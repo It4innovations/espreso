@@ -1,0 +1,56 @@
+CC=mpicc
+
+METIS_DIR=../../metis/metis-5.1.0/include
+SOLVER_DIR=../../solver/src
+LIBS=../libs
+
+USRCFLAGS=
+DEBUGCFLAGS=-O0 -g -cilk-serialize 
+
+CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I$(SOLVER_DIR) -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+opt   : CFLAGS += -O3 -xHost -ip -g
+debug : CFLAGS += $(DEBUGCFLAGS)
+pipe  : CFLAGS += $(USRCFLAGS)
+mic   : CFLAGS += -mmic 
+
+LDFLAGS = -mkl=parallel -L$(LIBS) -lsolver -lmetis -ltbb
+LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -lsolver_mic -ltbb 
+
+SOURCES = elements/element.cpp structures/mesh.cpp matrices/sparseIJVMatrix.cpp structures/faces.cpp elements/1D/point2d.cpp elements/2D/square.cpp elements/3D/hexahedron.cpp elements/1D/point3d.cpp structures/boundaries.cpp elements/1D/line.cpp elements/3D/tetrahedron.cpp structures/coordinates.cpp loader.cpp settings.cpp elements/2D/triangle.cpp structures/corners.cpp main.cpp matrices/sparseCSRMatrix.cpp matrices/denseMatrix.cpp matrices/matrix.cpp matrices/sparseDOKMatrix.cpp
+
+OBJECTS = $(SOURCES:.cpp=.o)
+
+EXECUTABLE = pmcube
+DEBUG_EXEC = pmcube_db
+MIC_EXEC   = pmcube_mic
+PIPE_EXEC  = pmcube_pipe
+
+opt: $(SOURCES) $(EXECUTABLE)
+
+pipe: $(SOURCES) $(PIPE_EXEC)
+
+debug: $(SOURCES) $(DEBUG_EXEC)
+
+mic: $(SOURCES) $(MIC_EXEC)
+
+
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(DEBUG_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(MIC_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS_MIC) $(OBJECTS) -o $@
+
+$(PIPE_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) $< -o $@
+
+clean:
+	rm -rf *.o 
+
+cleanall:
+	rm -rf *.o $(EXECUTABLE) $(DEBUG_EXEC) $(PIPE_EXEC) $(MIC_EXEC)

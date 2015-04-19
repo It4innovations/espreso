@@ -1,0 +1,85 @@
+
+#define PAR_VECTOR vector 
+//#define PAR_VECTOR tbb::concurrent_vector
+
+#define SEQ_VECTOR vector
+
+#ifdef WIN32	 
+	#include "stdafx.h"
+#endif
+
+
+#include "mpi.h"
+#include "mkl.h"
+#include <omp.h>
+
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
+
+#include <tbb/mutex.h>
+#include "tbb/parallel_sort.h"
+#include "tbb/tbb.h"
+
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <algorithm>
+#include <math.h>
+#include <iomanip>
+#include <map>
+
+#include <ctime>
+#include <stack>
+#include <time.h>
+
+#ifndef WIN32	 
+ #include "sys/types.h"
+ #include "sys/sysinfo.h"
+#endif
+
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <algorithm>
+#include <math.h>
+#include <iomanip>
+#include <map>
+
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+
+using std::vector;
+using std::cout;
+using std::map; 
+using std::make_pair; 
+using std::string;
+
+#pragma once
+
+//std::stack<clock_t> tictoc_stack;
+
+
+
+int SaveBinVectorDouble(SEQ_VECTOR <double> & SEQ_VECTOR, string filename);
+int LoadBinVectorInt(SEQ_VECTOR <int> & SEQ_VECTOR, string filename);
+int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <int> > & outputVecVec, string filename);
+int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename);
+
+template <typename T>
+void PrintVec(SEQ_VECTOR <T> vec, string name);
+
+template <typename T>
+void PrintVecND(SEQ_VECTOR <T> vec, string name); 
+
+void GetProcessMemoryStat_u( ); 
+void GetMemoryStat_u( );  
+int  parseLine(char* line); 
+double GetProcessMemory_u ( );
+
+// **** END - Uncategorized functions ********************************
+// *******************************************************************
