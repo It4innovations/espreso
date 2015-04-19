@@ -22,7 +22,7 @@ public:
 									std::vector < std::vector <int> >    & lambda_map_sub_B0, 
 									std::vector < std::vector <double> > & B1_l_duplicity,
 									const int domains_num, 
-									const Mesh mesh) ;
+									const Mesh &mesh) ;
 
 
 private:
