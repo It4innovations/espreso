@@ -7,7 +7,6 @@
 #include "TimeEval.h"
 
 
-
 template<typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 	//out << "[";
@@ -21,8 +20,7 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 	return out;
 }
 
-int main(int argc, char** argv)
-{
+void test(int argc, char** argv) {
 	
 	double start; 
 	start = omp_get_wtime();
@@ -412,4 +410,18 @@ int main(int argc, char** argv)
 	//std::cout << boundaries;
 	//std::cout << faces;
 	//std::cout << corners;
+}
+
+int main(int argc, char** argv)
+{
+	//test(argc, argv);
+
+	int partsCount = 4;
+	int fixPointsCount = 8;
+
+	Coordinates coords("matrices/HEX/15/coord");
+	Mesh mesh("matrices/HEX/15/elem", coords, partsCount, fixPointsCount);
+	Boundaries boundaries(mesh, coords);
+	Faces faces(mesh, coords);
+	Corners corners(faces.getFaces(), coords);
 }
