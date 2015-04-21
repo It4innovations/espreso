@@ -1,0 +1,79 @@
+CC=mpicxx -cxx=icpc
+
+INCLUDE = -I/usr/include/mpi
+
+# Parameters :
+#   - TM_BLOCK_START (use -DTM_BLOCK_START) - adds a MPI_Barrier before time measurement - barrier time is not measured
+#   - TM_BLOCK_END   (use -DTM_BLOCK_END)   - adds a MPI_Barrier before end of time measurement - barrier time is part of the measured time
+#   - USE_MPI_3      (use -DUSE_MPI_3)      - use non-blocking MPI_Iallreduce - in Pipeline CG algorithm - requires MPI 3 standard implementation
+
+USRCFLAGS=-DUSE_MPI_3 
+DEBUGCFLAGS=-g -d -cilk-serialize
+
+CFLAGS =-DXE6 -no-multibyte-chars -c -Wall -openmp -mkl=sequential -DHFETI_SOLVER -DTM_BLOCK_START -DDEVEL# -DTM_BLOCK_END  #parallel  -mkl=sequential
+opt   : CFLAGS += -O3 -xHost -ip
+debug : CFLAGS += $(DEBUGCFLAGS)
+pipe  : CFLAGS += $(USRCFLAGS)
+mic   : CFLAGS += -mmic 
+lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
+libmic: CFLAGS += -mmic -O3 -fPIC 
+libcuda: CFLAGS += -fPIC -O3 -xHost -ip -g -DCUDA
+
+LDFLAGS = -mkl=parallel
+
+SOURCES = HTFETI-seq.cpp Cluster.cpp ConfigFile.cpp Domain.cpp FEM_Assembler.cpp IterSolver.cpp SparseDSS.cpp SparseMatrix.cpp SparseSolver.cpp TimeEval.cpp utils.cpp
+
+OBJECTS = $(SOURCES:.cpp=.o)
+
+EXECUTABLE = htfeti_dev_par_nb
+DEBUG_EXEC = htfeti_dev_par_nb_db
+MIC_EXEC   = htfeti_dev_par_nb_mic
+PIPE_EXEC  = htfeti_dev_par_nb_pipe
+LIB	   = libsolver.so
+LIBMIC     = libsolver_mic.so
+LIBCUDA	   = libsolver_cuda.so
+
+opt: $(SOURCES) $(EXECUTABLE)
+
+pipe: $(SOURCES) $(PIPE_EXEC)
+
+debug: $(SOURCES) $(DEBUG_EXEC)
+
+mic: $(SOURCES) $(MIC_EXEC)
+
+lib: $(SOURCES) $(LIB)
+
+libmic: $(SOURCES) $(LIBMIC)
+
+libcuda: $(SOURCES) $(LIBCUDA) 
+
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(DEBUG_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(MIC_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(PIPE_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(LIB): $(OBJECTS)
+	$(CC) -shared $(INCLUDE) $(OBJECTS) -o $@
+
+$(LIBMIC): $(OBJECTS)
+	$(CC) -mmic -shared $(OBJECTS) -o $@
+
+$(LIBCUDA): $(OBJECTS)
+	$(CC) -shared $(OBJECTS) -o $@ -lcublas -lcudart
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) $(INCLUDE) $< -o $@
+
+
+clean:
+	rm -rf *.o 
+
+cleanall:
+	rm -rf *.o $(EXECUTABLE) $(DEBUG_EXEC) $(PIPE_EXEC) $(MIC_EXEC) $(LIB)
