@@ -34,6 +34,13 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 
 	Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints);
+	Mesh(size_t size, Coordinates &coordinates);
+
+	void push_element(Element* e)
+	{
+		_elements.push_back(e);
+	}
+
 	~Mesh();
 
 	void partitiate(idx_t parts, idx_t fixPoints);

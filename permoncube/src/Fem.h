@@ -12,6 +12,8 @@
 #include "LinearAlgebra.h"
 #include "CustomData.h"
 
+#include "espreso.h"
+
 class CKSparse;
 class CBSparse;
 class CRSparse;
@@ -27,11 +29,13 @@ public:
 //  int i_domGlobal;
 //	CFem();
 	CFem(const CFem& other);
-  CFem & operator=(const CFem &fem){printf("in Fem 29 +++++++++\n");}; 
+  CFem & operator=(const CFem &fem){printf("in Fem 29 +++++++++\n");};
 	CFem(MPI_Comm comm, int _i_domOnClust);
 
 	virtual ~CFem();
 
+	void element_generator3d(Mesh &mesh);
+	void coordinate_generator3d(Coordinates &coordinates);
 	void mesh_generator3d(CDomain *domainG);
 //	void dataDirBC();
 	void dataDirBCSub(int *i_face,int n_facesWithDirBC, 

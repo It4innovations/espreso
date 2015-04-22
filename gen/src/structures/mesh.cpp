@@ -47,6 +47,13 @@ Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fi
 	}
 }
 
+Mesh::Mesh(size_t size, Coordinates &coordinates): _coordinates(coordinates)
+{
+	_elements.reserve(size);
+	_lastNode = 0;
+	_maxElementSize = 0;
+}
+
 Element* Mesh::createElement(idx_t *indices, idx_t n)
 {
 	Element *e = NULL;

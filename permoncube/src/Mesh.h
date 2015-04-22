@@ -1,5 +1,5 @@
-#ifndef MESH_H_
-#define MESH_H_
+#ifndef MESH_H_1
+#define MESH_H_1
 
 #include "utility.h"
 #include "Solid45.h"
@@ -150,4 +150,4 @@ public:
 	void initialize(CDomain *domainG, int i_domOnClust, int i_domGlobal, int i_domGlobalMeshGen);
 };
 
-#endif /* MESH_H_ */
+#endif /* MESH_H_1 */

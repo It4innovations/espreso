@@ -14,6 +14,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 	Coordinates(const char *fileName);
+	Coordinates(size_t size, idx_t offset): _points(size), _offset(offset) {};
 
 	/** @brief Index correction. C/C++ indexes start at 0 while first Point is indexed by 1. */
 	void setOffset(idx_t offset)

@@ -18,6 +18,93 @@ CFem::CFem(const CFem& other):
 CFem::~CFem() {
 }
 
+void CFem::coordinate_generator3d(Coordinates &coordinates)
+{
+	int clusterCount[3] = { 1, 1, 1 };
+	int subInClusterCount[3] = { 2, 2, 2 };
+	int elementsInSubdomainCount[3] = { 10, 10, 10 };
+
+	int nnx = subInClusterCount[0] * elementsInSubdomainCount[0] + 1;
+	int nny = subInClusterCount[1] * elementsInSubdomainCount[1] + 1;
+	int nnz = subInClusterCount[2] * elementsInSubdomainCount[2] + 1;
+	double lenght[3] = { 1, 1, 1 };
+
+	double stepx = lenght[0] / (nnx - 1);
+	double stepy = lenght[1] / (nny - 1);
+	double stepz = lenght[2] / (nnz - 1);
+	idx_t index = 0;
+	for (int z = 0; z < nnz; z++) {
+		for (int y = 0; y < nny; y++) {
+			for (int x = 0; x < nnx; x++) {
+				coordinates[index++] = Point(x * stepx, y * stepy, z * stepz);
+			}
+		}
+	}
+}
+
+void CFem::element_generator3d(Mesh &mesh)
+{
+
+	//	###################################################
+	//	#                                                 #
+	//	#             A z-coord.                          #
+	//	#             |                                   #
+	//	#             |            E3                     #
+	//	#             |_ _ _ _ _ _ _                      #
+	//	#            /     E5      /|                     #
+	//	#           /_ _ _ _ _ _  / |                     #
+	//	#          |      |      |  |                     #
+	//	#        E4|      |      |E2|                     #
+	//	#          |_ _ _ |_ _ _ |  |       y-coord.      #
+	//	#          |    E1|      |  |------->             #
+	//	#          |      |      | /                      #
+	//	#          |_ _ _ |_ _ _ |/                       #
+	//	#         /                                       #
+	//	#        /       E0                               #
+	//	#       /                                         #
+	//	#      v  x-coord.                                #
+	//	#                                                 #
+	//	###################################################
+
+
+	int clusterCount[3] = { 1, 1, 1 };
+	int subInClusterCount[3] = { 2, 2, 2 };
+	int elementsInSubdomainCount[3] = { 10, 10, 10 };
+
+	idx_t indices[8];
+	int nnx = subInClusterCount[0] * elementsInSubdomainCount[0] + 1;
+	int nny = subInClusterCount[1] * elementsInSubdomainCount[1] + 1;
+	int nnz = subInClusterCount[2] * elementsInSubdomainCount[2] + 1;
+
+	int offset[3];
+
+	for (int subz = 0; subz < subInClusterCount[2]; subz++) {
+		for (int suby = 0; suby < subInClusterCount[1]; suby++) {
+			for (int subx = 0; subx < subInClusterCount[0]; subx++) {
+				offset[2] = subz * elementsInSubdomainCount[2];
+				offset[1] = suby * elementsInSubdomainCount[1];
+				offset[0] = subx * elementsInSubdomainCount[0];
+				for (int z = offset[2]; z < offset[2] + elementsInSubdomainCount[2]; z++) {
+					for (int y = offset[1]; y < offset[1] + elementsInSubdomainCount[1]; y++) {
+						for (int x = offset[0]; x < offset[0] + elementsInSubdomainCount[0]; x++) {
+							indices[0] = nnx * nny *  z      + nnx *  y      + x;
+							indices[1] = nnx * nny *  z      + nnx *  y      + x + 1;
+							indices[2] = nnx * nny *  z      + nnx * (y + 1) + x + 1;
+							indices[3] = nnx * nny *  z      + nnx * (y + 1) + x;
+							indices[4] = nnx * nny * (z + 1) + nnx *  y      + x;
+							indices[5] = nnx * nny * (z + 1) + nnx *  y      + x + 1;
+							indices[6] = nnx * nny * (z + 1) + nnx * (y + 1) + x + 1;
+							indices[7] = nnx * nny * (z + 1) + nnx * (y + 1) + x;
+							mesh.push_element(new Hexahedron(indices));
+						}
+					}
+				}
+
+			}
+		}
+	}
+}
+
 void CFem::mesh_generator3d(CDomain *domainG) {
 
 
