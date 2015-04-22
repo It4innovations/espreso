@@ -12,7 +12,7 @@
 #include "LinearAlgebra.h"
 #include "CustomData.h"
 
-#include "espreso.h"
+#include "esmesh.h"
 
 class CKSparse;
 class CBSparse;
@@ -34,8 +34,7 @@ public:
 
 	virtual ~CFem();
 
-	void element_generator3d(Mesh &mesh);
-	void coordinate_generator3d(Coordinates &coordinates);
+	static void mesh_generator3d(Mesh &mesh, Coordinates &coordinates, int *subdomains, int *elementsInSub);
 	void mesh_generator3d(CDomain *domainG);
 //	void dataDirBC();
 	void dataDirBCSub(int *i_face,int n_facesWithDirBC, 

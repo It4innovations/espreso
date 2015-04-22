@@ -12,14 +12,17 @@
 #   - TM_BLOCK_END   (use -DTM_BLOCK_END)   - adds a MPI_Barrier before end of time measurement - barrier time is part of the measured time
 #   - USE_MPI_3      (use -DUSE_MPI_3)      - use non-blocking MPI_Iallreduce - in Pipeline CG algorithm - requires MPI 3 standard implementation
 
-cp Makefile.Anselm Makefile
+rm -fr bin
+mkdir bin
 
-make cleanall
-make opt -j 16
+cp Makefile.Anselm bin/Makefile
+
+make -C bin cleanall
+make -C bin lib -j 16
 #make debug -j 16
-make clean
+make -C bin clean
 
-cp pmcube ../
+cp bin/libespmcube.so ../libs
 #cp pmcube_db ../
 
 

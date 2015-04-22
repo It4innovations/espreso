@@ -1,6 +1,5 @@
 #include "Fem.h"
 
-
 CFem::CFem(MPI_Comm comm, int _i_domOnClust) {
   this->comm = comm;
   i_domOnClust = _i_domOnClust;
@@ -18,33 +17,8 @@ CFem::CFem(const CFem& other):
 CFem::~CFem() {
 }
 
-void CFem::coordinate_generator3d(Coordinates &coordinates)
+void CFem::mesh_generator3d(Mesh &mesh, Coordinates &coordinates, int *subdomains, int *elementsInSub)
 {
-	int clusterCount[3] = { 1, 1, 1 };
-	int subInClusterCount[3] = { 2, 2, 2 };
-	int elementsInSubdomainCount[3] = { 10, 10, 10 };
-
-	int nnx = subInClusterCount[0] * elementsInSubdomainCount[0] + 1;
-	int nny = subInClusterCount[1] * elementsInSubdomainCount[1] + 1;
-	int nnz = subInClusterCount[2] * elementsInSubdomainCount[2] + 1;
-	double lenght[3] = { 1, 1, 1 };
-
-	double stepx = lenght[0] / (nnx - 1);
-	double stepy = lenght[1] / (nny - 1);
-	double stepz = lenght[2] / (nnz - 1);
-	idx_t index = 0;
-	for (int z = 0; z < nnz; z++) {
-		for (int y = 0; y < nny; y++) {
-			for (int x = 0; x < nnx; x++) {
-				coordinates[index++] = Point(x * stepx, y * stepy, z * stepz);
-			}
-		}
-	}
-}
-
-void CFem::element_generator3d(Mesh &mesh)
-{
-
 	//	###################################################
 	//	#                                                 #
 	//	#             A z-coord.                          #
@@ -66,27 +40,41 @@ void CFem::element_generator3d(Mesh &mesh)
 	//	#                                                 #
 	//	###################################################
 
+	int nnx = subdomains[0] * elementsInSub[0] + 1;
+	int nny = subdomains[1] * elementsInSub[1] + 1;
+	int nnz = subdomains[2] * elementsInSub[2] + 1;
+	double lenght[3] = { 1, 1, 1 };
 
-	int clusterCount[3] = { 1, 1, 1 };
-	int subInClusterCount[3] = { 2, 2, 2 };
-	int elementsInSubdomainCount[3] = { 10, 10, 10 };
+	double stepx = lenght[0] / (nnx - 1);
+	double stepy = lenght[1] / (nny - 1);
+	double stepz = lenght[2] / (nnz - 1);
+
+	idx_t index = 0;
+	coordinates.resize(nnz * nny * nnx);
+	for (int z = 0; z < nnz; z++) {
+		for (int y = 0; y < nny; y++) {
+			for (int x = 0; x < nnx; x++) {
+				coordinates[index++] = Point(x * stepx, y * stepy, z * stepz);
+			}
+		}
+	}
 
 	idx_t indices[8];
-	int nnx = subInClusterCount[0] * elementsInSubdomainCount[0] + 1;
-	int nny = subInClusterCount[1] * elementsInSubdomainCount[1] + 1;
-	int nnz = subInClusterCount[2] * elementsInSubdomainCount[2] + 1;
-
 	int offset[3];
+	mesh.reserve(
+			subdomains[2] * subdomains[1] * subdomains[0] *
+		elementsInSub[2] * elementsInSub[1] * elementsInSub[0]
+	);
 
-	for (int subz = 0; subz < subInClusterCount[2]; subz++) {
-		for (int suby = 0; suby < subInClusterCount[1]; suby++) {
-			for (int subx = 0; subx < subInClusterCount[0]; subx++) {
-				offset[2] = subz * elementsInSubdomainCount[2];
-				offset[1] = suby * elementsInSubdomainCount[1];
-				offset[0] = subx * elementsInSubdomainCount[0];
-				for (int z = offset[2]; z < offset[2] + elementsInSubdomainCount[2]; z++) {
-					for (int y = offset[1]; y < offset[1] + elementsInSubdomainCount[1]; y++) {
-						for (int x = offset[0]; x < offset[0] + elementsInSubdomainCount[0]; x++) {
+	for (int subz = 0; subz < subdomains[2]; subz++) {
+		for (int suby = 0; suby < subdomains[1]; suby++) {
+			for (int subx = 0; subx < subdomains[0]; subx++) {
+				offset[2] = subz * elementsInSub[2];
+				offset[1] = suby * elementsInSub[1];
+				offset[0] = subx * elementsInSub[0];
+				for (int z = offset[2]; z < offset[2] + elementsInSub[2]; z++) {
+					for (int y = offset[1]; y < offset[1] + elementsInSub[1]; y++) {
+						for (int x = offset[0]; x < offset[0] + elementsInSub[0]; x++) {
 							indices[0] = nnx * nny *  z      + nnx *  y      + x;
 							indices[1] = nnx * nny *  z      + nnx *  y      + x + 1;
 							indices[2] = nnx * nny *  z      + nnx * (y + 1) + x + 1;
@@ -95,11 +83,11 @@ void CFem::element_generator3d(Mesh &mesh)
 							indices[5] = nnx * nny * (z + 1) + nnx *  y      + x + 1;
 							indices[6] = nnx * nny * (z + 1) + nnx * (y + 1) + x + 1;
 							indices[7] = nnx * nny * (z + 1) + nnx * (y + 1) + x;
-							mesh.push_element(new Hexahedron(indices));
+							mesh.pushElement(new Hexahedron(indices));
 						}
 					}
 				}
-
+				mesh.endPartition();
 			}
 		}
 	}

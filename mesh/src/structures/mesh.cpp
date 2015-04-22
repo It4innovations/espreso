@@ -1,8 +1,8 @@
 #include "mesh.h"
 
 Mesh::Mesh(Coordinates &coordinates)
-	:_coordinates(coordinates), _elements(0), _lastNode(0), _partsNodesCount(0),
-	 _fixPoints(0), _flags(flags::FLAGS_SIZE), _maxElementSize(0)
+	:_coordinates(coordinates), _elements(0), _lastNode(0), _partsNodesCount(1, 0),
+	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -103,13 +103,18 @@ void Mesh::pushElement(Element* e)
 		_maxElementSize = e->size();
 	}
 	_elements.push_back(e);
+	if (_flags[flags::NEW_PARTITION]) {
+		_partPtrs.push_back(_partPtrs.back());
+		_partsNodesCount.push_back(0);
+		_flags[flags::NEW_PARTITION] = false;
+	}
 	_partPtrs.back() = _elements.size();
 }
 
 void Mesh::endPartition()
 {
-	computeLocalIndices(_partPtrs.size() - 1);
-	_partPtrs.push_back(_partPtrs.back());
+	computeLocalIndices(_partsNodesCount.size() - 1);
+	_flags[flags::NEW_PARTITION] = true;
 }
 
 Element* Mesh::createElement(idx_t *indices, idx_t n)

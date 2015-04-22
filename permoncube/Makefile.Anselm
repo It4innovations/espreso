@@ -5,6 +5,7 @@ DEBUGCFLAGS=-O0 -g -cilk-serialize
 
 CFLAGS =-c -fopenmp -mkl=parallel -I. -I../solver/ -I./include -DHFETI_SOLVER #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
+lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
 mic   : CFLAGS += -mmic 
@@ -16,16 +17,19 @@ SOURCES = Assembler.cpp BoundaryCondition.cpp BoundaryCondOnFace.cpp BSparse.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
-EXECUTABLE = pmcube
-DEBUG_EXEC = pmcube_db
-MIC_EXEC   = pmcube_mic
-PIPE_EXEC  = pmcube_pipe
+EXECUTABLE = espmcube
+DEBUG_EXEC = espmcube_db
+MIC_EXEC   = espmcube_mic
+PIPE_EXEC  = espmcube_pipe
+LIB        = libespmcube.so
 
 opt: $(SOURCES) $(EXECUTABLE)
 
 pipe: $(SOURCES) $(PIPE_EXEC)
 
 debug: $(SOURCES) $(DEBUG_EXEC)
+
+lib: $(SOURCES) $(LIB)
 
 mic: $(SOURCES) $(MIC_EXEC)
 
@@ -35,6 +39,9 @@ $(EXECUTABLE): $(OBJECTS)
 
 $(DEBUG_EXEC): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(LIB): $(OBJECTS)
+    $(CC) -shared $(INCLUDE) $(OBJECTS) -o $@
 
 $(MIC_EXEC): $(OBJECTS)
 	$(CC) $(LDFLAGS_MIC) $(OBJECTS) -o $@
@@ -49,4 +56,4 @@ clean:
 	rm -rf *.o 
 
 cleanall:
-	rm -rf *.o $(EXECUTABLE) $(DEBUG_EXEC) $(PIPE_EXEC) $(MIC_EXEC)
+	rm -rf *.o $(EXECUTABLE) $(DEBUG_EXEC) $(PIPE_EXEC) $(MIC_EXEC) $(LIB)

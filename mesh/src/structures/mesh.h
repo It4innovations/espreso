@@ -20,6 +20,7 @@ enum FLAGS {
 	PARTITIONS,
 	FIX_POINTS,
 	BOUNDARIES,
+	NEW_PARTITION,
 	FLAGS_SIZE
 };
 }
@@ -55,7 +56,7 @@ public:
 
 	size_t getPartsCount() const
 	{
-		return _partPtrs.size() - 1;
+		return _partsNodesCount.size();
 	}
 
 	const std::vector<idx_t>& getPartition() const

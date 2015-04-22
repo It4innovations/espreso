@@ -2,6 +2,7 @@
 
 #include "esmesh.h"
 #include "essolver.h"
+#include "espmcube.h"
 
 #include <vector>
 #include <iostream>
@@ -16,10 +17,10 @@ int main(int argc, char** argv)
 	Coordinates coordinates;
 	Mesh mesh(coordinates);
 
-	// load mesh from matrices
+	// load mesh from FILES
 	load_mesh(mesh, coordinates);
 
-	// generate mesh in permoncube
+	// generate mesh in PERMONCUBE
 	//generate_mesh(mesh, coordinates);
 
 	test(argc, argv, coordinates, mesh);
@@ -34,7 +35,13 @@ void load_mesh(Mesh &mesh, Coordinates &coordinates)
 
 void generate_mesh(Mesh &mesh, Coordinates &coordinates)
 {
+	int subdomains[] = { 4, 4, 4 };
+	int elementsInSub[] = { 10, 10, 10 };
 
+	CFem::mesh_generator3d(mesh, coordinates, subdomains, elementsInSub);
+
+	// TODO: set fix points in PERMONCUBE
+	mesh.computeFixPoints(4);
 }
 
 
@@ -65,6 +72,7 @@ void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
 
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
+	// TODO: fill boundaries in PERMONCUBE
 	Boundaries boundaries(mesh, coordinates);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;

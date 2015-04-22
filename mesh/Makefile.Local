@@ -8,7 +8,7 @@ INCLUDE=
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-c -no-multibyte-chars -mkl=parallel -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+CFLAGS =-c -mkl=parallel -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
@@ -16,7 +16,7 @@ lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
 mic   : CFLAGS += -mmic 
 
 LDFLAGS = -mkl=parallel -L$(LIBS) -lmetis -ltbb
-LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -ltbb
+LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -lmetis -ltbb
 
 SOURCES = elements/element.cpp structures/mesh.cpp matrices/sparseIJVMatrix.cpp structures/faces.cpp elements/1D/point2d.cpp elements/2D/square.cpp elements/3D/hexahedron.cpp elements/1D/point3d.cpp structures/boundaries.cpp elements/1D/line.cpp elements/3D/tetrahedron.cpp structures/coordinates.cpp loader.cpp settings.cpp elements/2D/triangle.cpp structures/corners.cpp matrices/sparseCSRMatrix.cpp matrices/denseMatrix.cpp matrices/matrix.cpp matrices/sparseDOKMatrix.cpp
 
