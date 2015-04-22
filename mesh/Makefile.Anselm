@@ -20,10 +20,10 @@ SOURCES = elements/element.cpp structures/mesh.cpp matrices/sparseIJVMatrix.cpp 
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
-EXECUTABLE = pmcube
-DEBUG_EXEC = pmcube_db
-MIC_EXEC   = pmcube_mic
-PIPE_EXEC  = pmcube_pipe
+EXECUTABLE = esmesh
+DEBUG_EXEC = esmesh_db
+MIC_EXEC   = esmesh_mic
+PIPE_EXEC  = esmesh_pipe
 
 opt: $(SOURCES) $(EXECUTABLE)
 

@@ -3,10 +3,10 @@ mkdir bin
 
 cp Makefile.Local bin/Makefile
 
-cp src/* bin
+cp -R src/* bin
 
 make -C bin cleanall
-make -C bin lib -j 16
+make -C bin opt
 
-cp bin/libessolver.so ../libs
+cp bin/espreso ../
 

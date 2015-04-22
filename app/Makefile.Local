@@ -1,0 +1,66 @@
+CC=mpicxx -cxx=icpc
+
+SOURCE_DIR=../..
+METIS_DIR=$(SOURCE_DIR)/metis/metis-5.1.0/include
+SOLVER_DIR=$(SOURCE_DIR)/solver/src
+MESH_DIR=$(SOURCE_DIR)/mesh/src
+LIBS=$(SOURCE_DIR)/libs
+INCLUDE=
+
+USRCFLAGS=
+DEBUGCFLAGS=-O0 -g -cilk-serialize 
+
+CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I$(SOLVER_DIR) -I$(MESH_DIR) -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+opt   : CFLAGS += -O3 -xHost -ip -g
+debug : CFLAGS += $(DEBUGCFLAGS)
+pipe  : CFLAGS += $(USRCFLAGS)
+lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
+mic   : CFLAGS += -mmic 
+
+LDFLAGS = -mkl=parallel -L$(LIBS) -lesmesh -lessolver -lmetis -ltbb
+LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -lesmesh -lessolver_mic -ltbb
+
+SOURCES = main.cpp
+
+OBJECTS = $(SOURCES:.cpp=.o)
+
+EXECUTABLE = espreso
+DEBUG_EXEC = espreso_db
+MIC_EXEC   = espreso_mic
+PIPE_EXEC  = espreso_pipe
+LIB	       = libespreso.so
+
+opt: $(SOURCES) $(EXECUTABLE)
+
+pipe: $(SOURCES) $(PIPE_EXEC)
+
+debug: $(SOURCES) $(DEBUG_EXEC)
+
+lib: $(SOURCES) $(LIB)
+
+mic: $(SOURCES) $(MIC_EXEC)
+
+
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(DEBUG_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+	
+$(LIB): $(OBJECTS)
+	$(CC) -shared $(INCLUDE) $(OBJECTS) -o $@
+
+$(MIC_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS_MIC) $(OBJECTS) -o $@
+
+$(PIPE_EXEC): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) $< -o $@
+
+clean:
+	rm -rf *.o 
+
+cleanall:
+	rm -rf *.o $(EXECUTABLE) $(DEBUG_EXEC) $(PIPE_EXEC) $(MIC_EXEC) $(LIB)

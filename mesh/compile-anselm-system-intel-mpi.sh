@@ -28,7 +28,7 @@ make opt -j 16
 make clean
 cd ..
 
-cp bin/pmcube ../
+cp bin/esmesh ../libs
 #cp pmcube_db ../
 
 

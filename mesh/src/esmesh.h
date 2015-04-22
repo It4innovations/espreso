@@ -1,5 +1,5 @@
-#ifndef ESPRESO_H_
-#define ESPRESO_H_
+#ifndef ESMESH_H_
+#define ESMESH_H_
 
 #include "settings.h"
 #include "structures/coordinates.h"
@@ -14,4 +14,4 @@
 
 #include "mkl.h"
 
-#endif /* ESPRESO_H_ */
+#endif /* ESMESH_H_ */

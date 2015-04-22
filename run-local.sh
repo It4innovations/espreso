@@ -1,4 +1,3 @@
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./gen/libs
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./solver/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
 
-./gen/Debug/espreso-gen
+./espreso

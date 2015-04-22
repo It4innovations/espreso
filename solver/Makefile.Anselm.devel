@@ -27,9 +27,9 @@ EXECUTABLE = htfeti_dev_par_nb
 DEBUG_EXEC = htfeti_dev_par_nb_db
 MIC_EXEC   = htfeti_dev_par_nb_mic
 PIPE_EXEC  = htfeti_dev_par_nb_pipe
-LIB	   = libsolver.so
-LIBMIC     = libsolver_mic.so
-LIBCUDA	   = libsolver_cuda.so
+LIB	       = libessolver.so
+LIBMIC     = libessolver_mic.so
+LIBCUDA	   = libessolver_cuda.so
 
 opt: $(SOURCES) $(EXECUTABLE)
 
