@@ -18,7 +18,14 @@ mic   : CFLAGS += -mmic
 LDFLAGS = -mkl=parallel -L$(LIBS) -lmetis -ltbb
 LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -lmetis -ltbb
 
-SOURCES = elements/element.cpp structures/mesh.cpp matrices/sparseIJVMatrix.cpp structures/faces.cpp elements/1D/point2d.cpp elements/2D/square.cpp elements/3D/hexahedron.cpp elements/1D/point3d.cpp structures/boundaries.cpp elements/1D/line.cpp elements/3D/tetrahedron.cpp structures/coordinates.cpp loader.cpp settings.cpp elements/2D/triangle.cpp structures/corners.cpp matrices/sparseCSRMatrix.cpp matrices/denseMatrix.cpp matrices/matrix.cpp matrices/sparseDOKMatrix.cpp
+SOURCES = \
+loader.cpp settings.cpp \
+structures/coordinates.cpp structures/mesh.cpp structures/boundaries.cpp structures/faces.cpp structures/corners.cpp \
+elements/element.cpp \
+elements/1D/line.cpp elements/1D/point2d.cpp elements/1D/point3d.cpp \
+elements/2D/square.cpp elements/2D/triangle.cpp \
+elements/3D/hexahedron.cpp elements/3D/tetrahedron.cpp \
+matrices/matrix.cpp matrices/sparseIJVMatrix.cpp matrices/sparseCSRMatrix.cpp matrices/denseMatrix.cpp matrices/sparseDOKMatrix.cpp \
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
