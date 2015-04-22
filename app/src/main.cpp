@@ -3,6 +3,9 @@
 #include "esmesh.h"
 #include "essolver.h"
 
+#include <vector>
+#include <iostream>
+
 
 template<typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
@@ -23,32 +26,32 @@ void test(int argc, char** argv) {
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	std::cout << "1 : " << omp_get_wtime() - start<< endl;
+	std::cout << "1 : " << omp_get_wtime() - start<< std::endl;
 
 	int partsCount = 4;
 	int fixPointsCount = 8;
 
-	std::cout << "2 : " << omp_get_wtime() - start<< endl;
+	std::cout << "2 : " << omp_get_wtime() - start<< std::endl;
 
 	Coordinates coords("matrices/HEX/15/coord");
 
-	std::cout << "3 : " << omp_get_wtime() - start<< endl;
+	std::cout << "3 : " << omp_get_wtime() - start<< std::endl;
 
 	Mesh mesh("matrices/HEX/15/elem", coords, partsCount, fixPointsCount);
 
-	std::cout << "4 : " << omp_get_wtime() - start<< endl;
+	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	Boundaries boundaries(mesh, coords);
 
-	std::cout << "5 : " << omp_get_wtime() - start<< endl;
+	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
 	Faces faces(mesh, coords);
 
-	std::cout << "6 : " << omp_get_wtime() - start<< endl;
+	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
 
 	Corners corners(faces.getFaces(), coords);
 
-	std::cout << "7 : " << omp_get_wtime() - start<< endl;
+	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
 
 	std::vector < SparseCSRMatrix >			K_mat;
 	std::vector < SparseCSRMatrix >			M_mat;
@@ -64,14 +67,14 @@ void test(int argc, char** argv) {
 	std::vector < std::vector < int > >		fix_nodes (partsCount);
 	std::vector < std::vector <int> >		l2g_vec;
 
-	std::cout << "8 : " << omp_get_wtime() - start<< endl;
+	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
 
 	for (int d = 0; d < partsCount; d++) {
 		K_mat.push_back( SparseCSRMatrix (0,0) );
 		M_mat.push_back( SparseCSRMatrix (0,0) );
 	}
 
-	std::cout << "9 : " << omp_get_wtime() - start<< endl;
+	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
 	for (int d = 0; d < partsCount; d++) {
 
@@ -87,7 +90,7 @@ void test(int argc, char** argv) {
 		f_vec[d].swap(f);
 	}
 
-	std::cout << "10: " << omp_get_wtime() - start<< endl;
+	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
 	const std::vector<idx_t> fixPoints = mesh.getFixPoints();
 
@@ -98,11 +101,11 @@ void test(int argc, char** argv) {
 		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
 	}
 
-	std::cout << "11: " << omp_get_wtime() - start<< endl;
+	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
 
 	boundaries.create_B1_l( B1_mat, B0_mat, l2g_vec, lambda_map_sub_clst, lambda_map_sub_B1, lambda_map_sub_B0, B1_l_duplicity, partsCount, mesh );
 
-	std::cout << "12: " << omp_get_wtime() - start<< endl;
+	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
 
 	std::cout.precision(10);
 
@@ -285,7 +288,7 @@ void test(int argc, char** argv) {
 	double max_vg;
 	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
 	if (MPIrank == 0)
-		std::cout << " Max value in_solution = " << max_vg << endl;
+		std::cout << " Max value in_solution = " << max_vg << std::endl;
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
