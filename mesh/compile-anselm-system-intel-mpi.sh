@@ -19,24 +19,7 @@ cp Makefile.Anselm bin/Makefile
 
 cp -R src/* bin
 
-cp ../solver/bin/libsolver.so libs
+make -C bin cleanall
+make -C bin lib -j 16
 
-cd bin
-make cleanall
-make opt -j 16
-#make debug -j 16
-make clean
-cd ..
-
-cp bin/esmesh ../libs
-#cp pmcube_db ../
-
-
-#make cleanall
-#make mic -j 16
-#make clean
-
-#cp pmcube_mic ../
-
-#rm *.cpp
-#rm *.h
+cp bin/libesmesh.so ../libs

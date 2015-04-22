@@ -13,7 +13,7 @@ module load intel/15.2.164
 
 #. /apps/intel/BETA2015/haswell.sh
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./gen/libs
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
 
 export OMP_NUM_THREADS=16
 
@@ -96,7 +96,7 @@ do
    #module load allinea-ddt-map/4.2.1
    #ddt -noqueue -start ./pmcube
 
-   ./pmcube | tee -a $log_file
+   ./espreso | tee -a $log_file
 
    #map -profile -n $(( X * Y * Z )) ./pmcube --Nx $x --Ny $y --Nz $z --nx $d --ny $d --nz $d --Clx $X --Cly $Y --Clz $Z --Cox $c --Coy $c --Coz $c --EDGE_COR --VTK 0 --ITERS 10      --HFETI 1 
    #ddt -noqueue -start -n $(( X * Y * Z )) ./pmcube --Nx $x --Ny $y --Nz $z --nx $d --ny $d --nz $d --Clx $X --Cly $Y --Clz $Z --VTK                                             --HFETI 0

@@ -2,22 +2,21 @@ CC=mpicxx -cxx=icpc
 
 SOURCE_DIR=../..
 METIS_DIR=$(SOURCE_DIR)/metis/metis-5.1.0/include
-SOLVER_DIR=$(SOURCE_DIR)/solver/src
 LIBS=$(SOURCE_DIR)/libs
 INCLUDE=
 
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I$(SOLVER_DIR) -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
 lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
 mic   : CFLAGS += -mmic 
 
-LDFLAGS = -mkl=parallel -L$(LIBS) -lsolver -lmetis -ltbb
-LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -lsolver_mic -ltbb
+LDFLAGS = -mkl=parallel -L$(LIBS) -lmetis -ltbb
+LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -ltbb
 
 SOURCES = elements/element.cpp structures/mesh.cpp matrices/sparseIJVMatrix.cpp structures/faces.cpp elements/1D/point2d.cpp elements/2D/square.cpp elements/3D/hexahedron.cpp elements/1D/point3d.cpp structures/boundaries.cpp elements/1D/line.cpp elements/3D/tetrahedron.cpp structures/coordinates.cpp loader.cpp settings.cpp elements/2D/triangle.cpp structures/corners.cpp matrices/sparseCSRMatrix.cpp matrices/denseMatrix.cpp matrices/matrix.cpp matrices/sparseDOKMatrix.cpp
 
@@ -27,7 +26,7 @@ EXECUTABLE = esmesh
 DEBUG_EXEC = esmesh_db
 MIC_EXEC   = esmesh_mic
 PIPE_EXEC  = esmesh_pipe
-LIB	       = libesmesh.so
+LIB        = libesmesh.so
 
 opt: $(SOURCES) $(EXECUTABLE)
 

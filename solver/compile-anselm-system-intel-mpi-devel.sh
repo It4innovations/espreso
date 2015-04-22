@@ -18,13 +18,12 @@ mkdir bin
 
 cp Makefile.Anselm.devel bin/Makefile
 
-find src -type f -name "*.cpp" -exec cp {} bin  \;
-find src -type f -name "*.h" -exec cp {} bin  \;
+cp src/* bin
 
-cd bin
-make cleanall
-make lib -j 16
-cd ..
+make -C bin cleanall
+make -C bin lib -j 16
+
+cp bin/libessolver.so ../libs
 
 #make libcuda -j 16
 #cp libsolver_cuda.so libsolver.so

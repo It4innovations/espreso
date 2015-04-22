@@ -13,10 +13,12 @@ module load intel/15.2.164
 
 module list
 
-cd ./solver
+cd solver
 ./compile-anselm-system-intel-mpi-devel.sh
 
-cd ..
-cd ./gen
+cd ../mesh
+./compile-anselm-system-intel-mpi.sh
+
+cd ../app
 ./compile-anselm-system-intel-mpi.sh
 
