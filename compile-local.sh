@@ -6,6 +6,9 @@ cd solver
 cd ../mesh
 ./compile-local.sh
 
+cd ../permoncube
+./compile-local.sh
+
 cd ../app
 ./compile-local.sh
 

@@ -19,6 +19,9 @@ cd solver
 cd ../mesh
 ./compile-anselm-system-intel-mpi.sh
 
+cd ../permoncube
+./compile-anselm-system-intel-mpi.sh
+
 cd ../app
 ./compile-anselm-system-intel-mpi.sh
 

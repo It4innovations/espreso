@@ -1,17 +1,24 @@
 CC=mpicc
 
+SOURCE_DIR=../..
+METIS_DIR=$(SOURCE_DIR)/metis/metis-5.1.0/include
+MESH_DIR=$(SOURCE_DIR)/mesh/src
+SOLVER_DIR=$(SOURCE_DIR)/solver/src
+LIBS=$(SOURCE_DIR)/libs
+INCLUDE=
+
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-c -fopenmp -mkl=parallel -I. -I../solver/ -I./include -DHFETI_SOLVER #-Wall
+CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I. -I$(SOLVER_DIR) -I$(MESH_DIR) -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
-lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
+lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
 mic   : CFLAGS += -mmic 
 
-LDFLAGS = -mkl=parallel -L. -lsolver -ltbb
-LDFLAGS_MIC =  -mmic -mkl=parallel -L. -lsolver_mic -ltbb
+LDFLAGS = -mkl=parallel -L$(LIBS) -lesmesh -lessolver -lmetis -ltbb
+LDFLAGS_MIC =  -mmic -mkl=parallel -L$(LIBS) -lesmesh -lessolver_mic -lmetis -ltbb
 
 SOURCES = Assembler.cpp BoundaryCondition.cpp BoundaryCondOnFace.cpp BSparse.cpp BSparseC.cpp Cluster_g.cpp ContactBC.cpp Coordinate.cpp CoupleIntDouble.cpp CustomData.cpp Data.cpp DirichletBC.cpp Domain_g.cpp ElementLibrary.cpp Fem.cpp KSparse.cpp LinearAlgebra.cpp main.cpp Mesh.cpp NeumannBC.cpp RectangularFace.cpp RSparse.cpp SaveFEM.cpp Solid45.cpp Solid45EqNumbGlobal.cpp Solid45NodNumbLoc.cpp Solver.cpp StiffnessLocal.cpp Test.cpp utility.cpp
 
@@ -41,7 +48,7 @@ $(DEBUG_EXEC): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
 $(LIB): $(OBJECTS)
-    $(CC) -shared $(INCLUDE) $(OBJECTS) -o $@
+	$(CC) -shared $(INCLUDE) $(OBJECTS) -o $@
 
 $(MIC_EXEC): $(OBJECTS)
 	$(CC) $(LDFLAGS_MIC) $(OBJECTS) -o $@
