@@ -3,5 +3,5 @@
 *.o
 *.so
 */bin
-pmcube
-gen/Debug
+*/Debug
+espreso
