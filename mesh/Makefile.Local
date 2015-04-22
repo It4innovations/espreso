@@ -8,7 +8,7 @@ INCLUDE=
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+CFLAGS =-c -no-multibyte-chars -mkl=parallel -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)

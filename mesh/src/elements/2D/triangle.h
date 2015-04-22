@@ -16,6 +16,11 @@ public:
 
 	Triangle(idx_t *indices);
 
+	Element* copy() const
+	{
+		return new Triangle(*this);
+	}
+
 	const idx_t* indices() const
 	{
 		return _indices;

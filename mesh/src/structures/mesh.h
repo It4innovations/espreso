@@ -33,13 +33,15 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 
+	Mesh(Coordinates &coordinates);
 	Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints);
-	Mesh(size_t size, Coordinates &coordinates);
 
-	void push_element(Element* e)
-	{
-		_elements.push_back(e);
-	}
+	Mesh(const Mesh &other);
+	Mesh& operator=(const Mesh &other);
+
+	void reserve(size_t size);
+	void pushElement(Element* e);
+	void endPartition();
 
 	~Mesh();
 
@@ -51,9 +53,19 @@ public:
 		return _elements;
 	};
 
+	size_t getPartsCount() const
+	{
+		return _partPtrs.size() - 1;
+	}
+
 	const std::vector<idx_t>& getPartition() const
 	{
 		return _partPtrs;
+	}
+
+	size_t getFixPointsCount() const
+	{
+		return _fixPoints.size() / (_partPtrs.size() - 1);
 	}
 
 	const std::vector<idx_t>& getFixPoints() const
@@ -112,6 +124,8 @@ public:
 	}
 
 private:
+	static void assign(Mesh &m1, Mesh &m2);
+
 	Element* createElement(idx_t *indices, idx_t n);
 
 	void _assemble_matrix(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<double> &f, idx_t part, bool dynamic);
@@ -120,7 +134,7 @@ private:
 	idx_t getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t part, idx_t subpart) const;
 
 	void partitiate(idx_t *ePartition);
-	void computeLocalIndices();
+	void computeLocalIndices(size_t part);
 
 	void checkMETISResult(int result) const;
 	void checkMKLResult(MKL_INT result) const;
@@ -139,9 +153,6 @@ private:
 
 	/** @brief Number of nodes in each part. */
 	std::vector<idx_t> _partsNodesCount;
-
-	/** @brief Keeps mapping of nodes to mesh parts. */
-	BoundaryNodes _boundaries;
 
 	/** @brief Fix points for all parts. */
 	std::vector<idx_t> _fixPoints;

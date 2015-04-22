@@ -6,7 +6,8 @@ int main(int argc, char** argv)
 	int fixPointsCount = 8;
 
 	Coordinates coords("matrices/HEX/15/coord");
-	Mesh mesh("matrices/HEX/15/elem", coords, partsCount, fixPointsCount);
+	Mesh mesh(coords);
+	mesh = Mesh("matrices/HEX/15/elem", coords, partsCount, fixPointsCount);
 	Boundaries boundaries(mesh, coords);
 	Faces faces(mesh, coords);
 	Corners corners(faces.getFaces(), coords);

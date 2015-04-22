@@ -32,7 +32,6 @@ public:
 		LOCAL
 	};
 
-
 	inline static bool match(idx_t *indices, idx_t x, idx_t y)
 	{
 		return indices[x] == indices[y];
@@ -83,6 +82,8 @@ public:
 		std::vector<double> Me;
 		_addLocalValues(K, M, f, Ke, Me, fe, offset, false);
 	}
+
+	virtual Element* copy() const = 0;
 
 	virtual const std::vector<std::vector<double> >& dN() const = 0;
 	virtual const std::vector<std::vector<double> >&  N() const = 0;

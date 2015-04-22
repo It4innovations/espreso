@@ -6,9 +6,41 @@
 #include <vector>
 #include <iostream>
 
+void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh);
+
+void load_mesh(Mesh &mesh, Coordinates &coordinates);
+void generate_mesh(Mesh &mesh, Coordinates &coordinates);
+
+int main(int argc, char** argv)
+{
+	Coordinates coordinates;
+	Mesh mesh(coordinates);
+
+	// load mesh from matrices
+	load_mesh(mesh, coordinates);
+
+	// generate mesh in permoncube
+	//generate_mesh(mesh, coordinates);
+
+	test(argc, argv, coordinates, mesh);
+}
+
+
+void load_mesh(Mesh &mesh, Coordinates &coordinates)
+{
+	coordinates = Coordinates("matrices/HEX/15/coord");
+	mesh = Mesh("matrices/HEX/15/elem", coordinates, 4, 8);
+}
+
+void generate_mesh(Mesh &mesh, Coordinates &coordinates)
+{
+
+}
+
 
 template<typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
+std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
+{
 	//out << "[";
 	size_t last = v.size() - 1;
 	for(size_t i = 0; i < v.size(); ++i) {
@@ -20,36 +52,28 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 	return out;
 }
 
-void test(int argc, char** argv) {
 
+
+void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
+{
 	double start;
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	std::cout << "1 : " << omp_get_wtime() - start<< std::endl;
-
-	int partsCount = 4;
-	int fixPointsCount = 8;
-
-	std::cout << "2 : " << omp_get_wtime() - start<< std::endl;
-
-	Coordinates coords("matrices/HEX/15/coord");
-
-	std::cout << "3 : " << omp_get_wtime() - start<< std::endl;
-
-	Mesh mesh("matrices/HEX/15/elem", coords, partsCount, fixPointsCount);
+	size_t partsCount = mesh.getPartsCount();
+	size_t fixPointsCount = mesh.getFixPointsCount();
 
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
-	Boundaries boundaries(mesh, coords);
+	Boundaries boundaries(mesh, coordinates);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
-	Faces faces(mesh, coords);
+	Faces faces(mesh, coordinates);
 
 	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
 
-	Corners corners(faces.getFaces(), coords);
+	Corners corners(faces.getFaces(), coordinates);
 
 	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
 
@@ -218,9 +242,9 @@ void test(int argc, char** argv) {
 	for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = coords[l2g_vec[d][i]].x;
-			tmp_vec[1] = coords[l2g_vec[d][i]].y;
-			tmp_vec[2] = coords[l2g_vec[d][i]].z;
+			tmp_vec[0] = coordinates[l2g_vec[d][i]].x;
+			tmp_vec[1] = coordinates[l2g_vec[d][i]].y;
+			tmp_vec[2] = coordinates[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -401,20 +425,7 @@ void test(int argc, char** argv) {
 	//myfile << K;
 	//myfile.close();
 
-	//std::std::cout << K;
-
-	int a = 0;
-
-	//std::cout << mesh;
-	//std::cout << coords;
-	//std::cout << boundaries;
-	//std::cout << faces;
-	//std::cout << corners;
-}
-
-int main(int argc, char** argv)
-{
-	test(argc, argv);
+	//std::cout << K;
 }
 
 

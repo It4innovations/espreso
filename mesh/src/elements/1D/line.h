@@ -16,6 +16,11 @@ public:
 
 	Line(idx_t *indices);
 
+	Element* copy() const
+	{
+		return new Line(*this);
+	}
+
 	const idx_t* indices() const
 	{
 		return _indices;

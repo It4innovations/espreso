@@ -1,5 +1,14 @@
 #include "mesh.h"
 
+Mesh::Mesh(Coordinates &coordinates)
+	:_coordinates(coordinates), _elements(0), _lastNode(0), _partsNodesCount(0),
+	 _fixPoints(0), _flags(flags::FLAGS_SIZE), _maxElementSize(0)
+{
+	_partPtrs.resize(2);
+	_partPtrs[0] = 0;
+	_partPtrs[1] = 0;
+}
+
 Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints):
 	_coordinates(coordinates),
 	_flags(flags::FLAGS_SIZE, false),
@@ -47,11 +56,60 @@ Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fi
 	}
 }
 
-Mesh::Mesh(size_t size, Coordinates &coordinates): _coordinates(coordinates)
+Mesh::Mesh(const Mesh &other)
+	:_coordinates(other._coordinates), _lastNode(other._lastNode), _partPtrs(other._partPtrs),
+	 _partsNodesCount(other._partsNodesCount), _fixPoints(other._fixPoints),
+	 _flags(other._flags), _maxElementSize(other._maxElementSize)
+{
+	_elements.reserve(other._elements.size());
+	for (size_t i = 0; i < other._elements.size(); i++) {
+		_elements.push_back(other._elements[i]->copy());
+	}
+}
+
+Mesh& Mesh::operator=(const Mesh &other)
+{
+	if (this != &other) {
+		Mesh mesh(other);
+		Mesh::assign(*this, mesh);
+	}
+	return *this;
+}
+
+void Mesh::assign(Mesh &m1, Mesh &m2)
+{
+	m1._elements.swap(m2._elements);
+	m1._fixPoints.swap(m2._fixPoints);
+	m1._flags.swap(m2._flags);
+	m1._partPtrs.swap(m2._partPtrs);
+	m1._partsNodesCount.swap(m2._partsNodesCount);
+	m1._maxElementSize = m2._maxElementSize;
+	m1._lastNode = m2._lastNode;
+}
+
+void Mesh::reserve(size_t size)
 {
 	_elements.reserve(size);
-	_lastNode = 0;
-	_maxElementSize = 0;
+}
+
+void Mesh::pushElement(Element* e)
+{
+	for (size_t i = 0; i < e->size(); i++) {
+		if (_lastNode < e->node(i)) {
+			_lastNode = e->node(i);
+		}
+	}
+	if (_maxElementSize < e->size()) {
+		_maxElementSize = e->size();
+	}
+	_elements.push_back(e);
+	_partPtrs.back() = _elements.size();
+}
+
+void Mesh::endPartition()
+{
+	computeLocalIndices(_partPtrs.size() - 1);
+	_partPtrs.push_back(_partPtrs.back());
 }
 
 Element* Mesh::createElement(idx_t *indices, idx_t n)
@@ -117,7 +175,7 @@ void Mesh::_assemble_matrix(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<
 void Mesh::partitiate(idx_t parts, idx_t fixPoints)
 {
 	_partPtrs.resize(parts + 1);
-	_partsNodesCount.resize(parts + 1);
+	_partsNodesCount.resize(parts);
 
 	// Call METIS to get partition of a whole mesh
 	idx_t *elementPartition = getPartition(0, _elements.size(), parts);
@@ -241,36 +299,33 @@ void Mesh::partitiate(idx_t *ePartition)
 			}
 		}
 		_partPtrs[part + 1] = index;
+		computeLocalIndices(part);
 	}
-
-	computeLocalIndices();
 }
 
-void Mesh::computeLocalIndices()
+void Mesh::computeLocalIndices(size_t part)
 {
 	idx_t *nodeMap = new idx_t[_lastNode + 1];
 
-	for (idx_t part = 0; part < _partPtrs.size() - 1; part++) {
-		// Compute mask of nodes
-		memset(nodeMap, 0, (_lastNode + 1) * sizeof(idx_t));
-		for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
-			for (size_t n = 0; n < _elements[e]->size(); n++) {
-				nodeMap[_elements[e]->node(n)] = 1;
-			}
+	// Compute mask of nodes
+	memset(nodeMap, 0, (_lastNode + 1) * sizeof(idx_t));
+	for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
+		for (size_t n = 0; n < _elements[e]->size(); n++) {
+			nodeMap[_elements[e]->node(n)] = 1;
 		}
+	}
 
-		// re-index nodes
-		idx_t nSize = 0;
-		for (idx_t k = 0; k <= _lastNode; k++) {
-			if (nodeMap[k] == 1) {
-				nodeMap[k] = nSize++;
-			}
+	// re-index nodes
+	idx_t nSize = 0;
+	for (idx_t k = 0; k <= _lastNode; k++) {
+		if (nodeMap[k] == 1) {
+			nodeMap[k] = nSize++;
 		}
-		_partsNodesCount[part] = nSize;
+	}
+	_partsNodesCount[part] = nSize;
 
-		for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
-			_elements[e]->setLocalIndices(nodeMap);
-		}
+	for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
+		_elements[e]->setLocalIndices(nodeMap);
 	}
 
 	delete[] nodeMap;

@@ -6,12 +6,11 @@ Boundaries::Boundaries(const Mesh &mesh, const Coordinates &coordinates):
 	const std::vector<idx_t> &parts = mesh.getPartition();
 	const std::vector<Element*> &elements = mesh.getElements();
 
-	for (size_t p = 0; p < parts.size() - 1; p++) {
+	for (size_t p = 0; p + 1 < parts.size(); p++) {
 		for (idx_t i = parts[p]; i < parts[p + 1]; i++) {
 			elements[i]->fillBoundaries(_boundaries, p);
 		}
 	}
-
 }
 
 void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 

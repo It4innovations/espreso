@@ -16,6 +16,11 @@ public:
 
 	Square(idx_t *indices);
 
+	Element* copy() const
+	{
+		return new Square(*this);
+	}
+
 	const idx_t* indices() const
 	{
 		return _indices;
