@@ -2,6 +2,7 @@
 *~
 *.o
 *.so
+*.vtk
 */bin
 */Debug
 espreso

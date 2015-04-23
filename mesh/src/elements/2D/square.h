@@ -7,6 +7,7 @@
 #define SquareNodesCount 4
 #define SquareFacesCount 1
 #define SquareGPCount 4
+#define SquareVTKCode 9
 
 class Square: public Element
 {
@@ -19,6 +20,11 @@ public:
 	Element* copy() const
 	{
 		return new Square(*this);
+	}
+
+	int vtkCode() const
+	{
+		return SquareVTKCode;
 	}
 
 	const idx_t* indices() const

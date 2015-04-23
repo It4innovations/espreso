@@ -7,6 +7,7 @@
 #define TriangleNodesCount 3
 #define TriangleFacesCount 1
 #define TriangleGPCount 3
+#define TriangleVTKCode 5
 
 class Triangle: public Element
 {
@@ -19,6 +20,11 @@ public:
 	Element* copy() const
 	{
 		return new Triangle(*this);
+	}
+
+	int vtkCode() const
+	{
+		return TriangleVTKCode;
 	}
 
 	const idx_t* indices() const

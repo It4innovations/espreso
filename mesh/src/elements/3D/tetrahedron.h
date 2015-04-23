@@ -7,6 +7,7 @@
 #define TetrahedronNodesCount 4
 #define TetrahedronFacesCount 4
 #define TetrahedronGPCount 4
+#define TetrahedronVTKCode 10
 
 class Tetrahedron: public Element
 {
@@ -19,6 +20,11 @@ public:
 	Element* copy() const
 	{
 		return new Tetrahedron(*this);
+	}
+
+	int vtkCode() const
+	{
+		return TetrahedronVTKCode;
 	}
 
 	const idx_t* indices() const

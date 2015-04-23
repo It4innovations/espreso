@@ -90,6 +90,7 @@ public:
 	virtual const std::vector<double>& weighFactor() const = 0;
 
 	// Virtual methods
+	virtual int vtkCode() const = 0;
 	virtual size_t size() const = 0;
 	virtual size_t gpSize() const = 0;
 	virtual void fillNeighbour(BoundaryNodes &nodes, int indexing) const = 0;

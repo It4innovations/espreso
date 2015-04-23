@@ -8,6 +8,7 @@
 #define HexahedronNodesCount 8
 #define HexahedronFacesCount 6
 #define HexahedronGPCount 8
+#define HexahedronVTKCode 12
 
 class Hexahedron: public Element
 {
@@ -20,6 +21,11 @@ public:
 	Element* copy() const
 	{
 		return new Hexahedron(*this);
+	}
+
+	int vtkCode() const
+	{
+		return HexahedronVTKCode;
 	}
 
 	const idx_t* indices() const

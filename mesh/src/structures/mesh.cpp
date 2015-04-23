@@ -434,6 +434,73 @@ Mesh::~Mesh()
 	}
 }
 
+
+void Mesh::saveBasis(std::ofstream &vtk)
+{
+	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
+	vtk << "# vtk DataFile Version 3.0\n";
+	vtk << "Test\n";
+	vtk << "ASCII\n\n";
+	vtk << "DATASET UNSTRUCTURED_GRID\n";
+	vtk << "POINTS " << _coordinates.size() << " float\n";
+	vtk << _coordinates << "\n";
+
+	size_t size = 0;
+	for (size_t i = 0; i < _elements.size(); i++) {
+		size += _elements[i]->size() + 1;
+	}
+	vtk << "CELLS " << _elements.size() << " " << size << "\n";
+	for (size_t i = 0; i < _elements.size(); i++) {
+		vtk << _elements[i]->size();
+		for (size_t j = 0; j < _elements[i]->size(); j++) {
+			vtk << " " << _elements[i]->node(j) - _coordinates.getOffset();
+		}
+		vtk << "\n";
+	}
+
+	vtk << "\n";
+	vtk << "CELL_TYPES " << _elements.size() << "\n";
+	for (size_t i = 0; i < _elements.size(); i++) {
+		vtk << _elements[i]->vtkCode() << "\n";
+	}
+
+	vtk << "\n";
+	vtk << "CELL_DATA " << _elements.size() << "\n";
+	vtk << "SCALARS decomposition int 1\n";
+	vtk << "LOOKUP_TABLE decomposition\n";
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+		for (idx_t i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+			vtk << part << "\n";
+		}
+	}
+}
+
+void Mesh::saveVTK(std::vector<std::vector<double> > &displacement)
+{
+	std::ofstream vtk;
+	saveBasis(vtk);
+
+	vtk << "\n";
+	vtk << "POINT_DATA " << _coordinates.size() << "\n";
+	vtk << "SCALARS displacements float 3\n";
+	vtk << "LOOKUP_TABLE default\n";
+	for (size_t i = 0; i < displacement.size(); i++) {
+		for (size_t j = 0; j < displacement[i].size(); j++) {
+			vtk << displacement[i][j] << " ";
+		}
+		vtk << "\n";
+	}
+
+	vtk.close();
+}
+
+void Mesh::saveVTK()
+{
+	std::ofstream vtk;
+	saveBasis(vtk);
+	vtk.close();
+}
+
 std::ostream& operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {

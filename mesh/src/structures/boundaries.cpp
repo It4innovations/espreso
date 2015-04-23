@@ -77,7 +77,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 		//	}
 		//}
 
-		if ( i < 37 && _boundaries[i].size() > 0) {
+		if ( i < 121 && _boundaries[i].size() > 0) {
 			for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
 				for (int d_i = 0; d_i < 3; d_i++) {
 					B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + d_i) =  1.0;  // 3*i + d_i

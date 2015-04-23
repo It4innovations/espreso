@@ -36,7 +36,7 @@ public:
 
 inline std::ostream& operator<<(std::ostream& os, const Point2D &p)
 {
-	os << "[" << p.x << ", " << p.y << "]: ";
+	os << p.x << " " << p.y;
 	return os;
 }
 

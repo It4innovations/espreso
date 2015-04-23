@@ -18,10 +18,12 @@ int main(int argc, char** argv)
 	Mesh mesh(coordinates);
 
 	// load mesh from FILES
-	load_mesh(mesh, coordinates);
+	//load_mesh(mesh, coordinates);
 
 	// generate mesh in PERMONCUBE
-	//generate_mesh(mesh, coordinates);
+	generate_mesh(mesh, coordinates);
+
+	//mesh.saveVTK();
 
 	test(argc, argv, coordinates, mesh);
 }
@@ -35,7 +37,7 @@ void load_mesh(Mesh &mesh, Coordinates &coordinates)
 
 void generate_mesh(Mesh &mesh, Coordinates &coordinates)
 {
-	int subdomains[] = { 4, 4, 4 };
+	int subdomains[] = { 1, 1, 1 };
 	int elementsInSub[] = { 10, 10, 10 };
 
 	CFem::mesh_generator3d(mesh, coordinates, subdomains, elementsInSub);
@@ -323,6 +325,8 @@ void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
 		std::cout << " Max value in_solution = " << max_vg << std::endl;
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
+
+	mesh.saveVTK(prim_solution);
 
 
 

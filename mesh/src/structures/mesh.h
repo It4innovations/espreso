@@ -40,6 +40,9 @@ public:
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
 
+	void saveVTK();
+	void saveVTK(std::vector<std::vector<double> > &displacement);
+
 	void reserve(size_t size);
 	void pushElement(Element* e);
 	void endPartition();
@@ -126,6 +129,8 @@ public:
 
 private:
 	static void assign(Mesh &m1, Mesh &m2);
+
+	void saveBasis(std::ofstream &vtk);
 
 	Element* createElement(idx_t *indices, idx_t n);
 

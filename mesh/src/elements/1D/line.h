@@ -7,6 +7,7 @@
 #define LineNodesCount 2
 #define LineFacesCount 0
 #define LineGPCount 2
+#define LineVTKCode 3
 
 class Line: public Element
 {
@@ -19,6 +20,11 @@ public:
 	Element* copy() const
 	{
 		return new Line(*this);
+	}
+
+	int vtkCode() const
+	{
+		return LineVTKCode;
 	}
 
 	const idx_t* indices() const
