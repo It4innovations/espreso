@@ -37,8 +37,8 @@ void load_mesh(Mesh &mesh, Coordinates &coordinates)
 
 void generate_mesh(Mesh &mesh, Coordinates &coordinates)
 {
-	int subdomains[] = { 1, 1, 1 };
-	int elementsInSub[] = { 10, 10, 10 };
+	int subdomains[] = { 2, 2, 2 };
+	int elementsInSub[] = { 15, 15, 15};
 
 	CFem::mesh_generator3d(mesh, coordinates, subdomains, elementsInSub);
 
@@ -122,6 +122,8 @@ void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
 		K_mat[d] = K;
 		M_mat[d] = M;
 		f_vec[d].swap(f);
+
+		std::cout << d << " "; 
 	}
 
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
@@ -326,7 +328,7 @@ void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	mesh.saveVTK(prim_solution);
+	mesh.saveVTK(prim_solution, l2g_vec);
 
 
 

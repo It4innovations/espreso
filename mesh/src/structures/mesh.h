@@ -13,6 +13,8 @@
 #include "../matrices/sparseDOKMatrix.h"
 #include "../settings.h"
 
+#include <vector>
+
 namespace flags
 {
 
@@ -40,8 +42,8 @@ public:
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
 
-	void saveVTK();
-	void saveVTK(std::vector<std::vector<double> > &displacement);
+	void saveVTK(std::vector<std::vector <int> > &l2g_vec);
+	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
 	void reserve(size_t size);
 	void pushElement(Element* e);
@@ -130,7 +132,7 @@ public:
 private:
 	static void assign(Mesh &m1, Mesh &m2);
 
-	void saveBasis(std::ofstream &vtk);
+	void saveBasis(std::ofstream &vtk,std::vector<std::vector <int> > &l2g_vec);
 
 	Element* createElement(idx_t *indices, idx_t n);
 
