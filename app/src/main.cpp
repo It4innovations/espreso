@@ -7,40 +7,75 @@
 #include <vector>
 #include <iostream>
 
-void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh);
+void test(int argc, char** argv,
+		Coordinates &coordinates,
+		Mesh &mesh,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z);
 
-void load_mesh(Mesh &mesh, Coordinates &coordinates);
-void generate_mesh(Mesh &mesh, Coordinates &coordinates);
+void load_mesh(
+		Mesh &mesh,
+		Coordinates &coordinates,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z);
+
+void generate_mesh(
+		Mesh &mesh,
+		Coordinates &coordinates,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z);
 
 int main(int argc, char** argv)
 {
 	Coordinates coordinates;
 	Mesh mesh(coordinates);
+	std::map<int, double> dirichlet_x, dirichlet_y, dirichlet_z;
 
 	// load mesh from FILES
-	//load_mesh(mesh, coordinates);
+	//load_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
 
 	// generate mesh in PERMONCUBE
-	generate_mesh(mesh, coordinates);
+	generate_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
 
 	//mesh.saveVTK();
 
-	test(argc, argv, coordinates, mesh);
+	test(argc, argv, coordinates, mesh, dirichlet_x, dirichlet_y, dirichlet_z);
 }
 
 
-void load_mesh(Mesh &mesh, Coordinates &coordinates)
+void load_mesh(
+		Mesh &mesh,
+		Coordinates &coordinates,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z)
 {
 	coordinates = Coordinates("matrices/HEX/15/coord");
 	mesh = Mesh("matrices/HEX/15/elem", coordinates, 4, 8);
+
+	// fix down face
+	for (int i = 0; i < 16 * 16; i++) {
+		dirichlet_x[i + coordinates.getOffset()] = 0;
+		dirichlet_y[i + coordinates.getOffset()] = 0;
+		dirichlet_z[i + coordinates.getOffset()] = 0;
+	}
 }
 
-void generate_mesh(Mesh &mesh, Coordinates &coordinates)
+void generate_mesh(
+		Mesh &mesh,
+		Coordinates &coordinates,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z)
 {
 	int subdomains[] = { 2, 2, 2 };
 	int elementsInSub[] = { 15, 15, 15};
 
 	CFem::mesh_generator3d(mesh, coordinates, subdomains, elementsInSub);
+	CFem::dirichlet(dirichlet_x, dirichlet_y, dirichlet_z, subdomains, elementsInSub);
 
 	// TODO: set fix points in PERMONCUBE
 	mesh.computeFixPoints(4);
@@ -63,7 +98,12 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 
 
 
-void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
+void test(int argc, char** argv,
+		Coordinates &coordinates,
+		Mesh &mesh,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z)
 {
 	double start;
 	start = omp_get_wtime();
@@ -136,14 +176,22 @@ void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
 		}
 		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
 	}
-	int subdomains[] = { 2, 2, 2 };
-	int elementsInSub[] = { 15, 15, 15};
 
 	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-  std::map < int, double >   dirichlet_x,dirichlet_y,dirichlet_z;
-  CFem::dirichlet(dirichlet_x,dirichlet_y,dirichlet_z,subdomains,elementsInSub);
-	boundaries.create_B1_l( B1_mat, B0_mat, l2g_vec, lambda_map_sub_clst, lambda_map_sub_B1, lambda_map_sub_B0, B1_l_duplicity,dirichlet_x,
-                          dirichlet_y,dirichlet_z, partsCount, mesh );
+	boundaries.create_B1_l(
+		B1_mat,
+		B0_mat,
+		l2g_vec,
+		lambda_map_sub_clst,
+		lambda_map_sub_B1,
+		lambda_map_sub_B0,
+		B1_l_duplicity,
+		dirichlet_x,
+		dirichlet_y,
+		dirichlet_z,
+		partsCount,
+		mesh
+	);
 
 	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
 
