@@ -35,6 +35,11 @@ public:
 	virtual ~CFem();
 
 	static void mesh_generator3d(Mesh &mesh, Coordinates &coordinates, int *subdomains, int *elementsInSub);
+	static void dirichlet(std::map < int, double >  & dirichlet_x, 
+                        std::map < int, double >  & dirichlet_y,
+                        std::map < int, double >  & dirichlet_z,
+                        int *subdomains, int *elementsInSub);
+
 	void mesh_generator3d(CDomain *domainG);
 //	void dataDirBC();
 	void dataDirBCSub(int *i_face,int n_facesWithDirBC, 

@@ -21,6 +21,9 @@ public:
 									std::vector < std::vector <int> >    & lambda_map_sub_B1, 
 									std::vector < std::vector <int> >    & lambda_map_sub_B0, 
 									std::vector < std::vector <double> > & B1_l_duplicity,
+                  std::map < int, double > & dirichlet_x,
+                  std::map < int, double > & dirichlet_y,
+                  std::map < int, double > & dirichlet_z,
 									const int domains_num, 
 									const Mesh &mesh) ;
 

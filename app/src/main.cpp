@@ -136,10 +136,14 @@ void test(int argc, char** argv, Coordinates &coordinates, Mesh &mesh)
 		}
 		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
 	}
+	int subdomains[] = { 2, 2, 2 };
+	int elementsInSub[] = { 15, 15, 15};
 
 	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-
-	boundaries.create_B1_l( B1_mat, B0_mat, l2g_vec, lambda_map_sub_clst, lambda_map_sub_B1, lambda_map_sub_B0, B1_l_duplicity, partsCount, mesh );
+  std::map < int, double >   dirichlet_x,dirichlet_y,dirichlet_z;
+  CFem::dirichlet(dirichlet_x,dirichlet_y,dirichlet_z,subdomains,elementsInSub);
+	boundaries.create_B1_l( B1_mat, B0_mat, l2g_vec, lambda_map_sub_clst, lambda_map_sub_B1, lambda_map_sub_B0, B1_l_duplicity,dirichlet_x,
+                          dirichlet_y,dirichlet_z, partsCount, mesh );
 
 	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
 

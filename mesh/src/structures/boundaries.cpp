@@ -20,6 +20,9 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 								std::vector < std::vector <int> >    & lambda_map_sub_B1,
 								std::vector < std::vector <int> >    & lambda_map_sub_B0, 
 								std::vector < std::vector <double> > & B1_l_duplicity,
+                std::map < int, double > & dirichlet_x,
+                std::map < int, double > & dirichlet_y,
+                std::map < int, double > & dirichlet_z,
 								const int domains_num, 
 								const Mesh &mesh) 
 {
@@ -49,6 +52,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 	std::set<int>::const_iterator it;
 	std::set<int>::const_iterator it1;
 	std::set<int>::const_iterator it2;
+	std::map<int,double>::const_iterator itm;
 
 	int offset = _coordinates.getOffset();
 	int lambda_count_B1 = 0; 
@@ -77,18 +81,29 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 		//	}
 		//}
 
-		if ( i < 121 && _boundaries[i].size() > 0) {
-			for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
-				for (int d_i = 0; d_i < 3; d_i++) {
-					B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + d_i) =  1.0;  // 3*i + d_i
-					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-					lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
-					B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
-					lambda_count_B1++;
-
-				}
-			}
-		} 
+    for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
+      if ((itm=dirichlet_x.find(i))!=dirichlet_x.end()){
+        B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
+        lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+        lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
+        B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
+        lambda_count_B1++;
+      }
+      if ((itm=dirichlet_y.find(i))!=dirichlet_y.end()){
+        B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
+        lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+        lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
+        B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
+        lambda_count_B1++;
+      }
+      if ((itm=dirichlet_z.find(i))!=dirichlet_z.end()){
+        B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
+        lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+        lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
+        B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
+        lambda_count_B1++;
+      }
+    }
 		
 		if ( _boundaries[i].size() > 1 ) {
 
