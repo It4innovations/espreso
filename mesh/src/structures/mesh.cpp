@@ -435,29 +435,28 @@ Mesh::~Mesh()
 }
 
 
-void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector <int> > &l2g_vec)
+void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec)
 {
 	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
 	vtk << "ASCII\n\n";
 	vtk << "DATASET UNSTRUCTURED_GRID\n";
-	size_t nSubClst=l2g_vec.size();
+	size_t nSubClst = l2g_vec.size();
 	size_t cnt=0;
 
 
- 	size_t n_points=0;
-	for (size_t d=0;d<l2g_vec.size();d++){
-		n_points+=l2g_vec[d].size();	
+	size_t n_points = 0;
+	for (size_t d = 0; d < l2g_vec.size(); d++) {
+		n_points+=l2g_vec[d].size();
 	}
 
 	vtk << "POINTS " << n_points << " float\n";
-	for (size_t d=0;d<nSubClst;d++){
-		for (size_t i=0;i<l2g_vec[d].size();i++){
-			vtk << _coordinates[l2g_vec[d][i]].x  	<< " " ;
-			vtk << _coordinates[l2g_vec[d][i]].y  	<< " " ;
-			vtk << _coordinates[l2g_vec[d][i]].z    << "\n";
-
+	for (size_t d = 0; d < nSubClst; d++) {
+		for (size_t i = 0; i < l2g_vec[d].size(); i++) {
+			vtk << _coordinates[l2g_vec[d][i]].x << " " ;
+			vtk << _coordinates[l2g_vec[d][i]].y << " " ;
+			vtk << _coordinates[l2g_vec[d][i]].z << "\n";
 		}
 	}
 
@@ -467,17 +466,17 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector <int> > &l2g_ve
 	}
 	vtk << "CELLS " << _elements.size() << " " << size << "\n";
 
-  size_t i=0;
+	size_t i=0;
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (idx_t ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
-  		vtk << _elements[i]->size();
-  		for (size_t j = 0; j < _elements[i]->size(); j++) {
-  			vtk << " " << _elements[i]->localNode(j) - _coordinates.getOffset()+cnt;
-  		}
-  	vtk << "\n";
-		i++;	
+			vtk << _elements[i]->size();
+			for (size_t j = 0; j < _elements[i]->size(); j++) {
+				vtk << " " << _elements[i]->localNode(j) - _coordinates.getOffset() + cnt;
+			}
+			vtk << "\n";
+			i++;
 		}
-    cnt+=l2g_vec[part].size();
+		cnt += l2g_vec[part].size();
 	}
 
 	vtk << "\n";
@@ -501,10 +500,10 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 {
 	std::ofstream vtk;
 	saveBasis(vtk, l2g_vec);
- 	
-  size_t n_points=0;
-	for (size_t d=0;d<l2g_vec.size();d++){
-		n_points+=l2g_vec[d].size();	
+
+	size_t n_points = 0;
+	for (size_t d = 0; d < l2g_vec.size(); d++) {
+		n_points += l2g_vec[d].size();
 	}
 
 	vtk << "\n";
@@ -512,10 +511,10 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 	vtk << "SCALARS displacements float 3\n";
 	vtk << "LOOKUP_TABLE default\n";
 	for (size_t i = 0; i < displacement.size(); i++) {
-		for (size_t j = 0; j < displacement[i].size()/3; j++) {
-			vtk << displacement[i][3*j+0] << " ";
-			vtk << displacement[i][3*j+1] << " ";
-			vtk << displacement[i][3*j+2] << "\n";
+		for (size_t j = 0; j < displacement[i].size() / 3; j++) {
+			vtk << displacement[i][3 * j + 0] << " ";
+			vtk << displacement[i][3 * j + 1] << " ";
+			vtk << displacement[i][3 * j + 2] << "\n";
 		}
 		
 	}
@@ -526,7 +525,8 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 void Mesh::saveVTK(std::vector<std::vector <int> > &l2g_vec)
 {
 	std::ofstream vtk;
-	saveBasis(vtk,l2g_vec);
+	saveBasis(vtk, l2g_vec);
+
 	vtk.close();
 }
 

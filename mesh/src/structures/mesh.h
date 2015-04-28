@@ -132,7 +132,7 @@ public:
 private:
 	static void assign(Mesh &m1, Mesh &m2);
 
-	void saveBasis(std::ofstream &vtk,std::vector<std::vector <int> > &l2g_vec);
+	void saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec);
 
 	Element* createElement(idx_t *indices, idx_t n);
 

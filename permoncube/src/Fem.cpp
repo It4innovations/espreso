@@ -93,12 +93,12 @@ void CFem::mesh_generator3d(Mesh &mesh, Coordinates &coordinates, int *subdomain
 	}
 }
 //
-void CFem::dirichlet(std::map < int, double >  & dirichlet_x, 
-                        std::map < int, double >  & dirichlet_y,
-                        std::map < int, double >  & dirichlet_z,
-                        int *subdomains, int *elementsInSub)
+void CFem::dirichlet(	std::map < int, double >  & dirichlet_x,
+						std::map < int, double >  & dirichlet_y,
+						std::map < int, double >  & dirichlet_z,
+						int *subdomains,
+						int *elementsInSub)
 {
-  
 	int nnx = subdomains[0] * elementsInSub[0] + 1;
 	int nny = subdomains[1] * elementsInSub[1] + 1;
 	int nnz = subdomains[2] * elementsInSub[2] + 1;
@@ -107,20 +107,19 @@ void CFem::dirichlet(std::map < int, double >  & dirichlet_x,
 	for (int z = 0; z < nnz; z++) {
 		for (int y = 0; y < nny; y++) {
 			for (int x = 0; x < nnx; x++) {
-        if (z==0){
-          dirichlet_z[index]=0.0;
-        }
-        if (y==0){
-          dirichlet_y[index]=0.0;
-        }
-        if (x==0){
-          dirichlet_x[index]=0.0;
-        }
-        index++;
+				if (z == 0){
+					dirichlet_z[index]=0.0;
+				}
+				if (y == 0){
+					dirichlet_y[index]=0.0;
+				}
+				if (x == 0){
+					dirichlet_x[index]=0.0;
+				}
+				index++;
 			}
 		}
 	}
-  
 }
 
 void CFem::mesh_generator3d(CDomain *domainG) {

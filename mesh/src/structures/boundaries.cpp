@@ -16,21 +16,21 @@ Boundaries::Boundaries(const Mesh &mesh, const Coordinates &coordinates):
 void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 
 								std::vector < SparseIJVMatrix >      & B0_local,
 								std::vector < std::vector <int> >    & l2g_vec,
-								std::vector < std::vector <int> >	 & lambda_map_sub_clst,
+								std::vector < std::vector <int> >    & lambda_map_sub_clst,
 								std::vector < std::vector <int> >    & lambda_map_sub_B1,
 								std::vector < std::vector <int> >    & lambda_map_sub_B0, 
 								std::vector < std::vector <double> > & B1_l_duplicity,
-                std::map < int, double > & dirichlet_x,
-                std::map < int, double > & dirichlet_y,
-                std::map < int, double > & dirichlet_z,
-								const int domains_num, 
-								const Mesh &mesh) 
+								std::map < int, double >             & dirichlet_x,
+								std::map < int, double >             & dirichlet_y,
+								std::map < int, double >             & dirichlet_z,
+								const int domains_num,
+								const Mesh &mesh)
 {
 
 	l2g_vec.resize(domains_num);
 	
-	std::vector < SparseDOKMatrix > B1_loc;  
-	std::vector < SparseDOKMatrix > B0_loc;  
+	std::vector < SparseDOKMatrix > B1_loc;
+	std::vector < SparseDOKMatrix > B0_loc;
 
 	lambda_map_sub_B1.resize (domains_num); 
 	lambda_map_sub_B0.resize (domains_num); 
@@ -81,29 +81,29 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 		//	}
 		//}
 
-    for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
-      if ((itm=dirichlet_x.find(i))!=dirichlet_x.end()){
-        B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
-        lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-        lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
-        B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
-        lambda_count_B1++;
-      }
-      if ((itm=dirichlet_y.find(i))!=dirichlet_y.end()){
-        B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
-        lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-        lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
-        B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
-        lambda_count_B1++;
-      }
-      if ((itm=dirichlet_z.find(i))!=dirichlet_z.end()){
-        B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
-        lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-        lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
-        B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
-        lambda_count_B1++;
-      }
-    }
+		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
+			if ( (itm = dirichlet_x.find(i)) != dirichlet_x.end() ) {
+				B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
+				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+				lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
+				B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
+				lambda_count_B1++;
+			}
+			if ( (itm = dirichlet_y.find(i)) != dirichlet_y.end() ) {
+				B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
+				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+				lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
+				B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
+				lambda_count_B1++;
+			}
+			if ( (itm = dirichlet_z.find(i)) != dirichlet_z.end() ) {
+				B1_loc           [*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
+				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+				lambda_map_sub_clst.push_back( std::vector < int > (1,lambda_count_B1) );
+				B1_l_duplicity   [*it].push_back( 1.0 / (double)_boundaries[i].size() );
+				lambda_count_B1++;
+			}
+		}
 		
 		if ( _boundaries[i].size() > 1 ) {
 
