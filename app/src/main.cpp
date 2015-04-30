@@ -35,10 +35,10 @@ int main(int argc, char** argv)
 	std::map<int, double> dirichlet_x, dirichlet_y, dirichlet_z;
 
 	// load mesh from FILES
-	//load_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
+	load_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
 
 	// generate mesh in PERMONCUBE
-	generate_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
+	//generate_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
 
 	//mesh.saveVTK();
 

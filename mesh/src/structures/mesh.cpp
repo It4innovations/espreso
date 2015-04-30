@@ -471,7 +471,7 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 		for (idx_t ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
 			vtk << _elements[i]->size();
 			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << _elements[i]->localNode(j) - _coordinates.getOffset() + cnt;
+				vtk << " " << _elements[i]->localNode(j)+ cnt;// - _coordinates.getOffset() ;
 			}
 			vtk << "\n";
 			i++;
