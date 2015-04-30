@@ -71,14 +71,18 @@ void generate_mesh(
 		std::map<int, double> &dirichlet_y,
 		std::map<int, double> &dirichlet_z)
 {
-	int subdomains[] = { 2, 2, 2 };
-	int elementsInSub[] = { 15, 15, 15};
+	int subdomains[] = { 12, 12, 12 };
+	int elementsInSub[] = { 13, 13, 13};
 
+	std::cout << "mesh_generator3d" << std::endl;
 	CFem::mesh_generator3d(mesh, coordinates, subdomains, elementsInSub);
+        std::cout << "dirichlet" << std::endl;
 	CFem::dirichlet(dirichlet_x, dirichlet_y, dirichlet_z, subdomains, elementsInSub);
+        std::cout << "fix points" << std::endl;
 
 	// TODO: set fix points in PERMONCUBE
 	mesh.computeFixPoints(4);
+	std::cout << "fix points - end" << std::endl;
 }
 
 
@@ -150,27 +154,27 @@ void test(int argc, char** argv,
 
 	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
-	for (int d = 0; d < partsCount; d++) {
+	cilk_for (int d = 0; d < partsCount; d++) {
 
 		int dimension = mesh.getPartNodesCount(d) * Point::size();
-		SparseCSRMatrix K(dimension, dimension);
+		//SparseCSRMatrix K(dimension, dimension);
 		SparseCSRMatrix M(dimension, dimension);
 		std::vector<double> f(dimension);
 
-		mesh.assemble_matrix(K, M, f, d);
+		mesh.assemble_matrix(K_mat[d], M, f, d);
 
-		K_mat[d] = K;
-		M_mat[d] = M;
+		//K_mat[d] = K;
+		//M_mat[d] = M;
 		f_vec[d].swap(f);
 
-		std::cout << d << " "; 
+		std::cout << d << " " << std::endl; 
 	}
 
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
 	const std::vector<idx_t> fixPoints = mesh.getFixPoints();
 
-	for (int d = 0; d < partsCount; d++) {
+	cilk_for (int d = 0; d < partsCount; d++) {
 		for (int fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
 			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
 		}
@@ -268,7 +272,7 @@ void test(int argc, char** argv,
 	// *** Setup B0 matrix *******************************************************************************************
 	if (cluster.USE_HFETI == 1 ) {
 
-		for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+		cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
 			ShortInt domain_index_in_cluster = i;
 
 			SetMatrixB0_fromCOO( cluster, domain_index_in_cluster,
@@ -284,7 +288,7 @@ void test(int argc, char** argv,
 	// *** END - Setup B0 matrix *************************************************************************************
 
 	// *** Setup B1 matrix *******************************************************************************************
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
 		ShortInt domain_index_in_cluster = i;
 		SetMatrixB1_fromCOO( cluster, domain_index_in_cluster,
 			B1_mat[i].rows(),			//clust_g.data[i]->B->B_full_rows, //n_row_eq,
@@ -296,14 +300,14 @@ void test(int argc, char** argv,
 			'G' );
 	}
 
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
 		cluster.domains[i].B1_scale_vec = B1_l_duplicity[i];
 	}
 	// *** END - Setup B1 matrix *************************************************************************************
 
 
 	// *** Setup R matrix ********************************************************************************************
-	for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+	cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
 			tmp_vec[0] = coordinates[l2g_vec[d][i]].x;
@@ -317,7 +321,7 @@ void test(int argc, char** argv,
 	// *** END - Setup R matrix **************************************************************************************
 
 	// *** Load RHS and fix points for K regularization **************************************************************
-	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 		//SetVecDbl( cluster.domains[i].f,        clust_g.data[i]->KSparse->n_row, clust_g.data[i]->fE );
 		cluster.domains[d].f = f_vec[d];
 
@@ -331,7 +335,7 @@ void test(int argc, char** argv,
 	// *** END - Load RHS and fix points for K regularization ********************************************************
 
 	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
 		cluster.domains[i].lambda_map_sub = lambda_map_sub_B1[i];
 	}
 
@@ -343,7 +347,7 @@ void test(int argc, char** argv,
 
 
 	// *** Load Matrix K and regularization ******************************************************************************
-	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 		SetMatrixK_fromCSR ( cluster, d,
 			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
 			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,

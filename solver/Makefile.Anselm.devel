@@ -13,7 +13,7 @@ opt   : CFLAGS += -O3 -xHost -ip
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
 mic   : CFLAGS += -mmic 
-lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
+lib   : CFLAGS += -fPIC -O3 -xHost -ip  # -g -d -cilk-serialize
 libmic: CFLAGS += -mmic -O3 -fPIC 
 libcuda: CFLAGS += -fPIC -O3 -xHost -ip -g -DCUDA
 
