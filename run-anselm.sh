@@ -85,7 +85,7 @@ do
 #done
 
 
-#   mpirun -n $(( X * Y * Z )) ./pmcube --Nx $x --Ny $y --Nz $z --nx $d --ny $d --nz $d --Clx $X --Cly $Y --Clz $Z --Cox $c --Coy $c --Coz $c --VTK --ITERS 20       --HFETI 1 # | tee -a $log_file
+#   mpirun -n # $(( X * Y * Z )) ./pmcube --Nx $x --Ny $y --Nz $z --nx $d --ny $d --nz $d --Clx $X --Cly $Y --Clz $Z --Cox $c --Coy $c --Coz $c --VTK --ITERS 20       --HFETI 1 # | tee -a $log_file
 
 
    #HFETI

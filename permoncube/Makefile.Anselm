@@ -14,7 +14,7 @@ CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I. -I$(SOLVER_DIR) -I$(MES
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
-lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
+lib   : CFLAGS += -fPIC -O3 -xHost -ip # -g -d -cilk-serialize
 mic   : CFLAGS += -mmic 
 
 LDFLAGS = -mkl=parallel -L$(LIBS) -lesmesh -lessolver -lmetis -ltbb
