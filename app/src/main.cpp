@@ -157,8 +157,6 @@ void test(int argc, char** argv,
 	cilk_for (int d = 0; d < partsCount; d++) {
 
 		int dimension = mesh.getPartNodesCount(d) * Point::size();
-		K_mat[d].resize(dimension, dimension);
-		M_mat[d].resize(dimension, dimension);
 		std::vector<double> f(dimension);
 
 		mesh.assemble_matrix(K_mat[d], M_mat[d], f, d);
