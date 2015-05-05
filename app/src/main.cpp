@@ -145,6 +145,8 @@ void test(int argc, char** argv,
 
 	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
 
+	K_mat.reserve(partsCount);
+	M_mat.reserve(partsCount);
 	for (int d = 0; d < partsCount; d++) {
 		K_mat.push_back( SparseCSRMatrix (0,0) );
 		M_mat.push_back( SparseCSRMatrix (0,0) );
@@ -155,11 +157,11 @@ void test(int argc, char** argv,
 	cilk_for (int d = 0; d < partsCount; d++) {
 
 		int dimension = mesh.getPartNodesCount(d) * Point::size();
-		//SparseCSRMatrix K(dimension, dimension);
-		SparseCSRMatrix M(dimension, dimension);
+		K_mat[d].resize(dimension, dimension);
+		M_mat[d].resize(dimension, dimension);
 		std::vector<double> f(dimension);
 
-		mesh.assemble_matrix(K_mat[d], M, f, d);
+		mesh.assemble_matrix(K_mat[d], M_mat[d], f, d);
 
 		//K_mat[d] = K;
 		//M_mat[d] = M;
