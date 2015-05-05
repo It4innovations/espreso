@@ -199,7 +199,7 @@ void Mesh::computeFixPoints(idx_t fixPoints)
 	idx_t parts = _partPtrs.size() - 1;
 	_fixPoints.resize(parts * fixPoints);
 
-	for (idx_t i = 0; i < parts; i++) {
+	cilk_for (idx_t i = 0; i < parts; i++) {
 		idx_t *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
 
 		for (idx_t j = 0; j < fixPoints; j++) {
