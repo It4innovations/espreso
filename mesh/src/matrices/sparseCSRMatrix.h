@@ -4,10 +4,12 @@
 #include "matrix.h"
 #include "sparseDOKMatrix.h"
 #include "sparseIJVMatrix.h"
+#include "sparseVVPMatrix.h"
 
 class DenseMatrix;
 class SparseDOKMatrix;
 class SparseIJVMatrix;
+class SparseVVPMatrix;
 
 class SparseCSRMatrix: public Matrix
 {
@@ -21,6 +23,7 @@ public:
 	SparseCSRMatrix(const DenseMatrix &other);
 	SparseCSRMatrix(const SparseDOKMatrix &other);
 	SparseCSRMatrix(const SparseIJVMatrix &other);
+	SparseCSRMatrix(SparseVVPMatrix &other);
 
 	SparseCSRMatrix& operator=(const DenseMatrix &other)
 	{
@@ -37,6 +40,13 @@ public:
 	}
 
 	SparseCSRMatrix& operator=(const SparseIJVMatrix &other)
+	{
+		SparseCSRMatrix tmp(other);
+		assign(*this, tmp);
+		return *this;
+	}
+
+	SparseCSRMatrix& operator=(SparseVVPMatrix &other)
 	{
 		SparseCSRMatrix tmp(other);
 		assign(*this, tmp);
@@ -89,20 +99,25 @@ public:
 		return &_columnIndices[0];
 	}
 
-	void dump()
+	void dump(std::ostream &os)
 	{
+		for(int i = 0; i <= _rows; i++) {
+			os << _rowPtrs[i] << " ";
+		}
+		os << std::endl;
+
+		for(int r = 0; r < _rows; r++) {
+			for(size_t i = _rowPtrs[r]; i < _rowPtrs[r + 1]; i++) {
+				os << _columnIndices[i] << " ";
+			}
+			os << std::endl;
+		}
+		os << std::endl;
+
 		for(size_t i = 0; i < _values.size(); i++) {
-			std::cout << _values[i] << " ";
+			os << _values[i] << " ";
 		}
-		std::cout << std::endl;
-		for(size_t i = 0; i < _columnIndices.size(); i++) {
-			std::cout << _columnIndices[i] << " ";
-		}
-		std::cout << std::endl;
-		for(int i = 0; i <= rows(); i++) {
-			std::cout << _rowPtrs[i] << " ";
-		}
-		std::cout << std::endl;
+		os << std::endl;
 	}
 
 protected:

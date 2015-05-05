@@ -6,6 +6,7 @@
 #include "sparseDOKMatrix.h"
 #include "sparseIJVMatrix.h"
 #include "sparseCSRMatrix.h"
+#include "sparseVVPMatrix.h"
 
 
 

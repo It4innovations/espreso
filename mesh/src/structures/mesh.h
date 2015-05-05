@@ -86,8 +86,8 @@ public:
 
 	void assemble_matrix(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, idx_t part)
 	{
-		SparseDOKMatrix _K(K.type(), K.rows(), K.columns());
-		SparseDOKMatrix _M(M.type(), M.rows(), M.columns());
+		SparseVVPMatrix _K;
+		SparseVVPMatrix _M;
 		_assemble_matrix(_K, _M, f, part, true);
 		K = _K;
 		M = _M;
@@ -95,38 +95,27 @@ public:
 
 	void assemble_matrix(SparseIJVMatrix &K, SparseIJVMatrix &M, std::vector<double> &f, idx_t part)
 	{
-		SparseDOKMatrix _K(K.type(), K.rows(), K.columns());
-		SparseDOKMatrix _M(M.type(), M.rows(), M.columns());
+		SparseVVPMatrix _K;
+		SparseVVPMatrix _M;
 		_assemble_matrix(_K, _M, f, part, true);
 		K = _K;
 		M = _M;
 	}
 
-	void assemble_matrix(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<double> &f, idx_t part)
-	{
-		_assemble_matrix(K, M, f, part, true);
-	}
-
 	void assemble_matrix(SparseCSRMatrix &K, std::vector<double> &f, idx_t part)
 	{
-		SparseDOKMatrix _K(K.type(), K.rows(), K.columns());
-		SparseDOKMatrix _M(0, 0);
+		SparseVVPMatrix _K;
+		SparseVVPMatrix _M;
 		_assemble_matrix(_K, _M, f, part, false);
 		K = _K;
 	}
 
 	void assemble_matrix(SparseIJVMatrix &K, std::vector<double> &f, idx_t part)
 	{
-		SparseDOKMatrix _K(K.type(), K.rows(), K.columns());
-		SparseDOKMatrix _M(0, 0);
+		SparseVVPMatrix _K;
+		SparseVVPMatrix _M;
 		_assemble_matrix(_K, _M, f, part, false);
 		K = _K;
-	}
-
-	void assemble_matrix(SparseDOKMatrix &K, std::vector<double> &f, idx_t part)
-	{
-		SparseDOKMatrix M(0, 0);
-		_assemble_matrix(K, M, f, part, false);
 	}
 
 private:
@@ -136,7 +125,7 @@ private:
 
 	Element* createElement(idx_t *indices, idx_t n);
 
-	void _assemble_matrix(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<double> &f, idx_t part, bool dynamic);
+	void _assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic);
 
 	idx_t* getPartition(idx_t first, idx_t last, idx_t parts) const;
 	idx_t getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t part, idx_t subpart) const;

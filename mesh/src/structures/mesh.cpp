@@ -142,10 +142,10 @@ Element* Mesh::createElement(idx_t *indices, idx_t n)
 	return e;
 }
 
-void Mesh::_assemble_matrix(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<double> &f, idx_t part, bool dynamic)
+void Mesh::_assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic)
 {
 	int nK = _partsNodesCount[part] * Point::size();
-	SparseDOKMatrix DOK_K(nK, nK);	// temporary matrix used for construct K
+	K.resize(nK, nK);
 	f.resize(nK);
 
 	size_t maxElementSize = _maxElementSize * Point::size();
@@ -158,23 +158,20 @@ void Mesh::_assemble_matrix(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<
 	double mi = 0.3;
 
 	if (dynamic) {
-		SparseDOKMatrix DOK_M(nK, nK);	// temporary matrix used for construct M
+		M.resize(nK, nK);
 		// Only one block is assembled -> all others are the same
 		std::vector <double> Me(_maxElementSize * _maxElementSize);
 
 		for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 			_elements[i]->elasticity(Ke, Me, fe, _coordinates, inertia, ex, mi);
-			_elements[i]->addLocalValues(DOK_K, DOK_M, f, Ke, Me, fe, 0);
+			_elements[i]->addLocalValues(K, M, f, Ke, Me, fe, 0);
 		}
-		M = DOK_M;
 	} else {
 		for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 			_elements[i]->elasticity(Ke, fe, _coordinates, inertia, ex, mi);
-			_elements[i]->addLocalValues(DOK_K, f, Ke, fe, 0);
+			_elements[i]->addLocalValues(K, f, Ke, fe, 0);
 		}
 	}
-
-	K = DOK_K;
 }
 
 void Mesh::partitiate(idx_t parts, idx_t fixPoints)

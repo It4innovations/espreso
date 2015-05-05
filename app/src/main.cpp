@@ -100,8 +100,6 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 	return out;
 }
 
-
-
 void test(int argc, char** argv,
 		Coordinates &coordinates,
 		Mesh &mesh,

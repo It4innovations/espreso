@@ -80,6 +80,26 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.typ
 		&info);
 }
 
+SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.type(), other.rows(), other.columns())
+{
+	other.shrink();
+	MKL_INT nnz = other.nonZeroValues();
+	_rowPtrs.reserve(other.rows() + 1);
+	_columnIndices.reserve(nnz);
+	_values.reserve(nnz);
+
+	const VVP &values = other.values();
+
+	_rowPtrs.push_back(0);
+	for (size_t row = 0; row < _rows; row++) {
+		for (size_t column = 0; column < values[row].size(); column++) {
+			_columnIndices.push_back(values[row][column].first);
+			_values.push_back(values[row][column].second);
+		}
+		_rowPtrs.push_back(_values.size());
+	}
+}
+
 void SparseCSRMatrix::makeTransposition()
 {
 	std::vector<MKL_INT> colPtrs, rowIndices;

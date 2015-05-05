@@ -5,10 +5,12 @@
 #include "denseMatrix.h"
 #include "sparseDOKMatrix.h"
 #include "sparseCSRMatrix.h"
+#include "sparseVVPMatrix.h"
 
 class DenseMatrix;
 class SparseDOKMatrix;
 class SparseCSRMatrix;
+class SparseVVPMatrix;
 
 class SparseIJVMatrix: public Matrix
 {
@@ -22,6 +24,7 @@ public:
 	SparseIJVMatrix(const DenseMatrix &other);
 	SparseIJVMatrix(const SparseDOKMatrix &other);
 	SparseIJVMatrix(const SparseCSRMatrix &other);
+	SparseIJVMatrix(SparseVVPMatrix &other);
 
 	SparseIJVMatrix& operator=(const DenseMatrix &other)
 	{
@@ -44,6 +47,13 @@ public:
 		return *this;
 	}
 
+	SparseIJVMatrix& operator=(SparseVVPMatrix &other)
+	{
+		SparseIJVMatrix tmp(other);
+		assign(*this, tmp);
+		return *this;
+	}
+
 	MKL_INT nonZeroValues() const
 	{
 		return _values.size();
@@ -54,7 +64,7 @@ public:
 		arrange(row, column);
 		for(int i = 0; i < _rowIndices.size(); i++)
 		{
-			if (_rowIndices[i] == row && _colIndices[i] == column) {
+			if (_rowIndices[i] == row && _columnIndices[i] == column) {
 				return _values[i];
 			}
 		}
@@ -68,7 +78,7 @@ public:
 
 	const MKL_INT* columnIndices() const
 	{
-		return &_colIndices[0];
+		return &_columnIndices[0];
 	}
 
 	const double* values() const
@@ -83,7 +93,7 @@ public:
 
 	MKL_INT* columnIndices()
 	{
-		return &_colIndices[0];
+		return &_columnIndices[0];
 	}
 
 	double* values()
@@ -101,14 +111,14 @@ private:
 	{
 		Matrix::assign(m1, m2);
 		m1._rowIndices.swap(m2._rowIndices);
-		m1._colIndices.swap(m2._colIndices);
+		m1._columnIndices.swap(m2._columnIndices);
 		m1._values.swap(m2._values);
 
 	}
 
 	// Sparse COO data
 	std::vector<MKL_INT> _rowIndices;
-	std::vector<MKL_INT> _colIndices;
+	std::vector<MKL_INT> _columnIndices;
 	std::vector<double> _values;
 };
 

@@ -4,14 +4,14 @@ SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.type(),
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
-	_colIndices.reserve(nnz);
+	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);
 
 	for(size_t r = 0; r < other.rows(); r++) {
 		for(size_t c = (_type == Matrix::SYMETRIC)? r: 0; c < other.columns(); c++) {
 			if (other(r, c) != 0) {
 				_rowIndices.push_back(r);
-				_colIndices.push_back(c);
+				_columnIndices.push_back(c);
 				_values.push_back(other(r, c));
 			}
 		}
@@ -22,7 +22,7 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.typ
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
-	_colIndices.reserve(nnz);
+	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);
 
 	const MatrixMap &dokValues = other.values();
@@ -34,7 +34,7 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.typ
 		for(column = columns.begin(); column != columns.end(); ++column) {
 			if (column->second != 0) {
 				_rowIndices.push_back(row->first);
-				_colIndices.push_back(column->first);
+				_columnIndices.push_back(column->first);
 				_values.push_back(column->second);
 			}
 		}
@@ -45,7 +45,7 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.typ
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowIndices.resize(nnz);
-	_colIndices.resize(nnz);
+	_columnIndices.resize(nnz);
 	_values.resize(nnz);
 
 	std::cout << "NONZERO: " << nnz << "\n";
@@ -68,7 +68,26 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.typ
 		&info);
 }
 
+SparseIJVMatrix::SparseIJVMatrix(SparseVVPMatrix &other): Matrix(other.type(), other.rows(), other.columns())
+{
+	other.shrink();
+	MKL_INT nnz = other.nonZeroValues();
+	_rowIndices.reserve(nnz);
+	_columnIndices.reserve(nnz);
+	_values.reserve(nnz);
+
+	const VVP &values = other.values();
+
+	for (size_t row = 0; row < _rows; row++) {
+		for (size_t column = 0; column < values[row].size(); column++) {
+			_rowIndices.push_back(row);
+			_columnIndices.push_back(values[row][column].first);
+			_values.push_back(values[row][column].second);
+		}
+	}
+}
+
 void SparseIJVMatrix::makeTransposition()
 {
-	_rowIndices.swap(_colIndices);
+	_rowIndices.swap(_columnIndices);
 }

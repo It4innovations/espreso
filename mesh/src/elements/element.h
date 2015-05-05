@@ -15,7 +15,7 @@
 #include "mkl.h"
 
 #include "../structures/coordinates.h"
-#include "../matrices/sparseDOKMatrix.h"
+#include "../matrices/matrices.h"
 
 struct ElementCmp;
 class Element;
@@ -69,16 +69,16 @@ public:
 		_elaticity(Ke, Me, fe, coordinates, inertia, ex, mi, false);
 	}
 
-	void addLocalValues(SparseDOKMatrix &K, SparseDOKMatrix &M, std::vector<double> &f,
+	void addLocalValues(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f,
 		const std::vector<double> &Ke, const std::vector<double> &Me, const std::vector<double> &fe, int offset) const
 	{
 		_addLocalValues(K, M, f, Ke, Me, fe, offset, true);
 	}
 
-	void addLocalValues(SparseDOKMatrix &K, std::vector<double> &f,
+	void addLocalValues(SparseVVPMatrix &K, std::vector<double> &f,
 		const std::vector<double> &Ke, const std::vector<double> &fe, int offset) const
 	{
-		SparseDOKMatrix M(0, 0);
+		SparseVVPMatrix M(0, 0);
 		std::vector<double> Me;
 		_addLocalValues(K, M, f, Ke, Me, fe, offset, false);
 	}
@@ -117,8 +117,8 @@ protected:
 	) const;
 
 	void _addLocalValues(
-		SparseDOKMatrix &K,
-		SparseDOKMatrix &M,
+		SparseVVPMatrix &K,
+		SparseVVPMatrix &M,
 		std::vector<double> &f,
 		const std::vector<double> &Ke,
 		const std::vector<double> &Me,

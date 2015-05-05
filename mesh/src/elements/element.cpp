@@ -180,8 +180,8 @@ void Element::_elaticity(
 }
 
 void Element::_addLocalValues(
-	SparseDOKMatrix &K,
-	SparseDOKMatrix &M,
+	SparseVVPMatrix &K,
+	SparseVVPMatrix &M,
 	std::vector<double> &f,
 	const std::vector<double> &Ke,
 	const std::vector<double> &Me,
