@@ -1,0 +1,23 @@
+
+MESH = "mesh"
+
+def configure(ctx):
+    ctx.setenv(MESH, ctx.all_envs["base"].derive());
+
+    ctx.env.append_unique("CXXFLAGS", [ "-fPIC" ])
+
+
+def build(ctx):
+    ctx.env = ctx.all_envs[MESH]
+    ctx.recurse("src")
+
+    ctx(
+        includes        = "src",
+        export_includes = "src",
+        name            = "mesh_includes"
+    )
+
+    #ctx(
+    #    rule="cp ${SRC} " + ctx.env.LIB_DIR + "libesmesh.so",
+    #    source="src/libesmesh.so"
+    #)

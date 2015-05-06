@@ -1,0 +1,13 @@
+APP = "app"
+
+def configure(ctx):
+    ctx.setenv(APP, ctx.all_envs["mpi"].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[APP]
+    ctx.recurse("src")
+
+    #ctx(
+    #    rule="cp ${SRC} " + ctx.env.LIB_DIR + "libesmesh.so",
+    #    source="src/libesmesh.so"
+    #)

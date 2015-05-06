@@ -1,0 +1,17 @@
+
+source_files =  (
+    "element.cpp",
+)
+
+def make(ctx):
+    ctx.recurse("1D")
+    ctx.recurse("2D")
+    ctx.recurse("3D")
+
+    ctx.objects(
+        source=source_files,
+        target="elements",
+        use="elements1D elements2D elements3D"
+    )
+
+debug = build = make

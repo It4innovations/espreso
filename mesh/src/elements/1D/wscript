@@ -1,0 +1,14 @@
+
+source_files =  (
+    "line.cpp",
+    "point3d.cpp",
+    "point2d.cpp",
+)
+
+def make(ctx):
+    ctx.objects(
+        source=source_files,
+        target="elements1D"
+    )
+
+debug = build = make

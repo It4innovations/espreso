@@ -1,0 +1,16 @@
+
+PMCUBE = "pmcube"
+
+def configure(ctx):
+    ctx.setenv(PMCUBE, ctx.all_envs["mpi"].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[PMCUBE]
+    ctx.recurse("src")
+
+    ctx(
+        includes        = "src",
+        export_includes = "src",
+        name            = "pmcube_includes"
+    )
+

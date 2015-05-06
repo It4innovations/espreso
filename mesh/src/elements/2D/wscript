@@ -1,0 +1,13 @@
+
+source_files =  (
+    "square.cpp",
+    "triangle.cpp",
+)
+
+def make(ctx):
+    ctx.objects(
+        source=source_files,
+        target="elements2D"
+    )
+
+debug = build = make

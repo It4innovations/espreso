@@ -1,0 +1,18 @@
+
+SOLVER = "solver"
+
+def configure(ctx):
+    ctx.setenv(SOLVER, ctx.all_envs["mpi"].derive());
+
+    ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL" ])
+
+
+def build(ctx):
+    ctx.env = ctx.all_envs[SOLVER]
+    ctx.recurse("src")
+
+    ctx(
+        includes        = "src",
+        export_includes = "src",
+        name            = "solver_includes"
+    )
