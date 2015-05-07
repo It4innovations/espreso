@@ -1,4 +1,5 @@
-#ifndef SOLVER_H_ #define SOLVER_H_
+#ifndef SOLVER_H_
+#define SOLVER_H_
 
 #include "utility.h"
 #include "Data.h"
