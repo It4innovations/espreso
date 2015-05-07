@@ -1,23 +1,44 @@
 
-MESH = "mesh"
+source_files = (
+    "src/settings.cpp",
+    "src/loader.cpp",
+    "src/structures/coordinates.cpp",
+    "src/structures/mesh.cpp",
+    "src/structures/faces.cpp",
+    "src/structures/corners.cpp",
+    "src/structures/boundaries.cpp",
+    "src/matrices/matrix.cpp",
+    "src/matrices/denseMatrix.cpp",
+    "src/matrices/sparseCSRMatrix.cpp",
+    "src/matrices/sparseDOKMatrix.cpp",
+    "src/matrices/sparseIJVMatrix.cpp",
+    "src/matrices/sparseVVPMatrix.cpp",
+    "src/elements/element.cpp",
+    "src/elements/3D/hexahedron.cpp",
+    "src/elements/3D/tetrahedron.cpp",
+    "src/elements/2D/square.cpp",
+    "src/elements/2D/triangle.cpp",
+    "src/elements/1D/line.cpp",
+    "src/elements/1D/point3d.cpp",
+    "src/elements/1D/point2d.cpp",
+)
 
 def configure(ctx):
-    ctx.setenv(MESH, ctx.all_envs["base"].derive());
-
-    ctx.env.append_unique("CXXFLAGS", [ "-fPIC" ])
-
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[MESH]
-    ctx.recurse("src")
+    ctx.env = ctx.all_envs["base"]
+
+    ctx.shlib(
+        source=source_files,
+        target="esmesh",
+        lib="metis",
+        libpath="../libs",
+        use="metis_includes",
+        install_path=ctx.ROOT + "/libs"
+    )
 
     ctx(
-        includes        = "src",
         export_includes = "src",
         name            = "mesh_includes"
     )
-
-    #ctx(
-    #    rule="cp ${SRC} " + ctx.env.LIB_DIR + "libesmesh.so",
-    #    source="src/libesmesh.so"
-    #)

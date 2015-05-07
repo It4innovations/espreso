@@ -1,16 +1,50 @@
 
-PMCUBE = "pmcube"
+source_files = (
+    "src/Assembler.cpp",
+    "src/BoundaryCondition.cpp",
+    "src/BoundaryCondOnFace.cpp",
+    "src/BSparse.cpp",
+    "src/BSparseC.cpp",
+    "src/Cluster_g.cpp",
+    "src/ContactBC.cpp",
+    "src/Coordinate.cpp",
+    "src/CoupleIntDouble.cpp",
+    "src/CustomData.cpp",
+    "src/Data.cpp",
+    "src/DirichletBC.cpp",
+    "src/Domain_g.cpp",
+    "src/ElementLibrary.cpp",
+    "src/Fem.cpp",
+    "src/KSparse.cpp",
+    "src/LinearAlgebra.cpp",
+    "src/main.cpp",
+    "src/Mesh.cpp",
+    "src/NeumannBC.cpp",
+    "src/RectangularFace.cpp",
+    "src/RSparse.cpp",
+    "src/SaveFEM.cpp",
+    "src/Solid45.cpp",
+    "src/Solid45EqNumbGlobal.cpp",
+    "src/Solid45NodNumbLoc.cpp",
+    "src/Solver.cpp",
+    "src/StiffnessLocal.cpp",
+    "src/Test.cpp",
+    "src/utility.cpp"
+)
 
 def configure(ctx):
-    ctx.setenv(PMCUBE, ctx.all_envs["mpi"].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[PMCUBE]
-    ctx.recurse("src")
+    ctx.env = ctx.all_envs["mpi"]
+    ctx.shlib(
+        source=source_files,
+        target="espmcube",
+        use="mesh_includes metis_includes",
+        install_path=ctx.ROOT + "/libs"
+    )
 
     ctx(
-        includes        = "src",
         export_includes = "src",
         name            = "pmcube_includes"
     )
-
