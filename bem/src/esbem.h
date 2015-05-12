@@ -2,7 +2,7 @@
 #ifndef BEM_H_
 #define BEM_H_
 
-namespace bem{
+namespace esbem {
 
 void getLameSteklovPoincare(
     double * Sarray,
