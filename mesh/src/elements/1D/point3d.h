@@ -12,26 +12,26 @@ class Point3D
 
 public:
 	Point3D(): x(0), y(0), z(0) {};
-	Point3D(real_t x, real_t y, real_t z): x(x), y(y), z(z) {};
+	Point3D(double x, double y, double z): x(x), y(y), z(z) {};
 	Point3D(const Point3D &p): x(p.x), y(p.y), z(p.z) {};
 
 	static size_t size() { return 3; }
 	void normalize();
-	real_t length() const;
+	double length() const;
 	const Point3D operator-() const;
 	void flip();
 	const Point3D operator-(const Point3D &) const;
 	const Point3D operator+(const Point3D &) const;
-	const Point3D operator*(real_t) const;
-	const Point3D operator/(real_t) const;
-	real_t scalar_product_with(const Point3D &);
-	Point3D &operator*=(real_t);
+	const Point3D operator*(double) const;
+	const Point3D operator/(double) const;
+	double scalar_product_with(const Point3D &);
+	Point3D &operator*=(double);
 	Point3D &operator+=(const Point3D &);
 	Point3D &operator-=(const Point3D &);
 	Point3D &operator=(const Point3D &);
-	Point3D &operator/=(real_t);
+	Point3D &operator/=(double);
 
-	real_t x, y, z;
+	double x, y, z;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Point3D &p)

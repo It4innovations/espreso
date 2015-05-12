@@ -48,6 +48,12 @@ public:
 		return _points[index - _offset];
 	}
 
+	double* data()
+	{
+		void *tmp = &_points[0];
+		return static_cast<double*>(tmp);
+	}
+
 private:
 	std::vector<Point> _points;
 

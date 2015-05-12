@@ -12,26 +12,26 @@ class Point2D
 
 public:
 	Point2D(): x(0), y(0) {};
-	Point2D(real_t x, real_t y): x(x), y(y) {};
+	Point2D(double x, double y): x(x), y(y) {};
 	Point2D(const Point2D &p): x(p.x), y(p.y) {};
 
 	static size_t size() { return 2; }
 	void normalize();
-	real_t length() const;
+	double length() const;
 	const Point2D operator-() const;
 	void flip();
 	const Point2D operator-(const Point2D &) const;
 	const Point2D operator+(const Point2D &) const;
-	const Point2D operator*(real_t) const;
-	const Point2D operator/(real_t) const;
-	real_t scalar_product_with(const Point2D &);
-	Point2D &operator*=(real_t);
+	const Point2D operator*(double) const;
+	const Point2D operator/(double) const;
+	double scalar_product_with(const Point2D &);
+	Point2D &operator*=(double);
 	Point2D &operator+=(const Point2D &);
 	Point2D &operator-=(const Point2D &);
 	Point2D &operator=(const Point2D &);
-	Point2D &operator/=(real_t);
+	Point2D &operator/=(double);
 
-	real_t x, y;
+	double x, y;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Point2D &p)

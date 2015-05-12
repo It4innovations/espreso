@@ -18,16 +18,22 @@ source_files = (
 def configure(ctx):
     ctx.setenv(SOLVER, ctx.all_envs["mpi"].derive());
 
-    ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
 
 def build(ctx):
     ctx.env = ctx.all_envs[SOLVER]
 
-    ctx.shlib(
-        source=source_files,
-        target="essolver",
-        install_path=ctx.ROOT + "/libs"
-    )
+    if ctx.env.SHARED_LIBS:
+        ctx.shlib(
+            source=source_files,
+            target="essolver",
+            install_path=ctx.ROOT + "/libs"
+        )
+    else:
+        ctx.stlib(
+            source=source_files,
+            target="essolver"
+        )
 
     ctx(
         export_includes = "src",

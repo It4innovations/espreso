@@ -128,11 +128,11 @@ Element* Mesh::createElement(idx_t *indices, idx_t n)
 	}
 
 	if (e == NULL) {
-		fprintf(stderr, "Unknown element with indices: ");
+		std::cerr << "Unknown element with indices: ";
 		for (idx_t i = 0; i < n; i++) {
-			fprintf(stderr, "%ld ", indices[i]);
+			std::cerr << indices[i] << " ";
 		}
-		fprintf(stderr, ".\n");
+		std::cerr << "\n";
 		exit(EXIT_FAILURE);
 	}
 

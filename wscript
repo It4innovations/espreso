@@ -1,6 +1,4 @@
 
-import os
-
 def options(opt):
     opt.load("icpc")
 
@@ -13,6 +11,11 @@ def options(opt):
        action="store_true",
        default=False,
        help="Compile MPI version with mpich.")
+
+    opt.add_option("--mesh",
+       action="store_true",
+       default=False,
+       help="Create application only from mesh.")
 
 
 def check_environment(ctx):
@@ -51,8 +54,9 @@ def configure(ctx):
     ctx.env.append_unique("LIB", [ "tbb" ])
 
     if ctx.options.debug:
-        ctx.env.append_unique("CXXFLAGS", [ "-g", "-mkl=sequential" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-g", "-mkl=sequential", "-openmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
+        ctx.env.append_unique("LIB", [ "gomp" ])
     else:
         ctx.env.append_unique("CXXFLAGS", [ "-mkl=parallel" ])
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel" ])
@@ -77,6 +81,10 @@ def build(ctx):
     )
 
     ctx.ROOT = ctx.path.abspath()
+
+    if ctx.options.mesh:
+        ctx.recurse("mesh")
+        return
 
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
