@@ -446,7 +446,7 @@ void Mesh::saveNodeArray(double *nodeArray, size_t part)
 {
 	size_t p = 0;
 	for (idx_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		nodeArray[p] << _elements[i];
+		&nodeArray[p] << *(_elements[i]);
 		p += _elements[i]->size();
 	}
 }

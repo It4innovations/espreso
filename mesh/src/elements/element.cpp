@@ -247,10 +247,4 @@ std::ostream& operator<<(std::ostream& os, const Element &e)
 	return os;
 }
 
-inline void operator<<(double *nodeArray, const Element &e)
-{
-	for (size_t i = 0; i < e.size(); i++) {
-		nodeArray[i] = e.node(i);
-	}
-}
 

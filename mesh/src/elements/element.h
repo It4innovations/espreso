@@ -38,7 +38,12 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
-	inline friend void operator<<(double *nodeArray, const Element &e);
+	friend void operator<<(double *nodeArray, const Element &e)
+	{
+		for (size_t i = 0; i < e.size(); i++) {
+			nodeArray[i] = e.node(i);
+		}
+	}
 
 	virtual ~Element() {};
 
