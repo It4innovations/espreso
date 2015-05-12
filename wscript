@@ -71,6 +71,7 @@ def configure(ctx):
 
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
+    ctx.recurse("bem")
     ctx.recurse("solver")
     ctx.recurse("app")
 
@@ -88,5 +89,6 @@ def build(ctx):
 
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
+    ctx.recurse("bem")
     ctx.recurse("solver")
     ctx.recurse("app")

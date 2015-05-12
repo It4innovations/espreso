@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 
 	//mesh.saveVTK();
 
-	test(argc, argv, coordinates, mesh, dirichlet_x, dirichlet_y, dirichlet_z);
+	testFEM(argc, argv, coordinates, mesh, dirichlet_x, dirichlet_y, dirichlet_z);
 }
 
 
