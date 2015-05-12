@@ -23,10 +23,19 @@ void Element::fillBoundaries(BoundaryNodes &nodes, int part) const
 	}
 }
 
-void Element::coordinatesToVector(std::vector<double> &vector, const Coordinates &coordinates) const
+void Element::coordinatesToVector(
+		std::vector<double> &vector,
+		const Coordinates &coordinates,
+		IndicesType indicesType,
+		size_t part) const
 {
 	for (size_t i = 0; i < size(); i++) {
-		&vector[i * Point::size()] << coordinates[node(i)];
+		if (indicesType == Element::GLOBAL) {
+			&vector[i * Point::size()] << coordinates[node(i)];
+		}
+		if (indicesType == Element::LOCAL) {
+			&vector[i * Point::size()] << coordinates.localPoint(part, node(i));
+		}
 	}
 }
 
@@ -34,7 +43,7 @@ void Element::_elaticity(
 		std::vector<double> &Ke,
 		std::vector<double> &Me,
 		std::vector<double> &fe,
-		const Coordinates &coordinates,
+		std::vector<double> &coordinates,
 		std::vector<double> &inertia,
 		double ex,
 		double mi,
@@ -50,9 +59,6 @@ void Element::_elaticity(
 	int Csize = 6;	// TODO: even for D2??
 	int nodes = size();
 	int gausePoints = gpSize();
-
-	std::vector<double> coordinatesVector(Ksize);
-	coordinatesToVector(coordinatesVector, coordinates);
 
 	std::vector<double> MatC(Csize * Csize, 0.0);
 
@@ -89,7 +95,7 @@ void Element::_elaticity(
 		cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			dimension, dimension, nodes,
-			1, &dN[gp][0], nodes, &coordinatesVector[0], dimension,
+			1, &dN[gp][0], nodes, &coordinates[0], dimension,
 			0, &MatJ[0], dimension
 		);
 
@@ -233,11 +239,18 @@ bool Element::isOnBorder(const BoundaryNodes &nodes, const idx_t *positions, idx
 	return true;
 }
 
-std::ostream& operator<<(std::ostream& os, Element &e)
+std::ostream& operator<<(std::ostream& os, const Element &e)
 {
 	for (size_t i = 0; i < e.size(); i++) {
 		os << e.node(i) << " ";
 	}
 	return os;
+}
+
+inline void operator<<(double *nodeArray, const Element &e)
+{
+	for (size_t i = 0; i < e.size(); i++) {
+		nodeArray[i] = e.node(i);
+	}
 }
 

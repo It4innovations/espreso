@@ -45,6 +45,8 @@ public:
 	void saveVTK(std::vector<std::vector <int> > &l2g_vec);
 	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
+	void saveNodeArray(double *nodeArray, size_t part);
+
 	void reserve(size_t size);
 	void pushElement(Element* e);
 	void endPartition();

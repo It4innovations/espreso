@@ -50,7 +50,7 @@ def configure(ctx):
     check_environment(ctx)
 
     ctx.setenv("base", ctx.env)
-    ctx.env.append_unique("CXXFLAGS", [ "-O2", "-Wall" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-Wall" ])
     ctx.env.append_unique("LIB", [ "tbb" ])
 
     if ctx.options.debug:
@@ -58,7 +58,7 @@ def configure(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
         ctx.env.append_unique("LIB", [ "gomp" ])
     else:
-        ctx.env.append_unique("CXXFLAGS", [ "-mkl=parallel" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-mkl=parallel" ])
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel" ])
 
     ctx.setenv("mpi", ctx.env)

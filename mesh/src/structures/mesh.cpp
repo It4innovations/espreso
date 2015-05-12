@@ -155,6 +155,7 @@ void Mesh::_assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<
 	size_t maxElementSize = _maxElementSize * Point::size();
 	std::vector<double> Ke(maxElementSize * maxElementSize);
 	std::vector<double> fe(maxElementSize);
+	std::vector<double> coordinates;
 
 	std::vector <double> inertia (3, 0.0);
 	inertia[2] = 9810.0 * 7.85e-9;
@@ -167,12 +168,16 @@ void Mesh::_assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<
 		std::vector <double> Me(_maxElementSize * _maxElementSize);
 
 		for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-			_elements[i]->elasticity(Ke, Me, fe, _coordinates, inertia, ex, mi);
+			coordinates.resize(_elements[i]->size() * Point::size());
+			_elements[i]->coordinatesToVector(coordinates, _coordinates, _indicesType, part);
+			_elements[i]->elasticity(Ke, Me, fe, coordinates, inertia, ex, mi);
 			_elements[i]->addLocalValues(K, M, f, Ke, Me, fe, 0);
 		}
 	} else {
 		for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-			_elements[i]->elasticity(Ke, fe, _coordinates, inertia, ex, mi);
+			coordinates.resize(_elements[i]->size() * Point::size());
+			_elements[i]->coordinatesToVector(coordinates, _coordinates, _indicesType, part);
+			_elements[i]->elasticity(Ke, fe, coordinates, inertia, ex, mi);
 			_elements[i]->addLocalValues(K, f, Ke, fe, 0);
 		}
 	}
@@ -437,6 +442,14 @@ Mesh::~Mesh()
 	}
 }
 
+void Mesh::saveNodeArray(double *nodeArray, size_t part)
+{
+	size_t p = 0;
+	for (idx_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
+		nodeArray[p] << _elements[i];
+		p += _elements[i]->size();
+	}
+}
 
 void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec)
 {

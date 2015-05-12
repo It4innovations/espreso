@@ -37,7 +37,8 @@ public:
 		return indices[x] == indices[y];
 	}
 
-	friend std::ostream& operator<<(std::ostream& os, Element &e);
+	friend std::ostream& operator<<(std::ostream& os, const Element &e);
+	inline friend void operator<<(double *nodeArray, const Element &e);
 
 	virtual ~Element() {};
 
@@ -49,16 +50,17 @@ public:
 	void fillNodes(idx_t *nodes) const;
 	void setLocalIndices(std::vector<idx_t> &mapping);
 	void fillBoundaries(BoundaryNodes &nodes, int part) const;
-	void coordinatesToVector(std::vector<double> &vector, const Coordinates &coordinates) const;
+	void coordinatesToVector(std::vector<double> &vector, const Coordinates &coordinates,
+			IndicesType indicesType, size_t part) const;
 
 	void elasticity(std::vector<double> &Ke, std::vector<double> &Me, std::vector<double> &fe,
-		const Coordinates &coordinates, std::vector<double> &inertia, double ex, double mi) const
+		std::vector<double> &coordinates, std::vector<double> &inertia, double ex, double mi) const
 	{
 		_elaticity(Ke, Me, fe, coordinates, inertia, ex, mi, true);
 	}
 
 	void elasticity(std::vector<double> &Ke, std::vector<double> &fe,
-		const Coordinates &coordinates, std::vector<double> &inertia, double ex, double mi) const
+			std::vector<double> &coordinates, std::vector<double> &inertia, double ex, double mi) const
 	{
 		std::vector<double> Me;
 		_elaticity(Ke, Me, fe, coordinates, inertia, ex, mi, false);
@@ -104,7 +106,7 @@ protected:
 		std::vector<double> &Ke,
 		std::vector<double> &Me,
 		std::vector<double> &fe,
-		const Coordinates &coordinates,
+		std::vector<double> &coordinates,
 		std::vector<double> &inertia,
 		double ex,
 		double mi,
