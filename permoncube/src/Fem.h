@@ -29,7 +29,6 @@ public:
 //  int i_domGlobal;
 //	CFem();
 	CFem(const CFem& other);
-  CFem & operator=(const CFem &fem){printf("in Fem 29 +++++++++\n");};
 	CFem(MPI_Comm comm, int _i_domOnClust);
 
 	virtual ~CFem();

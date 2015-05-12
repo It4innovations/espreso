@@ -142,6 +142,7 @@ public:
         fixingNodes=NULL;
 
       }
+      return *this;
 // ---------------------------------------
     }
     }

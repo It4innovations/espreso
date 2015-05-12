@@ -307,7 +307,7 @@ void CDomain::setFromOptions(int* argc, char*** argv) {
 			//////	 }
 		 ////// }
 
-  loopend:
+  //loopend:
   if (nxyzset[0] && !nxyzset[1]) nxyz[1] = nxyz[0];
   if (nxyzset[0] && !nxyzset[2]) nxyz[2] = nxyz[0];
   if (Cxyzset[0] && !Cxyzset[1]) Cxyz[1] = Cxyz[0];
