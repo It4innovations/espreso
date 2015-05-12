@@ -73,22 +73,7 @@ void Square::fillLines(BoundaryLines &lines, int parts[]) const
 
 Square::Square(idx_t *indices)
 {
-	idx_t min = 0;
-	for (idx_t i = 1; i < SquareNodesCount; i++) {
-		if (indices[min] > indices[i]) {
-			min = i;
-		}
-	}
-	_indices[0] = indices[min];
-	if (indices[(min + 1) % 4] < indices[(min + 3) % 4]) {
-		_indices[1] = indices[(min + 1) % 4];
-		_indices[2] = indices[(min + 2) % 4];
-		_indices[3] = indices[(min + 3) % 4];
-	} else {
-		_indices[1] = indices[(min + 3) % 4];
-		_indices[2] = indices[(min + 2) % 4];
-		_indices[3] = indices[(min + 1) % 4];
-	}
+	memcpy(_indices, indices, SquareNodesCount * sizeof(idx_t));
 }
 
 

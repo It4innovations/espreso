@@ -210,62 +210,7 @@ void Hexahedron::fillLines(BoundaryLines &lines, int parts[]) const
 
 Hexahedron::Hexahedron(idx_t *indices)
 {
-	idx_t min = 0;
-	for (idx_t i = 1; i < HexahedronNodesCount; i++) {
-		if (indices[min] > indices[i]) {
-			min = i;
-		}
-	}
-
-	// rotate to move minimal index to position 0 or 4
-	idx_t offset = min % 4;
-	for (int i = 0; i < 4; i++) {
-		_indices[i] = indices[(i + offset) % 4];
-		_indices[i + 4] = indices[(i + offset) % 4 + 4];
-	}
-
-	// rotate to move minimal index to position 0
-	idx_t tmp[8];
-	if (min > 3) {
-		tmp[0] = _indices[4];
-		tmp[1] = _indices[7];
-		tmp[2] = _indices[6];
-		tmp[3] = _indices[5];
-		tmp[4] = _indices[0];
-		tmp[5] = _indices[3];
-		tmp[6] = _indices[2];
-		tmp[7] = _indices[1];
-	} else {
-		memcpy(tmp, _indices, sizeof(idx_t) * HexahedronNodesCount);
-	}
-
-
-	idx_t right = tmp[1];
-	idx_t left = tmp[3];
-	idx_t up = tmp[4];
-	if (left < up && right < up) {
-		memcpy(_indices, tmp, sizeof(idx_t) * HexahedronNodesCount);
-	}
-	if (left < right && up < right) {
-		_indices[0] = tmp[0];
-		_indices[1] = tmp[3];
-		_indices[2] = tmp[7];
-		_indices[3] = tmp[4];
-		_indices[4] = tmp[1];
-		_indices[5] = tmp[2];
-		_indices[6] = tmp[6];
-		_indices[7] = tmp[5];
-	}
-	if (right < left && up < left) {
-		_indices[0] = tmp[0];
-		_indices[1] = tmp[4];
-		_indices[2] = tmp[5];
-		_indices[3] = tmp[1];
-		_indices[4] = tmp[3];
-		_indices[5] = tmp[7];
-		_indices[6] = tmp[6];
-		_indices[7] = tmp[2];
-	}
+	memcpy(_indices, indices, HexahedronNodesCount * sizeof(idx_t));
 }
 
 

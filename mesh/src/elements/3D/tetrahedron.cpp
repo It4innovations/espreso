@@ -185,11 +185,7 @@ void Tetrahedron::fillLines(BoundaryLines &lines, int parts[]) const
 
 Tetrahedron::Tetrahedron(idx_t *indices)
 {
-	_indices[0] = indices[0];
-	_indices[1] = indices[1];
-	_indices[2] = indices[2];
-	_indices[3] = indices[4];
-	std::sort(_indices, _indices + 4);
+	memcpy(_indices, indices, TetrahedronNodesCount * sizeof(idx_t));
 }
 
 

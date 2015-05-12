@@ -71,7 +71,6 @@ void Triangle::fillLines(BoundaryLines &lines, int parts[]) const
 
 Triangle::Triangle(idx_t *indices)
 {
-	memcpy(_indices, indices, sizeof(idx_t) * TriangleNodesCount);
-	std::sort(_indices, _indices + 3);
+	memcpy(_indices, indices, TriangleNodesCount * sizeof(idx_t));
 }
 

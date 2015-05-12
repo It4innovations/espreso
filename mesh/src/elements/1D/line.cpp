@@ -49,13 +49,7 @@ void Line::fillLines(BoundaryLines &lines, int parts[]) const
 
 Line::Line(idx_t *indices)
 {
-	if (indices[0] < indices[1]) {
-		_indices[0] = indices[0];
-		_indices[1] = indices[1];
-	} else {
-		_indices[0] = indices[1];
-		_indices[1] = indices[0];
-	}
+	memcpy(_indices, indices, LineNodesCount * sizeof(idx_t));
 }
 
 
