@@ -3,11 +3,19 @@
 #include "esmesh.h"
 #include "essolver.h"
 #include "espmcube.h"
+#include "esbem.h"
 
 #include <vector>
 #include <iostream>
 
-void test(int argc, char** argv,
+void testFEM(int argc, char** argv,
+		Coordinates &coordinates,
+		Mesh &mesh,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z);
+
+void testBEM(int argc, char** argv,
 		Coordinates &coordinates,
 		Mesh &mesh,
 		std::map<int, double> &dirichlet_x,
@@ -100,7 +108,7 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 	return out;
 }
 
-void test(int argc, char** argv,
+void testFEM(int argc, char** argv,
 		Coordinates &coordinates,
 		Mesh &mesh,
 		std::map<int, double> &dirichlet_x,
