@@ -20,8 +20,8 @@
 struct ElementCmp;
 class Element;
 
-typedef std::map<Element*, std::pair<int, int>, ElementCmp> BoundaryFaces;
-typedef std::map<Element*, std::set<int> , ElementCmp> BoundaryLines;
+typedef std::map<Element*, std::pair<int, int>, Element::compare > BoundaryFaces;
+typedef std::map<Element*, std::set<int>, Element::compare > BoundaryLines;
 typedef std::vector<std::set<int> > BoundaryNodes;
 
 class Element
@@ -37,6 +37,7 @@ public:
 		return indices[x] == indices[y];
 	}
 
+	static bool compare(Element *e1, Element *e2);
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
 	friend void operator<<(double *nodeArray, const Element &e)
 	{
@@ -130,16 +131,29 @@ protected:
 	) const;
 };
 
-struct ElementCmp {
-	bool operator()(const Element *e1, const Element *e2) const
+/*struct ElementCmp {
+	bool operator()(Element *e1, Element *e2)
 	{
 		if (e1->size() == e2->size()) {
-			return memcmp(e1->indices(), e2->indices(), sizeof(idx_t) * e1->size()) < 0;
+			end = e2->indices() + e2->size();
+			for (size_t i = 0; i < e1->size(); i++) {
+				if (std::find(e2->indices(), end, e1->node(i)) != end) {
+					continue;
+				}
+				different = std::mismatch(e2->indices(), end, e1->indices());
+				return different.second < different.first;
+			}
+			return false;
 		} else {
 			return e1->size() < e2->size();
 		}
 	}
-};
+
+	std::pair<int*, int*> different;
+	idx_t *end;
+};*/
+
+
 
 
 #endif /* ELEMENT_H_ */

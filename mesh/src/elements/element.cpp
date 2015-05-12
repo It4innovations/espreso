@@ -239,6 +239,23 @@ bool Element::isOnBorder(const BoundaryNodes &nodes, const idx_t *positions, idx
 	return true;
 }
 
+bool Element::compare(Element *e1, Element *e2)
+{
+	if (e1->size() == e2->size()) {
+		idx_t *end = e2->indices() + e2->size();
+		for (size_t i = 0; i < e1->size(); i++) {
+			if (std::find(e2->indices(), end, e1->node(i)) != end) {
+				continue;
+			}
+			std::pair<int*, int*> different = std::mismatch(e2->indices(), end, e1->indices());
+			return different.second < different.first;
+		}
+		return false;
+	} else {
+		return e1->size() < e2->size();
+	}
+}
+
 std::ostream& operator<<(std::ostream& os, const Element &e)
 {
 	for (size_t i = 0; i < e.size(); i++) {
