@@ -48,6 +48,28 @@ public:
 		return _points[index - _offset];
 	}
 
+	Point& localPoint(size_t part, idx_t index)
+	{
+		return _points[_localMappings[part][index] - _offset];
+	}
+
+	const Point& localPoint(size_t part, idx_t index) const
+	{
+		return _points[_localMappings[part][index] - _offset];
+	}
+
+	void localClear()
+	{
+		_localMappings.clear();
+	}
+
+	void localResize(size_t size)
+	{
+		_localMappings.resize(size);
+	}
+
+	void computeLocal(size_t part, std::vector<idx_t> &nodeMap, size_t size);
+
 	double* data()
 	{
 		void *tmp = &_points[0];
@@ -56,6 +78,8 @@ public:
 
 private:
 	std::vector<Point> _points;
+
+	std::vector<std::vector<idx_t> > _localMappings;
 
 	/** @brief Correction between C/C++ and Point indexing. */
 	idx_t _offset;

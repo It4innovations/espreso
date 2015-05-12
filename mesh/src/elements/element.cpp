@@ -2,18 +2,17 @@
 #include <iomanip>
 #include <iostream>
 
-void Element::fillNodes(idx_t *nodes, FLAGS indexing) const
+void Element::fillNodes(idx_t *nodes) const
 {
 	for (size_t i = 0; i < size(); i++) {
 		nodes[i] = node(i);
 	}
 }
 
-void Element::setLocalIndices(idx_t *mapping)
+void Element::setLocalIndices(std::vector<idx_t> &mapping)
 {
-	idx_t *indices = localIndices();
 	for (size_t i = 0; i < size(); i++) {
-		indices[i] = mapping[node(i)];
+		indices()[i] = mapping[node(i)];
 	}
 }
 
@@ -194,9 +193,9 @@ void Element::_addLocalValues(
 	size_t row, column;
 	size_t s = Point::size();
 	for (size_t i = 0; i < s * size(); i++) {
-		row = s * (localNode(i % size()) - offset) + i / size();
+		row = s * (node(i % size()) - offset) + i / size();
 		for (size_t j = 0; j < s * size(); j++) {
-			column = s * (localNode(j % size()) - offset) + j / size();
+			column = s * (node(j % size()) - offset) + j / size();
 			K(row, column) += Ke[i * s * size() + j];
 		}
 		f[row] += fe[i];
@@ -205,9 +204,9 @@ void Element::_addLocalValues(
 		return;
 	}
 	for (size_t i = 0; i < size(); i++) {
-		row = s * (localNode(i) - offset);
+		row = s * (node(i) - offset);
 		for (size_t j = 0; j < size(); j++) {
-			column = s * (localNode(i) - offset);
+			column = s * (node(i) - offset);
 			for (size_t k = 0; k < s; k++) {
 				M(row + k, column + k) += Me[i * size() + j];
 			}
@@ -236,13 +235,8 @@ bool Element::isOnBorder(const BoundaryNodes &nodes, const idx_t *positions, idx
 
 std::ostream& operator<<(std::ostream& os, Element &e)
 {
-	os << "global: ";
 	for (size_t i = 0; i < e.size(); i++) {
 		os << e.node(i) << " ";
-	}
-	os << ", local: ";
-	for (size_t i = 0; i < e.size(); i++) {
-		os << e.localNode(i) << " ";
 	}
 	return os;
 }

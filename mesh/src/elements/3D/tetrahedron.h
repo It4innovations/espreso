@@ -32,16 +32,6 @@ public:
 		return _indices;
 	}
 
-	const idx_t* localIndices() const
-	{
-		return _localIndices;
-	}
-
-	idx_t* localIndices()
-	{
-		return _localIndices;
-	}
-
 	size_t size() const
 	{
 		return TetrahedronNodesCount;
@@ -72,16 +62,22 @@ public:
 		return Tetrahedron::_weighFactor;
 	}
 
-	void fillNeighbour(BoundaryNodes &nodes, int indexing) const;
+	void fillNeighbour(BoundaryNodes &nodes) const;
 	void fillFaces(BoundaryFaces &faces, int part) const;
 	void fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const;
 	void fillLines(BoundaryLines &lines, int parts[]) const;
+
+protected:
+
+	idx_t* indices()
+	{
+		return _indices;
+	}
 
 private:
 	inline void setFaceNodes(idx_t nodes[], idx_t face) const;
 
 	idx_t _indices[TetrahedronNodesCount];
-	idx_t _localIndices[TetrahedronNodesCount];
 
 	static std::vector<std::vector<double> > _dN;
 	static std::vector<std::vector<double> > _N;

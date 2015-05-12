@@ -1,8 +1,8 @@
 #include "mesh.h"
 
 Mesh::Mesh(Coordinates &coordinates)
-	:_coordinates(coordinates), _elements(0), _lastNode(0), _partsNodesCount(1, 0),
-	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
+	:_coordinates(coordinates), _indicesType(Element::GLOBAL), _elements(0), _lastNode(0),
+	 _partsNodesCount(1, 0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -10,6 +10,7 @@ Mesh::Mesh(Coordinates &coordinates)
 }
 
 Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints):
+	_indicesType(Element::GLOBAL),
 	_coordinates(coordinates),
 	_flags(flags::FLAGS_SIZE, false),
 	_maxElementSize(0)
@@ -57,7 +58,8 @@ Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fi
 }
 
 Mesh::Mesh(const Mesh &other)
-	:_coordinates(other._coordinates), _lastNode(other._lastNode), _partPtrs(other._partPtrs),
+	:_indicesType(other._indicesType), _coordinates(other._coordinates),
+	 _lastNode(other._lastNode), _partPtrs(other._partPtrs),
 	 _partsNodesCount(other._partsNodesCount), _fixPoints(other._fixPoints),
 	 _flags(other._flags), _maxElementSize(other._maxElementSize)
 {
@@ -78,13 +80,15 @@ Mesh& Mesh::operator=(const Mesh &other)
 
 void Mesh::assign(Mesh &m1, Mesh &m2)
 {
+	m1._coordinates = m2._coordinates;
+	m1._indicesType = m2._indicesType;
 	m1._elements.swap(m2._elements);
-	m1._fixPoints.swap(m2._fixPoints);
-	m1._flags.swap(m2._flags);
+	m1._lastNode = m2._lastNode;
 	m1._partPtrs.swap(m2._partPtrs);
 	m1._partsNodesCount.swap(m2._partsNodesCount);
+	m1._fixPoints.swap(m2._fixPoints);
+	m1._flags.swap(m2._flags);
 	m1._maxElementSize = m2._maxElementSize;
-	m1._lastNode = m2._lastNode;
 }
 
 void Mesh::reserve(size_t size)
@@ -178,6 +182,8 @@ void Mesh::partitiate(idx_t parts, idx_t fixPoints)
 {
 	_partPtrs.resize(parts + 1);
 	_partsNodesCount.resize(parts);
+	_coordinates.localClear();
+	_coordinates.localResize(parts);
 
 	// Call METIS to get partition of a whole mesh
 	idx_t *elementPartition = getPartition(0, _elements.size(), parts);
@@ -245,7 +251,7 @@ idx_t* Mesh::getPartition(idx_t first, idx_t last, idx_t parts) const
 	// create array of nodes
 	n = new idx_t[e[eSize]];
 	for (idx_t i = first, index = 0; i < last; i++, index++) {
-		_elements[i]->fillNodes(n + e[index], Element::GLOBAL);
+		_elements[i]->fillNodes(n + e[index]);
 	}
 
 	// PREPARE OUTPUT VARIABLES
@@ -303,14 +309,14 @@ void Mesh::partitiate(idx_t *ePartition)
 		_partPtrs[part + 1] = index;
 		computeLocalIndices(part);
 	}
+	_indicesType = Element::LOCAL;
 }
 
 void Mesh::computeLocalIndices(size_t part)
 {
-	idx_t *nodeMap = new idx_t[_lastNode + 1];
+	std::vector<idx_t> nodeMap (_lastNode + 1, -1);
 
 	// Compute mask of nodes
-	memset(nodeMap, 0, (_lastNode + 1) * sizeof(idx_t));
 	for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
 		for (size_t n = 0; n < _elements[e]->size(); n++) {
 			nodeMap[_elements[e]->node(n)] = 1;
@@ -330,7 +336,7 @@ void Mesh::computeLocalIndices(size_t part)
 		_elements[e]->setLocalIndices(nodeMap);
 	}
 
-	delete[] nodeMap;
+	_coordinates.computeLocal(part, nodeMap, nSize);
 }
 
 idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t part, idx_t subpart) const
@@ -340,7 +346,7 @@ idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t par
 	BoundaryNodes neighbours(_partsNodesCount[part]);
 	for (idx_t i = first, index = 0; i < last; i++, index++) {
 		if (ePartition[index] == subpart) {
-			_elements[i]->fillNeighbour(neighbours, Element::LOCAL);
+			_elements[i]->fillNeighbour(neighbours);
 		}
 	}
 	MKL_INT nonZeroValues = 0;
@@ -468,7 +474,7 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 		for (idx_t ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
 			vtk << _elements[i]->size();
 			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << _elements[i]->localNode(j)+ cnt;// - _coordinates.getOffset() ;
+				vtk << " " << _elements[i]->node(j)+ cnt;
 			}
 			vtk << "\n";
 			i++;

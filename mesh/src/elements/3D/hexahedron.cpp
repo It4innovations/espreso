@@ -98,50 +98,36 @@ bool Hexahedron::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-void Hexahedron::fillNeighbour(BoundaryNodes &nodes, int indexing) const
+void Hexahedron::fillNeighbour(BoundaryNodes &nodes) const
 {
-	const idx_t *indices;
-	switch (indexing){
-		case Element::LOCAL: {
-			indices = _localIndices;
-			break;
-		}
-		case Element::GLOBAL: {
-			indices = _indices;
-			break;
-		}
-		default:
-			fprintf(stderr, "Incorrect indexing.\n");
-			exit(-1);
-	}
 	idx_t r, c;
 	for (idx_t i = 0; i < 4; i++) {
 		// BOTTOM FACE
-		r = indices[i];
-		c = indices[(i + 1) % 4];
+		r = _indices[i];
+		c = _indices[(i + 1) % 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
-		c = indices[(i + 3) % 4];
+		c = _indices[(i + 3) % 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
-		c = indices[i + 4];
+		c = _indices[i + 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
 
 		// TOP FACE
-		r = indices[i + 4];
-		c = indices[(i + 1) % 4 + 4];
+		r = _indices[i + 4];
+		c = _indices[(i + 1) % 4 + 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
-		c = indices[(i + 3) % 4 + 4];
+		c = _indices[(i + 3) % 4 + 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
-		c = indices[i];
+		c = _indices[i];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
@@ -280,8 +266,6 @@ Hexahedron::Hexahedron(idx_t *indices)
 		_indices[6] = tmp[6];
 		_indices[7] = tmp[2];
 	}
-
-	memcpy(_localIndices, _indices, sizeof(idx_t) * HexahedronNodesCount);
 }
 
 

@@ -22,30 +22,16 @@ bool Square::match(idx_t *indices, idx_t n)
 	return true;
 }
 
-void Square::fillNeighbour(BoundaryNodes &nodes, int indexing) const
+void Square::fillNeighbour(BoundaryNodes &nodes) const
 {
-	const idx_t *indices;
-	switch (indexing){
-		case Element::LOCAL: {
-			indices = _indices;
-			break;
-		}
-		case Element::GLOBAL: {
-			indices = _localIndices;
-			break;
-		}
-		default:
-			fprintf(stderr, "Incorrect indexing.\n");
-			exit(-1);
-	}
 	idx_t r, c;
 	for (idx_t i = 0; i < SquareNodesCount; i++) {
-		r = indices[i];
-		c = indices[(i + 1) % 4];
+		r = _indices[i];
+		c = _indices[(i + 1) % 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
-		c = indices[(i + 3) % 4];
+		c = _indices[(i + 3) % 4];
 		if (r < c) {
 			nodes[r].insert(c);
 		}
@@ -103,7 +89,6 @@ Square::Square(idx_t *indices)
 		_indices[2] = indices[(min + 2) % 4];
 		_indices[3] = indices[(min + 1) % 4];
 	}
-	memcpy(_localIndices, _indices, sizeof(idx_t) * SquareNodesCount);
 }
 
 

@@ -22,27 +22,13 @@ bool Triangle::match(idx_t *indices, idx_t n)
 	return true;
 }
 
-void Triangle::fillNeighbour(BoundaryNodes &nodes, int indexing) const
+void Triangle::fillNeighbour(BoundaryNodes &nodes) const
 {
-	const idx_t *indices;
-	switch (indexing){
-		case Element::LOCAL: {
-			indices = _indices;
-			break;
-		}
-		case Element::GLOBAL: {
-			indices = _localIndices;
-			break;
-		}
-		default:
-			fprintf(stderr, "Incorrect indexing.\n");
-			exit(-1);
-	}
 	idx_t r, c;
 	for (idx_t i = 0; i < TriangleNodesCount; i++) {
 		for (idx_t j = 0; j < TriangleNodesCount; j++) {
-			r = indices[i];
-			c = indices[i];
+			r = _indices[i];
+			c = _indices[i];
 			if (r < c) {
 				nodes[r].insert(c);
 			}
@@ -87,6 +73,5 @@ Triangle::Triangle(idx_t *indices)
 {
 	memcpy(_indices, indices, sizeof(idx_t) * TriangleNodesCount);
 	std::sort(_indices, _indices + 3);
-	memcpy(_localIndices, _indices, sizeof(idx_t) * TriangleNodesCount);
 }
 

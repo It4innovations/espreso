@@ -27,7 +27,7 @@ typedef std::vector<std::set<int> > BoundaryNodes;
 class Element
 {
 public:
-	enum FLAGS {
+	enum IndicesType {
 		GLOBAL,
 		LOCAL
 	};
@@ -46,13 +46,8 @@ public:
 		return indices()[index];
 	}
 
-	idx_t localNode(size_t index) const
-	{
-		return localIndices()[index];
-	}
-
-	void fillNodes(idx_t *nodes, FLAGS indexing) const;
-	void setLocalIndices(idx_t *mapping);
+	void fillNodes(idx_t *nodes) const;
+	void setLocalIndices(std::vector<idx_t> &mapping);
 	void fillBoundaries(BoundaryNodes &nodes, int part) const;
 	void coordinatesToVector(std::vector<double> &vector, const Coordinates &coordinates) const;
 
@@ -93,16 +88,16 @@ public:
 	virtual int vtkCode() const = 0;
 	virtual size_t size() const = 0;
 	virtual size_t gpSize() const = 0;
-	virtual void fillNeighbour(BoundaryNodes &nodes, int indexing) const = 0;
+	virtual void fillNeighbour(BoundaryNodes &nodes) const = 0;
 	virtual size_t faces() const = 0;
 	virtual void fillFaces(BoundaryFaces &faces, int part) const = 0;
 	virtual void fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const = 0;
 	virtual void fillLines(BoundaryLines &lines, int parts[]) const = 0;
 	virtual const idx_t* indices() const = 0;
-	virtual idx_t* localIndices() = 0;
-	virtual const idx_t* localIndices() const = 0;
 
 protected:
+	virtual idx_t* indices() = 0;
+
 	bool isOnBorder(const BoundaryNodes &nodes, const idx_t *positions, idx_t n) const;
 
 	void _elaticity(

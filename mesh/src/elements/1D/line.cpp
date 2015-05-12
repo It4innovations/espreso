@@ -18,27 +18,12 @@ bool Line::match(idx_t *indices, idx_t n)
 	return true;
 }
 
-void Line::fillNeighbour(BoundaryNodes &nodes, int indexing) const
+void Line::fillNeighbour(BoundaryNodes &nodes) const
 {
-	const idx_t *indices;
-	switch (indexing){
-		case Element::LOCAL: {
-			indices = _indices;
-			break;
-		}
-		case Element::GLOBAL: {
-			indices = _localIndices;
-			break;
-		}
-		default:
-			fprintf(stderr, "Incorrect indexing.\n");
-			exit(-1);
-	}
-
-	if (indices[0] < indices[1]) {
-		nodes[indices[0]].insert(indices[1]);
+	if (_indices[0] < _indices[1]) {
+		nodes[_indices[0]].insert(_indices[1]);
 	} else {
-		nodes[indices[1]].insert(indices[0]);
+		nodes[_indices[1]].insert(_indices[0]);
 	}
 }
 
@@ -71,8 +56,6 @@ Line::Line(idx_t *indices)
 		_indices[0] = indices[1];
 		_indices[1] = indices[0];
 	}
-	_localIndices[0] = _indices[0];
-	_localIndices[1] = _indices[1];
 }
 
 

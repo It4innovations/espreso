@@ -116,27 +116,13 @@ bool Tetrahedron::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-void Tetrahedron::fillNeighbour(BoundaryNodes &nodes, int indexing) const
+void Tetrahedron::fillNeighbour(BoundaryNodes &nodes) const
 {
-	const idx_t *indices;
-	switch (indexing){
-		case Element::LOCAL: {
-			indices = _indices;
-			break;
-		}
-		case Element::GLOBAL: {
-			indices = _localIndices;
-			break;
-		}
-		default:
-			fprintf(stderr, "Incorrect indexing.\n");
-			exit(-1);
-	}
 	idx_t r, c;
 	for (idx_t i = 0; i < TetrahedronNodesCount; i++) {
 		for (idx_t j = 0; j < TetrahedronNodesCount; j++) {
-			r = indices[i];
-			c = indices[j];
+			r = _indices[i];
+			c = _indices[j];
 			if (r < c) {
 				nodes[r].insert(c);
 			}
@@ -204,7 +190,6 @@ Tetrahedron::Tetrahedron(idx_t *indices)
 	_indices[2] = indices[2];
 	_indices[3] = indices[4];
 	std::sort(_indices, _indices + 4);
-	memcpy(_localIndices, _indices, sizeof(idx_t) * TetrahedronNodesCount);
 }
 
 
