@@ -38,20 +38,13 @@ def configure(ctx):
 def build(ctx):
     ctx.env = ctx.all_envs["mpi"]
 
-    if ctx.env.SHARED_LIBS:
-        ctx.shlib(
-            source=source_files,
-            target="espmcube",
-            use="mesh_includes metis_includes",
-            install_path=ctx.ROOT + "/libs"
-        )
-    else:
-        ctx.stlib(
-            source=source_files,
-            target="espmcube",
-            lib="metis",
-            use="mesh_includes metis_includes"
-        )
+    ctx.shlib(
+        source=source_files,
+        target="espmcube",
+        use="mesh_includes metis_includes",
+        install_path=ctx.ROOT + "/libs"
+    )
+
 
     ctx(
         export_includes = "src",
