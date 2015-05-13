@@ -124,8 +124,8 @@ void Mesh::endPartition()
 Element* Mesh::createElement(idx_t *indices, idx_t n)
 {
 	Element *e = NULL;
-	if (Tetrahedron::match(indices, n)) {
-		e = new Tetrahedron(indices);
+	if (Tetrahedron4::match(indices, n)) {
+		e = new Tetrahedron4(indices);
 	}
 	if (Hexahedron::match(indices, n)) {
 		e = new Hexahedron(indices);
