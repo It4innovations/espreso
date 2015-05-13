@@ -40,12 +40,17 @@ public:
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
 
-	void saveVTK();
+	Coordinates& coordinates()
+	{
+		return _coordinates;
+	}
+
+	void saveVTK(const char* filename);
 	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
 	void saveNodeArray(double *nodeArray, size_t part);
 
-	Mesh getBEM();
+	void getBEM(Mesh &bemMesh);
 
 	void reserve(size_t size);
 	void pushElement(Element* e);

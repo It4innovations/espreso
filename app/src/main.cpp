@@ -129,11 +129,11 @@ void testFEM(int argc, char** argv,
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
-	Faces faces(mesh, coordinates);
+	//Faces faces(mesh, coordinates);
 
 	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
 
-	Corners corners(faces.getFaces(), coordinates);
+	//Corners corners(faces.getFaces(), coordinates);
 
 	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
 

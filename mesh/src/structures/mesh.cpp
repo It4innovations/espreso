@@ -210,7 +210,11 @@ void Mesh::computeFixPoints(idx_t fixPoints)
 	idx_t parts = _partPtrs.size() - 1;
 	_fixPoints.resize(parts * fixPoints);
 
+#ifdef CILK
 	cilk_for (idx_t i = 0; i < parts; i++) {
+#else
+	for (idx_t i = 0; i < parts; i++) {
+#endif
 		idx_t *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
 
 		for (idx_t j = 0; j < fixPoints; j++) {
@@ -545,11 +549,11 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 	vtk.close();
 }
 
-void Mesh::saveVTK()
+void Mesh::saveVTK(const char* filename)
 {
 	std::ofstream vtk;
 
-	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
+	vtk.open(filename, std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
 	vtk << "ASCII\n\n";
@@ -561,6 +565,7 @@ void Mesh::saveVTK()
 	for (size_t i = 0; i < _elements.size(); i++) {
 		size += _elements[i]->size() + 1;
 	}
+
 	vtk << "CELLS " << _elements.size() << " " << size << "\n";
 	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
 		std::vector<idx_t> l2g = _coordinates.localToGlobal(p);
@@ -604,28 +609,33 @@ bool Mesh::isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vecto
 		         nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
 		         result.begin());
 		if (it - result.begin() == 1) {
-			return false;
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
-Mesh Mesh::getBEM()
+void Mesh::getBEM(Mesh &bemMesh)
 {
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
+#ifdef CILK
+	cilk_for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+#else
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+#endif
 		// Compute nodes' adjacent elements
-		std::vector<std::vector<int> > nodesElements(_coordinates.localToGlobal(i).size());
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		std::vector<std::vector<int> > nodesElements(l2g.size());
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
 				nodesElements[_elements[j]->node(k)].push_back(j);
 			}
 		}
 
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
 				std::vector<idx_t> face = _elements[j]->getFace(k);
@@ -645,7 +655,7 @@ Mesh Mesh::getBEM()
 		}
 	}
 
-	Coordinates coords;
+	Coordinates &coords = bemMesh.coordinates();
 	coords.localResize(_partPtrs.size() - 1);
 
 	size_t c = 0;
@@ -657,7 +667,11 @@ Mesh Mesh::getBEM()
 		}
 	}
 
+#ifdef CILK
+	cilk_for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+#else
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+#endif
 		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			for (size_t k = 0; k < faces[i][j].size(); k++) {
@@ -670,7 +684,6 @@ Mesh Mesh::getBEM()
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		count += elementsCount[i];
 	}
-	Mesh bemMesh(coords);
 	bemMesh.reserve(count);
 
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
@@ -699,8 +712,6 @@ Mesh Mesh::getBEM()
 		}
 		bemMesh.endPartition();
 	}
-
-	return bemMesh;
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)

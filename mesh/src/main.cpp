@@ -17,9 +17,13 @@ int main(int argc, char** argv)
 
 	//mesh.assemble_matrix(K, M, f, 0);
 
-	Mesh bem = mesh.getBEM();
+	mesh.saveVTK("mesh.vtk");
 
-	bem.saveVTK();
+	Coordinates c;
+	Mesh bem(c);
+	mesh.getBEM(bem);
+
+	bem.saveVTK("bem.vtk");
 
 	//mesh.saveVTK();
 }
