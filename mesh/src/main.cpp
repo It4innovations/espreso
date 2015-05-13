@@ -5,9 +5,9 @@ int main(int argc, char** argv)
 	int partsCount = 4;
 	int fixPointsCount = 8;
 
-	Coordinates coords("matrices/HEX/15/coord");
+	Coordinates coords("matrices/HEX/5/coord");
 	Mesh mesh(coords);
-	mesh = Mesh("matrices/HEX/15/elem", coords, partsCount, fixPointsCount);
+	mesh = Mesh("matrices/HEX/5/elem", coords, partsCount, fixPointsCount);
 
 	int dimension = mesh.getPartNodesCount(0) * Point::size();
 
@@ -18,6 +18,8 @@ int main(int argc, char** argv)
 	//mesh.assemble_matrix(K, M, f, 0);
 
 	Mesh bem = mesh.getBEM();
+
+	bem.saveVTK();
 
 	//mesh.saveVTK();
 }

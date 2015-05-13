@@ -40,7 +40,7 @@ public:
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
 
-	void saveVTK(std::vector<std::vector <int> > &l2g_vec);
+	void saveVTK();
 	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
 	void saveNodeArray(double *nodeArray, size_t part);

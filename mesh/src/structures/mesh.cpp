@@ -466,12 +466,12 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 	vtk << "ASCII\n\n";
 	vtk << "DATASET UNSTRUCTURED_GRID\n";
 	size_t nSubClst = l2g_vec.size();
-	size_t cnt=0;
+	size_t cnt = 0;
 
 
 	size_t n_points = 0;
 	for (size_t d = 0; d < l2g_vec.size(); d++) {
-		n_points+=l2g_vec[d].size();
+		n_points += l2g_vec[d].size();
 	}
 
 	vtk << "POINTS " << n_points << " float\n";
@@ -545,10 +545,49 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 	vtk.close();
 }
 
-void Mesh::saveVTK(std::vector<std::vector <int> > &l2g_vec)
+void Mesh::saveVTK()
 {
 	std::ofstream vtk;
-	saveBasis(vtk, l2g_vec);
+
+	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
+	vtk << "# vtk DataFile Version 3.0\n";
+	vtk << "Test\n";
+	vtk << "ASCII\n\n";
+	vtk << "DATASET UNSTRUCTURED_GRID\n";
+	vtk << "POINTS " << _coordinates.size() << " float\n";
+	vtk << _coordinates << "\n";
+
+	size_t size = 0;
+	for (size_t i = 0; i < _elements.size(); i++) {
+		size += _elements[i]->size() + 1;
+	}
+	vtk << "CELLS " << _elements.size() << " " << size << "\n";
+	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
+		std::vector<idx_t> l2g = _coordinates.localToGlobal(p);
+		for (size_t i = _partPtrs[p]; i < _partPtrs[p + 1]; i++) {
+			vtk << _elements[i]->size();
+			for (size_t j = 0; j < _elements[i]->size(); j++) {
+				vtk << " " << l2g[_elements[i]->node(j)] - _coordinates.getOffset();
+			}
+			vtk << "\n";
+		}
+	}
+
+	vtk << "\n";
+	vtk << "CELL_TYPES " << _elements.size() << "\n";
+	for (size_t i = 0; i < _elements.size(); i++) {
+		vtk << _elements[i]->vtkCode() << "\n";
+	}
+
+	vtk << "\n";
+	vtk << "CELL_DATA " << _elements.size() << "\n";
+	vtk << "SCALARS decomposition int 1\n";
+	vtk << "LOOKUP_TABLE decomposition\n";
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+		for (idx_t i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+			vtk << part << "\n";
+		}
+	}
 
 	vtk.close();
 }
