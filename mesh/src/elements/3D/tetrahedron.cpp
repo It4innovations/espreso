@@ -116,71 +116,25 @@ bool Tetrahedron::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-void Tetrahedron::fillNeighbour(BoundaryNodes &nodes) const
+std::vector<idx_t> Tetrahedron::getNeighbours(size_t nodeIndex) const
 {
-	idx_t r, c;
-	for (idx_t i = 0; i < TetrahedronNodesCount; i++) {
-		for (idx_t j = 0; j < TetrahedronNodesCount; j++) {
-			r = _indices[i];
-			c = _indices[j];
-			if (r < c) {
-				nodes[r].insert(c);
-			}
+	std::vector<idx_t> result;
+	result.reserve(3);
+	for (size_t i = 0; i < TetrahedronNodesCount; i++) {
+		if (i != nodeIndex) {
+			result.push_back(_indices[i]);
 		}
 	}
+	return result;
 }
 
-
-void Tetrahedron::setFaceNodes(idx_t nodes[], idx_t face) const
+std::vector<idx_t> Tetrahedron::getFace(size_t face) const
 {
-	nodes[0] = (face < 3) ? _indices[0] : _indices[1];
-	nodes[1] = (face < 2) ? _indices[1] : _indices[2];
-	nodes[2] = (face < 1) ? _indices[2] : _indices[3];
-}
-
-void Tetrahedron::fillFaces(BoundaryFaces &faces, int part) const
-{
-	Triangle *t;
-	idx_t ids[3];
-	for (idx_t i = 0; i < TetrahedronFacesCount; i++) {
-		setFaceNodes(ids, i);
-		t = new Triangle(ids);
-		t->fillFaces(faces, part);
-		delete t;
-	}
-}
-
-void Tetrahedron::fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const
-{
-	Triangle *t;
-	idx_t ids[3];
-	for (idx_t i = 0; i < TetrahedronFacesCount; i++) {
-		setFaceNodes(ids, i);
-		t = new Triangle(ids);
-		t->fillFacesOnBorder(faces, nodes, part);
-		delete t;
-	}
-}
-
-void Tetrahedron::fillLines(BoundaryLines &lines, int parts[]) const
-{
-	Line* line;
-	idx_t ids[2];
-	ids[0] = _indices[0];
-	for (int i = 1; i < 4; i++) {
-		ids[1] = _indices[i];
-		line = new Line(ids);
-		line->fillLines(lines, parts);
-		delete line;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		ids[0] = _indices[i + 1];
-		ids[1] = _indices[(i + 1) % 3 + 1];
-		line = new Line(ids);
-		line->fillLines(lines, parts);
-		delete line;
-	}
+	std::vector<idx_t> result(3);
+	result[0] = (face < 3) ? _indices[0] : _indices[1];
+	result[1] = (face < 2) ? _indices[1] : _indices[2];
+	result[2] = (face < 1) ? _indices[2] : _indices[3];
+	return result;
 }
 
 Tetrahedron::Tetrahedron(idx_t *indices)

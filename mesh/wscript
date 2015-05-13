@@ -4,8 +4,6 @@ source_files = (
     "src/loader.cpp",
     "src/structures/coordinates.cpp",
     "src/structures/mesh.cpp",
-    "src/structures/faces.cpp",
-    "src/structures/corners.cpp",
     "src/structures/boundaries.cpp",
     "src/matrices/matrix.cpp",
     "src/matrices/denseMatrix.cpp",

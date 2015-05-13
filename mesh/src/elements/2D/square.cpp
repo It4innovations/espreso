@@ -22,53 +22,19 @@ bool Square::match(idx_t *indices, idx_t n)
 	return true;
 }
 
-void Square::fillNeighbour(BoundaryNodes &nodes) const
+std::vector<idx_t> Square::getNeighbours(size_t nodeIndex) const
 {
-	idx_t r, c;
-	for (idx_t i = 0; i < SquareNodesCount; i++) {
-		r = _indices[i];
-		c = _indices[(i + 1) % 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
-		c = _indices[(i + 3) % 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
-	}
+	std::vector<idx_t> result(2);
+
+	result[0] = _indices[(nodeIndex + 1) % 4];
+	result[1] = _indices[(nodeIndex + 3) % 4];
+
+	return result;
 }
 
-void Square::fillFaces(BoundaryFaces &faces, int part) const
+std::vector<idx_t> Square::getFace(size_t face) const
 {
-	BoundaryFaces::iterator it = faces.find((Element*)this);
-	if (it == faces.end()) {
-		faces.insert(std::pair<Element*, std::pair<int, int> >(
-		                 new Square(*this), std::pair<int, int>(part, -1)
-		             ));
-	} else {
-		it->second.second = part;
-	}
-}
-
-void Square::fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const
-{
-	idx_t positions[4] = { 0, 1, 2, 3 };
-	if (isOnBorder(nodes, positions, 4)) {
-		fillFaces(faces, part);
-	}
-}
-
-void Square::fillLines(BoundaryLines &lines, int parts[]) const
-{
-	Line* line;
-	idx_t ids[2];
-	for (int i = 0; i < SquareNodesCount; i++) {
-		ids[0] = _indices[i];
-		ids[1] = _indices[(i + 1) % SquareNodesCount];
-		line = new Line(ids);
-		line->fillLines(lines, parts);
-		delete line;
-	}
+	return std::vector<idx_t> (_indices, _indices + 4);
 }
 
 Square::Square(idx_t *indices)

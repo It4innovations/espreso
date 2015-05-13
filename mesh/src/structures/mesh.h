@@ -27,8 +27,6 @@ enum FLAGS {
 };
 }
 
-typedef std::pair<int, double> IV_elem;
-
 class Mesh
 {
 
@@ -46,6 +44,8 @@ public:
 	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
 	void saveNodeArray(double *nodeArray, size_t part);
+
+	Mesh getBEM();
 
 	void reserve(size_t size);
 	void pushElement(Element* e);
@@ -137,6 +137,8 @@ private:
 
 	void checkMETISResult(int result) const;
 	void checkMKLResult(MKL_INT result) const;
+
+	bool isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_t> &face);
 
 	/** @brief Reference to coordinates. */
 	Coordinates &_coordinates;

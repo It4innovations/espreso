@@ -15,7 +15,9 @@ int main(int argc, char** argv)
 	SparseCSRMatrix M(dimension, dimension);
 	std::vector<double> f(dimension);
 
-	mesh.assemble_matrix(K, M, f, 0);
+	//mesh.assemble_matrix(K, M, f, 0);
+
+	Mesh bem = mesh.getBEM();
 
 	//mesh.saveVTK();
 }

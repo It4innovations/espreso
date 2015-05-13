@@ -62,10 +62,8 @@ public:
 		return Square::_weighFactor;
 	}
 
-	void fillNeighbour(BoundaryNodes &nodes) const;
-	void fillFaces(BoundaryFaces &faces, int part) const;
-	void fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const;
-	void fillLines(BoundaryLines &lines, int parts[]) const;
+	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
+	std::vector<idx_t> getFace(size_t face) const;
 
 protected:
 

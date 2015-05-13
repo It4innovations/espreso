@@ -351,7 +351,14 @@ idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t par
 	BoundaryNodes neighbours(_partsNodesCount[part]);
 	for (idx_t i = first, index = 0; i < last; i++, index++) {
 		if (ePartition[index] == subpart) {
-			_elements[i]->fillNeighbour(neighbours);
+			for (size_t j = 0; j < _elements[i]->size(); j++) {
+				std::vector<idx_t> neigh = _elements[i]->getNeighbours(j);
+				for (size_t k = 0; k < neigh.size(); k++) {
+					if (_elements[i]->node(j) < neigh[k]) {
+						neighbours[_elements[i]->node(j)].insert(neigh[k]);
+					}
+				}
+			}
 		}
 	}
 	MKL_INT nonZeroValues = 0;
@@ -544,6 +551,117 @@ void Mesh::saveVTK(std::vector<std::vector <int> > &l2g_vec)
 	saveBasis(vtk, l2g_vec);
 
 	vtk.close();
+}
+
+bool Mesh::isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_t> &face)
+{
+	std::vector<int> result(nodesElements[face[0]]);
+	std::vector<int>::iterator it = result.end();
+
+	for (size_t i = 1; i < face.size(); i++) {
+		std::vector<int> tmp(result.begin(), it);
+		it = std::set_intersection(
+		         tmp.begin(), tmp.end(),
+		         nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
+		         result.begin());
+		if (it - result.begin() == 1) {
+			return false;
+		}
+	}
+	return true;
+}
+
+Mesh Mesh::getBEM()
+{
+	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
+	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
+	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
+
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		// Compute nodes' adjacent elements
+		std::vector<std::vector<int> > nodesElements(_coordinates.localToGlobal(i).size());
+		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->size(); k++) {
+				nodesElements[_elements[j]->node(k)].push_back(j);
+			}
+		}
+
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->faces(); k++) {
+				std::vector<idx_t> face = _elements[j]->getFace(k);
+				if (isOuterFace(nodesElements, face)) {
+					faces[i].push_back(face);
+					if (face.size() == 3) {
+						elementsCount[i] += 1;
+					}
+					if (face.size() == 4) {
+						elementsCount[i] += 2;
+					}
+					for (size_t p = 0; p < face.size(); p++) {
+						selection[l2g[face[p]]] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	Coordinates coords;
+	coords.localResize(_partPtrs.size() - 1);
+
+	size_t c = 0;
+	coords.resize(std::count(selection.begin(), selection.end(), 1));
+	for (size_t i = 0; i < selection.size(); i++) {
+		if (selection[i] == 1) {
+			selection[i] = c;
+			coords[c++] = _coordinates[i];
+		}
+	}
+
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		for (size_t j = 0; j < faces[i].size(); j++) {
+			for (size_t k = 0; k < faces[i][j].size(); k++) {
+				faces[i][j][k] = selection[l2g[faces[i][j][k]]];
+			}
+		}
+	}
+
+	size_t count = 0;
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		count += elementsCount[i];
+	}
+	Mesh bemMesh(coords);
+	bemMesh.reserve(count);
+
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		for (size_t j = 0; j < faces[i].size(); j++) {
+			std::vector<idx_t> &face = faces[i][j];
+			if (faces[i][j].size() == 3) {
+				bemMesh.pushElement(new Triangle(&face[0]));
+			}
+			if (faces[i][j].size() == 4) {
+				size_t min = 0;
+				for (size_t p = 1; p < 4; p++) {
+					if (face[min] > face[p]) {
+						min = p;
+					}
+				}
+				if (min % 2 == 0) {
+					bemMesh.pushElement(new Triangle(&face[0]));
+					face[1] = face[0];
+					bemMesh.pushElement(new Triangle(&face[1]));
+				} else {
+					bemMesh.pushElement(new Triangle(&face[1]));
+					face[2] = face[3];
+					bemMesh.pushElement(new Triangle(&face[0]));
+				}
+			}
+		}
+		bemMesh.endPartition();
+	}
+
+	return bemMesh;
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)

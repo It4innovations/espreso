@@ -5,8 +5,8 @@
 #include "structures/coordinates.h"
 #include "structures/mesh.h"
 #include "structures/boundaries.h"
-#include "structures/faces.h"
-#include "structures/corners.h"
+//#include "structures/faces.h"
+//#include "structures/corners.h"
 
 //#include "string.h"
 

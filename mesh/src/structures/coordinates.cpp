@@ -19,7 +19,7 @@ Coordinates::Coordinates(const char *fileName): _offset(1)
 void Coordinates::computeLocal(size_t part, std::vector<idx_t> &nodeMap, size_t size)
 {
 	if (_localMappings.size() <= part) {
-		_localMappings.resize(part);
+		_localMappings.resize(part + 1);
 	}
 
 	_localMappings[part].clear();

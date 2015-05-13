@@ -17,11 +17,8 @@
 #include "../structures/coordinates.h"
 #include "../matrices/matrices.h"
 
-struct ElementCmp;
 class Element;
 
-typedef std::map<Element*, std::pair<int, int>, Element::compare > BoundaryFaces;
-typedef std::map<Element*, std::set<int>, Element::compare > BoundaryLines;
 typedef std::vector<std::set<int> > BoundaryNodes;
 
 class Element
@@ -37,7 +34,6 @@ public:
 		return indices[x] == indices[y];
 	}
 
-	static bool compare(Element *e1, Element *e2);
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
 	friend void operator<<(double *nodeArray, const Element &e)
 	{
@@ -96,17 +92,13 @@ public:
 	virtual int vtkCode() const = 0;
 	virtual size_t size() const = 0;
 	virtual size_t gpSize() const = 0;
-	virtual void fillNeighbour(BoundaryNodes &nodes) const = 0;
 	virtual size_t faces() const = 0;
-	virtual void fillFaces(BoundaryFaces &faces, int part) const = 0;
-	virtual void fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const = 0;
-	virtual void fillLines(BoundaryLines &lines, int parts[]) const = 0;
+	virtual std::vector<idx_t> getFace(size_t face) const = 0;
+	virtual std::vector<idx_t> getNeighbours(size_t nodeIndex) const = 0;
 	virtual const idx_t* indices() const = 0;
 
 protected:
 	virtual idx_t* indices() = 0;
-
-	bool isOnBorder(const BoundaryNodes &nodes, const idx_t *positions, idx_t n) const;
 
 	void _elaticity(
 		std::vector<double> &Ke,
@@ -130,28 +122,6 @@ protected:
 		bool dynamic
 	) const;
 };
-
-/*struct ElementCmp {
-	bool operator()(Element *e1, Element *e2)
-	{
-		if (e1->size() == e2->size()) {
-			end = e2->indices() + e2->size();
-			for (size_t i = 0; i < e1->size(); i++) {
-				if (std::find(e2->indices(), end, e1->node(i)) != end) {
-					continue;
-				}
-				different = std::mismatch(e2->indices(), end, e1->indices());
-				return different.second < different.first;
-			}
-			return false;
-		} else {
-			return e1->size() < e2->size();
-		}
-	}
-
-	std::pair<int*, int*> different;
-	idx_t *end;
-};*/
 
 
 

@@ -98,114 +98,51 @@ bool Hexahedron::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-void Hexahedron::fillNeighbour(BoundaryNodes &nodes) const
+std::vector<idx_t> Hexahedron::getNeighbours(size_t nodeIndex) const
 {
-	idx_t r, c;
-	for (idx_t i = 0; i < 4; i++) {
-		// BOTTOM FACE
-		r = _indices[i];
-		c = _indices[(i + 1) % 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
-		c = _indices[(i + 3) % 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
-		c = _indices[i + 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
+	std::vector<idx_t> result(3);
 
-		// TOP FACE
-		r = _indices[i + 4];
-		c = _indices[(i + 1) % 4 + 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
-		c = _indices[(i + 3) % 4 + 4];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
-		c = _indices[i];
-		if (r < c) {
-			nodes[r].insert(c);
-		}
+	if (nodeIndex > 3) {
+		result[0] = _indices[nodeIndex - 4];
+		result[1] = _indices[(nodeIndex + 1) % 4 + 4];
+		result[2] = _indices[(nodeIndex + 3) % 4 + 4];
+	} else {
+		result[0] = _indices[nodeIndex + 4];
+		result[1] = _indices[(nodeIndex + 1) % 4];
+		result[2] = _indices[(nodeIndex + 3) % 4];
 	}
+
+	return result;
 }
 
-void Hexahedron::setFaceNodes(idx_t nodes[], idx_t face) const
+std::vector<idx_t> Hexahedron::getFace(size_t face) const
 {
+	std::vector<idx_t> result(4);
+
+	// bottom
 	if (face == 4) {
-		nodes[0] = _indices[0];
-		nodes[1] = _indices[1];
-		nodes[2] = _indices[2];
-		nodes[3] = _indices[3];
-		return;
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		result[2] = _indices[2];
+		result[3] = _indices[1];
+		return result;
 	}
+
+	// top
 	if (face == 5) {
-		nodes[0] = _indices[4];
-		nodes[1] = _indices[5];
-		nodes[2] = _indices[6];
-		nodes[3] = _indices[7];
-		return;
+		result[0] = _indices[4];
+		result[1] = _indices[5];
+		result[2] = _indices[6];
+		result[3] = _indices[7];
+		return result;
 	}
-	nodes[0] = _indices[ face              ];
-	nodes[1] = _indices[(face + 1) % 4     ];
-	nodes[2] = _indices[(face + 1) % 4 + 4 ];
-	nodes[3] = _indices[ face + 4          ];
-}
 
-void Hexahedron::fillFaces(BoundaryFaces &faces, int part) const
-{
-	Square *s;
-	idx_t ids[4];
-	for (idx_t i = 0; i < HexahedronFacesCount; i++) {
-		setFaceNodes(ids, i);
-		s = new Square(ids);
-		s->fillFaces(faces, part);
-		delete s;
-	}
-}
-
-void Hexahedron::fillFacesOnBorder(BoundaryFaces &faces, const BoundaryNodes &nodes, int part) const
-{
-	Square *s;
-	idx_t ids[4];
-	for (idx_t i = 0; i < HexahedronFacesCount; i++) {
-		setFaceNodes(ids, i);
-		s = new Square(ids);
-		s->fillFacesOnBorder(faces, nodes, part);
-		delete s;
-	}
-}
-
-void Hexahedron::fillLines(BoundaryLines &lines, int parts[]) const
-{
-	Line* line;
-	idx_t ids[2];
-	for (int i = 0; i < 4; i++) {
-		// bottom
-		ids[0] = _indices[i];
-		ids[1] = _indices[(i + 1) % 4];
-		line = new Line(ids);
-		line->fillLines(lines, parts);
-		delete line;
-
-		// middle
-		ids[0] = _indices[i];
-		ids[1] = _indices[i + 4];
-		line = new Line(ids);
-		line->fillLines(lines, parts);
-		delete line;
-
-		// upper
-		ids[0] = _indices[i + 4];
-		ids[1] = _indices[(i + 1) % 4 + 4];
-		line = new Line(ids);
-		line->fillLines(lines, parts);
-		delete line;
-	}
+	//sides
+	result[0] = _indices[ face              ];
+	result[1] = _indices[(face + 1) % 4     ];
+	result[2] = _indices[(face + 1) % 4 + 4 ];
+	result[3] = _indices[ face + 4          ];
+	return result;
 }
 
 Hexahedron::Hexahedron(idx_t *indices)

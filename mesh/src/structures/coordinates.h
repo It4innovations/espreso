@@ -58,6 +58,11 @@ public:
 		return _points[_localMappings[part][index] - _offset];
 	}
 
+	const std::vector<idx_t>& localToGlobal(size_t part) const
+	{
+		return _localMappings[part];
+	}
+
 	void localClear()
 	{
 		_localMappings.clear();

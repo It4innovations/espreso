@@ -220,41 +220,6 @@ void Element::_addLocalValues(
 	}
 }
 
-bool Element::isOnBorder(const BoundaryNodes &nodes, const idx_t *positions, idx_t n) const
-{
-	const idx_t* _indices = indices();
-	std::vector<idx_t> result(nodes[_indices[positions[0]]].begin(), nodes[_indices[positions[0]]].end());
-	std::vector<idx_t>::iterator it = result.end();
-
-	for (size_t i = 1; i < n; i++) {
-		std::set<idx_t> tmp(result.begin(), it);
-		it = std::set_intersection(
-		         tmp.begin(), tmp.end(),
-		         nodes[_indices[positions[i]]].begin(), nodes[_indices[positions[i]]].end(),
-		         result.begin());
-		if (it - result.begin() == 1) {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool Element::compare(Element *e1, Element *e2)
-{
-	if (e1->size() == e2->size()) {
-		idx_t *end = e2->indices() + e2->size();
-		for (size_t i = 0; i < e1->size(); i++) {
-			if (std::find(e2->indices(), end, e1->node(i)) != end) {
-				continue;
-			}
-			std::pair<int*, int*> different = std::mismatch(e2->indices(), end, e1->indices());
-			return different.second < different.first;
-		}
-		return false;
-	} else {
-		return e1->size() < e2->size();
-	}
-}
 
 std::ostream& operator<<(std::ostream& os, const Element &e)
 {
