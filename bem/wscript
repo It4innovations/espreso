@@ -1,0 +1,10 @@
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+
+    ctx(
+        export_includes = "src",
+        name            = "bem_includes"
+    )
