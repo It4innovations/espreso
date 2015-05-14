@@ -27,3 +27,4 @@ modules.*
 doc/html/*
 doc/xml/*
 decomposer
+libs/*
