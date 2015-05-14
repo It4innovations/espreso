@@ -51,6 +51,8 @@ int main(int argc, char** argv)
 	//mesh.saveVTK();
 
 	testFEM(argc, argv, coordinates, mesh, dirichlet_x, dirichlet_y, dirichlet_z);
+
+	bem4i::getLameSteklovPoincare(NULL, 0, NULL, 0, NULL, 0, 0, 0, 0, false);
 }
 
 

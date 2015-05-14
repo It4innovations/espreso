@@ -10,7 +10,7 @@ def build(ctx):
     ctx.program(
         source=source_files,
         target="espreso",
-        lib="metis",
+        lib="metis esbem",
         libpath="../libs",
         use="mesh_includes solver_includes pmcube_includes bem_includes esmesh essolver espmcube",
         install_path=ctx.ROOT
