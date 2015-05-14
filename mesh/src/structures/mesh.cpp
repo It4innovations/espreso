@@ -390,7 +390,7 @@ void Mesh::computeFixPoints(idx_t fixPoints)
 	idx_t parts = _partPtrs.size() - 1;
 	_fixPoints.resize(parts * fixPoints);
 
-#ifdef CILK
+#ifndef SEQUENTIAL
 	cilk_for (idx_t i = 0; i < parts; i++) {
 #else
 	for (idx_t i = 0; i < parts; i++) {

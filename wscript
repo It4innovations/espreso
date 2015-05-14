@@ -54,7 +54,7 @@ def configure(ctx):
     ctx.env.append_unique("LIB", [ "tbb" ])
 
     if ctx.options.debug:
-        ctx.env.append_unique("CXXFLAGS", [ "-g", "-mkl=sequential", "-openmp" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-g", "-mkl=sequential", "-openmp", "-DSEQUENTIAL" ])
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
         ctx.env.append_unique("LIB", [ "gomp" ])
     else:

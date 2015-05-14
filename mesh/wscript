@@ -1,5 +1,5 @@
 
-MESH = "mesh"
+MESH = "base"
 
 source_files = (
     "src/settings.cpp",
@@ -24,13 +24,10 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.setenv(MESH, ctx.all_envs["base"].derive());
-
-    if not ctx.options.debug:
-        ctx.env.append_unique("CXXFLAGS", [ "-DCILK" ])
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs["base"]
+    ctx.env = ctx.all_envs[MESH]
 
     if ctx.options.mesh:
         ctx.program(
