@@ -146,7 +146,7 @@ Element* Mesh::createElement(idx_t *indices, idx_t n)
 	return e;
 }
 
-void Mesh::_assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic)
+void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic)
 {
 	int nK = _partsNodesCount[part] * Point::size();
 	K.resize(nK, nK);
@@ -154,8 +154,8 @@ void Mesh::_assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<
 
 	size_t maxElementSize = _maxElementSize * Point::size();
 	std::vector<double> Ke(maxElementSize * maxElementSize);
+	std::vector<double> Me;
 	std::vector<double> fe(maxElementSize);
-	std::vector<double> coordinates;
 
 	std::vector <double> inertia (3, 0.0);
 	inertia[2] = 9810.0 * 7.85e-9;
@@ -165,20 +165,200 @@ void Mesh::_assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<
 	if (dynamic) {
 		M.resize(nK, nK);
 		// Only one block is assembled -> all others are the same
-		std::vector <double> Me(_maxElementSize * _maxElementSize);
+		Me.resize(_maxElementSize * _maxElementSize);
+	}
 
-		for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-			coordinates.resize(_elements[i]->size() * Point::size());
-			_elements[i]->coordinatesToVector(coordinates, _coordinates, _indicesType, part);
-			_elements[i]->elasticity(Ke, Me, fe, coordinates, inertia, ex, mi);
-			_elements[i]->addLocalValues(K, M, f, Ke, Me, fe, 0);
+	for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
+		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, ex, mi, dynamic);
+		_integrateElasticity(_elements[i], K, M, f, Ke, Me, fe, dynamic);
+	}
+}
+
+void Mesh::_assembleElesticity(
+		const Element *e,
+		size_t part,
+		std::vector<double> &Ke,
+		std::vector<double> &Me,
+		std::vector<double> &fe,
+		std::vector<double> &inertia,
+		double ex,
+		double mi,
+		bool dynamic) const
+{
+	const std::vector<std::vector<double> > &dN = e->dN();
+	const std::vector<std::vector<double> > &N = e->N();
+	const std::vector<double> &weighFactor = e->weighFactor();
+
+	std::vector<double> coordinates(Point::size() * e->size());
+	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
+	for (size_t i = 0; i < e->size(); i++) {
+		&coordinates[i * Point::size()] << _coordinates[l2g[e->node(i)]];
+	}
+
+	int dimension = Point::size();
+	int Ksize = dimension * e->size();
+	int Csize = 6;	// TODO: even for D2??
+	int nodes = e->size();
+	int gausePoints = e->gpSize();
+
+	std::vector<double> MatC(Csize * Csize, 0.0);
+
+	double E = ex / ((1 + mi) * (1 - 2 * mi));
+	double mi2 = E * (1.0 - mi);
+	double mi3 = E * (0.5 - mi);
+	mi = E * mi;
+
+	MatC[0]  = mi2; MatC[1]  = mi;  MatC[2]  = mi;
+	MatC[6]  = mi;  MatC[7]  = mi2; MatC[8]  = mi;
+	MatC[12] = mi;  MatC[13] = mi;  MatC[14] = mi2;
+
+	MatC[21] = mi3; MatC[28] = mi3; MatC[35] = mi3;
+
+
+	std::vector<double> MatJ (dimension * dimension, 0);
+	std::vector<double> invJ (dimension * dimension, 0);
+
+	std::vector<double> dND (Ksize, 0);
+	std::vector<double> CB (Ksize * Csize, 0);
+	std::vector<double> B (Ksize * Csize, 0);
+
+	Ke.resize(Ksize * Ksize);
+	fe.resize(Ksize);
+	fill(Ke.begin(), Ke.end(), 0);
+	fill(fe.begin(), fe.end(), 0);
+	if (dynamic) {
+		Me.resize(nodes * nodes);
+		fill(Me.begin(), Me.end(), 0);
+	}
+
+	for (int gp = 0; gp < gausePoints; gp++) {
+
+		cblas_dgemm(
+			CblasRowMajor, CblasNoTrans, CblasNoTrans,
+			dimension, dimension, nodes,
+			1, &dN[gp][0], nodes, &coordinates[0], dimension,
+			0, &MatJ[0], dimension
+		);
+
+		double detJ = fabs( MatJ[0] * MatJ[4] * MatJ[8] +
+							MatJ[1] * MatJ[5] * MatJ[6] +
+							MatJ[2] * MatJ[3] * MatJ[7] -
+							MatJ[2] * MatJ[4] * MatJ[6] -
+							MatJ[1] * MatJ[3] * MatJ[8] -
+							MatJ[0] * MatJ[5] * MatJ[7]);
+
+		double detJx = 1 / detJ;
+
+		invJ[0] = detJx * (  MatJ[8] * MatJ[4] - MatJ[7] * MatJ[5] );
+		invJ[1] = detJx * (- MatJ[8] * MatJ[1] + MatJ[7] * MatJ[2] );
+		invJ[2] = detJx * (  MatJ[5] * MatJ[1] - MatJ[4] * MatJ[2] );
+		invJ[3] = detJx * (- MatJ[8] * MatJ[3] + MatJ[6] * MatJ[5] );
+		invJ[4] = detJx * (  MatJ[8] * MatJ[0] - MatJ[6] * MatJ[2] );
+		invJ[5] = detJx * (- MatJ[5] * MatJ[0] + MatJ[3] * MatJ[2] );
+		invJ[6] = detJx * (  MatJ[7] * MatJ[3] - MatJ[6] * MatJ[4] );
+		invJ[7] = detJx * (- MatJ[7] * MatJ[0] + MatJ[6] * MatJ[1] );
+		invJ[8] = detJx * (  MatJ[4] * MatJ[0] - MatJ[3] * MatJ[1] );
+
+		cblas_dgemm(
+			CblasRowMajor, CblasNoTrans, CblasNoTrans,
+			dimension, nodes, dimension,
+			1, &invJ[0], dimension, &dN[gp][0], nodes,
+			0, &dND.front(), nodes
+		);
+
+		// TODO: block ordering inside B
+		int columns = Ksize;
+		const double *dNDx = &dND[0];
+		const double *dNDy = &dND[e->size()];
+		const double *dNDz = &dND[2 * e->size()];
+
+		// B =
+		// dX   0   0
+		//  0  dY   0
+		//  0   0  dZ
+		// dY  dX   0
+		//  0  dZ  dY
+		// dZ   0  dX
+
+		memcpy(&B[0],                           dNDx, sizeof(double) * e->size());
+		memcpy(&B[3 * columns + e->size()],     dNDx, sizeof(double) * e->size());
+		memcpy(&B[5 * columns + 2 * e->size()], dNDx, sizeof(double) * e->size());
+
+		memcpy(&B[1 * columns + e->size()],     dNDy, sizeof(double) * e->size());
+		memcpy(&B[3 * columns],                 dNDy, sizeof(double) * e->size());
+		memcpy(&B[4 * columns + 2 * e->size()], dNDy, sizeof(double) * e->size());
+
+		memcpy(&B[2 * columns + 2 * e->size()], dNDz, sizeof(double) * e->size());
+		memcpy(&B[4 * columns + e->size()],     dNDz, sizeof(double) * e->size());
+		memcpy(&B[5 * columns],                 dNDz, sizeof(double) * e->size());
+
+
+		// C * B
+		cblas_dgemm(
+			CblasRowMajor, CblasNoTrans, CblasNoTrans,
+			Csize, Ksize, Csize,
+			1, &MatC[0], Csize, &B[0], Ksize,
+			0, &CB.front(), Ksize
+		);
+		//Ke = Ke + (B' * (C * B)) * dJ * WF;
+		cblas_dgemm(
+			CblasRowMajor, CblasTrans, CblasNoTrans,
+			Ksize, Ksize, Csize,
+			detJ * weighFactor[gp], &B[0], Ksize, &CB[0], Ksize,
+			1, &Ke[0], Ksize
+		);
+
+		for (int i = 0; i < Ksize; i++) {
+			fe[i] += detJ * weighFactor[gp] * N[gp][i % nodes] * inertia[i / nodes];
 		}
-	} else {
-		for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-			coordinates.resize(_elements[i]->size() * Point::size());
-			_elements[i]->coordinatesToVector(coordinates, _coordinates, _indicesType, part);
-			_elements[i]->elasticity(Ke, fe, coordinates, inertia, ex, mi);
-			_elements[i]->addLocalValues(K, f, Ke, fe, 0);
+
+		if (dynamic) {
+			// Me = Me + WF * (DENS * dJ) * (N' * N);
+			double dense = 7.85e-9;
+			cblas_dgemm(
+				CblasRowMajor, CblasTrans, CblasNoTrans,
+				nodes, nodes, 1,
+				dense * detJ * weighFactor[gp], &N[gp][0], nodes, &N[gp][0], nodes,
+				1, &Me[0], nodes
+			);
+		}
+	}
+}
+
+void Mesh::_integrateElasticity(
+		const Element *e,
+		SparseVVPMatrix &K,
+		SparseVVPMatrix &M,
+		std::vector<double> &f,
+		const std::vector<double> &Ke,
+		const std::vector<double> &Me,
+		const std::vector<double> &fe,
+		bool dynamic
+	) const
+{
+	// Element ordering: xxxx, yyyy, zzzz,...
+	// Global ordering:  xyz, xyz, xyz, xyz, ...
+	size_t row, column;
+	size_t s = Point::size();
+
+	for (size_t i = 0; i < s * e->size(); i++) {
+		row = s * (e->node(i % e->size())) + i / e->size();
+		for (size_t j = 0; j < s * e->size(); j++) {
+			column = s * (e->node(j % e->size())) + j / e->size();
+			K(row, column) = Ke[i * s * e->size() + j];
+		}
+		f[row] += fe[i];
+	}
+	if (!dynamic) {
+		return;
+	}
+	for (size_t i = 0; i < e->size(); i++) {
+		row = s * (e->node(i));
+		for (size_t j = 0; j < e->size(); j++) {
+			column = s * (e->node(i));
+			for (size_t k = 0; k < s; k++) {
+				M(row + k, column + k) += Me[i * e->size() + j];
+			}
 		}
 	}
 }
@@ -352,7 +532,7 @@ idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t par
 {
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
-	BoundaryNodes neighbours(_partsNodesCount[part]);
+	std::vector<std::set<int> > neighbours(_partsNodesCount[part]);
 	for (idx_t i = first, index = 0; i < last; i++, index++) {
 		if (ePartition[index] == subpart) {
 			for (size_t j = 0; j < _elements[i]->size(); j++) {
@@ -453,11 +633,11 @@ Mesh::~Mesh()
 	}
 }
 
-void Mesh::saveNodeArray(double *nodeArray, size_t part)
+void Mesh::saveNodeArray(idx_t *nodeArray, size_t part)
 {
 	size_t p = 0;
 	for (idx_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		&nodeArray[p] << *(_elements[i]);
+		_elements[i]->fillNodes(nodeArray + p);
 		p += _elements[i]->size();
 	}
 }

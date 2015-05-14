@@ -51,8 +51,6 @@ int main(int argc, char** argv)
 	//mesh.saveVTK();
 
 	testFEM(argc, argv, coordinates, mesh, dirichlet_x, dirichlet_y, dirichlet_z);
-
-	bem4i::getLameSteklovPoincare(NULL, 0, NULL, 0, NULL, 0, 0, 0, 0, false);
 }
 
 
@@ -169,7 +167,7 @@ void testFEM(int argc, char** argv,
 		int dimension = mesh.getPartNodesCount(d) * Point::size();
 		std::vector<double> f(dimension);
 
-		mesh.assemble_matrix(K_mat[d], M_mat[d], f, d);
+		mesh.elasticity(K_mat[d], M_mat[d], f, d);
 
 		//K_mat[d] = K;
 		//M_mat[d] = M;

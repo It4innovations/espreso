@@ -17,10 +17,6 @@
 #include "../structures/coordinates.h"
 #include "../matrices/matrices.h"
 
-class Element;
-
-typedef std::vector<std::set<int> > BoundaryNodes;
-
 class Element
 {
 public:
@@ -35,12 +31,6 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
-	friend void operator<<(double *nodeArray, const Element &e)
-	{
-		for (size_t i = 0; i < e.size(); i++) {
-			nodeArray[i] = e.node(i);
-		}
-	}
 
 	virtual ~Element() {};
 
@@ -49,37 +39,17 @@ public:
 		return indices()[index];
 	}
 
-	void fillNodes(idx_t *nodes) const;
-	void setLocalIndices(std::vector<idx_t> &mapping);
-	void fillBoundaries(BoundaryNodes &nodes, int part) const;
-	void coordinatesToVector(std::vector<double> &vector, const Coordinates &coordinates,
-			IndicesType indicesType, size_t part) const;
-
-	void elasticity(std::vector<double> &Ke, std::vector<double> &Me, std::vector<double> &fe,
-		std::vector<double> &coordinates, std::vector<double> &inertia, double ex, double mi) const
+	void fillNodes(idx_t *nodes) const
 	{
-		_elaticity(Ke, Me, fe, coordinates, inertia, ex, mi, true);
+		for (size_t i = 0; i < size(); i++) {
+			nodes[i] = node(i);
+		}
 	}
-
-	void elasticity(std::vector<double> &Ke, std::vector<double> &fe,
-			std::vector<double> &coordinates, std::vector<double> &inertia, double ex, double mi) const
+	void setLocalIndices(std::vector<idx_t> &mapping)
 	{
-		std::vector<double> Me;
-		_elaticity(Ke, Me, fe, coordinates, inertia, ex, mi, false);
-	}
-
-	void addLocalValues(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f,
-		const std::vector<double> &Ke, const std::vector<double> &Me, const std::vector<double> &fe, int offset) const
-	{
-		_addLocalValues(K, M, f, Ke, Me, fe, offset, true);
-	}
-
-	void addLocalValues(SparseVVPMatrix &K, std::vector<double> &f,
-		const std::vector<double> &Ke, const std::vector<double> &fe, int offset) const
-	{
-		SparseVVPMatrix M(0, 0);
-		std::vector<double> Me;
-		_addLocalValues(K, M, f, Ke, Me, fe, offset, false);
+		for (size_t i = 0; i < size(); i++) {
+			indices()[i] = mapping[node(i)];
+		}
 	}
 
 	virtual Element* copy() const = 0;
@@ -100,27 +70,6 @@ public:
 protected:
 	virtual idx_t* indices() = 0;
 
-	void _elaticity(
-		std::vector<double> &Ke,
-		std::vector<double> &Me,
-		std::vector<double> &fe,
-		std::vector<double> &coordinates,
-		std::vector<double> &inertia,
-		double ex,
-		double mi,
-		bool dynamic
-	) const;
-
-	void _addLocalValues(
-		SparseVVPMatrix &K,
-		SparseVVPMatrix &M,
-		std::vector<double> &f,
-		const std::vector<double> &Ke,
-		const std::vector<double> &Me,
-		const std::vector<double> &fe,
-		int offset,
-		bool dynamic
-	) const;
 };
 
 

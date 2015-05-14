@@ -15,15 +15,17 @@ int main(int argc, char** argv)
 	SparseCSRMatrix M(dimension, dimension);
 	std::vector<double> f(dimension);
 
-	//mesh.assemble_matrix(K, M, f, 0);
+	mesh.elasticity(K, M, f, 0);
 
-	mesh.saveVTK("mesh.vtk");
+	//mesh.saveVTK("mesh.vtk");
+
+	Boundaries b(mesh, coords);
 
 	Coordinates c;
 	Mesh bem(c);
 	mesh.getBEM(bem);
 
-	bem.saveVTK("bem.vtk");
+	//bem.saveVTK("bem.vtk");
 
 	//mesh.saveVTK();
 }

@@ -33,7 +33,7 @@ private:
 	const Coordinates &_coordinates;
 
 	/** @brief Keeps mapping of nodes to mesh parts. */
-	BoundaryNodes _boundaries;
+	std::vector<std::set<int> > _boundaries;
 };
 
 

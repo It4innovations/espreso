@@ -48,7 +48,7 @@ public:
 	void saveVTK(const char* filename);
 	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
-	void saveNodeArray(double *nodeArray, size_t part);
+	void saveNodeArray(idx_t *nodeArray, size_t part);
 
 	void getBEM(Mesh &bemMesh);
 
@@ -91,37 +91,19 @@ public:
 		return _partsNodesCount[part];
 	}
 
-	void assemble_matrix(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, idx_t part)
+	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, idx_t part)
 	{
 		SparseVVPMatrix _K;
 		SparseVVPMatrix _M;
-		_assemble_matrix(_K, _M, f, part, true);
+		_elasticity(_K, _M, f, part, true);
 		K = _K;
 		M = _M;
 	}
-
-	void assemble_matrix(SparseIJVMatrix &K, SparseIJVMatrix &M, std::vector<double> &f, idx_t part)
+	void elasticity(SparseCSRMatrix &K, std::vector<double> &f, idx_t part)
 	{
 		SparseVVPMatrix _K;
 		SparseVVPMatrix _M;
-		_assemble_matrix(_K, _M, f, part, true);
-		K = _K;
-		M = _M;
-	}
-
-	void assemble_matrix(SparseCSRMatrix &K, std::vector<double> &f, idx_t part)
-	{
-		SparseVVPMatrix _K;
-		SparseVVPMatrix _M;
-		_assemble_matrix(_K, _M, f, part, false);
-		K = _K;
-	}
-
-	void assemble_matrix(SparseIJVMatrix &K, std::vector<double> &f, idx_t part)
-	{
-		SparseVVPMatrix _K;
-		SparseVVPMatrix _M;
-		_assemble_matrix(_K, _M, f, part, false);
+		_elasticity(_K, _M, f, part, false);
 		K = _K;
 	}
 
@@ -132,7 +114,28 @@ private:
 
 	Element* createElement(idx_t *indices, idx_t n);
 
-	void _assemble_matrix(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic);
+	void _elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic);
+	void _assembleElesticity(
+		const Element *e,
+		size_t part,
+		std::vector<double> &Ke,
+		std::vector<double> &Me,
+		std::vector<double> &fe,
+		std::vector<double> &inertia,
+		double ex,
+		double mi,
+		bool dynamic) const;
+
+	void _integrateElasticity(
+		const Element *e,
+		SparseVVPMatrix &K,
+		SparseVVPMatrix &M,
+		std::vector<double> &f,
+		const std::vector<double> &Ke,
+		const std::vector<double> &Me,
+		const std::vector<double> &fe,
+		bool dynamic
+	) const;
 
 	idx_t* getPartition(idx_t first, idx_t last, idx_t parts) const;
 	idx_t getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t part, idx_t subpart) const;

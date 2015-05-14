@@ -7,8 +7,11 @@ Boundaries::Boundaries(const Mesh &mesh, const Coordinates &coordinates):
 	const std::vector<Element*> &elements = mesh.getElements();
 
 	for (size_t p = 0; p + 1 < parts.size(); p++) {
-		for (idx_t i = parts[p]; i < parts[p + 1]; i++) {
-			elements[i]->fillBoundaries(_boundaries, p);
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(p);
+		for (idx_t e = parts[p]; e < parts[p + 1]; e++) {
+			for (size_t n = 0; n < elements[e]->size(); n++) {
+				_boundaries[l2g[elements[e]->node(n)]].insert(p);
+			}
 		}
 	}
 }
