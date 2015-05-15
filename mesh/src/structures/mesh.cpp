@@ -918,7 +918,7 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 		}
 	}
 
-	/*bem4i::getLameSteklovPoincare(
+	bem4i::getLameSteklovPoincare(
 	    K.values(),
 	    _partsNodesCount[part],
 	    &nodes[0],
@@ -929,7 +929,7 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 	    3,				// order near
 	    4,				// order far
 	    true			// verbose
-	    );*/
+	    );
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)

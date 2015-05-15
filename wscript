@@ -59,7 +59,7 @@ def configure(ctx):
         ctx.env.append_unique("LIB", [ "gomp" ])
     else:
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-mkl=parallel" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-Wl,-rpath,../libs" ])
 
     ctx.setenv("mpi", ctx.env)
     if ctx.options.mpich:
