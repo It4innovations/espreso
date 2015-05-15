@@ -1,6 +1,7 @@
 #include "tetrahedron.h"
 
-std::vector<std::vector<double> > Tetra_dN() {
+std::vector<std::vector<double> > Tetra_dN()
+{
 	std::vector<std::vector<double> > dN(TetrahedronGPCount);
 
 	int dN_length  = 40;

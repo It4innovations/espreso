@@ -1,6 +1,6 @@
 
-#ifndef TETRAHEDRON_H_
-#define TETRAHEDRON_H_
+#ifndef TETRAHEDRON4_H_
+#define TETRAHEDRON4_H_
 
 #include "../element.h"
 #include "../2D/triangle.h"
@@ -81,4 +81,4 @@ private:
 	static std::vector<double> _weighFactor;
 };
 
-#endif /* TETRAHEDRON_H_ */
+#endif /* TETRAHEDRON4_H_ */
