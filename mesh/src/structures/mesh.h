@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <algorithm>
+#include <vector>
 
 #include "mkl.h"
 #include "cilk/cilk.h"
@@ -13,7 +14,7 @@
 #include "../matrices/sparseDOKMatrix.h"
 #include "../settings.h"
 
-#include <vector>
+#include "esbem.h"
 
 namespace flags
 {
@@ -26,6 +27,8 @@ enum FLAGS {
 	FLAGS_SIZE
 };
 }
+
+class BoundaryMesh;
 
 class Mesh
 {
@@ -50,7 +53,7 @@ public:
 
 	void saveNodeArray(idx_t *nodeArray, size_t part);
 
-	void getBEM(Mesh &bemMesh);
+	void getBoundary(BoundaryMesh &boundaryMesh);
 
 	void reserve(size_t size);
 	void pushElement(Element* e);
@@ -107,7 +110,7 @@ public:
 		K = _K;
 	}
 
-private:
+protected:
 	static void assign(Mesh &m1, Mesh &m2);
 
 	void saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec);
@@ -174,6 +177,27 @@ private:
 
 	/** @brief Size of an element with maximal number of nodes. */
 	size_t _maxElementSize;
+};
+
+
+class BoundaryMesh: public Mesh
+{
+
+public:
+
+	BoundaryMesh(Coordinates &coordinates): Mesh(coordinates) { };
+	BoundaryMesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints):
+		Mesh(fileName, coordinates, parts, fixPoints) { };
+
+	BoundaryMesh(const BoundaryMesh &other): Mesh(static_cast<Mesh>(other)) { };
+	BoundaryMesh& operator=(const BoundaryMesh &other)
+	{
+		static_cast<Mesh>(*this) = static_cast<Mesh>(other);
+		return *this;
+	}
+
+	void elasticity(DenseMatrix &K, size_t part) const;
+
 };
 
 

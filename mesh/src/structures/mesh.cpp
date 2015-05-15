@@ -795,13 +795,13 @@ bool Mesh::isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vecto
 	return false;
 }
 
-void Mesh::getBEM(Mesh &bemMesh)
+void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 {
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
-#ifdef CILK
+#ifndef SEQUENTIAL
 	cilk_for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 #else
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
@@ -835,7 +835,7 @@ void Mesh::getBEM(Mesh &bemMesh)
 		}
 	}
 
-	Coordinates &coords = bemMesh.coordinates();
+	Coordinates &coords = boundaryMesh.coordinates();
 	coords.localResize(_partPtrs.size() - 1);
 
 	size_t c = 0;
@@ -847,7 +847,7 @@ void Mesh::getBEM(Mesh &bemMesh)
 		}
 	}
 
-#ifdef CILK
+#ifndef SEQUENTIAL
 	cilk_for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 #else
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
@@ -864,13 +864,13 @@ void Mesh::getBEM(Mesh &bemMesh)
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		count += elementsCount[i];
 	}
-	bemMesh.reserve(count);
+	boundaryMesh.reserve(count);
 
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<idx_t> &face = faces[i][j];
 			if (faces[i][j].size() == 3) {
-				bemMesh.pushElement(new Triangle(&face[0]));
+				boundaryMesh.pushElement(new Triangle(&face[0]));
 			}
 			if (faces[i][j].size() == 4) {
 				size_t min = 0;
@@ -880,18 +880,52 @@ void Mesh::getBEM(Mesh &bemMesh)
 					}
 				}
 				if (min % 2 == 0) {
-					bemMesh.pushElement(new Triangle(&face[0]));
+					boundaryMesh.pushElement(new Triangle(&face[0]));
 					face[1] = face[0];
-					bemMesh.pushElement(new Triangle(&face[1]));
+					boundaryMesh.pushElement(new Triangle(&face[1]));
 				} else {
-					bemMesh.pushElement(new Triangle(&face[1]));
+					boundaryMesh.pushElement(new Triangle(&face[1]));
 					face[2] = face[3];
-					bemMesh.pushElement(new Triangle(&face[0]));
+					boundaryMesh.pushElement(new Triangle(&face[0]));
 				}
 			}
 		}
-		bemMesh.endPartition();
+		boundaryMesh.endPartition();
 	}
+}
+
+void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
+{
+	idx_t nK = Point::size() * _partsNodesCount[part];
+	int eSize = _partPtrs[part + 1] - _partPtrs[part];
+	K.resize(nK, nK);
+	std::vector<double> nodes(nK);
+	std::vector<int> elems(3 * eSize);
+
+	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
+	for (size_t i = 0; i < _partsNodesCount[part]; i++) {
+		&nodes[i * Point::size()] << _coordinates[l2g[i]];
+	}
+	for (size_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
+		// TODO: various data types int32_t and int64_t
+		// _elements[i]->fillNodes(&elems[3 * i]); CANNOT be used
+		for (size_t j = 0; j < _elements[i]->size(); j++) {
+			elems[3 * i + j] = _elements[i]->node(j);
+		}
+	}
+
+	bem4i::getLameSteklovPoincare(
+	    K.values(),
+	    _partsNodesCount[part],
+	    &nodes[0],
+	    eSize,
+	    &elems[0],
+	    0.29,			// nu
+	    1e11,			// E
+	    3,				// order near
+	    4,				// order far
+	    true			// verbose
+	    );
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)

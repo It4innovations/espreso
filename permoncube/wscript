@@ -41,7 +41,7 @@ def build(ctx):
     ctx.shlib(
         source=source_files,
         target="espmcube",
-        use="mesh_includes metis_includes",
+        use="mesh_includes metis_includes bem_includes",
         install_path=ctx.ROOT + "/libs"
     )
 

@@ -22,8 +22,11 @@ int main(int argc, char** argv)
 	Boundaries b(mesh, coords);
 
 	Coordinates c;
-	Mesh bem(c);
-	mesh.getBEM(bem);
+	BoundaryMesh bem(c);
+	mesh.getBoundary(bem);
+
+	DenseMatrix BK(0, 0);
+	bem.elasticity(BK, 0);
 
 	//bem.saveVTK("bem.vtk");
 

@@ -46,6 +46,16 @@ DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): EditableMatrix(other.typ
 	}
 }
 
+void DenseMatrix::resize(MKL_INT rows, MKL_INT columns)
+{
+	_rows = rows;
+	_cols = columns;
+	_values.resize(rows * columns);
+	if (rows != columns && _type == Matrix::SYMETRIC) {
+		_type = Matrix::GENERAL;
+	}
+}
+
 void DenseMatrix::makeTransposition()
 {
 	std::vector<double> values(_rows * _cols);

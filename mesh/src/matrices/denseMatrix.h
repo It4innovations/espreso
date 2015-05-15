@@ -51,6 +51,8 @@ public:
 		return *this;
 	}
 
+	void resize(MKL_INT rows, MKL_INT columns);
+
 	MKL_INT nonZeroValues() const
 	{
 		return std::count_if(_values.begin(), _values.end(), NonZero());
@@ -69,6 +71,11 @@ public:
 	}
 
 	const double* values() const
+	{
+		return &_values[0];
+	}
+
+	double* values()
 	{
 		return &_values[0];
 	}

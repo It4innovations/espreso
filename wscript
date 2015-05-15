@@ -69,9 +69,9 @@ def configure(ctx):
     ctx.env.CXX = list(ctx.env.MPICXX)
     ctx.env.LINK_CXX = list(ctx.env.MPICXX)
 
+    ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
-    ctx.recurse("bem")
     ctx.recurse("solver")
     ctx.recurse("app")
 
@@ -83,12 +83,12 @@ def build(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
+    ctx.recurse("bem")
+    ctx.recurse("mesh")
+
     if ctx.options.mesh:
-        ctx.recurse("mesh")
         return
 
-    ctx.recurse("mesh")
     ctx.recurse("permoncube")
-    ctx.recurse("bem")
     ctx.recurse("solver")
     ctx.recurse("app")
