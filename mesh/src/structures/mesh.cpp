@@ -801,10 +801,14 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
+	if (_partPtrs.size() < 2) {
+		std::cerr << "Internal error: _partPtrs.size()\n";
+		exit(EXIT_FAILURE);
+	}
 #ifndef SEQUENTIAL
-	cilk_for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #else
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		// Compute nodes' adjacent elements
 		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
@@ -848,9 +852,9 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 	}
 
 #ifndef SEQUENTIAL
-	cilk_for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #else
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (size_t j = 0; j < faces[i].size(); j++) {
