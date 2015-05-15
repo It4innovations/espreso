@@ -47,16 +47,16 @@ std::vector<std::vector<double> > Tetra4_N()
 		double _sv[] = {0.1381966011250105, 0.1381966011250105, 0.1381966011250105, 0.5854101966249685};
 		double _tv[] = {0.1381966011250105, 0.1381966011250105, 0.5854101966249685, 0.1381966011250105};
 		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		rv.assign(_sv, _sv + Tetrahedron4GPCount);
-		rv.assign(_tv, _tv + Tetrahedron4GPCount);
+		sv.assign(_sv, _sv + Tetrahedron4GPCount);
+		tv.assign(_tv, _tv + Tetrahedron4GPCount);
 	}
 	else if (Tetrahedron4GPCount == 5) {
 		double _rv[] = {0.2500000000000000, 0.5000000000000000, 0.1666666666666667, 0.1666666666666667, 0.1666666666666667};
 		double _sv[] = {0.2500000000000000, 0.1666666666666667, 0.1666666666666667, 0.1666666666666667, 0.5000000000000000};
 		double _tv[] = {0.2500000000000000, 0.1666666666666667, 0.1666666666666667, 0.5000000000000000, 0.1666666666666667};
 		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		rv.assign(_sv, _sv + Tetrahedron4GPCount);
-		rv.assign(_tv, _tv + Tetrahedron4GPCount);
+		sv.assign(_sv, _sv + Tetrahedron4GPCount);
+		tv.assign(_tv, _tv + Tetrahedron4GPCount);
 	}
 	else if (Tetrahedron4GPCount == 11) {
 		double _rv[] = {0.2500000000000000, 0.7857142857142857, 0.0714285714285714, 0.0714285714285714,
@@ -69,8 +69,8 @@ std::vector<std::vector<double> > Tetra4_N()
 		0.0714285714285714, 0.3994035761667992, 0.3994035761667992, 0.1005964238332008,
 		0.1005964238332008, 0.1005964238332008, 0.3994035761667992};
 		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		rv.assign(_sv, _sv + Tetrahedron4GPCount);
-		rv.assign(_tv, _tv + Tetrahedron4GPCount);
+		sv.assign(_sv, _sv + Tetrahedron4GPCount);
+		tv.assign(_tv, _tv + Tetrahedron4GPCount);
 	}
 	else if (Tetrahedron4GPCount == 15) {
 		double _rv[] = {0.2500000000000000, 0.0000000000000000, 0.3333333333333333, 0.3333333333333333,
@@ -86,8 +86,8 @@ std::vector<std::vector<double> > Tetra4_N()
 		0.0909090909090909, 0.0665501535736643, 0.0665501535736643, 0.4334498464263357,
 		0.4334498464263357, 0.4334498464263357, 0.0665501535736643};
 		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		rv.assign(_sv, _sv + Tetrahedron4GPCount);
-		rv.assign(_tv, _tv + Tetrahedron4GPCount);
+		sv.assign(_sv, _sv + Tetrahedron4GPCount);
+		tv.assign(_tv, _tv + Tetrahedron4GPCount);
 	}
 
 
@@ -201,7 +201,8 @@ std::vector<idx_t> Tetrahedron4::getFace(size_t face) const
 
 Tetrahedron4::Tetrahedron4(idx_t *indices)
 {
-	memcpy(_indices, indices, Tetrahedron4NodesCount * sizeof(idx_t));
+	memcpy(_indices, indices, 3 * sizeof(idx_t));
+	_indices[3] = indices[4];
 }
 
 

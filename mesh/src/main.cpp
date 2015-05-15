@@ -5,9 +5,9 @@ int main(int argc, char** argv)
 	int partsCount = 4;
 	int fixPointsCount = 8;
 
-	Coordinates coords("matrices/HEX/5/coord");
+	Coordinates coords("matrices/TET/10/coord");
 	Mesh mesh(coords);
-	mesh = Mesh("matrices/HEX/5/elem", coords, partsCount, fixPointsCount);
+	mesh = Mesh("matrices/TET/10/elem", coords, partsCount, fixPointsCount);
 
 	int dimension = mesh.getPartNodesCount(0) * Point::size();
 
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 
 	mesh.elasticity(K, M, f, 0);
 
-	//mesh.saveVTK("mesh.vtk");
+	mesh.saveVTK("mesh.vtk");
 
 	Boundaries b(mesh, coords);
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	DenseMatrix BK(0, 0);
 	bem.elasticity(BK, 0);
 
-	//bem.saveVTK("bem.vtk");
+	bem.saveVTK("bem.vtk");
 
 	//mesh.saveVTK();
 }

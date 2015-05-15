@@ -61,11 +61,11 @@ void load_mesh(
 		std::map<int, double> &dirichlet_y,
 		std::map<int, double> &dirichlet_z)
 {
-	coordinates = Coordinates("matrices/HEX/15/coord");
-	mesh = Mesh("matrices/HEX/15/elem", coordinates, 4, 8);
+	coordinates = Coordinates("matrices/TET/10/coord");
+	mesh = Mesh("matrices/TET/10/elem", coordinates, 4, 8);
 
 	// fix down face
-	for (int i = 0; i < 16 * 16; i++) {
+	for (int i = 0; i < 11 * 11; i++) {
 		dirichlet_x[i + coordinates.getOffset()] = 0;
 		dirichlet_y[i + coordinates.getOffset()] = 0;
 		dirichlet_z[i + coordinates.getOffset()] = 0;

@@ -140,7 +140,8 @@ std::vector<idx_t> Tetrahedron::getFace(size_t face) const
 
 Tetrahedron::Tetrahedron(idx_t *indices)
 {
-	memcpy(_indices, indices, TetrahedronNodesCount * sizeof(idx_t));
+	memcpy(_indices, indices, 3 * sizeof(idx_t));
+	_indices[3] = indices[4];
 }
 
 
