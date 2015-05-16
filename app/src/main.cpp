@@ -3,93 +3,98 @@
 #include "esmesh.h"
 #include "essolver.h"
 #include "espmcube.h"
-//#include "esbem.h"
 
 #include <vector>
 #include <iostream>
 
-void testFEM(int argc, char** argv,
-		Coordinates &coordinates,
-		Mesh &mesh,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z);
+struct FEMInput {
 
-void testBEM(int argc, char** argv,
-		Coordinates &coordinates,
-		Mesh &mesh,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z);
+	FEMInput(): mesh(coordinates) { };
 
-void load_mesh(
-		Mesh &mesh,
-		Coordinates &coordinates,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z);
+	Coordinates coordinates;
+	Mesh mesh;
+	std::map<int, double> dirichlet_x;
+	std::map<int, double> dirichlet_y;
+	std::map<int, double> dirichlet_z;
+};
 
-void generate_mesh(
-		Mesh &mesh,
-		Coordinates &coordinates,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z);
+struct FEMParams {
+
+	FEMParams(): generateMesh(false), subdomains(3), elementsInSub(3) { };
+
+	bool generateMesh;
+	std::vector<int> subdomains;
+	std::vector<int> elementsInSub;
+};
+
+FEMInput input;
+FEMParams params;
+
+
+void setParams(int argc, char** argv)
+{
+	if (argc != 7) {
+		return;
+	}
+
+	params.generateMesh = true;
+	int subdomains;
+	int elementsInSub;
+
+	for (int i = 0; i < 3; i++) {
+		sscanf(argv[2 * i + 1], "%i", &subdomains);
+		sscanf(argv[2 * i + 2], "%i", &elementsInSub);
+		std::cout << subdomains << " " << elementsInSub << " ";
+		params.subdomains[i] = subdomains;
+		params.elementsInSub[i] = elementsInSub;
+	}
+	std::cout << "\n";
+}
+
+void testFEM(int argc, char** argv);
+
+void testBEM(int argc, char** argv);
+
+void load_mesh();
+
+void generate_mesh();
 
 int main(int argc, char** argv)
 {
-	Coordinates coordinates;
-	Mesh mesh(coordinates);
-	std::map<int, double> dirichlet_x, dirichlet_y, dirichlet_z;
+	setParams(argc, argv);
+	if (params.generateMesh) {
+		generate_mesh();
+	} else {
+		load_mesh();
+	}
 
-	// load mesh from FILES
-	load_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
-
-	// generate mesh in PERMONCUBE
-	//generate_mesh(mesh, coordinates, dirichlet_x, dirichlet_y, dirichlet_z);
-
-	//mesh.saveVTK();
-
-	testFEM(argc, argv, coordinates, mesh, dirichlet_x, dirichlet_y, dirichlet_z);
+	testFEM(argc, argv);
 }
 
 
-void load_mesh(
-		Mesh &mesh,
-		Coordinates &coordinates,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z)
+void load_mesh()
 {
-	coordinates = Coordinates("matrices/TET/10/coord");
-	mesh = Mesh("matrices/TET/10/elem", coordinates, 4, 8);
+	input.coordinates = Coordinates("matrices/TET/10/coord");
+	input.mesh = Mesh("matrices/TET/10/elem", input.coordinates, 4, 8);
 
 	// fix down face
 	for (int i = 0; i < 11 * 11; i++) {
-		dirichlet_x[i + coordinates.getOffset()] = 0;
-		dirichlet_y[i + coordinates.getOffset()] = 0;
-		dirichlet_z[i + coordinates.getOffset()] = 0;
+		input.dirichlet_x[i + input.coordinates.getOffset()] = 0;
+		input.dirichlet_y[i + input.coordinates.getOffset()] = 0;
+		input.dirichlet_z[i + input.coordinates.getOffset()] = 0;
 	}
 }
 
-void generate_mesh(
-		Mesh &mesh,
-		Coordinates &coordinates,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z)
+void generate_mesh()
 {
-	int subdomains[] = { 12, 12, 12 };
-	int elementsInSub[] = { 13, 13, 13};
-
 	std::cout << "mesh_generator3d" << std::endl;
-	CFem::mesh_generator3d(mesh, coordinates, subdomains, elementsInSub);
-        std::cout << "dirichlet" << std::endl;
-	CFem::dirichlet(dirichlet_x, dirichlet_y, dirichlet_z, subdomains, elementsInSub);
-        std::cout << "fix points" << std::endl;
+	CFem::mesh_generator3d(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	std::cout << "dirichlet" << std::endl;
+	CFem::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	std::cout << "fix points" << std::endl;
 
 	// TODO: set fix points in PERMONCUBE
-	mesh.computeFixPoints(4);
+	input.mesh.computeFixPoints(4);
 	std::cout << "fix points - end" << std::endl;
 }
 
@@ -108,24 +113,19 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 	return out;
 }
 
-void testFEM(int argc, char** argv,
-		Coordinates &coordinates,
-		Mesh &mesh,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z)
+void testFEM(int argc, char** argv)
 {
 	double start;
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount = mesh.getPartsCount();
-	size_t fixPointsCount = mesh.getFixPointsCount();
+	size_t partsCount = input.mesh.getPartsCount();
+	size_t fixPointsCount = input.mesh.getFixPointsCount();
 
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	// TODO: fill boundaries in PERMONCUBE
-	Boundaries boundaries(mesh, coordinates);
+	Boundaries boundaries(input.mesh, input.coordinates);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -164,21 +164,21 @@ void testFEM(int argc, char** argv,
 
 	cilk_for (int d = 0; d < partsCount; d++) {
 
-		int dimension = mesh.getPartNodesCount(d) * Point::size();
+		int dimension = input.mesh.getPartNodesCount(d) * Point::size();
 		std::vector<double> f(dimension);
 
-		mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
 
 		//K_mat[d] = K;
 		//M_mat[d] = M;
 		f_vec[d].swap(f);
 
-		std::cout << d << " " << std::endl; 
+		std::cout << d << " " << std::endl;
 	}
 
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
-	const std::vector<idx_t> fixPoints = mesh.getFixPoints();
+	const std::vector<idx_t> fixPoints = input.mesh.getFixPoints();
 
 	cilk_for (int d = 0; d < partsCount; d++) {
 		for (int fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
@@ -196,11 +196,11 @@ void testFEM(int argc, char** argv,
 		lambda_map_sub_B1,
 		lambda_map_sub_B0,
 		B1_l_duplicity,
-		dirichlet_x,
-		dirichlet_y,
-		dirichlet_z,
+		input.dirichlet_x,
+		input.dirichlet_y,
+		input.dirichlet_z,
 		partsCount,
-		mesh
+		input.mesh
 	);
 
 	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
@@ -316,9 +316,9 @@ void testFEM(int argc, char** argv,
 	cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = coordinates[l2g_vec[d][i]].x;
-			tmp_vec[1] = coordinates[l2g_vec[d][i]].y;
-			tmp_vec[2] = coordinates[l2g_vec[d][i]].z;
+			tmp_vec[0] = input.coordinates[l2g_vec[d][i]].x;
+			tmp_vec[1] = input.coordinates[l2g_vec[d][i]].y;
+			tmp_vec[2] = input.coordinates[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -390,7 +390,7 @@ void testFEM(int argc, char** argv,
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	mesh.saveVTK(prim_solution, l2g_vec);
+	input.mesh.saveVTK(prim_solution, l2g_vec);
 
 
 

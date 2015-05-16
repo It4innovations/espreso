@@ -3,6 +3,17 @@
 module load bullxmpi/bullxmpi_1.2.4.1
 module load intel/15.2.164
 
+if [ "$#" -ne 1 ]; then
+  echo "  Use one of the following commands:"
+  echo "    ./anselm configure"
+  echo "    ./anselm build"
+  echo "    ./anselm run"
+  echo ""
+  echo "  'configure' sets all parameters for the compiler. It is mandatory to run this command at the first time."
+  echo "  'build' makes the runable application."
+  echo "  'run' starts the computation. The result is put to Paraview input file 'mesh.vtk'."
+fi
+
 if [ "$1" = "configure" ]; then
   ./waf configure
 fi
@@ -60,7 +71,7 @@ if [ "$1" = "run" ]; then
 
     date | tee -a $log_file
 
-    ./espreso | tee -a $log_file
+    ./espreso ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 
   done
 
