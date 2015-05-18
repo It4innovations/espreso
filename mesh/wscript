@@ -1,5 +1,5 @@
 
-MESH = "base"
+MESH = "mesh"
 
 source_files = (
     "src/settings.cpp",
@@ -25,7 +25,10 @@ source_files = (
 )
 
 def configure(ctx):
-    pass
+    ctx.setenv(MESH, ctx.all_envs["base"].derive());
+
+    if ctx.options.debug:
+        ctx.env.append_unique("CXXFLAGS", [ "-DDEBUG" ])
 
 def build(ctx):
     ctx.env = ctx.all_envs[MESH]
@@ -34,7 +37,7 @@ def build(ctx):
         ctx.program(
             source=source_files + ("src/main.cpp",),
             target="esmesh",
-            lib="metis esbem",
+            lib="metis",
             libpath="../libs",
             use="metis_includes bem_includes"
         )

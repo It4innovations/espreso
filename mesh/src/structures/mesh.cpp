@@ -390,7 +390,7 @@ void Mesh::computeFixPoints(idx_t fixPoints)
 	idx_t parts = _partPtrs.size() - 1;
 	_fixPoints.resize(parts * fixPoints);
 
-#ifndef SEQUENTIAL
+#ifndef DEBUG
 	cilk_for (idx_t i = 0; i < parts; i++) {
 #else
 	for (idx_t i = 0; i < parts; i++) {
@@ -805,7 +805,7 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
-#ifndef SEQUENTIAL
+#ifndef DEBUG
 	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #else
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
@@ -851,7 +851,7 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 		}
 	}
 
-#ifndef SEQUENTIAL
+#ifndef DEBUG
 	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #else
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
@@ -918,6 +918,8 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 		}
 	}
 
+	// the library bem4i is not compatible with valgrind
+#ifndef DEBUG
 	bem4i::getLameSteklovPoincare(
 	    K.values(),
 	    _partsNodesCount[part],
@@ -930,6 +932,8 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 	    4,				// order far
 	    true			// verbose
 	    );
+#endif
+
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)
