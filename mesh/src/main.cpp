@@ -5,9 +5,9 @@ int main(int argc, char** argv)
 	int partsCount = 1;
 	int fixPointsCount = 8;
 
-	Coordinates coords("matrices/TET/10/coord");
+	Coordinates coords("matrices/TET/5/coord");
 	Mesh mesh(coords);
-	mesh = Mesh("matrices/TET/10/elem", coords, partsCount, fixPointsCount);
+	mesh = Mesh("matrices/TET/5/elem", coords, partsCount, fixPointsCount);
 
 	int dimension = mesh.getPartNodesCount(0) * Point::size();
 
@@ -22,13 +22,24 @@ int main(int argc, char** argv)
 	Boundaries b(mesh, coords);
 
 	Coordinates c;
-	BoundaryMesh bem(c);
-	mesh.getBoundary(bem);
+	BoundaryMesh bMesh(c);
+	mesh.getBoundary(bMesh);
 
-	DenseMatrix BK(0, 0);
-	bem.elasticity(BK, 0);
+	std::vector<DenseMatrix> K_mat;
 
-	bem.saveVTK("bem.vtk");
+	K_mat.reserve(partsCount);
+	for (int d = 0; d < partsCount; d++) {
+		K_mat.push_back( DenseMatrix (0, 0) );
+	}
+
+	for (int d = 0; d < partsCount; d++) {
+
+		bMesh.elasticity(K_mat[d], d);
+
+		std::cout << d << " " << std::endl;
+	}
+
+	//bem.saveVTK("bem.vtk");
 
 	//mesh.saveVTK();
 }

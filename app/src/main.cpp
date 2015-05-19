@@ -69,7 +69,8 @@ int main(int argc, char** argv)
 		load_mesh();
 	}
 
-	testFEM(argc, argv);
+	testBEM(argc, argv);
+	//testFEM(argc, argv);
 }
 
 
@@ -112,6 +113,43 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 	}
 	//out << "]";
 	return out;
+}
+
+
+void testBEM(int argc, char** argv)
+{
+	std::cout << "TEST BEM\n";
+	size_t partsCount = input.mesh.getPartsCount();
+	size_t fixPointsCount = 4;
+
+	Coordinates coordinates;
+	BoundaryMesh bMesh(coordinates);
+
+	input.mesh.getBoundary(bMesh);
+
+	bMesh.computeFixPoints(fixPointsCount);
+
+	Boundaries boundaries(bMesh, coordinates);
+
+	std::vector<DenseMatrix> K_mat;
+
+	K_mat.reserve(partsCount);
+	for (int d = 0; d < partsCount; d++) {
+		K_mat.push_back( DenseMatrix (0, 0) );
+	}
+
+	for (int d = 0; d < partsCount; d++) {
+
+		bMesh.elasticity(K_mat[d], d);
+
+		std::cout << d << " " << std::endl;
+		return;
+	}
+
+
+	// TODO:
+
+
 }
 
 void testFEM(int argc, char** argv)

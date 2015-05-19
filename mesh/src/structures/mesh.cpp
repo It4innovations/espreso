@@ -914,11 +914,11 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 	for (size_t i = 0; i < _partsNodesCount[part]; i++) {
 		&nodes[i * Point::size()] << _coordinates[l2g[i]];
 	}
-	for (size_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
+	for (size_t i = _partPtrs[part], index = 0; i < _partPtrs[part + 1]; i++, index++) {
 		// TODO: various data types int32_t and int64_t
 		// _elements[i]->fillNodes(&elems[3 * i]); CANNOT be used
 		for (size_t j = 0; j < _elements[i]->size(); j++) {
-			elems[3 * i + j] = _elements[i]->node(j);
+			elems[3 * index + j] = _elements[i]->node(j);
 		}
 	}
 
