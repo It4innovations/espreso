@@ -58,8 +58,8 @@ def configure(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
         ctx.env.append_unique("LIB", [ "gomp" ])
     else:
-        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-mkl=parallel" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-Wl,-rpath,../libs" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-mkl=parallel", "-openmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-openmp" ])
 
     ctx.setenv("mpi", ctx.env)
     if ctx.options.mpich:
