@@ -8,9 +8,9 @@
 #include "2D/square.h"
 #include "2D/triangle.h"
 
-#include "3D/tetrahedron.h"
 #include "3D/tetrahedron4.h"
-#include "3D/hexahedron.h"
+#include "3D/tetrahedron10.h"
+#include "3D/hexahedron8.h"
 
 
 

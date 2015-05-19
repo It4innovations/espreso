@@ -1,8 +1,8 @@
-#include "tetrahedron.h"
+#include "tetrahedron10.h"
 
 std::vector<std::vector<double> > Tetra_dN()
 {
-	std::vector<std::vector<double> > dN(TetrahedronGPCount);
+	std::vector<std::vector<double> > dN(Tetrahedron10GPCount);
 
 	int dN_length  = 40;
 
@@ -11,7 +11,7 @@ std::vector<std::vector<double> > Tetra_dN()
 	double diag = (5.0 + 3.0 * CsQ_scale) / 20.0;
 	double rest = (5.0 - CsQ_scale) / 20.0;
 
-	for (unsigned int i = 0; i < TetrahedronGPCount; i++) {
+	for (unsigned int i = 0; i < Tetrahedron10GPCount; i++) {
 		double r = (i == 3) ? diag : rest;
 		double s = (i == 2) ? diag : rest;
 		double t = (i == 1) ? diag : rest;
@@ -48,14 +48,14 @@ std::vector<std::vector<double> > Tetra_dN()
 }
 
 std::vector<std::vector<double> > Tetra_N() {
-	std::vector<std::vector<double> > N(TetrahedronGPCount);
+	std::vector<std::vector<double> > N(Tetrahedron10GPCount);
 
 	double CsQ_scale = 0.577350269189626;
 
 	double diag = (5.0 + 3.0 * CsQ_scale) / 20.0;
 	double rest = (5.0 - CsQ_scale) / 20.0;
 
-	for (unsigned int i = 0; i < TetrahedronGPCount; i++) {
+	for (unsigned int i = 0; i < Tetrahedron10GPCount; i++) {
 		double r = (i == 3) ? diag : rest;
 		double s = (i == 2) ? diag : rest;
 		double t = (i == 1) ? diag : rest;
@@ -77,14 +77,14 @@ std::vector<std::vector<double> > Tetra_N() {
 	return N;
 }
 
-std::vector<std::vector<double> > Tetrahedron::_dN = Tetra_dN();
-std::vector<std::vector<double> > Tetrahedron::_N = Tetra_N();
-std::vector<double> Tetrahedron::_weighFactor(TetrahedronNodesCount, 1.0 / 24.0);
+std::vector<std::vector<double> > Tetrahedron10::_dN = Tetra_dN();
+std::vector<std::vector<double> > Tetrahedron10::_N = Tetra_N();
+std::vector<double> Tetrahedron10::_weighFactor(Tetrahedron10NodesCount, 1.0 / 24.0);
 
-bool Tetrahedron::match(idx_t *indices, idx_t n) {
+bool Tetrahedron10::match(idx_t *indices, idx_t n) {
 
 #ifndef D3
-	// Tetrahedron is 3D element
+	// Tetrahedron10 is 3D element
 	return false;
 #endif
 
@@ -117,11 +117,11 @@ bool Tetrahedron::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-std::vector<idx_t> Tetrahedron::getNeighbours(size_t nodeIndex) const
+std::vector<idx_t> Tetrahedron10::getNeighbours(size_t nodeIndex) const
 {
 	std::vector<idx_t> result;
 	result.reserve(3);
-	for (size_t i = 0; i < TetrahedronNodesCount; i++) {
+	for (size_t i = 0; i < Tetrahedron10NodesCount; i++) {
 		if (i != nodeIndex) {
 			result.push_back(_indices[i]);
 		}
@@ -129,7 +129,7 @@ std::vector<idx_t> Tetrahedron::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<idx_t> Tetrahedron::getFace(size_t face) const
+std::vector<idx_t> Tetrahedron10::getFace(size_t face) const
 {
 	std::vector<idx_t> result(3);
 	result[0] = (face < 3) ? _indices[0] : _indices[1];
@@ -138,7 +138,7 @@ std::vector<idx_t> Tetrahedron::getFace(size_t face) const
 	return result;
 }
 
-Tetrahedron::Tetrahedron(idx_t *indices)
+Tetrahedron10::Tetrahedron10(idx_t *indices)
 {
 	memcpy(_indices, indices, 3 * sizeof(idx_t));
 	_indices[3] = indices[4];

@@ -1,30 +1,31 @@
-#ifndef TETRAHEDRON_H_
-#define TETRAHEDRON_H_
+#ifndef HEXAHEDRON8_H_
+#define HEXAHEDRON8_H_
 
 #include "../element.h"
-#include "../2D/triangle.h"
+#include "../2D/square.h"
+#include "../1D/line.h"
 
-#define TetrahedronNodesCount 4
-#define TetrahedronFacesCount 4
-#define TetrahedronGPCount 4
-#define TetrahedronVTKCode 10
+#define Hexahedron8NodesCount 8
+#define Hexahedron8FacesCount 6
+#define Hexahedron8GPCount 8
+#define Hexahedron8VTKCode 12
 
-class Tetrahedron: public Element
+class Hexahedron8: public Element
 {
 
 public:
 	static bool match(idx_t *indices, idx_t n);
 
-	Tetrahedron(idx_t *indices);
+	Hexahedron8(idx_t *indices);
 
 	Element* copy() const
 	{
-		return new Tetrahedron(*this);
+		return new Hexahedron8(*this);
 	}
 
 	int vtkCode() const
 	{
-		return TetrahedronVTKCode;
+		return Hexahedron8VTKCode;
 	}
 
 	const idx_t* indices() const
@@ -34,32 +35,32 @@ public:
 
 	size_t size() const
 	{
-		return TetrahedronNodesCount;
+		return Hexahedron8NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return TetrahedronGPCount;
+		return Hexahedron8GPCount;
 	}
 
 	size_t faces() const
 	{
-		return TetrahedronFacesCount;
+		return Hexahedron8FacesCount;
 	}
 
 	const std::vector<std::vector<double> >& dN() const
 	{
-		return Tetrahedron::_dN;
+		return Hexahedron8::_dN;
 	}
 
 	const std::vector<std::vector<double> >&  N() const
 	{
-		return Tetrahedron::_N;
+		return Hexahedron8::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Tetrahedron::_weighFactor;
+		return Hexahedron8::_weighFactor;
 	}
 
 	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
@@ -73,11 +74,13 @@ protected:
 	}
 
 private:
-	idx_t _indices[TetrahedronNodesCount];
+	inline void setFaceNodes(idx_t nodes[], idx_t face) const;
+
+	idx_t _indices[Hexahedron8NodesCount];
 
 	static std::vector<std::vector<double> > _dN;
 	static std::vector<std::vector<double> > _N;
 	static std::vector<double> _weighFactor;
 };
 
-#endif /* TETRAHEDRON_H_ */
+#endif /* HEXAHEDRON8_H_ */

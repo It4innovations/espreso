@@ -70,7 +70,7 @@ void Permoncube::hexahedrons8(
 							indices[5] = nnx * nny * (z + 1) + nnx *  y      + x + 1;
 							indices[6] = nnx * nny * (z + 1) + nnx * (y + 1) + x + 1;
 							indices[7] = nnx * nny * (z + 1) + nnx * (y + 1) + x;
-							mesh.pushElement(new Hexahedron(indices));
+							mesh.pushElement(new Hexahedron8(indices));
 						}
 					}
 				}

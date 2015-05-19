@@ -123,8 +123,8 @@ Element* Mesh::createElement(idx_t *indices, idx_t n)
 	if (Tetrahedron4::match(indices, n)) {
 		e = new Tetrahedron4(indices);
 	}
-	if (Hexahedron::match(indices, n)) {
-		e = new Hexahedron(indices);
+	if (Hexahedron8::match(indices, n)) {
+		e = new Hexahedron8(indices);
 	}
 
 	if (e == NULL) {

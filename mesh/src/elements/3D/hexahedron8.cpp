@@ -1,17 +1,17 @@
-#include "hexahedron.h"
+#include "hexahedron8.h"
 
 std::vector<std::vector<double> > Hexa_dN() {
-	std::vector<std::vector<double> > dN(HexahedronGPCount);
+	std::vector<std::vector<double> > dN(Hexahedron8GPCount);
 
 	double CsQ_scale = 0.577350269189626;
 
-	for (unsigned int i = 0; i < HexahedronGPCount; i++) {
+	for (unsigned int i = 0; i < Hexahedron8GPCount; i++) {
 		double r = (i & 4) ? CsQ_scale : -CsQ_scale;
 		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
 		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		///dN contains [dNr, dNs, dNt]
-		dN[i].resize(Point::size() * HexahedronNodesCount);
+		dN[i].resize(Point::size() * Hexahedron8NodesCount);
 
 		// dNr - derivation of basis function
 		dN[i][0] = 0.125 * (-(1 - s) * (1 - t));
@@ -48,17 +48,17 @@ std::vector<std::vector<double> > Hexa_dN() {
 }
 
 std::vector<std::vector<double> > Hexa_N() {
-	std::vector<std::vector<double> > N(HexahedronGPCount);
+	std::vector<std::vector<double> > N(Hexahedron8GPCount);
 
 	double CsQ_scale = 0.577350269189626;
 
-	for (unsigned int i = 0; i < HexahedronGPCount; i++) {
+	for (unsigned int i = 0; i < Hexahedron8GPCount; i++) {
 		double r = (i & 4) ? CsQ_scale : -CsQ_scale;
 		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
 		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		// basis function
-		N[i].resize(HexahedronNodesCount);
+		N[i].resize(Hexahedron8NodesCount);
 		N[i][0] = 0.125 * (1 - r) * (1 - s) * (1 - t);
 		N[i][1] = 0.125 * (r + 1) * (1 - s) * (1 - t);
 		N[i][2] = 0.125 * (r + 1) * (s + 1) * (1 - t);
@@ -72,14 +72,14 @@ std::vector<std::vector<double> > Hexa_N() {
 	return N;
 }
 
-std::vector<std::vector<double> > Hexahedron::_dN = Hexa_dN();
-std::vector<std::vector<double> > Hexahedron::_N = Hexa_N();
-std::vector<double> Hexahedron::_weighFactor(HexahedronNodesCount, 1);
+std::vector<std::vector<double> > Hexahedron8::_dN = Hexa_dN();
+std::vector<std::vector<double> > Hexahedron8::_N = Hexa_N();
+std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
 
-bool Hexahedron::match(idx_t *indices, idx_t n) {
+bool Hexahedron8::match(idx_t *indices, idx_t n) {
 
 #ifndef D3
-	// Hexahedron is 3D element
+	// Hexahedron8 is 3D element
 	return false;
 #endif
 
@@ -98,7 +98,7 @@ bool Hexahedron::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-std::vector<idx_t> Hexahedron::getNeighbours(size_t nodeIndex) const
+std::vector<idx_t> Hexahedron8::getNeighbours(size_t nodeIndex) const
 {
 	std::vector<idx_t> result(3);
 
@@ -115,7 +115,7 @@ std::vector<idx_t> Hexahedron::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<idx_t> Hexahedron::getFace(size_t face) const
+std::vector<idx_t> Hexahedron8::getFace(size_t face) const
 {
 	std::vector<idx_t> result(4);
 
@@ -145,9 +145,9 @@ std::vector<idx_t> Hexahedron::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron::Hexahedron(idx_t *indices)
+Hexahedron8::Hexahedron8(idx_t *indices)
 {
-	memcpy(_indices, indices, HexahedronNodesCount * sizeof(idx_t));
+	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(idx_t));
 }
 
 

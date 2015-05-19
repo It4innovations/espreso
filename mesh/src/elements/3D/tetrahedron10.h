@@ -1,31 +1,30 @@
-#ifndef HEXAHEDRON_H_
-#define HEXAHEDRON_H_
+#ifndef TETRAHEDRON10_H_
+#define TETRAHEDRON10_H_
 
 #include "../element.h"
-#include "../2D/square.h"
-#include "../1D/line.h"
+#include "../2D/triangle.h"
 
-#define HexahedronNodesCount 8
-#define HexahedronFacesCount 6
-#define HexahedronGPCount 8
-#define HexahedronVTKCode 12
+#define Tetrahedron10NodesCount 4
+#define Tetrahedron10FacesCount 4
+#define Tetrahedron10GPCount 4
+#define Tetrahedron10VTKCode 10
 
-class Hexahedron: public Element
+class Tetrahedron10: public Element
 {
 
 public:
 	static bool match(idx_t *indices, idx_t n);
 
-	Hexahedron(idx_t *indices);
+	Tetrahedron10(idx_t *indices);
 
 	Element* copy() const
 	{
-		return new Hexahedron(*this);
+		return new Tetrahedron10(*this);
 	}
 
 	int vtkCode() const
 	{
-		return HexahedronVTKCode;
+		return Tetrahedron10VTKCode;
 	}
 
 	const idx_t* indices() const
@@ -35,32 +34,32 @@ public:
 
 	size_t size() const
 	{
-		return HexahedronNodesCount;
+		return Tetrahedron10NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return HexahedronGPCount;
+		return Tetrahedron10GPCount;
 	}
 
 	size_t faces() const
 	{
-		return HexahedronFacesCount;
+		return Tetrahedron10FacesCount;
 	}
 
 	const std::vector<std::vector<double> >& dN() const
 	{
-		return Hexahedron::_dN;
+		return Tetrahedron10::_dN;
 	}
 
 	const std::vector<std::vector<double> >&  N() const
 	{
-		return Hexahedron::_N;
+		return Tetrahedron10::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Hexahedron::_weighFactor;
+		return Tetrahedron10::_weighFactor;
 	}
 
 	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
@@ -74,13 +73,11 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(idx_t nodes[], idx_t face) const;
-
-	idx_t _indices[HexahedronNodesCount];
+	idx_t _indices[Tetrahedron10NodesCount];
 
 	static std::vector<std::vector<double> > _dN;
 	static std::vector<std::vector<double> > _N;
 	static std::vector<double> _weighFactor;
 };
 
-#endif /* HEXAHEDRON_H_ */
+#endif /* TETRAHEDRON10_H_ */
