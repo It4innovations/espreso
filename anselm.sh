@@ -15,7 +15,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure
+  ./waf configure --anselm
 fi
 
 if [ "$1" = "build" ]; then

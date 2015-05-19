@@ -17,6 +17,11 @@ def options(opt):
        default=False,
        help="Create application only from mesh.")
 
+    opt.add_option("--anselm",
+       action="store_true",
+       default=False,
+       help="Create application for Anselm.")
+
 
 def check_environment(ctx):
     try:
@@ -65,6 +70,9 @@ def configure(ctx):
     if ctx.options.mpich:
         ctx.env.append_unique("CXXFLAGS", [ "-cxx=icpc" ])
         ctx.env.append_unique("LINKFLAGS", [ "-cxx=icpc" ])
+
+    if ctx.options.anselm:
+        ctx.env.append_unique("CXXFLAGS", [ "-xSSE4.1" ])
 
     ctx.env.CXX = list(ctx.env.MPICXX)
     ctx.env.LINK_CXX = list(ctx.env.MPICXX)
