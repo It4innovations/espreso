@@ -108,9 +108,6 @@ void Permoncube::tetrahedrons4(
 	//	#                                                 #
 	//	###################################################
 
-	std::cout << subdomains[0] << " " << subdomains[1] << " " << subdomains[2] << "\n";
-	std::cout << elementsInSub[0] << " " << elementsInSub[1] << " " << elementsInSub[2] << "\n";
-
 	int nnx = subdomains[0] * elementsInSub[0] + 1;
 	int nny = subdomains[1] * elementsInSub[1] + 1;
 	int nnz = subdomains[2] * elementsInSub[2] + 1;
@@ -199,7 +196,6 @@ void Permoncube::tetrahedrons4(
 			}
 		}
 	}
-	std::cout << "TETRA\n";
 }
 
 
