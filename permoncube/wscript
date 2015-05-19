@@ -1,35 +1,6 @@
 
 source_files = (
-    "src/Assembler.cpp",
-    "src/BoundaryCondition.cpp",
-    "src/BoundaryCondOnFace.cpp",
-    "src/BSparse.cpp",
-    "src/BSparseC.cpp",
-    "src/Cluster_g.cpp",
-    "src/ContactBC.cpp",
-    "src/Coordinate.cpp",
-    "src/CoupleIntDouble.cpp",
-    "src/CustomData.cpp",
-    "src/Data.cpp",
-    "src/DirichletBC.cpp",
-    "src/Domain_g.cpp",
-    "src/ElementLibrary.cpp",
-    "src/Fem.cpp",
-    "src/KSparse.cpp",
-    "src/LinearAlgebra.cpp",
-    "src/main.cpp",
-    "src/Mesh.cpp",
-    "src/NeumannBC.cpp",
-    "src/RectangularFace.cpp",
-    "src/RSparse.cpp",
-    "src/SaveFEM.cpp",
-    "src/Solid45.cpp",
-    "src/Solid45EqNumbGlobal.cpp",
-    "src/Solid45NodNumbLoc.cpp",
-    "src/Solver.cpp",
-    "src/StiffnessLocal.cpp",
-    "src/Test.cpp",
-    "src/utility.cpp"
+    "src/permoncube.cpp",
 )
 
 def configure(ctx):

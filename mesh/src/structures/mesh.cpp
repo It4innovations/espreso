@@ -50,11 +50,7 @@ Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fi
 	// correct indexing -> C/C++ indexes start at 0, but Points usually start at 1
 	coordinates.setOffset(minIndices);
 
-	if (parts > 0) {
-		partitiate(parts, fixPoints);
-	} else if (fixPoints > 0) {
-		computeFixPoints(fixPoints);
-	}
+	partitiate(parts, fixPoints);
 }
 
 Mesh::Mesh(const Mesh &other)
@@ -409,6 +405,14 @@ void Mesh::computeFixPoints(idx_t fixPoints)
 
 idx_t* Mesh::getPartition(idx_t first, idx_t last, idx_t parts) const
 {
+
+	if (parts == 1) {
+		idx_t *ePartition = new idx_t[last - first];
+		for (idx_t i = first; i < last; i++) {
+			ePartition[i] = 0;
+		}
+		return ePartition;
+	}
 	// INPUTS
 	idx_t ncommon, eSize, nSize, *e, *n, options[METIS_NOPTIONS];
 

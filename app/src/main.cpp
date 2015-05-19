@@ -2,7 +2,7 @@
 
 #include "esmesh.h"
 #include "essolver.h"
-#include "espmcube.h"
+#include "permoncube.h"
 
 #include <vector>
 #include <iostream>
@@ -20,7 +20,10 @@ struct FEMInput {
 
 struct FEMParams {
 
-	FEMParams(): generateMesh(false), subdomains(3), elementsInSub(3) { };
+	FEMParams(): generateMesh(false), subdomains(3), elementsInSub(3) {
+		subdomains[0] = subdomains[1] = subdomains[2] = 1;
+		elementsInSub[0] = elementsInSub[1] = elementsInSub[2] = 10;
+	};
 
 	bool generateMesh;
 	std::vector<int> subdomains;
@@ -42,13 +45,11 @@ void setParams(int argc, char** argv)
 	int elementsInSub;
 
 	for (int i = 0; i < 3; i++) {
-		sscanf(argv[2 * i + 1], "%i", &subdomains);
-		sscanf(argv[2 * i + 2], "%i", &elementsInSub);
-		std::cout << subdomains << " " << elementsInSub << " ";
+		sscanf(argv[i + 1], "%i", &subdomains);
+		sscanf(argv[i + 4], "%i", &elementsInSub);
 		params.subdomains[i] = subdomains;
 		params.elementsInSub[i] = elementsInSub;
 	}
-	std::cout << "\n";
 }
 
 void testFEM(int argc, char** argv);
@@ -87,10 +88,10 @@ void load_mesh()
 
 void generate_mesh()
 {
-	std::cout << "mesh_generator3d" << std::endl;
-	CFem::mesh_generator3d(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	std::cout << "Permoncube:" << std::endl;
+	Permoncube::tetrahedrons4(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
 	std::cout << "dirichlet" << std::endl;
-	CFem::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	Permoncube::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), &(params.elementsInSub[0]));
 	std::cout << "fix points" << std::endl;
 
 	// TODO: set fix points in PERMONCUBE
@@ -203,6 +204,7 @@ void testFEM(int argc, char** argv)
 		input.mesh
 	);
 
+
 	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
 
 	std::cout.precision(10);
@@ -244,8 +246,6 @@ void testFEM(int argc, char** argv)
 	extern void SetMatrixFromCOO   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
 	extern void SetVecInt          ( vector <int>    & vec, ShortInt incerement_by, ShortInt nnz, ShortInt * vals);
 	extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
-
-
 
 	Cluster cluster(MPIrank + 1);
 	cluster.USE_DYNAMIC			= 0;
