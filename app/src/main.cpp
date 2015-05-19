@@ -118,18 +118,26 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 
 void testBEM(int argc, char** argv)
 {
-	std::cout << "TEST BEM\n";
+	double start = omp_get_wtime();
 	size_t partsCount = input.mesh.getPartsCount();
 	size_t fixPointsCount = 4;
 
 	Coordinates coordinates;
 	BoundaryMesh bMesh(coordinates);
 
+	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
+
 	input.mesh.getBoundary(bMesh);
+
+	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
 
 	bMesh.computeFixPoints(fixPointsCount);
 
+	std::cout << "3 : " << omp_get_wtime() - start << std::endl;
+
 	Boundaries boundaries(bMesh, coordinates);
+
+	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
 
 	std::vector<DenseMatrix> K_mat;
 
@@ -143,8 +151,9 @@ void testBEM(int argc, char** argv)
 		bMesh.elasticity(K_mat[d], d);
 
 		std::cout << d << " " << std::endl;
-		return;
 	}
+
+	std::cout << "5 : " << omp_get_wtime() - start << std::endl;
 
 
 	// TODO:

@@ -934,7 +934,7 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 	    1e11,			// E
 	    3,				// order near
 	    4,				// order far
-	    true			// verbose
+	    false			// verbose
 	    );
 #endif
 
