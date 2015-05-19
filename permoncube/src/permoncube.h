@@ -20,6 +20,12 @@ public:
 			int *subdomains,
 			int *elementsInSub);
 
+	static void tetrahedrons10(
+			Mesh &mesh,
+			Coordinates &coordinates,
+			int *subdomains,
+			int *elementsInSub);
+
 	static void dirichlet(
 			std::map < int, double >  & dirichlet_x,
 			std::map < int, double >  & dirichlet_y,

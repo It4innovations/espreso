@@ -4,10 +4,10 @@
 #include "../element.h"
 #include "../2D/triangle.h"
 
-#define Tetrahedron10NodesCount 4
+#define Tetrahedron10NodesCount 10
 #define Tetrahedron10FacesCount 4
 #define Tetrahedron10GPCount 4
-#define Tetrahedron10VTKCode 10
+#define Tetrahedron10VTKCode 24
 
 class Tetrahedron10: public Element
 {

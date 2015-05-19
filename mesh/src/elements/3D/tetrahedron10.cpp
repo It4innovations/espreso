@@ -88,26 +88,44 @@ bool Tetrahedron10::match(idx_t *indices, idx_t n) {
 	return false;
 #endif
 
-	if (n != 8) {
+	if (n != 20) {
 		return false;
 	}
 
 	if (!Element::match(indices, 2, 3)) {
 		return false;
 	}
+	if (!Element::match(indices, 2, 10)) {
+		return false;
+	}
+	if (!Element::match(indices, 19, 20)) {
+		return false;
+	}
 	if (!Element::match(indices, 4, 5)) {
 		return false;
 	}
-	if (!Element::match(indices, 5, 6)) {
+	if (!Element::match(indices, 4, 6)) {
 		return false;
 	}
-	if (!Element::match(indices, 6, 7)) {
+	if (!Element::match(indices, 4, 7)) {
+		return false;
+	}
+	if (!Element::match(indices, 4, 12)) {
+		return false;
+	}
+	if (!Element::match(indices, 4, 13)) {
+		return false;
+	}
+	if (!Element::match(indices, 4, 14)) {
+		return false;
+	}
+	if (!Element::match(indices, 4, 15)) {
 		return false;
 	}
 
-	idx_t various[4] = { 0, 1, 2, 4 };
-	for (idx_t i = 0; i < 3; i++) {
-		for (idx_t j = i + 1; j < 4; j++) {
+	idx_t various[10] = { 0, 1, 2, 4, 8, 9 ,11, 16, 17, 18 };
+	for (idx_t i = 0; i < 9; i++) {
+		for (idx_t j = i + 1; j < 10; j++) {
 			if (Element::match(indices, various[i], various[j])) {
 				return false;
 			}
@@ -120,11 +138,67 @@ bool Tetrahedron10::match(idx_t *indices, idx_t n) {
 std::vector<idx_t> Tetrahedron10::getNeighbours(size_t nodeIndex) const
 {
 	std::vector<idx_t> result;
-	result.reserve(3);
-	for (size_t i = 0; i < Tetrahedron10NodesCount; i++) {
-		if (i != nodeIndex) {
-			result.push_back(_indices[i]);
-		}
+	if (nodeIndex > 3) {
+		result.resize(2);
+	} else {
+		result.resize(3);
+	}
+
+	switch (nodeIndex) {
+	case 0: {
+		result[0] = _indices[4];
+		result[1] = _indices[6];
+		result[2] = _indices[7];
+		return result;
+	}
+	case 1: {
+		result[0] = _indices[4];
+		result[1] = _indices[5];
+		result[2] = _indices[8];
+		return result;
+	}
+	case 2: {
+		result[0] = _indices[5];
+		result[1] = _indices[6];
+		result[2] = _indices[9];
+		return result;
+	}
+	case 3: {
+		result[0] = _indices[7];
+		result[1] = _indices[8];
+		result[2] = _indices[9];
+		return result;
+	}
+	case 4: {
+		result[0] = _indices[0];
+		result[1] = _indices[1];
+		return result;
+	}
+	case 5: {
+		result[0] = _indices[1];
+		result[1] = _indices[2];
+		return result;
+	}
+	case 6: {
+		result[0] = _indices[0];
+		result[1] = _indices[2];
+		return result;
+	}
+	case 7: {
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		return result;
+	}
+	case 8: {
+		result[0] = _indices[1];
+		result[1] = _indices[3];
+		return result;
+	}
+	case 9: {
+		result[0] = _indices[2];
+		result[1] = _indices[3];
+		return result;
+	}
 	}
 	return result;
 }
@@ -140,8 +214,17 @@ std::vector<idx_t> Tetrahedron10::getFace(size_t face) const
 
 Tetrahedron10::Tetrahedron10(idx_t *indices)
 {
-	memcpy(_indices, indices, 3 * sizeof(idx_t));
+	_indices[0] = indices[0];
+	_indices[1] = indices[1];
+	_indices[2] = indices[2];
 	_indices[3] = indices[4];
+	_indices[4] = indices[8];
+	_indices[5] = indices[9];
+	_indices[6] = indices[11];
+	_indices[7] = indices[16];
+	_indices[8] = indices[17];
+	_indices[9] = indices[18];
 }
+
 
 
