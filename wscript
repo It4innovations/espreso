@@ -17,6 +17,11 @@ def options(opt):
        default=False,
        help="Create application only from mesh.")
 
+    opt.add_option("--permoncube",
+       action="store_true",
+       default=False,
+       help="Create application only from permoncube.")
+
     opt.add_option("--anselm",
        action="store_true",
        default=False,
@@ -93,10 +98,12 @@ def build(ctx):
 
     ctx.recurse("bem")
     ctx.recurse("mesh")
-
     if ctx.options.mesh:
         return
 
     ctx.recurse("permoncube")
+    if ctx.options.permoncube:
+        return
+
     ctx.recurse("solver")
     ctx.recurse("app")

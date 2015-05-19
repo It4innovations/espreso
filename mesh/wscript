@@ -33,11 +33,11 @@ def configure(ctx):
 def build(ctx):
     ctx.env = ctx.all_envs[MESH]
 
-    if ctx.options.mesh:
-        use = "metis_includes bem_includes"
-        if not ctx.options.debug:
-            use += " esbem"
+    use = "metis_includes bem_includes"
+    if not ctx.options.debug:
+        use += " esbem"
 
+    if ctx.options.mesh:
         ctx.program(
             source=source_files + ("src/main.cpp",),
             target="esmesh",
@@ -49,9 +49,9 @@ def build(ctx):
         ctx.shlib(
             source=source_files,
             target="esmesh",
-            lib="metis esbem",
+            lib="metis",
             libpath="../libs",
-            use="metis_includes bem_includes esbem",
+            use=use,
             install_path=ctx.ROOT + "/libs"
         )
 

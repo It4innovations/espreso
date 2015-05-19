@@ -938,6 +938,7 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 	    );
 #endif
 
+
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)

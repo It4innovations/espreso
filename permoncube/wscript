@@ -1,4 +1,6 @@
 
+PERMONCUBE = "base"
+
 source_files = (
     "src/permoncube.cpp",
 )
@@ -7,14 +9,22 @@ def configure(ctx):
     pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs["mpi"]
+    ctx.env = ctx.all_envs[PERMONCUBE]
 
-    ctx.shlib(
-        source=source_files,
-        target="espmcube",
-        use="mesh_includes metis_includes bem_includes",
-        install_path=ctx.ROOT + "/libs"
-    )
+    if ctx.options.permoncube:
+        ctx.program(
+            source=source_files + ("src/main.cpp",),
+            target="espmcube",
+            use="mesh_includes esmesh",
+            install_path=ctx.ROOT
+        )
+    else:
+        ctx.shlib(
+            source=source_files,
+            target="espmcube",
+            use="mesh_includes esmesh",
+            install_path=ctx.ROOT + "/libs"
+        )
 
 
     ctx(
