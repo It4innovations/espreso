@@ -11,7 +11,7 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
-	Boundaries(const Mesh &mesh, const Coordinates &coordinates);
+	Boundaries(const Mesh &mesh);
 	~Boundaries() { };
 
 	void create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 
@@ -24,13 +24,12 @@ public:
 						std::map < int, double >             & dirichlet_x,
 						std::map < int, double >             & dirichlet_y,
 						std::map < int, double >             & dirichlet_z,
-						const int domains_num,
-						const Mesh &mesh) ;
+						const int domains_num) ;
 
 
 private:
-	/** @brief Reference to coordinates. */
-	const Coordinates &_coordinates;
+	/** @brief Reference to a mesh. */
+	const Mesh &_mesh;
 
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<int> > _boundaries;

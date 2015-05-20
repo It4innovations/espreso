@@ -1,13 +1,13 @@
 #include "boundaries.h"
 
-Boundaries::Boundaries(const Mesh &mesh, const Coordinates &coordinates):
-	_boundaries(coordinates.size() + coordinates.getOffset()), _coordinates(coordinates)
+Boundaries::Boundaries(const Mesh &mesh):
+	_boundaries(mesh.coordinates().size() + mesh.coordinates().getOffset()), _mesh(mesh)
 {
 	const std::vector<idx_t> &parts = mesh.getPartition();
 	const std::vector<Element*> &elements = mesh.getElements();
 
 	for (size_t p = 0; p + 1 < parts.size(); p++) {
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(p);
+		const std::vector<idx_t> &l2g = mesh.coordinates().localToGlobal(p);
 		for (idx_t e = parts[p]; e < parts[p + 1]; e++) {
 			for (size_t n = 0; n < elements[e]->size(); n++) {
 				_boundaries[l2g[elements[e]->node(n)]].insert(p);
@@ -26,8 +26,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 								std::map < int, double >             & dirichlet_x,
 								std::map < int, double >             & dirichlet_y,
 								std::map < int, double >             & dirichlet_z,
-								const int domains_num,
-								const Mesh &mesh)
+								const int domains_num)
 {
 
 	l2g_vec.resize(domains_num);
@@ -43,7 +42,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 	std::vector <int> local_prim_numbering ( domains_num, local_prim_numbering_offset);
 
 	for (int d = 0; d < domains_num; d++) {
-		int dimension = mesh.getPartNodesCount(d) * Point::size();
+		int dimension = _mesh.getPartNodesCount(d) * Point::size();
 		
 		B1_loc.push_back( SparseDOKMatrix (1, dimension) );
 		B0_loc.push_back( SparseDOKMatrix (1, dimension) );
@@ -57,7 +56,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 	std::set<int>::const_iterator it2;
 	std::map<int,double>::const_iterator itm;
 
-	int offset = _coordinates.getOffset();
+	int offset = _mesh.coordinates().getOffset();
 	int lambda_count_B1 = 0; 
 	int lambda_count_B0 = 0; 
 
@@ -174,10 +173,10 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 std::ostream& operator<<(std::ostream& os, const Boundaries &b)
 {
 	std::set<int>::const_iterator it;
-	int offset = b._coordinates.getOffset();
+	int offset = b._mesh.coordinates().getOffset();
 
 	for (size_t i = offset; i < b._boundaries.size(); i++) {
-		os << b._coordinates[i] << ": ";
+		os << b._mesh.coordinates()[i] << ": ";
 		for (it = b._boundaries[i].begin(); it != b._boundaries[i].end(); ++it) {
 			os << *it << " ";
 		}

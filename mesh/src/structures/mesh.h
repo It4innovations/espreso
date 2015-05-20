@@ -37,11 +37,16 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 
-	Mesh(Coordinates &coordinates);
-	Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints);
+	Mesh();
+	Mesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints);
 
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
+
+	const Coordinates& coordinates() const
+	{
+		return _coordinates;
+	}
 
 	Coordinates& coordinates()
 	{
@@ -152,7 +157,7 @@ protected:
 	bool isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_t> &face);
 
 	/** @brief Reference to coordinates. */
-	Coordinates &_coordinates;
+	Coordinates _coordinates;
 
 	/** @brief The type of indices in element. [local, global] */
 	Element::IndicesType _indicesType;
@@ -185,9 +190,9 @@ class BoundaryMesh: public Mesh
 
 public:
 
-	BoundaryMesh(Coordinates &coordinates): Mesh(coordinates) { };
-	BoundaryMesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints):
-		Mesh(fileName, coordinates, parts, fixPoints) { };
+	BoundaryMesh(): Mesh() { };
+	BoundaryMesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
+		Mesh(mesh, coordinates, parts, fixPoints) { };
 
 	BoundaryMesh(const BoundaryMesh &other): Mesh(static_cast<Mesh>(other)) { };
 	BoundaryMesh& operator=(const BoundaryMesh &other)

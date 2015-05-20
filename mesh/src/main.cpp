@@ -5,9 +5,7 @@ int main(int argc, char** argv)
 	int partsCount = 4;
 	int fixPointsCount = 8;
 
-	Coordinates coords("matrices/TET/5/coord");
-	Mesh mesh(coords);
-	mesh = Mesh("matrices/TET/5/elem", coords, partsCount, fixPointsCount);
+	Mesh mesh("matrices/TET/5/elem", "matrices/TET/5/coord", partsCount, fixPointsCount);
 
 	int dimension = mesh.getPartNodesCount(0) * Point::size();
 
@@ -19,7 +17,7 @@ int main(int argc, char** argv)
 
 	mesh.saveVTK("mesh.vtk");
 
-	Boundaries b(mesh, coords);
+	Boundaries b(mesh);
 
 	Coordinates c;
 	BoundaryMesh bMesh(c);

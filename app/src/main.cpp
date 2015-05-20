@@ -9,9 +9,9 @@
 
 struct FEMInput {
 
-	FEMInput(): mesh(coordinates) { };
+	FEMInput(): coordinates(mesh.coordinates()) {};
 
-	Coordinates coordinates;
+	Coordinates &coordinates;
 	Mesh mesh;
 	std::map<int, double> dirichlet_x;
 	std::map<int, double> dirichlet_y;
@@ -77,8 +77,8 @@ int main(int argc, char** argv)
 
 void load_mesh()
 {
-	input.coordinates = Coordinates("matrices/TET/10/coord");
-	input.mesh = Mesh("matrices/TET/10/elem", input.coordinates, 4, 8);
+	input.mesh = Mesh("matrices/TET/10/elem", "matrices/TET/10/coord", 4, 8);
+	input.coordinates = input.mesh.coordinates();
 
 	// fix down face
 	for (int i = 0; i < 11 * 11; i++) {
@@ -123,8 +123,7 @@ void testBEM(int argc, char** argv)
 	size_t partsCount = input.mesh.getPartsCount();
 	size_t fixPointsCount = 4;
 
-	Coordinates coordinates;
-	BoundaryMesh bMesh(coordinates);
+	BoundaryMesh bMesh;
 
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
 
@@ -136,7 +135,7 @@ void testBEM(int argc, char** argv)
 
 	std::cout << "3 : " << omp_get_wtime() - start << std::endl;
 
-	Boundaries boundaries(bMesh, coordinates);
+	Boundaries boundaries(bMesh);
 
 	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
 
@@ -174,7 +173,7 @@ void testFEM(int argc, char** argv)
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	// TODO: fill boundaries in PERMONCUBE
-	Boundaries boundaries(input.mesh, input.coordinates);
+	Boundaries boundaries(input.mesh);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -248,8 +247,7 @@ void testFEM(int argc, char** argv)
 		input.dirichlet_x,
 		input.dirichlet_y,
 		input.dirichlet_z,
-		partsCount,
-		input.mesh
+		partsCount
 	);
 
 

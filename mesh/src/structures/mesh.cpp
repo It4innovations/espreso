@@ -1,23 +1,23 @@
 #include "mesh.h"
 
-Mesh::Mesh(Coordinates &coordinates)
-	:_coordinates(coordinates), _indicesType(Element::GLOBAL), _elements(0), _lastNode(0),
-	 _partsNodesCount(1, 0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
+Mesh::Mesh()
+	:_indicesType(Element::GLOBAL), _elements(0), _lastNode(0), _partsNodesCount(1, 0),
+	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fixPoints):
-	_indicesType(Element::GLOBAL),
+Mesh::Mesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
 	_coordinates(coordinates),
+	_indicesType(Element::GLOBAL),
 	_flags(flags::FLAGS_SIZE, false),
 	_maxElementSize(0)
 {
-	_elements.resize(Loader::getLinesCount(fileName));
+	_elements.resize(Loader::getLinesCount(mesh));
 
-	std::ifstream file(fileName);
+	std::ifstream file(mesh);
 	std::string line;
 
 	idx_t indices[20], n; 	// 20 is the max of vertices of a element
@@ -43,12 +43,12 @@ Mesh::Mesh(const char *fileName, Coordinates &coordinates, idx_t parts, idx_t fi
 		}
 		file.close();
 	} else {
-		fprintf(stderr, "Cannot load mesh from file: %s.\n", fileName);
+		fprintf(stderr, "Cannot load mesh from file: %s.\n", mesh);
 		exit(EXIT_FAILURE);
 	}
 
 	// correct indexing -> C/C++ indexes start at 0, but Points usually start at 1
-	coordinates.setOffset(minIndices);
+	_coordinates.setOffset(minIndices);
 
 	partitiate(parts, fixPoints);
 }
