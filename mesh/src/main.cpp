@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-	int partsCount = 1;
+	int partsCount = 4;
 	int fixPointsCount = 8;
 
 	Coordinates coords("matrices/TET/5/coord");

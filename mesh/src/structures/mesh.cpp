@@ -922,8 +922,6 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 		}
 	}
 
-	// the library bem4i is not compatible with valgrind
-#ifndef DEBUG
 	bem4i::getLameSteklovPoincare(
 	    K.values(),
 	    _partsNodesCount[part],
@@ -936,9 +934,6 @@ void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
 	    4,				// order far
 	    false			// verbose
 	    );
-#endif
-
-
 }
 
 std::ostream& operator<<(std::ostream& os, const Mesh &m)

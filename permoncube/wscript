@@ -15,7 +15,7 @@ def build(ctx):
         ctx.program(
             source=source_files + ("src/main.cpp",),
             target="espmcube",
-            use="mesh_includes esmesh",
+            use="mesh_includes esmesh esbem",
             install_path=ctx.ROOT
         )
     else:
