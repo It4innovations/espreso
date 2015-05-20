@@ -4,102 +4,67 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include <cmath>
 #include "mkl.h"
+
+struct NonZeroValue
+{
+	bool operator()(double value)
+	{
+		return fabs(value) > 0;
+	}
+};
 
 class Matrix
 {
 
 public:
-
-	enum MatrixType {
-		GENERAL,
-		SYMETRIC
-	};
-
-	friend std::ostream& operator<<(std::ostream& os, const Matrix &m);
-
-	virtual double operator()(MKL_INT row, MKL_INT column) const = 0;
-
-	virtual MKL_INT nonZeroValues() const = 0;
-
-	void transpose();
-
-	MKL_INT rows() const
+	size_t rows() const
 	{
 		return _rows;
 	}
-	MKL_INT columns() const
+
+	size_t columns() const
 	{
-		return _cols;
+		return _columns;
 	}
 
-	MatrixType type() const
+	void resize(size_t rows, size_t columns)
 	{
-		return _type;
+		_rows = rows;
+		_columns = columns;
 	}
+
+	virtual double operator()(size_t row, size_t column) const = 0;
+	virtual double& operator()(size_t row, size_t column) = 0;
+
+	virtual double get(size_t row, size_t column) const = 0;
+	virtual void set(size_t row, size_t column, double value) = 0;
+
+	virtual void transpose() = 0;
+	virtual size_t nonZeroValues() const = 0;
 
 	virtual ~Matrix() { };
 
+	friend std::ostream& operator<<(std::ostream& os, const Matrix &m);
+
 protected:
 
-	Matrix(MatrixType type): _type(type), _rows(0), _cols(0) {};
-	Matrix(MatrixType type, MKL_INT rows, MKL_INT cols);
+	Matrix(): _rows(0), _columns(0) { };
+	Matrix(size_t rows, size_t columns): _rows(rows), _columns(columns) { };
 
-	virtual void makeTransposition() = 0;
 
-	void arrange(MKL_INT &row, MKL_INT &column) const
-	{
-		if (_type == Matrix::SYMETRIC) {
-			if (row > column) {
-				MKL_INT tmp;
-				tmp = row;
-				row = column;
-				column = tmp;
-			}
-		}
-	}
 
 	static void assign(Matrix &m1, Matrix &m2)
 	{
-		m1._type = m2._type;
 		m1._rows = m2._rows;
-		m1._cols = m2._cols;
+		m1._columns = m2._columns;
 	}
 
-	MatrixType _type;
+	size_t _rows;
+	size_t _columns;
 
-	// Variables
-	MKL_INT _rows;		// number of rows
-	MKL_INT _cols;		// number of columns
-};
-
-
-class EditableMatrix: public Matrix
-{
-
-public:
-
-	virtual double operator()(MKL_INT row, MKL_INT column) const = 0;
-	virtual double& operator()(MKL_INT row, MKL_INT column) = 0;
-
-	virtual MKL_INT nonZeroValues() const = 0;
-
-	virtual ~EditableMatrix() { };
-
-protected:
-
-	EditableMatrix(MatrixType type, MKL_INT rows, MKL_INT cols) : Matrix(type, rows, cols) { };
-
-	virtual void makeTransposition() = 0;
-
-	static void assign(EditableMatrix &m1, EditableMatrix &m2)
-	{
-		Matrix::assign(m1, m2);
-	}
-
-private:
-
-
+	static NonZeroValue nonZero;
 };
 
 #endif /* MATRIX_H_ */

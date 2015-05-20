@@ -8,53 +8,33 @@
 #include "sparseCSRMatrix.h"
 #include "sparseIJVMatrix.h"
 
-typedef std::map<MKL_INT, std::map<MKL_INT, double> > MatrixMap;
-typedef std::map<MKL_INT, double> ColumnMap;
+typedef std::map<size_t, std::map<size_t, double> > MatrixMap;
+typedef std::map<size_t, double> ColumnMap;
 
-class DenseMatrix;
-class SparseCSRMatrix;
-class SparseIJVMatrix;
-
-class SparseDOKMatrix: public EditableMatrix
+class SparseDOKMatrix: public Matrix
 {
 
 public:
 
-	SparseDOKMatrix(MatrixType type, MKL_INT rowsAndCols): EditableMatrix(type, rowsAndCols, rowsAndCols) {};
-	SparseDOKMatrix(MatrixType type, MKL_INT rows, MKL_INT cols): EditableMatrix(type, rows, cols) {};
-	SparseDOKMatrix(MKL_INT rows, MKL_INT cols): EditableMatrix(Matrix::GENERAL, rows, cols) {};
+	SparseDOKMatrix() {};
+	SparseDOKMatrix(size_t rows, size_t columns): Matrix(rows, columns) {};
 
-	SparseDOKMatrix(const DenseMatrix &other);
-	SparseDOKMatrix(const SparseCSRMatrix &other);
-	SparseDOKMatrix(const SparseIJVMatrix &other);
+	void transpose();
+	size_t nonZeroValues() const;
 
-	SparseDOKMatrix& operator=(const DenseMatrix &other)
+
+	double operator()(size_t row, size_t column) const
 	{
-		SparseDOKMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
+		return get(row, column);
+	};
+
+	double& operator () (size_t row, size_t column)
+	{
+		return _values[row][column];
 	}
 
-	SparseDOKMatrix& operator=(const SparseCSRMatrix &other)
+	double get(size_t row, size_t column) const
 	{
-		SparseDOKMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	SparseDOKMatrix& operator=(const SparseIJVMatrix &other)
-	{
-		SparseDOKMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	MKL_INT nonZeroValues() const;
-
-	double operator()(MKL_INT row, MKL_INT column) const
-	{
-		arrange(row, column);
-
 		MatrixMap::const_iterator row_it = _values.find(row);
 		if (row_it == _values.end()) {
 			return 0;
@@ -64,43 +44,29 @@ public:
 			return 0;
 		}
 		return column_it->second;
-	};
-
-	double& operator () (MKL_INT row, MKL_INT column)
+	}
+	void set(size_t row, size_t column, double value)
 	{
-		arrange(row, column);
-		return _values[row][column];
+		if (Matrix::nonZero(value)) {
+			_values[row][column] = value;
+		}
 	}
 
-	MKL_INT removeZeros();
-
-	const std::map<MKL_INT, std::map<MKL_INT, double> >& values() const
+	const MatrixMap& values() const
 	{
 		return _values;
 	}
 
-	std::map<MKL_INT, std::map<MKL_INT, double> >& values()
+	MatrixMap& values()
 	{
 		return _values;
 	}
-
-	void setRows (MKL_INT rows_new) {
-		_rows = rows_new;
-	}
-
-	void setCols (MKL_INT cols_new) {
-		_cols = cols_new;
-	}
-
-protected:
-
-	void makeTransposition();
 
 private:
 
 	static void assign(SparseDOKMatrix &m1, SparseDOKMatrix &m2)
 	{
-		EditableMatrix::assign(m1, m2);
+		Matrix::assign(m1, m2);
 		m1._values.swap(m2._values);
 	}
 

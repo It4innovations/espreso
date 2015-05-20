@@ -133,7 +133,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 			bool is_corner = true; 
 			if ( is_corner ) {
 				for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
-					if (it1 != _boundaries[i].begin()) {				
+					if (it1 != _boundaries[i].begin()) {
 						for (int d_i = 0; d_i < 3; d_i++) {
 							B0_loc[*it2](lambda_count_B0, local_prim_numbering[*it2] + d_i) =  1.0; 
 							B0_loc[*it1](lambda_count_B0, local_prim_numbering[*it1] + d_i) = -1.0; 
@@ -159,12 +159,10 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 
 
 	for (int d = 0; d < domains_num; d++) {
-		B1_loc[d].setRows( lambda_count_B1 );
-		B1_loc[d].setCols( local_prim_numbering[d] );
+		B1_loc[d].resize(lambda_count_B1, local_prim_numbering[d]);
 		B1_local[d] = SparseIJVMatrix( B1_loc[d] );
-				
-		B0_loc[d].setRows( lambda_count_B0 );
-		B0_loc[d].setCols( local_prim_numbering[d] );
+
+		B0_loc[d].resize(lambda_count_B0, local_prim_numbering[d]);
 		B0_local[d] = SparseIJVMatrix( B0_loc[d] );
 	}
 

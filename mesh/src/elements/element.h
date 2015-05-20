@@ -2,17 +2,9 @@
 #define ELEMENT_H_
 
 #include <vector>
-#include <set>
-#include <map>
-#include <cmath>
-#include <algorithm>
 #include <cstring>
-#include <sstream>
-#include <fstream>
 
 #include "1D/point.h"
-#include "metis.h"
-#include "mkl.h"
 
 #include "../structures/coordinates.h"
 #include "../matrices/matrices.h"

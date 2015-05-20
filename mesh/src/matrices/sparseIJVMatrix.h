@@ -17,51 +17,34 @@ class SparseIJVMatrix: public Matrix
 
 public:
 
-	SparseIJVMatrix(MatrixType type, MKL_INT rowsAndCols): Matrix(type, rowsAndCols, rowsAndCols) { };
-	SparseIJVMatrix(MatrixType type, MKL_INT rows, MKL_INT cols): Matrix(type, rows, cols) { };
-	SparseIJVMatrix(MKL_INT rows, MKL_INT cols): Matrix(Matrix::GENERAL, rows, cols) { };
+	SparseIJVMatrix() { };
+	SparseIJVMatrix(MKL_INT rows, MKL_INT columns): Matrix(rows, columns) { };
 
 	SparseIJVMatrix(const DenseMatrix &other);
 	SparseIJVMatrix(const SparseDOKMatrix &other);
 	SparseIJVMatrix(const SparseCSRMatrix &other);
 	SparseIJVMatrix(SparseVVPMatrix &other);
 
-	SparseIJVMatrix& operator=(const DenseMatrix &other)
-	{
-		SparseIJVMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
+	SparseIJVMatrix& operator=(const DenseMatrix &other);
+	SparseIJVMatrix& operator=(const SparseDOKMatrix &other);
+	SparseIJVMatrix& operator=(const SparseCSRMatrix &other);
+	SparseIJVMatrix& operator=(SparseVVPMatrix &other);
 
-	SparseIJVMatrix& operator=(const SparseDOKMatrix &other)
-	{
-		SparseIJVMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
+	void reserve(size_t size);
+	void transpose();
 
-	SparseIJVMatrix& operator=(const SparseCSRMatrix &other)
-	{
-		SparseIJVMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	SparseIJVMatrix& operator=(SparseVVPMatrix &other)
-	{
-		SparseIJVMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	MKL_INT nonZeroValues() const
+	size_t nonZeroValues() const
 	{
 		return _values.size();
 	}
 
-	double operator()(MKL_INT row, MKL_INT column) const
+	double operator()(size_t row, size_t column) const
 	{
-		arrange(row, column);
+		return get(row, column);
+	}
+
+	double get(size_t row, size_t column) const
+	{
 		for(int i = 0; i < _rowIndices.size(); i++)
 		{
 			if (_rowIndices[i] == row && _columnIndices[i] == column) {
@@ -76,7 +59,17 @@ public:
 		return &_rowIndices[0];
 	}
 
+	MKL_INT* rowIndices()
+	{
+		return &_rowIndices[0];
+	}
+
 	const MKL_INT* columnIndices() const
+	{
+		return &_columnIndices[0];
+	}
+
+	MKL_INT* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
@@ -86,26 +79,39 @@ public:
 		return &_values[0];
 	}
 
-	MKL_INT* rowIndices()
-	{
-		return &_rowIndices[0];
-	}
-
-	MKL_INT* columnIndices()
-	{
-		return &_columnIndices[0];
-	}
-
 	double* values()
 	{
 		return &_values[0];
 	}
 
-protected:
-
-	void makeTransposition();
-
 private:
+
+	double& operator()(size_t row, size_t column)
+	{
+		for(int i = 0; i < _rowIndices.size(); i++)
+		{
+			if (_rowIndices[i] == row && _columnIndices[i] == column) {
+				return _values[i];
+			}
+		}
+		_rowIndices.push_back(row);
+		_columnIndices.push_back(column);
+		_values.push_back(0);
+		return _values.back();
+	}
+
+	void set(size_t row, size_t column, double value)
+	{
+		for(int i = 0; i < _rowIndices.size(); i++)
+		{
+			if (_rowIndices[i] == row && _columnIndices[i] == column) {
+				_values[i] = value;
+			}
+		}
+		_rowIndices.push_back(row);
+		_columnIndices.push_back(column);
+		_values.push_back(value);
+	}
 
 	static void assign(SparseIJVMatrix &m1, SparseIJVMatrix &m2)
 	{

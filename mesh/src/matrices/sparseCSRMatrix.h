@@ -16,51 +16,34 @@ class SparseCSRMatrix: public Matrix
 
 public:
 
-	SparseCSRMatrix(MatrixType type, MKL_INT rowsAndCols): Matrix(type, rowsAndCols, rowsAndCols) { };
-	SparseCSRMatrix(MatrixType type, MKL_INT rows, MKL_INT cols): Matrix(type, rows, cols) { };
-	SparseCSRMatrix(MKL_INT rows, MKL_INT cols): Matrix(Matrix::GENERAL, rows, cols) { };
+	SparseCSRMatrix() { };
+	SparseCSRMatrix(size_t rows, size_t columns): Matrix(rows, columns) { };
 
 	SparseCSRMatrix(const DenseMatrix &other);
 	SparseCSRMatrix(const SparseDOKMatrix &other);
 	SparseCSRMatrix(const SparseIJVMatrix &other);
 	SparseCSRMatrix(SparseVVPMatrix &other);
 
-	SparseCSRMatrix& operator=(const DenseMatrix &other)
-	{
-		SparseCSRMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
+	SparseCSRMatrix& operator=(const DenseMatrix &other);
+	SparseCSRMatrix& operator=(const SparseDOKMatrix &other);
+	SparseCSRMatrix& operator=(const SparseIJVMatrix &other);
+	SparseCSRMatrix& operator=(SparseVVPMatrix &other);
 
-	SparseCSRMatrix& operator=(const SparseDOKMatrix &other)
-	{
-		SparseCSRMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
+	void resize(size_t rows, size_t values);
+	void transpose();
 
-	SparseCSRMatrix& operator=(const SparseIJVMatrix &other)
-	{
-		SparseCSRMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	SparseCSRMatrix& operator=(SparseVVPMatrix &other)
-	{
-		SparseCSRMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	MKL_INT nonZeroValues() const
+	size_t nonZeroValues() const
 	{
 		return _values.size();
 	}
 
-	double operator()(MKL_INT row, MKL_INT column) const
+	double operator()(size_t row, size_t column) const
 	{
-		arrange(row, column);
+		return get(row, column);
+	}
+
+	double get(size_t row, size_t column) const
+	{
 		for(int i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
 			if (_columnIndices[i] == column) {
 				return _values[i];
@@ -74,7 +57,17 @@ public:
 		return &_values[0];
 	}
 
+	double* values()
+	{
+		return &_values[0];
+	}
+
 	const MKL_INT* rowPtrs() const
+	{
+		return &_rowPtrs[0];
+	}
+
+	MKL_INT* rowPtrs()
 	{
 		return &_rowPtrs[0];
 	}
@@ -84,47 +77,24 @@ public:
 		return &_columnIndices[0];
 	}
 
-	double* values()
-	{
-		return &_values[0];
-	}
-
-	MKL_INT* rowPtrs()
-	{
-		return &_rowPtrs[0];
-	}
-
 	MKL_INT* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
 
-	void dump(std::ostream &os)
+private:
+
+	double& operator()(size_t row, size_t column)
 	{
-		for(int i = 0; i <= _rows; i++) {
-			os << _rowPtrs[i] << " ";
-		}
-		os << std::endl;
-
-		for(int r = 0; r < _rows; r++) {
-			for(size_t i = _rowPtrs[r]; i < _rowPtrs[r + 1]; i++) {
-				os << _columnIndices[i] << " ";
-			}
-			os << std::endl;
-		}
-		os << std::endl;
-
-		for(size_t i = 0; i < _values.size(); i++) {
-			os << _values[i] << " ";
-		}
-		os << std::endl;
+		std::cerr << "It is not possible to insert to CRS matrix.\n";
+		exit(EXIT_FAILURE);
 	}
 
-protected:
-
-	void makeTransposition();
-
-private:
+	void set(size_t row, size_t column, double value)
+	{
+		std::cerr << "It is not possible to insert to CRS matrix.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	static void assign(SparseCSRMatrix &m1, SparseCSRMatrix &m2)
 	{

@@ -5,54 +5,49 @@
 
 #include "matrix.h"
 
-typedef std::vector<std::vector<std::pair<MKL_INT, double> > > VVP;
+typedef std::vector<std::vector<std::pair<size_t, double> > > VVP;
 
-class SparseVVPMatrix: public EditableMatrix
+class SparseVVPMatrix: public Matrix
 {
 
 public:
-	SparseVVPMatrix(MatrixType type, MKL_INT rowsAndCols)
-		: EditableMatrix(type, rowsAndCols, rowsAndCols), _values(rowsAndCols), _shrunk(true) { };
-	SparseVVPMatrix(MatrixType type, MKL_INT rows, MKL_INT cols)
-		: EditableMatrix(type, rows, cols), _values(rows), _shrunk(true) { };
-	SparseVVPMatrix(MKL_INT rows, MKL_INT cols)
-		: EditableMatrix(Matrix::GENERAL, rows, cols), _values(rows), _shrunk(true) { };
-	SparseVVPMatrix()
-		: EditableMatrix(Matrix::GENERAL, 0, 0), _shrunk(true) { };
 
-	double& operator()(MKL_INT row, MKL_INT column)
+	SparseVVPMatrix() {};
+	SparseVVPMatrix(size_t rows, size_t columns): Matrix(rows, columns), _values(rows) {};
+
+	void shrink();
+	void resize(size_t rows, size_t columns);
+	void transpose();
+	size_t nonZeroValues() const;
+
+	double& operator()(size_t row, size_t column)
 	{
-		arrange(row, column);
-		_shrunk = false;
-		_values[row].push_back(std::pair<MKL_INT, double>(column, 0));
+		_values[row].push_back(std::pair<size_t, double>(column, 0));
 		return _values[row].back().second;
 	}
 
-	bool isShrunk()
+	void set(size_t row, size_t column, double value)
 	{
-		return _shrunk;
+		_values[row].push_back(std::pair<size_t, double>(column, value));
 	}
-
-	void resize(MKL_INT rows, MKL_INT columns);
-	void shrink();
 
 	const VVP& values() const
 	{
 		return _values;
 	}
 
-	MKL_INT nonZeroValues() const;
-
-	void makeTransposition();
 
 private:
 
-	double operator()(MKL_INT row, MKL_INT column) const
+	double operator()(size_t row, size_t column) const
 	{
-		arrange(row, column);
-		double value;
-		for(int i = 0; i < _values[row].size(); i++)
-		{
+		return get(row, column);
+	}
+
+	double get(size_t row, size_t column) const
+	{
+		double value = 0;
+		for (size_t i = 0; i < _values[row].size(); i++) {
 			if (_values[row][i].first == column) {
 				value += _values[row][i].second;
 			}
@@ -61,8 +56,6 @@ private:
 	}
 
 	VVP _values;
-
-	bool _shrunk;
 };
 
 

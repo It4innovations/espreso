@@ -1,30 +1,32 @@
 #include "sparseCSRMatrix.h"
 
-SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.type(), other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns())
 {
 	MKL_INT nnz = other.nonZeroValues();
+	MKL_INT rows = _rows;
+	MKL_INT columns = _columns;
 	_rowPtrs.resize(other.rows() + 1);
 	_columnIndices.resize(nnz);
 	_values.resize(nnz);
 
 	int info;
 	MKL_INT job[6] = {
-		0,										// convert from dense to CSR
-		0,										// zero based indexing of input matrix
-		0,										// zero based indexing of output matrix
-		(_type == Matrix::SYMETRIC)? 1: 2,		// full matrix of upper triangular
-		nnz,									// number of non-zero values
-		1										// generate full output
+		0,				// convert from dense to CSR
+		0,				// zero based indexing of input matrix
+		0,				// zero based indexing of output matrix
+		2,				// full matrix
+		nnz,			// number of non-zero values
+		1				// generate full output
 	};
 
 	mkl_ddnscsr (
-		job, &_rows, &_cols,
-		const_cast<double*>(other.values()), &_cols,
+		job, &rows, &columns,
+		const_cast<double*>(other.values()), &columns,
 		values(), columnIndices(), rowPtrs(),
 		&info);
 }
 
-SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.type(), other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns())
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowPtrs.resize(other.rows() + 1);
@@ -55,9 +57,10 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.typ
 	std::fill(_rowPtrs.begin() + last_index, _rowPtrs.end(), nnz);
 }
 
-SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.type(), other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns())
 {
 	MKL_INT nnz = other.nonZeroValues();
+	MKL_INT rows = _rows;
 	_rowPtrs.resize(other.rows() + 1);
 	_columnIndices.resize(nnz);
 	_values.resize(nnz);
@@ -74,13 +77,13 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.typ
 	MKL_INT info;
 
 	mkl_dcsrcoo(
-		job, &_rows,
+		job, &rows,
 		values(), columnIndices(), rowPtrs(), &nnz,
 		const_cast<double*>(other.values()), const_cast<MKL_INT*>(other.rowIndices()), const_cast<MKL_INT*>(other.columnIndices()),
 		&info);
 }
 
-SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.type(), other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns())
 {
 	other.shrink();
 	MKL_INT nnz = other.nonZeroValues();
@@ -100,22 +103,57 @@ SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.type(), o
 	}
 }
 
-void SparseCSRMatrix::makeTransposition()
+SparseCSRMatrix& SparseCSRMatrix::operator=(const DenseMatrix &other)
+{
+	SparseCSRMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
+}
+
+SparseCSRMatrix& SparseCSRMatrix::operator=(const SparseDOKMatrix &other)
+{
+	SparseCSRMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
+}
+
+SparseCSRMatrix& SparseCSRMatrix::operator=(const SparseIJVMatrix &other)
+{
+	SparseCSRMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
+}
+
+SparseCSRMatrix& SparseCSRMatrix::operator=(SparseVVPMatrix &other)
+{
+	SparseCSRMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
+}
+
+void SparseCSRMatrix::resize(size_t rows, size_t columns)
+{
+	_rows = rows;
+	_columns = columns;
+	_rowPtrs.resize(rows + 1, _rowPtrs.back());
+}
+
+void SparseCSRMatrix::transpose()
 {
 	std::vector<MKL_INT> colPtrs, rowIndices;
 	std::vector<double> values;
 
-	colPtrs.resize(_cols + 1);
+	colPtrs.resize(_columns + 1);
 	rowIndices.resize(_columnIndices.size());
 	values.resize(_values.size());
 
-	std::vector<int> colCounters(_cols, 0);
+	std::vector<MKL_INT> colCounters(_columns, 0);
 	for (size_t i = 0; i < _columnIndices.size(); i++) {
 		colCounters[_columnIndices[i]]++;
 	}
 
 	colPtrs[0] = 0;
-	for (size_t i = 0; i < _cols; i++) {
+	for (size_t i = 0; i < _columns; i++) {
 		colPtrs[i + 1] = colPtrs[i] + colCounters[i];
 	}
 	std::fill(colCounters.begin(), colCounters.end(), 0);

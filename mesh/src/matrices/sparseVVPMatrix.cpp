@@ -1,17 +1,14 @@
 #include "sparseVVPMatrix.h"
 
-void SparseVVPMatrix::resize(MKL_INT rows, MKL_INT columns)
+void SparseVVPMatrix::resize(size_t rows, size_t columns)
 {
 	_rows = rows;
-	_cols = columns;
+	_columns = columns;
 	_values.resize(rows);
 }
 
 void SparseVVPMatrix::shrink()
 {
-	if (_shrunk) {
-		return;
-	}
 	size_t unique;
 	for (size_t row = 0; row < _rows; row++) {
 		std::sort(_values[row].begin(), _values[row].end());
@@ -29,19 +26,18 @@ void SparseVVPMatrix::shrink()
 		}
 		_values[row].resize(unique + 1);
 	}
-	_shrunk = true;
 }
 
-MKL_INT SparseVVPMatrix::nonZeroValues() const
+size_t SparseVVPMatrix::nonZeroValues() const
 {
-	MKL_INT size = 0;
+	size_t size = 0;
 	for (size_t row = 0; row < _rows; row++) {
 		size += _values[row].size();
 	}
 	return size;
 }
 
-void SparseVVPMatrix::makeTransposition()
+void SparseVVPMatrix::transpose()
 {
 	//TODO: implement
 }

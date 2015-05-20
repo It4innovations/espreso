@@ -9,65 +9,49 @@
 #include "sparseCSRMatrix.h"
 #include "sparseIJVMatrix.h"
 
-struct NonZero
-{
-	bool operator()(double value)
-	{
-		return value != 0;
-	}
-};
 
-class DenseMatrix: public EditableMatrix
+class DenseMatrix: public Matrix
 {
 
 public:
 
-	DenseMatrix(MatrixType type, MKL_INT rowsAndCols);
-	DenseMatrix(MKL_INT rows, MKL_INT cols):
-		EditableMatrix(Matrix::GENERAL, rows, cols), _values(rows * cols, 0) {};
+	DenseMatrix() {};
+	DenseMatrix(size_t rows, size_t columns): Matrix(rows, columns), _values(rows * columns, 0) {};
 
 	DenseMatrix(const SparseDOKMatrix &other);
 	DenseMatrix(const SparseCSRMatrix &other);
 	DenseMatrix(const SparseIJVMatrix &other);
 
-	DenseMatrix& operator=(const SparseDOKMatrix &other)
+	DenseMatrix& operator=(const SparseDOKMatrix &other);
+	DenseMatrix& operator=(const SparseCSRMatrix &other);
+	DenseMatrix& operator=(const SparseIJVMatrix &other);
+
+	void resize(size_t rows, size_t columns);
+	void transpose();
+
+	size_t nonZeroValues() const
 	{
-		DenseMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
+		return std::count_if(_values.begin(), _values.end(), NonZeroValue());
 	}
 
-	DenseMatrix& operator=(const SparseCSRMatrix &other)
+	double operator()(size_t row, size_t column) const
 	{
-		DenseMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	DenseMatrix& operator=(const SparseIJVMatrix &other)
-	{
-		DenseMatrix tmp(other);
-		assign(*this, tmp);
-		return *this;
-	}
-
-	void resize(MKL_INT rows, MKL_INT columns);
-
-	MKL_INT nonZeroValues() const
-	{
-		return std::count_if(_values.begin(), _values.end(), NonZero());
-	}
-
-	double operator()(MKL_INT row, MKL_INT column) const
-	{
-		arrange(row, column);
-		return _values[row * _cols + column];
+		return _values[row * _columns + column];
 	};
 
-	double& operator()(MKL_INT row, MKL_INT column)
+	double& operator()(size_t row, size_t column)
 	{
-		arrange(row, column);
-		return _values[row * _cols + column];
+		return _values[row * _columns + column];
+	}
+
+	double get(size_t row, size_t column) const
+	{
+		return _values[row * _columns + column];
+	}
+
+	void set(size_t row, size_t column, double value)
+	{
+		_values[row * _columns + column] = value;
 	}
 
 	const double* values() const
@@ -79,10 +63,6 @@ public:
 	{
 		return &_values[0];
 	}
-
-protected:
-
-	void makeTransposition();
 
 private:
 

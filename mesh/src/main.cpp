@@ -3,7 +3,7 @@
 int main(int argc, char** argv)
 {
 	int partsCount = 4;
-	int fixPointsCount = 8;
+	int fixPointsCount = 4;
 
 	Mesh mesh("matrices/TET/5/elem", "matrices/TET/5/coord", partsCount, fixPointsCount);
 
@@ -19,8 +19,7 @@ int main(int argc, char** argv)
 
 	Boundaries b(mesh);
 
-	Coordinates c;
-	BoundaryMesh bMesh(c);
+	BoundaryMesh bMesh;
 	mesh.getBoundary(bMesh);
 
 	std::vector<DenseMatrix> K_mat;

@@ -1,11 +1,6 @@
 #include "denseMatrix.h"
 
-DenseMatrix::DenseMatrix(MatrixType type, MKL_INT rowsAndCols): EditableMatrix(type, rowsAndCols, rowsAndCols)
-{
-	std::vector<double>(rows() * columns(), 0).swap(_values);
-}
-
-DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): EditableMatrix(other.type(), other.rows(), other.columns())
+DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns())
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
@@ -18,7 +13,7 @@ DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): EditableMatrix(other.typ
 	}
 }
 
-DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): EditableMatrix(other.type(), other.rows(), other.columns())
+DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), other.columns())
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
@@ -33,7 +28,7 @@ DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): EditableMatrix(other.typ
 	}
 }
 
-DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): EditableMatrix(other.type(), other.rows(), other.columns())
+DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns())
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
@@ -46,22 +41,40 @@ DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): EditableMatrix(other.typ
 	}
 }
 
-void DenseMatrix::resize(MKL_INT rows, MKL_INT columns)
+DenseMatrix& DenseMatrix::operator=(const SparseDOKMatrix &other)
 {
-	_rows = rows;
-	_cols = columns;
-	_values.resize(rows * columns);
-	if (rows != columns && _type == Matrix::SYMETRIC) {
-		_type = Matrix::GENERAL;
-	}
+	DenseMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
 }
 
-void DenseMatrix::makeTransposition()
+DenseMatrix& DenseMatrix::operator=(const SparseCSRMatrix &other)
 {
-	std::vector<double> values(_rows * _cols);
+	DenseMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
+}
+
+DenseMatrix& DenseMatrix::operator=(const SparseIJVMatrix &other)
+{
+	DenseMatrix tmp(other);
+	assign(*this, tmp);
+	return *this;
+}
+
+void DenseMatrix::resize(size_t rows, size_t columns)
+{
+	_rows = rows;
+	_columns = columns;
+	_values.resize(rows * columns);
+}
+
+void DenseMatrix::transpose()
+{
+	std::vector<double> values(_rows * _columns);
 	for (MKL_INT r = 0; r < _rows; r++) {
-		for (MKL_INT c = 0; c < _cols; c++){
-			values[c * _rows + r] = _values[r * _cols + c];
+		for (MKL_INT c = 0; c < _columns; c++) {
+			values[c * _rows + r] = _values[r * _columns + c];
 		}
 	}
 
