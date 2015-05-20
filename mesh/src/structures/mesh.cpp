@@ -167,6 +167,17 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, ex, mi, dynamic);
 		_integrateElasticity(_elements[i], K, M, f, Ke, Me, fe, dynamic);
+
+    if (i==0){
+      for (int I = 0;I<30;I++){
+        for (int J = 0;J<30;J++){
+          printf("%3.9e  ",Ke[I+30*J]);
+        }
+        printf("\n");
+      }
+    }
+
+
 	}
 }
 
@@ -303,6 +314,7 @@ void Mesh::_assembleElesticity(
 			detJ * weighFactor[gp], &B[0], Ksize, &CB[0], Ksize,
 			1, &Ke[0], Ksize
 		);
+
 
 		for (int i = 0; i < Ksize; i++) {
 			fe[i] += detJ * weighFactor[gp] * N[gp][i % nodes] * inertia[i / nodes];

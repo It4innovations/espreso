@@ -69,6 +69,7 @@ int main(int argc, char** argv)
 	} else {
 		load_mesh();
 	}
+  input.mesh.saveVTK("box.vtk");
 
 	//testBEM(argc, argv);
 	testFEM(argc, argv);
