@@ -42,13 +42,13 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.row
 	for(row = dokValues.begin(); row != dokValues.end(); ++row) {
 		const ColumnMap &columns = row->second;
 
-		std::fill(_rowPtrs.begin() + last_index, _rowPtrs.begin() + row->first + 1, nnz + _indexing);
-		last_index = row->first + 1;
+		std::fill(_rowPtrs.begin() + last_index, _rowPtrs.begin() + row->first - other.indexing() + 1, nnz + _indexing);
+		last_index = row->first - other.indexing() + 1;
 
 		ColumnMap::const_iterator column;
 		for(column = columns.begin(); column != columns.end(); ++column) {
 			if (column->second != 0) {
-				_columnIndices.push_back(column->first + _indexing);
+				_columnIndices.push_back(column->first - other.indexing() + _indexing);
 				_values.push_back(column->second);
 				nnz++;
 			}

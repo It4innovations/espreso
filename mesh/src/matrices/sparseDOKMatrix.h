@@ -32,16 +32,16 @@ public:
 
 	double& operator () (size_t row, size_t column)
 	{
-		return _values[row][column];
+		return _values[row + _indexing][column + _indexing];
 	}
 
 	double get(size_t row, size_t column) const
 	{
-		MatrixMap::const_iterator row_it = _values.find(row);
+		MatrixMap::const_iterator row_it = _values.find(row + _indexing);
 		if (row_it == _values.end()) {
 			return 0;
 		}
-		ColumnMap::const_iterator column_it = row_it->second.find(column);
+		ColumnMap::const_iterator column_it = row_it->second.find(column + _indexing);
 		if (column_it == row_it->second.end()) {
 			return 0;
 		}
@@ -50,7 +50,7 @@ public:
 	void set(size_t row, size_t column, double value)
 	{
 		if (Matrix::nonZero(value)) {
-			_values[row][column] = value;
+			_values[row + _indexing][column + _indexing] = value;
 		}
 	}
 
