@@ -99,6 +99,12 @@ void test_matrices()
 	matrices.push_back(new SparseCSRMatrix());
 	*dynamic_cast<SparseCSRMatrix*>(matrices.back()) = dok;
 
+	SparseCSRMatrix ccc(d);
+	SparseIJVMatrix iii(d);
+
+	matrices.push_back(new DenseMatrix(ccc));
+	matrices.push_back(new DenseMatrix(iii));
+
 	vvp.shrink();
 	for (size_t i = 1; i < matrices.size(); i++) {
 		for (size_t r = 0; r < matrices[i]->rows(); r++) {
@@ -119,6 +125,63 @@ void test_matrices()
 
 	for (size_t i = 3; i < matrices.size(); i++) {
 		delete matrices[i];
+	}
+
+	SparseDOKMatrix dokA(4, 6);
+	SparseDOKMatrix dokB(6, 5);
+	SparseDOKMatrix dokResult(4, 5);
+	int result[] = { 1, 4, 10, 20, 35 };
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = i; j < 5; j++) {
+			dokResult(i, j) = result[j - i];
+		}
+	}
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 6 - i; j++) {
+			dokA(i, j + i) = j + 1;
+		}
+	}
+
+	for (int i = 0; i < 6; i++) {
+		for (int j = 0; j < 5 - i; j++) {
+			dokB(i, j + i) = j + 1;
+		}
+	}
+
+	SparseCSRMatrix A(dokA);
+	SparseCSRMatrix B(dokB);
+	SparseCSRMatrix C;
+
+	C.multiply(A, B);
+	DenseMatrix denseC(C);
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 5; j++) {
+			if (denseC(i, j) != dokResult(i, j)) {
+				std::cerr << "CSR A * CSR B is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	dokA.transpose();
+	A = dokA;
+	SparseCSRMatrix D;
+	D.multiply(A, B, true);
+	DenseMatrix denseD(D);
+
+	std::cout << dokA;
+	std::cout << A;
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 5; j++) {
+			if (denseD(i, j) != dokResult(i, j)) {
+				std::cerr << "trans CSR A * CSR B is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 
 }

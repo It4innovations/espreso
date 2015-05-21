@@ -18,8 +18,8 @@ class SparseCSRMatrix: public Matrix
 
 public:
 
-	SparseCSRMatrix(): Matrix(CSRMatrixIndexing) { };
-	SparseCSRMatrix(size_t rows, size_t columns): Matrix(rows, columns, CSRMatrixIndexing) { };
+	SparseCSRMatrix();
+	SparseCSRMatrix(size_t rows, size_t columns);
 
 	SparseCSRMatrix(const DenseMatrix &other);
 	SparseCSRMatrix(const SparseDOKMatrix &other);
@@ -30,6 +30,8 @@ public:
 	SparseCSRMatrix& operator=(const SparseDOKMatrix &other);
 	SparseCSRMatrix& operator=(const SparseIJVMatrix &other);
 	SparseCSRMatrix& operator=(SparseVVPMatrix &other);
+
+	void multiply(SparseCSRMatrix &A, SparseCSRMatrix &B, bool transposeA = false);
 
 	void resize(size_t rows, size_t values);
 	void transpose();

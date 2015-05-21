@@ -1,5 +1,15 @@
 #include "sparseCSRMatrix.h"
 
+SparseCSRMatrix::SparseCSRMatrix(): Matrix(CSRMatrixIndexing)
+{
+	_rowPtrs.assign(2, _indexing);
+}
+
+SparseCSRMatrix::SparseCSRMatrix(size_t rows, size_t columns): Matrix(rows, columns, CSRMatrixIndexing)
+{
+	_rowPtrs.assign(rows + 1, _indexing);
+}
+
 SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
@@ -129,6 +139,54 @@ SparseCSRMatrix& SparseCSRMatrix::operator=(SparseVVPMatrix &other)
 	SparseCSRMatrix tmp(other);
 	assign(*this, tmp);
 	return *this;
+}
+
+void SparseCSRMatrix::multiply(SparseCSRMatrix &A, SparseCSRMatrix &B, bool transposeA)
+{
+	if (_indexing == Matrix::ZeroBased) {
+		std::cerr << "Multiplication of two CSR matrices with zero based indexing is not supported\n";
+		exit(EXIT_FAILURE);
+	}
+
+	_rows = A.rows();
+	_columns = B.columns();
+
+	MKL_INT request = 0;
+	MKL_INT sort = 8;	// C is sorted
+	MKL_INT m = A.rows();
+	MKL_INT n = A.columns();
+	MKL_INT k = B.columns();
+	MKL_INT nnz;		// not used
+	MKL_INT info;
+
+	_rowPtrs.resize(A.rows() + 1);
+
+	request = 1;	// compute only rowPrts
+	mkl_dcsrmultcsr(
+		"n",
+		&request,
+		&sort,
+		&m, &n, &k,
+		A.values(), A.columnIndices(), A.rowPtrs(),
+		B.values(), B.columnIndices(), B.rowPtrs(),
+		values(), columnIndices(), rowPtrs(),
+		&nnz,
+		&info);
+
+	_columnIndices.resize(_rowPtrs.back() - 1);
+	_values.resize(_rowPtrs.back() - 1);
+
+	request = 2;	// compute the rest of the matrix
+	mkl_dcsrmultcsr(
+		transposeA ? "t" : "n",
+		&request,
+		&sort,
+		&m, &n, &k,
+		A.values(), A.columnIndices(), A.rowPtrs(),
+		B.values(), B.columnIndices(), B.rowPtrs(),
+		values(), columnIndices(), rowPtrs(),
+		&nnz,
+		&info);
 }
 
 void SparseCSRMatrix::resize(size_t rows, size_t columns)

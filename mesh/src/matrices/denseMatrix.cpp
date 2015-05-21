@@ -8,7 +8,7 @@ DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), oth
 	for(row = other.values().begin(); row != other.values().end(); ++row) {
 		ColumnMap::const_iterator column;
 		for(column = row->second.begin(); column != row->second.end(); ++column) {
-			this->operator ()(row->first, column->first) = column->second;
+			set(row->first - other.indexing(), column->first - other.indexing(), column->second);
 		}
 	}
 }
@@ -23,7 +23,7 @@ DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), oth
 
 	for (MKL_INT r = 0; r < _rows; r++) {
 		for (MKL_INT i = rowPtrs[r]; i < rowPtrs[r + 1]; i++) {
-			this->operator ()(r, columnIndices[i]) = values[i];
+			set(r, columnIndices[i - other.indexing()] - other.indexing(), values[i - other.indexing()]);
 		}
 	}
 }
@@ -37,7 +37,7 @@ DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), oth
 	const double *values = other.values();
 
 	for (MKL_INT i = 0; i < other.nonZeroValues(); i++) {
-		this->operator ()(rowIndices[i], columnIndices[i]) = values[i];
+		set(rowIndices[i] - other.indexing(), columnIndices[i] - other.indexing(), values[i]);
 	}
 }
 
