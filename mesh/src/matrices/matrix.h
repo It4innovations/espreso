@@ -19,6 +19,11 @@ class Matrix
 {
 
 public:
+	enum Indexing {
+		ZeroBased,
+		OneBased
+	};
+
 	size_t rows() const
 	{
 		return _rows;
@@ -33,6 +38,11 @@ public:
 	{
 		_rows = rows;
 		_columns = columns;
+	}
+
+	Indexing indexing() const
+	{
+		return _indexing;
 	}
 
 	virtual double operator()(size_t row, size_t column) const = 0;
@@ -50,9 +60,9 @@ public:
 
 protected:
 
-	Matrix(): _rows(0), _columns(0) { };
-	Matrix(size_t rows, size_t columns): _rows(rows), _columns(columns) { };
-
+	Matrix(Indexing indexing): _rows(0), _columns(0), _indexing(indexing) { };
+	Matrix(size_t rows, size_t columns, Indexing indexing)
+		: _rows(rows), _columns(columns), _indexing(indexing) { };
 
 
 	static void assign(Matrix &m1, Matrix &m2)
@@ -63,6 +73,8 @@ protected:
 
 	size_t _rows;
 	size_t _columns;
+
+	Indexing _indexing;
 
 	static NonZeroValue nonZero;
 };

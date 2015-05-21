@@ -8,6 +8,8 @@
 #include "sparseCSRMatrix.h"
 #include "sparseIJVMatrix.h"
 
+#define DOKMatrixIndexing Matrix::ZeroBased
+
 typedef std::map<size_t, std::map<size_t, double> > MatrixMap;
 typedef std::map<size_t, double> ColumnMap;
 
@@ -16,8 +18,8 @@ class SparseDOKMatrix: public Matrix
 
 public:
 
-	SparseDOKMatrix() {};
-	SparseDOKMatrix(size_t rows, size_t columns): Matrix(rows, columns) {};
+	SparseDOKMatrix(): Matrix(DOKMatrixIndexing) {};
+	SparseDOKMatrix(size_t rows, size_t columns): Matrix(rows, columns, DOKMatrixIndexing) {};
 
 	void transpose();
 	size_t nonZeroValues() const;

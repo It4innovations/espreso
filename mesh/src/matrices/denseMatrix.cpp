@@ -1,6 +1,6 @@
 #include "denseMatrix.h"
 
-DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns())
+DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns(), DenseMatrixIndexing)
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
@@ -13,7 +13,7 @@ DenseMatrix::DenseMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), oth
 	}
 }
 
-DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), other.columns())
+DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), other.columns(), DenseMatrixIndexing)
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
@@ -28,7 +28,7 @@ DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), oth
 	}
 }
 
-DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns())
+DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns(), DenseMatrixIndexing)
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 

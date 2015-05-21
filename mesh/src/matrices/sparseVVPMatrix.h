@@ -5,6 +5,8 @@
 
 #include "matrix.h"
 
+#define VVPMatrixIndexing Matrix::ZeroBased
+
 typedef std::vector<std::vector<std::pair<size_t, double> > > VVP;
 
 class SparseVVPMatrix: public Matrix
@@ -12,8 +14,8 @@ class SparseVVPMatrix: public Matrix
 
 public:
 
-	SparseVVPMatrix() {};
-	SparseVVPMatrix(size_t rows, size_t columns): Matrix(rows, columns), _values(rows) {};
+	SparseVVPMatrix(): Matrix(VVPMatrixIndexing) {};
+	SparseVVPMatrix(size_t rows, size_t columns): Matrix(rows, columns, VVPMatrixIndexing), _values(rows) {};
 
 	void shrink();
 	void resize(size_t rows, size_t columns);

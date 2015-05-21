@@ -9,14 +9,16 @@
 #include "sparseCSRMatrix.h"
 #include "sparseIJVMatrix.h"
 
+#define DenseMatrixIndexing Matrix::ZeroBased
 
 class DenseMatrix: public Matrix
 {
 
 public:
 
-	DenseMatrix() {};
-	DenseMatrix(size_t rows, size_t columns): Matrix(rows, columns), _values(rows * columns, 0) {};
+	DenseMatrix(): Matrix(DenseMatrixIndexing) {};
+	DenseMatrix(size_t rows, size_t columns)
+		: Matrix(rows, columns, DenseMatrixIndexing), _values(rows * columns, 0) {};
 
 	DenseMatrix(const SparseDOKMatrix &other);
 	DenseMatrix(const SparseCSRMatrix &other);

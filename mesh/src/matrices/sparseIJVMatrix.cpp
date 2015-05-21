@@ -1,6 +1,6 @@
 #include "sparseIJVMatrix.h"
 
-SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns())
+SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
@@ -18,7 +18,7 @@ SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(),
 	}
 }
 
-SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns())
+SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
@@ -41,7 +41,7 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.row
 	}
 }
 
-SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), other.columns())
+SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
 	MKL_INT rows = _rows;
@@ -69,7 +69,7 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.row
 		&info);
 }
 
-SparseIJVMatrix::SparseIJVMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns())
+SparseIJVMatrix::SparseIJVMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
 	other.shrink();
 	MKL_INT nnz = other.nonZeroValues();

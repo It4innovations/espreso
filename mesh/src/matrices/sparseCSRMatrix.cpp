@@ -1,6 +1,6 @@
 #include "sparseCSRMatrix.h"
 
-SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
 	MKL_INT rows = _rows;
@@ -26,7 +26,7 @@ SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(),
 		&info);
 }
 
-SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
 	_rowPtrs.resize(other.rows() + 1);
@@ -57,7 +57,7 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.row
 	std::fill(_rowPtrs.begin() + last_index, _rowPtrs.end(), nnz);
 }
 
-SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	MKL_INT nnz = other.nonZeroValues();
 	MKL_INT rows = _rows;
@@ -83,7 +83,7 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.row
 		&info);
 }
 
-SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns())
+SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	other.shrink();
 	MKL_INT nnz = other.nonZeroValues();

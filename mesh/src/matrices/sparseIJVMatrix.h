@@ -12,13 +12,15 @@ class SparseDOKMatrix;
 class SparseCSRMatrix;
 class SparseVVPMatrix;
 
+#define IJVMatrixIndexing Matrix::ZeroBased
+
 class SparseIJVMatrix: public Matrix
 {
 
 public:
 
-	SparseIJVMatrix() { };
-	SparseIJVMatrix(MKL_INT rows, MKL_INT columns): Matrix(rows, columns) { };
+	SparseIJVMatrix(): Matrix(IJVMatrixIndexing) { };
+	SparseIJVMatrix(MKL_INT rows, MKL_INT columns): Matrix(rows, columns, IJVMatrixIndexing) { };
 
 	SparseIJVMatrix(const DenseMatrix &other);
 	SparseIJVMatrix(const SparseDOKMatrix &other);

@@ -11,13 +11,15 @@ class SparseDOKMatrix;
 class SparseIJVMatrix;
 class SparseVVPMatrix;
 
+#define CSRMatrixIndexing Matrix::ZeroBased
+
 class SparseCSRMatrix: public Matrix
 {
 
 public:
 
-	SparseCSRMatrix() { };
-	SparseCSRMatrix(size_t rows, size_t columns): Matrix(rows, columns) { };
+	SparseCSRMatrix(): Matrix(CSRMatrixIndexing) { };
+	SparseCSRMatrix(size_t rows, size_t columns): Matrix(rows, columns, CSRMatrixIndexing) { };
 
 	SparseCSRMatrix(const DenseMatrix &other);
 	SparseCSRMatrix(const SparseDOKMatrix &other);
