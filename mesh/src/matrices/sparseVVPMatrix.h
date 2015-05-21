@@ -30,7 +30,9 @@ public:
 
 	void set(size_t row, size_t column, double value)
 	{
-		_values[row].push_back(std::pair<size_t, double>(column, value));
+		if (Matrix::nonZero(value)) {
+			_values[row].push_back(std::pair<size_t, double>(column, value));
+		}
 	}
 
 	const VVP& values() const

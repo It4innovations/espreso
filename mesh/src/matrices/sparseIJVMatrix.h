@@ -12,7 +12,7 @@ class SparseDOKMatrix;
 class SparseCSRMatrix;
 class SparseVVPMatrix;
 
-#define IJVMatrixIndexing Matrix::ZeroBased
+#define IJVMatrixIndexing Matrix::OneBased
 
 class SparseIJVMatrix: public Matrix
 {
@@ -49,7 +49,7 @@ public:
 	{
 		for(int i = 0; i < _rowIndices.size(); i++)
 		{
-			if (_rowIndices[i] == row && _columnIndices[i] == column) {
+			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
 				return _values[i];
 			}
 		}
@@ -92,27 +92,29 @@ private:
 	{
 		for(int i = 0; i < _rowIndices.size(); i++)
 		{
-			if (_rowIndices[i] == row && _columnIndices[i] == column) {
+			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
 				return _values[i];
 			}
 		}
-		_rowIndices.push_back(row);
-		_columnIndices.push_back(column);
+		_rowIndices.push_back(row + _indexing);
+		_columnIndices.push_back(column + _indexing);
 		_values.push_back(0);
 		return _values.back();
 	}
 
 	void set(size_t row, size_t column, double value)
 	{
-		for(int i = 0; i < _rowIndices.size(); i++)
-		{
-			if (_rowIndices[i] == row && _columnIndices[i] == column) {
-				_values[i] = value;
+		if (Matrix::nonZero(value)) {
+			for(int i = 0; i < _rowIndices.size(); i++)
+			{
+				if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
+					_values[i] = value;
+				}
 			}
+			_rowIndices.push_back(row + _indexing);
+			_columnIndices.push_back(column + _indexing);
+			_values.push_back(value);
 		}
-		_rowIndices.push_back(row);
-		_columnIndices.push_back(column);
-		_values.push_back(value);
 	}
 
 	static void assign(SparseIJVMatrix &m1, SparseIJVMatrix &m2)

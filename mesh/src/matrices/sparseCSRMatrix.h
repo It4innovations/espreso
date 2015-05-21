@@ -11,7 +11,7 @@ class SparseDOKMatrix;
 class SparseIJVMatrix;
 class SparseVVPMatrix;
 
-#define CSRMatrixIndexing Matrix::ZeroBased
+#define CSRMatrixIndexing Matrix::OneBased
 
 class SparseCSRMatrix: public Matrix
 {
@@ -47,8 +47,8 @@ public:
 	double get(size_t row, size_t column) const
 	{
 		for(int i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
-			if (_columnIndices[i] == column) {
-				return _values[i];
+			if (_columnIndices[i - _indexing] == column + _indexing) {
+				return _values[i - _indexing];
 			}
 		}
 		return 0;

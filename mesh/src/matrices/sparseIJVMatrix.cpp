@@ -9,9 +9,9 @@ SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(),
 
 	for(size_t r = 0; r < other.rows(); r++) {
 		for(size_t c = 0; c < other.columns(); c++) {
-			if (other(r, c) != 0) {
-				_rowIndices.push_back(r);
-				_columnIndices.push_back(c);
+			if (Matrix::nonZero(other(r, c))) {
+				_rowIndices.push_back(r + _indexing);
+				_columnIndices.push_back(c + _indexing);
 				_values.push_back(other(r, c));
 			}
 		}
@@ -33,8 +33,8 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.row
 		ColumnMap::const_iterator column;
 		for(column = columns.begin(); column != columns.end(); ++column) {
 			if (column->second != 0) {
-				_rowIndices.push_back(row->first);
-				_columnIndices.push_back(column->first);
+				_rowIndices.push_back(row->first - other.indexing() + _indexing);
+				_columnIndices.push_back(column->first - other.indexing() + _indexing);
 				_values.push_back(column->second);
 			}
 		}
@@ -52,12 +52,12 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.row
 	std::cout << "NONZERO: " << nnz << "\n";
 
 	MKL_INT job[6] = {
-		0, 			// CSR to IJV
-		0,			// zero based indexing
-		0,			// zero based indexing
-		0,			// without any meaning
-		nnz,		// non-zero values
-		3,			// fill all output arrays
+		0, 					// CSR to IJV
+		other.indexing(),	// indexing of CSR matrix
+		_indexing,			// indexing of IJV matrix
+		0,					// without any meaning
+		nnz,				// non-zero values
+		3,					// fill all output arrays
 	};
 
 	MKL_INT info;
@@ -79,10 +79,10 @@ SparseIJVMatrix::SparseIJVMatrix(SparseVVPMatrix &other): Matrix(other.rows(), o
 
 	const VVP &values = other.values();
 
-	for (size_t row = 0; row < _rows; row++) {
+	for (size_t row = 0; row < other.rows(); row++) {
 		for (size_t column = 0; column < values[row].size(); column++) {
-			_rowIndices.push_back(row);
-			_columnIndices.push_back(values[row][column].first);
+			_rowIndices.push_back(row + _indexing);
+			_columnIndices.push_back(values[row][column].first - other.indexing() + _indexing);
 			_values.push_back(values[row][column].second);
 		}
 	}

@@ -11,12 +11,12 @@ SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(),
 
 	int info;
 	MKL_INT job[6] = {
-		0,				// convert from dense to CSR
-		0,				// zero based indexing of input matrix
-		0,				// zero based indexing of output matrix
-		2,				// full matrix
-		nnz,			// number of non-zero values
-		1				// generate full output
+		0,					// convert from dense to CSR
+		other.indexing(),	// indexing of dense matrix
+		indexing(),			// indexing of CSR matrix
+		2,					// full matrix
+		nnz,				// number of non-zero values
+		1					// generate full output
 	};
 
 	mkl_ddnscsr (
@@ -42,19 +42,19 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.row
 	for(row = dokValues.begin(); row != dokValues.end(); ++row) {
 		const ColumnMap &columns = row->second;
 
-		std::fill(_rowPtrs.begin() + last_index, _rowPtrs.begin() + row->first + 1, nnz);
+		std::fill(_rowPtrs.begin() + last_index, _rowPtrs.begin() + row->first + 1, nnz + _indexing);
 		last_index = row->first + 1;
 
 		ColumnMap::const_iterator column;
 		for(column = columns.begin(); column != columns.end(); ++column) {
 			if (column->second != 0) {
-				_columnIndices.push_back(column->first);
+				_columnIndices.push_back(column->first + _indexing);
 				_values.push_back(column->second);
 				nnz++;
 			}
 		}
 	}
-	std::fill(_rowPtrs.begin() + last_index, _rowPtrs.end(), nnz);
+	std::fill(_rowPtrs.begin() + last_index, _rowPtrs.end(), nnz + _indexing);
 }
 
 SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
@@ -66,12 +66,12 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.row
 	_values.resize(nnz);
 
 	MKL_INT job[6] = {
-		2, 			// IJV to sorted CSR
-		0,			// zero based indexing
-		0,			// zero based indexing
-		0,			// without any meaning
-		nnz,		// non-zero values
-		0,			// fill all output arrays
+		2, 					// IJV to sorted CSR
+		indexing(),			// indexing of CSR matrix
+		other.indexing(),	// indexing of IJV matrix
+		0,					// without any meaning
+		nnz,				// non-zero values
+		0,					// fill all output arrays
 	};
 
 	MKL_INT info;
@@ -93,13 +93,13 @@ SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.rows(), o
 
 	const VVP &values = other.values();
 
-	_rowPtrs.push_back(0);
+	_rowPtrs.push_back(_indexing);
 	for (size_t row = 0; row < _rows; row++) {
 		for (size_t column = 0; column < values[row].size(); column++) {
-			_columnIndices.push_back(values[row][column].first);
+			_columnIndices.push_back(values[row][column].first + _indexing);
 			_values.push_back(values[row][column].second);
 		}
-		_rowPtrs.push_back(_values.size());
+		_rowPtrs.push_back(_values.size() + _indexing);
 	}
 }
 

@@ -34,7 +34,7 @@ public:
 		return _columns;
 	}
 
-	void resize(size_t rows, size_t columns)
+	virtual void resize(size_t rows, size_t columns)
 	{
 		_rows = rows;
 		_columns = columns;

@@ -28,7 +28,7 @@ public:
 	double operator()(size_t row, size_t column) const
 	{
 		return get(row, column);
-	};
+	}
 
 	double& operator () (size_t row, size_t column)
 	{
