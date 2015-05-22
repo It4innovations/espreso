@@ -28,6 +28,8 @@ public:
 	DenseMatrix& operator=(const SparseCSRMatrix &other);
 	DenseMatrix& operator=(const SparseIJVMatrix &other);
 
+	void multiply(DenseMatrix &A, DenseMatrix &B, double alfa = 1, double beta = 0, bool transposeA = false, bool transposeB = false);
+
 	void resize(size_t rows, size_t columns);
 	void transpose();
 

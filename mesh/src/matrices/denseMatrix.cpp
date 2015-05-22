@@ -62,6 +62,24 @@ DenseMatrix& DenseMatrix::operator=(const SparseIJVMatrix &other)
 	return *this;
 }
 
+void DenseMatrix::multiply(DenseMatrix &A, DenseMatrix &B, double alfa, double beta, bool transposeA, bool transposeB)
+{
+	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());
+
+	cblas_dgemm(
+		CblasRowMajor,
+		transposeA ? CblasTrans : CblasNoTrans,
+		transposeB ? CblasTrans : CblasNoTrans,
+		transposeA ? A.columns() : A.rows(),
+		transposeB ? B.rows() : B.columns(),
+		transposeA ? A.rows() : A.columns(),
+		alfa,
+		A.values(), A.columns(),
+		B.values(), B.columns(),
+		beta,
+		values(), transposeB ? B.rows() : B.columns());
+}
+
 void DenseMatrix::resize(size_t rows, size_t columns)
 {
 	_rows = rows;
@@ -84,3 +102,5 @@ void DenseMatrix::transpose()
 	_rows = _columns;
 	_columns = tmp;
 }
+
+

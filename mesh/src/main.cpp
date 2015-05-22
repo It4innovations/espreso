@@ -158,12 +158,25 @@ void test_matrices()
 	SparseCSRMatrix csr(d);
 	SparseCSRMatrix csrT(csr);
 	csrT.transpose();
+	SparseCSRMatrix csrTT(csrT);
+	csrTT.transpose();
 
 	for (size_t r = 0; r < d.rows(); r++) {
 		for (size_t c = 0; c < d.columns(); c++) {
 			if (csr.get(r, c) != csrT.get(c, r)) {
 				std::cerr << csr;
 				std::cerr << csrT;
+				std::cerr << "Transpose of CSR matrix is incorrect.\n";
+				return;
+			}
+		}
+	}
+
+	for (size_t r = 0; r < d.rows(); r++) {
+		for (size_t c = 0; c < d.columns(); c++) {
+			if (csr.get(r, c) != csrTT.get(r, c)) {
+				std::cerr << csr;
+				std::cerr << csrTT;
 				std::cerr << "Transpose of CSR matrix is incorrect.\n";
 				return;
 			}
@@ -228,8 +241,8 @@ void test_matrices()
 		}
 	}
 
-	dokA.transpose();
-	A = dokA;
+	A.transpose();
+
 	SparseCSRMatrix D;
 
 	D.multiply(A, B, true);
@@ -242,6 +255,79 @@ void test_matrices()
 			}
 		}
 	}
+
+	DenseMatrix dA(dokA);
+	DenseMatrix dAT(dA);
+	dAT.transpose();
+	DenseMatrix dB(dokB);
+	DenseMatrix dBT(dB);
+	dBT.transpose();
+	DenseMatrix dAB;
+
+	dAB.multiply(dA, dB);
+
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (dAB.get(i, j) != dokResult(i, j)) {
+				std::cerr << "dense:  A * B is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	DenseMatrix dd1(3, 2);
+	DenseMatrix dd2(3, 3);
+
+	dd1(0, 0) = 1;
+	dd1(1, 0) = 1;
+	dd2(1, 0) = 1;
+	dd2(1, 1) = 2;
+	dd2(1, 2) = 3;
+
+	dAB.multiply(dAT, dB, 1, 0, true);
+
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (dAB.get(i, j) != dokResult(i, j)) {
+				std::cerr << "dense: AT * B is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	dAB.multiply(dA, dBT, 1, 0, false, true);
+
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (dAB.get(i, j) != dokResult(i, j)) {
+				std::cerr << "dense: A * BT is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	dAB.multiply(dAT, dBT, 1, 0, true, true);
+
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (dAB.get(i, j) != dokResult(i, j)) {
+				std::cerr << "dense: AT * BT is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	dAB.multiply(dAT, dBT, 1, 1, true, true);
+
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (dAB.get(i, j) != 2 * dokResult(i, j)) {
+				std::cerr << "dense: AT * BT + C  is incorrect\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
 }
 
 
