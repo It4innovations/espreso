@@ -92,7 +92,7 @@ void load_mesh()
 void generate_mesh()
 {
 	std::cout << "Permoncube:" << std::endl;
-	Permoncube::tetrahedrons4(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	Permoncube::tetrahedrons10(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
 	std::cout << "dirichlet" << std::endl;
 	Permoncube::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), &(params.elementsInSub[0]));
 	std::cout << "fix points" << std::endl;
