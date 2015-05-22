@@ -1,42 +1,46 @@
 
 #include "tetrahedron4.h"
 
-std::vector<std::vector<double> > Tetra4_dN()
+std::vector<DenseMatrix> Tetra4_dN()
 {
-	std::vector<std::vector<double> > dN(Tetrahedron4GPCount);
-
 	// dN contains [dNr, dNs, dNt]
-	int dN_length  = 12;
+	std::vector<DenseMatrix> dN(
+		Tetrahedron4GPCount,
+		DenseMatrix(Point::size(), Tetrahedron4NodesCount)
+	);
+
 
 	for (unsigned int i = 0; i < Tetrahedron4GPCount; i++) {
 		//  N = [ r, s, t,  1 - r - s - t ];
-		dN[i].assign(dN_length, 0);
+		DenseMatrix &m = dN[i];
 
 		// dNr = [ 1, 0, 0, -1 ];
-		dN[i][0] =  1.0;
-		dN[i][1] =  0.0;
-		dN[i][2] =  0.0;
-		dN[i][3] = -1.0;
+		m(0, 0) =  1.0;
+		m(0, 1) =  0.0;
+		m(0, 2) =  0.0;
+		m(0, 3) = -1.0;
 
 		// dNs = [ 0, 1, 0, -1 ];
-		dN[i][4] =  0.0;
-		dN[i][5] =  1.0;
-		dN[i][6] =  0.0;
-		dN[i][7] = -1.0;
+		m(1, 0) =  0.0;
+		m(1, 1) =  1.0;
+		m(1, 2) =  0.0;
+		m(1, 3) = -1.0;
 
 		// dNs = [ 0, 0, 1, -1 ];
-		dN[i][8] =  0.0;
-		dN[i][9] =  0.0;
-		dN[i][10] =  1.0;
-		dN[i][11] = -1.0;
+		m(2, 0) =  0.0;
+		m(2, 1) =  0.0;
+		m(2, 2) =  1.0;
+		m(2, 3) = -1.0;
 	}
 
 	return dN;
 }
 
-std::vector<std::vector<double> > Tetra4_N()
+std::vector<DenseMatrix> Tetra4_N()
 {
-	std::vector<std::vector<double> > N(Tetrahedron4GPCount);
+	std::vector<DenseMatrix> N(
+			Tetrahedron4GPCount,
+			DenseMatrix(1, Tetrahedron4NodesCount));
 
 	std::vector<double> rv;
 	std::vector<double> sv;
@@ -97,11 +101,10 @@ std::vector<std::vector<double> > Tetra4_N()
 		double s = sv[i];
 		double t = tv[i];
 
-		N[i].resize(4);
-		N[i][0] = r;
-		N[i][1] = s;
-		N[i][2] = t;
-		N[i][3] = 1.0 - r - s - t;
+		N[i](0, 0) = r;
+		N[i](0, 1) = s;
+		N[i](0, 2) = t;
+		N[i](0, 3) = 1.0 - r - s - t;
 	}
 
 	return N;
@@ -139,8 +142,8 @@ std::vector<double> Tetra4_Weight()
 	}
 }
 
-std::vector<std::vector<double> > Tetrahedron4::_dN = Tetra4_dN();
-std::vector<std::vector<double> > Tetrahedron4::_N = Tetra4_N();
+std::vector<DenseMatrix> Tetrahedron4::_dN = Tetra4_dN();
+std::vector<DenseMatrix> Tetrahedron4::_N = Tetra4_N();
 std::vector<double> Tetrahedron4::_weighFactor = Tetra4_Weight();
 
 bool Tetrahedron4::match(idx_t *indices, idx_t n) {

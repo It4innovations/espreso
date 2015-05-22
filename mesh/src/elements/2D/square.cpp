@@ -1,8 +1,8 @@
 #include "square.h"
 
 // TODO: Implement base functions
-std::vector<std::vector<double> > Square::_dN;
-std::vector<std::vector<double> > Square::_N;
+std::vector<DenseMatrix> Square::_dN;
+std::vector<DenseMatrix> Square::_N;
 std::vector<double> Square::_weighFactor;
 
 bool Square::match(idx_t *indices, idx_t n)

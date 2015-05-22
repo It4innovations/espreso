@@ -46,8 +46,8 @@ public:
 
 	virtual Element* copy() const = 0;
 
-	virtual const std::vector<std::vector<double> >& dN() const = 0;
-	virtual const std::vector<std::vector<double> >&  N() const = 0;
+	virtual const std::vector<DenseMatrix>& dN() const = 0;
+	virtual const std::vector<DenseMatrix>&  N() const = 0;
 	virtual const std::vector<double>& weighFactor() const = 0;
 
 	// Virtual methods

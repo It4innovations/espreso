@@ -1,7 +1,10 @@
 #include "hexahedron8.h"
 
-std::vector<std::vector<double> > Hexa_dN() {
-	std::vector<std::vector<double> > dN(Hexahedron8GPCount);
+std::vector<DenseMatrix> Hexa_dN() {
+	std::vector<DenseMatrix> dN(
+		Hexahedron8GPCount,
+		DenseMatrix(Point::size(), Hexahedron8NodesCount)
+	);
 
 	double CsQ_scale = 0.577350269189626;
 
@@ -11,44 +14,47 @@ std::vector<std::vector<double> > Hexa_dN() {
 		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		///dN contains [dNr, dNs, dNt]
-		dN[i].resize(Point::size() * Hexahedron8NodesCount);
+		DenseMatrix &m = dN[i];
 
 		// dNr - derivation of basis function
-		dN[i][0] = 0.125 * (-(1 - s) * (1 - t));
-		dN[i][1] = 0.125 * ( (1 - s) * (1 - t));
-		dN[i][2] = 0.125 * ( (1 + s) * (1 - t));
-		dN[i][3] = 0.125 * (-(1 + s) * (1 - t));
-		dN[i][4] = 0.125 * (-(1 - s) * (1 + t));
-		dN[i][5] = 0.125 * ( (1 - s) * (1 + t));
-		dN[i][6] = 0.125 * ( (1 + s) * (1 + t));
-		dN[i][7] = 0.125 * (-(1 + s) * (1 + t));
+		m(0, 0) = 0.125 * (-(1 - s) * (1 - t));
+		m(0, 1) = 0.125 * ( (1 - s) * (1 - t));
+		m(0, 2) = 0.125 * ( (1 + s) * (1 - t));
+		m(0, 3) = 0.125 * (-(1 + s) * (1 - t));
+		m(0, 4) = 0.125 * (-(1 - s) * (1 + t));
+		m(0, 5) = 0.125 * ( (1 - s) * (1 + t));
+		m(0, 6) = 0.125 * ( (1 + s) * (1 + t));
+		m(0, 7) = 0.125 * (-(1 + s) * (1 + t));
 
 		// dNs - derivation of basis function
-		dN[i][8]  = 0.125 * (-(1 - r) * (1 - t));
-		dN[i][9]  = 0.125 * (-(1 + r) * (1 - t));
-		dN[i][10] = 0.125 * ( (1 + r) * (1 - t));
-		dN[i][11] = 0.125 * ( (1 - r) * (1 - t));
-		dN[i][12] = 0.125 * (-(1 - r) * (1 + t));
-		dN[i][13] = 0.125 * (-(1 + r) * (1 + t));
-		dN[i][14] = 0.125 * ( (1 + r) * (1 + t));
-		dN[i][15] = 0.125 * ( (1 - r) * (1 + t));
+		m(1, 0)  = 0.125 * (-(1 - r) * (1 - t));
+		m(1, 1)  = 0.125 * (-(1 + r) * (1 - t));
+		m(1, 2) = 0.125 * ( (1 + r) * (1 - t));
+		m(1, 3) = 0.125 * ( (1 - r) * (1 - t));
+		m(1, 4) = 0.125 * (-(1 - r) * (1 + t));
+		m(1, 5) = 0.125 * (-(1 + r) * (1 + t));
+		m(1, 6) = 0.125 * ( (1 + r) * (1 + t));
+		m(1, 7) = 0.125 * ( (1 - r) * (1 + t));
 
 		// dNt - derivation of basis function
-		dN[i][16] = 0.125 * (-(1 - r) * (1 - s));
-		dN[i][17] = 0.125 * (-(1 + r) * (1 - s));
-		dN[i][18] = 0.125 * (-(1 + r) * (1 + s));
-		dN[i][19] = 0.125 * (-(1 - r) * (1 + s));
-		dN[i][20] = 0.125 * ( (1 - r) * (1 - s));
-		dN[i][21] = 0.125 * ( (1 + r) * (1 - s));
-		dN[i][22] = 0.125 * ( (1 + r) * (1 + s));
-		dN[i][23] = 0.125 * ( (1 - r) * (1 + s));
+		m(2, 0) = 0.125 * (-(1 - r) * (1 - s));
+		m(2, 1) = 0.125 * (-(1 + r) * (1 - s));
+		m(2, 2) = 0.125 * (-(1 + r) * (1 + s));
+		m(2, 3) = 0.125 * (-(1 - r) * (1 + s));
+		m(2, 4) = 0.125 * ( (1 - r) * (1 - s));
+		m(2, 5) = 0.125 * ( (1 + r) * (1 - s));
+		m(2, 6) = 0.125 * ( (1 + r) * (1 + s));
+		m(2, 7) = 0.125 * ( (1 - r) * (1 + s));
 	}
 
 	return dN;
 }
 
-std::vector<std::vector<double> > Hexa_N() {
-	std::vector<std::vector<double> > N(Hexahedron8GPCount);
+std::vector<DenseMatrix> Hexa_N() {
+	std::vector<DenseMatrix> N(
+		Hexahedron8GPCount,
+		DenseMatrix(1, Hexahedron8NodesCount)
+	);
 
 	double CsQ_scale = 0.577350269189626;
 
@@ -58,22 +64,21 @@ std::vector<std::vector<double> > Hexa_N() {
 		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		// basis function
-		N[i].resize(Hexahedron8NodesCount);
-		N[i][0] = 0.125 * (1 - r) * (1 - s) * (1 - t);
-		N[i][1] = 0.125 * (r + 1) * (1 - s) * (1 - t);
-		N[i][2] = 0.125 * (r + 1) * (s + 1) * (1 - t);
-		N[i][3] = 0.125 * (1 - r) * (s + 1) * (1 - t);
-		N[i][4] = 0.125 * (1 - r) * (1 - s) * (t + 1);
-		N[i][5] = 0.125 * (r + 1) * (1 - s) * (t + 1);
-		N[i][6] = 0.125 * (r + 1) * (s + 1) * (t + 1);
-		N[i][7] = 0.125 * (1 - r) * (s + 1) * (t + 1);
+		N[i](0, 0) = 0.125 * (1 - r) * (1 - s) * (1 - t);
+		N[i](0, 1) = 0.125 * (r + 1) * (1 - s) * (1 - t);
+		N[i](0, 2) = 0.125 * (r + 1) * (s + 1) * (1 - t);
+		N[i](0, 3) = 0.125 * (1 - r) * (s + 1) * (1 - t);
+		N[i](0, 4) = 0.125 * (1 - r) * (1 - s) * (t + 1);
+		N[i](0, 5) = 0.125 * (r + 1) * (1 - s) * (t + 1);
+		N[i](0, 6) = 0.125 * (r + 1) * (s + 1) * (t + 1);
+		N[i](0, 7) = 0.125 * (1 - r) * (s + 1) * (t + 1);
 	}
 
 	return N;
 }
 
-std::vector<std::vector<double> > Hexahedron8::_dN = Hexa_dN();
-std::vector<std::vector<double> > Hexahedron8::_N = Hexa_N();
+std::vector<DenseMatrix> Hexahedron8::_dN = Hexa_dN();
+std::vector<DenseMatrix> Hexahedron8::_N = Hexa_N();
 std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
 
 bool Hexahedron8::match(idx_t *indices, idx_t n) {

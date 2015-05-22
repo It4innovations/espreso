@@ -47,12 +47,12 @@ public:
 		return SquareFacesCount;
 	}
 
-	const std::vector<std::vector<double> >& dN() const
+	const std::vector<DenseMatrix>& dN() const
 	{
 		return Square::_dN;
 	}
 
-	const std::vector<std::vector<double> >&  N() const
+	const std::vector<DenseMatrix>&  N() const
 	{
 		return Square::_N;
 	}
@@ -75,8 +75,8 @@ protected:
 private:
 	idx_t _indices[SquareNodesCount];
 
-	static std::vector<std::vector<double> > _dN;
-	static std::vector<std::vector<double> > _N;
+	static std::vector<DenseMatrix> _dN;
+	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
 };
 

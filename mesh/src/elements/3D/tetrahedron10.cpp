@@ -1,16 +1,15 @@
 #include "tetrahedron10.h"
 
-std::vector<std::vector<double> > Tetra10_dN()
+std::vector<DenseMatrix> Tetra10_dN()
 {
-	std::vector<std::vector<double> > dN(Tetrahedron10GPCount);
-
-	int dN_length  = 30;
+	std::vector<DenseMatrix> dN(
+		Tetrahedron10GPCount,
+		DenseMatrix(Point::size(), Tetrahedron10NodesCount)
+	);
 
 	std::vector<double> rv;
 	std::vector<double> sv;
 	std::vector<double> tv;
-
-
 
 	if (Tetrahedron10GPCount == 4) {
 		double _rv[] = {0.5854101966249685, 0.1381966011250105, 0.1381966011250105, 0.1381966011250105};
@@ -95,60 +94,50 @@ std::vector<std::vector<double> > Tetra10_dN()
 		double s = sv[i];
 		double t = tv[i];
 
-		dN[i].assign(dN_length, 0);
+		DenseMatrix &m = dN[i];
 
-//	N[0] = r*(2.0*r - 1.0) ;
-//	N[1] = s*(2.0*s - 1.0) ;
-//	N[2] = t*(2.0*t - 1.0) ;
-//	N[3] = 2.0*r**2 + 4.0*r*s + 4.0*r*t - 3.0*r + 2.0*s**2 + 4.0*s*t - 3.0*s + 2.0*t**2 - 3.0*t + 1.0 ;
-//	N[4] = 4.0*r*s ;
-//	N[5] = 4.0*s*t ;
-//	N[6] = 4.0*r*t ;
-//	N[7] = r*(-4.0*r - 4.0*s - 4.0*t + 4.0) ;
-//	N[8] = s*(-4.0*r - 4.0*s - 4.0*t + 4.0) ;
-//	N[9] = t*(-4.0*r - 4.0*s - 4.0*t + 4.0) ;
+		m(0, 0) = 4.0 * r - 1.0;
+		m(0, 1) = 0;
+		m(0, 2) = 0;
+		m(0, 3) = 4.0 * r + 4.0 * s + 4.0 * t - 3.0;
+		m(0, 4) = 4.0 * s;
+		m(0, 5) = 0;
+		m(0, 6) = 4.0 * t;
+		m(0, 7) = -8.0 * r - 4.0 * s - 4.0 * t + 4.0;
+		m(0, 8) = -4.0 * s;
+		m(0, 9) = -4.0 * t;
 
+		m(1, 0) = 0;
+		m(1, 1) = 4.0 * s - 1.0;
+		m(1, 2) = 0 ;
+		m(1, 3) = 4.0 * r + 4.0 * s + 4.0 * t - 3.0;
+		m(1, 4) = 4.0 * r;
+		m(1, 5) = 4.0 * t;
+		m(1, 6) = 0;
+		m(1, 7) = -4.0 * r;
+		m(1, 8) = -4.0 * r - 8.0 * s - 4.0 * t + 4.0;
+		m(1, 9) = -4.0 * t;
 
-    dN[i][ 0] = 4.0*r - 1.0;
-    dN[i][ 1] = 0;
-    dN[i][ 2] = 0;
-    dN[i][ 3] = 4.0*r + 4.0*s + 4.0*t - 3.0;
-    dN[i][ 4] = 4.0*s;
-    dN[i][ 5] = 0;
-    dN[i][ 6] = 4.0*t;
-    dN[i][ 7] = -8.0*r - 4.0*s - 4.0*t + 4.0;
-    dN[i][ 8] = -4.0*s;
-    dN[i][ 9] = -4.0*t;
-
-    dN[i][10] = 0 ;
-    dN[i][11] = 4.0*s - 1.0 ;
-    dN[i][12] = 0 ;
-    dN[i][13] = 4.0*r + 4.0*s + 4.0*t - 3.0 ;
-    dN[i][14] = 4.0*r ;
-    dN[i][15] = 4.0*t ;
-    dN[i][16] = 0 ;
-    dN[i][17] = -4.0*r ;
-    dN[i][18] = -4.0*r - 8.0*s - 4.0*t + 4.0 ;
-    dN[i][19] = -4.0*t ;
-
-    dN[i][20] = 0 ;
-    dN[i][21] = 0 ;
-    dN[i][22] = 4.0*t - 1.0 ;
-    dN[i][23] = 4.0*r + 4.0*s + 4.0*t - 3.0 ;
-    dN[i][24] = 0 ;
-    dN[i][25] = 4.0*s ;
-    dN[i][26] = 4.0*r ;
-    dN[i][27] = -4.0*r ;
-    dN[i][28] = -4.0*s ;
-    dN[i][29] = -4.0*r - 4.0*s - 8.0*t + 4.0 ;
-
+		m(2, 0) = 0;
+		m(2, 1) = 0;
+		m(2, 2) = 4.0 * t - 1.0;
+		m(2, 3) = 4.0 * r + 4.0 * s + 4.0* t  - 3.0;
+		m(2, 4) = 0;
+		m(2, 5) = 4.0 * s;
+		m(2, 6) = 4.0 * r;
+		m(2, 7) = -4.0 * r;
+		m(2, 8) = -4.0 * s;
+		m(2, 9) = -4.0 * r - 4.0 * s - 8.0 * t + 4.0;
 	}
 
 	return dN;
 }
 
-std::vector<std::vector<double> > Tetra10_N() {
-	std::vector<std::vector<double> > N(Tetrahedron10GPCount);
+std::vector<DenseMatrix> Tetra10_N() {
+	std::vector<DenseMatrix> N(
+		Tetrahedron10GPCount,
+		DenseMatrix(1, Tetrahedron10NodesCount)
+	);
 
 	std::vector<double> rv;
 	std::vector<double> sv;
@@ -208,20 +197,16 @@ std::vector<std::vector<double> > Tetra10_N() {
 		double s = sv[i];
 		double t = tv[i];
 
-		N[i].resize(10);
-
-
-    N[i][0] = r*(2.0*r - 1.0) ;
-    N[i][1] = s*(2.0*s - 1.0) ;
-    N[i][2] = t*(2.0*t - 1.0) ;
-    N[i][3] = 2.0*r*r + 4.0*r*s + 4.0*r*t - 3.0*r + 2.0*s*s + 4.0*s*t - 3.0*s + 2.0*t*t - 3.0*t + 1.0 ;
-    N[i][4] = 4.0*r*s ;
-    N[i][5] = 4.0*s*t ;
-    N[i][6] = 4.0*r*t ;
-    N[i][7] = r*(-4.0*r - 4.0*s - 4.0*t + 4.0) ;
-    N[i][8] = s*(-4.0*r - 4.0*s - 4.0*t + 4.0) ;
-    N[i][9] = t*(-4.0*r - 4.0*s - 4.0*t + 4.0) ;
-
+		N[i](0, 0) = r * (2.0*r - 1.0);
+		N[i](0, 1) = s * (2.0*s - 1.0);
+		N[i](0, 2) = t * (2.0*t - 1.0);
+		N[i](0, 3) = 2.0 * r * r + 4.0 * r * s + 4.0 * r * t - 3.0 * r + 2.0* s * s + 4.0 * s * t - 3.0 * s + 2.0 * t * t - 3.0 * t + 1.0;
+		N[i](0, 4) = 4.0 * r * s;
+		N[i](0, 5) = 4.0 * s * t;
+		N[i](0, 6) = 4.0 * r * t;
+		N[i](0, 7) = r * (-4.0 * r - 4.0 * s - 4.0 * t + 4.0);
+		N[i](0, 8) = s * (-4.0 * r - 4.0 * s - 4.0 * t + 4.0);
+		N[i](0, 9) = t * (-4.0 * r - 4.0 * s - 4.0 * t + 4.0);
 	}
 
 	return N;
@@ -263,8 +248,8 @@ std::vector<double> Tetra10_Weight()
 
 
 
-std::vector<std::vector<double> > Tetrahedron10::_dN = Tetra10_dN();
-std::vector<std::vector<double> > Tetrahedron10::_N = Tetra10_N();
+std::vector<DenseMatrix> Tetrahedron10::_dN = Tetra10_dN();
+std::vector<DenseMatrix> Tetrahedron10::_N = Tetra10_N();
 std::vector<double> Tetrahedron10::_weighFactor = Tetra10_Weight();
 
 bool Tetrahedron10::match(idx_t *indices, idx_t n) {

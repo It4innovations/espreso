@@ -214,9 +214,9 @@ void Mesh::_assembleElesticity(
 		DenseMatrix &C,
 		bool dynamic) const
 {
-	const std::vector<std::vector<double> > &dN = e->dN();
-	DenseMatrix ddN(Point::size(), e->size());
-	const std::vector<std::vector<double> > &N = e->N();
+	const std::vector<DenseMatrix> &dN = e->dN();
+	//DenseMatrix ddN(Point::size(), e->size());
+	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 
 	DenseMatrix coordinates(e->size(), Point::size());
@@ -247,13 +247,13 @@ void Mesh::_assembleElesticity(
 	}
 
 	for (int gp = 0; gp < e->gpSize(); gp++) {
-		memcpy(ddN.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
-		J.multiply(ddN, coordinates);
+		//memcpy(ddN.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
+		J.multiply(dN[gp], coordinates);
 
 		double detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
 
-		ddND.multiply(invJ, ddN);
+		ddND.multiply(invJ, dN[gp]);
 
 		memcpy(&dND[0], ddND.values(), sizeof(double) * dND.size());
 		// TODO: block ordering inside B
@@ -286,7 +286,7 @@ void Mesh::_assembleElesticity(
 		Ke.multiply(dB, C * dB, detJ * weighFactor[gp], 1, true);
 
 		for (int i = 0; i < Ksize; i++) {
-			fe[i] += detJ * weighFactor[gp] * N[gp][i % nodes] * inertia[i / nodes];
+			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % nodes) * inertia[i / nodes];
 		}
 
 		if (dynamic) {
@@ -295,7 +295,7 @@ void Mesh::_assembleElesticity(
 			cblas_dgemm(
 				CblasRowMajor, CblasTrans, CblasNoTrans,
 				nodes, nodes, 1,
-				dense * detJ * weighFactor[gp], &N[gp][0], nodes, &N[gp][0], nodes,
+				dense * detJ * weighFactor[gp], N[gp].values(), nodes, N[gp].values(), nodes,
 				1, &Me[0], nodes
 			);
 		}

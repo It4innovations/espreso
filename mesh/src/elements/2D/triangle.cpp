@@ -1,8 +1,8 @@
 #include "triangle.h"
 
 // TODO: Implement base functions
-std::vector<std::vector<double> > Triangle::_dN;
-std::vector<std::vector<double> > Triangle::_N;
+std::vector<DenseMatrix> Triangle::_dN;
+std::vector<DenseMatrix> Triangle::_N;
 std::vector<double> Triangle::_weighFactor;
 
 bool Triangle::match(idx_t *indices, idx_t n)

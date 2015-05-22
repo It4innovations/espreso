@@ -1,8 +1,8 @@
 #include "line.h"
 
 // TODO: Implement base functions
-std::vector<std::vector<double> > Line::_dN;
-std::vector<std::vector<double> > Line::_N;
+std::vector<DenseMatrix> Line::_dN;
+std::vector<DenseMatrix> Line::_N;
 std::vector<double> Line::_weighFactor;
 
 bool Line::match(idx_t *indices, idx_t n)
