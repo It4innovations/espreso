@@ -198,6 +198,7 @@ void Mesh::_assembleElesticity(
 	int gausePoints = e->gpSize();
 
 	std::vector<double> MatC(Csize * Csize, 0.0);
+	DenseMatrix matC(Csize, Csize);
 
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	double mi2 = E * (1.0 - mi);
@@ -209,6 +210,7 @@ void Mesh::_assembleElesticity(
 	MatC[12] = mi;  MatC[13] = mi;  MatC[14] = mi2;
 
 	MatC[21] = mi3; MatC[28] = mi3; MatC[35] = mi3;
+	memcpy(matC.values(), &MatC[0], sizeof(double) * MatC.size());
 
 	DenseMatrix J(dimension, dimension);
 	std::vector<double> invJ (dimension * dimension, 0);
@@ -301,7 +303,7 @@ void Mesh::_assembleElesticity(
 		cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			Csize, Ksize, Csize,
-			1, &MatC[0], Csize, &B[0], Ksize,
+			1, matC.values(), Csize, &B[0], Ksize,
 			0, &CB.front(), Ksize
 		);
 		//Ke = Ke + (B' * (C * B)) * dJ * WF;
