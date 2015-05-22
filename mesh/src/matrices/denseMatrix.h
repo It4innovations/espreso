@@ -29,8 +29,12 @@ public:
 	DenseMatrix& operator=(const SparseIJVMatrix &other);
 
 	DenseMatrix& operator=(double value);
+	DenseMatrix operator*(DenseMatrix &M);
 
-	void multiply(DenseMatrix &A, DenseMatrix &B, double alfa = 1, double beta = 0, bool transposeA = false, bool transposeB = false);
+	void multiply(
+			const DenseMatrix &A, const DenseMatrix &B,
+			double alfa = 1, double beta = 0,
+			bool transposeA = false, bool transposeB = false);
 
 	void resize(size_t rows, size_t columns);
 	void transpose();

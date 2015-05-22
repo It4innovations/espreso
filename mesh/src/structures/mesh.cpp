@@ -227,18 +227,15 @@ void Mesh::_assembleElesticity(
 
 	int dimension = Point::size();
 	int Ksize = dimension * e->size();
-	int Csize = 6;	// TODO: even for D2??
 	int nodes = e->size();
-	int gausePoints = e->gpSize();
 
 	DenseMatrix J(dimension, dimension);
-	DenseMatrix invJJ(dimension, dimension);
+	DenseMatrix invJ(dimension, dimension);
 
 	std::vector<double> dND (Ksize, 0);
 	DenseMatrix ddND(Point::size(), e->size());
-	DenseMatrix dCB(Ksize, Csize);
-	std::vector<double> B (Ksize * Csize, 0);
-	DenseMatrix dB(Csize, Ksize);
+	std::vector<double> B (Ksize * C.rows(), 0);
+	DenseMatrix dB(C.rows(), Ksize);
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
@@ -249,14 +246,14 @@ void Mesh::_assembleElesticity(
 		fill(Me.begin(), Me.end(), 0);
 	}
 
-	for (int gp = 0; gp < gausePoints; gp++) {
+	for (int gp = 0; gp < e->gpSize(); gp++) {
 		memcpy(ddN.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
 		J.multiply(ddN, coordinates);
 
 		double detJ = determinant3x3(J);
-		inverse(J, invJJ, detJ);
+		inverse(J, invJ, detJ);
 
-		ddND.multiply(invJJ, ddN);
+		ddND.multiply(invJ, ddN);
 
 		memcpy(&dND[0], ddND.values(), sizeof(double) * dND.size());
 		// TODO: block ordering inside B
@@ -286,9 +283,7 @@ void Mesh::_assembleElesticity(
 		memcpy(&B[5 * columns],                 dNDz, sizeof(double) * e->size());
 
 		memcpy(dB.values(), &B[0], sizeof(double) * B.size());
-		dCB.multiply(C, dB);
-
-		Ke.multiply(dB, dCB, detJ * weighFactor[gp], 1, true);
+		Ke.multiply(dB, C * dB, detJ * weighFactor[gp], 1, true);
 
 		for (int i = 0; i < Ksize; i++) {
 			fe[i] += detJ * weighFactor[gp] * N[gp][i % nodes] * inertia[i / nodes];

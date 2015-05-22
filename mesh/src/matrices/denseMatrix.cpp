@@ -68,7 +68,17 @@ DenseMatrix& DenseMatrix::operator=(double value)
 	return *this;
 }
 
-void DenseMatrix::multiply(DenseMatrix &A, DenseMatrix &B, double alfa, double beta, bool transposeA, bool transposeB)
+DenseMatrix DenseMatrix::operator*(DenseMatrix &M)
+{
+	DenseMatrix result;
+	result.multiply(*this, M);
+	return result;
+}
+
+void DenseMatrix::multiply(
+		const DenseMatrix &A, const DenseMatrix &B,
+		double alfa, double beta,
+		bool transposeA, bool transposeB)
 {
 	if ( (transposeA ? A.rows() : A.columns()) != (transposeB ? B.columns() : B.rows()) ) {
 		std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";

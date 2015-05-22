@@ -5,7 +5,16 @@ void test_BEM();
 
 int main(int argc, char** argv)
 {
-	test_matrices();
+	DenseMatrix A(5, 3);
+	DenseMatrix B(3, 7);
+
+	/*DenseMatrix C;
+	C.multiply(A, B);*/
+
+	DenseMatrix D;
+	D.multiply(A, A * B);
+
+	//test_matrices();
 	return 0;
 }
 
