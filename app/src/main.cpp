@@ -245,8 +245,11 @@ void testFEM(int argc, char** argv)
 
 	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
+#ifndef DEBUG
 	cilk_for (int d = 0; d < partsCount; d++) {
-
+#else
+	for (int d = 0; d < partsCount; d++) {
+#endif
 		int dimension = input.mesh.getPartNodesCount(d) * Point::size();
 		std::vector<double> f(dimension);
 
@@ -263,7 +266,11 @@ void testFEM(int argc, char** argv)
 
 	const std::vector<idx_t> fixPoints = input.mesh.getFixPoints();
 
+#ifndef DEBUG
 	cilk_for (int d = 0; d < partsCount; d++) {
+#else
+	for (int d = 0; d < partsCount; d++) {
+#endif
 		for (int fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
 			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
 		}
@@ -359,7 +366,11 @@ void testFEM(int argc, char** argv)
 	// *** Setup B0 matrix *******************************************************************************************
 	if (cluster.USE_HFETI == 1 ) {
 
+#ifndef DEBUG
 		cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#else
+		for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#endif
 			ShortInt domain_index_in_cluster = i;
 
 			SetMatrixB0_fromCOO( cluster, domain_index_in_cluster,
@@ -375,7 +386,11 @@ void testFEM(int argc, char** argv)
 	// *** END - Setup B0 matrix *************************************************************************************
 
 	// *** Setup B1 matrix *******************************************************************************************
+#ifndef DEBUG
 	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#else
+	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#endif
 		ShortInt domain_index_in_cluster = i;
 		SetMatrixB1_fromCOO( cluster, domain_index_in_cluster,
 			B1_mat[i].rows(),			//clust_g.data[i]->B->B_full_rows, //n_row_eq,
@@ -387,14 +402,22 @@ void testFEM(int argc, char** argv)
 			'G' );
 	}
 
+#ifndef DEBUG
 	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#else
+	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#endif
 		cluster.domains[i].B1_scale_vec = B1_l_duplicity[i];
 	}
 	// *** END - Setup B1 matrix *************************************************************************************
 
 
 	// *** Setup R matrix ********************************************************************************************
+#ifndef DEBUG
 	cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+#else
+	for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+#endif
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
 			tmp_vec[0] = input.coordinates[l2g_vec[d][i]].x;
@@ -408,7 +431,11 @@ void testFEM(int argc, char** argv)
 	// *** END - Setup R matrix **************************************************************************************
 
 	// *** Load RHS and fix points for K regularization **************************************************************
+#ifndef DEBUG
 	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+#else
+	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+#endif
 		//SetVecDbl( cluster.domains[i].f,        clust_g.data[i]->KSparse->n_row, clust_g.data[i]->fE );
 		cluster.domains[d].f = f_vec[d];
 
@@ -422,7 +449,11 @@ void testFEM(int argc, char** argv)
 	// *** END - Load RHS and fix points for K regularization ********************************************************
 
 	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
+#ifndef DEBUG
 	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#else
+	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+#endif
 		cluster.domains[i].lambda_map_sub = lambda_map_sub_B1[i];
 	}
 
@@ -434,7 +465,11 @@ void testFEM(int argc, char** argv)
 
 
 	// *** Load Matrix K and regularization ******************************************************************************
+#ifndef DEBUG
 	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+#else
+	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+#endif
 		SetMatrixK_fromCSR ( cluster, d,
 			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
 			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
@@ -474,8 +509,6 @@ void testFEM(int argc, char** argv)
 	input.mesh.saveVTK(prim_solution, l2g_vec);
 
 
-
-
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
 	//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
@@ -491,98 +524,7 @@ void testFEM(int argc, char** argv)
 	// *** END - Running Solver ************************************************************************************************
 
 
-
-
-
-
 	// END - Stupid version of ESPRESO interface
-
-
-
-
-	//// Export matrices to FILE
-
-	//for (int d = 0; d < partsCount; d++) {
-
-	//	std::stringstream ss;
-	//	ss << "K_" << d;
-	//
-	//	std::string name = ss.str();
-	//
-	//	std::ofstream myfile;
-	//	myfile.open ( name );
-	//	myfile << K_mat[d];
-	//	myfile.close();
-
-	//}
-
-	//for (int d = 0; d < partsCount; d++) {
-
-	//	std::stringstream ss;
-	//	ss << "B_" << d;
-
-	//	std::string name = ss.str();
-
-	//	std::ofstream myfile;
-	//	myfile.open ( name );
-	//	myfile << B1_mat[d];
-	//	myfile.close();
-
-	//}
-
-	//for (int d = 0; d < partsCount; d++) {
-
-	//	std::stringstream ss;
-	//	ss << "f_" << d;
-
-	//	std::string name = ss.str();
-
-	//	std::ofstream myfile;
-	//	myfile.open ( name );
-	//	myfile << f_vec[d];
-	//	myfile.close();
-
-	//}
-
-	//for (int d = 0; d < partsCount; d++) {
-
-	//	std::stringstream ss;
-	//	ss << "l2g_" << d;
-
-	//	std::string name = ss.str();
-
-	//	std::ofstream myfile;
-	//	myfile.open ( name );
-	//	myfile << l2g_vec[d];
-	//	myfile.close();
-
-	//}
-
-	//SparseDOKMatrix dok(4, 4);
-	//dok(1, 1) = 5;
-	//dok(1, 2) += 5;
-	//std::std::cout << dok;
-
-	//std::std::cout << "Fix points:\n";
-	//for (int part = 0; part < partsCount; part++) {
-	//	std::std::cout << "Part: " << part << ": ";
-	//	for (int fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
-	//		std::std::cout << fixPoints[part * fixPointsCount + fixPoint] << " ";
-	//	}
-	//	std::std::cout << "\n";
-	//}
-
-	//std::vector <int> fix_points;
-
-	// pocet podoblasti * pocet fix bodu / 8 * 4
-	//mesh.getFixPoints();
-
-	//std::ofstream myfile;
-	//myfile.open ("K.txt");
-	//myfile << K;
-	//myfile.close();
-
-	//std::cout << K;
 }
 
 

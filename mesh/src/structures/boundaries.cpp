@@ -165,7 +165,6 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 		B0_loc[d].resize(lambda_count_B0, local_prim_numbering[d]);
 		B0_local[d] = SparseIJVMatrix( B0_loc[d] );
 	}
-
 }
 
 std::ostream& operator<<(std::ostream& os, const Boundaries &b)
