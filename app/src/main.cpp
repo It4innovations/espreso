@@ -314,11 +314,11 @@ void testFEM(int argc, char** argv)
 
 	extern void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
 		longInt n_rows, ShortInt n_cols, ShortInt nnz,
-		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
+		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
 
 	extern void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
 		longInt n_rows, ShortInt n_cols, ShortInt nnz,
-		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
+		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
 
 	extern void SetMatrixR_fromDense( Cluster & cluster, ShortInt domain_index_in_cluster,
 		ShortInt n_cols, ShortInt n_rows, double * vals, char type );
@@ -380,7 +380,7 @@ void testFEM(int argc, char** argv)
 				B0_mat[i].rowIndices(),		//&clust_g.data[i]->B->B0_I[0],		// BI_full[0], //Bi_coo,
 				B0_mat[i].columnIndices(),	//&clust_g.data[i]->B->B0_J[0],		// BJ_full[0], //Bj_coo,
 				B0_mat[i].values(),			//&clust_g.data[i]->B->B0_V[0],		// BV_full[0], //Bv_coo,
-				'G' );
+				'G', B0_mat[i].indexing() );
 		}
 	}
 	// *** END - Setup B0 matrix *************************************************************************************
@@ -399,7 +399,7 @@ void testFEM(int argc, char** argv)
 			B1_mat[i].rowIndices(),		//&clust_g.data[i]->B->BI_full[0], //Bi_coo,
 			B1_mat[i].columnIndices(),	//&clust_g.data[i]->B->BJ_full[0], //Bj_coo,
 			B1_mat[i].values(),			//&clust_g.data[i]->B->BV_full[0], //Bv_coo,
-			'G' );
+			'G', B1_mat[i].indexing() );
 	}
 
 #ifndef DEBUG

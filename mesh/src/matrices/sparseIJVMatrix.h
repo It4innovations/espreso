@@ -12,7 +12,7 @@ class SparseDOKMatrix;
 class SparseCSRMatrix;
 class SparseVVPMatrix;
 
-#define IJVMatrixIndexing Matrix::ZeroBased
+#define IJVMatrixIndexing Matrix::OneBased
 
 class SparseIJVMatrix: public Matrix
 {

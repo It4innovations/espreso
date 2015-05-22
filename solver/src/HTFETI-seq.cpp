@@ -244,19 +244,20 @@ void SetMatrixFromCSR   ( SparseMatrix & Mat, ShortInt n_rows, ShortInt n_cols, 
 	char f = 'u'; 
 }
 
-void SetMatrixFromCOO   ( SparseMatrix & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type ) {
+void SetMatrixFromCOO   ( SparseMatrix & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing ) {
 
 	Mat.I_row_indices.resize(nnz);
 	Mat.J_col_indices.resize(nnz);
 	Mat.V_values	 .resize(nnz); 
+	int offset = indexing ? 0 : 1;
 
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin()); 
 	for (int i = 0; i < Mat.I_row_indices.size(); i++)
-		Mat.I_row_indices[i] = I_rows[i] + 1; 
+		Mat.I_row_indices[i] = I_rows[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin()); 
 	for (int i = 0; i < Mat.J_col_indices.size(); i++)
-		Mat.J_col_indices[i] = J_cols[i] + 1; 
+		Mat.J_col_indices[i] = J_cols[i] + offset;
 
 	copy(V_vals, V_vals + nnz, Mat.V_values.begin()); 
 
@@ -351,7 +352,7 @@ void SetCluster ( Cluster & cluster, ShortInt * subdomains_global_indices_o, Sho
 
 void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster, 
 						   longInt   n_rows, ShortInt n_cols, ShortInt nnz, 
-						   longInt * I_rows, ShortInt * J_cols, double * V_vals, char type ) {
+						   longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing ) {
 
 	int MPIrank; 
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -372,7 +373,7 @@ void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
 	// *** Setup B1 matrix ********************************************************************************************
 	SetMatrixFromCOO( cluster.domains[domain_index_in_cluster].B1,
 		n_rows, n_cols, nnz, 
-		I_rows, J_cols, V_vals, type );
+		I_rows, J_cols, V_vals, type, indexing );
 	
 	// min version - should work 
 	cluster.domains[domain_index_in_cluster].B1.sortInCOO();
@@ -446,7 +447,7 @@ void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
 
 void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster, 
 	longInt   n_rows, ShortInt   n_cols, ShortInt nnz, 
-	longInt * I_rows, ShortInt * J_cols, double * V_vals, char type ) {
+	longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing ) {
 
 		int MPIrank; 
 		MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -467,7 +468,7 @@ void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
 		// *** Setup B0 matrix ********************************************************************************************
 		SetMatrixFromCOO( cluster.domains[domain_index_in_cluster].B0,
 			n_rows, n_cols, nnz, 
-			I_rows, J_cols, V_vals, type );
+			I_rows, J_cols, V_vals, type, indexing );
 
 		cluster.domains[domain_index_in_cluster].B0.ConvertToCSRwithSort(1);
 
