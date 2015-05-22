@@ -70,6 +70,10 @@ DenseMatrix& DenseMatrix::operator=(double value)
 
 void DenseMatrix::multiply(DenseMatrix &A, DenseMatrix &B, double alfa, double beta, bool transposeA, bool transposeB)
 {
+	if ( (transposeA ? A.rows() : A.columns()) != (transposeB ? B.columns() : B.rows()) ) {
+		std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
+		exit(EXIT_FAILURE);
+	}
 	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());
 
 	cblas_dgemm(

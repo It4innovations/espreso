@@ -182,6 +182,7 @@ void Mesh::_assembleElesticity(
 		bool dynamic) const
 {
 	const std::vector<std::vector<double> > &dN = e->dN();
+	DenseMatrix ddN(Point::size(), e->size());
 	const std::vector<std::vector<double> > &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 
@@ -219,7 +220,9 @@ void Mesh::_assembleElesticity(
 	std::vector<double> dND (Ksize, 0);
 	DenseMatrix ddND(Point::size(), e->size());
 	std::vector<double> CB (Ksize * Csize, 0);
+	DenseMatrix dCB(Ksize, Csize);
 	std::vector<double> B (Ksize * Csize, 0);
+	DenseMatrix dB(Csize, Ksize);
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
@@ -231,16 +234,14 @@ void Mesh::_assembleElesticity(
 	}
 
 	for (int gp = 0; gp < gausePoints; gp++) {
-
-		DenseMatrix dd(Point::size(), e->gpSize());
-		memcpy(dd.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
+		memcpy(ddN.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
 		/*cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			dimension, dimension, nodes,
 			1, dd.values(), nodes, coordinates.values(), dimension,
 			0, J.values(), dimension
 		);*/
-		J.multiply(dd, coordinates);
+		J.multiply(ddN, coordinates);
 
 		const double *j = J.values();
 		double detJ = fabs( j[0] * j[4] * j[8] +
@@ -269,7 +270,7 @@ void Mesh::_assembleElesticity(
 			1, invJJ.values(), dimension, &dN[gp][0], nodes,
 			0, ddND.values(), nodes
 		);*/
-		ddND.multiply(invJJ, dd);
+		ddND.multiply(invJJ, ddN);
 
 		memcpy(&dND[0], ddND.values(), sizeof(double) * dND.size());
 		// TODO: block ordering inside B
@@ -299,20 +300,26 @@ void Mesh::_assembleElesticity(
 		memcpy(&B[5 * columns],                 dNDz, sizeof(double) * e->size());
 
 
+		memcpy(dB.values(), &B[0], sizeof(double) * B.size());
 		// C * B
-		cblas_dgemm(
+		/*cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			Csize, Ksize, Csize,
-			1, matC.values(), Csize, &B[0], Ksize,
-			0, &CB.front(), Ksize
-		);
+			1, matC.values(), Csize, dB.values(), Ksize,
+			0, dCB.values(), Ksize
+		);*/
+
+		dCB.multiply(matC, dB);
+
 		//Ke = Ke + (B' * (C * B)) * dJ * WF;
-		cblas_dgemm(
+		/*cblas_dgemm(
 			CblasRowMajor, CblasTrans, CblasNoTrans,
 			Ksize, Ksize, Csize,
-			detJ * weighFactor[gp], &B[0], Ksize, &CB[0], Ksize,
+			detJ * weighFactor[gp], dB.values(), Ksize, dCB.values(), Ksize,
 			1, Ke.values(), Ksize
-		);
+		);*/
+
+		Ke.multiply(dB, dCB, detJ * weighFactor[gp], 1, true);
 
 		for (int i = 0; i < Ksize; i++) {
 			fe[i] += detJ * weighFactor[gp] * N[gp][i % nodes] * inertia[i / nodes];
