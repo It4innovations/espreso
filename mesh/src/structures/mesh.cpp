@@ -191,6 +191,7 @@ inline double determinant3x3(DenseMatrix &m)
 inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 {
 	const double *values = m.values();
+	inv.resize(m.rows(), m.columns());
 	double *invj = inv.values();
 	double detJx = 1 / det;
 	invj[0] = detJx * (  values[8] * values[4] - values[7] * values[5] );
@@ -204,6 +205,36 @@ inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	invj[8] = detJx * (  values[4] * values[0] - values[3] * values[1] );
 }
 
+// B =
+// dX   0   0
+//  0  dY   0
+//  0   0  dZ
+// dY  dX   0
+//  0  dZ  dY
+// dZ   0  dX
+inline void distribute(DenseMatrix &B, DenseMatrix &dND)
+{
+	// TODO: block ordering inside B
+	int columns = dND.rows() * dND.columns();
+	const double *dNDx = dND.values();
+	const double *dNDy = dND.values() + dND.columns();
+	const double *dNDz = dND.values() + 2 * dND.columns();
+
+	double *v = B.values();
+
+	memcpy(&v[0],                               dNDx, sizeof(double) * dND.columns());
+	memcpy(&v[3 * columns + dND.columns()],     dNDx, sizeof(double) * dND.columns());
+	memcpy(&v[5 * columns + 2 * dND.columns()], dNDx, sizeof(double) * dND.columns());
+
+	memcpy(&v[1 * columns + dND.columns()],     dNDy, sizeof(double) * dND.columns());
+	memcpy(&v[3 * columns],                     dNDy, sizeof(double) * dND.columns());
+	memcpy(&v[4 * columns + 2 * dND.columns()], dNDy, sizeof(double) * dND.columns());
+
+	memcpy(&v[2 * columns + 2 * dND.columns()], dNDz, sizeof(double) * dND.columns());
+	memcpy(&v[4 * columns + dND.columns()],     dNDz, sizeof(double) * dND.columns());
+	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
+}
+
 void Mesh::_assembleElesticity(
 		const Element *e,
 		size_t part,
@@ -215,7 +246,6 @@ void Mesh::_assembleElesticity(
 		bool dynamic) const
 {
 	const std::vector<DenseMatrix> &dN = e->dN();
-	//DenseMatrix ddN(Point::size(), e->size());
 	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 
@@ -225,74 +255,36 @@ void Mesh::_assembleElesticity(
 		coordinates.values()+ i * Point::size() << _coordinates[l2g[e->node(i)]];
 	}
 
-	int dimension = Point::size();
-	int Ksize = dimension * e->size();
-	int nodes = e->size();
-
-	DenseMatrix J(dimension, dimension);
-	DenseMatrix invJ(dimension, dimension);
-
-	std::vector<double> dND (Ksize, 0);
-	DenseMatrix ddND(Point::size(), e->size());
-	std::vector<double> B (Ksize * C.rows(), 0);
-	DenseMatrix dB(C.rows(), Ksize);
+	int Ksize = Point::size() * e->size();
+	double detJ;
+	DenseMatrix J, invJ, dND, B(C.rows(), Ksize);
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 	if (dynamic) {
-		Me.resize(nodes, nodes);
+		Me.resize(e->size(), e->size());
 		Me = 0;
 	}
 
 	for (int gp = 0; gp < e->gpSize(); gp++) {
-		//memcpy(ddN.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
 		J.multiply(dN[gp], coordinates);
-
-		double detJ = determinant3x3(J);
+		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
 
-		ddND.multiply(invJ, dN[gp]);
+		dND.multiply(invJ, dN[gp]);
+		distribute(B, dND);
 
-		memcpy(&dND[0], ddND.values(), sizeof(double) * dND.size());
-		// TODO: block ordering inside B
-		int columns = Ksize;
-		const double *dNDx = &dND[0];
-		const double *dNDy = &dND[e->size()];
-		const double *dNDz = &dND[2 * e->size()];
-
-		// B =
-		// dX   0   0
-		//  0  dY   0
-		//  0   0  dZ
-		// dY  dX   0
-		//  0  dZ  dY
-		// dZ   0  dX
-
-		memcpy(&B[0],                           dNDx, sizeof(double) * e->size());
-		memcpy(&B[3 * columns + e->size()],     dNDx, sizeof(double) * e->size());
-		memcpy(&B[5 * columns + 2 * e->size()], dNDx, sizeof(double) * e->size());
-
-		memcpy(&B[1 * columns + e->size()],     dNDy, sizeof(double) * e->size());
-		memcpy(&B[3 * columns],                 dNDy, sizeof(double) * e->size());
-		memcpy(&B[4 * columns + 2 * e->size()], dNDy, sizeof(double) * e->size());
-
-		memcpy(&B[2 * columns + 2 * e->size()], dNDz, sizeof(double) * e->size());
-		memcpy(&B[4 * columns + e->size()],     dNDz, sizeof(double) * e->size());
-		memcpy(&B[5 * columns],                 dNDz, sizeof(double) * e->size());
-
-		memcpy(dB.values(), &B[0], sizeof(double) * B.size());
-		Ke.multiply(dB, C * dB, detJ * weighFactor[gp], 1, true);
+		Ke.multiply(B, C * B, detJ * weighFactor[gp], 1, true);
 
 		for (int i = 0; i < Ksize; i++) {
-			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % nodes) * inertia[i / nodes];
+			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * inertia[i / e->size()];
 		}
 
 		if (dynamic) {
 			// Me = Me + WF * (DENS * dJ) * (N' * N);
-			double dense = 7.85e-9;
-			Me.multiply(N[gp], N[gp], dense * detJ * weighFactor[gp], 1, true);
+			Me.multiply(N[gp], N[gp], 7.85e-9 * detJ * weighFactor[gp], 1, true);
 		}
 	}
 }
