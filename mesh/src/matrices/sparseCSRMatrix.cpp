@@ -217,15 +217,19 @@ void SparseCSRMatrix::transpose()
 			1
 	};
 
-	size_t size = (_rows < _columns) ? _columns : _rows;
-
-	_rowPtrs.resize(size + 1, _rowPtrs.back());
+	size_t size;
+	if (_rows < _columns) {
+		size = _columns;
+		_rowPtrs.resize(size + 1, _rowPtrs.back());
+	} else {
+		size = _rows;
+	}
 
 	std::vector<MKL_INT> colPtrs(size + 1);
 	std::vector<MKL_INT> rowIndices(_columnIndices.size());
 	std::vector<double> vals(_values.size());
 
-	MKL_INT n = _rows;
+	MKL_INT n = size;
 	MKL_INT info;
 
 	mkl_dcsrcsc(
