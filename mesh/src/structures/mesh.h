@@ -127,7 +127,7 @@ protected:
 		const Element *e,
 		size_t part,
 		DenseMatrix &Ke,
-		std::vector<double> &Me,
+		DenseMatrix &Me,
 		std::vector<double> &fe,
 		std::vector<double> &inertia,
 		DenseMatrix &C,
@@ -139,7 +139,7 @@ protected:
 		SparseVVPMatrix &M,
 		std::vector<double> &f,
 		const DenseMatrix &Ke,
-		const std::vector<double> &Me,
+		const DenseMatrix &Me,
 		const std::vector<double> &fe,
 		bool dynamic
 	) const;

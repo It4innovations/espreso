@@ -150,7 +150,7 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 
 	size_t maxElementSize = _maxElementSize * Point::size();
 	DenseMatrix Ke(maxElementSize, maxElementSize);
-	std::vector<double> Me;
+	DenseMatrix Me;
 	std::vector<double> fe(maxElementSize);
 
 	std::vector <double> inertia (3, 0.0);
@@ -167,7 +167,7 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	if (dynamic) {
 		M.resize(nK, nK);
 		// Only one block is assembled -> all others are the same
-		Me.resize(_maxElementSize * _maxElementSize);
+		Me.resize(_maxElementSize, _maxElementSize);
 	}
 
 	for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
@@ -208,7 +208,7 @@ void Mesh::_assembleElesticity(
 		const Element *e,
 		size_t part,
 		DenseMatrix &Ke,
-		std::vector<double> &Me,
+		DenseMatrix &Me,
 		std::vector<double> &fe,
 		std::vector<double> &inertia,
 		DenseMatrix &C,
@@ -242,8 +242,8 @@ void Mesh::_assembleElesticity(
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 	if (dynamic) {
-		Me.resize(nodes * nodes);
-		fill(Me.begin(), Me.end(), 0);
+		Me.resize(nodes, nodes);
+		Me = 0;
 	}
 
 	for (int gp = 0; gp < e->gpSize(); gp++) {
@@ -292,12 +292,7 @@ void Mesh::_assembleElesticity(
 		if (dynamic) {
 			// Me = Me + WF * (DENS * dJ) * (N' * N);
 			double dense = 7.85e-9;
-			cblas_dgemm(
-				CblasRowMajor, CblasTrans, CblasNoTrans,
-				nodes, nodes, 1,
-				dense * detJ * weighFactor[gp], N[gp].values(), nodes, N[gp].values(), nodes,
-				1, &Me[0], nodes
-			);
+			Me.multiply(N[gp], N[gp], dense * detJ * weighFactor[gp], 1, true);
 		}
 	}
 }
@@ -308,7 +303,7 @@ void Mesh::_integrateElasticity(
 		SparseVVPMatrix &M,
 		std::vector<double> &f,
 		const DenseMatrix &Ke,
-		const std::vector<double> &Me,
+		const DenseMatrix &Me,
 		const std::vector<double> &fe,
 		bool dynamic
 	) const
@@ -322,7 +317,7 @@ void Mesh::_integrateElasticity(
 		row = s * (e->node(i % e->size())) + i / e->size();
 		for (size_t j = 0; j < s * e->size(); j++) {
 			column = s * (e->node(j % e->size())) + j / e->size();
-			K(row, column) = Ke.values()[i * s * e->size() + j];
+			K(row, column) = Ke(i, j);
 		}
 		f[row] += fe[i];
 	}
@@ -334,7 +329,7 @@ void Mesh::_integrateElasticity(
 		for (size_t j = 0; j < e->size(); j++) {
 			column = s * (e->node(i));
 			for (size_t k = 0; k < s; k++) {
-				M(row + k, column + k) += Me[i * e->size() + j];
+				M(row + k, column + k) += Me(i, j);
 			}
 		}
 	}
