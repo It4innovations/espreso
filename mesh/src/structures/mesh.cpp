@@ -212,8 +212,10 @@ void Mesh::_assembleElesticity(
 
 	DenseMatrix J(dimension, dimension);
 	std::vector<double> invJ (dimension * dimension, 0);
+	DenseMatrix invJJ(dimension, dimension);
 
 	std::vector<double> dND (Ksize, 0);
+	DenseMatrix ddND(Point::size(), e->size());
 	std::vector<double> CB (Ksize * Csize, 0);
 	std::vector<double> B (Ksize * Csize, 0);
 
@@ -228,12 +230,15 @@ void Mesh::_assembleElesticity(
 
 	for (int gp = 0; gp < gausePoints; gp++) {
 
-		cblas_dgemm(
+		DenseMatrix dd(Point::size(), e->gpSize());
+		memcpy(dd.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
+		/*cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			dimension, dimension, nodes,
-			1, &dN[gp][0], nodes, coordinates.values(), dimension,
+			1, dd.values(), nodes, coordinates.values(), dimension,
 			0, J.values(), dimension
-		);
+		);*/
+		J.multiply(dd, coordinates);
 
 		const double *j = J.values();
 		double detJ = fabs( j[0] * j[4] * j[8] +
@@ -245,23 +250,26 @@ void Mesh::_assembleElesticity(
 
 		double detJx = 1 / detJ;
 
-		invJ[0] = detJx * (  j[8] * j[4] - j[7] * j[5] );
-		invJ[1] = detJx * (- j[8] * j[1] + j[7] * j[2] );
-		invJ[2] = detJx * (  j[5] * j[1] - j[4] * j[2] );
-		invJ[3] = detJx * (- j[8] * j[3] + j[6] * j[5] );
-		invJ[4] = detJx * (  j[8] * j[0] - j[6] * j[2] );
-		invJ[5] = detJx * (- j[5] * j[0] + j[3] * j[2] );
-		invJ[6] = detJx * (  j[7] * j[3] - j[6] * j[4] );
-		invJ[7] = detJx * (- j[7] * j[0] + j[6] * j[1] );
-		invJ[8] = detJx * (  j[4] * j[0] - j[3] * j[1] );
+		double *invj = invJJ.values();
+		invj[0] = detJx * (  j[8] * j[4] - j[7] * j[5] );
+		invj[1] = detJx * (- j[8] * j[1] + j[7] * j[2] );
+		invj[2] = detJx * (  j[5] * j[1] - j[4] * j[2] );
+		invj[3] = detJx * (- j[8] * j[3] + j[6] * j[5] );
+		invj[4] = detJx * (  j[8] * j[0] - j[6] * j[2] );
+		invj[5] = detJx * (- j[5] * j[0] + j[3] * j[2] );
+		invj[6] = detJx * (  j[7] * j[3] - j[6] * j[4] );
+		invj[7] = detJx * (- j[7] * j[0] + j[6] * j[1] );
+		invj[8] = detJx * (  j[4] * j[0] - j[3] * j[1] );
 
-		cblas_dgemm(
+		/*cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			dimension, nodes, dimension,
-			1, &invJ[0], dimension, &dN[gp][0], nodes,
-			0, &dND.front(), nodes
-		);
+			1, invJJ.values(), dimension, &dN[gp][0], nodes,
+			0, ddND.values(), nodes
+		);*/
+		ddND.multiply(invJJ, dd);
 
+		memcpy(&dND[0], ddND.values(), sizeof(double) * dND.size());
 		// TODO: block ordering inside B
 		int columns = Ksize;
 		const double *dNDx = &dND[0];
