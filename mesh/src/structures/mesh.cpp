@@ -185,10 +185,10 @@ void Mesh::_assembleElesticity(
 	const std::vector<std::vector<double> > &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 
-	std::vector<double> coordinates(Point::size() * e->size());
+	DenseMatrix coordinates(e->size(), Point::size());
 	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
 	for (size_t i = 0; i < e->size(); i++) {
-		&coordinates[i * Point::size()] << _coordinates[l2g[e->node(i)]];
+		coordinates.values()+ i * Point::size() << _coordinates[l2g[e->node(i)]];
 	}
 
 	int dimension = Point::size();
@@ -210,7 +210,7 @@ void Mesh::_assembleElesticity(
 
 	MatC[21] = mi3; MatC[28] = mi3; MatC[35] = mi3;
 
-	std::vector<double> MatJ (dimension * dimension, 0);
+	DenseMatrix J(dimension, dimension);
 	std::vector<double> invJ (dimension * dimension, 0);
 
 	std::vector<double> dND (Ksize, 0);
@@ -231,28 +231,29 @@ void Mesh::_assembleElesticity(
 		cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
 			dimension, dimension, nodes,
-			1, &dN[gp][0], nodes, &coordinates[0], dimension,
-			0, &MatJ[0], dimension
+			1, &dN[gp][0], nodes, coordinates.values(), dimension,
+			0, J.values(), dimension
 		);
 
-		double detJ = fabs( MatJ[0] * MatJ[4] * MatJ[8] +
-							MatJ[1] * MatJ[5] * MatJ[6] +
-							MatJ[2] * MatJ[3] * MatJ[7] -
-							MatJ[2] * MatJ[4] * MatJ[6] -
-							MatJ[1] * MatJ[3] * MatJ[8] -
-							MatJ[0] * MatJ[5] * MatJ[7]);
+		const double *j = J.values();
+		double detJ = fabs( j[0] * j[4] * j[8] +
+							j[1] * j[5] * j[6] +
+							j[2] * j[3] * j[7] -
+							j[2] * j[4] * j[6] -
+							j[1] * j[3] * j[8] -
+							j[0] * j[5] * j[7]);
 
 		double detJx = 1 / detJ;
 
-		invJ[0] = detJx * (  MatJ[8] * MatJ[4] - MatJ[7] * MatJ[5] );
-		invJ[1] = detJx * (- MatJ[8] * MatJ[1] + MatJ[7] * MatJ[2] );
-		invJ[2] = detJx * (  MatJ[5] * MatJ[1] - MatJ[4] * MatJ[2] );
-		invJ[3] = detJx * (- MatJ[8] * MatJ[3] + MatJ[6] * MatJ[5] );
-		invJ[4] = detJx * (  MatJ[8] * MatJ[0] - MatJ[6] * MatJ[2] );
-		invJ[5] = detJx * (- MatJ[5] * MatJ[0] + MatJ[3] * MatJ[2] );
-		invJ[6] = detJx * (  MatJ[7] * MatJ[3] - MatJ[6] * MatJ[4] );
-		invJ[7] = detJx * (- MatJ[7] * MatJ[0] + MatJ[6] * MatJ[1] );
-		invJ[8] = detJx * (  MatJ[4] * MatJ[0] - MatJ[3] * MatJ[1] );
+		invJ[0] = detJx * (  j[8] * j[4] - j[7] * j[5] );
+		invJ[1] = detJx * (- j[8] * j[1] + j[7] * j[2] );
+		invJ[2] = detJx * (  j[5] * j[1] - j[4] * j[2] );
+		invJ[3] = detJx * (- j[8] * j[3] + j[6] * j[5] );
+		invJ[4] = detJx * (  j[8] * j[0] - j[6] * j[2] );
+		invJ[5] = detJx * (- j[5] * j[0] + j[3] * j[2] );
+		invJ[6] = detJx * (  j[7] * j[3] - j[6] * j[4] );
+		invJ[7] = detJx * (- j[7] * j[0] + j[6] * j[1] );
+		invJ[8] = detJx * (  j[4] * j[0] - j[3] * j[1] );
 
 		cblas_dgemm(
 			CblasRowMajor, CblasNoTrans, CblasNoTrans,
