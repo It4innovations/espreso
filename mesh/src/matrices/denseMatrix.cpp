@@ -62,6 +62,12 @@ DenseMatrix& DenseMatrix::operator=(const SparseIJVMatrix &other)
 	return *this;
 }
 
+DenseMatrix& DenseMatrix::operator=(double value)
+{
+	std::fill(_values.begin(), _values.end(), value);
+	return *this;
+}
+
 void DenseMatrix::multiply(DenseMatrix &A, DenseMatrix &B, double alfa, double beta, bool transposeA, bool transposeB)
 {
 	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());

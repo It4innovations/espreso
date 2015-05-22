@@ -126,7 +126,7 @@ protected:
 	void _assembleElesticity(
 		const Element *e,
 		size_t part,
-		std::vector<double> &Ke,
+		DenseMatrix &Ke,
 		std::vector<double> &Me,
 		std::vector<double> &fe,
 		std::vector<double> &inertia,
@@ -139,7 +139,7 @@ protected:
 		SparseVVPMatrix &K,
 		SparseVVPMatrix &M,
 		std::vector<double> &f,
-		const std::vector<double> &Ke,
+		const DenseMatrix &Ke,
 		const std::vector<double> &Me,
 		const std::vector<double> &fe,
 		bool dynamic

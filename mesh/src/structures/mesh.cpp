@@ -149,7 +149,7 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	f.resize(nK);
 
 	size_t maxElementSize = _maxElementSize * Point::size();
-	std::vector<double> Ke(maxElementSize * maxElementSize);
+	DenseMatrix Ke(maxElementSize, maxElementSize);
 	std::vector<double> Me;
 	std::vector<double> fe(maxElementSize);
 
@@ -173,7 +173,7 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 void Mesh::_assembleElesticity(
 		const Element *e,
 		size_t part,
-		std::vector<double> &Ke,
+		DenseMatrix &Ke,
 		std::vector<double> &Me,
 		std::vector<double> &fe,
 		std::vector<double> &inertia,
@@ -217,9 +217,9 @@ void Mesh::_assembleElesticity(
 	std::vector<double> CB (Ksize * Csize, 0);
 	std::vector<double> B (Ksize * Csize, 0);
 
-	Ke.resize(Ksize * Ksize);
+	Ke.resize(Ksize, Ksize);
+	Ke = 0;
 	fe.resize(Ksize);
-	fill(Ke.begin(), Ke.end(), 0);
 	fill(fe.begin(), fe.end(), 0);
 	if (dynamic) {
 		Me.resize(nodes * nodes);
@@ -300,9 +300,8 @@ void Mesh::_assembleElesticity(
 			CblasRowMajor, CblasTrans, CblasNoTrans,
 			Ksize, Ksize, Csize,
 			detJ * weighFactor[gp], &B[0], Ksize, &CB[0], Ksize,
-			1, &Ke[0], Ksize
+			1, Ke.values(), Ksize
 		);
-
 
 		for (int i = 0; i < Ksize; i++) {
 			fe[i] += detJ * weighFactor[gp] * N[gp][i % nodes] * inertia[i / nodes];
@@ -326,7 +325,7 @@ void Mesh::_integrateElasticity(
 		SparseVVPMatrix &K,
 		SparseVVPMatrix &M,
 		std::vector<double> &f,
-		const std::vector<double> &Ke,
+		const DenseMatrix &Ke,
 		const std::vector<double> &Me,
 		const std::vector<double> &fe,
 		bool dynamic
@@ -341,7 +340,7 @@ void Mesh::_integrateElasticity(
 		row = s * (e->node(i % e->size())) + i / e->size();
 		for (size_t j = 0; j < s * e->size(); j++) {
 			column = s * (e->node(j % e->size())) + j / e->size();
-			K(row, column) = Ke[i * s * e->size() + j];
+			K(row, column) = Ke.values()[i * s * e->size() + j];
 		}
 		f[row] += fe[i];
 	}
