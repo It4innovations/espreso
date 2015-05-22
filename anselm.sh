@@ -35,13 +35,16 @@ if [ "$1" = "run" ]; then
   clusters=3       #2
   domains_p_c=5    #7
 
+  #         HEXA8 TETRA4 TETRA10
+  el_type=(   0     1      2    )
+
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      1  8   3  10   6  14  16  15  10  10 )
+  dom_size=(      5  8   3  10   6  14  16  15  10  10 )
 
-  clustt_size_x=( 1   8   2   8   16   9   3   3   3   5 )
-  clustt_size_y=( 1   8   2   8   16   9   3   4   3   5 )
-  clustt_size_z=( 1   8   2   8   16   9   8   8   3   5 )
+  clustt_size_x=( 2   8   2   8   16   9   3   3   3   5 )
+  clustt_size_y=( 2   8   2   8   16   9   3   4   3   5 )
+  clustt_size_z=( 2   8   2   8   16   9   8   8   3   5 )
 
   clusters_x=(    1   1   2   1   1   2   8   8   1   2 )
   clusters_y=(    1   1   2   1   1   2   8   8   1   2 )
@@ -71,7 +74,7 @@ if [ "$1" = "run" ]; then
 
     date | tee -a $log_file
 
-    ./espreso ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+    ./espreso ${el_type[2]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 
   done
 

@@ -122,17 +122,18 @@ std::vector<double> Tetra4_Weight()
 		std::vector<double> w(11);
 		w[0] = -0.013155555555556;
 		w[1] = w[2] = w[3] = w[4] = 0.007622222222222;
-		w[5] = w[6] = w[7] = w[8] = w[5] = w[6] = w[7] = 0.024888888888889;
+		w[5] = w[6] = w[7] = w[8] = w[9] = w[10] = 0.024888888888889;
 		return w;
 	}
 	case 15: {
 		std::vector<double> w(15);
 		w[0] = 0.030283678097089;
 		w[1] = w[2] = w[3] = w[4] = 0.006026785714286;
-		w[5] = w[6] = w[7] = w[8] = w[9] = w[10] = w[5] = w[6] = w[7] = w[8] = w[9] = 0.011645249086029;
+		w[5] = w[6] = w[7] = w[8] = 0.011645249086029;
+		w[9] = w[10] = w[11] = w[12] = w[13] = w[14] = 0.010949141561386;
 		return w;
 	}
-	deault:
+	default:
 		std::cerr << "Unknown number of Tatrahedron4 GP count\n";
 		exit(EXIT_FAILURE);
 	}

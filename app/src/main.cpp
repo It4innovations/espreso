@@ -7,6 +7,12 @@
 #include <vector>
 #include <iostream>
 
+enum {
+	HEXA8,
+	TETRA4,
+	TETRA10
+};
+
 struct FEMInput {
 
 	FEMInput(): coordinates(mesh.coordinates()) {};
@@ -20,11 +26,12 @@ struct FEMInput {
 
 struct FEMParams {
 
-	FEMParams(): generateMesh(false), subdomains(3), elementsInSub(3) {
+	FEMParams(): type(HEXA8), generateMesh(false), subdomains(3), elementsInSub(3) {
 		subdomains[0] = subdomains[1] = subdomains[2] = 1;
 		elementsInSub[0] = elementsInSub[1] = elementsInSub[2] = 10;
 	};
 
+	int type;
 	bool generateMesh;
 	std::vector<int> subdomains;
 	std::vector<int> elementsInSub;
@@ -36,17 +43,22 @@ FEMParams params;
 
 void setParams(int argc, char** argv)
 {
-	if (argc != 7) {
+	if (argc != 8) {
 		return;
 	}
 
 	params.generateMesh = true;
+
+	int type;
+	sscanf(argv[1], "%i", &type);
+	params.type = type;
+
 	int subdomains;
 	int elementsInSub;
 
 	for (int i = 0; i < 3; i++) {
-		sscanf(argv[i + 1], "%i", &subdomains);
-		sscanf(argv[i + 4], "%i", &elementsInSub);
+		sscanf(argv[i + 2], "%i", &subdomains);
+		sscanf(argv[i + 5], "%i", &elementsInSub);
 		params.subdomains[i] = subdomains;
 		params.elementsInSub[i] = elementsInSub;
 	}
@@ -69,7 +81,6 @@ int main(int argc, char** argv)
 	} else {
 		load_mesh();
 	}
-  input.mesh.saveVTK("box.vtk");
 
 	//testBEM(argc, argv);
 	testFEM(argc, argv);
@@ -78,7 +89,7 @@ int main(int argc, char** argv)
 
 void load_mesh()
 {
-	input.mesh = Mesh("matrices/TET/10/elem", "matrices/TET/10/coord", 4, 8);
+	input.mesh = Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
 	input.coordinates = input.mesh.coordinates();
 
 	// fix down face
@@ -92,9 +103,32 @@ void load_mesh()
 void generate_mesh()
 {
 	std::cout << "Permoncube:" << std::endl;
-	Permoncube::tetrahedrons10(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	int elems[3];
+	switch (params.type) {
+	case HEXA8: {
+		Permoncube::hexahedrons8(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+		elems[0] = params.elementsInSub[0];
+		elems[1] = params.elementsInSub[1];
+		elems[2] = params.elementsInSub[2];
+		break;
+	}
+	case TETRA10: {
+		Permoncube::tetrahedrons10(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+		elems[0] = 2 * params.elementsInSub[0];
+		elems[1] = 2 * params.elementsInSub[1];
+		elems[2] = 2 * params.elementsInSub[2];
+		break;
+	}
+	case TETRA4: {
+		Permoncube::tetrahedrons4(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
+		elems[0] = params.elementsInSub[0];
+		elems[1] = params.elementsInSub[1];
+		elems[2] = params.elementsInSub[2];
+		break;
+	}
+	}
 	std::cout << "dirichlet" << std::endl;
-	Permoncube::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), &(params.elementsInSub[0]));
+	Permoncube::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), elems);
 	std::cout << "fix points" << std::endl;
 
 	// TODO: set fix points in PERMONCUBE
@@ -103,7 +137,7 @@ void generate_mesh()
 }
 
 
-template<typename T>
+/*template<typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 {
 	//out << "[";
@@ -115,7 +149,7 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 	}
 	//out << "]";
 	return out;
-}
+}*/
 
 
 void testBEM(int argc, char** argv)

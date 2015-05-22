@@ -24,10 +24,9 @@ int main(int argc, char** argv)
 {
 	setParams(argc, argv);
 
-	Coordinates coordinates;
-	Mesh mesh(coordinates);
+	Mesh mesh;
 
-	Permoncube::tetrahedrons10(mesh, coordinates, subdomains, elementsInSub);
+	Permoncube::tetrahedrons10(mesh, mesh.coordinates(), subdomains, elementsInSub);
 
 	int dimension = mesh.getPartNodesCount(0) * Point::size();
 
@@ -39,7 +38,7 @@ int main(int argc, char** argv)
 
 	mesh.saveVTK("mesh.vtk");
 
-	std::ofstream fileK("K.txt");
+	std::ofstream fileK("K15.txt");
 	fileK << K;
 	fileK.close();
 }

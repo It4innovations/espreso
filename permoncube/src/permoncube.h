@@ -32,6 +32,13 @@ public:
 			std::map < int, double >  & dirichlet_z,
 			int *subdomains,
 			int *elementsInSub);
+
+	static void dirichletTetra10(
+			std::map < int, double >  & dirichlet_x,
+			std::map < int, double >  & dirichlet_y,
+			std::map < int, double >  & dirichlet_z,
+			int *subdomains,
+			int *elementsInSub);
 };
 
 

@@ -31,7 +31,7 @@ void Permoncube::hexahedrons8(
 	int nnx = subdomains[0] * elementsInSub[0] + 1;
 	int nny = subdomains[1] * elementsInSub[1] + 1;
 	int nnz = subdomains[2] * elementsInSub[2] + 1;
-	double lenght[3] = { 1, 1, 1 };
+	double lenght[3] = { 30, 30, 30 };
 
 	double stepx = lenght[0] / (nnx - 1);
 	double stepy = lenght[1] / (nny - 1);
@@ -324,33 +324,45 @@ void Permoncube::dirichlet(
 		int *subdomains,
 		int *elementsInSub)
 {
-	int nnx = 2* subdomains[0] * elementsInSub[0] + 1;
-	int nny = 2* subdomains[1] * elementsInSub[1] + 1;
-	int nnz = 2* subdomains[2] * elementsInSub[2] + 1;
+
+	int nnx = subdomains[0] * elementsInSub[0] + 1;
+	int nny = subdomains[1] * elementsInSub[1] + 1;
+	int nnz = subdomains[2] * elementsInSub[2] + 1;
 
 	idx_t index = 0;
-  for (int i = 0;i < nnx*nny;i++){
-					dirichlet_z[i] = 0.0;
-					dirichlet_y[i] = 0.0;
-					dirichlet_x[i] = 0.0;
-  }
-
-//	for (int z = 0; z < nnz; z++) {
-//		for (int y = 0; y < nny; y++) {
-//			for (int x = 0; x < nnx; x++) {
-//				if (z == 0){
-//					dirichlet_z[index] = 0.0;
-//				}
-//				if (y == 0){
-//					dirichlet_y[index] = 0.0;
-//				}
-//				if (x == 0){
-//					dirichlet_x[index] = 0.0;
-//				}
-//				index++;
-//			}
-//		}
-//	}
+	for (int z = 0; z < nnz; z++) {
+		for (int y = 0; y < nny; y++) {
+			for (int x = 0; x < nnx; x++) {
+				if (z == 0){
+					dirichlet_z[index] = 0.0;
+				}
+				if (y == 0){
+					dirichlet_y[index] = 0.0;
+				}
+				if (x == 0){
+					dirichlet_x[index] = 0.0;
+				}
+				index++;
+			}
+		}
+	}
 }
 
+void dirichletTetra10(
+		std::map < int, double >  & dirichlet_x,
+		std::map < int, double >  & dirichlet_y,
+		std::map < int, double >  & dirichlet_z,
+		int *subdomains,
+		int *elementsInSub)
+{
+	int nnx = 2 * subdomains[0] * elementsInSub[0] + 1;
+	int nny = 2 * subdomains[1] * elementsInSub[1] + 1;
+	int nnz = 2 * subdomains[2] * elementsInSub[2] + 1;
+
+	for (int i = 0; i < nnx * nny; i++) {
+		dirichlet_z[i] = 0.0;
+		dirichlet_y[i] = 0.0;
+		dirichlet_x[i] = 0.0;
+	}
+}
 

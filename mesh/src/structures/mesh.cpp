@@ -167,17 +167,6 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, ex, mi, dynamic);
 		_integrateElasticity(_elements[i], K, M, f, Ke, Me, fe, dynamic);
-
-    if (i==0){
-      for (int I = 0;I<30;I++){
-        for (int J = 0;J<30;J++){
-          printf("%3.9e  ",Ke[I+30*J]);
-        }
-        printf("\n");
-      }
-    }
-
-
 	}
 }
 
@@ -202,12 +191,6 @@ void Mesh::_assembleElesticity(
 		&coordinates[i * Point::size()] << _coordinates[l2g[e->node(i)]];
 	}
 
-
-
-  for (int i=0;i<10;i++){
-    printf("(i: %d): %3.3e\t %3.3e\t %3.3e  \n",i,coordinates[3*i], coordinates[3*i+1],coordinates[3*i+2]);
-  }
-
 	int dimension = Point::size();
 	int Ksize = dimension * e->size();
 	int Csize = 6;	// TODO: even for D2??
@@ -227,7 +210,6 @@ void Mesh::_assembleElesticity(
 
 	MatC[21] = mi3; MatC[28] = mi3; MatC[35] = mi3;
 
-
 	std::vector<double> MatJ (dimension * dimension, 0);
 	std::vector<double> invJ (dimension * dimension, 0);
 
@@ -244,7 +226,6 @@ void Mesh::_assembleElesticity(
 		fill(Me.begin(), Me.end(), 0);
 	}
 
-  double detJ_complet = 0.0;
 	for (int gp = 0; gp < gausePoints; gp++) {
 
 		cblas_dgemm(
@@ -260,7 +241,7 @@ void Mesh::_assembleElesticity(
 							MatJ[2] * MatJ[4] * MatJ[6] -
 							MatJ[1] * MatJ[3] * MatJ[8] -
 							MatJ[0] * MatJ[5] * MatJ[7]);
-    detJ_complet+=detJ*weighFactor[gp];
+
 		double detJx = 1 / detJ;
 
 		invJ[0] = detJx * (  MatJ[8] * MatJ[4] - MatJ[7] * MatJ[5] );
@@ -338,8 +319,6 @@ void Mesh::_assembleElesticity(
 			);
 		}
 	}
-printf("-------------------------------------------------");
-printf("complet volume of element: %3.5e \n",detJ_complet);
 }
 
 void Mesh::_integrateElasticity(
