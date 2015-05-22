@@ -7,6 +7,16 @@
 #include <cmath>
 #include "mkl.h"
 
+template<typename T>
+std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
+{
+	for(size_t i = 0; i < v.size(); ++i) {
+		os << v[i] << " ";
+	}
+	os << "\n";
+	return os;
+}
+
 struct NonZeroValue
 {
 	bool operator()(double value)

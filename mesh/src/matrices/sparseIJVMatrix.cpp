@@ -49,8 +49,6 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.row
 	_columnIndices.resize(nnz);
 	_values.resize(nnz);
 
-	std::cout << "NONZERO: " << nnz << "\n";
-
 	MKL_INT job[6] = {
 		0, 					// CSR to IJV
 		other.indexing(),	// indexing of CSR matrix

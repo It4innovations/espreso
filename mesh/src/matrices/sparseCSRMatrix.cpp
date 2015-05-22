@@ -147,9 +147,17 @@ void SparseCSRMatrix::multiply(SparseCSRMatrix &A, SparseCSRMatrix &B, bool tran
 		std::cerr << "Multiplication of two CSR matrices with zero based indexing is not supported\n";
 		exit(EXIT_FAILURE);
 	}
-
-	_rows = A.rows();
-	_columns = B.columns();
+	if (transposeA) {
+		if (A.rows() != B.rows()) {
+			std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		if (A.columns() != B.rows()) {
+			std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	MKL_INT request = 0;
 	MKL_INT sort = 8;	// C is sorted
@@ -159,11 +167,13 @@ void SparseCSRMatrix::multiply(SparseCSRMatrix &A, SparseCSRMatrix &B, bool tran
 	MKL_INT nnz;		// not used
 	MKL_INT info;
 
-	_rowPtrs.resize(A.rows() + 1);
+	_rows = transposeA ? A.columns() : A.rows();;
+	_columns = k;
+	_rowPtrs.resize(_rows + 1);
 
 	request = 1;	// compute only rowPrts
 	mkl_dcsrmultcsr(
-		"n",
+		transposeA ? "t" : "n",
 		&request,
 		&sort,
 		&m, &n, &k,
@@ -198,34 +208,38 @@ void SparseCSRMatrix::resize(size_t rows, size_t columns)
 
 void SparseCSRMatrix::transpose()
 {
-	std::vector<MKL_INT> colPtrs, rowIndices;
-	std::vector<double> values;
+	MKL_INT job[6] = {
+			0,		// CSR to CSC
+			_indexing,
+			_indexing,
+			0,
+			0,
+			1
+	};
+
+	size_t size = (_rows < _columns) ? _columns : _rows;
+
+	_rowPtrs.resize(size + 1, _rowPtrs.back());
+
+	std::vector<MKL_INT> colPtrs(size + 1);
+	std::vector<MKL_INT> rowIndices(_columnIndices.size());
+	std::vector<double> vals(_values.size());
+
+	MKL_INT n = _rows;
+	MKL_INT info;
+
+	mkl_dcsrcsc(
+			job, &n,
+			values(), columnIndices(), rowPtrs(),
+			&vals[0], &rowIndices[0], &colPtrs[0],
+			&info);
 
 	colPtrs.resize(_columns + 1);
-	rowIndices.resize(_columnIndices.size());
-	values.resize(_values.size());
-
-	std::vector<MKL_INT> colCounters(_columns, 0);
-	for (size_t i = 0; i < _columnIndices.size(); i++) {
-		colCounters[_columnIndices[i]]++;
-	}
-
-	colPtrs[0] = 0;
-	for (size_t i = 0; i < _columns; i++) {
-		colPtrs[i + 1] = colPtrs[i] + colCounters[i];
-	}
-	std::fill(colCounters.begin(), colCounters.end(), 0);
-
-	for (size_t r = 0; r < _rows; r++) {
-		for (MKL_INT c = _rowPtrs[r]; c < _rowPtrs[r + 1]; c++) {
-			MKL_INT index = colPtrs[_columnIndices[c]] + colCounters[_columnIndices[c]]++;
-			rowIndices[index] = r;
-			values[index] = _values[c];
-		}
-	}
-
 	_rowPtrs.swap(colPtrs);
 	_columnIndices.swap(rowIndices);
-	_values.swap(values);
+	_values.swap(vals);
+	size_t tmp = _rows;
+	_rows = _columns;
+	_columns = tmp;
 }
 

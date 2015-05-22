@@ -71,12 +71,16 @@ void DenseMatrix::resize(size_t rows, size_t columns)
 
 void DenseMatrix::transpose()
 {
-	std::vector<double> values(_rows * _columns);
-	for (MKL_INT r = 0; r < _rows; r++) {
-		for (MKL_INT c = 0; c < _columns; c++) {
-			values[c * _rows + r] = _values[r * _columns + c];
-		}
-	}
+	std::vector<double> copy(_values.size());
 
-	_values.swap(values);
+	MKL_Domatcopy(
+			'r', 't',
+			_rows, _columns,
+			1, values(), _columns,
+			&copy[0], _rows);
+
+	_values.swap(copy);
+	size_t tmp = _rows;
+	_rows = _columns;
+	_columns = tmp;
 }

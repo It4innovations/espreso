@@ -23,6 +23,9 @@ void SparseDOKMatrix::transpose()
 	}
 
 	_values.swap(values);
+	size_t tmp = _rows;
+	_rows = _columns;
+	_columns = tmp;
 }
 
 
