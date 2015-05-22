@@ -157,6 +157,12 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	inertia[2] = 9810.0 * 7.85e-9;
 	double ex = 2.1e5;
 	double mi = 0.3;
+	double E = ex / ((1 + mi) * (1 - 2 * mi));
+	DenseMatrix C(6, 6);
+
+	C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = E * mi;
+	C(0, 0) = C(1, 1) = C(2, 2) = E * (1.0 - mi);
+	C(3, 3) = C(4, 4) = C(5, 5) = E * (0.5 - mi);
 
 	if (dynamic) {
 		M.resize(nK, nK);
@@ -165,9 +171,37 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	}
 
 	for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, ex, mi, dynamic);
+		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, C, dynamic);
 		_integrateElasticity(_elements[i], K, M, f, Ke, Me, fe, dynamic);
 	}
+}
+
+inline double determinant3x3(DenseMatrix &m)
+{
+	const double *values = m.values();
+	return fabs(
+			values[0] * values[4] * values[8] +
+			values[1] * values[5] * values[6] +
+			values[2] * values[3] * values[7] -
+			values[2] * values[4] * values[6] -
+			values[1] * values[3] * values[8] -
+			values[0] * values[5] * values[7]);
+}
+
+inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
+{
+	const double *values = m.values();
+	double *invj = inv.values();
+	double detJx = 1 / det;
+	invj[0] = detJx * (  values[8] * values[4] - values[7] * values[5] );
+	invj[1] = detJx * (- values[8] * values[1] + values[7] * values[2] );
+	invj[2] = detJx * (  values[5] * values[1] - values[4] * values[2] );
+	invj[3] = detJx * (- values[8] * values[3] + values[6] * values[5] );
+	invj[4] = detJx * (  values[8] * values[0] - values[6] * values[2] );
+	invj[5] = detJx * (- values[5] * values[0] + values[3] * values[2] );
+	invj[6] = detJx * (  values[7] * values[3] - values[6] * values[4] );
+	invj[7] = detJx * (- values[7] * values[0] + values[6] * values[1] );
+	invj[8] = detJx * (  values[4] * values[0] - values[3] * values[1] );
 }
 
 void Mesh::_assembleElesticity(
@@ -177,8 +211,7 @@ void Mesh::_assembleElesticity(
 		std::vector<double> &Me,
 		std::vector<double> &fe,
 		std::vector<double> &inertia,
-		double ex,
-		double mi,
+		DenseMatrix &C,
 		bool dynamic) const
 {
 	const std::vector<std::vector<double> > &dN = e->dN();
@@ -198,28 +231,11 @@ void Mesh::_assembleElesticity(
 	int nodes = e->size();
 	int gausePoints = e->gpSize();
 
-	std::vector<double> MatC(Csize * Csize, 0.0);
-	DenseMatrix matC(Csize, Csize);
-
-	double E = ex / ((1 + mi) * (1 - 2 * mi));
-	double mi2 = E * (1.0 - mi);
-	double mi3 = E * (0.5 - mi);
-	mi = E * mi;
-
-	MatC[0]  = mi2; MatC[1]  = mi;  MatC[2]  = mi;
-	MatC[6]  = mi;  MatC[7]  = mi2; MatC[8]  = mi;
-	MatC[12] = mi;  MatC[13] = mi;  MatC[14] = mi2;
-
-	MatC[21] = mi3; MatC[28] = mi3; MatC[35] = mi3;
-	memcpy(matC.values(), &MatC[0], sizeof(double) * MatC.size());
-
 	DenseMatrix J(dimension, dimension);
-	std::vector<double> invJ (dimension * dimension, 0);
 	DenseMatrix invJJ(dimension, dimension);
 
 	std::vector<double> dND (Ksize, 0);
 	DenseMatrix ddND(Point::size(), e->size());
-	std::vector<double> CB (Ksize * Csize, 0);
 	DenseMatrix dCB(Ksize, Csize);
 	std::vector<double> B (Ksize * Csize, 0);
 	DenseMatrix dB(Csize, Ksize);
@@ -235,41 +251,11 @@ void Mesh::_assembleElesticity(
 
 	for (int gp = 0; gp < gausePoints; gp++) {
 		memcpy(ddN.values(), &dN[gp][0], sizeof(double) * dN[gp].size());
-		/*cblas_dgemm(
-			CblasRowMajor, CblasNoTrans, CblasNoTrans,
-			dimension, dimension, nodes,
-			1, dd.values(), nodes, coordinates.values(), dimension,
-			0, J.values(), dimension
-		);*/
 		J.multiply(ddN, coordinates);
 
-		const double *j = J.values();
-		double detJ = fabs( j[0] * j[4] * j[8] +
-							j[1] * j[5] * j[6] +
-							j[2] * j[3] * j[7] -
-							j[2] * j[4] * j[6] -
-							j[1] * j[3] * j[8] -
-							j[0] * j[5] * j[7]);
+		double detJ = determinant3x3(J);
+		inverse(J, invJJ, detJ);
 
-		double detJx = 1 / detJ;
-
-		double *invj = invJJ.values();
-		invj[0] = detJx * (  j[8] * j[4] - j[7] * j[5] );
-		invj[1] = detJx * (- j[8] * j[1] + j[7] * j[2] );
-		invj[2] = detJx * (  j[5] * j[1] - j[4] * j[2] );
-		invj[3] = detJx * (- j[8] * j[3] + j[6] * j[5] );
-		invj[4] = detJx * (  j[8] * j[0] - j[6] * j[2] );
-		invj[5] = detJx * (- j[5] * j[0] + j[3] * j[2] );
-		invj[6] = detJx * (  j[7] * j[3] - j[6] * j[4] );
-		invj[7] = detJx * (- j[7] * j[0] + j[6] * j[1] );
-		invj[8] = detJx * (  j[4] * j[0] - j[3] * j[1] );
-
-		/*cblas_dgemm(
-			CblasRowMajor, CblasNoTrans, CblasNoTrans,
-			dimension, nodes, dimension,
-			1, invJJ.values(), dimension, &dN[gp][0], nodes,
-			0, ddND.values(), nodes
-		);*/
 		ddND.multiply(invJJ, ddN);
 
 		memcpy(&dND[0], ddND.values(), sizeof(double) * dND.size());
@@ -299,25 +285,8 @@ void Mesh::_assembleElesticity(
 		memcpy(&B[4 * columns + e->size()],     dNDz, sizeof(double) * e->size());
 		memcpy(&B[5 * columns],                 dNDz, sizeof(double) * e->size());
 
-
 		memcpy(dB.values(), &B[0], sizeof(double) * B.size());
-		// C * B
-		/*cblas_dgemm(
-			CblasRowMajor, CblasNoTrans, CblasNoTrans,
-			Csize, Ksize, Csize,
-			1, matC.values(), Csize, dB.values(), Ksize,
-			0, dCB.values(), Ksize
-		);*/
-
-		dCB.multiply(matC, dB);
-
-		//Ke = Ke + (B' * (C * B)) * dJ * WF;
-		/*cblas_dgemm(
-			CblasRowMajor, CblasTrans, CblasNoTrans,
-			Ksize, Ksize, Csize,
-			detJ * weighFactor[gp], dB.values(), Ksize, dCB.values(), Ksize,
-			1, Ke.values(), Ksize
-		);*/
+		dCB.multiply(C, dB);
 
 		Ke.multiply(dB, dCB, detJ * weighFactor[gp], 1, true);
 

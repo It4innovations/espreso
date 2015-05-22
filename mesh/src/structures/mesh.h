@@ -130,8 +130,7 @@ protected:
 		std::vector<double> &Me,
 		std::vector<double> &fe,
 		std::vector<double> &inertia,
-		double ex,
-		double mi,
+		DenseMatrix &C,
 		bool dynamic) const;
 
 	void _integrateElasticity(
