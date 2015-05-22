@@ -11,7 +11,7 @@ class SparseDOKMatrix;
 class SparseIJVMatrix;
 class SparseVVPMatrix;
 
-#define CSRMatrixIndexing Matrix::ZeroBased
+#define CSRMatrixIndexing Matrix::OneBased
 
 class SparseCSRMatrix: public Matrix
 {

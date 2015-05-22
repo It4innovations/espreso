@@ -218,6 +218,7 @@ double GetProcessMemory ( ) {
 void SetMatrixFromCSR   ( SparseMatrix & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type ) {
 
 	int nnz = rows[n_rows];  
+	int offset = (rows[0]) ? 0 : 1;
 
 	Mat.CSR_I_row_indices.resize(n_rows+1);
 	Mat.CSR_J_col_indices.resize(nnz);
@@ -225,11 +226,11 @@ void SetMatrixFromCSR   ( SparseMatrix & Mat, ShortInt n_rows, ShortInt n_cols, 
 
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin()); 
 	for (int i = 0; i < Mat.CSR_I_row_indices.size(); i++)
-		Mat.CSR_I_row_indices[i] = rows[i] + 1; 
+		Mat.CSR_I_row_indices[i] = rows[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin()); 
 	for (int i = 0; i < Mat.CSR_J_col_indices.size(); i++)
-		Mat.CSR_J_col_indices[i] = cols[i] + 1; 
+		Mat.CSR_J_col_indices[i] = cols[i] + offset;
 
 	copy(vals, vals + nnz, Mat.CSR_V_values.begin()); 
 
