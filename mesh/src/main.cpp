@@ -2,11 +2,29 @@
 
 void test_matrices();
 void test_BEM();
+void test_meshes();
 
 int main(int argc, char** argv)
 {
-	test_BEM();
+	test_meshes();
 	return 0;
+}
+
+void test_meshes()
+{
+	int partsCount = 4;
+	int fixPointsCount = 4;
+
+	Mesh mesh("matrices/HEX/5/elem", "matrices/HEX/5/coord", partsCount, fixPointsCount);
+
+	Boundaries b(mesh);
+
+	SurfaceMesh sMesh(mesh);
+	CommonFacesMesh cMesh(mesh);
+
+	mesh.saveVTK("mesh.vtk");
+	sMesh.saveVTK("surface.vtk");
+	cMesh.saveVTK("faces.vtk");
 }
 
 void test_BEM()
@@ -15,8 +33,6 @@ void test_BEM()
 	int fixPointsCount = 4;
 
 	Mesh mesh("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
-
-	Boundaries b(mesh);
 
 	SurfaceMesh bMesh;
 	mesh.getSurface(bMesh);

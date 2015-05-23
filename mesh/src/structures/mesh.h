@@ -29,6 +29,7 @@ enum FLAGS {
 }
 
 class SurfaceMesh;
+class CommonFacesMesh;
 
 class Mesh
 {
@@ -58,7 +59,8 @@ public:
 
 	void saveNodeArray(idx_t *nodeArray, size_t part);
 
-	void getSurface(SurfaceMesh &surfaceMesh);
+	void getSurface(SurfaceMesh &surface) const;
+	void getCommonFaces(CommonFacesMesh &commonFaces) const;
 
 	void reserve(size_t size);
 	void pushElement(Element* e);
@@ -190,15 +192,38 @@ public:
 	SurfaceMesh(): Mesh() { };
 	SurfaceMesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
 		Mesh(mesh, coordinates, parts, fixPoints) { };
-
-	SurfaceMesh(const SurfaceMesh &other): Mesh(static_cast<Mesh>(other)) { };
-	SurfaceMesh& operator=(const SurfaceMesh &other)
+	SurfaceMesh(const Mesh &mesh)
 	{
-		static_cast<Mesh>(*this) = static_cast<Mesh>(other);
-		return *this;
+		mesh.getSurface(*this);
 	}
 
 	void elasticity(DenseMatrix &K, size_t part) const;
+
+private:
+	SurfaceMesh(const SurfaceMesh &other): Mesh(static_cast<Mesh>(other)) { };
+	SurfaceMesh& operator=(const SurfaceMesh &other)
+	{
+		return *this;
+	}
+
+};
+
+class CommonFacesMesh: public Mesh
+{
+
+public:
+	CommonFacesMesh(): Mesh() { };
+	CommonFacesMesh(const Mesh &mesh)
+	{
+		mesh.getCommonFaces(*this);
+	}
+
+private:
+	CommonFacesMesh(const SurfaceMesh &other) { };
+	CommonFacesMesh& operator=(const CommonFacesMesh &other)
+	{
+		return *this;
+	}
 
 };
 

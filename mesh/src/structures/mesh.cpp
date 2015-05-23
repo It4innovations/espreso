@@ -767,7 +767,34 @@ bool isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_
 	return false;
 }
 
-void Mesh::getSurface(SurfaceMesh &surfaceMesh)
+bool isCommonFace(
+	std::vector<std::vector<int> > &nodesElements,
+	std::vector<idx_t> &face,
+	const std::vector<idx_t> &partPtrs)
+{
+	std::vector<int> result(nodesElements[face[0]]);
+	std::vector<int>::iterator it = result.end();
+
+	for (size_t i = 1; i < face.size(); i++) {
+		std::vector<int> tmp(result.begin(), it);
+		it = std::set_intersection(
+		         tmp.begin(), tmp.end(),
+		         nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
+		         result.begin());
+		if (it - result.begin() == 1) {
+			return false;
+		}
+	}
+
+	for (size_t i = 1; i < partPtrs.size() - 1; i++) {
+		if (result[0] < partPtrs[i] && partPtrs[i] <= result[1]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void Mesh::getSurface(SurfaceMesh &surface) const
 {
 	// vector of faces in all parts
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
@@ -814,7 +841,7 @@ void Mesh::getSurface(SurfaceMesh &surfaceMesh)
 		}
 	}
 
-	Coordinates &coords = surfaceMesh.coordinates();
+	Coordinates &coords = surface.coordinates();
 	coords.localResize(_partPtrs.size() - 1);
 
 	// Projects all coordinates to coordinates in the surface mesh
@@ -845,14 +872,14 @@ void Mesh::getSurface(SurfaceMesh &surfaceMesh)
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		count += elementsCount[i];
 	}
-	surfaceMesh.reserve(count);
+	surface.reserve(count);
 
 	// create surface mesh
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<idx_t> &face = faces[i][j];
 			if (faces[i][j].size() == 3) {
-				surfaceMesh.pushElement(new Triangle(&face[0]));
+				surface.pushElement(new Triangle(&face[0]));
 			}
 			// divide square to triangles
 			if (faces[i][j].size() == 4) {
@@ -863,17 +890,113 @@ void Mesh::getSurface(SurfaceMesh &surfaceMesh)
 					}
 				}
 				if (min % 2 == 0) {
-					surfaceMesh.pushElement(new Triangle(&face[0]));
+					surface.pushElement(new Triangle(&face[0]));
 					face[1] = face[0];
-					surfaceMesh.pushElement(new Triangle(&face[1]));
+					surface.pushElement(new Triangle(&face[1]));
 				} else {
-					surfaceMesh.pushElement(new Triangle(&face[1]));
+					surface.pushElement(new Triangle(&face[1]));
 					face[2] = face[3];
-					surfaceMesh.pushElement(new Triangle(&face[0]));
+					surface.pushElement(new Triangle(&face[0]));
 				}
 			}
 		}
-		surfaceMesh.endPartition();
+		surface.endPartition();
+	}
+}
+
+void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
+{
+	// vector of faces in all parts
+	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
+	// number of elements in all parts
+	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
+	// nodes in surface mesh
+	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
+
+	if (_partPtrs.size() < 2) {
+		std::cerr << "Internal error: _partPtrs.size()\n";
+		exit(EXIT_FAILURE);
+	}
+
+	std::vector<std::vector<int> > nodesElements(_coordinates.size() + _coordinates.getOffset());
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+		// Compute nodes' adjacent elements
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->size(); k++) {
+				nodesElements[l2g[_elements[j]->node(k)]].push_back(j);
+			}
+		}
+	}
+
+#ifndef DEBUG
+	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#else
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#endif
+		// compute number of elements and fill used nodes
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->faces(); k++) {
+				std::vector<idx_t> face = _elements[j]->getFace(k);
+				for (size_t f = 0; f < face.size(); f++) {
+					face[f] = l2g[face[f]];
+				}
+				if (isCommonFace(nodesElements, face, _partPtrs)) {
+					faces[i].push_back(face);
+					elementsCount[i] += 1;
+					for (size_t f = 0; f < face.size(); f++) {
+						selection[face[f]] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	Coordinates &coords = commonFaces.coordinates();
+	coords.localResize(_partPtrs.size() - 1);
+
+	// Projects all coordinates to coordinates in the common faces
+	size_t c = 0;
+	coords.resize(std::count(selection.begin(), selection.end(), 1));
+	for (size_t i = 0; i < selection.size(); i++) {
+		if (selection[i] == 1) {
+			selection[i] = c;
+			coords[c++] = _coordinates[i];
+		}
+	}
+
+#ifndef DEBUG
+	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#else
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#endif
+		// re-index faces to projected coordinates
+		for (size_t j = 0; j < faces[i].size(); j++) {
+			for (size_t k = 0; k < faces[i][j].size(); k++) {
+				faces[i][j][k] = selection[faces[i][j][k]];
+			}
+		}
+	}
+
+	size_t count = 0;
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		count += elementsCount[i];
+	}
+	commonFaces.reserve(count);
+
+	// create surface mesh
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		for (size_t j = 0; j < faces[i].size(); j++) {
+			std::vector<idx_t> &face = faces[i][j];
+			if (faces[i][j].size() == 3) {
+				commonFaces.pushElement(new Triangle(&face[0]));
+			}
+			if (faces[i][j].size() == 4) {
+				commonFaces.pushElement(new Square(&face[0]));
+			}
+		}
+		commonFaces.endPartition();
 	}
 }
 
