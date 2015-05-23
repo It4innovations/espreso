@@ -5,16 +5,7 @@ void test_BEM();
 
 int main(int argc, char** argv)
 {
-	DenseMatrix A(5, 3);
-	DenseMatrix B(3, 7);
-
-	/*DenseMatrix C;
-	C.multiply(A, B);*/
-
-	DenseMatrix D;
-	D.multiply(A, A * B);
-
-	//test_matrices();
+	test_BEM();
 	return 0;
 }
 
@@ -23,22 +14,12 @@ void test_BEM()
 	int partsCount = 4;
 	int fixPointsCount = 4;
 
-	Mesh mesh("matrices/TET/5/elem", "matrices/TET/5/coord", partsCount, fixPointsCount);
-
-	int dimension = mesh.getPartNodesCount(0) * Point::size();
-
-	SparseCSRMatrix K(dimension, dimension);
-	SparseCSRMatrix M(dimension, dimension);
-	std::vector<double> f(dimension);
-
-	mesh.elasticity(K, M, f, 0);
-
-	mesh.saveVTK("mesh.vtk");
+	Mesh mesh("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
 
 	Boundaries b(mesh);
 
-	BoundaryMesh bMesh;
-	mesh.getBoundary(bMesh);
+	SurfaceMesh bMesh;
+	mesh.getSurface(bMesh);
 
 	std::vector<DenseMatrix> K_mat;
 
@@ -54,9 +35,8 @@ void test_BEM()
 		std::cout << d << " " << std::endl;
 	}
 
-	//bem.saveVTK("bem.vtk");
+	bMesh.saveVTK("bem.vtk");
 
-	//mesh.saveVTK();
 }
 
 void fill_matrix(Matrix *m)

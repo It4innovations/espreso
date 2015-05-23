@@ -34,6 +34,30 @@ public:
 	double x, y, z;
 };
 
+inline bool operator<(const Point3D &p1, const Point3D &p2)
+{
+	if (p1.x == p2.x) {
+		if (p1.y == p2.y) {
+			if (p1.z == p2.z) {
+				return false;
+			}
+			return p1.z < p2.z;
+		}
+		return p1.y < p2.y;
+	}
+	return p1.x < p2.x;
+}
+
+inline bool operator>(const Point3D &p1, const Point3D &p2)
+{
+	return p2 < p1;
+}
+
+inline bool operator==(const Point3D &p1, const Point3D &p2)
+{
+	return !((p1 < p2) || (p2 < p1));
+}
+
 inline std::ostream& operator<<(std::ostream& os, const Point3D &p)
 {
 	os << p.x << " " << p.y << " " << p.z;

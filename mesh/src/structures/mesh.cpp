@@ -749,7 +749,7 @@ void Mesh::saveVTK(const char* filename)
 	vtk.close();
 }
 
-bool Mesh::isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_t> &face)
+bool isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_t> &face)
 {
 	std::vector<int> result(nodesElements[face[0]]);
 	std::vector<int>::iterator it = result.end();
@@ -767,10 +767,13 @@ bool Mesh::isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vecto
 	return false;
 }
 
-void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
+void Mesh::getSurface(SurfaceMesh &surfaceMesh)
 {
+	// vector of faces in all parts
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
+	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
+	// nodes in surface mesh
 	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
 	if (_partPtrs.size() < 2) {
@@ -791,7 +794,7 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 			}
 		}
 
-
+		// compute number of elements and fill used nodes
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
 				std::vector<idx_t> face = _elements[j]->getFace(k);
@@ -811,9 +814,10 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 		}
 	}
 
-	Coordinates &coords = boundaryMesh.coordinates();
+	Coordinates &coords = surfaceMesh.coordinates();
 	coords.localResize(_partPtrs.size() - 1);
 
+	// Projects all coordinates to coordinates in the surface mesh
 	size_t c = 0;
 	coords.resize(std::count(selection.begin(), selection.end(), 1));
 	for (size_t i = 0; i < selection.size(); i++) {
@@ -828,6 +832,7 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 #else
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
+		// re-index faces to projected coordinates
 		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			for (size_t k = 0; k < faces[i][j].size(); k++) {
@@ -840,37 +845,39 @@ void Mesh::getBoundary(BoundaryMesh &boundaryMesh)
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		count += elementsCount[i];
 	}
-	boundaryMesh.reserve(count);
+	surfaceMesh.reserve(count);
 
+	// create surface mesh
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<idx_t> &face = faces[i][j];
 			if (faces[i][j].size() == 3) {
-				boundaryMesh.pushElement(new Triangle(&face[0]));
+				surfaceMesh.pushElement(new Triangle(&face[0]));
 			}
+			// divide square to triangles
 			if (faces[i][j].size() == 4) {
 				size_t min = 0;
 				for (size_t p = 1; p < 4; p++) {
-					if (face[min] > face[p]) {
+					if (coords[face[p]] < coords[face[min]]) {
 						min = p;
 					}
 				}
 				if (min % 2 == 0) {
-					boundaryMesh.pushElement(new Triangle(&face[0]));
+					surfaceMesh.pushElement(new Triangle(&face[0]));
 					face[1] = face[0];
-					boundaryMesh.pushElement(new Triangle(&face[1]));
+					surfaceMesh.pushElement(new Triangle(&face[1]));
 				} else {
-					boundaryMesh.pushElement(new Triangle(&face[1]));
+					surfaceMesh.pushElement(new Triangle(&face[1]));
 					face[2] = face[3];
-					boundaryMesh.pushElement(new Triangle(&face[0]));
+					surfaceMesh.pushElement(new Triangle(&face[0]));
 				}
 			}
 		}
-		boundaryMesh.endPartition();
+		surfaceMesh.endPartition();
 	}
 }
 
-void BoundaryMesh::elasticity(DenseMatrix &K, size_t part) const
+void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 {
 	idx_t nK = Point::size() * _partsNodesCount[part];
 	int eSize = _partPtrs[part + 1] - _partPtrs[part];

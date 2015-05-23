@@ -28,7 +28,7 @@ enum FLAGS {
 };
 }
 
-class BoundaryMesh;
+class SurfaceMesh;
 
 class Mesh
 {
@@ -58,7 +58,7 @@ public:
 
 	void saveNodeArray(idx_t *nodeArray, size_t part);
 
-	void getBoundary(BoundaryMesh &boundaryMesh);
+	void getSurface(SurfaceMesh &surfaceMesh);
 
 	void reserve(size_t size);
 	void pushElement(Element* e);
@@ -153,8 +153,6 @@ protected:
 	void checkMETISResult(int result) const;
 	void checkMKLResult(MKL_INT result) const;
 
-	bool isOuterFace(std::vector<std::vector<int> > &nodesElements, std::vector<idx_t> &face);
-
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
 
@@ -184,17 +182,17 @@ protected:
 };
 
 
-class BoundaryMesh: public Mesh
+class SurfaceMesh: public Mesh
 {
 
 public:
 
-	BoundaryMesh(): Mesh() { };
-	BoundaryMesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
+	SurfaceMesh(): Mesh() { };
+	SurfaceMesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
 		Mesh(mesh, coordinates, parts, fixPoints) { };
 
-	BoundaryMesh(const BoundaryMesh &other): Mesh(static_cast<Mesh>(other)) { };
-	BoundaryMesh& operator=(const BoundaryMesh &other)
+	SurfaceMesh(const SurfaceMesh &other): Mesh(static_cast<Mesh>(other)) { };
+	SurfaceMesh& operator=(const SurfaceMesh &other)
 	{
 		static_cast<Mesh>(*this) = static_cast<Mesh>(other);
 		return *this;
