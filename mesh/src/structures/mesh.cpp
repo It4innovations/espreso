@@ -650,7 +650,7 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 		for (idx_t ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
 			vtk << _elements[i]->size();
 			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << _elements[i]->node(j)+ cnt;
+				vtk << " " << _elements[i]->node(j) + cnt;
 			}
 			vtk << "\n";
 			i++;
@@ -701,33 +701,54 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 	vtk.close();
 }
 
-void Mesh::saveVTK(const char* filename)
+void Mesh::saveVTK(const char* filename, double shrinking)
 {
 	std::ofstream vtk;
+
+	size_t cSize = 0;
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		cSize += _coordinates.localToGlobal(i).size();
+	}
 
 	vtk.open(filename, std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
 	vtk << "ASCII\n\n";
 	vtk << "DATASET UNSTRUCTURED_GRID\n";
-	vtk << "POINTS " << _coordinates.size() << " float\n";
-	vtk << _coordinates << "\n";
+	vtk << "POINTS " << cSize << " float\n";
+	for (size_t i = 0; i + 1< _partPtrs.size(); i++) {
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+
+		Point center;
+		for (size_t c = 0; c < l2g.size(); c++) {
+			center += _coordinates[l2g[c]];
+		}
+		center /= l2g.size();
+
+		for (size_t c = 0; c < l2g.size(); c++) {
+			Point x = _coordinates[l2g[c]];
+			x = center + (x - center) * shrinking;
+			vtk << x << "\n";
+		}
+	}
+	vtk << "\n";
 
 	size_t size = 0;
 	for (size_t i = 0; i < _elements.size(); i++) {
 		size += _elements[i]->size() + 1;
 	}
 
+	size_t offset = 0;
 	vtk << "CELLS " << _elements.size() << " " << size << "\n";
 	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
-		std::vector<idx_t> l2g = _coordinates.localToGlobal(p);
 		for (size_t i = _partPtrs[p]; i < _partPtrs[p + 1]; i++) {
 			vtk << _elements[i]->size();
 			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << l2g[_elements[i]->node(j)] - _coordinates.getOffset();
+				vtk << " " << _elements[i]->node(j) + offset;
 			}
 			vtk << "\n";
 		}
+		offset += _coordinates.localToGlobal(p).size();
 	}
 
 	vtk << "\n";

@@ -54,7 +54,7 @@ public:
 		return _coordinates;
 	}
 
-	void saveVTK(const char* filename);
+	void saveVTK(const char* filename, double shrinking = 1);
 	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
 
 	void saveNodeArray(idx_t *nodeArray, size_t part);

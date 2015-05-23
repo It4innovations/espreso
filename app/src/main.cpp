@@ -158,19 +158,17 @@ void testBEM(int argc, char** argv)
 	size_t partsCount = input.mesh.getPartsCount();
 	size_t fixPointsCount = 4;
 
-	BoundaryMesh bMesh;
-
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
 
-	input.mesh.getBoundary(bMesh);
+	SurfaceMesh sMesh(input.mesh);
 
 	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
 
-	bMesh.computeFixPoints(fixPointsCount);
+	sMesh.computeFixPoints(fixPointsCount);
 
 	std::cout << "3 : " << omp_get_wtime() - start << std::endl;
 
-	Boundaries boundaries(bMesh);
+	Boundaries boundaries(sMesh);
 
 	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
 
@@ -183,7 +181,7 @@ void testBEM(int argc, char** argv)
 
 	for (int d = 0; d < partsCount; d++) {
 
-		bMesh.elasticity(K_mat[d], d);
+		sMesh.elasticity(K_mat[d], d);
 
 		std::cout << d << " " << std::endl;
 	}

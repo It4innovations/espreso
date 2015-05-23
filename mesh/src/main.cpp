@@ -15,16 +15,16 @@ void test_meshes()
 	int partsCount = 4;
 	int fixPointsCount = 4;
 
-	Mesh mesh("matrices/HEX/5/elem", "matrices/HEX/5/coord", partsCount, fixPointsCount);
+	Mesh mesh("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
 
 	Boundaries b(mesh);
 
 	SurfaceMesh sMesh(mesh);
 	CommonFacesMesh cMesh(mesh);
 
-	mesh.saveVTK("mesh.vtk");
-	sMesh.saveVTK("surface.vtk");
-	cMesh.saveVTK("faces.vtk");
+	mesh.saveVTK("mesh.vtk", 0.8);
+	sMesh.saveVTK("surface.vtk", 0.8);
+	cMesh.saveVTK("faces.vtk", 0.8);
 }
 
 void test_BEM()
