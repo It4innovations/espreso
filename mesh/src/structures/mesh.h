@@ -30,6 +30,7 @@ enum FLAGS {
 
 class SurfaceMesh;
 class CommonFacesMesh;
+class CornerLinesMesh;
 
 class Mesh
 {
@@ -61,6 +62,7 @@ public:
 
 	void getSurface(SurfaceMesh &surface) const;
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;
+	void getCornerLines(CornerLinesMesh &cornerLines) const;
 
 	void reserve(size_t size);
 	void pushElement(Element* e);
@@ -188,7 +190,6 @@ class SurfaceMesh: public Mesh
 {
 
 public:
-
 	SurfaceMesh(): Mesh() { };
 	SurfaceMesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
 		Mesh(mesh, coordinates, parts, fixPoints) { };
@@ -198,14 +199,6 @@ public:
 	}
 
 	void elasticity(DenseMatrix &K, size_t part) const;
-
-private:
-	SurfaceMesh(const SurfaceMesh &other): Mesh(static_cast<Mesh>(other)) { };
-	SurfaceMesh& operator=(const SurfaceMesh &other)
-	{
-		return *this;
-	}
-
 };
 
 class CommonFacesMesh: public Mesh
@@ -217,14 +210,17 @@ public:
 	{
 		mesh.getCommonFaces(*this);
 	}
+};
 
-private:
-	CommonFacesMesh(const SurfaceMesh &other) { };
-	CommonFacesMesh& operator=(const CommonFacesMesh &other)
+class CornerLinesMesh: public Mesh
+{
+
+public:
+	CornerLinesMesh(): Mesh() { };
+	CornerLinesMesh(const Mesh &mesh)
 	{
-		return *this;
+		mesh.getCornerLines(*this);
 	}
-
 };
 
 

@@ -20,11 +20,11 @@ void test_meshes()
 	Boundaries b(mesh);
 
 	SurfaceMesh sMesh(mesh);
-	CommonFacesMesh cMesh(mesh);
+	CommonFacesMesh cMesh(sMesh);
 
-	mesh.saveVTK("mesh.vtk", 0.8);
-	sMesh.saveVTK("surface.vtk", 0.8);
-	cMesh.saveVTK("faces.vtk", 0.8);
+	mesh.saveVTK("mesh.vtk", 0.6);
+	sMesh.saveVTK("surface.vtk", 0.6);
+	cMesh.saveVTK("faces.vtk", 0.6);
 }
 
 void test_BEM()

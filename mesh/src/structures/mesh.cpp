@@ -1021,6 +1021,102 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 	}
 }
 
+void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
+{
+	// vector of faces in all parts
+	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
+	// number of elements in all parts
+	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
+	// nodes in surface mesh
+	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
+
+	if (_partPtrs.size() < 2) {
+		std::cerr << "Internal error: _partPtrs.size()\n";
+		exit(EXIT_FAILURE);
+	}
+
+	std::vector<std::vector<int> > nodesElements(_coordinates.size() + _coordinates.getOffset());
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+		// Compute nodes' adjacent elements
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->size(); k++) {
+				nodesElements[l2g[_elements[j]->node(k)]].push_back(j);
+			}
+		}
+	}
+
+#ifndef DEBUG
+	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#else
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#endif
+		// compute number of elements and fill used nodes
+		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->faces(); k++) {
+				std::vector<idx_t> face = _elements[j]->getFace(k);
+				for (size_t f = 0; f < face.size(); f++) {
+					face[f] = l2g[face[f]];
+				}
+				if (isCommonFace(nodesElements, face, _partPtrs)) {
+					faces[i].push_back(face);
+					elementsCount[i] += 1;
+					for (size_t f = 0; f < face.size(); f++) {
+						selection[face[f]] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	Coordinates &coords = cornerLines.coordinates();
+	coords.localResize(_partPtrs.size() - 1);
+
+	// Projects all coordinates to coordinates in the common faces
+	size_t c = 0;
+	coords.resize(std::count(selection.begin(), selection.end(), 1));
+	for (size_t i = 0; i < selection.size(); i++) {
+		if (selection[i] == 1) {
+			selection[i] = c;
+			coords[c++] = _coordinates[i];
+		}
+	}
+
+#ifndef DEBUG
+	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#else
+	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+#endif
+		// re-index faces to projected coordinates
+		for (size_t j = 0; j < faces[i].size(); j++) {
+			for (size_t k = 0; k < faces[i][j].size(); k++) {
+				faces[i][j][k] = selection[faces[i][j][k]];
+			}
+		}
+	}
+
+	size_t count = 0;
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		count += elementsCount[i];
+	}
+	cornerLines.reserve(count);
+
+	// create surface mesh
+	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+		for (size_t j = 0; j < faces[i].size(); j++) {
+			std::vector<idx_t> &face = faces[i][j];
+			if (faces[i][j].size() == 3) {
+				cornerLines.pushElement(new Triangle(&face[0]));
+			}
+			if (faces[i][j].size() == 4) {
+				cornerLines.pushElement(new Square(&face[0]));
+			}
+		}
+		cornerLines.endPartition();
+	}
+}
+
 void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 {
 	idx_t nK = Point::size() * _partsNodesCount[part];
