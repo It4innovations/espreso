@@ -27,13 +27,13 @@ if [ "$1" = "build" ]; then
 fi
 
 if [ "$1" = "clean" ]; then
-  ./waf clean
   ./waf uninstall
+  ./waf clean
 fi
 
 if [ "$1" = "distclean" ]; then
-  ./waf distclean
   ./waf uninstall
+  ./waf distclean
 fi
 
 if [ "$1" = "run" ]; then
