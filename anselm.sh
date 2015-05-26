@@ -8,10 +8,14 @@ if [ "$#" -ne 1 ]; then
   echo "    ./anselm configure"
   echo "    ./anselm build"
   echo "    ./anselm run"
+  echo "    ./anselm clean"
+  echo "    ./anselm distclean"
   echo ""
   echo "  'configure' sets all parameters for the compiler. It is mandatory to run this command at the first time."
   echo "  'build' makes the runable application."
   echo "  'run' starts the computation. The result is put to Paraview input file 'mesh.vtk'."
+  echo "  'clean' removes all files created by build process."
+  echo "  'distclean' removes all files."
 fi
 
 if [ "$1" = "configure" ]; then
@@ -19,8 +23,17 @@ if [ "$1" = "configure" ]; then
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf
   ./waf install
+fi
+
+if [ "$1" = "clean" ]; then
+  ./waf clean
+  ./waf uninstall
+fi
+
+if [ "$1" = "distclean" ]; then
+  ./waf distclean
+  ./waf uninstall
 fi
 
 if [ "$1" = "run" ]; then

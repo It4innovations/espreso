@@ -1,7 +1,5 @@
 
 def options(opt):
-    opt.load("icpc")
-
     opt.add_option("--debug",
        action="store_true",
        default=False,
@@ -55,9 +53,26 @@ def check_environment(ctx):
         ctx.fatal("Install Open MP or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
 
+from waflib.Tools import ccroot,ar,gxx
+
+def anselm(ctx):
+    ctx.env.CXX = ["icpc"]
+    ctx.env.LINK_CXX = ["icpc"]
+    ctx.env.MPICXX = ["mpic++"]
+    ctx.get_cc_version(["icpc"], icc=True)
+    ctx.env.CXX_NAME='icc'
+
+    ctx.gxx_common_flags()
+    ctx.gxx_modifier_platform()
+    ctx.cxx_load_tools()
+    ctx.cxx_add_flags()
+    ctx.link_add_flags()
 
 def configure(ctx):
-    check_environment(ctx)
+    if ctx.options.anselm:
+        anselm(ctx)
+    else:
+        check_environment(ctx)
 
     ctx.setenv("base", ctx.env)
     ctx.env.append_unique("CXXFLAGS", [ "-Wall" ])
