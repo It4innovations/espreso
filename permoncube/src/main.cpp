@@ -20,28 +20,47 @@ void setParams(int argc, char** argv)
 	}
 }
 
+void test_tetra10();
+
 int main(int argc, char** argv)
 {
 	setParams(argc, argv);
 
-	Mesh mesh;
+	permoncube::Settings settings;
+	permoncube::Generator *generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(settings);
 
-	Permoncube::tetrahedrons10(mesh, mesh.coordinates(), subdomains, elementsInSub);
+	mesh::Mesh mesh;
+	size_t cluster[3] = { 0, 0, 0 };
 
-	int dimension = mesh.getPartNodesCount(0) * Point::size();
+	std::cout << settings;
+
+	generator->mesh(mesh, cluster);
+
+	//std::cout << mesh.coordinates();
+
+	mesh.saveVTK("permon.vtk", 0.9);
+
+	delete generator;
+}
+
+
+void test_tetra10()
+{
+	mesh::Mesh m;
+
+	//Permoncube::PM::tetrahedrons10(mesh, mesh.coordinates(), subdomains, elementsInSub);
+
+	int dimension = m.getPartNodesCount(0) * mesh::Point::size();
 
 	SparseCSRMatrix K(dimension, dimension);
 	SparseCSRMatrix M(dimension, dimension);
 	std::vector<double> f(dimension);
 
-	mesh.elasticity(K, M, f, 0);
+	m.elasticity(K, M, f, 0);
 
-	mesh.saveVTK("mesh.vtk");
+	m.saveVTK("mesh.vtk");
 
 	std::ofstream fileK("K15.txt");
 	fileK << K;
 	fileK.close();
 }
-
-
-

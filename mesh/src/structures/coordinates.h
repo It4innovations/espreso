@@ -17,7 +17,13 @@ public:
 
 	Coordinates(): _points(0), _offset(0) { };
 	Coordinates(const char *fileName);
-	Coordinates(size_t size, idx_t offset): _points(size), _offset(offset) {};
+	Coordinates(size_t size, idx_t offset): _points(size), _offset(offset) { };
+
+	void add(idx_t index, const Point &point)
+	{
+		_points[_globalMapping.size()] = point;
+		_globalMapping.push_back(index);
+	}
 
 	void resize(size_t size)
 	{
@@ -87,6 +93,7 @@ private:
 	std::vector<Point> _points;
 
 	std::vector<std::vector<idx_t> > _localMappings;
+	std::vector<idx_t> _globalMapping;
 
 	/** @brief Correction between C/C++ and Point indexing. */
 	idx_t _offset;

@@ -1,5 +1,6 @@
 #include "permoncube.h"
 
+using namespace Permoncube;
 
 	//	###################################################
 	//	#                                                 #
@@ -22,7 +23,7 @@
 	//	#                                                 #
 	//	###################################################
 
-void Permoncube::hexahedrons8(
+void PM::hexahedrons8(
 		Mesh &mesh,
 		Coordinates &coordinates,
 		int *subdomains,
@@ -82,7 +83,7 @@ void Permoncube::hexahedrons8(
 
 }
 
-void Permoncube::tetrahedrons4(
+void PM::tetrahedrons4(
 		Mesh &mesh,
 		Coordinates &coordinates,
 		int *subdomains,
@@ -178,7 +179,7 @@ void Permoncube::tetrahedrons4(
 	}
 }
 
-void Permoncube::tetrahedrons10(
+void PM::tetrahedrons10(
 		Mesh &mesh,
 		Coordinates &coordinates,
 		int *subdomains,
@@ -317,7 +318,7 @@ void Permoncube::tetrahedrons10(
 }
 
 
-void Permoncube::dirichlet(
+void PM::dirichlet(
 		std::map < int, double >  & dirichlet_x,
 		std::map < int, double >  & dirichlet_y,
 		std::map < int, double >  & dirichlet_z,
@@ -348,7 +349,7 @@ void Permoncube::dirichlet(
 	}
 }
 
-void dirichletTetra10(
+void PM::dirichletTetra10(
 		std::map < int, double >  & dirichlet_x,
 		std::map < int, double >  & dirichlet_y,
 		std::map < int, double >  & dirichlet_z,
