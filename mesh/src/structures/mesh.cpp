@@ -614,7 +614,7 @@ void Mesh::saveNodeArray(idx_t *nodeArray, size_t part)
 	}
 }
 
-void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec)
+void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec, double shrinking)
 {
 	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
@@ -632,10 +632,17 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 
 	vtk << "POINTS " << n_points << " float\n";
 	for (size_t d = 0; d < nSubClst; d++) {
+		std::cout << "SSSSUUUUUUB: " << shrinking << "\n";
+		Point center;
+		for (size_t c = 0; c < l2g_vec[d].size(); c++) {
+			center += _coordinates[l2g_vec[d][c]];
+		}
+		center /= l2g_vec[d].size();
+
 		for (size_t i = 0; i < l2g_vec[d].size(); i++) {
-			vtk << _coordinates[l2g_vec[d][i]].x << " " ;
-			vtk << _coordinates[l2g_vec[d][i]].y << " " ;
-			vtk << _coordinates[l2g_vec[d][i]].z << "\n";
+			Point x = _coordinates[l2g_vec[d][i]];
+			x = center + (x - center) * shrinking;
+			vtk << x << "\n";
 		}
 	}
 
@@ -675,10 +682,10 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 	}
 }
 
-void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec)
+void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec, double shrinking)
 {
 	std::ofstream vtk;
-	saveBasis(vtk, l2g_vec);
+	saveBasis(vtk, l2g_vec, shrinking);
 
 	size_t n_points = 0;
 	for (size_t d = 0; d < l2g_vec.size(); d++) {

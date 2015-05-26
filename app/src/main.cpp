@@ -504,7 +504,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input.mesh.saveVTK(prim_solution, l2g_vec);
+	input.mesh.saveVTK(prim_solution, l2g_vec, 0.8);
 
 
 	//if (clust_g.domainG->flag_store_VTK)

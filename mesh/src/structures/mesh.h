@@ -56,7 +56,7 @@ public:
 	}
 
 	void saveVTK(const char* filename, double shrinking = 1);
-	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec );
+	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec, double shrinking = 1);
 
 	void saveNodeArray(idx_t *nodeArray, size_t part);
 
@@ -122,7 +122,7 @@ public:
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
 
-	void saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec);
+	void saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec, double shrinking);
 
 	Element* createElement(idx_t *indices, idx_t n);
 
