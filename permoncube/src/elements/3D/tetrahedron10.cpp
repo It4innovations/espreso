@@ -134,6 +134,52 @@ void Tetrahedron10::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings 
 	}
 }
 
+void Tetrahedron10::fixZeroPlanes(
+			const permoncube::Settings &settings,
+			std::map<int, double> &dirichlet_x,
+			std::map<int, double> &dirichlet_y,
+			std::map<int, double> &dirichlet_z)
+{
+	size_t nodes[3];
+	ElementGenerator<Tetrahedron10>::globalNodesCount(settings, nodes);
+	idx_t index = 0;
+	for (idx_t z = 0; z < nodes[2]; z++) {
+		for (idx_t y = 0; y < nodes[1]; y++) {
+			for (idx_t x = 0; x < nodes[0]; x++) {
+				if (z == 0) {
+					dirichlet_z[index] = 0.0;
+				}
+				if (y == 0) {
+					dirichlet_y[index] = 0.0;
+				}
+				if (x == 0) {
+					dirichlet_x[index] = 0.0;
+				}
+				index++;
+			}
+		}
+	}
+}
+
+void Tetrahedron10::fixBottom(
+			const permoncube::Settings &settings,
+			std::map<int, double> &dirichlet_x,
+			std::map<int, double> &dirichlet_y,
+			std::map<int, double> &dirichlet_z)
+{
+	size_t nodes[3];
+	ElementGenerator<Tetrahedron10>::globalNodesCount(settings, nodes);
+	idx_t index = 0;
+	for (idx_t y = 0; y < nodes[1]; y++) {
+		for (idx_t x = 0; x < nodes[0]; x++) {
+			dirichlet_z[index] = 0.0;
+			dirichlet_y[index] = 0.0;
+			dirichlet_x[index] = 0.0;
+			index++;
+		}
+	}
+}
+
 void Tetrahedron10::clear()
 {
 	_coordinateMapping.clear();

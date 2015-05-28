@@ -16,6 +16,17 @@ class Hexahedron8 {
 public:
 	static void addElements(mesh::Mesh &mesh, const idx_t indices[]);
 	static void addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[]);
+	static void fixZeroPlanes(
+			const permoncube::Settings &settings,
+			std::map<int, double> &dirichlet_x,
+			std::map<int, double> &dirichlet_y,
+			std::map<int, double> &dirichlet_z);
+	static void fixBottom(
+			const permoncube::Settings &settings,
+			std::map<int, double> &dirichlet_x,
+			std::map<int, double> &dirichlet_y,
+			std::map<int, double> &dirichlet_z);
+
 	static void clear();
 
 	static size_t subnodes[3];

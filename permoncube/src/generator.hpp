@@ -119,3 +119,22 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 	TElement::clear();
 }
 
+template <class TElement>
+void ElementGenerator<TElement>::fixZeroPlanes(
+			std::map<int, double> &dirichlet_x,
+			std::map<int, double> &dirichlet_y,
+			std::map<int, double> &dirichlet_z)
+{
+	TElement::fixZeroPlanes(_settings, dirichlet_x, dirichlet_y, dirichlet_z);
+}
+
+
+template <class TElement>
+void ElementGenerator<TElement>::fixBottom(
+			std::map<int, double> &dirichlet_x,
+			std::map<int, double> &dirichlet_y,
+			std::map<int, double> &dirichlet_z)
+{
+	TElement::fixBottom(_settings, dirichlet_x, dirichlet_y, dirichlet_z);
+}
+
