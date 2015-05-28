@@ -9,6 +9,8 @@
 #define Tetrahedron10GPCount 15
 #define Tetrahedron10VTKCode 24
 
+namespace mesh {
+
 class Tetrahedron10: public Element
 {
 
@@ -79,5 +81,7 @@ private:
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
 };
+
+}
 
 #endif /* TETRAHEDRON10_H_ */

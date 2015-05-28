@@ -1,13 +1,15 @@
 #include "boundaries.h"
 
-Boundaries::Boundaries(const Mesh &mesh):
-	_boundaries(mesh.coordinates().size() + mesh.coordinates().getOffset()), _mesh(mesh)
+using namespace mesh;
+
+Boundaries::Boundaries(const Mesh &m):
+	_boundaries(m.coordinates().size() + m.coordinates().getOffset()), _mesh(m)
 {
-	const std::vector<idx_t> &parts = mesh.getPartition();
-	const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<idx_t> &parts = m.getPartition();
+	const std::vector<Element*> &elements = m.getElements();
 
 	for (size_t p = 0; p + 1 < parts.size(); p++) {
-		const std::vector<idx_t> &l2g = mesh.coordinates().localToGlobal(p);
+		const std::vector<idx_t> &l2g = m.coordinates().localToGlobal(p);
 		for (idx_t e = parts[p]; e < parts[p + 1]; e++) {
 			for (size_t n = 0; n < elements[e]->size(); n++) {
 				_boundaries[l2g[elements[e]->node(n)]].insert(p);
@@ -167,7 +169,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 	}
 }
 
-std::ostream& operator<<(std::ostream& os, const Boundaries &b)
+std::ostream& mesh::operator<<(std::ostream& os, const Boundaries &b)
 {
 	std::set<int>::const_iterator it;
 	int offset = b._mesh.coordinates().getOffset();

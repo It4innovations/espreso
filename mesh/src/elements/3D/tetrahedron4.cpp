@@ -1,6 +1,8 @@
 
 #include "tetrahedron4.h"
 
+using namespace mesh;
+
 std::vector<DenseMatrix> Tetra4_dN()
 {
 	// dN contains [dNr, dNs, dNt]

@@ -1,5 +1,7 @@
 #include "triangle.h"
 
+using namespace mesh;
+
 // TODO: Implement base functions
 std::vector<DenseMatrix> Triangle::_dN;
 std::vector<DenseMatrix> Triangle::_N;

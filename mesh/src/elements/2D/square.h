@@ -9,6 +9,8 @@
 #define SquareGPCount 4
 #define SquareVTKCode 9
 
+namespace mesh {
+
 class Square: public Element
 {
 
@@ -80,7 +82,7 @@ private:
 	static std::vector<double> _weighFactor;
 };
 
-
+}
 
 
 #endif /* SQUARE_H_ */

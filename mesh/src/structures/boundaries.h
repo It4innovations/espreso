@@ -4,6 +4,8 @@
 #include "../elements/elements.h"
 #include "mesh.h"
 
+namespace mesh {
+
 class Boundaries
 {
 
@@ -35,6 +37,6 @@ private:
 	std::vector<std::set<int> > _boundaries;
 };
 
-
+}
 
 #endif /* BOUNDARIES_H_ */

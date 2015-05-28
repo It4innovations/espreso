@@ -1,5 +1,7 @@
 #include "line.h"
 
+using namespace mesh;
+
 // TODO: Implement base functions
 std::vector<DenseMatrix> Line::_dN;
 std::vector<DenseMatrix> Line::_N;

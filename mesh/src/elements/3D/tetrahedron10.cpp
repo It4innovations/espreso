@@ -1,5 +1,7 @@
 #include "tetrahedron10.h"
 
+using namespace mesh;
+
 std::vector<DenseMatrix> Tetra10_dN()
 {
 	std::vector<DenseMatrix> dN(

@@ -1,5 +1,7 @@
 #include "point2d.h"
 
+using namespace mesh;
+
 void Point2D::normalize()
 {
 	double l = 1.0 / sqrt(x * x + y * y);

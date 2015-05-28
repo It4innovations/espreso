@@ -1,5 +1,7 @@
 #include "coordinates.h"
 
+using namespace mesh;
+
 Coordinates::Coordinates(const char *fileName): _offset(1)
 {
 	_points.resize(Loader::getLinesCount(fileName));
@@ -31,13 +33,11 @@ void Coordinates::computeLocal(size_t part, std::vector<idx_t> &nodeMap, size_t 
 	}
 }
 
-std::ostream& operator<<(std::ostream& os, const Coordinates &c)
+std::ostream& mesh::operator<<(std::ostream& os, const Coordinates &c)
 {
 	for (size_t i = 0; i < c.size(); i++) {
 		os << c._points[i] << "\n";
 	}
 	return os;
 }
-
-
 

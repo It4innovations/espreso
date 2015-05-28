@@ -6,6 +6,8 @@
 
 #include <vector>
 
+namespace mesh {
+
 class Coordinates
 {
 
@@ -90,6 +92,6 @@ private:
 	idx_t _offset;
 };
 
-
+}
 
 #endif /* COORDINATES_H_ */

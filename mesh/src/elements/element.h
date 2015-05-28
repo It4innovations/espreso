@@ -9,6 +9,8 @@
 #include "../structures/coordinates.h"
 #include "../matrices/matrices.h"
 
+namespace mesh {
+
 class Element
 {
 public:
@@ -64,7 +66,7 @@ protected:
 
 };
 
-
+}
 
 
 #endif /* ELEMENT_H_ */

@@ -10,6 +10,8 @@
 #define Hexahedron8GPCount 8
 #define Hexahedron8VTKCode 12
 
+namespace mesh {
+
 class Hexahedron8: public Element
 {
 
@@ -82,5 +84,7 @@ private:
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
 };
+
+}
 
 #endif /* HEXAHEDRON8_H_ */

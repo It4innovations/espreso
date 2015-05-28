@@ -1,5 +1,7 @@
 #include "mesh.h"
 
+using namespace mesh;
+
 Mesh::Mesh()
 	:_indicesType(Element::GLOBAL), _elements(0), _lastNode(0), _partsNodesCount(1, 0),
 	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
@@ -9,15 +11,15 @@ Mesh::Mesh()
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
-	_coordinates(coordinates),
+Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t fixPoints):
+	_coordinates(coordinatesFile),
 	_indicesType(Element::GLOBAL),
 	_flags(flags::FLAGS_SIZE, false),
 	_maxElementSize(0)
 {
-	_elements.resize(Loader::getLinesCount(mesh));
+	_elements.resize(Loader::getLinesCount(meshFile));
 
-	std::ifstream file(mesh);
+	std::ifstream file(meshFile);
 	std::string line;
 
 	idx_t indices[20], n; 	// 20 is the max of vertices of a element
@@ -43,7 +45,7 @@ Mesh::Mesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoin
 		}
 		file.close();
 	} else {
-		fprintf(stderr, "Cannot load mesh from file: %s.\n", mesh);
+		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1158,7 +1160,7 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	    );
 }
 
-std::ostream& operator<<(std::ostream& os, const Mesh &m)
+std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {
 		os << *(m._elements[i]) << "\n";

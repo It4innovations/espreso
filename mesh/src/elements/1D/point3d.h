@@ -7,6 +7,8 @@
 
 #include <metis.h>
 
+namespace mesh {
+
 class Point3D
 {
 
@@ -80,6 +82,6 @@ inline void operator<<(double* vector, const Point3D &p)
 	vector[2] = p.z;
 }
 
-
+}
 
 #endif /* POINT3D_H_ */

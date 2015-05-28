@@ -15,14 +15,14 @@ void test_meshes()
 	int partsCount = 4;
 	int fixPointsCount = 4;
 
-	Mesh mesh("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
+	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
 
-	Boundaries b(mesh);
+	mesh::Boundaries b(m);
 
-	SurfaceMesh sMesh(mesh);
-	CommonFacesMesh cMesh(sMesh);
+	mesh::SurfaceMesh sMesh(m);
+	mesh::CommonFacesMesh cMesh(sMesh);
 
-	mesh.saveVTK("mesh.vtk", 0.6);
+	m.saveVTK("mesh.vtk", 0.6);
 	sMesh.saveVTK("surface.vtk", 0.6);
 	cMesh.saveVTK("faces.vtk", 0.6);
 }
@@ -32,10 +32,10 @@ void test_BEM()
 	int partsCount = 4;
 	int fixPointsCount = 4;
 
-	Mesh mesh("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
+	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
 
-	SurfaceMesh bMesh;
-	mesh.getSurface(bMesh);
+	mesh::SurfaceMesh bMesh;
+	m.getSurface(bMesh);
 
 	std::vector<DenseMatrix> K_mat;
 

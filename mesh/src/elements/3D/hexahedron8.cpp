@@ -1,5 +1,7 @@
 #include "hexahedron8.h"
 
+using namespace mesh;
+
 std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
 		Hexahedron8GPCount,

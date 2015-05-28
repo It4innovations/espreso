@@ -1,5 +1,7 @@
 #include "square.h"
 
+using namespace mesh;
+
 // TODO: Implement base functions
 std::vector<DenseMatrix> Square::_dN;
 std::vector<DenseMatrix> Square::_N;

@@ -9,6 +9,8 @@
 #define LineGPCount 2
 #define LineVTKCode 3
 
+namespace mesh {
+
 class Line: public Element
 {
 
@@ -80,6 +82,7 @@ private:
 	static std::vector<double> _weighFactor;
 };
 
+}
 
 
 #endif /* LINE_H_ */

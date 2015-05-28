@@ -7,6 +7,8 @@
 
 #include <metis.h>
 
+namespace mesh {
+
 class Point2D
 {
 
@@ -73,6 +75,8 @@ inline void operator<<(double* vector, const Point2D &p)
 {
 	vector[0] = p.x;
 	vector[1] = p.y;
+}
+
 }
 
 #endif /* POINT2D_H_ */

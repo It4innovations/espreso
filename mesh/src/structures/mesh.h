@@ -16,6 +16,8 @@
 
 #include "esbem.h"
 
+namespace mesh {
+
 namespace flags
 {
 
@@ -164,7 +166,7 @@ protected:
 	Element::IndicesType _indicesType;
 
 	/** @brief Array that stores all elements of the mesh. */
-	std::vector<Element*> _elements;
+	std::vector<mesh::Element*> _elements;
 
 	/** @brief The biggest node's id in the mesh. */
 	idx_t _lastNode;
@@ -223,6 +225,7 @@ public:
 	}
 };
 
+}
 
 
 #endif /* MESH_H_ */

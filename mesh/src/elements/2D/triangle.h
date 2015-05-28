@@ -9,6 +9,8 @@
 #define TriangleGPCount 3
 #define TriangleVTKCode 5
 
+namespace mesh {
+
 class Triangle: public Element
 {
 
@@ -79,6 +81,8 @@ private:
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
 };
+
+}
 
 
 
