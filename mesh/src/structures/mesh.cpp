@@ -1152,12 +1152,69 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	    eSize,
 	    &elems[0],
 	    0.33,			// nu
-	    1.1e5,			// E
+	    1.0e5,			// E
 	    3,				// order near
 	    4,				// order far
 	    false			// verbose
 	    );
 }
+
+
+void SurfaceMesh::integrateUpperFaces(std::vector < double > &f , size_t part){
+
+
+  double hight_z = 29.99999999;
+  const std::vector <idx_t> & l2g = _coordinates.localToGlobal(part);
+
+  double p0[3], p1[3], p2[3];
+  double v10[3], v20[3];
+  double Area_h;
+
+	for (size_t i = _partPtrs[part] ; i < _partPtrs[part + 1]; i++) {
+    bool flag_edgeOnTop = true;
+    for (size_t j = 0 ; j< _elements[i]->size();j++) {
+      if (_coordinates[l2g[_elements[i]->node(j)]].z<hight_z){
+        flag_edgeOnTop = false;
+        continue;
+      }
+    }
+    if (flag_edgeOnTop) {
+//      std::cout << "z = " ;
+//      std::cout << _coordinates[l2g[_elements[i]->node(0)]].z << std::endl;
+//
+      p0[0] = _coordinates[l2g[_elements[i]->node(0)]].x;
+      p0[1] = _coordinates[l2g[_elements[i]->node(0)]].y;
+      p0[2] = _coordinates[l2g[_elements[i]->node(0)]].z;
+
+      p1[0] = _coordinates[l2g[_elements[i]->node(1)]].x;
+      p1[1] = _coordinates[l2g[_elements[i]->node(1)]].y;
+      p1[2] = _coordinates[l2g[_elements[i]->node(1)]].z;
+
+      p2[0] = _coordinates[l2g[_elements[i]->node(2)]].x;
+      p2[1] = _coordinates[l2g[_elements[i]->node(2)]].y;
+      p2[2] = _coordinates[l2g[_elements[i]->node(2)]].z;
+      
+      for (size_t k = 0;k<3;k++){
+        v10[k] =  p1[k] - p0[k];
+        v20[k] =  p2[k] - p0[k];
+      }
+
+      Area_h = (v10[1]*v20[2] - v20[1]*v10[2] + 
+                v20[0]*v10[2] - v10[0]*v20[2] + 
+                v10[0]*v20[1] - v20[0]*v10[1]) * 0.5;
+
+//      std::cout << "area = " << Area_h << std::endl;
+      
+      for (size_t k = 0;k<3;k++){
+        f[3*_elements[i]->node(k)+2] +=  (1./3.) * Area_h;
+      }
+
+    }
+
+	}
+
+}
+
 
 std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
 {

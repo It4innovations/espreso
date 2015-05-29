@@ -259,6 +259,10 @@ void testBEM(int argc, char** argv)
         f_vec[d].resize(K_mat_dense[d].rows() , 0.0);
     }
     
+    for (int d = 0; d < partsCount; d++) {
+//      std::cout<< "d: "<< d <<std::endl;
+      sMesh.integrateUpperFaces(f_vec[d],d);
+    }
     
     std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
@@ -311,12 +315,12 @@ void testBEM(int argc, char** argv)
                         );
         
 
-    for (int d = 0; d < partsCount; d++) {
-        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
-            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
-                f_vec[d][3 * iz + 2] = 1.0;
-        }
-    }
+//    for (int d = 0; d < partsCount; d++) {
+//        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
+//            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
+//                f_vec[d][3 * iz + 2] = 1.0;
+//        }
+//    }
 
     
     
@@ -375,9 +379,9 @@ void testBEM(int argc, char** argv)
     cluster.NUMBER_OF_CLUSTERS	= MPIsize;
     
     IterSolver solver;
-    solver.CG_max_iter	 = 100;
+    solver.CG_max_iter	 = 1000;
     solver.USE_GGtINV	 = 1;
-    solver.epsilon		 = 0.00001;
+    solver.epsilon		 = 0.0000001;
     solver.USE_HFETI	 = cluster.USE_HFETI;
     solver.USE_KINV		 = cluster.USE_KINV;
     solver.USE_DYNAMIC	 = 0;

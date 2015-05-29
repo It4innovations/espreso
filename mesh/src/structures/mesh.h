@@ -201,6 +201,7 @@ public:
 	}
 
 	void elasticity(DenseMatrix &K, size_t part) const;
+  void integrateUpperFaces(std::vector < double > &f , size_t part);
 };
 
 class CommonFacesMesh: public Mesh
