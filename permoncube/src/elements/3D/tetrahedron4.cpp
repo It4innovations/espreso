@@ -58,7 +58,7 @@ void Tetrahedron4::addCoordinates(mesh::Mesh &mesh, const Settings &settings, co
 
 	size_t nodes[3];
 
-	ElementGenerator<Tetrahedron4>::clusterNodesCount(settings, nodes);
+	Utils<Tetrahedron4>::clusterNodesCount(settings, nodes);
 	mesh.coordinates().resize(nodes[0] * nodes[1] * nodes[2]);
 
 	idx_t global = 0;
@@ -73,7 +73,7 @@ void Tetrahedron4::addCoordinates(mesh::Mesh &mesh, const Settings &settings, co
 		step[i] = settings.clusterLength[i] / (nodes[i] - 1);
 	}
 
-	ElementGenerator<Hexahedron8>::globalNodesCount(settings, nodes);
+	Utils<Hexahedron8>::globalNodesCount(settings, nodes);
 	_coordinateMapping.resize(nodes[0] * nodes[1] * nodes[2]);
 
 	for (idx_t z = 0; z < nodes[2]; z++) {
@@ -97,7 +97,7 @@ void Tetrahedron4::fixZeroPlanes(
 			std::map<int, double> &dirichlet_z)
 {
 	size_t nodes[3];
-	ElementGenerator<Tetrahedron4>::globalNodesCount(settings, nodes);
+	Utils<Tetrahedron4>::globalNodesCount(settings, nodes);
 	idx_t index = 0;
 	for (idx_t z = 0; z < nodes[2]; z++) {
 		for (idx_t y = 0; y < nodes[1]; y++) {
@@ -124,7 +124,7 @@ void Tetrahedron4::fixBottom(
 			std::map<int, double> &dirichlet_z)
 {
 	size_t nodes[3];
-	ElementGenerator<Tetrahedron4>::globalNodesCount(settings, nodes);
+	Utils<Tetrahedron4>::globalNodesCount(settings, nodes);
 	idx_t index = 0;
 	for (idx_t y = 0; y < nodes[1]; y++) {
 		for (idx_t x = 0; x < nodes[0]; x++) {

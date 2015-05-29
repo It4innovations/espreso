@@ -25,35 +25,6 @@ using namespace permoncube;
 //	###################################################
 
 template <class TElement>
-void ElementGenerator<TElement>::globalNodesCount(const Settings &settings, size_t nodes[])
-{
-	size_t cluster[3];
-	ElementGenerator<TElement>::clusterNodesCount(settings, cluster);
-	for (size_t i = 0; i < 3; i++) {
-		nodes[i] = settings.clusters[i] * cluster[i];
-		if (settings.clusters[i] > 1) {
-			nodes[i]--;
-		}
-	}
-}
-
-template <class TElement>
-void ElementGenerator<TElement>::clusterNodesCount(const Settings &settings, size_t nodes[])
-{
-	for (size_t i = 0; i < 3; i++) {
-		nodes[i] = (TElement::subnodes[i] + 1) * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i] + 1;
-	}
-}
-
-template <class TElement>
-size_t ElementGenerator<TElement>::clusterElementsCount(const Settings &settings)
-{
-	return TElement::subelements *
-	settings.subdomainsInCluster[2] * settings.subdomainsInCluster[1] * settings.subdomainsInCluster[0] *
-	settings.elementsInSubdomain[2] * settings.elementsInSubdomain[1] * settings.elementsInSubdomain[0];
-}
-
-template <class TElement>
 void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 {
 	for (int i = 0; i < 3; i++) {
@@ -63,13 +34,13 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 		}
 	}
 	size_t nodes[3];
-	globalNodesCount(_settings, nodes);
+	Utils<TElement>::globalNodesCount(_settings, nodes);
 
 	TElement::addCoordinates(mesh, _settings, cluster);
 
 	idx_t indices[(2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2])];
 
-	mesh.reserve(clusterElementsCount(_settings));
+	mesh.reserve(Utils<TElement>::clusterElementsCount(_settings));
 
 	idx_t subdomain[3];
 	idx_t element[3];

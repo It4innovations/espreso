@@ -8,6 +8,7 @@
 #include "esmesh.h"
 #include "../../settings.h"
 #include "../../generator.h"
+#include "../../utils.h"
 
 namespace permoncube {
 

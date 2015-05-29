@@ -101,7 +101,7 @@ void Tetrahedron10::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings 
 
 	size_t nodes[3];
 
-	ElementGenerator<Tetrahedron10>::clusterNodesCount(settings, nodes);
+	Utils<Tetrahedron10>::clusterNodesCount(settings, nodes);
 	mesh.coordinates().resize(nodes[0] * nodes[1] * nodes[2]);
 
 	idx_t global = 0;
@@ -117,7 +117,7 @@ void Tetrahedron10::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings 
 		step[i] = settings.clusterLength[i] / (nodes[i] - 1);
 	}
 
-	ElementGenerator<Tetrahedron10>::globalNodesCount(settings, nodes);
+	Utils<Tetrahedron10>::globalNodesCount(settings, nodes);
 	_coordinateMapping.resize(nodes[0] * nodes[1] * nodes[2]);
 
 	for (idx_t z = 0; z < nodes[2]; z++) {
@@ -141,7 +141,7 @@ void Tetrahedron10::fixZeroPlanes(
 			std::map<int, double> &dirichlet_z)
 {
 	size_t nodes[3];
-	ElementGenerator<Tetrahedron10>::globalNodesCount(settings, nodes);
+	Utils<Tetrahedron10>::globalNodesCount(settings, nodes);
 	idx_t index = 0;
 	for (idx_t z = 0; z < nodes[2]; z++) {
 		for (idx_t y = 0; y < nodes[1]; y++) {
@@ -168,7 +168,7 @@ void Tetrahedron10::fixBottom(
 			std::map<int, double> &dirichlet_z)
 {
 	size_t nodes[3];
-	ElementGenerator<Tetrahedron10>::globalNodesCount(settings, nodes);
+	Utils<Tetrahedron10>::globalNodesCount(settings, nodes);
 	idx_t index = 0;
 	for (idx_t y = 0; y < nodes[1]; y++) {
 		for (idx_t x = 0; x < nodes[0]; x++) {
