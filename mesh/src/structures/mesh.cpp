@@ -1152,8 +1152,8 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	    &nodes[0],
 	    eSize,
 	    &elems[0],
-	    0.29,			// nu
-	    1e11,			// E
+	    0.33,			// nu
+	    1.1e5,			// E
 	    3,				// order near
 	    4,				// order far
 	    false			// verbose

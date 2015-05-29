@@ -8,7 +8,7 @@ INCLUDE=
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-DXE6 -no-multibyte-chars -c -Wall -mkl=sequential -I../../bem/src -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+CFLAGS =-d -cilk-serialize -DXE6 -no-multibyte-chars -c -Wall -mkl=sequential -I../../bem/src -I$(METIS_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)

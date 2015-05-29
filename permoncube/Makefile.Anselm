@@ -11,7 +11,7 @@ INCLUDE=
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I. -I$(SOLVER_DIR) -I$(MESH_DIR) -I$(METIS_DIR) -I$(BEM_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+CFLAGS =-g -c -no-multibyte-chars -openmp -mkl=parallel -I. -I$(SOLVER_DIR) -I$(MESH_DIR) -I$(METIS_DIR) -I$(BEM_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
