@@ -634,7 +634,6 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec
 
 	vtk << "POINTS " << n_points << " float\n";
 	for (size_t d = 0; d < nSubClst; d++) {
-		std::cout << "SSSSUUUUUUB: " << shrinking << "\n";
 		Point center;
 		for (size_t c = 0; c < l2g_vec[d].size(); c++) {
 			center += _coordinates[l2g_vec[d][c]];

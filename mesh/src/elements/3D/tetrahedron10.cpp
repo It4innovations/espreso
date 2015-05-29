@@ -379,9 +379,32 @@ std::vector<idx_t> Tetrahedron10::getNeighbours(size_t nodeIndex) const
 std::vector<idx_t> Tetrahedron10::getFace(size_t face) const
 {
 	std::vector<idx_t> result(3);
-	result[0] = (face < 3) ? _indices[0] : _indices[1];
-	result[1] = (face < 2) ? _indices[1] : _indices[2];
-	result[2] = (face < 1) ? _indices[2] : _indices[3];
+  switch (face){
+    case 0: {
+      result[0] = _indices[1];
+      result[1] = _indices[0];
+      result[2] = _indices[2];
+      break;
+    }
+    case 1: {
+      result[0] = _indices[0];
+      result[1] = _indices[1];
+      result[2] = _indices[3];
+      break;
+    }
+    case 2: {
+      result[0] = _indices[1];
+      result[1] = _indices[2];
+      result[2] = _indices[3];
+      break;
+    }
+    case 3: {
+      result[0] = _indices[2];
+      result[1] = _indices[0];
+      result[2] = _indices[3];
+      break;
+    }
+  }
 	return result;
 }
 
