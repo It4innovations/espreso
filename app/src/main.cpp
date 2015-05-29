@@ -17,8 +17,8 @@ struct FEMInput {
 
 	FEMInput(): coordinates(mesh.coordinates()) {};
 
-	Coordinates &coordinates;
-	Mesh mesh;
+	mesh::Coordinates &coordinates;
+	mesh::Mesh mesh;
 	std::map<int, double> dirichlet_x;
 	std::map<int, double> dirichlet_y;
 	std::map<int, double> dirichlet_z;
@@ -26,15 +26,12 @@ struct FEMInput {
 
 struct FEMParams {
 
-	FEMParams(): type(HEXA8), generateMesh(false), subdomains(3), elementsInSub(3) {
-		subdomains[0] = subdomains[1] = subdomains[2] = 1;
-		elementsInSub[0] = elementsInSub[1] = elementsInSub[2] = 10;
+	FEMParams(): type(HEXA8), generateMesh(false) {
 	};
 
 	int type;
 	bool generateMesh;
-	std::vector<int> subdomains;
-	std::vector<int> elementsInSub;
+	permoncube::Settings settings;
 };
 
 FEMInput input;
@@ -59,9 +56,10 @@ void setParams(int argc, char** argv)
 	for (int i = 0; i < 3; i++) {
 		sscanf(argv[i + 2], "%i", &subdomains);
 		sscanf(argv[i + 5], "%i", &elementsInSub);
-		params.subdomains[i] = subdomains;
-		params.elementsInSub[i] = elementsInSub;
+		params.settings.subdomainsInCluster[i] = subdomains;
+		params.settings.elementsInSubdomain[i] = elementsInSub;
 	}
+	params.settings.clusters[0] = params.settings.clusters[1] = params.settings.clusters[2] = 1;
 }
 
 void testFEM(int argc, char** argv);
@@ -89,7 +87,7 @@ int main(int argc, char** argv)
 
 void load_mesh()
 {
-	input.mesh = Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
+	input.mesh = mesh::Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
 	input.coordinates = input.mesh.coordinates();
 
 	// fix down face
@@ -104,31 +102,28 @@ void generate_mesh()
 {
 	std::cout << "Permoncube:" << std::endl;
 	int elems[3];
+	size_t cluster[3] = { 0, 0 ,0 };
+	permoncube::Generator *g;
+
 	switch (params.type) {
 	case HEXA8: {
-		Permoncube::hexahedrons8(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
-		elems[0] = params.elementsInSub[0];
-		elems[1] = params.elementsInSub[1];
-		elems[2] = params.elementsInSub[2];
+		g = new permoncube::ElementGenerator<permoncube::Hexahedron8>(params.settings);
 		break;
 	}
 	case TETRA10: {
-		Permoncube::tetrahedrons10(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
-		elems[0] = 2 * params.elementsInSub[0];
-		elems[1] = 2 * params.elementsInSub[1];
-		elems[2] = 2 * params.elementsInSub[2];
+		g = new permoncube::ElementGenerator<permoncube::Tetrahedron10>(params.settings);
 		break;
 	}
 	case TETRA4: {
-		Permoncube::tetrahedrons4(input.mesh, input.coordinates, &(params.subdomains[0]), &(params.elementsInSub[0]));
-		elems[0] = params.elementsInSub[0];
-		elems[1] = params.elementsInSub[1];
-		elems[2] = params.elementsInSub[2];
+		g = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
 		break;
 	}
 	}
+
+	g->mesh(input.mesh, cluster);
+
 	std::cout << "dirichlet" << std::endl;
-	Permoncube::dirichlet(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, &(params.subdomains[0]), elems);
+	g->fixZeroPlanes(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z);
 	std::cout << "fix points" << std::endl;
 
 	// TODO: set fix points in PERMONCUBE
@@ -160,7 +155,7 @@ void testBEM(int argc, char** argv)
 
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
 
-	SurfaceMesh sMesh(input.mesh);
+	mesh::SurfaceMesh sMesh(input.mesh);
 
 	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
 
@@ -168,7 +163,7 @@ void testBEM(int argc, char** argv)
 
 	std::cout << "3 : " << omp_get_wtime() - start << std::endl;
 
-	Boundaries boundaries(sMesh);
+	mesh::Boundaries boundaries(sMesh);
 
 	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
 
@@ -589,7 +584,7 @@ void testFEM(int argc, char** argv)
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	// TODO: fill boundaries in PERMONCUBE
-	Boundaries boundaries(input.mesh);
+	mesh::Boundaries boundaries(input.mesh);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -631,7 +626,7 @@ void testFEM(int argc, char** argv)
 #else
 	for (int d = 0; d < partsCount; d++) {
 #endif
-		int dimension = input.mesh.getPartNodesCount(d) * Point::size();
+		int dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
 		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
