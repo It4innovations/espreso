@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "esmesh.h"
+#include "element3D.h"
 #include "../../settings.h"
 #include "../../generator.h"
 #include "../../utils.h"
