@@ -707,6 +707,84 @@ void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
 
 
 
+void SetMatrixK_fromBEM ( Cluster & cluster, ShortInt domain_index_in_cluster,
+                         ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type ) {
+    
+
+    int MPIrank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    
+#if DEBUG == 1
+    if (MPIrank == 0) {
+        cout << " ******************************************************************************************************************************* " << endl;
+        cout << " *** SetMatrixK_fromCSR ******************************************************************************************************** " << endl;
+    }
+    
+    if (MPIrank == 0) {
+        GetProcessMemoryStat ( );
+        GetMemoryStat( );
+        cout << " Solver - Loading K make a copy of K ... " << endl;
+    }
+#endif
+    
+    SetMatrixFromCSR( cluster.domains[domain_index_in_cluster].K,
+                     n_rows, n_cols,
+                     rows, cols, vals, type);
+    
+    if ( cluster.domains[domain_index_in_cluster].K.type == 'G' )
+        cluster.domains[domain_index_in_cluster].K.RemoveLower();
+    
+#if DEBUG == 1
+    if (MPIrank == 0) {
+        GetProcessMemoryStat ( );
+        GetMemoryStat( );
+        cout << " Solver - Loading K, regularization and factorization ... " << endl;
+        cluster.domains[domain_index_in_cluster].Kplus.msglvl = 0;
+    }
+#endif
+    
+    // POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
+    cluster.domains[domain_index_in_cluster].Prec = cluster.domains[domain_index_in_cluster].K;
+    //cluster.domains[domain_index_in_cluster].Prec.ConvertCSRToDense( 0 );
+    
+    //cluster.domains[domain_index_in_cluster].K_regularizationFromR( );
+
+    cluster.domains[domain_index_in_cluster].Kplus.ImportMatrix  (cluster.domains[domain_index_in_cluster].K);
+    cluster.domains[domain_index_in_cluster].Kplus.Factorization ();
+    
+    // POZOR - jen pro Kinv
+    if (cluster.domains[domain_index_in_cluster].USE_KINV == 1 || cluster.domains[domain_index_in_cluster].USE_HFETI == 1)
+        cluster.domains[domain_index_in_cluster].KplusF.ImportMatrix (cluster.domains[domain_index_in_cluster].K);
+
+    cluster.domains[domain_index_in_cluster].K.Clear();
+    
+    
+    
+    
+    cluster.domains[domain_index_in_cluster].domain_prim_size = cluster.domains[domain_index_in_cluster].Kplus.cols;
+    
+#if DEBUG == 1
+    if (MPIrank == 0) {
+        cluster.domains[domain_index_in_cluster].Kplus.msglvl = 0;
+        GetProcessMemoryStat ( );
+        GetMemoryStat( );
+        cout << " Solver - Running SetClusterPC_AfterKplus ...  " << endl;
+    }
+    
+    if (MPIrank == 0) {
+        GetProcessMemoryStat ( );
+        GetMemoryStat( );
+    }
+    
+    if (MPIrank == 0) {
+        cout << " *** END - SetMatrixK_fromCSR ************************************************************************************************** " << endl;
+        cout << " ******************************************************************************************************************************* " << endl; 
+        cout << endl; 
+    }
+#endif
+ 
+ 
+}
 
 
 
