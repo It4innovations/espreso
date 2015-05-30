@@ -1,6 +1,7 @@
 #ifndef COORDINATES_H_
 #define COORDINATES_H_
 
+#include "../definitions.h"
 #include "../elements/1D/point.h"
 #include "../loader.h"
 
@@ -15,30 +16,46 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
-	Coordinates(): _points(0), _offset(0) { };
+	Coordinates(): _points(0), _clusterIndex(1) { };
 	Coordinates(const char *fileName);
-	Coordinates(size_t size, idx_t offset): _points(size), _offset(offset) { };
 
-	void add(idx_t index, const Point &point)
+	void add(const Point &point, LIdx clusterIndex, GIdx globalIndex)
 	{
-		_points[_globalMapping.size()] = point;
-		_globalMapping.push_back(index);
+		_points.push_back(point);
+		_clusterIndex[0].push_back(clusterIndex);
+		_globalIndex.push_back(globalIndex);
 	}
 
-	void resize(size_t size)
+	void reserve(size_t size)
 	{
-		_points.resize(size);
+		_points.reserve(size);
+		_globalIndex.reserve(size);
+		_clusterIndex[0].reserve(size);
 	}
 
-	/** @brief Index correction. C/C++ indexes start at 0 while first Point is indexed by 1. */
-	void setOffset(idx_t offset)
+	const Point& get(LIdx index, LIdx part) const
 	{
-		_offset = offset;
+		return _points[_clusterIndex[part][index]];
 	}
 
-	idx_t getOffset() const
+	LIdx clusterIndex(LIdx index, LIdx part) const
 	{
-		return _offset;
+		return _clusterIndex[part][index];
+	}
+
+	GIdx globalIndex(LIdx index, LIdx part) const
+	{
+		return _globalIndex[_clusterIndex[part][index]];
+	}
+
+	LIdx clusterSize() const
+	{
+		return _points.size();
+	}
+
+	LIdx localSize(LIdx part) const
+	{
+		return _clusterIndex[part].size();
 	}
 
 	size_t size() const
@@ -46,42 +63,22 @@ public:
 		return _points.size();
 	}
 
-	const Point& operator[](idx_t index) const
+	const std::vector<LIdx>& localToCluster(LIdx part) const
 	{
-		return _points[index - _offset];
-	}
-
-	Point& operator[](idx_t index)
-	{
-		return _points[index - _offset];
-	}
-
-	Point& localPoint(size_t part, idx_t index)
-	{
-		return _points[_localMappings[part][index] - _offset];
-	}
-
-	const Point& localPoint(size_t part, idx_t index) const
-	{
-		return _points[_localMappings[part][index] - _offset];
-	}
-
-	const std::vector<idx_t>& localToGlobal(size_t part) const
-	{
-		return _localMappings[part];
+		return _clusterIndex[part];
 	}
 
 	void localClear()
 	{
-		_localMappings.clear();
+		_clusterIndex.clear();
 	}
 
 	void localResize(size_t size)
 	{
-		_localMappings.resize(size);
+		_clusterIndex.resize(size);
 	}
 
-	void computeLocal(size_t part, std::vector<idx_t> &nodeMap, size_t size);
+	void computeLocal(LIdx part, std::vector<LIdx> &nodeMap, size_t size);
 
 	double* data()
 	{
@@ -89,14 +86,25 @@ public:
 		return static_cast<double*>(tmp);
 	}
 
+	const Point& operator[](LIdx index) const
+	{
+		return _points[index];
+	}
+
+	Point& operator[](LIdx index)
+	{
+		return _points[index];
+	}
+
+
 private:
 	std::vector<Point> _points;
 
-	std::vector<std::vector<idx_t> > _localMappings;
-	std::vector<idx_t> _globalMapping;
+	/** @brief Local point to cluster index. */
+	std::vector<std::vector<LIdx> > _clusterIndex;
 
-	/** @brief Correction between C/C++ and Point indexing. */
-	idx_t _offset;
+	/** @brief Point to global index */
+	std::vector<GIdx> _globalIndex;
 };
 
 }

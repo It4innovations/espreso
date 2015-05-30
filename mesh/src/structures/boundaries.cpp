@@ -2,17 +2,16 @@
 
 using namespace mesh;
 
-Boundaries::Boundaries(const Mesh &m):
-	_boundaries(m.coordinates().size() + m.coordinates().getOffset()), _mesh(m)
+Boundaries::Boundaries(const Mesh &m): _boundaries(m.coordinates().size()), _mesh(m)
 {
 	const std::vector<idx_t> &parts = m.getPartition();
 	const std::vector<Element*> &elements = m.getElements();
+	const Coordinates &c = m.coordinates();
 
 	for (size_t p = 0; p + 1 < parts.size(); p++) {
-		const std::vector<idx_t> &l2g = m.coordinates().localToGlobal(p);
 		for (idx_t e = parts[p]; e < parts[p + 1]; e++) {
 			for (size_t n = 0; n < elements[e]->size(); n++) {
-				_boundaries[l2g[elements[e]->node(n)]].insert(p);
+				_boundaries[c.clusterIndex(elements[e]->node(n), p)].insert(p);
 			}
 		}
 	}
@@ -58,11 +57,10 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 	std::set<int>::const_iterator it2;
 	std::map<int,double>::const_iterator itm;
 
-	int offset = _mesh.coordinates().getOffset();
 	int lambda_count_B1 = 0; 
 	int lambda_count_B0 = 0; 
 
-	for (size_t i = offset; i < _boundaries.size(); i++) {
+	for (size_t i = 0; i < _boundaries.size(); i++) {
 		
 		//std::vector < int > tmp_v;
 		//for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
@@ -132,13 +130,13 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 
 
 			// no duplicity 
-			bool is_corner = true; 
+			bool is_corner = true;
 			if ( is_corner ) {
 				for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
 					if (it1 != _boundaries[i].begin()) {
 						for (int d_i = 0; d_i < 3; d_i++) {
-							B0_loc[*it2](lambda_count_B0, local_prim_numbering[*it2] + d_i) =  1.0; 
-							B0_loc[*it1](lambda_count_B0, local_prim_numbering[*it1] + d_i) = -1.0; 
+							B0_loc[*it2](lambda_count_B0, local_prim_numbering[*it2] + d_i) =  1.0;
+							B0_loc[*it1](lambda_count_B0, local_prim_numbering[*it1] + d_i) = -1.0;
 
 							lambda_map_sub_B0[*it2].push_back(lambda_count_B0);
 							lambda_map_sub_B0[*it1].push_back(lambda_count_B0);
@@ -147,7 +145,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 
 						}
 					}
-					it2 = it1; 
+					it2 = it1;
 				}
 			}
 		}
@@ -172,9 +170,8 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local,
 std::ostream& mesh::operator<<(std::ostream& os, const Boundaries &b)
 {
 	std::set<int>::const_iterator it;
-	int offset = b._mesh.coordinates().getOffset();
 
-	for (size_t i = offset; i < b._boundaries.size(); i++) {
+	for (size_t i = 0; i < b._boundaries.size(); i++) {
 		os << b._mesh.coordinates()[i] << ": ";
 		for (it = b._boundaries[i].begin(); it != b._boundaries[i].end(); ++it) {
 			os << *it << " ";

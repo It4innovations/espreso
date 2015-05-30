@@ -15,11 +15,12 @@ void test_meshes()
 	int partsCount = 4;
 	int fixPointsCount = 4;
 
-	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
+	mesh::Mesh m("matrices/HEX/5/elem", "matrices/HEX/5/coord", partsCount, fixPointsCount);
 
 	mesh::Boundaries b(m);
 
 	mesh::SurfaceMesh sMesh(m);
+
 	mesh::CommonFacesMesh cMesh(sMesh);
 
 	m.saveVTK("mesh.vtk", 0.6);

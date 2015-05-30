@@ -18,6 +18,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 	_maxElementSize(0)
 {
 	_elements.resize(Loader::getLinesCount(meshFile));
+	_lastNode = _coordinates.size() - 1;
 
 	std::ifstream file(meshFile);
 	std::string line;
@@ -27,19 +28,12 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 	idx_t minIndices = 10000;
 
 	if (file.is_open()) {
-		_lastNode = 0;
 		for (idx_t c = 0; c < _elements.size(); c++) {
 			getline(file, line, '\n');;
 			std::stringstream ss(line);
 			n = 0;
 			while(ss >> value) {
-				indices[n++] = value;
-				if (minIndices > value) {
-					minIndices = value;
-				}
-				if (_lastNode < value) {
-					_lastNode = value;
-				}
+				indices[n++] = value - 1;
 			}
 			_elements[c] = createElement(indices, n);
 		}
@@ -48,9 +42,6 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
 		exit(EXIT_FAILURE);
 	}
-
-	// correct indexing -> C/C++ indexes start at 0, but Points usually start at 1
-	_coordinates.setOffset(minIndices);
 
 	partitiate(parts, fixPoints);
 }
@@ -252,9 +243,8 @@ void Mesh::_assembleElesticity(
 	const std::vector<double> &weighFactor = e->weighFactor();
 
 	DenseMatrix coordinates(e->size(), Point::size());
-	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
 	for (size_t i = 0; i < e->size(); i++) {
-		coordinates.values()+ i * Point::size() << _coordinates[l2g[e->node(i)]];
+		coordinates.values()+ i * Point::size() << _coordinates.get(e->node(i), part);
 	}
 
 	int Ksize = Point::size() * e->size();
@@ -714,8 +704,8 @@ void Mesh::saveVTK(const char* filename, double shrinking)
 	std::ofstream vtk;
 
 	size_t cSize = 0;
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
-		cSize += _coordinates.localToGlobal(i).size();
+	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
+		cSize += _coordinates.localToCluster(p).size();
 	}
 
 	vtk.open(filename, std::ios::out | std::ios::trunc);
@@ -724,17 +714,16 @@ void Mesh::saveVTK(const char* filename, double shrinking)
 	vtk << "ASCII\n\n";
 	vtk << "DATASET UNSTRUCTURED_GRID\n";
 	vtk << "POINTS " << cSize << " float\n";
-	for (size_t i = 0; i + 1< _partPtrs.size(); i++) {
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
+	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
 
 		Point center;
-		for (size_t c = 0; c < l2g.size(); c++) {
-			center += _coordinates[l2g[c]];
+		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
+			center += _coordinates.get(i, p);
 		}
-		center /= l2g.size();
+		center /= _coordinates.localSize(p);
 
-		for (size_t c = 0; c < l2g.size(); c++) {
-			Point x = _coordinates[l2g[c]];
+		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
+			Point x = _coordinates.get(i, p);
 			x = center + (x - center) * shrinking;
 			vtk << x << "\n";
 		}
@@ -756,7 +745,7 @@ void Mesh::saveVTK(const char* filename, double shrinking)
 			}
 			vtk << "\n";
 		}
-		offset += _coordinates.localToGlobal(p).size();
+		offset += _coordinates.localToCluster(p).size();
 	}
 
 	vtk << "\n";
@@ -829,8 +818,6 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
-	// nodes in surface mesh
-	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
 	if (_partPtrs.size() < 2) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
@@ -842,8 +829,7 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		// Compute nodes' adjacent elements
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
-		std::vector<std::vector<int> > nodesElements(l2g.size());
+		std::vector<std::vector<int> > nodesElements(_coordinates.localSize(i));
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
 				nodesElements[_elements[j]->node(k)].push_back(j);
@@ -855,6 +841,9 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
 				std::vector<idx_t> face = _elements[j]->getFace(k);
 				if (isOuterFace(nodesElements, face)) {
+					for (size_t f = 0; f < face.size(); f++) {
+						face[f] = _coordinates.clusterIndex(face[f], i);
+					}
 					faces[i].push_back(face);
 					if (face.size() == 3) {
 						elementsCount[i] += 1;
@@ -862,59 +851,32 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 					if (face.size() == 4) {
 						elementsCount[i] += 2;
 					}
-					for (size_t p = 0; p < face.size(); p++) {
-						selection[l2g[face[p]]] = 1;
-					}
 				}
 			}
 		}
 	}
 
-	Coordinates &coords = surface.coordinates();
-	coords.localResize(_partPtrs.size() - 1);
-
-	// Projects all coordinates to coordinates in the surface mesh
-	size_t c = 0;
-	coords.resize(std::count(selection.begin(), selection.end(), 1));
-	for (size_t i = 0; i < selection.size(); i++) {
-		if (selection[i] == 1) {
-			selection[i] = c;
-			coords[c++] = _coordinates[i];
-		}
-	}
-
-#ifndef DEBUG
-	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#else
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#endif
-		// re-index faces to projected coordinates
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
-		for (size_t j = 0; j < faces[i].size(); j++) {
-			for (size_t k = 0; k < faces[i][j].size(); k++) {
-				faces[i][j][k] = selection[l2g[faces[i][j][k]]];
-			}
-		}
-	}
+	surface.coordinates() = _coordinates;
 
 	size_t count = 0;
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		count += elementsCount[i];
 	}
+
 	surface.reserve(count);
 
 	// create surface mesh
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<idx_t> &face = faces[i][j];
-			if (faces[i][j].size() == 3) {
+			if (face.size() == 3) {
 				surface.pushElement(new Triangle(&face[0]));
 			}
 			// divide square to triangles
-			if (faces[i][j].size() == 4) {
+			if (face.size() == 4) {
 				size_t min = 0;
 				for (size_t p = 1; p < 4; p++) {
-					if (coords[face[p]] < coords[face[min]]) {
+					if (_coordinates[face[p]] < _coordinates[face[min]]) {
 						min = p;
 					}
 				}
@@ -939,21 +901,18 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
-	// nodes in surface mesh
-	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
 	if (_partPtrs.size() < 2) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
 
-	std::vector<std::vector<int> > nodesElements(_coordinates.size() + _coordinates.getOffset());
+	std::vector<std::vector<int> > nodesElements(_coordinates.size());
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 		// Compute nodes' adjacent elements
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[l2g[_elements[j]->node(k)]].push_back(j);
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
 			}
 		}
 	}
@@ -964,49 +923,21 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		// compute number of elements and fill used nodes
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
 				std::vector<idx_t> face = _elements[j]->getFace(k);
 				for (size_t f = 0; f < face.size(); f++) {
-					face[f] = l2g[face[f]];
+					face[f] = _coordinates.clusterIndex(face[f], i);
 				}
 				if (isCommonFace(nodesElements, face, _partPtrs)) {
 					faces[i].push_back(face);
 					elementsCount[i] += 1;
-					for (size_t f = 0; f < face.size(); f++) {
-						selection[face[f]] = 1;
-					}
 				}
 			}
 		}
 	}
 
-	Coordinates &coords = commonFaces.coordinates();
-	coords.localResize(_partPtrs.size() - 1);
-
-	// Projects all coordinates to coordinates in the common faces
-	size_t c = 0;
-	coords.resize(std::count(selection.begin(), selection.end(), 1));
-	for (size_t i = 0; i < selection.size(); i++) {
-		if (selection[i] == 1) {
-			selection[i] = c;
-			coords[c++] = _coordinates[i];
-		}
-	}
-
-#ifndef DEBUG
-	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#else
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#endif
-		// re-index faces to projected coordinates
-		for (size_t j = 0; j < faces[i].size(); j++) {
-			for (size_t k = 0; k < faces[i][j].size(); k++) {
-				faces[i][j][k] = selection[faces[i][j][k]];
-			}
-		}
-	}
+	commonFaces.coordinates() = _coordinates;
 
 	size_t count = 0;
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
@@ -1035,21 +966,18 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 	std::vector<std::vector<std::vector<idx_t> > > faces(_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
-	// nodes in surface mesh
-	std::vector<idx_t> selection(_coordinates.size() + _coordinates.getOffset(), -1);
 
 	if (_partPtrs.size() < 2) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
 
-	std::vector<std::vector<int> > nodesElements(_coordinates.size() + _coordinates.getOffset());
+	std::vector<std::vector<int> > nodesElements(_coordinates.size());
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 		// Compute nodes' adjacent elements
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[l2g[_elements[j]->node(k)]].push_back(j);
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), j)].push_back(j);
 			}
 		}
 	}
@@ -1060,49 +988,21 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		// compute number of elements and fill used nodes
-		const std::vector<idx_t> &l2g = _coordinates.localToGlobal(i);
 		for (idx_t j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
 				std::vector<idx_t> face = _elements[j]->getFace(k);
 				for (size_t f = 0; f < face.size(); f++) {
-					face[f] = l2g[face[f]];
+					face[f] = _coordinates.clusterIndex(face[f], i);
 				}
 				if (isCommonFace(nodesElements, face, _partPtrs)) {
 					faces[i].push_back(face);
 					elementsCount[i] += 1;
-					for (size_t f = 0; f < face.size(); f++) {
-						selection[face[f]] = 1;
-					}
 				}
 			}
 		}
 	}
 
-	Coordinates &coords = cornerLines.coordinates();
-	coords.localResize(_partPtrs.size() - 1);
-
-	// Projects all coordinates to coordinates in the common faces
-	size_t c = 0;
-	coords.resize(std::count(selection.begin(), selection.end(), 1));
-	for (size_t i = 0; i < selection.size(); i++) {
-		if (selection[i] == 1) {
-			selection[i] = c;
-			coords[c++] = _coordinates[i];
-		}
-	}
-
-#ifndef DEBUG
-	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#else
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#endif
-		// re-index faces to projected coordinates
-		for (size_t j = 0; j < faces[i].size(); j++) {
-			for (size_t k = 0; k < faces[i][j].size(); k++) {
-				faces[i][j][k] = selection[faces[i][j][k]];
-			}
-		}
-	}
+	cornerLines.coordinates() = _coordinates;
 
 	size_t count = 0;
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
@@ -1133,9 +1033,8 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	std::vector<double> nodes(nK);
 	std::vector<int> elems(3 * eSize);
 
-	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
 	for (size_t i = 0; i < _partsNodesCount[part]; i++) {
-		&nodes[i * Point::size()] << _coordinates[l2g[i]];
+		&nodes[i * Point::size()] << _coordinates.get(i, part);
 	}
 	for (size_t i = _partPtrs[part], index = 0; i < _partPtrs[part + 1]; i++, index++) {
 		// TODO: various data types int32_t and int64_t
@@ -1163,23 +1062,21 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
 {
 	double hight_z = 29.99999999;
-	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
-
 	Point p0, p1, p2, v10, v20;
 	double Area_h;
 
 	for (size_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		bool flag_edgeOnTop = true;
 		for (size_t j = 0; j < _elements[i]->size(); j++) {
-			if (_coordinates[l2g[_elements[i]->node(j)]].z < hight_z) {
+			if (_coordinates.get(_elements[i]->node(j), part).z < hight_z) {
 				flag_edgeOnTop = false;
 				continue;
 			}
 		}
 		if (flag_edgeOnTop) {
-			p0 = _coordinates[l2g[_elements[i]->node(0)]];
-			p1 = _coordinates[l2g[_elements[i]->node(1)]];
-			p2 = _coordinates[l2g[_elements[i]->node(2)]];
+			p0 = _coordinates.get(_elements[i]->node(0), part);
+			p1 = _coordinates.get(_elements[i]->node(1), part);
+			p2 = _coordinates.get(_elements[i]->node(2), part);
 			v10 = p1 - p0;
 			v20 = p2 - p0;
 

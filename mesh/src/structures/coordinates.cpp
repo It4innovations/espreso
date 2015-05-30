@@ -2,15 +2,20 @@
 
 using namespace mesh;
 
-Coordinates::Coordinates(const char *fileName): _offset(1)
+Coordinates::Coordinates(const char *fileName): _clusterIndex(1)
 {
 	_points.resize(Loader::getLinesCount(fileName));
+	_clusterIndex[0].resize(_points.size());
+	_globalIndex.resize(_points.size());
 
 	std::ifstream file(fileName);
 	size_t c = 0;
 
 	if (file.is_open()) {
-		while(c < size() && file >> _points[c++]);
+		while(c < size() && file >> _points[c])
+		{
+			_globalIndex[c] = _clusterIndex[0][c] = c++;
+		}
 		file.close();
 	} else {
 		fprintf(stderr, "Cannot load coordinates from file: %s.\n", fileName);
@@ -18,17 +23,17 @@ Coordinates::Coordinates(const char *fileName): _offset(1)
 	}
 }
 
-void Coordinates::computeLocal(size_t part, std::vector<idx_t> &nodeMap, size_t size)
+void Coordinates::computeLocal(LIdx part, std::vector<LIdx> &nodeMap, size_t size)
 {
-	if (_localMappings.size() <= part) {
-		_localMappings.resize(part + 1);
+	if (_clusterIndex.size() <= part) {
+		_clusterIndex.resize(part + 1);
 	}
 
-	_localMappings[part].clear();
-	_localMappings[part].reserve(size);
+	_clusterIndex[part].clear();
+	_clusterIndex[part].reserve(size);
 	for (size_t i = 0; i < nodeMap.size(); i++) {
 		if (nodeMap[i] >= 0) {
-			_localMappings[part].push_back(i);
+			_clusterIndex[part].push_back(i);
 		}
 	}
 }
