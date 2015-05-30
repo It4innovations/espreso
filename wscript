@@ -34,7 +34,10 @@ def check_environment(ctx):
             "Run './waf --help' for more options.")
 
     try:
-        ctx.find_program("mpic++", var="MPICXX")
+        if ctx.options.mpich:
+            ctx.find_program("mpic++.mpich", var="MPICXX")
+        else:
+            ctx.find_program("mpic++", var="MPICXX")
     except ctx.errors.ConfigurationError:
         ctx.fatal("mpic++ not found. Install MPI or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
@@ -53,20 +56,29 @@ def check_environment(ctx):
         ctx.fatal("Install Open MP or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
 
+    ctx.check_cxx(
+        fragment=
+            '''
+            #include <iostream>
+            int main() {
+                long long x;
+                if (sizeof(x) == 8) {
+                    std::cout << "sizeof(x)";
+                }
+                return 0;
+            }
+            ''',
+        execute     = True,
+        mandatory   = False,
+        errmsg      = "WARNING: ESPRESO with your compiler supports only 32-bit integers",
+        msg         = "Checking for 64-bit integers")
+
+
 from waflib.Tools import ccroot,ar,gxx
 
 def anselm(ctx):
-    ctx.env.CXX = ["icpc"]
-    ctx.env.LINK_CXX = ["icpc"]
+    ctx.load("icpc")
     ctx.env.MPICXX = ["mpic++"]
-    ctx.get_cc_version(["icpc"], icc=True)
-    ctx.env.CXX_NAME='icc'
-
-    ctx.gxx_common_flags()
-    ctx.gxx_modifier_platform()
-    ctx.cxx_load_tools()
-    ctx.cxx_add_flags()
-    ctx.link_add_flags()
 
 def configure(ctx):
     if ctx.options.anselm:
