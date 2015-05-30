@@ -1160,59 +1160,39 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 }
 
 
-void SurfaceMesh::integrateUpperFaces(std::vector < double > &f , size_t part){
+void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
+{
+	double hight_z = 29.99999999;
+	const std::vector<idx_t> &l2g = _coordinates.localToGlobal(part);
 
+	Point p0, p1, p2, v10, v20;
+	double Area_h;
 
-  double hight_z = 29.99999999;
-  const std::vector <idx_t> & l2g = _coordinates.localToGlobal(part);
+	for (size_t i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
+		bool flag_edgeOnTop = true;
+		for (size_t j = 0; j < _elements[i]->size(); j++) {
+			if (_coordinates[l2g[_elements[i]->node(j)]].z < hight_z) {
+				flag_edgeOnTop = false;
+				continue;
+			}
+		}
+		if (flag_edgeOnTop) {
+			p0 = _coordinates[l2g[_elements[i]->node(0)]];
+			p1 = _coordinates[l2g[_elements[i]->node(1)]];
+			p2 = _coordinates[l2g[_elements[i]->node(2)]];
+			v10 = p1 - p0;
+			v20 = p2 - p0;
 
-  double p0[3], p1[3], p2[3];
-  double v10[3], v20[3];
-  double Area_h;
+			Area_h = 0.5 * (
+				v10.y * v20.z - v20.y * v10.z +
+				v20.x * v10.z - v10.x * v20.z +
+				v10.x * v20.y - v20.x * v10.y);
 
-	for (size_t i = _partPtrs[part] ; i < _partPtrs[part + 1]; i++) {
-    bool flag_edgeOnTop = true;
-    for (size_t j = 0 ; j< _elements[i]->size();j++) {
-      if (_coordinates[l2g[_elements[i]->node(j)]].z<hight_z){
-        flag_edgeOnTop = false;
-        continue;
-      }
-    }
-    if (flag_edgeOnTop) {
-//      std::cout << "z = " ;
-//      std::cout << _coordinates[l2g[_elements[i]->node(0)]].z << std::endl;
-//
-      p0[0] = _coordinates[l2g[_elements[i]->node(0)]].x;
-      p0[1] = _coordinates[l2g[_elements[i]->node(0)]].y;
-      p0[2] = _coordinates[l2g[_elements[i]->node(0)]].z;
-
-      p1[0] = _coordinates[l2g[_elements[i]->node(1)]].x;
-      p1[1] = _coordinates[l2g[_elements[i]->node(1)]].y;
-      p1[2] = _coordinates[l2g[_elements[i]->node(1)]].z;
-
-      p2[0] = _coordinates[l2g[_elements[i]->node(2)]].x;
-      p2[1] = _coordinates[l2g[_elements[i]->node(2)]].y;
-      p2[2] = _coordinates[l2g[_elements[i]->node(2)]].z;
-      
-      for (size_t k = 0;k<3;k++){
-        v10[k] =  p1[k] - p0[k];
-        v20[k] =  p2[k] - p0[k];
-      }
-
-      Area_h = (v10[1]*v20[2] - v20[1]*v10[2] + 
-                v20[0]*v10[2] - v10[0]*v20[2] + 
-                v10[0]*v20[1] - v20[0]*v10[1]) * 0.5;
-
-//      std::cout << "area = " << Area_h << std::endl;
-      
-      for (size_t k = 0;k<3;k++){
-        f[3*_elements[i]->node(k)+2] +=  (1./3.) * Area_h;
-      }
-
-    }
-
+			for (size_t k = 0; k < 3; k++) {
+				f[3 * _elements[i]->node(k) + 2] +=  (1./3.) * Area_h;
+			}
+		}
 	}
-
 }
 
 
