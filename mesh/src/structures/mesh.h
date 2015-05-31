@@ -168,9 +168,6 @@ protected:
 	/** @brief Array that stores all elements of the mesh. */
 	std::vector<mesh::Element*> _elements;
 
-	/** @brief The biggest node's id in the mesh. */
-	idx_t _lastNode;
-
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<idx_t> _partPtrs;
 

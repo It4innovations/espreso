@@ -3,7 +3,7 @@
 using namespace mesh;
 
 Mesh::Mesh()
-	:_indicesType(Element::GLOBAL), _elements(0), _lastNode(0), _partsNodesCount(1, 0),
+	:_indicesType(Element::GLOBAL), _elements(0), _partsNodesCount(1, 0),
 	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
 {
 	_partPtrs.resize(2);
@@ -18,7 +18,6 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 	_maxElementSize(0)
 {
 	_elements.resize(Loader::getLinesCount(meshFile));
-	_lastNode = _coordinates.size() - 1;
 
 	std::ifstream file(meshFile);
 	std::string line;
@@ -48,7 +47,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 
 Mesh::Mesh(const Mesh &other)
 	:_indicesType(other._indicesType), _coordinates(other._coordinates),
-	 _lastNode(other._lastNode), _partPtrs(other._partPtrs),
+	 _partPtrs(other._partPtrs),
 	 _partsNodesCount(other._partsNodesCount), _fixPoints(other._fixPoints),
 	 _flags(other._flags), _maxElementSize(other._maxElementSize)
 {
@@ -72,7 +71,6 @@ void Mesh::assign(Mesh &m1, Mesh &m2)
 	m1._coordinates = m2._coordinates;
 	m1._indicesType = m2._indicesType;
 	m1._elements.swap(m2._elements);
-	m1._lastNode = m2._lastNode;
 	m1._partPtrs.swap(m2._partPtrs);
 	m1._partsNodesCount.swap(m2._partsNodesCount);
 	m1._fixPoints.swap(m2._fixPoints);
@@ -87,11 +85,6 @@ void Mesh::reserve(size_t size)
 
 void Mesh::pushElement(Element* e)
 {
-	for (size_t i = 0; i < e->size(); i++) {
-		if (_lastNode < e->node(i)) {
-			_lastNode = e->node(i);
-		}
-	}
 	if (_maxElementSize < e->size()) {
 		_maxElementSize = e->size();
 	}
@@ -392,7 +385,7 @@ idx_t* Mesh::getPartition(idx_t first, idx_t last, idx_t parts) const
 	METIS_SetDefaultOptions(options);
 
 	eSize = last - first;
-	nSize = _lastNode + 1;
+	nSize = _coordinates.clusterSize();
 
 	// create array storing pointers to elements' nodes
 	e = new idx_t[eSize + 1];
@@ -467,7 +460,7 @@ void Mesh::partitiate(idx_t *ePartition)
 
 void Mesh::computeLocalIndices(size_t part)
 {
-	std::vector<idx_t> nodeMap (_lastNode + 1, -1);
+	std::vector<idx_t> nodeMap (_coordinates.clusterSize(), -1);
 
 	// Compute mask of nodes
 	for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
@@ -478,7 +471,7 @@ void Mesh::computeLocalIndices(size_t part)
 
 	// re-index nodes
 	idx_t nSize = 0;
-	for (idx_t k = 0; k <= _lastNode; k++) {
+	for (idx_t k = 0; k < _coordinates.clusterSize(); k++) {
 		if (nodeMap[k] == 1) {
 			nodeMap[k] = nSize++;
 		}
