@@ -92,9 +92,9 @@ void load_mesh()
 
 	// fix down face
 	for (int i = 0; i < 11 * 11; i++) {
-		input.dirichlet_x[i + input.coordinates.getOffset()] = 0;
-		input.dirichlet_y[i + input.coordinates.getOffset()] = 0;
-		input.dirichlet_z[i + input.coordinates.getOffset()] = 0;
+		input.dirichlet_x[i] = 0;
+		input.dirichlet_y[i] = 0;
+		input.dirichlet_z[i] = 0;
 	}
 }
 
@@ -123,7 +123,7 @@ void generate_mesh()
 	g->mesh(input.mesh, cluster);
 
 	std::cout << "dirichlet" << std::endl;
-	g->fixZeroPlanes(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z);
+	g->fixZeroPlanes(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, cluster);
 	std::cout << "fix points" << std::endl;
 
 	// TODO: set fix points in PERMONCUBE
