@@ -162,9 +162,6 @@ protected:
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
 
-	/** @brief The type of indices in element. [local, global] */
-	Element::IndicesType _indicesType;
-
 	/** @brief Array that stores all elements of the mesh. */
 	std::vector<mesh::Element*> _elements;
 

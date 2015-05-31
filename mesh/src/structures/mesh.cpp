@@ -3,7 +3,7 @@
 using namespace mesh;
 
 Mesh::Mesh()
-	:_indicesType(Element::GLOBAL), _elements(0), _partsNodesCount(1, 0),
+	:_elements(0), _partsNodesCount(1, 0),
 	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
 {
 	_partPtrs.resize(2);
@@ -13,7 +13,6 @@ Mesh::Mesh()
 
 Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t fixPoints):
 	_coordinates(coordinatesFile),
-	_indicesType(Element::GLOBAL),
 	_flags(flags::FLAGS_SIZE, false),
 	_maxElementSize(0)
 {
@@ -46,7 +45,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 }
 
 Mesh::Mesh(const Mesh &other)
-	:_indicesType(other._indicesType), _coordinates(other._coordinates),
+	:_coordinates(other._coordinates),
 	 _partPtrs(other._partPtrs),
 	 _partsNodesCount(other._partsNodesCount), _fixPoints(other._fixPoints),
 	 _flags(other._flags), _maxElementSize(other._maxElementSize)
@@ -69,7 +68,6 @@ Mesh& Mesh::operator=(const Mesh &other)
 void Mesh::assign(Mesh &m1, Mesh &m2)
 {
 	m1._coordinates = m2._coordinates;
-	m1._indicesType = m2._indicesType;
 	m1._elements.swap(m2._elements);
 	m1._partPtrs.swap(m2._partPtrs);
 	m1._partsNodesCount.swap(m2._partsNodesCount);
@@ -455,7 +453,6 @@ void Mesh::partitiate(idx_t *ePartition)
 		_partPtrs[part + 1] = index;
 		computeLocalIndices(part);
 	}
-	_indicesType = Element::LOCAL;
 }
 
 void Mesh::computeLocalIndices(size_t part)
