@@ -21,12 +21,14 @@ public:
 			const permoncube::Settings &settings,
 			std::map<int, double> &dirichlet_x,
 			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z);
+			std::map<int, double> &dirichlet_z,
+			const size_t cluster[]);
 	static void fixBottom(
 			const permoncube::Settings &settings,
 			std::map<int, double> &dirichlet_x,
 			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z);
+			std::map<int, double> &dirichlet_z,
+			const size_t cluster[]);
 
 	static void clear();
 

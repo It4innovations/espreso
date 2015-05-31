@@ -18,13 +18,17 @@ public:
 			const permoncube::Settings &settings,
 			std::map<int, double> &dirichlet_x,
 			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z);
+			std::map<int, double> &dirichlet_z,
+			const size_t cluster[],
+			std::vector<idx_t> &mapping);
 
 	static void fixFullZeroPlanes(
 			const permoncube::Settings &settings,
 			std::map<int, double> &dirichlet_x,
 			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z);
+			std::map<int, double> &dirichlet_z,
+			const size_t cluster[],
+			std::vector<idx_t> &mapping);
 
 };
 }

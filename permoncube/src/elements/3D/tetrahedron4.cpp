@@ -58,21 +58,23 @@ void Tetrahedron4::addCoordinates(mesh::Mesh &mesh, const Settings &settings, co
 }
 
 void Tetrahedron4::fixZeroPlanes(
-			const permoncube::Settings &settings,
-			std::map<int, double> &dirichlet_x,
-			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z)
+		const permoncube::Settings &settings,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z,
+		const size_t cluster[])
 {
-	Element3D<Tetrahedron4>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z);
+	Element3D<Tetrahedron4>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster, _coordinateMapping);
 }
 
 void Tetrahedron4::fixBottom(
-			const permoncube::Settings &settings,
-			std::map<int, double> &dirichlet_x,
-			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z)
+		const permoncube::Settings &settings,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z,
+		const size_t cluster[])
 {
-	Element3D<Tetrahedron4>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z);
+	Element3D<Tetrahedron4>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster, _coordinateMapping);
 }
 
 void Tetrahedron4::clear()

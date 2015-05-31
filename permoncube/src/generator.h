@@ -16,11 +16,13 @@ public:
 	virtual void fixZeroPlanes(
 			std::map<int, double>  &dirichlet_x,
 			std::map<int, double>  &dirichlet_y,
-			std::map<int, double>  &dirichlet_z) = 0;
+			std::map<int, double>  &dirichlet_z,
+			const size_t cluster[]) = 0;
 	virtual void fixBottom(
-				std::map<int, double>  &dirichlet_x,
-				std::map<int, double>  &dirichlet_y,
-				std::map<int, double>  &dirichlet_z) = 0;
+			std::map<int, double>  &dirichlet_x,
+			std::map<int, double>  &dirichlet_y,
+			std::map<int, double>  &dirichlet_z,
+			const size_t cluster[]) = 0;
 
 	virtual ~Generator() { };
 
@@ -38,15 +40,20 @@ public:
 
 	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
 	void fixZeroPlanes(
-				std::map<int, double>  &dirichlet_x,
-				std::map<int, double>  &dirichlet_y,
-				std::map<int, double>  &dirichlet_z);
+			std::map<int, double>  &dirichlet_x,
+			std::map<int, double>  &dirichlet_y,
+			std::map<int, double>  &dirichlet_z,
+			const size_t cluster[]);
 	void fixBottom(
-				std::map<int, double>  &dirichlet_x,
-				std::map<int, double>  &dirichlet_y,
-				std::map<int, double>  &dirichlet_z);
+			std::map<int, double>  &dirichlet_x,
+			std::map<int, double>  &dirichlet_y,
+			std::map<int, double>  &dirichlet_z,
+			const size_t cluster[]);
 
-	~ElementGenerator() { };
+	~ElementGenerator()
+	{
+		TElement::clear();
+	}
 };
 
 }

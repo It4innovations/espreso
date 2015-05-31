@@ -33,21 +33,23 @@ void Hexahedron8::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &s
 }
 
 void Hexahedron8::fixZeroPlanes(
-			const permoncube::Settings &settings,
-			std::map<int, double> &dirichlet_x,
-			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z)
+		const permoncube::Settings &settings,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z,
+		const size_t cluster[])
 {
-	Element3D<Hexahedron8>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z);
+	Element3D<Hexahedron8>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster, _coordinateMapping);
 }
 
 void Hexahedron8::fixBottom(
-			const permoncube::Settings &settings,
-			std::map<int, double> &dirichlet_x,
-			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z)
+		const permoncube::Settings &settings,
+		std::map<int, double> &dirichlet_x,
+		std::map<int, double> &dirichlet_y,
+		std::map<int, double> &dirichlet_z,
+		const size_t cluster[])
 {
-	Element3D<Hexahedron8>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z);
+	Element3D<Hexahedron8>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster, _coordinateMapping);
 }
 
 void Hexahedron8::clear()
