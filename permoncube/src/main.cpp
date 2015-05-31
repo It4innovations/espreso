@@ -1,66 +1,110 @@
 #include "permoncube.h"
 
-int subdomains[3] = { 1, 1, 1 };
-int elementsInSub[3] = { 5, 5, 5 };
+permoncube::Settings settings;
 
 void setParams(int argc, char** argv)
 {
-	if (argc != 7) {
+	if (argc != 10) {
 		return;
 	}
 
+	int _cluster;
 	int _subdomains;
 	int _elementsInSub;
 
 	for (int i = 0; i < 3; i++) {
-		sscanf(argv[i + 1], "%i", &_subdomains);
-		sscanf(argv[i + 4], "%i", &_elementsInSub);
-		subdomains[i] = _subdomains;
-		elementsInSub[i] = _elementsInSub;
+		sscanf(argv[i + 1], "%i", &_cluster);
+		sscanf(argv[i + 4], "%i", &_subdomains);
+		sscanf(argv[i + 7], "%i", &_elementsInSub);
+		settings.clusters[i] = _cluster;
+		settings.subdomainsInCluster[i] = _subdomains;
+		settings.elementsInSubdomain[i] = _elementsInSub;
 	}
 }
 
+void test_hexa8();
+void test_tetra4();
 void test_tetra10();
 
 int main(int argc, char** argv)
 {
 	setParams(argc, argv);
-
-	permoncube::Settings settings;
-	permoncube::Generator *generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(settings);
-
-	mesh::Mesh mesh;
-	size_t cluster[3] = { 0, 0, 0 };
-
 	std::cout << settings;
 
-	generator->mesh(mesh, cluster);
-
-	//std::cout << mesh.coordinates();
-
-	mesh.saveVTK("permon.vtk", 0.9);
-
-	delete generator;
+	test_hexa8();
+	test_tetra4();
+	test_tetra10();
 }
 
+void test_hexa8()
+{
+	mesh::Mesh mesh;
+
+	size_t cluster[3] = { 0, 0, 0 };
+	if (settings.clusters[1] > 1) {
+		cluster[1] = 1;
+	}
+	if (settings.clusters[2] > 2) {
+		cluster[2] = 2;
+	}
+	permoncube::ElementGenerator<permoncube::Hexahedron8> generator(settings);
+
+	generator.mesh(mesh, cluster);
+
+	mesh.saveVTK("hexa8full.vtk", 0.9);
+	std::cout << "hexa8full saved\n";
+
+	mesh::SurfaceMesh sMesh(mesh);
+
+	sMesh.saveVTK("hexa8surface.vtk", 0.9);
+	std::cout << "hexa8surface saved\n";
+}
+
+void test_tetra4()
+{
+	mesh::Mesh mesh;
+
+	size_t cluster[3] = { 0, 0, 0 };
+	if (settings.clusters[1] > 1) {
+		cluster[1] = 1;
+	}
+	if (settings.clusters[2] > 2) {
+		cluster[2] = 2;
+	}
+	permoncube::ElementGenerator<permoncube::Tetrahedron4> generator(settings);
+
+	generator.mesh(mesh, cluster);
+
+	mesh.saveVTK("tetra4full.vtk", 0.9);
+	std::cout << "tetra4full saved\n";
+
+	mesh::SurfaceMesh sMesh(mesh);
+
+	sMesh.saveVTK("tetra4surface.vtk", 0.9);
+	std::cout << "tetra4surface saved\n";
+}
 
 void test_tetra10()
 {
-	mesh::Mesh m;
+	mesh::Mesh mesh;
 
-	//Permoncube::PM::tetrahedrons10(mesh, mesh.coordinates(), subdomains, elementsInSub);
+	size_t cluster[3] = { 0, 0, 0 };
+	if (settings.clusters[1] > 1) {
+		cluster[1] = 1;
+	}
+	if (settings.clusters[2] > 2) {
+		cluster[2] = 2;
+	}
+	permoncube::ElementGenerator<permoncube::Tetrahedron10> generator(settings);
 
-	int dimension = m.getPartNodesCount(0) * mesh::Point::size();
+	generator.mesh(mesh, cluster);
+	std::cout << "generated\n";
 
-	SparseCSRMatrix K(dimension, dimension);
-	SparseCSRMatrix M(dimension, dimension);
-	std::vector<double> f(dimension);
+	mesh.saveVTK("tetra10full.vtk", 0.9);
+	std::cout << "tetra10full saved\n";
 
-	m.elasticity(K, M, f, 0);
+	mesh::SurfaceMesh sMesh(mesh);
 
-	m.saveVTK("mesh.vtk");
-
-	std::ofstream fileK("K15.txt");
-	fileK << K;
-	fileK.close();
+	sMesh.saveVTK("tetra10surface.vtk", 0.9);
+	std::cout << "tetra10surface saved\n";
 }

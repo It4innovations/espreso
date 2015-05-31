@@ -11,7 +11,7 @@ void Element3D<TElement>::addFullCoordinates(mesh::Mesh &mesh, const Settings &s
 	size_t nodes[3];
 
 	Utils<TElement>::clusterNodesCount(settings, nodes);
-	mesh.coordinates().resize(nodes[0] * nodes[1] * nodes[2]);
+	mesh.coordinates().reserve(nodes[0] * nodes[1] * nodes[2]);
 
 	idx_t global = 0;
 	idx_t local = 0;
@@ -33,7 +33,7 @@ void Element3D<TElement>::addFullCoordinates(mesh::Mesh &mesh, const Settings &s
 			for (idx_t x = 0; x < nodes[0]; x++) {
 				mapping[global] = local;
 				if (s[2] <= z && z <= e[2] && s[1] <= y && y <= e[1] && s[0] <= x && x <= e[0]) {
-					coordinates.add(global, mesh::Point(x * step[0], y * step[1], z * step[2]));
+					coordinates.add(mesh::Point(x * step[0], y * step[1], z * step[2]), local, global);
 					local++;
 				}
 				global++;
