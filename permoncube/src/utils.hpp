@@ -8,10 +8,7 @@ void Utils<TElement>::globalNodesCount(const Settings &settings, size_t nodes[])
 	size_t cluster[3];
 	Utils<TElement>::clusterNodesCount(settings, cluster);
 	for (size_t i = 0; i < 3; i++) {
-		nodes[i] = settings.clusters[i] * cluster[i];
-		if (settings.clusters[i] > 1) {
-			nodes[i]--;
-		}
+		nodes[i] = settings.clusters[i] * (cluster[i] - 1) + 1;
 	}
 }
 

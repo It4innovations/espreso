@@ -18,8 +18,8 @@ void Element3D<TElement>::addFullCoordinates(mesh::Mesh &mesh, const Settings &s
 	idx_t s[3], e[3];
 	double step[3];
 	for (int i = 0; i < 3; i++) {
-		s[i] = (settings.subdomainsInCluster[i] * (settings.elementsInSubdomain[i] + TElement::subnodes[i])) * cluster[i];
-		e[i] = (settings.subdomainsInCluster[i] * (settings.elementsInSubdomain[i] + TElement::subnodes[i])) * (cluster[i] + 1);
+		s[i] = (nodes[i] - 1) * cluster[i];
+		e[i] = (nodes[i] - 1) * (cluster[i] + 1);
 	}
 	for (int i = 0; i < 3; i++) {
 		step[i] = settings.clusterLength[i] / (nodes[i] - 1);

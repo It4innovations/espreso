@@ -97,7 +97,7 @@ void Tetrahedron10::addElements(mesh::Mesh &mesh, const idx_t indices[])
 
 void Tetrahedron10::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[])
 {
-	Element3D<Tetrahedron4>::addFullCoordinates(mesh, settings, cluster, _coordinateMapping);
+	Element3D<Tetrahedron10>::addFullCoordinates(mesh, settings, cluster, _coordinateMapping);
 }
 
 void Tetrahedron10::fixZeroPlanes(
