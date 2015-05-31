@@ -80,8 +80,8 @@ int main(int argc, char** argv)
 		load_mesh();
 	}
 
-	testBEM(argc, argv);
-	//testFEM(argc, argv);
+	//testBEM(argc, argv);
+	testFEM(argc, argv);
 }
 
 
@@ -150,7 +150,7 @@ std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
 void testBEM(int argc, char** argv)
 {
 	double start = omp_get_wtime();
-	size_t partsCount = input.mesh.getPartsCount();
+	size_t partsCount = input.mesh.parts();
 	size_t fixPointsCount = 4;
 
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
@@ -582,7 +582,7 @@ void testFEM(int argc, char** argv)
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount = input.mesh.getPartsCount();
+	size_t partsCount = input.mesh.parts();
 	size_t fixPointsCount = input.mesh.getFixPointsCount();
 
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;

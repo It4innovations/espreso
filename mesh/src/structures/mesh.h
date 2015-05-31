@@ -80,9 +80,9 @@ public:
 		return _elements;
 	};
 
-	size_t getPartsCount() const
+	size_t parts() const
 	{
-		return _partsNodesCount.size();
+		return _partPtrs.size() - 1;
 	}
 
 	const std::vector<idx_t>& getPartition() const
@@ -102,7 +102,7 @@ public:
 
 	idx_t getPartNodesCount(idx_t part) const
 	{
-		return _partsNodesCount[part];
+		return _coordinates.localSize(part);
 	}
 
 	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, idx_t part)
@@ -167,9 +167,6 @@ protected:
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<idx_t> _partPtrs;
-
-	/** @brief Number of nodes in each part. */
-	std::vector<idx_t> _partsNodesCount;
 
 	/** @brief Fix points for all parts. */
 	std::vector<idx_t> _fixPoints;

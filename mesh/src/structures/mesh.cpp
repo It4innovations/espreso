@@ -3,8 +3,7 @@
 using namespace mesh;
 
 Mesh::Mesh()
-	:_elements(0), _partsNodesCount(1, 0),
-	 _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
+	:_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -46,8 +45,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 
 Mesh::Mesh(const Mesh &other)
 	:_coordinates(other._coordinates),
-	 _partPtrs(other._partPtrs),
-	 _partsNodesCount(other._partsNodesCount), _fixPoints(other._fixPoints),
+	 _partPtrs(other._partPtrs), _fixPoints(other._fixPoints),
 	 _flags(other._flags), _maxElementSize(other._maxElementSize)
 {
 	_elements.reserve(other._elements.size());
@@ -70,7 +68,6 @@ void Mesh::assign(Mesh &m1, Mesh &m2)
 	m1._coordinates = m2._coordinates;
 	m1._elements.swap(m2._elements);
 	m1._partPtrs.swap(m2._partPtrs);
-	m1._partsNodesCount.swap(m2._partsNodesCount);
 	m1._fixPoints.swap(m2._fixPoints);
 	m1._flags.swap(m2._flags);
 	m1._maxElementSize = m2._maxElementSize;
@@ -89,7 +86,6 @@ void Mesh::pushElement(Element* e)
 	_elements.push_back(e);
 	if (_flags[flags::NEW_PARTITION]) {
 		_partPtrs.push_back(_partPtrs.back());
-		_partsNodesCount.push_back(0);
 		_flags[flags::NEW_PARTITION] = false;
 	}
 	_partPtrs.back() = _elements.size();
@@ -97,7 +93,7 @@ void Mesh::pushElement(Element* e)
 
 void Mesh::endPartition()
 {
-	computeLocalIndices(_partsNodesCount.size() - 1);
+	computeLocalIndices(_partPtrs.size() - 2);
 	_flags[flags::NEW_PARTITION] = true;
 }
 
@@ -128,7 +124,7 @@ Element* Mesh::createElement(idx_t *indices, idx_t n)
 
 void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic)
 {
-	int nK = _partsNodesCount[part] * Point::size();
+	int nK = _coordinates.localSize(part) * Point::size();
 	K.resize(nK, nK);
 	f.resize(nK);
 
@@ -313,7 +309,6 @@ void Mesh::_integrateElasticity(
 void Mesh::partitiate(idx_t parts, idx_t fixPoints)
 {
 	_partPtrs.resize(parts + 1);
-	_partsNodesCount.resize(parts);
 	_coordinates.localClear();
 	_coordinates.localResize(parts);
 
@@ -334,13 +329,12 @@ void Mesh::partitiate(idx_t parts, idx_t fixPoints)
 
 void Mesh::computeFixPoints(idx_t fixPoints)
 {
-	idx_t parts = _partPtrs.size() - 1;
-	_fixPoints.resize(parts * fixPoints);
+	_fixPoints.resize(parts() * fixPoints);
 
 #ifndef DEBUG
-	cilk_for (idx_t i = 0; i < parts; i++) {
+	cilk_for (idx_t i = 0; i < parts(); i++) {
 #else
-	for (idx_t i = 0; i < parts; i++) {
+	for (idx_t i = 0; i < parts(); i++) {
 #endif
 		idx_t *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
 
@@ -473,7 +467,6 @@ void Mesh::computeLocalIndices(size_t part)
 			nodeMap[k] = nSize++;
 		}
 	}
-	_partsNodesCount[part] = nSize;
 
 	for (idx_t e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
 		_elements[e]->setLocalIndices(nodeMap);
@@ -486,7 +479,7 @@ idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t par
 {
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
-	std::vector<std::set<int> > neighbours(_partsNodesCount[part]);
+	std::vector<std::set<int> > neighbours(_coordinates.localSize(part));
 	for (idx_t i = first, index = 0; i < last; i++, index++) {
 		if (ePartition[index] == subpart) {
 			for (size_t j = 0; j < _elements[i]->size(); j++) {
@@ -507,7 +500,7 @@ idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t par
 	float *a;
 	MKL_INT *ia, *ja;
 	a = new float[nonZeroValues];
-	ia = new MKL_INT[_partsNodesCount[part] + 1];
+	ia = new MKL_INT[_coordinates.localSize(part) + 1];
 	ja = new MKL_INT[nonZeroValues];
 
 	MKL_INT i = 0;
@@ -522,7 +515,7 @@ idx_t Mesh::getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t par
 	}
 	ia[neighbours.size()] = i;
 
-	MKL_INT nSize = _partsNodesCount[part];
+	MKL_INT nSize = _coordinates.localSize(part);
 	float *x, *y, *swap;
 	x = new float[nSize];
 	y = new float[nSize];
@@ -1017,13 +1010,13 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 
 void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 {
-	idx_t nK = Point::size() * _partsNodesCount[part];
+	idx_t nK = Point::size() * _coordinates.localSize(part);
 	int eSize = _partPtrs[part + 1] - _partPtrs[part];
 	K.resize(nK, nK);
 	std::vector<double> nodes(nK);
 	std::vector<int> elems(3 * eSize);
 
-	for (size_t i = 0; i < _partsNodesCount[part]; i++) {
+	for (size_t i = 0; i < _coordinates.localSize(part); i++) {
 		&nodes[i * Point::size()] << _coordinates.get(i, part);
 	}
 	for (size_t i = _partPtrs[part], index = 0; i < _partPtrs[part + 1]; i++, index++) {
@@ -1036,7 +1029,7 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 
 	bem4i::getLameSteklovPoincare(
 	    K.values(),
-	    _partsNodesCount[part],
+	    _coordinates.localSize(part),
 	    &nodes[0],
 	    eSize,
 	    &elems[0],
