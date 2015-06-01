@@ -19,25 +19,25 @@ namespace permoncube {
 class Tetrahedron4 {
 
 public:
-	static void addElements(mesh::Mesh &mesh, const idx_t indices[]);
+	static void addElements(mesh::Mesh &mesh, const esint indices[]);
 	static void addCoordinates(mesh::Mesh &mesh, const Settings &settings, const size_t cluster[]);
 	static void fixZeroPlanes(
 			const permoncube::Settings &settings,
-			std::map<int, double> &dirichlet_x,
-			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z,
+			std::map<esint, double> &dirichlet_x,
+			std::map<esint, double> &dirichlet_y,
+			std::map<esint, double> &dirichlet_z,
 			const size_t cluster[]);
 	static void fixBottom(
 			const permoncube::Settings &settings,
-			std::map<int, double> &dirichlet_x,
-			std::map<int, double> &dirichlet_y,
-			std::map<int, double> &dirichlet_z,
+			std::map<esint, double> &dirichlet_x,
+			std::map<esint, double> &dirichlet_y,
+			std::map<esint, double> &dirichlet_z,
 			const size_t cluster[]);
 
 	static void clear() { };
 
-	static size_t subnodes[3];
-	static size_t subelements;
+	static esint subnodes[3];
+	static esint subelements;
 };
 
 }

@@ -8,27 +8,28 @@ void Element3D<TElement>::addFullCoordinates(mesh::Mesh &mesh, const Settings &s
 {
 	mesh::Coordinates &coordinates = mesh.coordinates();
 
-	size_t nodes[3];
-	Utils<TElement>::clusterNodesCount(settings, nodes);
-	mesh.coordinates().reserve(nodes[0] * nodes[1] * nodes[2]);
+	esint cNodes[3];
+	Utils<TElement>::clusterNodesCount(settings, cNodes);
+	mesh.coordinates().reserve(cNodes[0] * cNodes[1] * cNodes[2]);
 
-	idx_t global = 0;
-	idx_t local = 0;
-	idx_t s[3], e[3];
+	eslong global = 0;
+	esint local = 0;
+	eslong s[3], e[3];
 	double step[3];
-	for (int i = 0; i < 3; i++) {
-		s[i] = (nodes[i] - 1) * cluster[i];
-		e[i] = (nodes[i] - 1) * (cluster[i] + 1);
+	for (esint i = 0; i < 3; i++) {
+		s[i] = (cNodes[i] - 1) * cluster[i];
+		e[i] = (cNodes[i] - 1) * (cluster[i] + 1);
 	}
-	for (int i = 0; i < 3; i++) {
-		step[i] = settings.clusterLength[i] / (nodes[i] - 1);
+	for (esint i = 0; i < 3; i++) {
+		step[i] = settings.clusterLength[i] / (cNodes[i] - 1);
 	}
 
-	Utils<TElement>::globalNodesCount(settings, nodes);
+	eslong gNodes[3];
+	Utils<TElement>::globalNodesCount(settings, gNodes);
 
-	for (idx_t z = 0; z < nodes[2]; z++) {
-		for (idx_t y = 0; y < nodes[1]; y++) {
-			for (idx_t x = 0; x < nodes[0]; x++) {
+	for (eslong z = 0; z < gNodes[2]; z++) {
+		for (eslong y = 0; y < gNodes[1]; y++) {
+			for (eslong x = 0; x < gNodes[0]; x++) {
 				if (s[2] <= z && z <= e[2] && s[1] <= y && y <= e[1] && s[0] <= x && x <= e[0]) {
 					coordinates.add(mesh::Point(x * step[0], y * step[1], z * step[2]), local, global);
 					local++;
@@ -42,20 +43,20 @@ void Element3D<TElement>::addFullCoordinates(mesh::Mesh &mesh, const Settings &s
 template<class TElement>
 void Element3D<TElement>::fixFullBottom(
 		const permoncube::Settings &settings,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z,
+		std::map<esint, double> &dirichlet_x,
+		std::map<esint, double> &dirichlet_y,
+		std::map<esint, double> &dirichlet_z,
 		const size_t cluster[])
 {
 	if (cluster[2] > 0) {
 		return;
 	}
-	size_t nodes[3];
+	esint nodes[3];
 	Utils<TElement>::clusterNodesCount(settings, nodes);
 
-	idx_t index = 0;
-	for (idx_t y = 0; y < nodes[1]; y++) {
-		for (idx_t x = 0; x < nodes[0]; x++) {
+	esint index = 0;
+	for (esint y = 0; y < nodes[1]; y++) {
+		for (esint x = 0; x < nodes[0]; x++) {
 			dirichlet_z[index] = 0;
 			dirichlet_y[index] = 0;
 			dirichlet_x[index] = 0;
@@ -68,27 +69,27 @@ void Element3D<TElement>::fixFullBottom(
 template<class TElement>
 void Element3D<TElement>::fixFullZeroPlanes(
 		const permoncube::Settings &settings,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z,
+		std::map<esint, double> &dirichlet_x,
+		std::map<esint, double> &dirichlet_y,
+		std::map<esint, double> &dirichlet_z,
 		const size_t cluster[])
 {
-	size_t nodes[3];
+	esint nodes[3];
 	Utils<TElement>::clusterNodesCount(settings, nodes);
 
 	if (cluster[0] == 0) {
-		idx_t index = 0;
-		for (idx_t z = 0; z < nodes[2]; z++) {
-			for (idx_t y = 0; y < nodes[1]; y++) {
+		esint index = 0;
+		for (esint z = 0; z < nodes[2]; z++) {
+			for (esint y = 0; y < nodes[1]; y++) {
 				dirichlet_x[index] = 0;
 				index += nodes[0];
 			}
 		}
 	}
 	if (cluster[1] == 0) {
-		idx_t index = 0;
-		for (idx_t z = 0; z < nodes[2]; z++) {
-			for (idx_t x = 0; x < nodes[0]; x++) {
+		esint index = 0;
+		for (esint z = 0; z < nodes[2]; z++) {
+			for (esint x = 0; x < nodes[0]; x++) {
 				dirichlet_y[index] = 0;
 				index++;
 			}
@@ -96,9 +97,9 @@ void Element3D<TElement>::fixFullZeroPlanes(
 		}
 	}
 	if (cluster[2] == 0) {
-		idx_t index = 0;
-		for (idx_t y = 0; y < nodes[1]; y++) {
-			for (idx_t x = 0; x < nodes[0]; x++) {
+		esint index = 0;
+		for (esint y = 0; y < nodes[1]; y++) {
+			for (esint x = 0; x < nodes[0]; x++) {
 				dirichlet_y[index] = 0;
 				index++;
 			}

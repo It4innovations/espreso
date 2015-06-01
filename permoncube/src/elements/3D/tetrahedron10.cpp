@@ -3,17 +3,17 @@
 
 using namespace permoncube;
 
-size_t Tetrahedron10::subelements = Tetrahedron10Subelements;
+esint Tetrahedron10::subelements = Tetrahedron10Subelements;
 
-size_t Tetrahedron10::subnodes[3] = {
+esint Tetrahedron10::subnodes[3] = {
 		Tetrahedron10Subnodes,
 		Tetrahedron10Subnodes,
 		Tetrahedron10Subnodes
 };
 
-void Tetrahedron10::addElements(mesh::Mesh &mesh, const idx_t indices[])
+void Tetrahedron10::addElements(mesh::Mesh &mesh, const esint indices[])
 {
-	idx_t tetra[20];
+	esint tetra[20];
 	tetra[0] = indices[2];
 	tetra[1] = indices[6];
 	tetra[2] = indices[0];
@@ -100,9 +100,9 @@ void Tetrahedron10::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings 
 
 void Tetrahedron10::fixZeroPlanes(
 		const permoncube::Settings &settings,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z,
+		std::map<esint, double> &dirichlet_x,
+		std::map<esint, double> &dirichlet_y,
+		std::map<esint, double> &dirichlet_z,
 		const size_t cluster[])
 {
 	Element3D<Tetrahedron10>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
@@ -110,9 +110,9 @@ void Tetrahedron10::fixZeroPlanes(
 
 void Tetrahedron10::fixBottom(
 		const permoncube::Settings &settings,
-		std::map<int, double> &dirichlet_x,
-		std::map<int, double> &dirichlet_y,
-		std::map<int, double> &dirichlet_z,
+		std::map<esint, double> &dirichlet_x,
+		std::map<esint, double> &dirichlet_y,
+		std::map<esint, double> &dirichlet_z,
 		const size_t cluster[])
 {
 	Element3D<Tetrahedron10>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
