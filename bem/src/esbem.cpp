@@ -47,43 +47,24 @@
 #include "BEBilinearFormLame2Layer.h"
 #include "BEBilinearFormLameHypersingular.h"
 
-using namespace std;
-using namespace bem4i;
+#include "esbem.h"
 
-
-namespace bem4i {
-void getLameSteklovPoincare(
+void bem4i::getLameSteklovPoincare(
     double * Sarray,
-    int nNodes,
+    esint nNodes,
     const double * nodes,
-    int nElems,
-    const int * elems,
+    esint nElems,
+    const esint * elems,
     double nu,
     double E,
-    int orderNear,
-    int orderFar,
-    bool verbose = false
-    );
-}
-
-namespace bem4i {
-
-void getLameSteklovPoincare(
-    double * Sarray,
-    int nNodes,
-    const double * nodes,
-    int nElems,
-    const int * elems,
-    double nu,
-    double E,
-    int orderNear,
-    int orderFar,
+    esint orderNear,
+    esint orderFar,
     bool verbose
     ) {
 
   typedef double SC;
   typedef double SCVT;
-  typedef int LO;
+  typedef esint LO;
 
   std::vector< SCVT > nodesv;
   nodesv.assign( nodes, nodes + 3 * nNodes );
@@ -184,5 +165,4 @@ void getLameSteklovPoincare(
   S.add( *D, 1.0 );
 
   delete D;
-}
 }
