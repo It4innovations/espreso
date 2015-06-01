@@ -22,9 +22,6 @@ namespace flags
 {
 
 enum FLAGS {
-	PARTITIONS,
-	FIX_POINTS,
-	BOUNDARIES,
 	NEW_PARTITION,
 	FLAGS_SIZE
 };

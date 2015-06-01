@@ -310,8 +310,6 @@ void Mesh::partitiate(idx_t parts, idx_t fixPoints)
 	if (fixPoints > 0) {
 		computeFixPoints(fixPoints);
 	}
-
-	_flags[flags::PARTITIONS] = true;
 }
 
 void Mesh::computeFixPoints(idx_t fixPoints)
@@ -331,8 +329,6 @@ void Mesh::computeFixPoints(idx_t fixPoints)
 
 		delete[] eSubPartition;
 	}
-
-	_flags[flags::FIX_POINTS] = true;
 }
 
 idx_t* Mesh::getPartition(idx_t first, idx_t last, idx_t parts) const
