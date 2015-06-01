@@ -7,7 +7,7 @@ std::vector<DenseMatrix> Line::_dN;
 std::vector<DenseMatrix> Line::_N;
 std::vector<double> Line::_weighFactor;
 
-bool Line::match(idx_t *indices, idx_t n)
+bool Line::match(esint *indices, esint n)
 {
 	if (n != 2) {
 		return false;
@@ -20,23 +20,23 @@ bool Line::match(idx_t *indices, idx_t n)
 	return true;
 }
 
-std::vector<idx_t> Line::getNeighbours(size_t nodeIndex) const
+std::vector<esint> Line::getNeighbours(size_t nodeIndex) const
 {
-	std::vector<idx_t> result(1);
+	std::vector<esint> result(1);
 
 	result[0] = (nodeIndex == 0) ? _indices[1] : _indices[0];
 
 	return result;
 }
 
-std::vector<idx_t> Line::getFace(size_t face) const
+std::vector<esint> Line::getFace(size_t face) const
 {
-	return std::vector<idx_t> ();
+	return std::vector<esint> ();
 }
 
-Line::Line(idx_t *indices)
+Line::Line(esint *indices)
 {
-	memcpy(_indices, indices, LineNodesCount * sizeof(idx_t));
+	memcpy(_indices, indices, LineNodesCount * sizeof(esint));
 }
 
 

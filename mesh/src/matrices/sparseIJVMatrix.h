@@ -20,7 +20,7 @@ class SparseIJVMatrix: public Matrix
 public:
 
 	SparseIJVMatrix(): Matrix(IJVMatrixIndexing) { };
-	SparseIJVMatrix(MKL_INT rows, MKL_INT columns): Matrix(rows, columns, IJVMatrixIndexing) { };
+	SparseIJVMatrix(esint rows, esint columns): Matrix(rows, columns, IJVMatrixIndexing) { };
 
 	SparseIJVMatrix(const DenseMatrix &other);
 	SparseIJVMatrix(const SparseDOKMatrix &other);
@@ -47,7 +47,7 @@ public:
 
 	double get(size_t row, size_t column) const
 	{
-		for(int i = 0; i < _rowIndices.size(); i++)
+		for(esint i = 0; i < _rowIndices.size(); i++)
 		{
 			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
 				return _values[i];
@@ -56,22 +56,22 @@ public:
 		return 0;
 	}
 
-	const MKL_INT* rowIndices() const
+	const esint* rowIndices() const
 	{
 		return &_rowIndices[0];
 	}
 
-	MKL_INT* rowIndices()
+	esint* rowIndices()
 	{
 		return &_rowIndices[0];
 	}
 
-	const MKL_INT* columnIndices() const
+	const esint* columnIndices() const
 	{
 		return &_columnIndices[0];
 	}
 
-	MKL_INT* columnIndices()
+	esint* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
@@ -90,7 +90,7 @@ private:
 
 	double& operator()(size_t row, size_t column)
 	{
-		for(int i = 0; i < _rowIndices.size(); i++)
+		for(size_t i = 0; i < _rowIndices.size(); i++)
 		{
 			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
 				return _values[i];
@@ -105,7 +105,7 @@ private:
 	void set(size_t row, size_t column, double value)
 	{
 		if (Matrix::nonZero(value)) {
-			for(int i = 0; i < _rowIndices.size(); i++)
+			for(size_t i = 0; i < _rowIndices.size(); i++)
 			{
 				if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
 					_values[i] = value;
@@ -127,8 +127,8 @@ private:
 	}
 
 	// Sparse COO data
-	std::vector<MKL_INT> _rowIndices;
-	std::vector<MKL_INT> _columnIndices;
+	std::vector<esint> _rowIndices;
+	std::vector<esint> _columnIndices;
 	std::vector<double> _values;
 };
 

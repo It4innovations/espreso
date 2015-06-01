@@ -23,7 +23,7 @@ Coordinates::Coordinates(const char *fileName): _clusterIndex(1)
 	}
 }
 
-void Coordinates::computeLocal(LIdx part, std::vector<LIdx> &nodeMap, size_t size)
+void Coordinates::computeLocal(esint part, std::vector<esint> &nodeMap, size_t size)
 {
 	if (_clusterIndex.size() <= part) {
 		_clusterIndex.resize(part + 1);

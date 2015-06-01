@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstring>
 
+#include "../definitions.h"
+
 #include "1D/point.h"
 
 #include "../structures/coordinates.h"
@@ -19,7 +21,7 @@ public:
 		LOCAL
 	};
 
-	inline static bool match(idx_t *indices, idx_t x, idx_t y)
+	inline static bool match(esint *indices, esint x, esint y)
 	{
 		return indices[x] == indices[y];
 	}
@@ -28,18 +30,17 @@ public:
 
 	virtual ~Element() {};
 
-	idx_t node(size_t index) const
+	esint node(size_t index) const
 	{
 		return indices()[index];
 	}
 
-	void fillNodes(idx_t *nodes) const
+	void fillNodes(esint *nodes) const
 	{
-		for (size_t i = 0; i < size(); i++) {
-			nodes[i] = node(i);
-		}
+		memcpy(nodes, indices(), size() * sizeof(esint));
 	}
-	void setLocalIndices(std::vector<idx_t> &mapping)
+
+	void setLocalIndices(std::vector<esint> &mapping)
 	{
 		for (size_t i = 0; i < size(); i++) {
 			indices()[i] = mapping[node(i)];
@@ -53,16 +54,16 @@ public:
 	virtual const std::vector<double>& weighFactor() const = 0;
 
 	// Virtual methods
-	virtual int vtkCode() const = 0;
+	virtual esint vtkCode() const = 0;
 	virtual size_t size() const = 0;
 	virtual size_t gpSize() const = 0;
 	virtual size_t faces() const = 0;
-	virtual std::vector<idx_t> getFace(size_t face) const = 0;
-	virtual std::vector<idx_t> getNeighbours(size_t nodeIndex) const = 0;
-	virtual const idx_t* indices() const = 0;
+	virtual std::vector<esint> getFace(size_t face) const = 0;
+	virtual std::vector<esint> getNeighbours(size_t nodeIndex) const = 0;
+	virtual const esint* indices() const = 0;
 
 protected:
-	virtual idx_t* indices() = 0;
+	virtual esint* indices() = 0;
 
 };
 

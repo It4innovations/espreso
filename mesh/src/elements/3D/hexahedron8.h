@@ -16,21 +16,21 @@ class Hexahedron8: public Element
 {
 
 public:
-	static bool match(idx_t *indices, idx_t n);
+	static bool match(esint *indices, esint n);
 
-	Hexahedron8(idx_t *indices);
+	Hexahedron8(esint *indices);
 
 	Element* copy() const
 	{
 		return new Hexahedron8(*this);
 	}
 
-	int vtkCode() const
+	esint vtkCode() const
 	{
 		return Hexahedron8VTKCode;
 	}
 
-	const idx_t* indices() const
+	const esint* indices() const
 	{
 		return _indices;
 	}
@@ -65,20 +65,20 @@ public:
 		return Hexahedron8::_weighFactor;
 	}
 
-	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
-	std::vector<idx_t> getFace(size_t face) const;
+	std::vector<esint> getNeighbours(size_t nodeIndex) const;
+	std::vector<esint> getFace(size_t face) const;
 
 protected:
 
-	idx_t* indices()
+	esint* indices()
 	{
 		return _indices;
 	}
 
 private:
-	inline void setFaceNodes(idx_t nodes[], idx_t face) const;
+	inline void setFaceNodes(esint nodes[], esint face) const;
 
-	idx_t _indices[Hexahedron8NodesCount];
+	esint _indices[Hexahedron8NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

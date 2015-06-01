@@ -15,21 +15,21 @@ class Triangle: public Element
 {
 
 public:
-	static bool match(idx_t *indices, idx_t n);
+	static bool match(esint *indices, esint n);
 
-	Triangle(idx_t *indices);
+	Triangle(esint *indices);
 
 	Element* copy() const
 	{
 		return new Triangle(*this);
 	}
 
-	int vtkCode() const
+	esint vtkCode() const
 	{
 		return TriangleVTKCode;
 	}
 
-	const idx_t* indices() const
+	const esint* indices() const
 	{
 		return _indices;
 	}
@@ -64,18 +64,18 @@ public:
 		return Triangle::_weighFactor;
 	}
 
-	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
-	std::vector<idx_t> getFace(size_t face) const;
+	std::vector<esint> getNeighbours(size_t nodeIndex) const;
+	std::vector<esint> getFace(size_t face) const;
 
 protected:
 
-	idx_t* indices()
+	esint* indices()
 	{
 		return _indices;
 	}
 
 private:
-	idx_t _indices[TriangleNodesCount];
+	esint _indices[TriangleNodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

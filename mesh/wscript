@@ -40,7 +40,8 @@ def build(ctx):
             target="esmesh",
             lib="metis",
             libpath="../libs",
-            use="metis_includes bem_includes esbem"
+            use="metis_includes bem_includes esbem",
+            install_path=ctx.ROOT
         )
     else:
         ctx.shlib(

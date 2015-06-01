@@ -2,7 +2,7 @@
 
 SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
-	MKL_INT nnz = other.nonZeroValues();
+	esint nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
 	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);
@@ -20,7 +20,7 @@ SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(),
 
 SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
-	MKL_INT nnz = other.nonZeroValues();
+	esint nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
 	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);
@@ -43,13 +43,13 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseDOKMatrix &other): Matrix(other.row
 
 SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
-	MKL_INT nnz = other.nonZeroValues();
-	MKL_INT rows = _rows;
+	esint nnz = other.nonZeroValues();
+	esint rows = _rows;
 	_rowIndices.resize(nnz);
 	_columnIndices.resize(nnz);
 	_values.resize(nnz);
 
-	MKL_INT job[6] = {
+	esint job[6] = {
 		0, 					// CSR to IJV
 		other.indexing(),	// indexing of CSR matrix
 		_indexing,			// indexing of IJV matrix
@@ -58,11 +58,11 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.row
 		3,					// fill all output arrays
 	};
 
-	MKL_INT info;
+	esint info;
 
 	mkl_dcsrcoo(
 		job, &rows,
-		const_cast<double*>(other.values()), const_cast<MKL_INT*>(other.columnIndices()), const_cast<MKL_INT*>(other.rowPtrs()),
+		const_cast<double*>(other.values()), const_cast<esint*>(other.columnIndices()), const_cast<esint*>(other.rowPtrs()),
 		&nnz, values(), rowIndices(), columnIndices(),
 		&info);
 }
@@ -70,7 +70,7 @@ SparseIJVMatrix::SparseIJVMatrix(const SparseCSRMatrix &other): Matrix(other.row
 SparseIJVMatrix::SparseIJVMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
 	other.shrink();
-	MKL_INT nnz = other.nonZeroValues();
+	esint nnz = other.nonZeroValues();
 	_rowIndices.reserve(nnz);
 	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);

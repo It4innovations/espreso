@@ -48,7 +48,7 @@ public:
 
 	double get(size_t row, size_t column) const
 	{
-		for(int i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
+		for(esint i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
 			if (_columnIndices[i - _indexing] == column + _indexing) {
 				return _values[i - _indexing];
 			}
@@ -66,22 +66,22 @@ public:
 		return &_values[0];
 	}
 
-	const MKL_INT* rowPtrs() const
+	const esint* rowPtrs() const
 	{
 		return &_rowPtrs[0];
 	}
 
-	MKL_INT* rowPtrs()
+	esint* rowPtrs()
 	{
 		return &_rowPtrs[0];
 	}
 
-	const MKL_INT* columnIndices() const
+	const esint* columnIndices() const
 	{
 		return &_columnIndices[0];
 	}
 
-	MKL_INT* columnIndices()
+	esint* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
@@ -109,8 +109,8 @@ private:
 	}
 
 	// Sparse CSR data
-	std::vector<MKL_INT> _rowPtrs;
-	std::vector<MKL_INT> _columnIndices;
+	std::vector<esint> _rowPtrs;
+	std::vector<esint> _columnIndices;
 	std::vector<double> _values;
 
 };

@@ -148,7 +148,7 @@ std::vector<DenseMatrix> Tetrahedron4::_dN = Tetra4_dN();
 std::vector<DenseMatrix> Tetrahedron4::_N = Tetra4_N();
 std::vector<double> Tetrahedron4::_weighFactor = Tetra4_Weight();
 
-bool Tetrahedron4::match(idx_t *indices, idx_t n) {
+bool Tetrahedron4::match(esint *indices, esint n) {
 
 #ifndef D3
 	// Tetrahedron4 is 3D element
@@ -172,9 +172,9 @@ bool Tetrahedron4::match(idx_t *indices, idx_t n) {
 		return false;
 	}
 
-	idx_t various[4] = { 0, 1, 2, 4 };
-	for (idx_t i = 0; i < 3; i++) {
-		for (idx_t j = i + 1; j < 4; j++) {
+	esint various[4] = { 0, 1, 2, 4 };
+	for (esint i = 0; i < 3; i++) {
+		for (esint j = i + 1; j < 4; j++) {
 			if (Element::match(indices, various[i], various[j])) {
 				return false;
 			}
@@ -184,9 +184,9 @@ bool Tetrahedron4::match(idx_t *indices, idx_t n) {
 	return true;
 }
 
-std::vector<idx_t> Tetrahedron4::getNeighbours(size_t nodeIndex) const
+std::vector<esint> Tetrahedron4::getNeighbours(size_t nodeIndex) const
 {
-	std::vector<idx_t> result;
+	std::vector<esint> result;
 	result.reserve(3);
 	for (size_t i = 0; i < Tetrahedron4NodesCount; i++) {
 		if (i != nodeIndex) {
@@ -196,9 +196,9 @@ std::vector<idx_t> Tetrahedron4::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<idx_t> Tetrahedron4::getFace(size_t face) const
+std::vector<esint> Tetrahedron4::getFace(size_t face) const
 {
-	std::vector<idx_t> result(3);
+	std::vector<esint> result(3);
 	switch (face){
 	case 0: {
 		result[0] = _indices[1];
@@ -228,9 +228,9 @@ std::vector<idx_t> Tetrahedron4::getFace(size_t face) const
 	return result;
 }
 
-Tetrahedron4::Tetrahedron4(idx_t *indices)
+Tetrahedron4::Tetrahedron4(esint *indices)
 {
-	memcpy(_indices, indices, 3 * sizeof(idx_t));
+	memcpy(_indices, indices, 3 * sizeof(esint));
 	_indices[3] = indices[4];
 }
 

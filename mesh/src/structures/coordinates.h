@@ -19,7 +19,7 @@ public:
 	Coordinates(): _points(0), _clusterIndex(1) { };
 	Coordinates(const char *fileName);
 
-	void add(const Point &point, LIdx clusterIndex, GIdx globalIndex)
+	void add(const Point &point, esint clusterIndex, eslong globalIndex)
 	{
 		_points.push_back(point);
 		_clusterIndex[0].push_back(clusterIndex);
@@ -33,27 +33,27 @@ public:
 		_clusterIndex[0].reserve(size);
 	}
 
-	const Point& get(LIdx index, LIdx part) const
+	const Point& get(esint index, esint part) const
 	{
 		return _points[_clusterIndex[part][index]];
 	}
 
-	LIdx clusterIndex(LIdx index, LIdx part) const
+	esint clusterIndex(esint index, esint part) const
 	{
 		return _clusterIndex[part][index];
 	}
 
-	GIdx globalIndex(LIdx index, LIdx part) const
+	eslong globalIndex(esint index, esint part) const
 	{
 		return _globalIndex[_clusterIndex[part][index]];
 	}
 
-	LIdx clusterSize() const
+	esint clusterSize() const
 	{
 		return _points.size();
 	}
 
-	LIdx localSize(LIdx part) const
+	esint localSize(esint part) const
 	{
 		return _clusterIndex[part].size();
 	}
@@ -63,7 +63,7 @@ public:
 		return _points.size();
 	}
 
-	const std::vector<LIdx>& localToCluster(LIdx part) const
+	const std::vector<esint>& localToCluster(esint part) const
 	{
 		return _clusterIndex[part];
 	}
@@ -78,7 +78,7 @@ public:
 		_clusterIndex.resize(size);
 	}
 
-	void computeLocal(LIdx part, std::vector<LIdx> &nodeMap, size_t size);
+	void computeLocal(esint part, std::vector<esint> &nodeMap, size_t size);
 
 	double* data()
 	{
@@ -86,12 +86,12 @@ public:
 		return static_cast<double*>(tmp);
 	}
 
-	const Point& operator[](LIdx index) const
+	const Point& operator[](esint index) const
 	{
 		return _points[index];
 	}
 
-	Point& operator[](LIdx index)
+	Point& operator[](esint index)
 	{
 		return _points[index];
 	}
@@ -101,10 +101,10 @@ private:
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */
-	std::vector<std::vector<LIdx> > _clusterIndex;
+	std::vector<std::vector<esint> > _clusterIndex;
 
 	/** @brief Point to global index */
-	std::vector<GIdx> _globalIndex;
+	std::vector<eslong> _globalIndex;
 };
 
 }

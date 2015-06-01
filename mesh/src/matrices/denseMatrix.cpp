@@ -17,12 +17,12 @@ DenseMatrix::DenseMatrix(const SparseCSRMatrix &other): Matrix(other.rows(), oth
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
-	const MKL_INT *rowPtrs = other.rowPtrs();
-	const MKL_INT *columnIndices = other.columnIndices();
+	const esint *rowPtrs = other.rowPtrs();
+	const esint *columnIndices = other.columnIndices();
 	const double *values = other.values();
 
-	for (MKL_INT r = 0; r < _rows; r++) {
-		for (MKL_INT i = rowPtrs[r]; i < rowPtrs[r + 1]; i++) {
+	for (esint r = 0; r < _rows; r++) {
+		for (esint i = rowPtrs[r]; i < rowPtrs[r + 1]; i++) {
 			set(r, columnIndices[i - other.indexing()] - other.indexing(), values[i - other.indexing()]);
 		}
 	}
@@ -32,11 +32,11 @@ DenseMatrix::DenseMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), oth
 {
 	std::vector<double>(rows() * columns(), 0).swap(_values);
 
-	const MKL_INT *rowIndices = other.rowIndices();
-	const MKL_INT *columnIndices = other.columnIndices();
+	const esint *rowIndices = other.rowIndices();
+	const esint *columnIndices = other.columnIndices();
 	const double *values = other.values();
 
-	for (MKL_INT i = 0; i < other.nonZeroValues(); i++) {
+	for (esint i = 0; i < other.nonZeroValues(); i++) {
 		set(rowIndices[i] - other.indexing(), columnIndices[i] - other.indexing(), values[i]);
 	}
 }

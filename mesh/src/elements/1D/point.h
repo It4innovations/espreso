@@ -1,19 +1,20 @@
 #ifndef POINT_H_
 #define POINT_H_
 
-#ifndef D2
+#if ESPRESO_POINT_DIMENSION == 2
+	#define D2
+	#include "point2d.h"
 
-// D3 is the default value
-#define D3
-
-#include "point3d.h"
-#define Point Point3D
-
+	namespace mesh {
+		typedef mesh::Point2D Point;
+	}
 #else
+	#define D3
+	#include "point3d.h"
 
-#include "point2d.h"
-#define Point Point2D
-
+	namespace mesh {
+		typedef mesh::Point3D Point;
+	}
 #endif
 
 #endif /* POINT_H_ */

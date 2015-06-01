@@ -15,21 +15,21 @@ class Line: public Element
 {
 
 public:
-	static bool match(idx_t *indices, idx_t n);
+	static bool match(esint *indices, esint n);
 
-	Line(idx_t *indices);
+	Line(esint *indices);
 
 	Element* copy() const
 	{
 		return new Line(*this);
 	}
 
-	int vtkCode() const
+	esint vtkCode() const
 	{
 		return LineVTKCode;
 	}
 
-	const idx_t* indices() const
+	const esint* indices() const
 	{
 		return _indices;
 	}
@@ -64,18 +64,18 @@ public:
 		return Line::_weighFactor;
 	}
 
-	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
-	std::vector<idx_t> getFace(size_t face) const;
+	std::vector<esint> getNeighbours(size_t nodeIndex) const;
+	std::vector<esint> getFace(size_t face) const;
 
 protected:
 
-	idx_t* indices()
+	esint* indices()
 	{
 		return _indices;
 	}
 
 private:
-	idx_t _indices[LineNodesCount];
+	esint _indices[LineNodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

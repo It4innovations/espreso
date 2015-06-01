@@ -39,7 +39,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 
 	Mesh();
-	Mesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints);
+	Mesh(const char *mesh, const char *coordinates, esint parts, esint fixPoints);
 
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
@@ -55,9 +55,9 @@ public:
 	}
 
 	void saveVTK(const char* filename, double shrinking = 1);
-	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <int> > &l2g_vec, double shrinking = 1);
+	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <esint> > &l2g_vec, double shrinking = 1);
 
-	void saveNodeArray(idx_t *nodeArray, size_t part);
+	void saveNodeArray(esint *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;
@@ -69,8 +69,8 @@ public:
 
 	~Mesh();
 
-	void partitiate(idx_t parts, idx_t fixPoints);
-	void computeFixPoints(idx_t fixPoints);
+	void partitiate(esint parts, esint fixPoints);
+	void computeFixPoints(esint fixPoints);
 
 	const std::vector<Element*>& getElements() const
 	{
@@ -82,7 +82,7 @@ public:
 		return _partPtrs.size() - 1;
 	}
 
-	const std::vector<idx_t>& getPartition() const
+	const std::vector<esint>& getPartition() const
 	{
 		return _partPtrs;
 	}
@@ -92,17 +92,17 @@ public:
 		return _fixPoints.size() / (_partPtrs.size() - 1);
 	}
 
-	const std::vector<idx_t>& getFixPoints() const
+	const std::vector<esint>& getFixPoints() const
 	{
 		return _fixPoints;
 	}
 
-	idx_t getPartNodesCount(idx_t part) const
+	esint getPartNodesCount(esint part) const
 	{
 		return _coordinates.localSize(part);
 	}
 
-	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, idx_t part)
+	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, esint part)
 	{
 		SparseVVPMatrix _K;
 		SparseVVPMatrix _M;
@@ -110,7 +110,7 @@ public:
 		K = _K;
 		M = _M;
 	}
-	void elasticity(SparseCSRMatrix &K, std::vector<double> &f, idx_t part)
+	void elasticity(SparseCSRMatrix &K, std::vector<double> &f, esint part)
 	{
 		SparseVVPMatrix _K;
 		SparseVVPMatrix _M;
@@ -121,11 +121,11 @@ public:
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
 
-	void saveBasis(std::ofstream &vtk, std::vector<std::vector<int> > &l2g_vec, double shrinking);
+	void saveBasis(std::ofstream &vtk, std::vector<std::vector<esint> > &l2g_vec, double shrinking);
 
-	Element* createElement(idx_t *indices, idx_t n);
+	Element* createElement(esint *indices, esint n);
 
-	void _elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, idx_t part, bool dynamic);
+	void _elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, esint part, bool dynamic);
 	void _assembleElesticity(
 		const Element *e,
 		size_t part,
@@ -147,14 +147,14 @@ protected:
 		bool dynamic
 	) const;
 
-	idx_t* getPartition(idx_t first, idx_t last, idx_t parts) const;
-	idx_t getCentralNode(idx_t first, idx_t last, idx_t *ePartition, idx_t part, idx_t subpart) const;
+	esint* getPartition(esint first, esint last, esint parts) const;
+	esint getCentralNode(esint first, esint last, esint *ePartition, esint part, esint subpart) const;
 
-	void partitiate(idx_t *ePartition);
+	void partitiate(esint *ePartition);
 	void computeLocalIndices(size_t part);
 
-	void checkMETISResult(int result) const;
-	void checkMKLResult(MKL_INT result) const;
+	void checkMETISResult(esint result) const;
+	void checkMKLResult(esint result) const;
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
@@ -163,10 +163,10 @@ protected:
 	std::vector<mesh::Element*> _elements;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
-	std::vector<idx_t> _partPtrs;
+	std::vector<esint> _partPtrs;
 
 	/** @brief Fix points for all parts. */
-	std::vector<idx_t> _fixPoints;
+	std::vector<esint> _fixPoints;
 
 	/** @brief Flags used to recognize whether the specified property was computed. */
 	std::vector<bool> _flags;
@@ -178,7 +178,7 @@ class SurfaceMesh: public Mesh
 
 public:
 	SurfaceMesh(): Mesh() { };
-	SurfaceMesh(const char *mesh, const char *coordinates, idx_t parts, idx_t fixPoints):
+	SurfaceMesh(const char *mesh, const char *coordinates, esint parts, esint fixPoints):
 		Mesh(mesh, coordinates, parts, fixPoints) { };
 	SurfaceMesh(const Mesh &mesh)
 	{
