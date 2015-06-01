@@ -12,23 +12,21 @@ template<class TElement>
 class Element3D {
 
 public:
-	static void addFullCoordinates(mesh::Mesh &mesh, const Settings &settings, const size_t cluster[], std::vector<idx_t> &mapping);
+	static void addFullCoordinates(mesh::Mesh &mesh, const Settings &settings, const size_t cluster[]);
 
 	static void fixFullBottom(
 			const permoncube::Settings &settings,
 			std::map<int, double> &dirichlet_x,
 			std::map<int, double> &dirichlet_y,
 			std::map<int, double> &dirichlet_z,
-			const size_t cluster[],
-			std::vector<idx_t> &mapping);
+			const size_t cluster[]);
 
 	static void fixFullZeroPlanes(
 			const permoncube::Settings &settings,
 			std::map<int, double> &dirichlet_x,
 			std::map<int, double> &dirichlet_y,
 			std::map<int, double> &dirichlet_z,
-			const size_t cluster[],
-			std::vector<idx_t> &mapping);
+			const size_t cluster[]);
 
 };
 }

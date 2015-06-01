@@ -22,23 +22,14 @@ void setParams(int argc, char** argv)
 	}
 }
 
-void test_hexa8();
-void test_tetra4();
-void test_tetra10();
+void test_hexa8(size_t cluster[]);
+void test_tetra4(size_t cluster[]);
+void test_tetra10(size_t cluster[]);
 
 int main(int argc, char** argv)
 {
 	setParams(argc, argv);
 	std::cout << settings;
-
-	test_hexa8();
-	test_tetra4();
-	test_tetra10();
-}
-
-void test_hexa8()
-{
-	mesh::Mesh mesh;
 
 	size_t cluster[3] = { 0, 0, 0 };
 	if (settings.clusters[1] > 1) {
@@ -47,6 +38,16 @@ void test_hexa8()
 	if (settings.clusters[2] > 2) {
 		cluster[2] = 2;
 	}
+
+	test_hexa8(cluster);
+	test_tetra4(cluster);
+	test_tetra10(cluster);
+}
+
+void test_hexa8(size_t cluster[])
+{
+	mesh::Mesh mesh;
+
 	permoncube::ElementGenerator<permoncube::Hexahedron8> generator(settings);
 
 	generator.mesh(mesh, cluster);
@@ -60,17 +61,10 @@ void test_hexa8()
 	std::cout << "hexa8surface saved\n";
 }
 
-void test_tetra4()
+void test_tetra4(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	size_t cluster[3] = { 0, 0, 0 };
-	if (settings.clusters[1] > 1) {
-		cluster[1] = 1;
-	}
-	if (settings.clusters[2] > 2) {
-		cluster[2] = 2;
-	}
 	permoncube::ElementGenerator<permoncube::Tetrahedron4> generator(settings);
 
 	generator.mesh(mesh, cluster);
@@ -84,17 +78,10 @@ void test_tetra4()
 	std::cout << "tetra4surface saved\n";
 }
 
-void test_tetra10()
+void test_tetra10(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	size_t cluster[3] = { 0, 0, 0 };
-	if (settings.clusters[1] > 1) {
-		cluster[1] = 1;
-	}
-	if (settings.clusters[2] > 2) {
-		cluster[2] = 2;
-	}
 	permoncube::ElementGenerator<permoncube::Tetrahedron10> generator(settings);
 
 	generator.mesh(mesh, cluster);

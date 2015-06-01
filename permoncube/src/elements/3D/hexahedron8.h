@@ -30,13 +30,10 @@ public:
 			std::map<int, double> &dirichlet_z,
 			const size_t cluster[]);
 
-	static void clear();
+	static void clear() { };
 
 	static size_t subnodes[3];
 	static size_t subelements;
-
-private:
-	static std::vector<idx_t> _coordinateMapping;
 };
 
 }

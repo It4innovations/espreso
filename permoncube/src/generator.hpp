@@ -34,31 +34,28 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 		}
 	}
 	size_t nodes[3];
-	Utils<TElement>::globalNodesCount(_settings, nodes);
+	Utils<TElement>::clusterNodesCount(_settings, nodes);
 
 	TElement::addCoordinates(mesh, _settings, cluster);
 
-	idx_t indices[(2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2])];
+	std::vector<idx_t> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 
 	mesh.reserve(Utils<TElement>::clusterElementsCount(_settings));
 
 	idx_t subdomain[3];
 	idx_t element[3];
 
-	idx_t clusterOffset[3];
 	idx_t subdomainOffset[3];
 	idx_t elementOffset[3];
 
-	for (idx_t i = 0; i < 3; i++) {
-		clusterOffset[i] = cluster[i] * (_settings.subdomainsInCluster[i] * (_settings.elementsInSubdomain[i] * (1 + TElement::subnodes[i])));
-	}
+	//std::cout << "Cluster: " << clusterOffset[0] << ":" << clusterOffset[1] << ":" << clusterOffset[2] << "\n";
 	for (subdomain[2] = 0; subdomain[2] < _settings.subdomainsInCluster[2]; subdomain[2]++) {
 		for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
 			for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
 
 				// for each sub-domain
 				for (idx_t i = 0; i < 3; i++) {
-					subdomainOffset[i] = clusterOffset[i] + subdomain[i] * (_settings.elementsInSubdomain[i] * (1 + TElement::subnodes[i]));
+					subdomainOffset[i] = subdomain[i] * (_settings.elementsInSubdomain[i] * (1 + TElement::subnodes[i]));
 				}
 				for (element[2] = 0; element[2] < _settings.elementsInSubdomain[2]; element[2]++) {
 					for (element[1] = 0; element[1] < _settings.elementsInSubdomain[1]; element[1]++) {
@@ -79,7 +76,7 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 									}
 								}
 							}
-							TElement::addElements(mesh, indices);
+							TElement::addElements(mesh, &indices[0]);
 						}
 					}
 				}
