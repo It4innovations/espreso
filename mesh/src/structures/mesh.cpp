@@ -3,7 +3,7 @@
 using namespace mesh;
 
 Mesh::Mesh()
-	:_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false), _maxElementSize(0)
+	:_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -12,8 +12,7 @@ Mesh::Mesh()
 
 Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t fixPoints):
 	_coordinates(coordinatesFile),
-	_flags(flags::FLAGS_SIZE, false),
-	_maxElementSize(0)
+	_flags(flags::FLAGS_SIZE, false)
 {
 	_elements.resize(Loader::getLinesCount(meshFile));
 
@@ -46,7 +45,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, idx_t parts, idx_t
 Mesh::Mesh(const Mesh &other)
 	:_coordinates(other._coordinates),
 	 _partPtrs(other._partPtrs), _fixPoints(other._fixPoints),
-	 _flags(other._flags), _maxElementSize(other._maxElementSize)
+	 _flags(other._flags)
 {
 	_elements.reserve(other._elements.size());
 	for (size_t i = 0; i < other._elements.size(); i++) {
@@ -70,7 +69,6 @@ void Mesh::assign(Mesh &m1, Mesh &m2)
 	m1._partPtrs.swap(m2._partPtrs);
 	m1._fixPoints.swap(m2._fixPoints);
 	m1._flags.swap(m2._flags);
-	m1._maxElementSize = m2._maxElementSize;
 }
 
 void Mesh::reserve(size_t size)
@@ -80,9 +78,6 @@ void Mesh::reserve(size_t size)
 
 void Mesh::pushElement(Element* e)
 {
-	if (_maxElementSize < e->size()) {
-		_maxElementSize = e->size();
-	}
 	_elements.push_back(e);
 	if (_flags[flags::NEW_PARTITION]) {
 		_partPtrs.push_back(_partPtrs.back());
@@ -116,9 +111,6 @@ Element* Mesh::createElement(idx_t *indices, idx_t n)
 		exit(EXIT_FAILURE);
 	}
 
-	if (_maxElementSize < e->size()) {
-		_maxElementSize = e->size();
-	}
 	return e;
 }
 
@@ -126,12 +118,13 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 {
 	int nK = _coordinates.localSize(part) * Point::size();
 	K.resize(nK, nK);
+	if (dynamic) {
+		M.resize(nK, nK);
+	}
 	f.resize(nK);
 
-	size_t maxElementSize = _maxElementSize * Point::size();
-	DenseMatrix Ke(maxElementSize, maxElementSize);
-	DenseMatrix Me;
-	std::vector<double> fe(maxElementSize);
+	DenseMatrix Ke, Me;
+	std::vector<double> fe;
 
 	std::vector <double> inertia (3, 0.0);
 	inertia[2] = 9810.0 * 7.85e-9;
@@ -143,12 +136,6 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = E * mi;
 	C(0, 0) = C(1, 1) = C(2, 2) = E * (1.0 - mi);
 	C(3, 3) = C(4, 4) = C(5, 5) = E * (0.5 - mi);
-
-	if (dynamic) {
-		M.resize(nK, nK);
-		// Only one block is assembled -> all others are the same
-		Me.resize(_maxElementSize, _maxElementSize);
-	}
 
 	for (int i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, C, dynamic);

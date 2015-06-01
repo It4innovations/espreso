@@ -173,9 +173,6 @@ protected:
 
 	/** @brief Flags used to recognize whether the specified property was computed. */
 	std::vector<bool> _flags;
-
-	/** @brief Size of an element with maximal number of nodes. */
-	size_t _maxElementSize;
 };
 
 
