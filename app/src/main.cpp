@@ -80,8 +80,8 @@ int main(int argc, char** argv)
 		load_mesh();
 	}
 
-	//testBEM(argc, argv);
-	testFEM(argc, argv);
+	testBEM(argc, argv);
+	//testFEM(argc, argv);
 }
 
 
@@ -266,9 +266,8 @@ void testBEM(int argc, char** argv)
 #endif
         K_mat[d] = K_mat_dense[d];
         f_vec[d].resize(K_mat_dense[d].rows() , 0.0);
-        // TODO tady nemuze byt destructor
-        K_mat_dense[d].DenseMatrix::~DenseMatrix();
     }
+    K_mat_dense.clear();
     
     for (int d = 0; d < partsCount; d++) {
 //      std::cout<< "d: "<< d <<std::endl;
@@ -467,8 +466,8 @@ void testBEM(int argc, char** argv)
         cluster.domains[d].f = f_vec[d];
                             
         //SetVecInt( cluster.domains[i].fix_dofs, 1,                           24, clust_g.fem[i]->mesh.fixingDOFs );
-        for (int i = 0; i < fix_nodes[d].size(); i++) {
-            for (int d_i = 0; d_i < 3; d_i++) {
+        for (size_t i = 0; i < fix_nodes[d].size(); i++) {
+            for (size_t d_i = 0; d_i < 3; d_i++) {
                 cluster.domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
             }
         }
@@ -499,9 +498,8 @@ void testBEM(int argc, char** argv)
         K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
         K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
                                                         'G');
-        K_mat[d].SparseCSRMatrix::~SparseCSRMatrix();
-    
     }
+    K_mat.clear();
 
         
         
