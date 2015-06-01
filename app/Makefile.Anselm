@@ -1,4 +1,4 @@
-CC=mpicc
+CC=mpiicc
 
 SOURCE_DIR=../..
 METIS_DIR=$(SOURCE_DIR)/metis/metis-5.1.0/include
@@ -12,11 +12,11 @@ INCLUDE=
 USRCFLAGS=
 DEBUGCFLAGS=-O0 -g -cilk-serialize 
 
-CFLAGS =-g -d -cilk-serialize -c -no-multibyte-chars -openmp -mkl=parallel -I$(SOLVER_DIR) -I$(MESH_DIR) -I$(PMCUBE_DIR) -I$(METIS_DIR) -I$(BEM_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
+CFLAGS =-c -no-multibyte-chars -openmp -mkl=parallel -I$(SOLVER_DIR) -I$(MESH_DIR) -I$(PMCUBE_DIR) -I$(METIS_DIR) -I$(BEM_DIR) #-DHFETI_SOLVER #-DCUDA #-Wall
 opt   : CFLAGS += -O3 -xHost -ip -g
 debug : CFLAGS += $(DEBUGCFLAGS)
 pipe  : CFLAGS += $(USRCFLAGS)
-lib   : CFLAGS += -fPIC -O3 -xHost -ip -g -d -cilk-serialize
+lib   : CFLAGS += -fPIC -O3 -xHost -ip  #-g -d -cilk-serialize
 mic   : CFLAGS += -mmic 
 
 LDFLAGS = -mkl=parallel -L$(LIBS) -lespmcube -lesmesh -lessolver -lesbem -lmetis -ltbb

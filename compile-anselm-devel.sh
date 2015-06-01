@@ -2,8 +2,8 @@
 
 #module load cuda
 
-module load bullxmpi/bullxmpi_1.2.4.1
-#module load impi/4.1.1.036
+#module load bullxmpi/bullxmpi_1.2.4.1
+module load impi/4.1.1.036
 #module load impi/4.1.0.030
 #module load openmpi/1.8.1-icc
 

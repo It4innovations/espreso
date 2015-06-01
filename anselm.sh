@@ -1,7 +1,9 @@
 #!/bin/bash
 
 module load bullxmpi/bullxmpi_1.2.4.1
+#module load impi/4.1.1.036
 module load intel/15.2.164
+export LC_CTYPE=""
 
 if [ "$#" -ne 1 ]; then
   echo "  Use one of the following commands:"
@@ -38,7 +40,7 @@ fi
 
 if [ "$1" = "run" ]; then
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
-  export OMP_NUM_THREADS=16
+  export OMP_NUM_THREADS=1
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
 
@@ -53,26 +55,26 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      5  8   3  10   6  14  16  15  10  10 )
+  dom_size=(      15  16  17  8   9  10  11  12  13  14 )
+  clustt_size_x=( 10  10  10  10  10 10  10  10  10  10 )
 
-  clustt_size_x=( 2   8   2   8   16   9   3   3   3   5 )
-  clustt_size_y=( 2   8   2   8   16   9   3   4   3   5 )
-  clustt_size_z=( 2   8   2   8   16   9   8   8   3   5 )
+  clustt_size_y=( 5   5   5   5   5   5   5   5   5   5 )
+  clustt_size_z=( 5   5   5   5   5   5   5   5   5   5 )
 
-  clusters_x=(    1   1   2   1   1   2   8   8   1   2 )
-  clusters_y=(    1   1   2   1   1   2   8   8   1   2 )
-  clusters_z=(    1   1   2   1   1   2   4   4   1   2 )
+  clusters_x=(    1   1   1   1   1   1   1   1   1   1 )
+  clusters_y=(    1   1   1   1   1   1   1   1   1   1 )
+  clusters_z=(    1   1   1   1   1   1   1   1   1   1 )
 
-  corners=(       0   0   0   0   3   2   3   3   3   3 )
+  corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 0 # 0 1 2 3
+  for i in 1 2 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
 
     x=${clustt_size_x[${i}]}
-    y=${clustt_size_y[${i}]}
-    z=${clustt_size_z[${i}]}
+    y=${clustt_size_x[${i}]}
+    z=${clustt_size_x[${i}]}
 
     X=${clusters_x[${i}]}
     Y=${clusters_y[${i}]}
@@ -87,8 +89,10 @@ if [ "$1" = "run" ]; then
 
     date | tee -a $log_file
 
-    ./espreso ${el_type[2]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+    ./espreso ${el_type[0]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 
+    cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
+    rm mesh.vtk
   done
 
 fi

@@ -499,7 +499,6 @@ void Domain::K_regularization ( )
 
 void Domain::K_regularizationFromR ( ) {
 
-    ///* POZOR BEM only
     
 	SparseMatrix N; 
 	
@@ -531,7 +530,6 @@ void Domain::K_regularizationFromR ( ) {
 
 	K.    MatAddInPlace (NtN_Mat,'N', ro);
 	
-    //*/
     
     Kplus.ImportMatrix  (K);
 	Kplus.Factorization ();

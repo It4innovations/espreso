@@ -83,8 +83,16 @@ def configure(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
         ctx.env.append_unique("LIB", [ "gomp" ])
     else:
-        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-mkl=parallel", "-openmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-openmp" ])
+      #ctx.env.append_unique("CXXFLAGS", [ "-O0", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START", "-g", "-mkl=sequential", "-openmp", "-cilk-serialize"])
+      #ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
+       ctx.env.append_unique("CXXFLAGS", [ "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START", "-g", "-mkl=parallel", "-fopenmp" ])
+       ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-fopenmp" ])
+	
+
+
+       #ctx.env.append_unique("CXXFLAGS", [ "-O2", "-mkl=parallel", "-openmp" ])
+       #ctx.env.append_unique("CXXFLAGS", [ "-DDEBUG" ])
+       #ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-openmp" ])
 
     ctx.setenv("mpi", ctx.env)
     if ctx.options.mpich:

@@ -175,7 +175,11 @@ void testBEM(int argc, char** argv)
 	}
 
     
-    for (int d = 0; d < partsCount; d++) {
+#ifndef DEBUG
+    cilk_for (size_t d = 0; d < partsCount; d++) {
+#else
+    for (size_t d = 0; d < partsCount; d++) {
+#endif
 
 /*
         std::ofstream Kmat_file_o;
@@ -252,19 +256,31 @@ void testBEM(int argc, char** argv)
     std::cout << "BEM 8 : " << omp_get_wtime() - start<< std::endl;
 
     K_mat.reserve(partsCount);
-    for (int d = 0; d < partsCount; d++) {
+    for (size_t d = 0; d < partsCount; d++) {
         K_mat.push_back( SparseCSRMatrix (0,0) );
-        K_mat[d] = K_mat_dense[d];
-    
-        f_vec[d].resize(K_mat_dense[d].rows() , 0.0);
     }
-    
+
+#ifndef DEBUG
+    cilk_for (size_t d = 0; d < partsCount; d++) {
+#else
+    for (size_t d = 0; d < partsCount; d++) {
+#endif
+        K_mat[d] = K_mat_dense[d];
+        f_vec[d].resize(K_mat_dense[d].rows() , 0.0);
+        // TODO tady nemuze byt destructor
+        K_mat_dense[d].DenseMatrix::~DenseMatrix();
+    }
+        
     
     std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
-    const std::vector<idx_t> fixPoints = input.mesh.getFixPoints();
+    const std::vector<idx_t> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
 
-    for (int d = 0; d < partsCount; d++) {
+#ifndef DEBUG
+    cilk_for (size_t d = 0; d < partsCount; d++) {
+#else
+    for (size_t d = 0; d < partsCount; d++) {
+#endif
         for (int fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
             fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
         }
@@ -490,7 +506,7 @@ void testBEM(int argc, char** argv)
     SetSolverPreprocessing ( cluster, solver, lambda_map_sub_clst, neigh_clusters );
     // *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
                             
-    
+     
         
         
     // *** Load Matrix K and regularization ******************************************************************************
@@ -499,12 +515,15 @@ void testBEM(int argc, char** argv)
 #else
     for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 #endif
-        SetMatrixK_fromBEM ( cluster, d,
+        SetMatrixK_fromCSR ( cluster, d,
         K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
         K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
                                                         'G');
+        K_mat[d].SparseCSRMatrix::~SparseCSRMatrix();
+    
     }
 
+        
         
     if (cluster.USE_HFETI == 1)
         cluster.SetClusterHFETI();
