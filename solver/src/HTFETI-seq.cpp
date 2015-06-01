@@ -644,8 +644,8 @@ void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
 void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster, 
 						  ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type ) {
 
-
-	int MPIrank; 
+    
+    int MPIrank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
 #if DEBUG == 1
@@ -747,10 +747,10 @@ void SetMatrixK_fromBEM ( Cluster & cluster, ShortInt domain_index_in_cluster,
     cluster.domains[domain_index_in_cluster].Prec = cluster.domains[domain_index_in_cluster].K;
     //cluster.domains[domain_index_in_cluster].Prec.ConvertCSRToDense( 0 );
     
-    //cluster.domains[domain_index_in_cluster].K_regularizationFromR( );
+    cluster.domains[domain_index_in_cluster].K_regularizationFromR( );
 
-    cluster.domains[domain_index_in_cluster].Kplus.ImportMatrix  (cluster.domains[domain_index_in_cluster].K);
-    cluster.domains[domain_index_in_cluster].Kplus.Factorization ();
+    //cluster.domains[domain_index_in_cluster].Kplus.ImportMatrix  (cluster.domains[domain_index_in_cluster].K);
+    //cluster.domains[domain_index_in_cluster].Kplus.Factorization ();
     
     // POZOR - jen pro Kinv
     if (cluster.domains[domain_index_in_cluster].USE_KINV == 1 || cluster.domains[domain_index_in_cluster].USE_HFETI == 1)
