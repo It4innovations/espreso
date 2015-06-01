@@ -274,31 +274,7 @@ void testBEM(int argc, char** argv)
         }
         std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
     }
-    
-    
-    input.dirichlet_x.clear();
-    input.dirichlet_y.clear();
-    input.dirichlet_z.clear();
 
-    
-    for (int i = 0; i < sMesh.coordinates().size();i++){
-        
-        if (fabs(sMesh.coordinates()[i].x) < 0.0001) {
-            input.dirichlet_x[i] = 0.0;
-        }
-
-        if (fabs(sMesh.coordinates()[i].y) < 0.0001) {
-            input.dirichlet_y[i] = 0.0;
-        }
-
-        if (fabs(sMesh.coordinates()[i].z) < 0.0001) {
-            input.dirichlet_z[i] = 0.0;
-        }
-
-    
-    }
-    
-    
     std::cout << "11: " << omp_get_wtime() - start<< std::endl;
     boundaries.create_B1_l(
                             B1_mat,
