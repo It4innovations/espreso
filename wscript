@@ -33,6 +33,11 @@ def check_environment(ctx):
         ctx.fatal("Install Intel compiler or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
 
+    ctx.check(
+        "cmake",
+        msg = "Checking for cmake"
+    )
+
     try:
         if ctx.options.mpich:
             ctx.find_program("mpic++.mpich", var="MPICXX")
@@ -117,11 +122,6 @@ def configure(ctx):
     ctx.recurse("app")
 
 def build(ctx):
-    ctx(
-        export_includes = "../metis/metis-5.1.0/include",
-        name            = "metis_includes"
-    )
-
     ctx.ROOT = ctx.path.abspath()
 
     ctx.recurse("metis")

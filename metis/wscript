@@ -10,6 +10,7 @@ def build(ctx):
     ctx.add_group("copy")
     ctx.add_group("configure")
     ctx.add_group("install")
+    ctx.add_group("export")
 
     ctx.set_group("copy")
     os.chdir("metis/metis-5.1.0")
@@ -31,4 +32,10 @@ def build(ctx):
     ctx(
         rule = "cd metis ; make install > metis.install.log ; cd ..",
         name = "METIS - install"
+    )
+
+    ctx.set_group("export")
+    ctx(
+        export_includes = "../include",
+        name            = "metis_includes"
     )
