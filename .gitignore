@@ -4,8 +4,7 @@
 *.so
 *.vtk
 */bin
-*/Debug
-*/build
+es*
 build
-espreso
-libs/*
+libs
+include

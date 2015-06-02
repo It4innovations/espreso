@@ -109,6 +109,7 @@ def configure(ctx):
     ctx.env.CXX = list(ctx.env.MPICXX)
     ctx.env.LINK_CXX = list(ctx.env.MPICXX)
 
+    ctx.recurse("metis")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
@@ -123,6 +124,7 @@ def build(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
+    ctx.recurse("metis")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     if ctx.options.mesh:

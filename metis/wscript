@@ -1,0 +1,34 @@
+
+METIS = "metis"
+
+import os
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+    ctx.add_group("copy")
+    ctx.add_group("configure")
+    ctx.add_group("install")
+
+    ctx.set_group("copy")
+    os.chdir("metis/metis-5.1.0")
+    for top, dirs, files in os.walk("."):
+        for source in (x for x in files if "~" not in x):
+            ctx(
+                rule   = "cp ${SRC} ${TGT}",
+                source = os.path.join("metis-5.1.0", top, source),
+                target = os.path.join(top, source)
+            )
+
+    ctx.set_group("configure")
+    ctx(
+        rule = "make -C metis config shared=1 cc=icc openmp=-fopenmp prefix={0} > metis.configure.log".format(ctx.ROOT),
+        name = "METIS - configure"
+    )
+
+    ctx.set_group("install")
+    ctx(
+        rule = "cd metis ; make install > metis.install.log ; cd ..",
+        name = "METIS - install"
+    )
