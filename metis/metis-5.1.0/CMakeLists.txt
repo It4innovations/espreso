@@ -24,4 +24,5 @@ include_directories(include)
 # Recursively look for CMakeLists.txt in subdirs.
 add_subdirectory("include")
 add_subdirectory("libmetis")
-add_subdirectory("programs")
+# We need only the shared library
+#add_subdirectory("programs")

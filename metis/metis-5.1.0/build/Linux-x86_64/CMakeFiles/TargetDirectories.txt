@@ -1,7 +1,0 @@
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/programs/CMakeFiles/cmpfillin.dir
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/programs/CMakeFiles/gpmetis.dir
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/programs/CMakeFiles/graphchk.dir
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/programs/CMakeFiles/m2gmetis.dir
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/libmetis/CMakeFiles/metis.dir
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/programs/CMakeFiles/mpmetis.dir
-/home_lustre/lriha/htfeti/devel5-espreso_w_gen/metis/metis-5.1.0/build/Linux-x86_64/programs/CMakeFiles/ndmetis.dir
