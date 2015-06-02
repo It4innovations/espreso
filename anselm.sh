@@ -3,6 +3,7 @@
 module load bullxmpi/bullxmpi_1.2.4.1
 #module load impi/4.1.1.036
 module load intel/15.2.164
+module load cmake/2.8.11
 export LC_CTYPE=""
 
 if [ "$#" -ne 1 ]; then
