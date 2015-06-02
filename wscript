@@ -61,12 +61,13 @@ def check_environment(ctx):
         ctx.fatal("Install Open MP or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
 
+def data_types(ctx):
     ctx.check_cxx(
         fragment=
             '''
             #include <iostream>
             int main() {
-                long long x;
+                long x;
                 if (sizeof(x) == 8) {
                     std::cout << "sizeof(x)";
                 }
@@ -78,8 +79,54 @@ def check_environment(ctx):
         errmsg      = "WARNING: ESPRESO with your compiler supports only 32-bit integers",
         msg         = "Checking for 64-bit integers")
 
+    espreso = ctx.path.abspath() + "/include/espreso.h"
+    ctx.check(
+        fragment=
+            '''
+            #include "''' + espreso + '''"
+            #include <stdio.h>
 
-from waflib.Tools import ccroot,ar,gxx
+            int main() {
+                #if ESPRESO_LOCAL_INDICES_WIDTH == 32
+                    printf("32");
+                #elif ESPRESO_LOCAL_INDICES_WIDTH == 64
+                    printf("64");
+                #endif
+            }
+            ''',
+        execute     = True,
+        define_ret  = True,
+        define_name = "esint",
+        errmsg      = "Incorrect user-supplied value for ESPRESO_LOCAL_INDICES_WIDTH",
+        msg         = "Checking ESPRESO_LOCAL_INDICES_WIDTH"
+    )
+    esint = ctx.get_define("esint").replace("\"", "")
+    ctx.env.ESINT = int(esint)
+    ctx.undefine("esint")
+
+    ctx.check(
+        fragment=
+            '''
+            #include "''' + espreso + '''"
+            #include <stdio.h>
+
+            int main() {
+                #if ESPRESO_GLOBAL_INDICES_WIDTH == 32
+                    printf("32");
+                #elif ESPRESO_GLOBAL_INDICES_WIDTH == 64
+                    printf("64");
+                #endif
+            }
+            ''',
+        execute     = True,
+        define_ret  = True,
+        define_name = "eslong",
+        errmsg      = "Incorrect user-supplied value for ESPRESO_GLOBAL_INDICES_WIDTH",
+        msg         = "Checking ESPRESO_GLOBAL_INDICES_WIDTH"
+    )
+    eslong = ctx.get_define("eslong").replace("\"", "")
+    ctx.env.ESLONG = int(eslong)
+    ctx.undefine("eslong")
 
 def anselm(ctx):
     ctx.load("icpc")
@@ -90,6 +137,8 @@ def configure(ctx):
         anselm(ctx)
     else:
         check_environment(ctx)
+
+    data_types(ctx)
 
     ctx.setenv("base", ctx.env)
     ctx.env.append_unique("CXXFLAGS", [ "-Wall" ])
@@ -102,6 +151,11 @@ def configure(ctx):
     else:
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START", "-g", "-mkl=parallel", "-fopenmp" ])
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-fopenmp" ])
+
+    if ctx.env.ESINT == 32:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desint=int", "-DMKL_INT=int" ])
+    if ctx.env.ESINT == 64:
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long" , "-DMKL_INT=long", "-DNOBEM" ])
 
     ctx.setenv("mpi", ctx.env)
     if ctx.options.mpich:

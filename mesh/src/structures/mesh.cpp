@@ -551,7 +551,7 @@ void Mesh::checkMKLResult(esint result) const
 	case 0:
 		return;
 	default:
-		fprintf(stderr, "MKL error: %i.\n", result);
+		std::cerr << "MKL error: " << result << ".\n";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -1010,6 +1010,7 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 		}
 	}
 
+#ifndef NOBEM
 	bem4i::getLameSteklovPoincare(
 	    K.values(),
 	    _coordinates.localSize(part),
@@ -1022,6 +1023,10 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	    4,				// order far
 	    false			// verbose
 	    );
+#else
+	std::cerr << "BEM not support 64-bit data types, yet.\n";
+	exit(EXIT_FAILURE);
+#endif
 }
 
 
