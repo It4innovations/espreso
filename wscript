@@ -56,7 +56,6 @@ def configure(ctx):
     ctx.libs = {}
     ctx.stlibs = {}
 
-
     try:
         ctx.load("icpc")
     except ctx.errors.ConfigurationError:
