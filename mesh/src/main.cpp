@@ -6,7 +6,7 @@ void test_meshes();
 
 int main(int argc, char** argv)
 {
-	test_BEM();
+	test_meshes();
 	return 0;
 }
 
@@ -15,7 +15,7 @@ void test_meshes()
 	esint partsCount = 4;
 	esint fixPointsCount = 4;
 
-	mesh::Mesh m("matrices/HEX/5/elem", "matrices/HEX/5/coord", partsCount, fixPointsCount);
+	mesh::Mesh m("matrices/HEX/15/elem", "matrices/HEX/15/coord", partsCount, fixPointsCount);
 
 	mesh::Boundaries b(m);
 

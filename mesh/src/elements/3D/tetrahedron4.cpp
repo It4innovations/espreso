@@ -150,7 +150,7 @@ std::vector<double> Tetrahedron4::_weighFactor = Tetra4_Weight();
 
 bool Tetrahedron4::match(esint *indices, esint n) {
 
-#ifndef D3
+#if ESPRESO_POINT_DIMENSION == 2
 	// Tetrahedron4 is 3D element
 	return false;
 #endif

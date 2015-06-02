@@ -6,14 +6,18 @@
 
 #if ESPRESO_LOCAL_INDICES_WIDTH == 64
 	typedef long long esint;
-#else
+#elif ESPRESO_LOCAL_INDICES_WIDTH == 32
 	typedef int esint;
+#else
+	#error "Incorrect user-supplied value for ESPRESO_LOCAL_INDICES_WIDTH"
 #endif
 
-#if ESPRESO_GLOBAL_INDICES_WIDTH == 32
+#if ESPRESO_GLOBAL_INDICES_WIDTH == 64
+	typedef long long eslong;
+#elif ESPRESO_GLOBAL_INDICES_WIDTH == 32
 	typedef int eslong;
 #else
-	typedef long long eslong;
+	#error "Incorrect user-supplied value for ESPRESO_GLOBAL_INDICES_WIDTH"
 #endif
 
 

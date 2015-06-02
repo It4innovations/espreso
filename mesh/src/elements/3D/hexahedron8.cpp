@@ -85,7 +85,7 @@ std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
 
 bool Hexahedron8::match(esint *indices, esint n) {
 
-#ifndef D3
+#if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
 	return false;
 #endif

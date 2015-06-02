@@ -256,7 +256,7 @@ std::vector<double> Tetrahedron10::_weighFactor = Tetra10_Weight();
 
 bool Tetrahedron10::match(esint *indices, esint n) {
 
-#ifndef D3
+#if ESPRESO_POINT_DIMENSION == 2
 	// Tetrahedron10 is 3D element
 	return false;
 #endif
