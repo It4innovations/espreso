@@ -2,7 +2,7 @@
 
 #include "esmesh.h"
 #include "essolver.h"
-#include "permoncube.h"
+#include "espmcube.h"
 
 #include <vector>
 #include <iostream>
