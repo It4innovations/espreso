@@ -1,5 +1,8 @@
 
-VERSION = 1
+import commands
+import os
+
+VERSION = 2
 
 def options(opt):
     opt.add_option("--debug",
@@ -26,6 +29,91 @@ def options(opt):
        action="store_true",
        default=False,
        help="Create application for Anselm.")
+
+
+def configure(ctx):
+    if ctx.options.anselm:
+        anselm(ctx)
+    else:
+        check_environment(ctx)
+
+    data_types(ctx)
+    write_configuration(ctx)
+
+    ctx.setenv("base", ctx.env)
+    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
+
+    if ctx.env.ESINT == 32:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desint=int", "-DMKL_INT=int" ])
+        ctx.env.append_unique("LIB", [ "mkl_intel_lp64" ])
+    if ctx.env.ESINT == 64:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desint=long", "-DMKL_INT=long", "-DNOBEM" ])
+        ctx.env.append_unique("LIB", [ "mkl_intel_ilp64" ])
+
+    if ctx.env.ESLONG == 32:
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=int" ])
+    if ctx.env.ESLONG == 64:
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long" ])
+
+    ctx.env.append_unique("LIB", [ "mkl_core" ])
+
+    if ctx.options.debug:
+        ctx.env.append_unique("CXXFLAGS", [ "-g" ])
+        ctx.env.append_unique("LIB", [ "mkl_sequential" ])
+    else:
+        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START"])
+        ctx.env.append_unique("LIB", [ "mkl_intel_thread" ])
+
+    ctx.env.append_unique("LIB", [ "pthread", "m" ])
+
+    ctx.setenv("mpi", ctx.env)
+    if ctx.options.mpich:
+        ctx.env.append_unique("CXXFLAGS", [ "-cxx=icpc" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-cxx=icpc" ])
+
+    if ctx.options.anselm:
+        ctx.env.append_unique("CXXFLAGS", [ "-xSSE4.1" ])
+
+    ctx.env.CXX = list(ctx.env.MPICXX)
+    ctx.env.LINK_CXX = list(ctx.env.MPICXX)
+
+    ctx.recurse("metis")
+    ctx.recurse("bem")
+    ctx.recurse("mesh")
+    ctx.recurse("permoncube")
+    ctx.recurse("solver")
+    ctx.recurse("app")
+
+def build(ctx):
+    test_file = os.path.join(ctx.path.abspath(), "build/test_config")
+    if not os.path.isfile(test_file):
+        write_test_file()
+
+    process, version = commands.getstatusoutput(test_file)
+    if int(version) != VERSION:
+        ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
+
+    ctx.ROOT = ctx.path.abspath()
+
+    ctx.recurse("metis")
+    ctx.recurse("bem")
+    ctx.recurse("mesh")
+    if ctx.options.mesh:
+        return
+
+    ctx.recurse("permoncube")
+    if ctx.options.permoncube:
+        return
+
+    ctx.recurse("solver")
+    ctx.recurse("app")
+
+
+
+def anselm(ctx):
+    ctx.load("icpc")
+    ctx.env.MPICXX = ["mpic++"]
 
 
 def check_environment(ctx):
@@ -130,86 +218,11 @@ def data_types(ctx):
     ctx.define("eslong", int(eslong))
     ctx.env.ESLONG = int(eslong)
 
+
 def write_configuration(ctx):
     ctx.define("version", VERSION)
     ctx.write_config_header("config.h")
     write_test_file()
-
-def anselm(ctx):
-    ctx.load("icpc")
-    ctx.env.MPICXX = ["mpic++"]
-
-def configure(ctx):
-    if ctx.options.anselm:
-        anselm(ctx)
-    else:
-        check_environment(ctx)
-
-    data_types(ctx)
-    write_configuration(ctx)
-
-    ctx.setenv("base", ctx.env)
-    ctx.env.append_unique("CXXFLAGS", [ "-Wall" ])
-    ctx.env.append_unique("LIB", [ "tbb" ])
-
-    if ctx.options.debug:
-        ctx.env.append_unique("CXXFLAGS", [ "-g", "-mkl=sequential", "-openmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-mkl=sequential", "-openmp" ])
-        ctx.env.append_unique("LIB", [ "gomp" ])
-    else:
-        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START", "-g", "-mkl=parallel", "-fopenmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-fopenmp" ])
-
-    if ctx.env.ESINT == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long", "-Desint=int", "-DMKL_INT=int" ])
-    if ctx.env.ESINT == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long" , "-Desint=long" , "-DMKL_INT=long", "-DNOBEM" ])
-
-    ctx.setenv("mpi", ctx.env)
-    if ctx.options.mpich:
-        ctx.env.append_unique("CXXFLAGS", [ "-cxx=icpc" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-cxx=icpc" ])
-
-    if ctx.options.anselm:
-        ctx.env.append_unique("CXXFLAGS", [ "-xSSE4.1" ])
-
-    ctx.env.CXX = list(ctx.env.MPICXX)
-    ctx.env.LINK_CXX = list(ctx.env.MPICXX)
-
-    ctx.recurse("metis")
-    ctx.recurse("bem")
-    ctx.recurse("mesh")
-    ctx.recurse("permoncube")
-    ctx.recurse("solver")
-    ctx.recurse("app")
-
-
-import commands
-import os
-
-def build(ctx):
-    file = os.path.join(ctx.path.abspath(), "build/test_config")
-    if not os.path.isfile(file):
-        write_test_file()
-
-    process, version = commands.getstatusoutput(file)
-    if int(version) != VERSION:
-        ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
-
-    ctx.ROOT = ctx.path.abspath()
-
-    ctx.recurse("metis")
-    ctx.recurse("bem")
-    ctx.recurse("mesh")
-    if ctx.options.mesh:
-        return
-
-    ctx.recurse("permoncube")
-    if ctx.options.permoncube:
-        return
-
-    ctx.recurse("solver")
-    ctx.recurse("app")
 
 
 def write_test_file():

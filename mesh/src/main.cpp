@@ -6,7 +6,7 @@ void test_meshes();
 
 int main(int argc, char** argv)
 {
-	test_meshes();
+	test_matrices();
 	return 0;
 }
 
