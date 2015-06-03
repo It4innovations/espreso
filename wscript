@@ -217,6 +217,12 @@ def write_test_file():
     test_config.write('#!/usr/bin/env python')
     test_config.write(
     '''
+import os
+
+if not os.path.isfile("build/config.h") or not os.path.isfile("include/espreso.h"):
+    print "0"
+    quit()
+
 configFile = open("build/config.h", "r")
 espresoFile = open("include/espreso.h", "r")
 
