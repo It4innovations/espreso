@@ -1,4 +1,6 @@
 
+VERSION = 1
+
 def options(opt):
     opt.add_option("--debug",
        action="store_true",
@@ -101,8 +103,8 @@ def data_types(ctx):
         msg         = "Checking ESPRESO_LOCAL_INDICES_WIDTH"
     )
     esint = ctx.get_define("esint").replace("\"", "")
+    ctx.define("esint", int(esint))
     ctx.env.ESINT = int(esint)
-    ctx.undefine("esint")
 
     ctx.check(
         fragment=
@@ -125,8 +127,13 @@ def data_types(ctx):
         msg         = "Checking ESPRESO_GLOBAL_INDICES_WIDTH"
     )
     eslong = ctx.get_define("eslong").replace("\"", "")
+    ctx.define("eslong", int(eslong))
     ctx.env.ESLONG = int(eslong)
-    ctx.undefine("eslong")
+
+def write_configuration(ctx):
+    ctx.define("version", VERSION)
+    ctx.write_config_header("config.h")
+    write_test_file(ctx)
 
 def anselm(ctx):
     ctx.load("icpc")
@@ -139,6 +146,7 @@ def configure(ctx):
         check_environment(ctx)
 
     data_types(ctx)
+    write_configuration(ctx)
 
     ctx.setenv("base", ctx.env)
     ctx.env.append_unique("CXXFLAGS", [ "-Wall" ])
@@ -153,9 +161,9 @@ def configure(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-fopenmp" ])
 
     if ctx.env.ESINT == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desint=int", "-DMKL_INT=int" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long", "-Desint=int", "-DMKL_INT=int" ])
     if ctx.env.ESINT == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long" , "-DMKL_INT=long", "-DNOBEM" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long" , "-Desint=long" , "-DMKL_INT=long", "-DNOBEM" ])
 
     ctx.setenv("mpi", ctx.env)
     if ctx.options.mpich:
@@ -175,7 +183,16 @@ def configure(ctx):
     ctx.recurse("solver")
     ctx.recurse("app")
 
+
+import commands
+import os
+
 def build(ctx):
+    version = commands.getstatusoutput(os.path.join(ctx.path.abspath(), "test_config"))
+    print version
+    if version != VERSION:
+        #ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
+        return
     ctx.ROOT = ctx.path.abspath()
 
     ctx.recurse("metis")
@@ -190,3 +207,33 @@ def build(ctx):
 
     ctx.recurse("solver")
     ctx.recurse("app")
+
+
+def write_test_file(ctx):
+    test_config = open("build/test_config", "w")
+    test_config.write('#!/usr/bin/env python')
+    test_config.write(
+    '''
+configFile = open("build/config.h", "r")
+espresoFile = open("include/espreso.h", "r")
+
+config = {}
+espreso = {}
+
+for line in configFile:
+    if line.startswith("#define"):
+        values = line.split()
+        config[values[1]] = values[-1]
+for line in espresoFile:
+    if line.startswith("#define"):
+        values = line.split()
+        espreso[values[1]] = values[-1]
+if config["esint"] != espreso["ESPRESO_LOCAL_INDICES_WIDTH"]:
+    print "0"
+if config["eslong"] != espreso["ESPRESO_GLOBAL_INDICES_WIDTH"]:
+    print "0"
+
+print config["version"]
+    ''')
+
+    os.system("chmod +x build/test_config")

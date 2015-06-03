@@ -36,6 +36,6 @@ def build(ctx):
 
     ctx.set_group("export")
     ctx(
-        export_includes = "../include",
+        export_includes = "metis-5.1.0/include",
         name            = "metis_includes"
     )
