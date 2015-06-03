@@ -1,7 +1,6 @@
 #ifndef COORDINATES_H_
 #define COORDINATES_H_
 
-#include "../definitions.h"
 #include "../elements/1D/point.h"
 #include "../loader.h"
 

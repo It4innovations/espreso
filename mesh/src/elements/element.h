@@ -4,8 +4,6 @@
 #include <vector>
 #include <cstring>
 
-#include "../definitions.h"
-
 #include "1D/point.h"
 
 #include "../structures/coordinates.h"
