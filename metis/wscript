@@ -4,13 +4,29 @@ METIS = "metis"
 import os
 
 def configure(ctx):
-    pass
+    ctx.setenv(METIS, ctx.all_envs["base"].derive());
+
+    # remove touched file
+    touched = os.path.join(ctx.path.abspath(), "../build/metis/installed")
+    os.system("rm -f {0}".format(touched))
 
 def build(ctx):
+    ctx.env = ctx.all_envs[METIS]
+
+    ctx(
+        export_includes = "metis-5.1.0/include",
+        name            = "metis_includes"
+    )
+
     ctx.add_group("copy")
     ctx.add_group("configure")
+    ctx.add_group("build")
     ctx.add_group("install")
-    ctx.add_group("export")
+
+    touched = os.path.join(ctx.path.abspath(), "../build/metis/installed")
+
+    if os.path.isfile(touched):
+        return
 
     ctx.set_group("copy")
     os.chdir("metis/metis-5.1.0")
@@ -24,18 +40,24 @@ def build(ctx):
 
     ctx.set_group("configure")
     ctx(
-        rule = "make -C metis config shared=1 cc=icc openmp=-fopenmp prefix={0} > metis.configure.log".format(ctx.ROOT),
-        name = "METIS - configure"
+        rule   = "make -C metis config shared=1 cc=icc openmp=-fopenmp prefix={0} > metis.configure.log".format(ctx.ROOT),
+        name   = "METIS - configure",
+        always = True
+    )
+
+    ctx.set_group("build")
+    ctx(
+        rule   = "cd metis ; make install > ../metis.install.log ; cd ..",
+        name   = "METIS - build",
+        always = True
     )
 
     ctx.set_group("install")
+
+    # touch the file = it means that METIS have been installed
     ctx(
-        rule = "cd metis ; make install > metis.install.log ; cd ..",
-        name = "METIS - install"
+        rule   = "touch {0}".format(touched),
+        name   = "METIS - install",
+        always = True
     )
 
-    ctx.set_group("export")
-    ctx(
-        export_includes = "metis-5.1.0/include",
-        name            = "metis_includes"
-    )

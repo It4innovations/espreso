@@ -133,7 +133,7 @@ def data_types(ctx):
 def write_configuration(ctx):
     ctx.define("version", VERSION)
     ctx.write_config_header("config.h")
-    write_test_file(ctx)
+    write_test_file()
 
 def anselm(ctx):
     ctx.load("icpc")
@@ -188,11 +188,14 @@ import commands
 import os
 
 def build(ctx):
-    version = commands.getstatusoutput(os.path.join(ctx.path.abspath(), "test_config"))
-    print version
-    if version != VERSION:
-        #ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
-        return
+    file = os.path.join(ctx.path.abspath(), "build/test_config")
+    if not os.path.isfile(file):
+        write_test_file()
+
+    process, version = commands.getstatusoutput(file)
+    if int(version) != VERSION:
+        ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
+
     ctx.ROOT = ctx.path.abspath()
 
     ctx.recurse("metis")
@@ -209,7 +212,7 @@ def build(ctx):
     ctx.recurse("app")
 
 
-def write_test_file(ctx):
+def write_test_file():
     test_config = open("build/test_config", "w")
     test_config.write('#!/usr/bin/env python')
     test_config.write(
@@ -230,10 +233,10 @@ for line in espresoFile:
         espreso[values[1]] = values[-1]
 if config["esint"] != espreso["ESPRESO_LOCAL_INDICES_WIDTH"]:
     print "0"
-if config["eslong"] != espreso["ESPRESO_GLOBAL_INDICES_WIDTH"]:
+elif config["eslong"] != espreso["ESPRESO_GLOBAL_INDICES_WIDTH"]:
     print "0"
-
-print config["version"]
+else:
+    print config["version"]
     ''')
 
     os.system("chmod +x build/test_config")

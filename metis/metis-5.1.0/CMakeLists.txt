@@ -22,5 +22,5 @@ include(${GKLIB_PATH}/GKlibSystem.cmake)
 include_directories(${GKLIB_PATH})
 include_directories(include)
 # Recursively look for CMakeLists.txt in subdirs.
-add_subdirectory("include")
+#add_subdirectory("include")
 add_subdirectory("libmetis")
