@@ -43,6 +43,8 @@ def configure(ctx):
     ctx.setenv("base", ctx.env)
     ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp" ])
     ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
+    ctx.env.append_unique("LIBPATH", [ "../libs" ])
+    ctx.recurse("metis")
 
     if ctx.env.ESINT == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Desint=int", "-DMKL_INT=int" ])
@@ -78,7 +80,6 @@ def configure(ctx):
     ctx.env.CXX = list(ctx.env.MPICXX)
     ctx.env.LINK_CXX = list(ctx.env.MPICXX)
 
-    ctx.recurse("metis")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
@@ -94,6 +95,11 @@ def build(ctx):
     if int(version) != VERSION:
         ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
 
+
+    ctx(
+        export_includes = "include",
+        name            = "espreso_includes"
+    )
     ctx.ROOT = ctx.path.abspath()
 
     ctx.recurse("metis")
@@ -110,7 +116,6 @@ def build(ctx):
     ctx.recurse("app")
 
 
-
 def anselm(ctx):
     ctx.load("icpc")
     ctx.env.MPICXX = ["mpic++"]
@@ -122,11 +127,6 @@ def check_environment(ctx):
     except ctx.errors.ConfigurationError:
         ctx.fatal("Install Intel compiler or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
-
-    ctx.check(
-        "cmake",
-        msg = "Checking for cmake"
-    )
 
     try:
         if ctx.options.mpich:

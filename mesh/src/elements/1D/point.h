@@ -1,7 +1,7 @@
 #ifndef POINT_H_
 #define POINT_H_
 
-#include "../../include/espreso.h"
+#include "espreso.h"
 
 #if ESPRESO_POINT_DIMENSION == 2
 	#include "point2d.h"

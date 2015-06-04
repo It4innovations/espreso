@@ -17,14 +17,14 @@ def build(ctx):
         ctx.program(
             source=source_files + ("src/main.cpp",),
             target="espmcube",
-            use="mesh_includes esmesh esbem",
+            use="espreso_includes mesh_includes esmesh esbem",
             install_path=ctx.ROOT
         )
     else:
         ctx.shlib(
             source=source_files,
             target="espmcube",
-            use="mesh_includes esmesh",
+            use="espreso_includes mesh_includes esmesh",
             install_path=ctx.ROOT + "/libs"
         )
 

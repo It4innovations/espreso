@@ -8,6 +8,8 @@
 #include "mkl.h"
 #include "cilk/cilk.h"
 
+#include "metis.h"
+
 #include "../elements/elements.h"
 #include "coordinates.h"
 
