@@ -51,20 +51,20 @@
 
 void bem4i::getLameSteklovPoincare(
     double * Sarray,
-    esint nNodes,
+    eslocal nNodes,
     const double * nodes,
-    esint nElems,
-    const esint * elems,
+    eslocal nElems,
+    const eslocal * elems,
     double nu,
     double E,
-    esint orderNear,
-    esint orderFar,
+    eslocal orderNear,
+    eslocal orderFar,
     bool verbose
     ) {
 
   typedef double SC;
   typedef double SCVT;
-  typedef esint LO;
+  typedef eslocal LO;
 
   std::vector< SCVT > nodesv;
   nodesv.assign( nodes, nodes + 3 * nNodes );
