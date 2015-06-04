@@ -53,7 +53,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=long", "-DMKL_INT=long" ])
         ctx.env.append_unique("LIB", [ "mkl_intel_ilp64" ])
 
-    if ctx.env.ESLDUAL == 32:
+    if ctx.env.ESDUAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Desdual=int" ])
     if ctx.env.ESDUAL == 64:
         ctx.env.append_unique("CXXFLAGS", [ "-Desdual=long" ])

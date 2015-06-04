@@ -16,16 +16,17 @@ public:
 	Boundaries(const Mesh &mesh);
 	~Boundaries() { };
 
+	template<typename T>
 	void create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 
 						std::vector < SparseIJVMatrix >      & B0_local,
-						std::vector < std::vector <eslocal> >    & l2g_vec,
+						std::vector < std::vector <T> >      & l2g_vec,
 						std::vector < std::vector <eslocal> >    & lambda_map_sub_clst,
 						std::vector < std::vector <eslocal> >    & lambda_map_sub_B1,
 						std::vector < std::vector <eslocal> >    & lambda_map_sub_B0,
 						std::vector < std::vector <double> > & B1_l_duplicity,
-						std::map < eslocal, double >             & dirichlet_x,
-						std::map < eslocal, double >             & dirichlet_y,
-						std::map < eslocal, double >             & dirichlet_z,
+						std::map < T, double >             & dirichlet_x,
+						std::map < T, double >             & dirichlet_y,
+						std::map < T, double >             & dirichlet_z,
 						const eslocal domains_num) ;
 
 
@@ -38,5 +39,7 @@ private:
 };
 
 }
+
+#include "boundaries.hpp"
 
 #endif /* BOUNDARIES_H_ */

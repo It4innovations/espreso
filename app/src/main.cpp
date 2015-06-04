@@ -297,7 +297,7 @@ void testBEM(int argc, char** argv)
     }
 
     std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-    boundaries.create_B1_l(
+    boundaries.create_B1_l<eslocal>(
                             B1_mat,
                             B0_mat,
                             l2g_vec,
@@ -310,7 +310,6 @@ void testBEM(int argc, char** argv)
                             input[0].dirichlet_z,
                             partsCount
                         );
-        
 
 //    for (int d = 0; d < partsCount; d++) {
 //        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -664,7 +663,7 @@ void testFEM(int argc, char** argv)
 	}
 
 	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	boundaries.create_B1_l(
+	boundaries.create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
