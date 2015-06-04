@@ -283,7 +283,7 @@ void testBEM(int argc, char** argv)
     
     std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
-    const std::vector<idx_t> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
+    const std::vector<esint> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
 
 #ifndef DEBUG
     cilk_for (esint d = 0; d < partsCount; d++) {
@@ -650,7 +650,7 @@ void testFEM(int argc, char** argv)
         
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
-	const std::vector<idx_t> fixPoints = input[0].mesh.getFixPoints();
+	const std::vector<esint> fixPoints = input[0].mesh.getFixPoints();
 
 #ifndef DEBUG
 	cilk_for (esint d = 0; d < partsCount; d++) {
