@@ -93,7 +93,7 @@ void Element3D<TElement>::fixFullZeroPlanes(
 				dirichlet_y[index] = 0;
 				index++;
 			}
-			index += nodes[1] * nodes[0];
+			index = (z + 1) * nodes[1] * nodes[0];
 		}
 	}
 	if (cluster[2] == 0) {
