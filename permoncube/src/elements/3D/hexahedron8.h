@@ -15,25 +15,25 @@ namespace permoncube {
 class Hexahedron8 {
 
 public:
-	static void addElements(mesh::Mesh &mesh, const esint indices[]);
+	static void addElements(mesh::Mesh &mesh, const eslocal indices[]);
 	static void addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[]);
 	static void fixZeroPlanes(
 			const permoncube::Settings &settings,
-			std::map<esint, double> &dirichlet_x,
-			std::map<esint, double> &dirichlet_y,
-			std::map<esint, double> &dirichlet_z,
+			std::map<eslocal, double> &dirichlet_x,
+			std::map<eslocal, double> &dirichlet_y,
+			std::map<eslocal, double> &dirichlet_z,
 			const size_t cluster[]);
 	static void fixBottom(
 			const permoncube::Settings &settings,
-			std::map<esint, double> &dirichlet_x,
-			std::map<esint, double> &dirichlet_y,
-			std::map<esint, double> &dirichlet_z,
+			std::map<eslocal, double> &dirichlet_x,
+			std::map<eslocal, double> &dirichlet_y,
+			std::map<eslocal, double> &dirichlet_z,
 			const size_t cluster[]);
 
 	static void clear() { };
 
-	static esint subnodes[3];
-	static esint subelements;
+	static eslocal subnodes[3];
+	static eslocal subelements;
 };
 
 }

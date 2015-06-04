@@ -3,25 +3,25 @@
 using namespace permoncube;
 
 template <class TElement>
-void Utils<TElement>::globalNodesCount(const Settings &settings, eslong nodes[])
+void Utils<TElement>::globalNodesCount(const Settings &settings, esglobal nodes[])
 {
-	esint cluster[3];
+	eslocal cluster[3];
 	Utils<TElement>::clusterNodesCount(settings, cluster);
-	for (esint i = 0; i < 3; i++) {
+	for (eslocal i = 0; i < 3; i++) {
 		nodes[i] = settings.clusters[i] * (cluster[i] - 1) + 1;
 	}
 }
 
 template <class TElement>
-void Utils<TElement>::clusterNodesCount(const Settings &settings, esint nodes[])
+void Utils<TElement>::clusterNodesCount(const Settings &settings, eslocal nodes[])
 {
-	for (esint i = 0; i < 3; i++) {
+	for (eslocal i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i] + 1;
 	}
 }
 
 template <class TElement>
-esint Utils<TElement>::clusterElementsCount(const Settings &settings)
+eslocal Utils<TElement>::clusterElementsCount(const Settings &settings)
 {
 	return TElement::subelements *
 	settings.subdomainsInCluster[2] * settings.subdomainsInCluster[1] * settings.subdomainsInCluster[0] *

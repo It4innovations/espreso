@@ -15,21 +15,21 @@ class Square: public Element
 {
 
 public:
-	static bool match(esint *indices, esint n);
+	static bool match(eslocal *indices, eslocal n);
 
-	Square(esint *indices);
+	Square(eslocal *indices);
 
 	Element* copy() const
 	{
 		return new Square(*this);
 	}
 
-	esint vtkCode() const
+	eslocal vtkCode() const
 	{
 		return SquareVTKCode;
 	}
 
-	const esint* indices() const
+	const eslocal* indices() const
 	{
 		return _indices;
 	}
@@ -64,18 +64,18 @@ public:
 		return Square::_weighFactor;
 	}
 
-	std::vector<esint> getNeighbours(size_t nodeIndex) const;
-	std::vector<esint> getFace(size_t face) const;
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	std::vector<eslocal> getFace(size_t face) const;
 
 protected:
 
-	esint* indices()
+	eslocal* indices()
 	{
 		return _indices;
 	}
 
 private:
-	esint _indices[SquareNodesCount];
+	eslocal _indices[SquareNodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

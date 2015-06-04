@@ -83,7 +83,7 @@ std::vector<DenseMatrix> Hexahedron8::_dN = Hexa_dN();
 std::vector<DenseMatrix> Hexahedron8::_N = Hexa_N();
 std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
 
-bool Hexahedron8::match(esint *indices, esint n) {
+bool Hexahedron8::match(eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
@@ -94,8 +94,8 @@ bool Hexahedron8::match(esint *indices, esint n) {
 		return false;
 	}
 
-	for (esint i = 0; i < 7; i++) {
-		for (esint j = i + 1; j < 8; j++) {
+	for (eslocal i = 0; i < 7; i++) {
+		for (eslocal j = i + 1; j < 8; j++) {
 			if (Element::match(indices, i, j)) {
 				return false;
 			}
@@ -105,9 +105,9 @@ bool Hexahedron8::match(esint *indices, esint n) {
 	return true;
 }
 
-std::vector<esint> Hexahedron8::getNeighbours(size_t nodeIndex) const
+std::vector<eslocal> Hexahedron8::getNeighbours(size_t nodeIndex) const
 {
-	std::vector<esint> result(3);
+	std::vector<eslocal> result(3);
 
 	if (nodeIndex > 3) {
 		result[0] = _indices[nodeIndex - 4];
@@ -122,9 +122,9 @@ std::vector<esint> Hexahedron8::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<esint> Hexahedron8::getFace(size_t face) const
+std::vector<eslocal> Hexahedron8::getFace(size_t face) const
 {
-	std::vector<esint> result(4);
+	std::vector<eslocal> result(4);
 
 	// bottom
 	if (face == 4) {
@@ -152,9 +152,9 @@ std::vector<esint> Hexahedron8::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron8::Hexahedron8(esint *indices)
+Hexahedron8::Hexahedron8(eslocal *indices)
 {
-	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(esint));
+	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
 }
 
 

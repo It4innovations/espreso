@@ -12,15 +12,15 @@ SparseCSRMatrix::SparseCSRMatrix(size_t rows, size_t columns): Matrix(rows, colu
 
 SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
-	esint nnz = other.nonZeroValues();
-	esint rows = _rows;
-	esint columns = _columns;
+	eslocal nnz = other.nonZeroValues();
+	eslocal rows = _rows;
+	eslocal columns = _columns;
 	_rowPtrs.resize(other.rows() + 1);
 	_columnIndices.resize(nnz);
 	_values.resize(nnz);
 
-	esint info;
-	esint job[6] = {
+	eslocal info;
+	eslocal job[6] = {
 		0,					// convert from dense to CSR
 		other.indexing(),	// indexing of dense matrix
 		indexing(),			// indexing of CSR matrix
@@ -38,12 +38,12 @@ SparseCSRMatrix::SparseCSRMatrix(const DenseMatrix &other): Matrix(other.rows(),
 
 SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
-	esint nnz = other.nonZeroValues();
+	eslocal nnz = other.nonZeroValues();
 	_rowPtrs.resize(other.rows() + 1);
 	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);
 
-	esint last_index = 0;
+	eslocal last_index = 0;
 
 	const MatrixMap &dokValues = other.values();
 	MatrixMap::const_iterator row;
@@ -69,13 +69,13 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseDOKMatrix &other): Matrix(other.row
 
 SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
-	esint nnz = other.nonZeroValues();
-	esint rows = _rows;
+	eslocal nnz = other.nonZeroValues();
+	eslocal rows = _rows;
 	_rowPtrs.resize(other.rows() + 1);
 	_columnIndices.resize(nnz);
 	_values.resize(nnz);
 
-	esint job[6] = {
+	eslocal job[6] = {
 		2, 					// IJV to sorted CSR
 		indexing(),			// indexing of CSR matrix
 		other.indexing(),	// indexing of IJV matrix
@@ -84,19 +84,19 @@ SparseCSRMatrix::SparseCSRMatrix(const SparseIJVMatrix &other): Matrix(other.row
 		0,					// fill all output arrays
 	};
 
-	esint info;
+	eslocal info;
 
 	mkl_dcsrcoo(
 		job, &rows,
 		values(), columnIndices(), rowPtrs(), &nnz,
-		const_cast<double*>(other.values()), const_cast<esint*>(other.rowIndices()), const_cast<esint*>(other.columnIndices()),
+		const_cast<double*>(other.values()), const_cast<eslocal*>(other.rowIndices()), const_cast<eslocal*>(other.columnIndices()),
 		&info);
 }
 
 SparseCSRMatrix::SparseCSRMatrix(SparseVVPMatrix &other): Matrix(other.rows(), other.columns(), CSRMatrixIndexing)
 {
 	other.shrink();
-	esint nnz = other.nonZeroValues();
+	eslocal nnz = other.nonZeroValues();
 	_rowPtrs.reserve(other.rows() + 1);
 	_columnIndices.reserve(nnz);
 	_values.reserve(nnz);
@@ -159,13 +159,13 @@ void SparseCSRMatrix::multiply(SparseCSRMatrix &A, SparseCSRMatrix &B, bool tran
 		}
 	}
 
-	esint request = 0;
-	esint sort = 8;	// C is sorted
-	esint m = A.rows();
-	esint n = A.columns();
-	esint k = B.columns();
-	esint nnz;		// not used
-	esint info;
+	eslocal request = 0;
+	eslocal sort = 8;	// C is sorted
+	eslocal m = A.rows();
+	eslocal n = A.columns();
+	eslocal k = B.columns();
+	eslocal nnz;		// not used
+	eslocal info;
 
 	_rows = transposeA ? A.columns() : A.rows();;
 	_columns = k;
@@ -208,7 +208,7 @@ void SparseCSRMatrix::resize(size_t rows, size_t columns)
 
 void SparseCSRMatrix::transpose()
 {
-	esint job[6] = {
+	eslocal job[6] = {
 			0,		// CSR to CSC
 			_indexing,
 			_indexing,
@@ -225,12 +225,12 @@ void SparseCSRMatrix::transpose()
 		size = _rows;
 	}
 
-	std::vector<esint> colPtrs(size + 1);
-	std::vector<esint> rowIndices(_columnIndices.size());
+	std::vector<eslocal> colPtrs(size + 1);
+	std::vector<eslocal> rowIndices(_columnIndices.size());
 	std::vector<double> vals(_values.size());
 
-	esint n = size;
-	esint info;
+	eslocal n = size;
+	eslocal info;
 
 	mkl_dcsrcsc(
 			job, &n,

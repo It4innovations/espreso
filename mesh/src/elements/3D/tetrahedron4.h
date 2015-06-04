@@ -16,21 +16,21 @@ class Tetrahedron4: public Element
 {
 
 public:
-	static bool match(esint *indices, esint n);
+	static bool match(eslocal *indices, eslocal n);
 
-	Tetrahedron4(esint *indices);
+	Tetrahedron4(eslocal *indices);
 
 	Element* copy() const
 	{
 		return new Tetrahedron4(*this);
 	}
 
-	esint vtkCode() const
+	eslocal vtkCode() const
 	{
 		return Tetrahedron4VTKCode;
 	}
 
-	const esint* indices() const
+	const eslocal* indices() const
 	{
 		return _indices;
 	}
@@ -65,18 +65,18 @@ public:
 		return Tetrahedron4::_weighFactor;
 	}
 
-	std::vector<esint> getNeighbours(size_t nodeIndex) const;
-	std::vector<esint> getFace(size_t face) const;
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	std::vector<eslocal> getFace(size_t face) const;
 
 protected:
 
-	esint* indices()
+	eslocal* indices()
 	{
 		return _indices;
 	}
 
 private:
-	esint _indices[Tetrahedron4NodesCount];
+	eslocal _indices[Tetrahedron4NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

@@ -16,16 +16,16 @@ public:
 
 	static void fixFullBottom(
 			const permoncube::Settings &settings,
-			std::map<esint, double> &dirichlet_x,
-			std::map<esint, double> &dirichlet_y,
-			std::map<esint, double> &dirichlet_z,
+			std::map<eslocal, double> &dirichlet_x,
+			std::map<eslocal, double> &dirichlet_y,
+			std::map<eslocal, double> &dirichlet_z,
 			const size_t cluster[]);
 
 	static void fixFullZeroPlanes(
 			const permoncube::Settings &settings,
-			std::map<esint, double> &dirichlet_x,
-			std::map<esint, double> &dirichlet_y,
-			std::map<esint, double> &dirichlet_z,
+			std::map<eslocal, double> &dirichlet_x,
+			std::map<eslocal, double> &dirichlet_y,
+			std::map<eslocal, double> &dirichlet_z,
 			const size_t cluster[]);
 
 };

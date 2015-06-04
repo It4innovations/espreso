@@ -5,9 +5,9 @@ def configure(ctx):
     ctx.env.append_unique("LIB", [ "metis" ])
 
 def build(ctx):
-    if ctx.env.ESINT == 32:
+    if ctx.env.ESLOCAL == 32:
         metis = "metis32"
-    if ctx.env.ESINT == 64:
+    if ctx.env.ESLOCAL == 64:
         metis = "metis64"
 
     ctx(

@@ -14,14 +14,14 @@ class Generator {
 public:
 	virtual void mesh(mesh::Mesh &mesh, const size_t cluster[]) = 0;
 	virtual void fixZeroPlanes(
-			std::map<esint, double>  &dirichlet_x,
-			std::map<esint, double>  &dirichlet_y,
-			std::map<esint, double>  &dirichlet_z,
+			std::map<eslocal, double>  &dirichlet_x,
+			std::map<eslocal, double>  &dirichlet_y,
+			std::map<eslocal, double>  &dirichlet_z,
 			const size_t cluster[]) = 0;
 	virtual void fixBottom(
-			std::map<esint, double>  &dirichlet_x,
-			std::map<esint, double>  &dirichlet_y,
-			std::map<esint, double>  &dirichlet_z,
+			std::map<eslocal, double>  &dirichlet_x,
+			std::map<eslocal, double>  &dirichlet_y,
+			std::map<eslocal, double>  &dirichlet_z,
 			const size_t cluster[]) = 0;
 
 	virtual ~Generator() { };
@@ -40,14 +40,14 @@ public:
 
 	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
 	void fixZeroPlanes(
-			std::map<esint, double>  &dirichlet_x,
-			std::map<esint, double>  &dirichlet_y,
-			std::map<esint, double>  &dirichlet_z,
+			std::map<eslocal, double>  &dirichlet_x,
+			std::map<eslocal, double>  &dirichlet_y,
+			std::map<eslocal, double>  &dirichlet_z,
 			const size_t cluster[]);
 	void fixBottom(
-			std::map<esint, double>  &dirichlet_x,
-			std::map<esint, double>  &dirichlet_y,
-			std::map<esint, double>  &dirichlet_z,
+			std::map<eslocal, double>  &dirichlet_x,
+			std::map<eslocal, double>  &dirichlet_y,
+			std::map<eslocal, double>  &dirichlet_z,
 			const size_t cluster[]);
 
 	~ElementGenerator()

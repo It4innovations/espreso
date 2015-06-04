@@ -18,15 +18,15 @@ public:
 
 	void create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 
 						std::vector < SparseIJVMatrix >      & B0_local,
-						std::vector < std::vector <esint> >    & l2g_vec,
-						std::vector < std::vector <esint> >    & lambda_map_sub_clst,
-						std::vector < std::vector <esint> >    & lambda_map_sub_B1,
-						std::vector < std::vector <esint> >    & lambda_map_sub_B0,
+						std::vector < std::vector <eslocal> >    & l2g_vec,
+						std::vector < std::vector <eslocal> >    & lambda_map_sub_clst,
+						std::vector < std::vector <eslocal> >    & lambda_map_sub_B1,
+						std::vector < std::vector <eslocal> >    & lambda_map_sub_B0,
 						std::vector < std::vector <double> > & B1_l_duplicity,
-						std::map < esint, double >             & dirichlet_x,
-						std::map < esint, double >             & dirichlet_y,
-						std::map < esint, double >             & dirichlet_z,
-						const esint domains_num) ;
+						std::map < eslocal, double >             & dirichlet_x,
+						std::map < eslocal, double >             & dirichlet_y,
+						std::map < eslocal, double >             & dirichlet_z,
+						const eslocal domains_num) ;
 
 
 private:
@@ -34,7 +34,7 @@ private:
 	const Mesh &_mesh;
 
 	/** @brief Keeps mapping of nodes to mesh parts. */
-	std::vector<std::set<esint> > _boundaries;
+	std::vector<std::set<eslocal> > _boundaries;
 };
 
 }

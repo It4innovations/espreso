@@ -16,9 +16,9 @@ enum {
 struct FEMInput {
 
 	mesh::Mesh mesh;
-	std::map<esint, double> dirichlet_x;
-	std::map<esint, double> dirichlet_y;
-	std::map<esint, double> dirichlet_z;
+	std::map<eslocal, double> dirichlet_x;
+	std::map<eslocal, double> dirichlet_y;
+	std::map<eslocal, double> dirichlet_z;
 };
 
 struct FEMParams {
@@ -249,14 +249,14 @@ void testBEM(int argc, char** argv)
     std::vector < SparseIJVMatrix >			B1_mat;
     std::vector < SparseIJVMatrix >			B0_mat;
     
-    std::vector < std::vector <esint> >		lambda_map_sub_B1;
-    std::vector < std::vector <esint> >		lambda_map_sub_B0;
-    std::vector < std::vector <esint> >		lambda_map_sub_clst;
+    std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
+    std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
+    std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
     std::vector < std::vector <double> >	B1_l_duplicity;
     
     std::vector < std::vector < double > >	f_vec     (partsCount);
-    std::vector < std::vector < esint > >		fix_nodes (partsCount);
-    std::vector < std::vector <esint> >		l2g_vec;
+    std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
+    std::vector < std::vector <eslocal> >		l2g_vec;
     
     std::cout << "BEM 8 : " << omp_get_wtime() - start<< std::endl;
 
@@ -283,14 +283,14 @@ void testBEM(int argc, char** argv)
     
     std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
-    const std::vector<esint> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
+    const std::vector<eslocal> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
 
 #ifndef DEBUG
-    cilk_for (esint d = 0; d < partsCount; d++) {
+    cilk_for (eslocal d = 0; d < partsCount; d++) {
 #else
-    for (esint d = 0; d < partsCount; d++) {
+    for (eslocal d = 0; d < partsCount; d++) {
 #endif
-        for (esint fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+        for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
             fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
         }
         std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
@@ -604,20 +604,20 @@ void testFEM(int argc, char** argv)
 	std::vector < SparseIJVMatrix >			B1_mat;
 	std::vector < SparseIJVMatrix >			B0_mat;
 
-	std::vector < std::vector <esint> >		lambda_map_sub_B1;
-	std::vector < std::vector <esint> >		lambda_map_sub_B0;
-	std::vector < std::vector <esint> >		lambda_map_sub_clst;
+	std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
+	std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
+	std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
 	std::vector < std::vector <double> >	B1_l_duplicity;
 
 	std::vector < std::vector < double > >	f_vec     (partsCount);
-	std::vector < std::vector < esint > >		fix_nodes (partsCount);
-	std::vector < std::vector <esint> >		l2g_vec;
+	std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
+	std::vector < std::vector <eslocal> >		l2g_vec;
 
 	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
 
 	K_mat.reserve(partsCount);
 	M_mat.reserve(partsCount);
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 		K_mat.push_back( SparseCSRMatrix (0,0) );
 		M_mat.push_back( SparseCSRMatrix (0,0) );
 	}
@@ -625,11 +625,11 @@ void testFEM(int argc, char** argv)
 	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
 #ifndef DEBUG
-	cilk_for (esint d = 0; d < partsCount; d++) {
+	cilk_for (eslocal d = 0; d < partsCount; d++) {
 #else
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		esint dimension = input[0].mesh.getPartNodesCount(d) * mesh::Point::size();
+		eslocal dimension = input[0].mesh.getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
 		input[0].mesh.elasticity(K_mat[d], M_mat[d], f, d);
@@ -650,14 +650,14 @@ void testFEM(int argc, char** argv)
         
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
-	const std::vector<esint> fixPoints = input[0].mesh.getFixPoints();
+	const std::vector<eslocal> fixPoints = input[0].mesh.getFixPoints();
 
 #ifndef DEBUG
-	cilk_for (esint d = 0; d < partsCount; d++) {
+	cilk_for (eslocal d = 0; d < partsCount; d++) {
 #else
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		for (esint fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
 			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
 		}
 		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
@@ -679,8 +679,8 @@ void testFEM(int argc, char** argv)
 	);
 
         
-    for (esint d = 0; d < partsCount; d++) {
-        for (esint iz = 0; iz < l2g_vec[d].size(); iz++) {
+    for (eslocal d = 0; d < partsCount; d++) {
+        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
             if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
                 f_vec[d][3 * iz + 2] = 1.0;
         }

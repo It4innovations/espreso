@@ -7,14 +7,14 @@ std::vector<DenseMatrix> Triangle::_dN;
 std::vector<DenseMatrix> Triangle::_N;
 std::vector<double> Triangle::_weighFactor;
 
-bool Triangle::match(esint *indices, esint n)
+bool Triangle::match(eslocal *indices, eslocal n)
 {
 	if (n != 3) {
 		return false;
 	}
 
-	for (esint i = 0; i < TriangleNodesCount - 1; i++) {
-		for (esint j = i + 1; j < TriangleNodesCount; j++) {
+	for (eslocal i = 0; i < TriangleNodesCount - 1; i++) {
+		for (eslocal j = i + 1; j < TriangleNodesCount; j++) {
 			if (Element::match(indices, i, j)) {
 				return false;
 			}
@@ -24,12 +24,12 @@ bool Triangle::match(esint *indices, esint n)
 	return true;
 }
 
-std::vector<esint> Triangle::getNeighbours(size_t nodeIndex) const
+std::vector<eslocal> Triangle::getNeighbours(size_t nodeIndex) const
 {
-	std::vector<esint> result;
+	std::vector<eslocal> result;
 	result.reserve(2);
 
-	for (esint i = 0; i < TriangleNodesCount; i++) {
+	for (eslocal i = 0; i < TriangleNodesCount; i++) {
 		if (i != nodeIndex) {
 			result.push_back(_indices[i]);
 		}
@@ -38,13 +38,13 @@ std::vector<esint> Triangle::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<esint> Triangle::getFace(size_t face) const
+std::vector<eslocal> Triangle::getFace(size_t face) const
 {
-	return std::vector<esint> (_indices, _indices + 3);
+	return std::vector<eslocal> (_indices, _indices + 3);
 }
 
-Triangle::Triangle(esint *indices)
+Triangle::Triangle(eslocal *indices)
 {
-	memcpy(_indices, indices, TriangleNodesCount * sizeof(esint));
+	memcpy(_indices, indices, TriangleNodesCount * sizeof(eslocal));
 }
 

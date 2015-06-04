@@ -20,7 +20,7 @@ class SparseIJVMatrix: public Matrix
 public:
 
 	SparseIJVMatrix(): Matrix(IJVMatrixIndexing) { };
-	SparseIJVMatrix(esint rows, esint columns): Matrix(rows, columns, IJVMatrixIndexing) { };
+	SparseIJVMatrix(eslocal rows, eslocal columns): Matrix(rows, columns, IJVMatrixIndexing) { };
 
 	SparseIJVMatrix(const DenseMatrix &other);
 	SparseIJVMatrix(const SparseDOKMatrix &other);
@@ -47,7 +47,7 @@ public:
 
 	double get(size_t row, size_t column) const
 	{
-		for(esint i = 0; i < _rowIndices.size(); i++)
+		for(eslocal i = 0; i < _rowIndices.size(); i++)
 		{
 			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
 				return _values[i];
@@ -56,22 +56,22 @@ public:
 		return 0;
 	}
 
-	const esint* rowIndices() const
+	const eslocal* rowIndices() const
 	{
 		return &_rowIndices[0];
 	}
 
-	esint* rowIndices()
+	eslocal* rowIndices()
 	{
 		return &_rowIndices[0];
 	}
 
-	const esint* columnIndices() const
+	const eslocal* columnIndices() const
 	{
 		return &_columnIndices[0];
 	}
 
-	esint* columnIndices()
+	eslocal* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
@@ -127,8 +127,8 @@ private:
 	}
 
 	// Sparse COO data
-	std::vector<esint> _rowIndices;
-	std::vector<esint> _columnIndices;
+	std::vector<eslocal> _rowIndices;
+	std::vector<eslocal> _columnIndices;
 	std::vector<double> _values;
 };
 

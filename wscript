@@ -2,7 +2,7 @@
 import commands
 import os
 
-VERSION = 2
+VERSION = 3
 
 def options(opt):
     opt.add_option("--debug",
@@ -46,17 +46,22 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
     ctx.recurse("metis")
 
-    if ctx.env.ESINT == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desint=int", "-DMKL_INT=int" ])
+    if ctx.env.ESLOCAL == 32:
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])
         ctx.env.append_unique("LIB", [ "mkl_intel_lp64" ])
-    if ctx.env.ESINT == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desint=long", "-DMKL_INT=long" ])
+    if ctx.env.ESLOCAL == 64:
+        ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=long", "-DMKL_INT=long" ])
         ctx.env.append_unique("LIB", [ "mkl_intel_ilp64" ])
 
-    if ctx.env.ESLONG == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=int" ])
-    if ctx.env.ESLONG == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslong=long" ])
+    if ctx.env.ESLDUAL == 32:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desdual=int" ])
+    if ctx.env.ESDUAL == 64:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desdual=long" ])
+
+    if ctx.env.ESLGLOBAL == 32:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=int" ])
+    if ctx.env.ESGLOBAL == 64:
+        ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=long" ])
 
     ctx.env.append_unique("LIB", [ "mkl_core" ])
 
@@ -170,6 +175,7 @@ def data_types(ctx):
         msg         = "Checking for 64-bit integers")
 
     espreso = ctx.path.abspath() + "/include/espreso.h"
+
     ctx.check(
         fragment=
             '''
@@ -186,13 +192,37 @@ def data_types(ctx):
             ''',
         execute     = True,
         define_ret  = True,
-        define_name = "esint",
+        define_name = "eslocal",
         errmsg      = "Incorrect user-supplied value for ESPRESO_LOCAL_INDICES_WIDTH",
         msg         = "Checking ESPRESO_LOCAL_INDICES_WIDTH"
     )
-    esint = ctx.get_define("esint").replace("\"", "")
-    ctx.define("esint", int(esint))
-    ctx.env.ESINT = int(esint)
+    eslocal = ctx.get_define("eslocal").replace("\"", "")
+    ctx.define("eslocal", int(eslocal))
+    ctx.env.ESLOCAL = int(eslocal)
+
+    ctx.check(
+        fragment=
+            '''
+            #include "''' + espreso + '''"
+            #include <stdio.h>
+
+            int main() {
+                #if ESPRESO_DUAL_INDICES_WIDTH == 32
+                    printf("32");
+                #elif ESPRESO_DUAL_INDICES_WIDTH == 64
+                    printf("64");
+                #endif
+            }
+            ''',
+        execute     = True,
+        define_ret  = True,
+        define_name = "esdual",
+        errmsg      = "Incorrect user-supplied value for ESPRESO_DUAL_INDICES_WIDTH",
+        msg         = "Checking ESPRESO_DUAL_INDICES_WIDTH"
+    )
+    esdual = ctx.get_define("esdual").replace("\"", "")
+    ctx.define("esdual", int(esdual))
+    ctx.env.ESDUAL = int(esdual)
 
     ctx.check(
         fragment=
@@ -210,13 +240,13 @@ def data_types(ctx):
             ''',
         execute     = True,
         define_ret  = True,
-        define_name = "eslong",
+        define_name = "esglobal",
         errmsg      = "Incorrect user-supplied value for ESPRESO_GLOBAL_INDICES_WIDTH",
         msg         = "Checking ESPRESO_GLOBAL_INDICES_WIDTH"
     )
-    eslong = ctx.get_define("eslong").replace("\"", "")
-    ctx.define("eslong", int(eslong))
-    ctx.env.ESLONG = int(eslong)
+    esglobal = ctx.get_define("esglobal").replace("\"", "")
+    ctx.define("esglobal", int(esglobal))
+    ctx.env.ESGLOBAL = int(esglobal)
 
 
 def write_configuration(ctx):
@@ -250,9 +280,11 @@ for line in espresoFile:
     if line.startswith("#define"):
         values = line.split()
         espreso[values[1]] = values[-1]
-if config["esint"] != espreso["ESPRESO_LOCAL_INDICES_WIDTH"]:
+if config["eslocal"] != espreso["ESPRESO_LOCAL_INDICES_WIDTH"]:
     print "0"
-elif config["eslong"] != espreso["ESPRESO_GLOBAL_INDICES_WIDTH"]:
+elif config["esdual"] != espreso["ESPRESO_DUAL_INDICES_WIDTH"]:
+    print "0"
+elif config["esglobal"] != espreso["ESPRESO_GLOBAL_INDICES_WIDTH"]:
     print "0"
 else:
     print config["version"]
