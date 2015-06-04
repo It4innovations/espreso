@@ -134,7 +134,7 @@ void generate_mesh()
 				cluster[0] = x;
 				index = x * (1 + y * (1 + z));
 				g->mesh(input[index].mesh, cluster);
-				g->fixBottom(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				g->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
 				// TODO: set fix points in PERMONCUBE
 				input[index].mesh.computeFixPoints(4);
 			}

@@ -100,7 +100,7 @@ void Element3D<TElement>::fixFullZeroPlanes(
 		esint index = 0;
 		for (esint y = 0; y < nodes[1]; y++) {
 			for (esint x = 0; x < nodes[0]; x++) {
-				dirichlet_y[index] = 0;
+				dirichlet_z[index] = 0;
 				index++;
 			}
 		}
