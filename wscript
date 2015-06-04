@@ -48,7 +48,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-Desint=int", "-DMKL_INT=int" ])
         ctx.env.append_unique("LIB", [ "mkl_intel_lp64" ])
     if ctx.env.ESINT == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desint=long", "-DMKL_INT=long", "-DNOBEM" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-Desint=long", "-DMKL_INT=long" ])
         ctx.env.append_unique("LIB", [ "mkl_intel_ilp64" ])
 
     if ctx.env.ESLONG == 32:

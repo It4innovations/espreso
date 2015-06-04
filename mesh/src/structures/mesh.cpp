@@ -1010,7 +1010,6 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 		}
 	}
 
-#ifndef NOBEM
 	bem4i::getLameSteklovPoincare(
 	    K.values(),
 	    _coordinates.localSize(part),
@@ -1023,10 +1022,6 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	    4,				// order far
 	    false			// verbose
 	    );
-#else
-	std::cerr << "BEM not support 64-bit data types, yet.\n";
-	exit(EXIT_FAILURE);
-#endif
 }
 
 
