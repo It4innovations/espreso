@@ -90,7 +90,7 @@ if [ "$1" = "run" ]; then
 
     date | tee -a $log_file
 
-    ./espreso ${el_type[0]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 
     cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
     rm mesh.vtk
