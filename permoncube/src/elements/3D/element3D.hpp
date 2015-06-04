@@ -107,4 +107,50 @@ void Element3D<TElement>::fixFullZeroPlanes(
 	}
 }
 
+template<class TElement>
+void Element3D<TElement>::fillGlobalBoundaries(
+		const permoncube::Settings &settings,
+		mesh::Boundaries &boundaries)
+{
+	esglobal gNodes[3];
+	Utils<TElement>::globalNodesCount(settings, gNodes);
+	eslocal cNodes[3];
+	Utils<TElement>::clusterNodesCount(settings, cNodes);
+	boundaries.resize(gNodes[0] * gNodes[1] * gNodes[2]);
+
+	eslocal cluster[3];
+	bool border[3];
+	eslocal cIndex;
+	esglobal gIndex = 0;
+
+	for (esglobal z = 0; z < gNodes[2]; z++) {
+		cluster[2] = z ? (z - 1) / ( cNodes[2] - 1) : 0;
+		border[2] = (z == 0 || z == gNodes[2] - 1) ? false : z % ( cNodes[2] - 1) == 0;
+		for (esglobal y = 0; y < gNodes[1]; y++) {
+			cluster[1] = y ? (y - 1) / ( cNodes[1] - 1) : 0;
+			border[1] = (y == 0 || y == gNodes[1] - 1) ? false : y % ( cNodes[1] - 1) == 0;
+			for (esglobal x = 0; x < gNodes[0]; x++) {
+				cluster[0] = x ? (x - 1) / ( cNodes[0] - 1) : 0;
+				border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
+				cIndex = cluster[0] + cluster[1] * settings.clusters[0] + cluster[2] * settings.clusters[0] * settings.clusters[1];
+				boundaries[gIndex].insert(cIndex);
+				for (int i = 0; i < 8; i++) {
+					eslocal tmp = cIndex;
+					if (border[0] && (i & 1)) {
+						tmp += 1;
+					}
+					if (border[1] && (i & 2)) {
+						tmp += settings.clusters[0];
+					}
+					if (border[2] && (i & 4)) {
+						tmp += settings.clusters[0] * settings.clusters[1];
+					}
+					boundaries[gIndex].insert(tmp);
+				}
+				gIndex++;
+			}
+		}
+	}
+}
+
 

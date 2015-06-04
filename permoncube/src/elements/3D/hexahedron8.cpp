@@ -50,3 +50,10 @@ void Hexahedron8::fixBottom(
 	Element3D<Hexahedron8>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
 }
 
+void Hexahedron8::fillGlobalBoundaries(
+		const permoncube::Settings &settings,
+		mesh::Boundaries &boundaries)
+{
+	Element3D<Hexahedron8>::fillGlobalBoundaries(settings, boundaries);
+}
+

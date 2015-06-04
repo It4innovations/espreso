@@ -32,7 +32,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 	std::set<eslocal>::const_iterator it;
 	std::set<eslocal>::const_iterator it1;
 	std::set<eslocal>::const_iterator it2;
-	typename std::map< T, double>::const_iterator itm;
+	typename std::map<T, double>::const_iterator itm;
 
 	eslocal lambda_count_B1 = 0;
 	eslocal lambda_count_B0 = 0;

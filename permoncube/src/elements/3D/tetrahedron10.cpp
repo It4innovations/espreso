@@ -118,4 +118,12 @@ void Tetrahedron10::fixBottom(
 	Element3D<Tetrahedron10>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
 }
 
+void Tetrahedron10::fillGlobalBoundaries(
+		const permoncube::Settings &settings,
+		mesh::Boundaries &boundaries)
+{
+	Element3D<Tetrahedron10>::fillGlobalBoundaries(settings, boundaries);
+}
+
+
 

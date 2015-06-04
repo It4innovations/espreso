@@ -28,6 +28,11 @@ public:
 			std::map<eslocal, double> &dirichlet_z,
 			const size_t cluster[]);
 
+	static void fillGlobalBoundaries(
+			const permoncube::Settings &settings,
+			mesh::Boundaries &boundaries);
+
+
 };
 }
 

@@ -17,6 +17,7 @@ class Tetrahedron10 {
 public:
 	static void addElements(mesh::Mesh &mesh, const eslocal indices[]);
 	static void addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[]);
+
 	static void fixZeroPlanes(
 			const permoncube::Settings &settings,
 			std::map<eslocal, double> &dirichlet_x,
@@ -29,6 +30,10 @@ public:
 			std::map<eslocal, double> &dirichlet_y,
 			std::map<eslocal, double> &dirichlet_z,
 			const size_t cluster[]);
+
+	static void fillGlobalBoundaries(
+			const permoncube::Settings &settings,
+			mesh::Boundaries &boundaries);
 
 	static void clear() { };
 

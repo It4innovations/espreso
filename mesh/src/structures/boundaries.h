@@ -13,8 +13,24 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
+	Boundaries() { };
 	Boundaries(const Mesh &mesh);
 	~Boundaries() { };
+
+	void resize(size_t size)
+	{
+		_boundaries.resize(size);
+	}
+
+	size_t size()
+	{
+		return _boundaries.size();
+	}
+
+	std::set<eslocal>& operator[](size_t index)
+	{
+		return _boundaries[index];
+	}
 
 	template<typename T>
 	void create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 
@@ -31,9 +47,6 @@ public:
 
 
 private:
-	/** @brief Reference to a mesh. */
-	const Mesh &_mesh;
-
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;
 };
