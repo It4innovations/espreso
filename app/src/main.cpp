@@ -31,6 +31,7 @@ struct FEMParams {
 	permoncube::Settings settings;
 };
 
+permoncube::Generator *generator;
 std::vector<FEMInput> input;
 FEMParams params;
 
@@ -88,6 +89,11 @@ int main(int argc, char** argv)
 	} else {
 		testMPI(argc, argv);
 	}
+
+
+	if (params.generateMesh) {
+		delete generator;
+	}
 }
 
 
@@ -107,19 +113,18 @@ void load_mesh()
 void generate_mesh()
 {
 	std::cout << "Permoncube:" << std::endl;
-	permoncube::Generator *g;
 
 	switch (params.type) {
 	case HEXA8: {
-		g = new permoncube::ElementGenerator<permoncube::Hexahedron8>(params.settings);
+		generator = new permoncube::ElementGenerator<permoncube::Hexahedron8>(params.settings);
 		break;
 	}
 	case TETRA10: {
-		g = new permoncube::ElementGenerator<permoncube::Tetrahedron10>(params.settings);
+		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron10>(params.settings);
 		break;
 	}
 	case TETRA4: {
-		g = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
+		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
 		break;
 	}
 	}
@@ -133,8 +138,8 @@ void generate_mesh()
 			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
 				cluster[0] = x;
 				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
-				g->mesh(input[index].mesh, cluster);
-				g->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				generator->mesh(input[index].mesh, cluster);
+				generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
 				// TODO: set fix points in PERMONCUBE
 				input[index].mesh.computeFixPoints(4);
 			}
@@ -142,13 +147,27 @@ void generate_mesh()
 	}
 
 	std::cout << "Permoncube - end" << std::endl;
-	delete g;
 }
 
 
 void testMPI(int argc, char** argv)
 {
-	// TODO:
+	mesh::Boundaries globalBoundaries;
+	generator->fillGlobalBoundaries(globalBoundaries);
+
+	size_t index;
+	size_t cluster[3];
+	for (size_t z = 0; z < params.settings.clusters[2]; z++) {
+		for (size_t y = 0; y < params.settings.clusters[1]; y++) {
+			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
+				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
+				// index = cislo clusteru
+				// input[index].mesh = mesh na clusteru s cislem 'index'
+				// input[index].dirichlet_{x, y, z} = dirichlet na clusteru s cislem 'index'
+				// TODO: RUN SOLVER
+			}
+		}
+	}
 }
 
 
