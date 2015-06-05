@@ -2,7 +2,7 @@
 import commands
 import os
 
-VERSION = 3
+VERSION = 4
 
 def options(opt):
     opt.add_option("--debug",
@@ -72,7 +72,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START"])
         ctx.env.append_unique("LIB", [ "mkl_intel_thread" ])
 
-    ctx.env.append_unique("LIB", [ "pthread", "m" ])
+    ctx.env.append_unique("LIB", [ "pthread" ])
 
     ctx.setenv("mpi", ctx.env)
     if ctx.options.mpich:
