@@ -13,8 +13,8 @@ int main(int argc, char** argv)
 
 void test_ansys()
 {
-	esint partsCount = 4;
-	esint fixPointsCount = 4;
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
 
 	Ansys settings("../spanner/Model");
 
@@ -38,10 +38,10 @@ void test_ansys()
 
 void test_meshes()
 {
-	esint partsCount = 4;
-	esint fixPointsCount = 4;
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
 
-	mesh::Mesh m("matrices/HEX/5/elem", "matrices/HEX/5/coord", partsCount, fixPointsCount);
+	mesh::Mesh m("matrices/HEX/15/elem", "matrices/HEX/15/coord", partsCount, fixPointsCount);
 
 	mesh::Boundaries b(m);
 
@@ -56,8 +56,8 @@ void test_meshes()
 
 void test_BEM()
 {
-	esint partsCount = 4;
-	esint fixPointsCount = 4;
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
 
 	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
 
@@ -237,22 +237,22 @@ void test_matrices()
 	SparseDOKMatrix dokA(m, k);
 	SparseDOKMatrix dokB(k, n);
 	SparseDOKMatrix dokResult(m, n);
-	esint result[] = { 1, 4, 10, 20, 35 };
+	eslocal result[] = { 1, 4, 10, 20, 35 };
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = i; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = i; j < n; j++) {
 			dokResult(i, j) = result[j - i];
 		}
 	}
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < k - i; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < k - i; j++) {
 			dokA(i, j + i) = j + 1;
 		}
 	}
 
-	for (esint i = 0; i < k; i++) {
-		for (esint j = 0; j < n - i; j++) {
+	for (eslocal i = 0; i < k; i++) {
+		for (eslocal j = 0; j < n - i; j++) {
 			dokB(i, j + i) = j + 1;
 		}
 	}
@@ -264,8 +264,8 @@ void test_matrices()
 	C.multiply(A, B);
 	DenseMatrix denseC(C);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (denseC(i, j) != dokResult(i, j)) {
 				std::cerr << "CSR A * CSR B is incorrect\n";
 				exit(EXIT_FAILURE);
@@ -279,8 +279,8 @@ void test_matrices()
 
 	D.multiply(A, B, true);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (D.get(i, j) != dokResult(i, j)) {
 				std::cerr << "trans CSR A * CSR B is incorrect\n";
 				exit(EXIT_FAILURE);
@@ -298,8 +298,8 @@ void test_matrices()
 
 	dAB.multiply(dA, dB);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (dAB.get(i, j) != dokResult(i, j)) {
 				std::cerr << "dense:  A * B is incorrect\n";
 				exit(EXIT_FAILURE);
@@ -318,8 +318,8 @@ void test_matrices()
 
 	dAB.multiply(dAT, dB, 1, 0, true);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (dAB.get(i, j) != dokResult(i, j)) {
 				std::cerr << "dense: AT * B is incorrect\n";
 				exit(EXIT_FAILURE);
@@ -329,8 +329,8 @@ void test_matrices()
 
 	dAB.multiply(dA, dBT, 1, 0, false, true);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (dAB.get(i, j) != dokResult(i, j)) {
 				std::cerr << "dense: A * BT is incorrect\n";
 				exit(EXIT_FAILURE);
@@ -340,8 +340,8 @@ void test_matrices()
 
 	dAB.multiply(dAT, dBT, 1, 0, true, true);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (dAB.get(i, j) != dokResult(i, j)) {
 				std::cerr << "dense: AT * BT is incorrect\n";
 				exit(EXIT_FAILURE);
@@ -351,8 +351,8 @@ void test_matrices()
 
 	dAB.multiply(dAT, dBT, 1, 1, true, true);
 
-	for (esint i = 0; i < m; i++) {
-		for (esint j = 0; j < n; j++) {
+	for (eslocal i = 0; i < m; i++) {
+		for (eslocal j = 0; j < n; j++) {
 			if (dAB.get(i, j) != 2 * dokResult(i, j)) {
 				std::cerr << "dense: AT * BT + C  is incorrect\n";
 				exit(EXIT_FAILURE);

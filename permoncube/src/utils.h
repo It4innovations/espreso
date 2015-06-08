@@ -10,9 +10,9 @@ template <class TElement>
 class Utils {
 
 public:
-	static void globalNodesCount(const Settings &settings, eslong nodes[]);
-	static void clusterNodesCount(const Settings &settings, esint nodes[]);
-	static esint clusterElementsCount(const Settings &settings);
+	static void globalNodesCount(const Settings &settings, esglobal nodes[]);
+	static void clusterNodesCount(const Settings &settings, eslocal nodes[]);
+	static eslocal clusterElementsCount(const Settings &settings);
 };
 
 }

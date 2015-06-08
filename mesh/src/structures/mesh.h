@@ -8,6 +8,8 @@
 #include "mkl.h"
 #include "cilk/cilk.h"
 
+#include "metis.h"
+
 #include "../elements/elements.h"
 #include "coordinates.h"
 
@@ -39,8 +41,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 
 	Mesh();
-	Mesh(const char *mesh, const char *coordinates, esint parts, esint fixPoints);
-	Mesh(const Ansys &ansys,  esint parts, esint fixPoints);
+	Mesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints);
 
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
@@ -56,9 +57,9 @@ public:
 	}
 
 	void saveVTK(const char* filename, double shrinking = 1);
-	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <esint> > &l2g_vec, double shrinking = 1);
+	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <eslocal> > &l2g_vec, double shrinking = 1);
 
-	void saveNodeArray(esint *nodeArray, size_t part);
+	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;
@@ -70,8 +71,8 @@ public:
 
 	~Mesh();
 
-	void partitiate(esint parts, esint fixPoints);
-	void computeFixPoints(esint fixPoints);
+	void partitiate(eslocal parts, eslocal fixPoints);
+	void computeFixPoints(eslocal fixPoints);
 
 	const std::vector<Element*>& getElements() const
 	{
@@ -83,7 +84,7 @@ public:
 		return _partPtrs.size() - 1;
 	}
 
-	const std::vector<esint>& getPartition() const
+	const std::vector<eslocal>& getPartition() const
 	{
 		return _partPtrs;
 	}
@@ -93,17 +94,17 @@ public:
 		return _fixPoints.size() / (_partPtrs.size() - 1);
 	}
 
-	const std::vector<esint>& getFixPoints() const
+	const std::vector<eslocal>& getFixPoints() const
 	{
 		return _fixPoints;
 	}
 
-	esint getPartNodesCount(esint part) const
+	eslocal getPartNodesCount(eslocal part) const
 	{
 		return _coordinates.localSize(part);
 	}
 
-	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, esint part)
+	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, eslocal part)
 	{
 		SparseVVPMatrix _K;
 		SparseVVPMatrix _M;
@@ -111,7 +112,7 @@ public:
 		K = _K;
 		M = _M;
 	}
-	void elasticity(SparseCSRMatrix &K, std::vector<double> &f, esint part)
+	void elasticity(SparseCSRMatrix &K, std::vector<double> &f, eslocal part)
 	{
 		SparseVVPMatrix _K;
 		SparseVVPMatrix _M;
@@ -122,11 +123,11 @@ public:
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
 
-	void saveBasis(std::ofstream &vtk, std::vector<std::vector<esint> > &l2g_vec, double shrinking);
+	void saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g_vec, double shrinking);
 
-	Element* createElement(esint *indices, esint n);
+	Element* createElement(eslocal *indices, eslocal n);
 
-	void _elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, esint part, bool dynamic);
+	void _elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, eslocal part, bool dynamic);
 	void _assembleElesticity(
 		const Element *e,
 		size_t part,
@@ -148,16 +149,15 @@ protected:
 		bool dynamic
 	) const;
 
-	esint* getPartition(esint first, esint last, esint parts) const;
-	esint getCentralNode(esint first, esint last, esint *ePartition, esint part, esint subpart) const;
+	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
+	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
 
-	void partitiate(esint *ePartition);
+	void partitiate(eslocal *ePartition);
 	void computeLocalIndices(size_t part);
+	void readFromFile(const char *meshFile, eslocal elementSize);
 
-	void checkMETISResult(esint result) const;
-	void checkMKLResult(esint result) const;
-
-	void readFromFile(const char *meshFile, esint elementSize = 0);
+	void checkMETISResult(eslocal result) const;
+	void checkMKLResult(eslocal result) const;
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
@@ -166,10 +166,10 @@ protected:
 	std::vector<mesh::Element*> _elements;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
-	std::vector<esint> _partPtrs;
+	std::vector<eslocal> _partPtrs;
 
 	/** @brief Fix points for all parts. */
-	std::vector<esint> _fixPoints;
+	std::vector<eslocal> _fixPoints;
 
 	/** @brief Flags used to recognize whether the specified property was computed. */
 	std::vector<bool> _flags;
@@ -181,7 +181,7 @@ class SurfaceMesh: public Mesh
 
 public:
 	SurfaceMesh(): Mesh() { };
-	SurfaceMesh(const char *mesh, const char *coordinates, esint parts, esint fixPoints):
+	SurfaceMesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints):
 		Mesh(mesh, coordinates, parts, fixPoints) { };
 	SurfaceMesh(const Mesh &mesh)
 	{

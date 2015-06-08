@@ -1,7 +1,6 @@
 #ifndef COORDINATES_H_
 #define COORDINATES_H_
 
-#include "../definitions.h"
 #include "../elements/1D/point.h"
 #include "../loader.h"
 
@@ -19,7 +18,7 @@ public:
 	Coordinates(): _points(0), _clusterIndex(1) { };
 	Coordinates(const char *fileName);
 
-	void add(const Point &point, esint clusterIndex, eslong globalIndex)
+	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
 		_points.push_back(point);
 		_clusterIndex[0].push_back(clusterIndex);
@@ -33,27 +32,27 @@ public:
 		_clusterIndex[0].reserve(size);
 	}
 
-	const Point& get(esint index, esint part) const
+	const Point& get(eslocal index, eslocal part) const
 	{
 		return _points[_clusterIndex[part][index]];
 	}
 
-	esint clusterIndex(esint index, esint part) const
+	eslocal clusterIndex(eslocal index, eslocal part) const
 	{
 		return _clusterIndex[part][index];
 	}
 
-	eslong globalIndex(esint index, esint part) const
+	esglobal globalIndex(eslocal index, eslocal part) const
 	{
 		return _globalIndex[_clusterIndex[part][index]];
 	}
 
-	esint clusterSize() const
+	eslocal clusterSize() const
 	{
 		return _points.size();
 	}
 
-	esint localSize(esint part) const
+	eslocal localSize(eslocal part) const
 	{
 		return _clusterIndex[part].size();
 	}
@@ -63,7 +62,7 @@ public:
 		return _points.size();
 	}
 
-	const std::vector<esint>& localToCluster(esint part) const
+	const std::vector<eslocal>& localToCluster(eslocal part) const
 	{
 		return _clusterIndex[part];
 	}
@@ -78,7 +77,7 @@ public:
 		_clusterIndex.resize(size);
 	}
 
-	void computeLocal(esint part, std::vector<esint> &nodeMap, size_t size);
+	void computeLocal(eslocal part, std::vector<eslocal> &nodeMap, size_t size);
 
 	double* data()
 	{
@@ -86,12 +85,12 @@ public:
 		return static_cast<double*>(tmp);
 	}
 
-	const Point& operator[](esint index) const
+	const Point& operator[](eslocal index) const
 	{
 		return _points[index];
 	}
 
-	Point& operator[](esint index)
+	Point& operator[](eslocal index)
 	{
 		return _points[index];
 	}
@@ -101,10 +100,10 @@ private:
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */
-	std::vector<std::vector<esint> > _clusterIndex;
+	std::vector<std::vector<eslocal> > _clusterIndex;
 
 	/** @brief Point to global index */
-	std::vector<eslong> _globalIndex;
+	std::vector<esglobal> _globalIndex;
 };
 
 }

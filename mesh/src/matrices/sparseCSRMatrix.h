@@ -48,7 +48,7 @@ public:
 
 	double get(size_t row, size_t column) const
 	{
-		for(esint i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
+		for(eslocal i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
 			if (_columnIndices[i - _indexing] == column + _indexing) {
 				return _values[i - _indexing];
 			}
@@ -66,22 +66,22 @@ public:
 		return &_values[0];
 	}
 
-	const esint* rowPtrs() const
+	const eslocal* rowPtrs() const
 	{
 		return &_rowPtrs[0];
 	}
 
-	esint* rowPtrs()
+	eslocal* rowPtrs()
 	{
 		return &_rowPtrs[0];
 	}
 
-	const esint* columnIndices() const
+	const eslocal* columnIndices() const
 	{
 		return &_columnIndices[0];
 	}
 
-	esint* columnIndices()
+	eslocal* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
@@ -109,8 +109,8 @@ private:
 	}
 
 	// Sparse CSR data
-	std::vector<esint> _rowPtrs;
-	std::vector<esint> _columnIndices;
+	std::vector<eslocal> _rowPtrs;
+	std::vector<eslocal> _columnIndices;
 	std::vector<double> _values;
 
 };

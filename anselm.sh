@@ -3,6 +3,7 @@
 module load bullxmpi/bullxmpi_1.2.4.1
 #module load impi/4.1.1.036
 module load intel/15.2.164
+module load cmake/2.8.11
 export LC_CTYPE=""
 
 if [ "$#" -ne 1 ]; then
@@ -89,7 +90,7 @@ if [ "$1" = "run" ]; then
 
     date | tee -a $log_file
 
-    ./espreso ${el_type[0]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 
     cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
     rm mesh.vtk

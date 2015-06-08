@@ -38,18 +38,14 @@ def build(ctx):
         ctx.program(
             source=source_files + ("src/main.cpp",),
             target="esmesh",
-            lib="metis",
-            libpath="../libs",
-            use="metis_includes bem_includes esbem",
+            use="espreso_includes bem_includes esbem",
             install_path=ctx.ROOT
         )
     else:
         ctx.shlib(
             source=source_files,
             target="esmesh",
-            lib="metis",
-            libpath="../libs",
-            use="metis_includes bem_includes esbem",
+            use="espreso_includes bem_includes esbem",
             install_path=ctx.ROOT + "/libs"
         )
 

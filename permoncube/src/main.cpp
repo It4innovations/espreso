@@ -1,4 +1,8 @@
-#include "permoncube.h"
+
+#include <set>
+
+#include "espmcube.h"
+
 
 permoncube::Settings settings;
 
@@ -25,11 +29,11 @@ void setParams(int argc, char** argv)
 void test_hexa8(size_t cluster[]);
 void test_tetra4(size_t cluster[]);
 void test_tetra10(size_t cluster[]);
+void test_boudaries();
 
 int main(int argc, char** argv)
 {
 	setParams(argc, argv);
-	std::cout << settings;
 
 	size_t cluster[3] = { 0, 0, 0 };
 	if (settings.clusters[1] > 1) {
@@ -39,9 +43,61 @@ int main(int argc, char** argv)
 		cluster[2] = 2;
 	}
 
+	test_boudaries();
+	return 0;
+
+	std::cout << settings;
 	test_hexa8(cluster);
 	test_tetra4(cluster);
 	test_tetra10(cluster);
+}
+
+void test_boudaries()
+{
+	for (int i = 0; i < 3; i++) {
+		settings.clusters[i] = 3;
+		settings.subdomainsInCluster[i] = 5;
+		settings.elementsInSubdomain[i] = 1; // Mandatory !!!
+	}
+	std::cout << settings;
+
+	// MESH BOUNDARIES
+	mesh::Mesh mesh;
+	permoncube::Settings _settings = settings;
+	for (int i = 0; i < 3; i++) {
+		_settings.clusters[i] = 1;
+		_settings.subdomainsInCluster[i] = settings.clusters[i];
+		_settings.elementsInSubdomain[i] = settings.subdomainsInCluster[i];
+	}
+	permoncube::ElementGenerator<permoncube::Tetrahedron10> g1(_settings);
+
+	size_t cluster[3] = { 0, 0, 0 };
+	g1.mesh(mesh, cluster);
+	mesh::Boundaries bMesh(mesh);
+
+	// GLOBAL BOUNDARIES
+	permoncube::ElementGenerator<permoncube::Tetrahedron10> g2(settings);
+	mesh::Boundaries bGlobal;
+	g2.fillGlobalBoundaries(bGlobal);
+
+	if (bMesh.size() != bGlobal.size()) {
+		std::cerr << "Incorrect boundaries size in Permoncube\n";
+		std::cerr << bMesh.size() << " vs. " << bGlobal.size() << "\n";
+		exit(EXIT_FAILURE);
+	}
+	for (size_t i = 0; i < bMesh.size(); i++) {
+		if (bMesh[i].size() != bGlobal[i].size()) {
+			std::cerr << "Incorrect boundaries node size in Permoncube\n";
+			exit(EXIT_FAILURE);
+		}
+		std::set<eslocal>::const_iterator it;
+		for (it = bMesh[i].begin(); it != bMesh[i].end(); ++it) {
+			if (!bGlobal[i].count(*it)) {
+				std::cerr << "Incorrect boundaries node occurrence in Permoncube\n";
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
 }
 
 void test_hexa8(size_t cluster[])

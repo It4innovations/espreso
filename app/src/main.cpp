@@ -2,7 +2,7 @@
 
 #include "esmesh.h"
 #include "essolver.h"
-#include "permoncube.h"
+#include "espmcube.h"
 
 #include <vector>
 #include <iostream>
@@ -15,13 +15,10 @@ enum {
 
 struct FEMInput {
 
-	FEMInput(): coordinates(mesh.coordinates()) {};
-
-	mesh::Coordinates &coordinates;
 	mesh::Mesh mesh;
-	std::map<esint, double> dirichlet_x;
-	std::map<esint, double> dirichlet_y;
-	std::map<esint, double> dirichlet_z;
+	std::map<eslocal, double> dirichlet_x;
+	std::map<eslocal, double> dirichlet_y;
+	std::map<eslocal, double> dirichlet_z;
 };
 
 struct FEMParams {
@@ -34,13 +31,13 @@ struct FEMParams {
 	permoncube::Settings settings;
 };
 
-FEMInput input;
+permoncube::Generator *generator;
+std::vector<FEMInput> input;
 FEMParams params;
-
 
 void setParams(int argc, char** argv)
 {
-	if (argc != 8) {
+	if (argc != 11) {
 		return;
 	}
 
@@ -50,21 +47,27 @@ void setParams(int argc, char** argv)
 	sscanf(argv[1], "%i", &type);
 	params.type = type;
 
+	int clusters;
 	int subdomains;
 	int elementsInSub;
 
 	for (int i = 0; i < 3; i++) {
-		sscanf(argv[i + 2], "%i", &subdomains);
-		sscanf(argv[i + 5], "%i", &elementsInSub);
+		sscanf(argv[i + 2], "%i", &clusters);
+		sscanf(argv[i + 5], "%i", &subdomains);
+		sscanf(argv[i + 8], "%i", &elementsInSub);
+		params.settings.clusters[i] = clusters;
 		params.settings.subdomainsInCluster[i] = subdomains;
 		params.settings.elementsInSubdomain[i] = elementsInSub;
 	}
-	params.settings.clusters[0] = params.settings.clusters[1] = params.settings.clusters[2] = 1;
+
+	input.resize(params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2]);
 }
 
 void testFEM(int argc, char** argv);
 
 void testBEM(int argc, char** argv);
+
+void testMPI(int argc, char** argv);
 
 void load_mesh();
 
@@ -80,81 +83,103 @@ int main(int argc, char** argv)
 		load_mesh();
 	}
 
-	testBEM(argc, argv);
-	//testFEM(argc, argv);
+	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] == 1) {
+		testBEM(argc, argv);
+		//testFEM(argc, argv);
+	} else {
+		testMPI(argc, argv);
+	}
+
+
+	if (params.generateMesh) {
+		delete generator;
+	}
 }
 
 
 void load_mesh()
 {
-	input.mesh = mesh::Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
-	input.coordinates = input.mesh.coordinates();
+	input.resize(1);
+	input[0].mesh = mesh::Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
 
 	// fix down face
 	for (int i = 0; i < 11 * 11; i++) {
-		input.dirichlet_x[i] = 0;
-		input.dirichlet_y[i] = 0;
-		input.dirichlet_z[i] = 0;
+		input[0].dirichlet_x[i] = 0;
+		input[0].dirichlet_y[i] = 0;
+		input[0].dirichlet_z[i] = 0;
 	}
 }
 
 void generate_mesh()
 {
 	std::cout << "Permoncube:" << std::endl;
-	size_t cluster[3] = { 0, 0 ,0 };
-	permoncube::Generator *g;
 
 	switch (params.type) {
 	case HEXA8: {
-		g = new permoncube::ElementGenerator<permoncube::Hexahedron8>(params.settings);
+		generator = new permoncube::ElementGenerator<permoncube::Hexahedron8>(params.settings);
 		break;
 	}
 	case TETRA10: {
-		g = new permoncube::ElementGenerator<permoncube::Tetrahedron10>(params.settings);
+		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron10>(params.settings);
 		break;
 	}
 	case TETRA4: {
-		g = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
+		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
 		break;
 	}
 	}
 
-	g->mesh(input.mesh, cluster);
+	size_t index;
+	size_t cluster[3];
+	for (size_t z = 0; z < params.settings.clusters[2]; z++) {
+		cluster[2] = z;
+		for (size_t y = 0; y < params.settings.clusters[1]; y++) {
+			cluster[1] = y;
+			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
+				cluster[0] = x;
+				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
+				generator->mesh(input[index].mesh, cluster);
+				generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				// TODO: set fix points in PERMONCUBE
+				input[index].mesh.computeFixPoints(4);
+			}
+		}
+	}
 
-	std::cout << "dirichlet" << std::endl;
-	g->fixZeroPlanes(input.dirichlet_x, input.dirichlet_y, input.dirichlet_z, cluster);
-	std::cout << "fix points" << std::endl;
-
-	// TODO: set fix points in PERMONCUBE
-	input.mesh.computeFixPoints(4);
-	std::cout << "fix points - end" << std::endl;
+	std::cout << "Permoncube - end" << std::endl;
 }
 
 
-/*template<typename T>
-std::ostream& operator<< (std::ostream& out, const std::vector<T>& v)
+void testMPI(int argc, char** argv)
 {
-	//out << "[";
-	size_t last = v.size() - 1;
-	for(size_t i = 0; i < v.size(); ++i) {
-		out << v[i];
-		if (i != last)
-			out << ", ";
+	mesh::Boundaries globalBoundaries;
+	generator->fillGlobalBoundaries(globalBoundaries);
+
+	size_t index;
+	size_t cluster[3];
+	for (size_t z = 0; z < params.settings.clusters[2]; z++) {
+		for (size_t y = 0; y < params.settings.clusters[1]; y++) {
+			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
+				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
+				// index = cislo clusteru
+				// input[index].mesh = mesh na clusteru s cislem 'index'
+				// input[index].dirichlet_{x, y, z} = dirichlet na clusteru s cislem 'index'
+				// TODO: RUN SOLVER
+			}
+		}
 	}
-	//out << "]";
-	return out;
-}*/
+}
 
 
 void testBEM(int argc, char** argv)
 {
 	double start = omp_get_wtime();
-	size_t partsCount = input.mesh.parts();
+	size_t partsCount = input[0].mesh.parts();
 	size_t fixPointsCount = 4;
 
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
 
-	mesh::SurfaceMesh sMesh(input.mesh);
+	mesh::SurfaceMesh sMesh(input[0].mesh);
 
 	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
 
@@ -243,14 +268,14 @@ void testBEM(int argc, char** argv)
     std::vector < SparseIJVMatrix >			B1_mat;
     std::vector < SparseIJVMatrix >			B0_mat;
     
-    std::vector < std::vector <esint> >		lambda_map_sub_B1;
-    std::vector < std::vector <esint> >		lambda_map_sub_B0;
-    std::vector < std::vector <esint> >		lambda_map_sub_clst;
+    std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
+    std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
+    std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
     std::vector < std::vector <double> >	B1_l_duplicity;
     
     std::vector < std::vector < double > >	f_vec     (partsCount);
-    std::vector < std::vector < esint > >		fix_nodes (partsCount);
-    std::vector < std::vector <esint> >		l2g_vec;
+    std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
+    std::vector < std::vector <eslocal> >		l2g_vec;
     
     std::cout << "BEM 8 : " << omp_get_wtime() - start<< std::endl;
 
@@ -277,21 +302,21 @@ void testBEM(int argc, char** argv)
     
     std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
-    const std::vector<idx_t> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
+    const std::vector<eslocal> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
 
 #ifndef DEBUG
-    cilk_for (esint d = 0; d < partsCount; d++) {
+    cilk_for (eslocal d = 0; d < partsCount; d++) {
 #else
-    for (esint d = 0; d < partsCount; d++) {
+    for (eslocal d = 0; d < partsCount; d++) {
 #endif
-        for (esint fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+        for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
             fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
         }
         std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
     }
 
     std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-    boundaries.create_B1_l(
+    boundaries.create_B1_l<eslocal>(
                             B1_mat,
                             B0_mat,
                             l2g_vec,
@@ -299,12 +324,11 @@ void testBEM(int argc, char** argv)
                             lambda_map_sub_B1,
                             lambda_map_sub_B0,
                             B1_l_duplicity,
-                            input.dirichlet_x,
-                            input.dirichlet_y,
-                            input.dirichlet_z,
+                            input[0].dirichlet_x,
+                            input[0].dirichlet_y,
+                            input[0].dirichlet_z,
                             partsCount
                         );
-        
 
 //    for (int d = 0; d < partsCount; d++) {
 //        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -575,13 +599,13 @@ void testFEM(int argc, char** argv)
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount = input.mesh.parts();
-	size_t fixPointsCount = input.mesh.getFixPointsCount();
+	size_t partsCount = input[0].mesh.parts();
+	size_t fixPointsCount = input[0].mesh.getFixPointsCount();
 
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	// TODO: fill boundaries in PERMONCUBE
-	mesh::Boundaries boundaries(input.mesh);
+	mesh::Boundaries boundaries(input[0].mesh);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -598,20 +622,20 @@ void testFEM(int argc, char** argv)
 	std::vector < SparseIJVMatrix >			B1_mat;
 	std::vector < SparseIJVMatrix >			B0_mat;
 
-	std::vector < std::vector <esint> >		lambda_map_sub_B1;
-	std::vector < std::vector <esint> >		lambda_map_sub_B0;
-	std::vector < std::vector <esint> >		lambda_map_sub_clst;
+	std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
+	std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
+	std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
 	std::vector < std::vector <double> >	B1_l_duplicity;
 
 	std::vector < std::vector < double > >	f_vec     (partsCount);
-	std::vector < std::vector < esint > >		fix_nodes (partsCount);
-	std::vector < std::vector <esint> >		l2g_vec;
+	std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
+	std::vector < std::vector <eslocal> >		l2g_vec;
 
 	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
 
 	K_mat.reserve(partsCount);
 	M_mat.reserve(partsCount);
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 		K_mat.push_back( SparseCSRMatrix (0,0) );
 		M_mat.push_back( SparseCSRMatrix (0,0) );
 	}
@@ -619,14 +643,14 @@ void testFEM(int argc, char** argv)
 	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
 #ifndef DEBUG
-	cilk_for (esint d = 0; d < partsCount; d++) {
+	cilk_for (eslocal d = 0; d < partsCount; d++) {
 #else
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		esint dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
+		eslocal dimension = input[0].mesh.getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
-		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		input[0].mesh.elasticity(K_mat[d], M_mat[d], f, d);
 
 		//K_mat[d] = K;
 		//M_mat[d] = M;
@@ -644,21 +668,21 @@ void testFEM(int argc, char** argv)
         
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
-	const std::vector<idx_t> fixPoints = input.mesh.getFixPoints();
+	const std::vector<eslocal> fixPoints = input[0].mesh.getFixPoints();
 
 #ifndef DEBUG
-	cilk_for (esint d = 0; d < partsCount; d++) {
+	cilk_for (eslocal d = 0; d < partsCount; d++) {
 #else
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		for (esint fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
 			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
 		}
 		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
 	}
 
 	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	boundaries.create_B1_l(
+	boundaries.create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
@@ -666,16 +690,16 @@ void testFEM(int argc, char** argv)
 		lambda_map_sub_B1,
 		lambda_map_sub_B0,
 		B1_l_duplicity,
-		input.dirichlet_x,
-		input.dirichlet_y,
-		input.dirichlet_z,
+		input[0].dirichlet_x,
+		input[0].dirichlet_y,
+		input[0].dirichlet_z,
 		partsCount
 	);
 
         
-    for (esint d = 0; d < partsCount; d++) {
-        for (esint iz = 0; iz < l2g_vec[d].size(); iz++) {
-            if ( fabs( 30.0 - input.mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
+    for (eslocal d = 0; d < partsCount; d++) {
+        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
+            if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
                 f_vec[d][3 * iz + 2] = 1.0;
         }
     }
@@ -809,9 +833,9 @@ void testFEM(int argc, char** argv)
 #endif
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = input.coordinates[l2g_vec[d][i]].x;
-			tmp_vec[1] = input.coordinates[l2g_vec[d][i]].y;
-			tmp_vec[2] = input.coordinates[l2g_vec[d][i]].z;
+			tmp_vec[0] = input[0].mesh.coordinates()[l2g_vec[d][i]].x;
+			tmp_vec[1] = input[0].mesh.coordinates()[l2g_vec[d][i]].y;
+			tmp_vec[2] = input[0].mesh.coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -895,7 +919,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input.mesh.saveVTK(prim_solution, l2g_vec, 0.8);
+	input[0].mesh.saveVTK(prim_solution, l2g_vec, 0.8);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{

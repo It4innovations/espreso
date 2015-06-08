@@ -6,8 +6,6 @@
 #include <set>
 #include <limits>
 
-#include <metis.h>
-
 namespace mesh {
 
 class Point3D {

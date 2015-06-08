@@ -5,8 +5,6 @@
 #include <iostream>
 #include <set>
 
-#include <metis.h>
-
 namespace mesh {
 
 class Point2D
