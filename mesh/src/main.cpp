@@ -3,12 +3,38 @@
 void test_matrices();
 void test_BEM();
 void test_meshes();
+void test_ansys();
 
 int main(int argc, char** argv)
 {
-	test_BEM();
+	test_ansys();
 	return 0;
 }
+
+void test_ansys()
+{
+	esint partsCount = 4;
+	esint fixPointsCount = 4;
+
+	Ansys settings("../spanner/Model");
+
+	std::cout<<settings.coordinates()<<"\n"<<settings.elements()<<"\n";
+
+	mesh::Mesh m(settings, partsCount, fixPointsCount);
+
+	//std::cout<<m.coordinates();
+
+	mesh::Boundaries b(m);
+
+	mesh::SurfaceMesh sMesh(m);
+
+	mesh::CommonFacesMesh cMesh(sMesh);
+
+	m.saveVTK("mesh.vtk", 0.6);
+	sMesh.saveVTK("surface.vtk", 0.6);
+	cMesh.saveVTK("faces.vtk", 0.6);
+}
+
 
 void test_meshes()
 {

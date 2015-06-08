@@ -40,6 +40,7 @@ public:
 
 	Mesh();
 	Mesh(const char *mesh, const char *coordinates, esint parts, esint fixPoints);
+	Mesh(const Ansys &ansys,  esint parts, esint fixPoints);
 
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
@@ -155,6 +156,8 @@ protected:
 
 	void checkMETISResult(esint result) const;
 	void checkMKLResult(esint result) const;
+
+	void readFromFile(const char *meshFile, esint elementSize = 0);
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
