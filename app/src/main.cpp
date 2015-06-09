@@ -10,7 +10,8 @@
 enum {
 	HEXA8,
 	TETRA4,
-	TETRA10
+	TETRA10,
+	HEXA20
 };
 
 struct FEMInput {
@@ -84,8 +85,8 @@ int main(int argc, char** argv)
 	}
 
 	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] == 1) {
-		testBEM(argc, argv);
-		//testFEM(argc, argv);
+		//testBEM(argc, argv);
+		testFEM(argc, argv);
 	} else {
 		testMPI(argc, argv);
 	}
@@ -127,6 +128,10 @@ void generate_mesh()
 		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
 		break;
 	}
+	case HEXA20: {
+		generator = new permoncube::ElementGenerator<permoncube::Hexahedron20>(params.settings);
+		break;
+	}
 	}
 
 	size_t index;
@@ -139,7 +144,8 @@ void generate_mesh()
 				cluster[0] = x;
 				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
 				generator->mesh(input[index].mesh, cluster);
-				generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				//generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				generator->fixBottom(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
 				// TODO: set fix points in PERMONCUBE
 				input[index].mesh.computeFixPoints(4);
 			}
