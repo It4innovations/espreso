@@ -6,18 +6,20 @@
 #include "../2D/square.h"
 #include "../1D/line.h"
 
-#define Hexahedron20NodesCount 8
+#define Hexahedron20NodesCount 20
 #define Hexahedron20FacesCount 6
 #define Hexahedron20GPCount 8
-#define Hexahedron20VTKCode 12
+#define Hexahedron20VTKCode 25
+
+namespace mesh {
 
 class Hexahedron20: public Element
 {
 
 public:
-	static bool match(idx_t *indices, idx_t n);
+	static bool match(eslocal *indices, eslocal n);
 
-	Hexahedron20(idx_t *indices);
+	Hexahedron20(eslocal *indices);
 
 	Element* copy() const
 	{
@@ -29,7 +31,7 @@ public:
 		return Hexahedron20VTKCode;
 	}
 
-	const idx_t* indices() const
+	const eslocal* indices() const
 	{
 		return _indices;
 	}
@@ -54,10 +56,6 @@ public:
 		return Hexahedron20::_dN;
 	}
 
-  const std::vector< std::vector< double > >& rst()
-  {
-    return Hexahedron20::_rst;
-  }
 	const std::vector<DenseMatrix>&  N() const
 	{
 		return Hexahedron20::_N;
@@ -68,24 +66,28 @@ public:
 		return Hexahedron20::_weighFactor;
 	}
 
-	std::vector<idx_t> getNeighbours(size_t nodeIndex) const;
-	std::vector<idx_t> getFace(size_t face) const;
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	std::vector<eslocal> getFace(size_t face) const;
 
 protected:
 
-	idx_t* indices()
+	eslocal* indices()
 	{
 		return _indices;
 	}
 
 private:
-	inline void setFaceNodes(idx_t nodes[], idx_t face) const;
+	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
 
-	idx_t _indices[Hexahedron20NodesCount];
+	eslocal _indices[Hexahedron20NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
+	static std::vector<std::vector<double> > _rst;
 };
+
+
+}
 
 #endif /* HEXAHEDRON20_H_ */
