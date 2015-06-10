@@ -35,10 +35,13 @@ public:
 			const permoncube::Settings &settings,
 			mesh::Boundaries &boundaries);
 
-	static void clear() { };
+	static void clear() { _projection.clear(); };
 
 	static eslocal subnodes[3];
 	static eslocal subelements;
+
+private:
+	static std::vector<eslocal> _projection;
 };
 
 }
