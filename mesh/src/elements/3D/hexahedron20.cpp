@@ -3,7 +3,7 @@
 
 using namespace mesh;
 
-std::vector< std::vector< double> > rst()
+std::vector< std::vector< double> > Hexa20_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Hexahedron20GPCount));
 
@@ -46,7 +46,7 @@ std::vector< std::vector< double> > rst()
 }
 
 
-std::vector< std::vector< double> > _rst = rst();
+std::vector< std::vector< double> > _hexa20_rst = Hexa20_rst();
 
 std::vector<DenseMatrix> Hexa20_dN()
 {
@@ -58,9 +58,9 @@ std::vector<DenseMatrix> Hexa20_dN()
 	for (unsigned int i = 0; i < Hexahedron20GPCount; i++) {
 		DenseMatrix &m = dN[i];
 
-		double r = _rst[0][i];
-		double s = _rst[1][i];
-		double t = _rst[2][i];
+		double r = _hexa20_rst[0][i];
+		double s = _hexa20_rst[1][i];
+		double t = _hexa20_rst[2][i];
 
 
 		// dNr - derivation of basis function
@@ -149,9 +149,9 @@ std::vector<DenseMatrix> Hexa20_N() {
 	for (unsigned int i = 0; i < Hexahedron20GPCount; i++) {
 		DenseMatrix &m = N[i];
 
-		double r = _rst[0][i];
-		double s = _rst[1][i];
-		double t = _rst[2][i];
+		double r = _hexa20_rst[0][i];
+		double s = _hexa20_rst[1][i];
+		double t = _hexa20_rst[2][i];
 
 		// basis function
 		m(0, 0) = 0.125 * ((1.0 - r) * (1.0 - s) * (1.0 - t) * (-r - s - t - 2.0));

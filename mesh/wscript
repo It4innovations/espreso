@@ -18,6 +18,7 @@ source_files = (
     "src/elements/3D/hexahedron20.cpp",
     "src/elements/3D/tetrahedron4.cpp",
     "src/elements/3D/tetrahedron10.cpp",
+    "src/elements/3D/prisma6.cpp",
     "src/elements/2D/square.cpp",
     "src/elements/2D/triangle.cpp",
     "src/elements/1D/line.cpp",

@@ -11,7 +11,8 @@ enum {
 	HEXA8,
 	TETRA4,
 	TETRA10,
-	HEXA20
+	HEXA20,
+	PRISMA6
 };
 
 struct FEMInput {
@@ -130,6 +131,11 @@ void generate_mesh()
 	}
 	case HEXA20: {
 		generator = new permoncube::ElementGenerator<permoncube::Hexahedron20>(params.settings);
+		break;
+	}
+	case PRISMA6: {
+		generator = new permoncube::ElementGenerator<permoncube::Prisma6>(params.settings);
+		std::cout << "Prisma6\n";
 		break;
 	}
 	}
@@ -661,8 +667,8 @@ void testFEM(int argc, char** argv)
 		//K_mat[d] = K;
 		//M_mat[d] = M;
 
-        //f_vec[d].swap(f);
-        f_vec[d].resize(K_mat[d].rows() , 0.0);
+        f_vec[d].swap(f);
+        //f_vec[d].resize(K_mat[d].rows() , 0.0);
 
 		std::cout << d << " " << std::endl;
 	}
@@ -705,8 +711,9 @@ void testFEM(int argc, char** argv)
         
     for (eslocal d = 0; d < partsCount; d++) {
         for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-            if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
-                f_vec[d][3 * iz + 2] = 1.0;
+            if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
+                //f_vec[d][3 * iz + 2] = 1.0;
+            }
         }
     }
 

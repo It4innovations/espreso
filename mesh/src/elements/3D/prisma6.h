@@ -1,34 +1,33 @@
 
-#ifndef HEXAHEDRON20_H_
-#define HEXAHEDRON20_H_
+#ifndef PRISMA6_H_
+#define PRISMA6_H_
 
 #include "../element.h"
-#include "../2D/square.h"
 #include "../1D/line.h"
 
-#define Hexahedron20NodesCount 20
-#define Hexahedron20FacesCount 6
-#define Hexahedron20GPCount 8
-#define Hexahedron20VTKCode 25
+#define Prisma6NodesCount 6
+#define Prisma6FacesCount 5
+#define Prisma6GPCount 9
+#define Prisma6VTKCode 13
 
 namespace mesh {
 
-class Hexahedron20: public Element
+class Prisma6: public Element
 {
 
 public:
 	static bool match(eslocal *indices, eslocal n);
 
-	Hexahedron20(eslocal *indices);
+	Prisma6(eslocal *indices);
 
 	Element* copy() const
 	{
-		return new Hexahedron20(*this);
+		return new Prisma6(*this);
 	}
 
-	int vtkCode() const
+	eslocal vtkCode() const
 	{
-		return Hexahedron20VTKCode;
+		return Prisma6VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -38,32 +37,32 @@ public:
 
 	size_t size() const
 	{
-		return Hexahedron20NodesCount;
+		return Prisma6NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Hexahedron20GPCount;
+		return Prisma6GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Hexahedron20FacesCount;
+		return Prisma6FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Hexahedron20::_dN;
+		return Prisma6::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Hexahedron20::_N;
+		return Prisma6::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Hexahedron20::_weighFactor;
+		return Prisma6::_weighFactor;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -79,14 +78,14 @@ protected:
 private:
 	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
 
-	eslocal _indices[Hexahedron20NodesCount];
+	eslocal _indices[Prisma6NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
 };
 
-
 }
 
-#endif /* HEXAHEDRON20_H_ */
+
+#endif /* PRISMA6_H_ */
