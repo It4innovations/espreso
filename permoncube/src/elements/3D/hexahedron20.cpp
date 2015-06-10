@@ -25,7 +25,7 @@ void Hexahedron20::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	hexa[6] = _projection[indices[24]];
 	hexa[7] = _projection[indices[18]];
 
-	hexa[8] = _projection[indices[8]];
+	hexa[8] = _projection[indices[5]];
 	hexa[9] = _projection[indices[7]];
 	hexa[10] = _projection[indices[3]];
 	hexa[11] = _projection[indices[1]];
