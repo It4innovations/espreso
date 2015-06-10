@@ -121,5 +121,5 @@ if [ "$1" = "debug" ]; then
     date | tee -a $log_file
 
     valgrind ./espreso ${el_type[${i}]} 1 1 1 2 2 2 5 5 5 | tee -a $log_file
-
+  done
 fi
