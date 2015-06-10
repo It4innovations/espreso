@@ -219,6 +219,7 @@ void SetMatrixFromCSR   ( SparseMatrix & Mat, ShortInt n_rows, ShortInt n_cols, 
 
 	int nnz = rows[n_rows];  
 	int offset = (rows[0]) ? 0 : 1;
+	nnz -= rows[0];
 
 	Mat.CSR_I_row_indices.resize(n_rows+1);
 	Mat.CSR_J_col_indices.resize(nnz);
