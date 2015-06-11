@@ -1,9 +1,9 @@
 
-#ifndef PM_HEXAHEDRON20_H_
-#define PM_HEXAHEDRON20_H_
+#ifndef PM_PYRAMID5_H_
+#define PM_PYRAMID5_H_
 
-#define Hexahedron20Subelements 1
-#define Hexahedron20Subnodes 1
+#define Pyramid5Subelements 6
+#define Pyramid5Subnodes 1
 
 #include "esmesh.h"
 #include "../../settings.h"
@@ -12,10 +12,10 @@
 
 namespace permoncube {
 
-class Hexahedron20 {
+class Pyramid5 {
 
 public:
-	Hexahedron20(const permoncube::Settings &settings);
+	Pyramid5(const permoncube::Settings &settings);
 
 	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
 	static eslocal clusterNodesCount(const permoncube::Settings &settings);
@@ -23,7 +23,7 @@ public:
 
 	inline bool addPoint(const esglobal &x, const esglobal &y, const esglobal &z)
 	{
-		return !((odd(x) && odd(y)) || (odd(y) && odd(z)) || (odd(x) && odd(z)));
+		return (odd(x) && odd(y) && odd(z)) || (!odd(x) && !odd(y) && !odd(z));
 	}
 
 	inline eslocal projectPoint(const eslocal &index)
@@ -48,4 +48,4 @@ private:
 }
 
 
-#endif /* PM_HEXAHEDRON20_H_ */
+#endif /* PM_PYRAMID5_H_ */
