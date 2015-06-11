@@ -67,11 +67,11 @@ void test_BEM()
 	std::vector<DenseMatrix> K_mat;
 
 	K_mat.reserve(partsCount);
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 		K_mat.push_back( DenseMatrix (0, 0) );
 	}
 
-	for (esint d = 0; d < partsCount; d++) {
+	for (eslocal d = 0; d < partsCount; d++) {
 
 		bMesh.elasticity(K_mat[d], d);
 

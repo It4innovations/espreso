@@ -93,8 +93,6 @@ bool Hexahedron8::match(eslocal *indices, eslocal n) {
 	if (n != 8) {
 		return false;
 	}
-	//TODO: remove when input files are correct
-	return true;
 
 	for (eslocal i = 0; i < 7; i++) {
 		for (eslocal j = i + 1; j < 8; j++) {

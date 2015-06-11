@@ -9,35 +9,17 @@ Mesh::Mesh() :
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints):
-	_coordinates(coordinatesFile),
-	_flags(flags::FLAGS_SIZE, false)
-{
-	_elements.resize(Loader::getLinesCount(meshFile));
+Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts,
+		eslocal fixPoints) :
+		_coordinates(coordinatesFile), _flags(flags::FLAGS_SIZE, false) {
 
-	std::ifstream file(meshFile);
-	std::string line;
-
-	eslocal indices[20], n; 	// 20 is the max of vertices of a element
-	double value;
-	eslocal minIndices = 10000;
-
-	if (file.is_open()) {
-		for (eslocal c = 0; c < _elements.size(); c++) {
-			getline(file, line, '\n');;
-			std::stringstream ss(line);
-			n = 0;
-			while(ss >> value) {
-				indices[n++] = value - 1;
-			}
-			_elements[c] = createElement(indices, n);
-		}
-		file.close();
-	} else {
-		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
-		exit(EXIT_FAILURE);
-	}
-
+	readFromFile(meshFile);
+	partitiate(parts, fixPoints);
+}
+Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints) :
+		_coordinates(ansys.coordinates().c_str()), _flags(flags::FLAGS_SIZE,
+				false) {
+	readFromFile(ansys.elements().c_str(), 8);
 	partitiate(parts, fixPoints);
 }
 
@@ -84,14 +66,16 @@ void Mesh::endPartition() {
 	_flags[flags::NEW_PARTITION] = true;
 }
 
-Element* Mesh::createElement(eslocal *indices, eslocal n)
-{
+Element* Mesh::createElement(eslocal *indices, eslocal n) {
 	Element *e = NULL;
 	if (Tetrahedron4::match(indices, n)) {
 		e = new Tetrahedron4(indices);
 	}
 	if (Hexahedron8::match(indices, n)) {
 		e = new Hexahedron8(indices);
+	}
+	if (Prisma6::match(indices, n)) {
+		e = new Prisma6(indices);
 	}
 
 	if (e == NULL) {
@@ -106,8 +90,8 @@ Element* Mesh::createElement(eslocal *indices, eslocal n)
 	return e;
 }
 
-void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, eslocal part, bool dynamic)
-{
+void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M,
+		std::vector<double> &f, eslocal part, bool dynamic) {
 	eslocal nK = _coordinates.localSize(part) * Point::size();
 	K.resize(nK, nK);
 	if (dynamic) {
@@ -278,8 +262,7 @@ void Mesh::_integrateElasticity(const Element *e, SparseVVPMatrix &K,
 	}
 }
 
-void Mesh::partitiate(eslocal parts, eslocal fixPoints)
-{
+void Mesh::partitiate(eslocal parts, eslocal fixPoints) {
 	_partPtrs.resize(parts + 1);
 	_coordinates.localClear();
 	_coordinates.localResize(parts);
@@ -297,8 +280,7 @@ void Mesh::partitiate(eslocal parts, eslocal fixPoints)
 	}
 }
 
-void Mesh::computeFixPoints(eslocal fixPoints)
-{
+void Mesh::computeFixPoints(eslocal fixPoints) {
 	_fixPoints.resize(parts() * fixPoints);
 
 #ifndef DEBUG
@@ -306,7 +288,8 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 #else
 	for (eslocal i = 0; i < parts(); i++) {
 #endif
-		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
+		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1],
+				fixPoints);
 
 		for (eslocal j = 0; j < fixPoints; j++) {
 			_fixPoints[i * fixPoints + j] = getCentralNode(_partPtrs[i],
@@ -317,8 +300,7 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 	}
 }
 
-eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
-{
+eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const {
 
 	if (parts == 1) {
 		eslocal *ePartition = new eslocal[last - first];
@@ -365,21 +347,12 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	ePartition = new eslocal[eSize];
 	nPartition = new eslocal[nSize];
 
-	eslocal result = METIS_PartMeshDual(
-	                 &eSize,
-	                 &nSize,
-	                 e,
-	                 n,
-	                 NULL,		// weights of nodes
-	                 NULL,		// size of nodes
-	                 &ncommon,
-	                 &parts,
-	                 NULL,		// weights of parts
-	                 options,
-	                 &objval,
-	                 ePartition,
-	                 nPartition
-	             );
+	eslocal result = METIS_PartMeshDual(&eSize, &nSize, e, n,
+	NULL,		// weights of nodes
+			NULL,		// size of nodes
+			&ncommon, &parts,
+			NULL,		// weights of parts
+			options, &objval, ePartition, nPartition);
 	checkMETISResult(result);
 
 	delete[] e;
@@ -389,8 +362,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	return ePartition;
 }
 
-void Mesh::partitiate(eslocal *ePartition)
-{
+void Mesh::partitiate(eslocal *ePartition) {
 	_partPtrs[0] = 0;
 
 	Element *e;
@@ -417,9 +389,8 @@ void Mesh::partitiate(eslocal *ePartition)
 	}
 }
 
-void Mesh::computeLocalIndices(size_t part)
-{
-	std::vector<eslocal> nodeMap (_coordinates.clusterSize(), -1);
+void Mesh::computeLocalIndices(size_t part) {
+	std::vector<eslocal> nodeMap(_coordinates.clusterSize(), -1);
 
 	// Compute mask of nodes
 	for (eslocal e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
@@ -443,8 +414,8 @@ void Mesh::computeLocalIndices(size_t part)
 	_coordinates.computeLocal(part, nodeMap, nSize);
 }
 
-eslocal Mesh::getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const
-{
+eslocal Mesh::getCentralNode(eslocal first, eslocal last, eslocal *ePartition,
+eslocal part, eslocal subpart) const {
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
 	std::vector<std::set<eslocal> > neighbours(_coordinates.localSize(part));
@@ -515,8 +486,7 @@ eslocal Mesh::getCentralNode(eslocal first, eslocal last, eslocal *ePartition, e
 	return result;
 }
 
-void Mesh::checkMETISResult(eslocal result) const
-{
+void Mesh::checkMETISResult(eslocal result) const {
 	switch (result) {
 	case METIS_ERROR_INPUT:
 		fprintf(stderr, "An input for METIS procedure is incorrect.\n");
@@ -531,8 +501,7 @@ void Mesh::checkMETISResult(eslocal result) const
 	}
 }
 
-void Mesh::checkMKLResult(eslocal result) const
-{
+void Mesh::checkMKLResult(eslocal result) const {
 	switch (result) {
 	case 0:
 		return;
@@ -548,8 +517,7 @@ Mesh::~Mesh() {
 	}
 }
 
-void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
-{
+void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) {
 	size_t p = 0;
 	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		_elements[i]->fillNodes(nodeArray + p);
@@ -557,8 +525,8 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 	}
 }
 
-void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g_vec, double shrinking)
-{
+void Mesh::saveBasis(std::ofstream &vtk,
+		std::vector<std::vector<eslocal> > &l2g_vec, double shrinking) {
 	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
@@ -623,8 +591,8 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g
 	}
 }
 
-void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <eslocal> > &l2g_vec, double shrinking)
-{
+void Mesh::saveVTK(std::vector<std::vector<double> > &displacement,
+		std::vector<std::vector<eslocal> > &l2g_vec, double shrinking) {
 	std::ofstream vtk;
 	saveBasis(vtk, l2g_vec, shrinking);
 
@@ -716,8 +684,8 @@ void Mesh::saveVTK(const char* filename, double shrinking) {
 	vtk.close();
 }
 
-bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements, std::vector<eslocal> &face)
-{
+bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements,
+		std::vector<eslocal> &face) {
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
@@ -733,11 +701,8 @@ bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements, std::vector<
 	return false;
 }
 
-bool isCommonFace(
-	std::vector<std::vector<eslocal> > &nodesElements,
-	std::vector<eslocal> &face,
-	const std::vector<eslocal> &partPtrs)
-{
+bool isCommonFace(std::vector<std::vector<eslocal> > &nodesElements,
+		std::vector<eslocal> &face, const std::vector<eslocal> &partPtrs) {
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
@@ -761,7 +726,8 @@ bool isCommonFace(
 
 void Mesh::getSurface(SurfaceMesh &surface) const {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(
+			_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 
@@ -775,7 +741,8 @@ void Mesh::getSurface(SurfaceMesh &surface) const {
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		// Compute nodes' adjacent elements
-		std::vector<std::vector<eslocal> > nodesElements(_coordinates.localSize(i));
+		std::vector<std::vector<eslocal> > nodesElements(
+				_coordinates.localSize(i));
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
 				nodesElements[_elements[j]->node(k)].push_back(j);
@@ -843,7 +810,8 @@ void Mesh::getSurface(SurfaceMesh &surface) const {
 
 void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(
+			_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 
@@ -908,7 +876,8 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const {
 
 void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(
+			_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 
@@ -984,7 +953,7 @@ void Mesh::readFromFile(const char *meshFile, eslocal elementSize) {
 	if (file.is_open()) {
 		for (eslocal c = 0; c < _elements.size(); c++) {
 			getline(file, line, '\n');
-			std::cout<<line<<"\n";
+			std::cout << line << "\n";
 			std::stringstream ss(line);
 
 			n = 0;
