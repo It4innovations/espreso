@@ -48,9 +48,9 @@ int main(int argc, char** argv)
 	//test_boudaries();
 
 	std::cout << settings;
-	test_prisma6(cluster);
+	//test_prisma6(cluster);
 	//test_hexa8(cluster);
-	//test_hexa20(cluster);
+	test_hexa20(cluster);
 	//test_tetra4(cluster);
 	//test_tetra10(cluster);
 }

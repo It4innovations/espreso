@@ -93,37 +93,20 @@ void Tetrahedron10::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Tetrahedron10(tetra));
 }
 
-void Tetrahedron10::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[])
+eslocal Tetrahedron10::clusterNodesCount(const permoncube::Settings &settings)
 {
-	Element3D<Tetrahedron10>::addFullCoordinates(mesh, settings, cluster);
+	eslocal nodes[3];
+	Utils<Tetrahedron10>::clusterNodesCount(settings, nodes);
+
+	return nodes[0] * nodes[1] * nodes[2];
 }
 
-void Tetrahedron10::fixZeroPlanes(
-		const permoncube::Settings &settings,
-		std::map<eslocal, double> &dirichlet_x,
-		std::map<eslocal, double> &dirichlet_y,
-		std::map<eslocal, double> &dirichlet_z,
-		const size_t cluster[])
+esglobal Tetrahedron10::globalNodesCount(const permoncube::Settings &settings)
 {
-	Element3D<Tetrahedron10>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
-}
+	esglobal nodes[3];
+	Utils<Tetrahedron10>::globalNodesCount(settings, nodes);
 
-void Tetrahedron10::fixBottom(
-		const permoncube::Settings &settings,
-		std::map<eslocal, double> &dirichlet_x,
-		std::map<eslocal, double> &dirichlet_y,
-		std::map<eslocal, double> &dirichlet_z,
-		const size_t cluster[])
-{
-	Element3D<Tetrahedron10>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
+	return nodes[0] * nodes[1] * nodes[2];
 }
-
-void Tetrahedron10::fillGlobalBoundaries(
-		const permoncube::Settings &settings,
-		mesh::Boundaries &boundaries)
-{
-	Element3D<Tetrahedron10>::fillGlobalBoundaries(settings, boundaries);
-}
-
 
 

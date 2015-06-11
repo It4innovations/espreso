@@ -35,36 +35,20 @@ void Prisma6::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Prisma6(prisma));
 }
 
-void Prisma6::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[])
+eslocal Prisma6::clusterNodesCount(const permoncube::Settings &settings)
 {
-	Element3D<Prisma6>::addFullCoordinates(mesh, settings, cluster);
+	eslocal nodes[3];
+	Utils<Prisma6>::clusterNodesCount(settings, nodes);
+
+	return nodes[0] * nodes[1] * nodes[2];
 }
 
-void Prisma6::fixZeroPlanes(
-		const permoncube::Settings &settings,
-		std::map<eslocal, double> &dirichlet_x,
-		std::map<eslocal, double> &dirichlet_y,
-		std::map<eslocal, double> &dirichlet_z,
-		const size_t cluster[])
+esglobal Prisma6::globalNodesCount(const permoncube::Settings &settings)
 {
-	Element3D<Prisma6>::fixFullZeroPlanes(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
-}
+	esglobal nodes[3];
+	Utils<Prisma6>::globalNodesCount(settings, nodes);
 
-void Prisma6::fixBottom(
-		const permoncube::Settings &settings,
-		std::map<eslocal, double> &dirichlet_x,
-		std::map<eslocal, double> &dirichlet_y,
-		std::map<eslocal, double> &dirichlet_z,
-		const size_t cluster[])
-{
-	Element3D<Prisma6>::fixFullBottom(settings, dirichlet_x, dirichlet_y, dirichlet_z, cluster);
-}
-
-void Prisma6::fillGlobalBoundaries(
-		const permoncube::Settings &settings,
-		mesh::Boundaries &boundaries)
-{
-	Element3D<Prisma6>::fillGlobalBoundaries(settings, boundaries);
+	return nodes[0] * nodes[1] * nodes[2];
 }
 
 

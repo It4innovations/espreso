@@ -40,7 +40,7 @@ template<class TElement>
 class ElementGenerator: public Generator {
 
 public:
-	ElementGenerator(permoncube::Settings &settings): Generator(settings) { };
+	ElementGenerator(permoncube::Settings &settings): Generator(settings), e(settings) { };
 
 	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
 
@@ -58,10 +58,8 @@ public:
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries);
 
-	~ElementGenerator()
-	{
-		TElement::clear();
-	}
+private:
+	TElement e;
 };
 
 }

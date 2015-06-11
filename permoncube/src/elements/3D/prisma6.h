@@ -15,30 +15,27 @@ namespace permoncube {
 class Prisma6 {
 
 public:
-	static void addElements(mesh::Mesh &mesh, const eslocal indices[]);
-	static void addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[]);
+	Prisma6(const permoncube::Settings &settings): _settings(settings) {};
 
-	static void fixZeroPlanes(
-			const permoncube::Settings &settings,
-			std::map<eslocal, double> &dirichlet_x,
-			std::map<eslocal, double> &dirichlet_y,
-			std::map<eslocal, double> &dirichlet_z,
-			const size_t cluster[]);
-	static void fixBottom(
-			const permoncube::Settings &settings,
-			std::map<eslocal, double> &dirichlet_x,
-			std::map<eslocal, double> &dirichlet_y,
-			std::map<eslocal, double> &dirichlet_z,
-			const size_t cluster[]);
+	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
+	static eslocal clusterNodesCount(const permoncube::Settings &settings);
+	static esglobal globalNodesCount(const permoncube::Settings &settings);
 
-	static void fillGlobalBoundaries(
-			const permoncube::Settings &settings,
-			mesh::Boundaries &boundaries);
+	inline bool addPoint(const esglobal &x, const esglobal &y, const esglobal &z)
+	{
+		return true;
+	}
 
-	static void clear() { };
+	inline eslocal projectPoint(const eslocal &index)
+	{
+		return index;
+	}
 
 	static eslocal subnodes[3];
 	static eslocal subelements;
+
+private:
+	const permoncube::Settings &_settings;
 };
 
 }

@@ -9,7 +9,6 @@
 #include <cstring>
 
 #include "esmesh.h"
-#include "element3D.h"
 #include "../../settings.h"
 #include "../../generator.h"
 #include "../../utils.h"
@@ -19,29 +18,27 @@ namespace permoncube {
 class Tetrahedron4 {
 
 public:
-	static void addElements(mesh::Mesh &mesh, const eslocal indices[]);
-	static void addCoordinates(mesh::Mesh &mesh, const Settings &settings, const size_t cluster[]);
-	static void fixZeroPlanes(
-			const permoncube::Settings &settings,
-			std::map<eslocal, double> &dirichlet_x,
-			std::map<eslocal, double> &dirichlet_y,
-			std::map<eslocal, double> &dirichlet_z,
-			const size_t cluster[]);
-	static void fixBottom(
-			const permoncube::Settings &settings,
-			std::map<eslocal, double> &dirichlet_x,
-			std::map<eslocal, double> &dirichlet_y,
-			std::map<eslocal, double> &dirichlet_z,
-			const size_t cluster[]);
+	Tetrahedron4(const permoncube::Settings &settings): _settings(settings) {};
 
-	static void fillGlobalBoundaries(
-			const permoncube::Settings &settings,
-			mesh::Boundaries &boundaries);
+	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
+	static eslocal clusterNodesCount(const permoncube::Settings &settings);
+	static esglobal globalNodesCount(const permoncube::Settings &settings);
 
-	static void clear() { };
+	inline bool addPoint(const esglobal &x, const esglobal &y, const esglobal &z)
+	{
+		return true;
+	}
+
+	inline eslocal projectPoint(const eslocal &index)
+	{
+		return index;
+	}
 
 	static eslocal subnodes[3];
 	static eslocal subelements;
+
+private:
+	const permoncube::Settings &_settings;
 };
 
 }

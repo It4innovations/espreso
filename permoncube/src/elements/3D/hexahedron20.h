@@ -15,33 +15,34 @@ namespace permoncube {
 class Hexahedron20 {
 
 public:
-	static void addElements(mesh::Mesh &mesh, const eslocal indices[]);
-	static void addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[]);
+	Hexahedron20(const permoncube::Settings &settings);
 
-	static void fixZeroPlanes(
-			const permoncube::Settings &settings,
-			std::map<eslocal, double> &dirichlet_x,
-			std::map<eslocal, double> &dirichlet_y,
-			std::map<eslocal, double> &dirichlet_z,
-			const size_t cluster[]);
-	static void fixBottom(
-			const permoncube::Settings &settings,
-			std::map<eslocal, double> &dirichlet_x,
-			std::map<eslocal, double> &dirichlet_y,
-			std::map<eslocal, double> &dirichlet_z,
-			const size_t cluster[]);
+	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
+	static eslocal clusterNodesCount(const permoncube::Settings &settings);
+	static esglobal globalNodesCount(const permoncube::Settings &settings);
 
-	static void fillGlobalBoundaries(
-			const permoncube::Settings &settings,
-			mesh::Boundaries &boundaries);
+	inline bool addPoint(const esglobal &x, const esglobal &y, const esglobal &z)
+	{
+		return !((odd(x) && odd(y)) || (odd(y) && odd(z)) || (odd(x) && odd(z)));
+	}
 
-	static void clear() { _projection.clear(); };
+	inline eslocal projectPoint(const eslocal &index)
+	{
+		return _projection[index];
+	}
 
 	static eslocal subnodes[3];
 	static eslocal subelements;
 
 private:
-	static std::vector<eslocal> _projection;
+	const permoncube::Settings &_settings;
+
+	std::vector<eslocal> _projection;
+
+	inline static bool odd(const esglobal &x)
+	{
+		return x % 2 == 1;
+	}
 };
 
 }
