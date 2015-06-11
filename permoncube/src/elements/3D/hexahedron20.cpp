@@ -3,7 +3,7 @@
 
 using namespace permoncube;
 
-eslocal Hexahedron20::subelements = Hexahedron8Subelements;
+eslocal Hexahedron20::subelements = Hexahedron20Subelements;
 
 eslocal Hexahedron20::subnodes[3] = {
 		Hexahedron20Subnodes,

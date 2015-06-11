@@ -6,7 +6,8 @@ source_files = (
     "src/elements/3D/tetrahedron10.cpp",
     "src/elements/3D/hexahedron8.cpp",
     "src/elements/3D/hexahedron20.cpp",
-    "src/elements/3D/prisma6.cpp"
+    "src/elements/3D/prisma6.cpp",
+    "src/elements/3D/prisma15.cpp"
 )
 
 def configure(ctx):

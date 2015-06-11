@@ -7,6 +7,7 @@
 #include "3D/hexahedron8.h"
 #include "3D/hexahedron20.h"
 #include "3D/prisma6.h"
+#include "3D/prisma15.h"
 
 
 
