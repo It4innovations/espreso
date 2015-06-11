@@ -4,6 +4,7 @@
 *.so
 *.vtk
 */bin
+nohup.out
 es*
 build
 libs
