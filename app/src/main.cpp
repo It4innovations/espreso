@@ -10,7 +10,9 @@
 enum {
 	HEXA8,
 	TETRA4,
-	TETRA10
+	TETRA10,
+	HEXA20,
+	PRISMA6
 };
 
 struct FEMInput {
@@ -84,8 +86,8 @@ int main(int argc, char** argv)
 	}
 
 	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] == 1) {
-		testBEM(argc, argv);
-		//testFEM(argc, argv);
+		//testBEM(argc, argv);
+		testFEM(argc, argv);
 	} else {
 		testMPI(argc, argv);
 	}
@@ -127,6 +129,15 @@ void generate_mesh()
 		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
 		break;
 	}
+	case HEXA20: {
+		generator = new permoncube::ElementGenerator<permoncube::Hexahedron20>(params.settings);
+		break;
+	}
+	case PRISMA6: {
+		generator = new permoncube::ElementGenerator<permoncube::Prisma6>(params.settings);
+		std::cout << "Prisma6\n";
+		break;
+	}
 	}
 
 	size_t index;
@@ -139,7 +150,8 @@ void generate_mesh()
 				cluster[0] = x;
 				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
 				generator->mesh(input[index].mesh, cluster);
-				generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				//generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				generator->fixBottom(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
 				// TODO: set fix points in PERMONCUBE
 				input[index].mesh.computeFixPoints(4);
 			}
@@ -655,8 +667,8 @@ void testFEM(int argc, char** argv)
 		//K_mat[d] = K;
 		//M_mat[d] = M;
 
-        //f_vec[d].swap(f);
-        f_vec[d].resize(K_mat[d].rows() , 0.0);
+        f_vec[d].swap(f);
+        //f_vec[d].resize(K_mat[d].rows() , 0.0);
 
 		std::cout << d << " " << std::endl;
 	}
@@ -699,8 +711,9 @@ void testFEM(int argc, char** argv)
         
     for (eslocal d = 0; d < partsCount; d++) {
         for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-            if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
-                f_vec[d][3 * iz + 2] = 1.0;
+            if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
+                //f_vec[d][3 * iz + 2] = 1.0;
+            }
         }
     }
 

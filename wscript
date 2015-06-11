@@ -2,7 +2,7 @@
 import commands
 import os
 
-VERSION = 4
+VERSION = 5
 
 def options(opt):
     opt.add_option("--debug",

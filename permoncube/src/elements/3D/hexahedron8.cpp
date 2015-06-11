@@ -27,7 +27,7 @@ void Hexahedron8::addElements(mesh::Mesh &mesh, const eslocal indices[])
 
 void Hexahedron8::addCoordinates(mesh::Mesh &mesh, const permoncube::Settings &settings, const size_t cluster[])
 {
-	Element3D<Tetrahedron4>::addFullCoordinates(mesh, settings, cluster);
+	Element3D<Hexahedron8>::addFullCoordinates(mesh, settings, cluster);
 }
 
 void Hexahedron8::fixZeroPlanes(

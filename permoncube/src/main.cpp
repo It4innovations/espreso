@@ -27,8 +27,10 @@ void setParams(int argc, char** argv)
 }
 
 void test_hexa8(size_t cluster[]);
+void test_hexa20(size_t cluster[]);
 void test_tetra4(size_t cluster[]);
 void test_tetra10(size_t cluster[]);
+void test_prisma6(size_t cluster[]);
 void test_boudaries();
 
 int main(int argc, char** argv)
@@ -43,13 +45,14 @@ int main(int argc, char** argv)
 		cluster[2] = 2;
 	}
 
-	test_boudaries();
-	return 0;
+	//test_boudaries();
 
 	std::cout << settings;
-	test_hexa8(cluster);
-	test_tetra4(cluster);
-	test_tetra10(cluster);
+	test_prisma6(cluster);
+	//test_hexa8(cluster);
+	//test_hexa20(cluster);
+	//test_tetra4(cluster);
+	//test_tetra10(cluster);
 }
 
 void test_boudaries()
@@ -100,6 +103,23 @@ void test_boudaries()
 	}
 }
 
+void test_prisma6(size_t cluster[])
+{
+	mesh::Mesh mesh;
+
+	permoncube::ElementGenerator<permoncube::Prisma6> generator(settings);
+
+	generator.mesh(mesh, cluster);
+
+	mesh.saveVTK("prisma6full.vtk", 0.9);
+	std::cout << "prisma6full saved\n";
+
+	mesh::SurfaceMesh sMesh(mesh);
+
+	sMesh.saveVTK("prisma6surface.vtk", 0.9);
+	std::cout << "prisma6surface saved\n";
+}
+
 void test_hexa8(size_t cluster[])
 {
 	mesh::Mesh mesh;
@@ -115,6 +135,23 @@ void test_hexa8(size_t cluster[])
 
 	sMesh.saveVTK("hexa8surface.vtk", 0.9);
 	std::cout << "hexa8surface saved\n";
+}
+
+void test_hexa20(size_t cluster[])
+{
+	mesh::Mesh mesh;
+
+	permoncube::ElementGenerator<permoncube::Hexahedron20> generator(settings);
+
+	generator.mesh(mesh, cluster);
+
+	mesh.saveVTK("hexa20full.vtk", 0.9);
+	std::cout << "hexa20full saved\n";
+
+	mesh::SurfaceMesh sMesh(mesh);
+
+	sMesh.saveVTK("hexa20surface.vtk", 0.9);
+	std::cout << "hexa20surface saved\n";
 }
 
 void test_tetra4(size_t cluster[])

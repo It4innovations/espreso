@@ -2,18 +2,11 @@
 METIS = "metis"
 
 def configure(ctx):
-    ctx.env.append_unique("LIB", [ "metis" ])
+    if ctx.env.ESLOCAL == 32:
+        ctx.env.append_unique("LIB", [ "metis32" ])
+    if ctx.env.ESLOCAL == 64:
+        ctx.env.append_unique("LIB", [ "metis64" ])
 
 def build(ctx):
-    if ctx.env.ESLOCAL == 32:
-        metis = "metis32"
-    if ctx.env.ESLOCAL == 64:
-        metis = "metis64"
-
-    ctx(
-        rule = "cp ${SRC} ${TGT}",
-        source = "../libs/lib" + metis + ".so",
-        target = "../../libs/libmetis.so",
-        alwayes = True
-    )
+    pass
 

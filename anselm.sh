@@ -51,8 +51,8 @@ if [ "$1" = "run" ]; then
   clusters=3       #2
   domains_p_c=5    #7
 
-  #         HEXA8 TETRA4 TETRA10
-  el_type=(   0     1      2    )
+  #         HEXA8 TETRA4 TETRA10 HEXA20
+  el_type=(   0     1      2       3   )
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
@@ -96,4 +96,30 @@ if [ "$1" = "run" ]; then
     rm mesh.vtk
   done
 
+fi
+
+
+if [ "$1" = "debug" ]; then
+  module load valgrind/3.9.0-impi
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
+  export OMP_NUM_THREADS=1
+  export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
+  export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
+
+  #         HEXA8 TETRA4 TETRA10 HEXA20
+  el_type=(   0     1      2       3   )
+
+  for i in 0 #1 2 3
+  do
+
+    log_file=LOG-1:1:1-2:2:2-5:5:5.log
+
+    date | tee $log_file
+
+    echo "Config: dom_size = 5 | cluster_size = 2:2:2 | clusters = 1:1:1"
+
+    date | tee -a $log_file
+
+    valgrind ./espreso ${el_type[${i}]} 1 1 1 2 2 2 5 5 5 | tee -a $log_file
+  done
 fi
