@@ -8,6 +8,8 @@
 #include "3D/hexahedron20.h"
 #include "3D/prisma6.h"
 #include "3D/prisma15.h"
+#include "3D/pyramid5.h"
+#include "3D/pyramid13.h"
 
 
 

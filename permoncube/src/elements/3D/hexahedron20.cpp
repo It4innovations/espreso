@@ -16,6 +16,7 @@ Hexahedron20::Hexahedron20(const permoncube::Settings &settings): _settings(sett
 	eslocal nodes[3];
 	Utils<Hexahedron20>::clusterNodesCount(_settings, nodes);
 
+	_projection.reserve(clusterNodesCount(_settings));
 	eslocal local = 0;
 	for (eslocal z = 0; z < nodes[2]; z++) {
 		for (eslocal y = 0; y < nodes[1]; y++) {

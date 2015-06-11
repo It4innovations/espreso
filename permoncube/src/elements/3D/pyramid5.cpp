@@ -16,6 +16,7 @@ Pyramid5::Pyramid5(const permoncube::Settings &settings): _settings(settings)
 	eslocal nodes[3];
 	Utils<Pyramid5>::clusterNodesCount(_settings, nodes);
 
+	_projection.reserve(clusterNodesCount(_settings));
 	eslocal local = 0;
 	for (eslocal z = 0; z < nodes[2]; z++) {
 		for (eslocal y = 0; y < nodes[1]; y++) {
@@ -51,13 +52,13 @@ void Pyramid5::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[0] = _projection[indices[26]];
 	pyramid[1] = _projection[indices[24]];
 	pyramid[2] = _projection[indices[6]];
-	pyramid[3] = _projection[indices[8]];;
+	pyramid[3] = _projection[indices[8]];
 	//mesh.pushElement(new mesh::Pyramid5(hexa));
 
 	pyramid[0] = _projection[indices[24]];
 	pyramid[1] = _projection[indices[18]];
 	pyramid[2] = _projection[indices[0]];
-	pyramid[3] = _projection[indices[6]];;
+	pyramid[3] = _projection[indices[6]];
 	//mesh.pushElement(new mesh::Pyramid5(hexa));
 
 	pyramid[0] = _projection[indices[18]];
@@ -75,46 +76,18 @@ void Pyramid5::addElements(mesh::Mesh &mesh, const eslocal indices[])
 
 eslocal Pyramid5::clusterNodesCount(const permoncube::Settings &settings)
 {
-	Pyramid5::subelements = 1;
-	for (int i = 0; i < 3; i++) {
-		Pyramid5::subnodes[0] = 0;
-	}
+	eslocal count = Hexahedron8::clusterNodesCount(settings);
+	eslocal cElems = Utils<Hexahedron8>::clusterElementsCount(settings);
 
-	eslocal nodes[3];
-	Utils<Pyramid5>::clusterNodesCount(settings, nodes);
-	eslocal cElems = Utils<Pyramid5>::clusterElementsCount(settings);
-
-	eslocal count = nodes[0] * nodes[1] * nodes[2] + cElems;
-
-	Pyramid5::subelements = Pyramid5Subelements;
-	for (int i = 0; i < 3; i++) {
-		Pyramid5::subnodes[0] = Pyramid5Subnodes;
-	}
-
-	return count;
+	return count + cElems;
 }
 
 esglobal Pyramid5::globalNodesCount(const permoncube::Settings &settings)
 {
-	Pyramid5::subelements = 1;
-	for (int i = 0; i < 3; i++) {
-		Pyramid5::subnodes[0] = 0;
-	}
-
-	esglobal nodes[3];
-	Utils<Pyramid5>::globalNodesCount(settings, nodes);
-	esglobal cElems = Utils<Pyramid5>::clusterElementsCount(settings);
+	eslocal count = Hexahedron8::globalNodesCount(settings);
+	eslocal cElems = Utils<Hexahedron8>::clusterElementsCount(settings);
 	cElems *= settings.clusters[0] * settings.clusters[1] * settings.clusters[2];
 
-	esglobal count = nodes[0] * nodes[1] * nodes[2] + cElems;	// Full mesh
-
-	Pyramid5::subelements = Pyramid5Subelements;
-	for (int i = 0; i < 3; i++) {
-		Pyramid5::subnodes[0] = Pyramid5Subnodes;
-	}
-
-	return count;
+	return count + cElems;
 }
-
-
 

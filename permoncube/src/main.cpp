@@ -32,6 +32,8 @@ void test_tetra4(size_t cluster[]);
 void test_tetra10(size_t cluster[]);
 void test_prisma6(size_t cluster[]);
 void test_prisma15(size_t cluster[]);
+void test_pyramid5(size_t cluster[]);
+void test_pyramid13(size_t cluster[]);
 void test_boudaries();
 
 int main(int argc, char** argv)
@@ -49,6 +51,8 @@ int main(int argc, char** argv)
 	//test_boudaries();
 
 	std::cout << settings;
+	test_pyramid5(cluster);
+	test_pyramid13(cluster);
 	//test_prisma6(cluster);
 	test_prisma15(cluster);
 	//test_hexa8(cluster);
@@ -103,6 +107,40 @@ void test_boudaries()
 			}
 		}
 	}
+}
+
+void test_pyramid5(size_t cluster[])
+{
+	mesh::Mesh mesh;
+
+	permoncube::ElementGenerator<permoncube::Pyramid5> generator(settings);
+
+	generator.mesh(mesh, cluster);
+
+	mesh.saveVTK("pyramid5full.vtk", 0.9);
+	std::cout << "pyramid5full saved\n";
+
+	mesh::SurfaceMesh sMesh(mesh);
+
+	sMesh.saveVTK("pyramid5surface.vtk", 0.9);
+	std::cout << "pyramid5surface saved\n";
+}
+
+void test_pyramid13(size_t cluster[])
+{
+	mesh::Mesh mesh;
+
+	permoncube::ElementGenerator<permoncube::Pyramid13> generator(settings);
+
+	generator.mesh(mesh, cluster);
+
+	mesh.saveVTK("pyramid13full.vtk", 0.9);
+	std::cout << "pyramid13full saved\n";
+
+	mesh::SurfaceMesh sMesh(mesh);
+
+	sMesh.saveVTK("pyramid13surface.vtk", 0.9);
+	std::cout << "pyramid13surface saved\n";
 }
 
 void test_prisma6(size_t cluster[])
