@@ -52,9 +52,9 @@ int main(int argc, char** argv)
 
 	std::cout << settings;
 	//test_pyramid5(cluster);
-	//test_pyramid13(cluster);
+	test_pyramid13(cluster);
 	//test_prisma6(cluster);
-	test_prisma15(cluster);
+	//test_prisma15(cluster);
 	//test_hexa8(cluster);
 	//test_hexa20(cluster);
 	//test_tetra4(cluster);

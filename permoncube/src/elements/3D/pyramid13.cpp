@@ -54,7 +54,7 @@ void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[17] = _projection[indices[83]];
 	pyramid[18] = _projection[indices[33]];
 	pyramid[19] = _projection[indices[31]];
-	//mesh.pushElement(new mesh::Pyramid13(hexa));
+	mesh.pushElement(new mesh::Pyramid13(pyramid));
 
 	pyramid[0] = _projection[indices[104]];
 	pyramid[1] = _projection[indices[124]];
@@ -69,7 +69,7 @@ void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[17] = _projection[indices[93]];
 	pyramid[18] = _projection[indices[43]];
 	pyramid[19] = _projection[indices[33]];
-	//mesh.pushElement(new mesh::Pyramid13(hexa));
+	mesh.pushElement(new mesh::Pyramid13(pyramid));
 
 	pyramid[0] = _projection[indices[124]];
 	pyramid[1] = _projection[indices[120]];
@@ -84,7 +84,7 @@ void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[17] = _projection[indices[91]];
 	pyramid[18] = _projection[indices[41]];
 	pyramid[19] = _projection[indices[43]];
-	//mesh.pushElement(new mesh::Pyramid13(hexa));
+	mesh.pushElement(new mesh::Pyramid13(pyramid));
 
 	pyramid[0] = _projection[indices[120]];
 	pyramid[1] = _projection[indices[100]];
@@ -99,7 +99,7 @@ void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[17] = _projection[indices[81]];
 	pyramid[18] = _projection[indices[31]];
 	pyramid[19] = _projection[indices[41]];
-	//mesh.pushElement(new mesh::Pyramid13(hexa));
+	mesh.pushElement(new mesh::Pyramid13(pyramid));
 
 	pyramid[0] = _projection[indices[100]];
 	pyramid[1] = _projection[indices[120]];
@@ -114,7 +114,7 @@ void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[17] = _projection[indices[91]];
 	pyramid[18] = _projection[indices[93]];
 	pyramid[19] = _projection[indices[83]];
-	//mesh.pushElement(new mesh::Pyramid13(hexa));
+	mesh.pushElement(new mesh::Pyramid13(pyramid));
 
 	pyramid[0] = _projection[indices[4]];
 	pyramid[1] = _projection[indices[24]];
@@ -129,7 +129,7 @@ void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[17] = _projection[indices[43]];
 	pyramid[18] = _projection[indices[41]];
 	pyramid[19] = _projection[indices[31]];
-	//mesh.pushElement(new mesh::Pyramid13(hexa));
+	mesh.pushElement(new mesh::Pyramid13(pyramid));
 }
 
 eslocal Pyramid13::clusterNodesCount(const permoncube::Settings &settings)

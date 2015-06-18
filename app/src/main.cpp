@@ -13,7 +13,9 @@ enum {
 	TETRA10,
 	HEXA20,
 	PRISMA6,
-	PRISMA15
+	PRISMA15,
+	PYRAMID5,
+	PYRAMID13
 };
 
 struct FEMInput {
@@ -140,6 +142,14 @@ void generate_mesh()
 	}
 	case PRISMA15: {
 		generator = new permoncube::ElementGenerator<permoncube::Prisma15>(params.settings);
+		break;
+	}
+	case PYRAMID5: {
+		generator = new permoncube::ElementGenerator<permoncube::Pyramid5>(params.settings);
+		break;
+	}
+	case PYRAMID13: {
+		generator = new permoncube::ElementGenerator<permoncube::Pyramid13>(params.settings);
 		break;
 	}
 	}
@@ -936,7 +946,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input[0].mesh.saveVTK(prim_solution, l2g_vec, 0.8);
+	input[0].mesh.saveVTK(prim_solution, l2g_vec, 1.0);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
