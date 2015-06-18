@@ -53,7 +53,7 @@ void Prisma15::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	prisma[17] = _projection[indices[11]];
 	prisma[18] = _projection[indices[17]];
 	prisma[19] = _projection[indices[17]];
-	//mesh.pushElement(new mesh::Prisma15(prisma));
+	mesh.pushElement(new mesh::Prisma15(prisma));
 
 	prisma[0] = _projection[indices[0]];
 	prisma[1] = _projection[indices[8]];
@@ -76,7 +76,7 @@ void Prisma15::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	prisma[17] = _projection[indices[17]];
 	prisma[18] = _projection[indices[15]];
 	prisma[19] = _projection[indices[15]];
-	//mesh.pushElement(new mesh::Prisma15(prisma));
+	mesh.pushElement(new mesh::Prisma15(prisma));
 }
 
 eslocal Prisma15::clusterNodesCount(const permoncube::Settings &settings)

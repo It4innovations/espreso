@@ -51,8 +51,8 @@ if [ "$1" = "run" ]; then
   clusters=3       #2
   domains_p_c=5    #7
 
-  #         HEXA8 TETRA4 TETRA10 HEXA20
-  el_type=(   0     1      2       3   )
+  #         HEXA8 TETRA4 TETRA10 HEXA20 PRISMA6 PRISMA15
+  el_type=(   0     1      2       3       4       5    )
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9

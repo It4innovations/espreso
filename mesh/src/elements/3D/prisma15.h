@@ -3,12 +3,11 @@
 #define PRISMA15_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 
 #define Prisma15NodesCount 15
 #define Prisma15FacesCount 5
 #define Prisma15GPCount 9
-#define Prisma15VTKCode 13
+#define Prisma15VTKCode 26
 
 namespace mesh {
 

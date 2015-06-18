@@ -12,7 +12,8 @@ enum {
 	TETRA4,
 	TETRA10,
 	HEXA20,
-	PRISMA6
+	PRISMA6,
+	PRISMA15
 };
 
 struct FEMInput {
@@ -135,7 +136,10 @@ void generate_mesh()
 	}
 	case PRISMA6: {
 		generator = new permoncube::ElementGenerator<permoncube::Prisma6>(params.settings);
-		std::cout << "Prisma6\n";
+		break;
+	}
+	case PRISMA15: {
+		generator = new permoncube::ElementGenerator<permoncube::Prisma15>(params.settings);
 		break;
 	}
 	}
