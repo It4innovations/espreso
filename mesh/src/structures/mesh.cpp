@@ -953,7 +953,7 @@ void Mesh::readFromFile(const char *meshFile, eslocal elementSize) {
 	if (file.is_open()) {
 		for (eslocal c = 0; c < _elements.size(); c++) {
 			getline(file, line, '\n');
-			std::cout << line << "\n";
+			//std::cout << line << "\n";
 			std::stringstream ss(line);
 
 			n = 0;

@@ -5,8 +5,21 @@
 #include "../loader.h"
 
 #include <vector>
+#include <map>
 
-namespace mesh {
+namespace mesh
+{
+
+class CoordinatesProperty
+{
+public:
+	friend std::ostream& operator<<(std::ostream& os, const CoordinatesProperty &cp);
+
+	CoordinatesProperty(const char *fileName);
+
+private:
+	std::map<eslocal, double> _mapping;
+};
 
 class Coordinates
 {
@@ -15,8 +28,17 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
-	Coordinates(): _points(0), _clusterIndex(1) { };
+	Coordinates() :
+			_points(0), _clusterIndex(1)
+	{
+	}
+	;
 	Coordinates(const char *fileName);
+
+	Coordinates(const Coordinates &s);
+	Coordinates & operator=(const Coordinates &s);
+
+	~Coordinates();
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -95,6 +117,15 @@ public:
 		return _points[index];
 	}
 
+	void addCoordinatesProperty(const std::string &name,
+			CoordinatesProperty *property)
+	{
+		_coordinatesProperties[name] = property;
+	}
+
+	void addCoordinatesProperties(const Ansys &setting);
+
+	void printCoordinatesProperties();
 
 private:
 	std::vector<Point> _points;
@@ -104,6 +135,9 @@ private:
 
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
+
+	/** @brief Named coordinates properties */
+	std::map<const std::string, CoordinatesProperty*> _coordinatesProperties;
 };
 
 }
