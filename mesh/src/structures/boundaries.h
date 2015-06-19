@@ -27,9 +27,14 @@ public:
 		return _boundaries.size();
 	}
 
-	std::set<eslocal>& operator[](size_t index)
+	std::set<eslocal>& operator[](size_t position)
 	{
-		return _boundaries[index];
+		return _boundaries[position];
+	}
+
+	// prepare for future improvements
+	eslocal index(size_t position) {
+		return position;
 	}
 
 	template<typename T>
@@ -49,6 +54,7 @@ public:
 private:
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;
+	//std::vector<eslocal> _mapping;
 };
 
 }

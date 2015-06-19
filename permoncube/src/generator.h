@@ -26,7 +26,7 @@ public:
 			std::map<eslocal, double>  &dirichlet_z,
 			const size_t cluster[]) = 0;
 
-	virtual void fillGlobalBoundaries(mesh::Boundaries &boundaries) = 0;
+	virtual void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]) = 0;
 
 	virtual ~Generator() { };
 
@@ -56,7 +56,7 @@ public:
 			std::map<eslocal, double>  &dirichlet_z,
 			const size_t cluster[]);
 
-	void fillGlobalBoundaries(mesh::Boundaries &boundaries);
+	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 
 private:
 	TElement e;

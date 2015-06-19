@@ -21,6 +21,7 @@ enum {
 struct FEMInput {
 
 	mesh::Mesh mesh;
+	mesh::Boundaries boundaries;
 	std::map<eslocal, double> dirichlet_x;
 	std::map<eslocal, double> dirichlet_y;
 	std::map<eslocal, double> dirichlet_z;
@@ -166,6 +167,8 @@ void generate_mesh()
 				generator->mesh(input[index].mesh, cluster);
 				//generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
 				generator->fixBottom(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+
+				generator->fillGlobalBoundaries(input[index].boundaries, cluster);
 				// TODO: set fix points in PERMONCUBE
 				input[index].mesh.computeFixPoints(4);
 			}
@@ -178,11 +181,7 @@ void generate_mesh()
 
 void testMPI(int argc, char** argv)
 {
-	mesh::Boundaries globalBoundaries;
-	generator->fillGlobalBoundaries(globalBoundaries);
-
 	size_t index;
-	size_t cluster[3];
 	for (size_t z = 0; z < params.settings.clusters[2]; z++) {
 		for (size_t y = 0; y < params.settings.clusters[1]; y++) {
 			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
@@ -355,7 +354,6 @@ void testBEM(int argc, char** argv)
                             input[0].dirichlet_z,
                             partsCount
                         );
-
 //    for (int d = 0; d < partsCount; d++) {
 //        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
 //            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
@@ -722,7 +720,6 @@ void testFEM(int argc, char** argv)
 		partsCount
 	);
 
-        
     for (eslocal d = 0; d < partsCount; d++) {
         for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
             if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {

@@ -194,49 +194,49 @@ void ElementGenerator<TElement>::fixBottom(
 }
 
 template <class TElement>
-void ElementGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries)
+void ElementGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[])
 {
-		esglobal gNodes[3];
-		Utils<TElement>::globalNodesCount(_settings, gNodes);
-		eslocal cNodes[3];
-		Utils<TElement>::clusterNodesCount(_settings, cNodes);
-		boundaries.resize(TElement::globalNodesCount(_settings));
+	esglobal gNodes[3];
+	Utils<TElement>::globalNodesCount(_settings, gNodes);
+	eslocal cNodes[3];
+	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+	boundaries.resize(TElement::clusterNodesCount(_settings));
 
-		eslocal cluster[3];
-		bool border[3];
-		eslocal cIndex;
-		esglobal gIndex = 0;
+	bool border[3];
+	eslocal cIndex = cluster[0] + cluster[1] * _settings.clusters[0] + cluster[2] * _settings.clusters[0] * _settings.clusters[1];
+	esglobal index = 0;
 
-		for (esglobal z = 0; z < gNodes[2]; z++) {
-			cluster[2] = z ? (z - 1) / ( cNodes[2] - 1) : 0;
-			border[2] = (z == 0 || z == gNodes[2] - 1) ? false : z % ( cNodes[2] - 1) == 0;
-			for (esglobal y = 0; y < gNodes[1]; y++) {
-				cluster[1] = y ? (y - 1) / ( cNodes[1] - 1) : 0;
-				border[1] = (y == 0 || y == gNodes[1] - 1) ? false : y % ( cNodes[1] - 1) == 0;
-				for (esglobal x = 0; x < gNodes[0]; x++) {
-					if (!e.addPoint(x, y, z)) {
-						continue;
-					}
-					cluster[0] = x ? (x - 1) / ( cNodes[0] - 1) : 0;
-					border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
-					cIndex = cluster[0] + cluster[1] * _settings.clusters[0] + cluster[2] * _settings.clusters[0] * _settings.clusters[1];
-					boundaries[gIndex].insert(cIndex);
-					for (int i = 0; i < 8; i++) {
-						eslocal tmp = cIndex;
-						if (border[0] && (i & 1)) {
-							tmp += 1;
-						}
-						if (border[1] && (i & 2)) {
-							tmp += _settings.clusters[0];
-						}
-						if (border[2] && (i & 4)) {
-							tmp += _settings.clusters[0] * _settings.clusters[1];
-						}
-						boundaries[gIndex].insert(tmp);
-					}
-					gIndex++;
+	esglobal cs[3], ce[3];
+	for (eslocal i = 0; i < 3; i++) {
+		cs[i] = (cNodes[i] - 1) * cluster[i];
+		ce[i] = (cNodes[i] - 1) * (cluster[i] + 1);
+	}
+
+	for (esglobal z = cs[2]; z <= ce[2]; z++) {
+		border[2] = (z == 0 || z == gNodes[2] - 1) ? false : z % ( cNodes[2] - 1) == 0;
+		for (esglobal y = cs[1]; y <= ce[1]; y++) {
+			border[1] = (y == 0 || y == gNodes[1] - 1) ? false : y % ( cNodes[1] - 1) == 0;
+			for (esglobal x = cs[0]; x <= ce[0]; x++) {
+				if (!e.addPoint(x, y, z)) {
+					continue;
 				}
+				border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
+				for (int i = 0; i < 8; i++) {
+					eslocal tmp = cIndex;
+					if (border[0] && (i & 1)) {
+						tmp += (x == cs[0]) ? -1 : 1;
+					}
+					if (border[1] && (i & 2)) {
+						tmp += ((y == cs[1]) ? -1 : 1) * _settings.clusters[0];
+					}
+					if (border[2] && (i & 4)) {
+						tmp += ((z == cs[2]) ? -1 : 1) * _settings.clusters[0] * _settings.clusters[1];
+					}
+					boundaries[index].insert(tmp);
+				}
+				index++;
 			}
 		}
+	}
 }
 
