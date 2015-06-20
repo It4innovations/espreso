@@ -15,6 +15,9 @@ enum Property {
 	DIRICHLET_X,
 	DIRICHLET_Y,
 	DIRICHLET_Z,
+	FORCES_X,
+	FORCES_Y,
+	FORCES_Z,
 	SIZE
 };
 
@@ -55,7 +58,11 @@ public:
 
 	std::string coordinatesProperty(CP::Property property) const
 	{
-		return _projectRoot + "/" + _coordinatesProperty[property];
+		if (_coordinatesProperty[property].size()) {
+			return _projectRoot + "/" + _coordinatesProperty[property];
+		} else {
+			return "";
+		}
 	}
 
 	std::string& coordinatesProperty(CP::Property property) {

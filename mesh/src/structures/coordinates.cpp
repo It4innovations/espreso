@@ -15,8 +15,7 @@ void CoordinatesProperty::load(const char* fileName)
 		}
 		file.close();
 	} else {
-		fprintf(stderr, "Cannot load coordinates property from file: %s.\n", fileName);
-		exit(EXIT_FAILURE);
+		std::cout << "File '" << fileName << "' not found.\n";
 	}
 }
 
@@ -29,7 +28,7 @@ std::ostream& mesh::operator<<(std::ostream& os, const CoordinatesProperty &cp)
 	return os;
 }
 
-Coordinates::Coordinates(const char *fileName): _clusterIndex(1)
+void Coordinates::readFromFile(const char *fileName)
 {
 	_points.resize(Loader::getLinesCount(fileName));
 	_clusterIndex[0].resize(_points.size());
@@ -47,6 +46,22 @@ Coordinates::Coordinates(const char *fileName): _clusterIndex(1)
 		fprintf(stderr, "Cannot load coordinates from file: %s.\n", fileName);
 		exit(EXIT_FAILURE);
 	}
+}
+
+Coordinates::Coordinates(const char *fileName): _clusterIndex(1), _property(CP::SIZE)
+{
+	readFromFile(fileName);
+}
+
+Coordinates::Coordinates(const Ansys &a): _clusterIndex(1), _property(CP::SIZE)
+{
+	readFromFile(a.coordinates().c_str());
+	_property[CP::DIRICHLET_X].load(a.coordinatesProperty(CP::DIRICHLET_X).c_str());
+	_property[CP::DIRICHLET_Y].load(a.coordinatesProperty(CP::DIRICHLET_Y).c_str());
+	_property[CP::DIRICHLET_Z].load(a.coordinatesProperty(CP::DIRICHLET_Z).c_str());
+	_property[CP::FORCES_X].load(a.coordinatesProperty(CP::FORCES_X).c_str());
+	_property[CP::FORCES_Y].load(a.coordinatesProperty(CP::FORCES_Y).c_str());
+	_property[CP::FORCES_Z].load(a.coordinatesProperty(CP::FORCES_Z).c_str());
 }
 
 void Coordinates::computeLocal(eslocal part, std::vector<eslocal> &nodeMap, size_t size)

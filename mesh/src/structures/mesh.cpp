@@ -16,7 +16,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, esl
 	partitiate(parts, fixPoints);
 }
 Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
-	:_coordinates(ansys.coordinates().c_str()), _flags(flags::FLAGS_SIZE, false)
+	:_coordinates(ansys), _flags(flags::FLAGS_SIZE, false)
 {
 	readFromFile(ansys.elements().c_str(), 8);
 	partitiate(parts, fixPoints);

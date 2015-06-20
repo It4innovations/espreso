@@ -41,6 +41,7 @@ public:
 
 	Coordinates(): _points(0), _clusterIndex(1), _property(CP::SIZE) { };
 	Coordinates(const char *fileName);
+	Coordinates(const Ansys &a);
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -130,6 +131,8 @@ public:
 	}
 
 private:
+	void readFromFile(const char *fileName);
+
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */

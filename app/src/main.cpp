@@ -102,14 +102,15 @@ int main(int argc, char** argv)
 
 void load_mesh()
 {
-	input.mesh = mesh::Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
+	mesh::Ansys ansys("matrices/spanner/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+	ansys.coordinatesProperty(mesh::CP::FORCES_X) = "BC/Elasticity/NFX.dat";
+	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
+	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
 
-	// fix down face
-	for (int i = 0; i < 11 * 11; i++) {
-		input.mesh.coordinates().property(mesh::CP::DIRICHLET_X)[i] = 0;
-		input.mesh.coordinates().property(mesh::CP::DIRICHLET_Y)[i] = 0;
-		input.mesh.coordinates().property(mesh::CP::DIRICHLET_Z)[i] = 0;
-	}
+	input.mesh = mesh::Mesh(ansys, 4, 8);
 }
 
 void generate_mesh()
@@ -710,13 +711,30 @@ void testFEM(int argc, char** argv)
 		partsCount
 	);
 
-    for (eslocal d = 0; d < partsCount; d++) {
-        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-            if ( fabs( 30.0 - input.mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
-                //f_vec[d][3 * iz + 2] = 1.0;
-            }
-        }
-    }
+	const std::map<eslocal, double> &forces_x = input.mesh.coordinates().property(mesh::CP::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = input.mesh.coordinates().property(mesh::CP::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = input.mesh.coordinates().property(mesh::CP::FORCES_Z).values();
+
+	for (eslocal d = 0; d < partsCount; d++) {
+		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
+			if (forces_x.find(l2g_vec[d][iz]) != forces_x.end()) {
+				f_vec[d][3 * iz + 0] = forces_x.at(l2g_vec[d][iz]);
+			}
+			if (forces_y.find(l2g_vec[d][iz]) != forces_y.end()) {
+				f_vec[d][3 * iz + 1] = forces_y.at(l2g_vec[d][iz]);
+			}
+			if (forces_z.find(l2g_vec[d][iz]) != forces_z.end()) {
+				f_vec[d][3 * iz + 2] = forces_z.at(l2g_vec[d][iz]);
+			}
+		}
+	}
+//    for (eslocal d = 0; d < partsCount; d++) {
+//        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
+//            if ( fabs( 30.0 - input.mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
+//                //f_vec[d][3 * iz + 2] = 1.0;
+//            }
+//        }
+//    }
 
         
         
