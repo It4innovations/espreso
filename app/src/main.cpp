@@ -153,24 +153,18 @@ void generate_mesh()
 	}
 
 	size_t index;
-	size_t cluster[3];
-	for (size_t z = 0; z < params.settings.clusters[2]; z++) {
-		cluster[2] = z;
-		for (size_t y = 0; y < params.settings.clusters[1]; y++) {
-			cluster[1] = y;
-			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
-				cluster[0] = x;
-				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
-				generator->mesh(input.mesh, cluster);
-				//generator->fixZeroPlanes(input.mesh, cluster);
-				generator->fixBottom(input.mesh, cluster);
 
-				generator->fillGlobalBoundaries(input.boundaries, cluster);
-				// TODO: set fix points in PERMONCUBE
-				input.mesh.computeFixPoints(4);
-			}
-		}
-	}
+
+	index = 0; // MPI_RANK
+	size_t cluster[3] = { 0, 0, 0 }; // TODO: project MPI_RANK to cluster
+
+	generator->mesh(input.mesh, cluster);
+	//generator->fixZeroPlanes(input.mesh, cluster);
+	generator->fixBottom(input.mesh, cluster);
+
+	generator->fillGlobalBoundaries(input.boundaries, cluster);
+	// TODO: set fix points in PERMONCUBE
+	input.mesh.computeFixPoints(4);
 
 	std::cout << "Permoncube - end" << std::endl;
 }
@@ -179,17 +173,11 @@ void generate_mesh()
 void testMPI(int argc, char** argv)
 {
 	size_t index;
-	for (size_t z = 0; z < params.settings.clusters[2]; z++) {
-		for (size_t y = 0; y < params.settings.clusters[1]; y++) {
-			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
-				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
-				// index = cislo clusteru
-				// input[index].mesh = mesh na clusteru s cislem 'index'
-				// input[index].dirichlet_{x, y, z} = dirichlet na clusteru s cislem 'index'
-				// TODO: RUN SOLVER
-			}
-		}
-	}
+	index = 0; // MPI_RANK
+	// index = cislo clusteru
+	// input[index].mesh = mesh na clusteru s cislem 'index'
+	// input[index].dirichlet_{x, y, z} = dirichlet na clusteru s cislem 'index'
+	// TODO: RUN SOLVER
 }
 
 
