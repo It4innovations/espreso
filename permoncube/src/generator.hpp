@@ -121,12 +121,12 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 }
 
 template <class TElement>
-void ElementGenerator<TElement>::fixZeroPlanes(
-		std::map<eslocal, double> &dirichlet_x,
-		std::map<eslocal, double> &dirichlet_y,
-		std::map<eslocal, double> &dirichlet_z,
-		const size_t cluster[])
+void ElementGenerator<TElement>::fixZeroPlanes(mesh::Mesh &mesh, const size_t cluster[])
 {
+	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::CP::DIRICHLET_X);
+	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::CP::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::CP::DIRICHLET_Z);
+
 	eslocal nodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, nodes);
 
@@ -167,15 +167,15 @@ void ElementGenerator<TElement>::fixZeroPlanes(
 }
 
 template <class TElement>
-void ElementGenerator<TElement>::fixBottom(
-		std::map<eslocal, double> &dirichlet_x,
-		std::map<eslocal, double> &dirichlet_y,
-		std::map<eslocal, double> &dirichlet_z,
-		const size_t cluster[])
+void ElementGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluster[])
 {
 	if (cluster[2] > 0) {
 		return;
 	}
+	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::CP::DIRICHLET_X);
+	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::CP::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::CP::DIRICHLET_Z);
+
 	eslocal nodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, nodes);
 

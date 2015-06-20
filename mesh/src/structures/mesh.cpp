@@ -2,37 +2,38 @@
 
 using namespace mesh;
 
-Mesh::Mesh() :
-		_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false) {
+Mesh::Mesh():_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
+{
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts,
-		eslocal fixPoints) :
-		_coordinates(coordinatesFile), _flags(flags::FLAGS_SIZE, false) {
-
+Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints)
+	:_coordinates(coordinatesFile), _flags(flags::FLAGS_SIZE, false)
+{
 	readFromFile(meshFile);
 	partitiate(parts, fixPoints);
 }
-Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints) :
-		_coordinates(ansys.coordinates().c_str()), _flags(flags::FLAGS_SIZE,
-				false) {
+Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
+	:_coordinates(ansys.coordinates().c_str()), _flags(flags::FLAGS_SIZE, false)
+{
 	readFromFile(ansys.elements().c_str(), 8);
 	partitiate(parts, fixPoints);
 }
 
-Mesh::Mesh(const Mesh &other) :
-		_coordinates(other._coordinates), _partPtrs(other._partPtrs), _fixPoints(
-				other._fixPoints), _flags(other._flags) {
+Mesh::Mesh(const Mesh &other):
+	_coordinates(other._coordinates), _partPtrs(other._partPtrs),
+	_fixPoints(other._fixPoints), _flags(other._flags)
+{
 	_elements.reserve(other._elements.size());
 	for (size_t i = 0; i < other._elements.size(); i++) {
 		_elements.push_back(other._elements[i]->copy());
 	}
 }
 
-Mesh& Mesh::operator=(const Mesh &other) {
+Mesh& Mesh::operator=(const Mesh &other)
+{
 	if (this != &other) {
 		Mesh mesh(other);
 		Mesh::assign(*this, mesh);
@@ -40,7 +41,8 @@ Mesh& Mesh::operator=(const Mesh &other) {
 	return *this;
 }
 
-void Mesh::assign(Mesh &m1, Mesh &m2) {
+void Mesh::assign(Mesh &m1, Mesh &m2)
+{
 	m1._coordinates = m2._coordinates;
 	m1._elements.swap(m2._elements);
 	m1._partPtrs.swap(m2._partPtrs);
@@ -48,11 +50,13 @@ void Mesh::assign(Mesh &m1, Mesh &m2) {
 	m1._flags.swap(m2._flags);
 }
 
-void Mesh::reserve(size_t size) {
+void Mesh::reserve(size_t size)
+{
 	_elements.reserve(size);
 }
 
-void Mesh::pushElement(Element* e) {
+void Mesh::pushElement(Element* e)
+{
 	_elements.push_back(e);
 	if (_flags[flags::NEW_PARTITION]) {
 		_partPtrs.push_back(_partPtrs.back());
@@ -61,21 +65,38 @@ void Mesh::pushElement(Element* e) {
 	_partPtrs.back() = _elements.size();
 }
 
-void Mesh::endPartition() {
+void Mesh::endPartition()
+{
 	computeLocalIndices(_partPtrs.size() - 2);
 	_flags[flags::NEW_PARTITION] = true;
 }
 
-Element* Mesh::createElement(eslocal *indices, eslocal n) {
+Element* Mesh::createElement(eslocal *indices, eslocal n)
+{
 	Element *e = NULL;
 	if (Tetrahedron4::match(indices, n)) {
 		e = new Tetrahedron4(indices);
 	}
+	if (Tetrahedron10::match(indices, n)) {
+		e = new Tetrahedron10(indices);
+	}
 	if (Hexahedron8::match(indices, n)) {
 		e = new Hexahedron8(indices);
 	}
+	if (Hexahedron20::match(indices, n)) {
+		e = new Hexahedron20(indices);
+	}
 	if (Prisma6::match(indices, n)) {
 		e = new Prisma6(indices);
+	}
+	if (Prisma15::match(indices, n)) {
+		e = new Prisma15(indices);
+	}
+	if (Pyramid5::match(indices, n)) {
+		e = new Pyramid5(indices);
+	}
+	if (Pyramid13::match(indices, n)) {
+		e = new Pyramid13(indices);
 	}
 
 	if (e == NULL) {
@@ -90,8 +111,13 @@ Element* Mesh::createElement(eslocal *indices, eslocal n) {
 	return e;
 }
 
-void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M,
-		std::vector<double> &f, eslocal part, bool dynamic) {
+void Mesh::_elasticity(
+		SparseVVPMatrix &K,
+		SparseVVPMatrix &M,
+		std::vector<double> &f,
+		eslocal part,
+		bool dynamic)
+{
 	eslocal nK = _coordinates.localSize(part) * Point::size();
 	K.resize(nK, nK);
 	if (dynamic) {
@@ -120,7 +146,8 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M,
 	}
 }
 
-inline double determinant3x3(DenseMatrix &m) {
+inline double determinant3x3(DenseMatrix &m)
+{
 	const double *values = m.values();
 	return fabs(
 			values[0] * values[4] * values[8]
@@ -131,7 +158,8 @@ inline double determinant3x3(DenseMatrix &m) {
 					- values[0] * values[5] * values[7]);
 }
 
-inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det) {
+inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
+{
 	const double *values = m.values();
 	inv.resize(m.rows(), m.columns());
 	double *invj = inv.values();
@@ -154,7 +182,8 @@ inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det) {
 // dY  dX   0
 //  0  dZ  dY
 // dZ   0  dX
-inline void distribute(DenseMatrix &B, DenseMatrix &dND) {
+inline void distribute(DenseMatrix &B, DenseMatrix &dND)
+{
 	// TODO: block ordering inside B
 	eslocal columns = dND.rows() * dND.columns();
 	const double *dNDx = dND.values();
@@ -163,36 +192,36 @@ inline void distribute(DenseMatrix &B, DenseMatrix &dND) {
 
 	double *v = B.values();
 
-	memcpy(&v[0], dNDx, sizeof(double) * dND.columns());
-	memcpy(&v[3 * columns + dND.columns()], dNDx,
-			sizeof(double) * dND.columns());
-	memcpy(&v[5 * columns + 2 * dND.columns()], dNDx,
-			sizeof(double) * dND.columns());
+	memcpy(&v[0], dNDx,                               sizeof(double) * dND.columns());
+	memcpy(&v[3 * columns + dND.columns()],     dNDx, sizeof(double) * dND.columns());
+	memcpy(&v[5 * columns + 2 * dND.columns()], dNDx, sizeof(double) * dND.columns());
 
-	memcpy(&v[1 * columns + dND.columns()], dNDy,
-			sizeof(double) * dND.columns());
-	memcpy(&v[3 * columns], dNDy, sizeof(double) * dND.columns());
-	memcpy(&v[4 * columns + 2 * dND.columns()], dNDy,
-			sizeof(double) * dND.columns());
+	memcpy(&v[1 * columns + dND.columns()],     dNDy, sizeof(double) * dND.columns());
+	memcpy(&v[3 * columns],                     dNDy, sizeof(double) * dND.columns());
+	memcpy(&v[4 * columns + 2 * dND.columns()], dNDy, sizeof(double) * dND.columns());
 
-	memcpy(&v[2 * columns + 2 * dND.columns()], dNDz,
-			sizeof(double) * dND.columns());
-	memcpy(&v[4 * columns + dND.columns()], dNDz,
-			sizeof(double) * dND.columns());
-	memcpy(&v[5 * columns], dNDz, sizeof(double) * dND.columns());
+	memcpy(&v[2 * columns + 2 * dND.columns()], dNDz, sizeof(double) * dND.columns());
+	memcpy(&v[4 * columns + dND.columns()],     dNDz, sizeof(double) * dND.columns());
+	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
 }
 
-void Mesh::_assembleElesticity(const Element *e, size_t part, DenseMatrix &Ke,
-		DenseMatrix &Me, std::vector<double> &fe, std::vector<double> &inertia,
-		DenseMatrix &C, bool dynamic) const {
+void Mesh::_assembleElesticity(
+		const Element *e,
+		size_t part,
+		DenseMatrix &Ke,
+		DenseMatrix &Me,
+		std::vector<double> &fe,
+		std::vector<double> &inertia,
+		DenseMatrix &C,
+		bool dynamic) const
+{
 	const std::vector<DenseMatrix> &dN = e->dN();
 	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 
 	DenseMatrix coordinates(e->size(), Point::size());
 	for (size_t i = 0; i < e->size(); i++) {
-		coordinates.values() + i * Point::size()
-				<< _coordinates.get(e->node(i), part);
+		coordinates.values() + i * Point::size() << _coordinates.get(e->node(i), part);
 	}
 
 	eslocal Ksize = Point::size() * e->size();
@@ -219,22 +248,26 @@ void Mesh::_assembleElesticity(const Element *e, size_t part, DenseMatrix &Ke,
 		Ke.multiply(B, C * B, detJ * weighFactor[gp], 1, true);
 
 		for (eslocal i = 0; i < Ksize; i++) {
-			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size())
-					* inertia[i / e->size()];
+			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * inertia[i / e->size()];
 		}
 
 		if (dynamic) {
 			// Me = Me + WF * (DENS * dJ) * (N' * N);
-			Me.multiply(N[gp], N[gp], 7.85e-9 * detJ * weighFactor[gp], 1,
-					true);
+			Me.multiply(N[gp], N[gp], 7.85e-9 * detJ * weighFactor[gp], 1, true);
 		}
 	}
 }
 
-void Mesh::_integrateElasticity(const Element *e, SparseVVPMatrix &K,
-		SparseVVPMatrix &M, std::vector<double> &f, const DenseMatrix &Ke,
-		const DenseMatrix &Me, const std::vector<double> &fe,
-		bool dynamic) const {
+void Mesh::_integrateElasticity(
+		const Element *e,
+		SparseVVPMatrix &K,
+		SparseVVPMatrix &M,
+		std::vector<double> &f,
+		const DenseMatrix &Ke,
+		const DenseMatrix &Me,
+		const std::vector<double> &fe,
+		bool dynamic) const
+{
 	// Element ordering: xxxx, yyyy, zzzz,...
 	// Global ordering:  xyz, xyz, xyz, xyz, ...
 	size_t row, column;
@@ -262,7 +295,8 @@ void Mesh::_integrateElasticity(const Element *e, SparseVVPMatrix &K,
 	}
 }
 
-void Mesh::partitiate(eslocal parts, eslocal fixPoints) {
+void Mesh::partitiate(eslocal parts, eslocal fixPoints)
+{
 	_partPtrs.resize(parts + 1);
 	_coordinates.localClear();
 	_coordinates.localResize(parts);
@@ -280,7 +314,8 @@ void Mesh::partitiate(eslocal parts, eslocal fixPoints) {
 	}
 }
 
-void Mesh::computeFixPoints(eslocal fixPoints) {
+void Mesh::computeFixPoints(eslocal fixPoints)
+{
 	_fixPoints.resize(parts() * fixPoints);
 
 #ifndef DEBUG
@@ -288,20 +323,18 @@ void Mesh::computeFixPoints(eslocal fixPoints) {
 #else
 	for (eslocal i = 0; i < parts(); i++) {
 #endif
-		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1],
-				fixPoints);
+		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
 
 		for (eslocal j = 0; j < fixPoints; j++) {
-			_fixPoints[i * fixPoints + j] = getCentralNode(_partPtrs[i],
-					_partPtrs[i + 1], eSubPartition, i, j);
+			_fixPoints[i * fixPoints + j] = getCentralNode(_partPtrs[i], _partPtrs[i + 1], eSubPartition, i, j);
 		}
 
 		delete[] eSubPartition;
 	}
 }
 
-eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const {
-
+eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
+{
 	if (parts == 1) {
 		eslocal *ePartition = new eslocal[last - first];
 		for (eslocal i = first; i < last; i++) {
@@ -347,12 +380,20 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const {
 	ePartition = new eslocal[eSize];
 	nPartition = new eslocal[nSize];
 
-	eslocal result = METIS_PartMeshDual(&eSize, &nSize, e, n,
-	NULL,		// weights of nodes
+	eslocal result = METIS_PartMeshDual(
+			&eSize,
+			&nSize,
+			e,
+			n,
+			NULL,		// weights of nodes
 			NULL,		// size of nodes
-			&ncommon, &parts,
+			&ncommon,
+			&parts,
 			NULL,		// weights of parts
-			options, &objval, ePartition, nPartition);
+			options,
+			&objval,
+			ePartition,
+			nPartition);
 	checkMETISResult(result);
 
 	delete[] e;
@@ -362,7 +403,8 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const {
 	return ePartition;
 }
 
-void Mesh::partitiate(eslocal *ePartition) {
+void Mesh::partitiate(eslocal *ePartition)
+{
 	_partPtrs[0] = 0;
 
 	Element *e;
@@ -389,7 +431,8 @@ void Mesh::partitiate(eslocal *ePartition) {
 	}
 }
 
-void Mesh::computeLocalIndices(size_t part) {
+void Mesh::computeLocalIndices(size_t part)
+{
 	std::vector<eslocal> nodeMap(_coordinates.clusterSize(), -1);
 
 	// Compute mask of nodes
@@ -414,8 +457,13 @@ void Mesh::computeLocalIndices(size_t part) {
 	_coordinates.computeLocal(part, nodeMap, nSize);
 }
 
-eslocal Mesh::getCentralNode(eslocal first, eslocal last, eslocal *ePartition,
-eslocal part, eslocal subpart) const {
+eslocal Mesh::getCentralNode(
+		eslocal first,
+		eslocal last,
+		eslocal *ePartition,
+		eslocal part,
+		eslocal subpart) const
+{
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
 	std::vector<std::set<eslocal> > neighbours(_coordinates.localSize(part));
@@ -486,14 +534,14 @@ eslocal part, eslocal subpart) const {
 	return result;
 }
 
-void Mesh::checkMETISResult(eslocal result) const {
+void Mesh::checkMETISResult(eslocal result) const
+{
 	switch (result) {
 	case METIS_ERROR_INPUT:
 		fprintf(stderr, "An input for METIS procedure is incorrect.\n");
 		exit(EXIT_FAILURE);
 	case METIS_ERROR_MEMORY:
-		fprintf(stderr,
-				"There is not enough memory for compute a partition.\n");
+		fprintf(stderr, "There is not enough memory for compute a partition.\n");
 		exit(EXIT_FAILURE);
 	case METIS_ERROR:
 		fprintf(stderr, "METIS fail computation.\n");
@@ -501,7 +549,8 @@ void Mesh::checkMETISResult(eslocal result) const {
 	}
 }
 
-void Mesh::checkMKLResult(eslocal result) const {
+void Mesh::checkMKLResult(eslocal result) const
+{
 	switch (result) {
 	case 0:
 		return;
@@ -511,13 +560,15 @@ void Mesh::checkMKLResult(eslocal result) const {
 	}
 }
 
-Mesh::~Mesh() {
+Mesh::~Mesh()
+{
 	for (size_t i = 0; i < _elements.size(); i++) {
 		delete _elements[i];
 	}
 }
 
-void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) {
+void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
+{
 	size_t p = 0;
 	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		_elements[i]->fillNodes(nodeArray + p);
@@ -525,8 +576,11 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) {
 	}
 }
 
-void Mesh::saveBasis(std::ofstream &vtk,
-		std::vector<std::vector<eslocal> > &l2g_vec, double shrinking) {
+void Mesh::saveBasis(
+		std::ofstream &vtk,
+		std::vector<std::vector<eslocal> > &l2g_vec,
+		double shrinking)
+{
 	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
@@ -591,8 +645,11 @@ void Mesh::saveBasis(std::ofstream &vtk,
 	}
 }
 
-void Mesh::saveVTK(std::vector<std::vector<double> > &displacement,
-		std::vector<std::vector<eslocal> > &l2g_vec, double shrinking) {
+void Mesh::saveVTK(
+		std::vector<std::vector<double> > &displacement,
+		std::vector<std::vector<eslocal> > &l2g_vec,
+		double shrinking)
+{
 	std::ofstream vtk;
 	saveBasis(vtk, l2g_vec, shrinking);
 
@@ -617,7 +674,8 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement,
 	vtk.close();
 }
 
-void Mesh::saveVTK(const char* filename, double shrinking) {
+void Mesh::saveVTK(const char* filename, double shrinking)
+{
 	std::ofstream vtk;
 
 	size_t cSize = 0;
@@ -684,8 +742,10 @@ void Mesh::saveVTK(const char* filename, double shrinking) {
 	vtk.close();
 }
 
-bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements,
-		std::vector<eslocal> &face) {
+bool isOuterFace(
+		std::vector<std::vector<eslocal> > &nodesElements,
+		std::vector<eslocal> &face)
+{
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
@@ -701,8 +761,11 @@ bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements,
 	return false;
 }
 
-bool isCommonFace(std::vector<std::vector<eslocal> > &nodesElements,
-		std::vector<eslocal> &face, const std::vector<eslocal> &partPtrs) {
+bool isCommonFace(
+		std::vector<std::vector<eslocal> > &nodesElements,
+		std::vector<eslocal> &face,
+		const std::vector<eslocal> &partPtrs)
+{
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
@@ -724,7 +787,8 @@ bool isCommonFace(std::vector<std::vector<eslocal> > &nodesElements,
 	return false;
 }
 
-void Mesh::getSurface(SurfaceMesh &surface) const {
+void Mesh::getSurface(SurfaceMesh &surface) const
+{
 	// vector of faces in all parts
 	std::vector<std::vector<std::vector<eslocal> > > faces(
 			_partPtrs.size() - 1);
@@ -808,7 +872,8 @@ void Mesh::getSurface(SurfaceMesh &surface) const {
 	}
 }
 
-void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const {
+void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
+{
 	// vector of faces in all parts
 	std::vector<std::vector<std::vector<eslocal> > > faces(
 			_partPtrs.size() - 1);
@@ -874,7 +939,8 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const {
 	}
 }
 
-void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const {
+void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
+{
 	// vector of faces in all parts
 	std::vector<std::vector<std::vector<eslocal> > > faces(
 			_partPtrs.size() - 1);
@@ -940,7 +1006,8 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const {
 	}
 }
 
-void Mesh::readFromFile(const char *meshFile, eslocal elementSize) {
+void Mesh::readFromFile(const char *meshFile, eslocal elementSize)
+{
 	_elements.resize(Loader::getLinesCount(meshFile));
 
 	std::ifstream file(meshFile);
@@ -953,7 +1020,6 @@ void Mesh::readFromFile(const char *meshFile, eslocal elementSize) {
 	if (file.is_open()) {
 		for (eslocal c = 0; c < _elements.size(); c++) {
 			getline(file, line, '\n');
-			//std::cout << line << "\n";
 			std::stringstream ss(line);
 
 			n = 0;
@@ -964,7 +1030,6 @@ void Mesh::readFromFile(const char *meshFile, eslocal elementSize) {
 				n = std::min(n, elementSize);
 			}
 			_elements[c] = createElement(indices, n);
-
 		}
 		file.close();
 	} else {
@@ -973,7 +1038,8 @@ void Mesh::readFromFile(const char *meshFile, eslocal elementSize) {
 	}
 }
 
-void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const {
+void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
+{
 	eslocal nK = Point::size() * _coordinates.localSize(part);
 	eslocal eSize = _partPtrs[part + 1] - _partPtrs[part];
 	K.resize(nK, nK);
@@ -992,8 +1058,13 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const {
 		}
 	}
 
-	bem4i::getLameSteklovPoincare(K.values(), _coordinates.localSize(part),
-			&nodes[0], eSize, &elems[0], 0.33,			// nu
+	bem4i::getLameSteklovPoincare(
+			K.values(),
+			_coordinates.localSize(part),
+			&nodes[0],
+			eSize,
+			&elems[0],
+			0.33,			// nu
 			1.0e5,			// E
 			3,				// order near
 			4,				// order far
@@ -1001,7 +1072,8 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const {
 			);
 }
 
-void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part) {
+void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
+{
 	double hight_z = 29.99999999;
 	Point p0, p1, p2, v10, v20;
 	double Area_h;
@@ -1023,7 +1095,7 @@ void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part) {
 
 			Area_h = 0.5
 					* (v10.y * v20.z - v20.y * v10.z + v20.x * v10.z
-							- v10.x * v20.z + v10.x * v20.y - v20.x * v10.y);
+					-  v10.x * v20.z + v10.x * v20.y - v20.x * v10.y);
 
 			for (size_t k = 0; k < 3; k++) {
 				f[3 * _elements[i]->node(k) + 2] += (1. / 3.) * Area_h;
@@ -1032,7 +1104,8 @@ void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part) {
 	}
 }
 
-std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m) {
+std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
+{
 	for (size_t i = 0; i < m._elements.size(); i++) {
 		os << *(m._elements[i]) << "\n";
 	}

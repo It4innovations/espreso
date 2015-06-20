@@ -15,7 +15,18 @@ class CoordinatesProperty
 public:
 	friend std::ostream& operator<<(std::ostream& os, const CoordinatesProperty &cp);
 
-	CoordinatesProperty(const char *fileName);
+	CoordinatesProperty() { };
+	void load(const char *fileName);
+
+	double& operator[](eslocal index)
+	{
+		return _mapping[index];
+	}
+
+	const std::map<eslocal, double>& values() const
+	{
+		return _mapping;
+	}
 
 private:
 	std::map<eslocal, double> _mapping;
@@ -28,17 +39,8 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
-	Coordinates() :
-			_points(0), _clusterIndex(1)
-	{
-	}
-	;
+	Coordinates(): _points(0), _clusterIndex(1), _property(CP::SIZE) { };
 	Coordinates(const char *fileName);
-
-	Coordinates(const Coordinates &s);
-	Coordinates & operator=(const Coordinates &s);
-
-	~Coordinates();
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -117,15 +119,15 @@ public:
 		return _points[index];
 	}
 
-	void addCoordinatesProperty(const std::string &name,
-			CoordinatesProperty *property)
+	CoordinatesProperty& property(CP::Property property)
 	{
-		_coordinatesProperties[name] = property;
+		return _property[property];
 	}
 
-	void addCoordinatesProperties(const Ansys &setting);
-
-	void printCoordinatesProperties();
+	const CoordinatesProperty& property(CP::Property property) const
+	{
+		return _property[property];
+	}
 
 private:
 	std::vector<Point> _points;
@@ -136,8 +138,8 @@ private:
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
 
-	/** @brief Named coordinates properties */
-	std::map<const std::string, CoordinatesProperty*> _coordinatesProperties;
+	/** @brief Coordinates properties */
+	std::vector<CoordinatesProperty> _property;
 };
 
 }

@@ -20,11 +20,10 @@ enum {
 
 struct FEMInput {
 
+	FEMInput(): boundaries(mesh) { };
+
 	mesh::Mesh mesh;
 	mesh::Boundaries boundaries;
-	std::map<eslocal, double> dirichlet_x;
-	std::map<eslocal, double> dirichlet_y;
-	std::map<eslocal, double> dirichlet_z;
 };
 
 struct FEMParams {
@@ -38,7 +37,7 @@ struct FEMParams {
 };
 
 permoncube::Generator *generator;
-std::vector<FEMInput> input;
+FEMInput input;
 FEMParams params;
 
 void setParams(int argc, char** argv)
@@ -65,8 +64,6 @@ void setParams(int argc, char** argv)
 		params.settings.subdomainsInCluster[i] = subdomains;
 		params.settings.elementsInSubdomain[i] = elementsInSub;
 	}
-
-	input.resize(params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2]);
 }
 
 void testFEM(int argc, char** argv);
@@ -105,14 +102,13 @@ int main(int argc, char** argv)
 
 void load_mesh()
 {
-	input.resize(1);
-	input[0].mesh = mesh::Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
+	input.mesh = mesh::Mesh("matrices/HEX/10/elem", "matrices/HEX/10/coord", 4, 8);
 
 	// fix down face
 	for (int i = 0; i < 11 * 11; i++) {
-		input[0].dirichlet_x[i] = 0;
-		input[0].dirichlet_y[i] = 0;
-		input[0].dirichlet_z[i] = 0;
+		input.mesh.coordinates().property(mesh::CP::DIRICHLET_X)[i] = 0;
+		input.mesh.coordinates().property(mesh::CP::DIRICHLET_Y)[i] = 0;
+		input.mesh.coordinates().property(mesh::CP::DIRICHLET_Z)[i] = 0;
 	}
 }
 
@@ -164,13 +160,13 @@ void generate_mesh()
 			for (size_t x = 0; x < params.settings.clusters[0]; x++) {
 				cluster[0] = x;
 				index = x + y * params.settings.clusters[0] + z * params.settings.clusters[0] * params.settings.clusters[1];
-				generator->mesh(input[index].mesh, cluster);
-				//generator->fixZeroPlanes(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
-				generator->fixBottom(input[index].dirichlet_x, input[index].dirichlet_y, input[index].dirichlet_z, cluster);
+				generator->mesh(input.mesh, cluster);
+				//generator->fixZeroPlanes(input.mesh, cluster);
+				generator->fixBottom(input.mesh, cluster);
 
-				generator->fillGlobalBoundaries(input[index].boundaries, cluster);
+				generator->fillGlobalBoundaries(input.boundaries, cluster);
 				// TODO: set fix points in PERMONCUBE
-				input[index].mesh.computeFixPoints(4);
+				input.mesh.computeFixPoints(4);
 			}
 		}
 	}
@@ -199,12 +195,12 @@ void testMPI(int argc, char** argv)
 void testBEM(int argc, char** argv)
 {
 	double start = omp_get_wtime();
-	size_t partsCount = input[0].mesh.parts();
+	size_t partsCount = input.mesh.parts();
 	size_t fixPointsCount = 4;
 
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
 
-	mesh::SurfaceMesh sMesh(input[0].mesh);
+	mesh::SurfaceMesh sMesh(input.mesh);
 
 	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
 
@@ -349,9 +345,6 @@ void testBEM(int argc, char** argv)
                             lambda_map_sub_B1,
                             lambda_map_sub_B0,
                             B1_l_duplicity,
-                            input[0].dirichlet_x,
-                            input[0].dirichlet_y,
-                            input[0].dirichlet_z,
                             partsCount
                         );
 //    for (int d = 0; d < partsCount; d++) {
@@ -623,13 +616,13 @@ void testFEM(int argc, char** argv)
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount = input[0].mesh.parts();
-	size_t fixPointsCount = input[0].mesh.getFixPointsCount();
+	size_t partsCount = input.mesh.parts();
+	size_t fixPointsCount = input.mesh.getFixPointsCount();
 
 	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	// TODO: fill boundaries in PERMONCUBE
-	mesh::Boundaries boundaries(input[0].mesh);
+	mesh::Boundaries boundaries(input.mesh);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -671,10 +664,10 @@ void testFEM(int argc, char** argv)
 #else
 	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		eslocal dimension = input[0].mesh.getPartNodesCount(d) * mesh::Point::size();
+		eslocal dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
-		input[0].mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
 
 		//K_mat[d] = K;
 		//M_mat[d] = M;
@@ -692,7 +685,7 @@ void testFEM(int argc, char** argv)
         
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
-	const std::vector<eslocal> fixPoints = input[0].mesh.getFixPoints();
+	const std::vector<eslocal> fixPoints = input.mesh.getFixPoints();
 
 #ifndef DEBUG
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -714,15 +707,12 @@ void testFEM(int argc, char** argv)
 		lambda_map_sub_B1,
 		lambda_map_sub_B0,
 		B1_l_duplicity,
-		input[0].dirichlet_x,
-		input[0].dirichlet_y,
-		input[0].dirichlet_z,
 		partsCount
 	);
 
     for (eslocal d = 0; d < partsCount; d++) {
         for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-            if ( fabs( 30.0 - input[0].mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
+            if ( fabs( 30.0 - input.mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
                 //f_vec[d][3 * iz + 2] = 1.0;
             }
         }
@@ -857,9 +847,9 @@ void testFEM(int argc, char** argv)
 #endif
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = input[0].mesh.coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = input[0].mesh.coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = input[0].mesh.coordinates()[l2g_vec[d][i]].z;
+			tmp_vec[0] = input.mesh.coordinates()[l2g_vec[d][i]].x;
+			tmp_vec[1] = input.mesh.coordinates()[l2g_vec[d][i]].y;
+			tmp_vec[2] = input.mesh.coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -943,7 +933,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input[0].mesh.saveVTK(prim_solution, l2g_vec, 1.0);
+	input.mesh.saveVTK(prim_solution, l2g_vec, 1.0);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{

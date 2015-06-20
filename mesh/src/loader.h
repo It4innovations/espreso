@@ -5,7 +5,20 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <map>
+#include <vector>
+
+namespace mesh {
+
+namespace CP {
+
+enum Property {
+	DIRICHLET_X,
+	DIRICHLET_Y,
+	DIRICHLET_Z,
+	SIZE
+};
+
+}
 
 class Loader {
 
@@ -22,34 +35,40 @@ private:
 };
 
 class Ansys {
+
 public:
 	friend std::ostream& operator<<(std::ostream& os, const Ansys &a);
 
-	Ansys(const char *projectRoot) :
-			_projectRoot(projectRoot), _elements("ELEMENTS.dat"), _coordinates(
-					"COORDINATES.dat") {
-	}
-	std::string coordinates() const{
+	Ansys(const char *projectRoot): _projectRoot(projectRoot),
+			_elements("ELEMENTS.dat"), _coordinates("COORDINATES.dat"),
+			_coordinatesProperty(CP::SIZE) { };
+
+	std::string coordinates() const
+	{
 		return _projectRoot + "/" + _coordinates;
 	}
 
-	std::string elements() const{
+	std::string elements() const
+	{
 		return _projectRoot + "/" + _elements;
 	}
 
-	const std::map<std::string, std::string>& coordinatesProperties() const{
-		return _coordinatesProperties;
+	std::string coordinatesProperty(CP::Property property) const
+	{
+		return _projectRoot + "/" + _coordinatesProperty[property];
 	}
 
-	void addCoordinatesProperty(const char* name, const char* file) {
-		_coordinatesProperties[name] =_projectRoot+"/"+ file;
+	std::string& coordinatesProperty(CP::Property property) {
+		return _coordinatesProperty[property];
 	}
 
 private:
 	std::string _projectRoot;
 	std::string _elements;
 	std::string _coordinates;
-	std::map<std::string, std::string> _coordinatesProperties;
+	std::vector<std::string> _coordinatesProperty;
 };
+
+}
 
 #endif /* LOADING_H_ */

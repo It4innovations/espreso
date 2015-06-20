@@ -11,11 +11,12 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_B0,
 								std::vector < std::vector <double> >    & B1_l_duplicity,
-								std::map < T, double >             & dirichlet_x,
-								std::map < T, double >             & dirichlet_y,
-								std::map < T, double >             & dirichlet_z,
 								const eslocal domains_num)
 {
+
+	const std::map<eslocal, double> &dirichlet_x = _mesh.coordinates().property(CP::DIRICHLET_X).values();
+	const std::map<eslocal, double> &dirichlet_y = _mesh.coordinates().property(CP::DIRICHLET_Y).values();
+	const std::map<eslocal, double> &dirichlet_z = _mesh.coordinates().property(CP::DIRICHLET_Z).values();
 
 	l2g_vec.resize(domains_num);
 
@@ -39,7 +40,6 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 	for (T i = 0; i < _boundaries.size(); i++) {
 		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
 			if ( dirichlet_x.find(index(i)) != dirichlet_x.end() ) {
-				std::cout << "X: " << index(i);
 				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
 				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
 				lambda_map_sub_clst.push_back( std::vector <eslocal> (1, lambda_count_B1) );
@@ -47,7 +47,6 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 				lambda_count_B1++;
 			}
 			if ( dirichlet_y.find(index(i)) != dirichlet_y.end() ) {
-				std::cout << "Y: " << index(i);
 				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
 				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
 				lambda_map_sub_clst.push_back( std::vector < eslocal > (1,lambda_count_B1) );
@@ -55,7 +54,6 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 				lambda_count_B1++;
 			}
 			if ( dirichlet_z.find(index(i)) != dirichlet_z.end() ) {
-				std::cout << "Z: " << index(i);
 				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
 				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
 				lambda_map_sub_clst.push_back( std::vector < eslocal > (1, lambda_count_B1) );

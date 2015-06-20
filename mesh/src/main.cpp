@@ -16,16 +16,14 @@ void test_ansys()
 	eslocal partsCount = 4;
 	eslocal fixPointsCount = 4;
 
-	Ansys settings("../spanner/Model");
-	settings.addCoordinatesProperty("NUX", "BC/Elasticity/NUX.dat");
-	settings.addCoordinatesProperty("NFY", "BC/Elasticity/NFY.dat");
-	std::cout<<settings;
+	mesh::Ansys ansys("matrices/spanner/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
 
-	mesh::Mesh m(settings, partsCount, fixPointsCount);
+	std::cout << ansys;
 
-	m.coordinates().addCoordinatesProperties(settings);
-
-	//m.coordinates().printCoordinatesProperties();
+	mesh::Mesh m(ansys, partsCount, fixPointsCount);
 
 	mesh::Boundaries b(m);
 

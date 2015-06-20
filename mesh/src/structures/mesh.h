@@ -42,7 +42,7 @@ public:
 
 	Mesh();
 	Mesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints);
-	Mesh(const Ansys &ansys,  eslocal parts, eslocal fixPoints);
+	Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints);
 
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
@@ -155,7 +155,7 @@ protected:
 
 	void partitiate(eslocal *ePartition);
 	void computeLocalIndices(size_t part);
-	void readFromFile(const char *meshFile, eslocal elementSize=0);
+	void readFromFile(const char *meshFile, eslocal elementSize = 0);
 
 	void checkMETISResult(eslocal result) const;
 	void checkMKLResult(eslocal result) const;
@@ -190,7 +190,7 @@ public:
 	}
 
 	void elasticity(DenseMatrix &K, size_t part) const;
-  void integrateUpperFaces(std::vector < double > &f , size_t part);
+	void integrateUpperFaces(std::vector < double > &f , size_t part);
 };
 
 class CommonFacesMesh: public Mesh
