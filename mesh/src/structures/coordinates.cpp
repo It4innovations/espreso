@@ -11,7 +11,7 @@ void CoordinatesProperty::load(const char* fileName)
 		double value;
 
 		while (file >> coordinate && file.ignore(10, '.') && file >> value) {
-			_mapping[coordinate] = value;
+			_mapping[coordinate - 1] = value;
 		}
 		file.close();
 	} else {
