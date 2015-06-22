@@ -2,50 +2,29 @@
 
 using namespace mesh;
 
-Mesh::Mesh()
-	:_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
+Mesh::Mesh():_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints):
-	_coordinates(coordinatesFile),
-	_flags(flags::FLAGS_SIZE, false)
+Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints)
+	:_coordinates(coordinatesFile), _flags(flags::FLAGS_SIZE, false)
 {
-	_elements.resize(Loader::getLinesCount(meshFile));
-
-	std::ifstream file(meshFile);
-	std::string line;
-
-	eslocal indices[20], n; 	// 20 is the max of vertices of a element
-	double value;
-	eslocal minIndices = 10000;
-
-	if (file.is_open()) {
-		for (eslocal c = 0; c < _elements.size(); c++) {
-			getline(file, line, '\n');;
-			std::stringstream ss(line);
-			n = 0;
-			while(ss >> value) {
-				indices[n++] = value - 1;
-			}
-			_elements[c] = createElement(indices, n);
-		}
-		file.close();
-	} else {
-		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
-		exit(EXIT_FAILURE);
-	}
-
+	readFromFile(meshFile);
+	partitiate(parts, fixPoints);
+}
+Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
+	:_coordinates(ansys), _flags(flags::FLAGS_SIZE, false)
+{
+	readFromFile(ansys.elements().c_str(), 8);
 	partitiate(parts, fixPoints);
 }
 
-Mesh::Mesh(const Mesh &other)
-	:_coordinates(other._coordinates),
-	 _partPtrs(other._partPtrs), _fixPoints(other._fixPoints),
-	 _flags(other._flags)
+Mesh::Mesh(const Mesh &other):
+	_coordinates(other._coordinates), _partPtrs(other._partPtrs),
+	_fixPoints(other._fixPoints), _flags(other._flags)
 {
 	_elements.reserve(other._elements.size());
 	for (size_t i = 0; i < other._elements.size(); i++) {
@@ -98,8 +77,26 @@ Element* Mesh::createElement(eslocal *indices, eslocal n)
 	if (Tetrahedron4::match(indices, n)) {
 		e = new Tetrahedron4(indices);
 	}
+	if (Tetrahedron10::match(indices, n)) {
+		e = new Tetrahedron10(indices);
+	}
 	if (Hexahedron8::match(indices, n)) {
 		e = new Hexahedron8(indices);
+	}
+	if (Hexahedron20::match(indices, n)) {
+		e = new Hexahedron20(indices);
+	}
+	if (Prisma6::match(indices, n)) {
+		e = new Prisma6(indices);
+	}
+	if (Prisma15::match(indices, n)) {
+		e = new Prisma15(indices);
+	}
+	if (Pyramid5::match(indices, n)) {
+		e = new Pyramid5(indices);
+	}
+	if (Pyramid13::match(indices, n)) {
+		e = new Pyramid13(indices);
 	}
 
 	if (e == NULL) {
@@ -114,7 +111,12 @@ Element* Mesh::createElement(eslocal *indices, eslocal n)
 	return e;
 }
 
-void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, eslocal part, bool dynamic)
+void Mesh::_elasticity(
+		SparseVVPMatrix &K,
+		SparseVVPMatrix &M,
+		std::vector<double> &f,
+		eslocal part,
+		bool dynamic)
 {
 	eslocal nK = _coordinates.localSize(part) * Point::size();
 	K.resize(nK, nK);
@@ -126,7 +128,7 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	DenseMatrix Ke, Me;
 	std::vector<double> fe;
 
-	std::vector <double> inertia (3, 0.0);
+	std::vector<double> inertia(3, 0.0);
 	inertia[2] = 9810.0 * 7.85e-9;
 	double ex = 2.1e5;
 	double mi = 0.3;
@@ -138,7 +140,8 @@ void Mesh::_elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<doubl
 	C(3, 3) = C(4, 4) = C(5, 5) = E * (0.5 - mi);
 
 	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, C, dynamic);
+		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, C,
+				dynamic);
 		_integrateElasticity(_elements[i], K, M, f, Ke, Me, fe, dynamic);
 	}
 }
@@ -147,12 +150,12 @@ inline double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();
 	return fabs(
-			values[0] * values[4] * values[8] +
-			values[1] * values[5] * values[6] +
-			values[2] * values[3] * values[7] -
-			values[2] * values[4] * values[6] -
-			values[1] * values[3] * values[8] -
-			values[0] * values[5] * values[7]);
+			values[0] * values[4] * values[8]
+					+ values[1] * values[5] * values[6]
+					+ values[2] * values[3] * values[7]
+					- values[2] * values[4] * values[6]
+					- values[1] * values[3] * values[8]
+					- values[0] * values[5] * values[7]);
 }
 
 inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
@@ -161,15 +164,15 @@ inline void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv.resize(m.rows(), m.columns());
 	double *invj = inv.values();
 	double detJx = 1 / det;
-	invj[0] = detJx * (  values[8] * values[4] - values[7] * values[5] );
-	invj[1] = detJx * (- values[8] * values[1] + values[7] * values[2] );
-	invj[2] = detJx * (  values[5] * values[1] - values[4] * values[2] );
-	invj[3] = detJx * (- values[8] * values[3] + values[6] * values[5] );
-	invj[4] = detJx * (  values[8] * values[0] - values[6] * values[2] );
-	invj[5] = detJx * (- values[5] * values[0] + values[3] * values[2] );
-	invj[6] = detJx * (  values[7] * values[3] - values[6] * values[4] );
-	invj[7] = detJx * (- values[7] * values[0] + values[6] * values[1] );
-	invj[8] = detJx * (  values[4] * values[0] - values[3] * values[1] );
+	invj[0] = detJx * (values[8] * values[4] - values[7] * values[5]);
+	invj[1] = detJx * (-values[8] * values[1] + values[7] * values[2]);
+	invj[2] = detJx * (values[5] * values[1] - values[4] * values[2]);
+	invj[3] = detJx * (-values[8] * values[3] + values[6] * values[5]);
+	invj[4] = detJx * (values[8] * values[0] - values[6] * values[2]);
+	invj[5] = detJx * (-values[5] * values[0] + values[3] * values[2]);
+	invj[6] = detJx * (values[7] * values[3] - values[6] * values[4]);
+	invj[7] = detJx * (-values[7] * values[0] + values[6] * values[1]);
+	invj[8] = detJx * (values[4] * values[0] - values[3] * values[1]);
 }
 
 // B =
@@ -189,7 +192,7 @@ inline void distribute(DenseMatrix &B, DenseMatrix &dND)
 
 	double *v = B.values();
 
-	memcpy(&v[0],                               dNDx, sizeof(double) * dND.columns());
+	memcpy(&v[0], dNDx,                               sizeof(double) * dND.columns());
 	memcpy(&v[3 * columns + dND.columns()],     dNDx, sizeof(double) * dND.columns());
 	memcpy(&v[5 * columns + 2 * dND.columns()], dNDx, sizeof(double) * dND.columns());
 
@@ -218,7 +221,7 @@ void Mesh::_assembleElesticity(
 
 	DenseMatrix coordinates(e->size(), Point::size());
 	for (size_t i = 0; i < e->size(); i++) {
-		coordinates.values()+ i * Point::size() << _coordinates.get(e->node(i), part);
+		coordinates.values() + i * Point::size() << _coordinates.get(e->node(i), part);
 	}
 
 	eslocal Ksize = Point::size() * e->size();
@@ -263,8 +266,7 @@ void Mesh::_integrateElasticity(
 		const DenseMatrix &Ke,
 		const DenseMatrix &Me,
 		const std::vector<double> &fe,
-		bool dynamic
-	) const
+		bool dynamic) const
 {
 	// Element ordering: xxxx, yyyy, zzzz,...
 	// Global ordering:  xyz, xyz, xyz, xyz, ...
@@ -333,7 +335,6 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 
 eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 {
-
 	if (parts == 1) {
 		eslocal *ePartition = new eslocal[last - first];
 		for (eslocal i = first; i < last; i++) {
@@ -346,7 +347,6 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 
 	// OUTPUTS
 	eslocal objval, *ePartition, *nPartition;
-
 
 	// FILL INPUT VARIABLES
 	////////////////////////////////////////////////////////////////////////////
@@ -381,20 +381,19 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	nPartition = new eslocal[nSize];
 
 	eslocal result = METIS_PartMeshDual(
-	                 &eSize,
-	                 &nSize,
-	                 e,
-	                 n,
-	                 NULL,		// weights of nodes
-	                 NULL,		// size of nodes
-	                 &ncommon,
-	                 &parts,
-	                 NULL,		// weights of parts
-	                 options,
-	                 &objval,
-	                 ePartition,
-	                 nPartition
-	             );
+			&eSize,
+			&nSize,
+			e,
+			n,
+			NULL,		// weights of nodes
+			NULL,		// size of nodes
+			&ncommon,
+			&parts,
+			NULL,		// weights of parts
+			options,
+			&objval,
+			ePartition,
+			nPartition);
 	checkMETISResult(result);
 
 	delete[] e;
@@ -434,7 +433,7 @@ void Mesh::partitiate(eslocal *ePartition)
 
 void Mesh::computeLocalIndices(size_t part)
 {
-	std::vector<eslocal> nodeMap (_coordinates.clusterSize(), -1);
+	std::vector<eslocal> nodeMap(_coordinates.clusterSize(), -1);
 
 	// Compute mask of nodes
 	for (eslocal e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
@@ -458,7 +457,12 @@ void Mesh::computeLocalIndices(size_t part)
 	_coordinates.computeLocal(part, nodeMap, nSize);
 }
 
-eslocal Mesh::getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const
+eslocal Mesh::getCentralNode(
+		eslocal first,
+		eslocal last,
+		eslocal *ePartition,
+		eslocal part,
+		eslocal subpart) const
 {
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
@@ -510,7 +514,7 @@ eslocal Mesh::getCentralNode(eslocal first, eslocal last, eslocal *ePartition, e
 	float last_l = nSize, l = 1;
 	eslocal incr = 1;
 
-	while(fabs((l - last_l) / l) > 1e-6) {
+	while (fabs((l - last_l) / l) > 1e-6) {
 		mkl_cspblas_scsrsymv("U", &nSize, a, ia, ja, x, y);
 		last_l = l;
 		l = snrm2(&nSize, y, &incr);
@@ -572,7 +576,10 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 	}
 }
 
-void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g_vec, double shrinking)
+void Mesh::saveBasis(
+		std::ofstream &vtk,
+		std::vector<std::vector<eslocal> > &l2g_vec,
+		double shrinking)
 {
 	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
@@ -581,7 +588,6 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g
 	vtk << "DATASET UNSTRUCTURED_GRID\n";
 	size_t nSubClst = l2g_vec.size();
 	size_t cnt = 0;
-
 
 	size_t n_points = 0;
 	for (size_t d = 0; d < l2g_vec.size(); d++) {
@@ -609,7 +615,7 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g
 	}
 	vtk << "CELLS " << _elements.size() << " " << size << "\n";
 
-	size_t i=0;
+	size_t i = 0;
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
 			vtk << _elements[i]->size();
@@ -639,7 +645,10 @@ void Mesh::saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g
 	}
 }
 
-void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <eslocal> > &l2g_vec, double shrinking)
+void Mesh::saveVTK(
+		std::vector<std::vector<double> > &displacement,
+		std::vector<std::vector<eslocal> > &l2g_vec,
+		double shrinking)
 {
 	std::ofstream vtk;
 	saveBasis(vtk, l2g_vec, shrinking);
@@ -659,7 +668,7 @@ void Mesh::saveVTK(std::vector<std::vector<double> > &displacement, std::vector<
 			vtk << displacement[i][3 * j + 1] << " ";
 			vtk << displacement[i][3 * j + 2] << "\n";
 		}
-		
+
 	}
 
 	vtk.close();
@@ -733,17 +742,18 @@ void Mesh::saveVTK(const char* filename, double shrinking)
 	vtk.close();
 }
 
-bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements, std::vector<eslocal> &face)
+bool isOuterFace(
+		std::vector<std::vector<eslocal> > &nodesElements,
+		std::vector<eslocal> &face)
 {
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
 	for (size_t i = 1; i < face.size(); i++) {
 		std::vector<eslocal> tmp(result.begin(), it);
-		it = std::set_intersection(
-		         tmp.begin(), tmp.end(),
-		         nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
-		         result.begin());
+		it = std::set_intersection(tmp.begin(), tmp.end(),
+				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
+				result.begin());
 		if (it - result.begin() == 1) {
 			return true;
 		}
@@ -752,19 +762,18 @@ bool isOuterFace(std::vector<std::vector<eslocal> > &nodesElements, std::vector<
 }
 
 bool isCommonFace(
-	std::vector<std::vector<eslocal> > &nodesElements,
-	std::vector<eslocal> &face,
-	const std::vector<eslocal> &partPtrs)
+		std::vector<std::vector<eslocal> > &nodesElements,
+		std::vector<eslocal> &face,
+		const std::vector<eslocal> &partPtrs)
 {
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
 	for (size_t i = 1; i < face.size(); i++) {
 		std::vector<eslocal> tmp(result.begin(), it);
-		it = std::set_intersection(
-		         tmp.begin(), tmp.end(),
-		         nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
-		         result.begin());
+		it = std::set_intersection(tmp.begin(), tmp.end(),
+				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
+				result.begin());
 		if (it - result.begin() == 1) {
 			return false;
 		}
@@ -781,7 +790,8 @@ bool isCommonFace(
 void Mesh::getSurface(SurfaceMesh &surface) const
 {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(
+			_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 
@@ -795,7 +805,8 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
 #endif
 		// Compute nodes' adjacent elements
-		std::vector<std::vector<eslocal> > nodesElements(_coordinates.localSize(i));
+		std::vector<std::vector<eslocal> > nodesElements(
+				_coordinates.localSize(i));
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
 				nodesElements[_elements[j]->node(k)].push_back(j);
@@ -864,7 +875,8 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(
+			_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 
@@ -878,7 +890,8 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 		// Compute nodes' adjacent elements
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k),
+						i)].push_back(j);
 			}
 		}
 	}
@@ -929,7 +942,8 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(
+			_partPtrs.size() - 1);
 	// number of elements in all parts
 	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
 
@@ -943,7 +957,8 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 		// Compute nodes' adjacent elements
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), j)].push_back(j);
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k),
+						j)].push_back(j);
 			}
 		}
 	}
@@ -991,6 +1006,38 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 	}
 }
 
+void Mesh::readFromFile(const char *meshFile, eslocal elementSize)
+{
+	_elements.resize(Loader::getLinesCount(meshFile));
+
+	std::ifstream file(meshFile);
+	std::string line;
+
+	eslocal indices[20], n; 	// 20 is the max of vertices of a element
+	double value;
+	eslocal minIndices = 10000;
+
+	if (file.is_open()) {
+		for (eslocal c = 0; c < _elements.size(); c++) {
+			getline(file, line, '\n');
+			std::stringstream ss(line);
+
+			n = 0;
+			while (ss >> value) {
+				indices[n++] = value - 1;
+			}
+			if (elementSize > 0) {
+				n = std::min(n, elementSize);
+			}
+			_elements[c] = createElement(indices, n);
+		}
+		file.close();
+	} else {
+		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
+		exit(EXIT_FAILURE);
+	}
+}
+
 void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 {
 	eslocal nK = Point::size() * _coordinates.localSize(part);
@@ -1002,7 +1049,8 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	for (size_t i = 0; i < _coordinates.localSize(part); i++) {
 		&nodes[i * Point::size()] << _coordinates.get(i, part);
 	}
-	for (size_t i = _partPtrs[part], index = 0; i < _partPtrs[part + 1]; i++, index++) {
+	for (size_t i = _partPtrs[part], index = 0; i < _partPtrs[part + 1];
+			i++, index++) {
 		// TODO: various data types int32_t and int64_t
 		// _elements[i]->fillNodes(&elems[3 * i]); CANNOT be used
 		for (size_t j = 0; j < _elements[i]->size(); j++) {
@@ -1011,19 +1059,18 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 	}
 
 	bem4i::getLameSteklovPoincare(
-	    K.values(),
-	    _coordinates.localSize(part),
-	    &nodes[0],
-	    eSize,
-	    &elems[0],
-	    0.33,			// nu
-	    1.0e5,			// E
-	    3,				// order near
-	    4,				// order far
-	    false			// verbose
-	    );
+			K.values(),
+			_coordinates.localSize(part),
+			&nodes[0],
+			eSize,
+			&elems[0],
+			0.33,			// nu
+			1.0e5,			// E
+			3,				// order near
+			4,				// order far
+			false			// verbose
+			);
 }
-
 
 void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
 {
@@ -1046,18 +1093,16 @@ void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
 			v10 = p1 - p0;
 			v20 = p2 - p0;
 
-			Area_h = 0.5 * (
-				v10.y * v20.z - v20.y * v10.z +
-				v20.x * v10.z - v10.x * v20.z +
-				v10.x * v20.y - v20.x * v10.y);
+			Area_h = 0.5
+					* (v10.y * v20.z - v20.y * v10.z + v20.x * v10.z
+					-  v10.x * v20.z + v10.x * v20.y - v20.x * v10.y);
 
 			for (size_t k = 0; k < 3; k++) {
-				f[3 * _elements[i]->node(k) + 2] +=  (1./3.) * Area_h;
+				f[3 * _elements[i]->node(k) + 2] += (1. / 3.) * Area_h;
 			}
 		}
 	}
 }
-
 
 std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
 {
@@ -1066,6 +1111,4 @@ std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
 	}
 	return os;
 }
-
-
 

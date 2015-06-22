@@ -39,6 +39,9 @@ if [ "$1" = "distclean" ]; then
   ./waf distclean
 fi
 
+#         HEXA8 HEXA20 TETRA4 TETRA10 PRISMA6 PRISMA15 PYRAMID5 PYRAMID13
+el_type=(   0     1      2       3       4       5        6         7)
+
 if [ "$1" = "run" ]; then
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
   export OMP_NUM_THREADS=1
@@ -51,8 +54,7 @@ if [ "$1" = "run" ]; then
   clusters=3       #2
   domains_p_c=5    #7
 
-  #         HEXA8 TETRA4 TETRA10 HEXA20 PRISMA6 PRISMA15
-  el_type=(   0     1      2       3       4       5    )
+
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
@@ -105,9 +107,6 @@ if [ "$1" = "debug" ]; then
   export OMP_NUM_THREADS=1
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
-
-  #         HEXA8 TETRA4 TETRA10 HEXA20
-  el_type=(   0     1      2       3   )
 
   for i in 0 #1 2 3
   do
