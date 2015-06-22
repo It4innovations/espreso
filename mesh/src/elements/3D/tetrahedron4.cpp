@@ -116,11 +116,11 @@ std::vector<double> Tetra4_Weight()
 {
 	switch (Tetrahedron4GPCount) {
 	case 4: {
-		return std::vector<double> (4, 1 / 24.0);
+		return std::vector<double> (4, 1.0 / 24.0);
 	}
 	case 5: {
-		std::vector<double> w(5, 3 / 40.0);
-		w[0] = - 2 / 15.0;
+		std::vector<double> w(5, 3.0 / 40.0);
+		w[0] = - 2.0 / 15.0;
 		return w;
 	}
 	case 11: {
