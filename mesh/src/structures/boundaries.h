@@ -13,9 +13,7 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
-	Boundaries() { };
 	Boundaries(const Mesh &mesh);
-	~Boundaries() { };
 
 	void resize(size_t size)
 	{
@@ -27,9 +25,14 @@ public:
 		return _boundaries.size();
 	}
 
-	std::set<eslocal>& operator[](size_t index)
+	std::set<eslocal>& operator[](size_t position)
 	{
-		return _boundaries[index];
+		return _boundaries[position];
+	}
+
+	// prepare for future improvements
+	eslocal index(size_t position) {
+		return position;
 	}
 
 	template<typename T>
@@ -40,15 +43,15 @@ public:
 						std::vector < std::vector <eslocal> >    & lambda_map_sub_B1,
 						std::vector < std::vector <eslocal> >    & lambda_map_sub_B0,
 						std::vector < std::vector <double> > & B1_l_duplicity,
-						std::map < T, double >             & dirichlet_x,
-						std::map < T, double >             & dirichlet_y,
-						std::map < T, double >             & dirichlet_z,
 						const eslocal domains_num) ;
 
 
 private:
+	const Mesh &_mesh;
+
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;
+	//std::vector<eslocal> _mapping;
 };
 
 }

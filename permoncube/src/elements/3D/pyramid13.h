@@ -3,7 +3,7 @@
 #define PM_PYRAMID13_H_
 
 #define Pyramid13Subelements 6
-#define Pyramid13Subnodes 2
+#define Pyramid13Subnodes 3
 
 #include "esmesh.h"
 #include "../../settings.h"

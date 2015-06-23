@@ -41,37 +41,37 @@ void Pyramid5::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	pyramid[5] = _projection[indices[13]];
 	pyramid[6] = _projection[indices[13]];
 	pyramid[7] = _projection[indices[13]];
-	//mesh.pushElement(new mesh::Pyramid5(hexa));
+	mesh.pushElement(new mesh::Pyramid5(pyramid));
 
 	pyramid[0] = _projection[indices[20]];
 	pyramid[1] = _projection[indices[26]];
 	pyramid[2] = _projection[indices[8]];
 	pyramid[3] = _projection[indices[2]];
-	//mesh.pushElement(new mesh::Pyramid5(hexa));
+	mesh.pushElement(new mesh::Pyramid5(pyramid));
 
 	pyramid[0] = _projection[indices[26]];
 	pyramid[1] = _projection[indices[24]];
 	pyramid[2] = _projection[indices[6]];
 	pyramid[3] = _projection[indices[8]];
-	//mesh.pushElement(new mesh::Pyramid5(hexa));
+	mesh.pushElement(new mesh::Pyramid5(pyramid));
 
 	pyramid[0] = _projection[indices[24]];
 	pyramid[1] = _projection[indices[18]];
 	pyramid[2] = _projection[indices[0]];
 	pyramid[3] = _projection[indices[6]];
-	//mesh.pushElement(new mesh::Pyramid5(hexa));
+	mesh.pushElement(new mesh::Pyramid5(pyramid));
 
 	pyramid[0] = _projection[indices[18]];
 	pyramid[1] = _projection[indices[24]];
 	pyramid[2] = _projection[indices[26]];
 	pyramid[3] = _projection[indices[20]];
-	//mesh.pushElement(new mesh::Pyramid5(hexa));
+	mesh.pushElement(new mesh::Pyramid5(pyramid));
 
 	pyramid[0] = _projection[indices[2]];
 	pyramid[1] = _projection[indices[8]];
 	pyramid[2] = _projection[indices[6]];
 	pyramid[3] = _projection[indices[0]];
-	//mesh.pushElement(new mesh::Pyramid5(hexa));
+	mesh.pushElement(new mesh::Pyramid5(pyramid));
 }
 
 eslocal Pyramid5::clusterNodesCount(const permoncube::Settings &settings)

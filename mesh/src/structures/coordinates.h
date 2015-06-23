@@ -5,8 +5,32 @@
 #include "../loader.h"
 
 #include <vector>
+#include <map>
 
-namespace mesh {
+namespace mesh
+{
+
+class CoordinatesProperty
+{
+public:
+	friend std::ostream& operator<<(std::ostream& os, const CoordinatesProperty &cp);
+
+	CoordinatesProperty() { };
+	void load(const char *fileName);
+
+	double& operator[](eslocal index)
+	{
+		return _mapping[index];
+	}
+
+	const std::map<eslocal, double>& values() const
+	{
+		return _mapping;
+	}
+
+private:
+	std::map<eslocal, double> _mapping;
+};
 
 class Coordinates
 {
@@ -15,8 +39,9 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
-	Coordinates(): _points(0), _clusterIndex(1) { };
+	Coordinates(): _points(0), _clusterIndex(1), _property(CP::SIZE) { };
 	Coordinates(const char *fileName);
+	Coordinates(const Ansys &a);
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -95,8 +120,19 @@ public:
 		return _points[index];
 	}
 
+	CoordinatesProperty& property(CP::Property property)
+	{
+		return _property[property];
+	}
+
+	const CoordinatesProperty& property(CP::Property property) const
+	{
+		return _property[property];
+	}
 
 private:
+	void readFromFile(const char *fileName);
+
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */
@@ -104,6 +140,9 @@ private:
 
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
+
+	/** @brief Coordinates properties */
+	std::vector<CoordinatesProperty> _property;
 };
 
 }

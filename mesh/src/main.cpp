@@ -3,12 +3,39 @@
 void test_matrices();
 void test_BEM();
 void test_meshes();
+void test_ansys();
 
 int main(int argc, char** argv)
 {
-	test_matrices();
+	test_ansys();
 	return 0;
 }
+
+void test_ansys()
+{
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
+
+	mesh::Ansys ansys("matrices/spanner/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+
+	std::cout << ansys;
+
+	mesh::Mesh m(ansys, partsCount, fixPointsCount);
+
+	mesh::Boundaries b(m);
+
+	mesh::SurfaceMesh sMesh(m);
+
+	mesh::CommonFacesMesh cMesh(sMesh);
+
+	m.saveVTK("mesh.vtk", 0.6);
+	sMesh.saveVTK("surface.vtk", 0.6);
+	cMesh.saveVTK("faces.vtk", 0.6);
+}
+
 
 void test_meshes()
 {
