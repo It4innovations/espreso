@@ -110,7 +110,7 @@ void load_mesh()
 	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
 	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
 
-	input.mesh = mesh::Mesh(ansys, 4, 8);
+	input.mesh = mesh::Mesh(ansys, 10, 5);
 }
 
 void generate_mesh()
@@ -723,6 +723,44 @@ void testFEM(int argc, char** argv)
 //            }
 //        }
 //    }
+
+
+/*
+	for (eslocal d = 0; d < partsCount; d++) {
+    // K
+    std::ofstream (K_mat_file);
+    K_mat_file.precision(15);
+    K_mat_file << std::scientific;
+    std::stringstream K_mat_file_name;
+    K_mat_file_name << "dumped_files/K_mat_" << d;
+    K_mat_file.open ( K_mat_file_name.str().c_str() );
+    K_mat_file << K_mat[d];
+    K_mat_file.close();
+    // f
+    std::ofstream (f_vec_file);
+    f_vec_file.precision(15);
+    f_vec_file << std::scientific;
+    std::stringstream f_vec_file_name;
+    f_vec_file_name << "dumped_files/f_vec_" << d;
+    f_vec_file.open ( f_vec_file_name.str().c_str() );
+    f_vec_file << f_vec[d];
+    f_vec_file.close();
+    // B
+    std::ofstream (B0_mat_file);
+    B0_mat_file.precision(15);
+    B0_mat_file << std::scientific;
+    std::stringstream B0_mat_file_name;
+    B0_mat_file_name << "dumped_files/B0_mat_" << d;
+    B0_mat_file.open ( B0_mat_file_name.str().c_str() );
+    B0_mat_file << B0_mat[d];
+    B0_mat_file.close();
+
+
+  }
+ */       
+
+
+
 
         
         
