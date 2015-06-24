@@ -70,18 +70,29 @@ void testFEM(int argc, char** argv);
 
 void testBEM(int argc, char** argv);
 
-void testMPI(int argc, char** argv);
+void testMPI(int argc, char** argv, int MPIrank, int MPIsize);
 
 void load_mesh();
 
-void generate_mesh();
+void generate_mesh( int MPIrank );
 
 int main(int argc, char** argv)
 {
+
+    MPI_Init (&argc, &argv);					// starts MPI
+
+    int MPIrank;
+    int MPIsize;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+    std::cout << "Rank " << MPIrank << std::endl;
+
 	setParams(argc, argv);
 
 	if (params.generateMesh) {
-		generate_mesh();
+		generate_mesh( MPIrank );
 	} else {
 		load_mesh();
 	}
@@ -90,7 +101,7 @@ int main(int argc, char** argv)
 		//testBEM(argc, argv);
 		testFEM(argc, argv);
 	} else {
-		testMPI(argc, argv);
+		testMPI(argc, argv, MPIrank, MPIsize);
 	}
 
 
@@ -110,10 +121,10 @@ void load_mesh()
 	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
 	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
 
-	input.mesh = mesh::Mesh(ansys, 4, 8);
+	input.mesh = mesh::Mesh(ansys, 2, 8);
 }
 
-void generate_mesh()
+void generate_mesh( int MPIrank )
 {
 	std::cout << "Permoncube:" << std::endl;
 
@@ -152,11 +163,24 @@ void generate_mesh()
 	}
 	}
 
-	size_t index;
+	size_t index = MPIrank;
 
+	int globoalIndClst = MPIrank;
+	int Cx = params.settings.clusters[0];
+	int Cy = params.settings.clusters[1];
+	int Cz = params.settings.clusters[2];
 
-	index = 0; // MPI_RANK
-	size_t cluster[3] = { 0, 0, 0 }; // TODO: project MPI_RANK to cluster
+	int Iclst,Jclst,Kclst, inXYplane;
+
+	Kclst = ceil(double (globoalIndClst+1)/(Cx*Cy));
+	inXYplane = (globoalIndClst+1)-(Kclst-1)*Cx*Cy;
+	Jclst = ceil(double( inXYplane)/Cx);
+	Iclst = inXYplane - Cx*(Jclst-1);
+
+	size_t cluster[3];
+	cluster[0] = Iclst - 1;
+	cluster[1] = Jclst - 1;
+	cluster[2] = Kclst - 1;
 
 	generator->mesh(input.mesh, cluster);
 	//generator->fixZeroPlanes(input.mesh, cluster);
@@ -170,14 +194,130 @@ void generate_mesh()
 }
 
 
-void testMPI(int argc, char** argv)
+void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 {
-	size_t index;
-	index = 0; // MPI_RANK
-	// index = cislo clusteru
+
+	size_t clust_index = MPIrank; // clust_index = cislo clusteru
+
 	// input[index].mesh = mesh na clusteru s cislem 'index'
 	// input[index].dirichlet_{x, y, z} = dirichlet na clusteru s cislem 'index'
 	// TODO: RUN SOLVER
+
+	//input.mesh;			//
+
+	//input.boundaries; 	// globalni boundaries
+
+	// full version
+
+	double start;
+	start = omp_get_wtime();
+	std::cout.precision(15);
+
+	size_t partsCount 	  = input.mesh.parts();
+	size_t fixPointsCount = input.mesh.getFixPointsCount();
+
+	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
+
+	// TODO: fill boundaries in PERMONCUBE
+	mesh::Boundaries boundaries(input.mesh);
+
+	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
+
+	//Faces faces(mesh, coordinates);
+
+	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
+
+	//Corners corners(faces.getFaces(), coordinates);
+
+	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
+
+	std::vector < SparseCSRMatrix >			K_mat;
+	std::vector < SparseCSRMatrix >			M_mat;
+	std::vector < SparseIJVMatrix >			B1_mat;
+	std::vector < SparseIJVMatrix >			B0_mat;
+
+	std::vector < std::vector <eslocal> >	lambda_map_sub_B1;
+	std::vector < std::vector <eslocal> >	lambda_map_sub_B0;
+	std::vector < std::vector <eslocal> >	lambda_map_sub_clst;
+	std::vector < std::vector <double> >	B1_l_duplicity;
+
+	std::vector < std::vector <double > >	f_vec     (partsCount);
+	std::vector < std::vector <eslocal > >	fix_nodes (partsCount);
+	std::vector < std::vector <eslocal> >	l2g_vec;
+
+	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
+
+	K_mat.reserve(partsCount);
+	M_mat.reserve(partsCount);
+	for (eslocal d = 0; d < partsCount; d++) {
+		K_mat.push_back( SparseCSRMatrix (0,0) );
+		M_mat.push_back( SparseCSRMatrix (0,0) );
+	}
+
+	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
+
+#ifndef DEBUG
+	cilk_for (eslocal d = 0; d < partsCount; d++) {
+#else
+	for (eslocal d = 0; d < partsCount; d++) {
+#endif
+		eslocal dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
+		std::vector<double> f(dimension);
+
+		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
+
+        f_vec[d].swap(f);
+
+		std::cout << d << " " << std::endl;
+	}
+
+	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
+
+
+	const std::vector<eslocal> fixPoints = input.mesh.getFixPoints();
+
+#ifndef DEBUG
+	cilk_for (eslocal d = 0; d < partsCount; d++) {
+#else
+	for (eslocal d = 0; d < partsCount; d++) {
+#endif
+		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
+		}
+		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
+	}
+
+	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
+	boundaries.create_B1_l<eslocal>(
+		B1_mat,
+		B0_mat,
+		l2g_vec,
+		lambda_map_sub_clst,
+		lambda_map_sub_B1,
+		lambda_map_sub_B0,
+		B1_l_duplicity,
+		partsCount
+	);
+
+	std::vector < SparseIJVMatrix >			B1_mat_g;
+	std::vector < std::vector <eslocal> >	lambda_map_sub_B1_g;
+	std::vector < std::vector <eslocal> >	lambda_map_sub_clst_g;
+	std::vector < std::vector <double> >	B1_l_duplicity_g;
+
+
+	std::cout << "11.1: " << omp_get_wtime() - start<< std::endl;
+
+	input.boundaries.create_B1_g<eslocal>(
+		B1_mat_g,
+		lambda_map_sub_clst_g,
+		lambda_map_sub_B1_g,
+		B1_l_duplicity_g,
+		MPIrank,
+		MPIsize
+	);
+
+
+
 }
 
 
@@ -221,7 +361,7 @@ void testBEM(int argc, char** argv)
         
         Kmat_file_p.precision(15);
         Kmat_file_o.precision(15);
-       
+       4
         Kmat_file_o << std::scientific;
         Kmat_file_p << std::scientific;
         
@@ -699,6 +839,8 @@ void testFEM(int argc, char** argv)
 		partsCount
 	);
 
+	//std::cout << B1_mat[0];
+
 	const std::map<eslocal, double> &forces_x = input.mesh.coordinates().property(mesh::CP::FORCES_X).values();
 	const std::map<eslocal, double> &forces_y = input.mesh.coordinates().property(mesh::CP::FORCES_Y).values();
 	const std::map<eslocal, double> &forces_z = input.mesh.coordinates().property(mesh::CP::FORCES_Z).values();
@@ -776,9 +918,9 @@ void testFEM(int argc, char** argv)
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
 
 	IterSolver solver;
-	solver.CG_max_iter	 = 100;
+	solver.CG_max_iter	 = 1000;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = 0.0001;
+	solver.epsilon		 = 0.001;
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
 	solver.USE_DYNAMIC	 = 0;

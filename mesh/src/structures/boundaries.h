@@ -45,6 +45,13 @@ public:
 						std::vector < std::vector <double> > & B1_l_duplicity,
 						const eslocal domains_num) ;
 
+	template<typename T>
+	void create_B1_g(	std::vector < SparseIJVMatrix >      & B1_local,
+						std::vector < std::vector <eslocal> >    & lambda_map_sub_clst,
+						std::vector < std::vector <eslocal> >    & lambda_map_sub_B1,
+						std::vector < std::vector <double> > & B1_l_duplicity,
+						const eslocal MPIrank,
+						const eslocal MPIsize) ;
 
 private:
 	const Mesh &_mesh;

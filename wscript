@@ -41,7 +41,7 @@ def configure(ctx):
     write_configuration(ctx)
 
     ctx.setenv("base", ctx.env)
-    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11" ])
     ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
     ctx.recurse("metis")
@@ -135,7 +135,7 @@ def check_environment(ctx):
 
     try:
         if ctx.options.mpich:
-            ctx.find_program("mpic++.mpich", var="MPICXX")
+            ctx.find_program("mpic++", var="MPICXX")
         else:
             ctx.find_program("mpic++", var="MPICXX")
     except ctx.errors.ConfigurationError:

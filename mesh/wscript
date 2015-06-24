@@ -31,7 +31,7 @@ source_files = (
 
 
 def configure(ctx):
-    ctx.setenv(MESH, ctx.all_envs["base"].derive());
+    ctx.setenv(MESH, ctx.all_envs["mpi"].derive());
 
     if ctx.options.debug:
         ctx.env.append_unique("CXXFLAGS", [ "-DDEBUG" ])
