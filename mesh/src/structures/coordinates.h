@@ -4,6 +4,7 @@
 #include "../elements/1D/point.h"
 #include "../loader.h"
 
+#include <algorithm>
 #include <vector>
 #include <map>
 
@@ -76,6 +77,16 @@ public:
 	esglobal globalIndex(eslocal index) const
 	{
 		return _globalIndex[index];
+	}
+
+	eslocal clusterIndex(esglobal index) const
+	{
+		return lower_bound(_globalIndex.begin(), _globalIndex.end(), index) - _globalIndex.begin();
+	}
+
+	eslocal localIndex(eslocal index, eslocal part) const
+	{
+		return lower_bound(_clusterIndex[part].begin(), _clusterIndex[part].end(), index) - _clusterIndex[part].begin();
 	}
 
 

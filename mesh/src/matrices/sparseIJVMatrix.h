@@ -19,6 +19,8 @@ class SparseIJVMatrix: public Matrix
 
 public:
 
+	friend std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix &m);
+
 	SparseIJVMatrix(): Matrix(IJVMatrixIndexing) { };
 	SparseIJVMatrix(eslocal rows, eslocal columns): Matrix(rows, columns, IJVMatrixIndexing) { };
 

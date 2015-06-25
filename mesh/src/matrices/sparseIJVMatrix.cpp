@@ -1,5 +1,13 @@
 #include "sparseIJVMatrix.h"
 
+std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix &m)
+{
+	for (size_t i = 0; i < m.nonZeroValues(); i++) {
+		os << m._rowIndices[i] << " " << m._columnIndices[i] << " " << m._values[i] << "\n";
+	}
+	return os;
+}
+
 SparseIJVMatrix::SparseIJVMatrix(const DenseMatrix &other): Matrix(other.rows(), other.columns(), IJVMatrixIndexing)
 {
 	eslocal nnz = other.nonZeroValues();
