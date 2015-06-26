@@ -724,17 +724,17 @@ void testFEM(int argc, char** argv)
 //        }
 //    }
 
-
 /*
 	for (eslocal d = 0; d < partsCount; d++) {
     // K
+    SparseIJVMatrix tmpK = K_mat[d];
     std::ofstream (K_mat_file);
     K_mat_file.precision(15);
     K_mat_file << std::scientific;
     std::stringstream K_mat_file_name;
     K_mat_file_name << "dumped_files/K_mat_" << d;
     K_mat_file.open ( K_mat_file_name.str().c_str() );
-    K_mat_file << K_mat[d];
+    K_mat_file << tmpK;
     K_mat_file.close();
     // f
     std::ofstream (f_vec_file);
@@ -754,11 +754,8 @@ void testFEM(int argc, char** argv)
     B0_mat_file.open ( B0_mat_file_name.str().c_str() );
     B0_mat_file << B0_mat[d];
     B0_mat_file.close();
-
-
   }
- */       
-
+*/
 
 
 
@@ -814,13 +811,13 @@ void testFEM(int argc, char** argv)
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
 
 	IterSolver solver;
-	solver.CG_max_iter	 = 100;
+	solver.CG_max_iter	 = 200;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = 0.0001;
+	solver.epsilon		 = 0.00001;
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
 	solver.USE_DYNAMIC	 = 0;
-	solver.USE_PIPECG	 = 1;
+	solver.USE_PIPECG	 = 0;
 	solver.USE_PREC		 = 0;
 	solver.FIND_SOLUTION = 0;
 
