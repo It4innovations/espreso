@@ -7,7 +7,7 @@ void test_ansys();
 
 int main(int argc, char** argv)
 {
-	test_ansys();
+	test_matrices();
 	return 0;
 }
 
@@ -220,8 +220,8 @@ void test_matrices()
 	SparseIJVMatrix ijvT(csr);
 	ijvT.transpose();
 
-	for (size_t r = 0; r < d.rows(); r++) {
-		for (size_t c = 0; c < d.columns(); c++) {
+	for (size_t r = 0; r < ijvT.rows(); r++) {
+		for (size_t c = 0; c < ijvT.columns(); c++) {
 			if (ijv.get(r, c) != ijvT.get(c, r)) {
 				std::cerr << ijv;
 				std::cerr << ijvT;

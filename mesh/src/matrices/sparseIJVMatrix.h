@@ -37,6 +37,11 @@ public:
 	void reserve(size_t size);
 	void transpose();
 
+	void sort()
+	{
+		sort(0, _values.size());
+	}
+
 	size_t nonZeroValues() const
 	{
 		return _values.size();
@@ -89,6 +94,8 @@ public:
 	}
 
 private:
+
+	void sort(size_t begin, size_t end);
 
 	double& operator()(size_t row, size_t column)
 	{

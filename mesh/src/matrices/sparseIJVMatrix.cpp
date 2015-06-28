@@ -134,4 +134,65 @@ void SparseIJVMatrix::reserve(size_t size)
 void SparseIJVMatrix::transpose()
 {
 	_rowIndices.swap(_columnIndices);
+	size_t tmp = _rows;
+	_rows = _columns;
+	_columns = tmp;
+	sort();
+}
+
+#define compare(a, b, i, j) (a[i] != a[j] ? a[i] - a[j] : b[i] - b[j])
+
+void SparseIJVMatrix::sort(size_t begin, size_t end)
+{
+	size_t l, h, p;
+	eslocal p1, p2, t;
+	double p3, td;
+
+	if (begin >= end) {
+		return;
+	}
+
+	l = begin;
+	h = end;
+	p = end;
+
+	p1 = _columnIndices[p];
+	p2 = _rowIndices[p];
+	p3 = _values[p];
+
+	do {
+		while ((l < h) && compare(_rowIndices, _columnIndices, l, p) <= 0) { l++; }
+		while ((h > l) && compare(_rowIndices, _columnIndices, h, p) >= 0) { h--; }
+		if (l < h) {
+			t = _columnIndices[l];
+			_columnIndices[l] = _columnIndices[h];
+			_columnIndices[h] = t;
+
+			t = _rowIndices[l];
+			_rowIndices[l] = _rowIndices[h];
+			_rowIndices[h] = t;
+
+			td = _values[l];
+			_values[l] = _values[h];
+			_values[h] = td;
+		}
+	} while (l < h);
+
+	_columnIndices[p] = _columnIndices[l];
+	_columnIndices[l] = p1;
+
+	_rowIndices[p] = _rowIndices[l];
+	_rowIndices[l] = p2;
+
+	_values[p] = _values[l];
+	_values[l] = p3;
+
+	/* Sort smaller array first for less stack usage */
+	if (l - begin < end - l) {
+		sort(begin, l - 1);
+		sort(l + 1, end);
+	} else {
+		sort(l + 1, end);
+		sort(begin, l - 1);
+	}
 }
