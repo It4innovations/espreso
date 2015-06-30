@@ -36,22 +36,27 @@ public:
 	}
 
 	template<typename T>
-	void create_B1_l(	std::vector < SparseIJVMatrix >      & B1_local, 
-						std::vector < SparseIJVMatrix >      & B0_local,
-						std::vector < std::vector <T> >      & l2g_vec,
-						std::vector < std::vector <eslocal> >    & lambda_map_sub_clst,
-						std::vector < std::vector <eslocal> >    & lambda_map_sub_B1,
-						std::vector < std::vector <eslocal> >    & lambda_map_sub_B0,
-						std::vector < std::vector <double> > & B1_l_duplicity,
+	void create_B1_l(	std::vector < SparseIJVMatrix >      	& B1_local,
+						std::vector < SparseIJVMatrix >      	& B0_local,
+						std::vector < std::vector <T> >      	& l2g_vec,
+						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
+						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
+						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
+						std::vector < std::vector <double> > 	& B1_l_duplicity,
 						const eslocal domains_num) ;
 
 	template<typename T>
-	void create_B1_g(	std::vector < SparseIJVMatrix >      & B1_local,
-						std::vector < std::vector <eslocal> >    & lambda_map_sub_clst,
-						std::vector < std::vector <eslocal> >    & lambda_map_sub_B1,
-						std::vector < std::vector <double> > & B1_l_duplicity,
-						const eslocal MPIrank,
-						const eslocal MPIsize) ;
+	void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1_global,
+									const std::vector < SparseCSRMatrix >   & K_mat,
+									std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
+									std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
+									std::vector < std::vector <double> >    & B1_duplicity,
+									const eslocal MPIrank,
+									const eslocal MPIsize,
+									const eslocal subDomPerCluster,
+									std::vector < eslocal  > & myNeighClusters) ;
+
+
 
 private:
 	const Mesh &_mesh;

@@ -86,7 +86,14 @@ public:
 
 	eslocal localIndex(eslocal index, eslocal part) const
 	{
-		return lower_bound(_clusterIndex[part].begin(), _clusterIndex[part].end(), index) - _clusterIndex[part].begin();
+
+		std::vector< eslocal >::const_iterator it;
+		it = lower_bound(_clusterIndex[part].begin(), _clusterIndex[part].end(), index) ;
+
+		if (it == _clusterIndex[part].end() || *it != index)
+			return -1;
+		else
+			return it - _clusterIndex[part].begin();
 	}
 
 

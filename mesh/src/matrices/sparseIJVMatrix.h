@@ -68,6 +68,10 @@ public:
 		return &_rowIndices[0];
 	}
 
+	std::vector < eslocal > & rowIndices_vec () {
+		return _rowIndices;
+	}
+
 	const eslocal* columnIndices() const
 	{
 		return &_columnIndices[0];
@@ -76,6 +80,10 @@ public:
 	eslocal* columnIndices()
 	{
 		return &_columnIndices[0];
+	}
+
+	std::vector < eslocal > & columnIndices_vec () {
+		return _columnIndices;
 	}
 
 	const double* values() const
@@ -87,6 +95,46 @@ public:
 	{
 		return &_values[0];
 	}
+
+	std::vector < double > & values_vec () {
+		return _values;
+	}
+
+	void ShiftRowIndex ( eslocal offset ) {
+		for (int i = 0; i < _rowIndices.size(); i++)
+			_rowIndices[i]+=offset;
+
+		if ( _rowIndices.size() > 0 && _rowIndices[_rowIndices.size()-1] > _rows )
+				_rows = _rowIndices[_rowIndices.size()-1];
+
+	}
+
+	void AppendMatrix ( SparseDOKMatrix &inputMatrix) {
+		SparseIJVMatrix inpMatIJV;
+		inpMatIJV = inputMatrix;
+
+		_rowIndices.insert   (_rowIndices.end(),    inpMatIJV.rowIndices_vec().begin(),    inpMatIJV.rowIndices_vec().end()    );
+		_columnIndices.insert(_columnIndices.end(), inpMatIJV.columnIndices_vec().begin(), inpMatIJV.columnIndices_vec().end() );
+		_values.insert(       _values.end(),        inpMatIJV.values_vec().begin(),        inpMatIJV.values_vec().end()        );
+
+		_rows    = ( (_rows    > inpMatIJV.rows())    ? _rows    : inpMatIJV.rows()    );
+		_columns = ( (_columns > inpMatIJV.columns()) ? _columns : inpMatIJV.columns() );
+
+
+//		if ( (_rowIndices[_rowIndices.size()-1] + _indexing ) >= _rows ) {
+//			_rows = _rowIndices[_rowIndices.size()-1] + _indexing;
+//		}
+//
+//
+//		if ( (_columnIndices[_columnIndices.size()-1] +_indexing ) >= _columns ) {
+//			_columns = _columnIndices[_columnIndices.size()-1] + _indexing;
+//		}
+
+		//TODO:Call IJVSort()
+
+	}
+
+
 
 private:
 

@@ -58,10 +58,12 @@ def configure(ctx):
     if ctx.env.ESDUAL == 64:
         ctx.env.append_unique("CXXFLAGS", [ "-Desdual=long" ])
 
-    if ctx.env.ESLGLOBAL == 32:
+    if ctx.env.ESGLOBAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=int" ])
+	ctx.env.append_unique("CXXFLAGS", [ "-Desglobal_mpi=MPI_INT" ])
     if ctx.env.ESGLOBAL == 64:
         ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=long" ])
+	ctx.env.append_unique("CXXFLAGS", [ "-Desglobal_mpi=MPI_LONG" ])
 
     ctx.env.append_unique("LIB", [ "mkl_core" ])
 
