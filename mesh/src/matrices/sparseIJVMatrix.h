@@ -124,7 +124,7 @@ public:
 		_rows    = _rows > inputMatrix.rows() ? _rows : inputMatrix.rows();
 		_columns = _columns > inputMatrix.columns() ? _columns : inputMatrix.columns();
 
-		sort();
+		//sort();
 	}
 
 

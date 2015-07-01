@@ -65,7 +65,7 @@ do
 
    date | tee -a $log_file
 
-   ./espreso ${el_type[0]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
-
+   # ./espreso ${el_type[0]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+   mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 done
 
