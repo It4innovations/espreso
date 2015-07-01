@@ -1,5 +1,5 @@
 
-PERMONCUBE = "base"
+PERMONCUBE = "mpi"
 
 source_files = (
     "src/elements/3D/tetrahedron4.cpp",

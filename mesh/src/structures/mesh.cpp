@@ -1,5 +1,5 @@
 #include "mesh.h"
-
+#include "mpi.h"
 using namespace mesh;
 
 Mesh::Mesh():_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
@@ -581,7 +581,16 @@ void Mesh::saveBasis(
 		std::vector<std::vector<eslocal> > &l2g_vec,
 		double shrinking)
 {
-	vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
+
+	//TODO: lepsi integrace - mozna posila jmeno jako parametr, nebo aspo cluster index
+    int MPIrank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    std::stringstream name;
+    name << "mesh_" << MPIrank << ".vtk";
+    vtk.open(name.str().c_str()   , std::ios::out | std::ios::trunc);
+
+
+	//vtk.open("mesh.vtk", std::ios::out | std::ios::trunc);
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
 	vtk << "ASCII\n\n";

@@ -133,6 +133,7 @@ void SparseIJVMatrix::reserve(size_t size)
 
 void SparseIJVMatrix::transpose()
 {
+	//TODO: po swap by mela byt matice znovu setridena
 	_rowIndices.swap(_columnIndices);
 	size_t tmp = _rows;
 	_rows = _columns;
