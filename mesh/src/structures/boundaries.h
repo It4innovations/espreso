@@ -46,15 +46,15 @@ public:
 						const eslocal domains_num) ;
 
 	template<typename T>
-	void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1_global,
-									const std::vector < SparseCSRMatrix >   & K_mat,
-									std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
-									std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
-									std::vector < std::vector <double> >    & B1_duplicity,
-									const eslocal MPIrank,
-									const eslocal MPIsize,
-									const eslocal subDomPerCluster,
-									std::vector < eslocal  > & myNeighClusters) ;
+	void create_B1_g(	std::vector < SparseIJVMatrix >         & B1_global,
+						const std::vector < SparseCSRMatrix >   & K_mat,
+						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
+						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
+						std::vector < std::vector <double> >    & B1_duplicity,
+						const eslocal MPIrank,
+						const eslocal MPIsize,
+						const eslocal subDomPerCluster,
+						std::vector < eslocal  > & myNeighClusters) ;
 
 
 

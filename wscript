@@ -2,7 +2,7 @@
 import commands
 import os
 
-VERSION = 5
+VERSION = 6
 
 def options(opt):
     opt.add_option("--debug",
@@ -60,10 +60,10 @@ def configure(ctx):
 
     if ctx.env.ESGLOBAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=int" ])
-	ctx.env.append_unique("CXXFLAGS", [ "-Desglobal_mpi=MPI_INT" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-Desglobal_mpi=MPI_INT" ])
     if ctx.env.ESGLOBAL == 64:
         ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=long" ])
-	ctx.env.append_unique("CXXFLAGS", [ "-Desglobal_mpi=MPI_LONG" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-Desglobal_mpi=MPI_LONG" ])
 
     ctx.env.append_unique("LIB", [ "mkl_core" ])
 

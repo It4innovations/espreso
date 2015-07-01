@@ -58,7 +58,11 @@ public:
 	}
 
 	void saveVTK(const char* filename, double shrinking = 1);
-	void saveVTK(std::vector<std::vector<double> > &displacement, std::vector<std::vector <eslocal> > &l2g_vec, double shrinking = 1);
+	void saveVTK(
+			const char* filename,
+			std::vector<std::vector<double> > &displacement,
+			std::vector<std::vector <eslocal> > &l2g_vec,
+			double shrinking = 1);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 

@@ -73,7 +73,6 @@ public:
 		return _globalIndex[_clusterIndex[part][index]];
 	}
 
-	//TODO: LRiha - muze toto byt Ondro ?
 	esglobal globalIndex(eslocal index) const
 	{
 		return _globalIndex[index];

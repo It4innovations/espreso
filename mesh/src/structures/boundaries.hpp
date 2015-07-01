@@ -132,6 +132,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 }
 
 
+
 struct Comp_vf
 {
 	bool operator() (const std::vector<esglobal> &a, const std::vector<esglobal> &b)
@@ -377,7 +378,11 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 
 	std::vector < std::vector < esglobal > > mpi_send_buff;
 	mpi_send_buff.resize( myNeighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
+#ifdef DEBUG
+	for (int i = 0; i < myNeighClusters.size(); i++) {
+#else
 	cilk_for (int i = 0; i < myNeighClusters.size(); i++) {
+#endif
 		int index = 0;
 		if ( myLambdas.size() > 0 )
 		{
@@ -537,7 +542,8 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 		//TODO: lambdaNum muze byt 64bit integer
 		//TODO: matice B - pocet radku muze byt 64bit int
 		B1_DOK_tmp[d].resize( total_number_of_B1_l_rows + total_number_of_global_B1_lambdas , K_mat[d].rows());
-		B1[d].AppendMatrix(B1_DOK_tmp[d]); //    = B1_DOK_tmp[d];
+		SparseIJVMatrix ijv = B1_DOK_tmp[d];
+		B1[d].AppendMatrix(ijv); //    = B1_DOK_tmp[d];
 	}
 
 	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
@@ -647,7 +653,6 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 //
 
 }
-
 
 
 }
