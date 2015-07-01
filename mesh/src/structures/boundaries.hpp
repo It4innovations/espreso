@@ -6,8 +6,8 @@ namespace mesh {
 
 
 template<typename T>
-void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local,
-								std::vector < SparseIJVMatrix >         & B0_local,
+void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_local,
+								std::vector < SparseIJVMatrix<T> >         & B0_local,
 								std::vector < std::vector <T> >    		& l2g_vec,
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
@@ -22,8 +22,8 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix >         & B1_local
 
 	l2g_vec.resize(domains_num);
 
-	std::vector < SparseDOKMatrix > B1_loc(domains_num);
-	std::vector < SparseDOKMatrix > B0_loc(domains_num);
+	std::vector < SparseDOKMatrix<T> > B1_loc(domains_num);
+	std::vector < SparseDOKMatrix<T> > B0_loc(domains_num);
 
 	lambda_map_sub_B1.resize(domains_num);
 	lambda_map_sub_B0.resize(domains_num);
@@ -143,8 +143,8 @@ struct Comp_vf
 
 //TODO: potrebujeme mapovani pro DOFs global(ne cluster) to local(subdomains)
 template<typename T>
-void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
-								const std::vector < SparseCSRMatrix >   & K_mat,
+void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
+								const std::vector < SparseCSRMatrix<T> >   & K_mat,
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
 								std::vector < std::vector <double> >    & B1_duplicity,
@@ -200,7 +200,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 	// END - Local B1 - further processing - update row numbering based on all clusters
 
 
-	std::vector < SparseDOKMatrix > B1_DOK_tmp(subDomPerCluster);
+	std::vector < SparseDOKMatrix<T> > B1_DOK_tmp(subDomPerCluster);
 
 	eslocal dofs_per_node = 3;
 	bool flag_redund_lagr_mult = false;
@@ -542,7 +542,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 		//TODO: lambdaNum muze byt 64bit integer
 		//TODO: matice B - pocet radku muze byt 64bit int
 		B1_DOK_tmp[d].resize( total_number_of_B1_l_rows + total_number_of_global_B1_lambdas , K_mat[d].rows());
-		SparseIJVMatrix ijv = B1_DOK_tmp[d];
+		SparseIJVMatrix<T> ijv = B1_DOK_tmp[d];
 		B1[d].AppendMatrix(ijv); //    = B1_DOK_tmp[d];
 	}
 

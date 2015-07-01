@@ -10,9 +10,7 @@
 
 #define DOKMatrixIndexing Matrix::ZeroBased
 
-typedef std::map<size_t, std::map<size_t, double> > MatrixMap;
-typedef std::map<size_t, double> ColumnMap;
-
+template<typename Tindices>
 class SparseDOKMatrix: public Matrix
 {
 
@@ -37,11 +35,11 @@ public:
 
 	double get(size_t row, size_t column) const
 	{
-		MatrixMap::const_iterator row_it = _values.find(row + _indexing);
+		typename std::map<Tindices, std::map<Tindices, double> >::const_iterator row_it = _values.find(row + _indexing);
 		if (row_it == _values.end()) {
 			return 0;
 		}
-		ColumnMap::const_iterator column_it = row_it->second.find(column + _indexing);
+		typename std::map<Tindices, double>::const_iterator column_it = row_it->second.find(column + _indexing);
 		if (column_it == row_it->second.end()) {
 			return 0;
 		}
@@ -54,25 +52,27 @@ public:
 		}
 	}
 
-	const MatrixMap& values() const
+	const std::map<Tindices, std::map<Tindices, double> >& values() const
 	{
 		return _values;
 	}
 
-	MatrixMap& values()
+	std::map<Tindices, std::map<Tindices, double> >& values()
 	{
 		return _values;
 	}
 
 private:
 
-	static void assign(SparseDOKMatrix &m1, SparseDOKMatrix &m2)
+	static void assign(SparseDOKMatrix<Tindices> &m1, SparseDOKMatrix<Tindices> &m2)
 	{
 		Matrix::assign(m1, m2);
 		m1._values.swap(m2._values);
 	}
 
-	MatrixMap _values;
+	std::map<Tindices, std::map<Tindices, double> > _values;
 };
+
+#include "sparseDOKMatrix.hpp"
 
 #endif /* SPARSEDOKVMATRIX_H_ */

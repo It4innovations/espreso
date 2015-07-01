@@ -99,8 +99,8 @@ void test_matrices()
 	std::vector<Matrix*> matrices;
 
 	DenseMatrix d;
-	SparseDOKMatrix dok;
-	SparseVVPMatrix vvp;
+	SparseDOKMatrix<eslocal> dok;
+	SparseVVPMatrix<eslocal> vvp;
 
 	matrices.push_back(&d);
 	fill_matrix(matrices.back());
@@ -114,26 +114,26 @@ void test_matrices()
 	matrices.back()->set(1, 1, -3);
 
 	// IJV matrix
-	matrices.push_back(new SparseIJVMatrix(d));
-	matrices.push_back(new SparseIJVMatrix());
-	*dynamic_cast<SparseIJVMatrix*>(matrices.back()) = d;
-	matrices.push_back(new SparseIJVMatrix(dok));
-	matrices.push_back(new SparseIJVMatrix());
-	*dynamic_cast<SparseIJVMatrix*>(matrices.back()) = dok;
-	matrices.push_back(new SparseIJVMatrix(vvp));
-	matrices.push_back(new SparseIJVMatrix());
-	*dynamic_cast<SparseIJVMatrix*>(matrices.back()) = vvp;
+	matrices.push_back(new SparseIJVMatrix<eslocal>(d));
+	matrices.push_back(new SparseIJVMatrix<eslocal>());
+	*dynamic_cast<SparseIJVMatrix<eslocal>*>(matrices.back()) = d;
+	matrices.push_back(new SparseIJVMatrix<eslocal>(dok));
+	matrices.push_back(new SparseIJVMatrix<eslocal>());
+	*dynamic_cast<SparseIJVMatrix<eslocal>*>(matrices.back()) = dok;
+	matrices.push_back(new SparseIJVMatrix<eslocal>(vvp));
+	matrices.push_back(new SparseIJVMatrix<eslocal>());
+	*dynamic_cast<SparseIJVMatrix<eslocal>*>(matrices.back()) = vvp;
 
 	// CSR matrix
-	matrices.push_back(new SparseCSRMatrix(d));
-	matrices.push_back(new SparseCSRMatrix());
-	*dynamic_cast<SparseCSRMatrix*>(matrices.back()) = d;
-	matrices.push_back(new SparseCSRMatrix(dok));
-	matrices.push_back(new SparseCSRMatrix());
-	*dynamic_cast<SparseCSRMatrix*>(matrices.back()) = dok;
+	matrices.push_back(new SparseCSRMatrix<eslocal>(d));
+	matrices.push_back(new SparseCSRMatrix<eslocal>());
+	*dynamic_cast<SparseCSRMatrix<eslocal>*>(matrices.back()) = d;
+	matrices.push_back(new SparseCSRMatrix<eslocal>(dok));
+	matrices.push_back(new SparseCSRMatrix<eslocal>());
+	*dynamic_cast<SparseCSRMatrix<eslocal>*>(matrices.back()) = dok;
 
-	SparseCSRMatrix ccc(d);
-	SparseIJVMatrix iii(d);
+	SparseCSRMatrix<eslocal> ccc(d);
+	SparseIJVMatrix<eslocal> iii(d);
 
 	matrices.push_back(new DenseMatrix(ccc));
 	matrices.push_back(new DenseMatrix(iii));
@@ -188,10 +188,10 @@ void test_matrices()
 		}
 	}
 
-	SparseCSRMatrix csr(d);
-	SparseCSRMatrix csrT(csr);
+	SparseCSRMatrix<eslocal> csr(d);
+	SparseCSRMatrix<eslocal> csrT(csr);
 	csrT.transpose();
-	SparseCSRMatrix csrTT(csrT);
+	SparseCSRMatrix<eslocal> csrTT(csrT);
 	csrTT.transpose();
 
 	for (size_t r = 0; r < d.rows(); r++) {
@@ -216,8 +216,8 @@ void test_matrices()
 		}
 	}
 
-	SparseIJVMatrix ijv(d);
-	SparseIJVMatrix ijvT(csr);
+	SparseIJVMatrix<eslocal> ijv(d);
+	SparseIJVMatrix<eslocal> ijvT(csr);
 	ijvT.transpose();
 
 	for (size_t r = 0; r < ijvT.rows(); r++) {
@@ -235,9 +235,9 @@ void test_matrices()
 	size_t n = 5;
 	size_t k = 6;
 
-	SparseDOKMatrix dokA(m, k);
-	SparseDOKMatrix dokB(k, n);
-	SparseDOKMatrix dokResult(m, n);
+	SparseDOKMatrix<eslocal> dokA(m, k);
+	SparseDOKMatrix<eslocal> dokB(k, n);
+	SparseDOKMatrix<eslocal> dokResult(m, n);
 	eslocal result[] = { 1, 4, 10, 20, 35 };
 
 	for (eslocal i = 0; i < m; i++) {
@@ -258,9 +258,9 @@ void test_matrices()
 		}
 	}
 
-	SparseCSRMatrix A(dokA);
-	SparseCSRMatrix B(dokB);
-	SparseCSRMatrix C;
+	SparseCSRMatrix<eslocal> A(dokA);
+	SparseCSRMatrix<eslocal> B(dokB);
+	SparseCSRMatrix<eslocal> C;
 
 	C.multiply(A, B);
 	DenseMatrix denseC(C);
@@ -276,7 +276,7 @@ void test_matrices()
 
 	A.transpose();
 
-	SparseCSRMatrix D;
+	SparseCSRMatrix<eslocal> D;
 
 	D.multiply(A, B, true);
 

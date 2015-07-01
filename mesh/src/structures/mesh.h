@@ -109,18 +109,18 @@ public:
 		return _coordinates.localSize(part);
 	}
 
-	void elasticity(SparseCSRMatrix &K, SparseCSRMatrix &M, std::vector<double> &f, eslocal part)
+	void elasticity(SparseCSRMatrix<eslocal> &K, SparseCSRMatrix<eslocal> &M, std::vector<double> &f, eslocal part)
 	{
-		SparseVVPMatrix _K;
-		SparseVVPMatrix _M;
+		SparseVVPMatrix<eslocal> _K;
+		SparseVVPMatrix<eslocal> _M;
 		_elasticity(_K, _M, f, part, true);
 		K = _K;
 		M = _M;
 	}
-	void elasticity(SparseCSRMatrix &K, std::vector<double> &f, eslocal part)
+	void elasticity(SparseCSRMatrix<eslocal> &K, std::vector<double> &f, eslocal part)
 	{
-		SparseVVPMatrix _K;
-		SparseVVPMatrix _M;
+		SparseVVPMatrix<eslocal> _K;
+		SparseVVPMatrix<eslocal> _M;
 		_elasticity(_K, _M, f, part, false);
 		K = _K;
 	}
@@ -132,7 +132,7 @@ protected:
 
 	Element* createElement(eslocal *indices, eslocal n);
 
-	void _elasticity(SparseVVPMatrix &K, SparseVVPMatrix &M, std::vector<double> &f, eslocal part, bool dynamic);
+	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic);
 	void _assembleElesticity(
 		const Element *e,
 		size_t part,
@@ -145,8 +145,8 @@ protected:
 
 	void _integrateElasticity(
 		const Element *e,
-		SparseVVPMatrix &K,
-		SparseVVPMatrix &M,
+		SparseVVPMatrix<eslocal> &K,
+		SparseVVPMatrix<eslocal> &M,
 		std::vector<double> &f,
 		const DenseMatrix &Ke,
 		const DenseMatrix &Me,

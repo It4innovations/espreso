@@ -7,12 +7,13 @@
 #include "sparseVVPMatrix.h"
 
 class DenseMatrix;
-class SparseDOKMatrix;
-class SparseIJVMatrix;
-class SparseVVPMatrix;
+template<typename Tindices> class SparseDOKMatrix;
+template<typename Tindices> class SparseIJVMatrix;
+template<typename Tindices> class SparseVVPMatrix;
 
 #define CSRMatrixIndexing Matrix::OneBased
 
+template<typename Tindices>
 class SparseCSRMatrix: public Matrix
 {
 
@@ -22,16 +23,16 @@ public:
 	SparseCSRMatrix(size_t rows, size_t columns);
 
 	SparseCSRMatrix(const DenseMatrix &other);
-	SparseCSRMatrix(const SparseDOKMatrix &other);
-	SparseCSRMatrix(const SparseIJVMatrix &other);
-	SparseCSRMatrix(SparseVVPMatrix &other);
+	SparseCSRMatrix(const SparseDOKMatrix<Tindices> &other);
+	SparseCSRMatrix(const SparseIJVMatrix<Tindices> &other);
+	SparseCSRMatrix(SparseVVPMatrix<Tindices> &other);
 
 	SparseCSRMatrix& operator=(const DenseMatrix &other);
-	SparseCSRMatrix& operator=(const SparseDOKMatrix &other);
-	SparseCSRMatrix& operator=(const SparseIJVMatrix &other);
-	SparseCSRMatrix& operator=(SparseVVPMatrix &other);
+	SparseCSRMatrix<Tindices>& operator=(const SparseDOKMatrix<Tindices> &other);
+	SparseCSRMatrix<Tindices>& operator=(const SparseIJVMatrix<Tindices> &other);
+	SparseCSRMatrix<Tindices>& operator=(SparseVVPMatrix<Tindices> &other);
 
-	void multiply(SparseCSRMatrix &A, SparseCSRMatrix &B, bool transposeA = false);
+	void multiply(SparseCSRMatrix<Tindices> &A, SparseCSRMatrix<Tindices> &B, bool transposeA = false);
 
 	void resize(size_t rows, size_t values);
 	void transpose();
@@ -66,22 +67,22 @@ public:
 		return &_values[0];
 	}
 
-	const eslocal* rowPtrs() const
+	const Tindices* rowPtrs() const
 	{
 		return &_rowPtrs[0];
 	}
 
-	eslocal* rowPtrs()
+	Tindices* rowPtrs()
 	{
 		return &_rowPtrs[0];
 	}
 
-	const eslocal* columnIndices() const
+	const Tindices* columnIndices() const
 	{
 		return &_columnIndices[0];
 	}
 
-	eslocal* columnIndices()
+	Tindices* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
@@ -100,7 +101,7 @@ private:
 		exit(EXIT_FAILURE);
 	}
 
-	static void assign(SparseCSRMatrix &m1, SparseCSRMatrix &m2)
+	static void assign(SparseCSRMatrix<Tindices> &m1, SparseCSRMatrix<Tindices> &m2)
 	{
 		Matrix::assign(m1, m2);
 		m1._rowPtrs.swap(m2._rowPtrs);
@@ -109,10 +110,11 @@ private:
 	}
 
 	// Sparse CSR data
-	std::vector<eslocal> _rowPtrs;
-	std::vector<eslocal> _columnIndices;
+	std::vector<Tindices> _rowPtrs;
+	std::vector<Tindices> _columnIndices;
 	std::vector<double> _values;
-
 };
+
+#include "sparseCSRMatrix.hpp"
 
 #endif /* SPARSEIJVMATRIX_H_ */

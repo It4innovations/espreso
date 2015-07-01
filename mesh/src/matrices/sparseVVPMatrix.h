@@ -7,8 +7,10 @@
 
 #define VVPMatrixIndexing Matrix::ZeroBased
 
-typedef std::vector<std::vector<std::pair<eslocal, double> > > VVP;
+template<typename Tindices>
+using VVP = std::vector<std::vector<std::pair<Tindices, double> > >;
 
+template<typename Tindices>
 class SparseVVPMatrix: public Matrix
 {
 
@@ -24,18 +26,18 @@ public:
 
 	double& operator()(size_t row, size_t column)
 	{
-		_values[row].push_back(std::pair<eslocal, double>(column, 0));
+		_values[row].push_back(std::pair<Tindices, double>(column, 0));
 		return _values[row].back().second;
 	}
 
 	void set(size_t row, size_t column, double value)
 	{
 		if (Matrix::nonZero(value)) {
-			_values[row].push_back(std::pair<eslocal, double>(column, value));
+			_values[row].push_back(std::pair<Tindices, double>(column, value));
 		}
 	}
 
-	const VVP& values() const
+	const VVP<Tindices>& values() const
 	{
 		return _values;
 	}
@@ -59,8 +61,10 @@ private:
 		return value;
 	}
 
-	VVP _values;
+	VVP<Tindices> _values;
 };
+
+#include "sparseVVPMatrix.hpp"
 
 
 

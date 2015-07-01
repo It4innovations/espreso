@@ -8,31 +8,33 @@
 #include "sparseVVPMatrix.h"
 
 class DenseMatrix;
-class SparseDOKMatrix;
-class SparseCSRMatrix;
-class SparseVVPMatrix;
+template<typename Tindices> class SparseDOKMatrix;
+template<typename Tindices> class SparseCSRMatrix;
+template<typename Tindices> class SparseVVPMatrix;
 
 #define IJVMatrixIndexing Matrix::OneBased
 
+template<typename Tindices>
 class SparseIJVMatrix: public Matrix
 {
 
 public:
 
-	friend std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix &m);
+	template<typename Tindices>
+	friend std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix<Tindices> &m);
 
 	SparseIJVMatrix(): Matrix(IJVMatrixIndexing) { };
-	SparseIJVMatrix(eslocal rows, eslocal columns): Matrix(rows, columns, IJVMatrixIndexing) { };
+	SparseIJVMatrix(size_t rows, size_t columns): Matrix(rows, columns, IJVMatrixIndexing) { };
 
 	SparseIJVMatrix(const DenseMatrix &other);
-	SparseIJVMatrix(const SparseDOKMatrix &other);
-	SparseIJVMatrix(const SparseCSRMatrix &other);
-	SparseIJVMatrix(SparseVVPMatrix &other);
+	SparseIJVMatrix(const SparseDOKMatrix<Tindices> &other);
+	SparseIJVMatrix(const SparseCSRMatrix<Tindices> &other);
+	SparseIJVMatrix(SparseVVPMatrix<Tindices> &other);
 
-	SparseIJVMatrix& operator=(const DenseMatrix &other);
-	SparseIJVMatrix& operator=(const SparseDOKMatrix &other);
-	SparseIJVMatrix& operator=(const SparseCSRMatrix &other);
-	SparseIJVMatrix& operator=(SparseVVPMatrix &other);
+	SparseIJVMatrix<Tindices>& operator=(const DenseMatrix &other);
+	SparseIJVMatrix<Tindices>& operator=(const SparseDOKMatrix<Tindices> &other);
+	SparseIJVMatrix<Tindices>& operator=(const SparseCSRMatrix<Tindices> &other);
+	SparseIJVMatrix<Tindices>& operator=(SparseVVPMatrix<Tindices> &other);
 
 	void reserve(size_t size);
 	void transpose();
@@ -63,31 +65,31 @@ public:
 		return 0;
 	}
 
-	const eslocal* rowIndices() const
+	const Tindices* rowIndices() const
 	{
 		return &_rowIndices[0];
 	}
 
-	eslocal* rowIndices()
+	Tindices* rowIndices()
 	{
 		return &_rowIndices[0];
 	}
 
-	std::vector <eslocal>& rowIndices_vec() {
+	std::vector<Tindices>& rowIndices_vec() {
 		return _rowIndices;
 	}
 
-	const eslocal* columnIndices() const
+	const Tindices* columnIndices() const
 	{
 		return &_columnIndices[0];
 	}
 
-	eslocal* columnIndices()
+	Tindices* columnIndices()
 	{
 		return &_columnIndices[0];
 	}
 
-	std::vector <eslocal>& columnIndices_vec() {
+	std::vector<Tindices>& columnIndices_vec() {
 		return _columnIndices;
 	}
 
@@ -162,7 +164,7 @@ private:
 		}
 	}
 
-	static void assign(SparseIJVMatrix &m1, SparseIJVMatrix &m2)
+	static void assign(SparseIJVMatrix<Tindices> &m1, SparseIJVMatrix<Tindices> &m2)
 	{
 		Matrix::assign(m1, m2);
 		m1._rowIndices.swap(m2._rowIndices);
@@ -172,9 +174,11 @@ private:
 	}
 
 	// Sparse COO data
-	std::vector<eslocal> _rowIndices;
-	std::vector<eslocal> _columnIndices;
+	std::vector<Tindices> _rowIndices;
+	std::vector<Tindices> _columnIndices;
 	std::vector<double> _values;
 };
+
+#include "sparseIJVMatrix.hpp"
 
 #endif /* SPARSEIJVMATRIX_H_ */

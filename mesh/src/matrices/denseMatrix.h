@@ -20,13 +20,13 @@ public:
 	DenseMatrix(size_t rows, size_t columns)
 		: Matrix(rows, columns, DenseMatrixIndexing), _values(rows * columns, 0) {};
 
-	DenseMatrix(const SparseDOKMatrix &other);
-	DenseMatrix(const SparseCSRMatrix &other);
-	DenseMatrix(const SparseIJVMatrix &other);
+	template<typename Tindices> DenseMatrix(const SparseDOKMatrix<Tindices> &other);
+	template<typename Tindices> DenseMatrix(const SparseCSRMatrix<Tindices> &other);
+	template<typename Tindices> DenseMatrix(const SparseIJVMatrix<Tindices> &other);
 
-	DenseMatrix& operator=(const SparseDOKMatrix &other);
-	DenseMatrix& operator=(const SparseCSRMatrix &other);
-	DenseMatrix& operator=(const SparseIJVMatrix &other);
+	template<typename Tindices> DenseMatrix& operator=(const SparseDOKMatrix<Tindices> &other);
+	template<typename Tindices> DenseMatrix& operator=(const SparseCSRMatrix<Tindices> &other);
+	template<typename Tindices> DenseMatrix& operator=(const SparseIJVMatrix<Tindices> &other);
 
 	DenseMatrix& operator=(double value);
 	DenseMatrix operator*(DenseMatrix &M);
@@ -85,5 +85,6 @@ private:
 	std::vector<double> _values;
 };
 
+#include "denseMatrix.hpp"
 
 #endif /* DENSEMATRIX_H_ */

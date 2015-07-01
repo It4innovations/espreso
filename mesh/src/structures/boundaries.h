@@ -36,8 +36,8 @@ public:
 	}
 
 	template<typename T>
-	void create_B1_l(	std::vector < SparseIJVMatrix >      	& B1_local,
-						std::vector < SparseIJVMatrix >      	& B0_local,
+	void create_B1_l(	std::vector < SparseIJVMatrix<T> >      	& B1_local,
+						std::vector < SparseIJVMatrix<T> >      	& B0_local,
 						std::vector < std::vector <T> >      	& l2g_vec,
 						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
 						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
@@ -46,8 +46,8 @@ public:
 						const eslocal domains_num) ;
 
 	template<typename T>
-	void create_B1_g(	std::vector < SparseIJVMatrix >         & B1_global,
-						const std::vector < SparseCSRMatrix >   & K_mat,
+	void create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1_global,
+						const std::vector < SparseCSRMatrix<T> >   & K_mat,
 						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
 						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
 						std::vector < std::vector <double> >    & B1_duplicity,

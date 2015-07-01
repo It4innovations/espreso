@@ -112,8 +112,8 @@ Element* Mesh::createElement(eslocal *indices, eslocal n)
 }
 
 void Mesh::_elasticity(
-		SparseVVPMatrix &K,
-		SparseVVPMatrix &M,
+		SparseVVPMatrix<eslocal> &K,
+		SparseVVPMatrix<eslocal> &M,
 		std::vector<double> &f,
 		eslocal part,
 		bool dynamic)
@@ -260,8 +260,8 @@ void Mesh::_assembleElesticity(
 
 void Mesh::_integrateElasticity(
 		const Element *e,
-		SparseVVPMatrix &K,
-		SparseVVPMatrix &M,
+		SparseVVPMatrix<eslocal> &K,
+		SparseVVPMatrix<eslocal> &M,
 		std::vector<double> &f,
 		const DenseMatrix &Ke,
 		const DenseMatrix &Me,

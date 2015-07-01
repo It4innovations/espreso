@@ -234,10 +234,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
 
-	std::vector < SparseCSRMatrix >			K_mat;
-	std::vector < SparseCSRMatrix >			M_mat;
-	std::vector < SparseIJVMatrix >			B1_mat;
-	std::vector < SparseIJVMatrix >			B0_mat;
+	std::vector < SparseCSRMatrix<eslocal> >			K_mat;
+	std::vector < SparseCSRMatrix<eslocal> >			M_mat;
+	std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
+	std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
 
 	std::vector < std::vector <eslocal> >	lambda_map_sub_B1;
 	std::vector < std::vector <eslocal> >	lambda_map_sub_B0;
@@ -253,8 +253,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	K_mat.reserve(partsCount);
 	M_mat.reserve(partsCount);
 	for (eslocal d = 0; d < partsCount; d++) {
-		K_mat.push_back( SparseCSRMatrix (0,0) );
-		M_mat.push_back( SparseCSRMatrix (0,0) );
+		K_mat.push_back( SparseCSRMatrix<eslocal>(0,0) );
+		M_mat.push_back( SparseCSRMatrix<eslocal>(0,0) );
 	}
 
 	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
@@ -686,9 +686,9 @@ void testBEM(int argc, char** argv)
 
 	// TODO:
 
-    std::vector < SparseCSRMatrix >			K_mat;
-    std::vector < SparseIJVMatrix >			B1_mat;
-    std::vector < SparseIJVMatrix >			B0_mat;
+    std::vector < SparseCSRMatrix<eslocal> >			K_mat;
+    std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
+    std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
     
     std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
     std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
@@ -703,7 +703,7 @@ void testBEM(int argc, char** argv)
 
     K_mat.reserve(partsCount);
     for (size_t d = 0; d < partsCount; d++) {
-        K_mat.push_back( SparseCSRMatrix (0,0) );
+        K_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
     }
 
 #ifndef DEBUG
@@ -1035,10 +1035,10 @@ void testFEM(int argc, char** argv)
 
 	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
 
-	std::vector < SparseCSRMatrix >			K_mat;
-	std::vector < SparseCSRMatrix >			M_mat;
-	std::vector < SparseIJVMatrix >			B1_mat;
-	std::vector < SparseIJVMatrix >			B0_mat;
+	std::vector < SparseCSRMatrix<eslocal> >			K_mat;
+	std::vector < SparseCSRMatrix<eslocal> >			M_mat;
+	std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
+	std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
 
 	std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
 	std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
@@ -1054,8 +1054,8 @@ void testFEM(int argc, char** argv)
 	K_mat.reserve(partsCount);
 	M_mat.reserve(partsCount);
 	for (eslocal d = 0; d < partsCount; d++) {
-		K_mat.push_back( SparseCSRMatrix (0,0) );
-		M_mat.push_back( SparseCSRMatrix (0,0) );
+		K_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
+		M_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
 	}
 
 	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
