@@ -202,7 +202,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 	std::vector < SparseDOKMatrix > B1_DOK_tmp(subDomPerCluster);
 
 	eslocal dofs_per_node = 3;
-	bool flag_redund_lagr_mult = false;
+	bool flag_redund_lagr_mult = true;
 
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
 	eslocal borderDofNum; 	// number of DOFs on surface on my cluster
@@ -552,99 +552,14 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 		tmp_vec[1] = myLambdas[i][2];
 		tmp_vec[2] = myLambdas[i][3];
 
-		//domainG->lambda_map_sub.push_back(tmp_vec);
 		lambda_map_sub_clst.push_back(tmp_vec);
 
-		//data[myLambdas[i][5]]->B->lambda_map_sub.push_back( myLambdas[i][0] );
 		eslocal lam_tmp = myLambdas [i][0]; //TODO: esglobal
 		lambda_map_sub_B1[ myLambdas[i][5] ].push_back( lam_tmp );
 	}
 
 
 	if (MPIrank == 0) { std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; system("date +%T.%6N"); }
-
-
-
-//
-//
-//	std::vector < SparseDOKMatrix > B1_loc(MPIsize);
-//
-//	lambda_map_sub_B1.resize(MPIsize);
-//
-//	B1_l_duplicity.resize(MPIsize);
-//	std::vector<eslocal> local_prim_numbering(MPIsize, 0);
-//	B1_local.resize(MPIsize);
-//
-//	std::set<eslocal>::const_iterator it1;
-//	std::set<eslocal>::const_iterator it2;
-//
-//	eslocal lambda_count_B1 = 0;
-//
-//
-
-
-//	for (T i = 0; i < _boundaries.size(); i++) {
-//
-//		if ( _boundaries[i].size() > 1 ) {
-//
-////			// with duplicity
-////			for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
-////				for (it2 = it1,++it2; it2 != _boundaries[i].end(); ++it2) {
-////					for (eslocal d_i = 0; d_i < 3; d_i++) {
-////						B1_loc[*it1](lambda_count_B1, local_prim_numbering[*it1] + d_i) =  1.0;
-////						B1_loc[*it2](lambda_count_B1, local_prim_numbering[*it2] + d_i) = -1.0;
-////
-////						lambda_map_sub_B1[*it1].push_back(lambda_count_B1);
-////						lambda_map_sub_B1[*it2].push_back(lambda_count_B1);
-////						lambda_map_sub_clst.push_back( std::vector < eslocal > (1,lambda_count_B1) );
-////
-////						B1_l_duplicity[*it1].push_back( 1.0 / (double)_boundaries[i].size() );
-////						B1_l_duplicity[*it2].push_back( 1.0 / (double)_boundaries[i].size() );
-////
-////						lambda_count_B1++;
-////					}
-////				}
-////			}
-//
-//
-//			// no duplicity
-//			for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
-//				if (it1 != _boundaries[i].begin()) {
-//					for (eslocal d_i = 0; d_i < 3; d_i++) {
-//						B1_loc[*it2](lambda_count_B1, local_prim_numbering[*it2] + d_i) =  1.0;
-//						B1_loc[*it1](lambda_count_B1, local_prim_numbering[*it1] + d_i) = -1.0;
-//
-//						lambda_map_sub_B1[*it2].push_back(lambda_count_B1);
-//						lambda_map_sub_B1[*it1].push_back(lambda_count_B1);
-//						lambda_map_sub_clst.push_back( std::vector < eslocal > (1,lambda_count_B1) );
-//
-//						B1_l_duplicity[*it1].push_back( 1.0 / (double)_boundaries[i].size() );
-//						B1_l_duplicity[*it2].push_back( 1.0 / (double)_boundaries[i].size() );
-//
-//						lambda_count_B1++;
-//
-//						_mesh._coordinates.globalIndex()
-//
-//					}
-//				}
-//				it2 = it1;
-//			}
-//
-//
-//		}
-//
-//		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
-//			local_prim_numbering[*it] += 3;
-//        }
-//	}
-//
-//	for (eslocal d = 0; d < MPIsize; d++) {
-//		B1_loc[d].resize(lambda_count_B1, local_prim_numbering[d]);
-//		B1_local[d] = B1_loc[d];
-//	}
-//
-//        int a = 10;
-//
 
 }
 
