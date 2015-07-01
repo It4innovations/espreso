@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import numpy as np
-import scipy.sparse as spm 
+import scipy.sparse as spm
 import pylab as plt
 import scipy.sparse.linalg as sla
 

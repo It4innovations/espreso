@@ -2,7 +2,7 @@
 
 std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix &m)
 {
-  os << m._rows << " " << m._columns << " " << m.nonZeroValues() << "\n";
+	os << m.rows() << " " << m.columns() << " " << m.nonZeroValues() << "\n";
 
 	for (size_t i = 0; i < m.nonZeroValues(); i++) {
 		os << m._rowIndices[i] << " " << m._columnIndices[i] << " " << m._values[i] << "\n";
