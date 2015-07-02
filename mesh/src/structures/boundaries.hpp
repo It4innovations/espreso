@@ -156,6 +156,8 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 
 
 	// Local B1 - further processing - update row numbering based on all clusters
+        if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - start                                   "; system("date +%T.%6N"); }
+
 
 	// Create lambda global numbering
 	esglobal localB1_l_rows = B1[0].rows();
@@ -173,8 +175,10 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 	esglobal total_number_of_B1_l_rows = global_B1_l_rows;
 	MPI_Bcast(&total_number_of_B1_l_rows, 1, esglobal_mpi, MPIsize-1, MPI_COMM_WORLD);
 
-	//cilk_
-	for (eslocal domain_index=0; domain_index < subDomPerCluster; domain_index++) {
+        if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - EXscan and Bcast done                   "; system("date +%T.%6N"); }
+
+
+	cilk_for (eslocal domain_index=0; domain_index < subDomPerCluster; domain_index++) {
 		//TODO: lambda muze byt esglobal ale IJV matice je jen eslocal
 		esglobal row_offset = global_B1_l_rows - localB1_l_rows;
 		B1[domain_index].ShiftRowIndex(row_offset);
@@ -190,6 +194,9 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 //											lambdaGlobalCount_l;
 
 	}
+
+        if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - end of renumbering of rows of local B1   "; system("date +%T.%6N"); }
+
 
 	esglobal row_offset = global_B1_l_rows - localB1_l_rows;
 	for (eslocal i = 0; i < lambda_map_sub_clst.size(); i++) {
@@ -222,6 +229,9 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 	std::vector < eslocal > neigh_tmp  (MPIsize, 0);
 	std::set<eslocal>::const_iterator it_set;
 
+        if (MPIrank == 0) { std::cout << " Global B - Blobal B1 neighdofs and neigh dofs array building             "; system("date +%T.%6N"); }
+
+
 	for (T i = 0; i < _boundaries.size(); i++) {
 		if ( _boundaries[i].size() > 1 ) {
 			for (it_set = _boundaries[i].begin(); it_set != _boundaries[i].end(); ++it_set) {
@@ -244,6 +254,9 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 			myNeighClusters.push_back(i);
 
 	neighClustNum = myNeighClusters.size();
+
+        if (MPIrank == 0) { std::cout << " Global B - neighDOFs array swapping based neigh cluster indexes          "; system("date +%T.%6N"); }
+
 
 	for (int i = 0; i < myNeighClusters.size(); i++) {
 		neighBorderDofs[myNeighClusters[i]].swap(neighBorderDofs[i]);
