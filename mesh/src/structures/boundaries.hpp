@@ -156,7 +156,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 
 
 	// Local B1 - further processing - update row numbering based on all clusters
-        if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - start                                   "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - start                                   "; system("date +%T.%6N"); }
 
 
 	// Create lambda global numbering
@@ -175,7 +175,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix >         & B1,
 	esglobal total_number_of_B1_l_rows = global_B1_l_rows;
 	MPI_Bcast(&total_number_of_B1_l_rows, 1, esglobal_mpi, MPIsize-1, MPI_COMM_WORLD);
 
-        if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - EXscan and Bcast done                   "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - EXscan and Bcast done                  "; system("date +%T.%6N"); }
 
 
 	cilk_for (eslocal domain_index=0; domain_index < subDomPerCluster; domain_index++) {
