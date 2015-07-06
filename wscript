@@ -81,8 +81,8 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-cxx=icpc" ])
         ctx.env.append_unique("LINKFLAGS", [ "-cxx=icpc" ])
 
-    if ctx.options.anselm:
-        ctx.env.append_unique("CXXFLAGS", [ "-xSSE4.1" ])
+    #if ctx.options.anselm:
+        #ctx.env.append_unique("CXXFLAGS", [ "-xSSE4.1" ])
 
     ctx.env.CXX = list(ctx.env.MPICXX)
     ctx.env.LINK_CXX = list(ctx.env.MPICXX)
@@ -126,7 +126,7 @@ def build(ctx):
 def anselm(ctx):
     ctx.load("icpc")
     ctx.env.MPICXX = ["mpic++"]
-
+    #ctx.env.MPICXX = ["mpiicpc"]
 
 def check_environment(ctx):
     try:

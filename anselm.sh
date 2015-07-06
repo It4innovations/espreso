@@ -26,7 +26,7 @@ if [ "$1" = "configure" ]; then
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install
+  ./waf install -v
 fi
 
 if [ "$1" = "clean" ]; then
@@ -58,19 +58,19 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      15  16  17  8   9  10  11  12  13  14 )
-  clustt_size_x=( 10  10  10  10  10 10  10  10  10  10 )
+  dom_size=(      14  10  17  8   9  10  11  12  13  14 )
+  clustt_size_x=( 9   2   10  10  10 10  10  10  10  10 )
 
-  clustt_size_y=( 5   5   5   5   5   5   5   5   5   5 )
-  clustt_size_z=( 5   5   5   5   5   5   5   5   5   5 )
+#  clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
+#  clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
-  clusters_x=(    1   1   1   1   1   1   1   1   1   1 )
-  clusters_y=(    1   1   1   1   1   1   1   1   1   1 )
+  clusters_x=(    2   3   1   1   1   1   1   1   1   1 )
+  clusters_y=(    2   1   1   1   1   1   1   1   1   1 )
   clusters_z=(    1   1   1   1   1   1   1   1   1   1 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 1 2 # 0 1 2 3 4 5 6
+  for i in 0 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -92,10 +92,11 @@ if [ "$1" = "run" ]; then
 
     date | tee -a $log_file
 
-    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+    #                                         ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+    mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
 
-    cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
-    rm mesh.vtk
+    #cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
+    #rm mesh.vtk
   done
 
 fi

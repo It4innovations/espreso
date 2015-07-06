@@ -87,8 +87,6 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
     MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-    std::cout << "Rank " << MPIrank << std::endl;
-
 	setParams(argc, argv);
 
 	if (params.generateMesh) {
@@ -130,7 +128,7 @@ void load_mesh()
 
 void generate_mesh( int MPIrank )
 {
-	std::cout << "Permoncube:" << std::endl;
+	if (MPIrank == 0) { std::cout << "Permoncube - start                                                       "; system("date +%T.%6N"); }
 
 	switch (params.type) {
 	case HEXA8: {
@@ -194,7 +192,7 @@ void generate_mesh( int MPIrank )
 	// TODO: set fix points in PERMONCUBE
 	input.mesh.computeFixPoints(4);
 
-	std::cout << "Permoncube - end" << std::endl;
+	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
 }
 
 
@@ -203,15 +201,6 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	eslocal clust_index = MPIrank; // clust_index = cislo clusteru
 
-	// input[index].mesh = mesh na clusteru s cislem 'index'
-	// input[index].dirichlet_{x, y, z} = dirichlet na clusteru s cislem 'index'
-	// TODO: RUN SOLVER
-
-	//input.mesh;			//
-	//input.boundaries; 	// globalni boundaries za cluster
-
-	// full version
-
 	double start;
 	start = omp_get_wtime();
 	std::cout.precision(15);
@@ -219,20 +208,20 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	size_t partsCount 	  = input.mesh.parts();
 	size_t fixPointsCount = input.mesh.getFixPointsCount();
 
-	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
 	// TODO: fill boundaries in PERMONCUBE
 	mesh::Boundaries boundaries(input.mesh);
 
-	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
 	//Faces faces(mesh, coordinates);
 
-	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
 
 	//Corners corners(faces.getFaces(), coordinates);
 
-	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
 
 	std::vector < SparseCSRMatrix<eslocal> >			K_mat;
 	std::vector < SparseCSRMatrix<eslocal> >			M_mat;
@@ -248,7 +237,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	std::vector < std::vector <eslocal > >	fix_nodes (partsCount);
 	std::vector < std::vector <eslocal> >	l2g_vec;
 
-	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
 
 	K_mat.reserve(partsCount);
 	M_mat.reserve(partsCount);
@@ -257,7 +246,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		M_mat.push_back( SparseCSRMatrix<eslocal>(0,0) );
 	}
 
-	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
 #ifndef DEBUG
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -271,10 +260,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
         f_vec[d].swap(f);
 
-		std::cout << d << " " << std::endl;
+        if (MPIrank == 0) std::cout << d << " " ; //<< std::endl;
 	}
 
-	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << std::endl << "10: " << omp_get_wtime() - start<< std::endl;
 
 
 	const std::vector<eslocal> fixPoints = input.mesh.getFixPoints();
@@ -290,7 +279,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
 	}
 
-	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "11: " << omp_get_wtime() - start<< std::endl;
 	boundaries.create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
@@ -305,7 +294,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	std::vector < eslocal > neigh_clusters;
 
-	std::cout << "11.1: " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "11.1: " << omp_get_wtime() - start<< std::endl;
+
 	input.boundaries.create_B1_g<eslocal>(
 		B1_mat,
 		K_mat,
@@ -338,7 +328,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	}
 
 
-	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
+	if (MPIrank == 0) std::cout << "12: " << omp_get_wtime() - start<< std::endl;
 
 	std::cout.precision(10);
 
@@ -507,16 +497,24 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 
 	// *** Load Matrix K and regularization ******************************************************************************
-#ifndef DEBUG
+	if (MPIrank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
+	#ifndef DEBUG
 	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 #else
 	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 #endif
+		if (MPIrank == 0) std::cout << d << " " ;
+
 		SetMatrixK_fromCSR ( cluster, d,
 			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
 			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
 			'G');
+
+
+
+
 	}
+	if (MPIrank == 0) std::cout << std::endl ;
 
 	if (cluster.USE_HFETI == 1)
 		cluster.SetClusterHFETI();

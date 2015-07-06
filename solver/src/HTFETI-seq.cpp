@@ -377,7 +377,8 @@ void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
 		I_rows, J_cols, V_vals, type, indexing );
 	
 	// min version - should work 
-	cluster.domains[domain_index_in_cluster].B1.sortInCOO();
+	//TODO:Sort nejak blbne - nekdy sekne program - pocat na ten od Ondry
+	//cluster.domains[domain_index_in_cluster].B1.sortInCOO();
 	cluster.domains[domain_index_in_cluster].B1t = cluster.domains[domain_index_in_cluster].B1; 
 	cluster.domains[domain_index_in_cluster].B1t.MatTransposeCOO();
 	cluster.domains[domain_index_in_cluster].B1t.ConvertToCSRwithSort(1); 
@@ -646,8 +647,8 @@ void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
 						  ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type ) {
 
     
-    int MPIrank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    int MPIrank = 1;
+//	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
 #if DEBUG == 1
 	if (MPIrank == 0) {
@@ -684,6 +685,8 @@ void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
 
 	cluster.domains[domain_index_in_cluster].K_regularizationFromR( );
 	cluster.domains[domain_index_in_cluster].domain_prim_size = cluster.domains[domain_index_in_cluster].Kplus.cols; 
+
+	if ( cluster.cluster_global_index == 1 ) GetMemoryStat( );
 
 #if DEBUG == 1
 	if (MPIrank == 0) {
