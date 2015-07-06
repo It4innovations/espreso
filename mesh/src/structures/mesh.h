@@ -57,12 +57,16 @@ public:
 		return _coordinates;
 	}
 
-	void saveVTK(const char* filename, double shrinking = 1);
+	void saveVTK(
+			const char* filename,
+			double subDomainShrinking = 1,
+			double clusterShrinking = 1);
 	void saveVTK(
 			const char* filename,
 			std::vector<std::vector<double> > &displacement,
 			std::vector<std::vector <eslocal> > &l2g_vec,
-			double shrinking = 1);
+			double subDomainShrinking = 1,
+			double clusterShrinking = 1);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
@@ -128,7 +132,11 @@ public:
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
 
-	void saveBasis(std::ofstream &vtk, std::vector<std::vector<eslocal> > &l2g_vec, double shrinking);
+	void saveBasis(
+			std::ofstream &vtk,
+			std::vector<std::vector<eslocal> > &l2g_vec,
+			double subDomainShrinking,
+			double clusterShrinking);
 
 	Element* createElement(eslocal *indices, eslocal n);
 

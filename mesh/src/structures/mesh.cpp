@@ -579,7 +579,8 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 void Mesh::saveBasis(
 		std::ofstream &vtk,
 		std::vector<std::vector<eslocal> > &l2g_vec,
-		double shrinking)
+		double subDomainShrinking,
+		double clusterShrinking)
 {
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
@@ -593,17 +594,24 @@ void Mesh::saveBasis(
 		n_points += l2g_vec[d].size();
 	}
 
+	Point cCenter;
+	for (size_t i = 0; i < _coordinates.size(); i++) {
+		cCenter += _coordinates[i];
+	}
+	cCenter /= _coordinates.size();
+
 	vtk << "POINTS " << n_points << " float\n";
 	for (size_t d = 0; d < nSubClst; d++) {
-		Point center;
+		Point sCenter;
 		for (size_t c = 0; c < l2g_vec[d].size(); c++) {
-			center += _coordinates[l2g_vec[d][c]];
+			sCenter += _coordinates[l2g_vec[d][c]];
 		}
-		center /= l2g_vec[d].size();
+		sCenter /= l2g_vec[d].size();
 
 		for (size_t i = 0; i < l2g_vec[d].size(); i++) {
 			Point x = _coordinates[l2g_vec[d][i]];
-			x = center + (x - center) * shrinking;
+			x = sCenter + (x - sCenter) * subDomainShrinking;
+			x = cCenter + (x - cCenter) * clusterShrinking;
 			vtk << x << "\n";
 		}
 	}
@@ -648,10 +656,11 @@ void Mesh::saveVTK(
 		const char* filename,
 		std::vector<std::vector<double> > &displacement,
 		std::vector<std::vector<eslocal> > &l2g_vec,
-		double shrinking)
+		double subDomainShrinking,
+		double clusterShrinking)
 {
 	std::ofstream vtk(filename, std::ios::out | std::ios::trunc);
-	saveBasis(vtk, l2g_vec, shrinking);
+	saveBasis(vtk, l2g_vec, subDomainShrinking, clusterShrinking);
 
 	size_t n_points = 0;
 	for (size_t d = 0; d < l2g_vec.size(); d++) {
@@ -674,7 +683,10 @@ void Mesh::saveVTK(
 	vtk.close();
 }
 
-void Mesh::saveVTK(const char* filename, double shrinking)
+void Mesh::saveVTK(
+		const char* filename,
+		double subDomainShrinking,
+		double clusterShrinking)
 {
 	std::ofstream vtk;
 
@@ -689,17 +701,25 @@ void Mesh::saveVTK(const char* filename, double shrinking)
 	vtk << "ASCII\n\n";
 	vtk << "DATASET UNSTRUCTURED_GRID\n";
 	vtk << "POINTS " << cSize << " float\n";
+
+	Point cCenter;
+	for (size_t i = 0; i < _coordinates.size(); i++) {
+		cCenter += _coordinates[i];
+	}
+	cCenter /= _coordinates.size();
+
 	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
 
-		Point center;
+		Point sCenter;
 		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
-			center += _coordinates.get(i, p);
+			sCenter += _coordinates.get(i, p);
 		}
-		center /= _coordinates.localSize(p);
+		sCenter /= _coordinates.localSize(p);
 
 		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
 			Point x = _coordinates.get(i, p);
-			x = center + (x - center) * shrinking;
+			x = sCenter + (x - sCenter) * subDomainShrinking;
+			x = cCenter + (x - cCenter) * clusterShrinking;
 			vtk << x << "\n";
 		}
 	}
