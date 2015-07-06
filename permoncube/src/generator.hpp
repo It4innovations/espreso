@@ -50,7 +50,7 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 		ce[i] = (nodes[i] - 1) * (cluster[i] + 1);
 	}
 	for (eslocal i = 0; i < 3; i++) {
-		step[i] = _settings.clusterLength[i] / (nodes[i] - 1);
+		step[i] = _settings.problemLength[i] / ((nodes[i] - 1) * _settings.clusters[i]);
 	}
 
 	esglobal gNodes[3];
