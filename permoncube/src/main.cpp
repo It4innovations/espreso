@@ -48,11 +48,11 @@ int main(int argc, char** argv)
 		cluster[2] = 2;
 	}
 
-	//test_boudaries();
+	test_boudaries();
 
 	std::cout << settings;
 	//test_pyramid5(cluster);
-	test_pyramid13(cluster);
+	//test_pyramid13(cluster);
 	//test_prisma6(cluster);
 	//test_prisma15(cluster);
 	//test_hexa8(cluster);
@@ -86,8 +86,8 @@ void test_boudaries()
 
 	// GLOBAL BOUNDARIES
 	permoncube::ElementGenerator<permoncube::Tetrahedron10> g2(settings);
-	mesh::Boundaries bGlobal;
-	g2.fillGlobalBoundaries(bGlobal);
+	mesh::Boundaries bGlobal(mesh);
+	g2.fillGlobalBoundaries(bGlobal, cluster);
 
 	if (bMesh.size() != bGlobal.size()) {
 		std::cerr << "Incorrect boundaries size in Permoncube\n";

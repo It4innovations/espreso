@@ -28,6 +28,10 @@ Hexahedron20::Hexahedron20(const permoncube::Settings &settings): _settings(sett
 			}
 		}
 	}
+
+	Utils<Hexahedron8>::globalNodesCount(_settings, _g2Nodes);
+	Utils<Hexahedron20>::globalNodesCount(_settings, _g3Nodes);
+	faceNodes = _g3Nodes[0] * _g3Nodes[1]  - (_g2Nodes[0] - 1) * (_g2Nodes[1] - 1);
 }
 
 void Hexahedron20::addElements(mesh::Mesh &mesh, const eslocal indices[])

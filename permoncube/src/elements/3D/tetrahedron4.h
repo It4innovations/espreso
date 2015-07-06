@@ -18,7 +18,7 @@ namespace permoncube {
 class Tetrahedron4 {
 
 public:
-	Tetrahedron4(const permoncube::Settings &settings): _settings(settings) {};
+	Tetrahedron4(const permoncube::Settings &settings);
 
 	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
 	static eslocal clusterNodesCount(const permoncube::Settings &settings);
@@ -34,11 +34,28 @@ public:
 		return index;
 	}
 
+	inline esglobal offset_x(esglobal x, esglobal y, esglobal z)
+	{
+		return x;
+	}
+
+	inline esglobal offset_y(esglobal y, esglobal z)
+	{
+		return _gNodes[0] * y;
+	}
+
+	inline esglobal offset_z(esglobal z)
+	{
+		return _gNodes[0] * _gNodes[1] * z;
+	}
+
 	static eslocal subnodes[3];
 	static eslocal subelements;
 
 private:
 	const permoncube::Settings &_settings;
+
+	esglobal _gNodes[3];
 };
 
 }

@@ -11,6 +11,11 @@ eslocal Hexahedron8::subnodes[3] = {
 		Hexahedron8Subnodes,
 };
 
+Hexahedron8::Hexahedron8(const permoncube::Settings &settings): _settings(settings)
+{
+	Utils<Hexahedron8>::globalNodesCount(_settings, _gNodes);
+}
+
 void Hexahedron8::addElements(mesh::Mesh &mesh, const eslocal indices[])
 {
 	eslocal hexa[8];

@@ -27,6 +27,9 @@ Prisma15::Prisma15(const permoncube::Settings &settings): _settings(settings)
 			}
 		}
 	}
+
+	Utils<Prisma6>::globalNodesCount(_settings, _g2Nodes);
+	Utils<Prisma15>::globalNodesCount(_settings, _g3Nodes);
 }
 
 void Prisma15::addElements(mesh::Mesh &mesh, const eslocal indices[])

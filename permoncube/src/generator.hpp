@@ -53,20 +53,18 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 		step[i] = _settings.problemLength[i] / ((nodes[i] - 1) * _settings.clusters[i]);
 	}
 
-	esglobal gNodes[3];
-	Utils<TElement>::globalNodesCount(_settings, gNodes);
-
-	for (esglobal z = 0; z < gNodes[2]; z++) {
-		for (esglobal y = 0; y < gNodes[1]; y++) {
-			for (esglobal x = 0; x < gNodes[0]; x++) {
+	esglobal offset[3] = { 0, 0, 0 };
+	for (esglobal z = cs[2]; z <= ce[2]; z++) {
+		offset[2] = e.offset_z(z);
+		for (esglobal y = cs[1]; y <= ce[1]; y++) {
+			offset[1] = e.offset_y(y, z);
+			for (esglobal x = cs[0]; x <= ce[0]; x++) {
 				if (!e.addPoint(x, y, z)) {
 					continue;
 				}
-				if (cs[2] <= z && z <= ce[2] && cs[1] <= y && y <= ce[1] && cs[0] <= x && x <= ce[0]) {
-					coordinates.add(mesh::Point(x * step[0], y * step[1], z * step[2]), local, global);
-					local++;
-				}
-				global++;
+				offset[0] = e.offset_x(x, y, z);
+				global = offset[0] + offset[1] + offset[2];
+				coordinates.add(mesh::Point(x * step[0], y * step[1], z * step[2]), local++, global);
 			}
 		}
 	}

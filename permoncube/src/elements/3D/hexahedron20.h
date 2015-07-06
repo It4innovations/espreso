@@ -31,11 +31,38 @@ public:
 		return _projection[index];
 	}
 
+	inline esglobal offset_x(esglobal x, esglobal y, esglobal z)
+	{
+		if (z % 2 == 0 && y % 2 == 0) {
+			return x;
+		} else {
+			return x / 2;
+		}
+	}
+
+	inline esglobal offset_y(esglobal y, esglobal z)
+	{
+		if (z % 2 == 0) {
+			return _g3Nodes[0] * ((y + 1) / 2) + _g2Nodes[0] * (y / 2);
+		} else {
+			return _g2Nodes[0] * ((y + 1) / 2);
+		}
+	}
+
+	inline esglobal offset_z(esglobal z)
+	{
+		return  faceNodes * ((z + 1) / 2) + _g2Nodes[0] * _g2Nodes[1] * (z / 2);
+	}
+
 	static eslocal subnodes[3];
 	static eslocal subelements;
 
 private:
 	const permoncube::Settings &_settings;
+
+	esglobal _g2Nodes[3];
+	esglobal _g3Nodes[3];
+	esglobal faceNodes;
 
 	std::vector<eslocal> _projection;
 

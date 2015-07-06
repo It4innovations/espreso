@@ -28,6 +28,11 @@ Pyramid13::Pyramid13(const permoncube::Settings &settings): _settings(settings)
 			}
 		}
 	}
+
+	// Use elements with less sub-node -> it simplifies offset methods
+	Utils<Hexahedron20>::globalNodesCount(_settings, _g3Nodes);
+	Utils<Hexahedron8>::globalNodesCount(_settings, _g2Nodes);
+	faceNodes = _g3Nodes[0] * _g3Nodes[1]  - (_g2Nodes[0] - 1) * (_g2Nodes[1] - 1);
 }
 
 void Pyramid13::addElements(mesh::Mesh &mesh, const eslocal indices[])

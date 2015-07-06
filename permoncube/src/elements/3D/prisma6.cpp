@@ -11,6 +11,11 @@ eslocal Prisma6::subnodes[3] = {
 		Prisma6Subnodes,
 };
 
+Prisma6::Prisma6(const permoncube::Settings &settings): _settings(settings)
+{
+	Utils<Prisma6>::globalNodesCount(_settings, _gNodes);
+}
+
 void Prisma6::addElements(mesh::Mesh &mesh, const eslocal indices[])
 {
 	eslocal prisma[8];
@@ -50,7 +55,5 @@ esglobal Prisma6::globalNodesCount(const permoncube::Settings &settings)
 
 	return nodes[0] * nodes[1] * nodes[2];
 }
-
-
 
 

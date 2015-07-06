@@ -8,14 +8,14 @@
 #include <iostream>
 
 enum {
-	HEXA8,
-	HEXA20,
-	TETRA4,
-	TETRA10,
-	PRISMA6,
-	PRISMA15,
-	PYRAMID5,
-	PYRAMID13
+	HEXA8,		// 0 OK
+	HEXA20,		// 1 OK
+	TETRA4,		// 2 OK
+	TETRA10,	// 3 OK
+	PRISMA6,	// 4 OK
+	PRISMA15,	// 5 OK
+	PYRAMID5,	// 6 OK
+	PYRAMID13	// 7 incorrect indexing and global B
 };
 
 struct FEMInput {
@@ -78,16 +78,20 @@ void generate_mesh( int MPIrank );
 
 int main(int argc, char** argv)
 {
-
-    MPI_Init (&argc, &argv);					// starts MPI
-
-    int MPIrank;
-    int MPIsize;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-
 	setParams(argc, argv);
+
+	MPI_Init(&argc, &argv);					// starts MPI
+
+	int MPIrank;
+	int MPIsize;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] != MPIsize) {
+		std::cerr << "Invalid number of processes.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	if (params.generateMesh) {
 		generate_mesh( MPIrank );
@@ -99,11 +103,9 @@ int main(int argc, char** argv)
 		//testBEM(argc, argv);
 		//testFEM(argc, argv);
 		testMPI(argc, argv, MPIrank, MPIsize);
-
 	} else {
 		testMPI(argc, argv, MPIrank, MPIsize);
 	}
-
 
 	if (params.generateMesh) {
 		delete generator;

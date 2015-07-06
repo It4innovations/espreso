@@ -28,6 +28,9 @@ Pyramid5::Pyramid5(const permoncube::Settings &settings): _settings(settings)
 			}
 		}
 	}
+
+	// Hexahedron8 is without a center -> it simplifies offset methods
+	Utils<Hexahedron8>::globalNodesCount(_settings, _gNodes);
 }
 
 void Pyramid5::addElements(mesh::Mesh &mesh, const eslocal indices[])

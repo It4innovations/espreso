@@ -11,6 +11,11 @@ eslocal Tetrahedron10::subnodes[3] = {
 		Tetrahedron10Subnodes
 };
 
+Tetrahedron10::Tetrahedron10(const permoncube::Settings &settings): _settings(settings)
+{
+	Utils<Tetrahedron10>::globalNodesCount(_settings, _gNodes);
+}
+
 void Tetrahedron10::addElements(mesh::Mesh &mesh, const eslocal indices[])
 {
 	eslocal tetra[20];
@@ -108,5 +113,4 @@ esglobal Tetrahedron10::globalNodesCount(const permoncube::Settings &settings)
 
 	return nodes[0] * nodes[1] * nodes[2];
 }
-
 
