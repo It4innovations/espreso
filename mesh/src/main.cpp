@@ -31,9 +31,12 @@ void test_ansys()
 
 	mesh::CommonFacesMesh cMesh(sMesh);
 
+	mesh::CornerLinesMesh lMesh(m);
+
 	m.saveVTK("mesh.vtk", 0.6);
 	sMesh.saveVTK("surface.vtk", 0.6);
 	cMesh.saveVTK("faces.vtk", 0.6);
+	lMesh.saveVTK("lines.vtk", 0.6);
 }
 
 
@@ -50,9 +53,12 @@ void test_meshes()
 
 	mesh::CommonFacesMesh cMesh(sMesh);
 
+	mesh::CornerLinesMesh lMesh(m);
+
 	m.saveVTK("mesh.vtk", 0.6);
 	sMesh.saveVTK("surface.vtk", 0.6);
 	cMesh.saveVTK("faces.vtk", 0.6);
+	lMesh.saveVTK("lines.vtk", 0.6);
 }
 
 void test_BEM()

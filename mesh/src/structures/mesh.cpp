@@ -803,7 +803,7 @@ void Mesh::saveVTK(
 	if (getFixPointsCount()) {
 		vtk << "CELL_TYPES " << _elements.size() + parts() << "\n";
 	} else {
-		vtk << "CELL_TYPES " << _elements.size()<< "\n";
+		vtk << "CELL_TYPES " << _elements.size() << "\n";
 	}
 	for (size_t i = 0; i < _elements.size(); i++) {
 		vtk << _elements[i]->vtkCode() << "\n";
@@ -815,7 +815,12 @@ void Mesh::saveVTK(
 	}
 
 	vtk << "\n";
-	vtk << "CELL_DATA " << _elements.size() + parts() << "\n";
+	if (getFixPointsCount()) {
+		vtk << "CELL_DATA " << _elements.size() + parts() << "\n";
+	} else {
+		vtk << "CELL_DATA " << _elements.size() << "\n";
+	}
+
 	vtk << "SCALARS decomposition int 1\n";
 	vtk << "LOOKUP_TABLE decomposition\n";
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
@@ -880,23 +885,21 @@ bool isCommonFace(
 void Mesh::getSurface(SurfaceMesh &surface) const
 {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(
-			_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(parts());
 	// number of elements in all parts
-	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
+	std::vector<size_t> elementsCount(parts(), 0);
 
-	if (_partPtrs.size() < 2) {
+	if (parts() < 1) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
 #ifndef DEBUG
-	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+	cilk_for (size_t i = 0; i < parts(); i++) {
 #else
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+	for (size_t i = 0; i < parts(); i++) {
 #endif
 		// Compute nodes' adjacent elements
-		std::vector<std::vector<eslocal> > nodesElements(
-				_coordinates.localSize(i));
+		std::vector<std::vector<eslocal> > nodesElements(_coordinates.localSize(i));
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
 				nodesElements[_elements[j]->node(k)].push_back(j);
@@ -965,31 +968,29 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 {
 	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(
-			_partPtrs.size() - 1);
+	std::vector<std::vector<std::vector<eslocal> > > faces(parts());
 	// number of elements in all parts
-	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
+	std::vector<size_t> elementsCount(parts(), 0);
 
-	if (_partPtrs.size() < 2) {
+	if (parts() < 1) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
 
 	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+	for (size_t i = 0; i < parts(); i++) {
 		// Compute nodes' adjacent elements
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k),
-						i)].push_back(j);
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
 			}
 		}
 	}
 
 #ifndef DEBUG
-	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+	cilk_for (size_t i = 0; i < parts(); i++) {
 #else
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+	for (size_t i = 0; i < parts(); i++) {
 #endif
 		// compute number of elements and fill used nodes
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
@@ -1009,7 +1010,7 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 	commonFaces.coordinates() = _coordinates;
 
 	size_t count = 0;
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+	for (size_t i = 0; i < parts(); i++) {
 		count += elementsCount[i];
 	}
 	commonFaces.reserve(count);
@@ -1031,43 +1032,56 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 
 void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 {
-	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(
-			_partPtrs.size() - 1);
-	// number of elements in all parts
-	std::vector<size_t> elementsCount(_partPtrs.size() - 1, 0);
-
-	if (_partPtrs.size() < 2) {
+	if (parts() < 1) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
 
 	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
+	for (size_t i = 0; i < parts(); i++) {
 		// Compute nodes' adjacent elements
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k),
-						j)].push_back(j);
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
 			}
 		}
 	}
 
-#ifndef DEBUG
-	cilk_for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#else
-	for (size_t i = 0; i < _partPtrs.size() - 1; i++) {
-#endif
-		// compute number of elements and fill used nodes
+	std::vector<std::set<eslocal> > nodeParts(_coordinates.size());
+
+	for (size_t i = 0; i < parts(); i++) {
+		for (size_t j = 0; j < _coordinates.localSize(i); j++) {
+			nodeParts[_coordinates.clusterIndex(j, i)].insert(i);
+		}
+	}
+
+	for (size_t i = 0; i < parts(); i++) {
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
 				std::vector<eslocal> face = _elements[j]->getFace(k);
 				for (size_t f = 0; f < face.size(); f++) {
 					face[f] = _coordinates.clusterIndex(face[f], i);
 				}
-				if (isCommonFace(nodesElements, face, _partPtrs)) {
-					faces[i].push_back(face);
-					elementsCount[i] += 1;
+				if (isOuterFace(nodesElements, face)) {
+					for (size_t f = 0; f < face.size(); f++) {
+						nodeParts[face[f]].insert(parts());
+					}
+				}
+			}
+		}
+	}
+
+	std::vector<std::set<eslocal> > neighbours(_coordinates.size());
+	for (size_t p = 0; p < parts(); p++) {
+		for (eslocal j = _partPtrs[p]; j < _partPtrs[p + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->size(); k++) {
+				std::vector<eslocal> n = _elements[j]->getNeighbours(k);
+				eslocal c1 = _coordinates.clusterIndex(_elements[j]->node(k), p);
+				for (size_t i = 0; i < n.size(); i++) {
+					eslocal c2 = _coordinates.clusterIndex(n[i], p);
+					if (c1 < c2) {
+						neighbours[c1].insert(c2);
+					}
 				}
 			}
 		}
@@ -1075,25 +1089,42 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 
 	cornerLines.coordinates() = _coordinates;
 
-	size_t count = 0;
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
-		count += elementsCount[i];
-	}
-	cornerLines.reserve(count);
+	std::vector<eslocal> result;
+	std::vector<eslocal>::iterator end;
+	std::vector<eslocal>::iterator pit;
+	std::vector<std::vector<eslocal> > pairs(parts());
 
-	// create surface mesh
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
-		for (size_t j = 0; j < faces[i].size(); j++) {
-			std::vector<eslocal> &face = faces[i][j];
-			if (faces[i][j].size() == 3) {
-				cornerLines.pushElement(new Triangle(&face[0]));
+	std::set<eslocal>::iterator it;
+	for (size_t i = 0; i < neighbours.size(); i++) {
+		for (it = neighbours[i].begin(); it != neighbours[i].end(); ++it) {
+			result.resize(nodeParts[i].size());
+			end = std::set_intersection(
+				nodeParts[i].begin(), nodeParts[i].end(),
+				nodeParts[*it].begin(), nodeParts[*it].end(),
+				result.begin());
+			if (end - result.begin() >= 3) {
+				for (pit = result.begin(); pit != end && *pit < parts(); ++pit) {
+					pairs[*pit].push_back(i);
+					pairs[*pit].push_back(*it);
+				}
 			}
-			if (faces[i][j].size() == 4) {
-				cornerLines.pushElement(new Square(&face[0]));
-			}
+		}
+	}
+
+	eslocal size = 0;
+	for (size_t i = 0; i < parts(); i++) {
+		size += pairs[i].size() / 2;
+	}
+
+	cornerLines.reserve(size);
+
+	for (size_t i = 0; i < parts(); i++) {
+		for (size_t j = 0; j < pairs[i].size(); j += 2) {
+			cornerLines.pushElement(new Line(&pairs[i][j]));
 		}
 		cornerLines.endPartition();
 	}
+
 }
 
 void Mesh::readFromFile(const char *meshFile, eslocal elementSize)
