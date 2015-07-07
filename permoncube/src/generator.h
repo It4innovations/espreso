@@ -19,6 +19,8 @@ public:
 
 	virtual void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]) = 0;
 
+	virtual void setFixPoints(mesh::Mesh &mesh, const size_t cluster[]) = 0;
+
 	virtual ~Generator() { };
 
 protected:
@@ -39,6 +41,8 @@ public:
 	void fixBottom(mesh::Mesh &mesh, const size_t cluster[]);
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
+
+	void setFixPoints(mesh::Mesh &mesh, const size_t cluster[]);
 
 private:
 	TElement e;

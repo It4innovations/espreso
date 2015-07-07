@@ -191,8 +191,9 @@ void generate_mesh( int MPIrank )
 	generator->fixBottom(input.mesh, cluster);
 
 	generator->fillGlobalBoundaries(input.boundaries, cluster);
-	// TODO: set fix points in PERMONCUBE
-	input.mesh.computeFixPoints(4);
+
+	//generator->setFixPoints(input.mesh, cluster);
+	input.mesh.computeFixPoints(8);
 
 	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
 }
@@ -551,7 +552,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	std::stringstream ss;
 	ss << "mesh_" << MPIrank << ".vtk";
 
-	input.mesh.saveVTK(ss.str().c_str(), prim_solution, l2g_vec, 0.95, 0.9);
+	input.mesh.saveVTK(ss.str().c_str(), prim_solution, l2g_vec, boundaries, input.boundaries, 0.95, 0.9);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
@@ -987,7 +988,7 @@ void testBEM(int argc, char** argv)
                                 
     //input.mesh.saveVTK(prim_solution, l2g_vec);
                                 
-    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, 0.95, 0.9);
+    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, boundaries, input.boundaries, 0.95, 0.9);
     
                 //if (clust_g.domainG->flag_store_VTK)
                 //{
@@ -1387,7 +1388,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input.mesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, 1.0, 0.95);
+	input.mesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, boundaries, input.boundaries, 1.0, 0.95);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{

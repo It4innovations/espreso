@@ -579,6 +579,8 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 void Mesh::saveBasis(
 		std::ofstream &vtk,
 		std::vector<std::vector<eslocal> > &l2g_vec,
+		Boundaries &lBoundaries,
+		Boundaries &gBoundaries,
 		double subDomainShrinking,
 		double clusterShrinking)
 {
@@ -620,7 +622,13 @@ void Mesh::saveBasis(
 	for (size_t i = 0; i < _elements.size(); i++) {
 		size += _elements[i]->size() + 1;
 	}
-	vtk << "CELLS " << _elements.size() << " " << size << "\n";
+
+	if (getFixPointsCount()) {
+		size += parts() + _fixPoints.size();
+		vtk << "CELLS " << _elements.size() + parts() << " " << size << "\n";
+	} else {
+		vtk << "CELLS " << _elements.size() << " " << size << "\n";
+	}
 
 	size_t i = 0;
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
@@ -634,20 +642,49 @@ void Mesh::saveBasis(
 		}
 		cnt += l2g_vec[part].size();
 	}
-
-	vtk << "\n";
-	vtk << "CELL_TYPES " << _elements.size() << "\n";
-	for (size_t i = 0; i < _elements.size(); i++) {
-		vtk << _elements[i]->vtkCode() << "\n";
+	if (getFixPointsCount()) {
+		cnt = 0;
+		for (size_t part = 0; part < parts(); part++) {
+			vtk << getFixPointsCount();
+			for (size_t i = 0; i < getFixPointsCount(); i++) {
+				vtk << " " << _fixPoints[part * getFixPointsCount() + i] + cnt;
+			}
+			vtk << "\n";
+			cnt += l2g_vec[part].size();
+		}
 	}
 
 	vtk << "\n";
-	vtk << "CELL_DATA " << _elements.size() << "\n";
+	if (getFixPointsCount()) {
+		vtk << "CELL_TYPES " << _elements.size() + parts() << "\n";
+	} else {
+		vtk << "CELL_TYPES " << _elements.size() << "\n";
+	}
+	for (size_t i = 0; i < _elements.size(); i++) {
+		vtk << _elements[i]->vtkCode() << "\n";
+	}
+	if (getFixPointsCount()) {
+		for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
+			vtk << "2\n";
+		}
+	}
+
+	vtk << "\n";
+	if (getFixPointsCount()) {
+		vtk << "CELL_DATA " << _elements.size() + parts() << "\n";
+	} else {
+		vtk << "CELL_DATA " << _elements.size() << "\n";
+	}
 	vtk << "SCALARS decomposition int 1\n";
 	vtk << "LOOKUP_TABLE decomposition\n";
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
 			vtk << part << "\n";
+		}
+	}
+	if (getFixPointsCount()) {
+		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+			vtk << parts() << "\n";
 		}
 	}
 }
@@ -656,11 +693,13 @@ void Mesh::saveVTK(
 		const char* filename,
 		std::vector<std::vector<double> > &displacement,
 		std::vector<std::vector<eslocal> > &l2g_vec,
+		Boundaries &lBoundaries,
+		Boundaries &gBoundaries,
 		double subDomainShrinking,
 		double clusterShrinking)
 {
 	std::ofstream vtk(filename, std::ios::out | std::ios::trunc);
-	saveBasis(vtk, l2g_vec, subDomainShrinking, clusterShrinking);
+	saveBasis(vtk, l2g_vec, lBoundaries, gBoundaries, subDomainShrinking, clusterShrinking);
 
 	size_t n_points = 0;
 	for (size_t d = 0; d < l2g_vec.size(); d++) {
@@ -730,8 +769,13 @@ void Mesh::saveVTK(
 		size += _elements[i]->size() + 1;
 	}
 
+	if (getFixPointsCount()) {
+		size += parts() + _fixPoints.size();
+		vtk << "CELLS " << _elements.size() + parts() << " " << size << "\n";
+	} else {
+		vtk << "CELLS " << _elements.size() << " " << size << "\n";
+	}
 	size_t offset = 0;
-	vtk << "CELLS " << _elements.size() << " " << size << "\n";
 	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
 		for (size_t i = _partPtrs[p]; i < _partPtrs[p + 1]; i++) {
 			vtk << _elements[i]->size();
@@ -743,19 +787,45 @@ void Mesh::saveVTK(
 		offset += _coordinates.localToCluster(p).size();
 	}
 
-	vtk << "\n";
-	vtk << "CELL_TYPES " << _elements.size() << "\n";
-	for (size_t i = 0; i < _elements.size(); i++) {
-		vtk << _elements[i]->vtkCode() << "\n";
+	if (getFixPointsCount()) {
+		offset = 0;
+		for (size_t p = 0; p < parts(); p++) {
+			vtk << getFixPointsCount();
+			for (size_t i = 0; i < getFixPointsCount(); i++) {
+				vtk << " " << _fixPoints[p * getFixPointsCount() + i] + offset;
+			}
+			vtk << "\n";
+			offset += _coordinates.localToCluster(p).size();
+		}
 	}
 
 	vtk << "\n";
-	vtk << "CELL_DATA " << _elements.size() << "\n";
+	if (getFixPointsCount()) {
+		vtk << "CELL_TYPES " << _elements.size() + parts() << "\n";
+	} else {
+		vtk << "CELL_TYPES " << _elements.size()<< "\n";
+	}
+	for (size_t i = 0; i < _elements.size(); i++) {
+		vtk << _elements[i]->vtkCode() << "\n";
+	}
+	if (getFixPointsCount()) {
+		for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
+			vtk << "2\n";
+		}
+	}
+
+	vtk << "\n";
+	vtk << "CELL_DATA " << _elements.size() + parts() << "\n";
 	vtk << "SCALARS decomposition int 1\n";
 	vtk << "LOOKUP_TABLE decomposition\n";
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
 			vtk << part << "\n";
+		}
+	}
+	if (getFixPointsCount()) {
+		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+			vtk << parts() << "\n";
 		}
 	}
 

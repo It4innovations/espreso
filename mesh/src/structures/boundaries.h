@@ -6,6 +6,8 @@
 
 namespace mesh {
 
+class Mesh;
+
 class Boundaries
 {
 

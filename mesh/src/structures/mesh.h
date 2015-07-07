@@ -12,6 +12,7 @@
 
 #include "../elements/elements.h"
 #include "coordinates.h"
+#include "boundaries.h"
 
 #include "../matrices/sparseDOKMatrix.h"
 #include "../settings.h"
@@ -28,6 +29,8 @@ enum FLAGS {
 	FLAGS_SIZE
 };
 }
+
+class Boundaries;
 
 class SurfaceMesh;
 class CommonFacesMesh;
@@ -61,10 +64,13 @@ public:
 			const char* filename,
 			double subDomainShrinking = 1,
 			double clusterShrinking = 1);
+
 	void saveVTK(
 			const char* filename,
 			std::vector<std::vector<double> > &displacement,
 			std::vector<std::vector <eslocal> > &l2g_vec,
+			Boundaries &lBoundaries,
+			Boundaries &gBoundaries,
 			double subDomainShrinking = 1,
 			double clusterShrinking = 1);
 
@@ -103,6 +109,16 @@ public:
 		return _fixPoints.size() / (_partPtrs.size() - 1);
 	}
 
+	void setFixPoints(std::vector<eslocal> &fixPoints)
+	{
+		_fixPoints = fixPoints;
+		for (size_t p = 0; p < parts(); p++) {
+			for (size_t i = 0; i < getFixPointsCount(); i++) {
+				_fixPoints[p * getFixPointsCount() + i] = _coordinates.localIndex(_fixPoints[p * getFixPointsCount() + i], p);
+			}
+		}
+	}
+
 	const std::vector<eslocal>& getFixPoints() const
 	{
 		return _fixPoints;
@@ -135,6 +151,8 @@ protected:
 	void saveBasis(
 			std::ofstream &vtk,
 			std::vector<std::vector<eslocal> > &l2g_vec,
+			Boundaries &lBoundaries,
+			Boundaries &gBoundaries,
 			double subDomainShrinking,
 			double clusterShrinking);
 

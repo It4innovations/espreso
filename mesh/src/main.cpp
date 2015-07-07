@@ -7,7 +7,7 @@ void test_ansys();
 
 int main(int argc, char** argv)
 {
-	test_matrices();
+	test_meshes();
 	return 0;
 }
 
