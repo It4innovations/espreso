@@ -256,7 +256,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		eslocal dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
-		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		//input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		input.mesh.elasticity(K_mat[d], f, d);
 
         f_vec[d].swap(f);
 
@@ -305,7 +306,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		MPIrank,
 		MPIsize,
 		partsCount,
-		neigh_clusters
+		neigh_clusters,
+		boundaries
 	);
 
 
@@ -380,7 +382,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	solver.USE_KINV		 = cluster.USE_KINV;
 	solver.USE_DYNAMIC	 = 0;
 	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 0;
+	solver.USE_PREC		 = 1;
 	solver.FIND_SOLUTION = 0;
 
 
@@ -514,6 +516,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 
 	}
+
+	if ( cluster.USE_KINV == 1 )
+		cluster.Create_Kinv_perDomain();
+
 	if (MPIrank == 0) std::cout << std::endl ;
 
 	if (cluster.USE_HFETI == 1)
