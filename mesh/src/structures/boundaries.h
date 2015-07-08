@@ -32,6 +32,17 @@ public:
 		return _boundaries[position];
 	}
 
+	void setCorner(size_t index)
+	{
+		std::cout << "i: " << index << "\n";
+		_corners[index] = true;
+	}
+
+	bool isCorner(size_t index) const
+	{
+		return _corners[index];
+	}
+
 	// prepare for future improvements
 	eslocal index(size_t position) {
 		return position;
@@ -65,7 +76,9 @@ private:
 
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;
-	//std::vector<eslocal> _mapping;
+
+	/** @brief Keeps information whether a point is the corner. */
+	std::vector<bool> _corners;
 };
 
 }

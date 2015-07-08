@@ -20,6 +20,13 @@ public:
 	virtual void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]) = 0;
 
 	virtual void setFixPoints(mesh::Mesh &mesh, const size_t cluster[]) = 0;
+	virtual void setCorners(
+			mesh::Boundaries &boundaries,
+			const size_t cluster[],
+			const size_t number[],
+			const bool corners,
+			const bool edges,
+			const bool surface) = 0;
 
 	virtual ~Generator() { };
 
@@ -43,6 +50,13 @@ public:
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 
 	void setFixPoints(mesh::Mesh &mesh, const size_t cluster[]);
+	void setCorners(
+			mesh::Boundaries &boundaries,
+			const size_t cluster[],
+			const size_t number[],
+			const bool corners,
+			const bool edges,
+			const bool surface);
 
 private:
 	TElement e;

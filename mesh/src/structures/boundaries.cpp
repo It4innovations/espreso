@@ -2,7 +2,8 @@
 
 using namespace mesh;
 
-Boundaries::Boundaries(const Mesh &m): _mesh(m), _boundaries(m.coordinates().size())
+Boundaries::Boundaries(const Mesh &m)
+	: _mesh(m), _boundaries(m.coordinates().size()), _corners(m.coordinates().size(), false)
 {
 	const std::vector<eslocal> &parts = m.getPartition();
 	const std::vector<Element*> &elements = m.getElements();

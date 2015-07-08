@@ -274,4 +274,71 @@ void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh, const size_t clu
 	mesh.setFixPoints(fixPoints);
 }
 
+template <class TElement>
+void ElementGenerator<TElement>::setCorners(
+		mesh::Boundaries &boundaries,
+		const size_t cluster[],
+		const size_t number[],
+		const bool corners,
+		const bool edges,
+		const bool surface)
+{
+	eslocal nodes[3];
+	eslocal cNodes[3];
+	for (int i = 0; i < 3; i++) {
+		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
+	}
+	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+
+	eslocal index;
+	eslocal offset[3];
+	eslocal exclude[3];
+
+	if (corners) {
+		for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
+			for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
+				for (eslocal sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
+					for (int i = 0; i < 8; i++) {
+						offset[0] = (i & 1) ? 1 : 0;
+						offset[1] = (i & 2) ? 1 : 0;
+						offset[2] = (i & 4) ? 1 : 0;
+						if (sz == 0) { exclude[2] = 0; }
+						if (sy == 0) { exclude[1] = 0; }
+						if (sx == 0) { exclude[0] = 0; }
+						if (sz == _settings.subdomainsInCluster[2] - 1) { exclude[2] = 1; }
+						if (sy == _settings.subdomainsInCluster[1] - 1) { exclude[1] = 1; }
+						if (sx == _settings.subdomainsInCluster[0] - 1) { exclude[0] = 1; }
+						if (!memcmp(offset, exclude, 3 * sizeof(eslocal))) {
+							continue;
+						}
+						index =
+								(sz + offset[2]) * nodes[2] * cNodes[0] * cNodes[1] +
+								(sy + offset[1]) * nodes[1] * cNodes[0] +
+								(sx + offset[0]) * nodes[0];
+
+						boundaries.setCorner(e.projectPoint(index));
+					}
+				}
+			}
+		}
+	}
+
+/*	eslocal step = _settings.elementsInSubdomain[1] / (edges[1] + 1);
+	for (eslocal sz = 1; sz < _settings.subdomainsInCluster[2]; sz++) {
+		for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
+			for (size_t i = 0; i < edges[1] / 2; i++) {
+				index =
+						sz * nodes[2] * cNodes[0] * cNodes[1] +
+						(sy * nodes[1] + i * step) * nodes[1] * cNodes[0] +
+						sx + offset[0] * nodes[0];
+				boundaries.setCorner(sy * nodes[1] + i * step);
+				boundaries.setCorner((sy + 1) * nodes[1] - i * step);
+			}
+			if (edges[1] % 2 == 1) {
+				boundaries.setCorner(((sy + 1) * nodes[1] - sy * nodes[1]) / 2);
+			}
+		}
+	}*/
+}
+
 

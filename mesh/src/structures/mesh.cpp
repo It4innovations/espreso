@@ -576,14 +576,14 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 	}
 }
 
-//void Mesh::saveData()
-//{
-//	for (size_t p = 0; p < parts(); p++) {
-//		std::stringstream ss;
-//		ss << "mesh_" << p << ".dat";
-//		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-//	}
-//}
+void Mesh::saveData()
+{
+	for (size_t p = 0; p < parts(); p++) {
+		std::stringstream ss;
+		ss << "mesh_" << p << ".dat";
+		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+	}
+}
 
 void Mesh::saveBasis(
 		std::ofstream &vtk,
@@ -841,6 +841,13 @@ void Mesh::saveVTK(
 		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 			vtk << parts() << "\n";
 		}
+	}
+	vtk << "\n";
+
+	vtk << "SCALARS radius float 1\n";
+	vtk << "LOOKUP_TABLE default\n";
+	for (size_t i = 0; i < cSize; i++) {
+		vtk << i % 2 << "\n";
 	}
 
 	vtk.close();

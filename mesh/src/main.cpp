@@ -45,7 +45,7 @@ void test_meshes()
 	eslocal partsCount = 4;
 	eslocal fixPointsCount = 4;
 
-	mesh::Mesh m("matrices/HEX/15/elem", "matrices/HEX/15/coord", partsCount, fixPointsCount);
+	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
 
 	mesh::Boundaries b(m);
 

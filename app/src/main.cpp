@@ -20,10 +20,11 @@ enum {
 
 struct FEMInput {
 
-	FEMInput(): boundaries(mesh) { };
+	FEMInput(): globalBoundaries(mesh), localBoundaries(mesh) { };
 
 	mesh::Mesh mesh;
-	mesh::Boundaries boundaries;
+	mesh::Boundaries globalBoundaries;
+	mesh::Boundaries localBoundaries;
 };
 
 struct FEMParams {
@@ -190,10 +191,13 @@ void generate_mesh( int MPIrank )
 	//generator->fixZeroPlanes(input.mesh, cluster);
 	generator->fixBottom(input.mesh, cluster);
 
-	generator->fillGlobalBoundaries(input.boundaries, cluster);
+	generator->fillGlobalBoundaries(input.globalBoundaries, cluster);
 
 	//generator->setFixPoints(input.mesh, cluster);
 	input.mesh.computeFixPoints(8);
+
+	size_t number[3] = { 2, 2, 2 };
+	generator->setCorners(input.localBoundaries, cluster, number, true, true, true);
 
 	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
 }
@@ -212,9 +216,6 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	size_t fixPointsCount = input.mesh.getFixPointsCount();
 
 	if (MPIrank == 0) std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
-
-	// TODO: fill boundaries in PERMONCUBE
-	mesh::Boundaries boundaries(input.mesh);
 
 	if (MPIrank == 0) std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -283,7 +284,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	}
 
 	if (MPIrank == 0) std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	boundaries.create_B1_l<eslocal>(
+	input.localBoundaries.create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
@@ -299,7 +300,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	if (MPIrank == 0) std::cout << "11.1: " << omp_get_wtime() - start<< std::endl;
 
-	input.boundaries.create_B1_g<eslocal>(
+	input.globalBoundaries.create_B1_g<eslocal>(
 		B1_mat,
 		K_mat,
 		lambda_map_sub_clst,
@@ -552,7 +553,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	std::stringstream ss;
 	ss << "mesh_" << MPIrank << ".vtk";
 
-	input.mesh.saveVTK(ss.str().c_str(), prim_solution, l2g_vec, boundaries, input.boundaries, 0.95, 0.9);
+	input.mesh.saveVTK(ss.str().c_str(), prim_solution, l2g_vec, input.localBoundaries, input.globalBoundaries, 0.95, 0.9);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
@@ -608,9 +609,6 @@ void testBEM(int argc, char** argv)
 
 	sMesh.computeFixPoints(fixPointsCount);
 
-	std::cout << "3 : " << omp_get_wtime() - start << std::endl;
-
-	mesh::Boundaries boundaries(sMesh);
 
 	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
 
@@ -739,7 +737,7 @@ void testBEM(int argc, char** argv)
     }
 
     std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-    boundaries.create_B1_l<eslocal>(
+    input.localBoundaries.create_B1_l<eslocal>(
                             B1_mat,
                             B0_mat,
                             l2g_vec,
@@ -988,7 +986,7 @@ void testBEM(int argc, char** argv)
                                 
     //input.mesh.saveVTK(prim_solution, l2g_vec);
                                 
-    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, boundaries, input.boundaries, 0.95, 0.9);
+    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, input.localBoundaries, input.globalBoundaries, 0.95, 0.9);
     
                 //if (clust_g.domainG->flag_store_VTK)
                 //{
@@ -1021,10 +1019,6 @@ void testFEM(int argc, char** argv)
 	size_t partsCount = input.mesh.parts();
 	size_t fixPointsCount = input.mesh.getFixPointsCount();
 
-	std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
-
-	// TODO: fill boundaries in PERMONCUBE
-	mesh::Boundaries boundaries(input.mesh);
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
 
@@ -1101,7 +1095,7 @@ void testFEM(int argc, char** argv)
 	}
 
 	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	boundaries.create_B1_l<eslocal>(
+	input.localBoundaries.create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
@@ -1388,7 +1382,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input.mesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, boundaries, input.boundaries, 1.0, 0.95);
+	input.mesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, input.localBoundaries, input.globalBoundaries, 1.0, 0.95);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
