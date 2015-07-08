@@ -18,7 +18,7 @@ Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, esl
 Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
 	:_coordinates(ansys), _flags(flags::FLAGS_SIZE, false)
 {
-	readFromFile(ansys.elements().c_str(), 8);
+	readFromFile(ansys.elements().c_str(), 8, true);
 	partitiate(parts, fixPoints);
 }
 
@@ -576,6 +576,15 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 	}
 }
 
+//void Mesh::saveData()
+//{
+//	for (size_t p = 0; p < parts(); p++) {
+//		std::stringstream ss;
+//		ss << "mesh_" << p << ".dat";
+//		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+//	}
+//}
+
 void Mesh::saveBasis(
 		std::ofstream &vtk,
 		std::vector<std::vector<eslocal> > &l2g_vec,
@@ -1127,14 +1136,14 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 
 }
 
-void Mesh::readFromFile(const char *meshFile, eslocal elementSize)
+void Mesh::readFromFile(const char *meshFile, eslocal elementSize, bool params)
 {
 	_elements.resize(Loader::getLinesCount(meshFile));
 
 	std::ifstream file(meshFile);
 	std::string line;
 
-	eslocal indices[20], n; 	// 20 is the max of vertices of a element
+	eslocal indices[20 + Element::PARAMS_SIZE], n; 	// 20 is the max of vertices of a element
 	double value;
 	eslocal minIndices = 10000;
 
@@ -1145,12 +1154,18 @@ void Mesh::readFromFile(const char *meshFile, eslocal elementSize)
 
 			n = 0;
 			while (ss >> value) {
-				indices[n++] = value - 1;
+				indices[n++] = value;
 			}
 			if (elementSize > 0) {
 				n = std::min(n, elementSize);
 			}
+			for (size_t i = 0; i < n; i++) {
+				indices[i]--;	// re-index to zero base
+			}
 			_elements[c] = createElement(indices, n);
+			if (params) {
+				_elements[c]->setParams(indices + n);
+			}
 		}
 		file.close();
 	} else {

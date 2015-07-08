@@ -74,6 +74,8 @@ public:
 			double subDomainShrinking = 1,
 			double clusterShrinking = 1);
 
+	void saveData();
+
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
@@ -185,7 +187,7 @@ protected:
 
 	void partitiate(eslocal *ePartition);
 	void computeLocalIndices(size_t part);
-	void readFromFile(const char *meshFile, eslocal elementSize = 0);
+	void readFromFile(const char *meshFile, eslocal elementSize = 0, bool params = false);
 
 	void checkMETISResult(eslocal result) const;
 	void checkMKLResult(eslocal result) const;

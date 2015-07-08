@@ -11,12 +11,24 @@
 
 namespace mesh {
 
+
+
 class Element
 {
 public:
 	enum IndicesType {
 		GLOBAL,
 		LOCAL
+	};
+
+	enum Params {
+		MATERIAL,
+		TYPE,
+		CONSTANT,
+		COORDINATES,
+		BODY,
+		NUMBER,
+		PARAMS_SIZE
 	};
 
 	inline static bool match(eslocal *indices, eslocal x, eslocal y)
@@ -45,6 +57,18 @@ public:
 		}
 	}
 
+	void setParams(eslocal *params)
+	{
+		for (size_t i = 0; i < PARAMS_SIZE; i++) {
+			_params[i] = params[i];
+		}
+	}
+
+	eslocal getParam(Params param)
+	{
+		return _params[param];
+	}
+
 	virtual Element* copy() const = 0;
 
 	virtual const std::vector<DenseMatrix>& dN() const = 0;
@@ -62,6 +86,8 @@ public:
 
 protected:
 	virtual eslocal* indices() = 0;
+
+	eslocal _params[PARAMS_SIZE];
 
 };
 
