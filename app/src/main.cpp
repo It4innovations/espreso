@@ -208,9 +208,6 @@ void generate_mesh( int MPIrank )
 	size_t number[3] = { 3, 3, 3 };
 	generator->setCorners(*input.localBoundaries, cluster, number, true, true, true);
 
-	input.mesh->saveVTK("corners.vtk", *input.localBoundaries, 0.7);
-	exit(0);
-
 	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
 }
 
