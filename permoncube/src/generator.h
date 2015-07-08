@@ -19,10 +19,9 @@ public:
 
 	virtual void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]) = 0;
 
-	virtual void setFixPoints(mesh::Mesh &mesh, const size_t cluster[]) = 0;
+	virtual void setFixPoints(mesh::Mesh &mesh) = 0;
 	virtual void setCorners(
 			mesh::Boundaries &boundaries,
-			const size_t cluster[],
 			const size_t number[],
 			const bool corners,
 			const bool edges,
@@ -49,10 +48,9 @@ public:
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 
-	void setFixPoints(mesh::Mesh &mesh, const size_t cluster[]);
+	void setFixPoints(mesh::Mesh &mesh);
 	void setCorners(
 			mesh::Boundaries &boundaries,
-			const size_t cluster[],
 			const size_t number[],
 			const bool corners,
 			const bool edges,

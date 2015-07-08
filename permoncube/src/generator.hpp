@@ -240,7 +240,7 @@ void ElementGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundari
 
 
 template <class TElement>
-void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh, const size_t cluster[])
+void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh)
 {
 	std::vector<eslocal> fixPoints;
 	fixPoints.reserve(8 * _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
@@ -278,7 +278,6 @@ void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh, const size_t clu
 template <class TElement>
 void ElementGenerator<TElement>::setCorners(
 		mesh::Boundaries &boundaries,
-		const size_t cluster[],
 		const size_t number[],
 		const bool corners,
 		const bool edges,

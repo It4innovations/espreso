@@ -202,11 +202,11 @@ void generate_mesh( int MPIrank )
 
 	generator->fillGlobalBoundaries(*input.globalBoundaries, cluster);
 
-	generator->setFixPoints(*input.mesh, cluster);
+	generator->setFixPoints(*input.mesh);
 	//input.mesh->computeFixPoints(8);
 
 	size_t number[3] = { 3, 3, 3 };
-	generator->setCorners(*input.localBoundaries, cluster, number, true, true, true);
+	generator->setCorners(*input.localBoundaries, number, true, true, true);
 
 	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
 }
