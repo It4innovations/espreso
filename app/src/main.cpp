@@ -20,11 +20,16 @@ enum {
 
 struct FEMInput {
 
-	FEMInput(): globalBoundaries(mesh), localBoundaries(mesh) { };
+	FEMInput(): mesh(NULL), localBoundaries(NULL), globalBoundaries(NULL) {};
+	~FEMInput() {
+		if (mesh != NULL) { delete mesh; }
+		if (localBoundaries != NULL) { delete localBoundaries; }
+		if (globalBoundaries != NULL) { delete globalBoundaries; }
+	}
 
-	mesh::Mesh mesh;
-	mesh::Boundaries globalBoundaries;
-	mesh::Boundaries localBoundaries;
+	mesh::Mesh *mesh;
+	mesh::Boundaries *localBoundaries;
+	mesh::Boundaries *globalBoundaries;
 };
 
 struct FEMParams {
@@ -126,7 +131,8 @@ void load_mesh()
 	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
 	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
 
-	input.mesh = mesh::Mesh(ansys, 2, 8);
+	input.mesh = new mesh::Mesh(ansys, 2, 8);
+	input.localBoundaries = new mesh::Boundaries(*input.mesh);
 }
 
 void generate_mesh( int MPIrank )
@@ -187,17 +193,23 @@ void generate_mesh( int MPIrank )
 	cluster[1] = Jclst - 1;
 	cluster[2] = Kclst - 1;
 
-	generator->mesh(input.mesh, cluster);
+	input.mesh = new mesh::Mesh();
+	input.globalBoundaries = new mesh::Boundaries(*input.mesh);
+	generator->mesh(*input.mesh, cluster);
+	input.localBoundaries = new mesh::Boundaries(*input.mesh);
 	//generator->fixZeroPlanes(input.mesh, cluster);
-	generator->fixBottom(input.mesh, cluster);
+	generator->fixBottom(*input.mesh, cluster);
 
-	generator->fillGlobalBoundaries(input.globalBoundaries, cluster);
+	generator->fillGlobalBoundaries(*input.globalBoundaries, cluster);
 
-	//generator->setFixPoints(input.mesh, cluster);
-	input.mesh.computeFixPoints(8);
+	generator->setFixPoints(*input.mesh, cluster);
+	//input.mesh->computeFixPoints(8);
 
-	size_t number[3] = { 2, 2, 2 };
-	generator->setCorners(input.localBoundaries, cluster, number, true, true, true);
+	size_t number[3] = { 3, 3, 3 };
+	generator->setCorners(*input.localBoundaries, cluster, number, true, true, true);
+
+	input.mesh->saveVTK("corners.vtk", *input.localBoundaries, 0.7);
+	exit(0);
 
 	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
 }
@@ -212,8 +224,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount 	  = input.mesh.parts();
-	size_t fixPointsCount = input.mesh.getFixPointsCount();
+	size_t partsCount 	  = input.mesh->parts();
+	size_t fixPointsCount = input.mesh->getFixPointsCount();
 
 	if (MPIrank == 0) std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
 
@@ -257,10 +269,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 #else
 	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		eslocal dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
+		eslocal dimension = input.mesh->getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
-		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		input.mesh->elasticity(K_mat[d], M_mat[d], f, d);
 
         f_vec[d].swap(f);
 
@@ -270,7 +282,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	if (MPIrank == 0) std::cout << std::endl << "10: " << omp_get_wtime() - start<< std::endl;
 
 
-	const std::vector<eslocal> fixPoints = input.mesh.getFixPoints();
+	const std::vector<eslocal> fixPoints = input.mesh->getFixPoints();
 
 #ifndef DEBUG
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -284,7 +296,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	}
 
 	if (MPIrank == 0) std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	input.localBoundaries.create_B1_l<eslocal>(
+	input.localBoundaries->create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
@@ -300,7 +312,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	if (MPIrank == 0) std::cout << "11.1: " << omp_get_wtime() - start<< std::endl;
 
-	input.globalBoundaries.create_B1_g<eslocal>(
+	input.globalBoundaries->create_B1_g<eslocal>(
 		B1_mat,
 		K_mat,
 		lambda_map_sub_clst,
@@ -313,9 +325,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	);
 
 
-	const std::map<eslocal, double> &forces_x = input.mesh.coordinates().property(mesh::CP::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = input.mesh.coordinates().property(mesh::CP::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = input.mesh.coordinates().property(mesh::CP::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = input.mesh->coordinates().property(mesh::CP::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = input.mesh->coordinates().property(mesh::CP::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = input.mesh->coordinates().property(mesh::CP::FORCES_Z).values();
 
 	for (eslocal d = 0; d < partsCount; d++) {
 		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -456,9 +468,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 #endif
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = input.mesh.coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = input.mesh.coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = input.mesh.coordinates()[l2g_vec[d][i]].z;
+			tmp_vec[0] = input.mesh->coordinates()[l2g_vec[d][i]].x;
+			tmp_vec[1] = input.mesh->coordinates()[l2g_vec[d][i]].y;
+			tmp_vec[2] = input.mesh->coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -553,7 +565,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	std::stringstream ss;
 	ss << "mesh_" << MPIrank << ".vtk";
 
-	input.mesh.saveVTK(ss.str().c_str(), prim_solution, l2g_vec, input.localBoundaries, input.globalBoundaries, 0.95, 0.9);
+	input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
@@ -598,12 +610,12 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 void testBEM(int argc, char** argv)
 {
 	double start = omp_get_wtime();
-	size_t partsCount = input.mesh.parts();
+	size_t partsCount = input.mesh->parts();
 	size_t fixPointsCount = 4;
 
 	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
 
-	mesh::SurfaceMesh sMesh(input.mesh);
+	mesh::SurfaceMesh sMesh(*input.mesh);
 
 	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
 
@@ -723,7 +735,7 @@ void testBEM(int argc, char** argv)
     
     std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
 
-    const std::vector<eslocal> fixPoints = sMesh.getFixPoints(); // input.mesh.getFixPoints();
+    const std::vector<eslocal> fixPoints = sMesh.getFixPoints(); // input.mesh->getFixPoints();
 
 #ifndef DEBUG
     cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -737,7 +749,7 @@ void testBEM(int argc, char** argv)
     }
 
     std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-    input.localBoundaries.create_B1_l<eslocal>(
+    input.localBoundaries->create_B1_l<eslocal>(
                             B1_mat,
                             B0_mat,
                             l2g_vec,
@@ -984,9 +996,9 @@ void testBEM(int argc, char** argv)
                                 
     max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
                                 
-    //input.mesh.saveVTK(prim_solution, l2g_vec);
+    //input.mesh->saveVTK(prim_solution, l2g_vec);
                                 
-    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, input.localBoundaries, input.globalBoundaries, 0.95, 0.9);
+    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
     
                 //if (clust_g.domainG->flag_store_VTK)
                 //{
@@ -1016,8 +1028,8 @@ void testFEM(int argc, char** argv)
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount = input.mesh.parts();
-	size_t fixPointsCount = input.mesh.getFixPointsCount();
+	size_t partsCount = input.mesh->parts();
+	size_t fixPointsCount = input.mesh->getFixPointsCount();
 
 
 	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
@@ -1060,10 +1072,10 @@ void testFEM(int argc, char** argv)
 #else
 	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		eslocal dimension = input.mesh.getPartNodesCount(d) * mesh::Point::size();
+		eslocal dimension = input.mesh->getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
-		input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
+		input.mesh->elasticity(K_mat[d], M_mat[d], f, d);
 
 		//K_mat[d] = K;
 		//M_mat[d] = M;
@@ -1081,7 +1093,7 @@ void testFEM(int argc, char** argv)
         
 	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
 
-	const std::vector<eslocal> fixPoints = input.mesh.getFixPoints();
+	const std::vector<eslocal> fixPoints = input.mesh->getFixPoints();
 
 #ifndef DEBUG
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -1095,7 +1107,7 @@ void testFEM(int argc, char** argv)
 	}
 
 	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	input.localBoundaries.create_B1_l<eslocal>(
+	input.localBoundaries->create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
@@ -1108,9 +1120,9 @@ void testFEM(int argc, char** argv)
 
 	//std::cout << B1_mat[0];
 
-	const std::map<eslocal, double> &forces_x = input.mesh.coordinates().property(mesh::CP::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = input.mesh.coordinates().property(mesh::CP::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = input.mesh.coordinates().property(mesh::CP::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = input.mesh->coordinates().property(mesh::CP::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = input.mesh->coordinates().property(mesh::CP::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = input.mesh->coordinates().property(mesh::CP::FORCES_Z).values();
 
 	for (eslocal d = 0; d < partsCount; d++) {
 		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -1127,7 +1139,7 @@ void testFEM(int argc, char** argv)
 	}
 //    for (eslocal d = 0; d < partsCount; d++) {
 //        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-//            if ( fabs( 30.0 - input.mesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
+//            if ( fabs( 30.0 - input.mesh->coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
 //                //f_vec[d][3 * iz + 2] = 1.0;
 //            }
 //        }
@@ -1296,9 +1308,9 @@ void testFEM(int argc, char** argv)
 #endif
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = input.mesh.coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = input.mesh.coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = input.mesh.coordinates()[l2g_vec[d][i]].z;
+			tmp_vec[0] = input.mesh->coordinates()[l2g_vec[d][i]].x;
+			tmp_vec[1] = input.mesh->coordinates()[l2g_vec[d][i]].y;
+			tmp_vec[2] = input.mesh->coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -1382,7 +1394,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input.mesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, input.localBoundaries, input.globalBoundaries, 1.0, 0.95);
+	input.mesh->saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 1.0, 0.95);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{

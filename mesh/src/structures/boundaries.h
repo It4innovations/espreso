@@ -15,7 +15,7 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
-	Boundaries(const Mesh &mesh);
+	Boundaries(Mesh &mesh);
 
 	void resize(size_t size)
 	{
@@ -34,7 +34,6 @@ public:
 
 	void setCorner(size_t index)
 	{
-		std::cout << "i: " << index << "\n";
 		_corners[index] = true;
 	}
 
@@ -72,7 +71,7 @@ public:
 
 
 private:
-	const Mesh &_mesh;
+	Mesh &_mesh;
 
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;

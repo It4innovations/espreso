@@ -67,6 +67,12 @@ public:
 
 	void saveVTK(
 			const char* filename,
+			Boundaries &localBoundaries,
+			double subDomainShrinking = 1,
+			double clusterShrinking = 1);
+
+	void saveVTK(
+			const char* filename,
 			std::vector<std::vector<double> > &displacement,
 			std::vector<std::vector <eslocal> > &l2g_vec,
 			Boundaries &lBoundaries,

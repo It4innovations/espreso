@@ -1,6 +1,6 @@
 #include "generator.h"
 
-using namespace permoncube;
+namespace permoncube {
 
 
 //	###################################################
@@ -274,6 +274,7 @@ void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh, const size_t clu
 	mesh.setFixPoints(fixPoints);
 }
 
+
 template <class TElement>
 void ElementGenerator<TElement>::setCorners(
 		mesh::Boundaries &boundaries,
@@ -290,55 +291,66 @@ void ElementGenerator<TElement>::setCorners(
 	}
 	Utils<TElement>::clusterNodesCount(_settings, cNodes);
 
+	eslocal step[3];
+	for (int i = 0; i < 3; i++) {
+		step[i] = _settings.elementsInSubdomain[i] / (number[i] + 1);
+		step[i] *= TElement::subnodes[i] + 1;
+	}
+	std::vector<std::vector<size_t> > offsets(3);
+	std::vector<size_t> mul(3);
+
+	for (int i = 0; i < 3; i++) {
+		for (size_t j = 0; j < _settings.subdomainsInCluster[i]; j++) {
+			for (size_t k = 0; k <= number[i] / 2; k++) {
+				offsets[i].push_back(j * nodes[i] + k * step[i]);
+				offsets[i].push_back(j * nodes[i] + nodes[i] - k * step[i]);
+			}
+			if (number[i] % 2 == 1) {
+				offsets[i].push_back(j * nodes[i] + nodes[i] / 2);
+			}
+		}
+	}
+	mul[0] = 1;
+	mul[1] = cNodes[0];
+	mul[2] = cNodes[0] * cNodes[1];
+
 	eslocal index;
-	eslocal offset[3];
-	eslocal exclude[3];
-
-	if (corners) {
-		for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
-			for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
-				for (eslocal sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
-					for (int i = 0; i < 8; i++) {
-						offset[0] = (i & 1) ? 1 : 0;
-						offset[1] = (i & 2) ? 1 : 0;
-						offset[2] = (i & 4) ? 1 : 0;
-						if (sz == 0) { exclude[2] = 0; }
-						if (sy == 0) { exclude[1] = 0; }
-						if (sx == 0) { exclude[0] = 0; }
-						if (sz == _settings.subdomainsInCluster[2] - 1) { exclude[2] = 1; }
-						if (sy == _settings.subdomainsInCluster[1] - 1) { exclude[1] = 1; }
-						if (sx == _settings.subdomainsInCluster[0] - 1) { exclude[0] = 1; }
-						if (!memcmp(offset, exclude, 3 * sizeof(eslocal))) {
-							continue;
-						}
-						index =
-								(sz + offset[2]) * nodes[2] * cNodes[0] * cNodes[1] +
-								(sy + offset[1]) * nodes[1] * cNodes[0] +
-								(sx + offset[0]) * nodes[0];
-
-						boundaries.setCorner(e.projectPoint(index));
+	for (size_t d = 0; d < 3; d++) {
+		for (eslocal i = 1; i < _settings.subdomainsInCluster[d]; i++) {
+			for (size_t j = 0; j < offsets[(d + 1) % 3].size(); j++) {
+				for (size_t k = 0; k < offsets[(d + 2) % 3].size(); k++) {
+					if (!corners
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0)
+					{
+						continue;
 					}
+					if (!edges
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] != 0)
+					{
+						continue;
+					}
+					if (!edges
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] != 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0)
+					{
+						continue;
+					}
+					if (!surface
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] != 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] != 0)
+					{
+						continue;
+					}
+					index = i * nodes[d] * mul[d];
+					index += offsets[(d + 1) % 3][j] * mul[(d + 1) % 3];
+					index += offsets[(d + 2) % 3][k] * mul[(d + 2) % 3];
+					boundaries.setCorner(e.projectPoint(index));
 				}
 			}
 		}
 	}
-
-/*	eslocal step = _settings.elementsInSubdomain[1] / (edges[1] + 1);
-	for (eslocal sz = 1; sz < _settings.subdomainsInCluster[2]; sz++) {
-		for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
-			for (size_t i = 0; i < edges[1] / 2; i++) {
-				index =
-						sz * nodes[2] * cNodes[0] * cNodes[1] +
-						(sy * nodes[1] + i * step) * nodes[1] * cNodes[0] +
-						sx + offset[0] * nodes[0];
-				boundaries.setCorner(sy * nodes[1] + i * step);
-				boundaries.setCorner((sy + 1) * nodes[1] - i * step);
-			}
-			if (edges[1] % 2 == 1) {
-				boundaries.setCorner(((sy + 1) * nodes[1] - sy * nodes[1]) / 2);
-			}
-		}
-	}*/
 }
 
-
+}

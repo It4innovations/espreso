@@ -733,6 +733,109 @@ void Mesh::saveVTK(
 
 void Mesh::saveVTK(
 		const char* filename,
+		Boundaries &localBoundaries,
+		double subDomainShrinking,
+		double clusterShrinking)
+{
+	std::ofstream vtk;
+
+	size_t cSize = 0;
+	for (size_t p = 0; p < parts(); p++) {
+		cSize += _coordinates.localToCluster(p).size();
+	}
+
+	vtk.open(filename, std::ios::out | std::ios::trunc);
+	vtk << "# vtk DataFile Version 3.0\n";
+	vtk << "Test\n";
+	vtk << "ASCII\n\n";
+	vtk << "DATASET UNSTRUCTURED_GRID\n";
+	vtk << "POINTS " << cSize << " float\n";
+
+	Point cCenter;
+	for (size_t i = 0; i < _coordinates.size(); i++) {
+		cCenter += _coordinates[i];
+	}
+	cCenter /= _coordinates.size();
+
+	for (size_t p = 0; p < parts(); p++) {
+
+		Point sCenter;
+		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
+			sCenter += _coordinates.get(i, p);
+		}
+		sCenter /= _coordinates.localSize(p);
+
+		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
+			Point x = _coordinates.get(i, p);
+			x = sCenter + (x - sCenter) * subDomainShrinking;
+			x = cCenter + (x - cCenter) * clusterShrinking;
+			vtk << x << "\n";
+		}
+	}
+	vtk << "\n";
+
+	size_t size = 0;
+	for (size_t i = 0; i < _elements.size(); i++) {
+		size += _elements[i]->size() + 1;
+	}
+
+	size_t corners = 0;
+	for (size_t i = 0; i < localBoundaries.size(); i++) {
+		if (localBoundaries.isCorner(i)) {
+			corners += localBoundaries[i].size();
+		}
+	}
+
+	vtk << "CELLS " << _elements.size() + 1 << " " << size + corners << "\n";
+
+	size_t offset = 0;
+	for (size_t p = 0; p < parts(); p++) {
+		for (size_t i = _partPtrs[p]; i < _partPtrs[p + 1]; i++) {
+			vtk << _elements[i]->size();
+			for (size_t j = 0; j < _elements[i]->size(); j++) {
+				vtk << " " << _elements[i]->node(j) + offset;
+			}
+			vtk << "\n";
+		}
+		offset += _coordinates.localToCluster(p).size();
+	}
+
+	offset = 0;
+	vtk << corners;
+	for (size_t p = 0; p < parts(); p++) {
+		for (size_t i = 0; i < localBoundaries.size(); i++) {
+			if (localBoundaries.isCorner(i) && localBoundaries[i].count(p)) {
+				vtk << " " << _coordinates.localIndex(i, p) + offset;
+			}
+		}
+		offset += _coordinates.localSize(p);
+	}
+
+	vtk << "\n";
+	vtk << "CELL_TYPES " << _elements.size() + 1 << "\n";
+
+	for (size_t i = 0; i < _elements.size(); i++) {
+		vtk << _elements[i]->vtkCode() << "\n";
+	}
+	vtk << "2\n";
+
+	vtk << "\n";
+	vtk << "CELL_DATA " << _elements.size() + 1 << "\n";
+
+	vtk << "SCALARS decomposition int 1\n";
+	vtk << "LOOKUP_TABLE decomposition\n";
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+			vtk << part << "\n";
+		}
+	}
+	vtk << parts() << "\n";
+
+	vtk.close();
+}
+
+void Mesh::saveVTK(
+		const char* filename,
 		double subDomainShrinking,
 		double clusterShrinking)
 {
@@ -843,12 +946,6 @@ void Mesh::saveVTK(
 		}
 	}
 	vtk << "\n";
-
-	vtk << "SCALARS radius float 1\n";
-	vtk << "LOOKUP_TABLE default\n";
-	for (size_t i = 0; i < cSize; i++) {
-		vtk << i % 2 << "\n";
-	}
 
 	vtk.close();
 }
