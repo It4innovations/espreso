@@ -786,7 +786,7 @@ void Mesh::saveVTK(
 		}
 	}
 
-	vtk << "CELLS " << _elements.size() + 1 << " " << size + corners << "\n";
+	vtk << "CELLS " << _elements.size() + 1 << " " << size + corners  + 1 << "\n";
 
 	size_t offset = 0;
 	for (size_t p = 0; p < parts(); p++) {
