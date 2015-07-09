@@ -305,7 +305,8 @@ void ElementGenerator<TElement>::setCorners(
 				offsets[i].push_back(j * nodes[i] + nodes[i] - k * step[i]);
 			}
 			if (number[i] % 2 == 1) {
-				offsets[i].push_back(j * nodes[i] + nodes[i] / 2);
+				eslocal mid = (_settings.elementsInSubdomain[i] / 2) * (TElement::subnodes[i] + 1);
+				offsets[i].push_back(j * nodes[i] + mid);
 			}
 		}
 	}
