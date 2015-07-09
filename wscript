@@ -137,7 +137,8 @@ def check_environment(ctx):
 
     try:
         if ctx.options.mpich:
-            ctx.find_program("mpic++", var="MPICXX")
+#            ctx.find_program("mpic++", var="MPICXX")
+            ctx.find_program("mpic++.mpich", var="MPICXX")
         else:
             ctx.find_program("mpic++", var="MPICXX")
     except ctx.errors.ConfigurationError:
