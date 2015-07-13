@@ -58,6 +58,14 @@ public:
 		_clusterIndex[0].reserve(size);
 	}
 
+	void clear()
+	{
+		_points.clear();
+		_globalIndex.clear();
+		_clusterIndex.resize(1);
+		_clusterIndex[0].clear();
+	}
+
 	const Point& get(eslocal index, eslocal part) const
 	{
 		return _points[_clusterIndex[part][index]];

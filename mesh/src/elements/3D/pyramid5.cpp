@@ -193,6 +193,11 @@ Pyramid5::Pyramid5(eslocal *indices)
 	_indices[4] = indices[4];
 }
 
+Pyramid5::Pyramid5(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
+
 
 
 

@@ -88,3 +88,4 @@ std::ostream& mesh::operator<<(std::ostream& os, const Coordinates &c)
 	return os;
 }
 
+

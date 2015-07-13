@@ -201,6 +201,11 @@ Prisma6::Prisma6(eslocal *indices)
 	_indices[5] = indices[6];
 }
 
+Prisma6::Prisma6(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
+
 
 
 

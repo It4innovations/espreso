@@ -36,6 +36,9 @@ def build(ctx):
     ctx.env = ctx.all_envs[MESH]
 
     if ctx.options.mesh:
+        ctx.env = ctx.all_envs["base"]
+        ctx.env.append_unique("CXXFLAGS", [ "-DDEBUG" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-I/usr/include/mpi" ])
         ctx.program(
             source=source_files + ("src/main.cpp",),
             target="esmesh",

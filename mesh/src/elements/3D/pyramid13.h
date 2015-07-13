@@ -8,7 +8,7 @@
 #define Pyramid13NodesCount 13
 #define Pyramid13FacesCount 5
 #define Pyramid13GPCount 8
-#define Pyramid13VTKCode 27 
+#define Pyramid13VTKCode 27
 
 namespace mesh {
 
@@ -19,6 +19,7 @@ public:
 	static bool match(eslocal *indices, eslocal n);
 
 	Pyramid13(eslocal *indices);
+	Pyramid13(std::ifstream &is);
 
 	Element* copy() const
 	{

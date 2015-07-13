@@ -18,6 +18,7 @@ public:
 	static bool match(eslocal *indices, eslocal n);
 
 	Tetrahedron10(eslocal *indices);
+	Tetrahedron10(std::ifstream &is);
 
 	Element* copy() const
 	{

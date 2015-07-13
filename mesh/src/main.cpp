@@ -4,11 +4,26 @@ void test_matrices();
 void test_BEM();
 void test_meshes();
 void test_ansys();
+void test_saveData();
 
 int main(int argc, char** argv)
 {
-	test_meshes();
+	test_saveData();
 	return 0;
+}
+
+void test_saveData()
+{
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
+
+	mesh::Mesh m("matrices/TET/5/elem", "matrices/TET/5/coord", partsCount, fixPointsCount);
+
+	m.saveData();
+
+	//mesh::Mesh m2;
+	m.loadData("mesh_0.dat");
+	m.saveVTK("part0.vtk");
 }
 
 void test_ansys()

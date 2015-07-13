@@ -18,6 +18,7 @@ public:
 	static bool match(eslocal *indices, eslocal n);
 
 	Prisma15(eslocal *indices);
+	Prisma15(std::ifstream &is);
 
 	Element* copy() const
 	{

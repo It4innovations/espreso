@@ -234,4 +234,9 @@ Tetrahedron4::Tetrahedron4(eslocal *indices)
 	_indices[3] = indices[4];
 }
 
+Tetrahedron4::Tetrahedron4(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
+
 

@@ -19,6 +19,8 @@ public:
 	static bool match(eslocal *indices, eslocal n);
 
 	Pyramid5(eslocal *indices);
+	Pyramid5(std::ifstream &is);
+
 
 	Element* copy() const
 	{

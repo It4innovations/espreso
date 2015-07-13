@@ -4,6 +4,7 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 #include "mkl.h"
 #include "cilk/cilk.h"
@@ -81,6 +82,7 @@ public:
 			double clusterShrinking = 1);
 
 	void saveData();
+	void loadData(const char *filename);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 

@@ -157,4 +157,9 @@ Hexahedron8::Hexahedron8(eslocal *indices)
 	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
 }
 
+Hexahedron8::Hexahedron8(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
+
 

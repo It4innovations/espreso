@@ -20,6 +20,7 @@ public:
 	static bool match(eslocal *indices, eslocal n);
 
 	Hexahedron20(eslocal *indices);
+	Hexahedron20(std::ifstream &is);
 
 	Element* copy() const
 	{

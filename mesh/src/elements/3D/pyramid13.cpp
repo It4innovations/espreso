@@ -301,10 +301,11 @@ Pyramid13::Pyramid13(eslocal *indices)
   _indices[10] = indices[17];
   _indices[11] = indices[18];
   _indices[12] = indices[19];
+}
 
-
-
-
+Pyramid13::Pyramid13(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }
 
 

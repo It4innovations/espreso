@@ -422,5 +422,10 @@ Tetrahedron10::Tetrahedron10(eslocal *indices)
 	_indices[9] = indices[18];
 }
 
+Tetrahedron10::Tetrahedron10(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
+
 
 

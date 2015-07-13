@@ -12,4 +12,10 @@ std::ostream& mesh::operator<<(std::ostream& os, const Element &e)
 	return os;
 }
 
-
+std::ofstream& mesh::operator<<(std::ofstream& os, const Element &e)
+{
+	eslocal value = e.vtkCode();
+	os.write(reinterpret_cast<const char *>(&value), sizeof(eslocal));
+	os.write(reinterpret_cast<const char *>(e.indices()), sizeof(eslocal) * e.size());
+	return os;
+}

@@ -333,6 +333,10 @@ Prisma15::Prisma15(eslocal *indices)
 	_indices[14] = indices[18];
 }
 
+Prisma15::Prisma15(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
 
 
 

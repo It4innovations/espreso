@@ -384,4 +384,9 @@ Hexahedron20::Hexahedron20(eslocal *indices)
 	memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
 }
 
+Hexahedron20::Hexahedron20(std::ifstream &is)
+{
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+}
+
 

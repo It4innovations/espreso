@@ -576,14 +576,6 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 	}
 }
 
-void Mesh::saveData()
-{
-	for (size_t p = 0; p < parts(); p++) {
-		std::stringstream ss;
-		ss << "mesh_" << p << ".dat";
-		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-	}
-}
 
 void Mesh::saveBasis(
 		std::ofstream &vtk,
@@ -842,7 +834,7 @@ void Mesh::saveVTK(
 	std::ofstream vtk;
 
 	size_t cSize = 0;
-	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
+	for (size_t p = 0; p < parts(); p++) {
 		cSize += _coordinates.localToCluster(p).size();
 	}
 
@@ -1341,6 +1333,94 @@ void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
 				f[3 * _elements[i]->node(k) + 2] += (1. / 3.) * Area_h;
 			}
 		}
+	}
+}
+
+
+void Mesh::saveData()
+{
+	eslocal value;
+	esglobal index;
+	for (size_t p = 0; p < parts(); p++) {
+		std::stringstream ss;
+		ss << "mesh_" << p << ".dat";
+		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+
+		// save elements
+		value = _partPtrs[p + 1] - _partPtrs[p];
+		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			os << *(_elements[e]);
+		}
+
+		// save coordinates
+		value = _coordinates.localSize(p);
+		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+		const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
+		for (eslocal i = 0; i < l2c.size(); i++) {
+			index = _coordinates.globalIndex(i, p);
+			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
+			const Point &point = _coordinates.get(i, p);
+			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
+		}
+	}
+}
+
+void Mesh::loadData(const char *filename)
+{
+	std::ifstream is(filename, std::ifstream::binary);
+
+	// reset parameters
+	eslocal size, type;
+	esglobal index;
+	Point point;
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	_elements.clear();
+	_partPtrs.resize(2);
+	_partPtrs[1] = size;
+	_fixPoints.clear();
+	_elements.reserve(size);
+	_coordinates.clear();
+
+	// load elements
+	for (eslocal i = 0; i < size; i++) {
+		is.read(reinterpret_cast<char *>(&type), sizeof(eslocal));
+		switch(type) {
+		case Tetrahedron4VTKCode:
+			_elements.push_back(new Tetrahedron4(is));
+			break;
+		case Tetrahedron10VTKCode:
+			_elements.push_back(new Tetrahedron10(is));
+			break;
+		case Pyramid5VTKCode:
+			_elements.push_back(new Pyramid5(is));
+			break;
+		case Pyramid13VTKCode:
+			_elements.push_back(new Pyramid13(is));
+			break;
+		case Prisma6VTKCode:
+			_elements.push_back(new Prisma6(is));
+			break;
+		case Prisma15VTKCode:
+			_elements.push_back(new Prisma15(is));
+			break;
+		case Hexahedron8VTKCode:
+			_elements.push_back(new Hexahedron8(is));
+			break;
+		case Hexahedron20VTKCode:
+			_elements.push_back(new Hexahedron20(is));
+			break;
+		}
+	}
+
+	// load coordinates
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	_coordinates.reserve(size);
+	for (eslocal i = 0; i < size; i++) {
+		is.read(reinterpret_cast<char *>(&index), sizeof(esglobal));
+		is.read(reinterpret_cast<char *>(&point), Point::size() * sizeof(double));
+		_coordinates.add(point, i, index);
 	}
 }
 

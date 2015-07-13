@@ -37,6 +37,7 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
+	friend std::ofstream& operator<<(std::ofstream& os, const Element &e);
 
 	virtual ~Element() {};
 
