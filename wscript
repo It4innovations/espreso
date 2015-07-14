@@ -41,10 +41,17 @@ def configure(ctx):
     write_configuration(ctx)
 
     ctx.setenv("base", ctx.env)
-    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-fPIC", "-Wall", "-openmp", "-std=c++11" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-fPIC", "-Wall", "-openmp" ])
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
+    ctx.env.append_unique("STLIBPATH", [ "../libs" ])
+
+
     ctx.recurse("metis")
+    
+    ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
+
+    ctx.env.append_value("STLIB", [ "ifcore" ])  #-Wl,-Bstatic -L../libs -lifcore'
 
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])
@@ -90,8 +97,9 @@ def configure(ctx):
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
-    ctx.recurse("solver")
+    ctx.recurse("solver")  
     ctx.recurse("app")
+
 
 def build(ctx):
     test_file = os.path.join(ctx.path.abspath(), "build/test_config")

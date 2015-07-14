@@ -148,6 +148,7 @@ public:
 
 	double GetMeanOfDiagonalOfSymmetricMatrix();
 	double GetMaxOfDiagonalOfSymmetricMatrix();
+	void   SetDiagonalOfSymmetricMatrix( double val );
 	
 	void MatAppend(SparseMatrix & A); 
 	void RemoveLower(); 
@@ -160,6 +161,8 @@ public:
 	int MatCompareCOO(SparseMatrix & A);
 
 	void CreateEye  ( int size); 
+	void CreateEye  ( int size, double value, int offset_row, int offset_col);
+
 	void TestEye    ( int size); 
 	void TestMatRow ( int size, int row_index);
 	

@@ -370,7 +370,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	Cluster cluster(MPIrank + 1);
 	cluster.USE_DYNAMIC			= 0;
 	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 0;
+	cluster.USE_KINV			= 1;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
 
@@ -505,6 +505,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 #else
 	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 #endif
+
+		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
+
 		if (MPIrank == 0) std::cout << d << " " ;
 
 		SetMatrixK_fromCSR ( cluster, d,
@@ -517,8 +520,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	}
 
-	if ( cluster.USE_KINV == 1 )
+	if ( cluster.USE_KINV == 1 ) {
 		cluster.Create_Kinv_perDomain();
+		cluster.Create_SC_perDomain();
+	}
 
 	if (MPIrank == 0) std::cout << std::endl ;
 
@@ -1355,11 +1360,21 @@ void testFEM(int argc, char** argv)
 #else
 	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 #endif
+
+		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
+
 		SetMatrixK_fromCSR ( cluster, d,
 			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
 			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
 			'G');
 	}
+
+	//std::cout << std::endl;
+
+	//cluster.Create_Kinv_perDomain();
+
+	//cluster.Create_SC_perDomain();
+
 
 	if (cluster.USE_HFETI == 1)
 		cluster.SetClusterHFETI();
