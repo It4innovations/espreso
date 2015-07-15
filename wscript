@@ -2,7 +2,7 @@
 import commands
 import os
 
-VERSION = 6
+VERSION = 7
 
 def options(opt):
     opt.add_option("--debug",
@@ -41,14 +41,14 @@ def configure(ctx):
     write_configuration(ctx)
 
     ctx.setenv("base", ctx.env)
-    ctx.env.append_unique("CXXFLAGS", [ "-fPIC", "-Wall", "-openmp", "-std=c++11" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-fPIC", "-Wall", "-openmp" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
     ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
 
     ctx.recurse("metis")
-    
+
     ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
 
     ctx.env.append_value("STLIB", [ "ifcore" ])  #-Wl,-Bstatic -L../libs -lifcore'
