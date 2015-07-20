@@ -68,7 +68,7 @@ public:
 			const char* filename,
 			std::vector<std::vector<double> > &displacement,
 			std::vector<std::vector<eslocal> > &l2g_vec,
-			double shrinking));
+			double shrinking);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
