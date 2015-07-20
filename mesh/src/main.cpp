@@ -5,11 +5,31 @@ void test_BEM();
 void test_meshes();
 void test_ansys();
 void test_saveData();
+void test_ijv_sort();
 
 int main(int argc, char** argv)
 {
-	test_saveData();
+	test_ijv_sort();
 	return 0;
+}
+
+void test_ijv_sort()
+{
+	size_t rows = 50, columns = 50;
+
+	DenseMatrix d(rows, columns);
+
+	for (size_t i = 0; i < rows; i++) {
+		for (size_t j = 0; j < columns; j++) {
+			if ((j * columns + i) % 15 == 0) {
+				d(i, j) = j * columns + i;
+			}
+		}
+	}
+	SparseIJVMatrix<eslocal> m(d);
+	m.transpose();
+
+	std::cout << m;
 }
 
 void test_saveData()

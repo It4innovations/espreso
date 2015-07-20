@@ -41,7 +41,8 @@ public:
 
 	void sort()
 	{
-		sort(0, _values.size());
+		// last element is part of the array
+		sort(0, _values.size() - 1);
 	}
 
 	size_t nonZeroValues() const
@@ -130,7 +131,6 @@ public:
 	}
 
 
-
 private:
 
 	void sort(size_t begin, size_t end);
@@ -171,6 +171,30 @@ private:
 		m1._columnIndices.swap(m2._columnIndices);
 		m1._values.swap(m2._values);
 
+	}
+
+	inline Tindices compare(size_t i, size_t j)
+	{
+		if (_rowIndices[i] == _rowIndices[j]) {
+			return _columnIndices[i] - _columnIndices[j];
+		} else {
+			return _rowIndices[i] - _rowIndices[j];
+		}
+	}
+
+	inline void swap(size_t i, size_t j)
+	{
+		Tindices t = _columnIndices[i];
+		_columnIndices[i] = _columnIndices[j];
+		_columnIndices[j] = t;
+
+		t = _rowIndices[i];
+		_rowIndices[i] = _rowIndices[j];
+		_rowIndices[j] = t;
+
+		double td = _values[i];
+		_values[i] = _values[j];
+		_values[j] = td;
 	}
 
 	// Sparse COO data

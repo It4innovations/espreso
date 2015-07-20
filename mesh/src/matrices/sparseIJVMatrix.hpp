@@ -152,60 +152,30 @@ void SparseIJVMatrix<Tindices>::transpose()
 	sort();
 }
 
-#define compare(a, b, i, j) (a[i] != a[j] ? a[i] - a[j] : b[i] - b[j])
-
 template<typename Tindices>
 void SparseIJVMatrix<Tindices>::sort(size_t begin, size_t end)
 {
-	size_t l, h, p;
-	Tindices p1, p2, t;
-	double p3, td;
-
 	if (begin >= end) {
 		return;
 	}
 
-	l = begin;
-	h = end;
-	p = end;
-
-	p1 = _columnIndices[p];
-	p2 = _rowIndices[p];
-	p3 = _values[p];
+	size_t l = begin, h = end;
 
 	do {
-		while ((l < h) && compare(_rowIndices, _columnIndices, l, p) <= 0) { l++; }
-		while ((h > l) && compare(_rowIndices, _columnIndices, h, p) >= 0) { h--; }
-		if (l < h) {
-			t = _columnIndices[l];
-			_columnIndices[l] = _columnIndices[h];
-			_columnIndices[h] = t;
-
-			t = _rowIndices[l];
-			_rowIndices[l] = _rowIndices[h];
-			_rowIndices[h] = t;
-
-			td = _values[l];
-			_values[l] = _values[h];
-			_values[h] = td;
-		}
+		while ((l < h) && compare(l, end) <= 0) { l++; } // lesser or equal
+		while ((l < h) && compare(h, end) >= 0) { h--; } // higher of equal
+		if (l < h) { swap(l, h); }
 	} while (l < h);
-
-	_columnIndices[p] = _columnIndices[l];
-	_columnIndices[l] = p1;
-
-	_rowIndices[p] = _rowIndices[l];
-	_rowIndices[l] = p2;
-
-	_values[p] = _values[l];
-	_values[l] = p3;
+	// swap pivot to the middle of the array
+	swap(h, end);
 
 	/* Sort smaller array first for less stack usage */
 	if (l - begin < end - l) {
-		sort(begin, l - 1);
-		sort(l + 1, end);
+		sort(begin, l ? l - 1 : 0);
+		sort(h + 1, end);
 	} else {
-		sort(l + 1, end);
-		sort(begin, l - 1);
+		sort(h + 1, end);
+		sort(begin, l ? l - 1 : 0);
 	}
 }
+
