@@ -64,6 +64,12 @@ public:
 			std::vector<std::vector <eslocal> > &l2g_vec,
 			double shrinking = 1);
 
+	void Mesh::GenerateVTKinMemory (
+			const char* filename,
+			std::vector<std::vector<double> > &displacement,
+			std::vector<std::vector<eslocal> > &l2g_vec,
+			double shrinking));
+
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
