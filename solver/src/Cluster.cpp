@@ -1877,12 +1877,9 @@ void Cluster::Create_Kinv_perDomain() {
 
 
 #ifdef CUDA
-
 		//domains[i].B1Kplus.RemoveLowerDense(); 
-
 		domains[i].B1Kplus.CopyToCUDA_Dev();    
 		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();    
-
 #endif 
 
 
@@ -1903,7 +1900,8 @@ void Cluster::Create_Kinv_perDomain() {
 
 	}
 
-	cout << endl; 
+	if (cluster_global_index == 1)
+		cout << endl;
 
 #else
 	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -1979,12 +1977,10 @@ void Cluster::Create_SC_perDomain() {
 		domains[i].B1Kplus.MatScale(-1.0);
 
 		domains[i].B1Kplus.ConvertCSRToDense(0);
-
 		//domains[i].B1Kplus.ConvertDenseToDenseFloat(0);
 
 
 
-	cout << endl;
 
 #ifdef CUDA
 		//domains[i].B1Kplus.RemoveLowerDense();
@@ -2009,6 +2005,9 @@ void Cluster::Create_SC_perDomain() {
 
 
 	}
+
+	if (cluster_global_index == 1)
+	cout << endl;
 
 }
 

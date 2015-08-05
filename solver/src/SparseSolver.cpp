@@ -31,20 +31,17 @@ SparseSolver::SparseSolver(){
 	}
 	iparm[0] = 1;			/* No solver default */
 	iparm[1] = 2;			/* Fill-in reordering from METIS */
-							/* Numbers of processors, value of OMP_NUM_THREADS */
-	//iparm[2] = 1;
 
-        /* Numbers of processors, value of OMP_NUM_THREADS */
-        int num_procs;
-		char * var = getenv("OMP_NUM_THREADS");
-        if(var != NULL)
-                sscanf( var, "%d", &num_procs );
-        else {
-                printf("Set environment OMP_NUM_THREADS to 1");
-                exit(1);
-        }
-        iparm[2]  = num_procs;
-
+	/* Numbers of processors, value of OMP_NUM_THREADS */
+	int num_procs;
+	char * var = getenv("OMP_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var, "%d", &num_procs );
+	else {
+    	printf("Set environment OMP_NUM_THREADS to 1");
+        exit(1);
+	}
+    iparm[2]  = num_procs;
 
 	iparm[3] = 0;			/* No iterative-direct algorithm */
 	iparm[4] = 0;			/* No user fill-in reducing permutation */
@@ -542,7 +539,19 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	iparm[0] = 1;		/* No solver default */
 	iparm[1] = 2;		/* Fill-in reordering from METIS */
 						/* Numbers of processors, value of OMP_NUM_THREADS */
-	iparm[2] = 8;		/* Not used in MKL PARDISO */ // TODO: zjistit co to je pro MKL to bylo 0
+	//iparm[2] = 8;		/* Not used in MKL PARDISO */ // TODO: zjistit co to je pro MKL to bylo 0
+
+    /* Numbers of processors, value of OMP_NUM_THREADS */
+    int num_procs;
+	char * var = getenv("OMP_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var, "%d", &num_procs );
+    else {
+    	printf("Set environment OMP_NUM_THREADS to 1");
+        exit(1);
+    }
+    iparm[2]  = num_procs;
+
 	iparm[3] = 0;		/* No iterative-direct algorithm */
 	iparm[4] = 0;		/* No user fill-in reducing permutation */
 	iparm[5] = 0;		/* Write solution into x */

@@ -64,7 +64,7 @@ public:
 			std::vector<std::vector <eslocal> > &l2g_vec,
 			double shrinking = 1);
 
-	void Mesh::GenerateVTKinMemory (
+	void GenerateVTKinMemory (
 			const char* filename,
 			std::vector<std::vector<double> > &displacement,
 			std::vector<std::vector<eslocal> > &l2g_vec,
