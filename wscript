@@ -29,7 +29,11 @@ def options(opt):
        action="store_true",
        default=False,
        help="Create application for Anselm.")
-
+ 
+    opt.add_option("--cuda",
+ 	action="store_true",
+ 	default=False,
+ 	help="Create application with CUDA support.")
 
 def configure(ctx):
     if ctx.options.anselm:

@@ -132,8 +132,8 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_lo
 
 
 			// no duplicity
-			bool is_corner = true;
-			if ( is_corner ) {
+			//bool is_corner = true;
+			if ( isCorner(i) ) {
 				for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
 					if (it1 != _boundaries[i].begin()) {
 						for (eslocal d_i = 0; d_i < 3; d_i++) {
