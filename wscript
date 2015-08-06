@@ -35,6 +35,12 @@ def options(opt):
  	default=False,
  	help="Create application with CUDA support.")
 
+
+    opt.add_option("--salomon",
+		action="store_true",
+ 		default=False,
+		help="Create application for Salomon.")
+
 def configure(ctx):
     if ctx.options.anselm:
         anselm(ctx)
@@ -137,8 +143,8 @@ def build(ctx):
 
 def anselm(ctx):
     ctx.load("icpc")
-    ctx.env.MPICXX = ["mpic++"]
-    #ctx.env.MPICXX = ["mpiicpc"]
+    #ctx.env.MPICXX = ["mpic++"]
+    ctx.env.MPICXX = ["mpiicpc"]
 
 def check_environment(ctx):
     try:
