@@ -8,7 +8,7 @@ source_files = (
    "src/Domain.cpp",
    "src/FEM_Assembler.cpp",
    "src/IterSolver.cpp",
-   "src/SparseDSS.cpp",
+#   "src/SparseDSS.cpp",
    "src/SparseMatrix.cpp",
    "src/SparseSolver.cpp",
    "src/TimeEval.cpp",
@@ -18,7 +18,7 @@ source_files = (
 def configure(ctx):
     ctx.setenv(SOLVER, ctx.all_envs["mpi"].derive());
 
-    ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
 
 def build(ctx):
     ctx.env = ctx.all_envs[SOLVER]

@@ -66,7 +66,8 @@ public:
 						const eslocal MPIrank,
 						const eslocal MPIsize,
 						const eslocal subDomPerCluster,
-						std::vector < eslocal  > & myNeighClusters) ;
+						std::vector < eslocal  > & myNeighClusters,
+						mesh::Boundaries & local_boundaries) ;
 
 
 

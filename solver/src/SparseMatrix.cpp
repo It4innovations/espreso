@@ -1863,7 +1863,7 @@ void SparseMatrix::MatTransposeCOO() {
 	rows = cols; 
 	cols = tmp;  
 
-	sortInCOO(); 
+	//sortInCOO();  // TODO: musi se zpatky povolit hned jak se opravit funkce sort v COO
 
 }
 
@@ -1932,6 +1932,14 @@ double SparseMatrix::GetMaxOfDiagonalOfSymmetricMatrix() {
 
 	return vmax; 
 }
+
+
+void SparseMatrix::SetDiagonalOfSymmetricMatrix( double val ) {
+	for (int i = 0; i < CSR_I_row_indices.size() - 1; i++) {
+			CSR_V_values[ CSR_I_row_indices[i] - 1 ] = val;
+	}
+}
+
 
 void SparseMatrix::MatAppend(SparseMatrix & A) {
 
@@ -2079,6 +2087,26 @@ void SparseMatrix::CreateEye(int size) {
 	ConvertToCSR(); 
 
 }
+
+
+void SparseMatrix::CreateEye(int size, double value, int offset_row, int offset_col) {
+
+	for (int i = 0; i< size; i++) {
+		J_col_indices.push_back(offset_col + i+1);
+		I_row_indices.push_back(offset_row + i+1);
+		V_values.push_back( value );
+	}
+
+	rows = offset_row + size;
+	cols = offset_col + size;
+	nnz  = size;
+	type = 'G';
+
+	ConvertToCSR();
+
+}
+
+
 
 void SparseMatrix::TestEye(int size) {
 

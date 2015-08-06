@@ -5,7 +5,6 @@
  
 
 #include "utils.h"
-//#include "mkl_pardiso.h"
 
 //#include "mkl.h"
 //#include <string>
@@ -65,8 +64,7 @@ public:
 
 
 	/* Pardiso control parameters. */
-	MKL_INT iparm[65];
-	double  dparm[65];
+	MKL_INT iparm[64];
 	//MKL_INT * iparm;
 	
 	
@@ -102,7 +100,5 @@ public:
 	void SolveMat_Sparse( SparseMatrix & A ); 
 	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out ); 
 	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed );
-
-	void Create_SC( SparseMatrix & B_out, int sc_size );
 
 };

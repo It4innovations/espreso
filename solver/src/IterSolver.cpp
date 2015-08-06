@@ -1256,7 +1256,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	if (USE_PREC == 1) {
 
-		apply_prec_compB(timeEvalPrec, cluster, r_l, tmp_l); 
+		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, tmp_l); 
 
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, u_l, 0 );
@@ -1319,7 +1319,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 		if (USE_PREC == 1) {
 
 			prec_time.AddStart(omp_get_wtime());
-			apply_prec_compB(timeEvalPrec, cluster, w_l, tmp_l);
+			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_l);
 			prec_time.AddEnd(omp_get_wtime());
 
 			proj_time.AddStart(omp_get_wtime()); 
@@ -2589,7 +2589,9 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows ); 
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 				x_in_tmp[i]                            = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+#ifdef CUDA                                
 				cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+#endif
 				//cluster.domains[d].cuda_pinned_buff_fl[i] = (float) x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 			}
 
@@ -2736,7 +2738,10 @@ void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster,
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling 
 		cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 		
-		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');	
+		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+
+		//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
+
 	}
 
 	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);

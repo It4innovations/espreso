@@ -539,7 +539,7 @@ void Domain::K_regularizationFromR ( ) {
 		KplusF.ImportMatrix (K);
 
 	//K.    MatAddInPlace (NtN_Mat,'N', -ro);
-	K.Clear();
+	//K.Clear(); //TODO: potom se nekde musi K smazat
 	
 } 
 

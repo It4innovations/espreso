@@ -1877,12 +1877,9 @@ void Cluster::Create_Kinv_perDomain() {
 
 
 #ifdef CUDA
-
 		//domains[i].B1Kplus.RemoveLowerDense(); 
-
 		domains[i].B1Kplus.CopyToCUDA_Dev();    
 		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();    
-
 #endif 
 
 
@@ -1903,7 +1900,8 @@ void Cluster::Create_Kinv_perDomain() {
 
 	}
 
-	cout << endl; 
+	if (cluster_global_index == 1)
+		cout << endl;
 
 #else
 	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -1932,6 +1930,93 @@ void Cluster::Create_Kinv_perDomain() {
 #endif // DEVEL
 	
 }
+
+
+
+void Cluster::Create_SC_perDomain() {
+
+	if (cluster_global_index == 1)
+		cout << "Creating B1*K+*B1t : using Pardiso SC";
+
+	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
+
+		if (cluster_global_index == 1)
+			cout << " " << i ;
+
+		domains[i].KplusF.msglvl = 0;
+
+		if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
+
+
+		SparseMatrix K_sc1;
+		SparseMatrix K_b_tmp;
+		SparseMatrix Sc_eye;
+
+		K_b_tmp = domains[i].B1t_comp_dom;
+		K_b_tmp.MatTranspose();
+
+		Sc_eye.CreateEye(K_b_tmp.rows, 0.0, 0, K_b_tmp.cols);
+
+		K_sc1 = domains[i].K;
+		K_sc1.MatTranspose();
+		K_sc1.MatAppend(K_b_tmp);
+		K_sc1.MatTranspose();
+		K_sc1.MatAppend(Sc_eye);
+
+		domains[i].KplusF.ImportMatrix(K_sc1);
+		domains[i].KplusF.Create_SC(domains[i].B1Kplus, K_b_tmp.rows);
+		domains[i].B1Kplus.type = 'G';
+
+		SparseMatrix SC_tmp;
+		SC_tmp = domains[i].B1Kplus;
+		SC_tmp.SetDiagonalOfSymmetricMatrix(0.0);
+		SC_tmp.MatTranspose();
+
+		domains[i].B1Kplus.MatAddInPlace(SC_tmp,'N',1.0);
+
+		domains[i].B1Kplus.MatScale(-1.0);
+
+		domains[i].B1Kplus.ConvertCSRToDense(0);
+		//domains[i].B1Kplus.ConvertDenseToDenseFloat(0);
+
+
+
+
+#ifdef CUDA
+		//domains[i].B1Kplus.RemoveLowerDense();
+		domains[i].B1Kplus.CopyToCUDA_Dev();
+		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
+#endif
+
+
+#ifdef CUDA
+		if ( USE_KINV == 1 ) {
+			cilk_for (int d = 0; d < domains.size(); d++) {
+				cudaError_t status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
+				if (status != cudaSuccess)
+					printf("Error allocating pinned host memory \n");
+
+				//status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
+				//if (status != cudaSuccess)
+				//	printf("Error allocating pinned host memory \n");
+			}
+		}
+#endif
+
+
+	}
+
+	if (cluster_global_index == 1)
+	cout << endl;
+
+}
+
+
+
+
+
+
+
 
 
 void Cluster::compress_lambda_vector  ( SEQ_VECTOR <double> & decompressed_vec_lambda )  

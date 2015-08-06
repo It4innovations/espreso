@@ -2,7 +2,7 @@
 import commands
 import os
 
-VERSION = 6
+VERSION = 7
 
 def options(opt):
     opt.add_option("--debug",
@@ -44,7 +44,14 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11" ])
     ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
+    ctx.env.append_unique("STLIBPATH", [ "../libs" ])
+
+
     ctx.recurse("metis")
+
+    ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
+
+    ctx.env.append_value("STLIB", [ "ifcore" ])  #-Wl,-Bstatic -L../libs -lifcore'
 
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])
@@ -90,8 +97,9 @@ def configure(ctx):
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
-    ctx.recurse("solver")
+    ctx.recurse("solver")  
     ctx.recurse("app")
+
 
 def build(ctx):
     test_file = os.path.join(ctx.path.abspath(), "build/test_config")
@@ -137,8 +145,8 @@ def check_environment(ctx):
 
     try:
         if ctx.options.mpich:
-#            ctx.find_program("mpic++", var="MPICXX")
-            ctx.find_program("mpic++.mpich", var="MPICXX")
+            ctx.find_program("mpic++", var="MPICXX")
+#            ctx.find_program("mpic++.mpich", var="MPICXX")
         else:
             ctx.find_program("mpic++", var="MPICXX")
     except ctx.errors.ConfigurationError:
