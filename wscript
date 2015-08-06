@@ -30,6 +30,11 @@ def options(opt):
        default=False,
        help="Create application for Anselm.")
 
+    opt.add_option("--salomon",
+       action="store_true",
+       default=False,
+       help="Create application for Salomon.")
+
 
 def configure(ctx):
     if ctx.options.anselm:
@@ -133,8 +138,8 @@ def build(ctx):
 
 def anselm(ctx):
     ctx.load("icpc")
-    ctx.env.MPICXX = ["mpic++"]
-    #ctx.env.MPICXX = ["mpiicpc"]
+    #ctx.env.MPICXX = ["mpic++"]
+    ctx.env.MPICXX = ["mpiicpc"]
 
 def check_environment(ctx):
     try:
@@ -145,11 +150,9 @@ def check_environment(ctx):
 
     try:
         if ctx.options.mpich:
-            ctx.find_program("mpic++.mpich", var="MPICXX", mandatory=False)
-            if not ctx.env.MPICXX:
-                ctx.find_program("mpic++", var="MPICXX")
-        else:
             ctx.find_program("mpic++", var="MPICXX")
+        else:
+            ctx.find_program("mpiicpc", var="MPICXX")
     except ctx.errors.ConfigurationError:
         ctx.fatal("mpic++ not found. Install MPI or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
