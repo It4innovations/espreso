@@ -426,11 +426,11 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 	std::vector < std::vector < esglobal > > mpi_send_buff;
 	mpi_send_buff.resize( myNeighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
-#ifdef DEBUG
-	for (int i = 0; i < myNeighClusters.size(); i++) {
-#else
+//#ifdef DEBUG
+//	for (int i = 0; i < myNeighClusters.size(); i++) {
+//#else
 	cilk_for (int i = 0; i < myNeighClusters.size(); i++) {
-#endif
+//#endif
 		int index = 0;
 		if ( myLambdas.size() > 0 )
 		{
@@ -615,6 +615,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 	if (MPIrank == 0) { std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; system("date +%T.%6N"); }
 
+        MPI_Barrier(MPI_COMM_WORLD); 
 }
 
 
