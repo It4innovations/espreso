@@ -2346,6 +2346,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 	GGt_Mat_tmp.Clear();
 
 	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.AddStart(omp_get_wtime()); 
+	GGt_tmp.SetThreaded();
 	GGt_tmp.Factorization();
 	GGtFactor_time.AddEnd(omp_get_wtime()); GGtFactor_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGtFactor_time); 
 

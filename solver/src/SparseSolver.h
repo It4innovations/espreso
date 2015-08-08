@@ -89,6 +89,8 @@ public:
 	void ImportMatrix(SparseMatrix & A);
 	void Factorization(); 
 	void Clear();
+	void SetThreaded();
+
 	
 	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int rhs_start_index, int sol_start_index);
 	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int n_rhs );
@@ -97,12 +99,12 @@ public:
 	void SolveMat_Dense( SparseMatrix & A_in_out );
 	void SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ); 
 
-	void SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out ); 
+	void SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded );
 
 	void SolveMat_Sparse( SparseMatrix & A ); 
 	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out ); 
 	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed );
 
-	void Create_SC( SparseMatrix & B_out, int sc_size );
+	void Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded );
 
 };

@@ -440,7 +440,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	IterSolver solver;
 	solver.CG_max_iter	 = 1000;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = 0.0001;
+	solver.epsilon		 = 0.001;
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
 	solver.USE_DYNAMIC	 = 0;

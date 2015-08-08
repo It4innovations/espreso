@@ -32,16 +32,18 @@ SparseSolver::SparseSolver(){
 	iparm[0] = 1;			/* No solver default */
 	iparm[1] = 2;			/* Fill-in reordering from METIS */
 
-	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs;
-	char * var = getenv("OMP_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-	else {
-    	printf("Set environment OMP_NUM_THREADS to 1");
-        exit(1);
-	}
-    iparm[2]  = num_procs;
+//	/* Numbers of processors, value of OMP_NUM_THREADS */
+//	int num_procs;
+//	char * var = getenv("OMP_NUM_THREADS");
+//    if(var != NULL)
+//    	sscanf( var, "%d", &num_procs );
+//	else {
+//    	printf("Set environment OMP_NUM_THREADS to 1");
+//        exit(1);
+//	}
+//    iparm[2]  = num_procs;
+
+	iparm[2] = 1; //by default the solver runs with single thread
 
 	iparm[3] = 0;			/* No iterative-direct algorithm */
 	iparm[4] = 0;			/* No user fill-in reducing permutation */
@@ -167,6 +169,22 @@ void SparseSolver::ImportMatrix(SparseMatrix & A) {
 	copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices); 
 	copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices); 
 	copy(A.CSR_V_values     .begin(), A.CSR_V_values     .end(), CSR_V_values); 
+
+}
+
+void SparseSolver::SetThreaded() {
+
+	/* Numbers of processors, value of OMP_NUM_THREADS */
+	int num_procs;
+	char * var = getenv("SOLVER_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var, "%d", &num_procs );
+	else {
+    	printf("Set environment SOLVER_NUM_THREADS to 1");
+        exit(1);
+	}
+
+    iparm[2]  = num_procs;
 
 }
 
@@ -512,7 +530,7 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 
 }
 
-void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out ) {
+void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded ) {
 	
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -541,16 +559,24 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out ) {
 						/* Numbers of processors, value of OMP_NUM_THREADS */
 	//iparm[2] = 8;		/* Not used in MKL PARDISO */ // TODO: zjistit co to je pro MKL to bylo 0
 
-    /* Numbers of processors, value of OMP_NUM_THREADS */
-    int num_procs;
-	char * var = getenv("OMP_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-    else {
-    	printf("Set environment OMP_NUM_THREADS to 1");
-        exit(1);
-    }
-    iparm[2]  = num_procs;
+
+	if (isThreaded) {
+		/* Numbers of processors, value of OMP_NUM_THREADS */
+		int num_procs;
+		char * var = getenv("SOLVER_NUM_THREADS");
+	    if(var != NULL)
+	    	sscanf( var, "%d", &num_procs );
+		else {
+	    	printf("Set environment SOLVER_NUM_THREADS to 1");
+	        exit(1);
+		}
+
+	    iparm[2] = num_procs;
+	} else {
+		iparm[2] = 1;
+	}
+
+
 
 	iparm[3] = 0;		/* No iterative-direct algorithm */
 	iparm[4] = 0;		/* No user fill-in reducing permutation */
@@ -789,7 +815,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out ) {
 }
 
 
-void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size ) {
+void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded ) {
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -828,15 +854,21 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size ) {
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */
 						/* Numbers of processors, value of OMP_NUM_THREADS */
 
-	/* Numbers of processors, value of OMP_NUM_THREADS */
-    int num_procs;
-	char * var = getenv("OMP_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-    else {
-    	printf("Set environment OMP_NUM_THREADS to 1");
-        exit(1);
-    }
+	if (isThreaded) {
+		/* Numbers of processors, value of OMP_NUM_THREADS */
+		int num_procs;
+		char * var = getenv("SOLVER_NUM_THREADS");
+	    if(var != NULL)
+	    	sscanf( var, "%d", &num_procs );
+		else {
+	    	printf("Set environment SOLVER_NUM_THREADS to 1");
+	        exit(1);
+		}
+
+	    iparm[2] = num_procs;
+	} else {
+		iparm[2] = 1;
+	}
 
 //	iparm[0] = 1;		/* No solver default */
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */
@@ -870,7 +902,6 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size ) {
 	solver = 0; 		/* use sparse direct solver */
 	pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
 
-    iparm[2]  = num_procs;
     iparm[10] = 1;
     iparm[12] = 0;
 

@@ -1399,7 +1399,7 @@ void Cluster::CreateSa() {
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.AddStart(omp_get_wtime());
 	if (MPIrank == 0) F0_fast.msglvl = 1; 
-	F0_fast.SolveMatF(G0t,tmpM);
+	F0_fast.SolveMatF(G0t,tmpM, true);
 	if (MPIrank == 0) F0_fast.msglvl = 0; 
 	 G0solve_Sa_time.AddEnd(omp_get_wtime()); G0solve_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(G0solve_Sa_time); 
 
@@ -1855,7 +1855,7 @@ void Cluster::Create_Kinv_perDomain() {
 				
 		if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
 
-		domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus);
+		domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
 		domains[i].B1Kplus.MatTranspose();
 
 		if (cluster_global_index == 1 && i == 0)
@@ -1964,7 +1964,7 @@ void Cluster::Create_SC_perDomain() {
 		K_sc1.MatAppend(Sc_eye);
 
 		domains[i].KplusF.ImportMatrix(K_sc1);
-		domains[i].KplusF.Create_SC(domains[i].B1Kplus, K_b_tmp.rows);
+		domains[i].KplusF.Create_SC(domains[i].B1Kplus, K_b_tmp.rows, true);
 		domains[i].B1Kplus.type = 'G';
 
 		SparseMatrix SC_tmp;
