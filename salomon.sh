@@ -14,8 +14,6 @@ module load DDT/5.0.1
 
 export OMPI_CXX=icpc
 
-mpic++ -V
-
 #module load CMake/3.0.0-intel-2015b 
 #module load tbb/4.3.5.187
 export LC_CTYPE=""
@@ -36,11 +34,11 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --anselm
+  ./waf configure --salomon
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install -v
+  ./waf install
 fi
 
 if [ "$1" = "clean" ]; then
@@ -66,7 +64,6 @@ if [ "$1" = "run" ]; then
 
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs/
 
   log_file=output_8_nodes.log
 
