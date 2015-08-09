@@ -2,48 +2,49 @@
 import commands
 import os
 
-VERSION = 7
+VERSION = 8
 
 def options(opt):
     opt.add_option("--debug",
-       action="store_true",
-       default=False,
-       help="Compile sequential code.")
+        action="store_true",
+        default=False,
+        help="Compile sequential code.")
 
     opt.add_option("--mpich",
-       action="store_true",
-       default=False,
-       help="Compile MPI version with mpich.")
+        action="store_true",
+        default=False,
+        help="Compile MPI version with mpich.")
 
     opt.add_option("--mesh",
-       action="store_true",
-       default=False,
-       help="Create application only from mesh.")
+        action="store_true",
+        default=False,
+        help="Create application only from mesh.")
 
     opt.add_option("--permoncube",
-       action="store_true",
-       default=False,
-       help="Create application only from permoncube.")
+        action="store_true",
+        default=False,
+        help="Create application only from permoncube.")
 
     opt.add_option("--anselm",
-       action="store_true",
-       default=False,
-       help="Create application for Anselm.")
- 
-    opt.add_option("--cuda",
- 	action="store_true",
- 	default=False,
- 	help="Create application with CUDA support.")
+        action="store_true",
+        default=False,
+        help="Create application for Anselm.")
 
+    opt.add_option("--cuda",
+        action="store_true",
+        default=False,
+        help="Create application with CUDA support.")
 
     opt.add_option("--salomon",
-		action="store_true",
- 		default=False,
-		help="Create application for Salomon.")
+        action="store_true",
+        default=False,
+        help="Create application for Salomon.")
 
 def configure(ctx):
     if ctx.options.anselm:
         anselm(ctx)
+    elif ctx.options.salomon:
+        salomon(ctx)
     else:
         check_environment(ctx)
 
@@ -61,7 +62,7 @@ def configure(ctx):
 
     ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
 
-    ctx.env.append_value("STLIB", [ "ifcore" ])  #-Wl,-Bstatic -L../libs -lifcore'
+    ctx.env.append_value("STLIB", [ "ifcore" ])
 
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])
@@ -143,7 +144,10 @@ def build(ctx):
 
 def anselm(ctx):
     ctx.load("icpc")
-    #ctx.env.MPICXX = ["mpic++"]
+    ctx.env.MPICXX = ["mpic++"]
+
+def salomon(ctx):
+    ctx.load("icpc")
     ctx.env.MPICXX = ["mpiicpc"]
 
 def check_environment(ctx):
@@ -160,6 +164,7 @@ def check_environment(ctx):
                 ctx.find_program("mpic++", var="MPICXX")
         else:
             ctx.find_program("mpic++", var="MPICXX")
+
     except ctx.errors.ConfigurationError:
         ctx.fatal("mpic++ not found. Install MPI or try configuration for your cluster.\n"
             "Run './waf --help' for more options.")
