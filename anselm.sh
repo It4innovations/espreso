@@ -26,7 +26,7 @@ if [ "$1" = "configure" ]; then
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install -v
+  ./waf install
 fi
 
 if [ "$1" = "clean" ]; then
