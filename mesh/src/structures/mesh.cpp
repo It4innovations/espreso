@@ -1068,11 +1068,13 @@ bool isOuterFace(
 	return false;
 }
 
-bool isCommonFace(
+eslocal isOnBoundary(
 		std::vector<std::vector<eslocal> > &nodesElements,
 		std::vector<eslocal> &face,
-		const std::vector<eslocal> &partPtrs)
+		const std::vector<eslocal> &partPtrs,
+		eslocal differentParts)
 {
+	eslocal NOT_ON_BOUNDARY = -1;
 	std::vector<eslocal> result(nodesElements[face[0]]);
 	std::vector<eslocal>::iterator it = result.end();
 
@@ -1082,16 +1084,24 @@ bool isCommonFace(
 				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
 				result.begin());
 		if (it - result.begin() == 1) {
-			return false;
+			return NOT_ON_BOUNDARY;
 		}
 	}
 
-	for (size_t i = 1; i < partPtrs.size() - 1; i++) {
-		if (result[0] < partPtrs[i] && partPtrs[i] <= result[1]) {
-			return true;
+	eslocal counter = 0;
+	eslocal minPart = result[0];
+	for (size_t r = 1; r < it - result.begin(); r++) {
+		for (size_t i = 1; i < partPtrs.size() - 1; i++) {
+			if (result[r - 1] < partPtrs[i] && partPtrs[i] <= result[r]) {
+				if (minPart > result[r]) {
+					minPart = result[r];
+				}
+				counter++;
+				break;
+			}
 		}
 	}
-	return false;
+	return (counter >= differentParts) ? minPart : NOT_ON_BOUNDARY;
 }
 
 void Mesh::getSurface(SurfaceMesh &surface) const
@@ -1211,7 +1221,7 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 				for (size_t f = 0; f < face.size(); f++) {
 					face[f] = _coordinates.clusterIndex(face[f], i);
 				}
-				if (isCommonFace(nodesElements, face, _partPtrs)) {
+				if (isOnBoundary(nodesElements, face, _partPtrs, 1) >= 0) {
 					faces[i].push_back(face);
 					elementsCount[i] += 1;
 				}
@@ -1337,6 +1347,156 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 		cornerLines.endPartition();
 	}
 
+}
+
+void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, bool edges, bool faces) const
+{
+	if (parts() < 1) {
+		std::cerr << "Internal error: _partPtrs.size()\n";
+		exit(EXIT_FAILURE);
+	}
+	if (!corners && !edges && !faces) {
+		return;
+	}
+
+	// node to element
+	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
+	// node to neighbors nodes
+	std::vector<std::set<eslocal> > neighbours(_coordinates.size());
+
+	for (size_t i = 0; i < parts(); i++) {
+		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->size(); k++) {
+				// add node's adjacent element
+				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
+			}
+		}
+	}
+
+	// vector of faces
+	std::vector<std::vector<eslocal> > commonFaces;
+
+#ifndef DEBUG
+	cilk_for (eslocal i = 0; i < parts(); i++) {
+#else
+	for (eslocal i = 0; i < parts(); i++) {
+#endif
+		// compute number of elements and fill used nodes
+		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+			for (size_t k = 0; k < _elements[j]->faces(); k++) {
+				std::vector<eslocal> face = _elements[j]->getFace(k);
+				for (size_t f = 0; f < face.size(); f++) {
+					face[f] = _coordinates.clusterIndex(face[f], i);
+				}
+				if (isOnBoundary(nodesElements, face, _partPtrs, 1) == j) {
+					commonFaces.push_back(face);
+				}
+			}
+		}
+	}
+
+	// create mesh from common faces
+	Mesh cfm;
+	Element *e;
+	if (faces) {
+		cfm.coordinates() = _coordinates;
+		cfm.reserve(commonFaces.size());
+	}
+	std::vector<std::vector<eslocal> > nodesFaces(_coordinates.size());
+	for (size_t i = 0; i < commonFaces.size(); i++) {
+		if (commonFaces[i].size() == 3) {
+			e = new Triangle(&commonFaces[i][0]);
+		}
+		if (commonFaces[i].size() == 4) {
+			e = new Square(&commonFaces[i][0]);
+		}
+		if (faces) {
+			cfm.pushElement(e);
+		}
+		// preparation for corners on edges
+		for (size_t j = 0; j < e->size(); j++) {
+			std::vector<eslocal> neigh = e->getNeighbours(j);
+			eslocal index = e->node(j);
+			for (size_t n = 0; n < neigh.size(); n++) {
+				if (index < neigh[n]) {
+					neighbours[index].insert(neigh[n]);
+				}
+			}
+			nodesFaces[index].push_back(i);
+		}
+	}
+	if (faces) {
+		cfm.endPartition();
+		cfm.computeFixPoints(number);
+		for (size_t i = 0; i < cfm.getFixPointsCount(); i++) {
+			boundaries.setCorner(cfm.coordinates().clusterIndex(cfm.getFixPoints()[i], 0));
+		}
+	}
+
+	Mesh clm;
+	if (edges) {
+		clm.coordinates() = _coordinates;
+	}
+
+	std::vector<eslocal> result;
+	std::vector<eslocal>::iterator end;
+	std::vector<eslocal> pairs;
+	std::vector<eslocal> pair(2);
+	std::vector<eslocal> nodeCounter(_coordinates.size(), 0);
+
+	std::set<eslocal>::iterator it;
+	for (size_t i = 0; i < neighbours.size(); i++) {
+		for (it = neighbours[i].begin(); it != neighbours[i].end(); ++it) {
+			pair[0] = i;
+			pair[1] = *it;
+			result.resize(boundaries[i].size());
+			end = std::set_intersection(
+				boundaries[i].begin(), boundaries[i].end(),
+				boundaries[*it].begin(), boundaries[*it].end(),
+				result.begin());
+			if (end - result.begin() >= 3 && isOnBoundary(nodesElements, pair, _partPtrs, 2)) {
+				pairs.push_back(pair[0]);
+				pairs.push_back(pair[1]);
+				nodeCounter[pair[0]]++;
+				nodeCounter[pair[1]]++;
+				continue;
+			}
+			if (isOuterFace(nodesFaces, pair)) {
+				pairs.push_back(pair[0]);
+				pairs.push_back(pair[1]);
+				nodeCounter[pair[0]]++;
+				nodeCounter[pair[1]]++;
+			}
+		}
+	}
+
+	if (edges) {
+		clm.reserve(pairs.size() / 2);
+	}
+
+	for (size_t j = 0; j < pairs.size(); j += 2) {
+		if (corners) {
+			if (nodeCounter[pairs[j]] > 3 || nodeCounter[pairs[j + 1]] > 3) {
+				if (nodeCounter[pairs[j]] > 3) {
+					boundaries.setCorner(pairs[j]);
+				}
+				if (nodeCounter[pairs[j + 1]] > 3) {
+					boundaries.setCorner(pairs[j + 1]);
+				}
+				continue;
+			}
+		}
+		if (edges) {
+			clm.pushElement(new Line(&pairs[j]));
+		}
+	}
+	if (edges) {
+		clm.endPartition();
+		clm.computeFixPoints(number);
+		for (size_t i = 0; i < clm.getFixPointsCount(); i++) {
+			boundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[i], 0));
+		}
+	}
 }
 
 void Mesh::readFromFile(const char *meshFile, eslocal elementSize, bool params)

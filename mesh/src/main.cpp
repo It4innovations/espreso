@@ -2,6 +2,7 @@
 
 void test_matrices();
 void test_BEM();
+void test_corners();
 void test_meshes();
 void test_ansys();
 void test_saveData();
@@ -9,7 +10,7 @@ void test_ijv_sort();
 
 int main(int argc, char** argv)
 {
-	test_ijv_sort();
+	test_corners();
 	return 0;
 }
 
@@ -46,6 +47,25 @@ void test_saveData()
 	m.saveVTK("part0.vtk");
 }
 
+void test_corners()
+{
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
+
+	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
+//	mesh::Ansys ansys("matrices/spanner/Model");
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+//	mesh::Mesh m(ansys, partsCount, fixPointsCount);
+
+	mesh::Boundaries b(m);
+
+	m.computeCorners(b, 8, true, true, true);
+
+	m.saveVTK("mesh.vtk", b, 0.6);
+}
+
 void test_ansys()
 {
 	eslocal partsCount = 4;
@@ -64,11 +84,11 @@ void test_ansys()
 
 	mesh::SurfaceMesh sMesh(m);
 
-	mesh::CommonFacesMesh cMesh(sMesh);
+	mesh::CommonFacesMesh cMesh(m);
 
 	mesh::CornerLinesMesh lMesh(m);
 
-	m.saveVTK("mesh.vtk", 0.6);
+	m.saveVTK("mesh.vtk", b, 0.6);
 	sMesh.saveVTK("surface.vtk", 0.6);
 	cMesh.saveVTK("faces.vtk", 0.6);
 	lMesh.saveVTK("lines.vtk", 0.6);
@@ -86,7 +106,7 @@ void test_meshes()
 
 	mesh::SurfaceMesh sMesh(m);
 
-	mesh::CommonFacesMesh cMesh(sMesh);
+	mesh::CommonFacesMesh cMesh(m);
 
 	mesh::CornerLinesMesh lMesh(m);
 
