@@ -215,7 +215,7 @@ void CBSparseC::createB1(CDomain * domainG,
 	// receiving all border DOFs from all neighboring sub-domains 
 	for (unsigned int i = 0; i < myNeighSubDomains.size(); i++) {
 		neighBorderDofs[i].resize(myBorderDOFs.size()); 
-		MPI_Irecv(&neighBorderDofs[i][0], myBorderDOFs.size(),MPI_INT, myNeighSubDomains[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
+		MPI_Irecv(&neighBorderDofs[i][0], myBorderDOFs.size(), MPI_INT, myNeighSubDomains[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
 	}
 
 	MPI_Waitall(neighDomNum, mpi_recv_req, mpi_recv_stat); 

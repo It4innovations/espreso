@@ -42,6 +42,11 @@ public:
 		return _corners[index];
 	}
 
+	Mesh & mesh() {
+		return _mesh;
+	}
+
+
 	// prepare for future improvements
 	eslocal index(size_t position) {
 		return position;
@@ -55,7 +60,8 @@ public:
 						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
 						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
 						std::vector < std::vector <double> > 	& B1_l_duplicity,
-						const eslocal domains_num) ;
+						const eslocal domains_num,
+						mesh::Boundaries & global_boundaries) ;
 
 	template<typename T>
 	void create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1_global,

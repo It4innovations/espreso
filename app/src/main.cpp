@@ -340,7 +340,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		lambda_map_sub_B1,
 		lambda_map_sub_B0,
 		B1_duplicity,
-		partsCount
+		partsCount,
+		*input.globalBoundaries
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -363,7 +364,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		MPIsize,
 		partsCount,
 		neigh_clusters,
-		boundaries
+		//input.localBoundaries
+                boundaries
 	);
 
 	 timeB1glob.AddEndWithBarrier();
@@ -432,7 +434,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	Cluster cluster(MPIrank + 1);
 	cluster.USE_DYNAMIC			= 0;
-	cluster.USE_HFETI			= 1;
+	cluster.USE_HFETI			= 0;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
@@ -875,7 +877,8 @@ void testBEM(int argc, char** argv)
                             lambda_map_sub_B1,
                             lambda_map_sub_B0,
                             B1_l_duplicity,
-                            partsCount
+                            partsCount,
+							*input.localBoundaries
                         );
 //    for (int d = 0; d < partsCount; d++) {
 //        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -1233,7 +1236,8 @@ void testFEM(int argc, char** argv)
 		lambda_map_sub_B1,
 		lambda_map_sub_B0,
 		B1_l_duplicity,
-		partsCount
+		partsCount,
+		*input.localBoundaries
 	);
 
 	//std::cout << B1_mat[0];

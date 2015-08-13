@@ -85,10 +85,10 @@ def configure(ctx):
     ctx.env.append_unique("LIB", [ "mkl_core" ])
 
     if ctx.options.debug:
-        ctx.env.append_unique("CXXFLAGS", [ "-g" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-g", "-O0" ])
         ctx.env.append_unique("LIB", [ "mkl_sequential" ])
     else:
-        ctx.env.append_unique("CXXFLAGS", [ "-g", "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START"])
+        ctx.env.append_unique("CXXFLAGS", [ "-O2", "-DXE6", "-DDEVEL", "-DTM_BLOCK_START"])
         ctx.env.append_unique("LIB", [ "mkl_intel_thread" ])
 
     ctx.env.append_unique("LIB", [ "pthread" ])
