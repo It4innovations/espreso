@@ -298,7 +298,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     //myBorderDOFs.resize( std::distance(myBorderDOFs.begin(), itx) );
 
 	for (T i = 0; i < _boundaries.size(); i++) {
-		if ( _boundaries[i].size() > 1 ) {
+		if ( _boundaries[i].size() > 1 && local_boundaries[i].size() == 1 ) {
 			for (it_set = _boundaries[i].begin(); it_set != _boundaries[i].end(); ++it_set) {
 				if (*it_set != MPIrank) { // if it does point non local cluster = points to one of neighboring clusters
 					neigh_tmp[*it_set] = 1;
@@ -329,27 +329,58 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 
 	// sending my DOFs on border to all neighboring sub-domains
+
+//	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
+//		MPI_Isend(&myBorderDOFs[0], myBorderDOFs.size(), esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
+//	}
+//
+//	//TODO: Tady to chce poradne promtslet o delce bufferu a jestli vim kolik bajtu mam prijmout ???
+//	// receiving all border DOFs from all neighboring sub-domains
+//	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
+//		neighBorderDofs[i].resize(myBorderDOFs.size());
+//		MPI_Irecv(&neighBorderDofs[i][0], myBorderDOFs.size(),esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
+//	}
+//
+//	MPI_Waitall(neighClustNum, mpi_recv_req, mpi_recv_stat);
+//
+//	MPI_Barrier(MPI_COMM_WORLD);
+//
+//	// END - Find all MPIranks of all neighboring clusters in _boundaries
+
+
+	neighBorderDofs.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
+
+	// sending my DOFs on border to all neighboring sub-domains
 	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
 		MPI_Isend(&myBorderDOFs[0], myBorderDOFs.size(), esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 	}
 
-	//TODO: Tady to chce poradne promtslet o delce bufferu a jestli vim kolik bajtu mam prijmout ???
 	// receiving all border DOFs from all neighboring sub-domains
-	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
-		neighBorderDofs[i].resize(myBorderDOFs.size());
-		MPI_Irecv(&neighBorderDofs[i][0], myBorderDOFs.size(),esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
-	}
+	eslocal messages_received_bd = 0;
+	while ( messages_received_bd < myNeighClusters.size() ) {
+		for (eslocal i = 0; i < myNeighClusters.size(); i++) {
 
-	MPI_Waitall(neighClustNum, mpi_recv_req, mpi_recv_stat);
+			int flag;
+			MPI_Iprobe( myNeighClusters[i], 0, MPI_COMM_WORLD, &flag, &mpi_stat );
+
+			if (flag) {
+				int recv_msg_size = 0;
+
+				MPI_Get_count(&mpi_stat, esglobal_mpi, &recv_msg_size);
+
+				neighBorderDofs[i].resize(recv_msg_size);
+
+				MPI_Recv(&neighBorderDofs[i][0], recv_msg_size,esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_stat);
+
+				messages_received_bd++;
+			}
+		}
+	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	// END - Find all MPIranks of all neighboring clusters in _boundaries
 
 	if (MPIrank == 0) { std::cout << " Global B - Local preprocessing done                                      "; system("date +%T.%6N"); }
-
-	//neighBorderDofs.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
-
 
 
 	// NOW :
@@ -677,25 +708,25 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 // *****************************************************************************************************************************************************
 // Creating B on corners of clusters and domains
 
-        myNeighClusters.clear();
-        myNeighClusters.resize(MPIsize);
-
-    	for (T i = 0; i < _boundaries.size(); i++) {
-    		if ( _boundaries[i].size() > 1 && local_boundaries[i].size() == 1 ) {
-    			for (it_set = _boundaries[i].begin(); it_set != _boundaries[i].end(); ++it_set) {
-    				if (*it_set != MPIrank) { // if it does point non local cluster = points to one of neighboring clusters
-    					neigh_tmp[*it_set] = 1;
-    				}
-    			}
-    		}
-    	}
-
-    	myNeighClusters.clear();
-    	for (eslocal i = 0; i < neigh_tmp.size(); i++)
-    		if (neigh_tmp[i] == 1)
-    			myNeighClusters.push_back(i);
-
-    	neighClustNum = myNeighClusters.size();
+//        myNeighClusters.clear();
+//        myNeighClusters.resize(MPIsize);
+//
+//    	for (T i = 0; i < _boundaries.size(); i++) {
+//    		if ( _boundaries[i].size() > 1 && local_boundaries[i].size() > 1 ) {
+//    			for (it_set = _boundaries[i].begin(); it_set != _boundaries[i].end(); ++it_set) {
+//    				if (*it_set != MPIrank) { // if it does point non local cluster = points to one of neighboring clusters
+//    					neigh_tmp[*it_set] = 1;
+//    				}
+//    			}
+//    		}
+//    	}
+//
+//    	myNeighClusters.clear();
+//    	for (eslocal i = 0; i < neigh_tmp.size(); i++)
+//    		if (neigh_tmp[i] == 1)
+//    			myNeighClusters.push_back(i);
+//
+//    	neighClustNum = myNeighClusters.size();
 
 
 
@@ -766,27 +797,74 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
         if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
 
-        //MPI_Request * mpi_send_req  = new MPI_Request [neighClustNum];
-    	//MPI_Request * mpi_recv_req  = new MPI_Request [neighClustNum];
-    	//MPI_Status  * mpi_recv_stat = new MPI_Status  [neighClustNum];
+//        //MPI_Request * mpi_send_req  = new MPI_Request [neighClustNum];
+//    	//MPI_Request * mpi_recv_req  = new MPI_Request [neighClustNum];
+//    	//MPI_Status  * mpi_recv_stat = new MPI_Status  [neighClustNum];
+//
+//    	neighBorderDofs_sp.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
+//
+//    	// sending my DOFs on border to all neighboring sub-domains
+//    	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
+//    		MPI_Isend(&myBorderDOFs_sp[0], myBorderDOFs_sp.size(), esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
+//    	}
+//
+//    	//TODO: Tady to chce poradne promtslet o delce bufferu a jestli vim kolik bajtu mam prijmout ???
+//    	// receiving all border DOFs from all neighboring sub-domains
+//    	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
+//    		neighBorderDofs_sp[i].resize(myBorderDOFs_sp.size());
+//    		MPI_Irecv(&neighBorderDofs_sp[i][0], myBorderDOFs_sp.size(),esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
+//    	}
+//
+//    	MPI_Waitall(neighClustNum, mpi_recv_req, mpi_recv_stat);
+//
+//    	MPI_Barrier(MPI_COMM_WORLD);
+//
+//
+//    	//
 
-    	neighBorderDofs_sp.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
+       	neighBorderDofs_sp.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
 
     	// sending my DOFs on border to all neighboring sub-domains
     	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
     		MPI_Isend(&myBorderDOFs_sp[0], myBorderDOFs_sp.size(), esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
     	}
 
-    	//TODO: Tady to chce poradne promtslet o delce bufferu a jestli vim kolik bajtu mam prijmout ???
     	// receiving all border DOFs from all neighboring sub-domains
-    	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
-    		neighBorderDofs_sp[i].resize(myBorderDOFs_sp.size());
-    		MPI_Irecv(&neighBorderDofs_sp[i][0], myBorderDOFs_sp.size(),esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
+    	eslocal messages_received_spp = 0;
+    	while ( messages_received_spp < myNeighClusters.size() ) {
+    		for (eslocal i = 0; i < myNeighClusters.size(); i++) {
+
+    			int flag;
+    			MPI_Iprobe( myNeighClusters[i], 0, MPI_COMM_WORLD, &flag, &mpi_stat );
+
+    			if (flag) {
+    				int recv_msg_size = 0;
+
+    				MPI_Get_count(&mpi_stat, esglobal_mpi, &recv_msg_size);
+
+    				neighBorderDofs_sp[i].resize(recv_msg_size);
+
+    				MPI_Recv(&neighBorderDofs_sp[i][0], recv_msg_size,esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_stat);
+
+    				messages_received_spp++;
+    			}
+    		}
     	}
 
-    	MPI_Waitall(neighClustNum, mpi_recv_req, mpi_recv_stat);
-
     	MPI_Barrier(MPI_COMM_WORLD);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     	// END - Find all MPIranks of all neighboring clusters in _boundaries
 
@@ -875,7 +953,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     		}
 
     		do {
-
+      		  if ( neighBorderDofs_sp_red.size() > 0 && myBorderDOFs_sp_red.size() > 0 )
     			if ( neighBorderDofs_sp_red[i][nedofs_index] == myBorderDOFs_sp_red[mydofs_index] ) {
         			for (eslocal j = 0; j < neighBorderDofs_sp_cnt[i][nedofs_index]; j++)
     					myNeighsSparse_sp[mydofs_index].push_back(d);
