@@ -78,19 +78,18 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      16  16  16  16  16  16  16  12  13  14 )
+  dom_size=(      16  16  16  16  16  16  16  16  13  14 )
   clustt_size_x=( 10  10  10  10  10  10  10  10  10  10 )
+# clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
+# clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
-#  clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
-#  clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
-
-  clusters_x=(    2   3   4   5   6   7   8   1   1   1 )
-  clusters_y=(    2   3   4   5   6   7   8   1   1   1 )
-  clusters_z=(    2   3   4   5   6   7   8   1   1   1 )
+  clusters_x=(    2   3   4   5   6   7   8   9   1   1 )
+  clusters_y=(    2   3   4   5   6   7   8   9   1   1 )
+  clusters_z=(    2   3   4   5   6   7   8   9   1   1 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 3 # 0 1 2 3 4 5 6
+  for i in 7 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}

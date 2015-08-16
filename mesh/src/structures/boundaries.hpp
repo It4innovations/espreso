@@ -369,8 +369,9 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 				MPI_Get_count(&mpi_stat, esglobal_mpi, &recv_msg_size);
 
 				neighBorderDofs[i].resize(recv_msg_size);
-
-				MPI_Recv(&neighBorderDofs[i][0], recv_msg_size,esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_stat);
+				if (recv_msg_size < 0)
+					std::cout << "error in msg size !";
+				MPI_Recv(&neighBorderDofs[i][0], recv_msg_size, esglobal_mpi, myNeighClusters[i], 0, MPI_COMM_WORLD, &mpi_stat);
 
 				messages_received_bd++;
 			}

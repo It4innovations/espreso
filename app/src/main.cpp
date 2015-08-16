@@ -94,6 +94,10 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (MPIrank == 0)
+		std::cout << "First MPI barrier passed - OK .... " << std::endl;
+
 	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] != MPIsize) {
 		std::cerr << "Invalid number of processes.\n";
 		exit(EXIT_FAILURE);
@@ -434,7 +438,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	Cluster cluster(MPIrank + 1);
 	cluster.USE_DYNAMIC			= 0;
-	cluster.USE_HFETI			= 0;
+	cluster.USE_HFETI			= 1;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
@@ -618,7 +622,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	if ( cluster.USE_KINV == 1 ) {
 		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using solver"));
 		 timeSolSC1.AddStart();
-		cluster.Create_Kinv_perDomain();
+	//	cluster.Create_Kinv_perDomain();
 		 timeSolSC1.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeSolSC1);
 
@@ -679,12 +683,12 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	std::stringstream ss;
-	ss << "mesh_" << MPIrank << ".vtk";
 
 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 timeSaveVTK.AddStart();
-	input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+	//std::stringstream ss;
+	//ss << "mesh_" << MPIrank << ".vtk";
+	//input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
 	 timeSaveVTK.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSaveVTK);
 
