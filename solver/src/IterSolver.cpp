@@ -1135,6 +1135,7 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 	// *** save solution - in dual and amplitudes *********************************************
 	
 	apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l); 
+
 	cilk_for(int i = 0; i < r_l.size(); i++)
 		r_l[i] = b_l[i] - Ax_l[i];
 
@@ -1203,7 +1204,6 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	SEQ_VECTOR <double> u_l  (dl_size, 0); 
 	SEQ_VECTOR <double> tmp_l(dl_size, 0);
-
 
 
 	double gama_l  = 0;
@@ -1506,25 +1506,35 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
     // *** CG iteration loop ******************************************************************
 	// *** - input to CG - vec_b - right hand side in primal 
 	
-	// *** convert right hand side to dual 
-	cluster.domains[0].multKplusLocal(in_right_hand_side_primal[0],  cluster.x_prim_cluster1[0]);
-	cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0); 
-	for (int d = 1; d < cluster.domains.size(); d++) {	
-		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[0]);
-		cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 1.0); 
+
+//	cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0);
+//	for (int d = 1; d < cluster.domains.size(); d++) {
+//		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[0]);
+//		cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 1.0);
+//	}
+//	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
+
+	//// *** convert right hand side to dual
+	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+	SEQ_VECTOR < double > y_out_tmp;
+	for (int d = 0; d < cluster.domains.size(); d++) {
+		// *** convert right hand side to dual
+		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[d]);
+
+		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
+		cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+		for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 	}
 	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
-	
 
-	//// *** convert right hand side to dual 
-	//cluster.domains[0].multKplusLocal(in_right_hand_side_primal, vec_t_tmp);
-	//cluster.domains[0].B1_comp.MatVec(vec_t_tmp, cluster.compressed_tmp, 'N', 0, 0, 0.0); 
-	//All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
+	
 
 	int iter = 0; 
 	timing.totalTime.Reset();
 
-	apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l); 
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
 
 	cilk_for (int i = 0; i < r_l.size(); i++) {	// r = b - Ax;  
 		r_l[i] = b_l[i] - Ax_l[i]; 
@@ -1545,7 +1555,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 		if (USE_PREC == 1) {
 			cilk_for (int i = 0; i < w_l.size(); i++)
 				w_l[i] = r_l[i]; 
-			apply_prec_compB(timeEvalPrec, cluster, w_l, y_l);
+			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
 		} else {		
 			cilk_for (int i = 0; i < w_l.size(); i++)
 				w_l[i] = r_l[i]; 
@@ -1567,7 +1577,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 		}
 
-		apply_A_l_compB(timeEvalAppa, cluster, p_l, Ap_l);
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, p_l, Ap_l);
 
 
 
@@ -1608,14 +1618,31 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 
 	// reconstruction of u
+	//cilk_
 	for (int d = 0; d < cluster.domains.size(); d++) {
-		cluster.domains[d].B1t_comp.MatVec(x_l, cluster.x_prim_cluster1[d], 'N');
+		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 );
 
-		cilk_for(int i = 0; i < in_right_hand_side_primal[d].size(); i++)
+		for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+			x_in_tmp[i] = x_l[ cluster.domains[d].lambda_map_sub_local[i]];
+
+		cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+
+		for(int i = 0; i < in_right_hand_side_primal[d].size(); i++)
 			out_primal_solution_parallel[d][i] = in_right_hand_side_primal[d][i] - cluster.x_prim_cluster1[d][i];
 
 		cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
+
 	}
+
+	// -- old --
+//	for (int d = 0; d < cluster.domains.size(); d++) {
+//		cluster.domains[d].B1t_comp.MatVec(x_l, cluster.x_prim_cluster1[d], 'N');
+//
+//		cilk_for(int i = 0; i < in_right_hand_side_primal[d].size(); i++)
+//			out_primal_solution_parallel[d][i] = in_right_hand_side_primal[d][i] - cluster.x_prim_cluster1[d][i];
+//
+//		cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
+//	}
 	// *** output of CG - vec_u_n in primal 
 
 
@@ -1801,13 +1828,13 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 
 // *** Dynamic Elasticity Solver - uses non-singular CG Solvers *******************************************
-void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file ) 
+void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECTOR < SEQ_VECTOR < SEQ_VECTOR <double > > > & prim_solution_out)
 {
 	SEQ_VECTOR < SEQ_VECTOR <double> > vec_u     (cluster.domains.size()); 
 	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v     (cluster.domains.size()); 
 	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w     (cluster.domains.size()); 
 
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_u_n   (cluster.domains.size()); 
+    SEQ_VECTOR < SEQ_VECTOR <double> > vec_u_n   (cluster.domains.size());
 	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v_n   (cluster.domains.size()); 
 	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w_n   (cluster.domains.size()); 
 
@@ -1851,8 +1878,8 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file )
 	const_a[6] = const_deltat * (1.0 - const_gama);
 	const_a[7] = const_deltat * const_gama;
 	
-
-	for (int time = 0; time < NumberOfTimeIterations; time++) {
+	for (int time = 0; time < 100; time++) {
+	//for (int time = 0; time < NumberOfTimeIterations; time++) {
 
 		// *** calculate the right hand side in primal ********************************************
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
@@ -1865,9 +1892,9 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file )
 		// *** Run the CG solver **************************************************************
 				
 		if ( USE_PIPECG == 1 ) {
-			Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
+			//Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
 		} else {
-			Solve_RegCG_nonsingular ( cluster, vec_b, vec_u_n); 
+			Solve_RegCG_nonsingular ( cluster, vec_b, vec_u_n);
 		}
 
 		// *** END - Run the CG solver ********************************************************
@@ -1884,6 +1911,8 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file )
 				vec_w[d][i] = vec_w_n[d][i]; 
 			}
 		}
+
+		prim_solution_out.push_back(vec_u_n);
 
 		// *** Save results to file *****************************************************
 		if (FIND_SOLUTION == 1) {

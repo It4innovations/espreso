@@ -72,6 +72,9 @@ void Cluster::SetDynamicParameters(double set_dynamic_timestep, double set_dynam
 	dynamic_beta     = set_dynamic_beta; 
 	dynamic_gama     = set_dynamic_gama; 
 
+	for (int d = 0; d < domains.size(); d++)
+		domains[d].SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
+
 }
 
 void Cluster::LoadCluster(string directory_path, int use_dynamic_1_no_dynamic_0, int use_kinv_1_no_kinv_0 ) {
@@ -385,8 +388,9 @@ void Cluster::InitClusterPC( int * subdomains_global_indices, int number_of_subd
 	// *** Init all domains of the cluster ********************************************
 	for (int i = 0; i < number_of_subdomains; i++ ) {
 		domains[i].domain_global_index = domains_in_global_index[i]; 
-		domains[i].USE_KINV  = USE_KINV; 
-		domains[i].USE_HFETI = USE_HFETI; 
+		domains[i].USE_KINV    = USE_KINV;
+		domains[i].USE_HFETI   = USE_HFETI;
+		domains[i].USE_DYNAMIC = USE_DYNAMIC;
 	}	
 	// *** END - Init all domains of the cluster ***************************************
 }

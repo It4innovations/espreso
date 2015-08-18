@@ -197,7 +197,8 @@ public:
 	void Solve_PipeCG_nonsingular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel); 
 	
 	// *** 
-	void Solve_Dynamic ( Cluster & cluster, string result_file ); 
+	//void Solve_Dynamic ( Cluster & cluster, string result_file );
+	void Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECTOR < SEQ_VECTOR < SEQ_VECTOR <double> > > & prim_solution);
 
 
 };

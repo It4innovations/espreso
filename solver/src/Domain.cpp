@@ -499,38 +499,40 @@ void Domain::K_regularization ( )
 
 void Domain::K_regularizationFromR ( ) {
 
-    
-	SparseMatrix N; 
+    if (USE_DYNAMIC == 0) {
+
+		SparseMatrix N;
+
+		N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
+
+		SparseMatrix Nt;
+		N.MatTranspose( Nt );
+
+		SparseMatrix NtN_Mat;
+		NtN_Mat.MatMat( Nt,'N',N );
+		NtN_Mat.MatTranspose();
+		NtN_Mat.RemoveLower();
+
+		SparseSolver NtN;
+		NtN.ImportMatrix(NtN_Mat);
+		NtN_Mat.Clear();
+
+		NtN.Factorization();
+		NtN.SolveMat_Sparse(Nt);
+
+		//NtN = Nt*N
+		N.Clear();
+		Nt.MatTranspose(N);
+		NtN_Mat.MatMat(N,'N',Nt);
+		NtN_Mat.RemoveLower();
+
+		double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
+		ro = 1.0 * ro;
+
+		K.    MatAddInPlace (NtN_Mat,'N', ro);
 	
-	N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs); 
-
-	SparseMatrix Nt; 
-	N.MatTranspose( Nt ); 
-
-	SparseMatrix NtN_Mat; 
-	NtN_Mat.MatMat( Nt,'N',N ); 
-	NtN_Mat.MatTranspose();
-	NtN_Mat.RemoveLower();
-
-	SparseSolver NtN; 
-	NtN.ImportMatrix(NtN_Mat);
-	NtN_Mat.Clear();
-
-	NtN.Factorization();
-	NtN.SolveMat_Sparse(Nt); 
-
-	//NtN = Nt*N
-	N.Clear();
-	Nt.MatTranspose(N);
-	NtN_Mat.MatMat(N,'N',Nt);
-	NtN_Mat.RemoveLower();
-
-	double ro = K.GetMaxOfDiagonalOfSymmetricMatrix(); 
-	ro = 1.0 * ro; 
-
-	K.    MatAddInPlace (NtN_Mat,'N', ro);
+    }
 	
-    
     Kplus.ImportMatrix  (K);
 	Kplus.Factorization ();
 	

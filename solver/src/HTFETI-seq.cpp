@@ -667,6 +667,12 @@ void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
  					    n_rows, n_cols, 
 					    rows, cols, vals, type); 
 	
+	if (cluster.USE_DYNAMIC == 1) {
+		// suppose M in domain is already set
+		double time_const = 1.0 / ( cluster.dynamic_beta * cluster.dynamic_timestep * cluster.dynamic_timestep);
+		cluster.domains[domain_index_in_cluster].K.MatAddInPlace(cluster.domains[domain_index_in_cluster].M,'N', time_const);
+	}
+
 	if ( cluster.domains[domain_index_in_cluster].K.type == 'G' )
 		cluster.domains[domain_index_in_cluster].K.RemoveLower();
 
@@ -1054,7 +1060,7 @@ void SetMatrixK_fromBEM ( Cluster & cluster, ShortInt domain_index_in_cluster,
 	
 
 	if (USE_DYNAMIC == 1)
-		solver.Solve_Dynamic  ( cluster, result_file );
+		; //solver.Solve_Dynamic  ( cluster, result_file );
 	else 
 		solver.Solve_singular ( cluster, result_file );
    	

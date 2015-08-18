@@ -219,6 +219,8 @@ void generate_mesh( int MPIrank )
 void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 {
 
+	bool DYNAMIC = true;
+
 
 	TimeEval timeEvalMain(string("ESPRESO Solver Overal Timing"));
 	timeEvalMain.totalTime.AddStartWithBarrier();
@@ -299,8 +301,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		eslocal dimension = input.mesh->getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
-		//input.mesh.elasticity(K_mat[d], M_mat[d], f, d);
-		input.mesh->elasticity(K_mat[d], f, d);
+		if (DYNAMIC)
+			input.mesh->elasticity(K_mat[d], M_mat[d], f, d);
+		else
+			input.mesh->elasticity(K_mat[d],           f, d);
 
         f_vec[d].swap(f);
 
@@ -437,19 +441,23 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
 
 	Cluster cluster(MPIrank + 1);
-	cluster.USE_DYNAMIC			= 0;
-	cluster.USE_HFETI			= 1;
+	if ( DYNAMIC )
+		cluster.USE_DYNAMIC			= 1;
+	else
+		cluster.USE_DYNAMIC			= 0;
+
+	cluster.USE_HFETI			= 0;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
 
 	IterSolver solver;
-	solver.CG_max_iter	 = 1000;
+	solver.CG_max_iter	 = 100;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.001;
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
-	solver.USE_DYNAMIC	 = 0;
+	solver.USE_DYNAMIC	 = cluster.USE_DYNAMIC;
 	solver.USE_PIPECG	 = 0;
 	solver.USE_PREC		 = 1;
 	solver.FIND_SOLUTION = 0;
@@ -462,6 +470,34 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		domain_list[i] = i;
 
 	SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
+
+	if (DYNAMIC) {
+		double dynamic_beta     = 0.25;
+		double dynamic_gama     = 0.5;
+		double dynamic_timestep = 0.000001;
+
+		cluster.SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
+
+		double time_const = 1.0 / ( dynamic_beta * dynamic_timestep * dynamic_timestep);
+
+		for (int d = 0; d < partsCount; d++) {
+//			SetMatrixFromCSR(cluster.domains[d].K,
+//					K_mat[d].rows(), K_mat[d].columns(),
+//					K_mat[d].rowPtrs(), K_mat[d].columnIndices(),
+//					K_mat[d].values(),
+//					'G');
+
+			SetMatrixFromCSR(cluster.domains[d].M,
+					M_mat[d].rows(), M_mat[d].columns(),
+					M_mat[d].rowPtrs(), M_mat[d].columnIndices(),
+					M_mat[d].values(),
+					'G');
+
+//			cluster.domains[d].K.MatAddInPlace(cluster.domains[d].M,'N', time_const);
+
+		}
+
+	}
 
 	vector<double> solver_parameters ( 10 );
 	solver.Setup ( solver_parameters, cluster );
@@ -655,22 +691,147 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	// *** Running Solver ************************************************************************************************
 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	 timeSolCG.AddStart();
-    string result_file("MATSOL_SVN_Displacement.Nvec");
-	solver.Solve_singular ( cluster, result_file );
-	 timeSolCG.AddEndWithBarrier();
+
+	string result_file("MATSOL_SVN_Displacement.Nvec");
+	vector < vector < double > > prim_solution;
+	vector < vector < vector < double > > > prim_solution_dyn;
+
+    if (DYNAMIC) {
+
+//    	solver.Solve_Dynamic ( cluster , result_file, prim_solution_dyn );
+//
+//    	for (int t = 0; t < 100; t++) {
+//			std::stringstream ss;
+//			ss << "mesh_" << MPIrank << "_" << t << ".vtk";
+//			input.mesh->saveVTK(ss.str().c_str(), prim_solution_dyn[t], l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+//    	}
+
+
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_u     (cluster.domains.size());
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v     (cluster.domains.size());
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w     (cluster.domains.size());
+
+        SEQ_VECTOR < SEQ_VECTOR <double> > vec_u_n   (cluster.domains.size());
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v_n   (cluster.domains.size());
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w_n   (cluster.domains.size());
+
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_b     (cluster.domains.size());
+    	SEQ_VECTOR < SEQ_VECTOR <double> > vec_t_tmp (cluster.domains.size());
+
+    	for (int d = 0; d < cluster.domains.size(); d++) {
+    		vec_u[d]    .resize(cluster.domains[d].domain_prim_size, 0);
+    		vec_v[d]    .resize(cluster.domains[d].domain_prim_size, 0);
+    		vec_w[d]    .resize(cluster.domains[d].domain_prim_size, 0);
+
+    		vec_u_n[d]  .resize(cluster.domains[d].domain_prim_size, 0);
+    		vec_v_n[d]  .resize(cluster.domains[d].domain_prim_size, 0);
+    		vec_w_n[d]  .resize(cluster.domains[d].domain_prim_size, 0);
+
+    		vec_b[d]    .resize(cluster.domains[d].domain_prim_size, 0);
+    		vec_t_tmp[d].resize(cluster.domains[d].domain_prim_size, 0);
+    	}
+
+    	// *** Set up the initial acceleration ***********************
+    	for (int d = 0; d < cluster.domains.size(); d++) {
+    		for (int i = 2; i < vec_w[d].size(); i=i+3) {
+    			vec_w[d][i] = 1.0;
+    		}
+    	}
+    	// *** END - Set up the initial accel. ***********************
+
+
+    	double const_beta   = cluster.dynamic_beta;
+    	double const_deltat = cluster.dynamic_timestep;
+    	double const_gama   = cluster.dynamic_gama;
+
+
+    	SEQ_VECTOR <double> const_a (8,0);
+    	const_a[0] = 1.0 / (const_beta * const_deltat * const_deltat);
+    	const_a[1] = const_gama / (const_beta * const_deltat);
+    	const_a[2] = 1.0 / (const_beta * const_deltat);
+    	const_a[3] = (1.0 / (2 * const_beta)) - 1.0;
+    	const_a[4] = (const_gama / const_beta) - 1.0;
+    	const_a[5] = const_deltat * ((const_gama / (2.0 * const_beta)) - 1.0);
+    	const_a[6] = const_deltat * (1.0 - const_gama);
+    	const_a[7] = const_deltat * const_gama;
+
+    	for (int time = 0; time < 100; time++) {
+    	//for (int time = 0; time < NumberOfTimeIterations; time++) {
+
+    		// *** calculate the right hand side in primal ********************************************
+    		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
+    			for(int i = 0; i < vec_u[d].size(); i++) {
+    				vec_t_tmp[d][i] = const_a[0] * vec_u[d][i] + const_a[2] * vec_v[d][i] + const_a[3] * vec_w[d][i];
+    			}
+    			cluster.domains[d].M.MatVec(vec_t_tmp[d], vec_b[d],'N');
+    		}
+
+    		// *** Run the CG solver **************************************************************
+
+    		if ( solver.USE_PIPECG == 1 ) {
+    			//Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
+    		} else {
+    			solver.Solve_RegCG_nonsingular ( cluster, vec_b, vec_u_n);
+    		}
+
+    		// *** END - Run the CG solver ********************************************************
+
+    		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
+    			for(int i = 0; i < vec_u[d].size(); i++) {
+    				vec_w_n[d][i] = (const_a[0] * (vec_u_n[d][i] - vec_u[d][i])) - (const_a[2] * vec_v[d][i]) - (const_a[3] * vec_w  [d][i]);
+    				vec_v_n[d][i] = vec_v[d][i]                  + (const_a[6] * vec_w[d][i])                 + (const_a[7] * vec_w_n[d][i]);
+    			//}
+
+    			//for(int i = 0; i < vec_u[d].size(); i++) {
+    				vec_u[d][i] = vec_u_n[d][i];
+    				vec_v[d][i] = vec_v_n[d][i];
+    				vec_w[d][i] = vec_w_n[d][i];
+    			}
+    		}
+
+    		//prim_solution_out.push_back(vec_u_n);
+
+			std::stringstream ss;
+			ss << "mesh_" << MPIrank << "_" << time << ".vtk";
+			input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+
+
+    		// *** XXX
+    		if (solver.mpi_rank == solver.mpi_root) {
+    			cout<<endl<< "Time iter " << time << "\t";
+    		}
+
+
+    		// *** XXX
+    		solver.timing.totalTime.PrintStatMPI(0.0);
+    		solver.timing.totalTime.Reset();
+
+    	} // *** END - time iter loop *******************************************************
+
+    	solver.preproc_timing.PrintStatsMPI();
+    	solver.timeEvalAppa  .PrintStatsMPI();
+
+    	if (solver.USE_PREC == 1)
+    		solver.timeEvalPrec.PrintStatsMPI();
+
+    } else {
+		solver.Solve_singular( cluster, result_file );
+	}
+
+     timeSolCG.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSolCG);
 
 	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 	 timeGetSol.AddStart();
-	vector < vector < double > > prim_solution;
-	solver.GetSolution_Primal_singular_parallel(cluster, prim_solution);
+	if (!DYNAMIC) solver.GetSolution_Primal_singular_parallel(cluster, prim_solution);
 	 timeGetSol.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeGetSol);
 
 	double max_v = 0.0;
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++)
-		for (ShortInt j = 0; j < prim_solution[i].size(); j++)
-			if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
+	if (!DYNAMIC)
+		for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++)
+			for (ShortInt j = 0; j < prim_solution[i].size(); j++)
+				if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
 
 	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.AddStartWOBarrier(0.0); max_sol_ev.AddEndWOBarrier(max_v);
 
@@ -686,9 +847,11 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 timeSaveVTK.AddStart();
-	//std::stringstream ss;
-	//ss << "mesh_" << MPIrank << ".vtk";
-	//input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+	if (!DYNAMIC) {
+		std::stringstream ss;
+		ss << "mesh_" << MPIrank << ".vtk";
+		input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+	}
 	 timeSaveVTK.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSaveVTK);
 
