@@ -57,7 +57,6 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
     ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
-
     ctx.recurse("metis")
 
     if not ctx.options.mesh:

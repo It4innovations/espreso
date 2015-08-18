@@ -1964,7 +1964,7 @@ void Cluster::Create_SC_perDomain() {
 		K_sc1.MatAppend(Sc_eye);
 
 		domains[i].KplusF.ImportMatrix(K_sc1);
-		domains[i].KplusF.Create_SC(domains[i].B1Kplus, K_b_tmp.rows, true);
+		//domains[i].KplusF.Create_SC(domains[i].B1Kplus, K_b_tmp.rows);
 		domains[i].B1Kplus.type = 'G';
 
 		SparseMatrix SC_tmp;
