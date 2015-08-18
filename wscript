@@ -46,12 +46,17 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
     ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
+    # MUMPS libraries
+    ctx.env.append_unique("STLIBPATH", "/home/bes0030/MUMPS_5.0.1/lib")
+    ctx.env.append_unique("STLIB", ["dmumps", "mumps_common"])
+    #ctx.env.aapend_unique("MUMPS_LIBSEQ", "")
 
     ctx.recurse("metis")
 
-    ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
+    #ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
+    #ctx.env.append_value("STLIB", [ "ifcore" ])  #-Wl,-Bstatic -L../libs -lifcore'
 
-    ctx.env.append_value("STLIB", [ "ifcore" ])  #-Wl,-Bstatic -L../libs -lifcore'
+    #ctx.env.append_unique("LIB", [""]); 
 
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])
@@ -87,6 +92,9 @@ def configure(ctx):
     if ctx.options.mpich:
         ctx.env.append_unique("CXXFLAGS", [ "-cxx=icpc" ])
         ctx.env.append_unique("LINKFLAGS", [ "-cxx=icpc" ])
+
+    #ctx.env.append_unique("STLIB", ["dmumps", "mumps_common"])
+    #ctx.env.append_unique("MUMPS_LIB", ["mumps_common"])
 
     #if ctx.options.anselm:
         #ctx.env.append_unique("CXXFLAGS", [ "-xSSE4.1" ])
