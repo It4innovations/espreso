@@ -149,9 +149,6 @@ void load_mesh(int MPIrank)
 	input.mesh->computeFixPoints(20);
 	input.mesh->computeCorners(*input.localBoundaries, 20, true, false, false);
 
-	stringstream ssvtk;
-	ssvtk << "mesh_" << MPIrank << ".vtk";
-	input.mesh->saveVTK(ssvtk.str().c_str(), 0.9);
 }
 
 void generate_mesh( int MPIrank )

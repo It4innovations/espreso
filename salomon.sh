@@ -33,6 +33,19 @@ if [ "$#" -ne 1 ]; then
   echo "  'distclean' removes all files."
 fi
 
+if [ "$1" = "configure_mesh" ]; then
+  ./waf configure --mesh --salomon
+fi
+
+if [ "$1" = "build_mesh" ]; then
+  ./waf install --mesh
+fi
+
+if [ "$1" = "mesh" ]; then
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
+  ./esmesh
+fi
+
 if [ "$1" = "configure" ]; then
   ./waf configure --salomon
 fi
@@ -113,7 +126,8 @@ if [ "$1" = "run" ]; then
     #mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}               # | tee -a $log_file
    
-    mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+    # mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+    mpirun -n 10 ./espreso | tee -a $log_file
 
    
     #ddt -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file
