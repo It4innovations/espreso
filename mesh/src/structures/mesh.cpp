@@ -1608,6 +1608,7 @@ void Mesh::saveData()
 {
 	eslocal value;
 	esglobal index;
+
 	for (size_t p = 0; p < parts(); p++) {
 		std::stringstream ss;
 		ss << "mesh_" << p << ".dat";
@@ -1630,6 +1631,25 @@ void Mesh::saveData()
 			const Point &point = _coordinates.get(i, p);
 			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
 		}
+
+		// save coordinates' properties
+		for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
+			const std::map<eslocal, double> &property = _coordinates.property(i).values();
+			eslocal counter = 0;
+			const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
+			for (size_t j = 0; j < l2c.size(); j++) {
+				if (property.find(l2c[j]) != property.end()) {
+					counter++;
+				}
+			}
+			os.write(reinterpret_cast<const char*>(&counter), sizeof(eslocal));
+			for (eslocal j = 0; j < l2c.size(); j++) {
+				if (property.find(l2c[j]) != property.end()) {
+					os.write(reinterpret_cast<const char*>(&j), sizeof(eslocal));
+					os.write(reinterpret_cast<const char*>(&property.find(l2c[j])->second), sizeof(double));
+				}
+			}
+		}
 	}
 }
 
@@ -1638,8 +1658,9 @@ void Mesh::loadData(const char *filename)
 	std::ifstream is(filename, std::ifstream::binary);
 
 	// reset parameters
-	eslocal size, type;
+	eslocal size, type, cIndex;
 	esglobal index;
+	double value;
 	Point point;
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
@@ -1688,6 +1709,17 @@ void Mesh::loadData(const char *filename)
 		is.read(reinterpret_cast<char *>(&index), sizeof(esglobal));
 		is.read(reinterpret_cast<char *>(&point), Point::size() * sizeof(double));
 		_coordinates.add(point, i, index);
+	}
+
+	// load coordinates' properties
+	for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
+		CoordinatesProperty &property = _coordinates.property(i);
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal j = 0; j < size; j++) {
+			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
+			is.read(reinterpret_cast<char *>(&value), sizeof(double));
+			property[cIndex] = value;
+		}
 	}
 }
 

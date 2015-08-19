@@ -7,11 +7,25 @@ void test_meshes();
 void test_ansys();
 void test_saveData();
 void test_ijv_sort();
+void partitiateMesh();
 
 int main(int argc, char** argv)
 {
-	test_corners();
+	partitiateMesh();
 	return 0;
+}
+
+void partitiateMesh()
+{
+	eslocal numberOfParts = 10;
+
+	mesh::Ansys ansys("lopatka/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+	mesh::Mesh m(ansys, numberOfParts, 0);
+
+	m.saveData();
 }
 
 void test_ijv_sort()
@@ -36,15 +50,18 @@ void test_ijv_sort()
 void test_saveData()
 {
 	eslocal partsCount = 4;
-	eslocal fixPointsCount = 4;
+	eslocal fixPointsCount = 0;
 
-	mesh::Mesh m("matrices/TET/5/elem", "matrices/TET/5/coord", partsCount, fixPointsCount);
+	mesh::Ansys ansys("matrices/spanner/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+	mesh::Mesh m(ansys, partsCount, fixPointsCount);
 
 	m.saveData();
 
-	//mesh::Mesh m2;
 	m.loadData("mesh_0.dat");
-	m.saveVTK("part0.vtk");
+    m.saveVTK("part0.vtk", 0.9);
 }
 
 void test_corners()
