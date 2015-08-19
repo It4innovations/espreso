@@ -23,7 +23,6 @@ void Boundaries::saveData()
 	eslocal value, size;
 	esglobal index;
 
-	std::cout << _mesh.parts() << "\n";
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::stringstream ss;
 		ss << "boundaries_" << p << ".dat";

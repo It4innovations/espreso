@@ -78,7 +78,7 @@ void testBEM(int argc, char** argv);
 
 void testMPI(int argc, char** argv, int MPIrank, int MPIsize);
 
-void load_mesh();
+void load_mesh(int MPIrank);
 
 void generate_mesh( int MPIrank );
 
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] != MPIsize) {
+	if (params.generateMesh && params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] != MPIsize) {
 		std::cerr << "Invalid number of processes.\n";
 		exit(EXIT_FAILURE);
 	}
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
 	if (params.generateMesh) {
 		generate_mesh( MPIrank );
 	} else {
-		load_mesh();
+		load_mesh(MPIrank);
 	}
 
 	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] == 1) {
@@ -121,18 +121,37 @@ int main(int argc, char** argv)
 }
 
 
-void load_mesh()
+void load_mesh(int MPIrank)
 {
-	mesh::Ansys ansys("matrices/spanner/Model");
-	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
-	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
-	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
-	ansys.coordinatesProperty(mesh::CP::FORCES_X) = "BC/Elasticity/NFX.dat";
-	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
-	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
+//	mesh::Ansys ansys("matrices/spanner/Model");
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+//	ansys.coordinatesProperty(mesh::CP::FORCES_X) = "BC/Elasticity/NFX.dat";
+//	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
+//	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
+//
+//	input.mesh = new mesh::Mesh(ansys, 2, 8);
+//	input.localBoundaries = new mesh::Boundaries(*input.mesh);
 
-	input.mesh = new mesh::Mesh(ansys, 2, 8);
+	stringstream ssm;
+	stringstream ssb;
+	ssm << "mesh_" << MPIrank << ".dat";
+	ssb << "boundaries_" << MPIrank << ".dat";
+
+	input.mesh = new mesh::Mesh();
+	input.globalBoundaries = new mesh::Boundaries(*input.mesh);
+
+	input.mesh->loadData(ssm.str().c_str());
+	input.globalBoundaries->loadData(ssb.str().c_str());
 	input.localBoundaries = new mesh::Boundaries(*input.mesh);
+
+	input.mesh->computeFixPoints(20);
+	input.mesh->computeCorners(*input.localBoundaries, 20, true, false, false);
+
+	stringstream ssvtk;
+	ssvtk << "mesh_" << MPIrank << ".vtk";
+	input.mesh->saveVTK(ssvtk.str().c_str(), 0.9);
 }
 
 void generate_mesh( int MPIrank )
