@@ -25,7 +25,10 @@ void partitiateMesh()
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
 	mesh::Mesh m(ansys, numberOfParts, 0);
 
+	mesh::Boundaries b(m);
+
 	m.saveData();
+	b.saveData();
 }
 
 void test_ijv_sort()
@@ -60,8 +63,13 @@ void test_saveData()
 
 	m.saveData();
 
+    mesh::Boundaries b(m);
+	b.saveData();
+
 	m.loadData("mesh_0.dat");
-    m.saveVTK("part0.vtk", 0.9);
+	m.saveVTK("part0.vtk", 0.9);
+
+	b.loadData("boundaries_0.dat");
 }
 
 void test_corners()

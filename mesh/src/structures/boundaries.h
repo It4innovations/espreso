@@ -47,6 +47,9 @@ public:
 		return position;
 	}
 
+	void saveData();
+	void loadData(const char *filename);
+
 	template<typename T>
 	void create_B1_l(	std::vector < SparseIJVMatrix<T> >      	& B1_local,
 						std::vector < SparseIJVMatrix<T> >      	& B0_local,
