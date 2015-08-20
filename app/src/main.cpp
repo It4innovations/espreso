@@ -458,7 +458,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
 	solver.USE_DYNAMIC	 = cluster.USE_DYNAMIC;
-	solver.USE_PIPECG	 = 0;
+	solver.USE_PIPECG	 = 1;
 	solver.USE_PREC		 = 1;
 	solver.FIND_SOLUTION = 0;
 
@@ -755,7 +755,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     	const_a[6] = const_deltat * (1.0 - const_gama);
     	const_a[7] = const_deltat * const_gama;
 
-    	for (int time = 0; time < 100; time++) {
+    	for (int time = 0; time < 10; time++) {
     	//for (int time = 0; time < NumberOfTimeIterations; time++) {
 
     		// *** calculate the right hand side in primal ********************************************
@@ -769,7 +769,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     		// *** Run the CG solver **************************************************************
 
     		if ( solver.USE_PIPECG == 1 ) {
-    			//Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
+    			solver.Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
     		} else {
     			solver.Solve_RegCG_nonsingular ( cluster, vec_b, vec_u_n);
     		}
