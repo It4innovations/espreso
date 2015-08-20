@@ -2,15 +2,33 @@
 
 void test_matrices();
 void test_BEM();
+void test_corners();
 void test_meshes();
 void test_ansys();
 void test_saveData();
 void test_ijv_sort();
+void partitiateMesh();
 
 int main(int argc, char** argv)
 {
-	test_ijv_sort();
+	partitiateMesh();
 	return 0;
+}
+
+void partitiateMesh()
+{
+	eslocal numberOfParts = 4;
+
+	mesh::Ansys ansys("lopatka/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+	mesh::Mesh m(ansys, numberOfParts, 0);
+
+	mesh::Boundaries b(m);
+
+	m.saveData();
+	b.saveData();
 }
 
 void test_ijv_sort()
@@ -35,15 +53,42 @@ void test_ijv_sort()
 void test_saveData()
 {
 	eslocal partsCount = 4;
-	eslocal fixPointsCount = 4;
+	eslocal fixPointsCount = 0;
 
-	mesh::Mesh m("matrices/TET/5/elem", "matrices/TET/5/coord", partsCount, fixPointsCount);
+	mesh::Ansys ansys("matrices/spanner/Model");
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+	mesh::Mesh m(ansys, partsCount, fixPointsCount);
 
 	m.saveData();
 
-	//mesh::Mesh m2;
+    mesh::Boundaries b(m);
+	b.saveData();
+
 	m.loadData("mesh_0.dat");
-	m.saveVTK("part0.vtk");
+	m.saveVTK("part0.vtk", 0.9);
+
+	b.loadData("boundaries_0.dat");
+}
+
+void test_corners()
+{
+	eslocal partsCount = 4;
+	eslocal fixPointsCount = 4;
+
+	mesh::Mesh m("matrices/TET/10/elem", "matrices/TET/10/coord", partsCount, fixPointsCount);
+//	mesh::Ansys ansys("matrices/spanner/Model");
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
+//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+//	mesh::Mesh m(ansys, partsCount, fixPointsCount);
+
+	mesh::Boundaries b(m);
+
+	m.computeCorners(b, 8, true, true, true);
+
+	m.saveVTK("mesh.vtk", b, 0.6);
 }
 
 void test_ansys()
@@ -64,11 +109,11 @@ void test_ansys()
 
 	mesh::SurfaceMesh sMesh(m);
 
-	mesh::CommonFacesMesh cMesh(sMesh);
+	mesh::CommonFacesMesh cMesh(m);
 
 	mesh::CornerLinesMesh lMesh(m);
 
-	m.saveVTK("mesh.vtk", 0.6);
+	m.saveVTK("mesh.vtk", b, 0.6);
 	sMesh.saveVTK("surface.vtk", 0.6);
 	cMesh.saveVTK("faces.vtk", 0.6);
 	lMesh.saveVTK("lines.vtk", 0.6);
@@ -86,7 +131,7 @@ void test_meshes()
 
 	mesh::SurfaceMesh sMesh(m);
 
-	mesh::CommonFacesMesh cMesh(sMesh);
+	mesh::CommonFacesMesh cMesh(m);
 
 	mesh::CornerLinesMesh lMesh(m);
 

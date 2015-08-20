@@ -18,6 +18,59 @@ Boundaries::Boundaries(Mesh &m)
 	}
 }
 
+void Boundaries::saveData()
+{
+	eslocal value, size;
+	esglobal index;
+
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		std::stringstream ss;
+		ss << "boundaries_" << p << ".dat";
+		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+
+		size = 0;
+		for (size_t i = 0; i < _boundaries.size(); i++) {
+			if (_boundaries[i].find(p) != _boundaries[i].end()) {
+				size++;
+			}
+		}
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+
+		std::set<eslocal>::const_iterator it;
+		for (size_t i = 0; i < _boundaries.size(); i++) {
+			if (_boundaries[i].find(p) != _boundaries[i].end()) {
+				size = _boundaries[i].size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
+					value = *it;
+					os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+				}
+			}
+		}
+	}
+}
+
+void Boundaries::loadData(const char *filename)
+{
+	_boundaries.clear();
+	_corners.clear();
+
+	std::ifstream is(filename, std::ifstream::binary);
+
+	eslocal size, value;
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+
+	_boundaries.resize(size);
+	for (size_t i = 0; i < _boundaries.size(); i++) {
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal j = 0; j < size; j++) {
+			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
+			_boundaries[i].insert(value);
+		}
+	}
+}
+
 std::ostream& mesh::operator<<(std::ostream& os, const Boundaries &b)
 {
 	std::set<eslocal>::const_iterator it;

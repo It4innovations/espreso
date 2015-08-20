@@ -104,6 +104,7 @@ public:
 
 	void partitiate(eslocal parts, eslocal fixPoints);
 	void computeFixPoints(eslocal fixPoints);
+	void computeCorners(Boundaries &boundaries, eslocal number, bool corners, bool edges, bool faces) const;
 
 	const std::vector<Element*>& getElements() const
 	{

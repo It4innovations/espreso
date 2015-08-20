@@ -162,6 +162,21 @@ public:
 		return _property[property];
 	}
 
+	CoordinatesProperty& property(size_t property)
+	{
+		return _property[property];
+	}
+
+	const CoordinatesProperty& property(size_t property) const
+	{
+		return _property[property];
+	}
+
+	size_t propertiesSize() const
+	{
+		return _property.size();
+	}
+
 private:
 	void readFromFile(const char *fileName);
 
