@@ -786,7 +786,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     		// *** Run the CG solver **************************************************************
 
     		if ( solver.USE_PIPECG == 1 ) {
-    			//Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
+    			solver.Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
     		} else {
     			solver.Solve_RegCG_nonsingular ( cluster, vec_b, vec_u_n);
     		}
@@ -861,8 +861,6 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	std::stringstream ss;
-	ss << "mesh_" << MPIrank << ".vtk";
 
 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 timeSaveVTK.AddStart();
@@ -1064,8 +1062,8 @@ void testBEM(int argc, char** argv)
                             lambda_map_sub_B0,
                             B1_l_duplicity,
                             partsCount,
-							*input.globalBoundaries
-							);
+							*input.localBoundaries
+                        );
 //    for (int d = 0; d < partsCount; d++) {
 //        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
 //            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )

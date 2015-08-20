@@ -1693,18 +1693,34 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		// *** - input to CG - vec_b - right hand side in primal 
 
 		// *** convert right hand side to dual 
-		cluster.domains[0].multKplusLocal(in_right_hand_side_primal[0],  cluster.x_prim_cluster1[0]);
-		cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0); 
-		for (int d = 1; d < cluster.domains.size(); d++) {	
-			cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[0]);
-			cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 1.0); 
+//		cluster.domains[0].multKplusLocal(in_right_hand_side_primal[0],  cluster.x_prim_cluster1[0]);
+//		cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0);
+//		for (int d = 1; d < cluster.domains.size(); d++) {
+//			cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[0]);
+//			cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 1.0);
+//		}
+//		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
+
+		//// *** convert right hand side to dual
+		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+		SEQ_VECTOR < double > y_out_tmp;
+		for (int d = 0; d < cluster.domains.size(); d++) {
+			// *** convert right hand side to dual
+			cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[d]);
+
+			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
+			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
 		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
+
 
 		int iter = 0; 
 		timing.totalTime.Reset();
 
-		apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l); 
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
 
 		cilk_for (int i = 0; i < r_l.size(); i++) {	// r = b - Ax;  
 			r_l[i] = b_l[i] - Ax_l[i]; 
@@ -1713,13 +1729,13 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		}
 
 		if (USE_PREC == 1) {
-			apply_prec_compB(timeEvalPrec, cluster, r_l, u_l); 
+			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
 		} else {
 			cilk_for (int i = 0; i < r_l.size(); i++)   
 				u_l = r_l; 
 		}
 		
-		apply_A_l_compB(timeEvalAppa, cluster, u_l, w_l); 
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l);
 		
 		tol = epsilon * parallel_norm_compressed(cluster, b_l);
 		
@@ -1743,7 +1759,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			if (USE_PREC == 1) {
 								
 				prec_time.AddStart(omp_get_wtime()); 
-				apply_prec_compB(timeEvalPrec, cluster, w_l, m_l);
+				apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, m_l);
 				prec_time.AddEnd(omp_get_wtime());
 							
 			} else {
@@ -1755,7 +1771,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 			//------------------------------------------
 			appA_time.AddStart(omp_get_wtime()); 
-			apply_A_l_compB(timeEvalAppa, cluster, m_l, n_l);
+			apply_A_l_comp_dom_B(timeEvalAppa, cluster, m_l, n_l);
 			appA_time.AddEnd(omp_get_wtime());
 			//------------------------------------------
 			
@@ -1812,14 +1828,32 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		} // end iter loop 
 		
 		// reconstruction of u
+
+		//cilk_
 		for (int d = 0; d < cluster.domains.size(); d++) {
-			cluster.domains[d].B1t_comp.MatVec(x_l, cluster.x_prim_cluster1[d], 'N');
-		
-			cilk_for(int i = 0; i < in_right_hand_side_primal[d].size(); i++)
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 );
+
+			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				x_in_tmp[i] = x_l[ cluster.domains[d].lambda_map_sub_local[i]];
+
+			cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+
+			for(int i = 0; i < in_right_hand_side_primal[d].size(); i++)
 				out_primal_solution_parallel[d][i] = in_right_hand_side_primal[d][i] - cluster.x_prim_cluster1[d][i];
 
 			cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
+
 		}
+
+
+//		for (int d = 0; d < cluster.domains.size(); d++) {
+//			cluster.domains[d].B1t_comp.MatVec(x_l, cluster.x_prim_cluster1[d], 'N');
+//
+//			cilk_for(int i = 0; i < in_right_hand_side_primal[d].size(); i++)
+//				out_primal_solution_parallel[d][i] = in_right_hand_side_primal[d][i] - cluster.x_prim_cluster1[d][i];
+//
+//			cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
+//		}
 		// *** output of CG - vec_u_n in primal 
 
 }
