@@ -2,10 +2,7 @@
 METIS = "metis"
 
 def configure(ctx):
-    if ctx.env.ESLOCAL == 32:
-        ctx.env.append_unique("LIB", [ "metis32" ])
-    if ctx.env.ESLOCAL == 64:
-        ctx.env.append_unique("LIB", [ "metis64" ])
+    pass
 
 def build(ctx):
     pass

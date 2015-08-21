@@ -16,25 +16,24 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.setenv(SOLVER, ctx.all_envs["mpi"].derive());
+    ctx.setenv(SOLVER, ctx.all_envs[""].derive());
 
     ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
 
     if ctx.options.cuda:
-        ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
         ctx.env.append_unique("CXXFLAGS", ["-DCUDA"])
-        ctx.env.append_unique("LIB", [ "cudart", "cublas"])
 
 def build(ctx):
     ctx.env = ctx.all_envs[SOLVER]
 
     ctx.shlib(
-        source=source_files,
-        target="essolver",
-        install_path=ctx.ROOT + "/libs"
+        source          = source_files,
+        target          = "essolver",
+        install_path    = ctx.ROOT + "/libs"
     )
 
     ctx(
         export_includes = "src",
         name            = "solver_includes"
     )
+

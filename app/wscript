@@ -1,23 +1,70 @@
 
+APP = "app"
+
 from waflib.Tools.ccroot import link_task
 
 class cxxprogram(link_task):
-    run_str='${LINK_CXX} ${LINKFLAGS} ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT[0].abspath()} ${RPATH_ST:RPATH} ${FRAMEWORKPATH_ST:FRAMEWORKPATH} ${FRAMEWORK_ST:FRAMEWORK} ${ARCH_ST:ARCH} ${SHLIB_MARKER} ${LIBPATH_ST:LIBPATH} ${LIB_ST:LIB} ${LDFLAGS} ${STLIB_MARKER} ${STLIBPATH_ST:STLIBPATH} ${STLIB_ST:STLIB} -Wl,-Bdynamic'
-    vars=['LINKDEPS']
-    ext_out=['.bin']
-    inst_to='${BINDIR}'
+    vars    = ['LINKDEPS']
+    ext_out = ['.bin']
+    inst_to = '${BINDIR}',
+    run_str = '${LINK_CXX} \
+               ${LINKFLAGS} \
+               ${CXXLNK_SRC_F}${SRC} \
+               ${CXXLNK_TGT_F}${TGT[0].abspath()} \
+               ${RPATH_ST:RPATH} \
+               ${FRAMEWORKPATH_ST:FRAMEWORKPATH} \
+               ${FRAMEWORK_ST:FRAMEWORK} \
+               ${ARCH_ST:ARCH} \
+               ${SHLIB_MARKER} \
+               ${LIBPATH_ST:LIBPATH} \
+               ${LIB_ST:LIB} \
+               ${LDFLAGS} \
+               ${STLIB_MARKER} \
+               ${STLIBPATH_ST:STLIBPATH} \
+               ${STLIB_ST:STLIB} \
+               ${SHLIB_MARKER}'
 
 source_files = (
     "src/main.cpp",
 )
 
 def configure(ctx):
-    pass
+    ctx.setenv(APP, ctx.all_envs[""].derive())
+
+################################################################################
+#                     Set libraries used by ESPRESO
+################################################################################
+
+    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
+    ctx.env.append_unique("LIBPATH", [ "../libs" ])
+    ctx.env.append_unique("STLIBPATH", [ "../libs" ])
+
+    if ctx.env.ESLOCAL == 32:
+        ctx.env.append_unique("LIB", [ "metis32", "mkl_intel_lp64" ])
+    if ctx.env.ESLOCAL == 64:
+        ctx.env.append_unique("LIB", [ "metis64", "mkl_intel_ilp64" ])
+
+    if ctx.options.pardiso:
+        ctx.env.append_value("STLIB", [ "ifcore" ])
+        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "mkl_core", "mkl_intel_thread", "pthread" ])
+    elif ctx.options.mumps:
+        pass
+    elif ctx.options.cuda:
+        ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
+        ctx.env.append_unique("LIB", [ "cudart", "cublas"])
+    else:
+        pass
+
+################################################################################
+################################################################################
+
 
 def build(ctx):
+    ctx.env = ctx.all_envs[APP]
+
     ctx.program(
-        source=source_files,
-        target="espreso",
-        use="espreso_includes mesh_includes solver_includes pmcube_includes bem_includes esmesh essolver espmcube esbem",
-        install_path=ctx.ROOT
+        source          = source_files,
+        target          = "espreso",
+        use             = "solver_includes pmcube_includes mesh_includes bem_includes essolver espmcube esmesh esbem",
+        install_path    = ctx.ROOT
     )

@@ -1,5 +1,6 @@
 
 MESH = "mesh"
+MESH_APP = "meshApp"
 
 source_files = (
     "src/settings.cpp",
@@ -27,30 +28,38 @@ source_files = (
 
 
 def configure(ctx):
-    ctx.setenv(MESH, ctx.all_envs["mpi"].derive());
+    ctx.setenv(MESH, ctx.all_envs[""].derive());
 
-    if ctx.options.debug:
-        ctx.env.append_unique("CXXFLAGS", [ "-DDEBUG" ])
+    ctx.setenv(MESH_APP, ctx.all_envs[""].derive());
+
+    ctx.env.append_unique("LIBPATH", [ "../libs" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
+
+    if ctx.env.ESLOCAL == 32:
+        ctx.env.append_unique("LIB", [ "metis32", "mkl_intel_lp64" ])
+    if ctx.env.ESLOCAL == 64:
+        ctx.env.append_unique("LIB", [ "metis64", "mkl_intel_ilp64" ])
+
+    ctx.env.append_unique("LIB", [ "mkl_core", "mkl_intel_thread", "pthread" ])
+
 
 def build(ctx):
-    ctx.env = ctx.all_envs[MESH]
 
     if ctx.options.mesh:
-        #ctx.env = ctx.all_envs["base"]
-        #ctx.env.append_unique("CXXFLAGS", [ "-DDEBUG" ])
-        #ctx.env.append_unique("CXXFLAGS", [ "-I/usr/include/mpi" ])
+        ctx.env = ctx.all_envs[MESH_APP]
         ctx.program(
-            source=source_files + ("src/main.cpp",),
-            target="esmesh",
-            use="espreso_includes bem_includes esbem",
-            install_path=ctx.ROOT
+            source          = source_files + ("src/main.cpp",),
+            target          = "esmesh",
+            use             = "espreso_includes bem_includes esbem",
+            install_path    = ctx.ROOT
         )
     else:
+        ctx.env = ctx.all_envs[MESH]
         ctx.shlib(
-            source=source_files,
-            target="esmesh",
-            use="espreso_includes bem_includes esbem",
-            install_path=ctx.ROOT + "/libs"
+            source          = source_files,
+            target          = "esmesh",
+            use             = "espreso_includes bem_includes",
+            install_path    = ctx.ROOT + "/libs"
         )
 
     ctx(

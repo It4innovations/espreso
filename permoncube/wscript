@@ -1,5 +1,5 @@
 
-PERMONCUBE = "mpi"
+PERMONCUBE = "permoncube"
 
 source_files = (
     "src/elements/3D/tetrahedron4.cpp",
@@ -13,24 +13,24 @@ source_files = (
 )
 
 def configure(ctx):
-    pass
+    ctx.setenv(PERMONCUBE, ctx.all_envs[""].derive());
 
 def build(ctx):
     ctx.env = ctx.all_envs[PERMONCUBE]
 
     if ctx.options.permoncube:
         ctx.program(
-            source=source_files + ("src/main.cpp",),
-            target="espmcube",
-            use="espreso_includes mesh_includes esmesh esbem",
-            install_path=ctx.ROOT
+            source          = source_files + ("src/main.cpp",),
+            target          = "espmcube",
+            use             = "mesh_includes esmesh esbem",
+            install_path    = ctx.ROOT
         )
     else:
         ctx.shlib(
-            source=source_files,
-            target="espmcube",
-            use="espreso_includes mesh_includes esmesh",
-            install_path=ctx.ROOT + "/libs"
+            source          = source_files,
+            target          = "espmcube",
+            use             = "espreso_includes mesh_includes bem_includes",
+            install_path    = ctx.ROOT + "/libs"
         )
 
 
