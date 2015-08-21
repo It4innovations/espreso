@@ -8,9 +8,7 @@ source_files = (
    "src/Domain.cpp",
    "src/FEM_Assembler.cpp",
    "src/IterSolver.cpp",
-#   "src/SparseDSS.cpp",
    "src/SparseMatrix.cpp",
-   "src/SparseSolver.cpp",
    "src/TimeEval.cpp",
    "src/utils.cpp"
 )
@@ -20,11 +18,29 @@ def configure(ctx):
 
     ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
 
-    if ctx.options.cuda:
+    if ctx.options.pardiso:
+        ctx.env.SOLVER = "pardiso"
+    elif ctx.options.mumps:
+        ctx.env.SOLVER = "mumps"
+    elif ctx.options.cuda:
+        ctx.env.SOLVER = "cuda"
         ctx.env.append_unique("CXXFLAGS", ["-DCUDA"])
+    else:
+        ctx.env.SOLVER = "pardiso"
 
 def build(ctx):
     ctx.env = ctx.all_envs[SOLVER]
+    global source_files
+
+    if ctx.env.SOLVER == "pardiso":
+        source_files = source_files + ("src/SparseSolver.cpp",)
+    elif ctx.env.SOLVER == "mumps":
+        source_files = source_files + ("src/SparseSolverMumps.cpp",)
+    elif ctx.env.SOLVER == "cuda":
+        source_files = source_files + ("src/SparseSolver.cpp",)
+        ctx.env.append_unique("CXXFLAGS", ["-DCUDA"])
+    else:
+        source_files = source_files + ("src/SparseSolver.cpp",)
 
     ctx.shlib(
         source          = source_files,

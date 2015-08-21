@@ -101,7 +101,7 @@ def options(opt):
 
     opt.add_option("--pardiso",
         action="store_true",
-        default=True,
+        default=False,
         help="Solver use pardiso library.")
 
     opt.add_option("--mumps",
