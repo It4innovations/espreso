@@ -48,7 +48,6 @@ def configure(ctx):
 
     set_indices_width(ctx)
 
-    ctx.recurse("metis")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
@@ -123,7 +122,6 @@ def build(ctx):
     )
     ctx.ROOT = ctx.path.abspath()
 
-    ctx.recurse("metis")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     if ctx.options.mesh:
