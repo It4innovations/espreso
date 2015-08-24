@@ -185,7 +185,6 @@ void SparseSolver::SetThreaded() {
 	}
 
     iparm[2]  = num_procs;
-
 }
 
 void SparseSolver::Factorization() {

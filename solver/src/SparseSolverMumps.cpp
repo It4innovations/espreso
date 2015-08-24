@@ -1,6 +1,9 @@
 #include "SparseSolver.h"
 
+#include "mkl_pardiso.h"
+
 #include <dmumps_c.h>
+
 
 #define JOB_INIT -1
 #define JOB_END -2
@@ -10,6 +13,26 @@
 
 DMUMPS_STRUC_C id;
 int myid, ierr;
+
+void SparseSolver::SetThreaded() {
+
+	/* Numbers of processors, value of OMP_NUM_THREADS */
+	int num_procs;
+	char * var = getenv("SOLVER_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var, "%d", &num_procs );
+	else {
+    	printf("Set environment SOLVER_NUM_THREADS to 1");
+        exit(1);
+	}
+
+    iparm[2]  = num_procs;
+}
+
+void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded ) {
+	std::cerr << "MUMPS does not implement Schur complement.\n";
+	exit(EXIT_FAILURE);
+}
 
 SparseSolver::SparseSolver(){
 
@@ -538,7 +561,7 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 
 }
 
-void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out ) {
+void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded) {
 	
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */

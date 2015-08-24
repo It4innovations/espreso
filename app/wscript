@@ -46,14 +46,18 @@ def configure(ctx):
 
     if ctx.options.pardiso:
         ctx.env.append_value("STLIB", [ "ifcore" ])
-        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "mkl_core", "mkl_intel_thread", "pthread" ])
+        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
     elif ctx.options.mumps:
+        ctx.env.append_unique("LIB", [ "gfortran" ])
+        ctx.env.append_unique("STLIB", [ "dmumps", "mumps_common", "mpiseq", "pord", "esmumps", "scotch", "scotcherr" ])
         pass
     elif ctx.options.cuda:
         ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
         ctx.env.append_unique("LIB", [ "cudart", "cublas"])
     else:
         pass
+
+    ctx.env.append_unique("LIB", [ "mkl_core", "mkl_intel_thread", "pthread" ])
 
 ################################################################################
 ################################################################################
