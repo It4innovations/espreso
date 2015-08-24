@@ -1,0 +1,24 @@
+If there is a problem with builded external libraries, rebuild the following libraries and copy them to "espreso/libs" directory:
+
+METIS:
+	libmetis32.so -> METIS with 32b integers
+	libmetis64.so -> METIS with 64b integers
+
+SCOTCH:
+	libesmumps.a
+	libscotch.a
+	libscotcherr.a
+
+MUMPS:
+	-> libraries builded by gfortran
+	libdmumps_gfort.a
+	libpmiseq_gfort.a
+	libmumps_common_gfort.a
+	libpord_gfort.a
+
+	-> libraries builder by ifort
+	libdmumps_ifort.a
+	libpmiseq_ifort.a
+	libmumps_common_ifort.a
+	libpord_ifort.a
+
