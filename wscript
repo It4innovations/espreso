@@ -108,6 +108,11 @@ def options(opt):
         action="store_true",
         default=False,
         help="Solver use mumps library.")
+
+    opt.add_option("--gfortran",
+        action="store_true",
+        default=False,
+        help="MUMPS use libraries builder by gfortran.")
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
 
 
