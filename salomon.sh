@@ -46,6 +46,10 @@ if [ "$1" = "mesh" ]; then
   ./esmesh
 fi
 
+if [ "$1" = "configure_mumps" ]; then
+  ./waf configure --salomon --mumps
+fi
+
 if [ "$1" = "configure" ]; then
   ./waf configure --salomon
 fi
