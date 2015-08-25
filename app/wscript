@@ -53,8 +53,8 @@ def configure(ctx):
             ctx.env.append_unique("LIB", [ "gfortran", "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64" ])
             ctx.env.append_unique("STLIB", [ "dmumps_gfort", "mumps_common_gfort", "pord_gfort" ])
         else:
-            ctx.env.append_unique("LIB", "ifcore")
-            ctx.env.append_unique("STLIB", [ "dmumps_ifort", "mumps_common_ifort", "mpiseq_ifort", "pord_ifort" ])
+            ctx.env.append_unique("LIB", [ "ifcore", "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64" ])
+            ctx.env.append_unique("STLIB", [ "dmumps_ifort", "mumps_common_ifort", "pord_ifort" ])
         ctx.env.append_unique("STLIB", [ "esmumps", "scotch", "scotcherr" ])
     elif ctx.options.cuda:
         ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
