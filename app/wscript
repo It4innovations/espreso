@@ -42,6 +42,7 @@ def configure(ctx):
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("LIB", [ "metis32", "mkl_intel_lp64" ])
     if ctx.env.ESLOCAL == 64:
+        # TODO: 64b variant of solver is not working!
         ctx.env.append_unique("LIB", [ "metis64", "mkl_intel_ilp64" ])
 
     if ctx.options.pardiso:
@@ -49,8 +50,8 @@ def configure(ctx):
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
     elif ctx.options.mumps:
         if ctx.options.gfortran:
-            ctx.env.append_unique("LIB", [ "gfortran" ])
-            ctx.env.append_unique("STLIB", [ "dmumps_gfort", "mumps_common_gfort", "mpiseq_gfort", "pord_gfort" ])
+            ctx.env.append_unique("LIB", [ "gfortran", "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64" ])
+            ctx.env.append_unique("STLIB", [ "dmumps_gfort", "mumps_common_gfort", "pord_gfort" ])
         else:
             ctx.env.append_unique("LIB", "ifcore")
             ctx.env.append_unique("STLIB", [ "dmumps_ifort", "mumps_common_ifort", "mpiseq_ifort", "pord_ifort" ])
