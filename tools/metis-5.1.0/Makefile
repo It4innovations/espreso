@@ -4,11 +4,12 @@ assert     = not-set
 assert2    = not-set
 debug      = not-set
 gprof      = not-set
-openmp     = not-set
+openmp     = 1
 prefix     = not-set
 gklib_path = not-set
 shared     = not-set
-cc         = not-set
+cc         = icc
+idx_width  = 32
 
 
 # Basically proxies everything to the builddir cmake.
@@ -19,7 +20,7 @@ systype = $(shell uname -s)
 BUILDDIR = build/$(systype)-$(cputype)
 
 # Process configuration options.
-CONFIG_FLAGS = -DCMAKE_VERBOSE_MAKEFILE=1
+CONFIG_FLAGS = -DCMAKE_VERBOSE_MAKEFILE=0
 ifeq ($(gklib_path), not-set)
     gklib_path = GKlib
 endif
@@ -50,6 +51,11 @@ ifneq ($(shared), not-set)
 endif
 ifneq ($(cc), not-set)
     CONFIG_FLAGS += -DCMAKE_C_COMPILER=$(cc)
+endif
+ifneq ($(idx_width), 64)
+    CONFIG_FLAGS += -DIDXTYPEWIDTH=32
+else
+    CONFIG_FLAGS += -DIDXTYPEWIDTH=64
 endif
 
 VERNUM=5.1.0

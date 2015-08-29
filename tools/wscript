@@ -1,0 +1,46 @@
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+
+    ################################# METIS ####################################
+    params = "prefix=" + ctx.ROOT
+    # there is problem with -C option
+    path = ctx.ROOT + "/tools/metis-5.1.0/"
+    ctx(
+        rule    = "cd " + path + " ; make config idx_width=32 " + params,
+        always  = True,
+        name    = "METIS_configure_32b"
+    )
+    ctx(
+        rule    = "cd " + path + " ;  make",
+        always  = True,
+        after   = "METIS_configure_32b",
+        name    = "METIS_build_32b"
+    )
+    ctx(
+        rule    = "cd " + path + " ; make install",
+        always  = True,
+        after   = "METIS_build_32b",
+        name    = "METIS_install_32b"
+    )
+
+    ctx(
+        rule    = "cd " + path + " ; make config idx_width=64 " + params,
+        always  = True,
+        after   = "METIS_install_32b",
+        name    = "METIS_configure_64b"
+    )
+    ctx(
+        rule    = "cd " + path + " ;  make",
+        always  = True,
+        after   = "METIS_configure_64b",
+        name    = "METIS_build_64b"
+    )
+    ctx(
+        rule    = "cd " + path + " ; make install",
+        always  = True,
+        after   = "METIS_build_64b",
+        name    = "METIS_install_64b"
+    )

@@ -17,6 +17,8 @@ else()
   set(METIS_LIBRARY_TYPE STATIC)
 endif(SHARED)
 
+set(CMAKE_C_FLAGS -DIDXTYPEWIDTH=${IDXTYPEWIDTH})
+
 include(${GKLIB_PATH}/GKlibSystem.cmake)
 # Add include directories.
 include_directories(${GKLIB_PATH})
