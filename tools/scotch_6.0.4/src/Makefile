@@ -55,10 +55,9 @@ Makefile.inc			:
 
 include Makefile.inc
 
-prefix		?= /usr/local
 bindir		?= $(prefix)/bin
 includedir	?= $(prefix)/include
-libdir		?= $(prefix)/lib
+libdir		?= $(prefix)/libs
 datarootdir	?= $(prefix)/share
 mandir		?= $(datarootdir)/man
 
@@ -92,7 +91,6 @@ $(mandir)/man1			:	$(mandir)
 scotch				:	required
 					(cd libscotch ;      $(MAKE) VERSION=$(VERSION) RELEASE=$(RELEASE) PATCHLEVEL=$(PATCHLEVEL) scotch && $(MAKE) install)
 					(cd scotch ;         $(MAKE) VERSION=$(VERSION) RELEASE=$(RELEASE) PATCHLEVEL=$(PATCHLEVEL) scotch && $(MAKE) install)
-					(cd libscotchmetis ; $(MAKE)                                                                scotch && $(MAKE) install)
 
 ptscotch			:	required
 					(cd libscotch ;      $(MAKE) VERSION=$(VERSION) RELEASE=$(RELEASE) PATCHLEVEL=$(PATCHLEVEL) ptscotch && $(MAKE) ptinstall)
@@ -111,12 +109,8 @@ esmumps				:	scotch
 ptesmumps			:	ptscotch
 					(cd esmumps ; $(MAKE) ptscotch && $(MAKE) ptinstall)
 
-install				:	required	$(bindir)	$(includedir)	$(libdir)	$(mandir)/man1
-					-$(CP) -f ../bin/[agm]*$(EXE) $(bindir)
-					-$(CP) -f ../bin/d[agm]*$(EXE) $(bindir)
-					-$(CP) -f ../include/*scotch*.h $(includedir)
-					-$(CP) -f ../lib/*scotch*$(LIB) $(libdir)
-					-$(CP) -Rf ../man/* $(mandir)
+install				:	required
+					-$(CP) -f ../lib/*$(LIB) $(libdir)
 
 clean				:	required
 					(cd libscotch ;      $(MAKE) clean)

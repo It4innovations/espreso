@@ -2,6 +2,7 @@
 #  This file is part of MUMPS 5.0.1, released
 #  on Thu Jul 23 17:08:29 UTC 2015
 #
+installdir = $(prefix)/libs
 topdir = .
 libdir = $(topdir)/lib
 
@@ -38,6 +39,9 @@ include Makefile.inc
 
 mumps_lib: requiredobj
 	(cd src ; $(MAKE) $(ARITH))
+
+install:
+	cp -f lib/* $(installdir)
 
 cexamples:	c
 	(cd examples ; $(MAKE) c)

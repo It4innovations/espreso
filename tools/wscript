@@ -4,43 +4,41 @@ def configure(ctx):
 
 def build(ctx):
 
-    ################################# METIS ####################################
-    params = "prefix=" + ctx.ROOT
-    # there is problem with -C option
-    path = ctx.ROOT + "/tools/metis-5.1.0/"
+    # there is problem with -C option. Hence, 'cd + path' is used
+
+    prefix      = "prefix=" + ctx.ROOT
+    metis_path  = ctx.ROOT + "/tools/metis-5.1.0/"
+    scotch_path = ctx.ROOT + "/tools/scotch_6.0.4/src"
+    mumps_path  = ctx.ROOT + "/tools/MUMPS_5.0.1"
+
+    metis_params = prefix
+    scotch_params = ""
+    mumps_params = "cc='mpicc.mpich -cc=icc' fc='mpif90.mpich'"
+
     ctx(
-        rule    = "cd " + path + " ; make config idx_width=32 " + params,
+        rule    = "cd " + scotch_path + " ; make scotch esmumps " + scotch_params + " ; make install " + prefix,
         always  = True,
-        name    = "METIS_configure_32b"
-    )
-    ctx(
-        rule    = "cd " + path + " ;  make",
-        always  = True,
-        after   = "METIS_configure_32b",
-        name    = "METIS_build_32b"
-    )
-    ctx(
-        rule    = "cd " + path + " ; make install",
-        always  = True,
-        after   = "METIS_build_32b",
-        name    = "METIS_install_32b"
+        name    = "build scotch library"
     )
 
     ctx(
-        rule    = "cd " + path + " ; make config idx_width=64 " + params,
+        rule    = "cd " + mumps_path + " ; make d " + mumps_params + " ; make install " + prefix,
         always  = True,
-        after   = "METIS_install_32b",
-        name    = "METIS_configure_64b"
+        name    = "build MUMPS library"
     )
+
     ctx(
-        rule    = "cd " + path + " ;  make",
+        rule    = "cd " + metis_path + " ; make config idx_width=32 " + metis_params + " ; make install",
         always  = True,
-        after   = "METIS_configure_64b",
-        name    = "METIS_build_64b"
+        name    = "build METIS library with 32b integers"
     )
+
+    ctx.add_group()
+
     ctx(
-        rule    = "cd " + path + " ; make install",
+        rule    = "cd " + metis_path + " ; make config idx_width=64 " + metis_params + " ; make install",
         always  = True,
-        after   = "METIS_build_64b",
-        name    = "METIS_install_64b"
+        name    = "build METIS library with 64b integers"
     )
+
+
