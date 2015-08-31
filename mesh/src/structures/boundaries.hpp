@@ -6,13 +6,13 @@ namespace mesh {
 
 
 template<typename T>
-void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_local,
-								std::vector < SparseIJVMatrix<T> >         & B0_local,
-								std::vector < std::vector <T> >    		& l2g_vec,
-								std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
-								std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
-								std::vector < std::vector <eslocal> >   & lambda_map_sub_B0,
-								std::vector < std::vector <double> >    & B1_l_duplicity,
+void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local,
+								std::vector < SparseIJVMatrix   <T> >   & B0_local,
+								std::vector < std::vector <eslocal> > 	& l2g_vec,				// TODO: This is l2g just inside cluster ?
+								std::vector < std::vector       <T> >   & lambda_map_sub_clst,
+								std::vector < std::vector       <T> >   & lambda_map_sub_B1,
+								std::vector < std::vector <eslocal> >   & lambda_map_sub_B0,	//TODO: Inside cluster eslocal is OK
+								std::vector < std::vector < double> >   & B1_l_duplicity,
 								const eslocal domains_num,
 								mesh::Boundaries & global_boundaries)
 {
@@ -28,6 +28,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_lo
 
 	lambda_map_sub_B1.resize(domains_num);
 	lambda_map_sub_B0.resize(domains_num);
+
 	B1_l_duplicity.resize(domains_num);
 	std::vector<eslocal> local_prim_numbering(domains_num, 0);
 	B1_local.resize(domains_num);
@@ -37,7 +38,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_lo
 	std::set<eslocal>::const_iterator it1;
 	std::set<eslocal>::const_iterator it2;
 
-	eslocal lambda_count_B1 = 0;
+	T lambda_count_B1 = 0;
 	eslocal lambda_count_B0 = 0;
 
 	for (T i = 0; i < _boundaries.size(); i++) {
@@ -48,58 +49,34 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_lo
 			if ( dirichlet_x.find(index(i)) != dirichlet_x.end() ) {
 				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
 				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-				std::vector < eslocal > tmp_vec (2);
+				std::vector < T > tmp_vec (2);
 				tmp_vec[0] = lambda_count_B1;
 				tmp_vec[1] = 0;
 				lambda_map_sub_clst.push_back( tmp_vec );
 				is_dirichlet[0] = true;
 				B1_l_duplicity[*it].push_back( 1.0 );
-
-//				if ( _boundaries[i].size() > 1 ) {
-//					B1_l_duplicity[*it].push_back( 1.0 / ((double)_boundaries[i].size() + 1.0) );
-//
-// 				}
-//				else {
-//					B1_l_duplicity[*it].push_back( 1.0 );
-//				}
 				lambda_count_B1++;
 			}
 			if ( dirichlet_y.find(index(i)) != dirichlet_y.end() ) {
 				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
 				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-				std::vector < eslocal > tmp_vec (2);
+				std::vector < T > tmp_vec (2);
 				tmp_vec[0] = lambda_count_B1;
 				tmp_vec[1] = 0;
 				lambda_map_sub_clst.push_back( tmp_vec );
 				is_dirichlet[1] = true;
 				B1_l_duplicity[*it].push_back( 1.0 );
-
-//				if ( _boundaries[i].size() > 1 ) {
-//					B1_l_duplicity[*it].push_back( 1.0 / ((double)_boundaries[i].size() + 1.0) );
-//
-// 				}
-//				else {
-//					B1_l_duplicity[*it].push_back( 1.0 );
-//				}
 				lambda_count_B1++;
 			}
 			if ( dirichlet_z.find(index(i)) != dirichlet_z.end() ) {
 				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
 				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-				std::vector < eslocal > tmp_vec (2);
+				std::vector < T > tmp_vec (2);
 				tmp_vec[0] = lambda_count_B1;
 				tmp_vec[1] = 0;
 				lambda_map_sub_clst.push_back( tmp_vec );
 				is_dirichlet[2] = true;
 				B1_l_duplicity[*it].push_back( 1.0 );
-
-//				if ( _boundaries[i].size() > 1 ) {
-//					B1_l_duplicity[*it].push_back( 1.0 / ((double)_boundaries[i].size() + 1.0) );
-//
-// 				}
-//				else {
-//					B1_l_duplicity[*it].push_back( 1.0 );
-//				}
 				lambda_count_B1++;
 			}
 		}
@@ -117,7 +94,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_lo
 								lambda_map_sub_B1[*it1].push_back(lambda_count_B1);
 								lambda_map_sub_B1[*it2].push_back(lambda_count_B1);
 
-								std::vector < eslocal > tmp_vec (2);
+								std::vector < T > tmp_vec (2);
 								tmp_vec[0] = lambda_count_B1;
 								tmp_vec[1] = 0;
 								lambda_map_sub_clst.push_back( tmp_vec );
@@ -133,7 +110,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix<T> >         & B1_lo
 			}
 
 			// no duplicity
-			//bool is_corner = true;
+			// bool is_corner = true;
 			if ( isCorner(i) ) {
 				for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
 					if (it1 != _boundaries[i].begin()) {

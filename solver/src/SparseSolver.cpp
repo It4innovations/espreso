@@ -657,8 +657,14 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	MKL_INT info;
 
 	SEQ_VECTOR<double>  sol  (m * n, 0); // +1
+
+	bool clear_dense = false;
+	//TODO: na konci se musi smazat !!
+	if (A_in.dense_values.size() == 0) {
+		A_in.ConvertCSRToDense(0);
+		clear_dense = true;
+	}
 	
-	A_in.ConvertCSRToDense(0);
 
 	SEQ_VECTOR<MKL_INT> perm (A_in.dense_values.size() , 0);
 	for (int ii = 0; ii < A_in.dense_values.size(); ii++)
@@ -812,6 +818,12 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 		iparm, &msglvl, &ddum, &ddum, &error, dparm);
 
 
+	// A_in.ConvertCSRToDense(0);
+	//A_in.dense_values.swap(std::vector <double> ());
+
+	if (clear_dense) {
+		SEQ_VECTOR<double>().swap( A_in.dense_values );
+	}
 }
 
 

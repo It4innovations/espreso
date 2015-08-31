@@ -55,9 +55,9 @@ public:
 	template<typename T>
 	void create_B1_l(	std::vector < SparseIJVMatrix<T> >      	& B1_local,
 						std::vector < SparseIJVMatrix<T> >      	& B0_local,
-						std::vector < std::vector <T> >      	& l2g_vec,
-						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
-						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
+						std::vector < std::vector <eslocal> >      	& l2g_vec,
+						std::vector < std::vector <T> >   & lambda_map_sub_clst,
+						std::vector < std::vector <T> >   & lambda_map_sub_B1,
 						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
 						std::vector < std::vector <double> > 	& B1_l_duplicity,
 						const eslocal domains_num,
