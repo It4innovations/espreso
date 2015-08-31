@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#PBS -l select=729:ncpus=24:mpiprocs=1:ompthreads=1
+#PBS -N ESPRESO
+#PBS -j oe
+#PBS -l walltime=00:20:00
+##PBS -o /home/sta03/impi/out
+#PBS -A SERVICE
+#PBS -q qmpp
+
+# 1  1 
+# 2  8
+# 3  27
+# 4  64
+# 5  125
+# 6  216
+# 7  343
+# 8  512
+# 9  729
+# 10 1000
+
+clusters=8
+
+cd $PBS_O_WORKDIR
+
+export INTEL=/apps/all/icc/2015.3.187
+#IMPI=/apps/all/impi/5.0.3.048-iccifort-2015.3.187
+
+. $INTEL/bin/compilervars.sh intel64
+#. $IMPI/bin64/mpivars.sh
+
+
+THEDIR=$PBS_O_WORKDIR
+
+cd $THEDIR
+export OUT=$THEDIR/out
+mkdir -p $OUT
+
+export HOSTF=$THEDIR/hostfile
+export HOSTA=$PBS_NODEFILE
+export HOSTE=$THEDIR/hostfile-exclude
+
+export MPI_DSM_DISTRIBUTE=0
+export MPI_SHEPHERD=1
+export PERFBOOST_VERBOSE=1
+export MPI_VERBOSE=1
+export MPI_BUFS_PER_PROC=512
+
+export MODULEPATH=/usr/share/Modules/modulefiles:$MODULEPATH
+#module load icc
+module load mpt
+module load perfboost
+
+#cat $HOSTA > $HOSTF
+OFFLINE=`pbsnodes -l| cut -f1 -d' '| tr -t '\n' '|' |  sed 's/|/$|/g'| rev | sed 's/|//' | rev`
+grep -vE "${OFFLINE}" $HOSTA > $HOSTF
+if [ -s $HOSTE ]
+then
+  grep -vE `cat $HOSTE` $HOSTF > ${HOSTF}.new
+  mv -f ${HOSTF}.new $HOSTF
+fi
+
+PPN=1
+PROCS=`cat $HOSTF|wc -l`
+HOSTS=$PROCS
+echo HOSTS    $HOSTS
+X=`expr ${PROCS} \* $PPN`
+PROCS=$X 
+echo HOSTFILE $HOSTF
+echo PROCS    $PROCS
+
+awk  -v PPN=$PPN -F. '{ x[n++]=$1 } END { for (i=0;i<n;i++) { printf x[i] " " PPN; if (i < n-1) { printf ",\n" } } printf "\n"; }' $HOSTF > ${HOSTF}.new
+mv -f ${HOSTF}.new $HOSTF
+
+#time mpirun -f $HOSTF hostname #./hello_bar_mpt
+#mpirun -f $HOSTF perfboost -impi ./hello_bar
+#mpirun -f $HOSTF perfboost -impi ./hello_nobar
+#mpirun -f $MPT_HOSTS perfboost -impi ./hello_bar
+
+#cd $PBS_O_WORKDIR
+./salomon.sh runpbs $clusters
+
+
+

@@ -810,7 +810,8 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 		iparm, &msglvl, &ddum, &ddum, &error, dparm);
-
+ 
+	SEQ_VECTOR<double>().swap( A_in.dense_values );
 
 }
 

@@ -219,7 +219,7 @@ void generate_mesh( int MPIrank )
 void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 {
 
-	bool DYNAMIC = true;
+	bool DYNAMIC = false		;
 
 
 	TimeEval timeEvalMain(string("ESPRESO Solver Overal Timing"));
@@ -446,7 +446,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	else
 		cluster.USE_DYNAMIC			= 0;
 
-	cluster.USE_HFETI			= 0;
+	cluster.USE_HFETI			= 1;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
@@ -652,6 +652,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
 
+	K_mat.clear();
+
 	 timeSolKproc.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSolKproc);
 
@@ -848,9 +850,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 timeSaveVTK.AddStart();
 	if (!DYNAMIC) {
-		std::stringstream ss;
-		ss << "mesh_" << MPIrank << ".vtk";
-		input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+		//std::stringstream ss;
+		//ss << "mesh_" << MPIrank << ".vtk";
+		//input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
 	}
 	 timeSaveVTK.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSaveVTK);
