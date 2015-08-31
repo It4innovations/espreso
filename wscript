@@ -62,6 +62,7 @@ def configure(ctx):
     if not ctx.options.mesh:
         ctx.env.append_unique("LIB", ["pardiso500-INTEL120-X86-64"])
         ctx.env.append_value("STLIB", [ "ifcore" ])
+        ctx.env.append_value("STLIB", [ "Adaptor" ])
 
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])

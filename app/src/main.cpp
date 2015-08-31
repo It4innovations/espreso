@@ -4,6 +4,8 @@
 #include "essolver.h"
 #include "espmcube.h"
 
+#include "Adaptor.h"
+
 #include <vector>
 #include <iostream>
 
@@ -48,8 +50,11 @@ FEMParams params;
 
 void setParams(int argc, char** argv)
 {
-	if (argc != 11) {
-		return;
+	//TODO: better work with parameters 
+	//return;
+
+	if (argc != 12) {
+	//	return;
 	}
 
 	params.generateMesh = true;
@@ -488,10 +493,11 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
 
+	double dynamic_timestep;
 	if (DYNAMIC) {
 		double dynamic_beta     = 0.25;
 		double dynamic_gama     = 0.5;
-		double dynamic_timestep = 0.00001;
+		dynamic_timestep = 0.00001;
 
 		cluster.SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
 
@@ -772,8 +778,15 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     	const_a[6] = const_deltat * (1.0 - const_gama);
     	const_a[7] = const_deltat * const_gama;
 
-    	for (int time = 0; time < 1000; time++) {
-    	//for (int time = 0; time < NumberOfTimeIterations; time++) {
+	    std::vector<double> grid_points =  input.mesh->GenerateGridforCatalyst(l2g_vec, 0.9);
+	    std::vector<unsigned int> cell_points =  input.mesh->GenerateCellsforCatalyst(l2g_vec, 0.9);
+	    std::vector<float> decomposition_values = input.mesh->GenerateDecompositionforCatalyst(l2g_vec, 0.9);
+
+	    int numberOfTimeSteps = 1000;
+
+    	Adaptor::Initialize(argc, argv);
+    	for (int tt = 0; tt < numberOfTimeSteps; tt++) {
+
 
     		// *** calculate the right hand side in primal ********************************************
     		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
@@ -808,14 +821,28 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
     		//prim_solution_out.push_back(vec_u_n);
 
+
+    		//########################################################
+    		//Catalyst Code start
+    		//#########################################################
+
+    		unsigned int timeStep = tt;
+    		double time = timeStep * dynamic_timestep;
+    	    Adaptor::CoProcess(grid_points, cell_points, vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
+
+     		//########################################################
+     		//Catalyst Code end
+     		//#########################################################
+
+
 			std::stringstream ss;
-			ss << "mesh_" << MPIrank << "_" << time << ".vtk";
+			ss << "mesh_" << MPIrank << "_" << tt << ".vtk";
 			input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
 
 
     		// *** XXX
     		if (solver.mpi_rank == solver.mpi_root) {
-    			cout<<endl<< "Time iter " << time << "\t";
+    			cout<<endl<< "Time iter " << tt << "\t";
     		}
 
 
@@ -824,6 +851,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     		solver.timing.totalTime.Reset();
 
     	} // *** END - time iter loop *******************************************************
+	    Adaptor::Finalize();
 
     	solver.preproc_timing.PrintStatsMPI();
     	solver.timeEvalAppa  .PrintStatsMPI();
@@ -1062,8 +1090,8 @@ void testBEM(int argc, char** argv)
                             lambda_map_sub_B0,
                             B1_l_duplicity,
                             partsCount,
-							*input.localBoundaries
-                        );
+							*input.globalBoundaries
+							);
 //    for (int d = 0; d < partsCount; d++) {
 //        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
 //            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
