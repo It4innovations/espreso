@@ -10,7 +10,7 @@ from wafutils import *
 #..............................................................................#
 #     VERSION -> When you change the configuration, increment the value
 
-VERSION = 10
+VERSION = 11
 
 #..............................................................................#
 
