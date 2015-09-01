@@ -25,6 +25,11 @@ def configure(ctx):
     ctx.define("version", VERSION)
     ctx.write_config_header("config.h")
 
+    if ctx.options.static:
+        ctx.env.STATIC = True
+    else:
+        ctx.env.STATIC = False
+
 ################################################################################
 ################################################################################
 #                  Set MPI compiler and linker for clusters
@@ -139,6 +144,11 @@ def build(ctx):
         name            = "espreso_includes"
     )
     ctx.ROOT = ctx.path.abspath()
+
+    if ctx.env.STATIC or ctx.options.static:
+        ctx.lib = ctx.stlib
+    else:
+        ctx.lib = ctx.shlib
 
     ctx.recurse("tools")
     ctx.add_group()

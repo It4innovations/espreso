@@ -6,6 +6,11 @@ TOOLS = "tools"
 def configure(ctx):
     ctx.setenv(TOOLS, ctx.all_envs[""].derive())
 
+    if ctx.options.titan:
+        ctx.env.EXTERNAL_LIBRARIES = True
+    else:
+        ctx.env.EXTERNAL_LIBRARIES = False
+
     ctx.env.METIS = dict()
     ctx.env.SCOTCH = dict()
     ctx.env.MUMPS = dict()
@@ -21,9 +26,7 @@ def configure(ctx):
     ctx.env.SCOTCH["libs"] = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
     ctx.env.MUMPS["libs"]  = [ "dmumps", "mumps_common", "pord" ]
 
-    ctx.env.METIS["params"] = ctx.env.PREFIX
-    if not ctx.options.static:
-        ctx.env.METIS["params"] += " shared=1"
+    ctx.env.METIS["params"] = ctx.env.PREFIX + " shared=1"
 
     ctx.env.SCOTCH["params"] = ""
 
@@ -49,6 +52,9 @@ def check_libraries(libs, path, extension=".a"):
 def build(ctx):
     ctx.env = ctx.all_envs[TOOLS]
 
+    if ctx.env.EXTERNAL_LIBRARIES:
+        return
+
     if not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/"):
         ctx(
             rule    = "cd " + ctx.env.SCOTCH["path"] + ";" \
@@ -67,11 +73,7 @@ def build(ctx):
             name    = "build MUMPS library"
         )
 
-    if not ctx.options.static:
-        ext = ".so"
-    else:
-        ext = ".a"
-    if not check_libraries(ctx.env.METIS["libs"], ctx.ROOT + "/libs/", ext):
+    if not check_libraries(ctx.env.METIS["libs"], ctx.ROOT + "/libs/", ".so"):
         ctx(
             rule    = "cd " + ctx.env.METIS["path"] + ";" \
                       "make config idx_width=32 " + ctx.env.METIS["params"] + ";" \

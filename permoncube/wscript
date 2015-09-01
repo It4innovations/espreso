@@ -26,7 +26,7 @@ def build(ctx):
             install_path    = ctx.ROOT
         )
     else:
-        ctx.shlib(
+        ctx.lib(
             source          = source_files,
             target          = "espmcube",
             use             = "espreso_includes mesh_includes bem_includes",

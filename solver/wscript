@@ -43,7 +43,7 @@ def build(ctx):
     else:
         source_files = source_files + ("src/SparseSolver.cpp",)
 
-    ctx.shlib(
+    ctx.lib(
         source          = source_files,
         target          = "essolver",
         install_path    = ctx.ROOT + "/libs",

@@ -10,15 +10,8 @@ SCOTCH:
 	libscotcherr.a
 
 MUMPS:
-	-> libraries builded by gfortran
-	libdmumps_gfort.a
-	libpmiseq_gfort.a
-	libmumps_common_gfort.a
-	libpord_gfort.a
-
-	-> libraries builder by ifort
-	libdmumps_ifort.a
-	libpmiseq_ifort.a
-	libmumps_common_ifort.a
-	libpord_ifort.a
+	libdmumps.a
+	libpmiseq.a
+	libmumps_common.a
+	libpord.a
 
