@@ -23,8 +23,16 @@ def set_default(ctx):
             ctx.find_program("mpic++.mpich", var="MPICXX", mandatory=False)
             if not ctx.env.MPICXX:
                 ctx.find_program("mpic++", var="MPICXX")
+            ctx.find_program("mpicc.mpich", var="MPICC", mandatory=False)
+            if not ctx.env.MPICC:
+                ctx.find_program("mpicc", var="MPICC")
+            ctx.find_program("mpif90.mpich", var="MPIFORT", mandatory=False)
+            if not ctx.env.MPIFORT:
+                ctx.find_program("mpif90", var="MPIFORT")
         else:
             ctx.find_program("mpic++", var="MPICXX")
+            ctx.find_program("mpiicc", var="MPICC")
+            ctx.find_program("mpiifort", var="MPIFORT")
 
     except ctx.errors.ConfigurationError:
         ctx.fatal("mpic++ not found.\nRun './waf --help' for more options.")

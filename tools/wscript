@@ -30,14 +30,11 @@ def configure(ctx):
 
     ctx.env.SCOTCH["params"] = ""
 
+    cc = ctx.env.MPICC[0]
+    fc = ctx.env.MPIFORT[0]
     if ctx.options.mpich:
-        cc = "mpicc.mpich -cc=icc"
-    else:
-        cc = "mpiicc"
-    if ctx.options.gfortran:
-        fc = "mpif90.mpich"
-    else:
-        fc = "mpiifort"
+        cc += " -cc=icc"
+
     ctx.env.MUMPS["params"] = "cc='" + cc + "' fc='" + fc + "'";
     if not ctx.options.mpich:
         ctx.env.MUMPS["params"] += " opt='-nofor_main'"

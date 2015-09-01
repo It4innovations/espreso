@@ -35,11 +35,17 @@ def configure(ctx):
 #                  Set MPI compiler and linker for clusters
 
     if ctx.options.anselm:
-        ctx.env.CXX = ctx.env.LINK_CXX = ["mpic++"]
+        ctx.env.CXX = ctx.env.LINK_CXX = [ "mpic++" ]
+        ctx.env.MPICC = [ "mpiicc" ]
+        ctx.env.MPIFORT = [ "mpiifort" ]
     elif ctx.options.salomon:
         ctx.env.CXX = ctx.env.LINK_CXX = ["mpiicpc"]
+        ctx.env.MPICC = [ "mpiicc" ]
+        ctx.env.MPIFORT = [ "mpiifort" ]
     elif ctx.options.titan:
         ctx.env.CXX = ctx.env.LINK_CXX = ["CC"]
+        ctx.env.MPICC = [ "cc" ]
+        ctx.env.MPIFORT = [ "fc" ]
     else:
         set_default(ctx)
 
