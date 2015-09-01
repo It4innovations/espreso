@@ -42,12 +42,20 @@ def configure(ctx):
 #..............................................................................#
 
     ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O2" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-Wall" ])
+    if ctx.options.titan:
+        ctx.env.append_unique("CXXFLAGS", [ "-fPIE", "-dynamic" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-pie", "-dynamic" ])
+
 
 ################################################################################
 ################################################################################
 
     set_indices_width(ctx)
 
+    ctx.ROOT = ctx.path.abspath()
+
+    ctx.recurse("tools")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
@@ -113,6 +121,11 @@ def options(opt):
         action="store_true",
         default=False,
         help="MUMPS use libraries builder by gfortran.")
+
+    opt.add_option("--static",
+        action="store_true",
+        default=False,
+        help="All libraries created by ESPRESO are static.")
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
 
 
@@ -127,6 +140,8 @@ def build(ctx):
     )
     ctx.ROOT = ctx.path.abspath()
 
+    ctx.recurse("tools")
+    ctx.add_group()
     ctx.recurse("bem")
     ctx.recurse("mesh")
     if ctx.options.mesh:

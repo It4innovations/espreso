@@ -1,44 +1,93 @@
 
-def configure(ctx):
-    pass
+import os
 
-def build(ctx):
+TOOLS = "tools"
+
+def configure(ctx):
+    ctx.setenv(TOOLS, ctx.all_envs[""].derive())
+
+    ctx.env.METIS = dict()
+    ctx.env.SCOTCH = dict()
+    ctx.env.MUMPS = dict()
 
     # there is problem with -C option. Hence, 'cd + path' is used
+    ctx.env.PREFIX = "prefix=" + ctx.ROOT
 
-    prefix      = "prefix=" + ctx.ROOT
-    metis_path  = ctx.ROOT + "/tools/metis-5.1.0/"
-    scotch_path = ctx.ROOT + "/tools/scotch_6.0.4/src"
-    mumps_path  = ctx.ROOT + "/tools/MUMPS_5.0.1"
+    ctx.env.METIS["path"]  = ctx.ROOT + "/tools/metis-5.1.0/"
+    ctx.env.SCOTCH["path"] = ctx.ROOT + "/tools/scotch_6.0.4/src"
+    ctx.env.MUMPS["path"]  = ctx.ROOT + "/tools/MUMPS_5.0.1"
 
-    metis_params = prefix
-    scotch_params = ""
-    mumps_params = "cc='mpicc.mpich -cc=icc' fc='mpif90.mpich'"
+    ctx.env.METIS["libs"]  = [ "metis32", "metis64" ]
+    ctx.env.SCOTCH["libs"] = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
+    ctx.env.MUMPS["libs"]  = [ "dmumps", "mumps_common", "pord" ]
 
-    ctx(
-        rule    = "cd " + scotch_path + " ; make scotch esmumps " + scotch_params + " ; make install " + prefix,
-        always  = True,
-        name    = "build scotch library"
-    )
+    ctx.env.METIS["params"] = ctx.env.PREFIX
+    if not ctx.options.static:
+        ctx.env.METIS["params"] += " shared=1"
 
-    ctx(
-        rule    = "cd " + mumps_path + " ; make d " + mumps_params + " ; make install " + prefix,
-        always  = True,
-        name    = "build MUMPS library"
-    )
+    ctx.env.SCOTCH["params"] = ""
 
-    ctx(
-        rule    = "cd " + metis_path + " ; make config idx_width=32 " + metis_params + " ; make install",
-        always  = True,
-        name    = "build METIS library with 32b integers"
-    )
+    if ctx.options.mpich:
+        cc = "mpicc.mpich -cc=icc"
+    else:
+        cc = "mpiicc"
+    if ctx.options.gfortran:
+        fc = "mpif90.mpich"
+    else:
+        fc = "mpiifort"
+    ctx.env.MUMPS["params"] = "cc='" + cc + "' fc='" + fc + "'";
+    if not ctx.options.mpich:
+        ctx.env.MUMPS["params"] += " opt='-nofor_main'"
 
-    ctx.add_group()
+def check_libraries(libs, path, extension=".a"):
+    for lib in libs:
+        if not os.path.isfile(path + "lib" + lib + extension):
+            return False
 
-    ctx(
-        rule    = "cd " + metis_path + " ; make config idx_width=64 " + metis_params + " ; make install",
-        always  = True,
-        name    = "build METIS library with 64b integers"
-    )
+    return True
+
+def build(ctx):
+    ctx.env = ctx.all_envs[TOOLS]
+
+    if not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/"):
+        ctx(
+            rule    = "cd " + ctx.env.SCOTCH["path"] + ";" \
+                      "make scotch esmumps " + ctx.env.SCOTCH["params"] + ";" \
+                      "make install " + ctx.env.PREFIX,
+            always  = True,
+            name    = "build scotch library"
+        )
+
+    if not check_libraries(ctx.env.MUMPS["libs"], ctx.ROOT + "/libs/"):
+        ctx(
+            rule    = "cd " + ctx.env.MUMPS["path"] + ";" \
+                      "make d " + ctx.env.MUMPS["params"] + ";" \
+                      "make install " + ctx.env.PREFIX,
+            always  = True,
+            name    = "build MUMPS library"
+        )
+
+    if not ctx.options.static:
+        ext = ".so"
+    else:
+        ext = ".a"
+    if not check_libraries(ctx.env.METIS["libs"], ctx.ROOT + "/libs/", ext):
+        ctx(
+            rule    = "cd " + ctx.env.METIS["path"] + ";" \
+                      "make config idx_width=32 " + ctx.env.METIS["params"] + ";" \
+                      "make install",
+            always  = True,
+            name    = "build METIS library with 32b integers"
+        )
+
+        ctx.add_group()
+
+        ctx(
+            rule    = "cd " + ctx.env.METIS["path"] + ";" \
+                      "make config idx_width=64 " + ctx.env.METIS["params"] + ";" \
+                      "make install",
+            always  = True,
+            name    = "build METIS library with 64b integers"
+        )
 
 

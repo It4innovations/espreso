@@ -35,19 +35,32 @@ def configure(ctx):
 #                     Set libraries used by ESPRESO
 ################################################################################
 
-    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-openmp" ])
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
-    ctx.env.append_unique("STLIBPATH", [ "../libs" ])
+    if ctx.options.titan:
+        ctx.env.append_unique("LINKFLAGS", [ "-pie", "-dynamic" ])
+        ctx.env.append_unique("LIBPATH", [ "/opt/intel/composer_xe_2013_sp1.2.144/compiler/lib/intel64/" ])
+    else:
+        ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
     if ctx.env.ESLOCAL == 32:
-        ctx.env.append_unique("LIB", [ "metis32", "mkl_intel_lp64" ])
+        mkl = "mkl_intel_lp64"
+        metis = "metis32"
     if ctx.env.ESLOCAL == 64:
         # TODO: 64b variant of solver is not working!
-        ctx.env.append_unique("LIB", [ "metis64", "mkl_intel_ilp64" ])
+        mkl = "mkl_intel_ilp64"
+        metis = "metis64"
+
+    if ctx.options.titan:
+        metis = "metis"
 
     if ctx.options.pardiso:
-        ctx.env.append_value("STLIB", [ "ifcore" ])
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
+        if ctx.options.titan:
+            ctx.env.append_value("LIB", [ "ifcore" ])
+        else:
+            ctx.env.append_value("STLIB", [ "ifcore" ])
+
     elif ctx.options.mumps:
         if ctx.options.gfortran:
             ctx.env.append_unique("LIB", [ "gfortran", "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64" ])
@@ -56,13 +69,17 @@ def configure(ctx):
             ctx.env.append_unique("LIB", [ "ifcore", "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64" ])
             ctx.env.append_unique("STLIB", [ "dmumps_ifort", "mumps_common_ifort", "pord_ifort" ])
         ctx.env.append_unique("STLIB", [ "esmumps", "scotch", "scotcherr" ])
+
     elif ctx.options.cuda:
         ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
         ctx.env.append_unique("LIB", [ "cudart", "cublas"])
+
     else:
         pass
 
-    ctx.env.append_unique("LIB", [ "mkl_core", "mkl_intel_thread", "pthread" ])
+
+    ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+
 
 ################################################################################
 ################################################################################

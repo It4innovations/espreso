@@ -69,6 +69,7 @@ $(libdir)/libpord$(PLAT)$(LIBEXT):
 	  $(MAKE) CC="$(CC)" CFLAGS="$(OPTC)" AR="$(AR)" RANLIB="$(RANLIB)" OUTC="$(OUTC)" LIBEXT=$(LIBEXT); \
 	fi;
 	if [ "$(LPORDDIR)" != "" ] ; then \
+	  mkdir lib; \
 	  cp $(LPORDDIR)/libpord$(LIBEXT) $@; \
 	fi;
 

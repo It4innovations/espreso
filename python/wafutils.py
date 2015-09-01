@@ -32,9 +32,9 @@ def set_default(ctx):
     if ctx.options.mpich:
         ctx.env.append_unique("CXXFLAGS", [ "-cxx=icpc" ])
         ctx.env.append_unique("LINKFLAGS", [ "-cxx=icpc" ])
+        ctx.options.gfortran = True
 
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPICXX;
-    ctx.options.gfortran = True
 
     ctx.setenv("tmp", ctx.all_envs[""].derive())
 
