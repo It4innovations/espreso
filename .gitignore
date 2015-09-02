@@ -3,6 +3,10 @@
 *.o
 *.so
 *.vtk
+*.png
+*.a
+*.lic
+*.vim
 */bin
 nohup.out
 es*
