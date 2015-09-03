@@ -17,30 +17,39 @@
 
 #include<mpi.h>
 
+#define MAX_NUMBER_OF_NODES 20
 
 namespace
 {
   vtkCPProcessor* Processor = NULL;
   vtkUnstructuredGrid* VTKGrid;
 
-  void BuildVTKGrid(std::vector<double>& grid_points, std::vector<unsigned int>& cell_points)
+  void BuildVTKGrid(mesh::Mesh *mesh, 
+										std::vector<std::vector<eslocal> > &l2g_vec,
+										std::vector<double>& grid_points)//, std::vector<unsigned int>& cell_points)
   {
 
-	 //UNDER CONSTRUCTION
-	 int MPIsize = 1;
-	 int MPIrank = 0;
-	 MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-	 MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	//UNDER CONSTRUCTION
+	int MPIsize = 1;
+	int MPIrank = 0;
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	 MPI_Barrier(MPI_COMM_WORLD);
-	 std::cout << "##############################################here\n";
-	 std::cout << "MPIsize = " << MPIsize << "\n";
-	 std::cout << "MPIrank = " << MPIrank << "\n";
-	 std::cout << "##############################################here\n";
-	 MPI_Barrier(MPI_COMM_WORLD);
-	 //UNDER CONSTRUCTION
+	MPI_Barrier(MPI_COMM_WORLD);
+	std::cout << "##############################################here\n";
+	std::cout << "MPIsize = " << MPIsize << "\n";
+	std::cout << "MPIrank = " << MPIrank << "\n";
+	std::cout << "##############################################here\n";
+	MPI_Barrier(MPI_COMM_WORLD);
 
-    // Create GRID POINTS
+	const std::vector<mesh::Element*> &elements = mesh->getElements();
+  size_t numCells = 0;
+  for(size_t iEl=0; iEl<elements.size(); iEl++) { 
+		numCells+=elements[iEl]->size(); 
+	}
+
+
+// OLD CODE NODES    -- start ----------------------------------------------------------|
     vtkNew<vtkDoubleArray> pointArray;
     pointArray->SetNumberOfComponents(3);
 
@@ -52,24 +61,64 @@ namespace
     vtkNew<vtkPoints> points;
     points->SetData(pointArray.GetPointer());  //Need to convert vector to vtk datatype
     VTKGrid->SetPoints(points.GetPointer());
+// OLD CODE NODES    -- end ------------------------------------------------------------|
 
-    // Create the CELL POINTS
-    size_t numCells = cell_points.size();
+
+/*
+// NEW CODE NODES    -- start ----------------------------------------------------------|
+
+		size_t nSubClst = l2g_vec.size();
+		size_t cnt = 0;
+
+		size_t n_points = 0;
+		for (size_t d = 0; d < l2g_vec.size(); d++) {
+			n_points += l2g_vec[d].size();
+		}
+		size_t *coord = new size_t [n_points*3];
+
+		for (size_t d = 0; d < nSubClst; d++) {
+			mesh::Point center;
+			for (size_t c = 0; c < l2g_vec[d].size(); c++) {
+				center += mesh::coordinates[l2g_vec[d][c]];
+			}
+			center /= l2g_vec[d].size();
+
+			for (size_t i = 0; i < l2g_vec[d].size(); i++) {
+				mesh::Point x = _coordinates[l2g_vec[d][i]];
+				x = center + (x - center) * shrinking;
+				coord[3*i+0] = x.x;
+				coord[3*i+1] = x.y;
+				coord[3*i+2] = x.z;
+				}
+			}
+    vtkNew<vtkDoubleArray> pointArray;
+    pointArray->SetNumberOfComponents(3);
+
+    size_t numpoints = n_points*3;
+
+    pointArray->SetArray(grid_points, numpoints, 1);
+
+    vtkNew<vtkPoints> points;
+    points->SetData(pointArray.GetPointer());  //Need to convert vector to vtk datatype
+    VTKGrid->SetPoints(points.GetPointer());
+
+// NEW CODE NODES    -- end ------------------------------------------------------------|
+*/
+
+
+// NEW CODE ELEMENTS -- start ----------------------------------------------------------|
     VTKGrid->Allocate(static_cast<vtkIdType>(numCells));
+	  vtkIdType tmp[MAX_NUMBER_OF_NODES]; /* max number of nodes predicted to be '20' */
+    for(size_t iEl=0; iEl<elements.size(); iEl++) { 
+			for(size_t jNod=0; jNod<elements[iEl]->size(); jNod++){
+				tmp[jNod] = elements[iEl]->node(jNod);
+			}
+			VTKGrid->InsertNextCell(elements[iEl]->vtkCode(), elements[iEl]->size(), &tmp[0]);
+		}
+// NEW CODE ELEMENTS -- end ------------------------------------------------------------|
 
-//    for(size_t cell=0; cell<numCells; cell+=8)
-//      {
-//      vtkIdType tmp[8] = {cell_points[cell], cell_points[cell + 1], cell_points[cell + 2], cell_points[cell + 3],
-//                          cell_points[cell + 4], cell_points[cell + 5], cell_points[cell + 6], cell_points[cell + 7]};
-//      VTKGrid->InsertNextCell(VTK_HEXAHEDRON, 8, tmp);
-//      }
 
-    for(size_t cell=0; cell<numCells; cell+=4)
-      {
-      vtkIdType tmp[4] = {cell_points[cell], cell_points[cell + 1], cell_points[cell + 2], cell_points[cell + 3] }; //,
-                          //cell_points[cell + 4], cell_points[cell + 5], cell_points[cell + 6], cell_points[cell + 7]};
-      VTKGrid->InsertNextCell(10, 4, tmp);
-      }
+
 
 
   }
@@ -158,7 +207,11 @@ namespace
 
 
 
-  void BuildVTKDataStructures(std::vector<double>& grid_points, std::vector<unsigned int>& cell_points, std::vector<std::vector<double> >& prim_solution, std::vector<float>& decomposition_values)
+  void BuildVTKDataStructures(mesh::Mesh *mesh, 
+															std::vector<std::vector<eslocal> > &l2g_vec,
+															std::vector<double>& grid_points, 
+															//std::vector<unsigned int>& cell_points,
+															 std::vector<std::vector<double> >& prim_solution, std::vector<float>& decomposition_values)
   {
     if(VTKGrid == NULL)
       {
@@ -166,7 +219,7 @@ namespace
       // the first time it's needed. If we needed the memory
       // we could delete it and rebuild as necessary.
       VTKGrid = vtkUnstructuredGrid::New();
-      BuildVTKGrid(grid_points, cell_points);
+      BuildVTKGrid(mesh, l2g_vec,grid_points);//, cell_points);
       }
     UpdateVTKAttributes(prim_solution, decomposition_values);
   }
@@ -209,8 +262,13 @@ namespace Adaptor
       }
   }
 
-  void CoProcess(std::vector<double>& grid_points, std::vector<unsigned int>& cell_points, std::vector<std::vector<double> >& prim_solution, std::vector<float>& decomposition_values, double time,
-                 unsigned int timeStep, bool lastTimeStep)
+  void CoProcess(	mesh::Mesh *mesh, 
+									std::vector<std::vector<eslocal> > &l2g_vec,
+									std::vector<double>& grid_points, 
+//									std::vector<unsigned int>& cell_points, 	
+									std::vector<std::vector<double> >& prim_solution, 
+									std::vector<float>& decomposition_values, double time,
+                 	unsigned int timeStep, bool lastTimeStep)
   {
     vtkNew<vtkCPDataDescription> dataDescription;
     dataDescription->AddInput("input");
@@ -223,7 +281,9 @@ namespace Adaptor
       }
     if(Processor->RequestDataDescription(dataDescription.GetPointer()) != 0)
       {
-      BuildVTKDataStructures(grid_points, cell_points, prim_solution, decomposition_values);
+      BuildVTKDataStructures(mesh,l2g_vec, grid_points, 
+													//	cell_points, 
+														prim_solution, decomposition_values);
       dataDescription->GetInputDescriptionByName("input")->SetGrid(VTKGrid);
       Processor->CoProcess(dataDescription.GetPointer());
       }
