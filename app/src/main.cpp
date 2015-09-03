@@ -497,7 +497,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	if (DYNAMIC) {
 		double dynamic_beta     = 0.25;
 		double dynamic_gama     = 0.5;
-		dynamic_timestep = 0.00001;
+		dynamic_timestep 	= 0.000001;
 
 		cluster.SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
 
@@ -779,10 +779,10 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     	const_a[7] = const_deltat * const_gama;
 
 	    std::vector<double> grid_points =  input.mesh->GenerateGridforCatalyst(l2g_vec, 0.9);
-	    std::vector<unsigned int> cell_points =  input.mesh->GenerateCellsforCatalyst(l2g_vec, 0.9);
-	    std::vector<float> decomposition_values = input.mesh->GenerateDecompositionforCatalyst(l2g_vec, 0.9);
+//	    std::vector<unsigned int> cell_points =  input.mesh->GenerateCellsforCatalyst(l2g_vec, 0.9);
+	    std::vector<float> decomposition_values = input.mesh->GenerateDecompositionforCatalyst(l2g_vec);//, 0.9);
 
-	    int numberOfTimeSteps = 1000;
+	    int numberOfTimeSteps = 24;//1000;
 
     	Adaptor::Initialize(argc, argv);
     	for (int tt = 0; tt < numberOfTimeSteps; tt++) {
@@ -828,7 +828,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
     		unsigned int timeStep = tt;
     		double time = timeStep * dynamic_timestep;
-    	    Adaptor::CoProcess(grid_points, cell_points, vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
+    	    //Adaptor::CoProcess(input.mesh,l2g_vec, grid_points, cell_points, vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
+    	    Adaptor::CoProcess(input.mesh,l2g_vec, grid_points,  vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
+    	    //Adaptor::CoProcess(grid_points, cell_points, vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
 
      		//########################################################
      		//Catalyst Code end
