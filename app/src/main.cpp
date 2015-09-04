@@ -55,7 +55,7 @@ FEMParams params;
 void setParams(int argc, char** argv)
 {
 	//TODO: better work with parameters 
-	//return;
+//	return;
 
 	if (argc != 12) {
 	//	return;
@@ -782,16 +782,12 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     	const_a[6] = const_deltat * (1.0 - const_gama);
     	const_a[7] = const_deltat * const_gama;
 
-	    std::vector<double> grid_points =  input.mesh->GenerateGridforCatalyst(l2g_vec, SCALE_CLUSTER);
-//	    std::vector<unsigned int> cell_points =  input.mesh->GenerateCellsforCatalyst(l2g_vec, 0.9);
-	    std::vector<float> decomposition_values = input.mesh->GenerateDecompositionforCatalyst(l2g_vec);//, 0.9);
 
 	    int numberOfTimeSteps = 24;//1000;
 
     	Adaptor::Initialize(argc, argv);
+
     	for (int tt = 0; tt < numberOfTimeSteps; tt++) {
-
-
     		// *** calculate the right hand side in primal ********************************************
     		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
     			for(int i = 0; i < vec_u[d].size(); i++) {
@@ -825,32 +821,26 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
     		//prim_solution_out.push_back(vec_u_n);
 
-
     		//########################################################
     		//Catalyst Code start
     		//#########################################################
 
     		unsigned int timeStep = tt;
     		double time = timeStep * dynamic_timestep;
-    	    //Adaptor::CoProcess(input.mesh,l2g_vec, grid_points, cell_points, vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
-    	    Adaptor::CoProcess(input.mesh,l2g_vec, grid_points,  vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
-    	    //Adaptor::CoProcess(grid_points, cell_points, vec_u_n, decomposition_values, time, timeStep, timeStep == numberOfTimeSteps-1);
+	    	Adaptor::CoProcess(input.mesh,l2g_vec, vec_u_n,  time, timeStep, timeStep == numberOfTimeSteps-1);
 
      		//########################################################
      		//Catalyst Code end
      		//#########################################################
 
-
-			std::stringstream ss;
-			ss << "mesh_" << MPIrank << "_" << tt << ".vtk";
-			input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, SCALE_CLUSTER, SCALE_DOMAIN);
-
+				std::stringstream ss;
+				ss << "mesh_" << MPIrank << "_" << tt << ".vtk";
+				input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, SCALE_CLUSTER, SCALE_DOMAIN);
 
     		// *** XXX
     		if (solver.mpi_rank == solver.mpi_root) {
     			cout<<endl<< "Time iter " << tt << "\t";
     		}
-
 
     		// *** XXX
     		solver.timing.totalTime.PrintStatMPI(0.0);
