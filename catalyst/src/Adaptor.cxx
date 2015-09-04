@@ -64,7 +64,6 @@ namespace
 // OLD CODE NODES    -- end ------------------------------------------------------------|
 
 
-/*
 // NEW CODE NODES    -- start ----------------------------------------------------------|
 
 		size_t nSubClst = l2g_vec.size();
@@ -74,12 +73,20 @@ namespace
 		for (size_t d = 0; d < l2g_vec.size(); d++) {
 			n_points += l2g_vec[d].size();
 		}
+
+printf("n_points = %d \n", n_points);     // n_points is number of nodes 
+printf("numpoints = %d \n", numpoints);   // numpoints is number of coordinates ( nodes * 3 )
+
+// TODO Why it does not work ??? // 
+mesh::Coordinates &coords  = mesh->coordinates();
+printf(" one element of coord: %3.3e \n",coords[0].x);
+/*
 		size_t *coord = new size_t [n_points*3];
 
 		for (size_t d = 0; d < nSubClst; d++) {
 			mesh::Point center;
 			for (size_t c = 0; c < l2g_vec[d].size(); c++) {
-				center += mesh::coordinates[l2g_vec[d][c]];
+				center += _coordinates[l2g_vec[d][c]];
 			}
 			center /= l2g_vec[d].size();
 
