@@ -9,6 +9,10 @@
 #include <vector>
 #include <iostream>
 
+#define SCALE_CLUSTER 1.0
+#define SCALE_DOMAIN  1.0
+
+
 enum {
 	HEXA8,		// 0 OK
 	HEXA20,		// 1 OK
@@ -778,7 +782,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     	const_a[6] = const_deltat * (1.0 - const_gama);
     	const_a[7] = const_deltat * const_gama;
 
-	    std::vector<double> grid_points =  input.mesh->GenerateGridforCatalyst(l2g_vec, 0.9);
+	    std::vector<double> grid_points =  input.mesh->GenerateGridforCatalyst(l2g_vec, SCALE_CLUSTER);
 //	    std::vector<unsigned int> cell_points =  input.mesh->GenerateCellsforCatalyst(l2g_vec, 0.9);
 	    std::vector<float> decomposition_values = input.mesh->GenerateDecompositionforCatalyst(l2g_vec);//, 0.9);
 
@@ -839,7 +843,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 			std::stringstream ss;
 			ss << "mesh_" << MPIrank << "_" << tt << ".vtk";
-			input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+			input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, SCALE_CLUSTER, SCALE_DOMAIN);
 
 
     		// *** XXX
@@ -897,7 +901,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	if (!DYNAMIC) {
 		std::stringstream ss;
 		ss << "mesh_" << MPIrank << ".vtk";
-		input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+		input.mesh->saveVTK(ss.str().c_str(), prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, SCALE_CLUSTER, SCALE_DOMAIN);
 	}
 	 timeSaveVTK.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSaveVTK);
@@ -1333,7 +1337,7 @@ void testBEM(int argc, char** argv)
                                 
     //input.mesh->saveVTK(prim_solution, l2g_vec);
                                 
-    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, SCALE_CLUSTER, SCALE_DOMAIN);
     
                 //if (clust_g.domainG->flag_store_VTK)
                 //{
@@ -1740,7 +1744,7 @@ void testFEM(int argc, char** argv)
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
 
-	input.mesh->saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 1.0, 0.95);
+	input.mesh->saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, SCALE_CLUSTER, SCALE_DOMAIN);
 
 	//if (clust_g.domainG->flag_store_VTK)
 	//{
