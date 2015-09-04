@@ -84,16 +84,16 @@ public:
 	//##############################################
 		//Start Catalyst header files
 	//#############################################
-		std::vector<double> GenerateGridforCatalyst (
-				std::vector<std::vector<eslocal> > &l2g_vec,
-				double shrinking);
+//		std::vector<double> GenerateGridforCatalyst (
+//				std::vector<std::vector<eslocal> > &l2g_vec,
+//				double shrinking);
 
 //		std::vector<unsigned int> GenerateCellsforCatalyst (
 //				std::vector<std::vector<eslocal> > &l2g_vec,
 //				double shrinking);
 
-		std::vector<float> GenerateDecompositionforCatalyst (
-				std::vector<std::vector<eslocal> > &l2g_vec);
+//		std::vector<float> GenerateDecompositionforCatalyst (
+//				std::vector<std::vector<eslocal> > &l2g_vec);
 //				double shrinking);
 	//#############################################
 		//End Catalyst header files

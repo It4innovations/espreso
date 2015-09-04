@@ -579,60 +579,60 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 //###################################################################
 //		Start Catalyst code
 //###################################################################
-std::vector<double> Mesh::GenerateGridforCatalyst (
-		std::vector<std::vector<eslocal> > &l2g_vec,
-		double shrinking) {
-
-		std::vector<double> coord; //This needs to be made Dynamic!!
-		size_t nSubClst = l2g_vec.size();
-		size_t cnt = 0;
-
-		size_t n_points = 0;
-		for (size_t d = 0; d < l2g_vec.size(); d++) {
-			n_points += l2g_vec[d].size();
-		}
-
-		for (size_t d = 0; d < nSubClst; d++) {
-			Point center;
-			for (size_t c = 0; c < l2g_vec[d].size(); c++) {
-				center += _coordinates[l2g_vec[d][c]];
-			}
-			center /= l2g_vec[d].size();
-
-			for (size_t i = 0; i < l2g_vec[d].size(); i++) {
-				Point x = _coordinates[l2g_vec[d][i]];
-				x = center + (x - center) * shrinking;
-				coord.push_back(x.x);
-				coord.push_back(x.y);
-				coord.push_back(x.z);
-				//std::cout << coord[i] << " " << coord[i+1] << " " << coord[i+2] << "\n";
-				//std::copy(coord, coord+3, std::back_inserter(this->Points));
-				// TODO: Catalyst
-				// Grid::Points x contains all three coordinates (x, y and z)
-				// std::vector<double> Points;
-				// pointArray->SetArray(grid.GetPointsArray(), static_cast<vtkIdType>(grid.GetNumberOfPoints()*3), 1); in FEAdaptor.cxx line 28
-				}
-			}
-			return coord;
-}
-
-
-
-std::vector<float> Mesh::GenerateDecompositionforCatalyst (
-		std::vector<std::vector<eslocal> > &l2g_vec){
+//std::vector<double> Mesh::GenerateGridforCatalyst (
+//		std::vector<std::vector<eslocal> > &l2g_vec,
 //		double shrinking) {
+//
+//		std::vector<double> coord; //This needs to be made Dynamic!!
+//		size_t nSubClst = l2g_vec.size();
+//		size_t cnt = 0;
+//
+//		size_t n_points = 0;
+//		for (size_t d = 0; d < l2g_vec.size(); d++) {
+//			n_points += l2g_vec[d].size();
+//		}
+//
+//		for (size_t d = 0; d < nSubClst; d++) {
+//			Point center;
+//			for (size_t c = 0; c < l2g_vec[d].size(); c++) {
+//				center += _coordinates[l2g_vec[d][c]];
+//			}
+//			center /= l2g_vec[d].size();
+//
+//			for (size_t i = 0; i < l2g_vec[d].size(); i++) {
+//				Point x = _coordinates[l2g_vec[d][i]];
+//				x = center + (x - center) * shrinking;
+//				coord.push_back(x.x);
+//				coord.push_back(x.y);
+//				coord.push_back(x.z);
+//				//std::cout << coord[i] << " " << coord[i+1] << " " << coord[i+2] << "\n";
+//				//std::copy(coord, coord+3, std::back_inserter(this->Points));
+//				// TODO: Catalyst
+//				// Grid::Points x contains all three coordinates (x, y and z)
+//				// std::vector<double> Points;
+//				// pointArray->SetArray(grid.GetPointsArray(), static_cast<vtkIdType>(grid.GetNumberOfPoints()*3), 1); in FEAdaptor.cxx line 28
+//				}
+//			}
+//			return coord;
+//}
 
-	// Decomposition data store to VTK file7
-	std::vector<float> coord;
-	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
-			float part_redefine = (float)part;
-			coord.push_back(part_redefine);
-			//std::cout << part << "\n";
-		}
-	}
-	return coord;
-}
+
+
+//std::vector<float> Mesh::GenerateDecompositionforCatalyst (
+//		std::vector<std::vector<eslocal> > &l2g_vec){
+////		double shrinking) {
+//
+//	// Decomposition data store to VTK file7
+//	std::vector<float> coord;
+//	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+//		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+//			float part_redefine = (float)part;
+//			coord.push_back(part_redefine);
+//			//std::cout << part << "\n";
+//		}
+//	}
+//	return coord;
+//}
 
 //###################################################################
 //		End Catalyst code
