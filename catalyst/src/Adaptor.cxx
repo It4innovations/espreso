@@ -26,7 +26,7 @@ namespace
 
   void BuildVTKGrid(mesh::Mesh *mesh, 
 										std::vector<std::vector<eslocal> > &l2g_vec,
-										std::vector<double>& grid_points)//, std::vector<unsigned int>& cell_points)
+										std::vector<double>& grid_points)
   {
 
 	//UNDER CONSTRUCTION
@@ -117,10 +117,6 @@ namespace
 		}
 // NEW CODE ELEMENTS -- end ------------------------------------------------------------|
 
-
-
-
-
   }
 
 
@@ -184,7 +180,7 @@ namespace
 	      counter++;
 	   }
 
-
+	//TODO Why decomposition_array is rebuild?
 	 //DECOMPOSITION
 	float* decomposition_array = &decomposition_values[0];
 	float numCells = decomposition_values.size();
@@ -210,7 +206,6 @@ namespace
   void BuildVTKDataStructures(mesh::Mesh *mesh, 
 															std::vector<std::vector<eslocal> > &l2g_vec,
 															std::vector<double>& grid_points, 
-															//std::vector<unsigned int>& cell_points,
 															 std::vector<std::vector<double> >& prim_solution, std::vector<float>& decomposition_values)
   {
     if(VTKGrid == NULL)
@@ -219,7 +214,7 @@ namespace
       // the first time it's needed. If we needed the memory
       // we could delete it and rebuild as necessary.
       VTKGrid = vtkUnstructuredGrid::New();
-      BuildVTKGrid(mesh, l2g_vec,grid_points);//, cell_points);
+      BuildVTKGrid(mesh, l2g_vec,grid_points);
       }
     UpdateVTKAttributes(prim_solution, decomposition_values);
   }
@@ -265,7 +260,6 @@ namespace Adaptor
   void CoProcess(	mesh::Mesh *mesh, 
 									std::vector<std::vector<eslocal> > &l2g_vec,
 									std::vector<double>& grid_points, 
-//									std::vector<unsigned int>& cell_points, 	
 									std::vector<std::vector<double> >& prim_solution, 
 									std::vector<float>& decomposition_values, double time,
                  	unsigned int timeStep, bool lastTimeStep)
@@ -282,7 +276,6 @@ namespace Adaptor
     if(Processor->RequestDataDescription(dataDescription.GetPointer()) != 0)
       {
       BuildVTKDataStructures(mesh,l2g_vec, grid_points, 
-													//	cell_points, 
 														prim_solution, decomposition_values);
       dataDescription->GetInputDescriptionByName("input")->SetGrid(VTKGrid);
       Processor->CoProcess(dataDescription.GetPointer());
