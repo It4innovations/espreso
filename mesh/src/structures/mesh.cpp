@@ -442,7 +442,7 @@ void Mesh::computeLocalIndices(size_t part)
 		}
 	}
 
-	// re-index nodes
+	// re-index nodes 
 	eslocal nSize = 0;
 	for (eslocal k = 0; k < _coordinates.clusterSize(); k++) {
 		if (nodeMap[k] == 1) {
@@ -616,30 +616,6 @@ std::vector<double> Mesh::GenerateGridforCatalyst (
 			return coord;
 }
 
-//std::vector<unsigned int> Mesh::GenerateCellsforCatalyst (
-//		std::vector<std::vector<eslocal> > &l2g_vec,
-//		double shrinking) {
-//
-//		std::vector<unsigned int> coord; //This needs to be made Dynamic!!
-//		size_t cnt = 0;
-//
-//		size_t size = 0;
-//		for (size_t i = 0; i < _elements.size(); i++) {
-//			size += _elements[i]->size() + 1;
-//		}
-//
-//		size_t i = 0;
-//		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-//			for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
-//				for (size_t j = 0; j < _elements[i]->size(); j++) {
-//					coord.push_back(_elements[i]->node(j) + cnt);
-//				}
-//				i++;
-//			}
-//			cnt += l2g_vec[part].size();
-//		}
-//		return coord;
-//}
 
 
 std::vector<float> Mesh::GenerateDecompositionforCatalyst (
