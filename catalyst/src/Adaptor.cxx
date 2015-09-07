@@ -27,7 +27,6 @@ namespace
   void BuildVTKGrid(mesh::Mesh *mesh, 
 										std::vector<std::vector<eslocal> > &l2g_vec)
   {
-
 		//UNDER CONSTRUCTION
 		int MPIsize = 1;
 		int MPIrank = 0;
@@ -85,10 +84,8 @@ namespace
 	  VTKGrid->SetPoints(points.GetPointer());
 	
 	  VTKGrid->Allocate(static_cast<vtkIdType>(n_nodsClust));
-		vtkIdType tmp[MAX_NUMBER_OF_NODES]; 			/* max number of nodes predicted to be '20' */
-
-
-//--
+		vtkIdType tmp[MAX_NUMBER_OF_NODES];/* max number of nodes predicted to be '20' */
+//
 		size_t i = 0;
 		cnt = 0;
 		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
@@ -101,15 +98,7 @@ namespace
 			}
 			cnt += l2g_vec[part].size();
 		}
-//--
-
-//	  for(size_t iEl=0; iEl<elements.size(); iEl++) { 
-//			for(size_t jNod=0; jNod<elements[iEl]->size(); jNod++){
-//				tmp[jNod] = elements[iEl]->node(jNod);
-//			}
-//			VTKGrid->InsertNextCell(elements[iEl]->vtkCode(), elements[iEl]->size(), &tmp[0]);
-//		}
-
+//
 		float *decomposition_array = new float [elements.size()];
 
 		counter=0;
@@ -120,7 +109,7 @@ namespace
 				counter++;
 			}
 		}
-
+//
     if(VTKGrid->GetCellData()->GetNumberOfArrays() == 0)
       {
       vtkNew<vtkFloatArray> decomposition;
@@ -197,20 +186,13 @@ namespace
 	    displacement->SetTupleValue(counter, values);
 
 	   }
-
-
-
-
-
   }
 
 
 
   void BuildVTKDataStructures(mesh::Mesh *mesh, 
 		std::vector<std::vector<eslocal> > &l2g_vec,
-		std::vector<std::vector<double> >& prim_solution//, 
-//		std::vector<float>& decomposition_values
-)
+		std::vector<std::vector<double> >& prim_solution)
   {
     if(VTKGrid == NULL)
       {
