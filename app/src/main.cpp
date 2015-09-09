@@ -236,7 +236,7 @@ void generate_mesh( int MPIrank )
 void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 {
 
-	bool DYNAMIC = true;
+	bool DYNAMIC = false;
 
 
 	TimeEval timeEvalMain(string("ESPRESO Solver Overal Timing"));
@@ -390,7 +390,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		partsCount,
 		neigh_clusters,
 		//input.localBoundaries
-                boundaries
+        boundaries
 	);
 
 	 timeB1glob.AddEndWithBarrier();
