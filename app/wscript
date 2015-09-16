@@ -36,6 +36,10 @@ class cxxprogram(link_task):
                ${STLIB_ST:STLIB} \
                ${SHLIB_MARKER}'
 
+source_files = (
+    "src/configuration.cpp",
+)
+
 def configure(ctx):
     ctx.setenv(APP, ctx.all_envs[""].derive())
 
@@ -121,7 +125,7 @@ def build(ctx):
         )
     else:
         ctx.program(
-            source          = "src/main.cpp",
+            source          = source_files + ("src/main.cpp",),
             target          = "espreso",
             use             = "solver_includes pmcube_includes mesh_includes bem_includes {0} espmcube esmesh esbem".format(solver),
             install_path    = ctx.ROOT

@@ -4,6 +4,8 @@
 #include "essolver.h"
 #include "espmcube.h"
 
+#include "configuration.h"
+
 #include <vector>
 #include <iostream>
 
