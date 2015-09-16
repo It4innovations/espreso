@@ -6,10 +6,7 @@
 
 #include "mpi.h"
 
-#include "../mesh/src/esmesh.h"
-#include "../mesh/src/elements/elements.h"
-#include "../mesh/src/elements/element.h"
-#include "../mesh/src/structures/mesh.h"
+#include "esmesh.h"
 
 #include "vtkCellData.h"
 #include "vtkCellType.h"

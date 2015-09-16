@@ -24,10 +24,6 @@ class cxxprogram(link_task):
                ${STLIB_ST:STLIB} \
                ${SHLIB_MARKER}'
 
-source_files = (
-    "src/main.cpp",
-)
-
 def configure(ctx):
     ctx.setenv(APP, ctx.all_envs[""].derive())
 
@@ -88,9 +84,18 @@ def configure(ctx):
 def build(ctx):
     ctx.env = ctx.all_envs[APP]
 
-    ctx.program(
-        source          = source_files,
-        target          = "espreso",
-        use             = "solver_includes pmcube_includes mesh_includes bem_includes essolver espmcube esmesh esbem",
-        install_path    = ctx.ROOT
-    )
+    if ctx.options.catalyst:
+        ctx.program(
+            source          = "src/catalyst.cpp",
+            target          = "espreso",
+            use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes essolver espmcube esmesh esbem escatalyst",
+            install_path    = ctx.ROOT
+        )
+    else:
+        ctx.program(
+            source          = "src/main.cpp",
+            target          = "espreso",
+            use             = "solver_includes pmcube_includes mesh_includes bem_includes essolver espmcube esmesh esbem",
+            install_path    = ctx.ROOT
+        )
+

@@ -10,7 +10,7 @@ from wafutils import *
 #..............................................................................#
 #     VERSION -> When you change the configuration, increment the value
 
-VERSION = 11
+VERSION = 12
 
 #..............................................................................#
 
@@ -71,6 +71,7 @@ def configure(ctx):
     ctx.recurse("mesh")
     ctx.recurse("permoncube")
     ctx.recurse("solver")
+    ctx.recurse("catalyst")
     ctx.recurse("app")
 
 
@@ -137,6 +138,11 @@ def options(opt):
         action="store_true",
         default=False,
         help="All libraries created by ESPRESO are static.")
+
+    opt.add_option("--catalyst",
+        action="store_true",
+        default=False,
+        help="ESPRESO supports ParaView-Catalyst.")
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
 
 
@@ -168,6 +174,8 @@ def build(ctx):
         return
 
     ctx.recurse("solver")
+    if ctx.options.catalyst:
+        ctx.recurse("catalyst")
     ctx.recurse("app")
 
 
