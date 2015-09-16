@@ -3,8 +3,7 @@
 #include "esmesh.h"
 #include "essolver.h"
 #include "espmcube.h"
-
-#include "Adaptor.h"
+#include "escatalyst.h"
 
 #include <vector>
 #include <iostream>
