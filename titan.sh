@@ -56,11 +56,11 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --titan --static
+  ./waf configure --titan
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install -v
+  ./waf install -v --static
 #cd tools/metis-5.1.0/ ; make config compiler=cc #; make
 fi
 
