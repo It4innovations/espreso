@@ -287,7 +287,7 @@ void Mesh::_integrateElasticity(
 	for (size_t i = 0; i < e->size(); i++) {
 		row = s * (e->node(i));
 		for (size_t j = 0; j < e->size(); j++) {
-			column = s * (e->node(i));
+			column = s * (e->node(j)); //i
 			for (size_t k = 0; k < s; k++) {
 				M(row + k, column + k) += Me(i, j);
 			}
@@ -442,7 +442,7 @@ void Mesh::computeLocalIndices(size_t part)
 		}
 	}
 
-	// re-index nodes
+	// re-index nodes 
 	eslocal nSize = 0;
 	for (eslocal k = 0; k < _coordinates.clusterSize(); k++) {
 		if (nodeMap[k] == 1) {
@@ -575,103 +575,6 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 		p += _elements[i]->size();
 	}
 }
-
-void Mesh::GenerateVTKinMemory (
-		const char* filename,
-		std::vector<std::vector<double>  > &displacement,
-		std::vector<std::vector<eslocal> > &l2g_vec,
-		double shrinking) {
-//
-//			std::ofstream vtk(filename, std::ios::out | std::ios::trunc);
-//			//saveBasis(vtk, l2g_vec, shrinking);
-//
-//			size_t n_points = 0;
-//			for (size_t d = 0; d < l2g_vec.size(); d++) {
-//				n_points += l2g_vec[d].size();
-//			}
-//
-//			vtk << "\n";
-//			vtk << "POINT_DATA " << n_points << "\n";
-//			vtk << "SCALARS displacements float 3\n";
-//			vtk << "LOOKUP_TABLE default\n";
-//			for (size_t i = 0; i < displacement.size(); i++) {
-//				for (size_t j = 0; j < displacement[i].size() / 3; j++) {
-//					vtk << displacement[i][3 * j + 0] << " ";
-//					vtk << displacement[i][3 * j + 1] << " ";
-//					vtk << displacement[i][3 * j + 2] << "\n";
-//				}
-//
-//			}
-//
-//
-//
-//			vtk << "# vtk DataFile Version 3.0\n";
-//			vtk << "Test\n";
-//			vtk << "ASCII\n\n";
-//			vtk << "DATASET UNSTRUCTURED_GRID\n";
-//			size_t nSubClst = l2g_vec.size();
-//			size_t cnt = 0;
-//
-//			size_t n_points = 0;
-//			for (size_t d = 0; d < l2g_vec.size(); d++) {
-//				n_points += l2g_vec[d].size();
-//			}
-//
-//			vtk << "POINTS " << n_points << " float\n";
-//			for (size_t d = 0; d < nSubClst; d++) {
-//				Point center;
-//				for (size_t c = 0; c < l2g_vec[d].size(); c++) {
-//					center += _coordinates[l2g_vec[d][c]];
-//				}
-//				center /= l2g_vec[d].size();
-//
-//				for (size_t i = 0; i < l2g_vec[d].size(); i++) {
-//					Point x = _coordinates[l2g_vec[d][i]];
-//					x = center + (x - center) * shrinking;
-//					vtk << x << "\n";
-//				}
-//			}
-//
-//			size_t size = 0;
-//			for (size_t i = 0; i < _elements.size(); i++) {
-//				size += _elements[i]->size() + 1;
-//			}
-//			vtk << "CELLS " << _elements.size() << " " << size << "\n";
-//
-//			size_t i = 0;
-//			for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-//				for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
-//					vtk << _elements[i]->size();
-//					for (size_t j = 0; j < _elements[i]->size(); j++) {
-//						vtk << " " << _elements[i]->node(j) + cnt;
-//					}
-//					vtk << "\n";
-//					i++;
-//				}
-//				cnt += l2g_vec[part].size();
-//			}
-//
-//			vtk << "\n";
-//			vtk << "CELL_TYPES " << _elements.size() << "\n";
-//			for (size_t i = 0; i < _elements.size(); i++) {
-//				vtk << _elements[i]->vtkCode() << "\n";
-//			}
-//
-//			vtk << "\n";
-//			vtk << "CELL_DATA " << _elements.size() << "\n";
-//			vtk << "SCALARS decomposition int 1\n";
-//			vtk << "LOOKUP_TABLE decomposition\n";
-//			for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-//				for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
-//					vtk << part << "\n";
-//				}
-//			}
-//
-//
-//			vtk.close();
-}
-
-
 
 void Mesh::saveBasis(
 		std::ofstream &vtk,

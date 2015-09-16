@@ -3,7 +3,13 @@
 *.o
 *.so
 *.vtk
+*.png
+*.a
+*.lic
+*.vim
 */bin
+/*.dat
+mySh.sh
 nohup.out
 es*
 build
