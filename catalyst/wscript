@@ -1,0 +1,40 @@
+
+CATALYST = "catalyst"
+
+source_files = (
+   "src/adaptor.cpp",
+)
+
+def configure(ctx):
+    ctx.setenv(CATALYST, ctx.all_envs[""].derive())
+
+    ctx.env.append_unique("CXXFLAGS", [
+        "-DMPICH_IGNORE_CXX_SEEK",
+        "-DQT_CORE_LIB",
+        "-DQT_GUI_LIB",
+        "-DQT_NO_DEBUG",
+        "-DUSE_CATALYST"
+    ])
+
+
+def build(ctx):
+    ctx.env = ctx.all_envs[CATALYST]
+
+    ctx(
+        export_includes = "include",
+        name            = "paraview"
+    )
+
+    ctx.lib(
+        source          = source_files,
+        target          = "escatalyst",
+        use             = "espreso_includes mesh_includes bem_includes paraview",
+        install_path    = ctx.ROOT + "/libs"
+    )
+
+    ctx(
+        export_includes = "src",
+        use             = "paraview",
+        name            = "catalyst_includes"
+    )
+
