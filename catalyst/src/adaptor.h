@@ -8,19 +8,6 @@
 
 #include "esmesh.h"
 
-#include "vtkCellData.h"
-#include "vtkCellType.h"
-#include "vtkCPDataDescription.h"
-#include "vtkCPInputDataDescription.h"
-#include "vtkCPProcessor.h"
-#include "vtkCPPythonScriptPipeline.h"
-#include "vtkDoubleArray.h"
-#include "vtkFloatArray.h"
-#include "vtkNew.h"
-#include "vtkPoints.h"
-#include "vtkPointData.h"
-#include "vtkUnstructuredGrid.h"
-
 #define MAX_NUMBER_OF_NODES 20
 
 class Attributes;

@@ -85,10 +85,11 @@ def build(ctx):
     ctx.env = ctx.all_envs[APP]
 
     if ctx.options.catalyst:
+        ctx.env.append_unique("STLIB", [ "adaptor" ])
         ctx.program(
             source          = "src/catalyst.cpp",
             target          = "espreso",
-            use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes essolver espmcube esmesh esbem escatalyst",
+            use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes essolver espmcube esmesh esbem",
             install_path    = ctx.ROOT
         )
     else:

@@ -20,21 +20,20 @@ def configure(ctx):
 def build(ctx):
     ctx.env = ctx.all_envs[CATALYST]
 
-    ctx(
-        export_includes = "include",
-        name            = "paraview"
-    )
+#    ctx(
+#        export_includes = "include",
+#        name            = "paraview"
+#    )
 
-    ctx.lib(
-        source          = source_files,
-        target          = "escatalyst",
-        use             = "espreso_includes mesh_includes bem_includes paraview",
-        install_path    = ctx.ROOT + "/libs"
-    )
+#    ctx.lib(
+#        source          = source_files,
+#        target          = "escatalyst",
+#        use             = "espreso_includes mesh_includes bem_includes paraview",
+#        install_path    = ctx.ROOT + "/libs"
+#    )
 
     ctx(
         export_includes = "src",
-        use             = "paraview",
         name            = "catalyst_includes"
     )
 
