@@ -81,32 +81,8 @@ public:
 			double subDomainShrinking = 1,
 			double clusterShrinking = 1);
 
-	//##############################################
-		//Start Catalyst header files
-	//#############################################
-//		std::vector<double> GenerateGridforCatalyst (
-//				std::vector<std::vector<eslocal> > &l2g_vec,
-//				double shrinking);
-
-//		std::vector<unsigned int> GenerateCellsforCatalyst (
-//				std::vector<std::vector<eslocal> > &l2g_vec,
-//				double shrinking);
-
-//		std::vector<float> GenerateDecompositionforCatalyst (
-//				std::vector<std::vector<eslocal> > &l2g_vec);
-//				double shrinking);
-	//#############################################
-		//End Catalyst header files
-	//############################################
-
 	void saveData();
 	void loadData(const char *filename);
-
-	void GenerateVTKinMemory (
-			const char* filename,
-			std::vector<std::vector<double> > &displacement,
-			std::vector<std::vector<eslocal> > &l2g_vec,
-			double shrinking);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
