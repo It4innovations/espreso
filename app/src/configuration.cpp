@@ -5,11 +5,11 @@
 template<>
 const eslocal& Configuration::value<eslocal>(InputParameter parameter) const
 {
-	if (_configuration[parameter]->type() == INTEGER_PARAMETER) {
-		return static_cast<IntegerParameter*>(_configuration[parameter])->get();
+	if (_parameters[parameter]->type() == INTEGER_PARAMETER) {
+		return static_cast<IntegerParameter*>(_parameters[parameter])->get();
 	} else {
 		std::cerr << "Invalid parameter type. ";
-		std::cerr << _configuration[parameter]->name() << " is integer value.";
+		std::cerr << _parameters[parameter]->name() << " is integer value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -17,11 +17,11 @@ const eslocal& Configuration::value<eslocal>(InputParameter parameter) const
 template<>
 const std::string& Configuration::value<std::string>(InputParameter parameter) const
 {
-	if (_configuration[parameter]->type() == STRING_PARAMETER) {
-		return static_cast<StringParameter*>(_configuration[parameter])->get();
+	if (_parameters[parameter]->type() == STRING_PARAMETER) {
+		return static_cast<StringParameter*>(_parameters[parameter])->get();
 	} else {
 		std::cerr << "Invalid parameter type. ";
-		std::cerr << _configuration[parameter]->name() << " is string value.";
+		std::cerr << _parameters[parameter]->name() << " is string value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -29,11 +29,11 @@ const std::string& Configuration::value<std::string>(InputParameter parameter) c
 template<>
 const bool& Configuration::value<bool>(InputParameter parameter) const
 {
-	if (_configuration[parameter]->type() == BOOLEAN_PARAMETER) {
-		return static_cast<BooleanParameter*>(_configuration[parameter])->get();
+	if (_parameters[parameter]->type() == BOOLEAN_PARAMETER) {
+		return static_cast<BooleanParameter*>(_parameters[parameter])->get();
 	} else {
 		std::cerr << "Invalid parameter type. ";
-		std::cerr << _configuration[parameter]->name() << " is boolean value.";
+		std::cerr << _parameters[parameter]->name() << " is boolean value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -83,8 +83,11 @@ bool checkCmdLine(std::vector<size_t> &cmdLine, size_t value)
 	return false;
 }
 
-void Configuration::configure()
+void Configuration::configure(int argc, char** argv)
 {
+	std::vector<size_t> cmdLine;
+	std::vector<bool> configured(_parameters.size(), true);
+
 	// Parse command line arguments
 	if (_parameters[CMD_LINE_ARGUMENTS]->isSet()) {
 		std::string val = value<std::string>(CMD_LINE_ARGUMENTS);
@@ -97,7 +100,7 @@ void Configuration::configure()
 						std::cerr << "CMD_LINE_ARGUMENTS is not valid parameter in CMD_LINE_ARGUMENTS\n";
 						exit(EXIT_FAILURE);
 					}
-					_cmdLine.push_back(i);
+					cmdLine.push_back(i);
 					break;
 				}
 				if (i == ATTRIBUTES_COUNT - 1) {
@@ -112,49 +115,59 @@ void Configuration::configure()
 			}
 		}
 	}
+	if (argc - 1 < cmdLine.size()) {
+		std::cerr << "Too few command line arguments. ESPRESO assumes " << value<std::string>(CMD_LINE_ARGUMENTS) << "\n";
+		exit(EXIT_FAILURE);
+	}
+	if (argc - 1 > cmdLine.size()) {
+		std::cout << "Warning: ESPRESO omits some command line arguments.\n";
+	}
+	for (size_t i = 0; i < cmdLine.size(); i++) {
+		_parameters[cmdLine[i]]->set(std::string(_parameters[cmdLine[i]]->name() + "=" + argv[i + 1]));
+	}
+
 
 	// Parse ANSYS arguments
 	for (size_t i = ANSYS_DIR; i <= ANSYS_FORCES_Z; i++) {
 		if (_parameters[i]->isSet()) {
-			if (checkCmdLine(_cmdLine, i)) {
-				std::cout << "Warnink: parameter " << _parameters[i]->name() << " is ignored. It is command line argument.\n";
-			} else if (i != ANSYS_DIR && !_parameters[ANSYS_DIR]->isSet()) {
-				std::cout << "Warnink: parameter " << _parameters[i]->name() << " is ignored. Set parameter ANSYS_DIR first.\n";
-			} else {
-				_configuration.push_back(_parameters[i]);
+			if (checkCmdLine(cmdLine, i)) {
+				std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. It is command line argument.\n";
+			} else if (i != ANSYS_DIR && (!_parameters[ANSYS_DIR]->isSet() || checkCmdLine(cmdLine, ANSYS_DIR))) {
+				std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. Set parameter ANSYS_DIR first.\n";
 			}
+		} else {
+			configured[i] = false;
 		}
 	}
 
 	// Parse PermonCube arguments
 	for (size_t i = PMCUBE_ELEMENT_TYPE; i <= PMCUBE_ELEMENTS_Z; i++) {
 		if (_parameters[ANSYS_DIR]->isSet()) {
-			std::cout << "Warnink: parameter " << _parameters[i]->name() << " is ignored. ANSYS has higher priority.\n";
-		} else if (checkCmdLine(_cmdLine, i)) {
-			std::cout << "Warnink: parameter " << _parameters[i]->name() << " is ignored. It is command line argument.\n";
-		} else {
-			_configuration.push_back(_parameters[i]);
+			std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. ANSYS has higher priority.\n";
+			configured[i] = false;
+		} else if (checkCmdLine(cmdLine, i)) {
+			std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. It is command line argument.\n";
 		}
 	}
 	if (_parameters[PMCUBE_FIX_ZERO_PLANES]->isSet() && _parameters[PMCUBE_FIX_BOTTOM]->isSet()) {
-		std::cout << "Warnink: parameter PMCUBE_FIX_BOTTOM is ignored. PMCUBE_FIX_ZERO_PLANES has higher priority.\n";
-		_configuration.push_back(_parameters[PMCUBE_FIX_ZERO_PLANES]);
+		std::cout << "Warning: parameter PMCUBE_FIX_BOTTOM is ignored. PMCUBE_FIX_ZERO_PLANES has higher priority.\n";
+		configured[PMCUBE_FIX_BOTTOM] = false;
 	} else {
 		if (_parameters[PMCUBE_FIX_ZERO_PLANES]->isSet()) {
-			_configuration.push_back(_parameters[PMCUBE_FIX_ZERO_PLANES]);
+			configured[PMCUBE_FIX_BOTTOM] = false;
 		}
 		if (_parameters[PMCUBE_FIX_BOTTOM]->isSet()) {
-			_configuration.push_back(_parameters[PMCUBE_FIX_BOTTOM]);
+			configured[PMCUBE_FIX_ZERO_PLANES] = false;
 		}
 	}
 
-	// Parse solver arguments
-	for (size_t i = SOLVER_ITERATIONS; i <= SOLVER_ITERATIONS; i++) {
-		_configuration.push_back(_parameters[i]);
+	for (size_t i = 0; i < _parameters.size(); i++) {
+		_parameters[i]->reset(configured[i]);
 	}
 }
 
-Configuration::Configuration(std::string configFile): _parameters(ATTRIBUTES_COUNT)
+Configuration::Configuration(std::string configFile, int argc, char** argv)
+	: _parameters(ATTRIBUTES_COUNT)
 {
 	fillDefaultValues();
 
@@ -174,7 +187,7 @@ Configuration::Configuration(std::string configFile): _parameters(ATTRIBUTES_COU
 			for (size_t i = 0; i < _parameters.size(); i++) {
 				if (_parameters[i]->match(line)) {
 					if (_parameters[i]->isSet()) {
-						std::cout << "Warnink: parameter " << _parameters[i]->name() << " is set more than once.";
+						std::cout << "Warning: parameter " << _parameters[i]->name() << " is set more than once.";
 					}
 					_parameters[i]->set(line);
 					break;
@@ -191,24 +204,17 @@ Configuration::Configuration(std::string configFile): _parameters(ATTRIBUTES_COU
 		std::cout << "File '" << configFile << "' not found.\n";
 	}
 
-	configure();
+	configure(argc, argv);
 }
 
 void Configuration::print() const
 {
-	if (_cmdLine.size()) {
-		std::cout << "CMD LINE:";
-	}
-	for (size_t i = 0; i < _cmdLine.size(); i++) {
-		std::cout << " " << _parameters[_cmdLine[i]]->name();
-	}
-	if (_cmdLine.size()) {
-		std::cout << "\n";
-	}
-
-	for (size_t i = 0; i < _configuration.size(); i++) {
-		std::cout << _configuration[i]->name() << " = ";
-		switch (_configuration[i]->type()) {
+	for (size_t i = 0; i < _parameters.size(); i++) {
+		if (!_parameters[i]->isSet()) {
+			continue;
+		}
+		std::cout << _parameters[i]->name() << " = ";
+		switch (_parameters[i]->type()) {
 			case STRING_PARAMETER: {
 				std::cout << "'" << value<std::string>(i) << "'";
 				break;

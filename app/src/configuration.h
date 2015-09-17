@@ -13,6 +13,17 @@ class Configuration {
 
 public:
 
+	enum ElementType {
+		HEXA8,
+		HEXA20,
+		TETRA4,
+		TETRA10,
+		PRISMA6,
+		PRISMA15,
+		PYRAMID5,
+		PYRAMID13
+	};
+
 	enum InputParameter {
 		// General settings
 		CMD_LINE_ARGUMENTS,
@@ -44,11 +55,11 @@ public:
 		ATTRIBUTES_COUNT
 	};
 
-	Configuration(std::string configFile);
+	Configuration(std::string configFile, int argc, char** argv);
 	Configuration(): _parameters(ATTRIBUTES_COUNT)
 	{
 		fillDefaultValues();
-		configure();
+		configure(0, NULL);
 	}
 	~Configuration();
 
@@ -67,12 +78,9 @@ public:
 private:
 
 	void fillDefaultValues();
-	void configure();
+	void configure(int argc, char** argv);
 
 	std::vector<Parameter*> _parameters;
-	std::vector<Parameter*> _configuration;
-	std::vector<size_t> _cmdLine;
-
 };
 
 

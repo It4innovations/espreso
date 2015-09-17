@@ -44,6 +44,11 @@ public:
 		return _set;
 	}
 
+	void reset(bool value)
+	{
+		_set = value;
+	}
+
 	virtual void set(const std::string &line) =0;
 
 	void error(std::string message) const
@@ -101,7 +106,7 @@ class IntegerParameter : public Parameter {
 
 public:
 	IntegerParameter(std::string name, std::string description, eslocal value)
-		:Parameter(INTEGER_PARAMETER, name, description), _value(0) {};
+		:Parameter(INTEGER_PARAMETER, name, description), _value(value) {};
 
 	void set(const std::string &line)
 	{
@@ -120,7 +125,7 @@ class BooleanParameter : public Parameter {
 
 public:
 	BooleanParameter(std::string name, std::string description, eslocal value)
-		:Parameter(BOOLEAN_PARAMETER, name, description), _value(0) {};
+		:Parameter(BOOLEAN_PARAMETER, name, description), _value(value) {};
 
 	void set(const std::string &line)
 	{
