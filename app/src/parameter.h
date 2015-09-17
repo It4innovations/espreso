@@ -18,27 +18,33 @@ enum DataType {
 class Parameter {
 
 public:
-	bool match(std::string &line) const
+	bool match(const std::string &line) const
 	{
-		return line.compare(0, _name.size(), _name) == 0;
+		std::string param = line.substr(0, line.find(" "));
+		return param.size() == _name.size() && param.compare(0, _name.size(), _name) == 0;
 	}
 
-	std::string name()
+	const std::string& name() const
 	{
 		return _name;
 	}
 
-	std::string description()
+	const std::string& description() const
 	{
 		return _description;
 	}
 
-	DataType type()
+	DataType type() const
 	{
 		return _type;
 	}
 
-	virtual void set(std::string &line) =0;
+	bool isSet() const
+	{
+		return _set;
+	}
+
+	virtual void set(const std::string &line) =0;
 
 	void error(std::string message) const
 	{
@@ -46,12 +52,13 @@ public:
 		exit(EXIT_FAILURE);
 	}
 
-protected:
-	Parameter(DataType type, std::string name, std::string description)
-		: _type(type), _delimiter("="), _name(name), _description(description) {};
 	virtual ~Parameter() {};
 
-	std::string value(std::string &line)
+protected:
+	Parameter(DataType type, std::string name, std::string description)
+		: _type(type), _delimiter("="), _name(name), _description(description), _set(false) {};
+
+	std::string value(const std::string &line)
 	{
 		size_t pos = line.find(_delimiter);
 		if (pos == std::string::npos) {
@@ -65,6 +72,7 @@ protected:
 	std::string _name;
 	std::string _description;
 	DataType _type;
+	bool _set;
 
 };
 
@@ -74,12 +82,16 @@ public:
 	StringParameter(std::string name, std::string description, std::string value)
 		:Parameter(STRING_PARAMETER, name, description), _value(value) {};
 
-	void set(std::string &line)
+	void set(const std::string &line)
 	{
 		_value = value(line);
+		if (!_value.size()) {
+			error("Empty parameter " + _name + ".\n");
+		}
+		_set = true;
 	}
 
-	std::string get() { return _value; };
+	const std::string& get() const { return _value; };
 
 private:
 	std::string _value;
@@ -91,13 +103,14 @@ public:
 	IntegerParameter(std::string name, std::string description, eslocal value)
 		:Parameter(INTEGER_PARAMETER, name, description), _value(0) {};
 
-	void set(std::string &line)
+	void set(const std::string &line)
 	{
 		std::stringstream ss(value(line));
 		ss >> _value;
+		_set = true;
 	}
 
-	eslocal get() { return _value; };
+	const eslocal& get() const { return _value; };
 
 private:
 	eslocal _value;
@@ -109,17 +122,18 @@ public:
 	BooleanParameter(std::string name, std::string description, eslocal value)
 		:Parameter(BOOLEAN_PARAMETER, name, description), _value(0) {};
 
-	void set(std::string &line)
+	void set(const std::string &line)
 	{
 		size_t pos = line.find(_delimiter);
 		if (pos == std::string::npos) {
 			_value = true;
+			_set = true;
 		} else {
 			error("Boolean parameter " + _name + " should be without assignment.");
 		}
 	}
 
-	bool get() { return _value; };
+	const bool& get() const { return _value; };
 
 private:
 	bool _value;

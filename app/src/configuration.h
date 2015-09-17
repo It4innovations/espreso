@@ -47,26 +47,31 @@ public:
 	Configuration(std::string configFile);
 	Configuration(): _parameters(ATTRIBUTES_COUNT)
 	{
-		_fillDefaultValues();
+		fillDefaultValues();
+		configure();
 	}
+	~Configuration();
 
-	void print();
-	void description();
-
-	template<class ParameterType>
-	ParameterType value(InputParameter parameter);
+	void print() const;
+	void description() const;
 
 	template<class ParameterType>
-	ParameterType value(size_t parameter)
+	const ParameterType& value(InputParameter parameter) const;
+
+	template<class ParameterType>
+	const ParameterType& value(size_t parameter) const
 	{
 		return value<ParameterType>(static_cast<InputParameter>(parameter));
 	}
 
 private:
 
-	void _fillDefaultValues();
+	void fillDefaultValues();
+	void configure();
 
 	std::vector<Parameter*> _parameters;
+	std::vector<Parameter*> _configuration;
+	std::vector<size_t> _cmdLine;
 
 };
 
