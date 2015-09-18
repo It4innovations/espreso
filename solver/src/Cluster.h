@@ -29,6 +29,7 @@ using std::make_pair;
 #include "SparseSolver.h"
 #include "TimeEval.h"
 #include "Domain.h"
+#include "DenseMatrixPack.h"
 
 #include "utils.h"
 
@@ -72,12 +73,18 @@ public:
 	SparseMatrix F0_Mat;
 	SparseMatrix B0Kplus;
 
+	// Packed matrices (mainly for MIC computation)
+	SEQ_VECTOR <DenseMatrixPack> B1KplusPacks;
+
+	// number of MIC
+	int NUM_MICS;
+
 	SparseSolver F0;
 	SparseSolver F0_fast;
 	SparseSolver Sa;
 
 	SEQ_VECTOR <double> vec_d;
-	
+
 	SEQ_VECTOR <double> vec_b;
 	SEQ_VECTOR <double> vec_b_compressed;
 
@@ -112,7 +119,7 @@ public:
 	void Create_G1_perCluster();
 	void CreateVec_d_perCluster();
 	void CreateVec_b_perCluster();
-	
+
 	void Create_Kinv_perDomain();
 	void Create_SC_perDomain();
 
@@ -159,7 +166,7 @@ public:
 	TimeEvent clus_Sa_time;
 
 	TimeEvent loop_2_1_time;
-	
+
 	int iter_cnt_comm;
 
 	// variables for dynamic
