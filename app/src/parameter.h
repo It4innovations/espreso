@@ -50,6 +50,7 @@ public:
 	}
 
 	virtual void set(const std::string &line) =0;
+	virtual Parameter* copy() =0;
 
 	void error(std::string message) const
 	{
@@ -70,7 +71,12 @@ protected:
 			error("Incorrect format of " + _name + ". Use " + _name + _delimiter + "value.");
 		}
 		std::string val = line.substr(pos + 1);
-		return val.erase(0, val.find_first_not_of(" "));
+		val.erase(0, val.find_first_not_of(" "));
+		if (val.find_last_of(" ") != std::string::npos) {
+			return val.erase(val.find_last_of(" "));
+		} else {
+			return val;
+		}
 	}
 
 	std::string _delimiter;
@@ -98,6 +104,11 @@ public:
 
 	const std::string& get() const { return _value; };
 
+	Parameter* copy()
+	{
+		return new StringParameter(*this);
+	}
+
 private:
 	std::string _value;
 };
@@ -116,6 +127,11 @@ public:
 	}
 
 	const eslocal& get() const { return _value; };
+
+	Parameter* copy()
+	{
+		return new IntegerParameter(*this);
+	}
 
 private:
 	eslocal _value;
@@ -139,6 +155,11 @@ public:
 	}
 
 	const bool& get() const { return _value; };
+
+	Parameter* copy()
+	{
+		return new BooleanParameter(*this);
+	}
 
 private:
 	bool _value;

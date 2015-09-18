@@ -14,7 +14,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_B0,	//TODO: Inside cluster eslocal is OK
 								std::vector < std::vector < double> >   & B1_l_duplicity,
 								const eslocal domains_num,
-								mesh::Boundaries & global_boundaries)
+								const mesh::Boundaries & global_boundaries) const
 {
 
 	const std::map<eslocal, double> &dirichlet_x = _mesh.coordinates().property(CP::DIRICHLET_X).values();
@@ -164,7 +164,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 								const eslocal MPIsize,
 								const eslocal subDomPerCluster,
 								std::vector < eslocal  > & myNeighClusters,
-								mesh::Boundaries & local_boundaries)
+								const mesh::Boundaries & local_boundaries) const
 {
 
 	// Local B1 - further processing - update row numbering based on all clusters
@@ -618,7 +618,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 		eslocal  dofNODEoffset = DOFNumber % 3;
 		eslocal  clustDofNODENumber = _mesh.coordinates().clusterIndex( dofNODEnumber );
 
-		std::set < eslocal > & subs_with_element = _boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+		const std::set < eslocal > & subs_with_element = _boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 
 		eslocal  cnt            = myLambdas[j][4];
 		double B_value;
@@ -1248,7 +1248,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     		if ( myLambdas_sp[j][2] == myLambdas_sp[j][3] ) { // resim vazby mezi domenama uvnitr clusteru
 
     			eslocal  clustDofNODENumber = _mesh.coordinates().clusterIndex( dofNODEnumber );
-				std::set    < eslocal >  & subs_with_element = local_boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+				const std::set    < eslocal >  & subs_with_element = local_boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 				std::vector < eslocal >    subs_with_elem;
 				for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
 					subs_with_elem.push_back( *it_set );
@@ -1292,7 +1292,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     		} else { // resim vazby mezi clustery
 
     			eslocal  clustDofNODENumber = _mesh.coordinates().clusterIndex( dofNODEnumber );
-				std::set    < eslocal >  & subs_with_element = local_boundaries[clustDofNODENumber]; //_boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+				const std::set    < eslocal >  & subs_with_element = local_boundaries[clustDofNODENumber]; //_boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 				std::vector < eslocal >    subs_with_elem;
 				for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
 					subs_with_elem.push_back( *it_set );

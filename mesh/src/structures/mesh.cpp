@@ -50,6 +50,12 @@ void Mesh::assign(Mesh &m1, Mesh &m2)
 	m1._flags.swap(m2._flags);
 }
 
+void Mesh::loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints)
+{
+	readFromFile(ansys.elements().c_str(), 8, true);
+	partitiate(parts, fixPoints);
+}
+
 void Mesh::reserve(size_t size)
 {
 	_elements.reserve(size);
@@ -116,7 +122,7 @@ void Mesh::_elasticity(
 		SparseVVPMatrix<eslocal> &M,
 		std::vector<double> &f,
 		eslocal part,
-		bool dynamic)
+		bool dynamic) const
 {
 	eslocal nK = _coordinates.localSize(part) * Point::size();
 	K.resize(nK, nK);
@@ -140,8 +146,7 @@ void Mesh::_elasticity(
 	C(3, 3) = C(4, 4) = C(5, 5) = E * (0.5 - mi);
 
 	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, C,
-				dynamic);
+		_assembleElesticity(_elements[i], part, Ke, Me, fe, inertia, C, dynamic);
 		_integrateElasticity(_elements[i], K, M, f, Ke, Me, fe, dynamic);
 	}
 }
@@ -579,10 +584,10 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 void Mesh::saveBasis(
 		std::ofstream &vtk,
 		std::vector<std::vector<eslocal> > &l2g_vec,
-		Boundaries &lBoundaries,
-		Boundaries &gBoundaries,
+		const Boundaries &lBoundaries,
+		const Boundaries &gBoundaries,
 		double subDomainShrinking,
-		double clusterShrinking)
+		double clusterShrinking) const
 {
 	vtk << "# vtk DataFile Version 3.0\n";
 	vtk << "Test\n";
@@ -693,10 +698,10 @@ void Mesh::saveVTK(
 		const char* filename,
 		std::vector<std::vector<double> > &displacement,
 		std::vector<std::vector<eslocal> > &l2g_vec,
-		Boundaries &lBoundaries,
-		Boundaries &gBoundaries,
+		const Boundaries &lBoundaries,
+		const Boundaries &gBoundaries,
 		double subDomainShrinking,
-		double clusterShrinking)
+		double clusterShrinking) const
 {
 	std::ofstream vtk(filename, std::ios::out | std::ios::trunc);
 	saveBasis(vtk, l2g_vec, lBoundaries, gBoundaries, subDomainShrinking, clusterShrinking);
@@ -724,9 +729,9 @@ void Mesh::saveVTK(
 
 void Mesh::saveVTK(
 		const char* filename,
-		Boundaries &localBoundaries,
+		const Boundaries &localBoundaries,
 		double subDomainShrinking,
-		double clusterShrinking)
+		double clusterShrinking) const
 {
 	std::ofstream vtk;
 
@@ -828,7 +833,7 @@ void Mesh::saveVTK(
 void Mesh::saveVTK(
 		const char* filename,
 		double subDomainShrinking,
-		double clusterShrinking)
+		double clusterShrinking) const
 {
 	std::ofstream vtk;
 
@@ -1514,7 +1519,7 @@ void Mesh::saveData()
 
 	for (size_t p = 0; p < parts(); p++) {
 		std::stringstream ss;
-		ss << "mesh_" << p << ".dat";
+		ss << "mesh" << p << ".dat";
 		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		// save elements

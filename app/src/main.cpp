@@ -1,241 +1,32 @@
 #include "mpi.h"
 
-#include "esmesh.h"
 #include "essolver.h"
-#include "espmcube.h"
+#include "instance.h"
 
-#include "configuration.h"
-
-#include <vector>
-#include <iostream>
-
-enum {
-	HEXA8,		// 0 OK
-	HEXA20,		// 1 OK
-	TETRA4,		// 2 OK
-	TETRA10,	// 3 OK
-	PRISMA6,	// 4 OK
-	PRISMA15,	// 5 OK
-	PYRAMID5,	// 6 OK
-	PYRAMID13	// 7 incorrect indexing and global B
-};
-
-struct FEMInput {
-
-	FEMInput(): mesh(NULL), localBoundaries(NULL), globalBoundaries(NULL) {};
-	~FEMInput() {
-		if (mesh != NULL) { delete mesh; }
-		if (localBoundaries != NULL) { delete localBoundaries; }
-		if (globalBoundaries != NULL) { delete globalBoundaries; }
-	}
-
-	mesh::Mesh *mesh;
-	mesh::Boundaries *localBoundaries;
-	mesh::Boundaries *globalBoundaries;
-};
-
-struct FEMParams {
-
-	FEMParams(): type(HEXA8), generateMesh(false) {
-	};
-
-	int type;
-	bool generateMesh;
-	permoncube::Settings settings;
-};
-
-permoncube::Generator *generator;
-FEMInput input;
-FEMParams params;
-
-void setParams(int argc, char** argv)
-{
-	if (argc != 11) {
-		return;
-	}
-
-	params.generateMesh = true;
-
-	int type;
-	sscanf(argv[1], "%i", &type);
-	params.type = type;
-
-	int clusters;
-	int subdomains;
-	int elementsInSub;
-
-	for (int i = 0; i < 3; i++) {
-		sscanf(argv[i + 2], "%i", &clusters);
-		sscanf(argv[i + 5], "%i", &subdomains);
-		sscanf(argv[i + 8], "%i", &elementsInSub);
-		params.settings.clusters[i] = clusters;
-		params.settings.subdomainsInCluster[i] = subdomains;
-		params.settings.elementsInSubdomain[i] = elementsInSub;
-	}
-}
-
-void testFEM(int argc, char** argv);
-
-void testBEM(int argc, char** argv);
-
-void testMPI(int argc, char** argv, int MPIrank, int MPIsize);
-
-void load_mesh(int MPIrank);
-
-void generate_mesh( int MPIrank );
+void solve(Instance &instance);
 
 int main(int argc, char** argv)
 {
-	setParams(argc, argv);
-
-	MPI_Init(&argc, &argv);					// starts MPI
+	MPI_Init(&argc, &argv);
 
 	int MPIrank;
 	int MPIsize;
-
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	MPI_Barrier(MPI_COMM_WORLD);
-	if (MPIrank == 0)
-		std::cout << "First MPI barrier passed - OK .... " << std::endl;
+	Configuration config("configuration.txt", argc, argv);
+	// print all settings
+	config.print();
+	Instance instance(config, MPIrank, MPIsize);
 
-	if (params.generateMesh && params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] != MPIsize) {
-		std::cerr << "Invalid number of processes.\n";
-		exit(EXIT_FAILURE);
-	}
-
-	if (params.generateMesh) {
-		generate_mesh( MPIrank );
-	} else {
-		load_mesh(MPIrank);
-	}
-
-	if (params.settings.clusters[0] * params.settings.clusters[1] * params.settings.clusters[2] == 1) {
-		//testBEM(argc, argv);
-		//testFEM(argc, argv);
-		testMPI(argc, argv, MPIrank, MPIsize);
-	} else {
-		testMPI(argc, argv, MPIrank, MPIsize);
-	}
-
-	if (params.generateMesh) {
-		delete generator;
-	}
+	// This method needs re-factoring !!!
+	solve(instance);
 
 	MPI_Finalize();
 }
 
 
-void load_mesh(int MPIrank)
-{
-//	mesh::Ansys ansys("matrices/spanner/Model");
-//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
-//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
-//	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
-//	ansys.coordinatesProperty(mesh::CP::FORCES_X) = "BC/Elasticity/NFX.dat";
-//	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
-//	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
-//
-//	input.mesh = new mesh::Mesh(ansys, 2, 8);
-//	input.localBoundaries = new mesh::Boundaries(*input.mesh);
-
-	stringstream ssm;
-	stringstream ssb;
-	ssm << "mesh_" << MPIrank << ".dat";
-	ssb << "boundaries_" << MPIrank << ".dat";
-
-	input.mesh = new mesh::Mesh();
-	input.globalBoundaries = new mesh::Boundaries(*input.mesh);
-
-	input.mesh->loadData(ssm.str().c_str());
-	input.globalBoundaries->loadData(ssb.str().c_str());
-	input.mesh->partitiate(8,8);
-
-	input.localBoundaries = new mesh::Boundaries(*input.mesh);
-
-	//input.mesh->computeFixPoints(20);
-	//input.mesh->computeCorners(*input.localBoundaries, 20, true, false, false);
-}
-
-void generate_mesh( int MPIrank )
-{
-	if (MPIrank == 0) { std::cout << "Permoncube - start                                                       "; system("date +%T.%6N"); }
-
-	switch (params.type) {
-	case HEXA8: {
-		generator = new permoncube::ElementGenerator<permoncube::Hexahedron8>(params.settings);
-		break;
-	}
-	case TETRA10: {
-		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron10>(params.settings);
-		break;
-	}
-	case TETRA4: {
-		generator = new permoncube::ElementGenerator<permoncube::Tetrahedron4>(params.settings);
-		break;
-	}
-	case HEXA20: {
-		generator = new permoncube::ElementGenerator<permoncube::Hexahedron20>(params.settings);
-		break;
-	}
-	case PRISMA6: {
-		generator = new permoncube::ElementGenerator<permoncube::Prisma6>(params.settings);
-		break;
-	}
-	case PRISMA15: {
-		generator = new permoncube::ElementGenerator<permoncube::Prisma15>(params.settings);
-		break;
-	}
-	case PYRAMID5: {
-		generator = new permoncube::ElementGenerator<permoncube::Pyramid5>(params.settings);
-		break;
-	}
-	case PYRAMID13: {
-		generator = new permoncube::ElementGenerator<permoncube::Pyramid13>(params.settings);
-		break;
-	}
-	}
-
-	size_t index = MPIrank;
-
-	int globoalIndClst = MPIrank;
-	int Cx = params.settings.clusters[0];
-	int Cy = params.settings.clusters[1];
-	int Cz = params.settings.clusters[2];
-
-	int Iclst,Jclst,Kclst, inXYplane;
-
-	Kclst = ceil(double (globoalIndClst+1)/(Cx*Cy));
-	inXYplane = (globoalIndClst+1)-(Kclst-1)*Cx*Cy;
-	Jclst = ceil(double( inXYplane)/Cx);
-	Iclst = inXYplane - Cx*(Jclst-1);
-
-	size_t cluster[3];
-	cluster[0] = Iclst - 1;
-	cluster[1] = Jclst - 1;
-	cluster[2] = Kclst - 1;
-
-	input.mesh = new mesh::Mesh();
-	input.globalBoundaries = new mesh::Boundaries(*input.mesh);
-	generator->mesh(*input.mesh, cluster);
-	input.localBoundaries = new mesh::Boundaries(*input.mesh);
-	//generator->fixZeroPlanes(input.mesh, cluster);
-	generator->fixBottom(*input.mesh, cluster);
-
-	generator->fillGlobalBoundaries(*input.globalBoundaries, cluster);
-
-	generator->setFixPoints(*input.mesh);
-	//input.mesh->computeFixPoints(8);
-
-	size_t number[3] = { 1, 3, 3 };
-	generator->setCorners(*input.localBoundaries, number, true, false, false);
-
-	if (MPIrank == 0) { std::cout << "Permoncube - end                                                         "; system("date +%T.%6N"); }
-}
-
-
-void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
+void solve(Instance &instance)
 {
 
 	bool DYNAMIC = false;
@@ -249,40 +40,11 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	start = omp_get_wtime();
 	std::cout.precision(15);
 
-	size_t partsCount 	  = input.mesh->parts();
-	size_t fixPointsCount = input.mesh->getFixPointsCount();
+	size_t partsCount 	  = instance.mesh().parts();
+	size_t fixPointsCount = instance.mesh().getFixPointsCount();
 
-	//if (MPIrank == 0) std::cout << "4 : " << omp_get_wtime() - start<< std::endl;
-
-	 TimeEvent timeBoundaries(string("Create Boundaries from Mesh"));
-	 timeBoundaries.AddStart();
-
-	// TODO: fill boundaries in PERMONCUBE
-	mesh::Boundaries boundaries(*input.mesh);
-
-	 timeBoundaries.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeBoundaries);
-
-	//if (MPIrank == 0) std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
-
-	 TimeEvent timeFaces(string("Create Faces"));
-	 timeFaces.AddStart();
-	//Faces faces(mesh, coordinates);
-	 timeFaces.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeFaces);
-
-	//if (MPIrank == 0) std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
-
-	 TimeEvent timeCorners(string("Create Corners"));
-	 timeCorners.AddStart();
-	//Corners corners(faces.getFaces(), coordinates);
-	 timeCorners.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeCorners);
-
-	//if (MPIrank == 0) std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
-
-	 TimeEvent timeKasm(string("Create K matrices"));
-	 timeKasm.AddStart();
+	TimeEvent timeKasm(string("Create K matrices"));
+	timeKasm.AddStart();
 
 	std::vector < SparseCSRMatrix<eslocal> >			K_mat;
 	std::vector < SparseCSRMatrix<eslocal> >			M_mat;
@@ -314,17 +76,17 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 #else
 	for (eslocal d = 0; d < partsCount; d++) {
 #endif
-		eslocal dimension = input.mesh->getPartNodesCount(d) * mesh::Point::size();
+		eslocal dimension = instance.mesh().getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
 		if (DYNAMIC)
-			input.mesh->elasticity(K_mat[d], M_mat[d], f, d);
+			instance.mesh().elasticity(K_mat[d], M_mat[d], f, d);
 		else
-			input.mesh->elasticity(K_mat[d],           f, d);
+			instance.mesh().elasticity(K_mat[d],           f, d);
 
-        f_vec[d].swap(f);
+		f_vec[d].swap(f);
 
-        if (MPIrank == 0) std::cout << d << " " ; //<< std::endl;
+        if (instance.rank() == 0) std::cout << d << " " ; //<< std::endl;
 	}
 
 	//if (MPIrank == 0) std::cout << std::endl << "10: " << omp_get_wtime() - start<< std::endl;
@@ -336,7 +98,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	TimeEvent timeFnodes(string("Create Fix nodes"));
 	timeFnodes.AddStart();
-	const std::vector<eslocal> fixPoints = input.mesh->getFixPoints();
+	const std::vector<eslocal> fixPoints = instance.mesh().getFixPoints();
 
 #ifndef DEBUG
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -356,7 +118,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	 timeB1loc.AddStart();
 
 	//if (MPIrank == 0) std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	input.localBoundaries->create_B1_l<eslocal>(
+	 instance.localBoundaries().create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
 		l2g_vec,
@@ -365,7 +127,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		lambda_map_sub_B0,
 		B1_duplicity,
 		partsCount,
-		*input.globalBoundaries
+		instance.globalBoundaries()
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -378,18 +140,17 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	 TimeEvent timeB1glob(string("Create B1 global"));
 	 timeB1glob.AddStart();
 
-	input.globalBoundaries->create_B1_g<eslocal>(
+	 instance.globalBoundaries().create_B1_g<eslocal>(
 		B1_mat,
 		K_mat,
 		lambda_map_sub_clst,
 		lambda_map_sub_B1,
 		B1_duplicity,
-		MPIrank,
-		MPIsize,
+		instance.rank(),
+		instance.size(),
 		partsCount,
 		neigh_clusters,
-		//input.localBoundaries
-        boundaries
+        instance.localBoundaries()
 	);
 
 	 timeB1glob.AddEndWithBarrier();
@@ -398,9 +159,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	 TimeEvent timeBforces(string("Create boundary forces ??"));
 	 timeBforces.AddStart();
 
-	const std::map<eslocal, double> &forces_x = input.mesh->coordinates().property(mesh::CP::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = input.mesh->coordinates().property(mesh::CP::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = input.mesh->coordinates().property(mesh::CP::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = instance.mesh().coordinates().property(mesh::CP::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = instance.mesh().coordinates().property(mesh::CP::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = instance.mesh().coordinates().property(mesh::CP::FORCES_Z).values();
 
 	for (eslocal d = 0; d < partsCount; d++) {
 		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -456,7 +217,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	extern void SetVecInt          ( vector <int>    & vec, ShortInt incerement_by, ShortInt nnz, ShortInt * vals);
 	extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
 
-	Cluster cluster(MPIrank + 1);
+	Cluster cluster(instance.rank() + 1);
 	if ( DYNAMIC )
 		cluster.USE_DYNAMIC			= 1;
 	else
@@ -465,7 +226,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	cluster.USE_HFETI			= 0;
 	cluster.USE_KINV			= 1;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
-	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
+	cluster.NUMBER_OF_CLUSTERS	= instance.size();
 
 	IterSolver solver;
 	solver.CG_max_iter	 = 100;
@@ -485,7 +246,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	for (int i = 0; i<number_of_subdomains_per_cluster; i++)
 		domain_list[i] = i;
 
-	SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
+	SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, instance.rank());
 
 	if (DYNAMIC) {
 		double dynamic_beta     = 0.25;
@@ -594,9 +355,9 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 #endif
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = input.mesh->coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = input.mesh->coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = input.mesh->coordinates()[l2g_vec[d][i]].z;
+			tmp_vec[0] = instance.mesh().coordinates()[l2g_vec[d][i]].x;
+			tmp_vec[1] = instance.mesh().coordinates()[l2g_vec[d][i]].y;
+			tmp_vec[2] = instance.mesh().coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();
@@ -650,7 +411,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
 	 timeSolKproc.AddStart();
 
-	if (MPIrank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
+	if (instance.rank() == 0) std::cout << "K regularization and factorization ... " << std::endl ;
 	#ifndef DEBUG
 	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
 #else
@@ -658,7 +419,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 #endif
 
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
-		if (MPIrank == 0) std::cout << d << " " ;
+		if (instance.rank() == 0) std::cout << d << " " ;
 
 		SetMatrixK_fromCSR ( cluster, d,
 			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
@@ -687,7 +448,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		 timeEvalMain.AddEvent(timeSolSC2);
 	}
 
-	if (MPIrank == 0) std::cout << std::endl ;
+	if (instance.rank() == 0) std::cout << std::endl ;
 
 	if (cluster.USE_HFETI == 1) {
 		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
@@ -810,8 +571,8 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
     		//prim_solution_out.push_back(vec_u_n);
 
 			std::stringstream ss;
-			ss << "mesh_" << MPIrank << "_" << time << ".vtk";
-			input.mesh->saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+			ss << "mesh_" << instance.rank() << "_" << time << ".vtk";
+			instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, instance.localBoundaries(), instance.globalBoundaries(), 0.95, 0.9);
 
 
     		// *** XXX
@@ -857,7 +618,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	double max_vg;
 	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-	if (MPIrank == 0)
+	if (instance.rank() == 0)
 		std::cout << " Max value in_solution = " << max_vg << std::endl;
 
 	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
@@ -890,846 +651,827 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 
 	timeEvalMain.totalTime.AddEndWithBarrier();
 	timeEvalMain.PrintStatsMPI();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 
-void testBEM(int argc, char** argv)
-{
-	double start = omp_get_wtime();
-	size_t partsCount = input.mesh->parts();
-	size_t fixPointsCount = 4;
-
-	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
-
-	mesh::SurfaceMesh sMesh(*input.mesh);
-
-	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
-
-	sMesh.computeFixPoints(fixPointsCount);
-
-
-	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
-
-	std::vector<DenseMatrix> K_mat_dense;
-
-	K_mat_dense.reserve(partsCount);
-	for (int d = 0; d < partsCount; d++) {
-		K_mat_dense.push_back( DenseMatrix (0, 0) );
-	}
-
-    
-#ifndef DEBUG
-    cilk_for (size_t d = 0; d < partsCount; d++) {
-#else
-    for (size_t d = 0; d < partsCount; d++) {
-#endif
-
-/*
-        std::ofstream Kmat_file_o;
-        std::ofstream Kmat_file_p;
-        
-        Kmat_file_p.precision(15);
-        Kmat_file_o.precision(15);
-       4
-        Kmat_file_o << std::scientific;
-        Kmat_file_p << std::scientific;
-        
-        
-        std::stringstream Kmat_file_name_o;
-        Kmat_file_name_o << "Kmat_o_" << d;
-        
-        Kmat_file_o.open ( Kmat_file_name_o.str().c_str() );
-        Kmat_file_p.open ("Kmat_p.txt");
-        
- */
-        DenseMatrix K_tmp;
-        
-        sMesh.elasticity(K_mat_dense[d], d);
-        std::cout << d << " " << std::endl;
-        
-//        Kmat_file_o << K_mat_dense[d];
-        
-        int n = K_mat_dense[d].rows();
-        
-        K_tmp = K_mat_dense[d];
-        
-        for (int i = 0; i < n/3; i++) {
-            for (int j = 0; j < n; j++) {
-                K_tmp( 3*i+0,j) = K_mat_dense[d](0*(n/3) + i ,j);
-                K_tmp( 3*i+1,j) = K_mat_dense[d](1*(n/3) + i ,j);
-                K_tmp( 3*i+2,j) = K_mat_dense[d](2*(n/3) + i ,j);
-            }
-        }
- 
-        for (int i = 0; i < n/3; i++) {
-            for (int j = 0; j < n; j++) {
-                K_mat_dense[d]( j, 3*i+0) = K_tmp(j, 0*(n/3) + i );
-                K_mat_dense[d]( j, 3*i+1) = K_tmp(j, 1*(n/3) + i );
-                K_mat_dense[d]( j, 3*i+2) = K_tmp(j, 2*(n/3) + i );
-            }
-        }
-
-/*        
-        Kmat_file_p << K_mat_dense[d];
-        
-        Kmat_file_o.close();
-        Kmat_file_p.close();
-*/
-        
-    }
-
-	std::cout << "5 : " << omp_get_wtime() - start << std::endl;
-
-
-	// TODO:
-
-    std::vector < SparseCSRMatrix<eslocal> >			K_mat;
-    std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
-    std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
-    
-    std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
-    std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
-    std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
-    std::vector < std::vector <double> >	B1_l_duplicity;
-    
-    std::vector < std::vector < double > >	f_vec     (partsCount);
-    std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
-    std::vector < std::vector <eslocal> >		l2g_vec;
-    
-    std::cout << "BEM 8 : " << omp_get_wtime() - start<< std::endl;
-
-    K_mat.reserve(partsCount);
-    for (size_t d = 0; d < partsCount; d++) {
-        K_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
-    }
-
-#ifndef DEBUG
-    cilk_for (size_t d = 0; d < partsCount; d++) {
-#else
-    for (size_t d = 0; d < partsCount; d++) {
-#endif
-        K_mat[d] = K_mat_dense[d];
-        f_vec[d].resize(K_mat_dense[d].rows() , 0.0);
-    }
-    K_mat_dense.clear();
-    
-    for (int d = 0; d < partsCount; d++) {
-//      std::cout<< "d: "<< d <<std::endl;
-      sMesh.integrateUpperFaces(f_vec[d],d);
-    }
-        
-    
-    std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
-
-    const std::vector<eslocal> fixPoints = sMesh.getFixPoints(); // input.mesh->getFixPoints();
-
-#ifndef DEBUG
-    cilk_for (eslocal d = 0; d < partsCount; d++) {
-#else
-    for (eslocal d = 0; d < partsCount; d++) {
-#endif
-        for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
-            fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
-        }
-        std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
-    }
-
-    std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-    input.localBoundaries->create_B1_l<eslocal>(
-                            B1_mat,
-                            B0_mat,
-                            l2g_vec,
-                            lambda_map_sub_clst,
-                            lambda_map_sub_B1,
-                            lambda_map_sub_B0,
-                            B1_l_duplicity,
-                            partsCount,
-							*input.localBoundaries
-                        );
+//void testBEM(int argc, char** argv)
+//{
+//	double start = omp_get_wtime();
+//	size_t partsCount = input.mesh->parts();
+//	size_t fixPointsCount = 4;
+//
+//	std::cout << "1 : " << omp_get_wtime() - start << std::endl;
+//
+//	mesh::SurfaceMesh sMesh(*input.mesh);
+//
+//	std::cout << "2 : " << omp_get_wtime() - start << std::endl;
+//
+//	sMesh.computeFixPoints(fixPointsCount);
+//
+//
+//	std::cout << "4 : " << omp_get_wtime() - start << std::endl;
+//
+//	std::vector<DenseMatrix> K_mat_dense;
+//
+//	K_mat_dense.reserve(partsCount);
+//	for (int d = 0; d < partsCount; d++) {
+//		K_mat_dense.push_back( DenseMatrix (0, 0) );
+//	}
+//
+//
+//#ifndef DEBUG
+//    cilk_for (size_t d = 0; d < partsCount; d++) {
+//#else
+//    for (size_t d = 0; d < partsCount; d++) {
+//#endif
+//
+///*
+//        std::ofstream Kmat_file_o;
+//        std::ofstream Kmat_file_p;
+//
+//        Kmat_file_p.precision(15);
+//        Kmat_file_o.precision(15);
+//       4
+//        Kmat_file_o << std::scientific;
+//        Kmat_file_p << std::scientific;
+//
+//
+//        std::stringstream Kmat_file_name_o;
+//        Kmat_file_name_o << "Kmat_o_" << d;
+//
+//        Kmat_file_o.open ( Kmat_file_name_o.str().c_str() );
+//        Kmat_file_p.open ("Kmat_p.txt");
+//
+// */
+//        DenseMatrix K_tmp;
+//
+//        sMesh.elasticity(K_mat_dense[d], d);
+//        std::cout << d << " " << std::endl;
+//
+////        Kmat_file_o << K_mat_dense[d];
+//
+//        int n = K_mat_dense[d].rows();
+//
+//        K_tmp = K_mat_dense[d];
+//
+//        for (int i = 0; i < n/3; i++) {
+//            for (int j = 0; j < n; j++) {
+//                K_tmp( 3*i+0,j) = K_mat_dense[d](0*(n/3) + i ,j);
+//                K_tmp( 3*i+1,j) = K_mat_dense[d](1*(n/3) + i ,j);
+//                K_tmp( 3*i+2,j) = K_mat_dense[d](2*(n/3) + i ,j);
+//            }
+//        }
+//
+//        for (int i = 0; i < n/3; i++) {
+//            for (int j = 0; j < n; j++) {
+//                K_mat_dense[d]( j, 3*i+0) = K_tmp(j, 0*(n/3) + i );
+//                K_mat_dense[d]( j, 3*i+1) = K_tmp(j, 1*(n/3) + i );
+//                K_mat_dense[d]( j, 3*i+2) = K_tmp(j, 2*(n/3) + i );
+//            }
+//        }
+//
+///*
+//        Kmat_file_p << K_mat_dense[d];
+//
+//        Kmat_file_o.close();
+//        Kmat_file_p.close();
+//*/
+//
+//    }
+//
+//	std::cout << "5 : " << omp_get_wtime() - start << std::endl;
+//
+//
+//	// TODO:
+//
+//    std::vector < SparseCSRMatrix<eslocal> >			K_mat;
+//    std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
+//    std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
+//
+//    std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
+//    std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
+//    std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
+//    std::vector < std::vector <double> >	B1_l_duplicity;
+//
+//    std::vector < std::vector < double > >	f_vec     (partsCount);
+//    std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
+//    std::vector < std::vector <eslocal> >		l2g_vec;
+//
+//    std::cout << "BEM 8 : " << omp_get_wtime() - start<< std::endl;
+//
+//    K_mat.reserve(partsCount);
+//    for (size_t d = 0; d < partsCount; d++) {
+//        K_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
+//    }
+//
+//#ifndef DEBUG
+//    cilk_for (size_t d = 0; d < partsCount; d++) {
+//#else
+//    for (size_t d = 0; d < partsCount; d++) {
+//#endif
+//        K_mat[d] = K_mat_dense[d];
+//        f_vec[d].resize(K_mat_dense[d].rows() , 0.0);
+//    }
+//    K_mat_dense.clear();
+//
 //    for (int d = 0; d < partsCount; d++) {
-//        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
-//            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
-//                f_vec[d][3 * iz + 2] = 1.0;
+////      std::cout<< "d: "<< d <<std::endl;
+//      sMesh.integrateUpperFaces(f_vec[d],d);
+//    }
+//
+//
+//    std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
+//
+//    const std::vector<eslocal> fixPoints = sMesh.getFixPoints(); // input.mesh->getFixPoints();
+//
+//#ifndef DEBUG
+//    cilk_for (eslocal d = 0; d < partsCount; d++) {
+//#else
+//    for (eslocal d = 0; d < partsCount; d++) {
+//#endif
+//        for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+//            fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
+//        }
+//        std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
+//    }
+//
+//    std::cout << "11: " << omp_get_wtime() - start<< std::endl;
+//    input.localBoundaries->create_B1_l<eslocal>(
+//                            B1_mat,
+//                            B0_mat,
+//                            l2g_vec,
+//                            lambda_map_sub_clst,
+//                            lambda_map_sub_B1,
+//                            lambda_map_sub_B0,
+//                            B1_l_duplicity,
+//                            partsCount,
+//							*input.localBoundaries
+//                        );
+////    for (int d = 0; d < partsCount; d++) {
+////        for (int iz = 0; iz < l2g_vec[d].size(); iz++) {
+////            if ( fabs( 30.0 - sMesh.coordinates()[l2g_vec[d][iz]].z ) < 0.00001 )
+////                f_vec[d][3 * iz + 2] = 1.0;
+////        }
+////    }
+//
+//
+//
+//    std::cout << "12: " << omp_get_wtime() - start<< std::endl;
+//
+//    std::cout.precision(10);
+//
+//
+//    // Start - Stupid version of ESPRESO interface
+//
+//    MPI_Init (&argc, &argv);					// starts MPI
+//
+//    typedef int       ShortInt ;
+//    typedef int       longInt  ;
+//
+//
+//    int MPIrank = 0; //MPI_Comm_rank(fem->comm, &MPIrank);
+//    int MPIsize = 1; //MPI_Comm_size(fem->comm, &MPIsize);
+//    int number_of_subdomains_per_cluster = partsCount;
+//
+//
+//    extern void SetCluster		  ( Cluster & cluster, ShortInt * subdomains_global_indices, ShortInt number_of_subdomains, ShortInt MPI_rank);
+//
+//    extern void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//                                     longInt n_rows, ShortInt n_cols, ShortInt nnz,
+//                                     longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
+//
+//    extern void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//                                     longInt n_rows, ShortInt n_cols, ShortInt nnz,
+//                                     longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
+//
+//    extern void SetMatrixR_fromDense( Cluster & cluster, ShortInt domain_index_in_cluster,
+//                                     ShortInt n_cols, ShortInt n_rows, double * vals, char type );
+//
+//    extern void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//                                    ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
+//
+//    extern void SetMatrixK_fromBEM ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//                                    ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
+//
+//
+//    extern void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
+//                                        vector <vector <longInt> > & lambda_map_sub, vector < ShortInt > & neigh_domains );
+//
+//    extern void SetMatrixFromCSR   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
+//    extern void SetMatrixFromDense ( SparseMatrix    & Mat, ShortInt n_cols, ShortInt n_rows, double * vals, char type );
+//    extern void SetMatrixFromCOO   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
+//    extern void SetVecInt          ( vector <int>    & vec, ShortInt incerement_by, ShortInt nnz, ShortInt * vals);
+//    extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
+//
+//    Cluster cluster(MPIrank + 1);
+//    cluster.USE_DYNAMIC			= 0;
+//    cluster.USE_HFETI			= 0;
+//    cluster.USE_KINV			= 0;
+//    cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
+//    cluster.NUMBER_OF_CLUSTERS	= MPIsize;
+//
+//    IterSolver solver;
+//    solver.CG_max_iter	 = 1000;
+//    solver.USE_GGtINV	 = 1;
+//    solver.epsilon		 = 0.0000001;
+//    solver.USE_HFETI	 = cluster.USE_HFETI;
+//    solver.USE_KINV		 = cluster.USE_KINV;
+//    solver.USE_DYNAMIC	 = 0;
+//    solver.USE_PIPECG	 = 1;
+//    solver.USE_PREC		 = 0;
+//    solver.FIND_SOLUTION = 0;
+//
+//
+//    std::vector <int> domain_list (number_of_subdomains_per_cluster,0);
+//    for (int i = 0; i<number_of_subdomains_per_cluster; i++)
+//        domain_list[i] = i;
+//
+//    SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
+//
+//    vector<double> solver_parameters ( 10 );
+//    solver.Setup ( solver_parameters, cluster );
+//
+//    // *** Setup B0 matrix *******************************************************************************************
+//    if (cluster.USE_HFETI == 1 ) {
+//
+//#ifndef DEBUG
+//    cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//        ShortInt domain_index_in_cluster = i;
+//
+//        SetMatrixB0_fromCOO( cluster, domain_index_in_cluster,
+//                B0_mat[i].rows(),			//clust_g.data[i]->B->B0_rows,		// B_full_rows, //n_row_eq,
+//                B0_mat[i].columns(),		//.data[i]->B->B0_cols,				// B_full_cols, //n_col,
+//                B0_mat[i].nonZeroValues(),	//.data[i]->B->B0_nnz,				// B_full_nnz,  //nnz_eq,
+//                B0_mat[i].rowIndices(),		//&clust_g.data[i]->B->B0_I[0],		// BI_full[0], //Bi_coo,
+//                B0_mat[i].columnIndices(),	//&clust_g.data[i]->B->B0_J[0],		// BJ_full[0], //Bj_coo,
+//                B0_mat[i].values(),			//&clust_g.data[i]->B->B0_V[0],		// BV_full[0], //Bv_coo,
+//                'G', B0_mat[i].indexing() );
 //        }
 //    }
-
-    
-    
-    std::cout << "12: " << omp_get_wtime() - start<< std::endl;
-        
-    std::cout.precision(10);
-
-    
-    // Start - Stupid version of ESPRESO interface
-    
-    MPI_Init (&argc, &argv);					// starts MPI
-    
-    typedef int       ShortInt ;
-    typedef int       longInt  ;
-    
-    
-    int MPIrank = 0; //MPI_Comm_rank(fem->comm, &MPIrank);
-    int MPIsize = 1; //MPI_Comm_size(fem->comm, &MPIsize);
-    int number_of_subdomains_per_cluster = partsCount;
-    
-    
-    extern void SetCluster		  ( Cluster & cluster, ShortInt * subdomains_global_indices, ShortInt number_of_subdomains, ShortInt MPI_rank);
-    
-    extern void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
-                                     longInt n_rows, ShortInt n_cols, ShortInt nnz,
-                                     longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
-    
-    extern void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
-                                     longInt n_rows, ShortInt n_cols, ShortInt nnz,
-                                     longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
-    
-    extern void SetMatrixR_fromDense( Cluster & cluster, ShortInt domain_index_in_cluster,
-                                     ShortInt n_cols, ShortInt n_rows, double * vals, char type );
-    
-    extern void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
-                                    ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
-    
-    extern void SetMatrixK_fromBEM ( Cluster & cluster, ShortInt domain_index_in_cluster,
-                                    ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
-
-    
-    extern void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
-                                        vector <vector <longInt> > & lambda_map_sub, vector < ShortInt > & neigh_domains );
-    
-    extern void SetMatrixFromCSR   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
-    extern void SetMatrixFromDense ( SparseMatrix    & Mat, ShortInt n_cols, ShortInt n_rows, double * vals, char type );
-    extern void SetMatrixFromCOO   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
-    extern void SetVecInt          ( vector <int>    & vec, ShortInt incerement_by, ShortInt nnz, ShortInt * vals);
-    extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
-    
-    Cluster cluster(MPIrank + 1);
-    cluster.USE_DYNAMIC			= 0;
-    cluster.USE_HFETI			= 0;
-    cluster.USE_KINV			= 0;
-    cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
-    cluster.NUMBER_OF_CLUSTERS	= MPIsize;
-    
-    IterSolver solver;
-    solver.CG_max_iter	 = 1000;
-    solver.USE_GGtINV	 = 1;
-    solver.epsilon		 = 0.0000001;
-    solver.USE_HFETI	 = cluster.USE_HFETI;
-    solver.USE_KINV		 = cluster.USE_KINV;
-    solver.USE_DYNAMIC	 = 0;
-    solver.USE_PIPECG	 = 1;
-    solver.USE_PREC		 = 0;
-    solver.FIND_SOLUTION = 0;
-    
-    
-    std::vector <int> domain_list (number_of_subdomains_per_cluster,0);
-    for (int i = 0; i<number_of_subdomains_per_cluster; i++)
-        domain_list[i] = i;
-    
-    SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
-    
-    vector<double> solver_parameters ( 10 );
-    solver.Setup ( solver_parameters, cluster );
-    
-    // *** Setup B0 matrix *******************************************************************************************
-    if (cluster.USE_HFETI == 1 ) {
-        
-#ifndef DEBUG
-    cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-        ShortInt domain_index_in_cluster = i;
-                
-        SetMatrixB0_fromCOO( cluster, domain_index_in_cluster,
-                B0_mat[i].rows(),			//clust_g.data[i]->B->B0_rows,		// B_full_rows, //n_row_eq,
-                B0_mat[i].columns(),		//.data[i]->B->B0_cols,				// B_full_cols, //n_col,
-                B0_mat[i].nonZeroValues(),	//.data[i]->B->B0_nnz,				// B_full_nnz,  //nnz_eq,
-                B0_mat[i].rowIndices(),		//&clust_g.data[i]->B->B0_I[0],		// BI_full[0], //Bi_coo,
-                B0_mat[i].columnIndices(),	//&clust_g.data[i]->B->B0_J[0],		// BJ_full[0], //Bj_coo,
-                B0_mat[i].values(),			//&clust_g.data[i]->B->B0_V[0],		// BV_full[0], //Bv_coo,
-                'G', B0_mat[i].indexing() );
-        }
-    }
-    // *** END - Setup B0 matrix *************************************************************************************
-        
-    // *** Setup B1 matrix *******************************************************************************************
-#ifndef DEBUG
-    cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-        ShortInt domain_index_in_cluster = i;
-        SetMatrixB1_fromCOO( cluster, domain_index_in_cluster,
-                B1_mat[i].rows(),			//clust_g.data[i]->B->B_full_rows, //n_row_eq,
-                B1_mat[i].columns(),		//clust_g.data[i]->B->B_full_cols, //n_col,
-                B1_mat[i].nonZeroValues(),	//clust_g.data[i]->B->B_full_nnz,  //nnz_eq,
-                B1_mat[i].rowIndices(),		//&clust_g.data[i]->B->BI_full[0], //Bi_coo,
-                B1_mat[i].columnIndices(),	//&clust_g.data[i]->B->BJ_full[0], //Bj_coo,
-                B1_mat[i].values(),			//&clust_g.data[i]->B->BV_full[0], //Bv_coo,
-                'G', B1_mat[i].indexing() );
-    }
-            
-#ifndef DEBUG
-    cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-            cluster.domains[i].B1_scale_vec = B1_l_duplicity[i];
-    }
-    // *** END - Setup B1 matrix *************************************************************************************
-
-                
-                
-    // *** Setup R matrix ********************************************************************************************
-#ifndef DEBUG
-    cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#else
-    for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#endif
-        for (int i = 0; i < l2g_vec[d].size(); i++) {
-            std::vector <double> tmp_vec (3,0);
-            
-            tmp_vec[0] = sMesh.coordinates()[l2g_vec[d][i]].x;
-            tmp_vec[1] = sMesh.coordinates()[l2g_vec[d][i]].y;
-            tmp_vec[2] = sMesh.coordinates()[l2g_vec[d][i]].z;
-            cluster.domains[d].coordinates.push_back(tmp_vec);
-        }
-        cluster.domains[d].CreateKplus_R();
-        //cluster.domains[d].Kplus_R.ConvertCSRToDense(0);
-    }
-    // *** END - Setup R matrix **************************************************************************************
-                    
-    // *** Load RHS and fix points for K regularization **************************************************************
-
-    for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-        //SetVecDbl( cluster.domains[i].f,        clust_g.data[i]->KSparse->n_row, clust_g.data[i]->fE );
-        cluster.domains[d].f = f_vec[d];
-                            
-        //SetVecInt( cluster.domains[i].fix_dofs, 1,                           24, clust_g.fem[i]->mesh.fixingDOFs );
-        for (size_t i = 0; i < fix_nodes[d].size(); i++) {
-            for (size_t d_i = 0; d_i < 3; d_i++) {
-                cluster.domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
-            }
-        }
-    }
-    // *** END - Load RHS and fix points for K regularization ********************************************************
-                        
-    // *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
-    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-        cluster.domains[i].lambda_map_sub = lambda_map_sub_B1[i];
-    }
-                            
-    std::vector < int > neigh_clusters;
-    //neigh_clusters.push_back(0);
-                            
-    SetSolverPreprocessing ( cluster, solver, lambda_map_sub_clst, neigh_clusters );
-    // *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
-                            
-     
-        
-        
-    // *** Load Matrix K and regularization ******************************************************************************
-#ifndef DEBUG
-    cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#else
-    for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#endif
-        SetMatrixK_fromCSR ( cluster, d,
-        K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
-        K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
-                                                        'G');
-    }
-    K_mat.clear();
-
-        
-        
-    if (cluster.USE_HFETI == 1)
-        cluster.SetClusterHFETI();
-                                
-    cluster.SetClusterPC_AfterKplus();
-    // *** END - Load Matrix K and regularization  ***********************************************************************
-        
-
-                                
-    // *** Running Solver ************************************************************************************************
-    string result_file("MATSOL_SVN_Displacement.Nvec");
-    
-    
-        
-    solver.Solve_singular ( cluster, result_file );
- 
-    
-        
-        
-        
-    vector < vector < double > > prim_solution;
-    solver.GetSolution_Primal_singular_parallel(cluster, prim_solution);
-        
-    double max_v = 0.0;
-                                
-    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++)
-        for (ShortInt j = 0; j < prim_solution[i].size(); j++)
-            if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
-                                
-    TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.AddStartWOBarrier(0.0); max_sol_ev.AddEndWOBarrier(max_v);
-                                
-    std::cout.precision(15);
-                                
-    double max_vg;
-    MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-        
-    if (MPIrank == 0)
-        std::cout << " Max value in_solution = " << max_vg << std::endl;
-                                
-    max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
-                                
-    //input.mesh->saveVTK(prim_solution, l2g_vec);
-                                
-    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
-    
-                //if (clust_g.domainG->flag_store_VTK)
-                //{
-                //	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-                //		for (ShortInt j = 0; j < prim_solution[i].size(); j++) {
-                //			if (prim_solution[i][j] > max_v) max_v = prim_solution[i][j];
-                //		}
-                //		copy(prim_solution[i].begin(), prim_solution[i].end(), clust_g.data[i]->ddu);
-                //	}
-                                
-                //}
-                                
-                                
-    // *** END - Running Solver ************************************************************************************************
-                                
-                                
-    // END - Stupid version of ESPRESO interface
-        
-                
-    
-
-}
-
-void testFEM(int argc, char** argv)
-{
-	double start;
-	start = omp_get_wtime();
-	std::cout.precision(15);
-
-	size_t partsCount = input.mesh->parts();
-	size_t fixPointsCount = input.mesh->getFixPointsCount();
-
-
-	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
-
-	//Faces faces(mesh, coordinates);
-
-	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
-
-	//Corners corners(faces.getFaces(), coordinates);
-
-	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
-
-	std::vector < SparseCSRMatrix<eslocal> >			K_mat;
-	std::vector < SparseCSRMatrix<eslocal> >			M_mat;
-	std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
-	std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
-
-	std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
-	std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
-	std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
-	std::vector < std::vector <double> >	B1_l_duplicity;
-
-	std::vector < std::vector < double > >	f_vec     (partsCount);
-	std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
-	std::vector < std::vector <eslocal> >		l2g_vec;
-
-	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
-
-	K_mat.reserve(partsCount);
-	M_mat.reserve(partsCount);
-	for (eslocal d = 0; d < partsCount; d++) {
-		K_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
-		M_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
-	}
-
-	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
-
-#ifndef DEBUG
-	cilk_for (eslocal d = 0; d < partsCount; d++) {
-#else
-	for (eslocal d = 0; d < partsCount; d++) {
-#endif
-		eslocal dimension = input.mesh->getPartNodesCount(d) * mesh::Point::size();
-		std::vector<double> f(dimension);
-
-		input.mesh->elasticity(K_mat[d], M_mat[d], f, d);
-
-		//K_mat[d] = K;
-		//M_mat[d] = M;
-
-        f_vec[d].swap(f);
-        //f_vec[d].resize(K_mat[d].rows() , 0.0);
-
-		std::cout << d << " " << std::endl;
-	}
-    //f_vec[partsCount-1][f_vec[partsCount-1].size() - 1] = 1.0;
-
-        
-        
-        
-        
-	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
-
-	const std::vector<eslocal> fixPoints = input.mesh->getFixPoints();
-
-#ifndef DEBUG
-	cilk_for (eslocal d = 0; d < partsCount; d++) {
-#else
-	for (eslocal d = 0; d < partsCount; d++) {
-#endif
-		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
-			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
-		}
-		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
-	}
-
-	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
-	input.localBoundaries->create_B1_l<eslocal>(
-		B1_mat,
-		B0_mat,
-		l2g_vec,
-		lambda_map_sub_clst,
-		lambda_map_sub_B1,
-		lambda_map_sub_B0,
-		B1_l_duplicity,
-		partsCount,
-		*input.localBoundaries
-	);
-
-	//std::cout << B1_mat[0];
-
-	const std::map<eslocal, double> &forces_x = input.mesh->coordinates().property(mesh::CP::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = input.mesh->coordinates().property(mesh::CP::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = input.mesh->coordinates().property(mesh::CP::FORCES_Z).values();
-
-	for (eslocal d = 0; d < partsCount; d++) {
-		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-			if (forces_x.find(l2g_vec[d][iz]) != forces_x.end()) {
-				f_vec[d][3 * iz + 0] = forces_x.at(l2g_vec[d][iz]);
-			}
-			if (forces_y.find(l2g_vec[d][iz]) != forces_y.end()) {
-				f_vec[d][3 * iz + 1] = forces_y.at(l2g_vec[d][iz]);
-			}
-			if (forces_z.find(l2g_vec[d][iz]) != forces_z.end()) {
-				f_vec[d][3 * iz + 2] = forces_z.at(l2g_vec[d][iz]);
-			}
-		}
-	}
-//    for (eslocal d = 0; d < partsCount; d++) {
-//        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
-//            if ( fabs( 30.0 - input.mesh->coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
-//                //f_vec[d][3 * iz + 2] = 1.0;
+//    // *** END - Setup B0 matrix *************************************************************************************
+//
+//    // *** Setup B1 matrix *******************************************************************************************
+//#ifndef DEBUG
+//    cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//        ShortInt domain_index_in_cluster = i;
+//        SetMatrixB1_fromCOO( cluster, domain_index_in_cluster,
+//                B1_mat[i].rows(),			//clust_g.data[i]->B->B_full_rows, //n_row_eq,
+//                B1_mat[i].columns(),		//clust_g.data[i]->B->B_full_cols, //n_col,
+//                B1_mat[i].nonZeroValues(),	//clust_g.data[i]->B->B_full_nnz,  //nnz_eq,
+//                B1_mat[i].rowIndices(),		//&clust_g.data[i]->B->BI_full[0], //Bi_coo,
+//                B1_mat[i].columnIndices(),	//&clust_g.data[i]->B->BJ_full[0], //Bj_coo,
+//                B1_mat[i].values(),			//&clust_g.data[i]->B->BV_full[0], //Bv_coo,
+//                'G', B1_mat[i].indexing() );
+//    }
+//
+//#ifndef DEBUG
+//    cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//            cluster.domains[i].B1_scale_vec = B1_l_duplicity[i];
+//    }
+//    // *** END - Setup B1 matrix *************************************************************************************
+//
+//
+//
+//    // *** Setup R matrix ********************************************************************************************
+//#ifndef DEBUG
+//    cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#else
+//    for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#endif
+//        for (int i = 0; i < l2g_vec[d].size(); i++) {
+//            std::vector <double> tmp_vec (3,0);
+//
+//            tmp_vec[0] = sMesh.coordinates()[l2g_vec[d][i]].x;
+//            tmp_vec[1] = sMesh.coordinates()[l2g_vec[d][i]].y;
+//            tmp_vec[2] = sMesh.coordinates()[l2g_vec[d][i]].z;
+//            cluster.domains[d].coordinates.push_back(tmp_vec);
+//        }
+//        cluster.domains[d].CreateKplus_R();
+//        //cluster.domains[d].Kplus_R.ConvertCSRToDense(0);
+//    }
+//    // *** END - Setup R matrix **************************************************************************************
+//
+//    // *** Load RHS and fix points for K regularization **************************************************************
+//
+//    for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//        //SetVecDbl( cluster.domains[i].f,        clust_g.data[i]->KSparse->n_row, clust_g.data[i]->fE );
+//        cluster.domains[d].f = f_vec[d];
+//
+//        //SetVecInt( cluster.domains[i].fix_dofs, 1,                           24, clust_g.fem[i]->mesh.fixingDOFs );
+//        for (size_t i = 0; i < fix_nodes[d].size(); i++) {
+//            for (size_t d_i = 0; d_i < 3; d_i++) {
+//                cluster.domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
 //            }
 //        }
 //    }
-
-/*
-	for (eslocal d = 0; d < partsCount; d++) {
-    // K
-    SparseIJVMatrix tmpK = K_mat[d];
-    std::ofstream (K_mat_file);
-    K_mat_file.precision(15);
-    K_mat_file << std::scientific;
-    std::stringstream K_mat_file_name;
-    K_mat_file_name << "dumped_files/K_mat_" << d;
-    K_mat_file.open ( K_mat_file_name.str().c_str() );
-    K_mat_file << tmpK;
-    K_mat_file.close();
-    // f
-    std::ofstream (f_vec_file);
-    f_vec_file.precision(15);
-    f_vec_file << std::scientific;
-    std::stringstream f_vec_file_name;
-    f_vec_file_name << "dumped_files/f_vec_" << d;
-    f_vec_file.open ( f_vec_file_name.str().c_str() );
-    f_vec_file << f_vec[d];
-    f_vec_file.close();
-    // B
-    std::ofstream (B0_mat_file);
-    B0_mat_file.precision(15);
-    B0_mat_file << std::scientific;
-    std::stringstream B0_mat_file_name;
-    B0_mat_file_name << "dumped_files/B0_mat_" << d;
-    B0_mat_file.open ( B0_mat_file_name.str().c_str() );
-    B0_mat_file << B0_mat[d];
-    B0_mat_file.close();
-  }
-*/
-
-
-
-        
-        
-	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
-
-	std::cout.precision(10);
-
-	// Start - Stupid version of ESPRESO interface
-
-	//MPI_Init (&argc, &argv);					// starts MPI
-
-	typedef int       ShortInt ;
-	typedef int       longInt  ;
-
-
-	int MPIrank = 0; //MPI_Comm_rank(fem->comm, &MPIrank);
-	int MPIsize = 1; //MPI_Comm_size(fem->comm, &MPIsize);
-	int number_of_subdomains_per_cluster = partsCount;
-
-
-	extern void SetCluster		  ( Cluster & cluster, ShortInt * subdomains_global_indices, ShortInt number_of_subdomains, ShortInt MPI_rank);
-
-	extern void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
-		longInt n_rows, ShortInt n_cols, ShortInt nnz,
-		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
-
-	extern void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
-		longInt n_rows, ShortInt n_cols, ShortInt nnz,
-		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
-
-	extern void SetMatrixR_fromDense( Cluster & cluster, ShortInt domain_index_in_cluster,
-		ShortInt n_cols, ShortInt n_rows, double * vals, char type );
-
-	extern void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
-		ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
-
-	extern void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
-		vector <vector <longInt> > & lambda_map_sub, vector < ShortInt > & neigh_domains );
-
-	extern void SetMatrixFromCSR   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
-	extern void SetMatrixFromDense ( SparseMatrix    & Mat, ShortInt n_cols, ShortInt n_rows, double * vals, char type );
-	extern void SetMatrixFromCOO   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
-	extern void SetVecInt          ( vector <int>    & vec, ShortInt incerement_by, ShortInt nnz, ShortInt * vals);
-	extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
-
-	Cluster cluster(MPIrank + 1);
-	cluster.USE_DYNAMIC			= 0;
-	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 0;
-	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
-	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
-
-	IterSolver solver;
-	solver.CG_max_iter	 = 1000;
-	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = 0.00001;
-	solver.USE_HFETI	 = cluster.USE_HFETI;
-	solver.USE_KINV		 = cluster.USE_KINV;
-	solver.USE_DYNAMIC	 = 0;
-	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 0;
-	solver.FIND_SOLUTION = 0;
-
-	std::vector <int> domain_list (number_of_subdomains_per_cluster,0);
-	for (int i = 0; i<number_of_subdomains_per_cluster; i++)
-		domain_list[i] = i;
-
-	SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
-
-	vector<double> solver_parameters ( 10 );
-	solver.Setup ( solver_parameters, cluster );
-
-	// *** Setup B0 matrix *******************************************************************************************
-	if (cluster.USE_HFETI == 1 ) {
-
-#ifndef DEBUG
-		cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-		for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-			ShortInt domain_index_in_cluster = i;
-
-			SetMatrixB0_fromCOO( cluster, domain_index_in_cluster,
-				B0_mat[i].rows(),			//clust_g.data[i]->B->B0_rows,		// B_full_rows, //n_row_eq,
-				B0_mat[i].columns(),		//.data[i]->B->B0_cols,				// B_full_cols, //n_col,
-				B0_mat[i].nonZeroValues(),	//.data[i]->B->B0_nnz,				// B_full_nnz,  //nnz_eq,
-				B0_mat[i].rowIndices(),		//&clust_g.data[i]->B->B0_I[0],		// BI_full[0], //Bi_coo,
-				B0_mat[i].columnIndices(),	//&clust_g.data[i]->B->B0_J[0],		// BJ_full[0], //Bj_coo,
-				B0_mat[i].values(),			//&clust_g.data[i]->B->B0_V[0],		// BV_full[0], //Bv_coo,
-				'G', B0_mat[i].indexing() );
-		}
-	}
-	// *** END - Setup B0 matrix *************************************************************************************
-
-	// *** Setup B1 matrix *******************************************************************************************
-#ifndef DEBUG
-	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-		ShortInt domain_index_in_cluster = i;
-		SetMatrixB1_fromCOO( cluster, domain_index_in_cluster,
-			B1_mat[i].rows(),			//clust_g.data[i]->B->B_full_rows, //n_row_eq,
-			B1_mat[i].columns(),		//clust_g.data[i]->B->B_full_cols, //n_col,
-			B1_mat[i].nonZeroValues(),	//clust_g.data[i]->B->B_full_nnz,  //nnz_eq,
-			B1_mat[i].rowIndices(),		//&clust_g.data[i]->B->BI_full[0], //Bi_coo,
-			B1_mat[i].columnIndices(),	//&clust_g.data[i]->B->BJ_full[0], //Bj_coo,
-			B1_mat[i].values(),			//&clust_g.data[i]->B->BV_full[0], //Bv_coo,
-			'G', B1_mat[i].indexing() );
-	}
-
-#ifndef DEBUG
-	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-		cluster.domains[i].B1_scale_vec = B1_l_duplicity[i];
-	}
-	// *** END - Setup B1 matrix *************************************************************************************
-
-
-	// *** Setup R matrix ********************************************************************************************
-#ifndef DEBUG
-	cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#else
-	for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#endif
-		for (int i = 0; i < l2g_vec[d].size(); i++) {
-			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = input.mesh->coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = input.mesh->coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = input.mesh->coordinates()[l2g_vec[d][i]].z;
-			cluster.domains[d].coordinates.push_back(tmp_vec);
-		}
-		cluster.domains[d].CreateKplus_R();
-		//cluster.domains[d].Kplus_R.ConvertCSRToDense(0);
-	}
-	// *** END - Setup R matrix **************************************************************************************
-
-	// *** Load RHS and fix points for K regularization **************************************************************
-#ifndef DEBUG
-	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#else
-	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#endif
-		//SetVecDbl( cluster.domains[i].f,        clust_g.data[i]->KSparse->n_row, clust_g.data[i]->fE );
-		cluster.domains[d].f = f_vec[d];
-
-		//SetVecInt( cluster.domains[i].fix_dofs, 1,                           24, clust_g.fem[i]->mesh.fixingDOFs );
-		for (int i = 0; i < fix_nodes[d].size(); i++) {
- 			for (int d_i = 0; d_i < 3; d_i++) {
-				cluster.domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
-			}
-		}
-	}
-	// *** END - Load RHS and fix points for K regularization ********************************************************
-
-	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
-#ifndef DEBUG
-	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#else
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-#endif
-		cluster.domains[i].lambda_map_sub = lambda_map_sub_B1[i];
-	}
-
-	std::vector < int > neigh_clusters;
-	//neigh_clusters.push_back(0);
-
-	SetSolverPreprocessing ( cluster, solver, lambda_map_sub_clst, neigh_clusters );
-	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
-
-
-	// *** Load Matrix K and regularization ******************************************************************************
-#ifndef DEBUG
-	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#else
-	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
-#endif
-
-		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
-
-		SetMatrixK_fromCSR ( cluster, d,
-			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
-			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
-			'G');
-	}
-
-	//std::cout << std::endl;
-
-	//cluster.Create_Kinv_perDomain();
-
-	//cluster.Create_SC_perDomain();
-
-
-	if (cluster.USE_HFETI == 1)
-		cluster.SetClusterHFETI();
-
-	cluster.SetClusterPC_AfterKplus();
-	// *** END - Load Matrix K and regularization  ***********************************************************************
-
-
-	// *** Running Solver ************************************************************************************************
-	string result_file("MATSOL_SVN_Displacement.Nvec");
-	solver.Solve_singular ( cluster, result_file );
-
-	vector < vector < double > > prim_solution;
-	solver.GetSolution_Primal_singular_parallel(cluster, prim_solution);
-	double max_v = 0.0;
-
-	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++)
-		for (ShortInt j = 0; j < prim_solution[i].size(); j++)
-			if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
-
-	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.AddStartWOBarrier(0.0); max_sol_ev.AddEndWOBarrier(max_v);
-
-	std::cout.precision(15);
-
-	double max_vg;
-	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-	if (MPIrank == 0)
-		std::cout << " Max value in_solution = " << max_vg << std::endl;
-
-	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
-
-	input.mesh->saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 1.0, 0.95);
-
-	//if (clust_g.domainG->flag_store_VTK)
-	//{
-	//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
-	//		for (ShortInt j = 0; j < prim_solution[i].size(); j++) {
-	//			if (prim_solution[i][j] > max_v) max_v = prim_solution[i][j];
-	//		}
-	//		copy(prim_solution[i].begin(), prim_solution[i].end(), clust_g.data[i]->ddu);
-	//	}
-
-	//}
-
-
-	// *** END - Running Solver ************************************************************************************************
-
-
-	// END - Stupid version of ESPRESO interface
-}
+//    // *** END - Load RHS and fix points for K regularization ********************************************************
+//
+//    // *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
+//    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//        cluster.domains[i].lambda_map_sub = lambda_map_sub_B1[i];
+//    }
+//
+//    std::vector < int > neigh_clusters;
+//    //neigh_clusters.push_back(0);
+//
+//    SetSolverPreprocessing ( cluster, solver, lambda_map_sub_clst, neigh_clusters );
+//    // *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+//
+//
+//
+//
+//    // *** Load Matrix K and regularization ******************************************************************************
+//#ifndef DEBUG
+//    cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#else
+//    for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#endif
+//        SetMatrixK_fromCSR ( cluster, d,
+//        K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
+//        K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
+//                                                        'G');
+//    }
+//    K_mat.clear();
+//
+//
+//
+//    if (cluster.USE_HFETI == 1)
+//        cluster.SetClusterHFETI();
+//
+//    cluster.SetClusterPC_AfterKplus();
+//    // *** END - Load Matrix K and regularization  ***********************************************************************
+//
+//
+//
+//    // *** Running Solver ************************************************************************************************
+//    string result_file("MATSOL_SVN_Displacement.Nvec");
+//
+//
+//
+//    solver.Solve_singular ( cluster, result_file );
+//
+//
+//
+//
+//
+//    vector < vector < double > > prim_solution;
+//    solver.GetSolution_Primal_singular_parallel(cluster, prim_solution);
+//
+//    double max_v = 0.0;
+//
+//    for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++)
+//        for (ShortInt j = 0; j < prim_solution[i].size(); j++)
+//            if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
+//
+//    TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.AddStartWOBarrier(0.0); max_sol_ev.AddEndWOBarrier(max_v);
+//
+//    std::cout.precision(15);
+//
+//    double max_vg;
+//    MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+//
+//    if (MPIrank == 0)
+//        std::cout << " Max value in_solution = " << max_vg << std::endl;
+//
+//    max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
+//
+//    //input.mesh->saveVTK(prim_solution, l2g_vec);
+//
+//    sMesh.saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 0.95, 0.9);
+//
+//                //if (clust_g.domainG->flag_store_VTK)
+//                //{
+//                //	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//                //		for (ShortInt j = 0; j < prim_solution[i].size(); j++) {
+//                //			if (prim_solution[i][j] > max_v) max_v = prim_solution[i][j];
+//                //		}
+//                //		copy(prim_solution[i].begin(), prim_solution[i].end(), clust_g.data[i]->ddu);
+//                //	}
+//
+//                //}
+//
+//
+//    // *** END - Running Solver ************************************************************************************************
+//
+//
+//    // END - Stupid version of ESPRESO interface
+//
+//
+//
+//
+//}
+//
+//void testFEM(int argc, char** argv)
+//{
+//	double start;
+//	start = omp_get_wtime();
+//	std::cout.precision(15);
+//
+//	size_t partsCount = input.mesh->parts();
+//	size_t fixPointsCount = input.mesh->getFixPointsCount();
+//
+//
+//	std::cout << "5 : " << omp_get_wtime() - start<< std::endl;
+//
+//	//Faces faces(mesh, coordinates);
+//
+//	std::cout << "6 : " << omp_get_wtime() - start<< std::endl;
+//
+//	//Corners corners(faces.getFaces(), coordinates);
+//
+//	std::cout << "7 : " << omp_get_wtime() - start<< std::endl;
+//
+//	std::vector < SparseCSRMatrix<eslocal> >			K_mat;
+//	std::vector < SparseCSRMatrix<eslocal> >			M_mat;
+//	std::vector < SparseIJVMatrix<eslocal> >			B1_mat;
+//	std::vector < SparseIJVMatrix<eslocal> >			B0_mat;
+//
+//	std::vector < std::vector <eslocal> >		lambda_map_sub_B1;
+//	std::vector < std::vector <eslocal> >		lambda_map_sub_B0;
+//	std::vector < std::vector <eslocal> >		lambda_map_sub_clst;
+//	std::vector < std::vector <double> >	B1_l_duplicity;
+//
+//	std::vector < std::vector < double > >	f_vec     (partsCount);
+//	std::vector < std::vector < eslocal > >		fix_nodes (partsCount);
+//	std::vector < std::vector <eslocal> >		l2g_vec;
+//
+//	std::cout << "8 : " << omp_get_wtime() - start<< std::endl;
+//
+//	K_mat.reserve(partsCount);
+//	M_mat.reserve(partsCount);
+//	for (eslocal d = 0; d < partsCount; d++) {
+//		K_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
+//		M_mat.push_back( SparseCSRMatrix<eslocal> (0,0) );
+//	}
+//
+//	std::cout << "9 : " << omp_get_wtime() - start<< std::endl;
+//
+//#ifndef DEBUG
+//	cilk_for (eslocal d = 0; d < partsCount; d++) {
+//#else
+//	for (eslocal d = 0; d < partsCount; d++) {
+//#endif
+//		eslocal dimension = input.mesh->getPartNodesCount(d) * mesh::Point::size();
+//		std::vector<double> f(dimension);
+//
+//		input.mesh->elasticity(K_mat[d], M_mat[d], f, d);
+//
+//		//K_mat[d] = K;
+//		//M_mat[d] = M;
+//
+//        f_vec[d].swap(f);
+//        //f_vec[d].resize(K_mat[d].rows() , 0.0);
+//
+//		std::cout << d << " " << std::endl;
+//	}
+//    //f_vec[partsCount-1][f_vec[partsCount-1].size() - 1] = 1.0;
+//
+//
+//
+//
+//
+//	std::cout << "10: " << omp_get_wtime() - start<< std::endl;
+//
+//	const std::vector<eslocal> fixPoints = input.mesh->getFixPoints();
+//
+//#ifndef DEBUG
+//	cilk_for (eslocal d = 0; d < partsCount; d++) {
+//#else
+//	for (eslocal d = 0; d < partsCount; d++) {
+//#endif
+//		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+//			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
+//		}
+//		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
+//	}
+//
+//	std::cout << "11: " << omp_get_wtime() - start<< std::endl;
+//	input.localBoundaries->create_B1_l<eslocal>(
+//		B1_mat,
+//		B0_mat,
+//		l2g_vec,
+//		lambda_map_sub_clst,
+//		lambda_map_sub_B1,
+//		lambda_map_sub_B0,
+//		B1_l_duplicity,
+//		partsCount,
+//		*input.localBoundaries
+//	);
+//
+//	//std::cout << B1_mat[0];
+//
+//	const std::map<eslocal, double> &forces_x = input.mesh->coordinates().property(mesh::CP::FORCES_X).values();
+//	const std::map<eslocal, double> &forces_y = input.mesh->coordinates().property(mesh::CP::FORCES_Y).values();
+//	const std::map<eslocal, double> &forces_z = input.mesh->coordinates().property(mesh::CP::FORCES_Z).values();
+//
+//	for (eslocal d = 0; d < partsCount; d++) {
+//		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
+//			if (forces_x.find(l2g_vec[d][iz]) != forces_x.end()) {
+//				f_vec[d][3 * iz + 0] = forces_x.at(l2g_vec[d][iz]);
+//			}
+//			if (forces_y.find(l2g_vec[d][iz]) != forces_y.end()) {
+//				f_vec[d][3 * iz + 1] = forces_y.at(l2g_vec[d][iz]);
+//			}
+//			if (forces_z.find(l2g_vec[d][iz]) != forces_z.end()) {
+//				f_vec[d][3 * iz + 2] = forces_z.at(l2g_vec[d][iz]);
+//			}
+//		}
+//	}
+////    for (eslocal d = 0; d < partsCount; d++) {
+////        for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
+////            if ( fabs( 30.0 - input.mesh->coordinates()[l2g_vec[d][iz]].z ) < 0.00001 ) {
+////                //f_vec[d][3 * iz + 2] = 1.0;
+////            }
+////        }
+////    }
+//
+///*
+//	for (eslocal d = 0; d < partsCount; d++) {
+//    // K
+//    SparseIJVMatrix tmpK = K_mat[d];
+//    std::ofstream (K_mat_file);
+//    K_mat_file.precision(15);
+//    K_mat_file << std::scientific;
+//    std::stringstream K_mat_file_name;
+//    K_mat_file_name << "dumped_files/K_mat_" << d;
+//    K_mat_file.open ( K_mat_file_name.str().c_str() );
+//    K_mat_file << tmpK;
+//    K_mat_file.close();
+//    // f
+//    std::ofstream (f_vec_file);
+//    f_vec_file.precision(15);
+//    f_vec_file << std::scientific;
+//    std::stringstream f_vec_file_name;
+//    f_vec_file_name << "dumped_files/f_vec_" << d;
+//    f_vec_file.open ( f_vec_file_name.str().c_str() );
+//    f_vec_file << f_vec[d];
+//    f_vec_file.close();
+//    // B
+//    std::ofstream (B0_mat_file);
+//    B0_mat_file.precision(15);
+//    B0_mat_file << std::scientific;
+//    std::stringstream B0_mat_file_name;
+//    B0_mat_file_name << "dumped_files/B0_mat_" << d;
+//    B0_mat_file.open ( B0_mat_file_name.str().c_str() );
+//    B0_mat_file << B0_mat[d];
+//    B0_mat_file.close();
+//  }
+//*/
+//
+//
+//
+//
+//
+//	std::cout << "12: " << omp_get_wtime() - start<< std::endl;
+//
+//	std::cout.precision(10);
+//
+//	// Start - Stupid version of ESPRESO interface
+//
+//	//MPI_Init (&argc, &argv);					// starts MPI
+//
+//	typedef int       ShortInt ;
+//	typedef int       longInt  ;
+//
+//
+//	int MPIrank = 0; //MPI_Comm_rank(fem->comm, &MPIrank);
+//	int MPIsize = 1; //MPI_Comm_size(fem->comm, &MPIsize);
+//	int number_of_subdomains_per_cluster = partsCount;
+//
+//
+//	extern void SetCluster		  ( Cluster & cluster, ShortInt * subdomains_global_indices, ShortInt number_of_subdomains, ShortInt MPI_rank);
+//
+//	extern void SetMatrixB1_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//		longInt n_rows, ShortInt n_cols, ShortInt nnz,
+//		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
+//
+//	extern void SetMatrixB0_fromCOO ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//		longInt n_rows, ShortInt n_cols, ShortInt nnz,
+//		longInt * I_rows, ShortInt * J_cols, double * V_vals, char type, int indexing );
+//
+//	extern void SetMatrixR_fromDense( Cluster & cluster, ShortInt domain_index_in_cluster,
+//		ShortInt n_cols, ShortInt n_rows, double * vals, char type );
+//
+//	extern void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
+//		ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
+//
+//	extern void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
+//		vector <vector <longInt> > & lambda_map_sub, vector < ShortInt > & neigh_domains );
+//
+//	extern void SetMatrixFromCSR   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt * rows, ShortInt * cols, double * vals, char type );
+//	extern void SetMatrixFromDense ( SparseMatrix    & Mat, ShortInt n_cols, ShortInt n_rows, double * vals, char type );
+//	extern void SetMatrixFromCOO   ( SparseMatrix    & Mat, ShortInt n_rows, ShortInt n_cols, ShortInt nnz, ShortInt * I_rows, ShortInt * J_cols, double * V_vals, char type );
+//	extern void SetVecInt          ( vector <int>    & vec, ShortInt incerement_by, ShortInt nnz, ShortInt * vals);
+//	extern void SetVecDbl          ( vector <double> & vec, ShortInt nnz,	double * vals);
+//
+//	Cluster cluster(MPIrank + 1);
+//	cluster.USE_DYNAMIC			= 0;
+//	cluster.USE_HFETI			= 0;
+//	cluster.USE_KINV			= 0;
+//	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
+//	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
+//
+//	IterSolver solver;
+//	solver.CG_max_iter	 = 1000;
+//	solver.USE_GGtINV	 = 1;
+//	solver.epsilon		 = 0.00001;
+//	solver.USE_HFETI	 = cluster.USE_HFETI;
+//	solver.USE_KINV		 = cluster.USE_KINV;
+//	solver.USE_DYNAMIC	 = 0;
+//	solver.USE_PIPECG	 = 0;
+//	solver.USE_PREC		 = 0;
+//	solver.FIND_SOLUTION = 0;
+//
+//	std::vector <int> domain_list (number_of_subdomains_per_cluster,0);
+//	for (int i = 0; i<number_of_subdomains_per_cluster; i++)
+//		domain_list[i] = i;
+//
+//	SetCluster( cluster, &domain_list[0], number_of_subdomains_per_cluster, MPIrank);
+//
+//	vector<double> solver_parameters ( 10 );
+//	solver.Setup ( solver_parameters, cluster );
+//
+//	// *** Setup B0 matrix *******************************************************************************************
+//	if (cluster.USE_HFETI == 1 ) {
+//
+//#ifndef DEBUG
+//		cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//		for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//			ShortInt domain_index_in_cluster = i;
+//
+//			SetMatrixB0_fromCOO( cluster, domain_index_in_cluster,
+//				B0_mat[i].rows(),			//clust_g.data[i]->B->B0_rows,		// B_full_rows, //n_row_eq,
+//				B0_mat[i].columns(),		//.data[i]->B->B0_cols,				// B_full_cols, //n_col,
+//				B0_mat[i].nonZeroValues(),	//.data[i]->B->B0_nnz,				// B_full_nnz,  //nnz_eq,
+//				B0_mat[i].rowIndices(),		//&clust_g.data[i]->B->B0_I[0],		// BI_full[0], //Bi_coo,
+//				B0_mat[i].columnIndices(),	//&clust_g.data[i]->B->B0_J[0],		// BJ_full[0], //Bj_coo,
+//				B0_mat[i].values(),			//&clust_g.data[i]->B->B0_V[0],		// BV_full[0], //Bv_coo,
+//				'G', B0_mat[i].indexing() );
+//		}
+//	}
+//	// *** END - Setup B0 matrix *************************************************************************************
+//
+//	// *** Setup B1 matrix *******************************************************************************************
+//#ifndef DEBUG
+//	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//		ShortInt domain_index_in_cluster = i;
+//		SetMatrixB1_fromCOO( cluster, domain_index_in_cluster,
+//			B1_mat[i].rows(),			//clust_g.data[i]->B->B_full_rows, //n_row_eq,
+//			B1_mat[i].columns(),		//clust_g.data[i]->B->B_full_cols, //n_col,
+//			B1_mat[i].nonZeroValues(),	//clust_g.data[i]->B->B_full_nnz,  //nnz_eq,
+//			B1_mat[i].rowIndices(),		//&clust_g.data[i]->B->BI_full[0], //Bi_coo,
+//			B1_mat[i].columnIndices(),	//&clust_g.data[i]->B->BJ_full[0], //Bj_coo,
+//			B1_mat[i].values(),			//&clust_g.data[i]->B->BV_full[0], //Bv_coo,
+//			'G', B1_mat[i].indexing() );
+//	}
+//
+//#ifndef DEBUG
+//	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//		cluster.domains[i].B1_scale_vec = B1_l_duplicity[i];
+//	}
+//	// *** END - Setup B1 matrix *************************************************************************************
+//
+//
+//	// *** Setup R matrix ********************************************************************************************
+//#ifndef DEBUG
+//	cilk_for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#else
+//	for(ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#endif
+//		for (int i = 0; i < l2g_vec[d].size(); i++) {
+//			std::vector <double> tmp_vec (3,0);
+//			tmp_vec[0] = input.mesh->coordinates()[l2g_vec[d][i]].x;
+//			tmp_vec[1] = input.mesh->coordinates()[l2g_vec[d][i]].y;
+//			tmp_vec[2] = input.mesh->coordinates()[l2g_vec[d][i]].z;
+//			cluster.domains[d].coordinates.push_back(tmp_vec);
+//		}
+//		cluster.domains[d].CreateKplus_R();
+//		//cluster.domains[d].Kplus_R.ConvertCSRToDense(0);
+//	}
+//	// *** END - Setup R matrix **************************************************************************************
+//
+//	// *** Load RHS and fix points for K regularization **************************************************************
+//#ifndef DEBUG
+//	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#else
+//	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#endif
+//		//SetVecDbl( cluster.domains[i].f,        clust_g.data[i]->KSparse->n_row, clust_g.data[i]->fE );
+//		cluster.domains[d].f = f_vec[d];
+//
+//		//SetVecInt( cluster.domains[i].fix_dofs, 1,                           24, clust_g.fem[i]->mesh.fixingDOFs );
+//		for (int i = 0; i < fix_nodes[d].size(); i++) {
+// 			for (int d_i = 0; d_i < 3; d_i++) {
+//				cluster.domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
+//			}
+//		}
+//	}
+//	// *** END - Load RHS and fix points for K regularization ********************************************************
+//
+//	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
+//#ifndef DEBUG
+//	cilk_for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#else
+//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//#endif
+//		cluster.domains[i].lambda_map_sub = lambda_map_sub_B1[i];
+//	}
+//
+//	std::vector < int > neigh_clusters;
+//	//neigh_clusters.push_back(0);
+//
+//	SetSolverPreprocessing ( cluster, solver, lambda_map_sub_clst, neigh_clusters );
+//	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+//
+//
+//	// *** Load Matrix K and regularization ******************************************************************************
+//#ifndef DEBUG
+//	cilk_for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#else
+//	for (ShortInt d = 0; d < number_of_subdomains_per_cluster; d++) {
+//#endif
+//
+//		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
+//
+//		SetMatrixK_fromCSR ( cluster, d,
+//			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
+//			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
+//			'G');
+//	}
+//
+//	//std::cout << std::endl;
+//
+//	//cluster.Create_Kinv_perDomain();
+//
+//	//cluster.Create_SC_perDomain();
+//
+//
+//	if (cluster.USE_HFETI == 1)
+//		cluster.SetClusterHFETI();
+//
+//	cluster.SetClusterPC_AfterKplus();
+//	// *** END - Load Matrix K and regularization  ***********************************************************************
+//
+//
+//	// *** Running Solver ************************************************************************************************
+//	string result_file("MATSOL_SVN_Displacement.Nvec");
+//	solver.Solve_singular ( cluster, result_file );
+//
+//	vector < vector < double > > prim_solution;
+//	solver.GetSolution_Primal_singular_parallel(cluster, prim_solution);
+//	double max_v = 0.0;
+//
+//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++)
+//		for (ShortInt j = 0; j < prim_solution[i].size(); j++)
+//			if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
+//
+//	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.AddStartWOBarrier(0.0); max_sol_ev.AddEndWOBarrier(max_v);
+//
+//	std::cout.precision(15);
+//
+//	double max_vg;
+//	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+//	if (MPIrank == 0)
+//		std::cout << " Max value in_solution = " << max_vg << std::endl;
+//
+//	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
+//
+//	input.mesh->saveVTK("mesh.vtk", prim_solution, l2g_vec, *input.localBoundaries, *input.globalBoundaries, 1.0, 0.95);
+//
+//	//if (clust_g.domainG->flag_store_VTK)
+//	//{
+//	//	for (ShortInt i = 0; i < number_of_subdomains_per_cluster; i++) {
+//	//		for (ShortInt j = 0; j < prim_solution[i].size(); j++) {
+//	//			if (prim_solution[i][j] > max_v) max_v = prim_solution[i][j];
+//	//		}
+//	//		copy(prim_solution[i].begin(), prim_solution[i].end(), clust_g.data[i]->ddu);
+//	//	}
+//
+//	//}
+//
+//
+//	// *** END - Running Solver ************************************************************************************************
+//
+//
+//	// END - Stupid version of ESPRESO interface
+//}
 
 
 

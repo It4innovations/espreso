@@ -38,6 +38,7 @@ class cxxprogram(link_task):
 
 source_files = (
     "src/configuration.cpp",
+    "src/instance.cpp"
 )
 
 def configure(ctx):
@@ -54,8 +55,7 @@ def configure(ctx):
         ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
     if ctx.env.ESLOCAL == 32:
-        mkl = "mkl_intel_lp64"
-        metis = "metis32"
+        ctx.env.append_unique("LIB", [ "metis32", "mkl_intel_lp64" ])
     if ctx.env.ESLOCAL == 64:
         # TODO: 64b variant of solver is not working!
         mkl = "mkl_intel_ilp64"

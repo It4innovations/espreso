@@ -43,6 +43,16 @@ void Configuration::fillDefaultValues()
 {
 	_parameters[CMD_LINE_ARGUMENTS] = new StringParameter("CMD_LINE_ARGUMENTS", "Specifies parameters set from command line arguments.", "");
 
+	_parameters[MESH_FILE] = new StringParameter("MESH_FILE", "File with mesh description without .dat suffix", "");
+	_parameters[BOUNDARIES_FILE] = new StringParameter("BOUNDARIES_FILE", "File with boundaries description without .dat suffix", "");
+
+	_parameters[MESH_SUBDOMAINS] = new IntegerParameter("MESH_SUBDOMAINS", "Number of sub-domains in mesh.", 8);
+	_parameters[MESH_FIX_POINTS] = new IntegerParameter("MESH_FIX_POINTS", "Number of fix points in one sub-domain", 4);
+	_parameters[MESH_CORNERS_NUMBER] = new IntegerParameter("MESH_CORNERS_X", "Number of corners in x-axis.", 4);
+	_parameters[MESH_CORNERS_IN_CORNER] = new BooleanParameter("MESH_CORNERS_IN_CORNER", "Corner points in mesh corner.", false);
+	_parameters[MESH_CORNERS_IN_EDGES] = new BooleanParameter("MESH_CORNERS_IN_EDGES", "Corner points on edges.", false);
+	_parameters[MESH_CORNERS_IN_FACES] = new BooleanParameter("MESH_CORNERS_IN_FACES", "Corner points on faces.", false);
+
 	_parameters[ANSYS_DIR] = new StringParameter("ANSYS_DIR", "A root directory for ANSYS input files.", "");
 
 	_parameters[ANSYS_DIRICHLET_X] = new StringParameter("ANSYS_DIRICHLET_X", "A file with dirichlet condition in x-axis.", "");
@@ -69,6 +79,10 @@ void Configuration::fillDefaultValues()
 
 	_parameters[PMCUBE_FIX_ZERO_PLANES] = new BooleanParameter("PMCUBE_FIX_ZERO_PLANES", "Dirichlet is set to all nodes in zero planes.", false);
 	_parameters[PMCUBE_FIX_BOTTOM] = new BooleanParameter("PMCUBE_FIX_BOTTOM", "Dirichlet is set to all nodes in the bottom plane.", true);
+
+	_parameters[PMCUBE_CORNERS_X] = new IntegerParameter("PMCUBE_CORNERS_X", "Number of corners in x-axis.", 3);
+	_parameters[PMCUBE_CORNERS_Y] = new IntegerParameter("PMCUBE_CORNERS_Y", "Number of corners in y-axis.", 3);
+	_parameters[PMCUBE_CORNERS_Z] = new IntegerParameter("PMCUBE_CORNERS_Z", "Number of corners in z-axis.", 3);
 
 	_parameters[SOLVER_ITERATIONS] = new IntegerParameter("SOLVER_ITERATIONS", "Number of solver iterations.", 100);
 }
@@ -126,11 +140,32 @@ void Configuration::configure(int argc, char** argv)
 		_parameters[cmdLine[i]]->set(std::string(_parameters[cmdLine[i]]->name() + "=" + argv[i + 1]));
 	}
 
+	// Parse MESH arguments
+	for (size_t i = MESH_FILE; i <= BOUNDARIES_FILE; i++) {
+		if (_parameters[i]->isSet()) {
+			if (checkCmdLine(cmdLine, i)) {
+				std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. It is command line argument.\n";
+			}
+		} else {
+			configured[i] = false;
+		}
+	}
+	if (_parameters[MESH_FILE]->isSet() && !_parameters[BOUNDARIES_FILE]->isSet()) {
+		std::cerr << "When MESH_FILE is filled, BOUNDARIES_FILE has to be filled too.\n";
+		exit(EXIT_FAILURE);
+	}
+	if (!_parameters[MESH_FILE]->isSet() && _parameters[BOUNDARIES_FILE]->isSet()) {
+		std::cerr << "When BOUNDARIES_FILE is filled, MESH_FILE has to be filled too.\n";
+		exit(EXIT_FAILURE);
+	}
 
 	// Parse ANSYS arguments
 	for (size_t i = ANSYS_DIR; i <= ANSYS_FORCES_Z; i++) {
 		if (_parameters[i]->isSet()) {
-			if (checkCmdLine(cmdLine, i)) {
+			if (_parameters[MESH_FILE]->isSet()) {
+				std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. MESH_FILE has higher priority..\n";
+				configured[i] = false;
+			} else if (checkCmdLine(cmdLine, i)) {
 				std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. It is command line argument.\n";
 			} else if (i != ANSYS_DIR && (!_parameters[ANSYS_DIR]->isSet() || checkCmdLine(cmdLine, ANSYS_DIR))) {
 				std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. Set parameter ANSYS_DIR first.\n";
@@ -142,7 +177,10 @@ void Configuration::configure(int argc, char** argv)
 
 	// Parse PermonCube arguments
 	for (size_t i = PMCUBE_ELEMENT_TYPE; i <= PMCUBE_ELEMENTS_Z; i++) {
-		if (_parameters[ANSYS_DIR]->isSet()) {
+		if (_parameters[MESH_FILE]->isSet()) {
+			std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. MESH_FILE has higher priority..\n";
+			configured[i] = false;
+		} else if (_parameters[ANSYS_DIR]->isSet()) {
 			std::cout << "Warning: parameter " << _parameters[i]->name() << " is ignored. ANSYS has higher priority.\n";
 			configured[i] = false;
 		} else if (checkCmdLine(cmdLine, i)) {

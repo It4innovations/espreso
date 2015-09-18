@@ -46,6 +46,10 @@ public:
 			_elements("ELEMENTS.dat"), _coordinates("COORDINATES.dat"),
 			_coordinatesProperty(CP::SIZE) { };
 
+	Ansys(const std::string &projectRoot): _projectRoot(projectRoot),
+			_elements("ELEMENTS.dat"), _coordinates("COORDINATES.dat"),
+			_coordinatesProperty(CP::SIZE) { };
+
 	std::string coordinates() const
 	{
 		return _projectRoot + "/" + _coordinates;

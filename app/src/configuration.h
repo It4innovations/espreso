@@ -27,6 +27,17 @@ public:
 	enum InputParameter {
 		// General settings
 		CMD_LINE_ARGUMENTS,
+
+		// Mesh settings
+		MESH_FILE,
+		BOUNDARIES_FILE,
+		MESH_SUBDOMAINS,
+		MESH_FIX_POINTS,
+		MESH_CORNERS_NUMBER,
+		MESH_CORNERS_IN_CORNER,
+		MESH_CORNERS_IN_EDGES,
+		MESH_CORNERS_IN_FACES,
+
 		// Ansys settings
 		ANSYS_DIR,
 		ANSYS_DIRICHLET_X,
@@ -35,6 +46,7 @@ public:
 		ANSYS_FORCES_X,
 		ANSYS_FORCES_Y,
 		ANSYS_FORCES_Z,
+
 		// PermonCube settings
 		PMCUBE_ELEMENT_TYPE,
 		PMCUBE_CLUSTERS_X,
@@ -48,6 +60,10 @@ public:
 		PMCUBE_ELEMENTS_Z,
 		PMCUBE_FIX_ZERO_PLANES,
 		PMCUBE_FIX_BOTTOM,
+		PMCUBE_CORNERS_X,
+		PMCUBE_CORNERS_Y,
+		PMCUBE_CORNERS_Z,
+
 		// Solver settings
 		SOLVER_ITERATIONS,
 
@@ -61,10 +77,27 @@ public:
 		fillDefaultValues();
 		configure(0, NULL);
 	}
+	Configuration(const Configuration &other)
+	{
+		_parameters.resize(other._parameters.size());
+		for (size_t i = 0; i < other._parameters.size(); i++) {
+			_parameters[i] = other._parameters[i]->copy();
+		}
+	}
 	~Configuration();
 
 	void print() const;
 	void description() const;
+
+	Parameter* parameter(InputParameter parameter)
+	{
+		return _parameters[parameter];
+	}
+
+	Parameter* parameter(size_t parameter)
+	{
+		return _parameters[parameter];
+	}
 
 	template<class ParameterType>
 	const ParameterType& value(InputParameter parameter) const;

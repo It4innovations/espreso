@@ -11,7 +11,7 @@ void partitiateMesh();
 
 int main(int argc, char** argv)
 {
-	partitiateMesh();
+	test_saveData();
 	return 0;
 }
 
@@ -55,7 +55,7 @@ void test_saveData()
 	eslocal partsCount = 4;
 	eslocal fixPointsCount = 0;
 
-	mesh::Ansys ansys("matrices/spanner/Model");
+	mesh::Ansys ansys("examples/spanner/Model");
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
@@ -66,7 +66,7 @@ void test_saveData()
     mesh::Boundaries b(m);
 	b.saveData();
 
-	m.loadData("mesh_0.dat");
+	m.loadData("mesh0.dat");
 	m.saveVTK("part0.vtk", 0.9);
 
 	b.loadData("boundaries_0.dat");
@@ -96,10 +96,13 @@ void test_ansys()
 	eslocal partsCount = 4;
 	eslocal fixPointsCount = 4;
 
-	mesh::Ansys ansys("matrices/spanner/Model");
+	mesh::Ansys ansys("examples/spanner/Model");
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_X) = "BC/Elasticity/NUX.dat";
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Y) = "BC/Elasticity/NUY.dat";
 	ansys.coordinatesProperty(mesh::CP::DIRICHLET_Z) = "BC/Elasticity/NUZ.dat";
+	ansys.coordinatesProperty(mesh::CP::FORCES_X) = "BC/Elasticity/NFX.dat";
+	ansys.coordinatesProperty(mesh::CP::FORCES_Y) = "BC/Elasticity/NFY.dat";
+	ansys.coordinatesProperty(mesh::CP::FORCES_Z) = "BC/Elasticity/NFZ.dat";
 
 	std::cout << ansys;
 

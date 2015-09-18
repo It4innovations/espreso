@@ -2,12 +2,16 @@
 
 using namespace mesh;
 
-Boundaries::Boundaries(Mesh &m)
-	: _mesh(m), _boundaries(m.coordinates().size()), _corners(m.coordinates().size(), false)
+void Boundaries::compute()
 {
-	const std::vector<eslocal> &parts = m.getPartition();
-	const std::vector<Element*> &elements = m.getElements();
-	const Coordinates &c = m.coordinates();
+	const std::vector<eslocal> &parts = _mesh.getPartition();
+	const std::vector<Element*> &elements = _mesh.getElements();
+	const Coordinates &c = _mesh.coordinates();
+
+	_boundaries.clear();
+	_boundaries.resize(_mesh.coordinates().size());
+	_corners.clear();
+	_corners.resize(_mesh.coordinates().size(), false);
 
 	for (size_t p = 0; p + 1 < parts.size(); p++) {
 		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
@@ -25,7 +29,7 @@ void Boundaries::saveData()
 
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::stringstream ss;
-		ss << "boundaries_" << p << ".dat";
+		ss << "boundaries" << p << ".dat";
 		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		size = 0;

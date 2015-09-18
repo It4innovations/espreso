@@ -1,20 +1,30 @@
 
 ## Arguments read from the command line
-CMD_LINE_ARGUMENTS = PMCUBE_CLUSTERS_X PMCUBE_CLUSTERS_Y PMCUBE_CLUSTERS_Z
+#CMD_LINE_ARGUMENTS = PMCUBE_CLUSTERS_X PMCUBE_CLUSTERS_Y PMCUBE_CLUSTERS_Z
 
+
+##### MESH settings #####
+#MESH_FILE = mesh # without .dat
+#BOUNDARIES_FILE = boundaries # without .dat
+MESH_SUBDOMAINS = 10
+MESH_FIX_POINTS = 4
+#MESH_CORNERS_NUMBER = 8
+MESH_CORNERS_IN_CORNER
+#MESH_CORNERS_IN_EDGES
+#MESH_CORNERS_IN_FACES
 
 ##### ANSYS settings #####
-#ANSYS_DIR =
-#ANSYS_DIRICHLET_X =
-#ANSYS_DIRICHLET_Y =
-#ANSYS_DIRICHLET_Z =
-#ANSYS_FORCES_X =
-#ANSYS_FORCES_Y =
-#ANSYS_FORCES_Z =
+#ANSYS_DIR = examples/spanner/Model
+#ANSYS_DIRICHLET_X = BC/Elasticity/NUX.dat
+#ANSYS_DIRICHLET_Y = BC/Elasticity/NUY.dat
+#ANSYS_DIRICHLET_Z = BC/Elasticity/NUZ.dat
+#ANSYS_FORCES_X = BC/Elasticity/NFX.dat
+#ANSYS_FORCES_Y = BC/Elasticity/NFY.dat
+#ANSYS_FORCES_Z = BC/Elasticity/NFZ.dat
 
 
 ##### PermonCube settings #####
-# If ANSYS settings is filled, the following arguments are ignored
+# If ANSYS settings or MESH_FILE is filled, the following arguments are ignored
 PMCUBE_ELEMENT_TYPE = 2 # <0, 7> : HEXA8, HEXA20, TETRA4, TETRA10, PRISMA6, PRISMA15, PYRAMID5, PYRAMID13
 PMCUBE_CLUSTERS_X = 1
 PMCUBE_CLUSTERS_Y = 1
@@ -25,6 +35,9 @@ PMCUBE_SUBDOMAINS_Z = 2
 PMCUBE_ELEMENTS_X = 5
 PMCUBE_ELEMENTS_Y = 5
 PMCUBE_ELEMENTS_Z = 5
+PMCUBE_CORNERS_X = 3
+PMCUBE_CORNERS_Y = 3
+PMCUBE_CORNERS_Z = 3
 
 # Choose only one from the next two
 PMCUBE_FIX_ZERO_PLANES

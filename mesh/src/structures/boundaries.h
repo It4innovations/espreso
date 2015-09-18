@@ -15,16 +15,23 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
-	Boundaries(Mesh &mesh);
+	Boundaries(Mesh &mesh): _mesh(mesh) {};
+
+	void compute();
 
 	void resize(size_t size)
 	{
 		_boundaries.resize(size);
 	}
 
-	size_t size()
+	size_t size() const
 	{
 		return _boundaries.size();
+	}
+
+	const std::set<eslocal>& operator[](size_t position) const
+	{
+		return _boundaries[position];
 	}
 
 	std::set<eslocal>& operator[](size_t position)
@@ -42,13 +49,13 @@ public:
 		return _corners[index];
 	}
 
-	Mesh & mesh() {
+	const Mesh& mesh() const {
 		return _mesh;
 	}
 
 
 	// prepare for future improvements
-	eslocal index(size_t position) {
+	eslocal index(size_t position) const {
 		return position;
 	}
 
@@ -64,7 +71,7 @@ public:
 						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
 						std::vector < std::vector <double> > 	& B1_l_duplicity,
 						const eslocal domains_num,
-						mesh::Boundaries & global_boundaries) ;
+						const mesh::Boundaries & global_boundaries) const;
 
 	template<typename T>
 	void create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1_global,
@@ -76,7 +83,7 @@ public:
 						const eslocal MPIsize,
 						const eslocal subDomPerCluster,
 						std::vector < eslocal  > & myNeighClusters,
-						mesh::Boundaries & local_boundaries) ;
+						const mesh::Boundaries & local_boundaries) const;
 
 
 

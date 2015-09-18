@@ -64,22 +64,22 @@ public:
 	void saveVTK(
 			const char* filename,
 			double subDomainShrinking = 1,
-			double clusterShrinking = 1);
+			double clusterShrinking = 1) const;
 
 	void saveVTK(
 			const char* filename,
-			Boundaries &localBoundaries,
+			const Boundaries &localBoundaries,
 			double subDomainShrinking = 1,
-			double clusterShrinking = 1);
+			double clusterShrinking = 1) const;
 
 	void saveVTK(
 			const char* filename,
 			std::vector<std::vector<double> > &displacement,
 			std::vector<std::vector <eslocal> > &l2g_vec,
-			Boundaries &lBoundaries,
-			Boundaries &gBoundaries,
+			const Boundaries &lBoundaries,
+			const Boundaries &gBoundaries,
 			double subDomainShrinking = 1,
-			double clusterShrinking = 1);
+			double clusterShrinking = 1) const;
 
 	void saveData();
 	void loadData(const char *filename);
@@ -90,6 +90,7 @@ public:
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;
 	void getCornerLines(CornerLinesMesh &cornerLines) const;
 
+	void loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints);
 	void reserve(size_t size);
 	void pushElement(Element* e);
 	void endPartition();
@@ -140,7 +141,7 @@ public:
 		return _coordinates.localSize(part);
 	}
 
-	void elasticity(SparseCSRMatrix<eslocal> &K, SparseCSRMatrix<eslocal> &M, std::vector<double> &f, eslocal part)
+	void elasticity(SparseCSRMatrix<eslocal> &K, SparseCSRMatrix<eslocal> &M, std::vector<double> &f, eslocal part) const
 	{
 		SparseVVPMatrix<eslocal> _K;
 		SparseVVPMatrix<eslocal> _M;
@@ -148,7 +149,7 @@ public:
 		K = _K;
 		M = _M;
 	}
-	void elasticity(SparseCSRMatrix<eslocal> &K, std::vector<double> &f, eslocal part)
+	void elasticity(SparseCSRMatrix<eslocal> &K, std::vector<double> &f, eslocal part) const
 	{
 		SparseVVPMatrix<eslocal> _K;
 		SparseVVPMatrix<eslocal> _M;
@@ -162,14 +163,14 @@ protected:
 	void saveBasis(
 			std::ofstream &vtk,
 			std::vector<std::vector<eslocal> > &l2g_vec,
-			Boundaries &lBoundaries,
-			Boundaries &gBoundaries,
+			const Boundaries &lBoundaries,
+			const Boundaries &gBoundaries,
 			double subDomainShrinking,
-			double clusterShrinking);
+			double clusterShrinking) const;
 
 	Element* createElement(eslocal *indices, eslocal n);
 
-	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic);
+	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
 	void _assembleElesticity(
 		const Element *e,
 		size_t part,
