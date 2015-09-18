@@ -10,7 +10,8 @@ source_files = (
    "src/IterSolver.cpp",
    "src/SparseMatrix.cpp",
    "src/TimeEval.cpp",
-   "src/utils.cpp"
+   "src/utils.cpp",
+   "src/DenseMatrixPack.cpp"
 )
 
 def configure(ctx):

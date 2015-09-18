@@ -393,6 +393,7 @@ void DenseMatrixPack::DenseMatsVecsMIC_Start(
 }
 
 void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
+#ifdef MIC
   #pragma offload target(mic:device) if(1) \
     in( matrices : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( mic_x_in : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -407,4 +408,5 @@ void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
     wait( mic_y_out )\
     in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
     {}
+#endif
 }
