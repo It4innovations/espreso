@@ -117,17 +117,12 @@ def build(ctx):
 
     if ctx.options.catalyst:
         ctx.env.append_unique("STLIB", [ "adaptor" ])
-        ctx.program(
-            source          = "src/catalyst.cpp",
-            target          = "espreso",
-            use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes {0} espmcube esmesh esbem".format(solver),
-            install_path    = ctx.ROOT
-        )
-    else:
-        ctx.program(
-            source          = source_files + ("src/main.cpp",),
-            target          = "espreso",
-            use             = "solver_includes pmcube_includes mesh_includes bem_includes {0} espmcube esmesh esbem".format(solver),
-            install_path    = ctx.ROOT
-        )
+        ctx.env.append_unique("CXXFLAGS", [ "-DCATALYST" ])
+
+    ctx.program(
+        source          = source_files + ("src/main.cpp",),
+        target          = "espreso",
+        use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes {0} espmcube esmesh esbem".format(solver),
+        install_path    = ctx.ROOT
+    )
 

@@ -3,11 +3,19 @@
 #include "essolver.h"
 #include "instance.h"
 
+#ifdef CATALYST
+#include "escatalyst.h"
+#endif
+
 void solve(Instance &instance);
 
 int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
+
+#ifdef CATALYST
+    	Adaptor::Initialize(argc, argv);
+#endif
 
 	int MPIrank;
 	int MPIsize;
@@ -534,7 +542,9 @@ void solve(Instance &instance)
     	const_a[6] = const_deltat * (1.0 - const_gama);
     	const_a[7] = const_deltat * const_gama;
 
-    	for (int time = 0; time < 1000; time++) {
+    	int numberOfTimeSteps = 1000;
+
+    	for (int tt = 0; tt < numberOfTimeSteps; tt++) {
     	//for (int time = 0; time < NumberOfTimeIterations; time++) {
 
     		// *** calculate the right hand side in primal ********************************************
@@ -569,6 +579,11 @@ void solve(Instance &instance)
     		}
 
     		//prim_solution_out.push_back(vec_u_n);
+#ifdef CATALYST
+    		unsigned int timeStep = tt;
+    		double time = timeStep * dynamic_timestep;
+	    	Adaptor::CoProcess(input.mesh,l2g_vec, vec_u_n,  time, timeStep, timeStep == numberOfTimeSteps - 1);
+#endif
 
 			std::stringstream ss;
 			ss << "mesh_" << instance.rank() << "_" << time << ".vtk";
@@ -586,6 +601,10 @@ void solve(Instance &instance)
     		solver.timing.totalTime.Reset();
 
     	} // *** END - time iter loop *******************************************************
+
+#ifdef CATALYST
+    	Adaptor::Finalize();
+#endif
 
     	solver.preproc_timing.PrintStatsMPI();
     	solver.timeEvalAppa  .PrintStatsMPI();
