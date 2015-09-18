@@ -2288,6 +2288,19 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 	SparseMatrix GGt_Mat_tmp;
 	SparseSolver GGt_tmp;
 
+
+        /* Numbers of processors, value of OMP_NUM_THREADS */
+        int num_procs;
+        char * var = getenv("PAR_NUM_THREADS");
+        if(var != NULL)
+                sscanf( var, "%d", &num_procs );
+        else {
+                printf("Set environment PAR_NUM_THREADS to 1");
+                exit(1);
+        }
+        GGt_tmp.iparm[2]  = num_procs;
+
+
 	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.AddStart(omp_get_wtime());
 	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
 		SendMatrix(cluster.G1, cluster.my_neighs[neigh_i]);
@@ -2646,6 +2659,103 @@ void IterSolver::apply_A_l_compB( TimeEval & time_eval, Cluster & cluster, SEQ_V
 }
 
 void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+       time_eval.totalTime.AddStart(omp_get_wtime());
+
+       // number of Xeon Phi devices (0 for fallback to CPU)
+       int numDevices = cluster.NUM_MICS;
+
+       #ifdef MIC
+       if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
+
+               // HFETI on MIC using Schur
+
+               time_eval.timeEvents[0].AddStart(omp_get_wtime());
+
+               int maxDevNumber = numDevices;
+               if (numDevices == 0) {
+                       maxDevNumber = 1;               // if number of MICs is zero, we use a CPU
+               }
+               int matrixPerPack = cluster.domains.size() / maxDevNumber;
+               int offset = 0;
+
+               for ( int i = 0; i < maxDevNumber; i++ ) {
+                       if ( i == maxDevNumber - 1 ) {
+                               // add the remaining domains to the last pack
+                               matrixPerPack += cluster.domains.size() % maxDevNumber;
+                       }
+                       cilk_for (int d = offset; d < offset + matrixPerPack; d++) {
+                               SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
+                               for ( int j = 0; j < cluster.domains[d].lambda_map_sub_local.size(); j++ ) {
+                                       cluster.B1KplusPacks[i].SetX(d - offset, j, x_in[ cluster.domains[d].lambda_map_sub_local[j]]);
+                                       x_in_tmp[j] = x_in[ cluster.domains[d].lambda_map_sub_local[j]];
+                               }
+                               cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+                       }
+                       offset += matrixPerPack;
+               }
+
+       #pragma omp parallel num_threads( maxDevNumber )
+       {
+               if ( numDevices > 0 ) {
+                       // start async. computation on MICs
+                       cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
+               } else {
+                       // perform matrix-vector multiplication on CPU using MIC data structures
+                       cluster.B1KplusPacks[ 0 ].DenseMatsVecs( 'N' );
+               }
+       }
+       time_eval.timeEvents[0].AddEnd(omp_get_wtime());
+
+       // perform simultaneous computation on CPU
+       time_eval.timeEvents[1].AddStart(omp_get_wtime());
+       cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
+       time_eval.timeEvents[1].AddEnd(omp_get_wtime());
+
+       time_eval.timeEvents[2].AddStart(omp_get_wtime());
+       std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+
+       #pragma omp parallel num_threads( maxDevNumber )
+       {
+               if ( numDevices > 0 ) {
+                       // synchronize computation
+                       cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
+               }
+       }
+
+       // extract the result
+       offset = 0;
+       matrixPerPack = cluster.domains.size() / maxDevNumber;
+       for ( int i = 0; i < maxDevNumber; i++ ) {
+               if ( i == maxDevNumber - 1 ) {
+                       matrixPerPack += cluster.domains.size() % maxDevNumber;
+               }
+               cilk_for ( int d = offset ; d < offset + matrixPerPack; d++ ) {
+                       cluster.B1KplusPacks[i].GetY(d - offset, cluster.domains[d].compressed_tmp);
+               }
+               offset+=matrixPerPack;
+       }
+
+
+               time_eval.timeEvents[2].AddStart(omp_get_wtime());
+               std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+               for (int d = 0; d < cluster.domains.size(); d++) {
+                       for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+                               cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
+               }
+               time_eval.timeEvents[2].AddEnd(omp_get_wtime());
+               //std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+               SEQ_VECTOR < double > y_out_tmp;
+               for (int d = 0; d < cluster.domains.size(); d++) {
+                       y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
+                       cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+                       for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+                               cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
+               }
+               time_eval.timeEvents[2].AddEnd(omp_get_wtime());
+       }
+       #else
+
 
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
 		time_eval.timeEvents[0].AddStart(omp_get_wtime());
@@ -2709,6 +2819,72 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 
 	}
 	time_eval.totalTime.AddStart(omp_get_wtime());
+	#endif
+
+#ifdef MIC
+if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+
+       // classical FETI on MIC using Schur
+
+       time_eval.timeEvents[0].AddStart(omp_get_wtime());
+       time_eval.timeEvents[0].AddEnd(omp_get_wtime());
+
+       time_eval.timeEvents[1].AddStart(omp_get_wtime());
+
+       int maxDevNumber = numDevices;
+       if (numDevices == 0) {
+               maxDevNumber = 1;       // if number of MICs is zero, we use a CPU
+       }
+ 
+       int matrixPerPack = cluster.domains.size() / maxDevNumber;
+       int offset = 0;
+
+       for ( int i = 0; i < maxDevNumber; i++ ) {
+               if ( i == maxDevNumber - 1 ) {
+                       // add the remaining domains to the last pack
+                       matrixPerPack += cluster.domains.size() % maxDevNumber;
+               }
+               cilk_for (int d = offset; d < offset + matrixPerPack; d++) {
+                       //SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
+                       for ( int j = 0; j < cluster.domains[d].lambda_map_sub_local.size(); j++ )
+                               cluster.B1KplusPacks[i].SetX(d - offset, j, x_in[ cluster.domains[d].lambda_map_sub_local[j]]);
+               }
+               offset += matrixPerPack;
+      }
+
+#pragma omp parallel num_threads( maxDevNumber )
+{
+       int device = omp_get_thread_num();
+       if ( numDevices > 0 ) {
+               // run matrix-vector multiplication of MIC
+               cluster.B1KplusPacks[ device ].DenseMatsVecsMIC( 'N' );
+       } else {
+               // run matrix-vector multiplication on CPU
+               cluster.B1KplusPacks[ 0 ].DenseMatsVecs( 'N' );
+       }
+}
+       offset = 0;
+       matrixPerPack = cluster.domains.size() / maxDevNumber;
+       for ( int i = 0; i < maxDevNumber; i++ ) {
+               if ( i == maxDevNumber - 1 ) {
+                       matrixPerPack += cluster.domains.size() % maxDevNumber;
+               }
+               cilk_for ( int d = offset ; d < offset + matrixPerPack; d++ ) {
+                       cluster.B1KplusPacks[i].GetY(d - offset, cluster.domains[d].compressed_tmp);
+               }
+               offset+=matrixPerPack;
+       }
+       time_eval.timeEvents[1].AddEnd(omp_get_wtime());
+
+       time_eval.timeEvents[2].AddStart(omp_get_wtime());
+       std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+       for (int d = 0; d < cluster.domains.size(); d++) {
+               for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+                       cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
+       }
+       time_eval.timeEvents[2].AddEnd(omp_get_wtime());
+}
+#else
 
 
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
@@ -2730,6 +2906,8 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 #ifdef CUDA
 			cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy(x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
+#elif MICEXP
+       cluster.domains[d].B1Kplus.DenseMatVecMIC_wo_Copy(x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
 #else
 			cluster.domains[d].B1Kplus.DenseMatVec(x_in_tmp, cluster.domains[d].compressed_tmp);
 #endif
@@ -2745,7 +2923,7 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 		time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 	}
 
-
+#endif
 
 	if (cluster.USE_KINV == 0) {
 		time_eval.timeEvents[0].AddStart(omp_get_wtime());
