@@ -557,7 +557,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	iparm[1] = 2;		/* Fill-in reordering from METIS */
 						/* Numbers of processors, value of OMP_NUM_THREADS */
 	//iparm[2] = 8;		/* Not used in MKL PARDISO */ // TODO: zjistit co to je pro MKL to bylo 0
-
+	iparm[2] = 0;		/* Not used in MKL PARDISO */
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
