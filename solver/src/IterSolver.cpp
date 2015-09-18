@@ -7,14 +7,14 @@
 IterSolver::IterSolver()
 {
 
-	// Timing objects 
+	// Timing objects
 
 	// Main timing object for main CG loop
-	timing.			SetName("Main CG loop timing "); 
+	timing.			SetName("Main CG loop timing ");
 	preproc_timing.	SetName("Preprocessing timing ");
 
 
-	timeEvalAppa.	SetName(string("Apply Kplus timing ")); 
+	timeEvalAppa.	SetName(string("Apply Kplus timing "));
 	apa_B1t.		SetName(string("x = B1t * lambda "));
 	apa_kplus.		SetName(string("multKplus(local or global) "));
 	apa_B1.			SetName(string("lambda = B1 * x "));
@@ -24,18 +24,18 @@ IterSolver::IterSolver()
 	timeEvalAppa.AddEvent(apa_B1);
 	timeEvalAppa.AddEvent(apa_allred);
 
-	timeEvalPrec.	SetName(string("Apply Precond. timing ")); 
+	timeEvalPrec.	SetName(string("Apply Precond. timing "));
 	prec_kplus.		SetName(string("B1 * P * B1t "));
 	prec_allred.	SetName(string("All_Reduce_lambdas "));
 	timeEvalPrec.AddEvent(prec_kplus);
 	timeEvalPrec.AddEvent(prec_allred);
 
 
-	timeEvalProj.	SetName(string("Projector timing ")); 
+	timeEvalProj.	SetName(string("Projector timing "));
 	proj_G1t.		SetName(string("x = G1 * lambda "));
 	proj_Gthr.		SetName(string("MPI_gather - collective "));
 	proj_GGt.		SetName(string("GGt Solve on master node "));
-	proj_Sctr.		SetName(string("MPI_Scatter - collective ")); 
+	proj_Sctr.		SetName(string("MPI_Scatter - collective "));
 	proj_Gx.		SetName(string("lambda = G1t * x "));
 	proj_allred.	SetName(string("All_Reduce_lambdas "));
 	timeEvalProj.AddEvent(proj_G1t);
@@ -69,17 +69,17 @@ IterSolver::~IterSolver()
 
 void IterSolver::Setup ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in )
 {
-	
+
 	// *** MPI variables  **********************************************************
-	//mpi_rank;	//mpi_root;	//mpi_size; 
+	//mpi_rank;	//mpi_root;	//mpi_size;
 
 	MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);	/* get current process id */
 	MPI_Comm_size (MPI_COMM_WORLD, &mpi_size);	/* get number of processes */
-	mpi_root = 0; 
+	mpi_root = 0;
 
-	//CG_max_iter            = 5000; 
+	//CG_max_iter            = 5000;
 	NumberOfTimeIterations = 100;
-	
+
 }
 
 void IterSolver::Preprocessing ( Cluster & cluster )
@@ -89,10 +89,10 @@ void IterSolver::Preprocessing ( Cluster & cluster )
 
 	// ****************************************************************************
 	// *** Coarse problem - Make GGt **********************************************
-	
-	TimeEvent createGGT_time("Time to create GGt"); 
+
+	TimeEvent createGGT_time("Time to create GGt");
 	createGGT_time.AddStart(omp_get_wtime());
-	
+
 	if (USE_DYNAMIC == 0) {
 		if (USE_GGtINV == 1)
 #ifdef DEVEL
@@ -100,16 +100,16 @@ void IterSolver::Preprocessing ( Cluster & cluster )
 #else
 			CreateGGt_inv( cluster );
 #endif
-		else 
+		else
 			CreateGGt    ( cluster );
 	}
-	
+
 	createGGT_time.AddEnd(omp_get_wtime());
-	createGGT_time.PrintStatMPI(0.0); 
-	preproc_timing.AddEvent(createGGT_time); 
+	createGGT_time.PrintStatMPI(0.0);
+	preproc_timing.AddEvent(createGGT_time);
 
 
-	
+
 	// *** END - Make GGt *********************************************************
 	// ****************************************************************************
 
@@ -123,22 +123,22 @@ void IterSolver::Solve_singular ( Cluster & cluster, string & result_file )
 
 #ifdef DEVEL
 	if ( USE_PIPECG == 1 ) {
-		Solve_PipeCG_singular_dom( cluster ); 
+		Solve_PipeCG_singular_dom( cluster );
 	} else {
-		Solve_RegCG_singular_dom( cluster ); 
+		Solve_RegCG_singular_dom( cluster );
 	}
 
-	//MakeSolution_Primal_singular_parallel(cluster); 	
-	//Save_to_Ensight_file( cluster, result_file ); 
+	//MakeSolution_Primal_singular_parallel(cluster);
+	//Save_to_Ensight_file( cluster, result_file );
 #else
-	if ( USE_PIPECG   == 1 ) 
+	if ( USE_PIPECG   == 1 )
 		Solve_PipeCG_singular( cluster );
-	else 
-		Solve_RegCG_singular ( cluster ); 
-			
+	else
+		Solve_RegCG_singular ( cluster );
+
 	if ( FIND_SOLUTION == 1 ) {
-		MakeSolution_Primal_singular_parallel(cluster); 	
-		Save_to_Ensight_file( cluster, result_file ); 
+		MakeSolution_Primal_singular_parallel(cluster);
+		Save_to_Ensight_file( cluster, result_file );
 	}
 #endif // DEVEL
 
@@ -156,30 +156,30 @@ void IterSolver::GetSolution_Dual_singular_parallel    ( Cluster & cluster, SEQ_
 	dual_solution_out = dual_soultion_compressed_parallel;
 	cluster.decompress_lambda_vector( dual_solution_out );
 
-	amplitudes_out	  = amplitudes; 
+	amplitudes_out	  = amplitudes;
 
 }
 
 void IterSolver::GetSolution_Primal_singular_parallel  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out ) {
 
 	MakeSolution_Primal_singular_parallel(cluster);
-	primal_solution_out = primal_solution_parallel; 
+	primal_solution_out = primal_solution_parallel;
 
 }
 
-// will be private 
+// will be private
 void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 
-	primal_solution_parallel.clear(); 
+	primal_solution_parallel.clear();
 
 	// R * mu
-	SEQ_VECTOR<SEQ_VECTOR<double> > R_mu_prim_cluster; 
+	SEQ_VECTOR<SEQ_VECTOR<double> > R_mu_prim_cluster;
 
 	for (int d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 		if (USE_HFETI == 1)
 			cluster.domains[d].Kplus_R.MatVec(amplitudes, tmp, 'N', 0, 0);
-		else 
+		else
 			cluster.domains[d].Kplus_R.MatVec(amplitudes, tmp, 'N', d * cluster.domains[d].Kplus_R.cols, 0);
 
 		R_mu_prim_cluster.push_back(tmp);
@@ -188,17 +188,17 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 
 #ifdef DEVEL
 	for (int d = 0; d < cluster.domains.size(); d++) {
-		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols ); 
+		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols );
 		SEQ_VECTOR < double > tmp      ( cluster.domains[d].domain_prim_size  );
-		
+
 		for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d].lambda_map_sub_local[i]];
-		
+
 		cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, tmp, 'N');
 
 		for (int i = 0; i < tmp.size(); i++)
 			tmp[i] = cluster.domains[d].f[i] - tmp[i];
-		
+
 		primal_solution_parallel.push_back(tmp);
 
 	}
@@ -217,12 +217,12 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 		for (int d = 0; d < cluster.domains.size(); d++)
 			cluster.domains[d].multKplusLocal(primal_solution_parallel[d]);
 	} else  {
-		cluster.multKplusGlobal_l(primal_solution_parallel); 
+		cluster.multKplusGlobal_l(primal_solution_parallel);
 	}
 
  	for (int d = 0; d < cluster.domains.size(); d++) {
 		for (int i = 0; i < primal_solution_parallel[d].size()	; i++) {
-			primal_solution_parallel[d][i] = primal_solution_parallel[d][i] + R_mu_prim_cluster[d][i]; 
+			primal_solution_parallel[d][i] = primal_solution_parallel[d][i] + R_mu_prim_cluster[d][i];
 			//primal_solution_parallel[d][i] = cluster.domains[d].up0[i] + R_mu_prim_cluster[d][i];
 		}
 	}
@@ -231,8 +231,8 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 	//for (int d = 0; d < cluster.domains.size(); d++) {
 	//	char number[8];
 	//	sprintf(number, "%06d", cluster.domains[d].domain_global_index);
-	//	string path = string(cluster.data_directory) + "/" + "res_u_" + number; 
-	//	SaveBinVectorDouble(primal_solution[d], path); 
+	//	string path = string(cluster.data_directory) + "/" + "res_u_" + number;
+	//	SaveBinVectorDouble(primal_solution[d], path);
 	//}
 	//// *** END - Saving results to binary file *************************************
 
@@ -244,16 +244,16 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 	//	y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 	//	cluster.domains[d].B1_comp_dom.MatVec (primal_solution_parallel[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 	//	for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-	//		cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i]; 				
+	//		cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 	//}
 
 
 	//vector < double > y_out (cluster.my_lamdas_indices.size(), 0.0);
 	//All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
-	//double nnorm = parallel_norm_compressed(cluster,y_out); 
+	//double nnorm = parallel_norm_compressed(cluster,y_out);
 	//
 	//if (mpi_rank == 0)
-	//	cout << "B*u norm = " << nnorm << endl; 
+	//	cout << "B*u norm = " << nnorm << endl;
 
 }
 
@@ -261,7 +261,7 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 // *** Output routines ***************************************************
 void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file) {
 
-	int global_size = cluster.domains[0].number_of_nodes_in_global0[0]; 
+	int global_size = cluster.domains[0].number_of_nodes_in_global0[0];
 
 	SEQ_VECTOR <double> global_ux (global_size, 0);
 	SEQ_VECTOR <double> global_uy (global_size, 0);
@@ -269,14 +269,14 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file)
 
 	for (int d = 0; d < cluster.domains.size(); d++) {
 		for (int i = 0; i < primal_solution_parallel[d].size(); i = i + 3) {
-			int node_index = i / 3; 
+			int node_index = i / 3;
 			cluster.domains[d].ux.push_back( primal_solution_parallel[d][i  ] );	// ux
 			cluster.domains[d].uy.push_back( primal_solution_parallel[d][i+1] );	// uy
-			cluster.domains[d].uz.push_back( primal_solution_parallel[d][i+2] );    // uz 
+			cluster.domains[d].uz.push_back( primal_solution_parallel[d][i+2] );    // uz
 
-			global_ux[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += primal_solution_parallel[d][i  ] / cluster.domains[d].nodeMulti[node_index]; 
-			global_uy[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += primal_solution_parallel[d][i+1] / cluster.domains[d].nodeMulti[node_index]; 
-			global_uz[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += primal_solution_parallel[d][i+2] / cluster.domains[d].nodeMulti[node_index]; 
+			global_ux[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += primal_solution_parallel[d][i  ] / cluster.domains[d].nodeMulti[node_index];
+			global_uy[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += primal_solution_parallel[d][i+1] / cluster.domains[d].nodeMulti[node_index];
+			global_uz[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += primal_solution_parallel[d][i+2] / cluster.domains[d].nodeMulti[node_index];
 		}
 	}
 
@@ -285,13 +285,13 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file)
 	SEQ_VECTOR <double> final_global_uz (global_size, 0);
 
 #ifdef LIB
-	MPI_Reduce(&global_ux[0], &final_global_ux[0], global_size, MPI_DOUBLE, MPI_MAX, mpi_root, MPI_COMM_WORLD); 
-	MPI_Reduce(&global_uy[0], &final_global_uy[0], global_size, MPI_DOUBLE, MPI_MAX, mpi_root, MPI_COMM_WORLD); 
-	MPI_Reduce(&global_uz[0], &final_global_uz[0], global_size, MPI_DOUBLE, MPI_MAX, mpi_root, MPI_COMM_WORLD); 
+	MPI_Reduce(&global_ux[0], &final_global_ux[0], global_size, MPI_DOUBLE, MPI_MAX, mpi_root, MPI_COMM_WORLD);
+	MPI_Reduce(&global_uy[0], &final_global_uy[0], global_size, MPI_DOUBLE, MPI_MAX, mpi_root, MPI_COMM_WORLD);
+	MPI_Reduce(&global_uz[0], &final_global_uz[0], global_size, MPI_DOUBLE, MPI_MAX, mpi_root, MPI_COMM_WORLD);
 #else
-	MPI_Reduce(&global_ux[0], &final_global_ux[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD); 
-	MPI_Reduce(&global_uy[0], &final_global_uy[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD); 
-	MPI_Reduce(&global_uz[0], &final_global_uz[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD); 
+	MPI_Reduce(&global_ux[0], &final_global_ux[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD);
+	MPI_Reduce(&global_uy[0], &final_global_uy[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD);
+	MPI_Reduce(&global_uz[0], &final_global_uz[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD);
 #endif
 	if (mpi_rank == mpi_root) {
 
@@ -305,10 +305,10 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file)
 		char   s3[] = "coordinates";
 		char   c = '\n';
 
-		 
-		cout << "************************************************************************************************************************************************** " << endl; 
-		cout << " Saving results : " << endl; 
-		
+
+		cout << "************************************************************************************************************************************************** " << endl;
+		cout << " Saving results : " << endl;
+
 		FILE *stream;
 		stream = fopen( result_file.c_str(), "w" );
 
@@ -317,18 +317,18 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file)
 		fprintf( stream, "%s%c", s2, c );
 		fprintf( stream, "%s%c", s3, c );
 
-		for (int i = 0; i<final_global_ux.size(); i++) 
+		for (int i = 0; i<final_global_ux.size(); i++)
 			fprintf( stream, "%12.5e\n",final_global_ux[i]);
 
-		for (int i = 0; i<final_global_ux.size(); i++) 
-			fprintf( stream, "%12.5e\n",final_global_uy[i]);	
+		for (int i = 0; i<final_global_ux.size(); i++)
+			fprintf( stream, "%12.5e\n",final_global_uy[i]);
 
-		for (int i = 0; i<final_global_ux.size(); i++) 
+		for (int i = 0; i<final_global_ux.size(); i++)
 			fprintf( stream, "%12.5e\n",final_global_uz[i]);
 
 		fclose( stream );
 
-		cout << "Output file is : " << result_file << endl; 
+		cout << "Output file is : " << result_file << endl;
 
 	}
 
@@ -336,22 +336,22 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file)
 
 void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file, SEQ_VECTOR < SEQ_VECTOR < double> > & in_primal_solution_parallel ) {
 
-	int global_size = cluster.domains[0].number_of_nodes_in_global0[0]; 
+	int global_size = cluster.domains[0].number_of_nodes_in_global0[0];
 	SEQ_VECTOR <double> global_ux (global_size, 0);
 	SEQ_VECTOR <double> global_uy (global_size, 0);
 	SEQ_VECTOR <double> global_uz (global_size, 0);
 
 	for (int d = 0; d < cluster.domains.size(); d++) {
 		for (int i = 0; i < in_primal_solution_parallel[d].size(); i = i + 3) {
-			int node_index = i / 3; 
+			int node_index = i / 3;
 
 			cluster.domains[d].ux.push_back( in_primal_solution_parallel[d][i  ] );	// ux
 			cluster.domains[d].uy.push_back( in_primal_solution_parallel[d][i+1] );	// uy
-			cluster.domains[d].uz.push_back( in_primal_solution_parallel[d][i+2] );	// uz 
+			cluster.domains[d].uz.push_back( in_primal_solution_parallel[d][i+2] );	// uz
 
-			global_ux[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += in_primal_solution_parallel[d][i  ] / cluster.domains[d].nodeMulti[node_index]; 
-			global_uy[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += in_primal_solution_parallel[d][i+1] / cluster.domains[d].nodeMulti[node_index]; 
-			global_uz[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += in_primal_solution_parallel[d][i+2] / cluster.domains[d].nodeMulti[node_index]; 
+			global_ux[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += in_primal_solution_parallel[d][i  ] / cluster.domains[d].nodeMulti[node_index];
+			global_uy[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += in_primal_solution_parallel[d][i+1] / cluster.domains[d].nodeMulti[node_index];
+			global_uz[ cluster.domains[d].map_vector_local2global0[node_index] - 1 ] += in_primal_solution_parallel[d][i+2] / cluster.domains[d].nodeMulti[node_index];
 
 
 		}
@@ -361,11 +361,11 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file,
 	SEQ_VECTOR <double> final_global_uy (global_size, 0);
 	SEQ_VECTOR <double> final_global_uz (global_size, 0);
 
-	MPI_Reduce(&global_ux[0], &final_global_ux[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD); 
-	MPI_Reduce(&global_uy[0], &final_global_uy[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD); 
-	MPI_Reduce(&global_uz[0], &final_global_uz[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD); 
+	MPI_Reduce(&global_ux[0], &final_global_ux[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD);
+	MPI_Reduce(&global_uy[0], &final_global_uy[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD);
+	MPI_Reduce(&global_uz[0], &final_global_uz[0], global_size, MPI_DOUBLE, MPI_SUM, mpi_root, MPI_COMM_WORLD);
 
-	//save to file 
+	//save to file
 	if (mpi_rank == mpi_root) {
 
 #ifdef WIN32
@@ -386,13 +386,13 @@ void IterSolver::Save_to_Ensight_file ( Cluster & cluster, string & result_file,
 		fprintf( stream, "%s%c", s2, c );
 		fprintf( stream, "%s%c", s3, c );
 
-		for (int i = 0; i<final_global_ux.size(); i++) 
+		for (int i = 0; i<final_global_ux.size(); i++)
 			fprintf( stream, "%12.5e\n",final_global_ux[i]);
 
-		for (int i = 0; i<final_global_ux.size(); i++) 
-			fprintf( stream, "%12.5e\n",final_global_uy[i]);	
+		for (int i = 0; i<final_global_ux.size(); i++)
+			fprintf( stream, "%12.5e\n",final_global_uy[i]);
 
-		for (int i = 0; i<final_global_ux.size(); i++) 
+		for (int i = 0; i<final_global_ux.size(); i++)
 			fprintf( stream, "%12.5e\n",final_global_uz[i]);
 
 		fclose( stream );
@@ -413,22 +413,22 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 	SEQ_VECTOR <double> Ap_l (dl_size, 0);
 	SEQ_VECTOR <double> r_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> w_l  (dl_size, 0); 
-	SEQ_VECTOR <double> wp_l (dl_size, 0); 
+	SEQ_VECTOR <double> w_l  (dl_size, 0);
+	SEQ_VECTOR <double> wp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> y_l  (dl_size, 0); 
-	SEQ_VECTOR <double> yp_l (dl_size, 0); 
-	SEQ_VECTOR <double> z_l  (dl_size, 0); 
-	SEQ_VECTOR <double> p_l  (dl_size, 0); 
+	SEQ_VECTOR <double> y_l  (dl_size, 0);
+	SEQ_VECTOR <double> yp_l (dl_size, 0);
+	SEQ_VECTOR <double> z_l  (dl_size, 0);
+	SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> u_l  (dl_size, 0); 
-	
-	SEQ_VECTOR <double> b_l  (dl_size, 0);  
+	SEQ_VECTOR <double> u_l  (dl_size, 0);
 
-	double beta_l  = 0; 
-	double alpha_l = 0; 
-	double norm_l; 
-	double tol; 
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
+
+	double beta_l  = 0;
+	double alpha_l = 0;
+	double norm_l;
+	double tol;
 
 	// *** CG start ***************************************************************
 
@@ -436,20 +436,20 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 	// x = Ct * t1;
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 ); 
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	} else {
 		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	}
 
 	// *** Combine vectors b from all clusters ************************************
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
-	
+
 	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
 	apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
-	
+
 	// *** r = b - Ax *************************************************************
-	cilk_for (int i = 0; i < r_l.size(); i++)	
-		r_l[i] = b_l[i] - Ax_l[i]; 
+	cilk_for (int i = 0; i < r_l.size(); i++)
+		r_l[i] = b_l[i] - Ax_l[i];
 
 	if (USE_GGtINV == 1) {
 			Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l , 0);
@@ -458,21 +458,21 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 		}
 
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * parallel_norm_compressed(cluster, u_l); 
+	tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
 
-		timing.totalTime.AddStart(omp_get_wtime()); 
+		timing.totalTime.AddStart(omp_get_wtime());
 
 		cilk_for (int i = 0; i < r_l.size(); i++) {
-			wp_l[i] = w_l[i];				//	wp = w; 
-			yp_l[i] = y_l[i];				//	yp = y 
+			wp_l[i] = w_l[i];				//	wp = w;
+			yp_l[i] = y_l[i];				//	yp = y
 		}
 
 		if (USE_PREC == 1) {
 
-			proj1_time.AddStart(omp_get_wtime()); 
+			proj1_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
@@ -480,23 +480,23 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 			}
 			proj1_time.AddEnd(omp_get_wtime());
 
-			
+
 			prec_time.AddStart(omp_get_wtime());
 			apply_prec_compB(timeEvalPrec, cluster, w_l, z_l);
 			prec_time.AddEnd(omp_get_wtime());
 
-			
+
 			proj2_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
-				Projector_l_inv_compG( timeEvalProj, cluster, z_l, y_l, 0 ); 
+				Projector_l_inv_compG( timeEvalProj, cluster, z_l, y_l, 0 );
 			} else {
 				Projector_l_compG		  ( timeEvalProj, cluster, z_l, y_l, 0 );
 			}
 			proj2_time.AddEnd(omp_get_wtime());
 
-		} else {		
+		} else {
 
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
@@ -505,49 +505,49 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 			proj_time.AddEnd(omp_get_wtime());
 
 			cilk_for (int i = 0; i < w_l.size(); i++)
-				y_l[i] = w_l[i]; 
-		
-		} 
-		
-		
+				y_l[i] = w_l[i];
+
+		}
+
+
 		//------------------------------------------
-		if (iter == 0) {									// if outputs.n_it==1; 
-		
-			cilk_for (int i = 0; i < y_l.size(); i++) 
+		if (iter == 0) {									// if outputs.n_it==1;
+
+			cilk_for (int i = 0; i < y_l.size(); i++)
 				p_l[i] = y_l[i];							// p = y;
-		
+
 		} else {
 
 			ddot_beta.AddStart(omp_get_wtime());
 			beta_l =          parallel_ddot_compressed(cluster, y_l, w_l);
 			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
 			ddot_beta.AddEnd(omp_get_wtime());
-			
-			cilk_for (int i = 0; i < p_l.size(); i++) 
+
+			cilk_for (int i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 
 		}
-		
-		
-		
+
+
+
 		//------------------------------------------
 		appA_time.AddStart(omp_get_wtime());
 		apply_A_l_compB(timeEvalAppa, cluster, p_l, Ap_l);
 		appA_time.AddEnd(omp_get_wtime());
-		
+
 		//------------------------------------------
 		ddot_alpha.AddStart(omp_get_wtime());
-		alpha_l = parallel_ddot_compressed(cluster, y_l, w_l); 
+		alpha_l = parallel_ddot_compressed(cluster, y_l, w_l);
 		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
-		ddot_alpha.AddEnd(omp_get_wtime()); 
-		
-		//------------------------------------------		
+		ddot_alpha.AddEnd(omp_get_wtime());
+
+		//------------------------------------------
 		cilk_for (int i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
-			r_l[i] = r_l[i] - alpha_l * Ap_l[i]; 
+			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
 
-		timing.totalTime.AddEnd(omp_get_wtime()); 
+		timing.totalTime.AddEnd(omp_get_wtime());
 		timing.totalTime.PrintLastStatMPI(0.0);
 
 		norm_time.AddStart(omp_get_wtime());
@@ -558,15 +558,15 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 			printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 
 			//if (log_active == 1)
-				//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);  
+				//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 		}
 
 
 		// *** Stop condition ******************************************************************
-		if (norm_l < tol) 
-			break; 
+		if (norm_l < tol)
+			break;
 
-	} // end of CG iterations 
+	} // end of CG iterations
 
 
 	// *** save solution - in dual and amplitudes *********************************************
@@ -574,12 +574,12 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 	dual_residuum_compressed_parallel   = r_l;
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 ); 
+		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
 		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
 	// *** end - save solution - in dual and amplitudes ***************************************
-	
+
 
 	//if (mpi_rank == mpi_root)
 		//if (log_active == 1)
@@ -595,17 +595,17 @@ void IterSolver::Solve_RegCG_singular ( Cluster & cluster ) //, vector <double> 
 		timing.AddEvent(proj_time);
 	}
 
-	timing.AddEvent(appA_time ); 
+	timing.AddEvent(appA_time );
 	timing.AddEvent(ddot_beta);
-	timing.AddEvent(ddot_alpha); 
+	timing.AddEvent(ddot_alpha);
 
 	preproc_timing.PrintStatsMPI();
-	timing.PrintStatsMPI(); 
+	timing.PrintStatsMPI();
 	timeEvalAppa.PrintStatsMPI();
 	timeEvalProj.PrintStatsMPI();
-	
+
 	if (USE_PREC == 1)
-		timeEvalPrec.PrintStatsMPI(); 
+		timeEvalPrec.PrintStatsMPI();
 
 	//if(cluster.domains.size() > 1 )
 	if ( cluster.USE_HFETI == 1 )
@@ -626,22 +626,22 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 	SEQ_VECTOR <double> Ap_l (dl_size, 0);
 	SEQ_VECTOR <double> r_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> w_l  (dl_size, 0); 
-	SEQ_VECTOR <double> wp_l (dl_size, 0); 
+	SEQ_VECTOR <double> w_l  (dl_size, 0);
+	SEQ_VECTOR <double> wp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> y_l  (dl_size, 0); 
-	SEQ_VECTOR <double> yp_l (dl_size, 0); 
-	SEQ_VECTOR <double> z_l  (dl_size, 0); 
-	SEQ_VECTOR <double> p_l  (dl_size, 0); 
+	SEQ_VECTOR <double> y_l  (dl_size, 0);
+	SEQ_VECTOR <double> yp_l (dl_size, 0);
+	SEQ_VECTOR <double> z_l  (dl_size, 0);
+	SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> u_l  (dl_size, 0); 
+	SEQ_VECTOR <double> u_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> b_l  (dl_size, 0);  
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
 
-	double beta_l  = 0; 
-	double alpha_l = 0; 
-	double norm_l; 
-	double tol; 
+	double beta_l  = 0;
+	double alpha_l = 0;
+	double norm_l;
+	double tol;
 
 	// *** CG start ***************************************************************
 
@@ -649,7 +649,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 	// x = Ct * t1;
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 ); 
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	} else {
 		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	}
@@ -660,18 +660,18 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
-	// *** up0 pro ukoncovani v primaru 
+	// *** up0 pro ukoncovani v primaru
 	////cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 	////	cluster.domains[d].BtLambda_i = cluster.x_prim_cluster2[d];
 	////	//cluster.domains[d].BtLambda_i.resize(cluster.domains[d].up0.size(), 0);
 	////	cluster.domains[d].norm_f = 0.0;
 	////	for (int i = 0; i < cluster.domains[d].up0.size(); i++ ) {
 	////		cluster.domains[d].up0[i]     = cluster.domains[d].up0[i] - cluster.x_prim_cluster1[d][i];  // (K+ * f) - (K+ * Bt * lambda)
-	////		
+	////
 	////		cluster.domains[d].norm_f += cluster.domains[d].f[i] * cluster.domains[d].f[i];
 	////	}
 	////}
-	
+
 	// Get norm of f (right hand side)
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
@@ -679,14 +679,14 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 		norm_prim_fl += cluster.domains[d].norm_f;
 
 	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
-	norm_prim_fg = sqrt(norm_prim_fg); 
+	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	norm_prim_fg = sqrt(norm_prim_fg);
 
 
 
 	// *** r = b - Ax *************************************************************
-	cilk_for (int i = 0; i < r_l.size(); i++)	
-		r_l[i] = b_l[i] - Ax_l[i]; 
+	cilk_for (int i = 0; i < r_l.size(); i++)
+		r_l[i] = b_l[i] - Ax_l[i];
 
 	if (USE_GGtINV == 1) {
 		Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l , 0);
@@ -695,21 +695,21 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 	}
 
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * parallel_norm_compressed(cluster, u_l); 
+	tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
-		 
-		timing.totalTime.AddStart(omp_get_wtime()); 
+
+		timing.totalTime.AddStart(omp_get_wtime());
 
 		cilk_for (int i = 0; i < r_l.size(); i++) {
-			wp_l[i] = w_l[i];				//	wp = w; 
-			yp_l[i] = y_l[i];				//	yp = y 
+			wp_l[i] = w_l[i];				//	wp = w;
+			yp_l[i] = y_l[i];				//	yp = y
 		}
 
 		if (USE_PREC == 1) {
 
-			proj1_time.AddStart(omp_get_wtime()); 
+			proj1_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
@@ -717,23 +717,23 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 			}
 			proj1_time.AddEnd(omp_get_wtime());
 
-			// Scale 
+			// Scale
 			prec_time.AddStart(omp_get_wtime());
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, z_l);
 			prec_time.AddEnd(omp_get_wtime());
-			// Re-Scale 
+			// Re-Scale
 
 			proj2_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
-				Projector_l_inv_compG( timeEvalProj, cluster, z_l, y_l, 0 ); 
+				Projector_l_inv_compG( timeEvalProj, cluster, z_l, y_l, 0 );
 			} else {
 				Projector_l_compG		  ( timeEvalProj, cluster, z_l, y_l, 0 );
 			}
 			proj2_time.AddEnd(omp_get_wtime());
 
-		} else {		
+		} else {
 
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
@@ -742,15 +742,15 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 			proj_time.AddEnd(omp_get_wtime());
 
 			cilk_for (int i = 0; i < w_l.size(); i++)
-				y_l[i] = w_l[i]; 
+				y_l[i] = w_l[i];
 
-		} 
+		}
 
 
 		//------------------------------------------
-		if (iter == 0) {									// if outputs.n_it==1; 
+		if (iter == 0) {									// if outputs.n_it==1;
 
-			cilk_for (int i = 0; i < y_l.size(); i++) 
+			cilk_for (int i = 0; i < y_l.size(); i++)
 				p_l[i] = y_l[i];							// p = y;
 
 		} else {
@@ -760,7 +760,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
 			ddot_beta.AddEnd(omp_get_wtime());
 
-			cilk_for (int i = 0; i < p_l.size(); i++) 
+			cilk_for (int i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 
 		}
@@ -774,28 +774,28 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 
 		//------------------------------------------
 		 ddot_alpha.AddStart(omp_get_wtime());
-		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l); 
+		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l);
 		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
-		 ddot_alpha.AddEnd(omp_get_wtime()); 
+		 ddot_alpha.AddEnd(omp_get_wtime());
 
 		//-----------------------------------------
-		// *** up0 pro ukoncovani v primaru 
-		
+		// *** up0 pro ukoncovani v primaru
+
 		//// //cilk_
 		////for (int d = 0; d < cluster.domains.size(); d++) {
 		////	for (int i = 0; i < cluster.domains[d].up0.size(); i++ ) {
-		////		cluster.domains[d].up0[i]        -= alpha_l * cluster.x_prim_cluster1[d][i]; 
+		////		cluster.domains[d].up0[i]        -= alpha_l * cluster.x_prim_cluster1[d][i];
 		////		cluster.domains[d].BtLambda_i[i] += alpha_l * cluster.x_prim_cluster2[d][i];
 		////	}
 		////	cluster.domains[d].norm_vec.resize(cluster.domains[d].up0.size());
 		////	cluster.domains[d].K.MatVec(cluster.domains[d].up0, cluster.domains[d].norm_vec, 'N');
-		////	cluster.domains[d].norm_c = 0.0; 
+		////	cluster.domains[d].norm_c = 0.0;
 		////	for (int i = 0; i < cluster.domains[d].up0.size(); i++ ) {
 		////		cluster.domains[d].norm_vec[i] = cluster.domains[d].norm_vec[i]
 		////			                           + cluster.domains[d].BtLambda_i[i]
-		////									   - cluster.domains[d].f[i]; 
-		////		
-		////		cluster.domains[d].norm_c += cluster.domains[d].norm_vec[i] * cluster.domains[d].norm_vec[i]; 
+		////									   - cluster.domains[d].f[i];
+		////
+		////		cluster.domains[d].norm_c += cluster.domains[d].norm_vec[i] * cluster.domains[d].norm_vec[i];
 		////	}
 		////}
 
@@ -805,41 +805,41 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 		//	norm_prim_l += cluster.domains[d].norm_c;
 
 		//MPI_Allreduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		////MPI_Reduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
-		//norm_prim_g = sqrt(norm_prim_g); 
+		////MPI_Reduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		//norm_prim_g = sqrt(norm_prim_g);
 
 
 
-		 
 
-		//------------------------------------------		
+
+		//------------------------------------------
 		cilk_for (int i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
-			r_l[i] = r_l[i] - alpha_l * Ap_l[i]; 
+			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
 
-		timing.totalTime.AddEnd(omp_get_wtime()); 
+		timing.totalTime.AddEnd(omp_get_wtime());
 		timing.totalTime.PrintLastStatMPI(0.0);
 
 		 norm_time.AddStart(omp_get_wtime());
 		norm_l = parallel_norm_compressed(cluster, w_l);
 		 norm_time.AddEnd(omp_get_wtime());
-		
+
 
 		if (mpi_rank == mpi_root) {
 			//printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f - norm prim %1.20f norm f %1.20f : %1.20f \n", iter+1, norm_l, tol, norm_prim_g, norm_prim_fg, norm_prim_g / norm_prim_fg);
 			printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
 
 			//if (log_active == 1)
-			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);  
+			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 		}
 
 
 		// *** Stop condition ******************************************************************
-		if (norm_l < tol) 
-			break; 
+		if (norm_l < tol)
+			break;
 
-	} // end of CG iterations 
+	} // end of CG iterations
 
 
 	// *** save solution - in dual and amplitudes *********************************************
@@ -847,7 +847,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 	dual_residuum_compressed_parallel   = r_l;
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 ); 
+		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
 		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
@@ -870,17 +870,17 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster ) //, vector <doub
 		timing.AddEvent(proj_time);
 	}
 
-	timing.AddEvent(appA_time ); 
+	timing.AddEvent(appA_time );
 	timing.AddEvent(ddot_beta);
-	timing.AddEvent(ddot_alpha); 
+	timing.AddEvent(ddot_alpha);
 
 	preproc_timing.PrintStatsMPI();
-	timing.PrintStatsMPI(); 
+	timing.PrintStatsMPI();
 	timeEvalAppa.PrintStatsMPI();
 	timeEvalProj.PrintStatsMPI();
 
 	if (USE_PREC == 1)
-		timeEvalPrec.PrintStatsMPI(); 
+		timeEvalPrec.PrintStatsMPI();
 
 	//if(cluster.domains.size() > 1 )
 	if ( cluster.USE_HFETI == 1 )
@@ -897,27 +897,27 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
 
-	SEQ_VECTOR <double> b_l  (dl_size, 0);  
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
 
 	SEQ_VECTOR <double> Ax_l (dl_size, 0);
 	SEQ_VECTOR <double> Ap_l (dl_size, 0);
 	SEQ_VECTOR <double> r_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> w_l  (dl_size, 0); 
-	SEQ_VECTOR <double> wp_l (dl_size, 0); 
+	SEQ_VECTOR <double> w_l  (dl_size, 0);
+	SEQ_VECTOR <double> wp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> y_l  (dl_size, 0); 
-	SEQ_VECTOR <double> yp_l (dl_size, 0); 
+	SEQ_VECTOR <double> y_l  (dl_size, 0);
+	SEQ_VECTOR <double> yp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> z_l  (dl_size, 0); 
-	SEQ_VECTOR <double> p_l  (dl_size, 0); 
+	SEQ_VECTOR <double> z_l  (dl_size, 0);
+	SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> s_l  (dl_size, 0); 
-	SEQ_VECTOR <double> q_l  (dl_size, 0); 
-	SEQ_VECTOR <double> m_l  (dl_size, 0); 
-	SEQ_VECTOR <double> n_l  (dl_size, 0); 
+	SEQ_VECTOR <double> s_l  (dl_size, 0);
+	SEQ_VECTOR <double> q_l  (dl_size, 0);
+	SEQ_VECTOR <double> m_l  (dl_size, 0);
+	SEQ_VECTOR <double> n_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> u_l  (dl_size, 0); 
+	SEQ_VECTOR <double> u_l  (dl_size, 0);
 	SEQ_VECTOR <double> tmp_l(dl_size, 0);
 
 
@@ -925,23 +925,23 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 	double gama_lp = 0;
 
 	double delta_l = 0;
-	double beta_l  = 0; 
+	double beta_l  = 0;
 
-	double alpha_l = 0; 
+	double alpha_l = 0;
 	double alpha_lp;
 
-	double norm_l; 
-	double tol; 
+	double norm_l;
+	double tol;
 
 	// *** CG start ***************************************************************
 	// t1 = Uc\(Lc\d);
 	// x = Ct * t1;
 
 	if (USE_GGtINV == 1)
-		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 ); 
-	else 
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	else
 		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
-	
+
 
 	// *** Combine vectors b from all clusters ************************************
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
@@ -954,8 +954,8 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 	// *** r = b - Ax; ************************************************************
 	if (USE_PREC == 1) {
 
-		cilk_for (int i = 0; i < r_l.size(); i++)	
-			tmp_l[i] = b_l[i] - Ax_l[i]; 
+		cilk_for (int i = 0; i < r_l.size(); i++)
+			tmp_l[i] = b_l[i] - Ax_l[i];
 
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, r_l, 0 );
@@ -964,25 +964,25 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 
 	} else {
 
-		cilk_for (int i = 0; i < r_l.size(); i++)	
-			r_l[i] = b_l[i] - Ax_l[i]; 
+		cilk_for (int i = 0; i < r_l.size(); i++)
+			r_l[i] = b_l[i] - Ax_l[i];
 	}
 
-	
+
 	if (USE_PREC == 1) {
-		
-		apply_prec_compB(timeEvalPrec, cluster, r_l, tmp_l); 
-		
+
+		apply_prec_compB(timeEvalPrec, cluster, r_l, tmp_l);
+
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, u_l, 0 );
 		else
 			Projector_l_compG    ( timeEvalProj, cluster, tmp_l, u_l, 0 );
-		
+
 	} else {
-		
-		if (USE_GGtINV == 1) 
+
+		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l, 0 );
-		else 
+		else
 			Projector_l_compG    ( timeEvalProj, cluster, r_l, u_l, 0 );
 	}
 
@@ -1004,80 +1004,80 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 
 	// *** Calculate the stop condition *******************************************
 
-	if (USE_GGtINV == 1) 
+	if (USE_GGtINV == 1)
 		Projector_l_inv_compG( timeEvalProj, cluster, b_l, tmp_l, 0 );
-	else 
+	else
 		Projector_l_compG    ( timeEvalProj, cluster, b_l, tmp_l, 0 );
 
-	tol = epsilon * parallel_norm_compressed(cluster, tmp_l); 
-	//tol = epsilon * parallel_norm_compressed(cluster, u_l); 
-	
+	tol = epsilon * parallel_norm_compressed(cluster, tmp_l);
+	//tol = epsilon * parallel_norm_compressed(cluster, u_l);
+
 
 
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
 
-		timing.totalTime.AddStart(omp_get_wtime()); 
-		
+		timing.totalTime.AddStart(omp_get_wtime());
+
 		alpha_lp = alpha_l;
 		gama_lp  = gama_l;
 
 		//------------------------------------------
-		ddot_time.AddStart(omp_get_wtime()); 
+		ddot_time.AddStart(omp_get_wtime());
 		MPI_Request mpi_req;
-		MPI_Status mpi_stat; 
+		MPI_Status mpi_stat;
 
-		SEQ_VECTOR <double> reduction_tmp (2,0); 
+		SEQ_VECTOR <double> reduction_tmp (2,0);
 		SEQ_VECTOR <double> send_buf (2,0);
 		parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, &mpi_req, reduction_tmp, send_buf);
 
 		ddot_time.AddEnd(omp_get_wtime());
-		
+
 		if (USE_PREC == 1) {
-			
+
 			prec_time.AddStart(omp_get_wtime());
 			apply_prec_compB(timeEvalPrec, cluster, w_l, tmp_l);
 			prec_time.AddEnd(omp_get_wtime());
 
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1)
 				Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, m_l, 0 );
-			else 
+			else
 				Projector_l_compG    ( timeEvalProj, cluster, tmp_l, m_l, 0 );
 			proj_time.AddEnd(omp_get_wtime());
 
-			appA_time.AddStart(omp_get_wtime()); 
-			apply_A_l_compB(timeEvalAppa, cluster, m_l, tmp_l); 
+			appA_time.AddStart(omp_get_wtime());
+			apply_A_l_compB(timeEvalAppa, cluster, m_l, tmp_l);
 			appA_time.AddEnd(omp_get_wtime());
 
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1)
 				Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, n_l, 0 );
-			else 
+			else
 				Projector_l_compG    ( timeEvalProj, cluster, tmp_l, n_l, 0 );
 			proj_time.AddEnd(omp_get_wtime());
-			
+
 		} else {
 
 			//------------------------------------------
-			proj_time.AddStart(omp_get_wtime()); 
-		
+			proj_time.AddStart(omp_get_wtime());
+
 			if (USE_GGtINV == 1)
 				Projector_l_inv_compG( timeEvalProj, cluster, w_l, m_l, 0 );
-			else 
+			else
 				Projector_l_compG    ( timeEvalProj, cluster, w_l, m_l, 0 );
-		
+
 			proj_time.AddEnd(omp_get_wtime());
 
 			//------------------------------------------
-			appA_time.AddStart(omp_get_wtime()); 
+			appA_time.AddStart(omp_get_wtime());
 			apply_A_l_compB(timeEvalAppa, cluster, m_l, n_l);
 			appA_time.AddEnd(omp_get_wtime());
 			//------------------------------------------
 		}
 
 
-#ifndef WIN32	 
+#ifndef WIN32
 #ifdef USE_MPI_3
 		MPI_Wait(&mpi_req, &mpi_stat);
 #endif
@@ -1087,12 +1087,12 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 
 		//------------------------------------------
 		vec_time.AddStart(omp_get_wtime());
-		if (iter == 0) {			
-			beta_l  = 0; 
-			alpha_l = gama_l / delta_l; 
+		if (iter == 0) {
+			beta_l  = 0;
+			alpha_l = gama_l / delta_l;
 		} else {
 			beta_l  = gama_l / gama_lp;
-			alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp); 
+			alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp);
 		}
 
 		cilk_for (int i = 0; i < r_l.size(); i++) {
@@ -1108,42 +1108,42 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 		vec_time.AddEnd(omp_get_wtime());
 
 
-		timing.totalTime.AddEnd(omp_get_wtime()); 
+		timing.totalTime.AddEnd(omp_get_wtime());
 		timing.totalTime.PrintLastStatMPI(0.0);
 
 		norm_time.AddStart(omp_get_wtime());
-		
+
 		// POZOR - tady se to ukoncuje jinak = musime probrat
 		if (USE_PREC == 1)
-			norm_l = parallel_norm_compressed(cluster, r_l);	
-		else 
+			norm_l = parallel_norm_compressed(cluster, r_l);
+		else
 			norm_l = parallel_norm_compressed(cluster, u_l);
-		
+
 		norm_time.AddEnd(omp_get_wtime());
 
 		if (mpi_rank == mpi_root) {
 			printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 
 			//if (log_active == 1)
-			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);  
+			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 		}
 
-		if (norm_l < tol) 
-			break; 
+		if (norm_l < tol)
+			break;
 	}
 
 	// *** save solution - in dual and amplitudes *********************************************
-	
-	apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l); 
+
+	apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
 	cilk_for(int i = 0; i < r_l.size(); i++)
 		r_l[i] = b_l[i] - Ax_l[i];
 
 	dual_soultion_compressed_parallel   = x_l;
-	dual_residuum_compressed_parallel   = r_l; 
+	dual_residuum_compressed_parallel   = r_l;
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 ); 
+		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
 		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
@@ -1156,18 +1156,18 @@ void IterSolver::Solve_PipeCG_singular ( Cluster & cluster ) //, vector <double>
 
 	// *** Print out the timing for the iteration loop ***************************************
 
-	timing.AddEvent(ddot_time); 
-	timing.AddEvent(proj_time); 
-	timing.AddEvent(appA_time); 
-	timing.AddEvent(vec_time );  
+	timing.AddEvent(ddot_time);
+	timing.AddEvent(proj_time);
+	timing.AddEvent(appA_time);
+	timing.AddEvent(vec_time );
 
 	preproc_timing.PrintStatsMPI();
-	timing.PrintStatsMPI(); 
+	timing.PrintStatsMPI();
 	timeEvalAppa.PrintStatsMPI();
 	timeEvalProj.PrintStatsMPI();
 
 	if (USE_PREC == 1)
-		timeEvalPrec.PrintStatsMPI(); 
+		timeEvalPrec.PrintStatsMPI();
 
 	//if(cluster.domains.size() > 1 )
 	if ( cluster.USE_HFETI == 1 )
@@ -1182,27 +1182,27 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
 
-	SEQ_VECTOR <double> b_l  (dl_size, 0);  
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
 
 	SEQ_VECTOR <double> Ax_l (dl_size, 0);
 	SEQ_VECTOR <double> Ap_l (dl_size, 0);
 	SEQ_VECTOR <double> r_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> w_l  (dl_size, 0); 
-	SEQ_VECTOR <double> wp_l (dl_size, 0); 
+	SEQ_VECTOR <double> w_l  (dl_size, 0);
+	SEQ_VECTOR <double> wp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> y_l  (dl_size, 0);  
-	SEQ_VECTOR <double> yp_l (dl_size, 0); 
+	SEQ_VECTOR <double> y_l  (dl_size, 0);
+	SEQ_VECTOR <double> yp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> z_l  (dl_size, 0); 
-	SEQ_VECTOR <double> p_l  (dl_size, 0); 
+	SEQ_VECTOR <double> z_l  (dl_size, 0);
+	SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> s_l  (dl_size, 0); 
-	SEQ_VECTOR <double> q_l  (dl_size, 0); 
-	SEQ_VECTOR <double> m_l  (dl_size, 0); 
-	SEQ_VECTOR <double> n_l  (dl_size, 0); 
+	SEQ_VECTOR <double> s_l  (dl_size, 0);
+	SEQ_VECTOR <double> q_l  (dl_size, 0);
+	SEQ_VECTOR <double> m_l  (dl_size, 0);
+	SEQ_VECTOR <double> n_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> u_l  (dl_size, 0); 
+	SEQ_VECTOR <double> u_l  (dl_size, 0);
 	SEQ_VECTOR <double> tmp_l(dl_size, 0);
 
 
@@ -1210,21 +1210,21 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 	double gama_lp = 0;
 
 	double delta_l = 0;
-	double beta_l  = 0; 
+	double beta_l  = 0;
 
-	double alpha_l = 0; 
+	double alpha_l = 0;
 	double alpha_lp;
 
-	double norm_l; 
-	double tol; 
+	double norm_l;
+	double tol;
 
 	// *** CG start ***************************************************************
 	// t1 = Uc\(Lc\d);
 	// x = Ct * t1;
 
 	if (USE_GGtINV == 1)
-		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 ); 
-	else 
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	else
 		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 
 
@@ -1234,13 +1234,13 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l); //apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
-	
-	
+
+
 	// *** r = b - Ax; ************************************************************
 	if (USE_PREC == 1) {
 
-		cilk_for (int i = 0; i < r_l.size(); i++)	
-			tmp_l[i] = b_l[i] - Ax_l[i]; 
+		cilk_for (int i = 0; i < r_l.size(); i++)
+			tmp_l[i] = b_l[i] - Ax_l[i];
 
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, r_l, 0 );
@@ -1249,14 +1249,14 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	} else {
 
-		cilk_for (int i = 0; i < r_l.size(); i++)	
-			r_l[i] = b_l[i] - Ax_l[i]; 
+		cilk_for (int i = 0; i < r_l.size(); i++)
+			r_l[i] = b_l[i] - Ax_l[i];
 	}
 
 
 	if (USE_PREC == 1) {
 
-		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, tmp_l); 
+		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, tmp_l);
 
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, u_l, 0 );
@@ -1265,9 +1265,9 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	} else {
 
-		if (USE_GGtINV == 1) 
+		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l, 0 );
-		else 
+		else
 			Projector_l_compG    ( timeEvalProj, cluster, r_l, u_l, 0 );
 	}
 
@@ -1288,29 +1288,29 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	// *** Calculate the stop condition *******************************************
 
-	if (USE_GGtINV == 1) 
+	if (USE_GGtINV == 1)
 		Projector_l_inv_compG( timeEvalProj, cluster, b_l, tmp_l, 0 );
-	else 
+	else
 		Projector_l_compG    ( timeEvalProj, cluster, b_l, tmp_l, 0 );
 
-	tol = epsilon * parallel_norm_compressed(cluster, tmp_l); //tol = epsilon * parallel_norm_compressed(cluster, u_l); 
+	tol = epsilon * parallel_norm_compressed(cluster, tmp_l); //tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
 
 
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
 
-		timing.totalTime.AddStart(omp_get_wtime()); 
+		timing.totalTime.AddStart(omp_get_wtime());
 
 		alpha_lp = alpha_l;
 		gama_lp  = gama_l;
 
 		//------------------------------------------
-		ddot_time.AddStart(omp_get_wtime()); 
+		ddot_time.AddStart(omp_get_wtime());
 		MPI_Request mpi_req;
-		MPI_Status mpi_stat; 
+		MPI_Status mpi_stat;
 
-		SEQ_VECTOR <double> reduction_tmp (2,0); 
+		SEQ_VECTOR <double> reduction_tmp (2,0);
 		SEQ_VECTOR <double> send_buf (2,0);
 		parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, &mpi_req, reduction_tmp, send_buf);
 
@@ -1322,44 +1322,44 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_l);
 			prec_time.AddEnd(omp_get_wtime());
 
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1)
 				Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, m_l, 0 );
-			else 
+			else
 				Projector_l_compG    ( timeEvalProj, cluster, tmp_l, m_l, 0 );
 			proj_time.AddEnd(omp_get_wtime());
 
-			appA_time.AddStart(omp_get_wtime()); 
-			apply_A_l_comp_dom_B(timeEvalAppa, cluster, m_l, tmp_l); //apply_A_l_compB(timeEvalAppa, cluster, m_l, tmp_l); 
+			appA_time.AddStart(omp_get_wtime());
+			apply_A_l_comp_dom_B(timeEvalAppa, cluster, m_l, tmp_l); //apply_A_l_compB(timeEvalAppa, cluster, m_l, tmp_l);
 			appA_time.AddEnd(omp_get_wtime());
 
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1)
 				Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, n_l, 0 );
-			else 
+			else
 				Projector_l_compG    ( timeEvalProj, cluster, tmp_l, n_l, 0 );
 			proj_time.AddEnd(omp_get_wtime());
 
 		} else {
 
 			//------------------------------------------
-			proj_time.AddStart(omp_get_wtime()); 
+			proj_time.AddStart(omp_get_wtime());
 
 			if (USE_GGtINV == 1)
 				Projector_l_inv_compG( timeEvalProj, cluster, w_l, m_l, 0 );
-			else 
+			else
 				Projector_l_compG    ( timeEvalProj, cluster, w_l, m_l, 0 );
 
 			proj_time.AddEnd(omp_get_wtime());
 
 			//------------------------------------------
-			appA_time.AddStart(omp_get_wtime()); 
+			appA_time.AddStart(omp_get_wtime());
 			apply_A_l_comp_dom_B(timeEvalAppa, cluster, m_l, n_l); //apply_A_l_compB(timeEvalAppa, cluster, m_l, n_l);
 			appA_time.AddEnd(omp_get_wtime());
 			//------------------------------------------
 		}
 
-#ifndef WIN32	 
+#ifndef WIN32
 #ifdef USE_MPI_3
 		MPI_Wait(&mpi_req, &mpi_stat);
 #endif
@@ -1369,12 +1369,12 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 		//------------------------------------------
 		vec_time.AddStart(omp_get_wtime());
-		if (iter == 0) {			
-			beta_l  = 0; 
-			alpha_l = gama_l / delta_l; 
+		if (iter == 0) {
+			beta_l  = 0;
+			alpha_l = gama_l / delta_l;
 		} else {
 			beta_l  = gama_l / gama_lp;
-			alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp); 
+			alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp);
 		}
 
 		cilk_for (int i = 0; i < r_l.size(); i++) {
@@ -1390,15 +1390,15 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 		vec_time.AddEnd(omp_get_wtime());
 
 
-		timing.totalTime.AddEnd(omp_get_wtime()); 
+		timing.totalTime.AddEnd(omp_get_wtime());
 		timing.totalTime.PrintLastStatMPI(0.0);
 
 		norm_time.AddStart(omp_get_wtime());
 
 		// POZOR - tady se to ukoncuje jinak = musime probrat
 		if (USE_PREC == 1)
-			norm_l = parallel_norm_compressed(cluster, r_l);	
-		else 
+			norm_l = parallel_norm_compressed(cluster, r_l);
+		else
 			norm_l = parallel_norm_compressed(cluster, u_l);
 
 		norm_time.AddEnd(omp_get_wtime());
@@ -1407,25 +1407,25 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 			printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 
 			//if (log_active == 1)
-			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);  
+			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 		}
 
-		if (norm_l < tol) 
-			break; 
+		if (norm_l < tol)
+			break;
 	}
 
 	// *** save solution - in dual and amplitudes *********************************************
 
-	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l); //apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l); 
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l); //apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
 	cilk_for(int i = 0; i < r_l.size(); i++)
 		r_l[i] = b_l[i] - Ax_l[i];
 
 	dual_soultion_compressed_parallel   = x_l;
-	dual_residuum_compressed_parallel   = r_l; 
+	dual_residuum_compressed_parallel   = r_l;
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 ); 
+		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
 		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
@@ -1440,18 +1440,18 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 	// *** Print out the timing for the iteration loop ***************************************
 
-	timing.AddEvent(ddot_time); 
-	timing.AddEvent(proj_time); 
-	timing.AddEvent(appA_time); 
-	timing.AddEvent(vec_time );  
+	timing.AddEvent(ddot_time);
+	timing.AddEvent(proj_time);
+	timing.AddEvent(appA_time);
+	timing.AddEvent(vec_time );
 
 	preproc_timing.PrintStatsMPI();
-	timing.PrintStatsMPI(); 
+	timing.PrintStatsMPI();
 	timeEvalAppa.PrintStatsMPI();
 	timeEvalProj.PrintStatsMPI();
 
 	if (USE_PREC == 1)
-		timeEvalPrec.PrintStatsMPI(); 
+		timeEvalPrec.PrintStatsMPI();
 
 	//if(cluster.domains.size() > 1 )
 	if ( cluster.USE_HFETI == 1 )
@@ -1462,50 +1462,50 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster ) //, vector <dou
 
 
 // *** Non-singular CG Solvers *******************************************
-void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster, 
-										    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, 
+void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
+										    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 										    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel) {
-	
+
 	int dl_size = cluster.my_lamdas_indices.size();
 
-	SEQ_VECTOR <double> x_l  (dl_size, 0); 
-	SEQ_VECTOR <double> b_l  (dl_size, 0);  
+	SEQ_VECTOR <double> x_l  (dl_size, 0);
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
 
 	SEQ_VECTOR <double> Ax_l (dl_size, 0);
 	SEQ_VECTOR <double> Ap_l (dl_size, 0);
 	SEQ_VECTOR <double> r_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> w_l  (dl_size, 0); 
-	SEQ_VECTOR <double> wp_l (dl_size, 0); 
+	SEQ_VECTOR <double> w_l  (dl_size, 0);
+	SEQ_VECTOR <double> wp_l (dl_size, 0);
 
-	SEQ_VECTOR <double> y_l  (dl_size, 0); 
-	SEQ_VECTOR <double> yp_l (dl_size, 0); 
-	SEQ_VECTOR <double> z_l  (dl_size, 0); 
-	SEQ_VECTOR <double> p_l  (dl_size, 0); 
+	SEQ_VECTOR <double> y_l  (dl_size, 0);
+	SEQ_VECTOR <double> yp_l (dl_size, 0);
+	SEQ_VECTOR <double> z_l  (dl_size, 0);
+	SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> s_l  (dl_size, 0); 
-	SEQ_VECTOR <double> q_l  (dl_size, 0); 
-	SEQ_VECTOR <double> m_l  (dl_size, 0); 
-	SEQ_VECTOR <double> n_l  (dl_size, 0); 
+	SEQ_VECTOR <double> s_l  (dl_size, 0);
+	SEQ_VECTOR <double> q_l  (dl_size, 0);
+	SEQ_VECTOR <double> m_l  (dl_size, 0);
+	SEQ_VECTOR <double> n_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> u_l  (dl_size, 0); 
+	SEQ_VECTOR <double> u_l  (dl_size, 0);
 
 	double gama_l  = 0;
 	double gama_lp = 0;
 
 	double delta_l = 0;
-	double beta_l  = 0; 
+	double beta_l  = 0;
 
-	double alpha_l = 0; 
+	double alpha_l = 0;
 	double alpha_lp;
 
-	double norm_l; 
-	double tol; 
-	
-											   
+	double norm_l;
+	double tol;
+
+
     // *** CG iteration loop ******************************************************************
-	// *** - input to CG - vec_b - right hand side in primal 
-	
+	// *** - input to CG - vec_b - right hand side in primal
+
 
 //	cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0);
 //	for (int d = 1; d < cluster.domains.size(); d++) {
@@ -1529,43 +1529,43 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 	}
 	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
 
-	
 
-	int iter = 0; 
+
+	int iter = 0;
 	timing.totalTime.Reset();
 
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
 
-	cilk_for (int i = 0; i < r_l.size(); i++) {	// r = b - Ax;  
-		r_l[i] = b_l[i] - Ax_l[i]; 
+	cilk_for (int i = 0; i < r_l.size(); i++) {	// r = b - Ax;
+		r_l[i] = b_l[i] - Ax_l[i];
 		wp_l[i] = 0.0;
-		yp_l[i] = 0.0; 
+		yp_l[i] = 0.0;
 	}
 
 	tol = epsilon * parallel_norm_compressed(cluster, b_l);
 
 	for (iter = 0; iter < 1000; iter++) {
-		timing.totalTime.AddStart(omp_get_wtime()); 
+		timing.totalTime.AddStart(omp_get_wtime());
 
 		cilk_for (int i = 0; i < r_l.size(); i++) {
-			wp_l[i] = w_l[i];				//	wp = w; 
-			yp_l[i] = y_l[i];				//	yp = y 
+			wp_l[i] = w_l[i];				//	wp = w;
+			yp_l[i] = y_l[i];				//	yp = y
 		}
 
 		if (USE_PREC == 1) {
 			cilk_for (int i = 0; i < w_l.size(); i++)
-				w_l[i] = r_l[i]; 
+				w_l[i] = r_l[i];
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
-		} else {		
+		} else {
 			cilk_for (int i = 0; i < w_l.size(); i++)
-				w_l[i] = r_l[i]; 
+				w_l[i] = r_l[i];
 			cilk_for (int i = 0; i < w_l.size(); i++)
-				y_l[i] = w_l[i]; 
+				y_l[i] = w_l[i];
 		}
 
 
-		if (iter == 0) {									// if outputs.n_it==1; 
-			cilk_for (int i = 0; i < y_l.size(); i++) 
+		if (iter == 0) {									// if outputs.n_it==1;
+			cilk_for (int i = 0; i < y_l.size(); i++)
 				p_l[i] = y_l[i];							// p = y;
 		} else {
 			ddot_beta.AddStart(omp_get_wtime());
@@ -1573,7 +1573,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
 			ddot_beta.AddEnd(omp_get_wtime());
 
-			cilk_for (int i = 0; i < p_l.size(); i++) 
+			cilk_for (int i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 		}
 
@@ -1581,29 +1581,29 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 
 
-		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l); 
+		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l);
 		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
 
 		cilk_for (int i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
-			r_l[i] = r_l[i] - alpha_l * Ap_l[i]; 
+			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
 
-		timing.totalTime.AddEnd(omp_get_wtime()); 
+		timing.totalTime.AddEnd(omp_get_wtime());
 
 		norm_l = parallel_norm_compressed(cluster, r_l);
 
 		if (mpi_rank == mpi_root) {
 			printf ( "Iter MPI %d - norm %1.30f - tol %1.30f \r" , iter+1, norm_l, tol);
 			//if (log_active == 1)
-			//	fprintf(stream,"Iter MPI %d - norm %1.30f - tol %1.30f \n", iter+1, norm_l, tol);  
+			//	fprintf(stream,"Iter MPI %d - norm %1.30f - tol %1.30f \n", iter+1, norm_l, tol);
 		}
 
 
-		if (norm_l < tol) 
-			break; 
+		if (norm_l < tol)
+			break;
 
-	} // end iter loop 
+	} // end iter loop
 
 
 	//// reconstruction of u
@@ -1614,7 +1614,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 	//cluster.domains[0].multKplusLocal(out_primal_solution_parallel);
 
-	//// *** output of CG - vec_u_n in primal 
+	//// *** output of CG - vec_u_n in primal
 
 
 	// reconstruction of u
@@ -1643,56 +1643,56 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 //
 //		cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
 //	}
-	// *** output of CG - vec_u_n in primal 
+	// *** output of CG - vec_u_n in primal
 
 
 }
 
-void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster, 
-											SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, 
+void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
+											SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 											SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel) {
 
 		int dl_size = cluster.my_lamdas_indices.size();
 
-		SEQ_VECTOR <double> x_l  (dl_size, 0); 
-		SEQ_VECTOR <double> b_l  (dl_size, 0);  
+		SEQ_VECTOR <double> x_l  (dl_size, 0);
+		SEQ_VECTOR <double> b_l  (dl_size, 0);
 
 		SEQ_VECTOR <double> Ax_l (dl_size, 0);
 		SEQ_VECTOR <double> Ap_l (dl_size, 0);
 		SEQ_VECTOR <double> r_l  (dl_size, 0);
 
-		SEQ_VECTOR <double> w_l  (dl_size, 0); 
-		SEQ_VECTOR <double> wp_l (dl_size, 0); 
+		SEQ_VECTOR <double> w_l  (dl_size, 0);
+		SEQ_VECTOR <double> wp_l (dl_size, 0);
 
-		SEQ_VECTOR <double> y_l  (dl_size, 0); 
-		SEQ_VECTOR <double> yp_l (dl_size, 0); 
-		SEQ_VECTOR <double> z_l  (dl_size, 0); 
-		SEQ_VECTOR <double> p_l  (dl_size, 0); 
+		SEQ_VECTOR <double> y_l  (dl_size, 0);
+		SEQ_VECTOR <double> yp_l (dl_size, 0);
+		SEQ_VECTOR <double> z_l  (dl_size, 0);
+		SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-		SEQ_VECTOR <double> s_l  (dl_size, 0); 
-		SEQ_VECTOR <double> q_l  (dl_size, 0); 
-		SEQ_VECTOR <double> m_l  (dl_size, 0); 
-		SEQ_VECTOR <double> n_l  (dl_size, 0); 
+		SEQ_VECTOR <double> s_l  (dl_size, 0);
+		SEQ_VECTOR <double> q_l  (dl_size, 0);
+		SEQ_VECTOR <double> m_l  (dl_size, 0);
+		SEQ_VECTOR <double> n_l  (dl_size, 0);
 
-		SEQ_VECTOR <double> u_l  (dl_size, 0); 
+		SEQ_VECTOR <double> u_l  (dl_size, 0);
 
 		double gama_l  = 0;
 		double gama_lp = 0;
 
 		double delta_l = 0;
-		double beta_l  = 0; 
+		double beta_l  = 0;
 
-		double alpha_l = 0; 
+		double alpha_l = 0;
 		double alpha_lp;
 
-		double norm_l; 
-		double tol; 
+		double norm_l;
+		double tol;
 
 
 		// *** CG iteration loop ******************************************************************
-		// *** - input to CG - vec_b - right hand side in primal 
+		// *** - input to CG - vec_b - right hand side in primal
 
-		// *** convert right hand side to dual 
+		// *** convert right hand side to dual
 //		cluster.domains[0].multKplusLocal(in_right_hand_side_primal[0],  cluster.x_prim_cluster1[0]);
 //		cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0);
 //		for (int d = 1; d < cluster.domains.size(); d++) {
@@ -1717,66 +1717,66 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
 
 
-		int iter = 0; 
+		int iter = 0;
 		timing.totalTime.Reset();
 
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
 
-		cilk_for (int i = 0; i < r_l.size(); i++) {	// r = b - Ax;  
-			r_l[i] = b_l[i] - Ax_l[i]; 
+		cilk_for (int i = 0; i < r_l.size(); i++) {	// r = b - Ax;
+			r_l[i] = b_l[i] - Ax_l[i];
 			wp_l[i] = 0.0;
-			yp_l[i] = 0.0; 
+			yp_l[i] = 0.0;
 		}
 
 		if (USE_PREC == 1) {
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
 		} else {
-			cilk_for (int i = 0; i < r_l.size(); i++)   
-				u_l = r_l; 
+			cilk_for (int i = 0; i < r_l.size(); i++)
+				u_l = r_l;
 		}
-		
+
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l);
-		
+
 		tol = epsilon * parallel_norm_compressed(cluster, b_l);
-		
+
 		for (iter = 0; iter < CG_max_iter; iter++) {
 
-			timing.totalTime.AddStart(omp_get_wtime()); 
+			timing.totalTime.AddStart(omp_get_wtime());
 
 			alpha_lp = alpha_l;
 			gama_lp  = gama_l;
 
-			ddot_time.AddStart(omp_get_wtime()); 
+			ddot_time.AddStart(omp_get_wtime());
 			MPI_Request mpi_req;
-			MPI_Status mpi_stat; 
+			MPI_Status mpi_stat;
 
-			SEQ_VECTOR <double> reduction_tmp (2,0); 
+			SEQ_VECTOR <double> reduction_tmp (2,0);
 			SEQ_VECTOR <double> send_buf (2,0);
 			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, &mpi_req, reduction_tmp, send_buf);
 
 			ddot_time.AddEnd(omp_get_wtime());
 
 			if (USE_PREC == 1) {
-								
-				prec_time.AddStart(omp_get_wtime()); 
+
+				prec_time.AddStart(omp_get_wtime());
 				apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, m_l);
 				prec_time.AddEnd(omp_get_wtime());
-							
+
 			} else {
-							
+
 				cilk_for (int i = 0; i < m_l.size(); i++)
 					m_l[i] = w_l[i];
 
 			}
 
 			//------------------------------------------
-			appA_time.AddStart(omp_get_wtime()); 
+			appA_time.AddStart(omp_get_wtime());
 			apply_A_l_comp_dom_B(timeEvalAppa, cluster, m_l, n_l);
 			appA_time.AddEnd(omp_get_wtime());
 			//------------------------------------------
-			
 
-#ifndef WIN32	 
+
+#ifndef WIN32
 #ifdef USE_MPI_3
 			MPI_Wait(&mpi_req, &mpi_stat);
 #endif
@@ -1786,12 +1786,12 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 			//------------------------------------------
 			vec_time.AddStart(omp_get_wtime());
-			if (iter == 0) {			
-				beta_l  = 0; 
-				alpha_l = gama_l / delta_l; 
+			if (iter == 0) {
+				beta_l  = 0;
+				alpha_l = gama_l / delta_l;
 			} else {
 				beta_l  = gama_l / gama_lp;
-				alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp); 
+				alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp);
 			}
 
 			cilk_for (int i = 0; i < r_l.size(); i++) {
@@ -1807,7 +1807,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			vec_time.AddEnd(omp_get_wtime());
 
 
-			timing.totalTime.AddEnd(omp_get_wtime()); 
+			timing.totalTime.AddEnd(omp_get_wtime());
 			//timing.totalTime.PrintLastStatMPI(0.0);
 
 			norm_time.AddStart(omp_get_wtime());
@@ -1819,14 +1819,14 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 				//printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 				printf ( "Iter MPI %d - norm %1.30f - tol %1.30f \r" , iter+1, norm_l, tol);
 				//if (log_active == 1)
-				//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);  
+				//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 			}
 
-			if (norm_l < tol) 
-				break; 
+			if (norm_l < tol)
+				break;
 
-		} // end iter loop 
-		
+		} // end iter loop
+
 		// reconstruction of u
 
 		//cilk_
@@ -1854,7 +1854,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 //
 //			cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
 //		}
-		// *** output of CG - vec_u_n in primal 
+		// *** output of CG - vec_u_n in primal
 
 }
 
@@ -1864,16 +1864,16 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 // *** Dynamic Elasticity Solver - uses non-singular CG Solvers *******************************************
 void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECTOR < SEQ_VECTOR < SEQ_VECTOR <double > > > & prim_solution_out)
 {
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_u     (cluster.domains.size()); 
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v     (cluster.domains.size()); 
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w     (cluster.domains.size()); 
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_u     (cluster.domains.size());
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v     (cluster.domains.size());
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w     (cluster.domains.size());
 
     SEQ_VECTOR < SEQ_VECTOR <double> > vec_u_n   (cluster.domains.size());
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v_n   (cluster.domains.size()); 
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w_n   (cluster.domains.size()); 
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_v_n   (cluster.domains.size());
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_w_n   (cluster.domains.size());
 
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_b     (cluster.domains.size());     
-	SEQ_VECTOR < SEQ_VECTOR <double> > vec_t_tmp (cluster.domains.size()); 
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_b     (cluster.domains.size());
+	SEQ_VECTOR < SEQ_VECTOR <double> > vec_t_tmp (cluster.domains.size());
 
 	for (int d = 0; d < cluster.domains.size(); d++) {
 		vec_u[d]    .resize(cluster.domains[d].domain_prim_size, 0);
@@ -1887,21 +1887,21 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECT
 		vec_b[d]    .resize(cluster.domains[d].domain_prim_size, 0);
 		vec_t_tmp[d].resize(cluster.domains[d].domain_prim_size, 0);
 	}
-	
+
 	// *** Set up the initial acceleration ***********************
-	for (int d = 0; d < cluster.domains.size(); d++) {	
+	for (int d = 0; d < cluster.domains.size(); d++) {
 		for (int i = 2; i < vec_w[d].size(); i=i+3) {
 			vec_w[d][i] = 1.0;
 		}
 	}
 	// *** END - Set up the initial accel. ***********************
-	
-	
-	const_beta   = cluster.dynamic_beta; 
-	const_deltat = cluster.dynamic_timestep;
-	const_gama   = cluster.dynamic_gama; 
 
-	
+
+	const_beta   = cluster.dynamic_beta;
+	const_deltat = cluster.dynamic_timestep;
+	const_gama   = cluster.dynamic_gama;
+
+
 	SEQ_VECTOR <double> const_a (8,0);
 	const_a[0] = 1.0 / (const_beta * const_deltat * const_deltat);
 	const_a[1] = const_gama / (const_beta * const_deltat);
@@ -1911,7 +1911,7 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECT
 	const_a[5] = const_deltat * ((const_gama / (2.0 * const_beta)) - 1.0);
 	const_a[6] = const_deltat * (1.0 - const_gama);
 	const_a[7] = const_deltat * const_gama;
-	
+
 	for (int time = 0; time < 100; time++) {
 	//for (int time = 0; time < NumberOfTimeIterations; time++) {
 
@@ -1922,9 +1922,9 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECT
 			}
 			cluster.domains[d].M.MatVec(vec_t_tmp[d], vec_b[d],'N');
 		}
-		
+
 		// *** Run the CG solver **************************************************************
-				
+
 		if ( USE_PIPECG == 1 ) {
 			//Solve_PipeCG_nonsingular( cluster, vec_b, vec_u_n);
 		} else {
@@ -1936,13 +1936,13 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECT
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 			for(int i = 0; i < vec_u[d].size(); i++) {
 				vec_w_n[d][i] = (const_a[0] * (vec_u_n[d][i] - vec_u[d][i])) - (const_a[2] * vec_v[d][i]) - (const_a[3] * vec_w  [d][i]);
-				vec_v_n[d][i] = vec_v[d][i]                  + (const_a[6] * vec_w[d][i])                 + (const_a[7] * vec_w_n[d][i]); 
+				vec_v_n[d][i] = vec_v[d][i]                  + (const_a[6] * vec_w[d][i])                 + (const_a[7] * vec_w_n[d][i]);
 			//}
 
 			//for(int i = 0; i < vec_u[d].size(); i++) {
-				vec_u[d][i] = vec_u_n[d][i]; 
-				vec_v[d][i] = vec_v_n[d][i]; 
-				vec_w[d][i] = vec_w_n[d][i]; 
+				vec_u[d][i] = vec_u_n[d][i];
+				vec_v[d][i] = vec_v_n[d][i];
+				vec_w[d][i] = vec_w_n[d][i];
 			}
 		}
 
@@ -1952,18 +1952,18 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECT
 		if (FIND_SOLUTION == 1) {
 			char number[8];
 			sprintf(number, "%06d", time + 1);
-			string result_file_w_time = string(result_file) + number; 
-			Save_to_Ensight_file (cluster, result_file_w_time, vec_u_n ); 
+			string result_file_w_time = string(result_file) + number;
+			Save_to_Ensight_file (cluster, result_file_w_time, vec_u_n );
 		}
-		
+
 		// *** XXX
 		if (mpi_rank == mpi_root) {
-			cout<<endl<< "Time iter " << time << "\t"; 
+			cout<<endl<< "Time iter " << time << "\t";
 		}
-		
 
-		// *** XXX 
-		timing.totalTime.PrintStatMPI(0.0); 
+
+		// *** XXX
+		timing.totalTime.PrintStatMPI(0.0);
 		timing.totalTime.Reset();
 
 	} // *** END - time iter loop *******************************************************
@@ -1972,13 +1972,13 @@ void IterSolver::Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECT
 	timeEvalAppa  .PrintStatsMPI();
 
 	if (USE_PREC == 1)
-		timeEvalPrec.PrintStatsMPI(); 
+		timeEvalPrec.PrintStatsMPI();
 
 }
 
 
 // *** Coarse problem routines *******************************************
-void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt ) 
+void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt )
 
 {
 
@@ -1986,13 +1986,13 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 
 	double sc1 = omp_get_wtime();
 	SparseMatrix G;
-	
+
 
 	//if (mpi_rank == mpi_root)
 	//	G.MatAppend(cluster.G1);
 
 	//for (int mr = 1; mr < mpi_size; mr++) {
-	//	SparseMatrix Gtmp; 
+	//	SparseMatrix Gtmp;
 	//	SendMatrix(mpi_rank, mr, cluster.G1, mpi_root, Gtmp);
 
 	//	if (mpi_rank == mpi_root) {
@@ -2000,19 +2000,19 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 	//		Gtmp.Clear();
 	//	}
 	//}
-	
-	//// **** Log N MPI reduce 
-	int count_cv = 0; 
+
+	//// **** Log N MPI reduce
+	int count_cv = 0;
 	for (int li = 2; li <= 2*mpi_size; li = li * 2 ) {
 
-		SparseMatrix recv_m; 
+		SparseMatrix recv_m;
 
 		if (mpi_rank % li == 0) {
-			if (li == 2) 
+			if (li == 2)
 				G.MatAppend(cluster.G1);
 			if ((mpi_rank + li/2) < mpi_size) {
 				SendMatrix(mpi_rank, mpi_rank + li/2, cluster.G1, mpi_rank,        recv_m);
-				G.MatAppend(recv_m); 
+				G.MatAppend(recv_m);
 			} else {
 				SendMatrix(mpi_rank, mpi_size + 1, cluster.G1, mpi_size + 1,        recv_m);
 			}
@@ -2022,7 +2022,7 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 			{
 				if (li == 2)
 					SendMatrix(mpi_rank, mpi_rank       , cluster.G1, mpi_rank - li/2, recv_m);
-				else 
+				else
 					SendMatrix(mpi_rank, mpi_rank       , G         , mpi_rank - li/2, recv_m);
 			} else {
 				SendMatrix(mpi_rank, mpi_rank+1, cluster.G1, mpi_rank+1,recv_m);
@@ -2031,17 +2031,17 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		count_cv += mpi_size/li; 
+		count_cv += mpi_size/li;
 		if (mpi_rank == 0)
-			printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size); 
+			printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size);
 
 	}
 
-	//SparseMatrix Gtt; 
-	if (mpi_rank != mpi_root) 
-		G.Clear(); 
+	//SparseMatrix Gtt;
+	if (mpi_rank != mpi_root)
+		G.Clear();
 	//else {
-	//Gtt = G; 
+	//Gtt = G;
 	//G.Clear();
 	//}
 	// ****
@@ -2052,36 +2052,36 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 	double sp1 = omp_get_wtime();
 	if (mpi_rank == mpi_root) {
 		MKL_Set_Num_Threads(16);
-		// Create Gt and later GGt matrices and remove all elements under main diagonal of the GGt 
-		SparseMatrix Gt; 
+		// Create Gt and later GGt matrices and remove all elements under main diagonal of the GGt
+		SparseMatrix Gt;
 
 		double t1 = omp_get_wtime();
 		G.MatTranspose(Gt);
-		cout << "Gtranspose = " << omp_get_wtime() - t1 << endl; 
+		cout << "Gtranspose = " << omp_get_wtime() - t1 << endl;
 
 		t1 = omp_get_wtime();
 		SparseMatrix GGt_Mat;
-		GGt_Mat.MatMat(G, 'N', Gt); 
-		cout << "G x Gt = " << omp_get_wtime() - t1 << endl; 
+		GGt_Mat.MatMat(G, 'N', Gt);
+		cout << "G x Gt = " << omp_get_wtime() - t1 << endl;
 
 		t1 = omp_get_wtime();
 		Gt.Clear();
 		G.Clear();
-		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl; 
+		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl;
 
-		SpyText(GGt_Mat); 
+		SpyText(GGt_Mat);
 
 		t1 = omp_get_wtime();
 		GGt_Mat.RemoveLower();
-		cout << "GGt remove lower = " << omp_get_wtime() - t1 << endl; 
+		cout << "GGt remove lower = " << omp_get_wtime() - t1 << endl;
 
 		t1 = omp_get_wtime();
-		// Create Sparse Direct solver for GGt 
-		GGt.msglvl = 1; 
+		// Create Sparse Direct solver for GGt
+		GGt.msglvl = 1;
 
 		t1 = omp_get_wtime();
 		GGt.ImportMatrix(GGt_Mat);
-		cout << "ImportMatrix = " << omp_get_wtime() - t1 << endl; 
+		cout << "ImportMatrix = " << omp_get_wtime() - t1 << endl;
 
 
 		t1 = omp_get_wtime();
@@ -2090,11 +2090,11 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 
 		t1 = omp_get_wtime();
 		GGt.Factorization();
-		cout << "Factorization = " << omp_get_wtime() - t1 << endl; 
+		cout << "Factorization = " << omp_get_wtime() - t1 << endl;
 
 
 		t1 = omp_get_wtime();
-		GGt.msglvl = 0; 
+		GGt.msglvl = 0;
 
 		MKL_Set_Num_Threads(1);
 	}
@@ -2105,10 +2105,10 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 	if (mpi_rank == mpi_root)
 		GGtsize = GGt.cols;
 
-	MPI_Bcast( & GGtsize, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+	MPI_Bcast( & GGtsize, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #if TIME_MEAS >= 1
-	int rank; 
+	int rank;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 	if (rank == 0) {
 		double end = omp_get_wtime();
@@ -2116,35 +2116,35 @@ void IterSolver::CreateGGt( Cluster & cluster )      //, int mpi_rank, int mpi_r
 		cout <<	"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s \n";
 		cout <<	"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s \n\n";
 	}
-#endif 
+#endif
 
 }
 
-void IterSolver::CreateGGt_inv( Cluster & cluster )  //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt ) 
+void IterSolver::CreateGGt_inv( Cluster & cluster )  //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt )
 {
-	// temp variables 
+	// temp variables
 	SparseMatrix G;
-	SparseMatrix Gt; 
+	SparseMatrix Gt;
 	SparseMatrix GGt_Mat_tmp;
 	SparseSolver GGt_tmp;
 
-	if (mpi_rank == 0) cout << endl; 
+	if (mpi_rank == 0) cout << endl;
 
-	//// **** Log N MPI redukce 
-	TimeEvent collectG1_time("Collect G1 matrices to master"); 
+	//// **** Log N MPI redukce
+	TimeEvent collectG1_time("Collect G1 matrices to master");
 	collectG1_time.AddStart(omp_get_wtime());
-	
-	int count_cv = 0; 
+
+	int count_cv = 0;
 	for (int li = 2; li <= 2*mpi_size; li = li * 2 ) {
-		
-		SparseMatrix recv_m; 
+
+		SparseMatrix recv_m;
 
 		if (mpi_rank % li == 0) {
-			if (li == 2) 
+			if (li == 2)
 				G.MatAppend(cluster.G1);
 			if ((mpi_rank + li/2) < mpi_size) {
 				SendMatrix(mpi_rank, mpi_rank + li/2, cluster.G1, mpi_rank,        recv_m);
-				G.MatAppend(recv_m); 
+				G.MatAppend(recv_m);
 			} else {
 				SendMatrix(mpi_rank, mpi_size + 1, cluster.G1, mpi_size + 1,        recv_m);
 			}
@@ -2154,175 +2154,175 @@ void IterSolver::CreateGGt_inv( Cluster & cluster )  //, int mpi_rank, int mpi_r
 			{
 				if (li == 2)
 					SendMatrix(mpi_rank, mpi_rank       , cluster.G1, mpi_rank - li/2, recv_m);
-				else 
+				else
 					SendMatrix(mpi_rank, mpi_rank       , G         , mpi_rank - li/2, recv_m);
 			} else {
 				SendMatrix(mpi_rank, mpi_rank+1, cluster.G1, mpi_rank+1,recv_m);
 			}
 		}
-	
+
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		count_cv += mpi_size/li; 
+		count_cv += mpi_size/li;
 		if (mpi_rank == 0)
-			printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size); 
+			printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size);
 
 	}
-	collectG1_time.AddEnd(omp_get_wtime()); 
-	collectG1_time.PrintStatMPI(0.0); 
-	preproc_timing.AddEvent(collectG1_time); 
+	collectG1_time.AddEnd(omp_get_wtime());
+	collectG1_time.PrintStatMPI(0.0);
+	preproc_timing.AddEvent(collectG1_time);
 
-	if (mpi_rank != mpi_root) 
-		G.Clear(); 
+	if (mpi_rank != mpi_root)
+		G.Clear();
 
-	TimeEvent master_processing_time("Master proc.- Gtransp., GxGt mult., ."); 
+	TimeEvent master_processing_time("Master proc.- Gtransp., GxGt mult., .");
 	master_processing_time.AddStart(omp_get_wtime());
-	
+
 	MKL_Set_Num_Threads(24);
 
 	if (mpi_rank == mpi_root) {
-		// Create Gt and later GGt matrices and remove all elements under main diagonal of the GGt 
-	
+		// Create Gt and later GGt matrices and remove all elements under main diagonal of the GGt
+
 		double t1 = omp_get_wtime();
 		G.MatTranspose(Gt);
-		cout << "Gtranspose = " << omp_get_wtime() - t1 << endl; 
+		cout << "Gtranspose = " << omp_get_wtime() - t1 << endl;
 
 		t1 = omp_get_wtime();
-		GGt_Mat_tmp.MatMat(G, 'N', Gt); 
-		cout << "G x Gt = " << omp_get_wtime() - t1 << endl; 
+		GGt_Mat_tmp.MatMat(G, 'N', Gt);
+		cout << "G x Gt = " << omp_get_wtime() - t1 << endl;
 
 		t1 = omp_get_wtime();
 		Gt.Clear();
 		G.Clear();
-		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl; 
+		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl;
 
 		t1 = omp_get_wtime();
 		GGt_Mat_tmp.RemoveLower();
-		cout << "GGt remove lower = " << omp_get_wtime() - t1 << endl; 
+		cout << "GGt remove lower = " << omp_get_wtime() - t1 << endl;
 
 
-		SpyText(GGt_Mat_tmp); 
-		
+		SpyText(GGt_Mat_tmp);
+
 
 	}
 	master_processing_time.AddEnd(omp_get_wtime());
-	master_processing_time.PrintStatMPI(0.0); 
-	preproc_timing.AddEvent(master_processing_time); 
+	master_processing_time.PrintStatMPI(0.0);
+	preproc_timing.AddEvent(master_processing_time);
 
-	 TimeEvent GGt_bcast_time("Time to broadcast GGt from master all"); 
+	 TimeEvent GGt_bcast_time("Time to broadcast GGt from master all");
 	 GGt_bcast_time.AddStart(omp_get_wtime());
-	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp); 
+	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
 	 GGt_bcast_time.AddEnd(omp_get_wtime());
-	 GGt_bcast_time.PrintStatMPI(0.0); 
-	 preproc_timing.AddEvent(GGt_bcast_time); 
+	 GGt_bcast_time.PrintStatMPI(0.0);
+	 preproc_timing.AddEvent(GGt_bcast_time);
 
- 
-	// Create Sparse Direct solver for GGt 
+
+	// Create Sparse Direct solver for GGt
 	if (mpi_rank == mpi_root)
-		GGt_tmp.msglvl = 1; 
+		GGt_tmp.msglvl = 1;
 
-	 TimeEvent importGGt_time("Time to import GGt matrix into solver"); 
+	 TimeEvent importGGt_time("Time to import GGt matrix into solver");
 	 importGGt_time.AddStart(omp_get_wtime());
 	GGt_tmp.ImportMatrix(GGt_Mat_tmp);
 	 importGGt_time.AddEnd(omp_get_wtime());
-	 importGGt_time.PrintStatMPI(0.0); 
-	 preproc_timing.AddEvent(importGGt_time); 
+	 importGGt_time.PrintStatMPI(0.0);
+	 preproc_timing.AddEvent(importGGt_time);
 
 	GGt_Mat_tmp.Clear();
 
-	 TimeEvent GGtFactor_time("GGT Factorization time"); 
+	 TimeEvent GGtFactor_time("GGT Factorization time");
 	 GGtFactor_time.AddStart(omp_get_wtime());
 	GGt_tmp.Factorization();
 	 GGtFactor_time.AddEnd(omp_get_wtime());
-	 GGtFactor_time.PrintStatMPI(0.0); 
-	 preproc_timing.AddEvent(GGtFactor_time); 
+	 GGtFactor_time.PrintStatMPI(0.0);
+	 preproc_timing.AddEvent(GGtFactor_time);
 
-	TimeEvent GGT_rhs_time("Time to create RHS for get GGTINV"); 
+	TimeEvent GGT_rhs_time("Time to create RHS for get GGTINV");
 	GGT_rhs_time.AddStart(omp_get_wtime());
 	SEQ_VECTOR <double> rhs   (cluster.G1.rows * GGt_tmp.rows, 0);
 	cluster.GGtinvV.resize(cluster.G1.rows * GGt_tmp.rows, 0);
 
 	for (int i = 0; i < cluster.G1.rows; i++) {
 		int index = (GGt_tmp.rows * i) + (cluster.G1.rows * mpi_rank) + i;
-		rhs[index] = 1; 		 
+		rhs[index] = 1;
 	}
 	 GGT_rhs_time.AddEnd(omp_get_wtime());
-	 GGT_rhs_time.PrintStatMPI(0.0); 
-	 preproc_timing.AddEvent(GGT_rhs_time); 
+	 GGT_rhs_time.PrintStatMPI(0.0);
+	 preproc_timing.AddEvent(GGT_rhs_time);
 
-	 TimeEvent GGt_solve_time("Running solve to get stripe(s) of GGtINV"); 
+	 TimeEvent GGt_solve_time("Running solve to get stripe(s) of GGtINV");
 	 GGt_solve_time.AddStart(omp_get_wtime());
-	
-	GGt_tmp.Solve(rhs, cluster.GGtinvV, cluster.G1.rows); 
 
-	cluster.GGtinvM.dense_values = cluster.GGtinvV; 
+	GGt_tmp.Solve(rhs, cluster.GGtinvV, cluster.G1.rows);
+
+	cluster.GGtinvM.dense_values = cluster.GGtinvV;
 	cluster.GGtinvM.cols = cluster.G1.rows;
 	cluster.GGtinvM.rows = GGt_tmp.rows;
 
 	GGtsize  = GGt_tmp.cols;
-	
+
 	GGt.cols = GGt_tmp.cols;
 	GGt.rows = GGt_tmp.rows;
-	GGt.nnz  = GGt_tmp.nnz; 
+	GGt.nnz  = GGt_tmp.nnz;
 
-	GGt_tmp.msglvl = 0; 
-	GGt_tmp.Clear(); 
-	
+	GGt_tmp.msglvl = 0;
+	GGt_tmp.Clear();
+
 	 GGt_solve_time.AddEnd(omp_get_wtime());
-	 GGt_solve_time.PrintStatMPI(0.0); 
-	 preproc_timing.AddEvent(GGt_solve_time); 
+	 GGt_solve_time.PrintStatMPI(0.0);
+	 preproc_timing.AddEvent(GGt_solve_time);
 
 	 MKL_Set_Num_Threads(1);
 
 }
 
 
-void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt ) 
+void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt )
 {
-	
-	// temp variables 
+
+	// temp variables
 	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
 	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
-	SparseMatrix Gt_l; 
-	SparseMatrix GGt_l; 
+	SparseMatrix Gt_l;
+	SparseMatrix GGt_l;
 	SparseMatrix GGt_Mat_tmp;
 	SparseSolver GGt_tmp;
 
 	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.AddStart(omp_get_wtime());
-	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) 
-		SendMatrix(cluster.G1, cluster.my_neighs[neigh_i]); 
+	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
+		SendMatrix(cluster.G1, cluster.my_neighs[neigh_i]);
 
-	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) 
-		RecvMatrix(G_neighs[neigh_i], cluster.my_neighs[neigh_i]); 
-	 SaRGlocal.AddEnd(omp_get_wtime()); SaRGlocal.PrintStatMPI(0.0); preproc_timing.AddEvent(SaRGlocal); 
+	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
+		RecvMatrix(G_neighs[neigh_i], cluster.my_neighs[neigh_i]);
+	 SaRGlocal.AddEnd(omp_get_wtime()); SaRGlocal.PrintStatMPI(0.0); preproc_timing.AddEvent(SaRGlocal);
 
 
 	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.AddStart(omp_get_wtime());
 	if (cluster.USE_HFETI == 0)
 		cluster.G1.MatTranspose(Gt_l);
-	 Gt_l_trans.AddEnd(omp_get_wtime()); Gt_l_trans.PrintStatMPI(0.0); preproc_timing.AddEvent(Gt_l_trans); 
-	
+	 Gt_l_trans.AddEnd(omp_get_wtime()); Gt_l_trans.PrintStatMPI(0.0); preproc_timing.AddEvent(Gt_l_trans);
+
 	 TimeEvent GxGtMatMat("Local G x Gt MatMat "); GxGtMatMat.AddStart(omp_get_wtime());
 
 	if (cluster.USE_HFETI == 0)
-		GGt_l.MatMat(cluster.G1, 'N', Gt_l); 
+		GGt_l.MatMat(cluster.G1, 'N', Gt_l);
 	else
 		GGt_l.MatMatT(cluster.G1, cluster.G1);
 
-	 GxGtMatMat.AddEnd(omp_get_wtime()); GxGtMatMat.PrintStatMPI(0.0); preproc_timing.AddEvent(GxGtMatMat); 
+	 GxGtMatMat.AddEnd(omp_get_wtime()); GxGtMatMat.PrintStatMPI(0.0); preproc_timing.AddEvent(GxGtMatMat);
 	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
-	 
+
 
 	for (int i = 0; i < GGt_l.CSR_J_col_indices.size(); i++)
-		GGt_l.CSR_J_col_indices[i] += mpi_rank * cluster.G1.rows; 
-	
-	GGt_l.cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows; 
+		GGt_l.CSR_J_col_indices[i] += mpi_rank * cluster.G1.rows;
+
+	GGt_l.cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
 
 	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.AddStart(omp_get_wtime());
 	cilk_for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-		
+
 		if (cluster.USE_HFETI == 0)
-			GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', Gt_l); 
+			GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', Gt_l);
 		else
 			GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
 
@@ -2330,34 +2330,34 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 
 		int inc = cluster.G1.rows * cluster.my_neighs[neigh_i];
 		for (int i = 0; i < GGt_neighs[neigh_i].CSR_J_col_indices.size(); i++)
-			GGt_neighs[neigh_i].CSR_J_col_indices[i] += inc; 
-		
+			GGt_neighs[neigh_i].CSR_J_col_indices[i] += inc;
+
 		GGt_neighs[neigh_i].cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
-		G_neighs[neigh_i].Clear(); 
-	}		
-	 GGTNeighTime.AddEnd(omp_get_wtime()); GGTNeighTime.PrintStatMPI(0.0); preproc_timing.AddEvent(GGTNeighTime); 
+		G_neighs[neigh_i].Clear();
+	}
+	 GGTNeighTime.AddEnd(omp_get_wtime()); GGTNeighTime.PrintStatMPI(0.0); preproc_timing.AddEvent(GGTNeighTime);
 	 //GGTNeighTime.PrintLastStatMPI_PerNode(0.0);
-	
+
 	 TimeEvent GGtLocAsm("Assembling row of GGt per node - MatAddInPlace "); GGtLocAsm.AddStart(omp_get_wtime());
 	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-		GGt_l.MatAddInPlace(GGt_neighs[neigh_i], 'N', 1.0); 
+		GGt_l.MatAddInPlace(GGt_neighs[neigh_i], 'N', 1.0);
 		GGt_neighs[neigh_i].Clear();
 	}
-	 GGtLocAsm.AddEnd(omp_get_wtime()); GGtLocAsm.PrintStatMPI(0.0); preproc_timing.AddEvent(GGtLocAsm); 
+	 GGtLocAsm.AddEnd(omp_get_wtime()); GGtLocAsm.PrintStatMPI(0.0); preproc_timing.AddEvent(GGtLocAsm);
 
-	
+
 	TimeEvent collectGGt_time("Collect GGt pieces to master"); 	collectGGt_time.AddStart(omp_get_wtime());
-	int count_cv_l = 0; 
+	int count_cv_l = 0;
 	for (int li = 2; li <= 2*mpi_size; li = li * 2 ) {
 
-		SparseMatrix recv_m_l; 
+		SparseMatrix recv_m_l;
 
 		if (mpi_rank % li == 0) {
-			if (li == 2) 
+			if (li == 2)
 				GGt_Mat_tmp.MatAppend(GGt_l);
 			if ((mpi_rank + li/2) < mpi_size) {
 				SendMatrix(mpi_rank, mpi_rank + li/2, GGt_l, mpi_rank,     recv_m_l);
-				GGt_Mat_tmp.MatAppend(recv_m_l); 
+				GGt_Mat_tmp.MatAppend(recv_m_l);
 			} else {
 				SendMatrix(mpi_rank, mpi_size + 1   , GGt_l, mpi_size + 1, recv_m_l);
 			}
@@ -2367,7 +2367,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 			{
 				if (li == 2)
 					SendMatrix(mpi_rank, mpi_rank       , GGt_l      , mpi_rank - li/2, recv_m_l);
-				else 
+				else
 					SendMatrix(mpi_rank, mpi_rank       , GGt_Mat_tmp, mpi_rank - li/2, recv_m_l);
 			} else {
 				SendMatrix(mpi_rank, mpi_rank+1, GGt_l, mpi_rank+1,recv_m_l);
@@ -2376,42 +2376,42 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		GGt_l.Clear(); 
+		GGt_l.Clear();
 
-		count_cv_l += mpi_size/li; 
+		count_cv_l += mpi_size/li;
 		if (mpi_rank == 0)
-			printf(" Collecting matrices G : %d of %d \r", count_cv_l, mpi_size); 
+			printf(" Collecting matrices G : %d of %d \r", count_cv_l, mpi_size);
 
 	}
-	collectGGt_time.AddEnd(omp_get_wtime()); collectGGt_time.PrintStatMPI(0.0); preproc_timing.AddEvent(collectGGt_time); 
+	collectGGt_time.AddEnd(omp_get_wtime()); collectGGt_time.PrintStatMPI(0.0); preproc_timing.AddEvent(collectGGt_time);
 
-	if (mpi_rank == 0) cout << endl; 
+	if (mpi_rank == 0) cout << endl;
 
 	if (mpi_rank == 0)  {
 		GGt_Mat_tmp.RemoveLower();
-		SpyText(GGt_Mat_tmp); 
+		SpyText(GGt_Mat_tmp);
 	}
 
 	MKL_Set_Num_Threads(24);
 
 	TimeEvent GGt_bcast_time("Time to broadcast GGt from master all"); GGt_bcast_time.AddStart(omp_get_wtime());
-	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp); 
-	GGt_bcast_time.AddEnd(omp_get_wtime()); GGt_bcast_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGt_bcast_time); 
+	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
+	GGt_bcast_time.AddEnd(omp_get_wtime()); GGt_bcast_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGt_bcast_time);
 
-	// Create Sparse Direct solver for GGt 
+	// Create Sparse Direct solver for GGt
 	if (mpi_rank == mpi_root)
-		GGt_tmp.msglvl = 1; 
+		GGt_tmp.msglvl = 1;
 
 	TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.AddStart(omp_get_wtime());
 	GGt_tmp.ImportMatrix(GGt_Mat_tmp);
-	importGGt_time.AddEnd(omp_get_wtime()); importGGt_time.PrintStatMPI(0.0); preproc_timing.AddEvent(importGGt_time); 
+	importGGt_time.AddEnd(omp_get_wtime()); importGGt_time.PrintStatMPI(0.0); preproc_timing.AddEvent(importGGt_time);
 
 	GGt_Mat_tmp.Clear();
 
-	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.AddStart(omp_get_wtime()); 
+	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.AddStart(omp_get_wtime());
 	GGt_tmp.SetThreaded();
 	GGt_tmp.Factorization();
-	GGtFactor_time.AddEnd(omp_get_wtime()); GGtFactor_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGtFactor_time); 
+	GGtFactor_time.AddEnd(omp_get_wtime()); GGtFactor_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGtFactor_time);
 
 	TimeEvent GGT_rhs_time("Time to create RHS for get GGTINV"); GGT_rhs_time.AddStart(omp_get_wtime());
 	SEQ_VECTOR <double> rhs   (cluster.G1.rows * GGt_tmp.rows, 0);
@@ -2419,15 +2419,15 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 
 	for (int i = 0; i < cluster.G1.rows; i++) {
 		int index = (GGt_tmp.rows * i) + (cluster.G1.rows * mpi_rank) + i;
-		rhs[index] = 1; 		 
+		rhs[index] = 1;
 	}
-	GGT_rhs_time.AddEnd(omp_get_wtime()); GGT_rhs_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGT_rhs_time); 
+	GGT_rhs_time.AddEnd(omp_get_wtime()); GGT_rhs_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGT_rhs_time);
 
 	TimeEvent GGt_solve_time("Running solve to get stripe(s) of GGtINV"); GGt_solve_time.AddStart(omp_get_wtime());
 
-	GGt_tmp.Solve(rhs, cluster.GGtinvV, cluster.G1.rows); 
+	GGt_tmp.Solve(rhs, cluster.GGtinvV, cluster.G1.rows);
 
-	cluster.GGtinvM.dense_values = cluster.GGtinvV; 
+	cluster.GGtinvM.dense_values = cluster.GGtinvV;
 	cluster.GGtinvM.cols = cluster.G1.rows;
 	cluster.GGtinvM.rows = GGt_tmp.rows;
 
@@ -2435,36 +2435,36 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )  //, int mpi_rank, int 
 
 	GGt.cols = GGt_tmp.cols;
 	GGt.rows = GGt_tmp.rows;
-	GGt.nnz  = GGt_tmp.nnz; 
+	GGt.nnz  = GGt_tmp.nnz;
 
-	GGt_tmp.msglvl = 0; 
-	GGt_tmp.Clear(); 
+	GGt_tmp.msglvl = 0;
+	GGt_tmp.Clear();
 
-	GGt_solve_time.AddEnd(omp_get_wtime()); GGt_solve_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGt_solve_time); 
+	GGt_solve_time.AddEnd(omp_get_wtime()); GGt_solve_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGt_solve_time);
 
 	MKL_Set_Num_Threads(1);
-	
+
 }
 
 
 // *** Projector routines ************************************************
-void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, int output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // int mpi_rank, SparseSolver & GGt, 
+void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, int output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // int mpi_rank, SparseSolver & GGt,
 {
 
 	time_eval.totalTime.AddStart(omp_get_wtime());
 
-	//int dual_size    = cluster.domains[0].B1.rows; 
-	int d_local_size = cluster.G1_comp.rows; 
-	int mpi_root     = 0; 
+	//int dual_size    = cluster.domains[0].B1.rows;
+	int d_local_size = cluster.G1_comp.rows;
+	int mpi_root     = 0;
 
-	SEQ_VECTOR<double> d_local( d_local_size ); 
-	SEQ_VECTOR<double> d_mpi  ( GGtsize ); 
+	SEQ_VECTOR<double> d_local( d_local_size );
+	SEQ_VECTOR<double> d_mpi  ( GGtsize );
 
 	time_eval.timeEvents[0].AddStart(omp_get_wtime());
 	if ( output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 1)
-		d_local = x_in; 	
-	else 
-		cluster.G1_comp.MatVec(x_in, d_local, 'N');	
+		d_local = x_in;
+	else
+		cluster.G1_comp.MatVec(x_in, d_local, 'N');
 	time_eval.timeEvents[0].AddEnd(omp_get_wtime());
 
 
@@ -2480,7 +2480,7 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 
 	time_eval.timeEvents[2].AddStart(omp_get_wtime());
 	if (mpi_rank == mpi_root ) {
-		GGt.Solve(d_mpi);				// t1 = Uc\(Lc\d);     
+		GGt.Solve(d_mpi);				// t1 = Uc\(Lc\d);
 	}
 	time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 
@@ -2488,14 +2488,14 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 
 
 	time_eval.timeEvents[3].AddStart(omp_get_wtime());
-	MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, 
+	MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE,
 		&d_local[0], d_local_size, MPI_DOUBLE,
-		mpi_root, MPI_COMM_WORLD); 
+		mpi_root, MPI_COMM_WORLD);
 	time_eval.timeEvents[3].AddEnd(omp_get_wtime());
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2) {
-		// for mu calculation 
-		y_out = d_local; 
+		// for mu calculation
+		y_out = d_local;
 
 	} else {
 
@@ -2503,11 +2503,11 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 		//cluster.G1t_comp.MatVec(d_local, cluster.compressed_tmp, 'N'); // SUPER POZOR
 		cluster.G1_comp.MatVec(d_local, cluster.compressed_tmp, 'T');
 		time_eval.timeEvents[4].AddEnd(omp_get_wtime());
-		
+
 		time_eval.timeEvents[5].AddStart(omp_get_wtime());
-		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out); 
+		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
 		time_eval.timeEvents[5].AddEnd(omp_get_wtime());
-		
+
 		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
 			cilk_for (int i = 0; i < x_in.size(); i++)
 				y_out[i] = x_in[i] - y_out[i];
@@ -2516,7 +2516,7 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 	}
 
 	time_eval.totalTime.AddEnd(omp_get_wtime());
-		
+
 }
 
 void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, int output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // int mpi_rank, SparseSolver & GGt,
@@ -2524,17 +2524,17 @@ void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster,
 
 	time_eval.totalTime.AddStart(omp_get_wtime());
 
-	int d_local_size = cluster.G1_comp.rows; 
-	int mpi_root     = 0; 
+	int d_local_size = cluster.G1_comp.rows;
+	int mpi_root     = 0;
 
-	SEQ_VECTOR<double> d_local( d_local_size ); 
-	SEQ_VECTOR<double> d_mpi  ( GGtsize ); 
+	SEQ_VECTOR<double> d_local( d_local_size );
+	SEQ_VECTOR<double> d_mpi  ( GGtsize );
 
 	time_eval.timeEvents[0].AddStart(omp_get_wtime());
 	if ( output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 1)
-		d_local = x_in; 	
-	else 
-		cluster.G1_comp.MatVec(x_in, d_local, 'N');	
+		d_local = x_in;
+	else
+		cluster.G1_comp.MatVec(x_in, d_local, 'N');
 	time_eval.timeEvents[0].AddEnd(omp_get_wtime());
 
 	time_eval.timeEvents[1].AddStart(omp_get_wtime());
@@ -2542,25 +2542,25 @@ void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster,
 		&d_mpi[0], d_local_size, MPI_DOUBLE,
 		MPI_COMM_WORLD);
 	time_eval.timeEvents[1].AddEnd(omp_get_wtime());
-	
+
 	time_eval.timeEvents[2].AddStart(omp_get_wtime());
 	//for (int j = 0; j < cluster.G1_comp.rows; j++) {
 	//	d_local[j] = 0;
 	//	for (int i = 0; i < GGt.rows; i++ ) {
 	//		d_local[j] += cluster.GGtinvV[j * GGt.rows + i] * d_mpi[i];			// t1 = Uc\(Lc\d);
 	//	}
-	//}	
+	//}
 	cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
 	time_eval.timeEvents[2].AddEnd(omp_get_wtime());
-	
+
 	time_eval.timeEvents[3].AddStart(omp_get_wtime());
-	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, 
+	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE,
 	//	&d_local[0], d_local_size, MPI_DOUBLE,
-	//	mpi_root, MPI_COMM_WORLD); 
+	//	mpi_root, MPI_COMM_WORLD);
 	time_eval.timeEvents[3].AddEnd(omp_get_wtime());
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2) {
-		y_out = d_local; // for RBM amplitudes calculation 
+		y_out = d_local; // for RBM amplitudes calculation
 	} else {
 
 		time_eval.timeEvents[4].AddStart(omp_get_wtime());
@@ -2575,12 +2575,12 @@ void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster,
 		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
 			cilk_for (int i = 0; i < y_out.size(); i++)
 				y_out[i] = x_in[i] - y_out[i];
-		} 
+		}
 
 	}
 
 	time_eval.totalTime.AddEnd(omp_get_wtime());
-	
+
 }
 
 // *** Action of K+ routines *********************************************
@@ -2600,12 +2600,12 @@ void IterSolver::apply_A_l_compB( TimeEval & time_eval, Cluster & cluster, SEQ_V
 	time_eval.timeEvents[1].AddStart(omp_get_wtime());
 	if (cluster.USE_HFETI == 0) {
 		if (cluster.USE_KINV == 0) {
-			
+
 			cilk_for (int d = 0; d < cluster.domains.size(); d++)
-				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]); 
-		
+				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
+
 		} else {
-		
+
 			cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 				if (d == 0)
 					cluster.domains[0].B1Kplus.DenseMatVec(x_in, cluster.compressed_tmp);
@@ -2614,24 +2614,24 @@ void IterSolver::apply_A_l_compB( TimeEval & time_eval, Cluster & cluster, SEQ_V
 			}
 
 			for ( int d = 1; d < cluster.domains.size(); d++ )
-				for ( int i = 0; i < cluster.domains[d].compressed_tmp.size(); i++ ) 
-					cluster.compressed_tmp[i] = cluster.compressed_tmp[i] + cluster.domains[d].compressed_tmp[i]; 
-			
+				for ( int i = 0; i < cluster.domains[d].compressed_tmp.size(); i++ )
+					cluster.compressed_tmp[i] = cluster.compressed_tmp[i] + cluster.domains[d].compressed_tmp[i];
+
 		}
 	} else {
 		if (cluster.USE_KINV == 0){
-			cluster.multKplusGlobal_l(cluster.x_prim_cluster1); 
+			cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
 		} else {
 			cout << "USE of K_INV is not supported for HTFETI";
-			exit(0); 
+			exit(0);
 		}
 	}
 	time_eval.timeEvents[1].AddEnd(omp_get_wtime());
-	
+
 
 	time_eval.timeEvents[2].AddStart(omp_get_wtime());
 	if (cluster.USE_KINV == 0) {
-		cluster.B1_comp_MatVecSum( cluster.x_prim_cluster1, cluster.compressed_tmp, 'N' ); 
+		cluster.B1_comp_MatVecSum( cluster.x_prim_cluster1, cluster.compressed_tmp, 'N' );
 	}
 	time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 
@@ -2648,12 +2648,12 @@ void IterSolver::apply_A_l_compB( TimeEval & time_eval, Cluster & cluster, SEQ_V
 void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
 
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
-		time_eval.timeEvents[0].AddStart(omp_get_wtime()); 
+		time_eval.timeEvents[0].AddStart(omp_get_wtime());
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows ); 
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 				x_in_tmp[i]                            = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-#ifdef CUDA                                
+#ifdef CUDA
 				cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 #endif
 				//cluster.domains[d].cuda_pinned_buff_fl[i] = (float) x_in[ cluster.domains[d].lambda_map_sub_local[i]];
@@ -2667,7 +2667,7 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 #endif
 
 			cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
-		}	
+		}
 		time_eval.timeEvents[0].AddEnd(omp_get_wtime());
 
 		time_eval.timeEvents[1].AddStart(omp_get_wtime());
@@ -2684,15 +2684,15 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 
 		for (int d = 0; d < cluster.domains.size(); d++) {
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i]; 				
-				//cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += (double)cluster.domains[d].cuda_pinned_buff_fl[i]; 				
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
+				//cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += (double)cluster.domains[d].cuda_pinned_buff_fl[i];
 			}
 		}
 
 #else
 		for (int d = 0; d < cluster.domains.size(); d++) {
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i]; 				
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
 		}
 #endif
 
@@ -2703,7 +2703,7 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i]; 	
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
 		time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 
@@ -2713,19 +2713,19 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 		time_eval.timeEvents[0].AddStart(omp_get_wtime());
-		//// POZOR - jen pro porovnani vykonu CPU a GPU 
+		//// POZOR - jen pro porovnani vykonu CPU a GPU
 		//cilk_for (int d = 0; d < cluster.domains.size(); d++) {
-		//	SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows ); 
+		//	SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
 		//	for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 		//		x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 		//	cluster.domains[d].B1Kplus.DenseMatVec(x_in_tmp, cluster.domains[d].compressed_tmp);
 		//}
-		//// POZOR - jen pro porovnani vykonu CPU a GPU 
+		//// POZOR - jen pro porovnani vykonu CPU a GPU
 		time_eval.timeEvents[0].AddEnd(omp_get_wtime());
 
 		time_eval.timeEvents[1].AddStart(omp_get_wtime());
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows ); 
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 #ifdef CUDA
@@ -2740,7 +2740,7 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 		for (int d = 0; d < cluster.domains.size(); d++) {
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i]; 				
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
 		}
 		time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 	}
@@ -2750,7 +2750,7 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 	if (cluster.USE_KINV == 0) {
 		time_eval.timeEvents[0].AddStart(omp_get_wtime());
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 ); 
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 );
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 			cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
@@ -2761,9 +2761,9 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 		time_eval.timeEvents[1].AddStart(omp_get_wtime());
 		if (cluster.USE_HFETI == 0) {
 			cilk_for (int d = 0; d < cluster.domains.size(); d++)
-				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]); 
+				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
 			} else {
-				cluster.multKplusGlobal_l(cluster.x_prim_cluster1); 
+				cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
 		}
 		time_eval.timeEvents[1].AddEnd(omp_get_wtime());
 
@@ -2774,9 +2774,9 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 		for (int d = 0; d < cluster.domains.size(); d++) {
 			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
-			
+
 			for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i]; 	
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
 		time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 
@@ -2797,11 +2797,11 @@ void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster,
 	time_eval.timeEvents[0].AddStart(omp_get_wtime());
 
 	cilk_for (int d = 0; d < cluster.domains.size(); d++) {
-		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 ); 
+		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 );
 		for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling 
+			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 		cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
-		
+
 		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 
 		//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
@@ -2815,13 +2815,13 @@ void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster,
 		cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
 		for (int i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling  	
+			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 	}
 	time_eval.timeEvents[0].AddEnd(omp_get_wtime());
 
 
 	time_eval.timeEvents[1].AddStart(omp_get_wtime());
-	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out); 
+	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
 	time_eval.timeEvents[1].AddEnd(omp_get_wtime());
 
 
@@ -2849,21 +2849,21 @@ void IterSolver::apply_prec_compB( TimeEval & time_eval, Cluster & cluster, SEQ_
 	cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 		//cluster.domains[d].B1_comp.MatVec(x_in,cluster.x_prim_cluster1[d],'T');
 		cluster.domains[d].B1t_comp.MatVec(x_in,cluster.x_prim_cluster1[d],'N');
-		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');	
+		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 	}
 
-	cluster.B1_comp_MatVecSum( cluster.x_prim_cluster2, cluster.compressed_tmp, 'N' ); 
+	cluster.B1_comp_MatVecSum( cluster.x_prim_cluster2, cluster.compressed_tmp, 'N' );
 
-	//cluster.domains[0].B1_comp.MatVec    (cluster.x_prim_cluster2[0], cluster.compressed_tmp, 'N', 0, 0, 0.0); // first vector overwrites temp vector 
-	//for (int d = 1; d < cluster.domains.size(); d++) { // reduction  
+	//cluster.domains[0].B1_comp.MatVec    (cluster.x_prim_cluster2[0], cluster.compressed_tmp, 'N', 0, 0, 0.0); // first vector overwrites temp vector
+	//for (int d = 1; d < cluster.domains.size(); d++) { // reduction
 	//	cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster2[d], cluster.compressed_tmp, 'N', 0, 0, 1.0); // will add (summation per elements) all partial results into y_out
 	//}
-	
+
 	time_eval.timeEvents[0].AddEnd(omp_get_wtime());
 
-	
+
 	time_eval.timeEvents[1].AddStart(omp_get_wtime());
-	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out); 
+	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
 	time_eval.timeEvents[1].AddEnd(omp_get_wtime());
 
 
@@ -2880,20 +2880,20 @@ void IterSolver::apply_prec_compB( TimeEval & time_eval, Cluster & cluster, SEQ_
 // *** Communication layer **********************************************
 void   SendMatrix  ( int rank, int source_rank, SparseMatrix & A_in, int dest_rank, SparseMatrix & B_out) {
 
-	int param_tag = 1; 
+	int param_tag = 1;
 	int I_row_tag = 2;
-	int J_col_tag = 3; 
-	int V_val_tag = 4; 
+	int J_col_tag = 3;
+	int V_val_tag = 4;
 
 	MPI_Status status;
-	MPI_Request request; 
+	MPI_Request request;
 
 	if (rank == source_rank) {
-		int send_par_buf[4]; 
-		send_par_buf[0] = A_in.cols; 
-		send_par_buf[1] = A_in.rows; 
-		send_par_buf[2] = A_in.nnz; 
-		send_par_buf[3] = A_in.type; 
+		int send_par_buf[4];
+		send_par_buf[0] = A_in.cols;
+		send_par_buf[1] = A_in.rows;
+		send_par_buf[2] = A_in.nnz;
+		send_par_buf[3] = A_in.type;
 
 #ifdef XE6
 		MPI_Send(send_par_buf, 4, MPI_INT, dest_rank, param_tag, MPI_COMM_WORLD);
@@ -2901,23 +2901,23 @@ void   SendMatrix  ( int rank, int source_rank, SparseMatrix & A_in, int dest_ra
 		MPI_Send(&A_in.CSR_J_col_indices[0], A_in.nnz,      MPI_INT, dest_rank, J_col_tag, MPI_COMM_WORLD );
 		MPI_Send(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD );
 #else
-		MPI_Isend(send_par_buf, 4, MPI_INT, dest_rank, param_tag, MPI_COMM_WORLD, & request); 
-		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, MPI_INT, dest_rank, I_row_tag, MPI_COMM_WORLD, & request); 
-		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      MPI_INT, dest_rank, J_col_tag, MPI_COMM_WORLD, & request); 
-		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD, & request); 
+		MPI_Isend(send_par_buf, 4, MPI_INT, dest_rank, param_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, MPI_INT, dest_rank, I_row_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      MPI_INT, dest_rank, J_col_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD, & request);
 #endif
 
 	}
 
 	if (rank == dest_rank) {
-		int recv_par_buf[4]; 
-		MPI_Recv(recv_par_buf, 4, MPI_INT, source_rank, param_tag, MPI_COMM_WORLD, & status); 
+		int recv_par_buf[4];
+		MPI_Recv(recv_par_buf, 4, MPI_INT, source_rank, param_tag, MPI_COMM_WORLD, & status);
 		B_out.cols = recv_par_buf[0];
 		B_out.rows = recv_par_buf[1];
-		B_out.nnz  = recv_par_buf[2]; 
-		B_out.type = recv_par_buf[3]; 
+		B_out.nnz  = recv_par_buf[2];
+		B_out.type = recv_par_buf[3];
 
-		B_out.CSR_I_row_indices.resize(B_out.rows + 1); 
+		B_out.CSR_I_row_indices.resize(B_out.rows + 1);
 		B_out.CSR_J_col_indices.resize(B_out.nnz);
 		B_out.CSR_V_values.     resize(B_out.nnz);
 
@@ -2926,30 +2926,30 @@ void   SendMatrix  ( int rank, int source_rank, SparseMatrix & A_in, int dest_ra
 		MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE, source_rank, V_val_tag, MPI_COMM_WORLD, & status );
 	}
 
-#ifdef WIN32	 
+#ifdef WIN32
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
 
 void   SendMatrix ( SparseMatrix & A_in, int dest_rank ) {
 
-	int rank; 
+	int rank;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-	
 
-	int param_tag = 1; 
+
+	int param_tag = 1;
 	int I_row_tag = 2;
-	int J_col_tag = 3; 
-	int V_val_tag = 4; 
+	int J_col_tag = 3;
+	int V_val_tag = 4;
 
 	MPI_Status status;
-	MPI_Request request; 
+	MPI_Request request;
 
-	int send_par_buf[4]; 
-	send_par_buf[0] = A_in.cols; 
-	send_par_buf[1] = A_in.rows; 
-	send_par_buf[2] = A_in.nnz; 
-	send_par_buf[3] = A_in.type; 
+	int send_par_buf[4];
+	send_par_buf[0] = A_in.cols;
+	send_par_buf[1] = A_in.rows;
+	send_par_buf[2] = A_in.nnz;
+	send_par_buf[3] = A_in.type;
 
 //#ifdef XE6
 //		MPI_Send(send_par_buf, 4, MPI_INT, dest_rank, param_tag, MPI_COMM_WORLD);
@@ -2957,13 +2957,13 @@ void   SendMatrix ( SparseMatrix & A_in, int dest_rank ) {
 //		MPI_Send(&A_in.CSR_J_col_indices[0], A_in.nnz,      MPI_INT, dest_rank, J_col_tag, MPI_COMM_WORLD );
 //		MPI_Send(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD );
 //#else
-		MPI_Isend(send_par_buf, 4, MPI_INT, dest_rank, param_tag, MPI_COMM_WORLD, & request); 
-		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, MPI_INT, dest_rank, I_row_tag, MPI_COMM_WORLD, & request); 
-		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      MPI_INT, dest_rank, J_col_tag, MPI_COMM_WORLD, & request); 
-		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD, & request); 
+		MPI_Isend(send_par_buf, 4, MPI_INT, dest_rank, param_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, MPI_INT, dest_rank, I_row_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      MPI_INT, dest_rank, J_col_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD, & request);
 //#endif
 
-#ifdef WIN32	 
+#ifdef WIN32
 //	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
@@ -2972,35 +2972,35 @@ void   SendMatrix ( SparseMatrix & A_in, int dest_rank ) {
 
 void   RecvMatrix ( SparseMatrix & B_out, int source_rank) {
 
-	int rank; 
+	int rank;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
 
-	int param_tag = 1; 
+	int param_tag = 1;
 	int I_row_tag = 2;
-	int J_col_tag = 3; 
-	int V_val_tag = 4; 
+	int J_col_tag = 3;
+	int V_val_tag = 4;
 
 	MPI_Status status;
-	MPI_Request request; 
+	MPI_Request request;
 
-	int recv_par_buf[4]; 
-	MPI_Recv(recv_par_buf, 4, MPI_INT, source_rank, param_tag, MPI_COMM_WORLD, & status); 
+	int recv_par_buf[4];
+	MPI_Recv(recv_par_buf, 4, MPI_INT, source_rank, param_tag, MPI_COMM_WORLD, & status);
 	B_out.cols = recv_par_buf[0];
 	B_out.rows = recv_par_buf[1];
-	B_out.nnz  = recv_par_buf[2]; 
-	B_out.type = recv_par_buf[3]; 
+	B_out.nnz  = recv_par_buf[2];
+	B_out.type = recv_par_buf[3];
 
-	B_out.CSR_I_row_indices.resize(B_out.rows + 1); 
+	B_out.CSR_I_row_indices.resize(B_out.rows + 1);
 	B_out.CSR_J_col_indices.resize(B_out.nnz);
 	B_out.CSR_V_values.     resize(B_out.nnz);
 
 	MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, MPI_INT,    source_rank, I_row_tag, MPI_COMM_WORLD, & status );
 	MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      MPI_INT,    source_rank, J_col_tag, MPI_COMM_WORLD, & status );
 	MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE, source_rank, V_val_tag, MPI_COMM_WORLD, & status );
-	
 
-#ifdef WIN32	 
+
+#ifdef WIN32
 	//MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
@@ -3009,33 +3009,33 @@ void   RecvMatrix ( SparseMatrix & B_out, int source_rank) {
 
 void   BcastMatrix ( int rank, int mpi_root, int source_rank, SparseMatrix & A) {
 
-	//int param_tag = 1; 
+	//int param_tag = 1;
 	//int I_row_tag = 2;
-	//int J_col_tag = 3; 
-	//int V_val_tag = 4; 
+	//int J_col_tag = 3;
+	//int V_val_tag = 4;
 
 	//MPI_Status status;
-	//MPI_Request request; 
+	//MPI_Request request;
 
-	int send_par_buf[4]; 
-	//int recv_par_buf[4]; 
+	int send_par_buf[4];
+	//int recv_par_buf[4];
 
 	if (rank == source_rank) {
-		send_par_buf[0] = A.cols; send_par_buf[1] = A.rows; send_par_buf[2] = A.nnz; send_par_buf[3] = A.type; 
+		send_par_buf[0] = A.cols; send_par_buf[1] = A.rows; send_par_buf[2] = A.nnz; send_par_buf[3] = A.type;
 	}
 
-	MPI_Bcast(send_par_buf, 4, MPI_INT, source_rank, MPI_COMM_WORLD); 
+	MPI_Bcast(send_par_buf, 4, MPI_INT, source_rank, MPI_COMM_WORLD);
 
 	if (rank != source_rank) {
-		A.cols = send_par_buf[0]; A.rows = send_par_buf[1]; A.nnz  = send_par_buf[2]; A.type = send_par_buf[3]; 
-		A.CSR_I_row_indices.resize(A.rows + 1); 
+		A.cols = send_par_buf[0]; A.rows = send_par_buf[1]; A.nnz  = send_par_buf[2]; A.type = send_par_buf[3];
+		A.CSR_I_row_indices.resize(A.rows + 1);
 		A.CSR_J_col_indices.resize(A.nnz);
 		A.CSR_V_values.     resize(A.nnz);
 	}
 
-	MPI_Bcast(&A.CSR_I_row_indices[0], A.rows + 1, MPI_INT, source_rank, MPI_COMM_WORLD); 
-	MPI_Bcast(&A.CSR_J_col_indices[0], A.nnz,      MPI_INT, source_rank, MPI_COMM_WORLD); 
-	MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, MPI_COMM_WORLD); 
+	MPI_Bcast(&A.CSR_I_row_indices[0], A.rows + 1, MPI_INT, source_rank, MPI_COMM_WORLD);
+	MPI_Bcast(&A.CSR_J_col_indices[0], A.nnz,      MPI_INT, source_rank, MPI_COMM_WORLD);
+	MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, MPI_COMM_WORLD);
 }
 
 void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
@@ -3046,81 +3046,81 @@ void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, S
 		}
 	}
 
-	
+
 	MPI_Request * mpi_req  = new MPI_Request [cluster.my_neighs.size()];
 	MPI_Status  * mpi_stat = new MPI_Status  [cluster.my_neighs.size()];
 
 	cluster.iter_cnt_comm++;
 	int tag = cluster.iter_cnt_comm;
-	
+
 	for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 		MPI_Sendrecv(
 			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
-			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, MPI_COMM_WORLD, &mpi_stat[neigh_i] ); 
+			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, MPI_COMM_WORLD, &mpi_stat[neigh_i] );
 	}
 
 	//for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-	//	int b_size = cluster.my_comm_lambdas[neigh_i].size(); 
-	//	MPI_Isend(&b_size,                              1                                      , MPI_INT   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_req[neigh_i] ); 
+	//	int b_size = cluster.my_comm_lambdas[neigh_i].size();
+	//	MPI_Isend(&b_size,                              1                                      , MPI_INT   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_req[neigh_i] );
 	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       MPI_COMM_WORLD, &mpi_req[neigh_i] );
-	//	
+	//
 	//}
 
 	//for (int neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-	//	int r_size = 0; 
+	//	int r_size = 0;
 	//	MPI_Recv(&r_size                             ,                                       1, MPI_INT   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_stat[neigh_i] );
-	//	if (r_size != cluster.my_recv_lambdas[neigh_i].size()) cout << "Error - different buffer size " << endl; 
+	//	if (r_size != cluster.my_recv_lambdas[neigh_i].size()) cout << "Error - different buffer size " << endl;
 	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , MPI_COMM_WORLD, &mpi_stat[neigh_i] );
 	//}
-	 
+
 #ifdef XE6
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-#ifdef WIN32	 
+#ifdef WIN32
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
 	delete [] mpi_req;
 	delete [] mpi_stat;
 
-	y_out = x_in; // POZOR pozor 
+	y_out = x_in; // POZOR pozor
 	for (int i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
 		for (int j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
 			y_out[cluster.my_comm_lambdas_indices_comp[i][j]] += cluster.my_recv_lambdas[i][j];
 		}
-	}	
+	}
 
-	
+
 
 }
 
 void   compress_lambda_vector  ( Cluster & cluster, SEQ_VECTOR <double> & decompressed_vec_lambda)
 {
-	//compress vector for CG in main loop 
-	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++) 
-		decompressed_vec_lambda[i] = decompressed_vec_lambda[cluster.my_lamdas_indices[i]]; 
+	//compress vector for CG in main loop
+	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++)
+		decompressed_vec_lambda[i] = decompressed_vec_lambda[cluster.my_lamdas_indices[i]];
 
-	decompressed_vec_lambda.resize(cluster.my_lamdas_indices.size()); 
+	decompressed_vec_lambda.resize(cluster.my_lamdas_indices.size());
 }
 
 void   decompress_lambda_vector( Cluster & cluster, SEQ_VECTOR <double> & compressed_vec_lambda)
 {
 	SEQ_VECTOR <double> decompressed_vec_lambda (cluster.domains[0].B1.rows,0);
 
-	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++) 
-		decompressed_vec_lambda[cluster.my_lamdas_indices[i]] = compressed_vec_lambda[i]; 
+	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++)
+		decompressed_vec_lambda[cluster.my_lamdas_indices[i]] = compressed_vec_lambda[i];
 
 	compressed_vec_lambda = decompressed_vec_lambda;
 }
 
-double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector ) 
+double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector )
 {
 
-	double wl = 0; double wg = 0; 
+	double wl = 0; double wg = 0;
 
-	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++) 
-		wl = wl + (input_vector[i] * input_vector[i] * cluster.my_lamdas_ddot_filter[i]); 
+	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++)
+		wl = wl + (input_vector[i] * input_vector[i] * cluster.my_lamdas_ddot_filter[i]);
 
 	MPI_Allreduce( &wl, &wg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	double norm_l = sqrt(wg);
@@ -3128,34 +3128,34 @@ double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 	return norm_l;
 }
 
-double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 ) 
+double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 )
 {
-	double a1 = 0; double a1g = 0; 
+	double a1 = 0; double a1g = 0;
 
 	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++)  {
-		a1 = a1 + (input_vector1[i] * input_vector2[i] * cluster.my_lamdas_ddot_filter[i]); 
+		a1 = a1 + (input_vector1[i] * input_vector2[i] * cluster.my_lamdas_ddot_filter[i]);
 	}
 
 	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-	return a1g;  
+	return a1g;
 }
 
-void   parallel_ddot_compressed_non_blocking( Cluster & cluster, 
-	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b, 
-	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b, 
+void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
+	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
+	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
 	MPI_Request * mpi_req,
 	SEQ_VECTOR <double> & output,
-	SEQ_VECTOR <double> & send_buf) 
+	SEQ_VECTOR <double> & send_buf)
 {
 
 	for (int i = 0; i < cluster.my_lamdas_indices.size(); i++)  {
-		send_buf[0] = send_buf[0] + (input_vector_1a[i] * input_vector_1b[i] * cluster.my_lamdas_ddot_filter[i]); 
-		send_buf[1] = send_buf[1] + (input_vector_2a[i] * input_vector_2b[i] * cluster.my_lamdas_ddot_filter[i]); 
+		send_buf[0] = send_buf[0] + (input_vector_1a[i] * input_vector_1b[i] * cluster.my_lamdas_ddot_filter[i]);
+		send_buf[1] = send_buf[1] + (input_vector_2a[i] * input_vector_2b[i] * cluster.my_lamdas_ddot_filter[i]);
 	}
 
 
-#ifdef WIN32	 
+#ifdef WIN32
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #else
