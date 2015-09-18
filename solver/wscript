@@ -25,7 +25,10 @@ def configure(ctx):
         ctx.env.SOLVER = "mumps"
     elif ctx.options.cuda:
         ctx.env.SOLVER = "cuda"
-        ctx.env.append_unique("CXXFLAGS", ["-DCUDA"])
+        ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
+    elif ctx.options.mic:
+        ctx.env.SOLVER = "mic"
+        ctx.env.append_unique("CXXFLAGS", [ "-DMIC", "-mmic" ])
     else:
         ctx.options.pardiso = True # Set default solver
         ctx.env.SOLVER = "pardiso"
@@ -40,7 +43,8 @@ def build(ctx):
         source_files = source_files + ("src/SparseSolverMumps.cpp",)
     elif ctx.env.SOLVER == "cuda":
         source_files = source_files + ("src/SparseSolver.cpp",)
-        ctx.env.append_unique("CXXFLAGS", ["-DCUDA"])
+    elif ctx.env.SOLVER == "mic":
+        source_files = source_files + ("src/SparseSolver.cpp",) 
     else:
         source_files = source_files + ("src/SparseSolver.cpp",)
 

@@ -70,6 +70,9 @@ def configure(ctx):
         ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
         ctx.env.append_unique("LIB", [ "cudart", "cublas"])
 
+    elif ctx.options.mic:
+        pass
+
     else:
         pass
 

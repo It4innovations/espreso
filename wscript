@@ -104,6 +104,11 @@ def options(opt):
         default=False,
         help="Create application with CUDA support.")
 
+    opt.add_option("--mic",
+        action="store_true",
+        default=False,
+        help="Create application with MIC support.")
+
     opt.add_option("--salomon",
         action="store_true",
         default=False,
