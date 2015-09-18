@@ -1,4 +1,5 @@
 #include "Cluster.h"
+#include <tbb/mutex.h>
 
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
@@ -391,6 +392,7 @@ void Cluster::InitClusterPC( int * subdomains_global_indices, int number_of_subd
 		domains[i].USE_KINV    = USE_KINV;
 		domains[i].USE_HFETI   = USE_HFETI;
 		domains[i].USE_DYNAMIC = USE_DYNAMIC;
+
 	}
 	// *** END - Init all domains of the cluster ***************************************
 }
@@ -409,7 +411,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map_sub, SEQ
 		//	domains[i].SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
 
 		//domains[i].SetDomain(USE_HFETI, USE_DYNAMIC);
-				//.LoadDomain(directory_path, USE_HFETI, USE_DYNAMIC);
+		//.LoadDomain(directory_path, USE_HFETI, USE_DYNAMIC);
 
 	//}
 	// *** END - Load all domains of the cluster *****************************************
@@ -1031,7 +1033,7 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 	loop_1_1_time.AddStart();
 	cilk_for (int d = 0; d < domains.size(); d++)
 	{
-		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
+   		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
 	}
 	loop_1_1_time.AddEnd();
@@ -1363,6 +1365,18 @@ void Cluster::CreateF0() {
 	mkl_set_num_threads(24);
 	F0_Mat.RemoveLower();
 	F0.ImportMatrix(F0_Mat);
+
+        /* Numbers of processors, value of OMP_NUM_THREADS */
+        int num_procs;
+        char * var = getenv("PAR_NUM_THREADS");
+        if(var != NULL)
+                sscanf( var, "%d", &num_procs );
+        else {
+                printf("Set environment PAR_NUM_THREADS to 1");
+                exit(1);
+        }
+        F0_fast.iparm[2]  = num_procs;
+
 
 	F0_fast.ImportMatrix(F0_Mat);
 
@@ -1852,7 +1866,53 @@ void Cluster::Create_Kinv_perDomain() {
 	if (cluster_global_index == 1)
 		cout << "Creating B1*K+*B1t : ";
 
+this->NUM_MICS = 2;
 #ifdef DEVEL
+
+#ifdef MIC
+
+	// compute sizes of data to be offloaded to MIC
+	int maxDevNumber = this->NUM_MICS;
+	if (this->NUM_MICS == 0) {
+		maxDevNumber = 1;
+	}
+	int matrixPerPack = domains.size() / maxDevNumber;
+	int offset = 0;
+	bool symmetric = true;
+	this->B1KplusPacks.resize( maxDevNumber );
+	int * dom2dev = new int[ domains.size() ];
+	int * offsets = new int[maxDevNumber];
+
+	for ( int i = 0; i < maxDevNumber; i++ ) {
+		if ( i == maxDevNumber - 1 ) {
+			matrixPerPack += domains.size() % maxDevNumber;
+		}
+
+		long dataSize = 0;
+		offsets[i] = offset;
+
+		for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+			if (!symmetric) {
+				dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
+			} else {
+				// isPacked => is symmetric
+				dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
+					( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
+			}
+			dom2dev[ j ] = i;
+		}
+
+		this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
+
+		for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+			this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
+				domains[j].B1t_comp_dom.cols,  symmetric );
+		}
+		offset += matrixPerPack;
+	}
+//	tbb::mutex m;
+#endif
+
 	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
 
 		domains[i].KplusF.msglvl = 0;
@@ -1881,11 +1941,25 @@ void Cluster::Create_Kinv_perDomain() {
 
 
 #ifdef CUDA
-		//domains[i].B1Kplus.RemoveLowerDense();
-		domains[i].B1Kplus.CopyToCUDA_Dev();
-		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
+
+	//domains[i].B1Kplus.RemoveLowerDense();
+	domains[i].B1Kplus.CopyToCUDA_Dev();
+	//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
+
 #endif
 
+#ifdef MIC
+	this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
+	domains[i].B1Kplus.Clear();
+	//domains[i].B1t_comp_dom.Clear();
+	//if (numDevices > 0) {
+	//	domains[i].B1Kplus.CopyToMIC_Dev();
+	//}
+#endif
+
+//#ifdef MICEXP
+//domains[i].B1Kplus.CopyToMIC_Dev();
+//#endif
 
 #ifdef CUDA
 		if ( USE_KINV == 1 ) {
@@ -1904,8 +1978,57 @@ void Cluster::Create_Kinv_perDomain() {
 
 	}
 
-	if (cluster_global_index == 1)
-		cout << endl;
+	cout << endl;
+
+#ifdef MIC
+	delete [] dom2dev;
+	delete [] offsets;
+	if (this->NUM_MICS == 0) {
+		this->B1KplusPacks[0].AllocateVectors( );
+	}
+	for (int i = 0; i < this->NUM_MICS ; i++ ) {
+		this->B1KplusPacks[i].AllocateVectors( );
+		this->B1KplusPacks[i].SetDevice( i );
+		this->B1KplusPacks[i].CopyToMIC();
+	}
+
+	/*
+		int numDevices = 2;
+		int matrixPerPack = domains.size() / numDevices;
+		int offset = 0;
+		bool symmetric = true;
+		this->B1KplusPacks.resize( numDevices );
+
+		for ( int i = 0; i < numDevices; i++ ) {
+			if ( i == numDevices - 1 ) {
+				matrixPerPack += domains.size() % numDevices;
+			}
+
+			int dataSize = 0;
+
+			for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+				if (!symmetric) {
+			    dataSize += domains[j].B1Kplus.rows * domains[j].B1Kplus.cols;
+			  } else {
+			    // isPacked => is symmetric
+			    dataSize += ( ( 1.0 + ( double ) domains[j].B1Kplus.rows ) *
+						( ( double ) domains[j].B1Kplus.rows ) / 2.0 );
+			  }
+			}
+
+	 		this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
+
+			for ( int j = offset ; j < offset + matrixPerPack; j++ ) {
+				this->B1KplusPacks[i].AddDenseMatrix( &(domains[j].B1Kplus.dense_values[0]),
+					domains[j].B1Kplus.rows, domains[j].B1Kplus.cols, symmetric );
+			}
+			this->B1KplusPacks[i].SetDevice( i );
+			this->B1KplusPacks[i].CopyToMIC();
+
+			offset += matrixPerPack;
+		}
+*/
+#endif
 
 #else
 	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
