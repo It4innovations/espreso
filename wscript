@@ -48,7 +48,7 @@ def configure(ctx):
 #..............................................................................#
 
     ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O2" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-Wall" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     if ctx.options.titan:
         ctx.env.append_unique("CXXFLAGS", [ "-fPIE", "-dynamic" ])
         ctx.env.append_unique("LINKFLAGS", [ "-pie", "-dynamic" ])
@@ -73,41 +73,16 @@ def configure(ctx):
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
 #                          Options for ESPRESO
 
+
+
 def options(opt):
-    opt.add_option("--debug",
-        action="store_true",
-        default=False,
-        help="Compile sequential code.")
 
-    opt.add_option("--mpich",
-        action="store_true",
-        default=False,
-        help="Compile MPI version with mpich.")
-
-    opt.add_option("--mesh",
-        action="store_true",
-        default=False,
-        help="Create application only from mesh.")
-
-    opt.add_option("--permoncube",
-        action="store_true",
-        default=False,
-        help="Create application only from permoncube.")
+# Configure options
 
     opt.add_option("--anselm",
         action="store_true",
         default=False,
         help="Create application for Anselm.")
-
-    opt.add_option("--cuda",
-        action="store_true",
-        default=False,
-        help="Create application with CUDA support.")
-
-    opt.add_option("--mic",
-        action="store_true",
-        default=False,
-        help="Create application with MIC support.")
 
     opt.add_option("--salomon",
         action="store_true",
@@ -119,6 +94,39 @@ def options(opt):
         default=False,
         help="Create application for Titan.")
 
+    opt.add_option("--mpich",
+        action="store_true",
+        default=False,
+        help="Compile MPI version with mpich.")
+
+    opt.add_option("--gfortran",
+        action="store_true",
+        default=False,
+        help="MUMPS use libraries builder by gfortran.")
+
+
+# Build options
+
+    opt.add_option("--static",
+        action="store_true",
+        default=False,
+        help="All libraries created by ESPRESO are static.")
+
+    opt.add_option("--mesh",
+        action="store_true",
+        default=False,
+        help="Create application only from mesh.")
+
+    opt.add_option("--cuda",
+        action="store_true",
+        default=False,
+        help="Create application with CUDA support.")
+
+    opt.add_option("--mic",
+        action="store_true",
+        default=False,
+        help="Create application with MIC support.")
+
     opt.add_option("--pardiso",
         action="store_true",
         default=False,
@@ -128,16 +136,6 @@ def options(opt):
         action="store_true",
         default=False,
         help="Solver use mumps library.")
-
-    opt.add_option("--gfortran",
-        action="store_true",
-        default=False,
-        help="MUMPS use libraries builder by gfortran.")
-
-    opt.add_option("--static",
-        action="store_true",
-        default=False,
-        help="All libraries created by ESPRESO are static.")
 
     opt.add_option("--catalyst",
         action="store_true",
@@ -156,6 +154,7 @@ def build(ctx):
         name            = "espreso_includes"
     )
     ctx.ROOT = ctx.path.abspath()
+    ctx.LIBRARIES = ctx.ROOT + "/libs"
 
     if ctx.options.static:
         ctx.lib = ctx.stlib
@@ -170,9 +169,6 @@ def build(ctx):
         return
 
     ctx.recurse("permoncube")
-    if ctx.options.permoncube:
-        return
-
     ctx.recurse("solver")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")

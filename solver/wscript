@@ -1,5 +1,9 @@
 
-SOLVER = "solver"
+SOLVER = "essolver"
+SOLVER_MIC = SOLVER + "_mic"
+SOLVER_CUDA = SOLVER + "_cuda"
+SOLVER_PARDISO = SOLVER + "_pardiso"
+SOLVER_MUMPS = SOLVER + "_mumps"
 
 source_files = (
    "src/HTFETI-seq.cpp",
@@ -16,42 +20,43 @@ source_files = (
 
 def configure(ctx):
     ctx.setenv(SOLVER, ctx.all_envs[""].derive());
+    ctx.env.append_unique("CXXFLAGS", [ "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-openmp", "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
+    ctx.setenv(SOLVER_MIC, ctx.all_envs[SOLVER].derive());
+    ctx.env.append_unique("CXXFLAGS", [ "-DMIC", "-mmic" ])
 
-    if ctx.options.pardiso:
-        ctx.env.SOLVER = "pardiso"
-    elif ctx.options.mumps:
-        ctx.env.SOLVER = "mumps"
-    elif ctx.options.cuda:
-        ctx.env.SOLVER = "cuda"
-        ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-    elif ctx.options.mic:
-        ctx.env.SOLVER = "mic"
-        ctx.env.append_unique("CXXFLAGS", [ "-DMIC", "-mmic" ])
-    else:
-        ctx.options.pardiso = True # Set default solver
-        ctx.env.SOLVER = "pardiso"
+    ctx.setenv(SOLVER_CUDA, ctx.all_envs[SOLVER].derive());
+    ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
+
+    ctx.setenv(SOLVER_PARDISO, ctx.all_envs[SOLVER].derive());
+
+    ctx.setenv(SOLVER_MUMPS, ctx.all_envs[SOLVER].derive());
 
 def build(ctx):
-    ctx.env = ctx.all_envs[SOLVER]
-    global source_files
+    # DEFAULT SOLVER
+    ctx.env     = ctx.all_envs[SOLVER_PARDISO]
+    sources     = source_files + ("src/SparseSolver.cpp",)
+    target      = SOLVER_PARDISO
 
-    if ctx.env.SOLVER == "pardiso":
-        source_files = source_files + ("src/SparseSolver.cpp",)
-    elif ctx.env.SOLVER == "mumps":
-        source_files = source_files + ("src/SparseSolverMumps.cpp",)
-    elif ctx.env.SOLVER == "cuda":
-        source_files = source_files + ("src/SparseSolver.cpp",)
-    elif ctx.env.SOLVER == "mic":
-        source_files = source_files + ("src/SparseSolver.cpp",) 
-    else:
-        source_files = source_files + ("src/SparseSolver.cpp",)
+    if ctx.options.mic:
+        ctx.env = ctx.all_envs[SOLVER_MIC]
+        sources = source_files + ("src/SparseSolver.cpp",)
+        target  = SOLVER_MIC
+
+    if ctx.options.cuda:
+        ctx.env = ctx.all_envs[SOLVER_CUDA]
+        sources = source_files + ("src/SparseSolver.cpp",)
+        target  = SOLVER_CUDA
+
+    if ctx.options.mumps:
+        ctx.env = ctx.all_envs[SOLVER_MUMPS]
+        sources = source_files + ("src/SparseSolverMumps.cpp",)
+        target  = SOLVER_MUMPS
 
     ctx.lib(
-        source          = source_files,
-        target          = "essolver",
-        install_path    = ctx.ROOT + "/libs",
+        source          = sources,
+        target          = target,
+        install_path    = ctx.LIBRARIES,
         use             = "espreso_includes"
     )
 

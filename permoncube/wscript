@@ -18,21 +18,12 @@ def configure(ctx):
 def build(ctx):
     ctx.env = ctx.all_envs[PERMONCUBE]
 
-    if ctx.options.permoncube:
-        ctx.program(
-            source          = source_files + ("src/main.cpp",),
-            target          = "espmcube",
-            use             = "mesh_includes esmesh esbem",
-            install_path    = ctx.ROOT
-        )
-    else:
-        ctx.lib(
-            source          = source_files,
-            target          = "espmcube",
-            use             = "espreso_includes mesh_includes bem_includes",
-            install_path    = ctx.ROOT + "/libs"
-        )
-
+    ctx.lib(
+        source          = source_files,
+        target          = "espmcube",
+        use             = "espreso_includes mesh_includes bem_includes",
+        install_path    = ctx.LIBRARIES
+    )
 
     ctx(
         export_includes = "src",

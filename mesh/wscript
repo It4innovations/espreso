@@ -33,9 +33,7 @@ def configure(ctx):
     ctx.setenv(MESH_APP, ctx.all_envs[""].derive());
 
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-openmp" ])
     if ctx.options.titan:
-        ctx.env.append_unique("LINKFLAGS", [ "-pie", "-dynamic" ])
         ctx.env.append_unique("LIBPATH", [ "/opt/intel/composer_xe_2013_sp1.2.144/compiler/lib/intel64/" ])
 
     if ctx.env.ESLOCAL == 32:
@@ -66,7 +64,7 @@ def build(ctx):
             source          = source_files,
             target          = "esmesh",
             use             = "espreso_includes bem_includes",
-            install_path    = ctx.ROOT + "/libs"
+            install_path    = ctx.LIBRARIES
         )
 
     ctx(
