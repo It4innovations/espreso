@@ -33,29 +33,25 @@ if [ "$#" -ne 1 ]; then
   echo "  'distclean' removes all files."
 fi
 
-if [ "$1" = "configure_mesh" ]; then
-  ./waf configure --mesh --salomon
-fi
-
-if [ "$1" = "build_mesh" ]; then
-  ./waf install --mesh
-fi
-
-if [ "$1" = "mesh" ]; then
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
-  ./esmesh
-fi
-
-if [ "$1" = "configure_mumps" ]; then
-  ./waf configure --salomon --mumps
-fi
-
 if [ "$1" = "configure" ]; then
   ./waf configure --salomon
 fi
 
+if [ "$1" = "mesh" ]; then
+  ./waf install --mesh
+fi
+
+if [ "$1" = "esmesh" ]; then
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
+  ./esmesh
+fi
+
 if [ "$1" = "build" ]; then
   ./waf install
+fi
+
+if [ "$1" = "mic" ]; then
+  ./waf install --mic
 fi
 
 if [ "$1" = "clean" ]; then
