@@ -464,7 +464,7 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 		cluster.USE_DYNAMIC			= 0;
 
 	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 0;
+	cluster.USE_KINV			= 1;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPIsize;
 
@@ -675,13 +675,13 @@ void testMPI(int argc, char** argv, int MPIrank, int MPIsize)
 	if ( cluster.USE_KINV == 1 ) {
 		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using solver"));
 		 timeSolSC1.AddStart();
-	//	cluster.Create_Kinv_perDomain();
+		cluster.Create_Kinv_perDomain();
 		 timeSolSC1.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeSolSC1);
 
 		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));
 		 timeSolSC2.AddStart();
-		cluster.Create_SC_perDomain();
+	//	cluster.Create_SC_perDomain();
 		 timeSolSC2.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeSolSC2);
 	}

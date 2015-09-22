@@ -51,9 +51,7 @@ if [ "$1" = "build" ]; then
 fi
 
 if [ "$1" = "mic" ]; then
-  export MIC_ENV_PREFIX=MIC
-  export MIC_LD_LIBRARY_PATH=/apps/intel/composer_xe_2015.3.187/mkl/lib/mic:/apps/intel/composer_xe_2015.3.187/compiler/lib/mic:$MIC_LD_LIBRARY_PATH
-  ./waf install --mic -v
+  ./waf install --static --mic
 fi
 
 if [ "$1" = "clean" ]; then
@@ -76,7 +74,7 @@ if [ "$1" = "run" ]; then
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
   export SOLVER_NUM_THREADS=24
-
+  export PAR_NUM_THREADS=24
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
 
@@ -90,18 +88,18 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      16  16  16  16  16  16  16  16  13  14 )
-  clustt_size_x=( 10  10  10  10  10  10  10  10  10  10 )
+  dom_size=(      5  16  16  16  16  16  16  16  13  14 )
+  clustt_size_x=( 2  10  10  10  10  10  10  10  10  10 )
 # clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
 # clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
-  clusters_x=(    2   3   4   5   6   7   8   9   1   1 )
-  clusters_y=(    2   3   4   5   6   7   8   9   1   1 )
-  clusters_z=(    2   3   4   5   6   7   8   9   1   1 )
+  clusters_x=(    1   3   4   5   6   7   8   9   1   1 )
+  clusters_y=(    1   3   4   5   6   7   8   9   1   1 )
+  clusters_z=(    1   3   4   5   6   7   8   9   1   1 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 7 # 0 1 2 3 4 5 6
+  for i in 0 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -127,8 +125,8 @@ if [ "$1" = "run" ]; then
     #mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}               # | tee -a $log_file
    
-    # mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
-    mpirun -n 10 ./espreso | tee -a $log_file
+    mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+    #mpirun -n 10 ./espreso | tee -a $log_file
 
    
     #ddt -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file

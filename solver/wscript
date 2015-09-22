@@ -23,8 +23,7 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
 
     ctx.setenv(SOLVER_MIC, ctx.all_envs[SOLVER].derive());
-    ctx.env.append_unique("CXXFLAGS", [ "-DMIC", "-mmic", "-offload" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-mmic", "-offload" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-DMIC" ])
 
     ctx.setenv(SOLVER_CUDA, ctx.all_envs[SOLVER].derive());
     ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
