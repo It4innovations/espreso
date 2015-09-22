@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#PBS -l select=729:ncpus=24:mpiprocs=1:ompthreads=1
+#PBS -l select=216:ncpus=24:mpiprocs=1:ompthreads=1
 #PBS -N ESPRESO
 #PBS -j oe
-#PBS -l walltime=00:20:00
+#PBS -l walltime=00:05:00
 ##PBS -o /home/sta03/impi/out
 #PBS -A SERVICE
 #PBS -q qmpp
@@ -19,7 +19,7 @@
 # 9  729
 # 10 1000
 
-clusters=8
+clusters=1
 
 cd $PBS_O_WORKDIR
 
@@ -47,9 +47,9 @@ export MPI_VERBOSE=1
 export MPI_BUFS_PER_PROC=512
 
 export MODULEPATH=/usr/share/Modules/modulefiles:$MODULEPATH
-#module load icc
 module load mpt
 module load perfboost
+
 
 #cat $HOSTA > $HOSTF
 OFFLINE=`pbsnodes -l| cut -f1 -d' '| tr -t '\n' '|' |  sed 's/|/$|/g'| rev | sed 's/|//' | rev`
@@ -77,8 +77,24 @@ mv -f ${HOSTF}.new $HOSTF
 #mpirun -f $HOSTF perfboost -impi ./hello_nobar
 #mpirun -f $MPT_HOSTS perfboost -impi ./hello_bar
 
-#cd $PBS_O_WORKDIR
-./salomon.sh runpbs $clusters
+pwd
 
+domains=5
+dom_size=13
+./salomon.sh runpbs $clusters $domains $dom_size
 
+domains=5
+dom_size=15
+#./salomon.sh runpbs $clusters $domains $dom_size
 
+domains=5
+dom_size=17
+#./salomon.sh runpbs $clusters $domains $dom_size
+
+domains=5
+dom_size=19
+#./salomon.sh runpbs $clusters $domains $dom_size
+
+domains=6
+dom_size=22
+#./salomon.sh runpbs $clusters $domains $dom_size

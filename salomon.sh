@@ -18,9 +18,9 @@ if [ "$1" = "runpbs" ]; then
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs/
 
-  dom_size=15
+  dom_size=$4
   clusters=$2
-  clustt_size=11
+  clustt_size=$3
   corners=0
 
   d=${dom_size}
@@ -111,7 +111,8 @@ if [ "$1" = "run" ]; then
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
   export SOLVER_NUM_THREADS=24
-
+#  export CILK_NWORKERS=1 # 24
+#  export CILK_NPROC=1
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs/
@@ -126,18 +127,22 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      14  16  16  16  16  16  16  15  13  10 )
-  clustt_size_x=( 12  10  10  10  10  10  10  11  10  5 )
+ dom_size=(       8  16  17  18  19  15  16  16  16  16  10 )
+ clustt_size_x=(  8   6   6   6   6  10  10  10  10  10  5 )
+
+#  dom_size=(      25  25  25  25  25  25  33  24  24  24  24 )
+#  clustt_size_x=(  6   6   6   6   6   6  10  10  10  10  5 )
+
 # clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
 # clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
-  clusters_x=(    2   3   4   5   6   7   8   9   1   4 )
-  clusters_y=(    2   3   4   5   6   7   8   9   1   4 )
-  clusters_z=(    2   3   4   5   6   7   8   9   1   4 )
+  clusters_x=(    1   1   1   1   1   6   7   8   9   1   4 )
+  clusters_y=(    1   1   1   1   1   6   7   8   9   1   4 )
+  clusters_z=(    1   1   1   1   1   6   7   8   9   1   4 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 0 # 1 2 3 4 5 6 7
+  for i in 0 
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -164,7 +169,7 @@ if [ "$1" = "run" ]; then
    	
     mpirun -n $(( X * Y * Z ))  /home/lriha/espreso/espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file #"
     
-    #ddt -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file
+    #map -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file
 
     #cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
     #rm mesh.vtk

@@ -692,7 +692,7 @@ void SetMatrixK_fromCSR ( Cluster & cluster, ShortInt domain_index_in_cluster,
 	cluster.domains[domain_index_in_cluster].K_regularizationFromR( );
 	cluster.domains[domain_index_in_cluster].domain_prim_size = cluster.domains[domain_index_in_cluster].Kplus.cols; 
 
-	cluster.domains[domain_index_in_cluster].K.Clear();
+	//cluster.domains[domain_index_in_cluster].K.Clear();
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat( ); GetProcessMemoryStat ( ); }
 
