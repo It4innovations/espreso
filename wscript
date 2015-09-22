@@ -161,6 +161,11 @@ def build(ctx):
     else:
         ctx.lib = ctx.shlib
 
+    if ctx.options.mic:
+        pass
+        #ctx.recurse("solver")
+        #return
+
     ctx.recurse("tools")
     ctx.add_group()
     ctx.recurse("bem")

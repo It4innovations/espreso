@@ -51,7 +51,9 @@ if [ "$1" = "build" ]; then
 fi
 
 if [ "$1" = "mic" ]; then
-  ./waf install --mic
+  export MIC_ENV_PREFIX=MIC
+  export MIC_LD_LIBRARY_PATH=/apps/intel/composer_xe_2015.3.187/mkl/lib/mic:/apps/intel/composer_xe_2015.3.187/compiler/lib/mic:$MIC_LD_LIBRARY_PATH
+  ./waf install --mic -v
 fi
 
 if [ "$1" = "clean" ]; then

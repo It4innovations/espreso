@@ -59,10 +59,12 @@ def configure(ctx):
 
 
     ctx.setenv(APP_MIC, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+    ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "imf", "intlc", "svml", "irng", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+    ctx.env.append_unique("LINKFLAGS", [ "-mkl=parallel", "-mmic", "-offload" ])
 
 
     ctx.setenv(APP_CUDA, ctx.all_envs[APP].derive())
+    ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
     ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
     ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "cudart", "cublas", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
