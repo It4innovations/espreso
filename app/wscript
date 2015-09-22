@@ -116,14 +116,14 @@ def build(ctx):
         ctx.program(
             source          = "src/catalyst.cpp",
             target          = "espreso",
-            use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes " + solver + " espmcube esmesh esbem",
+            use             = "solver_includes pmcube_includes mesh_includes bem_includes catalyst_includes {0} espmcube esmesh esbem".format(solver),
             install_path    = ctx.ROOT
         )
     else:
         ctx.program(
             source          = "src/main.cpp",
             target          = "espreso",
-            use             = "solver_includes pmcube_includes mesh_includes bem_includes " + solver + " espmcube esmesh esbem",
+            use             = "solver_includes pmcube_includes mesh_includes bem_includes {0} espmcube esmesh esbem".format(solver),
             install_path    = ctx.ROOT
         )
 
