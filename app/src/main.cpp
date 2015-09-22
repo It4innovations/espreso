@@ -42,8 +42,6 @@ void solve(Instance &instance)
 	TimeEval timeEvalMain(string("ESPRESO Solver Overal Timing"));
 	timeEvalMain.totalTime.AddStartWithBarrier();
 
-	eslocal clust_index = MPIrank; // clust_index = cislo clusteru
-
 	double start;
 	start = omp_get_wtime();
 	std::cout.precision(15);
