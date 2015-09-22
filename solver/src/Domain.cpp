@@ -519,6 +519,7 @@ void Domain::K_regularizationFromR ( ) {
 
 		NtN.Factorization();
 		NtN.SolveMat_Sparse(Nt);
+		NtN.Clear();
 
 		//NtN = Nt*N
 		N.Clear();
@@ -534,8 +535,8 @@ void Domain::K_regularizationFromR ( ) {
     }
 	
     Kplus.ImportMatrix  (K);
-	Kplus.Factorization ();
-	
+    Kplus.Factorization ();
+
 	// POZOR - jen pro Kinv
 	if (USE_KINV == 1 || USE_HFETI == 1)
 		KplusF.ImportMatrix (K);

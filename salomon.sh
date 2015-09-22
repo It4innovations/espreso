@@ -1,24 +1,75 @@
 #!/bin/bash
 
-export CPATH=/apps/icc/2015.3.187-GNU-5.1.0-2.25/tbb/include/:$CPATH
+INTEL=/apps/all/icc/2015.3.187
+. $INTEL/tbb/bin/tbbvars.sh intel64
+
+if [ "$1" = "runpbs" ]; then
+
+
+
+  export PARDISOLICMESSAGE=1
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
+
+  export OMP_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+  export SOLVER_NUM_THREADS=24
+
+  export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
+  export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs/
+
+  dom_size=$4
+  clusters=$2
+  clustt_size=$3
+  corners=0
+
+  d=${dom_size}
+  c=${corners}
+
+  x=${clustt_size}
+  y=${clustt_size}
+  z=${clustt_size}
+
+  X=${clusters}
+  Y=${clusters}
+  Z=${clusters}
+
+  log_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.log
+
+  date | tee -a $log_file
+
+  echo "Config: dom_size=  $d | cluster_size = $x:$y:$z | clusters = $X:$Y:$Z  "
+
+  date | tee -a $log_file
+
+  #mpirun -n $(( X * Y * Z )) ./espreso 0 ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file 
+
+  mpirun -f /home/lriha/espreso/hostfile perfboost -impi ./espreso 0 ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+
+fi
+
+
+
 
 module load impi/5.0.3.048-iccifort-2015.3.187
-#module load MPT/2.12
-
-#module load OpenMPI/1.8.6-GNU-5.1.0-2.25
-#module unload GCC/5.1.0-binutils-2.25 binutils/2.25-GCC-5.1.0-binutils-2.25 GNU/5.1.0-2.25 impi/5.0.3.048-iccifort-2015.3.187
-
 module load icc/2015.3.187
 module load imkl/11.2.3.187-iimpi-7.3.5
-module load DDT/5.0.1
+#module load DDT/5.0.1
 
-export OMPI_CXX=icpc
+
+#export INTEL=/apps/all/icc/2015.3.187
+#export IMPI=/apps/all/impi/5.0.3.048-iccifort-2015.3.187
+
+#. $INTEL/bin/compilervars.sh intel64
+#. $IMPI/bin64/mpivars.sh
 
 #module load CMake/3.0.0-intel-2015b 
 #module load tbb/4.3.5.187
+#. $INTEL/tbb/bin/tbbvars.sh intel64
+
 export LC_CTYPE=""
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -eq 0 ]; then
   echo "  Use one of the following commands:"
   echo "    ./salomon configure"
   echo "    ./salomon build"
@@ -68,6 +119,7 @@ fi
 el_type=(   0     1      2       3       4       5        6         7)
 
 if [ "$1" = "run" ]; then
+
   export PARDISOLICMESSAGE=1 
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
 
@@ -75,6 +127,9 @@ if [ "$1" = "run" ]; then
   export MKL_NUM_THREADS=1
   export SOLVER_NUM_THREADS=24
   export PAR_NUM_THREADS=24
+i
+#  export CILK_NWORKERS=1 # 24
+#  export CILK_NPROC=1
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
 
@@ -112,10 +167,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-
     log_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.log
 
-    date | tee $log_file
+    date | tee -a $log_file
 
     echo "Config: dom_size=  $d | cluster_size = $x:$y:$z | clusters = $X:$Y:$Z  "
 
@@ -124,18 +178,17 @@ if [ "$1" = "run" ]; then
     #                                          ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}               # | tee -a $log_file
-   
     mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
     #mpirun -n 10 ./espreso | tee -a $log_file
-
    
     #ddt -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file
-
+   	
     #cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
     #rm mesh.vtk
   done
 
 fi
+
 
 
 if [ "$1" = "debug" ]; then

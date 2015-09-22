@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#PBS -l select=512:ncpus=24:mpiprocs=1:ompthreads=1
+#PBS -N ESPRESO
+#PBS -j oe
+#PBS -l walltime=00:60:00
+##PBS -o /home/sta03/impi/out
+#PBS -A SERVICE
+#PBS -q R167694
+
+# 1 1
+# 2 8
+# 3 27
+# 4 64
+# 5 125
+# 6 216
+# 7 343
+# 8 512
+# 7 729
+# 8 1000
+
+clusters=8
+
+cd $PBS_O_WORKDIR
+
+INTEL=/apps/all/icc/2015.3.187
+IMPI=/apps/all/impi/5.0.3.048-iccifort-2015.3.187
+
+. $INTEL/bin/compilervars.sh intel64
+. $IMPI/bin64/mpivars.sh
+
+export I_MPI_DAPL_PROVIDER=ofa-v2-mlx4_0-1u
+export I_MPI_DAPL_UD_PROVIDER=ofa-v2-mlx4_0-1u
+
+export DAPL_UCM_REP_TIME=16000
+export DAPL_UCM_RTU_TIME=8000
+export DAPL_UCM_RETRY=20
+
+export I_MPI_HYDRA_BOOTSTRAP=ssh
+export I_MPI_DEBUG=2
+export I_MPI_FABRICS=shm:dapl
+
+# Confirmed with https://software.intel.com/en-us/forums/topic/506890
+export I_MPI_DAPL_UD=enable
+export I_MPI_FALLBACK=disable
+
+#mpirun  -genvall ./hello_nobar
+
+cd $PBS_O_WORKDIR
+./salomon.sh runpbs $clusters
+
+
+

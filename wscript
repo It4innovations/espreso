@@ -74,7 +74,6 @@ def configure(ctx):
 #                          Options for ESPRESO
 
 
-
 def options(opt):
 
 # Configure options
