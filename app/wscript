@@ -38,7 +38,8 @@ class cxxprogram(link_task):
 
 source_files = (
     "src/configuration.cpp",
-    "src/instance.cpp"
+    "src/instance.cpp",
+    "src/assemblers/dynamics.cpp"
 )
 
 def configure(ctx):

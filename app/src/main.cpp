@@ -2,6 +2,8 @@
 
 #include "essolver.h"
 #include "instance.h"
+#include "solver/solver.h"
+#include "assemblers/assemblers.h"
 
 #ifdef CATALYST
 #include "escatalyst.h"
@@ -26,6 +28,10 @@ int main(int argc, char** argv)
 	// print all settings
 	config.print();
 	Instance instance(config, MPIrank, MPIsize);
+
+	Solver<Dynamics> solver(instance);
+
+	solver.solve();
 
 	// This method needs re-factoring !!!
 	solve(instance);
@@ -431,7 +437,7 @@ void solve(Instance &instance)
 			K_mat[d].rows(), K_mat[d].columns(), //  .data[i]->KSparse->n_row,   clust_g.data[i]->KSparse->n_row,
 			K_mat[d].rowPtrs(), K_mat[d].columnIndices(), K_mat[d].values(), //clust_g.data[i]->KSparse->row_ptr, clust_g.data[i]->KSparse->col_ind, clust_g.data[i]->KSparse->val,
 			'G');
-	
+
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
 
