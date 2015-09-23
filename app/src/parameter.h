@@ -73,7 +73,7 @@ protected:
 		}
 		std::string val = line.substr(pos + 1);
 		val.erase(0, val.find_first_not_of(" "));
-		if (val.find_last_of(" ") != std::string::npos) {
+		if (val[val.size() - 1] == ' ' &&  val.find_last_of(" ") != std::string::npos) {
 			return val.erase(val.find_last_of(" "));
 		} else {
 			return val;
