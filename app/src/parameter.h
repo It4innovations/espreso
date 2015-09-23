@@ -12,6 +12,7 @@
 enum DataType {
 	STRING_PARAMETER,
 	INTEGER_PARAMETER,
+	DOUBLE_PARAMETER,
 	BOOLEAN_PARAMETER
 };
 
@@ -135,6 +136,30 @@ public:
 
 private:
 	eslocal _value;
+};
+
+class DoubleParameter : public Parameter {
+
+public:
+	DoubleParameter(std::string name, std::string description, double value)
+		:Parameter(DOUBLE_PARAMETER, name, description), _value(value) {};
+
+	void set(const std::string &line)
+	{
+		std::stringstream ss(value(line));
+		ss >> _value;
+		_set = true;
+	}
+
+	const double& get() const { return _value; };
+
+	Parameter* copy()
+	{
+		return new DoubleParameter(*this);
+	}
+
+private:
+	double _value;
 };
 
 class BooleanParameter : public Parameter {

@@ -9,7 +9,19 @@ const eslocal& Configuration::value<eslocal>(InputParameter parameter) const
 		return static_cast<IntegerParameter*>(_parameters[parameter])->get();
 	} else {
 		std::cerr << "Invalid parameter type. ";
-		std::cerr << _parameters[parameter]->name() << " is integer value.";
+		std::cerr << _parameters[parameter]->name() << " is not integer value.";
+		exit(EXIT_FAILURE);
+	}
+}
+
+template<>
+const double& Configuration::value<double>(InputParameter parameter) const
+{
+	if (_parameters[parameter]->type() == DOUBLE_PARAMETER) {
+		return static_cast<DoubleParameter*>(_parameters[parameter])->get();
+	} else {
+		std::cerr << "Invalid parameter type. ";
+		std::cerr << _parameters[parameter]->name() << " is not double value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -21,7 +33,7 @@ const std::string& Configuration::value<std::string>(InputParameter parameter) c
 		return static_cast<StringParameter*>(_parameters[parameter])->get();
 	} else {
 		std::cerr << "Invalid parameter type. ";
-		std::cerr << _parameters[parameter]->name() << " is string value.";
+		std::cerr << _parameters[parameter]->name() << " is not string value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -33,7 +45,7 @@ const bool& Configuration::value<bool>(InputParameter parameter) const
 		return static_cast<BooleanParameter*>(_parameters[parameter])->get();
 	} else {
 		std::cerr << "Invalid parameter type. ";
-		std::cerr << _parameters[parameter]->name() << " is boolean value.";
+		std::cerr << _parameters[parameter]->name() << " is not boolean value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -259,6 +271,10 @@ void Configuration::print() const
 			}
 			case INTEGER_PARAMETER: {
 				std::cout << value<eslocal>(i);
+				break;
+			}
+			case DOUBLE_PARAMETER: {
+				std::cout << value<double>(i);
 				break;
 			}
 			case BOOLEAN_PARAMETER: {
