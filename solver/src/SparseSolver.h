@@ -41,6 +41,9 @@ public:
 	~SparseSolver();
 
 	// Matrix properties 
+
+	bool initialized;
+
 	int rows; 
 	int cols; 
 	int nnz; 
@@ -106,5 +109,7 @@ public:
 	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed );
 
 	void Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded );
+	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, int generate_symmetric_sc_1_generate_general_sc_0 );
+	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, int generate_symmetric_sc_1_generate_general_sc_0 );
 
 };

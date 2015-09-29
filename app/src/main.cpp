@@ -31,9 +31,9 @@ int main(int argc, char** argv)
 	Instance instance(config, MPIrank, MPIsize);
 
 	Solver<Linear_elasticity> solver_1 (instance);
-	Solver<Dynamics>          solver_2 (instance);
+	//Solver<Dynamics>          solver_2 (instance);
 
-	solver_2.solve(10);
+	//solver_2.solve(10);
 
 	solver_1.solve(1);
 
