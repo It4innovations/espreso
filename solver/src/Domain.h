@@ -45,7 +45,8 @@ public:
 	int domain_prim_size; 
 	int USE_DYNAMIC; 
 	int USE_KINV; 
-	int USE_HFETI; 
+	int USE_HFETI;
+	int DOFS_PER_NODE;
 
 	// Matrices and vectors of the cluster 
 	SparseMatrix B0; 
@@ -56,6 +57,9 @@ public:
 
 	SparseMatrix B0Kplus; 
 	SparseMatrix B0Kplus_comp; 
+
+	SparseMatrix B0KplusB1_comp;
+	SparseMatrix Kplus_R_B1_comp;
 
 
 	SparseMatrix B1Kplus;
@@ -81,6 +85,7 @@ public:
 	SparseMatrix Kplus_R; 
 	SparseMatrix R; 
 	SparseMatrix K;
+	//SparseMatrix K_non_sym;
 	SparseMatrix M; 
 	SparseMatrix Prec; 
 

@@ -594,7 +594,7 @@ void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
 	TimeEvent Vec_d_perCluster_time ("Setup Vec d per Cluster - preprocessing");
 	Vec_d_perCluster_time.AddStart(omp_get_wtime());
 
-	cluster.CreateVec_d_perCluster ();
+	//cluster.CreateVec_d_perCluster ();
 
 	Vec_d_perCluster_time.AddEnd(omp_get_wtime());
 	Vec_d_perCluster_time.PrintStatMPI(0.0); 
@@ -624,7 +624,7 @@ void SetSolverPreprocessing ( Cluster & cluster, IterSolver & solver,
 	TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - preprocessing");
 	cluster_SetClusterPC_time.AddStart(omp_get_wtime());
 
-	cluster.SetClusterPC( lambda_map_sub, neigh_domains ); // USE_DYNAMIC, USE_KINV 
+	cluster.SetClusterPC( lambda_map_sub);//, neigh_domains ); // USE_DYNAMIC, USE_KINV
 
 	cluster_SetClusterPC_time.AddEnd(omp_get_wtime());
 	cluster_SetClusterPC_time.PrintStatMPI(0.0); 

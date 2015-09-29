@@ -11,7 +11,9 @@ public:
 	Solver(const Instance &instance)
 		: _configuration(instance.configuration()), _assembler(instance) { };
 
-	void solve();
+	void init();
+
+	void solve( eslocal steps );
 
 private:
 	Configuration _configuration;

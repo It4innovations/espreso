@@ -6,7 +6,11 @@
 #include <vector>
 #include <iostream>
 
-#include "mkl.h"
+#include "mkl_spblas.h"
+#include "mkl_blas.h"
+#include "mkl_cblas.h"
+#include "mkl_lapacke.h"
+
 #include "cilk/cilk.h"
 
 #include "metis.h"

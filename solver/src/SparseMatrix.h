@@ -3,7 +3,7 @@
 #endif
 
 #include "utils.h"
-
+#include "esmesh.h"
 
 #ifdef CUDA
 	#include <cuda_runtime.h>
@@ -22,8 +22,6 @@ using std::fill;
 
 #pragma once
 
-
-
 class SparseMatrix
 {
 
@@ -33,12 +31,17 @@ public:
 	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric); 
 	SparseMatrix();
 	SparseMatrix( const SparseMatrix &A_in); 
+	SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in );
+	SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in );
+
 
 	//Destructor 
 	~SparseMatrix();
 
 	//assignment operator 
-	SparseMatrix& operator= (const SparseMatrix &A_in);
+	SparseMatrix& operator= ( const SparseMatrix &A_in);
+	SparseMatrix& operator= ( const SparseCSRMatrix<eslocal> &A_in );
+	SparseMatrix& operator= ( const SparseIJVMatrix<eslocal> &A_in );
 
 	// Variables 
 	int  rows;		// number of rows 

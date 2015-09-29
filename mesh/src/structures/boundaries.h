@@ -71,6 +71,7 @@ public:
 						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
 						std::vector < std::vector <double> > 	& B1_l_duplicity,
 						const eslocal domains_num,
+						const eslocal DOFS_PER_NODE,
 						const mesh::Boundaries & global_boundaries) const;
 
 	template<typename T>
@@ -82,6 +83,7 @@ public:
 						const eslocal MPIrank,
 						const eslocal MPIsize,
 						const eslocal subDomPerCluster,
+						const eslocal DOFS_PER_NODE,
 						std::vector < eslocal  > & myNeighClusters,
 						const mesh::Boundaries & local_boundaries) const;
 

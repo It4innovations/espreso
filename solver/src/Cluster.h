@@ -50,6 +50,7 @@ public:
 	int USE_HFETI;
 	int SUBDOM_PER_CLUSTER;
 	int NUMBER_OF_CLUSTERS;
+	int DOFS_PER_NODE;
 
 	int dual_size;
 	string data_directory;
@@ -103,7 +104,7 @@ public:
 	void LoadCluster(string directory_path, int use_dynamic_1_no_dynamic_0, int use_kinv_1_no_kinv_0 );
 
 	void InitClusterPC ( int * subdomains_global_indices, int number_of_subdomains );
-	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map, SEQ_VECTOR < int > & neigh_domains  );
+	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map); //, SEQ_VECTOR < int > & neigh_domains  );
 	void SetClusterPC_AfterKplus ();
 	void SetClusterHFETI ();
 
@@ -117,8 +118,8 @@ public:
 	void CreateSa();
 
 	void Create_G1_perCluster();
-	void CreateVec_d_perCluster();
-	void CreateVec_b_perCluster();
+	void CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
+	void CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 
 	void Create_Kinv_perDomain();
 	void Create_SC_perDomain();
@@ -129,8 +130,8 @@ public:
 	void compress_lambda_vector(SEQ_VECTOR <double> & decompressed_vec_lambda);
 	void decompress_lambda_vector(SEQ_VECTOR <double> & compressed_vec_lambda);
 
-	void GetProcessMemoryStat ( );
-	void GetMemoryStat( );
+	//void GetProcessMemoryStat ( );
+	//void GetMemoryStat( );
 
 	SEQ_VECTOR < SEQ_VECTOR <int> >		my_comm_lambdas_indices;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas;

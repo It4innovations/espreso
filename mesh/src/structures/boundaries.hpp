@@ -14,6 +14,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 								std::vector < std::vector <eslocal> >   & lambda_map_sub_B0,	//TODO: Inside cluster eslocal is OK
 								std::vector < std::vector < double> >   & B1_l_duplicity,
 								const eslocal domains_num,
+								const eslocal DOFS_PER_NODE,
 								const mesh::Boundaries & global_boundaries) const
 {
 
@@ -43,7 +44,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 
 	for (T i = 0; i < _boundaries.size(); i++) {
 
-		std::vector < bool > is_dirichlet (3, false); // TODO: 3 is number of DOFs per node
+		std::vector < bool > is_dirichlet (DOFS_PER_NODE, false); // TODO: 3 is number of DOFs per node
 
 		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
 			if ( dirichlet_x.find(index(i)) != dirichlet_x.end() ) {
@@ -57,27 +58,31 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 				B1_l_duplicity[*it].push_back( 1.0 );
 				lambda_count_B1++;
 			}
-			if ( dirichlet_y.find(index(i)) != dirichlet_y.end() ) {
-				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
-				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-				std::vector < T > tmp_vec (2);
-				tmp_vec[0] = lambda_count_B1;
-				tmp_vec[1] = 0;
-				lambda_map_sub_clst.push_back( tmp_vec );
-				is_dirichlet[1] = true;
-				B1_l_duplicity[*it].push_back( 1.0 );
-				lambda_count_B1++;
+			if (DOFS_PER_NODE > 1) {
+				if ( dirichlet_y.find(index(i)) != dirichlet_y.end() ) {
+					B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
+					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+					std::vector < T > tmp_vec (2);
+					tmp_vec[0] = lambda_count_B1;
+					tmp_vec[1] = 0;
+					lambda_map_sub_clst.push_back( tmp_vec );
+					is_dirichlet[1] = true;
+					B1_l_duplicity[*it].push_back( 1.0 );
+					lambda_count_B1++;
+				}
 			}
-			if ( dirichlet_z.find(index(i)) != dirichlet_z.end() ) {
-				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
-				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-				std::vector < T > tmp_vec (2);
-				tmp_vec[0] = lambda_count_B1;
-				tmp_vec[1] = 0;
-				lambda_map_sub_clst.push_back( tmp_vec );
-				is_dirichlet[2] = true;
-				B1_l_duplicity[*it].push_back( 1.0 );
-				lambda_count_B1++;
+			if (DOFS_PER_NODE > 2) {
+				if ( dirichlet_z.find(index(i)) != dirichlet_z.end() ) {
+					B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
+					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+					std::vector < T > tmp_vec (2);
+					tmp_vec[0] = lambda_count_B1;
+					tmp_vec[1] = 0;
+					lambda_map_sub_clst.push_back( tmp_vec );
+					is_dirichlet[2] = true;
+					B1_l_duplicity[*it].push_back( 1.0 );
+					lambda_count_B1++;
+				}
 			}
 		}
 
@@ -86,7 +91,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 				// with duplicity
 				for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
 					for (it2 = it1,++it2; it2 != _boundaries[i].end(); ++it2) {
-						for (eslocal d_i = 0; d_i < 3; d_i++) { //TODO: 3 DOFS per ndoe
+						for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++) {
 							if (!is_dirichlet[d_i]) {
 								B1_loc[*it1](lambda_count_B1, local_prim_numbering[*it1] + d_i) =  1.0;
 								B1_loc[*it2](lambda_count_B1, local_prim_numbering[*it2] + d_i) = -1.0;
@@ -114,7 +119,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 			if ( isCorner(i) ) {
 				for (it1 = _boundaries[i].begin(); it1 != _boundaries[i].end(); ++it1) {
 					if (it1 != _boundaries[i].begin()) {
-						for (eslocal d_i = 0; d_i < 3; d_i++) {
+						for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++) {
 							B0_loc[*it2](lambda_count_B0, local_prim_numbering[*it2] + d_i) =  1.0;
 							B0_loc[*it1](lambda_count_B0, local_prim_numbering[*it1] + d_i) = -1.0;
 							lambda_map_sub_B0[*it2].push_back(lambda_count_B0);
@@ -128,7 +133,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 		}
 
 		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
-			local_prim_numbering[*it] += 3;
+			local_prim_numbering[*it] += DOFS_PER_NODE;
 			l2g_vec[*it].push_back(index(i));
 		}
 
@@ -163,6 +168,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 								const eslocal MPIrank,
 								const eslocal MPIsize,
 								const eslocal subDomPerCluster,
+								const eslocal DOFS_PER_NODE,
 								std::vector < eslocal  > & myNeighClusters,
 								const mesh::Boundaries & local_boundaries) const
 {

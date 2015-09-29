@@ -310,7 +310,7 @@ void Cluster::LoadCluster(string directory_path, int use_dynamic_1_no_dynamic_0,
 
 	// *** Prepare the initial RBMs ********************************************************
 	if (USE_DYNAMIC == 0)
-		CreateVec_d_perCluster();
+	//	CreateVec_d_perCluster();
 
 	//// *** Prepare the initial right hand side in dual *************************************
 	//if (USE_DYNAMIC == 0)
@@ -335,7 +335,7 @@ void Cluster::LoadCluster(string directory_path, int use_dynamic_1_no_dynamic_0,
 
 	// *** Prepare the initial right hand side in dual *************************************
 	if (USE_DYNAMIC == 0)
-		CreateVec_b_perCluster();
+	//	CreateVec_b_perCluster();
 
 
 	// *** Compression of Matrix G1 to work with compressed lambda vectors *******************
@@ -354,7 +354,19 @@ void Cluster::LoadCluster(string directory_path, int use_dynamic_1_no_dynamic_0,
 	// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
 
-
+	//	TimeEvent Vec_d_perCluster_time ("Setup Vec d per Cluster - preprocessing");
+	//	Vec_d_perCluster_time.AddStart(omp_get_wtime());
+	//
+	//	cluster.CreateVec_d_perCluster ();
+	//
+	//	Vec_d_perCluster_time.AddEnd(omp_get_wtime());
+	//	Vec_d_perCluster_time//	TimeEvent Vec_d_perCluster_time ("Setup Vec d per Cluster - preprocessing");
+	//	Vec_d_perCluster_time.AddStart(omp_get_wtime());
+	//
+	//	cluster.CreateVec_d_perCluster ();
+	//
+	//	Vec_d_perCluster_time.AddEnd(omp_get_wtime());
+	//	Vec_d_perCluster_time.PrintStatMPI(0.0);.PrintStatMPI(0.0);
 
 	// *** Create inverse matrix of K+ matrix **************************************************
 	if (USE_KINV == 1)
@@ -389,15 +401,16 @@ void Cluster::InitClusterPC( int * subdomains_global_indices, int number_of_subd
 	// *** Init all domains of the cluster ********************************************
 	for (int i = 0; i < number_of_subdomains; i++ ) {
 		domains[i].domain_global_index = domains_in_global_index[i];
-		domains[i].USE_KINV    = USE_KINV;
-		domains[i].USE_HFETI   = USE_HFETI;
-		domains[i].USE_DYNAMIC = USE_DYNAMIC;
+		domains[i].USE_KINV    	 = USE_KINV;
+		domains[i].USE_HFETI   	 = USE_HFETI;
+		domains[i].USE_DYNAMIC 	 = USE_DYNAMIC;
+		domains[i].DOFS_PER_NODE = DOFS_PER_NODE;
 
 	}
 	// *** END - Init all domains of the cluster ***************************************
 }
 
-void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map_sub, SEQ_VECTOR < int > & neigh_domains ) {
+void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map_sub ) { //, SEQ_VECTOR < int > & neigh_domains ) {
 
 	//USE_DYNAMIC = use_dynamic_1_no_dynamic_0;
 	//USE_KINV    = use_kinv_1_no_kinv_0;
@@ -448,7 +461,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map_sub, SEQ
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 	//// *** - will be used to compress vectors and matrices for higher efficiency
-	my_neighs = neigh_domains;
+	//my_neighs = neigh_domains;
 
 
 	if (MPIrank == 0) {
@@ -790,7 +803,7 @@ void Cluster::SetClusterPC_AfterKplus () {
 	//// *** END - Alocate temporarly vectors for Temporary vectors for Apply_A function ***
 
 	//// *** Prepare the initial right hand side in dual *************************************
-	CreateVec_b_perCluster();
+	//CreateVec_b_perCluster();
 
 }
 
@@ -1794,9 +1807,9 @@ void Cluster::Create_G1_perCluster() {
 		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
 }
 
-void Cluster::CreateVec_d_perCluster() {
-	int size_d = domains[0].Kplus_R.cols; // because transpose of R
+void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
+	int size_d = domains[0].Kplus_R.cols; // because transpose of R
 
 	if ( USE_HFETI == 1 )
 		vec_d.resize( size_d );
@@ -1805,24 +1818,22 @@ void Cluster::CreateVec_d_perCluster() {
 
 	if ( USE_HFETI == 1) {
 		for (int d = 0; d < domains.size(); d++)
-			domains[d].Kplus_R.MatVec(domains[d].f, vec_d, 'T', 0, 0         , 1.0 );
+			domains[d].Kplus_R.MatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 	} else {
 		for (int d = 0; d < domains.size(); d++)										// MFETI
-			domains[d].Kplus_R.MatVec(domains[d].f, vec_d, 'T', 0, d * size_d, 0.0 );	// MFETI
+			domains[d].Kplus_R.MatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );	// MFETI
 	}
 
 	for (int i = 0; i < vec_d.size(); i++)
 		vec_d[i] = (-1.0) *  vec_d[i];
 }
 
-void Cluster::CreateVec_b_perCluster() {
 
-	//int MPIrank;
-	//MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 	for (int d = 0; d < domains.size(); d++) {
-		x_prim_cluster.push_back( domains[d].f );
+		x_prim_cluster.push_back( f[d] );
 	}
 
 	if (USE_HFETI == 0) {
@@ -1838,7 +1849,6 @@ void Cluster::CreateVec_b_perCluster() {
 		domains[d].up0 = x_prim_cluster[d];
 	}
 
-#ifdef DEVEL
 	vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
 
 	SEQ_VECTOR < double > y_out_tmp (domains[0].B1_comp_dom.rows);
@@ -1850,14 +1860,6 @@ void Cluster::CreateVec_b_perCluster() {
 			vec_b_compressed[ domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 	}
 
-
-#else
-	vec_b_compressed.resize(my_lamdas_indices.size());
-	for (int d = 0; d < domains.size(); d++)
-		domains[d].B1_comp.MatVec( x_prim_cluster[d], vec_b_compressed, 'N', 0, 0, 1.0);
-#endif
-
-	int a = 0;
 }
 
 
@@ -2057,7 +2059,6 @@ this->NUM_MICS = 2;
 #endif // DEVEL
 
 }
-
 
 
 void Cluster::Create_SC_perDomain() {

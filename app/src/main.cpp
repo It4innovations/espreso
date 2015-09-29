@@ -27,14 +27,18 @@ int main(int argc, char** argv)
 	Configuration config("configuration.txt", argc, argv);
 	// print all settings
 	config.print();
+
 	Instance instance(config, MPIrank, MPIsize);
 
-	Solver<Dynamics> solver(instance);
+	Solver<Linear_elasticity> solver_1 (instance);
+	Solver<Dynamics>          solver_2 (instance);
 
-	solver.solve();
+	solver_2.solve(10);
+
+	solver_1.solve(1);
 
 	// This method needs re-factoring !!!
-	solve(instance);
+	//solve(instance);
 
 	MPI_Finalize();
 }
@@ -44,6 +48,8 @@ void solve(Instance &instance)
 {
 
 	bool DYNAMIC = false;
+	int DOFS_PER_NODE = 3;
+
 
 	TimeEval timeEvalMain(string("ESPRESO Solver Overal Timing"));
 	timeEvalMain.totalTime.AddStartWithBarrier();
@@ -139,6 +145,7 @@ void solve(Instance &instance)
 		lambda_map_sub_B0,
 		B1_duplicity,
 		partsCount,
+		DOFS_PER_NODE,
 		instance.globalBoundaries()
 	);
 
@@ -161,6 +168,7 @@ void solve(Instance &instance)
 		instance.rank(),
 		instance.size(),
 		partsCount,
+		DOFS_PER_NODE,
 		neigh_clusters,
         instance.localBoundaries()
 	);
@@ -196,6 +204,31 @@ void solve(Instance &instance)
 
 	std::cout.precision(10);
 
+	LinearSolver es_solver;
+
+//	es_solver.init(
+//		instance,
+//
+//		K_mat,
+//
+//		B1_mat,
+//		B0_mat,
+//
+//		lambda_map_sub_B1,
+//		lambda_map_sub_B0,
+//		lambda_map_sub_clst,
+//		B1_duplicity,
+//
+//		f_vec,
+//		fix_nodes,
+//		l2g_vec,
+//
+//		neigh_clusters
+//
+//	);
+
+	return; 
+	
 
 	// Start - Stupid version of ESPRESO interface
 
@@ -239,6 +272,8 @@ void solve(Instance &instance)
 	cluster.USE_KINV			= 1;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= instance.size();
+	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
+
 
 	IterSolver solver;
 	solver.CG_max_iter	 = 100;
@@ -249,7 +284,7 @@ void solve(Instance &instance)
 	solver.USE_DYNAMIC	 = cluster.USE_DYNAMIC;
 	solver.USE_PIPECG	 = 0;
 	solver.USE_PREC		 = 1;
-	solver.FIND_SOLUTION = 0;
+	//solver.FIND_SOLUTION = 0;
 
 	 TimeEvent timeSetClust(string("Solver - Set cluster"));
 	 timeSetClust.AddStart();
@@ -617,7 +652,7 @@ void solve(Instance &instance)
     		solver.timeEvalPrec.PrintStatsMPI();
 
     } else {
-		solver.Solve_singular( cluster, result_file );
+		//solver.Solve_singular( cluster, result_file );
 	}
 
      timeSolCG.AddEndWithBarrier();

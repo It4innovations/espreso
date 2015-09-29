@@ -285,6 +285,209 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 
 }
 
+SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
+
+	rows = A_in.rows();
+	cols = A_in.columns();
+	nnz  = A_in.rowPtrs()[rows];
+	type = 'G';
+
+	int offset = (A_in.rowPtrs()[0]) ? 0 : 1;
+	nnz -= A_in.rowPtrs()[0];
+
+	CSR_I_row_indices.resize(rows+1);
+	CSR_J_col_indices.resize(nnz);
+	CSR_V_values	 .resize(nnz);
+
+	// Sparse CSR data
+	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
+	for (int i = 0; i < CSR_I_row_indices.size(); i++)
+		CSR_I_row_indices[i] = A_in.rowPtrs()[i] + offset;
+
+	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
+	for (int i = 0; i < CSR_J_col_indices.size(); i++)
+		CSR_J_col_indices[i] = A_in.columnIndices()[i] + offset;
+
+	copy(A_in.values(), A_in.values() + nnz, CSR_V_values.begin());
+
+//	// Sparse COO data
+//	I_row_indices = NULL;
+//	J_col_indices = NULL;
+//	V_values	  = NULL;
+//
+//	// Dense data
+//	dense_values	  = NULL;
+//	dense_values_fl   = NULL;
+
+	// GPU
+	d_dense_values = NULL;
+	d_x_in		   = NULL;
+	d_y_out		   = NULL;
+
+	d_dense_values_fl = NULL;
+	d_x_in_fl		  = NULL;
+	d_y_out_fl		  = NULL;
+
+#ifdef CUDA
+	handle		    = NULL;
+	stream          = NULL;
+#endif
+
+	// return the existing object
+	return *this;
+}
+
+SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in ) {
+
+	rows = A_in.rows();
+	cols = A_in.columns();
+	nnz  = A_in.rowPtrs()[rows];
+	type = type_in;
+
+	int offset = (A_in.rowPtrs()[0]) ? 0 : 1;
+	nnz -= A_in.rowPtrs()[0];
+
+	CSR_I_row_indices.resize(rows+1);
+	CSR_J_col_indices.resize(nnz);
+	CSR_V_values	 .resize(nnz);
+
+	// Sparse CSR data
+	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
+	for (int i = 0; i < CSR_I_row_indices.size(); i++)
+		CSR_I_row_indices[i] = A_in.rowPtrs()[i] + offset;
+
+	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
+	for (int i = 0; i < CSR_J_col_indices.size(); i++)
+		CSR_J_col_indices[i] = A_in.columnIndices()[i] + offset;
+
+	copy(A_in.values(), A_in.values() + nnz, CSR_V_values.begin());
+
+//	// Sparse COO data
+//	I_row_indices = NULL;
+//	J_col_indices = NULL;
+//	V_values	  = NULL;
+//
+//	// Dense data
+//	dense_values	  = NULL;
+//	dense_values_fl   = NULL;
+
+	// GPU
+	d_dense_values = NULL;
+	d_x_in		   = NULL;
+	d_y_out		   = NULL;
+
+	d_dense_values_fl = NULL;
+	d_x_in_fl		  = NULL;
+	d_y_out_fl		  = NULL;
+
+#ifdef CUDA
+	handle		    = NULL;
+	stream          = NULL;
+#endif
+
+}
+
+SparseMatrix& SparseMatrix::operator= ( const SparseIJVMatrix<eslocal> &A_in ) {
+
+	rows = A_in.rows();
+	cols = A_in.columns();
+	nnz  = A_in.nonZeroValues();
+	type = 'G';
+
+	int offset = A_in.indexing() ? 0 : 1;
+
+	I_row_indices.resize(nnz);
+	J_col_indices.resize(nnz);
+	V_values	 .resize(nnz);
+
+	// Sparse CSR data
+	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
+	for (int i = 0; i < I_row_indices.size(); i++)
+		I_row_indices[i] = A_in.rowIndices()[i] + offset;
+
+	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
+	for (int i = 0; i < J_col_indices.size(); i++)
+		J_col_indices[i] = A_in.columnIndices()[i] + offset;
+
+	copy(A_in.values(), A_in.values() + nnz, V_values.begin());
+
+	// Sparse CSR data
+//	CSR_I_row_indices = NULL;
+//	CSR_J_col_indices = NULL;
+//	CSR_V_values	  = NULL;
+
+	// Dense data
+	//dense_values.clear();
+	//dense_values_fl.clear();
+
+	// GPU
+	d_dense_values = NULL;
+	d_x_in		   = NULL;
+	d_y_out		   = NULL;
+
+	d_dense_values_fl = NULL;
+	d_x_in_fl		  = NULL;
+	d_y_out_fl		  = NULL;
+
+#ifdef CUDA
+	handle		    = NULL;
+	stream          = NULL;
+#endif
+
+	// return the existing object
+	return *this;
+
+}
+
+SparseMatrix::SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in ) {
+
+	rows = A_in.rows();
+	cols = A_in.columns();
+	nnz  = A_in.nonZeroValues();
+	type = type_in;
+
+	int offset = A_in.indexing() ? 0 : 1;
+
+	I_row_indices.resize(nnz);
+	J_col_indices.resize(nnz);
+	V_values	 .resize(nnz);
+
+	// Sparse CSR data
+	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
+	for (int i = 0; i < I_row_indices.size(); i++)
+		I_row_indices[i] = A_in.rowIndices()[i] + offset;
+
+	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
+	for (int i = 0; i < J_col_indices.size(); i++)
+		J_col_indices[i] = A_in.columnIndices()[i] + offset;
+
+	copy(A_in.values(), A_in.values() + nnz, V_values.begin());
+
+//	// Sparse CSR data
+//	CSR_I_row_indices = NULL;
+//	CSR_J_col_indices = NULL;
+//	CSR_V_values	  = NULL;
+//
+//	// Dense data
+//	dense_values	  = NULL;
+//	dense_values_fl   = NULL;
+
+	// GPU
+	d_dense_values = NULL;
+	d_x_in		   = NULL;
+	d_y_out		   = NULL;
+
+	d_dense_values_fl = NULL;
+	d_x_in_fl		  = NULL;
+	d_y_out_fl		  = NULL;
+
+#ifdef CUDA
+	handle		    = NULL;
+	stream          = NULL;
+#endif
+
+}
+
 
 SparseMatrix& SparseMatrix::operator= (const SparseMatrix &A_in) {
 
