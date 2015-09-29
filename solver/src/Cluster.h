@@ -110,7 +110,9 @@ public:
 
 	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<int> & cluster_map_vec);
 	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ); //, vector <double> & y_out, vector<int> & cluster_map_vec);
-	void multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
+
+	void multKplusGlobal_Kinv  ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
+	void multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
 
 	void CompressB0();
 	void CreateG0();
