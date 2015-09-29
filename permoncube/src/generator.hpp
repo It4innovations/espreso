@@ -182,9 +182,8 @@ void ElementGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluste
 		for (eslocal x = 0; x < nodes[0]; x++) {
 			if (e.addPoint(x, y, 0)) {
 				dirichlet_z[e.projectPoint(index)] = 0;
-				dirichlet_z[e.projectPoint(index)] = 0;
 				dirichlet_y[e.projectPoint(index)] = 0;
-				dirichlet_x[e.projectPoint(index)] = 0;
+				dirichlet_x[e.projectPoint(index)] = 1;
 			}
 			index++;
 		}

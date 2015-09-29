@@ -210,6 +210,7 @@ inline void distribute(DenseMatrix &B, DenseMatrix &dND)
 	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
 }
 
+
 void Mesh::_assembleElesticity(
 		const Element *e,
 		size_t part,
@@ -262,6 +263,137 @@ void Mesh::_assembleElesticity(
 		}
 	}
 }
+
+void Mesh::_heat(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const
+{
+//TODO nK various DOFs per nodes (may be)
+	eslocal nK = _coordinates.localSize(part); 
+	K.resize(nK, nK);
+	if (dynamic) {
+		M.resize(nK, nK);
+	}
+	f.resize(nK);
+
+	DenseMatrix Ke, Me;
+	std::vector<double> fe;
+
+//	std::vector<double> inertia(3, 0.0);
+//	inertia[2] = 9810.0 * 7.85e-9;
+//	double ex = 2.1e5;
+//	double mi = 0.3;
+//	double E = ex / ((1 + mi) * (1 - 2 * mi));
+//	DenseMatrix C(6, 6);
+
+//	C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = E * mi;
+//	C(0, 0) = C(1, 1) = C(2, 2) = E * (1.0 - mi);
+//	C(3, 3) = C(4, 4) = C(5, 5) = E * (0.5 - mi);
+	DenseMatrix C(3, 3);
+  double kxx = 1.0;
+  C(0,0) = kxx;
+  C(1,1) = kxx;
+  C(2,2) = kxx;
+
+	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
+		_assembleHeat(_elements[i], part, Ke, Me, fe, C, dynamic);
+		_integrateHeat(_elements[i], K, M, f, Ke, Me, fe, dynamic);
+	}
+
+
+
+}
+
+void Mesh::_assembleHeat(
+		const Element *e,
+		size_t part,
+		DenseMatrix &Ke,
+		DenseMatrix &Me,
+		std::vector<double> &fe,
+		DenseMatrix &C,
+		bool dynamic) const
+{
+	const std::vector<DenseMatrix> &dN = e->dN();
+	const std::vector<DenseMatrix> &N = e->N();
+	const std::vector<double> &weighFactor = e->weighFactor();
+
+	DenseMatrix coordinates(e->size(), Point::size());
+	for (size_t i = 0; i < e->size(); i++) {
+		coordinates.values() + i * Point::size() << _coordinates.get(e->node(i), part);
+	}
+
+  double CP = 1.0, rho = 7.85e-9; 
+	eslocal Ksize =  e->size();
+	double detJ;
+	DenseMatrix J, invJ, dND;//, B(C.rows(), Ksize);
+
+	Ke.resize(Ksize, Ksize);
+	Ke = 0;
+	fe.resize(Ksize);
+	fill(fe.begin(), fe.end(), 0);
+	if (dynamic) {
+		Me.resize(e->size(), e->size());
+		Me = 0;
+	}
+
+	for (eslocal gp = 0; gp < e->gpSize(); gp++) {
+		J.multiply(dN[gp], coordinates);
+		detJ = determinant3x3(J);
+		inverse(J, invJ, detJ);
+
+		dND.multiply(invJ, dN[gp]);
+		//distribute(B, dND);
+    DenseMatrix &B=dND;
+
+
+		Ke.multiply(B, C * B, detJ * weighFactor[gp], 1, true);
+
+//		for (eslocal i = 0; i < Ksize; i++) {
+//			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * inertia[i / e->size()];
+//		}
+
+		if (dynamic) {
+			// Me = Me + WF * (DENS * dJ) * (N' * N);
+			Me.multiply(N[gp], N[gp], rho * detJ * weighFactor[gp] * CP, 1, true);
+		}
+	}
+}
+
+void Mesh::_integrateHeat(
+		const Element *e,
+		SparseVVPMatrix<eslocal> &K,
+		SparseVVPMatrix<eslocal> &M,
+		std::vector<double> &f,
+		const DenseMatrix &Ke,
+		const DenseMatrix &Me,
+		const std::vector<double> &fe,
+		bool dynamic
+	) const
+{
+  //
+	size_t row, column;
+	size_t s = 1;
+
+	for (size_t i = 0; i < s * e->size(); i++) {
+		row = s * (e->node(i % e->size())) + i / e->size();
+		for (size_t j = 0; j < s * e->size(); j++) {
+			column = s * (e->node(j % e->size())) + j / e->size();
+			K(row, column) = Ke(i, j);
+		}
+		//f[row] += fe[i];
+	}
+	if (!dynamic) {
+		return;
+	}
+	for (size_t i = 0; i < e->size(); i++) {
+		row = s * (e->node(i));
+		for (size_t j = 0; j < e->size(); j++) {
+			column = s * (e->node(j)); //i
+			for (size_t k = 0; k < s; k++) {
+				M(row + k, column + k) += Me(i, j);
+			}
+		}
+	}
+}
+
 
 void Mesh::_integrateElasticity(
 		const Element *e,

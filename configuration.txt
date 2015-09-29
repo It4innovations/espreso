@@ -40,8 +40,8 @@ PMCUBE_CORNERS_Y = 3
 PMCUBE_CORNERS_Z = 3
 
 # Choose only one from the next two
-PMCUBE_FIX_ZERO_PLANES
-#PMCUBE_FIX_BOTTOM
+#PMCUBE_FIX_ZERO_PLANES
+PMCUBE_FIX_BOTTOM
 
 
 ##### Solver settings #####

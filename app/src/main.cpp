@@ -4,6 +4,7 @@
 #include "instance.h"
 #include "solver/solver.h"
 #include "assemblers/assemblers.h"
+#include "esmesh.h"
 
 #ifdef CATALYST
 #include "escatalyst.h"
@@ -29,11 +30,6 @@ int main(int argc, char** argv)
 	config.print();
 	Instance instance(config, MPIrank, MPIsize);
 
-	Solver<Dynamics> solver(instance);
-
-	solver.solve();
-
-	// This method needs re-factoring !!!
 	solve(instance);
 
 	MPI_Finalize();
@@ -91,6 +87,7 @@ void solve(Instance &instance)
 		eslocal dimension = instance.mesh().getPartNodesCount(d) * mesh::Point::size();
 		std::vector<double> f(dimension);
 
+    //TODO change elasticty -> heat
 		if (DYNAMIC)
 			instance.mesh().elasticity(K_mat[d], M_mat[d], f, d);
 		else

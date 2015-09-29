@@ -156,6 +156,14 @@ public:
 		_elasticity(_K, _M, f, part, false);
 		K = _K;
 	}
+	void heat(SparseCSRMatrix<eslocal> &K, SparseCSRMatrix<eslocal> &M, std::vector<double> &f, eslocal part) const
+	{
+		SparseVVPMatrix<eslocal> _K;
+		SparseVVPMatrix<eslocal> _M;
+		_heat(_K, _M, f, part, true);
+		K = _K;
+    M = _M;
+	}
 
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
@@ -182,6 +190,27 @@ protected:
 		bool dynamic) const;
 
 	void _integrateElasticity(
+		const Element *e,
+		SparseVVPMatrix<eslocal> &K,
+		SparseVVPMatrix<eslocal> &M,
+		std::vector<double> &f,
+		const DenseMatrix &Ke,
+		const DenseMatrix &Me,
+		const std::vector<double> &fe,
+		bool dynamic
+	) const;
+
+	void _heat(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
+	void _assembleHeat(
+		const Element *e,
+		size_t part,
+		DenseMatrix &Ke,
+		DenseMatrix &Me,
+		std::vector<double> &fe,
+		DenseMatrix &C,
+		bool dynamic) const;
+
+	void _integrateHeat(
 		const Element *e,
 		SparseVVPMatrix<eslocal> &K,
 		SparseVVPMatrix<eslocal> &M,
