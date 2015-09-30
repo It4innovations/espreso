@@ -1978,7 +1978,6 @@ void Cluster::Create_Kinv_perDomain() {
 		cout << "Creating B1*K+*B1t : ";
 
 this->NUM_MICS = 2;
-//#ifdef DEVEL
 
 #ifdef MIC
 
@@ -2068,10 +2067,6 @@ this->NUM_MICS = 2;
 	//}
 #endif
 
-//#ifdef MICEXP
-//domains[i].B1Kplus.CopyToMIC_Dev();
-//#endif
-
 #ifdef CUDA
 		if ( USE_KINV == 1 ) {
 			cilk_for (int d = 0; d < domains.size(); d++) {
@@ -2103,69 +2098,7 @@ this->NUM_MICS = 2;
 		this->B1KplusPacks[i].CopyToMIC();
 	}
 
-	/*
-		int numDevices = 2;
-		int matrixPerPack = domains.size() / numDevices;
-		int offset = 0;
-		bool symmetric = true;
-		this->B1KplusPacks.resize( numDevices );
-
-		for ( int i = 0; i < numDevices; i++ ) {
-			if ( i == numDevices - 1 ) {
-				matrixPerPack += domains.size() % numDevices;
-			}
-
-			int dataSize = 0;
-
-			for ( int j = offset; j < offset + matrixPerPack; j++ ) {
-				if (!symmetric) {
-			    dataSize += domains[j].B1Kplus.rows * domains[j].B1Kplus.cols;
-			  } else {
-			    // isPacked => is symmetric
-			    dataSize += ( ( 1.0 + ( double ) domains[j].B1Kplus.rows ) *
-						( ( double ) domains[j].B1Kplus.rows ) / 2.0 );
-			  }
-			}
-
-	 		this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
-
-			for ( int j = offset ; j < offset + matrixPerPack; j++ ) {
-				this->B1KplusPacks[i].AddDenseMatrix( &(domains[j].B1Kplus.dense_values[0]),
-					domains[j].B1Kplus.rows, domains[j].B1Kplus.cols, symmetric );
-			}
-			this->B1KplusPacks[i].SetDevice( i );
-			this->B1KplusPacks[i].CopyToMIC();
-
-			offset += matrixPerPack;
-		}
-*/
 #endif
-
-//#else
-//	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
-//
-//		domains[i].KplusF.msglvl = 0;
-//
-//		//if (cluster_global_index == 1)
-//		if ( i == 0 && cluster_global_index == 1)
-//			domains[i].KplusF.msglvl=1;
-//
-//		domains[i].KplusF.SolveMatF(domains[i].B1t_comp, domains[i].B1Kplus);
-//		domains[i].B1Kplus.MatTranspose();
-//
-//		if (cluster_global_index == 1) {
-//			//SpyText(domains[i].B1Kplus);
-//			cout << "B1Klus - sparsity - " << 100.0 * (double)domains[i].B1Kplus.nnz / (double)(domains[i].B1Kplus.cols * domains[i].B1Kplus.rows) << endl;
-//		}
-//
-//		SparseMatrix Btmp;
-//		Btmp.MatAddInPlace(domains[i].B1Kplus, 'N', 1.0);
-//
-//		domains[i].B1Kplus.Clear ();
-//		domains[i].B1Kplus.MatMat(Btmp,'N', domains[i].B1t_comp);
-//		domains[i].B1Kplus.ConvertCSRToDense(0);
-//	}
-//#endif // DEVEL
 
 }
 
@@ -2174,6 +2107,54 @@ void Cluster::Create_SC_perDomain() {
 
 	if (cluster_global_index == 1)
 		cout << "Creating B1*K+*B1t : using Pardiso SC : ";
+
+	this->NUM_MICS = 2;
+	#ifdef MIC
+
+		// compute sizes of data to be offloaded to MIC
+		int maxDevNumber = this->NUM_MICS;
+		if (this->NUM_MICS == 0) {
+			maxDevNumber = 1;
+		}
+		int matrixPerPack = domains.size() / maxDevNumber;
+		int offset = 0;
+		bool symmetric = true;
+		this->B1KplusPacks.resize( maxDevNumber );
+		int * dom2dev = new int[ domains.size() ];
+		int * offsets = new int[maxDevNumber];
+
+		for ( int i = 0; i < maxDevNumber; i++ ) {
+			if ( i == maxDevNumber - 1 ) {
+				matrixPerPack += domains.size() % maxDevNumber;
+			}
+
+			long dataSize = 0;
+			offsets[i] = offset;
+
+			for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+				if (!symmetric) {
+					dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
+				} else {
+					// isPacked => is symmetric
+					dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
+						( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
+				}
+				dom2dev[ j ] = i;
+			}
+
+			this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
+
+			for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+				this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
+					domains[j].B1t_comp_dom.cols,  symmetric );
+			}
+			offset += matrixPerPack;
+		}
+	//	tbb::mutex m;
+	#endif
+
+
+
 
 	cilk_for (int i = 0; i < domains_in_global_index.size(); i++ ) {
 
@@ -2204,6 +2185,14 @@ void Cluster::Create_SC_perDomain() {
 		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
 #endif
 
+#ifdef MIC
+	this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
+	domains[i].B1Kplus.Clear();
+	//domains[i].B1t_comp_dom.Clear();
+	//if (numDevices > 0) {
+	//	domains[i].B1Kplus.CopyToMIC_Dev();
+	//}
+#endif
 
 #ifdef CUDA
 		if ( USE_KINV == 1 ) {
@@ -2220,6 +2209,22 @@ void Cluster::Create_SC_perDomain() {
 #endif
 
 	}
+
+
+#ifdef MIC
+	delete [] dom2dev;
+	delete [] offsets;
+	if (this->NUM_MICS == 0) {
+		this->B1KplusPacks[0].AllocateVectors( );
+	}
+	for (int i = 0; i < this->NUM_MICS ; i++ ) {
+		this->B1KplusPacks[i].AllocateVectors( );
+		this->B1KplusPacks[i].SetDevice( i );
+		this->B1KplusPacks[i].CopyToMIC();
+	}
+
+#endif
+
 
 	if (cluster_global_index == 1)
 		cout << endl;

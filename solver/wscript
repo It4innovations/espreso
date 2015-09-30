@@ -3,6 +3,7 @@ SOLVER = "essolver"
 SOLVER_MIC = SOLVER + "_mic"
 SOLVER_CUDA = SOLVER + "_cuda"
 SOLVER_PARDISO = SOLVER + "_pardiso"
+SOLVER_PARDISO_MKL = SOLVER + "_pardiso_mkl"
 SOLVER_MUMPS = SOLVER + "_mumps"
 
 source_files = (
@@ -31,6 +32,8 @@ def configure(ctx):
 
     ctx.setenv(SOLVER_PARDISO, ctx.all_envs[SOLVER].derive());
 
+    ctx.setenv(SOLVER_PARDISO_MKL, ctx.all_envs[SOLVER].derive());
+
     ctx.setenv(SOLVER_MUMPS, ctx.all_envs[SOLVER].derive());
 
 def build(ctx):
@@ -53,6 +56,17 @@ def build(ctx):
         ctx.env = ctx.all_envs[SOLVER_MUMPS]
         sources = source_files + ("src/SparseSolverMumps.cpp",)
         target  = SOLVER_MUMPS
+
+    if ctx.options.pardiso:
+        ctx.env = ctx.all_envs[SOLVER_PARDISO]
+        sources = source_files + ("src/SparseSolver.cpp",)
+        target  = SOLVER_PARDISO
+
+    if ctx.options.pardiso_mkl:
+        ctx.env = ctx.all_envs[SOLVER_PARDISO]
+        sources = source_files + ("src/SparseSolverPardisoMKL.cpp",)
+        target  = SOLVER_PARDISO_MKL
+
 
     ctx.lib(
         source          = sources,

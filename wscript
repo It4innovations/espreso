@@ -132,6 +132,12 @@ def options(opt):
         default=False,
         help="Solver use pardiso library.")
 
+    opt.add_option("--pardiso_mkl",
+        action="store_true",
+        default=False,
+        help="Solver use pardiso library.")
+
+
     opt.add_option("--mumps",
         action="store_true",
         default=False,
