@@ -447,7 +447,7 @@ void Mesh::computeLocalIndices(size_t part)
 		}
 	}
 
-	// re-index nodes 
+	// re-index nodes
 	eslocal nSize = 0;
 	for (eslocal k = 0; k < _coordinates.clusterSize(); k++) {
 		if (nodeMap[k] == 1) {
@@ -854,6 +854,7 @@ void Mesh::saveVTK(
 		cCenter += _coordinates[i];
 	}
 	cCenter /= _coordinates.size();
+
 
 	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
 

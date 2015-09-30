@@ -6,8 +6,8 @@
 #define Pyramid13Subnodes 3
 
 #include "esmesh.h"
+#include "hexahedron20.h"
 #include "../../settings.h"
-#include "../../generator.h"
 #include "../../utils.h"
 
 namespace permoncube {

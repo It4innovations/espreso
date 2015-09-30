@@ -26,16 +26,22 @@ int main(int argc, char** argv)
 
 	Configuration config("configuration.txt", argc, argv);
 	// print all settings
-	config.print();
+	//config.print();
 	Instance instance(config, MPIrank, MPIsize);
+
+	std::stringstream ss;
+	ss << "mesh" << MPIrank << ".vtk";
+
+	instance.mesh().saveVTK(ss.str().c_str(), instance.localBoundaries(), 0.85, 0.7);
 
 	Solver<Dynamics> solver(instance);
 
-	solver.solve();
+	//solver.solve();
 
 	// This method needs re-factoring !!!
-	solve(instance);
+	//solve(instance);
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 }
 

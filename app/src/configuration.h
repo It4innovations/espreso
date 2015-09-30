@@ -24,6 +24,11 @@ public:
 		PYRAMID13
 	};
 
+	enum PermonCubeShapes {
+		CUBE,
+		SPHERE
+	};
+
 	enum InputParameter {
 		// General settings
 		CMD_LINE_ARGUMENTS,
@@ -48,6 +53,7 @@ public:
 		ANSYS_FORCES_Z,
 
 		// PermonCube settings
+		PMCUBE_SHAPE,
 		PMCUBE_ELEMENT_TYPE,
 		PMCUBE_CLUSTERS_X,
 		PMCUBE_CLUSTERS_Y,
@@ -63,6 +69,9 @@ public:
 		PMCUBE_CORNERS_X,
 		PMCUBE_CORNERS_Y,
 		PMCUBE_CORNERS_Z,
+		PMCUBE_SPHERE_LAYERS,
+		PMCUBE_SPHERE_INNER_RADIUS,
+		PMCUBE_SPHERE_OUTER_RADIUS,
 
 		// Solver settings
 		SOLVER_ITERATIONS,
