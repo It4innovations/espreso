@@ -158,11 +158,11 @@ void Linear_elasticity::init() {
 	 timeMconv.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeMconv);
 
-	 lin_solver.setup( _instance, true );
+	 lin_solver.setup( _instance.rank(), _instance.size(), true );
 
 	 lin_solver.init(
 
-		_instance,
+		_instance.mesh(),
 
 		K_mat_ls,
 

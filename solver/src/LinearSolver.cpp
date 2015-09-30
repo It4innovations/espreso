@@ -83,14 +83,14 @@ LinearSolver::~LinearSolver() {
 	// TODO Auto-generated destructor stub
 }
 
-void LinearSolver::setup( const Instance & instance, bool IS_SINGULAR ) {
+void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	SINGULAR = IS_SINGULAR;
 
 	DOFS_PER_NODE = 3;
 
-    MPI_rank = instance.rank();
-    MPI_size = instance.size();
+    MPI_rank = rank;
+    MPI_size = size;
 
     // ***************************************************************************************************************************
 	// Cluster structure  setup
@@ -122,7 +122,7 @@ void LinearSolver::setup( const Instance & instance, bool IS_SINGULAR ) {
 }
 
 void LinearSolver::init(
-		const Instance & instance,
+		const mesh::Mesh &mesh,
 
 		std::vector < SparseMatrix >	& K_mat,
 		std::vector < SparseMatrix >	& B1_mat,
@@ -191,7 +191,7 @@ void LinearSolver::init(
 
 	// *** Setup R matrix ********************************************************************************************
 	 TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
-	set_R(l2g_vec, instance);
+	set_R(l2g_vec, mesh);
 	 timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
@@ -394,16 +394,16 @@ void LinearSolver::set_B0 ( std::vector < SparseMatrix >	& B0_mat ) {
 
 void LinearSolver::set_R (
 		std::vector < std::vector <eslocal> >	& l2g_vec,
-		const Instance & instance
+		const mesh::Mesh &mesh
 )
 {
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = instance.mesh().coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = instance.mesh().coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = instance.mesh().coordinates()[l2g_vec[d][i]].z;
+			tmp_vec[0] = mesh.coordinates()[l2g_vec[d][i]].x;
+			tmp_vec[1] = mesh.coordinates()[l2g_vec[d][i]].y;
+			tmp_vec[2] = mesh.coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();

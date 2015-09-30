@@ -165,10 +165,10 @@ void Dynamics::init()
 	 timeEvalMain.AddEvent(timeMconv);
 
 
-	 lin_solver.setup( _instance, false );
+	 lin_solver.setup( _instance.rank(), _instance.size(), false );
 
 	 lin_solver.init(
-		_instance,
+		_instance.mesh(),
 
 		K_mat_ls,
 

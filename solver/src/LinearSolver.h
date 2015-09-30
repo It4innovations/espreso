@@ -10,7 +10,6 @@
 
 #include "esmesh.h"
 #include "essolver.h"
-#include "/home/lriha/espreso/app/src/instance.h" //TODO: fix includes
 
 
 //#include <omp.h>
@@ -63,10 +62,10 @@ public:
 
 	virtual ~LinearSolver();
 
-	void setup( const Instance & instance, bool SINGULAR );
+	void setup( int rank, int size, bool SINGULAR );
 
 	void init(
-			const Instance & instance,
+			const mesh::Mesh &mesh,
 
 			std::vector < SparseMatrix >	& K_mat,
 			std::vector < SparseMatrix >	& B1_mat,
@@ -104,7 +103,7 @@ public:
 
 	void set_R(
 			std::vector < std::vector <eslocal> >		& l2g_vec,
-			const Instance & instance
+			const mesh::Mesh &mesh
 	);
 
 private:
