@@ -1,4 +1,8 @@
-#include "generator.h"
+
+#ifndef CUBE_HPP_
+#define CUBE_HPP_
+
+#include "cube.h"
 
 namespace permoncube {
 
@@ -24,8 +28,26 @@ namespace permoncube {
 //	#                                                 #
 //	###################################################
 
+template<class TElement>
+void CubeGenerator<TElement>::fillCluster(int rank, size_t cluster[])
+{
+	eslocal index = 0, i = 0;
+	for (size_t z = 0; z < _settings.clusters[2]; z++) {
+		for (size_t y = 0; y < _settings.clusters[1]; y++) {
+		for (size_t x = 0; x < _settings.clusters[0]; x++) {
+				if (rank == index++) {
+					cluster[0] = x;
+					cluster[1] = y;
+					cluster[2] = z;
+					return;
+				}
+			}
+		}
+	}
+}
+
 template <class TElement>
-void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
+void CubeGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 {
 	for (eslocal i = 0; i < 3; i++) {
 		if (_settings.clusters[i] <= cluster[i]) {
@@ -119,7 +141,7 @@ void ElementGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 }
 
 template <class TElement>
-void ElementGenerator<TElement>::fixZeroPlanes(mesh::Mesh &mesh, const size_t cluster[])
+void CubeGenerator<TElement>::fixZeroPlanes(mesh::Mesh &mesh, const size_t cluster[])
 {
 	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::CP::DIRICHLET_X);
 	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::CP::DIRICHLET_Y);
@@ -165,7 +187,7 @@ void ElementGenerator<TElement>::fixZeroPlanes(mesh::Mesh &mesh, const size_t cl
 }
 
 template <class TElement>
-void ElementGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluster[])
+void CubeGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluster[])
 {
 	if (cluster[2] > 0) {
 		return;
@@ -191,7 +213,7 @@ void ElementGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluste
 }
 
 template <class TElement>
-void ElementGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[])
+void CubeGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[])
 {
 	esglobal gNodes[3];
 	Utils<TElement>::globalNodesCount(_settings, gNodes);
@@ -239,7 +261,7 @@ void ElementGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundari
 
 
 template <class TElement>
-void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh)
+void CubeGenerator<TElement>::setFixPoints(mesh::Mesh &mesh)
 {
 	std::vector<eslocal> fixPoints;
 	fixPoints.reserve(8 * _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
@@ -275,7 +297,7 @@ void ElementGenerator<TElement>::setFixPoints(mesh::Mesh &mesh)
 
 
 template <class TElement>
-void ElementGenerator<TElement>::setCorners(
+void CubeGenerator<TElement>::setCorners(
 		mesh::Boundaries &boundaries,
 		const size_t number[],
 		const bool corners,
@@ -353,3 +375,8 @@ void ElementGenerator<TElement>::setCorners(
 }
 
 }
+
+
+
+
+#endif /* CUBE_HPP_ */
