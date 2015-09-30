@@ -22,7 +22,6 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 	const std::map<eslocal, double> &dirichlet_y = _mesh.coordinates().property(CP::DIRICHLET_Y).values();
 	const std::map<eslocal, double> &dirichlet_z = _mesh.coordinates().property(CP::DIRICHLET_Z).values();
 
-  int dofB=1; 
 	l2g_vec.resize(domains_num);
 
 	std::vector < SparseDOKMatrix<T> > B1_loc(domains_num);
@@ -134,7 +133,7 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 		}
 
 		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
-			local_prim_numbering[*it] += dofB;
+			local_prim_numbering[*it] += DOFS_PER_NODE;
 			l2g_vec[*it].push_back(index(i));
 		}
 
