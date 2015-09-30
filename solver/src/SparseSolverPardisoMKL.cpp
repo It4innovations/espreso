@@ -1,16 +1,5 @@
 #include "SparseSolver.h"
-
-/* PARDISO prototype. */
-extern "C" void pardisoinit (void   *, int    *,   int *, int *, double *, int *);
-extern "C" void pardiso     (void   *, int    *,   int *, int *,    int *, int *,
-                  double *, int    *,    int *, int *,   int *, int *,
-                     int *, double *, double *, int *, double *);
-extern "C" void pardiso_chkmatrix  (int *, int *, double *, int *, int *, int *);
-extern "C" void pardiso_chkvec     (int *, int *, double *, int *);
-extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
-                           double *, int *);
-extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*);
-
+#include "mkl_pardiso.h"
 
 SparseSolver::SparseSolver(){
 
@@ -108,10 +97,9 @@ void SparseSolver::Clear() {
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		phase = -1;			/* Release internal memory. */
-
-		pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-			&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
-			iparm, &msglvl, &ddum, &ddum, &error, dparm);
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+		iparm, &msglvl, &ddum, &ddum, &error);
 
 		initialized = false;
 
@@ -174,9 +162,9 @@ void SparseSolver::Factorization() {
 	/* all memory that is necessary for the factorization. */
 	/* -------------------------------------------------------------------- */
 	phase = 11;
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
-
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
+	
 	if (error != 0)
 	{
 		printf ("\nERROR during symbolic factorization: %d", error);
@@ -195,8 +183,8 @@ void SparseSolver::Factorization() {
 	/* .. Numerical factorization. */
 	/* -------------------------------------------------------------------- */
 	phase = 22;
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
 	if (error != 0)
 	{
 		printf ("\nERROR during numerical factorization: %d", error);
@@ -229,9 +217,9 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	//iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
 	iparm[5] = 1;			// The solver stores the solution on the right-hand side b.
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs_sol[0], &tmp_sol[0], &error, dparm);
-	iparm[5] = ip5backup;
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs_sol[0], &tmp_sol[0], &error);
+	iparm[5] = ip5backup; 
 
 	if (error != 0)
 	{
@@ -262,9 +250,8 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 	phase = 33;
 	//iparm[7] = 2;			/* Max numbers of iterative refinement steps. */
 
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs[0], &sol[0], &error, dparm);
-
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs[0], &sol[0], &error);
 	if (error != 0)
 	{
 		printf ("\nERROR during solution: %d", error);
@@ -294,8 +281,8 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 	phase = 33;
 	//iparm[7] = 2;			/* Max numbers of iterative refinement steps. */
 
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error, dparm);
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error);
 	if (error != 0)
 	{
 		printf ("\nERROR during solution: %d", error);
@@ -601,8 +588,8 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 			perm[ii] = 1;
 
 	phase = 13;
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-		    &rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &perm[0], &nRhs, iparm, &msglvl, &A_in.dense_values[0], &sol[0], &error, dparm);
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+		    &rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &perm[0], &nRhs, iparm, &msglvl, &A_in.dense_values[0], &sol[0], &error);
 
 
 	if (error != 0)
@@ -670,10 +657,10 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	/* .. Termination and release of memory. */
 	/* -------------------------------------------------------------------- */
 	phase = -1;			/* Release internal memory. */
-	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
-		iparm, &msglvl, &ddum, &ddum, &error, dparm);
- 
+		iparm, &msglvl, &ddum, &ddum, &error);
+
 	//SEQ_VECTOR<double>().swap( A_in.dense_values );
 
 	initialized = false;
@@ -768,7 +755,7 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
 
 
 	solver = 0; 		/* use sparse direct solver */
-	pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
+	//TODO: pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
 
     iparm[10] = 1;
     iparm[12] = 0;
@@ -799,11 +786,11 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
 
     int nb = 0; // number of righhand sides
 
-    pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-               &rows,
-			   CSR_V_values, CSR_I_row_indices, CSR_J_col_indices,
-			   &idum, &nb,
-               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
+//               &rows,
+//			   CSR_V_values, CSR_I_row_indices, CSR_J_col_indices,
+//			   &idum, &nb,
+//               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
 
     if (error != 0)
     {
@@ -830,13 +817,13 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
     B_out.nnz  = nonzeros_S;
     B_out.type = 'S';
 
-    pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &B_out.CSR_V_values[0], &B_out.CSR_I_row_indices[0], &B_out.CSR_J_col_indices[0]);
+    //TODO: pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &B_out.CSR_V_values[0], &B_out.CSR_I_row_indices[0], &B_out.CSR_J_col_indices[0]);
 
     phase = -1;                 /* Release internal memory. */
 
-    pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-             &rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &idum,
-             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
+//             &rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &idum,
+//             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
 
     initialized = false;
 
@@ -951,7 +938,7 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 
 
 	solver = 0; 		/* use sparse direct solver */
-	pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
+	//TODO: pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
 
     iparm[10] = 1;
     iparm[12] = 0;
@@ -982,11 +969,11 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 
     int nb = 0; // number of righhand sides
 
-    pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-               &K_sc1.rows,
-			   &K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
-			   &idum, &nb,
-               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    //TODO:     pardiso(pt, &maxfct, &mnum, &mtype, &phase,
+//               &K_sc1.rows,
+//			   &K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+//			   &idum, &nb,
+//               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
 
     if (error != 0)
     {
@@ -1009,13 +996,13 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
     SC_out.nnz  = nonzeros_S;
     SC_out.type = 'S';
 
-    pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &SC_out.CSR_V_values[0], &SC_out.CSR_I_row_indices[0], &SC_out.CSR_J_col_indices[0]);
+    //TODO: pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &SC_out.CSR_V_values[0], &SC_out.CSR_I_row_indices[0], &SC_out.CSR_J_col_indices[0]);
 
     phase = -1;                 /* Release internal memory. */
 
-    pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-    		&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &idum,
-             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    //TODO:     pardiso(pt, &maxfct, &mnum, &mtype, &phase,
+//    		&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &idum,
+//             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
 
     initialized = false;
 
@@ -1187,7 +1174,7 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 
 
 	solver = 0; 		/* use sparse direct solver */
-	pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
+	//TODO: pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
 
     iparm[10] = 1;
     iparm[12] = 0;
@@ -1218,11 +1205,11 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 
     int nb = 0; // number of righhand sides
 
-    pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-               &K_sc1.rows,
-			   &K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
-			   &idum, &nb,
-               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
+//               &K_sc1.rows,
+//			   &K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+//			   &idum, &nb,
+//               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
 
     if (error != 0)
     {
@@ -1245,13 +1232,13 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
     SC_out.nnz  = nonzeros_S;
     SC_out.type = 'G';
 
-    pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &SC_out.CSR_V_values[0], &SC_out.CSR_I_row_indices[0], &SC_out.CSR_J_col_indices[0]);
+    //TODO: pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &SC_out.CSR_V_values[0], &SC_out.CSR_I_row_indices[0], &SC_out.CSR_J_col_indices[0]);
 
     phase = -1;                 /* Release internal memory. */
 
-    pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-    		&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &idum,
-             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
+//    		&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &idum,
+//             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
 
     initialized = false;
 

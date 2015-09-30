@@ -293,7 +293,7 @@ double GetProcessMemory_u ( ) {
 
 	while (fgets(line, 128, file) != NULL){
 		if (strncmp(line, "VmRSS:", 6) == 0){
-			result = parseLine(line);
+			result = parseLine_u(line);
 			break;
 		}
 	}

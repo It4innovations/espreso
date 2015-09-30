@@ -1,7 +1,6 @@
 #include "Domain.h"
 #include <cmath>
 
-
 // *******************************************************************
 // **** DOMAIN CLASS ************************************************
 
@@ -306,77 +305,80 @@ int  Domain::LoadCoordinates(string filename) {
 
 void Domain::CreateKplus_R ( ) 
 {
-  Kplus_R.dense_values.resize(coordinates.size());
+	if (DOFS_PER_NODE == 3) {
 
-   double  sqrtSize=sqrt(coordinates.size());
-   for (int i=0;i< coordinates.size();i++){
-     Kplus_R.dense_values[i] = sqrtSize;
-   }
+		int elem_index = 0;
 
-  Kplus_R.rows = coordinates.size();
-  Kplus_R.cols = 1; 
-  Kplus_R.nnz  = coordinates.size(); 
-  Kplus_R.type = 'G'; 
+		SparseMatrix R_per_element;
 
-  Kplus_R.ConvertDenseToCSR(1);
-  
-//  R_per_element.CSR_I_row_indices.resize(4);
-//  R_per_element.CSR_J_col_indices.resize(9);
-//  R_per_element.CSR_V_values.resize(9);
+		R_per_element.rows = 3;
+		R_per_element.cols = 6;
+		R_per_element.nnz  = 9;
+		R_per_element.type = 'G';
+
+		R_per_element.CSR_I_row_indices.resize(4);
+		R_per_element.CSR_J_col_indices.resize(9);
+		R_per_element.CSR_V_values.resize(9);
+
+		R_per_element.CSR_V_values[0] =   1;
+		R_per_element.CSR_V_values[1] = - coordinates[elem_index][2];
+		R_per_element.CSR_V_values[2] =   coordinates[elem_index][1];
+		R_per_element.CSR_V_values[3] =   1;
+		R_per_element.CSR_V_values[4] =   coordinates[elem_index][2];
+		R_per_element.CSR_V_values[5] = - coordinates[elem_index][0];
+		R_per_element.CSR_V_values[6] =   1 ;
+		R_per_element.CSR_V_values[7] = - coordinates[elem_index][1];
+		R_per_element.CSR_V_values[8] =   coordinates[elem_index][0];
+
+		R_per_element.CSR_J_col_indices[0] = 1;
+		R_per_element.CSR_J_col_indices[1] = 5;
+		R_per_element.CSR_J_col_indices[2] = 6;
+		R_per_element.CSR_J_col_indices[3] = 2;
+		R_per_element.CSR_J_col_indices[4] = 4;
+		R_per_element.CSR_J_col_indices[5] = 6;
+		R_per_element.CSR_J_col_indices[6] = 3;
+		R_per_element.CSR_J_col_indices[7] = 4;
+		R_per_element.CSR_J_col_indices[8] = 5;
+
+		R_per_element.CSR_I_row_indices[0] = 1;
+		R_per_element.CSR_I_row_indices[1] = 4;
+		R_per_element.CSR_I_row_indices[2] = 7;
+		R_per_element.CSR_I_row_indices[3] = 10;
+
+		Kplus_R.MatAppend(R_per_element);
+
+		for (elem_index = 1; elem_index < coordinates.size(); elem_index++) {
+			R_per_element.CSR_V_values[1] = - coordinates[elem_index][2];
+			R_per_element.CSR_V_values[2] =   coordinates[elem_index][1];
+			R_per_element.CSR_V_values[4] =   coordinates[elem_index][2];
+			R_per_element.CSR_V_values[5] = - coordinates[elem_index][0];
+			R_per_element.CSR_V_values[7] = - coordinates[elem_index][1];
+			R_per_element.CSR_V_values[8] =   coordinates[elem_index][0];
+
+			Kplus_R.MatAppend(R_per_element);
+		}
+
+		R_per_element.Clear();
+
+	}
 
 
-//	int elem_index = 0;
-//
-//	SparseMatrix R_per_element; 
-//
-//	R_per_element.rows = 3;
-//	R_per_element.cols = 6; 
-//	R_per_element.nnz  = 9; 
-//	R_per_element.type = 'G'; 
-//
-//	R_per_element.CSR_I_row_indices.resize(4);
-//	R_per_element.CSR_J_col_indices.resize(9);
-//	R_per_element.CSR_V_values.resize(9);
-//
-//	R_per_element.CSR_V_values[0] =   1;
-//	R_per_element.CSR_V_values[1] = - coordinates[elem_index][2];
-//	R_per_element.CSR_V_values[2] =   coordinates[elem_index][1];
-//	R_per_element.CSR_V_values[3] =   1;
-//	R_per_element.CSR_V_values[4] =   coordinates[elem_index][2];
-//	R_per_element.CSR_V_values[5] = - coordinates[elem_index][0];
-//	R_per_element.CSR_V_values[6] =   1 ;
-//	R_per_element.CSR_V_values[7] = - coordinates[elem_index][1];
-//	R_per_element.CSR_V_values[8] =   coordinates[elem_index][0];
-//
-//	R_per_element.CSR_J_col_indices[0] = 1;
-//	R_per_element.CSR_J_col_indices[1] = 5;
-//	R_per_element.CSR_J_col_indices[2] = 6;
-//	R_per_element.CSR_J_col_indices[3] = 2;
-//	R_per_element.CSR_J_col_indices[4] = 4;
-//	R_per_element.CSR_J_col_indices[5] = 6;
-//	R_per_element.CSR_J_col_indices[6] = 3;
-//	R_per_element.CSR_J_col_indices[7] = 4;
-//	R_per_element.CSR_J_col_indices[8] = 5;
-//
-//	R_per_element.CSR_I_row_indices[0] = 1;
-//	R_per_element.CSR_I_row_indices[1] = 4;
-//	R_per_element.CSR_I_row_indices[2] = 7;
-//	R_per_element.CSR_I_row_indices[3] = 10;
-//
-//	Kplus_R.MatAppend(R_per_element);
-//
-//	for (elem_index = 1; elem_index < coordinates.size(); elem_index++) {
-//		R_per_element.CSR_V_values[1] = - coordinates[elem_index][2];
-//		R_per_element.CSR_V_values[2] =   coordinates[elem_index][1];
-//		R_per_element.CSR_V_values[4] =   coordinates[elem_index][2];
-//		R_per_element.CSR_V_values[5] = - coordinates[elem_index][0];
-//		R_per_element.CSR_V_values[7] = - coordinates[elem_index][1];
-//		R_per_element.CSR_V_values[8] =   coordinates[elem_index][0];
-//
-//		Kplus_R.MatAppend(R_per_element);
-//	}	
-//
-//	R_per_element.Clear();
+	if (DOFS_PER_NODE == 1) {
+
+		Kplus_R.dense_values.resize( coordinates.size() );
+		double nsqrt = 1.0 / sqrt( coordinates.size() );
+
+		for (int elem_index = 1; elem_index < coordinates.size(); elem_index++) {
+			Kplus_R.dense_values[elem_index] = nsqrt;
+		}
+
+		Kplus_R.rows = coordinates.size();
+		Kplus_R.cols = 1;
+		Kplus_R.nnz  = coordinates.size();
+		Kplus_R.type = 'G';
+
+		Kplus_R.ConvertDenseToCSR(1);
+	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, int x_in_vector_start_index, int y_out_vector_start_index) {
@@ -521,37 +523,46 @@ void Domain::K_regularizationFromR ( ) {
 
     if (USE_DYNAMIC == 0) {
 
-		SparseMatrix N;
+    	if (DOFS_PER_NODE == 3) {
 
-		N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
+			SparseMatrix N;
 
-		SparseMatrix Nt;
-		N.MatTranspose( Nt );
+			N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
 
-		SparseMatrix NtN_Mat;
-		NtN_Mat.MatMat( Nt,'N',N );
-		NtN_Mat.MatTranspose();
-		NtN_Mat.RemoveLower();
+			SparseMatrix Nt;
+			N.MatTranspose( Nt );
 
-		SparseSolver NtN;
-		NtN.ImportMatrix(NtN_Mat);
-		NtN_Mat.Clear();
+			SparseMatrix NtN_Mat;
+			NtN_Mat.MatMat( Nt,'N',N );
+			NtN_Mat.MatTranspose();
+			NtN_Mat.RemoveLower();
 
-		NtN.Factorization();
-		NtN.SolveMat_Sparse(Nt);
-		NtN.Clear();
+			SparseSolver NtN;
+			NtN.ImportMatrix(NtN_Mat);
+			NtN_Mat.Clear();
 
-		//NtN = Nt*N
-		N.Clear();
-		Nt.MatTranspose(N);
-		NtN_Mat.MatMat(N,'N',Nt);
-		NtN_Mat.RemoveLower();
+			NtN.Factorization();
+			NtN.SolveMat_Sparse(Nt);
+			NtN.Clear();
 
-		double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
-		ro = 1.0 * ro;
+			//NtN = Nt*N
+			N.Clear();
+			Nt.MatTranspose(N);
+			NtN_Mat.MatMat(N,'N',Nt);
+			NtN_Mat.RemoveLower();
 
-		K.    MatAddInPlace (NtN_Mat,'N', ro);
-	
+			double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
+			ro = 1.0 * ro;
+
+			K.    MatAddInPlace (NtN_Mat,'N', ro);
+    	}
+
+
+    	if (DOFS_PER_NODE == 1) {
+    		double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
+    		K.CSR_V_values[0]+=ro;
+    	}
+
     }
 	
     Kplus.ImportMatrix  (K);

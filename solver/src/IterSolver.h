@@ -71,18 +71,9 @@ public:
 	int USE_PREC;
 	int USE_PIPECG;
 
-	int FIND_SOLUTION;
-
 	int CG_max_iter;
-	int NumberOfTimeIterations;
 
 	double epsilon; // stop condition
-
-
-	// DYNAMIC variables
-	double const_beta;
-	double const_gama;
-	double const_deltat;
 
 
 	// Timing objects
@@ -90,7 +81,7 @@ public:
 	// Main timing object for main CG loop
 	TimeEval timing; //("Main CG loop timing ");
 	TimeEval preproc_timing; // ("Preprocessing timing ");
-
+	TimeEval postproc_timing;
 
 	TimeEval timeEvalAppa; // (string("Apply Kplus timing "));
 	TimeEvent apa_B1t; //	  (string("x = B1t * lambda "));
@@ -152,7 +143,6 @@ public:
 
 	// *** Coarse problem related members
 	void CreateGGt    ( Cluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt );
-	void CreateGGt_inv( Cluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt )
 	void CreateGGt_inv_dist( Cluster & cluster );
 
 	// *** Projectors
@@ -160,26 +150,26 @@ public:
 	void Projector_l_inv_compG( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, int output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 	// *** Apply A embers
-	void apply_A_l_compB     ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out);
 	void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out);
 
 	// *** Preconditioner members
-	void apply_prec_compB( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 	void apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 
 	// *** Public functions
 	void Setup          ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in );
 	void Preprocessing  ( Cluster & cluster );
-	void Solve_singular ( Cluster & cluster, string & result_file );
+
+	void Solve_singular     ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel );
+	void Solve_non_singular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel );
 
 
 	// *** CG solvers
-	void Solve_RegCG_singular      ( Cluster & cluster ); //, vector <double> & x_l); // dual_soultion_in = x_l
-	void Solve_RegCG_singular_dom  ( Cluster & cluster ); //, vector <double> & x_l); // dual_soultion_in = x_l
+	void Solve_RegCG_singular_dom  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_PipeCG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 
-
-	void Solve_PipeCG_singular     ( Cluster & cluster ); //, vector <double> & x_l); // dual_soultion_in = x_l
-	void Solve_PipeCG_singular_dom ( Cluster & cluster ); //, vector <double> & x_l); // dual_soultion_in = x_l
+	// *** Dynamic solvers
+	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
+	void Solve_PipeCG_nonsingular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
 
 
 	// *** Functions related to getting solution from the solver
@@ -188,18 +178,6 @@ public:
 
 	void MakeSolution_Primal_singular_parallel ( Cluster & cluster);
 	void GetSolution_Primal_singular_parallel ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
-
-	void Save_to_Ensight_file (Cluster & cluster, string & result_file);
-	void Save_to_Ensight_file (Cluster & cluster, string & result_file, SEQ_VECTOR < SEQ_VECTOR < double> > & in_primal_solution_parallel);
-
-	// *** Dynamic solvers
-	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
-	void Solve_PipeCG_nonsingular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
-
-	// ***
-	void Solve_Dynamic ( Cluster & cluster, string result_file );
-	void Solve_Dynamic ( Cluster & cluster, string result_file, SEQ_VECTOR < SEQ_VECTOR < SEQ_VECTOR <double> > > & prim_solution);
-
 
 };
 

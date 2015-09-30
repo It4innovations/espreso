@@ -83,7 +83,7 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name);
 
 void GetProcessMemoryStat_u( ); 
 void GetMemoryStat_u( );  
-int  parseLine(char* line); 
+int  parseLine_u(char* line);
 double GetProcessMemory_u ( );
 
 // **** END - Uncategorized functions ********************************

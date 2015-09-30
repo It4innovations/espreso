@@ -47,7 +47,8 @@ def configure(ctx):
 #                   Global flags used for all libraries
 #..............................................................................#
 
-    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O2" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O0", "-cilk-serialize"])
+
     ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     if ctx.options.titan:
         ctx.env.append_unique("CXXFLAGS", [ "-fPIE", "-dynamic" ])
@@ -130,6 +131,12 @@ def options(opt):
         action="store_true",
         default=False,
         help="Solver use pardiso library.")
+
+    opt.add_option("--pardiso_mkl",
+        action="store_true",
+        default=False,
+        help="Solver use pardiso library.")
+
 
     opt.add_option("--mumps",
         action="store_true",

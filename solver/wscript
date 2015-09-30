@@ -3,10 +3,11 @@ SOLVER = "essolver"
 SOLVER_MIC = SOLVER + "_mic"
 SOLVER_CUDA = SOLVER + "_cuda"
 SOLVER_PARDISO = SOLVER + "_pardiso"
+SOLVER_PARDISO_MKL = SOLVER + "_pardiso_mkl"
 SOLVER_MUMPS = SOLVER + "_mumps"
 
 source_files = (
-   "src/HTFETI-seq.cpp",
+#   "src/HTFETI-seq.cpp",
    "src/Cluster.cpp",
    "src/ConfigFile.cpp",
    "src/Domain.cpp",
@@ -15,7 +16,8 @@ source_files = (
    "src/SparseMatrix.cpp",
    "src/TimeEval.cpp",
    "src/utils.cpp",
-   "src/DenseMatrixPack.cpp"
+   "src/DenseMatrixPack.cpp",
+   "src/LinearSolver.cpp"
 )
 
 def configure(ctx):
@@ -29,6 +31,8 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
 
     ctx.setenv(SOLVER_PARDISO, ctx.all_envs[SOLVER].derive());
+
+    ctx.setenv(SOLVER_PARDISO_MKL, ctx.all_envs[SOLVER].derive());
 
     ctx.setenv(SOLVER_MUMPS, ctx.all_envs[SOLVER].derive());
 
@@ -53,11 +57,22 @@ def build(ctx):
         sources = source_files + ("src/SparseSolverMumps.cpp",)
         target  = SOLVER_MUMPS
 
+    if ctx.options.pardiso:
+        ctx.env = ctx.all_envs[SOLVER_PARDISO]
+        sources = source_files + ("src/SparseSolver.cpp",)
+        target  = SOLVER_PARDISO
+
+    if ctx.options.pardiso_mkl:
+        ctx.env = ctx.all_envs[SOLVER_PARDISO]
+        sources = source_files + ("src/SparseSolverPardisoMKL.cpp",)
+        target  = SOLVER_PARDISO_MKL
+
+
     ctx.lib(
         source          = sources,
         target          = target,
         install_path    = ctx.LIBRARIES,
-        use             = "espreso_includes"
+        use             = "espreso_includes mesh_includes bem_includes pmcube_includes" 
     )
 
     ctx(

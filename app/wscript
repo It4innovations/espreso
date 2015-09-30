@@ -3,12 +3,14 @@ APP = "espreso"
 APP_MIC = APP + "_mic"
 APP_CUDA = APP + "_cuda"
 APP_PARDISO = APP + "_pardiso"
+APP_PARDISO_MKL = APP + "_pardiso_mkl"
 APP_MUMPS = APP + "_mumps"
 
 SOLVER = "essolver"
 SOLVER_MIC = SOLVER + "_mic"
 SOLVER_CUDA = SOLVER + "_cuda"
 SOLVER_PARDISO = SOLVER + "_pardiso"
+SOLVER_PARDISO_MKL = SOLVER + "_pardiso_mkl"
 SOLVER_MUMPS = SOLVER + "_mumps"
 
 import os
@@ -39,7 +41,8 @@ class cxxprogram(link_task):
 source_files = (
     "src/configuration.cpp",
     "src/instance.cpp",
-    "src/assemblers/dynamics.cpp"
+    "src/assemblers/dynamics.cpp",
+    "src/assemblers/linearelasticity.cpp"
 )
 
 def configure(ctx):
@@ -86,6 +89,8 @@ def configure(ctx):
     else:
         ctx.env.append_value("STLIB", [ "ifcore" ])
 
+    ctx.setenv(APP_PARDISO_MKL, ctx.all_envs[APP].derive())
+    ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
     ctx.setenv(APP_MUMPS, ctx.all_envs[APP].derive())
     ctx.env.append_unique("LIB", [ metis, "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
@@ -116,6 +121,10 @@ def build(ctx):
     if ctx.options.mumps:
         ctx.env = ctx.all_envs[APP_MUMPS]
         solver  = SOLVER_MUMPS
+
+    if ctx.options.pardiso_mkl:
+        ctx.env     = ctx.all_envs[APP_PARDISO_MKL]
+        solver      = SOLVER_PARDISO_MKL
 
     if ctx.options.catalyst:
         ctx.env.append_unique("STLIB", [ "adaptor" ])
