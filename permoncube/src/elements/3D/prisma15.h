@@ -6,8 +6,8 @@
 #define Prisma15Subnodes 1
 
 #include "esmesh.h"
+#include "prisma6.h"
 #include "../../settings.h"
-#include "../../generator.h"
 #include "../../utils.h"
 
 namespace permoncube {

@@ -6,8 +6,8 @@
 #define Pyramid5Subnodes 1
 
 #include "esmesh.h"
+#include "hexahedron8.h"
 #include "../../settings.h"
-#include "../../generator.h"
 #include "../../utils.h"
 
 namespace permoncube {

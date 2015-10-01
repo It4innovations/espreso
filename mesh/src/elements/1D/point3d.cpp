@@ -45,7 +45,7 @@ const Point3D Point3D::operator*(double scalar) const
 const Point3D Point3D::operator/(double scalar) const
 {
 	double xscalar = 1. / scalar;
-	return Point3D(x * xscalar, y * xscalar, z * scalar);
+	return Point3D(x * xscalar, y * xscalar, z * xscalar);
 }
 
 double Point3D::scalar_product_with(const Point3D & p)
