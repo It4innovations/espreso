@@ -14,6 +14,7 @@ extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*
 
 SparseSolver::SparseSolver(){
 
+	keep_factors=true;
 	initialized = false;
 
 	CSR_I_row_indices_size = 0;
@@ -1030,11 +1031,15 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 		SC_tmp.MatTranspose();
 
 		SC_out.MatAddInPlace(SC_tmp,'N',1.0);
+		SC_out.MatScale(-1.0);
+		SC_out.ConvertCSRToDense(1);
 
+    } else {
+		SC_out.MatScale(-1.0);
+		SC_out.ConvertCSRToDense(1);
+		SC_out.RemoveLowerDense();
     }
 
-	SC_out.MatScale(-1.0);
-	//SC_out.ConvertCSRToDense(0);
 
 }
 

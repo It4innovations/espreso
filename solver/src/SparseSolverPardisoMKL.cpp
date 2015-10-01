@@ -3,6 +3,7 @@
 
 SparseSolver::SparseSolver(){
 
+	keep_factors=true;
 	initialized = false;
 
 	CSR_I_row_indices_size = 0;
@@ -203,6 +204,9 @@ void SparseSolver::Factorization() {
 
 void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
+	if (!initialized)
+		Factorization();
+
 	double ddum  = 0;			/* Double dummy */
 	MKL_INT idum = 0;			/* Integer dummy. */
 	int n_rhs = 1;
@@ -227,19 +231,24 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		exit (3);
 	}
 
-#ifdef DEBUG
-	printf ("\nSolve completed ... ");
-	printf ("\nThe solution of the system is: ");
-	for (int i = 0; i < n; i++)
-	{
-		printf ("\n x [%d] = % f", i, x[i]);
+	if (!keep_factors) {
+		/* -------------------------------------------------------------------- */
+		/* .. Termination and release of memory. */
+		/* -------------------------------------------------------------------- */
+		phase = -1;			/* Release internal memory. */
+		int nRhs = 1;
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+				iparm, &msglvl, &ddum, &ddum, &error);
+		initialized = false;
 	}
-	printf ("\n");
-#endif
 
 }
 
 void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int n_rhs) {
+
+	if (!initialized)
+		Factorization();
 
 	double ddum  = 0;			/* Double dummy */
 	MKL_INT idum = 0;			/* Integer dummy. */
@@ -258,19 +267,26 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		exit (3);
 	}
 
-#ifdef DEBUG
-	printf ("\nSolve completed ... ");
-	printf ("\nThe solution of the system is: ");
-	for (int i = 0; i < n; i++)
-	{
-		printf ("\n x [%d] = % f", i, x[i]);
+	if (!keep_factors) {
+		/* -------------------------------------------------------------------- */
+		/* .. Termination and release of memory. */
+		/* -------------------------------------------------------------------- */
+		phase = -1;			/* Release internal memory. */
+		int nRhs = 1;
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+				iparm, &msglvl, &ddum, &ddum, &error);
+		initialized = false;
 	}
-	printf ("\n");
-#endif
+
+
 
 }
 
 void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int rhs_start_index, int sol_start_index) {
+
+	if (!initialized)
+		Factorization();
 
 	double ddum  = 0;			/* Double dummy */
 	MKL_INT idum = 0;			/* Integer dummy. */
@@ -289,15 +305,20 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		exit (3);
 	}
 
-#ifdef DEBUG
-	printf ("\nSolve completed ... ");
-	printf ("\nThe solution of the system is: ");
-	for (int i = 0; i < n; i++)
-	{
-		printf ("\n x [%d] = % f", i, x[i]);
+
+	if (!keep_factors) {
+		/* -------------------------------------------------------------------- */
+		/* .. Termination and release of memory. */
+		/* -------------------------------------------------------------------- */
+		phase = -1;			/* Release internal memory. */
+		int nRhs = 1;
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+				iparm, &msglvl, &ddum, &ddum, &error);
+		initialized = false;
 	}
-	printf ("\n");
-#endif
+
+
 
 }
 
@@ -311,6 +332,12 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
 };
 
 void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
+
+	if (!initialized)
+		Factorization();
+
+	bool keep_factors_tmp = keep_factors;
+	keep_factors = true;
 
 	char trans = T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed;
 
@@ -367,6 +394,20 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, c
 
 	tmpM.Clear();
 
+	keep_factors = keep_factors_tmp;
+	if (!keep_factors) {
+		/* -------------------------------------------------------------------- */
+		/* .. Termination and release of memory. */
+		/* -------------------------------------------------------------------- */
+		phase = -1;			/* Release internal memory. */
+		int nRhs = 1;
+		double ddum;			/* Double dummy */
+		MKL_INT idum;			/* Integer dummy. */
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+				iparm, &msglvl, &ddum, &ddum, &error);
+		initialized = false;
+	}
 }
 
 
@@ -375,9 +416,6 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A ) {
 }
 
 void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
-
-	//if (m_factorized == 0)
-	//	Factorization();
 
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
@@ -670,7 +708,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	}
 }
 
-void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded ) {
+void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreaded ) {
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -699,16 +737,12 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
 	/* .. Initialize the internal solver memory pointer. This is only */
 	/* necessary for the FIRST call of the PARDISO solver. */
 	/* -------------------------------------------------------------------- */
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 64; i++)
 		pt[i] = 0;
-	}
 
 	int 	mtype = 2;
 
-//	iparm[0] = 1;		/* No solver default */
-//	iparm[1] = 2;		/* Fill-in reordering from METIS */
-						/* Numbers of processors, value of OMP_NUM_THREADS */
-
+	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
 		int num_procs;
@@ -727,7 +761,7 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
 
 //	iparm[0] = 1;		/* No solver default */
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */
-//						/* Numbers of processors, value of OMP_NUM_THREADS */
+//	iparm[2]			/* Numbers of processors, value of OMP_NUM_THREADS */
 //	iparm[2] = 8;		/* Not used in MKL PARDISO */
 //	iparm[3] = 0;		/* No iterative-direct algorithm */
 //	iparm[4] = 0;		/* No user fill-in reducing permutation */
@@ -754,78 +788,98 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
 //	error  = 0;			/* Initialize error flag */
 
 
-	solver = 0; 		/* use sparse direct solver */
-	//TODO: pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
-
-    iparm[10] = 1;
-    iparm[12] = 0;
-
- 	maxfct = 1;			/* Maximum number of numerical factorizations. */
-	mnum   = 1;			/* Which factorization to use. */
-	//msglvl = 0;			/* Supress printing statistical information */
-	error  = 0;			/* Initialize error flag */
-
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
 
 
-    int nrows_S = sc_size;
-    phase       = 12;
-    iparm[37]   = nrows_S;
+    iparm[1-1] = 1;         /* No solver default */
+    iparm[2-1] = 2;         /* Fill-in reordering from METIS */
+    iparm[10-1] = 8; //13   /* Perturb the pivot elements with 1E-13 */
+    iparm[11-1] = 0;        /* Use nonsymmetric permutation and scaling MPS */
+    iparm[13-1] = 0;        /* Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
+    iparm[14-1] = 0;        /* Output: Number of perturbed pivots */
+    iparm[18-1] = -1;       /* Output: Number of nonzeros in the factor LU */
+    iparm[19-1] = -1;       /* Output: Mflops for LU factorization */
+    iparm[36-1] = 1;        /* Use Schur complement */
 
-    int nb = 0; // number of righhand sides
+    maxfct = 1;           /* Maximum number of numerical factorizations. */
+    mnum = 1;             /* Which factorization to use. */
+    //msglvl = 1;           /* Print statistical information in file */
+    error = 0;            /* Initialize error flag */
 
-    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-//               &rows,
-//			   CSR_V_values, CSR_I_row_indices, CSR_J_col_indices,
-//			   &idum, &nb,
-//               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    /* -------------------------------------------------------------------- */
+    /* .. Reordering and Symbolic Factorization. This step also allocates   */
+    /* all memory that is necessary for the factorization.                  */
+    /* -------------------------------------------------------------------- */
 
-    if (error != 0)
-    {
-        printf("\nERROR during symbolic factorization: %d", error);
-        exit(1);
-    } else {
-    	initialized = true;
-    }
-//    printf("\nReordering completed ...\n");
-//    printf("Number of nonzeros in factors  = %d\n", iparm[17]);
-//    printf("Number of factorization MFLOPS = %d\n", iparm[18]);
-//    printf("Number of nonzeros is   S      = %d\n", iparm[38]);
+    std::vector <int> perm (rows ,0);
+    for (int i = rows - sc_size; i < rows; i++)
+    	perm[i] = 1;
+
+    int nrhs = 0;
+
+//    phase = 11;
+//    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+//        		&K_sc1.rows,
+//				&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+//				&perm[0], &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+//
+//    if ( error != 0 )
+//    {
+//    	printf ("\nERROR during symbolic factorization: %d", error);
+//    	exit(1);
+//    }
+
+
+    /* -------------------------------------------------------------------- */
+    /* .. Numerical factorization. */
+    /* -------------------------------------------------------------------- */
+
+	SC_out.dense_values.resize(sc_size * sc_size);
+
+    phase = 12;
+    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows,
+			&CSR_V_values[0], &CSR_I_row_indices[0], &CSR_J_col_indices[0],
+			&perm[0], &nrhs,
+			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
+
+    for (int i = 0; i < SC_out.dense_values.size(); i++)
+    	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
+
+    if ( error != 0 )
+	{
+		printf ("\nERROR during numerical factorization: %d", error);
+		exit (2);
+	} else {
+		initialized = true;
+	}
+
+	/* -------------------------------------------------------------------- */
+	/* .. Termination and release of memory. */
+	/* -------------------------------------------------------------------- */
+	phase = -1;           /* Release internal memory. */
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, &ddum, &CSR_I_row_indices[0], &CSR_J_col_indices[0], &idum, &nrhs,
+			 iparm, &msglvl, &ddum, &ddum, &error);
+
+	initialized = false;
 
     /* -------------------------------------------------------------------- */
     /* ..  allocate memory for the Schur-complement and copy it there.      */
     /* -------------------------------------------------------------------- */
     int nonzeros_S = iparm[38];
 
-    B_out.CSR_I_row_indices.resize(nrows_S+1);
-    B_out.CSR_J_col_indices.resize(nonzeros_S);
-    B_out.CSR_V_values.resize(nonzeros_S);
-    B_out.cols = nrows_S;
-    B_out.rows = nrows_S;
-    B_out.nnz  = nonzeros_S;
-    B_out.type = 'S';
+    SC_out.cols = sc_size;
+    SC_out.rows = sc_size;
+    SC_out.type = 'G';
 
-    //TODO: pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &B_out.CSR_V_values[0], &B_out.CSR_I_row_indices[0], &B_out.CSR_J_col_indices[0]);
+    SC_out.ConvertDenseToCSR(1);
 
-    phase = -1;                 /* Release internal memory. */
+    if (msglvl == 1)
+    	SpyText(SC_out);
 
-    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-//             &rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &idum,
-//             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
-
-    initialized = false;
+//    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
+//    	SC_out.RemoveLower();
+//    }
 
 }
 
@@ -1017,13 +1071,15 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
     SC_out.rows = K_b_tmp.rows;
     SC_out.type = 'G';
 
-    SC_out.ConvertDenseToCSR(1);
+//    SC_out.ConvertDenseToCSR(1);
 
-    if (msglvl == 1)
-    	SpyText(SC_out);
+//    if (msglvl == 1)
+//    	SpyText(SC_out);
 
     if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
-    	SC_out.RemoveLower();
+    	//SC_out.RemoveLower();
+    	SC_out.RemoveLowerDense();
+    	SC_out.type = 'S';
     }
 
 
@@ -1108,9 +1164,8 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
     K_sc1 = K;
 
 	// *** END - Prepare matrix
-
-
 	//SpyText(K_sc1);
+
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -1139,16 +1194,12 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 	/* .. Initialize the internal solver memory pointer. This is only */
 	/* necessary for the FIRST call of the PARDISO solver. */
 	/* -------------------------------------------------------------------- */
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 64; i++)
 		pt[i] = 0;
-	}
 
-	int 	mtype = 11; // real unsymetric
+	int 	mtype = 11;
 
-//	iparm[0] = 1;		/* No solver default */
-//	iparm[1] = 2;		/* Fill-in reordering from METIS */
-						/* Numbers of processors, value of OMP_NUM_THREADS */
-
+	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
 		int num_procs;
@@ -1167,7 +1218,7 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 
 //	iparm[0] = 1;		/* No solver default */
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */
-//						/* Numbers of processors, value of OMP_NUM_THREADS */
+//	iparm[2]			/* Numbers of processors, value of OMP_NUM_THREADS */
 //	iparm[2] = 8;		/* Not used in MKL PARDISO */
 //	iparm[3] = 0;		/* No iterative-direct algorithm */
 //	iparm[4] = 0;		/* No user fill-in reducing permutation */
@@ -1194,105 +1245,91 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 //	error  = 0;			/* Initialize error flag */
 
 
-	solver = 0; 		/* use sparse direct solver */
-	//TODO: pardisoinit(pt,  &mtype, &solver, iparm, dparm, &error);
-
-    iparm[10] = 1;
-    iparm[12] = 0;
-
- 	maxfct = 1;			/* Maximum number of numerical factorizations. */
-	mnum   = 1;			/* Which factorization to use. */
-	//msglvl = 1;		/* Supress printing statistical information */
-	error  = 0;			/* Initialize error flag */
-
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
 
 
-    int nrows_S = B1_in.cols;
-    phase       = 12;
-    iparm[37]   = nrows_S;
+    iparm[1-1] = 1;         /* No solver default */
+    iparm[2-1] = 2;         /* Fill-in reordering from METIS */
+    iparm[10-1] = 8; //13   /* Perturb the pivot elements with 1E-13 */
+    iparm[11-1] = 0;        /* Use nonsymmetric permutation and scaling MPS */
+    iparm[13-1] = 0;        /* Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
+    iparm[14-1] = 0;        /* Output: Number of perturbed pivots */
+    iparm[18-1] = -1;       /* Output: Number of nonzeros in the factor LU */
+    iparm[19-1] = -1;       /* Output: Mflops for LU factorization */
+    iparm[36-1] = 1;        /* Use Schur complement */
 
-    int nb = 0; // number of righhand sides
+    maxfct = 1;           /* Maximum number of numerical factorizations. */
+    mnum = 1;             /* Which factorization to use. */
+    //msglvl = 1;           /* Print statistical information in file */
+    error = 0;            /* Initialize error flag */
 
-    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-//               &K_sc1.rows,
-//			   &K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
-//			   &idum, &nb,
-//               iparm, &msglvl, &ddum, &ddum, &error,  dparm);
+    /* -------------------------------------------------------------------- */
+    /* .. Reordering and Symbolic Factorization. This step also allocates   */
+    /* all memory that is necessary for the factorization.                  */
+    /* -------------------------------------------------------------------- */
 
-    if (error != 0)
-    {
-        printf("\nERROR during symbolic factorization: %d", error);
-        exit(1);
-    } else {
-    	initialized = true;
-    }
+    std::vector <int> perm (K_sc1.rows,0);
+    for (int i = K_in.rows; i < K_sc1.rows; i++)
+    	perm[i] = 1;
+
+    int nrhs = 0;
+
+//    phase = 11;
+//    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+//        		&K_sc1.rows,
+//				&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+//				&perm[0], &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+//
+//    if ( error != 0 )
+//    {
+//    	printf ("\nERROR during symbolic factorization: %d", error);
+//    	exit(1);
+//    }
+
+
+    /* -------------------------------------------------------------------- */
+    /* .. Numerical factorization. */
+    /* -------------------------------------------------------------------- */
+
+	SC_out.dense_values.resize(K_b_tmp.rows * K_b_tmp.rows);
+
+    phase = 12;
+    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&K_sc1.rows,
+			&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+			&perm[0], &nrhs,
+			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
+
+    for (int i = 0; i < SC_out.dense_values.size(); i++)
+    	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
+
+    if ( error != 0 )
+	{
+		printf ("\nERROR during numerical factorization: %d", error);
+		exit (2);
+	} else {
+		initialized = true;
+	}
+
+	/* -------------------------------------------------------------------- */
+	/* .. Termination and release of memory. */
+	/* -------------------------------------------------------------------- */
+	phase = -1;           /* Release internal memory. */
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &nrhs,
+			 iparm, &msglvl, &ddum, &ddum, &error);
+
+	initialized = false;
 
     /* -------------------------------------------------------------------- */
     /* ..  allocate memory for the Schur-complement and copy it there.      */
     /* -------------------------------------------------------------------- */
-    int nonzeros_S = iparm[38];
 
-    SC_out.CSR_I_row_indices.resize(nrows_S+1);
-    SC_out.CSR_J_col_indices.resize(nonzeros_S);
-    SC_out.CSR_V_values.resize(nonzeros_S);
-    SC_out.cols = nrows_S;
-    SC_out.rows = nrows_S;
-    SC_out.nnz  = nonzeros_S;
-    SC_out.type = 'G';
-
-    //TODO: pardiso_get_schur(pt, &maxfct, &mnum, &mtype, &SC_out.CSR_V_values[0], &SC_out.CSR_I_row_indices[0], &SC_out.CSR_J_col_indices[0]);
-
-    phase = -1;                 /* Release internal memory. */
-
-    //TODO: pardiso(pt, &maxfct, &mnum, &mtype, &phase,
-//    		&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &idum,
-//             iparm, &msglvl, &ddum, &ddum, &error,  dparm);
-
-    initialized = false;
-
-    // Finilize shape of the SC
-
-    //SpyText(SC_out);
-
-    SC_out.ConvertToCOO(1);
+    SC_out.cols = K_b_tmp.rows;
     SC_out.rows = B0_in.cols;
+    SC_out.type = 'G';
+    SC_out.dense_values.resize( SC_out.cols * SC_out.rows);
 
-    vector <int> 	I;
-    vector <int> 	J;
-    vector <double> V;
-
-    for (int i = 0; i < SC_out.I_row_indices.size(); i++) {
-    	if ( SC_out.I_row_indices[i] <= B0_in.cols) {
-    		I.push_back(SC_out.I_row_indices[i]);
-    		J.push_back(SC_out.J_col_indices[i]);
-    		V.push_back(SC_out.V_values[i]);
-    	}
-    }
-
-    SC_out.I_row_indices = I;
-    SC_out.J_col_indices = J;
-    SC_out.V_values      = V;
-
-    SC_out.nnz = V.size();
-
-    SC_out.ConvertToCSRwithSort(1);
-
-    //SpyText(SC_out);
-
-    SC_out.MatScale(-1.0);
+    //SC_out.ConvertDenseToCSR(1);
 
 }
 

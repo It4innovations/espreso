@@ -89,6 +89,8 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	DOFS_PER_NODE = 3;
 
+	KEEP_FACTORS = false; // only suported by MKL Pardiso so far
+
     MPI_rank = rank;
     MPI_size = size;
 
@@ -99,8 +101,8 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 1;
+	cluster.USE_HFETI			= 1;
+	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
 	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
@@ -111,7 +113,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	solver.CG_max_iter	 = 100;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
-	solver.USE_PIPECG	 = 1;
+	solver.USE_PIPECG	 = 0;
 	solver.USE_PREC		 = 1;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
@@ -242,6 +244,14 @@ void LinearSolver::init(
 		cluster.domains[d].Prec = cluster.domains[d].K;
 
 		cluster.domains[d].K_regularizationFromR( );
+
+		if (KEEP_FACTORS) {
+			cluster.domains[d].Kplus.keep_factors = true;
+			cluster.domains[d].Kplus.Factorization ();
+		} else {
+			cluster.domains[d].Kplus.keep_factors = false;
+		}
+
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
 
 		if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
@@ -294,8 +304,8 @@ void LinearSolver::init(
 
 
 
-	 timeEvalMain.totalTime.AddEndWithBarrier();
-	 timeEvalMain.PrintStatsMPI();
+//	 timeEvalMain.totalTime.AddEndWithBarrier();
+//	 timeEvalMain.PrintStatsMPI();
 
 }
 
@@ -339,6 +349,8 @@ void LinearSolver::finilize() {
 
 	if ( cluster.USE_HFETI == 1 ) cluster.ShowTiming();
 
+	 timeEvalMain.totalTime.AddEndWithBarrier();
+	 timeEvalMain.PrintStatsMPI();
 }
 
 void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution ) {

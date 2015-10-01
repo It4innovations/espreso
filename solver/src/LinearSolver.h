@@ -113,7 +113,7 @@ private:
 	eslocal number_of_subdomains_per_cluster;
 	eslocal DOFS_PER_NODE;
 	bool 	SINGULAR;
-
+	bool 	KEEP_FACTORS;
 
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 

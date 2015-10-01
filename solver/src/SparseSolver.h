@@ -43,6 +43,7 @@ public:
 	// Matrix properties 
 
 	bool initialized;
+	bool keep_factors;
 
 	int rows; 
 	int cols; 
