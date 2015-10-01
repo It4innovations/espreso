@@ -209,6 +209,7 @@ void LinearSolver::init(
 		for (int i = 0; i < fix_nodes[d].size(); i++)
  			for (int d_i = 0; d_i < 3; d_i++)
 				cluster.domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
+				//TODO: pocita se 3 dofs na uzel
 
 	 timeSetRHS.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSetRHS);
