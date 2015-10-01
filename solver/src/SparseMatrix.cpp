@@ -868,6 +868,9 @@ void SparseMatrix::ConvertCSRToDense( int clearCSR_1_keep_CSR_0 ) {
 		SEQ_VECTOR<double>().swap( CSR_V_values );
 	}
 
+	if (type == 'S')
+		this->RemoveLowerDense();
+
 }
 
 void SparseMatrix::ConvertDenseToCSR( int clearDense_1_keep_Dense_0 ){

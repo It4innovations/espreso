@@ -1461,6 +1461,7 @@ void Cluster::CreateF0() {
 		tmpF0v[d].MatMat(domains[d].B0, 'N', domains[d].B0Kplus);
 		domains[d].B0Kplus.Clear();
 
+		domains[d].Kplus.msglvl=0;
 		if (MPIrank == 0 ) {cout << d << " "; };
 	}	
 
@@ -1539,7 +1540,9 @@ void Cluster::CreateSa() {
 	} else {
 		SparseSolver tmpsps;
 		if (MPIrank == 0) tmpsps.msglvl = 1;
-		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 1 );
+		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
+        Salfa.ConvertDenseToCSR(1);
+        Salfa.RemoveLower();
 		if (MPIrank == 0) tmpsps.msglvl = 0;
 	}
 	F0_Mat.Clear();
@@ -2168,14 +2171,9 @@ void Cluster::Create_SC_perDomain() {
 		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
 		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 0 );
 
-		domains[i].B1Kplus.ConvertCSRToDense(0);
-		//domains[i].B1Kplus.ConvertDenseToDenseFloat(0);
-
 //		SparseSolver tmpsps2;
 //		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
 //		tmpsps2.Create_non_sym_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B0t_comp, domains[i].B0KplusB1_comp, false, 0 );
-//
-//		domains[i].B0KplusB1_comp.ConvertCSRToDense(0);
 
 
 

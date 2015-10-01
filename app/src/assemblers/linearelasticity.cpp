@@ -108,9 +108,6 @@ void Linear_elasticity::init() {
 
 	 // ************************************************************************************
 
-	 timeB1glob.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeB1glob);
-
 	 TimeEvent timeBforces(string("Create boundary forces ??"));
 	 timeBforces.AddStart();
 
@@ -158,7 +155,9 @@ void Linear_elasticity::init() {
 	 timeMconv.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeMconv);
 
-	 lin_solver.setup( _instance.rank(), _instance.size(), true );
+	 TimeEvent timeLSconv(string("Linear Solver - preprocessing"));
+	 timeLSconv.AddStart();
+	lin_solver.setup( _instance.rank(), _instance.size(), true );
 
 	 lin_solver.init(
 
@@ -182,6 +181,10 @@ void Linear_elasticity::init() {
 
 	);
 
+	 timeLSconv.AddEndWithBarrier();
+	 timeEvalMain.AddEvent(timeLSconv);
+
+
 }
 
 
@@ -203,9 +206,17 @@ void Linear_elasticity::post_solve_update() {
 
 
 void Linear_elasticity::solve(){
+
+	 TimeEvent timeLSrun(string("Linear Solver - runtime"));
+	 timeLSrun.AddStart();
 	lin_solver.Solve(f_vec, prim_solution);
+	 timeLSrun.AddEndWithBarrier();
+	 timeEvalMain.AddEvent(timeLSrun);
 }
 
 void Linear_elasticity::finalize() {
 	lin_solver.finilize();
+
+	 timeEvalMain.totalTime.AddEndWithBarrier();
+	 timeEvalMain.PrintStatsMPI();
 }
