@@ -110,11 +110,11 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = 100;
+	solver.CG_max_iter	 = 200;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
 	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 1;
+	solver.USE_PREC		 = 0;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
@@ -241,7 +241,8 @@ void LinearSolver::init(
 			cluster.domains[d].K.RemoveLower();
 
 		//TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
-		cluster.domains[d].Prec = cluster.domains[d].K;
+		if ( solver.USE_PREC == 1 )
+			cluster.domains[d].Prec = cluster.domains[d].K;
 
 		cluster.domains[d].K_regularizationFromR( );
 
@@ -250,6 +251,8 @@ void LinearSolver::init(
 			cluster.domains[d].Kplus.Factorization ();
 		} else {
 			cluster.domains[d].Kplus.keep_factors = false;
+			K_mat[d].Clear();
+			cluster.domains[d].K.Clear(); 
 		}
 
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;

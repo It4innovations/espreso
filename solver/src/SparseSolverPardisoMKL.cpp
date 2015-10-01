@@ -241,6 +241,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
+		printf(".");
 	}
 
 }
@@ -277,6 +278,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
+		printf(".");
 	}
 
 
@@ -316,6 +318,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
+		printf(".");
 	}
 
 

@@ -101,6 +101,10 @@ if [ "$1" = "build" ]; then
   ./waf install
 fi
 
+if [ "$1" = "build-pardiso_mkl" ]; then
+  ./waf install --pardiso_mkl
+fi
+
 if [ "$1" = "mic" ]; then
   ./waf install --static --mic
 fi
@@ -143,18 +147,18 @@ i
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      5  16  16  16  16  16  16  16  13  14 )
-  clustt_size_x=( 2  10  10  10  10  10  10  10  10  10 )
+  dom_size=(      16  25  21  16  16  16  16  16  13  14 )
+  clustt_size_x=( 16  10  12  10  10  10  10  10  10  10 )
 # clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
 # clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
-  clusters_x=(    1   3   4   5   6   7   8   9   1   1 )
-  clusters_y=(    1   3   4   5   6   7   8   9   1   1 )
-  clusters_z=(    1   3   4   5   6   7   8   9   1   1 )
+  clusters_x=(    1   1   1   5   6   7   8   9   1   1 )
+  clusters_y=(    1   1   1   5   6   7   8   9   1   1 )
+  clusters_z=(    1   1   1   5   6   7   8   9   1   1 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 0 # 0 1 2 3 4 5 6
+  for i in 2 1 0 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}

@@ -569,8 +569,8 @@ void Domain::K_regularizationFromR ( ) {
     //Kplus.Factorization ();
 
 	// POZOR - jen pro Kinv
-	if (USE_KINV == 1 || USE_HFETI == 1)
-		KplusF.ImportMatrix (K);
+//	if (USE_KINV == 1 || USE_HFETI == 1)
+//		KplusF.ImportMatrix (K);
 
 	//K.    MatAddInPlace (NtN_Mat,'N', -ro);
 	//K.Clear(); //TODO: potom se nekde musi K smazat
