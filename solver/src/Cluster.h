@@ -101,7 +101,6 @@ public:
 	TimeEval cluster_time;
 
 	// Functions of the class
-	void LoadCluster(string directory_path, int use_dynamic_1_no_dynamic_0, int use_kinv_1_no_kinv_0 );
 
 	void InitClusterPC ( int * subdomains_global_indices, int number_of_subdomains );
 	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map); //, SEQ_VECTOR < int > & neigh_domains  );

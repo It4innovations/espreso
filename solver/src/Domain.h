@@ -127,7 +127,6 @@ public:
 	// END - CUDA 
 
 	// Methods of the class
-	void LoadDomain(string directory_path, int for_single_domain_in_cluster_0, int use_dynamic_1_no_dynamic_0 );
 	void SetDomain(int USE_HFETI, int use_dynamic_1_no_dynamic_0);
 
 	void K_regularization( );
@@ -135,14 +134,12 @@ public:
 
 	void CreateKplus_R ( ); 
 
-	int  LoadCoordinates(string filename); 
-
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, int x_in_vector_start_index, int y_out_vector_start_index );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in_y_out); 
 
 	//dynamic
-	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama); 
+	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
 };
 
 
