@@ -843,26 +843,15 @@ void Mesh::saveVTK(
 		n_points += l2g_vec[d].size();
 	}
 
-//	vtk << "\n";
-//	vtk << "POINT_DATA " << n_points << "\n";
-//	vtk << "SCALARS displacements float 3\n";
-//	vtk << "LOOKUP_TABLE default\n";
-//	for (size_t i = 0; i < displacement.size(); i++) {
-//		for (size_t j = 0; j < displacement[i].size() / 3; j++) {
-//			vtk << displacement[i][3 * j + 0] << " ";
-//			vtk << displacement[i][3 * j + 1] << " ";
-//			vtk << displacement[i][3 * j + 2] << "\n";
-//		}
-//
-//	}
-
 	vtk << "\n";
 	vtk << "POINT_DATA " << n_points << "\n";
-	vtk << "SCALARS displacements float 1\n";
+	vtk << "SCALARS displacements float 3\n";
 	vtk << "LOOKUP_TABLE default\n";
 	for (size_t i = 0; i < displacement.size(); i++) {
-		for (size_t j = 0; j < displacement[i].size(); j++) {
-			vtk << displacement[i][j] << "\n";
+		for (size_t j = 0; j < displacement[i].size() / 3; j++) {
+			vtk << displacement[i][3 * j + 0] << " ";
+			vtk << displacement[i][3 * j + 1] << " ";
+			vtk << displacement[i][3 * j + 2] << "\n";
 		}
 
 	}

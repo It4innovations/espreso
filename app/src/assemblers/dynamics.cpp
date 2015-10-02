@@ -181,7 +181,6 @@ void Dynamics::init()
 		B1_duplicity,
 
 		f_vec,
-		f_vec, //to be vec_c
 		fix_nodes,
 		l2g_vec,
 

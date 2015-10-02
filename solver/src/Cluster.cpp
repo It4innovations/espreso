@@ -1670,17 +1670,11 @@ void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 	for (int d = 0; d < domains.size(); d++) {
 		y_out_tmp.resize( domains[d].B1_comp_dom.rows );
 		domains[d].B1_comp_dom.MatVec (x_prim_cluster[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
-
 		for (int i = 0; i < domains[d].lambda_map_sub_local.size(); i++)
-			vec_b_compressed[ domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] - domains[d].vec_c[i];
-
-		//for (int i = 0; lambda_map_sub_local.size(); i++)
-		//	vec_b_compressed[i] -= domains[d].vec_c[i];
+			vec_b_compressed[ domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 	}
 
 }
-
-
 
 
 void Cluster::Create_Kinv_perDomain() {

@@ -87,7 +87,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	SINGULAR = IS_SINGULAR;
 
-	DOFS_PER_NODE = 1; //TODO - set as parameter
+	DOFS_PER_NODE = 3;
 
 	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
 
@@ -101,7 +101,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 0;
+	cluster.USE_HFETI			= 1;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
@@ -114,7 +114,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
 	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 1;
+	solver.USE_PREC		 = 0;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
@@ -136,8 +136,6 @@ void LinearSolver::init(
 		std::vector < std::vector <double> >	& B1_duplicity,
 
 		std::vector < std::vector <double > >	& f_vec,
-		std::vector < std::vector <double > >	& vec_c,
-
 		std::vector < std::vector <eslocal > >	& fix_nodes,
 		std::vector < std::vector <eslocal> >	& l2g_vec,
 
@@ -206,10 +204,6 @@ void LinearSolver::init(
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		cluster.domains[d].f = f_vec[d];
-
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
-		cluster.domains[d].vec_c = vec_c[d];
-
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		for (int i = 0; i < fix_nodes[d].size(); i++)

@@ -89,10 +89,6 @@ public:
 	SEQ_VECTOR <double> vec_b;
 	SEQ_VECTOR <double> vec_b_compressed;
 
-	SEQ_VECTOR <double> vec_c;
-	SEQ_VECTOR <double> vec_c_compressed;
-
-
 	SEQ_VECTOR <double>	vec_lambda;
 	SEQ_VECTOR <double>	vec_alfa;
 	SEQ_VECTOR <double>	vec_g0;

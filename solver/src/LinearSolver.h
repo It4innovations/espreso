@@ -77,8 +77,6 @@ public:
 			std::vector < std::vector <double> >	& B1_duplicity,
 
 			std::vector < std::vector <double > >	& f_vec,
-			std::vector < std::vector <double > >	& vec_c,
-
 			std::vector < std::vector <eslocal > >	& fix_nodes,
 			std::vector < std::vector <eslocal> >	& l2g_vec,
 
@@ -108,14 +106,12 @@ public:
 			const mesh::Mesh &mesh
 	);
 
-	eslocal DOFS_PER_NODE;
-
 private:
 
 	eslocal MPI_rank;
 	eslocal MPI_size;
 	eslocal number_of_subdomains_per_cluster;
-
+	eslocal DOFS_PER_NODE;
 	bool 	SINGULAR;
 	bool 	KEEP_FACTORS;
 
