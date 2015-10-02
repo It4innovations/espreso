@@ -42,7 +42,8 @@ source_files = (
     "src/configuration.cpp",
     "src/instance.cpp",
     "src/assemblers/dynamics.cpp",
-    "src/assemblers/linearelasticity.cpp"
+    "src/assemblers/linearelasticity.cpp",
+    "src/assemblers/HeatSteadyState.cpp"
 )
 
 def configure(ctx):

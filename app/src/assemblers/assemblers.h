@@ -4,6 +4,6 @@
 
 #include "dynamics.h"
 #include "linearelasticity.h"
-
+#include "HeatSteadyState.h"
 
 #endif /* ASSEMBLERS_H_ */

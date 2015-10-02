@@ -169,6 +169,16 @@ public:
     M = _M;
 	}
 
+	void heat(SparseCSRMatrix<eslocal> &K, std::vector<double> &f, eslocal part) const
+	{
+		SparseVVPMatrix<eslocal> _K;
+		SparseVVPMatrix<eslocal> _M;
+		_heat(_K, _M, f, part, false);
+		K = _K;
+
+	}
+
+
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
 
