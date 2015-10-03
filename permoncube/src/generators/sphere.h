@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace permoncube {
+namespace esinput {
 
 namespace SphereGeneratorOptions {
 	enum {
@@ -38,10 +38,10 @@ inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
 }
 
 template<class TElement>
-class SphereGenerator: public Generator {
+class SphereGenerator: public MeshGenerator {
 
 public:
-	SphereGenerator(permoncube::SphereSettings &settings);
+	SphereGenerator(esinput::SphereSettings &settings);
 
 	void fillCluster(int rank, size_t cluster[]);
 

@@ -7,9 +7,9 @@
 #include "../elements/elements.h"
 #include "../utils.h"
 
-namespace permoncube {
+namespace esinput {
 
-class Generator {
+class MeshGenerator {
 
 public:
 	eslocal assumedProcessCount()
@@ -34,10 +34,10 @@ public:
 			const bool edges,
 			const bool surface) = 0;
 
-	virtual ~Generator() { }
+	virtual ~MeshGenerator() { }
 
 protected:
-	Generator(): _processes(1) { };
+	MeshGenerator(): _processes(1) { };
 
 	eslocal _processes;
 };

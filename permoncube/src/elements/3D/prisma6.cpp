@@ -1,7 +1,7 @@
 
 #include "prisma6.h"
 
-using namespace permoncube;
+using namespace esinput;
 
 eslocal Prisma6::subelements = Prisma6Subelements;
 
@@ -11,7 +11,7 @@ eslocal Prisma6::subnodes[3] = {
 		Prisma6Subnodes,
 };
 
-Prisma6::Prisma6(const permoncube::Settings &settings): _settings(settings)
+Prisma6::Prisma6(const esinput::Settings &settings): _settings(settings)
 {
 	Utils<Prisma6>::globalNodesCount(_settings, _gNodes);
 }
@@ -40,7 +40,7 @@ void Prisma6::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Prisma6(prisma));
 }
 
-eslocal Prisma6::clusterNodesCount(const permoncube::Settings &settings)
+eslocal Prisma6::clusterNodesCount(const esinput::Settings &settings)
 {
 	eslocal nodes[3];
 	Utils<Prisma6>::clusterNodesCount(settings, nodes);
@@ -48,7 +48,7 @@ eslocal Prisma6::clusterNodesCount(const permoncube::Settings &settings)
 	return nodes[0] * nodes[1] * nodes[2];
 }
 
-esglobal Prisma6::globalNodesCount(const permoncube::Settings &settings)
+esglobal Prisma6::globalNodesCount(const esinput::Settings &settings)
 {
 	esglobal nodes[3];
 	Utils<Prisma6>::globalNodesCount(settings, nodes);

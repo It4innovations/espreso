@@ -4,7 +4,7 @@
 
 #include "sphere.h"
 
-namespace permoncube {
+namespace esinput {
 
 
 //	###################################################

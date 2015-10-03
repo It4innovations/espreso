@@ -4,7 +4,7 @@
 
 #include "generator.h"
 
-namespace permoncube {
+namespace esinput {
 
 namespace CubeGeneratorOptions {
 	enum {
@@ -36,10 +36,10 @@ inline std::ostream& operator<<(std::ostream& os, const CubeSettings &s)
 }
 
 template<class TElement>
-class CubeGenerator: public Generator {
+class CubeGenerator: public MeshGenerator {
 
 public:
-	CubeGenerator(permoncube::CubeSettings &settings): _settings(settings), e(settings)
+	CubeGenerator(esinput::CubeSettings &settings): _settings(settings), e(settings)
 	{
 		_processes = _settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2];
 	}

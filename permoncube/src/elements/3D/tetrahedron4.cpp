@@ -1,6 +1,6 @@
 #include "tetrahedron4.h"
 
-using namespace permoncube;
+using namespace esinput;
 
 eslocal Tetrahedron4::subelements = Tetrahedron4Subelements;
 
@@ -10,7 +10,7 @@ eslocal Tetrahedron4::subnodes[3] = {
 		Tetrahedron4Subnodes
 };
 
-Tetrahedron4::Tetrahedron4(const permoncube::Settings &settings): _settings(settings)
+Tetrahedron4::Tetrahedron4(const esinput::Settings &settings): _settings(settings)
 {
 	Utils<Tetrahedron4>::globalNodesCount(_settings, _gNodes);
 }
@@ -55,7 +55,7 @@ void Tetrahedron4::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Tetrahedron4(tetra));
 }
 
-eslocal Tetrahedron4::clusterNodesCount(const permoncube::Settings &settings)
+eslocal Tetrahedron4::clusterNodesCount(const esinput::Settings &settings)
 {
 	eslocal nodes[3];
 	Utils<Tetrahedron4>::clusterNodesCount(settings, nodes);
@@ -63,7 +63,7 @@ eslocal Tetrahedron4::clusterNodesCount(const permoncube::Settings &settings)
 	return nodes[0] * nodes[1] * nodes[2];
 }
 
-esglobal Tetrahedron4::globalNodesCount(const permoncube::Settings &settings)
+esglobal Tetrahedron4::globalNodesCount(const esinput::Settings &settings)
 {
 	esglobal nodes[3];
 	Utils<Tetrahedron4>::globalNodesCount(settings, nodes);

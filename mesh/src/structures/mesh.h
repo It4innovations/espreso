@@ -24,6 +24,11 @@
 
 #include "esbem.h"
 
+namespace esinput {
+template<class TLoader>
+class Loader;
+}
+
 namespace mesh {
 
 namespace flags
@@ -47,6 +52,8 @@ class Mesh
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
+	template<class TLoader>
+	friend class esinput::Loader;
 
 	Mesh();
 	Mesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints);

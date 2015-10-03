@@ -4,7 +4,7 @@
 
 #include "cube.h"
 
-namespace permoncube {
+namespace esinput {
 
 
 //	###################################################

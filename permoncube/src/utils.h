@@ -4,7 +4,7 @@
 
 #include "settings.h"
 
-namespace permoncube {
+namespace esinput {
 
 template <class TElement>
 class Utils {

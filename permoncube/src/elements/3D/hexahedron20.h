@@ -10,16 +10,16 @@
 #include "../../settings.h"
 #include "../../utils.h"
 
-namespace permoncube {
+namespace esinput {
 
 class Hexahedron20 {
 
 public:
-	Hexahedron20(const permoncube::Settings &settings);
+	Hexahedron20(const esinput::Settings &settings);
 
 	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
-	static eslocal clusterNodesCount(const permoncube::Settings &settings);
-	static esglobal globalNodesCount(const permoncube::Settings &settings);
+	static eslocal clusterNodesCount(const esinput::Settings &settings);
+	static esglobal globalNodesCount(const esinput::Settings &settings);
 
 	inline bool addPoint(const esglobal &x, const esglobal &y, const esglobal &z)
 	{
@@ -58,7 +58,7 @@ public:
 	static eslocal subelements;
 
 private:
-	const permoncube::Settings &_settings;
+	const esinput::Settings &_settings;
 
 	esglobal _g2Nodes[3];
 	esglobal _g3Nodes[3];

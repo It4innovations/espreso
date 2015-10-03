@@ -2,7 +2,7 @@
 #ifndef PM_SETTINGS_H_
 #define PM_SETTINGS_H_
 
-namespace permoncube {
+namespace esinput {
 
 struct Settings {
 

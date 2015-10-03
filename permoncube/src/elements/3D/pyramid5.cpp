@@ -1,7 +1,7 @@
 
 #include "pyramid5.h"
 
-using namespace permoncube;
+using namespace esinput;
 
 eslocal Pyramid5::subelements = Pyramid5Subelements;
 
@@ -11,7 +11,7 @@ eslocal Pyramid5::subnodes[3] = {
 		Pyramid5Subnodes,
 };
 
-Pyramid5::Pyramid5(const permoncube::Settings &settings): _settings(settings)
+Pyramid5::Pyramid5(const esinput::Settings &settings): _settings(settings)
 {
 	eslocal nodes[3];
 	Utils<Pyramid5>::clusterNodesCount(_settings, nodes);
@@ -77,7 +77,7 @@ void Pyramid5::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Pyramid5(pyramid));
 }
 
-eslocal Pyramid5::clusterNodesCount(const permoncube::Settings &settings)
+eslocal Pyramid5::clusterNodesCount(const esinput::Settings &settings)
 {
 	eslocal count = Hexahedron8::clusterNodesCount(settings);
 	eslocal cElems = Utils<Hexahedron8>::clusterElementsCount(settings);
@@ -85,7 +85,7 @@ eslocal Pyramid5::clusterNodesCount(const permoncube::Settings &settings)
 	return count + cElems;
 }
 
-esglobal Pyramid5::globalNodesCount(const permoncube::Settings &settings)
+esglobal Pyramid5::globalNodesCount(const esinput::Settings &settings)
 {
 	eslocal count = Hexahedron8::globalNodesCount(settings);
 	eslocal cElems = Utils<Hexahedron8>::clusterElementsCount(settings);

@@ -1,5 +1,7 @@
 #include "mpi.h"
 
+#include "../../input/esinput.h"
+
 #include "essolver.h"
 #include "instance.h"
 #include "solver/solver.h"
@@ -14,6 +16,12 @@ void solve(Instance &instance);
 
 int main(int argc, char** argv)
 {
+	mesh::Mesh m;
+	esinput::Loader<esinput::MeshGenerator> l("configuration.txt");
+
+	l.fillMesh(m);
+
+	return 0;
 	MPI_Init(&argc, &argv);
 
 #ifdef CATALYST
@@ -230,8 +238,8 @@ void solve(Instance &instance)
 //
 //	);
 
-	return; 
-	
+	return;
+
 
 	// Start - Stupid version of ESPRESO interface
 

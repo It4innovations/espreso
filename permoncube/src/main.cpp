@@ -4,7 +4,7 @@
 #include "espmcube.h"
 
 
-permoncube::Settings settings;
+esinput::Settings settings;
 
 void setParams(int argc, char** argv)
 {
@@ -72,20 +72,20 @@ void test_boudaries()
 
 	// MESH BOUNDARIES
 	mesh::Mesh mesh;
-	permoncube::Settings _settings = settings;
+	esinput::Settings _settings = settings;
 	for (int i = 0; i < 3; i++) {
 		_settings.clusters[i] = 1;
 		_settings.subdomainsInCluster[i] = settings.clusters[i];
 		_settings.elementsInSubdomain[i] = settings.subdomainsInCluster[i];
 	}
-	permoncube::ElementGenerator<permoncube::Tetrahedron10> g1(_settings);
+	esinput::ElementGenerator<esinput::Tetrahedron10> g1(_settings);
 
 	size_t cluster[3] = { 0, 0, 0 };
 	g1.mesh(mesh, cluster);
 	mesh::Boundaries bMesh(mesh);
 
 	// GLOBAL BOUNDARIES
-	permoncube::ElementGenerator<permoncube::Tetrahedron10> g2(settings);
+	esinput::ElementGenerator<esinput::Tetrahedron10> g2(settings);
 	mesh::Boundaries bGlobal(mesh);
 	g2.fillGlobalBoundaries(bGlobal, cluster);
 
@@ -113,7 +113,7 @@ void test_pyramid5(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Pyramid5> generator(settings);
+	esinput::ElementGenerator<esinput::Pyramid5> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -130,7 +130,7 @@ void test_pyramid13(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Pyramid13> generator(settings);
+	esinput::ElementGenerator<esinput::Pyramid13> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -147,7 +147,7 @@ void test_prisma6(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Prisma6> generator(settings);
+	esinput::ElementGenerator<esinput::Prisma6> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -164,7 +164,7 @@ void test_prisma15(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Prisma15> generator(settings);
+	esinput::ElementGenerator<esinput::Prisma15> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -181,7 +181,7 @@ void test_hexa8(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Hexahedron8> generator(settings);
+	esinput::ElementGenerator<esinput::Hexahedron8> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -198,7 +198,7 @@ void test_hexa20(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Hexahedron20> generator(settings);
+	esinput::ElementGenerator<esinput::Hexahedron20> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -215,7 +215,7 @@ void test_tetra4(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Tetrahedron4> generator(settings);
+	esinput::ElementGenerator<esinput::Tetrahedron4> generator(settings);
 
 	generator.mesh(mesh, cluster);
 
@@ -232,7 +232,7 @@ void test_tetra10(size_t cluster[])
 {
 	mesh::Mesh mesh;
 
-	permoncube::ElementGenerator<permoncube::Tetrahedron10> generator(settings);
+	esinput::ElementGenerator<esinput::Tetrahedron10> generator(settings);
 
 	generator.mesh(mesh, cluster);
 	std::cout << "generated\n";

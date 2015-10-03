@@ -1,7 +1,7 @@
 
 #include "prisma15.h"
 
-using namespace permoncube;
+using namespace esinput;
 
 eslocal Prisma15::subelements = Prisma15Subelements;
 
@@ -11,7 +11,7 @@ eslocal Prisma15::subnodes[3] = {
 		Prisma15Subnodes,
 };
 
-Prisma15::Prisma15(const permoncube::Settings &settings): _settings(settings)
+Prisma15::Prisma15(const esinput::Settings &settings): _settings(settings)
 {
 	eslocal nodes[3];
 	Utils<Prisma15>::clusterNodesCount(_settings, nodes);
@@ -82,7 +82,7 @@ void Prisma15::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Prisma15(prisma));
 }
 
-eslocal Prisma15::clusterNodesCount(const permoncube::Settings &settings)
+eslocal Prisma15::clusterNodesCount(const esinput::Settings &settings)
 {
 	eslocal nodes[3];
 	Utils<Prisma15>::clusterNodesCount(settings, nodes);
@@ -99,7 +99,7 @@ eslocal Prisma15::clusterNodesCount(const permoncube::Settings &settings)
 	return count;
 }
 
-esglobal Prisma15::globalNodesCount(const permoncube::Settings &settings)
+esglobal Prisma15::globalNodesCount(const esinput::Settings &settings)
 {
 	esglobal nodes[3];
 	Utils<Prisma15>::globalNodesCount(settings, nodes);

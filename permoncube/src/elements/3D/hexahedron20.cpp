@@ -1,7 +1,7 @@
 
 #include "hexahedron20.h"
 
-using namespace permoncube;
+using namespace esinput;
 
 eslocal Hexahedron20::subelements = Hexahedron20Subelements;
 
@@ -11,7 +11,7 @@ eslocal Hexahedron20::subnodes[3] = {
 		Hexahedron20Subnodes,
 };
 
-Hexahedron20::Hexahedron20(const permoncube::Settings &settings): _settings(settings)
+Hexahedron20::Hexahedron20(const esinput::Settings &settings): _settings(settings)
 {
 	eslocal nodes[3];
 	Utils<Hexahedron20>::clusterNodesCount(_settings, nodes);
@@ -61,7 +61,7 @@ void Hexahedron20::addElements(mesh::Mesh &mesh, const eslocal indices[])
 	mesh.pushElement(new mesh::Hexahedron20(hexa));
 }
 
-eslocal Hexahedron20::clusterNodesCount(const permoncube::Settings &settings)
+eslocal Hexahedron20::clusterNodesCount(const esinput::Settings &settings)
 {
 	eslocal nodes[3];
 	Utils<Hexahedron20>::clusterNodesCount(settings, nodes);
@@ -78,7 +78,7 @@ eslocal Hexahedron20::clusterNodesCount(const permoncube::Settings &settings)
 	return count;
 }
 
-esglobal Hexahedron20::globalNodesCount(const permoncube::Settings &settings)
+esglobal Hexahedron20::globalNodesCount(const esinput::Settings &settings)
 {
 	esglobal nodes[3];
 	Utils<Hexahedron20>::globalNodesCount(settings, nodes);

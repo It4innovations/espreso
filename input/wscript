@@ -1,0 +1,6 @@
+
+def configure(ctx):
+    ctx.recurse("meshgenerator")
+
+def build(ctx):
+    ctx.recurse("meshgenerator")

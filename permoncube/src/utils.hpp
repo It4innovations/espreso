@@ -1,6 +1,6 @@
 #include "utils.h"
 
-using namespace permoncube;
+using namespace esinput;
 
 template <class TElement>
 void Utils<TElement>::globalNodesCount(const Settings &settings, esglobal nodes[])
