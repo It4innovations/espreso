@@ -4,7 +4,7 @@
 namespace esinput {
 
 template<class TElement>
-SphereGenerator<TElement>::SphereGenerator(SphereSettings &settings): _settings(settings), e(settings)
+SphereGenerator<TElement>::SphereGenerator(int argc, char** argv): _settings(argc, argv), e(_settings)
 {
 	_clusterMap.resize(_settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2]);
 	eslocal index = 0, i = 0;

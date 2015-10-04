@@ -19,7 +19,7 @@ template<class TElement>
 class SphereGenerator: public Generator {
 
 public:
-	SphereGenerator(int argc, char** argv): _settings(argc, argv), e(_settings) {};
+	SphereGenerator(int argc, char** argv);
 
 	void fillCluster(int rank, size_t cluster[]);
 

@@ -12,6 +12,7 @@ struct SphereSettings {
 
 	static std::vector<Description> description;
 
+	size_t clusters[3];
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
 	size_t layers;

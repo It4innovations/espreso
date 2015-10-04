@@ -11,8 +11,9 @@ source_files = (
     "elements/3D/pyramid5.cpp",
     "elements/3D/pyramid13.cpp",
     "factory/factory.cpp",
+    "factory/settings.cpp",
+    "cube/settings.cpp",
     "generator.cpp",
-    "cube/settings.cpp"
 )
 
 def configure(ctx):
