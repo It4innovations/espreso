@@ -6,7 +6,7 @@
 #define Hexahedron20Subnodes 1
 
 #include "esmesh.h"
-#include "../../../meshgenerator/elements/3D/hexahedron8.h"
+#include "hexahedron8.h"
 #include "../../cube/settings.h"
 #include "../../cube/utils.h"
 

@@ -17,9 +17,9 @@ void solve(Instance &instance);
 int main(int argc, char** argv)
 {
 	mesh::Mesh m;
-	esinput::Loader<esinput::MeshGenerator> l(argc, argv);
+	esinput::Input<esinput::MeshGenerator> l(argc, argv);
 
-	l.fillMesh(m);
+	l.load(m);
 
 	return 0;
 	MPI_Init(&argc, &argv);

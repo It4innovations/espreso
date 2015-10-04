@@ -26,7 +26,7 @@
 
 namespace esinput {
 template<class TLoader>
-class Loader;
+class Input;
 }
 
 namespace mesh {
@@ -52,8 +52,7 @@ class Mesh
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
-	template<class TLoader>
-	friend class esinput::Loader;
+	template<class TLoader> friend class esinput::Input;
 
 	Mesh();
 	Mesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints);

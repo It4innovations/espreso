@@ -7,27 +7,30 @@
 
 namespace esinput {
 
-template <class TLoader>
 class Loader {
 
 public:
-	Loader(int argc, char** argv): _loader(argc, argv) { };
-
-	void fillMesh(mesh::Mesh &mesh)
-	{
-		mesh._elements.size();
-	}
+	virtual void points(std::vector<mesh::Point> &data) =0;
 
 	virtual ~Loader() {};
+};
+
+template <class TLoader>
+class Input {
+
+public:
+	Input(int argc, char** argv): _loader(argc, argv) { };
+
+	void load(mesh::Mesh &mesh)
+	{
+		_loader.points(mesh._coordinates._points);
+	}
 
 private:
 	TLoader _loader;
 };
 
 }
-
-
-
 
 
 #endif /* INPUT_LOADER_H_ */

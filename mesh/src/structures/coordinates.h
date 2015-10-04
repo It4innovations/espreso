@@ -8,6 +8,11 @@
 #include <vector>
 #include <map>
 
+namespace esinput {
+template<class TLoader>
+class Input;
+}
+
 namespace mesh
 {
 
@@ -39,6 +44,7 @@ class Coordinates
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
+	template<class TLoader> friend class esinput::Input;
 
 	Coordinates(): _points(0), _clusterIndex(1), _property(CP::SIZE) { };
 	Coordinates(const char *fileName);

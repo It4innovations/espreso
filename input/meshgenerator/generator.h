@@ -2,6 +2,7 @@
 #ifndef INPUT_MESHGENERATOR_GENERATOR_H_
 #define INPUT_MESHGENERATOR_GENERATOR_H_
 
+#include "../loader.h"
 #include "elements/elements.h"
 
 namespace esinput {
@@ -42,9 +43,11 @@ protected:
 
 };
 
-class MeshGenerator {
+class MeshGenerator: public Loader {
 public:
 	MeshGenerator(int argc, char** argv);
+
+	void points(std::vector<mesh::Point> &data);
 
 	~MeshGenerator()
 	{
