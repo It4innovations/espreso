@@ -9,7 +9,10 @@ source_files = (
     "elements/3D/prisma6.cpp",
     "elements/3D/prisma15.cpp",
     "elements/3D/pyramid5.cpp",
-    "elements/3D/pyramid13.cpp"
+    "elements/3D/pyramid13.cpp",
+    "factory/factory.cpp",
+    "generator.cpp",
+    "cube/settings.cpp"
 )
 
 def configure(ctx):

@@ -9,7 +9,7 @@
 
 namespace esinput {
 
-class MeshGenerator {
+class Generator {
 
 public:
 	eslocal assumedProcessCount()
@@ -34,7 +34,7 @@ public:
 			const bool edges,
 			const bool surface) = 0;
 
-	virtual ~MeshGenerator() { }
+	virtual ~Generator() { }
 
 protected:
 	MeshGenerator(): _processes(1) { };

@@ -2,8 +2,8 @@
 #ifndef INPUT_MESHGENERATOR_CUBE_GENERATOR_H_
 #define INPUT_MESHGENERATOR_CUBE_GENERATOR_H_
 
+#include "../generator.h"
 #include "settings.h"
-#include "../meshgenerator.h"
 
 namespace esinput {
 
@@ -15,15 +15,10 @@ namespace CubeGeneratorOptions {
 }
 
 template<class TElement>
-class CubeGenerator: public MeshGenerator {
+class CubeGenerator: public Generator {
 
 public:
-	CubeGenerator(const std::string *configFile): e(_settings) {};
-
-	CubeGenerator(CubeSettings &settings): _settings(settings), e(settings)
-	{
-		_processes = _settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2];
-	}
+	CubeGenerator(int argc, char** argv): _settings(argc, argv), e(_settings) {};
 
 	void fillCluster(int rank, size_t cluster[]);
 
@@ -64,7 +59,7 @@ private:
 
 }
 
-#include "../../meshgenerator/cube/generator.hpp"
+#include "generator.hpp"
 
 
 

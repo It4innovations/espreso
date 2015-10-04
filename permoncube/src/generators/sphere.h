@@ -38,7 +38,7 @@ inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
 }
 
 template<class TElement>
-class SphereGenerator: public MeshGenerator {
+class SphereGenerator: public Generator {
 
 public:
 	SphereGenerator(esinput::SphereSettings &settings);

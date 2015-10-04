@@ -1,23 +1,21 @@
 
-#ifndef INPUT_MESHGENERATOR_MESHGENERATOR_H_
-#define INPUT_MESHGENERATOR_MESHGENERATOR_H_
+#ifndef INPUT_MESHGENERATOR_GENERATOR_H_
+#define INPUT_MESHGENERATOR_GENERATOR_H_
 
 #include "elements/elements.h"
 
 namespace esinput {
 
-class MeshGenerator {
+class Generator {
 
 public:
 
-	MeshGenerator(const std::string &configFile): _processes(1)
-	{
-		_generator = NULL;
-	}
-
-	~MeshGenerator() { }
+	~Generator() { };
 
 protected:
+
+	Generator(): _processes(1) { }
+
 	size_t assumedProcessCount()
 	{
 		return _processes;
@@ -41,10 +39,24 @@ protected:
 			const bool surface);
 
 	size_t _processes;
-	MeshGenerator *_generator;
+
+};
+
+class MeshGenerator {
+public:
+	MeshGenerator(int argc, char** argv);
+
+	~MeshGenerator()
+	{
+		delete _generator;
+	}
+
+private:
+
+	Generator *_generator;
 };
 
 }
 
 
-#endif /* INPUT_MESHGENERATOR_MESHGENERATOR_H_ */
+#endif /* INPUT_MESHGENERATOR_GENERATOR_H_ */

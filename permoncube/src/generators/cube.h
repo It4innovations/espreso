@@ -36,7 +36,7 @@ inline std::ostream& operator<<(std::ostream& os, const CubeSettings &s)
 }
 
 template<class TElement>
-class CubeGenerator: public MeshGenerator {
+class CubeGenerator: public Generator {
 
 public:
 	CubeGenerator(esinput::CubeSettings &settings): _settings(settings), e(settings)

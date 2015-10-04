@@ -11,7 +11,7 @@ template <class TLoader>
 class Loader {
 
 public:
-	Loader(const std::string &configuration): _loader(configuration) { };
+	Loader(int argc, char** argv): _loader(argc, argv) { };
 
 	void fillMesh(mesh::Mesh &mesh)
 	{

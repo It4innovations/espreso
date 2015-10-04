@@ -2,7 +2,7 @@
 #ifndef INPUT_MESHGENERATOR_SPHERE_GENERATOR_H_
 #define INPUT_MESHGENERATOR_SPHERE_GENERATOR_H_
 
-#include "../meshgenerator.h"
+#include "../generator.h"
 #include <algorithm>
 #include <cmath>
 #include "settings.h"
@@ -16,10 +16,10 @@ namespace SphereGeneratorOptions {
 }
 
 template<class TElement>
-class SphereGenerator: public MeshGenerator {
+class SphereGenerator: public Generator {
 
 public:
-	SphereGenerator(SphereSettings &settings);
+	SphereGenerator(int argc, char** argv): _settings(argc, argv), e(_settings) {};
 
 	void fillCluster(int rank, size_t cluster[]);
 

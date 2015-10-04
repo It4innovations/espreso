@@ -470,7 +470,3 @@ void SphereGenerator<TElement>::setCorners(
 
 }
 
-
-
-
-#endif /* SPHERE_HPP_ */

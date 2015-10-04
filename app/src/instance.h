@@ -9,12 +9,7 @@
 class Instance {
 
 public:
-	Instance(const Configuration &configuration, int rank, int size);
-
-	const Configuration& configuration() const
-	{
-		return _configuration;
-	}
+	Instance(int rank, int size);
 
 	const mesh::Mesh& mesh() const
 	{
@@ -42,9 +37,6 @@ public:
 	}
 
 private:
-
-	Configuration _configuration;
-
 	int _rank;
 	int _size;
 

@@ -4,3 +4,8 @@ def configure(ctx):
 
 def build(ctx):
     ctx.recurse("meshgenerator")
+
+    ctx(
+        export_includes = ".",
+        name            = "input_includes"
+    )

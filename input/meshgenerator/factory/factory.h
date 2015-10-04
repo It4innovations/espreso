@@ -1,0 +1,21 @@
+
+#ifndef INPUT_MESHGENERATOR_FACTORY_H_
+#define INPUT_MESHGENERATOR_FACTORY_H_
+
+#include "settings.h"
+#include "../generator.h"
+#include "../cube/generator.h"
+#include "../sphere/generator.h"
+
+namespace esinput {
+
+class MeshFactory {
+
+public:
+	static Generator* create(int argc, char** argv);
+};
+
+}
+
+
+#endif /* INPUT_MESHGENERATOR_FACTORY_H_ */

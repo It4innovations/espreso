@@ -8,15 +8,13 @@ template<class TAssembler>
 class Solver {
 
 public:
-	Solver(const Instance &instance)
-		: _configuration(instance.configuration()), _assembler(instance) { };
+	Solver(const Instance &instance): _assembler(instance) { };
 
 	void init();
 
 	void solve( eslocal steps );
 
 private:
-	Configuration _configuration;
 	TAssembler _assembler;
 };
 

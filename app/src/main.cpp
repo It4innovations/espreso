@@ -1,6 +1,6 @@
 #include "mpi.h"
 
-#include "../../input/esinput.h"
+#include "esinput.h"
 
 #include "essolver.h"
 #include "instance.h"
@@ -17,7 +17,7 @@ void solve(Instance &instance);
 int main(int argc, char** argv)
 {
 	mesh::Mesh m;
-	esinput::Loader<esinput::MeshGenerator> l("configuration.txt");
+	esinput::Loader<esinput::MeshGenerator> l(argc, argv);
 
 	l.fillMesh(m);
 
@@ -33,23 +33,23 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	Configuration config("configuration.txt", argc, argv);
+	//Configuration config("configuration.txt", argc, argv);
 	// print all settings
-	config.print();
+	//config.print();
 
-	Instance instance(config, MPIrank, MPIsize);
+	//Instance instance(config, MPIrank, MPIsize);
 
-	Solver<Linear_elasticity> solver_1 (instance);
+	//Solver<Linear_elasticity> solver_1 (instance);
 	//Solver<Dynamics>          solver_2 (instance);
 
 	//solver_2.solve(10);
 
-	solver_1.solve(1);
+	//solver_1.solve(1);
 
 	// This method needs re-factoring !!!
 	//solve(instance);
 
-	MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 }
 
