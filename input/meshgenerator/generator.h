@@ -11,7 +11,15 @@ class Generator {
 
 public:
 
-	~Generator() { };
+	virtual void points(mesh::Coordinates &data) = 0;
+	virtual void elements(std::vector<mesh::Element*> &data) = 0;
+
+	bool manualPostProcessing()
+	{
+		return false;
+	}
+
+	virtual ~Generator() { };
 
 protected:
 
@@ -43,11 +51,12 @@ protected:
 
 };
 
-class MeshGenerator: public Loader {
+class MeshGenerator: public InternalLoader {
 public:
-	MeshGenerator(int argc, char** argv);
+	MeshGenerator(int argc, char** argv, int rank, int size);
 
-	void points(std::vector<mesh::Point> &data);
+	void points(mesh::Coordinates &data);
+	void elements(std::vector<mesh::Element*> &data);
 
 	~MeshGenerator()
 	{

@@ -7,23 +7,45 @@
 
 namespace esinput {
 
-class Loader {
+class ExternalLoader {
 
 public:
-	virtual void points(std::vector<mesh::Point> &data) =0;
+	void load(mesh::Mesh &mesh)
+	{
+		points(mesh._coordinates);
+		elements(mesh._elements);
+	}
 
-	virtual ~Loader() {};
+	virtual void points(mesh::Coordinates &data) = 0;
+	virtual void elements(std::vector<mesh::Element*> &data) = 0;
+
+	virtual ~ExternalLoader() {};
+};
+
+class InternalLoader {
+
+public:
+	void load(mesh::Mesh &mesh)
+	{
+		points(mesh._coordinates);
+		elements(mesh._elements);
+	}
+
+	virtual void points(mesh::Coordinates &data) = 0;
+	virtual void elements(std::vector<mesh::Element*> &data) = 0;
+
+	virtual ~InternalLoader() {};
 };
 
 template <class TLoader>
 class Input {
 
 public:
-	Input(int argc, char** argv): _loader(argc, argv) { };
+	Input(int argc, char** argv, int rank, int size): _loader(argc, argv, rank, size) { };
 
 	void load(mesh::Mesh &mesh)
 	{
-		_loader.points(mesh._coordinates._points);
+		_loader.load(mesh);
 	}
 
 private:

@@ -1,5 +1,5 @@
 
-#include "../../meshgenerator/cube/generator.h"
+#include "generator.h"
 
 namespace esinput {
 
@@ -26,16 +26,21 @@ namespace esinput {
 //	###################################################
 
 template<class TElement>
-void CubeGenerator<TElement>::fillCluster(int rank, size_t cluster[])
+CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, int rank, int size): _settings(argc, argv), _rank(rank), _size(size)
 {
+	if (_settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2] != _size) {
+		std::cerr << "The number of clusters(" << _settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2];
+		std::cerr << ") does not accord the number of MPI processes(" << _size << ").\n";
+		exit(EXIT_FAILURE);
+	}
 	eslocal index = 0, i = 0;
 	for (size_t z = 0; z < _settings.clusters[2]; z++) {
 		for (size_t y = 0; y < _settings.clusters[1]; y++) {
-		for (size_t x = 0; x < _settings.clusters[0]; x++) {
-				if (rank == index++) {
-					cluster[0] = x;
-					cluster[1] = y;
-					cluster[2] = z;
+			for (size_t x = 0; x < _settings.clusters[0]; x++) {
+				if (_rank == index++) {
+					_cluster[0] = x;
+					_cluster[1] = y;
+					_cluster[2] = z;
 					return;
 				}
 			}
@@ -43,54 +48,54 @@ void CubeGenerator<TElement>::fillCluster(int rank, size_t cluster[])
 	}
 }
 
-template <class TElement>
-void CubeGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
+template<class TElement>
+void CubeGenerator<TElement>::points(mesh::Coordinates &data)
 {
-	for (eslocal i = 0; i < 3; i++) {
-		if (_settings.clusters[i] <= cluster[i]) {
-			std::cerr << "Permoncube: the number of a cluster is too high\n";
-			exit(EXIT_FAILURE);
-		}
-	}
-	eslocal nodes[3];
-	Utils<TElement>::clusterNodesCount(_settings, nodes);
+	eslocal cNodes[3];
+	esglobal gNodes[3];
 
+	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+	Utils<TElement>::globalNodesCount(_settings, gNodes);
 
-	// add coordinates
-	mesh::Coordinates &coordinates = mesh.coordinates();
-	coordinates.reserve(TElement::clusterNodesCount(_settings));
+	data.clear();
+	data.reserve(cNodes[0] * cNodes[1] * cNodes[2]);
 
-	esglobal global = 0;
-	eslocal local = 0;
 	esglobal cs[3], ce[3];
 	double step[3];
 	for (eslocal i = 0; i < 3; i++) {
-		cs[i] = (nodes[i] - 1) * cluster[i];
-		ce[i] = (nodes[i] - 1) * (cluster[i] + 1);
+		cs[i] = (cNodes[i] - 1) * _cluster[i];
+		ce[i] = (cNodes[i] - 1) * (_cluster[i] + 1);
 	}
 	for (eslocal i = 0; i < 3; i++) {
-		step[i] = _settings.problemLength[i] / ((nodes[i] - 1) * _settings.clusters[i]);
+		step[i] = _settings.problemLength[i] / ((cNodes[i] - 1) * _settings.clusters[i]);
 	}
 
-	esglobal offset[3] = { 0, 0, 0 };
 	for (esglobal z = cs[2]; z <= ce[2]; z++) {
-		offset[2] = e.offset_z(z);
 		for (esglobal y = cs[1]; y <= ce[1]; y++) {
-			offset[1] = e.offset_y(y, z);
 			for (esglobal x = cs[0]; x <= ce[0]; x++) {
-				if (!e.addPoint(x, y, z)) {
-					continue;
-				}
-				offset[0] = e.offset_x(x, y, z);
-				global = offset[0] + offset[1] + offset[2];
-				coordinates.add(mesh::Point(x * step[0], y * step[1], z * step[2]), local++, global);
+				data.add(
+					mesh::Point(x * step[0], y * step[1], z * step[2]),
+					(z - cs[2]) * cNodes[0] * cNodes[1] + (y - cs[1]) * cNodes[0] + (x - cs[0]),
+					z * gNodes[0] * gNodes[1] + y * gNodes[0] + x
+				);
 			}
 		}
 	}
+}
+
+template<class TElement>
+void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &data)
+{
+	eslocal cNodes[3];
+	esglobal gNodes[3];
+
+	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+	Utils<TElement>::globalNodesCount(_settings, gNodes);
 
 	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 
-	mesh.reserve(Utils<TElement>::clusterElementsCount(_settings));
+	data.clear();
+	data.reserve(Utils<TElement>::clusterElementsCount(_settings));
 
 	eslocal subdomain[3];
 	eslocal element[3];
@@ -121,17 +126,16 @@ void CubeGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 										// fill node indices
 
 										indices[i++] =
-												(elementOffset[2] + z) * nodes[0] * nodes[1] +
-												(elementOffset[1] + y) * nodes[0] +
+												(elementOffset[2] + z) * cNodes[0] * cNodes[1] +
+												(elementOffset[1] + y) * cNodes[0] +
 												(elementOffset[0] + x);
 									}
 								}
 							}
-							e.addElements(mesh, &indices[0]);
+							e.addElements(data, &indices[0]);
 						}
 					}
 				}
-				mesh.endPartition();
 			}
 		}
 	}

@@ -2,56 +2,18 @@
 #ifndef INPUT_MESHGENERATOR_ELEMENTS_3D_HEXAHEDRON8_H_
 #define INPUT_MESHGENERATOR_ELEMENTS_3D_HEXAHEDRON8_H_
 
-#define Hexahedron8Subelements 1
-#define Hexahedron8Subnodes 0
-
 #include "esmesh.h"
-#include "../../../meshgenerator/cube/settings.h"
-#include "../../../meshgenerator/cube/utils.h"
 
 namespace esinput {
 
 class Hexahedron8 {
 
 public:
-	Hexahedron8(const esinput::CubeSettings &settings);
+	static size_t subelements;
+	static size_t subnodes[3];
 
-	void addElements(mesh::Mesh &mesh, const eslocal indices[]);
-	static eslocal clusterNodesCount(const esinput::CubeSettings &settings);
-	static esglobal globalNodesCount(const esinput::CubeSettings &settings);
+	static void addElements(std::vector<mesh::Element*> &elements, const eslocal indices[]);
 
-	inline bool addPoint(const esglobal &x, const esglobal &y, const esglobal &z)
-	{
-		return true;
-	}
-
-	inline eslocal projectPoint(const eslocal &index)
-	{
-		return index;
-	}
-
-	inline esglobal offset_x(esglobal x, esglobal y, esglobal z)
-	{
-		return x;
-	}
-
-	inline esglobal offset_y(esglobal y, esglobal z)
-	{
-		return _gNodes[0] * y;
-	}
-
-	inline esglobal offset_z(esglobal z)
-	{
-		return _gNodes[0] * _gNodes[1] * z;
-	}
-
-	static eslocal subnodes[3];
-	static eslocal subelements;
-
-private:
-	const esinput::CubeSettings &_settings;
-
-	esglobal _gNodes[3];
 };
 
 }

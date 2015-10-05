@@ -4,6 +4,7 @@
 
 #include "../generator.h"
 #include "settings.h"
+#include "utils.h"
 
 namespace esinput {
 
@@ -18,9 +19,10 @@ template<class TElement>
 class CubeGenerator: public Generator {
 
 public:
-	CubeGenerator(int argc, char** argv): _settings(argc, argv), e(_settings) {};
+	CubeGenerator(int argc, char** argv, int rank, int size);
 
-	void fillCluster(int rank, size_t cluster[]);
+	void points(mesh::Coordinates &data);
+	void elements(std::vector<mesh::Element*> &data);
 
 	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
 
@@ -55,6 +57,9 @@ private:
 
 	CubeSettings _settings;
 	TElement e;
+	int _rank;
+	int _size;
+	size_t _cluster[3];
 };
 
 }

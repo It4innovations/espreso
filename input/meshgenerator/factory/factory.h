@@ -12,7 +12,7 @@ namespace esinput {
 class MeshFactory {
 
 public:
-	static Generator* create(int argc, char** argv);
+	static Generator* create(int argc, char** argv, int rank, int size);
 };
 
 }

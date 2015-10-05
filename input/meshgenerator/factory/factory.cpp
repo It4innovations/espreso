@@ -3,7 +3,7 @@
 
 using namespace esinput;
 
-Generator* MeshFactory::create(int argc, char** argv)
+Generator* MeshFactory::create(int argc, char** argv, int rank, int size)
 {
 	FactorySettings settings(argc, argv);
 
@@ -11,35 +11,35 @@ Generator* MeshFactory::create(int argc, char** argv)
 	case CUBE: {
 		switch (settings.elementType) {
 		case HEXA8: {
-			return new CubeGenerator<Hexahedron8>(argc, argv);
+			return new CubeGenerator<Hexahedron8>(argc, argv, rank, size);
 			break;
 		}
 		case HEXA20: {
-			return new CubeGenerator<Hexahedron20>(argc, argv);
+			return new CubeGenerator<Hexahedron20>(argc, argv, rank, size);
 			break;
 		}
 		case TETRA4: {
-			return new CubeGenerator<Tetrahedron4>(argc, argv);
+			return new CubeGenerator<Tetrahedron4>(argc, argv, rank, size);
 			break;
 		}
 		case TETRA10: {
-			return new CubeGenerator<Tetrahedron10>(argc, argv);
+			return new CubeGenerator<Tetrahedron10>(argc, argv, rank, size);
 			break;
 		}
 		case PRISMA6: {
-			return new CubeGenerator<Prisma6>(argc, argv);
+			return new CubeGenerator<Prisma6>(argc, argv, rank, size);
 			break;
 		}
 		case PRISMA15: {
-			return new CubeGenerator<Prisma15>(argc, argv);
+			return new CubeGenerator<Prisma15>(argc, argv, rank, size);
 			break;
 		}
 		case PYRAMID5: {
-			return new CubeGenerator<Pyramid5>(argc, argv);
+			return new CubeGenerator<Pyramid5>(argc, argv, rank, size);
 			break;
 		}
 		case PYRAMID13: {
-			return new CubeGenerator<Pyramid13>(argc, argv);
+			return new CubeGenerator<Pyramid13>(argc, argv, rank, size);
 			break;
 		}
 		default: {
@@ -96,8 +96,6 @@ Generator* MeshFactory::create(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 	}
-
-	return new CubeGenerator<Hexahedron8>(argc, argv);
 }
 
 

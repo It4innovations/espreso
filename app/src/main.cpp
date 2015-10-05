@@ -16,22 +16,23 @@ void solve(Instance &instance);
 
 int main(int argc, char** argv)
 {
+	int MPIrank, MPIsize;
+
+	MPI_Init(&argc, &argv);
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
 	mesh::Mesh m;
-	esinput::Input<esinput::MeshGenerator> l(argc, argv);
+	esinput::Input<esinput::MeshGenerator> l(argc, argv, MPIrank, MPIsize);
 
 	l.load(m);
 
 	return 0;
-	MPI_Init(&argc, &argv);
 
 #ifdef CATALYST
     	Adaptor::Initialize(argc, argv);
 #endif
-
-	int MPIrank;
-	int MPIsize;
-	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
 	//Configuration config("configuration.txt", argc, argv);
 	// print all settings
