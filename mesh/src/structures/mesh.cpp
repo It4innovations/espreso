@@ -2,7 +2,7 @@
 
 using namespace mesh;
 
-Mesh::Mesh():_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
+Mesh::Mesh():_elements(0), _fixPoints(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -10,13 +10,13 @@ Mesh::Mesh():_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
 }
 
 Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints)
-	:_coordinates(coordinatesFile), _flags(flags::FLAGS_SIZE, false)
+	:_coordinates(coordinatesFile)
 {
 	readFromFile(meshFile);
 	partitiate(parts, fixPoints);
 }
 Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
-	:_coordinates(ansys), _flags(flags::FLAGS_SIZE, false)
+	:_coordinates(ansys)
 {
 	readFromFile(ansys.elements().c_str(), 8, true);
 	partitiate(parts, fixPoints);
@@ -24,7 +24,7 @@ Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
 
 Mesh::Mesh(const Mesh &other):
 	_coordinates(other._coordinates), _partPtrs(other._partPtrs),
-	_fixPoints(other._fixPoints), _flags(other._flags)
+	_fixPoints(other._fixPoints)
 {
 	_elements.reserve(other._elements.size());
 	for (size_t i = 0; i < other._elements.size(); i++) {
@@ -47,7 +47,6 @@ void Mesh::assign(Mesh &m1, Mesh &m2)
 	m1._elements.swap(m2._elements);
 	m1._partPtrs.swap(m2._partPtrs);
 	m1._fixPoints.swap(m2._fixPoints);
-	m1._flags.swap(m2._flags);
 }
 
 void Mesh::loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints)

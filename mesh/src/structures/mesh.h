@@ -31,15 +31,6 @@ class ExternalLoader;
 
 namespace mesh {
 
-namespace flags
-{
-
-enum FLAGS {
-	NEW_PARTITION,
-	FLAGS_SIZE
-};
-}
-
 class Boundaries;
 
 class SurfaceMesh;
@@ -250,9 +241,6 @@ protected:
 
 	/** @brief Fix points for all parts. */
 	std::vector<eslocal> _fixPoints;
-
-	/** @brief Flags used to recognize whether the specified property was computed. */
-	std::vector<bool> _flags;
 };
 
 
