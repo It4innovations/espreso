@@ -102,9 +102,6 @@ public:
 	void getCornerLines(CornerLinesMesh &cornerLines) const;
 
 	void loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints);
-	void reserve(size_t size);
-	void pushElement(Element* e);
-	void endPartition();
 
 	~Mesh();
 

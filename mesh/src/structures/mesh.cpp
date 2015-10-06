@@ -56,27 +56,6 @@ void Mesh::loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints)
 	partitiate(parts, fixPoints);
 }
 
-void Mesh::reserve(size_t size)
-{
-	_elements.reserve(size);
-}
-
-void Mesh::pushElement(Element* e)
-{
-	_elements.push_back(e);
-	if (_flags[flags::NEW_PARTITION]) {
-		_partPtrs.push_back(_partPtrs.back());
-		_flags[flags::NEW_PARTITION] = false;
-	}
-	_partPtrs.back() = _elements.size();
-}
-
-void Mesh::endPartition()
-{
-	computeLocalIndices(_partPtrs.size() - 2);
-	_flags[flags::NEW_PARTITION] = true;
-}
-
 Element* Mesh::createElement(eslocal *indices, eslocal n)
 {
 	Element *e = NULL;
@@ -267,7 +246,7 @@ void Mesh::_assembleElesticity(
 void Mesh::_heat(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const
 {
 //TODO nK various DOFs per nodes (may be)
-	eslocal nK = _coordinates.localSize(part); 
+	eslocal nK = _coordinates.localSize(part);
 	K.resize(nK, nK);
 	if (dynamic) {
 		M.resize(nK, nK);
@@ -320,7 +299,7 @@ void Mesh::_assembleHeat(
 		coordinates.values() + i * Point::size() << _coordinates.get(e->node(i), part);
 	}
 
-  double CP = 1.0, rho = 7.85e-9; 
+  double CP = 1.0, rho = 7.85e-9;
 	eslocal Ksize =  e->size();
 	double detJ;
 	DenseMatrix J, invJ, dND;//, B(C.rows(), Ksize);
@@ -1196,14 +1175,17 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 		count += elementsCount[i];
 	}
 
-	surface.reserve(count);
+	surface._elements.reserve(count);
+	surface._partPtrs.clear();
+	surface._partPtrs.reserve(_partPtrs.size());
 
 	// create surface mesh
+	surface._partPtrs.push_back(surface._elements.size());
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (face.size() == 3) {
-				surface.pushElement(new Triangle(&face[0]));
+				surface._elements.push_back(new Triangle(&face[0]));
 			}
 			// divide square to triangles
 			if (face.size() == 4) {
@@ -1214,17 +1196,18 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 					}
 				}
 				if (min % 2 == 0) {
-					surface.pushElement(new Triangle(&face[0]));
+					surface._elements.push_back(new Triangle(&face[0]));
 					face[1] = face[0];
-					surface.pushElement(new Triangle(&face[1]));
+					surface._elements.push_back(new Triangle(&face[1]));
 				} else {
-					surface.pushElement(new Triangle(&face[1]));
+					surface._elements.push_back(new Triangle(&face[1]));
 					face[2] = face[3];
-					surface.pushElement(new Triangle(&face[0]));
+					surface._elements.push_back(new Triangle(&face[0]));
 				}
 			}
 		}
-		surface.endPartition();
+		surface._partPtrs.push_back(surface._elements.size());
+		surface.computeLocalIndices(surface._partPtrs.size() - 1);
 	}
 }
 
@@ -1276,20 +1259,24 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 	for (size_t i = 0; i < parts(); i++) {
 		count += elementsCount[i];
 	}
-	commonFaces.reserve(count);
+	commonFaces._elements.reserve(count);
+	commonFaces._partPtrs.clear();
+	commonFaces._partPtrs.reserve(_partPtrs.size());
 
 	// create surface mesh
+	commonFaces._partPtrs.push_back(commonFaces._elements.size());
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (faces[i][j].size() == 3) {
-				commonFaces.pushElement(new Triangle(&face[0]));
+				commonFaces._elements.push_back(new Triangle(&face[0]));
 			}
 			if (faces[i][j].size() == 4) {
-				commonFaces.pushElement(new Square(&face[0]));
+				commonFaces._elements.push_back(new Square(&face[0]));
 			}
 		}
-		commonFaces.endPartition();
+		commonFaces._partPtrs.push_back(commonFaces._elements.size());
+		commonFaces.computeLocalIndices(commonFaces._partPtrs.size() - 1);
 	}
 }
 
@@ -1379,13 +1366,17 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 		size += pairs[i].size() / 2;
 	}
 
-	cornerLines.reserve(size);
+	cornerLines._elements.reserve(size);
+	cornerLines._partPtrs.clear();
+	cornerLines._partPtrs.reserve(_partPtrs.size());
 
+	cornerLines._partPtrs.push_back(cornerLines._elements.size());
 	for (size_t i = 0; i < parts(); i++) {
 		for (size_t j = 0; j < pairs[i].size(); j += 2) {
-			cornerLines.pushElement(new Line(&pairs[i][j]));
+			cornerLines._elements.push_back(new Line(&pairs[i][j]));
 		}
-		cornerLines.endPartition();
+		cornerLines._partPtrs.push_back(cornerLines._elements.size());
+		cornerLines.computeLocalIndices(cornerLines._partPtrs.size() - 1);
 	}
 
 }
@@ -1441,7 +1432,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 	Element *e;
 	if (faces) {
 		cfm.coordinates() = _coordinates;
-		cfm.reserve(commonFaces.size());
+		cfm._elements.reserve(commonFaces.size());
 	}
 	std::vector<std::vector<eslocal> > nodesFaces(_coordinates.size());
 	for (size_t i = 0; i < commonFaces.size(); i++) {
@@ -1452,7 +1443,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 			e = new Square(&commonFaces[i][0]);
 		}
 		if (faces) {
-			cfm.pushElement(e);
+			cfm._elements.push_back(e);
 		}
 		// preparation for corners on edges
 		for (size_t j = 0; j < e->size(); j++) {
@@ -1467,7 +1458,8 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 		}
 	}
 	if (faces) {
-		cfm.endPartition();
+		cfm._partPtrs.back() = cfm._elements.size();
+		cfm.computeLocalIndices(cfm._partPtrs.size() - 1);
 		cfm.computeFixPoints(number);
 		for (size_t i = 0; i < cfm.getFixPointsCount(); i++) {
 			boundaries.setCorner(cfm.coordinates().clusterIndex(cfm.getFixPoints()[i], 0));
@@ -1512,7 +1504,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 	}
 
 	if (edges) {
-		clm.reserve(pairs.size() / 2);
+		clm._elements.reserve(pairs.size() / 2);
 	}
 
 	for (size_t j = 0; j < pairs.size(); j += 2) {
@@ -1528,11 +1520,12 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 			}
 		}
 		if (edges) {
-			clm.pushElement(new Line(&pairs[j]));
+			clm._elements.push_back(new Line(&pairs[j]));
 		}
 	}
 	if (edges) {
-		clm.endPartition();
+		clm._partPtrs.back() = clm._elements.size();
+		clm.computeLocalIndices(clm._partPtrs.size() - 1);
 		clm.computeFixPoints(number);
 		for (size_t i = 0; i < clm.getFixPointsCount(); i++) {
 			boundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[i], 0));
