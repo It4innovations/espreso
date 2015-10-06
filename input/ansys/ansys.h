@@ -30,8 +30,6 @@ private:
 	};
 
 	std::string _path;
-	int _rank;
-	int _size;
 };
 
 }

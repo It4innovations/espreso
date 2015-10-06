@@ -9,13 +9,6 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
-	:_coordinates(ansys)
-{
-	readFromFile(ansys.elements().c_str(), 8, true);
-	partitiate(parts, fixPoints);
-}
-
 Mesh::Mesh(const Mesh &other):
 	_coordinates(other._coordinates), _partPtrs(other._partPtrs),
 	_fixPoints(other._fixPoints)
@@ -43,51 +36,6 @@ void Mesh::assign(Mesh &m1, Mesh &m2)
 	m1._fixPoints.swap(m2._fixPoints);
 }
 
-void Mesh::loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints)
-{
-	readFromFile(ansys.elements().c_str(), 8, true);
-	partitiate(parts, fixPoints);
-}
-
-Element* Mesh::createElement(eslocal *indices, eslocal n)
-{
-	Element *e = NULL;
-	if (Tetrahedron4::match(indices, n)) {
-		e = new Tetrahedron4(indices);
-	}
-	if (Tetrahedron10::match(indices, n)) {
-		e = new Tetrahedron10(indices);
-	}
-	if (Hexahedron8::match(indices, n)) {
-		e = new Hexahedron8(indices);
-	}
-	if (Hexahedron20::match(indices, n)) {
-		e = new Hexahedron20(indices);
-	}
-	if (Prisma6::match(indices, n)) {
-		e = new Prisma6(indices);
-	}
-	if (Prisma15::match(indices, n)) {
-		e = new Prisma15(indices);
-	}
-	if (Pyramid5::match(indices, n)) {
-		e = new Pyramid5(indices);
-	}
-	if (Pyramid13::match(indices, n)) {
-		e = new Pyramid13(indices);
-	}
-
-	if (e == NULL) {
-		std::cerr << "Unknown element with indices: ";
-		for (eslocal i = 0; i < n; i++) {
-			std::cerr << indices[i] << " ";
-		}
-		std::cerr << "\n";
-		exit(EXIT_FAILURE);
-	}
-
-	return e;
-}
 
 void Mesh::_elasticity(
 		SparseVVPMatrix<eslocal> &K,
@@ -1523,44 +1471,6 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 		for (size_t i = 0; i < clm.getFixPointsCount(); i++) {
 			boundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[i], 0));
 		}
-	}
-}
-
-void Mesh::readFromFile(const char *meshFile, eslocal elementSize, bool params)
-{
-	_elements.resize(Loader::getLinesCount(meshFile));
-
-	std::ifstream file(meshFile);
-	std::string line;
-
-	eslocal indices[20 + Element::PARAMS_SIZE], n; 	// 20 is the max of vertices of a element
-	double value;
-	eslocal minIndices = 10000;
-
-	if (file.is_open()) {
-		for (eslocal c = 0; c < _elements.size(); c++) {
-			getline(file, line, '\n');
-			std::stringstream ss(line);
-
-			n = 0;
-			while (ss >> value) {
-				indices[n++] = value;
-			}
-			if (elementSize > 0) {
-				n = std::min(n, elementSize);
-			}
-			for (size_t i = 0; i < n; i++) {
-				indices[i]--;	// re-index to zero base
-			}
-			_elements[c] = createElement(indices, n);
-			if (params) {
-				_elements[c]->setParams(indices + n);
-			}
-		}
-		file.close();
-	} else {
-		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
-		exit(EXIT_FAILURE);
 	}
 }
 

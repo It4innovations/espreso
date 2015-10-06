@@ -4,7 +4,7 @@
 using namespace esinput;
 
 
-Ansys::Ansys(int argc, char** argv, int rank, int size): _rank(rank), _size(size)
+Ansys::Ansys(int argc, char** argv, int rank, int size)
 {
 	if (argc < 2) {
 		if (rank == 0) {

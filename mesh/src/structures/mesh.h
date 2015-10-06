@@ -47,7 +47,6 @@ public:
 	friend class esinput::ExternalLoader;
 
 	Mesh();
-	Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints);
 
 	Mesh(const Mesh &other);
 	Mesh& operator=(const Mesh &other);
@@ -90,8 +89,6 @@ public:
 	void getSurface(SurfaceMesh &surface) const;
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;
 	void getCornerLines(CornerLinesMesh &cornerLines) const;
-
-	void loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints);
 
 	~Mesh();
 
@@ -174,8 +171,6 @@ protected:
 			double subDomainShrinking,
 			double clusterShrinking) const;
 
-	Element* createElement(eslocal *indices, eslocal n);
-
 	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
 	void _assembleElesticity(
 		const Element *e,
@@ -224,7 +219,6 @@ protected:
 
 	void partitiate(eslocal *ePartition);
 	void computeLocalIndices(size_t part);
-	void readFromFile(const char *meshFile, eslocal elementSize = 0, bool params = false);
 
 	void checkMETISResult(eslocal result) const;
 	void checkMKLResult(eslocal result) const;
