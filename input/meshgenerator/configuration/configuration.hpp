@@ -6,6 +6,10 @@ namespace esinput {
 template<class TSettings>
 Configuration<TSettings>::Configuration(int argc, char **argv)
 {
+	_parameters["CMD_LINE_ARGUMENTS"] = new StringParameter(
+		"CMD_LINE_ARGUMENTS",
+		"Arguments set from the command line."
+	);
 	for (size_t i = 0; i < TSettings::description.size(); i++) {
 		switch (TSettings::description[i].type) {
 		case STRING_PARAMETER: {
@@ -86,11 +90,13 @@ void Configuration<TSettings>::load(int argc, char** argv)
 	}
 
 	std::vector<std::string> cmdLine;
+	size_t cmdLineSize = 0;
 	if (_parameters["CMD_LINE_ARGUMENTS"]->isSet()) {
 		std::string val = value<std::string>("CMD_LINE_ARGUMENTS", "");
 		while(true) {
 			size_t pos = val.find(" ");
 			std::string argument = val.substr(0, pos);
+			cmdLineSize++;
 			for (it = _parameters.begin(); it != _parameters.end(); ++it) {
 				if (it->second->match(val)) {
 					cmdLine.push_back(it->second->name());
@@ -105,11 +111,11 @@ void Configuration<TSettings>::load(int argc, char** argv)
 		}
 	}
 
-	if (argc - 2 < cmdLine.size()) {
+	if (argc - 2 < cmdLineSize) {
 		std::cerr << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
 		exit(EXIT_FAILURE);
 	}
-	if (argc - 2 > cmdLine.size()) {
+	if (argc - 2 > cmdLineSize) {
 		std::cout << "Warning: ESPRESO omits some command line arguments.\n";
 	}
 	for (size_t i = 0; i < cmdLine.size(); i++) {

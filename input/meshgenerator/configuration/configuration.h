@@ -23,50 +23,46 @@ public:
 	void print() const;
 
 	template<class ParameterType>
-	const ParameterType& value(const std::string &parameter, ParameterType defaultValue) const
+	const ParameterType value(const std::string &parameter, ParameterType defaultValue) const
 	{
 		return _getValue(parameter, defaultValue);
 	}
 
 private:
 
-	const eslocal& _getValue(const std::string &parameter, eslocal defaultValue) const
+	eslocal _getValue(const std::string &parameter, eslocal defaultValue) const
 	{
 		if (_parameters.find(parameter) != _parameters.end()) {
 			return static_cast<IntegerParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
-			std::cerr << "Incorrect parameter '" << parameter << "'.\n";
-			exit(EXIT_FAILURE);
+			return defaultValue;
 		}
 	}
 
-	const double& _getValue(const std::string &parameter, double defaultValue) const
+	double _getValue(const std::string &parameter, double defaultValue) const
 	{
 		if (_parameters.find(parameter) != _parameters.end()) {
 			return static_cast<DoubleParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
-			std::cerr << "Incorrect parameter '" << parameter << "'.\n";
-			exit(EXIT_FAILURE);
+			return defaultValue;
 		}
 	}
 
-	const std::string& _getValue(const std::string &parameter, std::string &defaultValue) const
+	std::string _getValue(const std::string &parameter, std::string &defaultValue) const
 	{
 		if (_parameters.find(parameter) != _parameters.end()) {
 			return static_cast<StringParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
-			std::cerr << "Incorrect parameter '" << parameter << "'.\n";
-			exit(EXIT_FAILURE);
+			return defaultValue;
 		}
 	}
 
-	const bool& _getValue(const std::string &parameter, bool defaultValue) const
+	bool _getValue(const std::string &parameter, bool defaultValue) const
 	{
 		if (_parameters.find(parameter) != _parameters.end()) {
 			return static_cast<BooleanParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
-			std::cerr << "Incorrect parameter '" << parameter << "'.\n";
-			exit(EXIT_FAILURE);
+			return defaultValue;
 		}
 	}
 
