@@ -18,17 +18,6 @@ public:
 
 protected:
 
-	Generator(): _processes(1) { }
-
-	size_t assumedProcessCount()
-	{
-		return _processes;
-	}
-
-	void fillCluster(int rank, size_t cluster[]);
-
-	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
-
 	void setDirichlet(mesh::Mesh &mesh, const size_t cluster[], size_t dirichlet);
 	void setForces(mesh::Mesh &mesh, const size_t cluster[]);
 
@@ -41,8 +30,6 @@ protected:
 			const bool corners,
 			const bool edges,
 			const bool surface);
-
-	size_t _processes;
 
 };
 

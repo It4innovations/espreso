@@ -14,6 +14,8 @@ public:
 	{
 		points(mesh._coordinates);
 		elements(mesh._elements);
+		mesh._partPtrs.back() = mesh._elements.size();
+		mesh.computeLocalIndices(0);
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;

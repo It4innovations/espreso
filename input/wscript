@@ -1,8 +1,10 @@
 
 def configure(ctx):
+    ctx.recurse("ansys")
     ctx.recurse("meshgenerator")
 
 def build(ctx):
+    ctx.recurse("ansys")
     ctx.recurse("meshgenerator")
 
     ctx(

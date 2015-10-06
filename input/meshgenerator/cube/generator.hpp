@@ -29,8 +29,10 @@ template<class TElement>
 CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, int rank, int size): _settings(argc, argv), _rank(rank), _size(size)
 {
 	if (_settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2] != _size) {
-		std::cerr << "The number of clusters(" << _settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2];
-		std::cerr << ") does not accord the number of MPI processes(" << _size << ").\n";
+		if (_rank == 0) {
+			std::cerr << "The number of clusters(" << _settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2];
+			std::cerr << ") does not accord the number of MPI processes(" << _size << ").\n";
+		}
 		exit(EXIT_FAILURE);
 	}
 	eslocal index = 0, i = 0;

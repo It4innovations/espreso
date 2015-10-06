@@ -8,13 +8,6 @@
 
 namespace esinput {
 
-namespace CubeGeneratorOptions {
-	enum {
-		DIRICHLET_BOTTOM,
-		DIRICHLET_ZERO_PLANES
-	};
-}
-
 template<class TElement>
 class CubeGenerator: public Generator {
 
@@ -24,21 +17,6 @@ public:
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 
-	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
-
-	void setDirichlet(mesh::Mesh &mesh, const size_t cluster[], size_t dirichlet)
-	{
-		switch (dirichlet) {
-		case CubeGeneratorOptions::DIRICHLET_BOTTOM: {
-			fixBottom(mesh, cluster);
-			break;
-		}
-		case CubeGeneratorOptions::DIRICHLET_ZERO_PLANES: {
-			fixZeroPlanes(mesh, cluster);
-			break;
-		}
-		}
-	}
 	void setForces(mesh::Mesh &mesh, const size_t cluster[]) { };
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
