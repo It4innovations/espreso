@@ -24,9 +24,17 @@ int main(int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
 	mesh::Mesh m;
-	esinput::Input<esinput::MeshGenerator> l(argc, argv, MPIrank, MPIsize);
+	esinput::Input<esinput::MeshGenerator> loader(argc, argv, MPIrank, MPIsize);
 
-	l.load(m);
+	loader.load(m);
+
+	std::stringstream ss;
+
+	ss << "cube" << MPIrank << ".vtk";
+
+	m.saveVTK(ss.str().c_str(), 0.9, 0.9);
+
+	MPI_Finalize();
 
 	return 0;
 

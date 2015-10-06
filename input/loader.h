@@ -16,8 +16,8 @@ public:
 		elements(mesh._elements);
 	}
 
-	virtual void points(mesh::Coordinates &data) = 0;
-	virtual void elements(std::vector<mesh::Element*> &data) = 0;
+	virtual void points(mesh::Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
 
 	virtual ~ExternalLoader() {};
 };
@@ -28,11 +28,14 @@ public:
 	void load(mesh::Mesh &mesh)
 	{
 		points(mesh._coordinates);
-		elements(mesh._elements);
+		elements(mesh._elements, mesh._partPtrs);
+		for (size_t i = 0; i < mesh._partPtrs.size() - 1; i++) {
+			mesh.computeLocalIndices(i);
+		}
 	}
 
-	virtual void points(mesh::Coordinates &data) = 0;
-	virtual void elements(std::vector<mesh::Element*> &data) = 0;
+	virtual void points(mesh::Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 
 	virtual ~InternalLoader() {};
 };

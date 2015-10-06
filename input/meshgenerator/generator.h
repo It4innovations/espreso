@@ -11,13 +11,8 @@ class Generator {
 
 public:
 
-	virtual void points(mesh::Coordinates &data) = 0;
-	virtual void elements(std::vector<mesh::Element*> &data) = 0;
-
-	bool manualPostProcessing()
-	{
-		return false;
-	}
+	virtual void points(mesh::Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 
 	virtual ~Generator() { };
 
@@ -55,8 +50,8 @@ class MeshGenerator: public InternalLoader {
 public:
 	MeshGenerator(int argc, char** argv, int rank, int size);
 
-	void points(mesh::Coordinates &data);
-	void elements(std::vector<mesh::Element*> &data);
+	void points(mesh::Coordinates &coordinates);
+	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 
 	~MeshGenerator()
 	{

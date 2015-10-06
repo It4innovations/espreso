@@ -49,7 +49,7 @@ CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, int rank, int size
 }
 
 template<class TElement>
-void CubeGenerator<TElement>::points(mesh::Coordinates &data)
+void CubeGenerator<TElement>::points(mesh::Coordinates &coordinates)
 {
 	eslocal cNodes[3];
 	esglobal gNodes[3];
@@ -57,8 +57,8 @@ void CubeGenerator<TElement>::points(mesh::Coordinates &data)
 	Utils<TElement>::clusterNodesCount(_settings, cNodes);
 	Utils<TElement>::globalNodesCount(_settings, gNodes);
 
-	data.clear();
-	data.reserve(cNodes[0] * cNodes[1] * cNodes[2]);
+	coordinates.clear();
+	coordinates.reserve(cNodes[0] * cNodes[1] * cNodes[2]);
 
 	esglobal cs[3], ce[3];
 	double step[3];
@@ -73,7 +73,7 @@ void CubeGenerator<TElement>::points(mesh::Coordinates &data)
 	for (esglobal z = cs[2]; z <= ce[2]; z++) {
 		for (esglobal y = cs[1]; y <= ce[1]; y++) {
 			for (esglobal x = cs[0]; x <= ce[0]; x++) {
-				data.add(
+				coordinates.add(
 					mesh::Point(x * step[0], y * step[1], z * step[2]),
 					(z - cs[2]) * cNodes[0] * cNodes[1] + (y - cs[1]) * cNodes[0] + (x - cs[0]),
 					z * gNodes[0] * gNodes[1] + y * gNodes[0] + x
@@ -84,7 +84,7 @@ void CubeGenerator<TElement>::points(mesh::Coordinates &data)
 }
 
 template<class TElement>
-void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &data)
+void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
 {
 	eslocal cNodes[3];
 	esglobal gNodes[3];
@@ -94,8 +94,10 @@ void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &data)
 
 	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 
-	data.clear();
-	data.reserve(Utils<TElement>::clusterElementsCount(_settings));
+	elements.clear();
+	elements.reserve(Utils<TElement>::clusterElementsCount(_settings));
+	parts.clear();
+	parts.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2] + 1);
 
 	eslocal subdomain[3];
 	eslocal element[3];
@@ -103,6 +105,7 @@ void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &data)
 	eslocal subdomainOffset[3];
 	eslocal elementOffset[3];
 
+	parts.push_back(elements.size());
 	for (subdomain[2] = 0; subdomain[2] < _settings.subdomainsInCluster[2]; subdomain[2]++) {
 		for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
 			for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
@@ -132,10 +135,11 @@ void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &data)
 									}
 								}
 							}
-							e.addElements(data, &indices[0]);
+							e.addElements(elements, &indices[0]);
 						}
 					}
 				}
+				parts.push_back(elements.size());
 			}
 		}
 	}

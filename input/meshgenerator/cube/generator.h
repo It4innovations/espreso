@@ -21,8 +21,8 @@ class CubeGenerator: public Generator {
 public:
 	CubeGenerator(int argc, char** argv, int rank, int size);
 
-	void points(mesh::Coordinates &data);
-	void elements(std::vector<mesh::Element*> &data);
+	void points(mesh::Coordinates &coordinates);
+	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 
 	void mesh(mesh::Mesh &mesh, const size_t cluster[]);
 
