@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
 	mesh::Mesh m;
-	esinput::Loader<esinput::Ansys> loader(argc, argv, MPIrank, MPIsize);
+	esinput::Loader<esinput::MeshGenerator> loader(argc, argv, MPIrank, MPIsize);
 
 	loader.load(m);
 

@@ -20,7 +20,6 @@
 #include "boundaries.h"
 
 #include "../matrices/sparseDOKMatrix.h"
-#include "../settings.h"
 
 #include "esbem.h"
 
