@@ -41,10 +41,10 @@ public:
 };
 
 template <class TLoader>
-class Input {
+class Loader {
 
 public:
-	Input(int argc, char** argv, int rank, int size): _loader(argc, argv, rank, size) { };
+	Loader(int argc, char** argv, int rank, int size): _loader(argc, argv, rank, size) { };
 
 	void load(mesh::Mesh &mesh)
 	{
