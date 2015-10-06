@@ -47,7 +47,6 @@ public:
 	friend class esinput::ExternalLoader;
 
 	Mesh();
-	Mesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints);
 	Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints);
 
 	Mesh(const Mesh &other);
@@ -249,8 +248,6 @@ class SurfaceMesh: public Mesh
 
 public:
 	SurfaceMesh(): Mesh() { };
-	SurfaceMesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints):
-		Mesh(mesh, coordinates, parts, fixPoints) { };
 	SurfaceMesh(const Mesh &mesh)
 	{
 		mesh.getSurface(*this);

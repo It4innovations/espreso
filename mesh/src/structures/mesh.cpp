@@ -9,12 +9,6 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints)
-	:_coordinates(coordinatesFile)
-{
-	readFromFile(meshFile);
-	partitiate(parts, fixPoints);
-}
 Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
 	:_coordinates(ansys)
 {
