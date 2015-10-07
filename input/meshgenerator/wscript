@@ -25,6 +25,6 @@ def build(ctx):
     ctx.lib(
         source          = source_files,
         target          = "esinput_generator",
-        use             = "espreso_includes mesh_includes bem_includes",
+        use             = "espreso_includes mesh_includes basis_includes bem_includes",
         install_path    = ctx.LIBRARIES
     )

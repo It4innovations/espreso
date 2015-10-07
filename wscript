@@ -62,6 +62,7 @@ def configure(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
+    ctx.recurse("basis")
     ctx.recurse("tools")
     ctx.recurse("bem")
     ctx.recurse("mesh")
@@ -168,6 +169,7 @@ def build(ctx):
     else:
         ctx.lib = ctx.shlib
 
+    ctx.recurse("basis")
     ctx.recurse("tools")
     ctx.add_group()
     ctx.recurse("bem")

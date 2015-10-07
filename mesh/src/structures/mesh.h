@@ -19,7 +19,7 @@
 #include "coordinates.h"
 #include "boundaries.h"
 
-#include "../matrices/sparseDOKMatrix.h"
+#include "esbasis.h"
 
 #include "esbem.h"
 
