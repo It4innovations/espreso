@@ -1,0 +1,11 @@
+
+def configure(ctx):
+    ctx.recurse("esdata")
+
+def build(ctx):
+    ctx.recurse("esdata")
+
+    ctx(
+        export_includes = ".",
+        name            = "output_includes"
+    )

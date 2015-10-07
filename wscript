@@ -67,6 +67,7 @@ def configure(ctx):
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")
+    ctx.recurse("output")
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("catalyst")
@@ -175,6 +176,7 @@ def build(ctx):
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")
+    ctx.recurse("output")
     if ctx.options.mesh:
         return
 

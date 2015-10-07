@@ -1540,56 +1540,6 @@ void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
 	}
 }
 
-
-void Mesh::saveData()
-{
-	eslocal value;
-	esglobal index;
-
-	for (size_t p = 0; p < parts(); p++) {
-		std::stringstream ss;
-		ss << "mesh" << p << ".dat";
-		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-
-		// save elements
-		value = _partPtrs[p + 1] - _partPtrs[p];
-		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
-		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			os << *(_elements[e]);
-		}
-
-		// save coordinates
-		value = _coordinates.localSize(p);
-		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
-		const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
-		for (eslocal i = 0; i < l2c.size(); i++) {
-			index = _coordinates.globalIndex(i, p);
-			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
-			const Point &point = _coordinates.get(i, p);
-			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
-		}
-
-		// save coordinates' properties
-		for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
-			const std::map<eslocal, double> &property = _coordinates.property(i).values();
-			eslocal counter = 0;
-			const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
-			for (size_t j = 0; j < l2c.size(); j++) {
-				if (property.find(l2c[j]) != property.end()) {
-					counter++;
-				}
-			}
-			os.write(reinterpret_cast<const char*>(&counter), sizeof(eslocal));
-			for (eslocal j = 0; j < l2c.size(); j++) {
-				if (property.find(l2c[j]) != property.end()) {
-					os.write(reinterpret_cast<const char*>(&j), sizeof(eslocal));
-					os.write(reinterpret_cast<const char*>(&property.find(l2c[j])->second), sizeof(double));
-				}
-			}
-		}
-	}
-}
-
 std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {

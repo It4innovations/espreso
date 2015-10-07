@@ -1,6 +1,7 @@
 #include "mpi.h"
 
 #include "esinput.h"
+#include "esoutput.h"
 
 #include "essolver.h"
 #include "instance.h"
@@ -33,6 +34,10 @@ int main(int argc, char** argv)
 	ss << "cube" << MPIrank << ".vtk";
 
 	m.saveVTK(ss.str().c_str(), 0.9, 0.9);
+
+	esoutput::Store<esoutput::Esdata> s("examples/esmesh", MPIrank, MPIsize);
+
+	s.store(m);
 
 	MPI_Finalize();
 

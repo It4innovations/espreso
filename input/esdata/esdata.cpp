@@ -3,7 +3,6 @@
 
 using namespace esinput;
 
-
 Esdata::Esdata(int argc, char** argv, int rank, int size): _rank(rank), _size(size)
 {
 	if (argc < 2) {
@@ -26,8 +25,6 @@ Esdata::Esdata(int argc, char** argv, int rank, int size): _rank(rank), _size(si
 //		}
 //	}
 }
-
-
 
 
 void Esdata::points(mesh::Coordinates &coordinates)

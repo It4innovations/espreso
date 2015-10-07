@@ -79,8 +79,6 @@ public:
 			double subDomainShrinking = 1,
 			double clusterShrinking = 1) const;
 
-	void saveData();
-
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;

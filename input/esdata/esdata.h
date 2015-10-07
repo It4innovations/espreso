@@ -10,7 +10,6 @@ class Esdata: public ExternalLoader {
 
 public:
 	Esdata(int argc, char** argv, int rank, int size);
-	~Esdata();
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
