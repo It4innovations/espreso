@@ -20,7 +20,6 @@
 #include "boundaries.h"
 
 #include "esbasis.h"
-
 #include "esbem.h"
 
 namespace esinput {
@@ -81,7 +80,6 @@ public:
 			double clusterShrinking = 1) const;
 
 	void saveData();
-	void loadData(const char *filename);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
