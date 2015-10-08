@@ -3,7 +3,6 @@ MESH = "mesh"
 MESH_APP = "meshApp"
 
 source_files = (
-    "src/loader.cpp",
     "src/structures/coordinates.cpp",
     "src/structures/mesh.cpp",
     "src/structures/boundaries.cpp",

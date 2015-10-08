@@ -114,9 +114,9 @@ void Dynamics::init()
 	 timeBforces.AddStart();
 
 	 //TODO: DOFS_PER_NODE
-	 const std::map<eslocal, double> &forces_x = _instance.mesh().coordinates().property(mesh::CP::FORCES_X).values();
-	 const std::map<eslocal, double> &forces_y = _instance.mesh().coordinates().property(mesh::CP::FORCES_Y).values();
-	 const std::map<eslocal, double> &forces_z = _instance.mesh().coordinates().property(mesh::CP::FORCES_Z).values();
+	 const std::map<eslocal, double> &forces_x = _instance.mesh().coordinates().property(mesh::FORCES_X).values();
+	 const std::map<eslocal, double> &forces_y = _instance.mesh().coordinates().property(mesh::FORCES_Y).values();
+	 const std::map<eslocal, double> &forces_z = _instance.mesh().coordinates().property(mesh::FORCES_Z).values();
 
 	 for (eslocal d = 0; d < partsCount; d++) {
 		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {

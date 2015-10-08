@@ -18,9 +18,9 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 								const mesh::Boundaries & global_boundaries) const
 {
 
-	const std::map<eslocal, double> &dirichlet_x = _mesh.coordinates().property(CP::DIRICHLET_X).values();
-	const std::map<eslocal, double> &dirichlet_y = _mesh.coordinates().property(CP::DIRICHLET_Y).values();
-	const std::map<eslocal, double> &dirichlet_z = _mesh.coordinates().property(CP::DIRICHLET_Z).values();
+	const std::map<eslocal, double> &dirichlet_x = _mesh.coordinates().property(DIRICHLET_X).values();
+	const std::map<eslocal, double> &dirichlet_y = _mesh.coordinates().property(DIRICHLET_Y).values();
+	const std::map<eslocal, double> &dirichlet_z = _mesh.coordinates().property(DIRICHLET_Z).values();
 
 	l2g_vec.resize(domains_num);
 
@@ -687,7 +687,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 	if (MPIrank == 0) { std::cout << " Dual size: " <<  total_number_of_B1_l_rows + total_number_of_global_B1_lambdas  << std::endl; }
 
-        MPI_Barrier(MPI_COMM_WORLD); 
+        MPI_Barrier(MPI_COMM_WORLD);
 
 
 
@@ -761,7 +761,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
     	// sort my neigh DOFs sp
     	std::sort (myBorderDOFs_sp.begin(), myBorderDOFs_sp.end());
-        myBorderDOFs_sp_nr = myBorderDOFs_sp; 
+        myBorderDOFs_sp_nr = myBorderDOFs_sp;
     	// removes the duplicit DOFs from myBorderDofs
     	std::vector< esglobal >::iterator itx;
         itx = std::unique (myBorderDOFs_sp_nr.begin(), myBorderDOFs_sp_nr.end());
@@ -1161,7 +1161,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     	if (MPIrank == 0) { std::cout << " Global B - Iprobe and MPIrecv                                            "; system("date +%T.%6N"); }
 
     	//std::vector < std::vector < esglobal > > mpi_recv_buff;
-    	mpi_recv_buff.clear(); 
+    	mpi_recv_buff.clear();
         mpi_recv_buff.resize( myNeighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
     	delete [] mpi_send_req;
 

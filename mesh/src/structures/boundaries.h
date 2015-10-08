@@ -1,8 +1,11 @@
 #ifndef BOUNDARIES_H_
 #define BOUNDARIES_H_
 
+#include <sstream>
+
 #include "../elements/elements.h"
 #include "mesh.h"
+
 
 namespace mesh {
 
