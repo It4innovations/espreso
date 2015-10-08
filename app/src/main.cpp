@@ -165,7 +165,8 @@ void solve(Instance &instance)
 		B1_duplicity,
 		partsCount,
 		DOFS_PER_NODE,
-		instance.globalBoundaries()
+		instance.globalBoundaries(),
+		instance.mesh().coordinates()
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -189,7 +190,8 @@ void solve(Instance &instance)
 		partsCount,
 		DOFS_PER_NODE,
 		neigh_clusters,
-        instance.localBoundaries()
+        instance.localBoundaries(),
+		instance.mesh().coordinates()
 	);
 
 	 timeB1glob.AddEndWithBarrier();

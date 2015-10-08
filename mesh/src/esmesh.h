@@ -2,8 +2,9 @@
 #define ESMESH_H_
 
 #include "structures/coordinates.h"
-#include "structures/mesh.h"
 #include "structures/boundaries.h"
+#include "structures/mesh.h"
+
 
 //#include "mkl.h"
 #include "mkl_spblas.h"

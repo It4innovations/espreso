@@ -4,8 +4,8 @@ MESH_APP = "meshApp"
 
 source_files = (
     "src/structures/coordinates.cpp",
-    "src/structures/mesh.cpp",
     "src/structures/boundaries.cpp",
+    "src/structures/mesh.cpp",
     "src/elements/element.cpp",
     "src/elements/3D/hexahedron8.cpp",
     "src/elements/3D/hexahedron20.cpp",

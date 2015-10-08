@@ -60,6 +60,16 @@ public:
 		return _coordinates;
 	}
 
+	const Boundaries& subdomainBoundaries() const
+	{
+		return _subdomainBoundaries;
+	}
+
+	const Boundaries& clusterBoundaries() const
+	{
+		return _clusterBoundaries;
+	}
+
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
@@ -177,6 +187,7 @@ protected:
 
 	void partitiate(eslocal *ePartition);
 	void computeLocalIndices(size_t part);
+	void computeBoundaries();
 
 	void checkMETISResult(eslocal result) const;
 	void checkMKLResult(eslocal result) const;
@@ -192,6 +203,12 @@ protected:
 
 	/** @brief Fix points for all parts. */
 	std::vector<eslocal> _fixPoints;
+
+	/** @brief Map of points to sub-domains. */
+	Boundaries _subdomainBoundaries;
+
+	/** @brief Map of points to clusters. */
+	Boundaries _clusterBoundaries;
 };
 
 

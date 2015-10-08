@@ -13,6 +13,7 @@ public:
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
+	void boundaries(mesh::Mesh &mesh);
 
 private:
 	std::string _path;

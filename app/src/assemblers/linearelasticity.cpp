@@ -77,7 +77,8 @@ void Linear_elasticity::init() {
 		B1_duplicity,
 		partsCount,
 		DOFS_PER_NODE,
-		_instance.globalBoundaries()
+		_instance.globalBoundaries(),
+		_instance.mesh().coordinates()
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -99,7 +100,8 @@ void Linear_elasticity::init() {
 		partsCount,
 		DOFS_PER_NODE,
 		neigh_clusters,
-        _instance.localBoundaries()
+        _instance.localBoundaries(),
+		_instance.mesh().coordinates()
 	);
 
 	 timeB1glob.AddEndWithBarrier();

@@ -18,12 +18,12 @@ public:
 
 	const mesh::Boundaries& localBoundaries() const
 	{
-		return _localBoundaries;
+		return _mesh.subdomainBoundaries();
 	}
 
 	const mesh::Boundaries& globalBoundaries() const
 	{
-		return _globalBoundaries;
+		return _mesh.clusterBoundaries();
 	}
 
 	int rank() const
@@ -41,8 +41,6 @@ private:
 	int _size;
 
 	mesh::Mesh _mesh;
-	mesh::Boundaries _localBoundaries;
-	mesh::Boundaries _globalBoundaries;
 };
 
 

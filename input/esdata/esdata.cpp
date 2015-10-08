@@ -89,3 +89,24 @@ void Esdata::elements(std::vector<mesh::Element*> &elements)
 
 	is.close();
 }
+
+void Esdata::boundaries(mesh::Mesh &mesh)
+{
+//	_boundaries.clear();
+//	_corners.clear();
+//
+//	std::ifstream is(filename, std::ifstream::binary);
+//
+//	eslocal size, value;
+//
+//	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+//
+//	_boundaries.resize(size);
+//	for (size_t i = 0; i < _boundaries.size(); i++) {
+//		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+//		for (eslocal j = 0; j < size; j++) {
+//			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
+//			_boundaries[i].insert(value);
+//		}
+//	}
+}

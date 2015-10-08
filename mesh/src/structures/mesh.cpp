@@ -369,6 +369,22 @@ void Mesh::partitiate(eslocal parts, eslocal fixPoints)
 	if (fixPoints > 0) {
 		computeFixPoints(fixPoints);
 	}
+
+	computeBoundaries();
+}
+
+void Mesh::computeBoundaries()
+{
+	_subdomainBoundaries.clear();
+	_subdomainBoundaries.resize(_coordinates.size());
+
+	for (size_t p = 0; p < parts(); p++) {
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (size_t n = 0; n < _elements[e]->size(); n++) {
+				_subdomainBoundaries[_coordinates.clusterIndex(_elements[e]->node(n), p)].insert(p);
+			}
+		}
+	}
 }
 
 void Mesh::computeFixPoints(eslocal fixPoints)

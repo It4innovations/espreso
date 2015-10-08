@@ -15,6 +15,8 @@ public:
 	void store(const mesh::Mesh &mesh, double shrinkSubdomain, double shrinkCluster);
 
 private:
+	void boundaries(const mesh::Mesh &mesh);
+
 	std::string _path;
 	int _rank;
 	int _size;
