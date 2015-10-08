@@ -8,8 +8,3 @@ def build(ctx):
     ctx.recurse("esdata")
     ctx.recurse("ansys")
     ctx.recurse("meshgenerator")
-
-    ctx(
-        export_includes = ".",
-        name            = "input_includes"
-    )

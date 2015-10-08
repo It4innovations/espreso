@@ -6,8 +6,3 @@ def configure(ctx):
 def build(ctx):
     ctx.recurse("vtk")
     ctx.recurse("esdata")
-
-    ctx(
-        export_includes = ".",
-        name            = "output_includes"
-    )

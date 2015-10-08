@@ -51,7 +51,7 @@ def build(ctx):
         ctx.program(
             source          = source_files + ("src/main.cpp",),
             target          = "esmesh",
-            use             = "espreso_includes basis_includes bem_includes esbem",
+            use             = "espreso_includes esbem",
             install_path    = ctx.ROOT
         )
     else:
@@ -59,11 +59,6 @@ def build(ctx):
         ctx.lib(
             source          = source_files,
             target          = "esmesh",
-            use             = "espreso_includes basis_includes bem_includes",
+            use             = "espreso_includes",
             install_path    = ctx.LIBRARIES
         )
-
-    ctx(
-        export_includes = "src",
-        name            = "mesh_includes"
-    )

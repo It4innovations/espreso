@@ -17,8 +17,3 @@ def build(ctx):
         target          = "esbasis",
         install_path    = ctx.LIBRARIES
     )
-
-    ctx(
-        export_includes = ".",
-        name            = "basis_includes"
-    )
