@@ -429,22 +429,22 @@ void CubeGenerator<TElement>::corners(mesh::Boundaries &boundaries)
 }
 
 template <class TElement>
-void CubeGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[])
+void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 {
 	esglobal gNodes[3];
 	Utils<TElement>::globalNodesCount(_settings, gNodes);
 	eslocal cNodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, cNodes);
-	boundaries.resize(TElement::clusterNodesCount(_settings));
+	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
 	bool border[3];
-	eslocal cIndex = cluster[0] + cluster[1] * _settings.clusters[0] + cluster[2] * _settings.clusters[0] * _settings.clusters[1];
+	eslocal cIndex = _cluster[0] + _cluster[1] * _settings.clusters[0] + _cluster[2] * _settings.clusters[0] * _settings.clusters[1];
 	esglobal index = 0;
 
 	esglobal cs[3], ce[3];
 	for (eslocal i = 0; i < 3; i++) {
-		cs[i] = (cNodes[i] - 1) * cluster[i];
-		ce[i] = (cNodes[i] - 1) * (cluster[i] + 1);
+		cs[i] = (cNodes[i] - 1) * _cluster[i];
+		ce[i] = (cNodes[i] - 1) * (_cluster[i] + 1);
 	}
 
 	for (esglobal z = cs[2]; z <= ce[2]; z++) {
@@ -452,9 +452,6 @@ void CubeGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries,
 		for (esglobal y = cs[1]; y <= ce[1]; y++) {
 			border[1] = (y == 0 || y == gNodes[1] - 1) ? false : y % ( cNodes[1] - 1) == 0;
 			for (esglobal x = cs[0]; x <= ce[0]; x++) {
-				if (!e.addPoint(x, y, z)) {
-					continue;
-				}
 				border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
 				for (int i = 0; i < 8; i++) {
 					eslocal tmp = cIndex;

@@ -19,15 +19,7 @@ public:
 	void fixPoints(std::vector<eslocal> &fixPoints);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void corners(mesh::Boundaries &boundaries);
-
-	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
-
-	void setCorners(
-			mesh::Boundaries &boundaries,
-			const size_t number[],
-			const bool corners,
-			const bool edges,
-			const bool surface);
+	void clusterBoundaries(mesh::Boundaries &boundaries);
 
 private:
 	CubeSettings _settings;

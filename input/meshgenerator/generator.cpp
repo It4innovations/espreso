@@ -35,3 +35,7 @@ void MeshGenerator::corners(mesh::Boundaries &boundaries)
 	_generator->corners(boundaries);
 }
 
+void MeshGenerator::clusterBoundaries(mesh::Boundaries &boundaries)
+{
+	_generator->clusterBoundaries(boundaries);
+}

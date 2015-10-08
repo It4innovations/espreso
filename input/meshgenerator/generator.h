@@ -10,25 +10,14 @@ namespace esinput {
 class Generator {
 
 public:
-
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void corners(mesh::Boundaries &boundaries) = 0;
+	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
 
 	virtual ~Generator() { };
-
-protected:
-	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
-
-	void setCorners(
-			mesh::Boundaries &boundaries,
-			const size_t number[],
-			const bool corners,
-			const bool edges,
-			const bool surface);
-
 };
 
 class MeshGenerator: public InternalLoader {
@@ -40,6 +29,7 @@ public:
 	void fixPoints(std::vector<eslocal> &fixPoints);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void corners(mesh::Boundaries &boundaries);
+	void clusterBoundaries(mesh::Boundaries &boundaries);
 
 	~MeshGenerator()
 	{
