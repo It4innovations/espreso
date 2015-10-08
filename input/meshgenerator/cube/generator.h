@@ -18,6 +18,7 @@ public:
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	void fixPoints(std::vector<eslocal> &fixPoints);
 	void boundaryConditions(mesh::Coordinates &coordinates);
+	void corners(mesh::Boundaries &boundaries);
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 

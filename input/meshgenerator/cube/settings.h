@@ -28,6 +28,10 @@ struct CubeSettings {
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
 	double problemLength[3];
+	size_t cornerCount;
+	bool corners;
+	bool edges;
+	bool faces;
 
 	std::vector<std::map<size_t, double> > boundaryCondition;
 	std::vector<std::map<size_t, bool> > fillCondition;

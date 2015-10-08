@@ -30,3 +30,8 @@ void MeshGenerator::boundaryConditions(mesh::Coordinates &coordinates)
 	_generator->boundaryConditions(coordinates);
 }
 
+void MeshGenerator::corners(mesh::Boundaries &boundaries)
+{
+	_generator->corners(boundaries);
+}
+

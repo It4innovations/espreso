@@ -15,17 +15,13 @@ public:
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
+	virtual void corners(mesh::Boundaries &boundaries) = 0;
 
 	virtual ~Generator() { };
 
 protected:
-
-	void setDirichlet(mesh::Mesh &mesh, const size_t cluster[], size_t dirichlet);
-	void setForces(mesh::Mesh &mesh, const size_t cluster[]);
-
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 
-	void setFixPoints(mesh::Mesh &mesh);
 	void setCorners(
 			mesh::Boundaries &boundaries,
 			const size_t number[],
@@ -43,6 +39,7 @@ public:
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	void fixPoints(std::vector<eslocal> &fixPoints);
 	void boundaryConditions(mesh::Coordinates &coordinates);
+	void corners(mesh::Boundaries &boundaries);
 
 	~MeshGenerator()
 	{

@@ -64,7 +64,12 @@ std::vector<Description> CubeSettings::description = {
 
 	{ DOUBLE_PARAMETER, "FORCES_BOTTOM_X", "Force on the bottom face in x-axis." },
 	{ DOUBLE_PARAMETER, "FORCES_BOTTOM_Y", "Force on the bottom face in y-axis." },
-	{ DOUBLE_PARAMETER, "FORCES_BOTTOM_Z", "Force on the bottom face in z-axis." }
+	{ DOUBLE_PARAMETER, "FORCES_BOTTOM_Z", "Force on the bottom face in z-axis." },
+
+	{ INTEGER_PARAMETER, "CORNER_COUNT", "The number of corners."},
+	{ BOOLEAN_PARAMETER, "CORNERS_IN_CORNERS", "Set corners in corner points."},
+	{ BOOLEAN_PARAMETER, "CORNERS_IN_EDGES", "Set corners on edges."},
+	{ BOOLEAN_PARAMETER, "CORNERS_IN_FACES", "Set corners on faces."},
 };
 
 CubeSettings::CubeSettings(int argc, char** argv)
@@ -85,19 +90,24 @@ CubeSettings::CubeSettings(int argc, char** argv)
 	problemLength[2] = configuration.value<double>("LENGTH_Z", 20);
 
 	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };
-	std::vector<std::string> faces = { "FRONT", "REAR", "LEFT", "RIGHT", "TOP", "BOTTOM" };
+	std::vector<std::string> cube_faces = { "FRONT", "REAR", "LEFT", "RIGHT", "TOP", "BOTTOM" };
 	std::vector<std::string> axis = { "X", "Y", "Z" };
 
-	fillCondition.resize(faces.size());
-	boundaryCondition.resize(faces.size());
+	fillCondition.resize(cube_faces.size());
+	boundaryCondition.resize(cube_faces.size());
 
-	for (size_t f = 0; f < faces.size(); f++) {
+	for (size_t f = 0; f < cube_faces.size(); f++) {
 		for (size_t p = mesh::DIRICHLET_X; p <= mesh::FORCES_Z; p++) {
-			std::string name = properties[p / 3] + "_" + faces[f] + "_" + axis[p % 3];
+			std::string name = properties[p / 3] + "_" + cube_faces[f] + "_" + axis[p % 3];
 			fillCondition[f][p] = configuration.isSet(name);
 			boundaryCondition[f][p] = configuration.value<double>(name, 0);
 		}
 	}
+
+	cornerCount = configuration.value<eslocal>("CORNER_COUNT", 0);
+	corners = configuration.value<bool>("CORNERS_IN_CORNERS", true);
+	edges = configuration.value<bool>("CORNERS_IN_EDGES", false);
+	faces = configuration.value<bool>("CORNERS_IN_FACES", false);
 }
 
 

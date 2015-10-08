@@ -356,6 +356,79 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 template <class TElement>
+void CubeGenerator<TElement>::corners(mesh::Boundaries &boundaries)
+{
+	eslocal nodes[3];
+	eslocal cNodes[3];
+	for (int i = 0; i < 3; i++) {
+		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
+	}
+	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+
+	eslocal step[3];
+	for (int i = 0; i < 3; i++) {
+		step[i] = _settings.elementsInSubdomain[i] / (_settings.cornerCount + 1);
+		step[i] *= TElement::subnodes[i] + 1;
+	}
+	std::vector<std::vector<size_t> > offsets(3);
+	std::vector<size_t> mul(3);
+
+	for (int i = 0; i < 3; i++) {
+		for (size_t j = 0; j < _settings.subdomainsInCluster[i]; j++) {
+			for (size_t k = 0; k <= _settings.cornerCount / 2; k++) {
+				offsets[i].push_back(j * nodes[i] + k * step[i]);
+				offsets[i].push_back(j * nodes[i] + nodes[i] - k * step[i]);
+			}
+			if (_settings.cornerCount % 2 == 1) {
+				eslocal mid = (_settings.elementsInSubdomain[i] / 2) * (TElement::subnodes[i] + 1);
+				offsets[i].push_back(j * nodes[i] + mid);
+			}
+		}
+	}
+	mul[0] = 1;
+	mul[1] = cNodes[0];
+	mul[2] = cNodes[0] * cNodes[1];
+
+	eslocal index;
+	for (size_t d = 0; d < 3; d++) {
+		for (eslocal i = 1; i < _settings.subdomainsInCluster[d]; i++) {
+			for (size_t j = 0; j < offsets[(d + 1) % 3].size(); j++) {
+				for (size_t k = 0; k < offsets[(d + 2) % 3].size(); k++) {
+					if (!_settings.corners
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0)
+					{
+						continue;
+					}
+					if (!_settings.edges
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] != 0)
+					{
+						continue;
+					}
+					if (!_settings.edges
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] != 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0)
+					{
+						continue;
+					}
+					if (!_settings.faces
+						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] != 0
+						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] != 0)
+					{
+						continue;
+					}
+					index = i * nodes[d] * mul[d];
+					index += offsets[(d + 1) % 3][j] * mul[(d + 1) % 3];
+					index += offsets[(d + 2) % 3][k] * mul[(d + 2) % 3];
+					boundaries.setCorner(index);
+				}
+			}
+		}
+	}
+}
+
+template <class TElement>
 void CubeGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[])
 {
 	esglobal gNodes[3];
@@ -397,85 +470,6 @@ void CubeGenerator<TElement>::fillGlobalBoundaries(mesh::Boundaries &boundaries,
 					boundaries[index].insert(tmp);
 				}
 				index++;
-			}
-		}
-	}
-}
-
-
-template <class TElement>
-void CubeGenerator<TElement>::setCorners(
-		mesh::Boundaries &boundaries,
-		const size_t number[],
-		const bool corners,
-		const bool edges,
-		const bool surface)
-{
-	eslocal nodes[3];
-	eslocal cNodes[3];
-	for (int i = 0; i < 3; i++) {
-		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
-	}
-	Utils<TElement>::clusterNodesCount(_settings, cNodes);
-
-	eslocal step[3];
-	for (int i = 0; i < 3; i++) {
-		step[i] = _settings.elementsInSubdomain[i] / (number[i] + 1);
-		step[i] *= TElement::subnodes[i] + 1;
-	}
-	std::vector<std::vector<size_t> > offsets(3);
-	std::vector<size_t> mul(3);
-
-	for (int i = 0; i < 3; i++) {
-		for (size_t j = 0; j < _settings.subdomainsInCluster[i]; j++) {
-			for (size_t k = 0; k <= number[i] / 2; k++) {
-				offsets[i].push_back(j * nodes[i] + k * step[i]);
-				offsets[i].push_back(j * nodes[i] + nodes[i] - k * step[i]);
-			}
-			if (number[i] % 2 == 1) {
-				eslocal mid = (_settings.elementsInSubdomain[i] / 2) * (TElement::subnodes[i] + 1);
-				offsets[i].push_back(j * nodes[i] + mid);
-			}
-		}
-	}
-	mul[0] = 1;
-	mul[1] = cNodes[0];
-	mul[2] = cNodes[0] * cNodes[1];
-
-	eslocal index;
-	for (size_t d = 0; d < 3; d++) {
-		for (eslocal i = 1; i < _settings.subdomainsInCluster[d]; i++) {
-			for (size_t j = 0; j < offsets[(d + 1) % 3].size(); j++) {
-				for (size_t k = 0; k < offsets[(d + 2) % 3].size(); k++) {
-					if (!corners
-						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0
-						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0)
-					{
-						continue;
-					}
-					if (!edges
-						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0
-						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] != 0)
-					{
-						continue;
-					}
-					if (!edges
-						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] != 0
-						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0)
-					{
-						continue;
-					}
-					if (!surface
-						&& offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] != 0
-						&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] != 0)
-					{
-						continue;
-					}
-					index = i * nodes[d] * mul[d];
-					index += offsets[(d + 1) % 3][j] * mul[(d + 1) % 3];
-					index += offsets[(d + 2) % 3][k] * mul[(d + 2) % 3];
-					boundaries.setCorner(e.projectPoint(index));
-				}
 			}
 		}
 	}
