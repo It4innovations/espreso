@@ -25,3 +25,8 @@ void MeshGenerator::fixPoints(std::vector<eslocal> &fixPoints)
 	_generator->fixPoints(fixPoints);
 }
 
+void MeshGenerator::boundaryConditions(mesh::Coordinates &coordinates)
+{
+	_generator->boundaryConditions(coordinates);
+}
+

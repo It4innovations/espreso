@@ -177,74 +177,180 @@ void CubeGenerator<TElement>::fixPoints(std::vector<eslocal> &fixPoints)
 	}
 }
 
-template <class TElement>
-void CubeGenerator<TElement>::fixZeroPlanes(mesh::Mesh &mesh, const size_t cluster[])
+template<class TElement>
+void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 {
-	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::DIRICHLET_Z);
+	mesh::CoordinatesProperty &dirichlet_x = coordinates.property(mesh::DIRICHLET_X);
+	mesh::CoordinatesProperty &dirichlet_y = coordinates.property(mesh::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dirichlet_z = coordinates.property(mesh::DIRICHLET_Z);
+	mesh::CoordinatesProperty &forces_x = coordinates.property(mesh::FORCES_X);
+	mesh::CoordinatesProperty &forces_y = coordinates.property(mesh::FORCES_Y);
+	mesh::CoordinatesProperty &forces_z = coordinates.property(mesh::FORCES_Z);
 
 	eslocal nodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, nodes);
 
-	if (cluster[0] == 0) {
+	if (_cluster[0] == 0) {
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (e.addPoint(0, y, z)) {
-					dirichlet_x[e.projectPoint(index)] = 0;
+				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_X]) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_X];
+				}
+				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_X]) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_X];
+				}
+				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_Y]) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_Y]) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_Z]) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_Z];
+				}
+				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_Z]) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_Z];
 				}
 				index += nodes[0];
 			}
 		}
 	}
-	if (cluster[1] == 0) {
+
+	if (_cluster[0] == _settings.clusters[0] - 1) {
+		eslocal index = nodes[0] - 1;
+		for (eslocal z = 0; z < nodes[2]; z++) {
+			for (eslocal y = 0; y < nodes[1]; y++) {
+				if (_settings.fillCondition[CubeSettings::FRONT][mesh::DIRICHLET_X]) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::DIRICHLET_X];
+				}
+				if (_settings.fillCondition[CubeSettings::FRONT][mesh::FORCES_X]) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::FORCES_X];
+				}
+				if (_settings.fillCondition[CubeSettings::FRONT][mesh::DIRICHLET_Y]) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::DIRICHLET_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::FRONT][mesh::FORCES_Y]) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::FORCES_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::FRONT][mesh::DIRICHLET_Z]) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::DIRICHLET_Z];
+				}
+				if (_settings.fillCondition[CubeSettings::FRONT][mesh::FORCES_Z]) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::FORCES_Z];
+				}
+				index += nodes[0];
+			}
+		}
+	}
+
+	if (_cluster[1] == 0) {
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (e.addPoint(x, 0, z)) {
-					dirichlet_y[e.projectPoint(index)] = 0;
+				if (_settings.fillCondition[CubeSettings::LEFT][mesh::DIRICHLET_X]) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::DIRICHLET_X];
+				}
+				if (_settings.fillCondition[CubeSettings::LEFT][mesh::FORCES_X]) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::FORCES_X];
+				}
+				if (_settings.fillCondition[CubeSettings::LEFT][mesh::DIRICHLET_Y]) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::DIRICHLET_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::LEFT][mesh::FORCES_Y]) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::FORCES_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::LEFT][mesh::DIRICHLET_Z]) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::DIRICHLET_Z];
+				}
+				if (_settings.fillCondition[CubeSettings::LEFT][mesh::FORCES_Z]) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::FORCES_Z];
 				}
 				index++;
 			}
 			index = (z + 1) * nodes[1] * nodes[0];
 		}
 	}
-	if (cluster[2] == 0) {
+
+	if (_cluster[1] == _settings.clusters[1] - 1) {
+		eslocal index = nodes[1] * nodes[0] - 1;
+		for (eslocal z = 0; z < nodes[2]; z++) {
+			for (eslocal x = 0; x < nodes[0]; x++) {
+				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::DIRICHLET_X]) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::DIRICHLET_X];
+				}
+				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::FORCES_X]) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::FORCES_X];
+				}
+				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Y]) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::FORCES_Y]) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::FORCES_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Z]) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Z];
+				}
+				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::FORCES_Z]) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::FORCES_Z];
+				}
+				index++;
+			}
+			index = (z + 2) * nodes[1] * nodes[0] - 1;
+		}
+	}
+
+	if (_cluster[2] == 0) {
 		eslocal index = 0;
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (e.addPoint(x, y, 0)) {
-					dirichlet_z[e.projectPoint(index)] = 0;
+				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_X]) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_X];
+				}
+				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::FORCES_X]) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::FORCES_X];
+				}
+				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Y]) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::FORCES_Y]) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::FORCES_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Z]) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Z];
+				}
+				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::FORCES_Z]) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::FORCES_Z];
 				}
 				index++;
 			}
 		}
 	}
-}
 
-template <class TElement>
-void CubeGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluster[])
-{
-	if (cluster[2] > 0) {
-		return;
-	}
-	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::DIRICHLET_Z);
-
-	eslocal nodes[3];
-	Utils<TElement>::clusterNodesCount(_settings, nodes);
-
-	eslocal index = 0;
-	for (eslocal y = 0; y < nodes[1]; y++) {
-		for (eslocal x = 0; x < nodes[0]; x++) {
-			if (e.addPoint(x, y, 0)) {
-				dirichlet_z[e.projectPoint(index)] = 0;
-				dirichlet_y[e.projectPoint(index)] = 0;
-				dirichlet_x[e.projectPoint(index)] = 1;
+	if (_cluster[2] == _settings.clusters[2] - 1) {
+		eslocal index = nodes[0] * nodes[1] * (nodes[2] - 1);
+		for (eslocal y = 0; y < nodes[1]; y++) {
+			for (eslocal x = 0; x < nodes[0]; x++) {
+				if (_settings.fillCondition[CubeSettings::TOP][mesh::DIRICHLET_X]) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::DIRICHLET_X];
+				}
+				if (_settings.fillCondition[CubeSettings::TOP][mesh::FORCES_X]) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::FORCES_X];
+				}
+				if (_settings.fillCondition[CubeSettings::TOP][mesh::DIRICHLET_Y]) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::DIRICHLET_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::TOP][mesh::FORCES_Y]) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::FORCES_Y];
+				}
+				if (_settings.fillCondition[CubeSettings::TOP][mesh::DIRICHLET_Z]) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::DIRICHLET_Z];
+				}
+				if (_settings.fillCondition[CubeSettings::TOP][mesh::FORCES_Z]) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::FORCES_Z];
+				}
+				index++;
 			}
-			index++;
 		}
 	}
 }

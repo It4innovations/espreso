@@ -22,6 +22,15 @@ public:
 
 	void print() const;
 
+	bool isSet(const std::string &parameter) const
+	{
+		if (_parameters.find(parameter) != _parameters.end()) {
+			return _parameters.find(parameter)->second->isSet();
+		} else {
+			return false;
+		}
+	}
+
 	template<class ParameterType>
 	const ParameterType value(const std::string &parameter, ParameterType defaultValue) const
 	{

@@ -43,11 +43,14 @@ public:
 				mesh._fixPoints[p * fSize + i] = mesh.coordinates().localIndex(mesh._fixPoints[p * fSize + i], p);
 			}
 		}
+
+		boundaryConditions(mesh._coordinates);
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
+	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 
 	virtual ~InternalLoader() {};
 };

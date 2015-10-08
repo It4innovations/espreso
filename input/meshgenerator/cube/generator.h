@@ -17,8 +17,7 @@ public:
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	void fixPoints(std::vector<eslocal> &fixPoints);
-
-	void setForces(mesh::Mesh &mesh, const size_t cluster[]) { };
+	void boundaryConditions(mesh::Coordinates &coordinates);
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 
@@ -30,9 +29,6 @@ public:
 			const bool surface);
 
 private:
-	void fixZeroPlanes(mesh::Mesh &mesh, const size_t cluster[]);
-	void fixBottom(mesh::Mesh &mesh, const size_t cluster[]);
-
 	CubeSettings _settings;
 	TElement e;
 	int _rank;
