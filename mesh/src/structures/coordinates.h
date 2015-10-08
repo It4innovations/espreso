@@ -122,6 +122,11 @@ public:
 		return _clusterIndex[part].size();
 	}
 
+	size_t parts() const
+	{
+		return _clusterIndex.size();
+	}
+
 	size_t size() const
 	{
 		return _points.size();

@@ -12,7 +12,7 @@ class Esdata: public MeshStore {
 public:
 	Esdata(const std::string &path, int rank, int size): _path(path), _rank(rank), _size(size) { };
 
-	void store(const mesh::Mesh &mesh);
+	void store(const mesh::Mesh &mesh, double shrinkSubdomain, double shrinkCluster);
 
 private:
 	std::string _path;

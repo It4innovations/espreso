@@ -59,26 +59,6 @@ public:
 		return _coordinates;
 	}
 
-	void saveVTK(
-			const char* filename,
-			double subDomainShrinking = 1,
-			double clusterShrinking = 1) const;
-
-	void saveVTK(
-			const char* filename,
-			const Boundaries &localBoundaries,
-			double subDomainShrinking = 1,
-			double clusterShrinking = 1) const;
-
-	void saveVTK(
-			const char* filename,
-			std::vector<std::vector<double> > &displacement,
-			std::vector<std::vector <eslocal> > &l2g_vec,
-			const Boundaries &lBoundaries,
-			const Boundaries &gBoundaries,
-			double subDomainShrinking = 1,
-			double clusterShrinking = 1) const;
-
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
@@ -157,14 +137,6 @@ public:
 
 protected:
 	static void assign(Mesh &m1, Mesh &m2);
-
-	void saveBasis(
-			std::ofstream &vtk,
-			std::vector<std::vector<eslocal> > &l2g_vec,
-			const Boundaries &lBoundaries,
-			const Boundaries &gBoundaries,
-			double subDomainShrinking,
-			double clusterShrinking) const;
 
 	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
 	void _assembleElesticity(

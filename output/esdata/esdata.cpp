@@ -3,8 +3,10 @@
 
 using namespace esoutput;
 
-void Esdata::store(const mesh::Mesh &mesh)
+void Esdata::store(const mesh::Mesh &mesh, double shrinkSubdomain, double shrinkCluster)
 {
+	// shrink is ignored!!!
+
 	std::stringstream ss;
 	ss << "mkdir -p " << _path;
 
@@ -22,6 +24,8 @@ void Esdata::store(const mesh::Mesh &mesh)
 		ssMesh << _path << "/" << p << "/elements.dat";
 		std::stringstream ssPoints;
 		ssPoints << _path << "/" << p << "/coordinates.dat";
+		std::stringstream ssBoundary;
+		ssBoundary << _path << "/" << p << "/boundary.dat";
 		std::ofstream os;
 
 		// save elements
@@ -50,24 +54,26 @@ void Esdata::store(const mesh::Mesh &mesh)
 		}
 		os.close();
 
-//		// save coordinates' properties
-//		for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
-//			const std::map<eslocal, double> &property = _coordinates.property(i).values();
-//			eslocal counter = 0;
-//			const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
-//			for (size_t j = 0; j < l2c.size(); j++) {
-//				if (property.find(l2c[j]) != property.end()) {
-//					counter++;
-//				}
-//			}
-//			os.write(reinterpret_cast<const char*>(&counter), sizeof(eslocal));
-//			for (eslocal j = 0; j < l2c.size(); j++) {
-//				if (property.find(l2c[j]) != property.end()) {
-//					os.write(reinterpret_cast<const char*>(&j), sizeof(eslocal));
-//					os.write(reinterpret_cast<const char*>(&property.find(l2c[j])->second), sizeof(double));
-//				}
-//			}
-//		}
+		// save boundary conditions
+		os.open(ssBoundary.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+		for (size_t i = 0; i < mesh.coordinates().propertiesSize(); i++) {
+			const std::map<eslocal, double> &property = mesh.coordinates().property(i).values();
+			eslocal counter = 0;
+			const std::vector<eslocal> &l2c = mesh.coordinates().localToCluster(p);
+			for (size_t j = 0; j < l2c.size(); j++) {
+				if (property.find(l2c[j]) != property.end()) {
+					counter++;
+				}
+			}
+			os.write(reinterpret_cast<const char*>(&counter), sizeof(eslocal));
+			for (eslocal j = 0; j < l2c.size(); j++) {
+				if (property.find(l2c[j]) != property.end()) {
+					os.write(reinterpret_cast<const char*>(&j), sizeof(eslocal));
+					os.write(reinterpret_cast<const char*>(&property.find(l2c[j])->second), sizeof(double));
+				}
+			}
+		}
+		os.close();
 	}
 }
 

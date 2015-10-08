@@ -3,6 +3,7 @@
 #define OUTPUT_ESOUTPUT_H_
 
 #include "esdata/esdata.h"
+#include "vtk/vtk.h"
 
 
 

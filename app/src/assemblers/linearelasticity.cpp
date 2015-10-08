@@ -195,7 +195,8 @@ void Linear_elasticity::post_solve_update() {
 	 	 timeSaveVTK.AddStart();
 		std::stringstream ss;
 		ss << "mesh_" << MPI_rank << ".vtk";
-		_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
+		// TODO: return save VTK
+		//_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
 		 timeSaveVTK.AddEndWithBarrier();
 	  	 timeEvalMain.AddEvent(timeSaveVTK);
 

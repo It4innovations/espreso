@@ -10,9 +10,17 @@ namespace esoutput {
 class MeshStore {
 
 public:
-	virtual void store(const mesh::Mesh &mesh) = 0;
+	virtual void store(const mesh::Mesh &mesh, double shrinkSubdomain, double shringCluster) = 0;
 
 	virtual ~MeshStore() {};
+};
+
+class ResultStore: public MeshStore {
+
+public:
+	virtual void store(const mesh::Mesh &mesh, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) = 0;
+
+	virtual ~ResultStore() {};
 };
 
 template <class TStore>
@@ -21,9 +29,14 @@ class Store {
 public:
 	Store(const std::string &path, int rank, int size): _store(path, rank, size) { };
 
-	void store(const mesh::Mesh &mesh)
+	void store(const mesh::Mesh &mesh, double shrinkSubdomain = 1, double shringCluster = 1)
 	{
-		_store.store(mesh);
+		_store.store(mesh, shrinkSubdomain, shringCluster);
+	}
+
+	void store(const mesh::Mesh &mesh, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1)
+	{
+		_store.store(mesh, displacement, shrinkSubdomain, shringCluster);
 	}
 
 private:

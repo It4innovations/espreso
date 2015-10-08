@@ -29,13 +29,7 @@ int main(int argc, char** argv)
 
 	loader.load(m);
 
-	std::stringstream ss;
-
-	ss << "cube" << MPIrank << ".vtk";
-
-	m.saveVTK(ss.str().c_str(), 0.9, 0.9);
-
-	esoutput::Store<esoutput::Esdata> s("examples/esmesh", MPIrank, MPIsize);
+	esoutput::Store<esoutput::VTK> s("test", MPIrank, MPIsize);
 
 	s.store(m);
 
@@ -651,7 +645,8 @@ void solve(Instance &instance)
 
 			std::stringstream ss;
 			ss << "mesh_" << instance.rank() << "_" << time << ".vtk";
-			instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, instance.localBoundaries(), instance.globalBoundaries(), 0.95, 0.9);
+			// TODO: uncomment
+			//instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, instance.localBoundaries(), instance.globalBoundaries(), 0.95, 0.9);
 
 
     		// *** XXX

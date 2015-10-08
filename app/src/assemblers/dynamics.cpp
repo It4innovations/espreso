@@ -284,7 +284,8 @@ void Dynamics::post_solve_update()
 
 	std::stringstream ss;
 	ss << "mesh_" << _instance.rank() << "_" << timeStep << ".vtk";
-	_instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
+	// TODO: return save VTK
+	//_instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
 
 	timeStep++;
 }

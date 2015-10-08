@@ -133,7 +133,7 @@ def build(ctx):
     ctx.program(
         source          = source_files + ("src/main.cpp",),
         target          = "espreso",
-        use             = "basis_includes solver_includes mesh_includes output_includes input_includes bem_includes catalyst_includes esbasis {0} esinput_ansys esinput_generator esinput_esdata esoutput_esdata esmesh esbem".format(solver),
+        use             = "basis_includes solver_includes mesh_includes output_includes input_includes bem_includes catalyst_includes esbasis {0} esinput_ansys esinput_generator esinput_esdata esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
         install_path    = ctx.ROOT
     )
 
