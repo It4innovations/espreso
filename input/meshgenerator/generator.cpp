@@ -20,3 +20,8 @@ void MeshGenerator::elements(std::vector<mesh::Element*> &elements, std::vector<
 	_generator->elements(elements, parts);
 }
 
+void MeshGenerator::fixPoints(std::vector<eslocal> &fixPoints)
+{
+	_generator->fixPoints(fixPoints);
+}
+

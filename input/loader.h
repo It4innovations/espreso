@@ -30,14 +30,24 @@ public:
 	void load(mesh::Mesh &mesh)
 	{
 		points(mesh._coordinates);
+
 		elements(mesh._elements, mesh._partPtrs);
-		for (size_t i = 0; i < mesh._partPtrs.size() - 1; i++) {
+		for (size_t i = 0; i < mesh.parts(); i++) {
 			mesh.computeLocalIndices(i);
+		}
+
+		fixPoints(mesh._fixPoints);
+		size_t fSize = mesh._fixPoints.size() / mesh.parts();
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			for (size_t i = 0; i < fSize; i++) {
+				mesh._fixPoints[p * fSize + i] = mesh.coordinates().localIndex(mesh._fixPoints[p * fSize + i], p);
+			}
 		}
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
+	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
 
 	virtual ~InternalLoader() {};
 };

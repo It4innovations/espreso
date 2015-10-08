@@ -13,6 +13,7 @@ public:
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
+	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
 
 	virtual ~Generator() { };
 
@@ -39,6 +40,7 @@ public:
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
+	void fixPoints(std::vector<eslocal> &fixPoints);
 
 	~MeshGenerator()
 	{

@@ -16,12 +16,12 @@ public:
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
+	void fixPoints(std::vector<eslocal> &fixPoints);
 
 	void setForces(mesh::Mesh &mesh, const size_t cluster[]) { };
 
 	void fillGlobalBoundaries(mesh::Boundaries &boundaries, const size_t cluster[]);
 
-	void setFixPoints(mesh::Mesh &mesh);
 	void setCorners(
 			mesh::Boundaries &boundaries,
 			const size_t number[],

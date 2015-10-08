@@ -92,16 +92,6 @@ public:
 		return _fixPoints.size() / (_partPtrs.size() - 1);
 	}
 
-	void setFixPoints(std::vector<eslocal> &fixPoints)
-	{
-		_fixPoints = fixPoints;
-		for (size_t p = 0; p < parts(); p++) {
-			for (size_t i = 0; i < getFixPointsCount(); i++) {
-				_fixPoints[p * getFixPointsCount() + i] = _coordinates.localIndex(_fixPoints[p * getFixPointsCount() + i], p);
-			}
-		}
-	}
-
 	const std::vector<eslocal>& getFixPoints() const
 	{
 		return _fixPoints;
