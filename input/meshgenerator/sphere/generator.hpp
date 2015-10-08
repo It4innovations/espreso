@@ -25,7 +25,6 @@ SphereGenerator<TElement>::SphereGenerator(int argc, char** argv): _settings(arg
 			}
 		}
 	}
-	_processes = index;
 };
 
 template<class TElement>
@@ -173,9 +172,9 @@ void SphereGenerator<TElement>::mesh(mesh::Mesh &mesh, const size_t cluster[])
 template <class TElement>
 void SphereGenerator<TElement>::fixInnerSurface(mesh::Mesh &mesh, const size_t cluster[])
 {
-	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::CP::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::CP::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::CP::DIRICHLET_Z);
+	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::DIRICHLET_X);
+	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::DIRICHLET_Z);
 
 	eslocal nodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, nodes);

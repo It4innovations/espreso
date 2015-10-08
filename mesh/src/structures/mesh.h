@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <stdlib.h>
 
 #include "mkl_spblas.h"
 #include "mkl_blas.h"
@@ -132,7 +133,7 @@ public:
 		SparseVVPMatrix<eslocal> _M;
 		_heat(_K, _M, f, part, true);
 		K = _K;
-    M = _M;
+		M = _M;
 	}
 
 protected:

@@ -150,9 +150,9 @@ void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &elements, st
 template <class TElement>
 void CubeGenerator<TElement>::fixZeroPlanes(mesh::Mesh &mesh, const size_t cluster[])
 {
-	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::CP::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::CP::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::CP::DIRICHLET_Z);
+	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::DIRICHLET_X);
+	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::DIRICHLET_Z);
 
 	eslocal nodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, nodes);
@@ -199,9 +199,9 @@ void CubeGenerator<TElement>::fixBottom(mesh::Mesh &mesh, const size_t cluster[]
 	if (cluster[2] > 0) {
 		return;
 	}
-	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::CP::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::CP::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::CP::DIRICHLET_Z);
+	mesh::CoordinatesProperty &dirichlet_x = mesh.coordinates().property(mesh::DIRICHLET_X);
+	mesh::CoordinatesProperty &dirichlet_y = mesh.coordinates().property(mesh::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dirichlet_z = mesh.coordinates().property(mesh::DIRICHLET_Z);
 
 	eslocal nodes[3];
 	Utils<TElement>::clusterNodesCount(_settings, nodes);
