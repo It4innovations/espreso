@@ -16,10 +16,14 @@ public:
 		elements(mesh._elements);
 		mesh._partPtrs.back() = mesh._elements.size();
 		mesh.computeLocalIndices(0);
+		boundaryConditions(mesh._coordinates);
+		clusterBoundaries(mesh, mesh._clusterBoundaries);
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
+	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
+	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) = 0;
 
 	virtual ~ExternalLoader() {};
 };

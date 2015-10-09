@@ -25,6 +25,16 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements)
 
 }
 
+void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates)
+{
+
+}
+
+void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+{
+
+}
+
 
 
 

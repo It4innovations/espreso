@@ -49,7 +49,7 @@ Generator* MeshFactory::create(int argc, char** argv, int rank, int size)
 		}
 		break;
 	}
-	case SPHERE: {
+//	case SPHERE: {
 //		switch (settings.elementType) {
 //		case HEXA8: {
 //			return new SphereGenerator<Hexahedron8>(argc, argv);
@@ -89,8 +89,8 @@ Generator* MeshFactory::create(int argc, char** argv, int rank, int size)
 //		}
 //		break;
 //		}
-		break;
-	}
+//		break;
+//	}
 	default: {
 		std::cerr << "Unknown shape.\n";
 		exit(EXIT_FAILURE);

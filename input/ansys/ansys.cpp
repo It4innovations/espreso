@@ -39,13 +39,6 @@ void Ansys::points(mesh::Coordinates &coordinates)
 		std::cerr << "Cannot load mesh from file: " << fileName << "\n";
 		exit(EXIT_FAILURE);
 	}
-
-//	_property[CP::DIRICHLET_X].load(a.coordinatesProperty(CP::DIRICHLET_X).c_str());
-//	_property[CP::DIRICHLET_Y].load(a.coordinatesProperty(CP::DIRICHLET_Y).c_str());
-//	_property[CP::DIRICHLET_Z].load(a.coordinatesProperty(CP::DIRICHLET_Z).c_str());
-//	_property[CP::FORCES_X].load(a.coordinatesProperty(CP::FORCES_X).c_str());
-//	_property[CP::FORCES_Y].load(a.coordinatesProperty(CP::FORCES_Y).c_str());
-//	_property[CP::FORCES_Z].load(a.coordinatesProperty(CP::FORCES_Z).c_str());
 }
 
 
@@ -87,6 +80,43 @@ void Ansys::elements(std::vector<mesh::Element*> &elements)
 		exit(EXIT_FAILURE);
 	}
 }
+
+void Ansys::boundaryConditions(mesh::Coordinates &coordinates)
+{
+	std::vector<std::string> conditions = {
+		_path + "/Model/BC/Elasticity/NUX.dat",
+		_path + "/Model/BC/Elasticity/NUY.dat",
+		_path + "/Model/BC/Elasticity/NUZ.dat",
+		_path + "/Model/BC/Elasticity/NFX.dat",
+		_path + "/Model/BC/Elasticity/NFY.dat",
+		_path + "/Model/BC/Elasticity/NFZ.dat"
+	};
+
+	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
+		mesh::CoordinatesProperty &property = coordinates.property(i);
+
+		std::ifstream file(conditions[i].c_str());
+
+		if (file.is_open()) {
+			eslocal coordinate;
+			double value;
+
+			while (file >> coordinate && file.ignore(10, '.') && file >> value) {
+				property[coordinate - 1] = value;
+			}
+			file.close();
+		} else {
+			std::cout << "Warning: File '" << conditions[i] << "' not found.\n";
+		}
+	}
+}
+
+
+void Ansys::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+{
+	//TODO: is there any way how to load it?
+}
+
 
 mesh::Element* Ansys::createElement(eslocal *indices, eslocal n)
 {

@@ -13,17 +13,6 @@ Esdata::Esdata(int argc, char** argv, int rank, int size): _rank(rank), _size(si
 	}
 
 	_path = argv[1];
-
-//	load coordinates' properties
-//	for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
-//		CoordinatesProperty &property = _coordinates.property(i);
-//		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-//		for (eslocal j = 0; j < size; j++) {
-//			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
-//			is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//			property[cIndex] = value;
-//		}
-//	}
 }
 
 
@@ -90,23 +79,46 @@ void Esdata::elements(std::vector<mesh::Element*> &elements)
 	is.close();
 }
 
-void Esdata::boundaries(mesh::Mesh &mesh)
+void Esdata::boundaryConditions(mesh::Coordinates &coordinates)
 {
-//	_boundaries.clear();
-//	_corners.clear();
-//
-//	std::ifstream is(filename, std::ifstream::binary);
-//
-//	eslocal size, value;
-//
-//	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-//
-//	_boundaries.resize(size);
-//	for (size_t i = 0; i < _boundaries.size(); i++) {
-//		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-//		for (eslocal j = 0; j < size; j++) {
-//			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
-//			_boundaries[i].insert(value);
-//		}
-//	}
+	std::stringstream fileName;
+	fileName << _path << "/" << _rank << "/boundaryConditions.dat";
+	std::ifstream is(fileName.str(), std::ifstream::binary);
+
+	eslocal size, cIndex;
+	double value;
+
+	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
+		mesh::CoordinatesProperty &property = coordinates.property(i);
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal j = 0; j < size; j++) {
+			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
+			is.read(reinterpret_cast<char *>(&value), sizeof(double));
+			property[cIndex] = value;
+		}
+	}
 }
+
+
+void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+{
+	std::stringstream fileName;
+	fileName << _path << "/" << _rank << "/clusterBoundaries.dat";
+	std::ifstream is(fileName.str(), std::ifstream::binary);
+
+	boundaries.clear();
+
+	eslocal size, value;
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+
+	boundaries.resize(size);
+	for (size_t i = 0; i < boundaries.size(); i++) {
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal j = 0; j < size; j++) {
+			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
+			boundaries[i].insert(value);
+		}
+	}
+}
+

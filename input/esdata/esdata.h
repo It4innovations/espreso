@@ -13,7 +13,8 @@ public:
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
-	void boundaries(mesh::Mesh &mesh);
+	void boundaryConditions(mesh::Coordinates &coordinates);
+	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
 
 private:
 	std::string _path;

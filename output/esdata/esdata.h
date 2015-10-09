@@ -15,6 +15,9 @@ public:
 	void store(const mesh::Mesh &mesh, double shrinkSubdomain, double shrinkCluster);
 
 private:
+	void coordinates(const mesh::Coordinates &coordinates);
+	void elements(const mesh::Mesh &mesh);
+	void boundaryConditions(const mesh::Coordinates &coordinates);
 	void boundaries(const mesh::Mesh &mesh);
 
 	std::string _path;
