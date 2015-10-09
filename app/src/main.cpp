@@ -24,14 +24,11 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	mesh::Mesh m;
-	esinput::Loader<esinput::MeshGenerator> loader(argc, argv, MPIrank, MPIsize);
+	mesh::Mesh m(MPIrank, MPIsize);
 
-	loader.load(m);
+	m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	esoutput::Store<esoutput::VTK> s("test", MPIrank, MPIsize);
-
-	s.store(m);
+	m.store(mesh::VTK, "test");
 
 	MPI_Finalize();
 

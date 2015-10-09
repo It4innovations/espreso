@@ -30,6 +30,18 @@ class ExternalLoader;
 
 namespace mesh {
 
+enum Input {
+	ANSYS,
+	ESPRESO_INPUT,
+	MESH_GENERATOR,
+	OPENFOAM
+};
+
+enum Output {
+	ESPRESO_OUTPUT,
+	VTK
+};
+
 class Boundaries;
 
 class SurfaceMesh;
@@ -45,7 +57,7 @@ public:
 	friend class esinput::InternalLoader;
 	friend class esinput::ExternalLoader;
 
-	Mesh();
+	Mesh(int rank, int size);
 
 	const Coordinates& coordinates() const
 	{
@@ -66,6 +78,20 @@ public:
 	{
 		return _clusterBoundaries;
 	}
+
+	int rank() const
+	{
+		return _rank;
+	}
+
+	int size() const
+	{
+		return _size;
+	}
+
+	void load(Input input, int argc, char** argv);
+	void store(Output output, const std::string &path, double shrinkSubdomain = 1, double shringCluster = 1);
+	void store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
@@ -204,6 +230,12 @@ protected:
 
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
+
+	/** @brief MPI rank */
+	int _rank;
+
+	/** @brief MPI size */
+	int _size;
 };
 
 
@@ -211,8 +243,8 @@ class SurfaceMesh: public Mesh
 {
 
 public:
-	SurfaceMesh(): Mesh() { };
-	SurfaceMesh(const Mesh &mesh)
+	SurfaceMesh(int rank, int size): Mesh(rank, size) { };
+	SurfaceMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
 	{
 		mesh.getSurface(*this);
 	}
@@ -225,8 +257,8 @@ class CommonFacesMesh: public Mesh
 {
 
 public:
-	CommonFacesMesh(): Mesh() { };
-	CommonFacesMesh(const Mesh &mesh)
+	CommonFacesMesh(int rank, int size): Mesh(rank, size) { };
+	CommonFacesMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
 	{
 		mesh.getCommonFaces(*this);
 	}
@@ -236,8 +268,8 @@ class CornerLinesMesh: public Mesh
 {
 
 public:
-	CornerLinesMesh(): Mesh() { };
-	CornerLinesMesh(const Mesh &mesh)
+	CornerLinesMesh(int rank, int size): Mesh(rank, size) { };
+	CornerLinesMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
 	{
 		mesh.getCornerLines(*this);
 	}

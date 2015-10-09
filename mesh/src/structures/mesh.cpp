@@ -1,12 +1,86 @@
 #include "mesh.h"
 
+#include "esinput.h"
+#include "esoutput.h"
+
 using namespace mesh;
 
-Mesh::Mesh():_elements(0), _fixPoints(0)
+Mesh::Mesh(int rank, int size):_elements(0), _fixPoints(0), _rank(rank), _size(size)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
+}
+
+void Mesh::load(Input input, int argc, char** argv)
+{
+	switch (input) {
+	case ANSYS: {
+		esinput::Loader<esinput::Ansys> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
+	}
+	case ESPRESO_INPUT: {
+		esinput::Loader<esinput::Esdata> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
+	}
+	case MESH_GENERATOR: {
+		esinput::Loader<esinput::MeshGenerator> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
+	}
+	case OPENFOAM: {
+		esinput::Loader<esinput::OpenFOAM> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown input type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+void Mesh::store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster)
+{
+	switch (output) {
+	case ESPRESO_OUTPUT: {
+		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
+		s.store(*this, shrinkSubdomain, shringCluster);
+		std::cout << "Warning: ESPRESO output format does not support the displacement.\n";
+		break;
+	}
+	case VTK: {
+		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
+		s.store(*this, displacement, shrinkSubdomain, shringCluster);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown output type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+void Mesh::store(Output output, const std::string &path, double shrinkSubdomain, double shringCluster)
+{
+	switch (output) {
+	case ESPRESO_OUTPUT: {
+		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
+		s.store(*this, shrinkSubdomain, shringCluster);
+		break;
+	}
+	case VTK: {
+		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
+		s.store(*this, shrinkSubdomain, shringCluster);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown output type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
 }
 
 void Mesh::_elasticity(
@@ -980,7 +1054,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 	}
 
 	// create mesh from common faces
-	Mesh cfm;
+	Mesh cfm(_rank, _size);
 	Element *e;
 	if (faces) {
 		cfm.coordinates() = _coordinates;
@@ -1018,7 +1092,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 		}
 	}
 
-	Mesh clm;
+	Mesh clm(_rank, _size);
 	if (edges) {
 		clm.coordinates() = _coordinates;
 	}
