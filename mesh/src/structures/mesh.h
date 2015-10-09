@@ -47,9 +47,6 @@ public:
 
 	Mesh();
 
-	Mesh(const Mesh &other);
-	Mesh& operator=(const Mesh &other);
-
 	const Coordinates& coordinates() const
 	{
 		return _coordinates;
@@ -137,8 +134,6 @@ public:
 	}
 
 protected:
-	static void assign(Mesh &m1, Mesh &m2);
-
 	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
 	void _assembleElesticity(
 		const Element *e,

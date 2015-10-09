@@ -9,34 +9,6 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const Mesh &other):
-	_coordinates(other._coordinates), _partPtrs(other._partPtrs),
-	_fixPoints(other._fixPoints)
-{
-	_elements.reserve(other._elements.size());
-	for (size_t i = 0; i < other._elements.size(); i++) {
-		_elements.push_back(other._elements[i]->copy());
-	}
-}
-
-Mesh& Mesh::operator=(const Mesh &other)
-{
-	if (this != &other) {
-		Mesh mesh(other);
-		Mesh::assign(*this, mesh);
-	}
-	return *this;
-}
-
-void Mesh::assign(Mesh &m1, Mesh &m2)
-{
-	m1._coordinates = m2._coordinates;
-	m1._elements.swap(m2._elements);
-	m1._partPtrs.swap(m2._partPtrs);
-	m1._fixPoints.swap(m2._fixPoints);
-}
-
-
 void Mesh::_elasticity(
 		SparseVVPMatrix<eslocal> &K,
 		SparseVVPMatrix<eslocal> &M,
