@@ -78,8 +78,10 @@ void VTK::coordinates(const mesh::Coordinates &coordinates, double shrinkSubdoma
 void VTK::elements(const mesh::Mesh &mesh)
 {
 	const std::vector<mesh::Element*> &elements = mesh.getElements();
+	const mesh::Coordinates &coordinates = mesh.coordinates();
 	const std::vector<eslocal> &partition = mesh.getPartition();
 	const std::vector<eslocal> &fixPoints = mesh.getFixPoints();
+	const mesh::Boundaries &boundaries = mesh.subdomainBoundaries();
 	size_t parts = mesh.parts();
 
 	size_t size = 0;
@@ -88,16 +90,17 @@ void VTK::elements(const mesh::Mesh &mesh)
 	}
 	size += fixPoints.size() + parts;
 
-//	size_t corners = 0;
-//	for (size_t i = 0; i < localBoundaries.size(); i++) {
-//		if (localBoundaries.isCorner(i)) {
-//			corners += localBoundaries[i].size();
-//		}
-//	}
+	size_t corners = 0;
+	for (size_t i = 0; i < boundaries.size(); i++) {
+		if (boundaries.isCorner(i)) {
+			corners += boundaries[i].size();
+		}
+	}
+	size += corners + 1;
 
 	// ELEMENTS
 	size_t offset = 0;
-	_vtk << "CELLS " << elements.size() + parts << " " << size << "\n";
+	_vtk << "CELLS " << elements.size() + parts + 1 << " " << size << "\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (size_t i = partition[p]; i < partition[p + 1]; i++) {
 			// elements
@@ -114,31 +117,35 @@ void VTK::elements(const mesh::Mesh &mesh)
 		}
 		_vtk << "\n";
 
-//		for (size_t p = 0; p < parts(); p++) {
-//			for (size_t i = 0; i < localBoundaries.size(); i++) {
-//				if (localBoundaries.isCorner(i) && localBoundaries[i].count(p)) {
-//					vtk << " " << _coordinates.localIndex(i, p) + offset;
-//				}
-//			}
-//			offset += _coordinates.localSize(p);
-//		}
-
-		offset += mesh.coordinates().localToCluster(p).size();
+		offset += mesh.coordinates().localSize(p);
+	}
+	_vtk << corners;
+	offset = 0;
+	for (size_t p = 0; p < parts; p++) {
+		for (size_t i = 0; i < boundaries.size(); i++) {
+			if (boundaries.isCorner(i) && boundaries[i].count(p)) {
+				_vtk << " " << coordinates.localIndex(i, p) + offset;
+			}
+		}
+		offset += mesh.coordinates().localSize(p);
 	}
 	_vtk << "\n";
 
+	_vtk << "\n";
+
 	// ELEMENTS TYPES
-	_vtk << "CELL_TYPES " << elements.size() + parts << "\n";
+	_vtk << "CELL_TYPES " << elements.size() + parts + 1 << "\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (size_t i = partition[p]; i < partition[p + 1]; i++) {
 			_vtk << elements[i]->vtkCode() << "\n";
 		}
 		_vtk << "2\n";
 	}
+	_vtk << "2\n";
 	_vtk << "\n";
 
 	// DECOMPOSITION TO SUBDOMAINS
-	_vtk << "CELL_DATA " << elements.size() + parts << "\n";
+	_vtk << "CELL_DATA " << elements.size() + parts + 1 << "\n";
 	_vtk << "SCALARS decomposition int 1\n";
 	_vtk << "LOOKUP_TABLE decomposition\n";
 	for (size_t p = 0; p < parts; p++) {
@@ -147,8 +154,8 @@ void VTK::elements(const mesh::Mesh &mesh)
 
 		}
 		_vtk << parts << "\n";
-		//_vtk << parts + 1 << "\n";
 	}
+	_vtk << parts + 1 << "\n";
 	_vtk << "\n";
 }
 

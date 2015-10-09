@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 
 	m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	m.store(mesh::VTK, "test");
+	m.store(mesh::VTK, "test", 0.9, 0.7);
 
 	MPI_Finalize();
 
