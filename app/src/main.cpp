@@ -26,11 +26,9 @@ int main(int argc, char** argv)
 
 	mesh::Mesh m(MPIrank, MPIsize);
 
-	m.load(mesh::ANSYS, argc, argv);
+	m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	m.partitiate(10, 0);
-
-	m.store(mesh::ESPRESO_OUTPUT, "examples/esdata/lopatka", 0.9, 0.7);
+	m.store(mesh::VTK, "test", 0.9, 0.7);
 
 	MPI_Finalize();
 

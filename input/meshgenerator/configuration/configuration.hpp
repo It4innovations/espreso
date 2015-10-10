@@ -89,20 +89,20 @@ void Configuration<TSettings>::load(int argc, char** argv)
 		return;
 	}
 
-	std::vector<std::string> cmdLine;
+	std::vector<std::pair<std::string, int> > cmdLine;
 	size_t cmdLineSize = 0;
 	if (_parameters["CMD_LINE_ARGUMENTS"]->isSet()) {
 		std::string val = value<std::string>("CMD_LINE_ARGUMENTS", "");
 		while(true) {
 			size_t pos = val.find(" ");
 			std::string argument = val.substr(0, pos);
-			cmdLineSize++;
 			for (it = _parameters.begin(); it != _parameters.end(); ++it) {
 				if (it->second->match(val)) {
-					cmdLine.push_back(it->second->name());
+					cmdLine.push_back(std::pair<std::string, int>(it->second->name(), cmdLineSize));
 					break;
 				}
 			}
+			cmdLineSize++;
 			val = val.erase(0, pos);
 			val = val.erase(0, val.find_first_not_of(" "));
 			if (!val.size()) {
@@ -119,7 +119,7 @@ void Configuration<TSettings>::load(int argc, char** argv)
 		std::cout << "Warning: ESPRESO omits some command line arguments.\n";
 	}
 	for (size_t i = 0; i < cmdLine.size(); i++) {
-		_parameters[cmdLine[i]]->set(std::string(_parameters[cmdLine[i]]->name() + "=" + argv[i + 2]));
+		_parameters[cmdLine[i].first]->set(std::string(_parameters[cmdLine[i].first]->name() + "=" + argv[cmdLine[i].second + 2]));
 	}
 }
 
