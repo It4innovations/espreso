@@ -13,6 +13,7 @@ source_files = (
     "factory/factory.cpp",
     "factory/settings.cpp",
     "cube/settings.cpp",
+    "sphere/settings.cpp",
     "generator.cpp",
 )
 

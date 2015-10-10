@@ -2,12 +2,12 @@
 #ifndef INPUT_MESHGENERATOR_CUBE_UTILS_H_
 #define INPUT_MESHGENERATOR_CUBE_UTILS_H_
 
-#include "../../meshgenerator/cube/settings.h"
+#include "settings.h"
 
 namespace esinput {
 
 template <class TElement>
-class Utils {
+class CubeUtils {
 
 public:
 	static void globalNodesCount(const CubeSettings &settings, esglobal nodes[]);
@@ -18,7 +18,7 @@ public:
 }
 
 
-#include "../../meshgenerator/cube/utils.hpp"
+#include "utils.hpp"
 
 
 #endif /* INPUT_MESHGENERATOR_CUBE_UTILS_H_ */

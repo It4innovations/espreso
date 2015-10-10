@@ -34,14 +34,18 @@ public:
 	template<class ParameterType>
 	const ParameterType value(const std::string &parameter, ParameterType defaultValue) const
 	{
-		return _getValue(parameter, defaultValue);
+		if (_parameters.find(parameter) != _parameters.end()) {
+			return _getValue(parameter, defaultValue);
+		} else {
+			return defaultValue;
+		}
 	}
 
 private:
 
 	eslocal _getValue(const std::string &parameter, eslocal defaultValue) const
 	{
-		if (_parameters.find(parameter) != _parameters.end()) {
+		if (_parameters.find(parameter)->second->isSet()) {
 			return static_cast<IntegerParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
 			return defaultValue;
@@ -50,7 +54,7 @@ private:
 
 	double _getValue(const std::string &parameter, double defaultValue) const
 	{
-		if (_parameters.find(parameter) != _parameters.end()) {
+		if (_parameters.find(parameter)->second->isSet()) {
 			return static_cast<DoubleParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
 			return defaultValue;
@@ -59,7 +63,7 @@ private:
 
 	std::string _getValue(const std::string &parameter, std::string &defaultValue) const
 	{
-		if (_parameters.find(parameter) != _parameters.end()) {
+		if (_parameters.find(parameter)->second->isSet()) {
 			return static_cast<StringParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
 			return defaultValue;
@@ -68,7 +72,7 @@ private:
 
 	bool _getValue(const std::string &parameter, bool defaultValue) const
 	{
-		if (_parameters.find(parameter) != _parameters.end()) {
+		if (_parameters.find(parameter)->second->isSet()) {
 			return static_cast<BooleanParameter*>(_parameters.find(parameter)->second)->get();
 		} else {
 			return defaultValue;

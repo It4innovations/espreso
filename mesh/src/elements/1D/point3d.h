@@ -11,22 +11,15 @@ namespace mesh {
 class Point3D {
 
 public:
-	Point3D() :
-			x(0), y(0), z(0) {
-	}
-	;
-	Point3D(double x, double y, double z) :
-			x(x), y(y), z(z) {
-	}
-	;
-	Point3D(const Point3D &p) :
-			x(p.x), y(p.y), z(p.z) {
-	}
-	;
+	Point3D(): x(0), y(0), z(0) { };
+	Point3D(double x, double y, double z): x(x), y(y), z(z) { };
+	Point3D(const Point3D &p): x(p.x), y(p.y), z(p.z) { };
 
-	static size_t size() {
+	static size_t size()
+	{
 		return 3;
 	}
+
 	void normalize();
 	double length() const;
 	const Point3D operator-() const;

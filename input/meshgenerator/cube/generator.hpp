@@ -56,8 +56,8 @@ void CubeGenerator<TElement>::points(mesh::Coordinates &coordinates)
 	eslocal cNodes[3];
 	esglobal gNodes[3];
 
-	Utils<TElement>::clusterNodesCount(_settings, cNodes);
-	Utils<TElement>::globalNodesCount(_settings, gNodes);
+	CubeUtils<TElement>::clusterNodesCount(_settings, cNodes);
+	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);
 
 	coordinates.clear();
 	coordinates.reserve(cNodes[0] * cNodes[1] * cNodes[2]);
@@ -89,15 +89,13 @@ template<class TElement>
 void CubeGenerator<TElement>::elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
 {
 	eslocal cNodes[3];
-	esglobal gNodes[3];
 
-	Utils<TElement>::clusterNodesCount(_settings, cNodes);
-	Utils<TElement>::globalNodesCount(_settings, gNodes);
+	CubeUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
 	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 
 	elements.clear();
-	elements.reserve(Utils<TElement>::clusterElementsCount(_settings));
+	elements.reserve(CubeUtils<TElement>::clusterElementsCount(_settings));
 	parts.clear();
 	parts.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2] + 1);
 
@@ -157,7 +155,7 @@ void CubeGenerator<TElement>::fixPoints(std::vector<eslocal> &fixPoints)
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
 	}
-	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+	CubeUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
 	eslocal offset[3];
 	for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
@@ -188,7 +186,7 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 	mesh::CoordinatesProperty &forces_z = coordinates.property(mesh::FORCES_Z);
 
 	eslocal nodes[3];
-	Utils<TElement>::clusterNodesCount(_settings, nodes);
+	CubeUtils<TElement>::clusterNodesCount(_settings, nodes);
 
 	if (_cluster[0] == 0) {
 		eslocal index = 0;
@@ -363,7 +361,7 @@ void CubeGenerator<TElement>::corners(mesh::Boundaries &boundaries)
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
 	}
-	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+	CubeUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
 	eslocal step[3];
 	for (int i = 0; i < 3; i++) {
@@ -432,9 +430,9 @@ template <class TElement>
 void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 {
 	esglobal gNodes[3];
-	Utils<TElement>::globalNodesCount(_settings, gNodes);
+	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);
 	eslocal cNodes[3];
-	Utils<TElement>::clusterNodesCount(_settings, cNodes);
+	CubeUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
 	bool border[3];

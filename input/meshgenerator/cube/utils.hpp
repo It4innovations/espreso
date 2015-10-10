@@ -1,20 +1,20 @@
 
-#include "../../meshgenerator/cube/utils.h"
+#include "utils.h"
 
 using namespace esinput;
 
 template <class TElement>
-void Utils<TElement>::globalNodesCount(const CubeSettings &settings, esglobal nodes[])
+void CubeUtils<TElement>::globalNodesCount(const CubeSettings &settings, esglobal nodes[])
 {
 	eslocal cluster[3];
-	Utils<TElement>::clusterNodesCount(settings, cluster);
+	CubeUtils<TElement>::clusterNodesCount(settings, cluster);
 	for (eslocal i = 0; i < 3; i++) {
 		nodes[i] = settings.clusters[i] * (cluster[i] - 1) + 1;
 	}
 }
 
 template <class TElement>
-void Utils<TElement>::clusterNodesCount(const CubeSettings &settings, eslocal nodes[])
+void CubeUtils<TElement>::clusterNodesCount(const CubeSettings &settings, eslocal nodes[])
 {
 	for (eslocal i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i] + 1;
@@ -22,7 +22,7 @@ void Utils<TElement>::clusterNodesCount(const CubeSettings &settings, eslocal no
 }
 
 template <class TElement>
-eslocal Utils<TElement>::clusterElementsCount(const CubeSettings &settings)
+eslocal CubeUtils<TElement>::clusterElementsCount(const CubeSettings &settings)
 {
 	return TElement::subelements *
 	settings.subdomainsInCluster[2] * settings.subdomainsInCluster[1] * settings.subdomainsInCluster[0] *

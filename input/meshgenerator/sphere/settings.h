@@ -12,10 +12,15 @@ struct SphereSettings {
 
 	static std::vector<Description> description;
 
-	size_t clusters[3];
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
 	size_t layers;
+	double innerRadius;
+	double outerRadius;
+	size_t cornerCount;
+	bool corners;
+	bool edges;
+	bool faces;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
