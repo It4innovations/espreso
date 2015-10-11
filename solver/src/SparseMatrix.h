@@ -134,6 +134,11 @@ public:
 
 	void MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta);
 	void MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta); 
+  void MatCondNumb(SparseMatrix & A_in);
+  void spmv_(SparseMatrix & A_in, double *x, double *Ax);
+  void printSymMatCSR( SparseMatrix & A_in);
+  void tridiagFromCSR( SparseMatrix & A_in);
+  double dot_e(double *x, double *y, int n);
 
 	void MatScale(double alpha);
 
@@ -152,6 +157,9 @@ public:
 	double GetMeanOfDiagonalOfSymmetricMatrix();
 	double GetMaxOfDiagonalOfSymmetricMatrix();
 	void   SetDiagonalOfSymmetricMatrix( double val );
+  void   getSubDiagBlockmatrix( SparseMatrix & A_in, SparseMatrix & A_out, int i_start, int size);
+  void   getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, int i_start, int i_size,
+                                          int j_start, int j_size);
 	
 	void MatAppend(SparseMatrix & A); 
 	void RemoveLower(); 

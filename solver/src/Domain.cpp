@@ -259,36 +259,56 @@ void Domain::K_regularizationFromR ( ) {
 
 			SparseMatrix NtN_Mat;
 			NtN_Mat.MatMat( Nt,'N',N );
-			NtN_Mat.MatTranspose();
-			NtN_Mat.RemoveLower();
+        NtN_Mat.MatTranspose();
+        NtN_Mat.RemoveLower();
 
-			SparseSolver NtN;
-			NtN.ImportMatrix(NtN_Mat);
-			NtN_Mat.Clear();
+        SparseSolver NtN;
+        NtN.ImportMatrix(NtN_Mat);
+        NtN_Mat.Clear();
 
-			NtN.Factorization();
-			NtN.SolveMat_Sparse(Nt);
-			NtN.Clear();
+        NtN.Factorization();
+        NtN.SolveMat_Sparse(Nt);
+        NtN.Clear();
 
-			//NtN = Nt*N
-			N.Clear();
-			Nt.MatTranspose(N);
-			NtN_Mat.MatMat(N,'N',Nt);
-			NtN_Mat.RemoveLower();
+        //NtN = Nt*N
+        N.Clear();
+        Nt.MatTranspose(N);
+        NtN_Mat.MatMat(N,'N',Nt);
+        NtN_Mat.RemoveLower();
 
-			double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
-			ro = 1.0 * ro;
+        double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
+        ro = 1.0 * ro;
 
-			K.    MatAddInPlace (NtN_Mat,'N', ro);
+        K.MatAddInPlace (NtN_Mat,'N', ro);
     	}
 
 
     	if (DOFS_PER_NODE == 1) {
-    		double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
-    		K.CSR_V_values[0]+=ro;
-    	}
 
+        K.MatCondNumb(K);
+        
+        SparseSolver forGInv;
+        forGInv.generalInverse(K); 
+//        printf("\n");
+//        for (int i = 0;i<K.rows+1;i++){
+//          for (int j = K.CSR_I_row_indices[i];j<K.CSR_I_row_indices[i+1];j++){
+//            printf("%d %d %3.9e \n",i+1,K.CSR_J_col_indices[j-1],K.CSR_V_values[j-1]);
+//          }
+//        }
+//    		double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
+    	//	K.CSR_V_values[0]*=1.1;
+        //K.CSR_V_values[K.CSR_I_row_indices[K.rows-25]-1]*=1.1;
+        K.CSR_V_values[0]*=1.1;
+        K.MatCondNumb(K);
+//        printf("\n");
+//        for (int i = 0;i<K.rows+1;i++){
+//          for (int j = K.CSR_I_row_indices[i];j<K.CSR_I_row_indices[i+1];j++){
+//            printf("%d %d %3.9e \n",i+1,K.CSR_J_col_indices[j-1],K.CSR_V_values[j-1]);
+//          }
+//        }
+    	}
     }
+
 
 
     Kplus.ImportMatrix  (K);

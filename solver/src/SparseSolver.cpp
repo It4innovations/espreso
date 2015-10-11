@@ -1293,3 +1293,60 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 
 }
 
+void SparseSolver::generalInverse( SparseMatrix & A_in){
+
+
+
+  int SC_SIZE = 20;
+  SparseMatrix S;
+  SparseMatrix A_rr;
+  SparseMatrix A_rs;
+  ImportMatrix(A_in);
+  int i_start = 0;
+  int nonsing_size = A_in.rows - SC_SIZE - i_start;
+  int j_start = nonsing_size;
+//void SparseSolver::Create_SC( SparseMatrix & B_out, int SC_SIZE, bool isThreaded )
+  Create_SC(S,SC_SIZE,false);
+  S.type='S';
+  S.ConvertCSRToDense(1);
+
+  // eigenvals and eigenvec of Schur complement
+  char JOBZ = 'V';
+  char UPLO = 'U';
+  double *W = new double[S.cols]; 
+  double *Z = new double[S.cols*S.cols]; 
+  MKL_INT info;
+  MKL_INT ldz = S.cols;
+  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
+  if (info){
+    printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
+  }
+
+  // zeros eigenvalue identifications 
+  int TWENTY=20;
+  double ratio; 
+  int itMax = TWENTY > S.rows ? TWENTY : S.rows;
+  for (int i = itMax-1; i > 0;i--){ 
+    ratio = fabs(W[i-1]/W[i]);
+    if (ratio < 1e-5){
+      printf("ratio = %3.15e, i=%d\n",ratio,i-1);
+    }
+  }
+
+
+//  S.printSymMatCSR(S);
+  A_rr.getSubDiagBlockmatrix(A_in,A_rr,i_start, nonsing_size);
+  A_rs.getSubBlockmatrix_rs(A_in,A_rs,i_start, nonsing_size,j_start,SC_SIZE);
+//  printf(" A_in\n");
+//  A_in.printSymMatCSR(A_in);
+//  printf(" A_rr\n");
+//  A_rr.printSymMatCSR(A_rr);
+//  printf(" A_rs\n");
+//  A_rs.printSymMatCSR(A_rs);
+
+  delete [] W;
+  delete [] Z;
+
+
+}
+

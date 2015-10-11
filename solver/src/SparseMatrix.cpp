@@ -1757,6 +1757,227 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 	type = 'G'; 
 }
 
+// AM -start: ---------------------------------------------------------------------------
+void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
+  int nA = A.cols;
+  memset(Ax,0,nA * sizeof(double));
+  for (int i = 0; i < nA ; i++) {
+    for (int j = A.CSR_I_row_indices[i];j<A.CSR_I_row_indices[i+1];j++) {
+      Ax[i] += CSR_V_values[j-1] * x[CSR_J_col_indices[j-1]-1];
+      if (j > CSR_I_row_indices[i]) {
+        Ax[CSR_J_col_indices[j-1]-1] +=	CSR_V_values[j-1] * x[CSR_J_col_indices[CSR_I_row_indices[i]-1]-1];
+      }
+    }
+  }
+}
+
+
+void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_out, int i_start, int size_rr){
+//
+// Function 'getSubDiagBlockmatrix' returns the diagonal block A_in(r,r) from original A_in,
+// where r = { i_start , i_start+1 , i_start+2 , ... , istart + size_rr - 1 }
+//
+//
+// rev. 2015-10-10 (A.M.)
+//
+// step 1: getting nnz of submatrix
+  int nnz_new=0;
+  int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
+  printf("offset = %d\n",offset);
+  for (int i = 0;i<size_rr;i++){
+    for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start && 
+                      (A_in.CSR_J_col_indices[j-offset]-offset)<(i_start+size_rr)){
+        nnz_new++;
+      }
+    }
+  }
+// step 2: allocation 1d arrays
+  A_out.CSR_V_values.resize(nnz_new);
+  A_out.CSR_J_col_indices.resize(nnz_new);
+  A_out.CSR_I_row_indices.resize(size_rr+1);
+  A_out.rows=size_rr;
+  A_out.cols=size_rr;
+  A_out.nnz=nnz_new;
+	A_out.type = 'S'; 
+// step 3: filling 1d arrays
+  int ijcnt=0;
+  A_out.CSR_I_row_indices[0]=offset;
+  for (int i = 0;i<size_rr;i++){
+    for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start && 
+                    (A_in.CSR_J_col_indices[j-offset]-offset)<(i_start+size_rr)){
+        A_out.CSR_J_col_indices[ijcnt] = (A_in.CSR_J_col_indices[j-offset]) - i_start;
+        A_out.CSR_V_values[ijcnt]=A_in.CSR_V_values[j-offset];
+        ijcnt++;
+      }
+    }
+    A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
+  }
+}
+
+
+void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, 
+                                          int i_start, int i_size,
+                                          int j_start, int j_size){
+//
+// Original matrix A_in is assembled from 4 submatrices
+//
+//      A_in = [A_in(r,r)  A_in(r,s)]
+//             [A_in(s,r)  A_in(s,s)].
+//
+// Function 'getSubBlockmatrix_rs' returns square matrix A_in(r,s) in CSR format.
+//
+// rev. 2015-10-10 (A.M.)
+//
+// step 1: getting nnz of submatrix
+  int nnz_new=0;
+  int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
+  printf("offset = %d\n",offset);
+  for (int i = 0;i<i_size;i++){
+    for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start && 
+                      (A_in.CSR_J_col_indices[j-offset]-offset)<(j_start+j_size)){
+        nnz_new++;
+      }
+    }
+  }
+  printf("nnz_new A_in(r,s)=%d\n",nnz_new);
+// step 2: allocation 1d arrays
+  A_out.CSR_V_values.resize(nnz_new);
+  A_out.CSR_J_col_indices.resize(nnz_new);
+  A_out.CSR_I_row_indices.resize(i_size+1);
+  A_out.rows=i_size;
+  A_out.cols=j_size;
+  A_out.nnz=nnz_new;
+	A_out.type = 'G'; 
+// step 3: filling 1d arrays
+  int ijcnt=0;
+  A_out.CSR_I_row_indices[0]=offset;
+  for (int i = 0;i<i_size;i++){
+    for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start && 
+                    (A_in.CSR_J_col_indices[j-offset]-offset)<(j_start+j_size)){
+        A_out.CSR_J_col_indices[ijcnt] = (A_in.CSR_J_col_indices[j-offset]) - j_start;
+        A_out.CSR_V_values[ijcnt]=A_in.CSR_V_values[j-offset];
+        ijcnt++;
+      }
+    }
+    A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
+  }
+}
+
+void SparseMatrix::printSymMatCSR( SparseMatrix & A_in){
+  for (int i = 0;i<A_in.rows;i++){
+    for (int j = A_in.CSR_I_row_indices[i];j<A_in.CSR_I_row_indices[i+1];j++){
+      printf("%d %d %3.9e \n",i+1,A_in.CSR_J_col_indices[j-1],A_in.CSR_V_values[j-1]);
+    }
+  }
+}
+
+void SparseMatrix::MatCondNumb(SparseMatrix & A_in){
+//
+  tridiagFromCSR(A_in);
+//  printSymMatCSR(A_in);
+//
+}
+
+void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
+//
+  int nA = A_in.rows;
+  int nMax = 100;
+  double *s = new double[nA];
+  double *s_bef = new double[nA];
+  double *As = new double[nA];
+  double *r = new double[nA];
+  double tmp_a,alpha, beta = 1.0, beta_bef;
+  double estim_cond;
+//
+//  if (nMax>nA); nMax=nA;
+  nMax = nMax > nA ? nA : nMax;
+  double *alphaVec = new double[nMax];
+  double *betaVec  = new double[nMax];
+  int cnt = 0;
+//
+  memset(s,0,nA * sizeof(double));
+  for (int i = 0 ; i < nA; i++){ r[i] = i ; }
+  tmp_a = sqrt(dot_e(r,r,nA));
+  for (int i = 0 ; i < nA; i++){ r[i] /=  tmp_a; }
+//
+  for (int i = 0; i < nMax ; i++){
+    memcpy( s_bef, s , sizeof( double ) * nA);
+    beta_bef=beta;
+    memcpy( s, r , sizeof( double ) * nA);
+    for (int j =  0;j < nA; j++){
+      s[j]/=beta;
+    }
+    spmv_(A_in,s,As);
+    alpha = dot_e(s,As,nA);
+    for (int j =  0;j < nA; j++){
+      r[j]=As[j] - s[j]*alpha - s_bef[j]*beta;
+    }
+//
+    beta = sqrt(dot_e(r,r,nA));
+    alphaVec[i] = alpha;
+    betaVec[i]  = beta;
+//
+    cnt++;
+    if ( fabs(beta/beta_bef) < 1e-4 ){
+      break; 
+    }
+  }
+
+
+//  printf("\n alpha beta \n");
+//  for (int i = 0 ; i < cnt; i++){
+//    printf("%3.8e %3.8e\n",alphaVec[i],betaVec[i]);
+//  }
+
+
+  char JOBZ = 'N';
+  double *Z = new double[cnt]; 
+  MKL_INT info;
+  MKL_INT ldz = cnt;
+  info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
+  estim_cond=alphaVec[cnt-1]/alphaVec[0];
+  if (estim_cond>1e10){
+    printf("\n\n--------condition number is very large-----------------\n");
+    printf("            cond(A) = %3.15e\tit: %d\n\n\n\n",estim_cond,cnt);
+  }
+  
+
+
+//  printf("\n eigenvals\n");
+//  for (int i = 0 ; i < cnt; i++){
+//    printf("%3.8e \n",alphaVec[i]);
+//  }
+
+
+
+  delete [] s;
+  delete [] s_bef;
+  delete [] As;
+  delete [] r;
+  delete [] alphaVec;
+  delete [] betaVec;
+  delete [] Z;
+
+}
+
+double SparseMatrix::dot_e(double *x, double *y, int n){
+  double dot_xy = 0.0;
+  for (int i = 0; i< n; i++){
+    dot_xy+=x[i]*y[i];
+  }
+  return dot_xy;
+
+}
+
+
+
+
+
+// AM -end:   ---------------------------------------------------------------------------
 void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta) {
 	//C := A+beta*op(B)
 
