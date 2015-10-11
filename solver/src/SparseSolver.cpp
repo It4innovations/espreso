@@ -1293,11 +1293,22 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 
 }
 
-void SparseSolver::generalInverse( SparseMatrix & A_in){
+void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
+//      
+// Routine calculates kernel R of A_in satisfied euqality
+//      A_in * R = O,
+// where O is zero matrix,
+// and makes the matrix A_in non-singular (A_reg) utilizing spectral conditions
+// Schur complement. Then 
+//      || A_in - A_in*inv(A_reg)*A_in || = 0.0
+//
+//
+// rev. 2015-10-11 (A.M.)
 
-
-
-  int SC_SIZE = 20;
+  
+ // TODO For more general case matrix A_in should be randomly permuted. 
+  
+  int SC_SIZE = 30;  
   SparseMatrix S;
   SparseMatrix A_rr;
   SparseMatrix A_rs;
@@ -1305,11 +1316,14 @@ void SparseSolver::generalInverse( SparseMatrix & A_in){
   int i_start = 0;
   int nonsing_size = A_in.rows - SC_SIZE - i_start;
   int j_start = nonsing_size;
-//void SparseSolver::Create_SC( SparseMatrix & B_out, int SC_SIZE, bool isThreaded )
+  vector <int> fix_dofs;
+  for (int i = 0;i<SC_SIZE;i++) fix_dofs.push_back(nonsing_size + i + 1); 
+  A_rr.getSubDiagBlockmatrix(A_in,A_rr,i_start, nonsing_size);
+  A_rr.MatCondNumb(A_rr);
+  A_rs.getSubBlockmatrix_rs(A_in,A_rs,i_start, nonsing_size,j_start,SC_SIZE);
   Create_SC(S,SC_SIZE,false);
   S.type='S';
   S.ConvertCSRToDense(1);
-
   // eigenvals and eigenvec of Schur complement
   char JOBZ = 'V';
   char UPLO = 'U';
@@ -1321,32 +1335,101 @@ void SparseSolver::generalInverse( SparseMatrix & A_in){
   if (info){
     printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
   }
-
-  // zeros eigenvalue identifications 
-  int TWENTY=20;
+  // identifications of zero eigenvalues 
+  int TWENTY=20, defect_A_in;// R_s_cols;
   double ratio; 
-  int itMax = TWENTY > S.rows ? TWENTY : S.rows;
+  int itMax = TWENTY < S.rows ? TWENTY : S.rows ;
   for (int i = itMax-1; i > 0;i--){ 
     ratio = fabs(W[i-1]/W[i]);
+//    printf("eig[%d],eig[%d]= [%3.15e/%3.15e]\n",i,i-1,W[i],W[i-1]);
     if (ratio < 1e-5){
       printf("ratio = %3.15e, i=%d\n",ratio,i-1);
+      defect_A_in=i;
     }
   }
+  // creating kernel R_s for singular part (Schur complement)
+  SparseMatrix R_s;
+  R_s.nnz  = defect_A_in*S.rows;
+  R_s.dense_values.resize(R_s.nnz);
+  R_s.rows = S.rows;
+  R_s.cols = defect_A_in;
+  R_s.type = 'G';
+	R_s.V_values.resize(R_s.nnz);			
+	R_s.J_col_indices.resize(R_s.nnz);		
+	R_s.I_row_indices.resize(R_s.nnz);	    
+  for (int j = 0; j < defect_A_in; j++){
+    for (int i = 0; i < R_s.rows; i++){
+	    R_s.V_values     [j*R_s.rows + i] = Z[j*R_s.rows + i];			
+	    R_s.I_row_indices[j*R_s.rows + i]=i+1;	    
+	    R_s.J_col_indices[j*R_s.rows + i]=j+1;		
+    }
+  }
+  R_s.ConvertToCSR(0);
+  // creating kernel R_r for non-singular part
+	SparseMatrix R_r; 
+	R_r.MatMat(A_rs,'N',R_s); 
+  SparseSolver A_rr_solver; 
+  A_rr_solver.ImportMatrix(A_rr);
+  A_rr.Clear();
+  A_rr_solver.Factorization();
+  A_rr_solver.SolveMat_Sparse(R_r); // inv(A_rr)*A_rs*R_s 
+  R_r.ConvertToCOO(1);
+  
+  // creating whole kernel R = [ (R_r)^T (R_s)^T ]^T
+  R.rows = R_r.rows+R_s.rows;
+  R.cols = R_r.cols;
+  R.nnz  = R.cols*R.rows;
+  R.dense_values.resize(R.nnz);
+  R.type = 'G';
+	R.V_values.resize(R.nnz);			
+	R.J_col_indices.resize(R.nnz);		
+	R.I_row_indices.resize(R.nnz);	    
+  int cnt=0;
+  for (int j = 0; j < R.cols; j++){
+    for (int i = 0; i < R_r.rows; i++){
+	    R.V_values     [cnt] = R_r.V_values[j*R_r.rows + i];			
+	    R.I_row_indices[cnt] = i+1;	    
+	    R.J_col_indices[cnt] = j+1;		
+      cnt++;
+    }
+    for (int i = 0; i < R_s.rows; i++){
+	    R.V_values     [cnt] = -R_s.V_values[j*R_s.rows + i];			
+	    R.I_row_indices[cnt]=i+1+R_r.rows;	    
+	    R.J_col_indices[cnt]=j+1;		
+      cnt++;
+    }
+  }
+  R.ConvertToCSR(1);
 
-
-//  S.printSymMatCSR(S);
-  A_rr.getSubDiagBlockmatrix(A_in,A_rr,i_start, nonsing_size);
-  A_rs.getSubBlockmatrix_rs(A_in,A_rs,i_start, nonsing_size,j_start,SC_SIZE);
-//  printf(" A_in\n");
-//  A_in.printSymMatCSR(A_in);
-//  printf(" A_rr\n");
-//  A_rr.printSymMatCSR(A_rr);
-//  printf(" A_rs\n");
-//  A_rs.printSymMatCSR(A_rs);
+  // regularization of matrix A_in
+  SparseMatrix N;
+  N.CreateMatFromRowsFromMatrix( R , fix_dofs);
+  N.printMatCSR(N);
+	SparseMatrix Nt;
+	N.MatTranspose( Nt );
+	SparseMatrix NtN_Mat;
+	NtN_Mat.MatMat( Nt,'N',N );
+  NtN_Mat.MatTranspose();
+  NtN_Mat.RemoveLower();
+  SparseSolver NtN;
+  NtN.ImportMatrix(NtN_Mat);
+  NtN_Mat.Clear();
+  NtN.Factorization();
+  NtN.SolveMat_Sparse(Nt);
+  NtN.Clear();
+  //NtN = Nt*N
+  N.Clear();
+  Nt.MatTranspose(N);
+  NtN_Mat.MatMat(N,'N',Nt);
+  NtN_Mat.RemoveLower();
+  double ro = A_in.GetMaxOfDiagonalOfSymmetricMatrix();
+  ro = 1.0 * ro;
+  A_in.MatAddInPlace (NtN_Mat,'N', ro);
+  A_in.MatCondNumb(A_in);
+  A_in.printMatCSR(A_in);
 
   delete [] W;
   delete [] Z;
-
 
 }
 

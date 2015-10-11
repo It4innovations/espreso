@@ -1773,7 +1773,7 @@ void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
 
 
 void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_out, int i_start, int size_rr){
-//
+// 
 // Function 'getSubDiagBlockmatrix' returns the diagonal block A_in(r,r) from original A_in,
 // where r = { i_start , i_start+1 , i_start+2 , ... , istart + size_rr - 1 }
 //
@@ -1867,7 +1867,7 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
   }
 }
 
-void SparseMatrix::printSymMatCSR( SparseMatrix & A_in){
+void SparseMatrix::printMatCSR( SparseMatrix & A_in){
   for (int i = 0;i<A_in.rows;i++){
     for (int j = A_in.CSR_I_row_indices[i];j<A_in.CSR_I_row_indices[i+1];j++){
       printf("%d %d %3.9e \n",i+1,A_in.CSR_J_col_indices[j-1],A_in.CSR_V_values[j-1]);
@@ -1878,12 +1878,14 @@ void SparseMatrix::printSymMatCSR( SparseMatrix & A_in){
 void SparseMatrix::MatCondNumb(SparseMatrix & A_in){
 //
   tridiagFromCSR(A_in);
-//  printSymMatCSR(A_in);
+//  printMatCSR(A_in);
 //
 }
 
 void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
 //
+  bool plotEigenvalues=false;
+  bool plot_a_and_b_defines_tridiag=false;
   int nA = A_in.rows;
   int nMax = 100;
   double *s = new double[nA];
@@ -1926,14 +1928,13 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
       break; 
     }
   }
-
-
-//  printf("\n alpha beta \n");
-//  for (int i = 0 ; i < cnt; i++){
-//    printf("%3.8e %3.8e\n",alphaVec[i],betaVec[i]);
-//  }
-
-
+//
+  if (plot_a_and_b_defines_tridiag){
+    printf("\n alpha beta \n");
+    for (int i = 0 ; i < cnt; i++){
+      printf("%3.8e %3.8e\n",alphaVec[i],betaVec[i]);
+    }
+  }
   char JOBZ = 'N';
   double *Z = new double[cnt]; 
   MKL_INT info;
@@ -1941,19 +1942,17 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
   info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=alphaVec[cnt-1]/alphaVec[0];
   if (estim_cond>1e10){
-    printf("\n\n--------condition number is very large-----------------\n");
-    printf("            cond(A) = %3.15e\tit: %d\n\n\n\n",estim_cond,cnt);
+    printf("\n\n!!!   CONDITION NUMBER IS VERY LARGE  !!! \n");
   }
-  
-
-
-//  printf("\n eigenvals\n");
-//  for (int i = 0 ; i < cnt; i++){
-//    printf("%3.8e \n",alphaVec[i]);
-//  }
-
-
-
+  printf("\n          cond(A) = %3.15e\tit: %d\n\n\n\n",estim_cond,cnt);
+//
+  if (plotEigenvalues){
+    printf("\n eigenvals\n");
+    for (int i = 0 ; i < cnt; i++){
+      printf("%3.8e \n",alphaVec[i]);
+    }
+  }
+//
   delete [] s;
   delete [] s_bef;
   delete [] As;
@@ -1961,7 +1960,7 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
   delete [] alphaVec;
   delete [] betaVec;
   delete [] Z;
-
+//
 }
 
 double SparseMatrix::dot_e(double *x, double *y, int n){
