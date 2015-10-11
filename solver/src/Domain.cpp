@@ -248,47 +248,47 @@ void Domain::K_regularizationFromR ( ) {
 
     if (USE_DYNAMIC == 0) {
 
-    	if (DOFS_PER_NODE == 3) {
+//    	if (DOFS_PER_NODE == 3) {
+//
+//			SparseMatrix N;
+//
+//			N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
+//
+//			SparseMatrix Nt;
+//			N.MatTranspose( Nt );
+//
+//			SparseMatrix NtN_Mat;
+//			NtN_Mat.MatMat( Nt,'N',N );
+//        NtN_Mat.MatTranspose();
+//        NtN_Mat.RemoveLower();
+//
+//        SparseSolver NtN;
+//        NtN.ImportMatrix(NtN_Mat);
+//        NtN_Mat.Clear();
+//
+//        NtN.Factorization();
+//        NtN.SolveMat_Sparse(Nt);
+//        NtN.Clear();
+//
+//        //NtN = Nt*N
+//        N.Clear();
+//        Nt.MatTranspose(N);
+//        NtN_Mat.MatMat(N,'N',Nt);
+//        NtN_Mat.RemoveLower();
+//
+//        double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
+//        ro = 1.0 * ro;
+//
+//        K.MatAddInPlace (NtN_Mat,'N', ro);
+//    	}
 
-			SparseMatrix N;
 
-			N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
-
-			SparseMatrix Nt;
-			N.MatTranspose( Nt );
-
-			SparseMatrix NtN_Mat;
-			NtN_Mat.MatMat( Nt,'N',N );
-        NtN_Mat.MatTranspose();
-        NtN_Mat.RemoveLower();
-
-        SparseSolver NtN;
-        NtN.ImportMatrix(NtN_Mat);
-        NtN_Mat.Clear();
-
-        NtN.Factorization();
-        NtN.SolveMat_Sparse(Nt);
-        NtN.Clear();
-
-        //NtN = Nt*N
-        N.Clear();
-        Nt.MatTranspose(N);
-        NtN_Mat.MatMat(N,'N',Nt);
-        NtN_Mat.RemoveLower();
-
-        double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
-        ro = 1.0 * ro;
-
-        K.MatAddInPlace (NtN_Mat,'N', ro);
-    	}
-
-
-    	if (DOFS_PER_NODE == 1) {
+//     	if (DOFS_PER_NODE == 1) {
         SparseSolver forGInv;
         SparseMatrix R; // automatically detected kernl of K
         forGInv.generalInverse(K,R); 
-        K.CSR_V_values[0]*=1.1;
-    	}
+//        K.CSR_V_values[0]*=1.1;
+//   	  }
     }
 
 

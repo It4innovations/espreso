@@ -1,5 +1,6 @@
 #include "SparseMatrix.h"
 
+
 void SpyText (SparseMatrix & A) {
 	
 	SEQ_VECTOR<char> tmp (60,'-');  
@@ -1878,7 +1879,6 @@ void SparseMatrix::printMatCSR( SparseMatrix & A_in){
 void SparseMatrix::MatCondNumb(SparseMatrix & A_in){
 //
   tridiagFromCSR(A_in);
-//  printMatCSR(A_in);
 //
 }
 
