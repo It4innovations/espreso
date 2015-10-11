@@ -1308,7 +1308,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
 // rev. 2015-10-11 (A.M.)
 
   
- // TODO For more general case matrix A_in should be randomly permuted. 
+// TODO FOR MORE GENERAL CASE MATRIX a_IN SHOULD BE RANDOMLY PERMUTED. 
   int SC_SIZE = 30;  
   SparseMatrix S;
   SparseMatrix A_rr;
@@ -1326,7 +1326,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   printf("S\n"); S.printMatCSR(S);
   S.type='S';
   S.ConvertCSRToDense(1);
-  // eigenvals and eigenvec of Schur complement
+// EIGENVALS AND EIGENVEC OF SCHUR COMPLEMENT
   char JOBZ = 'V';
   char UPLO = 'U';
   double *W = new double[S.cols]; 
@@ -1337,7 +1337,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   if (info){
     printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
   }
-  // identifications of zero eigenvalues 
+// IDENTIFICATIONS OF ZERO EIGENVALUES 
   int TWENTY=20, defect_A_in;// R_s_cols;
   double ratio; 
   int itMax = TWENTY < S.rows ? TWENTY : S.rows ;
@@ -1349,7 +1349,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
       printf("ratio = %3.15e, defect = %d\n",ratio,defect_A_in);
     }
   }
-  // creating kernel R_s for singular part (Schur complement)
+// --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
   SparseMatrix R_s;
   R_s.nnz  = defect_A_in*S.rows;
   R_s.dense_values.resize(R_s.nnz);
@@ -1365,9 +1365,8 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
     }
   }
   R_s.ConvertDenseToCSR(0);
-  
-  printf("R_s\n"); R_s.printMatCSR(R_s);
-  // creating kernel R_r for non-singular part
+  //printf("R_s\n"); R_s.printMatCSR(R_s);
+// --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 	SparseMatrix R_r; 
 	R_r.MatMat(A_rs,'N',R_s); 
   //printf("A_rs*R_s\n"); R.printMatCSR(R_r);
@@ -1380,7 +1379,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   
   R_r.ConvertCSRToDense(0);
   R_s.ConvertCSRToDense(0);
-  // creating whole kernel R = [ (R_r)^T (R_s)^T ]^T
+// --------------- CREATING WHOLE KERNEL R = [ (R_r)^T (R_s)^T ]^T
   R.rows = R_r.rows+R_s.rows;
   R.cols = R_r.cols;
   R.nnz  = R.cols*R.rows;
@@ -1399,7 +1398,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   }
   R.ConvertDenseToCSR(1);
   printf("R\n"); R.printMatCSR(R);
-  // regularization of matrix A_in
+// REGULARIZATION OF MATRIX A_in
   SparseMatrix N;
   N.CreateMatFromRowsFromMatrix( R , fix_dofs);
 //  printf("N\n"); N.printMatCSR(N);
@@ -1425,6 +1424,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
 
 	SparseMatrix A_in_R;
 	A_in_R.MatMat( A_in,'N',R );
+//TODO  Matrix A_in is triangular, and MatMat does not provide correct product! 
 //  printf("A_in_R\n"); A_in_R.printMatCSR(A_in_R);
 //  double norm_A_in_R=0.0;
 //  for (int i = 0; i < A_in.nnz;i++){
