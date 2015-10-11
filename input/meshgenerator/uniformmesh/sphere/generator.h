@@ -4,6 +4,7 @@
 
 #include "../generator.h"
 #include "settings.h"
+#include "utils.h"
 
 namespace esinput {
 

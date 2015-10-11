@@ -58,11 +58,19 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 	corner[1] = mesh::Point(         -1, corner[0].y, corner[0].z); // x-axis
 	corner[2] = mesh::Point(corner[0].x,           1, corner[0].z); // y-axis
 
+	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
+	eslocal ring = SphereUtils<TElement>::ringNodesCount(_settings);
+	if (this->_rank == 0) {
+		std::cout << "surface: " << surface << "\n";
+		std::cout << "ring: " << ring << "\n";
+		std::cout << "test: " << ring * (cNodes[0] - 1) << "\n";
+	}
 	mesh::Point point;
 	eslocal index = 0;
+	esglobal gIndex;
 	for (eslocal z = 0; z < cNodes[2]; z++) {
-		for (eslocal y = 0; y < cNodes[1]; y++) {
-			for (eslocal x = 0; x < cNodes[0]; x++) {
+		for (eslocal x = 0; x < cNodes[0]; x++) {
+			for (eslocal y = 0; y < cNodes[1]; y++) {
 				point.z = 1;
 				point.y = (corner[0] * (1 - y * step[1]) + corner[2] * y * step[1]).y;
 				point.x = (corner[0] * (1 - x * step[0]) + corner[1] * x * step[0]).x;
@@ -72,31 +80,62 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 
 				switch (this->_rank % 6) {
 				case 0: { // top
+					gIndex = z * surface + x * ring + y;
 					break;
 				}
-				case 1: { // bottom
-					point.flip();
-					break;
-				}
-				case 2: { // left
-					double tmp = point.y;
-					point.y = -point.z;
-					point.z = tmp;
-					break;
-				}
-				case 3: { // right
+				case 1: { // right
+					gIndex = z * surface + x * ring + y + cNodes[1] - 1;
 					double tmp = point.y;
 					point.y = point.z;
 					point.z = -tmp;
 					break;
 				}
+				case 2: { // bottom
+					gIndex = z * surface + x * ring + y + 2 * cNodes[1] - 2;
+					point.z = -point.z;
+					point.y = -point.y;
+					break;
+				}
+				case 3: { // left
+					gIndex = z * surface + x * ring + (y + 3 * cNodes[1] - 3) % ring;
+					double tmp = point.y;
+					point.y = -point.z;
+					point.z = tmp;
+					break;
+				}
 				case 4: { // front
+					gIndex = z * surface + cNodes[0] * ring + (x - 1) * (cNodes[1] - 2) + y - 1;
+					if (y == 0) {
+						gIndex = z * surface + (x + 3 * cNodes[1] - 3) % ring;
+					}
+					if (y == cNodes[1] - 1) {
+						gIndex = z * surface + cNodes[0] - 1 - x + cNodes[1] - 1;
+					}
+					if (x == 0) {
+						gIndex = z * surface + x * ring + cNodes[1] - 1 - y + 2 * cNodes[1] - 2;
+					}
+					if (x == cNodes[0] - 1) {
+						gIndex = z * surface + y;
+					}
 					double tmp = point.z;
 					point.z = -point.x;
 					point.x = tmp;
 					break;
 				}
 				case 5: { // rear
+					gIndex = z * surface + cNodes[0] * ring + (x - 1) * (cNodes[1] - 2) + y - 1 + (cNodes[1] - 2) * (cNodes[0] - 2);
+					if (y == 0) {
+						gIndex = z * surface + (cNodes[0] - 1) * ring + (cNodes[1] - 1 - x + 3 * cNodes[1] - 3) % ring;
+					}
+					if (y == cNodes[1] - 1) {
+						gIndex = z * surface + (cNodes[0] - 1) * ring + x + cNodes[1] - 1;
+					}
+					if (x == 0) {
+						gIndex = z * surface + (cNodes[0] - 1) * ring + y;
+					}
+					if (x == cNodes[0] - 1) {
+						gIndex = z * surface + x * ring + cNodes[1] - 1 - y + 2 * cNodes[1] - 2;
+					}
 					double tmp = point.z;
 					point.z = point.x;
 					point.x = -tmp;
@@ -104,8 +143,7 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 				}
 				}
 
-				coordinates.add(point, index, index);
-				index++;
+				coordinates.add(point, index++, gIndex);
 			}
 		}
 	}
