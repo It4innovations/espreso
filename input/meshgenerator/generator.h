@@ -10,6 +10,8 @@ namespace esinput {
 class Generator {
 
 public:
+	Generator(int rank, int size): _rank(rank), _size(size) { };
+
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
@@ -18,6 +20,10 @@ public:
 	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
 
 	virtual ~Generator() { };
+
+protected:
+	int _rank;
+	int _size;
 };
 
 class MeshGenerator: public InternalLoader {
@@ -37,7 +43,6 @@ public:
 	}
 
 private:
-
 	Generator *_generator;
 };
 

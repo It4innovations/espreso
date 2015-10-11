@@ -10,7 +10,7 @@ std::vector<Description> FactorySettings::description = {
 
 FactorySettings::FactorySettings(int argc, char** argv)
 {
-	Configuration<FactorySettings> configuration(argc, argv);
+	Configuration configuration(FactorySettings::description, argc, argv);
 
 	shape = configuration.value<eslocal>("SHAPE", 0);
 	elementType = configuration.value<eslocal>("ELEMENT_TYPE", 0);

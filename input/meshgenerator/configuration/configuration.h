@@ -13,11 +13,10 @@
 
 namespace esinput {
 
-template<class TSettings>
 class Configuration {
 
 public:
-	Configuration(int argc, char** argv);
+	Configuration(std::vector<Description> &description, int argc, char** argv);
 	~Configuration();
 
 	void print() const;
@@ -43,41 +42,10 @@ public:
 
 private:
 
-	eslocal _getValue(const std::string &parameter, eslocal defaultValue) const
-	{
-		if (_parameters.find(parameter)->second->isSet()) {
-			return static_cast<IntegerParameter*>(_parameters.find(parameter)->second)->get();
-		} else {
-			return defaultValue;
-		}
-	}
-
-	double _getValue(const std::string &parameter, double defaultValue) const
-	{
-		if (_parameters.find(parameter)->second->isSet()) {
-			return static_cast<DoubleParameter*>(_parameters.find(parameter)->second)->get();
-		} else {
-			return defaultValue;
-		}
-	}
-
-	std::string _getValue(const std::string &parameter, std::string &defaultValue) const
-	{
-		if (_parameters.find(parameter)->second->isSet()) {
-			return static_cast<StringParameter*>(_parameters.find(parameter)->second)->get();
-		} else {
-			return defaultValue;
-		}
-	}
-
-	bool _getValue(const std::string &parameter, bool defaultValue) const
-	{
-		if (_parameters.find(parameter)->second->isSet()) {
-			return static_cast<BooleanParameter*>(_parameters.find(parameter)->second)->get();
-		} else {
-			return defaultValue;
-		}
-	}
+	eslocal _getValue(const std::string &parameter, eslocal defaultValue) const;
+	double _getValue(const std::string &parameter, double defaultValue) const;
+	std::string _getValue(const std::string &parameter, std::string &defaultValue) const;
+	bool _getValue(const std::string &parameter, bool defaultValue) const;
 
 	void load(int argc, char** argv);
 
@@ -85,7 +53,5 @@ private:
 };
 
 }
-
-#include "configuration.hpp"
 
 #endif /* CONFIGURATION_H_ */

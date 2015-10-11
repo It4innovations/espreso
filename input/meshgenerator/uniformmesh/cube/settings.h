@@ -1,15 +1,14 @@
 
-#ifndef INPUT_MESHGENERATOR_CUBE_SETTINGS_H_
-#define INPUT_MESHGENERATOR_CUBE_SETTINGS_H_
+#ifndef INPUT_MESHGENERATOR_UNIFORMMESH_CUBE_SETTINGS_H_
+#define INPUT_MESHGENERATOR_UNIFORMMESH_CUBE_SETTINGS_H_
 
 #include <map>
 
-#include "../configuration/configuration.h"
-#include "esmesh.h"
+#include "../settings.h"
 
 namespace esinput {
 
-struct CubeSettings {
+struct CubeSettings: public UniformSettings {
 
 	enum Faces {
 		FRONT,
@@ -25,13 +24,7 @@ struct CubeSettings {
 	static std::vector<Description> description;
 
 	size_t clusters[3];
-	size_t subdomainsInCluster[3];
-	size_t elementsInSubdomain[3];
 	double problemLength[3];
-	size_t cornerCount;
-	bool corners;
-	bool edges;
-	bool faces;
 
 	std::vector<std::map<size_t, double> > boundaryCondition;
 	std::vector<std::map<size_t, bool> > fillCondition;
@@ -40,12 +33,10 @@ struct CubeSettings {
 inline std::ostream& operator<<(std::ostream& os, const CubeSettings &s)
 {
 	os << "clusters: " << s.clusters[0] << " : " << s.clusters[1] << " : " << s.clusters[2] << "\n";
-	os << "subdomainsInCluster: " << s.subdomainsInCluster[0] << " : " << s.subdomainsInCluster[1] << " : " << s.subdomainsInCluster[2] << "\n";
-	os << "elementsInSubdomain: " << s.elementsInSubdomain[0] << " : " << s.elementsInSubdomain[1] << " : " << s.elementsInSubdomain[2] << "\n";
 	os << "cube length: " << s.problemLength[0] << " : " << s.problemLength[1] << " : " << s.problemLength[2] << "\n";
 	return os;
 }
 
 }
 
-#endif /* INPUT_MESHGENERATOR_CUBE_SETTINGS_H_ */
+#endif /* INPUT_MESHGENERATOR_UNIFORMMESH_CUBE_SETTINGS_H_ */

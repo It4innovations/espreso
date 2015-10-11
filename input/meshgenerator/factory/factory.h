@@ -4,8 +4,8 @@
 
 #include "settings.h"
 #include "../generator.h"
-#include "../cube/generator.h"
-#include "../sphere/generator.h"
+#include "../uniformmesh/cube/generator.h"
+#include "../uniformmesh/sphere/generator.h"
 
 namespace esinput {
 

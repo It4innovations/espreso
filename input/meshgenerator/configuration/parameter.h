@@ -18,8 +18,8 @@ enum DataType {
 
 struct Description {
 	DataType type;
-	const char* name;
-	const char* description;
+	std::string name;
+	std::string description;
 };
 
 class Parameter {
