@@ -60,11 +60,7 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 
 	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
 	eslocal ring = SphereUtils<TElement>::ringNodesCount(_settings);
-	if (this->_rank == 0) {
-		std::cout << "surface: " << surface << "\n";
-		std::cout << "ring: " << ring << "\n";
-		std::cout << "test: " << ring * (cNodes[0] - 1) << "\n";
-	}
+
 	mesh::Point point;
 	eslocal index = 0;
 	esglobal gIndex;
@@ -156,50 +152,46 @@ void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinate
 	mesh::CoordinatesProperty &dirichlet_x = coordinates.property(mesh::DIRICHLET_X);
 	mesh::CoordinatesProperty &dirichlet_y = coordinates.property(mesh::DIRICHLET_Y);
 	mesh::CoordinatesProperty &dirichlet_z = coordinates.property(mesh::DIRICHLET_Z);
-	mesh::CoordinatesProperty &forces_x = coordinates.property(mesh::FORCES_X);
-	mesh::CoordinatesProperty &forces_y = coordinates.property(mesh::FORCES_Y);
-	mesh::CoordinatesProperty &forces_z = coordinates.property(mesh::FORCES_Z);
 
-//	eslocal nodes[3];
-//	SphereUtils<TElement>::clusterNodesCount(_settings, nodes);
-//
-//	if (_rank / 6 == 0) {
-//		eslocal index = 0;
-//		for (eslocal z = 0; z < nodes[2]; z++) {
-//			for (eslocal y = 0; y < nodes[1]; y++) {
-//				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_X]) {
-//					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_X];
-//				}
-//				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_X]) {
-//					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_X];
-//				}
-//				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_Y]) {
-//					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_Y];
-//				}
-//				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_Y]) {
-//					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_Y];
-//				}
-//				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_Z]) {
-//					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_Z];
-//				}
-//				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_Z]) {
-//					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_Z];
-//				}
-//				index += nodes[0];
-//			}
-//		}
-//	}
+	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
+
+	for (eslocal i = 0; i < surface; i++) {
+		dirichlet_x[i] = 0;
+		dirichlet_y[i] = 0;
+		dirichlet_z[i] = 0;
+	}
 }
 
 
 template <class TElement>
 void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 {
-//	esglobal gNodes[3];
-//	SphereUtils<TElement>::globalNodesCount(_settings, gNodes);
-//	eslocal cNodes[3];
-//	SphereUtils<TElement>::clusterNodesCount(_settings, cNodes);
-//	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
+	eslocal cNodes[3];
+	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
+	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
+
+	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
+	if (_rank / 6 > 0) {
+		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
+			boundaries[i].insert(_rank - 6);
+		}
+	}
+
+	if (_rank / 6 - 1 < _settings.layers) {
+		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
+			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].insert(_rank + 6);
+		}
+	}
+
+	eslocal index;
+	if  (_rank % 6 < 4) {
+		index = 0;
+		for (eslocal z = 0; z < cNodes[2]; z++) {
+			for (eslocal y = 0; y < cNodes[1]; y++) {
+				boundaries[index++].insert()
+			}
+		}
+	}
 //
 //	bool border[3];
 //	eslocal cIndex = _cluster[0] + _cluster[1] * _settings.clusters[0] + _cluster[2] * _settings.clusters[0] * _settings.clusters[1];
