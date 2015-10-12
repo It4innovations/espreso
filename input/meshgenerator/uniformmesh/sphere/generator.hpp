@@ -149,13 +149,17 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 template<class TElement>
 void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 {
+	if (this->_rank > 5) {
+		return;
+	}
 	mesh::CoordinatesProperty &dirichlet_x = coordinates.property(mesh::DIRICHLET_X);
 	mesh::CoordinatesProperty &dirichlet_y = coordinates.property(mesh::DIRICHLET_Y);
 	mesh::CoordinatesProperty &dirichlet_z = coordinates.property(mesh::DIRICHLET_Z);
 
-	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
+	eslocal cNodes[3];
+	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
-	for (eslocal i = 0; i < surface; i++) {
+	for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
 		dirichlet_x[i] = 0;
 		dirichlet_y[i] = 0;
 		dirichlet_z[i] = 0;
@@ -170,62 +174,44 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
-	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
-	if (_rank / 6 > 0) {
+	if (this->_rank / 6 > 0) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i].insert(_rank - 6);
+			boundaries[i].insert(this->_rank - 6);
 		}
 	}
 
-	if (_rank / 6 - 1 < _settings.layers) {
+	if (this->_rank / 6 < _settings.layers + 1) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].insert(_rank + 6);
+			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].insert(this->_rank + 6);
 		}
 	}
 
 	eslocal index;
-	if  (_rank % 6 < 4) {
-		index = 0;
+	if  (this->_rank % 6 < 4) {
 		for (eslocal z = 0; z < cNodes[2]; z++) {
+			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index++].insert()
+				boundaries[index + y].insert(6 * (this->_rank / 6) + 4);
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (this->_rank / 6) + 5);
+			}
+			for (eslocal x = 0; x < cNodes[0]; x++) {
+				boundaries[index + x * cNodes[1]].insert(6 * (this->_rank / 6) + (this->_rank + 3) % 4);
+				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (this->_rank / 6) + (this->_rank + 1) % 4);
+			}
+		}
+	} else {
+		for (eslocal z = 0; z < cNodes[2]; z++) {
+			index = z * cNodes[0] * cNodes[1];
+			for (eslocal y = 0; y < cNodes[1]; y++) {
+				boundaries[index + y].insert(6 * (this->_rank / 6) + 2);
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (this->_rank / 6));
+			}
+			for (eslocal x = 0; x < cNodes[0]; x++) {
+				boundaries[index + x * cNodes[1]].insert(6 * (this->_rank / 6) + 3);
+				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (this->_rank / 6) + 1);
 			}
 		}
 	}
-//
-//	bool border[3];
-//	eslocal cIndex = _cluster[0] + _cluster[1] * _settings.clusters[0] + _cluster[2] * _settings.clusters[0] * _settings.clusters[1];
-//	esglobal index = 0;
-//
-//	esglobal cs[3], ce[3];
-//	for (eslocal i = 0; i < 3; i++) {
-//		cs[i] = (cNodes[i] - 1) * _cluster[i];
-//		ce[i] = (cNodes[i] - 1) * (_cluster[i] + 1);
-//	}
-//
-//	for (esglobal z = cs[2]; z <= ce[2]; z++) {
-//		border[2] = (z == 0 || z == gNodes[2] - 1) ? false : z % ( cNodes[2] - 1) == 0;
-//		for (esglobal y = cs[1]; y <= ce[1]; y++) {
-//			border[1] = (y == 0 || y == gNodes[1] - 1) ? false : y % ( cNodes[1] - 1) == 0;
-//			for (esglobal x = cs[0]; x <= ce[0]; x++) {
-//				border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
-//				for (int i = 0; i < 8; i++) {
-//					eslocal tmp = cIndex;
-//					if (border[0] && (i & 1)) {
-//						tmp += (x == cs[0]) ? -1 : 1;
-//					}
-//					if (border[1] && (i & 2)) {
-//						tmp += ((y == cs[1]) ? -1 : 1) * _settings.clusters[0];
-//					}
-//					if (border[2] && (i & 4)) {
-//						tmp += ((z == cs[2]) ? -1 : 1) * _settings.clusters[0] * _settings.clusters[1];
-//					}
-//					boundaries[index].insert(tmp);
-//				}
-//				index++;
-//			}
-//		}
-//	}
 }
 
 }
