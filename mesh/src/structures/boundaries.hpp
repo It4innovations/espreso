@@ -49,75 +49,80 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 
 		for (it = _boundaries[i].begin(); it != _boundaries[i].end(); ++it) {
 
-			if (_mesh.coordinates()[i].z == 0.0 || _mesh.coordinates()[i].y == 0.0 ) {
+			if (DOFS_PER_NODE == 1) { // TODO: This is just for heat
 
-				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
-				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-				std::vector < T > tmp_vec (2);
-				tmp_vec[0] = lambda_count_B1;
-				tmp_vec[1] = 0;
-				lambda_map_sub_clst.push_back( tmp_vec );
-				is_dirichlet[0] = true;
-				B1_l_duplicity[*it].push_back( 1.0 );
+				if (_mesh.coordinates()[i].z == 0.0 || _mesh.coordinates()[i].y == 0.0 ) {
+
+					B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
+					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+					std::vector < T > tmp_vec (2);
+					tmp_vec[0] = lambda_count_B1;
+					tmp_vec[1] = 0;
+					lambda_map_sub_clst.push_back( tmp_vec );
+					is_dirichlet[0] = true;
+					B1_l_duplicity[*it].push_back( 1.0 );
 
 
-				if (_mesh.coordinates()[i].z == 0.0 )
-					vec_c[*it].push_back(1.0);
-				else
+					if (_mesh.coordinates()[i].z == 0.0 )
+						vec_c[*it].push_back(1.0);
+					else
+						vec_c[*it].push_back(-1.0);
+
+					lambda_count_B1++;
+				}
+
+			} else  {
+
+				if ( dirichlet_x.find(index(i)) != dirichlet_x.end() ) {
+					B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
+					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+					std::vector < T > tmp_vec (2);
+					tmp_vec[0] = lambda_count_B1;
+					tmp_vec[1] = 0;
+					lambda_map_sub_clst.push_back( tmp_vec );
+					is_dirichlet[0] = true;
+					B1_l_duplicity[*it].push_back( 1.0 );
+
 					vec_c[*it].push_back(0.0);
 
-				lambda_count_B1++;
+					lambda_count_B1++;
+				}
+
+				if (DOFS_PER_NODE > 1) {
+					if ( dirichlet_y.find(index(i)) != dirichlet_y.end() ) {
+						B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
+						lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+						std::vector < T > tmp_vec (2);
+						tmp_vec[0] = lambda_count_B1;
+						tmp_vec[1] = 0;
+						lambda_map_sub_clst.push_back( tmp_vec );
+						is_dirichlet[1] = true;
+						B1_l_duplicity[*it].push_back( 1.0 );
+
+						vec_c[*it].push_back(0.0);
+
+						lambda_count_B1++;
+					}
+				}
+				if (DOFS_PER_NODE > 2) {
+					if ( dirichlet_z.find(index(i)) != dirichlet_z.end() ) {
+						B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
+						lambda_map_sub_B1[*it].push_back(lambda_count_B1);
+						std::vector < T > tmp_vec (2);
+						tmp_vec[0] = lambda_count_B1;
+						tmp_vec[1] = 0;
+						lambda_map_sub_clst.push_back( tmp_vec );
+						is_dirichlet[2] = true;
+						B1_l_duplicity[*it].push_back( 1.0 );
+
+						vec_c[*it].push_back(0.0);
+
+						lambda_count_B1++;
+					}
+				}
 
 			}
 
-
-
-//			if ( dirichlet_x.find(index(i)) != dirichlet_x.end() ) {
-//				B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 0) =  1.0;  // 3*i + d_i
-//				lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-//				std::vector < T > tmp_vec (2);
-//				tmp_vec[0] = lambda_count_B1;
-//				tmp_vec[1] = 0;
-//				lambda_map_sub_clst.push_back( tmp_vec );
-//				is_dirichlet[0] = true;
-//				B1_l_duplicity[*it].push_back( 1.0 );
-//
-//
-//
-//				if (*it == 0)
-//					vec_c[*it].push_back(1.0);
-//				else
-//					vec_c[*it].push_back(0.0);
-//
-//				lambda_count_B1++;
-//			}
-//
-//			if (DOFS_PER_NODE > 1) {
-//				if ( dirichlet_y.find(index(i)) != dirichlet_y.end() ) {
-//					B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 1) =  1.0;  // 3*i + d_i
-//					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-//					std::vector < T > tmp_vec (2);
-//					tmp_vec[0] = lambda_count_B1;
-//					tmp_vec[1] = 0;
-//					lambda_map_sub_clst.push_back( tmp_vec );
-//					is_dirichlet[1] = true;
-//					B1_l_duplicity[*it].push_back( 1.0 );
-//					lambda_count_B1++;
-//				}
-//			}
-//			if (DOFS_PER_NODE > 2) {
-//				if ( dirichlet_z.find(index(i)) != dirichlet_z.end() ) {
-//					B1_loc[*it](lambda_count_B1, local_prim_numbering[*it] + 2) =  1.0;  // 3*i + d_i
-//					lambda_map_sub_B1[*it].push_back(lambda_count_B1);
-//					std::vector < T > tmp_vec (2);
-//					tmp_vec[0] = lambda_count_B1;
-//					tmp_vec[1] = 0;
-//					lambda_map_sub_clst.push_back( tmp_vec );
-//					is_dirichlet[2] = true;
-//					B1_l_duplicity[*it].push_back( 1.0 );
-//					lambda_count_B1++;
-//				}
-//			}
 		}
 
 		if ( _boundaries[i].size() > 1 ) {

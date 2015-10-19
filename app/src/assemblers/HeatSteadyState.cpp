@@ -155,8 +155,9 @@ void HeatSteadyState::init() {
 
 	 TimeEvent timeLSconv(string("Linear Solver - preprocessing"));
 	 timeLSconv.AddStart();
-	lin_solver.setup( _instance.rank(), _instance.size(), true );
+
 	lin_solver.DOFS_PER_NODE = DOFS_PER_NODE;
+	lin_solver.setup( _instance.rank(), _instance.size(), true );
 
 	 lin_solver.init(
 

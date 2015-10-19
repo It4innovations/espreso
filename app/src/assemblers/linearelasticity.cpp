@@ -67,6 +67,9 @@ void Linear_elasticity::init() {
 	 TimeEvent timeB1loc(string("Create B1 local"));
 	 timeB1loc.AddStart();
 
+	 //TODO: implement filling of vec_c
+	 vec_c.resize(partsCount);
+
 	 _instance.localBoundaries().create_B1_l<eslocal>(
 		B1_mat,
 		B0_mat,
@@ -75,6 +78,7 @@ void Linear_elasticity::init() {
 		lambda_map_sub_B1,
 		lambda_map_sub_B0,
 		B1_duplicity,
+		vec_c,
 		partsCount,
 		DOFS_PER_NODE,
 		_instance.globalBoundaries()
@@ -94,6 +98,7 @@ void Linear_elasticity::init() {
 		lambda_map_sub_clst,
 		lambda_map_sub_B1,
 		B1_duplicity,
+		vec_c,
 		_instance.rank(),
 		_instance.size(),
 		partsCount,
@@ -101,6 +106,9 @@ void Linear_elasticity::init() {
 		neigh_clusters,
         _instance.localBoundaries()
 	);
+
+	 for (int i = 0; i < vec_c.size(); i++)
+		 vec_c[i].resize(B1_duplicity[i].size(), 0.0);
 
 	 timeB1glob.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeB1glob);
@@ -140,7 +148,8 @@ void Linear_elasticity::init() {
 
 	K_mat_ls.resize(partsCount);
 	B1_mat_ls.resize(partsCount);
-	B0_mat_ls.resize(partsCount);
+	B0_mat_ls.
+	resize(partsCount);
 
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
  		K_mat_ls[d]  = K_mat[d];
@@ -157,7 +166,9 @@ void Linear_elasticity::init() {
 
 	 TimeEvent timeLSconv(string("Linear Solver - preprocessing"));
 	 timeLSconv.AddStart();
-	lin_solver.setup( _instance.rank(), _instance.size(), true );
+
+	 lin_solver.DOFS_PER_NODE = DOFS_PER_NODE;
+	 lin_solver.setup( _instance.rank(), _instance.size(), true );
 
 	 lin_solver.init(
 
@@ -174,7 +185,7 @@ void Linear_elasticity::init() {
 		B1_duplicity,
 
 		f_vec,
-		f_vec, // to be vec_c
+		vec_c,
 
 		fix_nodes,
 		l2g_vec,

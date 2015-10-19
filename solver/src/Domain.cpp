@@ -285,7 +285,10 @@ void Domain::K_regularizationFromR ( ) {
 
     	if (DOFS_PER_NODE == 1) {
     		double ro = K.GetMaxOfDiagonalOfSymmetricMatrix();
-    		K.CSR_V_values[0]+=ro;
+
+    		//K.CSR_V_values[ K.CSR_I_row_indices[100] - 1 ] = +ro;
+
+    		K.CSR_V_values[0] += ro;
     	}
 
     }
