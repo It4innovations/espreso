@@ -1761,12 +1761,14 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 // AM -start: ---------------------------------------------------------------------------
 void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
   int nA = A.cols;
+  int offset = A.CSR_I_row_indices[0] ? 1 : 0;
   memset(Ax,0,nA * sizeof(double));
   for (int i = 0; i < nA ; i++) {
     for (int j = A.CSR_I_row_indices[i];j<A.CSR_I_row_indices[i+1];j++) {
-      Ax[i] += CSR_V_values[j-1] * x[CSR_J_col_indices[j-1]-1];
+      Ax[i] += CSR_V_values[j-offset] * x[CSR_J_col_indices[j-offset]-offset];
       if (j > CSR_I_row_indices[i]) {
-        Ax[CSR_J_col_indices[j-1]-1] +=	CSR_V_values[j-1] * x[CSR_J_col_indices[CSR_I_row_indices[i]-1]-1];
+        Ax[CSR_J_col_indices[j-offset]-offset] +=
+            CSR_V_values[j-offset] * x[CSR_J_col_indices[CSR_I_row_indices[i]-offset]-offset];
       }
     }
   }
@@ -1784,7 +1786,7 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
 // step 1: getting nnz of submatrix
   int nnz_new=0;
   int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
-  printf("offset = %d\n",offset);
+  printf("\toffset = %d\n",offset);
   for (int i = 0;i<size_rr;i++){
     for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
       if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start && 
@@ -1834,7 +1836,7 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 // step 1: getting nnz of submatrix
   int nnz_new=0;
   int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
-  printf("offset = %d\n",offset);
+  printf("\toffset = %d\n",offset);
   for (int i = 0;i<i_size;i++){
     for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
       if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start && 
@@ -1843,7 +1845,7 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
       }
     }
   }
-  printf("nnz_new A_in(r,s)=%d\n",nnz_new);
+//  printf("nnz_new A_in(r,s)=%d\n",nnz_new);
 // step 2: allocation 1d arrays
   A_out.CSR_V_values.resize(nnz_new);
   A_out.CSR_J_col_indices.resize(nnz_new);
@@ -1868,7 +1870,8 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
   }
 }
 
-void SparseMatrix::printMatCSR( SparseMatrix & A_in){
+void SparseMatrix::printMatCSR( SparseMatrix & A_in, char *str0){
+  printf("\t%s\n",str0);
   for (int i = 0;i<A_in.rows;i++){
     for (int j = A_in.CSR_I_row_indices[i];j<A_in.CSR_I_row_indices[i+1];j++){
       printf("%d %d %3.9e \n",i+1,A_in.CSR_J_col_indices[j-1],A_in.CSR_V_values[j-1]);
@@ -1876,18 +1879,23 @@ void SparseMatrix::printMatCSR( SparseMatrix & A_in){
   }
 }
 
-void SparseMatrix::MatCondNumb(SparseMatrix & A_in){
+void SparseMatrix::MatCondNumb(SparseMatrix & A_in, char *str0){
 //
-  tridiagFromCSR(A_in);
+  tridiagFromCSR(A_in, str0);
 //
 }
 
-void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
+void SparseMatrix::permuteInCOO(SparseMatrix & A_in, int *perm){
+
+
+}
+
+void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
 //
-  bool plotEigenvalues=false;
+  bool plotEigenvalues=true;
   bool plot_a_and_b_defines_tridiag=false;
   int nA = A_in.rows;
-  int nMax = 100;
+  int nMax = 100; // size of tridiagonal matrix 
   double *s = new double[nA];
   double *s_bef = new double[nA];
   double *As = new double[nA];
@@ -1941,15 +1949,18 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in){
   MKL_INT ldz = cnt;
   info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=alphaVec[cnt-1]/alphaVec[0];
-  if (estim_cond>1e10){
-    printf("\n\n!!!   CONDITION NUMBER IS VERY LARGE  !!! \n");
-  }
-  printf("\n          cond(A) = %3.15e\tit: %d\n\n\n\n",estim_cond,cnt);
+  printf("\tcond(%s) = %3.15e\tit: %d\n",str0,fabs(estim_cond),cnt);
+//  if (fabs(estim_cond)>1e10){
+//    printf("!!!   CONDITION NUMBER IS VERY LARGE  !!! \n");
+//    estim_cond=fabs(estim_cond); // prevent to display negative cond_number
+//  }
 //
   if (plotEigenvalues){
     printf("\n eigenvals\n");
     for (int i = 0 ; i < cnt; i++){
-      printf("%3.8e \n",alphaVec[i]);
+      if (i < 10 || i > cnt-10){
+        printf("%5d:  %3.8e \n",i+1, alphaVec[i]);
+      }
     }
   }
 //

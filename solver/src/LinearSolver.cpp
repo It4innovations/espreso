@@ -194,9 +194,9 @@ void LinearSolver::init(
 
 
 	// *** Setup R matrix ********************************************************************************************
-	 TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
+	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
 	set_R(l2g_vec, mesh);
-	 timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
+	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
 

@@ -1306,27 +1306,35 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
 //
 //
 // rev. 2015-10-11 (A.M.)
-
-  
-// TODO FOR MORE GENERAL CASE MATRIX a_IN SHOULD BE RANDOMLY PERMUTED. 
-  int SC_SIZE = 30;  
+  printf("\n\n");
+  printf(" ###################################################################\n");
+  printf(" #                       GENERALIZED INVERSE                       #\n");
+  printf(" ###################################################################\n");
+//
+// 
+// TODO FOR MORE GENERAL CASE MATRIX A_in SHOULD BE RANDOMLY PERMUTED. 
+  int SC_SIZE = 100;         // size of S to detect singular part  
+  int TWENTY  = 20;         // constant set-up to defect <= TWENTY <= SC_SIZE 
   SparseMatrix S;
   SparseMatrix A_rr;
   SparseMatrix A_rs;
   ImportMatrix(A_in);
+  //int *perm = new perm[A_in.rows];
+
+
   int i_start = 0;
   int nonsing_size = A_in.rows - SC_SIZE - i_start;
   int j_start = nonsing_size;
   vector <int> fix_dofs;
   for (int i = 0;i<SC_SIZE;i++) fix_dofs.push_back(nonsing_size + i + 1); 
   A_rr.getSubDiagBlockmatrix(A_in,A_rr,i_start, nonsing_size);
-  A_rr.MatCondNumb(A_rr);
+  A_rr.MatCondNumb(A_rr,"A_rr");
   A_rs.getSubBlockmatrix_rs(A_in,A_rs,i_start, nonsing_size,j_start,SC_SIZE);
   Create_SC(S,SC_SIZE,false);
-  printf("S\n"); S.printMatCSR(S);
+//  S.printMatCSR(S,"Schur_complement");
   S.type='S';
   S.ConvertCSRToDense(1);
-// EIGENVALS AND EIGENVEC OF SCHUR COMPLEMENT
+// EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
   char JOBZ = 'V';
   char UPLO = 'U';
   double *W = new double[S.cols]; 
@@ -1338,7 +1346,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
     printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
   }
 // IDENTIFICATIONS OF ZERO EIGENVALUES 
-  int TWENTY=20, defect_A_in;// R_s_cols;
+  int defect_A_in;// R_s_cols;
   double ratio; 
   int itMax = TWENTY < S.rows ? TWENTY : S.rows ;
   for (int i = itMax-1; i > 0;i--){ 
@@ -1346,7 +1354,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
 //    printf("eig[%d],eig[%d]= [%3.15e/%3.15e]\n",i,i-1,W[i],W[i-1]);
     if (ratio < 1e-5){
       defect_A_in=i;
-      printf("ratio = %3.15e, defect = %d\n",ratio,defect_A_in);
+      printf("\tratio = %3.15e, defect = %d\n",ratio,defect_A_in);
     }
   }
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
@@ -1365,17 +1373,17 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
     }
   }
   R_s.ConvertDenseToCSR(0);
-  //printf("R_s\n"); R_s.printMatCSR(R_s);
+  //R_s.printMatCSR(R_s,"R_s");
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 	SparseMatrix R_r; 
 	R_r.MatMat(A_rs,'N',R_s); 
-  //printf("A_rs*R_s\n"); R.printMatCSR(R_r);
+  //R_r.printMatCSR(R_r,"A_rs*R_s");
   SparseSolver A_rr_solver; 
   A_rr_solver.ImportMatrix(A_rr);
   A_rr.Clear();
   A_rr_solver.Factorization();
   A_rr_solver.SolveMat_Sparse(R_r); // inv(A_rr)*A_rs*R_s 
-  //printf("R_r\n"); R_r.printMatCSR(R_r);
+  //R_r.printMatCSR(R_r,"R_r");
   
   R_r.ConvertCSRToDense(0);
   R_s.ConvertCSRToDense(0);
@@ -1397,11 +1405,11 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
     }
   }
   R.ConvertDenseToCSR(1);
-  printf("R\n"); R.printMatCSR(R);
+//R.printMatCSR(R,"R");
 // REGULARIZATION OF MATRIX A_in
   SparseMatrix N;
   N.CreateMatFromRowsFromMatrix( R , fix_dofs);
-//  printf("N\n"); N.printMatCSR(N);
+//N.printMatCSR(N,"N");
 	SparseMatrix Nt;
 	N.MatTranspose( Nt );
 	SparseMatrix NtN_Mat;
@@ -1420,26 +1428,27 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   NtN_Mat.RemoveLower();
   double ro = A_in.GetMaxOfDiagonalOfSymmetricMatrix();
   ro = 1.0 * ro;
-  printf("A_in\n"); A_in.printMatCSR(A_in);
-
+  A_in.MatCondNumb(A_in,"A_singular");
+//A_in.printMatCSR(A_in,"A_in");
+  A_in.MatAddInPlace (NtN_Mat,'N', ro);
+  A_in.MatCondNumb(A_in,"A_regularized");
 	SparseMatrix A_in_R;
 	A_in_R.MatMat( A_in,'N',R );
 //TODO  Matrix A_in is triangular, and MatMat does not provide correct product! 
-//  printf("A_in_R\n"); A_in_R.printMatCSR(A_in_R);
-//  double norm_A_in_R=0.0;
-//  for (int i = 0; i < A_in.nnz;i++){
-//    norm_A_in_R+=A_in_R.CSR_V_values[i]*A_in_R.CSR_V_values[i];
-//  }
-//  norm_A_in_R=sqrt(norm_A_in_R);
-//  printf("||A_in*R|| = %3.9e \n",norm_A_in_R);
+//A_in_R.printMatCSR(A_in_R,"A_in_R");
+  double norm_A_in_R=0.0;
+  for (int i = 0; i < A_in.nnz;i++){
+    norm_A_in_R+=A_in_R.CSR_V_values[i]*A_in_R.CSR_V_values[i];
+  }
+  norm_A_in_R=sqrt(norm_A_in_R);
+  printf("\t||A_in*R|| = %3.9e \n",norm_A_in_R);
 
-  A_in.MatCondNumb(A_in);
-  A_in.MatAddInPlace (NtN_Mat,'N', ro);
-//  printf("A_in_reg\n"); A_in.printMatCSR(A_in);
-//
+//A_in.printMatCSR(A_in,"A_in");
+  printf(" =============================================================\n\n");
 
   delete [] W;
   delete [] Z;
+  //delete [] perm;
 
 }
 
