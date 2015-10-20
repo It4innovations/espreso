@@ -1,12 +1,12 @@
 #ifndef BOUNDARIES_H_
 #define BOUNDARIES_H_
 
+#include <sstream>
+
 #include "../elements/elements.h"
-#include "mesh.h"
+#include "cilk/cilk.h"
 
 namespace mesh {
-
-class Mesh;
 
 class Boundaries
 {
@@ -15,13 +15,16 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
-	Boundaries(Mesh &mesh): _mesh(mesh) {};
-
-	void compute();
+	void clear()
+	{
+		_boundaries.clear();
+		_corners.clear();
+	}
 
 	void resize(size_t size)
 	{
 		_boundaries.resize(size);
+		_corners.resize(size, false);
 	}
 
 	size_t size() const
@@ -49,18 +52,10 @@ public:
 		return _corners[index];
 	}
 
-	const Mesh& mesh() const {
-		return _mesh;
-	}
-
-
 	// prepare for future improvements
 	eslocal index(size_t position) const {
 		return position;
 	}
-
-	void saveData();
-	void loadData(const char *filename);
 
 	template<typename T>
 	void create_B1_l(	std::vector < SparseIJVMatrix<T> >      	& B1_local,
@@ -72,7 +67,8 @@ public:
 						std::vector < std::vector <double> > 	& B1_l_duplicity,
 						const eslocal domains_num,
 						const eslocal DOFS_PER_NODE,
-						const mesh::Boundaries & global_boundaries) const;
+						const mesh::Boundaries & global_boundaries,
+						const Coordinates &coordinates) const;
 
 	template<typename T>
 	void create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1_global,
@@ -85,13 +81,12 @@ public:
 						const eslocal subDomPerCluster,
 						const eslocal DOFS_PER_NODE,
 						std::vector < eslocal  > & myNeighClusters,
-						const mesh::Boundaries & local_boundaries) const;
+						const mesh::Boundaries & local_boundaries,
+						const Coordinates &coordinates) const;
 
 
 
 private:
-	Mesh &_mesh;
-
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;
 

@@ -1,12 +1,10 @@
 #ifndef ESMESH_H_
 #define ESMESH_H_
 
-#include "settings.h"
 #include "structures/coordinates.h"
-#include "structures/mesh.h"
 #include "structures/boundaries.h"
+#include "structures/mesh.h"
 
-#include "matrices/matrices.h"
 
 //#include "mkl.h"
 #include "mkl_spblas.h"

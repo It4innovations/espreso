@@ -1,0 +1,19 @@
+
+OPENFOAM = "openfoam"
+
+source_files = (
+    "openfoam.cpp",
+)
+
+def configure(ctx):
+    ctx.setenv(OPENFOAM, ctx.all_envs[""].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[OPENFOAM]
+
+    ctx.lib(
+        source          = source_files,
+        target          = "esinput_openfoam",
+        use             = "espreso_includes",
+        install_path    = ctx.LIBRARIES
+    )

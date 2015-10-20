@@ -4,17 +4,12 @@
 
 #include "configuration.h"
 #include "esmesh.h"
-#include "espmcube.h"
+//#include "espmcube.h"
 
 class Instance {
 
 public:
-	Instance(const Configuration &configuration, int rank, int size);
-
-	const Configuration& configuration() const
-	{
-		return _configuration;
-	}
+	Instance(int rank, int size);
 
 	const mesh::Mesh& mesh() const
 	{
@@ -23,12 +18,12 @@ public:
 
 	const mesh::Boundaries& localBoundaries() const
 	{
-		return _localBoundaries;
+		return _mesh.subdomainBoundaries();
 	}
 
 	const mesh::Boundaries& globalBoundaries() const
 	{
-		return _globalBoundaries;
+		return _mesh.clusterBoundaries();
 	}
 
 	int rank() const
@@ -42,15 +37,10 @@ public:
 	}
 
 private:
-
-	Configuration _configuration;
-
 	int _rank;
 	int _size;
 
 	mesh::Mesh _mesh;
-	mesh::Boundaries _localBoundaries;
-	mesh::Boundaries _globalBoundaries;
 };
 
 

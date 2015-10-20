@@ -4,7 +4,6 @@
 
 namespace mesh {
 
-
 template<typename T>
 void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local,
 								std::vector < SparseIJVMatrix   <T> >   & B0_local,
@@ -15,12 +14,13 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 								std::vector < std::vector < double> >   & B1_l_duplicity,
 								const eslocal domains_num,
 								const eslocal DOFS_PER_NODE,
-								const mesh::Boundaries & global_boundaries) const
+								const Boundaries & global_boundaries,
+								const Coordinates &coordinates) const
 {
 
-	const std::map<eslocal, double> &dirichlet_x = _mesh.coordinates().property(CP::DIRICHLET_X).values();
-	const std::map<eslocal, double> &dirichlet_y = _mesh.coordinates().property(CP::DIRICHLET_Y).values();
-	const std::map<eslocal, double> &dirichlet_z = _mesh.coordinates().property(CP::DIRICHLET_Z).values();
+	const std::map<eslocal, double> &dirichlet_x = coordinates.property(DIRICHLET_X).values();
+	const std::map<eslocal, double> &dirichlet_y = coordinates.property(DIRICHLET_Y).values();
+	const std::map<eslocal, double> &dirichlet_z = coordinates.property(DIRICHLET_Z).values();
 
 	l2g_vec.resize(domains_num);
 
@@ -170,7 +170,8 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 								const eslocal subDomPerCluster,
 								const eslocal DOFS_PER_NODE,
 								std::vector < eslocal  > & myNeighClusters,
-								const mesh::Boundaries & local_boundaries) const
+								const mesh::Boundaries & local_boundaries,
+								const Coordinates &coordinates) const
 {
 
 	// Local B1 - further processing - update row numbering based on all clusters
@@ -265,7 +266,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 					// this loop goes over the nodes that are in multiple domains on this one cluster
 					//for (it_set_l = local_boundaries[i].begin(); it_set_l != local_boundaries[i].end(); ++it_set_l) {
 						for (int d_i = 0; d_i < dofs_per_node; d_i++ ) {
-							myBorderDOFs.push_back( dofs_per_node * _mesh.coordinates().globalIndex(i) + d_i ); // mapping local local to global
+							myBorderDOFs.push_back( dofs_per_node * coordinates.globalIndex(i) + d_i ); // mapping local local to global
 						}
 					//}
 				}
@@ -622,7 +623,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 		//TODO: predpoklada 3 stupne volnosti na uzel - vychazi z mapovani g2l pro uzly a ne DOFy
 		esglobal dofNODEnumber = DOFNumber / 3;
 		eslocal  dofNODEoffset = DOFNumber % 3;
-		eslocal  clustDofNODENumber = _mesh.coordinates().clusterIndex( dofNODEnumber );
+		eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
 
 		const std::set < eslocal > & subs_with_element = _boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 
@@ -637,7 +638,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 		for (eslocal d = 0; d < subDomPerCluster; d++) {
 		//for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set) {
 		//	eslocal d = *it_set;
-			eslocal domDofNODENumber = _mesh.coordinates().localIndex(clustDofNODENumber, d);
+			eslocal domDofNODENumber = coordinates.localIndex(clustDofNODENumber, d);
 			if ( domDofNODENumber != -1 ) {
 				//TODO: predpoklada 3 stupne volnosti na uzel - vychazi z mapovani g2l pro uzly a ne DOFy
 				eslocal domDOFNumber = 3 * domDofNODENumber + dofNODEoffset;
@@ -687,7 +688,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 	if (MPIrank == 0) { std::cout << " Dual size: " <<  total_number_of_B1_l_rows + total_number_of_global_B1_lambdas  << std::endl; }
 
-        MPI_Barrier(MPI_COMM_WORLD); 
+        MPI_Barrier(MPI_COMM_WORLD);
 
 
 
@@ -750,7 +751,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     					// this loop goes over the nodes that are in multiple domains on this one cluster
     					for (it_set_l = local_boundaries[i].begin(); it_set_l != local_boundaries[i].end(); ++it_set_l) {
     						for (int d_i = 0; d_i < dofs_per_node; d_i++ ) {
-    							myBorderDOFs_sp      .push_back( dofs_per_node * _mesh.coordinates().globalIndex(i) + d_i ); // mapping local local to global
+    							myBorderDOFs_sp      .push_back( dofs_per_node * coordinates.globalIndex(i) + d_i ); // mapping local local to global
     							myBorderDOFs_sp_loc_n.push_back( dofs_per_node *                                  i + d_i ); // in local numbering
     						}
     					}
@@ -761,7 +762,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
     	// sort my neigh DOFs sp
     	std::sort (myBorderDOFs_sp.begin(), myBorderDOFs_sp.end());
-        myBorderDOFs_sp_nr = myBorderDOFs_sp; 
+        myBorderDOFs_sp_nr = myBorderDOFs_sp;
     	// removes the duplicit DOFs from myBorderDofs
     	std::vector< esglobal >::iterator itx;
         itx = std::unique (myBorderDOFs_sp_nr.begin(), myBorderDOFs_sp_nr.end());
@@ -1161,7 +1162,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     	if (MPIrank == 0) { std::cout << " Global B - Iprobe and MPIrecv                                            "; system("date +%T.%6N"); }
 
     	//std::vector < std::vector < esglobal > > mpi_recv_buff;
-    	mpi_recv_buff.clear(); 
+    	mpi_recv_buff.clear();
         mpi_recv_buff.resize( myNeighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
     	delete [] mpi_send_req;
 
@@ -1253,7 +1254,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
     		if ( myLambdas_sp[j][2] == myLambdas_sp[j][3] ) { // resim vazby mezi domenama uvnitr clusteru
 
-    			eslocal  clustDofNODENumber = _mesh.coordinates().clusterIndex( dofNODEnumber );
+    			eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
 				const std::set    < eslocal >  & subs_with_element = local_boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 				std::vector < eslocal >    subs_with_elem;
 				for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
@@ -1262,8 +1263,8 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 				eslocal d1                = subs_with_elem[ myLambdas_sp[j][5] ];
 				eslocal d2                = subs_with_elem[ myLambdas_sp[j][6] ];
 
-				eslocal domDofNODENumber1 = local_boundaries.mesh().coordinates().localIndex(clustDofNODENumber, d1);
-				eslocal domDofNODENumber2 = local_boundaries.mesh().coordinates().localIndex(clustDofNODENumber, d2);
+				eslocal domDofNODENumber1 = coordinates.localIndex(clustDofNODENumber, d1);
+				eslocal domDofNODENumber2 = coordinates.localIndex(clustDofNODENumber, d2);
 
 				eslocal domDOFNumber1     = 3 * domDofNODENumber1 + dofNODEoffset;
 				eslocal domDOFNumber2     = 3 * domDofNODENumber2 + dofNODEoffset;
@@ -1297,7 +1298,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
     		} else { // resim vazby mezi clustery
 
-    			eslocal  clustDofNODENumber = _mesh.coordinates().clusterIndex( dofNODEnumber );
+    			eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
 				const std::set    < eslocal >  & subs_with_element = local_boundaries[clustDofNODENumber]; //_boundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 				std::vector < eslocal >    subs_with_elem;
 				for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
@@ -1313,7 +1314,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 				eslocal d                = subs_with_elem[ myLambdas_sp[j][5] ];
 				//eslocal domDofNODENumber = _mesh.coordinates().localIndex(clustDofNODENumber, d);
-				eslocal domDofNODENumber = local_boundaries.mesh().coordinates().localIndex(clustDofNODENumber, d);
+				eslocal domDofNODENumber = coordinates.localIndex(clustDofNODENumber, d);
 				eslocal domDOFNumber     = 3 * domDofNODENumber + dofNODEoffset;
 				// #ifdef USE_TBB
 				// m.lock();

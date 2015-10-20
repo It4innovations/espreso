@@ -2,14 +2,24 @@
 #define COORDINATES_H_
 
 #include "../elements/1D/point.h"
-#include "../loader.h"
 
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <fstream>
 
 namespace mesh
 {
+
+enum Property {
+	DIRICHLET_X,
+	DIRICHLET_Y,
+	DIRICHLET_Z,
+	FORCES_X,
+	FORCES_Y,
+	FORCES_Z,
+	PROPERTIES_COUNT
+};
 
 class CoordinatesProperty
 {
@@ -40,9 +50,7 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
-	Coordinates(): _points(0), _clusterIndex(1), _property(CP::SIZE) { };
-	Coordinates(const char *fileName);
-	Coordinates(const Ansys &a);
+	Coordinates(): _points(0), _clusterIndex(1), _property(PROPERTIES_COUNT) { };
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -114,6 +122,11 @@ public:
 		return _clusterIndex[part].size();
 	}
 
+	size_t parts() const
+	{
+		return _clusterIndex.size();
+	}
+
 	size_t size() const
 	{
 		return _points.size();
@@ -152,12 +165,12 @@ public:
 		return _points[index];
 	}
 
-	CoordinatesProperty& property(CP::Property property)
+	CoordinatesProperty& property(Property property)
 	{
 		return _property[property];
 	}
 
-	const CoordinatesProperty& property(CP::Property property) const
+	const CoordinatesProperty& property(Property property) const
 	{
 		return _property[property];
 	}
@@ -178,8 +191,6 @@ public:
 	}
 
 private:
-	void readFromFile(const char *fileName);
-
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */

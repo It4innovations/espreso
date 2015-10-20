@@ -1,0 +1,33 @@
+
+MESHGENERATOR = "meshgenerator"
+
+source_files = (
+    "elements/3D/tetrahedron4.cpp",
+    "elements/3D/tetrahedron10.cpp",
+    "elements/3D/hexahedron8.cpp",
+    "elements/3D/hexahedron20.cpp",
+    "elements/3D/prisma6.cpp",
+    "elements/3D/prisma15.cpp",
+    "elements/3D/pyramid5.cpp",
+    "elements/3D/pyramid13.cpp",
+    "configuration/configuration.cpp",
+    "factory/factory.cpp",
+    "factory/settings.cpp",
+    "uniformmesh/settings.cpp",
+    "uniformmesh/cube/settings.cpp",
+    "uniformmesh/sphere/settings.cpp",
+    "generator.cpp",
+)
+
+def configure(ctx):
+    ctx.setenv(MESHGENERATOR, ctx.all_envs[""].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[MESHGENERATOR]
+
+    ctx.lib(
+        source          = source_files,
+        target          = "esinput_generator",
+        use             = "espreso_includes",
+        install_path    = ctx.LIBRARIES
+    )

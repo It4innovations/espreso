@@ -1,0 +1,19 @@
+
+ANSYS = "ansys"
+
+source_files = (
+    "ansys.cpp",
+)
+
+def configure(ctx):
+    ctx.setenv(ANSYS, ctx.all_envs[""].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[ANSYS]
+
+    ctx.lib(
+        source          = source_files,
+        target          = "esinput_ansys",
+        use             = "espreso_includes",
+        install_path    = ctx.LIBRARIES
+    )

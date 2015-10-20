@@ -10,7 +10,7 @@ from wafutils import *
 #..............................................................................#
 #     VERSION -> When you change the configuration, increment the value
 
-VERSION = 13
+VERSION = 14
 
 #..............................................................................#
 
@@ -63,10 +63,13 @@ def configure(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
+    ctx.recurse("basis")
     ctx.recurse("tools")
     ctx.recurse("bem")
     ctx.recurse("mesh")
-    ctx.recurse("permoncube")
+    ctx.recurse("input")
+    ctx.recurse("output")
+    #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("catalyst")
     ctx.recurse("app")
@@ -157,9 +160,39 @@ def build(ctx):
         ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
 
     ctx(
-        export_includes = "include",
-        name            = "espreso_includes"
+        export_includes = "basis",
+        name            = "incl_basis"
     )
+    ctx(
+        export_includes = "input",
+        name            = "incl_input"
+    )
+    ctx(
+        export_includes = "output",
+        name            = "incl_output"
+    )
+    ctx(
+        export_includes = "mesh/src",
+        name            = "incl_mesh"
+    )
+    ctx(
+        export_includes = "solver/src",
+        name            = "incl_solver"
+    )
+    ctx(
+        export_includes = "bem/src",
+        name            = "incl_bem"
+    )
+    ctx(
+        export_includes = "catalyst/src",
+        name            = "incl_catalyst"
+    )
+    ctx(
+        export_includes = "include",
+        name            = "espreso_includes",
+        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst"
+    )
+
     ctx.ROOT = ctx.path.abspath()
     ctx.LIBRARIES = ctx.ROOT + "/libs"
 
@@ -168,14 +201,17 @@ def build(ctx):
     else:
         ctx.lib = ctx.shlib
 
+    ctx.recurse("basis")
     ctx.recurse("tools")
     ctx.add_group()
     ctx.recurse("bem")
     ctx.recurse("mesh")
+    ctx.recurse("input")
+    ctx.recurse("output")
     if ctx.options.mesh:
         return
 
-    ctx.recurse("permoncube")
+    #ctx.recurse("permoncube")
     ctx.recurse("solver")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")

@@ -72,7 +72,7 @@ def build(ctx):
         source          = sources,
         target          = target,
         install_path    = ctx.LIBRARIES,
-        use             = "espreso_includes mesh_includes bem_includes pmcube_includes" 
+        use             = "espreso_includes"
     )
 
     ctx(

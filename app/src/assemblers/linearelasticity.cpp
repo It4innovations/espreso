@@ -77,7 +77,8 @@ void Linear_elasticity::init() {
 		B1_duplicity,
 		partsCount,
 		DOFS_PER_NODE,
-		_instance.globalBoundaries()
+		_instance.globalBoundaries(),
+		_instance.mesh().coordinates()
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -99,7 +100,8 @@ void Linear_elasticity::init() {
 		partsCount,
 		DOFS_PER_NODE,
 		neigh_clusters,
-        _instance.localBoundaries()
+        _instance.localBoundaries(),
+		_instance.mesh().coordinates()
 	);
 
 	 timeB1glob.AddEndWithBarrier();
@@ -112,9 +114,9 @@ void Linear_elasticity::init() {
 	 timeBforces.AddStart();
 
 	 //TODO: DOFS_PER_NODE
-	 const std::map<eslocal, double> &forces_x = _instance.mesh().coordinates().property(mesh::CP::FORCES_X).values();
-	 const std::map<eslocal, double> &forces_y = _instance.mesh().coordinates().property(mesh::CP::FORCES_Y).values();
-	 const std::map<eslocal, double> &forces_z = _instance.mesh().coordinates().property(mesh::CP::FORCES_Z).values();
+	 const std::map<eslocal, double> &forces_x = _instance.mesh().coordinates().property(mesh::FORCES_X).values();
+	 const std::map<eslocal, double> &forces_y = _instance.mesh().coordinates().property(mesh::FORCES_Y).values();
+	 const std::map<eslocal, double> &forces_z = _instance.mesh().coordinates().property(mesh::FORCES_Z).values();
 
 	 for (eslocal d = 0; d < partsCount; d++) {
 		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -198,7 +200,8 @@ void Linear_elasticity::post_solve_update() {
 	 	 timeSaveVTK.AddStart();
 		std::stringstream ss;
 		ss << "mesh_" << MPI_rank << ".vtk";
-		_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
+		// TODO: return save VTK
+		//_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
 		 timeSaveVTK.AddEndWithBarrier();
 	  	 timeEvalMain.AddEvent(timeSaveVTK);
 

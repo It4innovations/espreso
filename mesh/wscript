@@ -3,13 +3,9 @@ MESH = "mesh"
 MESH_APP = "meshApp"
 
 source_files = (
-    "src/settings.cpp",
-    "src/loader.cpp",
     "src/structures/coordinates.cpp",
-    "src/structures/mesh.cpp",
     "src/structures/boundaries.cpp",
-    "src/matrices/matrix.cpp",
-    "src/matrices/denseMatrix.cpp",
+    "src/structures/mesh.cpp",
     "src/elements/element.cpp",
     "src/elements/3D/hexahedron8.cpp",
     "src/elements/3D/hexahedron20.cpp",
@@ -55,7 +51,7 @@ def build(ctx):
         ctx.program(
             source          = source_files + ("src/main.cpp",),
             target          = "esmesh",
-            use             = "espreso_includes bem_includes esbem",
+            use             = "espreso_includes esbem",
             install_path    = ctx.ROOT
         )
     else:
@@ -63,11 +59,6 @@ def build(ctx):
         ctx.lib(
             source          = source_files,
             target          = "esmesh",
-            use             = "espreso_includes bem_includes",
+            use             = "espreso_includes",
             install_path    = ctx.LIBRARIES
         )
-
-    ctx(
-        export_includes = "src",
-        name            = "mesh_includes"
-    )

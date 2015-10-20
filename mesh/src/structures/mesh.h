@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <stdlib.h>
 
 #include "mkl_spblas.h"
 #include "mkl_blas.h"
@@ -19,21 +20,27 @@
 #include "coordinates.h"
 #include "boundaries.h"
 
-#include "../matrices/sparseDOKMatrix.h"
-#include "../settings.h"
-
+#include "esbasis.h"
 #include "esbem.h"
+
+namespace esinput {
+class InternalLoader;
+class ExternalLoader;
+}
 
 namespace mesh {
 
-namespace flags
-{
-
-enum FLAGS {
-	NEW_PARTITION,
-	FLAGS_SIZE
+enum Input {
+	ANSYS,
+	ESPRESO_INPUT,
+	MESH_GENERATOR,
+	OPENFOAM
 };
-}
+
+enum Output {
+	ESPRESO_OUTPUT,
+	VTK
+};
 
 class Boundaries;
 
@@ -47,13 +54,10 @@ class Mesh
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
+	friend class esinput::InternalLoader;
+	friend class esinput::ExternalLoader;
 
-	Mesh();
-	Mesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints);
-	Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints);
-
-	Mesh(const Mesh &other);
-	Mesh& operator=(const Mesh &other);
+	Mesh(int rank, int size);
 
 	const Coordinates& coordinates() const
 	{
@@ -65,39 +69,35 @@ public:
 		return _coordinates;
 	}
 
-	void saveVTK(
-			const char* filename,
-			double subDomainShrinking = 1,
-			double clusterShrinking = 1) const;
+	const Boundaries& subdomainBoundaries() const
+	{
+		return _subdomainBoundaries;
+	}
 
-	void saveVTK(
-			const char* filename,
-			const Boundaries &localBoundaries,
-			double subDomainShrinking = 1,
-			double clusterShrinking = 1) const;
+	const Boundaries& clusterBoundaries() const
+	{
+		return _clusterBoundaries;
+	}
 
-	void saveVTK(
-			const char* filename,
-			std::vector<std::vector<double> > &displacement,
-			std::vector<std::vector <eslocal> > &l2g_vec,
-			const Boundaries &lBoundaries,
-			const Boundaries &gBoundaries,
-			double subDomainShrinking = 1,
-			double clusterShrinking = 1) const;
+	int rank() const
+	{
+		return _rank;
+	}
 
-	void saveData();
-	void loadData(const char *filename);
+	int size() const
+	{
+		return _size;
+	}
+
+	void load(Input input, int argc, char** argv);
+	void store(Output output, const std::string &path, double shrinkSubdomain = 1, double shringCluster = 1);
+	void store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
 	void getSurface(SurfaceMesh &surface) const;
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;
 	void getCornerLines(CornerLinesMesh &cornerLines) const;
-
-	void loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints);
-	void reserve(size_t size);
-	void pushElement(Element* e);
-	void endPartition();
 
 	~Mesh();
 
@@ -123,16 +123,6 @@ public:
 	size_t getFixPointsCount() const
 	{
 		return _fixPoints.size() / (_partPtrs.size() - 1);
-	}
-
-	void setFixPoints(std::vector<eslocal> &fixPoints)
-	{
-		_fixPoints = fixPoints;
-		for (size_t p = 0; p < parts(); p++) {
-			for (size_t i = 0; i < getFixPointsCount(); i++) {
-				_fixPoints[p * getFixPointsCount() + i] = _coordinates.localIndex(_fixPoints[p * getFixPointsCount() + i], p);
-			}
-		}
 	}
 
 	const std::vector<eslocal>& getFixPoints() const
@@ -166,22 +156,10 @@ public:
 		SparseVVPMatrix<eslocal> _M;
 		_heat(_K, _M, f, part, true);
 		K = _K;
-    M = _M;
+		M = _M;
 	}
 
 protected:
-	static void assign(Mesh &m1, Mesh &m2);
-
-	void saveBasis(
-			std::ofstream &vtk,
-			std::vector<std::vector<eslocal> > &l2g_vec,
-			const Boundaries &lBoundaries,
-			const Boundaries &gBoundaries,
-			double subDomainShrinking,
-			double clusterShrinking) const;
-
-	Element* createElement(eslocal *indices, eslocal n);
-
 	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
 	void _assembleElesticity(
 		const Element *e,
@@ -230,7 +208,7 @@ protected:
 
 	void partitiate(eslocal *ePartition);
 	void computeLocalIndices(size_t part);
-	void readFromFile(const char *meshFile, eslocal elementSize = 0, bool params = false);
+	void computeBoundaries();
 
 	void checkMETISResult(eslocal result) const;
 	void checkMKLResult(eslocal result) const;
@@ -247,8 +225,17 @@ protected:
 	/** @brief Fix points for all parts. */
 	std::vector<eslocal> _fixPoints;
 
-	/** @brief Flags used to recognize whether the specified property was computed. */
-	std::vector<bool> _flags;
+	/** @brief Map of points to sub-domains. */
+	Boundaries _subdomainBoundaries;
+
+	/** @brief Map of points to clusters. */
+	Boundaries _clusterBoundaries;
+
+	/** @brief MPI rank */
+	int _rank;
+
+	/** @brief MPI size */
+	int _size;
 };
 
 
@@ -256,10 +243,8 @@ class SurfaceMesh: public Mesh
 {
 
 public:
-	SurfaceMesh(): Mesh() { };
-	SurfaceMesh(const char *mesh, const char *coordinates, eslocal parts, eslocal fixPoints):
-		Mesh(mesh, coordinates, parts, fixPoints) { };
-	SurfaceMesh(const Mesh &mesh)
+	SurfaceMesh(int rank, int size): Mesh(rank, size) { };
+	SurfaceMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
 	{
 		mesh.getSurface(*this);
 	}
@@ -272,8 +257,8 @@ class CommonFacesMesh: public Mesh
 {
 
 public:
-	CommonFacesMesh(): Mesh() { };
-	CommonFacesMesh(const Mesh &mesh)
+	CommonFacesMesh(int rank, int size): Mesh(rank, size) { };
+	CommonFacesMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
 	{
 		mesh.getCommonFaces(*this);
 	}
@@ -283,8 +268,8 @@ class CornerLinesMesh: public Mesh
 {
 
 public:
-	CornerLinesMesh(): Mesh() { };
-	CornerLinesMesh(const Mesh &mesh)
+	CornerLinesMesh(int rank, int size): Mesh(rank, size) { };
+	CornerLinesMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
 	{
 		mesh.getCornerLines(*this);
 	}

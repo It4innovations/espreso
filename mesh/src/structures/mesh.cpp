@@ -1,120 +1,86 @@
 #include "mesh.h"
 
+#include "esinput.h"
+#include "esoutput.h"
+
 using namespace mesh;
 
-Mesh::Mesh():_elements(0), _fixPoints(0), _flags(flags::FLAGS_SIZE, false)
+Mesh::Mesh(int rank, int size):_elements(0), _fixPoints(0), _rank(rank), _size(size)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
 }
 
-Mesh::Mesh(const char *meshFile, const char *coordinatesFile, eslocal parts, eslocal fixPoints)
-	:_coordinates(coordinatesFile), _flags(flags::FLAGS_SIZE, false)
+void Mesh::load(Input input, int argc, char** argv)
 {
-	readFromFile(meshFile);
-	partitiate(parts, fixPoints);
-}
-Mesh::Mesh(const Ansys &ansys, eslocal parts, eslocal fixPoints)
-	:_coordinates(ansys), _flags(flags::FLAGS_SIZE, false)
-{
-	readFromFile(ansys.elements().c_str(), 8, true);
-	partitiate(parts, fixPoints);
-}
-
-Mesh::Mesh(const Mesh &other):
-	_coordinates(other._coordinates), _partPtrs(other._partPtrs),
-	_fixPoints(other._fixPoints), _flags(other._flags)
-{
-	_elements.reserve(other._elements.size());
-	for (size_t i = 0; i < other._elements.size(); i++) {
-		_elements.push_back(other._elements[i]->copy());
+	switch (input) {
+	case ANSYS: {
+		esinput::Loader<esinput::Ansys> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
 	}
-}
-
-Mesh& Mesh::operator=(const Mesh &other)
-{
-	if (this != &other) {
-		Mesh mesh(other);
-		Mesh::assign(*this, mesh);
+	case ESPRESO_INPUT: {
+		esinput::Loader<esinput::Esdata> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
 	}
-	return *this;
-}
-
-void Mesh::assign(Mesh &m1, Mesh &m2)
-{
-	m1._coordinates = m2._coordinates;
-	m1._elements.swap(m2._elements);
-	m1._partPtrs.swap(m2._partPtrs);
-	m1._fixPoints.swap(m2._fixPoints);
-	m1._flags.swap(m2._flags);
-}
-
-void Mesh::loadAnsys(const Ansys &ansys, eslocal parts, eslocal fixPoints)
-{
-	readFromFile(ansys.elements().c_str(), 8, true);
-	partitiate(parts, fixPoints);
-}
-
-void Mesh::reserve(size_t size)
-{
-	_elements.reserve(size);
-}
-
-void Mesh::pushElement(Element* e)
-{
-	_elements.push_back(e);
-	if (_flags[flags::NEW_PARTITION]) {
-		_partPtrs.push_back(_partPtrs.back());
-		_flags[flags::NEW_PARTITION] = false;
+	case MESH_GENERATOR: {
+		esinput::Loader<esinput::MeshGenerator> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
 	}
-	_partPtrs.back() = _elements.size();
-}
-
-void Mesh::endPartition()
-{
-	computeLocalIndices(_partPtrs.size() - 2);
-	_flags[flags::NEW_PARTITION] = true;
-}
-
-Element* Mesh::createElement(eslocal *indices, eslocal n)
-{
-	Element *e = NULL;
-	if (Tetrahedron4::match(indices, n)) {
-		e = new Tetrahedron4(indices);
+	case OPENFOAM: {
+		esinput::Loader<esinput::OpenFOAM> loader(argc, argv, _rank, _size);
+		loader.load(*this);
+		break;
 	}
-	if (Tetrahedron10::match(indices, n)) {
-		e = new Tetrahedron10(indices);
-	}
-	if (Hexahedron8::match(indices, n)) {
-		e = new Hexahedron8(indices);
-	}
-	if (Hexahedron20::match(indices, n)) {
-		e = new Hexahedron20(indices);
-	}
-	if (Prisma6::match(indices, n)) {
-		e = new Prisma6(indices);
-	}
-	if (Prisma15::match(indices, n)) {
-		e = new Prisma15(indices);
-	}
-	if (Pyramid5::match(indices, n)) {
-		e = new Pyramid5(indices);
-	}
-	if (Pyramid13::match(indices, n)) {
-		e = new Pyramid13(indices);
-	}
-
-	if (e == NULL) {
-		std::cerr << "Unknown element with indices: ";
-		for (eslocal i = 0; i < n; i++) {
-			std::cerr << indices[i] << " ";
-		}
-		std::cerr << "\n";
+	default: {
+		std::cerr << "Unknown input type.\n";
 		exit(EXIT_FAILURE);
 	}
+	}
+}
 
-	return e;
+void Mesh::store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster)
+{
+	switch (output) {
+	case ESPRESO_OUTPUT: {
+		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
+		s.store(*this, shrinkSubdomain, shringCluster);
+		std::cout << "Warning: ESPRESO output format does not support the displacement.\n";
+		break;
+	}
+	case VTK: {
+		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
+		s.store(*this, displacement, shrinkSubdomain, shringCluster);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown output type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+void Mesh::store(Output output, const std::string &path, double shrinkSubdomain, double shringCluster)
+{
+	switch (output) {
+	case ESPRESO_OUTPUT: {
+		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
+		s.store(*this, shrinkSubdomain, shringCluster);
+		break;
+	}
+	case VTK: {
+		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
+		s.store(*this, shrinkSubdomain, shringCluster);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown output type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
 }
 
 void Mesh::_elasticity(
@@ -267,7 +233,7 @@ void Mesh::_assembleElesticity(
 void Mesh::_heat(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const
 {
 //TODO nK various DOFs per nodes (may be)
-	eslocal nK = _coordinates.localSize(part); 
+	eslocal nK = _coordinates.localSize(part);
 	K.resize(nK, nK);
 	if (dynamic) {
 		M.resize(nK, nK);
@@ -320,7 +286,7 @@ void Mesh::_assembleHeat(
 		coordinates.values() + i * Point::size() << _coordinates.get(e->node(i), part);
 	}
 
-  double CP = 1.0, rho = 7.85e-9; 
+  double CP = 1.0, rho = 7.85e-9;
 	eslocal Ksize =  e->size();
 	double detJ;
 	DenseMatrix J, invJ, dND;//, B(C.rows(), Ksize);
@@ -448,6 +414,22 @@ void Mesh::partitiate(eslocal parts, eslocal fixPoints)
 
 	if (fixPoints > 0) {
 		computeFixPoints(fixPoints);
+	}
+
+	computeBoundaries();
+}
+
+void Mesh::computeBoundaries()
+{
+	_subdomainBoundaries.clear();
+	_subdomainBoundaries.resize(_coordinates.size());
+
+	for (size_t p = 0; p < parts(); p++) {
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (size_t n = 0; n < _elements[e]->size(); n++) {
+				_subdomainBoundaries[_coordinates.clusterIndex(_elements[e]->node(n), p)].insert(p);
+			}
+		}
 	}
 }
 
@@ -713,383 +695,6 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
 	}
 }
 
-void Mesh::saveBasis(
-		std::ofstream &vtk,
-		std::vector<std::vector<eslocal> > &l2g_vec,
-		const Boundaries &lBoundaries,
-		const Boundaries &gBoundaries,
-		double subDomainShrinking,
-		double clusterShrinking) const
-{
-	vtk << "# vtk DataFile Version 3.0\n";
-	vtk << "Test\n";
-	vtk << "ASCII\n\n";
-	vtk << "DATASET UNSTRUCTURED_GRID\n";
-	size_t nSubClst = l2g_vec.size();
-	size_t cnt = 0;
-
-	size_t n_points = 0;
-	for (size_t d = 0; d < l2g_vec.size(); d++) {
-		n_points += l2g_vec[d].size();
-	}
-
-	Point cCenter;
-	for (size_t i = 0; i < _coordinates.size(); i++) {
-		cCenter += _coordinates[i];
-	}
-	cCenter /= _coordinates.size();
-
-	vtk << "POINTS " << n_points << " float\n";
-	for (size_t d = 0; d < nSubClst; d++) {
-		Point sCenter;
-		for (size_t c = 0; c < l2g_vec[d].size(); c++) {
-			sCenter += _coordinates[l2g_vec[d][c]];
-		}
-		sCenter /= l2g_vec[d].size();
-
-		for (size_t i = 0; i < l2g_vec[d].size(); i++) {
-			Point x = _coordinates[l2g_vec[d][i]];
-			x = sCenter + (x - sCenter) * subDomainShrinking;
-			x = cCenter + (x - cCenter) * clusterShrinking;
-			vtk << x << "\n";
-		}
-	}
-
-	size_t size = 0;
-	for (size_t i = 0; i < _elements.size(); i++) {
-		size += _elements[i]->size() + 1;
-	}
-
-	if (getFixPointsCount()) {
-		size += parts() + _fixPoints.size();
-		vtk << "CELLS " << _elements.size() + parts() << " " << size << "\n";
-	} else {
-		vtk << "CELLS " << _elements.size() << " " << size << "\n";
-	}
-
-	size_t i = 0;
-	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-		for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
-			vtk << _elements[i]->size();
-			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << _elements[i]->node(j) + cnt;
-			}
-			vtk << "\n";
-			i++;
-		}
-		cnt += l2g_vec[part].size();
-	}
-	if (getFixPointsCount()) {
-		cnt = 0;
-		for (size_t part = 0; part < parts(); part++) {
-			vtk << getFixPointsCount();
-			for (size_t i = 0; i < getFixPointsCount(); i++) {
-				vtk << " " << _fixPoints[part * getFixPointsCount() + i] + cnt;
-			}
-			vtk << "\n";
-			cnt += l2g_vec[part].size();
-		}
-	}
-
-	vtk << "\n";
-	if (getFixPointsCount()) {
-		vtk << "CELL_TYPES " << _elements.size() + parts() << "\n";
-	} else {
-		vtk << "CELL_TYPES " << _elements.size() << "\n";
-	}
-	for (size_t i = 0; i < _elements.size(); i++) {
-		vtk << _elements[i]->vtkCode() << "\n";
-	}
-	if (getFixPointsCount()) {
-		for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
-			vtk << "2\n";
-		}
-	}
-
-	vtk << "\n";
-	if (getFixPointsCount()) {
-		vtk << "CELL_DATA " << _elements.size() + parts() << "\n";
-	} else {
-		vtk << "CELL_DATA " << _elements.size() << "\n";
-	}
-	vtk << "SCALARS decomposition int 1\n";
-	vtk << "LOOKUP_TABLE decomposition\n";
-	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
-			vtk << part << "\n";
-		}
-	}
-	if (getFixPointsCount()) {
-		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-			vtk << parts() << "\n";
-		}
-	}
-}
-
-void Mesh::saveVTK(
-		const char* filename,
-		std::vector<std::vector<double> > &displacement,
-		std::vector<std::vector<eslocal> > &l2g_vec,
-		const Boundaries &lBoundaries,
-		const Boundaries &gBoundaries,
-		double subDomainShrinking,
-		double clusterShrinking) const
-{
-	std::ofstream vtk(filename, std::ios::out | std::ios::trunc);
-	saveBasis(vtk, l2g_vec, lBoundaries, gBoundaries, subDomainShrinking, clusterShrinking);
-
-	size_t n_points = 0;
-	for (size_t d = 0; d < l2g_vec.size(); d++) {
-		n_points += l2g_vec[d].size();
-	}
-
-	vtk << "\n";
-	vtk << "POINT_DATA " << n_points << "\n";
-	vtk << "SCALARS displacements float 3\n";
-	vtk << "LOOKUP_TABLE default\n";
-	for (size_t i = 0; i < displacement.size(); i++) {
-		for (size_t j = 0; j < displacement[i].size() / 3; j++) {
-			vtk << displacement[i][3 * j + 0] << " ";
-			vtk << displacement[i][3 * j + 1] << " ";
-			vtk << displacement[i][3 * j + 2] << "\n";
-		}
-
-	}
-
-	vtk.close();
-}
-
-void Mesh::saveVTK(
-		const char* filename,
-		const Boundaries &localBoundaries,
-		double subDomainShrinking,
-		double clusterShrinking) const
-{
-	std::ofstream vtk;
-
-	size_t cSize = 0;
-	for (size_t p = 0; p < parts(); p++) {
-		cSize += _coordinates.localToCluster(p).size();
-	}
-
-	vtk.open(filename, std::ios::out | std::ios::trunc);
-	vtk << "# vtk DataFile Version 3.0\n";
-	vtk << "Test\n";
-	vtk << "ASCII\n\n";
-	vtk << "DATASET UNSTRUCTURED_GRID\n";
-	vtk << "POINTS " << cSize << " float\n";
-
-	Point cCenter;
-	for (size_t i = 0; i < _coordinates.size(); i++) {
-		cCenter += _coordinates[i];
-	}
-	cCenter /= _coordinates.size();
-
-	for (size_t p = 0; p < parts(); p++) {
-
-		Point sCenter;
-		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
-			sCenter += _coordinates.get(i, p);
-		}
-		sCenter /= _coordinates.localSize(p);
-
-		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
-			Point x = _coordinates.get(i, p);
-			x = sCenter + (x - sCenter) * subDomainShrinking;
-			x = cCenter + (x - cCenter) * clusterShrinking;
-			vtk << x << "\n";
-		}
-	}
-	vtk << "\n";
-
-	size_t size = 0;
-	for (size_t i = 0; i < _elements.size(); i++) {
-		size += _elements[i]->size() + 1;
-	}
-
-	size_t corners = 0;
-	for (size_t i = 0; i < localBoundaries.size(); i++) {
-		if (localBoundaries.isCorner(i)) {
-			corners += localBoundaries[i].size();
-		}
-	}
-
-	vtk << "CELLS " << _elements.size() + 1 << " " << size + corners  + 1 << "\n";
-
-	size_t offset = 0;
-	for (size_t p = 0; p < parts(); p++) {
-		for (size_t i = _partPtrs[p]; i < _partPtrs[p + 1]; i++) {
-			vtk << _elements[i]->size();
-			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << _elements[i]->node(j) + offset;
-			}
-			vtk << "\n";
-		}
-		offset += _coordinates.localToCluster(p).size();
-	}
-
-	offset = 0;
-	vtk << corners;
-	for (size_t p = 0; p < parts(); p++) {
-		for (size_t i = 0; i < localBoundaries.size(); i++) {
-			if (localBoundaries.isCorner(i) && localBoundaries[i].count(p)) {
-				vtk << " " << _coordinates.localIndex(i, p) + offset;
-			}
-		}
-		offset += _coordinates.localSize(p);
-	}
-
-	vtk << "\n";
-	vtk << "CELL_TYPES " << _elements.size() + 1 << "\n";
-
-	for (size_t i = 0; i < _elements.size(); i++) {
-		vtk << _elements[i]->vtkCode() << "\n";
-	}
-	vtk << "2\n";
-
-	vtk << "\n";
-	vtk << "CELL_DATA " << _elements.size() + 1 << "\n";
-
-	vtk << "SCALARS decomposition int 1\n";
-	vtk << "LOOKUP_TABLE decomposition\n";
-	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
-			vtk << part << "\n";
-		}
-	}
-	vtk << parts() << "\n";
-
-	vtk.close();
-}
-
-void Mesh::saveVTK(
-		const char* filename,
-		double subDomainShrinking,
-		double clusterShrinking) const
-{
-	std::ofstream vtk;
-
-	size_t cSize = 0;
-	for (size_t p = 0; p < parts(); p++) {
-		cSize += _coordinates.localToCluster(p).size();
-	}
-
-	vtk.open(filename, std::ios::out | std::ios::trunc);
-	vtk << "# vtk DataFile Version 3.0\n";
-	vtk << "Test\n";
-	vtk << "ASCII\n\n";
-	vtk << "DATASET UNSTRUCTURED_GRID\n";
-	vtk << "POINTS " << cSize << " float\n";
-
-	Point cCenter;
-	for (size_t i = 0; i < _coordinates.size(); i++) {
-		cCenter += _coordinates[i];
-	}
-	cCenter /= _coordinates.size();
-
-
-	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
-
-		Point sCenter;
-		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
-			sCenter += _coordinates.get(i, p);
-		}
-		sCenter /= _coordinates.localSize(p);
-
-		for (size_t i = 0; i < _coordinates.localSize(p); i++) {
-			Point x = _coordinates.get(i, p);
-			x = sCenter + (x - sCenter) * subDomainShrinking;
-			x = cCenter + (x - cCenter) * clusterShrinking;
-			vtk << x << "\n";
-			// TODO: Catalyst
-			// Grid::Points x contains all three coordinates (x, y and z)
-			// std::vector<double> Points;
-			// pointArray->SetArray(grid.GetPointsArray(), static_cast<vtkIdType>(grid.GetNumberOfPoints()*3), 1); in FEAdaptor.cxx line 28
-		}
-	}
-	vtk << "\n";
-
-	size_t size = 0;
-	for (size_t i = 0; i < _elements.size(); i++) {
-		size += _elements[i]->size() + 1;
-	}
-
-	if (getFixPointsCount()) {
-		size += parts() + _fixPoints.size();
-		vtk << "CELLS " << _elements.size() + parts() << " " << size << "\n";
-	} else {
-		vtk << "CELLS " << _elements.size() << " " << size << "\n";
-	}
-	size_t offset = 0;
-	for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
-	// TODO: Catalyst : create the cells
-	// create the cells
-	// size_t numCells = _elements->size();
-	// VTKGrid->Allocate(static_cast<vtkIdType>(size));
-		for (size_t i = _partPtrs[p]; i < _partPtrs[p + 1]; i++) {
-			vtk << _elements[i]->size();
-			//vtkIdType tmp[_elements[i]->size()];
-			for (size_t j = 0; j < _elements[i]->size(); j++) {
-				vtk << " " << _elements[i]->node(j) + offset;
-				//vtkIdType tmp[j] = _elements[i]->node(j) + offset;
-			}
-			//VTKGrid->InsertNextCell(_elements[i]->vtkCode(), 8, tmp);
-			vtk << "\n";
-		}
-		offset += _coordinates.localToCluster(p).size();
-	}
-
-	if (getFixPointsCount()) {
-		offset = 0;
-		for (size_t p = 0; p < parts(); p++) {
-			vtk << getFixPointsCount();
-			for (size_t i = 0; i < getFixPointsCount(); i++) {
-				vtk << " " << _fixPoints[p * getFixPointsCount() + i] + offset;
-			}
-			vtk << "\n";
-			offset += _coordinates.localToCluster(p).size();
-		}
-	}
-
-	vtk << "\n";
-	if (getFixPointsCount()) {
-		vtk << "CELL_TYPES " << _elements.size() + parts() << "\n";
-	} else {
-		vtk << "CELL_TYPES " << _elements.size() << "\n";
-	}
-	for (size_t i = 0; i < _elements.size(); i++) {
-		vtk << _elements[i]->vtkCode() << "\n";
-	}
-	if (getFixPointsCount()) {
-		for (size_t p = 0; p + 1 < _partPtrs.size(); p++) {
-			vtk << "2\n";
-		}
-	}
-
-	vtk << "\n";
-	if (getFixPointsCount()) {
-		vtk << "CELL_DATA " << _elements.size() + parts() << "\n";
-	} else {
-		vtk << "CELL_DATA " << _elements.size() << "\n";
-	}
-
-	vtk << "SCALARS decomposition int 1\n";
-	vtk << "LOOKUP_TABLE decomposition\n";
-	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
-			vtk << part << "\n";
-		}
-	}
-	if (getFixPointsCount()) {
-		for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
-			vtk << parts() << "\n";
-		}
-	}
-	vtk << "\n";
-
-	vtk.close();
-}
-
 bool isOuterFace(
 		std::vector<std::vector<eslocal> > &nodesElements,
 		std::vector<eslocal> &face)
@@ -1196,14 +801,17 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 		count += elementsCount[i];
 	}
 
-	surface.reserve(count);
+	surface._elements.reserve(count);
+	surface._partPtrs.clear();
+	surface._partPtrs.reserve(_partPtrs.size());
 
 	// create surface mesh
+	surface._partPtrs.push_back(surface._elements.size());
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (face.size() == 3) {
-				surface.pushElement(new Triangle(&face[0]));
+				surface._elements.push_back(new Triangle(&face[0]));
 			}
 			// divide square to triangles
 			if (face.size() == 4) {
@@ -1214,17 +822,18 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 					}
 				}
 				if (min % 2 == 0) {
-					surface.pushElement(new Triangle(&face[0]));
+					surface._elements.push_back(new Triangle(&face[0]));
 					face[1] = face[0];
-					surface.pushElement(new Triangle(&face[1]));
+					surface._elements.push_back(new Triangle(&face[1]));
 				} else {
-					surface.pushElement(new Triangle(&face[1]));
+					surface._elements.push_back(new Triangle(&face[1]));
 					face[2] = face[3];
-					surface.pushElement(new Triangle(&face[0]));
+					surface._elements.push_back(new Triangle(&face[0]));
 				}
 			}
 		}
-		surface.endPartition();
+		surface._partPtrs.push_back(surface._elements.size());
+		surface.computeLocalIndices(surface._partPtrs.size() - 1);
 	}
 }
 
@@ -1276,20 +885,24 @@ void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
 	for (size_t i = 0; i < parts(); i++) {
 		count += elementsCount[i];
 	}
-	commonFaces.reserve(count);
+	commonFaces._elements.reserve(count);
+	commonFaces._partPtrs.clear();
+	commonFaces._partPtrs.reserve(_partPtrs.size());
 
 	// create surface mesh
+	commonFaces._partPtrs.push_back(commonFaces._elements.size());
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (faces[i][j].size() == 3) {
-				commonFaces.pushElement(new Triangle(&face[0]));
+				commonFaces._elements.push_back(new Triangle(&face[0]));
 			}
 			if (faces[i][j].size() == 4) {
-				commonFaces.pushElement(new Square(&face[0]));
+				commonFaces._elements.push_back(new Square(&face[0]));
 			}
 		}
-		commonFaces.endPartition();
+		commonFaces._partPtrs.push_back(commonFaces._elements.size());
+		commonFaces.computeLocalIndices(commonFaces._partPtrs.size() - 1);
 	}
 }
 
@@ -1379,13 +992,17 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 		size += pairs[i].size() / 2;
 	}
 
-	cornerLines.reserve(size);
+	cornerLines._elements.reserve(size);
+	cornerLines._partPtrs.clear();
+	cornerLines._partPtrs.reserve(_partPtrs.size());
 
+	cornerLines._partPtrs.push_back(cornerLines._elements.size());
 	for (size_t i = 0; i < parts(); i++) {
 		for (size_t j = 0; j < pairs[i].size(); j += 2) {
-			cornerLines.pushElement(new Line(&pairs[i][j]));
+			cornerLines._elements.push_back(new Line(&pairs[i][j]));
 		}
-		cornerLines.endPartition();
+		cornerLines._partPtrs.push_back(cornerLines._elements.size());
+		cornerLines.computeLocalIndices(cornerLines._partPtrs.size() - 1);
 	}
 
 }
@@ -1437,11 +1054,11 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 	}
 
 	// create mesh from common faces
-	Mesh cfm;
+	Mesh cfm(_rank, _size);
 	Element *e;
 	if (faces) {
 		cfm.coordinates() = _coordinates;
-		cfm.reserve(commonFaces.size());
+		cfm._elements.reserve(commonFaces.size());
 	}
 	std::vector<std::vector<eslocal> > nodesFaces(_coordinates.size());
 	for (size_t i = 0; i < commonFaces.size(); i++) {
@@ -1452,7 +1069,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 			e = new Square(&commonFaces[i][0]);
 		}
 		if (faces) {
-			cfm.pushElement(e);
+			cfm._elements.push_back(e);
 		}
 		// preparation for corners on edges
 		for (size_t j = 0; j < e->size(); j++) {
@@ -1467,14 +1084,15 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 		}
 	}
 	if (faces) {
-		cfm.endPartition();
+		cfm._partPtrs.back() = cfm._elements.size();
+		cfm.computeLocalIndices(cfm._partPtrs.size() - 1);
 		cfm.computeFixPoints(number);
 		for (size_t i = 0; i < cfm.getFixPointsCount(); i++) {
 			boundaries.setCorner(cfm.coordinates().clusterIndex(cfm.getFixPoints()[i], 0));
 		}
 	}
 
-	Mesh clm;
+	Mesh clm(_rank, _size);
 	if (edges) {
 		clm.coordinates() = _coordinates;
 	}
@@ -1512,7 +1130,7 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 	}
 
 	if (edges) {
-		clm.reserve(pairs.size() / 2);
+		clm._elements.reserve(pairs.size() / 2);
 	}
 
 	for (size_t j = 0; j < pairs.size(); j += 2) {
@@ -1528,53 +1146,16 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 			}
 		}
 		if (edges) {
-			clm.pushElement(new Line(&pairs[j]));
+			clm._elements.push_back(new Line(&pairs[j]));
 		}
 	}
 	if (edges) {
-		clm.endPartition();
+		clm._partPtrs.back() = clm._elements.size();
+		clm.computeLocalIndices(clm._partPtrs.size() - 1);
 		clm.computeFixPoints(number);
 		for (size_t i = 0; i < clm.getFixPointsCount(); i++) {
 			boundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[i], 0));
 		}
-	}
-}
-
-void Mesh::readFromFile(const char *meshFile, eslocal elementSize, bool params)
-{
-	_elements.resize(Loader::getLinesCount(meshFile));
-
-	std::ifstream file(meshFile);
-	std::string line;
-
-	eslocal indices[20 + Element::PARAMS_SIZE], n; 	// 20 is the max of vertices of a element
-	double value;
-	eslocal minIndices = 10000;
-
-	if (file.is_open()) {
-		for (eslocal c = 0; c < _elements.size(); c++) {
-			getline(file, line, '\n');
-			std::stringstream ss(line);
-
-			n = 0;
-			while (ss >> value) {
-				indices[n++] = value;
-			}
-			if (elementSize > 0) {
-				n = std::min(n, elementSize);
-			}
-			for (size_t i = 0; i < n; i++) {
-				indices[i]--;	// re-index to zero base
-			}
-			_elements[c] = createElement(indices, n);
-			if (params) {
-				_elements[c]->setParams(indices + n);
-			}
-		}
-		file.close();
-	} else {
-		fprintf(stderr, "Cannot load mesh from file: %s.\n", meshFile);
-		exit(EXIT_FAILURE);
 	}
 }
 
@@ -1640,126 +1221,6 @@ void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
 			for (size_t k = 0; k < 3; k++) {
 				f[3 * _elements[i]->node(k) + 2] += (1. / 3.) * Area_h;
 			}
-		}
-	}
-}
-
-
-void Mesh::saveData()
-{
-	eslocal value;
-	esglobal index;
-
-	for (size_t p = 0; p < parts(); p++) {
-		std::stringstream ss;
-		ss << "mesh" << p << ".dat";
-		std::ofstream os(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-
-		// save elements
-		value = _partPtrs[p + 1] - _partPtrs[p];
-		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
-		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			os << *(_elements[e]);
-		}
-
-		// save coordinates
-		value = _coordinates.localSize(p);
-		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
-		const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
-		for (eslocal i = 0; i < l2c.size(); i++) {
-			index = _coordinates.globalIndex(i, p);
-			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
-			const Point &point = _coordinates.get(i, p);
-			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
-		}
-
-		// save coordinates' properties
-		for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
-			const std::map<eslocal, double> &property = _coordinates.property(i).values();
-			eslocal counter = 0;
-			const std::vector<eslocal> &l2c = _coordinates.localToCluster(p);
-			for (size_t j = 0; j < l2c.size(); j++) {
-				if (property.find(l2c[j]) != property.end()) {
-					counter++;
-				}
-			}
-			os.write(reinterpret_cast<const char*>(&counter), sizeof(eslocal));
-			for (eslocal j = 0; j < l2c.size(); j++) {
-				if (property.find(l2c[j]) != property.end()) {
-					os.write(reinterpret_cast<const char*>(&j), sizeof(eslocal));
-					os.write(reinterpret_cast<const char*>(&property.find(l2c[j])->second), sizeof(double));
-				}
-			}
-		}
-	}
-}
-
-void Mesh::loadData(const char *filename)
-{
-	std::ifstream is(filename, std::ifstream::binary);
-
-	// reset parameters
-	eslocal size, type, cIndex;
-	esglobal index;
-	double value;
-	Point point;
-
-	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	_elements.clear();
-	_partPtrs.resize(2);
-	_partPtrs[1] = size;
-	_fixPoints.clear();
-	_elements.reserve(size);
-	_coordinates.clear();
-
-	// load elements
-	for (eslocal i = 0; i < size; i++) {
-		is.read(reinterpret_cast<char *>(&type), sizeof(eslocal));
-		switch(type) {
-		case Tetrahedron4VTKCode:
-			_elements.push_back(new Tetrahedron4(is));
-			break;
-		case Tetrahedron10VTKCode:
-			_elements.push_back(new Tetrahedron10(is));
-			break;
-		case Pyramid5VTKCode:
-			_elements.push_back(new Pyramid5(is));
-			break;
-		case Pyramid13VTKCode:
-			_elements.push_back(new Pyramid13(is));
-			break;
-		case Prisma6VTKCode:
-			_elements.push_back(new Prisma6(is));
-			break;
-		case Prisma15VTKCode:
-			_elements.push_back(new Prisma15(is));
-			break;
-		case Hexahedron8VTKCode:
-			_elements.push_back(new Hexahedron8(is));
-			break;
-		case Hexahedron20VTKCode:
-			_elements.push_back(new Hexahedron20(is));
-			break;
-		}
-	}
-
-	// load coordinates
-	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	_coordinates.reserve(size);
-	for (eslocal i = 0; i < size; i++) {
-		is.read(reinterpret_cast<char *>(&index), sizeof(esglobal));
-		is.read(reinterpret_cast<char *>(&point), Point::size() * sizeof(double));
-		_coordinates.add(point, i, index);
-	}
-
-	// load coordinates' properties
-	for (size_t i = 0; i < _coordinates.propertiesSize(); i++) {
-		CoordinatesProperty &property = _coordinates.property(i);
-		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-		for (eslocal j = 0; j < size; j++) {
-			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
-			is.read(reinterpret_cast<char *>(&value), sizeof(double));
-			property[cIndex] = value;
 		}
 	}
 }

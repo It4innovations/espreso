@@ -1,5 +1,8 @@
 #include "mpi.h"
 
+#include "esinput.h"
+#include "esoutput.h"
+
 #include "essolver.h"
 #include "instance.h"
 #include "solver/solver.h"
@@ -14,34 +17,44 @@ void solve(Instance &instance);
 
 int main(int argc, char** argv)
 {
+	int MPIrank, MPIsize;
+
 	MPI_Init(&argc, &argv);
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+	mesh::Mesh m(MPIrank, MPIsize);
+
+	m.load(mesh::MESH_GENERATOR, argc, argv);
+
+	m.store(mesh::VTK, "test", 0.9, 0.7);
+
+	MPI_Finalize();
+
+	return 0;
 
 #ifdef CATALYST
     	Adaptor::Initialize(argc, argv);
 #endif
 
-	int MPIrank;
-	int MPIsize;
-	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-
-	Configuration config("configuration.txt", argc, argv);
+	//Configuration config("configuration.txt", argc, argv);
 	// print all settings
-	config.print();
+	//config.print();
 
-	Instance instance(config, MPIrank, MPIsize);
+	//Instance instance(config, MPIrank, MPIsize);
 
-	Solver<Linear_elasticity> solver_1 (instance);
+	//Solver<Linear_elasticity> solver_1 (instance);
 	//Solver<Dynamics>          solver_2 (instance);
 
 	//solver_2.solve(10);
 
-	solver_1.solve(1);
+	//solver_1.solve(1);
 
 	// This method needs re-factoring !!!
 	//solve(instance);
 
-	MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 }
 
@@ -149,7 +162,8 @@ void solve(Instance &instance)
 		B1_duplicity,
 		partsCount,
 		DOFS_PER_NODE,
-		instance.globalBoundaries()
+		instance.globalBoundaries(),
+		instance.mesh().coordinates()
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -173,7 +187,8 @@ void solve(Instance &instance)
 		partsCount,
 		DOFS_PER_NODE,
 		neigh_clusters,
-        instance.localBoundaries()
+        instance.localBoundaries(),
+		instance.mesh().coordinates()
 	);
 
 	 timeB1glob.AddEndWithBarrier();
@@ -182,9 +197,9 @@ void solve(Instance &instance)
 	 TimeEvent timeBforces(string("Create boundary forces ??"));
 	 timeBforces.AddStart();
 
-	const std::map<eslocal, double> &forces_x = instance.mesh().coordinates().property(mesh::CP::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = instance.mesh().coordinates().property(mesh::CP::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = instance.mesh().coordinates().property(mesh::CP::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = instance.mesh().coordinates().property(mesh::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = instance.mesh().coordinates().property(mesh::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = instance.mesh().coordinates().property(mesh::FORCES_Z).values();
 
 	for (eslocal d = 0; d < partsCount; d++) {
 		for (eslocal iz = 0; iz < l2g_vec[d].size(); iz++) {
@@ -230,8 +245,8 @@ void solve(Instance &instance)
 //
 //	);
 
-	return; 
-	
+	return;
+
 
 	// Start - Stupid version of ESPRESO interface
 
@@ -629,7 +644,8 @@ void solve(Instance &instance)
 
 			std::stringstream ss;
 			ss << "mesh_" << instance.rank() << "_" << time << ".vtk";
-			instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, instance.localBoundaries(), instance.globalBoundaries(), 0.95, 0.9);
+			// TODO: uncomment
+			//instance.mesh().saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, instance.localBoundaries(), instance.globalBoundaries(), 0.95, 0.9);
 
 
     		// *** XXX
