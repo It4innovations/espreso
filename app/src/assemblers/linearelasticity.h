@@ -36,6 +36,7 @@ private:
 	std::vector < std::vector <eslocal> >	 lambda_map_sub_B0;
 	std::vector < std::vector <eslocal> >	 lambda_map_sub_clst;
 	std::vector < std::vector <double> >	 B1_duplicity;		//VAHOVA FUNKCE
+	std::vector < std::vector <double> >	 vec_c;
 	std::vector < std::vector <eslocal> >	 l2g_vec; 			// l2g vector per cluster - not for entire problem
 
 

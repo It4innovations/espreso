@@ -44,17 +44,20 @@ int main(int argc, char** argv)
 
 	//Instance instance(config, MPIrank, MPIsize);
 
-	//Solver<Linear_elasticity> solver_1 (instance);
-	//Solver<Dynamics>          solver_2 (instance);
+	Solver<Linear_elasticity> solver_1 (instance);
+	solver_1.solve(1);
 
+	//Solver<Dynamics>          solver_2 (instance);
 	//solver_2.solve(10);
 
-	//solver_1.solve(1);
 
 	// This method needs re-factoring !!!
 	//solve(instance);
 
-	//MPI_Barrier(MPI_COMM_WORLD);
+	//Solver<HeatSteadyState> solver (instance);
+	//solver.solve(1);
+
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 }
 

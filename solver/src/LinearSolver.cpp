@@ -87,7 +87,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	SINGULAR = IS_SINGULAR;
 
-	DOFS_PER_NODE = 3;
+	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
 	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
 

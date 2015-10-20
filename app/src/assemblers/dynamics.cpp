@@ -166,7 +166,7 @@ void Dynamics::init()
 	 timeMconv.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeMconv);
 
-
+	 lin_solver.DOFS_PER_NODE = DOFS_PER_NODE;
 	 lin_solver.setup( _instance.rank(), _instance.size(), false );
 
 	 lin_solver.init(
