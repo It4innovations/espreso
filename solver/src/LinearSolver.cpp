@@ -101,7 +101,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 1;
+	cluster.USE_HFETI			= 0;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
@@ -110,7 +110,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = 200;
+	solver.CG_max_iter	 = 50;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
 	solver.USE_PIPECG	 = 0;
@@ -136,6 +136,8 @@ void LinearSolver::init(
 		std::vector < std::vector <double> >	& B1_duplicity,
 
 		std::vector < std::vector <double > >	& f_vec,
+		std::vector < std::vector <double > >	& vec_c,
+
 		std::vector < std::vector <eslocal > >	& fix_nodes,
 		std::vector < std::vector <eslocal> >	& l2g_vec,
 
@@ -204,6 +206,10 @@ void LinearSolver::init(
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		cluster.domains[d].f = f_vec[d];
+
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+		cluster.domains[d].vec_c = vec_c[d];
+
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		for (int i = 0; i < fix_nodes[d].size(); i++)

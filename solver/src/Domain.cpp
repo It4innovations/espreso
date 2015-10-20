@@ -292,7 +292,8 @@ void Domain::K_regularizationFromR ( ) {
     	}
 
     }
-	
+
+
     Kplus.ImportMatrix  (K);
     //Kplus.Factorization ();
 

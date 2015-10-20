@@ -9,7 +9,7 @@
 class Instance {
 
 public:
-	Instance(int rank, int size);
+	Instance(int argc, char** argv, int rank, int size);
 
 	const mesh::Mesh& mesh() const
 	{

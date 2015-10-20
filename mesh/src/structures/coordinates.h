@@ -57,6 +57,7 @@ public:
 		_points.push_back(point);
 		_clusterIndex[0].push_back(clusterIndex);
 		_globalIndex.push_back(globalIndex);
+		_globalMap[globalIndex] = clusterIndex;
 	}
 
 	void reserve(size_t size)
@@ -96,7 +97,8 @@ public:
 
 	eslocal clusterIndex(esglobal index) const
 	{
-		return lower_bound(_globalIndex.begin(), _globalIndex.end(), index) - _globalIndex.begin();
+		//return lower_bound(_globalIndex.begin(), _globalIndex.end(), index) - _globalIndex.begin();
+		return _globalMap.find(index)->second	;
 	}
 
 	eslocal localIndex(eslocal index, eslocal part) const
@@ -198,6 +200,7 @@ private:
 
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
+	std::map<esglobal,eslocal> _globalMap;
 
 	/** @brief Coordinates properties */
 	std::vector<CoordinatesProperty> _property;

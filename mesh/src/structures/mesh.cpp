@@ -42,7 +42,7 @@ void Mesh::load(Input input, int argc, char** argv)
 	}
 }
 
-void Mesh::store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster)
+void Mesh::store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) const
 {
 	switch (output) {
 	case ESPRESO_OUTPUT: {
@@ -63,7 +63,7 @@ void Mesh::store(Output output, const std::string &path, std::vector<std::vector
 	}
 }
 
-void Mesh::store(Output output, const std::string &path, double shrinkSubdomain, double shringCluster)
+void Mesh::store(Output output, const std::string &path, double shrinkSubdomain, double shringCluster) const
 {
 	switch (output) {
 	case ESPRESO_OUTPUT: {
@@ -101,7 +101,7 @@ void Mesh::_elasticity(
 	std::vector<double> fe;
 
 	std::vector<double> inertia(3, 0.0);
-	inertia[2] = 9810.0 * 7.85e-9;
+	inertia[2] = 1000; //9810.0 * 7.85e-9; //TODO: opravit zpet
 	double ex = 2.1e5;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));

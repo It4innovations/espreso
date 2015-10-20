@@ -90,8 +90,8 @@ public:
 	}
 
 	void load(Input input, int argc, char** argv);
-	void store(Output output, const std::string &path, double shrinkSubdomain = 1, double shringCluster = 1);
-	void store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1);
+	void store(Output output, const std::string &path, double shrinkSubdomain = 1, double shringCluster = 1) const;
+	void store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1) const;
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 

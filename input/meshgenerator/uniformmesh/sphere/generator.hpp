@@ -170,9 +170,14 @@ void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinate
 template <class TElement>
 void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 {
+
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
+
+	for (size_t i = 0; i < boundaries.size(); i++) {
+		boundaries[i].insert(this->_rank);
+	}
 
 	if (this->_rank / 6 > 0) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
@@ -180,7 +185,7 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 		}
 	}
 
-	if (this->_rank / 6 < _settings.layers + 1) {
+	if (this->_rank / 6 < _settings.layers - 1) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
 			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].insert(this->_rank + 6);
 		}
@@ -199,7 +204,7 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (this->_rank / 6) + (this->_rank + 1) % 4);
 			}
 		}
-	} else {
+	} else if (this->_rank % 6 == 4) {
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
@@ -211,7 +216,20 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (this->_rank / 6) + 1);
 			}
 		}
-	}
+	} else {
+            for (eslocal z = 0; z < cNodes[2]; z++) {
+                    index = z * cNodes[0] * cNodes[1];
+                    for (eslocal y = 0; y < cNodes[1]; y++) {
+                            boundaries[index + y].insert(6 * (this->_rank / 6));
+                            boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (this->_rank / 6) + 2);
+                    }
+                    for (eslocal x = 0; x < cNodes[0]; x++) {
+                            boundaries[index + x * cNodes[1]].insert(6 * (this->_rank / 6) + 3);
+                            boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (this->_rank / 6) + 1);
+                    }
+            }
+        
+        }
 }
 
 }

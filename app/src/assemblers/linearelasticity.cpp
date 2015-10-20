@@ -83,6 +83,7 @@ void Linear_elasticity::init() {
 		DOFS_PER_NODE,
 		_instance.globalBoundaries(),
 		_instance.mesh().coordinates()
+
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -107,6 +108,7 @@ void Linear_elasticity::init() {
 		neigh_clusters,
         _instance.localBoundaries(),
 		_instance.mesh().coordinates()
+
 	);
 
 	 for (int i = 0; i < vec_c.size(); i++)
@@ -212,9 +214,8 @@ void Linear_elasticity::post_solve_update() {
 	 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 	 timeSaveVTK.AddStart();
 		std::stringstream ss;
-		ss << "mesh_" << MPI_rank << ".vtk";
-		// TODO: return save VTK
 		//_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
+		_instance.mesh().store(mesh::VTK, "mesh", prim_solution, 0.95, 0.9);
 		 timeSaveVTK.AddEndWithBarrier();
 	  	 timeEvalMain.AddEvent(timeSaveVTK);
 

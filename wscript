@@ -47,8 +47,8 @@ def configure(ctx):
 #                   Global flags used for all libraries
 #..............................................................................#
 
-#    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O0", "-cilk-serialize"])
-    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O3"])
+    ctx.env.append_unique("CXXFLAGS", [ "-g", "-Wall", "-openmp", "-std=c++11", "-O0", "-cilk-serialize"])
+#    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O3"])
 
     ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     if ctx.options.titan:

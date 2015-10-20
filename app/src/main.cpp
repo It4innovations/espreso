@@ -24,15 +24,12 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	mesh::Mesh m(MPIrank, MPIsize);
+	//mesh::Mesh m(MPIrank, MPIsize);
 
-	m.load(mesh::MESH_GENERATOR, argc, argv);
+	//m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	m.store(mesh::VTK, "test", 0.9, 0.7);
+	//m.store(mesh::VTK, "test", 0.9, 0.7);
 
-	MPI_Finalize();
-
-	return 0;
 
 #ifdef CATALYST
     	Adaptor::Initialize(argc, argv);
@@ -42,7 +39,7 @@ int main(int argc, char** argv)
 	// print all settings
 	//config.print();
 
-	//Instance instance(config, MPIrank, MPIsize);
+	Instance instance(argc, argv, MPIrank, MPIsize);
 
 	Solver<Linear_elasticity> solver_1 (instance);
 	solver_1.solve(1);

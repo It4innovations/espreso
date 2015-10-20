@@ -163,7 +163,7 @@ void VTK::coordinatesDisplacement(const std::vector<std::vector<double> > &displ
 {
 	size_t size = 0;
 	for (size_t p = 0; p < displacement.size(); p++) {
-		size += displacement[p].size();
+		size += displacement[p].size() / 3;
 	}
 
 	_vtk << "\n";
