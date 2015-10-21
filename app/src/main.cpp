@@ -43,13 +43,9 @@ int main(int argc, char** argv)
     	Adaptor::Initialize(argc, argv);
 #endif
 
-	//Configuration config("configuration.txt", argc, argv);
-	// print all settings
-	//config.print();
-
 	Instance instance(argc, argv, MPIrank, MPIsize);
 	instance.computeSurface();
-	instance.surf_mesh().store(mesh::VTK, "surface_m", 0.9, 0.99);
+	//instance.surf_mesh().store(mesh::VTK, "surface_m", 0.9, 0.99);
 
 	Solver<Linear_elasticity> solver_1 (instance);
 	solver_1.solve(1);
@@ -59,10 +55,6 @@ int main(int argc, char** argv)
 
 	//Solver<HeatSteadyState> solver_h (instance);
 	//solver_h.solve(1);
-
-
-	// This method needs re-factoring !!!
-	//solve(instance);
 
 	//Solver<HeatSteadyState> solver (instance);
 	//solver.solve(1);

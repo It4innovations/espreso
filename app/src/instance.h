@@ -24,7 +24,7 @@ public:
 
 	void computeSurface () {
 		_mesh.getSurface(_surfaceMesh);
-		_surfaceMesh.computeFixPoints(8);
+		_surfaceMesh.computeFixPoints(4);
 
 	}
 
