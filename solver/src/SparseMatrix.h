@@ -135,11 +135,12 @@ public:
 	void MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta);
 	void MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta); 
   void MatCondNumb(SparseMatrix & A_in, char *str0);
-  void permuteInCOO(SparseMatrix & A_in, int *perm);
   void spmv_(SparseMatrix & A_in, double *x, double *Ax);
-  void printMatCSR( SparseMatrix & A_in, char *str0);
+  void printMatCSR( char *str0);
+  void getNullPivots(SEQ_VECTOR <int> & null_pivots);
   void tridiagFromCSR( SparseMatrix & A_in, char *str0);
   double dot_e(double *x, double *y, int n);
+  void GramSchmidtOrtho();
 
 	void MatScale(double alpha);
 

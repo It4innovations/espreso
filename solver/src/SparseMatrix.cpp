@@ -1870,12 +1870,17 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
   }
 }
 
-void SparseMatrix::printMatCSR( SparseMatrix & A_in, char *str0){
-  printf("\t%s\n",str0);
-  for (int i = 0;i<A_in.rows;i++){
-    for (int j = A_in.CSR_I_row_indices[i];j<A_in.CSR_I_row_indices[i+1];j++){
-      printf("%d %d %3.9e \n",i+1,A_in.CSR_J_col_indices[j-1],A_in.CSR_V_values[j-1]);
+void SparseMatrix::printMatCSR(char *str0){
+  printf("%s = [ ...\n",str0);
+  for (int i = 0;i<rows;i++){
+    for (int j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
+      printf("%d %d %3.9e \n",i+1,CSR_J_col_indices[j-1],CSR_V_values[j-1]);
     }
+  }
+  printf("];%s = full(sparse(%s(:,1),%s(:,2),%s(:,3),%d,%d));\n",
+                str0,str0,str0,str0,rows,cols);
+  if (type=='S'){
+    printf("%s=%s+%s'-diag(diag(%s));\n",str0,str0,str0,str0);
   }
 }
 
@@ -1884,10 +1889,97 @@ void SparseMatrix::MatCondNumb(SparseMatrix & A_in, char *str0){
   tridiagFromCSR(A_in, str0);
 //
 }
+//
 
-void SparseMatrix::permuteInCOO(SparseMatrix & A_in, int *perm){
+void SparseMatrix::GramSchmidtOrtho(){
+//
+  double *w = new double [rows];
+  double *R = new double [cols*cols];
+  memset(R,0,(cols*cols) * sizeof(double));
+
+  for (int j = 0;j<cols;j++){
+    memcpy( w, &(dense_values[j*rows]) , sizeof( double ) * rows);
+    for (int i = 0;i<j;i++){
+      R[j*cols+i] = dot_e(w, &(dense_values[i*rows]),rows);
+      for (int k=0;k<rows;k++){
+        w[k]-=dense_values[i*rows+k]*R[j*cols+i];
+      }
+    }
+    R[j*cols+j] = sqrt(dot_e(w,w,rows));
+    for (int k=0;k<rows;k++){
+      dense_values[j*rows+k] = w[k]/R[j*cols+j];
+    }
+  }
+
+  delete [] w;
+  delete [] R;
+}
 
 
+bool myfn(double i, double j) { return fabs(i)<=fabs(j); }
+
+void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
+	SEQ_VECTOR <double> N(dense_values);
+  int nEl = rows*cols;
+  std::vector <double>::iterator  it;
+  int I,J,K,colInd,rowInd;
+  double *tmpV = new double[rows];
+  double pivot;
+  int tmp_int;
+  int *_nul_piv = new int[rows];
+  for (int i = 0;i<rows;i++) _nul_piv[i]=i;
+  
+  
+  
+  auto ij= [&]( int ii, int jj ) -> int 
+   { return ii + rows*jj; };
+  
+
+  //for (int j=0;j<cols;j++)
+  for (int j=0;j<cols;j++){
+    it = std::max_element(N.begin(),N.end()-j*rows,myfn);
+    I = it - N.begin();
+    colInd = I/rows;
+    rowInd = I-colInd*rows;
+//    printf("rowInd=%d; colInd=%d; pos=%d;\n",rowInd+1,colInd+1,I+1);
+    for (int k=0;k<cols-j;k++){
+      tmpV[k] = N[ij(rows-1-j,k)];
+      N[ij(rows-1-j,k)] = N[ij(rowInd,k)];
+      N[ij(rowInd,k)]= tmpV[k];
+    }
+    tmp_int = _nul_piv[rowInd];
+    _nul_piv[rowInd] = _nul_piv[rows-1-j];
+    _nul_piv[rows-1-j] = tmp_int;
+//
+    memcpy( tmpV, &(N[ij(0,cols-1-j)]) , sizeof( double ) * rows);
+    memcpy( &(N[ij(0,cols-1-j)]), &(N[ij(0,colInd)]) , sizeof( double ) * rows);
+    memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
+    pivot = N[ij(rows-1-j,cols-1-j)];
+    printf("pivot = %3.9e \n",pivot);
+    for (int J=0;J<cols-j-1;J++){
+      for (int I=0;I<rows-j;I++){
+        N[ij(I,J)] -= N[ij(I,cols-1-j)]*N[ij(rows-1-j,J)]/pivot;
+      }
+    }
+//
+//    printf("\n"); 
+//    for (int I=0;I<rows;I++){
+//      for (int J=0;J<cols;J++){
+//        printf("%3.9e ",N[I+J*rows]);
+//      }
+//      printf("\n");
+//    }
+  }  
+// 
+  printf("\n");
+  for (int i = 0;i<cols;i++){
+    null_pivots.push_back(_nul_piv[rows-1-i]+1);
+  }
+  sort(null_pivots.begin(),null_pivots.end());
+//
+  delete [] _nul_piv;
+  delete [] tmpV;
+//
 }
 
 void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
@@ -1896,6 +1988,7 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
   bool plot_a_and_b_defines_tridiag=false;
   int nA = A_in.rows;
   int nMax = 100; // size of tridiagonal matrix 
+  int nEigToplot = 10;
   double *s = new double[nA];
   double *s_bef = new double[nA];
   double *As = new double[nA];
@@ -1949,16 +2042,17 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
   MKL_INT ldz = cnt;
   info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=alphaVec[cnt-1]/alphaVec[0];
-  printf("\tcond(%s) = %3.15e\tit: %d\n",str0,fabs(estim_cond),cnt);
+  printf("cond(%s) = %3.15e\tit: %d\n",str0,fabs(estim_cond),cnt);
 //  if (fabs(estim_cond)>1e10){
 //    printf("!!!   CONDITION NUMBER IS VERY LARGE  !!! \n");
 //    estim_cond=fabs(estim_cond); // prevent to display negative cond_number
 //  }
 //
   if (plotEigenvalues){
-    printf("\n eigenvals\n");
+    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+          str0,nEigToplot,cnt-nEigToplot+2,cnt);
     for (int i = 0 ; i < cnt; i++){
-      if (i < 10 || i > cnt-10){
+      if (i < nEigToplot|| i > cnt-nEigToplot){
         printf("%5d:  %3.8e \n",i+1, alphaVec[i]);
       }
     }

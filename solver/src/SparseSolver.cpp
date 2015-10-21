@@ -14,6 +14,7 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
                            double *, int *);
 extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*);
 
+//struct pair{ int ind1; int ind2; };
 
 SparseSolver::SparseSolver(){
 
@@ -1313,25 +1314,100 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
 //
 // 
 // TODO FOR MORE GENERAL CASE MATRIX A_in SHOULD BE RANDOMLY PERMUTED. 
-  int SC_SIZE = 100;         // size of S to detect singular part  
-  int TWENTY  = 20;         // constant set-up to defect <= TWENTY <= SC_SIZE 
+  int SC_SIZE = 50;         // size of S to detect singular part  
+  int TWENTY  = 20;         // constant set-up to DEFECT <= TWENTY <= SC_SIZE 
+  //TODO if A_in.rows<=SC_SIZE, use directlyi input A_in instead of S
   SparseMatrix S;
   SparseMatrix A_rr;
   SparseMatrix A_rs;
-  ImportMatrix(A_in);
-  //int *perm = new perm[A_in.rows];
+  SparseMatrix A_modif = A_in;
+  bool diagonalScaling = true;
+  bool permutVectorActive = true;
+  bool diagonalRegularization=true;
+
+  // diagonal scaling of A_modif:
+  // A_modif[i,j] = A_modif[i,j]/sqrt(A_modif[i,i]*A_modif[j,j]);
+  double di=1,dj=1;
+  for (int i = 0;i<A_modif.rows;i++){
+    if (diagonalScaling) {
+      di=A_modif.CSR_V_values[A_modif.CSR_I_row_indices[i]-1];
+    }
+    for (int j = A_modif.CSR_I_row_indices[i];j<A_modif.CSR_I_row_indices[i+1];j++){
+      if (diagonalScaling) {
+        dj=A_modif.CSR_V_values[A_modif.CSR_I_row_indices[A_modif.CSR_J_col_indices[j-1]-1]-1];
+      }
+      A_modif.CSR_V_values[j-1]/=sqrt(di*dj);
+    }
+  }
+
+//  A_modif.printMatCSR("A_modif");
 
 
+  vector<int> permVec;
   int i_start = 0;
-  int nonsing_size = A_in.rows - SC_SIZE - i_start;
-  int j_start = nonsing_size;
+  int NONSING_SIZE = A_in.rows - SC_SIZE - i_start;
+  int j_start = NONSING_SIZE;
+
+  // set row permVec = {0,1,2,3,4,...,A_in.rows};
+  for (int i=0; i<A_in.rows; ++i) permVec.push_back(i); // 0 1 2 A.rows
+  // random permutation
+  
+  if (permutVectorActive) random_shuffle ( permVec.begin(), permVec.end() );
+
+  //      r = permVec[0:NONSING_SIZE-1]     (singular DOFs)
+  //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
+  sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
+  sort(permVec.begin()+NONSING_SIZE,permVec.end());
+
+  std::vector<std::vector<int>> vec_I1_i2(A_in.rows, std::vector<int>(2, 1));
+
+  for (int i = 0; i < A_in.rows;i++){
+    vec_I1_i2[i][0]=permVec[i];
+    vec_I1_i2[i][1]=i; // position to create revers permutation
+  }
+
+  std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+            [](const std::vector<int>& a, const std::vector<int>& b) {
+    return a[0] < b[0];
+  });
+
+  A_modif.ConvertToCOO(0);
+  int *I_row_indices_p = new int[A_modif.nnz] ;
+  int *J_col_indices_p = new int[A_modif.nnz] ;
+//	V_values; J_col_indices; I_row_indices;	    
+    int I_index,J_index;
+    int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
+    for (int i = 0;i<A_modif.nnz;i++){
+      I_index = vec_I1_i2[A_modif.I_row_indices[i]-offset][1]+offset;
+      J_index = vec_I1_i2[A_modif.J_col_indices[i]-offset][1]+offset;
+      if (I_index>J_index){
+        I_row_indices_p[i]=J_index;
+        J_col_indices_p[i]=I_index;
+      }
+      else{
+        I_row_indices_p[i]=I_index;
+        J_col_indices_p[i]=J_index;
+      }
+   } 
+//
+  for (int i = 0; i<A_modif.nnz;i++){
+    A_modif.I_row_indices[i] = I_row_indices_p[i];
+    A_modif.J_col_indices[i] = J_col_indices_p[i];
+  }                            
+  A_modif.ConvertToCSRwithSort(0);
+  delete [] I_row_indices_p;
+  delete [] J_col_indices_p;
+
+//
   vector <int> fix_dofs;
-  for (int i = 0;i<SC_SIZE;i++) fix_dofs.push_back(nonsing_size + i + 1); 
-  A_rr.getSubDiagBlockmatrix(A_in,A_rr,i_start, nonsing_size);
+  for (int i = 0;i<SC_SIZE;i++) fix_dofs.push_back(permVec[NONSING_SIZE + i] + offset); 
+  A_rr.getSubDiagBlockmatrix(A_modif,A_rr,i_start, NONSING_SIZE);
   A_rr.MatCondNumb(A_rr,"A_rr");
-  A_rs.getSubBlockmatrix_rs(A_in,A_rs,i_start, nonsing_size,j_start,SC_SIZE);
+  A_rs.getSubBlockmatrix_rs(A_modif,A_rs,i_start, NONSING_SIZE,j_start,SC_SIZE);
+//
+  ImportMatrix(A_modif);
   Create_SC(S,SC_SIZE,false);
-//  S.printMatCSR(S,"Schur_complement");
+//  S.printMatCSR("Schur_complement");
   S.type='S';
   S.ConvertCSRToDense(1);
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
@@ -1354,7 +1430,7 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
 //    printf("eig[%d],eig[%d]= [%3.15e/%3.15e]\n",i,i-1,W[i],W[i-1]);
     if (ratio < 1e-5){
       defect_A_in=i;
-      printf("\tratio = %3.15e, defect = %d\n",ratio,defect_A_in);
+      printf("\tratio = %3.15e, DEFECT = %d\n",ratio,defect_A_in);
     }
   }
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
@@ -1373,18 +1449,18 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
     }
   }
   R_s.ConvertDenseToCSR(0);
-  //R_s.printMatCSR(R_s,"R_s");
+//  R_s.printMatCSR("R_s");
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 	SparseMatrix R_r; 
 	R_r.MatMat(A_rs,'N',R_s); 
-  //R_r.printMatCSR(R_r,"A_rs*R_s");
+  //R_r.printMatCSR("A_rs*R_s");
   SparseSolver A_rr_solver; 
   A_rr_solver.ImportMatrix(A_rr);
   A_rr.Clear();
   A_rr_solver.Factorization();
   A_rr_solver.SolveMat_Sparse(R_r); // inv(A_rr)*A_rs*R_s 
-  //R_r.printMatCSR(R_r,"R_r");
   
+//  R_r.printMatCSR("R_r");
   R_r.ConvertCSRToDense(0);
   R_s.ConvertCSRToDense(0);
 // --------------- CREATING WHOLE KERNEL R = [ (R_r)^T (R_s)^T ]^T
@@ -1396,54 +1472,93 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   cnt=0;
   for (int j = 0; j < R.cols; j++){
     for (int i = 0; i < R_r.rows; i++){
-	    R.dense_values[cnt] = R_r.dense_values[j*R_r.rows + i];			
+      if (diagonalScaling){
+        di=A_in.CSR_V_values[A_in.CSR_I_row_indices[permVec[i]]-1];
+      }
+      R.dense_values[j*R.rows + permVec[i]] = R_r.dense_values[j*R_r.rows + i]/sqrt(di);			
       cnt++;
     }
     for (int i = 0; i < R_s.rows; i++){
-	    R.dense_values[cnt] = -R_s.dense_values[j*R_s.rows + i];			
+      if (diagonalScaling){
+        di=A_in.CSR_V_values[A_in.CSR_I_row_indices[permVec[i+R_r.rows]]-1];
+      }
+	    R.dense_values[j*R.rows + permVec[i+R_r.rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
       cnt++;
     }
   }
-  R.ConvertDenseToCSR(1);
-//R.printMatCSR(R,"R");
-// REGULARIZATION OF MATRIX A_in
-  SparseMatrix N;
-  N.CreateMatFromRowsFromMatrix( R , fix_dofs);
-//N.printMatCSR(N,"N");
-	SparseMatrix Nt;
-	N.MatTranspose( Nt );
-	SparseMatrix NtN_Mat;
-	NtN_Mat.MatMat( Nt,'N',N );
-  NtN_Mat.MatTranspose();
-  NtN_Mat.RemoveLower();
-  SparseSolver NtN;
-  NtN.ImportMatrix(NtN_Mat);
-  NtN_Mat.Clear();
-  NtN.Factorization();
-  NtN.SolveMat_Sparse(Nt);
-  NtN.Clear();
-  N.Clear();
-  Nt.MatTranspose(N);
-  NtN_Mat.MatMat(N,'N',Nt);
-  NtN_Mat.RemoveLower();
-  double ro = A_in.GetMaxOfDiagonalOfSymmetricMatrix();
-  ro = 1.0 * ro;
-  A_in.MatCondNumb(A_in,"A_singular");
-//A_in.printMatCSR(A_in,"A_in");
-  A_in.MatAddInPlace (NtN_Mat,'N', ro);
-  A_in.MatCondNumb(A_in,"A_regularized");
-	SparseMatrix A_in_R;
-	A_in_R.MatMat( A_in,'N',R );
-//TODO  Matrix A_in is triangular, and MatMat does not provide correct product! 
-//A_in_R.printMatCSR(A_in_R,"A_in_R");
-  double norm_A_in_R=0.0;
-  for (int i = 0; i < A_in.nnz;i++){
-    norm_A_in_R+=A_in_R.CSR_V_values[i]*A_in_R.CSR_V_values[i];
-  }
-  norm_A_in_R=sqrt(norm_A_in_R);
-  printf("\t||A_in*R|| = %3.9e \n",norm_A_in_R);
+//
+  R.GramSchmidtOrtho();
+  SEQ_VECTOR <int> null_pivots;
+  R.getNullPivots(null_pivots);
 
-//A_in.printMatCSR(A_in,"A_in");
+  printf("null_pivots ...\n");
+  for (int i = 0;i<null_pivots.size();i++)
+    printf("%d ",null_pivots[i]);
+  printf("\n");
+  printf("fix_dof ...\n");
+//  for (int i = 0;i<fix_dofs.size();i++)
+//    printf("%d ",fix_dofs[i]);
+//  printf("\n");
+
+//
+  double * AR =  new double [A_in.rows];
+  double norm_AR_row,norm_AR = 0.0;
+  printf("||A*R[:,i]|| ...   \n");
+  for (int i = 0;i<R.cols;i++){
+    memset(AR,0,R.rows * sizeof(double));
+  	A_in.spmv_( A_in,&(R.dense_values[i*R.rows]),AR);
+    norm_AR_row=0.0;
+    for (int j = 0; j < R.rows;j++){
+      norm_AR_row+=AR[j]*AR[j];
+    }
+    printf("%3.3e  ",sqrt(norm_AR_row));
+    norm_AR+=norm_AR_row;
+  }
+  delete [] AR;
+  norm_AR=sqrt(norm_AR);
+  printf("\n||A*R|| = %3.9e \n",norm_AR);
+
+  R.ConvertDenseToCSR(1);
+//  R.printMatCSR("R");
+//  A_in.printMatCSR("A_in");
+// REGULARIZATION OF MATRIX A_in
+
+  double rho = A_in.GetMaxOfDiagonalOfSymmetricMatrix();
+  rho = 1.0 * rho;
+//
+  if (diagonalRegularization){
+    for (int i = 0; i < null_pivots.size(); i++){
+      //i=0,1,..;di=A_modif.CSR_V_values[A_modif.CSR_I_row_indices[i]-1];
+      A_in.CSR_V_values[A_in.CSR_I_row_indices[null_pivots[i]-1]-1]+=rho;
+    }
+
+  }
+  else{
+    SparseMatrix N;
+    //N.CreateMatFromRowsFromMatrix( R, fix_dofs);
+    N.CreateMatFromRowsFromMatrix( R, null_pivots);
+  //null_pivots
+    SparseMatrix Nt;
+    N.MatTranspose( Nt );
+    SparseMatrix NtN_Mat;
+    NtN_Mat.MatMat( Nt,'N',N );
+    NtN_Mat.MatTranspose();
+    NtN_Mat.RemoveLower();
+    SparseSolver NtN;
+    NtN.ImportMatrix(NtN_Mat);
+    NtN_Mat.Clear();
+    NtN.Factorization();
+    NtN.SolveMat_Sparse(Nt);
+    NtN.Clear();
+    NtN_Mat.MatMat(N,'N',Nt);
+    NtN_Mat.RemoveLower();
+    A_in.MatCondNumb(A_in,"A_singular");
+    A_in.MatAddInPlace (NtN_Mat,'N', rho);
+  }
+//  A_in.printMatCSR("A_regularized");
+  A_in.MatCondNumb(A_in,"A_regularized");
+
+
   printf(" =============================================================\n\n");
 
   delete [] W;
@@ -1451,4 +1566,5 @@ void SparseSolver::generalInverse( SparseMatrix & A_in, SparseMatrix & R){
   //delete [] perm;
 
 }
+
 

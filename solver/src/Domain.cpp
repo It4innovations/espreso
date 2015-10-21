@@ -251,6 +251,7 @@ void Domain::K_regularizationFromR ( ) {
 //    	if (DOFS_PER_NODE == 3) {
 //
 //			SparseMatrix N;
+//			N.printMatCSR(N,"Ntt");
 //
 //			N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
 //

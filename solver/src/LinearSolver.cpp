@@ -87,7 +87,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	SINGULAR = IS_SINGULAR;
 
-	DOFS_PER_NODE = 3; //TODO - set as parameter
+	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
 	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
 
@@ -114,7 +114,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
 	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 1;
+	solver.USE_PREC		 = 0;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
@@ -194,9 +194,9 @@ void LinearSolver::init(
 
 
 	// *** Setup R matrix ********************************************************************************************
-	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
+	 TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
 	set_R(l2g_vec, mesh);
-	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
+	 timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
 
