@@ -271,8 +271,9 @@ void Domain::K_regularizationFromR ( ) {
 			NtN.Clear();
 
 			//NtN = Nt*N
-			N.Clear();
-			Nt.MatTranspose(N);
+			//N.Clear();
+			//Nt.MatTranspose(N);
+
 			NtN_Mat.MatMat(N,'N',Nt);
 			NtN_Mat.RemoveLower();
 
