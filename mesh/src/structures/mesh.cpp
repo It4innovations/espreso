@@ -806,7 +806,7 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 	surface._partPtrs.reserve(_partPtrs.size());
 
 	// create surface mesh
-	surface._partPtrs.push_back(surface._elements.size());
+	surface._partPtrs.push_back(0); //(surface._elements.size());
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
@@ -833,8 +833,12 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 			}
 		}
 		surface._partPtrs.push_back(surface._elements.size());
-		surface.computeLocalIndices(surface._partPtrs.size() - 1);
+		surface.computeLocalIndices(surface._partPtrs.size() - 2);
+
 	}
+
+	surface.computeBoundaries();
+
 }
 
 void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
@@ -1193,7 +1197,7 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 			);
 }
 
-void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
+void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part) const
 {
 	double hight_z = 29.99999999;
 	Point p0, p1, p2, v10, v20;

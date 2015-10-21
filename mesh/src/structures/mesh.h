@@ -159,6 +159,15 @@ public:
 		M = _M;
 	}
 
+	void heat(SparseCSRMatrix<eslocal> &K, std::vector<double> &f, eslocal part) const
+	{
+		SparseVVPMatrix<eslocal> _K;
+		SparseVVPMatrix<eslocal> _M;
+		_heat(_K, _M, f, part, false);
+		K = _K;
+
+	}
+
 protected:
 	void _elasticity(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f, eslocal part, bool dynamic) const;
 	void _assembleElesticity(
@@ -250,7 +259,7 @@ public:
 	}
 
 	void elasticity(DenseMatrix &K, size_t part) const;
-	void integrateUpperFaces(std::vector < double > &f , size_t part);
+	void integrateUpperFaces(std::vector < double > &f , size_t part) const;
 };
 
 class CommonFacesMesh: public Mesh

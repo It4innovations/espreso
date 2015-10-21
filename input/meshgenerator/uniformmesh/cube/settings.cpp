@@ -55,7 +55,7 @@ CubeSettings::CubeSettings(int argc, char** argv): UniformSettings(argc, argv)
 	std::vector<std::string> axis = { "X", "Y", "Z" };
 	for (size_t i = 0; i < axis.size(); i++) {
 		clusters[i] = configuration.value<eslocal>("CLUSTERS_" + axis[i], 1);
-		problemLength[i] = configuration.value<double>("LENGTH_" + axis[i], 20);
+		problemLength[i] = configuration.value<double>("LENGTH_" + axis[i], 30);
 	}
 
 	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };

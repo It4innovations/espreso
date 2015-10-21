@@ -51,6 +51,8 @@ private:
 
 	size_t partsCount; 											//number of domains per cluster
 	int DOFS_PER_NODE;											// number of degrees of freedom per one node
+	bool BEM;
+
 
 	//Time measurement instances
 	TimeEval timeEvalMain;										// Time measurement instancefor overal solver runtime
