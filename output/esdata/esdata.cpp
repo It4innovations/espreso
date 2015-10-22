@@ -110,7 +110,7 @@ void Esdata::boundaries(const mesh::Mesh &mesh)
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/clusterBoundaries.dat";
-
+		std::cout << "X " << p << " " << ss.str() << std::endl;
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		size = 0;
@@ -132,6 +132,7 @@ void Esdata::boundaries(const mesh::Mesh &mesh)
 				}
 			}
 		}
+		os.close();
 	}
 }
 

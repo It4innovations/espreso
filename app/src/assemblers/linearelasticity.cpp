@@ -9,6 +9,7 @@
 
 void Linear_elasticity::init() {
 
+	BEM = true;
 	DOFS_PER_NODE = 3; //TODO - nacist z config souboru
 	timeEvalMain.SetName("Linear Elasticity Solver Overal Timing");
 
@@ -26,19 +27,62 @@ void Linear_elasticity::init() {
 
     // *************************************************************************************
 
+
+
+
 	K_mat.reserve(partsCount);
 	for (eslocal d = 0; d < partsCount; d++) {
 		K_mat.push_back( SparseCSRMatrix<eslocal>(0,0) );
 		f_vec.push_back( std::vector <double> ());
 	}
 
-	cilk_for (eslocal d = 0; d < partsCount; d++) {
-		//eslocal dimension = _instance.mesh().getPartNodesCount(d) * mesh::Point::size();
+	if (BEM) {
+		cilk_for (eslocal d = 0; d < partsCount; d++) {
+			DenseMatrix K_dense, K_tmp;
+			_instance.surf_mesh().elasticity(K_dense, d);
+			//TODO: not optimal
+			K_tmp = K_dense;
 
-		_instance.mesh().elasticity(K_mat[d], f_vec[d], d);
+			int n = K_dense.rows();
 
-        if (_instance.rank() == 0) std::cout << d << " " ; //<< std::endl;
+	        for (int i = 0; i < n/3; i++) {
+	            for (int j = 0; j < n; j++) {
+	                K_tmp( 3*i+0,j) = K_dense(0*(n/3) + i ,j);
+	                K_tmp( 3*i+1,j) = K_dense(1*(n/3) + i ,j);
+	                K_tmp( 3*i+2,j) = K_dense(2*(n/3) + i ,j);
+	            }
+	        }
+
+	        for (int i = 0; i < n/3; i++) {
+	            for (int j = 0; j < n; j++) {
+	                K_dense( j, 3*i+0) = K_tmp(j, 0*(n/3) + i );
+	                K_dense( j, 3*i+1) = K_tmp(j, 1*(n/3) + i );
+	                K_dense( j, 3*i+2) = K_tmp(j, 2*(n/3) + i );
+	            }
+	        }
+
+	        K_mat[d] = K_dense;
+	        f_vec[d].resize(K_dense.rows() , 0.0);
+
+	        //TODO: Musi byt pro kostku
+	        _instance.surf_mesh().integrateUpperFaces(f_vec[d],d);
+
+	        if (_instance.rank() == 0) std::cout << d << " " ; //<< std::endl;
+
+		}
+
+	} else {
+
+		cilk_for (eslocal d = 0; d < partsCount; d++) {
+			//eslocal dimension = _instance.mesh().getPartNodesCount(d) * mesh::Point::size();
+
+			_instance.mesh().elasticity(K_mat[d], f_vec[d], d);
+
+			if (_instance.rank() == 0) std::cout << d << " " ; //<< std::endl;
+		}
+
 	}
+
 	if (_instance.rank() == 0) std::cout << std::endl;
 	timeKasm.AddEndWithBarrier();
 	timeEvalMain.AddEvent(timeKasm);
@@ -48,8 +92,17 @@ void Linear_elasticity::init() {
 	TimeEvent timeFnodes(string("Create Fix nodes"));
 	timeFnodes.AddStart();
 
-	size_t fixPointsCount = _instance.mesh().getFixPointsCount();
-	const std::vector<eslocal> fixPoints = _instance.mesh().getFixPoints();
+	size_t fixPointsCount;
+	std::vector<eslocal> fixPoints;
+	if (BEM) {
+
+		fixPointsCount = _instance.surf_mesh().getFixPointsCount();
+		fixPoints      = _instance.surf_mesh().getFixPoints();
+	} else {
+		fixPoints      = _instance.mesh().getFixPoints();
+		fixPointsCount = _instance.mesh().getFixPointsCount();
+	}
+
 	fix_nodes.resize(partsCount);
 
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
@@ -70,46 +123,81 @@ void Linear_elasticity::init() {
 	 //TODO: implement filling of vec_c
 	 vec_c.resize(partsCount);
 
-	 _instance.localBoundaries().create_B1_l<eslocal>(
-		B1_mat,
-		B0_mat,
-		l2g_vec,
-		lambda_map_sub_clst,
-		lambda_map_sub_B1,
-		lambda_map_sub_B0,
-		B1_duplicity,
-		vec_c,
-		partsCount,
-		DOFS_PER_NODE,
-		_instance.globalBoundaries(),
-		_instance.mesh().coordinates()
+	 if (BEM) {
+		 _instance.surf_mesh().subdomainBoundaries().create_B1_l<eslocal>(
+			B1_mat,
+			B0_mat,
+			l2g_vec,
+			lambda_map_sub_clst,
+			lambda_map_sub_B1,
+			lambda_map_sub_B0,
+			B1_duplicity,
+			vec_c,
+			partsCount,
+			DOFS_PER_NODE,
+			_instance.globalBoundaries(),
+			_instance.surf_mesh().coordinates()
 
-	);
+		);
+	 } else {
+		 _instance.localBoundaries().create_B1_l<eslocal>(
+			B1_mat,
+			B0_mat,
+			l2g_vec,
+			lambda_map_sub_clst,
+			lambda_map_sub_B1,
+			lambda_map_sub_B0,
+			B1_duplicity,
+			vec_c,
+			partsCount,
+			DOFS_PER_NODE,
+			_instance.globalBoundaries(),
+			_instance.mesh().coordinates()
+		 );
+	 }
+		 timeB1loc.AddEndWithBarrier();
+		 timeEvalMain.AddEvent(timeB1loc);
 
-	 timeB1loc.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeB1loc);
+		 // ************************************************************************************
 
-	 // ************************************************************************************
+		 TimeEvent timeB1glob(string("Create B1 global"));
+		 timeB1glob.AddStart();
 
-	 TimeEvent timeB1glob(string("Create B1 global"));
-	 timeB1glob.AddStart();
+	if (BEM) {
+		 _instance.globalBoundaries().create_B1_g<eslocal>(
+			B1_mat,
+			K_mat,
+			lambda_map_sub_clst,
+			lambda_map_sub_B1,
+			B1_duplicity,
+			vec_c,
+			_instance.rank(),
+			_instance.size(),
+			partsCount,
+			DOFS_PER_NODE,
+			neigh_clusters,
+			_instance.localBoundaries(),
+			_instance.surf_mesh().coordinates()
+		);
+	} else {
+		 _instance.globalBoundaries().create_B1_g<eslocal>(
+			B1_mat,
+			K_mat,
+			lambda_map_sub_clst,
+			lambda_map_sub_B1,
+			B1_duplicity,
+			vec_c,
+			_instance.rank(),
+			_instance.size(),
+			partsCount,
+			DOFS_PER_NODE,
+			neigh_clusters,
+			_instance.localBoundaries(),
+			_instance.mesh().coordinates()
+		);
 
-	 _instance.globalBoundaries().create_B1_g<eslocal>(
-		B1_mat,
-		K_mat,
-		lambda_map_sub_clst,
-		lambda_map_sub_B1,
-		B1_duplicity,
-		vec_c,
-		_instance.rank(),
-		_instance.size(),
-		partsCount,
-		DOFS_PER_NODE,
-		neigh_clusters,
-        _instance.localBoundaries(),
-		_instance.mesh().coordinates()
+	}
 
-	);
 
 	 for (int i = 0; i < vec_c.size(); i++)
 		 vec_c[i].resize(B1_duplicity[i].size(), 0.0);
@@ -155,6 +243,10 @@ void Linear_elasticity::init() {
 	B0_mat_ls.
 	resize(partsCount);
 
+	std::ofstream file ("K_mat");
+	file << K_mat[0];
+	file.close();
+
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
  		K_mat_ls[d]  = K_mat[d];
  		B1_mat_ls[d] = B1_mat[d];
@@ -174,29 +266,57 @@ void Linear_elasticity::init() {
 	 lin_solver.DOFS_PER_NODE = DOFS_PER_NODE;
 	 lin_solver.setup( _instance.rank(), _instance.size(), true );
 
-	 lin_solver.init(
+	 if (BEM) {
 
-		_instance.mesh(),
+		 lin_solver.init(
 
-		K_mat_ls,
+			_instance.surf_mesh(),
 
-		B1_mat_ls,
-		B0_mat_ls,
+			K_mat_ls,
 
-		lambda_map_sub_B1,
-		lambda_map_sub_B0,
-		lambda_map_sub_clst,
-		B1_duplicity,
+			B1_mat_ls,
+			B0_mat_ls,
 
-		f_vec,
-		vec_c,
+			lambda_map_sub_B1,
+			lambda_map_sub_B0,
+			lambda_map_sub_clst,
+			B1_duplicity,
 
-		fix_nodes,
-		l2g_vec,
+			f_vec,
+			vec_c,
 
-		neigh_clusters
+			fix_nodes,
+			l2g_vec,
 
-	);
+			neigh_clusters
+
+		);
+	 } else {
+		 lin_solver.init(
+
+			_instance.mesh(),
+
+			K_mat_ls,
+
+			B1_mat_ls,
+			B0_mat_ls,
+
+			lambda_map_sub_B1,
+			lambda_map_sub_B0,
+			lambda_map_sub_clst,
+			B1_duplicity,
+
+			f_vec,
+			vec_c,
+
+			fix_nodes,
+			l2g_vec,
+
+			neigh_clusters
+
+		);
+
+	 }
 
 	 timeLSconv.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeLSconv);
@@ -213,9 +333,13 @@ void Linear_elasticity::post_solve_update() {
 
 	 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 	 timeSaveVTK.AddStart();
-		std::stringstream ss;
-		//_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
-		_instance.mesh().store(mesh::VTK, "mesh", prim_solution, 0.95, 0.9);
+
+	 	 if (BEM) {
+	 		_instance.surf_mesh().store(mesh::VTK, "mesh", prim_solution, 0.95, 0.9);
+	 	 } else {
+	 	 	_instance.mesh().     store(mesh::VTK, "mesh", prim_solution, 0.95, 0.9);
+	 	 }
+
 		 timeSaveVTK.AddEndWithBarrier();
 	  	 timeEvalMain.AddEvent(timeSaveVTK);
 

@@ -16,6 +16,18 @@ public:
 		return _mesh;
 	}
 
+	//TODO: BEM
+	const mesh::SurfaceMesh& surf_mesh() const
+	{
+		return _surfaceMesh;
+	}
+
+	void computeSurface () {
+		_mesh.getSurface(_surfaceMesh);
+		_surfaceMesh.computeFixPoints(4);
+
+	}
+
 	const mesh::Boundaries& localBoundaries() const
 	{
 		return _mesh.subdomainBoundaries();
@@ -40,7 +52,9 @@ private:
 	int _rank;
 	int _size;
 
+	//TODO: BEM
 	mesh::Mesh _mesh;
+	mesh::SurfaceMesh _surfaceMesh;
 };
 
 
