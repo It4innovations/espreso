@@ -71,6 +71,8 @@ def configure(ctx):
     ctx.recurse("output")
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
+    ctx.recurse("physics")
+    ctx.recurse("composer")
     ctx.recurse("catalyst")
     ctx.recurse("app")
 
@@ -180,6 +182,14 @@ def build(ctx):
         name            = "incl_solver"
     )
     ctx(
+        export_includes = "physics",
+        name            = "incl_physics"
+    )
+    ctx(
+        export_includes = "composer",
+        name            = "incl_composer"
+    )
+    ctx(
         export_includes = "bem/src",
         name            = "incl_bem"
     )
@@ -190,7 +200,7 @@ def build(ctx):
     ctx(
         export_includes = "include",
         name            = "espreso_includes",
-        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst"
+        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_physics"
     )
 
     ctx.ROOT = ctx.path.abspath()
@@ -213,6 +223,8 @@ def build(ctx):
 
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
+    ctx.recurse("physics")
+    ctx.recurse("composer")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")
     ctx.recurse("app")
