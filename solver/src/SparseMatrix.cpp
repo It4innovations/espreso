@@ -1759,6 +1759,7 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 }
 
 // AM -start: ---------------------------------------------------------------------------
+//
 void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
   int nA = A.cols;
   int offset = A.CSR_I_row_indices[0] ? 1 : 0;
@@ -1928,20 +1929,16 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
   int tmp_int;
   int *_nul_piv = new int[rows];
   for (int i = 0;i<rows;i++) _nul_piv[i]=i;
-  
-  
-  
+
+//TODO Ask about to the efficiency of next 2 lines.
   auto ij= [&]( int ii, int jj ) -> int 
    { return ii + rows*jj; };
-  
-
-  //for (int j=0;j<cols;j++)
+ // 
   for (int j=0;j<cols;j++){
     it = std::max_element(N.begin(),N.end()-j*rows,myfn);
     I = it - N.begin();
     colInd = I/rows;
     rowInd = I-colInd*rows;
-//    printf("rowInd=%d; colInd=%d; pos=%d;\n",rowInd+1,colInd+1,I+1);
     for (int k=0;k<cols-j;k++){
       tmpV[k] = N[ij(rows-1-j,k)];
       N[ij(rows-1-j,k)] = N[ij(rowInd,k)];
@@ -1950,7 +1947,6 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
     tmp_int = _nul_piv[rowInd];
     _nul_piv[rowInd] = _nul_piv[rows-1-j];
     _nul_piv[rows-1-j] = tmp_int;
-//
     memcpy( tmpV, &(N[ij(0,cols-1-j)]) , sizeof( double ) * rows);
     memcpy( &(N[ij(0,cols-1-j)]), &(N[ij(0,colInd)]) , sizeof( double ) * rows);
     memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
@@ -1961,14 +1957,6 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
         N[ij(I,J)] -= N[ij(I,cols-1-j)]*N[ij(rows-1-j,J)]/pivot;
       }
     }
-//
-//    printf("\n"); 
-//    for (int I=0;I<rows;I++){
-//      for (int J=0;J<cols;J++){
-//        printf("%3.9e ",N[I+J*rows]);
-//      }
-//      printf("\n");
-//    }
   }  
 // 
   printf("\n");
@@ -2043,11 +2031,7 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
   info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=alphaVec[cnt-1]/alphaVec[0];
   printf("cond(%s) = %3.15e\tit: %d\n",str0,fabs(estim_cond),cnt);
-//  if (fabs(estim_cond)>1e10){
-//    printf("!!!   CONDITION NUMBER IS VERY LARGE  !!! \n");
-//    estim_cond=fabs(estim_cond); // prevent to display negative cond_number
-//  }
-//
+
   if (plotEigenvalues){
     printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
           str0,nEigToplot,cnt-nEigToplot+2,cnt);
@@ -2074,14 +2058,12 @@ double SparseMatrix::dot_e(double *x, double *y, int n){
     dot_xy+=x[i]*y[i];
   }
   return dot_xy;
-
 }
 
-
-
-
-
 // AM -end:   ---------------------------------------------------------------------------
+
+
+
 void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta) {
 	//C := A+beta*op(B)
 
