@@ -2192,7 +2192,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     					for (it_set_l = local_boundaries[i].begin(); it_set_l != local_boundaries[i].end(); ++it_set_l) {
     						for (int d_i = 0; d_i < dofs_per_node; d_i++ ) {
     							myBorderDOFs_sp      .push_back( dofs_per_node * coordinates.globalIndex(i) + d_i ); // mapping local local to global
-    							myBorderDOFs_sp_loc_n.push_back( dofs_per_node *                                  i + d_i ); // in local numbering
+    							myBorderDOFs_sp_loc_n.push_back( dofs_per_node *                          i + d_i ); // in local numbering
     						}
     					}
     				}
@@ -2360,7 +2360,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
            	}
 
-           	if (dup_cnt_sp > 1){
+           	if (dup_cnt_sp > 1 && myBorderDOFs_sp.size() ){ //TODO pridal jsem: myBorderDOFs_sp.size()
            		neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
            		neighBorderDofs_sp_red[j].push_back(myBorderDOFs_sp[neighBorderDofs_sp_red[j].size() - 1]);
            	}

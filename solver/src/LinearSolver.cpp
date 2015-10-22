@@ -110,7 +110,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = 50;
+	solver.CG_max_iter	 = 500;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
 	solver.USE_PIPECG	 = 0;

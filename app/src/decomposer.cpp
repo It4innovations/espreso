@@ -14,6 +14,7 @@ int main(int argc, char** argv)
 	m.load(mesh::ANSYS, argc, argv);
 	m.partitiate(atoi(argv[2]), 0);
 	m.store(mesh::ESPRESO_OUTPUT, argv[3]);
+
 }
 
 

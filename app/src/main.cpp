@@ -24,28 +24,13 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-//	if (MPIrank == 0) {
-//		mesh::Mesh m(MPIrank, MPIsize);
-//		m.load(mesh::ANSYS, argc, argv);
-//		m.partitiate(4,0);
-//		m.store(mesh::ESPRESO_OUTPUT, "ansys_dec");
-//	}
-//
-////	mesh::Mesh m(MPIrank, MPIsize);
-////	m.load(mesh::ESPRESO_INPUT, argc, argv);
-////	m.store(mesh::VTK, "ans_vtk");
-//
-//
-//	MPI_Finalize();
-//	return 0;
-
 #ifdef CATALYST
     	Adaptor::Initialize(argc, argv);
 #endif
 
 	Instance instance(argc, argv, MPIrank, MPIsize);
 	instance.computeSurface();
-	//instance.surf_mesh().store(mesh::VTK, "surface_m", 0.9, 0.99);
+	instance.surf_mesh().store(mesh::VTK, "surface_m", 0.9, 0.99);
 
 	Solver<Linear_elasticity> solver_1 (instance);
 	solver_1.solve(1);

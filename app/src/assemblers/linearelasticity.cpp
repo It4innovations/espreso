@@ -9,7 +9,7 @@
 
 void Linear_elasticity::init() {
 
-	BEM = true;
+	BEM = false;
 	DOFS_PER_NODE = 3; //TODO - nacist z config souboru
 	timeEvalMain.SetName("Linear Elasticity Solver Overal Timing");
 
@@ -37,7 +37,7 @@ void Linear_elasticity::init() {
 	}
 
 	if (BEM) {
-		cilk_for (eslocal d = 0; d < partsCount; d++) {
+		for (eslocal d = 0; d < partsCount; d++) {
 			DenseMatrix K_dense, K_tmp;
 			_instance.surf_mesh().elasticity(K_dense, d);
 			//TODO: not optimal
@@ -240,12 +240,11 @@ void Linear_elasticity::init() {
 
 	K_mat_ls.resize(partsCount);
 	B1_mat_ls.resize(partsCount);
-	B0_mat_ls.
-	resize(partsCount);
+	B0_mat_ls.resize(partsCount);
 
-	std::ofstream file ("K_mat");
-	file << K_mat[0];
-	file.close();
+	//std::ofstream file ("K_mat");
+	//file << K_mat[0];
+	//file.close();
 
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
  		K_mat_ls[d]  = K_mat[d];

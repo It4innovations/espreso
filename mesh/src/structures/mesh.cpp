@@ -101,7 +101,8 @@ void Mesh::_elasticity(
 	std::vector<double> fe;
 
 	std::vector<double> inertia(3, 0.0);
-	inertia[2] = 1000; //9810.0 * 7.85e-9; //TODO: opravit zpet
+	//TODO
+	//inertia[2] = 9810.0 * 7.85e-9;
 	double ex = 2.1e5;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
@@ -477,6 +478,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	// The solution is increase the size of 'nodesCount' and keep the default numbering
 	//options[METIS_OPTION_NUMBERING] = coordinates.getNumbering();
 	METIS_SetDefaultOptions(options);
+	options[METIS_OPTION_CONTIG] = 1;
 
 	eSize = last - first;
 	nSize = _coordinates.clusterSize();
