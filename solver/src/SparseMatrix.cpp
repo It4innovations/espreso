@@ -1872,10 +1872,11 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 }
 
 void SparseMatrix::printMatCSR(char *str0){
+  int offset = CSR_I_row_indices[0] ? 1 : 0;
   printf("%s = [ ...\n",str0);
   for (int i = 0;i<rows;i++){
     for (int j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
-      printf("%d %d %3.9e \n",i+1,CSR_J_col_indices[j-1],CSR_V_values[j-1]);
+      printf("%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
     }
   }
   printf("];%s = full(sparse(%s(:,1),%s(:,2),%s(:,3),%d,%d));\n",
@@ -1885,11 +1886,6 @@ void SparseMatrix::printMatCSR(char *str0){
   }
 }
 
-void SparseMatrix::MatCondNumb(SparseMatrix & A_in, char *str0){
-//
-  tridiagFromCSR(A_in, str0);
-//
-}
 //
 
 void SparseMatrix::GramSchmidtOrtho(){
@@ -1911,7 +1907,6 @@ void SparseMatrix::GramSchmidtOrtho(){
       dense_values[j*rows+k] = w[k]/R[j*cols+j];
     }
   }
-
   delete [] w;
   delete [] R;
 }
@@ -1969,14 +1964,13 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
   delete [] tmpV;
 //
 }
-
-void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
 //
-  bool plotEigenvalues=true;
+double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, int plot_n_first_n_last_eigenvalues){
+//
   bool plot_a_and_b_defines_tridiag=false;
   int nA = A_in.rows;
-  int nMax = 100; // size of tridiagonal matrix 
-  int nEigToplot = 10;
+  int nMax = 200; // size of tridiagonal matrix 
+  //int nEigToplot = 10;
   double *s = new double[nA];
   double *s_bef = new double[nA];
   double *As = new double[nA];
@@ -2029,14 +2023,16 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
   MKL_INT info;
   MKL_INT ldz = cnt;
   info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
-  estim_cond=alphaVec[cnt-1]/alphaVec[0];
-  printf("cond(%s) = %3.15e\tit: %d\n",str0,fabs(estim_cond),cnt);
+  estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
+  if (plot_n_first_n_last_eigenvalues>0){
+    printf("cond(%s) = %3.15e\tit: %d\n",str0,estim_cond,cnt);
+  }
 
-  if (plotEigenvalues){
+  if (plot_n_first_n_last_eigenvalues>0){
     printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
-          str0,nEigToplot,cnt-nEigToplot+2,cnt);
+          str0,plot_n_first_n_last_eigenvalues,cnt-plot_n_first_n_last_eigenvalues+2,cnt);
     for (int i = 0 ; i < cnt; i++){
-      if (i < nEigToplot|| i > cnt-nEigToplot){
+      if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues){
         printf("%5d:  %3.8e \n",i+1, alphaVec[i]);
       }
     }
@@ -2049,6 +2045,8 @@ void SparseMatrix::tridiagFromCSR( SparseMatrix & A_in, char *str0){
   delete [] alphaVec;
   delete [] betaVec;
   delete [] Z;
+
+  return estim_cond;
 //
 }
 
