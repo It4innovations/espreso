@@ -37,7 +37,7 @@ void Linear_elasticity::init() {
 	}
 
 	if (BEM) {
-		for (eslocal d = 0; d < partsCount; d++) {
+		cilk_for (eslocal d = 0; d < partsCount; d++) {
 			DenseMatrix K_dense, K_tmp;
 			_instance.surf_mesh().elasticity(K_dense, d);
 			//TODO: not optimal
