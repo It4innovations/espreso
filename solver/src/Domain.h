@@ -138,7 +138,7 @@ public:
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, int x_in_vector_start_index, int y_out_vector_start_index );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in_y_out); 
-  void get_kernel_from_A( );
+  void get_kernel_from_A();
 
 	//dynamic
 	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);

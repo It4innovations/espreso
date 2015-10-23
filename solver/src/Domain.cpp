@@ -249,116 +249,216 @@ void Domain::get_kernel_from_A(){
 // Routine calculates kernel Kplus_R of K satisfied euqality
 //      K * Kplus_R = O,
 // where O is zero matrix,
-// and makes the matrix K non-singular (A_reg) utilizing spectral conditions
-// Schur complement. Then 
-//      || K - K*inv(A_reg)*K || = 0.0
+// and it makes the matrix K non-singular (K_reg) utilizing spectral conditions
+// of Schur complement. Then 
+//      || K - K*inv(K_reg)*K || = 0.0
 //
 //
-// rev. 2015-10-11 (A.M.)
+// rev. 2015-10-23 (A.M.)
+//==============================================================================
+//  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
+  bool diagonalScaling = true;            
+//  random selection of singular DOFs
+  int permutVectorActive = 1;
+//  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
+  bool diagonalRegularization=true;
+//  NtN_Mat from null pivots or fixing DOFs
+  bool use_null_pivots_or_s_set=true;
+// get and plot K eigenvalues (A is temporarily converted to dense);
+  int get_n_first_and_n_last_eigenvals_from_dense_K = 0;
+// get and plot S eigenvalues 
+  int get_n_first_and_n_last_eigenvals_from_dense_S = 6;
+// get approximation of K eigenvalues (A is temporarily converted to dense matrix);
+  int plot_n_first_n_last_eigenvalues = 10;
+
   printf("\n\n");
   printf(" ###################################################################\n");
-  printf(" #                 GET KERNEL OF A AND NULL PIVOTS                 #\n");
+  printf(" #                 Get kernel of K and null pivots                 #\n");
   printf(" ###################################################################\n");
-//
 // 
-// TODO FOR MORE GENERAL CASE MATRIX K SHOULD BE RANDOMLY PERMUTED. 
-  int SC_SIZE = 50;         // size of S to detect singular part  
-  int TWENTY  = 20;         // constant set-up to DEFECT <= TWENTY <= SC_SIZE 
-  //TODO if K.rows<=SC_SIZE, use directlyi input K instead of S
+  double COND_NUMB_FOR_SINGULAR_MATRIX                              = 1e13; 
+  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY                = 1.0e-5;
+  int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS                          = 2500;
+  int SC_SIZE = 50;                           // size of S to detect singular part  
+  int TWENTY  = 20;                           // constant set-up to DEFECT <= TWENTY <= SC_SIZE 
+  //TODO if K.rows<=SC_SIZE, use directly input K instead of S
   SparseMatrix S;
-  SparseMatrix A_rr;
-  SparseMatrix A_rs;
-  SparseMatrix A_modif = K;
-  bool diagonalScaling = true;
-  bool permutVectorActive = true;
-  bool diagonalRegularization=false;
-  bool useNullPivotsOr_s_set=false;
-
-  // diagonal scaling of A_modif:
-  // A_modif[i,j] = A_modif[i,j]/sqrt(A_modif[i,i]*A_modif[j,j]);
-  double di=1,dj=1;
-  for (int i = 0;i<A_modif.rows;i++){
-    if (diagonalScaling) {
-      di=A_modif.CSR_V_values[A_modif.CSR_I_row_indices[i]-1];
-    }
-    for (int j = A_modif.CSR_I_row_indices[i];j<A_modif.CSR_I_row_indices[i+1];j++){
-      if (diagonalScaling) {
-        dj=A_modif.CSR_V_values[A_modif.CSR_I_row_indices[A_modif.CSR_J_col_indices[j-1]-1]-1];
-      }
-      A_modif.CSR_V_values[j-1]/=sqrt(di*dj);
-    }
-  }
-
-//  A_modif.printMatCSR("A_modif");
-
-
-  vector<int> permVec;
+  SparseMatrix K_rr;
+  SparseMatrix K_rs;
   int i_start = 0;
   int NONSING_SIZE = K.rows - SC_SIZE - i_start;
   int j_start = NONSING_SIZE;
-
+  SEQ_VECTOR <int> permVec;
+  permVec.resize(K.rows);
+  SEQ_VECTOR <SEQ_VECTOR<int>> vec_I1_i2(K.rows, SEQ_VECTOR<int>(2, 1));
+  int offset = K.CSR_I_row_indices[0] ? 1 : 0;
+  //  
   // set row permVec = {0,1,2,3,4,...,K.rows};
-  for (int i=0; i<K.rows; ++i) permVec.push_back(i); // 0 1 2 A.rows
-  // random permutation
+  for (int i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 A.rows-1 
+  //
   
-  if (permutVectorActive) random_shuffle ( permVec.begin(), permVec.end() );
+  double cond_of_regular_part=0;
+  int *I_row_indices_p = new int[K.nnz] ;
+  int *J_col_indices_p = new int[K.nnz] ;
+  SEQ_VECTOR <int> tmp_vec_s;
+  tmp_vec_s.resize(SC_SIZE);
+  int v1, n_mv, kkk;
+  SEQ_VECTOR <int>::iterator it;
+  SEQ_VECTOR <int> fix_dofs;
+  fix_dofs.resize(SC_SIZE);
+  SparseMatrix K_modif;
 
-  //      r = permVec[0:NONSING_SIZE-1]     (singular DOFs)
-  //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
-  sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
-  sort(permVec.begin()+NONSING_SIZE,permVec.end());
+  double di=1,dj=1;
+  int cnt_while1=0;
 
-  std::vector<std::vector<int>> vec_I1_i2(K.rows, std::vector<int>(2, 1));
-
-  for (int i = 0; i < K.rows;i++){
-    vec_I1_i2[i][0]=permVec[i];
-    vec_I1_i2[i][1]=i; // position to create revers permutation
-  }
-
-  std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
-            [](const std::vector<int>& a, const std::vector<int>& b) {
-    return a[0] < b[0];
-  });
-
-  A_modif.ConvertToCOO(0);
-  int *I_row_indices_p = new int[A_modif.nnz] ;
-  int *J_col_indices_p = new int[A_modif.nnz] ;
-//	V_values; J_col_indices; I_row_indices;	    
-    int I_index,J_index;
-    int offset = K.CSR_I_row_indices[0] ? 1 : 0;
-    for (int i = 0;i<A_modif.nnz;i++){
-      I_index = vec_I1_i2[A_modif.I_row_indices[i]-offset][1]+offset;
-      J_index = vec_I1_i2[A_modif.J_col_indices[i]-offset][1]+offset;
-      if (I_index>J_index){
-        I_row_indices_p[i]=J_index;
-        J_col_indices_p[i]=I_index;
+  do {
+    // loop checking non-singularity of K_rr matrix
+    if (cnt_while1>0){
+      K_modif.Clear();
+    }
+    K_modif = K;
+  
+//  K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues);
+    // diagonal scaling of K_modif:
+    // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
+    for (int i = 0;i<K_modif.rows;i++){
+      if (diagonalScaling) {
+        di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
       }
-      else{
-        I_row_indices_p[i]=I_index;
-        J_col_indices_p[i]=J_index;
+      for (int j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+        if (diagonalScaling) {
+          dj=K_modif.CSR_V_values[
+            K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
+        }
+        K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
       }
-   } 
+    }
+
+  //################################################################################# 
+    if (get_n_first_and_n_last_eigenvals_from_dense_K && 
+        K_modif.cols<MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS && cnt_while1==0) {
+      K_modif.ConvertCSRToDense(0);
+    // EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
+    // Works only for matrix until size ~ 2500
+      char JOBZ_ = 'V';
+      char UPLO_ = 'U';
+      double *WK_modif = new double[K_modif.cols]; 
+      double *ZK_modif = new double[K_modif.cols*K_modif.cols]; 
+      MKL_INT info;
+      MKL_INT ldzA = K_modif.cols;
+      info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
+              K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
+      printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+            "K",get_n_first_and_n_last_eigenvals_from_dense_K,
+            K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2,K_modif.rows);
+      for (int i = 0 ; i < K_modif.rows; i++){
+        if (i < get_n_first_and_n_last_eigenvals_from_dense_K || 
+              i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
+          printf("%5d:  %3.8e \n",i+1, WK_modif[i]);
+        }
+      }
+      if (info){
+        printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
+      }
+      delete [] WK_modif;
+      delete [] ZK_modif;
+    }
+  //################################################################################# 
+
+    if (permutVectorActive==1){
+      srand(time(NULL));
+      random_shuffle ( permVec.begin(), permVec.end() );
+      sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
+      sort(permVec.begin()+NONSING_SIZE,permVec.end());
+    }
+    else if (permutVectorActive==2){
+      // random permutation
+      n_mv = 0; kkk=0;
+      srand(time(NULL));
+      // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
+      // If not, missing numbers are added and checked again.  
+      do {
+        for (int i = 0;i<(SC_SIZE-n_mv);i++){
+          v1 = rand() % K_modif.rows;
+          tmp_vec_s[n_mv+i]=v1; 
+        }
+        it=tmp_vec_s.begin();
+        std::sort(tmp_vec_s.begin(), tmp_vec_s.end());
+        it = std::unique(tmp_vec_s.begin(), tmp_vec_s.end());
+        n_mv = distance(tmp_vec_s.begin(),it);
+        kkk++;
+     } while (n_mv != SC_SIZE && kkk < 100);
+  //
+      int ik=0,cnt_i=0;
+      for (int i = 0;i<permVec.size();i++){
+        if (i==tmp_vec_s[ik]){
+          permVec[ik+NONSING_SIZE]=tmp_vec_s[ik];
+          ik++;
+        }
+        else{
+          permVec[cnt_i]=i;
+          cnt_i++;
+        }
+      }
+      printf("n_mv: %d, SC_SIZE: %d, it. for RAND: %d\n",n_mv,SC_SIZE,kkk);
+    }
+    //      r = permVec[0:NONSING_SIZE-1]     (singular DOFs)
+    //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
+
+    if (permutVectorActive>0){
 //
-  for (int i = 0; i<A_modif.nnz;i++){
-    A_modif.I_row_indices[i] = I_row_indices_p[i];
-    A_modif.J_col_indices[i] = J_col_indices_p[i];
-  }                            
-  A_modif.ConvertToCSRwithSort(0);
+      for (int i = 0; i < K.rows;i++){
+        vec_I1_i2[i][0]=permVec[i];
+        vec_I1_i2[i][1]=i; // position to create revers permutation
+      }
+
+      std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+                [](const SEQ_VECTOR <int>& a, const SEQ_VECTOR <int>& b) {
+        return a[0] < b[0];
+      });
+      // permutations made on matrix in COO format 
+      K_modif.ConvertToCOO(0);
+      int I_index,J_index;
+      for (int i = 0;i<K_modif.nnz;i++){
+        I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+        J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+        if (I_index>J_index){
+          I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+        }
+        else{
+          I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+        }
+      } 
+//
+      for (int i = 0; i<K_modif.nnz;i++){
+        K_modif.I_row_indices[i] = I_row_indices_p[i];
+        K_modif.J_col_indices[i] = J_col_indices_p[i];
+      }                            
+      K_modif.ConvertToCSRwithSort(0);
+    }
+//
+    for (int i = 0;i<SC_SIZE;i++) fix_dofs[i]=permVec[NONSING_SIZE + i] + offset; 
+    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, NONSING_SIZE);
+//    K_rr.printMatCSR("K_rr");
+    cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues);
+    printf("cond_of_regular_part=%3.9f\n",cond_of_regular_part);
+//
+    cnt_while1++;
+  } while ( cond_of_regular_part > COND_NUMB_FOR_SINGULAR_MATRIX && cnt_while1<100);
+
   delete [] I_row_indices_p;
   delete [] J_col_indices_p;
 
+//  for (int i = 0 ; i< SC_SIZE;i++){ printf("%d ",permVec[NONSING_SIZE+i]); } printf("\n");
 //
-  vector <int> fix_dofs;
-  for (int i = 0;i<SC_SIZE;i++) fix_dofs.push_back(permVec[NONSING_SIZE + i] + offset); 
-  A_rr.getSubDiagBlockmatrix(A_modif,A_rr,i_start, NONSING_SIZE);
-  A_rr.MatCondNumb(A_rr,"A_rr");
-  A_rs.getSubBlockmatrix_rs(A_modif,A_rs,i_start, NONSING_SIZE,j_start,SC_SIZE);
+  K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, NONSING_SIZE,j_start,SC_SIZE);
 //
   SparseSolver createSchur;
-  createSchur.ImportMatrix(A_modif);
+  // TODO Routine Create_SC can provide also factorization of K_rr which can avoid to latter factorization.
+  createSchur.ImportMatrix(K_modif);
+  K_modif.Clear();
   createSchur.Create_SC(S,SC_SIZE,false);
   createSchur.Clear();
-//  S.printMatCSR("Schur_complement");
   S.type='S';
   S.ConvertCSRToDense(1);
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
@@ -379,9 +479,19 @@ void Domain::get_kernel_from_A(){
   for (int i = itMax-1; i > 0;i--){ 
     ratio = fabs(W[i-1]/W[i]);
 //    printf("eig[%d],eig[%d]= [%3.15e/%3.15e]\n",i,i-1,W[i],W[i-1]);
-    if (ratio < 1e-5){
+    if (ratio < JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY){
       defect_A_in=i;
       printf("\tratio = %3.15e, DEFECT = %d\n",ratio,defect_A_in);
+    }
+  }
+// 
+  printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+        "S",get_n_first_and_n_last_eigenvals_from_dense_S,
+        S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2,S.rows);
+  for (int i = 0 ; i < S.rows; i++){
+    if (i < get_n_first_and_n_last_eigenvals_from_dense_S || 
+          i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
+      printf("%5d:  %3.8e \n",i+1, W[i]);
     }
   }
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
@@ -400,18 +510,17 @@ void Domain::get_kernel_from_A(){
     }
   }
   R_s.ConvertDenseToCSR(0);
-//  R_s.printMatCSR("R_s");
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 	SparseMatrix R_r; 
-	R_r.MatMat(A_rs,'N',R_s); 
-  //R_r.printMatCSR("A_rs*R_s");
-  SparseSolver A_rr_solver; 
-  A_rr_solver.ImportMatrix(A_rr);
-  A_rr.Clear();
-  A_rr_solver.Factorization();
-  A_rr_solver.SolveMat_Sparse(R_r); // inv(A_rr)*A_rs*R_s 
+	R_r.MatMat(K_rs,'N',R_s); 
+  K_rs.Clear();
+  SparseSolver K_rr_solver; 
+  K_rr_solver.ImportMatrix(K_rr);
+  K_rr.Clear();
+  K_rr_solver.Factorization();
+  K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s 
+  K_rr_solver.Clear();
   
-//  R_r.printMatCSR("R_r");
   R_r.ConvertCSRToDense(0);
   R_s.ConvertCSRToDense(0);
 // --------------- CREATING WHOLE KERNEL Kplus_R = [ (R_r)^T (R_s)^T ]^T
@@ -424,14 +533,14 @@ void Domain::get_kernel_from_A(){
   for (int j = 0; j < Kplus_R.cols; j++){
     for (int i = 0; i < R_r.rows; i++){
       if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-1];
+        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
       }
       Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r.rows + i]/sqrt(di);			
       cnt++;
     }
     for (int i = 0; i < R_s.rows; i++){
       if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r.rows]]-1];
+        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r.rows]]-offset];
       }
 	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r.rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
       cnt++;
@@ -473,20 +582,23 @@ void Domain::get_kernel_from_A(){
   double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
   rho = 1.0 * rho;
 //
-//  K.printMatCSR("A_singular");
-  K.MatCondNumb(K,"A_singular");
   if (diagonalRegularization){
     for (int i = 0; i < null_pivots.size(); i++){
-      K.CSR_V_values[K.CSR_I_row_indices[null_pivots[i]-1]-1]+=rho;
+      K.CSR_V_values[K.CSR_I_row_indices[null_pivots[i]-offset]-offset]+=rho;
     }
   }
   else{
     SparseMatrix N;
-    if (useNullPivotsOr_s_set){
+    if (use_null_pivots_or_s_set){
       N.CreateMatFromRowsFromMatrix( Kplus_R, null_pivots);
     }
     else
     {
+      printf("fix_dofs...\n");
+      for (int i = 0;i<fix_dofs.size();i++)
+        printf("%d ",fix_dofs[i]);
+      printf("\n");
+
       N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
     }
   //null_pivots
@@ -504,19 +616,17 @@ void Domain::get_kernel_from_A(){
     NtN.Clear();
     NtN_Mat.MatMat(N,'N',Nt);
     NtN_Mat.RemoveLower();
-    //K.MatCondNumb(K,"A_singular");
+    //K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues);
     K.MatAddInPlace (NtN_Mat,'N', rho);
   }
-//  K.printMatCSR("A_regularized");
-  K.MatCondNumb(K,"A_regularized");
+//  K.printMatCSR("K_regularized");
+//  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
 
 
   printf(" =============================================================\n\n");
 
   delete [] W;
   delete [] Z;
-  //delete [] perm;
-
 }
 
 
