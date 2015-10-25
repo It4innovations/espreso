@@ -9,21 +9,18 @@ namespace esoutput {
 class VTK: public ResultStore {
 
 public:
-	VTK(const std::string &path, int rank, int size): _file(path), _rank(rank), _size(size) { };
+	VTK(const mesh::Mesh &mesh, const std::string &path): ResultStore(mesh, path) { };
 
-	void store(const mesh::Mesh &mesh, double shrinkSubdomain, double shringCluster);
-	void store(const mesh::Mesh &mesh, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster);
+	void store(double shrinkSubdomain, double shringCluster);
+	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster);
 
-private:
+protected:
 	void head();
-	void coordinates(const mesh::Coordinates &coordinates, double shrinkSubdomain, double shringCluster);
-	void elements(const mesh::Mesh &mesh);
-	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement);
+	virtual void coordinates(const mesh::Coordinates &coordinates, double shrinkSubdomain, double shringCluster);
+	virtual void elements(const mesh::Mesh &mesh);
+	virtual void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement) = 0;
 
 	std::ofstream _vtk;
-	std::string _file;
-	int _rank;
-	int _size;
 };
 
 

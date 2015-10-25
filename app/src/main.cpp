@@ -30,14 +30,14 @@ int main(int argc, char** argv)
 //		m.partitiate(4,0);
 //		m.store(mesh::ESPRESO_OUTPUT, "ansys_dec");
 //	}
-//
-////	mesh::Mesh m(MPIrank, MPIsize);
-////	m.load(mesh::ESPRESO_INPUT, argc, argv);
-////	m.store(mesh::VTK, "ans_vtk");
-//
-//
-//	MPI_Finalize();
-//	return 0;
+
+	mesh::Mesh m(MPIrank, MPIsize);
+	m.load(mesh::ESPRESO_INPUT, argc, argv);
+	m.store(mesh::VTK_SURFACE, "ans_vtk");
+
+
+	MPI_Finalize();
+	return 0;
 
 #ifdef CATALYST
     	Adaptor::Initialize(argc, argv);

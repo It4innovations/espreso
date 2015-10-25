@@ -39,7 +39,8 @@ enum Input {
 
 enum Output {
 	ESPRESO_OUTPUT,
-	VTK
+	VTK_FULL,
+	VTK_SURFACE
 };
 
 class Boundaries;

@@ -46,14 +46,19 @@ void Mesh::store(Output output, const std::string &path, std::vector<std::vector
 {
 	switch (output) {
 	case ESPRESO_OUTPUT: {
-		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
-		s.store(*this, shrinkSubdomain, shringCluster);
+		esoutput::Store<esoutput::Esdata> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
 		std::cout << "Warning: ESPRESO output format does not support the displacement.\n";
 		break;
 	}
-	case VTK: {
-		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
-		s.store(*this, displacement, shrinkSubdomain, shringCluster);
+	case VTK_FULL: {
+		esoutput::Store<esoutput::VTK_Full> s(*this, path);
+		s.store(displacement, shrinkSubdomain, shringCluster);
+		break;
+	}
+	case VTK_SURFACE: {
+		esoutput::Store<esoutput::VTK_Surface> s(*this, path);
+		s.store(displacement, shrinkSubdomain, shringCluster);
 		break;
 	}
 	default: {
@@ -67,13 +72,18 @@ void Mesh::store(Output output, const std::string &path, double shrinkSubdomain,
 {
 	switch (output) {
 	case ESPRESO_OUTPUT: {
-		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
-		s.store(*this, shrinkSubdomain, shringCluster);
+		esoutput::Store<esoutput::Esdata> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
 		break;
 	}
-	case VTK: {
-		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
-		s.store(*this, shrinkSubdomain, shringCluster);
+	case VTK_FULL: {
+		esoutput::Store<esoutput::VTK_Full> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
+		break;
+	}
+	case VTK_SURFACE: {
+		esoutput::Store<esoutput::VTK_Surface> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
 		break;
 	}
 	default: {
