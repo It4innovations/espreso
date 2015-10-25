@@ -23,6 +23,23 @@ int main(int argc, char** argv)
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+//
+//	mesh::Mesh mesh(MPIrank, MPIsize);
+//	mesh.load(mesh::ESPRESO_INPUT, argc, argv);
+//
+//	std::vector<std::vector<double> > displacement;
+//	displacement.resize(mesh.parts());
+//	for (size_t p = 0; p < mesh.parts(); p++) {
+//		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
+//			displacement[p].push_back(1);
+//		}
+//	}
+//
+//	mesh.store(mesh::VTK_SURFACE, "surface", displacement);
+//
+//	MPI_Finalize();
+//	exit(EXIT_SUCCESS);
+
 
 #ifdef CATALYST
     	Adaptor::Initialize(argc, argv);
