@@ -2192,7 +2192,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
     					for (it_set_l = local_boundaries[i].begin(); it_set_l != local_boundaries[i].end(); ++it_set_l) {
     						for (int d_i = 0; d_i < dofs_per_node; d_i++ ) {
     							myBorderDOFs_sp      .push_back( dofs_per_node * coordinates.globalIndex(i) + d_i ); // mapping local local to global
-    							myBorderDOFs_sp_loc_n.push_back( dofs_per_node *                                  i + d_i ); // in local numbering
+    							myBorderDOFs_sp_loc_n.push_back( dofs_per_node *                          i + d_i ); // in local numbering
     						}
     					}
     				}
@@ -2340,76 +2340,84 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
        	}
 
-       	if (dup_cnt_sp > 1){
+       	if (dup_cnt_sp > 1) {
    			myBorderDOFs_sp_cnt.push_back(dup_cnt_sp);
    			myBorderDOFs_sp_red.push_back(myBorderDOFs_sp[myBorderDOFs_sp.size() - 1]);
        	}
 
 
     	for (eslocal j = 0; j < myNeighClusters.size(); j++) {
-           	dup_cnt_sp = 1;
-           	for (eslocal i = 1; i < neighBorderDofs_sp[j].size(); i++) {
 
-           		if (neighBorderDofs_sp[j][i-1] != neighBorderDofs_sp[j][i]) {
-           			neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
-           			neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][i-1]);
-           			dup_cnt_sp = 1;
-           		} else {
-           			dup_cnt_sp++;
-           		}
+    		//if ( neighBorderDofs_sp[j].size() && myBorderDOFs_sp.size() ) {
 
-           	}
+				dup_cnt_sp = 1;
+				for (eslocal i = 1; i < neighBorderDofs_sp[j].size(); i++) {
 
-           	if (dup_cnt_sp > 1){
-           		neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
-           		neighBorderDofs_sp_red[j].push_back(myBorderDOFs_sp[neighBorderDofs_sp_red[j].size() - 1]);
-           	}
+					if (neighBorderDofs_sp[j][i-1] != neighBorderDofs_sp[j][i]) {
+						neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
+						neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][i-1]);
+						dup_cnt_sp = 1;
+					} else {
+						dup_cnt_sp++;
+					}
 
+				}
+
+				if (dup_cnt_sp > 1 ){
+					neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
+					//neighBorderDofs_sp_red[j].push_back(myBorderDOFs_sp[neighBorderDofs_sp_red[j].size() - 1]);
+                                                  neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][neighBorderDofs_sp[j].size() - 1]);  
+				}
+
+    		//}
     	}
 
 
     	for (eslocal i = 0; i < myNeighClusters.size(); i++) {
-    		int d = myNeighClusters[i];
-    		int mydofs_index = 0;
-    		int nedofs_index = 0;
 
-    		if ( i == 0 && MPIrank < myNeighClusters[i] ) {
-    			for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
-    				for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
-    					myNeighsSparse_sp[j].push_back(MPIrank);
-    		}
+    		//if ( neighBorderDofs_sp[i].size() && myBorderDOFs_sp.size() ) {
 
-    		do {
-      		  if ( neighBorderDofs_sp_red.size() > 0 && myBorderDOFs_sp_red.size() > 0 )
-    			if ( neighBorderDofs_sp_red[i][nedofs_index] == myBorderDOFs_sp_red[mydofs_index] ) {
-        			for (eslocal j = 0; j < neighBorderDofs_sp_cnt[i][nedofs_index]; j++)
-    					myNeighsSparse_sp[mydofs_index].push_back(d);
-    				mydofs_index++;
-    				nedofs_index++;
-    			} else {
-    				if ( neighBorderDofs_sp_red[i][nedofs_index] > myBorderDOFs_sp_red[mydofs_index] ) {
-    					mydofs_index++;
-    				} else {
-    					nedofs_index++;
-    				}
-    			}
+				int d = myNeighClusters[i];
+				int mydofs_index = 0;
+				int nedofs_index = 0;
 
-    		} while (mydofs_index < myBorderDOFs_sp_red.size() && nedofs_index < neighBorderDofs_sp_red[i].size() );
+				if ( i == 0 && MPIrank < myNeighClusters[i] ) {
+					for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
+						for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
+							myNeighsSparse_sp[j].push_back(MPIrank);
+				}
 
+				do {
+				  if ( neighBorderDofs_sp_red[i].size() > 0 && myBorderDOFs_sp_red.size() > 0 )
+					if ( neighBorderDofs_sp_red[i][nedofs_index] == myBorderDOFs_sp_red[mydofs_index] ) {
+						for (eslocal j = 0; j < neighBorderDofs_sp_cnt[i][nedofs_index]; j++)
+							myNeighsSparse_sp[mydofs_index].push_back(d);
+						mydofs_index++;
+						nedofs_index++;
+					} else {
+						if ( neighBorderDofs_sp_red[i][nedofs_index] > myBorderDOFs_sp_red[mydofs_index] ) {
+							mydofs_index++;
+						} else {
+							nedofs_index++;
+						}
+					}
 
-    		if ( i < myNeighClusters.size() - 1)
-    			if ( MPIrank > myNeighClusters[i] && MPIrank < myNeighClusters[i+1] )
-    				for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
-        				for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
-        					myNeighsSparse_sp[j].push_back(MPIrank);
+				} while (mydofs_index < myBorderDOFs_sp_red.size() && nedofs_index < neighBorderDofs_sp_red[i].size() );
 
 
+				if ( i < myNeighClusters.size() - 1)
+					if ( MPIrank > myNeighClusters[i] && MPIrank < myNeighClusters[i+1] )
+						for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
+							for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
+								myNeighsSparse_sp[j].push_back(MPIrank);
 
-    		if ( i == myNeighClusters.size() -1 && MPIrank > myNeighClusters[i] )
-    			for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
-    				for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
-    					myNeighsSparse_sp[j].push_back(MPIrank);
 
+
+				if ( i == myNeighClusters.size() -1 && MPIrank > myNeighClusters[i] )
+					for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
+						for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
+							myNeighsSparse_sp[j].push_back(MPIrank);
+    		//}
     	}
 
 
@@ -2757,7 +2765,7 @@ void Boundaries::create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1,
 
 				eslocal d                = subs_with_elem[ myLambdas_sp[j][5] ];
 				//eslocal domDofNODENumber = coordinates.localIndex(clustDofNODENumber, d);
-				eslocal domDofNODENumber =coordinates.localIndex(clustDofNODENumber, d);
+				eslocal domDofNODENumber = coordinates.localIndex(clustDofNODENumber, d);
 				eslocal domDOFNumber     = DOFS_PER_NODE * domDofNODENumber + dofNODEoffset;
 				// #ifdef USE_TBB
 				// m.lock();

@@ -240,12 +240,11 @@ void Linear_elasticity::init() {
 
 	K_mat_ls.resize(partsCount);
 	B1_mat_ls.resize(partsCount);
-	B0_mat_ls.
-	resize(partsCount);
+	B0_mat_ls.resize(partsCount);
 
-	std::ofstream file ("K_mat");
-	file << K_mat[0];
-	file.close();
+	//std::ofstream file ("K_mat");
+	//file << K_mat[0];
+	//file.close();
 
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
  		K_mat_ls[d]  = K_mat[d];

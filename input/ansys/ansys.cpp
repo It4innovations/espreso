@@ -114,7 +114,10 @@ void Ansys::boundaryConditions(mesh::Coordinates &coordinates)
 
 void Ansys::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 {
-	//TODO: is there any way how to load it?
+	boundaries.resize(mesh.coordinates().size());
+	for (size_t i = 0; i < mesh.coordinates().size(); i++) {
+		boundaries[i].insert(0);
+	}
 }
 
 

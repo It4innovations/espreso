@@ -110,11 +110,11 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = 50;
+	solver.CG_max_iter	 = 500;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = 0.0001;
 	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 0;
+	solver.USE_PREC		 = 1;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
@@ -211,11 +211,11 @@ void LinearSolver::init(
 		cluster.domains[d].vec_c = vec_c[d];
 
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+	//cilk_
+          for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		for (int i = 0; i < fix_nodes[d].size(); i++)
  			for (int d_i = 0; d_i < DOFS_PER_NODE; d_i++)
 				cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
-				//TODO: pocita se 3 dofs na uzel
 
 	 timeSetRHS.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSetRHS);

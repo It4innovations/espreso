@@ -1,0 +1,11 @@
+
+ INTERACTIVE LINES PER PAGE     =   1000000
+ INTERACTIVE CHARACTERS PER LINE=        80
+ FILE OUTPUT LINES PER PAGE     =   1000000
+ FILE OUTPUT CHARACTERS PER LINE=       132
+
+ LIST DATA TABLE  ALL   FOR ALL MATERIALS
+
+ *** WARNING ***                         CP =      27.141   TIME= 12:04:01
+ The requested ALL table data for ALL materials does not exist.  The     
+ TBLIST command is ignored.                                              
