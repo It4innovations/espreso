@@ -253,21 +253,35 @@ void Domain::get_kernel_from_A(){
 //
 // rev. 2015-10-23 (A.M.)
 //==============================================================================
+//
+//    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
   bool diagonalScaling = true;            
+
+//    2) permutVectorActive
 //  random selection of singular DOFs
   int permutVectorActive = 1; // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
-// NtN_Mat from null pivots or fixing DOFs
+
+//    3) use_null_pivots_or_s_set
+  // NtN_Mat from null pivots or fixing DOFs
   bool use_null_pivots_or_s_set=true;
+
+//    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
 //  size of set 's' = defect(K)
-//  It's is active, only if and only if use_null_pivots_or_s_set=true.
+//  It's is active, only if and only if use_null_pivots_or_s_set
   bool diagonalRegularization=true;
-// get and plot K eigenvalues (A is temporarily converted to dense);
+
+//    5) get_n_first_and_n_last_eigenvals_from_dense_K
+// get and print K eigenvalues (A is temporarily converted to dense);
   int get_n_first_and_n_last_eigenvals_from_dense_K = 0;
-// get and plot S eigenvalues 
+
+//    6) get_n_first_and_n_last_eigenvals_from_dense_S
+// get and print S eigenvalues 
   int get_n_first_and_n_last_eigenvals_from_dense_S = 0;
-// get approximation of K eigenvalues (A is temporarily converted to dense matrix);
+
+//    7) plot_n_first_n_last_eigenvalues
+// get of K eigenvalues (A is temporarily converted to dense matrix);
   int plot_n_first_n_last_eigenvalues = 0;
 
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
@@ -277,21 +291,34 @@ void Domain::get_kernel_from_A(){
   printf(" #                 Get kernel of K and null pivots                 #\n");
   printf(" ###################################################################\n");
 // 
+//    1) COND_NUMB_FOR_SINGULAR_MATRIX
 //  If cond(A) > COND_NUMB_FOR_SINGULAR_MATRIX, A is considered as singular matrix.
-  double COND_NUMB_FOR_SINGULAR_MATRIX              = 1e13; 
-  // if CHECK_NONSING>0, checking of K_rr non-singularity is activated and it is repated 
-  // (CHECK_NONSING) times.
-  int CHECK_NONSING                                 = 0;
-  // if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
-  int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
-  // specification of size of Schur complement used for detection of zero eigenvalues.
-  // SC_SIZE >= expected defect 'd' (e.g. in elasticity d=6).
-  int SC_SIZE                                       = 50;  
-  // testing last TWENTY eigenvalues of S to distinguish, if d-last ones are zero or not.
-  int TWENTY                                        = 20;  
+  double COND_NUMB_FOR_SINGULAR_MATRIX=1e13; 
+
+//    2) CHECK_NONSING
+// if CHECK_NONSING>0, checking of K_rr non-singularity is activated and it is repeated 
+// (CHECK_NONSING) times.
+  int CHECK_NONSING=0;
+
+//    3) MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS
+// if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
+  int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS=2500;
+
+//    4) SC_SIZE
+// specification of size of Schur complement used for detection of zero eigenvalues.
+// SC_SIZE >= expected defect 'd' (e.g. in elasticity d=6).
+  int SC_SIZE=50;  
+
+//    5) TWENTY
+// testing last TWENTY eigenvalues of S to distinguish, if d-last ones are zero or not.
+  int TWENTY=20;  
   // TWENTY eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
-  // if d[i]/d[i+1]< JUMP_IN..., d[i] is last nonzero eigenvalue
-  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY   = 1.0e-5;
+  
+//    6) JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY
+// if d[i]/d[i+1]< JUMP_IN..., d[i] is last nonzero eigenvalue
+  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY=1.0e-5;
+
+  
   //TODO if K.rows<=SC_SIZE, use directly input K instead of S
   //
   //
