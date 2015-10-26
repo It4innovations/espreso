@@ -9,9 +9,11 @@
 
 void Linear_elasticity::init() {
 
-	BEM = false;
-	DOFS_PER_NODE = 3; //TODO - nacist z config souboru
+	BEM 			= false;
+	DOFS_PER_NODE 	= 3; //TODO - nacist z config souboru
 	timeEvalMain.SetName("Linear Elasticity Solver Overal Timing");
+
+	// -------------------------------------------------------------------------------------
 
     MPI_rank = _instance.rank();
     MPI_size = _instance.size();

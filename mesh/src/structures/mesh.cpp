@@ -112,7 +112,8 @@ void Mesh::_elasticity(
 
 	std::vector<double> inertia(3, 0.0);
 	//TODO
-	//inertia[2] = 9810.0 * 7.85e-9;
+	inertia[2] = 9810.0 * 7.85e-9;
+
 	double ex = 2.1e5;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
