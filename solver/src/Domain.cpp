@@ -261,7 +261,7 @@ void Domain::get_kernel_from_A(){
   bool use_null_pivots_or_s_set=true;
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
 //  size of set 's' = defect(K)
-//  It's is active, only if 'use_null_pivots_or_s_set=true'.
+//  It's is active, only if and only if use_null_pivots_or_s_set=true.
   bool diagonalRegularization=true;
 // get and plot K eigenvalues (A is temporarily converted to dense);
   int get_n_first_and_n_last_eigenvals_from_dense_K = 0;
@@ -279,18 +279,19 @@ void Domain::get_kernel_from_A(){
 // 
 //  If cond(A) > COND_NUMB_FOR_SINGULAR_MATRIX, A is considered as singular matrix.
   double COND_NUMB_FOR_SINGULAR_MATRIX              = 1e13; 
-  // n eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
-//
-  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY   = 1.0e-5;
-  // if CHECK_NONSING>0, checking of K_rr regularity is activated and it is repated CHECK_NONSING times.
+  // if CHECK_NONSING>0, checking of K_rr non-singularity is activated and it is repated 
+  // (CHECK_NONSING) times.
   int CHECK_NONSING                                 = 0;
-  // option max size of K, if the size is less, K is converted to dense format to get eigenvalues.
+  // if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
   int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
   // specification of size of Schur complement used for detection of zero eigenvalues.
+  // SC_SIZE >= expected defect 'd' (e.g. in elasticity d=6).
   int SC_SIZE                                       = 50;  
-  // 
-  // testing last TWENTY eigenvalues of S to distinguish if d-last ones are zero or not.
-  int TWENTY                                        = 20;  // index on which searching of null eigenval starts
+  // testing last TWENTY eigenvalues of S to distinguish, if d-last ones are zero or not.
+  int TWENTY                                        = 20;  
+  // TWENTY eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
+  // if d[i]/d[i+1]< JUMP_IN..., d[i] is last nonzero eigenvalue
+  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY   = 1.0e-5;
   //TODO if K.rows<=SC_SIZE, use directly input K instead of S
   //
   //
