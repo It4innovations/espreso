@@ -280,7 +280,7 @@ void Domain::get_kernel_from_A(){
 //
   double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY   = 1.0e-5;
   // if CHECK_NONSING>0, checking of K_rr regularity is activated and it is repated CHECK_NONSING times.
-  int CHECK_NONSING                                 = 0;
+  int CHECK_NONSING                                 = 1;
   // option max size of K, if the size is less, K is converted to dense format to get eigenvalues.
   int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
   // specification of size of Schur complement used for detection of zero eigenvalues.
