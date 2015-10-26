@@ -1787,7 +1787,7 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
 // step 1: getting nnz of submatrix
   int nnz_new=0;
   int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
-  printf("\toffset = %d\n",offset);
+//  printf("\toffset = %d\n",offset);
   for (int i = 0;i<size_rr;i++){
     for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
       if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start && 
@@ -1837,7 +1837,7 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 // step 1: getting nnz of submatrix
   int nnz_new=0;
   int offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
-  printf("\toffset = %d\n",offset);
+//  printf("\toffset = %d\n",offset);
   for (int i = 0;i<i_size;i++){
     for (int j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
       if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start && 
@@ -1929,7 +1929,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
   auto ij= [&]( int ii, int jj ) -> int 
    { return ii + rows*jj; };
  // 
-  printf("pivots: ");
+  //printf("pivots: ");
   for (int j=0;j<cols;j++){
     it = std::max_element(N.begin(),N.end()-j*rows,myfn);
     I = it - N.begin();
@@ -1947,7 +1947,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
     memcpy( &(N[ij(0,cols-1-j)]), &(N[ij(0,colInd)]) , sizeof( double ) * rows);
     memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
     pivot = N[ij(rows-1-j,cols-1-j)];
-    printf("%3.1e ",pivot);
+    //printf("%3.1e ",pivot);
     for (int J=0;J<cols-j-1;J++){
       for (int I=0;I<rows-j;I++){
         N[ij(I,J)] -= N[ij(I,cols-1-j)]*N[ij(rows-1-j,J)]/pivot;
@@ -1955,7 +1955,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
     }
   }  
 // 
-  printf("\n");
+  //printf("\n");
   for (int i = 0;i<cols;i++){
     null_pivots.push_back(_nul_piv[rows-1-i]+1);
   }

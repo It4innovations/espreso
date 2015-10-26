@@ -257,17 +257,20 @@ void Domain::get_kernel_from_A(){
   bool diagonalScaling = true;            
 //  random selection of singular DOFs
   int permutVectorActive = 1; // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
-//  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
-//  size of set 's' = defect(K)
-  bool diagonalRegularization=true;
 // NtN_Mat from null pivots or fixing DOFs
   bool use_null_pivots_or_s_set=true;
+//  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
+//  size of set 's' = defect(K)
+//  It's is active, only if 'use_null_pivots_or_s_set=true'.
+  bool diagonalRegularization=true;
 // get and plot K eigenvalues (A is temporarily converted to dense);
   int get_n_first_and_n_last_eigenvals_from_dense_K = 0;
 // get and plot S eigenvalues 
-  int get_n_first_and_n_last_eigenvals_from_dense_S = 6;
+  int get_n_first_and_n_last_eigenvals_from_dense_S = 0;
 // get approximation of K eigenvalues (A is temporarily converted to dense matrix);
-  int plot_n_first_n_last_eigenvalues = 6;
+  int plot_n_first_n_last_eigenvalues = 0;
+
+  if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
   printf("\n\n");
   printf(" ###################################################################\n");
@@ -280,7 +283,7 @@ void Domain::get_kernel_from_A(){
 //
   double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY   = 1.0e-5;
   // if CHECK_NONSING>0, checking of K_rr regularity is activated and it is repated CHECK_NONSING times.
-  int CHECK_NONSING                                 = 1;
+  int CHECK_NONSING                                 = 0;
   // option max size of K, if the size is less, K is converted to dense format to get eigenvalues.
   int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
   // specification of size of Schur complement used for detection of zero eigenvalues.
@@ -518,17 +521,19 @@ void Domain::get_kernel_from_A(){
 //    printf("eig[%d],eig[%d]= [%3.15e/%3.15e]\n",i,i-1,W[i],W[i-1]);
     if (ratio < JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY){
       defect_A_in=i;
-      printf("\tratio = %3.15e, DEFECT = %d\n",ratio,defect_A_in);
+ //     printf("\tratio = %3.15e, DEFECT = %d\n",ratio,defect_A_in);
     }
   }
 // 
-  printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
-        "S",get_n_first_and_n_last_eigenvals_from_dense_S,
-        S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2,S.rows);
-  for (int i = 0 ; i < S.rows; i++){
-    if (i < get_n_first_and_n_last_eigenvals_from_dense_S || 
-          i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
-      printf("%5d:  %3.8e \n",i+1, W[i]);
+  if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
+    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+          "S",get_n_first_and_n_last_eigenvals_from_dense_S,
+          S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2,S.rows);
+    for (int i = 0 ; i < S.rows; i++){
+      if (i < get_n_first_and_n_last_eigenvals_from_dense_S || 
+            i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
+        printf("%5d:  %3.8e \n",i+1, W[i]);
+      }
     }
   }
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
@@ -588,15 +593,15 @@ void Domain::get_kernel_from_A(){
   SEQ_VECTOR <int> null_pivots;
   Kplus_R.getNullPivots(null_pivots);
 
-  printf("null pivots, int ");
-  for (int i = 0;i<null_pivots.size();i++)
-    printf("%d ",null_pivots[i]);
-  printf("\n");
+//  printf("null pivots, int ");
+//  for (int i = 0;i<null_pivots.size();i++)
+//    printf("%d ",null_pivots[i]);
+//  printf("\n");
 
 //
   double * AR =  new double [K.rows];
   double norm_AR_row,norm_AR = 0.0;
-  printf("||A*Kplus_R[:,i]|| ...   \n");
+//  printf("||A*Kplus_R[:,i]|| ...   \n");
   for (int i = 0;i<Kplus_R.cols;i++){
     memset(AR,0,Kplus_R.rows * sizeof(double));
   	K.spmv_( K,&(Kplus_R.dense_values[i*Kplus_R.rows]),AR);
@@ -604,7 +609,7 @@ void Domain::get_kernel_from_A(){
     for (int j = 0; j < Kplus_R.rows;j++){
       norm_AR_row+=AR[j]*AR[j];
     }
-    printf("%3.3e  ",sqrt(norm_AR_row));
+ //   printf("%3.3e  ",sqrt(norm_AR_row));
     norm_AR+=norm_AR_row;
   }
   delete [] AR;
@@ -631,10 +636,10 @@ void Domain::get_kernel_from_A(){
     }
     else
     {
-      printf("fix_dofs...\n");
-      for (int i = 0;i<fix_dofs.size();i++)
-        printf("%d ",fix_dofs[i]);
-      printf("\n");
+//      printf("fix_dofs...\n");
+//      for (int i = 0;i<fix_dofs.size();i++)
+//        printf("%d ",fix_dofs[i]);
+//      printf("\n");
 
       N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
     }
