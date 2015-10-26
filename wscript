@@ -72,7 +72,6 @@ def configure(ctx):
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("physics")
-    ctx.recurse("composer")
     ctx.recurse("catalyst")
     ctx.recurse("app")
 
@@ -224,7 +223,6 @@ def build(ctx):
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("physics")
-    ctx.recurse("composer")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")
     ctx.recurse("app")

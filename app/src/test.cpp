@@ -6,7 +6,6 @@
 #include "essolver.h"
 #include "esmesh.h"
 #include "esphysics.h"
-#include "escomposer.h"
 
 
 int main(int argc, char** argv)
@@ -21,7 +20,7 @@ int main(int argc, char** argv)
 	mesh::Mesh m(MPIrank, MPIsize);
 	m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	composer::FEM<physics::LinearElasticity> fem(m);
+	physics::LinearElasticity<physics::FEM> fem;
 
 	SparseMatrix sm;
 	fem.element(sm, 0);

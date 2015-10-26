@@ -1,8 +1,20 @@
 
 PHYSICS = "physics"
 
+source_files = (
+    "linear/linear.cpp",
+    #"linear/elasticity/linearelasticity.cpp"
+)
+
 def configure(ctx):
     ctx.setenv(PHYSICS, ctx.all_envs[""].derive());
 
 def build(ctx):
     ctx.env = ctx.all_envs[PHYSICS]
+
+    ctx.lib(
+        source          = source_files,
+        target          = "esphysics",
+        use             = "espreso_includes",
+        install_path    = ctx.LIBRARIES
+    )
