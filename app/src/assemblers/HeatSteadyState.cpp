@@ -75,7 +75,9 @@ void HeatSteadyState::init() {
 		vec_c,
 		partsCount,
 		DOFS_PER_NODE,
-		_instance.globalBoundaries()
+		_instance.globalBoundaries(),
+		_instance.mesh().coordinates()
+
 	);
 
 	 timeB1loc.AddEndWithBarrier();
@@ -98,7 +100,9 @@ void HeatSteadyState::init() {
 		partsCount,
 		DOFS_PER_NODE,
 		neigh_clusters,
-        _instance.localBoundaries()
+        _instance.localBoundaries(),
+		_instance.mesh().coordinates()
+
 	);
 
 	 timeB1glob.AddEndWithBarrier();
@@ -194,9 +198,11 @@ void HeatSteadyState::pre_solve_update() {
 void HeatSteadyState::post_solve_update() {
 	 TimeEvent timeSaveVTK(string("Solver - Save VTK"));
 	 timeSaveVTK.AddStart();
-	std::stringstream ss;
-	ss << "mesh_" << MPI_rank << ".vtk";
-	_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
+//	std::stringstream ss;
+//	ss << "mesh_" << MPI_rank << ".vtk";
+	//_instance.mesh().saveVTK(ss.str().c_str(), prim_solution, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
+	_instance.mesh().store(mesh::VTK, "mesh", prim_solution, 0.95, 0.9);
+
 	 timeSaveVTK.AddEndWithBarrier();
  	 timeEvalMain.AddEvent(timeSaveVTK);
 }

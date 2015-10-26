@@ -42,7 +42,8 @@ source_files = (
     "src/configuration.cpp",
     "src/instance.cpp",
     "src/assemblers/dynamics.cpp",
-    "src/assemblers/linearelasticity.cpp"
+    "src/assemblers/linearelasticity.cpp",
+    "src/assemblers/HeatSteadyState.cpp"
 )
 
 def configure(ctx):
@@ -83,7 +84,7 @@ def configure(ctx):
 
 
     ctx.setenv(APP_PARDISO, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+    ctx.env.append_unique("LIB", [ metis, "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
     if ctx.options.titan:
         ctx.env.append_value("LIB", [ "ifcore" ])
     else:
@@ -136,4 +137,12 @@ def build(ctx):
         use             = "espreso_insluces esbasis {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
         install_path    = ctx.ROOT
     )
+
+    ctx.program(
+        source          = source_files + ("src/decomposer.cpp",),
+        target          = "decomposer",
+        use             = "espreso_insluces esbasis {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        install_path    = ctx.ROOT
+    )
+
 

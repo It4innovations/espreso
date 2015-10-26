@@ -101,7 +101,9 @@ void Mesh::_elasticity(
 	std::vector<double> fe;
 
 	std::vector<double> inertia(3, 0.0);
-	inertia[2] = 1000; //9810.0 * 7.85e-9; //TODO: opravit zpet
+	//TODO
+	inertia[2] = 9810.0 * 7.85e-9;
+
 	double ex = 2.1e5;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
@@ -477,6 +479,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	// The solution is increase the size of 'nodesCount' and keep the default numbering
 	//options[METIS_OPTION_NUMBERING] = coordinates.getNumbering();
 	METIS_SetDefaultOptions(options);
+	options[METIS_OPTION_CONTIG] = 1;
 
 	eSize = last - first;
 	nSize = _coordinates.clusterSize();
@@ -806,7 +809,7 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 	surface._partPtrs.reserve(_partPtrs.size());
 
 	// create surface mesh
-	surface._partPtrs.push_back(surface._elements.size());
+	surface._partPtrs.push_back(0); //(surface._elements.size());
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
@@ -833,8 +836,12 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 			}
 		}
 		surface._partPtrs.push_back(surface._elements.size());
-		surface.computeLocalIndices(surface._partPtrs.size() - 1);
+		surface.computeLocalIndices(surface._partPtrs.size() - 2);
+
 	}
+
+	surface.computeBoundaries();
+
 }
 
 void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
@@ -1185,15 +1192,15 @@ void SurfaceMesh::elasticity(DenseMatrix &K, size_t part) const
 			&nodes[0],
 			eSize,
 			&elems[0],
-			0.33,			// nu
-			1.0e5,			// E
+			0.3,			// nu
+			2.1e5,			// E
 			3,				// order near
 			4,				// order far
 			false			// verbose
 			);
 }
 
-void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part)
+void SurfaceMesh::integrateUpperFaces(std::vector<double> &f, size_t part) const
 {
 	double hight_z = 29.99999999;
 	Point p0, p1, p2, v10, v20;

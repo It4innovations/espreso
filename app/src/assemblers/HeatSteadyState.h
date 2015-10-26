@@ -1,10 +1,3 @@
-/*
- * HeatSteadyState.h
- *
- *  Created on: Oct 1, 2015
- *      Author: lriha
- */
-
 #ifndef APP_SRC_ASSEMBLERS_HEATSTEADYSTATE_H_
 #define APP_SRC_ASSEMBLERS_HEATSTEADYSTATE_H_
 
@@ -13,6 +6,7 @@
 #include "essolver.h"
 
 class HeatSteadyState: public Assembler {
+
 public:
 	HeatSteadyState(const Instance &instance): Assembler(instance) { };
 

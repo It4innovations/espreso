@@ -17,6 +17,11 @@ void solve(Instance &instance);
 
 int main(int argc, char** argv)
 {
+
+	bool BEM = false;
+
+	// -------------------------------------------
+
 	int MPIrank, MPIsize;
 
 	MPI_Init(&argc, &argv);
@@ -25,9 +30,7 @@ int main(int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
 	//mesh::Mesh m(MPIrank, MPIsize);
-
 	//m.load(mesh::MESH_GENERATOR, argc, argv);
-
 	//m.store(mesh::VTK, "test", 0.9, 0.7);
 
 
@@ -35,11 +38,12 @@ int main(int argc, char** argv)
     	Adaptor::Initialize(argc, argv);
 #endif
 
-	//Configuration config("configuration.txt", argc, argv);
-	// print all settings
-	//config.print();
-
 	Instance instance(argc, argv, MPIrank, MPIsize);
+
+	if (BEM) {
+		instance.computeSurface();
+		instance.surf_mesh().store(mesh::VTK, "surface_m", 0.9, 0.99);
+	}
 
 	Solver<Linear_elasticity> solver_1 (instance);
 	solver_1.solve(1);
@@ -47,12 +51,8 @@ int main(int argc, char** argv)
 	//Solver<Dynamics>          solver_2 (instance);
 	//solver_2.solve(10);
 
-
-	// This method needs re-factoring !!!
-	//solve(instance);
-
-	//Solver<HeatSteadyState> solver (instance);
-	//solver.solve(1);
+	//Solver<HeatSteadyState> solver_h (instance);
+	//solver_h.solve(1);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
@@ -1146,7 +1146,7 @@ void solve(Instance &instance)
 //
 //
 //}
-
+//
 //void testFEM(int argc, char** argv)
 //{
 //	double start;

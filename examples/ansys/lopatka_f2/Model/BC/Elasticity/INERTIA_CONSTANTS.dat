@@ -1,0 +1,27 @@
+
+ INTERACTIVE LINES PER PAGE     =   1000000
+ INTERACTIVE CHARACTERS PER LINE=        80
+ FILE OUTPUT LINES PER PAGE     =   1000000
+ FILE OUTPUT CHARACTERS PER LINE=       132
+
+
+
+                       Inertia load options
+
+
+            Acceleration vector     GLOBAL CARTESIAN COMPONENTS ARE:
+                                      0.0000      0.0000      0.0000    
+        Angular velocity vector     GLOBAL CARTESIAN COMPONENTS ARE:
+                                      0.0000      0.0000      0.0000    
+                                    SPIN SOFTENING NOT ACTIVATED
+    Angular acceleration vector     GLOBAL CARTESIAN COMPONENTS ARE:
+                                      0.0000      0.0000      0.0000    
+ Reference coord. system origin     ORIGIN =  0.0000      0.0000      0.0000    
+        Angular velocity vector     REFERENCE COORDINATE COMPONENTS ARE:     
+                                      0.0000      0.0000      0.0000    
+    Angular acceleration vector     REFERENCE COORDINATE COMPONENTS ARE:     
+                                      0.0000      0.0000      0.0000    
+                 Inertia relief     NO INERTIA RELIEF                        
+ Translational acceleration vector on components    NONE
+ Angular velocity vector on components    NONE
+ Angular acceleration vector on components    NONE
