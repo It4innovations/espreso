@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
 	if (BEM) {
 		instance.computeSurface();
-		instance.surf_mesh().store(mesh::VTK, "surface_m", 0.9, 0.99);
+		instance.surf_mesh().store(mesh::VTK_FULL, "surface_m", 0.9, 0.99);
 	}
 
 	Solver<Linear_elasticity> solver_1 (instance);

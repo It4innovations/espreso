@@ -34,8 +34,10 @@ class cxxprogram(link_task):
                ${LIB_ST:LIB} \
                ${LDFLAGS} \
                ${STLIB_MARKER} \
+               -Wl,--start-group \
                ${STLIBPATH_ST:STLIBPATH} \
                ${STLIB_ST:STLIB} \
+               -Wl,--end-group \
                ${SHLIB_MARKER}'
 
 source_files = (
