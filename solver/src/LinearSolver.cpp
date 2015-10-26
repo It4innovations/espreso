@@ -85,8 +85,8 @@ LinearSolver::~LinearSolver() {
 
 void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 
-	SINGULAR = IS_SINGULAR;
-
+	SINGULAR 	= IS_SINGULAR;
+  	R_from_mesh = false;
 	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
 	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
@@ -101,7 +101,7 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 1;
+	cluster.USE_HFETI			= 0;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
@@ -194,9 +194,22 @@ void LinearSolver::init(
 
 
 	// *** Setup R matrix ********************************************************************************************
-	 TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
-	set_R(l2g_vec, mesh);
-	 timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
+	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
+   if (R_from_mesh){
+	    set_R(l2g_vec, mesh);
+   }
+   else{
+	  cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		  cluster.domains[d].K = K_mat[d];
+		  if ( cluster.domains[d].K.type == 'G' )
+		  	cluster.domains[d].K.RemoveLower();
+		  //TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
+		  if ( solver.USE_PREC == 1 )
+		  	cluster.domains[d].Prec = cluster.domains[d].K;
+	  }
+      set_R_from_K(); 
+   }
+	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
 
@@ -242,17 +255,24 @@ void LinearSolver::init(
 		if (MPI_rank == 0) std::cout << d << " " ;
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
 
-		cluster.domains[d].K = K_mat[d];
+	    if (R_from_mesh) {
+		
+			cluster.domains[d].K = K_mat[d];
+      		
+      		if ( cluster.domains[d].K.type == 'G' )
+		  		cluster.domains[d].K.RemoveLower();
 
-		if ( cluster.domains[d].K.type == 'G' )
-			cluster.domains[d].K.RemoveLower();
+		  	//TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
+		  	if ( solver.USE_PREC == 1 )
+		  		cluster.domains[d].Prec = cluster.domains[d].K;
 
-		//TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
-		if ( solver.USE_PREC == 1 )
-			cluster.domains[d].Prec = cluster.domains[d].K;
+			cluster.domains[d].K_regularizationFromR( );
 
-		cluster.domains[d].K_regularizationFromR( );
-
+	    }
+		
+	    // Import of Regularized matrix K into Kplus (Sparse Solver)
+	    cluster.domains[d].Kplus.ImportMatrix (cluster.domains[d].K);
+    
 		if (KEEP_FACTORS) {
 			cluster.domains[d].Kplus.keep_factors = true;
 			cluster.domains[d].Kplus.Factorization ();
@@ -414,6 +434,17 @@ void LinearSolver::set_B0 ( std::vector < SparseMatrix >	& B0_mat ) {
 	}
 }
 
+
+void LinearSolver::set_R_from_K ()
+{
+
+	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		cluster.domains[d].get_kernel_from_K();
+	}
+
+}
+
+
 void LinearSolver::set_R (
 		std::vector < std::vector <eslocal> >	& l2g_vec,
 		const mesh::Mesh &mesh
@@ -421,6 +452,7 @@ void LinearSolver::set_R (
 {
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+
 		for (int i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
 			tmp_vec[0] = mesh.coordinates()[l2g_vec[d][i]].x;
@@ -428,6 +460,7 @@ void LinearSolver::set_R (
 			tmp_vec[2] = mesh.coordinates()[l2g_vec[d][i]].z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
+
 		cluster.domains[d].CreateKplus_R();
 	}
 

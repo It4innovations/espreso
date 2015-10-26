@@ -479,7 +479,11 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	// The solution is increase the size of 'nodesCount' and keep the default numbering
 	//options[METIS_OPTION_NUMBERING] = coordinates.getNumbering();
 	METIS_SetDefaultOptions(options);
-	options[METIS_OPTION_CONTIG] = 1;
+	//TODO:
+	options[METIS_OPTION_CONTIG]  = 1;
+	options[METIS_OPTION_MINCONN] = 1;
+	options[METIS_OPTION_NITER]   = 20;
+	options[METIS_PTYPE_KWAY]     = 1;
 
 	eSize = last - first;
 	nSize = _coordinates.clusterSize();

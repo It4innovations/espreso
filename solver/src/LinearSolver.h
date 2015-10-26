@@ -107,6 +107,8 @@ public:
 			std::vector < std::vector <eslocal> >		& l2g_vec,
 			const mesh::Mesh &mesh
 	);
+  
+  	void set_R_from_K();
 
 	eslocal DOFS_PER_NODE;
 
@@ -118,6 +120,7 @@ private:
 
 	bool 	SINGULAR;
 	bool 	KEEP_FACTORS;
+  	bool 	R_from_mesh;
 
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
