@@ -1929,6 +1929,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
   auto ij= [&]( int ii, int jj ) -> int 
    { return ii + rows*jj; };
  // 
+  printf("pivots: ");
   for (int j=0;j<cols;j++){
     it = std::max_element(N.begin(),N.end()-j*rows,myfn);
     I = it - N.begin();
@@ -1946,7 +1947,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <int> & null_pivots){
     memcpy( &(N[ij(0,cols-1-j)]), &(N[ij(0,colInd)]) , sizeof( double ) * rows);
     memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
     pivot = N[ij(rows-1-j,cols-1-j)];
-    printf("pivot = %3.9e \n",pivot);
+    printf("%3.1e ",pivot);
     for (int J=0;J<cols-j-1;J++){
       for (int I=0;I<rows-j;I++){
         N[ij(I,J)] -= N[ij(I,cols-1-j)]*N[ij(rows-1-j,J)]/pivot;

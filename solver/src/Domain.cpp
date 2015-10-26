@@ -246,12 +246,9 @@ void Domain::K_regularization ( )
 
 void Domain::get_kernel_from_A(){
 //      
-// Routine calculates kernel Kplus_R of K satisfied euqality
-//      K * Kplus_R = O,
-// where O is zero matrix,
-// and it makes the matrix K non-singular (K_reg) utilizing spectral conditions
-// of Schur complement. Then 
-//      || K - K*inv(K_reg)*K || = 0.0
+// Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
+// where O is zero matrix, and it makes the matrix K non-singular (K_reg) 
+// utilizing spectral conditions of Schur complement. Then ||K-K*inv(K_reg)*K||=0.0
 //
 //
 // rev. 2015-10-23 (A.M.)
@@ -259,29 +256,46 @@ void Domain::get_kernel_from_A(){
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
   bool diagonalScaling = true;            
 //  random selection of singular DOFs
-  int permutVectorActive = 1;
+  int permutVectorActive = 1; // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
+//  size of set 's' = defect(K)
   bool diagonalRegularization=true;
-//  NtN_Mat from null pivots or fixing DOFs
+// NtN_Mat from null pivots or fixing DOFs
   bool use_null_pivots_or_s_set=true;
 // get and plot K eigenvalues (A is temporarily converted to dense);
   int get_n_first_and_n_last_eigenvals_from_dense_K = 0;
 // get and plot S eigenvalues 
   int get_n_first_and_n_last_eigenvals_from_dense_S = 6;
 // get approximation of K eigenvalues (A is temporarily converted to dense matrix);
-  int plot_n_first_n_last_eigenvalues = 10;
+  int plot_n_first_n_last_eigenvalues = 6;
 
   printf("\n\n");
   printf(" ###################################################################\n");
   printf(" #                 Get kernel of K and null pivots                 #\n");
   printf(" ###################################################################\n");
 // 
-  double COND_NUMB_FOR_SINGULAR_MATRIX                              = 1e13; 
-  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY                = 1.0e-5;
-  int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS                          = 2500;
-  int SC_SIZE = 50;                           // size of S to detect singular part  
-  int TWENTY  = 20;                           // constant set-up to DEFECT <= TWENTY <= SC_SIZE 
+//  If cond(A) > COND_NUMB_FOR_SINGULAR_MATRIX, A is considered as singular matrix.
+  double COND_NUMB_FOR_SINGULAR_MATRIX              = 1e13; 
+  // n eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
+//
+  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY   = 1.0e-5;
+  // if CHECK_NONSING>0, checking of K_rr regularity is activated and it is repated CHECK_NONSING times.
+  int CHECK_NONSING                                 = 0;
+  // option max size of K, if the size is less, K is converted to dense format to get eigenvalues.
+  int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
+  // specification of size of Schur complement used for detection of zero eigenvalues.
+  int SC_SIZE                                       = 50;  
+  // 
+  // testing last TWENTY eigenvalues of S to distinguish if d-last ones are zero or not.
+  int TWENTY                                        = 20;  // index on which searching of null eigenval starts
   //TODO if K.rows<=SC_SIZE, use directly input K instead of S
+  //
+  //
+  //##########################################################################################
+  //##########################################################################################
+  //##########################################################################################
+  //##########################################################################################
+  //
   SparseMatrix S;
   SparseMatrix K_rr;
   SparseMatrix K_rs;
@@ -293,78 +307,99 @@ void Domain::get_kernel_from_A(){
   SEQ_VECTOR <SEQ_VECTOR<int>> vec_I1_i2(K.rows, SEQ_VECTOR<int>(2, 1));
   int offset = K.CSR_I_row_indices[0] ? 1 : 0;
   //  
-  // set row permVec = {0,1,2,3,4,...,K.rows};
-  for (int i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 A.rows-1 
-  //
   
-  double cond_of_regular_part=0;
+  double cond_of_regular_part=1e307;
   int *I_row_indices_p = new int[K.nnz] ;
   int *J_col_indices_p = new int[K.nnz] ;
   SEQ_VECTOR <int> tmp_vec_s;
   tmp_vec_s.resize(SC_SIZE);
-  int v1, n_mv, kkk;
+  int v1, n_mv, cnt_permut_vec;
   SEQ_VECTOR <int>::iterator it;
   SEQ_VECTOR <int> fix_dofs;
   fix_dofs.resize(SC_SIZE);
   SparseMatrix K_modif;
 
   double di=1,dj=1;
-  int cnt_while1=0;
+  int cnt_iter_check_nonsing=0;
 
-  do {
-    // loop checking non-singularity of K_rr matrix
-    if (cnt_while1>0){
-      K_modif.Clear();
-    }
-    K_modif = K;
+
+  K_modif = K;
   
 //  K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues);
-    // diagonal scaling of K_modif:
-    // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
-    for (int i = 0;i<K_modif.rows;i++){
+  // diagonal scaling of K_modif:
+  // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
+  for (int i = 0;i<K_modif.rows;i++){
+    if (diagonalScaling) {
+      di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
+    }
+    for (int j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
       if (diagonalScaling) {
-        di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
+        dj=K_modif.CSR_V_values[
+          K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
       }
-      for (int j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+      K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
+    }
+  }
+
+  //################################################################################# 
+  if (get_n_first_and_n_last_eigenvals_from_dense_K && 
+      K_modif.cols<MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS && cnt_iter_check_nonsing==0) {
+    K_modif.ConvertCSRToDense(0);
+  // EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
+  // Works only for matrix until size ~ 2500
+    char JOBZ_ = 'V';
+    char UPLO_ = 'U';
+    double *WK_modif = new double[K_modif.cols]; 
+    double *ZK_modif = new double[K_modif.cols*K_modif.cols]; 
+    MKL_INT info;
+    MKL_INT ldzA = K_modif.cols;
+    info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
+            K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
+    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+          "K",get_n_first_and_n_last_eigenvals_from_dense_K,
+          K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2,K_modif.rows);
+    for (int i = 0 ; i < K_modif.rows; i++){
+      if (i < get_n_first_and_n_last_eigenvals_from_dense_K || 
+            i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
+        printf("%5d:  %3.8e \n",i+1, WK_modif[i]);
+      }
+    }
+    if (info){
+      printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
+    }
+    delete [] WK_modif;
+    delete [] ZK_modif;
+  }
+  //################################################################################# 
+
+
+
+
+  while ( cond_of_regular_part > COND_NUMB_FOR_SINGULAR_MATRIX && cnt_iter_check_nonsing<(CHECK_NONSING+1)) {
+    // loop checking non-singularity of K_rr matrix
+    if (cnt_iter_check_nonsing>0){
+      K_modif.Clear();
+      K_modif=K;
+      //diagonal scaling
+      for (int i = 0;i<K_modif.rows;i++){
         if (diagonalScaling) {
-          dj=K_modif.CSR_V_values[
-            K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
+          di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
         }
-        K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
+        for (int j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+          if (diagonalScaling) {
+            dj=K_modif.CSR_V_values[
+              K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
+          }
+          K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
+        }
       }
     }
 
-  //################################################################################# 
-    if (get_n_first_and_n_last_eigenvals_from_dense_K && 
-        K_modif.cols<MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS && cnt_while1==0) {
-      K_modif.ConvertCSRToDense(0);
-    // EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
-    // Works only for matrix until size ~ 2500
-      char JOBZ_ = 'V';
-      char UPLO_ = 'U';
-      double *WK_modif = new double[K_modif.cols]; 
-      double *ZK_modif = new double[K_modif.cols*K_modif.cols]; 
-      MKL_INT info;
-      MKL_INT ldzA = K_modif.cols;
-      info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
-              K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
-      printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
-            "K",get_n_first_and_n_last_eigenvals_from_dense_K,
-            K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2,K_modif.rows);
-      for (int i = 0 ; i < K_modif.rows; i++){
-        if (i < get_n_first_and_n_last_eigenvals_from_dense_K || 
-              i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
-          printf("%5d:  %3.8e \n",i+1, WK_modif[i]);
-        }
-      }
-      if (info){
-        printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
-      }
-      delete [] WK_modif;
-      delete [] ZK_modif;
+    if (permutVectorActive<2){
+      // set row permVec = {0,1,2,3,4,...,K.rows};
+      for (int i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 A.rows-1 
     }
-  //################################################################################# 
-
+//
     if (permutVectorActive==1){
       srand(time(NULL));
       random_shuffle ( permVec.begin(), permVec.end() );
@@ -373,7 +408,8 @@ void Domain::get_kernel_from_A(){
     }
     else if (permutVectorActive==2){
       // random permutation
-      n_mv = 0; kkk=0;
+      n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to SC_SIZE
+      cnt_permut_vec=0;
       srand(time(NULL));
       // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
       // If not, missing numbers are added and checked again.  
@@ -386,9 +422,9 @@ void Domain::get_kernel_from_A(){
         std::sort(tmp_vec_s.begin(), tmp_vec_s.end());
         it = std::unique(tmp_vec_s.begin(), tmp_vec_s.end());
         n_mv = distance(tmp_vec_s.begin(),it);
-        kkk++;
-     } while (n_mv != SC_SIZE && kkk < 100);
-  //
+        cnt_permut_vec++;
+     } while (n_mv != SC_SIZE && cnt_permut_vec < 100);
+      //
       int ik=0,cnt_i=0;
       for (int i = 0;i<permVec.size();i++){
         if (i==tmp_vec_s[ik]){
@@ -400,11 +436,10 @@ void Domain::get_kernel_from_A(){
           cnt_i++;
         }
       }
-      printf("n_mv: %d, SC_SIZE: %d, it. for RAND: %d\n",n_mv,SC_SIZE,kkk);
+      printf("n_mv: %d, SC_SIZE: %d, it. for RAND: %d\n",n_mv,SC_SIZE,cnt_permut_vec);
     }
     //      r = permVec[0:NONSING_SIZE-1]     (singular DOFs)
     //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
-
     if (permutVectorActive>0){
 //
       for (int i = 0; i < K.rows;i++){
@@ -440,11 +475,13 @@ void Domain::get_kernel_from_A(){
     for (int i = 0;i<SC_SIZE;i++) fix_dofs[i]=permVec[NONSING_SIZE + i] + offset; 
     K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, NONSING_SIZE);
 //    K_rr.printMatCSR("K_rr");
-    cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues);
-    printf("cond_of_regular_part=%3.9f\n",cond_of_regular_part);
+    if (CHECK_NONSING!=0){
+      cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues);
+      printf("cond_of_regular_part=%3.9f\n",cond_of_regular_part);
+    }
 //
-    cnt_while1++;
-  } while ( cond_of_regular_part > COND_NUMB_FOR_SINGULAR_MATRIX && cnt_while1<100);
+    cnt_iter_check_nonsing++;
+  } 
 
   delete [] I_row_indices_p;
   delete [] J_col_indices_p;
@@ -551,7 +588,7 @@ void Domain::get_kernel_from_A(){
   SEQ_VECTOR <int> null_pivots;
   Kplus_R.getNullPivots(null_pivots);
 
-  printf("null_pivots ...\n");
+  printf("null pivots, int ");
   for (int i = 0;i<null_pivots.size();i++)
     printf("%d ",null_pivots[i]);
   printf("\n");
