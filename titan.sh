@@ -3,9 +3,11 @@
 module swap PrgEnv-pgi/5.2.40 PrgEnv-intel/5.2.40
 #module unload cray-libsci/13.0.4
 module swap intel/14.0.2.144  intel/15.0.2.164 #  intel/13.1.3.192 # intel/15.0.2.164
+
 module unload cray-libsci
-module load gcc
-module load cray-tpsl/1.5.0
+module load gcc/4.8.2
+module load cray-tpsl #/1.5.0
+
 #module load metis/5.1.0
 module list
 
@@ -56,11 +58,12 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --titan
+  ./waf configure --titan --static
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install -v --static
+  #./waf install -v --static --pardiso_mkl
+  ./waf install -v --static --pardiso_mkl 
 #cd tools/metis-5.1.0/ ; make config compiler=cc #; make
 fi
 
@@ -83,7 +86,8 @@ if [ "$1" = "run" ]; then
 
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
-  export SOLVER_NUM_THREADS=24
+  export SOLVER_NUM_THREADS=15
+  export PAR_NUM_THREADS=15
 
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
@@ -99,18 +103,18 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      16  16  16  16  16  16  16  16  13  14 )
-  clustt_size_x=( 10  10  10  10  10  10  10  10  10  10 )
+  dom_size=(      15  16  16  16  16  16  16  16  13  14 )
+  clustt_size_x=( 6   10  10  10  10  10  10  10  10  10 )
 # clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
 # clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
-  clusters_x=(    2   3   4   5   6   7   8   9   1   1 )
-  clusters_y=(    2   3   4   5   6   7   8   9   1   1 )
-  clusters_z=(    2   3   4   5   6   7   8   9   1   1 )
+  clusters_x=(    1   3   4   5   6   7   8   9   1   1 )
+  clusters_y=(    1   3   4   5   6   7   8   9   1   1 )
+  clusters_z=(    1   3   4   5   6   7   8   9   1   1 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 7 # 0 1 2 3 4 5 6
+  for i in 0 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -135,8 +139,21 @@ if [ "$1" = "run" ]; then
     #                                          ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}               # | tee -a $log_file
-   
-    aprun -n 1 ./esmesh
+
+    rm -rf $MEMBERWORK/csc180/*
+    #cp ./libs/*   $MEMBERWORK/csc180/
+    cp espreso    $MEMBERWORK/csc180/
+    #cp decomposer $MEMBERWORK/csc180/
+    cp -R examples $MEMBERWORK/csc180/   
+
+    cd            $MEMBERWORK/csc180/
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MEMBERWORK/csc180/
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/composer_xe_2015.2.164/compiler/lib/intel64/:/opt/gcc/4.8.2/snos/lib64/
+    aprun -cc none -N 1 -d 16 -n $(( X * Y * Z )) ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt 0 ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
+ 
+    cp $MEMBERWORK/csc180/*.log $PBS_O_WORKDIR
+    cp $MEMBERWORK/csc180/*.vtk $PBS_O_WORKDIR
+
     #mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
 
    
