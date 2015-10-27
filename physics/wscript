@@ -2,7 +2,7 @@
 PHYSICS = "physics"
 
 source_files = (
-    "linear/linear.cpp",
+    #"linear/linear.cpp",
     #"linear/elasticity/linearelasticity.cpp"
 )
 
@@ -11,6 +11,7 @@ def configure(ctx):
 
 def build(ctx):
     ctx.env = ctx.all_envs[PHYSICS]
+    return
 
     ctx.lib(
         source          = source_files,

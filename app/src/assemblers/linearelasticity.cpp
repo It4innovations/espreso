@@ -30,8 +30,6 @@ void Linear_elasticity::init() {
     // *************************************************************************************
 
 
-
-
 	K_mat.reserve(partsCount);
 	for (eslocal d = 0; d < partsCount; d++) {
 		K_mat.push_back( SparseCSRMatrix<eslocal>(0,0) );

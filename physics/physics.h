@@ -14,6 +14,7 @@ enum MatrixComposer {
 	ELMER
 };
 
+template <MatrixComposer TMatrixComposer>
 class Physics {
 
 public:
@@ -25,7 +26,25 @@ public:
 
 	virtual ~Physics() {};
 
+protected:
+	Physics(const mesh::Mesh &mesh);
+
+	const mesh::Mesh &_mesh;
+	const mesh::SurfaceMesh _surface;
+
+	bool _verbose;
+	TimeEval _timeStatistics;
+
 };
+
+template<>
+Physics<FEM>::Physics(const mesh::Mesh &mesh): _mesh(mesh), _surface(mesh.rank(), mesh.size()), _verbose(true) { }
+
+template<>
+Physics<BEM>::Physics(const mesh::Mesh &mesh): _mesh(mesh), _surface(mesh), _verbose(true) { }
+
+template<>
+Physics<ELMER>::Physics(const mesh::Mesh &mesh): _mesh(mesh), _surface(mesh.rank(), mesh.size()), _verbose(true) { }
 
 }
 
