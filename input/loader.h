@@ -41,11 +41,11 @@ public:
 		}
 
 		fixPoints(mesh._fixPoints);
-		size_t fSize = mesh._fixPoints.size() / mesh.parts();
 		for (size_t p = 0; p < mesh.parts(); p++) {
-			for (size_t i = 0; i < fSize; i++) {
-				mesh._fixPoints[p * fSize + i] = mesh.coordinates().localIndex(mesh._fixPoints[p * fSize + i], p);
+			for (size_t i = 0; i < mesh._fixPoints[p].size(); i++) {
+				mesh._fixPoints[p][i] = mesh.coordinates().localIndex(mesh._fixPoints[p][i], p);
 			}
+			std::sort(mesh._fixPoints[p].begin(), mesh._fixPoints[p].end());
 		}
 
 		mesh.computeBoundaries();
@@ -57,7 +57,7 @@ public:
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
-	virtual void fixPoints(std::vector<eslocal> &fixPoints) = 0;
+	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void corners(mesh::Boundaries &boundaries) = 0;
 	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;

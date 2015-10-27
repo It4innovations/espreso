@@ -72,4 +72,29 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 	_f[part].resize(_K.rows(), 0);
 }
 
+template <>
+void Linear<BEM>::saveResult()
+{
+	_surface.store(mesh::VTK_FULL, "mesh", _prim_solution, 0.95, 0.9);
+}
+
+template <>
+void Linear<BEM>::initSolver()
+{
+	_lin_solver.init(
+		_surface,
+		_K,
+		_globalB,
+		_localB,
+		_lambda_map_sub_B1,
+		_lambda_map_sub_B0,
+		_lambda_map_sub_clst,
+		_B1_duplicity,
+		_f,
+		_vec_c,
+		_surface.getFixPoints(),
+		_neighClusters
+	);
+}
+
 }

@@ -80,7 +80,7 @@ void VTK::elements(const mesh::Mesh &mesh)
 	const std::vector<mesh::Element*> &elements = mesh.getElements();
 	const mesh::Coordinates &coordinates = mesh.coordinates();
 	const std::vector<eslocal> &partition = mesh.getPartition();
-	const std::vector<eslocal> &fixPoints = mesh.getFixPoints();
+	const std::vector<std::vector<eslocal> > &fixPoints = mesh.getFixPoints();
 	const mesh::Boundaries &boundaries = mesh.subdomainBoundaries();
 	size_t parts = mesh.parts();
 
@@ -88,7 +88,9 @@ void VTK::elements(const mesh::Mesh &mesh)
 	for (size_t i = 0; i < elements.size(); i++) {
 		size += elements[i]->size() + 1;
 	}
-	size += fixPoints.size() + parts;
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		size += fixPoints[p].size() + 1;
+	}
 
 	size_t corners = 0;
 	for (size_t i = 0; i < boundaries.size(); i++) {
@@ -111,9 +113,9 @@ void VTK::elements(const mesh::Mesh &mesh)
 			_vtk << "\n";
 		}
 		// fix points for part 'p'
-		_vtk << fixPoints.size() / parts;
-		for (size_t j = 0; j < fixPoints.size() / parts; j++) {
-			_vtk << " " << fixPoints[p * fixPoints.size() / parts + j] + offset;
+		_vtk << fixPoints[p].size();
+		for (size_t j = 0; j < fixPoints[p].size(); j++) {
+			_vtk << " " << fixPoints[p][j] + offset;
 		}
 		_vtk << "\n";
 

@@ -138,8 +138,7 @@ void LinearSolver::init(
 		std::vector < std::vector <double > >	& f_vec,
 		std::vector < std::vector <double > >	& vec_c,
 
-		std::vector < std::vector <eslocal > >	& fix_nodes,
-		std::vector < std::vector <eslocal> >	& l2g_vec,
+		const std::vector < std::vector <eslocal > >	& fix_nodes,
 
 		std::vector < eslocal > & neigh_clusters
 
@@ -195,7 +194,7 @@ void LinearSolver::init(
 
 	// *** Setup R matrix ********************************************************************************************
 	 TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
-	set_R(l2g_vec, mesh);
+	set_R(mesh);
 	 timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
@@ -415,17 +414,15 @@ void LinearSolver::set_B0 ( std::vector < SparseMatrix >	& B0_mat ) {
 }
 
 void LinearSolver::set_R (
-		std::vector < std::vector <eslocal> >	& l2g_vec,
 		const mesh::Mesh &mesh
 )
 {
-
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		for (int i = 0; i < l2g_vec[d].size(); i++) {
+		for (int i = 0; i < mesh.coordinates().localSize(d); i++) {
 			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = mesh.coordinates()[l2g_vec[d][i]].x;
-			tmp_vec[1] = mesh.coordinates()[l2g_vec[d][i]].y;
-			tmp_vec[2] = mesh.coordinates()[l2g_vec[d][i]].z;
+			tmp_vec[0] = mesh.coordinates().get(i, d).x;
+			tmp_vec[1] = mesh.coordinates().get(i, d).y;
+			tmp_vec[2] = mesh.coordinates().get(i, d).z;
 			cluster.domains[d].coordinates.push_back(tmp_vec);
 		}
 		cluster.domains[d].CreateKplus_R();

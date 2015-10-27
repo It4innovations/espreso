@@ -121,12 +121,7 @@ public:
 		return _partPtrs;
 	}
 
-	size_t getFixPointsCount() const
-	{
-		return _fixPoints.size() / (_partPtrs.size() - 1);
-	}
-
-	const std::vector<eslocal>& getFixPoints() const
+	const std::vector<std::vector<eslocal> >& getFixPoints() const
 	{
 		return _fixPoints;
 	}
@@ -233,7 +228,7 @@ protected:
 	std::vector<eslocal> _partPtrs;
 
 	/** @brief Fix points for all parts. */
-	std::vector<eslocal> _fixPoints;
+	std::vector<std::vector<eslocal> > _fixPoints;
 
 	/** @brief Map of points to sub-domains. */
 	Boundaries _subdomainBoundaries;

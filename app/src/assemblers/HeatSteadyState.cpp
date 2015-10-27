@@ -180,7 +180,6 @@ void HeatSteadyState::init() {
 		f_vec,
 		vec_c,
 		fix_nodes,
-		l2g_vec,
 
 		neigh_clusters
 

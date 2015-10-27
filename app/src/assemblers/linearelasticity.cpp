@@ -91,27 +91,28 @@ void Linear_elasticity::init() {
 
 	TimeEvent timeFnodes(string("Create Fix nodes"));
 	timeFnodes.AddStart();
+//
+//	size_t fixPointsCount;
+//	std::vector<eslocal> fixPoints;
+//	if (BEM) {
+//
+//		fixPointsCount = _instance.surf_mesh().getFixPointsCount();
+//		fixPoints      = _instance.surf_mesh().getFixPoints();
+//	} else {
+//		fixPoints      = _instance.mesh().getFixPoints();
+//		fixPointsCount = _instance.mesh().getFixPointsCount();
+//	}
+//
+//	fix_nodes.resize(partsCount);
+//
+//	cilk_for (eslocal d = 0; d < partsCount; d++) {
+//			for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+//				fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
+//			}
+//			std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
+//		}
 
-	size_t fixPointsCount;
-	std::vector<eslocal> fixPoints;
-	if (BEM) {
-
-		fixPointsCount = _instance.surf_mesh().getFixPointsCount();
-		fixPoints      = _instance.surf_mesh().getFixPoints();
-	} else {
-		fixPoints      = _instance.mesh().getFixPoints();
-		fixPointsCount = _instance.mesh().getFixPointsCount();
-	}
-
-	fix_nodes.resize(partsCount);
-
-	cilk_for (eslocal d = 0; d < partsCount; d++) {
-			for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
-				fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
-			}
-			std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
-		}
-
+	fix_nodes = _instance.mesh().getFixPoints();
 	 timeFnodes.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeFnodes);
 
@@ -285,7 +286,6 @@ void Linear_elasticity::init() {
 			vec_c,
 
 			fix_nodes,
-			l2g_vec,
 
 			neigh_clusters
 
@@ -309,7 +309,6 @@ void Linear_elasticity::init() {
 			vec_c,
 
 			fix_nodes,
-			l2g_vec,
 
 			neigh_clusters
 
@@ -341,7 +340,6 @@ void Linear_elasticity::post_solve_update() {
 
 		 timeSaveVTK.AddEndWithBarrier();
 	  	 timeEvalMain.AddEvent(timeSaveVTK);
-
 }
 
 

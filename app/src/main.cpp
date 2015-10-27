@@ -93,7 +93,6 @@ void solve(Instance &instance)
 	std::cout.precision(15);
 
 	size_t partsCount 	  = instance.mesh().parts();
-	size_t fixPointsCount = instance.mesh().getFixPointsCount();
 
 	TimeEvent timeKasm(string("Create K matrices"));
 	timeKasm.AddStart();
@@ -151,18 +150,20 @@ void solve(Instance &instance)
 
 	TimeEvent timeFnodes(string("Create Fix nodes"));
 	timeFnodes.AddStart();
-	const std::vector<eslocal> fixPoints = instance.mesh().getFixPoints();
+//	const std::vector<eslocal> fixPoints = instance.mesh().getFixPoints();
+//
+//#ifndef DEBUG
+//	cilk_for (eslocal d = 0; d < partsCount; d++) {
+//#else
+//	for (eslocal d = 0; d < partsCount; d++) {
+//#endif
+//		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+//			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
+//		}
+//		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
+//	}
 
-#ifndef DEBUG
-	cilk_for (eslocal d = 0; d < partsCount; d++) {
-#else
-	for (eslocal d = 0; d < partsCount; d++) {
-#endif
-		for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
-			fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
-		}
-		std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
-	}
+	fix_nodes = instance.mesh().getFixPoints();
 
 	 timeFnodes.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeFnodes);

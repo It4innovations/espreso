@@ -79,8 +79,7 @@ public:
 			std::vector < std::vector <double > >	& f_vec,
 			std::vector < std::vector <double > >	& vec_c,
 
-			std::vector < std::vector <eslocal > >	& fix_nodes,
-			std::vector < std::vector <eslocal> >	& l2g_vec,
+			const std::vector < std::vector <eslocal > >	& fix_nodes,
 
 			std::vector < eslocal > & neigh_clusters
 
@@ -104,7 +103,6 @@ public:
 			std::vector < SparseMatrix >				& B0_mat );
 
 	void set_R(
-			std::vector < std::vector <eslocal> >		& l2g_vec,
 			const mesh::Mesh &mesh
 	);
 

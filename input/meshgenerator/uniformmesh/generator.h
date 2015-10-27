@@ -16,7 +16,7 @@ public:
 	UniformGenerator(int argc, char** argv, int rank, int size);
 
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
-	virtual void fixPoints(std::vector<eslocal> &fixPoints);
+	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void corners(mesh::Boundaries &boundaries);
 
 protected:

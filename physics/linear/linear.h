@@ -30,8 +30,12 @@ protected:
 
 	// Matrices for Linear Solver
 	std::vector<SparseMatrix> _K, _M, _localB, _globalB;
+	std::vector<SparseIJVMatrix<eslocal> > _B0, _B1;
 	// RHS
 	std::vector<std::vector<double> > _f;
+
+	// Result
+	vector<vector<double> > _prim_solution;
 
 	// Description ??
 	std::vector<std::vector<eslocal> > _lambda_map_sub_B1;
@@ -39,6 +43,9 @@ protected:
 	std::vector<std::vector<eslocal> > _lambda_map_sub_clst;
 	std::vector<std::vector<double> > _B1_duplicity;
 	std::vector<std::vector<double> > _vec_c;
+	std::vector<eslocal> _neighClusters;
+
+	LinearSolver _lin_solver;
 
 private:
 	size_t subdomains();
@@ -54,6 +61,8 @@ private:
 	void localB();
 	void globalB();
 	void RHS();
+	void initSolver();
+	void saveResult();
 };
 
 

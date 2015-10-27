@@ -447,7 +447,7 @@ void Mesh::computeBoundaries()
 
 void Mesh::computeFixPoints(eslocal fixPoints)
 {
-	_fixPoints.resize(parts() * fixPoints);
+	_fixPoints.resize(parts(), std::vector<eslocal>(fixPoints));
 
 #ifndef DEBUG
 	cilk_for (eslocal i = 0; i < parts(); i++) {
@@ -457,8 +457,9 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
 
 		for (eslocal j = 0; j < fixPoints; j++) {
-			_fixPoints[i * fixPoints + j] = getCentralNode(_partPtrs[i], _partPtrs[i + 1], eSubPartition, i, j);
+			_fixPoints[i][j] = getCentralNode(_partPtrs[i], _partPtrs[i + 1], eSubPartition, i, j);
 		}
+		std::sort(_fixPoints[i].begin(), _fixPoints[i].end());
 
 		delete[] eSubPartition;
 	}
@@ -1104,8 +1105,10 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 		cfm._partPtrs.back() = cfm._elements.size();
 		cfm.computeLocalIndices(cfm._partPtrs.size() - 1);
 		cfm.computeFixPoints(number);
-		for (size_t i = 0; i < cfm.getFixPointsCount(); i++) {
-			boundaries.setCorner(cfm.coordinates().clusterIndex(cfm.getFixPoints()[i], 0));
+		for (size_t p = 0; p < cfm.parts(); p++) {
+			for (size_t i = 0; i < cfm.getFixPoints()[p].size(); i++) {
+				boundaries.setCorner(cfm.coordinates().clusterIndex(cfm.getFixPoints()[p][i], 0));
+			}
 		}
 	}
 
@@ -1170,8 +1173,10 @@ void Mesh::computeCorners(Boundaries &boundaries, eslocal number, bool corners, 
 		clm._partPtrs.back() = clm._elements.size();
 		clm.computeLocalIndices(clm._partPtrs.size() - 1);
 		clm.computeFixPoints(number);
-		for (size_t i = 0; i < clm.getFixPointsCount(); i++) {
-			boundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[i], 0));
+		for (size_t p = 0; p < clm.parts(); p++) {
+			for (size_t i = 0; i < clm.getFixPoints()[p].size(); i++) {
+				boundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[p][i], 0));
+			}
 		}
 	}
 }

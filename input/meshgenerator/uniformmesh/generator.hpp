@@ -69,9 +69,9 @@ void UniformGenerator<TElement>::elements(std::vector<mesh::Element*> &elements,
 }
 
 template<class TElement>
-void UniformGenerator<TElement>::fixPoints(std::vector<eslocal> &fixPoints)
+void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
-	fixPoints.reserve(8 * _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
+	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
 
 	eslocal nodes[3];
 	eslocal cNodes[3];
@@ -84,11 +84,13 @@ void UniformGenerator<TElement>::fixPoints(std::vector<eslocal> &fixPoints)
 	for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
 		for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
 			for (eslocal sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
+				fixPoints.push_back(std::vector<eslocal>());
+				fixPoints.back().reserve(8);
 				for (int i = 0; i < 8; i++) {
 					offset[0] = (i & 1) ? 1 : 0;
 					offset[1] = (i & 2) ? 1 : 0;
 					offset[2] = (i & 4) ? 1 : 0;
-					fixPoints.push_back(
+					fixPoints.back().push_back(
 							(sz + offset[2]) * nodes[2] * cNodes[0] * cNodes[1] +
 							(sy + offset[1]) * nodes[1] * cNodes[0] +
 							(sx + offset[0]) * nodes[0]);

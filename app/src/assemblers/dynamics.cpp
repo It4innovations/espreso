@@ -47,16 +47,17 @@ void Dynamics::init()
 	TimeEvent timeFnodes(string("Create Fix nodes"));
 	timeFnodes.AddStart();
 
-	size_t fixPointsCount = _instance.mesh().getFixPointsCount();
-	const std::vector<eslocal> fixPoints = _instance.mesh().getFixPoints();
-	fix_nodes.resize(partsCount);
-
-	cilk_for (eslocal d = 0; d < partsCount; d++) {
-			for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
-				fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
-			}
-			std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
-		}
+	fix_nodes = _instance.mesh().getFixPoints();
+//	size_t fixPointsCount = _instance.mesh().getFixPointsCount();
+//	const std::vector<eslocal> fixPoints = _instance.mesh().getFixPoints();
+//	fix_nodes.resize(partsCount);
+//
+//	cilk_for (eslocal d = 0; d < partsCount; d++) {
+//			for (eslocal fixPoint = 0; fixPoint < fixPointsCount; fixPoint++) {
+//				fix_nodes[d].push_back(fixPoints[d * fixPointsCount + fixPoint]);
+//			}
+//			std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
+//		}
 
 	 timeFnodes.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeFnodes);
@@ -185,7 +186,6 @@ void Dynamics::init()
 		f_vec,
 		f_vec, //to be vec_c
 		fix_nodes,
-		l2g_vec,
 
 		neigh_clusters
 
