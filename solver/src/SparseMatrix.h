@@ -43,6 +43,8 @@ public:
 	SparseMatrix& operator= ( const SparseCSRMatrix<eslocal> &A_in );
 	SparseMatrix& operator= ( const SparseIJVMatrix<eslocal> &A_in );
 
+	void swap ( SparseMatrix &A_in);
+
 	// Variables 
 	int  rows;		// number of rows 
 	int  cols;		// number of columns 

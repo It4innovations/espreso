@@ -337,6 +337,51 @@ SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
 	return *this;
 }
 
+void SparseMatrix::swap ( SparseMatrix &A_in) {
+
+	MKL_INT tmp;
+	char ttype;
+
+	tmp = rows; rows = A_in.rows; A_in.rows = tmp;
+	tmp = cols; cols = A_in.cols; A_in.cols = tmp;
+	tmp = nnz;  nnz  = A_in.nnz;  A_in.nnz  = tmp;
+	ttype = type; type = A_in.type; A_in.type = ttype;
+
+	// Sparse COO data
+	I_row_indices.swap( A_in.I_row_indices );
+	J_col_indices.swap( A_in.CSR_J_col_indices );
+	V_values.swap     ( A_in.V_values );
+
+	// Sparse CSR data
+	CSR_I_row_indices.swap( A_in.CSR_I_row_indices );
+	CSR_J_col_indices.swap( A_in.CSR_J_col_indices );
+	CSR_V_values.swap     ( A_in.CSR_V_values );
+
+	// Dense data
+	dense_values	  .swap( A_in.dense_values );
+	dense_values_fl   .swap( A_in.dense_values_fl );
+
+	// GPU
+	double * tmpp;
+	tmpp = d_dense_values; d_dense_values = A_in.d_dense_values; A_in.d_dense_values = tmpp;
+	tmpp = d_x_in;         d_x_in  = A_in.d_x_in;                A_in.d_x_in  = tmpp;
+	tmpp = d_y_out;		   d_y_out = A_in.d_y_out;		         A_in.d_y_out = tmpp;
+
+	float * tmppf;
+	tmppf = d_dense_values_fl; d_dense_values_fl = A_in.d_dense_values_fl; A_in.d_dense_values_fl = tmppf;
+	tmppf = d_x_in_fl		; d_x_in_fl         = A_in.d_x_in_fl;         A_in.d_x_in_fl         = tmppf;
+	tmppf = d_y_out_fl		; d_y_out_fl        = A_in.d_y_out_fl;        A_in.d_y_out_fl        = tmppf;
+
+#ifdef CUDA
+	cublasHandle_t thandle;
+	cudaStream_t   tstream;
+
+	thandle = handle; handle = A_in.handle; A_in.handle = thandle;
+	tstream = stream; stream = A_in.stream; A_in.stream = tstream;
+#endif
+
+}
+
 SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in ) {
 
 	rows = A_in.rows();
