@@ -1,0 +1,8 @@
+
+COMPOSER = "composer"
+
+def configure(ctx):
+    ctx.setenv(COMPOSER, ctx.all_envs[""].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[COMPOSER]

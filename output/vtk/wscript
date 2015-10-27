@@ -3,6 +3,8 @@ VTK = "output_vtk"
 
 source_files = (
     "vtk.cpp",
+    "full/vtk.cpp",
+    "surface/vtk.cpp"
 )
 
 def configure(ctx):

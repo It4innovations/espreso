@@ -225,7 +225,7 @@ void LinearSolver::init(
 
 
 	//cilk_
-          for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+    for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		for (int i = 0; i < fix_nodes[d].size(); i++)
  			for (int d_i = 0; d_i < DOFS_PER_NODE; d_i++)
 				cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
