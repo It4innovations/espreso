@@ -1,7 +1,7 @@
 
 #include "linearelasticity.h"
 
-namespace physics {
+namespace assembler {
 
 template <MatrixComposer TMatrixComposer>
 void LinearElasticity<TMatrixComposer>::C(DenseMatrix &C)

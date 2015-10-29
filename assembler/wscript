@@ -1,5 +1,5 @@
 
-PHYSICS = "physics"
+ASSEMBLER = "assembler"
 
 source_files = (
     #"linear/linear.cpp",
@@ -7,15 +7,15 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.setenv(PHYSICS, ctx.all_envs[""].derive());
+    ctx.setenv(ASSEMBLER, ctx.all_envs[""].derive());
 
 def build(ctx):
-    ctx.env = ctx.all_envs[PHYSICS]
+    ctx.env = ctx.all_envs[ASSEMBLER]
     return
 
     ctx.lib(
         source          = source_files,
-        target          = "esphysics",
+        target          = "esassembler",
         use             = "espreso_includes",
         install_path    = ctx.LIBRARIES
     )

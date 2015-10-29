@@ -1,7 +1,7 @@
 
 #include "linear.h"
 
-namespace physics {
+namespace assembler {
 
 template <>
 void Linear<ELMER>::KMf(SparseMatrix &K, SparseMatrix &M, std::vector<double> &f, size_t part, bool dynamics)

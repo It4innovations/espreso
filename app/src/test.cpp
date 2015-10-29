@@ -1,11 +1,11 @@
 #include "mpi.h"
 
+#include "../../assembler/esassemblers.h"
 #include "esinput.h"
 #include "esoutput.h"
 
 #include "essolver.h"
 #include "esmesh.h"
-#include "esphysics.h"
 
 
 int main(int argc, char** argv)
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	mesh::Mesh m(MPIrank, MPIsize);
 	m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	physics::LinearElasticity<physics::FEM> fem(m);
+	assembler::LinearElasticity<assembler::FEM> fem(m);
 
 	fem.init();
 	fem.solve();

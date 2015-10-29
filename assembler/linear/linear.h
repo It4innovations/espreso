@@ -1,13 +1,13 @@
 
-#ifndef PHYSICS_LINEAR_LINEAR_H_
-#define PHYSICS_LINEAR_LINEAR_H_
+#ifndef ASSEMBLER_LINEAR_LINEAR_H_
+#define ASSEMBLER_LINEAR_LINEAR_H_
 
-#include "../physics.h"
+#include "../assembler.h"
 
-namespace physics {
+namespace assembler {
 
 template <MatrixComposer TMatrixComposer>
-class Linear: public Physics<TMatrixComposer> {
+class Linear: public Assembler<TMatrixComposer> {
 
 public:
 	virtual ~Linear() {};
@@ -19,7 +19,7 @@ public:
 	void finalize();
 
 protected:
-	Linear(const mesh::Mesh &mesh): Physics<TMatrixComposer>(mesh) {};
+	Linear(const mesh::Mesh &mesh): Assembler<TMatrixComposer>(mesh) {};
 
 	// FEM specific
 	virtual size_t DOFs() = 0;
@@ -73,4 +73,4 @@ private:
 #include "bem.hpp"
 
 
-#endif /* PHYSICS_LINEAR_LINEAR_H_ */
+#endif /* ASSEMBLER_LINEAR_LINEAR_H_ */

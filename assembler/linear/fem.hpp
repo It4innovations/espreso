@@ -1,7 +1,7 @@
 
 #include "linear.h"
 
-namespace physics {
+namespace assembler {
 
 template <>
 size_t Linear<FEM>::subdomains()

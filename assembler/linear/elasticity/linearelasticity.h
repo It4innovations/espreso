@@ -1,9 +1,9 @@
-#ifndef LINEARELASTICITY_H_
-#define LINEARELASTICITY_H_
+#ifndef ASSEMBLER_LINEAR_ELASTICITY_LINEARELASTICITY_H_
+#define ASSEMBLER_LINEAR_ELASTICITY_LINEARELASTICITY_H_
 
 #include "../linear.h"
 
-namespace physics {
+namespace assembler {
 
 template <MatrixComposer TMatrixComposer>
 class LinearElasticity: public Linear<TMatrixComposer> {
@@ -28,4 +28,4 @@ protected:
 
 #include "linearelasticity.hpp"
 
-#endif /* LINEARELASTICITY_H_ */
+#endif /* ASSEMBLER_LINEAR_ELASTICITY_LINEARELASTICITY_H_ */

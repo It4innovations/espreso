@@ -1,7 +1,7 @@
 
 #include "linear.h"
 
-namespace physics {
+namespace assembler {
 
 template <MatrixComposer TMatrixComposer>
 void Linear<TMatrixComposer>::init()
