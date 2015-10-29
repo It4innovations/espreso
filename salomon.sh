@@ -147,8 +147,8 @@ i
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      16  25  21  16  16  16  16  16  13  14 )
-  clustt_size_x=( 16  10  12  10  10  10  10  10  10  10 )
+  dom_size=(      10  25  21  16  16  16  16  16  13  14 )
+  clustt_size_x=( 10  10  12  10  10  10  10  10  10  10 )
 # clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
 # clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
@@ -158,7 +158,7 @@ i
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
-  for i in 2 1 0 # 0 1 2 3 4 5 6
+  for i in 0 # 0 1 2 3 4 5 6
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -182,7 +182,7 @@ i
     #                                          ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}               # | tee -a $log_file
-    mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+    mpirun -n $(( X * Y * Z ))  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom_sal.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
     #mpirun -n 10 ./espreso | tee -a $log_file
    
     #ddt -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file
