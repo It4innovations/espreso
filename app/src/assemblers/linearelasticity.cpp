@@ -45,18 +45,18 @@ void Linear_elasticity::init() {
 			//TODO: not optimal
 			K_tmp = K_dense;
 
-			int n = K_dense.rows();
+			eslocal n = K_dense.rows();
 
-	        for (int i = 0; i < n/3; i++) {
-	            for (int j = 0; j < n; j++) {
+	        for (eslocal i = 0; i < n/3; i++) {
+	            for (eslocal j = 0; j < n; j++) {
 	                K_tmp( 3*i+0,j) = K_dense(0*(n/3) + i ,j);
 	                K_tmp( 3*i+1,j) = K_dense(1*(n/3) + i ,j);
 	                K_tmp( 3*i+2,j) = K_dense(2*(n/3) + i ,j);
 	            }
 	        }
 
-	        for (int i = 0; i < n/3; i++) {
-	            for (int j = 0; j < n; j++) {
+	        for (eslocal i = 0; i < n/3; i++) {
+	            for (eslocal j = 0; j < n; j++) {
 	                K_dense( j, 3*i+0) = K_tmp(j, 0*(n/3) + i );
 	                K_dense( j, 3*i+1) = K_tmp(j, 1*(n/3) + i );
 	                K_dense( j, 3*i+2) = K_tmp(j, 2*(n/3) + i );
@@ -201,7 +201,7 @@ void Linear_elasticity::init() {
 	}
 
 
-	 for (int i = 0; i < vec_c.size(); i++)
+	 for (eslocal i = 0; i < vec_c.size(); i++)
 		 vec_c[i].resize(B1_duplicity[i].size(), 0.0);
 
 	 timeB1glob.AddEndWithBarrier();
@@ -338,7 +338,7 @@ void Linear_elasticity::post_solve_update() {
 	 	 if (BEM) {
 	 		_instance.surf_mesh().store(mesh::VTK_FULL, "mesh", prim_solution, 0.95, 0.9);
 	 	 } else {
-	 	 	_instance.mesh().     store(mesh::VTK_FULL, "mesh", prim_solution, 0.95, 0.9);
+	 	 	_instance.mesh().     store(mesh::VTK_SURFACE, "mesh", prim_solution, 0.95, 0.9);
 	 	 }
 
 		 timeSaveVTK.AddEndWithBarrier();

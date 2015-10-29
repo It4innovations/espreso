@@ -27,7 +27,7 @@ public:
 		return new Hexahedron20(*this);
 	}
 
-	int vtkCode() const
+	eslocal vtkCode() const
 	{
 		return Hexahedron20VTKCode;
 	}

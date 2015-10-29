@@ -7,11 +7,8 @@ SOLVER_PARDISO_MKL = SOLVER + "_pardiso_mkl"
 SOLVER_MUMPS = SOLVER + "_mumps"
 
 source_files = (
-#   "src/HTFETI-seq.cpp",
    "src/Cluster.cpp",
-   "src/ConfigFile.cpp",
    "src/Domain.cpp",
-   "src/FEM_Assembler.cpp",
    "src/IterSolver.cpp",
    "src/SparseMatrix.cpp",
    "src/TimeEval.cpp",

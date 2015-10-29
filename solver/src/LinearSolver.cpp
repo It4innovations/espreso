@@ -16,8 +16,8 @@ void Set_CSR_Matrix   (
 		double * vals,
 		char type ) {
 
-	int nnz = rows[n_rows];
-	int offset = (rows[0]) ? 0 : 1;
+	eslocal nnz = rows[n_rows];
+	eslocal offset = (rows[0]) ? 0 : 1;
 	nnz -= rows[0];
 
 	Mat.CSR_I_row_indices.resize(n_rows+1);
@@ -25,11 +25,11 @@ void Set_CSR_Matrix   (
 	Mat.CSR_V_values	 .resize(nnz);
 
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (int i = 0; i < Mat.CSR_I_row_indices.size(); i++)
+	for (eslocal i = 0; i < Mat.CSR_I_row_indices.size(); i++)
 		Mat.CSR_I_row_indices[i] = rows[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (int i = 0; i < Mat.CSR_J_col_indices.size(); i++)
+	for (eslocal i = 0; i < Mat.CSR_J_col_indices.size(); i++)
 		Mat.CSR_J_col_indices[i] = cols[i] + offset;
 
 	copy(vals, vals + nnz, Mat.CSR_V_values.begin());
@@ -49,19 +49,19 @@ void Set_COO_Matrix   (
 		eslocal	 * J_cols,
 		double * V_vals,
 		char type,
-		int indexing ) {
+		eslocal indexing ) {
 
 	Mat.I_row_indices.resize(nnz);
 	Mat.J_col_indices.resize(nnz);
 	Mat.V_values	 .resize(nnz);
-	int offset = indexing ? 0 : 1;
+	eslocal offset = indexing ? 0 : 1;
 
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (int i = 0; i < Mat.I_row_indices.size(); i++)
+	for (eslocal i = 0; i < Mat.I_row_indices.size(); i++)
 		Mat.I_row_indices[i] = I_rows[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (int i = 0; i < Mat.J_col_indices.size(); i++)
+	for (eslocal i = 0; i < Mat.J_col_indices.size(); i++)
 		Mat.J_col_indices[i] = J_cols[i] + offset;
 
 	copy(V_vals, V_vals + nnz, Mat.V_values.begin());
@@ -83,7 +83,7 @@ LinearSolver::~LinearSolver() {
 	// TODO Auto-generated destructor stub
 }
 
-void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
+void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	SINGULAR 	= IS_SINGULAR;
   	R_from_mesh = true	;
@@ -101,8 +101,8 @@ void LinearSolver::setup( int rank, int size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 1;
+	cluster.USE_HFETI			= 1;
+	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
 	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
@@ -157,8 +157,8 @@ void LinearSolver::init(
 	 timeSetClust.AddStart();
 
 	// Setup Cluster
-	std::vector <int> domain_list (number_of_subdomains_per_cluster,0);
-	for (int i = 0; i<number_of_subdomains_per_cluster; i++)
+	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster,0);
+	for (eslocal i = 0; i<number_of_subdomains_per_cluster; i++)
 		domain_list[i] = i;
 
 	cluster.cluster_global_index = MPI_rank + 1;
@@ -226,8 +226,8 @@ void LinearSolver::init(
 
 	//cilk_
     for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
-		for (int i = 0; i < fix_nodes[d].size(); i++)
- 			for (int d_i = 0; d_i < DOFS_PER_NODE; d_i++)
+		for (eslocal i = 0; i < fix_nodes[d].size(); i++)
+ 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
 				cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
 
 	 timeSetRHS.AddEndWithBarrier();
@@ -453,7 +453,7 @@ void LinearSolver::set_R (
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
-		for (int i = 0; i < l2g_vec[d].size(); i++) {
+		for (eslocal i = 0; i < l2g_vec[d].size(); i++) {
 			std::vector <double> tmp_vec (3,0);
 			tmp_vec[0] = mesh.coordinates()[l2g_vec[d][i]].x;
 			tmp_vec[1] = mesh.coordinates()[l2g_vec[d][i]].y;

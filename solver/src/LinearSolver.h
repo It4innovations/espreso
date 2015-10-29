@@ -62,7 +62,7 @@ public:
 
 	virtual ~LinearSolver();
 
-	void setup( int rank, int size, bool SINGULAR );
+	void setup( eslocal rank, eslocal size, bool SINGULAR );
 
 	void init(
 			const mesh::Mesh &mesh,

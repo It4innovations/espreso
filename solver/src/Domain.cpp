@@ -9,7 +9,7 @@ Domain::Domain(){
 
 }
 
-Domain::Domain(int domain_index, int use_dynamic_1_no_dynamic_0){
+Domain::Domain(eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0){
 	domain_global_index = domain_index; 
 	USE_DYNAMIC = use_dynamic_1_no_dynamic_0; 
 }
@@ -20,7 +20,7 @@ void Domain::SetDynamicParameters(double set_dynamic_timestep, double set_dynami
 	dynamic_gama     = set_dynamic_gama;
 }
 
-void Domain::SetDomain(int USE_HFETI, int use_dynamic_1_no_dynamic_0) {
+void Domain::SetDomain(eslocal USE_HFETI, eslocal use_dynamic_1_no_dynamic_0) {
 
 	USE_DYNAMIC = use_dynamic_1_no_dynamic_0; 
 	K_regularizationFromR( );
@@ -32,7 +32,7 @@ void Domain::CreateKplus_R ( )
 {
 	if (DOFS_PER_NODE == 3) {
 
-		int elem_index = 0;
+		eslocal elem_index = 0;
 
 		SparseMatrix R_per_element;
 
@@ -93,7 +93,7 @@ void Domain::CreateKplus_R ( )
 		Kplus_R.dense_values.resize( coordinates.size() );
 		double nsqrt = 1.0 / sqrt( coordinates.size() );
 
-		for (int elem_index = 1; elem_index < coordinates.size(); elem_index++) {
+		for (eslocal elem_index = 1; elem_index < coordinates.size(); elem_index++) {
 			Kplus_R.dense_values[elem_index] = nsqrt;
 		}
 
@@ -106,7 +106,7 @@ void Domain::CreateKplus_R ( )
 	}
 }
 
-void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, int x_in_vector_start_index, int y_out_vector_start_index) {
+void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
 	Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index); 
 }
 
@@ -126,22 +126,22 @@ void Domain::K_regularization ( )
 	N.cols = 6; // pozor 
 	N.nnz  = 0; 
 	N.type = 'G';
-	int row_fill = 1; 
+	eslocal row_fill = 1;
 	N.CSR_I_row_indices.reserve(K.rows+1);
 
-	int old_index  = 0;
-	int next_index = 0; 
+	eslocal old_index  = 0;
+	eslocal next_index = 0;
 
 	SEQ_VECTOR <double> dense_values;
 	double dense_pattern[] = 
 	   {1, 0, 0,    0, 8, 8,
 		0, 1, 0,    8, 0, 8,
 		0, 0, 1,    8, 8, 0}; // 8 is ust a random number 
-	int dense_pattern_size = 18; 
+	eslocal dense_pattern_size = 18;
 
 	dense_values.resize(fix_nodes.size() * dense_pattern_size);
-	for (int fpi = 0; fpi < fix_nodes.size(); fpi++) {
-		int elem_index = fix_nodes[fpi];
+	for (eslocal fpi = 0; fpi < fix_nodes.size(); fpi++) {
+		eslocal elem_index = fix_nodes[fpi];
 		dense_pattern[4]  = - coordinates[elem_index][2];
 		dense_pattern[5]  =   coordinates[elem_index][1];
 		dense_pattern[9]  =   coordinates[elem_index][2];
@@ -152,7 +152,7 @@ void Domain::K_regularization ( )
 		//dense_values.assign(dense_pattern + (fpi*dense_pattern_size), dense_pattern + ((fpi+1)*dense_pattern_size));
 	}
 
-	for (int fpi = 0; fpi < fix_nodes.size(); fpi++) {
+	for (eslocal fpi = 0; fpi < fix_nodes.size(); fpi++) {
 
 		old_index  = next_index;
 		next_index = 3 * fix_nodes[fpi] - 2;
@@ -160,7 +160,7 @@ void Domain::K_regularization ( )
 		fill(N.CSR_I_row_indices.begin() + old_index, N.CSR_I_row_indices.begin() + next_index, row_fill);
 		N.rows = next_index; 
 
-		int elem_index = fix_nodes[fpi];
+		eslocal elem_index = fix_nodes[fpi];
 		SparseMatrix R_per_element; 
 
 
@@ -312,7 +312,7 @@ void Domain::get_kernel_from_K(){
 
 //    2) permutVectorActive
 //  random selection of singular DOFs
-  int permutVectorActive = 1; // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
+  eslocal permutVectorActive = 1; // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
 
 //    3) use_null_pivots_or_s_set
   // NtN_Mat from null pivots or fixing DOFs
@@ -325,16 +325,16 @@ void Domain::get_kernel_from_K(){
   bool diagonalRegularization=true;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
-// get and print K eigenvalues (A is temporarily converted to dense);
-  int get_n_first_and_n_last_eigenvals_from_dense_K = 0;
+// get and preslocal K eigenvalues (A is temporarily converted to dense);
+  eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 0;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
-// get and print S eigenvalues 
-  int get_n_first_and_n_last_eigenvals_from_dense_S = 0;
+// get and preslocal S eigenvalues
+  eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 0;
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (A is temporarily converted to dense matrix);
-  int plot_n_first_n_last_eigenvalues = 0;
+  eslocal plot_n_first_n_last_eigenvalues = 0;
 
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
@@ -350,20 +350,20 @@ void Domain::get_kernel_from_K(){
 //    2) CHECK_NONSING
 // if CHECK_NONSING>0, checking of K_rr non-singularity is activated and it is repeated 
 // (CHECK_NONSING) times.
-  int CHECK_NONSING=0;
+  eslocal CHECK_NONSING=0;
 
 //    3) MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS
 // if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
-  int MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS=2500;
+  eslocal MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS=2500;
 
 //    4) SC_SIZE
 // specification of size of Schur complement used for detection of zero eigenvalues.
 // SC_SIZE >= expected defect 'd' (e.g. in elasticity d=6).
-  int SC_SIZE=50;
+  eslocal SC_SIZE=50;
 
 //    5) TWENTY
 // testing last TWENTY eigenvalues of S to distinguish, if d-last ones are zero or not.
-  int TWENTY=20;  
+  eslocal TWENTY=20;
   // TWENTY eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
   
 //    6) JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY
@@ -382,28 +382,28 @@ void Domain::get_kernel_from_K(){
   SparseMatrix S;
   SparseMatrix K_rr;
   SparseMatrix K_rs;
-  int i_start = 0;
-  int NONSING_SIZE = K.rows - SC_SIZE - i_start;
-  int j_start = NONSING_SIZE;
-  SEQ_VECTOR <int> permVec;
+  eslocal i_start = 0;
+  eslocal NONSING_SIZE = K.rows - SC_SIZE - i_start;
+  eslocal j_start = NONSING_SIZE;
+  SEQ_VECTOR <eslocal > permVec;
   permVec.resize(K.rows);
-  SEQ_VECTOR <SEQ_VECTOR<int>> vec_I1_i2(K.rows, SEQ_VECTOR<int>(2, 1));
-  int offset = K.CSR_I_row_indices[0] ? 1 : 0;
+  SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K.rows, SEQ_VECTOR<eslocal >(2, 1));
+  eslocal offset = K.CSR_I_row_indices[0] ? 1 : 0;
   //  
   
   double cond_of_regular_part=1e307;
-  int *I_row_indices_p = new int[K.nnz] ;
-  int *J_col_indices_p = new int[K.nnz] ;
-  SEQ_VECTOR <int> tmp_vec_s;
+  eslocal *I_row_indices_p = new eslocal [K.nnz] ;
+  eslocal *J_col_indices_p = new eslocal [K.nnz] ;
+  SEQ_VECTOR <eslocal > tmp_vec_s;
   tmp_vec_s.resize(SC_SIZE);
-  int v1, n_mv, cnt_permut_vec;
-  SEQ_VECTOR <int>::iterator it;
-  SEQ_VECTOR <int> fix_dofs;
+  eslocal v1, n_mv, cnt_permut_vec;
+  SEQ_VECTOR <eslocal >::iterator it;
+  SEQ_VECTOR <eslocal > fix_dofs;
   fix_dofs.resize(SC_SIZE);
   SparseMatrix K_modif;
 
   double di=1,dj=1;
-  int cnt_iter_check_nonsing=0;
+  eslocal cnt_iter_check_nonsing=0;
 
 
   K_modif = K;
@@ -411,11 +411,11 @@ void Domain::get_kernel_from_K(){
 //  K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues);
   // diagonal scaling of K_modif:
   // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
-  for (int i = 0;i<K_modif.rows;i++){
+  for (eslocal i = 0;i<K_modif.rows;i++){
     if (diagonalScaling) {
       di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
     }
-    for (int j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+    for (eslocal j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
       if (diagonalScaling) {
         dj=K_modif.CSR_V_values[
           K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
@@ -441,7 +441,7 @@ void Domain::get_kernel_from_K(){
     printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
           "K",get_n_first_and_n_last_eigenvals_from_dense_K,
           K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2,K_modif.rows);
-    for (int i = 0 ; i < K_modif.rows; i++){
+    for (eslocal i = 0 ; i < K_modif.rows; i++){
       if (i < get_n_first_and_n_last_eigenvals_from_dense_K || 
             i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
         printf("%5d:  %3.8e \n",i+1, WK_modif[i]);
@@ -464,11 +464,11 @@ void Domain::get_kernel_from_K(){
       K_modif.Clear();
       K_modif=K;
       //diagonal scaling
-      for (int i = 0;i<K_modif.rows;i++){
+      for (eslocal i = 0;i<K_modif.rows;i++){
         if (diagonalScaling) {
           di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
         }
-        for (int j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+        for (eslocal j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
           if (diagonalScaling) {
             dj=K_modif.CSR_V_values[
               K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
@@ -480,7 +480,7 @@ void Domain::get_kernel_from_K(){
 
     if (permutVectorActive<2){
       // set row permVec = {0,1,2,3,4,...,K.rows};
-      for (int i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 A.rows-1 
+      for (eslocal i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 A.rows-1
     }
 //
     if (permutVectorActive==1){
@@ -497,7 +497,7 @@ void Domain::get_kernel_from_K(){
       // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
       // If not, missing numbers are added and checked again.  
       do {
-        for (int i = 0;i<(SC_SIZE-n_mv);i++){
+        for (eslocal i = 0;i<(SC_SIZE-n_mv);i++){
           v1 = rand() % K_modif.rows;
           tmp_vec_s[n_mv+i]=v1; 
         }
@@ -508,8 +508,8 @@ void Domain::get_kernel_from_K(){
         cnt_permut_vec++;
      } while (n_mv != SC_SIZE && cnt_permut_vec < 100);
       //
-      int ik=0,cnt_i=0;
-      for (int i = 0;i<permVec.size();i++){
+      eslocal ik=0,cnt_i=0;
+      for (eslocal i = 0;i<permVec.size();i++){
         if (i==tmp_vec_s[ik]){
           permVec[ik+NONSING_SIZE]=tmp_vec_s[ik];
           ik++;
@@ -525,19 +525,19 @@ void Domain::get_kernel_from_K(){
     //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
     if (permutVectorActive>0){
 //
-      for (int i = 0; i < K.rows;i++){
+      for (eslocal i = 0; i < K.rows;i++){
         vec_I1_i2[i][0]=permVec[i];
         vec_I1_i2[i][1]=i; // position to create revers permutation
       }
 
       std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
-                [](const SEQ_VECTOR <int>& a, const SEQ_VECTOR <int>& b) {
+                [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
         return a[0] < b[0];
       });
       // permutations made on matrix in COO format 
       K_modif.ConvertToCOO(0);
-      int I_index,J_index;
-      for (int i = 0;i<K_modif.nnz;i++){
+      eslocal I_index,J_index;
+      for (eslocal i = 0;i<K_modif.nnz;i++){
         I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
         J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
         if (I_index>J_index){
@@ -548,14 +548,14 @@ void Domain::get_kernel_from_K(){
         }
       } 
 //
-      for (int i = 0; i<K_modif.nnz;i++){
+      for (eslocal i = 0; i<K_modif.nnz;i++){
         K_modif.I_row_indices[i] = I_row_indices_p[i];
         K_modif.J_col_indices[i] = J_col_indices_p[i];
       }                            
       K_modif.ConvertToCSRwithSort(0);
     }
 //
-    for (int i = 0;i<SC_SIZE;i++) fix_dofs[i]=permVec[NONSING_SIZE + i] + offset; 
+    for (eslocal i = 0;i<SC_SIZE;i++) fix_dofs[i]=permVec[NONSING_SIZE + i] + offset;
     K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, NONSING_SIZE);
 //    K_rr.printMatCSR("K_rr");
     if (CHECK_NONSING!=0){
@@ -569,7 +569,7 @@ void Domain::get_kernel_from_K(){
   delete [] I_row_indices_p;
   delete [] J_col_indices_p;
 
-//  for (int i = 0 ; i< SC_SIZE;i++){ printf("%d ",permVec[NONSING_SIZE+i]); } printf("\n");
+//  for (eslocal i = 0 ; i< SC_SIZE;i++){ printf("%d ",permVec[NONSING_SIZE+i]); } printf("\n");
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, NONSING_SIZE,j_start,SC_SIZE);
 //
@@ -593,10 +593,10 @@ void Domain::get_kernel_from_K(){
     printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
   }
 // IDENTIFICATIONS OF ZERO EIGENVALUES 
-  int defect_A_in;// R_s_cols;
+  eslocal defect_A_in;// R_s_cols;
   double ratio; 
-  int itMax = TWENTY < S.rows ? TWENTY : S.rows ;
-  for (int i = itMax-1; i > 0;i--){ 
+  eslocal itMax = TWENTY < S.rows ? TWENTY : S.rows ;
+  for (eslocal i = itMax-1; i > 0;i--){
     ratio = fabs(W[i-1]/W[i]);
 //    printf("eig[%d],eig[%d]= [%3.15e/%3.15e]\n",i,i-1,W[i],W[i-1]);
     if (ratio < JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY){
@@ -609,7 +609,7 @@ void Domain::get_kernel_from_K(){
     printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
           "S",get_n_first_and_n_last_eigenvals_from_dense_S,
           S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2,S.rows);
-    for (int i = 0 ; i < S.rows; i++){
+    for (eslocal i = 0 ; i < S.rows; i++){
       if (i < get_n_first_and_n_last_eigenvals_from_dense_S || 
             i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
         printf("%5d:  %3.8e \n",i+1, W[i]);
@@ -624,9 +624,9 @@ void Domain::get_kernel_from_K(){
   R_s.cols = defect_A_in;
   R_s.type = 'G';
  // 
-  int cnt=0;
-  for (int j = 0; j < defect_A_in; j++){
-    for (int i = 0; i < R_s.rows; i++){
+  eslocal cnt=0;
+  for (eslocal j = 0; j < defect_A_in; j++){
+    for (eslocal i = 0; i < R_s.rows; i++){
 	    R_s.dense_values[cnt] = Z[j*R_s.rows + i];			
       cnt++;
     }
@@ -652,15 +652,15 @@ void Domain::get_kernel_from_K(){
   Kplus_R.type = 'G';
 	Kplus_R.dense_values.resize(Kplus_R.nnz);			
   cnt=0;
-  for (int j = 0; j < Kplus_R.cols; j++){
-    for (int i = 0; i < R_r.rows; i++){
+  for (eslocal j = 0; j < Kplus_R.cols; j++){
+    for (eslocal i = 0; i < R_r.rows; i++){
       if (diagonalScaling){
         di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
       }
       Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r.rows + i]/sqrt(di);			
       cnt++;
     }
-    for (int i = 0; i < R_s.rows; i++){
+    for (eslocal i = 0; i < R_s.rows; i++){
       if (diagonalScaling){
         di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r.rows]]-offset];
       }
@@ -670,11 +670,11 @@ void Domain::get_kernel_from_K(){
   }
 //
   Kplus_R.GramSchmidtOrtho();
-  SEQ_VECTOR <int> null_pivots;
+  SEQ_VECTOR <eslocal > null_pivots;
   Kplus_R.getNullPivots(null_pivots);
 
-//  printf("null pivots, int ");
-//  for (int i = 0;i<null_pivots.size();i++)
+//  printf("null pivots, eslocal ");
+//  for (eslocal i = 0;i<null_pivots.size();i++)
 //    printf("%d ",null_pivots[i]);
 //  printf("\n");
 
@@ -682,11 +682,11 @@ void Domain::get_kernel_from_K(){
   double * AR =  new double [K.rows];
   double norm_AR_row,norm_AR = 0.0;
 //  printf("||A*Kplus_R[:,i]|| ...   \n");
-  for (int i = 0;i<Kplus_R.cols;i++){
+  for (eslocal i = 0;i<Kplus_R.cols;i++){
     memset(AR,0,Kplus_R.rows * sizeof(double));
   	K.spmv_( K,&(Kplus_R.dense_values[i*Kplus_R.rows]),AR);
     norm_AR_row=0.0;
-    for (int j = 0; j < Kplus_R.rows;j++){
+    for (eslocal j = 0; j < Kplus_R.rows;j++){
       norm_AR_row+=AR[j]*AR[j];
     }
  //   printf("%3.3e  ",sqrt(norm_AR_row));
@@ -705,7 +705,7 @@ void Domain::get_kernel_from_K(){
   rho = 1.0 * rho;
 //
   if (diagonalRegularization){
-    for (int i = 0; i < null_pivots.size(); i++){
+    for (eslocal i = 0; i < null_pivots.size(); i++){
       K.CSR_V_values[K.CSR_I_row_indices[null_pivots[i]-offset]-offset]+=rho;
     }
   }
@@ -717,7 +717,7 @@ void Domain::get_kernel_from_K(){
     else
     {
 //      printf("fix_dofs...\n");
-//      for (int i = 0;i<fix_dofs.size();i++)
+//      for (eslocal i = 0;i<fix_dofs.size();i++)
 //        printf("%d ",fix_dofs[i]);
 //      printf("\n");
 

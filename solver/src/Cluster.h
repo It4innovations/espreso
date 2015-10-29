@@ -40,27 +40,27 @@ class Cluster
 
 public:
 	// Constructor
-	Cluster(int cluster_index);
+	Cluster(eslocal cluster_index);
 	Cluster();
 
 	// Cluster specific variables
-	int cluster_global_index;
-	int USE_DYNAMIC;
-	int USE_KINV;
-	int USE_HFETI;
-	int SUBDOM_PER_CLUSTER;
-	int NUMBER_OF_CLUSTERS;
-	int DOFS_PER_NODE;
+	eslocal cluster_global_index;
+	eslocal USE_DYNAMIC;
+	eslocal USE_KINV;
+	eslocal USE_HFETI;
+	eslocal SUBDOM_PER_CLUSTER;
+	eslocal NUMBER_OF_CLUSTERS;
+	eslocal DOFS_PER_NODE;
 
-	int dual_size;
+	eslocal dual_size;
 	string data_directory;
 
 	// List of Domains
-	SEQ_VECTOR <int>	domains_in_global_index;
+	SEQ_VECTOR <eslocal>	domains_in_global_index;
 	PAR_VECTOR <Domain> domains;
 
-	int x_clust_size;
-	SEQ_VECTOR <int> x_clust_domain_map_vec;
+	eslocal x_clust_size;
+	SEQ_VECTOR <eslocal> x_clust_domain_map_vec;
 
 	// Global Matrices distributed per cluster
 	SparseMatrix G1;
@@ -78,7 +78,7 @@ public:
 	SEQ_VECTOR <DenseMatrixPack> B1KplusPacks;
 
 	// number of MIC
-	int NUM_MICS;
+	eslocal NUM_MICS;
 
 	SparseSolver F0;
 	SparseSolver F0_fast;
@@ -106,13 +106,13 @@ public:
 
 	// Functions of the class
 
-	void InitClusterPC ( int * subdomains_global_indices, int number_of_subdomains );
-	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <int> > & lambda_map); //, SEQ_VECTOR < int > & neigh_domains  );
+	void InitClusterPC ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
+	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map); //, SEQ_VECTOR < eslocal > & neigh_domains  );
 	void SetClusterPC_AfterKplus ();
 	void SetClusterHFETI ();
 
-	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<int> & cluster_map_vec);
-	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ); //, vector <double> & y_out, vector<int> & cluster_map_vec);
+	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
+	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ); //, vector <double> & y_out, vector<eslocal> & cluster_map_vec);
 
 	void multKplusGlobal_Kinv  ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
 	void multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
@@ -138,20 +138,20 @@ public:
 	//void GetProcessMemoryStat ( );
 	//void GetMemoryStat( );
 
-	SEQ_VECTOR < SEQ_VECTOR <int> >		my_comm_lambdas_indices;
+	SEQ_VECTOR < SEQ_VECTOR <eslocal> >		my_comm_lambdas_indices;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_recv_lambdas;
 
-	SEQ_VECTOR < SEQ_VECTOR <int> >		my_comm_lambdas_indices_comp;
+	SEQ_VECTOR < SEQ_VECTOR <eslocal> >		my_comm_lambdas_indices_comp;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas_comp;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_recv_lambdas_comp;
 
-	SEQ_VECTOR <int> my_neighs;
-	SEQ_VECTOR <int> my_lamdas_indices;
-	map <int,int> my_lamdas_map_indices;
+	SEQ_VECTOR <eslocal> my_neighs;
+	SEQ_VECTOR <eslocal> my_lamdas_indices;
+	map <eslocal,eslocal> my_lamdas_map_indices;
 
-	SEQ_VECTOR <int> my_lamdas_ddot_filter;
-	SEQ_VECTOR <int> lambdas_filter;
+	SEQ_VECTOR <eslocal> my_lamdas_ddot_filter;
+	SEQ_VECTOR <eslocal> lambdas_filter;
 
 	SEQ_VECTOR <double> compressed_tmp;
 	SEQ_VECTOR <double> compressed_tmp2;
@@ -173,7 +173,7 @@ public:
 
 	TimeEvent loop_2_1_time;
 
-	int iter_cnt_comm;
+	eslocal iter_cnt_comm;
 
 	// variables for dynamic
 	double dynamic_timestep;
