@@ -2,12 +2,12 @@
 #ifndef ASSEMBLER_LINEAR_LINEAR_H_
 #define ASSEMBLER_LINEAR_LINEAR_H_
 
-#include "../assembler.h"
+#include "../gluing/gluing.h"
 
 namespace assembler {
 
 template <MatrixComposer TMatrixComposer>
-class Linear: public Assembler<TMatrixComposer> {
+class Linear: public Gluing<TMatrixComposer> {
 
 public:
 	virtual ~Linear() {};
@@ -19,7 +19,7 @@ public:
 	void finalize();
 
 protected:
-	Linear(const mesh::Mesh &mesh): Assembler<TMatrixComposer>(mesh) {};
+	Linear(const mesh::Mesh &mesh): Gluing<TMatrixComposer>(mesh) {};
 
 	// FEM specific
 	virtual size_t DOFs() = 0;
@@ -29,26 +29,16 @@ protected:
 	virtual double rho() = 0;
 
 	// Matrices for Linear Solver
-	std::vector<SparseMatrix> _K, _M, _localB, _globalB;
-	std::vector<SparseIJVMatrix<eslocal> > _B0, _B1;
+	std::vector<SparseMatrix> _K, _M;
 	// RHS
 	std::vector<std::vector<double> > _f;
 
 	// Result
 	vector<vector<double> > _prim_solution;
 
-	// Description ??
-	std::vector<std::vector<eslocal> > _lambda_map_sub_B1;
-	std::vector<std::vector<eslocal> > _lambda_map_sub_B0;
-	std::vector<std::vector<eslocal> > _lambda_map_sub_clst;
-	std::vector<std::vector<double> > _B1_duplicity;
-	std::vector<std::vector<double> > _vec_c;
-	std::vector<eslocal> _neighClusters;
-
 	LinearSolver _lin_solver;
 
 private:
-	size_t subdomains();
 	void KMf(size_t part, bool dynamics);
 	void KeMefe(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
@@ -58,8 +48,6 @@ private:
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f,
 			const mesh::Element *e, bool dynamics);
 
-	void localB();
-	void globalB();
 	void RHS();
 	void initSolver();
 	void saveResult();

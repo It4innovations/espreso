@@ -29,6 +29,8 @@ public:
 protected:
 	Assembler(const mesh::Mesh &mesh);
 
+	virtual size_t subdomains();
+
 	const mesh::Mesh &_mesh;
 	const mesh::SurfaceMesh _surface;
 
@@ -37,17 +39,8 @@ protected:
 
 };
 
-template<>
-Assembler<FEM>::Assembler(const mesh::Mesh &mesh): _mesh(mesh), _surface(mesh.rank(), mesh.size()), _verbose(true) { }
-
-template<>
-Assembler<BEM>::Assembler(const mesh::Mesh &mesh): _mesh(mesh), _surface(mesh), _verbose(true) { }
-
-template<>
-Assembler<ELMER>::Assembler(const mesh::Mesh &mesh): _mesh(mesh), _surface(mesh.rank(), mesh.size()), _verbose(true) { }
-
 }
 
-
+#include "assembler.hpp"
 
 #endif /* ASSEMBLER_ASSEMBLER_H_ */

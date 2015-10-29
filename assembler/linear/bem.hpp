@@ -4,12 +4,6 @@
 namespace assembler {
 
 template <>
-size_t Linear<BEM>::subdomains()
-{
-	return this->_surface.parts();
-}
-
-template <>
 void Linear<BEM>::KMf(size_t part, bool dynamics)
 {
 	// TODO: temperature??

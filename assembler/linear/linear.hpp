@@ -14,10 +14,10 @@ void Linear<TMatrixComposer>::init()
 	TimeEvent timeKasm("Create K and RHS");
 	timeKasm.AddStart();
 
-	_K.resize(subdomains());
-	_M.resize(subdomains());
-	_f.resize(subdomains());
-	for (size_t s = 0; s < subdomains(); s++) {
+	_K.resize(this->subdomains());
+	_M.resize(this->subdomains());
+	_f.resize(this->subdomains());
+	for (size_t s = 0; s < this->subdomains(); s++) {
 		std::cout << s << " " ;
 		// TODO: set dynamics
 		KMf(s, false);
@@ -37,16 +37,7 @@ void Linear<TMatrixComposer>::init()
 	TimeEvent timeLocalB("Create local B");
 	timeLocalB.AddStart();
 
-	_localB.resize(subdomains());
-	_globalB.resize(subdomains());
-	_B0.resize(subdomains());
-	_B1.resize(subdomains());
-
-	_lambda_map_sub_B1.resize(subdomains());
-	_lambda_map_sub_B0.resize(subdomains());
-	_B1_duplicity.resize(subdomains());
-	_vec_c.resize(subdomains());
-	localB();
+	this->computeSubdomainGluing();
 
 	timeLocalB.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeLocalB);
@@ -55,21 +46,15 @@ void Linear<TMatrixComposer>::init()
 	TimeEvent timeGlobalB("Create global B");
 	timeGlobalB.AddStart();
 
-
-	globalB();
-	for (int i = 0; i < _vec_c.size(); i++) {
-		 _vec_c[i].resize(_B1_duplicity[i].size(), 0.0);
+	std::vector<size_t> rows(this->subdomains());
+	for (size_t s = 0; s < this->subdomains(); s++) {
+		rows[s] = _K[s].rows;
 	}
-
-	for (size_t p = 0; p < this->_mesh.parts(); p++) {
-		_localB[p] = _B0[p];
-		_globalB[p] = _B1[p];
-	}
+	this->computeClusterGluing(rows);
 
 	timeGlobalB.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeGlobalB);
 	std::cout << "3\n";
-
 
 	TimeEvent timeBforces("Fill right hand side");
 	timeBforces.AddStart();
