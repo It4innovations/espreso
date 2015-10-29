@@ -50,7 +50,7 @@ private:
 
 
 	size_t partsCount; 											//number of domains per cluster
-	int DOFS_PER_NODE;											// number of degrees of freedom per one node
+	eslocal DOFS_PER_NODE;											// number of degrees of freedom per one node
 	bool BEM;
 
 

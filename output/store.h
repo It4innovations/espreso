@@ -10,33 +10,42 @@ namespace esoutput {
 class MeshStore {
 
 public:
-	virtual void store(const mesh::Mesh &mesh, double shrinkSubdomain, double shringCluster) = 0;
+	virtual void store(double shrinkSubdomain, double shringCluster) = 0;
 
 	virtual ~MeshStore() {};
+
+protected:
+	MeshStore(const mesh::Mesh &mesh, const std::string &path): _mesh(mesh), _path(path) {};
+
+	const mesh::Mesh &_mesh;
+	std::string _path;
 };
 
 class ResultStore: public MeshStore {
 
 public:
-	virtual void store(const mesh::Mesh &mesh, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) = 0;
+	virtual void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) = 0;
 
 	virtual ~ResultStore() {};
+
+protected:
+	ResultStore(const mesh::Mesh &mesh, const std::string &path): MeshStore(mesh, path) {};
 };
 
 template <class TStore>
 class Store {
 
 public:
-	Store(const std::string &path, int rank, int size): _store(path, rank, size) { };
+	Store(const mesh::Mesh &mesh, const std::string &path): _store(mesh, path) { };
 
-	void store(const mesh::Mesh &mesh, double shrinkSubdomain = 1, double shringCluster = 1)
+	void store(double shrinkSubdomain = 1, double shringCluster = 1)
 	{
-		_store.store(mesh, shrinkSubdomain, shringCluster);
+		_store.store(shrinkSubdomain, shringCluster);
 	}
 
-	void store(const mesh::Mesh &mesh, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1)
+	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1)
 	{
-		_store.store(mesh, displacement, shrinkSubdomain, shringCluster);
+		_store.store(displacement, shrinkSubdomain, shringCluster);
 	}
 
 private:

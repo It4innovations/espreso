@@ -47,8 +47,8 @@ def configure(ctx):
 #                   Global flags used for all libraries
 #..............................................................................#
 
-#    ctx.env.append_unique("CXXFLAGS", [ "-g", "-Wall", "-openmp", "-std=c++11", "-O0", "-cilk-serialize"])
-    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O2"])
+    ctx.env.append_unique("CXXFLAGS", [ "-g", "-Wall", "-openmp", "-std=c++11", "-O0", "-cilk-serialize"])
+#    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O2"])
 
     ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
     if ctx.options.titan:
@@ -71,6 +71,8 @@ def configure(ctx):
     ctx.recurse("output")
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
+    ctx.recurse("physics")
+    ctx.recurse("composer")
     ctx.recurse("catalyst")
     ctx.recurse("app")
 
@@ -180,6 +182,14 @@ def build(ctx):
         name            = "incl_solver"
     )
     ctx(
+        export_includes = "physics",
+        name            = "incl_physics"
+    )
+    ctx(
+        export_includes = "composer",
+        name            = "incl_composer"
+    )
+    ctx(
         export_includes = "bem/src",
         name            = "incl_bem"
     )
@@ -188,9 +198,13 @@ def build(ctx):
         name            = "incl_catalyst"
     )
     ctx(
+        export_includes = "/usr/local/cuda-7.0/include",
+        name            = "incl_cuda"
+    )
+    ctx(
         export_includes = "include",
         name            = "espreso_includes",
-        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst"
+        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_physics incl_cuda"
     )
 
     ctx.ROOT = ctx.path.abspath()
@@ -213,6 +227,8 @@ def build(ctx):
 
     #ctx.recurse("permoncube")
     ctx.recurse("solver")
+    ctx.recurse("physics")
+    ctx.recurse("composer")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")
     ctx.recurse("app")

@@ -34,8 +34,10 @@ class cxxprogram(link_task):
                ${LIB_ST:LIB} \
                ${LDFLAGS} \
                ${STLIB_MARKER} \
+               -Wl,--start-group \
                ${STLIBPATH_ST:STLIBPATH} \
                ${STLIB_ST:STLIB} \
+               -Wl,--end-group \
                ${SHLIB_MARKER}'
 
 source_files = (
@@ -130,6 +132,13 @@ def build(ctx):
     if ctx.options.catalyst:
         ctx.env.append_unique("STLIB", [ "adaptor" ])
         ctx.env.append_unique("CXXFLAGS", [ "-DCATALYST" ])
+
+    ctx.program(
+        source          = source_files + ("src/test.cpp",),
+        target          = "estest",
+        use             = "espreso_insluces esbasis {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        install_path    = ctx.ROOT
+    )
 
     ctx.program(
         source          = source_files + ("src/main.cpp",),

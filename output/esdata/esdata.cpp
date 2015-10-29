@@ -3,23 +3,23 @@
 
 using namespace esoutput;
 
-void Esdata::store(const mesh::Mesh &mesh, double shrinkSubdomain, double shrinkCluster)
+void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 {
 	// shrink is ignored!!!
 
 	std::stringstream ss;
 	ss << "mkdir -p " << _path;
 	system(ss.str().c_str());
-	for (size_t p = 0; p < mesh.parts(); p++) {
+	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::stringstream ssDir;
 		ssDir << ss.str() << "/" << p;
 		system(ssDir.str().c_str());
 	}
 
-	coordinates(mesh.coordinates());
-	elements(mesh);
-	boundaryConditions(mesh.coordinates());
-	boundaries(mesh);
+	coordinates(_mesh.coordinates());
+	elements(_mesh);
+	boundaryConditions(_mesh.coordinates());
+	boundaries(_mesh);
 }
 
 void Esdata::coordinates(const mesh::Coordinates &coordinates)

@@ -36,11 +36,11 @@ public:
 	~TimeEvent(void);
 
 	string eventName; 
-	int eventCount; 
+	eslocal eventCount;
 	SEQ_VECTOR<double> eventTime; 
 
-	int name_length;
-	int val_length;
+	eslocal name_length;
+	eslocal val_length;
 
 	double avgTime; 
 	double sumTime; 

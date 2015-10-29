@@ -42,9 +42,9 @@ public:
 	// *** Variables *************
 
 	// MPI variables
-	int mpi_rank;
-	int mpi_root;
-	int mpi_size;
+	int  mpi_rank;
+	int  mpi_root;
+	int  mpi_size;
 
 	// *** Main cluster object associated with iteration solver
 	// Cluster & cluster;
@@ -60,18 +60,18 @@ public:
 	// Coarse problem variables
 	SparseMatrix	GGt_Mat;
 	SparseSolver	GGt;
-	int				GGtsize;
+	eslocal 				GGtsize;
 
 	// *** Setup variables
-	int USE_DYNAMIC;
-	int USE_KINV;
-	int USE_GGtINV;
-	int USE_HFETI;
+	eslocal  USE_DYNAMIC;
+	eslocal  USE_KINV;
+	eslocal  USE_GGtINV;
+	eslocal  USE_HFETI;
 
-	int USE_PREC;
-	int USE_PIPECG;
+	eslocal  USE_PREC;
+	eslocal  USE_PIPECG;
 
-	int CG_max_iter;
+	eslocal  CG_max_iter;
 
 	double epsilon; // stop condition
 
@@ -146,8 +146,8 @@ public:
 	void CreateGGt_inv_dist( Cluster & cluster );
 
 	// *** Projectors
-	void Projector_l_compG    ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, int output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolver & GGt,
-	void Projector_l_inv_compG( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, int output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector_l_compG    ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolver & GGt,
+	void Projector_l_inv_compG( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 	// *** Apply A embers
 	void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out);
@@ -183,13 +183,13 @@ public:
 
 //Utilities
 
-void SendMatrix(int rank, int source_rank, SparseMatrix & A_in, int dest_rank, SparseMatrix & B_out);
+void SendMatrix(eslocal  rank, eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
 
-void SendMatrix_2(int source_rank, SparseMatrix & A_in, int dest_rank, SparseMatrix & B_out);
-void RecvMatrix   ( SparseMatrix & B_out, int source_rank);
-void SendMatrix   ( SparseMatrix & A_in, int dest_rank );
+void SendMatrix_2(eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
+void RecvMatrix   ( SparseMatrix & B_out, eslocal  source_rank);
+void SendMatrix   ( SparseMatrix & A_in, eslocal  dest_rank );
 
-void BcastMatrix(int rank, int mpi_root, int source_rank, SparseMatrix & A);
+void BcastMatrix(eslocal  rank, eslocal  mpi_root, eslocal  source_rank, SparseMatrix & A);
 
 void All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 

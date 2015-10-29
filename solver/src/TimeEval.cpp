@@ -116,7 +116,7 @@ void TimeEvent::Evaluate() {
 	maxTime = 0; 
 	stdDev  = 0; 
 
-	for (int i = 0; i < eventCount; i++) {
+	for (eslocal i = 0; i < eventCount; i++) {
 		double d_time = eventTime[i]; 
 		sumTime += d_time; 
 		if (d_time < minTime )
@@ -128,7 +128,7 @@ void TimeEvent::Evaluate() {
 	avgTime = sumTime / eventCount; 
 
 	double E=0;
-	for (int i = 0; i < eventCount; i++)
+	for (eslocal i = 0; i < eventCount; i++)
 		E+=(eventTime[i] - avgTime)*(eventTime[i] - avgTime);
 	
 	stdDev = sqrt(1/eventCount*E);
@@ -169,11 +169,11 @@ void TimeEvent::PrintLastStat(double totalTime) {
 void TimeEvent::EvaluateMPI() {
 	Evaluate();
 
-	int rank, size; 
+	int rank, size;
 
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id */
 	MPI_Comm_size (MPI_COMM_WORLD, &size);	/* get number of processes */
-	int mpi_root = 0;
+	eslocal mpi_root = 0;
 
 	MPI_Reduce(&avgTime, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
 	g_avgTime = g_avgTime / size; 
@@ -190,7 +190,7 @@ void TimeEvent::EvaluateMPI() {
 void TimeEvent::PrintStatMPI(double totalTime) {
 	EvaluateMPI();
 
-	int rank; 
+	int rank;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id */
 
 	
@@ -216,11 +216,11 @@ void TimeEvent::PrintLastStatMPI(double totalTime) {
 
 	double d_time = eventTime[eventTime.size()-1]; 
 	
-	int rank, size; 
+	int rank, size;
 
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id */
 	MPI_Comm_size (MPI_COMM_WORLD, &size);	/* get number of processes */
-	int mpi_root = 0;
+	eslocal mpi_root = 0;
 
 	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
 	g_avgTime= g_avgTime / size; 
@@ -249,11 +249,11 @@ void TimeEvent::PrintLastStatMPI_PerNode(double totalTime) {
 
 	SEQ_VECTOR <double> d_all_times; 
 
-	int rank, size; 
+	int rank, size;
 
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id */
 	MPI_Comm_size (MPI_COMM_WORLD, &size);	/* get number of processes */
-	int mpi_root = 0;
+	eslocal mpi_root = 0;
 	
 	if(rank == 0)
 		d_all_times.resize(size);
@@ -280,7 +280,7 @@ void TimeEvent::PrintLastStatMPI_PerNode(double totalTime) {
 		}
 		cout << endl;
 
-		for (int i = 0; i < size; i++) {
+		for (eslocal i = 0; i < size; i++) {
 			cout << fixed << setw(3) << "R: " << setw(5) << i << setw(15) << d_all_times[i]; 
 				
 			if ((i+1) % 10 == 0)
@@ -325,7 +325,7 @@ void TimeEval::AddEvent(TimeEvent timeEvent) {
 void TimeEval::PrintStats() {
 	totalTime.Evaluate(); 
 
-	for (int i = 0; i < timeEvents.size(); i++) {
+	for (eslocal i = 0; i < timeEvents.size(); i++) {
 		timeEvents[i].PrintStat(totalTime.avgTime);
 	}
 
@@ -333,11 +333,11 @@ void TimeEval::PrintStats() {
 }
 
 void TimeEval::PrintStatsMPI() {
-	int rank; 
-	int size; 
+	int rank;
+	int size;
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id */
 	MPI_Comm_size (MPI_COMM_WORLD, &size);	/* get number of processes */
-	int mpi_root = 0;
+	eslocal mpi_root = 0;
 	
 	double sum_avg_time = 0;  
 	
@@ -349,7 +349,7 @@ void TimeEval::PrintStatsMPI() {
 	}
 	totalTime.EvaluateMPI();
 
-	for (int i = 0; i < timeEvents.size(); i++) {
+	for (eslocal i = 0; i < timeEvents.size(); i++) {
 		timeEvents[i].PrintStatMPI(totalTime.g_avgTime);
 		sum_avg_time += timeEvents[i].avgTime; 
 	}

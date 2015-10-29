@@ -1,0 +1,8 @@
+
+PHYSICS = "physics"
+
+def configure(ctx):
+    ctx.setenv(PHYSICS, ctx.all_envs[""].derive());
+
+def build(ctx):
+    ctx.env = ctx.all_envs[PHYSICS]

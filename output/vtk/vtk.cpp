@@ -3,29 +3,29 @@
 
 using namespace esoutput;
 
-void VTK::store(const mesh::Mesh &mesh, double shrinkSubdomain, double shringCluster)
+void VTK::store(double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _file << _rank << ".vtk";
+	ss << _path << _mesh.rank() << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
-	coordinates(mesh.coordinates(), shrinkSubdomain, shringCluster);
-	elements(mesh);
+	coordinates(_mesh.coordinates(), shrinkSubdomain, shringCluster);
+	elements(_mesh);
 
 	_vtk.close();
 }
 
 
-void VTK::store(const mesh::Mesh &mesh, std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster)
+void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _file << _rank << ".vtk";
+	ss << _path << _mesh.rank() << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
-	coordinates(mesh.coordinates(), shrinkSubdomain, shringCluster);
-	elements(mesh);
+	coordinates(_mesh.coordinates(), shrinkSubdomain, shringCluster);
+	elements(_mesh);
 	coordinatesDisplacement(displacement);
 
 	_vtk.close();
@@ -156,43 +156,6 @@ void VTK::elements(const mesh::Mesh &mesh)
 		_vtk << parts << "\n";
 	}
 	_vtk << parts + 1 << "\n";
-	_vtk << "\n";
-}
-
-void VTK::coordinatesDisplacement(const std::vector<std::vector<double> > &displacement)
-{
-	size_t size = 0;
-	for (size_t p = 0; p < displacement.size(); p++) {
-		size += displacement[p].size() / 3;
-	}
-
-	_vtk << "\n";
-	_vtk << "POINT_DATA " << size << "\n";
-	_vtk << "SCALARS displacements float 3\n";
-	_vtk << "LOOKUP_TABLE default\n";
-	for (size_t p = 0; p < displacement.size(); p++) {
-		for (size_t i = 0; i < displacement[p].size() / 3; i++) {
-			_vtk << displacement[p][3 * i + 0] << " ";
-			_vtk << displacement[p][3 * i + 1] << " ";
-			_vtk << displacement[p][3 * i + 2] << "\n";
-		}
-	}
-
-//	size_t size = 0;
-//	for (size_t p = 0; p < displacement.size(); p++) {
-//		size += displacement[p].size() / 1;
-//	}
-//
-//	_vtk << "\n";
-//	_vtk << "POINT_DATA " << size << "\n";
-//	_vtk << "SCALARS displacements float 1\n";
-//	_vtk << "LOOKUP_TABLE default\n";
-//	for (size_t p = 0; p < displacement.size(); p++) {
-//		for (size_t i = 0; i < displacement[p].size(); i++) {
-//			_vtk << displacement[p][i] << "\n";
-//		}
-//	}
-
 	_vtk << "\n";
 }
 

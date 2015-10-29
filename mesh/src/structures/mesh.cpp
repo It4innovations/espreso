@@ -46,14 +46,19 @@ void Mesh::store(Output output, const std::string &path, std::vector<std::vector
 {
 	switch (output) {
 	case ESPRESO_OUTPUT: {
-		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
-		s.store(*this, shrinkSubdomain, shringCluster);
+		esoutput::Store<esoutput::Esdata> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
 		std::cout << "Warning: ESPRESO output format does not support the displacement.\n";
 		break;
 	}
-	case VTK: {
-		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
-		s.store(*this, displacement, shrinkSubdomain, shringCluster);
+	case VTK_FULL: {
+		esoutput::Store<esoutput::VTK_Full> s(*this, path);
+		s.store(displacement, shrinkSubdomain, shringCluster);
+		break;
+	}
+	case VTK_SURFACE: {
+		esoutput::Store<esoutput::VTK_Surface> s(*this, path);
+		s.store(displacement, shrinkSubdomain, shringCluster);
 		break;
 	}
 	default: {
@@ -67,13 +72,18 @@ void Mesh::store(Output output, const std::string &path, double shrinkSubdomain,
 {
 	switch (output) {
 	case ESPRESO_OUTPUT: {
-		esoutput::Store<esoutput::Esdata> s(path, _rank, _size);
-		s.store(*this, shrinkSubdomain, shringCluster);
+		esoutput::Store<esoutput::Esdata> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
 		break;
 	}
-	case VTK: {
-		esoutput::Store<esoutput::VTK> s(path, _rank, _size);
-		s.store(*this, shrinkSubdomain, shringCluster);
+	case VTK_FULL: {
+		esoutput::Store<esoutput::VTK_Full> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
+		break;
+	}
+	case VTK_SURFACE: {
+		esoutput::Store<esoutput::VTK_Surface> s(*this, path);
+		s.store(shrinkSubdomain, shringCluster);
 		break;
 	}
 	default: {
@@ -102,7 +112,8 @@ void Mesh::_elasticity(
 
 	std::vector<double> inertia(3, 0.0);
 	//TODO
-	//inertia[2] = 9810.0 * 7.85e-9;
+	inertia[2] = 9810.0 * 7.85e-9;
+
 	double ex = 2.1e5;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
@@ -478,7 +489,11 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	// The solution is increase the size of 'nodesCount' and keep the default numbering
 	//options[METIS_OPTION_NUMBERING] = coordinates.getNumbering();
 	METIS_SetDefaultOptions(options);
-	options[METIS_OPTION_CONTIG] = 1;
+	//TODO:
+	options[METIS_OPTION_CONTIG]  = 1;
+	options[METIS_OPTION_MINCONN] = 1;
+	options[METIS_OPTION_NITER]   = 20;
+	options[METIS_PTYPE_KWAY]     = 1;
 
 	eSize = last - first;
 	nSize = _coordinates.clusterSize();

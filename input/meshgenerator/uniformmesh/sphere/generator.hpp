@@ -72,7 +72,7 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 				point.x = (corner[0] * (1 - x * step[0]) + corner[1] * x * step[0]).x;
 
 				point.normalize();
-				point *= _settings.innerRadius + layerSize * (this->_rank / 6) + z * step[2];
+				point *= _settings.innerRadius + layerSize * ((this->_rank / 6) + z * step[2]);
 
 				switch (this->_rank % 6) {
 				case 0: { // top
@@ -228,7 +228,7 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
                             boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (this->_rank / 6) + 1);
                     }
             }
-        
+
         }
 }
 
