@@ -23,6 +23,9 @@ int main(int argc, char** argv)
 	physics::LinearElasticity<physics::FEM> fem(m);
 
 	fem.init();
+	fem.solve();
+	fem.post_solve_update();
+	fem.finalize();
 
 	MPI_Finalize();
 }

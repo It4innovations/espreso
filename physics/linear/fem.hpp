@@ -85,7 +85,7 @@ void Linear<FEM>::KeMefe(
 		coordinates.values() + i * mesh::Point::size() << _mesh.coordinates().get(e->node(i), part);
 	}
 
-	eslocal Ksize = mesh::Point::size() * this->DOFs();
+	eslocal Ksize = e->size() * this->DOFs();
 	double detJ;
 	DenseMatrix J, invJ, dND;
 
