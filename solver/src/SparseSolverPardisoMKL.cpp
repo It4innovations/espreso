@@ -92,7 +92,7 @@ void SparseSolver::Clear() {
 	{
 		double ddum;			/* Double dummy */
 		MKL_INT idum;			/* Integer dummy. */
-		int nRhs = 1;
+		MKL_INT nRhs = 1;
 
 		/* -------------------------------------------------------------------- */
 		/* .. Termination and release of memory. */
@@ -128,8 +128,8 @@ void SparseSolver::ImportMatrix(SparseMatrix & A) {
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	   = A.CSR_V_values.size();
 
-	CSR_I_row_indices = new int[CSR_I_row_indices_size];
-	CSR_J_col_indices = new int[CSR_J_col_indices_size];
+	CSR_I_row_indices = new MKL_INT[CSR_I_row_indices_size];
+	CSR_J_col_indices = new MKL_INT[CSR_J_col_indices_size];
 	CSR_V_values	  = new double  [CSR_V_values_size];
 
 	copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
@@ -209,14 +209,14 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	double ddum  = 0;			/* Double dummy */
 	MKL_INT idum = 0;			/* Integer dummy. */
-	int n_rhs = 1;
+	MKL_INT n_rhs = 1;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Back substitution and iterative refinement. */
 	/* -------------------------------------------------------------------- */
 	phase = 33;
 
-	int ip5backup = iparm[5];
+	MKL_INT ip5backup = iparm[5];
 
 	//iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
@@ -236,7 +236,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		phase = -1;			/* Release internal memory. */
-		int nRhs = 1;
+		MKL_INT nRhs = 1;
 		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
@@ -246,7 +246,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 }
 
-void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int n_rhs) {
+void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
 
 	if (!initialized)
 		Factorization();
@@ -273,7 +273,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		phase = -1;			/* Release internal memory. */
-		int nRhs = 1;
+		MKL_INT nRhs = 1;
 		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
@@ -285,7 +285,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 
 }
 
-void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int rhs_start_index, int sol_start_index) {
+void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
 
 	if (!initialized)
 		Factorization();
@@ -313,7 +313,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		phase = -1;			/* Release internal memory. */
-		int nRhs = 1;
+		MKL_INT nRhs = 1;
 		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
@@ -360,20 +360,20 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, c
 	sol.resize(tmpM.cols);
 
 	// main loop over rows
-	int col = 0;
-	int n_nnz = 0;
-	for (int row = 1; row < tmpM.CSR_I_row_indices.size(); row++) {
-		int row_size = tmpM.CSR_I_row_indices[row] - tmpM.CSR_I_row_indices[row-1];
+	MKL_INT col = 0;
+	MKL_INT n_nnz = 0;
+	for (MKL_INT row = 1; row < tmpM.CSR_I_row_indices.size(); row++) {
+		MKL_INT row_size = tmpM.CSR_I_row_indices[row] - tmpM.CSR_I_row_indices[row-1];
 		if (row_size > 0) {
-			for (int c = 0; c < row_size; c++) { // loop over selected row
+			for (MKL_INT c = 0; c < row_size; c++) { // loop over selected row
 				rhs[ tmpM.CSR_J_col_indices[col] - 1] = tmpM.CSR_V_values [col];
 				col++;
 			}
-			int nRhs_l = 1;
+			MKL_INT nRhs_l = 1;
 			//m_error = dss_solve_real (m_handle, m_opt, &rhs[0], nRhs_l, &sol[0]);
 			Solve(rhs, sol, nRhs_l);
 
-			for (int s = 0; s < sol.size(); s++){
+			for (MKL_INT s = 0; s < sol.size(); s++){
 				if (sol[s] != 0.0) {
 					tmpM.I_row_indices.push_back(row);
 					tmpM.J_col_indices.push_back(s+1);
@@ -403,7 +403,7 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, c
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		phase = -1;			/* Release internal memory. */
-		int nRhs = 1;
+		MKL_INT nRhs = 1;
 		double ddum;			/* Double dummy */
 		MKL_INT idum;			/* Integer dummy. */
 		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
@@ -423,7 +423,7 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
 
-	int job[8];
+	MKL_INT job[8];
 	job[0] = 1; // if job(1)=1, the rectangular matrix A is restored from the CSR format.
 	job[1] = 1; // if job(2)=1, one-based indexing for the rectangular matrix A is used.
 	job[2] = 1; // if job(3)=1, one-based indexing for the matrix in CSR format is used.
@@ -450,11 +450,11 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	// Convert input matrix (RHS) to dense format
 
 	//void mkl_ddnscsr (
-	//	MKL_INT *job,
-	//	MKL_INT *m, MKL_INT *n,
-	//	double *Adns, MKL_INT *lda,
-	//	double *Acsr, MKL_INT *AJ, MKL_INT *AI,
-	//	MKL_INT *info);
+	//	int *job,
+	//	int *m, int *n,
+	//	double *Adns, int *lda,
+	//	double *Acsr, int *AJ, int *AI,
+	//	int *info);
 
 	mkl_ddnscsr (
 		job,
@@ -498,7 +498,7 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 		&info);
 
 	// Convert solution matrix (SOL) to sparse format - convert step
-	int nnzmax = B_out.CSR_I_row_indices[m];//-1;
+	MKL_INT nnzmax = B_out.CSR_I_row_indices[m];//-1;
 
 	B_out.CSR_J_col_indices.resize(nnzmax);
 	B_out.CSR_V_values.resize(nnzmax);
@@ -605,7 +605,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 
 	for (i = 0; i < 64; i++) pt[i] = 0;
 
-	int job[8];
+	MKL_INT job[8];
 
 	MKL_INT m		= A_in.rows;
 	MKL_INT n		= A_in.cols;
@@ -624,7 +624,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	}
 
 	SEQ_VECTOR<MKL_INT> perm (A_in.dense_values.size() , 0);
-	for (int ii = 0; ii < A_in.dense_values.size(); ii++)
+	for (MKL_INT ii = 0; ii < A_in.dense_values.size(); ii++)
 		if (A_in.dense_values[ii] != 0.0)
 			perm[ii] = 1;
 
@@ -641,7 +641,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 		initialized = true;
 	}
 
-	int x = 0;
+	MKL_INT x = 0;
 
 	// Convert solution matrix (SOL) to sparse format - find nnz step
 	job[0] = 0; // If job(1)=0, the rectangular matrix A is converted to the CSR format;
@@ -668,7 +668,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 		&info);
 
 	// Convert solution matrix (SOL) to sparse format - convert step
-	int nnzmax = B_out.CSR_I_row_indices[m];//-1; POZOR
+	MKL_INT nnzmax = B_out.CSR_I_row_indices[m];//-1; POZOR
 
 	B_out.CSR_J_col_indices.resize(nnzmax);
 	B_out.CSR_V_values.     resize(nnzmax);
@@ -711,7 +711,7 @@ void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool is
 	}
 }
 
-void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreaded ) {
+void SparseSolver::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -719,15 +719,15 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreade
 	void *pt[64];
 
 	/* Pardiso control parameters. */
-	int 	iparm[64];
+	MKL_INT 	iparm[64];
 	double  dparm[65];
-	int 	maxfct, mnum, phase, error;
+	MKL_INT 	maxfct, mnum, phase, error;
 
 	/* Auxiliary variables. */
-	int 	i;
+	MKL_INT 	i;
 	double 	ddum;			/* Double dummy */
-	int 	idum;			/* Integer dummy. */
-	int 	solver;
+	MKL_INT 	idum;			/* Integer dummy. */
+	MKL_INT 	solver;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Setup Pardiso control parameters. */
@@ -743,7 +743,7 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreade
 	for (i = 0; i < 64; i++)
 		pt[i] = 0;
 
-	int 	mtype = 2;
+	MKL_INT 	mtype = 2;
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
@@ -813,11 +813,11 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreade
     /* all memory that is necessary for the factorization.                  */
     /* -------------------------------------------------------------------- */
 
-    std::vector <int> perm (rows ,0);
-    for (int i = rows - sc_size; i < rows; i++)
+    std::vector <MKL_INT> perm (rows ,0);
+    for (MKL_INT i = rows - sc_size; i < rows; i++)
     	perm[i] = 1;
 
-    int nrhs = 0;
+    MKL_INT nrhs = 0;
 
 //    phase = 11;
 //    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
@@ -845,7 +845,7 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreade
 			&perm[0], &nrhs,
 			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
 
-    for (int i = 0; i < SC_out.dense_values.size(); i++)
+    for (MKL_INT i = 0; i < SC_out.dense_values.size(); i++)
     	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
 
     if ( error != 0 )
@@ -869,7 +869,7 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreade
     /* -------------------------------------------------------------------- */
     /* ..  allocate memory for the Schur-complement and copy it there.      */
     /* -------------------------------------------------------------------- */
-    int nonzeros_S = iparm[38];
+    MKL_INT nonzeros_S = iparm[38];
 
     SC_out.cols = sc_size;
     SC_out.rows = sc_size;
@@ -887,7 +887,7 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, int sc_size, bool isThreade
 }
 
 void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out,
-								    bool isThreaded, int generate_symmetric_sc_1_generate_general_sc_0 ) {
+								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
 	//int msglvl = 0;
 
@@ -918,15 +918,15 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 	void *pt[64];
 
 	/* Pardiso control parameters. */
-	int 	iparm[64];
+	MKL_INT 	iparm[64];
 	double  dparm[65];
-	int 	maxfct, mnum, phase, error;
+	MKL_INT 	maxfct, mnum, phase, error;
 
 	/* Auxiliary variables. */
-	int 	i;
+	MKL_INT 	i;
 	double 	ddum;			/* Double dummy */
-	int 	idum;			/* Integer dummy. */
-	int 	solver;
+	MKL_INT 	idum;			/* Integer dummy. */
+	MKL_INT 	solver;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Setup Pardiso control parameters. */
@@ -942,12 +942,12 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 	for (i = 0; i < 64; i++)
 		pt[i] = 0;
 
-	int 	mtype = 2;
+	MKL_INT 	mtype = 2;
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
+		MKL_INT num_procs;
 		char * var = getenv("SOLVER_NUM_THREADS");
 	    if(var != NULL)
 	    	sscanf( var, "%d", &num_procs );
@@ -1012,11 +1012,11 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
     /* all memory that is necessary for the factorization.                  */
     /* -------------------------------------------------------------------- */
 
-    std::vector <int> perm (K_sc1.rows,0);
-    for (int i = K_in.rows; i < K_sc1.rows; i++)
+    std::vector <MKL_INT> perm (K_sc1.rows,0);
+    for (MKL_INT i = K_in.rows; i < K_sc1.rows; i++)
     	perm[i] = 1;
 
-    int nrhs = 0;
+    MKL_INT nrhs = 0;
 
 //    phase = 11;
 //    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
@@ -1044,7 +1044,7 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 			&perm[0], &nrhs,
 			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
 
-    for (int i = 0; i < SC_out.dense_values.size(); i++)
+    for (MKL_INT i = 0; i < SC_out.dense_values.size(); i++)
     	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
 
     if ( error != 0 )
@@ -1068,7 +1068,7 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
     /* -------------------------------------------------------------------- */
     /* ..  allocate memory for the Schur-complement and copy it there.      */
     /* -------------------------------------------------------------------- */
-    int nonzeros_S = iparm[38];
+    MKL_INT nonzeros_S = iparm[38];
 
     SC_out.cols = K_b_tmp.rows;
     SC_out.rows = K_b_tmp.rows;
@@ -1105,7 +1105,7 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 
 }
 
-void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, int generate_symmetric_sc_1_generate_general_sc_0 ) {
+void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
 	//int msglvl = 0;
 
@@ -1176,15 +1176,15 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 	void *pt[64];
 
 	/* Pardiso control parameters. */
-	int 	iparm[64];
+	MKL_INT 	iparm[64];
 	double  dparm[65];
-	int 	maxfct, mnum, phase, error;
+	MKL_INT 	maxfct, mnum, phase, error;
 
 	/* Auxiliary variables. */
-	int 	i;
+	MKL_INT 	i;
 	double 	ddum;			/* Double dummy */
-	int 	idum;			/* Integer dummy. */
-	int 	solver;
+	MKL_INT 	idum;			/* Integer dummy. */
+	MKL_INT 	solver;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Setup Pardiso control parameters. */
@@ -1200,7 +1200,7 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 	for (i = 0; i < 64; i++)
 		pt[i] = 0;
 
-	int 	mtype = 11;
+	MKL_INT 	mtype = 11;
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
@@ -1270,11 +1270,11 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
     /* all memory that is necessary for the factorization.                  */
     /* -------------------------------------------------------------------- */
 
-    std::vector <int> perm (K_sc1.rows,0);
-    for (int i = K_in.rows; i < K_sc1.rows; i++)
+    std::vector <MKL_INT> perm (K_sc1.rows,0);
+    for (MKL_INT i = K_in.rows; i < K_sc1.rows; i++)
     	perm[i] = 1;
 
-    int nrhs = 0;
+    MKL_INT nrhs = 0;
 
 //    phase = 11;
 //    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
@@ -1302,7 +1302,7 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 			&perm[0], &nrhs,
 			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
 
-    for (int i = 0; i < SC_out.dense_values.size(); i++)
+    for (MKL_INT i = 0; i < SC_out.dense_values.size(); i++)
     	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
 
     if ( error != 0 )

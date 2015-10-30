@@ -197,9 +197,13 @@ def build(ctx):
         name            = "incl_catalyst"
     )
     ctx(
+        export_includes = "/usr/local/cuda-7.0/include",
+        name            = "incl_cuda"
+    )
+    ctx(
         export_includes = "include",
         name            = "espreso_includes",
-        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler"
+        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler incl_cuda"
     )
 
     ctx.ROOT = ctx.path.abspath()

@@ -41,7 +41,7 @@ using std::endl;
 //	in.close();
 //}
 
-int SaveBinVectorDouble(SEQ_VECTOR <double> & Vector, string filename) {
+eslocal SaveBinVectorDouble(SEQ_VECTOR <double> & Vector, string filename) {
 
 	std::ofstream file (filename.c_str(), std::ios::out | std::ofstream::binary);
 
@@ -83,7 +83,7 @@ int SaveBinVectorDouble(SEQ_VECTOR <double> & Vector, string filename) {
 
 
 
-int LoadBinVectorInt(SEQ_VECTOR <int> & Vector, string filename) {
+eslocal LoadBinVectorInt(SEQ_VECTOR <eslocal> & Vector, string filename) {
 
 	// open the file:
 	std::streampos fileSize;
@@ -96,7 +96,7 @@ int LoadBinVectorInt(SEQ_VECTOR <int> & Vector, string filename) {
 		file.seekg(0, std::ios::beg);
 
 		// read the data:
-		Vector.resize(fileSize / sizeof(int)); 
+		Vector.resize(fileSize / sizeof(eslocal));
 
 		file.read((char*) &Vector[0], fileSize);
 
@@ -109,7 +109,7 @@ int LoadBinVectorInt(SEQ_VECTOR <int> & Vector, string filename) {
 	}
 }
 
-int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <int> > & outputVecVec, string filename) {
+eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <eslocal> > & outputVecVec, string filename) {
 
 	std::ifstream in (filename.c_str(), std::ios::binary);
 	char delim = ';'; 
@@ -122,16 +122,16 @@ int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <int> > & outputVecVec, string filename
 		std::stringstream paramss(line);
 
 		getline(paramss,field,delim); 
-		int rows = atoi(field.c_str());		// get num of rows 
+		eslocal rows = atoi(field.c_str());		// get num of rows
 
 		getline(paramss,field,delim); 
-		int cols = atoi(field.c_str());		// get num of columns 
+		eslocal cols = atoi(field.c_str());		// get num of columns
 
 		// Get data 
 
-		for (int r_i = 0; r_i < rows; r_i++) {
-			SEQ_VECTOR <int> tmp_coor (cols); 
-			in.read((char*) &tmp_coor [0], cols*sizeof(int));
+		for (eslocal r_i = 0; r_i < rows; r_i++) {
+			SEQ_VECTOR <eslocal> tmp_coor (cols);
+			in.read((char*) &tmp_coor [0], cols*sizeof(eslocal));
 			outputVecVec.push_back(tmp_coor); 
 		}
 
@@ -144,7 +144,7 @@ int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <int> > & outputVecVec, string filename
 	}
 }
 
-int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename) {
+eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename) {
 
 	std::ifstream in (filename.c_str(), std::ios::binary);
 	char delim = ';'; 
@@ -157,14 +157,14 @@ int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filen
 		std::stringstream paramss(line);
 
 		getline(paramss,field,delim); 
-		int rows = atoi(field.c_str());		// get num of rows 
+		eslocal rows = atoi(field.c_str());		// get num of rows
 
 		getline(paramss,field,delim); 
-		int cols = atoi(field.c_str());		// get num of columns 
+		eslocal cols = atoi(field.c_str());		// get num of columns
 
 		// Get data 
 
-		for (int r_i = 0; r_i < rows; r_i++) {
+		for (eslocal r_i = 0; r_i < rows; r_i++) {
 			SEQ_VECTOR <double> tmp_coor (cols); 
 			in.read((char*) &tmp_coor [0], cols*sizeof(double));
 			outputVecVec.push_back(tmp_coor); 
@@ -192,7 +192,7 @@ void PrintVec(SEQ_VECTOR <T> vec, string name) {
 #endif
 	{
 		cout << endl << "Thread " << omp_get_thread_num() << " - Printing vector : " << name << endl; 
-		for (int i = 0; i < vec.size(); i++) {
+		for (eslocal i = 0; i < vec.size(); i++) {
 			cout << vec[i] << endl; 
 		}
 	}
@@ -206,14 +206,14 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name) {
 #endif
 	{
 		cout << endl << "Thread " << omp_get_thread_num() << " - Printing vector : " << name << endl; 
-		for (int i = 0; i < vec.size(); i++) {
+		for (eslocal i = 0; i < vec.size(); i++) {
 			cout << vec[i] << endl; 
 		}
 	}
 }
 
-int parseLine_u(char* line){
-	int i = strlen(line);
+eslocal parseLine_u(char* line){
+	eslocal i = strlen(line);
 	while (*line < '0' || *line > '9') line++;
 	line[i-3] = '\0';
 	i = atoi(line);
@@ -225,7 +225,7 @@ void GetProcessMemoryStat_u ( ) {
 #ifndef WIN32
 
 	FILE* file = fopen("/proc/self/status", "r");
-	int result = -1;
+	eslocal result = -1;
 	char line[128];
 
 
@@ -237,7 +237,7 @@ void GetProcessMemoryStat_u ( ) {
 	}
 	fclose(file);
 
-	int MPIrank; 
+	int MPIrank;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -287,7 +287,7 @@ double GetProcessMemory_u ( ) {
 #ifndef WIN32
 
 	FILE* file = fopen("/proc/self/status", "r");
-	int result = -1;
+	eslocal result = -1;
 	char line[128];
 
 

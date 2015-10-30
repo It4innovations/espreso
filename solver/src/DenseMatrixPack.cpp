@@ -288,18 +288,18 @@ void DenseMatrixPack::DenseMatsVecs(
 
       #pragma omp parallel for //schedule(dynamic,10)
       for ( long i = 0 ; i < nMatrices; i++ ) {
-
-        if ( !packed[i] ) {
-        dgemv(&T_for_transpose_N_for_not_transpose,
-  				&(rows[i]), &(cols[i]),
-  				&alpha, matrices + offsets[i], &(rows[i]),
-  				mic_x_in + colOffsets[i], &one,
-  				&beta, mic_y_out + rowOffsets[i], &one);
-        } else {
-  				cblas_dspmv(CblasColMajor, CblasUpper,
-  					rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
-            1, 0.0, mic_y_out + rowOffsets[i], 1);
-        }
+//TODO:uncoment to fix
+//        if ( !packed[i] ) {
+//        dgemv(&T_for_transpose_N_for_not_transpose,
+//  				&(rows[i]), &(cols[i]),
+//  				&alpha, matrices + offsets[i], &(rows[i]),
+//  				mic_x_in + colOffsets[i], &one,
+//  				&beta, mic_y_out + rowOffsets[i], &one);
+//        } else {
+//  				cblas_dspmv(CblasColMajor, CblasUpper,
+//  					rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
+//            1, 0.0, mic_y_out + rowOffsets[i], 1);
+//        }
       }
 
 

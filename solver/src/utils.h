@@ -70,10 +70,10 @@ using std::string;
 
 
 
-int SaveBinVectorDouble(SEQ_VECTOR <double> & SEQ_VECTOR, string filename);
-int LoadBinVectorInt(SEQ_VECTOR <int> & SEQ_VECTOR, string filename);
-int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <int> > & outputVecVec, string filename);
-int LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename);
+eslocal SaveBinVectorDouble(SEQ_VECTOR <double> & SEQ_VECTOR, string filename);
+eslocal LoadBinVectorInt(SEQ_VECTOR <eslocal> & SEQ_VECTOR, string filename);
+eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <eslocal> > & outputVecVec, string filename);
+eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string filename);
 
 template <typename T>
 void PrintVec(SEQ_VECTOR <T> vec, string name);
@@ -83,7 +83,7 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name);
 
 void GetProcessMemoryStat_u( ); 
 void GetMemoryStat_u( );  
-int  parseLine_u(char* line);
+eslocal  parseLine_u(char* line);
 double GetProcessMemory_u ( );
 
 // **** END - Uncategorized functions ********************************
