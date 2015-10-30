@@ -338,7 +338,7 @@ void Linear_elasticity::post_solve_update() {
 	 	 if (BEM) {
 	 		_instance.surf_mesh().store(mesh::VTK_FULL, "mesh", prim_solution, 0.95, 0.9);
 	 	 } else {
-	 	 	_instance.mesh().     store(mesh::VTK_SURFACE, "mesh", prim_solution, 0.95, 0.9);
+	 	 	_instance.mesh().     store(mesh::VTK_FULL, "mesh", prim_solution, 0.95, 0.9);
 	 	 }
 
 		 timeSaveVTK.AddEndWithBarrier();
@@ -362,3 +362,4 @@ void Linear_elasticity::finalize() {
 	 timeEvalMain.totalTime.AddEndWithBarrier();
 	 timeEvalMain.PrintStatsMPI();
 }
+

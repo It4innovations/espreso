@@ -44,6 +44,7 @@ public:
 
 	bool initialized;
 	bool keep_factors;
+	int  MPIrank;
 
 	MKL_INT rows;
 	MKL_INT cols;

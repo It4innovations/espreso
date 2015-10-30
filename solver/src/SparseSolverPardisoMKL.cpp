@@ -241,7 +241,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
-		printf(".");
+		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -278,7 +278,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
-		printf(".");
+		if (MPIrank == 0) printf(".");
 	}
 
 
@@ -318,7 +318,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
-		printf(".");
+		if (MPIrank == 0) printf(".");
 	}
 
 
@@ -340,7 +340,7 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, c
 		Factorization();
 
 	bool keep_factors_tmp = keep_factors;
-	keep_factors = true;
+	keep_factors          = true;
 
 	char trans = T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed;
 
