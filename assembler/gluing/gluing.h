@@ -6,6 +6,7 @@
 
 namespace assembler {
 
+// rename to equality constrains
 template <MatrixComposer TMatrixComposer>
 class Gluing: public Assembler<TMatrixComposer> {
 
@@ -15,12 +16,17 @@ public:
 protected:
 	Gluing(const mesh::Mesh &mesh);
 
+	// computeDirichlet
+	// computeGluing
+	// computeRigidBodyModes
+
 	void computeSubdomainGluing();
 	void computeClusterGluing(std::vector<size_t> &rows);
 
 	virtual size_t DOFs() = 0;
 
 	// Matrices for Linear Solver
+	// B0 B1
 	std::vector<SparseMatrix> _localB, _globalB;
 
 	// Description ??

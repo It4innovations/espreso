@@ -19,7 +19,8 @@ Gluing<TMatrixComposer>::Gluing(const mesh::Mesh &mesh): Assembler<TMatrixCompos
 template <MatrixComposer TMatrixComposer>
 void Gluing<TMatrixComposer>::computeSubdomainGluing()
 {
-	const mesh::Boundaries &localBoundaries = this->_mesh.subdomainBoundaries();
+	const mesh::Boundaries &localBoundaries = this->mesh().subdomainBoundaries();
+	// TODO: cluster boundaries in surface
 	const mesh::Boundaries &globalBoundaries = this->_mesh.clusterBoundaries();
 
 	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
@@ -49,7 +50,7 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
-				const std::map<eslocal, double> &property = this->_mesh.coordinates().property(*vi).values();
+				const std::map<eslocal, double> &property = this->mesh().coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
 					is_dirichlet[0] = true;
 
@@ -126,9 +127,10 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 	int MPIsize = this->_mesh.size();
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 	std::vector<SparseIJVMatrix<eslocal> > &B0 = _B0;
-	const mesh::Coordinates &coordinates = this->_mesh.coordinates();
+	const mesh::Coordinates &coordinates = this->mesh().coordinates();
+	// TODO: cluster boundaries in surface
 	const mesh::Boundaries &globalBoundaries = this->_mesh.clusterBoundaries();
-	const mesh::Boundaries &localBoundaries = this->_mesh.subdomainBoundaries();
+	const mesh::Boundaries &localBoundaries = this->mesh().subdomainBoundaries();
 
 	// Local B1 - further processing - update row numbering based on all clusters
     if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - start                                   "; system("date +%T.%6N"); }

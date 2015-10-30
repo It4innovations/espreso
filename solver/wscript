@@ -35,9 +35,9 @@ def configure(ctx):
 
 def build(ctx):
     # DEFAULT SOLVER
-    ctx.env     = ctx.all_envs[SOLVER_PARDISO]
-    sources     = source_files + ("src/SparseSolver.cpp",)
-    target      = SOLVER_PARDISO
+    ctx.env     = ctx.all_envs[SOLVER_PARDISO_MKL]
+    sources     = source_files + ("src/SparseSolverPardisoMKL.cpp",)
+    target      = SOLVER_PARDISO_MKL
 
     if ctx.options.mic:
         ctx.env = ctx.all_envs[SOLVER_MIC]
@@ -60,7 +60,7 @@ def build(ctx):
         target  = SOLVER_PARDISO
 
     if ctx.options.pardiso_mkl:
-        ctx.env = ctx.all_envs[SOLVER_PARDISO]
+        ctx.env = ctx.all_envs[SOLVER_PARDISO_MKL]
         sources = source_files + ("src/SparseSolverPardisoMKL.cpp",)
         target  = SOLVER_PARDISO_MKL
 

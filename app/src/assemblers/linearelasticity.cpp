@@ -9,7 +9,7 @@
 
 void Linear_elasticity::init() {
 
-	BEM 			= false;
+	BEM 			= true;
 	DOFS_PER_NODE 	= 3; //TODO - nacist z config souboru
 	timeEvalMain.SetName("Linear Elasticity Solver Overal Timing");
 
@@ -112,7 +112,13 @@ void Linear_elasticity::init() {
 //			std::sort ( fix_nodes[d].begin(), fix_nodes[d].end() );
 //		}
 
-	fix_nodes = _instance.mesh().getFixPoints();
+
+	if (BEM) {
+
+		fix_nodes     = _instance.surf_mesh().getFixPoints();
+	} else {
+		fix_nodes      = _instance.mesh().getFixPoints();
+	}
 	 timeFnodes.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeFnodes);
 

@@ -6,7 +6,6 @@ namespace assembler {
 template <MatrixComposer TMatrixComposer>
 void Linear<TMatrixComposer>::init()
 {
-	std::cout << "0\n";
 	this->_timeStatistics.SetName("Linear Elasticity Solver Overall Timing");
 	this->_timeStatistics.totalTime.AddStartWithBarrier();
 	std::cout.precision(15);
@@ -32,7 +31,6 @@ void Linear<TMatrixComposer>::init()
 
 	timeKasm.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeKasm);
-	std::cout << "1\n";
 
 	TimeEvent timeLocalB("Create local B");
 	timeLocalB.AddStart();
@@ -41,7 +39,6 @@ void Linear<TMatrixComposer>::init()
 
 	timeLocalB.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeLocalB);
-	std::cout << "2\n";
 
 	TimeEvent timeGlobalB("Create global B");
 	timeGlobalB.AddStart();
@@ -54,7 +51,6 @@ void Linear<TMatrixComposer>::init()
 
 	timeGlobalB.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeGlobalB);
-	std::cout << "3\n";
 
 	TimeEvent timeBforces("Fill right hand side");
 	timeBforces.AddStart();
@@ -74,7 +70,6 @@ void Linear<TMatrixComposer>::init()
 
 	timeLSconv.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeLSconv);
-	std::cout << "4\n";
 }
 
 template <MatrixComposer TMatrixComposer>

@@ -29,10 +29,11 @@ public:
 protected:
 	Assembler(const mesh::Mesh &mesh);
 
+	virtual const mesh::Mesh& mesh() const;
 	virtual size_t subdomains();
 
 	const mesh::Mesh &_mesh;
-	const mesh::SurfaceMesh _surface;
+	mesh::SurfaceMesh _surface;
 
 	bool _verbose;
 	TimeEval _timeStatistics;

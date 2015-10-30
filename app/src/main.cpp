@@ -18,7 +18,7 @@ void solve(Instance &instance);
 int main(int argc, char** argv)
 {
 
-	bool BEM = false;
+	bool BEM = true;
 
 	// -------------------------------------------
 

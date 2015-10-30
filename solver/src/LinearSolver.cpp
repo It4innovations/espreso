@@ -89,7 +89,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
   	R_from_mesh = true	;
 	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
-	KEEP_FACTORS = false; // only suported by MKL Pardiso so far
+	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
 
     MPI_rank = rank;
     MPI_size = size;
@@ -101,7 +101,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 1;
+	cluster.USE_HFETI			= 0;
 	cluster.USE_KINV			= 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;

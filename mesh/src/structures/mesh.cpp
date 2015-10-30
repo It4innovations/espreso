@@ -484,7 +484,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	////////////////////////////////////////////////////////////////////////////
 
 	// number of common nodes to be neighbor
-	ncommon = 2;
+	ncommon = 3;
 
 	// There is probably BUG in METIS numbering or I do not understand documentation.
 	// The solution is increase the size of 'nodesCount' and keep the default numbering
@@ -492,9 +492,9 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	METIS_SetDefaultOptions(options);
 	//TODO:
 	options[METIS_OPTION_CONTIG]  = 1;
-	options[METIS_OPTION_MINCONN] = 1;
-	options[METIS_OPTION_NITER]   = 20;
-	options[METIS_PTYPE_KWAY]     = 1;
+//	options[METIS_OPTION_MINCONN] = 1;
+//	options[METIS_OPTION_NITER]   = 20;
+//	options[METIS_PTYPE_KWAY]     = 1;
 
 	eSize = last - first;
 	nSize = _coordinates.clusterSize();

@@ -217,10 +217,10 @@ void Linear<FEM>::RHS()
 				_f[p][3 * i + 0] = forces_x.at(l2g[i]);
 			}
 			if (forces_y.find(l2g[i]) != forces_y.end()) {
-				_f[p][3 * i + 1] = forces_x.at(l2g[i]);
+				_f[p][3 * i + 1] = forces_y.at(l2g[i]);
 			}
 			if (forces_z.find(l2g[i]) != forces_z.end()) {
-				_f[p][3 * i + 2] = forces_x.at(l2g[i]);
+				_f[p][3 * i + 2] = forces_z.at(l2g[i]);
 			}
 		}
 	}

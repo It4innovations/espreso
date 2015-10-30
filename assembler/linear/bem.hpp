@@ -39,18 +39,18 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 			false			// verbose
 			);
 
-	DenseMatrix tmp;
-	size_t n = _K.rows();
-    for (int i = 0; i < n / 3; i++) {
-        for (int j = 0; j < n; j++) {
+	DenseMatrix tmp = _K;
+	eslocal n = _K.rows();
+    for (eslocal i = 0; i < n / 3; i++) {
+        for (eslocal j = 0; j < n; j++) {
             tmp(3 * i + 0, j) = _K(0 * (n / 3) + i, j);
             tmp(3 * i + 1, j) = _K(1 * (n / 3) + i, j);
             tmp(3 * i + 2, j) = _K(2 * (n / 3) + i, j);
         }
     }
 
-    for (int i = 0; i < n / 3; i++) {
-        for (int j = 0; j < n; j++) {
+    for (eslocal i = 0; i < n / 3; i++) {
+        for (eslocal j = 0; j < n; j++) {
             _K(j, 3 * i + 0) = tmp(j, 0 * (n / 3) + i);
             _K(j, 3 * i + 1) = tmp(j, 1 * (n / 3) + i);
             _K(j, 3 * i + 2) = tmp(j, 2 * (n / 3) + i);
@@ -67,9 +67,32 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 }
 
 template <>
+void Linear<BEM>::RHS()
+{
+	const std::map<eslocal, double> &forces_x = this->_mesh.coordinates().property(mesh::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = this->_mesh.coordinates().property(mesh::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = this->_mesh.coordinates().property(mesh::FORCES_Z).values();
+
+	for (size_t p = 0; p < this->_mesh.parts(); p++) {
+		const std::vector<eslocal> &l2g = this->_surface.coordinates().localToCluster(p);
+		for (eslocal i = 0; i < l2g.size(); i++) {
+			if (forces_x.find(l2g[i]) != forces_x.end()) {
+				_f[p][3 * i + 0] = forces_x.at(l2g[i]);
+			}
+			if (forces_y.find(l2g[i]) != forces_y.end()) {
+				_f[p][3 * i + 1] = forces_y.at(l2g[i]);
+			}
+			if (forces_z.find(l2g[i]) != forces_z.end()) {
+				_f[p][3 * i + 2] = forces_z.at(l2g[i]);
+			}
+		}
+	}
+}
+
+template <>
 void Linear<BEM>::saveResult()
 {
-	_surface.store(mesh::VTK_FULL, "mesh", _prim_solution, 0.95, 0.9);
+	_surface.store(mesh::VTK_FULL, "surface", _prim_solution, 0.95, 0.9);
 }
 
 template <>
