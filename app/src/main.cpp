@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 #endif
 
 	Instance instance(argc, argv, MPIrank, MPIsize);
-	instance.mesh().store(mesh::VTK_SURFACE, "in_mesh", 0.95, 0.9);
+	//instance.mesh().store(mesh::VTK_SURFACE, "in_mesh", 0.95, 0.9);
 
 
 	if (BEM) {

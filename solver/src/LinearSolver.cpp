@@ -89,7 +89,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
   	R_from_mesh = true	;
 	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
-	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
+	KEEP_FACTORS = false; // only suported by MKL Pardiso so far
 
     MPI_rank = rank;
     MPI_size = size;
@@ -277,6 +277,7 @@ void LinearSolver::init(
 			cluster.domains[d].Kplus.Factorization ();
 		} else {
 			cluster.domains[d].Kplus.keep_factors = false;
+			cluster.domains[d].Kplus.MPIrank = MPI_rank;
 			K_mat[d].Clear();
 			cluster.domains[d].K.Clear(); 
 		}
