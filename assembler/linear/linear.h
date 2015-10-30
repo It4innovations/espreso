@@ -40,6 +40,11 @@ protected:
 
 private:
 	void KMf(size_t part, bool dynamics);
+	void RHS();
+	void initSolver();
+	void saveResult();
+
+
 	void KeMefe(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
 			DenseMatrix &Ce, const mesh::Element *e, size_t part, bool dynamics);
@@ -48,9 +53,7 @@ private:
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f,
 			const mesh::Element *e, bool dynamics);
 
-	void RHS();
-	void initSolver();
-	void saveResult();
+
 };
 
 

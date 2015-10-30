@@ -13,15 +13,10 @@ public:
 
 protected:
 	size_t DOFs() { return 3; }
-	void inertia(std::vector<double> &inertia)
-	{
-		inertia.resize(3, 0);
-		inertia[2] = 9810.0 * 7.85e-9;
-	}
+	void inertia(std::vector<double> &inertia);
 	void C(DenseMatrix &C);
 	double CP() { return 1; }
 	double rho() { return 7.85e-9; }
-
 };
 
 }

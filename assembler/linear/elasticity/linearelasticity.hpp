@@ -4,6 +4,13 @@
 namespace assembler {
 
 template <MatrixComposer TMatrixComposer>
+void LinearElasticity<TMatrixComposer>::inertia(std::vector<double> &inertia)
+{
+	inertia.resize(3, 0);
+	inertia[2] = 9810.0 * 7.85e-9;
+}
+
+template <MatrixComposer TMatrixComposer>
 void LinearElasticity<TMatrixComposer>::C(DenseMatrix &C)
 {
 	std::vector<double> inertia(3, 0.0);

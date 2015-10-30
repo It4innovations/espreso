@@ -1,6 +1,6 @@
 #include "mpi.h"
 
-#include "../../assembler/esassemblers.h"
+#include "esassemblers.h"
 #include "esinput.h"
 #include "esoutput.h"
 
@@ -21,6 +21,7 @@ int main(int argc, char** argv)
 	m.load(mesh::MESH_GENERATOR, argc, argv);
 
 	assembler::LinearElasticity<assembler::FEM> fem(m);
+
 
 	fem.init();
 	fem.solve();
