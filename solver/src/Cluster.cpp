@@ -1237,6 +1237,7 @@ void Cluster::CreateSa() {
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.AddStart(omp_get_wtime());
 	if (!PARDISO_SC) {
 		if (MPIrank == 0) F0_fast.msglvl = 1;
+		//SolaveMatF is obsolete - use Schur Complement Instead
 		F0_fast.SolveMatF(G0t,tmpM, true);
 		if (MPIrank == 0) F0_fast.msglvl = 0;
 	} else {
@@ -1740,6 +1741,7 @@ this->NUM_MICS = 2;
 
 		if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
 
+		//SolveMatF is obsolete - use Schur complement instead
 		domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
 		domains[i].B1Kplus.MatTranspose();
 

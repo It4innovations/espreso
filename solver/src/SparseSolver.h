@@ -1,24 +1,12 @@
+//#ifndef SPARSE_SOLVER_H_
+//#define SPARSE_SOLVER_H_
+
 #ifdef WIN32	 
 	#include "stdafx.h"
 #endif
 
  
-
 #include "utils.h"
-//#include "mkl_pardiso.h"
-
-//#include "mkl.h"
-//#include <string>
-//#include <sstream>
-//#include <iostream>
-//#include <vector>
-//#include <fstream>
-//#include <algorithm>
-//
-//#include <math.h>
-//#include <stack>
-//#include <ctime>
-
 #include "SparseMatrix.h"
 
 using std::string; 
@@ -74,9 +62,7 @@ public:
 	double  dparm[65];
 	//int * iparm;
 	
-	
 	MKL_INT maxfct, mnum, phase, error, msglvl;
-
 	// *** 
 
 	MKL_INT m_nRhs;
@@ -114,5 +100,5 @@ public:
 	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
 	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
 
-//  void generalInverse( SparseMatrix & A_in, SparseMatrix & R);
 };
+//#endif //SPARSE_SOLVER_H_

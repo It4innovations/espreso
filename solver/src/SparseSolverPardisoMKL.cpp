@@ -1,6 +1,16 @@
 #include "SparseSolver.h"
 #include "mkl_pardiso.h"
 
+
+
+
+
+
+
+
+
+
+
 SparseSolver::SparseSolver(){
 
 	keep_factors=true;
@@ -85,7 +95,6 @@ SparseSolver::~SparseSolver() {
 
 }
 
-
 void SparseSolver::Clear() {
 
 	if ( initialized == true )
@@ -98,9 +107,9 @@ void SparseSolver::Clear() {
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		phase = -1;			/* Release internal memory. */
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
-		iparm, &msglvl, &ddum, &ddum, &error);
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+			iparm, &msglvl, &ddum, &ddum, &error);
 
 		initialized = false;
 
@@ -115,7 +124,6 @@ void SparseSolver::Clear() {
 		CSR_V_values_size      = 0;
 
 }
-
 
 void SparseSolver::ImportMatrix(SparseMatrix & A) {
 
@@ -207,8 +215,8 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	if (!initialized)
 		Factorization();
 
-	double ddum  = 0;			/* Double dummy */
-	MKL_INT idum = 0;			/* Integer dummy. */
+	double ddum   = 0;			/* Double dummy */
+	MKL_INT idum  = 0;			/* Integer dummy. */
 	MKL_INT n_rhs = 1;
 
 	/* -------------------------------------------------------------------- */
@@ -350,8 +358,6 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, c
 	else
 		tmpM = A_in;
 
-	//if (m_factorized == 0)
-	//	Factorization();
 
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
@@ -526,6 +532,7 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 
 }
 
+//Obsolete - to be removed
 void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded ) {
 
 	/* Internal solver memory pointer pt, */
