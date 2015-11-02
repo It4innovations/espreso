@@ -18,8 +18,7 @@ int main(int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
 	mesh::Mesh m(MPIrank, MPIsize);
-	m.load(mesh::ESPRESO_INPUT, argc, argv);
-	m.partitiate(16, 4);
+	m.load(mesh::MESH_GENERATOR, argc, argv);
 
 	assembler::LinearElasticity<assembler::BEM> fem(m);
 
