@@ -1273,12 +1273,13 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
 #endif
 }
 
-int SparseMatrix::CopyToCUDA_Dev( ) {
+eslocal SparseMatrix::CopyToCUDA_Dev( ) {
+	eslocal error = 0;
+
 #ifdef CUDA	 
 
 	eslocal mat_size = dense_values.size();// rows * cols;
 	eslocal lda = rows;
-	eslocal error = 0;
 
 	if ( d_dense_values == NULL ) {
 
@@ -1321,11 +1322,12 @@ int SparseMatrix::CopyToCUDA_Dev( ) {
 		 
 		cout << "X"; 
 			
-		return error;
 
 	}
 
 #endif
+	return error;
+
 }
 
 

@@ -115,7 +115,7 @@ public:
 
 	void RemoveLowerDense( ); 
 
-	int  CopyToCUDA_Dev ();
+	eslocal  CopyToCUDA_Dev ();
 	void CopyToCUDA_Dev_fl (); 
 	void CopyFromCUDA_Dev();
 	void FreeFromCUDA_Dev();
@@ -163,8 +163,8 @@ public:
 	double GetMeanOfDiagonalOfSymmetricMatrix();
 	double GetMaxOfDiagonalOfSymmetricMatrix();
 	void   SetDiagonalOfSymmetricMatrix( double val );
-  void   getSubDiagBlockmatrix( SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal size);
-  void   getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal i_size,
+	void   getSubDiagBlockmatrix( SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal size);
+	void   getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal i_size,
                                           eslocal j_start, eslocal j_size);
 	
 	void MatAppend(SparseMatrix & A); 
