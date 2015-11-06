@@ -22,7 +22,7 @@ source_files = (
 
 def configure(ctx):
     ctx.setenv(SOLVER, ctx.all_envs[""].derive());
-    ctx.env.append_unique("CXXFLAGS", [ "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB", "-DCUDA" ])
 
     ctx.setenv(SOLVER_MIC, ctx.all_envs[SOLVER].derive());
     ctx.env.append_unique("CXXFLAGS", [ "-DMIC" ])
@@ -33,7 +33,8 @@ def configure(ctx):
     ctx.setenv(SOLVER_PARDISO, ctx.all_envs[SOLVER].derive());
 
     ctx.setenv(SOLVER_PARDISO_MKL, ctx.all_envs[SOLVER].derive());
-
+    ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ]) # titan fix 
+    
     ctx.setenv(SOLVER_MUMPS, ctx.all_envs[SOLVER].derive());
 
 def build(ctx):
