@@ -1321,6 +1321,8 @@ int SparseMatrix::CopyToCUDA_Dev( ) {
 		 
 		cout << "X"; 
 			
+		return error;
+
 	}
 
 #endif
