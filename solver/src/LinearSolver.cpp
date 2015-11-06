@@ -102,7 +102,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 		cluster.USE_DYNAMIC		= 1;
 
 	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 0;
+	cluster.USE_KINV			= 1;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
 	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
@@ -112,7 +112,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	// Iter Solver Set-up
 	solver.CG_max_iter	 = 500;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = 0.0001;
+	solver.epsilon		 = 0.00000000000001;
 	solver.USE_PIPECG	 = 0;
 	solver.USE_PREC		 = 1;
 
