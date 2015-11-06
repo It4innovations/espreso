@@ -108,9 +108,9 @@ if [ "$1" = "run" ]; then
   clustt_size_y=( 4   4   5   5   6   4   4   3   5   5 )
   clustt_size_z=( 4   4   4   6   6   3   3   3   5   5 )
 
-  clusters_x=(    2   3   2   2   2   2   2   2   1   1 )
-  clusters_y=(    2   3   2   2   2   2   2   2   1   1 )
-  clusters_z=(    2   3   1   1   1   1   1   1   1   1 )
+  clusters_x=(    2   1   2   2   2   2   2   2   1   1 )
+  clusters_y=(    2   1   2   2   2   2   2   2   1   1 )
+  clusters_z=(    2   1   1   1   1   1   1   1   1   1 )
 
   corners=(       0   0   0   0   0   0   0   0   0   0 )
 
