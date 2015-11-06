@@ -280,6 +280,7 @@ void Domain::K_regularizationFromR ( ) {
 			ro = 1.0 * ro;
 
 			K.    MatAddInPlace (NtN_Mat,'N', ro);
+			//KplusF.ImportMatrix (K);
     	}
 
 

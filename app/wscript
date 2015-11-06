@@ -80,20 +80,27 @@ def configure(ctx):
 
     ctx.setenv(APP_CUDA, ctx.all_envs[APP].derive())
     ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-    ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
-    ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "cudart", "cublas", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-    ctx.env.append_unique("STLIB", [ "ifcore" ])
+    #ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
+    ctx.env.append_unique("STLIB", [ "cudart", "cublas" ])
+    #ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "cudart", "cublas", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+    #ctx.env.append_unique("STLIB", [ "ifcore" ])
 
 
     ctx.setenv(APP_PARDISO, ctx.all_envs[APP].derive())
     ctx.env.append_unique("LIB", [ metis, "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-    if ctx.options.titan:
-        ctx.env.append_value("LIB", [ "ifcore" ])
-    else:
-        ctx.env.append_value("STLIB", [ "ifcore" ])
+#    if ctx.options.titan:
+#        ctx.env.append_value("LIB", [ "ifcore" ])
+#    else:
+#        ctx.env.append_value("STLIB", [ "ifcore" ])
 
     ctx.setenv(APP_PARDISO_MKL, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+    if ctx.options.titan:    
+        ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
+	ctx.env.append_unique("LIB", [ "cudart", "cublas" ])
+        ctx.env.append_unique("STLIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "irng", "svml" ])
+    else:    
+        ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+
 
     ctx.setenv(APP_MUMPS, ctx.all_envs[APP].derive())
     ctx.env.append_unique("LIB", [ metis, "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
