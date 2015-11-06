@@ -11,7 +11,8 @@ Domain::Domain(){
 
 Domain::Domain(eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0){
 	domain_global_index = domain_index; 
-	USE_DYNAMIC = use_dynamic_1_no_dynamic_0; 
+	USE_DYNAMIC         = use_dynamic_1_no_dynamic_0;
+	isOnACC             = 0;
 }
 
 void Domain::SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama) {

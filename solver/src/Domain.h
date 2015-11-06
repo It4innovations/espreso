@@ -47,6 +47,8 @@ public:
 	eslocal USE_KINV;
 	eslocal USE_HFETI;
 	eslocal DOFS_PER_NODE;
+	eslocal isOnACC;
+
 
 	// Matrices and vectors of the cluster 
 	SparseMatrix B0; 

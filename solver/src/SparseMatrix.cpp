@@ -1273,11 +1273,12 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
 #endif
 }
 
-void SparseMatrix::CopyToCUDA_Dev( ) {
+int SparseMatrix::CopyToCUDA_Dev( ) {
 #ifdef CUDA	 
 
 	eslocal mat_size = dense_values.size();// rows * cols;
 	eslocal lda = rows;
+	eslocal error = 0;
 
 	if ( d_dense_values == NULL ) {
 
@@ -1291,17 +1292,19 @@ void SparseMatrix::CopyToCUDA_Dev( ) {
 
 		status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 		if (status != cudaSuccess) {
-			printf("Error allocating GPU memory  \n");
-			MPI_Finalize();
-			exit(0);
+			printf("Error allocating GPU memory for Matrix \n");
+			//MPI_Finalize();
+			//exit(0);
+			error = -1;
 		}
 		
 
 		status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
 		if (status != cudaSuccess) {
-			printf("Error allocating GPU memory \n");
-			MPI_Finalize();
-			exit(0);
+			printf("Error allocating GPU memory for Vector \n");
+			//MPI_Finalize();
+			//exit(0);
+			error = -1;
 		}
 		
 

@@ -1704,14 +1704,20 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 				x_in_tmp[i]                            = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 #ifdef CUDA
-				cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+				if (cluster.domains[d].isOnACC == 1) {
+					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+					//cluster.domains[d].cuda_pinned_buff_fl[i] = (float) x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+				}
 #endif
-				//cluster.domains[d].cuda_pinned_buff_fl[i] = (float) x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 			}
 
 #ifdef CUDA
-			cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start( cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0 );
+			if (cluster.domains[d].isOnACC == 1) {
+				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start( cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0 );
 			//cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start_fl( cluster.domains[d].cuda_pinned_buff_fl, cluster.domains[d].cuda_pinned_buff_fl,'N',0 );
+			} else {
+				cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
+			}
 #else
 			cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
 #endif
@@ -1729,13 +1735,21 @@ void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, 
 
 #ifdef CUDA
 		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
+			if (cluster.domains[d].isOnACC == 1) {
+				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
+			}
 		}
 
 		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
-				//cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += (double)cluster.domains[d].cuda_pinned_buff_fl[i];
+			if (cluster.domains[d].isOnACC == 1) {
+				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
+					//cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += (double)cluster.domains[d].cuda_pinned_buff_fl[i];
+				}
+			} else {
+				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
+				}
 			}
 		}
 
@@ -1845,11 +1859,15 @@ if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 #ifdef CUDA
-			cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy(x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
+			if (cluster.domains[d].isOnACC == 1) {
+				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy(x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
+			} else {
+				cluster.domains[d].B1Kplus.DenseMatVec            (x_in_tmp, cluster.domains[d].compressed_tmp);
+			}
 #elif MICEXP
-       cluster.domains[d].B1Kplus.DenseMatVecMIC_wo_Copy(x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
+			cluster.domains[d].B1Kplus.DenseMatVecMIC_wo_Copy (x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
 #else
-			cluster.domains[d].B1Kplus.DenseMatVec(x_in_tmp, cluster.domains[d].compressed_tmp);
+			cluster.domains[d].B1Kplus.DenseMatVec            (x_in_tmp, cluster.domains[d].compressed_tmp);
 #endif
 		}
 		time_eval.timeEvents[1].AddEnd(omp_get_wtime());

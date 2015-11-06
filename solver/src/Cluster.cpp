@@ -1889,8 +1889,13 @@ void Cluster::Create_SC_perDomain() {
 
 #ifdef CUDA
 		//domains[i].B1Kplus.RemoveLowerDense();
-		domains[i].B1Kplus.CopyToCUDA_Dev();
+		eslocal status;
+		status = domains[i].B1Kplus.CopyToCUDA_Dev();
 		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
+		if (status == 0)
+			domains[i].isOnACC = 1;
+		else
+			domains[i].isOnACC = 0;
 #endif
 
 #ifdef MIC
