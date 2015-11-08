@@ -17,10 +17,12 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
-	mesh::Mesh m(MPIrank, MPIsize);
-	m.load(mesh::MESH_GENERATOR, argc, argv);
+	mesh::Mesh mesh(MPIrank, MPIsize);
+	mesh.load(mesh::MESH_GENERATOR, argc, argv);
 
-	assembler::LinearElasticity<assembler::BEM> fem(m);
+	mesh::SurfaceMesh surface(mesh);
+	assembler::BEM bem(mesh, surface);
+	assembler::LinearElasticity<assembler::BEM> fem(bem);
 
 
 	fem.init();

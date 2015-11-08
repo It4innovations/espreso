@@ -69,11 +69,11 @@ def configure(ctx):
     ctx.recurse("mesh")
     ctx.recurse("input")
     ctx.recurse("output")
-    #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("assembler")
     ctx.recurse("catalyst")
     ctx.recurse("app")
+    ctx.recurse("apiwrapper")
 
 
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
@@ -224,12 +224,12 @@ def build(ctx):
     if ctx.options.mesh:
         return
 
-    #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("assembler")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")
     ctx.recurse("app")
+    ctx.recurse("apiwrapper")
 
 
 

@@ -8,13 +8,24 @@
 
 namespace assembler {
 
-enum MatrixComposer {
-	FEM,
-	BEM,
-	ELMER
+struct FEM {
+	FEM(mesh::Mesh &mesh): mesh(mesh) { };
+
+	mesh::Mesh &mesh;
 };
 
-template <MatrixComposer TMatrixComposer>
+struct BEM {
+	BEM(mesh::Mesh &mesh, mesh::SurfaceMesh &surface): mesh(mesh), surface(surface) { };
+
+	mesh::Mesh &mesh;
+	mesh::SurfaceMesh &surface;
+};
+
+struct API {
+
+};
+
+template <class TInput>
 class Assembler {
 
 public:
@@ -27,13 +38,14 @@ public:
 	virtual ~Assembler() {};
 
 protected:
-	Assembler(const mesh::Mesh &mesh);
+	Assembler(TInput &input): _input(input), _verbose(true) {};
 
-	virtual const mesh::Mesh& mesh() const;
+//	virtual const mesh::Mesh& mesh() const;
 	virtual size_t subdomains();
+	virtual size_t rank();
+	virtual size_t size();
 
-	const mesh::Mesh &_mesh;
-	mesh::SurfaceMesh _surface;
+	TInput &_input;
 
 	bool _verbose;
 	TimeEval _timeStatistics;

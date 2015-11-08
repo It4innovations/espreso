@@ -6,11 +6,11 @@
 
 namespace assembler {
 
-template <MatrixComposer TMatrixComposer>
-class Temperature: public Linear<TMatrixComposer> {
+template <class TInput>
+class Temperature: public Linear<TInput> {
 
 public:
-	Temperature(const mesh::Mesh &mesh): Linear<TMatrixComposer>(mesh) {};
+	Temperature(TInput &input): Linear<TInput>(input) {};
 
 protected:
 	size_t DOFs() { return 1; }
