@@ -16,6 +16,18 @@ Gluing<TInput>::Gluing(TInput &input): Assembler<TInput>(input) {
 	_vec_c.resize(this->subdomains());
 };
 
+template <>
+void Gluing<API>::computeSubdomainGluing()
+{
+
+}
+
+template <>
+void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
+{
+
+}
+
 template <class TInput>
 void Gluing<TInput>::computeSubdomainGluing()
 {

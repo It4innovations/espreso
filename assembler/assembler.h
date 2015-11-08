@@ -5,6 +5,7 @@
 #include "essolver.h"
 #include "esmesh.h"
 #include "esbem.h"
+#include "../libespreso/espreso.h"
 
 namespace assembler {
 
@@ -23,6 +24,10 @@ struct BEM {
 
 struct API {
 
+	API(LocalStiffnessMatrices &Ke, DoubleVector &rhs): Ke(Ke), rhs(rhs) { };
+
+	LocalStiffnessMatrices &Ke;
+	DoubleVector &rhs;
 };
 
 template <class TInput>

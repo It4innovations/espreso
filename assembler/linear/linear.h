@@ -62,6 +62,7 @@ private:
 #include "linear.hpp"
 #include "fem.hpp"
 #include "bem.hpp"
+#include "api.hpp"
 
 
 #endif /* ASSEMBLER_LINEAR_LINEAR_H_ */
