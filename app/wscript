@@ -154,4 +154,11 @@ def build(ctx):
         install_path    = ctx.ROOT
     )
 
+    ctx.program(
+        source          = ("main.cpp", "solver/solver.cpp"),
+        target          = "final",
+        use             = "espreso_insluces esbasis {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        install_path    = ctx.ROOT
+    )
+
 

@@ -3,7 +3,7 @@
 
 namespace assembler {
 
-double determinant3x3(DenseMatrix &m)
+static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();
 	return fabs(
@@ -16,7 +16,7 @@ double determinant3x3(DenseMatrix &m)
    );
 }
 
-void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
+static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 {
 	const double *values = m.values();
 	inv.resize(m.rows(), m.columns());
@@ -40,7 +40,7 @@ void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 // dY  dX   0
 //  0  dZ  dY
 // dZ   0  dX
-void distribute(DenseMatrix &B, DenseMatrix &dND)
+static void distribute(DenseMatrix &B, DenseMatrix &dND)
 {
 	eslocal columns = dND.rows() * dND.columns();
 	const double *dNDx = dND.values();
