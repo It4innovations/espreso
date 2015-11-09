@@ -1,7 +1,7 @@
-export MKL_NUM_THREADS=1
-export OMP_NUM_THREADS=1
-export SOLVER_NUM_THREADS=1
-export PAR_NUM_THREADS=1
+export MKL_NUM_THREADS=2
+export OMP_NUM_THREADS=2
+export SOLVER_NUM_THREADS=2
+export PAR_NUM_THREADS=2
 
 export CILK_NWORKERS=4
 
@@ -9,5 +9,4 @@ export PARDISOLICMESSAGE=1
 
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/ParaView-bin/lib/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/Paraview-OSPRay/ParaView-v4.3.1-source/build/lib/
-export  PAR_NUM_THREADS=1
 

@@ -144,6 +144,11 @@ void LinearSolver::init(
 
 ) {
 
+//	SparseMatrix t;
+//	t.CreateEye(10);
+//	t.SaveMatrixBinInCOO("B1.mat");
+
+
 	number_of_subdomains_per_cluster = K_mat.size();
 
 

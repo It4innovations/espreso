@@ -86,6 +86,9 @@ public:
 	//void LoadMatrixInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric); 
 	//void LoadMatrix(string filename, char matrix_type_G_for_general_S_for_symmetric); 
 	eslocal  LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
+
+	eslocal  SaveMatrixBinInCOO(string filename);
+
 	eslocal  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric);
 	eslocal  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric, eslocal clearCOO_1_keep_COO_0 );
 
@@ -147,11 +150,6 @@ public:
 	void GramSchmidtOrtho();
 
 	void MatScale(double alpha);
-
-	//void MatTranspose(); 
-	//void MatTranspose(double beta); 
-	//void MatTranspose(SparseMatrix & A_out); 
-	//void MatTranspose(SparseMatrix & A_out, double beta); 
 
 	void MatTranspose();
 	void MatTranspose(double beta);

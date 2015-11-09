@@ -619,6 +619,37 @@ void SparseMatrix::Clear() {
 	//d_x_in		   = NULL: 
 }
 
+eslocal  SparseMatrix::SaveMatrixBinInCOO(string filename) {
+
+	//ConvertToCSR(0);
+
+	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
+
+	if ( out.is_open() ) {
+		char delim = ';';
+
+		//write parameters
+		out << "%% rows;cols;nnz;type" << endl;
+		out << rows << ";" << cols << ";" << nnz << ";" << type << endl;
+
+		out.write((char*)&CSR_I_row_indices[0], CSR_I_row_indices.size() * sizeof(eslocal));
+		cout << endl;
+
+		out.write((char*)&CSR_J_col_indices[0], CSR_J_col_indices.size() * sizeof(eslocal));
+		cout << endl;
+
+		out.write((char*)&CSR_V_values[0], CSR_V_values.size() * sizeof(double));
+		cout << endl;
+
+		out.close();
+		return 0;
+
+	} else {
+		cout << "Matrix file " << filename << " cannot be created ! " << endl;
+		return -1;
+	}
+
+}
 
 eslocal SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric) {
 	

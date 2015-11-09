@@ -1876,7 +1876,7 @@ void Cluster::Create_SC_perDomain() {
 		domains[i].KplusF.msglvl = 0;
 
 		if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
-
+		//mkl_set_num_threads( 4 );
 		SparseSolver tmpsps;
 		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
 		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 0 );
@@ -1884,8 +1884,6 @@ void Cluster::Create_SC_perDomain() {
 //		SparseSolver tmpsps2;
 //		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
 //		tmpsps2.Create_non_sym_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B0t_comp, domains[i].B0KplusB1_comp, false, 0 );
-
-
 
 #ifdef CUDA
 		//domains[i].B1Kplus.RemoveLowerDense();
