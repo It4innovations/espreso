@@ -65,9 +65,9 @@ void Boundaries::create_B1_l(	std::vector < SparseIJVMatrix   <T> >   & B1_local
 
 
 					if (coordinates[i].z == 0.0 )
-						vec_c[*it].push_back(1.0);
+						vec_c[*it].push_back(100.0);
 					else
-						vec_c[*it].push_back(-1.0);
+						vec_c[*it].push_back(200.0);
 
 					lambda_count_B1++;
 				}
