@@ -47,14 +47,14 @@ int main(int argc, char** argv)
 		instance.surf_mesh().store(mesh::VTK_FULL, "surface_m", 0.95, 0.9);
 	}
 
-	Solver<Linear_elasticity> solver_1 (instance);
-	solver_1.solve(1);
+//	Solver<Linear_elasticity> solver_1 (instance);
+//	solver_1.solve(1);
 
 	//Solver<Dynamics>          solver_2 (instance);
 	//solver_2.solve(10);
 
-	//Solver<HeatSteadyState> solver_h (instance);
-	//solver_h.solve(1);
+	Solver<HeatSteadyState> solver_h (instance);
+	solver_h.solve(1);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
