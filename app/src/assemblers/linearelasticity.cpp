@@ -9,7 +9,7 @@
 
 void Linear_elasticity::init() {
 
-	BEM 			= true;
+	BEM 			= false;
 	DOFS_PER_NODE 	= 3; //TODO - nacist z config souboru
 	timeEvalMain.SetName("Linear Elasticity Solver Overal Timing");
 
