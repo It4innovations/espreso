@@ -30,8 +30,8 @@ struct API {
 	DoubleVector &rhs;
 };
 
-template <class TInput>
-class Assembler {
+
+class AssemblerBase {
 
 public:
 	virtual void init() = 0;
@@ -40,12 +40,15 @@ public:
 	virtual void solve() = 0;
 	virtual void finalize() = 0;
 
-	virtual ~Assembler() {};
+	virtual ~AssemblerBase() {};
+};
+
+template <class TInput>
+class Assembler: public AssemblerBase {
 
 protected:
 	Assembler(TInput &input): _input(input), _verbose(true) {};
 
-//	virtual const mesh::Mesh& mesh() const;
 	virtual size_t subdomains();
 	virtual size_t rank();
 	virtual size_t size();

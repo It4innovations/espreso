@@ -41,11 +41,7 @@ class cxxprogram(link_task):
                ${SHLIB_MARKER}'
 
 source_files = (
-    "src/configuration.cpp",
-    "src/instance.cpp",
-    "src/assemblers/dynamics.cpp",
-    "src/assemblers/linearelasticity.cpp",
-    "src/assemblers/HeatSteadyState.cpp"
+    "factory/factory.cpp",
 )
 
 def configure(ctx):
@@ -134,29 +130,15 @@ def build(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-DCATALYST" ])
 
     ctx.program(
-        source          = source_files + ("src/test.cpp",),
-        target          = "estest",
-        use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
-        install_path    = ctx.ROOT
-    )
-
-    ctx.program(
-        source          = source_files + ("src/main.cpp",),
+        source          = source_files + ("main.cpp",),
         target          = "espreso",
         use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
         install_path    = ctx.ROOT
     )
 
     ctx.program(
-        source          = source_files + ("src/decomposer.cpp",),
+        source          = source_files + ("decomposer.cpp",),
         target          = "decomposer",
-        use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
-        install_path    = ctx.ROOT
-    )
-
-    ctx.program(
-        source          = ("main.cpp", "solver/solver.cpp"),
-        target          = "final",
         use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
         install_path    = ctx.ROOT
     )
