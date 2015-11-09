@@ -57,64 +57,6 @@ public:
 		return position;
 	}
 
-	template<typename T>
-	void create_B1_l(	std::vector < SparseIJVMatrix<T> >      	& B1_local,
-						std::vector < SparseIJVMatrix<T> >      	& B0_local,
-						std::vector < std::vector <eslocal> >      	& l2g_vec,
-						std::vector < std::vector <T> >   & lambda_map_sub_clst,
-						std::vector < std::vector <T> >   & lambda_map_sub_B1,
-						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
-						std::vector < std::vector <double> > 	& B1_l_duplicity,
-						const eslocal domains_num,
-						const eslocal DOFS_PER_NODE,
-						const mesh::Boundaries & global_boundaries,
-						const Coordinates &coordinates) const;
-
-
-	template<typename T>
-	void create_B1_l(	std::vector < SparseIJVMatrix<T> >      	& B1_local,
-						std::vector < SparseIJVMatrix<T> >      	& B0_local,
-						std::vector < std::vector <eslocal> >      	& l2g_vec,
-						std::vector < std::vector <T> >   & lambda_map_sub_clst,
-						std::vector < std::vector <T> >   & lambda_map_sub_B1,
-						std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
-						std::vector < std::vector <double> > 	& B1_l_duplicity,
-						std::vector < std::vector < double> >   & vec_c,
-						const eslocal domains_num,
-						const eslocal DOFS_PER_NODE,
-						const mesh::Boundaries & global_boundaries,
-						const Coordinates &coordinates) const;
-
-
-	template<typename T>
-	void create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1_global,
-						const std::vector < SparseCSRMatrix<T> >   & K_mat,
-						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
-						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
-						std::vector < std::vector <double> >    & B1_duplicity,
-						const eslocal MPIrank,
-						const eslocal MPIsize,
-						const eslocal subDomPerCluster,
-						const eslocal DOFS_PER_NODE,
-						std::vector < eslocal  > & myNeighClusters,
-						const mesh::Boundaries & local_boundaries,
-						const Coordinates &coordinates) const;
-
-	template<typename T>
-	void create_B1_g(	std::vector < SparseIJVMatrix<T> >         & B1_global,
-						const std::vector < SparseCSRMatrix<T> >   & K_mat,
-						std::vector < std::vector <eslocal> >   & lambda_map_sub_clst,
-						std::vector < std::vector <eslocal> >   & lambda_map_sub_B1,
-						std::vector < std::vector <double> >    & B1_duplicity,
-						std::vector < std::vector < double> >   & vec_c,
-						const eslocal MPIrank,
-						const eslocal MPIsize,
-						const eslocal subDomPerCluster,
-						const eslocal DOFS_PER_NODE,
-						std::vector < eslocal  > & myNeighClusters,
-						const mesh::Boundaries & local_boundaries,
-						const Coordinates &coordinates) const;
-
 private:
 	/** @brief Keeps mapping of nodes to mesh parts. */
 	std::vector<std::set<eslocal> > _boundaries;
@@ -124,7 +66,5 @@ private:
 };
 
 }
-
-#include "boundaries.hpp"
 
 #endif /* BOUNDARIES_H_ */
