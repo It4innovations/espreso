@@ -5,15 +5,13 @@ using namespace assembler;
 
 std::list<Assembler<API>*> DataHolder::assemblers;
 MPI_Comm DataHolder::communicator;
-int DataHolder::MPIrank;
-int DataHolder::MPIsize;
 
 
 int ESPRESO_Init(MPI_Comm communicator)
 {
 	DataHolder::communicator = communicator;
-	MPI_Comm_rank(communicator, &DataHolder::MPIrank);
-	MPI_Comm_size(communicator, &DataHolder::MPIsize);
+	MPI_Comm_rank(communicator, &esconfig::MPIrank);
+	MPI_Comm_size(communicator, &esconfig::MPIsize);
 	return 0;
 }
 

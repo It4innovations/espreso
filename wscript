@@ -64,6 +64,7 @@ def configure(ctx):
     ctx.ROOT = ctx.path.abspath()
 
     ctx.recurse("basis")
+    ctx.recurse("config")
     ctx.recurse("tools")
     ctx.recurse("bem")
     ctx.recurse("mesh")
@@ -165,6 +166,10 @@ def build(ctx):
         name            = "incl_basis"
     )
     ctx(
+        export_includes = "config",
+        name            = "incl_config"
+    )
+    ctx(
         export_includes = "input",
         name            = "incl_input"
     )
@@ -203,7 +208,7 @@ def build(ctx):
     ctx(
         export_includes = "include",
         name            = "espreso_includes",
-        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler incl_cuda"
+        use             = "incl_basis incl_config incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler incl_cuda"
     )
 
     ctx.ROOT = ctx.path.abspath()
@@ -215,6 +220,7 @@ def build(ctx):
         ctx.lib = ctx.shlib
 
     ctx.recurse("basis")
+    ctx.recurse("config")
     ctx.recurse("tools")
     ctx.add_group()
     ctx.recurse("bem")

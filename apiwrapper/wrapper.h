@@ -5,13 +5,12 @@
 #include "../libespreso/espreso.h"
 #include <iostream>
 
+#include "esconfig.h"
 #include "esassemblers.h"
 
 struct DataHolder {
 	static std::list<assembler::Assembler<assembler::API>*> assemblers;
 	static MPI_Comm communicator;
-	static int MPIrank;
-	static int MPIsize;
 };
 
 
