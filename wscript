@@ -118,11 +118,6 @@ def options(opt):
         default=False,
         help="All libraries created by ESPRESO are static.")
 
-    opt.add_option("--mesh",
-        action="store_true",
-        default=False,
-        help="Create application only from mesh.")
-
     opt.add_option("--cuda",
         action="store_true",
         default=False,
@@ -178,7 +173,7 @@ def build(ctx):
         name            = "incl_output"
     )
     ctx(
-        export_includes = "mesh/src",
+        export_includes = "mesh",
         name            = "incl_mesh"
     )
     ctx(
@@ -227,9 +222,6 @@ def build(ctx):
     ctx.recurse("mesh")
     ctx.recurse("input")
     ctx.recurse("output")
-    if ctx.options.mesh:
-        return
-
     ctx.recurse("solver")
     ctx.recurse("assembler")
     if ctx.options.catalyst:

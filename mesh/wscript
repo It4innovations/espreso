@@ -1,64 +1,35 @@
 
 MESH = "mesh"
-MESH_APP = "meshApp"
 
 source_files = (
-    "src/structures/coordinates.cpp",
-    "src/structures/boundaries.cpp",
-    "src/structures/mesh.cpp",
-    "src/elements/element.cpp",
-    "src/elements/3D/hexahedron8.cpp",
-    "src/elements/3D/hexahedron20.cpp",
-    "src/elements/3D/tetrahedron4.cpp",
-    "src/elements/3D/tetrahedron10.cpp",
-    "src/elements/3D/prisma6.cpp",
-    "src/elements/3D/prisma15.cpp",
-    "src/elements/3D/pyramid5.cpp",
-    "src/elements/3D/pyramid13.cpp",
-    "src/elements/2D/square.cpp",
-    "src/elements/2D/triangle.cpp",
-    "src/elements/1D/line.cpp",
-    "src/elements/1D/point3d.cpp",
-    "src/elements/1D/point2d.cpp",
+    "structures/coordinates.cpp",
+    "structures/boundaries.cpp",
+    "structures/mesh.cpp",
+    "elements/element.cpp",
+    "elements/3D/hexahedron8.cpp",
+    "elements/3D/hexahedron20.cpp",
+    "elements/3D/tetrahedron4.cpp",
+    "elements/3D/tetrahedron10.cpp",
+    "elements/3D/prisma6.cpp",
+    "elements/3D/prisma15.cpp",
+    "elements/3D/pyramid5.cpp",
+    "elements/3D/pyramid13.cpp",
+    "elements/2D/square.cpp",
+    "elements/2D/triangle.cpp",
+    "elements/1D/line.cpp",
+    "elements/1D/point3d.cpp",
+    "elements/1D/point2d.cpp",
 )
 
 
 def configure(ctx):
     ctx.setenv(MESH, ctx.all_envs[""].derive());
 
-    ctx.setenv(MESH_APP, ctx.all_envs[""].derive());
-
-    ctx.env.append_unique("LIBPATH", [ "../libs" ])
-    if ctx.options.titan:
-        ctx.env.append_unique("LIBPATH", [ "/opt/intel/composer_xe_2013_sp1.2.144/compiler/lib/intel64/" ])
-
-    if ctx.env.ESLOCAL == 32:
-        mkl = "mkl_intel_lp64"
-        metis = "metis32"
-    if ctx.env.ESLOCAL == 64:
-        mkl = "mkl_intel_ilp64"
-        metis = "metis64"
-    if ctx.options.titan:
-        metis = "metis"
-
-    ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-
-
 def build(ctx):
-
-    if ctx.options.mesh:
-        ctx.env = ctx.all_envs[MESH_APP]
-        ctx.program(
-            source          = source_files + ("src/main.cpp",),
-            target          = "esmesh",
-            use             = "espreso_includes esbem",
-            install_path    = ctx.ROOT
-        )
-    else:
-        ctx.env = ctx.all_envs[MESH]
-        ctx.lib(
-            source          = source_files,
-            target          = "esmesh",
-            use             = "espreso_includes",
-            install_path    = ctx.LIBRARIES
-        )
+    ctx.env = ctx.all_envs[MESH]
+    ctx.lib(
+        source          = source_files,
+        target          = "esmesh",
+        use             = "espreso_includes",
+        install_path    = ctx.LIBRARIES
+    )

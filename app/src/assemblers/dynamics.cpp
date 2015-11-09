@@ -35,7 +35,8 @@ void Dynamics::init()
 	}
 
 	cilk_for (eslocal d = 0; d < partsCount; d++) {
-		_instance.mesh().elasticity(K_mat[d], M_mat[d], f_vec[d], d);
+		// TODO: USE ASSEMBLER
+		//_instance.mesh().elasticity(K_mat[d], M_mat[d], f_vec[d], d);
         if (_instance.rank() == 0) std::cout << d << " " ; //<< std::endl;
 	}
 	if (_instance.rank() == 0) std::cout << std::endl;

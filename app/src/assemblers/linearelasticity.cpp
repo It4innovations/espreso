@@ -76,7 +76,8 @@ void Linear_elasticity::init() {
 		cilk_for (eslocal d = 0; d < partsCount; d++) {
 			//eslocal dimension = _instance.mesh().getPartNodesCount(d) * mesh::Point::size();
 
-			_instance.mesh().elasticity(K_mat[d], f_vec[d], d);
+			// TODO: USE ASSEMBLER
+			//_instance.mesh().elasticity(K_mat[d], f_vec[d], d);
 
 			if (_instance.rank() == 0) std::cout << d << " " ; //<< std::endl;
 		}
