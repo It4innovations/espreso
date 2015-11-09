@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	mesh::Mesh m(MPIrank, MPIsize);
 	m.load(mesh::MESH_GENERATOR, argc, argv);
 
-	assembler::LinearElasticity<assembler::BEM> fem(m);
+	assembler::LinearElasticity<assembler::FEM> fem(m);
 
 
 	fem.init();
