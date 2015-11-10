@@ -93,7 +93,7 @@ void Domain::CreateKplus_R ( )
 		Kplus_R.dense_values.resize( coordinates.size() );
 		double nsqrt = 1.0 / sqrt( coordinates.size() );
 
-		for (eslocal elem_index = 1; elem_index < coordinates.size(); elem_index++) {
+		for (eslocal elem_index = 0; elem_index < coordinates.size(); elem_index++) {
 			Kplus_R.dense_values[elem_index] = nsqrt;
 		}
 
@@ -383,6 +383,11 @@ void Domain::get_kernel_from_K(){
   SparseMatrix K_rr;
   SparseMatrix K_rs;
   eslocal i_start = 0;
+
+  if (K.rows<SC_SIZE){
+	  SC_SIZE = K.rows;
+  }
+
   eslocal NONSING_SIZE = K.rows - SC_SIZE - i_start;
   eslocal j_start = NONSING_SIZE;
   SEQ_VECTOR <eslocal > permVec;
