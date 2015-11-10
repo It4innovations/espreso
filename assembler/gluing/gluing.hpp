@@ -26,7 +26,6 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
 	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
 
-	std::vector<eslocal> local_prim_numbering(this->subdomains(), 0);
 
 	std::vector<size_t>::const_iterator vi;
 	std::set<eslocal>::const_iterator si1, si2;
@@ -45,7 +44,9 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 		properties[2] = mesh::DIRICHLET_Z;
 	}
 
+	std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
 	for (size_t i = 0; i < localBoundaries.size(); i++) {
+
 
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
@@ -54,7 +55,7 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 				if (property.find(i) != property.end()) {
 					is_dirichlet[0] = true;
 
-					gB[*si1](lambda_count_B1, local_prim_numbering[*si1] + (vi - properties.begin())) =  1.0;
+					gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
 
 					_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
 					_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
@@ -62,6 +63,24 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 					_vec_c[*si1].push_back(0.0);
 
 					lambda_count_B1++;
+				}
+			}
+		}
+
+		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+			local_prim_numbering_d[*si1] += this->DOFs();
+		}
+
+	}
+
+	std::vector<eslocal> local_prim_numbering(this->subdomains(), 0);
+	for (size_t i = 0; i < localBoundaries.size(); i++) {
+		std::vector<bool> is_dirichlet(this->DOFs(), false);
+		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+			for (vi = properties.begin(); vi != properties.end(); ++vi) {
+				const std::map<eslocal, double> &property = this->mesh().coordinates().property(*vi).values();
+				if (property.find(i) != property.end()) {
+					is_dirichlet[0] = true;
 				}
 			}
 		}
@@ -90,6 +109,7 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 					}
 				}
 			}
+
 			if (localBoundaries.isCorner(i)) {
 				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
 					for (eslocal d = 0; d < this->DOFs(); d++) {
@@ -190,12 +210,12 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 	bool flag_redund_lagr_mult = true;
 
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
-	eslocal borderDofNum; 	// number of DOFs on surface on my cluster
+	eslocal borderDofNum; 	// number of DOFs on surface of my cluster
 	std::vector< esglobal >::iterator it_vec;
 
-	std::vector < std::vector < esglobal > > neighBorderDofs;        			// 2D vector for DOFs on borders of neighboring sub-domains
-	std::vector < esglobal > myBorderDOFs;  	// my border DOFs are here
-	//std::vector < eslocal  > _neighClusters; 	// my neighboring clusters
+	std::vector < std::vector < esglobal > > neighBorderDofs;   // 2D vector for DOFs on borders of neighboring sub-domains
+	std::vector < esglobal > myBorderDOFs;  					// my border DOFs are here
+	//std::vector < eslocal  > _neighClusters; 					// my neighboring clusters
 
 
 	MPI_Request   mpi_req;
@@ -214,85 +234,43 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 	for (size_t i = 0; i < globalBoundaries.size(); i++) {
 		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() == 1 ) {
 			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
-				if (*it_set != MPIrank) { // if it does point non local cluster = points to one of neighboring clusters
-					//neigh_tmp[*it_set] = 1;
-					// TODO: If the neighborring nodes are assembled localy - info from Mesh - use next 3 lines - but it does not have information on duplicity
-					//for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
-					//	neighBorderDofs[*it_set].push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
-					//}
+				if (*it_set == MPIrank) { // if it points to local cluster
+					for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
+						myBorderDOFs.push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
+					}
 				} else {
-					// this loop goes over the nodes that are in multiple domains on this one cluster
-					//for (it_set_l = localBoundaries[i].begin(); it_set_l != localBoundaries[i].end(); ++it_set_l) {
-						for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
-							myBorderDOFs.push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
-						}
-					//}
+					neigh_tmp[*it_set] = 1;
 				}
 	        }
 		}
 	}
-	//std::sort (myBorderDOFs.begin(), myBorderDOFs.end());
 
+	// Detecting neighboring clusters
+	for (eslocal i = 0; i < neigh_tmp.size(); i++)
+		if (neigh_tmp[i] == 1)
+			_neighClusters.push_back(i);
+
+	// Total number of neighboring clusters
+	neighClustNum = _neighClusters.size();
+
+	//std::sort (myBorderDOFs.begin(), myBorderDOFs.end());
 	// removes the duplicit DOFs from myBorderDofs
 	// POZOR
 	//std::vector< esglobal >::iterator itx;
     //itx = std::unique (myBorderDOFs.begin(), myBorderDOFs.end());
     //myBorderDOFs.resize( std::distance(myBorderDOFs.begin(), itx) );
 
-	for (size_t i = 0; i < globalBoundaries.size(); i++) {
-		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() == 1 ) {
-			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
-				if (*it_set != MPIrank) { // if it does point non local cluster = points to one of neighboring clusters
-					neigh_tmp[*it_set] = 1;
-				}
-			}
-		}
-	}
 
-	for (eslocal i = 0; i < neigh_tmp.size(); i++)
-		if (neigh_tmp[i] == 1)
-			_neighClusters.push_back(i);
-
-	neighClustNum = _neighClusters.size();
-
-	//  if (MPIrank == 0) { std::cout << " Global B - neighDOFs array swapping based neigh cluster indexes          "; system("date +%T.%6N"); }
-	//	for (int i = 0; i < _neighClusters.size(); i++) {
-	//		neighBorderDofs[_neighClusters[i]].swap(neighBorderDofs[i]);
-	//	}
-	//	neighBorderDofs.resize(neighClustNum);
 
     if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
 
-    MPI_Request * mpi_send_req  = new MPI_Request [neighClustNum];
-	MPI_Request * mpi_recv_req  = new MPI_Request [neighClustNum];
-	MPI_Status  * mpi_recv_stat = new MPI_Status  [neighClustNum];
+    MPI_Request * mpi_send_req  = new MPI_Request [_neighClusters.size()];
+	MPI_Request * mpi_recv_req  = new MPI_Request [_neighClusters.size()];
+	MPI_Status  * mpi_recv_stat = new MPI_Status  [_neighClusters.size()];
 
-	neighBorderDofs.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
+	neighBorderDofs.resize( _neighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
 
-
-	// sending my DOFs on border to all neighboring sub-domains
-
-//	for (eslocal i = 0; i < _neighClusters.size(); i++) {
-//		MPI_Isend(&myBorderDOFs[0], myBorderDOFs.size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
-//	}
-//
-//	//TODO: Tady to chce poradne promtslet o delce bufferu a jestli vim kolik bajtu mam prijmout ???
-//	// receiving all border DOFs from all neighboring sub-domains
-//	for (eslocal i = 0; i < _neighClusters.size(); i++) {
-//		neighBorderDofs[i].resize(myBorderDOFs.size());
-//		MPI_Irecv(&neighBorderDofs[i][0], myBorderDOFs.size(),esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
-//	}
-//
-//	MPI_Waitall(neighClustNum, mpi_recv_req, mpi_recv_stat);
-//
-//	MPI_Barrier(MPI_COMM_WORLD);
-//
-//	// END - Find all MPIranks of all neighboring clusters in globalBoundaries
-
-
-	neighBorderDofs.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
-
-	// sending my DOFs on border to all neighboring sub-domains
+	// sending my border DOFs to all neighboring clusters
 	for (eslocal i = 0; i < _neighClusters.size(); i++) {
 		MPI_Isend(&myBorderDOFs[0], myBorderDOFs.size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 	}
@@ -327,30 +305,17 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 
 
 	// NOW :
-	// my neighboring sub-domains are in : 	_neighClusters
-	// my border DOFs are in : 				myBorderDOFs
-	// neighboring sub-domains border DOFs are in neighBorderDofs[i]
-
-	// removes the duplicit DOFs from myBorderDofs
-	//std::vector< esglobal >::iterator it;
-    //it = std::unique (myBorderDOFs.begin(), myBorderDOFs.end());
-    //myBorderDOFs.resize( std::distance(myBorderDOFs.begin(), it) );
+	// my neighboring clusters are in :     	_neighClusters
+	// my border DOFs are in : 					myBorderDOFs
+	// neighboring clusters border DOFs are in:	neighBorderDofs[i]
 
  	std::vector < std::vector < esglobal > > myNeighsSparse;
 	myNeighsSparse.resize( myBorderDOFs.size() );
 
 	for (eslocal j = 0; j < myBorderDOFs.size(); j++) {
-		//if ( j == 0 ) {
-			myNeighsSparse[j].reserve(5);
-			myNeighsSparse[j].push_back(myBorderDOFs[j]);
-//		} else {
-//			if (myBorderDOFs[j-1] != myBorderDOFs[j]) {
-//				myNeighsSparse[j].reserve(5);
-//				myNeighsSparse[j].push_back(myBorderDOFs[j]);
-//			}
-//		}
+		myNeighsSparse[j].reserve(5);
+		myNeighsSparse[j].push_back(myBorderDOFs[j]);
 	}
-
 
 	for (eslocal i = 0; i < _neighClusters.size(); i++) {
 		int d = _neighClusters[i];
@@ -417,10 +382,10 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 					myLambdas.push_back ( std::vector < esglobal > () );
 					myLambdas[lambdaCount].reserve(6);
 					myLambdas[lambdaCount].resize(5);
-					myLambdas[lambdaCount][0] = lambdaCount;	// at this point local index of this lambda - needs to be updated after MPIgather and MPIscatter
-					myLambdas[lambdaCount][1] = dof;			// dof in global numbering
+					myLambdas[lambdaCount][0] = lambdaCount;			// at this point local index of this lambda - needs to be updated after MPIgather and MPIscatter
+					myLambdas[lambdaCount][1] = dof;					// dof in global numbering
 					myLambdas[lambdaCount][2] = (esglobal)MPIrank;		// my sub-domainG
-					myLambdas[lambdaCount][3] = neighSD;		// neigh. sub-domainG
+					myLambdas[lambdaCount][3] = neighSD;				// neigh. sub-domainG
 					myLambdas[lambdaCount][4] = (esglobal)cnt_tmp;		// delitel lambdy pri zapisu do B matice - odpovida poctu duplicitnich vazeb
 					lambdaCount++;
 
@@ -548,11 +513,6 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 
 	if (MPIrank == 0) { std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; system("date +%T.%6N"); }
 
-	//bool comp_vf(const std::vector<esglobal> &a, const std::vector<esglobal> &b)
-	//{
-	//	return a[0] < b[0];
-	//}
-
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
 
 //#ifdef USE_TBB
@@ -582,7 +542,7 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 		eslocal  dofNODEoffset = DOFNumber % this->DOFs();
 		eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
 
-		const std::set < eslocal > & subs_with_element = globalBoundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+		const std::set < eslocal > & subs_with_element = this->mesh().subdomainBoundaries()[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 
 		eslocal  cnt            = myLambdas[j][4];
 		double B_value;
@@ -592,9 +552,13 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 			B_value = -1.0;
 
 		//TODO:Tuto smycku prepsat, aby fungovala jen podoblasti, ve ktery je uzel
-		for (eslocal d = 0; d < this->subdomains(); d++) {
-		//for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set) {
-		//	eslocal d = *it_set;
+		// Pomala a otestovana verze
+		//for (eslocal d = 0; d < this->subdomains(); d++) {
+ 
+        //TODO: rychle verze nutno otestovat na realne uloze
+		for (it_set = localBoundaries[clustDofNODENumber].begin(); it_set != localBoundaries[clustDofNODENumber].end(); ++it_set) {
+			eslocal d = *it_set;
+
 			eslocal domDofNODENumber = coordinates.localIndex(clustDofNODENumber, d);
 			if ( domDofNODENumber != -1 ) {
 				//vychazi z mapovani g2l pro uzly a ne DOFy
@@ -623,7 +587,6 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 		B1[d].AppendMatrix(ijv); //    = B1_DOK_tmp[d];
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
 
 	if (MPIrank == 0) { std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; system("date +%T.%6N"); }
 
@@ -641,13 +604,11 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
 		_lambda_map_sub_B1[ myLambdas[i][5] ].push_back( lam_tmp );
 	}
 
-
-	if (MPIrank == 0) { std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; system("date +%T.%6N"); }
-
 	if (MPIrank == 0) { std::cout << " Dual size: " <<  total_number_of_B1_l_rows + total_number_of_global_B1_lambdas  << std::endl; }
 
         MPI_Barrier(MPI_COMM_WORLD);
 
+   	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
 
 
 // *****************************************************************************************************************************************************
