@@ -66,6 +66,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
+
+					double dirichlet_value = property.at(i);
+
 					is_dirichlet[0] = true;
 
 					gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
@@ -73,7 +76,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 					_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
 					_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
 					_B1_duplicity[*si1].push_back(1.0);
-					_vec_c[*si1].push_back(0.0);
+					_vec_c[*si1].push_back(dirichlet_value);
 
 					lambda_count_B1++;
 				}

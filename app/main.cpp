@@ -18,7 +18,8 @@ int main(int argc, char **argv)
 	mesh.load(mesh::MESH_GENERATOR, argc, argv);
 
 	assembler::FEM fem(mesh);
-	assembler::LinearElasticity<assembler::FEM> app(fem);
+	//assembler::LinearElasticity<assembler::FEM> app(fem);
+	assembler::Temperature<assembler::FEM> app(fem);
 
 	app.init();
 	app.solve();

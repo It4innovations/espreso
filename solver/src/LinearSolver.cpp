@@ -86,7 +86,7 @@ LinearSolver::~LinearSolver() {
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	SINGULAR 	= IS_SINGULAR;
-  	R_from_mesh = true	;
+  	R_from_mesh = false	;
 	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
 	KEEP_FACTORS = true; // only suported by MKL Pardiso so far

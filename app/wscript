@@ -84,10 +84,10 @@ def configure(ctx):
 
     ctx.setenv(APP_PARDISO, ctx.all_envs[APP].derive())
     ctx.env.append_unique("LIB", [ metis, "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-#    if ctx.options.titan:
-#        ctx.env.append_value("LIB", [ "ifcore" ])
-#    else:
-#        ctx.env.append_value("STLIB", [ "ifcore" ])
+    if ctx.options.titan:
+        ctx.env.append_value("LIB", [ "ifcore" ])
+    else:
+        ctx.env.append_value("STLIB", [ "ifcore" ])
 
     ctx.setenv(APP_PARDISO_MKL, ctx.all_envs[APP].derive())
     if ctx.options.titan:    
@@ -128,9 +128,9 @@ def build(ctx):
         ctx.env = ctx.all_envs[APP_MUMPS]
         solver  = SOLVER_MUMPS
 
-    if ctx.options.pardiso_mkl:
-        ctx.env     = ctx.all_envs[APP_PARDISO_MKL]
-        solver      = SOLVER_PARDISO_MKL
+    if ctx.options.pardiso:
+        ctx.env     = ctx.all_envs[APP_PARDISO]
+        solver      = SOLVER_PARDISO
 
     if ctx.options.catalyst:
         ctx.env.append_unique("STLIB", [ "adaptor" ])
