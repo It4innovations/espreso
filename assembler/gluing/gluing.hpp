@@ -25,7 +25,8 @@ void Gluing<API>::computeSubdomainGluing()
 template <>
 void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 {
-
+	//_input->l2g.size;
+	//_input->l2g.values[i];
 }
 
 template <class TInput>
@@ -90,7 +91,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
-				const std::map<eslocal, double> &property = this->mesh().coordinates().property(*vi).values();
+				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
 					is_dirichlet[0] = true;
 				}
@@ -554,7 +555,7 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		eslocal  dofNODEoffset = DOFNumber % this->DOFs();
 		eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
 
-		const std::set < eslocal > & subs_with_element = this->mesh().subdomainBoundaries()[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+		const std::set < eslocal > & subs_with_element = this->_input.mesh.subdomainBoundaries()[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 
 		eslocal  cnt            = myLambdas[j][4];
 		double B_value;

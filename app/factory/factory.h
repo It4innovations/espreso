@@ -10,7 +10,7 @@
 class Factory {
 
 public:
-	Factory(int argc, char **argv);
+	Factory(int *argc, char ***argv);
 
 	void solve( eslocal steps );
 
@@ -18,6 +18,8 @@ public:
 
 private:
 	assembler::AssemblerBase *_assembler;
+	mesh::Mesh *_mesh;
+	mesh::SurfaceMesh *_surface;
 };
 
 

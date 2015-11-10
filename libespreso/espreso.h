@@ -26,6 +26,11 @@ struct DoubleVector {
 	double *values;
 };
 
+struct IntVector {
+	esint size;
+	esint *values;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,6 +46,7 @@ int ESPRESO_Init(
 int FETI_PrepareElasticity(
 	LocalStiffnessMatrices *Ke,
 	DoubleVector *rhs,
+	IntVector *l2g,
 	ESPRESOHandler *handler
 );
 

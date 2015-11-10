@@ -24,10 +24,11 @@ struct BEM {
 
 struct API {
 
-	API(LocalStiffnessMatrices &Ke, DoubleVector &rhs): Ke(Ke), rhs(rhs) { };
+	API(LocalStiffnessMatrices &Ke, DoubleVector &rhs, IntVector &l2g): Ke(Ke), rhs(rhs), l2g(l2g) { };
 
 	LocalStiffnessMatrices &Ke;
 	DoubleVector &rhs;
+    IntVector &l2g;
 };
 
 

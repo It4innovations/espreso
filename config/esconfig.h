@@ -6,8 +6,14 @@
 
 namespace esconfig {
 
+enum Discretization {
+	FEM,
+	BEM
+};
+
 extern int MPIrank;
 extern int MPIsize;
+extern Discretization discretization;
 
 namespace solver {
 	extern double epsilon;

@@ -28,9 +28,10 @@ int ESPRESO_Finalize()
 int FETI_PrepareElasticity(
 	LocalStiffnessMatrices *Ke,
 	DoubleVector *rhs,
+	IntVector *l2g,
 	ESPRESOHandler *handler)
 {
-	API api(*Ke, *rhs);
+	API api(*Ke, *rhs, *l2g);
 	DataHolder::assemblers.push_back(new LinearElasticity<API>(api));
 	*handler = DataHolder::assemblers.back();
 	return 0;
