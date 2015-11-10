@@ -110,9 +110,9 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = 500;
+	solver.CG_max_iter	 = esconfig::solver::maxIterations;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = 0.0001;
+	solver.epsilon		 = esconfig::solver::epsilon;
 	solver.USE_PIPECG	 = 0;
 	solver.USE_PREC		 = 0;
 
@@ -211,7 +211,7 @@ void LinearSolver::init(
 		  if ( solver.USE_PREC == 1 )
 		  	cluster.domains[d].Prec = cluster.domains[d].K;
 	  }
-      set_R_from_K(); 
+      set_R_from_K();
    }
 	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
@@ -260,9 +260,9 @@ void LinearSolver::init(
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
 
 	    if (R_from_mesh) {
-		
+
 			cluster.domains[d].K = K_mat[d];
-      		
+
       		if ( cluster.domains[d].K.type == 'G' )
 		  		cluster.domains[d].K.RemoveLower();
 
@@ -273,10 +273,10 @@ void LinearSolver::init(
 			cluster.domains[d].K_regularizationFromR( );
 
 	    }
-		
+
 	    // Import of Regularized matrix K into Kplus (Sparse Solver)
 	    cluster.domains[d].Kplus.ImportMatrix (cluster.domains[d].K);
-    
+
 		if (KEEP_FACTORS) {
 			cluster.domains[d].Kplus.keep_factors = true;
 			cluster.domains[d].Kplus.Factorization ();
@@ -284,7 +284,7 @@ void LinearSolver::init(
 			cluster.domains[d].Kplus.keep_factors = false;
 			cluster.domains[d].Kplus.MPIrank = MPI_rank;
 			K_mat[d].Clear();
-			cluster.domains[d].K.Clear(); 
+			cluster.domains[d].K.Clear();
 		}
 
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;

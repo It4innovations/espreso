@@ -1,0 +1,29 @@
+
+API = "api"
+
+source_files = (
+    "wrapper.cpp",
+)
+
+def configure(ctx):
+    ctx.setenv(API, ctx.all_envs[""].derive());
+
+    if ctx.env.ESLOCAL == 32:
+        mkl = "mkl_intel_lp64"
+        metis = "metis32"
+    if ctx.env.ESLOCAL == 64:
+        mkl = "mkl_intel_ilp64"
+        metis = "metis64"
+
+    ctx.env.append_unique("LIBPATH", [ "../libs" ])
+    ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+
+def build(ctx):
+    ctx.env = ctx.all_envs[API]
+
+    ctx.lib(
+        source          = source_files,
+        target          = "espreso",
+        use             = "espreso_insluces esbasis esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk essolver_pardiso_mkl esmesh esbem",
+        install_path    = ctx.LIBRARIES #ctx.ROOT + "/libespreso"
+    )

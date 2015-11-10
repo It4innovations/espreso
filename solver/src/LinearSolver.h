@@ -8,6 +8,7 @@
 #ifndef SOLVER_SRC_LINEARSOLVER_H_
 #define SOLVER_SRC_LINEARSOLVER_H_
 
+#include "esconfig.h"
 #include "esmesh.h"
 #include "essolver.h"
 
@@ -105,7 +106,7 @@ public:
 	void set_R(
 			const mesh::Mesh &mesh
 	);
-  
+
   	void set_R_from_K();
 
 	eslocal DOFS_PER_NODE;

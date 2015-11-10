@@ -6,7 +6,6 @@
 
 #define ESPRESO_POINT_DIMENSION 3
 
-
 // Warning: all indices have to have the same width. Because of MKL
 // TODO:
 #define ESPRESO_LOCAL_INDICES_WIDTH 32

@@ -7,18 +7,18 @@ template <>
 void Linear<BEM>::KMf(size_t part, bool dynamics)
 {
 	// TODO: temperature??
-	const std::vector<eslocal> &partition = _surface.getPartition();
-	const std::vector<mesh::Element*> &elements = _surface.getElements();
+	const std::vector<eslocal> &partition = _input.surface.getPartition();
+	const std::vector<mesh::Element*> &elements = _input.surface.getElements();
 
 	DenseMatrix _K;
-	eslocal nK = _surface.coordinates().localSize(part) * mesh::Point::size();
+	eslocal nK = _input.surface.coordinates().localSize(part) * mesh::Point::size();
 	eslocal eSize = partition[part + 1] - partition[part];
 	_K.resize(nK, nK);
 	std::vector<double> nodes(nK);
 	std::vector<eslocal> elems(3 * eSize);
 
-	for (size_t i = 0; i < _surface.coordinates().localSize(part); i++) {
-		&nodes[i * mesh::Point::size()] << _surface.coordinates().get(i, part);
+	for (size_t i = 0; i < _input.surface.coordinates().localSize(part); i++) {
+		&nodes[i * mesh::Point::size()] << _input.surface.coordinates().get(i, part);
 	}
 	for (size_t i = partition[part], index = 0; i < partition[part + 1]; i++, index++) {
 		for (size_t j = 0; j < elements[i]->size(); j++) {
@@ -28,7 +28,7 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 
 	bem4i::getLameSteklovPoincare(
 			_K.values(),
-			_surface.coordinates().localSize(part),
+			_input.surface.coordinates().localSize(part),
 			&nodes[0],
 			eSize,
 			&elems[0],
@@ -69,12 +69,12 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 template <>
 void Linear<BEM>::RHS()
 {
-	const std::map<eslocal, double> &forces_x = this->_mesh.coordinates().property(mesh::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = this->_mesh.coordinates().property(mesh::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = this->_mesh.coordinates().property(mesh::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = this->_input.mesh.coordinates().property(mesh::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = this->_input.mesh.coordinates().property(mesh::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = this->_input.mesh.coordinates().property(mesh::FORCES_Z).values();
 
-	for (size_t p = 0; p < this->_mesh.parts(); p++) {
-		const std::vector<eslocal> &l2g = this->_surface.coordinates().localToCluster(p);
+	for (size_t p = 0; p < this->_input.mesh.parts(); p++) {
+		const std::vector<eslocal> &l2g = this->_input.surface.coordinates().localToCluster(p);
 		for (eslocal i = 0; i < l2g.size(); i++) {
 			if (forces_x.find(l2g[i]) != forces_x.end()) {
 				_f[p][3 * i + 0] = forces_x.at(l2g[i]);
@@ -92,14 +92,14 @@ void Linear<BEM>::RHS()
 template <>
 void Linear<BEM>::saveResult()
 {
-	_surface.store(mesh::VTK_FULL, "surface", _prim_solution, 0.95, 0.9);
+	_input.surface.store(mesh::VTK_FULL, "surface", _prim_solution, 0.95, 0.9);
 }
 
 template <>
 void Linear<BEM>::initSolver()
 {
 	_lin_solver.init(
-		_surface,
+		_input.surface,
 		_K,
 		_globalB,
 		_localB,
@@ -109,7 +109,7 @@ void Linear<BEM>::initSolver()
 		_B1_duplicity,
 		_f,
 		_vec_c,
-		_surface.getFixPoints(),
+		_input.surface.getFixPoints(),
 		_neighClusters
 	);
 }

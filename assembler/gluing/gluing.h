@@ -7,14 +7,14 @@
 namespace assembler {
 
 // rename to equality constrains
-template <MatrixComposer TMatrixComposer>
-class Gluing: public Assembler<TMatrixComposer> {
+template <class TInput>
+class Gluing: public Assembler<TInput> {
 
 public:
 	virtual ~Gluing() {};
 
 protected:
-	Gluing(const mesh::Mesh &mesh);
+	Gluing(TInput &input);
 
 	// computeDirichlet
 	// computeGluing

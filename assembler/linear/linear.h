@@ -6,8 +6,8 @@
 
 namespace assembler {
 
-template <MatrixComposer TMatrixComposer>
-class Linear: public Gluing<TMatrixComposer> {
+template <class TInput>
+class Linear: public Gluing<TInput> {
 
 public:
 	virtual ~Linear() {};
@@ -19,7 +19,7 @@ public:
 	void finalize();
 
 protected:
-	Linear(const mesh::Mesh &mesh): Gluing<TMatrixComposer>(mesh) {};
+	Linear(TInput &input): Gluing<TInput>(input) {};
 
 	// FEM specific
 	virtual size_t DOFs() = 0;
@@ -62,6 +62,7 @@ private:
 #include "linear.hpp"
 #include "fem.hpp"
 #include "bem.hpp"
+#include "api.hpp"
 
 
 #endif /* ASSEMBLER_LINEAR_LINEAR_H_ */

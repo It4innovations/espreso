@@ -3,7 +3,7 @@
 
 namespace assembler {
 
-double determinant3x3(DenseMatrix &m)
+static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();
 	return fabs(
@@ -16,7 +16,7 @@ double determinant3x3(DenseMatrix &m)
    );
 }
 
-void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
+static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 {
 	const double *values = m.values();
 	inv.resize(m.rows(), m.columns());
@@ -40,7 +40,7 @@ void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 // dY  dX   0
 //  0  dZ  dY
 // dZ   0  dX
-void distribute(DenseMatrix &B, DenseMatrix &dND)
+static void distribute(DenseMatrix &B, DenseMatrix &dND)
 {
 	eslocal columns = dND.rows() * dND.columns();
 	const double *dNDx = dND.values();
@@ -76,7 +76,7 @@ void Linear<FEM>::KeMefe(
 
 	DenseMatrix coordinates(e->size(), mesh::Point::size());
 	for (size_t i = 0; i < e->size(); i++) {
-		coordinates.values() + i * mesh::Point::size() << _mesh.coordinates().get(e->node(i), part);
+		coordinates.values() + i * mesh::Point::size() << _input.mesh.coordinates().get(e->node(i), part);
 	}
 
 	eslocal Ksize = e->size() * this->DOFs();
@@ -158,7 +158,7 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 {
 	SparseVVPMatrix<eslocal> _K;
 	SparseVVPMatrix<eslocal> _M;
-	eslocal nK = _mesh.coordinates().localSize(part) * this->DOFs();
+	eslocal nK = _input.mesh.coordinates().localSize(part) * this->DOFs();
 	_K.resize(nK, nK);
 	if (dynamics) {
 		_M.resize(nK, nK);
@@ -170,8 +170,8 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 
 	this->C(Ce);
 
-	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<mesh::Element*> &elements = _mesh.getElements();
+	const std::vector<eslocal> &partition = _input.mesh.getPartition();
+	const std::vector<mesh::Element*> &elements = _input.mesh.getElements();
 	for (eslocal i = partition[part]; i < partition[part + 1]; i++) {
 		KeMefe(Ke, Me, fe, Ce, elements[i], part, dynamics);
 		integrate(Ke, Me, fe, _K, _M, _f[part], elements[i], dynamics);
@@ -188,7 +188,7 @@ template <>
 void Linear<FEM>::initSolver()
 {
 	_lin_solver.init(
-		_mesh,
+		_input.mesh,
 		_K,
 		_globalB,
 		_localB,
@@ -198,7 +198,7 @@ void Linear<FEM>::initSolver()
 		_B1_duplicity,
 		_f,
 		_vec_c,
-		_mesh.getFixPoints(),
+		_input.mesh.getFixPoints(),
 		_neighClusters
 	);
 }
@@ -206,12 +206,12 @@ void Linear<FEM>::initSolver()
 template <>
 void Linear<FEM>::RHS()
 {
-	const std::map<eslocal, double> &forces_x = this->_mesh.coordinates().property(mesh::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = this->_mesh.coordinates().property(mesh::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = this->_mesh.coordinates().property(mesh::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = this->_input.mesh.coordinates().property(mesh::FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = this->_input.mesh.coordinates().property(mesh::FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = this->_input.mesh.coordinates().property(mesh::FORCES_Z).values();
 
-	for (size_t p = 0; p < this->_mesh.parts(); p++) {
-		const std::vector<eslocal> &l2g = this->_mesh.coordinates().localToCluster(p);
+	for (size_t p = 0; p < this->_input.mesh.parts(); p++) {
+		const std::vector<eslocal> &l2g = this->_input.mesh.coordinates().localToCluster(p);
 		for (eslocal i = 0; i < l2g.size(); i++) {
 			if (forces_x.find(l2g[i]) != forces_x.end()) {
 				_f[p][3 * i + 0] = forces_x.at(l2g[i]);
@@ -229,7 +229,7 @@ void Linear<FEM>::RHS()
 template <>
 void Linear<FEM>::saveResult()
 {
-	_mesh.store(mesh::VTK_FULL, "mesh", _prim_solution, 0.95, 0.9);
+	_input.mesh.store(mesh::VTK_FULL, "mesh", _prim_solution, 0.95, 0.9);
 }
 
 }

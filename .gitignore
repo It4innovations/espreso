@@ -7,11 +7,10 @@
 *.a
 *.lic
 *.vim
-*/bin
 /*.dat
 mySh.sh
 nohup.out
-es*
+espreso
 build
 libs
 include

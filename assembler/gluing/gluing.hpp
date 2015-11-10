@@ -3,8 +3,8 @@
 
 namespace assembler {
 
-template <MatrixComposer TMatrixComposer>
-Gluing<TMatrixComposer>::Gluing(const mesh::Mesh &mesh): Assembler<TMatrixComposer>(mesh) {
+template <class TInput>
+Gluing<TInput>::Gluing(TInput &input): Assembler<TInput>(input) {
 	_localB.resize(this->subdomains());
 	_globalB.resize(this->subdomains());
 	_B0.resize(this->subdomains());
@@ -16,12 +16,24 @@ Gluing<TMatrixComposer>::Gluing(const mesh::Mesh &mesh): Assembler<TMatrixCompos
 	_vec_c.resize(this->subdomains());
 };
 
-template <MatrixComposer TMatrixComposer>
-void Gluing<TMatrixComposer>::computeSubdomainGluing()
+template <>
+void Gluing<API>::computeSubdomainGluing()
 {
-	const mesh::Boundaries &localBoundaries = this->mesh().subdomainBoundaries();
+
+}
+
+template <>
+void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
+{
+
+}
+
+template <class TInput>
+void Gluing<TInput>::computeSubdomainGluing()
+{
+	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
 	// TODO: cluster boundaries in surface
-	const mesh::Boundaries &globalBoundaries = this->_mesh.clusterBoundaries();
+	const mesh::Boundaries &globalBoundaries = this->_input.mesh.clusterBoundaries();
 
 	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
 	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
@@ -51,7 +63,7 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
-				const std::map<eslocal, double> &property = this->mesh().coordinates().property(*vi).values();
+				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
 					is_dirichlet[0] = true;
 
@@ -140,17 +152,17 @@ void Gluing<TMatrixComposer>::computeSubdomainGluing()
 }
 
 
-template <MatrixComposer TMatrixComposer>
-void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
+template <class TInput>
+void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 {
-	int MPIrank = this->_mesh.rank();
-	int MPIsize = this->_mesh.size();
+	int MPIrank = this->rank();
+	int MPIsize = this->size();
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 	std::vector<SparseIJVMatrix<eslocal> > &B0 = _B0;
-	const mesh::Coordinates &coordinates = this->mesh().coordinates();
+	const mesh::Coordinates &coordinates = this->_input.mesh.coordinates();
 	// TODO: cluster boundaries in surface
-	const mesh::Boundaries &globalBoundaries = this->_mesh.clusterBoundaries();
-	const mesh::Boundaries &localBoundaries = this->mesh().subdomainBoundaries();
+	const mesh::Boundaries &globalBoundaries = this->_input.mesh.clusterBoundaries();
+	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
 
 	// Local B1 - further processing - update row numbering based on all clusters
     if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - start                                   "; system("date +%T.%6N"); }
@@ -1328,7 +1340,7 @@ void Gluing<TMatrixComposer>::computeClusterGluing(std::vector<size_t> &rows)
     		 _vec_c[i].resize(_B1_duplicity[i].size(), 0.0);
     	}
 
-    	for (size_t p = 0; p < this->_mesh.parts(); p++) {
+    	for (size_t p = 0; p < this->subdomains(); p++) {
     		_localB[p] = _B0[p];
     		_globalB[p] = _B1[p];
     	}

@@ -5,11 +5,11 @@
 
 namespace assembler {
 
-template <MatrixComposer TMatrixComposer>
-class LinearElasticity: public Linear<TMatrixComposer> {
+template <class TInput>
+class LinearElasticity: public Linear<TInput> {
 
 public:
-	LinearElasticity(const mesh::Mesh &mesh): Linear<TMatrixComposer>(mesh) {};
+	LinearElasticity(TInput &input): Linear<TInput>(input) {};
 
 protected:
 	size_t DOFs() { return 3; }

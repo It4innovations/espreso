@@ -64,16 +64,17 @@ def configure(ctx):
     ctx.ROOT = ctx.path.abspath()
 
     ctx.recurse("basis")
+    ctx.recurse("config")
     ctx.recurse("tools")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")
     ctx.recurse("output")
-    #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("assembler")
     ctx.recurse("catalyst")
     ctx.recurse("app")
+    ctx.recurse("apiwrapper")
 
 
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
@@ -116,11 +117,6 @@ def options(opt):
         action="store_true",
         default=False,
         help="All libraries created by ESPRESO are static.")
-
-    opt.add_option("--mesh",
-        action="store_true",
-        default=False,
-        help="Create application only from mesh.")
 
     opt.add_option("--cuda",
         action="store_true",
@@ -165,6 +161,10 @@ def build(ctx):
         name            = "incl_basis"
     )
     ctx(
+        export_includes = "config",
+        name            = "incl_config"
+    )
+    ctx(
         export_includes = "input",
         name            = "incl_input"
     )
@@ -173,7 +173,7 @@ def build(ctx):
         name            = "incl_output"
     )
     ctx(
-        export_includes = "mesh/src",
+        export_includes = "mesh",
         name            = "incl_mesh"
     )
     ctx(
@@ -203,7 +203,7 @@ def build(ctx):
     ctx(
         export_includes = "include",
         name            = "espreso_includes",
-        use             = "incl_basis incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler incl_cuda"
+        use             = "incl_basis incl_config incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler incl_cuda"
     )
 
     ctx.ROOT = ctx.path.abspath()
@@ -215,21 +215,19 @@ def build(ctx):
         ctx.lib = ctx.shlib
 
     ctx.recurse("basis")
+    ctx.recurse("config")
     ctx.recurse("tools")
     ctx.add_group()
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")
     ctx.recurse("output")
-    if ctx.options.mesh:
-        return
-
-    #ctx.recurse("permoncube")
     ctx.recurse("solver")
     ctx.recurse("assembler")
     if ctx.options.catalyst:
         ctx.recurse("catalyst")
     ctx.recurse("app")
+    ctx.recurse("apiwrapper")
 
 
 

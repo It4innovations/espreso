@@ -3,8 +3,8 @@
 
 namespace assembler {
 
-template <MatrixComposer TMatrixComposer>
-void Linear<TMatrixComposer>::init()
+template <class TInput>
+void Linear<TInput>::init()
 {
 	this->_timeStatistics.SetName("Linear Elasticity Solver Overall Timing");
 	this->_timeStatistics.totalTime.AddStartWithBarrier();
@@ -21,11 +21,11 @@ void Linear<TMatrixComposer>::init()
 		// TODO: set dynamics
 		KMf(s, false);
 
-		if (this->_verbose && this->_mesh.rank() == 0) {
+		if (this->_verbose && this->rank() == 0) {
 			std::cout << s << " " ;
 		}
 	}
-	if (this->_verbose && this->_mesh.rank() == 0) {
+	if (this->_verbose && this->rank() == 0) {
 		std::cout << std::endl;
 	}
 
@@ -64,7 +64,7 @@ void Linear<TMatrixComposer>::init()
 	timeLSconv.AddStart();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(this->_mesh.rank(), this->_mesh.size(), true);
+	_lin_solver.setup(this->rank(), this->size(), true);
 
 	initSolver();
 
@@ -72,14 +72,14 @@ void Linear<TMatrixComposer>::init()
 	this->_timeStatistics.AddEvent(timeLSconv);
 }
 
-template <MatrixComposer TMatrixComposer>
-void Linear<TMatrixComposer>::pre_solve_update()
+template <class TInput>
+void Linear<TInput>::pre_solve_update()
 {
 
 }
 
-template <MatrixComposer TMatrixComposer>
-void Linear<TMatrixComposer>::post_solve_update()
+template <class TInput>
+void Linear<TInput>::post_solve_update()
 {
 	TimeEvent timeSaveVTK("Solver - Save VTK");
 	timeSaveVTK.AddStart();
@@ -90,8 +90,8 @@ void Linear<TMatrixComposer>::post_solve_update()
 	this->_timeStatistics.AddEvent(timeSaveVTK);
 }
 
-template <MatrixComposer TMatrixComposer>
-void Linear<TMatrixComposer>::solve()
+template <class TInput>
+void Linear<TInput>::solve()
 {
 	TimeEvent timeLSrun("Linear Solver - runtime");
 	timeLSrun.AddStart();
@@ -102,8 +102,8 @@ void Linear<TMatrixComposer>::solve()
 	this->_timeStatistics.AddEvent(timeLSrun);
 }
 
-template <MatrixComposer TMatrixComposer>
-void Linear<TMatrixComposer>::finalize()
+template <class TInput>
+void Linear<TInput>::finalize()
 {
 	_lin_solver.finilize();
 
