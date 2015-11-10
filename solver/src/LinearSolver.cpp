@@ -7,74 +7,6 @@
 
 #include "LinearSolver.h"
 
-void Set_CSR_Matrix   (
-		SparseMatrix & Mat,
-		eslocal n_rows,
-		eslocal n_cols,
-		eslocal * rows,
-		eslocal * cols,
-		double * vals,
-		char type ) {
-
-	eslocal nnz = rows[n_rows];
-	eslocal offset = (rows[0]) ? 0 : 1;
-	nnz -= rows[0];
-
-	Mat.CSR_I_row_indices.resize(n_rows+1);
-	Mat.CSR_J_col_indices.resize(nnz);
-	Mat.CSR_V_values	 .resize(nnz);
-
-	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (eslocal i = 0; i < Mat.CSR_I_row_indices.size(); i++)
-		Mat.CSR_I_row_indices[i] = rows[i] + offset;
-
-	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (eslocal i = 0; i < Mat.CSR_J_col_indices.size(); i++)
-		Mat.CSR_J_col_indices[i] = cols[i] + offset;
-
-	copy(vals, vals + nnz, Mat.CSR_V_values.begin());
-
-	Mat.cols = n_cols;
-	Mat.rows = n_rows;
-	Mat.nnz  = nnz;
-	Mat.type = type;
-}
-
-void Set_COO_Matrix   (
-		SparseMatrix & Mat,
-		eslocal n_rows,
-		eslocal n_cols,
-		eslocal nnz,
-		eslocal * I_rows,
-		eslocal	 * J_cols,
-		double * V_vals,
-		char type,
-		eslocal indexing ) {
-
-	Mat.I_row_indices.resize(nnz);
-	Mat.J_col_indices.resize(nnz);
-	Mat.V_values	 .resize(nnz);
-	eslocal offset = indexing ? 0 : 1;
-
-	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (eslocal i = 0; i < Mat.I_row_indices.size(); i++)
-		Mat.I_row_indices[i] = I_rows[i] + offset;
-
-	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (eslocal i = 0; i < Mat.J_col_indices.size(); i++)
-		Mat.J_col_indices[i] = J_cols[i] + offset;
-
-	copy(V_vals, V_vals + nnz, Mat.V_values.begin());
-
-	Mat.cols = n_cols;
-	Mat.rows = n_rows;
-	Mat.nnz  = nnz;
-	Mat.type = type;
-
-}
-
-
-
 LinearSolver::LinearSolver() {
 
 }
@@ -86,10 +18,16 @@ LinearSolver::~LinearSolver() {
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	SINGULAR 	= IS_SINGULAR;
-  	R_from_mesh = false	;
-	//DOFS_PER_NODE = 1; //TODO - set as parameter
 
-	KEEP_FACTORS = true; // only suported by MKL Pardiso so far
+	if ( esconfig::solver::REGULARIZATION == 0 )
+  		R_from_mesh = true	;
+  	else
+  		R_from_mesh = false	;
+
+	if ( esconfig::solver::KEEP_FACTORS == 0)
+		KEEP_FACTORS = false; // only suported by MKL Pardiso so far
+	else
+		KEEP_FACTORS = true;
 
     MPI_rank = rank;
     MPI_size = size;
@@ -101,8 +39,8 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= 0;
-	cluster.USE_KINV			= 0;
+	cluster.USE_HFETI			= esconfig::solver::FETI_METHOD;
+	cluster.USE_KINV			= esconfig::solver::USE_SCHUR_COMPLEMENT;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
 	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
@@ -113,8 +51,8 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	solver.CG_max_iter	 = esconfig::solver::maxIterations;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = esconfig::solver::epsilon;
-	solver.USE_PIPECG	 = 0;
-	solver.USE_PREC		 = 0;
+	solver.USE_PIPECG	 = esconfig::solver::CG_SOLVER;
+	solver.USE_PREC		 = esconfig::solver::PRECONDITIONER;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
@@ -144,13 +82,7 @@ void LinearSolver::init(
 
 ) {
 
-//	SparseMatrix t;
-//	t.CreateEye(10);
-//	t.SaveMatrixBinInCOO("B1.mat");
-
-
 	number_of_subdomains_per_cluster = K_mat.size();
-
 
     // Overal Linear Solver Time measurement structure
      timeEvalMain.SetName(string("ESPRESO Linear Solver Overal Timing"));

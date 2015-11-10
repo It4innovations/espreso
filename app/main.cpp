@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 
 	assembler::FEM fem(mesh);
 	//assembler::LinearElasticity<assembler::FEM> app(fem);
+
 	assembler::Temperature<assembler::FEM> app(fem);
 
 	app.init();
