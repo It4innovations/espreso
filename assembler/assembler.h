@@ -2,6 +2,7 @@
 #ifndef ASSEMBLER_ASSEMBLER_H_
 #define ASSEMBLER_ASSEMBLER_H_
 
+#include "esoutput.h"
 #include "essolver.h"
 #include "esmesh.h"
 #include "esbem.h"
@@ -55,7 +56,7 @@ protected:
 	virtual size_t rank();
 	virtual size_t size();
 
-	TInput &_input;
+	TInput _input;
 
 	bool _verbose;
 	TimeEval _timeStatistics;

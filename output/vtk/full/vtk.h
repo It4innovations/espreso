@@ -12,7 +12,7 @@ public:
 	VTK_Full(const mesh::Mesh &mesh, const std::string &path): VTK(mesh, path) { };
 
 protected:
-	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement);
+	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
 };
 
 

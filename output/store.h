@@ -24,7 +24,7 @@ protected:
 class ResultStore: public MeshStore {
 
 public:
-	virtual void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) = 0;
+	virtual void store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster) = 0;
 
 	virtual ~ResultStore() {};
 
@@ -43,9 +43,9 @@ public:
 		_store.store(shrinkSubdomain, shringCluster);
 	}
 
-	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1)
+	void store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain = 1, double shringCluster = 1)
 	{
-		_store.store(displacement, shrinkSubdomain, shringCluster);
+		_store.store(displacement, dofs, shrinkSubdomain, shringCluster);
 	}
 
 private:

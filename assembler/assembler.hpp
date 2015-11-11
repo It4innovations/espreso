@@ -19,7 +19,6 @@ template<>
 size_t Assembler<API>::subdomains()
 {
 	return 1;
-	//return this->_surface.parts();
 }
 
 template<>
@@ -38,7 +37,6 @@ template<>
 size_t Assembler<API>::rank()
 {
 	return 1;
-	//return this->_surface.parts();
 }
 
 template<>
@@ -57,26 +55,7 @@ template<>
 size_t Assembler<API>::size()
 {
 	return 1;
-	//return this->_surface.parts();
 }
-//
-//template<>
-//const mesh::Mesh& Assembler<FEM>::mesh() const
-//{
-//	return this->_mesh;
-//}
-//
-//template<>
-//const mesh::Mesh& Assembler<BEM>::mesh() const
-//{
-//	return this->_surface;
-//}
-//
-//template<>
-//const mesh::Mesh& Assembler<API>::mesh() const
-//{
-//	return this->_mesh;
-//}
 
 }
 

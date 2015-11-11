@@ -92,7 +92,8 @@ void Linear<BEM>::RHS()
 template <>
 void Linear<BEM>::saveResult()
 {
-	_input.surface.store(mesh::VTK_FULL, "surface", _prim_solution, 0.95, 0.9);
+	esoutput::VTK_Full vtk(_input.surface, "surface");
+	vtk.store(_prim_solution, this->DOFs(), 0.95, 0.9);
 }
 
 template <>
