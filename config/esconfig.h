@@ -27,6 +27,10 @@ namespace solver {
 
 }
 
+namespace tmp{
+	extern size_t DOFS;
+}
+
 }
 
 
