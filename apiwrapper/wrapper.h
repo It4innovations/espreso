@@ -8,6 +8,10 @@
 #include "esconfig.h"
 #include "esassemblers.h"
 
+struct ESPRESOMatData {
+	SparseCSRMatrix<eslocal> &data;
+};
+
 struct DataHolder {
 	static std::list<assembler::Assembler<assembler::API>*> assemblers;
 	static MPI_Comm communicator;

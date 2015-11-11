@@ -6,8 +6,7 @@ using namespace assembler;
 std::list<Assembler<API>*> DataHolder::assemblers;
 MPI_Comm DataHolder::communicator;
 
-
-int ESPRESO_Init(MPI_Comm communicator)
+int ESPRESOInit(MPI_Comm communicator)
 {
 	DataHolder::communicator = communicator;
 	MPI_Comm_rank(communicator, &esconfig::MPIrank);
@@ -15,7 +14,35 @@ int ESPRESO_Init(MPI_Comm communicator)
 	return 0;
 }
 
-int ESPRESO_Finalize()
+int ESPRESOCreateStiffnessMatrix(
+	esint n,
+	esint nelms,
+	esint *eltptr,
+	esint *eltvar,
+	double *values,
+	ESPRESOMat *stiffnessMatrix)
+{
+	return 0;
+}
+
+int ESPRESOSolveFETI(
+	ESPRESOMat *stiffnessMatrix,
+	ESPRESODoubleVector *rhs,
+	ESPRESOMap *dirichlet,
+	ESPRESOIntVector *l2g,
+	ESPRESOIntVector *neighbourRanks,
+	ESPRESODoubleVector *solution)
+{
+	return 0;
+}
+
+int ESPRESOFree(void *data)
+{
+	// TODO: implement me
+	return 0;
+}
+
+int ESPRESOFinalize()
 {
 	std::list<Assembler<API>*>::iterator it;
 	for (it = DataHolder::assemblers.begin(); it != DataHolder::assemblers.end(); ++it) {
@@ -24,31 +51,5 @@ int ESPRESO_Finalize()
 	DataHolder::assemblers.clear();
 	return 0;
 }
-
-int FETI_PrepareElasticity(
-	LocalStiffnessMatrices *Ke,
-	DoubleVector *rhs,
-	IntVector *l2g,
-	ESPRESOHandler *handler)
-{
-	API api(*Ke, *rhs, *l2g);
-	DataHolder::assemblers.push_back(new LinearElasticity<API>(api));
-	*handler = DataHolder::assemblers.back();
-	return 0;
-}
-
-int Solve(
-	ESPRESOHandler *handler,
-	DoubleVector *solution)
-{
-	std::list<Assembler<API>*>::iterator it;
-	for (it = DataHolder::assemblers.begin(); it != DataHolder::assemblers.end(); ++it) {
-		if (*it == *handler) {
-			// it->solve(...)
-		}
-	}
-	return 0;
-}
-
 
 

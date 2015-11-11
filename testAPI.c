@@ -5,22 +5,34 @@ int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
 
-	ESPRESO_Init(MPI_COMM_WORLD);
-	ESPRESO_Finalize();
+	ESPRESOInit(MPI_COMM_WORLD);
 
-	LocalStiffnessMatrices Ke;
-	Ke.size = 5;
-	Ke.array = (int*)malloc(sizeof(int) * 5);
-	int i;
-	for (i = 0; i < 5; i++) {
-		Ke.array[i] = i;
-	}
+	ESPRESOMat stiffnessMatrix;
 
-	ESPRESOHandler elasticity;
-	DoubleVector rhs;
-	DoubleVector solution;
-	FETI_PrepareElasticity(&Ke, &rhs, &elasticity);
-	Solve(&elasticity, &solution);
+	ESPRESODoubleVector rhs;
+	rhs.size = 5;
+	rhs.values = (double*)malloc(5 * sizeof(double));
+
+	ESPRESOMap dirichlet;
+	dirichlet.size = 4;
+	dirichlet.indices = (int*)malloc(5 * sizeof(double));
+	dirichlet.values = (double*)malloc(5 * sizeof(double));
+
+	ESPRESOIntVector l2g;
+	l2g.size = 5;
+	l2g.values = (int*)malloc(5 * sizeof(double));
+
+	ESPRESOIntVector neighbourRanks;
+	neighbourRanks.size = 3;
+	neighbourRanks.values = (int*)malloc(3 * sizeof(double));
+
+	ESPRESODoubleVector solution;
+	solution.size = 5;
+	solution.values = (double*)malloc(5 * sizeof(double));
+
+	ESPRESOSolveFETI(&stiffnessMatrix, &rhs, &dirichlet, &l2g, &neighbourRanks, &solution);
+
+	ESPRESOFree(stiffnessMatrix);
 
 	MPI_Finalize();
 }

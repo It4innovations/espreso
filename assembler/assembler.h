@@ -24,11 +24,12 @@ struct BEM {
 
 struct API {
 
-	API(LocalStiffnessMatrices &Ke, DoubleVector &rhs, IntVector &l2g): Ke(Ke), rhs(rhs), l2g(l2g) { };
+	API(SparseCSRMatrix<eslocal> &Ke, ESPRESODoubleVector &rhs, ESPRESOIntVector &l2g)
+	:Ke(Ke), rhs(rhs), l2g(l2g) { };
 
-	LocalStiffnessMatrices &Ke;
-	DoubleVector &rhs;
-    IntVector &l2g;
+	SparseCSRMatrix<eslocal> &Ke;
+	ESPRESODoubleVector &rhs;
+	ESPRESOIntVector &l2g;
 };
 
 

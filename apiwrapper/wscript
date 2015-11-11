@@ -24,6 +24,6 @@ def build(ctx):
     ctx.lib(
         source          = source_files,
         target          = "espreso",
-        use             = "espreso_insluces esbasis esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk essolver_pardiso_mkl esmesh esbem",
+        use             = "espreso_insluces esbasis esconfig esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk essolver_pardiso_mkl esmesh esbem",
         install_path    = ctx.LIBRARIES #ctx.ROOT + "/libespreso"
     )

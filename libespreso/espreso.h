@@ -15,47 +15,61 @@
 	#error "Incorrect user-supplied value of ESPRESO_INDICES_WIDTH"
 #endif
 
-
-struct LocalStiffnessMatrices {
+struct ESPRESOIntVector {
 	esint size;
-	esint *array;
+	esint *values;
 };
 
-struct DoubleVector {
+struct ESPRESODoubleVector {
 	esint size;
 	double *values;
 };
 
-struct IntVector {
+struct ESPRESOMap {
 	esint size;
-	esint *values;
+	esint *indices;
+	double *values;
 };
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct LocalStiffnessMatrices LocalStiffnessMatrices;
-typedef struct DoubleVector DoubleVector;
-typedef void* ESPRESOHandler;
+typedef struct ESPRESOMatData* ESPRESOMat;
 
-int ESPRESO_Init(
+typedef struct ESPRESOIntVector ESPRESOIntVector;
+typedef struct ESPRESODoubleVector ESPRESODoubleVector;
+typedef struct ESPRESOMap ESPRESOMap;
+
+
+int ESPRESOInit(
 	MPI_Comm communicator
 );
 
-int FETI_PrepareElasticity(
-	LocalStiffnessMatrices *Ke,
-	DoubleVector *rhs,
-	IntVector *l2g,
-	ESPRESOHandler *handler
+int ESPRESOCreateStiffnessMatrix(
+	esint n,
+	esint nelms,
+	esint *eltptr,
+	esint *eltvar,
+	double *values,
+	ESPRESOMat *stiffnessMatrix
 );
 
-int Solve(
-	ESPRESOHandler *handler,
-	DoubleVector *solution
+int ESPRESOSolveFETI(
+	ESPRESOMat *stiffnessMatrix,
+	ESPRESODoubleVector *rhs,
+	ESPRESOMap *dirichlet,
+	ESPRESOIntVector *l2g,
+	ESPRESOIntVector *neighbourRanks,
+	ESPRESODoubleVector *solution
 );
 
-int ESPRESO_Finalize();
+int ESPRESOFree(
+	void *data
+);
+
+int ESPRESOFinalize();
 
 
 #ifdef __cplusplus
