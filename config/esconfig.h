@@ -10,6 +10,7 @@ extern int MPIrank;
 extern int MPIsize;
 
 namespace mesh {
+	extern size_t subdomains;
 	extern size_t fixPoints;
 
 	enum Input { ANSYS, OPENFOAM, ESDATA_IN, GENERATOR };

@@ -8,19 +8,19 @@ static void load(mesh::Mesh *mesh, int argc, char **argv)
 	case esconfig::mesh::ANSYS: {
 		esinput::Ansys loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->computeFixPoints(esconfig::mesh::fixPoints);
+		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::OPENFOAM: {
 		esinput::OpenFOAM loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->computeFixPoints(esconfig::mesh::fixPoints);
+		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::ESDATA_IN: {
 		esinput::Esdata loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->computeFixPoints(esconfig::mesh::fixPoints);
+		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::GENERATOR: {
