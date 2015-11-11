@@ -168,7 +168,8 @@ public:
 	void MatAppend(SparseMatrix & A); 
 	void RemoveLower(); 
 
-	void CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add);
+	void CreateMatFromRowsFromMatrix         (SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add);
+	void CreateMatFromRowsFromMatrix_NewSize (SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add);
 
 	void Clear();
 

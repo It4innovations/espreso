@@ -241,6 +241,12 @@ void LinearSolver::init(
 		 timeEvalMain.AddEvent(timeHFETIprec);
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
+    //cluster.Create_G1_perCluster();
+    solver.Preprocessing ( cluster );
+    cluster.G1.Clear();
+
+    //for (int d = 0; d < cluster.domains.size(); d++)
+    //	cluster.domains[d].Kplus_R = cluster.domains[d].Kplus_Rb;
 
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
@@ -377,6 +383,7 @@ void LinearSolver::set_R_from_K ()
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].get_kernel_from_K();
+		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
 
 }

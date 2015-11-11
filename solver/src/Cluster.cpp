@@ -326,7 +326,8 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 		//************************
 
-		domains[i].B1.Clear();
+		//TODO: pozor vratit
+		//domains[i].B1.Clear();
 		domains[i].B1t.Clear();
 		//domains[i].B1_comp.Clear();
 		//domains[i].B1t_comp.Clear();
@@ -340,6 +341,9 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		domains[i].B1_comp.I_row_indices = domains[i].B1.I_row_indices;
 		domains[i].B1_comp.J_col_indices = domains[i].B1.J_col_indices;
 		domains[i].B1_comp.V_values      = domains[i].B1.V_values;
+		c', '-I/home/lriha/espreso/build/bem/src', '-I/home/lriha/espreso/bem/src', '-I/home/lriha/espreso/build/catalyst/src', '-I/home/lriha/espreso/catalyst/src', '-I/home/lriha/espreso/build/composer', '-I/home/lriha/espreso/composer', '-I/home/lriha/espreso/build/assembler', '-I/home/lriha/espreso/assembler', '-I/usr/local/cuda-7.0/include', '../solver/src/SparseSolver.cpp', '-c', '-o', '/home/lriha/espreso/build/solver/src/SparseSolver.cpp.1.o']
+		../solver/src/Cluster.cpp(1248): error: expected an identifier
+		  void <() {
 
 		domains[i].B1_comp.rows = domains[i].B1.rows;
 		domains[i].B1_comp.cols = domains[i].B1.cols;
@@ -484,6 +488,32 @@ void Cluster::SetClusterHFETI () {
 
 		HFETI_prec_timing.totalTime.AddEnd(omp_get_wtime());
 		HFETI_prec_timing.PrintStatsMPI();
+
+		//TODO: To be fixed
+
+		Create_G1_perCluster();
+
+		if (USE_DYNAMIC == 0) {
+
+			G1.ConvertToCOO( 1 );
+			cilk_for (int j = 0; j < G1.J_col_indices.size(); j++ )
+				G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+
+			G1.cols = my_lamdas_indices.size();
+			G1.ConvertToCSRwithSort( 1 );
+
+			G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
+			G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
+			G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
+
+			G1_comp.rows = G1.rows;
+			G1_comp.cols = G1.cols;
+			G1_comp.nnz  = G1.nnz;
+			G1_comp.type = G1.type;
+
+			//G1.Clear();
+
+		}
 
 
 
@@ -1221,6 +1251,15 @@ void Cluster::CreateF0() {
 void Cluster::CreateSa() {
 
 	bool PARDISO_SC = true;
+	bool get_kernel_from_mesh;
+	
+	if ( esconfig::solver::REGULARIZATION == 0 )
+  		get_kernel_from_mesh = true	;
+  	else
+  		get_kernel_from_mesh = false	;
+	
+	
+
 
 	MKL_Set_Num_Threads(24); 
 	int MPIrank; MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -1259,28 +1298,80 @@ void Cluster::CreateSa() {
 	}
 	 SaMatMat_Sa_time.AddEnd(omp_get_wtime()); SaMatMat_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(SaMatMat_Sa_time); 
 	
-	// Regularization of Salfa
-	 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.AddStart(omp_get_wtime());
-		
-	SparseMatrix Eye, N, Nt, NNt; 
-	Eye.CreateEye(6); N.CreateEye(6); Nt.CreateEye(6);
+	 if (!get_kernel_from_mesh) {
+		 SparseMatrix Kernel_Sa;
+		 domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
 
-	for (eslocal i=0; i < domains.size()-1; i++) {
-		N.MatAppend(Eye);
-		Nt.MatAppend(Eye); 
-	}
+		 //Kernel_Sa.printMatCSR("Ker_Salfa");
 
-	Nt.MatTranspose();
-	NNt.MatMat(N, 'N', Nt);
-	NNt.RemoveLower();
+//		 SparseMatrix T1;
+//		 T1.MatMat(G0t,'N', Kernel_Sa);
+//		 SpyText(T1);
+//		 T1.printMatCSR("BlMat");
 
-	double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
-	ro = 0.5 * ro; 
+		 for (int d = 0; d < domains.size(); d++) {
+			 SparseMatrix tR;
+			 SEQ_VECTOR < eslocal > rows_inds (Kernel_Sa.cols);
+			 for (int i = 0; i < Kernel_Sa.cols; i++)
+				 rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
+			 tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
 
-	Salfa.MatAddInPlace(NNt,'N', ro);
-	// End regularization of Salfa
+			 //tR.printMatCSR("tr");
 
-	 reg_Sa_time.AddEnd(omp_get_wtime()); reg_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(reg_Sa_time); 
+			 SparseMatrix TmpR;
+			 TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
+			 domains[d].Kplus_Rb = TmpR;
+			 domains[d].Kplus_Rb.ConvertCSRToDense(0);
+
+			 //SparseMatrix T2;
+			 //T2.MatMat(domains[d].Prec, 'N', domains[d].Kplus_R);
+
+
+//			  double * AR =  new double [domains[d].Prec.rows];
+//			  double norm_AR_row,norm_AR = 0.0;
+//			 //printf("||A*Kplus_R[:,i]|| ...   \n");
+//			  for (int i = 0;i<domains[d].Kplus_R.cols;i++){
+//			    memset(AR,0,domains[d].Kplus_R.rows * sizeof(double));
+//			    domains[d].Prec.spmv_( domains[d].Prec,&(domains[d].Kplus_R.dense_values[i*domains[d].Kplus_R.rows]),AR);
+//			    norm_AR_row=0.0;
+//			    for (int j = 0; j < domains[d].Kplus_R.rows;j++){
+//			      norm_AR_row+=AR[j]*AR[j];
+//			    }
+//			 //   printf("%3.3e  ",sqrt(norm_AR_row));
+//			    norm_AR+=norm_AR_row;
+//			  }
+//			  delete [] AR;
+//			  norm_AR=sqrt(norm_AR);
+//			  printf("\n||A*Kplus_R|| = %3.9e \n",norm_AR);
+
+		 }
+
+
+	 } else {
+		// Regularization of Salfa
+		 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.AddStart(omp_get_wtime());
+
+		SparseMatrix Eye, N, Nt, NNt;
+		Eye.CreateEye(6); N.CreateEye(6); Nt.CreateEye(6);
+
+		for (int i=0; i < domains.size()-1; i++) {
+			N.MatAppend(Eye);
+			Nt.MatAppend(Eye);
+		}
+
+		Nt.MatTranspose();
+		NNt.MatMat(N, 'N', Nt);
+		NNt.RemoveLower();
+
+		double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+		ro = 0.5 * ro;
+
+		Salfa.MatAddInPlace(NNt,'N', ro);
+		// End regularization of Salfa
+
+		 reg_Sa_time.AddEnd(omp_get_wtime()); reg_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(reg_Sa_time);
+	 }
+
 
 	 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.AddStart(omp_get_wtime());
 	if (MPIrank == 0) Sa.msglvl = 0; 
@@ -1426,7 +1517,11 @@ void Cluster::Create_G1_perCluster() {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			domains[j].Kplus_R.MatTranspose(Rt);
+			if ( esconfig::solver::REGULARIZATION == 0 )
+				domains[j].Kplus_R.MatTranspose(Rt);
+		  	else
+				domains[j].Kplus_Rb.MatTranspose(Rt);
+
 			//Rt = domains[j].Kplus_R;
 			//Rt.MatTranspose();
 
@@ -1541,7 +1636,11 @@ void Cluster::Create_G1_perCluster() {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			domains[j].Kplus_R.MatTranspose(Rt);
+			if ( esconfig::solver::REGULARIZATION == 0 )
+				domains[j].Kplus_R.MatTranspose(Rt);
+		  	else
+				domains[j].Kplus_Rb.MatTranspose(Rt);
+
 			Rt.ConvertCSRToDense(1);
 			B = domains[j].B1;
 
@@ -1624,7 +1723,7 @@ void Cluster::Create_G1_perCluster() {
 
 void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
-	eslocal size_d = domains[0].Kplus_R.cols; // because transpose of R
+	eslocal size_d = domains[0].Kplus_Rb.cols; // because transpose of R
 
 	if ( USE_HFETI == 1 )
 		vec_d.resize( size_d );
@@ -1633,14 +1732,15 @@ void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
 	if ( USE_HFETI == 1) {
 		for (eslocal d = 0; d < domains.size(); d++)
-			domains[d].Kplus_R.MatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+			domains[d].Kplus_Rb.MatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 	} else {
 		for (eslocal d = 0; d < domains.size(); d++)										// MFETI
-			domains[d].Kplus_R.MatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );	// MFETI
+			domains[d].Kplus_Rb.MatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );	// MFETI
 	}
 
 	for (eslocal i = 0; i < vec_d.size(); i++)
 		vec_d[i] = (-1.0) *  vec_d[i];
+
 }
 
 

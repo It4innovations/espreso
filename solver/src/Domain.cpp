@@ -297,8 +297,11 @@ void Domain::K_regularizationFromR ( ) {
 	
 } 
 
+void Domain::get_kernel_from_K() {
+	get_kernel_from_K(K, Kplus_R);
+}
 
-void Domain::get_kernel_from_K(){
+void Domain::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 //      
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg) 
@@ -703,7 +706,7 @@ void Domain::get_kernel_from_K(){
   norm_AR=sqrt(norm_AR);
   printf("\n||A*Kplus_R|| = %3.9e \n",norm_AR);
 
-  Kplus_R.ConvertDenseToCSR(1);
+  Kplus_R.ConvertDenseToCSR(0);
 //  Kplus_R.printMatCSR("Kplus_R");
 //  K.printMatCSR("K");
 // REGULARIZATION OF MATRIX K

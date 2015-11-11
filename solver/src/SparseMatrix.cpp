@@ -2608,7 +2608,42 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 }
 
+void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_VECTOR <int> & rows_to_add) {
 
+	int old_index  = 0;
+	int next_index = 0; 
+	int row_fill   = 1;
+
+	rows = rows_to_add.size();
+	cols = A_in.cols;
+	type = A_in.type; 
+
+	//CSR_I_row_indices.resize( rows + 1 );
+
+	for (int i = 0; i < rows_to_add.size(); i++) {
+		
+		old_index  = next_index; 
+		next_index = rows_to_add[i]; 
+
+		//fill(CSR_I_row_indices.begin() + old_index, CSR_I_row_indices.begin() + next_index, row_fill);
+                CSR_I_row_indices.push_back(row_fill);		
+
+		int A_in_start_index = A_in.CSR_I_row_indices[rows_to_add[i] - 1 ] - 1 ; 
+		int A_in_end_index   = A_in.CSR_I_row_indices[rows_to_add[i] + 1 - 1] - 1 ; 
+
+		CSR_J_col_indices.insert(CSR_J_col_indices.end(), A_in.CSR_J_col_indices.begin() + A_in_start_index, A_in.CSR_J_col_indices.begin() + A_in_end_index ); 
+		CSR_V_values.     insert(CSR_V_values.end(),      A_in.CSR_V_values.     begin() + A_in_start_index, A_in.CSR_V_values.     begin() + A_in_end_index ); 
+		row_fill = 1 + CSR_J_col_indices.size(); 		
+
+	}
+
+	
+	//fill(CSR_I_row_indices.begin() + next_index, CSR_I_row_indices.begin() + rows + 1, row_fill);
+        CSR_I_row_indices.push_back(row_fill);
+
+	nnz = CSR_V_values.size(); 
+
+}
 
 eslocal SparseMatrix::MatCompare(SparseMatrix & A) {
 	eslocal res = 0;
