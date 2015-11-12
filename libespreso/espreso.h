@@ -15,17 +15,17 @@
 	#error "Incorrect user-supplied value of ESPRESO_INDICES_WIDTH"
 #endif
 
-struct ESPRESOIntVector {
+struct ESPRESOStructIntVector {
 	esint size;
 	esint *values;
 };
 
-struct ESPRESODoubleVector {
+struct ESPRESOStructDoubleVector {
 	esint size;
 	double *values;
 };
 
-struct ESPRESOMap {
+struct ESPRESOStructMap {
 	esint size;
 	esint *indices;
 	double *values;
@@ -36,36 +36,63 @@ struct ESPRESOMap {
 extern "C" {
 #endif
 
-typedef struct ESPRESOMatData* ESPRESOMat;
+typedef struct ESPRESOStructMat* ESPRESOMat;
 
-typedef struct ESPRESOIntVector ESPRESOIntVector;
-typedef struct ESPRESODoubleVector ESPRESODoubleVector;
-typedef struct ESPRESOMap ESPRESOMap;
+typedef struct ESPRESOStructIntVector* ESPRESOIntVector;
+typedef struct ESPRESOStructDoubleVector* ESPRESODoubleVector;
+typedef struct ESPRESOStructMap* ESPRESOMap;
+
+typedef struct ESPRESOStructFETIIntance* ESPRESOFETIInstance;
 
 
 int ESPRESOInit(
 	MPI_Comm communicator
 );
 
-int ESPRESOCreateStiffnessMatrix(
+int ESPRESOCreateMatrixElemental(
 	esint n,
-	esint nelms,
+	esint nelt,
 	esint *eltptr,
 	esint *eltvar,
 	double *values,
 	ESPRESOMat *stiffnessMatrix
 );
 
-int ESPRESOSolveFETI(
+int ESPRESOCreateDoubleVector(
+	esint size,
+	double *values,
+	ESPRESODoubleVector *vector
+);
+
+int ESPRESOCreateIntVector(
+	esint size,
+	esint *values,
+	ESPRESOIntVector *vector
+);
+
+int ESPRESOCreateMap(
+	esint size,
+	esint *indices,
+	double *values,
+	ESPRESOMap *vector
+);
+
+int ESPRESOPrepareFETIInstance(
 	ESPRESOMat *stiffnessMatrix,
 	ESPRESODoubleVector *rhs,
 	ESPRESOMap *dirichlet,
 	ESPRESOIntVector *l2g,
 	ESPRESOIntVector *neighbourRanks,
-	ESPRESODoubleVector *solution
+	ESPRESOFETIInstance *instance
 );
 
-int ESPRESOFree(
+int ESPRESOSolveFETI(
+	ESPRESOFETIInstance *instance,
+	esint size,
+	double *values
+);
+
+int ESPRESODestroy(
 	void *data
 );
 

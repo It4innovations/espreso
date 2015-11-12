@@ -182,7 +182,12 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster)  {
 	for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 		if (USE_HFETI == 1)
-			cluster.domains[d].Kplus_R.MatVec(amplitudes, tmp, 'N', 0, 0);
+
+			if ( esconfig::solver::REGULARIZATION == 0 )
+				cluster.domains[d].Kplus_R.MatVec(amplitudes, tmp, 'N', 0, 0);
+		  	else
+		  		cluster.domains[d].Kplus_Rb.MatVec(amplitudes, tmp, 'N', 0, 0);
+
 		else
 			cluster.domains[d].Kplus_R.MatVec(amplitudes, tmp, 'N', d * cluster.domains[d].Kplus_R.cols, 0);
 

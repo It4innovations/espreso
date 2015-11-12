@@ -8,12 +8,23 @@
 #include "esconfig.h"
 #include "esassemblers.h"
 
-struct ESPRESOMatData {
-	SparseCSRMatrix<eslocal> &data;
+struct ESPRESOStructMat {
+	ESPRESOStructMat(SparseCSRMatrix<eslocal> *data): data(data) {};
+	~ESPRESOStructMat() { delete data; }
+
+	SparseCSRMatrix<eslocal> *data;
+};
+
+struct ESPRESOStructFETIIntance {
+	ESPRESOStructFETIIntance(assembler::LinearElasticity<assembler::API> *data): data(data) {};
+	~ESPRESOStructFETIIntance() { delete data; }
+
+	assembler::LinearElasticity<assembler::API> *data;
 };
 
 struct DataHolder {
-	static std::list<assembler::Assembler<assembler::API>*> assemblers;
+	static std::list<ESPRESOStructMat*> matrices;
+	static std::list<ESPRESOStructFETIIntance*> instances;
 	static MPI_Comm communicator;
 };
 

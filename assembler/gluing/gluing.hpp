@@ -126,6 +126,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 				}
 			}
 
+			//if ( 1 == 1 ) {
 			if (localBoundaries.isCorner(i)) {
 				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
 					for (eslocal d = 0; d < this->DOFs(); d++) {

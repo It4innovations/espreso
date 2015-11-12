@@ -83,7 +83,22 @@ public:
 			const std::vector < std::vector <eslocal > >	& fix_nodes,
 
 			std::vector < eslocal > & neigh_clusters
+	);
 
+	void init(
+			std::vector < SparseMatrix >	& K_mat,
+			std::vector < SparseMatrix >	& B1_mat,
+			std::vector < SparseMatrix >	& B0_mat,
+
+			std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
+			std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
+			std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
+			std::vector < std::vector <double> >	& B1_duplicity,
+
+			std::vector < std::vector <double > >	& f_vec,
+			std::vector < std::vector <double > >	& vec_c,
+
+			std::vector < eslocal > & neigh_clusters
 	);
 
 	void Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub );

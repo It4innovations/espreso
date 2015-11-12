@@ -62,6 +62,198 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 }
 
 void LinearSolver::init(
+		std::vector < SparseMatrix >	& K_mat,
+		std::vector < SparseMatrix >	& B1_mat,
+		std::vector < SparseMatrix >	& B0_mat,
+
+		std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
+		std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
+		std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
+		std::vector < std::vector <double> >	& B1_duplicity,
+
+		std::vector < std::vector <double > >	& f_vec,
+		std::vector < std::vector <double > >	& vec_c,
+
+		std::vector < eslocal > & neigh_clusters)
+{
+	number_of_subdomains_per_cluster = K_mat.size();
+
+	// Overal Linear Solver Time measurement structure
+	 timeEvalMain.SetName(string("ESPRESO Linear Solver Overal Timing"));
+	 timeEvalMain.totalTime.AddStartWithBarrier();
+
+
+	 TimeEvent timeSetClust(string("Solver - Set cluster"));
+	 timeSetClust.AddStart();
+
+	// Setup Cluster
+	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster,0);
+	for (eslocal i = 0; i<number_of_subdomains_per_cluster; i++)
+		domain_list[i] = i;
+
+	cluster.cluster_global_index = MPI_rank + 1;
+	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
+	cluster.my_neighs = neigh_clusters;
+
+	// END - Setup cluster
+
+
+
+	vector<double> solver_parameters ( 10 );
+	solver.Setup ( solver_parameters, cluster );
+
+	 timeSetClust.AddEndWithBarrier();
+	 timeEvalMain.AddEvent(timeSetClust);
+
+
+	// *** Setup B0 matrix *******************************************************************************************
+	if (cluster.USE_HFETI == 1 ) {
+		  TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.AddStart();
+		 set_B0(B0_mat);
+		  timeSetB0.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetB0);
+
+	}
+	// *** END - Setup B0 matrix *************************************************************************************
+
+
+	// *** Setup B1 matrix *******************************************************************************************
+	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.AddStart();
+	set_B1(B1_mat,B1_duplicity);
+	 timeSetB1.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetB1);
+	// *** END - Setup B1 matrix *************************************************************************************
+
+
+	// *** Setup R matrix ********************************************************************************************
+	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
+
+	  cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		  cluster.domains[d].K = K_mat[d];
+		  if ( cluster.domains[d].K.type == 'G' )
+			cluster.domains[d].K.RemoveLower();
+		  //TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
+		  if ( solver.USE_PREC == 1 )
+			cluster.domains[d].Prec = cluster.domains[d].K;
+	  }
+	  set_R_from_K();
+
+	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
+	// *** END - Setup R matrix **************************************************************************************
+
+
+	// *** Load RHS and fix points for K regularization **************************************************************
+	 TimeEvent timeSetRHS(string("Solver - Set RHS and Fix points"));
+	 timeSetRHS.AddStart();
+
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+		cluster.domains[d].f = f_vec[d];
+
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+		cluster.domains[d].vec_c = vec_c[d];
+
+
+	 timeSetRHS.AddEndWithBarrier();
+	 timeEvalMain.AddEvent(timeSetRHS);
+	// *** END - Load RHS and fix points for K regularization ********************************************************
+
+
+	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
+	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.AddStart();
+
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+		cluster.domains[d].lambda_map_sub = lambda_map_sub_B1[d];
+
+	Preprocessing( lambda_map_sub_clst );
+
+	 timeSolPrec.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSolPrec);
+	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+
+
+	// *** Load Matrix K and regularization ******************************************************************************
+	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
+	 timeSolKproc.AddStart();
+	if (MPI_rank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		if (MPI_rank == 0) std::cout << d << " " ;
+		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
+
+		if (R_from_mesh) {
+
+			cluster.domains[d].K = K_mat[d];
+
+			if ( cluster.domains[d].K.type == 'G' )
+				cluster.domains[d].K.RemoveLower();
+
+			//TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
+			if ( solver.USE_PREC == 1 )
+				cluster.domains[d].Prec = cluster.domains[d].K;
+
+			cluster.domains[d].K_regularizationFromR( );
+
+		}
+
+		// Import of Regularized matrix K into Kplus (Sparse Solver)
+		cluster.domains[d].Kplus.ImportMatrix (cluster.domains[d].K);
+
+		if (KEEP_FACTORS) {
+			cluster.domains[d].Kplus.keep_factors = true;
+			cluster.domains[d].Kplus.Factorization ();
+		} else {
+			cluster.domains[d].Kplus.keep_factors = false;
+			cluster.domains[d].Kplus.MPIrank = MPI_rank;
+			K_mat[d].Clear();
+			cluster.domains[d].K.Clear();
+		}
+
+		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
+
+		if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
+		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
+	}
+
+	if (MPI_rank == 0) std::cout << std::endl;
+	 timeSolKproc.AddEndWithBarrier();
+	 timeEvalMain.AddEvent(timeSolKproc);
+	// *** END - Load Matrix K and regularization ******************************************************************************
+
+
+	// *** Setup Hybrid FETI part of the solver ********************************************************************************
+	if (cluster.USE_HFETI == 1) {
+		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
+		 timeHFETIprec.AddStart();
+		cluster.SetClusterHFETI();
+		 timeHFETIprec.AddEndWithBarrier();
+		 timeEvalMain.AddEvent(timeHFETIprec);
+	}
+	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
+
+	// *** Computation of the Schur Complement ***************************************************************************************
+	if ( cluster.USE_KINV == 1 ) {
+		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using many RSH "));
+		 timeSolSC1.AddStart();
+	//	cluster.Create_Kinv_perDomain();
+		 timeSolSC1.AddEndWithBarrier();
+		 timeEvalMain.AddEvent(timeSolSC1);
+
+		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));
+		 timeSolSC2.AddStart();
+		cluster.Create_SC_perDomain();
+		 timeSolSC2.AddEndWithBarrier();
+		 timeEvalMain.AddEvent(timeSolSC2);
+	}
+	// *** END - Computation of the Schur Complement *********************************************************************************
+
+
+	// *** Final Solver Setup after K factorization **********************************************************************************
+	 TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));
+	 timeSolAkpl.AddStart();
+	cluster.SetClusterPC_AfterKplus();
+	 timeSolAkpl.AddEndWithBarrier();
+	 timeEvalMain.AddEvent(timeSolAkpl);
+
+}
+
+void LinearSolver::init(
 		const mesh::Mesh &mesh,
 
 		std::vector < SparseMatrix >	& K_mat,
@@ -241,6 +433,14 @@ void LinearSolver::init(
 		 timeEvalMain.AddEvent(timeHFETIprec);
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
+    //cluster.Create_G1_perCluster();
+
+    if (cluster.USE_HFETI == 1) {
+    	solver.Preprocessing ( cluster );
+    	cluster.G1.Clear();
+    }
+    //for (int d = 0; d < cluster.domains.size(); d++)
+    //	cluster.domains[d].Kplus_R = cluster.domains[d].Kplus_Rb;
 
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
@@ -376,7 +576,8 @@ void LinearSolver::set_R_from_K ()
 {
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster.domains[d].get_kernel_from_K();
+		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,cluster.domains[d].Kplus_R);
+		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
 
 }
@@ -396,6 +597,8 @@ void LinearSolver::set_R (
 		}
 
 		cluster.domains[d].CreateKplus_R();
+		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
+		
 	}
 
 }

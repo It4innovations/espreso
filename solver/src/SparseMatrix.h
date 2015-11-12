@@ -4,6 +4,9 @@
 
 #include "utils.h"
 #include "esmesh.h"
+//#include "SparseSolver.h"
+
+class SparseSolver;
 
 #ifdef CUDA
 	#include <cuda_runtime.h>
@@ -144,9 +147,12 @@ public:
 	double MatCondNumb(SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues);
 	void spmv_(SparseMatrix & A_in, double *x, double *Ax);
 	void printMatCSR( char *str0);
+	void printMatCSR2( char *str0);
 	void getNullPivots(SEQ_VECTOR <eslocal> & null_pivots);
 	void tridiagFromCSR( SparseMatrix & A_in, char *str0);
 	double dot_e(double *x, double *y, eslocal n);
+
+	void getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format);
 	void GramSchmidtOrtho();
 
 	void MatScale(double alpha);
@@ -168,7 +174,8 @@ public:
 	void MatAppend(SparseMatrix & A); 
 	void RemoveLower(); 
 
-	void CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add);
+	void CreateMatFromRowsFromMatrix         (SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add);
+	void CreateMatFromRowsFromMatrix_NewSize (SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add);
 
 	void Clear();
 
@@ -182,6 +189,10 @@ public:
 	void TestMatRow ( eslocal size, eslocal row_index);
 	
 	void sortInCOO();
+
+//	void get_kernel_from_K();
+	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR);
+
 };
 
 void sortMatrixInCOO(SparseMatrix & Matrix);
