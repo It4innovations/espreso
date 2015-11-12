@@ -32,6 +32,7 @@ using std::make_pair;
 #include "DenseMatrixPack.h"
 
 #include "utils.h"
+#include "esconfig.h"
 
 #pragma once
 

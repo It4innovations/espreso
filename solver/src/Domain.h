@@ -86,6 +86,8 @@ public:
 	SEQ_VECTOR <double> vec_c;
 
 	SparseMatrix Kplus_R; 
+	SparseMatrix Kplus_Rb;
+
 	SparseMatrix R; 
 	SparseMatrix K;
 	//SparseMatrix K_non_sym;
@@ -141,7 +143,7 @@ public:
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in_y_out); 
 
-	void get_kernel_from_K();
+
 
 	//dynamic
 	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
