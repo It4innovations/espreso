@@ -384,7 +384,7 @@ void LinearSolver::set_R_from_K ()
 {
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster.domains[d].get_kernel_from_K();
+		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,cluster.domains[d].Kplus_R);
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
 

@@ -143,8 +143,6 @@ public:
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in_y_out); 
 
-	void get_kernel_from_K();
-	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR);
 
 
 	//dynamic

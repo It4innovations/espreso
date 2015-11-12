@@ -1303,10 +1303,10 @@ void Cluster::CreateSa() {
 
 		 GGt.MatMat(G0,'N',G0t);
 		 GGt.RemoveLower();
-		 domains[0].get_kernel_from_K(GGt, Kernel_Sa);
+		 GGt.get_kernel_from_K(GGt, Kernel_Sa);
 
 		 SparseMatrix TSak;
-		 domains[0].get_kernel_from_K(Salfa,TSak);
+		 GGt.get_kernel_from_K(Salfa,TSak);
 		 TSak.Clear();
 
 		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);

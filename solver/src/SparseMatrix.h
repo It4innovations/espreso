@@ -4,6 +4,9 @@
 
 #include "utils.h"
 #include "esmesh.h"
+//#include "SparseSolver.h"
+
+class SparseSolver;
 
 #ifdef CUDA
 	#include <cuda_runtime.h>
@@ -186,6 +189,10 @@ public:
 	void TestMatRow ( eslocal size, eslocal row_index);
 	
 	void sortInCOO();
+
+//	void get_kernel_from_K();
+	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR);
+
 };
 
 void sortMatrixInCOO(SparseMatrix & Matrix);
