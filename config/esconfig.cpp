@@ -17,7 +17,7 @@ namespace solver {
 	size_t		KEEP_FACTORS			= 1; 		// 1 - YES; 0 - NO
 	size_t   	PRECONDITIONER			= 0;		// 0 - NO preconditioner; 1 - Lumped
 	size_t		CG_SOLVER				= 0;		// 0 - Standard CG; 1 - Pipelined CG
-	size_t		REGULARIZATION 			= 0;		// 0 - from mesh; 1 - from stifness matrix
+	size_t		REGULARIZATION 			= 1;		// 0 - from mesh; 1 - from stifness matrix
 
 
 }

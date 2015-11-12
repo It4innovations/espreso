@@ -6,7 +6,7 @@
 
 
 Domain::Domain(){
-
+  
 }
 
 Domain::Domain(eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0){
@@ -308,7 +308,7 @@ void Domain::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 // utilizing spectral conditions of Schur complement. Then ||K-K*inv(K_reg)*K||=0.0
 //
 //
-// rev. 2015-10-23 (A.M.)
+// rev. 2015-11-11 (A.M.)
 //==============================================================================
 //
 //    1) diagonalScaling
@@ -494,7 +494,8 @@ void Domain::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
     }
 //
     if (permutVectorActive==1){
-      srand(time(NULL));
+//      srand(time(NULL));
+      srand(0);
       random_shuffle ( permVec.begin(), permVec.end() );
       sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
       sort(permVec.begin()+NONSING_SIZE,permVec.end());
@@ -683,28 +684,9 @@ void Domain::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   SEQ_VECTOR <eslocal > null_pivots;
   Kplus_R.getNullPivots(null_pivots);
 
-//  printf("null pivots, eslocal ");
-//  for (eslocal i = 0;i<null_pivots.size();i++)
-//    printf("%d ",null_pivots[i]);
-//  printf("\n");
-
-//
-  double * AR =  new double [K.rows];
-  double norm_AR_row,norm_AR = 0.0;
-//  printf("||A*Kplus_R[:,i]|| ...   \n");
-  for (eslocal i = 0;i<Kplus_R.cols;i++){
-    memset(AR,0,Kplus_R.rows * sizeof(double));
-  	K.spmv_( K,&(Kplus_R.dense_values[i*Kplus_R.rows]),AR);
-    norm_AR_row=0.0;
-    for (eslocal j = 0; j < Kplus_R.rows;j++){
-      norm_AR_row+=AR[j]*AR[j];
-    }
- //   printf("%3.3e  ",sqrt(norm_AR_row));
-    norm_AR+=norm_AR_row;
-  }
-  delete [] AR;
-  norm_AR=sqrt(norm_AR);
-  printf("\n||A*Kplus_R|| = %3.9e \n",norm_AR);
+  // norm of product K*R: second matrix has to be in dense format!!!
+  K.getNorm_K_R(K,Kplus_R);
+  //
 
   Kplus_R.ConvertDenseToCSR(0);
 //  Kplus_R.printMatCSR("Kplus_R");
@@ -753,7 +735,7 @@ void Domain::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   }
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
-
+ 
 
   printf(" =============================================================\n\n");
 

@@ -1968,6 +1968,41 @@ void SparseMatrix::printMatCSR(char *str0){
   }
 }
 
+void SparseMatrix::printMatCSR2(char *str0){
+  eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
+
+  FILE *fid = fopen(str0,"w");
+  int isGeneral=0;
+  if (type=='G') isGeneral=1;
+  fprintf(fid,"%d %d %d\n",rows,cols,isGeneral);
+
+  for (eslocal i = 0;i<rows;i++){
+    for (eslocal j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
+      fprintf(fid,"%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
+    }
+  }
+}
+
+
+void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
+  double * AR =  new double [K.rows];
+  double norm_AR_row,norm_AR = 0.0;
+//  printf("||A*Kplus_R[:,i]|| ...   \n");
+  for (eslocal i = 0;i<R_in_dense_format.cols;i++){
+    memset(AR,0,R_in_dense_format.rows * sizeof(double));
+  	K.spmv_( K,&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),AR);
+    norm_AR_row=0.0;
+    for (eslocal j = 0; j < R_in_dense_format.rows;j++){
+      norm_AR_row+=AR[j]*AR[j];
+    }
+ //   printf("%3.3e  ",sqrt(norm_AR_row));
+    norm_AR+=norm_AR_row;
+  }
+  delete [] AR;
+  norm_AR=sqrt(norm_AR);
+  printf("\n||A*Kplus_R|| = %3.9e, defect = %d\n",norm_AR,R_in_dense_format.cols);
+}
+
 //
 
 void SparseMatrix::GramSchmidtOrtho(){

@@ -242,9 +242,11 @@ void LinearSolver::init(
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
     //cluster.Create_G1_perCluster();
-    solver.Preprocessing ( cluster );
-    cluster.G1.Clear();
 
+    if (cluster.USE_HFETI == 1) {
+    	solver.Preprocessing ( cluster );
+    	cluster.G1.Clear();
+    }
     //for (int d = 0; d < cluster.domains.size(); d++)
     //	cluster.domains[d].Kplus_R = cluster.domains[d].Kplus_Rb;
 
@@ -403,6 +405,8 @@ void LinearSolver::set_R (
 		}
 
 		cluster.domains[d].CreateKplus_R();
+		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
+		
 	}
 
 }

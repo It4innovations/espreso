@@ -144,9 +144,12 @@ public:
 	double MatCondNumb(SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues);
 	void spmv_(SparseMatrix & A_in, double *x, double *Ax);
 	void printMatCSR( char *str0);
+	void printMatCSR2( char *str0);
 	void getNullPivots(SEQ_VECTOR <eslocal> & null_pivots);
 	void tridiagFromCSR( SparseMatrix & A_in, char *str0);
 	double dot_e(double *x, double *y, eslocal n);
+
+	void getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format);
 	void GramSchmidtOrtho();
 
 	void MatScale(double alpha);

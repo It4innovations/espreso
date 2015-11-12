@@ -341,9 +341,6 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		domains[i].B1_comp.I_row_indices = domains[i].B1.I_row_indices;
 		domains[i].B1_comp.J_col_indices = domains[i].B1.J_col_indices;
 		domains[i].B1_comp.V_values      = domains[i].B1.V_values;
-		c', '-I/home/lriha/espreso/build/bem/src', '-I/home/lriha/espreso/bem/src', '-I/home/lriha/espreso/build/catalyst/src', '-I/home/lriha/espreso/catalyst/src', '-I/home/lriha/espreso/build/composer', '-I/home/lriha/espreso/composer', '-I/home/lriha/espreso/build/assembler', '-I/home/lriha/espreso/assembler', '-I/usr/local/cuda-7.0/include', '../solver/src/SparseSolver.cpp', '-c', '-o', '/home/lriha/espreso/build/solver/src/SparseSolver.cpp.1.o']
-		../solver/src/Cluster.cpp(1248): error: expected an identifier
-		  void <() {
 
 		domains[i].B1_comp.rows = domains[i].B1.rows;
 		domains[i].B1_comp.cols = domains[i].B1.cols;
@@ -1300,50 +1297,43 @@ void Cluster::CreateSa() {
 	
 	 if (!get_kernel_from_mesh) {
 		 SparseMatrix Kernel_Sa;
-		 domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
+		 printf("Salfa\n");
 
-		 //Kernel_Sa.printMatCSR("Ker_Salfa");
+		 SparseMatrix GGt;
+
+		 GGt.MatMat(G0,'N',G0t);
+		 GGt.RemoveLower();
+		 domains[0].get_kernel_from_K(GGt, Kernel_Sa);
+
+		 SparseMatrix TSak;
+		 domains[0].get_kernel_from_K(Salfa,TSak);
+		 TSak.Clear();
+
+		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
+
+//		 Salfa.printMatCSR2("Salfa.txt");
 
 //		 SparseMatrix T1;
 //		 T1.MatMat(G0t,'N', Kernel_Sa);
 //		 SpyText(T1);
 //		 T1.printMatCSR("BlMat");
+//		 Kernel_Sa.printMatCSR2("H.txt");
 
+		 char str000[128];
 		 for (int d = 0; d < domains.size(); d++) {
 			 SparseMatrix tR;
 			 SEQ_VECTOR < eslocal > rows_inds (Kernel_Sa.cols);
 			 for (int i = 0; i < Kernel_Sa.cols; i++)
 				 rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
 			 tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
-
-			 //tR.printMatCSR("tr");
-
+			 sprintf(str000,"%s%d%s","tr",d,".txt");
+//			 tR.printMatCSR2(str000);
 			 SparseMatrix TmpR;
 			 TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
 			 domains[d].Kplus_Rb = TmpR;
 			 domains[d].Kplus_Rb.ConvertCSRToDense(0);
-
 			 //SparseMatrix T2;
 			 //T2.MatMat(domains[d].Prec, 'N', domains[d].Kplus_R);
-
-
-//			  double * AR =  new double [domains[d].Prec.rows];
-//			  double norm_AR_row,norm_AR = 0.0;
-//			 //printf("||A*Kplus_R[:,i]|| ...   \n");
-//			  for (int i = 0;i<domains[d].Kplus_R.cols;i++){
-//			    memset(AR,0,domains[d].Kplus_R.rows * sizeof(double));
-//			    domains[d].Prec.spmv_( domains[d].Prec,&(domains[d].Kplus_R.dense_values[i*domains[d].Kplus_R.rows]),AR);
-//			    norm_AR_row=0.0;
-//			    for (int j = 0; j < domains[d].Kplus_R.rows;j++){
-//			      norm_AR_row+=AR[j]*AR[j];
-//			    }
-//			 //   printf("%3.3e  ",sqrt(norm_AR_row));
-//			    norm_AR+=norm_AR_row;
-//			  }
-//			  delete [] AR;
-//			  norm_AR=sqrt(norm_AR);
-//			  printf("\n||A*Kplus_R|| = %3.9e \n",norm_AR);
-
 		 }
 
 
