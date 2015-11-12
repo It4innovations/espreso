@@ -25,12 +25,18 @@ struct BEM {
 
 struct API {
 
-	API(SparseCSRMatrix<eslocal> &Ke, ESPRESODoubleVector &rhs, ESPRESOIntVector &l2g)
-	:Ke(Ke), rhs(rhs), l2g(l2g) { };
+	API(SparseCSRMatrix<eslocal> &Ke,
+		ESPRESOStructDoubleVector &rhs,
+		ESPRESOStructMap &dirichlet,
+		ESPRESOStructIntVector &l2g,
+		ESPRESOStructIntVector &neighbourRanks)
+	:Ke(Ke), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks) { };
 
 	SparseCSRMatrix<eslocal> &Ke;
-	ESPRESODoubleVector &rhs;
-	ESPRESOIntVector &l2g;
+	ESPRESOStructDoubleVector &rhs;
+	ESPRESOStructMap &dirichlet;
+	ESPRESOStructIntVector &l2g;
+	ESPRESOStructIntVector &neighbourRanks;
 };
 
 

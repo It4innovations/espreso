@@ -15,7 +15,7 @@ namespace mesh {
 
 namespace assembler {
 	Discretization discretization = FEM;
-	Assembler assembler = Temperature;
+	Assembler assembler = LinearElasticity;
 }
 
 namespace solver {
