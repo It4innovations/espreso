@@ -852,8 +852,8 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool isThr
 			&perm[0], &nrhs,
 			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
 
-    for (MKL_INT i = 0; i < SC_out.dense_values.size(); i++)
-    	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
+    //for (MKL_INT i = 0; i < SC_out.dense_values.size(); i++)
+    //	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
 
     if ( error != 0 )
 	{
@@ -883,6 +883,8 @@ void SparseSolver::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool isThr
     SC_out.type = 'G';
 
     SC_out.ConvertDenseToCSR(1);
+    SC_out.RemoveLower();
+    SC_out.type = 'S';
 
     if (msglvl == 1)
     	SpyText(SC_out);
