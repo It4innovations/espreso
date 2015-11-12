@@ -36,7 +36,7 @@ size_t Assembler<BEM>::rank()
 template<>
 size_t Assembler<API>::rank()
 {
-	return 1;
+	return esconfig::MPIrank;
 }
 
 template<>
@@ -54,7 +54,7 @@ size_t Assembler<BEM>::size()
 template<>
 size_t Assembler<API>::size()
 {
-	return 1;
+	return esconfig::MPIsize;
 }
 
 }

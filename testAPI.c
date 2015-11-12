@@ -75,6 +75,8 @@ int main(int argc, char** argv)
 //
 //	ESPRESOFree(stiffnessMatrix);
 
+	ESPRESOFinalize();
+
 	MPI_Finalize();
 }
 

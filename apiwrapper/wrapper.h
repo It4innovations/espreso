@@ -9,16 +9,19 @@
 #include "esassemblers.h"
 
 struct ESPRESOStructMat {
+	ESPRESOStructMat(SparseCSRMatrix<eslocal> *data): data(data) {};
+	~ESPRESOStructMat() { delete data; }
+
 	SparseCSRMatrix<eslocal> *data;
 };
 
 struct ESPRESOStructFETIIntance {
-	assembler::API *data;
+	assembler::API data;
 };
 
 struct DataHolder {
-	static std::list<ESPRESOStructMat> matrices;
-	static std::list<ESPRESOFETIInstance> instances;
+	static std::list<ESPRESOStructMat*> matrices;
+	static std::list<ESPRESOFETIInstance*> instances;
 	static MPI_Comm communicator;
 };
 

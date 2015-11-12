@@ -3,8 +3,8 @@
 
 using namespace assembler;
 
-std::list<ESPRESOStructMat> DataHolder::matrices;
-std::list<ESPRESOFETIInstance> DataHolder::instances;
+std::list<ESPRESOStructMat*> DataHolder::matrices;
+std::list<ESPRESOFETIInstance*> DataHolder::instances;
 MPI_Comm DataHolder::communicator;
 
 int ESPRESOFinalize();
@@ -39,7 +39,10 @@ int ESPRESOCreateMatrixElemental(
 		}
 	}
 
-	std::cout << matrix;
+	ESPRESOStructMat *holder = new ESPRESOStructMat(new SparseCSRMatrix<eslocal>(matrix));
+
+	DataHolder::matrices.push_back(holder);
+	stiffnessMatrix = &DataHolder::matrices.back();
 	return 0;
 }
 
@@ -95,11 +98,11 @@ int ESPRESODestroy(void *data)
 
 int ESPRESOFinalize()
 {
-//	std::list<Assembler<API>*>::iterator it;
-//	for (it = DataHolder::assemblers.begin(); it != DataHolder::assemblers.end(); ++it) {
-//		delete *it;
-//	}
-//	DataHolder::assemblers.clear();
+	std::list<ESPRESOStructMat*>::iterator it;
+	for (it = DataHolder::matrices.begin(); it != DataHolder::matrices.end(); ++it) {
+		delete *it;
+	}
+	DataHolder::matrices.clear();
 	return 0;
 }
 
