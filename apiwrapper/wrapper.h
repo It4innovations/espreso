@@ -16,12 +16,15 @@ struct ESPRESOStructMat {
 };
 
 struct ESPRESOStructFETIIntance {
-	assembler::API data;
+	ESPRESOStructFETIIntance(assembler::LinearElasticity<assembler::API> *data): data(data) {};
+	~ESPRESOStructFETIIntance() { delete data; }
+
+	assembler::LinearElasticity<assembler::API> *data;
 };
 
 struct DataHolder {
 	static std::list<ESPRESOStructMat*> matrices;
-	static std::list<ESPRESOFETIInstance*> instances;
+	static std::list<ESPRESOStructFETIIntance*> instances;
 	static MPI_Comm communicator;
 };
 

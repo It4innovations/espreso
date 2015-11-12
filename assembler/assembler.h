@@ -30,13 +30,14 @@ struct API {
 		ESPRESOStructMap &dirichlet,
 		ESPRESOStructIntVector &l2g,
 		ESPRESOStructIntVector &neighbourRanks)
-	:K(K), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks) { };
+	:K(K), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
 
 	SparseCSRMatrix<eslocal> &K;
 	ESPRESOStructDoubleVector &rhs;
 	ESPRESOStructMap &dirichlet;
 	ESPRESOStructIntVector &l2g;
 	ESPRESOStructIntVector &neighbourRanks;
+	eslocal indexing;
 };
 
 

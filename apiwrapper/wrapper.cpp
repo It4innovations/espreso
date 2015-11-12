@@ -4,8 +4,10 @@
 using namespace assembler;
 
 std::list<ESPRESOStructMat*> DataHolder::matrices;
-std::list<ESPRESOFETIInstance*> DataHolder::instances;
+std::list<ESPRESOStructFETIIntance*> DataHolder::instances;
 MPI_Comm DataHolder::communicator;
+
+using namespace assembler;
 
 int ESPRESOFinalize();
 
@@ -42,7 +44,7 @@ int ESPRESOCreateMatrixElemental(
 	ESPRESOStructMat *holder = new ESPRESOStructMat(new SparseCSRMatrix<eslocal>(matrix));
 
 	DataHolder::matrices.push_back(holder);
-	stiffnessMatrix = &DataHolder::matrices.back();
+	*stiffnessMatrix = DataHolder::matrices.back();
 	return 0;
 }
 
@@ -79,6 +81,20 @@ int ESPRESOPrepareFETIInstance(
 	ESPRESOIntVector *neighbourRanks,
 	ESPRESOFETIInstance *instance)
 {
+//	std::list<ESPRESOStructMat*>::iterator it;
+//	for (it = DataHolder::matrices.begin(); it != DataHolder::matrices.end(); ++it) {
+//		if (*it == *stiffnessMatrix) {
+//			std::cout << "MATRIX found\n";
+//		}
+//	}
+
+	API api(*(*stiffnessMatrix)->data, **rhs, **dirichlet, **l2g, **neighbourRanks);
+	ESPRESOStructFETIIntance *holder = new ESPRESOStructFETIIntance(new LinearElasticity<API>(api));
+
+	holder->data->init();
+
+	DataHolder::instances.push_back(holder);
+	*instance = DataHolder::instances.back();
 	return 0;
 }
 
@@ -87,6 +103,14 @@ int ESPRESOSolveFETI(
 	esint size,
 	double *values)
 {
+//	std::list<ESPRESOStructFETIIntance*>::iterator it;
+//	for (it = DataHolder::instances.begin(); it != DataHolder::instances.end(); ++it) {
+//		if (*it == *instance) {
+//			std::cout << "HURAA\n";
+//		}
+//	}
+
+	(*instance)->data->solve();
 	return 0;
 }
 
