@@ -19,9 +19,7 @@ Gluing<TInput>::Gluing(TInput &input): Assembler<TInput>(input) {
 template <>
 void Gluing<API>::computeSubdomainGluing()
 {
-
-	esint index_offset = 0;
-	esint DOFs		   = 3;
+	esint index_offset = _input.indexing;
 
 //	std::map <esint, double> dirichlet;
 //	for (esint i = 0; i < _input.dirichlet.size; i++)
@@ -61,17 +59,11 @@ void Gluing<API>::computeSubdomainGluing()
 	}
 
 	for (eslocal d = 0; d < this->subdomains(); d++) {
-		gB[d].resize(lambda_count_B1, _input.l2g.size * DOFs); //TODO: _K.rows or _K.cols
+		gB[d].resize(lambda_count_B1, _input.l2g.size); //TODO: _K.rows or _K.cols
 		_B1[d] = gB[d];
 
-		lB[d].resize(lambda_count_B0, _input.l2g.size * DOFs ); //TODO: _K.rows or _K.cols
+		lB[d].resize(lambda_count_B0, _input.l2g.size); //TODO: _K.rows or _K.cols
 		_B0[d] = lB[d];
-	}
-
-	if (esconfig::MPIrank == 0) {
-		std::ofstream os("B1_API.txt");
-		os << _B1[0];
-		os.close();
 	}
 }
 
@@ -508,15 +500,12 @@ void Gluing<TInput>::computeSubdomainGluing()
 	std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
 	for (size_t i = 0; i < localBoundaries.size(); i++) {
 
-
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
-					if (esconfig::MPIrank) {
-						std::cout << i << "\n";
- 					}
+
 
 					double dirichlet_value = property.at(i);
 
@@ -604,12 +593,6 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
 		_B0[d] = lB[d];
-	}
-
-	if (esconfig::MPIrank == 0) {
-		std::ofstream os("B1_FEM.txt");
-		os << _B1[0];
-		os.close();
 	}
 }
 
