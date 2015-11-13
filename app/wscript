@@ -5,7 +5,6 @@ APP_CUDA = APP + "_cuda"
 APP_PARDISO = APP + "_pardiso"
 APP_PARDISO_MKL = APP + "_pardiso_mkl"
 APP_MUMPS = APP + "_mumps"
-
 SOLVER = "essolver"
 SOLVER_MIC = SOLVER + "_mic"
 SOLVER_CUDA = SOLVER + "_cuda"
@@ -44,6 +43,10 @@ source_files = (
     "factory/factory.cpp",
 )
 
+apiwrapper_files = (
+    "apiwrapper/wrapper.cpp",
+)
+
 def configure(ctx):
     ctx.setenv(APP, ctx.all_envs[""].derive())
 
@@ -61,7 +64,6 @@ def configure(ctx):
         mkl = "mkl_intel_lp64"
         metis = "metis32"
     if ctx.env.ESLOCAL == 64:
-        # TODO: 64b variant of solver is not working!
         mkl = "mkl_intel_ilp64"
         metis = "metis64"
     if ctx.options.titan:
@@ -90,11 +92,11 @@ def configure(ctx):
         ctx.env.append_value("STLIB", [ "ifcore" ])
 
     ctx.setenv(APP_PARDISO_MKL, ctx.all_envs[APP].derive())
-    if ctx.options.titan:    
+    if ctx.options.titan:
         ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-	ctx.env.append_unique("LIB", [ "cudart", "cublas" ])
+        ctx.env.append_unique("LIB", [ "cudart", "cublas" ])
         ctx.env.append_unique("STLIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "irng", "svml" ])
-    else:    
+    else:
         ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
 
@@ -148,6 +150,13 @@ def build(ctx):
         target          = "decomposer",
         use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
         install_path    = ctx.ROOT
+    )
+
+    ctx.lib(
+        source          = apiwrapper_files,
+        target          = "espreso",
+        use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        install_path    = ctx.LIBRARIES
     )
 
 

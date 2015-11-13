@@ -74,7 +74,6 @@ def configure(ctx):
     ctx.recurse("assembler")
     ctx.recurse("catalyst")
     ctx.recurse("app")
-    ctx.recurse("apiwrapper")
 
 
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
@@ -227,7 +226,6 @@ def build(ctx):
     if ctx.options.catalyst:
         ctx.recurse("catalyst")
     ctx.recurse("app")
-    ctx.recurse("apiwrapper")
 
 
 
