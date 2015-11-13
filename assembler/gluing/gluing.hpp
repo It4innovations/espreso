@@ -68,8 +68,11 @@ void Gluing<API>::computeSubdomainGluing()
 		_B0[d] = lB[d];
 	}
 
-
-
+	if (esconfig::MPIrank == 0) {
+		std::ofstream os("B1_API.txt");
+		os << _B1[0];
+		os.close();
+	}
 }
 
 template <>
@@ -511,6 +514,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
+					if (esconfig::MPIrank) {
+						std::cout << i << "\n";
+ 					}
 
 					double dirichlet_value = property.at(i);
 
@@ -598,6 +604,12 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
 		_B0[d] = lB[d];
+	}
+
+	if (esconfig::MPIrank == 0) {
+		std::ofstream os("B1_FEM.txt");
+		os << _B1[0];
+		os.close();
 	}
 }
 

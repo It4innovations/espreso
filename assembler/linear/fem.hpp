@@ -170,16 +170,23 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 
 	this->C(Ce);
 
+	std::ofstream osK("Ke.txt");
+
+
 	const std::vector<eslocal> &partition = _input.mesh.getPartition();
 	const std::vector<mesh::Element*> &elements = _input.mesh.getElements();
 	for (eslocal i = partition[part]; i < partition[part + 1]; i++) {
 		KeMefe(Ke, Me, fe, Ce, elements[i], part, dynamics);
+		osK << Ke;
 		integrate(Ke, Me, fe, _K, _M, _f[part], elements[i], dynamics);
 	}
+
+	osK.close();
 
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	SparseCSRMatrix<eslocal> csrM = _M;
+
 	this->_K[part] = csrK;
 	this->_M[part] = csrM;
 }
@@ -224,6 +231,22 @@ void Linear<FEM>::RHS()
 			}
 		}
 	}
+
+	if (esconfig::MPIrank != 0) {
+		return;
+	}
+
+	std::ofstream os("F_FEM.txt");
+	eslocal index = 1;
+	for (size_t i = 0; i < _f[0].size(); i++) {
+		os << _f[0][i] << " ";
+		if (index % 3 == 0) {
+			os << std::endl;
+		}
+		index++;
+	}
+	os.close();
+
 }
 
 template <>

@@ -111,6 +111,7 @@ int ESPRESOSolveFETI(
 //	}
 
 	(*instance)->data->solve();
+	(*instance)->data->post_solve_update();
 	return 0;
 }
 
