@@ -1,8 +1,11 @@
 
 #include "factory.h"
 
-static void load(mesh::Mesh *mesh, int argc, char **argv)
+using namespace assembler;
+
+static mesh::Mesh* getMesh(int argc, char **argv)
 {
+	mesh::Mesh *mesh = new mesh::Mesh(esconfig::MPIrank, esconfig::MPIsize);
 	switch (esconfig::mesh::input) {
 
 	case esconfig::mesh::ANSYS: {
@@ -28,11 +31,46 @@ static void load(mesh::Mesh *mesh, int argc, char **argv)
 		loader.load(*mesh);
 		break;
 	}
+	}
+	return mesh;
+}
 
+template<class TDiscretization>
+static AssemblerBase* createAssembler(TDiscretization discretization)
+{
+	switch (esconfig::assembler::assembler) {
+
+	case esconfig::assembler::LinearElasticity: {
+		return new LinearElasticity<TDiscretization>(discretization);
+	}
+	case esconfig::assembler::Temperature: {
+		return new LinearElasticity<TDiscretization>(discretization);
+	}
+	default:
+		std::cerr << "Unknown assembler.\n";
+		exit(EXIT_FAILURE);
 	}
 }
 
-using namespace assembler;
+static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface)
+{
+	switch (esconfig::assembler::discretization) {
+
+	case esconfig::assembler::FEM: {
+		FEM fem(*mesh);
+		return createAssembler<FEM>(fem);
+	}
+	case esconfig::assembler::BEM: {
+		surface = new mesh::SurfaceMesh(*mesh);
+		surface->computeFixPoints(esconfig::mesh::fixPoints);
+		BEM bem(*mesh, *surface);
+		return createAssembler<BEM>(bem);
+	}
+	default:
+		std::cerr << "Unknown discretization.\n";
+		exit(EXIT_FAILURE);
+	}
+}
 
 Factory::Factory(int argc, char **argv)
 :_assembler(NULL), _mesh(NULL), _surface(NULL)
@@ -40,50 +78,8 @@ Factory::Factory(int argc, char **argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
-	_mesh = new mesh::Mesh(esconfig::MPIrank, esconfig::MPIsize);
-	load(_mesh, argc, argv);
-
-	switch (esconfig::assembler::assembler) {
-
-	case esconfig::assembler::LinearElasticity: {
-		switch (esconfig::assembler::discretization) {
-
-		case esconfig::assembler::FEM: {
-			FEM fem(*_mesh);
-			_assembler = new LinearElasticity<FEM>(fem);
-			break;
-		}
-		case esconfig::assembler::BEM: {
-			_surface = new mesh::SurfaceMesh(*_mesh);
-			_surface->computeFixPoints(esconfig::mesh::fixPoints);
-			BEM bem(*_mesh, *_surface);
-			_assembler = new LinearElasticity<BEM>(bem);
-			break;
-		}
-		}
-		break;
-	}
-
-	case esconfig::assembler::Temperature: {
-		switch (esconfig::assembler::discretization) {
-
-		case esconfig::assembler::FEM: {
-			FEM fem(*_mesh);
-			_assembler = new Temperature<FEM>(fem);
-			break;
-		}
-		case esconfig::assembler::BEM: {
-			_surface = new mesh::SurfaceMesh(*_mesh);
-			_surface->computeFixPoints(esconfig::mesh::fixPoints);
-			BEM bem(*_mesh, *_surface);
-			_assembler = new Temperature<BEM>(bem);
-			break;
-		}
-		}
-		break;
-	}
-	}
-
+	_mesh = getMesh(argc, argv);
+	_assembler = getAssembler(_mesh, _surface);
 }
 
 Factory::~Factory()

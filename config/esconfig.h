@@ -16,12 +16,12 @@ namespace mesh {
 	enum Input { ANSYS, OPENFOAM, ESDATA_IN, GENERATOR };
 	extern Input input;
 
-	enum Output { VTK_FULL, VTK_SURFACE, ESDATA_OUT };
+	enum Output { VTK_FULL, VTK_SURFACE, ESDATA_OUT }; // only VTK_FULL is working
 	extern Output output;
 }
 
 namespace assembler {
-	enum Discretization { FEM, BEM };
+	enum Discretization { FEM, BEM, API };
 	extern Discretization discretization;
 
 	enum Assembler { LinearElasticity, Temperature };

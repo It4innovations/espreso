@@ -19,11 +19,10 @@ public:
 
 private:
 	assembler::AssemblerBase *_assembler;
+	std::vector<std::vector<double> > _solution;
 
 	mesh::Mesh *_mesh;
 	mesh::SurfaceMesh *_surface;
-
-	std::vector<std::vector<double> > _solution;
 };
 
 
