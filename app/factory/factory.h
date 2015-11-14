@@ -13,6 +13,7 @@ public:
 	Factory(int argc, char **argv);
 
 	void solve( eslocal steps );
+	void store(const char *file);
 
 	~Factory();
 
@@ -21,6 +22,8 @@ private:
 
 	mesh::Mesh *_mesh;
 	mesh::SurfaceMesh *_surface;
+
+	std::vector<std::vector<double> > _solution;
 };
 
 

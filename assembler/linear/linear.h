@@ -15,14 +15,13 @@ public:
 	void init();
 	void pre_solve_update();
 	void post_solve_update();
-	void solve();
+	void solve(std::vector<std::vector<double> > &solution);
 	void finalize();
 
 protected:
 	Linear(TInput &input): Gluing<TInput>(input) {};
 
 	// FEM specific
-	virtual size_t DOFs() = 0;
 	virtual void inertia(std::vector<double> &inertia) = 0;
 	virtual void C(DenseMatrix &C) = 0;
 	virtual double CP() = 0;
@@ -33,17 +32,12 @@ protected:
 	// RHS
 	std::vector<std::vector<double> > _f;
 
-	// Result
-	vector<vector<double> > _prim_solution;
-
 	LinearSolver _lin_solver;
 
 private:
 	void KMf(size_t part, bool dynamics);
 	void RHS();
 	void initSolver();
-	void saveResult();
-
 
 	void KeMefe(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,

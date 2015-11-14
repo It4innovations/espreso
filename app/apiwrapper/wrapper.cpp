@@ -110,8 +110,10 @@ int ESPRESOSolveFETI(
 //		}
 //	}
 
-	(*instance)->data->solve();
-	(*instance)->data->post_solve_update();
+	std::vector<std::vector<double> > solution(1);
+	solution[0] = std::vector<double>(values, values + size);
+	(*instance)->data->solve(solution);
+	memcpy(values, &solution[0][0], size);
 	return 0;
 }
 

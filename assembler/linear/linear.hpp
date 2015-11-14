@@ -81,22 +81,22 @@ void Linear<TInput>::pre_solve_update()
 template <class TInput>
 void Linear<TInput>::post_solve_update()
 {
-	TimeEvent timeSaveVTK("Solver - Save VTK");
-	timeSaveVTK.AddStart();
-
-	saveResult();
-
-	timeSaveVTK.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeSaveVTK);
+//	TimeEvent timeSaveVTK("Solver - Save VTK");
+//	timeSaveVTK.AddStart();
+//
+//	saveResult();
+//
+//	timeSaveVTK.AddEndWithBarrier();
+//	this->_timeStatistics.AddEvent(timeSaveVTK);
 }
 
 template <class TInput>
-void Linear<TInput>::solve()
+void Linear<TInput>::solve(std::vector<std::vector<double> > &solution)
 {
 	TimeEvent timeLSrun("Linear Solver - runtime");
 	timeLSrun.AddStart();
 
-	_lin_solver.Solve(_f, _prim_solution);
+	_lin_solver.Solve(_f, solution);
 
 	timeLSrun.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeLSrun);

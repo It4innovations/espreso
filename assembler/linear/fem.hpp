@@ -227,11 +227,4 @@ void Linear<FEM>::RHS()
 	}
 }
 
-template <>
-void Linear<FEM>::saveResult()
-{
-	esoutput::VTK_Full vtk(_input.mesh, "mesh");
-	vtk.store(_prim_solution, this->DOFs(), 0.95, 0.9);
-}
-
 }

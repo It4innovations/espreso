@@ -90,13 +90,6 @@ void Linear<BEM>::RHS()
 }
 
 template <>
-void Linear<BEM>::saveResult()
-{
-	esoutput::VTK_Full vtk(_input.surface, "surface");
-	vtk.store(_prim_solution, this->DOFs(), 0.95, 0.9);
-}
-
-template <>
 void Linear<BEM>::initSolver()
 {
 	_lin_solver.init(

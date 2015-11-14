@@ -16,12 +16,6 @@ void Linear<API>::RHS()
 }
 
 template <>
-void Linear<API>::saveResult()
-{
-
-}
-
-template <>
 void Linear<API>::initSolver()
 {
 	_lin_solver.init(

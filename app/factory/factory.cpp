@@ -103,12 +103,29 @@ void Factory::solve(eslocal steps)
 
 	for (int i = 0; i < steps; i++) {
 		_assembler->pre_solve_update();
-		_assembler->solve();
+		_assembler->solve(_solution);
 		_assembler->post_solve_update();
 	}
 
 	_assembler->finalize();
 }
 
+void Factory::store(const char *file)
+{
+	switch (esconfig::assembler::discretization){
+
+	case esconfig::assembler::FEM: {
+		esoutput::VTK_Full vtk(*_mesh, file);
+		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
+		break;
+	}
+
+	case esconfig::assembler::BEM: {
+		esoutput::VTK_Full vtk(*_surface, "surface");
+		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
+		break;
+	}
+	}
+}
 
 
