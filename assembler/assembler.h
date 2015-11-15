@@ -23,6 +23,29 @@ struct BEM {
 	mesh::SurfaceMesh &surface;
 };
 
+// Design for testing
+struct APIHolder {
+	SparseCSRMatrix<eslocal> *K;
+	ESPRESOStructDoubleVector *rhs;
+	ESPRESOStructMap *dirichlet;
+	ESPRESOStructIntVector *l2g;
+	ESPRESOStructIntVector *neighbourRanks;
+	eslocal indexing;
+
+	~APIHolder() {
+		delete K;
+		delete rhs->values;
+		delete rhs;
+		delete dirichlet->indices;
+		delete dirichlet->values;
+		delete dirichlet;
+		delete l2g->values;
+		delete l2g;
+		delete neighbourRanks->values;
+		delete neighbourRanks;
+	}
+};
+
 struct API {
 
 	API(SparseCSRMatrix<eslocal> &K,
@@ -31,6 +54,9 @@ struct API {
 		ESPRESOStructIntVector &l2g,
 		ESPRESOStructIntVector &neighbourRanks)
 	:K(K), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
+
+	API(APIHolder &holder): K(*holder.K), rhs(*holder.rhs), dirichlet(*holder.dirichlet),
+		l2g(*holder.l2g), neighbourRanks(*holder.neighbourRanks), indexing(holder.indexing) { };
 
 	SparseCSRMatrix<eslocal> &K;
 	ESPRESOStructDoubleVector &rhs;
@@ -51,6 +77,7 @@ public:
 	virtual void finalize() = 0;
 
 	virtual size_t DOFs() = 0;
+	virtual void fillAPIHolder(APIHolder *holder) = 0;
 
 	virtual ~AssemblerBase() {};
 };

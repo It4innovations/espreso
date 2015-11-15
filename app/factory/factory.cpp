@@ -52,7 +52,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 }
 
-static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface)
+static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface, assembler::APIHolder *apiHolder)
 {
 	switch (esconfig::assembler::discretization) {
 
@@ -66,6 +66,16 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface)
 		BEM bem(*mesh, *surface);
 		return createAssembler<BEM>(bem);
 	}
+	case esconfig::assembler::API: {
+		apiHolder = new APIHolder();
+		esconfig::assembler::discretization = esconfig::assembler::FEM;
+		assembler::AssemblerBase * assembler = getAssembler(mesh, surface, apiHolder);
+		esconfig::assembler::discretization = esconfig::assembler::API;
+		assembler->fillAPIHolder(apiHolder);
+		API api(*apiHolder);
+		delete assembler;
+		return createAssembler<API>(api);
+	}
 	default:
 		std::cerr << "Unknown discretization.\n";
 		exit(EXIT_FAILURE);
@@ -73,13 +83,13 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface)
 }
 
 Factory::Factory(int argc, char **argv)
-:_assembler(NULL), _mesh(NULL), _surface(NULL)
+:_assembler(NULL), _mesh(NULL), _surface(NULL), _apiHolder(NULL)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
 	_mesh = getMesh(argc, argv);
-	_assembler = getAssembler(_mesh, _surface);
+	_assembler = getAssembler(_mesh, _surface, _apiHolder);
 }
 
 Factory::~Factory()
@@ -90,6 +100,9 @@ Factory::~Factory()
 	}
 	if (_surface != NULL) {
 		delete _surface;
+	}
+	if (_apiHolder != NULL) {
+		delete _apiHolder;
 	}
 }
 
@@ -104,20 +117,28 @@ void Factory::solve(eslocal steps)
 	}
 
 	_assembler->finalize();
+
+	store();
 }
 
-void Factory::store(const char *file)
+void Factory::store()
 {
 	switch (esconfig::assembler::discretization){
 
 	case esconfig::assembler::FEM: {
-		esoutput::VTK_Full vtk(*_mesh, file);
+		esoutput::VTK_Full vtk(*_mesh, "mesh");
 		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
 		break;
 	}
 
 	case esconfig::assembler::BEM: {
 		esoutput::VTK_Full vtk(*_surface, "surface");
+		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
+		break;
+	}
+
+	case esconfig::assembler::API: {
+		esoutput::VTK_Full vtk(*_mesh, "api");
 		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
 		break;
 	}

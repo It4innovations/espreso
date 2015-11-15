@@ -7,7 +7,7 @@ int MPIrank = 0;
 int MPIsize = 1;
 
 namespace mesh {
-	size_t subdomains = 4;
+	size_t subdomains = 1;
 	size_t fixPoints = 4;
 	Input input = GENERATOR;
 	Output output = VTK_FULL;

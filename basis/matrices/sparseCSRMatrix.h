@@ -19,6 +19,9 @@ class SparseCSRMatrix: public Matrix
 
 public:
 
+	template<typename Tindices>
+	friend std::ostream& operator<<(std::ostream& os, const SparseCSRMatrix<Tindices> &m);
+
 	SparseCSRMatrix();
 	SparseCSRMatrix(size_t rows, size_t columns);
 

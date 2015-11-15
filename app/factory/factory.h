@@ -13,16 +13,18 @@ public:
 	Factory(int argc, char **argv);
 
 	void solve( eslocal steps );
-	void store(const char *file);
 
 	~Factory();
 
 private:
+	void store();
+
 	assembler::AssemblerBase *_assembler;
 	std::vector<std::vector<double> > _solution;
 
 	mesh::Mesh *_mesh;
 	mesh::SurfaceMesh *_surface;
+	assembler::APIHolder *_apiHolder;
 };
 
 
