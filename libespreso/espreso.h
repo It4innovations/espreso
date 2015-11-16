@@ -36,7 +36,7 @@ struct ESPRESOStructMap {
 extern "C" {
 #endif
 
-typedef struct ESPRESOStructMat* ESPRESOMat;
+typedef struct ESPRESOStructMatrix* ESPRESOMatrix;
 
 typedef struct ESPRESOStructIntVector* ESPRESOIntVector;
 typedef struct ESPRESOStructDoubleVector* ESPRESODoubleVector;
@@ -44,10 +44,12 @@ typedef struct ESPRESOStructMap* ESPRESOMap;
 
 typedef struct ESPRESOStructFETIIntance* ESPRESOFETIInstance;
 
-
+////// Avoid init and finalize?
 int ESPRESOInit(
 	MPI_Comm communicator
 );
+int ESPRESOFinalize();
+///////////////////////////////
 
 int ESPRESOCreateMatrixElemental(
 	esint n,
@@ -55,7 +57,7 @@ int ESPRESOCreateMatrixElemental(
 	esint *eltptr,
 	esint *eltvar,
 	double *values,
-	ESPRESOMat *stiffnessMatrix
+	ESPRESOMatrix *stiffnessMatrix
 );
 
 int ESPRESOCreateDoubleVector(
@@ -78,7 +80,7 @@ int ESPRESOCreateMap(
 );
 
 int ESPRESOPrepareFETIInstance(
-	ESPRESOMat *stiffnessMatrix,
+	ESPRESOMatrix *stiffnessMatrix,
 	ESPRESODoubleVector *rhs,
 	ESPRESOMap *dirichlet,
 	ESPRESOIntVector *l2g,
@@ -95,8 +97,6 @@ int ESPRESOSolveFETI(
 int ESPRESODestroy(
 	void *data
 );
-
-int ESPRESOFinalize();
 
 
 #ifdef __cplusplus

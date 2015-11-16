@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 	}
 	file.close();
 
-	ESPRESOMat K;
+	ESPRESOMatrix K;
 	ESPRESOCreateMatrixElemental(n, nelt, eltptr, eltvar, values, &K);
 
 	ESPRESODoubleVector rhs = new ESPRESOStructDoubleVector();
@@ -139,12 +139,17 @@ int main(int argc, char** argv)
 	file.close();
 
 	ESPRESOFETIInstance instance;
-	ESPRESOPrepareFETIInstance(&K, &rhs, &dirichlet, &l2g, &neighbourRanks, &instance);
+	//ESPRESOPrepareFETIInstance(&K, &rhs, &dirichlet, &l2g, &neighbourRanks, &instance);
 
 	ESPRESODoubleVector solution = new ESPRESOStructDoubleVector();
 	solution->size = rhs->size;
 	solution->values = new double[solution->size];
-	ESPRESOSolveFETI(&instance, solution->size, solution->values);
+	//ESPRESOSolveFETI(&instance, solution->size, solution->values);
+
+	ESPRESODoubleVector vvv;
+	ESPRESOCreateDoubleVector(rhs->size, rhs->values, &vvv);
+
+	ESPRESODestroy(vvv);
 
 	ESPRESOFinalize();
 

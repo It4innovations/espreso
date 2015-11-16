@@ -3,7 +3,10 @@
 
 using namespace assembler;
 
-std::list<ESPRESOStructMat*> DataHolder::matrices;
+std::list<ESPRESOStructDoubleVector*> DataHolder::doubleVectors;
+std::list<ESPRESOStructIntVector*> DataHolder::intVectors;
+std::list<ESPRESOStructMap*> DataHolder::maps;
+std::list<ESPRESOStructMatrix*> DataHolder::matrices;
 std::list<ESPRESOStructFETIIntance*> DataHolder::instances;
 MPI_Comm DataHolder::communicator;
 
@@ -25,7 +28,7 @@ int ESPRESOCreateMatrixElemental(
 	esint *eltptr,
 	esint *eltvar,
 	double *values,
-	ESPRESOMat *stiffnessMatrix)
+	ESPRESOMatrix *stiffnessMatrix)
 {
 	esint indexing = eltptr[0];
 
@@ -41,9 +44,8 @@ int ESPRESOCreateMatrixElemental(
 		}
 	}
 
-	ESPRESOStructMat *holder = new ESPRESOStructMat(new SparseCSRMatrix<eslocal>(matrix));
-
-	DataHolder::matrices.push_back(holder);
+	DataHolder::matrices.push_back(new ESPRESOStructMatrix());
+	DataHolder::matrices.back()->data = matrix;
 	*stiffnessMatrix = DataHolder::matrices.back();
 	return 0;
 }
@@ -53,6 +55,11 @@ int ESPRESOCreateDoubleVector(
 	double *values,
 	ESPRESODoubleVector *vector)
 {
+	DataHolder::doubleVectors.push_back(new ESPRESOStructDoubleVector());
+	DataHolder::doubleVectors.back()->size = size;
+	DataHolder::doubleVectors.back()->values = new double[size];
+	memcpy(DataHolder::doubleVectors.back()->values, values, size * sizeof(double));
+	*vector = DataHolder::doubleVectors.back();
 	return 0;
 }
 
@@ -61,6 +68,11 @@ int ESPRESOCreateIntVector(
 	esint *values,
 	ESPRESOIntVector *vector)
 {
+	DataHolder::intVectors.push_back(new ESPRESOStructIntVector());
+	DataHolder::intVectors.back()->size = size;
+	DataHolder::intVectors.back()->values = new esint[size];
+	memcpy(DataHolder::intVectors.back()->values, values, size * sizeof(esint));
+	*vector = DataHolder::intVectors.back();
 	return 0;
 }
 
@@ -70,30 +82,28 @@ int ESPRESOCreateMap(
 	double *values,
 	ESPRESOMap *vector)
 {
+	DataHolder::maps.push_back(new ESPRESOStructMap());
+	DataHolder::maps.back()->size = size;
+	DataHolder::maps.back()->indices = new esint[size];
+	DataHolder::maps.back()->values = new double[size];
+	memcpy(DataHolder::maps.back()->indices, indices, size * sizeof(esint));
+	memcpy(DataHolder::maps.back()->values, values, size * sizeof(double));
+	*vector = DataHolder::maps.back();
 	return 0;
 }
 
 int ESPRESOPrepareFETIInstance(
-	ESPRESOMat *stiffnessMatrix,
+	ESPRESOMatrix *stiffnessMatrix,
 	ESPRESODoubleVector *rhs,
 	ESPRESOMap *dirichlet,
 	ESPRESOIntVector *l2g,
 	ESPRESOIntVector *neighbourRanks,
 	ESPRESOFETIInstance *instance)
 {
-//	std::list<ESPRESOStructMat*>::iterator it;
-//	for (it = DataHolder::matrices.begin(); it != DataHolder::matrices.end(); ++it) {
-//		if (*it == *stiffnessMatrix) {
-//			std::cout << "MATRIX found\n";
-//		}
-//	}
+	API api((*stiffnessMatrix)->data, **rhs, **dirichlet, **l2g, **neighbourRanks);
+	DataHolder::instances.push_back(new ESPRESOStructFETIIntance(api));
 
-	API api(*(*stiffnessMatrix)->data, **rhs, **dirichlet, **l2g, **neighbourRanks);
-	ESPRESOStructFETIIntance *holder = new ESPRESOStructFETIIntance(new LinearElasticity<API>(api));
-
-	holder->data->init();
-
-	DataHolder::instances.push_back(holder);
+	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
 	return 0;
 }
@@ -103,33 +113,84 @@ int ESPRESOSolveFETI(
 	esint size,
 	double *values)
 {
-//	std::list<ESPRESOStructFETIIntance*>::iterator it;
-//	for (it = DataHolder::instances.begin(); it != DataHolder::instances.end(); ++it) {
-//		if (*it == *instance) {
-//			std::cout << "HURAA\n";
-//		}
-//	}
-
 	std::vector<std::vector<double> > solution(1);
 	solution[0] = std::vector<double>(values, values + size);
-	(*instance)->data->solve(solution);
+	(*instance)->data.solve(solution);
 	memcpy(values, &solution[0][0], size);
 	return 0;
 }
 
 int ESPRESODestroy(void *data)
 {
-	// TODO: implement me
+	for (
+		std::list<ESPRESOStructDoubleVector*>::iterator it = DataHolder::doubleVectors.begin();
+		it != DataHolder::doubleVectors.end();
+		++it
+	) {
+		if (*it == data) {
+			delete (*it)->values;
+			delete *it;
+			DataHolder::doubleVectors.erase(it);
+			return 0;
+		}
+	}
+
+	for (
+		std::list<ESPRESOStructIntVector*>::iterator it = DataHolder::intVectors.begin();
+		it != DataHolder::intVectors.end();
+		++it
+	) {
+		if (*it == data) {
+			delete (*it)->values;
+			delete *it;
+			DataHolder::intVectors.erase(it);
+			return 0;
+		}
+	}
+
+	for (
+		std::list<ESPRESOStructMap*>::iterator it = DataHolder::maps.begin();
+		it != DataHolder::maps.end();
+		++it
+	) {
+		if (*it == data) {
+			delete (*it)->indices;
+			delete (*it)->values;
+			delete *it;
+			DataHolder::maps.erase(it);
+			return 0;
+		}
+	}
+
+	for (
+		std::list<ESPRESOStructMatrix*>::iterator it = DataHolder::matrices.begin();
+		it != DataHolder::matrices.end();
+		++it
+	) {
+		if (*it == data) {
+			delete *it;
+			DataHolder::matrices.erase(it);
+			return 0;
+		}
+	}
+
+	for (
+		std::list<ESPRESOStructFETIIntance*>::iterator it = DataHolder::instances.begin();
+		it != DataHolder::instances.end();
+		++it
+	) {
+		if (*it == data) {
+			delete *it;
+			DataHolder::instances.erase(it);
+			return 0;
+		}
+	}
+
 	return 0;
 }
 
 int ESPRESOFinalize()
 {
-	std::list<ESPRESOStructMat*>::iterator it;
-	for (it = DataHolder::matrices.begin(); it != DataHolder::matrices.end(); ++it) {
-		delete *it;
-	}
-	DataHolder::matrices.clear();
 	return 0;
 }
 
