@@ -87,6 +87,7 @@ int FETI4ICreateMap(
 }
 
 int FETI4IPrepareFETIInstance(
+	FETI4IInt *settings,
 	FETI4IMatrix *stiffnessMatrix,
 	FETI4IDoubleVector *rhs,
 	FETI4IMap *dirichlet,
@@ -103,6 +104,7 @@ int FETI4IPrepareFETIInstance(
 }
 
 int FETI4ISolveFETI(
+	FETI4IInt *settings,
 	FETI4IFETIInstance *instance,
 	FETI4IInt size,
 	FETI4IReal *values)
