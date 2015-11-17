@@ -4,97 +4,103 @@
 
 #include "mpi.h"
 
-#define ESPRESO_INDICES_WIDTH 32
+#define FETI4I_INDICES_WIDTH 32
+#define FETI4I_REAL_WIDTH 64
 
 
-#if ESPRESO_INDICES_WIDTH == 32
-	typedef int esint;
-#elif ESPRESO_INDICES_WIDTH == 64
+#if FETI4I_INDICES_WIDTH == 32
+	typedef int FETI4IInt;
+#elif FETI4I_INDICES_WIDTH == 64
 	typedef long esint;
 #else
-	#error "Incorrect user-supplied value of ESPRESO_INDICES_WIDTH"
+	#error "Incorrect user-supplied value of FETI4I_INDICES_WIDTH"
 #endif
 
-struct ESPRESOStructIntVector {
-	esint size;
-	esint *values;
+#if FETI4I_REAL_WIDTH == 64
+	typedef long FETI4IReal;
+#else
+	#error "Incorrect user-supplied value of FETI4I_REAL_WIDTH"
+#endif
+
+
+struct FETI4IStructIntVector {
+	FETI4IInt size;
+	FETI4IInt *values;
 };
 
-struct ESPRESOStructDoubleVector {
-	esint size;
+struct FETI4IStructDoubleVector {
+	FETI4IInt size;
 	double *values;
 };
 
-struct ESPRESOStructMap {
-	esint size;
-	esint *indices;
+struct FETI4IStructMap {
+	FETI4IInt size;
+	FETI4IInt *indices;
 	double *values;
 };
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct ESPRESOStructMatrix* ESPRESOMatrix;
+typedef struct FETI4IStructMatrix* FETI4IMatrix;
+typedef struct FETI4IStructIntVector* FETI4IIntVector;
+typedef struct FETI4IStructDoubleVector* FETI4IDoubleVector;
+typedef struct FETI4IStructMap* FETI4IMap;
 
-typedef struct ESPRESOStructIntVector* ESPRESOIntVector;
-typedef struct ESPRESOStructDoubleVector* ESPRESODoubleVector;
-typedef struct ESPRESOStructMap* ESPRESOMap;
-
-typedef struct ESPRESOStructFETIIntance* ESPRESOFETIInstance;
+typedef struct FETI4IStructFETIIntance* FETI4IFETIInstance;
 
 ////// Avoid init and finalize?
-int ESPRESOInit(
+int FETI4IInit(
 	MPI_Comm communicator
 );
-int ESPRESOFinalize();
+int FETI4IFinalize();
 ///////////////////////////////
 
-int ESPRESOCreateMatrixElemental(
-	esint n,
-	esint nelt,
-	esint *eltptr,
-	esint *eltvar,
+int FETI4ICreateMatrixElemental(
+	FETI4IInt n,
+	FETI4IInt nelt,
+	FETI4IInt *eltptr,
+	FETI4IInt *eltvar,
 	double *values,
-	ESPRESOMatrix *stiffnessMatrix
+	FETI4IMatrix *stiffnessMatrix
 );
 
-int ESPRESOCreateDoubleVector(
-	esint size,
+int FETI4ICreateDoubleVector(
+	FETI4IInt size,
 	double *values,
-	ESPRESODoubleVector *vector
+	FETI4IDoubleVector *vector
 );
 
-int ESPRESOCreateIntVector(
-	esint size,
-	esint *values,
-	ESPRESOIntVector *vector
+int FETI4ICreateIntVector(
+	FETI4IInt size,
+	FETI4IInt *values,
+	FETI4IIntVector *vector
 );
 
-int ESPRESOCreateMap(
-	esint size,
-	esint *indices,
+int FETI4ICreateMap(
+	FETI4IInt size,
+	FETI4IInt *indices,
 	double *values,
-	ESPRESOMap *vector
+	FETI4IMap *vector
 );
 
-int ESPRESOPrepareFETIInstance(
-	ESPRESOMatrix *stiffnessMatrix,
-	ESPRESODoubleVector *rhs,
-	ESPRESOMap *dirichlet,
-	ESPRESOIntVector *l2g,
-	ESPRESOIntVector *neighbourRanks,
-	ESPRESOFETIInstance *instance
+int FETI4IPrepareFETIInstance(
+	FETI4IMatrix *stiffnessMatrix,
+	FETI4IDoubleVector *rhs,
+	FETI4IMap *dirichlet,
+	FETI4IIntVector *l2g,
+	FETI4IIntVector *neighbourRanks,
+	FETI4IFETIInstance *instance
 );
 
-int ESPRESOSolveFETI(
-	ESPRESOFETIInstance *instance,
-	esint size,
+int FETI4ISolveFETI(
+	FETI4IFETIInstance *instance,
+	FETI4IInt size,
 	double *values
 );
 
-int ESPRESODestroy(
+int FETI4IDestroy(
 	void *data
 );
 

@@ -132,7 +132,7 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 	}
 	holder->K = new SparseCSRMatrix<eslocal>(vvp);
 
-	holder->rhs = new ESPRESOStructDoubleVector();
+	holder->rhs = new FETI4IStructDoubleVector();
 	holder->rhs->size = _f[0].size();
 	holder->rhs->values = new double[_f[0].size()];
 	for (size_t i = 0; i < _f[0].size(); i++) {
@@ -155,7 +155,7 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 2 + indexing, dz.find(i)->second));
 		}
 	}
-	holder->dirichlet = new ESPRESOStructMap();
+	holder->dirichlet = new FETI4IStructMap();
 	holder->dirichlet->size = dir.size();
 	holder->dirichlet->indices = new eslocal[dir.size()];
 	holder->dirichlet->values = new double[dir.size()];
@@ -164,7 +164,7 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 		holder->dirichlet->values[i] = dir[i].second;
 	}
 
-	holder->l2g = new ESPRESOStructIntVector();
+	holder->l2g = new FETI4IStructIntVector();
 	holder->l2g->size = coo.size() * 3;
 	holder->l2g->values = new eslocal[coo.size() * 3];
 	for (size_t i = 0; i < coo.size(); i++) {
@@ -173,7 +173,7 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 		holder->l2g->values[3 * i + 2] = 3 * coo.globalIndex(i) + 2 + indexing;
 	}
 
-	holder->neighbourRanks = new ESPRESOStructIntVector();
+	holder->neighbourRanks = new FETI4IStructIntVector();
 	holder->neighbourRanks->size = this->_neighClusters.size();
 	holder->neighbourRanks->values = new eslocal[this->_neighClusters.size()];
 	for (size_t i = 0; i < this->_neighClusters.size(); i++) {

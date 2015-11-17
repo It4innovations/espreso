@@ -23,13 +23,14 @@ struct BEM {
 	mesh::SurfaceMesh &surface;
 };
 
+
 // Design for testing
 struct APIHolder {
 	SparseCSRMatrix<eslocal> *K;
-	ESPRESOStructDoubleVector *rhs;
-	ESPRESOStructMap *dirichlet;
-	ESPRESOStructIntVector *l2g;
-	ESPRESOStructIntVector *neighbourRanks;
+	FETI4IStructDoubleVector *rhs;
+	FETI4IStructMap *dirichlet;
+	FETI4IStructIntVector *l2g;
+	FETI4IStructIntVector *neighbourRanks;
 	eslocal indexing;
 
 	~APIHolder() {
@@ -49,20 +50,20 @@ struct APIHolder {
 struct API {
 
 	API(SparseCSRMatrix<eslocal> &K,
-		ESPRESOStructDoubleVector &rhs,
-		ESPRESOStructMap &dirichlet,
-		ESPRESOStructIntVector &l2g,
-		ESPRESOStructIntVector &neighbourRanks)
+		FETI4IStructDoubleVector &rhs,
+		FETI4IStructMap &dirichlet,
+		FETI4IStructIntVector &l2g,
+		FETI4IStructIntVector &neighbourRanks)
 	:K(K), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
 
 	API(APIHolder &holder): K(*holder.K), rhs(*holder.rhs), dirichlet(*holder.dirichlet),
 		l2g(*holder.l2g), neighbourRanks(*holder.neighbourRanks), indexing(holder.indexing) { };
 
 	SparseCSRMatrix<eslocal> &K;
-	ESPRESOStructDoubleVector &rhs;
-	ESPRESOStructMap &dirichlet;
-	ESPRESOStructIntVector &l2g;
-	ESPRESOStructIntVector &neighbourRanks;
+	FETI4IStructDoubleVector &rhs;
+	FETI4IStructMap &dirichlet;
+	FETI4IStructIntVector &l2g;
+	FETI4IStructIntVector &neighbourRanks;
 	eslocal indexing;
 };
 

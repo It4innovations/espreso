@@ -19,17 +19,17 @@ Gluing<TInput>::Gluing(TInput &input): Assembler<TInput>(input) {
 template <>
 void Gluing<API>::computeSubdomainGluing()
 {
-	esint index_offset = _input.indexing;
+	FETI4IInt index_offset = _input.indexing;
 
-//	std::map <esint, double> dirichlet;
-//	for (esint i = 0; i < _input.dirichlet.size; i++)
+//	std::map <FETI4IInt, double> dirichlet;
+//	for (FETI4IInt i = 0; i < _input.dirichlet.size; i++)
 //		dirichlet.insert(std::make_pair(_input.dirichlet.indices[i], _input.dirichlet.values[i] ));
 
-	std::map <esint, esint> g2l;
-	for (esint i = 0; i < _input.l2g.size; i++)
+	std::map <FETI4IInt, FETI4IInt> g2l;
+	for (FETI4IInt i = 0; i < _input.l2g.size; i++)
 		g2l.insert(std::make_pair(_input.l2g.values[i],i));
 
-	std::map<esint, esint> :: iterator map_it;
+	std::map<FETI4IInt, FETI4IInt> :: iterator map_it;
 
 	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
 	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
@@ -39,7 +39,7 @@ void Gluing<API>::computeSubdomainGluing()
 	//std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
 	for (size_t i = 0; i < _input.dirichlet.size; i++) {
 
-		esint loc_DOF_num = -1;
+		FETI4IInt loc_DOF_num = -1;
 		map_it = g2l.find(_input.dirichlet.indices[i]);
 		if (  map_it != g2l.end() ) {
 			loc_DOF_num = map_it->second;
@@ -68,22 +68,22 @@ template <>
 void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 {
 
-	esint index_offset = _input.indexing;
+	FETI4IInt index_offset = _input.indexing;
 
 	local_B1_global_resize();
 
-	for (esint i = 0; i < _input.neighbourRanks.size; i++)
+	for (FETI4IInt i = 0; i < _input.neighbourRanks.size; i++)
 		_neighClusters.push_back(_input.neighbourRanks.values[i] - index_offset);
 
 	_myBorderDOFs.resize(_input.l2g.size);
-	for (esint i = 0; i < _input.l2g.size; i++)
+	for (FETI4IInt i = 0; i < _input.l2g.size; i++)
 		_myBorderDOFs[i] = _input.l2g.values[i];
 
-	std::map <esint, esint> g2l;
-	for (esint i = 0; i < _input.l2g.size; i++)
+	std::map <FETI4IInt, FETI4IInt> g2l;
+	for (FETI4IInt i = 0; i < _input.l2g.size; i++)
 		g2l.insert(std::make_pair(_input.l2g.values[i],i));
 
-	std::map<esint, esint> :: iterator map_it;
+	std::map<FETI4IInt, FETI4IInt> :: iterator map_it;
 
 	int MPIrank = this->rank();
 	int MPIsize = this->size();
