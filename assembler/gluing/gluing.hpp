@@ -31,15 +31,12 @@ void Gluing<API>::computeSubdomainGluing()
 
 	std::map<esint, esint> :: iterator map_it;
 
-	//_input.dirichlet.
-	//ESPRESOStructMap
-
 	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
 	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
 
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
 
-	std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
+	//std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
 	for (size_t i = 0; i < _input.dirichlet.size; i++) {
 
 		esint loc_DOF_num = -1;
@@ -71,10 +68,12 @@ template <>
 void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 {
 
+	esint index_offset = _input.indexing;
+
 	local_B1_global_resize();
 
 	for (esint i = 0; i < _input.neighbourRanks.size; i++)
-		_neighClusters.push_back(_input.neighbourRanks.values[i]);
+		_neighClusters.push_back(_input.neighbourRanks.values[i] - index_offset);
 
 	_myBorderDOFs.resize(_input.l2g.size);
 	for (esint i = 0; i < _input.l2g.size; i++)

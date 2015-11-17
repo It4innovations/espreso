@@ -120,7 +120,7 @@ void Linear<API>::fillAPIHolder(APIHolder *holder)
 template <class TInput>
 void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 {
-	eslocal indexing = 0;
+	eslocal indexing = 1;
 
 	init();
 
