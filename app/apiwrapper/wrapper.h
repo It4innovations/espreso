@@ -7,6 +7,18 @@
 #include "esconfig.h"
 #include "esassemblers.h"
 
+struct FETI4IStructDoubleVector {
+	std::vector<double> data;
+};
+
+struct FETI4IStructIntVector {
+	std::vector<eslocal> data;
+};
+
+struct FETI4IStructMap {
+	std::map<eslocal, double> data;
+};
+
 struct FETI4IStructMatrix {
 	FETI4IStructMatrix(): data(0, 0) { };
 

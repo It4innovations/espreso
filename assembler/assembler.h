@@ -8,22 +8,6 @@
 #include "esbem.h"
 #include "../libespreso/espreso.h"
 
-struct FETI4IStructIntVector {
-	FETI4IInt size;
-	FETI4IInt *values;
-};
-
-struct FETI4IStructDoubleVector {
-	FETI4IInt size;
-	double *values;
-};
-
-struct FETI4IStructMap {
-	FETI4IInt size;
-	FETI4IInt *indices;
-	double *values;
-};
-
 namespace assembler {
 
 struct FEM {
@@ -43,22 +27,17 @@ struct BEM {
 // Design for testing
 struct APIHolder {
 	SparseCSRMatrix<eslocal> *K;
-	FETI4IStructDoubleVector *rhs;
-	FETI4IStructMap *dirichlet;
-	FETI4IStructIntVector *l2g;
-	FETI4IStructIntVector *neighbourRanks;
+	std::vector<double> *rhs;
+	std::map<eslocal, double> *dirichlet;
+	std::vector<eslocal> *l2g;
+	std::vector<eslocal> *neighbourRanks;
 	eslocal indexing;
 
 	~APIHolder() {
 		delete K;
-		delete rhs->values;
 		delete rhs;
-		delete dirichlet->indices;
-		delete dirichlet->values;
 		delete dirichlet;
-		delete l2g->values;
 		delete l2g;
-		delete neighbourRanks->values;
 		delete neighbourRanks;
 	}
 };
@@ -66,20 +45,20 @@ struct APIHolder {
 struct API {
 
 	API(SparseCSRMatrix<eslocal> &K,
-		FETI4IStructDoubleVector &rhs,
-		FETI4IStructMap &dirichlet,
-		FETI4IStructIntVector &l2g,
-		FETI4IStructIntVector &neighbourRanks)
+		std::vector<double> &rhs,
+		std::map<eslocal, double> &dirichlet,
+		std::vector<eslocal> &l2g,
+		std::vector<eslocal> &neighbourRanks)
 	:K(K), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
 
 	API(APIHolder &holder): K(*holder.K), rhs(*holder.rhs), dirichlet(*holder.dirichlet),
 		l2g(*holder.l2g), neighbourRanks(*holder.neighbourRanks), indexing(holder.indexing) { };
 
 	SparseCSRMatrix<eslocal> &K;
-	FETI4IStructDoubleVector &rhs;
-	FETI4IStructMap &dirichlet;
-	FETI4IStructIntVector &l2g;
-	FETI4IStructIntVector &neighbourRanks;
+	std::vector<double> &rhs;
+	std::map<eslocal, double> &dirichlet;
+	std::vector<eslocal> &l2g;
+	std::vector<eslocal> &neighbourRanks;
 	eslocal indexing;
 };
 

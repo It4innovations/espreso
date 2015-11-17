@@ -12,7 +12,7 @@ void Linear<API>::KMf(size_t part, bool dynamics)
 template <>
 void Linear<API>::RHS()
 {
-	_f[0] = std::vector<double>(this->_input.rhs.values, this->_input.rhs.values + this->_input.rhs.size);
+	_f[0] = this->_input.rhs;
 }
 
 template <>

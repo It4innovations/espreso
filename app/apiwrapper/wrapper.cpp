@@ -56,9 +56,7 @@ int FETI4ICreateDoubleVector(
 	FETI4IDoubleVector *vector)
 {
 	DataHolder::doubleVectors.push_back(new FETI4IStructDoubleVector());
-	DataHolder::doubleVectors.back()->size = size;
-	DataHolder::doubleVectors.back()->values = new double[size];
-	memcpy(DataHolder::doubleVectors.back()->values, values, size * sizeof(double));
+	DataHolder::doubleVectors.back()->data = std::vector<double>(values, values + size);
 	*vector = DataHolder::doubleVectors.back();
 	return 0;
 }
@@ -69,9 +67,7 @@ int FETI4ICreateIntVector(
 	FETI4IIntVector *vector)
 {
 	DataHolder::intVectors.push_back(new FETI4IStructIntVector());
-	DataHolder::intVectors.back()->size = size;
-	DataHolder::intVectors.back()->values = new FETI4IInt[size];
-	memcpy(DataHolder::intVectors.back()->values, values, size * sizeof(FETI4IInt));
+	DataHolder::intVectors.back()->data = std::vector<eslocal>(values, values + size);
 	*vector = DataHolder::intVectors.back();
 	return 0;
 }
@@ -83,11 +79,9 @@ int FETI4ICreateMap(
 	FETI4IMap *vector)
 {
 	DataHolder::maps.push_back(new FETI4IStructMap());
-	DataHolder::maps.back()->size = size;
-	DataHolder::maps.back()->indices = new FETI4IInt[size];
-	DataHolder::maps.back()->values = new double[size];
-	memcpy(DataHolder::maps.back()->indices, indices, size * sizeof(FETI4IInt));
-	memcpy(DataHolder::maps.back()->values, values, size * sizeof(double));
+	for (FETI4IInt i = 0; i < size; i++) {
+		DataHolder::maps.back()->data[indices[i]] = values[i];
+	}
 	*vector = DataHolder::maps.back();
 	return 0;
 }
@@ -100,7 +94,7 @@ int FETI4IPrepareFETIInstance(
 	FETI4IIntVector *neighbourRanks,
 	FETI4IFETIInstance *instance)
 {
-	API api((*stiffnessMatrix)->data, **rhs, **dirichlet, **l2g, **neighbourRanks);
+	API api((*stiffnessMatrix)->data, (*rhs)->data, (*dirichlet)->data, (*l2g)->data, (*neighbourRanks)->data);
 	DataHolder::instances.push_back(new FETI4IStructFETIIntance(api));
 
 	DataHolder::instances.back()->data.init();
@@ -128,7 +122,6 @@ int FETI4IDestroy(void *data)
 		++it
 	) {
 		if (*it == data) {
-			delete (*it)->values;
 			delete *it;
 			DataHolder::doubleVectors.erase(it);
 			return 0;
@@ -141,7 +134,6 @@ int FETI4IDestroy(void *data)
 		++it
 	) {
 		if (*it == data) {
-			delete (*it)->values;
 			delete *it;
 			DataHolder::intVectors.erase(it);
 			return 0;
@@ -154,8 +146,6 @@ int FETI4IDestroy(void *data)
 		++it
 	) {
 		if (*it == data) {
-			delete (*it)->indices;
-			delete (*it)->values;
 			delete *it;
 			DataHolder::maps.erase(it);
 			return 0;

@@ -132,53 +132,32 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 	}
 	holder->K = new SparseCSRMatrix<eslocal>(vvp);
 
-	holder->rhs = new FETI4IStructDoubleVector();
-	holder->rhs->size = _f[0].size();
-	holder->rhs->values = new double[_f[0].size()];
-	for (size_t i = 0; i < _f[0].size(); i++) {
-		holder->rhs->values[i] = _f[0][i];
-	}
+	holder->rhs = new std::vector<double>(_f[0]);
 
-	std::vector<std::pair<esglobal, double> > dir;
+	holder->dirichlet = new std::map<eslocal, double>();
 	const mesh::Coordinates &coo = this->_input.mesh.coordinates();
 	const std::map<eslocal, double> &dx = coo.property(mesh::DIRICHLET_X).values();
 	const std::map<eslocal, double> &dy = coo.property(mesh::DIRICHLET_X).values();
 	const std::map<eslocal, double> &dz = coo.property(mesh::DIRICHLET_X).values();
-	for (size_t i = 0; i < coo.size(); i++) {
-		if (dx.find(i) != dx.end()) {
-			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + indexing, dx.find(i)->second));
-		}
-		if (dy.find(i) != dy.end()) {
-			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 1 + indexing, dy.find(i)->second));
-		}
-		if (dz.find(i) != dz.end()) {
-			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 2 + indexing, dz.find(i)->second));
-		}
+	std::map<eslocal, double>::const_iterator it;
+	for (it = dx.begin(); it != dx.end(); ++it) {
+		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + indexing] = it->second;
 	}
-	holder->dirichlet = new FETI4IStructMap();
-	holder->dirichlet->size = dir.size();
-	holder->dirichlet->indices = new eslocal[dir.size()];
-	holder->dirichlet->values = new double[dir.size()];
-	for (size_t i = 0; i < dir.size(); i++) {
-		holder->dirichlet->indices[i] = dir[i].first;
-		holder->dirichlet->values[i] = dir[i].second;
+	for (it = dy.begin(); it != dy.end(); ++it) {
+		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + 1 + indexing] = it->second;
+	}
+	for (it = dz.begin(); it != dz.end(); ++it) {
+		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + 2 + indexing] = it->second;
 	}
 
-	holder->l2g = new FETI4IStructIntVector();
-	holder->l2g->size = coo.size() * 3;
-	holder->l2g->values = new eslocal[coo.size() * 3];
+	holder->l2g = new std::vector<eslocal>(coo.size() * 3);
 	for (size_t i = 0; i < coo.size(); i++) {
-		holder->l2g->values[3 * i] = 3 * coo.globalIndex(i) + indexing;
-		holder->l2g->values[3 * i + 1] = 3 * coo.globalIndex(i) + 1 + indexing;
-		holder->l2g->values[3 * i + 2] = 3 * coo.globalIndex(i) + 2 + indexing;
+		(*holder->l2g)[3 * i] = 3 * coo.globalIndex(i) + indexing;
+		(*holder->l2g)[3 * i + 1] = 3 * coo.globalIndex(i) + 1 + indexing;
+		(*holder->l2g)[3 * i + 2] = 3 * coo.globalIndex(i) + 2 + indexing;
 	}
 
-	holder->neighbourRanks = new FETI4IStructIntVector();
-	holder->neighbourRanks->size = this->_neighClusters.size();
-	holder->neighbourRanks->values = new eslocal[this->_neighClusters.size()];
-	for (size_t i = 0; i < this->_neighClusters.size(); i++) {
-		holder->neighbourRanks->values[i] = this->_neighClusters[i] + indexing;
-	}
+	holder->neighbourRanks = new std::vector<eslocal>(this->_neighClusters);
 
 	holder->indexing = indexing;
 }

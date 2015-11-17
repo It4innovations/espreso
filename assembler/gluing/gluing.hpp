@@ -26,8 +26,8 @@ void Gluing<API>::computeSubdomainGluing()
 //		dirichlet.insert(std::make_pair(_input.dirichlet.indices[i], _input.dirichlet.values[i] ));
 
 	std::map <FETI4IInt, FETI4IInt> g2l;
-	for (FETI4IInt i = 0; i < _input.l2g.size; i++)
-		g2l.insert(std::make_pair(_input.l2g.values[i],i));
+	for (FETI4IInt i = 0; i < _input.l2g.size(); i++)
+		g2l.insert(std::make_pair(_input.l2g[i], i));
 
 	std::map<FETI4IInt, FETI4IInt> :: iterator map_it;
 
@@ -37,10 +37,11 @@ void Gluing<API>::computeSubdomainGluing()
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
 
 	//std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
-	for (size_t i = 0; i < _input.dirichlet.size; i++) {
+	std::map<eslocal, double>::const_iterator it;
+	for (it = _input.dirichlet.begin(); it != _input.dirichlet.end(); ++it) {
 
 		FETI4IInt loc_DOF_num = -1;
-		map_it = g2l.find(_input.dirichlet.indices[i]);
+		map_it = g2l.find(it->first);
 		if (  map_it != g2l.end() ) {
 			loc_DOF_num = map_it->second;
 
@@ -49,17 +50,17 @@ void Gluing<API>::computeSubdomainGluing()
 			_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
 			_lambda_map_sub_B1[0].push_back(lambda_count_B1);
 			_B1_duplicity[0].push_back(1.0);
-			_vec_c[0].push_back(_input.dirichlet.values[i]);
+			_vec_c[0].push_back(it->second);
 
 			lambda_count_B1++;
 		}
 	}
 
 	for (eslocal d = 0; d < this->subdomains(); d++) {
-		gB[d].resize(lambda_count_B1, _input.l2g.size); //TODO: _K.rows or _K.cols
+		gB[d].resize(lambda_count_B1, _input.l2g.size()); //TODO: _K.rows or _K.cols
 		_B1[d] = gB[d];
 
-		lB[d].resize(lambda_count_B0, _input.l2g.size); //TODO: _K.rows or _K.cols
+		lB[d].resize(lambda_count_B0, _input.l2g.size()); //TODO: _K.rows or _K.cols
 		_B0[d] = lB[d];
 	}
 }
@@ -72,16 +73,16 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 
 	local_B1_global_resize();
 
-	for (FETI4IInt i = 0; i < _input.neighbourRanks.size; i++)
-		_neighClusters.push_back(_input.neighbourRanks.values[i] - index_offset);
+	for (FETI4IInt i = 0; i < _input.neighbourRanks.size(); i++)
+		_neighClusters.push_back(_input.neighbourRanks[i]);// - index_offset);
 
-	_myBorderDOFs.resize(_input.l2g.size);
-	for (FETI4IInt i = 0; i < _input.l2g.size; i++)
-		_myBorderDOFs[i] = _input.l2g.values[i];
+	_myBorderDOFs.resize(_input.l2g.size());
+	for (FETI4IInt i = 0; i < _input.l2g.size(); i++)
+		_myBorderDOFs[i] = _input.l2g[i];
 
 	std::map <FETI4IInt, FETI4IInt> g2l;
-	for (FETI4IInt i = 0; i < _input.l2g.size; i++)
-		g2l.insert(std::make_pair(_input.l2g.values[i],i));
+	for (FETI4IInt i = 0; i < _input.l2g.size(); i++)
+		g2l.insert(std::make_pair(_input.l2g[i],i));
 
 	std::map<FETI4IInt, FETI4IInt> :: iterator map_it;
 
