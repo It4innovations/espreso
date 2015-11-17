@@ -45,13 +45,13 @@ int FETI4ICreateMatrixElemental(
 	FETI4IInt nelt,
 	FETI4IInt *eltptr,
 	FETI4IInt *eltvar,
-	double *values,
+	FETI4IReal *values,
 	FETI4IMatrix *stiffnessMatrix
 );
 
 int FETI4ICreateDoubleVector(
 	FETI4IInt size,
-	double *values,
+	FETI4IReal *values,
 	FETI4IDoubleVector *vector
 );
 
@@ -64,7 +64,7 @@ int FETI4ICreateIntVector(
 int FETI4ICreateMap(
 	FETI4IInt size,
 	FETI4IInt *indices,
-	double *values,
+	FETI4IReal *values,
 	FETI4IMap *vector
 );
 
@@ -80,7 +80,7 @@ int FETI4IPrepareFETIInstance(
 int FETI4ISolveFETI(
 	FETI4IFETIInstance *instance,
 	FETI4IInt size,
-	double *values
+	FETI4IReal *values
 );
 
 int FETI4IDestroy(

@@ -27,7 +27,7 @@ int FETI4ICreateMatrixElemental(
 	FETI4IInt nelt,
 	FETI4IInt *eltptr,
 	FETI4IInt *eltvar,
-	double *values,
+	FETI4IReal *values,
 	FETI4IMatrix *stiffnessMatrix)
 {
 	FETI4IInt indexing = eltptr[0];
@@ -52,7 +52,7 @@ int FETI4ICreateMatrixElemental(
 
 int FETI4ICreateDoubleVector(
 	FETI4IInt size,
-	double *values,
+	FETI4IReal *values,
 	FETI4IDoubleVector *vector)
 {
 	DataHolder::doubleVectors.push_back(new FETI4IStructDoubleVector());
@@ -75,7 +75,7 @@ int FETI4ICreateIntVector(
 int FETI4ICreateMap(
 	FETI4IInt size,
 	FETI4IInt *indices,
-	double *values,
+	FETI4IReal *values,
 	FETI4IMap *vector)
 {
 	DataHolder::maps.push_back(new FETI4IStructMap());
@@ -105,7 +105,7 @@ int FETI4IPrepareFETIInstance(
 int FETI4ISolveFETI(
 	FETI4IFETIInstance *instance,
 	FETI4IInt size,
-	double *values)
+	FETI4IReal *values)
 {
 	std::vector<std::vector<double> > solution(1);
 	solution[0] = std::vector<double>(values, values + size);
@@ -114,67 +114,25 @@ int FETI4ISolveFETI(
 	return 0;
 }
 
+template <typename TFETI4I>
+static void destroy(std::list<TFETI4I*> &list, void *value)
+{
+	for (typename std::list<TFETI4I*>::iterator it = list.begin(); it != list.end(); ++it) {
+		if (*it == value) {
+			delete *it;
+			list.erase(it);
+			return;
+		}
+	}
+}
+
 int FETI4IDestroy(void *data)
 {
-	for (
-		std::list<FETI4IStructDoubleVector*>::iterator it = DataHolder::doubleVectors.begin();
-		it != DataHolder::doubleVectors.end();
-		++it
-	) {
-		if (*it == data) {
-			delete *it;
-			DataHolder::doubleVectors.erase(it);
-			return 0;
-		}
-	}
-
-	for (
-		std::list<FETI4IStructIntVector*>::iterator it = DataHolder::intVectors.begin();
-		it != DataHolder::intVectors.end();
-		++it
-	) {
-		if (*it == data) {
-			delete *it;
-			DataHolder::intVectors.erase(it);
-			return 0;
-		}
-	}
-
-	for (
-		std::list<FETI4IStructMap*>::iterator it = DataHolder::maps.begin();
-		it != DataHolder::maps.end();
-		++it
-	) {
-		if (*it == data) {
-			delete *it;
-			DataHolder::maps.erase(it);
-			return 0;
-		}
-	}
-
-	for (
-		std::list<FETI4IStructMatrix*>::iterator it = DataHolder::matrices.begin();
-		it != DataHolder::matrices.end();
-		++it
-	) {
-		if (*it == data) {
-			delete *it;
-			DataHolder::matrices.erase(it);
-			return 0;
-		}
-	}
-
-	for (
-		std::list<FETI4IStructFETIIntance*>::iterator it = DataHolder::instances.begin();
-		it != DataHolder::instances.end();
-		++it
-	) {
-		if (*it == data) {
-			delete *it;
-			DataHolder::instances.erase(it);
-			return 0;
-		}
-	}
+	destroy(DataHolder::doubleVectors, data);
+	destroy(DataHolder::intVectors, data);
+	destroy(DataHolder::maps, data);
+	destroy(DataHolder::matrices, data);
+	destroy(DataHolder::instances, data);
 
 	return 0;
 }
