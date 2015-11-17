@@ -22,23 +22,6 @@
 	#error "Incorrect user-supplied value of FETI4I_REAL_WIDTH"
 #endif
 
-
-struct FETI4IStructIntVector {
-	FETI4IInt size;
-	FETI4IInt *values;
-};
-
-struct FETI4IStructDoubleVector {
-	FETI4IInt size;
-	double *values;
-};
-
-struct FETI4IStructMap {
-	FETI4IInt size;
-	FETI4IInt *indices;
-	double *values;
-};
-
 #ifdef __cplusplus
 extern "C" {
 #endif

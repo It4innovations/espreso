@@ -8,6 +8,22 @@
 #include "esbem.h"
 #include "../libespreso/espreso.h"
 
+struct FETI4IStructIntVector {
+	FETI4IInt size;
+	FETI4IInt *values;
+};
+
+struct FETI4IStructDoubleVector {
+	FETI4IInt size;
+	double *values;
+};
+
+struct FETI4IStructMap {
+	FETI4IInt size;
+	FETI4IInt *indices;
+	double *values;
+};
+
 namespace assembler {
 
 struct FEM {
