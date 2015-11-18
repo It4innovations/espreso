@@ -21,9 +21,14 @@ def configure(ctx):
     except ctx.errors.ConfigurationError:
         ctx.fatal("Install Intel compiler or load the appropriate module.")
 
+    # read 'build.config.default' and 'build.config'
+    load_config_file(ctx)
+
     configure_indices_width(ctx)
     ctx.define("version", VERSION)
     ctx.write_config_header("config.h")
+
+    print ctx.options.flags
 
 ################################################################################
 ################################################################################
@@ -83,6 +88,11 @@ def configure(ctx):
 def options(opt):
 
 # Configure options
+
+    opt.add_option("--flags",
+        action="store",
+        default="",
+        help="Set flags.")
 
     opt.add_option("--anselm",
         action="store_true",

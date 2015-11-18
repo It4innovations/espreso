@@ -1,0 +1,11 @@
+
+# Set MPI compilers. ESPRESO is compiled by a compiler specified in CXX.
+
+CXX = mpic++
+CC = mpicc
+
+CXXFLAGS = -Wall -openmp -std=c++11 -O2
+LINKFLAGS = -Wall -openmp
+
+
+

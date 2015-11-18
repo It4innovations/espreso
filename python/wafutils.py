@@ -1,6 +1,22 @@
 
 import os
 
+def load_config_file(ctx):
+    # Load default configuration
+    defaultConfig = open("build.config.default", "r")
+    for line in defaultConfig:
+        parts = line.split('#', 1)[0].partition('=')
+        if parts[1] == '=':
+            ctx.env[parts[0].strip()] = parts[2].split()
+
+    # Load user specific configuration
+    if os.path.isfile("build.config"):
+        userConfig = open("build.config", "r")
+        for line in userConfig:
+            parts = line.split('#', 1)[0].partition('=')
+            if parts[1] == '=':
+                ctx.env[parts[0].strip()] = parts[2].split()
+
 def set_indices_width(ctx):
     if ctx.env.ESLOCAL == 32:
         ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])

@@ -11,7 +11,7 @@
 mySh.sh
 nohup.out
 espreso
-build
+build*
 libs
 include
 tools
