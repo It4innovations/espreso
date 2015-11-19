@@ -18,6 +18,7 @@ public:
 		mesh.computeLocalIndices(0);
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
+		mesh.computeBoundaries();
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
