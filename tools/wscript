@@ -30,8 +30,8 @@ def configure(ctx):
 
     ctx.env.SCOTCH["params"] = ""
 
-    cc = ctx.env.MPICC[0]
-    fc = ctx.env.MPIFORT[0]
+    cc = ctx.env.CC[0]
+    fc = ctx.env.FC[0]
     if ctx.options.mpich:
         cc += " -cc=icc"
 

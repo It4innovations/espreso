@@ -3,6 +3,7 @@
 
 CXX = mpic++
 CC = mpicc
+FC = mpif90
 
 CXXFLAGS = -Wall -openmp -std=c++11 -O2
 LINKFLAGS = -Wall -openmp

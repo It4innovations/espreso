@@ -1,7 +1,7 @@
 
 import os
 
-def load_config_file(ctx):
+def set_configuration(ctx, attributes):
     # Load default configuration
     defaultConfig = open("build.config.default", "r")
     for line in defaultConfig:
@@ -16,6 +16,11 @@ def load_config_file(ctx):
             parts = line.split('#', 1)[0].partition('=')
             if parts[1] == '=':
                 ctx.env[parts[0].strip()] = parts[2].split()
+
+    # Load configuration specified while the project configuration
+    for attribute in attributes:
+        if getattr(ctx.options, attribute):
+            ctx.env[attribute] = getattr(ctx.options, attribute)
 
 def set_indices_width(ctx):
     if ctx.env.ESLOCAL == 32:

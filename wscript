@@ -7,6 +7,14 @@ sys.path.append(os.path.abspath("./python"))
 from wafutils import *
 
 
+attributes = {
+    "CXX": "MPI/C++ compiler used to build ESPRESO.",
+    "CC": "C compiler for build tools used by ESPRESO.",
+    "CXXFLAGS": "Flags used by the compiler for all ESPRESO sources.",
+    "LINKFLAGS": "Flags used by the linker for all ESPRESO sources."
+}
+
+
 #..............................................................................#
 #     VERSION -> When you change the configuration, increment the value
 
@@ -22,13 +30,11 @@ def configure(ctx):
         ctx.fatal("Install Intel compiler or load the appropriate module.")
 
     # read 'build.config.default' and 'build.config'
-    load_config_file(ctx)
+    set_configuration(ctx, attributes)
 
     configure_indices_width(ctx)
     ctx.define("version", VERSION)
     ctx.write_config_header("config.h")
-
-    print ctx.options.flags
 
 ################################################################################
 ################################################################################
@@ -46,8 +52,8 @@ def configure(ctx):
         ctx.env.CXX = ctx.env.LINK_CXX = ["CC"]
         ctx.env.MPICC = [ "cc" ]
         ctx.env.MPIFORT = [ "fc" ]
-    else:
-        set_default(ctx)
+
+    ctx.env.LINK_CXX = ctx.env.CXX
 
 #                   Global flags used for all libraries
 #..............................................................................#
@@ -80,19 +86,17 @@ def configure(ctx):
     ctx.recurse("catalyst")
     ctx.recurse("app")
 
-
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
 #                          Options for ESPRESO
 
 
 def options(opt):
 
-# Configure options
-
-    opt.add_option("--flags",
+    for attribute, description in attributes.iteritems():
+        opt.add_option("--" + attribute,
         action="store",
         default="",
-        help="Set flags.")
+        help=description)
 
     opt.add_option("--anselm",
         action="store_true",
