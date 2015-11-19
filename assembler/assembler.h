@@ -29,6 +29,8 @@ struct APIHolder {
 	SparseCSRMatrix<eslocal> *K;
 	std::vector<double> *rhs;
 	std::map<eslocal, double> *dirichlet;
+	std::vector<eslocal> *dir_indices;
+	std::vector<double> *dir_values;
 	std::vector<eslocal> *l2g;
 	std::vector<eslocal> *neighbourRanks;
 	eslocal indexing;
@@ -37,6 +39,8 @@ struct APIHolder {
 		delete K;
 		delete rhs;
 		delete dirichlet;
+		delete dir_indices;
+		delete dir_values;
 		delete l2g;
 		delete neighbourRanks;
 	}
@@ -59,6 +63,33 @@ struct API {
 	std::map<eslocal, double> &dirichlet;
 	std::vector<eslocal> &l2g;
 	std::vector<eslocal> &neighbourRanks;
+	eslocal indexing;
+};
+
+struct API2 {
+	API2(APIHolder &holder):
+		K(holder.K),
+		rhs_size(holder.rhs->size()), rhs(holder.rhs->data()),
+		dirichlet_size(holder.dirichlet->size()), dirichlet_indices(holder.dir_indices->data()), dirichlet_values(holder.dir_values->data()),
+		l2g_size(holder.l2g->size()), l2g(holder.l2g->data()),
+		neighbour_size(holder.neighbourRanks->size()), neighbour(holder.neighbourRanks->data()),
+		indexing(holder.indexing) { };
+
+	SparseCSRMatrix<eslocal> *K;
+
+	eslocal rhs_size;
+	double *rhs;
+
+	eslocal dirichlet_size;
+	eslocal *dirichlet_indices;
+	double *dirichlet_values;
+
+	eslocal l2g_size;
+	eslocal *l2g;
+
+	eslocal neighbour_size;
+	eslocal *neighbour;
+
 	eslocal indexing;
 };
 

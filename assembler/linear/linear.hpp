@@ -117,6 +117,12 @@ void Linear<API>::fillAPIHolder(APIHolder *holder)
 
 }
 
+template <>
+void Linear<API2>::fillAPIHolder(APIHolder *holder)
+{
+
+}
+
 template <class TInput>
 void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 {
@@ -148,6 +154,14 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 	}
 	for (it = dz.begin(); it != dz.end(); ++it) {
 		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + 2 + indexing] = it->second;
+	}
+
+	holder->dir_indices = new std::vector<eslocal>(holder->dirichlet->size());
+	holder->dir_values = new std::vector<double>(holder->dirichlet->size());
+	eslocal index = 0;
+	for (it = holder->dirichlet->begin(); it != holder->dirichlet->end(); ++it, index++) {
+		(*holder->dir_indices)[index] = it->first;
+		(*holder->dir_values)[index] = it->second;
 	}
 
 	holder->l2g = new std::vector<eslocal>(coo.size() * 3);
