@@ -1,4 +1,6 @@
 
+VERSION = 15
+
 import commands
 import sys
 import os
@@ -6,21 +8,30 @@ import os
 sys.path.append(os.path.abspath("./python"))
 from wafutils import *
 
+# Each attribute has this structure: ( "attribute", "description", "data type", "choices")
 
-attributes = {
-    "CXX": "MPI/C++ compiler used to build ESPRESO.",
-    "CC": "C compiler for build tools used by ESPRESO.",
-    "CXXFLAGS": "Flags used by the compiler for all ESPRESO sources.",
-    "LINKFLAGS": "Flags used by the linker for all ESPRESO sources."
-}
+compilers = [
+    ("CXX", "Intel MPI/C++ compiler used to build ESPRESO.", "string", ""),
+    ("CC", "C compiler for build tools used by ESPRESO.", "string", ""),
+    ("FC", "Fortran compiler for build tools used by ESPRESO.", "string", "")
+]
 
+compiler_attributes = [
+    ("CXXFLAGS", "List of compilation flags for ESPRESO files.", "string", ""),
+    ("LINKFLAGS", "List of flags for linking ESPRESO.", "string", ""),
+    ("INCLUDES", "Include paths.", "string", ""),
+    ("LIBPATH", "List of search path for shared libraries.", "string", ""),
+    ("STLIBPATH", "List of search path for static libraries.", "string", "")
+]
 
-#..............................................................................#
-#     VERSION -> When you change the configuration, increment the value
+solvers = [ "MKL", "PARDISO", "CUDA", "MIC", "MUMPS" ]
 
-VERSION = 14
-
-#..............................................................................#
+espreso_attributes = [
+    ("CHECK_ENV", "Set to 1, if you want to test the build configuration.", "choice", [ "0", "1" ]),
+    ("INT_WIDTH", "ESPRESO integer datatype width.", "choice", [ "32", "64" ]),
+    ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "DYNAMIC", "STATIC" ]),
+    ("SOLVER", "ESPRESO internal solver.", "choice", solvers),
+]
 
 
 def configure(ctx):
@@ -29,48 +40,9 @@ def configure(ctx):
     except ctx.errors.ConfigurationError:
         ctx.fatal("Install Intel compiler or load the appropriate module.")
 
-    # read 'build.config.default' and 'build.config'
-    set_configuration(ctx, attributes)
-
-    configure_indices_width(ctx)
-    ctx.define("version", VERSION)
-    ctx.write_config_header("config.h")
-
-################################################################################
-################################################################################
-#                  Set MPI compiler and linker for clusters
-
-    if ctx.options.anselm:
-        ctx.env.CXX = ctx.env.LINK_CXX = [ "mpic++" ]
-        ctx.env.MPICC = [ "mpiicc" ]
-        ctx.env.MPIFORT = [ "mpiifort" ]
-    elif ctx.options.salomon:
-        ctx.env.CXX = ctx.env.LINK_CXX = ["mpiicpc"]
-        ctx.env.MPICC = [ "mpiicc" ]
-        ctx.env.MPIFORT = [ "mpiifort" ]
-    elif ctx.options.titan:
-        ctx.env.CXX = ctx.env.LINK_CXX = ["CC"]
-        ctx.env.MPICC = [ "cc" ]
-        ctx.env.MPIFORT = [ "fc" ]
-
-    ctx.env.LINK_CXX = ctx.env.CXX
-
-#                   Global flags used for all libraries
-#..............................................................................#
-
-    ctx.env.append_unique("CXXFLAGS", [ "-g", "-Wall", "-openmp", "-std=c++11", "-O0", "-cilk-serialize"])
-#    ctx.env.append_unique("CXXFLAGS", [ "-Wall", "-openmp", "-std=c++11", "-O2"])
-
-    ctx.env.append_unique("LINKFLAGS", [ "-Wall", "-openmp" ])
-    if ctx.options.titan:
-        ctx.env.append_unique("CXXFLAGS", [ "-fPIE", "-dynamic" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-pie", "-dynamic" ])
-
-
-################################################################################
-################################################################################
-
-    set_indices_width(ctx)
+    read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes)
+    set_datatypes(ctx)
+    ctx.append_solver_attributes = append_solver_attributes
 
     ctx.ROOT = ctx.path.abspath()
 
@@ -83,85 +55,7 @@ def configure(ctx):
     ctx.recurse("output")
     ctx.recurse("solver")
     ctx.recurse("assembler")
-    ctx.recurse("catalyst")
     ctx.recurse("app")
-
-#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
-#                          Options for ESPRESO
-
-
-def options(opt):
-
-    for attribute, description in attributes.iteritems():
-        opt.add_option("--" + attribute,
-        action="store",
-        default="",
-        help=description)
-
-    opt.add_option("--anselm",
-        action="store_true",
-        default=False,
-        help="Create application for Anselm.")
-
-    opt.add_option("--salomon",
-        action="store_true",
-        default=False,
-        help="Create application for Salomon.")
-
-    opt.add_option("--titan",
-        action="store_true",
-        default=False,
-        help="Create application for Titan.")
-
-    opt.add_option("--mpich",
-        action="store_true",
-        default=False,
-        help="Compile MPI version with mpich.")
-
-    opt.add_option("--gfortran",
-        action="store_true",
-        default=False,
-        help="MUMPS use libraries builder by gfortran.")
-
-
-# Build options
-
-    opt.add_option("--static",
-        action="store_true",
-        default=False,
-        help="All libraries created by ESPRESO are static.")
-
-    opt.add_option("--cuda",
-        action="store_true",
-        default=False,
-        help="Create application with CUDA support.")
-
-    opt.add_option("--mic",
-        action="store_true",
-        default=False,
-        help="Create application with MIC support.")
-
-    opt.add_option("--pardiso",
-        action="store_true",
-        default=False,
-        help="Solver use pardiso library.")
-
-    opt.add_option("--pardiso_mkl",
-        action="store_true",
-        default=False,
-        help="Solver use pardiso library.")
-
-
-    opt.add_option("--mumps",
-        action="store_true",
-        default=False,
-        help="Solver use mumps library.")
-
-    opt.add_option("--catalyst",
-        action="store_true",
-        default=False,
-        help="ESPRESO supports ParaView-Catalyst.")
-#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
 
 
 def build(ctx):
@@ -206,10 +100,6 @@ def build(ctx):
         name            = "incl_bem"
     )
     ctx(
-        export_includes = "catalyst/src",
-        name            = "incl_catalyst"
-    )
-    ctx(
         export_includes = "/usr/local/cuda-7.0/include",
         name            = "incl_cuda"
     )
@@ -222,7 +112,7 @@ def build(ctx):
     ctx.ROOT = ctx.path.abspath()
     ctx.LIBRARIES = ctx.ROOT + "/libs"
 
-    if ctx.options.static:
+    if ctx.env.LIBTYPE == "STATIC":
         ctx.lib = ctx.stlib
     else:
         ctx.lib = ctx.shlib
@@ -237,11 +127,58 @@ def build(ctx):
     ctx.recurse("output")
     ctx.recurse("solver")
     ctx.recurse("assembler")
-    if ctx.options.catalyst:
-        ctx.recurse("catalyst")
     ctx.recurse("app")
 
 
+def options(opt):
+    def add_option(group, attribute, description, type, choices):
+        if type == "choice":
+            group.add_option("--" + attribute,
+            action="store",
+            type=type,
+            choices=choices,
+            metavar="{" + ", ".join(choices) + "}",
+            help=description)
+        else:
+            group.add_option("--" + attribute,
+            action="store",
+            default="",
+            type=type,
+            metavar="...",
+            help=description)
+
+    for attribute, description, type, choices in espreso_attributes:
+        add_option(
+            opt.add_option_group("General ESPRESO parameters"),
+            attribute, description, type, choices
+        )
+
+    for attribute, description, type, choices in compilers:
+        add_option(
+            opt.add_option_group("Compilers"),
+            attribute, description, type, choices
+        )
+
+    for attribute, description, type, choices in compiler_attributes:
+        add_option(
+            opt.add_option_group("Global compiler attributes"),
+            attribute, description, type, choices
+        )
+
+    desc = (
+        "Parameters are in the form SOLVER::ATTRIBUTE. By these attributes "
+        "you can specify attributes only for chosen SOLVER. Each attribute "
+        "will be added to global compiler attributes.")
+
+    opt.add_option_group("Solver specific compiler attributes", desc)
+    for solver in solvers:
+        for attribute, description, type, choices in compiler_attributes:
+            add_option(
+                opt.add_option_group("For SOLVER={0}".format(solver)),
+                solver + "::" + attribute,
+                description,
+                type, choices
+            )
 
 
 

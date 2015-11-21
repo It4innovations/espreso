@@ -1,10 +1,5 @@
 
-SOLVER = "essolver"
-SOLVER_MIC = SOLVER + "_mic"
-SOLVER_CUDA = SOLVER + "_cuda"
-SOLVER_PARDISO = SOLVER + "_pardiso"
-SOLVER_PARDISO_MKL = SOLVER + "_pardiso_mkl"
-SOLVER_MUMPS = SOLVER + "_mumps"
+SOLVER = "solver"
 
 source_files = (
    "src/Cluster.cpp",
@@ -19,62 +14,33 @@ source_files = (
 
 def configure(ctx):
     ctx.setenv(SOLVER, ctx.all_envs[""].derive());
-    ctx.env.append_unique("CXXFLAGS", [ "-DXE6", "-DHFETI_SOLVER", "-DTM_BLOCK_START", "-DDEVEL", "-DLIB" ]) #, "-DCUDA" ])
+    ctx.env.append_unique("DEFINES", [ "XE6", "TM_BLOCK_START", "DEVEL"])
+    ctx.append_solver_attributes(ctx)
 
-    ctx.setenv(SOLVER_MIC, ctx.all_envs[SOLVER].derive());
-    ctx.env.append_unique("CXXFLAGS", [ "-DMIC" ])
-
-    ctx.setenv(SOLVER_CUDA, ctx.all_envs[SOLVER].derive());
-    ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-
-    ctx.setenv(SOLVER_PARDISO, ctx.all_envs[SOLVER].derive());
-
-    ctx.setenv(SOLVER_PARDISO_MKL, ctx.all_envs[SOLVER].derive());
-    #ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ]) # titan fix 
-    
-    ctx.setenv(SOLVER_MUMPS, ctx.all_envs[SOLVER].derive());
 
 def build(ctx):
-    # DEFAULT SOLVER
-    ctx.env     = ctx.all_envs[SOLVER_PARDISO_MKL]
-    sources     = source_files + ("src/SparseSolverPardisoMKL.cpp",)
-    target      = SOLVER_PARDISO_MKL
+    ctx.env = ctx.all_envs[SOLVER]
 
-    if ctx.options.mic:
-        ctx.env = ctx.all_envs[SOLVER_MIC]
+    if ctx.env.SOLVER == "MIC":
         sources = source_files + ("src/SparseSolver.cpp",)
-        target  = SOLVER_MIC
 
-    if ctx.options.cuda:
-        ctx.env = ctx.all_envs[SOLVER_CUDA]
+    if ctx.env.SOLVER == "CUDA":
         sources = source_files + ("src/SparseSolver.cpp",)
-        target  = SOLVER_CUDA
 
-    if ctx.options.mumps:
-        ctx.env = ctx.all_envs[SOLVER_MUMPS]
+    if ctx.env.SOLVER == "MUMPS":
         sources = source_files + ("src/SparseSolverMumps.cpp",)
-        target  = SOLVER_MUMPS
 
-    if ctx.options.pardiso:
-        ctx.env = ctx.all_envs[SOLVER_PARDISO]
+    if ctx.env.SOLVER == "PARDISO":
         sources = source_files + ("src/SparseSolver.cpp",)
-        target  = SOLVER_PARDISO
 
-    if ctx.options.pardiso_mkl:
-        ctx.env = ctx.all_envs[SOLVER_PARDISO_MKL]
+    if ctx.env.SOLVER == "MKL":
         sources = source_files + ("src/SparseSolverPardisoMKL.cpp",)
-        target  = SOLVER_PARDISO_MKL
 
 
     ctx.lib(
         source          = sources,
-        target          = target,
+        target          = "essolver_{0}".format(ctx.env.SOLVER),
         install_path    = ctx.LIBRARIES,
         use             = "espreso_includes"
-    )
-
-    ctx(
-        export_includes = "src",
-        name            = "solver_includes"
     )
 

@@ -14,7 +14,7 @@ namespace mesh {
 }
 
 namespace assembler {
-	Discretization discretization = API;
+	Discretization discretization = FEM;
 	Assembler assembler = LinearElasticity;
 }
 namespace solver {

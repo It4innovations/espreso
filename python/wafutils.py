@@ -1,26 +1,68 @@
 
 import os
 
-def set_configuration(ctx, attributes):
-    # Load default configuration
-    defaultConfig = open("build.config.default", "r")
-    for line in defaultConfig:
-        parts = line.split('#', 1)[0].partition('=')
-        if parts[1] == '=':
-            ctx.env[parts[0].strip()] = parts[2].split()
-
-    # Load user specific configuration
-    if os.path.isfile("build.config"):
-        userConfig = open("build.config", "r")
-        for line in userConfig:
+def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes):
+    def read_config(config):
+        for line in config:
             parts = line.split('#', 1)[0].partition('=')
             if parts[1] == '=':
                 ctx.env[parts[0].strip()] = parts[2].split()
 
-    # Load configuration specified while the project configuration
-    for attribute in attributes:
+    def read_attribute(attribute, type):
         if getattr(ctx.options, attribute):
-            ctx.env[attribute] = getattr(ctx.options, attribute)
+            ctx.env[attribute] = getattr(ctx.options, attribute).split()
+        if type == "choice":
+            ctx.env[attribute] = ctx.env[attribute][0]
+
+    def print_attribute(attribute, type, value):
+        if type == "string":
+            ctx.msg("Settings " + attribute + " to ", " ".join(value))
+        else:
+            ctx.msg("Settings " + attribute + " to ", value)
+
+    # Load default configuration
+    defaultConfig = open("build.config.default", "r")
+    read_config(open("build.config.default", "r"))
+
+    # Load user specific configuration
+    if os.path.isfile("build.config"):
+        read_config(open("build.config", "r"))
+
+    # Load configuration specified while the project configuration
+    for attribute, description, type, value in espreso_attributes + compilers + compiler_attributes:
+        read_attribute(attribute, type)
+
+    for solver in solvers:
+        for attribute, description, type, value in compiler_attributes:
+            read_attribute(solver + "::" + attribute, type)
+
+    ctx.env.LINK_CXX = ctx.env.CXX
+
+    # Print final configuration
+    for attribute, description, type, value in espreso_attributes:
+        print_attribute(attribute, type, ctx.env[attribute])
+
+    for attribute, description, type, value in compiler_attributes:
+        print_attribute(attribute, type,
+                        ctx.env[attribute] + ctx.env[ctx.env["SOLVER"] + "::" + attribute])
+
+def set_datatypes(ctx):
+    ctx.env.INT_WIDTH = int(ctx.env.INT_WIDTH)
+    if ctx.env.INT_WIDTH == 32:
+        ctx.env.append_unique("DEFINES", [ "eslocal=int", "MKL_INT=int", "esglobal=int", "esglobal_mpi=MPI_INT" ])
+    elif ctx.env.INT_WIDTH == 64:
+        ctx.env.append_unique("DEFINES", [ "-Deslocal=long", "-DMKL_INT=long", "-Desglobal=long", "-Desglobal_mpi=MPI_LONG" ])
+    else:
+        ctx.fatal("ESPRESO supports only INT_WIDTH = {32, 64}.")
+
+def append_solver_attributes(ctx):
+    if ctx.env.SOLVER == "MIC" or ctx.env.SOLVER == "CUDA":
+        ctx.env.append_unique("DEFINES", ctx.env.SOLVER)
+
+    env = ctx.all_envs[""]
+    for attribute in env.table:
+        if attribute.find(ctx.env.SOLVER) != -1:
+            ctx.env.append_unique(attribute.split("::")[1], env[attribute])
 
 def set_indices_width(ctx):
     if ctx.env.ESLOCAL == 32:
@@ -187,6 +229,7 @@ def configure_indices_width(ctx):
 
 
 def check_configuration(version):
+    return True
     if not os.path.isfile("build/config.h") or not os.path.isfile("include/espreso.h"):
         return False
 

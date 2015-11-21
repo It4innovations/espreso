@@ -1,18 +1,5 @@
 
 APP = "espreso"
-APP_MIC = APP + "_mic"
-APP_CUDA = APP + "_cuda"
-APP_PARDISO = APP + "_pardiso"
-APP_PARDISO_MKL = APP + "_pardiso_mkl"
-APP_MUMPS = APP + "_mumps"
-SOLVER = "essolver"
-SOLVER_MIC = SOLVER + "_mic"
-SOLVER_CUDA = SOLVER + "_cuda"
-SOLVER_PARDISO = SOLVER + "_pardiso"
-SOLVER_PARDISO_MKL = SOLVER + "_pardiso_mkl"
-SOLVER_MUMPS = SOLVER + "_mumps"
-
-import os
 
 from waflib.Tools.ccroot import link_task
 
@@ -49,64 +36,25 @@ apiwrapper_files = (
 
 def configure(ctx):
     ctx.setenv(APP, ctx.all_envs[""].derive())
-
-################################################################################
-#                     Set libraries used by ESPRESO
-################################################################################
+    ctx.append_solver_attributes(ctx)
 
     ctx.env.append_unique("LIBPATH", [ "../libs" ])
-    if ctx.options.titan:
-        ctx.env.append_unique("LIBPATH", [ "/opt/intel/composer_xe_2013_sp1.2.144/compiler/lib/intel64/" ])
-    else:
-        ctx.env.append_unique("STLIBPATH", [ "../libs" ])
+    ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
-    if ctx.env.ESLOCAL == 32:
+    if ctx.env.INT_WIDTH == 32:
         mkl = "mkl_intel_lp64"
         metis = "metis32"
-    if ctx.env.ESLOCAL == 64:
+    if ctx.env.INT_WIDTH == 64:
         mkl = "mkl_intel_ilp64"
         metis = "metis64"
-    if ctx.options.titan:
-        metis = "metis"
 
+    ctx.env.append_unique("LIB", [ metis ])
 
-    ctx.setenv(APP_MIC, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "imf", "intlc", "svml", "irng", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-    ctx.env.append_unique("STLIB", [ "ifcore" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread".format(os.environ['MKLROOT']) ])
-
-
-    ctx.setenv(APP_CUDA, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-    #ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
-    ctx.env.append_unique("STLIB", [ "cudart", "cublas" ])
-    #ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", "cudart", "cublas", metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-    #ctx.env.append_unique("STLIB", [ "ifcore" ])
-
-
-    ctx.setenv(APP_PARDISO, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("LIB", [ metis, "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-    if ctx.options.titan:
-        ctx.env.append_value("LIB", [ "ifcore" ])
-    else:
+    if ctx.env.SOLVER == "PARDISO":
+        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
         ctx.env.append_value("STLIB", [ "ifcore" ])
 
-    ctx.setenv(APP_PARDISO_MKL, ctx.all_envs[APP].derive())
-    if ctx.options.titan:
-        ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-        ctx.env.append_unique("LIB", [ "cudart", "cublas" ])
-        ctx.env.append_unique("STLIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "irng", "svml" ])
-    else:
-        ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-
-
-    ctx.setenv(APP_MUMPS, ctx.all_envs[APP].derive())
-    ctx.env.append_unique("LIB", [ metis, "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-    ctx.env.append_unique("STLIB", [ "dmumps", "mumps_common", "pord", "esmumps", "scotch", "scotcherr" ])
-    if ctx.options.gfortran:
-        ctx.env.append_unique("LIB", [ "gfortran" ])
-    else:
-        ctx.env.append_unique("LIB", [ "ifcore" ])
+    ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
 
 ################################################################################
@@ -114,48 +62,26 @@ def configure(ctx):
 
 
 def build(ctx):
-    # DEFAULT APPLICATION
-    ctx.env     = ctx.all_envs[APP_PARDISO_MKL]
-    solver      = SOLVER_PARDISO_MKL
-
-    if ctx.options.mic:
-        ctx.env = ctx.all_envs[APP_MIC]
-        solver  = SOLVER_MIC
-
-    if ctx.options.cuda:
-        ctx.env = ctx.all_envs[APP_CUDA]
-        solver  = SOLVER_CUDA
-
-    if ctx.options.mumps:
-        ctx.env = ctx.all_envs[APP_MUMPS]
-        solver  = SOLVER_MUMPS
-
-    if ctx.options.pardiso:
-        ctx.env     = ctx.all_envs[APP_PARDISO]
-        solver      = SOLVER_PARDISO
-
-    if ctx.options.catalyst:
-        ctx.env.append_unique("STLIB", [ "adaptor" ])
-        ctx.env.append_unique("CXXFLAGS", [ "-DCATALYST" ])
+    ctx.env = ctx.all_envs[APP]
 
     ctx.program(
         source          = source_files + ("main.cpp",),
         target          = "espreso",
-        use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
         install_path    = ctx.ROOT
     )
 
     ctx.program(
         source          = source_files + ("decomposer.cpp",),
         target          = "decomposer",
-        use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
         install_path    = ctx.ROOT
     )
 
     ctx.lib(
         source          = apiwrapper_files,
         target          = "espreso",
-        use             = "espreso_insluces esbasis esconfig {0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(solver),
+        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
         install_path    = ctx.LIBRARIES
     )
 
