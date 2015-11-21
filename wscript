@@ -50,7 +50,6 @@ def check_lib(self, library, dependencies=[]):
 def check_stlib(self, library, dependencies=[]):
     self.stlibs[library] = [ library ] + dependencies
 
-
 def configure(ctx):
     ctx.headers = []
     ctx.libs = {}
@@ -124,7 +123,6 @@ def build(ctx):
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
     ctx.recurse("src/app")
-
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32
