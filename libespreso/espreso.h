@@ -14,13 +14,16 @@
  Possible values for FETI4I_REAL_WIDTH:
    64: ESPRESO supports only 64 bit real values
 ------------------------------------------------------------------------------*/
+#ifndef FETI4I_INDICES_WIDTH
 #define FETI4I_INDICES_WIDTH 32
+#endif
+
 #define FETI4I_REAL_WIDTH 64
 
 #if FETI4I_INDICES_WIDTH == 32
 	typedef int FETI4IInt;
 #elif FETI4I_INDICES_WIDTH == 64
-	typedef long esint;
+	typedef long FETI4IInt;
 #else
 	#error "Incorrect user-supplied value of FETI4I_INDICES_WIDTH"
 #endif
@@ -41,60 +44,45 @@ extern "C" {
 ------------------------------------------------------------------------------*/
 typedef struct FETI4IStructMatrix* FETI4IMatrix;
 typedef struct FETI4IStructIntVector* FETI4IIntVector;
-typedef struct FETI4IStructDoubleVector* FETI4IDoubleVector;
-typedef struct FETI4IStructMap* FETI4IMap;
+typedef struct FETI4IStructRealVector* FETI4IRealVector;
 
-typedef struct FETI4IStructFETIIntance* FETI4IFETIInstance;
+typedef struct FETI4IStructIntance* FETI4IInstance;
 
 
 /*-----------------------------------------------------------------------------
  Functions for manipulating with ESPRESO internal structures
 ------------------------------------------------------------------------------*/
 int FETI4ICreateMatrixElemental(
-	FETI4IInt n,
-	FETI4IInt nelt,
-	FETI4IInt *eltptr,
-	FETI4IInt *eltvar,
-	FETI4IReal *values,
-	FETI4IMatrix *stiffnessMatrix
+		FETI4IMatrix *stiffnessMatrix,
+		FETI4IInt n,
+		FETI4IInt nelt,
+		FETI4IInt* eltptr,
+		FETI4IInt* eltvar,
+		FETI4IReal* values
 );
 
 int FETI4ICreateDoubleVector(
-	FETI4IInt size,
-	FETI4IReal *values,
-	FETI4IDoubleVector *vector
+		FETI4IRealVector *vector,
+		FETI4IInt size,
+		FETI4IReal* values
 );
 
 int FETI4ICreateIntVector(
-	FETI4IInt size,
-	FETI4IInt *values,
-	FETI4IIntVector *vector
+		FETI4IIntVector *vector,
+		FETI4IInt size,
+		FETI4IInt *values
 );
 
-int FETI4ICreateMap(
-	FETI4IInt size,
-	FETI4IInt *indices,
-	FETI4IReal *values,
-	FETI4IMap *vector
-);
-
-int FETI4IUpdateDoubleVector(
-	FETI4IInt size,
-	FETI4IReal *values,
-	FETI4IDoubleVector *vector
+int FETI4IUpdateRealVector(
+		FETI4IRealVector vector,
+		FETI4IInt size,
+		FETI4IReal* values
 );
 
 int FETI4IUpdateIntVector(
-	FETI4IInt size,
-	FETI4IInt *values,
-	FETI4IIntVector *vector
-);
-
-int FETI4IUpdateMap(
-	FETI4IInt size,
-	FETI4IInt *indices,
-	FETI4IReal *values,
-	FETI4IMap *vector
+		FETI4IIntVector vector,
+		FETI4IInt size,
+		FETI4IInt* values
 );
 
 
@@ -102,38 +90,40 @@ int FETI4IUpdateMap(
  Functions for creating an instance and solve it
 ------------------------------------------------------------------------------*/
 
-int FETI4ISolveFETI(
-	FETI4IInt *settings,
-	FETI4IFETIInstance *instance,
-	FETI4IInt size,
-	FETI4IReal *values
+int FETI4ISolve(
+	FETI4IInstance instance,
+	FETI4IInt solution_size,
+	FETI4IReal* solution
 );
 
-int FETI4IPrepareFETIInstance(
-	FETI4IInt *settings,
-	FETI4IMatrix *stiffnessMatrix,
-	FETI4IDoubleVector *rhs,
-	FETI4IMap *dirichlet,
-	FETI4IIntVector *l2g,
-	FETI4IIntVector *neighbourRanks,
-	FETI4IFETIInstance *instance
+int FETI4ICreateInstance(
+		FETI4IInstance *instance,
+		FETI4IInt* settings,
+		FETI4IMatrix stiffnessMatrix,
+		FETI4IRealVector rhs,
+		FETI4IIntVector dirichlet_indices,
+		FETI4IRealVector dirichlet_values,
+		FETI4IIntVector l2g,
+		FETI4IIntVector neighbourRanks,
+		MPI_Comm communicator
 );
 
 int FETI4IUpdateStiffnessMatrix(
-	FETI4IMatrix *stiffnessMatrix,
-	FETI4IFETIInstance *instance
+		FETI4IInstance instance,
+		FETI4IMatrix stiffnessMatrix
 );
 
 int FETI4IUpdateRhs(
-	FETI4IDoubleVector *rhs,
-	FETI4IFETIInstance *instance
+		FETI4IInstance instance,
+		FETI4IRealVector rhs
 );
 
 int FETI4IUpdateDirichlet(
-	FETI4IMap *dirichlet,
-	FETI4IIntVector *l2g,
-	FETI4IIntVector *neighbourRanks,
-	FETI4IFETIInstance *instance
+		FETI4IInstance instance,
+		FETI4IIntVector dirichlet_instances,
+		FETI4IRealVector dirichlet_values,
+		FETI4IIntVector l2g,
+		FETI4IIntVector neighbourRanks
 );
 
 
@@ -144,15 +134,6 @@ int FETI4IUpdateDirichlet(
 int FETI4IDestroy(
 	void *data
 );
-
-
-
-////// Avoid Init and Finalize to make more user-friendly approach?
-int FETI4IInit(
-	MPI_Comm communicator
-);
-int FETI4IFinalize();
-///////////////////////////////
 
 #ifdef __cplusplus
 }

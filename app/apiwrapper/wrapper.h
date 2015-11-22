@@ -7,16 +7,12 @@
 #include "esconfig.h"
 #include "esassemblers.h"
 
-struct FETI4IStructDoubleVector {
+struct FETI4IStructRealVector {
 	std::vector<double> data;
 };
 
 struct FETI4IStructIntVector {
 	std::vector<eslocal> data;
-};
-
-struct FETI4IStructMap {
-	std::map<eslocal, double> data;
 };
 
 struct FETI4IStructMatrix {
@@ -25,18 +21,17 @@ struct FETI4IStructMatrix {
 	SparseCSRMatrix<eslocal> data;
 };
 
-struct FETI4IStructFETIIntance {
-	FETI4IStructFETIIntance(assembler::LinearElasticity<assembler::API> data): data(data) { };
+struct FETI4IStructIntance {
+	FETI4IStructIntance(assembler::LinearElasticity<assembler::API> data): data(data) { };
 
 	assembler::LinearElasticity<assembler::API> data;
 };
 
 struct DataHolder {
-	static std::list<FETI4IStructDoubleVector*> doubleVectors;
+	static std::list<FETI4IStructRealVector*> doubleVectors;
 	static std::list<FETI4IStructIntVector*> intVectors;
-	static std::list<FETI4IStructMap*> maps;
 	static std::list<FETI4IStructMatrix*> matrices;
-	static std::list<FETI4IStructFETIIntance*> instances;
+	static std::list<FETI4IStructIntance*> instances;
 	static MPI_Comm communicator;
 };
 

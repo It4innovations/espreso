@@ -140,28 +140,28 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 
 	holder->rhs = new std::vector<double>(_f[0]);
 
-	holder->dirichlet = new std::map<eslocal, double>();
+	std::map<eslocal, double> dirichlet;
 	const mesh::Coordinates &coo = this->_input.mesh.coordinates();
 	const std::map<eslocal, double> &dx = coo.property(mesh::DIRICHLET_X).values();
 	const std::map<eslocal, double> &dy = coo.property(mesh::DIRICHLET_X).values();
 	const std::map<eslocal, double> &dz = coo.property(mesh::DIRICHLET_X).values();
 	std::map<eslocal, double>::const_iterator it;
 	for (it = dx.begin(); it != dx.end(); ++it) {
-		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + indexing] = it->second;
+		dirichlet[3 * coo.globalIndex(it->first) + indexing] = it->second;
 	}
 	for (it = dy.begin(); it != dy.end(); ++it) {
-		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + 1 + indexing] = it->second;
+		dirichlet[3 * coo.globalIndex(it->first) + 1 + indexing] = it->second;
 	}
 	for (it = dz.begin(); it != dz.end(); ++it) {
-		(*holder->dirichlet)[3 * coo.globalIndex(it->first) + 2 + indexing] = it->second;
+		dirichlet[3 * coo.globalIndex(it->first) + 2 + indexing] = it->second;
 	}
 
-	holder->dir_indices = new std::vector<eslocal>(holder->dirichlet->size());
-	holder->dir_values = new std::vector<double>(holder->dirichlet->size());
+	holder->dirichlet_indices = new std::vector<eslocal>(dirichlet.size());
+	holder->dirichlet_values = new std::vector<double>(dirichlet.size());
 	eslocal index = 0;
-	for (it = holder->dirichlet->begin(); it != holder->dirichlet->end(); ++it, index++) {
-		(*holder->dir_indices)[index] = it->first;
-		(*holder->dir_values)[index] = it->second;
+	for (it = dirichlet.begin(); it != dirichlet.end(); ++it, index++) {
+		(*holder->dirichlet_indices)[index] = it->first;
+		(*holder->dirichlet_values)[index] = it->second;
 	}
 
 	holder->l2g = new std::vector<eslocal>(coo.size() * 3);

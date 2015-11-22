@@ -3,32 +3,20 @@
 
 using namespace assembler;
 
-std::list<FETI4IStructDoubleVector*> DataHolder::doubleVectors;
+std::list<FETI4IStructRealVector*> DataHolder::doubleVectors;
 std::list<FETI4IStructIntVector*> DataHolder::intVectors;
-std::list<FETI4IStructMap*> DataHolder::maps;
 std::list<FETI4IStructMatrix*> DataHolder::matrices;
-std::list<FETI4IStructFETIIntance*> DataHolder::instances;
-MPI_Comm DataHolder::communicator;
+std::list<FETI4IStructIntance*> DataHolder::instances;
 
 using namespace assembler;
 
-int FETI4IFinalize();
-
-int FETI4IInit(MPI_Comm communicator)
-{
-	DataHolder::communicator = communicator;
-	MPI_Comm_rank(communicator, &esconfig::MPIrank);
-	MPI_Comm_size(communicator, &esconfig::MPIsize);
-	return 0;
-}
-
 int FETI4ICreateMatrixElemental(
-	FETI4IInt n,
-	FETI4IInt nelt,
-	FETI4IInt *eltptr,
-	FETI4IInt *eltvar,
-	FETI4IReal *values,
-	FETI4IMatrix *stiffnessMatrix)
+		FETI4IMatrix *stiffnessMatrix,
+		FETI4IInt n,
+		FETI4IInt nelt,
+		FETI4IInt* eltptr,
+		FETI4IInt* eltvar,
+		FETI4IReal* values)
 {
 	FETI4IInt indexing = eltptr[0];
 
@@ -51,20 +39,20 @@ int FETI4ICreateMatrixElemental(
 }
 
 int FETI4ICreateDoubleVector(
-	FETI4IInt size,
-	FETI4IReal *values,
-	FETI4IDoubleVector *vector)
+		FETI4IRealVector *vector,
+		FETI4IInt size,
+		FETI4IReal* values)
 {
-	DataHolder::doubleVectors.push_back(new FETI4IStructDoubleVector());
+	DataHolder::doubleVectors.push_back(new FETI4IStructRealVector());
 	DataHolder::doubleVectors.back()->data = std::vector<double>(values, values + size);
 	*vector = DataHolder::doubleVectors.back();
 	return 0;
 }
 
 int FETI4ICreateIntVector(
-	FETI4IInt size,
-	FETI4IInt *values,
-	FETI4IIntVector *vector)
+		FETI4IIntVector *vector,
+		FETI4IInt size,
+		FETI4IInt *values)
 {
 	DataHolder::intVectors.push_back(new FETI4IStructIntVector());
 	DataHolder::intVectors.back()->data = std::vector<eslocal>(values, values + size);
@@ -72,47 +60,38 @@ int FETI4ICreateIntVector(
 	return 0;
 }
 
-int FETI4ICreateMap(
-	FETI4IInt size,
-	FETI4IInt *indices,
-	FETI4IReal *values,
-	FETI4IMap *vector)
+int FETI4ICreateInstance(
+		FETI4IInstance *instance,
+		FETI4IInt* settings,
+		FETI4IMatrix stiffnessMatrix,
+		FETI4IRealVector rhs,
+		FETI4IIntVector dirichlet_indices,
+		FETI4IRealVector dirichlet_values,
+		FETI4IIntVector l2g,
+		FETI4IIntVector neighbourRanks,
+		MPI_Comm communicator)
 {
-	DataHolder::maps.push_back(new FETI4IStructMap());
-	for (FETI4IInt i = 0; i < size; i++) {
-		DataHolder::maps.back()->data[indices[i]] = values[i];
-	}
-	*vector = DataHolder::maps.back();
-	return 0;
-}
-
-int FETI4IPrepareFETIInstance(
-	FETI4IInt *settings,
-	FETI4IMatrix *stiffnessMatrix,
-	FETI4IDoubleVector *rhs,
-	FETI4IMap *dirichlet,
-	FETI4IIntVector *l2g,
-	FETI4IIntVector *neighbourRanks,
-	FETI4IFETIInstance *instance)
-{
-	API api((*stiffnessMatrix)->data, (*rhs)->data, (*dirichlet)->data, (*l2g)->data, (*neighbourRanks)->data);
-	DataHolder::instances.push_back(new FETI4IStructFETIIntance(api));
+	MPI_Comm_rank(communicator, &esconfig::MPIrank);
+	MPI_Comm_size(communicator, &esconfig::MPIsize);
+	API api(
+			stiffnessMatrix->data, rhs->data, dirichlet_indices->data, dirichlet_values->data,
+			l2g->data, neighbourRanks->data);
+	DataHolder::instances.push_back(new FETI4IStructIntance(api));
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
 	return 0;
 }
 
-int FETI4ISolveFETI(
-	FETI4IInt *settings,
-	FETI4IFETIInstance *instance,
-	FETI4IInt size,
-	FETI4IReal *values)
+int FETI4ISolve(
+	FETI4IInstance instance,
+	FETI4IInt solution_size,
+	FETI4IReal* solution)
 {
-	std::vector<std::vector<double> > solution(1);
-	solution[0] = std::vector<double>(values, values + size);
-	(*instance)->data.solve(solution);
-	memcpy(values, &solution[0][0], size);
+	std::vector<std::vector<double> > solutions(1);
+	solutions[0] = std::vector<double>(solution, solution + solution_size);
+	instance->data.solve(solutions);
+	memcpy(solution, &solutions[0][0], solution_size);
 	return 0;
 }
 
@@ -132,15 +111,9 @@ int FETI4IDestroy(void *data)
 {
 	destroy(DataHolder::doubleVectors, data);
 	destroy(DataHolder::intVectors, data);
-	destroy(DataHolder::maps, data);
 	destroy(DataHolder::matrices, data);
 	destroy(DataHolder::instances, data);
 
-	return 0;
-}
-
-int FETI4IFinalize()
-{
 	return 0;
 }
 

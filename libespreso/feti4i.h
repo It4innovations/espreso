@@ -1,11 +1,11 @@
 
-#ifndef ESPRESO_API_SIMPLE_H_
-#define ESPRESO_API_SIMPLE_H_
+#ifndef FETI4I_H_
+#define FETI4I_H_
 
 #include "mpi.h"
 
 /*-----------------------------------------------------------------------------
- Set data-types used in ESPRESO
+ Set data-types used in FETI4I
 
  Possible values for FETI4I_INDICES_WIDTH:
    32: use 32 bit signed integer
@@ -14,13 +14,16 @@
  Possible values for FETI4I_REAL_WIDTH:
    64: ESPRESO supports only 64 bit real values
 ------------------------------------------------------------------------------*/
+#ifndef FETI4I_INDICES_WIDTH
 #define FETI4I_INDICES_WIDTH 32
+#endif
+
 #define FETI4I_REAL_WIDTH 64
 
 #if FETI4I_INDICES_WIDTH == 32
 	typedef int FETI4IInt;
 #elif FETI4I_INDICES_WIDTH == 64
-	typedef long esint;
+	typedef long FETI4IInt;
 #else
 	#error "Incorrect user-supplied value of FETI4I_INDICES_WIDTH"
 #endif
@@ -37,71 +40,74 @@ extern "C" {
 #endif
 
 /*-----------------------------------------------------------------------------
- Definitions of internal structures used in ESPRESO
+ Definitions of internal structures used in FETI4I
 ------------------------------------------------------------------------------*/
 typedef struct FETI4IStructMatrix* FETI4IMatrix;
-typedef struct FETI4IStructFETIIntance* FETI4IFETIInstance;
+typedef struct FETI4IStructIntance* FETI4IInstance;
 
 
 /*-----------------------------------------------------------------------------
- Functions for manipulating with ESPRESO internal structures
+ Functions for manipulating with FETI4I internal structures
 ------------------------------------------------------------------------------*/
-int FETI4ICreateMatrixElemental(
-	FETI4IInt n,
-	FETI4IInt nelt,
-	FETI4IInt *eltptr,
-	FETI4IInt *eltvar,
-	FETI4IReal *values,
-	FETI4IMatrix *stiffnessMatrix
+int FETI4ICreateStiffnessMatrix(
+		FETI4IMatrix 	*stiffnessMatrix,
+		FETI4IInt 		n,
+		FETI4IInt 		nelt,
+		FETI4IInt* 		eltptr,
+		FETI4IInt* 		eltvar,
+		FETI4IReal* 	values
 );
 
 /*-----------------------------------------------------------------------------
  Functions for creating an instance and solve it
 ------------------------------------------------------------------------------*/
 
-int FETI4ISolveFETI(
-	FETI4IInt *settings,
-	FETI4IFETIInstance *instance,
-	FETI4IInt solution_size,
-	FETI4IReal *solution_values
+int FETI4ISolve(
+		FETI4IInstance 	instance,
+		FETI4IInt 		solution_size,
+		FETI4IReal*		solution
 );
 
-int FETI4IPrepareFETIInstance(
-	FETI4IInt *settings,
-	FETI4IMatrix *stiffnessMatrix,
-	FETI4IInt rhs_size,
-	FETI4IReal *rhs_values,
-	FETI4IInt dirichlet_size,
-	FETI4IInt *dirichlet_indices,
-	FETI4IReal *dirichlet_values,
-	FETI4IInt l2g_size,
-	FETI4IReal *l2g_values,
-	FETI4IInt neighbour_size,
-	FETI4IReal *neighbour_values,
-	MPI_Comm communicator,
-	FETI4IFETIInstance *instance
+int FETI4ICreateInstance(
+		FETI4IInstance 	*instance,
+		FETI4IInt* 		settings,	// Currently only NULL is supported
+		FETI4IMatrix 	stiffnessMatrix,
+		FETI4IInt 		rhs_size,
+		FETI4IReal* 	rhs,
+		FETI4IInt 		dirichlet_size,
+		FETI4IInt* 		dirichlet_indices,
+		FETI4IReal* 	dirichlet_values,
+		FETI4IInt 		l2g_size,
+		FETI4IReal* 	l2g_values,
+		FETI4IInt 		neighbours_size,
+		FETI4IReal* 	neighbours,
+		MPI_Comm 		communicator	// Currently only MPI_COMM_WORLD is supported
 );
+
+/*-----------------------------------------------------------------------------
+ Functions for updating a created instance
+------------------------------------------------------------------------------*/
 
 int FETI4IUpdateStiffnessMatrix(
-	FETI4IMatrix *stiffnessMatrix,
-	FETI4IFETIInstance *instance
+		FETI4IInstance 	instance,
+		FETI4IMatrix 	stiffnessMatrix
 );
 
 int FETI4IUpdateRhs(
-	FETI4IInt rhs_size,
-	FETI4IReal *rhs_values,
-	FETI4IFETIInstance *instance
+		FETI4IInstance 	instance,
+		FETI4IInt 		rhs_size,
+		FETI4IReal* 	rhs_values
 );
 
 int FETI4IUpdateDirichlet(
-	FETI4IInt dirichlet_size,
-	FETI4IInt *dirichlet_indices,
-	FETI4IReal *dirichlet_values,
-	FETI4IInt l2g_size,
-	FETI4IReal *l2g_values,
-	FETI4IInt neighbour_size,
-	FETI4IReal *neighbour_values,
-	FETI4IFETIInstance *instance
+		FETI4IInstance 	instance,
+		FETI4IInt 		dirichlet_size,
+		FETI4IInt* 		dirichlet_indices,
+		FETI4IReal* 	dirichlet_values,
+		FETI4IInt 		l2g_size,
+		FETI4IReal* 	l2g_values,
+		FETI4IInt 		neighbour_size,
+		FETI4IReal* 	neighbour_values
 );
 
 
@@ -110,7 +116,7 @@ int FETI4IUpdateDirichlet(
 ------------------------------------------------------------------------------*/
 
 int FETI4IDestroy(
-	void *data
+		void* 			data
 );
 
 #ifdef __cplusplus
@@ -118,4 +124,4 @@ int FETI4IDestroy(
 #endif
 
 
-#endif /* ESPRESO_API_SIMPLE_H_ */
+#endif /* FETI4I_H_ */

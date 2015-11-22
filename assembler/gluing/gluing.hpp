@@ -33,11 +33,10 @@ void Gluing<API>::computeSubdomainGluing()
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
 
 	//std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
-	std::map<eslocal, double>::const_iterator it;
-	for (it = _input.dirichlet.begin(); it != _input.dirichlet.end(); ++it) {
+	for (size_t i = 0; i != _input.dirichlet_indices.size(); i++) {
 
 		eslocal loc_DOF_num = -1;
-		map_it = g2l.find(it->first);
+		map_it = g2l.find(_input.dirichlet_indices[i]);
 		if (  map_it != g2l.end() ) {
 			loc_DOF_num = map_it->second;
 
@@ -46,7 +45,7 @@ void Gluing<API>::computeSubdomainGluing()
 			_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
 			_lambda_map_sub_B1[0].push_back(lambda_count_B1);
 			_B1_duplicity[0].push_back(1.0);
-			_vec_c[0].push_back(it->second);
+			_vec_c[0].push_back(_input.dirichlet_values[i]);
 
 			lambda_count_B1++;
 		}

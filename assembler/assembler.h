@@ -28,9 +28,8 @@ struct BEM {
 struct APIHolder {
 	SparseCSRMatrix<eslocal> *K;
 	std::vector<double> *rhs;
-	std::map<eslocal, double> *dirichlet;
-	std::vector<eslocal> *dir_indices;
-	std::vector<double> *dir_values;
+	std::vector<eslocal> *dirichlet_indices;
+	std::vector<double> *dirichlet_values;
 	std::vector<eslocal> *l2g;
 	std::vector<eslocal> *neighbourRanks;
 	eslocal indexing;
@@ -38,9 +37,8 @@ struct APIHolder {
 	~APIHolder() {
 		delete K;
 		delete rhs;
-		delete dirichlet;
-		delete dir_indices;
-		delete dir_values;
+		delete dirichlet_indices;
+		delete dirichlet_values;
 		delete l2g;
 		delete neighbourRanks;
 	}
@@ -50,17 +48,21 @@ struct API {
 
 	API(SparseCSRMatrix<eslocal> &K,
 		std::vector<double> &rhs,
-		std::map<eslocal, double> &dirichlet,
+		std::vector<eslocal> &dirichlet_indices,
+		std::vector<double> &dirichlet_values,
 		std::vector<eslocal> &l2g,
 		std::vector<eslocal> &neighbourRanks)
-	:K(K), rhs(rhs), dirichlet(dirichlet), l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
+	:K(K), rhs(rhs), dirichlet_indices(dirichlet_indices), dirichlet_values(dirichlet_values),
+	 l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
 
-	API(APIHolder &holder): K(*holder.K), rhs(*holder.rhs), dirichlet(*holder.dirichlet),
+	API(APIHolder &holder): K(*holder.K), rhs(*holder.rhs),
+		dirichlet_indices(*holder.dirichlet_indices), dirichlet_values(*holder.dirichlet_values),
 		l2g(*holder.l2g), neighbourRanks(*holder.neighbourRanks), indexing(holder.indexing) { };
 
 	SparseCSRMatrix<eslocal> &K;
 	std::vector<double> &rhs;
-	std::map<eslocal, double> &dirichlet;
+	std::vector<eslocal> &dirichlet_indices;
+	std::vector<double> &dirichlet_values;
 	std::vector<eslocal> &l2g;
 	std::vector<eslocal> &neighbourRanks;
 	eslocal indexing;
@@ -70,7 +72,9 @@ struct API2 {
 	API2(APIHolder &holder):
 		K(holder.K),
 		rhs_size(holder.rhs->size()), rhs(holder.rhs->data()),
-		dirichlet_size(holder.dirichlet->size()), dirichlet_indices(holder.dir_indices->data()), dirichlet_values(holder.dir_values->data()),
+		dirichlet_size(holder.dirichlet_indices->size()),
+		dirichlet_indices(holder.dirichlet_indices->data()),
+		dirichlet_values(holder.dirichlet_values->data()),
 		l2g_size(holder.l2g->size()), l2g(holder.l2g->data()),
 		neighbour_size(holder.neighbourRanks->size()), neighbour(holder.neighbourRanks->data()),
 		indexing(holder.indexing) { };
