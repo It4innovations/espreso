@@ -29,7 +29,7 @@
 #endif
 
 #if FETI4I_REAL_WIDTH == 64
-	typedef long FETI4IReal;
+	typedef double FETI4IReal;
 #else
 	#error "Incorrect user-supplied value of FETI4I_REAL_WIDTH"
 #endif
@@ -78,9 +78,9 @@ int FETI4ICreateInstance(
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values,
 		FETI4IInt 		l2g_size,
-		FETI4IReal* 	l2g_values,
+		FETI4IInt* 		l2g,
 		FETI4IInt 		neighbours_size,
-		FETI4IReal* 	neighbours,
+		FETI4IInt* 		neighbours,
 		MPI_Comm 		communicator	// Currently only MPI_COMM_WORLD is supported
 );
 

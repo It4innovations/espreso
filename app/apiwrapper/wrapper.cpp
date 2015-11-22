@@ -3,8 +3,6 @@
 
 using namespace assembler;
 
-std::list<FETI4IStructRealVector*> DataHolder::doubleVectors;
-std::list<FETI4IStructIntVector*> DataHolder::intVectors;
 std::list<FETI4IStructMatrix*> DataHolder::matrices;
 std::list<FETI4IStructIntance*> DataHolder::instances;
 
@@ -38,44 +36,35 @@ int FETI4ICreateMatrixElemental(
 	return 0;
 }
 
-int FETI4ICreateDoubleVector(
-		FETI4IRealVector *vector,
-		FETI4IInt size,
-		FETI4IReal* values)
-{
-	DataHolder::doubleVectors.push_back(new FETI4IStructRealVector());
-	DataHolder::doubleVectors.back()->data = std::vector<double>(values, values + size);
-	*vector = DataHolder::doubleVectors.back();
-	return 0;
-}
-
-int FETI4ICreateIntVector(
-		FETI4IIntVector *vector,
-		FETI4IInt size,
-		FETI4IInt *values)
-{
-	DataHolder::intVectors.push_back(new FETI4IStructIntVector());
-	DataHolder::intVectors.back()->data = std::vector<eslocal>(values, values + size);
-	*vector = DataHolder::intVectors.back();
-	return 0;
-}
-
 int FETI4ICreateInstance(
-		FETI4IInstance *instance,
-		FETI4IInt* settings,
-		FETI4IMatrix stiffnessMatrix,
-		FETI4IRealVector rhs,
-		FETI4IIntVector dirichlet_indices,
-		FETI4IRealVector dirichlet_values,
-		FETI4IIntVector l2g,
-		FETI4IIntVector neighbourRanks,
-		MPI_Comm communicator)
+		FETI4IInstance 	*instance,
+		FETI4IInt* 		settings,	// Currently only NULL is supported
+		FETI4IMatrix 	stiffnessMatrix,
+		FETI4IInt 		rhs_size,
+		FETI4IReal* 	rhs,
+		FETI4IInt 		dirichlet_size,
+		FETI4IInt* 		dirichlet_indices,
+		FETI4IReal* 	dirichlet_values,
+		FETI4IInt 		l2g_size,
+		FETI4IInt* 	l2g,
+		FETI4IInt 		neighbours_size,
+		FETI4IInt* 	neighbours,
+		MPI_Comm 		communicator)
 {
 	MPI_Comm_rank(communicator, &esconfig::MPIrank);
 	MPI_Comm_size(communicator, &esconfig::MPIsize);
-	API api(
-			stiffnessMatrix->data, rhs->data, dirichlet_indices->data, dirichlet_values->data,
-			l2g->data, neighbourRanks->data);
+
+	API2 api;
+	api.K = &(stiffnessMatrix->data);
+	api.rhs_size = rhs_size;
+	api.rhs = rhs;
+	api.dirichlet_size = dirichlet_size;
+	api.dirichlet_indices = dirichlet_indices;
+	api.dirichlet_values = dirichlet_values;
+	api.l2g_size = l2g_size;
+	api.l2g = l2g;
+	api.neighbours_size = neighbours_size;
+	api.neighbours = neighbours;
 	DataHolder::instances.push_back(new FETI4IStructIntance(api));
 
 	DataHolder::instances.back()->data.init();
@@ -109,8 +98,6 @@ static void destroy(std::list<TFETI4I*> &list, void *value)
 
 int FETI4IDestroy(void *data)
 {
-	destroy(DataHolder::doubleVectors, data);
-	destroy(DataHolder::intVectors, data);
 	destroy(DataHolder::matrices, data);
 	destroy(DataHolder::instances, data);
 

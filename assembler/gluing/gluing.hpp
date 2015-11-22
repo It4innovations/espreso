@@ -515,8 +515,8 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 
 	local_B1_global_resize();
 
-	for (eslocal i = 0; i < _input.neighbour_size; i++)
-		_neighClusters.push_back(_input.neighbour[i]);// - index_offset);
+	for (eslocal i = 0; i < _input.neighbours_size; i++)
+		_neighClusters.push_back(_input.neighbours[i]);// - index_offset);
 
 	_myBorderDOFs.resize(_input.l2g_size);
 	for (eslocal i = 0; i < _input.l2g_size; i++)

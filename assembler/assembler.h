@@ -6,7 +6,7 @@
 #include "essolver.h"
 #include "esmesh.h"
 #include "esbem.h"
-#include "../libespreso/espreso.h"
+#include "../libespreso/feti4i.h"
 
 namespace assembler {
 
@@ -69,6 +69,7 @@ struct API {
 };
 
 struct API2 {
+	API2() {};
 	API2(APIHolder &holder):
 		K(holder.K),
 		rhs_size(holder.rhs->size()), rhs(holder.rhs->data()),
@@ -76,7 +77,7 @@ struct API2 {
 		dirichlet_indices(holder.dirichlet_indices->data()),
 		dirichlet_values(holder.dirichlet_values->data()),
 		l2g_size(holder.l2g->size()), l2g(holder.l2g->data()),
-		neighbour_size(holder.neighbourRanks->size()), neighbour(holder.neighbourRanks->data()),
+		neighbours_size(holder.neighbourRanks->size()), neighbours(holder.neighbourRanks->data()),
 		indexing(holder.indexing) { };
 
 	SparseCSRMatrix<eslocal> *K;
@@ -91,8 +92,8 @@ struct API2 {
 	eslocal l2g_size;
 	eslocal *l2g;
 
-	eslocal neighbour_size;
-	eslocal *neighbour;
+	eslocal neighbours_size;
+	eslocal *neighbours;
 
 	eslocal indexing;
 };
