@@ -947,7 +947,6 @@ void Gluing<TInput>::computeSubdomainGluing()
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
 
-
 					double dirichlet_value = property.at(i);
 
 					is_dirichlet[0] = true;

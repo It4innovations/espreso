@@ -60,7 +60,7 @@ int FETI4IAddElement(
 	eslocal offset = stiffnessMatrix->offset;
 	for (eslocal i = 0; i < size; i++) {
 		for (eslocal j = 0; j < size; j++) {
-			stiffnessMatrix->data(indices[i] - offset,  indices[j] - offset) = eMatrix[i, j];
+			stiffnessMatrix->data(indices[i] - offset,  indices[j] - offset) = eMatrix[i * size + j];
 		}
 	}
 	offset = rhs->offset;
@@ -87,9 +87,11 @@ int FETI4ICreateInstance(
 	API2 api;
 	DataHolder::instances.push_back(new FETI4IStructIntance(api));
 	DataHolder::instances.back()->K = stiffnessMatrix->data;
+	api.K = &(DataHolder::instances.back()->K);
 	SparseIJVMatrix<eslocal> ijv = rhs->data;
 	DenseMatrix d = ijv;
 	DataHolder::instances.back()->rhs = std::vector<double>(d.values(), d.values() + d.columns());
+	api.rhs = &(DataHolder::instances.back()->rhs);
 	api.dirichlet_size = dirichlet_size;
 	api.dirichlet_indices = dirichlet_indices;
 	api.dirichlet_values = dirichlet_values;
@@ -97,6 +99,7 @@ int FETI4ICreateInstance(
 	api.l2g = l2g;
 	api.neighbours_size = neighbours_size;
 	api.neighbours = neighbours;
+	DataHolder::instances.back()->data = assembler::LinearElasticity<assembler::API2>(api);
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();

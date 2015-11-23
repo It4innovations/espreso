@@ -1,157 +1,88 @@
 
-#include "libespreso/espreso.h"
+#include "libespreso/feti4i.h"
 #include <sstream>
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <cstdlib>
+
+template <typename Ttype>
+static void readFile(typename std::vector<Ttype> &vector, std::string fileName) {
+	vector.clear();
+	std::ifstream file(fileName.c_str());
+	if (file.is_open()) {
+		Ttype value;
+		while (file >> value) {
+			vector.push_back(value);
+		}
+	} else {
+		std::cerr << "Cannot read file " << fileName << "\n";
+		exit(EXIT_FAILURE);
+	}
+}
 
 int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
-
 	int MPIrank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-	ESPRESOInit(MPI_COMM_WORLD);
+	std::stringstream path;
+	path << argv[1] << "/" << MPIrank << "/";
 
-	std::stringstream ss;
-	ss << argv[1] << MPIrank;
+	FETI4IMatrix K;
+	FETI4IRHS rhs;
 
-	esint n;
-	esint nelt;
-	esint *eltptr;
-	esint *eltvar;
-	double *values;
-	esint nvar;
-	esint valueSize = 0;
+	FETI4ICreateStiffnessMatrixAndRHS(&K, &rhs, 0);
 
-	std::stringstream KeInfo;
-	KeInfo << ss.str() << "/KeInfo.txt";
-	std::ifstream file(KeInfo.str().c_str());
-	if (file.is_open()) {
-		file >> n;
-		file >> nelt;
-		file >> nvar;
-	}
-	file.close();
+	std::vector<FETI4IInt> elements;
+	readFile(elements, path.str() + "elements.txt");
+	for (size_t e = 0; e < elements.size(); e++) {
+		std::vector<FETI4IInt> indices;
+		std::vector<FETI4IReal> Kvalues, RHSvalues;
+		std::stringstream Ki, Kv, Rv;
+		Ki << path.str() << "Ki" << elements[e] << ".txt";
+		Kv << path.str() << "Ke" << elements[e] << ".txt";
+		Rv << path.str() << "Rv" << elements[e] << ".txt";
+		readFile(indices, Ki.str());
+		readFile(Kvalues, Kv.str());
+		readFile(RHSvalues, Rv.str());
 
-	eltptr = new esint[nelt + 1];
-	eltvar = new esint[nvar];
-
-	std::stringstream KeElmPtr;
-	KeElmPtr << ss.str() << "/eltptr.txt";
-	file.open(KeElmPtr.str().c_str());
-	esint index = 0;
-	if (file.is_open()) {
-		while (file >> eltptr[index++]);
-	}
-	file.close();
-
-	for (size_t i = 0; i < nelt; i++) {
-		valueSize += (eltptr[i + 1] - eltptr[i]) * (eltptr[i + 1] - eltptr[i]);
+		FETI4IAddElement(K, rhs, indices.size(), indices.data(), Kvalues.data(), RHSvalues.data());
 	}
 
-	std::stringstream KeIndex;
-	KeIndex << ss.str() << "/KeIndex.txt";
-	file.open(KeIndex.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		while (file >> eltvar[index++]);
-	}
-	file.close();
+	std::vector<FETI4IInt> dirichlet_indices;
+	std::vector<FETI4IReal> dirichlet_values;
+	std::vector<FETI4IInt> l2g;
+	std::vector<FETI4IInt> neighbours;
+	readFile(dirichlet_indices, path.str() + "dirichlet_indices.txt");
+	readFile(dirichlet_values, path.str() + "dirichlet_values.txt");
+	readFile(l2g, path.str() + "l2g.txt");
+	readFile(neighbours, path.str() + "neighbours.txt");
 
-	values = new double[valueSize];
+	FETI4IInstance instance;
 
-	std::stringstream KeValues;
-	KeValues << ss.str() << "/Ke.txt";
-	file.open(KeValues.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		while (file >> values[index++]);
-	}
-	file.close();
+	std::cout << "create instance\n";
 
-	ESPRESOMatrix K;
-	ESPRESOCreateMatrixElemental(n, nelt, eltptr, eltvar, values, &K);
+	FETI4ICreateInstance(
+			&instance,
+			K,
+			rhs,
+			dirichlet_indices.size(),
+			dirichlet_indices.data(),
+			dirichlet_values.data(),
+			l2g.data(),
+			neighbours.size(),
+			neighbours.data());
 
-	ESPRESODoubleVector rhs = new ESPRESOStructDoubleVector();
-	ESPRESOMap dirichlet = new ESPRESOStructMap();
-	ESPRESOIntVector l2g = new ESPRESOStructIntVector();
-	ESPRESOIntVector neighbourRanks = new ESPRESOStructIntVector();
+	std::vector<FETI4IReal> solution(l2g.size());
+
+	std::cout << "solve\n";
+
+	FETI4ISolve(instance, solution.size(), solution.data());
 
 
-	std::stringstream RHS;
-	RHS << ss.str() << "/f.txt";
-	file.open(RHS.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		file >> rhs->size;
-		rhs->values = new double[rhs->size];
-		while (file >> rhs->values[index++]);
-	}
-	file.close();
-
-	std::stringstream DIRI;
-	DIRI << ss.str() << "/BCDIndex.txt";
-	file.open(DIRI.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		file >> dirichlet->size;
-		if (dirichlet->size) {
-			dirichlet->indices = new esint[dirichlet->size];
-			dirichlet->values = new double[dirichlet->size];
-			while (file >> dirichlet->indices[index++]);
-		}
-	}
-	file.close();
-
-	std::stringstream DIRV;
-	DIRV << ss.str() << "/BCDValue.txt";
-	file.open(DIRV.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		if (dirichlet->size) {
-			while (file >> dirichlet->values[index++]);
-		}
-	}
-	file.close();
-
-	std::stringstream L2G;
-	L2G << ss.str() << "/l2g.txt";
-	file.open(L2G.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		file >> l2g->size;
-		l2g->values = new esint[l2g->size];
-		while (file >> l2g->values[index++]);
-	}
-	file.close();
-
-	std::stringstream RANKS;
-	RANKS << ss.str() << "/ranks.txt";
-	file.open(RANKS.str().c_str());
-	index = 0;
-	if (file.is_open()) {
-		file >> neighbourRanks->size;
-		neighbourRanks->values = new esint[neighbourRanks->size];
-		while (file >> neighbourRanks->values[index++]);
-	}
-	file.close();
-
-	ESPRESOFETIInstance instance;
-	//ESPRESOPrepareFETIInstance(&K, &rhs, &dirichlet, &l2g, &neighbourRanks, &instance);
-
-	ESPRESODoubleVector solution = new ESPRESOStructDoubleVector();
-	solution->size = rhs->size;
-	solution->values = new double[solution->size];
-	//ESPRESOSolveFETI(&instance, solution->size, solution->values);
-
-	ESPRESODoubleVector vvv;
-	ESPRESOCreateDoubleVector(rhs->size, rhs->values, &vvv);
-
-	ESPRESODestroy(vvv);
-
-	ESPRESOFinalize();
 
 	MPI_Finalize();
 }

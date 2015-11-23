@@ -47,6 +47,7 @@ void Linear<TInput>::init()
 	for (size_t s = 0; s < this->subdomains(); s++) {
 		rows[s] = _K[s].rows;
 	}
+
 	this->computeClusterGluing(rows);
 
 	timeGlobalB.AddEndWithBarrier();

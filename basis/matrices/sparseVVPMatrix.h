@@ -28,6 +28,10 @@ public:
 	{
 		if(_values.size() <= row) {
 			_values.resize(row + 1);
+			_rows = row + 1;
+		}
+		if (column >= _columns) {
+			_columns = column + 1;
 		}
 		_values[row].push_back(std::pair<Tindices, double>(column, 0));
 		return _values[row].back().second;
@@ -38,6 +42,10 @@ public:
 		if (Matrix::nonZero(value)) {
 			if(_values.size() <= row) {
 				_values.resize(row + 1);
+				_rows = row + 1;
+			}
+			if (column >= _columns) {
+				_columns = column + 1;
 			}
 			_values[row].push_back(std::pair<Tindices, double>(column, value));
 		}
