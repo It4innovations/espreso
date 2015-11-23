@@ -72,7 +72,7 @@ struct API2 {
 	API2() {};
 	API2(APIHolder &holder):
 		K(holder.K),
-		rhs_size(holder.rhs->size()), rhs(holder.rhs->data()),
+		rhs(holder.rhs),
 		dirichlet_size(holder.dirichlet_indices->size()),
 		dirichlet_indices(holder.dirichlet_indices->data()),
 		dirichlet_values(holder.dirichlet_values->data()),
@@ -82,8 +82,7 @@ struct API2 {
 
 	SparseCSRMatrix<eslocal> *K;
 
-	eslocal rhs_size;
-	double *rhs;
+	std::vector<double> *rhs;
 
 	eslocal dirichlet_size;
 	eslocal *dirichlet_indices;

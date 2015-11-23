@@ -42,20 +42,27 @@ extern "C" {
 /*-----------------------------------------------------------------------------
  Definitions of internal structures used in FETI4I
 ------------------------------------------------------------------------------*/
+typedef struct FETI4IStructRHS* FETI4IRHS;
 typedef struct FETI4IStructMatrix* FETI4IMatrix;
 typedef struct FETI4IStructIntance* FETI4IInstance;
-
 
 /*-----------------------------------------------------------------------------
  Functions for manipulating with FETI4I internal structures
 ------------------------------------------------------------------------------*/
-int FETI4ICreateStiffnessMatrix(
+
+int FETI4ICreateStiffnessMatrixAndRHS(
 		FETI4IMatrix 	*stiffnessMatrix,
-		FETI4IInt 		n,
-		FETI4IInt 		nelt,
-		FETI4IInt* 		eltptr,
-		FETI4IInt* 		eltvar,
-		FETI4IReal* 	values
+		FETI4IRHS 		*rhs,
+		FETI4IInt		indexBase
+);
+
+int FETI4IAddElement(
+		FETI4IMatrix 	stiffnessMatrix,
+		FETI4IRHS 		rhs,
+		FETI4IInt 		size,
+		FETI4IInt* 		indices,
+		FETI4IReal* 	eMatrix,
+		FETI4IReal*		eRHS
 );
 
 /*-----------------------------------------------------------------------------
@@ -70,18 +77,14 @@ int FETI4ISolve(
 
 int FETI4ICreateInstance(
 		FETI4IInstance 	*instance,
-		FETI4IInt* 		settings,	// Currently only NULL is supported
 		FETI4IMatrix 	stiffnessMatrix,
-		FETI4IInt 		rhs_size,
-		FETI4IReal* 	rhs,
+		FETI4IRHS 		rhs,
 		FETI4IInt 		dirichlet_size,
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values,
-		FETI4IInt 		l2g_size,
 		FETI4IInt* 		l2g,
 		FETI4IInt 		neighbours_size,
-		FETI4IInt* 		neighbours,
-		MPI_Comm 		communicator	// Currently only MPI_COMM_WORLD is supported
+		FETI4IInt* 		neighbours
 );
 
 /*-----------------------------------------------------------------------------
@@ -104,10 +107,9 @@ int FETI4IUpdateDirichlet(
 		FETI4IInt 		dirichlet_size,
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values,
-		FETI4IInt 		l2g_size,
-		FETI4IReal* 	l2g_values,
+		FETI4IReal* 	l2g,
 		FETI4IInt 		neighbour_size,
-		FETI4IReal* 	neighbour_values
+		FETI4IReal* 	neighbour
 );
 
 
@@ -117,6 +119,16 @@ int FETI4IUpdateDirichlet(
 
 int FETI4IDestroy(
 		void* 			data
+);
+
+
+int FETI4ICreateStiffnessMatrix(
+		FETI4IMatrix 	*stiffnessMatrix,
+		FETI4IInt 		n,
+		FETI4IInt 		nelt,
+		FETI4IInt* 		eltptr,
+		FETI4IInt* 		eltvar,
+		FETI4IReal* 	values
 );
 
 #ifdef __cplusplus

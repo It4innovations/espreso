@@ -3,12 +3,13 @@
 
 using namespace assembler;
 
+std::list<FETI4IStructRHS*> DataHolder::RHSs;
 std::list<FETI4IStructMatrix*> DataHolder::matrices;
 std::list<FETI4IStructIntance*> DataHolder::instances;
 
 using namespace assembler;
 
-int FETI4ICreateMatrixElemental(
+int FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix *stiffnessMatrix,
 		FETI4IInt n,
 		FETI4IInt nelt,
@@ -30,42 +31,72 @@ int FETI4ICreateMatrixElemental(
 		}
 	}
 
-	DataHolder::matrices.push_back(new FETI4IStructMatrix());
+	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexing));
 	DataHolder::matrices.back()->data = matrix;
 	*stiffnessMatrix = DataHolder::matrices.back();
 	return 0;
 }
 
+int FETI4ICreateStiffnessMatrixAndRHS(
+		FETI4IMatrix 	*stiffnessMatrix,
+		FETI4IRHS 		*rhs,
+		FETI4IInt		indexBase)
+{
+	DataHolder::RHSs.push_back(new FETI4IStructRHS(indexBase));
+	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexBase));
+	*stiffnessMatrix = DataHolder::matrices.back();
+	*rhs = DataHolder::RHSs.back();
+	return 0;
+}
+
+int FETI4IAddElement(
+		FETI4IMatrix 	stiffnessMatrix,
+		FETI4IRHS 		rhs,
+		FETI4IInt 		size,
+		FETI4IInt* 		indices,
+		FETI4IReal* 	eMatrix,
+		FETI4IReal*		eRHS)
+{
+	eslocal offset = stiffnessMatrix->offset;
+	for (eslocal i = 0; i < size; i++) {
+		for (eslocal j = 0; j < size; j++) {
+			stiffnessMatrix->data(indices[i] - offset,  indices[j] - offset) = eMatrix[i, j];
+		}
+	}
+	offset = rhs->offset;
+	for (eslocal i = 0; i < size; i++) {
+		rhs->data(0, indices[i] - offset) = eRHS[i];
+	}
+	return 0;
+}
+
 int FETI4ICreateInstance(
 		FETI4IInstance 	*instance,
-		FETI4IInt* 		settings,	// Currently only NULL is supported
 		FETI4IMatrix 	stiffnessMatrix,
-		FETI4IInt 		rhs_size,
-		FETI4IReal* 	rhs,
+		FETI4IRHS 		rhs,
 		FETI4IInt 		dirichlet_size,
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values,
-		FETI4IInt 		l2g_size,
-		FETI4IInt* 	l2g,
+		FETI4IInt* 		l2g,
 		FETI4IInt 		neighbours_size,
-		FETI4IInt* 	neighbours,
-		MPI_Comm 		communicator)
+		FETI4IInt* 		neighbours)
 {
-	MPI_Comm_rank(communicator, &esconfig::MPIrank);
-	MPI_Comm_size(communicator, &esconfig::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
 	API2 api;
-	api.K = &(stiffnessMatrix->data);
-	api.rhs_size = rhs_size;
-	api.rhs = rhs;
+	DataHolder::instances.push_back(new FETI4IStructIntance(api));
+	DataHolder::instances.back()->K = stiffnessMatrix->data;
+	SparseIJVMatrix<eslocal> ijv = rhs->data;
+	DenseMatrix d = ijv;
+	DataHolder::instances.back()->rhs = std::vector<double>(d.values(), d.values() + d.columns());
 	api.dirichlet_size = dirichlet_size;
 	api.dirichlet_indices = dirichlet_indices;
 	api.dirichlet_values = dirichlet_values;
-	api.l2g_size = l2g_size;
+	api.l2g_size = api.K->rows();
 	api.l2g = l2g;
 	api.neighbours_size = neighbours_size;
 	api.neighbours = neighbours;
-	DataHolder::instances.push_back(new FETI4IStructIntance(api));
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
@@ -98,9 +129,9 @@ static void destroy(std::list<TFETI4I*> &list, void *value)
 
 int FETI4IDestroy(void *data)
 {
+	destroy(DataHolder::RHSs, data);
 	destroy(DataHolder::matrices, data);
 	destroy(DataHolder::instances, data);
-
 	return 0;
 }
 

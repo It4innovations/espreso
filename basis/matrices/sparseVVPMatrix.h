@@ -26,6 +26,9 @@ public:
 
 	double& operator()(size_t row, size_t column)
 	{
+		if(_values.size() <= row) {
+			_values.resize(row + 1);
+		}
 		_values[row].push_back(std::pair<Tindices, double>(column, 0));
 		return _values[row].back().second;
 	}
@@ -33,6 +36,9 @@ public:
 	void set(size_t row, size_t column, double value)
 	{
 		if (Matrix::nonZero(value)) {
+			if(_values.size() <= row) {
+				_values.resize(row + 1);
+			}
 			_values[row].push_back(std::pair<Tindices, double>(column, value));
 		}
 	}
