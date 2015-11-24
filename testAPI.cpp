@@ -22,6 +22,20 @@ static void readFile(typename std::vector<Ttype> &vector, std::string fileName) 
 	}
 }
 
+static void readBinary(std::vector<double> &vector, std::string fileName) {
+	std::ifstream file(fileName.c_str(), std::fstream::binary);
+	if (file.is_open()) {
+		for (size_t i = 0; i < vector.size(); i++) {
+			double value;
+			file.read(reinterpret_cast<char *>(&value), sizeof(double));
+			vector[i] = value;
+		}
+	} else {
+		std::cerr << "Cannot read file " << fileName << "\n";
+		exit(EXIT_FAILURE);
+	}
+}
+
 int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
@@ -43,10 +57,11 @@ int main(int argc, char** argv)
 		std::vector<FETI4IReal> Kvalues, RHSvalues;
 		std::stringstream Ki, Kv, Rv;
 		Ki << path.str() << "Ki" << elements[e] << ".txt";
-		Kv << path.str() << "Ke" << elements[e] << ".txt";
+		Kv << path.str() << "Ke" << elements[e] << ".bin";
 		Rv << path.str() << "Rv" << elements[e] << ".txt";
 		readFile(indices, Ki.str());
-		readFile(Kvalues, Kv.str());
+		Kvalues.resize(indices.size() * indices.size());
+		readBinary(Kvalues, Kv.str());
 		readFile(RHSvalues, Rv.str());
 
 		FETI4IAddElement(K, rhs, indices.size(), indices.data(), Kvalues.data(), RHSvalues.data());
