@@ -104,9 +104,9 @@ def configure(ctx):
     ctx.env.append_unique("LIB", [ metis, "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
     ctx.env.append_unique("STLIB", [ "dmumps", "mumps_common", "pord", "esmumps", "scotch", "scotcherr" ])
     if ctx.options.gfortran:
-        ctx.env.append_unique("LIB", [ "gfortran" ])
+    	ctx.env.append_unique("LIB", [ "gfortran" ])
     else:
-        ctx.env.append_unique("LIB", [ "ifcore" ])
+    	ctx.env.append_unique("LIB", [ "ifcore" ])
 
 
 ################################################################################

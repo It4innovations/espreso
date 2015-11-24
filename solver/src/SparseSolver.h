@@ -14,6 +14,7 @@ using std::endl;
 using std::left;
 using std::fixed;
 
+#include <dmumps_c.h>
 
 
 #pragma once
@@ -28,6 +29,10 @@ public:
 	//Destructor
 	~SparseSolver();
 
+	DMUMPS_STRUC_C id;
+
+
+
 	// Matrix properties 
 
 	bool initialized;
@@ -38,9 +43,20 @@ public:
 	MKL_INT cols;
 	MKL_INT nnz;
 
+
+
+	MKL_INT		* I_row_indices;
+	MKL_INT		* J_col_indices;
+	double		* V_values;
+
+	MKL_INT		I_row_indices_size;
+	MKL_INT		J_col_indices_size;
+	MKL_INT		V_values_size;
+
+
 	MKL_INT		* CSR_I_row_indices;
 	MKL_INT		* CSR_J_col_indices;
-	double	* CSR_V_values; 
+	double		* CSR_V_values;
 
 	MKL_INT		CSR_I_row_indices_size;
 	MKL_INT		CSR_J_col_indices_size;
