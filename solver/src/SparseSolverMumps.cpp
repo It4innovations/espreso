@@ -169,12 +169,16 @@ void SparseSolver::Clear() {
  *
  * @param[in] A SparseMatrix to be imported.
  */
-void SparseSolver::ImportMatrix(SparseMatrix & A) {
+void SparseSolver::ImportMatrix(SparseMatrix & A_in) {
+
+	SparseMatrix A;
+	A = A_in;
+
 	rows	= A.rows;
 	cols	= A.cols;
 	nnz		= A.nnz;
 
-	m_Kplus_size = A.rows; 
+	m_Kplus_size = A.rows;
 
 	A.ConvertToCOO(0); // 0 - keep CSR, 1 - remove CSR // TODO poresit, jestli mazat
 
