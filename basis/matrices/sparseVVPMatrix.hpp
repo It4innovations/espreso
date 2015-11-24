@@ -1,6 +1,21 @@
 #include "sparseVVPMatrix.h"
 
 template<typename Tindices>
+std::ostream& operator<<(std::ostream& os, const SparseVVPMatrix<Tindices> &m)
+{
+	os << m.rows() << " " << m.columns() << " " << m.nonZeroValues() << "\n";
+
+	for (size_t r = 0; r < m._values.size(); r++) {
+		os << r << ": ";
+		for (size_t c = 0; c < m._values[r].size(); c++) {
+			os << "(" << m._values[r][c].first << ":" << m._values[r][c].second << ")";
+		}
+		os << "\n";
+	}
+	return os;
+}
+
+template<typename Tindices>
 void SparseVVPMatrix<Tindices>::resize(size_t rows, size_t columns)
 {
 	_rows = rows;
