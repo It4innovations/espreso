@@ -1318,7 +1318,8 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
 		if (status != cudaSuccess)   {
-			printf("Error allocating GPU memory \n");
+			//printf("Error allocating GPU memory \n");
+      std::cout <<"Error allocating GPU memory \n";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1326,7 +1327,8 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 		if (status != cudaSuccess) {
-			printf("Error allocating GPU memory for Matrix \n");
+			//printf("Error allocating GPU memory for Matrix \n");
+      std::cout <<"Error allocating GPU memory for Matrix \n";
 			//MPI_Finalize();
 			//exit(0);
 			error = -1;
@@ -1335,7 +1337,8 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
 		if (status != cudaSuccess) {
-			printf("Error allocating GPU memory for Vector \n");
+			//printf("Error allocating GPU memory for Vector \n");
+      std::cout <<"Error allocating GPU memory for Vector \n";
 			//MPI_Finalize();
 			//exit(0);
 			error = -1;
@@ -1453,7 +1456,8 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
 		if (status != cudaSuccess)   {
-			printf("Error allocating GPU memory \n");
+			//printf("Error allocating GPU memory \n");
+      std::cout<< "Error allocating GPU memory \n";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1461,7 +1465,8 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
 		if (status != cudaSuccess) {
-			printf("Error allocating GPU memory  \n");
+			//printf("Error allocating GPU memory  \n");
+      std::cout<<"Error allocating GPU memory  \n";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1469,7 +1474,8 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
 		if (status != cudaSuccess) {
-			printf("Error allocating GPU memory \n");
+			//printf("Error allocating GPU memory \n");
+      std::cout<<"Error allocating GPU memory \n";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -2002,7 +2008,8 @@ void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format
   }
   delete [] AR;
   norm_AR=sqrt(norm_AR);
-  printf("\n||A*Kplus_R|| = %3.9e, defect = %d\n",norm_AR,R_in_dense_format.cols);
+  //printf("\n||A*Kplus_R|| = %3.9e, defect = %d\n",norm_AR,R_in_dense_format.cols);
+  std::cout<<"||A*Kplus_R|| = "<< norm_AR <<", defect = "<<R_in_dense_format.cols<< "\n";
 }
 
 //
@@ -2149,11 +2156,16 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_
   }
 
   if (plot_n_first_n_last_eigenvalues>0){
-    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
-          str0,plot_n_first_n_last_eigenvalues,cnt-plot_n_first_n_last_eigenvalues+2,cnt);
+//    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+//          str0,plot_n_first_n_last_eigenvalues,cnt-plot_n_first_n_last_eigenvalues+2,cnt);
+    std::cout<<"eigenvals of "<<str0 <<" d{1:" << plot_n_first_n_last_eigenvalues << " and d{" <<
+         cnt-plot_n_first_n_last_eigenvalues+2 << ":"<< cnt<< "}\n";
+
+
     for (eslocal i = 0 ; i < cnt; i++){
       if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues){
-        printf("%5d:  %3.8e \n",i+1, alphaVec[i]);
+        //printf("%5d:  %3.8e \n",i+1, alphaVec[i]);
+        std::cout<< i+1 <<":"<< alphaVec[i] << "\n";
       }
     }
   }
@@ -2932,10 +2944,11 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
-  printf("\n\n");
-  printf(" ###################################################################\n");
-  printf(" #                 Get kernel of K and null pivots                 #\n");
-  printf(" ###################################################################\n");
+  
+  std::cout << "\n\n"; 
+  std::cout << " ###################################################################\n";
+  std::cout << " #                 Get kernel of K and null pivots                 #\n";
+  std::cout << " ###################################################################\n";
 //
 //    1) COND_NUMB_FOR_SINGULAR_MATRIX
 //  If cond(A) > COND_NUMB_FOR_SINGULAR_MATRIX, A is considered as singular matrix.
@@ -3037,17 +3050,23 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
     MKL_INT ldzA = K_modif.cols;
     info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
             K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
-    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
-          "K",get_n_first_and_n_last_eigenvals_from_dense_K,
-          K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2,K_modif.rows);
+//    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+//          "K",get_n_first_and_n_last_eigenvals_from_dense_K,
+//          K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2,K_modif.rows);
+
+    std::cout<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << " and d{" <<
+         K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
+
+
     for (eslocal i = 0 ; i < K_modif.rows; i++){
       if (i < get_n_first_and_n_last_eigenvals_from_dense_K ||
             i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
-        printf("%5d:  %3.8e \n",i+1, WK_modif[i]);
+//        printf("%5d:  %3.8e \n",i+1, WK_modif[i]);
+        std::cout<< i+1 <<":"<< WK_modif[i] << "\n";
       }
     }
     if (info){
-      printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
+      std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse\n";
     }
     delete [] WK_modif;
     delete [] ZK_modif;
@@ -3055,6 +3074,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   //#################################################################################
 
 
+//    std::cout<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << " and d{" <<
+//         K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
+//
+//        std::cout<< i+1 <<":"<< WK_modif[i] << "\n";
 
 
   while ( cond_of_regular_part > COND_NUMB_FOR_SINGULAR_MATRIX && cnt_iter_check_nonsing<(CHECK_NONSING+1)) {
@@ -3084,7 +3107,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 //
     if (permutVectorActive==1){
 //      srand(time(NULL));
-      srand(0);
+      srand(0); // random will be constant until next compiling 
       random_shuffle ( permVec.begin(), permVec.end() );
       sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
       sort(permVec.begin()+NONSING_SIZE,permVec.end());
@@ -3119,7 +3142,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
           cnt_i++;
         }
       }
-      printf("n_mv: %d, SC_SIZE: %d, it. for RAND: %d\n",n_mv,SC_SIZE,cnt_permut_vec);
+      //printf("n_mv: %d, SC_SIZE: %d, it. for RAND: %d\n",n_mv,SC_SIZE,cnt_permut_vec);
+      std::cout << "n_mv: " << n_mv <<", SC_SIZE: " << SC_SIZE << ", it. for RAND: "<< cnt_permut_vec<<"\n";
     }
     //      r = permVec[0:NONSING_SIZE-1]     (singular DOFs)
     //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
@@ -3160,7 +3184,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 //    K_rr.printMatCSR("K_rr");
     if (CHECK_NONSING!=0){
       cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues);
-      printf("cond_of_regular_part=%3.9f\n",cond_of_regular_part);
+      //printf("cond_of_regular_part=%3.9f\n",cond_of_regular_part);
+      std::cout << "cond of regular part = "<< cond_of_regular_part <<"\n";
     }
 //
     cnt_iter_check_nonsing++;
@@ -3190,7 +3215,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   MKL_INT ldz = S.cols;
   info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
   if (info){
-    printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
+    //printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
+    std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse\n";
   }
 // IDENTIFICATIONS OF ZERO EIGENVALUES
   eslocal defect_A_in;// R_s_cols;
@@ -3206,13 +3232,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   }
 //
   if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
-    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
-          "S",get_n_first_and_n_last_eigenvals_from_dense_S,
-          S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2,S.rows);
+//    printf("eigenvals of %s d{1:%d} and d{%d:%d}\n",
+//          "S",get_n_first_and_n_last_eigenvals_from_dense_S,
+//          S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2,S.rows);
+    std::cout<<"eigenvals of S d{1:" << get_n_first_and_n_last_eigenvals_from_dense_S << " and d{" <<
+         S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2 << ":"<< S.rows<< "}\n";
+
     for (eslocal i = 0 ; i < S.rows; i++){
       if (i < get_n_first_and_n_last_eigenvals_from_dense_S ||
             i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
-        printf("%5d:  %3.8e \n",i+1, W[i]);
+//        printf("%5d:  %3.8e \n",i+1, W[i]);
+        std::cout<< i+1 <<":"<< W[i] << "\n";
       }
     }
   }
@@ -3326,7 +3356,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
 
 
-  printf(" =============================================================\n\n");
+  //printf(" =============================================================\n\n");
+  std::cout <<" =============================================================\n\n";
 
   delete [] W;
   delete [] Z;
