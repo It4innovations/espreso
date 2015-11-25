@@ -54,8 +54,6 @@ typedef struct FETI4IStructInstance* FETI4IInstance;
  Functions for manipulating with FETI4I internal structures
 ------------------------------------------------------------------------------*/
 
-void FETI4ITest();
-
 void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix 	*matrix, //TODO size?
 		FETI4IInt		indexBase
@@ -124,6 +122,37 @@ void FETI4IUpdateDirichlet(
 
 void FETI4IDestroy(
 		void* 			ptr
+);
+
+/*-----------------------------------------------------------------------------
+ API testing functions
+------------------------------------------------------------------------------*/
+
+void FETI4ITest();
+
+void TEST4IGetElementsInfo(
+		FETI4IInt		*elements,
+		FETI4IInt		*elementSize
+);
+
+void TEST4IGetElement(
+		FETI4IInt		index,
+		FETI4IInt*		*indices,
+		FETI4IReal*		*values
+);
+
+void TEST4IGetInstanceInfo(
+		FETI4IInt		*rhs_size,
+		FETI4IInt		*dirichlet_size,
+		FETI4IInt		*neighbours_size
+);
+
+void TEST4IGetInstance(
+		FETI4IReal*		*rhs,
+		FETI4IInt*		*l2g,
+		FETI4IInt*		*dirichlet_indices,
+		FETI4IReal*		*dirichlet_values,
+		FETI4IInt*		*neighbours
 );
 
 
