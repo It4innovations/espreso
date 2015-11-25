@@ -99,7 +99,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
 	neighClustNum = _neighClusters.size();
 
-    if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
+   //   system("date +%T.%6N"); 
+    }
 
     MPI_Request * mpi_send_req  = new MPI_Request [_neighClusters.size()];
 	MPI_Request * mpi_recv_req  = new MPI_Request [_neighClusters.size()];
@@ -139,7 +142,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Local preprocessing done                                      "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Local preprocessing done                                      "; 
+  //  system("date +%T.%6N"); 
+  }
 
 
 	// NOW :
@@ -199,7 +205,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		if (myNeighsSparse[i].size() < 3)
 			myNeighsSparse[i].clear();
 
-	if (MPIrank == 0) { std::cout << " Global B - myNeighSparse assembled                                       "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - myNeighSparse assembled                                       "; 
+//    system("date +%T.%6N"); 
+  }
 
 	std::vector < std::vector < esglobal > > myLambdas;
 
@@ -237,7 +246,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Create global lambda numbering                                "; 
+ //   system("date +%T.%6N"); 
+  }
 
 	esglobal lambdaGlobalCount = 0;
 
@@ -254,7 +266,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 			myLambdas[i][0] = myLambdas[i][0]  + lambdaGlobalCount + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Assembling messages with lambdas for MPI                      "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
+    //system("date +%T.%6N"); 
+  }
 
 
 	std::vector < std::vector < esglobal > > mpi_send_buff;
@@ -286,13 +301,19 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Isend                                                         "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Isend                                                         "; 
+ //   system("date +%T.%6N"); 
+  }
 
 	for (int i = 0; i < _neighClusters.size(); i++)
 		MPI_Isend(&mpi_send_buff[i][0], mpi_send_buff[i].size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Iprobe and MPIrecv                                            "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Iprobe and MPIrecv                                            "; 
+   // system("date +%T.%6N"); 
+  }
 
 	std::vector < std::vector < esglobal > > mpi_recv_buff;
 	mpi_recv_buff.resize( _neighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
@@ -323,7 +344,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Decode received lambdas                                       "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Decode received lambdas                                       "; 
+//    system("date +%T.%6N"); 
+  }
 
 	// decode received lambdas
 	eslocal recv_lamba_count = 0;
@@ -349,7 +373,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
+ //   system("date +%T.%6N"); 
+  }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
 
@@ -359,7 +386,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
 //#endif
 
-	if (MPIrank == 0) { std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Final B assembling with g2l mapping using std::map            ";
+//    system("date +%T.%6N"); 
+  }
 
 	esglobal lambda;
 	esglobal DOFNumber;
@@ -429,7 +459,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	}
 
 
-	if (MPIrank == 0) { std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
+  //  system("date +%T.%6N");
+  }
 
 
 	// for global B1
@@ -449,7 +482,10 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-   	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
+   	if (MPIrank == 0) { 
+      std::cout << " Global B - END                                                           "; 
+   //   system("date +%T.%6N"); 
+    }
 
 
 
@@ -546,7 +582,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
 	neighClustNum = _neighClusters.size();
 
-    if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
+//      system("date +%T.%6N"); 
+    }
 
     MPI_Request * mpi_send_req  = new MPI_Request [_neighClusters.size()];
 	MPI_Request * mpi_recv_req  = new MPI_Request [_neighClusters.size()];
@@ -586,7 +625,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Local preprocessing done                                      "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Local preprocessing done                                      "; 
+//    system("date +%T.%6N"); 
+  }
 
 
 	// NOW :
@@ -646,7 +688,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 		if (myNeighsSparse[i].size() < 3)
 			myNeighsSparse[i].clear();
 
-	if (MPIrank == 0) { std::cout << " Global B - myNeighSparse assembled                                       "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - myNeighSparse assembled                                       "; 
+//    system("date +%T.%6N"); 
+  }
 
 	std::vector < std::vector < esglobal > > myLambdas;
 
@@ -684,7 +729,9 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                "; 
+   // system("date +%T.%6N"); 
+  }
 
 	esglobal lambdaGlobalCount = 0;
 
@@ -701,7 +748,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 			myLambdas[i][0] = myLambdas[i][0]  + lambdaGlobalCount + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Assembling messages with lambdas for MPI                      "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
+    //system("date +%T.%6N"); 
+  }
 
 
 	std::vector < std::vector < esglobal > > mpi_send_buff;
@@ -733,13 +783,19 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Isend                                                         "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Isend                                                         "; 
+    //system("date +%T.%6N"); 
+  }
 
 	for (int i = 0; i < _neighClusters.size(); i++)
 		MPI_Isend(&mpi_send_buff[i][0], mpi_send_buff[i].size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Iprobe and MPIrecv                                            "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Iprobe and MPIrecv                                            "; 
+    //system("date +%T.%6N"); 
+  }
 
 	std::vector < std::vector < esglobal > > mpi_recv_buff;
 	mpi_recv_buff.resize( _neighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
@@ -770,7 +826,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Decode received lambdas                                       "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Decode received lambdas                                       "; 
+    //system("date +%T.%6N"); 
+  }
 
 	// decode received lambdas
 	eslocal recv_lamba_count = 0;
@@ -796,7 +855,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
+   // system("date +%T.%6N"); 
+  }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
 
@@ -806,7 +868,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
 //#endif
 
-	if (MPIrank == 0) { std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
+//    system("date +%T.%6N"); 
+  }
 
 	esglobal lambda;
 	esglobal DOFNumber;
@@ -876,7 +941,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 	}
 
 
-	if (MPIrank == 0) { std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
+ //   system("date +%T.%6N"); 
+  }
 
 
 	// for global B1
@@ -896,7 +964,10 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-   	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
+   	if (MPIrank == 0) { 
+      std::cout << " Global B - END                                                           "; 
+     // system("date +%T.%6N"); 
+     }
 
 
 
@@ -1045,7 +1116,10 @@ void Gluing<TInput>::local_B1_global_resize() {
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 
 	// Local B1 - further processing - update row numbering based on all clusters
-    if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - start                                   "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - Local preprocessing - start                                   "; 
+//      system("date +%T.%6N"); 
+    }
 
 	// Create lambda global numbering
 	esglobal localB1_l_rows = B1[0].rows(); // number of rows B1 for all domains must be the same
@@ -1061,7 +1135,10 @@ void Gluing<TInput>::local_B1_global_resize() {
 	total_number_of_B1_l_rows = global_B1_l_rows;
 	MPI_Bcast(&total_number_of_B1_l_rows, 1, esglobal_mpi, MPIsize-1, MPI_COMM_WORLD);
 
-    if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - EXscan and Bcast done                  "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - Local preprocessing - EXscan and Bcast done                  "; 
+//      system("date +%T.%6N"); 
+    }
 
 	cilk_for (eslocal domain_index=0; domain_index < this->subdomains(); domain_index++) {
 		//TODO: lambda muze byt esglobal ale IJV matice je jen eslocal
@@ -1077,7 +1154,10 @@ void Gluing<TInput>::local_B1_global_resize() {
 
 	}
 
-    if (MPIrank == 0) { std::cout << " Global B - Local preprocessing - end of renumbering of rows of local B1   "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - Local preprocessing - end of renumbering of rows of local B1   "; 
+//      system("date +%T.%6N"); 
+    }
 
 
 	esglobal row_offset = global_B1_l_rows - localB1_l_rows;
@@ -1118,7 +1198,10 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 	std::set<eslocal>::const_iterator it_set;
 	std::set<eslocal>::const_iterator it_set_l;
 
-    if (MPIrank == 0) { std::cout << " Global B - Blobal B1 neighdofs and neigh dofs array building             "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - Blobal B1 neighdofs and neigh dofs array building             "; 
+      //system("date +%T.%6N"); 
+      }
 
     // Now this loop is used to get my Border DOFs and my neighboring subdomains
     // information about neighnoring DOFS is here, but it is not used
@@ -1185,7 +1268,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
 	neighClustNum = _neighClusters.size();
 
-    if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
+    if (MPIrank == 0) { 
+      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
+     // system("date +%T.%6N");
+    }
 
     MPI_Request * mpi_send_req  = new MPI_Request [_neighClusters.size()];
 	MPI_Request * mpi_recv_req  = new MPI_Request [_neighClusters.size()];
@@ -1225,7 +1311,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Local preprocessing done                                      "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Local preprocessing done                                      "; 
+ //   system("date +%T.%6N"); 
+  }
 
 
 	// NOW :
@@ -1285,7 +1374,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		if (myNeighsSparse[i].size() < 3)
 			myNeighsSparse[i].clear();
 
-	if (MPIrank == 0) { std::cout << " Global B - myNeighSparse assembled                                       "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - myNeighSparse assembled                                       "; 
+//    system("date +%T.%6N"); 
+  }
 
 	std::vector < std::vector < esglobal > > myLambdas;
 
@@ -1323,7 +1415,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Create global lambda numbering                                "; 
+   // system("date +%T.%6N"); 
+  }
 
 	esglobal lambdaGlobalCount = 0;
 
@@ -1340,7 +1435,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 			myLambdas[i][0] = myLambdas[i][0]  + lambdaGlobalCount + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Assembling messages with lambdas for MPI                      "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
+ //   system("date +%T.%6N"); 
+  }
 
 
 	std::vector < std::vector < esglobal > > mpi_send_buff;
@@ -1372,13 +1470,19 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Isend                                                         "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Isend                                                         "; 
+ //   system("date +%T.%6N"); 
+  }
 
 	for (int i = 0; i < _neighClusters.size(); i++)
 		MPI_Isend(&mpi_send_buff[i][0], mpi_send_buff[i].size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 
 
-	if (MPIrank == 0) { std::cout << " Global B - Iprobe and MPIrecv                                            "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Iprobe and MPIrecv                                            "; 
+ //   system("date +%T.%6N"); 
+  }
 
 	std::vector < std::vector < esglobal > > mpi_recv_buff;
 	mpi_recv_buff.resize( _neighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
@@ -1409,7 +1513,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Decode received lambdas                                       "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Decode received lambdas                                       ";
+//    system("date +%T.%6N"); 
+  }
 
 	// decode received lambdas
 	eslocal recv_lamba_count = 0;
@@ -1435,7 +1542,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
+ //   system("date +%T.%6N"); 
+  }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
 
@@ -1445,7 +1555,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
 //#endif
 
-	if (MPIrank == 0) { std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
+    //system("date +%T.%6N"); 
+    }
 
 	esglobal lambda;
 	esglobal DOFNumber;
@@ -1512,7 +1625,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	}
 
 
-	if (MPIrank == 0) { std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; system("date +%T.%6N"); }
+	if (MPIrank == 0) { 
+    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
+//    system("date +%T.%6N"); 
+  }
 
 
 	// for global B1
@@ -1532,7 +1648,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-   	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
+   	if (MPIrank == 0) { 
+      std::cout << " Global B - END                                                           "; 
+      system("date +%T.%6N"); 
+    }
 
 
 // *****************************************************************************************************************************************************
@@ -1582,7 +1701,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     	//std::set<eslocal>::const_iterator it_set;
     	//std::set<eslocal>::const_iterator it_set_l;
 
-        if (MPIrank == 0) { std::cout << " Global B SP - Blobal B1 neighdofs and neigh dofs array building          "; system("date +%T.%6N"); }
+        if (MPIrank == 0) { 
+          std::cout << " Global B SP - Blobal B1 neighdofs and neigh dofs array building          "; 
+      //    system("date +%T.%6N");
+        }
 
         // Now this loop is used to get my Border DOFs and my neighboring subdomains
         // information about neighnoring DOFS is here, but it is not used
@@ -1625,7 +1747,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     	//	}
     	//	neighBorderDofs.resize(neighClustNum);
 
-        if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
+        if (MPIrank == 0) { 
+          std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
+      //    system("date +%T.%6N"); 
+        }
 
 //        //MPI_Request * mpi_send_req  = new MPI_Request [neighClustNum];
 //    	//MPI_Request * mpi_recv_req  = new MPI_Request [neighClustNum];
@@ -1698,7 +1823,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
     	// END - Find all MPIranks of all neighboring clusters in globalBoundaries
 
-    	if (MPIrank == 0) { std::cout << " Global B - Local preprocessing done                                      "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - Local preprocessing done                                      "; 
+     //   system("date +%T.%6N"); 
+      }
 
     	// NOW :
     	// my neighboring sub-domains are in : 	_neighClusters
@@ -1886,7 +2014,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     			myNeighsSparse_sp[i].clear();
 
 
-    	if (MPIrank == 0) { std::cout << " Global B - myNeighSparse assembled                                       "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - myNeighSparse assembled                                       "; 
+     //   system("date +%T.%6N"); 
+      }
 
     	std::vector < std::vector < esglobal > > myLambdas_sp;
 
@@ -1953,7 +2084,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - Create global lambda numbering                                "; 
+        system("date +%T.%6N"); 
+      }
 
     	esglobal lambdaGlobalCount_sp = 0;
 
@@ -1969,7 +2103,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		for (eslocal i = 0; i < myLambdas_sp.size(); i++)
     			myLambdas_sp[i][0] = myLambdas_sp[i][0]  + lambdaGlobalCount_sp + total_number_of_global_B1_lambdas + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
-    	if (MPIrank == 0) { std::cout << " Global B - Assembling messages with lambdas for MPI                      "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
+     //   system("date +%T.%6N"); 
+      }
 
 
     	//std::vector < std::vector < esglobal > > mpi_send_buff;
@@ -2004,13 +2141,19 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { std::cout << " Global B - Isend                                                         "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - Isend                                                         "; 
+     //   system("date +%T.%6N"); 
+      }
 
     	for (int i = 0; i < _neighClusters.size(); i++)
     		MPI_Isend(&mpi_send_buff[i][0], mpi_send_buff[i].size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 
 
-    	if (MPIrank == 0) { std::cout << " Global B - Iprobe and MPIrecv                                            "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Iprobe and MPIrecv                                            "; 
+      //  system("date +%T.%6N"); 
+      }
 
     	//std::vector < std::vector < esglobal > > mpi_recv_buff;
     	mpi_recv_buff.clear();
@@ -2042,7 +2185,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { std::cout << " Global B - Decode received lambdas                                       "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - Decode received lambdas                                       "; 
+       // system("date +%T.%6N"); 
+       }
 
     	// decode received lambdas
     	eslocal recv_lamba_count_sp = 0;
@@ -2070,7 +2216,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
+     //   system("date +%T.%6N"); 
+      }
 
     //	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
 
@@ -2080,7 +2229,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     	std::sort         (myLambdas_sp.begin(), myLambdas_sp.end(), comp_vf);
     //#endif
 
-    	if (MPIrank == 0) { std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
+        system("date +%T.%6N"); 
+      }
 
     	esglobal lambda_sp;
     	esglobal DOFNumber_sp;
@@ -2215,9 +2367,15 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		B1[d].AppendMatrix(ijv); //    = B1_DOK_tmp[d];
     	}
 
-    	if (MPIrank == 0) { std::cout << " Global B - END                                                           "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " Global B - END                                                           "; 
+     //   system("date +%T.%6N"); 
+      }
 
-    	if (MPIrank == 0) { std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) {
+        std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
+     //   system("date +%T.%6N"); 
+      }
 
 
 //    	// for global B1
@@ -2241,7 +2399,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 //    	}
 
 
-    	if (MPIrank == 0) { std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { 
+        std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; 
+     //   system("date +%T.%6N"); 
+      }
 
     	MPI_Barrier(MPI_COMM_WORLD);
 
