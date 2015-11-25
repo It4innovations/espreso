@@ -10,11 +10,11 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	mesh::Mesh m(0, 0);
-	m.load(mesh::ANSYS, argc, argv);
+	mesh::Mesh m(0, 1);
+	esinput::Ansys loader(argc, argv, 0, 1);
+	loader.load(m);
 	m.partitiate(atoi(argv[2]), 0);
-	m.store(mesh::ESPRESO_OUTPUT, argv[3]);
-
+	esoutput::VTK_Full vtk(m, argv[3]);
 }
 
 

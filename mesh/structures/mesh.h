@@ -21,7 +21,6 @@
 #include "boundaries.h"
 
 #include "esbasis.h"
-#include "esbem.h"
 
 namespace esinput {
 class InternalLoader;
@@ -30,18 +29,6 @@ class ExternalLoader;
 
 namespace mesh {
 
-enum Input {
-	ANSYS,
-	ESPRESO_INPUT,
-	MESH_GENERATOR,
-	OPENFOAM
-};
-
-enum Output {
-	ESPRESO_OUTPUT,
-	VTK_FULL,
-	VTK_SURFACE
-};
 
 class Boundaries;
 
@@ -89,10 +76,6 @@ public:
 	{
 		return _size;
 	}
-
-	void load(Input input, int argc, char** argv);
-	void store(Output output, const std::string &path, double shrinkSubdomain = 1, double shringCluster = 1) const;
-	void store(Output output, const std::string &path, std::vector<std::vector<double> > &displacement, double shrinkSubdomain = 1, double shringCluster = 1) const;
 
 	void saveNodeArray(eslocal *nodeArray, size_t part);
 
@@ -177,9 +160,6 @@ public:
 	{
 		mesh.getSurface(*this);
 	}
-
-	void elasticity(DenseMatrix &K, size_t part) const;
-	void integrateUpperFaces(std::vector < double > &f , size_t part) const;
 };
 
 class CommonFacesMesh: public Mesh
