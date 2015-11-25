@@ -174,7 +174,7 @@ void LinearSolver::init(
 	if (MPI_rank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		if (MPI_rank == 0) std::cout << d << " " ;
-		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
+		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 
 		if (R_from_mesh) {
 
@@ -381,7 +381,7 @@ void LinearSolver::init(
 	if (MPI_rank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		if (MPI_rank == 0) std::cout << d << " " ;
-		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
+		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 
 	    if (R_from_mesh) {
 
