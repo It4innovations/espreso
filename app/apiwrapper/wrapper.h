@@ -6,7 +6,7 @@
 
 #include "esconfig.h"
 #include "esassemblers.h"
-#include "esinput.h"
+//#include "esinput.h"
 
 struct FETI4IStructMatrix {
 	FETI4IStructMatrix(eslocal offset): data(0, 0), offset(offset) { };

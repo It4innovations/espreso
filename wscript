@@ -43,6 +43,8 @@ def configure(ctx):
     read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes)
     set_datatypes(ctx)
     ctx.append_solver_attributes = append_solver_attributes
+    if ctx.env.LIBTYPE == "STATIC":
+        ctx.env.append_unique("CXXFLAGS", [ "-fPIC" ])
 
     ctx.ROOT = ctx.path.abspath()
 

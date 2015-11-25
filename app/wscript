@@ -48,7 +48,10 @@ def configure(ctx):
         mkl = "mkl_intel_ilp64"
         metis = "metis64"
 
-    ctx.env.append_unique("LIB", [ metis ])
+    if ctx.env.LIBTYPE == "STATIC":
+        ctx.env.append_unique("STLIB", [ metis ])
+    else:
+        ctx.env.append_unique("LIB", [ metis ])
 
     if ctx.env.SOLVER == "PARDISO":
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
@@ -78,10 +81,10 @@ def build(ctx):
         install_path    = ctx.ROOT
     )
 
-    ctx.lib(
+    ctx.shlib(
         source          = apiwrapper_files,
         target          = "espreso",
-        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
+        use             = "espreso_insluces esbasis esconfig essolver_{0} esbem".format(ctx.env.SOLVER),
         install_path    = ctx.LIBRARIES
     )
 
