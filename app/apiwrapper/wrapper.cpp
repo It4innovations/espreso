@@ -2,6 +2,7 @@
 #include "wrapper.h"
 
 using namespace assembler;
+using namespace esinput;
 
 std::list<FETI4IStructMatrix*> DataHolder::matrices;
 std::list<FETI4IStructInstance*> DataHolder::instances;
@@ -35,6 +36,26 @@ using namespace assembler;
 //	*stiffnessMatrix = DataHolder::matrices.back();
 //	return 0;
 //}
+
+void FETI4ITest()
+{
+	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
+
+	CubeSettings cube(esconfig::MPIrank, esconfig::MPIsize);
+	MeshGenerator generator(new CubeGenerator<Hexahedron8>(cube));
+
+	mesh::Mesh mesh(esconfig::MPIrank, esconfig::MPIsize);
+	generator.load(mesh);
+
+	FEM fem(mesh);
+	LinearElasticity<FEM> solver(fem);
+
+	std::vector<std::vector<double> > solution;
+
+	solver.init();
+	solver.solve(solution);
+}
 
 void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix 	*matrix,

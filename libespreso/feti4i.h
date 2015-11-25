@@ -54,6 +54,8 @@ typedef struct FETI4IStructInstance* FETI4IInstance;
  Functions for manipulating with FETI4I internal structures
 ------------------------------------------------------------------------------*/
 
+void FETI4ITest();
+
 void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix 	*matrix, //TODO size?
 		FETI4IInt		indexBase
