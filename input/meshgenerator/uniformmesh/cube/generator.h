@@ -13,6 +13,7 @@ class CubeGenerator: public UniformGenerator<TElement> {
 
 public:
 	CubeGenerator(int argc, char** argv, int rank, int size);
+	CubeGenerator(CubeSettings &settings);
 
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);

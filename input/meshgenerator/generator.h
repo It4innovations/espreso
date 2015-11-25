@@ -29,6 +29,7 @@ protected:
 class MeshGenerator: public InternalLoader {
 public:
 	MeshGenerator(int argc, char** argv, int rank, int size);
+	MeshGenerator(Generator *generator): _generator(generator) { };
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);

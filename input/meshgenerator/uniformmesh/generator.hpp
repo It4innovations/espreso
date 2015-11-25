@@ -6,7 +6,7 @@ namespace esinput {
 
 template<class TElement>
 UniformGenerator<TElement>::UniformGenerator(int argc, char** argv, int rank, int size)
-	: Generator(rank, size), _settings(argc, argv) { };
+	: Generator(rank, size), _settings(argc, argv, rank, size) { };
 
 template<class TElement>
 void UniformGenerator<TElement>::elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)

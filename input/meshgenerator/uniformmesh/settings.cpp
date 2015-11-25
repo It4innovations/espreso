@@ -2,7 +2,7 @@
 
 using namespace esinput;
 
-std::vector<Description> createUniformSetting()
+static std::vector<Description> createUniformSetting()
 {
 	std::vector<Description> description;
 	std::vector<std::pair<std::string, std::string> > axis = {
@@ -30,7 +30,8 @@ std::vector<Description> createUniformSetting()
 
 std::vector<Description> UniformSettings::description = createUniformSetting();
 
-UniformSettings::UniformSettings(int argc, char** argv)
+UniformSettings::UniformSettings(int argc, char** argv, size_t index, size_t size)
+:index(index), size(size)
 {
 	Configuration configuration(UniformSettings::description, argc, argv);
 
@@ -44,4 +45,17 @@ UniformSettings::UniformSettings(int argc, char** argv)
 	corners = configuration.value<bool>("CORNERS_IN_CORNERS", true);
 	edges = configuration.value<bool>("CORNERS_IN_EDGES", false);
 	faces = configuration.value<bool>("CORNERS_IN_FACES", false);
+}
+
+UniformSettings::UniformSettings(size_t index, size_t size): index(index), size(size)
+{
+	for (size_t i = 0; i < 3; i++) { // x, y, z
+		subdomainsInCluster[i] = 2;
+		elementsInSubdomain[i] = 5;
+	}
+
+	cornerCount = 0;
+	corners = true;
+	edges = false;
+	faces = false;
 }

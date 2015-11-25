@@ -19,7 +19,8 @@ struct CubeSettings: public UniformSettings {
 		BOTTOM
 	};
 
-	CubeSettings(int argc, char** argv);
+	CubeSettings(int argc, char** argv, size_t index, size_t size);
+	CubeSettings(size_t index, size_t size);
 
 	static std::vector<Description> description;
 

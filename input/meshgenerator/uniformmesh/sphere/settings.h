@@ -8,7 +8,7 @@ namespace esinput {
 
 struct SphereSettings: public UniformSettings {
 
-	SphereSettings(int argc, char** argv);
+	SphereSettings(int argc, char** argv, size_t index, size_t size);
 
 	static std::vector<Description> description;
 

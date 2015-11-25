@@ -25,30 +25,42 @@ namespace esinput {
 //	#                                                 #
 //	###################################################
 
-template<class TElement>
-CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, int rank, int size)
-	: UniformGenerator<TElement>(argc, argv, rank, size), _settings(argc, argv)
+static void setCluster(size_t cluster[], CubeSettings &settings)
 {
-	if (_settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2] != this->_size) {
-		if (this->_rank == 0) {
-			std::cerr << "The number of clusters(" << _settings.clusters[0] * _settings.clusters[1] * _settings.clusters[2];
-			std::cerr << ") does not accord the number of MPI processes(" << this->_size << ").\n";
+	if (settings.clusters[0] * settings.clusters[1] * settings.clusters[2] != settings.size) {
+			if (settings.index == 0) {
+				std::cerr << "The number of clusters(" << settings.clusters[0] * settings.clusters[1] * settings.clusters[2];
+				std::cerr << ") does not accord the number of MPI processes(" << settings.size << ").\n";
+			}
+			exit(EXIT_FAILURE);
 		}
-		exit(EXIT_FAILURE);
-	}
-	eslocal index = 0, i = 0;
-	for (size_t z = 0; z < _settings.clusters[2]; z++) {
-		for (size_t y = 0; y < _settings.clusters[1]; y++) {
-			for (size_t x = 0; x < _settings.clusters[0]; x++) {
-				if (this->_rank == index++) {
-					_cluster[0] = x;
-					_cluster[1] = y;
-					_cluster[2] = z;
-					return;
+		eslocal index = 0, i = 0;
+		for (size_t z = 0; z < settings.clusters[2]; z++) {
+			for (size_t y = 0; y < settings.clusters[1]; y++) {
+				for (size_t x = 0; x < settings.clusters[0]; x++) {
+					if (settings.index == index++) {
+						cluster[0] = x;
+						cluster[1] = y;
+						cluster[2] = z;
+						return;
+					}
 				}
 			}
 		}
-	}
+}
+
+template<class TElement>
+CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, int rank, int size)
+	: UniformGenerator<TElement>(argc, argv, rank, size), _settings(argc, argv, rank, size)
+{
+	setCluster(_cluster, _settings);
+}
+
+template<class TElement>
+CubeGenerator<TElement>::CubeGenerator(CubeSettings &settings)
+	: UniformGenerator<TElement>(settings), _settings(settings)
+{
+	setCluster(_cluster, _settings);
 }
 
 template<class TElement>

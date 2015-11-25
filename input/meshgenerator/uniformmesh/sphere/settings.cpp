@@ -3,7 +3,7 @@
 
 using namespace esinput;
 
-std::vector<Description> createSphereSetting()
+static std::vector<Description> createSphereSetting()
 {
 	std::vector<Description> description(UniformSettings::description);
 
@@ -22,7 +22,8 @@ std::vector<Description> createSphereSetting()
 
 std::vector<Description> SphereSettings::description = createSphereSetting();
 
-SphereSettings::SphereSettings(int argc, char** argv): UniformSettings(argc, argv)
+SphereSettings::SphereSettings(int argc, char** argv,size_t index, size_t size)
+: UniformSettings(argc, argv, index, size)
 {
 	Configuration configuration(SphereSettings::description, argc, argv);
 

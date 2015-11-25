@@ -27,7 +27,7 @@ namespace esinput {
 
 template<class TElement>
 SphereGenerator<TElement>::SphereGenerator(int argc, char** argv, int rank, int size)
-	: UniformGenerator<TElement>(argc, argv, rank, size), _settings(argc, argv)
+	: UniformGenerator<TElement>(argc, argv, rank, size), _settings(argc, argv, rank, size)
 {
 	if (_settings.layers * 6 != this->_size) {
 		if (this->_rank == 0) {

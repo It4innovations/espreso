@@ -3,7 +3,7 @@
 
 using namespace esinput;
 
-std::vector<Description> createCubeSetting()
+static std::vector<Description> createCubeSetting()
 {
 	std::vector<Description> description(UniformSettings::description);
 
@@ -48,7 +48,8 @@ std::vector<Description> createCubeSetting()
 
 std::vector<Description> CubeSettings::description = createCubeSetting();
 
-CubeSettings::CubeSettings(int argc, char** argv): UniformSettings(argc, argv)
+CubeSettings::CubeSettings(int argc, char** argv, size_t index, size_t size)
+: UniformSettings(argc, argv, index, size)
 {
 	Configuration configuration(CubeSettings::description, argc, argv);
 
@@ -71,6 +72,32 @@ CubeSettings::CubeSettings(int argc, char** argv): UniformSettings(argc, argv)
 			boundaryCondition[f][p] = configuration.value<double>(name, 0);
 		}
 	}
+}
+
+CubeSettings::CubeSettings(size_t index, size_t size)
+: UniformSettings(index, size)
+{
+	std::vector<std::string> axis = { "X", "Y", "Z" };
+	for (size_t i = 0; i < axis.size(); i++) {
+		clusters[i] = 1;
+		problemLength[i] = 30;
+	}
+
+	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };
+	std::vector<std::string> cube_faces = { "FRONT", "REAR", "LEFT", "RIGHT", "TOP", "BOTTOM" };
+
+	fillCondition.resize(cube_faces.size());
+	boundaryCondition.resize(cube_faces.size());
+
+	for (size_t f = 0; f < cube_faces.size(); f++) {
+		for (size_t p = mesh::DIRICHLET_X; p <= mesh::FORCES_Z; p++) {
+			fillCondition[f][p] = false;
+			boundaryCondition[f][p] = 0;
+		}
+	}
+
+	// DIRICHLET_BOTTOM_X, DIRICHLET_BOTTOM_Y, DIRICHLET_BOTTOM_Z
+	fillCondition[5][0] = fillCondition[5][1] = fillCondition[5][2] = true;
 }
 
 

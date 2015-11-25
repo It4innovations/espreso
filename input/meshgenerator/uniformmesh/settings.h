@@ -9,9 +9,13 @@ namespace esinput {
 
 struct UniformSettings {
 
-	UniformSettings(int argc, char** argv);
+	UniformSettings(int argc, char** argv, size_t index, size_t size);
+	UniformSettings(size_t index, size_t size);
 
 	static std::vector<Description> description;
+
+	size_t index;
+	size_t size;
 
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
