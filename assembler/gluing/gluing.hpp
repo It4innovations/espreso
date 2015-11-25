@@ -469,7 +469,7 @@ void Gluing<API2>::computeSubdomainGluing()
 	eslocal index_offset = _input.indexing;
 
 	std::map <eslocal, eslocal> g2l;
-	for (eslocal i = 0; i < _input.l2g_size; i++)
+	for (eslocal i = 0; i < _input.size; i++)
 		g2l.insert(std::make_pair(_input.l2g[i], i));
 
 	std::map<eslocal, eslocal> :: iterator map_it;
@@ -499,10 +499,10 @@ void Gluing<API2>::computeSubdomainGluing()
 	}
 
 	for (eslocal d = 0; d < this->subdomains(); d++) {
-		gB[d].resize(lambda_count_B1, _input.l2g_size); //TODO: _K.rows or _K.cols
+		gB[d].resize(lambda_count_B1, _input.size); //TODO: _K.rows or _K.cols
 		_B1[d] = gB[d];
 
-		lB[d].resize(lambda_count_B0, _input.l2g_size); //TODO: _K.rows or _K.cols
+		lB[d].resize(lambda_count_B0, _input.size); //TODO: _K.rows or _K.cols
 		_B0[d] = lB[d];
 	}
 }
@@ -518,12 +518,12 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 	for (eslocal i = 0; i < _input.neighbours_size; i++)
 		_neighClusters.push_back(_input.neighbours[i]);// - index_offset);
 
-	_myBorderDOFs.resize(_input.l2g_size);
-	for (eslocal i = 0; i < _input.l2g_size; i++)
+	_myBorderDOFs.resize(_input.size);
+	for (eslocal i = 0; i < _input.size; i++)
 		_myBorderDOFs[i] = _input.l2g[i];
 
 	std::map <eslocal, eslocal> g2l;
-	for (eslocal i = 0; i < _input.l2g_size; i++)
+	for (eslocal i = 0; i < _input.size; i++)
 		g2l.insert(std::make_pair(_input.l2g[i],i));
 
 	std::map<eslocal, eslocal> :: iterator map_it;

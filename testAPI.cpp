@@ -46,31 +46,30 @@ int main(int argc, char** argv)
 	path << argv[1] << "/" << MPIrank << "/";
 
 	FETI4IMatrix K;
-	FETI4IRHS rhs;
 
-	FETI4ICreateStiffnessMatrixAndRHS(&K, &rhs, 0);
+	FETI4ICreateStiffnessMatrix(&K, 0);
 
 	std::vector<FETI4IInt> elements;
 	readFile(elements, path.str() + "elements.txt");
 	for (size_t e = 0; e < elements.size(); e++) {
 		std::vector<FETI4IInt> indices;
-		std::vector<FETI4IReal> Kvalues, RHSvalues;
-		std::stringstream Ki, Kv, Rv;
+		std::vector<FETI4IReal> Kvalues;
+		std::stringstream Ki, Kv;
 		Ki << path.str() << "Ki" << elements[e] << ".txt";
 		Kv << path.str() << "Ke" << elements[e] << ".bin";
-		Rv << path.str() << "Rv" << elements[e] << ".txt";
 		readFile(indices, Ki.str());
 		Kvalues.resize(indices.size() * indices.size());
 		readBinary(Kvalues, Kv.str());
-		readFile(RHSvalues, Rv.str());
 
-		FETI4IAddElement(K, rhs, indices.size(), indices.data(), Kvalues.data(), RHSvalues.data());
+		FETI4IAddElement(K, indices.size(), indices.data(), Kvalues.data());
 	}
 
+	std::vector<FETI4IReal> rhs;
 	std::vector<FETI4IInt> dirichlet_indices;
 	std::vector<FETI4IReal> dirichlet_values;
 	std::vector<FETI4IInt> l2g;
-	std::vector<FETI4IInt> neighbours;
+	std::vector<FETI4IMPIInt> neighbours;
+	readFile(rhs, path.str() + "rhs.txt");
 	readFile(dirichlet_indices, path.str() + "dirichlet_indices.txt");
 	readFile(dirichlet_values, path.str() + "dirichlet_values.txt");
 	readFile(l2g, path.str() + "l2g.txt");
@@ -78,25 +77,21 @@ int main(int argc, char** argv)
 
 	FETI4IInstance instance;
 
-	std::cout << "create instance\n";
-
 	FETI4ICreateInstance(
 			&instance,
 			K,
-			rhs,
-			dirichlet_indices.size(),
-			dirichlet_indices.data(),
-			dirichlet_values.data(),
+			rhs.size(),
+			rhs.data(),
 			l2g.data(),
 			neighbours.size(),
-			neighbours.data());
+			neighbours.data(),
+			dirichlet_indices.size(),
+			dirichlet_indices.data(),
+			dirichlet_values.data());
 
-	std::vector<FETI4IReal> solution(l2g.size());
-
-	std::cout << "solve\n";
+	std::vector<FETI4IReal> solution(rhs.size());
 
 	FETI4ISolve(instance, solution.size(), solution.data());
-
 
 
 	MPI_Finalize();
