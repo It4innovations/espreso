@@ -76,6 +76,7 @@ SparseSolver::SparseSolver(){
 	msglvl = 0;
 #endif
 	error = 0;				/* Initialize error flag */
+  msglvl=0;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Initialize the internal solver memory pointer. This is only */
