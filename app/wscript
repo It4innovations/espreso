@@ -48,14 +48,14 @@ def configure(ctx):
         mkl = "mkl_intel_ilp64"
         metis = "metis64"
 
-    if ctx.env.LIBTYPE == "STATIC":
-        ctx.env.append_unique("STLIB", [ metis ])
-    else:
-        ctx.env.append_unique("LIB", [ metis ])
-
-    if ctx.env.SOLVER == "PARDISO":
-        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
-        ctx.env.append_value("STLIB", [ "ifcore" ])
+#    if ctx.env.LIBTYPE == "STATIC":
+#        ctx.env.append_unique("STLIB", [ metis ])
+#    else:
+#        ctx.env.append_unique("LIB", [ metis ])
+#
+#    if ctx.env.SOLVER == "PARDISO":
+#        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
+#        ctx.env.append_value("STLIB", [ "ifcore" ])
 
     ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
@@ -67,25 +67,25 @@ def configure(ctx):
 def build(ctx):
     ctx.env = ctx.all_envs[APP]
 
-    ctx.program(
-        source          = source_files + ("main.cpp",),
-        target          = "espreso",
-        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
-        install_path    = ctx.ROOT
-    )
+#    ctx.program(
+#        source          = source_files + ("main.cpp",),
+#        target          = "espreso",
+#        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
+#        install_path    = ctx.ROOT
+#    )
 
-    ctx.program(
-        source          = source_files + ("decomposer.cpp",),
-        target          = "decomposer",
-        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
-        install_path    = ctx.ROOT
-    )
+#    ctx.program(
+#        source          = source_files + ("decomposer.cpp",),
+#        target          = "decomposer",
+#        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
+#        install_path    = ctx.ROOT
+#    )
 
     ctx.shlib(
         source          = apiwrapper_files,
-        target          = "espreso",
-        use             = "espreso_insluces esbasis esconfig essolver_{0} esbem".format(ctx.env.SOLVER),
-        install_path    = ctx.LIBRARIES
+        target          = "feti4i",
+        use             = "espreso_insluces esbasis esconfig essolver_{0}".format(ctx.env.SOLVER),
+        install_path    = ctx.ROOT + "/libespreso"
     )
 
 

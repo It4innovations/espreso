@@ -42,6 +42,8 @@ PROGRAM test
 
   CALL TEST4IGetInstance(rhs, l2g, dirichlet_indices, dirichlet_values, neighbours)
 
+  write (*,*) "Get instance"
+
   CALL FETI4ICreateInstance(instance, matrix, rhs_size, rhs, l2g, &
     neighbours_size, neighbours, dirichlet_size, dirichlet_indices, dirichlet_values)
   write (*,*) "Initialized"

@@ -13,7 +13,7 @@ test.o: test.F90 feti4i.mod
 	${FC} -c -g test.F90 -o $@
 
 test: test.o
-	${LINK.F} test.o -o $@ -L../../libs -lespreso
+	${LINK.F} test.o -o $@ -L.. -lfeti4i
 
 clean:
 	${RM} test.o feti4i_mod.o feti4i.mod

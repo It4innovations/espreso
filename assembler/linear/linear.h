@@ -57,7 +57,7 @@ private:
 
 #include "linear.hpp"
 #include "fem.hpp"
-#include "bem.hpp"
+//#include "bem.hpp"
 #include "api.hpp"
 
 
