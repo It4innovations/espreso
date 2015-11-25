@@ -175,10 +175,15 @@ void TEST4IGetElementsInfo(
 		FETI4IInt		*elements,
 		FETI4IInt		*elementSize)
 {
+	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 	std::vector<FETI4IInt> eCount;
 	std::vector<FETI4IInt> eSize;
-	readFile(eCount, "examples/api/cube/0/elements.txt");
-	readFile(eSize, "examples/api/cube/0/Ki.txt");
+	std::stringstream ssEl, ssKi;
+	ssEl << "examples/api/cube/" << esconfig::MPIrank << "/elements.txt";
+	ssKi << "examples/api/cube/" << esconfig::MPIrank << "/Ki0.txt";
+	readFile(eCount, ssEl.str());
+	readFile(eSize, ssKi.str());
 
 	*elements = eCount.size();
 	*elementSize = eSize.size();
@@ -193,10 +198,11 @@ void TEST4IGetElement(
 	std::vector<FETI4IReal> Kv;
 
 	std::stringstream ssKi, ssKv;
-	ssKi << "examples/api/cube/0/Ki" << index << ".txt";
-	ssKv << "examples/api/cube/0/Ke" << index << ".bin";
-	readFile(Ki, ssKi.str().c_str());
-	readBinary(Kv, ssKv.str().c_str());
+	ssKi << "examples/api/cube/" << esconfig::MPIrank << "/Ki" << index << ".txt";
+	ssKv << "examples/api/cube/" << esconfig::MPIrank << "/Ke" << index << ".bin";
+	readFile(Ki, ssKi.str());
+	Kv.resize(Ki.size() * Ki.size());
+	readBinary(Kv, ssKv.str());
 	memcpy(indices, Ki.data(), Ki.size() * sizeof(eslocal));
 	memcpy(values, Kv.data(), Kv.size() * sizeof(double));
 }
@@ -210,9 +216,13 @@ void TEST4IGetInstanceInfo(
 	std::vector<FETI4IInt> dirichlet;
 	std::vector<FETI4IMPIInt> neighbours;
 
-	readFile(rhs, "examples/api/cube/0/rhs.txt");
-	readFile(dirichlet, "examples/api/cube/0/dirichlet_indices.txt");
-	readFile(neighbours, "examples/api/cube/0/neighbours.txt");
+	std::stringstream ssRhs, ssD, ssN;
+	ssRhs << "examples/api/cube/" << esconfig::MPIrank << "/rhs.txt";
+	ssD << "examples/api/cube/" << esconfig::MPIrank << "/dirichlet_indices.txt";
+	ssN << "examples/api/cube/" << esconfig::MPIrank << "/neighbours.txt";
+	readFile(rhs, ssRhs.str().c_str());
+	readFile(dirichlet, ssD.str().c_str());
+	readFile(neighbours, ssN.str().c_str());
 
 	*rhs_size = rhs.size();
 	*dirichlet_size = dirichlet.size();
@@ -231,11 +241,18 @@ void TEST4IGetInstance(
 	std::vector<FETI4IInt> _dirichlet_indices;
 	std::vector<FETI4IReal> _dirichlet_values;
 	std::vector<FETI4IMPIInt> _neighbours;
-	readFile(_rhs, "examples/api/cube/0/rhs.txt");
-	readFile(_dirichlet_indices, "examples/api/cube/0/dirichlet_indices.txt");
-	readFile(_dirichlet_values, "examples/api/cube/0/dirichlet_values.txt");
-	readFile(_l2g, "examples/api/cube/0/l2g.txt");
-	readFile(_neighbours, "examples/api/cube/0/neighbours.txt");
+
+	std::stringstream ssRhs, ssL, ssDi, ssDv, ssN;
+	ssRhs << "examples/api/cube/" << esconfig::MPIrank << "/rhs.txt";
+	ssL << "examples/api/cube/" << esconfig::MPIrank << "/l2g.txt";
+	ssDi << "examples/api/cube/" << esconfig::MPIrank << "/dirichlet_indices.txt";
+	ssDv << "examples/api/cube/" << esconfig::MPIrank << "/dirichlet_values.txt";
+	ssN << "examples/api/cube/" << esconfig::MPIrank << "/neighbours.txt";
+	readFile(_rhs, ssRhs.str());
+	readFile(_dirichlet_indices, ssDi.str());
+	readFile(_dirichlet_values, ssDv.str());
+	readFile(_l2g, ssL.str());
+	readFile(_neighbours, ssN.str());
 
 	memcpy(rhs, _rhs.data(), _rhs.size() * sizeof(double));
 	memcpy(l2g, _l2g.data(), _l2g.size() * sizeof(eslocal));
