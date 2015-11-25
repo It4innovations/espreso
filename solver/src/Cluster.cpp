@@ -1162,7 +1162,7 @@ void Cluster::CreateF0() {
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
 		if (MPIrank == 0 && d == 0)
-			domains[d].Kplus.msglvl=1;
+			domains[d].Kplus.msglvl=0;
 		else
 			domains[d].Kplus.msglvl=0;
 

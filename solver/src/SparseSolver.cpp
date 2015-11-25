@@ -75,6 +75,7 @@ SparseSolver::SparseSolver(){
 #else
 	msglvl = 0;
 #endif
+  msglvl=0;
 	error = 0;				/* Initialize error flag */
 
 	/* -------------------------------------------------------------------- */

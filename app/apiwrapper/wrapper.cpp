@@ -122,7 +122,8 @@ void FETI4ICreateInstance(
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
-
+  
+  std::cout.setstate(std::ios_base::failbit);
 	API2 api;
 	DataHolder::instances.push_back(new FETI4IStructInstance(api));
 	DataHolder::instances.back()->K = matrix->data;

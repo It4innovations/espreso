@@ -445,11 +445,27 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 		if (mpi_rank == mpi_root) {
 			//printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f - norm prim %1.20f norm f %1.20f : %1.20f \n", iter+1, norm_l, tol, norm_prim_g, norm_prim_fg, norm_prim_g / norm_prim_fg);
-			printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
+//		printf (       "Iter MPI %5d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
+//
+		
+
+
+      int my_prec=log10(int(1./epsilon));
+      std::cout.clear();
+      std::cout<<"Iter MPI ";
+      std::cout<<std::setw(5);
+      std::cout<<iter+1;
+      std::cout.precision(my_prec+2);
+      std::cout<<" ||normed_residual|| = "<<norm_l/tol*epsilon;
+      std::cout.precision(my_prec);
+      std::cout<<",   epsilon = "<<epsilon <<"\n";
+      //printf (       "Iter MPI %5d - ||normed_residual|| %1.20f - tol %1.20f\n", iter+1, norm_l/tol*epsilon,epsilon );
+    //  std::cout<<      "Iter MPI "<< iter+1 << "- norm dual "<< norm_l << " - tol " <<tol <<"\n";
 
 			//if (log_active == 1)
 			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 		}
+    std::cout.setstate(std::ios_base::failbit);
 
 
 		// *** Stop condition ******************************************************************
@@ -1193,7 +1209,8 @@ void IterSolver::CreateGGt( Cluster & cluster )
 
 		count_cv += mpi_size/li;
 		if (mpi_rank == 0)
-			printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size);
+			//printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size);
+			std::cout<<" Collecting matrices G : " << count_cv <<" of " << mpi_size << "\n";
 
 	}
 
@@ -1237,7 +1254,7 @@ void IterSolver::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		// Create Sparse Direct solver for GGt
-		GGt.msglvl = 1;
+		GGt.msglvl = 0;
 
 		t1 = omp_get_wtime();
 		GGt.ImportMatrix(GGt_Mat);
@@ -1300,7 +1317,8 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
         if(var != NULL)
                 sscanf( var, "%d", &num_procs );
         else {
-                printf("Set environment PAR_NUM_THREADS to 1");
+                //printf("Set environment PAR_NUM_THREADS to 1");
+          std::cout<<"Set environment PAR_NUM_THREADS to 1";
                 exit(1);
         }
         GGt_tmp.iparm[2]  = num_procs;
@@ -1398,7 +1416,8 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 
 		count_cv_l += mpi_size/li;
 		if (mpi_rank == 0)
-			printf(" Collecting matrices G : %d of %d \r", count_cv_l, mpi_size);
+//			printf(" Collecting matrices G : %d of %d \r", count_cv_l, mpi_size);
+			std::cout<<" Collecting matrices G : " << count_cv_l <<" of " << mpi_size << "\n";
 
 	}
 	collectGGt_time.AddEnd(omp_get_wtime()); collectGGt_time.PrintStatMPI(0.0); preproc_timing.AddEvent(collectGGt_time);
@@ -1418,7 +1437,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 
 	// Create Sparse Direct solver for GGt
 	if (mpi_rank == mpi_root)
-		GGt_tmp.msglvl = 1;
+		GGt_tmp.msglvl = 0;
 
 	TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.AddStart(omp_get_wtime());
 	GGt_tmp.ImportMatrix(GGt_Mat_tmp);
