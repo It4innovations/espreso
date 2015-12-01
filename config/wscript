@@ -1,16 +1,12 @@
 
-CONFIG = "config"
-
 source_files = (
     "esconfig.cpp",
 )
 
 def configure(ctx):
-    ctx.setenv(CONFIG, ctx.all_envs[""].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[CONFIG]
-
     ctx.lib(
         source          = source_files,
         target          = "esconfig",

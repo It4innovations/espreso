@@ -32,26 +32,36 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     for attribute, description, type, value in espreso_attributes + compilers + compiler_attributes:
         read_attribute(attribute, type)
 
-    for solver in solvers:
-        for attribute, description, type, value in compiler_attributes:
-            read_attribute(solver + "::" + attribute, type)
+    for attribute, description, type, value in compiler_attributes:
+        read_attribute("SOLVER::" + attribute, type)
+
+    # Rewrite solver attributes by attributes from configuration
+    for attribute, description, type, value in compiler_attributes:
+        if not ctx.env["SOLVER::" + attribute]:
+            ctx.env["SOLVER::" + attribute] = ctx.env[ctx.env.SOLVER + "::" + attribute]
 
     ctx.env.LINK_CXX = ctx.env.CXX
 
     # Print final configuration
+    ctx.find_program(ctx.env.CXX)
+    ctx.find_program(ctx.env.CC)
+    ctx.find_program(ctx.env.FC)
+
     for attribute, description, type, value in espreso_attributes:
         print_attribute(attribute, type, ctx.env[attribute])
 
     for attribute, description, type, value in compiler_attributes:
-        print_attribute(attribute, type,
-                        ctx.env[attribute] + ctx.env[ctx.env["SOLVER"] + "::" + attribute])
+        print_attribute(attribute, type, ctx.env[attribute])
+
+    for attribute, description, type, value in compiler_attributes:
+        print_attribute("SOLVER::" + attribute, type, ctx.env["SOLVER::" + attribute])
 
 def set_datatypes(ctx):
     ctx.env.INT_WIDTH = int(ctx.env.INT_WIDTH)
     if ctx.env.INT_WIDTH == 32:
-        ctx.env.append_unique("DEFINES", [ "eslocal=int", "MKL_INT=int", "esglobal=int", "esglobal_mpi=MPI_INT" ])
+        ctx.env.append_unique("DEFINES", [ "eslocal=int", "MKL_INT=int", "esglobal=int", "esglobal_mpi=MPI_INT", "BLAS_INT" ])
     elif ctx.env.INT_WIDTH == 64:
-        ctx.env.append_unique("DEFINES", [ "-Deslocal=long", "-DMKL_INT=long", "-Desglobal=long", "-Desglobal_mpi=MPI_LONG" ])
+        ctx.env.append_unique("DEFINES", [ "eslocal=long", "MKL_INT=long", "esglobal=long", "esglobal_mpi=MPI_LONG", "BLAS_LONG" ])
     else:
         ctx.fatal("ESPRESO supports only INT_WIDTH = {32, 64}.")
 
@@ -59,26 +69,53 @@ def append_solver_attributes(ctx):
     if ctx.env.SOLVER == "MIC" or ctx.env.SOLVER == "CUDA":
         ctx.env.append_unique("DEFINES", ctx.env.SOLVER)
 
-    env = ctx.all_envs[""]
-    for attribute in env.table:
-        if attribute.find(ctx.env.SOLVER) != -1:
-            ctx.env.append_unique(attribute.split("::")[1], env[attribute])
+    for attribute in ctx.env.table:
+        if attribute.find("SOLVER::") != -1:
+            ctx.env.append_unique(attribute.split("::")[1], ctx.env[attribute])
 
-def set_indices_width(ctx):
-    if ctx.env.ESLOCAL == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=int", "-DMKL_INT=int" ])
-    if ctx.env.ESLOCAL == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Deslocal=long", "-DMKL_INT=long" ])
+def check_environment(ctx):
+    ctx.check_cxx(
+        fragment=
+            '''
+            #include <iostream>
+            int main() {
+                long x;
+                if (sizeof(x) == 8) {
+                    std::cout << "sizeof(x)";
+                }
+                return 0;
+            }
+            ''',
+        execute     = True,
+        mandatory   = False,
+        errmsg      = "WARNING: ESPRESO with your compiler supports only 32-bit integers",
+        msg         = "Checking for 64-bit integers")
 
-    if ctx.env.ESDUAL == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desdual=int" ])
-    if ctx.env.ESDUAL == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desdual=long" ])
-
-    if ctx.env.ESGLOBAL == 32:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=int", "-Desglobal_mpi=MPI_INT" ])
-    if ctx.env.ESGLOBAL == 64:
-        ctx.env.append_unique("CXXFLAGS", [ "-Desglobal=long", "-Desglobal_mpi=MPI_LONG" ])
+    ret = ctx.check(
+        fragment=
+            '''
+            #include <iostream>
+            int main() {
+            #ifdef __ICC
+                std::cout << __ICC;
+                return 0;
+            #endif
+            #ifdef __INTEL_COMPILER
+                std::cout <<  __INTEL_COMPILER;
+                return 0;
+            #endif
+                std::cout << \"0\";
+                return 0;
+            }
+            ''',
+        execute     = True,
+        define_ret  = True,
+        errmsg      = "Incorrect user-supplied value for ESPRESO_LOCAL_INDICES_WIDTH",
+        msg         = "Checking icpc compiler support.",
+        okmsg       = "supported"
+    )
+    ctx.env.ICPC_VERSION = int(ret[:2])
+    ctx.msg("Checking icpc version", ctx.env.ICPC_VERSION)
 
 def set_default(ctx):
     try:

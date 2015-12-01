@@ -1,17 +1,13 @@
 
-BASIS = "basis"
-
 source_files = (
     "matrices/denseMatrix.cpp",
     "matrices/matrix.cpp",
 )
 
 def configure(ctx):
-    ctx.setenv(BASIS, ctx.all_envs[""].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[BASIS]
-
     ctx.lib(
         source          = source_files,
         target          = "esbasis",

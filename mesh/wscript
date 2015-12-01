@@ -1,6 +1,4 @@
 
-MESH = "mesh"
-
 source_files = (
     "structures/coordinates.cpp",
     "structures/boundaries.cpp",
@@ -23,10 +21,9 @@ source_files = (
 
 
 def configure(ctx):
-    ctx.setenv(MESH, ctx.all_envs[""].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[MESH]
     ctx.lib(
         source          = source_files,
         target          = "esmesh",
