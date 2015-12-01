@@ -11,17 +11,17 @@ from wafutils import *
 # Each attribute has this structure: ( "attribute", "description", "data type", "choices")
 
 compilers = [
-    ("CXX", "Intel MPI/C++ compiler used to build ESPRESO.", "string", ""),
-    ("CC", "C compiler for build tools used by ESPRESO.", "string", ""),
-    ("FC", "Fortran compiler for build tools used by ESPRESO.", "string", "")
+    ("CXX", "Intel MPI/C++ compiler used to build ESPRESO.", "string", "compiler"),
+    ("CC", "C compiler for build tools used by ESPRESO.", "string", "compiler"),
+    ("FC", "Fortran compiler for build tools used by ESPRESO.", "string", "compiler")
 ]
 
 compiler_attributes = [
-    ("CXXFLAGS", "List of compilation flags for ESPRESO files.", "string", ""),
-    ("LINKFLAGS", "List of flags for linking ESPRESO.", "string", ""),
-    ("INCLUDES", "Include paths.", "string", ""),
-    ("LIBPATH", "List of search path for shared libraries.", "string", ""),
-    ("STLIBPATH", "List of search path for static libraries.", "string", "")
+    ("CXXFLAGS", "List of compilation flags for ESPRESO files.", "string", "flags"),
+    ("LINKFLAGS", "List of flags for linking ESPRESO.", "string", "flags"),
+    ("INCLUDES", "Include paths.", "string", "paths"),
+    ("LIBPATH", "List of search path for shared libraries.", "string", "paths"),
+    ("STLIBPATH", "List of search path for static libraries.", "string", "paths")
 ]
 
 solvers = [ "MKL", "PARDISO", "CUDA", "MIC", "MUMPS" ]
@@ -29,8 +29,8 @@ solvers = [ "MKL", "PARDISO", "CUDA", "MIC", "MUMPS" ]
 espreso_attributes = [
     ("CHECK_ENV", "Set to 1, if you want to test the build configuration.", "choice", [ "0", "1" ]),
     ("INT_WIDTH", "ESPRESO integer datatype width.", "choice", [ "32", "64" ]),
-    ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "DYNAMIC", "STATIC" ]),
-    ("SOLVER", "ESPRESO internal solver.", "choice", solvers),
+    ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "SHARED", "STATIC" ]),
+    ("SOLVER", "ESPRESO internal solver. Default: MKL", "choice", solvers),
 ]
 
 
@@ -42,21 +42,28 @@ def configure(ctx):
 
     read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes)
     set_datatypes(ctx)
-    ctx.append_solver_attributes = append_solver_attributes
 
     ctx.ROOT = ctx.path.abspath()
 
+    # recurse to tools
+    ctx.recurse("tools")
+
+    # recurse to basic parts
     ctx.recurse("basis")
     ctx.recurse("config")
-    ctx.recurse("tools")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")
     ctx.recurse("output")
+
+    # recurse to ESPRESO solver
+    ctx.setenv("solver", ctx.env.derive());
+    append_solver_attributes(ctx)
     ctx.recurse("solver")
     ctx.recurse("assembler")
     ctx.recurse("app")
 
+    check_environment(ctx)
 
 def build(ctx):
 
@@ -125,12 +132,16 @@ def build(ctx):
     ctx.recurse("mesh")
     ctx.recurse("input")
     ctx.recurse("output")
+
+    ctx.env = ctx.all_envs["solver"]
     ctx.recurse("solver")
     ctx.recurse("assembler")
     ctx.recurse("app")
 
 
 def options(opt):
+    opt.parser.formatter.max_help_position = 32
+
     def add_option(group, attribute, description, type, choices):
         if type == "choice":
             group.add_option("--" + attribute,
@@ -144,7 +155,7 @@ def options(opt):
             action="store",
             default="",
             type=type,
-            metavar="...",
+            metavar=choices,
             help=description)
 
     for attribute, description, type, choices in espreso_attributes:
@@ -166,19 +177,17 @@ def options(opt):
         )
 
     desc = (
-        "Parameters are in the form SOLVER::ATTRIBUTE. By these attributes "
-        "you can specify attributes only for chosen SOLVER. Each attribute "
-        "will be added to global compiler attributes.")
+        "ESPRESO supports several linear solvers for various platforms. "
+        "Each solver is built independently to other ESPRESO parts. "
+        "Attributes below specify attributes only for chosen SOLVER.")
 
-    opt.add_option_group("Solver specific compiler attributes", desc)
-    for solver in solvers:
-        for attribute, description, type, choices in compiler_attributes:
-            add_option(
-                opt.add_option_group("For SOLVER={0}".format(solver)),
-                solver + "::" + attribute,
-                description,
-                type, choices
-            )
+    for attribute, description, type, choices in compiler_attributes:
+        add_option(
+            opt.add_option_group("Solver specific compiler attributes", desc),
+            "SOLVER" + "::" + attribute,
+            description,
+            type, choices
+        )
 
 
 

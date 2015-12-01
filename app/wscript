@@ -3,6 +3,7 @@ APP = "espreso"
 
 from waflib.Tools.ccroot import link_task
 
+# Reconfigure build string to fit our requirements
 class cxxprogram(link_task):
     vars    = ['LINKDEPS']
     ext_out = ['.bin']
@@ -35,30 +36,7 @@ apiwrapper_files = (
 )
 
 def configure(ctx):
-    ctx.setenv(APP, ctx.all_envs[""].derive())
-    ctx.append_solver_attributes(ctx)
-
-    ctx.env.append_unique("LIBPATH", [ "../libs" ])
-    ctx.env.append_unique("STLIBPATH", [ "../libs" ])
-
-    if ctx.env.INT_WIDTH == 32:
-        mkl = "mkl_intel_lp64"
-        metis = "metis32"
-    if ctx.env.INT_WIDTH == 64:
-        mkl = "mkl_intel_ilp64"
-        metis = "metis64"
-
-    ctx.env.append_unique("LIB", [ metis ])
-
-    if ctx.env.SOLVER == "PARDISO":
-        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ])
-        ctx.env.append_value("STLIB", [ "ifcore" ])
-
-    ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-
-
-################################################################################
-################################################################################
+    pass
 
 
 def build(ctx):

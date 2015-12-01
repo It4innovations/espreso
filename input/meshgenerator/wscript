@@ -1,6 +1,4 @@
 
-MESHGENERATOR = "meshgenerator"
-
 source_files = (
     "elements/3D/tetrahedron4.cpp",
     "elements/3D/tetrahedron10.cpp",
@@ -20,11 +18,9 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.setenv(MESHGENERATOR, ctx.all_envs[""].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[MESHGENERATOR]
-
     ctx.lib(
         source          = source_files,
         target          = "esinput_generator",

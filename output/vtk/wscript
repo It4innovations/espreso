@@ -1,6 +1,4 @@
 
-VTK = "output_vtk"
-
 source_files = (
     "vtk.cpp",
     "full/vtk.cpp",
@@ -8,11 +6,9 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.setenv(VTK, ctx.all_envs[""].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[VTK]
-
     ctx.lib(
         source          = source_files,
         target          = "esoutput_vtk",
