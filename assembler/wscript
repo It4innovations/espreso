@@ -1,16 +1,13 @@
 
-ASSEMBLER = "assembler"
-
 source_files = (
     #"linear/linear.cpp",
     #"linear/elasticity/linearelasticity.cpp"
 )
 
 def configure(ctx):
-    ctx.setenv(ASSEMBLER, ctx.all_envs[""].derive());
+    pass
 
 def build(ctx):
-    ctx.env = ctx.all_envs[ASSEMBLER]
     return
 
     ctx.lib(

@@ -1,6 +1,4 @@
 
-APP = "espreso"
-
 from waflib.Tools.ccroot import link_task
 
 # Reconfigure build string to fit our requirements
@@ -40,27 +38,25 @@ def configure(ctx):
 
 
 def build(ctx):
-    ctx.env = ctx.all_envs[APP]
-
-#    ctx.program(
-#        source          = source_files + ("main.cpp",),
-#        target          = "espreso",
-#        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
-#        install_path    = ctx.ROOT
-#    )
-
-#    ctx.program(
-#        source          = source_files + ("decomposer.cpp",),
-#        target          = "decomposer",
-#        use             = "espreso_insluces esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
-#        install_path    = ctx.ROOT
-#    )
-
-    ctx.shlib(
-        source          = apiwrapper_files,
-        target          = "feti4i",
-        use             = "espreso_insluces esbasis esconfig essolver_{0}".format(ctx.env.SOLVER),
-        install_path    = ctx.ROOT + "/libespreso"
+    ctx.program(
+        source          = source_files + ("main.cpp",),
+        target          = "espreso",
+        use             = "espreso_includes esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
+        install_path    = ctx.ROOT
     )
+
+    ctx.program(
+        source          = source_files + ("decomposer.cpp",),
+        target          = "decomposer",
+        use             = "espreso_includes esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
+        install_path    = ctx.ROOT
+    )
+
+#    ctx.shlib(
+#        source          = apiwrapper_files,
+#        target          = "feti4i",
+#        use             = "espreso_includes esbasis esconfig essolver_{0} esbem".format(ctx.env.SOLVER),
+#        install_path    = ctx.ROOT + "/libespreso"
+#    )
 
 

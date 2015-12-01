@@ -34,7 +34,7 @@ STLIBPATH =
 # you can specify attributes only for chosen SOLVER. Each attribute
 # will be added to global compiler attributes.
 
-MKL::CXXFLAGS = -cc
+MKL::CXXFLAGS =
 MKL::LINKFLAGS =
 MKL::INCLUDES =
 MKL::LIBPATH =

@@ -45,6 +45,12 @@ def configure(ctx):
 
     ctx.ROOT = ctx.path.abspath()
 
+    if not os.path.exists(ctx.ROOT + "/libs"):
+        os.makedirs(ctx.ROOT + "/libs")
+
+    ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
+    ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
+
     # recurse to tools
     ctx.recurse("tools")
 
@@ -66,10 +72,6 @@ def configure(ctx):
     check_environment(ctx)
 
 def build(ctx):
-
-    if not check_configuration(VERSION):
-        ctx.fatal("Settings of ESPRESO have changed. Run configure first.")
-
     ctx(
         export_includes = "basis",
         name            = "incl_basis"
