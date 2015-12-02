@@ -50,7 +50,7 @@ def build(ctx):
     if ctx.env.EXTERNAL_LIBRARIES:
         return
 
-    if not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/"):
+    if ctx.env.SOLVER == "MUMPS" and not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/"):
         ctx(
             rule    = "cd " + ctx.env.SCOTCH["path"] + ";" \
                       "make scotch esmumps " + ctx.env.SCOTCH["params"] + ";" \
@@ -59,7 +59,7 @@ def build(ctx):
             name    = "build scotch library"
         )
 
-    if not check_libraries(ctx.env.MUMPS["libs"], ctx.ROOT + "/libs/"):
+    if ctx.env.SOLVER == "MUMPS" and not check_libraries(ctx.env.MUMPS["libs"], ctx.ROOT + "/libs/"):
         ctx(
             rule    = "cd " + ctx.env.MUMPS["path"] + ";" \
                       "make d " + ctx.env.MUMPS["params"] + ";" \

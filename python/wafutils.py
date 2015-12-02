@@ -129,7 +129,6 @@ def check_environment(ctx):
                 std::cout <<  __INTEL_COMPILER;
                 return 0;
             #endif
-                std::cout << \"00\";
                 return 0;
             }
             ''',
