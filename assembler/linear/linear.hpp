@@ -16,7 +16,7 @@ void Linear<TInput>::init()
 	_K.resize(this->subdomains());
 	_M.resize(this->subdomains());
 	_f.resize(this->subdomains());
-	for (size_t s = 0; s < this->subdomains(); s++) {
+	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
 		std::cout << s << " " ;
 		// TODO: set dynamics
 		KMf(s, false);

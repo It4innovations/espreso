@@ -478,11 +478,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
 	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
 
-
-	std::vector<size_t>::const_iterator vi;
-	std::set<eslocal>::const_iterator si1, si2;
-
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
+
+
 
 	// TODO: make it more general
 	std::vector<size_t> properties;
@@ -496,103 +494,398 @@ void Gluing<TInput>::computeSubdomainGluing()
 		properties[2] = mesh::DIRICHLET_Z;
 	}
 
-	std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
-	for (size_t i = 0; i < localBoundaries.size(); i++) {
+	int threads = 3;
+	std::vector < std::vector < std::vector < eslocal > > > _mat_B_dir (threads);
+	std::vector < std::vector<eslocal> > local_prim_numbering_d_l (threads);
+	std::vector<eslocal> lambda_count_B1_l (threads, 0);
+	std::vector<eslocal> lambda_count_B1_sum (threads, 0);
 
-		std::vector<bool> is_dirichlet(this->DOFs(), false);
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-			for (vi = properties.begin(); vi != properties.end(); ++vi) {
-				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
-				if (property.find(i) != property.end()) {
+	std::vector < std::vector < std::vector < double > > > vec_c_l ( threads );
+
+#pragma omp parallel num_threads(threads)
+	{
+		int this_thread = omp_get_thread_num();
+		int num_threads = omp_get_num_threads();
 
 
-					double dirichlet_value = property.at(i);
+		std::vector<size_t>::const_iterator vi_l;
+		std::set<eslocal>::const_iterator si1_l, si2_l;
 
-					is_dirichlet[0] = true;
+		_mat_B_dir[this_thread].			  resize( this->subdomains() );
+		local_prim_numbering_d_l[this_thread].resize( this->subdomains(),0 );
+		vec_c_l[this_thread].                 resize( this->subdomains() );
 
-					gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
+		int chunk_size = localBoundaries.size() / num_threads;
 
-					_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
-					_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
-					_B1_duplicity[*si1].push_back(1.0);
-					_vec_c[*si1].push_back(dirichlet_value);
+#pragma omp for schedule (static, chunk_size)
+		for (size_t i = 0; i < localBoundaries.size(); i++) {
 
-					lambda_count_B1++;
+			std::vector<bool> is_dirichlet(this->DOFs(), false);
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				for (vi_l = properties.begin(); vi_l != properties.end(); ++vi_l) {
+					const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi_l).values();
+					if (property.find(i) != property.end()) {
+
+						double dirichlet_value = property.at(i);
+
+						//is_dirichlet[0] = true;
+
+						_mat_B_dir[this_thread][*si1_l].push_back( lambda_count_B1_l[this_thread] );
+						_mat_B_dir[this_thread][*si1_l].push_back( local_prim_numbering_d_l[this_thread][*si1_l] + (vi_l - properties.begin()) );
+						_mat_B_dir[this_thread][*si1_l].push_back( 1 );
+
+						vec_c_l   [this_thread][*si1_l].push_back(dirichlet_value);
+
+						//gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
+
+						//_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
+						//_lambda_map_sub_B1[*si1].	push_back(lambda_count_B1);
+						//_B1_duplicity[*si1].		push_back(1.0);
+						//_vec_c[*si1].				push_back(dirichlet_value);
+
+						lambda_count_B1_l[this_thread]++;
+					}
+				}
+			}
+
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				local_prim_numbering_d_l[this_thread][*si1_l] += this->DOFs();
+			}
+
+
+		}
+
+#pragma omp barrier
+
+#pragma omp master
+		{
+			lambda_count_B1_sum[0] = lambda_count_B1_l[0];
+			for (size_t th = 1; th < threads; th++) {
+				//lambda_count_B1_l[th] += lambda_count_B1_l[th - 1];
+				lambda_count_B1_sum[th] = lambda_count_B1_sum[th-1] + lambda_count_B1_l[th];
+				for (size_t d = 0; d < this->subdomains(); d++) {
+					local_prim_numbering_d_l[th][d] += local_prim_numbering_d_l[th - 1][d];
 				}
 			}
 		}
 
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-			local_prim_numbering_d[*si1] += this->DOFs();
+
+#pragma omp for
+		for (size_t d = 0; d < this->subdomains(); d++) {
+			for (size_t th = 0; th < threads; th++) {
+				eslocal lambda_off = 0;
+				eslocal locDOF_off = 0;
+
+				if (th > 0) lambda_off = lambda_count_B1_sum[th-1];
+
+				for (size_t i = 0; i < _mat_B_dir[th][d].size(); i = i + 3 ) {
+					if (th > 0) locDOF_off = local_prim_numbering_d_l[th-1][d];
+
+					eslocal lambda = _mat_B_dir[th][d][i + 0] + lambda_off;
+				    eslocal locDOF = _mat_B_dir[th][d][i + 1] + locDOF_off;
+
+				    gB[d]( lambda , locDOF  ) = (double)_mat_B_dir[th][d][i + 2];
+
+					_lambda_map_sub_B1[d].	push_back(lambda);
+					_B1_duplicity[d]. 		push_back(1.0);
+
+				}
+
+				_vec_c[d].insert( _vec_c[d].end(), vec_c_l[th][d].begin(), vec_c_l[th][d].end() );
+
+			}
+		}
+
+#pragma omp master
+		{
+			for (eslocal i = 0; i < lambda_count_B1_sum[threads - 1]; i++)
+				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
+
+			lambda_count_B1 = lambda_count_B1_sum[threads - 1];
+
 		}
 
 	}
 
-	std::vector<eslocal> local_prim_numbering(this->subdomains(), 0);
-	for (size_t i = 0; i < localBoundaries.size(); i++) {
-		std::vector<bool> is_dirichlet(this->DOFs(), false);
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-			for (vi = properties.begin(); vi != properties.end(); ++vi) {
-				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
-				if (property.find(i) != property.end()) {
-					is_dirichlet[0] = true;
+	std::vector<size_t>::const_iterator vi;
+	std::set<eslocal>::const_iterator si1, si2;
+
+
+// Dirichelt - seq version
+	std::vector<std::vector<eslocal> > lambda_map_sub_clst;
+	std::vector<std::vector<eslocal> > lambda_map_sub_B1 ( this->subdomains() );
+	std::vector<std::vector<double> >  B1_duplicity ( this->subdomains() );
+	std::vector<std::vector<double> >  vec_c ( this->subdomains() );
+//
+//
+//
+//	std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
+//	for (size_t i = 0; i < localBoundaries.size(); i++) {
+//
+//		std::vector<bool> is_dirichlet(this->DOFs(), false);
+//		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+//			for (vi = properties.begin(); vi != properties.end(); ++vi) {
+//				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
+//				if (property.find(i) != property.end()) {
+//
+//
+//					double dirichlet_value = property.at(i);
+//
+//					is_dirichlet[0] = true;
+//
+//					//gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
+//
+//					//_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
+//					//_lambda_map_sub_B1[*si1].	push_back(lambda_count_B1);
+//					//_B1_duplicity[*si1].		push_back(1.0);
+//					//_vec_c[*si1].				push_back(dirichlet_value);
+//
+//					lambda_count_B1++;
+//				}
+//			}
+//		}
+//
+//		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+//			local_prim_numbering_d[*si1] += this->DOFs();
+//		}
+//
+//	}
+
+
+
+
+
+
+
+//	std::vector < std::vector < std::vector < eslocal > > > _mat_B_dir (threads);
+//	std::vector < std::vector<eslocal> > local_prim_numbering_d_l (threads);
+//	std::vector<eslocal> lambda_count_B1_l (threads, 0);
+
+//	lambda_count_B1_l.clear();
+//	lambda_count_B1_l.resize(threads, 0);
+
+//	std::vector < std::vector < std::vector < double > > > vec_c_l ( threads );
+
+#pragma omp parallel num_threads(threads)
+	{
+		int this_thread = omp_get_thread_num();
+		int num_threads = omp_get_num_threads();
+
+		std::vector<size_t>::const_iterator vi_l;
+		std::set<eslocal>::const_iterator si1_l, si2_l;
+
+		_mat_B_dir[this_thread].			  clear();
+		local_prim_numbering_d_l[this_thread].clear();
+		//vec_c_l[this_thread].                 clear();
+
+		_mat_B_dir[this_thread].			  resize( this->subdomains() );
+		local_prim_numbering_d_l[this_thread].resize( this->subdomains(),0 );
+		//vec_c_l[this_thread].                 resize( this->subdomains() );
+
+		int chunk_size = localBoundaries.size() / num_threads;
+
+#pragma omp for schedule (static, chunk_size)
+		for (size_t i = 0; i < localBoundaries.size(); i++) {
+
+			std::vector<bool> is_dirichlet(this->DOFs(), false);
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				for (vi_l = properties.begin(); vi_l != properties.end(); ++vi_l) {
+					const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi_l).values();
+					if (property.find(i) != property.end()) {
+						is_dirichlet[0] = true;
+					}
 				}
 			}
-		}
 
-		if (localBoundaries[i].size() > 1) {
-			if (globalBoundaries[i].size() == 1) {
-				for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-					for (si2 = si1,++si2; si2 != localBoundaries[i].end(); ++si2) {
-						for (eslocal d = 0; d < this->DOFs(); d++) {
-							if (is_dirichlet[d]) {
-								continue;
+			if (localBoundaries[i].size() > 1) {
+
+				if ( globalBoundaries[i].size() == 1
+					 && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
+					 ) {	//TODO: Pozor Cornery nejdou do B1
+					for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+						for (si2_l = si1_l,++si2_l; si2_l != localBoundaries[i].end(); ++si2_l) {
+							for (eslocal d = 0; d < this->DOFs(); d++) {
+								if (is_dirichlet[d]) {
+									continue;
+								}
+
+								_mat_B_dir[this_thread][*si1_l].push_back( lambda_count_B1_l[this_thread] );
+								_mat_B_dir[this_thread][*si1_l].push_back( local_prim_numbering_d_l[this_thread][*si1_l] + d );
+								_mat_B_dir[this_thread][*si1_l].push_back( 1 * localBoundaries[i].size() );
+
+								_mat_B_dir[this_thread][*si2_l].push_back( lambda_count_B1_l[this_thread] );
+								_mat_B_dir[this_thread][*si2_l].push_back( local_prim_numbering_d_l[this_thread][*si2_l] + d );
+								_mat_B_dir[this_thread][*si2_l].push_back( -1 * localBoundaries[i].size() );
+
+								lambda_count_B1_l[this_thread]++;
 							}
-							gB[*si1](lambda_count_B1, local_prim_numbering[*si1] + d) =  1.0;
-							gB[*si2](lambda_count_B1, local_prim_numbering[*si2] + d) = -1.0;
-
-							_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
-							_lambda_map_sub_B1[*si2].push_back(lambda_count_B1);
-							_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
-							_B1_duplicity[*si1].push_back( 1.0 / (double) localBoundaries[i].size() );
-							_B1_duplicity[*si2].push_back( 1.0 / (double) localBoundaries[i].size() );
-							_vec_c[*si1].push_back(0.0);
-							_vec_c[*si2].push_back(0.0);
-
-							lambda_count_B1++;
 						}
 					}
 				}
+
+
 			}
 
-			//if ( 1 == 1 ) {
-			if (localBoundaries.isCorner(i)) {
-				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
-					for (eslocal d = 0; d < this->DOFs(); d++) {
-						lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
-						lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
-						_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
-						_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
-						lambda_count_B0++;
-					}
-					si2 = si1;
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				local_prim_numbering_d_l[this_thread][*si1_l] += this->DOFs();
+			}
+
+		}
+
+#pragma omp barrier
+
+#pragma omp master
+		{
+			for (size_t th = 1; th < threads; th++) {
+				lambda_count_B1_l[th] += lambda_count_B1_l[th - 1];
+				for (size_t d = 0; d < this->subdomains(); d++) {
+					local_prim_numbering_d_l[th][d] += local_prim_numbering_d_l[th - 1][d];
 				}
 			}
 		}
 
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-			local_prim_numbering[*si1] += this->DOFs();
+
+#pragma omp for
+		for (size_t d = 0; d < this->subdomains(); d++) {
+			for (size_t th = 0; th < threads; th++) {
+				eslocal lambda_off = 0;
+				eslocal locDOF_off = 0;
+
+				if (th > 0) lambda_off = lambda_count_B1_l[th-1];
+
+				for (size_t i = 0; i < _mat_B_dir[th][d].size(); i = i + 3 ) {
+					if (th > 0) locDOF_off = local_prim_numbering_d_l[th-1][d];
+
+					eslocal lambda = _mat_B_dir[th][d][i + 0] + lambda_off;
+				    eslocal locDOF = _mat_B_dir[th][d][i + 1] + locDOF_off;
+
+				    double duplicity;
+				    double value;
+				    eslocal tmp = _mat_B_dir[th][d][i + 2];
+
+				    if (tmp < 0) {
+				    	duplicity = -1.0 / (double)tmp;
+				    	value 	   = -1.0;
+				    } else {
+				    	duplicity = 1.0 / (double)tmp;
+				    	value 	   = 1.0;
+				    }
+
+				    gB[d]( lambda , locDOF  ) = value;
+
+					_lambda_map_sub_B1[d].	push_back(lambda);
+					_B1_duplicity[d]. 		push_back(duplicity);
+					_vec_c[d]. 				push_back(0.0);
+
+				}
+
+			}
+		}
+
+#pragma omp master
+		{
+			for (eslocal i = 0; i < lambda_count_B1_l[threads - 1]; i++) {
+				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
+			}
+			lambda_count_B1 += lambda_count_B1_l[threads - 1];
+
 		}
 
 	}
 
+
+
+
+
+
+//	std::vector<eslocal> local_prim_numbering(this->subdomains(), 0);
+//	for (size_t i = 0; i < localBoundaries.size(); i++) {
+//
+//
+//
+//		std::vector<bool> is_dirichlet(this->DOFs(), false);
+//		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+//			for (vi = properties.begin(); vi != properties.end(); ++vi) {
+//				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
+//				if (property.find(i) != property.end()) {
+//					//TODO: Toto asi neni dobre - jak resit DOFs ?
+//					is_dirichlet[0] = true;
+//				}
+//			}
+//		}
+
+//		if (localBoundaries[i].size() > 1) {
+//
+//			if ( globalBoundaries[i].size() == 1
+//				 && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
+//				 ) {	//TODO: Pozor Cornery nejdou do B1
+//				for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+//					for (si2 = si1,++si2; si2 != localBoundaries[i].end(); ++si2) {
+//						for (eslocal d = 0; d < this->DOFs(); d++) {
+//							if (is_dirichlet[d]) {
+//								continue;
+//							}
+//							gB[*si1](lambda_count_B1, local_prim_numbering[*si1] + d) =  1.0;
+//							gB[*si2](lambda_count_B1, local_prim_numbering[*si2] + d) = -1.0;
+//
+//							_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
+//							_lambda_map_sub_B1[*si2].push_back(lambda_count_B1);
+//							_lambda_map_sub_clst.	 push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
+//							_B1_duplicity[*si1].	 push_back( 1.0 / (double) localBoundaries[i].size() );
+//							_B1_duplicity[*si2].	 push_back( 1.0 / (double) localBoundaries[i].size() );
+//							_vec_c[*si1].			 push_back(0.0);
+//							_vec_c[*si2].			 push_back(0.0);
+//
+//							lambda_count_B1++;
+//						}
+//					}
+//				}
+//			}
+
+//			//if ( 1 == 1 ) {
+//			if (localBoundaries.isCorner(i)) {
+//				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
+//					for (eslocal d = 0; d < this->DOFs(); d++) {
+//						lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
+//						lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
+//						_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
+//						_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
+//						lambda_count_B0++;
+//					}
+//					si2 = si1;
+//				}
+//			}
+//
+//
+//
+//		}
+
+//		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+//			local_prim_numbering[*si1] += this->DOFs();
+//		}
+
+//	}
+
+	//	for (eslocal d = 0; d < this->subdomains(); d++) {
+	//		gB[d].resize(lambda_count_B1, local_prim_numbering[d]);
+	//		_B1[d] = gB[d];
+	//
+	////		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
+	////		_B0[d] = lB[d];
+	//	}
+
+	std::cout << "lambdas in B0 = " << lambda_count_B0++ << std::endl;
+
+
 	for (eslocal d = 0; d < this->subdomains(); d++) {
-		gB[d].resize(lambda_count_B1, local_prim_numbering[d]);
+		gB[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
 		_B1[d] = gB[d];
 
-		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
-		_B0[d] = lB[d];
+//		lB[d].resize(lambda_count_B0, local_prim_numbering[threads - 1][d]);
+//		_B0[d] = lB[d];
 	}
+
+
 }
 
 template <class TInput>
