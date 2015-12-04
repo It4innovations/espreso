@@ -472,8 +472,8 @@ template <class TInput>
 void Gluing<TInput>::computeSubdomainGluing()
 {
 
-//#define PARALLEL
-#define SEQUENTIAL
+#define PARALLEL
+//#define SEQUENTIAL
 
 
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
@@ -673,6 +673,10 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 #ifdef PARALLEL
 
+//	std::vector < std::vector < std::vector < eslocal > > > mat_B0 				 	 (threads);
+//	std::vector < std::vector<eslocal> > 					local_prim_numbering_d_l (threads);
+//	std::vector<eslocal> 									lambda_count_B1_l 		 (threads, 0);
+
 #pragma omp parallel num_threads(threads)
 	{
 		int this_thread = omp_get_thread_num();
@@ -717,7 +721,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 			if (localBoundaries[i].size() > 1) {
 
 				if ( globalBoundaries[i].size() == 1
-					// && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
+					 && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
 					 ) {	//TODO: Pozor Cornery nejdou do B1
 					for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
 						for (si2_l = si1_l,++si2_l; si2_l != localBoundaries[i].end(); ++si2_l) {
@@ -739,6 +743,22 @@ void Gluing<TInput>::computeSubdomainGluing()
 						}
 					}
 				}
+
+				//if ( 1 == 1 ) {
+//				if (localBoundaries.isCorner(i)) {
+//					for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
+//						for (eslocal d = 0; d < this->DOFs(); d++) {
+//
+//							//lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
+//							//lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
+//							//_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
+//							//_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
+//							//lambda_count_B0++;
+//						}
+//						si2 = si1;
+//					}
+//				}
+
 
 
 			}
@@ -865,19 +885,19 @@ void Gluing<TInput>::computeSubdomainGluing()
 				}
 			}
 
-//			//if ( 1 == 1 ) {
-//			if (localBoundaries.isCorner(i)) {
-//				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
-//					for (eslocal d = 0; d < this->DOFs(); d++) {
-//						lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
-//						lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
-//						_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
-//						_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
-//						lambda_count_B0++;
-//					}
-//					si2 = si1;
-//				}
-//			}
+			//if ( 1 == 1 ) {
+			if (localBoundaries.isCorner(i)) {
+				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
+					for (eslocal d = 0; d < this->DOFs(); d++) {
+						lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
+						lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
+						_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
+						_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
+						lambda_count_B0++;
+					}
+					si2 = si1;
+				}
+			}
 
 		}
 
@@ -891,8 +911,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 		t_gB[d].resize(t_lambda_count_B1, local_prim_numbering[d]);
 		_B1[d] = t_gB[d];
 
-	//		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
-	//		_B0[d] = lB[d];
+		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
+		_B0[d] = lB[d];
 	}
 
 //	for (int i = 0; i < t_lambda_map_sub_B1.size(); i++ )
