@@ -16,13 +16,17 @@ void Linear<TInput>::init()
 	_K.resize(this->subdomains());
 	_M.resize(this->subdomains());
 	_f.resize(this->subdomains());
+
+	if (this->_verbose && this->rank() == 0) {
+		std::cout << "Assembling matrices : ";
+	}
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
-		std::cout << s << " " ;
+		//std::cout << s << " " ;
 		// TODO: set dynamics
 		KMf(s, false);
 
 		if (this->_verbose && this->rank() == 0) {
-			std::cout << s << " " ;
+			std::cout << "." ;//<< s << " " ;
 		}
 	}
 	if (this->_verbose && this->rank() == 0) {

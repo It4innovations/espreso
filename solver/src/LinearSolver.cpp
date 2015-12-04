@@ -206,7 +206,7 @@ void LinearSolver::init(
 
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
 
-		if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+		if ( cluster.cluster_global_index == 1 ) { std::cout < ".";}; //{ GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
@@ -378,9 +378,9 @@ void LinearSolver::init(
 	// *** Load Matrix K and regularization ******************************************************************************
 	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
 	 timeSolKproc.AddStart();
-	if (MPI_rank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
+	if (MPI_rank == 0) std::cout << "K regularization and factorization ... : ";
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		if (MPI_rank == 0) std::cout << d << " " ;
+		if (MPI_rank == 0) std::cout << "."; //<< d << " " ;
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
 
 	    if (R_from_mesh) {
@@ -413,7 +413,7 @@ void LinearSolver::init(
 
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
 
-		if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+		//if ( cluster.cluster_global_index == 1 ) { std::cout < ".";}; //{ GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
