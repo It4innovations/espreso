@@ -480,8 +480,13 @@ void Gluing<TInput>::computeSubdomainGluing()
 	// TODO: cluster boundaries on surface
 	const mesh::Boundaries &globalBoundaries = this->_input.mesh.clusterBoundaries();
 
-	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
-	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
+	//std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
+	//std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
+
+	//std::vector<SparseIJVMatrix<eslocal> > gBij(this->subdomains());
+
+	if (_B1.size() != this->subdomains())
+		_B1.resize(this->subdomains());
 
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
 
@@ -514,7 +519,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 	std::vector<eslocal> 									lambda_count_B1_l 		 (threads, 0);
 	std::vector<eslocal> 									lambda_count_B1_sum 	 (threads, 0);
 
-	std::vector < std::vector < std::vector < double > > > vec_c_l ( threads );
+	std::vector < std::vector < std::vector < double > > > 	vec_c_l ( threads );
 
 #pragma omp parallel num_threads(threads)
 	{
@@ -525,11 +530,16 @@ void Gluing<TInput>::computeSubdomainGluing()
 		std::vector<size_t>::const_iterator vi_l;
 		std::set<eslocal>::const_iterator si1_l, si2_l;
 
-		mat_B_dir[this_thread].			  resize( this->subdomains()    );
+		mat_B_dir[this_thread].			  	  resize( this->subdomains()    );
 		local_prim_numbering_d_l[this_thread].resize( this->subdomains(), 0 );
 		vec_c_l[this_thread].                 resize( this->subdomains()    );
 
 		int chunk_size = localBoundaries.size() / (num_threads-1);
+
+		for (int d = 0; d < this->subdomains(); d++) {
+			mat_B_dir[this_thread][d].reserve(chunk_size);
+			vec_c_l[this_thread][d].reserve(chunk_size);
+		}
 
 //#pragma omp for schedule (static, chunk_size)
 //		for (size_t i = 0; i < localBoundaries.size(); i++) {
@@ -593,6 +603,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 #pragma omp for
 		for (size_t d = 0; d < this->subdomains(); d++) {
+
 			for (size_t th = 0; th < threads; th++) {
 				eslocal lambda_off = 0;
 				eslocal locDOF_off = 0;
@@ -605,7 +616,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 					eslocal lambda = mat_B_dir[th][d][i + 0] + lambda_off;
 				    eslocal locDOF = mat_B_dir[th][d][i + 1] + locDOF_off;
 
-				    gB[d]( lambda , locDOF  ) = (double)mat_B_dir[th][d][i + 2];
+				    //gB[d]( lambda , locDOF  ) = (double)mat_B_dir[th][d][i + 2];
+				    _B1[d].set ( lambda , locDOF, (double)mat_B_dir[th][d][i + 2]);
 
 					_lambda_map_sub_B1[d].	push_back(lambda);
 					_B1_duplicity[d]. 		push_back(1.0);
@@ -695,7 +707,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 		int chunk_size = localBoundaries.size() / (num_threads );
 
-
+		for (int d = 0; d < this->subdomains(); d++) {
+			mat_B_dir[this_thread][d].reserve(chunk_size);
+		}
 
 //#pragma omp for schedule (static, chunk_size)
 //		for (size_t i = 0; i < localBoundaries.size(); i++) {
@@ -807,7 +821,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 				    	value 	   = 1.0;
 				    }
 
-				    gB[d]( lambda , locDOF  ) = value;
+				    //gB[d]( lambda , locDOF  ) = value;
+				    _B1[d].set ( lambda , locDOF, value);
 
 					_lambda_map_sub_B1[d].	push_back(lambda);
 					_B1_duplicity[d]. 		push_back(duplicity);
@@ -831,11 +846,15 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 
 	for (eslocal d = 0; d < this->subdomains(); d++) {
-		gB[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
-		_B1[d] = gB[d];
+//		//gB[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
+//		gBij[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
+//		//_B1[d] = gB[d];
+//		_B1[d] = gBij[d];
+////		lB[d].resize(lambda_count_B0, local_prim_numbering[threads - 1][d]);
+////		_B0[d] = lB[d];
 
-//		lB[d].resize(lambda_count_B0, local_prim_numbering[threads - 1][d]);
-//		_B0[d] = lB[d];
+		_B1[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
+
 	}
 
 
