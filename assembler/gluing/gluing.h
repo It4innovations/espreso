@@ -38,14 +38,16 @@ protected:
 	std::vector<std::vector<eslocal> > _lambda_map_sub_clst;
 	std::vector<std::vector<double> >  _B1_duplicity;
 	std::vector<std::vector<double> >  _vec_c;
-	std::vector<eslocal> _neighClusters;
+	std::vector<eslocal> 			   _neighClusters;
 
 private:
 	// used for computation
 	std::vector<SparseIJVMatrix<eslocal> > _B0, _B1;
 
 	// Per-cluster variables
-	std::vector < esglobal > _myBorderDOFs;  // DOFs on the border of the cluster
+	std::vector < esglobal > _myBorderDOFs;  	// DOFs on the border of the cluster but not domains
+	std::vector < esglobal > _myBorderDOFs_sp;  // DOFs on the border of the cluster and domains
+
 	esglobal 				 total_number_of_B1_l_rows;
 
 
