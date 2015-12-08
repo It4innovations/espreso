@@ -84,6 +84,7 @@ public:
 	SparseSolver F0;
 	SparseSolver F0_fast;
 	SparseSolver Sa;
+	SparseMatrix SaMat;
 
 	SEQ_VECTOR <double> vec_d;
 

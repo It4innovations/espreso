@@ -67,7 +67,8 @@ public:
 
 	// Dense data 
 	SEQ_VECTOR <double> dense_values;
-	SEQ_VECTOR <float> dense_values_fl;
+	SEQ_VECTOR <float>  dense_values_fl;
+	SEQ_VECTOR <eslocal>    ipiv;
 
 	// CUDA
 	double * d_dense_values;

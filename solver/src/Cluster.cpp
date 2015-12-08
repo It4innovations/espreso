@@ -181,7 +181,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 	SEQ_VECTOR< SEQ_VECTOR <eslocal> > lambdas_per_subdomain ( domains.size() * NUMBER_OF_CLUSTERS );
 	my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
-	for (eslocal i = 0; i < lambda_map_sub.size(); i++) {
+	cilk_for (eslocal i = 0; i < lambda_map_sub.size(); i++) {
 		if ( lambda_map_sub[i].size() > 2 ) {
 			if ( lambda_map_sub[i][1] < lambda_map_sub[i][2] )
 				my_lamdas_ddot_filter[i] = 1.0;
@@ -206,7 +206,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 	my_comm_lambdas			.resize(my_neighs.size());
 	my_recv_lambdas			.resize(my_neighs.size());
 
-	for (eslocal i = 0; i < my_neighs.size(); i++) {
+	cilk_for (eslocal i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices[i] = lambdas_per_subdomain[my_neighs[i]];
 		my_comm_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
@@ -216,11 +216,11 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 	compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
 #ifdef DEVEL
-	for (eslocal d = 0; d < domains.size(); d++ )
-	if (USE_KINV == 1 )
-		domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
-	else
-		domains[d].compressed_tmp.resize( 1, 0);
+	cilk_for (eslocal d = 0; d < domains.size(); d++ )
+		if (USE_KINV == 1 )
+			domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
+		else
+			domains[d].compressed_tmp.resize( 1, 0);
 #else
 	for (eslocal d = 0; d < domains.size(); d++ )
 		domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
@@ -231,13 +231,13 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
 
 	// mapping/compression vector for domains
-	for (eslocal i = 0; i < domains.size(); i++) {
+	cilk_for (eslocal i = 0; i < domains.size(); i++) {
 		for (eslocal j = 0; j < domains[i].lambda_map_sub.size(); j++) {
 			domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
 		}
 	}
 
-	for (eslocal d = 0; d < domains.size(); d++) {
+	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 		eslocal i = 0;
 		eslocal j = 0;
 		do
@@ -263,7 +263,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
 	my_comm_lambdas_indices_comp.resize(my_neighs.size());
-	for (eslocal i = 0; i < my_neighs.size(); i++) {
+	cilk_for (eslocal i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices_comp[i].resize( lambdas_per_subdomain[my_neighs[i]].size() );
 		for (eslocal j = 0; j < lambdas_per_subdomain[my_neighs[i]].size(); j++ )
 			my_comm_lambdas_indices_comp[i][j] = my_lamdas_map_indices[lambdas_per_subdomain[my_neighs[i]][j]];
@@ -708,13 +708,21 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	clus_Sa_time.AddStart();
-	Sa.Solve(tm2[0], vec_alfa,0,0);
-	clus_Sa_time.AddEnd();
+	 clus_Sa_time.AddStart();
+#ifdef SPARSE_SA
+	 Sa.Solve(tm2[0], vec_alfa,0,0);
+#else
+	char U = 'U';
+	eslocal nrhs = 1;
+	eslocal info = 0;
+	vec_alfa = tm2[0];
+	dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
+#endif
+	 clus_Sa_time.AddEnd();
 
-	clus_G0t_time.AddStart();
+	 clus_G0t_time.AddStart();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	clus_G0t_time.AddEnd();
+	 clus_G0t_time.AddEnd();
 
 	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
@@ -1360,13 +1368,24 @@ void Cluster::CreateSa() {
 		 reg_Sa_time.AddEnd(omp_get_wtime()); reg_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(reg_Sa_time);
 	 }
 
-
+#ifdef SPARSE_SA
 	 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.AddStart(omp_get_wtime());
-	if (MPIrank == 0) Sa.msglvl = 0; 
-	Sa.ImportMatrix(Salfa); 
-	Sa.Factorization(); 
-	if (MPIrank == 0) Sa.msglvl = 0; 
-	 fact_Sa_time.AddEnd(omp_get_wtime()); fact_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(fact_Sa_time); 
+	if (MPIrank == 0) Sa.msglvl = 1;
+	Sa.ImportMatrix(Salfa);
+	Sa.Factorization();
+	if (MPIrank == 0) Sa.msglvl = 0;
+	 fact_Sa_time.AddEnd(omp_get_wtime()); fact_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(fact_Sa_time);
+#else
+	 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.AddStart(omp_get_wtime());
+	SaMat = Salfa;
+	SaMat.ConvertCSRToDense(1);
+	eslocal info;
+	char U = 'U';
+	SaMat.ipiv.resize(SaMat.cols);
+	dsptrf( &U, &SaMat.cols, &SaMat.dense_values[0], &SaMat.ipiv[0], &info );
+	 factd_Sa_time.AddEnd(omp_get_wtime()); factd_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(factd_Sa_time);
+#endif
+
 
 	Sa_timing.totalTime.AddEnd(omp_get_wtime()); Sa_timing.PrintStatsMPI(); 
 	MKL_Set_Num_Threads(1);
