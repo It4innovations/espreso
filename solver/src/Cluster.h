@@ -110,7 +110,7 @@ public:
 	void InitClusterPC ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
 	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map); //, SEQ_VECTOR < eslocal > & neigh_domains  );
 	void SetClusterPC_AfterKplus ();
-	void SetClusterHFETI ();
+	void SetClusterHFETI ( bool R_from_mesh );
 
 	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
 	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ); //, vector <double> & y_out, vector<eslocal> & cluster_map_vec);

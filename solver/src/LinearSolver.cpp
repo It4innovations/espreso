@@ -221,7 +221,7 @@ void LinearSolver::init(
 	if (cluster.USE_HFETI == 1) {
 		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
 		 timeHFETIprec.AddStart();
-		cluster.SetClusterHFETI();
+		cluster.SetClusterHFETI( R_from_mesh );
 		 timeHFETIprec.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeHFETIprec);
 	}
@@ -352,8 +352,7 @@ void LinearSolver::init(
 		cluster.domains[d].vec_c = vec_c[d];
 
 
-	//cilk_
-    for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		for (eslocal i = 0; i < fix_nodes[d].size(); i++)
  			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
 				cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
@@ -428,14 +427,14 @@ void LinearSolver::init(
 	if (cluster.USE_HFETI == 1) {
 		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
 		 timeHFETIprec.AddStart();
-		cluster.SetClusterHFETI();
+		cluster.SetClusterHFETI( R_from_mesh );
 		 timeHFETIprec.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeHFETIprec);
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
     //cluster.Create_G1_perCluster();
 
-    if (cluster.USE_HFETI == 1) {
+    if (cluster.USE_HFETI == 1 && !R_from_mesh ) {
     	solver.Preprocessing ( cluster );
     	cluster.G1.Clear();
     }

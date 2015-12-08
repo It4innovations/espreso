@@ -430,7 +430,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 }
 
-void Cluster::SetClusterHFETI () {
+void Cluster::SetClusterHFETI (bool R_from_mesh) {
 	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
 	if (USE_HFETI == 1) {
 
@@ -486,32 +486,30 @@ void Cluster::SetClusterHFETI () {
 		HFETI_prec_timing.totalTime.AddEnd(omp_get_wtime());
 		HFETI_prec_timing.PrintStatsMPI();
 
-		//TODO: To be fixed
+		if (! R_from_mesh) {
 
-		Create_G1_perCluster();
+			Create_G1_perCluster();
 
-		if (USE_DYNAMIC == 0) {
+			if (USE_DYNAMIC == 0) {
 
-			G1.ConvertToCOO( 1 );
-			cilk_for (int j = 0; j < G1.J_col_indices.size(); j++ )
-				G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+				G1.ConvertToCOO( 1 );
+				cilk_for (int j = 0; j < G1.J_col_indices.size(); j++ )
+					G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
 
-			G1.cols = my_lamdas_indices.size();
-			G1.ConvertToCSRwithSort( 1 );
+				G1.cols = my_lamdas_indices.size();
+				G1.ConvertToCSRwithSort( 1 );
 
-			G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
-			G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
-			G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
+				G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
+				G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
+				G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
 
-			G1_comp.rows = G1.rows;
-			G1_comp.cols = G1.cols;
-			G1_comp.nnz  = G1.nnz;
-			G1_comp.type = G1.type;
+				G1_comp.rows = G1.rows;
+				G1_comp.cols = G1.cols;
+				G1_comp.nnz  = G1.nnz;
+				G1_comp.type = G1.type;
 
-			//G1.Clear();
-
+			}
 		}
-
 
 
 	}
@@ -1191,7 +1189,7 @@ void Cluster::CreateF0() {
 		domains[d].B0Kplus.Clear();
 
 		domains[d].Kplus.msglvl=0;
-		if (MPIrank == 0 ) {cout << d << " "; };
+		if (MPIrank == 0 ) cout << "."; //{cout << d << " "; };
 	}	
 
 	if (MPIrank == 0 ) {cout << endl; };

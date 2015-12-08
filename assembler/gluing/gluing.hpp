@@ -485,6 +485,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 	if (_B1.size() != this->subdomains())
 		_B1.resize(this->subdomains());
 
+	if (_B0.size() != this->subdomains())
+		_B0.resize(this->subdomains());
+
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
 
 	// TODO: make it more general
@@ -515,6 +518,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 	std::vector < std::vector<eslocal> > 					local_prim_numbering_d_l (threads);
 	std::vector<eslocal> 									lambda_count_B1_l 		 (threads, 0);
 	std::vector<eslocal> 									lambda_count_B1_sum 	 (threads, 0);
+
+
+
 
 	std::vector < std::vector < std::vector < double > > > 	vec_c_l ( threads );
 
@@ -688,9 +694,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 #ifdef PARALLEL
 
-//	std::vector < std::vector < std::vector < eslocal > > > mat_B0 				 	 (threads);
-//	std::vector < std::vector<eslocal> > 					local_prim_numbering_d_l (threads);
-//	std::vector<eslocal> 									lambda_count_B1_l 		 (threads, 0);
+	std::vector < std::vector < std::vector < eslocal > > > mat_B0 				 	 (threads);
+	std::vector<eslocal> 									lambda_count_B0_l 		 (threads, 0);
 
 #pragma omp parallel num_threads(threads)
 	{
@@ -704,6 +709,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 		local_prim_numbering_d_l[this_thread].clear();
 
 		mat_B_dir[this_thread].			  resize( this->subdomains() );
+                mat_B0   [this_thread].                   resize( this->subdomains()  );
 		local_prim_numbering_d_l[this_thread].resize( this->subdomains(),0 );
 
 		int chunk_size = localBoundaries.size() / (num_threads );
@@ -760,19 +766,30 @@ void Gluing<TInput>::computeSubdomainGluing()
 				}
 
 				//if ( 1 == 1 ) {
-//				if (localBoundaries.isCorner(i)) {
-//					for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
-//						for (eslocal d = 0; d < this->DOFs(); d++) {
-//
-//							//lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
-//							//lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
-//							//_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
-//							//_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
-//							//lambda_count_B0++;
-//						}
-//						si2 = si1;
-//					}
-//				}
+				if (localBoundaries.isCorner(i)) {
+					for (si1_l = localBoundaries[i].begin(), si2_l = si1_l, ++si1_l; si1_l != localBoundaries[i].end(); ++si1_l) {
+						for (eslocal d = 0; d < this->DOFs(); d++) {
+
+							//lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
+							//lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
+							//_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
+							//_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
+							//lambda_count_B0++;
+
+							mat_B0[this_thread][*si1_l].push_back( lambda_count_B0_l[this_thread] );
+							mat_B0[this_thread][*si1_l].push_back( local_prim_numbering_d_l[this_thread][*si1_l] + d );
+							mat_B0[this_thread][*si1_l].push_back( 1 );
+
+							mat_B0[this_thread][*si2_l].push_back( lambda_count_B0_l[this_thread] );
+							mat_B0[this_thread][*si2_l].push_back( local_prim_numbering_d_l[this_thread][*si2_l] + d );
+							mat_B0[this_thread][*si2_l].push_back( -1 );
+
+							lambda_count_B0_l[this_thread]++;
+
+						}
+						si2_l = si1_l;
+					}
+				}
 
 
 
@@ -789,6 +806,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 		{
 			for (size_t th = 1; th < threads; th++) {
 				lambda_count_B1_l[th] += lambda_count_B1_l[th - 1];
+				lambda_count_B0_l[th] += lambda_count_B0_l[th - 1];
 				//std::cout << lambda_count_B1_l[th] << " ";
 				for (size_t d = 0; d < this->subdomains(); d++) {
 					local_prim_numbering_d_l[th][d] += local_prim_numbering_d_l[th - 1][d];
@@ -805,7 +823,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 				if (th > 0) lambda_off = lambda_count_B1_l[th-1];
 
 				for (size_t i = 0; i < mat_B_dir[th][d].size(); i = i + 3 ) {
-					if (th > 0) locDOF_off = local_prim_numbering_d_l[th-1][d];
+					if (th > 0)
+						locDOF_off = local_prim_numbering_d_l[th-1][d];
 
 					eslocal lambda = mat_B_dir[th][d][i + 0] + lambda_off;
 				    eslocal locDOF = mat_B_dir[th][d][i + 1] + locDOF_off;
@@ -834,13 +853,40 @@ void Gluing<TInput>::computeSubdomainGluing()
 			}
 		}
 
+
+#pragma omp for
+		for (size_t d = 0; d < this->subdomains(); d++) {
+			for (size_t th = 0; th < threads; th++) {
+				eslocal lambda_off = 0;
+				eslocal locDOF_off = 0;
+
+				if (th > 0) lambda_off = lambda_count_B0_l[th-1];
+
+				for (size_t i = 0; i < mat_B0[th][d].size(); i = i + 3 ) {
+
+					if (th > 0)
+						locDOF_off = local_prim_numbering_d_l[th-1][d];
+
+					eslocal lambda = mat_B0[th][d][i + 0] + lambda_off;
+				    eslocal locDOF = mat_B0[th][d][i + 1] + locDOF_off;
+
+				    double duplicity;
+				    double value = (double) mat_B0[th][d][i + 2];
+
+				    _B0[d].set ( lambda , locDOF, value);
+					_lambda_map_sub_B0[d].	push_back(lambda);
+
+				}
+			}
+		}
+
 #pragma omp master
 		{
 			for (eslocal i = 0; i < lambda_count_B1_l[threads - 1]; i++) {
 				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
 			}
 			lambda_count_B1 = lambda_count_B1_l[threads - 1];
-
+			lambda_count_B0 = lambda_count_B0_l[threads - 1];
 		}
 
 	}
@@ -853,7 +899,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 //		_B1[d] = gBij[d];
 ////		lB[d].resize(lambda_count_B0, local_prim_numbering[threads - 1][d]);
 ////		_B0[d] = lB[d];
-
+		_B0[d].resize(lambda_count_B0, local_prim_numbering_d_l[threads - 1][d]);
 		_B1[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
 
 	}
@@ -1379,12 +1425,12 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	if (MPIrank == 0) { std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; system("date +%T.%6N"); }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
-
-//#ifdef USE_TBB
-//	tbb::parallel_sort(myLambdas.begin(), myLambdas.end(), comp_vf);
-//#else
+//#define USE_TBB
+#ifdef USE_TBB
+	tbb::parallel_sort(myLambdas.begin(), myLambdas.end(), comp_vf);
+#else
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
-//#endif
+#endif
 
 	if (MPIrank == 0) { std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; system("date +%T.%6N"); }
 
@@ -1392,12 +1438,12 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	esglobal DOFNumber;
 	eslocal n_myLambdas = myLambdas.size();
 
-//#ifdef USE_TBB
-//	tbb::mutex m;
-//	cilk_for (int j = 0; j < n_myLambdas; j++)
-//#else
+#ifdef USE_TBB
+	tbb::mutex m;
+	cilk_for (int j = 0; j < n_myLambdas; j++)
+#else
 	for (eslocal j = 0; j < n_myLambdas; j++)
-//#endif
+#endif
 	{
 
 		esglobal lambda         = myLambdas[j][0];
@@ -1428,23 +1474,23 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 			if ( domDofNODENumber != -1 ) {
 				//vychazi z mapovani g2l pro uzly a ne DOFy
 				eslocal domDOFNumber = this->DOFs() * domDofNODENumber + dofNODEoffset;
-//			   #ifdef USE_TBB
-//				m.lock();
-//			   #endif
+			   #ifdef USE_TBB
+				m.lock();
+			   #endif
 				B1_DOK_tmp[d](lambda, domDOFNumber) = B_value;
 				myLambdas[j].push_back(d);
 				_B1_duplicity[d].push_back(1.0 / cnt);
 				_vec_c[d].push_back(0.0);
-//			   #ifdef USE_TBB
-//				m.unlock();
-//			   #endif
+			   #ifdef USE_TBB
+				m.unlock();
+			   #endif
 				break;
 
 			}
 		}
 	}
 
-	for (eslocal d = 0; d < this->subdomains(); d++){
+	cilk_for (eslocal d = 0; d < this->subdomains(); d++){
 		//TODO: lambdaNum muze byt 64bit integer
 		//TODO: matice B - pocet radku muze byt 64bit int
 		B1_DOK_tmp[d].resize( total_number_of_B1_l_rows + total_number_of_global_B1_lambdas , rows[d]);
