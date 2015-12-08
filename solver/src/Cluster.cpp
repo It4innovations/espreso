@@ -181,7 +181,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 	SEQ_VECTOR< SEQ_VECTOR <eslocal> > lambdas_per_subdomain ( domains.size() * NUMBER_OF_CLUSTERS );
 	my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
-	cilk_for (eslocal i = 0; i < lambda_map_sub.size(); i++) {
+	for (eslocal i = 0; i < lambda_map_sub.size(); i++) {
 		if ( lambda_map_sub[i].size() > 2 ) {
 			if ( lambda_map_sub[i][1] < lambda_map_sub[i][2] )
 				my_lamdas_ddot_filter[i] = 1.0;
