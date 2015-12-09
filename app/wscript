@@ -60,6 +60,9 @@ def configure(ctx):
     else:
         ctx.env.append_unique("STLIBPATH", [ "../libs" ])
 
+
+#	ctx.env.append_unique("LINKFLAGS", [ "-tcollect"])
+
     if ctx.env.ESLOCAL == 32:
         mkl = "mkl_intel_lp64"
         metis = "metis32"

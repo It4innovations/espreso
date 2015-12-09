@@ -1943,9 +1943,9 @@ void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster,
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 		cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 
-		//cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 
-		cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
+		//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
 
 	}
 
