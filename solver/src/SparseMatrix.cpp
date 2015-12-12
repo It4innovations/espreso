@@ -231,6 +231,8 @@ SparseMatrix::SparseMatrix() {
 	rows = 0; 
 	type = 0; 
 
+	USE_FLOAT = false;
+
 	d_dense_values = NULL; 
 	d_x_in		   = NULL;
 	d_y_out		   = NULL; 
@@ -256,6 +258,8 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	cols = A_in.cols;
 	nnz  = A_in.nnz;
 	type = A_in.type;
+
+	USE_FLOAT = A_in.USE_FLOAT;
 
 	// Sparse COO data 
 	I_row_indices = A_in.I_row_indices;
@@ -293,6 +297,8 @@ SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
 	cols = A_in.columns();
 	nnz  = A_in.rowPtrs()[rows];
 	type = 'G';
+
+	USE_FLOAT = false;
 
 	eslocal offset = (A_in.rowPtrs()[0]) ? 0 : 1;
 	nnz -= A_in.rowPtrs()[0];
@@ -349,6 +355,8 @@ void SparseMatrix::swap ( SparseMatrix &A_in) {
 	tmp = nnz;  nnz  = A_in.nnz;  A_in.nnz  = tmp;
 	ttype = type; type = A_in.type; A_in.type = ttype;
 
+	bool tb = USE_FLOAT; USE_FLOAT = A_in.USE_FLOAT; A_in.USE_FLOAT = tb;
+
 	// Sparse COO data
 	I_row_indices.swap( A_in.I_row_indices );
 	J_col_indices.swap( A_in.CSR_J_col_indices );
@@ -390,6 +398,8 @@ SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in )
 	cols = A_in.columns();
 	nnz  = A_in.rowPtrs()[rows];
 	type = type_in;
+
+	USE_FLOAT = false;
 
 	eslocal offset = (A_in.rowPtrs()[0]) ? 0 : 1;
 	nnz -= A_in.rowPtrs()[0];
@@ -440,6 +450,8 @@ SparseMatrix& SparseMatrix::operator= ( const SparseIJVMatrix<eslocal> &A_in ) {
 	cols = A_in.columns();
 	nnz  = A_in.nonZeroValues();
 	type = 'G';
+
+	USE_FLOAT = false;
 
 	eslocal offset = A_in.indexing() ? 0 : 1;
 
@@ -492,6 +504,8 @@ SparseMatrix::SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in )
 	cols = A_in.columns();
 	nnz  = A_in.nonZeroValues();
 	type = type_in;
+
+	USE_FLOAT = false;
 
 	eslocal offset = A_in.indexing() ? 0 : 1;
 
@@ -549,6 +563,8 @@ SparseMatrix& SparseMatrix::operator= (const SparseMatrix &A_in) {
 		cols = A_in.cols;
 		nnz  = A_in.nnz;
 		type = A_in.type;
+
+		USE_FLOAT = A_in.USE_FLOAT;
 
 		// Sparse COO data 
 		I_row_indices = A_in.I_row_indices;
@@ -1079,21 +1095,57 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 	// CblasTrans=112,       /* trans='T' */
 	// CblasConjTrans=113};  /* trans='C' */
 
-	if ( T_for_transpose_N_for_not_transpose == 'T' ) 
-		cblas_dgemv 
-			(CblasColMajor, CblasTrans,  
-			rows, cols, 
-			alpha, &dense_values[0], lda, 
-			&x_in[x_in_vector_start_index], 1, 
-			beta, &y_out[0], 1);
-	else 
-		cblas_dgemv 
-			(CblasColMajor, CblasNoTrans,  
-			rows, cols, 
-			alpha, &dense_values[0], lda, 
-			&x_in[x_in_vector_start_index], 1, 
-			beta, &y_out[0], 1);
+	if (type == 'G') {
+		if ( T_for_transpose_N_for_not_transpose == 'T' )
+			cblas_dgemv
+				(CblasColMajor, CblasTrans,
+				rows, cols,
+				alpha, &dense_values[0], lda,
+				&x_in[x_in_vector_start_index], 1,
+				beta, &y_out[0], 1);
+		else
+			cblas_dgemv
+				(CblasColMajor, CblasNoTrans,
+				rows, cols,
+				alpha, &dense_values[0], lda,
+				&x_in[x_in_vector_start_index], 1,
+				beta, &y_out[0], 1);
+	} else {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+                    std::cout << "Transposition is not supported for packed symmetric matrices" << std::endl;
+                    return;
+		} else {
 
+			if (!USE_FLOAT) {
+				cblas_dspmv(
+						CblasColMajor, CblasUpper,
+						rows,
+						alpha, &dense_values[0],
+						&x_in[x_in_vector_start_index], 1,
+						beta, &y_out[0], 1);
+			} else {
+
+				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+
+				for (eslocal i = 0; i < rows; i++)
+					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
+
+				cblas_sspmv(
+						CblasColMajor, CblasUpper,
+						rows,
+						alpha, &dense_values_fl[0],
+						&vec_fl_in[0], 1,
+						beta, &vec_fl_out[0], 1);
+
+				for (eslocal i = 0; i < rows; i++)
+					y_out[i] = (double)vec_fl_out[i];
+
+				//cout << "using float " << endl;
+
+			}
+		}
+	}
 }
 
 

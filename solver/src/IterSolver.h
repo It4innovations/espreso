@@ -73,6 +73,9 @@ public:
 
 	eslocal  CG_max_iter;
 
+	eslocal PAR_NUM_THREADS;
+	eslocal SOLVER_NUM_THREADS;
+
 	double epsilon; // stop condition
 
 

@@ -271,6 +271,11 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	}
 
+	double x_norm_l = parallel_norm_compressed(cluster, cluster.vec_d);
+	printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+	x_norm_l = parallel_norm_compressed(cluster, x_l);
+	printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+
 	// *** Combine vectors b from all clusters ************************************
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
 
@@ -324,7 +329,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 			yp_l[i] = y_l[i];				//	yp = y
 		}
 
-		if (USE_PREC == 1) {
+		if (USE_PREC >= 1) {
 
 			proj1_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
@@ -445,7 +450,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 		if (mpi_rank == mpi_root) {
 			//printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f - norm prim %1.20f norm f %1.20f : %1.20f \n", iter+1, norm_l, tol, norm_prim_g, norm_prim_fg, norm_prim_g / norm_prim_fg);
-			printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
+			printf (       "Iter MPI %d - norm dual %1.30f - tol %1.30f \n", iter+1, norm_l, tol );
 
 			//if (log_active == 1)
 			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
@@ -473,7 +478,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
-	if (USE_PREC == 1) {
+	if (USE_PREC >= 1) {
 		timing.AddEvent(proj1_time);
 		timing.AddEvent(prec_time );
 		timing.AddEvent(proj2_time);
@@ -554,7 +559,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 
 	// *** r = b - Ax; ************************************************************
-	if (USE_PREC == 1) {
+	if (USE_PREC >= 1) {
 
 		cilk_for (eslocal i = 0; i < r_l.size(); i++)
 			tmp_l[i] = b_l[i] - Ax_l[i];
@@ -571,7 +576,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	}
 
 
-	if (USE_PREC == 1) {
+	if (USE_PREC >= 1) {
 
 		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, tmp_l);
 
@@ -589,7 +594,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	}
 
 
-	if (USE_PREC == 1) {
+	if (USE_PREC >= 1) {
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, tmp_l); //apply_A_l_compB(timeEvalAppa, cluster, u_l, tmp_l);
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, w_l, 0 );
@@ -633,7 +638,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 		ddot_time.AddEnd(omp_get_wtime());
 
-		if (USE_PREC == 1) {
+		if (USE_PREC >= 1) {
 
 			prec_time.AddStart(omp_get_wtime());
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_l);
@@ -713,7 +718,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		norm_time.AddStart(omp_get_wtime());
 
 		// POZOR - tady se to ukoncuje jinak = musime probrat
-		if (USE_PREC == 1)
+		if (USE_PREC >= 1)
 			norm_l = parallel_norm_compressed(cluster, r_l);
 		else
 			norm_l = parallel_norm_compressed(cluster, u_l);
@@ -849,7 +854,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 			yp_l[i] = y_l[i];				//	yp = y
 		}
 
-		if (USE_PREC == 1) {
+		if (USE_PREC >= 1) {
 			cilk_for (eslocal i = 0; i < w_l.size(); i++)
 				w_l[i] = r_l[i];
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
@@ -1009,7 +1014,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			yp_l[i] = 0.0;
 		}
 
-		if (USE_PREC == 1) {
+		if (USE_PREC >= 1) {
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
 		} else {
 			cilk_for (eslocal i = 0; i < r_l.size(); i++)
@@ -1037,7 +1042,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 			ddot_time.AddEnd(omp_get_wtime());
 
-			if (USE_PREC == 1) {
+			if (USE_PREC >= 1) {
 
 				prec_time.AddStart(omp_get_wtime());
 				apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, m_l);
@@ -1211,7 +1216,8 @@ void IterSolver::CreateGGt( Cluster & cluster )
 
 	double sp1 = omp_get_wtime();
 	if (mpi_rank == mpi_root) {
-		MKL_Set_Num_Threads(16);
+
+		MKL_Set_Num_Threads(PAR_NUM_THREADS);
 		// Create Gt and later GGt matrices and remove all elements under main diagonal of the GGt
 		SparseMatrix Gt;
 
@@ -1255,7 +1261,7 @@ void IterSolver::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		GGt.msglvl = 0;
-
+		//TODO:
 		MKL_Set_Num_Threads(1);
 	}
 
@@ -1410,7 +1416,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 		SpyText(GGt_Mat_tmp);
 	}
 
-	MKL_Set_Num_Threads(24);
+	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 
 	TimeEvent GGt_bcast_time("Time to broadcast GGt from master all"); GGt_bcast_time.AddStart(omp_get_wtime());
 	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
@@ -1448,6 +1454,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 	cluster.GGtinvM.dense_values = cluster.GGtinvV;
 	cluster.GGtinvM.cols = cluster.G1.rows;
 	cluster.GGtinvM.rows = GGt_tmp.rows;
+        cluster.GGtinvM.type = 'G';
 
 	GGtsize  = GGt_tmp.cols;
 
@@ -1494,6 +1501,8 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 	time_eval.timeEvents[1].AddEnd(omp_get_wtime());
 
 
+//	for (int i = 0; i < d_mpi.size(); i++)
+//	printf (       "Test probe 1: %d norm = %1.30f \n", i, d_mpi[i] );
 
 
 	time_eval.timeEvents[2].AddStart(omp_get_wtime());
@@ -1502,7 +1511,8 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 	}
 	time_eval.timeEvents[2].AddEnd(omp_get_wtime());
 
-
+//	for (int i = 0; i < d_mpi.size(); i++)
+//	printf (       "Test probe 1: %d norm = %1.30f \n", i, d_mpi[i] );
 
 
 	time_eval.timeEvents[3].AddStart(omp_get_wtime());
@@ -1941,12 +1951,17 @@ void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster,
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1t_comp_dom.cols, 0.0 );
 		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
-		cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 
-		cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+		// Lumped Prec
+		if (USE_PREC == 1) {
+			cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+		}
 
-		//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
-
+		if (USE_PREC == 2) { // Weight scaling function
+			cluster.domains[d].B1t_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'N');
+			//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
+		}
 	}
 
 	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);

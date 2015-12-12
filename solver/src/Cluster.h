@@ -52,6 +52,8 @@ public:
 	eslocal SUBDOM_PER_CLUSTER;
 	eslocal NUMBER_OF_CLUSTERS;
 	eslocal DOFS_PER_NODE;
+	eslocal PAR_NUM_THREADS;
+	eslocal SOLVER_NUM_THREADS;
 
 	eslocal dual_size;
 	string data_directory;
@@ -150,13 +152,14 @@ public:
 
 	SEQ_VECTOR <eslocal> my_neighs;
 	SEQ_VECTOR <eslocal> my_lamdas_indices;
-	map <eslocal,eslocal> my_lamdas_map_indices;
+
+	map <eslocal,eslocal> _my_lamdas_map_indices;
 
 	SEQ_VECTOR <eslocal> my_lamdas_ddot_filter;
 	SEQ_VECTOR <eslocal> lambdas_filter;
 
 	SEQ_VECTOR <double> compressed_tmp;
-	SEQ_VECTOR <double> compressed_tmp2;
+	//SEQ_VECTOR <double> compressed_tmp2;
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster1;
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster2;

@@ -48,7 +48,7 @@ SparseSolver::SparseSolver(){
 
 	iparm[2] = 1; 			//by default the solver runs with single thread
 
-	iparm[3] = 0;			/* No iterative-direct algorithm */
+	iparm[3] = 0;//62 0;			/* No iterative-direct algorithm */
 	iparm[4] = 0;			/* No user fill-in reducing permutation */
 	iparm[5] = 0;			/* Write solution into x */
 	iparm[6] = 0;			/* Not in use */
@@ -66,7 +66,7 @@ SparseSolver::SparseSolver(){
 	iparm[18] = -1;			/* Output: Mflops for LU factorization */
 	iparm[19] = 0;			/* Output: Numbers of CG Iterations */
 
-	iparm[59] = 1;			// OOC mode
+	iparm[59] = 0;			// OOC mode
 
 	maxfct = 1;				/* Maximum number of numerical factorizations. */
 	mnum = 1;				/* Which factorization to use. */
@@ -931,12 +931,12 @@ void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, Sp
 
 	/* Pardiso control parameters. */
 	MKL_INT 	iparm[64];
-	double  dparm[65];
+	double  	dparm[65];
 	MKL_INT 	maxfct, mnum, phase, error;
 
 	/* Auxiliary variables. */
 	MKL_INT 	i;
-	double 	ddum;			/* Double dummy */
+	double 		ddum;			/* Double dummy */
 	MKL_INT 	idum;			/* Integer dummy. */
 	MKL_INT 	solver;
 

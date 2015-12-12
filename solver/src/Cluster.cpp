@@ -1,5 +1,6 @@
 #include "Cluster.h"
 #include <tbb/mutex.h>
+//#define SPARSE_SA
 
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
@@ -112,25 +113,10 @@ void Cluster::InitClusterPC( eslocal * subdomains_global_indices, eslocal number
 	// *** END - Init all domains of the cluster ***************************************
 }
 
-void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) { //, SEQ_VECTOR < eslocal > & neigh_domains ) {
+void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
 
-	//USE_DYNAMIC = use_dynamic_1_no_dynamic_0;
-	//USE_KINV    = use_kinv_1_no_kinv_0;
 
-	// *** Load all domains of the cluster ********************************************
-	//mkl_set_num_threads(1);
-
-	//for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
-
-		//if (USE_DYNAMIC == 1)
-		//	domains[i].SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
-
-		//domains[i].SetDomain(USE_HFETI, USE_DYNAMIC);
-		//.LoadDomain(directory_path, USE_HFETI, USE_DYNAMIC);
-
-	//}
-	// *** END - Load all domains of the cluster *****************************************
-
+	map <eslocal,eslocal> my_lamdas_map_indices;
 
 
 	//// *** Set up the dual size ********************************************************
@@ -145,7 +131,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		tm2.resize(domains.size());
 		tm3.resize(domains.size());
 
-		for (eslocal d = 0; d < domains.size(); d++) {
+		cilk_for (eslocal d = 0; d < domains.size(); d++) {
 			eslocal max_tmp_vec_size = domains[d].B0.cols;
 
 			if (domains[d].B0.rows > domains[d].B0.cols)
@@ -213,18 +199,15 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 	}
 
 	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
-	compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
+	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
-#ifdef DEVEL
+
 	cilk_for (eslocal d = 0; d < domains.size(); d++ )
 		if (USE_KINV == 1 )
 			domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
 		else
 			domains[d].compressed_tmp.resize( 1, 0);
-#else
-	for (eslocal d = 0; d < domains.size(); d++ )
-		domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
-#endif
+
 
 	// mapping/compression vector for cluster
 	for (eslocal i = 0; i <my_lamdas_indices.size(); i++)
@@ -238,7 +221,10 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 	}
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		eslocal i = 0;
+		
+            if (domains[d].lambda_map_sub.size() > 0 ) {
+
+                eslocal i = 0;
 		eslocal j = 0;
 		do
 		{
@@ -256,7 +242,8 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 
 		} while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
-	}
+            }
+        }
 	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
 
@@ -279,30 +266,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		cout << endl;
 	}
 
-#ifdef DEVEL
-
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
-
-		//domains[i].B1_comp.I_row_indices = domains[i].B1.I_row_indices;
-		//domains[i].B1_comp.J_col_indices = domains[i].B1.J_col_indices;
-		//domains[i].B1_comp.V_values      = domains[i].B1.V_values;
-
-		//domains[i].B1_comp.rows = domains[i].B1.rows;
-		//domains[i].B1_comp.cols = domains[i].B1.cols;
-		//domains[i].B1_comp.nnz  = domains[i].B1.nnz;
-		//domains[i].B1_comp.type = domains[i].B1.type;
-
-		//for (eslocal j = 0; j < domains[i].B1_comp.I_row_indices.size(); j++ ) {
-		//	eslocal tmp_new = my_lamdas_map_indices[domains[i].B1_comp.I_row_indices [j] - 1] + 1;  // numbering from 1 in matrix
-		//	domains[i].B1_comp.I_row_indices [j] = tmp_new;									    // j + 1; // numbering matrix from 1
-		//}
-
-		//domains[i].B1_comp.rows = my_lamdas_indices.size();
-		//domains[i].B1_comp.ConvertToCSRwithSort( 1 );
-
-		//domains[i].B1_comp.MatTranspose(domains[i].B1t_comp);
-
-		//******************
 
 		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
 		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
@@ -327,64 +291,14 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		//************************
 
 		//TODO: pozor vratit
-		//domains[i].B1.Clear();
-		domains[i].B1t.Clear();
-		//domains[i].B1_comp.Clear();
-		//domains[i].B1t_comp.Clear();
-
-	}
-
-#else
-
-	for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
-
-		domains[i].B1_comp.I_row_indices = domains[i].B1.I_row_indices;
-		domains[i].B1_comp.J_col_indices = domains[i].B1.J_col_indices;
-		domains[i].B1_comp.V_values      = domains[i].B1.V_values;
-
-		domains[i].B1_comp.rows = domains[i].B1.rows;
-		domains[i].B1_comp.cols = domains[i].B1.cols;
-		domains[i].B1_comp.nnz  = domains[i].B1.nnz;
-		domains[i].B1_comp.type = domains[i].B1.type;
-
-		for (eslocal j = 0; j < domains[i].B1_comp.I_row_indices.size(); j++ ) {
-			eslocal tmp_new = my_lamdas_map_indices[domains[i].B1_comp.I_row_indices [j]-1]+1;  // numbering from 1 in matrix
-			domains[i].B1_comp.I_row_indices [j] = tmp_new;									// j + 1; // numbering matrix from 1
-		}
-
-		domains[i].B1_comp.rows = my_lamdas_indices.size();
-		domains[i].B1_comp.ConvertToCSR( 0 );
-
-		domains[i].B1_comp.MatTranspose(domains[i].B1t_comp);
-
-		//******************
-
-		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
-		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
-		domains[i].B1_comp_dom.V_values      = domains[i].B1.V_values;
-
-		domains[i].B1_comp_dom.rows = domains[i].B1.rows;
-		domains[i].B1_comp_dom.cols = domains[i].B1.cols;
-		domains[i].B1_comp_dom.nnz  = domains[i].B1.nnz;
-		domains[i].B1_comp_dom.type = domains[i].B1.type;
-
-		for (eslocal j = 0; j < domains[i].B1_comp_dom.I_row_indices.size(); j++ ) {
-			eslocal tmp_new = domains[i].my_lamdas_map_indices[domains[i].B1_comp_dom.I_row_indices [j]-1]+1;  // numbering from 1 in matrix
-			domains[i].B1_comp_dom.I_row_indices [j] = tmp_new;									// j + 1; // numbering matrix from 1
-		}
-
-		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();// my_lamdas_indices.size();
-		domains[i].B1_comp_dom.ConvertToCSR( 0 );
-
-		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
-
-
-		//************************
-
 		domains[i].B1.Clear();
+		domains[i].B1t.Clear();
+		domains[i].B1_comp.Clear();
+		domains[i].B1t_comp.Clear();
 
 	}
-#endif
+
+
 	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
 
 
@@ -420,6 +334,14 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 	}
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
+	bool R_from_mesh = true;
+	if ( esconfig::solver::REGULARIZATION == 0 )
+  		R_from_mesh = true	;
+  	else
+  		R_from_mesh = false	;
+
+	if (! R_from_mesh)
+		_my_lamdas_map_indices = my_lamdas_map_indices;
 
 	if (MPIrank == 0) {
 		cout << " ******************************************************************************************************************************* " << endl;
@@ -494,7 +416,7 @@ void Cluster::SetClusterHFETI (bool R_from_mesh) {
 
 				G1.ConvertToCOO( 1 );
 				cilk_for (int j = 0; j < G1.J_col_indices.size(); j++ )
-					G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+					G1.J_col_indices[j] = _my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
 
 				G1.cols = my_lamdas_indices.size();
 				G1.ConvertToCSRwithSort( 1 );
@@ -655,8 +577,6 @@ void Cluster::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & 
 
 void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	eslocal num_threads = domains.size();
-
 	mkl_set_num_threads(1);
 
 	cluster_time.totalTime.AddStart();
@@ -693,16 +613,26 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	// end loop over domains
 	loop_1_2_time.AddEnd();
 
-	mkl_set_num_threads(24); //pozor
+	mkl_set_num_threads(PAR_NUM_THREADS);
 	clusCP_time.AddStart();
+
+
+//	for (int i = 0; i < vec_g0.size(); i++)
+//	printf (       "Test probe 1: %d norm = %1.30f \n", i, vec_g0[i] );
 
 	clus_F0_1_time.AddStart();
 	F0.Solve(vec_g0, tm1[0], 0, 0);
 	clus_F0_1_time.AddEnd();
 
+//	for (int i = 0; i < tm1[0].size(); i++)
+//	printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
+
 	clus_G0_time.AddStart();
 	G0.MatVec(tm1[0], tm2[0], 'N');
 	clus_G0_time.AddEnd();
+
+//	for (int i = 0; i < tm1[0].size(); i++)
+//	printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
@@ -720,9 +650,15 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 #endif
 	 clus_Sa_time.AddEnd();
 
+//		for (int i = 0; i < vec_alfa.size(); i++)
+//		printf (       "Test probe 4: %d norm = %1.30f \n", i, vec_alfa[i] );
+
 	 clus_G0t_time.AddStart();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
 	 clus_G0t_time.AddEnd();
+
+//		for (int i = 0; i < tm1[0].size(); i++)
+//		printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
@@ -734,6 +670,8 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	clusCP_time.AddEnd();
 
+//	for (int i = 0; i < vec_lambda.size(); i++)
+//	printf (       "Test probe 6: %d norm = %1.30f \n", i, vec_lambda[i] );
 
 	// Kplus_x
 	mkl_set_num_threads(1);
@@ -803,7 +741,7 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 	// end loop over domains
 	loop_1_2_time.AddEnd();
 
-	mkl_set_num_threads(24); //pozor
+	mkl_set_num_threads(PAR_NUM_THREADS);
 	clusCP_time.AddStart();
 
 	clus_F0_1_time.AddStart();
@@ -818,13 +756,21 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	clus_Sa_time.AddStart();
-	Sa.Solve(tm2[0], vec_alfa,0,0);
-	clus_Sa_time.AddEnd();
+	 clus_Sa_time.AddStart();
+ #ifdef SPARSE_SA
+    Sa.Solve(tm2[0], vec_alfa,0,0);
+ #else
+    char U = 'U';
+    eslocal nrhs = 1;
+    eslocal info = 0;
+    vec_alfa = tm2[0];
+    dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
+ #endif
+     clus_Sa_time.AddEnd();
 
-	clus_G0t_time.AddStart();
+	 clus_G0t_time.AddStart();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	clus_G0t_time.AddEnd();
+	 clus_G0t_time.AddEnd();
 
 	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
@@ -900,7 +846,7 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 	// end loop over domains
 	loop_1_2_time.AddEnd();
 
-	mkl_set_num_threads(24); //pozor
+	mkl_set_num_threads(PAR_NUM_THREADS);
 	clusCP_time.AddStart();
 
 	clus_F0_1_time.AddStart();
@@ -1147,6 +1093,7 @@ void Cluster::CreateG0() {
 		G0.MatAppend(G0LocalTemp[i]);
 		G0LocalTemp[i].Clear();
 	}
+
 }
 
 void Cluster::CreateF0() {
@@ -1226,26 +1173,27 @@ void Cluster::CreateF0() {
 
 	 TimeEvent fact_F0_time("B0 Kplus Factorization "); fact_F0_time.AddStart(omp_get_wtime());
 
-	mkl_set_num_threads(24); 
+	mkl_set_num_threads(PAR_NUM_THREADS);
 	F0_Mat.RemoveLower();
 	F0.ImportMatrix(F0_Mat); 
 
 	F0_fast.ImportMatrix(F0_Mat);
 
 	//F0_Mat.Clear();
+	F0.SetThreaded();
 	F0.Factorization();
+
 	mkl_set_num_threads(1);
 
 	if (MPIrank == 0) F0.msglvl = 0;
 
 	 fact_F0_time.AddEnd(omp_get_wtime()); fact_F0_time.PrintStatMPI(0.0); F0_timing.AddEvent(fact_F0_time);
 
-
 	F0_timing.totalTime.AddEnd(omp_get_wtime());
 	F0_timing.PrintStatsMPI();
 
 	// *** POZOR **************************************************************
-	for (eslocal d = 0; d<domains.size(); d++) {
+	cilk_for (eslocal d = 0; d<domains.size(); d++) {
 		domains[d].B0.Clear(); 
 		domains[d].B0t.Clear(); 
 	}
@@ -1262,9 +1210,7 @@ void Cluster::CreateSa() {
   		get_kernel_from_mesh = false	;
 	
 	
-
-
-	MKL_Set_Num_Threads(24); 
+	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 	int MPIrank; MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
 	SparseMatrix Salfa; SparseMatrix tmpM;
@@ -1520,69 +1466,89 @@ void Cluster::Create_G1_perCluster() {
 			//tmp_Mat[j].MatMatSorted( domains[j].Kplus_R, 'T', domains[j].B1t); // - pozor mooooc pomale a MKL rutina zere mooooooc pameti
 
 			// V3
+			SparseMatrix Gcoo;
+			if (domains[j].B1.nnz > 0) {
 
-			SparseMatrix Rt;
-			SparseMatrix B;
+				SparseMatrix Rt;
+				SparseMatrix B;
 
-			if ( esconfig::solver::REGULARIZATION == 0 )
-				domains[j].Kplus_R.MatTranspose(Rt);
-		  	else
-				domains[j].Kplus_Rb.MatTranspose(Rt);
+				if ( esconfig::solver::REGULARIZATION == 0 )
+					domains[j].Kplus_R.MatTranspose(Rt);
+				else
+					domains[j].Kplus_Rb.MatTranspose(Rt);
 
-			//Rt = domains[j].Kplus_R;
-			//Rt.MatTranspose();
+				//Rt = domains[j].Kplus_R;
+				//Rt.MatTranspose();
 
-			Rt.ConvertCSRToDense(1);
-			B = domains[j].B1;
+				Rt.ConvertCSRToDense(1);
+				B = domains[j].B1;
 
-			SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
-			SEQ_VECTOR <eslocal > G_I_row_indices;
-			G_I_row_indices.resize(B.nnz);
+				SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
+				SEQ_VECTOR <eslocal > G_I_row_indices;
+				G_I_row_indices.resize(B.nnz);
 
-			eslocal indx = 0;
-			for (eslocal r = 0; r < Rt.rows; r++)
-				tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
-
-			G_I_row_indices[indx] = B.I_row_indices[0];
-
-			for (eslocal i = 1; i < B.I_row_indices.size(); i++) {
-
-				if (B.I_row_indices[i-1] != B.I_row_indices[i])
-					indx++;
-
+				eslocal indx = 0;
 				for (eslocal r = 0; r < Rt.rows; r++)
-					tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+					tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
 
-				G_I_row_indices[indx] = B.I_row_indices[i];
-			}
+				G_I_row_indices[indx] = B.I_row_indices[0];
 
-			G_I_row_indices.resize(indx+1);
-			tmpG.resize(indx+1);
+				for (eslocal i = 1; i < B.I_row_indices.size(); i++) {
 
-			SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-			SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-			SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+					if (B.I_row_indices[i-1] != B.I_row_indices[i])
+						indx++;
 
-			for (eslocal i = 0; i < tmpG.size(); i++) {
-				for (eslocal j = 0; j < tmpG[i].size(); j++){
-					if (tmpG[i][j] != 0) {
-						G_I.push_back(G_I_row_indices[i]);
-						G_J.push_back(j+1);
-						G_V.push_back(tmpG[i][j]);
+					for (eslocal r = 0; r < Rt.rows; r++)
+						tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+
+					G_I_row_indices[indx] = B.I_row_indices[i];
+				}
+
+				G_I_row_indices.resize(indx+1);
+				tmpG.resize(indx+1);
+
+				SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+				SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+				SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+
+				for (eslocal i = 0; i < tmpG.size(); i++) {
+					for (eslocal j = 0; j < tmpG[i].size(); j++){
+						if (tmpG[i][j] != 0) {
+							G_I.push_back(G_I_row_indices[i]);
+							G_J.push_back(j+1);
+							G_V.push_back(tmpG[i][j]);
+						}
 					}
 				}
+
+
+
+
+				Gcoo.I_row_indices = G_J; //G_I;
+				Gcoo.J_col_indices = G_I; //G_J;
+				Gcoo.V_values      = G_V;
+				Gcoo.cols = B.rows; //R.cols;
+				Gcoo.rows = Rt.rows; //B.rows;
+				Gcoo.nnz  = G_I.size();
+				Gcoo.type = 'G';
+
+				Gcoo.ConvertToCSRwithSort(1);
+
+			} else {
+				Gcoo.cols = domains[j].B1.rows;
+				if ( esconfig::solver::REGULARIZATION == 0 )
+					Gcoo.rows = domains[j].Kplus_R.rows;
+				else
+					Gcoo.rows = domains[j].Kplus_Rb.rows;
+				Gcoo.I_row_indices.resize(1,0);
+				Gcoo.J_col_indices.resize(1,0);
+				Gcoo.V_values.resize(0,0);
+
+				Gcoo.nnz  = 0;
+				Gcoo.type = 'G';
+
+				Gcoo.ConvertToCSRwithSort(1);
 			}
-
-			SparseMatrix Gcoo;
-			Gcoo.I_row_indices = G_J; //G_I;
-			Gcoo.J_col_indices = G_I; //G_J;
-			Gcoo.V_values      = G_V;
-			Gcoo.cols = B.rows; //R.cols;
-			Gcoo.rows = Rt.rows; //B.rows;
-			Gcoo.nnz  = G_I.size();
-			Gcoo.type = 'G';
-
-			Gcoo.ConvertToCSRwithSort(1);
 
 			tmp_Mat[j] = Gcoo;
 
@@ -1766,10 +1732,10 @@ void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 		multKplusGlobal_l( x_prim_cluster );						// HFETI
 	}
 
-	// pro ukoncovani v primaru - vypocet up0
-	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		domains[d].up0 = x_prim_cluster[d];
-	}
+//	// pro ukoncovani v primaru - vypocet up0
+//	cilk_for (eslocal d = 0; d < domains.size(); d++) {
+//		domains[d].up0 = x_prim_cluster[d];
+//	}
 
 	vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
 
@@ -1978,15 +1944,14 @@ void Cluster::Create_SC_perDomain() {
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
-		if (cluster_global_index == 1) cout << " " << i ;
+		if (cluster_global_index == 1) cout << "."; // << i ;
 
-		domains[i].KplusF.msglvl = 0;
-
-		if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
-		//mkl_set_num_threads( 4 );
 		SparseSolver tmpsps;
 		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
-		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 0 );
+		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
+
+		//domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
+		//domains[i].B1Kplus.USE_FLOAT = true;
 
 //		SparseSolver tmpsps2;
 //		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;

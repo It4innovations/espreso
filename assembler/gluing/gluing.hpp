@@ -472,8 +472,8 @@ template <class TInput>
 void Gluing<TInput>::computeSubdomainGluing()
 {
 
-#define PARALLEL
-//#define SEQUENTIAL
+//#define PARALLEL
+#define SEQUENTIAL
 
 
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
@@ -537,9 +537,13 @@ void Gluing<TInput>::computeSubdomainGluing()
 		local_prim_numbering_d_l[this_thread].resize( this->subdomains(), 0 );
 		vec_c_l[this_thread].                 resize( this->subdomains()    );
 
-		int chunk_size = localBoundaries.size() / (num_threads-1);
-
-		for (int d = 0; d < this->subdomains(); d++) {
+		int chunk_size; 
+                if (num_threads > 1) 
+                    chunk_size = localBoundaries.size() / (num_threads-1);
+                else 
+                    chunk_size = localBoundaries.size(); 
+                    
+                for (int d = 0; d < this->subdomains(); d++) {
 			mat_B_dir[this_thread][d].reserve(chunk_size);
 			vec_c_l[this_thread][d].reserve(chunk_size);
 		}
@@ -634,8 +638,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 #pragma omp master
 		{
-			for (eslocal i = 0; i < lambda_count_B1_sum[threads - 1]; i++)
-				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
+//			for (eslocal i = 0; i < lambda_count_B1_sum[threads - 1]; i++)
+//				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
 			lambda_count_B1 = lambda_count_B1_sum[threads - 1];
 		}
 	}
@@ -712,8 +716,12 @@ void Gluing<TInput>::computeSubdomainGluing()
                 mat_B0   [this_thread].                   resize( this->subdomains()  );
 		local_prim_numbering_d_l[this_thread].resize( this->subdomains(),0 );
 
-		int chunk_size = localBoundaries.size() / (num_threads );
-
+		int chunk_size; 
+                if (num_threads > 1) 
+                    chunk_size = localBoundaries.size() / (num_threads-1);
+                else 
+                    chunk_size = localBoundaries.size(); 
+                    
 		for (int d = 0; d < this->subdomains(); d++) {
 			mat_B_dir[this_thread][d].reserve(chunk_size);
 		}
@@ -998,7 +1006,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 	_vec_c = t_vec_c;
 #endif //SEQUENTIAL
 
-	std::cout << "lambdas in B0 = " << lambda_count_B0++ << std::endl;
+	if ( this->rank() == 0) { std::cout << " B0 size: " <<  lambda_count_B0  << std::endl; }
 
 
 }

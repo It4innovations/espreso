@@ -59,6 +59,34 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	solver.USE_DYNAMIC	 = cluster.USE_DYNAMIC;
 	// ***************************************************************************************************************************
 
+	/* Numbers of processors, value of SOLVER_NUM_THREADS */
+	int solv_num_procs;
+	char * var = getenv("SOLVER_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var, "%d", &solv_num_procs );
+	else {
+    	printf("Set environment SOLVER_NUM_THREADS to 1 - number of cores");
+        exit(1);
+	}
+
+	/* Numbers of processors, value of SOLVER_NUM_THREADS */
+	int par_num_procs;
+	char * var2 = getenv("PAR_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var2, "%d", &par_num_procs );
+	else {
+    	printf("Set environment PAR_NUM_THREADS to 1 - number of cores");
+        exit(1);
+	}
+
+	cluster.PAR_NUM_THREADS	= par_num_procs;
+	cluster.SOLVER_NUM_THREADS = solv_num_procs;
+
+	solver.PAR_NUM_THREADS = par_num_procs;
+	solver.SOLVER_NUM_THREADS = solv_num_procs;
+
+	//mkl_cbwr_set(MKL_CBWR_COMPATIBLE);
+
 }
 
 void LinearSolver::init(
@@ -130,7 +158,6 @@ void LinearSolver::init(
 		  cluster.domains[d].K = K_mat[d];
 		  if ( cluster.domains[d].K.type == 'G' )
 			cluster.domains[d].K.RemoveLower();
-		  //TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
 		  if ( solver.USE_PREC == 1 )
 			cluster.domains[d].Prec = cluster.domains[d].K;
 	  }
@@ -183,7 +210,6 @@ void LinearSolver::init(
 			if ( cluster.domains[d].K.type == 'G' )
 				cluster.domains[d].K.RemoveLower();
 
-			//TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
 			if ( solver.USE_PREC == 1 )
 				cluster.domains[d].Prec = cluster.domains[d].K;
 
@@ -331,7 +357,6 @@ void LinearSolver::init(
 		  cluster.domains[d].K = K_mat[d];
 		  if ( cluster.domains[d].K.type == 'G' )
 		  	cluster.domains[d].K.RemoveLower();
-		  //TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
 		  if ( solver.USE_PREC == 1 )
 		  	cluster.domains[d].Prec = cluster.domains[d].K;
 	  }
@@ -377,9 +402,14 @@ void LinearSolver::init(
 	// *** Load Matrix K and regularization ******************************************************************************
 	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
 	 timeSolKproc.AddStart();
-	if (MPI_rank == 0) std::cout << "K regularization and factorization ... : ";
+
+	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
+	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.AddStartWOBarrier( GetProcessMemory_u() );
+
+	if (MPI_rank == 0) std::cout << std::endl << "K regularization : ";
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		if (MPI_rank == 0) std::cout << "."; //<< d << " " ;
+		//if (MPI_rank == 0) std::cout << "."; //<< d << " " ;
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
 
 	    if (R_from_mesh) {
@@ -389,7 +419,6 @@ void LinearSolver::init(
       		if ( cluster.domains[d].K.type == 'G' )
 		  		cluster.domains[d].K.RemoveLower();
 
-		  	//TODO: POZOR - zbytecne kopiruju - pokud se nepouziva LUMPED
 		  	if ( solver.USE_PREC == 1 )
 		  		cluster.domains[d].Prec = cluster.domains[d].K;
 
@@ -397,7 +426,21 @@ void LinearSolver::init(
 
 	    }
 
-	    // Import of Regularized matrix K into Kplus (Sparse Solver)
+	    if (MPI_rank == 0) std::cout << ".";
+
+	}
+	if (MPI_rank == 0) std::cout << std::endl;
+	 KregMem.AddEndWOBarrier( GetProcessMemory_u() );
+	 KregMem.PrintLastStatMPI_PerNode( 0.0 );
+
+	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
+
+	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.AddStartWOBarrier( GetProcessMemory_u() );
+
+	if (MPI_rank == 0) std::cout << std::endl << "K factorization : ";
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		// Import of Regularized matrix K into Kplus (Sparse Solver)
 	    cluster.domains[d].Kplus.ImportMatrix (cluster.domains[d].K);
 
 		if (KEEP_FACTORS) {
@@ -413,9 +456,15 @@ void LinearSolver::init(
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
 
 		//if ( cluster.cluster_global_index == 1 ) { std::cout < ".";}; //{ GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
-
+	    if (MPI_rank == 0) std::cout << ".";
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
+	if (MPI_rank == 0) std::cout << std::endl;
+	 KFactMem.AddEndWOBarrier( GetProcessMemory_u() );
+	 KFactMem.PrintLastStatMPI_PerNode( 0.0 );
+
+	if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
 
 	if (MPI_rank == 0) std::cout << std::endl;
 	 timeSolKproc.AddEndWithBarrier();
@@ -430,6 +479,9 @@ void LinearSolver::init(
 		cluster.SetClusterHFETI( R_from_mesh );
 		 timeHFETIprec.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeHFETIprec);
+
+			if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
     //cluster.Create_G1_perCluster();
@@ -437,23 +489,29 @@ void LinearSolver::init(
     if (cluster.USE_HFETI == 1 && !R_from_mesh ) {
     	solver.Preprocessing ( cluster );
     	cluster.G1.Clear();
+    	if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
     }
     //for (int d = 0; d < cluster.domains.size(); d++)
     //	cluster.domains[d].Kplus_R = cluster.domains[d].Kplus_Rb;
 
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
-		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using many RSH "));
-		 timeSolSC1.AddStart();
-	//	cluster.Create_Kinv_perDomain();
-		 timeSolSC1.AddEndWithBarrier();
-		 timeEvalMain.AddEvent(timeSolSC1);
+//		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using many RSH "));
+//		 timeSolSC1.AddStart();
+//	//	cluster.Create_Kinv_perDomain();
+//		 timeSolSC1.AddEndWithBarrier();
+//		 timeEvalMain.AddEvent(timeSolSC1);
 
-		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));
-		 timeSolSC2.AddStart();
+		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.AddStartWOBarrier( GetProcessMemory_u() );
+		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.AddStart();
 		cluster.Create_SC_perDomain();
-		 timeSolSC2.AddEndWithBarrier();
-		 timeEvalMain.AddEvent(timeSolSC2);
+		 timeSolSC2.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSolSC2);
+		 KSCMem.AddEndWOBarrier( GetProcessMemory_u() );
+		 KSCMem.PrintLastStatMPI_PerNode( 0.0 );
+
+		if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
 	}
 	// *** END - Computation of the Schur Complement *********************************************************************************
 
@@ -511,7 +569,7 @@ void LinearSolver::finilize() {
 
 	if (SINGULAR) solver.timeEvalProj.PrintStatsMPI();
 
-	if ( solver.USE_PREC   == 1 ) solver.timeEvalPrec.PrintStatsMPI();
+	if ( solver.USE_PREC   >= 1 ) solver.timeEvalPrec.PrintStatsMPI();
 
 	if ( cluster.USE_HFETI == 1 ) cluster.ShowTiming();
 
