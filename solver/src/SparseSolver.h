@@ -37,6 +37,7 @@ public:
 
 	bool initialized;
 	bool keep_factors;
+	bool import_with_copy;
 	int  MPIrank;
 
 	MKL_INT rows;
@@ -94,6 +95,8 @@ public:
 
 	//Members
 	void ImportMatrix(SparseMatrix & A);
+	void ImportMatrix_wo_Copy(SparseMatrix & A);
+
 	void Factorization(); 
 	void Clear();
 	void SetThreaded();

@@ -359,7 +359,7 @@ void SparseMatrix::swap ( SparseMatrix &A_in) {
 
 	// Sparse COO data
 	I_row_indices.swap( A_in.I_row_indices );
-	J_col_indices.swap( A_in.CSR_J_col_indices );
+	J_col_indices.swap( A_in.J_col_indices );
 	V_values.swap     ( A_in.V_values );
 
 	// Sparse CSR data
@@ -1068,15 +1068,24 @@ void SparseMatrix::ConvertDenseToDenseFloat( eslocal clear_DoubleDense_1_keep_Do
 //}
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out) {
-	DenseMatVec(x_in, y_out, 'N', 0); 
+	DenseMatVec(x_in, y_out, 'N', 0, 0, 0.0);
 }
 
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose ) {
-	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, 0); 
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, 0, 0, 0.0);
 }
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, 0, 0.0);
+}
+
+void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, y_out_vector_start_index, 0.0);
+}
+
+void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index, double beta) {
+
 
 	// void cblas_dgemv 
 	//  (const CBLAS_ORDER order, const CBLAS_TRANSPOSE TransA, 
@@ -1088,7 +1097,7 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 	// y := alpha*A*x + beta*y,
 
 	double alpha = 1.0; 
-	double beta  = 0.0; 
+	//double beta  = 0.0;
 	eslocal lda = rows;
 
 	//char trans = 'N'; // CblasNoTrans=111,     /* trans='N' */
@@ -1102,14 +1111,14 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 				rows, cols,
 				alpha, &dense_values[0], lda,
 				&x_in[x_in_vector_start_index], 1,
-				beta, &y_out[0], 1);
+				beta, &y_out[y_out_vector_start_index], 1);
 		else
 			cblas_dgemv
 				(CblasColMajor, CblasNoTrans,
 				rows, cols,
 				alpha, &dense_values[0], lda,
 				&x_in[x_in_vector_start_index], 1,
-				beta, &y_out[0], 1);
+				beta, &y_out[y_out_vector_start_index], 1);
 	} else {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
                     std::cout << "Transposition is not supported for packed symmetric matrices" << std::endl;
@@ -1122,7 +1131,7 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 						rows,
 						alpha, &dense_values[0],
 						&x_in[x_in_vector_start_index], 1,
-						beta, &y_out[0], 1);
+						beta, &y_out[y_out_vector_start_index], 1);
 			} else {
 
 				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
@@ -1139,7 +1148,7 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 						beta, &vec_fl_out[0], 1);
 
 				for (eslocal i = 0; i < rows; i++)
-					y_out[i] = (double)vec_fl_out[i];
+					y_out[i + y_out_vector_start_index] = (double)vec_fl_out[i];
 
 				//cout << "using float " << endl;
 
@@ -1605,7 +1614,7 @@ void SparseMatrix::MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y
 	} 
 
 	if (type == 'S') {
-		matdescra[0] = 'T'; // Triangular Matrix  
+		matdescra[0] = 'S'; // Triangular Matrix
 		matdescra[1] = 'U'; // Triangular indicator: upper 
 		matdescra[2] = 'N'; // Main diagonal type: non-unit
 		matdescra[3] = 'F'; // One based indexing 
@@ -1894,10 +1903,13 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 	type = 'G'; 
 }
 
+//#define ENGENIV
+
 // AM -start: ---------------------------------------------------------------------------
 //
 void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
-  eslocal nA = A.cols;
+#ifdef ENGENIV
+	eslocal nA = A.cols;
   eslocal offset = A.CSR_I_row_indices[0] ? 1 : 0;
   memset(Ax,0,nA * sizeof(double));
   for (eslocal i = 0; i < nA ; i++) {
@@ -1909,10 +1921,12 @@ void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
       }
     }
   }
+#endif
 }
 
 
 void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal size_rr){
+#ifdef ENGENIV
 // 
 // Function 'getSubDiagBlockmatrix' returns the diagonal block A_in(r,r) from original A_in,
 // where r = { i_start , i_start+1 , i_start+2 , ... , istart + size_rr - 1 }
@@ -1954,12 +1968,14 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
     }
     A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
   }
+#endif
 }
 
 
 void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, 
                                           eslocal i_start, eslocal i_size,
                                           eslocal j_start, eslocal j_size){
+#ifdef ENGENIV
 //
 // Original matrix A_in is assembled from 4 submatrices
 //
@@ -2080,12 +2096,14 @@ void SparseMatrix::GramSchmidtOrtho(){
   }
   delete [] w;
   delete [] R;
+#endif
 }
 
 
 bool myfn(double i, double j) { return fabs(i)<=fabs(j); }
 
 void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
+#ifdef ENGENIV
 	SEQ_VECTOR <double> N(dense_values);
   eslocal nEl = rows*cols;
   std::vector <double>::iterator  it;
@@ -2135,10 +2153,11 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
   delete [] _nul_piv;
   delete [] tmpV;
 //
+#endif
 }
 //
 double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues){
-//
+#ifdef ENGENIV
   bool plot_a_and_b_defines_tridiag=false;
   eslocal nA = A_in.rows;
   eslocal nMax = 200; // size of tridiagonal matrix
@@ -2219,7 +2238,7 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_
   delete [] Z;
 
   return estim_cond;
-//
+#endif
 }
 
 double SparseMatrix::dot_e(double *x, double *y, eslocal n){
@@ -2281,17 +2300,17 @@ void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_
 	eslocal nnzmax;
 	eslocal ierr;
 
-	double * a  = &CSR_V_values[0]; 
+	double 	   * a  = &CSR_V_values[0];
 	eslocal    * ia = &CSR_I_row_indices[0];
 	eslocal    * ja = &CSR_J_col_indices[0];
 
-	double * b  = &B_in.CSR_V_values[0]; 
+	double     * b  = &B_in.CSR_V_values[0];
 	eslocal    * ib = &B_in.CSR_I_row_indices[0];
 	eslocal    * jb = &B_in.CSR_J_col_indices[0];
 
 	SEQ_VECTOR<eslocal>		t_CSR_I_row_indices;	t_CSR_I_row_indices.resize( m + 1 );
 	SEQ_VECTOR<eslocal>		t_CSR_J_col_indices;	t_CSR_J_col_indices.resize(1);
-	SEQ_VECTOR<double>	t_CSR_V_values;			t_CSR_V_values.resize(1); 
+	SEQ_VECTOR<double>		t_CSR_V_values;			t_CSR_V_values.resize(1);
 
 	//void mkl_dcsradd (
 	//	char *transa, eslocal *job, eslocal *sort,
@@ -2697,7 +2716,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 }
 
-void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_VECTOR <int> & rows_to_add) {
+void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add) {
 
 	int old_index  = 0;
 	int next_index = 0; 

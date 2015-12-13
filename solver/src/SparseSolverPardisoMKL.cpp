@@ -116,9 +116,12 @@ void SparseSolver::Clear() {
 
 	}
 
+	if (import_with_copy) {
+
 		if (CSR_I_row_indices_size > 0)     delete [] CSR_I_row_indices;
 		if (CSR_J_col_indices_size > 0)		delete [] CSR_J_col_indices;
 		if (CSR_V_values_size > 0)			delete [] CSR_V_values;
+	}
 
 		CSR_I_row_indices_size = 0;
 		CSR_J_col_indices_size = 0;
@@ -144,6 +147,26 @@ void SparseSolver::ImportMatrix(SparseMatrix & A) {
 	copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
 	copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
 	copy(A.CSR_V_values     .begin(), A.CSR_V_values     .end(), CSR_V_values);
+
+	import_with_copy = true;
+}
+
+void SparseSolver::ImportMatrix_wo_Copy(SparseMatrix & A) {
+
+	rows	= A.rows;
+	cols	= A.cols;
+	nnz		= A.nnz;
+	m_Kplus_size = A.rows;
+
+	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
+	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
+	CSR_V_values_size	   = A.CSR_V_values.size();
+
+	CSR_I_row_indices = &A.CSR_I_row_indices[0];
+	CSR_J_col_indices = &A.CSR_J_col_indices[0];
+	CSR_V_values	  = &A.CSR_V_values[0];
+
+	import_with_copy = false;
 
 }
 

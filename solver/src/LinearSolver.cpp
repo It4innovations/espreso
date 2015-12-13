@@ -213,7 +213,7 @@ void LinearSolver::init(
 			if ( solver.USE_PREC == 1 )
 				cluster.domains[d].Prec = cluster.domains[d].K;
 
-			cluster.domains[d].K_regularizationFromR( );
+			cluster.domains[d].K_regularizationFromR( cluster.domains[d].K );
 
 		}
 
@@ -263,7 +263,8 @@ void LinearSolver::init(
 
 		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));
 		 timeSolSC2.AddStart();
-		cluster.Create_SC_perDomain();
+		bool USE_FLOAT;
+		cluster.Create_SC_perDomain( USE_FLOAT );
 		 timeSolSC2.AddEndWithBarrier();
 		 timeEvalMain.AddEvent(timeSolSC2);
 	}
@@ -370,17 +371,14 @@ void LinearSolver::init(
 	 TimeEvent timeSetRHS(string("Solver - Set RHS and Fix points"));
 	 timeSetRHS.AddStart();
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
-		cluster.domains[d].f = f_vec[d];
+//	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+//		cluster.domains[d].f = f_vec[d];
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		cluster.domains[d].vec_c = vec_c[d];
 
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
-		for (eslocal i = 0; i < fix_nodes[d].size(); i++)
- 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
-				cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
+
 
 	 timeSetRHS.AddEndWithBarrier();
 	 timeEvalMain.AddEvent(timeSetRHS);
@@ -414,15 +412,21 @@ void LinearSolver::init(
 
 	    if (R_from_mesh) {
 
-			cluster.domains[d].K = K_mat[d];
+			cluster.domains[d].K.swap(K_mat[d]);
 
       		if ( cluster.domains[d].K.type == 'G' )
 		  		cluster.domains[d].K.RemoveLower();
 
-		  	if ( solver.USE_PREC == 1 )
-		  		cluster.domains[d].Prec = cluster.domains[d].K;
+//		  	if ( solver.USE_PREC == 1 )
+//		  		cluster.domains[d].Prec = cluster.domains[d].K;
 
-			cluster.domains[d].K_regularizationFromR( );
+   			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
+   	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
+   					cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
+
+			cluster.domains[d].K_regularizationFromR ( cluster.domains[d].K );
+
+			std::vector <eslocal> ().swap (cluster.domains[d].fix_dofs);
 
 	    }
 
@@ -441,7 +445,7 @@ void LinearSolver::init(
 	if (MPI_rank == 0) std::cout << std::endl << "K factorization : ";
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
-	    cluster.domains[d].Kplus.ImportMatrix (cluster.domains[d].K);
+	    cluster.domains[d].Kplus.ImportMatrix_wo_Copy (cluster.domains[d].K);
 
 		if (KEEP_FACTORS) {
 			cluster.domains[d].Kplus.keep_factors = true;
@@ -449,8 +453,6 @@ void LinearSolver::init(
 		} else {
 			cluster.domains[d].Kplus.keep_factors = false;
 			cluster.domains[d].Kplus.MPIrank = MPI_rank;
-			K_mat[d].Clear();
-			cluster.domains[d].K.Clear();
 		}
 
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
@@ -505,7 +507,8 @@ void LinearSolver::init(
 
 		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.AddStartWOBarrier( GetProcessMemory_u() );
 		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.AddStart();
-		cluster.Create_SC_perDomain();
+		bool USE_FLOAT = false;
+		cluster.Create_SC_perDomain(USE_FLOAT);
 		 timeSolSC2.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSolSC2);
 		 KSCMem.AddEndWOBarrier( GetProcessMemory_u() );
 		 KSCMem.PrintLastStatMPI_PerNode( 0.0 );
@@ -599,8 +602,8 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 
 
 void LinearSolver::set_B1(
-		std::vector < SparseMatrix >	& B1_mat,
-		std::vector < std::vector <double> >	    & B1_duplicity) {
+		std::vector < SparseMatrix >			& B1_mat,
+		std::vector < std::vector <double> >	& B1_duplicity) {
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
@@ -644,17 +647,19 @@ void LinearSolver::set_R (
 		const mesh::Mesh &mesh
 )
 {
-	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
-			std::vector <double> tmp_vec (3,0);
-			tmp_vec[0] = mesh.coordinates().get(i, d).x;
-			tmp_vec[1] = mesh.coordinates().get(i, d).y;
-			tmp_vec[2] = mesh.coordinates().get(i, d).z;
-			cluster.domains[d].coordinates.push_back(tmp_vec);
-		}
+	std::vector < std::vector < std:: vector < double > > > coordinates;
+	coordinates.resize( number_of_subdomains_per_cluster );
 
-		cluster.domains[d].CreateKplus_R();
-		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
+	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		coordinates[d].resize(mesh.coordinates().localSize(d), std::vector <double> (3, 0.0));
+		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
+			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
+			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
+			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
+		}
+		cluster.domains[d].CreateKplus_R( coordinates[d] );
+
+		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 		
 	}
 

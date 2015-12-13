@@ -285,7 +285,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
+		//domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
 
 		//************************
@@ -293,8 +293,10 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		//TODO: pozor vratit
 		domains[i].B1.Clear();
 		domains[i].B1t.Clear();
-		domains[i].B1_comp.Clear();
-		domains[i].B1t_comp.Clear();
+//		domains[i].B1_comp.Clear();
+//		domains[i].B1t_comp.Clear();
+
+		domains[i].my_lamdas_map_indices.clear();
 
 	}
 
@@ -459,120 +461,120 @@ void Cluster::SetClusterPC_AfterKplus () {
 
 void Cluster::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec) {
 
-	vec_g0.resize(G0.cols);
-	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-
-	vec_e0.resize(G0.rows);
-	fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-
-	//y_out.resize(x_clust_size);
-
-	// temp vectors
-	SEQ_VECTOR <double> t1,t2,t3;
-
-
-	// loop over domains in the cluster
-	for (eslocal d = 0; d < domains.size(); d++) {
-		eslocal x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
-		eslocal domain_size = domains[d].Kplus.m_Kplus_size;
-
-		t1.resize(domain_size);
-		t2.resize(vec_g0.size());
-		fill(t1.begin(), t1.end(), 0);
-		fill(t2.begin(), t2.end(), 0);
-
-
-		// g0
-		domains[d].multKplusLocal( x_in, t1, x_in_vector_start_index, 0 );
-
-		//					  in   out trans
-		domains[d].B0.MatVec( t1 , t2,  'N' );
-
-		for (eslocal i = 0; i < vec_g0.size(); i++ )
-			vec_g0[i] = vec_g0[i] + t2[i];
-
-		// e0
-		t2.resize(domains[d].Kplus_R.cols); // resize na pocet sloupcu matice Kplus_R - velikost jadra
-		fill(t2.begin(), t2.end(), 0); // reset t2 - migh not be necessary
-
-		domains[d].Kplus_R.MatVec(x_in, t2, 'T', x_in_vector_start_index, 0);
-
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
-		for (eslocal i = e0_start; i < e0_end; i++ )
-			vec_e0[i] = - t2[i - e0_start];
-
-	} // end loop over domains
-
-
-	// alfa
-	t1.resize(F0.m_Kplus_size);
-	fill(t1.begin(), t1.end(), 0);
-
-	F0.Solve(vec_g0, t1,0,0);
-
-	t2.resize(G0.rows);
-	fill(t2.begin(), t2.end(), 0);
-
-	G0.MatVec(t1, t2, 'N');
-	for (eslocal i = 0; i < vec_e0.size(); i++)
-		t2[i] = t2[i] - vec_e0[i];
-
-	vec_alfa.resize(Sa.m_Kplus_size);
-	Sa.Solve(t2, vec_alfa,0,0);
-
-	// lambda
-	t1.resize(G0.cols);
-	fill(t1.begin(), t1.end(), 0);
-
-	G0.MatVec(vec_alfa, t1, 'T');
-
-	for (eslocal i = 0; i < vec_g0.size(); i++)
-		t1[i] = vec_g0[i] - t1[i];
-
-	vec_lambda.resize(F0.m_Kplus_size);
-	F0.Solve(t1, vec_lambda,0,0);
-
-	// Kplus_x
-	for (eslocal d = 0; d < domains.size(); d++) {
-		//eslocal x_in_vector_start_index = x_clust_domain_map_vec[d];
-		eslocal x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
-		eslocal domain_size = domains[d].Kplus.m_Kplus_size;
-
-		t1.resize(domain_size);
-		fill(t1.begin(), t1.end(), 0);
-
-		domains[d].B0.MatVec(vec_lambda, t1, 'T');
-
-		for (eslocal i = 0; i < domain_size; i++)
-			t1[i] = x_in[x_in_vector_start_index + i] - t1[i];
-
-		t2.resize(domain_size);
-		fill(t2.begin(), t2.end(), 0);
-
-		domains[d].multKplusLocal(t1 , t2, 0, 0);
-
-		t3.resize(domain_size);
-		fill(t3.begin(), t3.end(), 0);
-
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
-		domains[d].Kplus_R.MatVec(vec_alfa, t3, 'N', e0_start,0);
-
-		for (eslocal i = 0; i < domain_size; i++)
-			y_out[x_in_vector_start_index + i] = t2[i] + t3[i];
-
-		double t_sum = 0;
-		for (eslocal i = 0; i < domain_size; i++)
-			t_sum +=  (t2[i] + t3[i]);
-
-		t_sum = t_sum;
-
-	}
-
-	t1.clear();
-	t2.clear();
-	t3.clear();
+//	vec_g0.resize(G0.cols);
+//	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+//
+//	vec_e0.resize(G0.rows);
+//	fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
+//
+//	//y_out.resize(x_clust_size);
+//
+//	// temp vectors
+//	SEQ_VECTOR <double> t1,t2,t3;
+//
+//
+//	// loop over domains in the cluster
+//	for (eslocal d = 0; d < domains.size(); d++) {
+//		eslocal x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
+//		eslocal domain_size = domains[d].Kplus.m_Kplus_size;
+//
+//		t1.resize(domain_size);
+//		t2.resize(vec_g0.size());
+//		fill(t1.begin(), t1.end(), 0);
+//		fill(t2.begin(), t2.end(), 0);
+//
+//
+//		// g0
+//		domains[d].multKplusLocal( x_in, t1, x_in_vector_start_index, 0 );
+//
+//		//					  in   out trans
+//		domains[d].B0.MatVec( t1 , t2,  'N' );
+//
+//		for (eslocal i = 0; i < vec_g0.size(); i++ )
+//			vec_g0[i] = vec_g0[i] + t2[i];
+//
+//		// e0
+//		t2.resize(domains[d].Kplus_R.cols); // resize na pocet sloupcu matice Kplus_R - velikost jadra
+//		fill(t2.begin(), t2.end(), 0); // reset t2 - migh not be necessary
+//
+//		domains[d].Kplus_R.MatVec(x_in, t2, 'T', x_in_vector_start_index, 0);
+//
+//		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+//		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+//		for (eslocal i = e0_start; i < e0_end; i++ )
+//			vec_e0[i] = - t2[i - e0_start];
+//
+//	} // end loop over domains
+//
+//
+//	// alfa
+//	t1.resize(F0.m_Kplus_size);
+//	fill(t1.begin(), t1.end(), 0);
+//
+//	F0.Solve(vec_g0, t1,0,0);
+//
+//	t2.resize(G0.rows);
+//	fill(t2.begin(), t2.end(), 0);
+//
+//	G0.MatVec(t1, t2, 'N');
+//	for (eslocal i = 0; i < vec_e0.size(); i++)
+//		t2[i] = t2[i] - vec_e0[i];
+//
+//	vec_alfa.resize(Sa.m_Kplus_size);
+//	Sa.Solve(t2, vec_alfa,0,0);
+//
+//	// lambda
+//	t1.resize(G0.cols);
+//	fill(t1.begin(), t1.end(), 0);
+//
+//	G0.MatVec(vec_alfa, t1, 'T');
+//
+//	for (eslocal i = 0; i < vec_g0.size(); i++)
+//		t1[i] = vec_g0[i] - t1[i];
+//
+//	vec_lambda.resize(F0.m_Kplus_size);
+//	F0.Solve(t1, vec_lambda,0,0);
+//
+//	// Kplus_x
+//	for (eslocal d = 0; d < domains.size(); d++) {
+//		//eslocal x_in_vector_start_index = x_clust_domain_map_vec[d];
+//		eslocal x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
+//		eslocal domain_size = domains[d].Kplus.m_Kplus_size;
+//
+//		t1.resize(domain_size);
+//		fill(t1.begin(), t1.end(), 0);
+//
+//		domains[d].B0.MatVec(vec_lambda, t1, 'T');
+//
+//		for (eslocal i = 0; i < domain_size; i++)
+//			t1[i] = x_in[x_in_vector_start_index + i] - t1[i];
+//
+//		t2.resize(domain_size);
+//		fill(t2.begin(), t2.end(), 0);
+//
+//		domains[d].multKplusLocal(t1 , t2, 0, 0);
+//
+//		t3.resize(domain_size);
+//		fill(t3.begin(), t3.end(), 0);
+//
+//		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+//		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+//		domains[d].Kplus_R.MatVec(vec_alfa, t3, 'N', e0_start,0);
+//
+//		for (eslocal i = 0; i < domain_size; i++)
+//			y_out[x_in_vector_start_index + i] = t2[i] + t3[i];
+//
+//		double t_sum = 0;
+//		for (eslocal i = 0; i < domain_size; i++)
+//			t_sum +=  (t2[i] + t3[i]);
+//
+//		t_sum = t_sum;
+//
+//	}
+//
+//	t1.clear();
+//	t2.clear();
+//	t3.clear();
 }
 
 void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
@@ -684,7 +686,8 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
 		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-		domains[d].B0t_comp.MatVec(tmp_vec, tm1[d], 'N');
+		//domains[d].B0t_comp.MatVec(tmp_vec, tm1[d], 'N');
+		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
 		for (eslocal i = 0; i < domain_size; i++)
 			tm1[d][i] = x_in[d][i] - tm1[d][i];
@@ -1072,7 +1075,7 @@ void Cluster::CompressB0() {
 		domains[d].B0_comp.ConvertToCSR(1);
 		domains[d].B0_comp.MatTranspose(domains[d].B0t_comp);
 
-		domains[d].Kplus_R.ConvertCSRToDense(0); // pozor - keep CSR data
+		//domains[d].Kplus_R.ConvertCSRToDense(0); // TODO: - keep CSR data
 
 	}
 
@@ -1085,8 +1088,14 @@ void Cluster::CreateG0() {
 	SEQ_VECTOR <SparseMatrix> G0LocalTemp( domains.size() );
 
 	cilk_for (eslocal i = 0; i<domains.size(); i++) {
+		domains[i].Kplus_R.ConvertDenseToCSR(0);
+
 		G0LocalTemp[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R );
 		G0LocalTemp[i].MatTranspose(-1.0);
+
+		SEQ_VECTOR<eslocal>().swap( domains[i].Kplus_R.CSR_I_row_indices );
+		SEQ_VECTOR<eslocal>().swap( domains[i].Kplus_R.CSR_J_col_indices );
+		SEQ_VECTOR<double> ().swap( domains[i].Kplus_R.CSR_V_values );
 	}
 
 	for (eslocal i = 0; i<domains.size(); i++) {
@@ -1120,6 +1129,8 @@ void Cluster::CreateF0() {
 			domains[d].Kplus.msglvl=0;
 
 		domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+		domains[d].B0t_comp.Clear();
+
 		domains[d].B0Kplus = domains[d].B0Kplus_comp;
 		domains[d].B0Kplus_comp.MatTranspose();
 		domains[d].B0Kplus_comp.ConvertCSRToDense(1);
@@ -1472,10 +1483,17 @@ void Cluster::Create_G1_perCluster() {
 				SparseMatrix Rt;
 				SparseMatrix B;
 
-				if ( esconfig::solver::REGULARIZATION == 0 )
-					domains[j].Kplus_R.MatTranspose(Rt);
-				else
-					domains[j].Kplus_Rb.MatTranspose(Rt);
+				if ( esconfig::solver::REGULARIZATION == 0 ) {
+					Rt = domains[j].Kplus_R;
+					Rt.ConvertDenseToCSR(1);
+					Rt.MatTranspose();
+					//domains[j].Kplus_R.MatTranspose(Rt);
+				} else {
+					Rt = domains[j].Kplus_Rb;
+					Rt.ConvertDenseToCSR(1);
+					Rt.MatTranspose();
+					//domains[j].Kplus_Rb.MatTranspose(Rt);
+				}
 
 				//Rt = domains[j].Kplus_R;
 				//Rt.MatTranspose();
@@ -1609,10 +1627,17 @@ void Cluster::Create_G1_perCluster() {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			if ( esconfig::solver::REGULARIZATION == 0 )
-				domains[j].Kplus_R.MatTranspose(Rt);
-		  	else
-				domains[j].Kplus_Rb.MatTranspose(Rt);
+			if ( esconfig::solver::REGULARIZATION == 0 ) {
+				Rt = domains[j].Kplus_R;
+				Rt.ConvertDenseToCSR(1);
+				Rt.MatTranspose();
+				//domains[j].Kplus_R.MatTranspose(Rt);
+			} else {
+				Rt = domains[j].Kplus_Rb;
+				Rt.ConvertDenseToCSR(1);
+				Rt.MatTranspose();
+				//domains[j].Kplus_Rb.MatTranspose(Rt);
+			}
 
 			Rt.ConvertCSRToDense(1);
 			B = domains[j].B1;
@@ -1696,7 +1721,7 @@ void Cluster::Create_G1_perCluster() {
 
 void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
-	eslocal size_d = domains[0].Kplus_Rb.cols; // because transpose of R
+	eslocal size_d = domains[0].Kplus_R.cols; // because transpose of R
 
 	if ( USE_HFETI == 1 )
 		vec_d.resize( size_d );
@@ -1704,11 +1729,21 @@ void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 		vec_d.resize( domains.size() * size_d );	// MFETI
 
 	if ( USE_HFETI == 1) {
-		for (eslocal d = 0; d < domains.size(); d++)
-			domains[d].Kplus_Rb.MatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+		for (eslocal d = 0; d < domains.size(); d++) {
+			if ( esconfig::solver::REGULARIZATION == 0 ) {
+				domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+			} else {
+				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+			}
+		}
 	} else {
-		for (eslocal d = 0; d < domains.size(); d++)										// MFETI
-			domains[d].Kplus_Rb.MatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );	// MFETI
+		for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
+			if ( esconfig::solver::REGULARIZATION == 0 ) {
+				domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+			} else {
+				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+			}
+		}
 	}
 
 	for (eslocal i = 0; i < vec_d.size(); i++)
@@ -1719,9 +1754,9 @@ void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
 void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
-	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
-	for (eslocal d = 0; d < domains.size(); d++) {
-		x_prim_cluster.push_back( f[d] );
+	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
+	cilk_for (eslocal d = 0; d < domains.size(); d++) {
+		x_prim_cluster[d] = f[d];
 	}
 
 	if (USE_HFETI == 0) {
@@ -1758,6 +1793,9 @@ void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 
 void Cluster::Create_Kinv_perDomain() {
+
+	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
 	if (cluster_global_index == 1)
 		cout << "Creating B1*K+*B1t : ";
@@ -1886,10 +1924,19 @@ this->NUM_MICS = 2;
 
 #endif
 
+	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+		domains[i].B1t_comp_dom.Clear();
+
+//	std::cout << "This function is obsolete - use Create_SC_perDomain" << std::endl;
+//	return();
+
 }
 
 
-void Cluster::Create_SC_perDomain() {
+void Cluster::Create_SC_perDomain(bool USE_FLOAT) {
+
+	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
 	if (cluster_global_index == 1)
 		cout << "Creating B1*K+*B1t : using Pardiso SC : ";
@@ -1950,8 +1997,10 @@ void Cluster::Create_SC_perDomain() {
 		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
 		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
 
-		//domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
-		//domains[i].B1Kplus.USE_FLOAT = true;
+		if (USE_FLOAT){
+			domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
+			domains[i].B1Kplus.USE_FLOAT = true;
+		}
 
 //		SparseSolver tmpsps2;
 //		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
@@ -2008,6 +2057,8 @@ void Cluster::Create_SC_perDomain() {
 
 #endif
 
+	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+		domains[i].B1t_comp_dom.Clear();
 
 	if (cluster_global_index == 1)
 		cout << endl;
@@ -2044,11 +2095,15 @@ void Cluster::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_vec_l
 
 void Cluster::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
 
+	std::cout << " B1_comp_MatVecSum - not implemented " << std::endl;
+
+	exit(0);
+
 	//if (domains.size() <= 3) {
 
-		domains[0].B1_comp.MatVec (x_in[0], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 0.0); // first vector overwrites temp vector
-		for (eslocal d = 1; d < domains.size(); d++) // reduction
-			domains[d].B1_comp.MatVec (x_in[d], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 1.0); // will add (summation per elements) all partial results into y_out
+//		domains[0].B1_comp.MatVec (x_in[0], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 0.0); // first vector overwrites temp vector
+//		for (eslocal d = 1; d < domains.size(); d++) // reduction
+//			domains[d].B1_comp.MatVec (x_in[d], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 1.0); // will add (summation per elements) all partial results into y_out
 
 	//} else {
 	//

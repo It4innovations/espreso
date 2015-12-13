@@ -179,8 +179,8 @@ public:
 	void GetSolution_Dual_singular_parallel ( Cluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out );
 	void GetResiduum_Dual_singular_parallel ( Cluster & cluster, SEQ_VECTOR <double> & dual_residuum_out );
 
-	void MakeSolution_Primal_singular_parallel ( Cluster & cluster);
-	void GetSolution_Primal_singular_parallel ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
+	void MakeSolution_Primal_singular_parallel ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
+	void GetSolution_Primal_singular_parallel  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
 
 };
 
