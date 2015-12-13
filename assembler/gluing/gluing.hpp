@@ -472,8 +472,8 @@ template <class TInput>
 void Gluing<TInput>::computeSubdomainGluing()
 {
 
-//#define PARALLEL
-#define SEQUENTIAL
+#define PARALLEL
+//#define SEQUENTIAL
 
 
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();

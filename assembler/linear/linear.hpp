@@ -124,67 +124,68 @@ void Linear<API>::fillAPIHolder(APIHolder *holder)
 template <class TInput>
 void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 {
-	eslocal indexing = 1;
-
-	init();
-
-	SparseVVPMatrix<eslocal> vvp(_K[0].rows, _K[0].cols);
-	for (size_t i = 0; i < _K[0].rows; i++) {
-		for (size_t j = _K[0].CSR_I_row_indices[i]; j < _K[0].CSR_I_row_indices[i + 1]; j++) {
-			vvp(i, _K[0].CSR_J_col_indices[j - 1] - 1) = _K[0].CSR_V_values[j - 1];
-		}
-	}
-	holder->K = new SparseCSRMatrix<eslocal>(vvp);
-
-	holder->rhs = new ESPRESOStructDoubleVector();
-	holder->rhs->size = _f[0].size();
-	holder->rhs->values = new double[_f[0].size()];
-	for (size_t i = 0; i < _f[0].size(); i++) {
-		holder->rhs->values[i] = _f[0][i];
-	}
-
-	std::vector<std::pair<esglobal, double> > dir;
-	const mesh::Coordinates &coo = this->_input.mesh.coordinates();
-	const std::map<eslocal, double> &dx = coo.property(mesh::DIRICHLET_X).values();
-	const std::map<eslocal, double> &dy = coo.property(mesh::DIRICHLET_X).values();
-	const std::map<eslocal, double> &dz = coo.property(mesh::DIRICHLET_X).values();
-	for (size_t i = 0; i < coo.size(); i++) {
-		if (dx.find(i) != dx.end()) {
-			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + indexing, dx.find(i)->second));
-		}
-		if (dy.find(i) != dy.end()) {
-			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 1 + indexing, dy.find(i)->second));
-		}
-		if (dz.find(i) != dz.end()) {
-			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 2 + indexing, dz.find(i)->second));
-		}
-	}
-	holder->dirichlet = new ESPRESOStructMap();
-	holder->dirichlet->size = dir.size();
-	holder->dirichlet->indices = new eslocal[dir.size()];
-	holder->dirichlet->values = new double[dir.size()];
-	for (size_t i = 0; i < dir.size(); i++) {
-		holder->dirichlet->indices[i] = dir[i].first;
-		holder->dirichlet->values[i] = dir[i].second;
-	}
-
-	holder->l2g = new ESPRESOStructIntVector();
-	holder->l2g->size = coo.size() * 3;
-	holder->l2g->values = new eslocal[coo.size() * 3];
-	for (size_t i = 0; i < coo.size(); i++) {
-		holder->l2g->values[3 * i] = 3 * coo.globalIndex(i) + indexing;
-		holder->l2g->values[3 * i + 1] = 3 * coo.globalIndex(i) + 1 + indexing;
-		holder->l2g->values[3 * i + 2] = 3 * coo.globalIndex(i) + 2 + indexing;
-	}
-
-	holder->neighbourRanks = new ESPRESOStructIntVector();
-	holder->neighbourRanks->size = this->_neighClusters.size();
-	holder->neighbourRanks->values = new eslocal[this->_neighClusters.size()];
-	for (size_t i = 0; i < this->_neighClusters.size(); i++) {
-		holder->neighbourRanks->values[i] = this->_neighClusters[i] + indexing;
-	}
-
-	holder->indexing = indexing;
+//TODO: dissabled because of 64bit int
+//	eslocal indexing = 1;
+//
+//	init();
+//
+//	SparseVVPMatrix<eslocal> vvp(_K[0].rows, _K[0].cols);
+//	for (size_t i = 0; i < _K[0].rows; i++) {
+//		for (size_t j = _K[0].CSR_I_row_indices[i]; j < _K[0].CSR_I_row_indices[i + 1]; j++) {
+//			vvp(i, _K[0].CSR_J_col_indices[j - 1] - 1) = _K[0].CSR_V_values[j - 1];
+//		}
+//	}
+//	holder->K = new SparseCSRMatrix<eslocal>(vvp);
+//
+//	holder->rhs = new ESPRESOStructDoubleVector();
+//	holder->rhs->size = _f[0].size();
+//	holder->rhs->values = new double[_f[0].size()];
+//	for (size_t i = 0; i < _f[0].size(); i++) {
+//		holder->rhs->values[i] = _f[0][i];
+//	}
+//
+//	std::vector<std::pair<esglobal, double> > dir;
+//	const mesh::Coordinates &coo = this->_input.mesh.coordinates();
+//	const std::map<eslocal, double> &dx = coo.property(mesh::DIRICHLET_X).values();
+//	const std::map<eslocal, double> &dy = coo.property(mesh::DIRICHLET_X).values();
+//	const std::map<eslocal, double> &dz = coo.property(mesh::DIRICHLET_X).values();
+//	for (size_t i = 0; i < coo.size(); i++) {
+//		if (dx.find(i) != dx.end()) {
+//			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + indexing, dx.find(i)->second));
+//		}
+//		if (dy.find(i) != dy.end()) {
+//			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 1 + indexing, dy.find(i)->second));
+//		}
+//		if (dz.find(i) != dz.end()) {
+//			dir.push_back(std::pair<esglobal, double>(3 * coo.globalIndex(i) + 2 + indexing, dz.find(i)->second));
+//		}
+//	}
+//	holder->dirichlet = new ESPRESOStructMap();
+//	holder->dirichlet->size = dir.size();
+//	holder->dirichlet->indices = new eslocal[dir.size()];
+//	holder->dirichlet->values = new double[dir.size()];
+//	for (size_t i = 0; i < dir.size(); i++) {
+//		holder->dirichlet->indices[i] = dir[i].first;
+//		holder->dirichlet->values[i] = dir[i].second;
+//	}
+//
+//	holder->l2g = new ESPRESOStructIntVector();
+//	holder->l2g->size = coo.size() * 3;
+//	holder->l2g->values = new eslocal[coo.size() * 3];
+//	for (size_t i = 0; i < coo.size(); i++) {
+//		holder->l2g->values[3 * i] = 3 * coo.globalIndex(i) + indexing;
+//		holder->l2g->values[3 * i + 1] = 3 * coo.globalIndex(i) + 1 + indexing;
+//		holder->l2g->values[3 * i + 2] = 3 * coo.globalIndex(i) + 2 + indexing;
+//	}
+//
+//	holder->neighbourRanks = new ESPRESOStructIntVector();
+//	holder->neighbourRanks->size = this->_neighClusters.size();
+//	holder->neighbourRanks->values = new eslocal[this->_neighClusters.size()];
+//	for (size_t i = 0; i < this->_neighClusters.size(); i++) {
+//		holder->neighbourRanks->values[i] = this->_neighClusters[i] + indexing;
+//	}
+//
+//	holder->indexing = indexing;
 }
 
 

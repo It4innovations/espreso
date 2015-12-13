@@ -2051,10 +2051,12 @@ void SparseMatrix::printMatCSR2(char *str0){
       fprintf(fid,"%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
     }
   }
+#endif
 }
 
 
 void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
+#ifdef ENGENIV
   double * AR =  new double [K.rows];
   double norm_AR_row,norm_AR = 0.0;
 //  printf("||A*Kplus_R[:,i]|| ...   \n");
@@ -2071,12 +2073,13 @@ void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format
   delete [] AR;
   norm_AR=sqrt(norm_AR);
   printf("\n||A*Kplus_R|| = %3.9e, defect = %d\n",norm_AR,R_in_dense_format.cols);
+#endif
 }
 
 //
 
 void SparseMatrix::GramSchmidtOrtho(){
-//
+#ifdef ENGENIV
   double *w = new double [rows];
   double *R = new double [cols*cols];
   memset(R,0,(cols*cols) * sizeof(double));
