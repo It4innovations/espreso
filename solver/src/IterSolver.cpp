@@ -281,10 +281,10 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	}
 
-	double x_norm_l = parallel_norm_compressed(cluster, cluster.vec_d);
-	printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
-	x_norm_l = parallel_norm_compressed(cluster, x_l);
-	printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+	//double x_norm_l = parallel_norm_compressed(cluster, cluster.vec_d);
+	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+	//x_norm_l = parallel_norm_compressed(cluster, x_l);
+	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
 
 	// *** Combine vectors b from all clusters ************************************
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
