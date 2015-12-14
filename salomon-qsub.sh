@@ -187,8 +187,8 @@ if [ "$1" = "run" ]; then
 
   #               OM OK OK
   #               0   1   2   3   4   5   6   7   8   9   10
-  dom_size=(      16  16  16  16  16  16  16  16  16  16  16)
-  clustt_size_x=( 10  10  10  10  10  10  10  10  10  10  10)
+  dom_size=(      12  12  12  12  12  12  12  16  16  16  16)
+  clustt_size_x=(  9   9   9   9   9   9   9  10  10  10  10)
 # clustt_size_y=( 2   5   5   5   5   5   5   5   5   5 )
 # clustt_size_z=( 1   5   5   5   5   5   5   5   5   5 )
 
@@ -198,7 +198,7 @@ if [ "$1" = "run" ]; then
 
   corners=(       0   0   0   0   0   0   0   0    0   0   0)
 
-  for i in 8 9 10 8 9 10 # 0 1 2 3 4 5 6 7 8 9 10
+  for i in 0 1 2 3 4 5 6   # 8 9 10 8 9 10 # 0 1 2 3 4 5 6 7 8 9 10
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -223,20 +223,21 @@ if [ "$1" = "run" ]; then
     qsub_command+="date | tee -a $log_file;"
     
     echo "Config: dom_size=  $d | cluster_size = $x:$y:$z | clusters = $X:$Y:$Z  "
-    #cp -R ~/espreso/libs/     	 /scratch/work/user/lriha/esp/
-    #cp -R ~/espreso/examples/ 	 /scratch/work/user/lriha/esp/
-    #cp    ~/espreso/espreso      /scratch/work/user/lriha/esp/
-    #cp    ~/espreso/salomon.sh   /scratch/work/user/lriha/esp/
-    #cp    ~/espreso/salomon-qsub.sh /scratch/work/user/lriha/esp/
+    mkdir /scratch/work/user/lriha/esp/$out_dir
+    cp -R ~/espreso/libs/     	 /scratch/work/user/lriha/esp/$out_dir
+    cp -R ~/espreso/examples/ 	 /scratch/work/user/lriha/esp/$out_dir
+    cp    ~/espreso/espreso      /scratch/work/user/lriha/esp/$out_dir
+    cp    ~/espreso/salomon.sh   /scratch/work/user/lriha/esp/$out_dir
+    cp    ~/espreso/salomon-qsub.sh /scratch/work/user/lriha/esp/$out_dir
     #cd /scratch/work/user/lriha/esp/
 
 
-    qsub_command+="/scratch/work/user/lriha/esp/$out_dir;"
-    qsub_command+="cp -R ~/espreso/libs/        /scratch/work/user/lriha/esp/$out_dir;"
-    qsub_command+="cp -R ~/espreso/examples/    /scratch/work/user/lriha/esp/$out_dir;"
-    qsub_command+="cp    ~/espreso/espreso      /scratch/work/user/lriha/esp/$out_dir;"
-    qsub_command+="cp    ~/espreso/salomon.sh   /scratch/work/user/lriha/esp/$out_dir;"
-    qsub_command+="cp    ~/espreso/salomon-qsub.sh /scratch/work/user/lriha/esp/$out_dir;"
+    #qsub_command+="mkdir /scratch/work/user/lriha/esp/$out_dir;"
+    #qsub_command+="cp -R ~/espreso/libs/        /scratch/work/user/lriha/esp/$out_dir;"
+    #qsub_command+="cp -R ~/espreso/examples/    /scratch/work/user/lriha/esp/$out_dir;"
+    #qsub_command+="cp    ~/espreso/espreso      /scratch/work/user/lriha/esp/$out_dir;"
+    #qsub_command+="cp    ~/espreso/salomon.sh   /scratch/work/user/lriha/esp/$out_dir;"
+    #qsub_command+="cp    ~/espreso/salomon-qsub.sh /scratch/work/user/lriha/esp/$out_dir;"
     qsub_command+="cd /scratch/work/user/lriha/esp/$out_dir;"
 
 
