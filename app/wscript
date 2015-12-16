@@ -70,7 +70,7 @@ def configure(ctx):
         mkl = "mkl_intel_ilp64"
         metis = "metis64"
     if ctx.options.titan:
-        metis = "metis"
+        metis = "metis64"
 
 
     ctx.setenv(APP_MIC, ctx.all_envs[APP].derive())
@@ -96,9 +96,9 @@ def configure(ctx):
 
     ctx.setenv(APP_PARDISO_MKL, ctx.all_envs[APP].derive())
     if ctx.options.titan:
-        ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
-        ctx.env.append_unique("LIB", [ "cudart", "cublas" ])
-        ctx.env.append_unique("STLIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "irng", "svml" ])
+        #ctx.env.append_unique("CXXFLAGS", [ "-DCUDA" ])
+        #ctx.env.append_unique("LIB", [ "cudart", "cublas" ])
+        ctx.env.append_unique("STLIB", [ mkl, "mkl_core", "mkl_intel_thread", "irng", "svml" ])
     else:
         ctx.env.append_unique("LIB", [ metis, mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
