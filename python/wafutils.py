@@ -111,7 +111,8 @@ def append_solver_attributes(ctx):
 
 def check_environment(ctx):
     # create new environment and remove all libraries
-    ctx.setenv("checker", ctx.env.derive());
+    ctx.setenv("checker", ctx.env.derive())
+    ctx.find_program("cmake")
     ctx.env.LIB = []
     ctx.env.STLIB = []
 
