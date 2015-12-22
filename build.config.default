@@ -3,7 +3,7 @@
 # Set MPI compilers. ESPRESO is compiled by a compiler specified in CXX.
 # CXX compiler has to use Intel C++ compiler.
 
-CXX = mpic++
+CXX = mpiicpc
 CC = mpicc
 FC = mpif90
 
