@@ -3,6 +3,7 @@
 #define BASIS_ESBASIS_H_
 
 #include "matrices/matrices.h"
+#include "logging/logging.h"
 
 
 

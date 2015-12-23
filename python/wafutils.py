@@ -92,7 +92,7 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     for attribute, description, type, value in compiler_attributes:
         print_attribute("SOLVER::" + attribute, type, ctx.env["SOLVER::" + attribute])
 
-def set_datatypes(ctx):
+def set_compiler_defines(ctx):
     ctx.env.INT_WIDTH = int(ctx.env.INT_WIDTH)
     if ctx.env.INT_WIDTH == 32:
         ctx.env.append_unique("DEFINES", [ "eslocal=int", "MKL_INT=int", "esglobal=int", "esglobal_mpi=MPI_INT", "BLAS_INT" ])
@@ -100,6 +100,12 @@ def set_datatypes(ctx):
         ctx.env.append_unique("DEFINES", [ "eslocal=long", "MKL_INT=long", "esglobal=long", "esglobal_mpi=MPI_LONG", "BLAS_LONG" ])
     else:
         ctx.fatal("ESPRESO supports only INT_WIDTH = {32, 64}.")
+
+    ctx.env.VERBOSE = int(ctx.env.VERBOSE)
+    ctx.env.append_unique("DEFINES", [ "VERBOSE={0}".format(ctx.env.VERBOSE) ])
+
+    if ctx.env.DEBUG == "1":
+        ctx.env.append_unique("DEFINES", [ "DEBUG" ])
 
 def append_solver_attributes(ctx):
     if ctx.env.SOLVER == "MIC" or ctx.env.SOLVER == "CUDA":
@@ -110,6 +116,9 @@ def append_solver_attributes(ctx):
             ctx.env.append_unique(attribute.split("::")[1], ctx.env[attribute])
 
 def check_environment(ctx):
+    if ctx.env.CHECK_ENV == "0":
+        return
+
     # create new environment and remove all libraries
     ctx.setenv("checker", ctx.env.derive())
     ctx.find_program("cmake")
@@ -141,9 +150,6 @@ def check_environment(ctx):
 
     ctx.env.ICPC_VERSION = int(ret[:2])
     ctx.msg("Checking for Intel compiler version", ctx.env.ICPC_VERSION)
-
-    if ctx.env.CHECK_ENV == "0":
-        return
 
     ctx.check_cxx(
         fragment=

@@ -31,6 +31,8 @@ espreso_attributes = [
     ("INT_WIDTH", "ESPRESO integer datatype width.", "choice", [ "32", "64" ]),
     ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "SHARED", "STATIC" ]),
     ("SOLVER", "ESPRESO internal solver. Default: MKL", "choice", solvers),
+    ("VERBOSE", "Verbosity level.", "choice", [ "0", "1", "2", "3" ]),
+    ("DEBUG", "Debug information.", "choice", [ "0", "1" ]),
 ]
 
 
@@ -41,7 +43,7 @@ def configure(ctx):
         ctx.fatal("Install Intel compiler or load the appropriate module.")
 
     read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes)
-    set_datatypes(ctx)
+    set_compiler_defines(ctx)
 
     ctx.ROOT = ctx.path.abspath()
 
