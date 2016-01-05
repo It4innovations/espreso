@@ -95,6 +95,16 @@ void Mesh::store(Output output, const std::string &path, double shrinkSubdomain,
 
 void Mesh::partitiate(eslocal parts, eslocal fixPoints)
 {
+	if (this->parts()) {
+		// reset elements node indices
+		for (eslocal p = 0; p < this->parts(); p++) {
+			for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+				for (eslocal n = 0; n < _elements[e]->size(); n++) {
+					_elements[e]->node(n) = _coordinates.clusterIndex(_elements[e]->node(n), p);
+				}
+			}
+		}
+	}
 	_partPtrs.resize(parts + 1);
 	_coordinates.localClear();
 	_coordinates.localResize(parts);
@@ -271,7 +281,9 @@ void Mesh::computeLocalIndices(size_t part)
 	}
 
 	for (eslocal e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
-		_elements[e]->setLocalIndices(nodeMap);
+		for (eslocal n = 0; n < _elements[e]->size(); n++) {
+			_elements[e]->node(n) = nodeMap[_elements[e]->node(n)];
+		}
 	}
 
 	_coordinates.computeLocal(part, nodeMap, nSize);

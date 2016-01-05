@@ -29,7 +29,7 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 	case esconfig::mesh::GENERATOR: {
 		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
+		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	}
@@ -73,9 +73,9 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface,
 		assembler::AssemblerBase * assembler = getAssembler(mesh, surface, apiHolder);
 		esconfig::assembler::discretization = esconfig::assembler::API;
 		assembler->fillAPIHolder(apiHolder);
-		API api(*apiHolder);
+		API2 api(*apiHolder);
 		delete assembler;
-		return createAssembler<API>(api);
+		return createAssembler<API2>(api);
 	}
 	default:
 		std::cerr << "Unknown discretization.\n";
