@@ -59,6 +59,7 @@ void Mesh::computeBoundaries()
 
 void Mesh::computeFixPoints(eslocal fixPoints)
 {
+	_fixPoints.clear();
 	_fixPoints.resize(parts(), std::vector<eslocal>(fixPoints));
 
 #ifndef DEBUG
@@ -72,6 +73,10 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 			_fixPoints[i][j] = getCentralNode(_partPtrs[i], _partPtrs[i + 1], eSubPartition, i, j);
 		}
 		std::sort(_fixPoints[i].begin(), _fixPoints[i].end());
+
+		// Remove the same points
+		auto it = std::unique(_fixPoints[i].begin(), _fixPoints[i].end());
+		_fixPoints[i].resize(it - _fixPoints[i].begin());
 
 		delete[] eSubPartition;
 	}
