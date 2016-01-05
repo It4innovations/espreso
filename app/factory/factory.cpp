@@ -29,6 +29,7 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 	case esconfig::mesh::GENERATOR: {
 		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
+		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	}

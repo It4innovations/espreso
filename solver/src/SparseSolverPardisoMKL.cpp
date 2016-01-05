@@ -1371,3 +1371,186 @@ void SparseSolver::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & 
 
 }
 
+
+#include <stdio.h>
+#include "mkl_rci.h"
+#include "mkl_blas.h"
+#include "mkl_spblas.h"
+#include "mkl_service.h"
+
+void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
+
+	MKL_INT size = A_in.rows;
+	SEQ_VECTOR <double> sol (size, 0);
+
+	SolveCG(A_in, rhs_sol, sol);
+
+	rhs_sol = sol;
+}
+
+void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
+
+
+
+
+	  /*---------------------------------------------------------------------------   */
+	  /* Define arrays for the upper triangle of the coefficient matrix and rhs vector */
+	  /* Compressed sparse row storage is used for sparse representation              */
+	  /*---------------------------------------------------------------------------   */
+	  MKL_INT rci_request, itercount, i;
+
+	  //MKL_INT expected_itercount = 8;
+	  MKL_INT n = A_in.rows; //rhs_in.size();
+
+
+	  /* Fill all arrays containing matrix data. */
+	  MKL_INT * ia  = &A_in.CSR_I_row_indices[0];
+	  MKL_INT * ja  = &A_in.CSR_J_col_indices[0];
+	  double  * a   = &A_in.CSR_V_values[0];
+
+
+//	  MKL_INT * ia  = CSR_I_row_indices;
+//	  MKL_INT * ja  = CSR_J_col_indices;
+//	  double  * a   = CSR_V_values;
+
+	  /*---------------------------------------------------------------------------*/
+	  /* Allocate storage for the solver ?par and temporary storage tmp            */
+	  /*---------------------------------------------------------------------------*/
+	  MKL_INT length = 128;
+	  MKL_INT ipar[128];
+	  double dpar[128];
+	  char matdes[3];
+	  double one = 1.E0;
+
+	  SEQ_VECTOR <double> tmp_vec (4 * n, 0);
+	  double * tmp;
+	  tmp = &tmp_vec[0];
+
+	  /*---------------------------------------------------------------------------*/
+	  /* Some additional variables to use with the RCI (P)CG solver                */
+	  /*---------------------------------------------------------------------------*/
+	  double * solution = &sol[0];
+      double * rhs = &rhs_in[0];
+
+
+	  double * temp;
+	  SEQ_VECTOR <double> temp_vec (n,0);
+	  temp = &temp_vec[0];
+
+	  double euclidean_norm;
+
+	  char tr = 'u';
+	  double eone = -1.E0;
+	  MKL_INT ione = 1;
+
+	  /*---------------------------------------------------------------------------*/
+	  /* Initialize the initial guess                                              */
+	  /*---------------------------------------------------------------------------*/
+	  for (i = 0; i < n; i++)
+	    {
+	      solution[i] = 0.E0;
+	    }
+
+	  matdes[0] = 'd';
+	  matdes[1] = 'l';
+	  matdes[2] = 'n';
+	  /*---------------------------------------------------------------------------*/
+	  /* Initialize the solver                                                     */
+	  /*---------------------------------------------------------------------------*/
+
+	  dcg_init (&n, solution, rhs, &rci_request, ipar, dpar, tmp);
+	  if (rci_request != 0)
+	    goto failure;
+	  /*---------------------------------------------------------------------------*/
+	  /* Set the desired parameters:                                               */
+	  /* LOGICAL parameters:                                                       */
+	  /* -                                                                         */
+	  /* INTEGER parameters:                                                       */
+	  /* set the maximal number of iterations to 100                               */
+	  /* DOUBLE parameters                                                         */
+	  /* -                                                                         */
+	  /*---------------------------------------------------------------------------*/
+	  ipar[4] = 1000;
+	  ipar[10]=1;
+	  /*---------------------------------------------------------------------------*/
+	  /* Check the correctness and consistency of the newly set parameters         */
+	  /*---------------------------------------------------------------------------*/
+	  dcg_check (&n, solution, rhs, &rci_request, ipar, dpar, tmp);
+	  if (rci_request != 0)
+	    goto failure;
+	  /*---------------------------------------------------------------------------*/
+	  /* Compute the solution by RCI (P)CG solver                                  */
+	  /* Reverse Communications starts here                                        */
+	  /*---------------------------------------------------------------------------*/
+	rci:dcg (&n, solution, rhs, &rci_request, ipar, dpar, tmp);
+	  /*---------------------------------------------------------------------------*/
+	  /* If rci_request=0, then the solution was found according to the requested  */
+	  /* stopping tests. In this case, this means that it was found after 100      */
+	  /* iterations.                                                               */
+	  /*---------------------------------------------------------------------------*/
+	  if (rci_request == 0)
+	    goto getsln;
+	  /*---------------------------------------------------------------------------*/
+	  /* If rci_request=1, then compute the vector A*TMP[0]                        */
+	  /* and put the result in vector TMP[n]                                       */
+	  /*---------------------------------------------------------------------------*/
+	  if (rci_request == 1)
+	    {
+	      mkl_dcsrsymv (&tr, &n, a, ia, ja, tmp, &tmp[n]);
+	      goto rci;
+	    }
+	  /*---------------------------------------------------------------------------*/
+	  /* If rci_request=2, then do the user-defined stopping test: compute the     */
+	  /* Euclidean norm of the actual residual using MKL routines and check if     */
+	  /* it is less than 1.E-8                                                     */
+	  /*---------------------------------------------------------------------------*/
+	  if (rci_request == 2)
+	    {
+	      mkl_dcsrsymv (&tr, &n, a, ia, ja, solution, temp);
+	      daxpy (&n, &eone, rhs, &ione, temp, &ione);
+	      euclidean_norm = dnrm2 (&n, temp, &ione);
+	      /*---------------------------------------------------------------------------*/
+	      /* The solution has not been found yet according to the user-defined stopping */
+	      /* test. Continue RCI (P)CG iterations.                                      */
+	      /*---------------------------------------------------------------------------*/
+	      if (euclidean_norm > 1.E-6)
+	        goto rci;
+	      /*---------------------------------------------------------------------------*/
+	      /* The solution has been found according to the user-defined stopping test   */
+	      /*---------------------------------------------------------------------------*/
+	      else
+	        goto getsln;
+	    }
+	  /*---------------------------------------------------------------------------*/
+	  /* If rci_request=3, then compute apply the preconditioner matrix C_inverse  */
+	  /* on vector tmp[2*n] and put the result in vector tmp[3*n]                  */
+	  /*---------------------------------------------------------------------------*/
+	  if (rci_request == 3)
+	    {
+	      mkl_dcsrsv (&matdes[2], &n, &one, matdes, a, ja, ia, &ia[1], &tmp[2 * n], &tmp[3 * n]);
+	      goto rci;
+	    }	  /*---------------------------------------------------------------------------*/
+	  /* If rci_request=anything else, then dcg subroutine failed                  */
+	  /* to compute the solution vector: solution[n]                               */
+	  /*---------------------------------------------------------------------------*/
+	  goto failure;
+	  /*---------------------------------------------------------------------------*/
+	  /* Reverse Communication ends here                                           */
+	  /* Get the current iteration number into itercount                           */
+	  /*---------------------------------------------------------------------------*/
+	getsln:dcg_get (&n, solution, rhs, &rci_request, ipar, dpar, tmp, &itercount);
+
+	std::cout << " " << itercount;
+
+	  //printf ("\nNumber of iterations: %d\n", itercount);
+
+	  /*-------------------------------------------------------------------------*/
+	  /* Release internal MKL memory that might be used for computations         */
+	  /* NOTE: It is important to call the routine below to avoid memory leaks   */
+	  /* unless you disable MKL Memory Manager                                   */
+	  /*-------------------------------------------------------------------------*/
+	failure: ; //printf ("This example FAILED as the solver has returned the ERROR code %d", rci_request);
+	  //MKL_Free_Buffers ();
+
+
+}

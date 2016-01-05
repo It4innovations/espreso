@@ -118,7 +118,8 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
-	Kplus.Solve(x_in_y_out); 
+	//Kplus.Solve(x_in_y_out);
+	Kplus.SolveCG(K, x_in_y_out);
 }
 
 //void Domain::K_regularization ( )
