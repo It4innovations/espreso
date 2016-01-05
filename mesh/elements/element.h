@@ -41,7 +41,12 @@ public:
 
 	virtual ~Element() {};
 
-	eslocal node(size_t index) const
+	const eslocal& node(size_t index) const
+	{
+		return indices()[index];
+	}
+
+	eslocal& node(size_t index)
 	{
 		return indices()[index];
 	}
@@ -49,13 +54,6 @@ public:
 	void fillNodes(eslocal *nodes) const
 	{
 		memcpy(nodes, indices(), size() * sizeof(eslocal));
-	}
-
-	void setLocalIndices(std::vector<eslocal> &mapping)
-	{
-		for (size_t i = 0; i < size(); i++) {
-			indices()[i] = mapping[node(i)];
-		}
 	}
 
 	void setParams(eslocal *params)
