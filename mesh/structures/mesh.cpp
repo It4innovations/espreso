@@ -817,7 +817,6 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 			for (size_t f = 0; f < cfm._elements[e]->faces(); f++) {
 				std::vector<eslocal> face = cfm._elements[e]->getFace(f);
 				if (isOuterFace(nodesFaces[p], face)) {
-					//clm._elements.push_back(new Line(face.data()));
 					face[0] = cfm.coordinates().clusterIndex(face[0], p);
 					face[1] = cfm.coordinates().clusterIndex(face[1], p);
 					outerFaces.push_back(face);
@@ -828,7 +827,6 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 				}
 			}
 		}
-		//clm._partPtrs.push_back(clm._elements.size());
 	}
 	eslocal linePoints = 0;
 	for (size_t i = 0; i < cfm._coordinates.size(); i++) {
@@ -837,19 +835,6 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 			points[i] = linePoints++;
 		}
 	}
-//	for (size_t p = 0; p < clm.parts(); p++) {
-//		for (size_t e = clm._partPtrs[p]; e < clm._partPtrs[p + 1]; e++) {
-//			for (size_t n = 0; n < clm._elements[e]->size(); n++) {
-//				clm._elements[e]->node(n) = points[cfm.coordinates().clusterIndex(clm._elements[e]->node(n), p)];
-//			}
-//		}
-//	}
-//	for (size_t i = 0; i < outerFaces.size(); i++) {
-//		outerFaces[i][0] = clm.coordinates().clusterIndex(outerFaces[i][0]);
-//		outerFaces[i][1] = clm.coordinates().clusterIndex(outerFaces[i][1]);
-//	}
-
-
 
 	std::vector<bool> mask(cfm.coordinates().size(), false);
 	size_t maskCounter = 0;
@@ -902,102 +887,27 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 	for (size_t p = 0; p < clm.parts(); p++) {
 		clm.computeLocalIndices(p);
 	}
-//	clm._fixPoints.clear();
-//	clm._fixPoints.resize(clm.parts());
 	clm._fixPoints.clear();
 	clm._fixPoints.resize(clm.parts(), std::vector<eslocal>(0));
 	//clm.computeFixPoints(number);
+	// TODO: set corners to mesh
 
 	esoutput::VTK_Full out2(clm, "edges");
-	out2.store(1, 1);
-	exit(0);
-	// OLD IMPLEMENTATION
-//
-//	for (size_t i = 0; i < cfm._elements.size(); i++) {
-//		// preparation for corners on edges
-//		for (size_t j = 0; j < cfm._elements[i]->size(); j++) {
-//			std::vector<eslocal> neigh = cfm._elements[i]->getNeighbours(j);
-//			eslocal index = cfm._elements[i]->node(j);
-//			for (size_t n = 0; n < neigh.size(); n++) {
-//				if (index < neigh[n]) {
-//					neighbours[index].insert(neigh[n]);
-//				}
-//			}
-//			nodesFaces[index].push_back(i);
-//		}
-//	}
+	out2.store(.9, 1);
 
-	//Mesh clm(_rank, _size);
-//	if (edges) {
-//		clm.coordinates() = _coordinates;
-//	}
-//
-//	std::vector<eslocal> result;
-//	std::vector<eslocal>::iterator end;
-//	std::vector<eslocal> pairs;
-//	std::vector<eslocal> pair(2);
-//	std::vector<eslocal> nodeCounter(_coordinates.size(), 0);
-//
-//	std::set<eslocal>::iterator it;
-//	for (size_t i = 0; i < neighbours.size(); i++) {
-//		for (it = neighbours[i].begin(); it != neighbours[i].end(); ++it) {
-//			pair[0] = i;
-//			pair[1] = *it;
-//			result.resize(_subdomainBoundaries[i].size());
-//			end = std::set_intersection(
-//				_subdomainBoundaries[i].begin(), _subdomainBoundaries[i].end(),
-//				_subdomainBoundaries[*it].begin(), _subdomainBoundaries[*it].end(),
-//				result.begin());
-//			if (end - result.begin() >= 3 && isOnBoundary(nodesElements, pair, _partPtrs, 2)) {
-//				pairs.push_back(pair[0]);
-//				pairs.push_back(pair[1]);
-//				nodeCounter[pair[0]]++;
-//				nodeCounter[pair[1]]++;
-//				continue;
-//			}
-//			if (isOuterFace(nodesFaces, pair)) {
-//				pairs.push_back(pair[0]);
-//				pairs.push_back(pair[1]);
-//				nodeCounter[pair[0]]++;
-//				nodeCounter[pair[1]]++;
-//			}
-//		}
-//	}
-//
-//	if (edges) {
-//		clm._elements.reserve(pairs.size() / 2);
-//	}
-//
-//	for (size_t j = 0; j < pairs.size(); j += 2) {
-//		if (vertex) {
-//			size_t counerMin = 2;
-//			if (nodeCounter[pairs[j]] > counerMin || nodeCounter[pairs[j + 1]] > counerMin) {
-//				if (nodeCounter[pairs[j]] > counerMin) {
-//					_subdomainBoundaries.setCorner(pairs[j]);
-//				}
-//				if (nodeCounter[pairs[j + 1]] > counerMin) {
-//					_subdomainBoundaries.setCorner(pairs[j + 1]);
-//				}
-//				continue;
-//			}
-//		}
-//		if (edges) {
-//			clm._elements.push_back(new Line(&pairs[j]));
-//		}
-//	}
-//	if (edges) {
-//		clm._partPtrs.back() = clm._elements.size();
-//		clm.computeLocalIndices(clm._partPtrs.size() - 2);
-//		clm.computeFixPoints(number);
-//		for (size_t p = 0; p < clm.parts(); p++) {
-//			for (size_t i = 0; i < clm.getFixPoints()[p].size(); i++) {
-//				_subdomainBoundaries.setCorner(clm.coordinates().clusterIndex(clm.getFixPoints()[p][i], 0));
-//				std::cout << "add edge\n";
-//			}
-//		}
-//		esoutput::VTK_Full out(clm, "edges");
-//		out.store(0.7, 1);
-//	}
+	for (size_t p = 0; p < clm.parts(); p++) {
+		std::vector<eslocal> vertexNodes(clm.coordinates().localSize(p), 0);
+		for (size_t e = clm._partPtrs[p]; e < clm._partPtrs[p + 1]; e++) {
+			for (size_t n = 0; n < clm._elements[e]->size(); n++) {
+				vertexNodes[clm._elements[e]->node(n)]++;
+			}
+		}
+		for (size_t i = 0; i < vertexNodes.size(); i++) {
+			if (vertexNodes[i] % 2 == 1) {
+				std::cout << "mam vertex: " << p << " -> " << clm.coordinates().clusterIndex(i, p) << "\n";
+			}
+		}
+	}
 }
 
 std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
