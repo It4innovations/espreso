@@ -6,7 +6,7 @@ int main(int argc, char **argv)
 	MPI_Init(&argc, &argv);
 
 	Factory factory(argc, argv);
-	factory.solve(1);
+	//factory.solve(1);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

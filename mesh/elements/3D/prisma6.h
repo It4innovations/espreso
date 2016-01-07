@@ -66,6 +66,11 @@ public:
 		return Prisma6::_weighFactor;
 	}
 
+	eslocal nCommon() const
+	{
+		return 3;
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 

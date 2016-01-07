@@ -5,7 +5,7 @@
 #include "../1D/line.h"
 
 #define TriangleNodesCount 3
-#define TriangleFacesCount 1
+#define TriangleFacesCount 3
 #define TriangleGPCount 3
 #define TriangleVTKCode 5
 
@@ -62,6 +62,11 @@ public:
 	const std::vector<double>& weighFactor() const
 	{
 		return Triangle::_weighFactor;
+	}
+
+	eslocal nCommon() const
+	{
+		return 2;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;

@@ -5,7 +5,7 @@
 #include "../1D/line.h"
 
 #define SquareNodesCount 4
-#define SquareFacesCount 1
+#define SquareFacesCount 4
 #define SquareGPCount 4
 #define SquareVTKCode 9
 
@@ -62,6 +62,11 @@ public:
 	const std::vector<double>& weighFactor() const
 	{
 		return Square::_weighFactor;
+	}
+
+	eslocal nCommon() const
+	{
+		return 2;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;

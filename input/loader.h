@@ -14,11 +14,15 @@ public:
 	{
 		points(mesh._coordinates);
 		elements(mesh._elements);
-		mesh._partPtrs.back() = mesh._elements.size();
-		mesh.computeLocalIndices(0);
+		mesh.partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
 		mesh.computeBoundaries();
+		mesh.computeCorners(
+				esconfig::mesh::corners,
+				esconfig::mesh::vertexCorners,
+				esconfig::mesh::edgeCorners,
+				esconfig::mesh::faceCorners);
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;

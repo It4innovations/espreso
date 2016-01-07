@@ -64,6 +64,11 @@ public:
 		return Line::_weighFactor;
 	}
 
+	eslocal nCommon() const
+	{
+		return 1;
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 

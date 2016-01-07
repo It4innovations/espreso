@@ -36,7 +36,11 @@ std::vector<eslocal> Square::getNeighbours(size_t nodeIndex) const
 
 std::vector<eslocal> Square::getFace(size_t face) const
 {
-	return std::vector<eslocal> (_indices, _indices + 4);
+	if (face < 3) {
+		return std::vector<eslocal>(_indices + face, _indices + face + 2);
+	} else {
+		return std::vector<eslocal>({_indices[3], _indices[0]});
+	}
 }
 
 Square::Square(eslocal *indices)

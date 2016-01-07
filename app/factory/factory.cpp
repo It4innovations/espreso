@@ -11,25 +11,25 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 	case esconfig::mesh::ANSYS: {
 		esinput::Ansys loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
+		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::OPENFOAM: {
 		esinput::OpenFOAM loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
+		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::ESDATA_IN: {
 		esinput::Esdata loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
+		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::GENERATOR: {
 		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
+		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	}
@@ -91,6 +91,9 @@ Factory::Factory(int argc, char **argv)
 
 	_mesh = getMesh(argc, argv);
 	_assembler = getAssembler(_mesh, _surface, _apiHolder);
+
+	esoutput::VTK_Full out(*_mesh, "corners");
+	out.store(0.8, 1);
 }
 
 Factory::~Factory()

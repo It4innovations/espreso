@@ -21,6 +21,7 @@
 #include "boundaries.h"
 
 #include "esbasis.h"
+#include "esconfig.h"
 
 namespace esinput {
 class InternalLoader;
@@ -87,7 +88,7 @@ public:
 
 	void partitiate(eslocal parts, eslocal fixPoints);
 	void computeFixPoints(eslocal fixPoints);
-	void computeCorners(Boundaries &boundaries, eslocal number, bool corners, bool edges, bool faces) const;
+	void computeCorners(eslocal number, bool vertex, bool edges, bool faces);
 
 	const std::vector<Element*>& getElements() const
 	{
