@@ -22,7 +22,8 @@ public:
 				esconfig::mesh::corners,
 				esconfig::mesh::vertexCorners,
 				esconfig::mesh::edgeCorners,
-				esconfig::mesh::faceCorners);
+				esconfig::mesh::faceCorners,
+				esconfig::mesh::averaging);
 	}
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;

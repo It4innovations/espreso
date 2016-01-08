@@ -88,7 +88,7 @@ public:
 
 	void partitiate(eslocal parts, eslocal fixPoints);
 	void computeFixPoints(eslocal fixPoints);
-	void computeCorners(eslocal number, bool vertex, bool edges, bool faces);
+	void computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averaging);
 
 	const std::vector<Element*>& getElements() const
 	{

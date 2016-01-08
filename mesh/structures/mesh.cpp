@@ -687,13 +687,13 @@ void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
 
 }
 
-void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
+void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averaging)
 {
 	if (parts() < 1) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
-	if (parts() == 1 || (!vertex && !edges && !faces)) {
+	if (parts() == 1 || (!vertex && !edges && !faces && !averaging)) {
 		return;
 	}
 
@@ -792,7 +792,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 		}
 	}
 
-	if (!edges && !vertex) {
+	if (!edges && !vertex && !averaging) {
 		return;
 	}
 
@@ -892,6 +892,11 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 				}
 			}
 		}
+		if (vertices.size() > 2) {
+			// non-continuous edge -> separate it
+			std::cerr << "ERROR: non-continuous edge - not finished code!\n";
+			exit(0);
+		}
 		for (eslocal e = clm._elements.size() - 1; e >= clm._partPtrs.back(); e--) {
 			if (vertices.find(clm._elements[e]->node(0)) != vertices.end()
 					|| vertices.find(clm._elements[e]->node(1)) != vertices.end()) {
@@ -900,14 +905,14 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 				clm._elements.erase(clm._elements.begin() + e);
 			}
 		}
+		if (clm._partPtrs.back() < clm._elements.size()) {
+			clm._partPtrs.push_back(clm._elements.size());
+		}
 		if (vertex) {
 			for (auto it = vertices.begin(); it != vertices.end(); ++it) {
 				eslocal fPoint = clm.coordinates().globalIndex(*it);
 				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(fPoint));
 			}
-		}
-		if (clm._partPtrs.back() < clm._elements.size()) {
-			clm._partPtrs.push_back(clm._elements.size());
 		}
 	}
 
@@ -915,6 +920,27 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 	clm._coordinates.localResize(clm.parts());
 	for (size_t p = 0; p < clm.parts(); p++) {
 		clm.computeLocalIndices(p);
+	}
+	if (averaging) {
+		clm.computeFixPoints(1);
+		for (size_t p = 0; p < clm.parts(); p++) {
+			for (size_t i = 0; i < clm.getFixPoints()[p].size(); i++) {
+				eslocal corner = clm.coordinates().globalIndex(clm.getFixPoints()[p][i], p);
+				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(corner));
+				std::set<eslocal> aPoints;
+				for (size_t e = clm._partPtrs[p]; e < clm._partPtrs[p + 1]; e++) {
+					aPoints.insert(clm._elements[e]->node(0));
+					aPoints.insert(clm._elements[e]->node(1));
+				}
+				std::vector<eslocal>& averaging = _subdomainBoundaries.averaging(cfm.coordinates().globalIndex(corner));
+				averaging.insert(averaging.begin(), aPoints.begin(), aPoints.end());
+				for (size_t j = 0; j < averaging.size(); j++) {
+					eslocal av = clm.coordinates().globalIndex(averaging[j], p);
+					averaging[j] = cfm.coordinates().globalIndex(av);
+				}
+			}
+		}
+		return;
 	}
 	if (edges) {
 		clm.computeFixPoints(number);

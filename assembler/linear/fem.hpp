@@ -186,6 +186,35 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 }
 
 template <>
+void Linear<FEM>::T(size_t part)
+{
+	eslocal nT = _input.mesh.coordinates().localSize(part) * this->DOFs();
+	SparseDOKMatrix<eslocal> _T(nT, nT);
+	for (size_t i = 0; i < nT; i++) {
+		_T(i, i) = 1;
+	}
+
+	const mesh::Coordinates& coords = _input.mesh.coordinates();
+	const mesh::Boundaries& boundary = _input.mesh.subdomainBoundaries();
+
+	for (size_t i = 0; i < coords.localSize(part); i++) {
+		if (boundary.isAveraging(coords.clusterIndex(i, part))) {
+			const std::vector<eslocal>& av = boundary.averaging(coords.clusterIndex(i, part));
+			for (size_t a = 0; a < av.size(); a++) {
+				eslocal j = coords.localIndex(av[a], part);
+				for (int d = 0; d < this->DOFs(); d++) {
+					_T(i * this->DOFs() + d, j * this->DOFs() + d) = -1;
+					_T(j * this->DOFs() + d, i * this->DOFs() + d) = 1;
+				}
+			}
+		}
+	}
+
+	SparseCSRMatrix<eslocal> tmpT = _T;
+	this->_T[part] = tmpT;
+}
+
+template <>
 void Linear<FEM>::initSolver()
 {
 	_lin_solver.init(

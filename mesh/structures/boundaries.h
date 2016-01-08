@@ -52,6 +52,21 @@ public:
 		return _corners[index];
 	}
 
+	bool isAveraging(eslocal corner) const
+	{
+		return _averaging.find(corner) != _averaging.end();
+	}
+
+	const std::vector<eslocal>& averaging(eslocal corner) const
+	{
+		return _averaging.find(corner)->second;
+	}
+
+	std::vector<eslocal>& averaging(eslocal corner)
+	{
+		return _averaging[corner];
+	}
+
 	// prepare for future improvements
 	eslocal index(size_t position) const {
 		return position;
@@ -63,6 +78,9 @@ private:
 
 	/** @brief Keeps information whether a point is the corner. */
 	std::vector<bool> _corners;
+
+	/** @brief Defines corners averaging nodes. */
+	std::map<eslocal, std::vector<eslocal> > _averaging;
 };
 
 }

@@ -14,12 +14,14 @@ void Linear<TInput>::init()
 	timeKasm.AddStart();
 
 	_K.resize(this->subdomains());
+	_T.resize(this->subdomains());
 	_M.resize(this->subdomains());
 	_f.resize(this->subdomains());
 	for (size_t s = 0; s < this->subdomains(); s++) {
 		std::cout << s << " " ;
 		// TODO: set dynamics
 		KMf(s, false);
+		T(s);
 
 		if (this->_verbose && this->rank() == 0) {
 			std::cout << s << " " ;
@@ -110,6 +112,14 @@ void Linear<TInput>::finalize()
 
 	this->_timeStatistics.totalTime.AddEndWithBarrier();
 	this->_timeStatistics.PrintStatsMPI();
+}
+
+template <class TInput>
+void Linear<TInput>::T(size_t part)
+{
+	SparseIJVMatrix<eslocal> _T(1, 1);
+
+	this->_T[part] = _T;
 }
 
 template <>

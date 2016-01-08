@@ -30,7 +30,7 @@ protected:
 	virtual double rho() = 0;
 
 	// Matrices for Linear Solver
-	std::vector<SparseMatrix> _K, _M;
+	std::vector<SparseMatrix> _K, _T, _M;
 	// RHS
 	std::vector<std::vector<double> > _f;
 
@@ -38,6 +38,7 @@ protected:
 
 private:
 	void KMf(size_t part, bool dynamics);
+	void T(size_t part);
 	void RHS();
 	void initSolver();
 

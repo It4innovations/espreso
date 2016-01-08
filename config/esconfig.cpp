@@ -14,6 +14,7 @@ namespace mesh {
 	bool vertexCorners = true;
 	bool edgeCorners = false;
 	bool faceCorners = false;
+	bool averaging = true;
 
 	Input input = ANSYS;
 	Output output = VTK_FULL;
