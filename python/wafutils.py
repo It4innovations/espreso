@@ -32,7 +32,7 @@ def check_libraries(ctx):
         check_library(ctx, "STLIB", name, library)
 
 def check_headers(ctx):
-    headers = [ "mkl.h", "cilk/cilk.h", "omp.h" ]
+    headers = [ "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]
 
     for header in headers:
         check_header(ctx, header)
