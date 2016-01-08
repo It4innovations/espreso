@@ -10,10 +10,10 @@ namespace mesh {
 	size_t subdomains = 4;
 	size_t fixPoints = 8;
 
-	size_t corners = 1;
-	bool vertexCorners = false;
-	bool edgeCorners = true;
-	bool faceCorners = true;
+	size_t corners = 2;
+	bool vertexCorners = true;
+	bool edgeCorners = false;
+	bool faceCorners = false;
 
 	Input input = ANSYS;
 	Output output = VTK_FULL;

@@ -91,9 +91,6 @@ Factory::Factory(int argc, char **argv)
 
 	_mesh = getMesh(argc, argv);
 	_assembler = getAssembler(_mesh, _surface, _apiHolder);
-
-	esoutput::VTK_Full out(*_mesh, "corners");
-	out.store(0.8, 1);
 }
 
 Factory::~Factory()

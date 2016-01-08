@@ -89,7 +89,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	if (parts == 1) {
 		eslocal *ePartition = new eslocal[last - first];
 		for (eslocal i = first; i < last; i++) {
-			ePartition[i] = 0;
+			ePartition[i - first] = 0;
 		}
 		return ePartition;
 	}
@@ -741,58 +741,59 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 	// create mesh from common faces
 	Mesh cfm(_rank, _size);
 	Element *el;
-	if (faces) {
-		eslocal index = 0;
-		for (size_t i = 0; i < _coordinates.size(); i++) {
-			if (projection[i] == 1) {
-				cfm.coordinates().add(_coordinates[i], index, i);
-				projection[i] = index++;
-			}
+	eslocal index = 0;
+	for (size_t i = 0; i < _coordinates.size(); i++) {
+		if (projection[i] == 1) {
+			cfm.coordinates().add(_coordinates[i], index, i);
+			projection[i] = index++;
 		}
-		for (size_t i = 0; i < commonFaces.size(); i++) {
-			for (size_t j = 0; j < commonFaces[i].size(); j++) {
-				commonFaces[i][j] = projection[commonFaces[i][j]];
-			}
+	}
+	for (size_t i = 0; i < commonFaces.size(); i++) {
+		for (size_t j = 0; j < commonFaces[i].size(); j++) {
+			commonFaces[i][j] = projection[commonFaces[i][j]];
 		}
-		//cfm.coordinates() = _coordinates;
-		cfm._elements.reserve(commonFaces.size());
+	}
+	//cfm.coordinates() = _coordinates;
+	cfm._elements.reserve(commonFaces.size());
 
-		// create mesh
-		cfm._partPtrs.clear();
-		cfm._partPtrs.push_back(0);
-		for (size_t i = 0; i < parts(); i++) {
-			for (size_t j = i + 1; j < parts(); j++) {
-				for (size_t e = 0; e < commonFaces.size(); e++) {
-					if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
-						if (commonFaces[e].size() == 3) {
-							el = new Triangle(commonFaces[e].data());
-						}
-						if (commonFaces[e].size() == 4) {
-							el = new Square(commonFaces[e].data());
-						}
-						cfm._elements.push_back(el);
+	// create mesh
+	cfm._partPtrs.clear();
+	cfm._partPtrs.push_back(0);
+	for (size_t i = 0; i < parts(); i++) {
+		for (size_t j = i + 1; j < parts(); j++) {
+			for (size_t e = 0; e < commonFaces.size(); e++) {
+				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
+					if (commonFaces[e].size() == 3) {
+						el = new Triangle(commonFaces[e].data());
 					}
-				}
-				if (cfm._elements.size() > cfm._partPtrs.back()) {
-					cfm._partPtrs.push_back(cfm._elements.size());
+					if (commonFaces[e].size() == 4) {
+						el = new Square(commonFaces[e].data());
+					}
+					cfm._elements.push_back(el);
 				}
 			}
+			if (cfm._elements.size() > cfm._partPtrs.back()) {
+				cfm._partPtrs.push_back(cfm._elements.size());
+			}
 		}
-		cfm._coordinates.localClear();
-		cfm._coordinates.localResize(cfm.parts());
+	}
+	cfm._coordinates.localClear();
+	cfm._coordinates.localResize(cfm.parts());
+	for (size_t p = 0; p < cfm.parts(); p++) {
+		cfm.computeLocalIndices(p);
+	}
+
+	if (faces) {
+		cfm.computeFixPoints(number);
 		for (size_t p = 0; p < cfm.parts(); p++) {
-			cfm.computeLocalIndices(p);
+			for (size_t i = 0; i < cfm.getFixPoints()[p].size(); i++) {
+				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(cfm.getFixPoints()[p][i], p));
+			}
 		}
-		cfm._fixPoints.clear();
-		cfm._fixPoints.resize(cfm.parts(), std::vector<eslocal>(0));
-//		cfm.computeFixPoints(number);
-//		for (size_t p = 0; p < cfm.parts(); p++) {
-//			for (size_t i = 0; i < cfm.getFixPoints()[p].size(); i++) {
-//				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(cfm.getFixPoints()[p][i], 0));
-//			}
-//		}
-		esoutput::VTK_Full out(cfm, "faces");
-		out.store(1, 1);
+	}
+
+	if (!edges && !vertex) {
+		return;
 	}
 
 	Mesh clm(_rank, _size);
@@ -807,7 +808,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 		}
 	}
 
-	std::vector<std::vector<eslocal> > outerFaces;
+	std::vector<std::pair<eslocal, eslocal> > outerFaces;
 	std::vector<char> nSubdomains(cfm.coordinates().size() * cfm.parts(), 0);
 	std::vector<eslocal> points(cfm.coordinates().size(), 0);
 	clm._partPtrs.clear();
@@ -819,7 +820,11 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 				if (isOuterFace(nodesFaces[p], face)) {
 					face[0] = cfm.coordinates().clusterIndex(face[0], p);
 					face[1] = cfm.coordinates().clusterIndex(face[1], p);
-					outerFaces.push_back(face);
+					if (face[0] < face[1]) {
+						outerFaces.push_back(std::pair<eslocal, eslocal>(face[0], face[1]));
+					} else {
+						outerFaces.push_back(std::pair<eslocal, eslocal>(face[1], face[0]));
+					}
 					nSubdomains[face[0] * cfm.parts() + p] = 1;
 					nSubdomains[face[1] * cfm.parts() + p] = 1;
 					points[face[0]] = 1;
@@ -828,6 +833,10 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 			}
 		}
 	}
+	std::sort(outerFaces.begin(), outerFaces.end());
+	auto it = std::unique(outerFaces.begin(), outerFaces.end());
+	outerFaces.resize(std::distance(outerFaces.begin(), it));
+
 	eslocal linePoints = 0;
 	for (size_t i = 0; i < cfm._coordinates.size(); i++) {
 		if (points[i] == 1) {
@@ -864,17 +873,37 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 			}
 		}
 		bool innerLine = std::count(s, e, 1) > 1;
+		std::set<eslocal> vertices;
 		for (size_t i = 0; i < outerFaces.size(); i++) {
-			char *p0s = nSubdomains.data() + outerFaces[i][0] * cfm.parts();
-			char *p1s = nSubdomains.data() + outerFaces[i][1] * cfm.parts();
-			char *p0e = nSubdomains.data() + (outerFaces[i][0] + 1) * cfm.parts();
-			char *p1e = nSubdomains.data() + (outerFaces[i][1] + 1) * cfm.parts();
-			if (std::equal(s, e, p0s) || std::equal(s, e, p1s)) {
-				if (!innerLine || (std::count(p0s, p0e, 1) > 1 && std::count(p1s, p1e, 1) > 1) ) {
-					tmpPair[0] = clm.coordinates().clusterIndex(outerFaces[i][0]);
-					tmpPair[1] = clm.coordinates().clusterIndex(outerFaces[i][1]);
-					clm._elements.push_back(new Line(tmpPair.data()));
+			char *p0s = nSubdomains.data() + outerFaces[i].first * cfm.parts();
+			char *p1s = nSubdomains.data() + outerFaces[i].second * cfm.parts();
+			char *p0e = nSubdomains.data() + (outerFaces[i].first + 1) * cfm.parts();
+			char *p1e = nSubdomains.data() + (outerFaces[i].second + 1) * cfm.parts();
+			if (std::equal(s, e, p0s) && std::equal(s, e, p1s)) {
+				tmpPair[0] = clm.coordinates().clusterIndex(outerFaces[i].first);
+				tmpPair[1] = clm.coordinates().clusterIndex(outerFaces[i].second);
+				clm._elements.push_back(new Line(tmpPair.data()));
+			}
+			if (std::equal(s, e, p0s) != std::equal(s, e, p1s)) {
+				if (std::count(p0s, p0e, 1) > std::count(p1s, p1e, 1)) {
+					vertices.insert(clm.coordinates().clusterIndex(outerFaces[i].first));
+				} else {
+					vertices.insert(clm.coordinates().clusterIndex(outerFaces[i].second));
 				}
+			}
+		}
+		for (eslocal e = clm._elements.size() - 1; e >= clm._partPtrs.back(); e--) {
+			if (vertices.find(clm._elements[e]->node(0)) != vertices.end()
+					|| vertices.find(clm._elements[e]->node(1)) != vertices.end()) {
+
+				// erase elements with vertex corners
+				clm._elements.erase(clm._elements.begin() + e);
+			}
+		}
+		if (vertex) {
+			for (auto it = vertices.begin(); it != vertices.end(); ++it) {
+				eslocal fPoint = clm.coordinates().globalIndex(*it);
+				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(fPoint));
 			}
 		}
 		if (clm._partPtrs.back() < clm._elements.size()) {
@@ -887,24 +916,12 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces)
 	for (size_t p = 0; p < clm.parts(); p++) {
 		clm.computeLocalIndices(p);
 	}
-	clm._fixPoints.clear();
-	clm._fixPoints.resize(clm.parts(), std::vector<eslocal>(0));
-	//clm.computeFixPoints(number);
-	// TODO: set corners to mesh
-
-	esoutput::VTK_Full out2(clm, "edges");
-	out2.store(.9, 1);
-
-	for (size_t p = 0; p < clm.parts(); p++) {
-		std::vector<eslocal> vertexNodes(clm.coordinates().localSize(p), 0);
-		for (size_t e = clm._partPtrs[p]; e < clm._partPtrs[p + 1]; e++) {
-			for (size_t n = 0; n < clm._elements[e]->size(); n++) {
-				vertexNodes[clm._elements[e]->node(n)]++;
-			}
-		}
-		for (size_t i = 0; i < vertexNodes.size(); i++) {
-			if (vertexNodes[i] % 2 == 1) {
-				std::cout << "mam vertex: " << p << " -> " << clm.coordinates().clusterIndex(i, p) << "\n";
+	if (edges) {
+		clm.computeFixPoints(number);
+		for (size_t p = 0; p < clm.parts(); p++) {
+			for (size_t i = 0; i < clm.getFixPoints()[p].size(); i++) {
+				eslocal fPoint = clm.coordinates().globalIndex(clm.getFixPoints()[p][i], p);
+				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(fPoint));
 			}
 		}
 	}
