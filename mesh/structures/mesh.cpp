@@ -127,7 +127,8 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	// number of common nodes to be neighbor
 	ncommon = 4;
 	for (eslocal i = first, index = 0; i < last; i++, index++) {
-		_elements[i]->fillNodes(n + e[index]);
+		const Element* el = _elements[i];
+		memcpy(n + e[index], el->indices(), el->size() * sizeof(eslocal));
 		if (ncommon > _elements[i]->nCommon()) {
 			ncommon = _elements[i]->nCommon();
 		}
@@ -327,12 +328,11 @@ Mesh::~Mesh()
 	}
 }
 
-void Mesh::saveNodeArray(eslocal *nodeArray, size_t part)
+void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) const
 {
-	size_t p = 0;
 	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		_elements[i]->fillNodes(nodeArray + p);
-		p += _elements[i]->size();
+		const Element* e = _elements[i];
+		memcpy(nodeArray + i * e->size(), e->indices(), e->size() * sizeof(eslocal));
 	}
 }
 
@@ -699,8 +699,6 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 
 	// node to element
 	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
-	// node to neighbors nodes
-	std::vector<std::set<eslocal> > neighbours(_coordinates.size());
 
 	for (size_t i = 0; i < parts(); i++) {
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
@@ -753,7 +751,6 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			commonFaces[i][j] = projection[commonFaces[i][j]];
 		}
 	}
-	//cfm.coordinates() = _coordinates;
 	cfm._elements.reserve(commonFaces.size());
 
 	// create mesh

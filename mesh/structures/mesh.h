@@ -78,7 +78,7 @@ public:
 		return _size;
 	}
 
-	void saveNodeArray(eslocal *nodeArray, size_t part);
+	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 
 	void getSurface(SurfaceMesh &surface) const;
 	void getCommonFaces(CommonFacesMesh &commonFaces) const;

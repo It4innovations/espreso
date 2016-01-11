@@ -51,11 +51,6 @@ public:
 		return indices()[index];
 	}
 
-	void fillNodes(eslocal *nodes) const
-	{
-		memcpy(nodes, indices(), size() * sizeof(eslocal));
-	}
-
 	void setParams(eslocal *params)
 	{
 		for (size_t i = 0; i < PARAMS_SIZE; i++) {
