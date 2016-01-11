@@ -45,32 +45,8 @@ struct APIHolder {
 };
 
 struct API {
-
-	API(SparseCSRMatrix<eslocal> &K,
-		std::vector<double> &rhs,
-		std::vector<eslocal> &dirichlet_indices,
-		std::vector<double> &dirichlet_values,
-		std::vector<eslocal> &l2g,
-		std::vector<eslocal> &neighbourRanks)
-	:K(K), rhs(rhs), dirichlet_indices(dirichlet_indices), dirichlet_values(dirichlet_values),
-	 l2g(l2g), neighbourRanks(neighbourRanks), indexing(0) { };
-
-	API(APIHolder &holder): K(*holder.K), rhs(*holder.rhs),
-		dirichlet_indices(*holder.dirichlet_indices), dirichlet_values(*holder.dirichlet_values),
-		l2g(*holder.l2g), neighbourRanks(*holder.neighbourRanks), indexing(holder.indexing) { };
-
-	SparseCSRMatrix<eslocal> &K;
-	std::vector<double> &rhs;
-	std::vector<eslocal> &dirichlet_indices;
-	std::vector<double> &dirichlet_values;
-	std::vector<eslocal> &l2g;
-	std::vector<eslocal> &neighbourRanks;
-	eslocal indexing;
-};
-
-struct API2 {
-	API2() {};
-	API2(APIHolder &holder):
+	API() {};
+	API(APIHolder &holder):
 		K(holder.K), size(holder.rhs->size()), rhs(holder.rhs->data()), l2g(holder.l2g->data()),
 		dirichlet_size(holder.dirichlet_indices->size()),
 		dirichlet_indices(holder.dirichlet_indices->data()),

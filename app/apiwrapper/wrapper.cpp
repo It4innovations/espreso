@@ -122,9 +122,9 @@ void FETI4ICreateInstance(
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
-  
-  std::cout.setstate(std::ios_base::failbit);
-	API2 api;
+
+	std::cout.setstate(std::ios_base::failbit);
+	API api;
 	DataHolder::instances.push_back(new FETI4IStructInstance(api));
 	DataHolder::instances.back()->K = matrix->data;
 	api.K = &(DataHolder::instances.back()->K);
@@ -136,7 +136,7 @@ void FETI4ICreateInstance(
 	api.l2g = l2g;
 	api.neighbours_size = neighbours_size;
 	api.neighbours = neighbours;
-	DataHolder::instances.back()->data = assembler::LinearElasticity<assembler::API2>(api);
+	DataHolder::instances.back()->data = assembler::LinearElasticity<assembler::API>(api);
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();

@@ -21,11 +21,5 @@ size_t Assembler<API>::subdomains()
 	return 1;
 }
 
-template<>
-size_t Assembler<API2>::subdomains()
-{
-	return 1;
-}
-
 }
 

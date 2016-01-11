@@ -128,12 +128,6 @@ void Linear<API>::fillAPIHolder(APIHolder *holder)
 
 }
 
-template <>
-void Linear<API2>::fillAPIHolder(APIHolder *holder)
-{
-
-}
-
 template <class TInput>
 void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 {

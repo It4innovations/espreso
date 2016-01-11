@@ -70,9 +70,9 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assemb
 		assembler::AssemblerBase * assembler = getAssembler(mesh, surface, apiHolder);
 		esconfig::assembler::discretization = esconfig::assembler::API;
 		assembler->fillAPIHolder(apiHolder);
-		API2 api(*apiHolder);
+		API api(*apiHolder);
 		delete assembler;
-		return createAssembler<API2>(api);
+		return createAssembler<API>(api);
 	}
 	default:
 		std::cerr << "Unknown discretization.\n";

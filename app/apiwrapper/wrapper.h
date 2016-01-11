@@ -3,6 +3,7 @@
 #define ESPRESO_WRAPPER_H_
 
 #include <iostream>
+#include <list>
 
 #include "esconfig.h"
 #include "esassemblers.h"
@@ -16,9 +17,9 @@ struct FETI4IStructMatrix {
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(assembler::LinearElasticity<assembler::API2> data): data(data), K(0, 0) { };
+	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data): data(data), K(0, 0) { };
 
-	assembler::LinearElasticity<assembler::API2> data;
+	assembler::LinearElasticity<assembler::API> data;
 	SparseCSRMatrix<eslocal> K;
 };
 
