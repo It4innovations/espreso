@@ -64,11 +64,7 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 	_fixPoints.clear();
 	_fixPoints.resize(parts(), std::vector<eslocal>(fixPoints));
 
-#ifndef DEBUG
 	cilk_for (eslocal i = 0; i < parts(); i++) {
-#else
-	for (eslocal i = 0; i < parts(); i++) {
-#endif
 		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
 
 		for (eslocal j = 0; j < fixPoints; j++) {
@@ -356,42 +352,6 @@ static bool isOuterFace(
 	return false;
 }
 
-static eslocal isOnBoundary(
-		std::vector<std::vector<eslocal> > &nodesElements,
-		std::vector<eslocal> &face,
-		const std::vector<eslocal> &partPtrs,
-		eslocal differentParts)
-{
-	eslocal NOT_ON_BOUNDARY = -1;
-	std::vector<eslocal> result(nodesElements[face[0]]);
-	std::vector<eslocal>::iterator it = result.end();
-
-	for (size_t i = 1; i < face.size(); i++) {
-		std::vector<eslocal> tmp(result.begin(), it);
-		it = std::set_intersection(tmp.begin(), tmp.end(),
-				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
-				result.begin());
-		if (it - result.begin() == 1) {
-			return NOT_ON_BOUNDARY;
-		}
-	}
-
-	eslocal counter = 0;
-	eslocal minPart = result[0];
-	for (size_t r = 1; r < it - result.begin(); r++) {
-		for (size_t i = 1; i < partPtrs.size() - 1; i++) {
-			if (result[r - 1] < partPtrs[i] && partPtrs[i] <= result[r]) {
-				if (minPart > result[r]) {
-					minPart = result[r];
-				}
-				counter++;
-				break;
-			}
-		}
-	}
-	return (counter >= differentParts) ? minPart : NOT_ON_BOUNDARY;
-}
-
 static eslocal findSubdomains(
 		std::vector<std::vector<eslocal> > &nodesElements,
 		std::vector<eslocal> &face,
@@ -437,11 +397,8 @@ void Mesh::getSurface(Mesh &surface) const
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
-#ifndef DEBUG
+
 	cilk_for (size_t i = 0; i < parts(); i++) {
-#else
-	for (size_t i = 0; i < parts(); i++) {
-#endif
 		// Compute nodes' adjacent elements
 		std::vector<std::vector<eslocal> > nodesElements(_coordinates.localSize(i));
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
