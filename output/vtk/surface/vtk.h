@@ -9,13 +9,16 @@ namespace esoutput {
 class VTK_Surface: public VTK {
 
 public:
-	VTK_Surface(const mesh::Mesh &mesh, const std::string &path): _full(mesh), _surface(mesh), VTK(_surface, path)  { };
+	VTK_Surface(const mesh::Mesh &mesh, const std::string &path): _full(mesh), VTK(_surface, path)
+	{
+		mesh.getSurface(_surface);
+	};
 
 protected:
 	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
 
 	const mesh::Mesh &_full;
-	mesh::SurfaceMesh _surface;
+	mesh::Mesh _surface;
 };
 
 

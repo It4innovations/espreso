@@ -17,10 +17,10 @@ struct FEM {
 };
 
 struct BEM {
-	BEM(mesh::Mesh &mesh, mesh::SurfaceMesh &surface): mesh(mesh), surface(surface) { };
+	BEM(mesh::Mesh &mesh, mesh::Mesh &surface): mesh(mesh), surface(surface) { };
 
 	mesh::Mesh &mesh;
-	mesh::SurfaceMesh &surface;
+	mesh::Mesh &surface;
 };
 
 
@@ -117,8 +117,6 @@ protected:
 	Assembler(TInput &input): _input(input), _verbose(true) {};
 
 	virtual size_t subdomains();
-	virtual size_t rank();
-	virtual size_t size();
 
 	TInput _input;
 

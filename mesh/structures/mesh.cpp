@@ -5,7 +5,7 @@
 
 using namespace mesh;
 
-Mesh::Mesh(int rank, int size):_elements(0), _fixPoints(0), _rank(rank), _size(size)
+Mesh::Mesh():_elements(0), _fixPoints(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -426,7 +426,7 @@ static eslocal findSubdomains(
 	return (subdomains.size() > differentParts) ? result[0] : NOT_ON_BOUNDARY;
 }
 
-void Mesh::getSurface(SurfaceMesh &surface) const
+void Mesh::getSurface(Mesh &surface) const
 {
 	// vector of faces in all parts
 	std::vector<std::vector<std::vector<eslocal> > > faces(parts());
@@ -517,176 +517,6 @@ void Mesh::getSurface(SurfaceMesh &surface) const
 
 }
 
-void Mesh::getCommonFaces(CommonFacesMesh &commonFaces) const
-{
-	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(parts());
-	// number of elements in all parts
-	std::vector<size_t> elementsCount(parts(), 0);
-
-	if (parts() < 1) {
-		std::cerr << "Internal error: _partPtrs.size()\n";
-		exit(EXIT_FAILURE);
-	}
-
-	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
-	for (size_t i = 0; i < parts(); i++) {
-		// Compute nodes' adjacent elements
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
-			}
-		}
-	}
-
-#ifndef DEBUG
-	cilk_for (size_t i = 0; i < parts(); i++) {
-#else
-	for (size_t i = 0; i < parts(); i++) {
-#endif
-		// compute number of elements and fill used nodes
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->faces(); k++) {
-				std::vector<eslocal> face = _elements[j]->getFace(k);
-				for (size_t f = 0; f < face.size(); f++) {
-					face[f] = _coordinates.clusterIndex(face[f], i);
-				}
-				if (isOnBoundary(nodesElements, face, _partPtrs, 1) >= 0) {
-					faces[i].push_back(face);
-					elementsCount[i] += 1;
-				}
-			}
-		}
-	}
-
-	commonFaces.coordinates() = _coordinates;
-
-	size_t count = 0;
-	for (size_t i = 0; i < parts(); i++) {
-		count += elementsCount[i];
-	}
-	commonFaces._elements.reserve(count);
-	commonFaces._partPtrs.clear();
-	commonFaces._partPtrs.reserve(_partPtrs.size());
-
-	// create surface mesh
-	commonFaces._partPtrs.push_back(commonFaces._elements.size());
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
-		for (size_t j = 0; j < faces[i].size(); j++) {
-			std::vector<eslocal> &face = faces[i][j];
-			if (faces[i][j].size() == 3) {
-				commonFaces._elements.push_back(new Triangle(&face[0]));
-			}
-			if (faces[i][j].size() == 4) {
-				commonFaces._elements.push_back(new Square(&face[0]));
-			}
-		}
-		commonFaces._partPtrs.push_back(commonFaces._elements.size());
-		commonFaces.computeLocalIndices(commonFaces._partPtrs.size() - 1);
-	}
-}
-
-void Mesh::getCornerLines(CornerLinesMesh &cornerLines) const
-{
-	if (parts() < 1) {
-		std::cerr << "Internal error: _partPtrs.size()\n";
-		exit(EXIT_FAILURE);
-	}
-
-	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
-	for (size_t i = 0; i < parts(); i++) {
-		// Compute nodes' adjacent elements
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				nodesElements[_coordinates.clusterIndex(_elements[j]->node(k), i)].push_back(j);
-			}
-		}
-	}
-
-	std::vector<std::set<eslocal> > nodeParts(_coordinates.size());
-
-	for (size_t i = 0; i < parts(); i++) {
-		for (size_t j = 0; j < _coordinates.localSize(i); j++) {
-			nodeParts[_coordinates.clusterIndex(j, i)].insert(i);
-		}
-	}
-
-	for (size_t i = 0; i < parts(); i++) {
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->faces(); k++) {
-				std::vector<eslocal> face = _elements[j]->getFace(k);
-				for (size_t f = 0; f < face.size(); f++) {
-					face[f] = _coordinates.clusterIndex(face[f], i);
-				}
-				if (isOuterFace(nodesElements, face)) {
-					for (size_t f = 0; f < face.size(); f++) {
-						nodeParts[face[f]].insert(parts());
-					}
-				}
-			}
-		}
-	}
-
-	std::vector<std::set<eslocal> > neighbours(_coordinates.size());
-	for (size_t p = 0; p < parts(); p++) {
-		for (eslocal j = _partPtrs[p]; j < _partPtrs[p + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->size(); k++) {
-				std::vector<eslocal> n = _elements[j]->getNeighbours(k);
-				eslocal c1 = _coordinates.clusterIndex(_elements[j]->node(k), p);
-				for (size_t i = 0; i < n.size(); i++) {
-					eslocal c2 = _coordinates.clusterIndex(n[i], p);
-					if (c1 < c2) {
-						neighbours[c1].insert(c2);
-					}
-				}
-			}
-		}
-	}
-
-	cornerLines.coordinates() = _coordinates;
-
-	std::vector<eslocal> result;
-	std::vector<eslocal>::iterator end;
-	std::vector<eslocal>::iterator pit;
-	std::vector<std::vector<eslocal> > pairs(parts());
-
-	std::set<eslocal>::iterator it;
-	for (size_t i = 0; i < neighbours.size(); i++) {
-		for (it = neighbours[i].begin(); it != neighbours[i].end(); ++it) {
-			result.resize(nodeParts[i].size());
-			end = std::set_intersection(
-				nodeParts[i].begin(), nodeParts[i].end(),
-				nodeParts[*it].begin(), nodeParts[*it].end(),
-				result.begin());
-			if (end - result.begin() >= 3) {
-				for (pit = result.begin(); pit != end && *pit < parts(); ++pit) {
-					pairs[*pit].push_back(i);
-					pairs[*pit].push_back(*it);
-				}
-			}
-		}
-	}
-
-	eslocal size = 0;
-	for (size_t i = 0; i < parts(); i++) {
-		size += pairs[i].size() / 2;
-	}
-
-	cornerLines._elements.reserve(size);
-	cornerLines._partPtrs.clear();
-	cornerLines._partPtrs.reserve(_partPtrs.size());
-
-	cornerLines._partPtrs.push_back(cornerLines._elements.size());
-	for (size_t i = 0; i < parts(); i++) {
-		for (size_t j = 0; j < pairs[i].size(); j += 2) {
-			cornerLines._elements.push_back(new Line(&pairs[i][j]));
-		}
-		cornerLines._partPtrs.push_back(cornerLines._elements.size());
-		cornerLines.computeLocalIndices(cornerLines._partPtrs.size() - 1);
-	}
-
-}
-
 void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averaging)
 {
 	if (parts() < 1) {
@@ -737,7 +567,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	}
 
 	// create mesh from common faces
-	Mesh cfm(_rank, _size);
+	Mesh cfm;
 	Element *el;
 	eslocal index = 0;
 	for (size_t i = 0; i < _coordinates.size(); i++) {
@@ -793,7 +623,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 		return;
 	}
 
-	Mesh clm(_rank, _size);
+	Mesh clm;
 	std::vector<std::vector<std::vector<eslocal> > > nodesFaces(cfm.parts());
 	for (size_t p = 0; p < cfm.parts(); p++) {
 		nodesFaces[p].resize(cfm._coordinates.localSize(p));

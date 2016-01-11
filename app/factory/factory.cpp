@@ -5,31 +5,27 @@ using namespace assembler;
 
 static mesh::Mesh* getMesh(int argc, char **argv)
 {
-	mesh::Mesh *mesh = new mesh::Mesh(esconfig::MPIrank, esconfig::MPIsize);
+	mesh::Mesh *mesh = new mesh::Mesh();
 	switch (esconfig::mesh::input) {
 
 	case esconfig::mesh::ANSYS: {
 		esinput::Ansys loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::OPENFOAM: {
 		esinput::OpenFOAM loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::ESDATA_IN: {
 		esinput::Esdata loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	case esconfig::mesh::GENERATOR: {
 		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
-		//mesh->partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
 		break;
 	}
 	}
@@ -53,7 +49,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 }
 
-static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface, assembler::APIHolder *apiHolder)
+static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assembler::APIHolder *apiHolder)
 {
 	switch (esconfig::assembler::discretization) {
 
@@ -62,7 +58,8 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::SurfaceMesh *surface,
 		return createAssembler<FEM>(fem);
 	}
 	case esconfig::assembler::BEM: {
-		surface = new mesh::SurfaceMesh(*mesh);
+		surface = new mesh::Mesh();
+		mesh->getSurface(*surface);
 		surface->computeFixPoints(esconfig::mesh::fixPoints);
 		BEM bem(*mesh, *surface);
 		return createAssembler<BEM>(bem);

@@ -46,7 +46,7 @@ public:
 	friend class esinput::InternalLoader;
 	friend class esinput::ExternalLoader;
 
-	Mesh(int rank, int size);
+	Mesh();
 
 	const Coordinates& coordinates() const
 	{
@@ -68,21 +68,9 @@ public:
 		return _clusterBoundaries;
 	}
 
-	int rank() const
-	{
-		return _rank;
-	}
-
-	int size() const
-	{
-		return _size;
-	}
-
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 
-	void getSurface(SurfaceMesh &surface) const;
-	void getCommonFaces(CommonFacesMesh &commonFaces) const;
-	void getCornerLines(CornerLinesMesh &cornerLines) const;
+	void getSurface(Mesh &surface) const;
 
 	~Mesh();
 
@@ -143,46 +131,6 @@ protected:
 
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
-
-	/** @brief MPI rank */
-	int _rank;
-
-	/** @brief MPI size */
-	int _size;
-};
-
-
-class SurfaceMesh: public Mesh
-{
-
-public:
-	SurfaceMesh(int rank, int size): Mesh(rank, size) { };
-	SurfaceMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
-	{
-		mesh.getSurface(*this);
-	}
-};
-
-class CommonFacesMesh: public Mesh
-{
-
-public:
-	CommonFacesMesh(int rank, int size): Mesh(rank, size) { };
-	CommonFacesMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
-	{
-		mesh.getCommonFaces(*this);
-	}
-};
-
-class CornerLinesMesh: public Mesh
-{
-
-public:
-	CornerLinesMesh(int rank, int size): Mesh(rank, size) { };
-	CornerLinesMesh(const Mesh &mesh): Mesh(mesh.rank(), mesh.size())
-	{
-		mesh.getCornerLines(*this);
-	}
 };
 
 }

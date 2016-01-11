@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	mesh::Mesh m(0, 1);
+	mesh::Mesh m;
 	esinput::Ansys loader(argc, argv, 0, 1);
 	loader.load(m);
 	m.partitiate(atoi(argv[2]), 0);

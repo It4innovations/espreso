@@ -23,11 +23,11 @@ void Linear<TInput>::init()
 		KMf(s, false);
 		T(s);
 
-		if (this->_verbose && this->rank() == 0) {
+		if (this->_verbose && esconfig::MPIrank == 0) {
 			std::cout << s << " " ;
 		}
 	}
-	if (this->_verbose && this->rank() == 0) {
+	if (this->_verbose && esconfig::MPIrank == 0) {
 		std::cout << std::endl;
 	}
 
@@ -67,7 +67,7 @@ void Linear<TInput>::init()
 	timeLSconv.AddStart();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(this->rank(), this->size(), true);
+	_lin_solver.setup(esconfig::MPIrank, esconfig::MPIsize, true);
 
 	initSolver();
 

@@ -6,7 +6,7 @@ using namespace esoutput;
 void VTK::store(double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << _mesh.rank() << ".vtk";
+	ss << _path << esconfig::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
@@ -20,7 +20,7 @@ void VTK::store(double shrinkSubdomain, double shringCluster)
 void VTK::store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << _mesh.rank() << ".vtk";
+	ss << _path << esconfig::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();

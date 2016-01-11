@@ -81,8 +81,8 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 
 	std::map<eslocal, eslocal> :: iterator map_it;
 
-	int MPIrank = this->rank();
-	int MPIsize = this->size();
+	int MPIrank = esconfig::MPIrank;
+	int MPIsize = esconfig::MPIsize;
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 	std::vector<SparseIJVMatrix<eslocal> > &B0 = _B0;
 
@@ -564,8 +564,8 @@ void Gluing<API2>::computeClusterGluing(std::vector<size_t> &rows)
 
 	std::map<eslocal, eslocal> :: iterator map_it;
 
-	int MPIrank = this->rank();
-	int MPIsize = this->size();
+	int MPIrank = esconfig::MPIrank;
+	int MPIsize = esconfig::MPIsize;
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 	std::vector<SparseIJVMatrix<eslocal> > &B0 = _B0;
 
@@ -1110,8 +1110,8 @@ void Gluing<TInput>::computeSubdomainGluing()
 template <class TInput>
 void Gluing<TInput>::local_B1_global_resize() {
 
-	int MPIrank = this->rank();
-	int MPIsize = this->size();
+	int MPIrank = esconfig::MPIrank;
+	int MPIsize = esconfig::MPIsize;
 
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 
@@ -1173,8 +1173,8 @@ void Gluing<TInput>::local_B1_global_resize() {
 template <class TInput>
 void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 
-	int MPIrank = this->rank();
-	int MPIsize = this->size();
+	int MPIrank = esconfig::MPIrank;
+	int MPIsize = esconfig::MPIsize;
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 	std::vector<SparseIJVMatrix<eslocal> > &B0 = _B0;
 	const mesh::Coordinates &coordinates = this->_input.mesh.coordinates();
@@ -1238,8 +1238,8 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 template <class TInput>
 void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 {
-	int MPIrank = this->rank();
-	int MPIsize = this->size();
+	int MPIrank = esconfig::MPIrank;
+	int MPIsize = esconfig::MPIsize;
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 	std::vector<SparseIJVMatrix<eslocal> > &B0 = _B0;
 	const mesh::Coordinates &coordinates = this->_input.mesh.coordinates();
