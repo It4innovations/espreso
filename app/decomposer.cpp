@@ -13,7 +13,7 @@ int main(int argc, char** argv)
 	mesh::Mesh m;
 	esinput::Ansys loader(argc, argv, 0, 1);
 	loader.load(m);
-	m.partitiate(atoi(argv[2]), 0);
+	m.partitiate(atoi(argv[2]));
 	esoutput::VTK_Full vtk(m, argv[3]);
 }
 

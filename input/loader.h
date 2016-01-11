@@ -14,7 +14,8 @@ public:
 	{
 		points(mesh._coordinates);
 		elements(mesh._elements);
-		mesh.partitiate(esconfig::mesh::subdomains, esconfig::mesh::fixPoints);
+		mesh.partitiate(esconfig::mesh::subdomains);
+		mesh.computeFixPoints(esconfig::mesh::fixPoints);
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
 		mesh.computeBoundaries();
@@ -42,9 +43,7 @@ public:
 		points(mesh._coordinates);
 
 		elements(mesh._elements, mesh._partPtrs);
-		for (size_t i = 0; i < mesh.parts(); i++) {
-			mesh.computeLocalIndices(i);
-		}
+		mesh.remapElementsToSubdomain();
 
 		fixPoints(mesh._fixPoints);
 		for (size_t p = 0; p < mesh.parts(); p++) {

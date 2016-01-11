@@ -48,6 +48,7 @@ class Coordinates
 
 public:
 
+	friend class Mesh;
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 	Coordinates(): _points(0), _clusterIndex(1), _property(PROPERTIES_COUNT) { };
@@ -114,12 +115,12 @@ public:
 	}
 
 
-	eslocal clusterSize() const
+	size_t clusterSize() const
 	{
 		return _points.size();
 	}
 
-	eslocal localSize(eslocal part) const
+	size_t localSize(eslocal part) const
 	{
 		return _clusterIndex[part].size();
 	}

@@ -12,36 +12,42 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 	_partPtrs[1] = 0;
 }
 
-void Mesh::partitiate(eslocal parts, eslocal fixPoints)
+void Mesh::partitiate(size_t parts)
 {
 	if (this->parts()) {
-		// reset elements node indices
-		for (eslocal p = 0; p < this->parts(); p++) {
-			for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-				for (eslocal n = 0; n < _elements[e]->size(); n++) {
-					_elements[e]->node(n) = _coordinates.clusterIndex(_elements[e]->node(n), p);
+		this->remapElementsToCluster();
+	}
+
+	_partPtrs.resize(parts + 1);
+	_partPtrs[0] = 0;
+
+	eslocal *ePartition = getPartition(0, _elements.size(), parts);
+
+	Element *e;
+	eslocal p;
+	for (size_t part = 0; part < parts; part++) {
+		eslocal index = _partPtrs[part];	// index of last ordered element
+		for (size_t i = _partPtrs[part]; i < _elements.size(); i++) {
+			if (ePartition[i] == part) {
+				if (i == index) {
+					index++;
+				} else {
+					e = _elements[i];
+					_elements[i] = _elements[index];
+					_elements[index] = e;
+					p = ePartition[i];
+					ePartition[i] = ePartition[index];
+					ePartition[index] = p;
+					index++;
 				}
 			}
 		}
+		_partPtrs[part + 1] = index;
 	}
-	_partPtrs.resize(parts + 1);
-	_coordinates.localClear();
-	_coordinates.localResize(parts);
+	delete[] ePartition;
 
-	// Call METIS to get partition of a whole mesh
-	eslocal *elementPartition = getPartition(0, _elements.size(), parts);
-
-	// Rearrange mesh's elements
-	partitiate(elementPartition);
-
-	delete[] elementPartition;
-
-	if (fixPoints > 0) {
-		computeFixPoints(fixPoints);
-	} else {
-		_fixPoints.resize(parts, std::vector<eslocal>());
-	}
-
+	remapElementsToSubdomain();
+	computeFixPoints(0);
 	computeBoundaries();
 }
 
@@ -49,6 +55,10 @@ void Mesh::computeBoundaries()
 {
 	_subdomainBoundaries.clear();
 	_subdomainBoundaries.resize(_coordinates.size());
+
+	// reset corners
+	_subdomainBoundaries._averaging.clear();
+	std::fill(_subdomainBoundaries._corners.begin(), _subdomainBoundaries._corners.end(), false);
 
 	for (size_t p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
@@ -59,10 +69,14 @@ void Mesh::computeBoundaries()
 	}
 }
 
-void Mesh::computeFixPoints(eslocal fixPoints)
+void Mesh::computeFixPoints(size_t fixPoints)
 {
 	_fixPoints.clear();
 	_fixPoints.resize(parts(), std::vector<eslocal>(fixPoints));
+
+	if (fixPoints == 0) {
+		return;
+	}
 
 	cilk_for (eslocal i = 0; i < parts(); i++) {
 		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], fixPoints);
@@ -77,6 +91,21 @@ void Mesh::computeFixPoints(eslocal fixPoints)
 		_fixPoints[i].resize(it - _fixPoints[i].begin());
 
 		delete[] eSubPartition;
+	}
+}
+
+static void checkMETISResult(eslocal result)
+{
+	switch (result) {
+	case METIS_ERROR_INPUT:
+		eslog::error << "An input for METIS procedure is incorrect.\n";
+		exit(EXIT_FAILURE);
+	case METIS_ERROR_MEMORY:
+		eslog::error << "There is not enough memory for compute a partition.\n";
+		exit(EXIT_FAILURE);
+	case METIS_ERROR:
+		eslog::error << "METIS fail computation.\n";
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -158,61 +187,6 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	return ePartition;
 }
 
-void Mesh::partitiate(eslocal *ePartition)
-{
-	_partPtrs[0] = 0;
-
-	Element *e;
-	eslocal p;
-	for (size_t part = 0; part < _partPtrs.size() - 1; part++) {
-		eslocal index = _partPtrs[part];	// index of last ordered element
-		for (size_t i = _partPtrs[part]; i < _elements.size(); i++) {
-			if (ePartition[i] == part) {
-				if (i == index) {
-					index++;
-				} else {
-					e = _elements[i];
-					_elements[i] = _elements[index];
-					_elements[index] = e;
-					p = ePartition[i];
-					ePartition[i] = ePartition[index];
-					ePartition[index] = p;
-					index++;
-				}
-			}
-		}
-		_partPtrs[part + 1] = index;
-		computeLocalIndices(part);
-	}
-}
-
-void Mesh::computeLocalIndices(size_t part)
-{
-	std::vector<eslocal> nodeMap(_coordinates.clusterSize(), -1);
-
-	// Compute mask of nodes
-	for (eslocal e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
-		for (size_t n = 0; n < _elements[e]->size(); n++) {
-			nodeMap[_elements[e]->node(n)] = 1;
-		}
-	}
-
-	// re-index nodes
-	eslocal nSize = 0;
-	for (eslocal k = 0; k < _coordinates.clusterSize(); k++) {
-		if (nodeMap[k] == 1) {
-			nodeMap[k] = nSize++;
-		}
-	}
-
-	for (eslocal e = _partPtrs[part]; e < _partPtrs[part + 1]; e++) {
-		for (eslocal n = 0; n < _elements[e]->size(); n++) {
-			_elements[e]->node(n) = nodeMap[_elements[e]->node(n)];
-		}
-	}
-
-	_coordinates.computeLocal(part, nodeMap, nSize);
-}
 
 eslocal Mesh::getCentralNode(
 		eslocal first,
@@ -289,32 +263,6 @@ eslocal Mesh::getCentralNode(
 	delete[] y;
 
 	return result;
-}
-
-void Mesh::checkMETISResult(eslocal result) const
-{
-	switch (result) {
-	case METIS_ERROR_INPUT:
-		fprintf(stderr, "An input for METIS procedure is incorrect.\n");
-		exit(EXIT_FAILURE);
-	case METIS_ERROR_MEMORY:
-		fprintf(stderr, "There is not enough memory for compute a partition.\n");
-		exit(EXIT_FAILURE);
-	case METIS_ERROR:
-		fprintf(stderr, "METIS fail computation.\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-void Mesh::checkMKLResult(eslocal result) const
-{
-	switch (result) {
-	case 0:
-		return;
-	default:
-		std::cerr << "MKL error: " << result << ".\n";
-		exit(EXIT_FAILURE);
-	}
 }
 
 Mesh::~Mesh()
@@ -466,12 +414,11 @@ void Mesh::getSurface(Mesh &surface) const
 			}
 		}
 		surface._partPtrs.push_back(surface._elements.size());
-		surface.computeLocalIndices(surface._partPtrs.size() - 2);
-
 	}
 
+	surface.remapElementsToSubdomain();
+	surface.computeFixPoints(0);
 	surface.computeBoundaries();
-
 }
 
 void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averaging)
@@ -561,11 +508,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			}
 		}
 	}
-	cfm._coordinates.localClear();
-	cfm._coordinates.localResize(cfm.parts());
-	for (size_t p = 0; p < cfm.parts(); p++) {
-		cfm.computeLocalIndices(p);
-	}
+	cfm.remapElementsToSubdomain();
 
 	if (faces) {
 		cfm.computeFixPoints(number);
@@ -700,11 +643,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 		}
 	}
 
-	clm._coordinates.localClear();
-	clm._coordinates.localResize(clm.parts());
-	for (size_t p = 0; p < clm.parts(); p++) {
-		clm.computeLocalIndices(p);
-	}
+	clm.remapElementsToSubdomain();
 	if (averaging) {
 		clm.computeFixPoints(1);
 		for (size_t p = 0; p < clm.parts(); p++) {
@@ -732,6 +671,56 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			for (size_t i = 0; i < clm.getFixPoints()[p].size(); i++) {
 				eslocal fPoint = clm.coordinates().globalIndex(clm.getFixPoints()[p][i], p);
 				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(fPoint));
+			}
+		}
+	}
+}
+
+void Mesh::remapElementsToSubdomain()
+{
+	std::vector<eslocal> nodeMap(_coordinates.clusterSize(), -1);
+	_coordinates._clusterIndex.clear();
+	_coordinates._clusterIndex.resize(parts());
+
+	for (size_t p = 0; p < parts(); p++) {
+		std::fill(nodeMap.begin(), nodeMap.end(), -1);
+
+		// Compute mask of nodes
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (size_t n = 0; n < _elements[e]->size(); n++) {
+				nodeMap[_elements[e]->node(n)] = 1;
+			}
+		}
+
+		// re-index nodes
+		eslocal nSize = 0;
+		for (size_t c = 0; c < _coordinates.clusterSize(); c++) {
+			if (nodeMap[c] == 1) {
+				nodeMap[c] = nSize++;
+			}
+		}
+
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (eslocal n = 0; n < _elements[e]->size(); n++) {
+				_elements[e]->node(n) = nodeMap[_elements[e]->node(n)];
+			}
+		}
+
+		_coordinates._clusterIndex[p].reserve(nSize);
+		for (size_t c = 0; c < _coordinates.clusterSize(); c++) {
+			if (nodeMap[c] >= 0) {
+				_coordinates._clusterIndex[p].push_back(c);
+			}
+		}
+	}
+}
+
+void Mesh::remapElementsToCluster()
+{
+	for (eslocal p = 0; p < this->parts(); p++) {
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (eslocal n = 0; n < _elements[e]->size(); n++) {
+				_elements[e]->node(n) = _coordinates.clusterIndex(_elements[e]->node(n), p);
 			}
 		}
 	}

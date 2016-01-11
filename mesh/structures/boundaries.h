@@ -13,6 +13,7 @@ class Boundaries
 
 public:
 
+	friend class Mesh;
 	friend std::ostream& operator<<(std::ostream& os, const Boundaries &f);
 
 	void clear()

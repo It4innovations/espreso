@@ -33,10 +33,6 @@ namespace mesh {
 
 class Boundaries;
 
-class SurfaceMesh;
-class CommonFacesMesh;
-class CornerLinesMesh;
-
 class Mesh
 {
 
@@ -74,8 +70,8 @@ public:
 
 	~Mesh();
 
-	void partitiate(eslocal parts, eslocal fixPoints);
-	void computeFixPoints(eslocal fixPoints);
+	void partitiate(size_t parts);
+	void computeFixPoints(size_t fixPoints);
 	void computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averaging);
 
 	const std::vector<Element*>& getElements() const
@@ -107,12 +103,9 @@ protected:
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
 
-	void partitiate(eslocal *ePartition);
-	void computeLocalIndices(size_t part);
 	void computeBoundaries();
-
-	void checkMETISResult(eslocal result) const;
-	void checkMKLResult(eslocal result) const;
+	void remapElementsToSubdomain();
+	void remapElementsToCluster();
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
