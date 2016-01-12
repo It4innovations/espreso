@@ -502,8 +502,8 @@ template <class TInput>
 void Gluing<TInput>::computeSubdomainGluing()
 {
 
-#define PARALLEL
-//#define SEQUENTIAL
+//#define PARALLEL
+#define SEQUENTIAL
 
 
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
@@ -1035,7 +1035,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 	_vec_c = t_vec_c;
 #endif //SEQUENTIAL
 
-	if ( this->rank() == 0) { std::cout << " B0 size: " <<  lambda_count_B0  << std::endl; }
+	if ( esconfig::MPIrank == 0) { std::cout << " B0 size: " <<  lambda_count_B0  << std::endl; }
 
 
 }

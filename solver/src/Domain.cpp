@@ -110,16 +110,51 @@ void Domain::CreateKplus_R ( std::vector < std::vector < double > > coordinates 
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
-	Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index); 
+	switch (esconfig::solver::KSOLVER) {
+	case 0: {
+		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
+		break;
+	}
+//	case 1: {
+//		Kplus.SolveCG(K, x_in_y_out);
+//		break;
+//	}
+	default:
+		std::cerr << "Invalid KSOLVER value\n";
+		exit(EXIT_FAILURE);
+	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out) {
-	Kplus.Solve(x_in, y_out, 0, 0); 
+	switch (esconfig::solver::KSOLVER) {
+	case 0: {
+		Kplus.Solve(x_in, y_out, 0, 0);
+		break;
+	}
+//	case 1: {
+//		Kplus.SolveCG(K, x_in_y_out);
+//		break;
+//	}
+	default:
+		std::cerr << "Invalid KSOLVER value\n";
+		exit(EXIT_FAILURE);
+	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
-	//Kplus.Solve(x_in_y_out);
-	Kplus.SolveCG(K, x_in_y_out);
+	switch (esconfig::solver::KSOLVER) {
+	case 0: {
+		Kplus.Solve(x_in_y_out);
+		break;
+	}
+	case 1: {
+		Kplus.SolveCG(K, x_in_y_out);
+		break;
+	}
+	default:
+		std::cerr << "Invalid KSOLVER value\n";
+		exit(EXIT_FAILURE);
+	}
 }
 
 //void Domain::K_regularization ( )
