@@ -54,7 +54,7 @@ void Mesh::partitiate(size_t parts)
 void Mesh::computeBoundaries()
 {
 	_subdomainBoundaries.clear();
-	_subdomainBoundaries.resize(_coordinates.size());
+	_subdomainBoundaries.resize(_coordinates.clusterSize());
 
 	// reset corners
 	_subdomainBoundaries._averaging.clear();
@@ -432,7 +432,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	}
 
 	// node to element
-	std::vector<std::vector<eslocal> > nodesElements(_coordinates.size());
+	std::vector<std::vector<eslocal> > nodesElements(_coordinates.clusterSize());
 
 	for (size_t i = 0; i < parts(); i++) {
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
@@ -447,7 +447,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	std::vector<std::vector<eslocal> > commonFaces;
 	std::vector<eslocal> eSub;
 	std::vector<bool> subdomains;
-	std::vector<eslocal> projection(_coordinates.size(), 0);
+	std::vector<eslocal> projection(_coordinates.clusterSize(), 0);
 
 	for (eslocal i = 0; i < parts(); i++) {
 		// compute number of elements and fill used nodes
@@ -474,7 +474,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	Mesh cfm;
 	Element *el;
 	eslocal index = 0;
-	for (size_t i = 0; i < _coordinates.size(); i++) {
+	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
 		if (projection[i] == 1) {
 			cfm.coordinates().add(_coordinates[i], index, i);
 			projection[i] = index++;
@@ -536,8 +536,8 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	}
 
 	std::vector<std::pair<eslocal, eslocal> > outerFaces;
-	std::vector<char> nSubdomains(cfm.coordinates().size() * cfm.parts(), 0);
-	std::vector<eslocal> points(cfm.coordinates().size(), 0);
+	std::vector<char> nSubdomains(cfm.coordinates().clusterSize() * cfm.parts(), 0);
+	std::vector<eslocal> points(cfm.coordinates().clusterSize(), 0);
 	clm._partPtrs.clear();
 	clm._partPtrs.push_back(0);
 	for (size_t p = 0; p < cfm.parts(); p++) {
@@ -565,14 +565,14 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	outerFaces.resize(std::distance(outerFaces.begin(), it));
 
 	eslocal linePoints = 0;
-	for (size_t i = 0; i < cfm._coordinates.size(); i++) {
+	for (size_t i = 0; i < cfm._coordinates.clusterSize(); i++) {
 		if (points[i] == 1) {
 			clm.coordinates().add(cfm._coordinates[i], linePoints, i);
 			points[i] = linePoints++;
 		}
 	}
 
-	std::vector<bool> mask(cfm.coordinates().size(), false);
+	std::vector<bool> mask(cfm.coordinates().clusterSize(), false);
 	size_t maskCounter = 0;
 	for (size_t i = 0; i < mask.size(); i++) {
 		char *s = nSubdomains.data() + i * cfm.parts();
@@ -585,7 +585,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 
 	size_t begin = 0;
 	std::vector<eslocal> tmpPair(2);
-	while (maskCounter < cfm.coordinates().size()) {
+	while (maskCounter < cfm.coordinates().clusterSize()) {
 		while (mask[begin]) {
 			begin++;
 		}
@@ -601,6 +601,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 		}
 		bool innerLine = std::count(s, e, 1) > 1;
 		std::set<eslocal> vertices;
+		bool flag = true;
 		for (size_t i = 0; i < outerFaces.size(); i++) {
 			char *p0s = nSubdomains.data() + outerFaces[i].first * cfm.parts();
 			char *p1s = nSubdomains.data() + outerFaces[i].second * cfm.parts();
@@ -619,17 +620,67 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 				}
 			}
 		}
-		if (vertices.size() > 2) {
-			// non-continuous edge -> separate it
-			std::cerr << "ERROR: non-continuous edge - not finished code!\n";
-			exit(0);
-		}
 		for (eslocal e = clm._elements.size() - 1; e >= clm._partPtrs.back(); e--) {
 			if (vertices.find(clm._elements[e]->node(0)) != vertices.end()
 					|| vertices.find(clm._elements[e]->node(1)) != vertices.end()) {
 
 				// erase elements with vertex corners
 				clm._elements.erase(clm._elements.begin() + e);
+			}
+		}
+		if (vertices.size() > 2) {
+			// non-continuous edge -> separate it
+			std::vector<std::pair<eslocal, eslocal> > neigh(clm.coordinates().clusterSize(), std::pair<eslocal, eslocal>(-1, -1));
+			std::vector<int> color(clm._elements.size() - clm._partPtrs.back());
+			auto next = [&] (eslocal node) {
+				if (neigh[node].first != -1 && color[neigh[node].first - clm._partPtrs.back()] == 0) {
+					return neigh[node].first;
+				};
+				if (neigh[node].second != -1 && color[neigh[node].second - clm._partPtrs.back()] == 0) {
+					return neigh[node].second;
+				};
+				return -1;
+			};
+			std::function<void(eslocal, int)> traverse = [&] (eslocal element, int lColor) {
+				color[element - clm._partPtrs.back()] = lColor;
+				eslocal e = next(clm._elements[element]->node(0));
+				if (e != -1 && color[e - clm._partPtrs.back()] == 0) {
+					traverse(e, lColor);
+				}
+				e = next(clm._elements[element]->node(1));
+				if (e != -1 && color[e - clm._partPtrs.back()] == 0) {
+					traverse(e, lColor);
+				}
+			};
+
+			for (eslocal e = clm._partPtrs.back(); e < clm._elements.size(); e++) {
+				if (neigh[clm._elements[e]->node(0)].first == -1) {
+					neigh[clm._elements[e]->node(0)].first = e;
+				} else {
+					neigh[clm._elements[e]->node(0)].second = e;
+				}
+				if (neigh[clm._elements[e]->node(1)].first == -1) {
+					neigh[clm._elements[e]->node(1)].first = e;
+				} else {
+					neigh[clm._elements[e]->node(1)].second = e;
+				}
+			}
+
+			int colors = 0;
+			for (eslocal e = clm._partPtrs.back(), i = 0; e < clm._elements.size(); e++, i++) {
+				if (color[i] == 0) {
+					traverse(e, ++colors);
+				}
+			}
+			std::vector<Element*> tmp(clm._elements.begin() + clm._partPtrs.back(), clm._elements.end());
+			clm._elements.resize(clm._partPtrs.back());
+			for (int c = 1; c <= colors; c++) {
+				for (size_t i = 0; i < color.size(); i++) {
+					if (color[i] == c) {
+						clm._elements.push_back(tmp[i]);
+					}
+				}
+				clm._partPtrs.push_back(clm._elements.size());
 			}
 		}
 		if (clm._partPtrs.back() < clm._elements.size()) {

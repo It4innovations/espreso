@@ -130,11 +130,6 @@ public:
 		return _clusterIndex.size();
 	}
 
-	size_t size() const
-	{
-		return _points.size();
-	}
-
 	const std::vector<eslocal>& localToCluster(eslocal part) const
 	{
 		return _clusterIndex[part];

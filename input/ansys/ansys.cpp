@@ -114,8 +114,8 @@ void Ansys::boundaryConditions(mesh::Coordinates &coordinates)
 
 void Ansys::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 {
-	boundaries.resize(mesh.coordinates().size());
-	for (size_t i = 0; i < mesh.coordinates().size(); i++) {
+	boundaries.resize(mesh.coordinates().clusterSize());
+	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		boundaries[i].insert(0);
 	}
 }

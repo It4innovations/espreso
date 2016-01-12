@@ -52,10 +52,10 @@ void VTK::coordinates(const mesh::Coordinates &coordinates, double shrinkSubdoma
 	_vtk << "POINTS " << cSize << " float\n";
 
 	mesh::Point cCenter;
-	for (size_t i = 0; i < coordinates.size(); i++) {
+	for (size_t i = 0; i < coordinates.clusterSize(); i++) {
 		cCenter += coordinates[i];
 	}
-	cCenter /= coordinates.size();
+	cCenter /= coordinates.clusterSize();
 
 
 	for (size_t p = 0; p < parts; p++) {

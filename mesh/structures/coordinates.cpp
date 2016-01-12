@@ -45,7 +45,7 @@ void Coordinates::computeLocal(eslocal part, std::vector<eslocal> &nodeMap, size
 
 std::ostream& mesh::operator<<(std::ostream& os, const Coordinates &c)
 {
-	for (size_t i = 0; i < c.size(); i++)
+	for (size_t i = 0; i < c.clusterSize(); i++)
 	{
 		os << c._points[i] << "\n";
 	}

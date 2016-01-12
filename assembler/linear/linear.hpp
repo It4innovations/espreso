@@ -169,8 +169,8 @@ void Linear<TInput>::fillAPIHolder(APIHolder *holder)
 		(*holder->dirichlet_values)[index] = it->second;
 	}
 
-	holder->l2g = new std::vector<eslocal>(coo.size() * 3);
-	for (size_t i = 0; i < coo.size(); i++) {
+	holder->l2g = new std::vector<eslocal>(coo.clusterSize() * 3);
+	for (size_t i = 0; i < coo.clusterSize(); i++) {
 		(*holder->l2g)[3 * i] = 3 * coo.globalIndex(i) + indexing;
 		(*holder->l2g)[3 * i + 1] = 3 * coo.globalIndex(i) + 1 + indexing;
 		(*holder->l2g)[3 * i + 2] = 3 * coo.globalIndex(i) + 2 + indexing;
