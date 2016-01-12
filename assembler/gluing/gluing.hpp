@@ -501,16 +501,22 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 template <class TInput>
 void Gluing<TInput>::computeSubdomainGluing()
 {
+
+#define PARALLEL
+//#define SEQUENTIAL
+
+
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
-	// TODO: cluster boundaries in surface
+	// TODO: cluster boundaries on surface
 	const mesh::Boundaries &globalBoundaries = this->_input.mesh.clusterBoundaries();
 
-	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
-	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
 
 
-	std::vector<size_t>::const_iterator vi;
-	std::set<eslocal>::const_iterator si1, si2;
+	if (_B1.size() != this->subdomains())
+		_B1.resize(this->subdomains());
+
+	if (_B0.size() != this->subdomains())
+		_B0.resize(this->subdomains());
 
 	eslocal lambda_count_B0 = 0, lambda_count_B1 = 0;
 
@@ -526,7 +532,168 @@ void Gluing<TInput>::computeSubdomainGluing()
 		properties[2] = mesh::DIRICHLET_Z;
 	}
 
-	std::vector<eslocal> local_prim_numbering_d(this->subdomains(), 0);
+#ifdef PARALLEL
+
+	/* Numbers of processors, value of PAR_NUM_THREADS */
+	int threads;
+	char * var = getenv("PAR_NUM_THREADS");
+    if(var != NULL)
+    	sscanf( var, "%d", &threads );
+	else {
+    	printf("Parallel generator of B matrix - Please set environment PAR_NUM_THREADS to 1");
+        exit(1);
+	}
+
+	std::vector < std::vector < std::vector < eslocal > > > mat_B_dir 				 (threads);
+	std::vector < std::vector<eslocal> > 					local_prim_numbering_d_l (threads);
+	std::vector<eslocal> 									lambda_count_B1_l 		 (threads, 0);
+	std::vector<eslocal> 									lambda_count_B1_sum 	 (threads, 0);
+
+
+
+
+	std::vector < std::vector < std::vector < double > > > 	vec_c_l ( threads );
+
+#pragma omp parallel num_threads(threads)
+	{
+		int this_thread = omp_get_thread_num();
+		int num_threads = omp_get_num_threads();
+
+
+		std::vector<size_t>::const_iterator vi_l;
+		std::set<eslocal>::const_iterator si1_l, si2_l;
+
+		mat_B_dir[this_thread].			  	  resize( this->subdomains()    );
+		local_prim_numbering_d_l[this_thread].resize( this->subdomains(), 0 );
+		vec_c_l[this_thread].                 resize( this->subdomains()    );
+
+		int chunk_size; 
+                if (num_threads > 1) 
+                    chunk_size = localBoundaries.size() / (num_threads-1);
+                else 
+                    chunk_size = localBoundaries.size(); 
+                    
+                for (int d = 0; d < this->subdomains(); d++) {
+			mat_B_dir[this_thread][d].reserve(chunk_size);
+			vec_c_l[this_thread][d].reserve(chunk_size);
+		}
+
+//#pragma omp for schedule (static, chunk_size)
+//		for (size_t i = 0; i < localBoundaries.size(); i++) {
+
+		size_t lo =  this_thread      * chunk_size;
+		size_t hi = (this_thread + 1) * chunk_size;
+
+		if (hi > localBoundaries.size())    hi = localBoundaries.size();
+		if (this_thread == num_threads - 1) hi = localBoundaries.size();
+
+		for (size_t i = lo; i < hi; i++) {
+
+			std::vector<bool> is_dirichlet(this->DOFs(), false);
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				for (vi_l = properties.begin(); vi_l != properties.end(); ++vi_l) {
+					const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi_l).values();
+					if (property.find(i) != property.end()) {
+
+						double dirichlet_value = property.at(i);
+
+						//is_dirichlet[0] = true;
+
+						mat_B_dir[this_thread][*si1_l].push_back( lambda_count_B1_l[this_thread] );
+						mat_B_dir[this_thread][*si1_l].push_back( local_prim_numbering_d_l[this_thread][*si1_l] + (vi_l - properties.begin()) );
+						mat_B_dir[this_thread][*si1_l].push_back( 1 );
+
+						vec_c_l   [this_thread][*si1_l].push_back( dirichlet_value );
+
+						//gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
+
+						//_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
+						//_lambda_map_sub_B1[*si1].	push_back(lambda_count_B1);
+						//_B1_duplicity[*si1].		push_back(1.0);
+						//_vec_c[*si1].				push_back(dirichlet_value);
+
+						lambda_count_B1_l[this_thread]++;
+					}
+				}
+			}
+
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				local_prim_numbering_d_l[this_thread][*si1_l] += this->DOFs();
+			}
+
+
+		}
+
+#pragma omp barrier
+
+#pragma omp master
+		{
+			lambda_count_B1_sum[0] = lambda_count_B1_l[0];
+			for (size_t th = 1; th < threads; th++) {
+				lambda_count_B1_sum[th] = lambda_count_B1_sum[th-1] + lambda_count_B1_l[th];
+				for (size_t d = 0; d < this->subdomains(); d++) {
+					local_prim_numbering_d_l[th][d] += local_prim_numbering_d_l[th - 1][d];
+				}
+			}
+		}
+
+
+#pragma omp for
+		for (size_t d = 0; d < this->subdomains(); d++) {
+
+			for (size_t th = 0; th < threads; th++) {
+				eslocal lambda_off = 0;
+				eslocal locDOF_off = 0;
+
+				if (th > 0) lambda_off = lambda_count_B1_sum[th-1];
+
+				for (size_t i = 0; i < mat_B_dir[th][d].size(); i = i + 3 ) {
+					if (th > 0) locDOF_off = local_prim_numbering_d_l[th-1][d];
+
+					eslocal lambda = mat_B_dir[th][d][i + 0] + lambda_off;
+				    eslocal locDOF = mat_B_dir[th][d][i + 1] + locDOF_off;
+
+				    //gB[d]( lambda , locDOF  ) = (double)mat_B_dir[th][d][i + 2];
+				    _B1[d].set ( lambda , locDOF, (double)mat_B_dir[th][d][i + 2]);
+
+					_lambda_map_sub_B1[d].	push_back(lambda);
+					_B1_duplicity[d]. 		push_back(1.0);
+
+				}
+
+				_vec_c[d].insert( _vec_c[d].end(), vec_c_l[th][d].begin(), vec_c_l[th][d].end() );
+
+			}
+		}
+
+#pragma omp master
+		{
+//			for (eslocal i = 0; i < lambda_count_B1_sum[threads - 1]; i++)
+//				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
+			lambda_count_B1 = lambda_count_B1_sum[threads - 1];
+		}
+	}
+#endif //PARALLEL
+
+#ifdef SEQUENTIAL
+
+	std::vector<SparseDOKMatrix<eslocal> > gB(this->subdomains());
+	std::vector<SparseDOKMatrix<eslocal> > lB(this->subdomains());
+
+	//std::vector<SparseIJVMatrix<eslocal> > gBij(this->subdomains());
+
+ //Dirichelt - seq version
+	std::vector<size_t>::const_iterator vi;
+	std::set<eslocal>::const_iterator si1, si2;
+
+	std::vector<std::vector<eslocal> > t_lambda_map_sub_clst;
+	std::vector<std::vector<eslocal> > t_lambda_map_sub_B1 ( this->subdomains() );
+	std::vector<std::vector<double> >  t_B1_duplicity ( this->subdomains() );
+	std::vector<std::vector<double> >  t_vec_c ( this->subdomains() );
+	std::vector<SparseDOKMatrix<eslocal> > t_gB(this->subdomains());
+	int 								t_lambda_count_B1 = 0;
+
+	std::vector<eslocal> t_local_prim_numbering_d(this->subdomains(), 0);
 	for (size_t i = 0; i < localBoundaries.size(); i++) {
 
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
@@ -539,56 +706,283 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 					is_dirichlet[0] = true;
 
-					gB[*si1](lambda_count_B1, local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
+					t_gB[*si1](t_lambda_count_B1, t_local_prim_numbering_d[*si1] + (vi - properties.begin())) =  1.0;
 
-					_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
-					_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
-					_B1_duplicity[*si1].push_back(1.0);
-					_vec_c[*si1].push_back(dirichlet_value);
+					t_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ t_lambda_count_B1, 0 }));
+					t_lambda_map_sub_B1[*si1].	push_back(t_lambda_count_B1);
+					t_B1_duplicity[*si1].		push_back(1.0);
+					t_vec_c[*si1].				push_back(dirichlet_value);
 
-					lambda_count_B1++;
+					t_lambda_count_B1++;
 				}
 			}
 		}
 
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-			local_prim_numbering_d[*si1] += this->DOFs();
+			t_local_prim_numbering_d[*si1] += this->DOFs();
+		}
+
+	}
+#endif //SEQUENTIAL
+
+#ifdef PARALLEL
+
+	std::vector < std::vector < std::vector < eslocal > > > mat_B0 				 	 (threads);
+	std::vector<eslocal> 									lambda_count_B0_l 		 (threads, 0);
+
+#pragma omp parallel num_threads(threads)
+	{
+		int this_thread = omp_get_thread_num();
+		int num_threads = omp_get_num_threads();
+
+		std::vector<size_t>::const_iterator vi_l;
+		std::set<eslocal>::const_iterator si1_l, si2_l;
+
+		mat_B_dir[this_thread].			  	  clear();
+		local_prim_numbering_d_l[this_thread].clear();
+
+		mat_B_dir[this_thread].			  resize( this->subdomains() );
+                mat_B0   [this_thread].                   resize( this->subdomains()  );
+		local_prim_numbering_d_l[this_thread].resize( this->subdomains(),0 );
+
+		int chunk_size; 
+                if (num_threads > 1) 
+                    chunk_size = localBoundaries.size() / (num_threads-1);
+                else 
+                    chunk_size = localBoundaries.size(); 
+                    
+		for (int d = 0; d < this->subdomains(); d++) {
+			mat_B_dir[this_thread][d].reserve(chunk_size);
+		}
+
+//#pragma omp for schedule (static, chunk_size)
+//		for (size_t i = 0; i < localBoundaries.size(); i++) {
+
+		size_t lo =  this_thread      * chunk_size;
+		size_t hi = (this_thread + 1) * chunk_size;
+
+		if (hi > localBoundaries.size())    hi = localBoundaries.size();
+		if (this_thread == num_threads - 1) hi = localBoundaries.size();
+
+		for (size_t i = lo; i < hi; i++) {
+
+			std::vector<bool> is_dirichlet(this->DOFs(), false);
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				for (vi_l = properties.begin(); vi_l != properties.end(); ++vi_l) {
+					const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi_l).values();
+					if (property.find(i) != property.end()) {
+						is_dirichlet[0] = true;
+					}
+				}
+			}
+
+			if (localBoundaries[i].size() > 1) {
+
+				if ( globalBoundaries[i].size() == 1
+					 && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
+					 ) {	//TODO: Pozor Cornery nejdou do B1
+					for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+						for (si2_l = si1_l,++si2_l; si2_l != localBoundaries[i].end(); ++si2_l) {
+							for (eslocal d = 0; d < this->DOFs(); d++) {
+								if (is_dirichlet[d]) {
+									continue;
+								}
+
+								mat_B_dir[this_thread][*si1_l].push_back( lambda_count_B1_l[this_thread] );
+								mat_B_dir[this_thread][*si1_l].push_back( local_prim_numbering_d_l[this_thread][*si1_l] + d );
+								mat_B_dir[this_thread][*si1_l].push_back( 1 * localBoundaries[i].size() );
+
+								mat_B_dir[this_thread][*si2_l].push_back( lambda_count_B1_l[this_thread] );
+								mat_B_dir[this_thread][*si2_l].push_back( local_prim_numbering_d_l[this_thread][*si2_l] + d );
+								mat_B_dir[this_thread][*si2_l].push_back( -1 * localBoundaries[i].size() );
+
+								lambda_count_B1_l[this_thread]++;
+							}
+						}
+					}
+				}
+
+				//if ( 1 == 1 ) {
+				if (localBoundaries.isCorner(i)) {
+					for (si1_l = localBoundaries[i].begin(), si2_l = si1_l, ++si1_l; si1_l != localBoundaries[i].end(); ++si1_l) {
+						for (eslocal d = 0; d < this->DOFs(); d++) {
+
+							//lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
+							//lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
+							//_lambda_map_sub_B0[*si2].push_back(lambda_count_B0);
+							//_lambda_map_sub_B0[*si1].push_back(lambda_count_B0);
+							//lambda_count_B0++;
+
+							mat_B0[this_thread][*si1_l].push_back( lambda_count_B0_l[this_thread] );
+							mat_B0[this_thread][*si1_l].push_back( local_prim_numbering_d_l[this_thread][*si1_l] + d );
+							mat_B0[this_thread][*si1_l].push_back( 1 );
+
+							mat_B0[this_thread][*si2_l].push_back( lambda_count_B0_l[this_thread] );
+							mat_B0[this_thread][*si2_l].push_back( local_prim_numbering_d_l[this_thread][*si2_l] + d );
+							mat_B0[this_thread][*si2_l].push_back( -1 );
+
+							lambda_count_B0_l[this_thread]++;
+
+						}
+						si2_l = si1_l;
+					}
+				}
+
+
+
+			}
+
+			for (si1_l = localBoundaries[i].begin(); si1_l != localBoundaries[i].end(); ++si1_l) {
+				local_prim_numbering_d_l[this_thread][*si1_l] += this->DOFs();
+			}
+
+		}
+
+#pragma omp barrier
+#pragma omp single
+		{
+			for (size_t th = 1; th < threads; th++) {
+				lambda_count_B1_l[th] += lambda_count_B1_l[th - 1];
+				lambda_count_B0_l[th] += lambda_count_B0_l[th - 1];
+				//std::cout << lambda_count_B1_l[th] << " ";
+				for (size_t d = 0; d < this->subdomains(); d++) {
+					local_prim_numbering_d_l[th][d] += local_prim_numbering_d_l[th - 1][d];
+				}
+			}
+		}
+
+#pragma omp for
+		for (size_t d = 0; d < this->subdomains(); d++) {
+			for (size_t th = 0; th < threads; th++) {
+				eslocal lambda_off = 0;
+				eslocal locDOF_off = 0;
+
+				if (th > 0) lambda_off = lambda_count_B1_l[th-1];
+
+				for (size_t i = 0; i < mat_B_dir[th][d].size(); i = i + 3 ) {
+					if (th > 0)
+						locDOF_off = local_prim_numbering_d_l[th-1][d];
+
+					eslocal lambda = mat_B_dir[th][d][i + 0] + lambda_off;
+				    eslocal locDOF = mat_B_dir[th][d][i + 1] + locDOF_off;
+
+				    double duplicity;
+				    double value;
+				    eslocal tmp = mat_B_dir[th][d][i + 2];
+
+				    if (tmp < 0) {
+				    	duplicity = -1.0 / (double)tmp;
+				    	value 	   = -1.0;
+				    } else {
+				    	duplicity = 1.0 / (double)tmp;
+				    	value 	   = 1.0;
+				    }
+
+				    //gB[d]( lambda , locDOF  ) = value;
+				    _B1[d].set ( lambda , locDOF, value);
+
+					_lambda_map_sub_B1[d].	push_back(lambda);
+					_B1_duplicity[d]. 		push_back(duplicity);
+					_vec_c[d]. 				push_back(0.0);
+
+				}
+
+			}
+		}
+
+
+#pragma omp for
+		for (size_t d = 0; d < this->subdomains(); d++) {
+			for (size_t th = 0; th < threads; th++) {
+				eslocal lambda_off = 0;
+				eslocal locDOF_off = 0;
+
+				if (th > 0) lambda_off = lambda_count_B0_l[th-1];
+
+				for (size_t i = 0; i < mat_B0[th][d].size(); i = i + 3 ) {
+
+					if (th > 0)
+						locDOF_off = local_prim_numbering_d_l[th-1][d];
+
+					eslocal lambda = mat_B0[th][d][i + 0] + lambda_off;
+				    eslocal locDOF = mat_B0[th][d][i + 1] + locDOF_off;
+
+				    double duplicity;
+				    double value = (double) mat_B0[th][d][i + 2];
+
+				    _B0[d].set ( lambda , locDOF, value);
+					_lambda_map_sub_B0[d].	push_back(lambda);
+
+				}
+			}
+		}
+
+#pragma omp master
+		{
+			for (eslocal i = 0; i < lambda_count_B1_l[threads - 1]; i++) {
+				_lambda_map_sub_clst.		push_back(std::vector<eslocal>({ i, 0 }));
+			}
+			lambda_count_B1 = lambda_count_B1_l[threads - 1];
+			lambda_count_B0 = lambda_count_B0_l[threads - 1];
 		}
 
 	}
 
+
+	for (eslocal d = 0; d < this->subdomains(); d++) {
+//		//gB[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
+//		gBij[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
+//		//_B1[d] = gB[d];
+//		_B1[d] = gBij[d];
+////		lB[d].resize(lambda_count_B0, local_prim_numbering[threads - 1][d]);
+////		_B0[d] = lB[d];
+		_B0[d].resize(lambda_count_B0, local_prim_numbering_d_l[threads - 1][d]);
+		_B1[d].resize(lambda_count_B1, local_prim_numbering_d_l[threads - 1][d]);
+
+	}
+
+
+#endif // PARALLEL
+
+
+#ifdef SEQUENTIAL
 	std::vector<eslocal> local_prim_numbering(this->subdomains(), 0);
 	for (size_t i = 0; i < localBoundaries.size(); i++) {
+
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
+					//TODO: Toto asi neni dobre - jak resit DOFs ?
 					is_dirichlet[0] = true;
 				}
 			}
 		}
 
 		if (localBoundaries[i].size() > 1) {
-			if (globalBoundaries[i].size() == 1) {
+
+			if ( globalBoundaries[i].size() == 1
+				 && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
+				 ) {	//TODO: Pozor Cornery nejdou do B1
 				for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 					for (si2 = si1,++si2; si2 != localBoundaries[i].end(); ++si2) {
 						for (eslocal d = 0; d < this->DOFs(); d++) {
 							if (is_dirichlet[d]) {
 								continue;
 							}
-							gB[*si1](lambda_count_B1, local_prim_numbering[*si1] + d) =  1.0;
-							gB[*si2](lambda_count_B1, local_prim_numbering[*si2] + d) = -1.0;
+							t_gB[*si1](t_lambda_count_B1, local_prim_numbering[*si1] + d) =  1.0;
+							t_gB[*si2](t_lambda_count_B1, local_prim_numbering[*si2] + d) = -1.0;
 
-							_lambda_map_sub_B1[*si1].push_back(lambda_count_B1);
-							_lambda_map_sub_B1[*si2].push_back(lambda_count_B1);
-							_lambda_map_sub_clst.push_back(std::vector<eslocal>({ lambda_count_B1, 0 }));
-							_B1_duplicity[*si1].push_back( 1.0 / (double) localBoundaries[i].size() );
-							_B1_duplicity[*si2].push_back( 1.0 / (double) localBoundaries[i].size() );
-							_vec_c[*si1].push_back(0.0);
-							_vec_c[*si2].push_back(0.0);
+							t_lambda_map_sub_B1[*si1].push_back(t_lambda_count_B1);
+							t_lambda_map_sub_B1[*si2].push_back(t_lambda_count_B1);
+							t_lambda_map_sub_clst.	 push_back(std::vector<eslocal>({ t_lambda_count_B1, 0 }));
+							t_B1_duplicity[*si1].	 push_back( 1.0 / (double) localBoundaries[i].size() );
+							t_B1_duplicity[*si2].	 push_back( 1.0 / (double) localBoundaries[i].size() );
+							t_vec_c[*si1].			 push_back(0.0);
+							t_vec_c[*si2].			 push_back(0.0);
 
-							lambda_count_B1++;
+							t_lambda_count_B1++;
 						}
 					}
 				}
@@ -607,6 +1001,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 					si2 = si1;
 				}
 			}
+
 		}
 
 		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
@@ -616,12 +1011,33 @@ void Gluing<TInput>::computeSubdomainGluing()
 	}
 
 	for (eslocal d = 0; d < this->subdomains(); d++) {
-		gB[d].resize(lambda_count_B1, local_prim_numbering[d]);
-		_B1[d] = gB[d];
+		t_gB[d].resize(t_lambda_count_B1, local_prim_numbering[d]);
+		_B1[d] = t_gB[d];
 
 		lB[d].resize(lambda_count_B0, local_prim_numbering[d]);
 		_B0[d] = lB[d];
 	}
+
+//	for (int i = 0; i < t_lambda_map_sub_B1.size(); i++ )
+//	{
+//		for (int j = 0; j < t_lambda_map_sub_B1[i].size(); j++)
+//		{
+//			if ( _lambda_map_sub_B1[i][j] != t_lambda_map_sub_B1[i][j] )
+//				cout << i << ":" << j << " - " <<_lambda_map_sub_B1[i][j] << " - " << t_lambda_map_sub_B1[i][j] << std::endl;
+//		}
+//		//if ( _lambda_map_sub_B1[i].size() == t_lambda_map_sub_B1[i].size() )
+//		//	cout << i << ":" <<_lambda_map_sub_B1[i].size() << " - " << t_lambda_map_sub_B1[i].size() << std::endl;
+//	}
+
+	_lambda_map_sub_B1 = t_lambda_map_sub_B1;
+	_lambda_map_sub_clst = t_lambda_map_sub_clst;
+	_B1_duplicity = t_B1_duplicity;
+	_vec_c = t_vec_c;
+#endif //SEQUENTIAL
+
+	if ( this->rank() == 0) { std::cout << " B0 size: " <<  lambda_count_B0  << std::endl; }
+
+
 }
 
 template <class TInput>
@@ -724,6 +1140,8 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
     // information about neighnoring DOFS is here, but it is not used
 	// neighBorderDofs.resize( MPIsize, std::vector< esglobal >( 0 , 0 ) );
 	for (size_t i = 0; i < globalBoundaries.size(); i++) {
+
+		//
 		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() == 1 ) {
 			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
 				if (*it_set == MPIrank) { // if it points to local cluster
@@ -735,6 +1153,22 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 				}
 	        }
 		}
+
+		//
+		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() > 1 ) {
+			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
+				if (*it_set == MPIrank) {
+					// this loop goes over the nodes that are in multiple domains on this one cluster
+					for (it_set_l = localBoundaries[i].begin(); it_set_l != localBoundaries[i].end(); ++it_set_l) {
+						for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
+							_myBorderDOFs_sp      .push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
+							//myBorderDOFs_sp_loc_n.push_back( this->DOFs() *                          i + d_i ); // in local numbering
+						}
+					}
+				}
+	        }
+		}
+
 	}
 
 	// Detecting neighboring clusters
@@ -749,6 +1183,8 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
     //itx = std::unique (myBorderDOFs.begin(), myBorderDOFs.end());
     //myBorderDOFs.resize( std::distance(myBorderDOFs.begin(), itx) );
 
+	// sort my neigh DOFs sp
+	std::sort (_myBorderDOFs_sp.begin(), _myBorderDOFs_sp.end());
 
 }
 
@@ -1065,12 +1501,12 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
   }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
-
-//#ifdef USE_TBB
-//	tbb::parallel_sort(myLambdas.begin(), myLambdas.end(), comp_vf);
-//#else
+//#define USE_TBB
+#ifdef USE_TBB
+	tbb::parallel_sort(myLambdas.begin(), myLambdas.end(), comp_vf);
+#else
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
-//#endif
+#endif
 
 	if (MPIrank == 0) { 
     std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
@@ -1081,12 +1517,12 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	esglobal DOFNumber;
 	eslocal n_myLambdas = myLambdas.size();
 
-//#ifdef USE_TBB
-//	tbb::mutex m;
-//	cilk_for (int j = 0; j < n_myLambdas; j++)
-//#else
+#ifdef USE_TBB
+	tbb::mutex m;
+	cilk_for (int j = 0; j < n_myLambdas; j++)
+#else
 	for (eslocal j = 0; j < n_myLambdas; j++)
-//#endif
+#endif
 	{
 
 		esglobal lambda         = myLambdas[j][0];
@@ -1117,23 +1553,23 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 			if ( domDofNODENumber != -1 ) {
 				//vychazi z mapovani g2l pro uzly a ne DOFy
 				eslocal domDOFNumber = this->DOFs() * domDofNODENumber + dofNODEoffset;
-//			   #ifdef USE_TBB
-//				m.lock();
-//			   #endif
+			   #ifdef USE_TBB
+				m.lock();
+			   #endif
 				B1_DOK_tmp[d](lambda, domDOFNumber) = B_value;
 				myLambdas[j].push_back(d);
 				_B1_duplicity[d].push_back(1.0 / cnt);
 				_vec_c[d].push_back(0.0);
-//			   #ifdef USE_TBB
-//				m.unlock();
-//			   #endif
+			   #ifdef USE_TBB
+				m.unlock();
+			   #endif
 				break;
 
 			}
 		}
 	}
 
-	for (eslocal d = 0; d < this->subdomains(); d++){
+	cilk_for (eslocal d = 0; d < this->subdomains(); d++){
 		//TODO: lambdaNum muze byt 64bit integer
 		//TODO: matice B - pocet radku muze byt 64bit int
 		B1_DOK_tmp[d].resize( total_number_of_B1_l_rows + total_number_of_global_B1_lambdas , rows[d]);
@@ -1174,131 +1610,33 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 // *****************************************************************************************************************************************************
 // Creating B on corners of clusters and domains
 
-//        _neighClusters.clear();
-//        _neighClusters.resize(MPIsize);
-//
-//    	for (T i = 0; i < globalBoundaries.size(); i++) {
-//    		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() > 1 ) {
-//    			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
-//    				if (*it_set != MPIrank) { // if it does point non local cluster = points to one of neighboring clusters
-//    					neigh_tmp[*it_set] = 1;
-//    				}
-//    			}
-//    		}
-//    	}
-//
-//    	_neighClusters.clear();
-//    	for (eslocal i = 0; i < neigh_tmp.size(); i++)
-//    		if (neigh_tmp[i] == 1)
-//    			_neighClusters.push_back(i);
-//
-//    	neighClustNum = _neighClusters.size();
-
-
-
-    	//std::vector < SparseDOKMatrix<T> > B1_DOK_tmp(this->subdomains());
 
     	flag_redund_lagr_mult = true;
     	eslocal neighClustNum_sp = 0;	// number of neighboring sub-domains for current sub-domainG
     	eslocal borderDofNum_sp  = 0; 	// number of DOFs on surface on my cluster
 
     	std::vector < std::vector < esglobal > > neighBorderDofs_sp;    // 2D vector for DOFs on borders of neighboring sub-domains
-    	std::vector < esglobal > 				 myBorderDOFs_sp;  	// my border DOFs are here - in global numbering
+    	//std::vector < esglobal > 				 myBorderDOFs_sp;  	    // my border DOFs are here - in global numbering
         std::vector < esglobal > 				 myBorderDOFs_sp_nr;  	// my border DOFs are here - in global numbering
         std::vector < esglobal > 				 myBorderDOFs_sp_loc_n; // my border DOFs are here - in local numbering
 
-    	//std::vector < eslocal  > _neighClusters; 	// my neighboring clusters
 
+        myBorderDOFs_sp_nr = _myBorderDOFs_sp;
+    	neighClustNum 	   = _neighClusters.size();
 
-    	//MPI_Request   mpi_req;
-    	//MPI_Status 	  mpi_stat;
-
-    	// Find all MPIranks of all neighboring clusters in globalBoundaries
-    	//std::vector < eslocal > neigh_tmp_sp  (MPIsize, 0);
-    	//std::set<eslocal>::const_iterator it_set;
-    	//std::set<eslocal>::const_iterator it_set_l;
-
-        if (MPIrank == 0) { 
-          std::cout << " Global B SP - Blobal B1 neighdofs and neigh dofs array building          "; 
-      //    system("date +%T.%6N");
-        }
-
-        // Now this loop is used to get my Border DOFs and my neighboring subdomains
-        // information about neighnoring DOFS is here, but it is not used
-    	// neighBorderDofs.resize( MPIsize, std::vector< esglobal >( 0 , 0 ) );
-    	for (size_t i = 0; i < globalBoundaries.size(); i++) {
-    		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() > 1 ) {
-    			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
-    				if (*it_set == MPIrank) {
-    					// this loop goes over the nodes that are in multiple domains on this one cluster
-    					for (it_set_l = localBoundaries[i].begin(); it_set_l != localBoundaries[i].end(); ++it_set_l) {
-    						for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
-    							myBorderDOFs_sp      .push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
-    							myBorderDOFs_sp_loc_n.push_back( this->DOFs() *                          i + d_i ); // in local numbering
-    						}
-    					}
-    				}
-    	        }
-    		}
-    	}
-
-    	// sort my neigh DOFs sp
-    	std::sort (myBorderDOFs_sp.begin(), myBorderDOFs_sp.end());
-        myBorderDOFs_sp_nr = myBorderDOFs_sp;
-    	// removes the duplicit DOFs from myBorderDofs
+        // removes the duplicit DOFs from myBorderDofs
     	std::vector< esglobal >::iterator itx;
         itx = std::unique (myBorderDOFs_sp_nr.begin(), myBorderDOFs_sp_nr.end());
         myBorderDOFs_sp_nr.resize( std::distance(myBorderDOFs_sp_nr.begin(), itx) );
 
+        if (MPIrank == 0) { std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; system("date +%T.%6N"); }
 
-    	//for (eslocal i = 0; i < neigh_tmp.size(); i++)
-    	//	if (neigh_tmp[i] == 1)
-    	//		_neighClusters.push_back(i);
-
-    	// I have neigh clusters from previous work with Global B
-    	neighClustNum = _neighClusters.size();
-
-    	//  if (MPIrank == 0) { std::cout << " Global B - neighDOFs array swapping based neigh cluster indexes          "; system("date +%T.%6N"); }
-    	//	for (int i = 0; i < _neighClusters.size(); i++) {
-    	//		neighBorderDofs[_neighClusters[i]].swap(neighBorderDofs[i]);
-    	//	}
-    	//	neighBorderDofs.resize(neighClustNum);
-
-        if (MPIrank == 0) { 
-          std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
-      //    system("date +%T.%6N"); 
-        }
-
-//        //MPI_Request * mpi_send_req  = new MPI_Request [neighClustNum];
-//    	//MPI_Request * mpi_recv_req  = new MPI_Request [neighClustNum];
-//    	//MPI_Status  * mpi_recv_stat = new MPI_Status  [neighClustNum];
-//
-//    	neighBorderDofs_sp.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
-//
-//    	// sending my DOFs on border to all neighboring sub-domains
-//    	for (eslocal i = 0; i < _neighClusters.size(); i++) {
-//    		MPI_Isend(&myBorderDOFs_sp[0], myBorderDOFs_sp.size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
-//    	}
-//
-//    	//TODO: Tady to chce poradne promtslet o delce bufferu a jestli vim kolik bajtu mam prijmout ???
-//    	// receiving all border DOFs from all neighboring sub-domains
-//    	for (eslocal i = 0; i < _neighClusters.size(); i++) {
-//    		neighBorderDofs_sp[i].resize(myBorderDOFs_sp.size());
-//    		MPI_Irecv(&neighBorderDofs_sp[i][0], myBorderDOFs_sp.size(),esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_recv_req[i]);
-//    	}
-//
-//    	MPI_Waitall(neighClustNum, mpi_recv_req, mpi_recv_stat);
-//
-//    	MPI_Barrier(MPI_COMM_WORLD);
-//
-//
-//    	//
 
        	neighBorderDofs_sp.resize( neighClustNum, std::vector< esglobal >( 0 , 0 ) );
 
     	// sending my DOFs on border to all neighboring sub-domains
     	for (eslocal i = 0; i < _neighClusters.size(); i++) {
-    		MPI_Isend(&myBorderDOFs_sp[0], myBorderDOFs_sp.size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
+    		MPI_Isend(&_myBorderDOFs_sp[0], _myBorderDOFs_sp.size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
     	}
 
     	// receiving all border DOFs from all neighboring sub-domains
@@ -1324,19 +1662,6 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     	}
 
     	MPI_Barrier(MPI_COMM_WORLD);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     	// END - Find all MPIranks of all neighboring clusters in globalBoundaries
 
@@ -1376,11 +1701,11 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     	std::vector               < esglobal > 	myBorderDOFs_sp_red;    	// my border dofs w/o duplicity
 
        	eslocal dup_cnt_sp = 1;
-       	for (eslocal i = 1; i < myBorderDOFs_sp.size(); i++) {
+       	for (eslocal i = 1; i < _myBorderDOFs_sp.size(); i++) {
 
-       		if (myBorderDOFs_sp[i-1] != myBorderDOFs_sp[i]) {
+       		if (_myBorderDOFs_sp[i-1] != _myBorderDOFs_sp[i]) {
        			myBorderDOFs_sp_cnt.push_back(dup_cnt_sp);
-       			myBorderDOFs_sp_red.push_back(myBorderDOFs_sp[i-1]);
+       			myBorderDOFs_sp_red.push_back(_myBorderDOFs_sp[i-1]);
        			dup_cnt_sp = 1;
        		} else {
        			dup_cnt_sp++;
@@ -1390,141 +1715,70 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
        	if (dup_cnt_sp > 1) {
    			myBorderDOFs_sp_cnt.push_back(dup_cnt_sp);
-   			myBorderDOFs_sp_red.push_back(myBorderDOFs_sp[myBorderDOFs_sp.size() - 1]);
+   			myBorderDOFs_sp_red.push_back(_myBorderDOFs_sp[_myBorderDOFs_sp.size() - 1]);
        	}
 
-
     	for (eslocal j = 0; j < _neighClusters.size(); j++) {
-
-    		//if ( neighBorderDofs_sp[j].size() && myBorderDOFs_sp.size() ) {
-
-				dup_cnt_sp = 1;
-				for (eslocal i = 1; i < neighBorderDofs_sp[j].size(); i++) {
-
-					if (neighBorderDofs_sp[j][i-1] != neighBorderDofs_sp[j][i]) {
-						neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
-						neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][i-1]);
-						dup_cnt_sp = 1;
-					} else {
-						dup_cnt_sp++;
-					}
-
-				}
-
-				if (dup_cnt_sp > 1 ){
+			dup_cnt_sp = 1;
+			for (eslocal i = 1; i < neighBorderDofs_sp[j].size(); i++) {
+				if (neighBorderDofs_sp[j][i-1] != neighBorderDofs_sp[j][i]) {
 					neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
-					//neighBorderDofs_sp_red[j].push_back(myBorderDOFs_sp[neighBorderDofs_sp_red[j].size() - 1]);
-                                                  neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][neighBorderDofs_sp[j].size() - 1]);
+					neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][i-1]);
+					dup_cnt_sp = 1;
+				} else {
+					dup_cnt_sp++;
 				}
+			}
 
-    		//}
+			if (dup_cnt_sp > 1 ){
+				neighBorderDofs_sp_cnt[j].push_back(dup_cnt_sp);
+                neighBorderDofs_sp_red[j].push_back(neighBorderDofs_sp[j][neighBorderDofs_sp[j].size() - 1]);
+			}
     	}
 
 
     	for (eslocal i = 0; i < _neighClusters.size(); i++) {
 
-    		//if ( neighBorderDofs_sp[i].size() && myBorderDOFs_sp.size() ) {
+    		int d = _neighClusters[i];
+    		int mydofs_index = 0;
+    		int nedofs_index = 0;
 
-				int d = _neighClusters[i];
-				int mydofs_index = 0;
-				int nedofs_index = 0;
+    		if ( i == 0 && MPIrank < _neighClusters[i] ) {
+    			for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
+    				for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
+    					myNeighsSparse_sp[j].push_back(MPIrank);
+    		}
 
-				if ( i == 0 && MPIrank < _neighClusters[i] ) {
-					for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
-						for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
-							myNeighsSparse_sp[j].push_back(MPIrank);
-				}
+    		do {
+    			if ( neighBorderDofs_sp_red[i].size() > 0 && myBorderDOFs_sp_red.size() > 0 )
+    				if ( neighBorderDofs_sp_red[i][nedofs_index] == myBorderDOFs_sp_red[mydofs_index] ) {
+    					for (eslocal j = 0; j < neighBorderDofs_sp_cnt[i][nedofs_index]; j++)
+    						myNeighsSparse_sp[mydofs_index].push_back(d);
+    					mydofs_index++;
+    					nedofs_index++;
+    				} else {
+    					if ( neighBorderDofs_sp_red[i][nedofs_index] > myBorderDOFs_sp_red[mydofs_index] ) {
+    						mydofs_index++;
+    					} else {
+    						nedofs_index++;
+    					}
+    				}
 
-				do {
-				  if ( neighBorderDofs_sp_red[i].size() > 0 && myBorderDOFs_sp_red.size() > 0 )
-					if ( neighBorderDofs_sp_red[i][nedofs_index] == myBorderDOFs_sp_red[mydofs_index] ) {
-						for (eslocal j = 0; j < neighBorderDofs_sp_cnt[i][nedofs_index]; j++)
-							myNeighsSparse_sp[mydofs_index].push_back(d);
-						mydofs_index++;
-						nedofs_index++;
-					} else {
-						if ( neighBorderDofs_sp_red[i][nedofs_index] > myBorderDOFs_sp_red[mydofs_index] ) {
-							mydofs_index++;
-						} else {
-							nedofs_index++;
-						}
-					}
+    		} while (mydofs_index < myBorderDOFs_sp_red.size() && nedofs_index < neighBorderDofs_sp_red[i].size() );
 
-				} while (mydofs_index < myBorderDOFs_sp_red.size() && nedofs_index < neighBorderDofs_sp_red[i].size() );
-
-
-				if ( i < _neighClusters.size() - 1)
-					if ( MPIrank > _neighClusters[i] && MPIrank < _neighClusters[i+1] )
-						for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
-							for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
-								myNeighsSparse_sp[j].push_back(MPIrank);
+    		if ( i < _neighClusters.size() - 1)
+    			if ( MPIrank > _neighClusters[i] && MPIrank < _neighClusters[i+1] )
+    				for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
+    					for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
+    						myNeighsSparse_sp[j].push_back(MPIrank);
 
 
-
-				if ( i == _neighClusters.size() -1 && MPIrank > _neighClusters[i] )
-					for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
-						for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
-							myNeighsSparse_sp[j].push_back(MPIrank);
-    		//}
+    		if ( i == _neighClusters.size() -1 && MPIrank > _neighClusters[i] )
+    			for (eslocal j = 0; j < myBorderDOFs_sp_red.size(); j++)
+    				for (eslocal k = 0; k < myBorderDOFs_sp_cnt[j]; k++)
+    					myNeighsSparse_sp[j].push_back(MPIrank);
     	}
 
-
-    	//////////////////
-
-//    	for (eslocal i = 0; i < _neighClusters.size(); i++) {
-//
-//    		int            d = _neighClusters[i];
-//    		int mydofs_index = 0;
-//    		int nedofs_index = 0;
-//    		int output_index = 0;
-//
-//    		do {
-//    		  if ( neighBorderDofs_sp.size() > 0 && myBorderDOFs_sp.size() > 0 )
-//    			if ( neighBorderDofs_sp[i][nedofs_index] == myBorderDOFs_sp[mydofs_index] ) {
-//    				int my_dof_dup_cnt = 0;
-//    				int ne_dof_dup_cnt = 0;
-//    				esglobal myDOF = myBorderDOFs_sp[mydofs_index];
-//					esglobal neDOF = neighBorderDofs_sp[i][nedofs_index];
-//
-//					if (MPIrank < d && i == 0) {
-//						do {
-//							mydofs_index++;
-//							myNeighsSparse_sp[output_index].push_back(MPIrank);
-//						} while ( myDOF ==  myBorderDOFs_sp[mydofs_index]);
-//					}
-//
-//    				do {
-//    					nedofs_index++;
-//        				myNeighsSparse_sp[output_index].push_back(d);
-//    				} while ( neDOF == neighBorderDofs_sp[i][nedofs_index] );
-//
-//    				if ( i < _neighClusters.size() - 1)
-//					if ( MPIrank > _neighClusters[i] && MPIrank < _neighClusters[i+1] ) {
-//						do {
-//							mydofs_index++;
-//							myNeighsSparse_sp[output_index].push_back(MPIrank);
-//						} while ( myDOF ==  myBorderDOFs_sp[mydofs_index]);
-//					}
-//
-//					if ( i == _neighClusters.size() -1 && MPIrank > _neighClusters[i] ) {
-//						do {
-//							mydofs_index++;
-//							myNeighsSparse_sp[output_index].push_back(MPIrank);
-//						} while ( myDOF ==  myBorderDOFs_sp[mydofs_index]);
-//					}
-//					output_index++;
-//
-//    			} else {
-//    				if ( neighBorderDofs_sp[i][nedofs_index] > myBorderDOFs_sp[mydofs_index] ) {
-//    					mydofs_index++;
-//    				} else {
-//    					nedofs_index++;
-//    				}
-//    			}
-//
-//    		} while (mydofs_index < myBorderDOFs_sp.size() && nedofs_index < neighBorderDofs_sp[i].size() );
-//
-//    	}
 
     	for (eslocal i = 0; i < myNeighsSparse_sp.size(); i++)
     		if (myNeighsSparse_sp[i].size() < 3)
@@ -1625,15 +1879,10 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
      //   system("date +%T.%6N"); 
       }
 
-
-    	//std::vector < std::vector < esglobal > > mpi_send_buff;
     	mpi_send_buff.clear();
     	mpi_send_buff.resize( _neighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
-    //#ifdef DEBUG
-    //	for (int i = 0; i < _neighClusters.size(); i++) {
-    //#else
+
     	cilk_for (int i = 0; i < _neighClusters.size(); i++) {
-    //#endif
     		int index = 0;
     		if ( myLambdas_sp.size() > 0 )
     		{
@@ -1672,7 +1921,6 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
       //  system("date +%T.%6N"); 
       }
 
-    	//std::vector < std::vector < esglobal > > mpi_recv_buff;
     	mpi_recv_buff.clear();
         mpi_recv_buff.resize( _neighClusters.size(), std::vector< esglobal >( 0 , 0 ) );
     	delete [] mpi_send_req;
@@ -1865,16 +2113,6 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
     	}
 
-//    	for (T i = 0; i < globalBoundaries.size(); i++) {
-//    		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() > 1 ) {
-//    			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
-//    				if (*it_set == MPIrank) {
-//    					// this loop goes over the nodes that are in multiple domains on this one cluster
-//    					for (it_set_l = localBoundaries[i].begin(); it_set_l != localBoundaries[i].end(); ++it_set_l) {
-//    						for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
-//    							myBorderDOFs_sp      .push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
-
-
 
     	for (eslocal d = 0; d < this->subdomains(); d++){
     		//TODO: lambdaNum muze byt 64bit integer
@@ -1889,49 +2127,21 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
      //   system("date +%T.%6N"); 
       }
 
-    	if (MPIrank == 0) {
-        std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
-     //   system("date +%T.%6N"); 
-      }
 
+    	if (MPIrank == 0) { std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; system("date +%T.%6N"); }
+    	if (MPIrank == 0) { std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; system("date +%T.%6N"); }
 
-//    	// for global B1
-//    	for (int i = 0; i < myLambdas_sp.size(); i++) {
-//
-//    		std::vector < eslocal > tmp_vec (2,0);		//TODO: must be esglobal
-//    		tmp_vec[0] = myLambdas_sp[i][0];
-//    		tmp_vec[1] = myLambdas_sp[i][2];
-//
-//    		if ( myLambdas_sp[i][2] != myLambdas_sp[i][3])
-//    			tmp_vec.push_back(myLambdas_sp[i][3]);
-//
-//    		_lambda_map_sub_clst.push_back(tmp_vec);
-//
-//    		eslocal lam_tmp = myLambdas_sp [i][0]; //TODO: esglobal
-//    		lambda_map_sub_B1[ myLambdas_sp[i][7] ].push_back( lam_tmp );
-//
-//    		if ( myLambdas_sp[i].size() == 9 )
-//        		lambda_map_sub_B1[ myLambdas_sp[i][8] ].push_back( lam_tmp );
-//
-//    	}
-
-
-    	if (MPIrank == 0) { 
-        std::cout << " END - Creating lambda_map_sub vector of vectors - Global B1              "; 
-     //   system("date +%T.%6N"); 
-      }
 
     	MPI_Barrier(MPI_COMM_WORLD);
 
         if (MPIrank == 0) { std::cout << " Dual size: " <<  total_number_of_B1_l_rows + total_number_of_global_B1_lambdas + total_number_of_global_B1_lambdas_sp  << std::endl; }
 
-
-    	for (int i = 0; i < _vec_c.size(); i++) {
+    	cilk_for (int i = 0; i < _vec_c.size(); i++) {
     		 _vec_c[i].resize(_B1_duplicity[i].size(), 0.0);
     	}
 
-    	for (size_t p = 0; p < this->subdomains(); p++) {
-    		_localB[p] = _B0[p];
+    	cilk_for (size_t p = 0; p < this->subdomains(); p++) {
+    		_localB[p]  = _B0[p];
     		_globalB[p] = _B1[p];
     	}
 }

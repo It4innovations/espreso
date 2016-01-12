@@ -52,6 +52,8 @@ public:
 	eslocal SUBDOM_PER_CLUSTER;
 	eslocal NUMBER_OF_CLUSTERS;
 	eslocal DOFS_PER_NODE;
+	eslocal PAR_NUM_THREADS;
+	eslocal SOLVER_NUM_THREADS;
 
 	eslocal dual_size;
 	string data_directory;
@@ -84,6 +86,7 @@ public:
 	SparseSolver F0;
 	SparseSolver F0_fast;
 	SparseSolver Sa;
+	SparseMatrix SaMat;
 
 	SEQ_VECTOR <double> vec_d;
 
@@ -110,7 +113,7 @@ public:
 	void InitClusterPC ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
 	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map); //, SEQ_VECTOR < eslocal > & neigh_domains  );
 	void SetClusterPC_AfterKplus ();
-	void SetClusterHFETI ();
+	void SetClusterHFETI ( bool R_from_mesh );
 
 	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
 	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ); //, vector <double> & y_out, vector<eslocal> & cluster_map_vec);
@@ -128,7 +131,7 @@ public:
 	void CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 
 	void Create_Kinv_perDomain();
-	void Create_SC_perDomain();
+	void Create_SC_perDomain( bool USE_FLOAT );
 
 	void B1_comp_MatVecSum(SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose );
 
@@ -149,13 +152,14 @@ public:
 
 	SEQ_VECTOR <eslocal> my_neighs;
 	SEQ_VECTOR <eslocal> my_lamdas_indices;
-	map <eslocal,eslocal> my_lamdas_map_indices;
+
+	map <eslocal,eslocal> _my_lamdas_map_indices;
 
 	SEQ_VECTOR <eslocal> my_lamdas_ddot_filter;
 	SEQ_VECTOR <eslocal> lambdas_filter;
 
 	SEQ_VECTOR <double> compressed_tmp;
-	SEQ_VECTOR <double> compressed_tmp2;
+	//SEQ_VECTOR <double> compressed_tmp2;
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster1;
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster2;

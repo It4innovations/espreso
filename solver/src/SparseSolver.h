@@ -14,6 +14,7 @@ using std::endl;
 using std::left;
 using std::fixed;
 
+#include <dmumps_c.h>
 
 
 #pragma once
@@ -28,19 +29,35 @@ public:
 	//Destructor
 	~SparseSolver();
 
+	DMUMPS_STRUC_C id;
+
+
+
 	// Matrix properties 
 
 	bool initialized;
 	bool keep_factors;
+	bool import_with_copy;
 	int  MPIrank;
 
 	MKL_INT rows;
 	MKL_INT cols;
 	MKL_INT nnz;
 
+
+
+	MKL_INT		* I_row_indices;
+	MKL_INT		* J_col_indices;
+	double		* V_values;
+
+	MKL_INT		I_row_indices_size;
+	MKL_INT		J_col_indices_size;
+	MKL_INT		V_values_size;
+
+
 	MKL_INT		* CSR_I_row_indices;
 	MKL_INT		* CSR_J_col_indices;
-	double	* CSR_V_values; 
+	double		* CSR_V_values;
 
 	MKL_INT		CSR_I_row_indices_size;
 	MKL_INT		CSR_J_col_indices_size;
@@ -78,6 +95,8 @@ public:
 
 	//Members
 	void ImportMatrix(SparseMatrix & A);
+	void ImportMatrix_wo_Copy(SparseMatrix & A);
+
 	void Factorization(); 
 	void Clear();
 	void SetThreaded();
@@ -99,6 +118,10 @@ public:
 	void Create_SC( SparseMatrix & B_out, MKL_INT sc_size, bool isThreaded );
 	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
 	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
+
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol);
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol);
+
 
 };
 //#endif //SPARSE_SOLVER_H_

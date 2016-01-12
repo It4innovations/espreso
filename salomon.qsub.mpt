@@ -19,16 +19,19 @@
 # 9  729
 # 10 1000
 
-clusters=1
+clusters=4
 
 cd $PBS_O_WORKDIR
 
-export INTEL=/apps/all/icc/2015.3.187
+#export INTEL=/apps/all/icc/2015.3.187
 #IMPI=/apps/all/impi/5.0.3.048-iccifort-2015.3.187
 
-. $INTEL/bin/compilervars.sh intel64
+#. $INTEL/bin/compilervars.sh intel64
 #. $IMPI/bin64/mpivars.sh
 
+
+module load icc/2016.1.150-GCC-4.9.3
+module load imkl/11.3.1.150-iimpi-2016.00-GCC-4.9.3
 
 THEDIR=$PBS_O_WORKDIR
 
@@ -79,12 +82,12 @@ mv -f ${HOSTF}.new $HOSTF
 
 pwd
 
-domains=5
-dom_size=13
+domains=6
+dom_size=6
 ./salomon.sh runpbs $clusters $domains $dom_size
 
 domains=5
-dom_size=15
+dom_size=1a5
 #./salomon.sh runpbs $clusters $domains $dom_size
 
 domains=5

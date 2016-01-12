@@ -66,8 +66,13 @@ public:
 	SEQ_VECTOR <double> CSR_V_values; 
 
 	// Dense data 
-	SEQ_VECTOR <double> dense_values;
-	SEQ_VECTOR <float> dense_values_fl;
+	SEQ_VECTOR <double> 	dense_values;
+	SEQ_VECTOR <float>  	dense_values_fl;
+	SEQ_VECTOR <eslocal>    ipiv;
+
+	SEQ_VECTOR <float> 		vec_fl_in;
+	SEQ_VECTOR <float> 		vec_fl_out;
+	bool					USE_FLOAT;
 
 	// CUDA
 	double * d_dense_values;
@@ -110,6 +115,8 @@ public:
 	void DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out);
 	void DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose);
 	void DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index);
+	void DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index);
+	void DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index, double beta);
 
 	void DenseMatVecCUDA_w_Copy (SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index);
 	void DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index);

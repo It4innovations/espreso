@@ -5,7 +5,7 @@ TimeEvent::TimeEvent(void)
 {
 	eventCount  = 0; 
 	name_length = 50;
-	val_length  = 15;
+	val_length  = 12;
 
 }
 
@@ -15,7 +15,7 @@ TimeEvent::TimeEvent(string name)
 	eventName   = name;  
 	eventCount  = 0; 
 	name_length = 50;
-	val_length  = 15;
+	val_length  = 12;
 
 }
 

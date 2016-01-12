@@ -44,6 +44,7 @@ namespace solver {
 	extern size_t	CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
 	extern size_t	REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
 
+
 }
 
 namespace tmp{

@@ -187,7 +187,6 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	return ePartition;
 }
 
-
 eslocal Mesh::getCentralNode(
 		eslocal first,
 		eslocal last,

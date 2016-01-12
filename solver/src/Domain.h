@@ -70,8 +70,8 @@ public:
 	SparseMatrix B1; 
 	SparseMatrix B1t; 
 	
-	SparseMatrix   B1_comp;
-	SparseMatrix   B1t_comp; 
+	//SparseMatrix   B1_comp;
+	//SparseMatrix   B1t_comp;
 	SEQ_VECTOR< eslocal >  lambda_map_sub;
 	map <eslocal, eslocal> my_lamdas_map_indices;
 	SEQ_VECTOR< double >B1_scale_vec;
@@ -90,6 +90,10 @@ public:
 
 	SparseMatrix R; 
 	SparseMatrix K;
+
+	// Matrix and coeficient for regularization
+	SparseMatrix _RegMat;
+
 	//SparseMatrix K_non_sym;
 	SparseMatrix M; 
 	SparseMatrix Prec; 
@@ -98,7 +102,7 @@ public:
 	SEQ_VECTOR <eslocal>	map_vector;
 
 
-	SEQ_VECTOR <SEQ_VECTOR <double> > coordinates; 
+	//SEQ_VECTOR <SEQ_VECTOR <double> > coordinates;
 	//vector <vector <eslocal> > elements;
 
 	SEQ_VECTOR <eslocal> fix_nodes;
@@ -134,10 +138,10 @@ public:
 	// Methods of the class
 	void SetDomain(eslocal USE_HFETI, eslocal use_dynamic_1_no_dynamic_0);
 
-	void K_regularization( );
-	void K_regularizationFromR ( ); 
+	//void K_regularization( );
+	void K_regularizationFromR ( SparseMatrix & K_in);
 
-	void CreateKplus_R ( ); 
+	void CreateKplus_R ( std::vector < std::vector < double > > coordinates );
 
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
