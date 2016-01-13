@@ -39,12 +39,6 @@ public:
 	void reserve(size_t size);
 	void transpose();
 
-	//TODO: To Ondra - zkontrolovat zda je OK - L.Riha
-	void resize(size_t rows, size_t columns) {
-		_rows = rows;
-		_columns = columns;
-	}
-
 	void sort()
 	{
 		// last element is part of the array
@@ -136,7 +130,20 @@ public:
 		//sort();
 	}
 
-	//TODO: to Ondra - moved from private
+	double& operator()(size_t row, size_t column)
+	{
+		for(size_t i = 0; i < _rowIndices.size(); i++)
+		{
+			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
+				return _values[i];
+			}
+		}
+		_rowIndices.push_back(row + _indexing);
+		_columnIndices.push_back(column + _indexing);
+		_values.push_back(0);
+		return _values.back();
+	}
+
 	void set(size_t row, size_t column, double value)
 	{
 		if (Matrix::nonZero(value)) {
@@ -155,35 +162,6 @@ public:
 private:
 
 	void sort(size_t begin, size_t end);
-
-	double& operator()(size_t row, size_t column)
-	{
-		for(size_t i = 0; i < _rowIndices.size(); i++)
-		{
-			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
-				return _values[i];
-			}
-		}
-		_rowIndices.push_back(row + _indexing);
-		_columnIndices.push_back(column + _indexing);
-		_values.push_back(0);
-		return _values.back();
-	}
-
-//	void set(size_t row, size_t column, double value)
-//	{
-//		if (Matrix::nonZero(value)) {
-//			for(size_t i = 0; i < _rowIndices.size(); i++)
-//			{
-//				if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
-//					_values[i] = value;
-//				}
-//			}
-//			_rowIndices.push_back(row + _indexing);
-//			_columnIndices.push_back(column + _indexing);
-//			_values.push_back(value);
-//		}
-//	}
 
 	static void assign(SparseIJVMatrix<Tindices> &m1, SparseIJVMatrix<Tindices> &m2)
 	{
