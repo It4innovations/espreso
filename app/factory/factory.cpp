@@ -26,6 +26,7 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 	case esconfig::mesh::GENERATOR: {
 		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
+		break;
 		mesh->partitiate(esconfig::mesh::subdomains);
 		mesh->computeFixPoints(esconfig::mesh::fixPoints);
 		mesh->computeCorners(
@@ -123,28 +124,26 @@ void Factory::solve(eslocal steps)
 	}
 
 	_assembler->finalize();
-
-	store();
 }
 
-void Factory::store()
+void Factory::store(const std::string &file)
 {
 	switch (esconfig::assembler::discretization){
 
 	case esconfig::assembler::FEM: {
-		esoutput::VTK_Full vtk(*_mesh, "mesh");
+		esoutput::VTK_Full vtk(*_mesh, file);
 		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
 		break;
 	}
 
 	case esconfig::assembler::BEM: {
-		esoutput::VTK_Full vtk(*_surface, "surface");
+		esoutput::VTK_Full vtk(*_surface, file);
 		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
 		break;
 	}
 
 	case esconfig::assembler::API: {
-		esoutput::VTK_Full vtk(*_mesh, "api");
+		esoutput::VTK_Full vtk(*_mesh, file);
 		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
 		break;
 	}
