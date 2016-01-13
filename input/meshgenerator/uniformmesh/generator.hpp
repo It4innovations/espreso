@@ -166,9 +166,6 @@ void UniformGenerator<TElement>::corners(mesh::Boundaries &boundaries)
 					index = i * nodes[d] * mul[d];
 					index += offsets[(d + 1) % 3][j] * mul[(d + 1) % 3];
 					index += offsets[(d + 2) % 3][k] * mul[(d + 2) % 3];
-
-					//if ( !(   offsets[(d + 1) % 3][j] % nodes[(d + 1) % 3] == 0 //TODO: Dirty fix to avoid putting corners into corners
-					//	&& offsets[(d + 2) % 3][k] % nodes[(d + 2) % 3] == 0))
 					boundaries.setCorner(index);
 				}
 			}

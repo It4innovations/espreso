@@ -42,7 +42,7 @@ UniformSettings::UniformSettings(int argc, char** argv, size_t index, size_t siz
 	}
 
 	cornerCount = configuration.value<eslocal>("CORNER_COUNT", 0);
-	corners = configuration.value<bool>("CORNERS_IN_CORNERS", true);
+	corners = configuration.value<bool>("CORNERS_IN_CORNERS", false);
 	edges = configuration.value<bool>("CORNERS_IN_EDGES", false);
 	faces = configuration.value<bool>("CORNERS_IN_FACES", false);
 }
@@ -55,7 +55,7 @@ UniformSettings::UniformSettings(size_t index, size_t size): index(index), size(
 	}
 
 	cornerCount = 0;
-	corners = true;
+	corners = false;
 	edges = false;
 	faces = false;
 }

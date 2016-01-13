@@ -95,9 +95,6 @@ CubeSettings::CubeSettings(size_t index, size_t size)
 			boundaryCondition[f][p] = 0;
 		}
 	}
-
-	// DIRICHLET_BOTTOM_X, DIRICHLET_BOTTOM_Y, DIRICHLET_BOTTOM_Z
-	fillCondition[5][0] = fillCondition[5][1] = fillCondition[5][2] = true;
 }
 
 

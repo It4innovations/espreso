@@ -7,6 +7,7 @@ int main(int argc, char **argv)
 
 	Factory factory(argc, argv);
 	factory.solve(1);
+	factory.store("mesh");
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
