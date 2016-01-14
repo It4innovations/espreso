@@ -15,11 +15,11 @@ public:
 	SphereGenerator(int argc, char** argv, size_t index, size_t size);
 	SphereGenerator(const SphereSettings &settings);
 
+private:
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Boundaries &boundaries);
 
-private:
 	const SphereSettings _settings;
 };
 

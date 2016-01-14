@@ -15,11 +15,11 @@ public:
 	CubeGenerator(int argc, char** argv, size_t index, size_t size);
 	CubeGenerator(const CubeSettings &settings);
 
+protected:
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Boundaries &boundaries);
 
-protected:
 	const CubeSettings _settings;
 	size_t _cluster[3];
 };

@@ -28,6 +28,7 @@ public:
 				esconfig::mesh::averaging);
 	}
 
+protected:
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
@@ -74,6 +75,7 @@ public:
 		}
 	}
 
+protected:
 	virtual bool manualPartition() = 0;
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
