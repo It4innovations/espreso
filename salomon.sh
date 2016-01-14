@@ -118,28 +118,15 @@ if [ "$#" -eq 0 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --salomon
+  ./waf configure
 fi
 
 if [ "$1" = "mesh" ]; then
-  ./waf install --mesh
-fi
-
-if [ "$1" = "esmesh" ]; then
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
-  ./esmesh
+  ./waf install
 fi
 
 if [ "$1" = "build" ]; then
   ./waf install
-fi
-
-if [ "$1" = "build-pardiso_mkl" ]; then
-  ./waf install --pardiso_mkl
-fi
-
-if [ "$1" = "mic" ]; then
-  ./waf install --static --mic
 fi
 
 if [ "$1" = "clean" ]; then
