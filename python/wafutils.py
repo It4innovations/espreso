@@ -1,10 +1,22 @@
 
 import os
+import subprocess
 
 def check_libraries(ctx):
     def add(map, *libraries):
         for library in libraries:
             map[library] = [ library ]
+
+    def check_library(type, name, library):
+        env = ctx.env
+        ctx.setenv("tmp", ctx.env.derive());
+        ctx.env.append_unique("LIB", library)
+        ctx.check(
+            msg     = "Checking for library '{0}'".format(name),
+            errmsg  = "not found - add path to library '{0}' to {1}PATH".format(name, type),
+            okmsg   = "found"
+        )
+        ctx.env = env
 
     libraries = {}
     stlibraries = {}
@@ -26,16 +38,21 @@ def check_libraries(ctx):
         add(libraries, "ifcore")
 
     for name, library in libraries.items():
-        check_library(ctx, "LIB", name, library)
+        check_library("LIB", name, library)
 
     for name, library in stlibraries.items():
-        check_library(ctx, "STLIB", name, library)
+        check_library("STLIB", name, library)
 
 def check_headers(ctx):
-    headers = [ "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]
+    headers = [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]
 
     for header in headers:
-        check_header(ctx, header)
+        ctx.check_cxx(
+            header_name = header,
+            msg         = "Checking for header '{0}'".format(header),
+            errmsg      = "not found - add path to header '{0}' to INCLUDES".format(header),
+            okmsg       = "found"
+        )
 
 def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes):
     def read_config(config):
@@ -125,70 +142,12 @@ def check_environment(ctx):
     ctx.env.LIB = []
     ctx.env.STLIB = []
 
-    ret = ctx.check(
-        fragment=
-            '''
-            #include "mpi.h"
-            #include <iostream>
-            int main() {
-            #ifdef __ICC
-                std::cout << __ICC;
-                return 0;
-            #endif
-            #ifdef __INTEL_COMPILER
-                std::cout <<  __INTEL_COMPILER;
-                return 0;
-            #endif
-                return 0;
-            }
-            ''',
-        execute     = True,
-        define_ret  = True,
-        errmsg      = " ".join(ctx.env.CXX) + " is not MPI/Intel compiler",
-        msg         = "Checking for MPI/Intel compiler",
-        okmsg       = "pass")
-
-    ctx.env.ICPC_VERSION = int(ret[:2])
+    ret = subprocess.Popen(ctx.env.CXX + [ "--version" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    version = ret.communicate()[0].split()[2]
+    ctx.env.ICPC_VERSION = int(version[:2])
     ctx.msg("Checking for Intel compiler version", ctx.env.ICPC_VERSION)
-
-    ctx.check_cxx(
-        fragment=
-            '''
-            #include <iostream>
-            int main() {
-                long x;
-                if (sizeof(x) == 8) {
-                    std::cout << "sizeof(x)";
-                }
-                return 0;
-            }
-            ''',
-        execute     = True,
-        mandatory   = False,
-        errmsg      = "WARNING: ESPRESO with your compiler supports only 32-bit integers",
-        okmsg       = "supported",
-        msg         = "Checking for 64-bit integers")
 
     check_headers(ctx)
     check_libraries(ctx)
 
-def check_library(ctx, type, name, library):
-    env = ctx.env
-    ctx.setenv("tmp", ctx.env.derive());
-    ctx.env.append_unique("LIB", library)
-    ctx.check(
-        msg     = "Checking for library '{0}'".format(name),
-        errmsg  = "not found - add path to library '{0}' to {1}PATH".format(name, type),
-        okmsg   = "found"
-    )
-    ctx.env = env
-
-def check_header(ctx, header):
-    ctx.check_cxx(
-        fragment  = "#include \"{0}\"\nint main() {{ return 0; }}".format(header),
-        msg       = "Checking for header '{0}'".format(header),
-        errmsg    = "not found - add path to header '{0}' to INCLUDES".format(header),
-        okmsg     = "found"
-    )
-    ctx.env[type] = []
 
