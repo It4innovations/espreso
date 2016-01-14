@@ -142,7 +142,7 @@ def check_environment(ctx):
     ctx.env.LIB = []
     ctx.env.STLIB = []
 
-    ret = subprocess.Popen(ctx.env.CXX + [ "--version" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = subprocess.Popen(ctx.env.CXX + ctx.env.CXXFLAGS + [ "--version" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     version = ret.communicate()[0].split()[2]
     ctx.env.ICPC_VERSION = int(version[:2])
     ctx.msg("Checking for Intel compiler version", ctx.env.ICPC_VERSION)
