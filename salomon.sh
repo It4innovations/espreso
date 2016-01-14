@@ -70,19 +70,24 @@ fi
 #module load icc/2015.3.187
 #module load imkl/11.2.3.187-iimpi-7.3.5
 
-module load icc/2016.1.150-GCC-4.9.3 
-module load imkl/11.3.1.150-iimpi-2016.00-GCC-4.9.3
-module load tbb/4.4.2.152
-module load DDT/5.0.1
-module load itac/9.1.2.024
+#module load icc/2016.1.150-GCC-4.9.3 
+#module load imkl/11.3.1.150-iimpi-2016.00-GCC-4.9.3
+#module load tbb/4.4.2.152
+#module load DDT/5.0.1
+#module load itac/9.1.2.024
+
+module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25
+module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25 
+module load tbb/4.4.2.152 
+
 
 #INTEL MPI
 #module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3
 
 
 #START - SGI MPI
-module load perfboost
-module load mpt/2.12
+#module load perfboost
+#module load mpt/2.12
 
 export MPI_DSM_DISTRIBUTE=0
 export MPI_SHEPHERD=1
@@ -126,6 +131,7 @@ if [ "$1" = "mesh" ]; then
 fi
 
 if [ "$1" = "build" ]; then
+  module list
   ./waf install
 fi
 
