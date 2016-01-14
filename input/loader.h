@@ -16,9 +16,10 @@ public:
 		elements(mesh._elements);
 		mesh.partitiate(esconfig::mesh::subdomains);
 		mesh.computeFixPoints(esconfig::mesh::fixPoints);
+		mesh.computeBoundaries();
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
-		mesh.computeBoundaries();
+
 		mesh.computeCorners(
 				esconfig::mesh::corners,
 				esconfig::mesh::vertexCorners,
@@ -45,20 +46,35 @@ public:
 		elements(mesh._elements, mesh._partPtrs);
 		mesh.remapElementsToSubdomain();
 
-		fixPoints(mesh._fixPoints);
-		for (size_t p = 0; p < mesh.parts(); p++) {
-			for (size_t i = 0; i < mesh._fixPoints[p].size(); i++) {
-				mesh._fixPoints[p][i] = mesh.coordinates().localIndex(mesh._fixPoints[p][i], p);
+		if (manualPartition()) {
+			mesh.partitiate(esconfig::mesh::subdomains);
+			mesh.computeFixPoints(esconfig::mesh::fixPoints);
+		} else {
+			fixPoints(mesh._fixPoints);
+			for (size_t p = 0; p < mesh.parts(); p++) {
+				for (size_t i = 0; i < mesh._fixPoints[p].size(); i++) {
+					mesh._fixPoints[p][i] = mesh.coordinates().localIndex(mesh._fixPoints[p][i], p);
+				}
+				std::sort(mesh._fixPoints[p].begin(), mesh._fixPoints[p].end());
 			}
-			std::sort(mesh._fixPoints[p].begin(), mesh._fixPoints[p].end());
 		}
-
 		mesh.computeBoundaries();
-		corners(mesh._subdomainBoundaries);
+		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh._clusterBoundaries);
 
-		boundaryConditions(mesh._coordinates);
+		if (manualPartition()) {
+			mesh.computeCorners(
+					esconfig::mesh::corners,
+					esconfig::mesh::vertexCorners,
+					esconfig::mesh::edgeCorners,
+					esconfig::mesh::faceCorners,
+					esconfig::mesh::averaging);
+		} else {
+			corners(mesh._subdomainBoundaries);
+		}
 	}
+
+	virtual bool manualPartition() = 0;
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;

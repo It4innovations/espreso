@@ -4,13 +4,15 @@
 
 #include "../loader.h"
 #include "elements/elements.h"
+#include "settings.h"
 
 namespace esinput {
 
 class Generator {
 
 public:
-	Generator(int rank, int size): _rank(rank), _size(size) { };
+	Generator(int argc, char** argv, size_t index, size_t size): _settings(argc, argv, index, size) { };
+	Generator(const Settings &settings): _settings(settings) { };
 
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
@@ -19,17 +21,23 @@ public:
 	virtual void corners(mesh::Boundaries &boundaries) = 0;
 	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
 
+	bool manualPartition()
+	{
+		return _settings.useMetis;
+	}
+
 	virtual ~Generator() { };
 
 protected:
-	int _rank;
-	int _size;
+	const Settings _settings;
 };
 
 class MeshGenerator: public InternalLoader {
 public:
-	MeshGenerator(int argc, char** argv, int rank, int size);
+	MeshGenerator(int argc, char** argv, size_t index, size_t size);
 	MeshGenerator(Generator *generator): _generator(generator) { };
+
+	bool manualPartition();
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);

@@ -31,7 +31,7 @@ static std::vector<Description> createUniformSetting()
 std::vector<Description> UniformSettings::description = createUniformSetting();
 
 UniformSettings::UniformSettings(int argc, char** argv, size_t index, size_t size)
-:index(index), size(size)
+: Settings(index, size)
 {
 	Configuration configuration(UniformSettings::description, argc, argv);
 
@@ -47,7 +47,8 @@ UniformSettings::UniformSettings(int argc, char** argv, size_t index, size_t siz
 	faces = configuration.value<bool>("CORNERS_IN_FACES", false);
 }
 
-UniformSettings::UniformSettings(size_t index, size_t size): index(index), size(size)
+UniformSettings::UniformSettings(size_t index, size_t size)
+: Settings(index, size)
 {
 	for (size_t i = 0; i < 3; i++) { // x, y, z
 		subdomainsInCluster[i] = 2;

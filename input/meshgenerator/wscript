@@ -11,6 +11,7 @@ source_files = (
     "configuration/configuration.cpp",
     "factory/factory.cpp",
     "factory/settings.cpp",
+    "settings.cpp",
     "uniformmesh/settings.cpp",
     "uniformmesh/cube/settings.cpp",
     "uniformmesh/sphere/settings.cpp",

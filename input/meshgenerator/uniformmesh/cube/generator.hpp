@@ -25,39 +25,39 @@ namespace esinput {
 //	#                                                 #
 //	###################################################
 
-static void setCluster(size_t cluster[], CubeSettings &settings)
+static void setCluster(size_t cluster[], const CubeSettings &settings)
 {
 	if (settings.clusters[0] * settings.clusters[1] * settings.clusters[2] != settings.size) {
-			if (settings.index == 0) {
-				std::cerr << "The number of clusters(" << settings.clusters[0] * settings.clusters[1] * settings.clusters[2];
-				std::cerr << ") does not accord the number of MPI processes(" << settings.size << ").\n";
-			}
-			exit(EXIT_FAILURE);
+		if (settings.index == 0) {
+			std::cerr << "The number of clusters(" << settings.clusters[0] * settings.clusters[1] * settings.clusters[2];
+			std::cerr << ") does not accord the number of MPI processes(" << settings.size << ").\n";
 		}
-		eslocal index = 0, i = 0;
-		for (size_t z = 0; z < settings.clusters[2]; z++) {
-			for (size_t y = 0; y < settings.clusters[1]; y++) {
-				for (size_t x = 0; x < settings.clusters[0]; x++) {
-					if (settings.index == index++) {
-						cluster[0] = x;
-						cluster[1] = y;
-						cluster[2] = z;
-						return;
-					}
+		exit(EXIT_FAILURE);
+	}
+	eslocal index = 0, i = 0;
+	for (size_t z = 0; z < settings.clusters[2]; z++) {
+		for (size_t y = 0; y < settings.clusters[1]; y++) {
+			for (size_t x = 0; x < settings.clusters[0]; x++) {
+				if (settings.index == index++) {
+					cluster[0] = x;
+					cluster[1] = y;
+					cluster[2] = z;
+					return;
 				}
 			}
 		}
+	}
 }
 
 template<class TElement>
-CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, int rank, int size)
-	: UniformGenerator<TElement>(argc, argv, rank, size), _settings(argc, argv, rank, size)
+CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, size_t index, size_t size)
+	: UniformGenerator<TElement>(argc, argv, index, size), _settings(argc, argv, index, size)
 {
 	setCluster(_cluster, _settings);
 }
 
 template<class TElement>
-CubeGenerator<TElement>::CubeGenerator(CubeSettings &settings)
+CubeGenerator<TElement>::CubeGenerator(const CubeSettings &settings)
 	: UniformGenerator<TElement>(settings), _settings(settings)
 {
 	setCluster(_cluster, _settings);
@@ -115,23 +115,23 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_X]) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_X];
+				if (_settings.fillCondition[CubeSettings::REAR].find(mesh::DIRICHLET_X)->second) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR].find(mesh::DIRICHLET_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_X]) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_X];
+				if (_settings.fillCondition[CubeSettings::REAR].find(mesh::FORCES_X)->second) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR].find(mesh::FORCES_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_Y]) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_Y];
+				if (_settings.fillCondition[CubeSettings::REAR].find(mesh::DIRICHLET_Y)->second) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR].find(mesh::DIRICHLET_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_Y]) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_Y];
+				if (_settings.fillCondition[CubeSettings::REAR].find(mesh::FORCES_Y)->second) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR].find(mesh::FORCES_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::REAR][mesh::DIRICHLET_Z]) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::DIRICHLET_Z];
+				if (_settings.fillCondition[CubeSettings::REAR].find(mesh::DIRICHLET_Z)->second) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR].find(mesh::DIRICHLET_Z)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::REAR][mesh::FORCES_Z]) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR][mesh::FORCES_Z];
+				if (_settings.fillCondition[CubeSettings::REAR].find(mesh::FORCES_Z)->second) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR].find(mesh::FORCES_Z)->second;
 				}
 				index += nodes[0];
 			}
@@ -142,23 +142,23 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 		eslocal index = nodes[0] - 1;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (_settings.fillCondition[CubeSettings::FRONT][mesh::DIRICHLET_X]) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::DIRICHLET_X];
+				if (_settings.fillCondition[CubeSettings::FRONT].find(mesh::DIRICHLET_X)->second) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(mesh::DIRICHLET_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT][mesh::FORCES_X]) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::FORCES_X];
+				if (_settings.fillCondition[CubeSettings::FRONT].find(mesh::FORCES_X)->second) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(mesh::FORCES_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT][mesh::DIRICHLET_Y]) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::DIRICHLET_Y];
+				if (_settings.fillCondition[CubeSettings::FRONT].find(mesh::DIRICHLET_Y)->second) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(mesh::DIRICHLET_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT][mesh::FORCES_Y]) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::FORCES_Y];
+				if (_settings.fillCondition[CubeSettings::FRONT].find(mesh::FORCES_Y)->second) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(mesh::FORCES_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT][mesh::DIRICHLET_Z]) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::DIRICHLET_Z];
+				if (_settings.fillCondition[CubeSettings::FRONT].find(mesh::DIRICHLET_Z)->second) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(mesh::DIRICHLET_Z)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT][mesh::FORCES_Z]) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::FRONT][mesh::FORCES_Z];
+				if (_settings.fillCondition[CubeSettings::FRONT].find(mesh::FORCES_Z)->second) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(mesh::FORCES_Z)->second;
 				}
 				index += nodes[0];
 			}
@@ -169,23 +169,23 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::LEFT][mesh::DIRICHLET_X]) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::DIRICHLET_X];
+				if (_settings.fillCondition[CubeSettings::LEFT].find(mesh::DIRICHLET_X)->second) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(mesh::DIRICHLET_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT][mesh::FORCES_X]) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::FORCES_X];
+				if (_settings.fillCondition[CubeSettings::LEFT].find(mesh::FORCES_X)->second) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(mesh::FORCES_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT][mesh::DIRICHLET_Y]) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::DIRICHLET_Y];
+				if (_settings.fillCondition[CubeSettings::LEFT].find(mesh::DIRICHLET_Y)->second) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(mesh::DIRICHLET_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT][mesh::FORCES_Y]) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::FORCES_Y];
+				if (_settings.fillCondition[CubeSettings::LEFT].find(mesh::FORCES_Y)->second) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(mesh::FORCES_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT][mesh::DIRICHLET_Z]) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::DIRICHLET_Z];
+				if (_settings.fillCondition[CubeSettings::LEFT].find(mesh::DIRICHLET_Z)->second) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(mesh::DIRICHLET_Z)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT][mesh::FORCES_Z]) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT][mesh::FORCES_Z];
+				if (_settings.fillCondition[CubeSettings::LEFT].find(mesh::FORCES_Z)->second) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(mesh::FORCES_Z)->second;
 				}
 				index++;
 			}
@@ -197,23 +197,23 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 		eslocal index = nodes[1] * nodes[0] - 1;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::DIRICHLET_X]) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::DIRICHLET_X];
+				if (_settings.fillCondition[CubeSettings::RIGHT].find(mesh::DIRICHLET_X)->second) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(mesh::DIRICHLET_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::FORCES_X]) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::FORCES_X];
+				if (_settings.fillCondition[CubeSettings::RIGHT].find(mesh::FORCES_X)->second) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(mesh::FORCES_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Y]) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Y];
+				if (_settings.fillCondition[CubeSettings::RIGHT].find(mesh::DIRICHLET_Y)->second) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(mesh::DIRICHLET_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::FORCES_Y]) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::FORCES_Y];
+				if (_settings.fillCondition[CubeSettings::RIGHT].find(mesh::FORCES_Y)->second) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(mesh::FORCES_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Z]) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::DIRICHLET_Z];
+				if (_settings.fillCondition[CubeSettings::RIGHT].find(mesh::DIRICHLET_Z)->second) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(mesh::DIRICHLET_Z)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT][mesh::FORCES_Z]) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT][mesh::FORCES_Z];
+				if (_settings.fillCondition[CubeSettings::RIGHT].find(mesh::FORCES_Z)->second) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(mesh::FORCES_Z)->second;
 				}
 				index++;
 			}
@@ -225,23 +225,23 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 		eslocal index = 0;
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_X]) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_X];
+				if (_settings.fillCondition[CubeSettings::BOTTOM].find(mesh::DIRICHLET_X)->second) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(mesh::DIRICHLET_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::FORCES_X]) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::FORCES_X];
+				if (_settings.fillCondition[CubeSettings::BOTTOM].find(mesh::FORCES_X)->second) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(mesh::FORCES_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Y]) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Y];
+				if (_settings.fillCondition[CubeSettings::BOTTOM].find(mesh::DIRICHLET_Y)->second) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(mesh::DIRICHLET_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::FORCES_Y]) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::FORCES_Y];
+				if (_settings.fillCondition[CubeSettings::BOTTOM].find(mesh::FORCES_Y)->second) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(mesh::FORCES_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Z]) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::DIRICHLET_Z];
+				if (_settings.fillCondition[CubeSettings::BOTTOM].find(mesh::DIRICHLET_Z)->second) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(mesh::DIRICHLET_Z)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM][mesh::FORCES_Z]) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM][mesh::FORCES_Z];
+				if (_settings.fillCondition[CubeSettings::BOTTOM].find(mesh::FORCES_Z)->second) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(mesh::FORCES_Z)->second;
 				}
 				index++;
 			}
@@ -252,23 +252,23 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 		eslocal index = nodes[0] * nodes[1] * (nodes[2] - 1);
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::TOP][mesh::DIRICHLET_X]) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::DIRICHLET_X];
+				if (_settings.fillCondition[CubeSettings::TOP].find(mesh::DIRICHLET_X)->second) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP].find(mesh::DIRICHLET_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::TOP][mesh::FORCES_X]) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::FORCES_X];
+				if (_settings.fillCondition[CubeSettings::TOP].find(mesh::FORCES_X)->second) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP].find(mesh::FORCES_X)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::TOP][mesh::DIRICHLET_Y]) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::DIRICHLET_Y];
+				if (_settings.fillCondition[CubeSettings::TOP].find(mesh::DIRICHLET_Y)->second) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP].find(mesh::DIRICHLET_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::TOP][mesh::FORCES_Y]) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::FORCES_Y];
+				if (_settings.fillCondition[CubeSettings::TOP].find(mesh::FORCES_Y)->second) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP].find(mesh::FORCES_Y)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::TOP][mesh::DIRICHLET_Z]) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::DIRICHLET_Z];
+				if (_settings.fillCondition[CubeSettings::TOP].find(mesh::DIRICHLET_Z)->second) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP].find(mesh::DIRICHLET_Z)->second;
 				}
-				if (_settings.fillCondition[CubeSettings::TOP][mesh::FORCES_Z]) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP][mesh::FORCES_Z];
+				if (_settings.fillCondition[CubeSettings::TOP].find(mesh::FORCES_Z)->second) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP].find(mesh::FORCES_Z)->second;
 				}
 				index++;
 			}

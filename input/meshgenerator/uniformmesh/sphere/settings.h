@@ -9,6 +9,7 @@ namespace esinput {
 struct SphereSettings: public UniformSettings {
 
 	SphereSettings(int argc, char** argv, size_t index, size_t size);
+	SphereSettings(size_t index, size_t size);
 
 	static std::vector<Description> description;
 
@@ -19,7 +20,10 @@ struct SphereSettings: public UniformSettings {
 
 inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
 {
+	os << UniformSettings(s);
 	os << "layers: " << s.layers << "\n";
+	os << "innerRadius: " << s.innerRadius << "\n";
+	os << "outerRadius: " << s.outerRadius << "\n";
 	return os;
 }
 

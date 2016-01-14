@@ -42,6 +42,7 @@ public:
 	friend class esinput::InternalLoader;
 	friend class esinput::ExternalLoader;
 
+
 	Mesh();
 
 	const Coordinates& coordinates() const

@@ -3,7 +3,7 @@
 
 using namespace esinput;
 
-Generator* MeshFactory::create(int argc, char** argv, int rank, int size)
+Generator* MeshFactory::create(int argc, char** argv, size_t index, size_t size)
 {
 	FactorySettings settings(argc, argv);
 
@@ -11,35 +11,35 @@ Generator* MeshFactory::create(int argc, char** argv, int rank, int size)
 	case CUBE: {
 		switch (settings.elementType) {
 		case HEXA8: {
-			return new CubeGenerator<Hexahedron8>(argc, argv, rank, size);
+			return new CubeGenerator<Hexahedron8>(argc, argv, index, size);
 			break;
 		}
 		case HEXA20: {
-			return new CubeGenerator<Hexahedron20>(argc, argv, rank, size);
+			return new CubeGenerator<Hexahedron20>(argc, argv, index, size);
 			break;
 		}
 		case TETRA4: {
-			return new CubeGenerator<Tetrahedron4>(argc, argv, rank, size);
+			return new CubeGenerator<Tetrahedron4>(argc, argv, index, size);
 			break;
 		}
 		case TETRA10: {
-			return new CubeGenerator<Tetrahedron10>(argc, argv, rank, size);
+			return new CubeGenerator<Tetrahedron10>(argc, argv, index, size);
 			break;
 		}
 		case PRISMA6: {
-			return new CubeGenerator<Prisma6>(argc, argv, rank, size);
+			return new CubeGenerator<Prisma6>(argc, argv, index, size);
 			break;
 		}
 		case PRISMA15: {
-			return new CubeGenerator<Prisma15>(argc, argv, rank, size);
+			return new CubeGenerator<Prisma15>(argc, argv, index, size);
 			break;
 		}
 		case PYRAMID5: {
-			return new CubeGenerator<Pyramid5>(argc, argv, rank, size);
+			return new CubeGenerator<Pyramid5>(argc, argv, index, size);
 			break;
 		}
 		case PYRAMID13: {
-			return new CubeGenerator<Pyramid13>(argc, argv, rank, size);
+			return new CubeGenerator<Pyramid13>(argc, argv, index, size);
 			break;
 		}
 		default: {
@@ -52,35 +52,35 @@ Generator* MeshFactory::create(int argc, char** argv, int rank, int size)
 	case SPHERE: {
 		switch (settings.elementType) {
 		case HEXA8: {
-			return new SphereGenerator<Hexahedron8>(argc, argv, rank, size);
+			return new SphereGenerator<Hexahedron8>(argc, argv, index, size);
 			break;
 		}
 		case HEXA20: {
-			return new SphereGenerator<Hexahedron20>(argc, argv, rank, size);
+			return new SphereGenerator<Hexahedron20>(argc, argv, index, size);
 			break;
 		}
 		case TETRA4: {
-			return new SphereGenerator<Tetrahedron4>(argc, argv, rank, size);
+			return new SphereGenerator<Tetrahedron4>(argc, argv, index, size);
 			break;
 		}
 		case TETRA10: {
-			return new SphereGenerator<Tetrahedron10>(argc, argv, rank, size);
+			return new SphereGenerator<Tetrahedron10>(argc, argv, index, size);
 			break;
 		}
 		case PRISMA6: {
-			return new SphereGenerator<Prisma6>(argc, argv, rank, size);
+			return new SphereGenerator<Prisma6>(argc, argv, index, size);
 			break;
 		}
 		case PRISMA15: {
-			return new SphereGenerator<Prisma15>(argc, argv, rank, size);
+			return new SphereGenerator<Prisma15>(argc, argv, index, size);
 			break;
 		}
 		case PYRAMID5: {
-			return new SphereGenerator<Pyramid5>(argc, argv, rank, size);
+			return new SphereGenerator<Pyramid5>(argc, argv, index, size);
 			break;
 		}
 		case PYRAMID13: {
-			return new SphereGenerator<Pyramid13>(argc, argv, rank, size);
+			return new SphereGenerator<Pyramid13>(argc, argv, index, size);
 			break;
 		}
 		default: {

@@ -13,9 +13,10 @@ template<class TElement>
 class UniformGenerator: public Generator {
 
 public:
-	UniformGenerator(int argc, char** argv, int rank, int size);
-	UniformGenerator(UniformSettings &settings)
-	: Generator(settings.index, settings.size), _settings(settings) { };
+	UniformGenerator(int argc, char** argv, size_t index, size_t size)
+	: Generator(argc, argv, index, size), _settings(argc, argv, index, size) { };
+	UniformGenerator(const UniformSettings &settings)
+	: Generator(settings), _settings(settings) { };
 
 	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
@@ -23,7 +24,7 @@ public:
 
 protected:
 	TElement _e;
-	UniformSettings _settings;
+	const UniformSettings _settings;
 };
 
 }

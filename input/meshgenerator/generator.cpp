@@ -5,9 +5,14 @@
 using namespace esinput;
 
 
-MeshGenerator::MeshGenerator(int argc, char** argv, int rank, int size)
+MeshGenerator::MeshGenerator(int argc, char** argv, size_t index, size_t size)
 {
-	_generator = MeshFactory::create(argc, argv, rank, size);
+	_generator = MeshFactory::create(argc, argv, index, size);
+}
+
+bool MeshGenerator::manualPartition()
+{
+	return _generator->manualPartition();
 }
 
 void MeshGenerator::points(mesh::Coordinates &coordinates)

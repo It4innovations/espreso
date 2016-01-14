@@ -22,7 +22,7 @@ static std::vector<Description> createSphereSetting()
 
 std::vector<Description> SphereSettings::description = createSphereSetting();
 
-SphereSettings::SphereSettings(int argc, char** argv,size_t index, size_t size)
+SphereSettings::SphereSettings(int argc, char** argv, size_t index, size_t size)
 : UniformSettings(argc, argv, index, size)
 {
 	Configuration configuration(SphereSettings::description, argc, argv);
@@ -30,6 +30,14 @@ SphereSettings::SphereSettings(int argc, char** argv,size_t index, size_t size)
 	layers = configuration.value<eslocal>("LAYERS", 1);
 	innerRadius = configuration.value<double>("INNER_RADIUS", 9);
 	outerRadius = configuration.value<double>("OUTER_RADIUS", 12);
+}
+
+SphereSettings::SphereSettings(size_t index, size_t size)
+: UniformSettings(index, size)
+{
+	layers = 1;
+	innerRadius = 9;
+	outerRadius = 12;
 }
 
 

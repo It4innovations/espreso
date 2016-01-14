@@ -12,14 +12,15 @@ template<class TElement>
 class SphereGenerator: public UniformGenerator<TElement> {
 
 public:
-	SphereGenerator(int argc, char** argv, int rank, int size);
+	SphereGenerator(int argc, char** argv, size_t index, size_t size);
+	SphereGenerator(const SphereSettings &settings);
 
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Boundaries &boundaries);
 
 private:
-	SphereSettings _settings;
+	const SphereSettings _settings;
 };
 
 }

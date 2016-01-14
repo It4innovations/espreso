@@ -12,15 +12,15 @@ template<class TElement>
 class CubeGenerator: public UniformGenerator<TElement> {
 
 public:
-	CubeGenerator(int argc, char** argv, int rank, int size);
-	CubeGenerator(CubeSettings &settings);
+	CubeGenerator(int argc, char** argv, size_t index, size_t size);
+	CubeGenerator(const CubeSettings &settings);
 
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Boundaries &boundaries);
 
 protected:
-	CubeSettings _settings;
+	const CubeSettings _settings;
 	size_t _cluster[3];
 };
 
