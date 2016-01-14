@@ -144,7 +144,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	e = new eslocal[eSize + 1];
 	e[0] = 0;
 	for (eslocal i = first, index = 0; i < last; i++, index++) {
-		e[index + 1] = e[index] + _elements[i]->size();
+		e[index + 1] = e[index] + _elements[i]->coarseSize();
 	}
 
 	// create array of nodes
@@ -153,7 +153,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	ncommon = 4;
 	for (eslocal i = first, index = 0; i < last; i++, index++) {
 		const Element* el = _elements[i];
-		memcpy(n + e[index], el->indices(), el->size() * sizeof(eslocal));
+		memcpy(n + e[index], el->indices(), el->coarseSize() * sizeof(eslocal));
 		if (ncommon > _elements[i]->nCommon()) {
 			ncommon = _elements[i]->nCommon();
 		}

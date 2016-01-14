@@ -3,6 +3,7 @@
 
 #include "../element.h"
 #include "../2D/triangle.h"
+#include "tetrahedron4.h"
 
 #define Tetrahedron10NodesCount 10
 #define Tetrahedron10FacesCount 4
@@ -38,6 +39,11 @@ public:
 	size_t size() const
 	{
 		return Tetrahedron10NodesCount;
+	}
+
+	size_t coarseSize() const
+	{
+		return Tetrahedron4NodesCount;
 	}
 
 	size_t gpSize() const

@@ -41,6 +41,11 @@ public:
 		return Tetrahedron4NodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return Tetrahedron4NodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return Tetrahedron4GPCount;

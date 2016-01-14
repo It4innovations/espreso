@@ -39,6 +39,11 @@ public:
 		return LineNodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return LineNodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return LineGPCount;

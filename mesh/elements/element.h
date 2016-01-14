@@ -73,6 +73,7 @@ public:
 	virtual eslocal nCommon() const = 0;
 	virtual eslocal vtkCode() const = 0;
 	virtual size_t size() const = 0;
+	virtual size_t coarseSize() const = 0;
 	virtual size_t gpSize() const = 0;
 	virtual size_t faces() const = 0;
 	virtual std::vector<eslocal> getFace(size_t face) const = 0;

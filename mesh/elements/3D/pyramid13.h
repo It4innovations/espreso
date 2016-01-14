@@ -4,6 +4,7 @@
 
 #include "../element.h"
 #include "../1D/line.h"
+#include "pyramid5.h"
 
 #define Pyramid13NodesCount 13
 #define Pyramid13FacesCount 5
@@ -39,6 +40,11 @@ public:
 	size_t size() const
 	{
 		return Pyramid13NodesCount;
+	}
+
+	size_t coarseSize() const
+	{
+		return Pyramid5NodesCount;
 	}
 
 	size_t gpSize() const

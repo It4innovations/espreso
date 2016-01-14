@@ -39,6 +39,11 @@ public:
 		return SquareNodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return SquareNodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return SquareGPCount;

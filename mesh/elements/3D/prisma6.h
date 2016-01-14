@@ -41,6 +41,11 @@ public:
 		return Prisma6NodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return Prisma6NodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return Prisma6GPCount;

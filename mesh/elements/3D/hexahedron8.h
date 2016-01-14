@@ -41,6 +41,11 @@ public:
 		return Hexahedron8NodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return Hexahedron8NodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return Hexahedron8GPCount;

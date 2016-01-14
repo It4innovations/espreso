@@ -3,6 +3,7 @@
 #define PRISMA15_H_
 
 #include "../element.h"
+#include "prisma6.h"
 
 #define Prisma15NodesCount 15
 #define Prisma15FacesCount 5
@@ -38,6 +39,11 @@ public:
 	size_t size() const
 	{
 		return Prisma15NodesCount;
+	}
+
+	size_t coarseSize() const
+	{
+		return Prisma6NodesCount;
 	}
 
 	size_t gpSize() const

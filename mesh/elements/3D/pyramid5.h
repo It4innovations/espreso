@@ -42,6 +42,11 @@ public:
 		return Pyramid5NodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return Pyramid5NodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return Pyramid5GPCount;

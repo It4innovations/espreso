@@ -5,6 +5,7 @@
 #include "../element.h"
 #include "../2D/square.h"
 #include "../1D/line.h"
+#include "hexahedron8.h"
 
 #define Hexahedron20NodesCount 20
 #define Hexahedron20FacesCount 6
@@ -40,6 +41,11 @@ public:
 	size_t size() const
 	{
 		return Hexahedron20NodesCount;
+	}
+
+	size_t coarseSize() const
+	{
+		return Hexahedron8NodesCount;
 	}
 
 	size_t gpSize() const

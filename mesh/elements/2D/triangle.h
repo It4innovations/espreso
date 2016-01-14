@@ -39,6 +39,11 @@ public:
 		return TriangleNodesCount;
 	}
 
+	size_t coarseSize() const
+	{
+		return TriangleNodesCount;
+	}
+
 	size_t gpSize() const
 	{
 		return TriangleGPCount;
