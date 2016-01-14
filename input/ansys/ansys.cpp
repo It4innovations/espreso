@@ -44,28 +44,37 @@ void Ansys::points(mesh::Coordinates &coordinates)
 
 void Ansys::elements(std::vector<mesh::Element*> &elements)
 {
+	int lines = 2;	// load it from Model/BC/Elasticity/ELEMENT_TYPE.dat
 	std::string fileName = _path + "/Model/ELEMENTS.dat";
-	elements.resize(getLinesCount(fileName));
+	elements.resize(getLinesCount(fileName) / lines);
 
 	std::ifstream file(fileName);
-	std::string line;
+	std::vector<std::string> line(lines);
 
 	// 20 is the max of vertices of a element
 	// 6 is the parameters number
-	eslocal values[20 + 6], n;
+	eslocal values[20];
+	eslocal params[6];
 	eslocal value;
 	eslocal minIndices = 10000;
 
 	if (file.is_open()) {
 		for (eslocal c = 0; c < elements.size(); c++) {
-			getline(file, line, '\n');
-			std::stringstream ss(line);
-
-			n = 0;
-			while (ss >> value) {
-				values[n++] = value;
+			for (size_t l = 0; l < lines; l++) {
+				getline(file, line[l], '\n');
 			}
-			n -= 6;
+
+			eslocal n = 0, p = 0;
+			for (size_t l = 0; l < line.size(); l++) {
+				std::stringstream ss(line[l]);
+				while (ss >> value) {
+					if (n + p >= 8 && n + p <= 13) {
+						params[p++] = value;
+					} else {
+						values[n++] = value;
+					}
+				}
+			}
 
 			// re-index to zero base
 			for (size_t i = 0; i < n; i++) {

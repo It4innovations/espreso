@@ -271,7 +271,7 @@ bool Tetrahedron10::match(eslocal *indices, eslocal n) {
 	if (!Element::match(indices, 2, 10)) {
 		return false;
 	}
-	if (!Element::match(indices, 19, 20)) {
+	if (!Element::match(indices, 18, 19)) {
 		return false;
 	}
 	if (!Element::match(indices, 4, 5)) {
