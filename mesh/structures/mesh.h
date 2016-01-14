@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <stdlib.h>
+#include <functional>
 
 #include "mkl_spblas.h"
 #include "mkl_blas.h"
