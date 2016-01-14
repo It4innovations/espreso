@@ -8,7 +8,7 @@
 
 namespace esinput {
 
-class Generator {
+class Generator: public InternalLoader {
 
 public:
 	Generator(int argc, char** argv, size_t index, size_t size): _settings(argc, argv, index, size) { };
