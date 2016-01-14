@@ -1,0 +1,8 @@
+
+ INTERACTIVE LINES PER PAGE     =        20
+ INTERACTIVE CHARACTERS PER LINE=       256
+ FILE OUTPUT LINES PER PAGE     =   1000000
+ FILE OUTPUT CHARACTERS PER LINE=       132
+
+ *** NOTE ***                            CP =       6.641   TIME= 15:17:33
+ No entities defined.  The RLIST command is ignored.                     
