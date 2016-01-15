@@ -16,7 +16,7 @@ namespace mesh {
 	bool faceCorners = false;
 	bool averaging = false;
 
-	Input input = ANSYS;
+	Input input = ESDATA_IN;
 	Output output = VTK_FULL;
 }
 

@@ -14,7 +14,8 @@ int main(int argc, char** argv)
 	esinput::Ansys loader(argc, argv, 0, 1);
 	loader.load(m);
 	m.partitiate(atoi(argv[2]));
-	esoutput::VTK_Full vtk(m, argv[3]);
+	esoutput::Esdata data(m, argv[3]);
+	data.store(1, 1);
 }
 
 
