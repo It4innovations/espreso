@@ -22,6 +22,11 @@ def check_libraries(ctx):
     stlibraries = {}
 
     add(libraries, "pthread")
+    if not ctx.env.BUILD_TOOLS:
+        if ctx.env.LIBTYPE == "STATIC":
+            add(stlibraries, "metis")
+        else:
+            add(libraries, "metis")
     libraries["mkl"] = [ "mkl_intel_lp64", "mkl_core", "mkl_intel_thread" ]
 
     if ctx.env.SOLVER == "PARDISO":
