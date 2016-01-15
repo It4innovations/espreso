@@ -631,7 +631,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			// non-continuous edge -> separate it
 			std::vector<std::pair<eslocal, eslocal> > neigh(clm.coordinates().clusterSize(), std::pair<eslocal, eslocal>(-1, -1));
 			std::vector<int> color(clm._elements.size() - clm._partPtrs.back());
-			auto next = [&] (eslocal node) {
+			auto next = [&] (eslocal node) -> eslocal {
 				if (neigh[node].first != -1 && color[neigh[node].first - clm._partPtrs.back()] == 0) {
 					return neigh[node].first;
 				};
