@@ -17,6 +17,9 @@ SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC M
 LIBTYPE = SHARED        # ESPRESO is built to SHARED or STATIC libraries
 VERBOSE = 1             # Verbosity level { 0 - nothing, 1, 2, 3 - all }
 DEBUG = 0               # turn { 0 - off, 1 -on } print of debug information
+BUILD_TOOLS = 1         # ESPRESO try to compile external tools.
+                        # If the compilation is not successful set this attribute to 0 and build tools manually.
+                        # Required tools: METIS
 
 
 #..............................................................................

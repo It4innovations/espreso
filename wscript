@@ -33,6 +33,7 @@ espreso_attributes = [
     ("SOLVER", "ESPRESO internal solver. Default: MKL", "choice", solvers),
     ("VERBOSE", "Verbosity level.", "choice", [ "0", "1", "2", "3" ]),
     ("DEBUG", "Debug information.", "choice", [ "0", "1" ]),
+    ("BUILD_TOOLS", "ESPRESO try to compile external tools. If the compilation is not successful set this attribute to 0 and build tools manually.", "choice", [ "0", "1" ]),
 ]
 
 
@@ -53,8 +54,8 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
     ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
 
-    # recurse to tools
-    ctx.recurse("tools")
+    if ctx.env.BUILD_TOOLS:
+        ctx.recurse("tools")
 
     # recurse to basic parts
     ctx.recurse("basis")
