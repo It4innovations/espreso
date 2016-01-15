@@ -1,0 +1,68 @@
+
+#..............................................................................
+# Set MPI compilers. ESPRESO is compiled by a compiler specified in CXX.
+# CXX compiler has to use Intel C++ compiler.
+
+CXX = CC
+CC = cc
+FC = ftn
+
+
+#..............................................................................
+# Set general ESPRESO settings
+
+CHECK_ENV = 1           # turn { 0 - off, 1 - on } all checks for configuration
+INT_WIDTH = 32          # ESPRESO supports only { 32, 64 } integer width
+SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC MUMPS
+LIBTYPE = STATIC        # ESPRESO is built to SHARED or STATIC libraries
+VERBOSE = 1             # Verbosity level { 0 - nothing, 1, 2, 3 - all }
+DEBUG = 0               # turn { 0 - off, 1 -on } print of debug information
+BUILD_TOOLS = 0         # METIS is usually installed on cray systems
+
+
+#..............................................................................
+# Set global compiler attributes
+
+CXXFLAGS = -Wall -openmp -std=c++11 -O2 -fPIC -dynamic
+LINKFLAGS = -Wall -openmp -pie -dynamic
+INCLUDES =
+LIBPATH =
+STLIBPATH =
+
+
+#..............................................................................
+# Set solver specific compiler attributes
+
+# Parameters are in the form SOLVER::ATTRIBUTE. By these attributes
+# you can specify attributes only for chosen SOLVER. Each attribute
+# will be added to global compiler attributes.
+
+MKL::CXXFLAGS =
+MKL::LINKFLAGS =
+MKL::INCLUDES =
+MKL::LIBPATH =
+MKL::STLIBPATH =
+
+PARDISO::CXXFLAGS =
+PARDISO::LINKFLAGS =
+PARDISO::INCLUDES =
+PARDISO::LIBPATH =
+PARDISO::STLIBPATH =
+
+CUDA::CXXFLAGS =
+CUDA::LINKFLAGS =
+CUDA::INCLUDES =
+CUDA::LIBPATH =
+CUDA::STLIBPATH =
+
+MIC::CXXFLAGS =
+MIC::LINKFLAGS =
+MIC::INCLUDES =
+MIC::LIBPATH =
+MIC::STLIBPATH =
+
+MUMPS::CXXFLAGS =
+MUMPS::LINKFLAGS =
+MUMPS::INCLUDES =
+MUMPS::LIBPATH =
+MUMPS::STLIBPATH =

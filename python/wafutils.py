@@ -79,8 +79,10 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
             ctx.msg("Settings " + attribute + " to ", value)
 
     # Load default configuration
-    defaultConfig = open("build.config.default", "r")
-    read_config(open("build.config.default", "r"))
+    if ctx.options.cray:
+        read_config(open("build.config.cray", "r"))
+    else:
+        read_config(open("build.config.default", "r"))
 
     # Load user specific configuration
     if os.path.isfile("build.config"):

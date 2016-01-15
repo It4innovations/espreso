@@ -195,5 +195,13 @@ def options(opt):
             type, choices
         )
 
+    system = opt.add_option_group("Systems")
+    system.add_option(
+        "--cray",
+        action="store_true",
+        default=False,
+        help="Compile for Cray"
+    )
+
 
 
