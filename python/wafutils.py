@@ -22,7 +22,7 @@ def check_libraries(ctx):
     stlibraries = {}
 
     add(libraries, "pthread")
-    if not ctx.env.BUILD_TOOLS:
+    if ctx.env.BUILD_TOOLS == "0":
         if ctx.env.LIBTYPE == "STATIC":
             add(stlibraries, "metis")
         else:

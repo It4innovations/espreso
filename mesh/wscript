@@ -25,7 +25,7 @@ def configure(ctx):
         metis = "metis32"
     if ctx.env.INT_WIDTH == 64:
         metis = "metis64"
-    if not ctx.env.BUILD_TOOLS:
+    if ctx.env.BUILD_TOOLS == "0":
         metis = "metis"
 
     if ctx.env.LIBTYPE == "SHARED":

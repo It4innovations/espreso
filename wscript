@@ -54,7 +54,7 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
     ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
 
-    if ctx.env.BUILD_TOOLS:
+    if ctx.env.BUILD_TOOLS == "1":
         ctx.recurse("tools")
 
     # recurse to basic parts
@@ -131,7 +131,8 @@ def build(ctx):
 
     ctx.recurse("basis")
     ctx.recurse("config")
-    ctx.recurse("tools")
+    if ctx.env.BUILD_TOOLS == "1":
+        ctx.recurse("tools")
     ctx.add_group()
     ctx.recurse("bem")
     ctx.recurse("mesh")
