@@ -243,14 +243,15 @@ void Linear<FEM>::RHS()
 	for (size_t p = 0; p < this->_input.mesh.parts(); p++) {
 		const std::vector<eslocal> &l2g = this->_input.mesh.coordinates().localToCluster(p);
 		for (eslocal i = 0; i < l2g.size(); i++) {
+			size_t n = this->_input.mesh.subdomainBoundaries()[l2g[i]].size();
 			if (forces_x.find(l2g[i]) != forces_x.end()) {
-				_f[p][this->DOFs() * i + 0] = forces_x.at(l2g[i]);
+				_f[p][this->DOFs() * i + 0] = forces_x.at(l2g[i]) / n;
 			}
 			if (forces_y.find(l2g[i]) != forces_y.end()) {
-				_f[p][this->DOFs() * i + 1] = forces_y.at(l2g[i]);
+				_f[p][this->DOFs() * i + 1] = forces_y.at(l2g[i]) / n;
 			}
 			if (forces_z.find(l2g[i]) != forces_z.end()) {
-				_f[p][this->DOFs() * i + 2] = forces_z.at(l2g[i]);
+				_f[p][this->DOFs() * i + 2] = forces_z.at(l2g[i]) / n;
 			}
 		}
 	}
