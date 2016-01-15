@@ -10,8 +10,6 @@
 #ifndef _METIS_H_
 #define _METIS_H_ 
 
-#include "espreso.h"
-
 /****************************************************************************
 * A set of defines that can be modified by the user
 *****************************************************************************/
@@ -32,7 +30,7 @@
  GCC does provides these definitions in stdint.h, but it may require some
  modifications on other architectures.
 --------------------------------------------------------------------------*/
-#define IDXTYPEWIDTH ESPRESO_LOCAL_INDICES_WIDTH
+#define IDXTYPEWIDTH METISWIDTH
 
 
 /*--------------------------------------------------------------------------
