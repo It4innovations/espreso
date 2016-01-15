@@ -30,7 +30,7 @@
  GCC does provides these definitions in stdint.h, but it may require some
  modifications on other architectures.
 --------------------------------------------------------------------------*/
-#define IDXTYPEWIDTH METISWIDTH
+#define IDXTYPEWIDTH INT_WIDTH
 
 
 /*--------------------------------------------------------------------------
