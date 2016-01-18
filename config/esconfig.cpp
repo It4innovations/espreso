@@ -26,7 +26,7 @@ namespace assembler {
 }
 namespace solver {
 
-	double 		epsilon 				= 0.001;	// Solver requested precision
+	double 		epsilon 				= 0.0001;	// Solver requested precision
 	size_t 		maxIterations			= 200;		//
 	size_t   	FETI_METHOD				= 1; 		// 0 - Total FETI; 1 - HFETI;
 	size_t   	USE_SCHUR_COMPLEMENT	= 0; 		// 1 - YES

@@ -370,13 +370,13 @@ void LinearSolver::init(
 
 
 
-	for (int d = 0; d < T_mat.size(); d++) {
+	cilk_for (int d = 0; d < T_mat.size(); d++) {
 			SparseSolver Tinv;
 			Tinv.mtype = 11;
 			Tinv.ImportMatrix(T_mat[d]);
 			Tinv.Factorization();
 
-			SpyText( T_mat[d] );
+			//SpyText( T_mat[d] );
 
 			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
 			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
