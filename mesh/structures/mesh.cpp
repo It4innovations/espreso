@@ -609,7 +609,21 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			if (std::equal(s, e, p0s) && std::equal(s, e, p1s)) {
 				tmpPair[0] = clm.coordinates().clusterIndex(outerFaces[i].first);
 				tmpPair[1] = clm.coordinates().clusterIndex(outerFaces[i].second);
-				clm._elements.push_back(new Line(tmpPair.data()));
+				if (averaging) {
+					esglobal p1 = cfm.coordinates().globalIndex(outerFaces[i].first);
+					esglobal p2 = cfm.coordinates().globalIndex(outerFaces[i].second);
+					auto &dx = _coordinates.property(DIRICHLET_X).values();
+					auto &dy = _coordinates.property(DIRICHLET_Y).values();
+					auto &dz = _coordinates.property(DIRICHLET_Z).values();
+					if (dx.find(p1) == dx.end() && dx.find(p2) == dx.end()
+							&& dy.find(p1) == dy.end() && dy.find(p2) == dy.end()
+							&& dz.find(p1) == dz.end() && dz.find(p2) == dz.end()) {
+
+						clm._elements.push_back(new Line(tmpPair.data()));
+					}
+				} else {
+					clm._elements.push_back(new Line(tmpPair.data()));
+				}
 			}
 			if (std::equal(s, e, p0s) != std::equal(s, e, p1s)) {
 				if (std::count(p0s, p0e, 1) > std::count(p1s, p1e, 1)) {
