@@ -5,7 +5,8 @@
 #include "loader.h"
 #include "meshgenerator/uniformmesh/cube/generator.h"
 #include "meshgenerator/uniformmesh/sphere/generator.h"
-#include "ansys/ansys.h"
+#include "ansys/matsol/ansys.h"
+#include "ansys/workbench/ansys.h"
 #include "esdata/esdata.h"
 #include "openfoam/openfoam.h"
 

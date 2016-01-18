@@ -1,6 +1,8 @@
 
 source_files = (
-    "ansys.cpp",
+    "utils.cpp",
+    "matsol/ansys.cpp",
+    "workbench/ansys.cpp",
 )
 
 def configure(ctx):

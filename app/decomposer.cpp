@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 	}
 
 	mesh::Mesh m;
-	esinput::Ansys loader(argc, argv, 0, 1);
+	esinput::AnsysWorkbench loader(argc, argv, 0, 1);
 	loader.load(m);
 	m.partitiate(atoi(argv[2]));
 	esoutput::Esdata data(m, argv[3]);

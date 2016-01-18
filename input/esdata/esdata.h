@@ -16,6 +16,9 @@ public:
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
 
+	void open() {};
+	void close() {};
+
 private:
 	std::string _path;
 	int _rank;

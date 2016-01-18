@@ -8,8 +8,13 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 	mesh::Mesh *mesh = new mesh::Mesh();
 	switch (esconfig::mesh::input) {
 
-	case esconfig::mesh::ANSYS: {
-		esinput::Ansys loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
+	case esconfig::mesh::ANSYS_MATSOL: {
+		esinput::AnsysMatsol loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
+		loader.load(*mesh);
+		break;
+	}
+	case esconfig::mesh::ANSYS_WORKBENCH: {
+		esinput::AnsysWorkbench loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
 		break;
 	}

@@ -19,7 +19,7 @@ namespace mesh {
 	extern bool faceCorners;
 	extern bool averaging;
 
-	enum Input { ANSYS, OPENFOAM, ESDATA_IN, GENERATOR };
+	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA_IN, GENERATOR };
 	extern Input input;
 
 	enum Output { VTK_FULL, VTK_SURFACE, ESDATA_OUT }; // only VTK_FULL is working

@@ -12,6 +12,7 @@ class ExternalLoader {
 public:
 	void load(mesh::Mesh &mesh)
 	{
+		open();
 		points(mesh._coordinates);
 		elements(mesh._elements);
 		mesh.partitiate(esconfig::mesh::subdomains);
@@ -19,6 +20,7 @@ public:
 		mesh.computeBoundaries();
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
+		close();
 
 		mesh.computeCorners(
 				esconfig::mesh::corners,
@@ -33,6 +35,9 @@ protected:
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) = 0;
+
+	virtual void open() = 0;
+	virtual void close() = 0;
 
 	virtual ~ExternalLoader() {};
 };

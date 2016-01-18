@@ -207,7 +207,7 @@ std::vector<double> Hexahedron20::_weighFactor = Hexa20_weight();
 
 bool Hexahedron20::match(eslocal *indices, eslocal n) {
 
-#ifndef D3
+#if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron20 is 3D element
 	return false;
 #endif

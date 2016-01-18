@@ -4,7 +4,7 @@
 using namespace esinput;
 
 
-Ansys::Ansys(int argc, char** argv, int rank, int size)
+AnsysMatsol::AnsysMatsol(int argc, char** argv, int rank, int size)
 {
 	if (argc < 2) {
 		if (rank == 0) {
@@ -15,7 +15,7 @@ Ansys::Ansys(int argc, char** argv, int rank, int size)
 	_path = argv[1];
 }
 
-void Ansys::points(mesh::Coordinates &coordinates)
+void AnsysMatsol::points(mesh::Coordinates &coordinates)
 {
 	std::string fileName = _path + "/Model/COORDINATES.dat";
 
@@ -42,8 +42,9 @@ void Ansys::points(mesh::Coordinates &coordinates)
 }
 
 
-void Ansys::elements(std::vector<mesh::Element*> &elements)
+void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 {
+	//std::string settingFile = _path + "/Model/BC/Elasticity/ELEMENT_TYPE.dat";
 	int lines = 2;	// load it from Model/BC/Elasticity/ELEMENT_TYPE.dat
 	std::string fileName = _path + "/Model/ELEMENTS.dat";
 	elements.resize(getLinesCount(fileName) / lines);
@@ -80,7 +81,7 @@ void Ansys::elements(std::vector<mesh::Element*> &elements)
 			for (size_t i = 0; i < n; i++) {
 				values[i]--;
 			}
-			elements[c] = createElement(values, n);
+			elements[c] = AnsysUtils::createElement(values, n);
 			elements[c]->setParams(values + n);
 		}
 		file.close();
@@ -90,7 +91,7 @@ void Ansys::elements(std::vector<mesh::Element*> &elements)
 	}
 }
 
-void Ansys::boundaryConditions(mesh::Coordinates &coordinates)
+void AnsysMatsol::boundaryConditions(mesh::Coordinates &coordinates)
 {
 	std::vector<std::string> conditions = {
 		_path + "/Model/BC/Elasticity/NUX.dat",
@@ -121,7 +122,7 @@ void Ansys::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 
-void Ansys::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void AnsysMatsol::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
@@ -129,48 +130,7 @@ void Ansys::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 	}
 }
 
-
-mesh::Element* Ansys::createElement(eslocal *indices, eslocal n)
-{
-	mesh::Element *e = NULL;
-	if (mesh::Tetrahedron4::match(indices, n)) {
-		e = new mesh::Tetrahedron4(indices);
-	}
-	if (mesh::Tetrahedron10::match(indices, n)) {
-		e = new mesh::Tetrahedron10(indices);
-	}
-	if (mesh::Hexahedron8::match(indices, n)) {
-		e = new mesh::Hexahedron8(indices);
-	}
-	if (mesh::Hexahedron20::match(indices, n)) {
-		e = new mesh::Hexahedron20(indices);
-	}
-	if (mesh::Prisma6::match(indices, n)) {
-		e = new mesh::Prisma6(indices);
-	}
-	if (mesh::Prisma15::match(indices, n)) {
-		e = new mesh::Prisma15(indices);
-	}
-	if (mesh::Pyramid5::match(indices, n)) {
-		e = new mesh::Pyramid5(indices);
-	}
-	if (mesh::Pyramid13::match(indices, n)) {
-		e = new mesh::Pyramid13(indices);
-	}
-
-	if (e == NULL) {
-		std::cerr << "Unknown element with indices: ";
-		for (eslocal i = 0; i < n; i++) {
-			std::cerr << indices[i] << " ";
-		}
-		std::cerr << "\n";
-		exit(EXIT_FAILURE);
-	}
-
-	return e;
-}
-
-size_t Ansys::getLinesCount(const std::string &file)
+size_t AnsysMatsol::getLinesCount(const std::string &file)
 {
 	std::ifstream f(file);
 	if (f.is_open()) {
