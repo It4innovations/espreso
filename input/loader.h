@@ -77,6 +77,9 @@ public:
 					esconfig::mesh::averaging);
 		} else {
 			corners(mesh._subdomainBoundaries);
+			if (esconfig::mesh::averaging) {
+				mesh.computeCorners(0, false, false, false, true);
+			}
 		}
 	}
 
