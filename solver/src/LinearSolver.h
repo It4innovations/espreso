@@ -69,6 +69,7 @@ public:
 			const mesh::Mesh &mesh,
 
 			std::vector < SparseMatrix >	& K_mat,
+			std::vector < SparseMatrix >	& T_mat,
 			std::vector < SparseMatrix >	& B1_mat,
 			std::vector < SparseMatrix >	& B0_mat,
 

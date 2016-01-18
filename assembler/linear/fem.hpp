@@ -220,6 +220,7 @@ void Linear<FEM>::initSolver()
 	_lin_solver.init(
 		_input.mesh,
 		_K,
+		_T,
 		_globalB,
 		_localB,
 		_lambda_map_sub_B1,

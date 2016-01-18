@@ -95,6 +95,7 @@ void Linear<BEM>::initSolver()
 	_lin_solver.init(
 		_input.surface,
 		_K,
+		_T,
 		_globalB,
 		_localB,
 		_lambda_map_sub_B1,

@@ -284,6 +284,7 @@ void LinearSolver::init(
 		const mesh::Mesh &mesh,
 
 		std::vector < SparseMatrix >	& K_mat,
+		std::vector < SparseMatrix >	& T_mat,
 		std::vector < SparseMatrix >	& B1_mat,
 		std::vector < SparseMatrix >	& B0_mat,
 
@@ -300,6 +301,7 @@ void LinearSolver::init(
 		std::vector < eslocal > & neigh_clusters
 
 ) {
+
 
 	number_of_subdomains_per_cluster = K_mat.size();
 
@@ -365,6 +367,33 @@ void LinearSolver::init(
    }
 	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
+
+
+
+	for (int d = 0; d < T_mat.size(); d++) {
+			SparseSolver Tinv;
+			Tinv.mtype = 11;
+			Tinv.ImportMatrix(T_mat[d]);
+			Tinv.Factorization();
+
+			SpyText( T_mat[d] );
+
+			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
+			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
+			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
+
+			cluster.domains[d].T = T_mat[d];
+
+			SparseMatrix Ktmp;
+			Ktmp = K_mat[d];
+
+			Ktmp.MatMat( T_mat[d], 'T', K_mat[d] );
+
+			K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
+
+
+	}
+
 
 
 	// *** Load RHS and fix points for K regularization **************************************************************
@@ -549,6 +578,12 @@ void LinearSolver::Solve(
 		solver.Solve_non_singular( cluster, f_vec, prim_solution );
 		solver.timing.totalTime.PrintStatMPI(0.0);
 		//solver.timing.totalTime.Reset();
+	}
+
+	for (int d = 0; d < cluster.domains.size(); d++) {
+		vector < double >  tmp;
+		tmp = prim_solution[d];
+		cluster.domains[d].T.MatVec(tmp, prim_solution[d], 'N');
 	}
 
 	 timeSolCG.AddEndWithBarrier();

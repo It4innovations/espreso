@@ -90,6 +90,7 @@ public:
 
 	SparseMatrix R; 
 	SparseMatrix K;
+	SparseMatrix T;
 
 	// Matrix and coeficient for regularization
 	SparseMatrix _RegMat;

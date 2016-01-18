@@ -12,11 +12,11 @@ namespace mesh {
 
 	size_t corners = 6;
 	bool vertexCorners = true;
-	bool edgeCorners = true;
+	bool edgeCorners = false;
 	bool faceCorners = false;
-	bool averaging = false;
+	bool averaging = true;
 
-	Input input = ANSYS_MATSOL;
+	Input input = GENERATOR;
 	Output output = VTK_FULL;
 }
 
