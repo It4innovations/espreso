@@ -53,7 +53,7 @@ public:
 		mesh.remapElementsToSubdomain();
 
 		if (manualPartition()) {
-			mesh.partitiate(esconfig::mesh::subdomains);
+			mesh.partitiate(mesh.parts());
 			mesh.computeFixPoints(esconfig::mesh::fixPoints);
 		} else {
 			fixPoints(mesh._fixPoints);
