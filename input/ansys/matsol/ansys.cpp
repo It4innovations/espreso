@@ -44,8 +44,34 @@ void AnsysMatsol::points(mesh::Coordinates &coordinates)
 
 void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 {
-	//std::string settingFile = _path + "/Model/BC/Elasticity/ELEMENT_TYPE.dat";
-	int lines = 2;	// load it from Model/BC/Elasticity/ELEMENT_TYPE.dat
+	int lines;
+	std::string settingFile = _path + "/Model/BC/Elasticity/ELEMENT_TYPE.dat";
+	std::ifstream setting(settingFile);
+
+	std::string tmp;
+	if (setting.is_open()) {
+		while (setting) {
+			getline(setting, tmp, '\n');
+			std::string data = tmp.substr(tmp.find_first_not_of(' '));
+			if (data.find("ELEMENT TYPE", 0, 12) == 0) {
+				std::stringstream ss(data.substr(data.find("SOLID") + 5, 3));
+				eslocal eNumber;
+				ss >> eNumber;
+				switch (eNumber) {
+				case 186: lines = 2; break;
+				case 185: lines = 1; break;
+				default:
+					eslog::error << "Load error: unknown element type\n";
+					exit(EXIT_FAILURE);
+				}
+				break;
+			}
+		}
+	} else {
+		std::cerr << "Cannot load element settings from file: " << settingFile << "\n";
+		exit(EXIT_FAILURE);
+	}
+
 	std::string fileName = _path + "/Model/ELEMENTS.dat";
 	elements.resize(getLinesCount(fileName) / lines);
 
