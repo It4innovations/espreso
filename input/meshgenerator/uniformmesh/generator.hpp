@@ -72,10 +72,15 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	eslocal cNodes[3];
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
+		if (nodes[i] < 4) {
+			std::cerr << "FIX POINT ERROR: sub-domain is too small.\n";
+			exit(EXIT_FAILURE);
+		}
 	}
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
 	eslocal offset[3];
+	eslocal shift[3];
 	for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
 		for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
 			for (eslocal sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
@@ -85,10 +90,13 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 					offset[0] = (i & 1) ? 1 : 0;
 					offset[1] = (i & 2) ? 1 : 0;
 					offset[2] = (i & 4) ? 1 : 0;
+					shift[0] = (i & 1) ? -1 : 1;
+					shift[1] = (i & 2) ? -1 : 1;
+					shift[2] = (i & 4) ? -1 : 1;
 					fixPoints.back().push_back(
-							(sz + offset[2]) * nodes[2] * cNodes[0] * cNodes[1] +
-							(sy + offset[1]) * nodes[1] * cNodes[0] +
-							(sx + offset[0]) * nodes[0]);
+							((sz + offset[2]) * nodes[2] + shift[2]) * cNodes[0] * cNodes[1] +
+							((sy + offset[1]) * nodes[1] + shift[1]) * cNodes[0] +
+							((sx + offset[0]) * nodes[0] + shift[0]));
 				}
 			}
 		}
