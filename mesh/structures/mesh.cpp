@@ -612,6 +612,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 
 	size_t begin = 0;
 	std::vector<eslocal> tmpPair(2);
+	std::vector<bool> sausageEdges;
 	while (maskCounter < cfm.coordinates().clusterSize()) {
 		while (mask[begin]) {
 			begin++;
@@ -724,10 +725,13 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 				clm._partPtrs.push_back(clm._elements.size());
 			}
 		}
+
 		if (clm._partPtrs.back() < clm._elements.size()) {
 			clm._partPtrs.push_back(clm._elements.size());
 		}
+
 		if (vertex) {
+			sausageEdges.push_back(!vertices.size());
 			for (auto it = vertices.begin(); it != vertices.end(); ++it) {
 				eslocal fPoint = clm.coordinates().globalIndex(*it);
 				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(fPoint));
@@ -736,6 +740,21 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	}
 
 	clm.remapElementsToSubdomain();
+	for (size_t i = 0; i < sausageEdges.size(); i++) {
+		if (sausageEdges[i]) {
+			size_t SAUSAGE_CORNERS = 4;
+			eslocal *eSubPartition = clm.getPartition(clm._partPtrs[i], clm._partPtrs[i + 1], SAUSAGE_CORNERS);
+
+			for (eslocal j = 0; j < SAUSAGE_CORNERS; j++) {
+				eslocal sCorner = clm.getCentralNode(clm._partPtrs[i], clm._partPtrs[i + 1], eSubPartition, i, j);
+				sCorner = clm.coordinates().globalIndex(sCorner, i);
+				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(sCorner));
+			}
+
+			delete[] eSubPartition;
+		}
+	}
+
 	if (averageEdges) {
 		clm.computeFixPoints(1);
 		for (size_t p = 0; p < clm.parts(); p++) {
@@ -744,8 +763,17 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 				_subdomainBoundaries.setCorner(cfm.coordinates().globalIndex(corner));
 				std::set<eslocal> aPoints;
 				for (size_t e = clm._partPtrs[p]; e < clm._partPtrs[p + 1]; e++) {
-					aPoints.insert(clm._elements[e]->node(0));
-					aPoints.insert(clm._elements[e]->node(1));
+					if (sausageEdges[p]) {
+						if (!_subdomainBoundaries.isCorner(clm.coordinates().globalIndex(clm._elements[e]->node(0), p))) {
+							aPoints.insert(clm._elements[e]->node(0));
+						}
+						if (!_subdomainBoundaries.isCorner(clm.coordinates().globalIndex(clm._elements[e]->node(1), p))) {
+							aPoints.insert(clm._elements[e]->node(0));
+						}
+					} else {
+						aPoints.insert(clm._elements[e]->node(0));
+						aPoints.insert(clm._elements[e]->node(1));
+					}
 				}
 				std::vector<eslocal>& averaging = _subdomainBoundaries.averaging(cfm.coordinates().globalIndex(corner));
 				averaging.insert(averaging.begin(), aPoints.begin(), aPoints.end());
