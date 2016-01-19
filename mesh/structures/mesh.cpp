@@ -420,13 +420,13 @@ void Mesh::getSurface(Mesh &surface) const
 	surface.computeBoundaries();
 }
 
-void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averaging)
+void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averageEdges, bool averageFaces)
 {
 	if (parts() < 1) {
 		std::cerr << "Internal error: _partPtrs.size()\n";
 		exit(EXIT_FAILURE);
 	}
-	if (parts() == 1 || (!vertex && !edges && !faces && !averaging)) {
+	if (parts() == 1 || (!vertex && !edges && !faces && !averageEdges && !averageFaces)) {
 		return;
 	}
 
@@ -518,7 +518,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 		}
 	}
 
-	if (!edges && !vertex && !averaging) {
+	if (!edges && !vertex && !averageEdges && !averageFaces) {
 		return;
 	}
 
@@ -534,6 +534,8 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 		}
 	}
 
+	std::set<eslocal> borderLine;
+
 	std::vector<std::pair<eslocal, eslocal> > outerFaces;
 	std::vector<char> nSubdomains(cfm.coordinates().clusterSize() * cfm.parts(), 0);
 	std::vector<eslocal> points(cfm.coordinates().clusterSize(), 0);
@@ -544,6 +546,10 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			for (size_t f = 0; f < cfm._elements[e]->faces(); f++) {
 				std::vector<eslocal> face = cfm._elements[e]->getFace(f);
 				if (isOuterFace(nodesFaces[p], face)) {
+					if (averageFaces) {
+						borderLine.insert(cfm.coordinates().clusterIndex(face[0], p));
+						borderLine.insert(cfm.coordinates().clusterIndex(face[1], p));
+					}
 					face[0] = cfm.coordinates().clusterIndex(face[0], p);
 					face[1] = cfm.coordinates().clusterIndex(face[1], p);
 					if (face[0] < face[1]) {
@@ -562,6 +568,28 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	std::sort(outerFaces.begin(), outerFaces.end());
 	auto it = std::unique(outerFaces.begin(), outerFaces.end());
 	outerFaces.resize(std::distance(outerFaces.begin(), it));
+
+	// faces averaging
+	if (averageFaces) {
+		if (!cfm.getFixPoints().size() || !cfm.getFixPoints()[0].size()) {
+			cfm.computeFixPoints(1);
+		}
+		for (size_t p = 0; p < cfm.parts(); p++) {
+			eslocal corner = cfm.coordinates().globalIndex(cfm.getFixPoints()[p][0], p);
+			//_subdomainBoundaries.setCorner(corner); ->already added
+			std::set<eslocal> aPoints;
+			for (size_t e = cfm._partPtrs[p]; e < cfm._partPtrs[p + 1]; e++) {
+				for (size_t n = 0; n < cfm._elements[e]->size(); n++) {
+					eslocal node = cfm.coordinates().clusterIndex(cfm._elements[e]->node(n), p);
+					if (borderLine.find(node) == borderLine.end()) {
+						aPoints.insert(cfm.coordinates().globalIndex(node));
+					}
+				}
+			}
+			std::vector<eslocal>& averaging = _subdomainBoundaries.averaging(corner);
+			averaging.insert(averaging.begin(), aPoints.begin(), aPoints.end());
+		}
+	}
 
 	eslocal linePoints = 0;
 	for (size_t i = 0; i < cfm._coordinates.clusterSize(); i++) {
@@ -609,7 +637,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 			if (std::equal(s, e, p0s) && std::equal(s, e, p1s)) {
 				tmpPair[0] = clm.coordinates().clusterIndex(outerFaces[i].first);
 				tmpPair[1] = clm.coordinates().clusterIndex(outerFaces[i].second);
-				if (averaging) {
+				if (averageEdges) {
 					esglobal p1 = cfm.coordinates().globalIndex(outerFaces[i].first);
 					esglobal p2 = cfm.coordinates().globalIndex(outerFaces[i].second);
 					auto &dx = _coordinates.property(DIRICHLET_X).values();
@@ -708,7 +736,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 	}
 
 	clm.remapElementsToSubdomain();
-	if (averaging) {
+	if (averageEdges) {
 		clm.computeFixPoints(1);
 		for (size_t p = 0; p < clm.parts(); p++) {
 			for (size_t i = 0; i < clm.getFixPoints()[p].size(); i++) {
