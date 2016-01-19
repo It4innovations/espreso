@@ -370,30 +370,31 @@ void LinearSolver::init(
 
 
 
-	cilk_for (int d = 0; d < T_mat.size(); d++) {
-			SparseSolver Tinv;
-			Tinv.mtype = 11;
-			Tinv.ImportMatrix(T_mat[d]);
-			Tinv.Factorization();
+	if ( esconfig::mesh::averaging) {
+		cilk_for (int d = 0; d < T_mat.size(); d++) {
+				SparseSolver Tinv;
+				Tinv.mtype = 11;
+				Tinv.ImportMatrix(T_mat[d]);
+				Tinv.Factorization();
 
-			//SpyText( T_mat[d] );
+				//SpyText( T_mat[d] );
 
-			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
-			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
-			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
+				cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
+				Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
+				cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
 
-			cluster.domains[d].T = T_mat[d];
+				cluster.domains[d].T = T_mat[d];
 
-			SparseMatrix Ktmp;
-			Ktmp = K_mat[d];
+				SparseMatrix Ktmp;
+				Ktmp = K_mat[d];
 
-			Ktmp.MatMat( T_mat[d], 'T', K_mat[d] );
+				Ktmp.MatMat( T_mat[d], 'T', K_mat[d] );
 
-			K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
+				K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
 
 
+		}
 	}
-
 
 
 	// *** Load RHS and fix points for K regularization **************************************************************
@@ -580,10 +581,12 @@ void LinearSolver::Solve(
 		//solver.timing.totalTime.Reset();
 	}
 
-	for (int d = 0; d < cluster.domains.size(); d++) {
-		vector < double >  tmp;
-		tmp = prim_solution[d];
-		cluster.domains[d].T.MatVec(tmp, prim_solution[d], 'N');
+	if ( esconfig::mesh::averaging) {
+		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
+			vector < double >  tmp;
+			tmp = prim_solution[d];
+			cluster.domains[d].T.MatVec(tmp, prim_solution[d], 'N');
+		}
 	}
 
 	 timeSolCG.AddEndWithBarrier();
