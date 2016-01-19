@@ -27,7 +27,8 @@ public:
 				esconfig::mesh::vertexCorners,
 				esconfig::mesh::edgeCorners,
 				esconfig::mesh::faceCorners,
-				esconfig::mesh::averaging);
+				esconfig::mesh::averageEdges,
+				esconfig::mesh::averageFaces);
 	}
 
 protected:
@@ -74,11 +75,12 @@ public:
 					esconfig::mesh::vertexCorners,
 					esconfig::mesh::edgeCorners,
 					esconfig::mesh::faceCorners,
-					esconfig::mesh::averaging);
+					esconfig::mesh::averageEdges,
+					esconfig::mesh::averageFaces);
 		} else {
 			corners(mesh._subdomainBoundaries);
-			if (esconfig::mesh::averaging) {
-				mesh.computeCorners(0, false, false, false, true);
+			if (esconfig::mesh::averageEdges || esconfig::mesh::averageFaces) {
+				mesh.computeCorners(0, false, false, false, esconfig::mesh::averageEdges, esconfig::mesh::averageFaces);
 			}
 		}
 	}

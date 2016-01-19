@@ -17,7 +17,9 @@ namespace mesh {
 	extern bool vertexCorners;
 	extern bool edgeCorners;
 	extern bool faceCorners;
-	extern bool averaging;
+
+	extern bool averageEdges;
+	extern bool averageFaces;
 
 	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA_IN, GENERATOR };
 	extern Input input;

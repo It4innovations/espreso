@@ -370,7 +370,7 @@ void LinearSolver::init(
 
 
 
-	if ( esconfig::mesh::averaging) {
+	if ( esconfig::mesh::averageEdges || esconfig::mesh::averageFaces ) {
 		cilk_for (int d = 0; d < T_mat.size(); d++) {
 				SparseSolver Tinv;
 				Tinv.mtype = 11;
@@ -581,7 +581,7 @@ void LinearSolver::Solve(
 		//solver.timing.totalTime.Reset();
 	}
 
-	if ( esconfig::mesh::averaging) {
+	if ( esconfig::mesh::averageEdges || esconfig::mesh::averageFaces ) {
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 			vector < double >  tmp;
 			tmp = prim_solution[d];

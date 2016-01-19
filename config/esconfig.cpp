@@ -14,7 +14,9 @@ namespace mesh {
 	bool vertexCorners = true;
 	bool edgeCorners = false;
 	bool faceCorners = false;
-	bool averaging = false;
+
+	bool averageEdges = true;
+	bool averageFaces = false;
 
 	Input input = GENERATOR;
 	Output output = VTK_FULL;

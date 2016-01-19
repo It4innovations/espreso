@@ -32,15 +32,6 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
 		break;
-		mesh->partitiate(esconfig::mesh::subdomains);
-		mesh->computeFixPoints(esconfig::mesh::fixPoints);
-		mesh->computeCorners(
-				esconfig::mesh::corners,
-				esconfig::mesh::vertexCorners,
-				esconfig::mesh::edgeCorners,
-				esconfig::mesh::faceCorners,
-				esconfig::mesh::averaging);
-		break;
 	}
 	}
 	return mesh;
