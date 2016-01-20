@@ -2,6 +2,19 @@
 
 #include "SparseSolver.h"
 
+std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
+{
+	os << m.rows << " " << m.cols << " " << m.nnz << "\n";
+
+	if (m.CSR_I_row_indices.size()) {
+		os << m.CSR_I_row_indices << "\n";
+		os << m.CSR_J_col_indices << "\n";
+		os << m.CSR_V_values << "\n";
+	}
+
+	return os;
+}
+
 void SpyText (SparseMatrix & A) {
 	
 	SEQ_VECTOR<char> tmp (60,'-');  
@@ -2254,6 +2267,7 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_
 
   return estim_cond;
 #endif
+  return 0;
 }
 
 double SparseMatrix::dot_e(double *x, double *y, eslocal n){

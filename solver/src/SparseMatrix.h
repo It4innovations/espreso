@@ -38,6 +38,8 @@ public:
 	SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in );
 	SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in );
 
+	friend std::ostream& operator<<(std::ostream& os, const SparseMatrix &m);
+
 
 	//Destructor 
 	~SparseMatrix();
