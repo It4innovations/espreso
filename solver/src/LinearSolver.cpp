@@ -354,6 +354,15 @@ void LinearSolver::init(
 	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
    if (R_from_mesh){
 	    set_R(mesh);
+	    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+			std::stringstream ss;
+			ss << "R" << d << ".txt";
+			std::ofstream os(ss.str().c_str());
+			SparseMatrix s = cluster.domains[d].Kplus_R;
+			s.ConvertDenseToCSR(1);
+			os << s;
+			os.close();
+		}
    }
    else{
 	  cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
@@ -371,16 +380,16 @@ void LinearSolver::init(
 
 
 	cilk_for (int d = 0; d < T_mat.size(); d++) {
-			SparseSolver Tinv;
-			Tinv.mtype = 11;
-			Tinv.ImportMatrix(T_mat[d]);
-			Tinv.Factorization();
+//			SparseSolver Tinv;
+//			Tinv.mtype = 11;
+//			Tinv.ImportMatrix(T_mat[d]);
+//			Tinv.Factorization();
 
 			//SpyText( T_mat[d] );
 
-			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
-			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
-			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
+//			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
+//			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
+//			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
 
 			cluster.domains[d].T = T_mat[d];
 
@@ -392,6 +401,22 @@ void LinearSolver::init(
 			K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
 
 
+	}
+//
+//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//		std::stringstream ss;
+//		ss << "RT" << d << ".txt";
+//		std::ofstream os(ss.str().c_str());
+//		os << cluster.domains[d].Kplus_R.rows << " " << cluster.domains[d].Kplus_R.cols;
+//		os << cluster.domains[d].Kplus_R.V_values;
+//		os.close();
+//	}
+    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		std::stringstream ss;
+		ss << "KT" << d << ".txt";
+		std::ofstream os(ss.str().c_str());
+		os << K_mat[d];
+		os.close();
 	}
 
 
@@ -467,6 +492,52 @@ void LinearSolver::init(
 	 KregMem.PrintLastStatMPI_PerNode( 0.0 );
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+
+
+
+
+	cilk_for (int d = 0; d < T_mat.size(); d++) {
+			SparseSolver Tinv;
+			Tinv.mtype = 11;
+			Tinv.ImportMatrix(T_mat[d]);
+			Tinv.Factorization();
+
+			//SpyText( T_mat[d] );
+
+			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
+			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
+			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
+
+//			cluster.domains[d].T = T_mat[d];
+
+//			SparseMatrix Ktmp;
+//			Ktmp = K_mat[d];
+//
+//			Ktmp.MatMat( T_mat[d], 'T', K_mat[d] );
+//
+//			K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
+
+
+	}
+
+    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		std::stringstream ss;
+		ss << "RT" << d << ".txt";
+		std::ofstream os(ss.str().c_str());
+		SparseMatrix s = cluster.domains[d].Kplus_R;
+		s.ConvertDenseToCSR(1);
+		os << s;
+		os.close();
+	}
+//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//		std::stringstream ss;
+//		ss << "KT" << d << ".txt";
+//		std::ofstream os(ss.str().c_str());
+//		os << K_mat[d];
+//		os.close();
+//	}
+
+
 
 
 	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.AddStartWOBarrier( GetProcessMemory_u() );

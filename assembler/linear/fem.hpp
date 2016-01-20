@@ -182,6 +182,13 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 	SparseCSRMatrix<eslocal> csrM = _M;
 
 	this->_K[part] = csrK;
+
+	std::stringstream ss;
+	ss << "K" << part << ".txt";
+	std::ofstream os(ss.str().c_str());
+	os << csrK;
+	os.close();
+
 	this->_M[part] = csrM;
 }
 
@@ -211,6 +218,13 @@ void Linear<FEM>::T(size_t part)
 	}
 
 	SparseCSRMatrix<eslocal> tmpT = _T;
+
+	std::stringstream ss;
+	ss << "T" << part << ".txt";
+	std::ofstream os(ss.str().c_str());
+	os << tmpT;
+	os.close();
+
 	this->_T[part] = tmpT;
 }
 
@@ -255,7 +269,13 @@ void Linear<FEM>::RHS()
 				_f[p][this->DOFs() * i + 2] = forces_z.at(l2g[i]) / n;
 			}
 		}
+		std::stringstream ss;
+		ss << "f" << p << ".txt";
+		std::ofstream os(ss.str().c_str());
+		os << _f[p];
+		os.close();
 	}
+
 }
 
 }
