@@ -151,6 +151,9 @@ public:
 	void MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta);
 	void MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta); 
  
+	void PrintMatSize( string Matname );
+
+
 	double MatCondNumb(SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues);
 	void spmv_(SparseMatrix & A_in, double *x, double *Ax);
 	void printMatCSR( char *str0);

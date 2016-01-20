@@ -790,6 +790,31 @@ eslocal SparseMatrix::LoadMatrixBin(string filename, char matrix_type_G_for_gene
 
 
 
+void SparseMatrix::PrintMatSize( string Matname ) {
+
+//	// Sparse COO data
+//	I_row_indices = A_in.I_row_indices;
+//	J_col_indices = A_in.J_col_indices;
+//	V_values	  = A_in.V_values;
+//
+//	// Sparse CSR data
+//	CSR_I_row_indices = A_in.CSR_I_row_indices;
+//	CSR_J_col_indices = A_in.CSR_J_col_indices;
+//	CSR_V_values	  = A_in.CSR_V_values;
+//
+//	// Dense data
+//	dense_values	  = A_in.dense_values;
+//	dense_values_fl   = A_in.dense_values_fl;
+
+	eslocal dense_size = dense_values.size() * sizeof(double);
+	eslocal CSR_size   = CSR_I_row_indices.size() * sizeof(eslocal) + CSR_J_col_indices.size() * sizeof(eslocal) + CSR_V_values.size() * sizeof(double);
+	eslocal IJV_size   = I_row_indices.size() * sizeof(eslocal) 	+ J_col_indices.size() * sizeof(eslocal) 	  + V_values.size() * sizeof(double);
+
+	std::cout << std::endl << "Matrix " << Matname << " sizes: "<< std::endl;
+	std::cout << "DNS size: " << dense_size << " B" << std::endl;
+	std::cout << "CSR size: " << CSR_size << " B"  << std::endl;
+	std::cout << "IJV size: " << IJV_size << " B" << std::endl <<std::endl;
+}
 
 
 void SparseMatrix::ConvertToCSR( ) {
