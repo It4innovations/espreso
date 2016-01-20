@@ -17,7 +17,6 @@ public:
 		elements(mesh._elements);
 		mesh.partitiate(esconfig::mesh::subdomains);
 		mesh.computeFixPoints(esconfig::mesh::fixPoints);
-		mesh.computeBoundaries();
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
 		close();
@@ -64,8 +63,8 @@ public:
 				}
 				std::sort(mesh._fixPoints[p].begin(), mesh._fixPoints[p].end());
 			}
+			mesh.computeBoundaries();
 		}
-		mesh.computeBoundaries();
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh._clusterBoundaries);
 
@@ -80,7 +79,7 @@ public:
 		} else {
 			corners(mesh._subdomainBoundaries);
 			if (esconfig::mesh::averageEdges || esconfig::mesh::averageFaces) {
-				mesh.computeCorners(0, false, false, false, esconfig::mesh::averageEdges, esconfig::mesh::averageFaces);
+				mesh.computeCorners(0, true, false, false, esconfig::mesh::averageEdges, esconfig::mesh::averageFaces);
 			}
 		}
 	}
