@@ -8,7 +8,8 @@ size_t Tetrahedron10::subnodes[] = { 1, 1, 1 };
 
 void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[])
 {
-	eslocal tetra[20];
+	eslocal size = 20;
+	eslocal tetra[size];
 	tetra[0] = indices[2];
 	tetra[1] = indices[6];
 	tetra[2] = indices[0];
@@ -20,7 +21,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[16] = indices[11];
 	tetra[17] = indices[13];
 	tetra[18] = indices[10];
-	elements.push_back(new mesh::Tetrahedron10(tetra));
+	elements.push_back(new mesh::Tetrahedron10(tetra, size));
 
 	tetra[0] = indices[6];
 	tetra[1] = indices[0];
@@ -33,7 +34,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[16] = indices[12];
 	tetra[17] = indices[9];
 	tetra[18] = indices[19];
-	elements.push_back(new mesh::Tetrahedron10(tetra));
+	elements.push_back(new mesh::Tetrahedron10(tetra, size));
 
 	tetra[0] = indices[24];
 	tetra[1] = indices[6];
@@ -46,7 +47,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[16] = indices[21];
 	tetra[17] = indices[12];
 	tetra[18] = indices[19];
-	elements.push_back(new mesh::Tetrahedron10(tetra));
+	elements.push_back(new mesh::Tetrahedron10(tetra, size));
 
 	tetra[0] = indices[6];
 	tetra[1] = indices[26];
@@ -59,7 +60,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[16] = indices[13];
 	tetra[17] = indices[23];
 	tetra[18] = indices[22];
-	elements.push_back(new mesh::Tetrahedron10(tetra));
+	elements.push_back(new mesh::Tetrahedron10(tetra, size));
 
 	tetra[0] = indices[8];
 	tetra[1] = indices[26];
@@ -72,7 +73,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[16] = indices[14];
 	tetra[17] = indices[23];
 	tetra[18] = indices[13];
-	elements.push_back(new mesh::Tetrahedron10(tetra));
+	elements.push_back(new mesh::Tetrahedron10(tetra, size));
 
 	tetra[0] = indices[2];
 	tetra[1] = indices[20];
@@ -85,7 +86,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[16] = indices[4];
 	tetra[17] = indices[13];
 	tetra[18] = indices[7];
-	elements.push_back(new mesh::Tetrahedron10(tetra));
+	elements.push_back(new mesh::Tetrahedron10(tetra, size));
 }
 
 

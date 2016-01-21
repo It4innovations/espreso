@@ -10,7 +10,7 @@ mesh::Element* AnsysUtils::createElement(eslocal *indices, eslocal n)
 		e = new mesh::Tetrahedron4(indices);
 	}
 	if (mesh::Tetrahedron10::match(indices, n)) {
-		e = new mesh::Tetrahedron10(indices);
+		e = new mesh::Tetrahedron10(indices, n);
 	}
 	if (mesh::Hexahedron8::match(indices, n)) {
 		e = new mesh::Hexahedron8(indices);

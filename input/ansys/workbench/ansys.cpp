@@ -81,6 +81,7 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 
 	line = skip(_file, "et");
 	switch (last(line)) {
+	case 187:
 	case 186: lines = 2; break;
 	case 185: lines = 1; break;
 	default:

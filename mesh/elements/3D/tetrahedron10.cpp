@@ -261,48 +261,60 @@ bool Tetrahedron10::match(eslocal *indices, eslocal n) {
 	return false;
 #endif
 
-	if (n != 20) {
-		return false;
-	}
+	switch (n) {
+	case 20: {
+		if (!Element::match(indices, 2, 3)) {
+			return false;
+		}
+		if (!Element::match(indices, 2, 10)) {
+			return false;
+		}
+		if (!Element::match(indices, 18, 19)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 5)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 6)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 7)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 12)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 13)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 14)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 15)) {
+			return false;
+		}
 
-	if (!Element::match(indices, 2, 3)) {
-		return false;
-	}
-	if (!Element::match(indices, 2, 10)) {
-		return false;
-	}
-	if (!Element::match(indices, 18, 19)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 5)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 6)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 7)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 12)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 13)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 14)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 15)) {
-		return false;
-	}
-
-	eslocal various[10] = { 0, 1, 2, 4, 8, 9 ,11, 16, 17, 18 };
-	for (eslocal i = 0; i < 9; i++) {
-		for (eslocal j = i + 1; j < 10; j++) {
-			if (Element::match(indices, various[i], various[j])) {
-				return false;
+		eslocal various[10] = { 0, 1, 2, 4, 8, 9 ,11, 16, 17, 18 };
+		for (eslocal i = 0; i < 9; i++) {
+			for (eslocal j = i + 1; j < 10; j++) {
+				if (Element::match(indices, various[i], various[j])) {
+					return false;
+				}
 			}
 		}
+		break;
+	}
+	case 10: {
+		for (eslocal i = 0; i < 9; i++) {
+			for (eslocal j = i + 1; j < 10; j++) {
+				if (Element::match(indices, i, j)) {
+					return false;
+				}
+			}
+		}
+		break;
+	}
+	default: return false;
 	}
 
 	return true;
@@ -408,18 +420,27 @@ std::vector<eslocal> Tetrahedron10::getFace(size_t face) const
 	return result;
 }
 
-Tetrahedron10::Tetrahedron10(eslocal *indices)
+Tetrahedron10::Tetrahedron10(eslocal *indices, eslocal n)
 {
-	_indices[0] = indices[0];
-	_indices[1] = indices[1];
-	_indices[2] = indices[2];
-	_indices[3] = indices[4];
-	_indices[4] = indices[8];
-	_indices[5] = indices[9];
-	_indices[6] = indices[11];
-	_indices[7] = indices[16];
-	_indices[8] = indices[17];
-	_indices[9] = indices[18];
+	switch (n) {
+	case 10: {
+		memcpy(_indices, indices, 10 * sizeof(eslocal));
+		break;
+	}
+	case 20: {
+		_indices[0] = indices[0];
+		_indices[1] = indices[1];
+		_indices[2] = indices[2];
+		_indices[3] = indices[4];
+		_indices[4] = indices[8];
+		_indices[5] = indices[9];
+		_indices[6] = indices[11];
+		_indices[7] = indices[16];
+		_indices[8] = indices[17];
+		_indices[9] = indices[18];
+	}
+	}
+
 }
 
 Tetrahedron10::Tetrahedron10(std::ifstream &is)
