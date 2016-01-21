@@ -576,7 +576,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 		}
 		for (size_t p = 0; p < cfm.parts(); p++) {
 			eslocal corner = cfm.coordinates().globalIndex(cfm.getFixPoints()[p][0], p);
-			//_subdomainBoundaries.setCorner(corner); ->already added
+			_subdomainBoundaries.setCorner(corner);
 			std::set<eslocal> aPoints;
 			for (size_t e = cfm._partPtrs[p]; e < cfm._partPtrs[p + 1]; e++) {
 				for (size_t n = 0; n < cfm._elements[e]->size(); n++) {
@@ -644,9 +644,11 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 					auto &dx = _coordinates.property(DIRICHLET_X).values();
 					auto &dy = _coordinates.property(DIRICHLET_Y).values();
 					auto &dz = _coordinates.property(DIRICHLET_Z).values();
+					auto &cb = _clusterBoundaries;
 					if (dx.find(p1) == dx.end() && dx.find(p2) == dx.end()
 							&& dy.find(p1) == dy.end() && dy.find(p2) == dy.end()
-							&& dz.find(p1) == dz.end() && dz.find(p2) == dz.end()) {
+							&& dz.find(p1) == dz.end() && dz.find(p2) == dz.end()
+							&& cb[p1].size() == 1 && cb[p2].size() == 1) {
 
 						clm._elements.push_back(new Line(tmpPair.data()));
 					}
