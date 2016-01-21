@@ -4,11 +4,13 @@
 template<typename Tindices>
 std::ostream& operator<<(std::ostream& os, const SparseCSRMatrix<Tindices> &m)
 {
-	os << m.rows() << " " << m.columns() << " " << m.nonZeroValues() << "\n";
-
-	os << m._rowPtrs << "\n";
-	os << m._columnIndices << "\n";
-	os << m._values << "\n";
+	SparseIJVMatrix<Tindices> ijv = m;
+	os << ijv;
+//	os << m.rows() << " " << m.columns() << " " << m.nonZeroValues() << "\n";
+//
+//	os << m._rowPtrs << "\n";
+//	os << m._columnIndices << "\n";
+//	os << m._values << "\n";
 	return os;
 }
 

@@ -41,7 +41,6 @@ void Esdata::elements(std::vector<mesh::Element*> &elements)
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/elements.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
-        std::cout << fileName.str() << std::endl; 
 	eslocal size, type;
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	elements.reserve(size);
