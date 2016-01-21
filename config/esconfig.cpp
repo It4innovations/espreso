@@ -7,10 +7,10 @@ int MPIrank = 0;
 int MPIsize = 1;
 
 namespace mesh {
-	size_t subdomains = 2;
+	size_t subdomains = 8;
 	size_t fixPoints = 8;
 
-	size_t corners = 6;
+	size_t corners = 3;
 	bool vertexCorners = true;
 	bool edgeCorners = false;
 	bool faceCorners = false;
@@ -18,7 +18,7 @@ namespace mesh {
 	bool averageEdges = false;
 	bool averageFaces = false;
 
-	Input input = GENERATOR;
+	Input input = ESDATA_IN;
 	Output output = VTK_FULL;
 }
 

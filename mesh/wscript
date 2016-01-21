@@ -26,7 +26,7 @@ def configure(ctx):
     if ctx.env.INT_WIDTH == 64:
         metis = "metis64"
     if ctx.env.BUILD_TOOLS == "0":
-        metis = ctx.env.METISLIB
+        metis = ctx.env.METISLIB[0]
 
     if ctx.env.LIBTYPE == "SHARED":
         ctx.env.append_unique("LIB", [ metis ])

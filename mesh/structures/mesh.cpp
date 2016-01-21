@@ -743,7 +743,7 @@ void Mesh::computeCorners(eslocal number, bool vertex, bool edges, bool faces, b
 
 	clm.remapElementsToSubdomain();
 	for (size_t i = 0; i < sausageEdges.size(); i++) {
-		if (sausageEdges[i]) {
+		if (sausageEdges[i] && 0) { 
 			size_t SAUSAGE_CORNERS = 4;
 			eslocal *eSubPartition = clm.getPartition(clm._partPtrs[i], clm._partPtrs[i + 1], SAUSAGE_CORNERS);
 
