@@ -10,10 +10,11 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	esconfig::mesh::subdomains = atoi(argv[2]);
+	esconfig::mesh::fixPoints = 0;
 	mesh::Mesh m;
 	esinput::AnsysWorkbench loader(argc, argv, 0, 1);
 	loader.load(m);
-	m.partitiate(atoi(argv[2]));
 	esoutput::Esdata data(m, argv[3]);
 	data.store(1, 1);
 }

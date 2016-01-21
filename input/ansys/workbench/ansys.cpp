@@ -63,7 +63,7 @@ void AnsysWorkbench::points(mesh::Coordinates &coordinates)
 	size_t lines = 0;
 	while(true) {
 		getline(_file, line);
-		if (line.find("-1", 0, 2) != std::string::npos) {
+		if (line.find("-1", 0, 2) == 0) {
 			break;
 		}
 		std::stringstream ss(line);
@@ -120,6 +120,7 @@ void AnsysWorkbench::boundaryConditions(mesh::Coordinates &coordinates)
 	std::string line;
 	line = skip(_file, "CMBLOCK");
 	eslocal value, n = 0, size = last(line);
+	getline(_file, line);
 
 	mesh::CoordinatesProperty &dx = coordinates.property(mesh::DIRICHLET_X);
 	mesh::CoordinatesProperty &dy = coordinates.property(mesh::DIRICHLET_Y);
