@@ -1719,11 +1719,11 @@ void Cluster::Create_G1_perCluster() {
 		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
 
 
-	std::stringstream ss;
-	ss << "G" << ".txt";
-	std::ofstream os(ss.str().c_str());
-	os << G1;
-	os.close();
+//	std::stringstream ss;
+//	ss << "G" << ".txt";
+//	std::ofstream os(ss.str().c_str());
+//	os << G1;
+//	os.close();
 
 }
 
@@ -1758,13 +1758,13 @@ void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 		vec_d[i] = (-1.0) *  vec_d[i];
 
 
-	std::stringstream ss;
-	ss.precision(40);
-	ss << "vec_d" << ".txt";
-	std::ofstream os(ss.str().c_str());
-	os.precision(40);
-	os << vec_d;
-	os.close();
+//	std::stringstream ss;
+//	ss.precision(40);
+//	ss << "vec_d" << ".txt";
+//	std::ofstream os(ss.str().c_str());
+//	os.precision(40);
+//	os << vec_d;
+//	os.close();
 
 }
 
