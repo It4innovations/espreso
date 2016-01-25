@@ -91,21 +91,30 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 
 	line = skip(_file, "eblock");
 	size_t eSize = last(line);
+
+	// (<lineSize>i<numberSize>) e.g. (19i9)
 	getline(_file, line);
+	std::stringstream format(line);
+	eslocal lineSize, numberSize;
+	format.ignore(1) >> lineSize;
+	format.ignore(1) >> numberSize;
 
 	eslocal values[38], value, n, p;
 	elements.resize(eSize);
 	for (size_t i = 0; i < eSize; i++) {
 		p = n = 0;
 		for (size_t l = 0; l < lines; l++) {
-			getline(_file, line);
-			std::stringstream ss(line);
-			while (ss >> value) {
+			char *s = new char[numberSize + 1];
+			do {
+				_file.get(s, numberSize + 1);
 				if (n + p < 11) {
 					p++; // TODO: do not skip parameters
 				} else {
-					values[n++] = value;
+					values[n++] = atol(s);
 				}
+			} while (_file.peek() != '\n' && _file.peek() != '\r');
+			while (_file.peek() == '\n' || _file.peek() == '\r') {
+				_file.get();
 			}
 		}
 		for (size_t v = 0; v < n; v++) {
