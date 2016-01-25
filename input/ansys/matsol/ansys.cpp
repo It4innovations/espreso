@@ -59,6 +59,7 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 				ss >> eNumber;
 				switch (eNumber) {
 				case 186: lines = 2; break;
+				case 45:
 				case 185: lines = 1; break;
 				default:
 					eslog::error << "Load error: unknown element type\n";
