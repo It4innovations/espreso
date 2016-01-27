@@ -733,7 +733,7 @@ void LinearSolver::finilize() {
 
 	if (SINGULAR) solver.timeEvalProj.PrintStatsMPI();
 
-	if ( solver.USE_PREC   >= 1 ) solver.timeEvalPrec.PrintStatsMPI();
+	if ( solver.USE_PREC   > 0 ) solver.timeEvalPrec.PrintStatsMPI();
 
 	if ( cluster.USE_HFETI == 1 ) cluster.ShowTiming();
 
