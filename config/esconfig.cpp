@@ -11,11 +11,11 @@ namespace mesh {
 	size_t fixPoints = 8;
 
 	size_t corners = 3;
-	bool vertexCorners = true;
+	bool vertexCorners = false;
 	bool edgeCorners = false;
 	bool faceCorners = false;
 
-	bool averageEdges = false;
+	bool averageEdges = true;
 	bool averageFaces = false;
 
 	Input input = GENERATOR;
