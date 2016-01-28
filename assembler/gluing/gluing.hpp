@@ -1149,7 +1149,9 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 						_myBorderDOFs.push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
 					}
 				} else {
-					neigh_tmp[*it_set] = 1;
+					if (neigh_tmp.size() > *it_set) {
+						neigh_tmp[*it_set] = 1;
+					}
 				}
 	        }
 		}
