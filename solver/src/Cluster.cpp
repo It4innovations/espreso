@@ -291,7 +291,10 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		//************************
 
 		//TODO: pozor vratit
-		domains[i].B1.Clear();
+
+		if ( esconfig::solver::REGULARIZATION == 0 )
+                    domains[i].B1.Clear();
+
 		domains[i].B1t.Clear();
 //		domains[i].B1_comp.Clear();
 //		domains[i].B1t_comp.Clear();
@@ -315,6 +318,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 	if (USE_DYNAMIC == 0) {
 
+
 		G1.ConvertToCOO( 1 );
 		cilk_for (eslocal j = 0; j < G1.J_col_indices.size(); j++ )
 			G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
@@ -332,6 +336,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 		G1_comp.type = G1.type;
 
 		G1.Clear();
+
 
 	}
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
@@ -1260,16 +1265,16 @@ void Cluster::CreateSa() {
 	
 	 if (!get_kernel_from_mesh) {
 		 SparseMatrix Kernel_Sa;
-		 printf("Salfa\n");
+		 printf("Salfa - regularization from matrix \n");
 
 		 SparseMatrix GGt;
 
 		 GGt.MatMat(G0,'N',G0t);
 		 GGt.RemoveLower();
-		 GGt.get_kernel_from_K(GGt, Kernel_Sa);
+//		 GGt.get_kernel_from_K(GGt, Kernel_Sa);
 
 		 SparseMatrix TSak;
-		 GGt.get_kernel_from_K(Salfa,TSak);
+		 Salfa.get_kernel_from_K(Salfa,Kernel_Sa);
 		 TSak.Clear();
 
 		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
@@ -1292,6 +1297,7 @@ void Cluster::CreateSa() {
 			 sprintf(str000,"%s%d%s","tr",d,".txt");
 //			 tR.printMatCSR2(str000);
 			 SparseMatrix TmpR;
+			 domains[d].Kplus_R.ConvertDenseToCSR(0);
 			 TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
 			 domains[d].Kplus_Rb = TmpR;
 			 domains[d].Kplus_Rb.ConvertCSRToDense(0);

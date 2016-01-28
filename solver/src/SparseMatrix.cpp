@@ -1951,12 +1951,13 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 	type = 'G'; 
 }
 
-//#define ENGENIV
+//TODO: Pozor pro zobecneno nerzi musi byt odkomentovane
+#define GENINVtools
 
 // AM -start: ---------------------------------------------------------------------------
 //
 void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
-#ifdef ENGENIV
+#ifdef GENINVtools
 	eslocal nA = A.cols;
   eslocal offset = A.CSR_I_row_indices[0] ? 1 : 0;
   memset(Ax,0,nA * sizeof(double));
@@ -1974,7 +1975,7 @@ void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
 
 
 void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal size_rr){
-#ifdef ENGENIV
+#ifdef GENINVtools
 // 
 // Function 'getSubDiagBlockmatrix' returns the diagonal block A_in(r,r) from original A_in,
 // where r = { i_start , i_start+1 , i_start+2 , ... , istart + size_rr - 1 }
@@ -2023,7 +2024,7 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
 void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, 
                                           eslocal i_start, eslocal i_size,
                                           eslocal j_start, eslocal j_size){
-#ifdef ENGENIV
+#ifdef GENINVtools
 //
 // Original matrix A_in is assembled from 4 submatrices
 //
@@ -2104,7 +2105,7 @@ void SparseMatrix::printMatCSR2(char *str0){
 
 
 void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
-#ifdef ENGENIV
+#ifdef GENINVtools
   double * AR =  new double [K.rows];
   double norm_AR_row,norm_AR = 0.0;
 //  printf("||A*Kplus_R[:,i]|| ...   \n");
@@ -2128,7 +2129,7 @@ void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format
 //
 
 void SparseMatrix::GramSchmidtOrtho(){
-#ifdef ENGENIV
+#ifdef GENINVtools
   double *w = new double [rows];
   double *R = new double [cols*cols];
   memset(R,0,(cols*cols) * sizeof(double));
@@ -2155,7 +2156,7 @@ void SparseMatrix::GramSchmidtOrtho(){
 bool myfn(double i, double j) { return fabs(i)<=fabs(j); }
 
 void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
-#ifdef ENGENIV
+#ifdef GENINVtools
 	SEQ_VECTOR <double> N(dense_values);
   eslocal nEl = rows*cols;
   std::vector <double>::iterator  it;
@@ -2209,7 +2210,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
 }
 //
 double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues){
-#ifdef ENGENIV
+#ifdef GENINVtools
   bool plot_a_and_b_defines_tridiag=false;
   eslocal nA = A_in.rows;
   eslocal nMax = 200; // size of tridiagonal matrix

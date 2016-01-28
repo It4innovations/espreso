@@ -339,7 +339,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 			yp_l[i] = y_l[i];				//	yp = y
 		}
 
-		if (USE_PREC >= 1) {
+		if (USE_PREC > 0) {
 
 			proj1_time.AddStart(omp_get_wtime());
 			if (USE_GGtINV == 1) {
@@ -504,7 +504,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
-	if (USE_PREC >= 1) {
+	if (USE_PREC > 0) {
 		timing.AddEvent(proj1_time);
 		timing.AddEvent(prec_time );
 		timing.AddEvent(proj2_time);
@@ -585,7 +585,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 
 	// *** r = b - Ax; ************************************************************
-	if (USE_PREC >= 1) {
+	if (USE_PREC > 0) {
 
 		cilk_for (eslocal i = 0; i < r_l.size(); i++)
 			tmp_l[i] = b_l[i] - Ax_l[i];
@@ -602,7 +602,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	}
 
 
-	if (USE_PREC >= 1) {
+	if (USE_PREC > 0) {
 
 		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, tmp_l);
 
@@ -620,7 +620,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	}
 
 
-	if (USE_PREC >= 1) {
+	if (USE_PREC > 0) {
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, tmp_l); //apply_A_l_compB(timeEvalAppa, cluster, u_l, tmp_l);
 		if (USE_GGtINV == 1)
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, w_l, 0 );
@@ -664,7 +664,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 		ddot_time.AddEnd(omp_get_wtime());
 
-		if (USE_PREC >= 1) {
+		if (USE_PREC > 0) {
 
 			prec_time.AddStart(omp_get_wtime());
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_l);
@@ -744,7 +744,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		norm_time.AddStart(omp_get_wtime());
 
 		// POZOR - tady se to ukoncuje jinak = musime probrat
-		if (USE_PREC >= 1)
+		if (USE_PREC > 0)
 			norm_l = parallel_norm_compressed(cluster, r_l);
 		else
 			norm_l = parallel_norm_compressed(cluster, u_l);
@@ -785,7 +785,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
-	if (USE_PREC >= 1) {
+	if (USE_PREC > 0) {
 		//timing.AddEvent(proj1_time);
 		timing.AddEvent(proj_time);
 		timing.AddEvent(prec_time );
@@ -891,7 +891,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 			yp_l[i] = y_l[i];				//	yp = y
 		}
 
-		if (USE_PREC >= 1) {
+		if (USE_PREC > 0) {
 			cilk_for (eslocal i = 0; i < w_l.size(); i++)
 				w_l[i] = r_l[i];
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
@@ -1051,7 +1051,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			yp_l[i] = 0.0;
 		}
 
-		if (USE_PREC >= 1) {
+		if (USE_PREC > 0) {
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
 		} else {
 			cilk_for (eslocal i = 0; i < r_l.size(); i++)
@@ -1079,7 +1079,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 			ddot_time.AddEnd(omp_get_wtime());
 
-			if (USE_PREC >= 1) {
+			if (USE_PREC > 0) {
 
 				prec_time.AddStart(omp_get_wtime());
 				apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, m_l);
