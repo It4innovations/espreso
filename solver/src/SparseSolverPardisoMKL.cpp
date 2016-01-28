@@ -260,7 +260,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
 		exit (3);
 	}
 
@@ -297,7 +297,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs[0], &sol[0], &error);
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
 		exit (3);
 	}
 
@@ -336,7 +336,7 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error);
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
 		exit (3);
 	}
 
