@@ -4,6 +4,7 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
+#include <tuple>
 #include <iostream>
 #include <stdlib.h>
 #include <functional>
@@ -74,7 +75,7 @@ public:
 
 	void partitiate(size_t parts);
 	void computeFixPoints(size_t fixPoints);
-	void computeCorners(eslocal number, bool vertex, bool edges, bool faces, bool averageEdges, bool averageFaces);
+	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
 
 	const std::vector<Element*>& getElements() const
 	{
@@ -108,6 +109,12 @@ protected:
 	void computeBoundaries();
 	void remapElementsToSubdomain();
 	void remapElementsToCluster();
+
+private:
+	void makePartContinuous(size_t part);
+	void computeCommonFaces(Mesh &faces);
+	void computeBorderLinesAndVertices(const Mesh &faces, std::vector<char> &border, Mesh &lines, std::set<eslocal> &vertices);
+	void checkCycle(size_t part, std::set<eslocal> &vertices);
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
