@@ -729,6 +729,12 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<char> &bo
 					} else {
 						lines._elements.push_back(new Line(tmp));
 					}
+				} else {
+					if (has_dirichlet(start) || on_cluster_boundary(end)) {
+						vertices.insert(points[start]);
+					} else {
+						vertices.insert(points[end]);
+					}
 				}
 			}
 			if (same_subdomains(begin, start) != same_subdomains(begin, end)) {
