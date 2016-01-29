@@ -12,11 +12,11 @@ namespace mesh {
 
 	size_t corners = 1;
 	bool vertexCorners = true;
-	bool edgeCorners = false;
-	bool faceCorners = true;
+	bool edgeCorners = true;
+	bool faceCorners = false;
 
-	bool averageEdges = false;
-	bool averageFaces = true;
+	bool averageEdges = true;
+	bool averageFaces = false;
 
 	Input input = ESDATA_IN;
 	Output output = VTK_FULL;
