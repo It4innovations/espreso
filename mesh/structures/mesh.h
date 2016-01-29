@@ -115,6 +115,8 @@ private:
 	void computeCommonFaces(Mesh &faces);
 	void computeBorderLinesAndVertices(const Mesh &faces, std::vector<char> &border, Mesh &lines, std::set<eslocal> &vertices);
 	void checkCycle(size_t part, std::set<eslocal> &vertices);
+	void prepareAveragingLines(Mesh &faces, Mesh &lines);
+	void prepareAveragingFaces(Mesh &faces, std::vector<char> &border);
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;

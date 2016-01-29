@@ -10,13 +10,13 @@ namespace mesh {
 	size_t subdomains = 32;
 	size_t fixPoints = 8;
 
-	size_t corners = 3;
+	size_t corners = 1;
 	bool vertexCorners = true;
 	bool edgeCorners = false;
-	bool faceCorners = false;
+	bool faceCorners = true;
 
 	bool averageEdges = false;
-	bool averageFaces = false;
+	bool averageFaces = true;
 
 	Input input = ESDATA_IN;
 	Output output = VTK_FULL;

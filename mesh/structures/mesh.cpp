@@ -678,22 +678,6 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<char> &bo
 		return std::equal(s, e, t);
 	};
 
-	// check whether a point has dirichler condition
-	auto has_dirichlet = [&] (eslocal i) {
-		eslocal index = faces.coordinates().globalIndex(i);
-		auto &dx = coordinates().property(DIRICHLET_X).values();
-		auto &dy = coordinates().property(DIRICHLET_Y).values();
-		auto &dz = coordinates().property(DIRICHLET_Z).values();
-		return dx.find(index) != dx.end() || dy.find(index) != dy.end() || dz.find(index) != dz.end();
-	};
-
-	// check whether a point is on cluster boundary
-	auto on_cluster_boundary = [&] (eslocal i) {
-		eslocal index = faces.coordinates().globalIndex(i);
-		auto &cb = clusterBoundaries();
-		return cb[index].size() > 1;
-	};
-
 	auto subdomains_count = [&] (eslocal i) {
 		return std::count(nSubdomains.data() + i * faces.parts(), nSubdomains.data() + (i + 1) * faces.parts(), 1);
 	};
@@ -722,19 +706,11 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<char> &bo
 			eslocal end = (std::get<2>(commonLines[i]) == -1) ? mid : std::get<2>(commonLines[i]);
 
 			if (same_subdomains(begin, start) && same_subdomains(begin, end)) {
-				if (!has_dirichlet(start) && !has_dirichlet(end) && !on_cluster_boundary(start) && !on_cluster_boundary(end)) {
-					eslocal tmp[3] = { points[start], points[mid], points[end] };
-					if (std::get<2>(commonLines[i]) == -1) {
-						lines._elements.push_back(new Line(tmp));
-					} else {
-						lines._elements.push_back(new Line(tmp));
-					}
+				eslocal tmp[3] = { points[start], points[mid], points[end] };
+				if (std::get<2>(commonLines[i]) == -1) {
+					lines._elements.push_back(new Line(tmp));
 				} else {
-					if (has_dirichlet(start) || on_cluster_boundary(end)) {
-						vertices.insert(points[start]);
-					} else {
-						vertices.insert(points[end]);
-					}
+					lines._elements.push_back(new Line(tmp));
 				}
 			}
 			if (same_subdomains(begin, start) != same_subdomains(begin, end)) {
@@ -785,6 +761,88 @@ void Mesh::checkCycle(size_t part, std::set<eslocal> &vertices)
 	}
 }
 
+void Mesh::prepareAveragingLines(Mesh &faces, Mesh &lines)
+{
+	// check whether a point has dirichler condition
+	auto has_dirichlet = [&] (eslocal i) {
+		eslocal index = lines.coordinates().globalIndex(i);
+		index = faces.coordinates().globalIndex(index);
+		auto &dx = coordinates().property(DIRICHLET_X).values();
+		auto &dy = coordinates().property(DIRICHLET_Y).values();
+		auto &dz = coordinates().property(DIRICHLET_Z).values();
+		return dx.find(index) != dx.end() || dy.find(index) != dy.end() || dz.find(index) != dz.end();
+	};
+
+	// check whether a point is on cluster boundary
+	auto on_cluster_boundary = [&] (eslocal i) {
+		eslocal index = lines.coordinates().globalIndex(i);
+		index = faces.coordinates().globalIndex(index);
+		auto &cb = clusterBoundaries();
+		return cb[index].size() > 1;
+	};
+
+	lines.remapElementsToCluster();
+
+	for (size_t e = 0; e < lines._partPtrs.back(); e++) {
+		for (size_t n = 0; n < lines._elements[e]->size(); n++) {
+			if (has_dirichlet(lines._elements[e]->node(n)) || on_cluster_boundary(lines._elements[e]->node(n))) {
+				delete lines._elements[e];
+				lines._elements[e] = NULL;
+				break;
+			}
+		}
+	}
+
+	size_t counter = 0;
+	std::vector<eslocal> partition(1, 0);
+	for (size_t p = 0; p < lines.parts(); p++) {
+		for (size_t e = lines._partPtrs[p]; e < lines._partPtrs[p + 1]; e++) {
+			if (lines._elements[e] != NULL) {
+				std::swap(lines._elements[counter++], lines._elements[e]);
+			}
+		}
+		if (counter > partition.back()) {
+			partition.push_back(counter);
+		}
+	}
+	lines._elements.resize(partition.back());
+	lines._partPtrs.swap(partition);
+
+	lines.remapElementsToSubdomain();
+}
+
+void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<char> &border)
+{
+	faces.remapElementsToCluster();
+
+	for (size_t e = 0; e < faces._partPtrs.back(); e++) {
+		for (size_t n = 0; n < faces._elements[e]->size(); n++) {
+			if (border[faces._elements[e]->node(n)]) {
+				delete faces._elements[e];
+				faces._elements[e] = NULL;
+				break;
+			}
+		}
+	}
+
+	size_t counter = 0;
+	std::vector<eslocal> partition(1, 0);
+	for (size_t p = 0; p < faces.parts(); p++) {
+		for (size_t e = faces._partPtrs[p]; e < faces._partPtrs[p + 1]; e++) {
+			if (faces._elements[e] != NULL) {
+				std::swap(faces._elements[counter++], faces._elements[e]);
+			}
+		}
+		if (counter > partition.back()) {
+			partition.push_back(counter);
+		}
+	}
+	faces._elements.resize(partition.back());
+	faces._partPtrs.swap(partition);
+
+	faces.remapElementsToSubdomain();
+}
+
 
 void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces)
 {
@@ -799,11 +857,10 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	Mesh commonFaces;
 	Mesh commonLines;
 	std::set<eslocal> commonVertices;
-	std::vector<char> commonFacesBorner;
+	std::vector<char> commonFacesBorder;
 
 	computeCommonFaces(commonFaces);
-	computeBorderLinesAndVertices(commonFaces, commonFacesBorner, commonLines, commonVertices);
-
+	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
 
 	auto faceToCluster = [&] (eslocal index, eslocal part) {
 		return commonFaces.coordinates().globalIndex(index, part);
@@ -814,41 +871,25 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 		return commonFaces.coordinates().globalIndex(index);
 	};
 
-	if (vertices) {
-		for (auto it = commonVertices.begin(); it != commonVertices.end(); ++it) {
-			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(*it));
-		}
-		if (!edges && !averageEdges) {
-			std::set<eslocal> cycleVertices;
-			for (size_t p = 0; p < commonLines.parts(); p++) {
-				commonLines.checkCycle(p, cycleVertices);
-			}
-			for (auto it = cycleVertices.begin(); it != cycleVertices.end(); ++it) {
-				_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(*it));
+	auto corners = [&] (Mesh &mesh, std::function<eslocal(eslocal, eslocal)> map) {
+		mesh.computeFixPoints(number);
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			for (size_t i = 0; i < mesh.getFixPoints()[p].size(); i++) {
+				_subdomainBoundaries.setCorner(map(mesh.getFixPoints()[p][i], p));
 			}
 		}
-	}
+	};
 
-	if (edges && !averageEdges) {
-		commonLines.computeFixPoints(number);
-		for (size_t p = 0; p < commonLines.parts(); p++) {
-			auto &fixPoints = commonLines.getFixPoints();
-			for (size_t i = 0; i < fixPoints[p].size(); i++) {
-				_subdomainBoundaries.setCorner(lineToCluster(fixPoints[p][i], p));
-			}
-		}
-	}
-
-	if (averageEdges) {
-		commonLines.computeFixPoints(1);
-		for (size_t p = 0; p < commonLines.parts(); p++) {
-			eslocal corner = lineToCluster(commonLines._fixPoints[p][0], p);
+	auto average = [&] (Mesh &mesh, std::function<eslocal(eslocal, eslocal)> map) {
+		mesh.computeFixPoints(1);
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			eslocal corner = map(mesh._fixPoints[p][0], p);
 			_subdomainBoundaries.setCorner(corner);
 
 			std::set<eslocal> aPoints;
-			for (size_t e = commonLines._partPtrs[p]; e < commonLines._partPtrs[p + 1]; e++) {
-				for (size_t n = 0; n < commonLines._elements[e]->size(); n++) {
-					eslocal point = lineToCluster(commonLines._elements[e]->node(n), p);
+			for (size_t e = mesh._partPtrs[p]; e < mesh._partPtrs[p + 1]; e++) {
+				for (size_t n = 0; n < mesh._elements[e]->size(); n++) {
+					eslocal point = map(mesh._elements[e]->node(n), p);
 					if (!_subdomainBoundaries.isCorner(point)) {
 						aPoints.insert(point);
 					}
@@ -858,67 +899,42 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 			std::vector<eslocal>& averaging = _subdomainBoundaries.averaging(corner);
 			averaging.insert(averaging.begin(), aPoints.begin(), aPoints.end());
 		}
-	}
+	};
 
-	size_t faceCorners = 0;
-	if (faces) {
-		faceCorners += number;
-	}
-	if (averageFaces) {
-		faceCorners++;
-	}
-	commonFaces.computeFixPoints(faceCorners);
-
-	if (faces) {
-		for (size_t p = 0; p < commonFaces.parts(); p++) {
-			auto &fixPoints = commonFaces.getFixPoints();
-			for (size_t i = 0; i < fixPoints[p].size(); i++) {
-				_subdomainBoundaries.setCorner(faceToCluster(fixPoints[p][i], p));
-			}
+	if (vertices) {
+		for (auto it = commonVertices.begin(); it != commonVertices.end(); ++it) {
+			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(*it));
+		}
+		std::set<eslocal> cycleVertices;
+		for (size_t p = 0; p < commonLines.parts(); p++) {
+			commonLines.checkCycle(p, cycleVertices);
+		}
+		for (auto it = cycleVertices.begin(); it != cycleVertices.end(); ++it) {
+			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(*it));
 		}
 	}
-	if (averageFaces) {
-		for (size_t p = 0; p < commonFaces.parts(); p++) {
-			eslocal corner = -1;
-			for (size_t i = 0; i < commonFaces._fixPoints[p].size(); i++) {
-				eslocal point = commonFaces.coordinates().clusterIndex(commonFaces._fixPoints[p][i], p);
-				if (commonFacesBorner[point] == 0) {
-					corner = commonFaces.coordinates().globalIndex(point);
-					break;
-				}
-			}
-			if (corner == -1) {
-				for (size_t i = 0; i < commonFaces.coordinates().localSize(p); i++) {
-					eslocal point = commonFaces.coordinates().clusterIndex(i, p);
-					if (commonFacesBorner[point] == 0) {
-						corner = commonFaces.coordinates().globalIndex(point);
-						break;
-					}
-				}
-			}
 
-			if (corner == -1) {
-				std::cout << "AVERAGE FACES WARNING: There is no point inside common faces.\n";
-				break;
-			}
-
-			_subdomainBoundaries.setCorner(corner);
-
-			std::set<eslocal> aPoints;
-			for (size_t e = commonFaces._partPtrs[p]; e < commonFaces._partPtrs[p + 1]; e++) {
-				for (size_t n = 0; n < commonFaces._elements[e]->size(); n++) {
-					eslocal gPoint = faceToCluster(commonFaces._elements[e]->node(n), p);
-					eslocal cPoint = commonFaces.coordinates().clusterIndex(commonFaces._elements[e]->node(n), p);
-					if (!_subdomainBoundaries.isCorner(gPoint) && !commonFacesBorner[cPoint]) {
-						aPoints.insert(gPoint);
-					}
-				}
-			}
-
-			std::vector<eslocal>& averaging = _subdomainBoundaries.averaging(corner);
-			averaging.insert(averaging.begin(), aPoints.begin(), aPoints.end());
-		}
+	if (edges && !averageEdges) {
+		corners(commonLines, lineToCluster);
 	}
+
+	if (averageEdges) {
+		prepareAveragingLines(commonFaces, commonLines);
+		average(commonLines, lineToCluster);
+	}
+
+	if (faces) {
+		corners(commonFaces, faceToCluster);
+	}
+	if (averageFaces) {
+		prepareAveragingFaces(commonFaces, commonFacesBorder);
+		average(commonFaces, faceToCluster);
+	}
+
+	esoutput::VTK_Full ooF(commonFaces, "faces");
+	ooF.store(1, 1);
+	esoutput::VTK_Full ooE(commonLines, "edges");
+	ooE.store(1, 1);
 }
 
 void Mesh::remapElementsToSubdomain()
