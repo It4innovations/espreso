@@ -41,6 +41,12 @@ namespace solver {
 
 }
 
+namespace info {
+	std::string output = "log";
+
+	bool printMatrices = false;
+}
+
 }
 
 

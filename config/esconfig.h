@@ -3,6 +3,7 @@
 #define ESCONFIG_H_
 
 #include <cstdlib>
+#include <string>
 
 namespace esconfig {
 
@@ -50,9 +51,17 @@ namespace solver {
 
 }
 
+namespace info {
+	extern std::string output;
+
+	extern bool printMatrices;
+}
+
 namespace tmp{
 	extern size_t DOFS;
 }
+
+
 
 }
 
