@@ -1133,7 +1133,15 @@ void Cluster::CreateF0() {
 		else
 			domains[d].Kplus.msglvl=0;
 
-		domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+		if (esconfig::solver::KSOLVER == 2) {
+			SparseSolver Ktmp;
+			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
+			Ktmp.Factorization();
+			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+		} else {
+			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+		}
+
 		domains[d].B0t_comp.Clear();
 
 		domains[d].B0Kplus = domains[d].B0Kplus_comp;
@@ -1193,7 +1201,9 @@ void Cluster::CreateF0() {
 	F0_Mat.RemoveLower();
 	F0.ImportMatrix(F0_Mat); 
 
-	F0_fast.ImportMatrix(F0_Mat);
+	bool PARDISO_SC = true;
+	if (!PARDISO_SC)
+		F0_fast.ImportMatrix(F0_Mat);
 
 	//F0_Mat.Clear();
 	F0.SetThreaded();

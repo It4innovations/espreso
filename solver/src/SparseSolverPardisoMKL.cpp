@@ -16,11 +16,12 @@ SparseSolver::SparseSolver(){
 
 	keep_factors=true;
 	initialized = false;
+	USE_FLOAT = false;
 
 	CSR_I_row_indices_size = 0;
 	CSR_J_col_indices_size = 0;
 	CSR_V_values_size = 0;
-
+        CSR_V_values_fl_size = 0; 
 
 	mtype = 2; 			/* Real symmetric positive definite matrix */
 
@@ -122,15 +123,19 @@ void SparseSolver::Clear() {
 		if (CSR_I_row_indices_size > 0)     delete [] CSR_I_row_indices;
 		if (CSR_J_col_indices_size > 0)		delete [] CSR_J_col_indices;
 		if (CSR_V_values_size > 0)			delete [] CSR_V_values;
+		if (CSR_V_values_fl_size > 0)		delete [] CSR_V_values_fl;
 	}
 
 		CSR_I_row_indices_size = 0;
 		CSR_J_col_indices_size = 0;
 		CSR_V_values_size      = 0;
+		CSR_V_values_fl_size   = 0;
 
 }
 
 void SparseSolver::ImportMatrix(SparseMatrix & A) {
+
+	USE_FLOAT = false;
 
 	rows	= A.rows;
 	cols	= A.cols;
@@ -152,7 +157,41 @@ void SparseSolver::ImportMatrix(SparseMatrix & A) {
 	import_with_copy = true;
 }
 
+void SparseSolver::ImportMatrix_fl(SparseMatrix & A) {
+
+	USE_FLOAT = true;
+
+	rows	= A.rows;
+	cols	= A.cols;
+	nnz		= A.nnz;
+	m_Kplus_size = A.rows;
+
+	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
+	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
+	CSR_V_values_size	   = 0;
+	CSR_V_values_fl_size   = A.CSR_V_values.size();
+
+	CSR_I_row_indices = new MKL_INT[CSR_I_row_indices_size];
+	CSR_J_col_indices = new MKL_INT[CSR_J_col_indices_size];
+	CSR_V_values_fl	  = new float  [CSR_V_values_fl_size];
+
+	copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
+	copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
+
+	for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+		CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
+
+
+	//copy(A.CSR_V_values     .begin(), A.CSR_V_values     .end(), CSR_V_values);
+
+	import_with_copy = true;
+
+}
+
+
 void SparseSolver::ImportMatrix_wo_Copy(SparseMatrix & A) {
+
+	USE_FLOAT = false;
 
 	rows	= A.rows;
 	cols	= A.cols;
@@ -196,13 +235,21 @@ void SparseSolver::Factorization() {
 	/* all memory that is necessary for the factorization. */
 	/* -------------------------------------------------------------------- */
 	phase = 11;
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
 	
+	if (USE_FLOAT) {
+		iparm[27] = 1; //run PARDISO in FLOAT
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values_fl, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
+	} else {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
+	}
+
 	if (error != 0)
 	{
-		printf ("\nERROR during symbolic factorization: %d", error);
-		exit (1);
+		//printf ("\nERROR during symbolic factorization: %d", error);
+		std::cout << "\nERROR : " << error << " during symbolic factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
 	}
@@ -217,12 +264,20 @@ void SparseSolver::Factorization() {
 	/* .. Numerical factorization. */
 	/* -------------------------------------------------------------------- */
 	phase = 22;
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
+
+	if (USE_FLOAT) {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values_fl, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
+	} else {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error);
+	}
+
 	if (error != 0)
 	{
-		printf ("\nERROR during numerical factorization: %d", error);
-		//exit (2);
+		std::cout << "\nERROR : " << error << " during numerical factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+		//printf ("\nERROR during numerical factorization: %d", error);
+		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
 	}
@@ -232,10 +287,21 @@ void SparseSolver::Factorization() {
 #endif
 
 	//TODO:
-	tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
+	if (USE_FLOAT) {
+		tmp_sol_fl1.resize(m_Kplus_size);
+		tmp_sol_fl2.resize(m_Kplus_size);
+	} else {
+		tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
+	}
 }
 
 void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
+
+	if( USE_FLOAT ) {
+		for (eslocal i = 0; i < m_Kplus_size; i++)
+			tmp_sol_fl1[i] = (float)rhs_sol[i];
+	}
+
 
 	if (!initialized)
 		Factorization();
@@ -254,8 +320,13 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	//iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
 	iparm[5] = 1;			// The solver stores the solution on the right-hand side b.
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs_sol[0], &tmp_sol[0], &error);
+	if (USE_FLOAT)
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &tmp_sol_fl1[0], &tmp_sol_fl2[0], &error);
+	else
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs_sol[0], &tmp_sol[0], &error);
+
 	iparm[5] = ip5backup; 
 
 	if (error != 0)
@@ -277,9 +348,25 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		if (MPIrank == 0) printf(".");
 	}
 
+	if( USE_FLOAT ) {
+		for (eslocal i = 0; i < m_Kplus_size; i++)
+			rhs_sol[i] = (double)tmp_sol_fl1[i];
+	}
+
+
 }
 
 void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
+
+	SEQ_VECTOR <float> tmp_in, tmp_out;
+
+	if( USE_FLOAT ) {
+		tmp_in.resize(n_rhs * m_Kplus_size);
+		tmp_out.resize(n_rhs * m_Kplus_size);
+
+		for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
+			tmp_in[i] = (float)rhs[i];
+	}
 
 	if (!initialized)
 		Factorization();
@@ -293,8 +380,14 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 	phase = 33;
 	//iparm[7] = 2;			/* Max numbers of iterative refinement steps. */
 
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs[0], &sol[0], &error);
+	if (USE_FLOAT) {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+				&rows, CSR_V_values_fl, CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &tmp_in[0], &tmp_out[0], &error);
+	} else {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+				&rows, CSR_V_values,    CSR_I_row_indices, CSR_J_col_indices, &idum, &n_rhs, iparm, &msglvl, &rhs[0], &sol[0], &error);
+	}
+
 	if (error != 0)
 	{
 		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
@@ -314,12 +407,20 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 		if (MPIrank == 0) printf(".");
 	}
 
-
+	if( USE_FLOAT ) {
+		for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
+			sol[i] = (double)tmp_out[i];
+	}
 
 }
 
 void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
 
+	if( USE_FLOAT ) {
+		for (eslocal i = 0; i < m_Kplus_size; i++)
+			tmp_sol_fl1[i] = (float)rhs[rhs_start_index+ i];
+	}
+
 	if (!initialized)
 		Factorization();
 
@@ -332,8 +433,14 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 	phase = 33;
 	//iparm[7] = 2;			/* Max numbers of iterative refinement steps. */
 
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error);
+	if (USE_FLOAT) {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values_fl, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &tmp_sol_fl1[0], &tmp_sol_fl2[0], &error);
+	} else {
+		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&rows, CSR_V_values,    CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error);
+	}
+
 	if (error != 0)
 	{
 		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
@@ -355,6 +462,10 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 	}
 
 
+	if( USE_FLOAT ) {
+		for (eslocal i = 0; i < m_Kplus_size; i++)
+			sol[i + sol_start_index] = (double)tmp_sol_fl2[i];
+	}
 
 }
 

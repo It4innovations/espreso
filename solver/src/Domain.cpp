@@ -115,6 +115,10 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
 	}
+	case 2: {
+		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
+		break;
+	}
 //	case 1: {
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
@@ -131,6 +135,10 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
 	}
+	case 2: {
+		Kplus.Solve(x_in, y_out, 0, 0);
+		break;
+	}
 //	case 1: {
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
@@ -144,6 +152,10 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 	switch (esconfig::solver::KSOLVER) {
 	case 0: {
+		Kplus.Solve(x_in_y_out);
+		break;
+	}
+	case 2: {
 		Kplus.Solve(x_in_y_out);
 		break;
 	}

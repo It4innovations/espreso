@@ -465,13 +465,14 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 		
 
 
-      int my_prec=log10(int(1./epsilon));
+      int my_prec= 10; //log10(int(1./epsilon));
       std::cout.clear();
       std::cout<<"Iter MPI ";
-      std::cout<<std::setw(5);
+      std::cout<<std::setw(my_prec+2);
       std::cout<<iter+1;
       std::cout.precision(my_prec+2);
       std::cout<<" ||normed_residual|| = "<<norm_l/tol*epsilon;
+      std::cout<<" ||residual|| = "<<norm_l;
       std::cout.precision(my_prec);
       std::cout<<",   epsilon = "<<epsilon <<"\n";
       //printf (       "Iter MPI %5d - ||normed_residual|| %1.20f - tol %1.20f\n", iter+1, norm_l/tol*epsilon,epsilon );
