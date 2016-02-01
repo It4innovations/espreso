@@ -882,17 +882,15 @@ void LinearSolver::set_R_from_K ()
     double _min_norm_KR_per_clust=sqrt(*min_norm_KR_pow_2_per_clust);
     double _max_norm_KR_per_clust=sqrt(*max_norm_KR_pow_2_per_clust);
 
-  std::cout<<"###############################################################################################################\n";
-  std::cout<<"##############    K E R N E L   D E T E C T I O N    V I A    S C H U R   C O M P L E M E N T    ##############\n";
-  std::cout<<"###############################################################################################################\n";
+  std::cout<<" *******************************************************************************************************************************\n";
+  std::cout<<" ********************    K E R N E L   D E T E C T I O N    V I A    S C H U R   C O M P L E M E N T    ************************\n";
+  std::cout<<" *******************************************************************************************************************************\n";
   std::cout<< " Statistics for " << numberOfAllSubdomains  << " subdomains.\n";
-  std::cout<< " defect_K    min:max        " << *min_defect_per_clust << " : "
-                                             << *max_defect_per_clust << "\n"; 
-  std::cout<< " norm_KR     min:max:mean   " << _min_norm_KR_per_clust << " : "
-                                             << _max_norm_KR_per_clust << " : "
-                                             << norm_KR_clusters_mean << "\n";
-  std::cout<<"##########################################################################################################\n";
-
+  std::cout<< " defect(K)  min:max        " << *min_defect_per_clust << " : "
+                                            << *max_defect_per_clust << "\n"; 
+  std::cout<< " ||K*R||    min:max:avg    " << _min_norm_KR_per_clust << " : "
+                                            << _max_norm_KR_per_clust << " : "
+                                            << norm_KR_clusters_mean << "\n";
   }
 
 
