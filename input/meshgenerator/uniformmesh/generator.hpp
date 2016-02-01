@@ -72,7 +72,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	eslocal cNodes[3];
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
-		if (nodes[i] < 4) {
+		if (nodes[i] < 3) {
 			std::cerr << "FIX POINT ERROR: sub-domain is too small.\n";
 			exit(EXIT_FAILURE);
 		}
