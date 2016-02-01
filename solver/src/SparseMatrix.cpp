@@ -3059,15 +3059,16 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
 // get of K eigenvalues (K is temporarily converted to dense matrix);
   eslocal plot_n_first_n_last_eigenvalues = 0;
 
+//    8) fixing_nodes_or_dof
+// non-singular part is found chosing fixing nodes,
+// min(fixing_nodes_or_dof)>=3; if variable is nonzero, 
+// parameter SC_SIZE is set to fixing_nodes_or_dof*dofPerNode
+  eslocal fixing_nodes_or_dof = 3;
+  eslocal dofPerNode=3;
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
-
   
-//  if (i_sub==0){
-//  std::cout << "\n\n"; 
-//  std::cout << " ###################################################################\n";
-//  std::cout << " #                 Get kernel of K and null pivots                 #\n";
-//  std::cout << " ###################################################################\n";
-//  }
 //
 //    1) COND_NUMB_FOR_SINGULAR_MATRIX
 //  If cond(K) > COND_NUMB_FOR_SINGULAR_MATRIX, K is considered as singular matrix.
@@ -3099,10 +3100,12 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
 
   //TODO if K.rows<=SC_SIZE, use directly input K instead of S
   //
+  int n_nodsSub=0;
+  if (fixing_nodes_or_dof>0){
+    SC_SIZE = fixing_nodes_or_dof*dofPerNode;
+    n_nodsSub = round(K.rows/dofPerNode);
+  }
   //
-  //##########################################################################################
-  //##########################################################################################
-  //##########################################################################################
   //##########################################################################################
   //
   SparseMatrix S;
@@ -3112,11 +3115,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
 
   if (K.rows<SC_SIZE){
 	  SC_SIZE = K.rows;
+    fixing_nodes_or_dof=0;
   }
 
   eslocal NONSING_SIZE = K.rows - SC_SIZE - i_start;
   eslocal j_start = NONSING_SIZE;
   SEQ_VECTOR <eslocal > permVec;
+
   permVec.resize(K.rows);
   SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K.rows, SEQ_VECTOR<eslocal >(2, 1));
   eslocal offset = K.CSR_I_row_indices[0] ? 1 : 0;
@@ -3221,13 +3226,34 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
 
     if (permutVectorActive<2){
       // set row permVec = {0,1,2,3,4,...,K.rows};
-      for (eslocal i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
+      if (fixing_nodes_or_dof==0){
+        for (eslocal i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
+      }
+      else
+      {
+        for (eslocal i=0; i<n_nodsSub; ++i) { permVec[i]=i;} // 0 1 2 n_nodsSub-1
+      }
     }
 //
     if (permutVectorActive==1){
 //      srand(time(NULL));
       srand(0); // random will be constant until next compiling 
-      random_shuffle ( permVec.begin(), permVec.end() );
+
+      if (fixing_nodes_or_dof==0){
+        random_shuffle ( permVec.begin(), permVec.end() );
+      }
+      else
+      {
+        random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
+        for (eslocal i=n_nodsSub;i>0;i--){
+          for (eslocal j=0;j<dofPerNode;j++){
+            permVec[dofPerNode*i-1-j] = dofPerNode*permVec[i-1]+j;
+//            printf("(i:%d, j:%d, permVec %d)  %d   %d \n", i,j, permVec[i-1],
+//                dofPerNode*i-1-j,dofPerNode*permVec[i-1]+j);
+          }
+        }
+      }
+
       sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
       sort(permVec.begin()+NONSING_SIZE,permVec.end());
     }
