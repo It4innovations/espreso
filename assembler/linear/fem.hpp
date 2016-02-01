@@ -168,11 +168,10 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 	DenseMatrix Ke, Me, Ce;
 	std::vector<double> fe;
 
-	this->C(Ce);
-
 	const std::vector<eslocal> &partition = _input.mesh.getPartition();
 	const std::vector<mesh::Element*> &elements = _input.mesh.getElements();
 	for (eslocal i = partition[part]; i < partition[part + 1]; i++) {
+		this->C(Ce, elements[i]->getParam(mesh::Element::MATERIAL));
 		KeMefe(Ke, Me, fe, Ce, elements[i], part, dynamics);
 		integrate(Ke, Me, fe, _K, _M, _f[part], elements[i], dynamics);
 	}

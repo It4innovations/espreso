@@ -25,7 +25,7 @@ protected:
 
 	// FEM specific
 	virtual void inertia(std::vector<double> &inertia) = 0;
-	virtual void C(DenseMatrix &C) = 0;
+	virtual void C(DenseMatrix &C, eslocal material) = 0;
 	virtual double CP() = 0;
 	virtual double rho() = 0;
 

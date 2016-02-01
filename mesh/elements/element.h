@@ -31,13 +31,23 @@ public:
 		PARAMS_SIZE
 	};
 
-	inline static bool match(eslocal *indices, eslocal x, eslocal y)
+	inline static bool match(const eslocal *indices, eslocal x, eslocal y)
 	{
 		return indices[x] == indices[y];
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
 	friend std::ofstream& operator<<(std::ofstream& os, const Element &e);
+
+	Element(const eslocal *params)
+	{
+		memcpy(_params, params, sizeof(eslocal) * PARAMS_SIZE);
+	}
+
+	Element(std::ifstream &is)
+	{
+		// TODO:
+	}
 
 	virtual ~Element() {};
 
@@ -53,9 +63,17 @@ public:
 
 	void setParams(eslocal *params)
 	{
-		for (size_t i = 0; i < PARAMS_SIZE; i++) {
-			_params[i] = params[i];
-		}
+		memcpy(_params, params, sizeof(eslocal) * PARAMS_SIZE);
+	}
+
+	const eslocal* getParams()
+	{
+		return _params;
+	}
+
+	void setParam(Params param, eslocal value)
+	{
+		_params[param] = value;
 	}
 
 	eslocal getParam(Params param)

@@ -51,6 +51,12 @@ SphereGenerator<TElement>::SphereGenerator(const SphereSettings &settings)
 }
 
 template<class TElement>
+void SphereGenerator<TElement>::elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+{
+	// TODO: set materials
+}
+
+template<class TElement>
 void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 {
 	eslocal cNodes[3];

@@ -18,7 +18,8 @@ protected:
 	UniformGenerator(const UniformSettings &settings)
 	: Generator(settings), _settings(settings) { };
 
-	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
+	virtual void elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
+	virtual void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void corners(mesh::Boundaries &boundaries);
 

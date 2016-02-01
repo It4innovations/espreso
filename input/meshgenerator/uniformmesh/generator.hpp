@@ -4,7 +4,7 @@
 namespace esinput {
 
 template<class TElement>
-void UniformGenerator<TElement>::elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+void UniformGenerator<TElement>::elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
 {
 	eslocal cNodes[3];
 
@@ -22,6 +22,8 @@ void UniformGenerator<TElement>::elements(std::vector<mesh::Element*> &elements,
 
 	eslocal subdomainOffset[3];
 	eslocal elementOffset[3];
+
+	eslocal params[6] = {0, 0, 0, 0, 0, 0};
 
 	parts.push_back(elements.size());
 	for (subdomain[2] = 0; subdomain[2] < _settings.subdomainsInCluster[2]; subdomain[2]++) {
@@ -53,7 +55,7 @@ void UniformGenerator<TElement>::elements(std::vector<mesh::Element*> &elements,
 									}
 								}
 							}
-							_e.addElements(elements, &indices[0]);
+							_e.addElements(elements, &indices[0], params);
 						}
 					}
 				}
@@ -70,14 +72,14 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 
 	eslocal nodes[3];
 	eslocal cNodes[3];
+	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
-		if (nodes[i] < 4) {
+		if (cNodes[i] < 4) {
 			std::cerr << "FIX POINT ERROR: sub-domain is too small.\n";
 			exit(EXIT_FAILURE);
 		}
 	}
-	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
 	eslocal shift_offset = 1; //1
 	eslocal offset[3];

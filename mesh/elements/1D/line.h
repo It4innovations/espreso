@@ -17,7 +17,7 @@ class Line: public Element
 public:
 	static bool match(eslocal *indices, eslocal n);
 
-	Line(eslocal *indices);
+	Line(eslocal *indices, eslocal *params);
 
 	Element* copy() const
 	{

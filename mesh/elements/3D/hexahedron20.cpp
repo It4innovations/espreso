@@ -205,7 +205,7 @@ std::vector<DenseMatrix> Hexahedron20::_dN = Hexa20_dN();
 std::vector<DenseMatrix> Hexahedron20::_N = Hexa20_N();
 std::vector<double> Hexahedron20::_weighFactor = Hexa20_weight();
 
-bool Hexahedron20::match(eslocal *indices, eslocal n) {
+bool Hexahedron20::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron20 is 3D element
@@ -379,12 +379,12 @@ std::vector<eslocal> Hexahedron20::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron20::Hexahedron20(eslocal *indices)
+Hexahedron20::Hexahedron20(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
 }
 
-Hexahedron20::Hexahedron20(std::ifstream &is)
+Hexahedron20::Hexahedron20(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

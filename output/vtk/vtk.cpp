@@ -159,6 +159,19 @@ void VTK::elements(const mesh::Mesh &mesh)
 	}
 	_vtk << parts + 1 << "\n";
 	_vtk << "\n";
+
+	// DECOMPOSITION TO MATERIAL
+	_vtk << "SCALARS materials int 1\n";
+	_vtk << "LOOKUP_TABLE materials\n";
+	for (size_t p = 0; p < parts; p++) {
+		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
+			_vtk << elements[i]->getParam(mesh::Element::MATERIAL) << "\n";
+
+		}
+		_vtk << parts << "\n";
+	}
+	_vtk << parts + 1 << "\n";
+	_vtk << "\n";
 }
 
 

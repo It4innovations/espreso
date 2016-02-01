@@ -43,7 +43,7 @@ std::vector<eslocal> Square::getFace(size_t face) const
 	}
 }
 
-Square::Square(eslocal *indices)
+Square::Square(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, SquareNodesCount * sizeof(eslocal));
 }

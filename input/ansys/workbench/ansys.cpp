@@ -99,7 +99,8 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 	format.ignore(1) >> lineSize;
 	format.ignore(1) >> numberSize;
 
-	eslocal values[38], value, n, p;
+	eslocal values[38], params[11], value, n, p;
+	params[0] = 0;
 	elements.resize(eSize);
 	for (size_t i = 0; i < eSize; i++) {
 		p = n = 0;
@@ -108,7 +109,8 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 			do {
 				_file.get(s, numberSize + 1);
 				if (n + p < 11) {
-					p++; // TODO: do not skip parameters
+					//params[p++];
+					p++;
 				} else {
 					values[n++] = atol(s);
 				}
@@ -120,7 +122,7 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 		for (size_t v = 0; v < n; v++) {
 			values[v]--; // re-index
 		}
-		elements[i] = AnsysUtils::createElement(values, n);
+		elements[i] = AnsysUtils::createElement(values, n, params);
 	}
 }
 

@@ -12,7 +12,7 @@ public:
 	static size_t subelements;
 	static size_t subnodes[3];
 
-	static void addElements(std::vector<mesh::Element*> &elements, const eslocal indices[]);
+	static void addElements(std::vector<mesh::Element*> &elements, const eslocal indices[], const eslocal params[]);
 
 };
 

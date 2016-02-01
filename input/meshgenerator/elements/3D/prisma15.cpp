@@ -6,7 +6,7 @@ using namespace esinput;
 size_t Prisma15::subelements = 2;
 size_t Prisma15::subnodes[] = { 1, 1, 1 };
 
-void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[])
+void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal prisma[20];
 	prisma[0] = indices[0];
@@ -30,7 +30,7 @@ void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal 
 	prisma[17] = indices[11];
 	prisma[18] = indices[17];
 	prisma[19] = indices[17];
-	elements.push_back(new mesh::Prisma15(prisma));
+	elements.push_back(new mesh::Prisma15(prisma, params));
 
 	prisma[0] = indices[0];
 	prisma[1] = indices[8];
@@ -53,7 +53,7 @@ void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal 
 	prisma[17] = indices[17];
 	prisma[18] = indices[15];
 	prisma[19] = indices[15];
-	elements.push_back(new mesh::Prisma15(prisma));
+	elements.push_back(new mesh::Prisma15(prisma, params));
 }
 
 

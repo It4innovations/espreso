@@ -385,6 +385,7 @@ void Mesh::getSurface(Mesh &surface) const
 	surface._elements.reserve(count);
 	surface._partPtrs.clear();
 	surface._partPtrs.reserve(_partPtrs.size());
+	eslocal params[6] = {0, 0, 0, 0, 0, 0};
 
 	// create surface mesh
 	surface._partPtrs.push_back(0); //(surface._elements.size());
@@ -392,7 +393,7 @@ void Mesh::getSurface(Mesh &surface) const
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (face.size() == 3) {
-				surface._elements.push_back(new Triangle(&face[0]));
+				surface._elements.push_back(new Triangle(&face[0], params));
 			}
 			// divide square to triangles
 			if (face.size() == 4) {
@@ -403,13 +404,13 @@ void Mesh::getSurface(Mesh &surface) const
 					}
 				}
 				if (min % 2 == 0) {
-					surface._elements.push_back(new Triangle(&face[0]));
+					surface._elements.push_back(new Triangle(&face[0], params));
 					face[1] = face[0];
-					surface._elements.push_back(new Triangle(&face[1]));
+					surface._elements.push_back(new Triangle(&face[1], params));
 				} else {
-					surface._elements.push_back(new Triangle(&face[1]));
+					surface._elements.push_back(new Triangle(&face[1], params));
 					face[2] = face[3];
-					surface._elements.push_back(new Triangle(&face[0]));
+					surface._elements.push_back(new Triangle(&face[0], params));
 				}
 			}
 		}
@@ -560,6 +561,8 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 	}
 	mesh._elements.reserve(commonFaces.size());
 
+	eslocal params[6] = {0, 0, 0, 0, 0, 0};
+
 	// create mesh
 	mesh._partPtrs.clear();
 	mesh._partPtrs.push_back(0);
@@ -568,10 +571,10 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 			for (size_t e = 0; e < commonFaces.size(); e++) {
 				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
 					if (commonFaces[e].size() == 3) {
-						el = new Triangle(commonFaces[e].data());
+						el = new Triangle(commonFaces[e].data(), params);
 					}
 					if (commonFaces[e].size() == 4) {
-						el = new Square(commonFaces[e].data());
+						el = new Square(commonFaces[e].data(), params);
 					}
 					mesh._elements.push_back(el);
 				}
@@ -700,6 +703,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 
 		bool innerLine = subdomains_count(begin) > 1;
 		bool flag = true;
+		eslocal params[6] = {0, 0, 0, 0, 0, 0};
 		for (size_t i = 0; i < commonLines.size(); i++) {
 			eslocal start = std::get<0>(commonLines[i]);
 			eslocal mid = std::get<1>(commonLines[i]);
@@ -708,9 +712,9 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 			if (same_subdomains(begin, start) && same_subdomains(begin, end)) {
 				eslocal tmp[3] = { points[start], points[mid], points[end] };
 				if (std::get<2>(commonLines[i]) == -1) {
-					lines._elements.push_back(new Line(tmp));
+					lines._elements.push_back(new Line(tmp, params));
 				} else {
-					lines._elements.push_back(new Line(tmp));
+					lines._elements.push_back(new Line(tmp, params));
 				}
 			}
 			if (same_subdomains(begin, start) != same_subdomains(begin, end)) {

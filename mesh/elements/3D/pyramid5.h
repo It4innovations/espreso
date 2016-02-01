@@ -16,9 +16,9 @@ class Pyramid5: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Pyramid5(eslocal *indices);
+	Pyramid5(const eslocal *indices, const eslocal *params);
 	Pyramid5(std::ifstream &is);
 
 

@@ -151,7 +151,7 @@ std::vector<DenseMatrix> Prisma15::_dN = Prisma15_dN();
 std::vector<DenseMatrix> Prisma15::_N = Prisma15_N();
 std::vector<double> Prisma15::_weighFactor = Prisma15_weight();
 
-bool Prisma15::match(eslocal *indices, eslocal n) {
+bool Prisma15::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Prisma15 is 3D element
@@ -314,7 +314,7 @@ std::vector<eslocal> Prisma15::getFace(size_t face) const
 	return result;
 }
 
-Prisma15::Prisma15(eslocal *indices)
+Prisma15::Prisma15(const eslocal *indices, const eslocal *params): Element(params)
 {
 	_indices[0] = indices[0];
 	_indices[1] = indices[1];
@@ -333,7 +333,7 @@ Prisma15::Prisma15(eslocal *indices)
 	_indices[14] = indices[18];
 }
 
-Prisma15::Prisma15(std::ifstream &is)
+Prisma15::Prisma15(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }
