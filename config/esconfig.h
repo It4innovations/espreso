@@ -27,6 +27,8 @@ namespace mesh {
 
 	enum Output { VTK_FULL, VTK_SURFACE, ESDATA_OUT }; // only VTK_FULL is working
 	extern Output output;
+
+	extern double materialDifference;
 }
 
 namespace assembler {

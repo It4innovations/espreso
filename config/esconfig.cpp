@@ -18,8 +18,10 @@ namespace mesh {
 	bool averageEdges = false;
 	bool averageFaces = false;
 
-	Input input = ESDATA_IN;
+	Input input = GENERATOR;
 	Output output = VTK_FULL;
+
+	double materialDifference = 1e4;
 }
 
 namespace assembler {
