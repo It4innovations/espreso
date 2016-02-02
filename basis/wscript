@@ -12,5 +12,6 @@ def build(ctx):
     ctx.lib(
         source          = source_files,
         target          = "esbasis",
+        use             = "espreso_includes",
         install_path    = ctx.LIBRARIES
     )

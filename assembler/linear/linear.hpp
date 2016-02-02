@@ -27,6 +27,14 @@ void Linear<TInput>::init()
 		KMf(s, false);
 		T(s);
 
+		if (esconfig::info::printMatrices) {
+			std::ofstream osK(eslog::Logging::prepareFile(s, "K").c_str());
+			osK << _K[s];
+			osK.close();
+			std::ofstream osT(eslog::Logging::prepareFile(s, "T").c_str());
+			osT << _T[s];
+			osT.close();
+		}
 		if (this->_verbose && esconfig::MPIrank == 0) {
 			std::cout << "." ;//<< s << " " ;
 		}
@@ -63,6 +71,23 @@ void Linear<TInput>::init()
 	timeBforces.AddStart();
 
 	RHS();
+
+	if (esconfig::info::printMatrices) {
+		for (size_t s = 0; s < this->subdomains(); s++) {
+			std::ofstream osF(eslog::Logging::prepareFile(s, "f").c_str());
+			osF << _f[s];
+			osF.close();
+
+			std::ofstream osB0(eslog::Logging::prepareFile(s, "B0").c_str());
+			osB0 << this->_B0[s];
+			osB0.close();
+
+			std::ofstream osB1(eslog::Logging::prepareFile(s, "B1").c_str());
+			osB1 << this->_B1[s];
+			osB1.close();
+		}
+	}
+
 
 	timeBforces.AddEndWithBarrier();
 	this->_timeStatistics.AddEvent(timeBforces);

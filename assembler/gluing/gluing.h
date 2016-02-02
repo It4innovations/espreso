@@ -42,11 +42,13 @@ protected:
 	std::vector<std::vector<double> >  _B1_duplicity;
 	std::vector<std::vector<double> >  _vec_c;
 
-private:
-	// used for computation
 	std::vector<SparseIJVMatrix<eslocal> > _B0;				// local matrix for HFETI corners
 
 	std::vector<SparseIJVMatrix<eslocal> > _B1;				// final B1 - will be created by appending the _B1_dir + _B1_gl_loc + _B1_gl_glob + _B1_gl_glob_red
+
+private:
+	// used for computation
+
 
 	std::vector<SparseIJVMatrix<eslocal> > _B1_dir; 		// local B1 for dirichlet
 	std::vector<SparseIJVMatrix<eslocal> > _B1_gl_loc;		// local B1 for gluing

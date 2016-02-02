@@ -397,31 +397,24 @@ void LinearSolver::init(
 		  	cluster.domains[d].K.RemoveLower();
 		  if ( solver.USE_PREC == 1 )
 		  	cluster.domains[d].Prec = cluster.domains[d].K;
-	  }
-      set_R_from_K();
-   }
+		}
+	set_R_from_K();
+	}
 
 
-//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		std::stringstream ss;
-//		ss << "R" << d << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		SparseMatrix s = cluster.domains[d].Kplus_R;
-//		s.ConvertDenseToCSR(1);
-//		os << s;
-//		os.close();
-//	}
+	if (esconfig::info::printMatrices) {
+		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+			SparseMatrix s = cluster.domains[d].Kplus_R;
+			s.ConvertDenseToCSR(1);
+
+			std::ofstream os(eslog::Logging::prepareFile(d, "R"));
+			os << s;
+			os.close();
+		}
+	}
 
 	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
-
-//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		std::stringstream ss;
-//		ss << "Ko" << d << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		os << K_mat[d];
-//		os.close();
-//	}
 
 
 	if ( esconfig::mesh::averageEdges || esconfig::mesh::averageFaces ) {
@@ -459,23 +452,20 @@ void LinearSolver::init(
 
 	}
 
-//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		std::stringstream ss;
-//		ss << "KT" << d << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		os << K_mat[d];
-//		os.close();
-//	}
+	if (esconfig::info::printMatrices) {
+		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+			SparseMatrix RT = cluster.domains[d].Kplus_R;
+			RT.ConvertDenseToCSR(1);
 
-//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		std::stringstream ss;
-//		ss << "RT" << d << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		SparseMatrix s = cluster.domains[d].Kplus_R;
-//		s.ConvertDenseToCSR(1);
-//		os << s;
-//		os.close();
-//	}
+			std::ofstream osKT(eslog::Logging::prepareFile(d, "KT"));
+			osKT << K_mat[d];
+			osKT.close();
+
+			std::ofstream osRT(eslog::Logging::prepareFile(d, "RT"));
+			osRT << RT;
+			osRT.close();
+		}
+	}
 
 	// *** Load RHS and fix points for K regularization **************************************************************
 	 TimeEvent timeSetRHS(string("Solver - Set RHS and Fix points"));
@@ -549,38 +539,12 @@ void LinearSolver::init(
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
-//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		std::stringstream ss;
-//		ss << "Kreg" << d << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		SparseMatrix s = cluster.domains[d].K;
-//		os << s;
-//		os.close();
-//	}
-
-
-//	cilk_for (int d = 0; d < T_mat.size(); d++) {
-//			SparseSolver Tinv;
-//			Tinv.mtype = 11;
-//			Tinv.ImportMatrix(T_mat[d]);
-//			Tinv.Factorization();
-//
-//			//SpyText( T_mat[d] );
-//
-//			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
-//			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
-//			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
-//	}
-//
-//    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		std::stringstream ss;
-//		ss << "RT" << d << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		SparseMatrix s = cluster.domains[d].Kplus_R;
-//		s.ConvertDenseToCSR(1);
-//		os << s;
-//		os.close();
-//	}
+    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		std::ofstream os(eslog::Logging::prepareFile(d, "Kreg"));
+		SparseMatrix s = cluster.domains[d].K;
+		os << s;
+		os.close();
+	}
 
 
 	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.AddStartWOBarrier( GetProcessMemory_u() );
@@ -698,17 +662,6 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 			vector < double >  tmp;
 			tmp = prim_solution[d];
 			cluster.domains[d].T.MatVec(tmp, prim_solution[d], 'N');
-
-
-//			std::stringstream ss;
-//			ss.precision(40);
-//			ss << "sol" << d << ".txt";
-//			std::ofstream os(ss.str().c_str());
-//			os.precision(40);
-//			os << prim_solution[d];
-//			os.close();
-
-
 		}
 	}
 
