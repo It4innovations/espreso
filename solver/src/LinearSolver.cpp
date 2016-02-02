@@ -7,6 +7,9 @@
 
 #include "LinearSolver.h"
 
+//#include <Eigen/Dense>
+//using Eigen::MatrixXd;
+
 LinearSolver::LinearSolver() {
 
 }
@@ -303,6 +306,14 @@ void LinearSolver::init(
 ) {
 
 
+
+//	MatrixXd m = MatrixXd::Random(3,3);
+//
+//	std::cout<< m << std::endl;
+//
+//	return;
+
+
 	number_of_subdomains_per_cluster = K_mat.size();
 
     // Overal Linear Solver Time measurement structure
@@ -551,8 +562,30 @@ void LinearSolver::init(
 
 	if (MPI_rank == 0) std::cout << std::endl << "K factorization : ";
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
-	    cluster.domains[d].Kplus.ImportMatrix_wo_Copy (cluster.domains[d].K);
+		switch (esconfig::solver::KSOLVER) {
+		case 0: {
+			cluster.domains[d].Kplus.ImportMatrix_wo_Copy (cluster.domains[d].K);
+			break;
+		}
+		case 1: {
+			;
+			break;
+		}
+		case 2: {
+			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
+			break;
+		}
+		case 3: {
+			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
+			break;
+		}
+		default:
+			std::cerr << "Invalid KSOLVER value\n";
+			exit(EXIT_FAILURE);
+		}
+
 
 		if (KEEP_FACTORS) {
 			cluster.domains[d].Kplus.keep_factors = true;

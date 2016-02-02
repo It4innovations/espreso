@@ -31,6 +31,7 @@ public:
 	bool initialized;
 	bool keep_factors;
 	bool import_with_copy;
+	bool USE_FLOAT;
 	int  MPIrank;
 
 	MKL_INT rows;
@@ -42,6 +43,7 @@ public:
 	MKL_INT		* I_row_indices;
 	MKL_INT		* J_col_indices;
 	double		* V_values;
+	float		* V_values_fl;
 
 	MKL_INT		I_row_indices_size;
 	MKL_INT		J_col_indices_size;
@@ -51,10 +53,12 @@ public:
 	MKL_INT		* CSR_I_row_indices;
 	MKL_INT		* CSR_J_col_indices;
 	double		* CSR_V_values;
+	float 		* CSR_V_values_fl;
 
 	MKL_INT		CSR_I_row_indices_size;
 	MKL_INT		CSR_J_col_indices_size;
 	MKL_INT		CSR_V_values_size;
+	MKL_INT 	CSR_V_values_fl_size;
 
 	// *** Pardiso Solver Variables 
 
@@ -85,9 +89,13 @@ public:
 
 	// for in-place solve 
 	SEQ_VECTOR <double> tmp_sol; 
+	SEQ_VECTOR <float> tmp_sol_fl1;
+	SEQ_VECTOR <float> tmp_sol_fl2;
 
 	//Members
 	void ImportMatrix(SparseMatrix & A);
+	void ImportMatrix_fl(SparseMatrix & A);
+
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
 
 	void Factorization(); 

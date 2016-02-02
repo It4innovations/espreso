@@ -46,7 +46,11 @@ namespace solver {
 	extern size_t	PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
 	extern size_t	CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
 	extern size_t	REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
-	extern size_t	KSOLVER;					// 0 - Direct, 1 - Iter
+	extern size_t	KSOLVER;					// 0 - Direct DP, 1 - Iter, 2 - Direct SP, 3 - Direct MIXED Prec
+	extern size_t   KSOLVER_SP_iter_steps;		// number of reiteration steps for SP direct solver
+	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
+												// 1 - DIRECT SP if KSOLVER is DIRECT SP
+												// 1 - Direct DP if KSOLVER is DIRECT SP
 
 
 }
