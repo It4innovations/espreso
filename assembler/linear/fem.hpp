@@ -181,20 +181,7 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 	SparseCSRMatrix<eslocal> csrM = _M;
 
 	this->_K[part] = csrK;
-
-//	std::stringstream ss;
-//	ss << "K" << part << ".txt";
-//	std::ofstream os(ss.str().c_str());
-//	os << csrK;
-//	os.close();
-
 	this->_M[part] = csrM;
-	if (esconfig::info::printMatrices) {
-		std::ofstream osK(eslog::Logging::prepareFile(part, "K").c_str());
-		SparseIJVMatrix<eslocal> ijv = csrK;
-		osK << ijv;
-		osK.close();
-	}
 }
 
 template <>
@@ -225,21 +212,6 @@ void Linear<FEM>::T(size_t part)
 	}
 
 	SparseCSRMatrix<eslocal> tmpT = _T;
-
-//	std::stringstream ss;
-//	ss << "T" << part << ".txt";
-//	std::ofstream os(ss.str().c_str());
-//	os << tmpT;
-//	os.close();
-
-	this->_T[part] = tmpT;
-
-	if (esconfig::info::printMatrices) {
-		std::ofstream osT(eslog::Logging::prepareFile(part, "T").c_str());
-		SparseIJVMatrix<eslocal> ijv = tmpT;
-		osT << ijv;
-		osT.close();
-	}
 }
 
 template <>
@@ -283,13 +255,6 @@ void Linear<FEM>::RHS()
 				_f[p][this->DOFs() * i + 2] = forces_z.at(l2g[i]) / n;
 			}
 		}
-//		std::stringstream ss;
-//		ss.precision(40);
-//		ss << "f" << p << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		os.precision(40);
-//		os << _f[p];
-//		os.close();
 	}
 
 }

@@ -27,6 +27,7 @@ void Linear<TInput>::init()
 		KMf(s, false);
 		T(s);
 
+
 		if (this->_verbose && esconfig::MPIrank == 0) {
 			std::cout << "." ;//<< s << " " ;
 		}
@@ -66,6 +67,13 @@ void Linear<TInput>::init()
 
 	if (esconfig::info::printMatrices) {
 		for (size_t s = 0; s < this->subdomains(); s++) {
+			std::ofstream osK(eslog::Logging::prepareFile(s, "K").c_str());
+			osK << _K[s];
+			osK.close();
+			std::ofstream osT(eslog::Logging::prepareFile(s, "T").c_str());
+			osT << _T[s];
+			osT.close();
+
 			std::ofstream osF(eslog::Logging::prepareFile(s, "f").c_str());
 			osF << _f[s];
 			osF.close();
