@@ -554,11 +554,13 @@ void LinearSolver::init(
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
-    for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		std::ofstream os(eslog::Logging::prepareFile(d, "Kreg"));
-		SparseMatrix s = cluster.domains[d].K;
-		os << s;
-		os.close();
+	if (esconfig::info::printMatrices) {
+		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+			std::ofstream os(eslog::Logging::prepareFile(d, "Kreg"));
+			SparseMatrix s = cluster.domains[d].K;
+			os << s;
+			os.close();
+		}
 	}
 
 
