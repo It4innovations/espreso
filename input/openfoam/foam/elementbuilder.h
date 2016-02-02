@@ -9,7 +9,7 @@ public:
     ElementBuilder(Faces *faces);
     virtual ~ElementBuilder();
 
-    void add(int index)
+    void add(esglobal index)
     {
         selectedFaces[numberOfFaces]=&(faces->at(index));
         numberOfFaces++;
@@ -28,7 +28,7 @@ public:
     }
     int getNumberOfFaces() { return numberOfFaces;}
 
-    ParseError* createElement();
+    ParseError* createElement(std::vector<mesh::Element*> &elements);
 
 
 protected:

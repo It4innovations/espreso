@@ -12,12 +12,13 @@ ElementBuilder::~ElementBuilder()
     delete selectedFaces;
 }
 
-ParseError* ElementBuilder::createElement()
+ParseError* ElementBuilder::createElement(std::vector<mesh::Element*> &elements)
 {
 
     std::set< eslocal > coordinates;
     int numberOfSquares =0;
     eslocal indicies[8];
+    eslocal params[mesh::Element::PARAMS_SIZE];
 
     for(int i=0; i<numberOfFaces; i++)
     {
@@ -33,6 +34,7 @@ ParseError* ElementBuilder::createElement()
     }
     if (coordinates.size()==4)
     {
+    	//Tetrahedron4
         if (numberOfFaces!=4)
         {
             std::stringstream ss;
@@ -55,13 +57,7 @@ ParseError* ElementBuilder::createElement()
         indicies[2] = face->p[2];
         indicies[3] = indicies[2];
         indicies[4] = *(coordinates.begin());
-        //indicies[5] = indicies[4];
-        //indicies[6] = indicies[4];
-        //indicies[7] = indicies[4];
-        //Tetrahedron4
-        //std::cout<<"Tetrahedron:";
-        //for(int i=0;i<5;i++) std::cout<<indicies[i]<<" ";
-        //std::cout<<"\n";
+        elements.push_back(new mesh::Tetrahedron4(indicies, params));
     }
     else if (coordinates.size()==5)
     {
@@ -95,11 +91,7 @@ ParseError* ElementBuilder::createElement()
         indicies[2] = face->p[2];
         indicies[3] = face->p[3];
         indicies[4] = *(coordinates.begin());
-
-        //Pyramid5
-        //std::cout<<"Pyramid5:";
-        //for(int i=0;i<5;i++) std::cout<<indicies[i]<<" ";
-        //std::cout<<"\n";
+        elements.push_back(new mesh::Pyramid5(indicies, params));
     }
     else if (coordinates.size()==6)
     {
@@ -131,10 +123,7 @@ ParseError* ElementBuilder::createElement()
         PARSE_GUARD(nextPoint(face, indicies[0], indicies[1],indicies[5]));
         PARSE_GUARD(nextPoint(face, indicies[1], indicies[2],indicies[6]));
         indicies[7] = indicies[6];
-        //Prism6
-        //std::cout<<"Prism:";
-        //for(int i=0;i<8;i++) std::cout<<indicies[i]<<" ";
-        //std::cout<<"\n";
+        elements.push_back(new mesh::Prisma6(indicies, params));
     }
     else if (coordinates.size()==8)
     {
@@ -159,10 +148,7 @@ ParseError* ElementBuilder::createElement()
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[0], indicies[1],indicies[5]));
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[1], indicies[2],indicies[6]));
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[2], indicies[3],indicies[7]));
-        //Hexahedron
-        //std::cout<<"Hexahedron: ";
-        //for(int i=0;i<8;i++) std::cout<<indicies[i]<<" ";
-        //std::cout<<"\n";
+        elements.push_back(new mesh::Hexahedron8(indicies, params));
     }
     else
     {
