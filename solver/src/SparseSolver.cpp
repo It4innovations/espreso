@@ -174,7 +174,7 @@ void SparseSolver::SetThreaded() {
     iparm[2]  = num_procs;
 }
 
-void SparseSolver::Factorization() {
+void SparseSolver::Factorization(const std::string &str) {
 
 	double ddum;			/* Double dummy */
 	int idum;				/* Integer dummy. */
@@ -189,8 +189,8 @@ void SparseSolver::Factorization() {
 
 	if (error != 0)
 	{
-		printf ("\nERROR during symbolic factorization: %d", error);
-		exit (1);
+		std::cerr << "ERROR during numerical factorization: " << str << "\n";
+		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
 	}
@@ -209,8 +209,8 @@ void SparseSolver::Factorization() {
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 	if (error != 0)
 	{
-		printf ("\nERROR during numerical factorization: %d", error);
-		//exit (2);
+		std::cerr << "ERROR during numerical factorization: " << str << "\n";
+		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
 	}

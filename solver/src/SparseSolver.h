@@ -98,7 +98,7 @@ public:
 
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
 
-	void Factorization(); 
+	void Factorization(const std::string &str);
 	void Clear();
 	void SetThreaded();
 

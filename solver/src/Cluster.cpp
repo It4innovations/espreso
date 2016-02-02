@@ -1139,7 +1139,9 @@ void Cluster::CreateF0() {
 			) {
 			SparseSolver Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
-			Ktmp.Factorization();
+			std::stringstream ss;
+			ss << "Create F0 -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		} else {
 			// F0 uses same precision is K
@@ -1211,7 +1213,9 @@ void Cluster::CreateF0() {
 
 	//F0_Mat.Clear();
 	F0.SetThreaded();
-	F0.Factorization();
+	std::stringstream ss;
+	ss << "F0 -> rank: " << esconfig::MPIrank;
+	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);
 

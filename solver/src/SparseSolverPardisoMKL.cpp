@@ -225,7 +225,7 @@ void SparseSolver::SetThreaded() {
     iparm[2]  = num_procs;
 }
 
-void SparseSolver::Factorization() {
+void SparseSolver::Factorization(const std::string &str) {
 
 	double ddum;			/* Double dummy */
 	MKL_INT idum;			/* Integer dummy. */
@@ -248,7 +248,7 @@ void SparseSolver::Factorization() {
 	if (error != 0)
 	{
 		//printf ("\nERROR during symbolic factorization: %d", error);
-		std::cout << "\nERROR : " << error << " during symbolic factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+		std::cerr << "ERROR during symbolic factorization: " << str << "\n";
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -275,8 +275,7 @@ void SparseSolver::Factorization() {
 
 	if (error != 0)
 	{
-		std::cout << "\nERROR : " << error << " during numerical factorization on MPI rank : " << esconfig::MPIrank << std::endl;
-		//printf ("\nERROR during numerical factorization: %d", error);
+		std::cerr << "ERROR during numerical factorization: " << str << "\n";
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
@@ -303,8 +302,11 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	}
 
 
-	if (!initialized)
-		Factorization();
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Solve -> rank: " << esconfig::MPIrank;
+		Factorization(ss.str());
+	}
 
 	double ddum   = 0;			/* Double dummy */
 	MKL_INT idum  = 0;			/* Integer dummy. */
@@ -368,8 +370,11 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 			tmp_in[i] = (float)rhs[i];
 	}
 
-	if (!initialized)
-		Factorization();
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Solve -> rank: " << esconfig::MPIrank;
+		Factorization(ss.str());
+	}
 
 	double ddum  = 0;			/* Double dummy */
 	MKL_INT idum = 0;			/* Integer dummy. */
@@ -421,8 +426,11 @@ void SparseSolver::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, 
 			tmp_sol_fl1[i] = (float)rhs[rhs_start_index+ i];
 	}
 
-	if (!initialized)
-		Factorization();
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Solve -> rank: " << esconfig::MPIrank;
+		Factorization(ss.str());
+	}
 
 	double ddum  = 0;			/* Double dummy */
 	MKL_INT idum = 0;			/* Integer dummy. */
@@ -480,8 +488,11 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
 
 void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
 
-	if (!initialized)
-		Factorization();
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Solve -> rank: " << esconfig::MPIrank;
+		Factorization(ss.str());
+	}
 
 	bool keep_factors_tmp = keep_factors;
 	keep_factors          = true;

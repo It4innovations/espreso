@@ -1294,7 +1294,9 @@ void IterSolver::CreateGGt( Cluster & cluster )
 
 
 		t1 = omp_get_wtime();
-		GGt.Factorization();
+		std::stringstream ss;
+		ss << "Create GGt -> rank: " << esconfig::MPIrank;
+		GGt.Factorization(ss.str());
 		cout << "Factorization = " << omp_get_wtime() - t1 << endl;
 
 
@@ -1475,7 +1477,9 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 
 	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.AddStart(omp_get_wtime());
 	GGt_tmp.SetThreaded();
-	GGt_tmp.Factorization();
+	std::stringstream ss;
+	ss << "Create GGt_inv_dist-> rank: " << esconfig::MPIrank;
+	GGt_tmp.Factorization(ss.str());
 	GGtFactor_time.AddEnd(omp_get_wtime()); GGtFactor_time.PrintStatMPI(0.0); preproc_timing.AddEvent(GGtFactor_time);
 
 	TimeEvent GGT_rhs_time("Time to create RHS for get GGTINV"); GGT_rhs_time.AddStart(omp_get_wtime());

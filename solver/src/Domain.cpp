@@ -389,7 +389,9 @@ void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
 			NtN.ImportMatrix(NtN_Mat);
 			NtN_Mat.Clear();
 
-			NtN.Factorization();
+			std::stringstream ss;
+			ss << "K regularization from R -> rank: " << esconfig::MPIrank;
+			NtN.Factorization(ss.str());
 			NtN.SolveMat_Sparse(Nt);
 			NtN.Clear();
 

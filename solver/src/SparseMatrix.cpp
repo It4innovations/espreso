@@ -3416,7 +3416,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
   SparseSolver K_rr_solver;
   K_rr_solver.ImportMatrix(K_rr);
   K_rr.Clear();
-  K_rr_solver.Factorization();
+  std::stringstream ss;
+  ss << "get kerner from K -> rank: " << esconfig::MPIrank;
+  K_rr_solver.Factorization(ss.str());
   K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
   K_rr_solver.Clear();
 
@@ -3496,7 +3498,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
     SparseSolver NtN;
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
-    NtN.Factorization();
+    std::stringstream sss;
+    sss << "get kernel from K -> rank: " << esconfig::MPIrank;
+    NtN.Factorization(ss.str());
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();
     NtN_Mat.MatMat(N,'N',Nt);

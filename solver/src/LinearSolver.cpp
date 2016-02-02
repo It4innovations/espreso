@@ -224,8 +224,10 @@ void LinearSolver::init(
 		cluster.domains[d].Kplus.ImportMatrix (cluster.domains[d].K);
 
 		if (KEEP_FACTORS) {
+			std::stringstream ss;
+			ss << "init -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
 			cluster.domains[d].Kplus.keep_factors = true;
-			cluster.domains[d].Kplus.Factorization ();
+			cluster.domains[d].Kplus.Factorization (ss.str());
 		} else {
 			cluster.domains[d].Kplus.keep_factors = false;
 			cluster.domains[d].Kplus.MPIrank = MPI_rank;
@@ -436,7 +438,9 @@ void LinearSolver::init(
 			SparseSolver Tinv;
 			Tinv.mtype = 11;
 			Tinv.ImportMatrix(T_mat[d]);
-			Tinv.Factorization();
+			std::stringstream ss;
+			ss << "init averaging -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			Tinv.Factorization(ss.str());
 
 			//SpyText( T_mat[d] );
 
@@ -588,8 +592,10 @@ void LinearSolver::init(
 
 
 		if (KEEP_FACTORS) {
+			std::stringstream ss;
+			ss << "init -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
 			cluster.domains[d].Kplus.keep_factors = true;
-			cluster.domains[d].Kplus.Factorization ();
+			cluster.domains[d].Kplus.Factorization (ss.str());
 		} else {
 			cluster.domains[d].Kplus.keep_factors = false;
 			cluster.domains[d].Kplus.MPIrank = MPI_rank;
