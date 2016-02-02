@@ -69,19 +69,19 @@ template<class TElement>
 void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
+	eslocal SHIFT = 1;
+	eslocal shift_offset[3] = {SHIFT, SHIFT, SHIFT};
 
 	eslocal nodes[3];
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
-		if (cNodes[i] < 4) {
-			std::cerr << "FIX POINT ERROR: sub-domain is too small.\n";
-			exit(EXIT_FAILURE);
+		if (2 * (shift_offset[i] + 1) < nodes[i] + 1) {
+			shift_offset[i] = (nodes[i] + 1) / 2 - 1;
 		}
 	}
 
-	eslocal shift_offset = 1; //1
 	eslocal offset[3];
 	eslocal shift[3];
 	for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
@@ -93,9 +93,9 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 					offset[0] = (i & 1) ? 1 : 0;
 					offset[1] = (i & 2) ? 1 : 0;
 					offset[2] = (i & 4) ? 1 : 0;
-					shift[0] = (i & 1) ? -shift_offset : shift_offset;
-					shift[1] = (i & 2) ? -shift_offset : shift_offset;
-					shift[2] = (i & 4) ? -shift_offset : shift_offset;
+					shift[0] = (i & 1) ? -shift_offset[0] : shift_offset[0];
+					shift[1] = (i & 2) ? -shift_offset[1] : shift_offset[1];
+					shift[2] = (i & 4) ? -shift_offset[2] : shift_offset[2];
 					fixPoints.back().push_back(
 							((sz + offset[2]) * nodes[2] + shift[2]) * cNodes[0] * cNodes[1] +
 							((sy + offset[1]) * nodes[1] + shift[1]) * cNodes[0] +

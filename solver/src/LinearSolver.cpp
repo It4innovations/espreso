@@ -796,10 +796,106 @@ void LinearSolver::set_B0 ( std::vector < SparseMatrix >	& B0_mat ) {
 void LinearSolver::set_R_from_K ()
 {
 
+  // Allocation of vectros on each cluster
+  vector<double> norm_KR_d_pow_2; norm_KR_d_pow_2.resize(number_of_subdomains_per_cluster);
+  vector<eslocal> defect_K_d; defect_K_d.resize(number_of_subdomains_per_cluster);
+
+  
+  // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,cluster.domains[d].Kplus_R);
+		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
+                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]), 
+                                            &(defect_K_d[d]));
+    
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
+  // sum of ||K*R|| (all subdomains on the cluster)
+  double sum_per_sub_on_clst_norm_KR_d_pow_2 = 0;
+	for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+     sum_per_sub_on_clst_norm_KR_d_pow_2+=norm_KR_d_pow_2[d];
+  }
+  //
+  auto max_defect = std::max_element(defect_K_d.begin(),defect_K_d.end());
+  auto min_defect = std::min_element(defect_K_d.begin(),defect_K_d.end());
+  //
+  auto max_norm_KR_d_pow_2 = std::max_element(norm_KR_d_pow_2.begin(),norm_KR_d_pow_2.end());
+  auto min_norm_KR_d_pow_2 = std::min_element(norm_KR_d_pow_2.begin(),norm_KR_d_pow_2.end());
+  // 
+  double MinMaxMeanNorm_MinMaxDefectNsubs[6]= {*min_norm_KR_d_pow_2, *max_norm_KR_d_pow_2,
+                                           sum_per_sub_on_clst_norm_KR_d_pow_2,
+                                           *min_defect,*max_defect,
+                                           number_of_subdomains_per_cluster};
+  // 
+  // gathering of statistic on MPI_rank = 0
+  int recv_msg_size=6;
+	MPI_Status 	  mpi_stat;
+  //
+  if (MPI_rank>0)
+  {
+    MPI_Request * mpi_send_req  = new MPI_Request [1];
+    MPI_Isend(&(MinMaxMeanNorm_MinMaxDefectNsubs[0]), recv_msg_size, MPI_DOUBLE, 0, 0,  
+                MPI_COMM_WORLD, mpi_send_req);
+  }
+  else
+  {
+  // Allocation of vectros on MPI_rank = 0
+    vector<double> norm_KR_pow_2_clusters_max; norm_KR_pow_2_clusters_max.resize(MPI_size);
+    vector<double> norm_KR_pow_2_clusters_min; norm_KR_pow_2_clusters_min.resize(MPI_size);
+    vector<double> norm_KR_pow_2_clusters_sum; norm_KR_pow_2_clusters_sum.resize(MPI_size);
+    vector<eslocal> defect_K_clusters_max; defect_K_clusters_max.resize(MPI_size);
+    vector<eslocal> defect_K_clusters_min; defect_K_clusters_min.resize(MPI_size);
+
+    norm_KR_pow_2_clusters_min[0] = MinMaxMeanNorm_MinMaxDefectNsubs[0];
+    norm_KR_pow_2_clusters_max[0] = MinMaxMeanNorm_MinMaxDefectNsubs[1];
+    norm_KR_pow_2_clusters_sum[0] = MinMaxMeanNorm_MinMaxDefectNsubs[2];
+    defect_K_clusters_min[0]      = MinMaxMeanNorm_MinMaxDefectNsubs[3];
+    defect_K_clusters_max[0]      = MinMaxMeanNorm_MinMaxDefectNsubs[4];
+    eslocal numberOfAllSubdomains     = MinMaxMeanNorm_MinMaxDefectNsubs[5];
+
+
+		for (eslocal i = 1; i < MPI_size; i++) {
+      //TODO: Should (may) be 'cilk_for' insead of 'for' used?
+	    MPI_Recv(&(MinMaxMeanNorm_MinMaxDefectNsubs[0]), recv_msg_size, MPI_DOUBLE, i, 0, 
+                 MPI_COMM_WORLD, &mpi_stat);
+      norm_KR_pow_2_clusters_min[i] = MinMaxMeanNorm_MinMaxDefectNsubs[0];
+      norm_KR_pow_2_clusters_max[i] = MinMaxMeanNorm_MinMaxDefectNsubs[1];
+      norm_KR_pow_2_clusters_sum[i] = MinMaxMeanNorm_MinMaxDefectNsubs[2];
+      defect_K_clusters_min[i]      = MinMaxMeanNorm_MinMaxDefectNsubs[3];
+      defect_K_clusters_max[i]      = MinMaxMeanNorm_MinMaxDefectNsubs[4];
+      numberOfAllSubdomains        += MinMaxMeanNorm_MinMaxDefectNsubs[5];
+    }
+    //
+    double sum_per_clst_norm_KR_pow_2 = 0;
+	  for(eslocal c = 0; c < MPI_size; c++) {
+       sum_per_clst_norm_KR_pow_2+=norm_KR_pow_2_clusters_sum[c];
+    }
+    // from here norm_KR is not powered by 2 anymore
+    double norm_KR_clusters_mean = sqrt(sum_per_clst_norm_KR_pow_2/numberOfAllSubdomains);
+
+    //
+    auto max_defect_per_clust = std::max_element(defect_K_clusters_max.begin(),defect_K_clusters_max.end());
+    auto min_defect_per_clust = std::min_element(defect_K_clusters_min.begin(),defect_K_clusters_min.end());
+
+    auto max_norm_KR_pow_2_per_clust = std::max_element(norm_KR_pow_2_clusters_max.begin(),norm_KR_pow_2_clusters_max.end());
+    auto min_norm_KR_pow_2_per_clust = std::min_element(norm_KR_pow_2_clusters_min.begin(),norm_KR_pow_2_clusters_min.end());
+      
+    double _min_norm_KR_per_clust=sqrt(*min_norm_KR_pow_2_per_clust);
+    double _max_norm_KR_per_clust=sqrt(*max_norm_KR_pow_2_per_clust);
+
+  std::cout<<" *******************************************************************************************************************************\n";
+  std::cout<<" ********************    K E R N E L   D E T E C T I O N    V I A    S C H U R   C O M P L E M E N T    ************************\n";
+  std::cout<<" *******************************************************************************************************************************\n";
+  std::cout<< " Statistics for " << numberOfAllSubdomains  << " subdomains.\n";
+  std::cout<< " defect(K)  min:max        " << *min_defect_per_clust << " : "
+                                            << *max_defect_per_clust << "\n"; 
+  std::cout<< " ||K*R||    min:max:avg    " << _min_norm_KR_per_clust << " : "
+                                            << _max_norm_KR_per_clust << " : "
+                                            << norm_KR_clusters_mean << "\n";
+  }
+
+
+
+
 
 }
 
