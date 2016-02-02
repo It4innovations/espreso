@@ -2,6 +2,7 @@
 source_files = (
     "base/bytearray.cpp",
     "base/simplestream.cpp",
+    "base/filestream.cpp",
     "foam/foamfile.cpp",
     "foam/face.cpp",
     "foam/dictionary.cpp",

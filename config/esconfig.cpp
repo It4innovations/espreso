@@ -18,7 +18,7 @@ namespace mesh {
 	bool averageEdges = false;
 	bool averageFaces = false;
 
-	Input input = GENERATOR;
+	Input input = OPENFOAM;
 	Output output = VTK_FULL;
 
 	double materialDifference = 1e-0;

@@ -29,7 +29,7 @@ ParseError* Face::parse(Tokenizer &ts)
     return NULL;
 }
 
-bool Face::containsLine(int x, int y)
+bool Face::containsLine(eslocal x, eslocal y)
 {
     for(int i=0; i<numberOfPoints; i++)
     {
@@ -42,7 +42,7 @@ bool Face::containsLine(int x, int y)
     return false;
 }
 
-ParseError* Face::nextPoint(int x, int y, int &next)
+ParseError* Face::nextPoint(eslocal x, eslocal y, eslocal &next)
 {
     for(int i=0; i<numberOfPoints; i++)
     {

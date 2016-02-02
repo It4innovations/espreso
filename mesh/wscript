@@ -32,6 +32,8 @@ def configure(ctx):
         ctx.env.append_unique("LIB", [ metis ])
     if ctx.env.LIBTYPE == "STATIC":
         ctx.env.append_unique("STLIB", [ metis ])
+   
+    ctx.env.append_unique("LIB", [ "z" ])
 
 def build(ctx):
     ctx.lib(

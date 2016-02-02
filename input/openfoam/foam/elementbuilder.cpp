@@ -15,9 +15,9 @@ ElementBuilder::~ElementBuilder()
 ParseError* ElementBuilder::createElement()
 {
 
-    std::set< int > coordinates;
+    std::set< eslocal > coordinates;
     int numberOfSquares =0;
-    int indicies[8];
+    eslocal indicies[8];
 
     for(int i=0; i<numberOfFaces; i++)
     {
@@ -59,9 +59,9 @@ ParseError* ElementBuilder::createElement()
         //indicies[6] = indicies[4];
         //indicies[7] = indicies[4];
         //Tetrahedron4
-        std::cout<<"Tetrahedron:";
-        for(int i=0;i<5;i++) std::cout<<indicies[i]<<" ";
-        std::cout<<"\n";
+        //std::cout<<"Tetrahedron:";
+        //for(int i=0;i<5;i++) std::cout<<indicies[i]<<" ";
+        //std::cout<<"\n";
     }
     else if (coordinates.size()==5)
     {
@@ -97,9 +97,9 @@ ParseError* ElementBuilder::createElement()
         indicies[4] = *(coordinates.begin());
 
         //Pyramid5
-        std::cout<<"Pyramid5:";
-        for(int i=0;i<5;i++) std::cout<<indicies[i]<<" ";
-        std::cout<<"\n";
+        //std::cout<<"Pyramid5:";
+        //for(int i=0;i<5;i++) std::cout<<indicies[i]<<" ";
+        //std::cout<<"\n";
     }
     else if (coordinates.size()==6)
     {
@@ -132,9 +132,9 @@ ParseError* ElementBuilder::createElement()
         PARSE_GUARD(nextPoint(face, indicies[1], indicies[2],indicies[6]));
         indicies[7] = indicies[6];
         //Prism6
-        std::cout<<"Prism:";
-        for(int i=0;i<8;i++) std::cout<<indicies[i]<<" ";
-        std::cout<<"\n";
+        //std::cout<<"Prism:";
+        //for(int i=0;i<8;i++) std::cout<<indicies[i]<<" ";
+        //std::cout<<"\n";
     }
     else if (coordinates.size()==8)
     {
@@ -151,18 +151,18 @@ ParseError* ElementBuilder::createElement()
             return new ParseError(ss.str(), "ElementBuilder");
         }
         indicies[0] = selectedFaces[0]->p[0];
-        indicies[1] = selectedFaces[0]->p[1];
+        indicies[1] = selectedFaces[0]->p[3];
         indicies[2] = selectedFaces[0]->p[2];
-        indicies[3] = selectedFaces[0]->p[3];
+        indicies[3] = selectedFaces[0]->p[1];
 
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[3], indicies[0],indicies[4]));
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[0], indicies[1],indicies[5]));
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[1], indicies[2],indicies[6]));
         PARSE_GUARD(nextPoint(selectedFaces[0], indicies[2], indicies[3],indicies[7]));
         //Hexahedron
-        std::cout<<"Hexahedron: ";
-        for(int i=0;i<8;i++) std::cout<<indicies[i]<<" ";
-        std::cout<<"\n";
+        //std::cout<<"Hexahedron: ";
+        //for(int i=0;i<8;i++) std::cout<<indicies[i]<<" ";
+        //std::cout<<"\n";
     }
     else
     {
@@ -173,7 +173,7 @@ ParseError* ElementBuilder::createElement()
     return NULL;
 }
 
-ParseError* ElementBuilder::nextPoint(Face *origin, int x, int y, int &nextPoint) {
+ParseError* ElementBuilder::nextPoint(Face *origin, eslocal x, eslocal y, eslocal &nextPoint) {
     for(int i=0;i<numberOfFaces;i++) {
         if (selectedFaces[i]!=origin) {
             if (selectedFaces[i]->containsLine(x,y)) {

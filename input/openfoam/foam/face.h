@@ -11,8 +11,8 @@ public:
     virtual ~Face();
 
     ParseError* parse(Tokenizer &ts);
-    bool containsLine(int x, int y);
-    ParseError* nextPoint(int x, int y, int &next);
+    bool containsLine(eslocal x, eslocal y);
+    ParseError* nextPoint(eslocal x, eslocal y, eslocal &next);
 
     friend inline std::ostream& operator<<(std::ostream& os, const Face& obj)
     {
@@ -25,7 +25,7 @@ public:
         return os;
     }
 
-    int p[4];
+    eslocal p[4];
     int numberOfPoints;
 
 protected:

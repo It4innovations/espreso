@@ -95,8 +95,8 @@ template<typename T> ParseError* parse(Tokenizer &ts, std::vector<T> &value)
     }
     if (ts.isTokenInt())
     {
-        int i;
-        ts.readInt(i);
+        long i;
+        ts.readLong(i);
         value.reserve(i);
     }
     PARSE_GUARD(ts.consumeChar('('));

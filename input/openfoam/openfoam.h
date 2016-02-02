@@ -23,9 +23,12 @@ public:
 private:
 
 	ParseError* computePolyMeshPath(int rank, int size);
+	void solveParseError(ParseError *error);
 
 	std::string _projectPath;
 	std::string _polyMeshPath;
+	int _rank;
+	int _size;
 };
 
 }

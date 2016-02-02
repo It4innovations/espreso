@@ -34,7 +34,7 @@ public:
 protected:
 private:
 
-    ParseError* nextPoint(Face *origin, int x, int y, int &nextPoint);
+    ParseError* nextPoint(Face *origin, eslocal x, eslocal y, eslocal &nextPoint);
 
     Face** selectedFaces;
     int numberOfFaces;

@@ -90,6 +90,10 @@ static mesh::Mesh* getMesh(const Options &options)
 	case esconfig::mesh::OPENFOAM: {
 		esinput::OpenFOAM loader(options, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
+
+		esoutput::VTK_Full out(*mesh, "test");
+		out.store(1,1);
+
 		break;
 	}
 	case esconfig::mesh::ESDATA_IN: {
