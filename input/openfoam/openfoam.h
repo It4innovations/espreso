@@ -3,6 +3,7 @@
 #define INPUT_OPENFOAM_OPENFOAM_H_
 
 #include "../loader.h"
+#include "foam/foamfile.h"
 
 namespace esinput {
 
@@ -20,7 +21,11 @@ public:
 	void close() {};
 
 private:
-	std::string _path;
+
+	ParseError* computePolyMeshPath(int rank, int size);
+
+	std::string _projectPath;
+	std::string _polyMeshPath;
 };
 
 }

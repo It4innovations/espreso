@@ -1,6 +1,13 @@
 
 source_files = (
-    "openfoam.cpp",
+    "base/bytearray.cpp",
+    "base/simplestream.cpp",
+    "foam/foamfile.cpp",
+    "foam/face.cpp",
+    "foam/dictionary.cpp",
+    "foam/dictionarybasedobject.cpp",
+    "foam/elementbuilder.cpp",
+    "openfoam.cpp"
 )
 
 def configure(ctx):
