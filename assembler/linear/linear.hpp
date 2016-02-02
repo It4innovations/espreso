@@ -27,14 +27,6 @@ void Linear<TInput>::init()
 		KMf(s, false);
 		T(s);
 
-		if (esconfig::info::printMatrices) {
-			std::ofstream osK(eslog::Logging::prepareFile(s, "K").c_str());
-			osK << _K[s];
-			osK.close();
-			std::ofstream osT(eslog::Logging::prepareFile(s, "T").c_str());
-			osT << _T[s];
-			osT.close();
-		}
 		if (this->_verbose && esconfig::MPIrank == 0) {
 			std::cout << "." ;//<< s << " " ;
 		}

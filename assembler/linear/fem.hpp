@@ -189,6 +189,12 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 //	os.close();
 
 	this->_M[part] = csrM;
+	if (esconfig::info::printMatrices) {
+		std::ofstream osK(eslog::Logging::prepareFile(part, "K").c_str());
+		SparseIJVMatrix<eslocal> ijv = csrK;
+		osK << ijv;
+		osK.close();
+	}
 }
 
 template <>
@@ -227,6 +233,13 @@ void Linear<FEM>::T(size_t part)
 //	os.close();
 
 	this->_T[part] = tmpT;
+
+	if (esconfig::info::printMatrices) {
+		std::ofstream osT(eslog::Logging::prepareFile(part, "T").c_str());
+		SparseIJVMatrix<eslocal> ijv = tmpT;
+		osT << ijv;
+		osT.close();
+	}
 }
 
 template <>

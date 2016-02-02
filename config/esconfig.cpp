@@ -18,7 +18,7 @@ namespace mesh {
 	bool averageEdges = false;
 	bool averageFaces = false;
 
-	Input input = GENERATOR;
+	Input input = ESDATA_IN;
 	Output output = VTK_FULL;
 }
 
@@ -47,7 +47,7 @@ namespace solver {
 namespace info {
 	std::string output = "log";
 
-	bool printMatrices = false;
+	bool printMatrices = true;
 }
 
 }
