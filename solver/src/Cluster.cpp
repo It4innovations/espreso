@@ -1133,12 +1133,16 @@ void Cluster::CreateF0() {
 		else
 			domains[d].Kplus.msglvl=0;
 
-		if (esconfig::solver::KSOLVER == 2) {
+		// FO solve in doble in case K is in single
+		if (   (esconfig::solver::KSOLVER == 2 || esconfig::solver::KSOLVER == 3 )
+			 && esconfig::solver::F0_SOLVER == 1
+			) {
 			SparseSolver Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			Ktmp.Factorization();
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		} else {
+			// F0 uses same precision is K
 			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		}
 

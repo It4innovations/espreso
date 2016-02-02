@@ -613,6 +613,10 @@ void LinearSolver::init(
 			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
 			break;
 		}
+		case 3: {
+			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
+			break;
+		}
 		default:
 			std::cerr << "Invalid KSOLVER value\n";
 			exit(EXIT_FAILURE);

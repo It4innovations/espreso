@@ -119,6 +119,28 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
 	}
+	case 3: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in, x, x_in_vector_start_index, 0);
+
+		for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+			K.MatVec(x,r,'N');
+			for (eslocal i = 0; i < r.size(); i++)
+				r[i] = x_in[i + x_in_vector_start_index] - r[i];
+			Kplus.Solve(r, z, 0, 0);
+			for (eslocal i = 0; i < r.size(); i++)
+				x[i] = x[i] + z[i];
+		}
+
+		for (eslocal i = 0; i < r.size(); i++)
+			y_out[y_out_vector_start_index + i] = x[i];
+
+		break;
+	}
 //	case 1: {
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
@@ -139,6 +161,28 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
 	}
+	case 3: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in, x, 0, 0);
+
+		for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+			K.MatVec(x,r,'N');
+			for (eslocal i = 0; i < r.size(); i++)
+				r[i] = x_in[i] - r[i];
+			Kplus.Solve(r, z, 0, 0);
+			for (eslocal i = 0; i < r.size(); i++)
+				x[i] = x[i] + z[i];
+		}
+
+		for (eslocal i = 0; i < r.size(); i++)
+			y_out[i] = x[i];
+
+		break;
+	}
 //	case 1: {
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
@@ -151,12 +195,34 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 	switch (esconfig::solver::KSOLVER) {
-	case 0: {
+	case 0: { //DIRECT DP
 		Kplus.Solve(x_in_y_out);
 		break;
 	}
-	case 2: {
+	case 2: { // DIRECT SP
 		Kplus.Solve(x_in_y_out);
+		break;
+	}
+	case 3: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in_y_out, x, 0, 0);
+
+		for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+			K.MatVec(x,r,'N');
+			for (eslocal i = 0; i < r.size(); i++)
+				r[i] = x_in_y_out[i] - r[i];
+			Kplus.Solve(r, z, 0, 0);
+			for (eslocal i = 0; i < r.size(); i++)
+				x[i] = x[i] + z[i];
+		}
+
+		for (eslocal i = 0; i < r.size(); i++)
+			x_in_y_out[i] = x[i];
+
 		break;
 	}
 	case 1: {
