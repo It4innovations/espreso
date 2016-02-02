@@ -4,11 +4,6 @@
 
 #define SEQ_VECTOR vector
 
-#ifdef WIN32	 
-	#include "stdafx.h"
-#endif
-
-
 #include "mpi.h"
 //#include "mkl.h"
 #include "mkl_spblas.h"

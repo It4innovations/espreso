@@ -1,6 +1,3 @@
-#ifdef WIN32	 
-#include "stdafx.h"
-#endif
 
 #include <omp.h>
 #include "mpi.h"
