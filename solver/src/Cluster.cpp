@@ -5,67 +5,62 @@
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
 
-Cluster::Cluster(eslocal cluster_index){
+Cluster::Cluster(eslocal cluster_index):
+	cluster_time("Cluster Timing "),
+	vec_fill_time("Reseting vec_g0 and vec_e0"),
+	loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+	loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
+	clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
+	clus_F0_1_time("F0 solve - 1st "),
+	clus_F0_2_time("F0 solve - 2nd "),
+	clus_G0_time("G0  Mult "),
+	clus_G0t_time("G0t Mult "),
+	clus_Sa_time("Sa solve "),
+	loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
+{
 
 	cluster_global_index = cluster_index;
-
-	cluster_time  = TimeEval ("Cluster Timing ");
-
-	vec_fill_time = TimeEvent("Reseting vec_g0 and vec_e0");
-	loop_1_1_time = TimeEvent("Loop 1: Kplus-sv, B0-mv, KpluR-mv");
-	loop_1_2_time = TimeEvent("Loop 1: vec_e0 and vec_g0");
-
-	clusCP_time   = TimeEvent("Cluster CP - F0,GO,Sa,G0t,F0 ");
-	clus_F0_1_time= TimeEvent("F0 solve - 1st ");
-	clus_F0_2_time= TimeEvent("F0 solve - 2nd ");
-	clus_G0_time  = TimeEvent("G0  Mult ");
-	clus_G0t_time = TimeEvent("G0t Mult ");
-	clus_Sa_time  = TimeEvent("Sa solve ");
-
-	loop_2_1_time = TimeEvent("Loop2: Kplus-sv, B0-mv, Kplus-mv");
-
 	iter_cnt_comm = 0;
 }
 
 
 
-Cluster::Cluster() {
+Cluster::Cluster():
+	cluster_time("Cluster Timing "),
 
-	cluster_time  = TimeEval("Cluster Timing ");
+	vec_fill_time("Reseting vec_g0 and vec_e0"),
+	loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+	loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
 
-	vec_fill_time = TimeEvent("Reseting vec_g0 and vec_e0");
-	loop_1_1_time = TimeEvent("Loop 1: Kplus-sv, B0-mv, KpluR-mv");
-	loop_1_2_time = TimeEvent("Loop 1: vec_e0 and vec_g0");
+	clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
+	clus_F0_1_time("F0 solve - 1st "),
+	clus_F0_2_time("F0 solve - 2nd "),
+	clus_G0_time("G0  Mult "),
+	clus_G0t_time("G0t Mult "),
+	clus_Sa_time("Sa solve "),
 
-	clusCP_time   = TimeEvent("Cluster CP - F0,GO,Sa,G0t,F0 ");
-	clus_F0_1_time= TimeEvent("F0 solve - 1st ");
-	clus_F0_2_time= TimeEvent("F0 solve - 2nd ");
-	clus_G0_time  = TimeEvent("G0  Mult ");
-	clus_G0t_time = TimeEvent("G0t Mult ");
-	clus_Sa_time  = TimeEvent("Sa solve ");
-
-	loop_2_1_time = TimeEvent("Loop2: Kplus-sv, B0-mv, Kplus-mv");
-
+	loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
+{
 	iter_cnt_comm = 0;
 }
 
 
 void Cluster::ShowTiming()  {
 
-	cluster_time.AddEvent(vec_fill_time);
-	cluster_time.AddEvent(loop_1_1_time);
-	cluster_time.AddEvent(loop_1_2_time);
+	cluster_time.addEvent(vec_fill_time);
+	cluster_time.addEvent(loop_1_1_time);
+	cluster_time.addEvent(loop_1_2_time);
 
-	cluster_time.AddEvent(clus_F0_1_time);
-	cluster_time.AddEvent(clus_G0_time);
-	cluster_time.AddEvent(clus_Sa_time);
-	cluster_time.AddEvent(clus_G0t_time);
-	cluster_time.AddEvent(clus_F0_2_time);
+	cluster_time.addEvent(clus_F0_1_time);
+	cluster_time.addEvent(clus_G0_time);
+	cluster_time.addEvent(clus_Sa_time);
+	cluster_time.addEvent(clus_G0t_time);
+	cluster_time.addEvent(clus_F0_2_time);
 
-	cluster_time.AddEvent(clusCP_time);
-	cluster_time.AddEvent(loop_2_1_time);
+	cluster_time.addEvent(clusCP_time);
+	cluster_time.addEvent(loop_2_1_time);
 
-	cluster_time.PrintStatsMPI();
+	cluster_time.printStatsMPI();
 }
 
 void Cluster::SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama) {
@@ -221,7 +216,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 	}
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		
+
             if (domains[d].lambda_map_sub.size() > 0 ) {
 
                 eslocal i = 0;
@@ -364,7 +359,7 @@ void Cluster::SetClusterHFETI (bool R_from_mesh) {
 	if (USE_HFETI == 1) {
 
 		TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
-		HFETI_prec_timing.totalTime.AddStart(omp_get_wtime());
+		HFETI_prec_timing.totalTime.start();
 
 		int MPIrank;
 		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
@@ -372,48 +367,48 @@ void Cluster::SetClusterHFETI (bool R_from_mesh) {
 
 
 		TimeEvent B0_time("Compress B0 per cluster");
-		B0_time.AddStart(omp_get_wtime());
+		B0_time.start();
 
 		CompressB0();
 
-		B0_time.AddEnd(omp_get_wtime());
-		B0_time.PrintStatMPI(0.0);
-		HFETI_prec_timing.AddEvent(B0_time);
+		B0_time.end();
+		B0_time.printStatMPI();
+		HFETI_prec_timing.addEvent(B0_time);
 
 
 		TimeEvent G0_time("Create G0 per cluster");
-		G0_time.AddStart(omp_get_wtime());
+		G0_time.start();
 
 		CreateG0();
 		vec_g0.resize(G0.cols);
 		vec_e0.resize(G0.rows);
 
-		G0_time.AddEnd(omp_get_wtime());
-		G0_time.PrintStatMPI(0.0);
-		HFETI_prec_timing.AddEvent(G0_time);
+		G0_time.end();
+		G0_time.printStatMPI();
+		HFETI_prec_timing.addEvent(G0_time);
 
 
 		TimeEvent F0_time("Create F0 per cluster");
-		F0_time.AddStart(omp_get_wtime());
+		F0_time.start();
 
 		CreateF0();
 		vec_lambda.resize(F0.m_Kplus_size);
 
-		F0_time.AddEnd(omp_get_wtime());
-		HFETI_prec_timing.AddEvent(F0_time);
+		F0_time.end();
+		HFETI_prec_timing.addEvent(F0_time);
 
 
 		TimeEvent Sa_time("Create Salfa per cluster");
-		Sa_time.AddStart(omp_get_wtime());
+		Sa_time.start();
 
 		CreateSa();
 		vec_alfa.resize(Sa.m_Kplus_size);
 
-		Sa_time.AddEnd(omp_get_wtime());
-		HFETI_prec_timing.AddEvent(Sa_time);
+		Sa_time.end();
+		HFETI_prec_timing.addEvent(Sa_time);
 
-		HFETI_prec_timing.totalTime.AddEnd(omp_get_wtime());
-		HFETI_prec_timing.PrintStatsMPI();
+		HFETI_prec_timing.totalTime.end();
+		HFETI_prec_timing.printStatsMPI();
 
 		if (! R_from_mesh) {
 
@@ -586,23 +581,23 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	mkl_set_num_threads(1);
 
-	cluster_time.totalTime.AddStart();
+	cluster_time.totalTime.start();
 
-	vec_fill_time.AddStart();
+	vec_fill_time.start();
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	vec_fill_time.AddEnd();
+	vec_fill_time.end();
 
 	// loop over domains in the cluster
-	loop_1_1_time.AddStart();
+	loop_1_1_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
 	}
-	loop_1_1_time.AddEnd();
+	loop_1_1_time.end();
 
-	loop_1_2_time.AddStart();
+	loop_1_2_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
@@ -618,25 +613,25 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
-	loop_1_2_time.AddEnd();
+	loop_1_2_time.end();
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.AddStart();
+	clusCP_time.start();
 
 
 //	for (int i = 0; i < vec_g0.size(); i++)
 //	printf (       "Test probe 1: %d norm = %1.30f \n", i, vec_g0[i] );
 
-	clus_F0_1_time.AddStart();
+	clus_F0_1_time.start();
 	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.AddEnd();
+	clus_F0_1_time.end();
 
 //	for (int i = 0; i < tm1[0].size(); i++)
 //	printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
 
-	clus_G0_time.AddStart();
+	clus_G0_time.start();
 	G0.MatVec(tm1[0], tm2[0], 'N');
-	clus_G0_time.AddEnd();
+	clus_G0_time.end();
 
 //	for (int i = 0; i < tm1[0].size(); i++)
 //	printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
@@ -645,7 +640,7 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	 clus_Sa_time.AddStart();
+	 clus_Sa_time.start();
 #ifdef SPARSE_SA
 	 Sa.Solve(tm2[0], vec_alfa,0,0);
 #else
@@ -655,14 +650,14 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	vec_alfa = tm2[0];
 	dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
 #endif
-	 clus_Sa_time.AddEnd();
+	 clus_Sa_time.end();
 
 //		for (int i = 0; i < vec_alfa.size(); i++)
 //		printf (       "Test probe 4: %d norm = %1.30f \n", i, vec_alfa[i] );
 
-	 clus_G0t_time.AddStart();
+	 clus_G0t_time.start();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	 clus_G0t_time.AddEnd();
+	 clus_G0t_time.end();
 
 //		for (int i = 0; i < tm1[0].size(); i++)
 //		printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
@@ -671,18 +666,18 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
-	clus_F0_2_time.AddStart();
+	clus_F0_2_time.start();
 	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.AddEnd();
+	clus_F0_2_time.end();
 
-	clusCP_time.AddEnd();
+	clusCP_time.end();
 
 //	for (int i = 0; i < vec_lambda.size(); i++)
 //	printf (       "Test probe 6: %d norm = %1.30f \n", i, vec_lambda[i] );
 
 	// Kplus_x
 	mkl_set_num_threads(1);
-	loop_2_1_time.AddStart();
+	loop_2_1_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
@@ -708,31 +703,31 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
-	loop_2_1_time.AddEnd();
+	loop_2_1_time.end();
 
-	cluster_time.totalTime.AddEnd();
+	cluster_time.totalTime.end();
 }
 
 void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 	mkl_set_num_threads(1);
-	cluster_time.totalTime.AddStart();
+	cluster_time.totalTime.start();
 
-	vec_fill_time.AddStart();
+	vec_fill_time.start();
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	vec_fill_time.AddEnd();
+	vec_fill_time.end();
 
 	// loop over domains in the cluster
-	loop_1_1_time.AddStart();
+	loop_1_1_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
    		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
 	}
-	loop_1_1_time.AddEnd();
+	loop_1_1_time.end();
 
-	loop_1_2_time.AddStart();
+	loop_1_2_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
@@ -747,24 +742,24 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
-	loop_1_2_time.AddEnd();
+	loop_1_2_time.end();
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.AddStart();
+	clusCP_time.start();
 
-	clus_F0_1_time.AddStart();
+	clus_F0_1_time.start();
 	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.AddEnd();
+	clus_F0_1_time.end();
 
-	clus_G0_time.AddStart();
+	clus_G0_time.start();
 	G0.MatVec(tm1[0], tm2[0], 'N');
-	clus_G0_time.AddEnd();
+	clus_G0_time.end();
 
 	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	 clus_Sa_time.AddStart();
+	 clus_Sa_time.start();
  #ifdef SPARSE_SA
     Sa.Solve(tm2[0], vec_alfa,0,0);
  #else
@@ -774,26 +769,26 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
     vec_alfa = tm2[0];
     dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
  #endif
-     clus_Sa_time.AddEnd();
+     clus_Sa_time.end();
 
-	 clus_G0t_time.AddStart();
+	 clus_G0t_time.start();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	 clus_G0t_time.AddEnd();
+	 clus_G0t_time.end();
 
 	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
-	clus_F0_2_time.AddStart();
+	clus_F0_2_time.start();
 	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.AddEnd();
+	clus_F0_2_time.end();
 
-	clusCP_time.AddEnd();
+	clusCP_time.end();
 
 
 	// Kplus_x
 	mkl_set_num_threads(1);
-	loop_2_1_time.AddStart();
+	loop_2_1_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
@@ -811,23 +806,23 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
-	loop_2_1_time.AddEnd();
+	loop_2_1_time.end();
 
-	cluster_time.totalTime.AddEnd();
+	cluster_time.totalTime.end();
 }
 
 void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 	mkl_set_num_threads(1);
-	cluster_time.totalTime.AddStart();
+	cluster_time.totalTime.start();
 
-	vec_fill_time.AddStart();
+	vec_fill_time.start();
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	vec_fill_time.AddEnd();
+	vec_fill_time.end();
 
 	// loop over domains in the cluster
-	loop_1_1_time.AddStart();
+	loop_1_1_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
    		//domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);				// g0 - with comp B0Kplus
@@ -835,9 +830,9 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 		domains[d].B0KplusB1_comp .DenseMatVec(x_in[d], tm2[d], 'N');		// g0 - with comp B0Kplus
 		domains[d].Kplus_R_B1_comp.DenseMatVec(x_in[d], tm3[d], 'N');		// e0
 	}
-	loop_1_1_time.AddEnd();
+	loop_1_1_time.end();
 
-	loop_1_2_time.AddStart();
+	loop_1_2_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
@@ -852,45 +847,45 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
-	loop_1_2_time.AddEnd();
+	loop_1_2_time.end();
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.AddStart();
+	clusCP_time.start();
 
-	clus_F0_1_time.AddStart();
+	clus_F0_1_time.start();
 	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.AddEnd();
+	clus_F0_1_time.end();
 
-	clus_G0_time.AddStart();
+	clus_G0_time.start();
 	G0.MatVec(tm1[0], tm2[0], 'N');
-	clus_G0_time.AddEnd();
+	clus_G0_time.end();
 
 	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	clus_Sa_time.AddStart();
+	clus_Sa_time.start();
 	Sa.Solve(tm2[0], vec_alfa,0,0);
-	clus_Sa_time.AddEnd();
+	clus_Sa_time.end();
 
-	clus_G0t_time.AddStart();
+	clus_G0t_time.start();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	clus_G0t_time.AddEnd();
+	clus_G0t_time.end();
 
 	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
-	clus_F0_2_time.AddStart();
+	clus_F0_2_time.start();
 	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.AddEnd();
+	clus_F0_2_time.end();
 
-	clusCP_time.AddEnd();
+	clusCP_time.end();
 
 
 	// Kplus_x
 	mkl_set_num_threads(1);
-	loop_2_1_time.AddStart();
+	loop_2_1_time.start();
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
@@ -914,9 +909,9 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
-	loop_2_1_time.AddEnd();
+	loop_2_1_time.end();
 
-	cluster_time.totalTime.AddEnd();
+	cluster_time.totalTime.end();
 }
 
 
@@ -934,15 +929,15 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 //	//__cilkrts_set_param("nworkers", num_threads);
 //	mkl_set_num_threads(1);
 //
-//	cluster_time.totalTime.AddStart();
+//	cluster_time.totalTime.start();
 //
-//	vec_fill_time.AddStart();
+//	vec_fill_time.start();
 //	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 //	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-//	vec_fill_time.AddEnd();
+//	vec_fill_time.end();
 //
 //	// loop over domains in the cluster
-//	loop_1_1_time.AddStart();
+//	loop_1_1_time.start();
 //	cilk_for (eslocal d = 0; d < domains.size(); d++)
 //	{
 //		//PROD - domains[d].B0Kplus.MatVec(x_in[d], tm2[d], 'N');			// g0 using B0Kplus
@@ -956,9 +951,9 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 //		//domains[d].Kplus_R.MatVec     (x_in[d], tm3[d], 'T');		        // e0
 //		domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');
 //	}
-//	loop_1_1_time.AddEnd();
+//	loop_1_1_time.end();
 //
-//	loop_1_2_time.AddStart();
+//	loop_1_2_time.start();
 //	cilk_for (eslocal d = 0; d < domains.size(); d++)
 //	{
 //		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
@@ -988,45 +983,45 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 //
 //
 //	// end loop over domains
-//	loop_1_2_time.AddEnd();
+//	loop_1_2_time.end();
 //
 //	mkl_set_num_threads(24); //pozor
-//	clusCP_time.AddStart();
+//	clusCP_time.start();
 //
-//	clus_F0_1_time.AddStart();
+//	clus_F0_1_time.start();
 //	F0.Solve(vec_g0, tm1[0], 0, 0);
-//	clus_F0_1_time.AddEnd();
+//	clus_F0_1_time.end();
 //
-//	clus_G0_time.AddStart();
+//	clus_G0_time.start();
 //	G0.MatVec(tm1[0], tm2[0], 'N');
-//	clus_G0_time.AddEnd();
+//	clus_G0_time.end();
 //
 //	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
 //		tm2[0][i] = tm2[0][i] - vec_e0[i];
 //	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 //
-//	clus_Sa_time.AddStart();
+//	clus_Sa_time.start();
 //	Sa.Solve(tm2[0], vec_alfa,0,0);
-//	clus_Sa_time.AddEnd();
+//	clus_Sa_time.end();
 //
-//	clus_G0t_time.AddStart();
+//	clus_G0t_time.start();
 //	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-//	clus_G0t_time.AddEnd();
+//	clus_G0t_time.end();
 //
 //	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 //		tm1[0][i] = vec_g0[i] - tm1[0][i];
 //
 //
-//	clus_F0_2_time.AddStart();
+//	clus_F0_2_time.start();
 //	F0.Solve(tm1[0], vec_lambda,0,0);
-//	clus_F0_2_time.AddEnd();
+//	clus_F0_2_time.end();
 //
-//	clusCP_time.AddEnd();
+//	clusCP_time.end();
 //
 //
 //	// Kplus_x
 //	mkl_set_num_threads(1);
-//	loop_2_1_time.AddStart();
+//	loop_2_1_time.start();
 //	cilk_for (eslocal d = 0; d < domains.size(); d++)
 //	{
 //		eslocal domain_size = domains[d].domain_prim_size;
@@ -1057,9 +1052,9 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 //			x_in[d][i] = tm2[d][i] + tm3[d][i];
 //
 //	}
-//	loop_2_1_time.AddEnd();
+//	loop_2_1_time.end();
 //
-//	cluster_time.totalTime.AddEnd();
+//	cluster_time.totalTime.end();
 //}
 
 
@@ -1113,18 +1108,18 @@ void Cluster::CreateG0() {
 void Cluster::CreateF0() {
 
 	 TimeEval F0_timing (" HFETI - F0 preprocessing timing");
-	 F0_timing.totalTime.AddStart(omp_get_wtime());
+	 F0_timing.totalTime.start();
 
 	mkl_set_num_threads(1);
 
 	int MPIrank; MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
 
-	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());  
-		
+	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
+
 	if (MPIrank == 0 ) {cout << "HFETI - Create F0 - domain : " << endl; };
-		
+
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple RHS solve");
-	 solve_F0_time.AddStart(omp_get_wtime());
+	 solve_F0_time.start();
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
@@ -1157,8 +1152,8 @@ void Cluster::CreateF0() {
 		for (eslocal i = 0; i < domains[d].B0Kplus.CSR_J_col_indices.size() - 1; i++)
 			domains[d].B0Kplus.CSR_J_col_indices[i] = domains[d].B0_comp_map_vec [ domains[d].B0Kplus.CSR_J_col_indices[i] - 1 ];
 
-		domains[d].B0Kplus.cols = domains[d].B0.rows;; 
-			
+		domains[d].B0Kplus.cols = domains[d].B0.rows;;
+
 		// Reduces the work for HFETI iteration - reduces the
 		// New multKlpusGlobal_Kinv2
 		if ( 0 == 1 ) {
@@ -1175,37 +1170,37 @@ void Cluster::CreateF0() {
 
 		domains[d].Kplus.msglvl=0;
 		if (MPIrank == 0 ) cout << "."; //{cout << d << " "; };
-	}	
+	}
 
 	if (MPIrank == 0 ) {cout << endl; };
 
-	 solve_F0_time.AddEnd(omp_get_wtime());
-	 solve_F0_time.PrintStatMPI(0.0);
-	 F0_timing.AddEvent(solve_F0_time);
-	
+	 solve_F0_time.end();
+	 solve_F0_time.printStatMPI();
+	 F0_timing.addEvent(solve_F0_time);
+
 	if (MPIrank == 0 ) {cout << endl; };
 
 	 TimeEvent reduction_F0_time("F0 reduction time");
-	 reduction_F0_time.AddStart(omp_get_wtime());
+	 reduction_F0_time.start();
 
 	for (eslocal j = 1; j < tmpF0v.size(); j = j * 2 ) {
 		cilk_for (eslocal i = 0; i < tmpF0v.size(); i = i + 2*j) {
 			if ( i+j < tmpF0v.size()) {
-				tmpF0v[i    ].MatAddInPlace( tmpF0v[i + j], 'N', 1.0 ); 
+				tmpF0v[i    ].MatAddInPlace( tmpF0v[i + j], 'N', 1.0 );
 				tmpF0v[i + j].Clear();
 			}
 		}
-	} 
-	F0_Mat = tmpF0v[0]; 
+	}
+	F0_Mat = tmpF0v[0];
 
-	 reduction_F0_time.AddEnd(omp_get_wtime()); reduction_F0_time.PrintStatMPI(0.0); F0_timing.AddEvent(reduction_F0_time);
+	 reduction_F0_time.end(); reduction_F0_time.printStatMPI(); F0_timing.addEvent(reduction_F0_time);
 
 
-	 TimeEvent fact_F0_time("B0 Kplus Factorization "); fact_F0_time.AddStart(omp_get_wtime());
+	 TimeEvent fact_F0_time("B0 Kplus Factorization "); fact_F0_time.start();
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
 	F0_Mat.RemoveLower();
-	F0.ImportMatrix(F0_Mat); 
+	F0.ImportMatrix(F0_Mat);
 
 	bool PARDISO_SC = true;
 	if (!PARDISO_SC)
@@ -1221,15 +1216,15 @@ void Cluster::CreateF0() {
 
 	if (MPIrank == 0) F0.msglvl = 0;
 
-	 fact_F0_time.AddEnd(omp_get_wtime()); fact_F0_time.PrintStatMPI(0.0); F0_timing.AddEvent(fact_F0_time);
+	 fact_F0_time.end(); fact_F0_time.printStatMPI(); F0_timing.addEvent(fact_F0_time);
 
-	F0_timing.totalTime.AddEnd(omp_get_wtime());
-	F0_timing.PrintStatsMPI();
+	F0_timing.totalTime.end();
+	F0_timing.printStatsMPI();
 
 	// *** POZOR **************************************************************
 	cilk_for (eslocal d = 0; d<domains.size(); d++) {
-		domains[d].B0.Clear(); 
-		domains[d].B0t.Clear(); 
+		domains[d].B0.Clear();
+		domains[d].B0t.Clear();
 	}
 };
 
@@ -1237,26 +1232,26 @@ void Cluster::CreateSa() {
 
 	bool PARDISO_SC = true;
 	bool get_kernel_from_mesh;
-	
+
 	if ( esconfig::solver::REGULARIZATION == 0 )
   		get_kernel_from_mesh = true	;
   	else
   		get_kernel_from_mesh = false	;
-	
-	
+
+
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 	int MPIrank; MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
 	SparseMatrix Salfa; SparseMatrix tmpM;
 
-	TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); Sa_timing.totalTime.AddStart(omp_get_wtime());
+	TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); Sa_timing.totalTime.start();
 
-	 TimeEvent G0trans_Sa_time("G0 transpose"); G0trans_Sa_time.AddStart(omp_get_wtime());
-	SparseMatrix G0t; 
+	 TimeEvent G0trans_Sa_time("G0 transpose"); G0trans_Sa_time.start();
+	SparseMatrix G0t;
 	G0.MatTranspose(G0t);
-	 G0trans_Sa_time.AddEnd(omp_get_wtime()); G0trans_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(G0trans_Sa_time); 
+	 G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time);
 
-	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.AddStart(omp_get_wtime());
+	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.start();
 	if (!PARDISO_SC) {
 		if (MPIrank == 0) F0_fast.msglvl = 1;
 		//SolaveMatF is obsolete - use Schur Complement Instead
@@ -1271,16 +1266,16 @@ void Cluster::CreateSa() {
 		if (MPIrank == 0) tmpsps.msglvl = 0;
 	}
 	F0_Mat.Clear();
-	 G0solve_Sa_time.AddEnd(omp_get_wtime()); G0solve_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(G0solve_Sa_time); 
+	 G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time);
 
-	 TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution "); SaMatMat_Sa_time.AddStart(omp_get_wtime());
+	 TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution "); SaMatMat_Sa_time.start();
 	if (!PARDISO_SC) {
 		Salfa.MatMat(G0, 'N', tmpM);
 		Salfa.RemoveLower();
 		tmpM.Clear();
 	}
-	 SaMatMat_Sa_time.AddEnd(omp_get_wtime()); SaMatMat_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(SaMatMat_Sa_time); 
-	
+	 SaMatMat_Sa_time.end(); SaMatMat_Sa_time.printStatMPI(); Sa_timing.addEvent(SaMatMat_Sa_time);
+
 	 if (!get_kernel_from_mesh) {
 		 SparseMatrix Kernel_Sa;
 		 printf("Salfa - regularization from matrix \n");
@@ -1329,7 +1324,7 @@ void Cluster::CreateSa() {
 
 	 } else {
 		// Regularization of Salfa
-		 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.AddStart(omp_get_wtime());
+		 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
 
 		SparseMatrix Eye, N, Nt, NNt;
 		Eye.CreateEye(6); N.CreateEye(6); Nt.CreateEye(6);
@@ -1349,29 +1344,29 @@ void Cluster::CreateSa() {
 		Salfa.MatAddInPlace(NNt,'N', ro);
 		// End regularization of Salfa
 
-		 reg_Sa_time.AddEnd(omp_get_wtime()); reg_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(reg_Sa_time);
+		 reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
 	 }
 
 #ifdef SPARSE_SA
-	 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.AddStart(omp_get_wtime());
+	 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
 	if (MPIrank == 0) Sa.msglvl = 1;
 	Sa.ImportMatrix(Salfa);
 	Sa.Factorization();
 	if (MPIrank == 0) Sa.msglvl = 0;
-	 fact_Sa_time.AddEnd(omp_get_wtime()); fact_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(fact_Sa_time);
+	 fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
 #else
-	 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.AddStart(omp_get_wtime());
+	 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 	SaMat = Salfa;
 	SaMat.ConvertCSRToDense(1);
 	eslocal info;
 	char U = 'U';
 	SaMat.ipiv.resize(SaMat.cols);
 	dsptrf( &U, &SaMat.cols, &SaMat.dense_values[0], &SaMat.ipiv[0], &info );
-	 factd_Sa_time.AddEnd(omp_get_wtime()); factd_Sa_time.PrintStatMPI(0.0); Sa_timing.AddEvent(factd_Sa_time);
+	 factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
 #endif
 
 
-	Sa_timing.totalTime.AddEnd(omp_get_wtime()); Sa_timing.PrintStatsMPI(); 
+	Sa_timing.totalTime.end(); Sa_timing.printStatsMPI();
 	MKL_Set_Num_Threads(1);
 }
 
@@ -1418,9 +1413,9 @@ void Cluster::Create_G1_perCluster() {
 		//}
 
 		TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
-		G1_1_time.AddStart(omp_get_wtime());
+		G1_1_time.start();
 		TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
-		G1_1_mem.AddStartWOBarrier(GetProcessMemory_u());
+		G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
 
 
 		//SparseMatrix Rt;
@@ -1604,17 +1599,17 @@ void Cluster::Create_G1_perCluster() {
 
 		}
 
-		G1_1_time.AddEnd(omp_get_wtime());
-		G1_1_time.PrintStatMPI(0.0);
-		//G1_1_time.PrintLastStatMPI_PerNode(0.0);
-		G1_1_mem.AddEndWOBarrier(GetProcessMemory_u());
-		G1_1_mem.PrintStatMPI(0.0);
-		//G1_1_mem.PrintLastStatMPI_PerNode(0.0);
+		G1_1_time.end();
+		G1_1_time.printStatMPI();
+		//G1_1_time.printLastStatMPIPerNode();
+		G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+		G1_1_mem.printStatMPI();
+		//G1_1_mem.printLastStatMPIPerNode();
 
 		TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
-		G1_2_time.AddStart(omp_get_wtime());
+		G1_2_time.start();
 		TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
-		G1_2_mem.AddStartWOBarrier(GetProcessMemory_u());
+		G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
 
 		for (eslocal j = 1; j < tmp_Mat.size(); j = j * 2 ) {
 			cilk_for (eslocal i = 0; i < tmp_Mat.size(); i = i + 2*j) {
@@ -1625,13 +1620,13 @@ void Cluster::Create_G1_perCluster() {
 			}
 		}
 
-		G1_2_time.AddEnd(omp_get_wtime());
-		G1_2_time.PrintStatMPI(0.0);
-		//G1_2_time.PrintLastStatMPI_PerNode(0.0);
+		G1_2_time.end();
+		G1_2_time.printStatMPI();
+		//G1_2_time.printLastStatMPIPerNode();
 
-		G1_2_mem.AddEndWOBarrier(GetProcessMemory_u());
-		G1_2_mem.PrintStatMPI(0.0);
-		//G1_2_mem.PrintLastStatMPI_PerNode(0.0);
+		G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
+		G1_2_mem.printStatMPI();
+		//G1_2_mem.printLastStatMPIPerNode();
 
 		G1 = tmp_Mat[0];
 		tmp_Mat[0].Clear();

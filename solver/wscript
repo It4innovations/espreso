@@ -4,7 +4,6 @@ source_files = (
    "src/Domain.cpp",
    "src/IterSolver.cpp",
    "src/SparseMatrix.cpp",
-   "src/TimeEval.cpp",
    "src/utils.cpp",
    "src/DenseMatrixPack.cpp",
    "src/LinearSolver.cpp"

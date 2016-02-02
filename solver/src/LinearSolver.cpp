@@ -10,7 +10,7 @@
 //#include <Eigen/Dense>
 //using Eigen::MatrixXd;
 
-LinearSolver::LinearSolver() {
+LinearSolver::LinearSolver(): timeEvalMain("ESPRESO Solver Overal Timing") {
 
 }
 
@@ -110,12 +110,11 @@ void LinearSolver::init(
 	number_of_subdomains_per_cluster = K_mat.size();
 
 	// Overal Linear Solver Time measurement structure
-	 timeEvalMain.SetName(string("ESPRESO Linear Solver Overal Timing"));
-	 timeEvalMain.totalTime.AddStartWithBarrier();
+	 timeEvalMain.totalTime.startWithBarrier();
 
 
 	 TimeEvent timeSetClust(string("Solver - Set cluster"));
-	 timeSetClust.AddStart();
+	 timeSetClust.start();
 
 	// Setup Cluster
 	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster,0);
@@ -133,29 +132,29 @@ void LinearSolver::init(
 	vector<double> solver_parameters ( 10 );
 	solver.Setup ( solver_parameters, cluster );
 
-	 timeSetClust.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSetClust);
+	 timeSetClust.endWithBarrier();
+	 timeEvalMain.addEvent(timeSetClust);
 
 
 	// *** Setup B0 matrix *******************************************************************************************
 	if (cluster.USE_HFETI == 1 ) {
-		  TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.AddStart();
+		  TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.start();
 		 set_B0(B0_mat);
-		  timeSetB0.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetB0);
+		  timeSetB0.endWithBarrier(); timeEvalMain.addEvent(timeSetB0);
 
 	}
 	// *** END - Setup B0 matrix *************************************************************************************
 
 
 	// *** Setup B1 matrix *******************************************************************************************
-	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.AddStart();
+	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.start();
 	set_B1(B1_mat,B1_duplicity);
-	 timeSetB1.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetB1);
+	 timeSetB1.endWithBarrier(); timeEvalMain.addEvent(timeSetB1);
 	// *** END - Setup B1 matrix *************************************************************************************
 
 
 	// *** Setup R matrix ********************************************************************************************
-	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
+	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.start();
 
 	  cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		  cluster.domains[d].K = K_mat[d];
@@ -166,13 +165,13 @@ void LinearSolver::init(
 	  }
 	  set_R_from_K();
 
-	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
+	timeSetR.endWithBarrier(); timeEvalMain.addEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
 
 	// *** Load RHS and fix points for K regularization **************************************************************
 	 TimeEvent timeSetRHS(string("Solver - Set RHS and Fix points"));
-	 timeSetRHS.AddStart();
+	 timeSetRHS.start();
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		cluster.domains[d].f = f_vec[d];
@@ -181,26 +180,26 @@ void LinearSolver::init(
 		cluster.domains[d].vec_c = vec_c[d];
 
 
-	 timeSetRHS.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSetRHS);
+	 timeSetRHS.endWithBarrier();
+	 timeEvalMain.addEvent(timeSetRHS);
 	// *** END - Load RHS and fix points for K regularization ********************************************************
 
 
 	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
-	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.AddStart();
+	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		cluster.domains[d].lambda_map_sub = lambda_map_sub_B1[d];
 
 	Preprocessing( lambda_map_sub_clst );
 
-	 timeSolPrec.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSolPrec);
+	 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
 	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
 
 
 	// *** Load Matrix K and regularization ******************************************************************************
 	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
-	 timeSolKproc.AddStart();
+	 timeSolKproc.start();
 	if (MPI_rank == 0) std::cout << "K regularization and factorization ... " << std::endl ;
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		if (MPI_rank == 0) std::cout << d << " " ;
@@ -243,45 +242,45 @@ void LinearSolver::init(
 	}
 
 	if (MPI_rank == 0) std::cout << std::endl;
-	 timeSolKproc.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSolKproc);
+	 timeSolKproc.endWithBarrier();
+	 timeEvalMain.addEvent(timeSolKproc);
 	// *** END - Load Matrix K and regularization ******************************************************************************
 
 
 	// *** Setup Hybrid FETI part of the solver ********************************************************************************
 	if (cluster.USE_HFETI == 1) {
 		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
-		 timeHFETIprec.AddStart();
+		 timeHFETIprec.start();
 		cluster.SetClusterHFETI( R_from_mesh );
-		 timeHFETIprec.AddEndWithBarrier();
-		 timeEvalMain.AddEvent(timeHFETIprec);
+		 timeHFETIprec.endWithBarrier();
+		 timeEvalMain.addEvent(timeHFETIprec);
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
 
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
 		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using many RSH "));
-		 timeSolSC1.AddStart();
+		 timeSolSC1.start();
 	//	cluster.Create_Kinv_perDomain();
-		 timeSolSC1.AddEndWithBarrier();
-		 timeEvalMain.AddEvent(timeSolSC1);
+		 timeSolSC1.endWithBarrier();
+		 timeEvalMain.addEvent(timeSolSC1);
 
 		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));
-		 timeSolSC2.AddStart();
+		 timeSolSC2.start();
 		bool USE_FLOAT;
 		cluster.Create_SC_perDomain( USE_FLOAT );
-		 timeSolSC2.AddEndWithBarrier();
-		 timeEvalMain.AddEvent(timeSolSC2);
+		 timeSolSC2.endWithBarrier();
+		 timeEvalMain.addEvent(timeSolSC2);
 	}
 	// *** END - Computation of the Schur Complement *********************************************************************************
 
 
 	// *** Final Solver Setup after K factorization **********************************************************************************
 	 TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));
-	 timeSolAkpl.AddStart();
+	 timeSolAkpl.start();
 	cluster.SetClusterPC_AfterKplus();
-	 timeSolAkpl.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSolAkpl);
+	 timeSolAkpl.endWithBarrier();
+	 timeEvalMain.addEvent(timeSolAkpl);
 
 }
 
@@ -319,12 +318,11 @@ void LinearSolver::init(
 	number_of_subdomains_per_cluster = K_mat.size();
 
     // Overal Linear Solver Time measurement structure
-     timeEvalMain.SetName(string("ESPRESO Linear Solver Overal Timing"));
-	 timeEvalMain.totalTime.AddStartWithBarrier();
+	 timeEvalMain.totalTime.startWithBarrier();
 
 
 	 TimeEvent timeSetClust(string("Solver - Set cluster"));
-	 timeSetClust.AddStart();
+	 timeSetClust.start();
 
 	// Setup Cluster
 	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster,0);
@@ -342,8 +340,8 @@ void LinearSolver::init(
 	vector<double> solver_parameters ( 10 );
 	solver.Setup ( solver_parameters, cluster );
 
-	 timeSetClust.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSetClust);
+	 timeSetClust.endWithBarrier();
+	 timeEvalMain.addEvent(timeSetClust);
 
 
 	// *** Setup B0 matrix *******************************************************************************************
@@ -366,9 +364,9 @@ void LinearSolver::init(
 
 
 	if (cluster.USE_HFETI == 1 ) {
-		  TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.AddStart();
+		  TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.start();
 		 set_B0(B0_mat);
-		  timeSetB0.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetB0);
+		  timeSetB0.endWithBarrier(); timeEvalMain.addEvent(timeSetB0);
 
 	}
 	// *** END - Setup B0 matrix *************************************************************************************
@@ -392,14 +390,14 @@ void LinearSolver::init(
 //		os.close();
 //	}
 
-	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.AddStart();
+	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.start();
 	set_B1(B1_mat,B1_duplicity);
-	 timeSetB1.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetB1);
+	 timeSetB1.endWithBarrier(); timeEvalMain.addEvent(timeSetB1);
 	// *** END - Setup B1 matrix *************************************************************************************
 
 
 	// *** Setup R matrix ********************************************************************************************
-	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.AddStart();
+	TimeEvent timeSetR(string("Solver - Set R")); timeSetR.start();
    if (R_from_mesh){
 	    set_R(mesh);
    }
@@ -426,7 +424,7 @@ void LinearSolver::init(
 		}
 	}
 
-	timeSetR.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSetR);
+	timeSetR.endWithBarrier(); timeEvalMain.addEvent(timeSetR);
 	// *** END - Setup R matrix **************************************************************************************
 
 
@@ -484,7 +482,7 @@ void LinearSolver::init(
 
 	// *** Load RHS and fix points for K regularization **************************************************************
 	 TimeEvent timeSetRHS(string("Solver - Set RHS and Fix points"));
-	 timeSetRHS.AddStart();
+	 timeSetRHS.start();
 
 //	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 //		cluster.domains[d].f = f_vec[d];
@@ -495,30 +493,30 @@ void LinearSolver::init(
 
 
 
-	 timeSetRHS.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSetRHS);
+	 timeSetRHS.endWithBarrier();
+	 timeEvalMain.addEvent(timeSetRHS);
 	// *** END - Load RHS and fix points for K regularization ********************************************************
 
 
 	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
-	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.AddStart();
+	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
 		cluster.domains[d].lambda_map_sub = lambda_map_sub_B1[d];
 
 	Preprocessing( lambda_map_sub_clst );
 
-	 timeSolPrec.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSolPrec);
+	 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
 	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
 
 
 	// *** Load Matrix K and regularization ******************************************************************************
 	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
-	 timeSolKproc.AddStart();
+	 timeSolKproc.start();
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
-	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.AddStartWOBarrier( GetProcessMemory_u() );
+	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
 
 	if (MPI_rank == 0) std::cout << std::endl << "K regularization : ";
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
@@ -549,8 +547,8 @@ void LinearSolver::init(
 
 	}
 	if (MPI_rank == 0) std::cout << std::endl;
-	 KregMem.AddEndWOBarrier( GetProcessMemory_u() );
-	 KregMem.PrintLastStatMPI_PerNode( 0.0 );
+	 KregMem.endWithoutBarrier( GetProcessMemory_u() );
+	 KregMem.printLastStatMPIPerNode();
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
@@ -564,7 +562,7 @@ void LinearSolver::init(
 	}
 
 
-	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.AddStartWOBarrier( GetProcessMemory_u() );
+	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
 
 	if (MPI_rank == 0) std::cout << std::endl << "K factorization : ";
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
@@ -610,25 +608,25 @@ void LinearSolver::init(
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
 	if (MPI_rank == 0) std::cout << std::endl;
-	 KFactMem.AddEndWOBarrier( GetProcessMemory_u() );
-	 KFactMem.PrintLastStatMPI_PerNode( 0.0 );
+	 KFactMem.endWithoutBarrier( GetProcessMemory_u() );
+	 KFactMem.printLastStatMPIPerNode();
 
 	if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
 
 	if (MPI_rank == 0) std::cout << std::endl;
-	 timeSolKproc.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSolKproc);
+	 timeSolKproc.endWithBarrier();
+	 timeEvalMain.addEvent(timeSolKproc);
 	// *** END - Load Matrix K and regularization ******************************************************************************
 
 
 	// *** Setup Hybrid FETI part of the solver ********************************************************************************
 	if (cluster.USE_HFETI == 1) {
 		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
-		 timeHFETIprec.AddStart();
+		 timeHFETIprec.start();
 		cluster.SetClusterHFETI( R_from_mesh );
-		 timeHFETIprec.AddEndWithBarrier();
-		 timeEvalMain.AddEvent(timeHFETIprec);
+		 timeHFETIprec.endWithBarrier();
+		 timeEvalMain.addEvent(timeHFETIprec);
 
 			if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
@@ -648,18 +646,18 @@ void LinearSolver::init(
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
 //		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using many RSH "));
-//		 timeSolSC1.AddStart();
+//		 timeSolSC1.start();
 //	//	cluster.Create_Kinv_perDomain();
-//		 timeSolSC1.AddEndWithBarrier();
-//		 timeEvalMain.AddEvent(timeSolSC1);
+//		 timeSolSC1.endWithBarrier();
+//		 timeEvalMain.addEvent(timeSolSC1);
 
-		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.AddStartWOBarrier( GetProcessMemory_u() );
-		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.AddStart();
+		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
+		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
 		bool USE_FLOAT = false;
 		cluster.Create_SC_perDomain(USE_FLOAT);
-		 timeSolSC2.AddEndWithBarrier(); timeEvalMain.AddEvent(timeSolSC2);
-		 KSCMem.AddEndWOBarrier( GetProcessMemory_u() );
-		 KSCMem.PrintLastStatMPI_PerNode( 0.0 );
+		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
+		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
+		 KSCMem.printLastStatMPIPerNode();
 
 		if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
@@ -669,18 +667,18 @@ void LinearSolver::init(
 
 	// *** Final Solver Setup after K factorization **********************************************************************************
 	 TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));
-	 timeSolAkpl.AddStart();
+	 timeSolAkpl.start();
 	cluster.SetClusterPC_AfterKplus();
-	 timeSolAkpl.AddEndWithBarrier();
-	 timeEvalMain.AddEvent(timeSolAkpl);
+	 timeSolAkpl.endWithBarrier();
+	 timeEvalMain.addEvent(timeSolAkpl);
 	// *** END - Final Solver Setup after K factorization ****************************************************************************
 
 
 
 
 
-//	 timeEvalMain.totalTime.AddEndWithBarrier();
-//	 timeEvalMain.PrintStatsMPI();
+//	 timeEvalMain.totalTime.endWithBarrier();
+//	 timeEvalMain.printStatsMPI();
 
 }
 
@@ -688,13 +686,13 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		                  std::vector < std::vector < double > >  & prim_solution) {
 
 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
-	 timeSolCG.AddStart();
+	 timeSolCG.start();
 
 	if (solver.USE_DYNAMIC == 0)
 		solver.Solve_singular    ( cluster, f_vec, prim_solution );
 	else {
 		solver.Solve_non_singular( cluster, f_vec, prim_solution );
-		solver.timing.totalTime.PrintStatMPI(0.0);
+		solver.timing.totalTime.printStatMPI();
 		//solver.timing.totalTime.Reset();
 	}
 
@@ -706,8 +704,8 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		}
 	}
 
-	 timeSolCG.AddEndWithBarrier();
-     timeEvalMain.AddEvent(timeSolCG);
+	 timeSolCG.endWithBarrier();
+     timeEvalMain.addEvent(timeSolCG);
 
 }
 
@@ -718,21 +716,21 @@ void LinearSolver::Postprocessing( ) {
 void LinearSolver::finilize() {
 
 	// Show Linear Solver Runtime Evaluation
-	solver.preproc_timing.PrintStatsMPI();
-	solver.timing.PrintStatsMPI();
+	solver.preproc_timing.printStatsMPI();
+	solver.timing.printStatsMPI();
 
-	if (SINGULAR) solver.postproc_timing.PrintStatsMPI();
+	if (SINGULAR) solver.postproc_timing.printStatsMPI();
 
-	solver.timeEvalAppa.PrintStatsMPI();
+	solver.timeEvalAppa.printStatsMPI();
 
-	if (SINGULAR) solver.timeEvalProj.PrintStatsMPI();
+	if (SINGULAR) solver.timeEvalProj.printStatsMPI();
 
-	if ( solver.USE_PREC   > 0 ) solver.timeEvalPrec.PrintStatsMPI();
+	if ( solver.USE_PREC   > 0 ) solver.timeEvalPrec.printStatsMPI();
 
 	if ( cluster.USE_HFETI == 1 ) cluster.ShowTiming();
 
-	 timeEvalMain.totalTime.AddEndWithBarrier();
-	 timeEvalMain.PrintStatsMPI();
+	 timeEvalMain.totalTime.endWithBarrier();
+	 timeEvalMain.printStatsMPI();
 }
 
 void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution ) {
@@ -742,7 +740,7 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 			for (eslocal j = 0; j < prim_solution[i].size(); j++)
 				if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
 
-	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.AddStartWOBarrier(0.0); max_sol_ev.AddEndWOBarrier(max_v);
+	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.startWithoutBarrier(0.0); max_sol_ev.endWithoutBarrier(max_v);
 
 	std::cout.precision(12);
 	double max_vg;
@@ -750,7 +748,7 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 	if (MPI_rank == 0)
 		std::cout << " Max value in_solution = " << max_vg << std::endl;
 
-	max_sol_ev.PrintLastStatMPI_PerNode(max_vg);
+	max_sol_ev.printLastStatMPIPerNode(max_vg);
 	// *** END - Solutin correctnes test ******************************************************************************************
 
 }
@@ -794,13 +792,13 @@ void LinearSolver::set_R_from_K ()
   vector<double> norm_KR_d_pow_2; norm_KR_d_pow_2.resize(number_of_subdomains_per_cluster);
   vector<eslocal> defect_K_d; defect_K_d.resize(number_of_subdomains_per_cluster);
 
-  
+
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
-                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]), 
+                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]),
                                             &(defect_K_d[d]));
-    
+
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
   // sum of ||K*R|| (all subdomains on the cluster)
@@ -814,12 +812,12 @@ void LinearSolver::set_R_from_K ()
   //
   auto max_norm_KR_d_pow_2 = std::max_element(norm_KR_d_pow_2.begin(),norm_KR_d_pow_2.end());
   auto min_norm_KR_d_pow_2 = std::min_element(norm_KR_d_pow_2.begin(),norm_KR_d_pow_2.end());
-  // 
+  //
   double MinMaxMeanNorm_MinMaxDefectNsubs[6]= {*min_norm_KR_d_pow_2, *max_norm_KR_d_pow_2,
                                            sum_per_sub_on_clst_norm_KR_d_pow_2,
                                            *min_defect,*max_defect,
                                            number_of_subdomains_per_cluster};
-  // 
+  //
   // gathering of statistic on MPI_rank = 0
   int recv_msg_size=6;
 	MPI_Status 	  mpi_stat;
@@ -827,7 +825,7 @@ void LinearSolver::set_R_from_K ()
   if (MPI_rank>0)
   {
     MPI_Request * mpi_send_req  = new MPI_Request [1];
-    MPI_Isend(&(MinMaxMeanNorm_MinMaxDefectNsubs[0]), recv_msg_size, MPI_DOUBLE, 0, 0,  
+    MPI_Isend(&(MinMaxMeanNorm_MinMaxDefectNsubs[0]), recv_msg_size, MPI_DOUBLE, 0, 0,
                 MPI_COMM_WORLD, mpi_send_req);
   }
   else
@@ -849,7 +847,7 @@ void LinearSolver::set_R_from_K ()
 
 		for (eslocal i = 1; i < MPI_size; i++) {
       //TODO: Should (may) be 'cilk_for' insead of 'for' used?
-	    MPI_Recv(&(MinMaxMeanNorm_MinMaxDefectNsubs[0]), recv_msg_size, MPI_DOUBLE, i, 0, 
+	    MPI_Recv(&(MinMaxMeanNorm_MinMaxDefectNsubs[0]), recv_msg_size, MPI_DOUBLE, i, 0,
                  MPI_COMM_WORLD, &mpi_stat);
       norm_KR_pow_2_clusters_min[i] = MinMaxMeanNorm_MinMaxDefectNsubs[0];
       norm_KR_pow_2_clusters_max[i] = MinMaxMeanNorm_MinMaxDefectNsubs[1];
@@ -872,7 +870,7 @@ void LinearSolver::set_R_from_K ()
 
     auto max_norm_KR_pow_2_per_clust = std::max_element(norm_KR_pow_2_clusters_max.begin(),norm_KR_pow_2_clusters_max.end());
     auto min_norm_KR_pow_2_per_clust = std::min_element(norm_KR_pow_2_clusters_min.begin(),norm_KR_pow_2_clusters_min.end());
-      
+
     double _min_norm_KR_per_clust=sqrt(*min_norm_KR_pow_2_per_clust);
     double _max_norm_KR_per_clust=sqrt(*max_norm_KR_pow_2_per_clust);
 
@@ -881,7 +879,7 @@ void LinearSolver::set_R_from_K ()
   std::cout<<" *******************************************************************************************************************************\n";
   std::cout<< " Statistics for " << numberOfAllSubdomains  << " subdomains.\n";
   std::cout<< " defect(K)  min:max        " << *min_defect_per_clust << " : "
-                                            << *max_defect_per_clust << "\n"; 
+                                            << *max_defect_per_clust << "\n";
   std::cout<< " ||K*R||    min:max:avg    " << _min_norm_KR_per_clust << " : "
                                             << _max_norm_KR_per_clust << " : "
                                             << norm_KR_clusters_mean << "\n";
@@ -911,7 +909,7 @@ void LinearSolver::set_R (
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
 
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
-		
+
 	}
 
 }
@@ -928,18 +926,18 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing");
-	G1_perCluster_time.AddStart(omp_get_wtime());
+	G1_perCluster_time.start();
 
 	TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing");
-	G1_perCluster_mem.AddStartWOBarrier(GetProcessMemory_u());
+	G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
 
 	cluster.Create_G1_perCluster   ();
 
-	G1_perCluster_time.AddEnd(omp_get_wtime());
-	G1_perCluster_time.PrintStatMPI(0.0);
+	G1_perCluster_time.end();
+	G1_perCluster_time.printStatMPI();
 
-	G1_perCluster_mem.AddEndWOBarrier(GetProcessMemory_u());
-	G1_perCluster_mem.PrintStatMPI(0.0);
+	G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u());
+	G1_perCluster_mem.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
@@ -948,12 +946,12 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 //	TimeEvent Vec_d_perCluster_time ("Setup Vec d per Cluster - preprocessing");
-//	Vec_d_perCluster_time.AddStart(omp_get_wtime());
+//	Vec_d_perCluster_time.start();
 //
 //	cluster.CreateVec_d_perCluster ();
 //
-//	Vec_d_perCluster_time.AddEnd(omp_get_wtime());
-//	Vec_d_perCluster_time.PrintStatMPI(0.0);
+//	Vec_d_perCluster_time.end();
+//	Vec_d_perCluster_time.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
@@ -962,14 +960,14 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - preprocessing");
-	solver_Preprocessing_time.AddStart(omp_get_wtime());
+	solver_Preprocessing_time.start();
 
 	//cluster.my_neighs = neigh_domains;
 
 	solver.Preprocessing ( cluster );
 
-	solver_Preprocessing_time.AddEnd(omp_get_wtime());
-	solver_Preprocessing_time.PrintStatMPI(0.0);
+	solver_Preprocessing_time.end();
+	solver_Preprocessing_time.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
@@ -978,12 +976,12 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - preprocessing");
-	cluster_SetClusterPC_time.AddStart(omp_get_wtime());
+	cluster_SetClusterPC_time.start();
 
 	cluster.SetClusterPC( lambda_map_sub ); // USE_DYNAMIC, USE_KINV
 
-	cluster_SetClusterPC_time.AddEnd(omp_get_wtime());
-	cluster_SetClusterPC_time.PrintStatMPI(0.0);
+	cluster_SetClusterPC_time.end();
+	cluster_SetClusterPC_time.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );

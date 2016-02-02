@@ -6,12 +6,11 @@ namespace assembler {
 template <class TInput>
 void Linear<TInput>::init()
 {
-	this->_timeStatistics.SetName("Linear Elasticity Solver Overall Timing");
-	this->_timeStatistics.totalTime.AddStartWithBarrier();
+	this->_timeStatistics.totalTime.startWithBarrier();
 	std::cout.precision(15);
 
 	TimeEvent timeKasm("Create K and RHS");
-	timeKasm.AddStart();
+	timeKasm.start();
 
 	_K.resize(this->subdomains());
 	_T.resize(this->subdomains());
@@ -36,19 +35,19 @@ void Linear<TInput>::init()
 		std::cout << std::endl;
 	}
 
-	timeKasm.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeKasm);
+	timeKasm.endWithBarrier();
+	this->_timeStatistics.addEvent(timeKasm);
 
 	TimeEvent timeLocalB("Create local B");
-	timeLocalB.AddStart();
+	timeLocalB.start();
 
 	this->computeSubdomainGluing();
 
-	timeLocalB.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeLocalB);
+	timeLocalB.endWithBarrier();
+	this->_timeStatistics.addEvent(timeLocalB);
 
 	TimeEvent timeGlobalB("Create global B");
-	timeGlobalB.AddStart();
+	timeGlobalB.start();
 
 	std::vector<size_t> rows(this->subdomains());
 	for (size_t s = 0; s < this->subdomains(); s++) {
@@ -57,11 +56,11 @@ void Linear<TInput>::init()
 
 	this->computeClusterGluing(rows);
 
-	timeGlobalB.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeGlobalB);
+	timeGlobalB.endWithBarrier();
+	this->_timeStatistics.addEvent(timeGlobalB);
 
 	TimeEvent timeBforces("Fill right hand side");
-	timeBforces.AddStart();
+	timeBforces.start();
 
 	RHS();
 
@@ -89,19 +88,19 @@ void Linear<TInput>::init()
 	}
 
 
-	timeBforces.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeBforces);
+	timeBforces.endWithBarrier();
+	this->_timeStatistics.addEvent(timeBforces);
 
 	TimeEvent timeLSconv(string("Linear Solver - preprocessing"));
-	timeLSconv.AddStart();
+	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
 	_lin_solver.setup(esconfig::MPIrank, esconfig::MPIsize, true);
 
 	initSolver();
 
-	timeLSconv.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeLSconv);
+	timeLSconv.endWithBarrier();
+	this->_timeStatistics.addEvent(timeLSconv);
 }
 
 template <class TInput>
@@ -114,24 +113,24 @@ template <class TInput>
 void Linear<TInput>::post_solve_update()
 {
 //	TimeEvent timeSaveVTK("Solver - Save VTK");
-//	timeSaveVTK.AddStart();
+//	timeSaveVTK.start();
 //
 //	saveResult();
 //
-//	timeSaveVTK.AddEndWithBarrier();
-//	this->_timeStatistics.AddEvent(timeSaveVTK);
+//	timeSaveVTK.endWithBarrier();
+//	this->_timeStatistics.addEvent(timeSaveVTK);
 }
 
 template <class TInput>
 void Linear<TInput>::solve(std::vector<std::vector<double> > &solution)
 {
 	TimeEvent timeLSrun("Linear Solver - runtime");
-	timeLSrun.AddStart();
+	timeLSrun.start();
 
 	_lin_solver.Solve(_f, solution);
 
-	timeLSrun.AddEndWithBarrier();
-	this->_timeStatistics.AddEvent(timeLSrun);
+	timeLSrun.endWithBarrier();
+	this->_timeStatistics.addEvent(timeLSrun);
 }
 
 template <class TInput>
@@ -139,8 +138,8 @@ void Linear<TInput>::finalize()
 {
 	_lin_solver.finilize();
 
-	this->_timeStatistics.totalTime.AddEndWithBarrier();
-	this->_timeStatistics.PrintStatsMPI();
+	this->_timeStatistics.totalTime.endWithBarrier();
+	this->_timeStatistics.printStatsMPI();
 }
 
 template <class TInput>

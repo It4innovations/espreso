@@ -4,6 +4,7 @@
 
 #include "matrices/matrices.h"
 #include "logging/logging.h"
+#include "logging/timeeval.h"
 
 
 

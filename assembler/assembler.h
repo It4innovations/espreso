@@ -90,7 +90,7 @@ template <class TInput>
 class Assembler: public AssemblerBase {
 
 protected:
-	Assembler(TInput &input): _input(input), _verbose(true) {};
+	Assembler(TInput &input): _input(input), _verbose(true), _timeStatistics("Solver Overall Timing") {};
 
 	virtual size_t subdomains();
 

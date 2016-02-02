@@ -3,6 +3,7 @@ source_files = (
     "matrices/denseMatrix.cpp",
     "matrices/matrix.cpp",
     "logging/logging.cpp",
+    "logging/timeeval.cpp",
 )
 
 def configure(ctx):
