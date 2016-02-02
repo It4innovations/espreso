@@ -6,7 +6,7 @@ using namespace esinput;
 size_t Pyramid13::subelements = 6;
 size_t Pyramid13::subnodes[] = { 3, 3, 3 };
 
-void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[])
+void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal pyramid[20];
 	pyramid[0] = indices[100];
@@ -30,7 +30,7 @@ void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal
 	pyramid[17] = indices[83];
 	pyramid[18] = indices[33];
 	pyramid[19] = indices[31];
-	elements.push_back(new mesh::Pyramid13(pyramid));
+	elements.push_back(new mesh::Pyramid13(pyramid, params));
 
 	pyramid[0] = indices[104];
 	pyramid[1] = indices[124];
@@ -45,7 +45,7 @@ void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal
 	pyramid[17] = indices[93];
 	pyramid[18] = indices[43];
 	pyramid[19] = indices[33];
-	elements.push_back(new mesh::Pyramid13(pyramid));
+	elements.push_back(new mesh::Pyramid13(pyramid, params));
 
 	pyramid[0] = indices[124];
 	pyramid[1] = indices[120];
@@ -60,7 +60,7 @@ void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal
 	pyramid[17] = indices[91];
 	pyramid[18] = indices[41];
 	pyramid[19] = indices[43];
-	elements.push_back(new mesh::Pyramid13(pyramid));
+	elements.push_back(new mesh::Pyramid13(pyramid, params));
 
 	pyramid[0] = indices[120];
 	pyramid[1] = indices[100];
@@ -75,7 +75,7 @@ void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal
 	pyramid[17] = indices[81];
 	pyramid[18] = indices[31];
 	pyramid[19] = indices[41];
-	elements.push_back(new mesh::Pyramid13(pyramid));
+	elements.push_back(new mesh::Pyramid13(pyramid, params));
 
 	pyramid[0] = indices[100];
 	pyramid[1] = indices[120];
@@ -90,7 +90,7 @@ void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal
 	pyramid[17] = indices[91];
 	pyramid[18] = indices[93];
 	pyramid[19] = indices[83];
-	elements.push_back(new mesh::Pyramid13(pyramid));
+	elements.push_back(new mesh::Pyramid13(pyramid, params));
 
 	pyramid[0] = indices[4];
 	pyramid[1] = indices[24];
@@ -105,7 +105,7 @@ void Pyramid13::addElements(std::vector<mesh::Element*> &elements, const eslocal
 	pyramid[17] = indices[43];
 	pyramid[18] = indices[41];
 	pyramid[19] = indices[31];
-	elements.push_back(new mesh::Pyramid13(pyramid));
+	elements.push_back(new mesh::Pyramid13(pyramid, params));
 }
 
 

@@ -14,7 +14,7 @@ public:
 protected:
 	size_t DOFs() { return 3; }
 	void inertia(std::vector<double> &inertia);
-	void C(DenseMatrix &C);
+	void C(DenseMatrix &C, eslocal material);
 	double CP() { return 1; }
 	double rho() { return 7.85e-9; }
 };

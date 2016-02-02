@@ -6,10 +6,12 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 {
 	os << m.rows << " " << m.cols << " " << m.nnz << "\n";
 
-	os.precision(40);
+	os.precision(8);
 
 	SparseMatrix s = m;
-	s.ConvertToCOO(1);
+	if (s.CSR_J_col_indices.size()) {
+		s.ConvertToCOO(1);
+	}
 
 	for (size_t i = 0; i < s.nnz; i++) {
 		os << s.I_row_indices[i] << " ";
@@ -1951,7 +1953,7 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 	type = 'G'; 
 }
 
-//TODO: Pozor pro zobecneno nerzi musi byt odkomentovane
+//TODO: Pozor pro zobecnenou verzi musi byt odkomentovane!
 #define GENINVtools
 
 // AM -start: ---------------------------------------------------------------------------
@@ -2104,7 +2106,7 @@ void SparseMatrix::printMatCSR2(char *str0){
 }
 
 
-void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
+double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
 #ifdef GENINVtools
   double * AR =  new double [K.rows];
   double norm_AR_row,norm_AR = 0.0;
@@ -2121,8 +2123,7 @@ void SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format
   }
   delete [] AR;
   norm_AR=sqrt(norm_AR);
-  //printf("\n||A*Kplus_R|| = %3.9e, defect = %d\n",norm_AR,R_in_dense_format.cols);
-  std::cout<<"||A*Kplus_R|| = "<< norm_AR <<", defect = "<<R_in_dense_format.cols<< "\n";
+  return norm_AR;
 #endif
 }
 
@@ -3020,7 +3021,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 //	get_kernel_from_K(K, Kplus_R);
 //}
 
-void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
+void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,int *defect_d){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -3049,27 +3050,30 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   bool diagonalRegularization=true;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
-// get and preslocal K eigenvalues (A is temporarily converted to dense);
+// get and print 2*n K eigenvalues (K is temporarily converted to dense);
   eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 0;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
-// get and preslocal S eigenvalues
+// get and print 2*n S eigenvalues
   eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 0;
 
 //    7) plot_n_first_n_last_eigenvalues
-// get of K eigenvalues (A is temporarily converted to dense matrix);
+// get of K eigenvalues (K is temporarily converted to dense matrix);
   eslocal plot_n_first_n_last_eigenvalues = 0;
 
+//    8) fixing_nodes_or_dof
+// non-singular part is found chosing fixing nodes,
+// min(fixing_nodes_or_dof)>=3; if variable is nonzero, 
+// parameter SC_SIZE is set to fixing_nodes_or_dof*dofPerNode
+  eslocal fixing_nodes_or_dof = 3;
+  eslocal dofPerNode=3;
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
-
   
-  std::cout << "\n\n"; 
-  std::cout << " ###################################################################\n";
-  std::cout << " #                 Get kernel of K and null pivots                 #\n";
-  std::cout << " ###################################################################\n";
 //
 //    1) COND_NUMB_FOR_SINGULAR_MATRIX
-//  If cond(A) > COND_NUMB_FOR_SINGULAR_MATRIX, A is considered as singular matrix.
+//  If cond(K) > COND_NUMB_FOR_SINGULAR_MATRIX, K is considered as singular matrix.
   double COND_NUMB_FOR_SINGULAR_MATRIX=1e13;
 
 //    2) CHECK_NONSING
@@ -3083,7 +3087,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 
 //    4) SC_SIZE
 // specification of size of Schur complement used for detection of zero eigenvalues.
-// SC_SIZE >= expected defect 'd' (e.g. in elasticity d=6).
+//eslocal  SC_SIZE >= expected defect 'd' (e.g. in elasticity d=6).
   eslocal SC_SIZE=50;
 
 //    5) TWENTY
@@ -3098,10 +3102,12 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 
   //TODO if K.rows<=SC_SIZE, use directly input K instead of S
   //
+  int n_nodsSub=0;
+  if (fixing_nodes_or_dof>0){
+    SC_SIZE = fixing_nodes_or_dof*dofPerNode;
+    n_nodsSub = round(K.rows/dofPerNode);
+  }
   //
-  //##########################################################################################
-  //##########################################################################################
-  //##########################################################################################
   //##########################################################################################
   //
   SparseMatrix S;
@@ -3111,11 +3117,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 
   if (K.rows<SC_SIZE){
 	  SC_SIZE = K.rows;
+    fixing_nodes_or_dof=0;
   }
 
   eslocal NONSING_SIZE = K.rows - SC_SIZE - i_start;
   eslocal j_start = NONSING_SIZE;
   SEQ_VECTOR <eslocal > permVec;
+
   permVec.resize(K.rows);
   SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K.rows, SEQ_VECTOR<eslocal >(2, 1));
   eslocal offset = K.CSR_I_row_indices[0] ? 1 : 0;
@@ -3220,13 +3228,34 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 
     if (permutVectorActive<2){
       // set row permVec = {0,1,2,3,4,...,K.rows};
-      for (eslocal i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 A.rows-1
+      if (fixing_nodes_or_dof==0){
+        for (eslocal i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
+      }
+      else
+      {
+        for (eslocal i=0; i<n_nodsSub; ++i) { permVec[i]=i;} // 0 1 2 n_nodsSub-1
+      }
     }
 //
     if (permutVectorActive==1){
 //      srand(time(NULL));
       srand(0); // random will be constant until next compiling 
-      random_shuffle ( permVec.begin(), permVec.end() );
+
+      if (fixing_nodes_or_dof==0){
+        random_shuffle ( permVec.begin(), permVec.end() );
+      }
+      else
+      {
+        random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
+        for (eslocal i=n_nodsSub;i>0;i--){
+          for (eslocal j=0;j<dofPerNode;j++){
+            permVec[dofPerNode*i-1-j] = dofPerNode*permVec[i-1]+j;
+//            printf("(i:%d, j:%d, permVec %d)  %d   %d \n", i,j, permVec[i-1],
+//                dofPerNode*i-1-j,dofPerNode*permVec[i-1]+j);
+          }
+        }
+      }
+
       sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
       sort(permVec.begin()+NONSING_SIZE,permVec.end());
     }
@@ -3422,7 +3451,12 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
   Kplus_R.getNullPivots(null_pivots);
 
   // norm of product K*R: second matrix has to be in dense format!!!
-  K.getNorm_K_R(K,Kplus_R);
+  *norm_KR_d_pow_2 = K.getNorm_K_R(K,Kplus_R)*K.getNorm_K_R(K,Kplus_R);
+  *defect_d = Kplus_R.cols;
+//  if (i_sub==0){
+//  std::cout<<"||A*Kplus_R||\tdefect "<< "\n";
+//  }
+//  std::cout<< norm_KR << "\t"<< Kplus_R.cols<< "\n";
   //
 
   Kplus_R.ConvertDenseToCSR(0);
@@ -3473,9 +3507,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R){
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
 
-
-  //printf(" =============================================================\n\n");
-  std::cout <<" =============================================================\n\n";
 
   delete [] W;
   delete [] Z;

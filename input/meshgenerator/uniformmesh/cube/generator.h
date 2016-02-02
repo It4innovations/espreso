@@ -16,6 +16,7 @@ public:
 	CubeGenerator(const CubeSettings &settings);
 
 protected:
+	void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Boundaries &boundaries);

@@ -22,7 +22,8 @@ void MeshGenerator::points(mesh::Coordinates &coordinates)
 
 void MeshGenerator::elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
 {
-	_generator->elements(elements, parts);
+	_generator->elementsMesh(elements, parts);
+	_generator->elementsMaterials(elements, parts);
 }
 
 void MeshGenerator::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)

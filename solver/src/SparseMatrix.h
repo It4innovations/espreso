@@ -1,7 +1,3 @@
-#ifdef WIN32	 
-#include "stdafx.h"
-#endif
-
 #include "utils.h"
 #include "esmesh.h"
 //#include "SparseSolver.h"
@@ -164,7 +160,7 @@ public:
 	void tridiagFromCSR( SparseMatrix & A_in, char *str0);
 	double dot_e(double *x, double *y, eslocal n);
 
-	void getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format);
+	double getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format);
 	void GramSchmidtOrtho();
 
 	void MatScale(double alpha);
@@ -203,7 +199,8 @@ public:
 	void sortInCOO();
 
 //	void get_kernel_from_K();
-	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR);
+	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR,
+        double * norm_KR, int * defect);
 
 };
 

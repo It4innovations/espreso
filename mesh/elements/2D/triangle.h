@@ -17,7 +17,7 @@ class Triangle: public Element
 public:
 	static bool match(eslocal *indices, eslocal n);
 
-	Triangle(eslocal *indices);
+	Triangle(eslocal *indices, eslocal *params);
 
 	Element* copy() const
 	{

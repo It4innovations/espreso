@@ -64,6 +64,48 @@ CubeGenerator<TElement>::CubeGenerator(const CubeSettings &settings)
 }
 
 template<class TElement>
+void CubeGenerator<TElement>::elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+{
+	esglobal cubeElements[3], partSize[3], cOffset[3], offset[3];
+	eslocal subdomain[3], element[3], material, counter;
+
+	for (size_t i = 0; i < 3; i++) {
+		cubeElements[i] = _settings.clusters[i] * _settings.subdomainsInCluster[i] * _settings.elementsInSubdomain[i];
+		cOffset[i] = _cluster[i] * _settings.subdomainsInCluster[i] * _settings.elementsInSubdomain[i];
+		partSize[i] = std::ceil(cubeElements[i] / (double)_settings.materialsLayers[i]);
+	}
+
+	counter = 0;
+	for (subdomain[2] = 0; subdomain[2] < _settings.subdomainsInCluster[2]; subdomain[2]++) {
+			for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
+				for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
+
+					for (element[2] = 0; element[2] < _settings.elementsInSubdomain[2]; element[2]++) {
+						for (element[1] = 0; element[1] < _settings.elementsInSubdomain[1]; element[1]++) {
+							for (element[0] = 0; element[0] < _settings.elementsInSubdomain[0]; element[0]++) {
+
+								material = 0;
+								for (eslocal i = 0; i < 3; i++) {
+									offset[i] = cOffset[i] + subdomain[i] * _settings.elementsInSubdomain[i] + element[i];
+									if (offset[i] / partSize[0] % 2 == 1) {
+										material = (material + 1) % 2;
+									}
+								}
+								for (size_t e = 0; e < TElement::subelements; e++) {
+									elements[counter++]->setParam(mesh::Element::MATERIAL, material);
+								}
+							}
+						}
+					}
+
+				}
+			}
+	}
+
+}
+
+
+template<class TElement>
 void CubeGenerator<TElement>::points(mesh::Coordinates &coordinates)
 {
 	eslocal cNodes[3];

@@ -10,7 +10,7 @@ namespace esinput {
 
 class AnsysUtils {
 public:
-	static mesh::Element* createElement(eslocal *indices, eslocal n);
+	static mesh::Element* createElement(eslocal *indices, eslocal n, eslocal *params);
 };
 
 

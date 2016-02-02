@@ -148,7 +148,7 @@ std::vector<DenseMatrix> Tetrahedron4::_dN = Tetra4_dN();
 std::vector<DenseMatrix> Tetrahedron4::_N = Tetra4_N();
 std::vector<double> Tetrahedron4::_weighFactor = Tetra4_Weight();
 
-bool Tetrahedron4::match(eslocal *indices, eslocal n) {
+bool Tetrahedron4::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Tetrahedron4 is 3D element
@@ -228,13 +228,13 @@ std::vector<eslocal> Tetrahedron4::getFace(size_t face) const
 	return result;
 }
 
-Tetrahedron4::Tetrahedron4(eslocal *indices)
+Tetrahedron4::Tetrahedron4(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, 3 * sizeof(eslocal));
 	_indices[3] = indices[4];
 }
 
-Tetrahedron4::Tetrahedron4(std::ifstream &is)
+Tetrahedron4::Tetrahedron4(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

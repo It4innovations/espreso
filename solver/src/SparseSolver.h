@@ -1,10 +1,3 @@
-//#ifndef SPARSE_SOLVER_H_
-//#define SPARSE_SOLVER_H_
-
-#ifdef WIN32	 
-	#include "stdafx.h"
-#endif
-
  
 #include "utils.h"
 #include "SparseMatrix.h"

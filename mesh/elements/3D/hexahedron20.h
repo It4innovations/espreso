@@ -18,9 +18,9 @@ class Hexahedron20: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Hexahedron20(eslocal *indices);
+	Hexahedron20(const eslocal *indices, const eslocal *params);
 	Hexahedron20(std::ifstream &is);
 
 	Element* copy() const

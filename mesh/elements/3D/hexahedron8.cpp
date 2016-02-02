@@ -83,7 +83,7 @@ std::vector<DenseMatrix> Hexahedron8::_dN = Hexa_dN();
 std::vector<DenseMatrix> Hexahedron8::_N = Hexa_N();
 std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
 
-bool Hexahedron8::match(eslocal *indices, eslocal n) {
+bool Hexahedron8::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
@@ -152,12 +152,12 @@ std::vector<eslocal> Hexahedron8::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron8::Hexahedron8(eslocal *indices)
+Hexahedron8::Hexahedron8(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
 }
 
-Hexahedron8::Hexahedron8(std::ifstream &is)
+Hexahedron8::Hexahedron8(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

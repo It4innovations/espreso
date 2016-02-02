@@ -107,7 +107,7 @@ std::vector<DenseMatrix> Pyramid5::_dN = Pyramid5_dN();
 std::vector<DenseMatrix> Pyramid5::_N = Pyramid5_N();
 std::vector<double> Pyramid5::_weighFactor = Pyramid5_weight();
 
-bool Pyramid5::match(eslocal *indices, eslocal n) {
+bool Pyramid5::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
@@ -184,7 +184,7 @@ std::vector<eslocal> Pyramid5::getFace(size_t face) const
 	return result;
 }
 
-Pyramid5::Pyramid5(eslocal *indices)
+Pyramid5::Pyramid5(const eslocal *indices, const eslocal *params): Element(params)
 {
 	_indices[0] = indices[0];
 	_indices[1] = indices[1];
@@ -193,7 +193,7 @@ Pyramid5::Pyramid5(eslocal *indices)
 	_indices[4] = indices[4];
 }
 
-Pyramid5::Pyramid5(std::ifstream &is)
+Pyramid5::Pyramid5(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

@@ -34,7 +34,7 @@ std::vector<eslocal> Line::getFace(size_t face) const
 	return std::vector<eslocal> ();
 }
 
-Line::Line(eslocal *indices)
+Line::Line(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, LineNodesCount * sizeof(eslocal));
 }

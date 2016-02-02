@@ -77,12 +77,12 @@ def configure(ctx):
 
 def build(ctx):
     ctx(
-        export_includes = "basis",
-        name            = "incl_basis"
-    )
-    ctx(
         export_includes = "config",
         name            = "incl_config"
+    )
+    ctx(
+        export_includes = "basis",
+        name            = "incl_basis"
     )
     ctx(
         export_includes = "input",

@@ -47,7 +47,7 @@ std::vector<eslocal> Triangle::getFace(size_t face) const
 	}
 }
 
-Triangle::Triangle(eslocal *indices)
+Triangle::Triangle(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, TriangleNodesCount * sizeof(eslocal));
 }

@@ -16,9 +16,9 @@ class Prisma15: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Prisma15(eslocal *indices);
+	Prisma15(const eslocal *indices, const eslocal *params);
 	Prisma15(std::ifstream &is);
 
 	Element* copy() const

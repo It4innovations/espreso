@@ -115,7 +115,7 @@ std::vector<DenseMatrix> Prisma6::_dN = Prisma6_dN();
 std::vector<DenseMatrix> Prisma6::_N = Prisma6_N();
 std::vector<double> Prisma6::_weighFactor = Prisma6_weight();
 
-bool Prisma6::match(eslocal *indices, eslocal n) {
+bool Prisma6::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
@@ -191,7 +191,7 @@ std::vector<eslocal> Prisma6::getFace(size_t face) const
 	return result;
 }
 
-Prisma6::Prisma6(eslocal *indices)
+Prisma6::Prisma6(const eslocal *indices, const eslocal *params): Element(params)
 {
 	_indices[0] = indices[0];
 	_indices[1] = indices[1];
@@ -201,7 +201,7 @@ Prisma6::Prisma6(eslocal *indices)
 	_indices[5] = indices[6];
 }
 
-Prisma6::Prisma6(std::ifstream &is)
+Prisma6::Prisma6(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

@@ -16,8 +16,16 @@ protected:
 	Generator(int argc, char** argv, size_t index, size_t size): _settings(argc, argv, index, size) { };
 	Generator(const Settings &settings): _settings(settings) { };
 
+	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+	{
+		elementsMesh(elements, parts);
+		elementsMaterials(elements, parts);
+	}
+
+	virtual void elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
+	virtual void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
+
 	virtual void points(mesh::Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void corners(mesh::Boundaries &boundaries) = 0;

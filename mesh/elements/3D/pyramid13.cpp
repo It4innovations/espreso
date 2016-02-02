@@ -136,7 +136,7 @@ std::vector<DenseMatrix> Pyramid13::_dN = Pyramid13_dN();
 std::vector<DenseMatrix> Pyramid13::_N = Pyramid13_N();
 std::vector<double> Pyramid13::_weighFactor = Pyramid13_weight();
 
-bool Pyramid13::match(eslocal *indices, eslocal n) {
+bool Pyramid13::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
@@ -286,7 +286,7 @@ std::vector<eslocal> Pyramid13::getFace(size_t face) const
 	return result;
 }
 
-Pyramid13::Pyramid13(eslocal *indices)
+Pyramid13::Pyramid13(const eslocal *indices, const eslocal *params): Element(params)
 {
 	_indices[ 0] = indices[ 0];
 	_indices[ 1] = indices[ 1];
@@ -303,7 +303,7 @@ Pyramid13::Pyramid13(eslocal *indices)
   _indices[12] = indices[19];
 }
 
-Pyramid13::Pyramid13(std::ifstream &is)
+Pyramid13::Pyramid13(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }
