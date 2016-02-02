@@ -22,7 +22,6 @@ using std::make_pair;
 #include <cilk/cilk_api.h>
 
 #include "SparseMatrix.h"
-#include "FEM_Assembler.h"
 #include "SparseSolver.h"
 #include "TimeEval.h"
 
