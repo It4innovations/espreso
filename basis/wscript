@@ -7,7 +7,7 @@ source_files = (
 )
 
 def configure(ctx):
-    pass
+    ctx.env.append_unique("DEFINES", [ "INFO_BLOCKING_EVENTS" ])
 
 def build(ctx):
     ctx.lib(
