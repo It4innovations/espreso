@@ -123,13 +123,17 @@ void FETI4ICreateInstance(
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
-	std::cout.setstate(std::ios_base::failbit);
+	//std::cout.setstate(std::ios_base::failbit);
 	API api;
 	DataHolder::instances.push_back(new FETI4IStructInstance(api));
 	DataHolder::instances.back()->K = matrix->data;
 	api.K = &(DataHolder::instances.back()->K);
 	api.size = size;
 	api.rhs = rhs;
+	for (size_t i = 0; i < dirichlet_size; i++) {
+		dirichlet_indices[i] = l2g[dirichlet_indices[i] - matrix->offset];
+	}
+
 	api.dirichlet_size = dirichlet_size;
 	api.dirichlet_indices = dirichlet_indices;
 	api.dirichlet_values = dirichlet_values;
@@ -150,7 +154,7 @@ void FETI4ISolve(
 	std::vector<std::vector<double> > solutions(1);
 	solutions[0] = std::vector<double>(solution, solution + solution_size);
 	instance->data.solve(solutions);
-	memcpy(solution, &solutions[0][0], solution_size);
+	memcpy(solution, &solutions[0][0], solution_size * sizeof(double));
 }
 
 template <typename TFETI4I>

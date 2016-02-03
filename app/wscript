@@ -52,11 +52,11 @@ def build(ctx):
         install_path    = ctx.ROOT
     )
 
-#    ctx.shlib(
-#        source          = apiwrapper_files,
-#        target          = "feti4i",
-#        use             = "espreso_includes esbasis esconfig essolver_{0} esbem".format(ctx.env.SOLVER),
-#        install_path    = ctx.ROOT + "/libespreso"
-#    )
+    ctx.shlib(
+        source          = apiwrapper_files,
+        target          = "feti4i",
+        use             = "espreso_includes esbasis esconfig essolver_{0} esbem".format(ctx.env.SOLVER),
+        install_path    = ctx.ROOT + "/libespreso"
+    )
 
 
