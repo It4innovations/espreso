@@ -87,7 +87,7 @@ void CubeGenerator<TElement>::elementsMaterials(std::vector<mesh::Element*> &ele
 								material = 0;
 								for (eslocal i = 0; i < 3; i++) {
 									offset[i] = cOffset[i] + subdomain[i] * _settings.elementsInSubdomain[i] + element[i];
-									if (offset[i] / partSize[0] % 2 == 1) {
+									if (offset[i] / partSize[i] % 2 == 1) {
 										material = (material + 1) % 2;
 									}
 								}
