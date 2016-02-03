@@ -156,7 +156,7 @@ public:
 	void PrintMatSize( string Matname );
 
 
-	double MatCondNumb(SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues);
+	double MatCondNumb(SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues,double *maxEig, int nMax_);
 	void spmv_(SparseMatrix & A_in, double *x, double *Ax);
 	void printMatCSR( char *str0);
 	void printMatCSR2( char *str0);
@@ -204,7 +204,7 @@ public:
 
 //	void get_kernel_from_K();
 	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR,
-        double * norm_KR, int * defect);
+        double * norm_KR, int * defect, int d_sub);
 
 };
 
