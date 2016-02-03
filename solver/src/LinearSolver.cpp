@@ -433,7 +433,7 @@ void LinearSolver::init(
 
 			//SpyText(T_mat[d]);
 
-			SparseSolver Tinv;
+			SparseSolverCPU Tinv;
 			Tinv.mtype = 11;
 			Tinv.ImportMatrix(T_mat[d]);
 			std::stringstream ss;

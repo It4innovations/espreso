@@ -10,10 +10,8 @@
 /************************************************************************************************
 *   INCLUDE LIBRARIES   *
 ************************/
-#include "SparseSolver.h"
 #include "mkl_pardiso.h"
-#include <dmumps_c.h>
-#include <fstream>
+#include "mumps.h"
 
 /************************************************************************************************
 *   DEFINE CONSTANTS   *
@@ -33,7 +31,7 @@
 /** @brief Controls, if the variable SOLVER_NUM_THREADS is set.
  *
  */
-void SparseSolver::SetThreaded() {
+void SparseSolverMUMPS::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	int num_procs;
@@ -52,7 +50,7 @@ void SparseSolver::SetThreaded() {
  * @param[out] B_out      SparseMatrix, where Schur complement is saved.
  * @param[in]  sc_size    Schur complement size.
  */
-void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded ) {
+void SparseSolverMUMPS::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded ) {
 	/* Note, that Schur complement is stored BY COLUMNS,
 	   storing by rows is obsolete in MUMPS. */
 
@@ -90,14 +88,14 @@ void SparseSolver::Create_SC( SparseMatrix & B_out, int sc_size, bool isThreaded
 	dmumps_c(&id);
 }
 
-void SparseSolver::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 )
+void SparseSolverMUMPS::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 )
 {
 	std::cout << "Not implemented in MUMPS" << std::endl;
 }
 /** @brief Constructor.
  *
  */
-SparseSolver::SparseSolver(){
+SparseSolverMUMPS::SparseSolverMUMPS(){
 
 	I_row_indices_size = 0;
 	J_col_indices_size = 0;
@@ -115,14 +113,14 @@ SparseSolver::SparseSolver(){
 
 	maxfct = 1;				/* Maximum number of numerical factorizations. */
 	//mnum = 1;				/* Which factorization to use. */
-#ifdef DEBUG 
+#ifdef DEBUG
 	msglvl = 1;				/* Print statistical information in file */
-#else 
+#else
 	msglvl = 0;
 #endif
 	error = 0;				/* Initialize error flag */
 
-	m_nRhs		 = 1; 
+	m_nRhs		 = 1;
 	m_factorized = 0;
 }
 
@@ -130,7 +128,7 @@ SparseSolver::SparseSolver(){
  *
  * Deallocates I_row_indices, J_col_indices, V_values
  */
-SparseSolver::~SparseSolver() {
+SparseSolverMUMPS::~~SparseSolverMUMPS() {
 
 	// MUMPS instance termination TODO dodelat - MUMPS se musi dealokovat
 	//id.job=JOB_END;
@@ -147,19 +145,19 @@ SparseSolver::~SparseSolver() {
 
 /** @brief Deallocs matrix, like the desctructor.
  *
- * @see SparseSolver::~SparseSolver()
+ * @see SparseSolverMUMPS::~SparseSolver()
  */
-void SparseSolver::Clear() {
+void SparseSolverMUMPS::Clear() {
 	/* -------------------------------------------------------------------- */
 	/* .. Termination and release of memory. */
 	/* -------------------------------------------------------------------- */
-	
+
 	//TODO dodelat MUMPS
 
 	if (I_row_indices_size > 0)     delete [] I_row_indices;
 	if (J_col_indices_size > 0)		delete [] J_col_indices;
 	if (V_values_size > 0)			delete [] V_values;
-	
+
 	I_row_indices_size = 0;
 	J_col_indices_size = 0;
 	V_values_size      = 0;
@@ -169,7 +167,7 @@ void SparseSolver::Clear() {
  *
  * @param[in] A SparseMatrix to be imported.
  */
-void SparseSolver::ImportMatrix(SparseMatrix & A_in) {
+void SparseSolverMUMPS::ImportMatrix(SparseMatrix & A_in) {
 
 	SparseMatrix A;
 	A = A_in;
@@ -206,7 +204,7 @@ void SparseSolver::ImportMatrix(SparseMatrix & A_in) {
 /** @brief Does factorization of imported matrix.
  *
  */
-void SparseSolver::Factorization() {
+void SparseSolverMUMPS::Factorization() {
 	//phase = 11;
 
 	//SparseMatrix B;
@@ -218,11 +216,11 @@ void SparseSolver::Factorization() {
 	id.job = 2;
 	dmumps_c(&id); // Factorization
 
-#ifdef DEBUG 
+#ifdef DEBUG
 	printf ("\nFactorization completed ... ");
 #endif
 
-	m_factorized = 1; 
+	m_factorized = 1;
 }
 
 /** @brief Solves system of equations with one right-hand side.
@@ -230,14 +228,14 @@ void SparseSolver::Factorization() {
  * @param[in,out] rhs_sol Vector containing right-hand side vector as input
  *                        and the solutioni of the system as output.
  */
-void SparseSolver::Solve(SEQ_VECTOR <double> & rhs_sol) {
+void SparseSolverMUMPS::Solve(SEQ_VECTOR <double> & rhs_sol) {
 	id.job = 3; // set MUMPS to solve the system
 
 	id.rhs = &rhs_sol[0]; // init MUMPS with right-hand side vector
 
 	dmumps_c(&id); // solve the system
 
-#ifdef DEBUG 
+#ifdef DEBUG
 	printf ("\nSolve completed ... ");
 	printf ("\nThe solution of the system is: ");
 	for (int i = 0; i < n; i++)
@@ -254,7 +252,7 @@ void SparseSolver::Solve(SEQ_VECTOR <double> & rhs_sol) {
  * @param[in]     rhs   Multiple right-hand sides of the system.
  * @param[in,out] n_rhs Number of right-hand side vectors.
  */
-void SparseSolver::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int n_rhs) {
+void SparseSolverMUMPS::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int n_rhs) {
 	id.job		   = 3; // set MUMPS to solve the system
 
 	int rhs_size   = rhs.size() / n_rhs; // size of one RHS
@@ -268,7 +266,7 @@ void SparseSolver::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, i
 
 	dmumps_c(&id); // solve the system
 
-#ifdef DEBUG 
+#ifdef DEBUG
 	printf ("\nSolve completed ... ");
 	printf ("\nThe solution of the system is: ");
 	for (int i = 0; i < n; i++)
@@ -288,7 +286,7 @@ void SparseSolver::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, i
  * @param[in]  rhs_start_index
  * @param[in]  sol_start_index
  */
-void SparseSolver::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int rhs_start_index, int sol_start_index) {
+void SparseSolverMUMPS::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int rhs_start_index, int sol_start_index) {
     sol = rhs;
 
 	id.job = 3; // set MUMPS to solve the system
@@ -296,7 +294,7 @@ void SparseSolver::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, i
 
 	dmumps_c(&id);
 
-#ifdef DEBUG 
+#ifdef DEBUG
 	printf ("\nSolve completed ... ");
 	printf ("\nThe solution of the system is: ");
 	for (int i = 0; i < n; i++)
@@ -305,15 +303,15 @@ void SparseSolver::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, i
 	}
 	printf ("\n");
 #endif
-} 
+}
 
 /** @brief Solves the system of equations where solutions are returned as a SparseMatrix.
  *
  * @param[in,out] A SparseMatrix which contains multiple right-hand sides (column-wise)
  *                  for input and solutions (column-wise) for output.
  */
-void SparseSolver::SolveMat_Sparse( SparseMatrix & A) {
-	SolveMat_Sparse(A, A); 
+void SparseSolverMUMPS::SolveMat_Sparse( SparseMatrix & A) {
+	SolveMat_Sparse(A, A);
 };
 
 /** @brief Solves the system of equations where solutions are returned as a SparseMatrix.
@@ -322,8 +320,8 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A) {
  * @param[in]  A_in  SparseMatrix containing multiple right-hand sides of the system, for
  *                   input is transposed!
  */
-void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
-	SolveMat_Sparse(A_in, B_out, 'T'); 
+void SparseSolverMUMPS::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
+	SolveMat_Sparse(A_in, B_out, 'T');
 };
 
 /** @brief Solves the system of equations where solutions are returned as a SparseMatrix.
@@ -332,7 +330,7 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
  * @param[in]  A_in  SparseMatrix containing all right-hand sides (column-wise).
  * @param[in]  T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed The switch which allows to transpose the input matrix before solving the system.
  */
-void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
+void SparseSolverMUMPS::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
 	// TODO popsat system prevodu CSR na CSC pomoci maticove transpozice
 	SparseMatrix tmpM;
 
@@ -375,7 +373,7 @@ void SparseSolver::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, c
  * @param[in,out] A SparseMatrix containing multiple right-hand sides for input and
  *                  multiple solutions in 'dense_values' attribute for output.
  */
-void SparseSolver::SolveMat_Dense( SparseMatrix & A ) {
+void SparseSolverMUMPS::SolveMat_Dense( SparseMatrix & A ) {
 	SolveMat_Dense(A, A);
 }
 
@@ -384,11 +382,11 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A ) {
  * @param[out] B_out SparseMatrix containing multiple solutions in 'dense_values' attribute.
  * @param[in]  A_in  SparseMatrix containing multiple right-hand sides column-wise.
  */
-void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
+void SparseSolverMUMPS::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	//if (m_factorized == 0)
-	//	Factorization(); 
+	//	Factorization();
 
-	SEQ_VECTOR<double> rhs; 
+	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
 
 	int job[8];
@@ -405,12 +403,12 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	job[7] = 0; //
 
 	MKL_INT m = A_in.rows;
-	MKL_INT n = A_in.cols; 
+	MKL_INT n = A_in.cols;
 	MKL_INT nRhs = A_in.cols;
 
 	rhs.resize(m * n);
 	sol.resize(m * n);
-	//double *Adns = &rhs[0]; 
+	//double *Adns = &rhs[0];
 	MKL_INT lda  = m;
 
 	//double *Acsr = &A_in.CSR_V_values[0];
@@ -420,26 +418,26 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	MKL_INT info;
 
 
-	// Convert input matrix (RHS) to dense format 
+	// Convert input matrix (RHS) to dense format
 
 	//void mkl_ddnscsr (
-	//	MKL_INT *job, 
-	//	MKL_INT *m, MKL_INT *n, 
-	//	double *Adns, MKL_INT *lda, 
-	//	double *Acsr, MKL_INT *AJ, MKL_INT *AI, 
+	//	MKL_INT *job,
+	//	MKL_INT *m, MKL_INT *n,
+	//	double *Adns, MKL_INT *lda,
+	//	double *Acsr, MKL_INT *AJ, MKL_INT *AI,
 	//	MKL_INT *info);
 
 //TODO sparse RHS misto dense - i v SolveMatSparse
 	mkl_ddnscsr (
-		job, 
-		&m, &n, 
-		&rhs[0], &lda, 
-		&A_in.CSR_V_values[0], &A_in.CSR_J_col_indices[0], &A_in.CSR_I_row_indices[0], 
+		job,
+		&m, &n,
+		&rhs[0], &lda,
+		&A_in.CSR_V_values[0], &A_in.CSR_J_col_indices[0], &A_in.CSR_I_row_indices[0],
 		&info);
 
-	// Solve with multiple right hand sides 
+	// Solve with multiple right hand sides
 	//	m_error = dss_solve_real (m_handle, m_opt, &rhs[0], nRhs, &sol[0]);
-	
+
 	Solve(rhs,sol,nRhs);
 
 	rhs.clear();
@@ -457,9 +455,9 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	job[6] = 0; //
 	job[7] = 0; //
 
-	//Adns = &sol[0]; 
+	//Adns = &sol[0];
 
-	B_out.CSR_I_row_indices.resize(m + 1); 
+	B_out.CSR_I_row_indices.resize(m + 1);
 	B_out.CSR_J_col_indices.resize(1);
 	B_out.CSR_V_values.resize(1);
 
@@ -468,14 +466,14 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	//AI   = &B_out.CSR_I_row_indices[0];
 
 	mkl_ddnscsr (
-		job, 
-		&m, &n, 
-		&sol[0], &lda, 
-		&B_out.CSR_V_values[0], &B_out.CSR_J_col_indices[0], &B_out.CSR_I_row_indices[0], 
+		job,
+		&m, &n,
+		&sol[0], &lda,
+		&B_out.CSR_V_values[0], &B_out.CSR_J_col_indices[0], &B_out.CSR_I_row_indices[0],
 		&info);
 
-	// Convert solution matrix (SOL) to sparse format - convert step 
-	int nnzmax = B_out.CSR_I_row_indices[m];//-1; 
+	// Convert solution matrix (SOL) to sparse format - convert step
+	int nnzmax = B_out.CSR_I_row_indices[m];//-1;
 
 	B_out.CSR_J_col_indices.resize(nnzmax);
 	B_out.CSR_V_values.resize(nnzmax);
@@ -490,25 +488,29 @@ void SparseSolver::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
 	// If job(6)>0, arrays acsr, ia, ja are generated for the output storage.
 
 	mkl_ddnscsr (
-		job, 
-		&m, &n, 
-		&sol[0], &lda, 
-		&B_out.CSR_V_values[0], &B_out.CSR_J_col_indices[0], &B_out.CSR_I_row_indices[0], 
+		job,
+		&m, &n,
+		&sol[0], &lda,
+		&B_out.CSR_V_values[0], &B_out.CSR_J_col_indices[0], &B_out.CSR_I_row_indices[0],
 		&info);
 
 
-	// Setup parameters for output matrix 
+	// Setup parameters for output matrix
 	B_out.cols	= A_in.cols;
 	B_out.rows	= A_in.rows;
 	B_out.nnz	= B_out.CSR_V_values.size();
 	B_out.type	= 'G';
 
-	sol.clear(); 
+	sol.clear();
 
 }
 
-void SparseSolver::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded) {
+void SparseSolverMUMPS::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded) {
 
  std::cout << "Not Implemented in MUMPS" << std::endl;
 
 }
+
+
+
+

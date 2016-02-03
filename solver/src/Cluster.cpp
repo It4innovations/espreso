@@ -1132,7 +1132,7 @@ void Cluster::CreateF0() {
 		if (   (esconfig::solver::KSOLVER == 2 || esconfig::solver::KSOLVER == 3 )
 			 && esconfig::solver::F0_SOLVER == 1
 			) {
-			SparseSolver Ktmp;
+			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
 			ss << "Create F0 -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
@@ -1258,7 +1258,7 @@ void Cluster::CreateSa() {
 		F0_fast.SolveMatF(G0t,tmpM, true);
 		if (MPIrank == 0) F0_fast.msglvl = 0;
 	} else {
-		SparseSolver tmpsps;
+		SparseSolverCPU tmpsps;
 		if (MPIrank == 0) tmpsps.msglvl = 1;
 		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
         Salfa.ConvertDenseToCSR(1);
@@ -2032,7 +2032,7 @@ void Cluster::Create_SC_perDomain(bool USE_FLOAT) {
 
 		if (cluster_global_index == 1) cout << "."; // << i ;
 
-		SparseSolver tmpsps;
+		SparseSolverCPU tmpsps;
 		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
 		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
 
@@ -2041,7 +2041,7 @@ void Cluster::Create_SC_perDomain(bool USE_FLOAT) {
 			domains[i].B1Kplus.USE_FLOAT = true;
 		}
 
-//		SparseSolver tmpsps2;
+//		SparseSolverCPU tmpsps2;
 //		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
 //		tmpsps2.Create_non_sym_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B0t_comp, domains[i].B0KplusB1_comp, false, 0 );
 

@@ -335,7 +335,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 //	NtN_Mat.MatTranspose();
 //	NtN_Mat.RemoveLower();
 //
-//	SparseSolver NtN;
+//	SparseSolverCPU NtN;
 //	NtN.ImportMatrix(NtN_Mat);
 //	NtN_Mat.Clear();
 //
@@ -385,7 +385,7 @@ void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
 			NtN_Mat.MatTranspose();
 			NtN_Mat.RemoveLower();
 
-			SparseSolver NtN;
+			SparseSolverCPU NtN;
 			NtN.ImportMatrix(NtN_Mat);
 			NtN_Mat.Clear();
 

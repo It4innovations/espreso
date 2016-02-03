@@ -22,7 +22,8 @@ using std::make_pair;
 #include <cilk/cilk_api.h>
 
 #include "SparseMatrix.h"
-#include "SparseSolver.h"
+//#include "SparseSolverCPU.h"
+#include "../sparse/sparsesolvers.h"
 #include "Cluster.h"
 
 #include "utils.h"
@@ -56,7 +57,7 @@ public:
 
 	// Coarse problem variables
 	SparseMatrix	GGt_Mat;
-	SparseSolver	GGt;
+	SparseSolverCPU	GGt;
 	eslocal 				GGtsize;
 
 	// *** Setup variables
@@ -142,11 +143,11 @@ public:
 
 
 	// *** Coarse problem related members
-	void CreateGGt    ( Cluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolver & GGt );
+	void CreateGGt    ( Cluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolverCPU & GGt );
 	void CreateGGt_inv_dist( Cluster & cluster );
 
 	// *** Projectors
-	void Projector_l_compG    ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolver & GGt,
+	void Projector_l_compG    ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
 	void Projector_l_inv_compG( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 	// *** Apply A embers

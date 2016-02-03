@@ -22,7 +22,7 @@ using std::make_pair;
 #include <cilk/cilk_api.h>
 
 #include "SparseMatrix.h"
-#include "SparseSolver.h"
+#include "../sparse/sparsesolvers.h"
 
 #include "utils.h"
 
@@ -77,8 +77,8 @@ public:
 	SparseMatrix B1t_comp_dom;
 	SEQ_VECTOR <eslocal> lambda_map_sub_local;
 
-	SparseSolver Kplus;
-	SparseSolver KplusF;
+	SparseSolverCPU Kplus;
+	SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> f;
 	SEQ_VECTOR <double> vec_c;
 
