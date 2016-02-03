@@ -15,3 +15,5 @@ build*
 libs
 include
 tools
+kernel_detct_c*
+kernel_statistic.txt

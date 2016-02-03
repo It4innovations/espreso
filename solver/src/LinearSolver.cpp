@@ -796,9 +796,9 @@ void LinearSolver::set_R_from_K ()
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
-                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]),
-                                            &(defect_K_d[d]));
-
+                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]), 
+                                            &(defect_K_d[d]),d);
+    
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
   // sum of ||K*R|| (all subdomains on the cluster)
@@ -873,16 +873,42 @@ void LinearSolver::set_R_from_K ()
 
     double _min_norm_KR_per_clust=sqrt(*min_norm_KR_pow_2_per_clust);
     double _max_norm_KR_per_clust=sqrt(*max_norm_KR_pow_2_per_clust);
+    
+    
+    
+    std::ofstream os ("kernel_statistic.txt");
+    os.precision(17);
+    os << " *******************************************************************************************************************************\n";
+    os << " ********************    K E R N E L   D E T E C T I O N    V I A    S C H U R   C O M P L E M E N T    ************************\n";
+    os << " *******************************************************************************************************************************\n";
+    os << " Statistics for " << numberOfAllSubdomains; 
+    if (MPI_size==0 &&  number_of_subdomains_per_cluster==1 ){ 
+      os << " subdomain.\n";
+     }
+    else
+    {
+      os << " subdomains.\n";
+    }
+    os << " defect(K)  min:max        " << *min_defect_per_clust << " : "
+                                        << *max_defect_per_clust << "\n";
+    os << " ||K*R||    min:max:avg    " << _min_norm_KR_per_clust << " : "
+                                        << _max_norm_KR_per_clust << " : "
+                                        << norm_KR_clusters_mean << "\n";
+    os.close();
 
-  std::cout<<" *******************************************************************************************************************************\n";
-  std::cout<<" ********************    K E R N E L   D E T E C T I O N    V I A    S C H U R   C O M P L E M E N T    ************************\n";
-  std::cout<<" *******************************************************************************************************************************\n";
-  std::cout<< " Statistics for " << numberOfAllSubdomains  << " subdomains.\n";
-  std::cout<< " defect(K)  min:max        " << *min_defect_per_clust << " : "
-                                            << *max_defect_per_clust << "\n";
-  std::cout<< " ||K*R||    min:max:avg    " << _min_norm_KR_per_clust << " : "
-                                            << _max_norm_KR_per_clust << " : "
-                                            << norm_KR_clusters_mean << "\n";
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 
 
