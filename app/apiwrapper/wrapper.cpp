@@ -128,6 +128,7 @@ void FETI4ICreateInstance(
 	DataHolder::instances.push_back(new FETI4IStructInstance(api));
 	DataHolder::instances.back()->K = matrix->data;
 	api.K = &(DataHolder::instances.back()->K);
+	api.indexing = matrix->offset;
 	api.size = size;
 	api.rhs = rhs;
 	for (size_t i = 0; i < dirichlet_size; i++) {
@@ -155,6 +156,8 @@ void FETI4ISolve(
 	solutions[0] = std::vector<double>(solution, solution + solution_size);
 	instance->data.solve(solutions);
 	memcpy(solution, &solutions[0][0], solution_size * sizeof(double));
+
+	instance->data.finalize();
 }
 
 template <typename TFETI4I>
