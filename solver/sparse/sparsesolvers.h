@@ -2,32 +2,33 @@
 #ifndef SOLVER_SPARSE_SPARSESOLVERS_H_
 #define SOLVER_SPARSE_SPARSESOLVERS_H_
 
-#if SOLVER == MKL
+
+#if defined(SOLVER_MKL)
 #include "cpu/mkl.h"
 	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverMKL SparseSolverAcc;
 
 
-#elif SOLVER == PARDISO
+#elif defined(SOLVER_PARDISO)
 #include "cpu/pardiso.h"
 	typedef SparseSolverPardiso SparseSolverCPU;
 	typedef SparseSolverPardiso SparseSolverAcc;
 
 
-#elif SOLVER == MUMPS
+#elif defined(SOLVER_MUMPS)
 #include "cpu/mumps.h"
 	typedef SparseSolverMUMPS SparseSolverCPU;
 	typedef SparseSolverMUMPS SparseSolverAcc;
 
 
-#elif SOLVER == MIC
+#elif defined(SOLVER_MIC)
 #include "acc/pardiso.h"
 #include "acc/mic.h"
 	typedef SparseSolverPARDISO SparseSolverCPU;
 	typedef SparseSolverMIC SparseSolverAcc;
 
 
-#elif SOLVER == CUDA
+#elif defined(SOLVER_CUDA)
 #include "acc/pardiso.h"
 #include "acc/cuda.h"
 	typedef SparseSolverPARDISO SparseSolverCPU;
@@ -35,7 +36,7 @@
 
 
 #else
-#error "Incorrect user-supplied value for SOLVER."
+#error "Incorrect user-supplied value for SOLVER. Check your build.config script."
 #endif
 
 
