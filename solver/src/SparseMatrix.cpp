@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 {
 	os << m.rows << " " << m.cols << " " << m.nnz << "\n";
 
-	os.precision(8);
+	os.precision(15);
 
 	SparseMatrix s = m;
 	if (s.CSR_J_col_indices.size()) {
@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 	for (size_t i = 0; i < s.nnz; i++) {
 		os << s.I_row_indices[i] << " ";
 		os << s.J_col_indices[i] << " ";
-		os << s.V_values[i] << "\n";
+		os << std::scientific << s.V_values[i] << "\n";
 	}
 	return os;
 }
