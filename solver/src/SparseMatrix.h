@@ -201,6 +201,26 @@ public:
 	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR,
         double * norm_KR, int * defect, int d_sub);
 
+private:
+
+  // get_kernel_from_K: default parameters
+  //
+  bool DIAGONALSCALING                                  = true;
+  eslocal PERMUTVECTORACTIVE                            = 1; 
+  bool USE_NULL_PIVOTS_OR_S_SET                         = true;
+  bool DIAGONALREGULARIZATION                           = true;
+  eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
+  eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
+  eslocal PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
+  eslocal FIXING_NODES_OR_DOF                           = 0;
+  eslocal DOFPERNODE                                    = 3;
+  double COND_NUMB_FOR_SINGULAR_MATRIX                  = 1e13;
+  eslocal CHECK_NONSING                                 = 0;
+  eslocal MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
+  eslocal SC_SIZE                                       = 50;
+  eslocal TWENTY                                        = 20;
+  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0e-5;
+
 };
 
 void sortMatrixInCOO(SparseMatrix & Matrix);
