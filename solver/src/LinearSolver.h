@@ -47,7 +47,7 @@
 //#include "SparseMatrix.h"
 //#include "FEM_Assembler.h"
 //#include "SparseDSS.h"
-//#include "SparseSolver.h"
+//#include "SparseSolverCPU.h"
 //#include "TimeEval.h"
 //#include "Domain.h"
 //#include "Cluster.h"

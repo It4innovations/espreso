@@ -22,7 +22,7 @@ using std::make_pair;
 #include <cilk/cilk_api.h>
 
 #include "SparseMatrix.h"
-#include "SparseSolver.h"
+//#include "SparseSolverCPU.h"
 #include "Domain.h"
 #include "DenseMatrixPack.h"
 
@@ -79,9 +79,9 @@ public:
 	// number of MIC
 	eslocal NUM_MICS;
 
-	SparseSolver F0;
-	SparseSolver F0_fast;
-	SparseSolver Sa;
+	SparseSolverCPU F0;
+	SparseSolverCPU F0_fast;
+	SparseSolverCPU Sa;
 	SparseMatrix SaMat;
 
 	SEQ_VECTOR <double> vec_d;

@@ -49,10 +49,10 @@ def build(ctx):
         sources = source_files + ("src/SparseSolverMumps.cpp",)
 
     if ctx.env.SOLVER == "PARDISO":
-        sources = source_files + ("src/SparseSolver.cpp",)
+        sources = source_files + ("sparse/cpu/pardiso.cpp",)
 
     if ctx.env.SOLVER == "MKL":
-        sources = source_files + ("src/SparseSolverPardisoMKL.cpp",)
+        sources = source_files + ("sparse/cpu/mkl.cpp",)
 
 
     ctx.lib(

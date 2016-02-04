@@ -1,6 +1,6 @@
 #include "SparseMatrix.h"
 
-#include "SparseSolver.h"
+#include "../sparse/sparsesolvers.h"
 
 std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 {
@@ -3400,7 +3400,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, NONSING_SIZE,j_start,SC_SIZE);
 //
-  SparseSolver createSchur;
+  SparseSolverCPU createSchur;
   // TODO Routine Create_SC can provide also factorization of K_rr which can avoid to latter factorization.
   createSchur.ImportMatrix(K_modif);
   createSchur.Create_SC(S,SC_SIZE,false);
@@ -3417,8 +3417,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
   MKL_INT ldz = S.cols;
   info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
   if (info){
-    //printf("info = %d\n, something wrong with Schur complement in SparseSolver::generalIinverse",info);
-    std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse\n";
+    //printf("info = %d\n, something wrong with Schur complement in SparseSolverCPU::generalIinverse",info);
+    std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse\n";
   }
 // IDENTIFICATIONS OF ZERO EIGENVALUES
   eslocal defect_A_in;// R_s_cols;
@@ -3470,7 +3470,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
 	SparseMatrix R_r;
 	R_r.MatMat(K_rs,'N',R_s);
   K_rs.Clear();
-  SparseSolver K_rr_solver;
+  SparseSolverCPU K_rr_solver;
   K_rr_solver.ImportMatrix(K_rr);
   K_rr.Clear();
   std::stringstream ss;
@@ -3561,7 +3561,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
     NtN_Mat.MatMat( Nt,'N',N );
     NtN_Mat.MatTranspose();
     NtN_Mat.RemoveLower();
-    SparseSolver NtN;
+    SparseSolverCPU NtN;
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
     std::stringstream sss;

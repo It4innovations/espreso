@@ -1,8 +1,8 @@
 #include "utils.h"
 #include "esmesh.h"
-//#include "SparseSolver.h"
+//#include "../sparse/sparsesolvers.h"
 
-class SparseSolver;
+//class SparseSolverCPU;
 
 #ifdef CUDA
 	#include <cuda_runtime.h>
@@ -20,7 +20,6 @@ using std::fill;
 
 
 #pragma once
-//#include "SparseSolver.h"
 
 class SparseMatrix
 {

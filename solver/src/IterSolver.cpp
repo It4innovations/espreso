@@ -1330,7 +1330,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 	SparseMatrix Gt_l;
 	SparseMatrix GGt_l;
 	SparseMatrix GGt_Mat_tmp;
-	SparseSolver GGt_tmp;
+	SparseSolverCPU GGt_tmp;
 
 
         /* Numbers of processors, value of OMP_NUM_THREADS */
@@ -1510,7 +1510,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 
 
 // *** Projector routines ************************************************
-void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolver & GGt,
+void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	time_eval.totalTime.start();
@@ -1584,7 +1584,7 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 
 }
 
-void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolver & GGt,
+void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	time_eval.totalTime.start();
