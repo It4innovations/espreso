@@ -114,7 +114,7 @@ bool Pyramid5::match(const eslocal *indices, eslocal n) {
 	return false;
 #endif
 
-	if (n != 5) {
+	if (n != 8) {
 		return false;
 	}
 

@@ -148,8 +148,10 @@ void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates) {
 
 }
 
-void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
-		mesh::Boundaries &boundaries) {
-
+void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) {
+	boundaries.resize(mesh.coordinates().clusterSize());
+	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
+		boundaries[i].insert(0);
+	}
 }
 

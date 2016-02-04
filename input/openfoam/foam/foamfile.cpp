@@ -57,7 +57,6 @@ void FoamFile::parseHeader()
     do {
         tokenizer->nextToken();
         if (tokenizer->failIfEnd() != NULL) {
-            // TODO: Free error
             fprintf(stderr, "Invalid FoamFile\n");
             exit(1);
         }
