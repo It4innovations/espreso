@@ -96,7 +96,7 @@ void OpenFOAM::points(mesh::Coordinates &coordinates) {
 
 void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 	FoamFile facesFile(_polyMeshPath + "faces");
-	Faces faces;
+	std::vector<Face> faces;
 	solveParseError(parse(facesFile.getTokenizer(), faces));
 	FoamFile ownerFile(_polyMeshPath + "owner");
 	std::vector< esglobal > owner;
@@ -114,6 +114,7 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 	elements.reserve(maximum);
 	elementBuilders.reserve(maximum);
 
+	//#pragma omp for
 	for (int i = 0; i < maximum; i++) {
 		elementBuilders.push_back(new ElementBuilder(&faces));
 	}
@@ -151,7 +152,7 @@ void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates) {
 void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].insert(0);
+		boundaries[i].insert(_rank);
 	}
 }
 

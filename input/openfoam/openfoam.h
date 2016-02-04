@@ -25,9 +25,16 @@ private:
 	ParseError* computePolyMeshPath(int rank, int size);
 	void solveParseError(ParseError *error);
 
+	/** @brief Project path. */
 	std::string _projectPath;
+
+	/** @brief Path to PolyMesh, it contains also rank number for divided cases. */
 	std::string _polyMeshPath;
+
+	/** @brief Assigned rank, 0 for non MPI runs.*/
 	int _rank;
+
+	/** @brief Number of processes, 1 for non MPI runs*/
 	int _size;
 };
 

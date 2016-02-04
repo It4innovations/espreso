@@ -1,7 +1,7 @@
 #include "elementbuilder.h"
 #include <set>
 
-ElementBuilder::ElementBuilder(Faces *faces) : faces(faces)
+ElementBuilder::ElementBuilder(std::vector<Face> *faces) : faces(faces)
 {
     selectedFaces = new Face*[6];
     numberOfFaces=0;

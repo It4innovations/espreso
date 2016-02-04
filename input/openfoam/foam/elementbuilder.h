@@ -6,7 +6,7 @@
 class ElementBuilder
 {
 public:
-    ElementBuilder(Faces *faces);
+    ElementBuilder(std::vector<Face> *faces);
     virtual ~ElementBuilder();
 
     void add(esglobal index)
@@ -38,7 +38,7 @@ private:
 
     Face** selectedFaces;
     int numberOfFaces;
-    Faces *faces;
+    std::vector<Face> *faces;
 };
 
 #endif // ELEMENTBUILDER_H

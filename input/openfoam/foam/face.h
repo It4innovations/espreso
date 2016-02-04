@@ -32,7 +32,4 @@ protected:
 private:
 };
 
-typedef std::vector<Face> Faces;
-
-
 #endif // FACE_H

@@ -3,6 +3,7 @@ source_files = (
     "structures/coordinates.cpp",
     "structures/boundaries.cpp",
     "structures/mesh.cpp",
+    "structures/faces.cpp",
     "elements/element.cpp",
     "elements/3D/hexahedron8.cpp",
     "elements/3D/hexahedron20.cpp",
