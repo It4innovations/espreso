@@ -21,6 +21,7 @@
 #include "../elements/elements.h"
 #include "coordinates.h"
 #include "boundaries.h"
+#include "faces.h"
 
 #include "esbasis.h"
 #include "esconfig.h"
@@ -56,6 +57,10 @@ public:
 	Coordinates& coordinates()
 	{
 		return _coordinates;
+	}
+
+	Faces& faces() {
+		return _faces;
 	}
 
 	const Boundaries& subdomainBoundaries() const
@@ -120,6 +125,9 @@ protected:
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
+
+	/** @brief Indexes of all faces, it's element contains an element reference.*/
+	Faces _faces;
 
 	/** @brief Array that stores all elements of the mesh. */
 	std::vector<mesh::Element*> _elements;

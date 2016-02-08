@@ -6,5 +6,4 @@
 #include "structures/boundaries.h"
 #include "structures/mesh.h"
 
-
 #endif /* MESH_ESMESH_H_ */

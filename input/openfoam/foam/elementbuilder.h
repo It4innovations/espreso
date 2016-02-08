@@ -2,31 +2,40 @@
 #define ELEMENTBUILDER_H
 
 #include "face.h"
+#include <set>
+#include <list>
+
 
 class ElementBuilder
 {
 public:
-    ElementBuilder(std::vector<Face> *faces);
+    ElementBuilder();
     virtual ~ElementBuilder();
 
-    void add(esglobal index)
+    void add(Face *face, bool owner)
     {
-        selectedFaces[numberOfFaces]=&(faces->at(index));
-        numberOfFaces++;
+        //selectedFaces[numberOfFaces]=&(faces->at(index));
+    	selectedFaces.push_back(std::pair<Face*, bool>(face, owner));
     }
 
     friend inline std::ostream& operator<<(std::ostream& os, const ElementBuilder& obj)
     {
         // write obj to stream
-        os<<obj.numberOfFaces<<"(";
-        for(int i=0;i<obj.numberOfFaces;i++) {
-            if (i!=0) os<<",";
-            os<<*(obj.selectedFaces[i]);
+        os<<obj.selectedFaces.size()<<"(";
+        bool first = true;
+        for(std::list< std::pair<Face*, bool> >::const_iterator it = obj.selectedFaces.begin();
+        				it != obj.selectedFaces.end(); ++it) {
+            if (first) {
+            	first=false;
+            }else {
+            	os<<",";
+            }
+            os<<*((*it).first)<<"-"<<(*it).second;
         }
         os<<")";
         return os;
     }
-    int getNumberOfFaces() { return numberOfFaces;}
+    size_t getNumberOfFaces() { return selectedFaces.size();}
 
     ParseError* createElement(std::vector<mesh::Element*> &elements);
 
@@ -34,11 +43,9 @@ public:
 protected:
 private:
 
-    ParseError* nextPoint(Face *origin, eslocal x, eslocal y, eslocal &nextPoint);
+    ParseError* nextPoint(eslocal x, eslocal y, eslocal &nextPoint);
 
-    Face** selectedFaces;
-    int numberOfFaces;
-    std::vector<Face> *faces;
+    std::list< std::pair<Face*, bool> > selectedFaces;
 };
 
 #endif // ELEMENTBUILDER_H

@@ -167,8 +167,8 @@ std::vector<eslocal> Prisma6::getFace(size_t face) const
 	// bottom
 	if (face == 3) {
 		std::vector<eslocal> result(3);
-		result[0] = _indices[0];
-		result[1] = _indices[1];
+		result[0] = _indices[1];
+		result[1] = _indices[0];
 		result[2] = _indices[2];
 		return result;
 	}

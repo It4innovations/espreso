@@ -1,7 +1,4 @@
 #include "openfoam.h"
-#include "foam/dictionary.h"
-#include "foam/face.h"
-#include "foam/elementbuilder.h"
 
 using namespace esinput;
 
@@ -61,7 +58,6 @@ ParseError* OpenFOAM::computePolyMeshPath(int rank, int size) {
 
 void OpenFOAM::points(mesh::Coordinates &coordinates) {
 	FoamFile pointsFile(_polyMeshPath + "points");
-	//TODO:
 	Points points;
 	solveParseError(parse(pointsFile.getTokenizer(), points));
 	coordinates.reserve(points.size());
@@ -96,8 +92,7 @@ void OpenFOAM::points(mesh::Coordinates &coordinates) {
 
 void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 	FoamFile facesFile(_polyMeshPath + "faces");
-	std::vector<Face> faces;
-	solveParseError(parse(facesFile.getTokenizer(), faces));
+	solveParseError(parse(facesFile.getTokenizer(), _faces));
 	FoamFile ownerFile(_polyMeshPath + "owner");
 	std::vector< esglobal > owner;
 	solveParseError(parse(ownerFile.getTokenizer(), owner));
@@ -116,13 +111,13 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 
 	//#pragma omp for
 	for (int i = 0; i < maximum; i++) {
-		elementBuilders.push_back(new ElementBuilder(&faces));
+		elementBuilders.push_back(new ElementBuilder());
 	}
 
 	esglobal face = 0;
 	for (std::vector<esglobal>::iterator it = owner.begin(); it != owner.end();
 			++it) {
-		elementBuilders[*it]->add(face);
+		elementBuilders[*it]->add(&(_faces.at(face)), true);
 		face++;
 	}
 
@@ -134,7 +129,7 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 	face = 0;
 	for (std::vector<esglobal>::iterator it = neighbour.begin();
 			it != neighbour.end(); ++it) {
-		elementBuilders[*it]->add(face);
+		elementBuilders[*it]->add(&(_faces.at(face)), false);
 		face++;
 	}
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin();
@@ -143,6 +138,21 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 		delete *it;
 	}
 
+}
+
+void OpenFOAM::faces(mesh::Faces &faces) {
+	for(std::vector<Face>::iterator it = _faces.begin(); it!=_faces.end(); ++it) {
+		faces.push_back((*it).getFaceIndex());
+
+		/*std::cout<<*it;
+		mesh::Element *element = (*it).getFaceIndex().first;
+		const std::vector<eslocal> &data = element->getFace((*it).getFaceIndex().second);
+		std::cout<<" -- "<<data.size()<<"(";
+		for(int i=0;i<data.size();i++) {
+			std::cout<<data[i]<<",";
+		}
+		std::cout<<")\n";*/
+	}
 }
 
 void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates) {

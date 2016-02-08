@@ -2,7 +2,6 @@
 #define PARSER_H
 
 #include "tokenizer.h"
-#include "../openfoam.h"
 #include "../../loader.h"
 #include <vector>
 

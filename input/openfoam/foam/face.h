@@ -3,6 +3,7 @@
 
 #include "../base/parser.h"
 #include "../base/tokenizer.h"
+#include "../../loader.h"
 
 class Face
 {
@@ -13,6 +14,12 @@ public:
     ParseError* parse(Tokenizer &ts);
     bool containsLine(eslocal x, eslocal y);
     ParseError* nextPoint(eslocal x, eslocal y, eslocal &next);
+    void setFaceIndex(mesh::Element *element, unsigned char index) {
+    	_index = std::pair<mesh::Element*, unsigned char>(element, index);
+    }
+    mesh::FaceIndex &getFaceIndex() {
+    	return _index;
+    }
 
     friend inline std::ostream& operator<<(std::ostream& os, const Face& obj)
     {
@@ -30,6 +37,8 @@ public:
 
 protected:
 private:
+    mesh::FaceIndex _index;
+
 };
 
 #endif // FACE_H

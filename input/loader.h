@@ -18,6 +18,7 @@ public:
 		open();
 		points(mesh._coordinates);
 		elements(mesh._elements);
+		faces(mesh._faces);
 		mesh.partitiate(esconfig::mesh::subdomains);
 		mesh.computeFixPoints(esconfig::mesh::fixPoints);
 		boundaryConditions(mesh._coordinates);
@@ -36,6 +37,7 @@ public:
 protected:
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
+	virtual void faces(mesh::Faces &faces) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) = 0;
 

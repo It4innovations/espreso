@@ -20,6 +20,7 @@ public:
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
+	void faces(mesh::Faces &faces) {};
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
 

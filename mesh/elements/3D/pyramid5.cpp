@@ -156,31 +156,20 @@ std::vector<eslocal> Pyramid5::getNeighbours(size_t nodeIndex) const
 
 std::vector<eslocal> Pyramid5::getFace(size_t face) const
 {
-  //TODO
 	// bottom
-	//if (face == 3) {
-	//	std::vector<eslocal> result(3);
-	//	result[0] = _indices[0];
-	//	result[1] = _indices[1];
-	//	result[2] = _indices[2];
-	//	return result;
-	//}
-
-	//// top
-	//if (face == 4) {
-	//	std::vector<eslocal> result(3);
-	//	result[0] = _indices[3];
-	//	result[1] = _indices[4];
-	//	result[2] = _indices[5];
-	//	return result;
-	//}
-
+	if (face == 0) {
+		std::vector<eslocal> result(4);
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		result[2] = _indices[2];
+		result[3] = _indices[1];
+		return result;
+	}
 	////sides
-	std::vector<eslocal> result(4);
-	//result[0] = _indices[ face              ];
-	//result[1] = _indices[(face + 1) % 3     ];
-	//result[2] = _indices[(face + 1) % 3 + 3 ];
-	//result[3] = _indices[ face + 3          ];
+	std::vector<eslocal> result(3);
+	result[0] = _indices[ face -1   ];
+	result[1] = _indices[(face) % 3 ];
+	result[2] = _indices[4];
 	return result;
 }
 

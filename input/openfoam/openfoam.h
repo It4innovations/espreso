@@ -4,6 +4,9 @@
 
 #include "../loader.h"
 #include "foam/foamfile.h"
+#include "foam/face.h"
+#include "foam/dictionary.h"
+#include "foam/elementbuilder.h"
 
 namespace esinput {
 
@@ -14,6 +17,7 @@ public:
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
+	void faces(mesh::Faces &faces);
 	void boundaryConditions(mesh::Coordinates &coordinates);
 	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
 
@@ -36,10 +40,11 @@ private:
 
 	/** @brief Number of processes, 1 for non MPI runs*/
 	int _size;
+
+	/** @brief Temporary storage for faces*/
+	std::vector<Face> _faces;
 };
 
 }
-
-
 
 #endif /* INPUT_OPENFOAM_OPENFOAM_H_ */
