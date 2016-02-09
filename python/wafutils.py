@@ -126,7 +126,7 @@ def set_compiler_defines(ctx):
         ctx.fatal("ESPRESO supports only INT_WIDTH = {32, 64}.")
 
     ctx.env.VERBOSE = int(ctx.env.VERBOSE)
-    ctx.env.append_unique("DEFINES", [ "VERBOSE={0}".format(ctx.env.VERBOSE) ])
+    ctx.env.append_unique("DEFINES", [ "VERBOSE={0}".format(ctx.env.VERBOSE), "FETI4I_INT_WIDTH={0}".format(ctx.env.INT_WIDTH) ])
 
     if ctx.env.DEBUG == "1":
         ctx.env.append_unique("DEFINES", [ "DEBUG" ])

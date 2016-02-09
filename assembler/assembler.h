@@ -31,7 +31,7 @@ struct APIHolder {
 	std::vector<eslocal> *dirichlet_indices;
 	std::vector<double> *dirichlet_values;
 	std::vector<eslocal> *l2g;
-	std::vector<eslocal> *neighbourRanks;
+	std::vector<int> *neighbourRanks;
 	eslocal indexing;
 
 	~APIHolder() {
@@ -64,8 +64,8 @@ struct API {
 	eslocal *dirichlet_indices;
 	double *dirichlet_values;
 
-	eslocal neighbours_size;
-	eslocal *neighbours;
+	int neighbours_size;
+	int *neighbours;
 
 	eslocal indexing;
 };
