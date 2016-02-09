@@ -13,7 +13,7 @@ void LinearElasticity<TInput>::inertia(std::vector<double> &inertia)
 template <class TInput>
 void LinearElasticity<TInput>::C(DenseMatrix &C, eslocal material)
 {
-	double ex = !material ? 2.1e5 : 2.1e10;
+	double ex = !material ? 2.1e5 : 2.1e5;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	C.resize(6, 6);

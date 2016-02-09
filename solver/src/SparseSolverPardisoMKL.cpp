@@ -1501,8 +1501,11 @@ void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
 }
 
 void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
+	SEQ_VECTOR<double> init;
+	SolveCG(A_in, rhs_in, sol, init);
+}
 
-
+void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
 
 
 	  /*---------------------------------------------------------------------------   */
@@ -1558,11 +1561,13 @@ void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SE
 	  /*---------------------------------------------------------------------------*/
 	  /* Initialize the initial guess                                              */
 	  /*---------------------------------------------------------------------------*/
-	  for (i = 0; i < n; i++)
-	    {
-	      solution[i] = 0.E0;
-	    }
-
+	  if (initial_guess.size() > 0 ) {
+		  for (i = 0; i < n; i++)
+			solution[i] = initial_guess[i];
+	  } else {
+		  for (i = 0; i < n; i++)
+			  solution[i] = 0.E0;
+	  }
 	  matdes[0] = 'd';
 	  matdes[1] = 'l';
 	  matdes[2] = 'n';
@@ -1582,7 +1587,7 @@ void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SE
 	  /* DOUBLE parameters                                                         */
 	  /* -                                                                         */
 	  /*---------------------------------------------------------------------------*/
-	  ipar[4] = 1000;
+	  ipar[4] = 10000;
 	  ipar[10]=1;
 	  /*---------------------------------------------------------------------------*/
 	  /* Check the correctness and consistency of the newly set parameters         */
@@ -1625,7 +1630,7 @@ void SparseSolver::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SE
 	      /* The solution has not been found yet according to the user-defined stopping */
 	      /* test. Continue RCI (P)CG iterations.                                      */
 	      /*---------------------------------------------------------------------------*/
-	      if (euclidean_norm > 1.E-6)
+	      if (euclidean_norm > 1.E-13)
 	        goto rci;
 	      /*---------------------------------------------------------------------------*/
 	      /* The solution has been found according to the user-defined stopping test   */

@@ -120,6 +120,7 @@ public:
 	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
 	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
 
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess);
 	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol);
 	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol);
 

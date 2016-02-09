@@ -45,6 +45,9 @@ public:
 	eslocal DOFS_PER_NODE;
 	eslocal isOnACC;
 
+	eslocal domain_index;
+	bool	enable_SP_refinement;
+
 
 	// Matrices and vectors of the cluster 
 	SparseMatrix B0; 
@@ -64,7 +67,9 @@ public:
 	//SparseMatrix B1KplusB1t;
 	
 	SparseMatrix B1; 
-	SparseMatrix B1t; 
+	SparseMatrix B1t;
+	SparseMatrix B1t_DirPr;
+	SEQ_VECTOR <eslocal> B1t_Dir_perm_vec;
 	
 	//SparseMatrix   B1_comp;
 	//SparseMatrix   B1t_comp;

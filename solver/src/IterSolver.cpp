@@ -458,6 +458,15 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 		 norm_time.AddEnd(omp_get_wtime());
 
 
+//		if (norm_l/tol*epsilon < 1) {
+//			for(eslocal d = 0; d < cluster.domains.size(); d++)
+//				cluster.domains[d].enable_SP_refinement = true;
+//
+//			if (esconfig::MPIrank == 0)
+//				std::cout << "Single precission iterative refinement enabled ... " << std::endl;
+//		}
+
+
 		if (mpi_rank == mpi_root) {
 			//printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f - norm prim %1.20f norm f %1.20f : %1.20f \n", iter+1, norm_l, tol, norm_prim_g, norm_prim_fg, norm_prim_g / norm_prim_fg);
 //		printf (       "Iter MPI %5d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
@@ -2013,13 +2022,25 @@ void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster,
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
 			//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
 		}
+
+		if (USE_PREC == 3) { // Dirichlet Prec
+			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+		}
+
 	}
 
 	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 	SEQ_VECTOR < double > y_out_tmp;
 	for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-		cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+		if (USE_PREC == 1 || USE_PREC == 2)
+			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+		if (USE_PREC == 3)
+			cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
 
 		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling

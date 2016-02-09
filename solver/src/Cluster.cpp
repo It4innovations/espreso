@@ -108,6 +108,7 @@ void Cluster::InitClusterPC( eslocal * subdomains_global_indices, eslocal number
 		domains[i].USE_HFETI   	 = USE_HFETI;
 		domains[i].USE_DYNAMIC 	 = USE_DYNAMIC;
 		domains[i].DOFS_PER_NODE = DOFS_PER_NODE;
+		domains[i].domain_index  = i;
 
 	}
 	// *** END - Init all domains of the cluster ***************************************
@@ -284,6 +285,18 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
+
+		//if (esconfig::solver::PRECONDITIONER == 3) { // DIR
+			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
+			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
+			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
+			domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size();
+
+			domains[i].B1t_Dir_perm_vec = domains[i].B1_comp_dom.CSR_J_col_indices;
+			std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
+			last = std::unique(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
+			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
+		//}
 
 		//domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
@@ -697,7 +710,7 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		for (eslocal i = 0; i < domain_size; i++)
 			tm1[d][i] = x_in[d][i] - tm1[d][i];
 
-		domains[d].multKplusLocal(tm1[d] , tm2[d], 0, 0);
+		domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
