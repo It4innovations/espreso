@@ -1,3 +1,4 @@
+
 #include "mkl.h"
 
 SparseSolverMKL::SparseSolverMKL(){
@@ -236,7 +237,7 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 	if (error != 0)
 	{
 		//printf ("\nERROR during symbolic factorization: %d", error);
-		std::cerr << "ERROR during symbolic factorization: " << str << "\n";
+		std::cout << "\nERROR : " << error << " during symbolic factorization on MPI rank : " << esconfig::MPIrank << std::endl;
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -263,7 +264,8 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
-		std::cerr << "ERROR during numerical factorization: " << str << "\n";
+		std::cout << "\nERROR : " << error << " during numerical factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+		//printf ("\nERROR during numerical factorization: %d", error);
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
@@ -1500,8 +1502,11 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol
 }
 
 void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
+	SEQ_VECTOR<double> init;
+	SolveCG(A_in, rhs_in, sol, init);
+}
 
-
+void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
 
 
 	  /*---------------------------------------------------------------------------   */
@@ -1557,11 +1562,13 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in,
 	  /*---------------------------------------------------------------------------*/
 	  /* Initialize the initial guess                                              */
 	  /*---------------------------------------------------------------------------*/
-	  for (i = 0; i < n; i++)
-	    {
-	      solution[i] = 0.E0;
-	    }
-
+	  if (initial_guess.size() > 0 ) {
+		  for (i = 0; i < n; i++)
+			solution[i] = initial_guess[i];
+	  } else {
+		  for (i = 0; i < n; i++)
+			  solution[i] = 0.E0;
+	  }
 	  matdes[0] = 'd';
 	  matdes[1] = 'l';
 	  matdes[2] = 'n';
@@ -1581,7 +1588,7 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in,
 	  /* DOUBLE parameters                                                         */
 	  /* -                                                                         */
 	  /*---------------------------------------------------------------------------*/
-	  ipar[4] = 1000;
+	  ipar[4] = 10000;
 	  ipar[10]=1;
 	  /*---------------------------------------------------------------------------*/
 	  /* Check the correctness and consistency of the newly set parameters         */
@@ -1624,7 +1631,7 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in,
 	      /* The solution has not been found yet according to the user-defined stopping */
 	      /* test. Continue RCI (P)CG iterations.                                      */
 	      /*---------------------------------------------------------------------------*/
-	      if (euclidean_norm > 1.E-6)
+	      if (euclidean_norm > 1.E-13)
 	        goto rci;
 	      /*---------------------------------------------------------------------------*/
 	      /* The solution has been found according to the user-defined stopping test   */

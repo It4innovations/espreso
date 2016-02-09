@@ -120,24 +120,40 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		break;
 	}
 	case 3: { // DIRECT MIX - 2xSP
+		std::cout << "Not implemented ... " << std::endl;
+		exit(EXIT_FAILURE);
 
-		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
-		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
-		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
-
-		Kplus.Solve(x_in, x, x_in_vector_start_index, 0);
-
-		for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
-			K.MatVec(x,r,'N');
-			for (eslocal i = 0; i < r.size(); i++)
-				r[i] = x_in[i + x_in_vector_start_index] - r[i];
-			Kplus.Solve(r, z, 0, 0);
-			for (eslocal i = 0; i < r.size(); i++)
-				x[i] = x[i] + z[i];
-		}
-
-		for (eslocal i = 0; i < r.size(); i++)
-			y_out[y_out_vector_start_index + i] = x[i];
+//		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+//		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
+//		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+//
+//		Kplus.Solve(x_in, x, x_in_vector_start_index, 0);
+//		if (enable_SP_refinement) {
+//			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+//				K.MatVec(x,r,'N');
+//				for (eslocal i = 0; i < r.size(); i++)
+//					r[i] = x_in[i + x_in_vector_start_index] - r[i];
+//				Kplus.Solve(r, z, 0, 0);
+//				for (eslocal i = 0; i < r.size(); i++)
+//					x[i] = x[i] + z[i];
+//
+//				double norm = 0.0;
+//				for (eslocal i = 0; i < r.size(); i++)
+//					norm += r[i]*r[i];
+//
+//				norm = sqrt(norm);
+//
+//				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
+//					std::cout.precision(20);
+//					std::cout << "Refinement steps: " << step << " | norm: " << norm << std::endl;
+//					break;
+//				}
+//
+//			}
+//		}
+//
+//		for (eslocal i = 0; i < r.size(); i++)
+//			y_out[y_out_vector_start_index + i] = x[i];
 
 		break;
 	}
@@ -167,26 +183,54 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
 
-		Kplus.Solve(x_in, x, 0, 0);
+		bool success = false;
 
-		for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
-			K.MatVec(x,r,'N');
-			for (eslocal i = 0; i < r.size(); i++)
-				r[i] = x_in[i] - r[i];
-			Kplus.Solve(r, z, 0, 0);
-			for (eslocal i = 0; i < r.size(); i++)
-				x[i] = x[i] + z[i];
+		Kplus.Solve(x_in, x, 0, 0);
+		if (enable_SP_refinement) {
+			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+				K.MatVec(x,r,'N');
+				for (eslocal i = 0; i < r.size(); i++)
+					r[i] = x_in[i] - r[i];
+				Kplus.Solve(r, z, 0, 0);
+				//Kplus.SolveCG(K, r, z);
+				for (eslocal i = 0; i < r.size(); i++)
+					x[i] = x[i] + z[i];
+
+				double norm = 0.0;
+				for (eslocal i = 0; i < r.size(); i++)
+					norm += r[i]*r[i];
+
+				norm = sqrt(norm);
+
+				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
+					std::cout << " " << step;
+					success = true;
+					break;
+				}
+			}
 		}
+
+		if (!success)
+			std::cout << " F";
 
 		for (eslocal i = 0; i < r.size(); i++)
 			y_out[i] = x[i];
 
 		break;
 	}
-//	case 1: {
-//		Kplus.SolveCG(K, x_in_y_out);
-//		break;
-//	}
+	case 4: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in, x, 0, 0);
+		Kplus.SolveCG(K, x_in, y_out, x);
+
+		break;
+	}
+	case 1: {
+		Kplus.SolveCG(K, x_in, y_out);
+		break;
+	}
 	default:
 		std::cerr << "Invalid KSOLVER value\n";
 		exit(EXIT_FAILURE);
@@ -205,23 +249,55 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 	}
 	case 3: { // DIRECT MIX - 2xSP
 
+		bool success = false;
+
 		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
 
 		Kplus.Solve(x_in_y_out, x, 0, 0);
 
-		for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
-			K.MatVec(x,r,'N');
-			for (eslocal i = 0; i < r.size(); i++)
-				r[i] = x_in_y_out[i] - r[i];
-			Kplus.Solve(r, z, 0, 0);
-			for (eslocal i = 0; i < r.size(); i++)
-				x[i] = x[i] + z[i];
+		if (enable_SP_refinement) {
+			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+				K.MatVec(x,r,'N');
+				for (eslocal i = 0; i < r.size(); i++)
+					r[i] = x_in_y_out[i] - r[i];
+				Kplus.Solve(r, z, 0, 0);
+				for (eslocal i = 0; i < r.size(); i++)
+					x[i] = x[i] + z[i];
+
+				double norm = 0.0;
+				for (eslocal i = 0; i < r.size(); i++)
+					norm += r[i]*r[i];
+
+				norm = sqrt(norm);
+
+				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
+					std::cout << " " << step;
+					break;
+				}
+
+			}
 		}
+
+		if (!success)
+			std::cout << " F";
 
 		for (eslocal i = 0; i < r.size(); i++)
 			x_in_y_out[i] = x[i];
+
+		break;
+	}
+	case 4: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in_y_out, x, 0, 0);
+		Kplus.SolveCG(K, x_in_y_out, z, x);
+
+		for (eslocal i = 0; i < z.size(); i++)
+			x_in_y_out[i] = z[i];
 
 		break;
 	}

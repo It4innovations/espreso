@@ -465,6 +465,7 @@ void LinearSolver::init(
 
 	}
 
+
 	if (esconfig::info::printMatrices) {
 		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			SparseMatrix RT = cluster.domains[d].Kplus_R;
@@ -506,6 +507,89 @@ void LinearSolver::init(
 
 	Preprocessing( lambda_map_sub_clst );
 
+
+	// **** Set Dirifchlet Preconditioner
+	if (esconfig::solver::PRECONDITIONER == 3 ) {
+		if (esconfig::MPIrank == 0)
+			std::cout << "Calculating Dirichlet Preconditioner : ";
+	  cilk_for (int d = 0; d < K_mat.size(); d++) {
+		SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
+		SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
+		SEQ_VECTOR <eslocal> perm_vec_diff ( K_mat[d].rows );
+
+		SEQ_VECTOR <eslocal> I_row_indices_p (K_mat[d].nnz);
+		SEQ_VECTOR <eslocal> J_col_indices_p (K_mat[d].nnz);
+
+		for (eslocal i = 0; i < perm_vec.size(); i++)
+			perm_vec[i] = perm_vec[i] - 1;
+
+		for (eslocal i = 0; i < perm_vec_full.size(); i++)
+			perm_vec_full[i] = i;
+
+		auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
+		perm_vec_diff.resize(it - perm_vec_diff.begin());
+
+		perm_vec_full = perm_vec_diff;
+		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+
+		SparseMatrix K_modif = K_mat[d];
+		K_modif.RemoveLower();
+
+		SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
+		eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+
+		for (eslocal i = 0; i < K_modif.rows;i++){
+	        vec_I1_i2[i][0] = perm_vec_full[i];
+	        vec_I1_i2[i][1] = i; // position to create revers permutation
+	    }
+
+	    std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+	          [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
+	    return a[0] < b[0];
+	    });
+
+
+        // permutations made on matrix in COO format
+		K_modif.ConvertToCOO(0);
+		eslocal I_index,J_index;
+		for (eslocal i = 0;i<K_modif.nnz;i++){
+			I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+			J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+			if (I_index>J_index){
+				I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+			}
+			else{
+				I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+			}
+		}
+		//
+		for (eslocal i = 0; i<K_modif.nnz;i++){
+			K_modif.I_row_indices[i] = I_row_indices_p[i];
+			K_modif.J_col_indices[i] = J_col_indices_p[i];
+      }
+      K_modif.ConvertToCSRwithSort(0);
+
+      SparseMatrix S;
+      SparseSolverCPU createSchur;
+      eslocal SC_SIZE = perm_vec.size();
+      createSchur.ImportMatrix(K_modif);
+      createSchur.Create_SC(S,SC_SIZE,false);
+      S.type='S';
+      //S.ConvertCSRToDense(1);
+
+
+
+      cluster.domains[d].Prec = S;
+
+      if (esconfig::MPIrank == 0)
+      			std::cout << ".";
+
+	  }
+      if (esconfig::MPIrank == 0)
+      			std::cout << std::endl;
+	}
+	// **** END
+
 	 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
 	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
 
@@ -538,6 +622,7 @@ void LinearSolver::init(
    					cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
 
 			cluster.domains[d].K_regularizationFromR ( cluster.domains[d].K );
+			cluster.domains[d].enable_SP_refinement = true;
 
 			std::vector <eslocal> ().swap (cluster.domains[d].fix_dofs);
 
@@ -561,7 +646,6 @@ void LinearSolver::init(
 		}
 	}
 
-
 	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
 
 	if (MPI_rank == 0) std::cout << std::endl << "K factorization : ";
@@ -582,6 +666,10 @@ void LinearSolver::init(
 			break;
 		}
 		case 3: {
+			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
+			break;
+		}
+		case 4: {
 			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
 			break;
 		}
@@ -796,9 +884,9 @@ void LinearSolver::set_R_from_K ()
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
-                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]), 
+                                            cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]),
                                             &(defect_K_d[d]),d);
-    
+
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
   // sum of ||K*R|| (all subdomains on the cluster)
@@ -873,16 +961,16 @@ void LinearSolver::set_R_from_K ()
 
     double _min_norm_KR_per_clust=sqrt(*min_norm_KR_pow_2_per_clust);
     double _max_norm_KR_per_clust=sqrt(*max_norm_KR_pow_2_per_clust);
-    
-    
-    
+
+
+
     std::ofstream os ("kernel_statistic.txt");
     os.precision(17);
     os << " *******************************************************************************************************************************\n";
     os << " ********************    K E R N E L   D E T E C T I O N    V I A    S C H U R   C O M P L E M E N T    ************************\n";
     os << " *******************************************************************************************************************************\n";
-    os << " Statistics for " << numberOfAllSubdomains; 
-    if (MPI_size==0 &&  number_of_subdomains_per_cluster==1 ){ 
+    os << " Statistics for " << numberOfAllSubdomains;
+    if (MPI_size==0 &&  number_of_subdomains_per_cluster==1 ){
       os << " subdomain.\n";
      }
     else
