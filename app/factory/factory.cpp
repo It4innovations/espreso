@@ -3,6 +3,77 @@
 
 using namespace assembler;
 
+template<class TShape>
+static void generateShape(int argc, char **argv, mesh::Mesh *mesh)
+{
+	esinput::Settings settings(argc, argv, 0 ,1);
+
+	switch (settings.shape) {
+	case esinput::CUBE: {
+		esinput::CubeSettings cube(argc, argv, 0, 1);
+		esinput::CubeGenerator<TShape> generator(cube);
+		generator.load(*mesh);
+		break;
+	}
+	case esinput::SPHERE: {
+		esinput::SphereSettings sphere(argc, argv, 0 ,1);
+		esinput::SphereGenerator<TShape> generator(sphere);
+		generator.load(*mesh);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown shape.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+static void generate(int argc, char **argv, mesh::Mesh *mesh)
+{
+	esinput::Settings settings(argc, argv, 0 ,1);
+
+	switch (settings.elementType) {
+	case esinput::HEXA8: {
+		generateShape<esinput::Hexahedron8>(argc, argv, mesh);
+		break;
+	}
+	case esinput::HEXA20: {
+		generateShape<esinput::Hexahedron20>(argc, argv, mesh);
+		break;
+	}
+	case esinput::TETRA4: {
+		generateShape<esinput::Tetrahedron4>(argc, argv, mesh);
+		break;
+	}
+	case esinput::TETRA10: {
+		generateShape<esinput::Tetrahedron10>(argc, argv, mesh);
+		break;
+	}
+	case esinput::PRISMA6: {
+		generateShape<esinput::Prisma6>(argc, argv, mesh);
+		break;
+	}
+	case esinput::PRISMA15: {
+		generateShape<esinput::Prisma15>(argc, argv, mesh);
+		break;
+	}
+	case esinput::PYRAMID5: {
+		generateShape<esinput::Pyramid5>(argc, argv, mesh);
+		break;
+	}
+	case esinput::PYRAMID13: {
+		generateShape<esinput::Pyramid13>(argc, argv, mesh);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown element type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+
+
 static mesh::Mesh* getMesh(int argc, char **argv)
 {
 	mesh::Mesh *mesh = new mesh::Mesh();
@@ -29,8 +100,7 @@ static mesh::Mesh* getMesh(int argc, char **argv)
 		break;
 	}
 	case esconfig::mesh::GENERATOR: {
-		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
-		loader.load(*mesh);
+		generate(argc, argv, mesh);
 		break;
 	}
 	}

@@ -12,7 +12,6 @@ template<class TElement>
 class SphereGenerator: public UniformGenerator<TElement> {
 
 public:
-	SphereGenerator(int argc, char** argv, size_t index, size_t size);
 	SphereGenerator(const SphereSettings &settings);
 
 private:

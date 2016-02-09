@@ -11,6 +11,13 @@ static std::vector<Description> createSetting()
 		BOOLEAN_PARAMETER, "USE_METIS", "Use METIS for mesh partition."
 	});
 
+	description.push_back({
+		INTEGER_PARAMETER, "SHAPE", "Generated shape. Supported values: 0 - CUBE, 1 - SPHERE"
+	});
+	description.push_back({
+		INTEGER_PARAMETER, "ELEMENT_TYPE", "The type of generated element. Supported values: <0, 7>"
+	});
+
 	return description;
 };
 
@@ -22,12 +29,16 @@ Settings::Settings(int argc, char** argv,size_t index, size_t size)
 	Configuration configuration(Settings::description, argc, argv);
 
 	useMetis = configuration.value<eslocal>("USE_METIS", false);
+	shape = configuration.value<eslocal>("SHAPE", 0);
+	elementType = configuration.value<eslocal>("ELEMENT_TYPE", 0);
 }
 
 Settings::Settings(size_t index, size_t size)
 : index(index), size(size)
 {
 	useMetis = false;
+	shape = 0;
+	elementType = 0;
 }
 
 
