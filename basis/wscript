@@ -4,7 +4,7 @@ source_files = (
     "matrices/matrix.cpp",
     "logging/logging.cpp",
     "logging/timeeval.cpp",
-    "options/options.cpp",
+    "options/options.cpp"
 )
 
 def configure(ctx):

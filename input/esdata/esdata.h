@@ -9,7 +9,7 @@ namespace esinput {
 class Esdata: public ExternalLoader {
 
 public:
-	Esdata(int argc, char** argv, int rank, int size);
+	Esdata(const Options &options, int rank, int size);
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);

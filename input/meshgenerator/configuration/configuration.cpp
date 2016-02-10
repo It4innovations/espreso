@@ -3,7 +3,7 @@
 
 namespace esinput {
 
-Configuration::Configuration(std::vector<Description> &description, int argc, char **argv)
+Configuration::Configuration(std::vector<Description> &description, const Options &options)
 {
 	_parameters["CMD_LINE_ARGUMENTS"] = new StringParameter(
 		"CMD_LINE_ARGUMENTS",
@@ -42,16 +42,12 @@ Configuration::Configuration(std::vector<Description> &description, int argc, ch
 		}
 	}
 
-	load(argc, argv);
+	load(options);
 }
 
-void Configuration::load(int argc, char** argv)
+void Configuration::load(const Options &options)
 {
-	if (argc < 2) {
-		std::cerr << "Specify the path to an example as the first command line attribute.\n";
-		exit(EXIT_FAILURE);
-	}
-	std::ifstream file(argv[1]);
+	std::ifstream file(options.path);
 	std::map<std::string, Parameter*>::iterator it;
 
 	if (file.is_open()) {
@@ -79,7 +75,7 @@ void Configuration::load(int argc, char** argv)
 
 		file.close();
 	} else {
-		std::cout << "The example on path '" << argv[1] << "' not found.\n";
+		std::cout << "The example on path '" << options.path << "' not found.\n";
 	}
 
 	// Read attributes from command line
@@ -95,7 +91,7 @@ void Configuration::load(int argc, char** argv)
 			size_t pos = val.find(" ");
 			std::string argument = val.substr(0, pos);
 			for (it = _parameters.begin(); it != _parameters.end(); ++it) {
-				if (it->second->match(val)) {
+				if (it->second->match(argument)) {
 					cmdLine.push_back(std::pair<std::string, int>(it->second->name(), cmdLineSize));
 					break;
 				}
@@ -109,15 +105,15 @@ void Configuration::load(int argc, char** argv)
 		}
 	}
 
-	if (argc - 2 < cmdLineSize) {
+	if (options.nameless.size() < cmdLineSize) {
 		std::cerr << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
 		exit(EXIT_FAILURE);
 	}
-	if (argc - 2 > cmdLineSize) {
+	if (options.nameless.size() > cmdLineSize) {
 		std::cout << "Warning: ESPRESO omits some command line arguments.\n";
 	}
 	for (size_t i = 0; i < cmdLine.size(); i++) {
-		_parameters[cmdLine[i].first]->set(std::string(_parameters[cmdLine[i].first]->name() + "=" + argv[cmdLine[i].second + 2]));
+		_parameters[cmdLine[i].first]->set(std::string(_parameters[cmdLine[i].first]->name() + "=" + options.nameless[cmdLine[i].second]));
 	}
 }
 

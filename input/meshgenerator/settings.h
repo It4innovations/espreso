@@ -24,7 +24,7 @@ enum ElementType {
 
 struct Settings {
 
-	Settings(int argc, char** argv, size_t index, size_t size);
+	Settings(const Options &options, size_t index, size_t size);
 	Settings(size_t index, size_t size);
 
 	static std::vector<Description> description;

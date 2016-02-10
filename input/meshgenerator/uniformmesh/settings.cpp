@@ -4,7 +4,7 @@ using namespace esinput;
 
 static std::vector<Description> createUniformSetting()
 {
-	std::vector<Description> description;
+	std::vector<Description> description(Settings::description);
 	std::vector<std::pair<std::string, std::string> > axis = {
 			{"X", "x"},
 			{"Y", "y"},
@@ -33,10 +33,10 @@ static std::vector<Description> createUniformSetting()
 
 std::vector<Description> UniformSettings::description = createUniformSetting();
 
-UniformSettings::UniformSettings(int argc, char** argv, size_t index, size_t size)
-: Settings(index, size)
+UniformSettings::UniformSettings(const Options &options, size_t index, size_t size)
+: Settings(options, index, size)
 {
-	Configuration configuration(UniformSettings::description, argc, argv);
+	Configuration configuration(UniformSettings::description, options);
 
 	std::vector<std::string> axis = { "X", "Y", "Z" };
 	for (size_t i = 0; i < axis.size(); i++) {

@@ -3,6 +3,7 @@
 #define CONFIGURATION_H_
 
 #include "parameter.h"
+#include "esbasis.h"
 
 #include <map>
 #include <vector>
@@ -16,7 +17,7 @@ namespace esinput {
 class Configuration {
 
 public:
-	Configuration(std::vector<Description> &description, int argc, char** argv);
+	Configuration(std::vector<Description> &description, const Options &options);
 	~Configuration();
 
 	void print() const;
@@ -47,7 +48,7 @@ private:
 	std::string _getValue(const std::string &parameter, std::string &defaultValue) const;
 	bool _getValue(const std::string &parameter, bool defaultValue) const;
 
-	void load(int argc, char** argv);
+	void load(const Options &options);
 
 	std::map<std::string, Parameter*> _parameters;
 };

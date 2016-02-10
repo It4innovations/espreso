@@ -3,16 +3,9 @@
 
 using namespace esinput;
 
-Esdata::Esdata(int argc, char** argv, int rank, int size): _rank(rank), _size(size)
+Esdata::Esdata(const Options &options, int rank, int size): _rank(rank), _size(size)
 {
-	if (argc < 2) {
-		if (rank == 0) {
-			std::cerr << "Specify the path to an example as the first command line attribute.\n";
-		}
-		exit(EXIT_FAILURE);
-	}
-
-	_path = argv[1];
+	_path = options.path;
 }
 
 

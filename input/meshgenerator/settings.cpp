@@ -23,10 +23,10 @@ static std::vector<Description> createSetting()
 
 std::vector<Description> Settings::description = createSetting();
 
-Settings::Settings(int argc, char** argv,size_t index, size_t size)
+Settings::Settings(const Options &options, size_t index, size_t size)
 : index(index), size(size)
 {
-	Configuration configuration(Settings::description, argc, argv);
+	Configuration configuration(Settings::description, options);
 
 	useMetis = configuration.value<eslocal>("USE_METIS", false);
 	shape = configuration.value<eslocal>("SHAPE", 0);

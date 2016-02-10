@@ -48,10 +48,10 @@ static std::vector<Description> createCubeSetting()
 
 std::vector<Description> CubeSettings::description = createCubeSetting();
 
-CubeSettings::CubeSettings(int argc, char** argv, size_t index, size_t size)
-: UniformSettings(argc, argv, index, size)
+CubeSettings::CubeSettings(const Options &options, size_t index, size_t size)
+: UniformSettings(options, index, size)
 {
-	Configuration configuration(CubeSettings::description, argc, argv);
+	Configuration configuration(CubeSettings::description, options);
 
 	std::vector<std::string> axis = { "X", "Y", "Z" };
 	for (size_t i = 0; i < axis.size(); i++) {
