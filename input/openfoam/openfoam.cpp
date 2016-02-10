@@ -9,8 +9,10 @@ OpenFOAM::OpenFOAM(const Options &options, int rank, int size)
 	solveParseError(computePolyMeshPath(rank, size));
 	_rank = rank;
 	_size = size;
-	std::cout << "Rank " << rank << ": PolyMesh path: " << _polyMeshPath
+	std::stringstream ss;
+	ss<< "Rank " << rank << "- PolyMesh path: " << _polyMeshPath
 			<< std::endl;
+	std::cout << ss.str();
 }
 
 void OpenFOAM::solveParseError(ParseError *error) {
@@ -141,28 +143,75 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 }
 
 void OpenFOAM::faces(mesh::Faces &faces) {
-	for(std::vector<Face>::iterator it = _faces.begin(); it!=_faces.end(); ++it) {
+	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();
+			++it) {
 		faces.push_back((*it).getFaceIndex());
-
-		/*std::cout<<*it;
-		mesh::Element *element = (*it).getFaceIndex().first;
-		const std::vector<eslocal> &data = element->getFace((*it).getFaceIndex().second);
-		std::cout<<" -- "<<data.size()<<"(";
-		for(int i=0;i<data.size();i++) {
-			std::cout<<data[i]<<",";
-		}
-		std::cout<<")\n";*/
 	}
+	_faces.clear();
 }
 
 void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates) {
 
 }
 
-void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) {
+void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
+		mesh::Boundaries &boundaries) {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		boundaries[i].insert(_rank);
+	}
+	if (_size > 1) {
+
+/*		for (int i = 0; i < mesh.faces().size(); i++) {
+			std::cout << "Face " << i;
+			std::vector<eslocal> face = mesh.faces()[i];
+			std::cout << " (";
+			for (std::vector<eslocal>::iterator it = face.begin();
+					it != face.end(); ++it) {
+				std::cout << *it << ",";
+			}
+			std::cout << ")\n";
+
+		}*/
+
+		FoamFile boundaryFile(_polyMeshPath + "boundary");
+		std::vector<Dictionary> boundary;
+		solveParseError(parse(boundaryFile.getTokenizer(), boundary));
+
+		for (std::vector<Dictionary>::iterator it = boundary.begin();
+				it != boundary.end(); ++it) {
+			if ((*it).getName().find("procBoundary") == 0) {
+				int myProcNo;
+				solveParseError((*it).readEntry("myProcNo", myProcNo));
+				if (myProcNo != _rank) {
+					std::stringstream ss;
+					ss << "Boundary for rank: " << myProcNo
+							<< ", but opened in process: " << _rank;
+					std::cerr << ss.str();
+					exit(EXIT_FAILURE);
+				}
+
+				int neighbProcNo;
+				solveParseError((*it).readEntry("neighbProcNo", neighbProcNo));
+				int nFaces;
+				solveParseError((*it).readEntry("nFaces", nFaces));
+				int startFace;
+				solveParseError((*it).readEntry("startFace", startFace));
+				for (int i = 0; i < nFaces; i++) {
+					std::vector<eslocal> face = mesh.faces()[startFace + i];
+				//	std::cout << "Face: ";
+					for (std::vector<eslocal>::iterator it = face.begin();
+							it != face.end(); ++it) {
+				//		std::cout << *it << ",";
+						boundaries[*it].insert(neighbProcNo);
+					}
+				//	std::cout << "\n";
+				}
+				/*std::cout << "Process: " << myProcNo << " " << neighbProcNo
+						<< " " << startFace << " " << nFaces << "\n";
+				*/
+			}
+		}
 	}
 }
 

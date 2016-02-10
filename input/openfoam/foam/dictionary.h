@@ -42,7 +42,7 @@ public:
     ParseError* readEntry(const std::string &entryName, T &value) const {
         const ByteArray *text = lookupConst(entryName);
         if (text == NULL) {
-            return new ParseError("Dictionary has no entry"+entryName, name);
+            return new ParseError("Dictionary has no entry "+entryName, name);
         }
         return parse(text, entryName, value);
     }

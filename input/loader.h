@@ -19,11 +19,11 @@ public:
 		points(mesh._coordinates);
 		elements(mesh._elements);
 		faces(mesh._faces);
-		mesh.partitiate(esconfig::mesh::subdomains);
-		mesh.computeFixPoints(esconfig::mesh::fixPoints);
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries);
 		close();
+		mesh.partitiate(esconfig::mesh::subdomains);
+		mesh.computeFixPoints(esconfig::mesh::fixPoints);
 
 		mesh.computeCorners(
 				esconfig::mesh::corners,
