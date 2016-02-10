@@ -21,7 +21,7 @@ namespace mesh {
 	Input input = GENERATOR;
 	Output output = VTK_FULL;
 
-	double materialDifference = 1e4;
+	double materialDifference = 1e-4;
 }
 
 namespace assembler {
