@@ -8,6 +8,7 @@ source_files = (
     "foam/dictionary.cpp",
     "foam/dictionarybasedobject.cpp",
     "foam/elementbuilder.cpp",
+    "foam/cellzone.cpp",
     "openfoam.cpp"
 )
 

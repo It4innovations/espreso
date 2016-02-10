@@ -139,7 +139,13 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 		solveParseError((*it)->createElement(elements));
 		delete *it;
 	}
-
+	//reads also cell zones
+	FoamFile cellZonesFile(_polyMeshPath + "cellZones");
+	solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
+	/*for (std::vector<CellZone>::iterator it = _cellZones.begin();
+				it != _cellZones.end(); ++it) {
+		std::cout<<*it;
+	}*/
 }
 
 void OpenFOAM::faces(mesh::Faces &faces) {

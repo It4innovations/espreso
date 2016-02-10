@@ -7,6 +7,7 @@
 #include "foam/face.h"
 #include "foam/dictionary.h"
 #include "foam/elementbuilder.h"
+#include "foam/cellzone.h"
 
 namespace esinput {
 
@@ -43,6 +44,9 @@ private:
 
 	/** @brief Temporary storage for faces*/
 	std::vector<Face> _faces;
+
+	/** @brief Temporary storage for cell zones*/
+	std::vector<CellZone> _cellZones;
 };
 
 }
