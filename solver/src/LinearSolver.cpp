@@ -890,6 +890,7 @@ void LinearSolver::set_R_from_K ()
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
   // sum of ||K*R|| (all subdomains on the cluster)
+#ifdef VERBOSE_LEVEL
   double sum_per_sub_on_clst_norm_KR_d_pow_2 = 0;
 	for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
      sum_per_sub_on_clst_norm_KR_d_pow_2+=norm_KR_d_pow_2[d];
@@ -983,24 +984,9 @@ void LinearSolver::set_R_from_K ()
                                         << _max_norm_KR_per_clust << " : "
                                         << norm_KR_clusters_mean << "\n";
     os.close();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   }
 
-
-
+#endif
 
 
 }
