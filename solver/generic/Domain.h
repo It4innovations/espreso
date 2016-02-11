@@ -21,10 +21,10 @@ using std::make_pair;
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 
-#include "SparseMatrix.h"
-#include "../sparse/sparsesolvers.h"
+#include "../generic/SparseMatrix.h"
+#include "../specific/sparsesolvers.h"
 
-#include "utils.h"
+#include "../generic/utils.h"
 
 #include "esbasis.h"
 

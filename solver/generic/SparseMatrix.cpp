@@ -1,6 +1,6 @@
-#include "SparseMatrix.h"
+#include "../generic/SparseMatrix.h"
 
-#include "../sparse/sparsesolvers.h"
+#include "../specific/sparsesolvers.h"
 
 std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 {

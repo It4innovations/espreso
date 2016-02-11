@@ -1,9 +1,9 @@
 
-#ifndef SOLVER_SPARSE_SPARSESOLVER_H_
-#define SOLVER_SPARSE_SPARSESOLVER_H_
+#ifndef SOLVER_SPECIFIC_SPARSESOLVER_H_
+#define SOLVER_SPECIFIC_SPARSESOLVER_H_
 
-#include "../src/utils.h"
-#include "../src/SparseMatrix.h"
+#include "../generic/utils.h"
+#include "../generic/SparseMatrix.h"
 
 class SparseSolver
 {
@@ -45,4 +45,4 @@ public:
 
 
 
-#endif /* SOLVER_SPARSE_SPARSESOLVER_H_ */
+#endif /* SOLVER_SPECIFIC_SPARSESOLVER_H_ */

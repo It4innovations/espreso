@@ -5,14 +5,14 @@
  *      Author: lriha
  */
 
-#ifndef SOLVER_SRC_LINEARSOLVER_H_
-#define SOLVER_SRC_LINEARSOLVER_H_
+#ifndef SOLVER_GENERIC_LINEARSOLVER_H_
+#define SOLVER_GENERIC_LINEARSOLVER_H_
 
+#include "../essolver.h"
+#include "../specific/itersolvers.h"
 #include "esconfig.h"
 #include "esmesh.h"
-#include "essolver.h"
 
-#include "../sparse/itersolvers.h"
 
 
 //#include <omp.h>
@@ -149,4 +149,4 @@ private:
 
 };
 
-#endif /* SOLVER_SRC_LINEARSOLVER_H_ */
+#endif /* SOLVER_GENERIC_LINEARSOLVER_H_ */

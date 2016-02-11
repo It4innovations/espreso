@@ -1,9 +1,9 @@
 
-#ifndef SOLVER_SPARSE_CPU_MKL_H_
-#define SOLVER_SPARSE_CPU_MKL_H_
+#ifndef SOLVER_SPECIFIC_CPU_MKL_H_
+#define SOLVER_SPECIFIC_CPU_MKL_H_
 
-#include "../sparsesolver.h"
 #include "mkl_pardiso.h"
+#include "../sparsesolver.h"
 
 class SparseSolverMKL: public SparseSolver
 {
@@ -113,4 +113,4 @@ public:
 
 
 
-#endif /* SOLVER_SPARSE_CPU_MKL_H_ */
+#endif /* SOLVER_SPECIFIC_CPU_MKL_H_ */

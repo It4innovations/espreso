@@ -3,10 +3,10 @@
 #define ASSEMBLER_ASSEMBLER_H_
 
 #include "esoutput.h"
-#include "essolver.h"
 #include "esmesh.h"
 #include "esbem.h"
 #include "../libespreso/feti4i.h"
+#include "../solver/essolver.h"
 
 namespace assembler {
 

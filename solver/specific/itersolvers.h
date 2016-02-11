@@ -1,6 +1,6 @@
 
-#ifndef SOLVER_SPARSE_ITERSOLVERS_H_
-#define SOLVER_SPARSE_ITERSOLVERS_H_
+#ifndef SOLVER_SPECIFIC_ITERSOLVERS_H_
+#define SOLVER_SPECIFIC_ITERSOLVERS_H_
 
 #if defined(SOLVER_MKL)
 #include "cpu/itersolvercpu.h"
@@ -31,4 +31,4 @@
 
 
 
-#endif /* SOLVER_SPARSE_ITERSOLVERS_H_ */
+#endif /* SOLVER_SPECIFIC_ITERSOLVERS_H_ */

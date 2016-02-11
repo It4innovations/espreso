@@ -1,6 +1,6 @@
 
-#ifndef SOLVER_SPARSE_CLUSTERS_H_
-#define SOLVER_SPARSE_CLUSTERS_H_
+#ifndef SOLVER_SPECIFIC_CLUSTERS_H_
+#define SOLVER_SPECIFIC_CLUSTERS_H_
 
 #if defined(SOLVER_MKL)
 #include "cpu/clustercpu.h"
@@ -30,4 +30,4 @@
 
 
 
-#endif /* SOLVER_SPARSE_CLUSTERS_H_ */
+#endif /* SOLVER_SPECIFIC_CLUSTERS_H_ */

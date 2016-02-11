@@ -97,16 +97,8 @@ def build(ctx):
         name            = "incl_mesh"
     )
     ctx(
-        export_includes = "solver/src",
-        name            = "incl_solver"
-    )
-    ctx(
         export_includes = "assembler",
         name            = "incl_assembler"
-    )
-    ctx(
-        export_includes = "composer",
-        name            = "incl_composer"
     )
     ctx(
         export_includes = "bem/src",

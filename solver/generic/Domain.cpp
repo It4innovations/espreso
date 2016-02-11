@@ -1,4 +1,5 @@
-#include "Domain.h"
+#include "../generic/Domain.h"
+
 #include <cmath>
 
 // *******************************************************************

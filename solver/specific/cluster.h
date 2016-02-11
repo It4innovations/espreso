@@ -1,6 +1,6 @@
 
-#ifndef SOLVER_SPARSE_CLUSTER_H_
-#define SOLVER_SPARSE_CLUSTER_H_
+#ifndef SOLVER_SPECIFIC_CLUSTER_H_
+#define SOLVER_SPECIFIC_CLUSTER_H_
 
 
 #include <omp.h>
@@ -25,11 +25,11 @@ using std::make_pair;
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 
-#include "SparseMatrix.h"
-#include "Domain.h"
-#include "DenseMatrixPack.h"
+#include "../generic/SparseMatrix.h"
+#include "../generic/Domain.h"
+#include "acc/DenseMatrixPack.h"
 
-#include "utils.h"
+#include "../generic/utils.h"
 #include "esconfig.h"
 #include "esbasis.h"
 
@@ -227,4 +227,4 @@ public:
 
 
 
-#endif /* SOLVER_SPARSE_CLUSTER_H_ */
+#endif /* SOLVER_SPECIFIC_CLUSTER_H_ */

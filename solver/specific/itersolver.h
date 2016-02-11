@@ -1,6 +1,6 @@
 
-#ifndef SOLVER_SPARSE_ITERSOLVER_H_
-#define SOLVER_SPARSE_ITERSOLVER_H_
+#ifndef SOLVER_SPECIFIC_ITERSOLVER_H_
+#define SOLVER_SPECIFIC_ITERSOLVER_H_
 
 #include <omp.h>
 #include "mpi.h"
@@ -24,11 +24,11 @@ using std::make_pair;
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 
-#include "SparseMatrix.h"
+#include "../generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
 
-#include "utils.h"
+#include "../generic/utils.h"
 
 #include "esbasis.h"
 
@@ -213,4 +213,4 @@ void parallel_ddot_compressed_non_blocking( Cluster & cluster,
 
 
 
-#endif /* SOLVER_SPARSE_ITERSOLVER_H_ */
+#endif /* SOLVER_SPECIFIC_ITERSOLVER_H_ */
