@@ -12,12 +12,10 @@ namespace esinput {
 template<class TElement>
 class UniformGenerator: public Generator {
 
-protected:
-	UniformGenerator(int argc, char** argv, size_t index, size_t size)
-	: Generator(argc, argv, index, size), _settings(argc, argv, index, size) { };
-	UniformGenerator(const UniformSettings &settings)
-	: Generator(settings), _settings(settings) { };
+public:
+	UniformGenerator(const UniformSettings &settings): Generator(settings), _settings(settings) { };
 
+protected:
 	virtual void elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	virtual void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);

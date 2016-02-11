@@ -16,7 +16,7 @@ namespace esinput {
 class AnsysWorkbench: public ExternalLoader {
 
 public:
-	AnsysWorkbench(int argc, char** argv, size_t index, size_t size);
+	AnsysWorkbench(const Options &options, size_t index, size_t size);
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);

@@ -15,7 +15,7 @@ namespace esinput {
 class AnsysMatsol: public ExternalLoader {
 
 public:
-	AnsysMatsol(int argc, char** argv, int rank, int size);
+	AnsysMatsol(const Options &options, int rank, int size);
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);

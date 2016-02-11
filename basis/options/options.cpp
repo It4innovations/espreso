@@ -48,11 +48,21 @@ Options::Options(int* argc, char*** argv): verbosity(VERBOSE)
 			printOption("-v,vv,vvv", "verbose level");
 
 			std::cout << "\nPARAMETERS:\n";
-			std::cout << "\tlist of nameless parameters for particular example\n";
+			std::cout << "\tlist of nameless parameters for a particular example\n";
+			exit(EXIT_SUCCESS);
 			break;
 		case '?':
 			break;
 		}
+	}
+
+	if (optind == 1) { // compatibility with old version of ESPRESO binary
+		if (*argc < 2) {
+			std::cerr << "ESPRESO Error: specify path to an example. Run 'espreso -h' for more info.\n";
+			exit(EXIT_FAILURE);
+		}
+		path = (*argv)[1];
+		optind++;
 	}
 
 	while (optind < *argc) {
@@ -62,10 +72,16 @@ Options::Options(int* argc, char*** argv): verbosity(VERBOSE)
 
 std::ostream& operator<<(std::ostream& os, const Options &options)
 {
-       os << "input: '" << options.input << "'\n";
-       os << "path: '" << options.path << "'\n";
-       os << "verbosity level: " << options.verbosity << "\n";
-       return os;
+	os << "input: '" << options.input << "'\n";
+	os << "path: '" << options.path << "'\n";
+	os << "verbosity level: " << options.verbosity << "\n";
+	os << "nameless: ";
+	for (size_t i = 0; i < options.nameless.size(); i++) {
+		os << options.nameless[i] << " ";
+	}
+	os << "\n";
+
+	return os;
 }
 
 

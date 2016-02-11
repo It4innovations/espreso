@@ -9,13 +9,10 @@ source_files = (
     "elements/3D/pyramid5.cpp",
     "elements/3D/pyramid13.cpp",
     "configuration/configuration.cpp",
-    "factory/factory.cpp",
-    "factory/settings.cpp",
     "settings.cpp",
     "uniformmesh/settings.cpp",
     "uniformmesh/cube/settings.cpp",
     "uniformmesh/sphere/settings.cpp",
-    "generator.cpp",
 )
 
 def configure(ctx):

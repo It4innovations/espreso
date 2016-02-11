@@ -9,7 +9,7 @@ namespace esinput {
 class OpenFOAM: public ExternalLoader {
 
 public:
-	OpenFOAM(int argc, char** argv, int rank, int size);
+	OpenFOAM(const Options &options, int rank, int size);
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);

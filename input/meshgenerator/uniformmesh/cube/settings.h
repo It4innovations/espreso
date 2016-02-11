@@ -19,8 +19,7 @@ struct CubeSettings: public UniformSettings {
 		BOTTOM
 	};
 
-	CubeSettings(): UniformSettings(0, 1) { };
-	CubeSettings(int argc, char** argv, size_t index, size_t size);
+	CubeSettings(const Options &options, size_t index, size_t size);
 	CubeSettings(size_t index, size_t size);
 
 	static std::vector<Description> description;

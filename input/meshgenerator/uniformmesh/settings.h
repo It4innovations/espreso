@@ -10,7 +10,7 @@ namespace esinput {
 
 struct UniformSettings: public Settings {
 
-	UniformSettings(int argc, char** argv, size_t index, size_t size);
+	UniformSettings(const Options &options, size_t index, size_t size);
 	UniformSettings(size_t index, size_t size);
 
 	static std::vector<Description> description;
