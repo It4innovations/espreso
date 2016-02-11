@@ -198,7 +198,7 @@ public:
 	void sortInCOO();
 
 //	void get_kernel_from_K();
-	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &KplusR,
+	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
         double * norm_KR, eslocal * defect, eslocal d_sub);
 
 private:
