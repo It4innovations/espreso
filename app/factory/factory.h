@@ -10,7 +10,7 @@
 class Factory {
 
 public:
-	Factory(int argc, char **argv);
+	Factory(const Options &options);
 
 	void solve( eslocal steps );
 	void store(const std::string &file);

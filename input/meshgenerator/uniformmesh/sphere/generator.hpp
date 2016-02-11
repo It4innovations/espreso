@@ -36,12 +36,6 @@ static void checkSettings(const SphereSettings &settings)
 	}
 }
 
-template<class TElement>
-SphereGenerator<TElement>::SphereGenerator(int argc, char** argv, size_t index, size_t size)
-	: UniformGenerator<TElement>(argc, argv, index, size), _settings(argc, argv, index, size)
-{
-	checkSettings(_settings);
-}
 
 template<class TElement>
 SphereGenerator<TElement>::SphereGenerator(const SphereSettings &settings)

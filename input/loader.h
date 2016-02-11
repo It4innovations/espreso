@@ -97,21 +97,6 @@ protected:
 	virtual ~InternalLoader() {};
 };
 
-template <class TLoader>
-class Loader {
-
-public:
-	Loader(int argc, char** argv, int rank, int size): _loader(argc, argv, rank, size) { };
-
-	void load(mesh::Mesh &mesh)
-	{
-		_loader.load(mesh);
-	}
-
-private:
-	TLoader _loader;
-};
-
 }
 
 

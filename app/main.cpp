@@ -5,7 +5,9 @@ int main(int argc, char **argv)
 {
 	MPI_Init(&argc, &argv);
 
-	Factory factory(argc, argv);
+	Options options(&argc, &argv);
+
+	Factory factory(options);
 	factory.solve(1);
 	factory.store("mesh");
 

@@ -10,11 +10,9 @@ namespace esinput {
 
 class Generator: public InternalLoader {
 
-	friend class MeshGenerator;
-
 protected:
-	Generator(int argc, char** argv, size_t index, size_t size): _settings(argc, argv, index, size) { };
 	Generator(const Settings &settings): _settings(settings) { };
+	virtual ~Generator() { };
 
 	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
 	{
@@ -36,34 +34,7 @@ protected:
 		return _settings.useMetis;
 	}
 
-	virtual ~Generator() { };
-
 	const Settings _settings;
-};
-
-class MeshGenerator: public InternalLoader {
-
-public:
-	MeshGenerator(int argc, char** argv, size_t index, size_t size);
-	MeshGenerator(Generator *generator): _generator(generator) { };
-
-	~MeshGenerator()
-	{
-		delete _generator;
-	}
-
-protected:
-	bool manualPartition();
-
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
-	void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void corners(mesh::Boundaries &boundaries);
-	void clusterBoundaries(mesh::Boundaries &boundaries);
-
-private:
-	Generator *_generator;
 };
 
 }

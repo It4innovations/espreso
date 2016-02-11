@@ -4,15 +4,9 @@
 using namespace esinput;
 
 
-AnsysMatsol::AnsysMatsol(int argc, char** argv, int rank, int size)
+AnsysMatsol::AnsysMatsol(const Options &options, int rank, int size)
 {
-	if (argc < 2) {
-		if (rank == 0) {
-			std::cerr << "Specify the path to an example as the first command line attribute.\n";
-		}
-		exit(EXIT_FAILURE);
-	}
-	_path = argv[1];
+	_path = options.path;
 }
 
 void AnsysMatsol::points(mesh::Coordinates &coordinates)

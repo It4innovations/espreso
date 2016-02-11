@@ -12,7 +12,6 @@ template<class TElement>
 class CubeGenerator: public UniformGenerator<TElement> {
 
 public:
-	CubeGenerator(int argc, char** argv, size_t index, size_t size);
 	CubeGenerator(const CubeSettings &settings);
 
 protected:

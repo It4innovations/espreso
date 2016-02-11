@@ -50,13 +50,6 @@ static void setCluster(size_t cluster[], const CubeSettings &settings)
 }
 
 template<class TElement>
-CubeGenerator<TElement>::CubeGenerator(int argc, char** argv, size_t index, size_t size)
-	: UniformGenerator<TElement>(argc, argv, index, size), _settings(argc, argv, index, size)
-{
-	setCluster(_cluster, _settings);
-}
-
-template<class TElement>
 CubeGenerator<TElement>::CubeGenerator(const CubeSettings &settings)
 	: UniformGenerator<TElement>(settings), _settings(settings)
 {

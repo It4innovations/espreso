@@ -4,32 +4,10 @@
 using namespace esinput;
 
 
-AnsysWorkbench::AnsysWorkbench(int argc, char** argv, size_t index, size_t size)
+AnsysWorkbench::AnsysWorkbench(const Options &options, size_t index, size_t size)
 {
-	if (argc < 2) {
-		if (index == 0) {
-			std::cerr << "Specify the path to an example as the first command line attribute.\n";
-		}
-		exit(EXIT_FAILURE);
-	}
-	_path = argv[1];
+	_path = options.path;
 }
-
-//static size_t getCoordinateSize(std::ifstream &is)
-//{
-//	std::streampos start = is.tellg();
-//	std::string line;
-//	size_t lineCount = 0;
-//	while(true) {
-//		getline(is, line);
-//		if (line.find("-1", 0, 2) != std::string::npos) {
-//			break;
-//		}
-//		lineCount++;
-//	}
-//	is.seekg(start);
-//	return lineCount;
-//}
 
 static std::string skip(std::ifstream &is, std::string str)
 {

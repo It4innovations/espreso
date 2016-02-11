@@ -3,34 +3,104 @@
 
 using namespace assembler;
 
-static mesh::Mesh* getMesh(int argc, char **argv)
+template<class TShape>
+static void generateShape(const Options &options, mesh::Mesh *mesh)
+{
+	esinput::Settings settings(options, esconfig::MPIrank ,esconfig::MPIsize);
+
+	switch (settings.shape) {
+	case esinput::CUBE: {
+		esinput::CubeSettings cube(options, esconfig::MPIrank ,esconfig::MPIsize);
+		esinput::CubeGenerator<TShape> generator(cube);
+		generator.load(*mesh);
+		break;
+	}
+	case esinput::SPHERE: {
+		esinput::SphereSettings sphere(options, esconfig::MPIrank ,esconfig::MPIsize);
+		esinput::SphereGenerator<TShape> generator(sphere);
+		generator.load(*mesh);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown shape.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+static void generate(const Options &options, mesh::Mesh *mesh)
+{
+	esinput::Settings settings(options, esconfig::MPIrank ,esconfig::MPIsize);
+
+	switch (settings.elementType) {
+	case esinput::HEXA8: {
+		generateShape<esinput::Hexahedron8>(options, mesh);
+		break;
+	}
+	case esinput::HEXA20: {
+		generateShape<esinput::Hexahedron20>(options, mesh);
+		break;
+	}
+	case esinput::TETRA4: {
+		generateShape<esinput::Tetrahedron4>(options, mesh);
+		break;
+	}
+	case esinput::TETRA10: {
+		generateShape<esinput::Tetrahedron10>(options, mesh);
+		break;
+	}
+	case esinput::PRISMA6: {
+		generateShape<esinput::Prisma6>(options, mesh);
+		break;
+	}
+	case esinput::PRISMA15: {
+		generateShape<esinput::Prisma15>(options, mesh);
+		break;
+	}
+	case esinput::PYRAMID5: {
+		generateShape<esinput::Pyramid5>(options, mesh);
+		break;
+	}
+	case esinput::PYRAMID13: {
+		generateShape<esinput::Pyramid13>(options, mesh);
+		break;
+	}
+	default: {
+		std::cerr << "Unknown element type.\n";
+		exit(EXIT_FAILURE);
+	}
+	}
+}
+
+
+
+static mesh::Mesh* getMesh(const Options &options)
 {
 	mesh::Mesh *mesh = new mesh::Mesh();
 	switch (esconfig::mesh::input) {
 
 	case esconfig::mesh::ANSYS_MATSOL: {
-		esinput::AnsysMatsol loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
+		esinput::AnsysMatsol loader(options, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
 		break;
 	}
 	case esconfig::mesh::ANSYS_WORKBENCH: {
-		esinput::AnsysWorkbench loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
+		esinput::AnsysWorkbench loader(options, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
 		break;
 	}
 	case esconfig::mesh::OPENFOAM: {
-		esinput::OpenFOAM loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
+		esinput::OpenFOAM loader(options, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
 		break;
 	}
 	case esconfig::mesh::ESDATA_IN: {
-		esinput::Esdata loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
+		esinput::Esdata loader(options, esconfig::MPIrank, esconfig::MPIsize);
 		loader.load(*mesh);
 		break;
 	}
 	case esconfig::mesh::GENERATOR: {
-		esinput::MeshGenerator loader(argc, argv, esconfig::MPIrank, esconfig::MPIsize);
-		loader.load(*mesh);
+		generate(options, mesh);
 		break;
 	}
 	}
@@ -85,13 +155,13 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assemb
 	}
 }
 
-Factory::Factory(int argc, char **argv)
+Factory::Factory(const Options &options)
 :_assembler(NULL), _mesh(NULL), _surface(NULL), _apiHolder(NULL)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
-	_mesh = getMesh(argc, argv);
+	_mesh = getMesh(options);
 	_assembler = getAssembler(_mesh, _surface, _apiHolder);
 }
 
