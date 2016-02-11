@@ -3702,7 +3702,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     NtN_Mat.MatMat(N,'N',Nt);
     NtN_Mat.MatScale(rho);
     NtN_Mat.RemoveLower();
-    K.MatAddInPlace (NtN_Mat,'N', rho);
+    K.MatAddInPlace (NtN_Mat,'N', 1);
     // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
     if (d_sub!=-1) 
     {
