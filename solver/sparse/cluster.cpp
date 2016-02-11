@@ -1,51 +1,12 @@
-#include "Cluster.h"
-#include <tbb/mutex.h>
-//#define SPARSE_SA
+
+#include "cluster.h"
+
 
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
 
-Cluster::Cluster(eslocal cluster_index):
-	cluster_time("Cluster Timing "),
-	vec_fill_time("Reseting vec_g0 and vec_e0"),
-	loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
-	loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
-	clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
-	clus_F0_1_time("F0 solve - 1st "),
-	clus_F0_2_time("F0 solve - 2nd "),
-	clus_G0_time("G0  Mult "),
-	clus_G0t_time("G0t Mult "),
-	clus_Sa_time("Sa solve "),
-	loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
-{
 
-	cluster_global_index = cluster_index;
-	iter_cnt_comm = 0;
-}
-
-
-
-Cluster::Cluster():
-	cluster_time("Cluster Timing "),
-
-	vec_fill_time("Reseting vec_g0 and vec_e0"),
-	loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
-	loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
-
-	clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
-	clus_F0_1_time("F0 solve - 1st "),
-	clus_F0_2_time("F0 solve - 2nd "),
-	clus_G0_time("G0  Mult "),
-	clus_G0t_time("G0t Mult "),
-	clus_Sa_time("Sa solve "),
-
-	loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
-{
-	iter_cnt_comm = 0;
-}
-
-
-void Cluster::ShowTiming()  {
+void ClusterBase::ShowTiming()  {
 
 	cluster_time.addEvent(vec_fill_time);
 	cluster_time.addEvent(loop_1_1_time);
@@ -63,7 +24,7 @@ void Cluster::ShowTiming()  {
 	cluster_time.printStatsMPI();
 }
 
-void Cluster::SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama) {
+void ClusterBase::SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama) {
 
 	dynamic_timestep = set_dynamic_timestep;
 	dynamic_beta     = set_dynamic_beta;
@@ -75,7 +36,7 @@ void Cluster::SetDynamicParameters(double set_dynamic_timestep, double set_dynam
 }
 
 
-void Cluster::InitClusterPC( eslocal * subdomains_global_indices, eslocal number_of_subdomains ) {
+void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal number_of_subdomains ) {
 
 	// *** Init the vector of domains *****************************************************
 	//LoadBinVectorInt(domains_in_global_index, string(path) + string(filename_DOMAINS));
@@ -109,7 +70,7 @@ void Cluster::InitClusterPC( eslocal * subdomains_global_indices, eslocal number
 	// *** END - Init all domains of the cluster ***************************************
 }
 
-void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
+void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
 
 
 	map <eslocal,eslocal> my_lamdas_map_indices;
@@ -367,7 +328,7 @@ void Cluster::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub 
 
 }
 
-void Cluster::SetClusterHFETI (bool R_from_mesh) {
+void ClusterBase::SetClusterHFETI (bool R_from_mesh) {
 	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
 	if (USE_HFETI == 1) {
 
@@ -453,7 +414,7 @@ void Cluster::SetClusterHFETI (bool R_from_mesh) {
 	// *** END - Create Matrices for Hybrid FETI *****************************************
 }
 
-void Cluster::SetClusterPC_AfterKplus () {
+void ClusterBase::SetClusterPC_AfterKplus () {
 
 	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
 	//// *** - temporary vectors for work primal domain size *******************************
@@ -472,7 +433,7 @@ void Cluster::SetClusterPC_AfterKplus () {
 }
 
 
-void Cluster::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec) {
+void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec) {
 
 //	vec_g0.resize(G0.cols);
 //	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
@@ -590,7 +551,7 @@ void Cluster::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & 
 //	t3.clear();
 }
 
-void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	mkl_set_num_threads(1);
 
@@ -721,7 +682,7 @@ void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	cluster_time.totalTime.end();
 }
 
-void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
+void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 	mkl_set_num_threads(1);
 	cluster_time.totalTime.start();
@@ -824,7 +785,7 @@ void Cluster::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 	cluster_time.totalTime.end();
 }
 
-void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
+void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 	mkl_set_num_threads(1);
 	cluster_time.totalTime.start();
@@ -929,7 +890,7 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 
 ////backup March 31 2015
-//void Cluster::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+//void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //
 //	//eslocal MPIrank;
 //	//MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
@@ -1071,7 +1032,7 @@ void Cluster::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 //}
 
 
-void Cluster::CompressB0() {
+void ClusterBase::CompressB0() {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
@@ -1094,7 +1055,7 @@ void Cluster::CompressB0() {
 
 }
 
-void Cluster::CreateG0() {
+void ClusterBase::CreateG0() {
 
 	mkl_set_num_threads(1);
 
@@ -1118,7 +1079,7 @@ void Cluster::CreateG0() {
 
 }
 
-void Cluster::CreateF0() {
+void ClusterBase::CreateF0() {
 
 	 TimeEval F0_timing (" HFETI - F0 preprocessing timing");
 	 F0_timing.totalTime.start();
@@ -1241,7 +1202,7 @@ void Cluster::CreateF0() {
 	}
 };
 
-void Cluster::CreateSa() {
+void ClusterBase::CreateSa() {
 
 	bool PARDISO_SC = true;
 	bool get_kernel_from_mesh;
@@ -1384,7 +1345,7 @@ void Cluster::CreateSa() {
 }
 
 
-void Cluster::Create_G1_perCluster() {
+void ClusterBase::Create_G1_perCluster() {
 
 	SparseMatrix tmpM;
 
@@ -1762,7 +1723,7 @@ void Cluster::Create_G1_perCluster() {
 
 }
 
-void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
+void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
 	eslocal size_d = domains[0].Kplus_R.cols; // because transpose of R
 
@@ -1804,7 +1765,7 @@ void Cluster::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 }
 
 
-void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
+void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
@@ -1844,7 +1805,7 @@ void Cluster::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 
 
-void Cluster::Create_Kinv_perDomain() {
+void ClusterBase::Create_Kinv_perDomain() {
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
@@ -1985,147 +1946,10 @@ this->NUM_MICS = 2;
 }
 
 
-void Cluster::Create_SC_perDomain(bool USE_FLOAT) {
-
-	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
-		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
-
-	if (cluster_global_index == 1)
-		cout << "Creating B1*K+*B1t : using Pardiso SC : ";
-
-	this->NUM_MICS = 2;
-	#ifdef MIC
-
-		// compute sizes of data to be offloaded to MIC
-		eslocal maxDevNumber = this->NUM_MICS;
-		if (this->NUM_MICS == 0) {
-			maxDevNumber = 1;
-		}
-		eslocal matrixPerPack = domains.size() / maxDevNumber;
-		eslocal offset = 0;
-		bool symmetric = true;
-		this->B1KplusPacks.resize( maxDevNumber );
-		eslocal * dom2dev = new eslocal[ domains.size() ];
-		eslocal * offsets = new eslocal[maxDevNumber];
-
-		for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-			if ( i == maxDevNumber - 1 ) {
-				matrixPerPack += domains.size() % maxDevNumber;
-			}
-
-			long dataSize = 0;
-			offsets[i] = offset;
-
-			for ( eslocal j = offset; j < offset + matrixPerPack; j++ ) {
-				if (!symmetric) {
-					dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
-				} else {
-					// isPacked => is symmetric
-					dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
-						( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
-				}
-				dom2dev[ j ] = i;
-			}
-
-			this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
-
-			for ( eslocal j = offset; j < offset + matrixPerPack; j++ ) {
-				this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
-					domains[j].B1t_comp_dom.cols,  symmetric );
-			}
-			offset += matrixPerPack;
-		}
-	//	tbb::mutex m;
-	#endif
 
 
 
-
-	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
-
-		if (cluster_global_index == 1) cout << "."; // << i ;
-
-		SparseSolverCPU tmpsps;
-		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
-		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
-
-		if (USE_FLOAT){
-			domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
-			domains[i].B1Kplus.USE_FLOAT = true;
-		}
-
-//		SparseSolverCPU tmpsps2;
-//		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
-//		tmpsps2.Create_non_sym_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B0t_comp, domains[i].B0KplusB1_comp, false, 0 );
-
-#ifdef CUDA
-		//domains[i].B1Kplus.RemoveLowerDense();
-		eslocal status;
-		status = domains[i].B1Kplus.CopyToCUDA_Dev();
-		//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
-		if (status == 0)
-			domains[i].isOnACC = 1;
-		else
-			domains[i].isOnACC = 0;
-#endif
-
-#ifdef MIC
-	this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
-	domains[i].B1Kplus.Clear();
-	//domains[i].B1t_comp_dom.Clear();
-	//if (numDevices > 0) {
-	//	domains[i].B1Kplus.CopyToMIC_Dev();
-	//}
-#endif
-
-#ifdef CUDA
-		if ( USE_KINV == 1 ) {
-			cilk_for (eslocal d = 0; d < domains.size(); d++) {
-				cudaError_t status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
-				if (status != cudaSuccess)
-					printf("Error allocating pinned host memory \n");
-
-				//status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
-				//if (status != cudaSuccess)
-				//	printf("Error allocating pinned host memory \n");
-			}
-		}
-#endif
-
-	}
-
-
-#ifdef MIC
-	delete [] dom2dev;
-	delete [] offsets;
-	if (this->NUM_MICS == 0) {
-		this->B1KplusPacks[0].AllocateVectors( );
-	}
-	for (eslocal i = 0; i < this->NUM_MICS ; i++ ) {
-		this->B1KplusPacks[i].AllocateVectors( );
-		this->B1KplusPacks[i].SetDevice( i );
-		this->B1KplusPacks[i].CopyToMIC();
-	}
-
-#endif
-
-	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
-		domains[i].B1t_comp_dom.Clear();
-
-	if (cluster_global_index == 1)
-		cout << endl;
-
-}
-
-
-
-
-
-
-
-
-
-void Cluster::compress_lambda_vector  ( SEQ_VECTOR <double> & decompressed_vec_lambda )
+void ClusterBase::compress_lambda_vector  ( SEQ_VECTOR <double> & decompressed_vec_lambda )
 {
 	//compress vector for CG in main loop
 	for (eslocal i = 0; i < my_lamdas_indices.size(); i++)
@@ -2134,7 +1958,7 @@ void Cluster::compress_lambda_vector  ( SEQ_VECTOR <double> & decompressed_vec_l
 	decompressed_vec_lambda.resize(my_lamdas_indices.size());
 }
 
-void Cluster::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_vec_lambda )
+void ClusterBase::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_vec_lambda )
 {
 	SEQ_VECTOR <double> decompressed_vec_lambda (domains[0].B1.rows,0);
 
@@ -2145,7 +1969,7 @@ void Cluster::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_vec_l
 }
 
 
-void Cluster::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
+void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
 
 	std::cout << " B1_comp_MatVecSum - not implemented " << std::endl;
 
@@ -2182,3 +2006,10 @@ void Cluster::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_
 
 // **** END - CLUSTER CLASS ************************************************
 // *******************************************************************
+
+
+
+
+
+
+

@@ -12,6 +12,8 @@
 #include "esmesh.h"
 #include "essolver.h"
 
+#include "../sparse/itersolvers.h"
+
 
 //#include <omp.h>
 //#include "mpi.h"

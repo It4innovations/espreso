@@ -14,22 +14,20 @@
 	typedef SparseSolverPardiso SparseSolverCPU;
 	typedef SparseSolverPardiso SparseSolverAcc;
 
-
 #elif defined(SOLVER_MUMPS)
 #include "cpu/mumps.h"
 	typedef SparseSolverMUMPS SparseSolverCPU;
 	typedef SparseSolverMUMPS SparseSolverAcc;
 
-
 #elif defined(SOLVER_MIC)
-#include "acc/pardiso.h"
+#include "cpu/pardiso.h"
 #include "acc/mic.h"
 	typedef SparseSolverPARDISO SparseSolverCPU;
 	typedef SparseSolverMIC SparseSolverAcc;
 
 
 #elif defined(SOLVER_CUDA)
-#include "acc/pardiso.h"
+#include "cpu/pardiso.h"
 #include "acc/cuda.h"
 	typedef SparseSolverPARDISO SparseSolverCPU;
 	typedef SparseSolverCUDA SparseSolverAcc;

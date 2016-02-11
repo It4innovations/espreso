@@ -1,12 +1,12 @@
 
 source_files = (
-   "src/Cluster.cpp",
    "src/Domain.cpp",
-   "src/IterSolver.cpp",
    "src/SparseMatrix.cpp",
    "src/utils.cpp",
    "src/DenseMatrixPack.cpp",
-   "src/LinearSolver.cpp"
+   "src/LinearSolver.cpp",
+   "sparse/cluster.cpp",
+   "sparse/itersolver.cpp"
 )
 
 def configure(ctx):
@@ -40,19 +40,19 @@ def configure(ctx):
 
 def build(ctx):
     if ctx.env.SOLVER == "MIC":
-        sources = source_files + ("src/SparseSolver.cpp",)
+        sources = source_files + ("src/SparseSolver.cpp", "sparse/acc/clusteracc.cpp", "sparse/acc/itersolveracc.cpp")
 
     if ctx.env.SOLVER == "CUDA":
-        sources = source_files + ("src/SparseSolver.cpp",)
+        sources = source_files + ("src/SparseSolver.cpp", "sparse/acc/clusteracc.cpp", "sparse/acc/itersolveracc.cpp")
 
     if ctx.env.SOLVER == "MUMPS":
-        sources = source_files + ("src/SparseSolverMumps.cpp",)
+        sources = source_files + ("src/SparseSolverMumps.cpp", "sparse/cpu/clustercpu.cpp", "sparse/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "PARDISO":
-        sources = source_files + ("sparse/cpu/pardiso.cpp",)
+        sources = source_files + ("sparse/cpu/pardiso.cpp", "sparse/cpu/clustercpu.cpp", "sparse/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "MKL":
-        sources = source_files + ("sparse/cpu/mkl.cpp",)
+        sources = source_files + ("sparse/cpu/mkl.cpp", "sparse/cpu/clustercpu.cpp", "sparse/cpu/itersolvercpu.cpp")
 
 
     ctx.lib(

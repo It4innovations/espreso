@@ -2,9 +2,9 @@
 //#include <stdlib.h>
 //#include <crtdbg.h>
 
-#include "IterSolver.h"
+#include "itersolver.h"
 
-IterSolver::IterSolver():
+IterSolverBase::IterSolverBase():
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
 	postproc_timing	("Postprocessing timing"),
@@ -54,12 +54,7 @@ IterSolver::IterSolver():
 }
 
 
-IterSolver::~IterSolver()
-{
-
-}
-
-void IterSolver::Setup ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in )
+void IterSolverBase::Setup ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in )
 {
 
 	// *** MPI variables  **********************************************************
@@ -71,7 +66,7 @@ void IterSolver::Setup ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in
 
 }
 
-void IterSolver::Preprocessing ( Cluster & cluster )
+void IterSolverBase::Preprocessing ( Cluster & cluster )
 {
 
 	preproc_timing.totalTime.start();
@@ -101,7 +96,7 @@ void IterSolver::Preprocessing ( Cluster & cluster )
 
 }
 
-void IterSolver::Solve_singular ( Cluster & cluster,
+void IterSolverBase::Solve_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
@@ -127,7 +122,7 @@ void IterSolver::Solve_singular ( Cluster & cluster,
 
 }
 
-void IterSolver::Solve_non_singular ( Cluster & cluster,
+void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
@@ -141,14 +136,14 @@ void IterSolver::Solve_non_singular ( Cluster & cluster,
 }
 
 
-void IterSolver::GetResiduum_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_residuum_out ) {
+void IterSolverBase::GetResiduum_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_residuum_out ) {
 
 	dual_residuum_out = dual_residuum_compressed_parallel;
 	cluster.decompress_lambda_vector( dual_residuum_out );
 
 }
 
-void IterSolver::GetSolution_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out ) {
+void IterSolverBase::GetSolution_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out ) {
 
 	dual_solution_out = dual_soultion_compressed_parallel;
 	cluster.decompress_lambda_vector( dual_solution_out );
@@ -157,7 +152,7 @@ void IterSolver::GetSolution_Dual_singular_parallel    ( Cluster & cluster, SEQ_
 
 }
 
-void IterSolver::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
+void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out ) {
 
@@ -166,7 +161,7 @@ void IterSolver::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 
 }
 
-void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
+void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out )  {
 
@@ -230,7 +225,7 @@ void IterSolver::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 
 
 // *** Singular CG Solvers ***********************************************
-void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -522,7 +517,7 @@ void IterSolver::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 }
 
-void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 	eslocal dl_size = cluster.my_lamdas_indices.size();
@@ -803,7 +798,7 @@ void IterSolver::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 
 // *** Non-singular CG Solvers *******************************************
-void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
+void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 										    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 										    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel) {
 
@@ -973,7 +968,7 @@ void IterSolver::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 }
 
-void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
+void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 											SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 											SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel) {
 
@@ -1182,7 +1177,7 @@ void IterSolver::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 
 // *** Coarse problem routines *******************************************
-void IterSolver::CreateGGt( Cluster & cluster )
+void IterSolverBase::CreateGGt( Cluster & cluster )
 
 {
 
@@ -1330,7 +1325,7 @@ void IterSolver::CreateGGt( Cluster & cluster )
 
 }
 
-void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
+void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 {
 
 	// temp variables
@@ -1519,7 +1514,7 @@ void IterSolver::CreateGGt_inv_dist( Cluster & cluster )
 
 
 // *** Projector routines ************************************************
-void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	time_eval.totalTime.start();
@@ -1593,7 +1588,7 @@ void IterSolver::Projector_l_compG (TimeEval & time_eval, Cluster & cluster, SEQ
 
 }
 
-void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	time_eval.totalTime.start();
@@ -1659,7 +1654,7 @@ void IterSolver::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster,
 
 // *** Action of K+ routines *********************************************
 
-void IterSolver::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+void IterSolverBase::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
        time_eval.totalTime.start();
 
        // number of Xeon Phi devices (0 for fallback to CPU)
@@ -1987,7 +1982,7 @@ if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 
 }
 
-void IterSolver::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
+void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
 
 	time_eval.totalTime.start();
 
@@ -2348,3 +2343,8 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 
 // *** END - Communication layer ****************************************
 // **********************************************************************
+
+
+
+
+
