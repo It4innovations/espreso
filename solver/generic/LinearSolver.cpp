@@ -194,7 +194,95 @@ void LinearSolver::init(
 	Preprocessing( lambda_map_sub_clst );
 
 	 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
-	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************	
+	
+	 TimeEvent timeSolDir(string("Solver - Dirichlet preconditioner assembling")); timeSolDir.start();
+
+	
+	// **** Set Dirifchlet Preconditioner
+	if (esconfig::solver::PRECONDITIONER == 3 ) {
+		if (esconfig::MPIrank == 0)
+			std::cout << "Calculating Dirichlet Preconditioner : ";
+	  cilk_for (int d = 0; d < K_mat.size(); d++) {
+		SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
+		SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
+		SEQ_VECTOR <eslocal> perm_vec_diff ( K_mat[d].rows );
+
+		SEQ_VECTOR <eslocal> I_row_indices_p (K_mat[d].nnz);
+		SEQ_VECTOR <eslocal> J_col_indices_p (K_mat[d].nnz);
+
+		for (eslocal i = 0; i < perm_vec.size(); i++)
+			perm_vec[i] = perm_vec[i] - 1;
+
+		for (eslocal i = 0; i < perm_vec_full.size(); i++)
+			perm_vec_full[i] = i;
+
+		auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
+		perm_vec_diff.resize(it - perm_vec_diff.begin());
+
+		perm_vec_full = perm_vec_diff;
+		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+
+		SparseMatrix K_modif = K_mat[d];
+		K_modif.RemoveLower();
+
+		SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
+		eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+
+		for (eslocal i = 0; i < K_modif.rows;i++){
+	        vec_I1_i2[i][0] = perm_vec_full[i];
+	        vec_I1_i2[i][1] = i; // position to create revers permutation
+	    }
+
+	    std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+	          [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
+	    return a[0] < b[0];
+	    });
+
+
+        // permutations made on matrix in COO format
+		K_modif.ConvertToCOO(0);
+		eslocal I_index,J_index;
+		for (eslocal i = 0;i<K_modif.nnz;i++){
+			I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+			J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+			if (I_index>J_index){
+				I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+			}
+			else{
+				I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+			}
+		}
+		//
+		for (eslocal i = 0; i<K_modif.nnz;i++){
+			K_modif.I_row_indices[i] = I_row_indices_p[i];
+			K_modif.J_col_indices[i] = J_col_indices_p[i];
+      }
+      K_modif.ConvertToCSRwithSort(0);
+
+      SparseMatrix S;
+      SparseSolverCPU createSchur;
+      eslocal SC_SIZE = perm_vec.size();
+      createSchur.ImportMatrix(K_modif);
+      createSchur.Create_SC(S,SC_SIZE,false);
+      S.type='S';
+      //S.ConvertCSRToDense(1);
+
+
+
+      cluster.domains[d].Prec = S;
+
+      if (esconfig::MPIrank == 0)
+      			std::cout << ".";
+
+	  }
+      if (esconfig::MPIrank == 0)
+      			std::cout << std::endl;
+	}
+	// **** END
+
+	 timeSolDir.endWithBarrier(); timeEvalMain.addEvent(timeSolDir);
+
 
 
 	// *** Load Matrix K and regularization ******************************************************************************
@@ -890,7 +978,7 @@ void LinearSolver::set_R_from_K ()
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
   // sum of ||K*R|| (all subdomains on the cluster)
-#ifdef VERBOSE_LEVEL
+#ifdef VERBOSE_LEVEL_X
   double sum_per_sub_on_clst_norm_KR_d_pow_2 = 0;
 	for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
      sum_per_sub_on_clst_norm_KR_d_pow_2+=norm_KR_d_pow_2[d];
