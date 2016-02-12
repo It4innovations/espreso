@@ -62,6 +62,7 @@ namespace info {
 	extern std::string output;
 
 	extern size_t verboseLevel;
+	extern bool testingMode;
 	extern bool printMatrices;
 }
 

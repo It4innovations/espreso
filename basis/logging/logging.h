@@ -14,7 +14,6 @@
 
 #define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT).get()
 
-
 namespace eslog {
 
 enum ESPRESOTest {

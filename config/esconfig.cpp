@@ -51,6 +51,7 @@ namespace info {
 	std::string output = "log";
 
 	size_t verboseLevel = VERBOSE;
+	bool testingMode = false;
 	bool printMatrices = false;
 }
 

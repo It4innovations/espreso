@@ -22,13 +22,22 @@ Log::Log(Event event): event(event), error(false)
 	case CHECKPOINT3:
 		time(3);
 		indent(2);
+		os << (esconfig::info::testingMode ? "CHECKPOINT : " : "");
 		break;
 	case CHECKPOINT2:
 		time(2);
 		indent(1);
+		os << (esconfig::info::testingMode ? "CHECKPOINT : " : "");
 		break;
 	case CHECKPOINT1:
 		time(1);
+		os << (esconfig::info::testingMode ? "CHECKPOINT : " : "");
+		break;
+	case DURATION:
+		os << (esconfig::info::testingMode ? "DURATION : " : "");
+		break;
+	case TEST_SIMPLE: case TEST_EXPENSIVE:
+		os << (esconfig::info::testingMode ? "TEST : " : "");
 		break;
 	case ERROR:
 		os << "ESPRESO ERROR : ";
