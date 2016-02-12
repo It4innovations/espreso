@@ -52,7 +52,7 @@ def build(ctx):
         sources = source_files + ("specific/cpu/pardiso.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "MKL":
-        sources = source_files + ("specific/cpu/mkl.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
+        sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
 
 
     ctx.lib(

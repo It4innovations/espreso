@@ -1,6 +1,6 @@
 
-#ifndef SOLVER_SPECIFIC_CPU_MKL_H_
-#define SOLVER_SPECIFIC_CPU_MKL_H_
+#ifndef SOLVER_SPECIFIC_CPU_SOLVERMKL_H_
+#define SOLVER_SPECIFIC_CPU_SOLVERMKL_H_
 
 #include "mkl_pardiso.h"
 #include "../sparsesolver.h"
@@ -113,4 +113,4 @@ public:
 
 
 
-#endif /* SOLVER_SPECIFIC_CPU_MKL_H_ */
+#endif /* SOLVER_SPECIFIC_CPU_SOLVERMKL_H_ */

@@ -4,7 +4,7 @@
 
 
 #if defined(SOLVER_MKL)
-#include "cpu/mkl.h"
+#include "cpu/solvermkl.h"
 	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverMKL SparseSolverAcc;
 

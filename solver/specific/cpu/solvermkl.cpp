@@ -1,5 +1,5 @@
 
-#include "mkl.h"
+#include "solvermkl.h"
 
 SparseSolverMKL::SparseSolverMKL(){
 
