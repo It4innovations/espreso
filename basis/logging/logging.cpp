@@ -3,8 +3,8 @@
 
 namespace eslog {
 
-std::vector<double> Log::lastTimes = { TimeEvent::time() };
-
+double Log::start = TimeEvent::time();
+std::vector<double> Log::lastTimes = { Log::start };
 
 Log::Log(Event event): event(event), error(false)
 {
@@ -30,10 +30,8 @@ Log::Log(Event event): event(event), error(false)
 	case CHECKPOINT1:
 		time(1);
 		break;
-	case TEST_SIMPLE: case TEST_EXPENSIVE:
-		os << "TEST : ";
-		break;
 	case ERROR:
+		os << "ESPRESO ERROR : ";
 		error = true;
 		break;
 	}
@@ -57,23 +55,28 @@ static void duration(std::ostringstream &os, std::vector<double> lastTimes, int 
 
 Log::~Log()
 {
+	if (event != ERROR) {
+		os << " : ";
+	}
+
 	switch (event) {
 	case CHECKPOINT3:
-		os << " : ";
 		duration(os ,lastTimes, 3, esconfig::info::verboseLevel > 1);
 		break;
 	case CHECKPOINT2:
-		os << " : ";
 		duration(os ,lastTimes, 2, esconfig::info::verboseLevel > 1);
 		break;
 	case CHECKPOINT1:
-		os << " : ";
 		duration(os ,lastTimes, 1, esconfig::info::verboseLevel > 1);
 		break;
 	case TEST_SIMPLE: case TEST_EXPENSIVE:
-		os << " : ";
 		os << (error ? "FAILED" : "PASSED");
 		break;
+	case DURATION:
+		if (esconfig::info::verboseLevel > 1) {
+			MPI_Barrier(MPI_COMM_WORLD);
+		}
+		os << TimeEvent::time() - start;
 	}
 
 	os << std::endl;

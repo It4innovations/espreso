@@ -12,7 +12,7 @@
 #include "esconfig.h"
 #include "timeeval.h"
 
-#define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT)
+#define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT).get()
 
 
 namespace eslog {
@@ -25,6 +25,7 @@ enum ESPRESOTest {
 enum Event {
 	ERROR,
 	VERBOSE_LEVEL0,
+	DURATION,
 	CHECKPOINT1,
 	CHECKPOINT2,
 	CHECKPOINT3,
@@ -53,6 +54,8 @@ public:
 	Log(Event event);
 	~Log();
 
+	Log& get() { return *this; };
+
 	static bool report(Event event) {
 		switch (esconfig::info::verboseLevel) {
 		case 0: return event < VERBOSE_LEVEL0;
@@ -64,14 +67,15 @@ public:
 	};
 
 protected:
+	static std::vector<double> lastTimes;
+	static double start;
+
 	std::ostringstream os;
 	Event event;
 	bool error;
 private:
 	Log(const Log&);
 	Log& operator =(const Log&);
-
-	static std::vector<double> lastTimes;
 };
 
 class Logging {
