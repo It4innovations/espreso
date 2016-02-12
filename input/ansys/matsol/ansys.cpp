@@ -56,8 +56,7 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 				case 45:
 				case 185: lines = 1; break;
 				default:
-					eslog::error << "Load error: unknown element type\n";
-					exit(EXIT_FAILURE);
+					ESLOG(eslog::ERROR) << "Load error: unknown element type\n";
 				}
 				break;
 			}
@@ -107,8 +106,7 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 		}
 		file.close();
 	} else {
-		std::cerr << "Cannot load mesh from file: " << fileName << "\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName << "\n";
 	}
 }
 
@@ -164,9 +162,9 @@ size_t AnsysMatsol::getLinesCount(const std::string &file)
 		f.close();
 		return size;
 	} else {
-		std::cerr << "Cannot load file: " << file << "\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Cannot load file: " << file << "\n";
 	}
+	return 0;
 }
 
 

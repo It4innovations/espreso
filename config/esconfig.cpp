@@ -50,6 +50,7 @@ namespace solver {
 namespace info {
 	std::string output = "log";
 
+	size_t verboseLevel = VERBOSE;
 	bool printMatrices = false;
 }
 

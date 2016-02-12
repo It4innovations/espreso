@@ -99,14 +99,11 @@ static void checkMETISResult(eslocal result)
 {
 	switch (result) {
 	case METIS_ERROR_INPUT:
-		eslog::error << "An input for METIS procedure is incorrect.\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "An input for METIS procedure is incorrect.\n";
 	case METIS_ERROR_MEMORY:
-		eslog::error << "There is not enough memory for compute a partition.\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "There is not enough memory for compute a partition.\n";
 	case METIS_ERROR:
-		eslog::error << "METIS fail computation.\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "METIS fail computation.\n";
 	}
 }
 

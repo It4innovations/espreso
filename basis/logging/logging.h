@@ -6,70 +6,73 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 #include "esconfig.h"
+#include "timeeval.h"
+
+#define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT)
+
 
 namespace eslog {
 
-struct Info1 {
-	template<typename T>
-	Info1& operator<<(const T& value)
+enum ESPRESOTest {
+	FAILED,
+	PASSED
+};
+
+enum Event {
+	ERROR,
+	VERBOSE_LEVEL0,
+	CHECKPOINT1,
+	CHECKPOINT2,
+	CHECKPOINT3,
+	TEST_SIMPLE,
+	VERBOSE_LEVEL1,
+	VERBOSE_LEVEL2,
+	TEST_EXPENSIVE,
+	VERBOSE_LEVEL3
+};
+
+class Log
+{
+public:
+	Log& operator<<(const ESPRESOTest &test)
 	{
-#if VERBOSE > 0
-		std::cout << value;
-#endif
+		if (test == FAILED) { error = true; }
+		return *this;
+	}
+	template<typename Ttype>
+	Log& operator<<(const Ttype &value)
+	{
+		os << value;
 		return *this;
 	}
 
-};
+	Log(Event event);
+	~Log();
 
-struct Info2 {
-	template<typename T>
-	Info2& operator<<(const T& value)
-	{
-#if VERBOSE > 1
-		std::cout << value;
-#endif
-		return *this;
-	}
-};
+	static bool report(Event event) {
+		switch (esconfig::info::verboseLevel) {
+		case 0: return event < VERBOSE_LEVEL0;
+		case 1: return event < VERBOSE_LEVEL1;
+		case 2: return event < VERBOSE_LEVEL2;
+		case 3: return event < VERBOSE_LEVEL3;
+		default : return true;
+		}
+	};
 
-struct Info3 {
-	template<typename T>
-	Info3& operator<<(const T& value)
-	{
-#if VERBOSE > 2
-		std::cout << value;
-#endif
-		return *this;
-	}
-};
+protected:
+	std::ostringstream os;
+	Event event;
+	bool error;
+private:
+	Log(const Log&);
+	Log& operator =(const Log&);
 
-struct Debug {
-	template<typename T>
-	Debug& operator<<(const T& value)
-	{
-#ifdef DEBUG
-		std::cout << value;
-#endif
-		return *this;
-	}
+	static std::vector<double> lastTimes;
 };
-
-struct Error {
-	template<typename T>
-	Error& operator<<(const T& value)
-	{
-		std::cerr << value;
-		return *this;
-	}
-};
-
-extern Info1 info1;
-extern Info2 info2;
-extern Info3 info3;
-extern Debug debug;
-extern Error error;
 
 class Logging {
 
