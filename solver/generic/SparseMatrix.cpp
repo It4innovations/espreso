@@ -3020,7 +3020,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //==============================================================================
 //
 #ifndef VERBOSE_LEVEL
-#define VERBOSE_LEVEL 1
+#define VERBOSE_LEVEL 0
 #endif 
 //
 //    1) diagonalScaling
@@ -3054,7 +3054,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
-  eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 0;
+  eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 10;
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
@@ -3092,7 +3092,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //eslocal  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
 //ESLOCAL SC_SIZE                                       = 50;
-  eslocal sc_size                                       = 20;
+  eslocal sc_size                                       = 50;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
@@ -3216,6 +3216,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   //TODO if K.rows<=sc_size, use directly input K instead of S
   //
   int n_nodsSub = 0;
+  double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
   if (fixing_nodes_or_dof>0){
     sc_size = fixing_nodes_or_dof*dofPerNode;
     n_nodsSub = round(K.rows/dofPerNode);
@@ -3660,6 +3661,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
   os << std::scientific;
   os << "max(eig(K)):     " << lmx_K << "\n";
+  os << "max(diag(K)):    " << rho << "\n";
   double tmp = K.getNorm_K_R(K,Kplus_R);
   *norm_KR_d_pow_2 = (tmp*tmp)/(lmx_K*lmx_K);
   *defect_d = Kplus_R.cols;
@@ -3673,8 +3675,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //
   Kplus_R.ConvertDenseToCSR(0);
 //
-  double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
-  rho = 1.0 * rho;
 //
   if (diagonalRegularization){
     eslocal tmp_int0;
