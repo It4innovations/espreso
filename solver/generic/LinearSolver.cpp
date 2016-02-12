@@ -972,8 +972,10 @@ void LinearSolver::set_R_from_K ()
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
+                                            cluster.domains[d]._RegMat,
                                             cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]),
                                             &(defect_K_d[d]),d);
+    
 
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}

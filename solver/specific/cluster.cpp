@@ -1263,8 +1263,8 @@ void ClusterBase::CreateSa() {
 
      double tmp_double;
      eslocal tmp_int;
-		 SparseMatrix TSak;
-		 Salfa.get_kernel_from_K(Salfa,Kernel_Sa,&tmp_double, &tmp_int, -1);
+		 SparseMatrix TSak, _tmpSparseMat;
+		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,&tmp_double, &tmp_int, -1);
 		 TSak.Clear();
 
 		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);

@@ -3009,7 +3009,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 //	get_kernel_from_K(K, Kplus_R);
 //}
 
-void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
+void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -3654,8 +3654,25 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
   rho = 1.0 * rho;
 //
   if (diagonalRegularization){
+    eslocal tmp_int0;
+    if (d_sub!=-1) {
+	    regMat.rows = K.rows;
+	    regMat.cols = K.cols;
+	    regMat.type = 'S';
+	    regMat.nnz= null_pivots.size();
+      
+      regMat.I_row_indices.resize(regMat.nnz);
+      regMat.J_col_indices.resize(regMat.nnz);
+      regMat.V_values.resize(regMat.nnz);     
+    }
     for (eslocal i = 0; i < null_pivots.size(); i++){
-      K.CSR_V_values[K.CSR_I_row_indices[null_pivots[i]-offset]-offset]+=rho;
+      tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
+      K.CSR_V_values[tmp_int0]+=rho;
+      if (d_sub!=-1) {
+        regMat.I_row_indices[i] = null_pivots[i];
+        regMat.J_col_indices[i] = null_pivots[i];
+        regMat.V_values[i]      = rho ;
+      }
     }
   }
   else{
@@ -3683,8 +3700,15 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &Kplus_R,doub
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();
     NtN_Mat.MatMat(N,'N',Nt);
+    NtN_Mat.MatScale(rho);
     NtN_Mat.RemoveLower();
-    K.MatAddInPlace (NtN_Mat,'N', rho);
+    K.MatAddInPlace (NtN_Mat,'N', 1);
+    // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
+    if (d_sub!=-1) 
+    {
+      regMat=NtN_Mat; 
+      regMat.ConvertToCOO(1);
+    }
   }
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
