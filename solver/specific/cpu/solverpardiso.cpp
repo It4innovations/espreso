@@ -1,4 +1,4 @@
-#include "pardiso.h"
+#include "solverpardiso.h"
 
 /* PARDISO prototype. */
 extern "C" void pardisoinit (void   *, int    *,   int *, int *, double *, int *);

@@ -1,6 +1,6 @@
 
-#ifndef SOLVER_SPECIFIC_CPU_PARDISO_H_
-#define SOLVER_SPECIFIC_CPU_PARDISO_H_
+#ifndef SOLVER_SPECIFIC_CPU_SOLVERPARDISO_H_
+#define SOLVER_SPECIFIC_CPU_SOLVERPARDISO_H_
 
 #include "../../specific/sparsesolver.h"
 
@@ -119,4 +119,4 @@ public:
 };
 
 
-#endif /* SOLVER_SPECIFIC_CPU_PARDISO_H_ */
+#endif /* SOLVER_SPECIFIC_CPU_SOLVERPARDISO_H_ */
