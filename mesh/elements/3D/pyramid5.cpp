@@ -19,7 +19,7 @@ std::vector< std::vector< double> > Pyramid5_rst()
 		return rst;
 	}
 	default:
-		std::cerr << "Unknown number of Pyramid5 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Pyramid5 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -42,7 +42,7 @@ std::vector<DenseMatrix> Pyramid5_dN() {
 		double t = _pyramid5_rst[2][i];
 
 		// dNr - derivation of basis function
-		m(0, 0) = 0.125 * (-(1.-s)*(1.-t)); 
+		m(0, 0) = 0.125 * (-(1.-s)*(1.-t));
 		m(0, 1) = 0.125 * ((1.-s)*(1.-t));
 		m(0, 2) = 0.125 * ((1.+s)*(1.-t));
 		m(0, 3) = 0.125 * (-(1.+s)*(1.-t));
@@ -95,10 +95,10 @@ std::vector<double> Pyramid5_weight()
 	switch (Pyramid5GPCount) {
 	case 8: {
 		return std::vector<double> (8, 1.0);
- 
+
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron10 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }

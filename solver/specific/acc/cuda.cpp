@@ -1433,11 +1433,11 @@ void SparseSolverCUDA::ImportMatrix_wo_Copy(SparseMatrix & A) {
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
 
-	std::cerr << "Not implemented: SolveCG\n";
+	ESLOG(eslog::ERROR) << "Not implemented: SolveCG.";
 	exit(EXIT_FAILURE);
 }
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
-	std::cerr << "Not implemented: SolveCG\n";
+	ESLOG(eslog::ERROR) << "Not implemented: SolveCG.";
 	exit(EXIT_FAILURE);
 }

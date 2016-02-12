@@ -7,6 +7,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "esbasis.h"
+
 namespace esinput {
 
 enum DataType {
@@ -59,12 +61,6 @@ public:
 	virtual void set(const std::string &line) =0;
 	virtual Parameter* copy() =0;
 
-	void error(std::string message) const
-	{
-		std::cerr << "The configuration file is not valid: " << message << "\n";
-		exit(EXIT_FAILURE);
-	}
-
 	virtual ~Parameter() {};
 
 protected:
@@ -75,7 +71,7 @@ protected:
 	{
 		size_t pos = line.find(_delimiter);
 		if (pos == std::string::npos) {
-			error("Incorrect format of " + _name + ". Use " + _name + _delimiter + "value.");
+			ESLOG(eslog::ERROR) << "Incorrect format of " << _name << ". Use " << _name << _delimiter << "value.";
 		}
 		std::string val = line.substr(pos + 1);
 		val.erase(0, val.find_first_not_of(" "));
@@ -104,7 +100,7 @@ public:
 	{
 		_value = value(line);
 		if (!_value.size()) {
-			error("Empty parameter " + _name + ".\n");
+			ESLOG(eslog::ERROR) << "Empty parameter " << _name << ".";
 		}
 		_set = true;
 	}
@@ -181,7 +177,7 @@ public:
 			_value = true;
 			_set = true;
 		} else {
-			error("Boolean parameter " + _name + " should be without assignment.");
+			ESLOG(eslog::ERROR) << "Boolean parameter " << _name << " should be without assignment.";
 		}
 	}
 

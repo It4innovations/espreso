@@ -19,7 +19,7 @@ std::vector< std::vector< double> > Pyramid13_rst()
 		return rst;
 	}
 	default:
-		std::cerr << "Unknown number of Pyramid13 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Pyramid13 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -124,10 +124,10 @@ std::vector<double> Pyramid13_weight()
 	switch (Pyramid13GPCount) {
 	case 8: {
 		return std::vector<double> (8, 1.0);
- 
+
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron10 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -178,7 +178,7 @@ std::vector<eslocal> Pyramid13::getNeighbours(size_t nodeIndex) const
 	}else {
     result.resize(4);
   }
-  
+
 
 	switch (nodeIndex) {
 	case 0: {

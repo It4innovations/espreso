@@ -22,8 +22,7 @@ static void generateShape(const Options &options, mesh::Mesh *mesh)
 		break;
 	}
 	default: {
-		std::cerr << "Unknown shape.\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Unknown shape.";
 	}
 	}
 }
@@ -66,8 +65,7 @@ static void generate(const Options &options, mesh::Mesh *mesh)
 		break;
 	}
 	default: {
-		std::cerr << "Unknown element type.\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Unknown element type.";
 	}
 	}
 }
@@ -119,7 +117,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 		return new LinearElasticity<TDiscretization>(discretization);
 	}
 	default:
-		std::cerr << "Unknown assembler.\n";
+		ESLOG(eslog::ERROR) << "Unknown assembler.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -150,7 +148,7 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assemb
 		return createAssembler<API>(api);
 	}
 	default:
-		std::cerr << "Unknown discretization.\n";
+		ESLOG(eslog::ERROR) << "Unknown discretization.";
 		exit(EXIT_FAILURE);
 	}
 }

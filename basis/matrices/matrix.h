@@ -12,6 +12,8 @@
 #include "mkl_lapacke.h"
 #include "mkl_trans.h"
 
+#include "../logging/logging.h"
+
 template<typename T>
 std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
 {

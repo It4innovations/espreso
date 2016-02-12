@@ -9,6 +9,7 @@
 #include <getopt.h>
 
 #include "esconfig.h"
+#include "../logging/logging.h"
 
 struct Options {
 

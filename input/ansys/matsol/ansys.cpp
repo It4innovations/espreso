@@ -30,8 +30,7 @@ void AnsysMatsol::points(mesh::Coordinates &coordinates)
 		}
 		file.close();
 	} else {
-		std::cerr << "Cannot load mesh from file: " << fileName << "\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
 	}
 }
 
@@ -62,8 +61,7 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 			}
 		}
 	} else {
-		std::cerr << "Cannot load element settings from file: " << settingFile << "\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Cannot load element settings from file: " << settingFile;
 	}
 
 	std::string fileName = _path + "/Model/ELEMENTS.dat";
@@ -106,7 +104,7 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 		}
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName << "\n";
+		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
 	}
 }
 

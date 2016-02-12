@@ -27,8 +27,7 @@ public:
 	{
 		_file.open(_path.c_str());
 		if (!_file.is_open()) {
-			std::cerr << "Cannot load mesh from file: " << _path << "\n";
-			exit(EXIT_FAILURE);
+			ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << _path;
 		}
 	}
 

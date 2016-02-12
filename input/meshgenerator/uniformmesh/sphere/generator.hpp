@@ -28,11 +28,8 @@ namespace esinput {
 static void checkSettings(const SphereSettings &settings)
 {
 	if (settings.layers * 6 != settings.size) {
-		if (settings.index == 0) {
-			std::cerr << "The number of clusters(" << settings.layers * 6;
-			std::cerr << ") does not accord the number of MPI processes(" << settings.size << ").\n";
-		}
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "The number of clusters(" << settings.layers * 6
+							<< ") does not accord the number of MPI processes(" << settings.size << ").";
 	}
 }
 

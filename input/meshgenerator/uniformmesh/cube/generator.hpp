@@ -28,11 +28,8 @@ namespace esinput {
 static void setCluster(size_t cluster[], const CubeSettings &settings)
 {
 	if (settings.clusters[0] * settings.clusters[1] * settings.clusters[2] != settings.size) {
-		if (settings.index == 0) {
-			std::cerr << "The number of clusters(" << settings.clusters[0] * settings.clusters[1] * settings.clusters[2];
-			std::cerr << ") does not accord the number of MPI processes(" << settings.size << ").\n";
-		}
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "The number of clusters(" << settings.clusters[0] * settings.clusters[1] * settings.clusters[2]
+							<< ") does not accord the number of MPI processes(" << settings.size << ").";
 	}
 	eslocal index = 0, i = 0;
 	for (size_t z = 0; z < settings.clusters[2]; z++) {

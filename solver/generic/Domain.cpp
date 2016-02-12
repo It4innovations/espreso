@@ -7,11 +7,11 @@
 
 
 Domain::Domain(){
-  
+
 }
 
 Domain::Domain(eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0){
-	domain_global_index = domain_index; 
+	domain_global_index = domain_index;
 	USE_DYNAMIC         = use_dynamic_1_no_dynamic_0;
 	isOnACC             = 0;
 }
@@ -24,7 +24,7 @@ void Domain::SetDynamicParameters(double set_dynamic_timestep, double set_dynami
 
 void Domain::SetDomain(eslocal USE_HFETI, eslocal use_dynamic_1_no_dynamic_0) {
 
-	USE_DYNAMIC = use_dynamic_1_no_dynamic_0; 
+	USE_DYNAMIC = use_dynamic_1_no_dynamic_0;
 	//K_regularizationFromR( );
 	domain_prim_size = Kplus.cols;
 
@@ -163,7 +163,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		break;
 //	}
 	default:
-		std::cerr << "Invalid KSOLVER value\n";
+		ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -233,7 +233,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		break;
 	}
 	default:
-		std::cerr << "Invalid KSOLVER value\n";
+		ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -307,7 +307,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		break;
 	}
 	default:
-		std::cerr << "Invalid KSOLVER value\n";
+		ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -498,8 +498,8 @@ void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
     	}
 
     }
-	
-} 
+
+}
 
 // **** END - DOMAIN CLASS *******************************************
 // *******************************************************************

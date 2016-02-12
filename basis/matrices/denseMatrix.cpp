@@ -19,8 +19,7 @@ void DenseMatrix::multiply(
 		bool transposeA, bool transposeB)
 {
 	if ( (transposeA ? A.rows() : A.columns()) != (transposeB ? B.columns() : B.rows()) ) {
-		std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 	}
 	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());
 

@@ -139,7 +139,7 @@ std::vector<double> Tetra4_Weight()
 		return w;
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron4 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron4 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }

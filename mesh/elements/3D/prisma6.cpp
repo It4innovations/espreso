@@ -21,7 +21,7 @@ std::vector< std::vector< double> > Prisma6_rst()
 		return rst;
 	}
 	default:
-		std::cerr << "Unknown number of Prisma6 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Prisma6 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -106,7 +106,7 @@ std::vector<double> Prisma6_weight()
 		return std::vector<double> (w, w + 9);
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron10 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }

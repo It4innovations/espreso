@@ -1344,8 +1344,8 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
                 sscanf( var, "%d", &num_procs );
         else {
                 //printf("Set environment PAR_NUM_THREADS to 1");
-          std::cerr<<"Set environment PAR_NUM_THREADS to 1\n";
-                exit(1);
+        	ESLOG(eslog::ERROR) << "Set environment PAR_NUM_THREADS to 1.";
+			exit(1);
         }
         GGt_tmp.iparm[2]  = num_procs;
 

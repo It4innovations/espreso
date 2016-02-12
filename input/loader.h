@@ -2,6 +2,7 @@
 #ifndef INPUT_LOADER_H_
 #define INPUT_LOADER_H_
 
+#include "esbasis.h"
 #include "esmesh.h"
 #include <string>
 

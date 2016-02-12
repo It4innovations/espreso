@@ -169,18 +169,15 @@ template<typename Tindices>
 void SparseCSRMatrix<Tindices>::multiply(SparseCSRMatrix<Tindices> &A, SparseCSRMatrix<Tindices> &B, bool transposeA)
 {
 	if (_indexing == Matrix::ZeroBased) {
-		std::cerr << "Multiplication of two CSR matrices with zero based indexing is not supported\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Multiplication of two CSR matrices with zero based indexing is not supported.";
 	}
 	if (transposeA) {
 		if (A.rows() != B.rows()) {
-			std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
-			exit(EXIT_FAILURE);
+			ESLOG(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 		}
 	} else {
 		if (A.columns() != B.rows()) {
-			std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
-			exit(EXIT_FAILURE);
+			ESLOG(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 		}
 	}
 

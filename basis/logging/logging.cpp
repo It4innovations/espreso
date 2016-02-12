@@ -57,19 +57,21 @@ static void duration(std::ostringstream &os, std::vector<double> lastTimes, int 
 
 Log::~Log()
 {
-	os << " : ";
-
 	switch (event) {
 	case CHECKPOINT3:
+		os << " : ";
 		duration(os ,lastTimes, 3, esconfig::info::verboseLevel > 1);
 		break;
 	case CHECKPOINT2:
+		os << " : ";
 		duration(os ,lastTimes, 2, esconfig::info::verboseLevel > 1);
 		break;
 	case CHECKPOINT1:
+		os << " : ";
 		duration(os ,lastTimes, 1, esconfig::info::verboseLevel > 1);
 		break;
 	case TEST_SIMPLE: case TEST_EXPENSIVE:
+		os << " : ";
 		os << (error ? "FAILED" : "PASSED");
 		break;
 	}

@@ -32,12 +32,15 @@ mesh::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *p
 	}
 
 	if (e == NULL) {
-		std::cerr << "Unknown element with indices: ";
-		for (eslocal i = 0; i < n; i++) {
-			std::cerr << indices[i] << " ";
-		}
-		std::cerr << "\n";
-		exit(EXIT_FAILURE);
+		auto print_indices = [&] () {
+			std::stringstream ss;
+			for (eslocal i = 0; i < n; i++) {
+				ss << indices[i] << " ";
+			};
+			return ss.str();
+		};
+
+		ESLOG(eslog::ERROR) << "Unknown element with indices: " << print_indices();
 	}
 
 	return e;

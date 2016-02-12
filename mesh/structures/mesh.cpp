@@ -339,8 +339,7 @@ void Mesh::getSurface(Mesh &surface) const
 	std::vector<size_t> elementsCount(parts(), 0);
 
 	if (parts() < 1) {
-		std::cerr << "Internal error: _partPtrs.size()\n";
-		exit(EXIT_FAILURE);
+		ESLOG(eslog::ERROR) << "Internal error: _partPtrs.size().";
 	}
 
 	cilk_for (size_t i = 0; i < parts(); i++) {
@@ -634,7 +633,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 						commonLines.push_back(std::make_tuple(line[0], line[1], line[2]));
 						break;
 					default:
-						std::cerr << "MESH ERROR: unknown line type.\n";
+						ESLOG(eslog::ERROR) << "MESH ERROR: unknown line type.";
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -906,7 +905,7 @@ void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces)
 {
 	if (parts() < 1) {
-		std::cerr << "Internal error: _partPtrs.size()\n";
+		ESLOG(eslog::ERROR) << "Internal error: _partPtrs.size().";
 		exit(EXIT_FAILURE);
 	}
 	if (parts() == 1 || (!vertices && !edges && !faces && !averageEdges && !averageFaces)) {

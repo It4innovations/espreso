@@ -194,11 +194,11 @@ void LinearSolver::init(
 	Preprocessing( lambda_map_sub_clst );
 
 	 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
-	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************	
-	
+	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+
 	 TimeEvent timeSolDir(string("Solver - Dirichlet preconditioner assembling")); timeSolDir.start();
 
-	
+
 	// **** Set Dirifchlet Preconditioner
 	if (esconfig::solver::PRECONDITIONER == 3 ) {
 		if (esconfig::MPIrank == 0)
@@ -762,7 +762,7 @@ void LinearSolver::init(
 			break;
 		}
 		default:
-			std::cerr << "Invalid KSOLVER value\n";
+			ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
 			exit(EXIT_FAILURE);
 		}
 

@@ -40,7 +40,7 @@ std::vector< std::vector< double> > Hexa20_rst()
 		return rst;
 	}
 	default:
-		std::cerr << "Unknown number of Hexahedron20 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Hexahedron20 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -196,7 +196,7 @@ std::vector<double> Hexa20_weight()
 		return w;
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron10 GP count\n";
+		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
