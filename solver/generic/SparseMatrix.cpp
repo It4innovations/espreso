@@ -3510,14 +3510,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     K_rr_solver.SolveMat_Dense(invKrrKrs);
     SparseMatrix KsrInvKrrKrs;
 	  KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
-//	  KsrInvKrrKrs.MatMat(invKrrKrs,'T',K_rs);
     S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
     S.RemoveLower();
   }
   else{
     SparseSolverCPU createSchur;
     // TODO PARDISO_SC provides factor K_rr. 
-    // This code makes factorization redundantly later.
+    // if SC_via_K_rr=false,  factorization is made redundantly later.
     createSchur.ImportMatrix(K_modif);
     createSchur.Create_SC(S,sc_size,false);
     K_modif.Clear();
