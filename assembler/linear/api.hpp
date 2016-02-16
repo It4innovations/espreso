@@ -6,7 +6,7 @@ namespace assembler {
 template <>
 void Linear<API>::KMf(size_t part, bool dynamics)
 {
-	_K[part] = *(this->_input.K);
+	_K[part] = (*(this->_input.K))[part];
 }
 
 template <>

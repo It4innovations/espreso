@@ -91,6 +91,7 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		indexBase)
 {
 	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexBase));
+	DataHolder::matrices.back()->K.resize(esconfig::mesh::subdomains, SparseVVPMatrix<eslocal>(0, 0));
 	*matrix = DataHolder::matrices.back();
 }
 
@@ -104,7 +105,7 @@ void FETI4IAddElement(
 	if (esconfig::mesh::subdomains == 1) {
 		for (eslocal i = 0; i < size; i++) {
 			for (eslocal j = 0; j < size; j++) {
-				matrix->data(indices[i] - offset,  indices[j] - offset) = values[i * size + j];
+				matrix->K[0](indices[i] - offset,  indices[j] - offset) = values[i * size + j];
 			}
 		}
 	} else {
@@ -131,7 +132,10 @@ void FETI4ICreateInstance(
 
 	API api;
 	DataHolder::instances.push_back(new FETI4IStructInstance(api));
-	DataHolder::instances.back()->K = matrix->data;
+	DataHolder::instances.back()->K.resize(matrix->K.size(), SparseCSRMatrix<eslocal>(0, 0));
+	for (size_t i = 0; i < matrix->K.size(); i++) {
+		DataHolder::instances.back()->K[i] = matrix->K[i];
+	}
 	api.K = &(DataHolder::instances.back()->K);
 	api.indexing = matrix->offset;
 	api.size = size;

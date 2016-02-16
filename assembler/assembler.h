@@ -26,7 +26,7 @@ struct BEM {
 
 // Design for testing
 struct APIHolder {
-	SparseCSRMatrix<eslocal> *K;
+	std::vector<SparseCSRMatrix<eslocal> > *K;
 	std::vector<double> *rhs;
 	std::vector<eslocal> *dirichlet_indices;
 	std::vector<double> *dirichlet_values;
@@ -54,7 +54,7 @@ struct API {
 		neighbours_size(holder.neighbourRanks->size()), neighbours(holder.neighbourRanks->data()),
 		indexing(holder.indexing) { };
 
-	SparseCSRMatrix<eslocal> *K;
+	std::vector<SparseCSRMatrix<eslocal> > *K;
 
 	eslocal size;
 	double *rhs;

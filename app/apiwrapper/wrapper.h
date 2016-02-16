@@ -7,12 +7,12 @@
 
 #include "esconfig.h"
 #include "esassemblers.h"
-//#include "esinput.h"
+#include "esinput.h"
 
 struct FETI4IStructMatrix {
-	FETI4IStructMatrix(eslocal offset): data(0, 0), offset(offset) { };
+	FETI4IStructMatrix(eslocal offset): offset(offset) { };
 
-	SparseVVPMatrix<eslocal> data;
+	std::vector<SparseVVPMatrix<eslocal> > K;
 
 	std::vector<std::vector<eslocal> > eIndices;
 	std::vector<std::vector<double> > eMatrix;
@@ -21,10 +21,10 @@ struct FETI4IStructMatrix {
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data): data(data), K(0, 0) { };
+	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data): data(data) { };
 
 	assembler::LinearElasticity<assembler::API> data;
-	SparseCSRMatrix<eslocal> K;
+	std::vector<SparseCSRMatrix<eslocal> > K;
 };
 
 struct DataHolder {
