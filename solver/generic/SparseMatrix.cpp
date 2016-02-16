@@ -3025,69 +3025,85 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //
 //    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
-  bool diagonalScaling = true;
+//BOOL DIAGONALSCALING                                  = true;
+  bool diagonalScaling                                  = true;
 
 //    2) permutVectorActive
 //  random selection of singular DOFs
-  eslocal permutVectorActive = 1; // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
+// 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
+//ESLOCAL PERMUTVECTORACTIVE                            = 1; 
+  eslocal permutVectorActive                            = 1;
 
 //    3) use_null_pivots_or_s_set
   // NtN_Mat from null pivots or fixing DOFs
-  bool use_null_pivots_or_s_set=true;
+//BOOL USE_NULL_PIVOTS_OR_S_SET                         = TRUE;
+  bool use_null_pivots_or_s_set                         = true;
 
 //    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
 //  size of set 's' = defect(K)
 //  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
-  bool diagonalRegularization=true;
+//BOOL DIAGONALREGULARIZATION                           = TRUE;
+  bool diagonalRegularization                           = true;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
 // get and print 2*n K eigenvalues (K is temporarily converted to dense);
+//ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
   eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 0;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
+//ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
   eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 10;
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
-  eslocal plot_n_first_n_last_eigenvalues = 0;
+//ESLOCAL PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
+  eslocal plot_n_first_n_last_eigenvalues               = 0;
 
 //    8) fixing_nodes_or_dof
 // non-singular part determined by fixing nodes (FN),
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero, 
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
-  eslocal fixing_nodes_or_dof = 3;
-  eslocal dofPerNode=3;
+//ESLOCAL FIXING_NODES_OR_DOF                           = 0;
+  eslocal fixing_nodes_or_dof = 0;
+//ESLOCAL DOFPERNODE                                    = 3;
+  eslocal dofPerNode                                    = 3;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //    1) cond_numb_for_singular_matrix
 //  If cond(K) > cond_numb_for_singular_matrix, K is considered as singular matrix.
-  double cond_numb_for_singular_matrix=1e13;
+//DOUBLE COND_NUMB_FOR_SINGULAR_MATRIX                  = 1E13;
+  double cond_numb_for_singular_matrix                  = 1e13;
 
 //    2) check_nonsing
 // if check_nonsing>0, checking of K_rr non-singularity is activated and it is repeated
 // (check_nonsing) times.
-  eslocal check_nonsing=1;
+//ESLOCAL CHECK_NONSING                                 = 0;
+  eslocal check_nonsing                                 = 0;
 
 //    3) max_size_of_dense_matrix_to_get_eigs
 // if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
-  eslocal max_size_of_dense_matrix_to_get_eigs=2500;
+//ESLOCAL MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
+  eslocal max_size_of_dense_matrix_to_get_eigs          = 2500;
 
 //    4) sc_size
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //eslocal  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
-  eslocal sc_size=50;
+//ESLOCAL SC_SIZE                                       = 50;
+  eslocal sc_size                                       = 50;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
-  eslocal twenty=20;
+//ESLOCAL TWENTY                                        = 20;
+  eslocal twenty                                        = 20;
   // twenty eigenvalues are ascendly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
 
 //    6) jump_in_eigenvalues_alerting_singularity
 // if d[i]/d[i+1]< jump_in_eigenvalues_alerting_singularity, d[i] is last nonzero eigenvalue
-  double jump_in_eigenvalues_alerting_singularity=1.0e-5;
+//DOUBLE JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0E-5;
+  double jump_in_eigenvalues_alerting_singularity       = 1.0e-5;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3200,6 +3216,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   //TODO if K.rows<=sc_size, use directly input K instead of S
   //
   int n_nodsSub = 0;
+  double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
   if (fixing_nodes_or_dof>0){
     sc_size = fixing_nodes_or_dof*dofPerNode;
     n_nodsSub = round(K.rows/dofPerNode);
@@ -3223,8 +3240,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     os << "===================================================================================\n";
 #endif
 
-  eslocal NONSING_SIZE = K.rows - sc_size - i_start;
-  eslocal j_start = NONSING_SIZE;
+  eslocal nonsing_size = K.rows - sc_size - i_start;
+  eslocal j_start = nonsing_size;
   SEQ_VECTOR <eslocal > permVec;
 
   permVec.resize(K.rows);
@@ -3377,8 +3394,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
         }
       }
 
-      sort(permVec.begin(),permVec.begin()+NONSING_SIZE);
-      sort(permVec.begin()+NONSING_SIZE,permVec.end());
+      sort(permVec.begin(),permVec.begin()+nonsing_size);
+      sort(permVec.begin()+nonsing_size,permVec.end());
     }
     else if (permutVectorActive==2){
       // random permutation
@@ -3402,7 +3419,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
       eslocal ik=0,cnt_i=0;
       for (eslocal i = 0;i<permVec.size();i++){
         if (i==tmp_vec_s[ik]){
-          permVec[ik+NONSING_SIZE]=tmp_vec_s[ik];
+          permVec[ik+nonsing_size]=tmp_vec_s[ik];
           ik++;
         }
         else{
@@ -3414,8 +3431,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
         os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
 #endif      
     }
-    //      r = permVec[0:NONSING_SIZE-1]     (singular DOFs)
-    //      s = permVec[NONSING_SIZE:end-1]   (non-singular DOFs)
+    //      r = permVec[0:nonsing_size-1]     (singular DOFs)
+    //      s = permVec[nonsing_size:end-1]   (non-singular DOFs)
     if (permutVectorActive>0){
 //
       for (eslocal i = 0; i < K.rows;i++){
@@ -3448,9 +3465,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
       K_modif.ConvertToCSRwithSort(0);
     }
 //
-    for (eslocal i = 0;i<sc_size;i++) fix_dofs[i]=permVec[NONSING_SIZE + i] + offset;
-    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, NONSING_SIZE);
-//    K_rr.printMatCSR("K_rr");
+    for (eslocal i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
+    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
     if (check_nonsing!=0){
       double lmx_K_rr;
       cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
@@ -3475,31 +3491,45 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
                //                                               |
 
 //
-  K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, NONSING_SIZE,j_start,sc_size);
+  K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
 #if VERBOSE_LEVEL>0
 //4 - creation of block K_rs
   time1 = omp_get_wtime();
   elapsed_secs[4] = double(time1 - begin_time) ;
 #endif
-               //                                               |
 //
-  SparseSolverCPU createSchur;
-  // TODO Routine Create_SC can provide also factorization of K_rr which can avoid to latter factorization.
-  createSchur.ImportMatrix(K_modif);
-  createSchur.Create_SC(S,sc_size,false);
-  K_modif.Clear();
-  createSchur.Clear();
+  SparseSolverCPU K_rr_solver;
+  std::stringstream ss;
+  bool SC_via_K_rr=true;
+  if (SC_via_K_rr){
+    K_rr_solver.ImportMatrix(K_rr);
+    K_rr.Clear();
+    ss << "get kerner from K -> rank: " << esconfig::MPIrank;
+    K_rr_solver.Factorization(ss.str());
+    S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+    SparseMatrix invKrrKrs = K_rs;
+    K_rr_solver.SolveMat_Dense(invKrrKrs);
+    SparseMatrix KsrInvKrrKrs;
+	  KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+    S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+    S.RemoveLower();
+  }
+  else{
+    SparseSolverCPU createSchur;
+    // TODO PARDISO_SC provides factor K_rr. 
+    // if SC_via_K_rr=false,  factorization is made redundantly later.
+    createSchur.ImportMatrix(K_modif);
+    createSchur.Create_SC(S,sc_size,false);
+    K_modif.Clear();
+    createSchur.Clear();
+  }
   S.type='S';
   S.ConvertCSRToDense(1);
-
 #if VERBOSE_LEVEL>0
 //5 - Schur complement created
   time1 = omp_get_wtime();
   elapsed_secs[5] = double(time1 - begin_time) ;
 #endif
-               //                                               |
-
-
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
   char JOBZ = 'V';
   char UPLO = 'U';
@@ -3511,23 +3541,19 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   if (info){
     std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse\n";
   }
-
 #if VERBOSE_LEVEL>0
 //6 - Schur complement eigenvalues obtained
   time1 = omp_get_wtime();
   elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
-               //                                               |
-
-
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  eslocal defect_A_in;// R_s_cols;
+  eslocal defect_K_in;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
   for (eslocal i = itMax-1; i > 0;i--){
     ratio = fabs(W[i-1]/W[i]);
     if (ratio < jump_in_eigenvalues_alerting_singularity){
-      defect_A_in=i;
+      defect_K_in=i;
     }
   }
 #if VERBOSE_LEVEL>0
@@ -3535,7 +3561,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[7] = double(time1 - begin_time) ;
 #endif
-               //                                               |
 //
 #if VERBOSE_LEVEL>1
   if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
@@ -3554,14 +3579,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #endif
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
   SparseMatrix R_s;
-  R_s.nnz  = defect_A_in*S.rows;
+  R_s.nnz  = defect_K_in*S.rows;
   R_s.dense_values.resize(R_s.nnz);
   R_s.rows = S.rows;
-  R_s.cols = defect_A_in;
+  R_s.cols = defect_K_in;
   R_s.type = 'G';
- //
   eslocal cntR=0;
-  for (eslocal j = 0; j < defect_A_in; j++){
+  for (eslocal j = 0; j < defect_K_in; j++){
     for (eslocal i = 0; i < R_s.rows; i++){
 	    R_s.dense_values[cntR] = Z[j*R_s.rows + i];
       cntR++;
@@ -3573,17 +3597,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[8] = double(time1 - begin_time) ;
 #endif
-               //                                               |
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 	SparseMatrix R_r;
 	R_r.MatMat(K_rs,'N',R_s);
   K_rs.Clear();
-  SparseSolverCPU K_rr_solver;
-  K_rr_solver.ImportMatrix(K_rr);
-  K_rr.Clear();
-  std::stringstream ss;
-  ss << "get kerner from K -> rank: " << esconfig::MPIrank;
-  K_rr_solver.Factorization(ss.str());
+  if (!SC_via_K_rr){
+    K_rr_solver.ImportMatrix(K_rr);
+    K_rr.Clear();
+//    std::stringstream ss;
+    ss << "get kerner from K -> rank: " << esconfig::MPIrank;
+    K_rr_solver.Factorization(ss.str());
+  }
   K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
   K_rr_solver.Clear();
 
@@ -3637,6 +3661,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
   os << std::scientific;
   os << "max(eig(K)):     " << lmx_K << "\n";
+  os << "max(diag(K)):    " << rho << "\n";
   double tmp = K.getNorm_K_R(K,Kplus_R);
   *norm_KR_d_pow_2 = (tmp*tmp)/(lmx_K*lmx_K);
   *defect_d = Kplus_R.cols;
@@ -3650,8 +3675,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //
   Kplus_R.ConvertDenseToCSR(0);
 //
-  double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
-  rho = 1.0 * rho;
 //
   if (diagonalRegularization){
     eslocal tmp_int0;
@@ -3739,7 +3762,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
   os.close();
 #endif
-
   
 
 }
