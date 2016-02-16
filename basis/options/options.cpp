@@ -9,7 +9,7 @@ static struct option long_options[] = {
 		{0, 0, 0, 0}
 };
 
-Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingMode(false)
+Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0)
 {
 	auto printOption = [] (const std::string &opt, const std::string &desc) {
 		std::cout << "\t" << opt;
@@ -31,6 +31,9 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingMode(fa
 		case 'v':
 			verboseLevel++;
 			break;
+		case 't':
+			testingLevel++;
+			break;
 		case 'i':
 			input = std::string(optarg);
 			input.erase(0, input.find_first_not_of('='));
@@ -38,9 +41,6 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingMode(fa
 		case 'p':
 			path = std::string(optarg);
 			path.erase(0, path.find_first_not_of('='));
-			break;
-		case 't':
-			testingMode = true;
 			break;
 		case 'h':
 			std::cout << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
@@ -83,7 +83,7 @@ void Options::configure()
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
 	esconfig::info::verboseLevel = verboseLevel;
-	esconfig::info::testingMode = testingMode;
+	esconfig::info::testingLevel = testingLevel;
 
 	std::vector<std::pair<std::string, esconfig::mesh::Input> > inputs = {
 			{ "GENERATOR", esconfig::mesh::GENERATOR },
@@ -109,7 +109,7 @@ std::ostream& operator<<(std::ostream& os, const Options &options)
 	os << "input: '" << options.input << "'\n";
 	os << "path: '" << options.path << "'\n";
 	os << "verbosity level: " << options.verboseLevel << "\n";
-	os << "testing mode: " << options.testingMode << "\n";
+	os << "testing level: " << options.testingLevel << "\n";
 	os << "nameless: ";
 	for (size_t i = 0; i < options.nameless.size(); i++) {
 		os << options.nameless[i] << " ";

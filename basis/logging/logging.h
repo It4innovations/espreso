@@ -13,6 +13,7 @@
 #include "timeeval.h"
 
 #define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT).get()
+#define ESTEST(EVENT) if (!eslog::Test::report(EVENT)) ; else eslog::Test(EVENT).get()
 
 namespace eslog {
 
@@ -21,41 +22,68 @@ enum ESPRESOTest {
 	PASSED
 };
 
-enum Event {
+enum TestEvent {
+	SIMPLE,
+	EXPENSIVE,
+	PEDANTIC
+};
+
+enum LogEvent {
 	ERROR,
 	VERBOSE_LEVEL0,
-	DURATION,
+	INFO,
 	CHECKPOINT1,
-	CHECKPOINT2,
-	CHECKPOINT3,
-	TEST_SIMPLE,
+	SUMMARY,
 	VERBOSE_LEVEL1,
+	CHECKPOINT2,
 	VERBOSE_LEVEL2,
-	TEST_EXPENSIVE,
+	CHECKPOINT3,
 	VERBOSE_LEVEL3
 };
 
-class Log
+class Test
 {
 public:
-	Log& operator<<(const ESPRESOTest &test)
+	Test& operator<<(const ESPRESOTest &test)
 	{
 		if (test == FAILED) { error = true; }
 		return *this;
 	}
 	template<typename Ttype>
-	Log& operator<<(const Ttype &value)
+	Test& operator<<(const Ttype &value)
 	{
 		os << value;
 		return *this;
 	}
 
-	Log(Event event);
+	Test(TestEvent event): error(false) {};
+	~Test();
+
+	Test& get() { return *this; };
+
+	static bool report(TestEvent event) {
+		return event < esconfig::info::testingLevel;
+	};
+
+protected:
+	std::ostringstream os;
+	bool error;
+};
+
+class Log
+{
+public:
+	static double time()
+	{
+		return omp_get_wtime();
+	}
+
+	Log(LogEvent event);
 	~Log();
 
-	Log& get() { return *this; };
+	std::ostringstream& get() { return os; };
 
-	static bool report(Event event) {
+	static bool report(LogEvent event) {
 		switch (esconfig::info::verboseLevel) {
 		case 0: return event < VERBOSE_LEVEL0;
 		case 1: return event < VERBOSE_LEVEL1;
@@ -66,16 +94,15 @@ public:
 	};
 
 protected:
-	static std::vector<double> lastTimes;
-	static double start;
+	static std::vector<Checkpoint> checkpoints;
+
+	void evaluateCheckpoints();
 
 	std::ostringstream os;
-	Event event;
-	bool error;
-private:
-	Log(const Log&);
-	Log& operator =(const Log&);
+	LogEvent event;
 };
+
+
 
 class Logging {
 

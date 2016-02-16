@@ -12,7 +12,6 @@ int main(int argc, char **argv)
 	factory.store("mesh");
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	ESLOG(eslog::DURATION) << "ESPRESO overall time";
 	MPI_Finalize();
 	return 0;
 }

@@ -22,7 +22,7 @@ struct Options {
 	std::string input;
 	std::string path;
 	size_t verboseLevel;
-	bool testingMode;
+	size_t testingLevel;
 	std::vector<std::string> nameless;
 };
 
