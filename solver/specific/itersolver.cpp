@@ -1350,13 +1350,14 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
         GGt_tmp.iparm[2]  = num_procs;
 
 
-	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.start();
+//	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.start();
 //	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
 //		SendMatrix(cluster.G1, cluster.my_neighs[neigh_i]);
 //
 //	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
 //		RecvMatrix(G_neighs[neigh_i], cluster.my_neighs[neigh_i]);
 
+	 TimeEvent SaRGlocal("Exchange local G1 matrices to neighs. "); SaRGlocal.start();
 	ExchangeMatrices(cluster.G1, G_neighs, cluster.my_neighs);
 	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
 
@@ -2201,10 +2202,10 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		send_par_buf[neigh_i].resize(4);
 		int dest_rank = neighbor_ranks[neigh_i];
 
-		send_par_buf[0] = A_in.cols;
-		send_par_buf[1] = A_in.rows;
-		send_par_buf[2] = A_in.nnz;
-		send_par_buf[3] = (eslocal)A_in.type;
+		send_par_buf[neigh_i][0] = A_in.cols;
+		send_par_buf[neigh_i][1] = A_in.rows;
+		send_par_buf[neigh_i][2] = A_in.nnz;
+		send_par_buf[neigh_i][3] = (eslocal)A_in.type;
 
 		MPI_Isend(&send_par_buf[neigh_i][0],  4, 				esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 0] );
 
@@ -2216,11 +2217,11 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		recv_par_buf[neigh_i].resize(4);
 		int source_rank = neighbor_ranks[neigh_i];
 
-		MPI_Recv(&recv_par_buf[neigh_i][0], 4, esglobal_mpi, source_rank, tag, MPI_COMM_WORLD, & status);
-		B_out[neigh_i].cols = recv_par_buf[0];
-		B_out[neigh_i].rows = recv_par_buf[1];
-		B_out[neigh_i].nnz  = recv_par_buf[2];
-		B_out[neigh_i].type = (char)recv_par_buf[3];
+		MPI_Recv(&recv_par_buf[neigh_i][0], 4, esglobal_mpi, source_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		B_out[neigh_i].cols = recv_par_buf[neigh_i][0];
+		B_out[neigh_i].rows = recv_par_buf[neigh_i][1];
+		B_out[neigh_i].nnz  = recv_par_buf[neigh_i][2];
+		B_out[neigh_i].type = (char)recv_par_buf[neigh_i][3];
 
 		B_out[neigh_i].CSR_I_row_indices.resize(B_out[neigh_i].rows + 1);
 		B_out[neigh_i].CSR_J_col_indices.resize(B_out[neigh_i].nnz);
@@ -2242,11 +2243,16 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 
 	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
 	{
-		MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, I_row_tag, MPI_COMM_WORLD, & status[4 * neigh_i + 0] );
-		MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, J_col_tag, MPI_COMM_WORLD, & status[4 * neigh_i + 1] );
-		MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE,      source_rank, V_val_tag, MPI_COMM_WORLD, & status[4 * neigh_i + 2] );
+		int source_rank = neighbor_ranks[neigh_i];
+		int tag = 1;
+
+		MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0], B_out[neigh_i].rows + 1, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
+		MPI_Irecv(&B_out[neigh_i].CSR_J_col_indices[0], B_out[neigh_i].nnz,      esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 5] );
+		MPI_Irecv(&B_out[neigh_i].CSR_V_values[0],      B_out[neigh_i].nnz,      MPI_DOUBLE,      source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 6] );
 	}
 
+
+	MPI_Waitall(neighbor_ranks.size(), &request[0], MPI_STATUSES_IGNORE);
 
 //	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
 //		SendMatrix(A_in, neighbor_ranks[neigh_i]);
