@@ -10,21 +10,22 @@
 #include "esinput.h"
 
 struct FETI4IStructMatrix {
-	FETI4IStructMatrix(eslocal offset): offset(offset) { };
-
-	std::vector<SparseVVPMatrix<eslocal> > K;
+	FETI4IStructMatrix(eslocal offset): offset(offset), K(0, 0) { };
 
 	std::vector<std::vector<eslocal> > eIndices;
-	std::vector<std::vector<double> > eMatrix;
+	std::vector<std::vector<double> > eMatrices;
+
+	// used in case of 1 subdomain
+	SparseVVPMatrix<eslocal> K;
 
 	eslocal offset;
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data): data(data) { };
+	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data): data(data), K(0, 0) { };
 
 	assembler::LinearElasticity<assembler::API> data;
-	std::vector<SparseCSRMatrix<eslocal> > K;
+	SparseCSRMatrix<eslocal> K;
 };
 
 struct DataHolder {

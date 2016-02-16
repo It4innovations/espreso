@@ -23,38 +23,11 @@ struct BEM {
 	mesh::Mesh &surface;
 };
 
-
-// Design for testing
-struct APIHolder {
-	std::vector<SparseCSRMatrix<eslocal> > *K;
-	std::vector<double> *rhs;
-	std::vector<eslocal> *dirichlet_indices;
-	std::vector<double> *dirichlet_values;
-	std::vector<eslocal> *l2g;
-	std::vector<int> *neighbourRanks;
-	eslocal indexing;
-
-	~APIHolder() {
-		delete K;
-		delete rhs;
-		delete dirichlet_indices;
-		delete dirichlet_values;
-		delete l2g;
-		delete neighbourRanks;
-	}
-};
-
 struct API {
-	API() {};
-	API(APIHolder &holder):
-		K(holder.K), size(holder.rhs->size()), rhs(holder.rhs->data()), l2g(holder.l2g->data()),
-		dirichlet_size(holder.dirichlet_indices->size()),
-		dirichlet_indices(holder.dirichlet_indices->data()),
-		dirichlet_values(holder.dirichlet_values->data()),
-		neighbours_size(holder.neighbourRanks->size()), neighbours(holder.neighbourRanks->data()),
-		indexing(holder.indexing) { };
+	API(mesh::APIMesh &mesh): mesh(&mesh), K(NULL) { };
 
-	std::vector<SparseCSRMatrix<eslocal> > *K;
+	mesh::APIMesh *mesh;
+	SparseCSRMatrix<eslocal> *K;
 
 	eslocal size;
 	double *rhs;
@@ -81,7 +54,6 @@ public:
 	virtual void finalize() = 0;
 
 	virtual size_t DOFs() = 0;
-	virtual void fillAPIHolder(APIHolder *holder) = 0;
 
 	virtual ~AssemblerBase() {};
 };

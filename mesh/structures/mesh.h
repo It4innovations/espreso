@@ -28,6 +28,7 @@
 namespace esinput {
 class InternalLoader;
 class ExternalLoader;
+class APILoader;
 }
 
 namespace mesh {
@@ -71,9 +72,9 @@ public:
 
 	void getSurface(Mesh &surface) const;
 
-	~Mesh();
+	virtual ~Mesh();
 
-	void partitiate(size_t parts);
+	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t fixPoints);
 	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
 
@@ -110,7 +111,6 @@ protected:
 	void remapElementsToSubdomain();
 	void remapElementsToCluster();
 
-private:
 	void makePartContinuous(size_t part);
 	void computeCommonFaces(Mesh &faces);
 	void computeBorderLinesAndVertices(const Mesh &faces, std::vector<bool> &border, Mesh &lines, std::set<eslocal> &vertices);
@@ -135,6 +135,24 @@ private:
 
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
+};
+
+class APIMesh: public Mesh
+{
+	friend class esinput::APILoader;
+
+public:
+	APIMesh(std::vector<std::vector<double> > &eMatrices): _eMatrices(eMatrices) { };
+
+	void partitiate(size_t parts);
+
+	std::vector<std::vector<double> >& getMatrices() const
+	{
+		return _eMatrices;
+	}
+
+protected:
+	std::vector<std::vector<double> > &_eMatrices;
 };
 
 }

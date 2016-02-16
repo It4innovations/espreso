@@ -6,23 +6,18 @@
 
 namespace esinput {
 
-class API: public ExternalLoader {
+class API: public APILoader {
 
 public:
-	API(std::vector<std::vector<eslocal> > eIndices, std::vector<std::vector<double> > eMatrix)
-	: eIndices(eIndices), eMatrix(eMatrix) { };
+	// TODO: elements with various DOFS
+	API(std::vector<std::vector<eslocal> > &eIndices): DOFS(3), eIndices(eIndices) { };
 
-	void points(mesh::Coordinates &coordinates) { /* empty in case of API */ };
+	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
-	void boundaryConditions(mesh::Coordinates &coordinates) { /* empty in case of API */ };
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) { /* empty in case of API */ };
-
-	void open() {};
-	void close() {};
 
 private:
-	std::vector<std::vector<eslocal> > eIndices;
-	std::vector<std::vector<double> > eMatrix;
+	size_t DOFS;
+	std::vector<std::vector<eslocal> > &eIndices;
 };
 
 }

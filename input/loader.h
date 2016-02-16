@@ -8,6 +8,8 @@
 
 namespace esinput {
 
+//class Loader
+
 class ExternalLoader {
 
 public:
@@ -41,6 +43,23 @@ protected:
 	virtual void close() = 0;
 
 	virtual ~ExternalLoader() {};
+};
+
+class APILoader {
+
+public:
+	void load(mesh::APIMesh &mesh)
+	{
+		points(mesh._coordinates);
+		elements(mesh._elements);
+		mesh.partitiate(esconfig::mesh::subdomains);
+	}
+
+protected:
+	virtual void points(mesh::Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
+
+	virtual ~APILoader() {};
 };
 
 class InternalLoader {

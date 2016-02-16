@@ -122,7 +122,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 }
 
-static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assembler::APIHolder *apiHolder)
+static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface)
 {
 	switch (esconfig::assembler::discretization) {
 
@@ -137,16 +137,6 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assemb
 		BEM bem(*mesh, *surface);
 		return createAssembler<BEM>(bem);
 	}
-	case esconfig::assembler::API: {
-		apiHolder = new APIHolder();
-		esconfig::assembler::discretization = esconfig::assembler::FEM;
-		assembler::AssemblerBase * assembler = getAssembler(mesh, surface, apiHolder);
-		esconfig::assembler::discretization = esconfig::assembler::API;
-		assembler->fillAPIHolder(apiHolder);
-		API api(*apiHolder);
-		delete assembler;
-		return createAssembler<API>(api);
-	}
 	default:
 		ESLOG(eslog::ERROR) << "Unknown discretization.";
 		exit(EXIT_FAILURE);
@@ -154,13 +144,13 @@ static AssemblerBase* getAssembler(mesh::Mesh *mesh, mesh::Mesh *surface, assemb
 }
 
 Factory::Factory(const Options &options)
-:_assembler(NULL), _mesh(NULL), _surface(NULL), _apiHolder(NULL)
+:_assembler(NULL), _mesh(NULL), _surface(NULL)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
 	_mesh = getMesh(options);
-	_assembler = getAssembler(_mesh, _surface, _apiHolder);
+	_assembler = getAssembler(_mesh, _surface);
 }
 
 Factory::~Factory()
@@ -171,9 +161,6 @@ Factory::~Factory()
 	}
 	if (_surface != NULL) {
 		delete _surface;
-	}
-	if (_apiHolder != NULL) {
-		delete _apiHolder;
 	}
 }
 

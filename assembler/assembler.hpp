@@ -18,7 +18,7 @@ size_t Assembler<BEM>::subdomains()
 template<>
 size_t Assembler<API>::subdomains()
 {
-	return 1;
+	return this->_input.mesh->parts();
 }
 
 }

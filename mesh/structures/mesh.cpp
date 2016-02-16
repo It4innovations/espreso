@@ -51,6 +51,46 @@ void Mesh::partitiate(size_t parts)
 	computeBoundaries();
 }
 
+void APIMesh::partitiate(size_t parts)
+{
+	if (this->parts()) {
+		this->remapElementsToCluster();
+	}
+
+	_partPtrs.resize(parts + 1);
+	_partPtrs[0] = 0;
+
+	eslocal *ePartition = getPartition(0, _elements.size(), parts);
+
+	Element *e;
+	eslocal p;
+	for (size_t part = 0; part < parts; part++) {
+		eslocal index = _partPtrs[part];	// index of last ordered element
+		for (size_t i = _partPtrs[part]; i < _elements.size(); i++) {
+			if (ePartition[i] == part) {
+				if (i == index) {
+					index++;
+				} else {
+					e = _elements[i];
+					_elements[i] = _elements[index];
+					_elements[index] = e;
+					p = ePartition[i];
+					ePartition[i] = ePartition[index];
+					ePartition[index] = p;
+					index++;
+					_eMatrices[i].swap(_eMatrices[index]);
+				}
+			}
+		}
+		_partPtrs[part + 1] = index;
+	}
+	delete[] ePartition;
+
+	remapElementsToSubdomain();
+	computeFixPoints(0);
+	computeBoundaries();
+}
+
 void Mesh::computeBoundaries()
 {
 	_subdomainBoundaries.clear();

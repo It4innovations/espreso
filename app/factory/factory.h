@@ -23,7 +23,6 @@ private:
 
 	mesh::Mesh *_mesh;
 	mesh::Mesh *_surface;
-	assembler::APIHolder *_apiHolder;
 };
 
 

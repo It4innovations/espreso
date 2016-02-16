@@ -91,7 +91,6 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		indexBase)
 {
 	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexBase));
-	DataHolder::matrices.back()->K.resize(esconfig::mesh::subdomains, SparseVVPMatrix<eslocal>(0, 0));
 	*matrix = DataHolder::matrices.back();
 }
 
@@ -101,17 +100,22 @@ void FETI4IAddElement(
 		FETI4IInt* 		indices,
 		FETI4IReal* 	values)
 {
-	eslocal offset = matrix->offset;
+	if (std::all_of(values, values + size, [] (double &value) { return value == 0; })) {
+		// Skip elements with zero values
+		return;
+	}
+
 	if (esconfig::mesh::subdomains == 1) {
 		for (eslocal i = 0; i < size; i++) {
 			for (eslocal j = 0; j < size; j++) {
-				matrix->K[0](indices[i] - offset,  indices[j] - offset) = values[i * size + j];
+				matrix->K(indices[i] - matrix->offset,  indices[j] - matrix->offset) = values[i * size + j];
 			}
 		}
 	} else {
+		eslocal offset = matrix->offset;
 		matrix->eIndices.push_back(std::vector<eslocal>(indices, indices + size));
 		std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
-		matrix->eMatrix.push_back(std::vector<double>(values, values + size));
+		matrix->eMatrices.push_back(std::vector<double>(values, values + size * size));
 	}
 }
 
@@ -130,13 +134,20 @@ void FETI4ICreateInstance(
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
-	API api;
-	DataHolder::instances.push_back(new FETI4IStructInstance(api));
-	DataHolder::instances.back()->K.resize(matrix->K.size(), SparseCSRMatrix<eslocal>(0, 0));
-	for (size_t i = 0; i < matrix->K.size(); i++) {
-		DataHolder::instances.back()->K[i] = matrix->K[i];
+	mesh::APIMesh mesh(matrix->eMatrices);
+	esinput::API loader(matrix->eIndices);
+	if (esconfig::mesh::subdomains > 1) {
+		loader.load(mesh);
 	}
-	api.K = &(DataHolder::instances.back()->K);
+
+	API api(mesh);
+	DataHolder::instances.push_back(new FETI4IStructInstance(api));
+
+	if (esconfig::mesh::subdomains == 1) {
+		DataHolder::instances.back()->K = matrix->K;
+		api.K = &(DataHolder::instances.back()->K);
+	}
+
 	api.indexing = matrix->offset;
 	api.size = size;
 	api.rhs = rhs;

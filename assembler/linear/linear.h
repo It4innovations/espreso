@@ -18,8 +18,6 @@ public:
 	void solve(std::vector<std::vector<double> > &solution);
 	void finalize();
 
-	void fillAPIHolder(APIHolder *holder);
-
 protected:
 	Linear(TInput &input): Gluing<TInput>(input) {};
 

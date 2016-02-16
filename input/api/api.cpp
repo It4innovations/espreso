@@ -4,16 +4,27 @@
 using namespace esinput;
 
 
+void API::points(mesh::Coordinates &coordinates)
+{
+	mesh::Point p;
+
+	eslocal max = 0;
+	for (eslocal e = 0; e < eIndices.size(); e++) {
+		max = std::max(max, *std::max_element(eIndices[e].begin(), eIndices[e].end()));
+	}
+	coordinates.reserve(max + 1);
+	for (size_t i = 0; i <= max; i++) {
+		coordinates.add(p, i, i);
+	}
+}
+
 void API::elements(std::vector<mesh::Element*> &elements)
 {
-	// TODO: elements with various DOFS
-	int DOFS = 3;
-
 	elements.reserve(eIndices.size());
 	eslocal indices[20], params[6];
 
 	for (eslocal e = 0; e < eIndices.size(); e++) {
-		for (eslocal i = 0; i < eIndices.size(); i += DOFS) {
+		for (eslocal i = 0; i < eIndices[e].size(); i += DOFS) {
 			indices[i / DOFS] = eIndices[e][i] / DOFS;
 		}
 		switch(eIndices[e].size() / DOFS) {
