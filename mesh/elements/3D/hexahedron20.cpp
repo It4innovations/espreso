@@ -379,9 +379,15 @@ std::vector<eslocal> Hexahedron20::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron20::Hexahedron20(const eslocal *indices, const eslocal *params): Element(params)
+Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
+	switch (n) {
+	case 20:
+		memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Hexahedron20 from " << n << " elements.";
+	}
 }
 
 Hexahedron20::Hexahedron20(std::ifstream &is): Element(is)

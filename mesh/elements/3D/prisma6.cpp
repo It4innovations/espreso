@@ -191,14 +191,23 @@ std::vector<eslocal> Prisma6::getFace(size_t face) const
 	return result;
 }
 
-Prisma6::Prisma6(const eslocal *indices, const eslocal *params): Element(params)
+Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	_indices[0] = indices[0];
-	_indices[1] = indices[1];
-	_indices[2] = indices[2];
-	_indices[3] = indices[4];
-	_indices[4] = indices[5];
-	_indices[5] = indices[6];
+	switch (n) {
+	case 6:
+		memcpy(_indices, indices, 6 * sizeof(eslocal));
+		break;
+	case 8:
+		_indices[0] = indices[0];
+		_indices[1] = indices[1];
+		_indices[2] = indices[2];
+		_indices[3] = indices[4];
+		_indices[4] = indices[5];
+		_indices[5] = indices[6];
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Prisma6 from " << n << " elements.";
+	}
 }
 
 Prisma6::Prisma6(std::ifstream &is): Element(is)

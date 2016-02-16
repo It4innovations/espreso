@@ -18,7 +18,7 @@ class Tetrahedron4: public Element
 public:
 	static bool match(const eslocal *indices, eslocal n);
 
-	Tetrahedron4(const eslocal *indices, const eslocal *params);
+	Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params);
 	Tetrahedron4(std::ifstream &is);
 
 	Element* copy() const

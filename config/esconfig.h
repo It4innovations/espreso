@@ -7,6 +7,28 @@
 
 namespace esconfig {
 
+enum FetiMethod {
+	TOTAL_FETI,
+	HYBRID_FETI
+};
+
+enum Preconditioner {
+	NO_PRECONDITIONER,
+	LUMPED
+};
+
+enum CGSolver {
+	STANDARD,
+	PIPELINED
+};
+
+enum KSolver {
+	DIRECT_DOUBLE_PRECISION,
+	ITERATIVE,
+	DIRECT_SINGLE_PRECISION,
+	DIRECT_MIXED_PREXISION
+};
+
 extern int MPIrank;
 extern int MPIsize;
 

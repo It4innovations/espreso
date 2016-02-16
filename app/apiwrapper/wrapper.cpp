@@ -101,10 +101,16 @@ void FETI4IAddElement(
 		FETI4IReal* 	values)
 {
 	eslocal offset = matrix->offset;
-	for (eslocal i = 0; i < size; i++) {
-		for (eslocal j = 0; j < size; j++) {
-			matrix->data(indices[i] - offset,  indices[j] - offset) = values[i * size + j];
+	if (esconfig::mesh::subdomains == 1) {
+		for (eslocal i = 0; i < size; i++) {
+			for (eslocal j = 0; j < size; j++) {
+				matrix->data(indices[i] - offset,  indices[j] - offset) = values[i * size + j];
+			}
 		}
+	} else {
+		matrix->eIndices.push_back(std::vector<eslocal>(indices, indices + size));
+		std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
+		matrix->eMatrix.push_back(std::vector<double>(values, values + size));
 	}
 }
 
@@ -123,7 +129,6 @@ void FETI4ICreateInstance(
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
-	//std::cout.setstate(std::ios_base::failbit);
 	API api;
 	DataHolder::instances.push_back(new FETI4IStructInstance(api));
 	DataHolder::instances.back()->K = matrix->data;

@@ -17,7 +17,7 @@ void Hexahedron8::addElements(std::vector<mesh::Element*> &elements, const esloc
 	hexa[5] = indices[5];
 	hexa[6] = indices[7];
 	hexa[7] = indices[6];
-	elements.push_back(new mesh::Hexahedron8(hexa, params));
+	elements.push_back(new mesh::Hexahedron8(hexa, 8, params));
 }
 
 

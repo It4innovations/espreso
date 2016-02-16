@@ -286,21 +286,30 @@ std::vector<eslocal> Pyramid13::getFace(size_t face) const
 	return result;
 }
 
-Pyramid13::Pyramid13(const eslocal *indices, const eslocal *params): Element(params)
+Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	_indices[ 0] = indices[ 0];
-	_indices[ 1] = indices[ 1];
-	_indices[ 2] = indices[ 2];
-	_indices[ 3] = indices[ 3];
-	_indices[ 4] = indices[ 4];
-  _indices[ 5] = indices[ 8];
-  _indices[ 6] = indices[ 9];
-  _indices[ 7] = indices[10];
-  _indices[ 8] = indices[11];
-  _indices[ 9] = indices[16];
-  _indices[10] = indices[17];
-  _indices[11] = indices[18];
-  _indices[12] = indices[19];
+	switch (n) {
+	case 13:
+		memcpy(_indices, indices, 13 * sizeof(eslocal));
+		break;
+	case 20:
+		_indices[ 0] = indices[ 0];
+		_indices[ 1] = indices[ 1];
+		_indices[ 2] = indices[ 2];
+		_indices[ 3] = indices[ 3];
+		_indices[ 4] = indices[ 4];
+		_indices[ 5] = indices[ 8];
+		_indices[ 6] = indices[ 9];
+		_indices[ 7] = indices[10];
+		_indices[ 8] = indices[11];
+		_indices[ 9] = indices[16];
+		_indices[10] = indices[17];
+		_indices[11] = indices[18];
+		_indices[12] = indices[19];
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Pyramid13 from " << n << " elements.";
+	}
 }
 
 Pyramid13::Pyramid13(std::ifstream &is): Element(is)

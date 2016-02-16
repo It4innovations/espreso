@@ -228,10 +228,19 @@ std::vector<eslocal> Tetrahedron4::getFace(size_t face) const
 	return result;
 }
 
-Tetrahedron4::Tetrahedron4(const eslocal *indices, const eslocal *params): Element(params)
+Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	memcpy(_indices, indices, 3 * sizeof(eslocal));
-	_indices[3] = indices[4];
+	switch (n) {
+	case 8:
+		memcpy(_indices, indices, 3 * sizeof(eslocal));
+		_indices[3] = indices[4];
+		break;
+	case 4:
+		memcpy(_indices, indices, 4 * sizeof(eslocal));
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
+	}
 }
 
 Tetrahedron4::Tetrahedron4(std::ifstream &is): Element(is)

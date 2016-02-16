@@ -1,0 +1,15 @@
+
+source_files = (
+    "api.cpp",
+)
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+    ctx.lib(
+        source          = source_files,
+        target          = "esinput_api",
+        use             = "espreso_includes",
+        install_path    = ctx.LIBRARIES
+    )

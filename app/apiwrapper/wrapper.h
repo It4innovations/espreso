@@ -13,6 +13,10 @@ struct FETI4IStructMatrix {
 	FETI4IStructMatrix(eslocal offset): data(0, 0), offset(offset) { };
 
 	SparseVVPMatrix<eslocal> data;
+
+	std::vector<std::vector<eslocal> > eIndices;
+	std::vector<std::vector<double> > eMatrix;
+
 	eslocal offset;
 };
 

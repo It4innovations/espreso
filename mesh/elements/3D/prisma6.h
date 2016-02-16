@@ -18,7 +18,7 @@ class Prisma6: public Element
 public:
 	static bool match(const eslocal *indices, eslocal n);
 
-	Prisma6(const eslocal *indices, const eslocal *params);
+	Prisma6(const eslocal *indices, eslocal n, const eslocal *params);
 	Prisma6(std::ifstream &is);
 
 	Element* copy() const

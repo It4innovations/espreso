@@ -184,13 +184,22 @@ std::vector<eslocal> Pyramid5::getFace(size_t face) const
 	return result;
 }
 
-Pyramid5::Pyramid5(const eslocal *indices, const eslocal *params): Element(params)
+Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	_indices[0] = indices[0];
-	_indices[1] = indices[1];
-	_indices[2] = indices[2];
-	_indices[3] = indices[3];
-	_indices[4] = indices[4];
+	switch (n) {
+	case 8:
+		_indices[0] = indices[0];
+		_indices[1] = indices[1];
+		_indices[2] = indices[2];
+		_indices[3] = indices[3];
+		_indices[4] = indices[4];
+		break;
+	case 5:
+		memcpy(_indices, indices, 5 * sizeof(eslocal));
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Tetrahedron5 from " << n << " elements.";
+	}
 }
 
 Pyramid5::Pyramid5(std::ifstream &is): Element(is)

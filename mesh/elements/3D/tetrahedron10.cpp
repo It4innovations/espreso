@@ -423,11 +423,10 @@ std::vector<eslocal> Tetrahedron10::getFace(size_t face) const
 Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
 	switch (n) {
-	case 10: {
+	case 10:
 		memcpy(_indices, indices, 10 * sizeof(eslocal));
 		break;
-	}
-	case 20: {
+	case 20:
 		_indices[0] = indices[0];
 		_indices[1] = indices[1];
 		_indices[2] = indices[2];
@@ -438,7 +437,9 @@ Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *p
 		_indices[7] = indices[16];
 		_indices[8] = indices[17];
 		_indices[9] = indices[18];
-	}
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Tetrahedron10 from " << n << " elements.";
 	}
 
 }

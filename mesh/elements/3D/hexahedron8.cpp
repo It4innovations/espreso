@@ -152,9 +152,15 @@ std::vector<eslocal> Hexahedron8::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron8::Hexahedron8(const eslocal *indices, const eslocal *params): Element(params)
+Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
+	switch (n) {
+	case 8:
+		memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
+	}
 }
 
 Hexahedron8::Hexahedron8(std::ifstream &is): Element(is)

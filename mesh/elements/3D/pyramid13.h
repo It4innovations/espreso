@@ -19,7 +19,7 @@ class Pyramid13: public Element
 public:
 	static bool match(const eslocal *indices, eslocal n);
 
-	Pyramid13(const eslocal *indices, const eslocal *params);
+	Pyramid13(const eslocal *indices, eslocal n, const eslocal *params);
 	Pyramid13(std::ifstream &is);
 
 	Element* copy() const

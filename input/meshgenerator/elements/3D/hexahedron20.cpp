@@ -30,7 +30,7 @@ void Hexahedron20::addElements(std::vector<mesh::Element*> &elements, const eslo
 	hexa[17] = indices[17];
 	hexa[18] = indices[15];
 	hexa[19] = indices[9];
-	elements.push_back(new mesh::Hexahedron20(hexa, params));
+	elements.push_back(new mesh::Hexahedron20(hexa, 20, params));
 }
 
 

@@ -314,23 +314,32 @@ std::vector<eslocal> Prisma15::getFace(size_t face) const
 	return result;
 }
 
-Prisma15::Prisma15(const eslocal *indices, const eslocal *params): Element(params)
+Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
-	_indices[0] = indices[0];
-	_indices[1] = indices[1];
-	_indices[2] = indices[2];
-	_indices[3] = indices[4];
-	_indices[4] = indices[5];
-	_indices[5] = indices[6];
-	_indices[6] = indices[8];
-	_indices[7] = indices[9];
-	_indices[8] = indices[11];
-	_indices[9] = indices[12];
-	_indices[10] = indices[13];
-	_indices[11] = indices[15];
-	_indices[12] = indices[16];
-	_indices[13] = indices[17];
-	_indices[14] = indices[18];
+	switch (n) {
+	case 20:
+		_indices[0] = indices[0];
+		_indices[1] = indices[1];
+		_indices[2] = indices[2];
+		_indices[3] = indices[4];
+		_indices[4] = indices[5];
+		_indices[5] = indices[6];
+		_indices[6] = indices[8];
+		_indices[7] = indices[9];
+		_indices[8] = indices[11];
+		_indices[9] = indices[12];
+		_indices[10] = indices[13];
+		_indices[11] = indices[15];
+		_indices[12] = indices[16];
+		_indices[13] = indices[17];
+		_indices[14] = indices[18];
+		break;
+	case 15:
+		memcpy(_indices, indices, 15 * sizeof(eslocal));
+		break;
+	default:
+		ESLOG(eslog::ERROR) << "It is not possible to create Prisma15 from " << n << " elements.";
+	}
 }
 
 Prisma15::Prisma15(std::ifstream &is): Element(is)
