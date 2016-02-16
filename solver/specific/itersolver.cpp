@@ -1351,11 +1351,13 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 
 	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.start();
-	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
-		SendMatrix(cluster.G1, cluster.my_neighs[neigh_i]);
+//	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
+//		SendMatrix(cluster.G1, cluster.my_neighs[neigh_i]);
+//
+//	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
+//		RecvMatrix(G_neighs[neigh_i], cluster.my_neighs[neigh_i]);
 
-	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ )
-		RecvMatrix(G_neighs[neigh_i], cluster.my_neighs[neigh_i]);
+	ExchangeMatrices(cluster.G1, G_neighs, cluster.my_neighs);
 	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
 
 
@@ -2178,6 +2180,79 @@ void   RecvMatrix ( SparseMatrix & B_out, eslocal source_rank) {
 #ifdef WIN32
 	//MPI_Barrier(MPI_COMM_WORLD);
 #endif
+}
+
+void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <eslocal> neighbor_ranks ) {
+
+	int tag = 1;
+	//MPI_Request * request = (*MPI_Request)malloc( 3 * neighbor_ranks.size()*sizeof(MPI_Request));
+	//MPI_Status  * status  = (*MPI_Status) malloc( 3 * neighbor_ranks.size()*sizeof(MPI_Status ));
+
+
+	SEQ_VECTOR < MPI_Request > request ( 7 * neighbor_ranks.size() );
+
+
+	SEQ_VECTOR < SEQ_VECTOR < eslocal > > send_par_buf ( neighbor_ranks.size() );
+	SEQ_VECTOR < SEQ_VECTOR < eslocal > > recv_par_buf ( neighbor_ranks.size() );
+
+	//Send Matrix properties
+	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
+	{
+		send_par_buf[neigh_i].resize(4);
+		int dest_rank = neighbor_ranks[neigh_i];
+
+		send_par_buf[0] = A_in.cols;
+		send_par_buf[1] = A_in.rows;
+		send_par_buf[2] = A_in.nnz;
+		send_par_buf[3] = (eslocal)A_in.type;
+
+		MPI_Isend(&send_par_buf[neigh_i][0],  4, 				esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 0] );
+
+	}
+
+
+	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
+	{
+		recv_par_buf[neigh_i].resize(4);
+		int source_rank = neighbor_ranks[neigh_i];
+
+		MPI_Recv(&recv_par_buf[neigh_i][0], 4, esglobal_mpi, source_rank, tag, MPI_COMM_WORLD, & status);
+		B_out[neigh_i].cols = recv_par_buf[0];
+		B_out[neigh_i].rows = recv_par_buf[1];
+		B_out[neigh_i].nnz  = recv_par_buf[2];
+		B_out[neigh_i].type = (char)recv_par_buf[3];
+
+		B_out[neigh_i].CSR_I_row_indices.resize(B_out[neigh_i].rows + 1);
+		B_out[neigh_i].CSR_J_col_indices.resize(B_out[neigh_i].nnz);
+		B_out[neigh_i].CSR_V_values.     resize(B_out[neigh_i].nnz);
+	}
+
+	// Send Data
+	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
+	{
+		int dest_rank = neighbor_ranks[neigh_i];
+		int tag = 1;
+
+		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
+		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 2] );
+		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 3] );
+
+	}
+
+
+	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
+	{
+		MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, I_row_tag, MPI_COMM_WORLD, & status[4 * neigh_i + 0] );
+		MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, J_col_tag, MPI_COMM_WORLD, & status[4 * neigh_i + 1] );
+		MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE,      source_rank, V_val_tag, MPI_COMM_WORLD, & status[4 * neigh_i + 2] );
+	}
+
+
+//	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
+//		SendMatrix(A_in, neighbor_ranks[neigh_i]);
+
+//	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
+//		RecvMatrix(B_out[neigh_i], neighbor_ranks[neigh_i]);
 }
 
 void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, SparseMatrix & A) {
