@@ -183,9 +183,10 @@ public:
 
 //Utilities
 
-void SendMatrix(eslocal  rank, eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
+void SendMatrix  (eslocal  rank, eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
 
-void SendMatrix_2(eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
+void SendMatrix2 (eslocal  rank, eslocal  source_rank, SparseMatrix & A_in, eslocal  dest_rank, SparseMatrix & B_out);
+
 void RecvMatrix   ( SparseMatrix & B_out, eslocal  source_rank);
 void SendMatrix   ( SparseMatrix & A_in, eslocal  dest_rank );
 
