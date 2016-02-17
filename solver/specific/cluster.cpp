@@ -1261,8 +1261,8 @@ void ClusterBase::CreateSa() {
 //		 GGt.get_kernel_from_K(GGt, Kernel_Sa);
 
 
-     double tmp_double;
-     eslocal tmp_int;
+		 double tmp_double;
+		 eslocal tmp_int;
 		 SparseMatrix TSak, _tmpSparseMat;
 		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,&tmp_double, &tmp_int, -1);
 		 TSak.Clear();
