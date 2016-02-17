@@ -643,7 +643,7 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+	for (eslocal iter = 0; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
 
@@ -867,7 +867,7 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 
 
-	int iter = 0;
+	eslocal iter = 0;
 	timing.totalTime.reset();
 
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
@@ -1037,7 +1037,7 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
 
 
-		int iter = 0;
+		eslocal iter = 0;
 		timing.totalTime.reset();
 
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
@@ -1201,7 +1201,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 	//}
 
 	//// **** Log N MPI reduce
-	int count_cv = 0;
+	eslocal count_cv = 0;
 	for (eslocal li = 2; li <= 2*mpi_size; li = li * 2 ) {
 
 		SparseMatrix recv_m;
@@ -1421,21 +1421,21 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 			if (li == 2)
 				GGt_Mat_tmp.MatAppend(GGt_l);
 			if ((mpi_rank + li/2) < mpi_size) {
-				SendMatrix2(mpi_rank, mpi_rank + li/2, GGt_l, mpi_rank,     recv_m_l);
+				SendMatrix(mpi_rank, mpi_rank + li/2, GGt_l, mpi_rank,     recv_m_l);
 				GGt_Mat_tmp.MatAppend(recv_m_l);
 			} else {
-				SendMatrix2(mpi_rank, mpi_size + 1   , GGt_l, mpi_size + 1, recv_m_l);
+				SendMatrix(mpi_rank, mpi_size + 1   , GGt_l, mpi_size + 1, recv_m_l);
 			}
 		} else {
 
 			if ((mpi_rank + li/2) % li == 0)
 			{
 				if (li == 2)
-					SendMatrix2(mpi_rank, mpi_rank       , GGt_l      , mpi_rank - li/2, recv_m_l);
+					SendMatrix(mpi_rank, mpi_rank       , GGt_l      , mpi_rank - li/2, recv_m_l);
 				else
-					SendMatrix2(mpi_rank, mpi_rank       , GGt_Mat_tmp, mpi_rank - li/2, recv_m_l);
+					SendMatrix(mpi_rank, mpi_rank       , GGt_Mat_tmp, mpi_rank - li/2, recv_m_l);
 			} else {
-				SendMatrix2(mpi_rank, mpi_rank+1, GGt_l, mpi_rank+1,recv_m_l);
+				SendMatrix(mpi_rank, mpi_rank+1, GGt_l, mpi_rank+1,recv_m_l);
 			}
 		}
 
@@ -1996,28 +1996,26 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 
-		// Lumped Prec
+		// Lumped Prec - memory efficient
 		if (USE_PREC == 1) {
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-
-			//cluster.domains[d].K.MatAddInPlace( cluster.domains[d]._RegMat, 'N', -1.0);
 			cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
-			//cluster.domains[d]._RegMat.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', 0, 0, -1.0);
-
-			//cluster.domains[d].K.MatAddInPlace( cluster.domains[d]._RegMat, 'N',  1.0);
-
-			//cluster.domains[d].Kplus.ImportMatrix_wo_Copy (cluster.domains[d].K);
-
-			//cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 		}
 
-		if (USE_PREC == 2) { // Weight scaling function
+		// Lumped Prec - fast - separate matrix
+		if (USE_PREC == 11 ) {
+			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+		}
+
+		// Weight scaling function
+		if (USE_PREC == 2) {
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
-			//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d];
 		}
 
-		if (USE_PREC == 3) { // Dirichlet Prec
+		// Dirichlet Prec
+		if (USE_PREC == 3) {
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 		}
@@ -2029,7 +2027,7 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 	for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 
-		if (USE_PREC == 1 || USE_PREC == 2)
+		if (USE_PREC == 1 || USE_PREC == 2 || USE_PREC == 11 )
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
 		if (USE_PREC == 3)
@@ -2058,7 +2056,7 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 
 // **********************************************************************
 // *** Communication layer **********************************************
-void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, eslocal dest_rank, SparseMatrix & B_out) {
+void   SendMatrix2  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, eslocal dest_rank, SparseMatrix & B_out) {
 
 	eslocal param_tag = 1;
 	eslocal I_row_tag = 2;
@@ -2111,7 +2109,7 @@ void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, esl
 #endif
 }
 
-void   SendMatrix2  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, eslocal dest_rank, SparseMatrix & B_out) {
+void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, eslocal dest_rank, SparseMatrix & B_out) {
 
 	eslocal tag = 1;
 
@@ -2235,9 +2233,7 @@ void   RecvMatrix ( SparseMatrix & B_out, eslocal source_rank) {
 
 void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, SEQ_VECTOR <eslocal> neighbor_ranks ) {
 
-	int tag = 1;
-	//MPI_Request * request = (*MPI_Request)malloc( 3 * neighbor_ranks.size()*sizeof(MPI_Request));
-	//MPI_Status  * status  = (*MPI_Status) malloc( 3 * neighbor_ranks.size()*sizeof(MPI_Status ));
+	eslocal tag = 1;
 
 	SEQ_VECTOR < MPI_Request > request ( 7 * neighbor_ranks.size() );
 
@@ -2248,7 +2244,7 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
 	{
 		send_par_buf[neigh_i].resize(4);
-		int dest_rank = neighbor_ranks[neigh_i];
+		eslocal dest_rank = neighbor_ranks[neigh_i];
 
 		send_par_buf[neigh_i][0] = A_in.cols;
 		send_par_buf[neigh_i][1] = A_in.rows;
@@ -2263,7 +2259,7 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
 	{
 		recv_par_buf[neigh_i].resize(4);
-		int source_rank = neighbor_ranks[neigh_i];
+		eslocal source_rank = neighbor_ranks[neigh_i];
 
 		MPI_Recv(&recv_par_buf[neigh_i][0], 4, esglobal_mpi, source_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -2280,8 +2276,8 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 	// Send Data
 	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
 	{
-		int dest_rank = neighbor_ranks[neigh_i];
-		int tag = 1;
+		eslocal dest_rank = neighbor_ranks[neigh_i];
+		eslocal tag = 1;
 
 		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
 		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 2] );
@@ -2292,8 +2288,8 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 
 	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
 	{
-		int source_rank = neighbor_ranks[neigh_i];
-		int tag = 1;
+		eslocal source_rank = neighbor_ranks[neigh_i];
+		eslocal tag = 1;
 
 		MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0], B_out[neigh_i].rows + 1, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
 		MPI_Irecv(&B_out[neigh_i].CSR_J_col_indices[0], B_out[neigh_i].nnz,      esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 5] );
@@ -2302,27 +2298,11 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 
 	MPI_Waitall(7 * neighbor_ranks.size(), &request[0], MPI_STATUSES_IGNORE);
 
-//	MPI_Barrier(MPI_COMM_WORLD);
-
-//	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
-//		SendMatrix(A_in, neighbor_ranks[neigh_i]);
-
-//	for (eslocal neigh_i = 0; neigh_i < neighbor_ranks.size(); neigh_i++ )
-//		RecvMatrix(B_out[neigh_i], neighbor_ranks[neigh_i]);
 }
 
 void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, SparseMatrix & A) {
 
-	//eslocal param_tag = 1;
-	//eslocal I_row_tag = 2;
-	//eslocal J_col_tag = 3;
-	//eslocal V_val_tag = 4;
-
-	//MPI_Status status;
-	//MPI_Request request;
-
 	eslocal send_par_buf[4];
-	//eslocal recv_par_buf[4];
 
 	if (rank == source_rank) {
 		send_par_buf[0] = A.cols; send_par_buf[1] = A.rows; send_par_buf[2] = A.nnz; send_par_buf[3] = A.type;

@@ -494,10 +494,10 @@ void LinearSolver::init(
 		  cluster.domains[d].K = K_mat[d];
 		  if ( cluster.domains[d].K.type == 'G' )
 		  	cluster.domains[d].K.RemoveLower();
-		  if ( solver.USE_PREC == 1 )
+		  if ( solver.USE_PREC == 11 )
 		  	cluster.domains[d].Prec = cluster.domains[d].K;
 		}
-	set_R_from_K();
+	    set_R_from_K();
 	}
 
 
@@ -519,16 +519,12 @@ void LinearSolver::init(
 	if ( esconfig::mesh::averageEdges || esconfig::mesh::averageFaces ) {
 		cilk_for (int d = 0; d < T_mat.size(); d++) {
 
-			//SpyText(T_mat[d]);
-
 			SparseSolverCPU Tinv;
 			Tinv.mtype = 11;
 			Tinv.ImportMatrix(T_mat[d]);
 			std::stringstream ss;
-			ss << "init averaging -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			ss << "Init averaging -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
 			Tinv.Factorization(ss.str());
-
-			//SpyText( T_mat[d] );
 
 			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
 			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
@@ -598,83 +594,81 @@ void LinearSolver::init(
 
 	// **** Set Dirifchlet Preconditioner
 	if (esconfig::solver::PRECONDITIONER == 3 ) {
+
 		if (esconfig::MPIrank == 0)
 			std::cout << "Calculating Dirichlet Preconditioner : ";
-	  cilk_for (int d = 0; d < K_mat.size(); d++) {
-		SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
-		SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
-		SEQ_VECTOR <eslocal> perm_vec_diff ( K_mat[d].rows );
+		cilk_for (int d = 0; d < K_mat.size(); d++) {
+			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
+			SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
+			SEQ_VECTOR <eslocal> perm_vec_diff ( K_mat[d].rows );
 
-		SEQ_VECTOR <eslocal> I_row_indices_p (K_mat[d].nnz);
-		SEQ_VECTOR <eslocal> J_col_indices_p (K_mat[d].nnz);
+			SEQ_VECTOR <eslocal> I_row_indices_p (K_mat[d].nnz);
+			SEQ_VECTOR <eslocal> J_col_indices_p (K_mat[d].nnz);
 
-		for (eslocal i = 0; i < perm_vec.size(); i++)
-			perm_vec[i] = perm_vec[i] - 1;
+			for (eslocal i = 0; i < perm_vec.size(); i++)
+				perm_vec[i] = perm_vec[i] - 1;
 
-		for (eslocal i = 0; i < perm_vec_full.size(); i++)
-			perm_vec_full[i] = i;
+			for (eslocal i = 0; i < perm_vec_full.size(); i++)
+				perm_vec_full[i] = i;
 
-		auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
-		perm_vec_diff.resize(it - perm_vec_diff.begin());
+			auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
+			perm_vec_diff.resize(it - perm_vec_diff.begin());
 
-		perm_vec_full = perm_vec_diff;
-		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+			perm_vec_full = perm_vec_diff;
+			perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-		SparseMatrix K_modif = K_mat[d];
-		K_modif.RemoveLower();
+			SparseMatrix K_modif = K_mat[d];
+			K_modif.RemoveLower();
 
-		SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
-		eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+			SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
+			eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
 
-		for (eslocal i = 0; i < K_modif.rows;i++){
-	        vec_I1_i2[i][0] = perm_vec_full[i];
-	        vec_I1_i2[i][1] = i; // position to create revers permutation
-	    }
-
-	    std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
-	          [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
-	    return a[0] < b[0];
-	    });
-
-
-        // permutations made on matrix in COO format
-		K_modif.ConvertToCOO(0);
-		eslocal I_index,J_index;
-		for (eslocal i = 0;i<K_modif.nnz;i++){
-			I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
-			J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
-			if (I_index>J_index){
-				I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+			for (eslocal i = 0; i < K_modif.rows;i++){
+				vec_I1_i2[i][0] = perm_vec_full[i];
+				vec_I1_i2[i][1] = i; // position to create reverse permutation
 			}
-			else{
-				I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+
+			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+					[](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
+				return a[0] < b[0];
+			});
+
+
+			// permutations made on matrix in COO format
+			K_modif.ConvertToCOO(0);
+			eslocal I_index,J_index;
+			for (eslocal i = 0;i<K_modif.nnz;i++){
+				I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+				J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+				if (I_index>J_index){
+					I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+				}
+				else{
+					I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+				}
 			}
+			//
+			for (eslocal i = 0; i<K_modif.nnz;i++){
+				K_modif.I_row_indices[i] = I_row_indices_p[i];
+				K_modif.J_col_indices[i] = J_col_indices_p[i];
+			}
+			K_modif.ConvertToCSRwithSort(0);
+
+			SparseMatrix S;
+			SparseSolverCPU createSchur;
+			eslocal SC_SIZE = perm_vec.size();
+			createSchur.ImportMatrix(K_modif);
+			createSchur.Create_SC(S,SC_SIZE,false);
+			S.type='S';
+
+			cluster.domains[d].Prec = S;
+
+			if (esconfig::MPIrank == 0)
+				std::cout << ".";
+
 		}
-		//
-		for (eslocal i = 0; i<K_modif.nnz;i++){
-			K_modif.I_row_indices[i] = I_row_indices_p[i];
-			K_modif.J_col_indices[i] = J_col_indices_p[i];
-      }
-      K_modif.ConvertToCSRwithSort(0);
-
-      SparseMatrix S;
-      SparseSolverCPU createSchur;
-      eslocal SC_SIZE = perm_vec.size();
-      createSchur.ImportMatrix(K_modif);
-      createSchur.Create_SC(S,SC_SIZE,false);
-      S.type='S';
-      //S.ConvertCSRToDense(1);
-
-
-
-      cluster.domains[d].Prec = S;
-
-      if (esconfig::MPIrank == 0)
-      			std::cout << ".";
-
-	  }
-      if (esconfig::MPIrank == 0)
-      			std::cout << std::endl;
+		if (esconfig::MPIrank == 0)
+			std::cout << std::endl;
 	}
 	// **** END
 
@@ -702,8 +696,8 @@ void LinearSolver::init(
       		if ( cluster.domains[d].K.type == 'G' )
 		  		cluster.domains[d].K.RemoveLower();
 
-//		  	if ( solver.USE_PREC == 1 )
-//		  		cluster.domains[d].Prec = cluster.domains[d].K;
+		  	if ( solver.USE_PREC == 11 )
+		  		cluster.domains[d].Prec = cluster.domains[d].K;
 
    			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
    	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
@@ -964,7 +958,7 @@ void LinearSolver::set_B0 ( std::vector < SparseMatrix >	& B0_mat ) {
 void LinearSolver::set_R_from_K ()
 {
 
-  // Allocation of vectros on each cluster
+  // Allocation of vectors on each cluster
   vector<double> norm_KR_d_pow_2; norm_KR_d_pow_2.resize(number_of_subdomains_per_cluster);
   vector<eslocal> defect_K_d; defect_K_d.resize(number_of_subdomains_per_cluster);
 
@@ -1097,7 +1091,6 @@ void LinearSolver::set_R (
 			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
 		}
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
-
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 
 	}
@@ -1108,33 +1101,25 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 	if (MPI_rank == 0) {
 		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** SetSolverPreprocessing **************************************************************************************************** " << endl;
+		cout << " *** Solver Preprocessing ****************************************************************************************************** " << endl;
 
 		GetProcessMemoryStat_u ( );
 		GetMemoryStat_u( );
 		cout << " Solver - Creating G1 per cluster ... " << endl;
 	}
 
-	TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing");
-	G1_perCluster_time.start();
-
-	TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing");
-	G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-
+	 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
+	 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
 	cluster.Create_G1_perCluster   ();
+	 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
+	 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
-	G1_perCluster_time.end();
-	G1_perCluster_time.printStatMPI();
-
-	G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u());
-	G1_perCluster_mem.printStatMPI();
-
-	if (MPI_rank == 0) {
-		GetProcessMemoryStat_u ( );
-		GetMemoryStat_u ( );
-		cout << " Solver - CreateVec_d_perCluster ... " << endl;
-	}
-
+//	if (MPI_rank == 0) {
+//		GetProcessMemoryStat_u ( );
+//		GetMemoryStat_u ( );
+//		cout << " Solver - CreateVec_d_perCluster ... " << endl;
+//	}
+//
 //	TimeEvent Vec_d_perCluster_time ("Setup Vec d per Cluster - preprocessing");
 //	Vec_d_perCluster_time.start();
 //
@@ -1146,18 +1131,12 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
 		GetMemoryStat_u( );
-		cout << " Solver - Creating Global G1 and Running preprocessing (create GGt) ... " << endl;
+		cout << " Solver - Creating Global G1 and Running pre-processing (create GGt) ... " << endl;
 	}
 
-	TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - preprocessing");
-	solver_Preprocessing_time.start();
-
-	//cluster.my_neighs = neigh_domains;
-
+	 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
 	solver.Preprocessing ( cluster );
-
-	solver_Preprocessing_time.end();
-	solver_Preprocessing_time.printStatMPI();
+	 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
@@ -1165,19 +1144,15 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 		cout << " Solver - SetClusterPC - lambda map sub a neigh domains ... " << endl;
 	}
 
-	TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - preprocessing");
-	cluster_SetClusterPC_time.start();
-
+	 TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - pre-processing"); cluster_SetClusterPC_time.start();
 	cluster.SetClusterPC( lambda_map_sub ); // USE_DYNAMIC, USE_KINV
-
-	cluster_SetClusterPC_time.end();
-	cluster_SetClusterPC_time.printStatMPI();
+	 cluster_SetClusterPC_time.end(); cluster_SetClusterPC_time.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
 		GetMemoryStat_u ( );
 
-		cout << " *** END - SetSolverPreprocessing ********************************************************************************************** " << endl;
+		cout << " *** END - Solver Preprocessing ************************************************************************************************ " << endl;
 		cout << " ******************************************************************************************************************************* " << endl;
 		cout << endl;
 	}
