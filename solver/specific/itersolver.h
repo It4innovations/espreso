@@ -195,6 +195,7 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 void BcastMatrix(eslocal  rank, eslocal  mpi_root, eslocal  source_rank, SparseMatrix & A);
 
 void All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
+void All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 
 void All_Reduce_lambdas      ( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ); // POZOR - musi jit pryc
 

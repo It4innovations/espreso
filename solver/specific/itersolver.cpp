@@ -2342,7 +2342,7 @@ void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, Sparse
 	MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, MPI_COMM_WORLD);
 }
 
-void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
+void   All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
 {
 
 	for (eslocal i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
@@ -2398,6 +2398,49 @@ void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, S
 	}
 
 
+
+}
+
+
+void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
+{
+
+	for (eslocal i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
+		for (eslocal j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
+			cluster.my_comm_lambdas[i][j] = x_in[cluster.my_comm_lambdas_indices_comp[i][j]];
+		}
+	}
+
+	SEQ_VECTOR < MPI_Request > request ( 2 * cluster.my_neighs.size() );
+
+	cluster.iter_cnt_comm++;
+	eslocal tag = 1;
+
+//	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+//		MPI_Sendrecv(
+//			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
+//			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
+//			MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//	}
+
+	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+		MPI_Isend(
+			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, MPI_COMM_WORLD, &request[ 0                        + neigh_i] );
+	}
+
+	for (eslocal neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+		MPI_Irecv(
+			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, MPI_COMM_WORLD, &request[ cluster.my_neighs.size() + neigh_i] );
+	}
+
+	MPI_Waitall( 2 * cluster.my_neighs.size(), &request[0], MPI_STATUSES_IGNORE);
+
+	y_out = x_in; // POZOR pozor
+	for (eslocal i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
+		for (eslocal j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
+			y_out[cluster.my_comm_lambdas_indices_comp[i][j]] += cluster.my_recv_lambdas[i][j];
+		}
+	}
 
 }
 
