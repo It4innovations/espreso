@@ -8,7 +8,7 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.env.append_unique("DEFINES", [ "INFO_BLOCKING_EVENTS" ])
+    #ctx.env.append_unique("DEFINES", [ "TM_BLOCK_START" ])
 
 def build(ctx):
     ctx.lib(

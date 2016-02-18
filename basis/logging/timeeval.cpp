@@ -27,7 +27,7 @@ void TimeEvent::reset() {
 }
 
 void TimeEvent::start(double time) {
-#ifdef INFO_BLOCKING_EVENTS
+#ifdef TM_BLOCK_START
 	startWithBarrier(time);
 #else
 	startWithoutBarrier(time);
@@ -45,7 +45,7 @@ void TimeEvent::startWithoutBarrier(double time) {
 
 
 void TimeEvent::end(double time) {
-#ifdef INFO_BLOCKING_EVENTS
+#ifdef TM_BLOCK_END
 	endWithBarrier(time);
 #else
 	endWithoutBarrier(time);
