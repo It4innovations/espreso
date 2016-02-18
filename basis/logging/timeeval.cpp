@@ -45,7 +45,7 @@ void TimeEvent::startWithoutBarrier(double time) {
 
 void TimeEvent::start() {
 #ifdef TM_BLOCK_START
-	startWithBarrier(time);
+	startWithBarrier();
 #else
 	startWithoutBarrier();
 #endif
