@@ -46,13 +46,19 @@ struct TimeEvent
 		return omp_get_wtime();
 	}
 
-	void start(double time = time());
-	void startWithBarrier(double time = time());
-	void startWithoutBarrier(double time = time());
+	void start();
+	void startWithBarrier();
+	void startWithoutBarrier();
+	void start(double time);
+	void startWithBarrier(double time);
+	void startWithoutBarrier(double time);
 
-	void end(double time = time());
-	void endWithBarrier(double time = time());
-	void endWithoutBarrier(double time = time());
+	void end();
+	void endWithBarrier();
+	void endWithoutBarrier();
+	void end(double time);
+	void endWithBarrier(double time);
+	void endWithoutBarrier(double time);
 
 	void reset();
 
