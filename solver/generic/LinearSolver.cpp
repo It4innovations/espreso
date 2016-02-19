@@ -324,7 +324,7 @@ void LinearSolver::init(
 
 		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
 
-		if ( cluster.cluster_global_index == 1 ) { std::cout < ".";}; //{ GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
+		if ( cluster.cluster_global_index == 1 ) { std::cout << ".";}; //{ GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
 		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
 	}
