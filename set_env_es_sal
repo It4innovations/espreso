@@ -1,0 +1,26 @@
+#!/bin/bash
+
+module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25
+module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25
+module load tbb/4.4.2.152
+
+export MKL_NUM_THREADS=1;
+export OMP_NUM_THREADS=1;
+export SOLVER_NUM_THREADS=22;
+export PAR_NUM_THREADS=22;
+export CILK_NWORKERS=22;
+export PARDISOLICMESSAGE=1;
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.;
+export LC_CTYPE=;
+#module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3
+#module load perfboost;
+#module load mpt/2.12;
+#module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25;
+#module load tbb/4.4.2.152;
+#module unload impi;
+#module unload iimpi;
+#export MPI_DSM_DISTRIBUTE=0;
+#export MPI_SHEPHERD=1;
+#export PERFBOOST_VERBOSE=1;
+#export MPI_VERBOSE=1;
+#export MPI_BUFS_PER_PROC=512;

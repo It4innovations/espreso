@@ -10,7 +10,7 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.env.append_unique("DEFINES", [ "XE6", "TM_BLOCK_START", "DEVEL"])
+    ctx.env.append_unique("DEFINES", [ "XE6", "DEVEL"])
 
     if ctx.env.INT_WIDTH == 32:
         mkl = "mkl_intel_lp64"
@@ -18,7 +18,12 @@ def configure(ctx):
         mkl = "mkl_intel_ilp64"
 
     if ctx.env.SOLVER == "MKL":
-        ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+        if ctx.env.LIBTYPE == "STATIC":
+            lib = "STLIB"
+        else:
+            lib = "LIB"
+        ctx.env.append_unique(lib, [ mkl, "mkl_core", "mkl_intel_thread" ])
+        ctx.env.append_unique("LIB", [ "pthread" ])
 
     if ctx.env.SOLVER == "PARDISO":
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])

@@ -52,7 +52,7 @@ def build(ctx):
         install_path    = ctx.ROOT
     )
 
-    ctx.shlib(
+    ctx.lib(
         source          = apiwrapper_files,
         target          = "feti4i",
         use             = "espreso_includes esbasis esconfig esinput_api essolver_{0} esmesh esbem".format(ctx.env.SOLVER),

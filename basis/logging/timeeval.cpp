@@ -27,7 +27,7 @@ void TimeEvent::reset() {
 }
 
 void TimeEvent::start(double time) {
-#ifdef INFO_BLOCKING_EVENTS
+#ifdef TM_BLOCK_START
 	startWithBarrier(time);
 #else
 	startWithoutBarrier(time);
@@ -43,9 +43,44 @@ void TimeEvent::startWithoutBarrier(double time) {
 	eventTime.push_back(time);
 }
 
+void TimeEvent::start() {
+#ifdef TM_BLOCK_START
+	startWithBarrier();
+#else
+	startWithoutBarrier();
+#endif
+}
+
+void TimeEvent::startWithBarrier() {
+	MPI_Barrier(MPI_COMM_WORLD);
+	startWithoutBarrier();
+}
+
+void TimeEvent::startWithoutBarrier() {
+	eventTime.push_back(time());
+}
+
+
+void TimeEvent::end() {
+#ifdef TM_BLOCK_END
+	endWithBarrier();
+#else
+	endWithoutBarrier();
+#endif
+}
+
+void TimeEvent::endWithBarrier() {
+	MPI_Barrier(MPI_COMM_WORLD);
+	endWithoutBarrier();
+}
+
+void TimeEvent::endWithoutBarrier() {
+	eventTime.back() = time() - eventTime.back();
+	eventCount++;
+}
 
 void TimeEvent::end(double time) {
-#ifdef INFO_BLOCKING_EVENTS
+#ifdef TM_BLOCK_END
 	endWithBarrier(time);
 #else
 	endWithoutBarrier(time);
