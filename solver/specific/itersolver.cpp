@@ -655,9 +655,16 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		MPI_Request mpi_req;
 		MPI_Status mpi_stat;
 
-		SEQ_VECTOR <double> reduction_tmp (2,0);
-		SEQ_VECTOR <double> send_buf (2,0);
-		parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, &mpi_req, reduction_tmp, send_buf);
+		SEQ_VECTOR <double> reduction_tmp (3,0);
+		SEQ_VECTOR <double> send_buf      (3,0);
+
+		// POZOR - tady se to ukoncuje jinak = musime probrat
+		if (USE_PREC > 0)
+			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, r_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, r_l);
+		else
+			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, u_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, u_l);
+
+		// parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, &mpi_req, reduction_tmp, send_buf);
 
 		ddot_time.end();
 
@@ -709,8 +716,10 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		MPI_Wait(&mpi_req, &mpi_stat);
 #endif
 #endif
+
 		gama_l  = reduction_tmp[0];
 		delta_l = reduction_tmp[1];
+		norm_l  = reduction_tmp[2];
 
 		//------------------------------------------
 		vec_time.start();
@@ -740,11 +749,11 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 		norm_time.start();
 
-		// POZOR - tady se to ukoncuje jinak = musime probrat
-		if (USE_PREC > 0)
-			norm_l = parallel_norm_compressed(cluster, r_l);
-		else
-			norm_l = parallel_norm_compressed(cluster, u_l);
+//		// POZOR - tady se to ukoncuje jinak = musime probrat
+//		if (USE_PREC > 0)
+//			norm_l = parallel_norm_compressed(cluster, r_l);
+//		else
+//			norm_l = parallel_norm_compressed(cluster, u_l);
 
 		norm_time.end();
 
@@ -2468,6 +2477,38 @@ double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
 	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
+	SEQ_VECTOR<double> & input_norm_vec,
+
+	MPI_Request * mpi_req,
+	SEQ_VECTOR <double> & output,
+	SEQ_VECTOR <double> & send_buf)
+{
+
+	for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++)  {
+		send_buf[0] = send_buf[0] + (input_vector_1a[i] * input_vector_1b[i] * cluster.my_lamdas_ddot_filter[i]); // ddot 1
+		send_buf[1] = send_buf[1] + (input_vector_2a[i] * input_vector_2b[i] * cluster.my_lamdas_ddot_filter[i]); // ddot 2
+		send_buf[2] = send_buf[2] + (input_norm_vec[i]  * input_norm_vec[i]  * cluster.my_lamdas_ddot_filter[i]); // norm
+	}
+
+
+#ifdef WIN32
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+#ifdef USE_MPI_3
+	MPI_Iallreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, mpi_req);
+#else
+	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+#endif
+
+}
+
+
+void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
+	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
+	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
+
 	MPI_Request * mpi_req,
 	SEQ_VECTOR <double> & output,
 	SEQ_VECTOR <double> & send_buf)

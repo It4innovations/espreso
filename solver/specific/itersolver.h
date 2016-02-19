@@ -210,10 +210,17 @@ double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 void parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
 	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
+	SEQ_VECTOR<double> & input_norm_vec,
 	MPI_Request * mpi_req,
 	SEQ_VECTOR <double> & output,
 	SEQ_VECTOR <double> & send_buf) ;
 
+void parallel_ddot_compressed_non_blocking( Cluster & cluster,
+	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
+	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
+	MPI_Request * mpi_req,
+	SEQ_VECTOR <double> & output,
+	SEQ_VECTOR <double> & send_buf) ;
 
 
 
