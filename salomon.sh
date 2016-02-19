@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORKDIR=~/espreso-results-mpt-3
+WORKDIR=~/espreso-results-pbs-static-pbs
 ESPRESODIR=~/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
@@ -41,12 +41,12 @@ if [ "$1" = "configure" ]; then
 fi
 
 if [ "$1" = "mesh" ]; then
-  ./waf install
+  ./waf install -v
 fi
 
 if [ "$1" = "build" ]; then
   module list
-  ./waf install
+  ./waf install -v
 fi
 
 if [ "$1" = "clean" ]; then
@@ -124,7 +124,7 @@ if [ "$1" = "run" ]; then
   
   qsub_command_0+="module list;"
 	
-  for i in 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 # 22 23 24 25 26 27 28 29 30 31
+  for i in 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -153,6 +153,7 @@ if [ "$1" = "run" ]; then
     account=SERVICE
     actualTime=$( date +%y%m%d_%H:%M:%S )
     log_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime.log
+    node_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime.node
     out_dir=ESP-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime
     qsub_command=$qsub_command_0
     qsub_command+="date | tee -a $log_file;"
@@ -166,7 +167,7 @@ if [ "$1" = "run" ]; then
     cp       $ESPRESODIR/salomon.sh     $WORKDIR/$out_dir
 
     qsub_command+="cd $WORKDIR/$out_dir;"
-    qsub_command+="ls;"
+    qsub_command+="cat $¡PBS_NODEFILE | tee -a $node_file;"
 
     if [ "$3" = "mpi" ]; then
 
@@ -179,30 +180,32 @@ if [ "$1" = "run" ]; then
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
       export LC_CTYPE=
 
+      cd $WORKDIR/$out_dir
+      cat $PBS_NODEFILE | tee -a $node_file
+
       if [ "$2" = "intel" ]; then
-        cd $WORKDIR/$out_dir
         mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
       fi
       
       if [ "$2" = "sgi" ]; then
-        cd $WORKDIR/$out_dir
         mpiexec_mpt -n $(( X * Y * Z )) perfboost -impi  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
       fi
     fi
 
 
     if [ "$3" = "pbs" ]; then
+      cd $WORKDIR/$out_dir
       if [ "$2" = "sgi" ]; then
         qsub_command+="mpiexec_mpt -n $(( X * Y * Z )) perfboost -impi ./espreso $EXAMPLEDIR/$EXAMPLE ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file;"
       fi
       if [ "$2" = "intel" ]; then
         qsub_command+="mpirun      -n $(( X * Y * Z ))                 ./espreso $EXAMPLEDIR/$EXAMPLE ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file;"    
       fi
- 
-      echo $qsub_command | tr ";" "\n" | tee $WORKDIR/$out_dir/job.qsub
-      echo "qsub -q qmpp -A $account -l select=$(( ((X * Y * Z)/MPI_PER_NODE) + 1 )):ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:20:00 -N $jobname" | tee $WORKDIR/$out_dir/job.qsub
 
-      echo $qsub_command | tr ";" "\n" | \
+      echo $qsub_command | tr ";" "\n" | tr -d "¡" | tee $WORKDIR/$out_dir/job.qsub
+      echo "qsub -q qmpp -A $account -l select=$(( ((X * Y * Z)/MPI_PER_NODE) + 1 )):ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:20:00 -N $jobname" | tee -a $WORKDIR/$out_dir/job.qsub
+
+      echo $qsub_command | tr ";" "\n" | tr -d "¡" | \
       qsub -q qmpp -A $account -l select=$(( ((X * Y * Z)/MPI_PER_NODE) + 1 )):ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:20:00 -N $jobname
     
     fi
