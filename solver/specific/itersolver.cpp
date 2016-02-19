@@ -437,48 +437,31 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
 
-		timing.totalTime.end();
-		timing.totalTime.printLastStatMPI();
-
 		 norm_time.start();
 		norm_l = parallel_norm_compressed(cluster, w_l);
 		 norm_time.end();
 
-
-//		if (norm_l/tol*epsilon < 1) {
-//			for(eslocal d = 0; d < cluster.domains.size(); d++)
-//				cluster.domains[d].enable_SP_refinement = true;
-//
-//			if (esconfig::MPIrank == 0)
-//				std::cout << "Single precission iterative refinement enabled ... " << std::endl;
-//		}
-
+		 timing.totalTime.end();
+//TODO: if VERBOSE = 1
+		//timing.totalTime.printLastStatMPI();
 
 		if (mpi_rank == mpi_root) {
-			//printf (       "Iter MPI %d - norm dual %1.20f - tol %1.20f - norm prim %1.20f norm f %1.20f : %1.20f \n", iter+1, norm_l, tol, norm_prim_g, norm_prim_fg, norm_prim_g / norm_prim_fg);
-//		printf (       "Iter MPI %5d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
-//
-
-
-
-      int my_prec= 10; //log10(int(1./epsilon));
-      std::cout.clear();
-      std::cout<<"Iter MPI ";
-      std::cout<<std::setw(my_prec+2);
-      std::cout<<iter+1;
-      std::cout.precision(my_prec+2);
-      std::cout<<" ||normed_residual|| = "<<norm_l/tol*epsilon;
-      std::cout<<" ||residual|| = "<<norm_l;
-      std::cout.precision(my_prec);
-      std::cout<<",   epsilon = "<<epsilon <<"\n";
-      //printf (       "Iter MPI %5d - ||normed_residual|| %1.20f - tol %1.20f\n", iter+1, norm_l/tol*epsilon,epsilon );
-    //  std::cout<<      "Iter MPI "<< iter+1 << "- norm dual "<< norm_l << " - tol " <<tol <<"\n";
-
-			//if (log_active == 1)
-			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
+			//printf (       "Iter MPI %5d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
+			int my_prec = 10; //log10(int(1./epsilon));
+		    std::cout.clear();
+		    std::cout<<"RegCG  MPI Iter: ";
+		    std::cout<<std::setw(my_prec+4);
+		    std::cout<<iter+1;
+		    std::cout.precision(my_prec+4);
+		    std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
+		    std::cout<<" ||residual|| = "        << norm_l;
+		    std::cout.precision(my_prec);
+		    std::cout<<", epsilon = "            << epsilon;
+		    std::cout.precision(my_prec+4);
+		    std::cout<<", tol = "                << tol;
+		    std::cout<<", Local time: " << timing.totalTime.getLastStat();
+		    std::cout<<"\n";
 		}
-//    std::cout.setstate(std::ios_base::failbit);
-
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -592,6 +575,8 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		else
 			Projector_l_compG    ( timeEvalProj, cluster, tmp_l, r_l, 0 );
 
+		tol = epsilon * parallel_norm_compressed(cluster, r_l);
+
 	} else {
 
 		cilk_for (eslocal i = 0; i < r_l.size(); i++)
@@ -614,6 +599,9 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 			Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l, 0 );
 		else
 			Projector_l_compG    ( timeEvalProj, cluster, r_l, u_l, 0 );
+
+		tol = epsilon * parallel_norm_compressed(cluster, u_l);
+
 	}
 
 
@@ -629,18 +617,6 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l); 	//apply_A_l_compB(timeEvalAppa, cluster, u_l, w_l);
 
 	}
-
-
-	// *** Calculate the stop condition *******************************************
-
-	if (USE_GGtINV == 1)
-		Projector_l_inv_compG( timeEvalProj, cluster, b_l, tmp_l, 0 );
-	else
-		Projector_l_compG    ( timeEvalProj, cluster, b_l, tmp_l, 0 );
-
-	tol = epsilon * parallel_norm_compressed(cluster, tmp_l); //tol = epsilon * parallel_norm_compressed(cluster, u_l);
-
-
 
 	// *** Start the CG iteration loop ********************************************
 	for (eslocal iter = 0; iter < CG_max_iter; iter++) {
@@ -717,9 +693,30 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 #endif
 #endif
 
+		norm_l  = sqrt(reduction_tmp[2]);
+		if (mpi_rank == mpi_root) {
+			//printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
+
+		      int my_prec = 10; //log10(int(1./epsilon));
+		      std::cout.clear();
+		      std::cout<<"PipeCG MPI Iter: ";
+		      std::cout<<std::setw(my_prec+4);
+		      std::cout<<iter+1;
+		      std::cout.precision(my_prec+4);
+		      std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
+		      std::cout<<" ||residual|| = "        << norm_l;
+		      std::cout.precision(my_prec);
+		      std::cout<<", epsilon = "            << epsilon;
+			  std::cout<<", tol = "                << tol;
+			  std::cout<<", Local time: " << timing.totalTime.getLastStat();
+			  std::cout<<"\n";
+		}
+
+		if (norm_l < tol)
+			break;
+
 		gama_l  = reduction_tmp[0];
 		delta_l = reduction_tmp[1];
-		norm_l  = reduction_tmp[2];
 
 		//------------------------------------------
 		vec_time.start();
@@ -743,29 +740,15 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		}
 		vec_time.end();
 
-
-		timing.totalTime.end();
-		timing.totalTime.printLastStatMPI();
-
 		norm_time.start();
-
-//		// POZOR - tady se to ukoncuje jinak = musime probrat
-//		if (USE_PREC > 0)
-//			norm_l = parallel_norm_compressed(cluster, r_l);
-//		else
-//			norm_l = parallel_norm_compressed(cluster, u_l);
-
 		norm_time.end();
 
-		if (mpi_rank == mpi_root) {
-			printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
+		 timing.totalTime.end();
+//TODO: if VERBOSE = 1
+		//timing.totalTime.printLastStatMPI();
 
-			//if (log_active == 1)
-			//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
-		}
 
-		if (norm_l < tol)
-			break;
+
 	}
 
 	// *** save solution - in dual and amplitudes *********************************************
@@ -2493,12 +2476,12 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 
 #ifdef WIN32
 	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #else
 #ifdef USE_MPI_3
-	MPI_Iallreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, mpi_req);
+	MPI_Iallreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, mpi_req);
 #else
-	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 #endif
 

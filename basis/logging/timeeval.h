@@ -64,6 +64,7 @@ struct TimeEvent
 
 	void printStat(double totalTime = 0.0);
 	void printLastStat(double totalTime = 0.0);
+	double getLastStat(double totalTime = 0.0);
 
 	void printStatMPI(double totalTime = 0.0);
 	void printLastStatMPI(double totalTime = 0.0);

@@ -173,6 +173,10 @@ void TimeEvent::printLastStat(double totalTime) {
 	std::cout << std::endl;
 }
 
+double TimeEvent::getLastStat(double totalTime) {
+	return eventTime.back();
+}
+
 
 void TimeEvent::printStatMPI(double totalTime) {
 	evaluateMPI();
