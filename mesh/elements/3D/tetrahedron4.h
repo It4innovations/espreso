@@ -61,7 +61,7 @@ public:
 		return Tetrahedron4::_dN;
 	}
 
-	const std::vector<DenseMatrix>&  N() const
+	const std::vector<DenseMatrix>& N() const
 	{
 		return Tetrahedron4::_N;
 	}
