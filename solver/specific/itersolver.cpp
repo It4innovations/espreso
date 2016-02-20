@@ -503,6 +503,11 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
+
+#ifdef USE_MPI_3
+	if (mpi_rank == mpi_root)
+		std::cout << "Note: PipeCG is using non-blocking AllReduce ... " << std::endl;
+#endif
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
@@ -694,24 +699,6 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 #endif
 
 		norm_l  = sqrt(reduction_tmp[2]);
-		if (mpi_rank == mpi_root) {
-			//printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
-
-		      int my_prec = 10; //log10(int(1./epsilon));
-		      std::cout.clear();
-		      std::cout<<"PipeCG MPI Iter: ";
-		      std::cout<<std::setw(my_prec+4);
-		      std::cout<<iter+1;
-		      std::cout.precision(my_prec+4);
-		      std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
-		      std::cout<<" ||residual|| = "        << norm_l;
-		      std::cout.precision(my_prec);
-		      std::cout<<", epsilon = "            << epsilon;
-			  std::cout<<", tol = "                << tol;
-			  std::cout<<", Local time: " << timing.totalTime.getLastStat();
-			  std::cout<<"\n";
-		}
-
 		if (norm_l < tol)
 			break;
 
@@ -747,9 +734,25 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 //TODO: if VERBOSE = 1
 		//timing.totalTime.printLastStatMPI();
 
+		 if (mpi_rank == mpi_root) {
+			 //printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 
+			 int my_prec = 10; //log10(int(1./epsilon));
+			 std::cout.clear();
+			 std::cout<<"PipeCG MPI Iter: ";
+			 std::cout<<std::setw(my_prec+4);
+			 std::cout<<iter+1;
+			 std::cout.precision(my_prec+4);
+			 std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
+			 std::cout<<" ||residual|| = "        << norm_l;
+			 std::cout.precision(my_prec);
+			 std::cout<<", epsilon = "            << epsilon;
+			 std::cout<<", tol = "                << tol;
+			 std::cout<<", Local time: " << timing.totalTime.getLastStat();
+			 std::cout<<"\n";
+		 }
 
-	}
+	} // END of CG loop
 
 	// *** save solution - in dual and amplitudes *********************************************
 

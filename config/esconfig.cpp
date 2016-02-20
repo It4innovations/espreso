@@ -36,7 +36,7 @@ namespace solver {
 	size_t USE_SCHUR_COMPLEMENT  = 0;   // 1 - YES
 	size_t KEEP_FACTORS          = 1;   // 1 - YES; 0 - NO
 	size_t PRECONDITIONER        = 0;   // 0 - NO preconditioner; 1 - Lumped; 2 - weight function;
-	size_t CG_SOLVER             = 1;   // 0 - Standard CG; 1 - Pipelined CG
+	size_t CG_SOLVER             = 0;   // 0 - Standard CG; 1 - Pipelined CG
 	size_t REGULARIZATION        = 0;   // 0 - from mesh; 1 - from stiffness matrix
 	size_t KSOLVER               = 0;	// 0 - Direct DP, 1 - Iterative solver, 2 - Direct SP,  3 - Direct MIXED Prec
 	size_t KSOLVER_SP_iter_steps = 0;   // number of reiteration steps for SP direct solver
