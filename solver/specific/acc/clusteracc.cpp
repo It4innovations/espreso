@@ -3,7 +3,7 @@
 
 
 
-void ClusterBase::Create_SC_perDomain(bool USE_FLOAT) {
+void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);

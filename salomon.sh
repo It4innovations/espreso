@@ -4,8 +4,8 @@ WORKDIR=~/espreso-results-pbs-static-pbs
 ESPRESODIR=~/espreso_git/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
-THREADS_PER_MPI=1
-MPI_PER_NODE=22
+THREADS_PER_MPI=24
+MPI_PER_NODE=1
 
 #module load impi/5.0.3.048-iccifort-2015.3.187
 #module load icc/2015.3.187
@@ -124,7 +124,7 @@ if [ "$1" = "run" ]; then
   
   qsub_command_0+="module list;"
 	
-  for i in 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+  for i in 1 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -137,9 +137,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=7
-    c=0
-    x=6
+    d=7 # subdomains size
+    c=0 # number of corners - nefunguje 
+    x=6 # cluster size in domains
 
     y=$x
     z=$x
