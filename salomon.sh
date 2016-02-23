@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WORKDIR=~/espreso-results-pbs-static-pbs
-ESPRESODIR=~/espreso
+ESPRESODIR=~/espreso_git/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
 THREADS_PER_MPI=1
