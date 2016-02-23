@@ -1,6 +1,7 @@
 
 #include "../specific/cluster.h"
 
+//#define SPARSE_SA
 
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
@@ -327,6 +328,39 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	}
 
 }
+
+void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes ) {
+
+	cilk_for (eslocal d = 0; d < domains.size(); d++) {
+		if ( d == 0 && esconfig::MPIrank == 0) domains[d].Kplus.msglvl=1;
+
+	    if (esconfig::solver::REGULARIZATION == 0) {
+
+			domains[d].K.swap(K_in[d]);
+
+      		if ( domains[d].K.type == 'G' )
+		  		domains[d].K.RemoveLower();
+
+		  	if ( esconfig::solver::PRECONDITIONER == 11 )
+		  		domains[d].Prec = domains[d].K;
+
+   			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
+   	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
+   					domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
+
+			domains[d].K_regularizationFromR ( domains[d].K );
+			domains[d].enable_SP_refinement = true;
+
+			std::vector <eslocal> ().swap (domains[d].fix_dofs);
+
+	    }
+
+	    if (esconfig::MPIrank == 0) std::cout << ".";
+
+	}
+
+}
+
 
 void ClusterBase::SetClusterHFETI (bool R_from_mesh) {
 	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
@@ -1325,7 +1359,7 @@ void ClusterBase::CreateSa() {
 	 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
 	if (MPIrank == 0) Sa.msglvl = 1;
 	Sa.ImportMatrix(Salfa);
-	Sa.Factorization();
+	Sa.Factorization("salfa");
 	if (MPIrank == 0) Sa.msglvl = 0;
 	 fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
 #else

@@ -146,12 +146,15 @@ public:
 	// Functions of the class
 
 	void InitClusterPC ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
-	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map); //, SEQ_VECTOR < eslocal > & neigh_domains  );
+	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map);
 	void SetClusterPC_AfterKplus ();
 	void SetClusterHFETI ( bool R_from_mesh );
 
+	virtual void SetupKsolvers ( ) = 0;
+	void ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes );
+
 	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
-	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ); //, vector <double> & y_out, vector<eslocal> & cluster_map_vec);
+	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
 
 	void multKplusGlobal_Kinv  ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
 	void multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
@@ -173,9 +176,6 @@ public:
 	void ShowTiming();
 	void compress_lambda_vector(SEQ_VECTOR <double> & decompressed_vec_lambda);
 	void decompress_lambda_vector(SEQ_VECTOR <double> & compressed_vec_lambda);
-
-	//void GetProcessMemoryStat ( );
-	//void GetMemoryStat( );
 
 	SEQ_VECTOR < SEQ_VECTOR <eslocal> >		my_comm_lambdas_indices;
 	SEQ_VECTOR < SEQ_VECTOR <double> >  my_comm_lambdas;

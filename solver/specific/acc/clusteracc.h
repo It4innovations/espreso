@@ -13,6 +13,7 @@ public:
 	ClusterAcc(): ClusterBase() {};
 
 	void Create_SC_perDomain( bool USE_FLOAT );
+	void SetupKsolvers ( );
 };
 
 

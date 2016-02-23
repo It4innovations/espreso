@@ -1631,7 +1631,7 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in,
 	      /* The solution has not been found yet according to the user-defined stopping */
 	      /* test. Continue RCI (P)CG iterations.                                      */
 	      /*---------------------------------------------------------------------------*/
-	      if (euclidean_norm > 1.E-13)
+	      if (euclidean_norm > 1.E-10)
 	        goto rci;
 	      /*---------------------------------------------------------------------------*/
 	      /* The solution has been found according to the user-defined stopping test   */
@@ -1658,7 +1658,7 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in,
 	  /*---------------------------------------------------------------------------*/
 	getsln:dcg_get (&n, solution, rhs, &rci_request, ipar, dpar, tmp, &itercount);
 
-	std::cout << " " << itercount;
+	//std::cout << " " << itercount;
 
 	  //printf ("\nNumber of iterations: %d\n", itercount);
 

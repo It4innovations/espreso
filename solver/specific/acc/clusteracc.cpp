@@ -134,3 +134,9 @@ void ClusterBase::Create_SC_perDomain(bool USE_FLOAT) {
 		cout << endl;
 
 }
+
+//TODO:
+void ClusterBase::SetupKsolvers ( ) {
+
+
+}
