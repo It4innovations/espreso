@@ -288,7 +288,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	if (USE_DYNAMIC == 0) {
 
-
+            if ( esconfig::solver::REGULARIZATION == 0 ) {
 		G1.ConvertToCOO( 1 );
 		cilk_for (eslocal j = 0; j < G1.J_col_indices.size(); j++ )
 			G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
@@ -306,7 +306,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		G1_comp.type = G1.type;
 
 		G1.Clear();
-
+            }
 
 	}
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
@@ -417,32 +417,6 @@ void ClusterBase::SetClusterHFETI (bool R_from_mesh) {
 
 		HFETI_prec_timing.totalTime.end();
 		HFETI_prec_timing.printStatsMPI();
-
-		if (! R_from_mesh) {
-
-			Create_G1_perCluster();
-
-			if (USE_DYNAMIC == 0) {
-
-				G1.ConvertToCOO( 1 );
-				cilk_for (int j = 0; j < G1.J_col_indices.size(); j++ )
-					G1.J_col_indices[j] = _my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
-
-				G1.cols = my_lamdas_indices.size();
-				G1.ConvertToCSRwithSort( 1 );
-
-				G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
-				G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
-				G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
-
-				G1_comp.rows = G1.rows;
-				G1_comp.cols = G1.cols;
-				G1_comp.nnz  = G1.nnz;
-				G1_comp.type = G1.type;
-
-			}
-		}
-
 
 	}
 	// *** END - Create Matrices for Hybrid FETI *****************************************

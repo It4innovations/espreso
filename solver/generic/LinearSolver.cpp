@@ -756,8 +756,27 @@ void LinearSolver::init(
     //cluster.Create_G1_perCluster();
 
     if (cluster.USE_HFETI == 1 && !R_from_mesh ) {
+		cluster.Create_G1_perCluster();
     	solver.Preprocessing ( cluster );
+
+    	cluster.G1.ConvertToCOO( 1 );
+		cilk_for (int j = 0; j < cluster.G1.J_col_indices.size(); j++ )
+    		cluster.G1.J_col_indices[j] = cluster._my_lamdas_map_indices[ cluster.G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+
+		cluster.G1.cols = cluster.my_lamdas_indices.size();
+		cluster.G1.ConvertToCSRwithSort( 1 );
+
+		cluster.G1_comp.CSR_I_row_indices.swap( cluster.G1.CSR_I_row_indices );
+		cluster.G1_comp.CSR_J_col_indices.swap( cluster.G1.CSR_J_col_indices );
+		cluster.G1_comp.CSR_V_values     .swap( cluster.G1.CSR_V_values		 );
+
+		cluster.G1_comp.rows = cluster.G1.rows;
+		cluster.G1_comp.cols = cluster.G1.cols;
+		cluster.G1_comp.nnz  = cluster.G1.nnz;
+		cluster.G1_comp.type = cluster.G1.type;
+
     	cluster.G1.Clear();
+
     	if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
     }
@@ -1054,7 +1073,9 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 	 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
 	 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-	cluster.Create_G1_perCluster   ();
+    if (cluster.USE_HFETI == 1 && R_from_mesh ) {
+    	cluster.Create_G1_perCluster   ();
+    }
 	 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 	 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
@@ -1079,7 +1100,9 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
-	solver.Preprocessing ( cluster );
+    if (cluster.USE_HFETI == 1 && R_from_mesh ) {
+	 	solver.Preprocessing ( cluster );
+    }
 	 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
 
 	if (MPI_rank == 0) {

@@ -1495,7 +1495,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	cluster.GGtinvM.dense_values = cluster.GGtinvV;
 	cluster.GGtinvM.cols = cluster.G1.rows;
 	cluster.GGtinvM.rows = GGt_tmp.rows;
-        cluster.GGtinvM.type = 'G';
+    cluster.GGtinvM.type = 'G';
 
 	GGtsize  = GGt_tmp.cols;
 
