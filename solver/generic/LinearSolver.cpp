@@ -753,35 +753,49 @@ void LinearSolver::init(
 
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
-    //cluster.Create_G1_perCluster();
 
-    if (cluster.USE_HFETI == 1 && !R_from_mesh ) {
-		cluster.Create_G1_perCluster();
-    	solver.Preprocessing ( cluster );
 
-    	cluster.G1.ConvertToCOO( 1 );
-		cilk_for (int j = 0; j < cluster.G1.J_col_indices.size(); j++ )
-    		cluster.G1.J_col_indices[j] = cluster._my_lamdas_map_indices[ cluster.G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+    if (cluster.USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1) {
 
-		cluster.G1.cols = cluster.my_lamdas_indices.size();
-		cluster.G1.ConvertToCSRwithSort( 1 );
+    	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
+		if (MPI_rank == 0) {
+			cout << " ******************************************************************************************************************************* " << endl;
+			cout << " *** Solver Preprocessing - HFETI with regularization from K matrix ************************************************************ " << endl;
 
-		cluster.G1_comp.CSR_I_row_indices.swap( cluster.G1.CSR_I_row_indices );
-		cluster.G1_comp.CSR_J_col_indices.swap( cluster.G1.CSR_J_col_indices );
-		cluster.G1_comp.CSR_V_values     .swap( cluster.G1.CSR_V_values		 );
+			GetProcessMemoryStat_u ( );
+			GetMemoryStat_u( );
+			cout << " Solver - Creating G1 per cluster ... " << endl;
+		}
 
-		cluster.G1_comp.rows = cluster.G1.rows;
-		cluster.G1_comp.cols = cluster.G1.cols;
-		cluster.G1_comp.nnz  = cluster.G1.nnz;
-		cluster.G1_comp.type = cluster.G1.type;
+		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
+		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
+		cluster.Create_G1_perCluster   ();
+		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
+		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
-    	cluster.G1.Clear();
+
+		if (MPI_rank == 0) {
+			GetProcessMemoryStat_u ( );
+			GetMemoryStat_u( );
+			cout << " Solver - Creating Global G1 and Running pre-processing (create GGt) ... " << endl;
+		}
+
+		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
+		solver.Preprocessing ( cluster );
+		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
+
+      	cluster.Compress_G1();
+
+      	// Cleanup - of uncessary objects
+    	cluster._my_lamdas_map_indices.clear();
+    	cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
+    		cluster.domains[d].B1.Clear();
+
+    	timeSolPrec2.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec2);
 
     	if ( cluster.cluster_global_index == 1 ) { std::cout << std::endl; GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
-
     }
-    //for (int d = 0; d < cluster.domains.size(); d++)
-    //	cluster.domains[d].Kplus_R = cluster.domains[d].Kplus_Rb;
+
 
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
@@ -1062,48 +1076,33 @@ void LinearSolver::set_R (
 
 void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
 
-	if (MPI_rank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** Solver Preprocessing ****************************************************************************************************** " << endl;
+	if ( ! (cluster.USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1 )) {
+		if (MPI_rank == 0) {
+			cout << " ******************************************************************************************************************************* " << endl;
+			cout << " *** Solver Preprocessing ****************************************************************************************************** " << endl;
 
-		GetProcessMemoryStat_u ( );
-		GetMemoryStat_u( );
-		cout << " Solver - Creating G1 per cluster ... " << endl;
+			GetProcessMemoryStat_u ( );
+			GetMemoryStat_u( );
+			cout << " Solver - Creating G1 per cluster ... " << endl;
+		}
+
+		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
+		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
+		cluster.Create_G1_perCluster   ();
+		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
+		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
+
+
+		if (MPI_rank == 0) {
+			GetProcessMemoryStat_u ( );
+			GetMemoryStat_u( );
+			cout << " Solver - Creating Global G1 and Running pre-processing (create GGt) ... " << endl;
+		}
+
+		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
+		solver.Preprocessing ( cluster );
+		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
 	}
-
-	 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
-	 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-    if (cluster.USE_HFETI == 1 && R_from_mesh ) {
-    	cluster.Create_G1_perCluster   ();
-    }
-	 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
-	 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
-
-//	if (MPI_rank == 0) {
-//		GetProcessMemoryStat_u ( );
-//		GetMemoryStat_u ( );
-//		cout << " Solver - CreateVec_d_perCluster ... " << endl;
-//	}
-//
-//	TimeEvent Vec_d_perCluster_time ("Setup Vec d per Cluster - preprocessing");
-//	Vec_d_perCluster_time.start();
-//
-//	cluster.CreateVec_d_perCluster ();
-//
-//	Vec_d_perCluster_time.end();
-//	Vec_d_perCluster_time.printStatMPI();
-
-	if (MPI_rank == 0) {
-		GetProcessMemoryStat_u ( );
-		GetMemoryStat_u( );
-		cout << " Solver - Creating Global G1 and Running pre-processing (create GGt) ... " << endl;
-	}
-
-	 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
-    if (cluster.USE_HFETI == 1 && R_from_mesh ) {
-	 	solver.Preprocessing ( cluster );
-    }
-	 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
 
 	if (MPI_rank == 0) {
 		GetProcessMemoryStat_u ( );
@@ -1112,7 +1111,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	 TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - pre-processing"); cluster_SetClusterPC_time.start();
-	cluster.SetClusterPC( lambda_map_sub ); // USE_DYNAMIC, USE_KINV
+	cluster.SetClusterPC( lambda_map_sub );
 	 cluster_SetClusterPC_time.end(); cluster_SetClusterPC_time.printStatMPI();
 
 	if (MPI_rank == 0) {
