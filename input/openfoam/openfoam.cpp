@@ -2,7 +2,6 @@
 
 using namespace esinput;
 
-<<<<<<< 8627e8dd523255e077a3666ff27b8ede8aeefc14
 OpenFOAM::OpenFOAM(const Options &options, int rank, int size)
 {
 	_projectPath = options.path;

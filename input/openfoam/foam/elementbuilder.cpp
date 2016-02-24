@@ -54,7 +54,7 @@ ParseError* ElementBuilder::createElement(
 		indicies[3] = indicies[2];
 		indicies[4] = *(coordinates.begin());
 
-		mesh::Element* element = new mesh::Tetrahedron4(indicies, params);
+		mesh::Element* element = new mesh::Tetrahedron4(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -105,7 +105,7 @@ ParseError* ElementBuilder::createElement(
 		indicies[2] = firstFace.first->p[2];
 		indicies[3] = firstFace.first->p[1];
 		indicies[4] = *(coordinates.begin());
-		mesh::Element *element = new mesh::Pyramid5(indicies, params);
+		mesh::Element *element = new mesh::Pyramid5(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -169,7 +169,7 @@ ParseError* ElementBuilder::createElement(
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		indicies[7] = indicies[6];
-		mesh::Element *element = new mesh::Prisma6(indicies, params);
+		mesh::Element *element = new mesh::Prisma6(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 3);
 		}
@@ -216,7 +216,7 @@ ParseError* ElementBuilder::createElement(
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		PARSE_GUARD(nextPoint(indicies[2], indicies[3], indicies[7]));
-		mesh::Element *element = new mesh::Hexahedron8(indicies, params);
+		mesh::Element *element = new mesh::Hexahedron8(indicies, 8, params);
 
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 4);
