@@ -165,6 +165,7 @@ public:
 	void CreateSa();
 
 	void Create_G1_perCluster();
+	void Compress_G1();
 	void CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 	void CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 

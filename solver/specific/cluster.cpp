@@ -74,7 +74,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
 
 
-	map <eslocal,eslocal> my_lamdas_map_indices;
+	//map <eslocal,eslocal> my_lamdas_map_indices;
 
 
 	//// *** Set up the dual size ********************************************************
@@ -101,8 +101,6 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 		// *** END - Alocate temporarly vectors for inter-cluster processing *****************
 	}
-
-
 
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
@@ -169,7 +167,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	// mapping/compression vector for cluster
 	for (eslocal i = 0; i <my_lamdas_indices.size(); i++)
-		my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
+		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
 
 	// mapping/compression vector for domains
 	cilk_for (eslocal i = 0; i < domains.size(); i++) {
@@ -211,7 +209,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	cilk_for (eslocal i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices_comp[i].resize( lambdas_per_subdomain[my_neighs[i]].size() );
 		for (eslocal j = 0; j < lambdas_per_subdomain[my_neighs[i]].size(); j++ )
-			my_comm_lambdas_indices_comp[i][j] = my_lamdas_map_indices[lambdas_per_subdomain[my_neighs[i]][j]];
+			my_comm_lambdas_indices_comp[i][j] = _my_lamdas_map_indices[lambdas_per_subdomain[my_neighs[i]][j]];
 	}
 	//// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
 
@@ -243,7 +241,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		//if (esconfig::solver::PRECONDITIONER == 3) { // DIR
+		if (esconfig::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
 			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
 			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
@@ -253,15 +251,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 			std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
 			last = std::unique(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
 			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
-		//}
-
-		//domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
-
+		}
 
 		//************************
-
-		//TODO: pozor vratit
-
 		if ( esconfig::solver::REGULARIZATION == 0 )
                     domains[i].B1.Clear();
 
@@ -287,38 +279,11 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	}
 
 	if (USE_DYNAMIC == 0) {
-
-            if ( esconfig::solver::REGULARIZATION == 0 ) {
-		G1.ConvertToCOO( 1 );
-		cilk_for (eslocal j = 0; j < G1.J_col_indices.size(); j++ )
-			G1.J_col_indices[j] = my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
-
-		G1.cols = my_lamdas_indices.size();
-		G1.ConvertToCSRwithSort( 1 );
-
-		G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
-		G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
-		G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
-
-		G1_comp.rows = G1.rows;
-		G1_comp.cols = G1.cols;
-		G1_comp.nnz  = G1.nnz;
-		G1_comp.type = G1.type;
-
-		G1.Clear();
-            }
-
+		if ( ! (USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1 )) {
+			Compress_G1();
+		}
 	}
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
-
-	bool R_from_mesh = true;
-	if ( esconfig::solver::REGULARIZATION == 0 )
-  		R_from_mesh = true	;
-  	else
-  		R_from_mesh = false	;
-
-	if (! R_from_mesh)
-		_my_lamdas_map_indices = my_lamdas_map_indices;
 
 	if (MPIrank == 0) {
 		cout << " ******************************************************************************************************************************* " << endl;
@@ -1728,6 +1693,29 @@ void ClusterBase::Create_G1_perCluster() {
 //	std::ofstream os(ss.str().c_str());
 //	os << G1;
 //	os.close();
+
+}
+
+void ClusterBase::Compress_G1() {
+
+	G1.ConvertToCOO( 1 );
+
+	cilk_for (eslocal j = 0; j < G1.J_col_indices.size(); j++ )
+		G1.J_col_indices[j] = _my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+
+	G1.cols = my_lamdas_indices.size();
+	G1.ConvertToCSRwithSort( 1 );
+
+	G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
+	G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
+	G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
+
+	G1_comp.rows = G1.rows;
+	G1_comp.cols = G1.cols;
+	G1_comp.nnz  = G1.nnz;
+	G1_comp.type = G1.type;
+
+	G1.Clear();
 
 }
 
