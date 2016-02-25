@@ -27,10 +27,10 @@
 
 
 #elif defined(SOLVER_CUDA)
-#include "cpu/solverpardiso.h"
-#include "acc/cuda.h"
-	typedef SparseSolverPARDISO SparseSolverCPU;
-	typedef SparseSolverCUDA SparseSolverAcc;
+#include "cpu/solvermkl.h"
+//#include "acc/cuda.h"
+	typedef SparseSolverMKL SparseSolverCPU;
+	typedef SparseSolverMKL SparseSolverAcc;
 
 
 #else
