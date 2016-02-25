@@ -20,8 +20,8 @@
 	typedef IterSolverAcc	IterSolver;
 
 #elif defined(SOLVER_CUDA)
-#include "acc/itersolveracc.h"
-	typedef IterSolverAcc	IterSolver;
+#include "acc/itersolverGPU.h"
+	typedef IterSolverGPU	IterSolver;
 
 
 #else

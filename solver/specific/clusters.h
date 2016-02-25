@@ -20,8 +20,8 @@
 	typedef ClusterAcc	Cluster;
 
 #elif defined(SOLVER_CUDA)
-#include "acc/clusteracc.h"
-	typedef ClusterAcc	Cluster;
+#include "acc/clusterGPU.h"
+	typedef ClusterGPU	Cluster;
 
 
 #else
