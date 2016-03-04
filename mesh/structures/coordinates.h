@@ -130,6 +130,11 @@ public:
 		return _clusterIndex.size();
 	}
 
+	const std::vector<esglobal>& clusterToGlobal() const
+	{
+		return _globalIndex;
+	}
+
 	const std::vector<eslocal>& localToCluster(eslocal part) const
 	{
 		return _clusterIndex[part];
