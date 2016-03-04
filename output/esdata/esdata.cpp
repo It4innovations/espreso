@@ -114,18 +114,17 @@ void Esdata::boundaries(const mesh::Mesh &mesh)
 
 		size = 0;
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (boundaries[i].find(p) != boundaries[i].end()) {
+			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
 				size++;
 			}
 		}
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 
-		std::set<eslocal>::const_iterator it;
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (boundaries[i].find(p) != boundaries[i].end()) {
+			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
 				size = boundaries[i].size();
 				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-				for (it = boundaries[i].begin(); it != boundaries[i].end(); ++it) {
+				for (auto it = boundaries[i].begin(); it != boundaries[i].end(); ++it) {
 					value = *it;
 					os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
 				}

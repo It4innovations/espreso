@@ -143,7 +143,7 @@ void AnsysMatsol::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundari
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].insert(0);
+		boundaries[i].push_back(0);
 	}
 }
 

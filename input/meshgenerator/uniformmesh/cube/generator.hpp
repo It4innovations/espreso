@@ -345,8 +345,11 @@ void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 					if (border[2] && (i & 4)) {
 						tmp += ((z == cs[2]) ? -1 : 1) * _settings.clusters[0] * _settings.clusters[1];
 					}
-					boundaries[index].insert(tmp);
+					boundaries[index].push_back(tmp);
 				}
+				std::sort(boundaries[index].begin(), boundaries[index].end());
+				auto end = std::unique(boundaries[index].begin(), boundaries[index].end());
+				boundaries[index].resize(end - boundaries[index].begin());
 				index++;
 			}
 		}

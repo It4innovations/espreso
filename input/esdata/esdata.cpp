@@ -109,7 +109,7 @@ void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
-			boundaries[i].insert(value);
+			boundaries[i].push_back(value);
 		}
 	}
 }

@@ -184,18 +184,18 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
 	for (size_t i = 0; i < boundaries.size(); i++) {
-		boundaries[i].insert(_settings.index);
+		boundaries[i].push_back(_settings.index);
 	}
 
 	if (_settings.index / 6 > 0) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i].insert(_settings.index - 6);
+			boundaries[i].push_back(_settings.index - 6);
 		}
 	}
 
 	if (_settings.index / 6 < _settings.layers - 1) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].insert(_settings.index + 6);
+			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].push_back(_settings.index + 6);
 		}
 	}
 
@@ -204,38 +204,45 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].insert(6 * (_settings.index / 6) + 4);
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (_settings.index / 6) + 5);
+				boundaries[index + y].push_back(6 * (_settings.index / 6) + 4);
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6) + 5);
 			}
 			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].insert(6 * (_settings.index / 6) + (_settings.index + 3) % 4);
-				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (_settings.index / 6) + (_settings.index + 1) % 4);
+				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + (_settings.index + 3) % 4);
+				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + (_settings.index + 1) % 4);
 			}
 		}
 	} else if (_settings.index % 6 == 4) {
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].insert(6 * (_settings.index / 6) + 2);
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (_settings.index / 6));
+				boundaries[index + y].push_back(6 * (_settings.index / 6) + 2);
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6));
 			}
 			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].insert(6 * (_settings.index / 6) + 3);
-				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (_settings.index / 6) + 1);
+				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + 3);
+				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + 1);
 			}
 		}
 	} else {
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].insert(6 * (_settings.index / 6));
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (_settings.index / 6) + 2);
+				boundaries[index + y].push_back(6 * (_settings.index / 6));
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6) + 2);
 			}
 			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].insert(6 * (_settings.index / 6) + 3);
-				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (_settings.index / 6) + 1);
+				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + 3);
+				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + 1);
 			}
 		}
+	}
+
+	// TODO: check if it is necessary
+	for (size_t i = 0; i < boundaries.size(); i++) {
+		std::sort(boundaries[i].begin(), boundaries[i].end());
+		auto end = std::unique(boundaries[i].begin(), boundaries[i].end());
+		boundaries[i].resize(end - boundaries[i].begin());
 	}
 }
 

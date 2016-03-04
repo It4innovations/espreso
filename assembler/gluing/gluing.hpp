@@ -14,6 +14,17 @@ Gluing<TInput>::Gluing(TInput &input): Assembler<TInput>(input) {
 	_lambda_map_sub_B0.resize(this->subdomains());
 	_B1_duplicity.resize(this->subdomains());
 	_vec_c.resize(this->subdomains());
+
+	for (size_t s = 0; s < this->subdomains(); s++) {
+		_globalB[s].rows = 0;
+		_globalB[s].nnz = 0;
+		_globalB[s].type = 'G';
+
+		_localB[s].rows = 0;
+		_localB[s].nnz = 0;
+		_localB[s].type = 'G';
+	}
+
 };
 
 template <>
@@ -91,17 +102,15 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	std::vector < SparseDOKMatrix<eslocal> > B1_DOK_tmp(this->subdomains());
 	MPI_Request   mpi_req;
 	MPI_Status 	  mpi_stat;
-	std::set<eslocal>::const_iterator it_set;
-	std::set<eslocal>::const_iterator it_set_l;
 
 
 	// Total number of neighboring clusters
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
 	neighClustNum = _neighClusters.size();
 
-    if (MPIrank == 0) { 
-      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
-//      system("date +%T.%6N"); 
+    if (MPIrank == 0) {
+      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                ";
+//      system("date +%T.%6N");
     }
 
     MPI_Request * mpi_send_req  = new MPI_Request [_neighClusters.size()];
@@ -142,9 +151,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Local preprocessing done                                      "; 
-//    system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Local preprocessing done                                      ";
+//    system("date +%T.%6N");
   }
 
 
@@ -205,9 +214,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		if (myNeighsSparse[i].size() < 3)
 			myNeighsSparse[i].clear();
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - myNeighSparse assembled                                       "; 
-//    system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - myNeighSparse assembled                                       ";
+//    system("date +%T.%6N");
   }
 
 	std::vector < std::vector < esglobal > > myLambdas;
@@ -246,8 +255,8 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                "; 
-   // system("date +%T.%6N"); 
+	if (MPIrank == 0) { std::cout << " Global B - Create global lambda numbering                                ";
+   // system("date +%T.%6N");
   }
 
 	esglobal lambdaGlobalCount = 0;
@@ -265,9 +274,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 			myLambdas[i][0] = myLambdas[i][0]  + lambdaGlobalCount + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
-    //system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Assembling messages with lambdas for MPI                      ";
+    //system("date +%T.%6N");
   }
 
 
@@ -300,18 +309,18 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Isend                                                         "; 
-    //system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Isend                                                         ";
+    //system("date +%T.%6N");
   }
 
 	for (int i = 0; i < _neighClusters.size(); i++)
 		MPI_Isend(&mpi_send_buff[i][0], mpi_send_buff[i].size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Iprobe and MPIrecv                                            "; 
-    //system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Iprobe and MPIrecv                                            ";
+    //system("date +%T.%6N");
   }
 
 	std::vector < std::vector < esglobal > > mpi_recv_buff;
@@ -343,9 +352,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Decode received lambdas                                       "; 
-    //system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Decode received lambdas                                       ";
+    //system("date +%T.%6N");
   }
 
 	// decode received lambdas
@@ -372,9 +381,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
-   // system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - myLambdas - sort or tbb:sort                                  ";
+   // system("date +%T.%6N");
   }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
@@ -385,9 +394,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
 //#endif
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
-//    system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Final B assembling with g2l mapping using std::map            ";
+//    system("date +%T.%6N");
   }
 
 	esglobal lambda;
@@ -458,9 +467,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 	}
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
- //   system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    ";
+ //   system("date +%T.%6N");
   }
 
 
@@ -481,9 +490,9 @@ void Gluing<API>::computeClusterGluing(std::vector<size_t> &rows)
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-   	if (MPIrank == 0) { 
-      std::cout << " Global B - END                                                           "; 
-     // system("date +%T.%6N"); 
+   	if (MPIrank == 0) {
+      std::cout << " Global B - END                                                           ";
+     // system("date +%T.%6N");
      }
 
 
@@ -504,7 +513,6 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 //#define PARALLEL
 #define SEQUENTIAL
-
 
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
 	// TODO: cluster boundaries on surface
@@ -567,12 +575,12 @@ void Gluing<TInput>::computeSubdomainGluing()
 		local_prim_numbering_d_l[this_thread].resize( this->subdomains(), 0 );
 		vec_c_l[this_thread].                 resize( this->subdomains()    );
 
-		int chunk_size; 
-                if (num_threads > 1) 
+		int chunk_size;
+                if (num_threads > 1)
                     chunk_size = localBoundaries.size() / (num_threads-1);
-                else 
-                    chunk_size = localBoundaries.size(); 
-                    
+                else
+                    chunk_size = localBoundaries.size();
+
                 for (int d = 0; d < this->subdomains(); d++) {
 			mat_B_dir[this_thread][d].reserve(chunk_size);
 			vec_c_l[this_thread][d].reserve(chunk_size);
@@ -684,7 +692,6 @@ void Gluing<TInput>::computeSubdomainGluing()
 
  //Dirichelt - seq version
 	std::vector<size_t>::const_iterator vi;
-	std::set<eslocal>::const_iterator si1, si2;
 
 	std::vector<std::vector<eslocal> > t_lambda_map_sub_clst;
 	std::vector<std::vector<eslocal> > t_lambda_map_sub_B1 ( this->subdomains() );
@@ -697,7 +704,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 	for (size_t i = 0; i < localBoundaries.size(); i++) {
 
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+		for (auto si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
@@ -718,11 +725,12 @@ void Gluing<TInput>::computeSubdomainGluing()
 			}
 		}
 
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+		for (auto si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			t_local_prim_numbering_d[*si1] += this->DOFs();
 		}
 
 	}
+
 #endif //SEQUENTIAL
 
 #ifdef PARALLEL
@@ -745,12 +753,12 @@ void Gluing<TInput>::computeSubdomainGluing()
                 mat_B0   [this_thread].                   resize( this->subdomains()  );
 		local_prim_numbering_d_l[this_thread].resize( this->subdomains(),0 );
 
-		int chunk_size; 
-                if (num_threads > 1) 
+		int chunk_size;
+                if (num_threads > 1)
                     chunk_size = localBoundaries.size() / (num_threads-1);
-                else 
-                    chunk_size = localBoundaries.size(); 
-                    
+                else
+                    chunk_size = localBoundaries.size();
+
 		for (int d = 0; d < this->subdomains(); d++) {
 			mat_B_dir[this_thread][d].reserve(chunk_size);
 		}
@@ -946,16 +954,16 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 
 #ifdef SEQUENTIAL
+
 	std::vector<eslocal> local_prim_numbering(this->subdomains(), 0);
 	for (size_t i = 0; i < localBoundaries.size(); i++) {
 
 		std::vector<bool> is_dirichlet(this->DOFs(), false);
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+		for (auto si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			for (vi = properties.begin(); vi != properties.end(); ++vi) {
 				const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(*vi).values();
 				if (property.find(i) != property.end()) {
-					//TODO: Toto asi neni dobre - jak resit DOFs ?
-					is_dirichlet[0] = true;
+					is_dirichlet[vi - properties.begin()] = true;
 				}
 			}
 		}
@@ -965,8 +973,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 			if ( globalBoundaries[i].size() == 1
 				 && ( !localBoundaries.isCorner(i) || esconfig::solver::FETI_METHOD != 1 )
 				 ) {	//TODO: Pozor Cornery nejdou do B1
-				for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
-					for (si2 = si1,++si2; si2 != localBoundaries[i].end(); ++si2) {
+				for (auto si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+					auto si2 = si1;
+					for (++si2; si2 != localBoundaries[i].end(); ++si2) {
 						for (eslocal d = 0; d < this->DOFs(); d++) {
 							if (is_dirichlet[d]) {
 								continue;
@@ -976,6 +985,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 							t_lambda_map_sub_B1[*si1].push_back(t_lambda_count_B1);
 							t_lambda_map_sub_B1[*si2].push_back(t_lambda_count_B1);
+
 							t_lambda_map_sub_clst.	 push_back(std::vector<eslocal>({ t_lambda_count_B1, 0 }));
 							t_B1_duplicity[*si1].	 push_back( 1.0 / (double) localBoundaries[i].size() );
 							t_B1_duplicity[*si2].	 push_back( 1.0 / (double) localBoundaries[i].size() );
@@ -990,7 +1000,9 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 			//if ( 1 == 1 ) {
 			if (localBoundaries.isCorner(i)) {
-				for (si1 = localBoundaries[i].begin(), si2 = si1, ++si1; si1 != localBoundaries[i].end(); ++si1) {
+				auto si1 = localBoundaries[i].begin();
+				auto si2 = si1;
+				for (++si1; si1 != localBoundaries[i].end(); ++si1) {
 					for (eslocal d = 0; d < this->DOFs(); d++) {
 						lB[*si2](lambda_count_B0, local_prim_numbering[*si2] + d) =  1.0;
 						lB[*si1](lambda_count_B0, local_prim_numbering[*si1] + d) = -1.0;
@@ -1004,7 +1016,7 @@ void Gluing<TInput>::computeSubdomainGluing()
 
 		}
 
-		for (si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
+		for (auto si1 = localBoundaries[i].begin(); si1 != localBoundaries[i].end(); ++si1) {
 			local_prim_numbering[*si1] += this->DOFs();
 		}
 
@@ -1049,9 +1061,9 @@ void Gluing<TInput>::local_B1_global_resize() {
 	std::vector<SparseIJVMatrix<eslocal> > &B1 = _B1;
 
 	// Local B1 - further processing - update row numbering based on all clusters
-    if (MPIrank == 0) { 
-      std::cout << " Global B - Local preprocessing - start                                   "; 
-//      system("date +%T.%6N"); 
+    if (MPIrank == 0) {
+      std::cout << " Global B - Local preprocessing - start                                   ";
+//      system("date +%T.%6N");
     }
 
 	// Create lambda global numbering
@@ -1068,9 +1080,9 @@ void Gluing<TInput>::local_B1_global_resize() {
 	total_number_of_B1_l_rows = global_B1_l_rows;
 	MPI_Bcast(&total_number_of_B1_l_rows, 1, esglobal_mpi, MPIsize-1, MPI_COMM_WORLD);
 
-    if (MPIrank == 0) { 
-      std::cout << " Global B - Local preprocessing - EXscan and Bcast done                  "; 
-//      system("date +%T.%6N"); 
+    if (MPIrank == 0) {
+      std::cout << " Global B - Local preprocessing - EXscan and Bcast done                  ";
+//      system("date +%T.%6N");
     }
 
 	cilk_for (eslocal domain_index=0; domain_index < this->subdomains(); domain_index++) {
@@ -1087,9 +1099,9 @@ void Gluing<TInput>::local_B1_global_resize() {
 
 	}
 
-    if (MPIrank == 0) { 
-      std::cout << " Global B - Local preprocessing - end of renumbering of rows of local B1   "; 
-//      system("date +%T.%6N"); 
+    if (MPIrank == 0) {
+      std::cout << " Global B - Local preprocessing - end of renumbering of rows of local B1   ";
+//      system("date +%T.%6N");
     }
 
 
@@ -1115,6 +1127,17 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 	const mesh::Boundaries &globalBoundaries = this->_input.mesh.clusterBoundaries();
 	const mesh::Boundaries &localBoundaries = this->_input.mesh.subdomainBoundaries();
 
+	std::vector<size_t> properties;
+	properties.resize(this->DOFs());
+	if (this->DOFs() == 1) {
+		properties[0] = mesh::DIRICHLET_X;
+	}
+	if (this->DOFs() == 3) {
+		properties[0] = mesh::DIRICHLET_X;
+		properties[1] = mesh::DIRICHLET_Y;
+		properties[2] = mesh::DIRICHLET_Z;
+	}
+
 
 	eslocal borderDofNum; 	// number of DOFs on surface of my cluster
 	std::vector< esglobal >::iterator it_vec;
@@ -1128,24 +1151,25 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 
 	// Find all MPIranks of all neighboring clusters in globalBoundaries
 	std::vector < eslocal > neigh_tmp  (MPIsize, 0);
-	std::set<eslocal>::const_iterator it_set;
-	std::set<eslocal>::const_iterator it_set_l;
 
-    if (MPIrank == 0) { 
-      std::cout << " Global B - Blobal B1 neighdofs and neigh dofs array building             "; 
-      //system("date +%T.%6N"); 
+    if (MPIrank == 0) {
+      std::cout << " Global B - Blobal B1 neighdofs and neigh dofs array building             ";
+      //system("date +%T.%6N");
       }
 
     // Now this loop is used to get my Border DOFs and my neighboring subdomains
     // information about neighnoring DOFS is here, but it is not used
 	// neighBorderDofs.resize( MPIsize, std::vector< esglobal >( 0 , 0 ) );
 	for (size_t i = 0; i < globalBoundaries.size(); i++) {
-
 		//
 		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() == 1 ) {
-			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
+			for (auto it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
 				if (*it_set == MPIrank) { // if it points to local cluster
 					for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
+						const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(d_i).values();
+						if (property.find(i) != property.end()) {
+							continue;
+						}
 						_myBorderDOFs.push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
 					}
 				} else {
@@ -1158,11 +1182,15 @@ void Gluing<TInput>::get_myBorderDOFs_from_mesh() {
 
 		//
 		if ( globalBoundaries[i].size() > 1 && localBoundaries[i].size() > 1 ) {
-			for (it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
+			for (auto it_set = globalBoundaries[i].begin(); it_set != globalBoundaries[i].end(); ++it_set) {
 				if (*it_set == MPIrank) {
 					// this loop goes over the nodes that are in multiple domains on this one cluster
-					for (it_set_l = localBoundaries[i].begin(); it_set_l != localBoundaries[i].end(); ++it_set_l) {
+					for (auto it_set_l = localBoundaries[i].begin(); it_set_l != localBoundaries[i].end(); ++it_set_l) {
 						for (int d_i = 0; d_i < this->DOFs(); d_i++ ) {
+							const std::map<eslocal, double> &property = this->_input.mesh.coordinates().property(d_i).values();
+							if (property.find(i) != property.end()) {
+								continue;
+							}
 							_myBorderDOFs_sp      .push_back( this->DOFs() * coordinates.globalIndex(i) + d_i ); // mapping local local to global
 							//myBorderDOFs_sp_loc_n.push_back( this->DOFs() *                          i + d_i ); // in local numbering
 						}
@@ -1207,8 +1235,6 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	std::vector < SparseDOKMatrix<eslocal> > B1_DOK_tmp(this->subdomains());
 	MPI_Request   mpi_req;
 	MPI_Status 	  mpi_stat;
-	std::set<eslocal>::const_iterator it_set;
-	std::set<eslocal>::const_iterator it_set_l;
 
 
 	// Update of local B1 matrices into global numbering
@@ -1223,8 +1249,8 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	eslocal neighClustNum;	// number of neighboring sub-domains for current sub-domainG
 	neighClustNum = _neighClusters.size();
 
-    if (MPIrank == 0) { 
-      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                "; 
+    if (MPIrank == 0) {
+      std::cout << " Global B - myNeighDOFs arrays are transfered to neighbors                ";
      // system("date +%T.%6N");
     }
 
@@ -1266,9 +1292,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Local preprocessing done                                      "; 
- //   system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Local preprocessing done                                      ";
+ //   system("date +%T.%6N");
   }
 
 
@@ -1329,9 +1355,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		if (myNeighsSparse[i].size() < 3)
 			myNeighsSparse[i].clear();
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - myNeighSparse assembled                                       "; 
-//    system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - myNeighSparse assembled                                       ";
+//    system("date +%T.%6N");
   }
 
 	std::vector < std::vector < esglobal > > myLambdas;
@@ -1370,9 +1396,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Create global lambda numbering                                "; 
-   // system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Create global lambda numbering                                ";
+   // system("date +%T.%6N");
   }
 
 	esglobal lambdaGlobalCount = 0;
@@ -1390,9 +1416,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 			myLambdas[i][0] = myLambdas[i][0]  + lambdaGlobalCount + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
- //   system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Assembling messages with lambdas for MPI                      ";
+ //   system("date +%T.%6N");
   }
 
 
@@ -1425,18 +1451,18 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Isend                                                         "; 
- //   system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Isend                                                         ";
+ //   system("date +%T.%6N");
   }
 
 	for (int i = 0; i < _neighClusters.size(); i++)
 		MPI_Isend(&mpi_send_buff[i][0], mpi_send_buff[i].size(), esglobal_mpi, _neighClusters[i], 0, MPI_COMM_WORLD, &mpi_send_req[i]);
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Iprobe and MPIrecv                                            "; 
- //   system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Iprobe and MPIrecv                                            ";
+ //   system("date +%T.%6N");
   }
 
 	std::vector < std::vector < esglobal > > mpi_recv_buff;
@@ -1468,9 +1494,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
+	if (MPIrank == 0) {
     std::cout << " Global B - Decode received lambdas                                       ";
-//    system("date +%T.%6N"); 
+//    system("date +%T.%6N");
   }
 
 	// decode received lambdas
@@ -1497,9 +1523,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		}
 	}
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
- //   system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - myLambdas - sort or tbb:sort                                  ";
+ //   system("date +%T.%6N");
   }
 
 	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
@@ -1510,9 +1536,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	std::sort         (myLambdas.begin(), myLambdas.end(), comp_vf);
 #endif
 
-	if (MPIrank == 0) { 
-    std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
-    //system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Global B - Final B assembling with g2l mapping using std::map            ";
+    //system("date +%T.%6N");
     }
 
 	esglobal lambda;
@@ -1534,7 +1560,7 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		eslocal  dofNODEoffset = DOFNumber % this->DOFs();
 		eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
 
-		const std::set < eslocal > & subs_with_element = this->_input.mesh.subdomainBoundaries()[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+		const std::vector < eslocal > & subs_with_element = this->_input.mesh.subdomainBoundaries()[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 
 		eslocal  cnt            = myLambdas[j][4];
 		double B_value;
@@ -1546,9 +1572,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 		//TODO:Tuto smycku prepsat, aby fungovala jen podoblasti, ve ktery je uzel
 		// Pomala a otestovana verze
 		//for (eslocal d = 0; d < this->subdomains(); d++) {
- 
+
         //TODO: rychle verze nutno otestovat na realne uloze
-		for (it_set = localBoundaries[clustDofNODENumber].begin(); it_set != localBoundaries[clustDofNODENumber].end(); ++it_set) {
+		for (auto it_set = localBoundaries[clustDofNODENumber].begin(); it_set != localBoundaries[clustDofNODENumber].end(); ++it_set) {
 			eslocal d = *it_set;
 
 			eslocal domDofNODENumber = coordinates.localIndex(clustDofNODENumber, d);
@@ -1580,9 +1606,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 	}
 
 
-	if (MPIrank == 0) { 
-    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    "; 
-//    system("date +%T.%6N"); 
+	if (MPIrank == 0) {
+    std::cout << " Creating lambda_map_sub vector of vectors - Global B1                    ";
+//    system("date +%T.%6N");
   }
 
 
@@ -1603,9 +1629,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-   	if (MPIrank == 0) { 
-      std::cout << " Global B - END                                                           "; 
-      system("date +%T.%6N"); 
+   	if (MPIrank == 0) {
+      std::cout << " Global B - END                                                           ";
+      system("date +%T.%6N");
     }
 
 
@@ -1667,9 +1693,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
     	// END - Find all MPIranks of all neighboring clusters in globalBoundaries
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - Local preprocessing done                                      "; 
-     //   system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Local preprocessing done                                      ";
+     //   system("date +%T.%6N");
       }
 
     	// NOW :
@@ -1787,9 +1813,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     			myNeighsSparse_sp[i].clear();
 
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - myNeighSparse assembled                                       "; 
-     //   system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - myNeighSparse assembled                                       ";
+     //   system("date +%T.%6N");
       }
 
     	std::vector < std::vector < esglobal > > myLambdas_sp;
@@ -1857,9 +1883,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - Create global lambda numbering                                "; 
-        system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Create global lambda numbering                                ";
+        system("date +%T.%6N");
       }
 
     	esglobal lambdaGlobalCount_sp = 0;
@@ -1876,9 +1902,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		for (eslocal i = 0; i < myLambdas_sp.size(); i++)
     			myLambdas_sp[i][0] = myLambdas_sp[i][0]  + lambdaGlobalCount_sp + total_number_of_global_B1_lambdas + total_number_of_B1_l_rows; // create global lambda numbering <=> increment lambda numbering by number of lambdas created by all subdomains with smaller index
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - Assembling messages with lambdas for MPI                      "; 
-     //   system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Assembling messages with lambdas for MPI                      ";
+     //   system("date +%T.%6N");
       }
 
     	mpi_send_buff.clear();
@@ -1909,9 +1935,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - Isend                                                         "; 
-     //   system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Isend                                                         ";
+     //   system("date +%T.%6N");
       }
 
     	for (int i = 0; i < _neighClusters.size(); i++)
@@ -1919,8 +1945,8 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
 
 
     	if (MPIrank == 0) {
-        std::cout << " Global B - Iprobe and MPIrecv                                            "; 
-      //  system("date +%T.%6N"); 
+        std::cout << " Global B - Iprobe and MPIrecv                                            ";
+      //  system("date +%T.%6N");
       }
 
     	mpi_recv_buff.clear();
@@ -1952,9 +1978,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - Decode received lambdas                                       "; 
-       // system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Decode received lambdas                                       ";
+       // system("date +%T.%6N");
        }
 
     	// decode received lambdas
@@ -1983,9 +2009,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		}
     	}
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - myLambdas - sort or tbb:sort                                  "; 
-     //   system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - myLambdas - sort or tbb:sort                                  ";
+     //   system("date +%T.%6N");
       }
 
     //	auto comp_vf = [](const std::vector<esglobal> &a, const std::vector<esglobal> &b) {return a[0] < b[0];};
@@ -1996,9 +2022,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     	std::sort         (myLambdas_sp.begin(), myLambdas_sp.end(), comp_vf);
     //#endif
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - Final B assembling with g2l mapping using std::map            "; 
-        system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - Final B assembling with g2l mapping using std::map            ";
+        system("date +%T.%6N");
       }
 
     	esglobal lambda_sp;
@@ -2025,9 +2051,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		if ( myLambdas_sp[j][2] == myLambdas_sp[j][3] ) { // resim vazby mezi domenama uvnitr clusteru
 
     			eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
-				const std::set    < eslocal >  & subs_with_element = localBoundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+				const std::vector < eslocal >  & subs_with_element = localBoundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 				std::vector < eslocal >    subs_with_elem;
-				for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
+				for (auto it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
 					subs_with_elem.push_back( *it_set );
 
 				eslocal d1                = subs_with_elem[ myLambdas_sp[j][5] ];
@@ -2072,9 +2098,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		} else { // resim vazby mezi clustery
 
     			eslocal  clustDofNODENumber = coordinates.clusterIndex( dofNODEnumber );
-				const std::set    < eslocal >  & subs_with_element = localBoundaries[clustDofNODENumber]; //globalBoundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
+				const std::vector    < eslocal >  & subs_with_element = localBoundaries[clustDofNODENumber]; //globalBoundaries[clustDofNODENumber]; // mnozina podoblasti na ktery je tento uzel
 				std::vector < eslocal >    subs_with_elem;
-				for (it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
+				for (auto it_set = subs_with_element.begin(); it_set != subs_with_element.end(); ++it_set)
 					subs_with_elem.push_back( *it_set );
 
 
@@ -2124,9 +2150,9 @@ void Gluing<TInput>::computeClusterGluing(std::vector<size_t> &rows)
     		B1[d].AppendMatrix(ijv); //    = B1_DOK_tmp[d];
     	}
 
-    	if (MPIrank == 0) { 
-        std::cout << " Global B - END                                                           "; 
-     //   system("date +%T.%6N"); 
+    	if (MPIrank == 0) {
+        std::cout << " Global B - END                                                           ";
+     //   system("date +%T.%6N");
       }
 
 

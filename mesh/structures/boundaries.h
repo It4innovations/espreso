@@ -4,7 +4,6 @@
 #include <sstream>
 
 #include "../elements/elements.h"
-#include "cilk/cilk.h"
 
 namespace mesh {
 
@@ -33,12 +32,12 @@ public:
 		return _boundaries.size();
 	}
 
-	const std::set<eslocal>& operator[](size_t position) const
+	const std::vector<eslocal>& operator[](size_t position) const
 	{
 		return _boundaries[position];
 	}
 
-	std::set<eslocal>& operator[](size_t position)
+	std::vector<eslocal>& operator[](size_t position)
 	{
 		return _boundaries[position];
 	}
@@ -68,14 +67,14 @@ public:
 		return _averaging[corner];
 	}
 
-	// prepare for future improvements
-	eslocal index(size_t position) const {
-		return position;
+	const std::vector<std::vector<eslocal> > boundary() const
+	{
+		return _boundaries;
 	}
 
 private:
 	/** @brief Keeps mapping of nodes to mesh parts. */
-	std::vector<std::set<eslocal> > _boundaries;
+	std::vector<std::vector<eslocal> > _boundaries;
 
 	/** @brief Keeps information whether a point is the corner. */
 	std::vector<bool> _corners;

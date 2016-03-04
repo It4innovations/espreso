@@ -103,7 +103,10 @@ void Mesh::computeBoundaries()
 	for (size_t p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (size_t n = 0; n < _elements[e]->size(); n++) {
-				_subdomainBoundaries[_coordinates.clusterIndex(_elements[e]->node(n), p)].insert(p);
+				auto index = _coordinates.clusterIndex(_elements[e]->node(n), p);
+				if (!_subdomainBoundaries[index].size() || _subdomainBoundaries[index].back() != p) {
+					_subdomainBoundaries[index].push_back(p);
+				}
 			}
 		}
 	}
@@ -800,7 +803,7 @@ void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
 
 		eslocal begin = lines._partPtrs[p], end = lines._partPtrs[p + 1];
 
-		int max = (end - begin) / 5 + 1;
+		int max = (end - begin) / 2 + 1;
 		size_t corners = std::min(max, 3);
 		eslocal *ePartition = lines.getPartition(begin, end, corners);
 
@@ -998,7 +1001,6 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 			averaging.insert(averaging.begin(), aPoints.begin(), aPoints.end());
 		}
 	};
-
 
 	if (vertices) {
 		for (auto it = commonVertices.begin(); it != commonVertices.end(); ++it) {

@@ -125,7 +125,7 @@ void VTK::elements(const mesh::Mesh &mesh)
 	offset = 0;
 	for (size_t p = 0; p < parts; p++) {
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (boundaries.isCorner(i) && boundaries[i].count(p)) {
+			if (boundaries.isCorner(i) && std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
 				_vtk << " " << coordinates.localIndex(i, p) + offset;
 			}
 		}

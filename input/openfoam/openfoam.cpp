@@ -163,7 +163,7 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 		mesh::Boundaries &boundaries) {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].insert(_rank);
+		boundaries[i].push_back(_rank);
 	}
 	if (_size > 1) {
 
@@ -183,8 +183,7 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 		std::vector<Dictionary> boundary;
 		solveParseError(parse(boundaryFile.getTokenizer(), boundary));
 
-		for (std::vector<Dictionary>::iterator it = boundary.begin();
-				it != boundary.end(); ++it) {
+		for (std::vector<Dictionary>::iterator it = boundary.begin(); it != boundary.end(); ++it) {
 			if ((*it).getName().find("procBoundary") == 0) {
 				int myProcNo;
 				solveParseError((*it).readEntry("myProcNo", myProcNo));
@@ -208,7 +207,7 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 					for (std::vector<eslocal>::iterator it = face.begin();
 							it != face.end(); ++it) {
 				//		std::cout << *it << ",";
-						boundaries[*it].insert(neighbProcNo);
+						boundaries[*it].push_back(neighbProcNo);
 					}
 				//	std::cout << "\n";
 				}
@@ -217,6 +216,11 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 				*/
 			}
 		}
+	}
+
+	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
+		std::sort(boundaries[i].begin(), boundaries[i].end());
+		boundaries[i].resize(std::unique(boundaries[i].begin(), boundaries[i].end()) - boundaries[i].begin());
 	}
 }
 
