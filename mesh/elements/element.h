@@ -47,6 +47,9 @@ public:
 	Element(std::ifstream &is)
 	{
 		// TODO:
+		for (size_t p = 0; p < PARAMS_SIZE; p++) {
+			_params[p] = 0;
+		}
 	}
 
 	virtual ~Element() {};
