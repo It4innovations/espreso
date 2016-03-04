@@ -2,12 +2,12 @@
 #ifndef ASSEMBLER_LINEAR_LINEAR_H_
 #define ASSEMBLER_LINEAR_LINEAR_H_
 
-#include "../gluing/gluing.h"
+#include "../constraints/equalityconstraints.h"
 
 namespace assembler {
 
 template <class TInput>
-class Linear: public Gluing<TInput> {
+class Linear: public EqualityConstraints<TInput> {
 
 public:
 	virtual ~Linear() {};
@@ -19,7 +19,7 @@ public:
 	void finalize();
 
 protected:
-	Linear(TInput &input): Gluing<TInput>(input) {};
+	Linear(TInput &input): EqualityConstraints<TInput>(input) {};
 
 	// FEM specific
 	virtual void inertia(std::vector<double> &inertia) = 0;

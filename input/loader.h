@@ -20,7 +20,7 @@ public:
 		elements(mesh._elements);
 		faces(mesh._faces);
 		boundaryConditions(mesh._coordinates);
-		clusterBoundaries(mesh, mesh._clusterBoundaries);
+		clusterBoundaries(mesh, mesh._clusterBoundaries, mesh._neighbours);
 		close();
 		mesh.partitiate(esconfig::mesh::subdomains);
 		mesh.computeFixPoints(esconfig::mesh::fixPoints);
@@ -41,7 +41,7 @@ protected:
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
 	virtual void faces(mesh::Faces &faces) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
-	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) = 0;
+	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual void open() = 0;
 	virtual void close() = 0;
@@ -57,7 +57,7 @@ public:
 		points(mesh._coordinates);
 		elements(mesh._elements);
 		mesh.partitiate(esconfig::mesh::subdomains);
-		clusterBoundaries(mesh, mesh._clusterBoundaries);
+		clusterBoundaries(mesh, mesh._clusterBoundaries, mesh._neighbours);
 
 		mesh.computeCorners(
 				esconfig::mesh::corners,
@@ -71,7 +71,7 @@ public:
 protected:
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
-	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) = 0;
+	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual ~APILoader() {};
 };
@@ -100,7 +100,7 @@ public:
 			mesh.computeBoundaries();
 		}
 		boundaryConditions(mesh._coordinates);
-		clusterBoundaries(mesh._clusterBoundaries);
+		clusterBoundaries(mesh._clusterBoundaries, mesh._neighbours);
 
 		if (manualPartition()) {
 			mesh.computeCorners(
@@ -126,7 +126,7 @@ protected:
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void corners(mesh::Boundaries &boundaries) = 0;
-	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
+	virtual void clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual ~InternalLoader() {};
 };

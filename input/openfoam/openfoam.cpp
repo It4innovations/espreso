@@ -159,8 +159,9 @@ void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates) {
 
 }
 
-void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
-		mesh::Boundaries &boundaries) {
+void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours) {
+	std::set<int> neighs;
+
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		boundaries[i].push_back(_rank);
@@ -189,8 +190,7 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 				solveParseError((*it).readEntry("myProcNo", myProcNo));
 				if (myProcNo != _rank) {
 					std::stringstream ss;
-					ss << "Boundary for rank: " << myProcNo
-							<< ", but opened in process: " << _rank;
+					ss << "Boundary for rank: " << myProcNo << ", but opened in process: " << _rank;
 					std::cerr << ss.str();
 					exit(EXIT_FAILURE);
 				}
@@ -203,17 +203,11 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 				solveParseError((*it).readEntry("startFace", startFace));
 				for (int i = 0; i < nFaces; i++) {
 					std::vector<eslocal> face = mesh.faces()[startFace + i];
-				//	std::cout << "Face: ";
-					for (std::vector<eslocal>::iterator it = face.begin();
-							it != face.end(); ++it) {
-				//		std::cout << *it << ",";
+					for (std::vector<eslocal>::iterator it = face.begin(); it != face.end(); ++it) {
 						boundaries[*it].push_back(neighbProcNo);
+						neighs.insert(neighbProcNo);
 					}
-				//	std::cout << "\n";
 				}
-				/*std::cout << "Process: " << myProcNo << " " << neighbProcNo
-						<< " " << startFace << " " << nFaces << "\n";
-				*/
 			}
 		}
 	}
@@ -222,5 +216,8 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh,
 		std::sort(boundaries[i].begin(), boundaries[i].end());
 		boundaries[i].resize(std::unique(boundaries[i].begin(), boundaries[i].end()) - boundaries[i].begin());
 	}
+
+	neighs.erase(esconfig::MPIrank);
+	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

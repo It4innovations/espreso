@@ -18,7 +18,7 @@ protected:
 	void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
 	void points(mesh::Coordinates &coordinates);
 	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Boundaries &boundaries);
+	void clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours);
 
 	const CubeSettings _settings;
 	size_t _cluster[3];

@@ -22,7 +22,7 @@ public:
 	void elements(std::vector<mesh::Element*> &elements);
 	void faces(mesh::Faces &faces) {};
 	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
+	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void open()
 	{

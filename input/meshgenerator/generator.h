@@ -27,7 +27,7 @@ protected:
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
 	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
 	virtual void corners(mesh::Boundaries &boundaries) = 0;
-	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
+	virtual void clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	bool manualPartition()
 	{

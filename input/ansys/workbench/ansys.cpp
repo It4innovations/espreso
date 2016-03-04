@@ -143,7 +143,7 @@ void AnsysWorkbench::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void AnsysWorkbench::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {

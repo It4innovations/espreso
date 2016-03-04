@@ -11,18 +11,18 @@ class API: public APILoader {
 public:
 	// TODO: elements with various DOFS
 	API(std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, esglobal *ids)
-	: DOFs(3), eIndices(eIndices), neighbours(neighbours), size(size), ids(ids) { };
+	: _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
 
 	void points(mesh::Coordinates &coordinates);
 	void elements(std::vector<mesh::Element*> &elements);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
+	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
-	size_t DOFs;
-	std::vector<std::vector<eslocal> > &eIndices;
-	std::vector<eslocal> &neighbours;
-	size_t size;
-	esglobal *ids;
+	size_t _DOFs;
+	std::vector<std::vector<eslocal> > &_eIndices;
+	std::vector<eslocal> &_neighbours;
+	size_t _size;
+	esglobal *_ids;
 };
 
 }

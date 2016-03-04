@@ -38,26 +38,18 @@ void Linear<TInput>::init()
 	timeKasm.endWithBarrier();
 	this->_timeStatistics.addEvent(timeKasm);
 
-	TimeEvent timeLocalB("Create local B");
-	timeLocalB.start();
-
-	this->computeSubdomainGluing();
-
-	timeLocalB.endWithBarrier();
-	this->_timeStatistics.addEvent(timeLocalB);
-
-	TimeEvent timeGlobalB("Create global B");
-	timeGlobalB.start();
-
 	std::vector<size_t> rows(this->subdomains());
 	for (size_t s = 0; s < this->subdomains(); s++) {
 		rows[s] = _K[s].rows;
 	}
 
-	this->computeClusterGluing(rows);
+	TimeEvent timeParallelG("Gluing");
+	timeParallelG.startWithBarrier();
 
-	timeGlobalB.endWithBarrier();
-	this->_timeStatistics.addEvent(timeGlobalB);
+	this->assembleConstraints(rows);
+
+	timeParallelG.end();
+	this->_timeStatistics.addEvent(timeParallelG);
 
 	TimeEvent timeBforces("Fill right hand side");
 	timeBforces.start();

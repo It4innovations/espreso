@@ -108,6 +108,11 @@ public:
 		return _coordinates.localSize(part);
 	}
 
+	const std::vector<int>& neighbours() const
+	{
+		return _neighbours;
+	}
+
 protected:
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
@@ -144,11 +149,15 @@ protected:
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
 
+	/** @brief list of neighbours MPI ranks/ */
+	std::vector<int> _neighbours;
+
 private:
 	Mesh(const Mesh &mesh)
 	{
 		ESLOG(eslog::ERROR) << "It is not allowed to copy Mesh.";
 	}
+
 	Mesh& operator=(const Mesh &mesh)
 	{
 		ESLOG(eslog::ERROR) << "It is not allowed to copy Mesh.";

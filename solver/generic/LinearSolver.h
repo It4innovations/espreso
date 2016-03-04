@@ -85,7 +85,7 @@ public:
 
 			const std::vector < std::vector <eslocal > >	& fix_nodes,
 
-			std::vector < eslocal > & neigh_clusters
+			const std::vector < int > & neigh_clusters
 	);
 
 	void init(
@@ -101,7 +101,7 @@ public:
 			std::vector < std::vector <double > >	& f_vec,
 			std::vector < std::vector <double > >	& vec_c,
 
-			std::vector < eslocal > & neigh_clusters
+			const std::vector < int > & neigh_clusters
 	);
 
 	void Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub );

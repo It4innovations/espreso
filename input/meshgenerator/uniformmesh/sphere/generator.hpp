@@ -177,11 +177,13 @@ void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinate
 
 
 template <class TElement>
-void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
+void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
+
+	std::set<int> neighs;
 
 	for (size_t i = 0; i < boundaries.size(); i++) {
 		boundaries[i].push_back(_settings.index);
@@ -243,7 +245,11 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 		std::sort(boundaries[i].begin(), boundaries[i].end());
 		auto end = std::unique(boundaries[i].begin(), boundaries[i].end());
 		boundaries[i].resize(end - boundaries[i].begin());
+		neighs.insert(boundaries[i].begin(), boundaries[i].end());
 	}
+
+	neighs.erase(esconfig::MPIrank);
+	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 
 }

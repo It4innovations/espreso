@@ -92,11 +92,13 @@ void Esdata::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 
-void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/clusterBoundaries.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
+
+	std::set<int> neighs;
 
 	boundaries.clear();
 
@@ -110,7 +112,11 @@ void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
 			boundaries[i].push_back(value);
+			neighs.insert(value);
 		}
 	}
+
+	neighs.erase(esconfig::MPIrank);
+	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

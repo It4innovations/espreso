@@ -221,16 +221,16 @@ void Linear<FEM>::initSolver()
 		_input.mesh,
 		_K,
 		_T,
-		_globalB,
-		_localB,
-		_lambda_map_sub_B1,
-		_lambda_map_sub_B0,
-		_lambda_map_sub_clst,
-		_B1_duplicity,
+		_B1,
+		_B0,
+		_B1subdomainsMap,
+		_B0subdomainsMap,
+		_B1clustersMap,
+		_B1duplicity,
 		_f,
-		_vec_c,
+		_B1c,
 		_input.mesh.getFixPoints(),
-		_neighClusters
+		_input.mesh.neighbours()
 	);
 }
 
@@ -259,4 +259,6 @@ void Linear<FEM>::RHS()
 
 }
 
+
 }
+

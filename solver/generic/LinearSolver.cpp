@@ -105,7 +105,7 @@ void LinearSolver::init(
 		std::vector < std::vector <double > >	& f_vec,
 		std::vector < std::vector <double > >	& vec_c,
 
-		std::vector < eslocal > & neigh_clusters)
+		const std::vector < int > & neigh_clusters)
 {
 	number_of_subdomains_per_cluster = K_mat.size();
 
@@ -387,7 +387,7 @@ void LinearSolver::init(
 
 		const std::vector < std::vector <eslocal > >	& fix_nodes,
 
-		std::vector < eslocal > & neigh_clusters
+		const std::vector < int > & neigh_clusters
 
 ) {
 

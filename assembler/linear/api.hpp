@@ -6,10 +6,6 @@ namespace assembler {
 template <>
 void Linear<API>::KMf(size_t part, bool dynamics)
 {
-	if (esconfig::mesh::subdomains == 1) {
-		_K[part] = *(this->_input.K);
-		return;
-	}
 	size_t DOFS = 3;
 	SparseVVPMatrix<eslocal> _K;
 	eslocal nK = this->_input.mesh->coordinates().localSize(part) * DOFS;
@@ -38,10 +34,6 @@ void Linear<API>::KMf(size_t part, bool dynamics)
 template <>
 void Linear<API>::RHS()
 {
-	if (esconfig::mesh::subdomains == 1) {
-		_f[0] = std::vector<double>(this->_input.rhs, this->_input.rhs + this->_input.size);
-		return;
-	}
 	size_t DOFS = 3;
 
 	for (size_t p = 0; p < this->_input.mesh->parts(); p++) {
@@ -59,16 +51,48 @@ void Linear<API>::initSolver()
 {
 	_lin_solver.init(
 		_K,
-		_globalB,
-		_localB,
-		_lambda_map_sub_B1,
-		_lambda_map_sub_B0,
-		_lambda_map_sub_clst,
-		_B1_duplicity,
+		_B1,
+		_B0,
+		_B1subdomainsMap,
+		_B0subdomainsMap,
+		_B1clustersMap,
+		_B1duplicity,
 		_f,
-		_vec_c,
-		_neighClusters
+		_B1c,
+		_input.mesh->neighbours()
 	);
+}
+
+template <>
+void Linear<API>::solve(std::vector<std::vector<double> > &solution)
+{
+	TimeEvent timeLSrun("Linear Solver - runtime");
+	timeLSrun.start();
+
+	std::vector<std::vector<double> > tmpSolution(_f.size());
+	for (size_t i = 0; i <_f.size(); i++) {
+		tmpSolution[i].resize(_f[i].size());
+	}
+
+	_lin_solver.Solve(_f, tmpSolution);
+
+	size_t DOFs = 3;
+
+	std::for_each(solution[0].begin(), solution[0].end(), [] (double &v) { v = 0; });
+
+	const mesh::Boundaries &boundaries = this->_input.mesh->subdomainBoundaries();
+	for (size_t p = 0; p < this->_input.mesh->parts(); p++) {
+		const std::vector<eslocal> &l2c = this->_input.mesh->coordinates().localToCluster(p);
+		for (size_t i = 0; i < l2c.size(); i++) {
+			for (size_t d = 0; d < DOFs; d++) {
+				solution[0][DOFs * l2c[i] + d] += tmpSolution[p][DOFs * i + d] / boundaries[l2c[i]].size();
+			}
+		}
+	}
+
+
+	timeLSrun.endWithBarrier();
+	this->_timeStatistics.addEvent(timeLSrun);
 }
 
 }

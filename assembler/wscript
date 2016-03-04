@@ -1,15 +1,12 @@
 
 source_files = (
-    #"linear/linear.cpp",
-    #"linear/elasticity/linearelasticity.cpp"
+    "constraints/equalityconstraints.cpp",
 )
 
 def configure(ctx):
     pass
 
 def build(ctx):
-    return
-
     ctx.lib(
         source          = source_files,
         target          = "esassembler",

@@ -310,7 +310,7 @@ void CubeGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
 
 
 template <class TElement>
-void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
+void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	esglobal gNodes[3];
 	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);
@@ -327,6 +327,9 @@ void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 		cs[i] = (cNodes[i] - 1) * _cluster[i];
 		ce[i] = (cNodes[i] - 1) * (_cluster[i] + 1);
 	}
+
+	// TODO: optimize this
+	std::set<int> neighs;
 
 	for (esglobal z = cs[2]; z <= ce[2]; z++) {
 		border[2] = (z == 0 || z == gNodes[2] - 1) ? false : z % ( cNodes[2] - 1) == 0;
@@ -346,6 +349,7 @@ void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 						tmp += ((z == cs[2]) ? -1 : 1) * _settings.clusters[0] * _settings.clusters[1];
 					}
 					boundaries[index].push_back(tmp);
+					neighs.insert(tmp);
 				}
 				std::sort(boundaries[index].begin(), boundaries[index].end());
 				auto end = std::unique(boundaries[index].begin(), boundaries[index].end());
@@ -354,6 +358,9 @@ void CubeGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 			}
 		}
 	}
+
+	neighs.erase(esconfig::MPIrank);
+	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 
 }

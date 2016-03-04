@@ -139,7 +139,7 @@ void AnsysMatsol::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 
-void AnsysMatsol::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void AnsysMatsol::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
