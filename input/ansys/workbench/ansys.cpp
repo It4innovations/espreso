@@ -107,20 +107,40 @@ void AnsysWorkbench::boundaryConditions(mesh::Coordinates &coordinates)
 {
 	std::string line;
 	line = skip(_file, "CMBLOCK");
-	eslocal value, n = 0, size = last(line);
-	getline(_file, line);
 
-	mesh::CoordinatesProperty &dx = coordinates.property(mesh::DIRICHLET_X);
-	mesh::CoordinatesProperty &dy = coordinates.property(mesh::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dz = coordinates.property(mesh::DIRICHLET_Z);
-	while (n < size) {
+	if (line.find("SELECTION") != std::string::npos) {
+		eslocal value, n = 0, size = last(line);
 		getline(_file, line);
-		std::stringstream ss(line);
-		while (ss >> value) {
-			dx[value - 1] = 0;
-			dy[value - 1] = 0;
-			dz[value - 1] = 0;
-			n++;
+
+		mesh::CoordinatesProperty &fx = coordinates.property(mesh::FORCES_X);
+		while (n < size) {
+			getline(_file, line);
+			std::stringstream ss(line);
+			while (ss >> value) {
+				fx[value - 1] = 10;
+				n++;
+			}
+		}
+
+		line = skip(_file, "CMBLOCK");
+	}
+
+	if (line.find("_FIXEDSU") != std::string::npos) {
+		eslocal value, n = 0, size = last(line);
+		getline(_file, line);
+
+		mesh::CoordinatesProperty &dx = coordinates.property(mesh::DIRICHLET_X);
+		mesh::CoordinatesProperty &dy = coordinates.property(mesh::DIRICHLET_Y);
+		mesh::CoordinatesProperty &dz = coordinates.property(mesh::DIRICHLET_Z);
+		while (n < size) {
+			getline(_file, line);
+			std::stringstream ss(line);
+			while (ss >> value) {
+				dx[value - 1] = 0;
+				dy[value - 1] = 0;
+				dz[value - 1] = 0;
+				n++;
+			}
 		}
 	}
 }
@@ -130,7 +150,7 @@ void AnsysWorkbench::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &bound
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].insert(0);
+		boundaries[i].push_back(0);
 	}
 }
 
