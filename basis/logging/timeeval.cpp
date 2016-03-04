@@ -123,7 +123,11 @@ void TimeEvent::evaluate() {
 		E += (eventTime[i] - avgTime) * (eventTime[i] - avgTime);
 	}
 
-	stdDev = sqrt(1 / eventCount * E);
+	if (eventCount * E) {
+		stdDev = sqrt(1 / eventCount * E);
+	} else {
+		stdDev = 0;
+	}
 }
 
 void TimeEvent::evaluateMPI() {

@@ -49,6 +49,7 @@ struct TimeEvent
 	void start();
 	void startWithBarrier();
 	void startWithoutBarrier();
+
 	void start(double time);
 	void startWithBarrier(double time);
 	void startWithoutBarrier(double time);
@@ -56,6 +57,7 @@ struct TimeEvent
 	void end();
 	void endWithBarrier();
 	void endWithoutBarrier();
+
 	void end(double time);
 	void endWithBarrier(double time);
 	void endWithoutBarrier(double time);

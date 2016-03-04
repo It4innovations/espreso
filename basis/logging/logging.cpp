@@ -25,7 +25,7 @@ Log::Log(LogEvent event): event(event)
 Log::~Log()
 {
 	if (event == ERROR) {
-		fprintf(stderr, "%s", os.str().c_str());
+		fprintf(stderr, "%s\n", os.str().c_str());
 		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", esconfig::MPIrank);
 		fflush(stderr);
 		exit(EXIT_FAILURE);
