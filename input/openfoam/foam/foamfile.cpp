@@ -6,7 +6,7 @@
 bool FoamFile::fileExists(const char *filename)
 {
     std::ifstream ifile(filename);
-    return ifile;
+    return ifile.good();
 }
 
 FoamFile::FoamFile(const std::string &filename)
