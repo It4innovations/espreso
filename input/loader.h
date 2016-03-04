@@ -25,13 +25,15 @@ public:
 		mesh.partitiate(esconfig::mesh::subdomains);
 		mesh.computeFixPoints(esconfig::mesh::fixPoints);
 
-		mesh.computeCorners(
-				esconfig::mesh::corners,
-				esconfig::mesh::vertexCorners,
-				esconfig::mesh::edgeCorners,
-				esconfig::mesh::faceCorners,
-				esconfig::mesh::averageEdges,
-				esconfig::mesh::averageFaces);
+		if (esconfig::solver::FETI_METHOD == esconfig::HYBRID_FETI) {
+			mesh.computeCorners(
+					esconfig::mesh::corners,
+					esconfig::mesh::vertexCorners,
+					esconfig::mesh::edgeCorners,
+					esconfig::mesh::faceCorners,
+					esconfig::mesh::averageEdges,
+					esconfig::mesh::averageFaces);
+		}
 	}
 
 protected:
@@ -55,11 +57,21 @@ public:
 		points(mesh._coordinates);
 		elements(mesh._elements);
 		mesh.partitiate(esconfig::mesh::subdomains);
+		clusterBoundaries(mesh, mesh._clusterBoundaries);
+
+		mesh.computeCorners(
+				esconfig::mesh::corners,
+				esconfig::mesh::vertexCorners,
+				esconfig::mesh::edgeCorners,
+				esconfig::mesh::faceCorners,
+				esconfig::mesh::averageEdges,
+				esconfig::mesh::averageFaces);
 	}
 
 protected:
 	virtual void points(mesh::Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
+	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries) = 0;
 
 	virtual ~APILoader() {};
 };

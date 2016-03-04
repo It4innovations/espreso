@@ -22,9 +22,11 @@ struct FETI4IStructMatrix {
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data): data(data), K(0, 0) { };
+	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data, mesh::Mesh *mesh): data(data), mesh(mesh), K(0, 0) { };
+	~FETI4IStructInstance() { delete mesh; }
 
 	assembler::LinearElasticity<assembler::API> data;
+	mesh::Mesh *mesh;
 	SparseCSRMatrix<eslocal> K;
 };
 

@@ -24,7 +24,7 @@ struct BEM {
 };
 
 struct API {
-	API(mesh::APIMesh &mesh): mesh(&mesh), K(NULL) { };
+	API(mesh::APIMesh *mesh): mesh(mesh), K(NULL) { };
 
 	mesh::APIMesh *mesh;
 	SparseCSRMatrix<eslocal> *K;

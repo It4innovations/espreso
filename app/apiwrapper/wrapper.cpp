@@ -2,7 +2,6 @@
 #include "wrapper.h"
 
 using namespace assembler;
-//using namespace esinput;
 
 std::list<FETI4IStructMatrix*> DataHolder::matrices;
 std::list<FETI4IStructInstance*> DataHolder::instances;
@@ -105,18 +104,10 @@ void FETI4IAddElement(
 		return;
 	}
 
-	if (esconfig::mesh::subdomains == 1) {
-		for (eslocal i = 0; i < size; i++) {
-			for (eslocal j = 0; j < size; j++) {
-				matrix->K(indices[i] - matrix->offset,  indices[j] - matrix->offset) = values[i * size + j];
-			}
-		}
-	} else {
-		eslocal offset = matrix->offset;
-		matrix->eIndices.push_back(std::vector<eslocal>(indices, indices + size));
-		std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
-		matrix->eMatrices.push_back(std::vector<double>(values, values + size * size));
-	}
+	eslocal offset = matrix->offset;
+	matrix->eIndices.push_back(std::vector<eslocal>(indices, indices + size));
+	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
+	matrix->eMatrices.push_back(std::vector<double>(values, values + size * size));
 }
 
 void FETI4ICreateInstance(
@@ -128,33 +119,26 @@ void FETI4ICreateInstance(
 		FETI4IMPIInt 	neighbours_size,
 		FETI4IMPIInt*	neighbours,
 		FETI4IInt 		dirichlet_size,
-		FETI4IInt* 		dirichlet_indices,  //TODO which numbering? we prefer global numbering
+		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
-	mesh::APIMesh mesh(matrix->eMatrices);
-	esinput::API loader(matrix->eIndices);
-	if (esconfig::mesh::subdomains > 1) {
-		loader.load(mesh);
-	}
+	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
+	neighClusters.push_back(esconfig::MPIrank);
+	std::sort(neighClusters.begin(), neighClusters.end());
+
+	mesh::APIMesh *mesh = new mesh::APIMesh(matrix->eMatrices);
+	esinput::API loader(matrix->eIndices, neighClusters, size, l2g);
+	loader.load(*mesh);
 
 	API api(mesh);
-	DataHolder::instances.push_back(new FETI4IStructInstance(api));
-
-	if (esconfig::mesh::subdomains == 1) {
-		DataHolder::instances.back()->K = matrix->K;
-		api.K = &(DataHolder::instances.back()->K);
-	}
+	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
 
 	api.indexing = matrix->offset;
 	api.size = size;
 	api.rhs = rhs;
-	for (size_t i = 0; i < dirichlet_size; i++) {
-		dirichlet_indices[i] = l2g[dirichlet_indices[i] - matrix->offset];
-	}
-
 	api.dirichlet_size = dirichlet_size;
 	api.dirichlet_indices = dirichlet_indices;
 	api.dirichlet_values = dirichlet_values;
