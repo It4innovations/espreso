@@ -487,7 +487,7 @@ SparseMatrix& SparseMatrix::operator= ( const SparseIJVMatrix<eslocal> &A_in ) {
 	for (eslocal i = 0; i < J_col_indices.size(); i++)
 		J_col_indices[i] = A_in.columnIndices()[i] + offset;
 
-	copy(A_in.values(), A_in.values() + nnz, V_values.begin());
+	copy(A_in.values().begin(), A_in.values().end(), V_values.begin());
 
 	// Sparse CSR data
 //	CSR_I_row_indices = NULL;
@@ -541,7 +541,7 @@ SparseMatrix::SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in )
 	for (eslocal i = 0; i < J_col_indices.size(); i++)
 		J_col_indices[i] = A_in.columnIndices()[i] + offset;
 
-	copy(A_in.values(), A_in.values() + nnz, V_values.begin());
+	copy(A_in.values().begin(), A_in.values().end(), V_values.begin());
 
 //	// Sparse CSR data
 //	CSR_I_row_indices = NULL;
@@ -3021,7 +3021,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
-#endif 
+#endif
 //
 //    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
@@ -3031,7 +3031,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //    2) permutVectorActive
 //  random selection of singular DOFs
 // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
-//ESLOCAL PERMUTVECTORACTIVE                            = 1; 
+//ESLOCAL PERMUTVECTORACTIVE                            = 1;
   eslocal permutVectorActive                            = 1;
 
 //    3) use_null_pivots_or_s_set
@@ -3063,7 +3063,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 
 //    8) fixing_nodes_or_dof
 // non-singular part determined by fixing nodes (FN),
-// min(fixing_nodes_or_dof)>=3; if variable is nonzero, 
+// min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
 //ESLOCAL FIXING_NODES_OR_DOF                           = 0;
   eslocal fixing_nodes_or_dof = 0;
@@ -3120,7 +3120,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 // DEFAULT SET-UP
 #if VERBOSE_LEVEL < 4
     diagonalScaling                               = DIAGONALSCALING;
-    permutVectorActive                            = PERMUTVECTORACTIVE; 
+    permutVectorActive                            = PERMUTVECTORACTIVE;
     use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
     diagonalRegularization                        = DIAGONALREGULARIZATION;
     get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
@@ -3136,15 +3136,15 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
 #endif
 
-// STATISTICS MADE AND PRINTED TO FILE 
+// STATISTICS MADE AND PRINTED TO FILE
 //        'kernel_detct_cX_dY.txt  (X - clust. number, Y - subdomain. number)
 //  -BRIEF
 #if VERBOSE_LEVEL == 2
-    // print ||K*R|| to file 
+    // print ||K*R|| to file
 #endif
 //  - DETAILED
 #if VERBOSE_LEVEL == 3
-    get_n_first_and_n_last_eigenvals_from_dense_S = 10; 
+    get_n_first_and_n_last_eigenvals_from_dense_S = 10;
     check_nonsing                                 = 1;
     // max(eig(K))
 #endif
@@ -3288,7 +3288,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
       K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
     }
   }
-  
+
 #if VERBOSE_LEVEL>0
 //1 - diagonal scaling
   time1 = omp_get_wtime();
@@ -3429,7 +3429,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
       }
 #if VERBOSE_LEVEL>1
         os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
-#endif      
+#endif
     }
     //      r = permVec[0:nonsing_size-1]     (singular DOFs)
     //      s = permVec[nonsing_size:end-1]   (non-singular DOFs)
@@ -3516,7 +3516,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   }
   else{
     SparseSolverCPU createSchur;
-    // TODO PARDISO_SC provides factor K_rr. 
+    // TODO PARDISO_SC provides factor K_rr.
     // if SC_via_K_rr=false,  factorization is made redundantly later.
     createSchur.ImportMatrix(K_modif);
     createSchur.Create_SC(S,sc_size,false);
@@ -3683,10 +3683,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 	    regMat.cols = K.cols;
 	    regMat.type = 'S';
 	    regMat.nnz= null_pivots.size();
-      
+
       regMat.I_row_indices.resize(regMat.nnz);
       regMat.J_col_indices.resize(regMat.nnz);
-      regMat.V_values.resize(regMat.nnz);     
+      regMat.V_values.resize(regMat.nnz);
     }
     for (eslocal i = 0; i < null_pivots.size(); i++){
       tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
@@ -3727,9 +3727,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     NtN_Mat.RemoveLower();
     K.MatAddInPlace (NtN_Mat,'N', 1);
     // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
-    if (d_sub!=-1) 
+    if (d_sub!=-1)
     {
-      regMat=NtN_Mat; 
+      regMat=NtN_Mat;
       regMat.ConvertToCOO(1);
     }
   }
@@ -3739,7 +3739,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 
   delete [] W;
   delete [] Z;
-  
+
   double end_time = omp_get_wtime();
 //12 - Total time in kernel detection
   elapsed_secs[12] = double(end_time - begin_time) ;
@@ -3762,7 +3762,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
   os.close();
 #endif
-  
+
 
 }
 

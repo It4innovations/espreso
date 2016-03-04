@@ -66,45 +66,33 @@ public:
 		return 0;
 	}
 
-	const Tindices* rowIndices() const
+	std::vector<Tindices>& rowIndices()
 	{
-		return &_rowIndices[0];
-	}
-
-	Tindices* rowIndices()
-	{
-		return &_rowIndices[0];
-	}
-
-	std::vector<Tindices>& rowIndices_vec() {
 		return _rowIndices;
 	}
 
-	const Tindices* columnIndices() const
+	const std::vector<Tindices>& rowIndices() const
 	{
-		return &_columnIndices[0];
+		return _rowIndices;
 	}
 
-	Tindices* columnIndices()
+	std::vector<Tindices>& columnIndices()
 	{
-		return &_columnIndices[0];
-	}
-
-	std::vector<Tindices>& columnIndices_vec() {
 		return _columnIndices;
 	}
 
-	const double* values() const
+	const std::vector<Tindices>& columnIndices() const
 	{
-		return &_values[0];
+		return _columnIndices;
 	}
 
-	double* values()
+	std::vector<double>& values()
 	{
-		return &_values[0];
+		return _values;
 	}
 
-	std::vector<double>& values_vec() {
+	const std::vector<double>& values() const
+	{
 		return _values;
 	}
 
@@ -116,7 +104,6 @@ public:
 		if (_rowIndices.size() && _rowIndices.back() > _rows) {
 			_rows = _rowIndices.back();
 		}
-
 	}
 
 	void AppendMatrix(SparseIJVMatrix &inputMatrix) {
@@ -130,18 +117,37 @@ public:
 		//sort();
 	}
 
+	void push(size_t row, size_t column, double value)
+	{
+		_rowIndices.push_back(row + _indexing);
+		_columnIndices.push_back(column + _indexing);
+		_values.push_back(value);
+	}
+
 	double& operator()(size_t row, size_t column)
 	{
-		for(size_t i = 0; i < _rowIndices.size(); i++)
-		{
-			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
-				return _values[i];
-			}
-		}
+//		for(size_t i = 0; i < _rowIndices.size(); i++)
+//		{
+//			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
+//				return _values[i];
+//			}
+//		}
 		_rowIndices.push_back(row + _indexing);
 		_columnIndices.push_back(column + _indexing);
 		_values.push_back(0);
 		return _values.back();
+	}
+
+private:
+
+	void sort(size_t begin, size_t end);
+
+	static void assign(SparseIJVMatrix<Tindices> &m1, SparseIJVMatrix<Tindices> &m2)
+	{
+		Matrix::assign(m1, m2);
+		m1._rowIndices.swap(m2._rowIndices);
+		m1._columnIndices.swap(m2._columnIndices);
+		m1._values.swap(m2._values);
 	}
 
 	void set(size_t row, size_t column, double value)
@@ -157,19 +163,6 @@ public:
 			_columnIndices.push_back(column + _indexing);
 			_values.push_back(value);
 		}
-	}
-
-private:
-
-	void sort(size_t begin, size_t end);
-
-	static void assign(SparseIJVMatrix<Tindices> &m1, SparseIJVMatrix<Tindices> &m2)
-	{
-		Matrix::assign(m1, m2);
-		m1._rowIndices.swap(m2._rowIndices);
-		m1._columnIndices.swap(m2._columnIndices);
-		m1._values.swap(m2._values);
-
 	}
 
 	inline Tindices compare(size_t i, size_t j)
