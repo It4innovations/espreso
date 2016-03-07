@@ -1,5 +1,4 @@
 #!/bin/bash
-
 WORKDIR=~/espreso-results-pbs-static-pbs
 ESPRESODIR=~/espreso_git/espreso
 EXAMPLEDIR=examples/meshgenerator
@@ -123,7 +122,7 @@ if [ "$1" = "run" ]; then
   fi
   
   qsub_command_0+="module list;"
-	
+
   for i in 1 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
   do
     d=${dom_size[${i}]}
@@ -137,7 +136,7 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=7 # subdomains size
+    d=3 # subdomains size
     c=0 # number of corners - nefunguje 
     x=6 # cluster size in domains
 
@@ -171,6 +170,7 @@ if [ "$1" = "run" ]; then
 
     if [ "$3" = "mpi" ]; then
 
+#export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
       export MKL_NUM_THREADS=1
       export OMP_NUM_THREADS=1
       export SOLVER_NUM_THREADS=$THREADS_PER_MPI
@@ -178,13 +178,15 @@ if [ "$1" = "run" ]; then
       export CILK_NWORKERS=$THREADS_PER_MPI
       export PARDISOLICMESSAGE=1
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
+      export MIC_ENV_PREFIX=MIC
+      export MIC_OMP_NUM_THREADS=1
       export LC_CTYPE=
 
       cd $WORKDIR/$out_dir
-      cat $PBS_NODEFILE | tee -a $node_file
 
+      #cat $PBS_NODEFILE | tee -a $node_file
       if [ "$2" = "intel" ]; then
-        mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+      mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
       fi
       
       if [ "$2" = "sgi" ]; then

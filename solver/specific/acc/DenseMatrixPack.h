@@ -89,6 +89,11 @@ public:
   int getDevice() {
     return device;
   }
+
+  bool areDataOnMIC() {
+    return this->copiedToMIC;  
+  }
+
 /*
   void setDevice(int device) {
     this->device = device;
@@ -276,4 +281,6 @@ private:
   // output buffer on MIC
   double * mic_y_out;
 
+  // are data copied to MIC
+  bool copiedToMIC;
 };

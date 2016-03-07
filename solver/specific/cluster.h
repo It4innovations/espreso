@@ -112,12 +112,6 @@ public:
 	SparseMatrix F0_Mat;
 	SparseMatrix B0Kplus;
 
-	// Packed matrices (mainly for MIC computation)
-	SEQ_VECTOR <DenseMatrixPack> B1KplusPacks;
-
-	// number of MIC
-	eslocal NUM_MICS;
-
 	SparseSolverCPU F0;
 	SparseSolverCPU F0_fast;
 	SparseSolverCPU Sa;
