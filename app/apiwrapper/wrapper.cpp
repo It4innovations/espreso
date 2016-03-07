@@ -126,8 +126,6 @@ void FETI4ICreateInstance(
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
-	neighClusters.push_back(esconfig::MPIrank);
-	std::sort(neighClusters.begin(), neighClusters.end());
 
 	mesh::APIMesh *mesh = new mesh::APIMesh(matrix->eMatrices);
 	esinput::API loader(matrix->eIndices, neighClusters, size, l2g);
