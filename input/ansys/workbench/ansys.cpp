@@ -106,41 +106,38 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 void AnsysWorkbench::boundaryConditions(mesh::Coordinates &coordinates)
 {
 	std::string line;
-	line = skip(_file, "CMBLOCK");
+	line = skip(_file, "CMBLOCK,SELECTION");
 
-	if (line.find("SELECTION") != std::string::npos) {
-		eslocal value, n = 0, size = last(line);
+	eslocal value, n = 0, size = last(line);
+	getline(_file, line);
+
+	mesh::CoordinatesProperty &fx = coordinates.property(mesh::FORCES_X);
+	while (n < size) {
 		getline(_file, line);
-
-		mesh::CoordinatesProperty &fx = coordinates.property(mesh::FORCES_X);
-		while (n < size) {
-			getline(_file, line);
-			std::stringstream ss(line);
-			while (ss >> value) {
-				fx[value - 1] = 10;
-				n++;
-			}
+		std::stringstream ss(line);
+		while (ss >> value) {
+			fx[value - 1] = 10;
+			n++;
 		}
-
-		line = skip(_file, "CMBLOCK");
 	}
 
-	if (line.find("_FIXEDSU") != std::string::npos) {
-		eslocal value, n = 0, size = last(line);
-		getline(_file, line);
+	line = skip(_file, "CMBLOCK,_FIXEDSU");
+	n = 0;
+	size = last(line);
 
-		mesh::CoordinatesProperty &dx = coordinates.property(mesh::DIRICHLET_X);
-		mesh::CoordinatesProperty &dy = coordinates.property(mesh::DIRICHLET_Y);
-		mesh::CoordinatesProperty &dz = coordinates.property(mesh::DIRICHLET_Z);
-		while (n < size) {
-			getline(_file, line);
-			std::stringstream ss(line);
-			while (ss >> value) {
-				dx[value - 1] = 0;
-				dy[value - 1] = 0;
-				dz[value - 1] = 0;
-				n++;
-			}
+	getline(_file, line);
+
+	mesh::CoordinatesProperty &dx = coordinates.property(mesh::DIRICHLET_X);
+	mesh::CoordinatesProperty &dy = coordinates.property(mesh::DIRICHLET_Y);
+	mesh::CoordinatesProperty &dz = coordinates.property(mesh::DIRICHLET_Z);
+	while (n < size) {
+		getline(_file, line);
+		std::stringstream ss(line);
+		while (ss >> value) {
+			dx[value - 1] = 0;
+			dy[value - 1] = 0;
+			dz[value - 1] = 0;
+			n++;
 		}
 	}
 }
