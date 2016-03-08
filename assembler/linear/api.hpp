@@ -49,8 +49,14 @@ void Linear<API>::RHS()
 template <>
 void Linear<API>::initSolver()
 {
+	// TODO: solve it better
+
+	std::vector<std::vector<eslocal> > fixPoints;
+
 	_lin_solver.init(
+		*_input.mesh,
 		_K,
+		_T,
 		_B1,
 		_B0,
 		_B1subdomainsMap,
@@ -59,6 +65,7 @@ void Linear<API>::initSolver()
 		_B1duplicity,
 		_f,
 		_B1c,
+		fixPoints,
 		_input.mesh->neighbours()
 	);
 }
