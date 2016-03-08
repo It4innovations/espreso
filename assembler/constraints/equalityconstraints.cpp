@@ -161,6 +161,10 @@ size_t Dirichlet::assemble(
 		B1clustersMap.push_back({ i, esconfig::MPIrank });
 	}
 
+	if (dirichletSize == 0) {
+		ESLOG(eslog::ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
+	}
+
 	return dirichletSize;
 }
 
