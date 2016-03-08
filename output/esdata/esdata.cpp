@@ -24,11 +24,11 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 
 void Esdata::coordinates(const mesh::Coordinates &coordinates)
 {
-	std::ofstream os;
-	eslocal value;
-	esglobal index;
+	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
+		std::ofstream os;
+		eslocal value;
+		esglobal index;
 
-	for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/coordinates.dat";
 
@@ -49,10 +49,10 @@ void Esdata::coordinates(const mesh::Coordinates &coordinates)
 
 void Esdata::boundaryConditions(const mesh::Coordinates &coordinates)
 {
-	std::ofstream os;
-	eslocal value;
+	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
+		std::ofstream os;
+		eslocal value;
 
-	for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/boundaryConditions.dat";
 
@@ -80,12 +80,12 @@ void Esdata::boundaryConditions(const mesh::Coordinates &coordinates)
 
 void Esdata::elements(const mesh::Mesh &mesh)
 {
-	std::ofstream os;
-	const std::vector<eslocal> &parts = mesh.getPartition();
-	const std::vector<mesh::Element*> &elements = mesh.getElements();
-	eslocal value;
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		const std::vector<eslocal> &parts = mesh.getPartition();
+		const std::vector<mesh::Element*> &elements = mesh.getElements();
+		eslocal value;
 
-	for (size_t p = 0; p < mesh.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/elements.dat";
 
@@ -102,12 +102,12 @@ void Esdata::elements(const mesh::Mesh &mesh)
 
 void Esdata::boundaries(const mesh::Mesh &mesh)
 {
-	std::ofstream os;
-	const mesh::Boundaries &boundaries = mesh.subdomainBoundaries();
-	eslocal value, size;
-	esglobal index;
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		const mesh::Boundaries &boundaries = mesh.subdomainBoundaries();
+		eslocal value, size;
+		esglobal index;
 
-	for (size_t p = 0; p < mesh.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/clusterBoundaries.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);

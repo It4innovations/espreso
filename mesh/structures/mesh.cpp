@@ -14,6 +14,10 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 
 void Mesh::partitiate(size_t parts)
 {
+	if (parts == this->parts()) {
+		return;
+	}
+
 	if (this->parts()) {
 		this->remapElementsToCluster();
 	}
@@ -53,6 +57,10 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
+	if (parts == this->parts()) {
+		return;
+	}
+
 	if (this->parts()) {
 		this->remapElementsToCluster();
 	}
