@@ -33,6 +33,8 @@ using std::make_pair;
 #include "esconfig.h"
 #include "esbasis.h"
 
+using esconfig::solver::N_MICS;
+
 class Domain;
 
 
@@ -111,12 +113,6 @@ public:
 	SparseMatrix G0;
 	SparseMatrix F0_Mat;
 	SparseMatrix B0Kplus;
-
-	// Packed matrices (mainly for MIC computation)
-	SEQ_VECTOR <DenseMatrixPack> B1KplusPacks;
-
-	// number of MIC
-	eslocal NUM_MICS;
 
 	SparseSolverCPU F0;
 	SparseSolverCPU F0_fast;

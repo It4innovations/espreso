@@ -826,7 +826,6 @@ void LinearSolver::init(
 	 timeSolAkpl.endWithBarrier();
 	 timeEvalMain.addEvent(timeSolAkpl);
 	// *** END - Final Solver Setup after K factorization ****************************************************************************
-
 }
 
 void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,

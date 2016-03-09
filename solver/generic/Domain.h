@@ -81,7 +81,8 @@ public:
 	SEQ_VECTOR <eslocal> lambda_map_sub_local;
 
 	SparseSolverCPU Kplus;
-	SparseSolverCPU KplusF;
+	
+    SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> f;
 	SEQ_VECTOR <double> vec_c;
 

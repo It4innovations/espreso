@@ -20,9 +20,9 @@
 	typedef SparseSolverMUMPS SparseSolverAcc;
 
 #elif defined(SOLVER_MIC)
-#include "cpu/solverpardiso.h"
+#include "cpu/solvermkl.h"
 #include "acc/mic.h"
-	typedef SparseSolverPARDISO SparseSolverCPU;
+	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverMIC SparseSolverAcc;
 
 

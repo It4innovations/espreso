@@ -25,6 +25,7 @@ DenseMatrixPack::DenseMatrixPack() {
   this->mic_x_in = NULL;
   this->mic_y_out = NULL;
 
+  this->copiedToMIC = false;
 }
 
 DenseMatrixPack::DenseMatrixPack(
@@ -274,6 +275,7 @@ void DenseMatrixPack::CopyToMIC( ) {
   in( this : alloc_if( 1 ) free_if( 0 ) )
 
 #endif
+  this->copiedToMIC = true;
 }
 
 void DenseMatrixPack::DenseMatsVecs(
@@ -309,6 +311,8 @@ void DenseMatrixPack::DenseMatsVecsMIC(
   char T_for_transpose_N_for_not_transpose
 ) {
 #ifdef MIC
+
+
 	#pragma offload target(mic:device) if(1) \
 		in( matrices : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
 		in( mic_x_in : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -320,7 +324,7 @@ void DenseMatrixPack::DenseMatsVecsMIC(
     in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
 		out( mic_y_out : length( totalRows ) alloc_if( 0 ) free_if( 0 ) ) \
-    in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+    in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
 		{
 			double alpha = 1.0;
 			double beta  = 0.0;

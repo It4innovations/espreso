@@ -1,11 +1,10 @@
 #!/bin/bash
-
 WORKDIR=~/espreso-results-pbs-static-pbs
-ESPRESODIR=~/espreso
+ESPRESODIR=~/espreso_git/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
-THREADS_PER_MPI=1
-MPI_PER_NODE=22
+THREADS_PER_MPI=24
+MPI_PER_NODE=1
 
 #module load impi/5.0.3.048-iccifort-2015.3.187
 #module load icc/2015.3.187
@@ -123,8 +122,8 @@ if [ "$1" = "run" ]; then
   fi
   
   qsub_command_0+="module list;"
-	
-  for i in 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+
+  for i in 1 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -137,9 +136,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=7
-    c=0
-    x=6
+    d=3 # subdomains size
+    c=0 # number of corners - nefunguje 
+    x=6 # cluster size in domains
 
     y=$x
     z=$x
@@ -171,6 +170,7 @@ if [ "$1" = "run" ]; then
 
     if [ "$3" = "mpi" ]; then
 
+#export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
       export MKL_NUM_THREADS=1
       export OMP_NUM_THREADS=1
       export SOLVER_NUM_THREADS=$THREADS_PER_MPI
@@ -178,13 +178,21 @@ if [ "$1" = "run" ]; then
       export CILK_NWORKERS=$THREADS_PER_MPI
       export PARDISOLICMESSAGE=1
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
+      export MIC_ENV_PREFIX=MIC
+      export MIC_OMP_NUM_THREADS=32
+      export MIC_OMP_NESTED=FALSE
+      export MIC_MKL_DYNAMIC=FALSE
+      export MIC_MKL_NUM_THREADS=1
+      export MIC_USE_2MB_BUFFERS=100k
+      export OFFLOAD_INIT=on_start
       export LC_CTYPE=
 
-      cd $WORKDIR/$out_dir
-      cat $PBS_NODEFILE | tee -a $node_file
 
+      cd $WORKDIR/$out_dir
+
+      #cat $PBS_NODEFILE | tee -a $node_file
       if [ "$2" = "intel" ]; then
-        mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+      mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
       fi
       
       if [ "$2" = "sgi" ]; then

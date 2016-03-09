@@ -1,3 +1,4 @@
+import os
 
 source_files = (
    "generic/Domain.cpp",
@@ -45,7 +46,7 @@ def configure(ctx):
 
 def build(ctx):
     if ctx.env.SOLVER == "MIC":
-        sources = source_files + ("specific/acc/mic.cpp", "specific/acc/clusteracc.cpp", "specific/acc/itersolveracc.cpp")
+        sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp", "specific/acc/itersolveracc.cpp")
 
     if ctx.env.SOLVER == "CUDA":
         sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp")

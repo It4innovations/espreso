@@ -12,6 +12,7 @@ using std::vector;
 
 class DenseMatrixPack
 {
+    friend class SparseSolverMIC;
 
 public:
 
@@ -85,6 +86,148 @@ public:
     int device
   );
 
+  int getDevice() {
+    return device;
+  }
+
+  bool areDataOnMIC() {
+    return this->copiedToMIC;  
+  }
+
+/*
+  void setDevice(int device) {
+    this->device = device;
+  }
+
+  long getMaxNMatrices() {
+    return this->maxNMatrices;
+  }
+
+  void setMaxNMatrices(long maxNMatrices) {
+    this->maxNMatrices = maxNMatrices;
+  }
+
+  long getNMatrices() {
+    return this->nMatrices;
+  }
+
+  void setNMatrices(long nMatrices) {
+    this->nMatrices = nMatrices;
+  }
+
+  void setPreallocSize(long preallocSize) {
+    this->preallocSize = preallocSize;
+  }
+
+  long getPreallocSize() {
+    return this->preallocSize;
+  }
+
+  void setFreeSpace(long freeSpace) {
+    this->freeSpace = freeSpace;
+  }
+
+  long getFreeSpace() {
+    return this->freeSpace;
+  }
+
+  void setMatrices(double * matrices) {
+    this->matrices = matrices;
+  }
+
+  double * getMatrices() {
+    return this->matrices;
+  }
+
+  void setRows(int * rows) {
+    this->rows = rows;
+  }
+
+  int * getRows() {
+    return this->rows;
+  }
+
+  void setCols(int * cols) {
+    this->cols = cols;
+  }
+
+  int * getCols() {
+    return this->cols;
+  }
+
+  void setTotalRows(long totalRows) {
+    this->totalRows = totalRows;
+  }
+
+  long getTotalRows() {
+    return this->totalRows;
+  }
+
+  void setTotalCols(long totalCols) {
+    this->totalCols = totalCols;
+  }
+
+  long getTotalCols() {
+    return this->totalCols;
+  }
+
+  void setOffsets(long * offsets) {
+      this->offsets = offsets;
+  }
+
+  long * getOffsets() {
+    return this->offsets;
+  }
+
+  void setRowOffsets(long * rowOffsets) {
+      this->rowOffsets = rowOffsets;
+  }
+
+  long * getRowOffsets() {
+    return this->rowOffsets;
+  }
+
+  void setColOffsets(long * colOffsets) {
+      this->colOffsets = colOffsets;
+  }
+
+  long * getColOffsets() {
+    return this->colOffsets;
+  }
+
+  void setLengths(long * lenghts) {
+    this->lengths = lengths;
+  }
+
+  long * getLengths() {
+    return this->lengths;
+  }
+  
+  void setPacked(bool * packed) {
+    this->packed = packed;
+  }
+
+  bool* getPacked() {
+    return this->packed;
+  }
+
+  void setMic_x_in(double * mic_x_in) {
+    this->mic_x_in = mic_x_in;
+  }
+
+  double * getMic_x_in() {
+    return this->mic_x_in;
+  }
+
+  void setMic_y_out(double * mic_y_out) {
+    this->mic_y_out = mic_y_out;
+  }
+
+  double * getMic_y_out() {
+    return this->mic_y_out;
+  }
+
+*/
 private:
 
   // MIC number
@@ -138,4 +281,6 @@ private:
   // output buffer on MIC
   double * mic_y_out;
 
+  // are data copied to MIC
+  bool copiedToMIC;
 };
