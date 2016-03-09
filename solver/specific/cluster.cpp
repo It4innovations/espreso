@@ -1310,6 +1310,7 @@ void ClusterBase::CreateSa() {
 	SaMat.ipiv.resize(SaMat.cols);
 	dsptrf( &U, &SaMat.cols, &SaMat.dense_values[0], &SaMat.ipiv[0], &info );
 	 factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+	Sa.m_Kplus_size = SaMat.cols;
 #endif
 
 

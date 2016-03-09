@@ -6,6 +6,7 @@ SparseSolverMKL::SparseSolverMKL(){
 	keep_factors=true;
 	initialized = false;
 	USE_FLOAT = false;
+	import_with_copy = false;
 
 	CSR_I_row_indices_size = 0;
 	CSR_J_col_indices_size = 0;
