@@ -14,7 +14,7 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 
 void Mesh::partitiate(size_t parts)
 {
-	if (parts == this->parts()) {
+	if (parts == 1 && this->parts() == 1) {
 		return;
 	}
 
@@ -811,8 +811,9 @@ void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
 
 		eslocal begin = lines._partPtrs[p], end = lines._partPtrs[p + 1];
 
-		int max = (end - begin) / 2 + 1;
-		size_t corners = std::min(max, 3);
+		// defense strategy -> it is better to add more corners than is necessary
+		int max = end - begin;
+		size_t corners = std::min(max, 4);
 		eslocal *ePartition = lines.getPartition(begin, end, corners);
 
 		if (average) {
@@ -963,6 +964,9 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 		return;
 	}
 
+	_subdomainBoundaries._corners.clear();
+	_subdomainBoundaries._corners.resize(_subdomainBoundaries.size(), false);
+
 	Mesh commonFaces;
 	Mesh commonLines;
 	std::set<eslocal> commonVertices;
@@ -1012,7 +1016,7 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 
 	if (vertices) {
 		for (auto it = commonVertices.begin(); it != commonVertices.end(); ++it) {
-			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(*it));
+			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(commonLines.coordinates().globalIndex(*it)));
 		}
 		correctCycle(commonFaces, commonLines, averageEdges);
 	}

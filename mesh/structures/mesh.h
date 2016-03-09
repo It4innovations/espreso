@@ -143,6 +143,18 @@ protected:
 
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
+
+private:
+	Mesh(const Mesh &mesh)
+	{
+		ESLOG(eslog::ERROR) << "It is not allowed to copy Mesh.";
+	}
+	Mesh& operator=(const Mesh &mesh)
+	{
+		ESLOG(eslog::ERROR) << "It is not allowed to copy Mesh.";
+		return *this;
+	}
+
 };
 
 class APIMesh: public Mesh
