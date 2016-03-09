@@ -19,10 +19,25 @@ namespace mesh {
 	bool averageFaces = false;
 
 	Input input = GENERATOR;
-	Output output = VTK_FULL;
+
 
 	double materialDifference = 1e-0;
 }
+
+namespace output {
+
+	Output output = VTK;
+
+	bool saveMesh = false;
+	bool saveFixPoints = false;
+	bool saveCorners = false;
+	bool saveResults = true;
+
+	double subdomainShrinkRatio = .95;
+	double clusterShrinkRatio = .9;
+}
+
+
 
 namespace assembler {
 	Discretization discretization = FEM;

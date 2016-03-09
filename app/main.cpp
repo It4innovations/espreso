@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
 	Factory factory(options);
 	factory.solve(1);
-	factory.store("mesh");
+	factory.store("result");
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

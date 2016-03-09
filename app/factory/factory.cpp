@@ -155,6 +155,18 @@ Factory::Factory(const Options &options)
 	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
 
 	_mesh = getMesh(options);
+
+	if (esconfig::output::saveMesh) {
+		esoutput::VTK_Full::mesh(*_mesh, "mesh", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	}
+	if (esconfig::output::saveFixPoints) {
+		esoutput::VTK_Full::fixPoints(*_mesh, "meshFixPoints", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	}
+	if (esconfig::output::saveFixPoints) {
+		esoutput::VTK_Full::corners(*_mesh, "meshCorners", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	}
+
+
 	_assembler = getAssembler(_mesh, _surface);
 }
 
@@ -187,20 +199,26 @@ void Factory::store(const std::string &file)
 	switch (esconfig::assembler::discretization){
 
 	case esconfig::assembler::FEM: {
-		esoutput::VTK_Full vtk(*_mesh, file);
-		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
+		if (esconfig::output::saveResults) {
+			esoutput::VTK_Full vtk(*_mesh, file);
+			vtk.store(_solution, _assembler->DOFs(), esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+		}
 		break;
 	}
 
 	case esconfig::assembler::BEM: {
-		esoutput::VTK_Full vtk(*_surface, file);
-		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
+		if (esconfig::output::saveResults) {
+			esoutput::VTK_Full vtk(*_surface, file);
+			vtk.store(_solution, _assembler->DOFs(), esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+		}
 		break;
 	}
 
 	case esconfig::assembler::API: {
-		esoutput::VTK_Full vtk(*_mesh, file);
-		vtk.store(_solution, _assembler->DOFs(), 0.95, 0.9);
+		if (esconfig::output::saveResults) {
+			esoutput::VTK_Full vtk(*_mesh, file);
+			vtk.store(_solution, _assembler->DOFs(), esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+		}
 		break;
 	}
 	}

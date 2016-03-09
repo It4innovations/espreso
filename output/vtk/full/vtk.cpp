@@ -4,7 +4,6 @@
 
 using namespace esoutput;
 
-
 void VTK_Full::coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs)
 {
 
