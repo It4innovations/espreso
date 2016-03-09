@@ -179,8 +179,14 @@ if [ "$1" = "run" ]; then
       export PARDISOLICMESSAGE=1
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
       export MIC_ENV_PREFIX=MIC
-      export MIC_OMP_NUM_THREADS=1
+      export MIC_OMP_NUM_THREADS=32
+      export MIC_OMP_NESTED=FALSE
+      export MIC_MKL_DYNAMIC=FALSE
+      export MIC_MKL_NUM_THREADS=1
+      export MIC_USE_2MB_BUFFERS=100k
+      export OFFLOAD_INIT=on_start
       export LC_CTYPE=
+
 
       cd $WORKDIR/$out_dir
 

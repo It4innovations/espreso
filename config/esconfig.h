@@ -76,6 +76,7 @@ namespace solver {
 	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
 												// 1 - DIRECT SP if KSOLVER is DIRECT SP
 												// 1 - Direct DP if KSOLVER is DIRECT SP
+    extern size_t   N_MICS;
 
 
 }

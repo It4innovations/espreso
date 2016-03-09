@@ -74,10 +74,10 @@ void SparseSolverMIC::Clear() {
             delete [] dparm[i];
             _mm_free(perm[i]);
         }
-       delete [] pt;
-       delete [] iparm;
-       delete [] dparm;
-       delete [] perm;
+        delete [] pt;
+        delete [] iparm;
+        delete [] dparm;
+        delete [] perm;
     }
 
 
@@ -405,9 +405,9 @@ void SparseSolverMIC::Factorization(const std::string &str) {
     in(dparm : length(0) alloc_if(0) free_if(0)) \
     in(error : length(0) alloc_if(0) free_if(0)) \ 
     in(m_Kplus_size : length(0) alloc_if(0) free_if(0)) \
+        in(perm : length(0) alloc_if(0) free_if(0)) \
         in(this : length(0) alloc_if(0) free_if(0))
         {
-            std::cout <<"test"<<std::endl;
             phase = 11;
             MKL_INT idum;
             mnum = 1;
@@ -439,60 +439,61 @@ void SparseSolverMIC::Factorization(const std::string &str) {
                     if (USE_FLOAT) {
                         iparm[i][27] = 1; // run PARDISO in float
                         pardiso(pt[i], &maxfct, &mnum, &mtype, &phase,
-                                &rows[i], CSR_V_values_fl[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
+                                &rows[i], CSR_V_values_fl[i], CSR_I_row_indices[i], CSR_J_col_indices[i], perm[i], &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
                     } else {
                         pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
-                                &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
+                                &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], perm[i], &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
                     }
 
                 }
-            
-            std::cout << "Symbolic factorization finished."<<std::endl;
-            initialized = true;
-            for (eslocal i=0; i < nMatrices; i++) {
-                if (error[i] != 0) {
-                    initialized = false;
-                    std::cerr << "ERROR during symbolic factorization of matrix " << i <<": " << str << "\n";
-                }
-            }
-            if (!initialized) {
-                exit(EXIT_FAILURE);
-            }
-
-#ifdef DEBUG
-            preslocalf ("\nReordering completed ... ");
-#endif
-
-            /* -------------------------------------------------------------------- */
-            /* .. Numerical factorization. */
-            /* -------------------------------------------------------------------- */
-            phase = 22;
-#pragma omp for
-            for (eslocal i = 0; i < nMatrices; i++) {
-                if (USE_FLOAT) {
-                    pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
-                            &rows[i], CSR_V_values_fl[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
-                } else {
-                    pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
-                            &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
-                }
-                m_factorized = 1;
+                initialized = true;            
                 for (eslocal i=0; i < nMatrices; i++) {
                     if (error[i] != 0) {
-                        m_factorized = 0;
-                        std::cerr << "ERROR during numeric factorization of matrix " << i <<": " << str << "\n";
+                        initialized = false;
+                        std::cerr << "ERROR during symbolic factorization of matrix " << i <<": " << str << "\n";
                     }
                 }
-                if (m_factorized!=1) {
+                if (!initialized) {
                     exit(EXIT_FAILURE);
                 }
 
 #ifdef DEBUG
-                preslocalf ("\nFactorization completed ... ");
+                preslocalf ("\nReordering completed ... ");
 #endif
+
+                /* -------------------------------------------------------------------- */
+                /* .. Numerical factorization. */
+                /* -------------------------------------------------------------------- */
+#pragma omp single
+                {
+                    phase = 22;
+                }
+#pragma omp for
+                for (eslocal i = 0; i < nMatrices; i++) {
+                    if (USE_FLOAT) {
+                        pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
+                                &rows[i], CSR_V_values_fl[i], CSR_I_row_indices[i], CSR_J_col_indices[i], perm[i], &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
+                    } else {
+                        pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
+                                &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], perm[i], &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
+                    }
+                    m_factorized = 1;
+                    for (eslocal i=0; i < nMatrices; i++) {
+                        if (error[i] != 0) {
+                            m_factorized = 0;
+                            std::cerr << "ERROR during numeric factorization of matrix " << i <<": " << str << "\n";
+                        }
+                    }
+                    if (m_factorized!=1) {
+                        exit(EXIT_FAILURE);
+                    }
+
+#ifdef DEBUG
+                    preslocalf ("\nFactorization completed ... ");
+#endif
+                }
             }
         }
-}
     if (USE_FLOAT) {
         tmp_sol_fl1 = new float*[nMatrices];
         tmp_sol_fl2 = new float*[nMatrices];
@@ -511,7 +512,8 @@ void SparseSolverMIC::Factorization(const std::string &str) {
             eslocal tmpLength = m_Kplus_size[i];
 #pragma offload target(mic:device) \
             in(tmp1 : length(tmpLength) alloc_if(1) free_if(0)) \
-            in(tmp2 : length(tmpLength) alloc_if(1) free_if(0))
+            in(tmp2 : length(tmpLength) alloc_if(1) free_if(0)) \
+            in(this : length(0) alloc_if(0) free_if(0))
             {
                 tmp_sol_fl1[i] = tmp1;
                 tmp_sol_fl2[i] = tmp2;
@@ -548,21 +550,20 @@ void SparseSolverMIC::Factorization(const std::string &str) {
 
     }
 
-
-
+    m_factorized = true;
 }
-void SparseSolverMIC::Solve( SEQ_VECTOR <double> * rhs_sol) {
+void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
 
-    if (!initialized) {
+    if (!m_factorized) {
+        std::cout << "NOT INITIALIED\n\n"<<std::endl;
         std::stringstream ss;
         ss << "Solve -> rank: ";// << esconfig::MPIrank; // MPIrank link problem
         Factorization(ss.str());
     }
-
     if( USE_FLOAT ) {
         for (eslocal i = 0; i < nMatrices; i++) {
             for (eslocal j = 0; j < m_Kplus_size[i]; j++)
-                tmp_sol_fl1[i][j] = (float)rhs_sol[i][j];
+                tmp_sol_fl1[i][j] = (float)(rhs_sol[i])->at(j);
         }
     }
     double ** tmpVecPointers = new double*[nMatrices];
@@ -580,7 +581,7 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> * rhs_sol) {
         }
     } else {
         for (eslocal i = 0; i < nMatrices; i++) {
-            tmpVecPointers[i] = &(rhs_sol[i][0]);
+            tmpVecPointers[i] = &(rhs_sol[i]->at(0));
         }
         //#pragma offload_transfer taget(mic:device) \
         //in(tmpVecPoeslocalers : length(nMatrices) alloc_if(1) free_if(0))
@@ -603,41 +604,61 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> * rhs_sol) {
     in(nnz : length(0) alloc_if(0) free_if(0) ) \
     in(CSR_I_row_indices_size : length(0) alloc_if(0) free_if(0)) \
     in(CSR_J_col_indices_size : length(0) alloc_if(0) free_if(0)) \
+    in(CSR_I_row_indices : length(0) alloc_if(0) free_if(0)) \
+    in(CSR_J_col_indices : length(0) alloc_if(0) free_if(0)) \
+    in(CSR_V_values :length(0) alloc_if(0) free_if(0)) \
     in(pt : length(0) alloc_if(0) free_if(0)) \
     in(iparm : length(0) alloc_if(0) free_if(0)) \
     in(dparm : length(0) alloc_if(0) free_if(0)) \
+    in(perm : length(0) alloc_if(0) free_if(0)) \
     in(error : length(0) alloc_if(0) free_if(0)) \
     in(m_Kplus_size : length(0) alloc_if(0) free_if(0)) \
-    in(tmp_sol_fl1 : length(0) alloc_if(0) free_if(0)) \
-    in(tmp_sol_fl2 : length(0) alloc_if(0) free_if(0)) \
     in(tmp_sol_d1 : length(0) alloc_if(0) free_if(0)) \
-    in(tmp_sol_d2 : length(0) alloc_if(0) free_if(0))
+    in(tmp_sol_d2 : length(0) alloc_if(0) free_if(0)) \
+    in(this : length(0) alloc_if(0) free_if(0))
     {
 
 
         double ddum   = 0;			/* Double dummy */
         MKL_INT idum  = 0;			/* Integer dummy. */
         MKL_INT n_rhs = 1;
+        msglvl        = 0;
 
         /* -------------------------------------------------------------------- */
         /* .. Back substitution and iterative refinement. */
         /* -------------------------------------------------------------------- */
-        phase = 33;
-
 
         //iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
-#pragma omp parallel for
-        for (eslocal i = 0; i < nMatrices; i++) {
-            MKL_INT ip5backup = iparm[i][5];
-            iparm[i][5] = 1;
-            if (USE_FLOAT)
-                pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
-                        &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &n_rhs, iparm[i], &msglvl, &tmp_sol_fl1[i], &tmp_sol_fl2[i], &error[i]);
-            else
-                pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
-                        &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &n_rhs, iparm[i], &msglvl, tmp_sol_d1[i], tmp_sol_d2[i], &error[i]);
-            iparm[i][5] = ip5backup;
+        phase=331;
+#pragma omp parallel num_threads(21)
+        {
+            int myPhase = 331;
+#pragma omp for schedule(dynamic)
+            for (eslocal i = 0; i < nMatrices; i++) {
+                myPhase=331;
+                MKL_INT ip5backup = iparm[i][5];
+                iparm[i][5] = 0;
+                if (USE_FLOAT) {
+                    myPhase=33;
+                    pardiso (pt[i], &maxfct, &mnum, &mtype, &myPhase,
+                            &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &n_rhs, iparm[i], &msglvl, &tmp_sol_fl1[i], &tmp_sol_fl2[i], &error[i]);
+
+
+                } else {
+myPhase = 33;
+                    PARDISO (pt[i], &maxfct, &mnum, &mtype, &myPhase,
+                            &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], NULL, &n_rhs, iparm[i], &msglvl, tmp_sol_d1[i], tmp_sol_d2[i], &error[i]);
+
+
+
+                    //myPhase = 332;
+                    //PARDISO (pt[i], &maxfct, &mnum, &mtype, &myPhase,
+                    //        &rows[i], CSR_V_values[i], CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &n_rhs, iparm[i], &msglvl, tmp_sol_d1[i], tmp_sol_d2[i], &error[i]);
+
+                }
+                iparm[i][5] = ip5backup;
+            }
         }
         bool err = false;
         for (eslocal i = 0; i < nMatrices; i++) {
@@ -657,15 +678,17 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> * rhs_sol) {
             /* -------------------------------------------------------------------- */
             /* .. Termination and release of memory. */
             /* -------------------------------------------------------------------- */
-            phase = -1;			/* Release internal memory. */
-            MKL_INT nRhs = 1;
-            for (eslocal i =0 ; i < nMatrices; i++ ) {
-                pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
-                        &rows[i], &ddum, CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &nRhs,
-                        iparm[i], &msglvl, &ddum, &ddum, &error[i]);
-            }
-            initialized = false;
-            if (MPIrank == 0) printf(".");
+            /*
+               phase = -1;	 		
+               MKL_INT nRhs = 1;
+               for (eslocal i =0 ; i < nMatrices; i++ ) {
+               pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
+               &rows[i], &ddum, CSR_I_row_indices[i], CSR_J_col_indices[i], &idum, &nRhs,
+               iparm[i], &msglvl, &ddum, &ddum, &error[i]);
+               }
+               initialized = false;
+               if (MPIrank == 0) printf(".");
+               */
         }
 
 
@@ -678,18 +701,17 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> * rhs_sol) {
 #pragma offload_transfer target(mic:device) \
             out(tmp : length(m_Kplus_size[i]) alloc_if(0) free_if(0))
             for (eslocal j = 0; j < m_Kplus_size[i]; j++) {
-                rhs_sol[i][j] = (double) tmp[j];
+                rhs_sol[i]->at(j) = (double) tmp[j];
             }
         }
     } else {
         for (eslocal i = 0; i < nMatrices; i++) {
             double * tmp = tmp_sol_d2[i];
+            double * output = tmpVecPointers[i];
 #pragma offload_transfer target(mic:device) \
-            out(tmp : length(m_Kplus_size[i]) alloc_if(0) free_if(0) into(tmpVecPointers[i]))
+            out(tmp : length(m_Kplus_size[i]) alloc_if(0) free_if(0) into(output))
         }
     }
-
-
 }
 
 void SparseSolverMIC::Create_SC(

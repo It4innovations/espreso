@@ -33,6 +33,8 @@ using std::make_pair;
 #include "esconfig.h"
 #include "esbasis.h"
 
+using esconfig::solver::N_MICS;
+
 class Domain;
 
 
