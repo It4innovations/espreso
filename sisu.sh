@@ -29,11 +29,11 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --titan --static
+  ./waf configure --cray
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install -v --static --pardiso_mkl
+  ./waf install -v
 fi
 
 if [ "$1" = "clean" ]; then

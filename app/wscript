@@ -25,6 +25,29 @@ class cxxprogram(link_task):
                -Wl,--end-group \
                ${SHLIB_MARKER}'
 
+class cxxshlib(link_task):
+    vars    = ['LINKDEPS']
+    ext_out = ['.bin']
+    inst_to = '${BINDIR}',
+    run_str = '${LINK_CXX} \
+               ${LINKFLAGS} \
+               ${CXXLNK_SRC_F}${SRC} \
+               ${CXXLNK_TGT_F}${TGT[0].abspath()} \
+               ${RPATH_ST:RPATH} \
+               ${FRAMEWORKPATH_ST:FRAMEWORKPATH} \
+               ${FRAMEWORK_ST:FRAMEWORK} \
+               ${ARCH_ST:ARCH} \
+               ${SHLIB_MARKER} \
+               ${LIBPATH_ST:LIBPATH} \
+               ${LIB_ST:LIB} \
+               ${LDFLAGS} \
+               ${STLIB_MARKER} \
+               -Wl,--start-group \
+               ${STLIBPATH_ST:STLIBPATH} \
+               ${STLIB_ST:STLIB} \
+               -Wl,--end-group \
+               ${SHLIB_MARKER}'
+
 source_files = (
     "factory/factory.cpp",
 )
@@ -52,7 +75,7 @@ def build(ctx):
         install_path    = ctx.ROOT
     )
 
-    ctx.lib(
+    ctx.shlib(
         source          = apiwrapper_files,
         target          = "feti4i",
         use             = "espreso_includes esbasis esconfig esinput_api essolver_{0} esmesh esbem esassembler".format(ctx.env.SOLVER),
