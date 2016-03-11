@@ -39,6 +39,40 @@ public:
 		output.store(corners, shrinkSubdomain, shringCluster);
 	}
 
+	static void dirichlet(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+	{
+		VTK_Full outputx(mesh, path + "X");
+		VTK_Full outputy(mesh, path + "Y");
+		VTK_Full outputz(mesh, path + "Z");
+
+		std::vector<std::vector<eslocal> > dx(mesh.parts());
+		std::vector<std::vector<eslocal> > dy(mesh.parts());
+		std::vector<std::vector<eslocal> > dz(mesh.parts());
+
+		auto &dxMap = mesh.coordinates().property(mesh::DIRICHLET_X).values();
+		auto &dyMap = mesh.coordinates().property(mesh::DIRICHLET_Y).values();
+		auto &dzMap = mesh.coordinates().property(mesh::DIRICHLET_Z).values();
+
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			auto &l2c = mesh.coordinates().localToCluster(p);
+			for (size_t i = 0; i < l2c.size(); i++) {
+				if (dxMap.find(l2c[i]) != dxMap.end()) {
+					dx[p].push_back(i);
+				}
+				if (dyMap.find(l2c[i]) != dyMap.end()) {
+					dy[p].push_back(i);
+				}
+				if (dzMap.find(l2c[i]) != dzMap.end()) {
+					dz[p].push_back(i);
+				}
+			}
+		}
+
+		outputx.store(dx, shrinkSubdomain, shringCluster);
+		outputy.store(dy, shrinkSubdomain, shringCluster);
+		outputz.store(dz, shrinkSubdomain, shringCluster);
+	}
+
 protected:
 	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
 };

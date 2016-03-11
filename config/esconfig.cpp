@@ -31,6 +31,7 @@ namespace output {
 	bool saveMesh = false;
 	bool saveFixPoints = false;
 	bool saveCorners = false;
+	bool saveDirichlet = false;
 	bool saveResults = true;
 
 	double subdomainShrinkRatio = .95;

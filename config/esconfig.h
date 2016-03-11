@@ -58,6 +58,7 @@ namespace output {
 	extern bool saveMesh;
 	extern bool saveFixPoints;
 	extern bool saveCorners;
+	extern bool saveDirichlet;
 	extern bool saveResults;
 
 	extern double subdomainShrinkRatio;

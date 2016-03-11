@@ -165,6 +165,9 @@ Factory::Factory(const Options &options)
 	if (esconfig::output::saveFixPoints) {
 		esoutput::VTK_Full::corners(*_mesh, "meshCorners", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
 	}
+	if (esconfig::output::saveDirichlet) {
+		esoutput::VTK_Full::dirichlet(*_mesh, "meshDirichlet", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	}
 
 
 	_assembler = getAssembler(_mesh, _surface);
