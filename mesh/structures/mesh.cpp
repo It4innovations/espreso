@@ -15,6 +15,10 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 void Mesh::partitiate(size_t parts)
 {
 	if (parts == 1 && this->parts() == 1) {
+		_partPtrs.resize(parts + 1);
+		_partPtrs[0] = 0;
+		_partPtrs[1] = _elements.size();
+		remapElementsToSubdomain();
 		computeFixPoints(0);
 		computeBoundaries();
 		return;
@@ -60,6 +64,10 @@ void Mesh::partitiate(size_t parts)
 void APIMesh::partitiate(size_t parts)
 {
 	if (parts == 1 && this->parts() == 1) {
+		_partPtrs.resize(parts + 1);
+		_partPtrs[0] = 0;
+		_partPtrs[1] = _elements.size();
+		remapElementsToSubdomain();
 		computeFixPoints(0);
 		computeBoundaries();
 		return;
