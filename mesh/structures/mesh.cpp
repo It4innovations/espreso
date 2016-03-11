@@ -15,6 +15,8 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 void Mesh::partitiate(size_t parts)
 {
 	if (parts == 1 && this->parts() == 1) {
+		computeFixPoints(0);
+		computeBoundaries();
 		return;
 	}
 
@@ -57,7 +59,9 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
-	if (parts == this->parts()) {
+	if (parts == 1 && this->parts() == 1) {
+		computeFixPoints(0);
+		computeBoundaries();
 		return;
 	}
 
