@@ -1,25 +1,10 @@
 
-source_files = (
-    "base/bytearray.cpp",
-    "base/simplestream.cpp",
-    "base/filestream.cpp",
-    "foam/foamfile.cpp",
-    "foam/face.cpp",
-    "foam/dictionary.cpp",
-    "foam/dictionarybasedobject.cpp",
-    "foam/elementbuilder.cpp",
-    "foam/cellzone.cpp",
-    "openfoam.cpp"
-)
-
 def configure(ctx):
     ctx.env.append_unique("LIB", [ "z" ])
-    pass
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esinput_openfoam",
-        use             = "espreso_includes",
-        install_path    = ctx.LIBRARIES
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "openfoam_in",
+        use    = "espreso_includes"
     )

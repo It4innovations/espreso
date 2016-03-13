@@ -1,8 +1,5 @@
 #include "mesh.h"
 
-#include "esinput.h"
-#include "esoutput.h"
-
 using namespace mesh;
 
 Mesh::Mesh():_elements(0), _fixPoints(0)

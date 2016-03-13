@@ -1,25 +1,4 @@
 
-source_files = (
-    "structures/coordinates.cpp",
-    "structures/boundaries.cpp",
-    "structures/mesh.cpp",
-    "structures/faces.cpp",
-    "elements/element.cpp",
-    "elements/3D/hexahedron8.cpp",
-    "elements/3D/hexahedron20.cpp",
-    "elements/3D/tetrahedron4.cpp",
-    "elements/3D/tetrahedron10.cpp",
-    "elements/3D/prisma6.cpp",
-    "elements/3D/prisma15.cpp",
-    "elements/3D/pyramid5.cpp",
-    "elements/3D/pyramid13.cpp",
-    "elements/2D/square.cpp",
-    "elements/2D/triangle.cpp",
-    "elements/1D/line.cpp",
-    "elements/1D/point3d.cpp",
-    "elements/1D/point2d.cpp",
-)
-
 
 def configure(ctx):
     if ctx.env.INT_WIDTH == 32:
@@ -33,13 +12,10 @@ def configure(ctx):
         ctx.env.append_unique("LIB", [ metis ])
     if ctx.env.LIBTYPE == "STATIC":
         ctx.env.append_unique("STLIB", [ metis ])
-   
-    ctx.env.append_unique("LIB", [ "z" ])
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esmesh",
-        use             = "espreso_includes",
-        install_path    = ctx.LIBRARIES
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "mesh",
+        use    = "espreso_includes",
     )

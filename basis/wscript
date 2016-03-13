@@ -1,21 +1,11 @@
 
-source_files = (
-    "matrices/denseMatrix.cpp",
-    "matrices/matrix.cpp",
-    "logging/logging.cpp",
-    "logging/timeeval.cpp",
-    "options/options.cpp",
-    "utilities/utils.cpp"
-)
-
 def configure(ctx):
     pass
-    #ctx.env.append_unique("DEFINES", [ "TM_BLOCK_START" ])
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esbasis",
-        use             = "espreso_includes",
-        install_path    = ctx.LIBRARIES
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "basis",
+        use    = "espreso_includes"
     )
