@@ -3,7 +3,7 @@
 #define HEXAHEDRON20_H_
 
 #include "../element.h"
-#include "../2D/square.h"
+#include "../2D/square4.h"
 #include "../1D/line.h"
 #include "hexahedron8.h"
 

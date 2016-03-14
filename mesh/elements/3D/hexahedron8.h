@@ -2,7 +2,7 @@
 #define HEXAHEDRON8_H_
 
 #include "../element.h"
-#include "../2D/square.h"
+#include "../2D/square4.h"
 #include "../1D/line.h"
 
 #define Hexahedron8NodesCount 8

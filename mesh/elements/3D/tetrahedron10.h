@@ -2,7 +2,7 @@
 #define TETRAHEDRON10_H_
 
 #include "../element.h"
-#include "../2D/triangle.h"
+#include "../2D/triangle3.h"
 #include "tetrahedron4.h"
 
 #define Tetrahedron10NodesCount 10

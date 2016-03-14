@@ -449,7 +449,7 @@ void Mesh::getSurface(Mesh &surface) const
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (face.size() == 3) {
-				surface._elements.push_back(new Triangle(&face[0], params));
+				surface._elements.push_back(new Triangle3(&face[0], params));
 			}
 			// divide square to triangles
 			if (face.size() == 4) {
@@ -460,13 +460,13 @@ void Mesh::getSurface(Mesh &surface) const
 					}
 				}
 				if (min % 2 == 0) {
-					surface._elements.push_back(new Triangle(&face[0], params));
+					surface._elements.push_back(new Triangle3(&face[0], params));
 					face[1] = face[0];
-					surface._elements.push_back(new Triangle(&face[1], params));
+					surface._elements.push_back(new Triangle3(&face[1], params));
 				} else {
-					surface._elements.push_back(new Triangle(&face[1], params));
+					surface._elements.push_back(new Triangle3(&face[1], params));
 					face[2] = face[3];
-					surface._elements.push_back(new Triangle(&face[0], params));
+					surface._elements.push_back(new Triangle3(&face[0], params));
 				}
 			}
 		}
@@ -627,10 +627,10 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 			for (size_t e = 0; e < commonFaces.size(); e++) {
 				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
 					if (commonFaces[e].size() == 3) {
-						el = new Triangle(commonFaces[e].data(), params);
+						el = new Triangle3(commonFaces[e].data(), params);
 					}
 					if (commonFaces[e].size() == 4) {
-						el = new Square(commonFaces[e].data(), params);
+						el = new Square4(commonFaces[e].data(), params);
 					}
 					mesh._elements.push_back(el);
 				}

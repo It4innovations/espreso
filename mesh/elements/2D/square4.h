@@ -1,32 +1,32 @@
-#ifndef TRIANGLE_H_
-#define TRIANGLE_H_
+#ifndef SQUARE4_H_
+#define SQUARE4_H_
 
 #include "../element.h"
 #include "../1D/line.h"
 
-#define TriangleNodesCount 3
-#define TriangleFacesCount 3
-#define TriangleGPCount 3
-#define TriangleVTKCode 5
+#define Square4NodesCount 4
+#define Square4FacesCount 4
+#define Square4GPCount 4
+#define Square4VTKCode 9
 
 namespace espreso {
 
-class Triangle: public Element
+class Square4: public Element
 {
 
 public:
 	static bool match(eslocal *indices, eslocal n);
 
-	Triangle(eslocal *indices, eslocal *params);
+	Square4(eslocal *indices, eslocal *params);
 
 	Element* copy() const
 	{
-		return new Triangle(*this);
+		return new Square4(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return TriangleVTKCode;
+		return Square4VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -36,37 +36,37 @@ public:
 
 	size_t size() const
 	{
-		return TriangleNodesCount;
+		return Square4NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return TriangleNodesCount;
+		return Square4NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return TriangleGPCount;
+		return Square4GPCount;
 	}
 
 	size_t faces() const
 	{
-		return TriangleFacesCount;
+		return Square4FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Triangle::_dN;
+		return Square4::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Triangle::_N;
+		return Square4::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Triangle::_weighFactor;
+		return Square4::_weighFactor;
 	}
 
 	eslocal nCommon() const
@@ -85,7 +85,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[TriangleNodesCount];
+	eslocal _indices[Square4NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -95,5 +95,4 @@ private:
 }
 
 
-
-#endif /* TRIANGLE_H_ */
+#endif /* SQUARE4_H_ */
