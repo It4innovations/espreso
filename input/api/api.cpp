@@ -68,6 +68,7 @@ void API::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std:
 	std::vector<std::vector<esglobal> > rBuffer(_neighbours.size());
 	std::vector<MPI_Request> req(2 * _neighbours.size());
 	std::vector<size_t> sizes(_neighbours.size());
+	std::set<int> realNeighbour;
 
 	_size /= _DOFs;
 
@@ -114,6 +115,7 @@ void API::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std:
 				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), _ids[i * _DOFs] / _DOFs);
 				if (it != rBuffer[n].end() && *it == _ids[i * _DOFs] / _DOFs) {
 					boundaries[i].push_back(_neighbours[n]);
+					realNeighbour.insert(_neighbours[n]);
 				}
 			}
 			if (_neighbours.size() == pushMyRank) {
@@ -123,5 +125,5 @@ void API::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std:
 		}
 	}
 
-	neighbours = _neighbours;
+	neighbours = std::vector<int>(realNeighbour.begin(), realNeighbour.end());
 }
