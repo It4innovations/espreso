@@ -11,7 +11,8 @@ static struct option long_options[] = {
 
 using namespace espreso;
 
-Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0)
+Options::Options(int* argc, char*** argv)
+: verboseLevel(0), testingLevel(0), measureLevel(0)
 {
 	auto printOption = [] (const std::string &opt, const std::string &desc) {
 		std::cout << "\t" << opt;
@@ -24,7 +25,7 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0
 
 	int option_index, option;
 	while (true) {
-		option = getopt_long(*argc, *argv, "i:p:vht", long_options, &option_index);
+		option = getopt_long(*argc, *argv, "i:p:vtmh", long_options, &option_index);
 		if (option == -1) {
 			break;
 		}
@@ -35,6 +36,9 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0
 			break;
 		case 't':
 			testingLevel++;
+			break;
+		case 'm':
+			measureLevel++;
 			break;
 		case 'i':
 			input = std::string(optarg);
@@ -49,9 +53,11 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0
 
 			std::cout << "\nOPTIONS:\n";
 			printOption("-h, --help", "show this message");
-			printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata]");
+			printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
 			printOption("-p, --path=PATH", "path to an example");
 			printOption("-v,vv,vvv", "verbose level");
+			printOption("-t,tt,ttt", "testing level");
+			printOption("-m,mm,mmm", "time measuring level");
 
 			std::cout << "\nPARAMETERS:\n";
 			std::cout << "\tlist of nameless parameters for a particular example\n";
@@ -67,6 +73,8 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0
 			ESINFO(ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
 		}
 		path = (*argv)[1];
+		verboseLevel = 3;
+		measureLevel = 3;
 		optind++;
 	}
 
@@ -86,13 +94,14 @@ void Options::configure()
 
 	config::info::verboseLevel = verboseLevel;
 	config::info::testingLevel = testingLevel;
+	config::info::measureLevel = measureLevel;
 
 	std::vector<std::pair<std::string, config::mesh::Input> > inputs = {
 			{ "GENERATOR", config::mesh::GENERATOR },
 			{ "MATSOL", config::mesh::ANSYS_MATSOL },
 			{ "WORKBENCH", config::mesh::ANSYS_WORKBENCH },
 			{ "OPENFOAM", config::mesh::OPENFOAM },
-			{ "ESDATA", config::mesh::ESDATA_IN },
+			{ "ESDATA", config::mesh::ESDATA },
 	};
 	for (size_t i = 0; i < inputs.size(); i++) {
 		if (!std::lexicographical_compare(
@@ -112,6 +121,7 @@ std::ostream& operator<<(std::ostream& os, const Options &options)
 	os << "path: '" << options.path << "'\n";
 	os << "verbosity level: " << options.verboseLevel << "\n";
 	os << "testing level: " << options.testingLevel << "\n";
+	os << "time measuring level: " << options.measureLevel << "\n";
 	os << "nameless: ";
 	for (size_t i = 0; i < options.nameless.size(); i++) {
 		os << options.nameless[i] << " ";

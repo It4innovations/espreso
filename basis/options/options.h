@@ -26,6 +26,7 @@ struct Options {
 	std::string path;
 	size_t verboseLevel;
 	size_t testingLevel;
+	size_t measureLevel;
 	std::vector<std::string> nameless;
 };
 

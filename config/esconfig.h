@@ -14,7 +14,9 @@ enum FetiMethod {
 
 enum Preconditioner {
 	NO_PRECONDITIONER,
-	LUMPED
+	LUMPED,
+	WEIGHT,
+	DIRICHLET
 };
 
 enum CGSolver {
@@ -44,7 +46,7 @@ namespace mesh {
 	extern bool averageEdges;
 	extern bool averageFaces;
 
-	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA_IN, GENERATOR };
+	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA, GENERATOR };
 	extern Input input;
 
 	extern double materialDifference;
@@ -52,7 +54,7 @@ namespace mesh {
 
 namespace output {
 
-	enum Output { VTK, ESDATA_OUT }; // only VTK_FULL is working
+	enum Output { VTK, ESDATA }; // only VTK_FULL is working
 	extern Output output;
 
 	extern bool saveMesh;
@@ -100,6 +102,7 @@ namespace info {
 	extern size_t verboseLevel;
 	extern size_t testingLevel;
 	extern size_t measureLevel;
+
 	extern bool printMatrices;
 }
 

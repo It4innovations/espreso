@@ -97,7 +97,7 @@ static Mesh* getMesh(const Options &options)
 
 		break;
 	}
-	case config::mesh::ESDATA_IN: {
+	case config::mesh::ESDATA: {
 		input::Esdata loader(options, config::MPIrank, config::MPIsize);
 		loader.load(*mesh);
 		break;
