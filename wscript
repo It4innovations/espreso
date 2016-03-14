@@ -82,7 +82,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx(
-        export_includes = "config basis mesh input output bem/src assembler",
+        export_includes = "include config basis mesh input output bem/src assembler",
         name            = "espreso_includes"
     )
 
