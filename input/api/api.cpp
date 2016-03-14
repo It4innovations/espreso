@@ -92,7 +92,7 @@ void API::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std:
 	size_t rCounter = 0;
 	for (size_t n = 0; n < _neighbours.size(); n++) {
 		if (_neighbours[n] != esconfig::MPIrank) {
-			MPI_Isend(sBuffer.data(),    sizes[n] * sizeof(esglobal), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + rCounter++);
+			MPI_Isend(sBuffer.data(),       _size * sizeof(esglobal), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + rCounter++);
 			MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(esglobal), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + rCounter++);
 		}
 	}
