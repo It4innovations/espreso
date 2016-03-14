@@ -188,7 +188,7 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
-		ESLOG(eslog::ERROR) << "ERROR during numerical factorization: " << str;
+		ESINFO(eslog::ERROR) << "ERROR during numerical factorization: " << str;
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -208,7 +208,7 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 	if (error != 0)
 	{
-		ESLOG(eslog::ERROR) << "ERROR during numerical factorization: " << str;
+		ESINFO(eslog::ERROR) << "ERROR during numerical factorization: " << str;
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;

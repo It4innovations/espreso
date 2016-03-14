@@ -70,6 +70,7 @@ namespace info {
 
 	size_t verboseLevel = VERBOSE;
 	size_t testingLevel = 0;
+	size_t measureLevel = 2;
 	bool printMatrices = false;
 }
 

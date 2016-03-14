@@ -63,7 +63,7 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 	case 186: lines = 2; break;
 	case 185: lines = 1; break;
 	default:
-		ESLOG(eslog::ERROR) << "Load error: unknown element type\n";
+		ESINFO(eslog::ERROR) << "Load error: unknown element type\n";
 	}
 
 	line = skip(_file, "eblock");

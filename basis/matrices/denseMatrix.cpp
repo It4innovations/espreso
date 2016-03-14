@@ -19,7 +19,7 @@ void DenseMatrix::multiply(
 		bool transposeA, bool transposeB)
 {
 	if ( (transposeA ? A.rows() : A.columns()) != (transposeB ? B.columns() : B.rows()) ) {
-		ESLOG(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
+		ESINFO(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 	}
 	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());
 

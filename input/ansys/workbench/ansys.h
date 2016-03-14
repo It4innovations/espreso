@@ -28,7 +28,7 @@ public:
 	{
 		_file.open(_path.c_str());
 		if (!_file.is_open()) {
-			ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << _path;
+			ESINFO(eslog::ERROR) << "Cannot load mesh from file: " << _path;
 		}
 	}
 

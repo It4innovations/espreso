@@ -55,7 +55,7 @@ void API::elements(std::vector<mesh::Element*> &elements)
 			elements.push_back(new mesh::Hexahedron20(indices, _eIndices[e].size() / _DOFs, params));
 			break;
 		default:
-			ESLOG(eslog::ERROR) << "Unknown element with " << _eIndices[e].size() / _DOFs << " indices.";
+			ESINFO(eslog::ERROR) << "Unknown element with " << _eIndices[e].size() / _DOFs << " indices.";
 		}
 	}
 }

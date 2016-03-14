@@ -162,7 +162,7 @@ size_t Dirichlet::assemble(
 	}
 
 	if (dirichletSize == 0) {
-		ESLOG(eslog::ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
+		ESINFO(eslog::ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
 	}
 
 	return dirichletSize;

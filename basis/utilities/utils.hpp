@@ -20,7 +20,7 @@ void Esutils::setFromEnv(Ttype &value, const std::string &name)
 		std::stringstream ss(var);
 		ss >> value;
 	} else {
-		ESLOG(eslog::ERROR) << "Set environment variable " << name;
+		ESINFO(eslog::ERROR) << "Set environment variable " << name;
 	}
 }
 
@@ -35,7 +35,7 @@ template<typename Ttype>
 std::vector<Ttype> Esutils::getDistribution(size_t parts, Ttype start, Ttype end)
 {
 	if (start > end) {
-		ESLOG(eslog::ERROR) << "Distribution of interval <" << start << "," << end << "> is not possible.";
+		ESINFO(eslog::ERROR) << "Distribution of interval <" << start << "," << end << "> is not possible.";
 	}
 	size_t size = end - start;
 	std::vector<Ttype> distribution(parts + 1, 0);

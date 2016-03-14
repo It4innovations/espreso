@@ -8,7 +8,7 @@
 int main(int argc, char** argv)
 {
 	if (argc < 4) {
-		ESLOG(eslog::ERROR) << "Specify parameters: ANSYS_FILE OUTPUT_LOCATION [ NUMBER_OF_PARTS ]";
+		ESINFO(eslog::ERROR) << "Specify parameters: ANSYS_FILE OUTPUT_LOCATION [ NUMBER_OF_PARTS ]";
 	}
 
 

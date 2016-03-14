@@ -3,9 +3,43 @@
 
 namespace eslog {
 
-std::vector<Checkpoint> Log::checkpoints = { Checkpoint("Start", Log::time(), 0) };
+std::vector<Checkpoint> Measure::checkpoints = { Checkpoint("Start", Measure::time(), 0) };
 
-Log::Log(LogEvent event): event(event)
+Test::~Test()
+{
+	os << " : " << (error ? "FAILED" : "PASSED") << std::endl;
+
+	if (error) {
+		ESINFO(ERROR) << os.str();
+	}
+
+	fprintf(stdout, "%s", os.str().c_str());
+	fflush(stdout);
+}
+
+
+Info::~Info()
+{
+	if (event == ERROR) {
+		fprintf(stderr, "%s\n", os.str().c_str());
+		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", esconfig::MPIrank);
+		fflush(stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	os << std::endl;
+
+	if (esconfig::MPIrank != 0) {
+		return; // only first process print results
+	}
+
+	fprintf(stdout, "%s", os.str().c_str());
+	fflush(stdout);
+}
+
+
+
+Measure::Measure(MeasureEvent event): event(event)
 {
 	auto indent = [&] (int tabs) { for (int t = 0; t < tabs; t++) { os << "  "; } };
 
@@ -22,7 +56,7 @@ Log::Log(LogEvent event): event(event)
 	}
 }
 
-Log::~Log()
+Measure::~Measure()
 {
 	if (event == ERROR) {
 		fprintf(stderr, "%s\n", os.str().c_str());
@@ -57,7 +91,7 @@ Log::~Log()
 	fflush(stdout);
 }
 
-void Log::evaluateCheckpoints()
+void Measure::evaluateCheckpoints()
 {
 	if (esconfig::MPIrank != 0) {
 		return;
@@ -68,16 +102,35 @@ void Log::evaluateCheckpoints()
 	}
 }
 
-Test::~Test()
+double Measure::processMemory()
 {
-	os << " : " << (error ? "FAILED" : "PASSED") << std::endl;
+	std::ifstream file("/proc/self/status");
+	eslocal result = -1;
+	std::string line, label("VmRSS:");
 
-	if (error) {
-		ESLOG(ERROR) << os.str();
+	while (getline(file, line)) {
+		if (line.find(label.c_str(), 0, label.size()) == 0) {
+			file.close();
+			std::stringstream(line) >> label >> result;
+			return result / 1024.0;
+		}
 	}
+	file.close();
+	return 0;
+}
 
-	fprintf(stdout, "%s", os.str().c_str());
-	fflush(stdout);
+double Measure::globalMemory()
+{
+	struct sysinfo memInfo;
+	sysinfo(&memInfo);
+	return ((memInfo.totalram - memInfo.freeram) * memInfo.mem_unit) / 1024.0 / 1024.0;
+}
+
+double Measure::availableMemory()
+{
+	struct sysinfo memInfo;
+	sysinfo(&memInfo);
+	return (memInfo.totalram * memInfo.mem_unit) / 1024.0 / 1024.0;
 }
 }
 

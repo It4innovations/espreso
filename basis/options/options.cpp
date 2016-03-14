@@ -62,7 +62,7 @@ Options::Options(int* argc, char*** argv): verboseLevel(VERBOSE), testingLevel(0
 
 	if (optind == 1 || (optind > 1 && !path.size())) { // compatibility with old version of ESPRESO binary
 		if (*argc < 2) {
-			ESLOG(eslog::ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
+			ESINFO(eslog::ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
 		}
 		path = (*argv)[1];
 		optind++;

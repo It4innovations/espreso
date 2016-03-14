@@ -6,14 +6,17 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
+#include <sys/sysinfo.h>
 
 #include "esconfig.h"
 #include "timeeval.h"
 
-#define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT).get()
-#define ESTEST(EVENT) if (!eslog::Test::report(EVENT)) ; else eslog::Test(EVENT).get()
+#define ESTEST(EVENT) if (!eslog::Test::report(EVENT))    ; else eslog::Test(EVENT).get()
+#define ESINFO(EVENT) if (!eslog::Info::report(EVENT))    ; else eslog::Info(EVENT).get()
+#define ESTIME(EVENT) if (!eslog::Measure::report(EVENT)) ; else eslog::Measure(EVENT).get()
 
 namespace eslog {
 
@@ -23,22 +26,45 @@ enum ESPRESOTest {
 };
 
 enum TestEvent {
+	MANDATORY,
+	TEST_LEVEL0,
+
 	SIMPLE,
+	TEST_LEVEL1,
+
 	EXPENSIVE,
-	PEDANTIC
+	TEST_LEVEL2,
+
+	PEDANTIC,
+	TEST_LEVEL3,
 };
 
-enum LogEvent {
+enum InfoEvent {
 	ERROR,
 	VERBOSE_LEVEL0,
-	INFO,
-	CHECKPOINT1,
-	SUMMARY,
+
+	BASIC,
 	VERBOSE_LEVEL1,
-	CHECKPOINT2,
+
+	DETAILED,
 	VERBOSE_LEVEL2,
-	CHECKPOINT3,
+
+	EXHAUSTIVE,
 	VERBOSE_LEVEL3
+};
+
+enum MeasureEvent {
+	MEASURE_LEVEL0,
+
+	SUMMARY,
+	CHECKPOINT1,
+	MEASURE_LEVEL1,
+
+	CHECKPOINT2,
+	MEASURE_LEVEL2,
+
+	CHECKPOINT3,
+	MEASURE_LEVEL3
 };
 
 class Test
@@ -62,7 +88,13 @@ public:
 	Test& get() { return *this; };
 
 	static bool report(TestEvent event) {
-		return event < esconfig::info::testingLevel;
+		switch (esconfig::info::testingLevel) {
+		case 0: return event < TEST_LEVEL0;
+		case 1: return event < TEST_LEVEL1;
+		case 2: return event < TEST_LEVEL2;
+		case 3: return event < TEST_LEVEL3;
+		default : return true;
+		}
 	};
 
 protected:
@@ -70,20 +102,15 @@ protected:
 	bool error;
 };
 
-class Log
+class Info
 {
 public:
-	static double time()
-	{
-		return omp_get_wtime();
-	}
-
-	Log(LogEvent event);
-	~Log();
+	Info(InfoEvent event): event(event) {};
+	~Info();
 
 	std::ostringstream& get() { return os; };
 
-	static bool report(LogEvent event) {
+	static bool report(InfoEvent event) {
 		switch (esconfig::info::verboseLevel) {
 		case 0: return event < VERBOSE_LEVEL0;
 		case 1: return event < VERBOSE_LEVEL1;
@@ -94,15 +121,46 @@ public:
 	};
 
 protected:
+	std::ostringstream os;
+	InfoEvent event;
+};
+
+
+class Measure
+{
+public:
+	static double time()
+	{
+		return omp_get_wtime();
+	}
+
+	Measure(MeasureEvent event);
+	~Measure();
+
+	static double processMemory();
+	static double globalMemory();
+	static double availableMemory();
+
+	std::ostringstream& get() { return os; };
+
+	static bool report(MeasureEvent event) {
+		switch (esconfig::info::measureLevel) {
+		case 0: return event < MEASURE_LEVEL0;
+		case 1: return event < MEASURE_LEVEL1;
+		case 2: return event < MEASURE_LEVEL2;
+		case 3: return event < MEASURE_LEVEL3;
+		default : return true;
+		}
+	};
+
+protected:
 	static std::vector<Checkpoint> checkpoints;
 
 	void evaluateCheckpoints();
 
 	std::ostringstream os;
-	LogEvent event;
+	MeasureEvent event;
 };
-
-
 
 class Logging {
 

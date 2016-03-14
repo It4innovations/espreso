@@ -159,7 +159,7 @@ Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *param
 		memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
 		break;
 	default:
-		ESLOG(eslog::ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
+		ESINFO(eslog::ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
 	}
 }
 

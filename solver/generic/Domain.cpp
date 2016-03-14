@@ -163,7 +163,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		break;
 //	}
 	default:
-		ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
+		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -233,7 +233,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		break;
 	}
 	default:
-		ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
+		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -307,7 +307,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		break;
 	}
 	default:
-		ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
+		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }

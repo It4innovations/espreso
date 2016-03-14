@@ -1339,7 +1339,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
                 sscanf( var, "%d", &num_procs );
         else {
                 //printf("Set environment PAR_NUM_THREADS to 1");
-        	ESLOG(eslog::ERROR) << "Set environment PAR_NUM_THREADS to 1.";
+        	ESINFO(eslog::ERROR) << "Set environment PAR_NUM_THREADS to 1.";
 			exit(1);
         }
         GGt_tmp.iparm[2]  = num_procs;
@@ -1474,7 +1474,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	std::stringstream ss;
 	ss << "Create GGt_inv_dist-> rank: " << esconfig::MPIrank;
 	GGt_tmp.Factorization(ss.str());
-	GGtFactor_time.end(); 
+	GGtFactor_time.end();
 	GGtFactor_time.printLastStatMPIPerNode();
 	GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
 

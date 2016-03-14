@@ -36,7 +36,7 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
 }
 
 void ClusterCPU::Create_Kinv_perDomain() {
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) 
+    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
 
@@ -83,7 +83,7 @@ void ClusterCPU::Create_Kinv_perDomain() {
 
 
 void ClusterCPU::SetupKsolvers ( ) {
-    
+
     cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
@@ -109,7 +109,7 @@ void ClusterCPU::SetupKsolvers ( ) {
                         break;
                     }
             default:
-                    ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
+            		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
                     exit(EXIT_FAILURE);
         }
 

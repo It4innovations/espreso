@@ -18,7 +18,7 @@ static void readFile(typename std::vector<Ttype> &vector, std::string fileName) 
 			vector.push_back(value);
 		}
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot read file " << fileName;
+		ESINFO(eslog::ERROR) << "Cannot read file " << fileName;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -32,7 +32,7 @@ static void readBinary(std::vector<double> &vector, std::string fileName) {
 			vector[i] = value;
 		}
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot read file " << fileName;
+		ESINFO(eslog::ERROR) << "Cannot read file " << fileName;
 		exit(EXIT_FAILURE);
 	}
 }

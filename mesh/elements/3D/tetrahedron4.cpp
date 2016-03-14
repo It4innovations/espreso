@@ -90,7 +90,7 @@ static std::vector<DenseMatrix> Tetra4_N()
 				0.4334498464263357, 0.4334498464263357, 0.0665501535736643};
 		break;
 	default:
-		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron4 GP count.";
+		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron4 GP count.";
 	}
 
 
@@ -136,7 +136,7 @@ static std::vector<double> Tetra4_Weight()
 		return w;
 	}
 	default:
-		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron4 GP count.";
+		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron4 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -245,7 +245,7 @@ Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *par
 		memcpy(_indices, indices, 4 * sizeof(eslocal));
 		break;
 	default:
-		ESLOG(eslog::ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
+		ESINFO(eslog::ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
 	}
 }
 

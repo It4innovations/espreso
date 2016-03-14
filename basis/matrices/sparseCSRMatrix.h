@@ -94,13 +94,13 @@ private:
 
 	double& operator()(size_t row, size_t column)
 	{
-		ESLOG(eslog::ERROR) << "It is not possible to insert to CRS matrix.";
+		ESINFO(eslog::ERROR) << "It is not possible to insert to CRS matrix.";
 		exit(EXIT_FAILURE);
 	}
 
 	void set(size_t row, size_t column, double value)
 	{
-		ESLOG(eslog::ERROR) << "It is not possible to insert to CRS matrix.";
+		ESINFO(eslog::ERROR) << "It is not possible to insert to CRS matrix.";
 	}
 
 	static void assign(SparseCSRMatrix<Tindices> &m1, SparseCSRMatrix<Tindices> &m2)

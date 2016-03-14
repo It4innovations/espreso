@@ -30,7 +30,7 @@ void AnsysMatsol::points(mesh::Coordinates &coordinates)
 		}
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
+		ESINFO(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
 	}
 }
 
@@ -55,13 +55,13 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 				case 45:
 				case 185: lines = 1; break;
 				default:
-					ESLOG(eslog::ERROR) << "Load error: unknown element type\n";
+					ESINFO(eslog::ERROR) << "Load error: unknown element type\n";
 				}
 				break;
 			}
 		}
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load element settings from file: " << settingFile;
+		ESINFO(eslog::ERROR) << "Cannot load element settings from file: " << settingFile;
 	}
 
 	std::string fileName = _path + "/Model/ELEMENTS.dat";
@@ -104,7 +104,7 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 		}
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
+		ESINFO(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
 	}
 }
 
@@ -160,7 +160,7 @@ size_t AnsysMatsol::getLinesCount(const std::string &file)
 		f.close();
 		return size;
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load file: " << file << "\n";
+		ESINFO(eslog::ERROR) << "Cannot load file: " << file << "\n";
 	}
 	return 0;
 }

@@ -40,7 +40,7 @@ mesh::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *p
 			return ss.str();
 		};
 
-		ESLOG(eslog::ERROR) << "Unknown element with indices: " << print_indices();
+		ESINFO(eslog::ERROR) << "Unknown element with indices: " << print_indices();
 	}
 
 	return e;

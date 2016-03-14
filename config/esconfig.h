@@ -99,6 +99,7 @@ namespace info {
 
 	extern size_t verboseLevel;
 	extern size_t testingLevel;
+	extern size_t measureLevel;
 	extern bool printMatrices;
 }
 

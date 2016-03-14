@@ -75,7 +75,7 @@ void Configuration::load(const Options &options)
 
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "The example on path '" << options.path << "' not found.";
+		ESINFO(eslog::ERROR) << "The example on path '" << options.path << "' not found.";
 	}
 
 	// Read attributes from command line
@@ -106,7 +106,7 @@ void Configuration::load(const Options &options)
 	}
 
 	if (options.nameless.size() < cmdLineSize) {
-		ESLOG(eslog::ERROR) << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
+		ESINFO(eslog::ERROR) << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
 		exit(EXIT_FAILURE);
 	}
 	if (options.nameless.size() > cmdLineSize) {
