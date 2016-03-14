@@ -1,7 +1,7 @@
 
 #include "hexahedron20.h"
 
-using namespace mesh;
+using namespace espreso;
 
 std::vector< std::vector< double> > Hexa20_rst()
 {
@@ -40,7 +40,7 @@ std::vector< std::vector< double> > Hexa20_rst()
 		return rst;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Hexahedron20 GP count.";
+		ESINFO(ERROR) << "Unknown number of Hexahedron20 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -196,7 +196,7 @@ std::vector<double> Hexa20_weight()
 		return w;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -386,7 +386,7 @@ Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *par
 		memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Hexahedron20 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Hexahedron20 from " << n << " elements.";
 	}
 }
 

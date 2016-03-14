@@ -1,5 +1,7 @@
 #include "elementbuilder.h"
 
+using namespace espreso::input;
+
 ElementBuilder::ElementBuilder() {
 }
 
@@ -8,12 +10,12 @@ ElementBuilder::~ElementBuilder() {
 }
 
 ParseError* ElementBuilder::createElement(
-		std::vector<mesh::Element*> &elements) {
+		std::vector<Element*> &elements) {
 
 	std::set< eslocal > coordinates;
 	int numberOfSquares = 0;
 	eslocal indicies[8];
-	eslocal params[mesh::Element::PARAMS_SIZE];
+	eslocal params[Element::PARAMS_SIZE];
 
 	for (std::list<std::pair<Face*, bool> >::iterator it =
 			selectedFaces.begin(); it != selectedFaces.end(); ++it) {
@@ -54,7 +56,7 @@ ParseError* ElementBuilder::createElement(
 		indicies[3] = indicies[2];
 		indicies[4] = *(coordinates.begin());
 
-		mesh::Element* element = new mesh::Tetrahedron4(indicies, 8, params);
+		Element* element = new Tetrahedron4(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -105,7 +107,7 @@ ParseError* ElementBuilder::createElement(
 		indicies[2] = firstFace.first->p[2];
 		indicies[3] = firstFace.first->p[1];
 		indicies[4] = *(coordinates.begin());
-		mesh::Element *element = new mesh::Pyramid5(indicies, 8, params);
+		Element *element = new Pyramid5(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -169,7 +171,7 @@ ParseError* ElementBuilder::createElement(
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		indicies[7] = indicies[6];
-		mesh::Element *element = new mesh::Prisma6(indicies, 8, params);
+		Element *element = new Prisma6(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 3);
 		}
@@ -216,7 +218,7 @@ ParseError* ElementBuilder::createElement(
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		PARSE_GUARD(nextPoint(indicies[2], indicies[3], indicies[7]));
-		mesh::Element *element = new mesh::Hexahedron8(indicies, 8, params);
+		Element *element = new Hexahedron8(indicies, 8, params);
 
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 4);

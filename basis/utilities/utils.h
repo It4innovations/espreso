@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "../logging/logging.h"
 
+namespace espreso {
+
 struct Esutils
 {
 
@@ -20,6 +22,19 @@ struct Esutils
 	template<typename Ttype>
 	static std::vector<Ttype> getDistribution(size_t parts, Ttype start, Ttype end);
 };
+
+
+template<typename T>
+std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
+{
+	for(size_t i = 0; i < v.size(); ++i) {
+		os << v[i] << " ";
+	}
+	os << "\n";
+	return os;
+}
+
+}
 
 #include "utils.hpp"
 

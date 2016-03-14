@@ -1,7 +1,7 @@
 
 #include "linear.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 void Linear<TInput>::init()
@@ -17,7 +17,7 @@ void Linear<TInput>::init()
 	_M.resize(this->subdomains());
 	_f.resize(this->subdomains());
 
-	if (this->_verbose && esconfig::MPIrank == 0) {
+	if (this->_verbose && config::MPIrank == 0) {
 		std::cout << "Assembling matrices : ";
 	}
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
@@ -27,11 +27,11 @@ void Linear<TInput>::init()
 		T(s);
 
 
-		if (this->_verbose && esconfig::MPIrank == 0) {
+		if (this->_verbose && config::MPIrank == 0) {
 			std::cout << "." ;//<< s << " " ;
 		}
 	}
-	if (this->_verbose && esconfig::MPIrank == 0) {
+	if (this->_verbose && config::MPIrank == 0) {
 		std::cout << std::endl;
 	}
 
@@ -56,24 +56,24 @@ void Linear<TInput>::init()
 
 	RHS();
 
-	if (esconfig::info::printMatrices) {
+	if (config::info::printMatrices) {
 		for (size_t s = 0; s < this->subdomains(); s++) {
-			std::ofstream osK(eslog::Logging::prepareFile(s, "K").c_str());
+			std::ofstream osK(Logging::prepareFile(s, "K").c_str());
 			osK << _K[s];
 			osK.close();
-			std::ofstream osT(eslog::Logging::prepareFile(s, "T").c_str());
+			std::ofstream osT(Logging::prepareFile(s, "T").c_str());
 			osT << _T[s];
 			osT.close();
 
-			std::ofstream osF(eslog::Logging::prepareFile(s, "f").c_str());
+			std::ofstream osF(Logging::prepareFile(s, "f").c_str());
 			osF << _f[s];
 			osF.close();
 
-			std::ofstream osB0(eslog::Logging::prepareFile(s, "B0").c_str());
+			std::ofstream osB0(Logging::prepareFile(s, "B0").c_str());
 			osB0 << this->_B0[s];
 			osB0.close();
 
-			std::ofstream osB1(eslog::Logging::prepareFile(s, "B1").c_str());
+			std::ofstream osB1(Logging::prepareFile(s, "B1").c_str());
 			osB1 << this->_B1[s];
 			osB1.close();
 		}
@@ -87,7 +87,7 @@ void Linear<TInput>::init()
 	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(esconfig::MPIrank, esconfig::MPIsize, true);
+	_lin_solver.setup(config::MPIrank, config::MPIsize, true);
 
 	initSolver();
 

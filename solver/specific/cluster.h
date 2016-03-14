@@ -33,7 +33,9 @@ using std::make_pair;
 #include "esconfig.h"
 #include "esbasis.h"
 
-using esconfig::solver::N_MICS;
+using config::solver::N_MICS;
+
+namespace espreso {
 
 class Domain;
 
@@ -221,7 +223,6 @@ public:
 	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
 };
 
-
-
+}
 
 #endif /* SOLVER_SPECIFIC_CLUSTER_H_ */

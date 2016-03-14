@@ -1,5 +1,7 @@
 #include "mic.h"
 
+using namespace espreso;
+
 SparseSolverMIC::SparseSolverMIC() {
     device = 0;
     isOffloaded = false;

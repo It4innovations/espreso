@@ -6,14 +6,16 @@
 #include "esmesh.h"
 #include <string>
 
-namespace esinput {
+namespace espreso {
+
+namespace input {
 
 //class Loader
 
 class ExternalLoader {
 
 public:
-	void load(mesh::Mesh &mesh)
+	void load(Mesh &mesh)
 	{
 		open();
 		points(mesh._coordinates);
@@ -22,26 +24,26 @@ public:
 		boundaryConditions(mesh._coordinates);
 		clusterBoundaries(mesh, mesh._clusterBoundaries, mesh._neighbours);
 		close();
-		mesh.partitiate(esconfig::mesh::subdomains);
-		mesh.computeFixPoints(esconfig::mesh::fixPoints);
+		mesh.partitiate(config::mesh::subdomains);
+		mesh.computeFixPoints(config::mesh::fixPoints);
 
-		if (esconfig::solver::FETI_METHOD == esconfig::HYBRID_FETI) {
+		if (config::solver::FETI_METHOD == config::HYBRID_FETI) {
 			mesh.computeCorners(
-					esconfig::mesh::corners,
-					esconfig::mesh::vertexCorners,
-					esconfig::mesh::edgeCorners,
-					esconfig::mesh::faceCorners,
-					esconfig::mesh::averageEdges,
-					esconfig::mesh::averageFaces);
+					config::mesh::corners,
+					config::mesh::vertexCorners,
+					config::mesh::edgeCorners,
+					config::mesh::faceCorners,
+					config::mesh::averageEdges,
+					config::mesh::averageFaces);
 		}
 	}
 
 protected:
-	virtual void points(mesh::Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
-	virtual void faces(mesh::Faces &faces) = 0;
-	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
-	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
+	virtual void points(Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<Element*> &elements) = 0;
+	virtual void faces(Faces &faces) = 0;
+	virtual void boundaryConditions(Coordinates &coordinates) = 0;
+	virtual void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual void open() = 0;
 	virtual void close() = 0;
@@ -52,26 +54,26 @@ protected:
 class APILoader {
 
 public:
-	void load(mesh::APIMesh &mesh)
+	void load(APIMesh &mesh)
 	{
 		points(mesh._coordinates);
 		elements(mesh._elements);
-		mesh.partitiate(esconfig::mesh::subdomains);
+		mesh.partitiate(config::mesh::subdomains);
 		clusterBoundaries(mesh, mesh._clusterBoundaries, mesh._neighbours);
 
 		mesh.computeCorners(
-				esconfig::mesh::corners,
-				esconfig::mesh::vertexCorners,
-				esconfig::mesh::edgeCorners,
-				esconfig::mesh::faceCorners,
-				esconfig::mesh::averageEdges,
-				esconfig::mesh::averageFaces);
+				config::mesh::corners,
+				config::mesh::vertexCorners,
+				config::mesh::edgeCorners,
+				config::mesh::faceCorners,
+				config::mesh::averageEdges,
+				config::mesh::averageFaces);
 	}
 
 protected:
-	virtual void points(mesh::Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<mesh::Element*> &elements) = 0;
-	virtual void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
+	virtual void points(Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<Element*> &elements) = 0;
+	virtual void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual ~APILoader() {};
 };
@@ -79,7 +81,7 @@ protected:
 class InternalLoader {
 
 public:
-	void load(mesh::Mesh &mesh)
+	void load(Mesh &mesh)
 	{
 		points(mesh._coordinates);
 
@@ -88,7 +90,7 @@ public:
 
 		if (manualPartition()) {
 			mesh.partitiate(mesh.parts());
-			mesh.computeFixPoints(esconfig::mesh::fixPoints);
+			mesh.computeFixPoints(config::mesh::fixPoints);
 		} else {
 			fixPoints(mesh._fixPoints);
 			for (size_t p = 0; p < mesh.parts(); p++) {
@@ -104,16 +106,16 @@ public:
 
 		if (manualPartition()) {
 			mesh.computeCorners(
-					esconfig::mesh::corners,
-					esconfig::mesh::vertexCorners,
-					esconfig::mesh::edgeCorners,
-					esconfig::mesh::faceCorners,
-					esconfig::mesh::averageEdges,
-					esconfig::mesh::averageFaces);
+					config::mesh::corners,
+					config::mesh::vertexCorners,
+					config::mesh::edgeCorners,
+					config::mesh::faceCorners,
+					config::mesh::averageEdges,
+					config::mesh::averageFaces);
 		} else {
 			corners(mesh._subdomainBoundaries);
-			if (esconfig::mesh::averageEdges || esconfig::mesh::averageFaces) {
-				mesh.computeCorners(0, true, false, false, esconfig::mesh::averageEdges, esconfig::mesh::averageFaces);
+			if (config::mesh::averageEdges || config::mesh::averageFaces) {
+				mesh.computeCorners(0, true, false, false, config::mesh::averageEdges, config::mesh::averageFaces);
 			}
 		}
 	}
@@ -121,17 +123,19 @@ public:
 protected:
 	virtual bool manualPartition() = 0;
 
-	virtual void points(mesh::Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
+	virtual void points(Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<Element*> &elements, std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
-	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
-	virtual void corners(mesh::Boundaries &boundaries) = 0;
-	virtual void clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours) = 0;
+	virtual void boundaryConditions(Coordinates &coordinates) = 0;
+	virtual void corners(Boundaries &boundaries) = 0;
+	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual ~InternalLoader() {};
 };
 
 }
+}
+
 
 
 #endif /* INPUT_LOADER_H_ */

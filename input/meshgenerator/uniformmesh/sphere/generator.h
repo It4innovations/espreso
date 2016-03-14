@@ -6,7 +6,8 @@
 #include "settings.h"
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template<class TElement>
 class SphereGenerator: public UniformGenerator<TElement> {
@@ -15,14 +16,15 @@ public:
 	SphereGenerator(const SphereSettings &settings);
 
 private:
-	void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
-	void points(mesh::Coordinates &coordinates);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours);
+	void elementsMaterials(std::vector<Element*> &elements, std::vector<eslocal> &parts);
+	void points(Coordinates &coordinates);
+	void boundaryConditions(Coordinates &coordinates);
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 	const SphereSettings _settings;
 };
 
+}
 }
 
 #include "generator.hpp"

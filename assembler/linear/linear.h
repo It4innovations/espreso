@@ -4,7 +4,7 @@
 
 #include "../constraints/equalityconstraints.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 class Linear: public EqualityConstraints<TInput> {
@@ -42,11 +42,11 @@ private:
 
 	void KeMefe(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
-			DenseMatrix &Ce, const mesh::Element *e, size_t part, bool dynamics);
+			DenseMatrix &Ce, const Element *e, size_t part, bool dynamics);
 	void integrate(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f,
-			const mesh::Element *e, bool dynamics);
+			const Element *e, bool dynamics);
 
 
 };

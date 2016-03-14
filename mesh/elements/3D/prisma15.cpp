@@ -1,6 +1,6 @@
 #include "prisma15.h"
 
-using namespace mesh;
+using namespace espreso;
 
 std::vector< std::vector< double> > Prisma15_rst()
 {
@@ -21,7 +21,7 @@ std::vector< std::vector< double> > Prisma15_rst()
 		return rst;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Prisma15 GP count.";
+		ESINFO(ERROR) << "Unknown number of Prisma15 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -142,7 +142,7 @@ std::vector<double> Prisma15_weight()
 		return std::vector<double> (w, w + 9);
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -338,7 +338,7 @@ Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): El
 		memcpy(_indices, indices, 15 * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Prisma15 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Prisma15 from " << n << " elements.";
 	}
 }
 

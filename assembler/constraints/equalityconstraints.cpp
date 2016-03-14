@@ -1,7 +1,7 @@
 
 #include "../constraints/equalityconstraints.h"
 
-using namespace assembler;
+using namespace espreso;
 
 #define LAMBDA_FIRST 0
 #define LAMBDA_INNER -1
@@ -15,7 +15,7 @@ static void offsetSum(void *in, void *out, int *len, MPI_Datatype *datatype)
 static size_t scanOffsets(size_t &offset)
 {
 	size_t size = offset;
-	if (esconfig::MPIsize == 1) { // because MPI hates all users
+	if (config::MPIsize == 1) { // because MPI hates all users
 		offset = 0;
 		return size;
 	}
@@ -25,8 +25,8 @@ static size_t scanOffsets(size_t &offset)
 	MPI_Exscan(&size, &offset, sizeof(size_t), MPI_BYTE, op, MPI_COMM_WORLD);
 
 	size = offset + size;
-	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, esconfig::MPIsize - 1, MPI_COMM_WORLD);
-	if (esconfig::MPIrank == 0) {
+	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, config::MPIsize - 1, MPI_COMM_WORLD);
+	if (config::MPIrank == 0) {
 		// MPI really hates all -> it set offset on all processes to zero except on process 0
 		offset = 0;
 	}
@@ -72,11 +72,11 @@ static bool clusterMappingCompare(const std::vector<esglobal> &v1, const std::ve
 	return v1[0] < v2[0];
 }
 
-Constraints::Constraints(const mesh::Mesh &mesh, size_t firstIndex)
+Constraints::Constraints(const Mesh &mesh, size_t firstIndex)
 : _mesh(mesh), _subdomains(mesh.parts()), _firstIndex(firstIndex), _DOFs(3)
 {
 	_neighbours = mesh.neighbours();
-	_neighbours.push_back(esconfig::MPIrank);
+	_neighbours.push_back(config::MPIrank);
 	std::sort(_neighbours.begin(), _neighbours.end());
 }
 
@@ -158,11 +158,11 @@ size_t Dirichlet::assemble(
 
 	B1clustersMap.reserve(clusterDirichletSize);
 	for (esglobal i = clusterOffset; i < clusterOffset + clusterDirichletSize; i++) {
-		B1clustersMap.push_back({ i, esconfig::MPIrank });
+		B1clustersMap.push_back({ i, config::MPIrank });
 	}
 
 	if (dirichletSize == 0) {
-		ESINFO(eslog::ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
+		ESINFO(ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
 	}
 
 	return dirichletSize;
@@ -306,7 +306,7 @@ size_t Gluing::clustersLambdaCounters(std::vector<esglobal> &ids, const std::vec
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 
-			if (_cBoundary[n].size() > 1 && esconfig::MPIrank == _cBoundary[n][0]) {
+			if (_cBoundary[n].size() > 1 && config::MPIrank == _cBoundary[n][0]) {
 				size_t pairs = gluingPairs(multiplicity[n].back());
 				for (size_t i = 0; i < _DOFs; i++) {
 					ids[n * _DOFs + i] = pairs;
@@ -394,7 +394,7 @@ void Gluing::composeSubdomainGluing(const std::vector<esglobal> &ids, std::vecto
 							gluing[s].push(ids[l2c[n] * _DOFs + d] + offset, n * _DOFs + d, index < i ? 1 : -1);
 							duplicity[s].push_back(1. / neighs.size());
 							if (index < i) {
-								clusterMap[s].push_back({ ids[l2c[n] * _DOFs + d] + offset, esconfig::MPIrank });
+								clusterMap[s].push_back({ ids[l2c[n] * _DOFs + d] + offset, config::MPIrank });
 							}
 						}
 					}
@@ -420,7 +420,7 @@ void Gluing::composeClustersGluing(
 			size_t index = 0, myFirst;
 			const std::vector<eslocal> &neighs = _cBoundary[l2c[n]];
 			for (size_t i = 0; i < neighs.size(); i++) {
-				if (neighs[i] != esconfig::MPIrank) {
+				if (neighs[i] != config::MPIrank) {
 					index += multiplicity[l2c[n]][i];
 				} else {
 					myFirst = index;
@@ -440,12 +440,12 @@ void Gluing::composeClustersGluing(
 								esglobal offset = i < index ? pairOffset(i, index, multiplicity[l2c[n]].back()) : pairOffset(index, i, multiplicity[l2c[n]].back());
 								gluing[s].push(ids[l2c[n] * _DOFs + d] + offset, n * _DOFs + d, index < i ? 1 : -1);
 								duplicity[s].push_back(1. / multiplicity[l2c[n]].back());
-								if (_cBoundary[l2c[n]][r] == esconfig::MPIrank) {
+								if (_cBoundary[l2c[n]][r] == config::MPIrank) {
 									if (index < i) {
-										clusterMap[s].push_back({ ids[l2c[n] * _DOFs + d] + offset, esconfig::MPIrank });
+										clusterMap[s].push_back({ ids[l2c[n] * _DOFs + d] + offset, config::MPIrank });
 									}
 								} else {
-									clusterMap[s].push_back({ ids[l2c[n] * _DOFs + d] + offset, esconfig::MPIrank, _cBoundary[l2c[n]][r] });
+									clusterMap[s].push_back({ ids[l2c[n] * _DOFs + d] + offset, config::MPIrank, _cBoundary[l2c[n]][r] });
 								}
 							}
 						}
@@ -539,7 +539,7 @@ void Gluing::exchangeGlobalIds(std::vector<esglobal> &ids, const std::vector<std
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 			if (_cBoundary[n].size() > 1) {
-				if (esconfig::MPIrank == _cBoundary[n][0]) {
+				if (config::MPIrank == _cBoundary[n][0]) {
 					// send my ids to higher ranks
 					for (size_t i = 1; i < _cBoundary[n].size(); i++) {
 						nodesIds[t][n2i(_cBoundary[n][i])].push_back({ _c2g[n], ids[_DOFs * n] });
@@ -557,7 +557,7 @@ void Gluing::exchangeGlobalIds(std::vector<esglobal> &ids, const std::vector<std
 		for (size_t t = 0; t < threads; t++) {
 			size += nodesIds[t][n].size();
 		}
-		if (_neighbours[n] < esconfig::MPIrank) {
+		if (_neighbours[n] < config::MPIrank) {
 			nodesIds[0][n].resize(size);
 		} else {
 			nodesIds[0][n].reserve(size);
@@ -571,10 +571,10 @@ void Gluing::exchangeGlobalIds(std::vector<esglobal> &ids, const std::vector<std
 	std::vector<MPI_Request> req(_neighbours.size() - 1); // not send to my id
 	size_t nCounter = 0;
 	for (size_t n = 0; n < _neighbours.size(); n++) {
-		if (_neighbours[n] > esconfig::MPIrank) {
+		if (_neighbours[n] > config::MPIrank) {
 			MPI_Isend(nodesIds[0][n].data(), 2 * sizeof(esglobal) * nodesIds[0][n].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + nCounter++);
 		}
-		if (_neighbours[n] < esconfig::MPIrank) {
+		if (_neighbours[n] < config::MPIrank) {
 			MPI_Irecv(nodesIds[0][n].data(), 2 * sizeof(esglobal) * nodesIds[0][n].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + nCounter++);
 		}
 	}
@@ -585,7 +585,7 @@ void Gluing::exchangeGlobalIds(std::vector<esglobal> &ids, const std::vector<std
 	for (size_t t = 0; t < threads; t++) {
 		size_t size = 0;
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-			if (_cBoundary[n].size() > 1 && _cBoundary[n][0] < esconfig::MPIrank) {
+			if (_cBoundary[n].size() > 1 && _cBoundary[n][0] < config::MPIrank) {
 				size_t pairs = gluingPairs(multiplicity[n].back());
 				std::pair<esglobal, esglobal> node(_c2g[n], 0);
 				auto it = std::lower_bound(nodesIds[0][n2i(_cBoundary[n][0])].begin(), nodesIds[0][n2i(_cBoundary[n][0])].end(), node, compareAccordingFirst);

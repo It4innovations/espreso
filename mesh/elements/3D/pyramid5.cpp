@@ -1,6 +1,6 @@
 #include "pyramid5.h"
 
-using namespace mesh;
+using namespace espreso;
 
 static std::vector< std::vector< double> > Pyramid5_rst()
 {
@@ -14,7 +14,7 @@ static std::vector< std::vector< double> > Pyramid5_rst()
 		rst[2] = { -v,  v, -v,  v, -v,  v, -v,  v };
 		return rst;
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Pyramid5 GP count.";
+		ESINFO(ERROR) << "Unknown number of Pyramid5 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -93,7 +93,7 @@ static std::vector<double> Pyramid5_weight()
 		return std::vector<double> (8, 1.0);
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -191,7 +191,7 @@ Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params): El
 		memcpy(_indices, indices, 5 * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Tetrahedron5 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Tetrahedron5 from " << n << " elements.";
 	}
 }
 

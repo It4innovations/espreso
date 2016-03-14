@@ -30,6 +30,8 @@ using std::make_pair;
 
 #pragma once
 
+namespace espreso {
+
 class Domain {
 
 public:
@@ -153,4 +155,5 @@ public:
 	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
 };
 
+}
 

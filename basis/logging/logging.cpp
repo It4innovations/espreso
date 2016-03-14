@@ -1,7 +1,7 @@
 
 #include "logging.h"
 
-namespace eslog {
+namespace espreso {
 
 std::vector<Checkpoint> Measure::checkpoints = { Checkpoint("Start", Measure::time(), 0) };
 
@@ -22,14 +22,14 @@ Info::~Info()
 {
 	if (event == ERROR) {
 		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", esconfig::MPIrank);
+		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);
 		fflush(stderr);
 		exit(EXIT_FAILURE);
 	}
 
 	os << std::endl;
 
-	if (esconfig::MPIrank != 0) {
+	if (config::MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -60,7 +60,7 @@ Measure::~Measure()
 {
 	if (event == ERROR) {
 		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", esconfig::MPIrank);
+		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);
 		fflush(stderr);
 		exit(EXIT_FAILURE);
 	}
@@ -83,7 +83,7 @@ Measure::~Measure()
 
 	os << std::endl;
 
-	if (esconfig::MPIrank != 0) {
+	if (config::MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -93,7 +93,7 @@ Measure::~Measure()
 
 void Measure::evaluateCheckpoints()
 {
-	if (esconfig::MPIrank != 0) {
+	if (config::MPIrank != 0) {
 		return;
 	}
 

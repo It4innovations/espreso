@@ -6,6 +6,8 @@
 #include "mkl_pardiso.h"
 #include "DenseMatrixPack.h"
 
+namespace espreso {
+
 class SparseSolverMIC
 {
 
@@ -120,5 +122,7 @@ public:
     double ** tmp_sol_d1;
     double ** tmp_sol_d2;
 };
+
+}
 
 #endif

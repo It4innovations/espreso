@@ -4,6 +4,8 @@
 
 #include "../cluster.h"
 
+namespace espreso {
+
 class ClusterAcc: public ClusterBase
 {
 
@@ -41,6 +43,7 @@ public:
     bool deleteMatrices;
 };
 
+}
 
 
 #endif /* SOLVER_SPECIFIC_ACC_CLUSTERACC_H_ */

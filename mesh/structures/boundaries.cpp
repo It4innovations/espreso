@@ -1,8 +1,8 @@
 #include "boundaries.h"
 
-using namespace mesh;
+using namespace espreso;
 
-std::ostream& mesh::operator<<(std::ostream& os, const Boundaries &b)
+std::ostream& espreso::operator<<(std::ostream& os, const Boundaries &b)
 {
 	for (size_t i = 0; i < b._boundaries.size(); i++) {
 		os << i << ": ";

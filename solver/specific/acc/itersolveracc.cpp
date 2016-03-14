@@ -2,7 +2,7 @@
 #include "itersolveracc.h"
 
 
-
+using namespace espreso;
 // *** Action of K+ routines *********************************************
 
 void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {

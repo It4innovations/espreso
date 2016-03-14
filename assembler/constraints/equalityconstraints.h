@@ -4,14 +4,14 @@
 
 #include "../assembler.h"
 
-namespace assembler {
+namespace espreso {
 
 class Constraints
 {
 protected:
-	Constraints(const mesh::Mesh &mesh, size_t firstIndex);
+	Constraints(const Mesh &mesh, size_t firstIndex);
 
-	const mesh::Mesh &_mesh;
+	const Mesh &_mesh;
 	std::vector<eslocal> _neighbours;
 
 	size_t _subdomains;
@@ -22,12 +22,12 @@ protected:
 class Dirichlet: public Constraints
 {
 public:
-	Dirichlet(const mesh::Mesh &mesh, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
+	Dirichlet(const Mesh &mesh, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
 	:Constraints(mesh, offset),
 	 _dirichletSize(indices.size()), _dirichletOffset(0),
 	 _dirichletIndices(indices.data()), _dirichletValues(values.data()) { };
 
-	Dirichlet(const mesh::Mesh &mesh, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
+	Dirichlet(const Mesh &mesh, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
 	:Constraints(mesh, firstIndex),
 	 _dirichletSize(size), _dirichletOffset(offset),
 	_dirichletIndices(indices), _dirichletValues(values) { };
@@ -48,13 +48,13 @@ protected:
 class Gluing: public Constraints
 {
 public:
-	Gluing(mesh::Mesh &mesh, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
+	Gluing(Mesh &mesh, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
 	:Constraints(mesh, firstIndex),
 	  _ignoredDOFsSize(ignoredDOFs.size()), _ignoredDOFsOffset(0), _ignoredDOFs(ignoredDOFs.data()),
 	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
-	Gluing(mesh::Mesh &mesh, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
+	Gluing(Mesh &mesh, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
 	:Constraints(mesh, firstIndex),
 	 _ignoredDOFsSize(ignoredDOFsSize), _ignoredDOFsOffset(ignoredDOFsOffset), _ignoredDOFs(ignoredDOFs),
 	 _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
@@ -76,8 +76,8 @@ protected:
 	const eslocal _ignoredDOFsOffset;
 	const eslocal *_ignoredDOFs;
 
-	const mesh::Boundaries &_sBoundary;
-	const mesh::Boundaries &_cBoundary;
+	const Boundaries &_sBoundary;
+	const Boundaries &_cBoundary;
 	const std::vector<esglobal> &_c2g;
 
 private:

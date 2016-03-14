@@ -4,6 +4,8 @@
 
 #include "itersolver.h"
 
+using namespace espreso;
+
 IterSolverBase::IterSolverBase():
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
@@ -175,7 +177,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 		if (USE_HFETI == 1)
 
-			if ( esconfig::solver::REGULARIZATION == 0 )
+			if ( config::solver::REGULARIZATION == 0 )
 				cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
 		  	else
 		  		cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
@@ -1286,7 +1288,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		std::stringstream ss;
-		ss << "Create GGt -> rank: " << esconfig::MPIrank;
+		ss << "Create GGt -> rank: " << config::MPIrank;
 		GGt.Factorization(ss.str());
 		cout << "Factorization = " << omp_get_wtime() - t1 << endl;
 
@@ -1339,7 +1341,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
                 sscanf( var, "%d", &num_procs );
         else {
                 //printf("Set environment PAR_NUM_THREADS to 1");
-        	ESINFO(eslog::ERROR) << "Set environment PAR_NUM_THREADS to 1.";
+        	ESINFO(ERROR) << "Set environment PAR_NUM_THREADS to 1.";
 			exit(1);
         }
         GGt_tmp.iparm[2]  = num_procs;
@@ -1472,7 +1474,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
 	GGt_tmp.SetThreaded();
 	std::stringstream ss;
-	ss << "Create GGt_inv_dist-> rank: " << esconfig::MPIrank;
+	ss << "Create GGt_inv_dist-> rank: " << config::MPIrank;
 	GGt_tmp.Factorization(ss.str());
 	GGtFactor_time.end();
 	GGtFactor_time.printLastStatMPIPerNode();
@@ -1718,6 +1720,7 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 // *** END - Iteration solver class *************************************
 // **********************************************************************
 
+namespace espreso {
 
 
 // **********************************************************************
@@ -2185,6 +2188,8 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 #endif
+
+}
 
 }
 

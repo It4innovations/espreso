@@ -11,7 +11,7 @@
 #define Pyramid13GPCount 8
 #define Pyramid13VTKCode 27
 
-namespace mesh {
+namespace espreso {
 
 class Pyramid13: public Element
 {

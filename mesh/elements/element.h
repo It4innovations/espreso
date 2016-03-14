@@ -9,7 +9,7 @@
 #include "../structures/coordinates.h"
 #include "esbasis.h"
 
-namespace mesh {
+namespace espreso {
 
 
 

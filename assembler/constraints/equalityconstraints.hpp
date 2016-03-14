@@ -1,7 +1,7 @@
 
 #include "equalityconstraints.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 EqualityConstraints<TInput>::EqualityConstraints(TInput &input): Assembler<TInput>(input)
@@ -89,7 +89,7 @@ void EqualityConstraints<API>::assembleConstraints(std::vector<size_t> columns)
 
 	std::vector<eslocal> corners;
 
-	if (esconfig::solver::FETI_METHOD == esconfig::HYBRID_FETI && !esconfig::solver::REDUNDANT_LAGRANGE) {
+	if (config::solver::FETI_METHOD == config::HYBRID_FETI && !config::solver::REDUNDANT_LAGRANGE) {
 		// in this case B1 has to ignore corner nodes
 		for (size_t i = 0; i < this->_input.mesh->subdomainBoundaries().size(); i++) {
 			if (this->_input.mesh->subdomainBoundaries().isCorner(i)) {
@@ -99,7 +99,7 @@ void EqualityConstraints<API>::assembleConstraints(std::vector<size_t> columns)
 	}
 
 	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
-	if (esconfig::solver::FETI_METHOD == esconfig::HYBRID_FETI) {
+	if (config::solver::FETI_METHOD == config::HYBRID_FETI) {
 		gluing.assembleB0(_B0);
 	}
 
@@ -112,7 +112,7 @@ void EqualityConstraints<TInput>::assembleConstraints(std::vector<size_t> column
 {
 	initColumns(_B0, _B1, columns);
 
-	const std::map<eslocal, double> &dx = this->_input.mesh.coordinates().property(mesh::DIRICHLET_X).values();
+	const std::map<eslocal, double> &dx = this->_input.mesh.coordinates().property(DIRICHLET_X).values();
 	std::vector<eslocal> dirichlet(3 * dx.size());
 	std::vector<double> dirichletValues(3 * dx.size(), 0);
 
@@ -139,7 +139,7 @@ void EqualityConstraints<TInput>::assembleConstraints(std::vector<size_t> column
 
 	std::vector<eslocal> corners;
 
-	if (esconfig::solver::FETI_METHOD == esconfig::HYBRID_FETI && !esconfig::solver::REDUNDANT_LAGRANGE) {
+	if (config::solver::FETI_METHOD == config::HYBRID_FETI && !config::solver::REDUNDANT_LAGRANGE) {
 		// in this case B1 has to ignore corner nodes
 		for (size_t i = 0; i < this->_input.mesh.subdomainBoundaries().size(); i++) {
 			if (this->_input.mesh.subdomainBoundaries().isCorner(i)) {
@@ -149,7 +149,7 @@ void EqualityConstraints<TInput>::assembleConstraints(std::vector<size_t> column
 	}
 
 	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
-	if (esconfig::solver::FETI_METHOD == esconfig::HYBRID_FETI) {
+	if (config::solver::FETI_METHOD == config::HYBRID_FETI) {
 		gluing.assembleB0(_B0);
 	}
 

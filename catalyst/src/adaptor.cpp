@@ -17,7 +17,7 @@ namespace {
 vtkCPProcessor* Processor = NULL;
 vtkUnstructuredGrid* VTKGrid;
 
-void BuildVTKGrid(mesh::Mesh *mesh, std::vector<std::vector<eslocal> > &l2g_vec)
+void BuildVTKGrid(Mesh *mesh, std::vector<std::vector<eslocal> > &l2g_vec)
 {
 	//UNDER CONSTRUCTION
 	int MPIsize = 1;
@@ -32,7 +32,7 @@ void BuildVTKGrid(mesh::Mesh *mesh, std::vector<std::vector<eslocal> > &l2g_vec)
 	std::cout << "##############################################here\n";
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	const std::vector<mesh::Element*> &elements = mesh->getElements();
+	const std::vector<Element*> &elements = mesh->getElements();
 	const std::vector<eslocal> &_partPtrs = mesh->getPartition();
 
 	size_t n_nodsClust = 0;
@@ -45,19 +45,19 @@ void BuildVTKGrid(mesh::Mesh *mesh, std::vector<std::vector<eslocal> > &l2g_vec)
 		n_points += l2g_vec[d].size();
 	}
 	double shrinking = 0.90;
-	mesh::Coordinates &_coordinates = mesh->coordinates();
+	Coordinates &_coordinates = mesh->coordinates();
 	double *coord_xyz = new double[n_points * 3];   // TODO not deleted
 
 	int counter = 0;
 	for (size_t d = 0; d < nSubClst; d++) {
-		mesh::Point center;
+		Point center;
 		for (size_t c = 0; c < l2g_vec[d].size(); c++) {
 			center += _coordinates[l2g_vec[d][c]];
 		}
 		center /= l2g_vec[d].size();
 
 		for (size_t i = 0; i < l2g_vec[d].size(); i++) {
-			mesh::Point xyz = _coordinates[l2g_vec[d][i]];
+			Point xyz = _coordinates[l2g_vec[d][i]];
 			xyz = center + (xyz - center) * shrinking;
 			coord_xyz[3 * counter + 0] = xyz.x;
 			coord_xyz[3 * counter + 1] = xyz.y;
@@ -175,7 +175,7 @@ void UpdateVTKAttributes(std::vector<std::vector<double> >& prim_solution)
 }
 
 void BuildVTKDataStructures(
-		mesh::Mesh *mesh,
+		Mesh *mesh,
 		std::vector<std::vector<eslocal> > &l2g_vec,
 		std::vector<std::vector<double> >& prim_solution)
 {
@@ -222,7 +222,7 @@ void Finalize() {
 }
 
 void CoProcess(
-		mesh::Mesh *mesh,
+		Mesh *mesh,
 		std::vector<std::vector<eslocal> > &l2g_vec,
 		std::vector<std::vector<double> >& prim_solution,
 		double time,

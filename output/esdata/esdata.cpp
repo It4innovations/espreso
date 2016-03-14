@@ -1,7 +1,7 @@
 
 #include "esdata.h"
 
-using namespace esoutput;
+using namespace espreso::output;
 
 void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 {
@@ -22,7 +22,7 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 	boundaries(_mesh);
 }
 
-void Esdata::coordinates(const mesh::Coordinates &coordinates)
+void Esdata::coordinates(const Coordinates &coordinates)
 {
 	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
@@ -39,15 +39,15 @@ void Esdata::coordinates(const mesh::Coordinates &coordinates)
 		for (eslocal i = 0; i < coordinates.localSize(p); i++) {
 			index = coordinates.globalIndex(i, p);
 			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
-			const mesh::Point &point = coordinates.get(i, p);
-			os.write(reinterpret_cast<const char*>(&point), mesh::Point::size() * sizeof(double));
+			const Point &point = coordinates.get(i, p);
+			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
 		}
 		os.close();
 	}
 }
 
 
-void Esdata::boundaryConditions(const mesh::Coordinates &coordinates)
+void Esdata::boundaryConditions(const Coordinates &coordinates)
 {
 	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
@@ -78,12 +78,12 @@ void Esdata::boundaryConditions(const mesh::Coordinates &coordinates)
 	}
 }
 
-void Esdata::elements(const mesh::Mesh &mesh)
+void Esdata::elements(const Mesh &mesh)
 {
 	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		const std::vector<eslocal> &parts = mesh.getPartition();
-		const std::vector<mesh::Element*> &elements = mesh.getElements();
+		const std::vector<Element*> &elements = mesh.getElements();
 		eslocal value;
 
 		std::stringstream ss;
@@ -100,11 +100,11 @@ void Esdata::elements(const mesh::Mesh &mesh)
 	}
 }
 
-void Esdata::boundaries(const mesh::Mesh &mesh)
+void Esdata::boundaries(const Mesh &mesh)
 {
 	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
-		const mesh::Boundaries &boundaries = mesh.subdomainBoundaries();
+		const Boundaries &boundaries = mesh.subdomainBoundaries();
 		eslocal value, size;
 		esglobal index;
 

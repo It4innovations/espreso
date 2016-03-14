@@ -7,6 +7,8 @@
 #include "sparseCSRMatrix.h"
 #include "sparseVVPMatrix.h"
 
+namespace espreso {
+
 class DenseMatrix;
 template<typename Tindices> class SparseDOKMatrix;
 template<typename Tindices> class SparseCSRMatrix;
@@ -194,6 +196,8 @@ private:
 	std::vector<Tindices> _columnIndices;
 	std::vector<double> _values;
 };
+
+}
 
 #include "sparseIJVMatrix.hpp"
 

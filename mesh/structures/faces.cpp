@@ -7,7 +7,7 @@
 
 #include "faces.h"
 
-using namespace mesh;
+using namespace espreso;
 
 Faces::Faces() {
 	// TODO Auto-generated constructor stub

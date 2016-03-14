@@ -1,6 +1,6 @@
 #include "triangle.h"
 
-using namespace mesh;
+using namespace espreso;
 
 // TODO: Implement base functions
 std::vector<DenseMatrix> Triangle::_dN;

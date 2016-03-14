@@ -12,7 +12,7 @@
 #include <vector>
 #include "../elements/element.h"
 
-namespace mesh {
+namespace espreso {
 
 /** @brief Face index contains an element and its face index */
 typedef std::pair<Element*, unsigned char> FaceIndex;

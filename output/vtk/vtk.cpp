@@ -1,11 +1,11 @@
 
 #include "vtk.h"
 
-using namespace esoutput;
+using namespace espreso::output;
 
-VTK::VTK(const mesh::Mesh &mesh, const std::string &path): ResultStore(mesh, path)
+VTK::VTK(const Mesh &mesh, const std::string &path): ResultStore(mesh, path)
 {
-	const mesh::Coordinates &coordinates = mesh.coordinates();
+	const Coordinates &coordinates = mesh.coordinates();
 
 	for (size_t i = 0; i < coordinates.clusterSize(); i++) {
 		_clusterCenter += coordinates[i];
@@ -21,11 +21,11 @@ VTK::VTK(const mesh::Mesh &mesh, const std::string &path): ResultStore(mesh, pat
 	}
 }
 
-mesh::Point VTK::shrink(const mesh::Point &p,
-			const mesh::Point &subdomainCenter, double subdomainShrinkRatio,
-			const mesh::Point &clusterCenter, double clusterShrinkRatio)
+espreso::Point VTK::shrink(const Point &p,
+			const Point &subdomainCenter, double subdomainShrinkRatio,
+			const Point &clusterCenter, double clusterShrinkRatio)
 {
-	mesh::Point x = p;
+	Point x = p;
 	x = subdomainCenter + (x - subdomainCenter) * subdomainShrinkRatio;
 	x = clusterCenter + (x - clusterCenter) * clusterShrinkRatio;
 	return x;
@@ -34,7 +34,7 @@ mesh::Point VTK::shrink(const mesh::Point &p,
 void VTK::store(const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << esconfig::MPIrank << ".vtk";
+	ss << _path << config::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
@@ -48,7 +48,7 @@ void VTK::store(const std::vector<std::vector<eslocal> > &points, double shrinkS
 void VTK::store(double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << esconfig::MPIrank << ".vtk";
+	ss << _path << config::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
@@ -62,7 +62,7 @@ void VTK::store(double shrinkSubdomain, double shringCluster)
 void VTK::store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << esconfig::MPIrank << ".vtk";
+	ss << _path << config::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
@@ -81,7 +81,7 @@ void VTK::head()
 	_vtk << "\n";
 }
 
-void VTK::coordinates(const mesh::Coordinates &coordinates, double shrinkSubdomain, double shringCluster)
+void VTK::coordinates(const Coordinates &coordinates, double shrinkSubdomain, double shringCluster)
 {
 	size_t parts = coordinates.parts();
 
@@ -101,7 +101,7 @@ void VTK::coordinates(const mesh::Coordinates &coordinates, double shrinkSubdoma
 	_vtk << "\n";
 }
 
-void VTK::coordinates(const mesh::Coordinates &coordinates, const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
+void VTK::coordinates(const Coordinates &coordinates, const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
 {
 	size_t parts = coordinates.parts();
 
@@ -121,9 +121,9 @@ void VTK::coordinates(const mesh::Coordinates &coordinates, const std::vector<st
 	_vtk << "\n";
 }
 
-void VTK::elements(const mesh::Mesh &mesh)
+void VTK::elements(const Mesh &mesh)
 {
-	const std::vector<mesh::Element*> &elements = mesh.getElements();
+	const std::vector<Element*> &elements = mesh.getElements();
 	const std::vector<eslocal> &partition = mesh.getPartition();
 	size_t parts = mesh.parts();
 
@@ -176,7 +176,7 @@ void VTK::elements(const mesh::Mesh &mesh)
 	_vtk << "LOOKUP_TABLE materials\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			_vtk << elements[i]->getParam(mesh::Element::MATERIAL) << "\n";
+			_vtk << elements[i]->getParam(Element::MATERIAL) << "\n";
 
 		}
 	}

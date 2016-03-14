@@ -3,6 +3,9 @@
 
 #include <ostream>
 
+namespace espreso {
+namespace input {
+
 class ByteArray
 {
 public:
@@ -40,6 +43,8 @@ private:
     char* _data;
 };
 
+}
+}
 
 
 #endif // BYTEARRAY_H

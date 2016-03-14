@@ -1,5 +1,7 @@
 #include "dictionarybasedobject.h"
 
+using namespace espreso::input;
+
 DictionaryBasedObject::DictionaryBasedObject()
 {
 }

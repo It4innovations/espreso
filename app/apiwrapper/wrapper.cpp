@@ -1,12 +1,10 @@
 
 #include "wrapper.h"
 
-using namespace assembler;
+std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
+std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 
-std::list<FETI4IStructMatrix*> DataHolder::matrices;
-std::list<FETI4IStructInstance*> DataHolder::instances;
-
-using namespace assembler;
+using namespace espreso;
 
 template <typename Ttype>
 static void readFile(typename std::vector<Ttype> &vector, std::string fileName) {
@@ -18,7 +16,7 @@ static void readFile(typename std::vector<Ttype> &vector, std::string fileName) 
 			vector.push_back(value);
 		}
 	} else {
-		ESINFO(eslog::ERROR) << "Cannot read file " << fileName;
+		ESINFO(ERROR) << "Cannot read file " << fileName;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -32,7 +30,7 @@ static void readBinary(std::vector<double> &vector, std::string fileName) {
 			vector[i] = value;
 		}
 	} else {
-		ESINFO(eslog::ERROR) << "Cannot read file " << fileName;
+		ESINFO(ERROR) << "Cannot read file " << fileName;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -122,13 +120,13 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
 
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
-	mesh::APIMesh *mesh = new mesh::APIMesh(matrix->eMatrices);
-	esinput::API loader(matrix->eIndices, neighClusters, size, l2g);
+	APIMesh *mesh = new APIMesh(matrix->eMatrices);
+	input::API loader(matrix->eIndices, neighClusters, size, l2g);
 	loader.load(*mesh);
 
 	API api(mesh);
@@ -143,7 +141,7 @@ void FETI4ICreateInstance(
 	api.l2g = l2g;
 	api.neighbours_size = neighbours_size;
 	api.neighbours = neighbours;
-	DataHolder::instances.back()->data = assembler::LinearElasticity<assembler::API>(api);
+	DataHolder::instances.back()->data = LinearElasticity<API>(api);
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
@@ -185,13 +183,13 @@ void TEST4IGetElementsInfo(
 		FETI4IInt		*elements,
 		FETI4IInt		*elementSize)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
 	std::vector<FETI4IInt> eCount;
 	std::vector<FETI4IInt> eSize;
 	std::stringstream ssEl, ssKi;
-	ssEl << "examples/api/cube/" << esconfig::MPIrank << "/elements.txt";
-	ssKi << "examples/api/cube/" << esconfig::MPIrank << "/Ki0.txt";
+	ssEl << "examples/api/cube/" << config::MPIrank << "/elements.txt";
+	ssKi << "examples/api/cube/" << config::MPIrank << "/Ki0.txt";
 	readFile(eCount, ssEl.str());
 	readFile(eSize, ssKi.str());
 
@@ -208,8 +206,8 @@ void TEST4IGetElement(
 	std::vector<FETI4IReal> Kv;
 
 	std::stringstream ssKi, ssKv;
-	ssKi << "examples/api/cube/" << esconfig::MPIrank << "/Ki" << index << ".txt";
-	ssKv << "examples/api/cube/" << esconfig::MPIrank << "/Ke" << index << ".bin";
+	ssKi << "examples/api/cube/" << config::MPIrank << "/Ki" << index << ".txt";
+	ssKv << "examples/api/cube/" << config::MPIrank << "/Ke" << index << ".bin";
 	readFile(Ki, ssKi.str());
 	Kv.resize(Ki.size() * Ki.size());
 	readBinary(Kv, ssKv.str());
@@ -227,9 +225,9 @@ void TEST4IGetInstanceInfo(
 	std::vector<FETI4IMPIInt> neighbours;
 
 	std::stringstream ssRhs, ssD, ssN;
-	ssRhs << "examples/api/cube/" << esconfig::MPIrank << "/rhs.txt";
-	ssD << "examples/api/cube/" << esconfig::MPIrank << "/dirichlet_indices.txt";
-	ssN << "examples/api/cube/" << esconfig::MPIrank << "/neighbours.txt";
+	ssRhs << "examples/api/cube/" << config::MPIrank << "/rhs.txt";
+	ssD << "examples/api/cube/" << config::MPIrank << "/dirichlet_indices.txt";
+	ssN << "examples/api/cube/" << config::MPIrank << "/neighbours.txt";
 	readFile(rhs, ssRhs.str().c_str());
 	readFile(dirichlet, ssD.str().c_str());
 	readFile(neighbours, ssN.str().c_str());
@@ -253,11 +251,11 @@ void TEST4IGetInstance(
 	std::vector<FETI4IMPIInt> _neighbours;
 
 	std::stringstream ssRhs, ssL, ssDi, ssDv, ssN;
-	ssRhs << "examples/api/cube/" << esconfig::MPIrank << "/rhs.txt";
-	ssL << "examples/api/cube/" << esconfig::MPIrank << "/l2g.txt";
-	ssDi << "examples/api/cube/" << esconfig::MPIrank << "/dirichlet_indices.txt";
-	ssDv << "examples/api/cube/" << esconfig::MPIrank << "/dirichlet_values.txt";
-	ssN << "examples/api/cube/" << esconfig::MPIrank << "/neighbours.txt";
+	ssRhs << "examples/api/cube/" << config::MPIrank << "/rhs.txt";
+	ssL << "examples/api/cube/" << config::MPIrank << "/l2g.txt";
+	ssDi << "examples/api/cube/" << config::MPIrank << "/dirichlet_indices.txt";
+	ssDv << "examples/api/cube/" << config::MPIrank << "/dirichlet_values.txt";
+	ssN << "examples/api/cube/" << config::MPIrank << "/neighbours.txt";
 	readFile(_rhs, ssRhs.str());
 	readFile(_dirichlet_indices, ssDi.str());
 	readFile(_dirichlet_values, ssDv.str());
@@ -270,4 +268,3 @@ void TEST4IGetInstance(
 	memcpy(dirichlet_values, _dirichlet_values.data(), _dirichlet_values.size() * sizeof(double));
 	memcpy(neighbours, _neighbours.data(), _neighbours.size() * sizeof(eslocal));
 }
-

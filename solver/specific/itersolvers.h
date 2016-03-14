@@ -4,24 +4,39 @@
 
 #if defined(SOLVER_MKL)
 #include "cpu/itersolvercpu.h"
+
+namespace espreso {
 	typedef IterSolverCPU	IterSolver;
+}
 
 
 #elif defined(SOLVER_PARDISO)
 #include "cpu/itersolvercpu.h"
+
+namespace espreso {
 	typedef IterSolverCPU	IterSolver;
+}
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/itersolvercpu.h"
+
+namespace espreso {
 	typedef IterSolverCPU	IterSolver;
+}
 
 #elif defined(SOLVER_MIC)
 #include "acc/itersolveracc.h"
+
+namespace espreso {
 	typedef IterSolverAcc	IterSolver;
+}
 
 #elif defined(SOLVER_CUDA)
 #include "acc/itersolverGPU.h"
+
+namespace espreso {
 	typedef IterSolverGPU	IterSolver;
+}
 
 
 #else

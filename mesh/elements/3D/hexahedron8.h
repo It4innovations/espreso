@@ -10,7 +10,7 @@
 #define Hexahedron8GPCount 8
 #define Hexahedron8VTKCode 12
 
-namespace mesh {
+namespace espreso {
 
 class Hexahedron8: public Element
 {

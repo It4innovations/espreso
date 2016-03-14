@@ -1,6 +1,6 @@
 #include "openfoam.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 OpenFOAM::OpenFOAM(const Options &options, int rank, int size)
 {
@@ -57,7 +57,7 @@ ParseError* OpenFOAM::computePolyMeshPath(int rank, int size) {
 	return NULL;
 }
 
-void OpenFOAM::points(mesh::Coordinates &coordinates) {
+void OpenFOAM::points(Coordinates &coordinates) {
 	FoamFile pointsFile(_polyMeshPath + "points");
 	Points points;
 	solveParseError(parse(pointsFile.getTokenizer(), points));
@@ -78,20 +78,20 @@ void OpenFOAM::points(mesh::Coordinates &coordinates) {
 		}
 		std::vector< esglobal >::iterator it_addressing = addressing.begin();
 		it_addressing = addressing.begin();
-		for (std::vector<mesh::Point>::iterator it = points.begin();
+		for (std::vector<Point>::iterator it = points.begin();
 				it != points.end(); ++it) {
 			coordinates.add(*it, counter, *it_addressing);
 			++it_addressing;
 		}
 	} else {
-		for (std::vector<mesh::Point>::iterator it = points.begin();
+		for (std::vector<Point>::iterator it = points.begin();
 				it != points.end(); ++it) {
 			coordinates.add(*it, counter, counter);
 		}
 	}
 }
 
-void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
+void OpenFOAM::elements(std::vector<Element*> &elements) {
 	FoamFile facesFile(_polyMeshPath + "faces");
 	solveParseError(parse(facesFile.getTokenizer(), _faces));
 	FoamFile ownerFile(_polyMeshPath + "owner");
@@ -147,7 +147,7 @@ void OpenFOAM::elements(std::vector<mesh::Element*> &elements) {
 	}*/
 }
 
-void OpenFOAM::faces(mesh::Faces &faces) {
+void OpenFOAM::faces(Faces &faces) {
 	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();
 			++it) {
 		faces.push_back((*it).getFaceIndex());
@@ -155,11 +155,11 @@ void OpenFOAM::faces(mesh::Faces &faces) {
 	_faces.clear();
 }
 
-void OpenFOAM::boundaryConditions(mesh::Coordinates &coordinates) {
+void OpenFOAM::boundaryConditions(Coordinates &coordinates) {
 
 }
 
-void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours) {
+void OpenFOAM::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours) {
 	std::set<int> neighs;
 
 	boundaries.resize(mesh.coordinates().clusterSize());
@@ -217,7 +217,7 @@ void OpenFOAM::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries,
 		boundaries[i].resize(std::unique(boundaries[i].begin(), boundaries[i].end()) - boundaries[i].begin());
 	}
 
-	neighs.erase(esconfig::MPIrank);
+	neighs.erase(config::MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

@@ -1,5 +1,6 @@
 #include "sparseCSRMatrix.h"
 
+namespace espreso {
 
 template<typename Tindices>
 std::ostream& operator<<(std::ostream& os, const SparseCSRMatrix<Tindices> &m)
@@ -169,15 +170,15 @@ template<typename Tindices>
 void SparseCSRMatrix<Tindices>::multiply(SparseCSRMatrix<Tindices> &A, SparseCSRMatrix<Tindices> &B, bool transposeA)
 {
 	if (_indexing == Matrix::ZeroBased) {
-		ESINFO(eslog::ERROR) << "Multiplication of two CSR matrices with zero based indexing is not supported.";
+		ESINFO(ERROR) << "Multiplication of two CSR matrices with zero based indexing is not supported.";
 	}
 	if (transposeA) {
 		if (A.rows() != B.rows()) {
-			ESINFO(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
+			ESINFO(ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 		}
 	} else {
 		if (A.columns() != B.rows()) {
-			ESINFO(eslog::ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
+			ESINFO(ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 		}
 	}
 
@@ -269,5 +270,7 @@ void SparseCSRMatrix<Tindices>::transpose()
 	size_t tmp = _rows;
 	_rows = _columns;
 	_columns = tmp;
+}
+
 }
 

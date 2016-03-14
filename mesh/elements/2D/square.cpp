@@ -1,6 +1,6 @@
 #include "square.h"
 
-using namespace mesh;
+using namespace espreso;
 
 // TODO: Implement base functions
 std::vector<DenseMatrix> Square::_dN;

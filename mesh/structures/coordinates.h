@@ -8,7 +8,7 @@
 #include <map>
 #include <fstream>
 
-namespace mesh
+namespace espreso
 {
 
 enum Property {

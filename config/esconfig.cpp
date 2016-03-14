@@ -1,7 +1,7 @@
 
 #include "esconfig.h"
 
-namespace esconfig {
+namespace config {
 
 int MPIrank = 0;
 int MPIsize = 1;

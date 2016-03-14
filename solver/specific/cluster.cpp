@@ -6,6 +6,7 @@
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
 
+using namespace espreso;
 
 void ClusterBase::ShowTiming()  {
 
@@ -241,7 +242,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		if (esconfig::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
+		if (config::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
 			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
 			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
@@ -254,7 +255,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 
 		//************************
-		if ( esconfig::solver::REGULARIZATION == 0 )
+		if ( config::solver::REGULARIZATION == 0 )
                     domains[i].B1.Clear();
 
 		domains[i].B1t.Clear();
@@ -279,7 +280,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	}
 
 	if (USE_DYNAMIC == 0) {
-		if ( ! (USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1 )) {
+		if ( ! (USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
 			Compress_G1();
 		}
 	}
@@ -297,16 +298,16 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes ) {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		if ( d == 0 && esconfig::MPIrank == 0) domains[d].Kplus.msglvl=1;
+		if ( d == 0 && config::MPIrank == 0) domains[d].Kplus.msglvl=1;
 
-	    if (esconfig::solver::REGULARIZATION == 0) {
+	    if (config::solver::REGULARIZATION == 0) {
 
 			domains[d].K.swap(K_in[d]);
 
       		if ( domains[d].K.type == 'G' )
 		  		domains[d].K.RemoveLower();
 
-		  	if ( esconfig::solver::PRECONDITIONER == 11 )
+		  	if ( config::solver::PRECONDITIONER == 11 )
 		  		domains[d].Prec = domains[d].K;
 
    			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
@@ -320,7 +321,7 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 
 	    }
 
-	    if (esconfig::MPIrank == 0) std::cout << ".";
+	    if (config::MPIrank == 0) std::cout << ".";
 
 	}
 
@@ -1076,13 +1077,13 @@ void ClusterBase::CreateF0() {
 			domains[d].Kplus.msglvl=0;
 
 		// FO solve in doble in case K is in single
-		if (   (esconfig::solver::KSOLVER == 2 || esconfig::solver::KSOLVER == 3 )
-			 && esconfig::solver::F0_SOLVER == 1
+		if (   (config::solver::KSOLVER == 2 || config::solver::KSOLVER == 3 )
+			 && config::solver::F0_SOLVER == 1
 			) {
 			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
-			ss << "Create F0 -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			ss << "Create F0 -> rank: " << config::MPIrank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		} else {
@@ -1156,7 +1157,7 @@ void ClusterBase::CreateF0() {
 	//F0_Mat.Clear();
 	F0.SetThreaded();
 	std::stringstream ss;
-	ss << "F0 -> rank: " << esconfig::MPIrank;
+	ss << "F0 -> rank: " << config::MPIrank;
 	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);
@@ -1180,7 +1181,7 @@ void ClusterBase::CreateSa() {
 	bool PARDISO_SC = true;
 	bool get_kernel_from_mesh;
 
-	if ( esconfig::solver::REGULARIZATION == 0 )
+	if ( config::solver::REGULARIZATION == 0 )
   		get_kernel_from_mesh = true	;
   	else
   		get_kernel_from_mesh = false	;
@@ -1453,7 +1454,7 @@ void ClusterBase::Create_G1_perCluster() {
 				SparseMatrix Rt;
 				SparseMatrix B;
 
-				if ( esconfig::solver::REGULARIZATION == 0 ) {
+				if ( config::solver::REGULARIZATION == 0 ) {
 					Rt = domains[j].Kplus_R;
 					Rt.ConvertDenseToCSR(1);
 					Rt.MatTranspose();
@@ -1524,7 +1525,7 @@ void ClusterBase::Create_G1_perCluster() {
 
 			} else {
 				Gcoo.cols = domains[j].B1.rows;
-				if ( esconfig::solver::REGULARIZATION == 0 )
+				if ( config::solver::REGULARIZATION == 0 )
 					Gcoo.rows = domains[j].Kplus_R.rows;
 				else
 					Gcoo.rows = domains[j].Kplus_Rb.rows;
@@ -1597,7 +1598,7 @@ void ClusterBase::Create_G1_perCluster() {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			if ( esconfig::solver::REGULARIZATION == 0 ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				Rt = domains[j].Kplus_R;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
@@ -1731,7 +1732,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	if ( USE_HFETI == 1) {
 		for (eslocal d = 0; d < domains.size(); d++) {
-			if ( esconfig::solver::REGULARIZATION == 0 ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 			} else {
 				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
@@ -1739,7 +1740,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		}
 	} else {
 		for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
-			if ( esconfig::solver::REGULARIZATION == 0 ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 			} else {
 				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI

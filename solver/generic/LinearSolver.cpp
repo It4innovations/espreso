@@ -10,6 +10,8 @@
 //#include <Eigen/Dense>
 //using Eigen::MatrixXd;
 
+using namespace espreso;
+
 LinearSolver::LinearSolver(): timeEvalMain("ESPRESO Solver Overal Timing") {
 
 }
@@ -22,12 +24,12 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	SINGULAR 	= IS_SINGULAR;
 
-	if ( esconfig::solver::REGULARIZATION == 0 )
+	if ( config::solver::REGULARIZATION == 0 )
   		R_from_mesh = true	;
   	else
   		R_from_mesh = false	;
 
-	if ( esconfig::solver::KEEP_FACTORS == 0)
+	if ( config::solver::KEEP_FACTORS == 0)
 		KEEP_FACTORS = false; // only suported by MKL Pardiso so far
 	else
 		KEEP_FACTORS = true;
@@ -42,8 +44,8 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= esconfig::solver::FETI_METHOD;
-	cluster.USE_KINV			= esconfig::solver::USE_SCHUR_COMPLEMENT;
+	cluster.USE_HFETI			= config::solver::FETI_METHOD;
+	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
 	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
@@ -51,11 +53,11 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = esconfig::solver::maxIterations;
+	solver.CG_max_iter	 = config::solver::maxIterations;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = esconfig::solver::epsilon;
-	solver.USE_PIPECG	 = esconfig::solver::CG_SOLVER;
-	solver.USE_PREC		 = esconfig::solver::PRECONDITIONER;
+	solver.epsilon		 = config::solver::epsilon;
+	solver.USE_PIPECG	 = config::solver::CG_SOLVER;
+	solver.USE_PREC		 = config::solver::PRECONDITIONER;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
 	solver.USE_KINV		 = cluster.USE_KINV;
@@ -93,7 +95,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 }
 
 void LinearSolver::init(
-		const mesh::Mesh &mesh,
+		const Mesh &mesh,
 
 		std::vector < SparseMatrix >	& K_mat,
 		std::vector < SparseMatrix >	& T_mat,
@@ -168,12 +170,12 @@ void LinearSolver::init(
 		set_R_from_K();
 	}
 
-	if (esconfig::info::printMatrices) {
+	if (config::info::printMatrices) {
 		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			SparseMatrix s = cluster.domains[d].Kplus_R;
 			s.ConvertDenseToCSR(1);
 
-			std::ofstream os(eslog::Logging::prepareFile(d, "R"));
+			std::ofstream os(Logging::prepareFile(d, "R"));
 			os << s;
 			os.close();
 		}
@@ -184,14 +186,14 @@ void LinearSolver::init(
 
 
 	// *** HTFETI - averaging objects
-	if ( esconfig::mesh::averageEdges || esconfig::mesh::averageFaces ) {
+	if ( config::mesh::averageEdges || config::mesh::averageFaces ) {
 		cilk_for (int d = 0; d < T_mat.size(); d++) {
 
 			SparseSolverCPU Tinv;
 			Tinv.mtype = 11;
 			Tinv.ImportMatrix(T_mat[d]);
 			std::stringstream ss;
-			ss << "Init averaging -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			ss << "Init averaging -> rank: " << config::MPIrank << ", subdomain: " << d;
 			Tinv.Factorization(ss.str());
 
 			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
@@ -219,16 +221,16 @@ void LinearSolver::init(
 	// *** END - HTFETI - averaging objects
 
 
-	if (esconfig::info::printMatrices) {
+	if (config::info::printMatrices) {
 		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			SparseMatrix RT = cluster.domains[d].Kplus_R;
 			RT.ConvertDenseToCSR(1);
 
-			std::ofstream osKT(eslog::Logging::prepareFile(d, "KT"));
+			std::ofstream osKT(Logging::prepareFile(d, "KT"));
 			osKT << K_mat[d];
 			osKT.close();
 
-			std::ofstream osRT(eslog::Logging::prepareFile(d, "RT"));
+			std::ofstream osRT(Logging::prepareFile(d, "RT"));
 			osRT << RT;
 			osRT.close();
 		}
@@ -260,10 +262,10 @@ void LinearSolver::init(
 
 
 	// **** Calculate Dirichlet Preconditioner ********************************
-	if (esconfig::solver::PRECONDITIONER == 3 ) {
+	if (config::solver::PRECONDITIONER == 3 ) {
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
-		if (esconfig::MPIrank == 0)
+		if (config::MPIrank == 0)
 			std::cout << "Calculating Dirichlet Preconditioner : ";
 		cilk_for (int d = 0; d < K_mat.size(); d++) {
 			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
@@ -331,11 +333,11 @@ void LinearSolver::init(
 
 			cluster.domains[d].Prec = S;
 
-			if (esconfig::MPIrank == 0)
+			if (config::MPIrank == 0)
 				std::cout << ".";
 
 		}
-		if (esconfig::MPIrank == 0)
+		if (config::MPIrank == 0)
 			std::cout << std::endl;
 
 		timeDirPrec.endWithBarrier(); timeEvalMain.addEvent(timeDirPrec);
@@ -391,9 +393,9 @@ void LinearSolver::init(
 
 	if ( cluster.cluster_global_index == 1 ) { GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
 
-	if (esconfig::info::printMatrices) {
+	if (config::info::printMatrices) {
 		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-			std::ofstream os(eslog::Logging::prepareFile(d, "Kreg"));
+			std::ofstream os(Logging::prepareFile(d, "Kreg"));
 			SparseMatrix s = cluster.domains[d].K;
 			os << s;
 			os.close();
@@ -478,7 +480,7 @@ void LinearSolver::init(
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
 
 
-    if (cluster.USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1) {
+    if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1) {
 
     	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
 		if (MPI_rank == 0) {
@@ -565,7 +567,7 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		//solver.timing.totalTime.Reset();
 	}
 
-	if ( esconfig::mesh::averageEdges || esconfig::mesh::averageFaces ) {
+	if ( config::mesh::averageEdges || config::mesh::averageFaces ) {
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 			vector < double >  tmp;
 			tmp = prim_solution[d];
@@ -776,7 +778,7 @@ void LinearSolver::set_R_from_K ()
 
 
 void LinearSolver::set_R (
-		const mesh::Mesh &mesh
+		const Mesh &mesh
 )
 {
 	std::vector < std::vector < std:: vector < double > > > coordinates;
@@ -798,7 +800,7 @@ void LinearSolver::set_R (
 
 void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
 
-	if ( ! (cluster.USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1 )) {
+	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
 		if (MPI_rank == 0) {
 			cout << " ******************************************************************************************************************************* " << endl;
 			cout << " *** Solver Preprocessing ****************************************************************************************************** " << endl;

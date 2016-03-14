@@ -10,7 +10,7 @@
 #define Prisma15GPCount 9
 #define Prisma15VTKCode 26
 
-namespace mesh {
+namespace espreso {
 
 class Prisma15: public Element
 {

@@ -2,6 +2,8 @@
 
 using std::endl; 
 
+
+namespace espreso {
 // *******************************************************************
 // **** Uncategorized functions **************************************
 
@@ -212,7 +214,7 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name) {
 	}
 }
 
-eslocal parseLine_u(char* line){
+static eslocal parseLine_u(char* line){
 	eslocal i = strlen(line);
 	while (*line < '0' || *line > '9') line++;
 	line[i-3] = '\0';
@@ -307,5 +309,7 @@ double GetProcessMemory_u ( ) {
 
 }
 
+
+}
 // **** END - Uncategorized functions ********************************
 // *******************************************************************

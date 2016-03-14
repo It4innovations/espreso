@@ -3,6 +3,9 @@
 
 #include "dictionary.h"
 
+namespace espreso {
+namespace input {
+
 class DictionaryBasedObject
 {
 public:
@@ -10,7 +13,7 @@ public:
     virtual ~DictionaryBasedObject();
 
     ParseError* parse(Tokenizer &ts);
-    void write(TextStream &ts) const;    
+    void write(TextStream &ts) const;
 
     Dictionary* getDictionary() const {
         Dictionary *dictionary = new Dictionary();
@@ -21,5 +24,8 @@ public:
     virtual ParseError* readDictionary(const Dictionary &dictionary) = 0;
     virtual void writeDictionary(Dictionary &dictionary) const = 0;
 };
+
+}
+}
 
 #endif // DIRECTORYOBJECT_H

@@ -4,7 +4,8 @@
 
 #include "../loader.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 class API: public APILoader {
 
@@ -13,9 +14,9 @@ public:
 	API(std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, esglobal *ids)
 	: _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours);
+	void points(Coordinates &coordinates);
+	void elements(std::vector<Element*> &elements);
+	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
 	size_t _DOFs;
@@ -25,6 +26,7 @@ private:
 	esglobal *_ids;
 };
 
+}
 }
 
 

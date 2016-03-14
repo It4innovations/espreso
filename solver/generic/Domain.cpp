@@ -5,6 +5,7 @@
 // *******************************************************************
 // **** DOMAIN CLASS ************************************************
 
+using namespace espreso;
 
 Domain::Domain(){
 
@@ -111,7 +112,7 @@ void Domain::CreateKplus_R ( std::vector < std::vector < double > > coordinates 
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
-	switch (esconfig::solver::KSOLVER) {
+	switch (config::solver::KSOLVER) {
 	case 0: {
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
@@ -163,13 +164,13 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		break;
 //	}
 	default:
-		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
+		ESINFO(ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out) {
-	switch (esconfig::solver::KSOLVER) {
+	switch (config::solver::KSOLVER) {
 	case 0: {
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
@@ -188,7 +189,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 		Kplus.Solve(x_in, x, 0, 0);
 		if (enable_SP_refinement) {
-			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_iter_steps; step++) {
 				K.MatVec(x,r,'N');
 				for (eslocal i = 0; i < r.size(); i++)
 					r[i] = x_in[i] - r[i];
@@ -203,7 +204,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 				norm = sqrt(norm);
 
-				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
+				if (norm < config::solver::KSOLVER_SP_iter_norm) {
 					std::cout << " " << step;
 					success = true;
 					break;
@@ -233,13 +234,13 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		break;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
+		ESINFO(ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
-	switch (esconfig::solver::KSOLVER) {
+	switch (config::solver::KSOLVER) {
 	case 0: { //DIRECT DP
 		Kplus.Solve(x_in_y_out);
 		break;
@@ -259,7 +260,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		Kplus.Solve(x_in_y_out, x, 0, 0);
 
 		if (enable_SP_refinement) {
-			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_iter_steps; step++) {
 				K.MatVec(x,r,'N');
 				for (eslocal i = 0; i < r.size(); i++)
 					r[i] = x_in_y_out[i] - r[i];
@@ -273,7 +274,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 
 				norm = sqrt(norm);
 
-				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
+				if (norm < config::solver::KSOLVER_SP_iter_norm) {
 					std::cout << " " << step;
 					break;
 				}
@@ -307,7 +308,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		break;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
+		ESINFO(ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -467,7 +468,7 @@ void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
 			NtN_Mat.Clear();
 
 			std::stringstream ss;
-			ss << "K regularization from R -> rank: " << esconfig::MPIrank;
+			ss << "K regularization from R -> rank: " << config::MPIrank;
 			NtN.Factorization(ss.str());
 			NtN.SolveMat_Sparse(Nt);
 			NtN.Clear();

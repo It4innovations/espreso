@@ -2,7 +2,9 @@
 
 #include "../specific/sparsesolvers.h"
 
-std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
+using namespace espreso;
+
+std::ostream& espreso::operator<<(std::ostream& os, const SparseMatrix &m)
 {
 	os << m.rows << " " << m.cols << " " << m.nnz << "\n";
 
@@ -20,111 +22,6 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 	}
 	return os;
 }
-
-void SpyText (SparseMatrix & A) {
-
-	SEQ_VECTOR<char> tmp (60,'-');
-
-	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
-		std::cout << *i << ' ';
-
-	cout << endl;
-
-	eslocal rows_coef = 1 + A.rows / 60;
-	eslocal cols_coef = 1 + A.cols / 60;
-
-	eslocal col_index = 0;
-	eslocal row_index = 0;
-	for (eslocal r = 0; r < A.rows; r = r + rows_coef) {
-		eslocal row_length = 0;
-		if (( r + rows_coef) < A.rows)
-			row_length = A.CSR_I_row_indices[r+rows_coef] - A.CSR_I_row_indices[r];
-		else
- 			row_length = A.CSR_I_row_indices[A.rows] - A.CSR_I_row_indices[r];
-
-			SEQ_VECTOR<char> tmp (60,' ');
-			SEQ_VECTOR<eslocal> tmp_c (60,0);
-		for (eslocal c = 0; c < row_length; c++) {
-			if (A.CSR_V_values[col_index] != 0.0) {
-				tmp_c[A.CSR_J_col_indices[col_index] / cols_coef]++;
-			} else {
-				if (tmp_c[A.CSR_J_col_indices[col_index] / cols_coef] == 0)
-					tmp_c[A.CSR_J_col_indices[col_index] / cols_coef] = -1;
-			}
-			col_index++;
-		}
-
-		for (eslocal c = 0; c < tmp_c.size(); c++) {
-			if (tmp_c[c] > 0) {
-				tmp[c] = '0' + tmp_c[c] / (cols_coef * 26);
-				if (tmp[c] == '0') tmp[c] = '.';
-			} else {
-				if (tmp_c[c] == -1)
-					tmp[c] = 'x';
-			}
-		}
-
-		cout << "|";
-		for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
-			std::cout << *i << ' ';
-
-		cout << "|" << endl;
-	}
-
-	//SEQ_VECTOR<char> tmp (60,'-');
-
-	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
-		std::cout << *i << ' ';
-
-	cout << endl << endl;
-}
-
-void sortMatrixInCOO(SparseMatrix & Matrix)
-{
-	q_sort(Matrix, 0, Matrix.nnz - 1);
-
-	//eslocal k = 0;
-	///*  Remove duplicates */
-	//for( eslocal i = 1; i < Matrix.nnz; i++) {
-	//	if ( (Matrix.I_row_indices[k] != Matrix.I_row_indices[i]) || (Matrix.J_col_indices[k] != Matrix.J_col_indices[i]) ){
-	//		k++;
-	//		Matrix.I_row_indices[k] = Matrix.I_row_indices[i];
-	//		Matrix.J_col_indices[k] = Matrix.J_col_indices[i];
-	//		Matrix.V_values[k] = Matrix.V_values[i];
-	//	} else {
-	//		Matrix.V_values[k] += Matrix.V_values[i];
-	//	}
-	//}
-	//Matrix.nnz = k+1;
-	//Matrix.I_row_indices.resize(k+1);
-	//Matrix.J_col_indices.resize(k+1);
-	//Matrix.V_values.resize(k+1);
-
-}
-
-void SparseMatrix::sortInCOO()
-{
-	q_sort_in(I_row_indices, J_col_indices,V_values, 0, nnz - 1);
-
-	//eslocal k = 0;
-	///*  Remove duplicates */
-	//for( eslocal i = 1; i < Matrix.nnz; i++) {
-	//	if ( (Matrix.I_row_indices[k] != Matrix.I_row_indices[i]) || (Matrix.J_col_indices[k] != Matrix.J_col_indices[i]) ){
-	//		k++;
-	//		Matrix.I_row_indices[k] = Matrix.I_row_indices[i];
-	//		Matrix.J_col_indices[k] = Matrix.J_col_indices[i];
-	//		Matrix.V_values[k] = Matrix.V_values[i];
-	//	} else {
-	//		Matrix.V_values[k] += Matrix.V_values[i];
-	//	}
-	//}
-	//Matrix.nnz = k+1;
-	//Matrix.I_row_indices.resize(k+1);
-	//Matrix.J_col_indices.resize(k+1);
-	//Matrix.V_values.resize(k+1);
-
-}
-
 
 #define comp_x(_a,_b,_x,_p) (_a[_x]!=_a[_p] ? _a[_x]-_a[_p] : _b[_x]-_b[_p])
 
@@ -240,6 +137,111 @@ static void q_sort(SparseMatrix & Matrix, eslocal lo, eslocal hi ) {
 		q_sort( Matrix, l+1, hi );
 		q_sort( Matrix, lo, l-1 );
 	}
+}
+
+
+void espreso::SpyText (SparseMatrix & A) {
+
+	SEQ_VECTOR<char> tmp (60,'-');
+
+	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
+		std::cout << *i << ' ';
+
+	cout << endl;
+
+	eslocal rows_coef = 1 + A.rows / 60;
+	eslocal cols_coef = 1 + A.cols / 60;
+
+	eslocal col_index = 0;
+	eslocal row_index = 0;
+	for (eslocal r = 0; r < A.rows; r = r + rows_coef) {
+		eslocal row_length = 0;
+		if (( r + rows_coef) < A.rows)
+			row_length = A.CSR_I_row_indices[r+rows_coef] - A.CSR_I_row_indices[r];
+		else
+ 			row_length = A.CSR_I_row_indices[A.rows] - A.CSR_I_row_indices[r];
+
+			SEQ_VECTOR<char> tmp (60,' ');
+			SEQ_VECTOR<eslocal> tmp_c (60,0);
+		for (eslocal c = 0; c < row_length; c++) {
+			if (A.CSR_V_values[col_index] != 0.0) {
+				tmp_c[A.CSR_J_col_indices[col_index] / cols_coef]++;
+			} else {
+				if (tmp_c[A.CSR_J_col_indices[col_index] / cols_coef] == 0)
+					tmp_c[A.CSR_J_col_indices[col_index] / cols_coef] = -1;
+			}
+			col_index++;
+		}
+
+		for (eslocal c = 0; c < tmp_c.size(); c++) {
+			if (tmp_c[c] > 0) {
+				tmp[c] = '0' + tmp_c[c] / (cols_coef * 26);
+				if (tmp[c] == '0') tmp[c] = '.';
+			} else {
+				if (tmp_c[c] == -1)
+					tmp[c] = 'x';
+			}
+		}
+
+		cout << "|";
+		for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
+			std::cout << *i << ' ';
+
+		cout << "|" << endl;
+	}
+
+	//SEQ_VECTOR<char> tmp (60,'-');
+
+	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
+		std::cout << *i << ' ';
+
+	cout << endl << endl;
+}
+
+void espreso::sortMatrixInCOO(SparseMatrix & Matrix)
+{
+	q_sort(Matrix, 0, Matrix.nnz - 1);
+
+	//eslocal k = 0;
+	///*  Remove duplicates */
+	//for( eslocal i = 1; i < Matrix.nnz; i++) {
+	//	if ( (Matrix.I_row_indices[k] != Matrix.I_row_indices[i]) || (Matrix.J_col_indices[k] != Matrix.J_col_indices[i]) ){
+	//		k++;
+	//		Matrix.I_row_indices[k] = Matrix.I_row_indices[i];
+	//		Matrix.J_col_indices[k] = Matrix.J_col_indices[i];
+	//		Matrix.V_values[k] = Matrix.V_values[i];
+	//	} else {
+	//		Matrix.V_values[k] += Matrix.V_values[i];
+	//	}
+	//}
+	//Matrix.nnz = k+1;
+	//Matrix.I_row_indices.resize(k+1);
+	//Matrix.J_col_indices.resize(k+1);
+	//Matrix.V_values.resize(k+1);
+
+}
+
+void SparseMatrix::sortInCOO()
+{
+	q_sort_in(I_row_indices, J_col_indices,V_values, 0, nnz - 1);
+
+	//eslocal k = 0;
+	///*  Remove duplicates */
+	//for( eslocal i = 1; i < Matrix.nnz; i++) {
+	//	if ( (Matrix.I_row_indices[k] != Matrix.I_row_indices[i]) || (Matrix.J_col_indices[k] != Matrix.J_col_indices[i]) ){
+	//		k++;
+	//		Matrix.I_row_indices[k] = Matrix.I_row_indices[i];
+	//		Matrix.J_col_indices[k] = Matrix.J_col_indices[i];
+	//		Matrix.V_values[k] = Matrix.V_values[i];
+	//	} else {
+	//		Matrix.V_values[k] += Matrix.V_values[i];
+	//	}
+	//}
+	//Matrix.nnz = k+1;
+	//Matrix.I_row_indices.resize(k+1);
+	//Matrix.J_col_indices.resize(k+1);
+	//Matrix.V_values.resize(k+1);
+
 }
 
 
@@ -3114,7 +3116,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  int MPI_rank=esconfig::MPIrank;
+  int MPI_rank=config::MPIrank;
   double begin_time = omp_get_wtime();
 
 // DEFAULT SET-UP
@@ -3504,7 +3506,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   if (SC_via_K_rr){
     K_rr_solver.ImportMatrix(K_rr);
     K_rr.Clear();
-    ss << "get kerner from K -> rank: " << esconfig::MPIrank;
+    ss << "get kerner from K -> rank: " << config::MPIrank;
     K_rr_solver.Factorization(ss.str());
     S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
     SparseMatrix invKrrKrs = K_rs;
@@ -3605,7 +3607,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     K_rr_solver.ImportMatrix(K_rr);
     K_rr.Clear();
 //    std::stringstream ss;
-    ss << "get kerner from K -> rank: " << esconfig::MPIrank;
+    ss << "get kerner from K -> rank: " << config::MPIrank;
     K_rr_solver.Factorization(ss.str());
   }
   K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
@@ -3718,7 +3720,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
     std::stringstream sss;
-    sss << "get kernel from K -> rank: " << esconfig::MPIrank;
+    sss << "get kernel from K -> rank: " << config::MPIrank;
     NtN.Factorization(ss.str());
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();

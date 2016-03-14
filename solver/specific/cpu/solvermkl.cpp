@@ -1,6 +1,8 @@
 
 #include "solvermkl.h"
 
+using namespace espreso;
+
 SparseSolverMKL::SparseSolverMKL(){
 
 	keep_factors=true;
@@ -238,7 +240,7 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 	if (error != 0)
 	{
 		//printf ("\nERROR during symbolic factorization: %d", error);
-		std::cout << "\nERROR : " << error << " during symbolic factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+		std::cout << "\nERROR : " << error << " during symbolic factorization on MPI rank : " << config::MPIrank << std::endl;
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -265,7 +267,7 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
-		std::cout << "\nERROR : " << error << " during numerical factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+		std::cout << "\nERROR : " << error << " during numerical factorization on MPI rank : " << config::MPIrank << std::endl;
 		//printf ("\nERROR during numerical factorization: %d", error);
 		exit (EXIT_FAILURE);
 	} else {
@@ -295,7 +297,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -324,7 +326,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
+		printf ("\nERROR during solution: %d on process %d\n", error, config::MPIrank);
 		exit (3);
 	}
 
@@ -363,7 +365,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -386,7 +388,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
+		printf ("\nERROR during solution: %d on process %d\n", error, config::MPIrank);
 		exit (3);
 	}
 
@@ -419,7 +421,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -442,7 +444,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
+		printf ("\nERROR during solution: %d on process %d\n", error, config::MPIrank);
 		exit (3);
 	}
 
@@ -481,7 +483,7 @@ void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 

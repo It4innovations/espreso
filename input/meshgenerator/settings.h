@@ -4,7 +4,8 @@
 
 #include "configuration/configuration.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 enum GeneratorShape {
 	CUBE,
@@ -48,6 +49,7 @@ inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 	return os;
 }
 
+}
 }
 
 

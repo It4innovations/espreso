@@ -10,7 +10,7 @@
 #define Tetrahedron10GPCount 15
 #define Tetrahedron10VTKCode 24
 
-namespace mesh {
+namespace espreso {
 
 class Tetrahedron10: public Element
 {

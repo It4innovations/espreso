@@ -5,6 +5,9 @@
 #include <sstream>
 #include <string>
 
+namespace espreso {
+namespace input {
+
 template<typename TStream>
 class TokenStream : public Tokenizer
 {
@@ -169,6 +172,9 @@ protected:
     TStream *stream;
 
 };
+
+}
+}
 
 
 #endif // TOKENSTREAM_H

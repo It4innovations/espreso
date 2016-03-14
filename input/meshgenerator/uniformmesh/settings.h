@@ -6,7 +6,8 @@
 #include "../settings.h"
 #include "esmesh.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 struct UniformSettings: public Settings {
 
@@ -37,6 +38,7 @@ inline std::ostream& operator<<(std::ostream& os, const UniformSettings &s)
 	return os;
 }
 
+}
 }
 
 

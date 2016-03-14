@@ -5,6 +5,8 @@
 
 #include "matrix.h"
 
+namespace espreso {
+
 #define VVPMatrixIndexing Matrix::ZeroBased
 
 template<typename Tindices>
@@ -80,6 +82,8 @@ private:
 
 	VVP<Tindices> _values;
 };
+
+}
 
 #include "sparseVVPMatrix.hpp"
 

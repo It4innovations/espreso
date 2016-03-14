@@ -6,6 +6,9 @@
 
 #define PARSE_GUARD(x) { ParseError *_parse_err = (x); if (_parse_err != NULL) { return _parse_err; } }
 
+namespace espreso {
+namespace input {
+
 class ParseError
 {
 public:
@@ -31,5 +34,9 @@ inline void catchParseError(ParseError *parseError) {
         exit(1);
     }
 }
+
+}
+}
+
 
 #endif // PARSEERROR_H

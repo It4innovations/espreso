@@ -1,7 +1,7 @@
 
 #include "settings.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 static std::vector<Description> createCubeSetting()
 {
@@ -66,7 +66,7 @@ CubeSettings::CubeSettings(const Options &options, size_t index, size_t size)
 	boundaryCondition.resize(cube_faces.size());
 
 	for (size_t f = 0; f < cube_faces.size(); f++) {
-		for (size_t p = mesh::DIRICHLET_X; p <= mesh::FORCES_Z; p++) {
+		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
 			std::string name = properties[p / 3] + "_" + cube_faces[f] + "_" + axis[p % 3];
 			fillCondition[f][p] = configuration.isSet(name);
 			boundaryCondition[f][p] = configuration.value<double>(name, 0);
@@ -90,7 +90,7 @@ CubeSettings::CubeSettings(size_t index, size_t size)
 	boundaryCondition.resize(cube_faces.size());
 
 	for (size_t f = 0; f < cube_faces.size(); f++) {
-		for (size_t p = mesh::DIRICHLET_X; p <= mesh::FORCES_Z; p++) {
+		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
 			fillCondition[f][p] = false;
 			boundaryCondition[f][p] = 0;
 		}

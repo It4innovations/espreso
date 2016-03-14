@@ -4,26 +4,27 @@
 
 #include "../vtk.h"
 
-namespace esoutput {
+namespace espreso {
+namespace output {
 
 class VTK_Full: public VTK {
 
 public:
-	VTK_Full(const mesh::Mesh &mesh, const std::string &path): VTK(mesh, path) { };
+	VTK_Full(const Mesh &mesh, const std::string &path): VTK(mesh, path) { };
 
-	static void mesh(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+	static void mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 	{
 		VTK_Full output(mesh, path);
 		output.store(shrinkSubdomain, shringCluster);
 	}
 
-	static void fixPoints(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 	{
 		VTK_Full output(mesh, path);
 		output.store(mesh.getFixPoints(), shrinkSubdomain, shringCluster);
 	}
 
-	static void corners(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 	{
 		VTK_Full output(mesh, path);
 		std::vector<std::vector<eslocal> > corners(mesh.parts());
@@ -39,7 +40,7 @@ public:
 		output.store(corners, shrinkSubdomain, shringCluster);
 	}
 
-	static void dirichlet(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+	static void dirichlet(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 	{
 		VTK_Full outputx(mesh, path + "X");
 		VTK_Full outputy(mesh, path + "Y");
@@ -49,9 +50,9 @@ public:
 		std::vector<std::vector<eslocal> > dy(mesh.parts());
 		std::vector<std::vector<eslocal> > dz(mesh.parts());
 
-		auto &dxMap = mesh.coordinates().property(mesh::DIRICHLET_X).values();
-		auto &dyMap = mesh.coordinates().property(mesh::DIRICHLET_Y).values();
-		auto &dzMap = mesh.coordinates().property(mesh::DIRICHLET_Z).values();
+		auto &dxMap = mesh.coordinates().property(DIRICHLET_X).values();
+		auto &dyMap = mesh.coordinates().property(DIRICHLET_Y).values();
+		auto &dzMap = mesh.coordinates().property(DIRICHLET_Z).values();
 
 		for (size_t p = 0; p < mesh.parts(); p++) {
 			auto &l2c = mesh.coordinates().localToCluster(p);
@@ -77,7 +78,7 @@ protected:
 	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
 };
 
-
+}
 }
 
 

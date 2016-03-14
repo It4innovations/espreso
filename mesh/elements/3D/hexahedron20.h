@@ -12,7 +12,7 @@
 #define Hexahedron20GPCount 8
 #define Hexahedron20VTKCode 25
 
-namespace mesh {
+namespace espreso {
 
 class Hexahedron20: public Element
 {

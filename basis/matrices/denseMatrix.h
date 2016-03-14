@@ -9,6 +9,8 @@
 #include "sparseCSRMatrix.h"
 #include "sparseIJVMatrix.h"
 
+namespace espreso {
+
 #define DenseMatrixIndexing Matrix::ZeroBased
 
 class DenseMatrix: public Matrix
@@ -84,6 +86,8 @@ private:
 
 	std::vector<double> _values;
 };
+
+}
 
 #include "denseMatrix.hpp"
 

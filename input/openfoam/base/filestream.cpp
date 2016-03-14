@@ -1,5 +1,7 @@
 #include "filestream.h"
 
+using namespace espreso::input;
+
 FileStream::FileStream(const std::string &filename)
     : SimpleStream(filename), file(filename.c_str())
 {

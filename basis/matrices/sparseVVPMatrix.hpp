@@ -1,5 +1,7 @@
 #include "sparseVVPMatrix.h"
 
+namespace espreso {
+
 template<typename Tindices>
 std::ostream& operator<<(std::ostream& os, const SparseVVPMatrix<Tindices> &m)
 {
@@ -64,5 +66,6 @@ void SparseVVPMatrix<Tindices>::transpose()
 	//TODO: implement
 }
 
+}
 
 

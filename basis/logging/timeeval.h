@@ -9,6 +9,8 @@
 #include <vector>
 #include <iomanip>
 
+namespace espreso {
+
 struct Checkpoint
 {
 	Checkpoint(const std::string &name, double time, size_t level)
@@ -114,5 +116,7 @@ struct TimeEval
 	std::vector<TimeEvent> timeEvents;
 
 };
+
+}
 
 #endif /* BASIS_LOGGING_TIMEEVAL_H_ */

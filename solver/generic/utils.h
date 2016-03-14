@@ -64,6 +64,7 @@ using std::string;
 //std::stack<clock_t> tictoc_stack;
 
 
+namespace espreso {
 
 eslocal SaveBinVectorDouble(SEQ_VECTOR <double> & SEQ_VECTOR, string filename);
 eslocal LoadBinVectorInt(SEQ_VECTOR <eslocal> & SEQ_VECTOR, string filename);
@@ -78,8 +79,8 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name);
 
 void GetProcessMemoryStat_u( ); 
 void GetMemoryStat_u( );  
-eslocal  parseLine_u(char* line);
 double GetProcessMemory_u ( );
 
+}
 // **** END - Uncategorized functions ********************************
 // *******************************************************************

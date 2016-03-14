@@ -6,6 +6,9 @@
 #include <string>
 #include "../../loader.h"
 
+namespace espreso {
+namespace input {
+
 class CellZone {
 public:
 	CellZone();
@@ -15,7 +18,7 @@ public:
 	}
 
 	ParseError* loadFromDictionary(Dictionary &dictionary);
-	const std::vector<mesh::Element*>& elements() const {
+	const std::vector<Element*>& elements() const {
 		return _elements;
 	}
 	const std::vector<eslocal >& elementIndexes() const {
@@ -37,10 +40,17 @@ public:
 
 protected:
 	std::string name;
-	std::vector<mesh::Element*> _elements;
+	std::vector<Element*> _elements;
 	std::vector< eslocal > _elementIndexes;
 };
 
 ParseError* parse(Tokenizer &ts, CellZone &cellZone);
+
+}
+}
+
+
+
+
 
 #endif // CELLZONE_H

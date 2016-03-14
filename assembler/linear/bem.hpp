@@ -1,24 +1,24 @@
 
 #include "linear.h"
 
-namespace assembler {
+namespace espreso {
 
 template <>
 void Linear<BEM>::KMf(size_t part, bool dynamics)
 {
 	// TODO: temperature??
 	const std::vector<eslocal> &partition = _input.surface.getPartition();
-	const std::vector<mesh::Element*> &elements = _input.surface.getElements();
+	const std::vector<Element*> &elements = _input.surface.getElements();
 
 	DenseMatrix _K;
-	eslocal nK = _input.surface.coordinates().localSize(part) * mesh::Point::size();
+	eslocal nK = _input.surface.coordinates().localSize(part) * Point::size();
 	eslocal eSize = partition[part + 1] - partition[part];
 	_K.resize(nK, nK);
 	std::vector<double> nodes(nK);
 	std::vector<eslocal> elems(3 * eSize);
 
 	for (size_t i = 0; i < _input.surface.coordinates().localSize(part); i++) {
-		&nodes[i * mesh::Point::size()] << _input.surface.coordinates().get(i, part);
+		&nodes[i * Point::size()] << _input.surface.coordinates().get(i, part);
 	}
 	for (size_t i = partition[part], index = 0; i < partition[part + 1]; i++, index++) {
 		for (size_t j = 0; j < elements[i]->size(); j++) {
@@ -69,9 +69,9 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 template <>
 void Linear<BEM>::RHS()
 {
-	const std::map<eslocal, double> &forces_x = this->_input.mesh.coordinates().property(mesh::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = this->_input.mesh.coordinates().property(mesh::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = this->_input.mesh.coordinates().property(mesh::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = this->_input.mesh.coordinates().property(FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = this->_input.mesh.coordinates().property(FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = this->_input.mesh.coordinates().property(FORCES_Z).values();
 
 	for (size_t p = 0; p < this->_input.mesh.parts(); p++) {
 		const std::vector<eslocal> &l2g = this->_input.surface.coordinates().localToCluster(p);

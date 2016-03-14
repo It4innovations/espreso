@@ -26,14 +26,13 @@
 #include "esbasis.h"
 #include "esconfig.h"
 
-namespace esinput {
+namespace espreso {
+
+namespace input {
 class InternalLoader;
 class ExternalLoader;
 class APILoader;
 }
-
-namespace mesh {
-
 
 class Boundaries;
 
@@ -43,8 +42,8 @@ class Mesh
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
-	friend class esinput::InternalLoader;
-	friend class esinput::ExternalLoader;
+	friend class input::InternalLoader;
+	friend class input::ExternalLoader;
 
 
 	Mesh();
@@ -135,7 +134,7 @@ protected:
 	Faces _faces;
 
 	/** @brief Array that stores all elements of the mesh. */
-	std::vector<mesh::Element*> _elements;
+	std::vector<Element*> _elements;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;
@@ -155,12 +154,12 @@ protected:
 private:
 	Mesh(const Mesh &mesh)
 	{
-		ESINFO(eslog::ERROR) << "It is not allowed to copy Mesh.";
+		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
 	}
 
 	Mesh& operator=(const Mesh &mesh)
 	{
-		ESINFO(eslog::ERROR) << "It is not allowed to copy Mesh.";
+		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
 		return *this;
 	}
 
@@ -168,7 +167,7 @@ private:
 
 class APIMesh: public Mesh
 {
-	friend class esinput::APILoader;
+	friend class input::APILoader;
 
 public:
 	APIMesh(std::vector<std::vector<double> > &eMatrices): _eMatrices(eMatrices) { };

@@ -5,24 +5,26 @@
 #include "../store.h"
 #include <cstdlib>
 
-namespace esoutput {
+namespace espreso {
+namespace output {
 
 class Esdata: public MeshStore {
 
 public:
-	Esdata(const mesh::Mesh &mesh, const std::string &path): MeshStore(mesh, path) { };
+	Esdata(const Mesh &mesh, const std::string &path): MeshStore(mesh, path) { };
 
 	void store(double shrinkSubdomain, double shrinkCluster);
 
 private:
-	void coordinates(const mesh::Coordinates &coordinates);
-	void elements(const mesh::Mesh &mesh);
-	void boundaryConditions(const mesh::Coordinates &coordinates);
-	void boundaries(const mesh::Mesh &mesh);
+	void coordinates(const Coordinates &coordinates);
+	void elements(const Mesh &mesh);
+	void boundaryConditions(const Coordinates &coordinates);
+	void boundaries(const Mesh &mesh);
 };
 
 
-};
+}
+}
 
 
 #endif /* OUTPUT_ESDATA_ESDATA_H_ */

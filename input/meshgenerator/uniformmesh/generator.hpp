@@ -1,10 +1,11 @@
 
 #include "generator.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template<class TElement>
-void UniformGenerator<TElement>::elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements, std::vector<eslocal> &parts)
 {
 	eslocal cNodes[3];
 
@@ -110,7 +111,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 }
 
 template <class TElement>
-void UniformGenerator<TElement>::corners(mesh::Boundaries &boundaries)
+void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 {
 	eslocal nodes[3];
 	eslocal cNodes[3];
@@ -182,5 +183,6 @@ void UniformGenerator<TElement>::corners(mesh::Boundaries &boundaries)
 	}
 }
 
+}
 }
 

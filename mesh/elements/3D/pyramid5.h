@@ -10,7 +10,7 @@
 #define Pyramid5GPCount 8
 #define Pyramid5VTKCode 14
 
-namespace mesh {
+namespace espreso {
 
 class Pyramid5: public Element
 {

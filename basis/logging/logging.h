@@ -14,11 +14,11 @@
 #include "esconfig.h"
 #include "timeeval.h"
 
-#define ESTEST(EVENT) if (!eslog::Test::report(EVENT))    ; else eslog::Test(EVENT).get()
-#define ESINFO(EVENT) if (!eslog::Info::report(EVENT))    ; else eslog::Info(EVENT).get()
-#define ESTIME(EVENT) if (!eslog::Measure::report(EVENT)) ; else eslog::Measure(EVENT).get()
+#define ESTEST(EVENT) if (!espreso::Test::report(EVENT))    ; else espreso::Test(EVENT).get()
+#define ESINFO(EVENT) if (!espreso::Info::report(EVENT))    ; else espreso::Info(EVENT).get()
+#define ESTIME(EVENT) if (!espreso::Measure::report(EVENT)) ; else espreso::Measure(EVENT).get()
 
-namespace eslog {
+namespace espreso {
 
 enum ESPRESOTest {
 	FAILED,
@@ -88,7 +88,7 @@ public:
 	Test& get() { return *this; };
 
 	static bool report(TestEvent event) {
-		switch (esconfig::info::testingLevel) {
+		switch (config::info::testingLevel) {
 		case 0: return event < TEST_LEVEL0;
 		case 1: return event < TEST_LEVEL1;
 		case 2: return event < TEST_LEVEL2;
@@ -111,7 +111,7 @@ public:
 	std::ostringstream& get() { return os; };
 
 	static bool report(InfoEvent event) {
-		switch (esconfig::info::verboseLevel) {
+		switch (config::info::verboseLevel) {
 		case 0: return event < VERBOSE_LEVEL0;
 		case 1: return event < VERBOSE_LEVEL1;
 		case 2: return event < VERBOSE_LEVEL2;
@@ -144,7 +144,7 @@ public:
 	std::ostringstream& get() { return os; };
 
 	static bool report(MeasureEvent event) {
-		switch (esconfig::info::measureLevel) {
+		switch (config::info::measureLevel) {
 		case 0: return event < MEASURE_LEVEL0;
 		case 1: return event < MEASURE_LEVEL1;
 		case 2: return event < MEASURE_LEVEL2;
@@ -169,7 +169,7 @@ public:
 	{
 		std::stringstream dir, file, mkdir;
 
-		dir << esconfig::info::output << "/" << esconfig::MPIrank << "/";
+		dir << config::info::output << "/" << config::MPIrank << "/";
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();

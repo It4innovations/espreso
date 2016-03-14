@@ -3,6 +3,8 @@
 #include "utils.h"
 
 
+namespace espreso {
+
 template<typename Ttype>
 Ttype Esutils::getEnv(const std::string &name)
 {
@@ -20,7 +22,7 @@ void Esutils::setFromEnv(Ttype &value, const std::string &name)
 		std::stringstream ss(var);
 		ss >> value;
 	} else {
-		ESINFO(eslog::ERROR) << "Set environment variable " << name;
+		ESINFO(ERROR) << "Set environment variable " << name;
 	}
 }
 
@@ -35,7 +37,7 @@ template<typename Ttype>
 std::vector<Ttype> Esutils::getDistribution(size_t parts, Ttype start, Ttype end)
 {
 	if (start > end) {
-		ESINFO(eslog::ERROR) << "Distribution of interval <" << start << "," << end << "> is not possible.";
+		ESINFO(ERROR) << "Distribution of interval <" << start << "," << end << "> is not possible.";
 	}
 	size_t size = end - start;
 	std::vector<Ttype> distribution(parts + 1, 0);
@@ -49,4 +51,6 @@ std::vector<Ttype> Esutils::getDistribution(size_t parts, Ttype start, Ttype end
 	distribution[parts] = end;
 
 	return distribution;
+}
+
 }

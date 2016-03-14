@@ -9,6 +9,9 @@
 #include "parseerror.h"
 #include "simplestream.h"
 
+namespace espreso {
+namespace input {
+
 enum TokenType {
     TOKEN_INT = 0,
     TOKEN_DOUBLE,
@@ -181,5 +184,8 @@ protected:
     long int intValue;
     double doubleValue;
 };
+
+}
+}
 
 #endif // TOKENIZER_H

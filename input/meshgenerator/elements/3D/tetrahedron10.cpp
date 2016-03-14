@@ -1,12 +1,12 @@
 
 #include "tetrahedron10.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 size_t Tetrahedron10::subelements = 6;
 size_t Tetrahedron10::subnodes[] = { 1, 1, 1 };
 
-void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[], const eslocal params[])
+void Tetrahedron10::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal size = 10;
 	eslocal tetra[size];
@@ -21,7 +21,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[7] = indices[11];
 	tetra[8] = indices[13];
 	tetra[9] = indices[10];
-	elements.push_back(new mesh::Tetrahedron10(tetra, size, params));
+	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 
 	tetra[0] = indices[6];
 	tetra[1] = indices[0];
@@ -34,7 +34,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[7] = indices[12];
 	tetra[8] = indices[9];
 	tetra[9] = indices[19];
-	elements.push_back(new mesh::Tetrahedron10(tetra, size, params));
+	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 
 	tetra[0] = indices[24];
 	tetra[1] = indices[6];
@@ -47,7 +47,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[7] = indices[21];
 	tetra[8] = indices[12];
 	tetra[9] = indices[19];
-	elements.push_back(new mesh::Tetrahedron10(tetra, size, params));
+	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 
 	tetra[0] = indices[6];
 	tetra[1] = indices[26];
@@ -60,7 +60,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[7] = indices[13];
 	tetra[8] = indices[23];
 	tetra[9] = indices[22];
-	elements.push_back(new mesh::Tetrahedron10(tetra, size, params));
+	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 
 	tetra[0] = indices[8];
 	tetra[1] = indices[26];
@@ -73,7 +73,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[7] = indices[14];
 	tetra[8] = indices[23];
 	tetra[9] = indices[13];
-	elements.push_back(new mesh::Tetrahedron10(tetra, size, params));
+	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 
 	tetra[0] = indices[2];
 	tetra[1] = indices[20];
@@ -86,7 +86,7 @@ void Tetrahedron10::addElements(std::vector<mesh::Element*> &elements, const esl
 	tetra[7] = indices[4];
 	tetra[8] = indices[13];
 	tetra[9] = indices[7];
-	elements.push_back(new mesh::Tetrahedron10(tetra, size, params));
+	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 }
 
 

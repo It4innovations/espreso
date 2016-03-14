@@ -9,18 +9,19 @@
 #include "foam/elementbuilder.h"
 #include "foam/cellzone.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 class OpenFOAM: public ExternalLoader {
 
 public:
 	OpenFOAM(const Options &options, int rank, int size);
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements);
-	void faces(mesh::Faces &faces);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours);
+	void points(Coordinates &coordinates);
+	void elements(std::vector<Element*> &elements);
+	void faces(Faces &faces);
+	void boundaryConditions(Coordinates &coordinates);
+	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void open() {};
 	void close() {};
@@ -49,6 +50,7 @@ private:
 	std::vector<CellZone> _cellZones;
 };
 
+}
 }
 
 #endif /* INPUT_OPENFOAM_OPENFOAM_H_ */

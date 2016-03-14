@@ -1,5 +1,7 @@
 #include "face.h"
 
+using namespace espreso::input;
+
 Face::Face()
 {
     numberOfPoints =0;

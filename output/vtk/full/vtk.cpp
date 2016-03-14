@@ -2,7 +2,7 @@
 #include "vtk.h"
 #include "esconfig.h"
 
-using namespace esoutput;
+using namespace espreso::output;
 
 void VTK_Full::coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs)
 {

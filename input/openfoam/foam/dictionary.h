@@ -8,8 +8,11 @@
 #include "../base/parser.h"
 #include "../base/textstream.h"
 
-typedef std::pair<std::string, ByteArray> DictionaryEntry;
 
+namespace espreso {
+namespace input {
+
+typedef std::pair<std::string, ByteArray> DictionaryEntry;
 
 class Dictionary
 {
@@ -115,5 +118,8 @@ protected:
     std::string name;
     std::string source;
 };
+
+}
+}
 
 #endif // DICTIONARY_H

@@ -11,6 +11,7 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
                            double *, int *);
 extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*);
 
+using namespace espreso;
 
 SparseSolverPardiso::SparseSolverPardiso() {
 
@@ -188,7 +189,7 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
-		ESINFO(eslog::ERROR) << "ERROR during numerical factorization: " << str;
+		ESINFO(ERROR) << "ERROR during numerical factorization: " << str;
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -208,7 +209,7 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 	if (error != 0)
 	{
-		ESINFO(eslog::ERROR) << "ERROR during numerical factorization: " << str;
+		ESINFO(ERROR) << "ERROR during numerical factorization: " << str;
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
@@ -226,7 +227,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -273,7 +274,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -315,7 +316,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -364,7 +365,7 @@ void SparseSolverPardiso::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 

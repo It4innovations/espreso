@@ -21,6 +21,8 @@ using std::fill;
 
 #pragma once
 
+namespace espreso {
+
 class SparseMatrix
 {
 
@@ -225,8 +227,5 @@ private:
 
 void sortMatrixInCOO(SparseMatrix & Matrix);
 void SpyText (SparseMatrix & A);
-static void q_sort(SparseMatrix & Matrix, eslocal lo, eslocal hi );
-static void q_sort_in(vector <eslocal>    & I_row_indices,
-				   	  vector <eslocal>    & J_col_indices,
-					  vector <double> & V_values,
-					  eslocal lo, eslocal hi );
+
+}

@@ -1,7 +1,8 @@
 
 #include "generator.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 
 //	###################################################
@@ -28,7 +29,7 @@ namespace esinput {
 static void checkSettings(const SphereSettings &settings)
 {
 	if (settings.layers * 6 != settings.size) {
-		ESINFO(eslog::ERROR) << "The number of clusters(" << settings.layers * 6
+		ESINFO(ERROR) << "The number of clusters(" << settings.layers * 6
 							<< ") does not accord the number of MPI processes(" << settings.size << ").";
 	}
 }
@@ -42,13 +43,13 @@ SphereGenerator<TElement>::SphereGenerator(const SphereSettings &settings)
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+void SphereGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements, std::vector<eslocal> &parts)
 {
 	// TODO: set materials
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
+void SphereGenerator<TElement>::points(Coordinates &coordinates)
 {
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
@@ -62,15 +63,15 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 	}
 
 	double layerSize = (_settings.outerRadius - _settings.innerRadius) / _settings.layers;
-	mesh::Point corner[3];
-	corner[0] = mesh::Point(          1,          -1,           1);
-	corner[1] = mesh::Point(         -1, corner[0].y, corner[0].z); // x-axis
-	corner[2] = mesh::Point(corner[0].x,           1, corner[0].z); // y-axis
+	Point corner[3];
+	corner[0] = Point(          1,          -1,           1);
+	corner[1] = Point(         -1, corner[0].y, corner[0].z); // x-axis
+	corner[2] = Point(corner[0].x,           1, corner[0].z); // y-axis
 
 	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
 	eslocal ring = SphereUtils<TElement>::ringNodesCount(_settings);
 
-	mesh::Point point;
+	Point point;
 	eslocal index = 0;
 	esglobal gIndex;
 	for (eslocal z = 0; z < cNodes[2]; z++) {
@@ -156,14 +157,14 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 
 
 template<class TElement>
-void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
+void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 {
 	if (_settings.index > 5) {
 		return;
 	}
-	mesh::CoordinatesProperty &dirichlet_x = coordinates.property(mesh::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = coordinates.property(mesh::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = coordinates.property(mesh::DIRICHLET_Z);
+	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
+	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
+	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
 
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
@@ -177,7 +178,7 @@ void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinate
 
 
 template <class TElement>
-void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries, std::vector<int> &neighbours)
+void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
@@ -248,9 +249,10 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries, 
 		neighs.insert(boundaries[i].begin(), boundaries[i].end());
 	}
 
-	neighs.erase(esconfig::MPIrank);
+	neighs.erase(config::MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 
+}
 }
 

@@ -6,6 +6,9 @@
 #include <list>
 
 
+namespace espreso {
+namespace input {
+
 class ElementBuilder
 {
 public:
@@ -37,7 +40,7 @@ public:
     }
     size_t getNumberOfFaces() { return selectedFaces.size();}
 
-    ParseError* createElement(std::vector<mesh::Element*> &elements);
+    ParseError* createElement(std::vector<Element*> &elements);
 
 
 protected:
@@ -47,5 +50,8 @@ private:
 
     std::list< std::pair<Face*, bool> > selectedFaces;
 };
+
+}
+}
 
 #endif // ELEMENTBUILDER_H

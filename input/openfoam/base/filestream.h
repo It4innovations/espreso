@@ -8,6 +8,9 @@
 #include <string.h>
 #include "simplestream.h"
 
+namespace espreso {
+namespace input {
+
 class FileStream : public SimpleStream
 {
 public:
@@ -109,6 +112,9 @@ public:
 protected:
     gzFile file;
 };
+
+}
+}
 
 
 #endif // FILESTREAM_H

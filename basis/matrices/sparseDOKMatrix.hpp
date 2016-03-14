@@ -1,5 +1,7 @@
 #include "sparseDOKMatrix.h"
 
+namespace espreso {
+
 template<typename Tindices>
 size_t SparseDOKMatrix<Tindices>::nonZeroValues() const
 {
@@ -30,5 +32,6 @@ void SparseDOKMatrix<Tindices>::transpose()
 	_columns = tmp;
 }
 
+}
 
 

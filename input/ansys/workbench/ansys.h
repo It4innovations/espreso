@@ -10,25 +10,25 @@
 #include "../../loader.h"
 #include "../utils.h"
 
-
-namespace esinput {
+namespace espreso {
+namespace input {
 
 class AnsysWorkbench: public ExternalLoader {
 
 public:
 	AnsysWorkbench(const Options &options, size_t index, size_t size);
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements);
-	void faces(mesh::Faces &faces) {};
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries, std::vector<int> &neighbours);
+	void points(Coordinates &coordinates);
+	void elements(std::vector<Element*> &elements);
+	void faces(Faces &faces) {};
+	void boundaryConditions(Coordinates &coordinates);
+	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void open()
 	{
 		_file.open(_path.c_str());
 		if (!_file.is_open()) {
-			ESINFO(eslog::ERROR) << "Cannot load mesh from file: " << _path;
+			ESINFO(ERROR) << "Cannot load mesh from file: " << _path;
 		}
 	}
 
@@ -42,6 +42,7 @@ private:
 	std::string _path;
 };
 
+}
 }
 
 

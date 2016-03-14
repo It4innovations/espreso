@@ -1,7 +1,7 @@
 
 #include "itersolvercpu.h"
 
-
+using namespace espreso;
 
 // *** Action of K+ routines *********************************************
 

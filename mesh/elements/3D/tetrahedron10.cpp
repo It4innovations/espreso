@@ -1,6 +1,6 @@
 #include "tetrahedron10.h"
 
-using namespace mesh;
+using namespace espreso;
 
 static std::vector<DenseMatrix> Tetra10_dN()
 {
@@ -59,7 +59,7 @@ static std::vector<DenseMatrix> Tetra10_dN()
 				0.4334498464263357, 0.4334498464263357, 0.0665501535736643};
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 	}
 
 	for (unsigned int i = 0; i < Tetrahedron10GPCount; i++) {
@@ -160,7 +160,7 @@ static std::vector<DenseMatrix> Tetra10_N() {
 				0.4334498464263357, 0.4334498464263357, 0.0665501535736643};
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 	}
 
 	for (unsigned int i = 0; i < Tetrahedron10GPCount; i++) {
@@ -211,7 +211,7 @@ static std::vector<double> Tetra10_Weight()
 		return w;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -404,7 +404,7 @@ Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *p
 		_indices[9] = indices[18];
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Tetrahedron10 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Tetrahedron10 from " << n << " elements.";
 	}
 
 }

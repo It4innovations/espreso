@@ -11,6 +11,9 @@
 #include "esconfig.h"
 #include "../logging/logging.h"
 
+
+namespace espreso {
+
 struct Options {
 
 	friend std::ostream& operator<<(std::ostream& os, const Options &options);
@@ -25,5 +28,7 @@ struct Options {
 	size_t testingLevel;
 	std::vector<std::string> nameless;
 };
+
+}
 
 #endif /* APP_OPTIONS_OPTIONS_H_ */

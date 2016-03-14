@@ -6,6 +6,8 @@
 #include "../generic/utils.h"
 #include "../generic/SparseMatrix.h"
 
+namespace espreso {
+
 class SparseSolver
 {
 
@@ -44,6 +46,6 @@ public:
 	virtual void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) = 0;
 };
 
-
+}
 
 #endif /* SOLVER_SPECIFIC_SPARSESOLVER_H_ */

@@ -8,7 +8,7 @@ using std::vector;
 
 #pragma once
 
-
+namespace espreso {
 
 class DenseMatrixPack
 {
@@ -284,3 +284,5 @@ private:
   // are data copied to MIC
   bool copiedToMIC;
 };
+
+}

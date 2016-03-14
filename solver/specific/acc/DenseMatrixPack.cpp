@@ -1,5 +1,7 @@
 #include "DenseMatrixPack.h"
 
+namespace espreso {
+
 DenseMatrixPack::DenseMatrixPack() {
 
   this->device = 0;
@@ -413,4 +415,6 @@ void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
     in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
     {}
 #endif
+}
+
 }

@@ -3,6 +3,8 @@
 #include "../base/filestream.h"
 #include "../base/tokenstream.h"
 
+using namespace espreso::input;
+
 bool FoamFile::fileExists(const char *filename)
 {
     std::ifstream ifile(filename);

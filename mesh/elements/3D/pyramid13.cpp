@@ -1,6 +1,6 @@
 #include "pyramid13.h"
 
-using namespace mesh;
+using namespace espreso;
 
 static std::vector< std::vector< double> > Pyramid13_rst()
 {
@@ -15,7 +15,7 @@ static std::vector< std::vector< double> > Pyramid13_rst()
 		return rst;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Pyramid13 GP count.";
+		ESINFO(ERROR) << "Unknown number of Pyramid13 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -123,7 +123,7 @@ static std::vector<double> Pyramid13_weight()
 		return std::vector<double> (8, 1.0);
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -315,7 +315,7 @@ Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): 
 		_indices[12] = indices[19];
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Pyramid13 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Pyramid13 from " << n << " elements.";
 	}
 }
 

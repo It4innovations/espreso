@@ -1,6 +1,9 @@
 #include "bytearray.h"
 #include <string.h>
 
+namespace espreso {
+namespace input {
+
 ByteArray::ByteArray(const char* data, int size)
 {
     _size = size;
@@ -28,15 +31,17 @@ ByteArray::~ByteArray()
 }
 
 ByteArray & ByteArray::operator= (const ByteArray &b)
-    {
-        if (this != &b)
-        {
-            _size = b.size();
-            if (_data!=NULL) delete [] _data;
-            _data = new char[_size];
-            memcpy(_data, b._data, _size * sizeof(char));
-        }
-        return *this;
-    }
+{
+	if (this != &b)
+	{
+		_size = b.size();
+		if (_data!=NULL) delete [] _data;
+		_data = new char[_size];
+		memcpy(_data, b._data, _size * sizeof(char));
+	}
+	return *this;
+}
 
 
+}
+}

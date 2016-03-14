@@ -1,34 +1,34 @@
 
 #include "utils.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
-mesh::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params)
+espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params)
 {
-	mesh::Element *e = NULL;
-	if (mesh::Tetrahedron4::match(indices, n)) {
-		e = new mesh::Tetrahedron4(indices, n, params);
+	Element *e = NULL;
+	if (Tetrahedron4::match(indices, n)) {
+		e = new Tetrahedron4(indices, n, params);
 	}
-	if (mesh::Tetrahedron10::match(indices, n)) {
-		e = new mesh::Tetrahedron10(indices, n, params);
+	if (Tetrahedron10::match(indices, n)) {
+		e = new Tetrahedron10(indices, n, params);
 	}
-	if (mesh::Hexahedron8::match(indices, n)) {
-		e = new mesh::Hexahedron8(indices, n, params);
+	if (Hexahedron8::match(indices, n)) {
+		e = new Hexahedron8(indices, n, params);
 	}
-	if (mesh::Hexahedron20::match(indices, n)) {
-		e = new mesh::Hexahedron20(indices, n, params);
+	if (Hexahedron20::match(indices, n)) {
+		e = new Hexahedron20(indices, n, params);
 	}
-	if (mesh::Prisma6::match(indices, n)) {
-		e = new mesh::Prisma6(indices, n, params);
+	if (Prisma6::match(indices, n)) {
+		e = new Prisma6(indices, n, params);
 	}
-	if (mesh::Prisma15::match(indices, n)) {
-		e = new mesh::Prisma15(indices, n, params);
+	if (Prisma15::match(indices, n)) {
+		e = new Prisma15(indices, n, params);
 	}
-	if (mesh::Pyramid5::match(indices, n)) {
-		e = new mesh::Pyramid5(indices, n, params);
+	if (Pyramid5::match(indices, n)) {
+		e = new Pyramid5(indices, n, params);
 	}
-	if (mesh::Pyramid13::match(indices, n)) {
-		e = new mesh::Pyramid13(indices, n, params);
+	if (Pyramid13::match(indices, n)) {
+		e = new Pyramid13(indices, n, params);
 	}
 
 	if (e == NULL) {
@@ -40,7 +40,7 @@ mesh::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *p
 			return ss.str();
 		};
 
-		ESINFO(eslog::ERROR) << "Unknown element with indices: " << print_indices();
+		ESINFO(ERROR) << "Unknown element with indices: " << print_indices();
 	}
 
 	return e;

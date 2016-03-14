@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-namespace assembler {
+namespace espreso {
 
 template<>
 size_t Assembler<FEM>::subdomains()

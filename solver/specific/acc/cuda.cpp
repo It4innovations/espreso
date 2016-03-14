@@ -13,7 +13,7 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
                            double *, int *);
 extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*);*/
 
-
+using namespace espreso;
 
 SparseSolverCUDA::SparseSolverCUDA(){
 
@@ -1433,11 +1433,11 @@ void SparseSolverCUDA::ImportMatrix_wo_Copy(SparseMatrix & A) {
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
 
-	ESINFO(eslog::ERROR) << "Not implemented: SolveCG.";
+	ESINFO(ERROR) << "Not implemented: SolveCG.";
 	exit(EXIT_FAILURE);
 }
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
-	ESINFO(eslog::ERROR) << "Not implemented: SolveCG.";
+	ESINFO(ERROR) << "Not implemented: SolveCG.";
 	exit(EXIT_FAILURE);
 }

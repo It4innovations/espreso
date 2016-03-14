@@ -4,6 +4,9 @@
 #include <string>
 #include "bytearray.h"
 
+namespace espreso {
+namespace input {
+
 class SimpleStream
 {
 public:
@@ -53,5 +56,8 @@ protected:
     int position;
     ByteArray data;
 };
+
+}
+}
 
 #endif // SIMPLESTREAM_H

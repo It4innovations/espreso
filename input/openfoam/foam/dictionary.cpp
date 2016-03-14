@@ -1,5 +1,7 @@
 #include "dictionary.h"
 
+using namespace espreso::input;
+
 Dictionary::~Dictionary()
 {
     for (std::vector< Dictionary* >::iterator it = dictionaries.begin() ; it != dictionaries.end(); ++it) {

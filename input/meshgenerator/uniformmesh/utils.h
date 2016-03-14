@@ -4,7 +4,8 @@
 
 #include "settings.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template <class TElement>
 class UniformUtils {
@@ -14,6 +15,7 @@ public:
 	static eslocal clusterElementsCount(const UniformSettings &settings);
 };
 
+}
 }
 
 

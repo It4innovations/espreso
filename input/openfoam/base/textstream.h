@@ -3,6 +3,8 @@
 
 #include <fstream>
 
+namespace espreso {
+namespace input {
 
 class TextStream : public std::ofstream {
 
@@ -68,7 +70,7 @@ template<> inline void write(TextStream &ts, const std::string &value) {
     ts << value;
 }
 
-template<> inline void write(TextStream &ts, const mesh::Point &value) {
+template<> inline void write(TextStream &ts, const Point &value) {
     ts << "(" << value.x << " " << value.y << " " << value.z << ")";
 }
 
@@ -96,6 +98,9 @@ template<typename T> void write(TextStream &ts, const std::vector<T> &value) {
     ts.decIndent();
     ts.beginLine();
     ts << ")";
+}
+
+}
 }
 
 #endif // TEXTSTREAM_H

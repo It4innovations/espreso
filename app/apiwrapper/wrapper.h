@@ -16,25 +16,28 @@ struct FETI4IStructMatrix {
 	std::vector<std::vector<double> > eMatrices;
 
 	// used in case of 1 subdomain
-	SparseVVPMatrix<eslocal> K;
+	espreso::SparseVVPMatrix<eslocal> K;
 
 	eslocal offset;
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(assembler::LinearElasticity<assembler::API> data, mesh::Mesh *mesh): data(data), mesh(mesh), K(0, 0) { };
+	FETI4IStructInstance(espreso::LinearElasticity<espreso::API> data, espreso::Mesh *mesh): data(data), mesh(mesh), K(0, 0) { };
 	~FETI4IStructInstance() { delete mesh; }
 
-	assembler::LinearElasticity<assembler::API> data;
-	mesh::Mesh *mesh;
-	SparseCSRMatrix<eslocal> K;
+	espreso::LinearElasticity<espreso::API> data;
+	espreso::Mesh *mesh;
+	espreso::SparseCSRMatrix<eslocal> K;
 };
+
+namespace espreso {
 
 struct DataHolder {
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;
 };
 
+}
 
 
 #endif /* ESPRESO_WRAPPER_H_ */

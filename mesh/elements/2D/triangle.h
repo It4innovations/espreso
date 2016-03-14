@@ -9,7 +9,7 @@
 #define TriangleGPCount 3
 #define TriangleVTKCode 5
 
-namespace mesh {
+namespace espreso {
 
 class Triangle: public Element
 {

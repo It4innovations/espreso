@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-using namespace mesh;
+using namespace espreso;
 
 Mesh::Mesh():_elements(0), _fixPoints(0)
 {
@@ -159,11 +159,11 @@ static void checkMETISResult(eslocal result)
 {
 	switch (result) {
 	case METIS_ERROR_INPUT:
-		ESINFO(eslog::ERROR) << "An input for METIS procedure is incorrect.\n";
+		ESINFO(ERROR) << "An input for METIS procedure is incorrect.\n";
 	case METIS_ERROR_MEMORY:
-		ESINFO(eslog::ERROR) << "There is not enough memory for compute a partition.\n";
+		ESINFO(ERROR) << "There is not enough memory for compute a partition.\n";
 	case METIS_ERROR:
-		ESINFO(eslog::ERROR) << "METIS fail computation.\n";
+		ESINFO(ERROR) << "METIS fail computation.\n";
 	}
 }
 
@@ -399,7 +399,7 @@ void Mesh::getSurface(Mesh &surface) const
 	std::vector<size_t> elementsCount(parts(), 0);
 
 	if (parts() < 1) {
-		ESINFO(eslog::ERROR) << "Internal error: _partPtrs.size().";
+		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
 	}
 
 	cilk_for (size_t i = 0; i < parts(); i++) {
@@ -693,7 +693,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 						commonLines.push_back(std::make_tuple(line[0], line[1], line[2]));
 						break;
 					default:
-						ESINFO(eslog::ERROR) << "MESH ERROR: unknown line type.";
+						ESINFO(ERROR) << "MESH ERROR: unknown line type.";
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -966,7 +966,7 @@ void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces)
 {
 	if (parts() < 1) {
-		ESINFO(eslog::ERROR) << "Internal error: _partPtrs.size().";
+		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
 		exit(EXIT_FAILURE);
 	}
 	if (parts() == 1 || (!vertices && !edges && !faces && !averageEdges && !averageFaces)) {
@@ -1098,7 +1098,7 @@ void Mesh::remapElementsToCluster()
 	}
 }
 
-std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
+std::ostream& espreso::operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {
 		os << *(m._elements[i]) << "\n";

@@ -1,7 +1,7 @@
 
 #include "configuration.h"
 
-namespace esinput {
+using namespace espreso::input;
 
 Configuration::Configuration(std::vector<Description> &description, const Options &options)
 {
@@ -75,7 +75,7 @@ void Configuration::load(const Options &options)
 
 		file.close();
 	} else {
-		ESINFO(eslog::ERROR) << "The example on path '" << options.path << "' not found.";
+		ESINFO(ERROR) << "The example on path '" << options.path << "' not found.";
 	}
 
 	// Read attributes from command line
@@ -106,7 +106,7 @@ void Configuration::load(const Options &options)
 	}
 
 	if (options.nameless.size() < cmdLineSize) {
-		ESINFO(eslog::ERROR) << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
+		ESINFO(ERROR) << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
 		exit(EXIT_FAILURE);
 	}
 	if (options.nameless.size() > cmdLineSize) {
@@ -193,6 +193,4 @@ Configuration::~Configuration()
 	for (it = _parameters.begin(); it != _parameters.end(); ++it) {
 		delete it->second;
 	}
-}
-
 }

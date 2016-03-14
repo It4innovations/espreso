@@ -14,15 +14,7 @@
 
 #include "../logging/logging.h"
 
-template<typename T>
-std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
-{
-	for(size_t i = 0; i < v.size(); ++i) {
-		os << v[i] << " ";
-	}
-	os << "\n";
-	return os;
-}
+namespace espreso {
 
 struct NonZeroValue
 {
@@ -95,5 +87,7 @@ protected:
 
 	static NonZeroValue nonZero;
 };
+
+}
 
 #endif /* MATRIX_H_ */

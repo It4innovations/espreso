@@ -1,6 +1,8 @@
 
 #include "timeeval.h"
 
+using namespace espreso;
+
 TimeEvent::TimeEvent(std::string name)
 {
 	eventName   = name;

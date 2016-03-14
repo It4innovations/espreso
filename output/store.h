@@ -4,7 +4,8 @@
 
 #include "esmesh.h"
 
-namespace esoutput {
+namespace espreso {
+namespace output {
 
 
 class MeshStore {
@@ -15,9 +16,9 @@ public:
 	virtual ~MeshStore() {};
 
 protected:
-	MeshStore(const mesh::Mesh &mesh, const std::string path): _mesh(mesh), _path(path) {};
+	MeshStore(const Mesh &mesh, const std::string path): _mesh(mesh), _path(path) {};
 
-	const mesh::Mesh &_mesh;
+	const Mesh &_mesh;
 	std::string _path;
 };
 
@@ -29,9 +30,10 @@ public:
 	virtual ~ResultStore() {};
 
 protected:
-	ResultStore(const mesh::Mesh &mesh, const std::string &path): MeshStore(mesh, path) {};
+	ResultStore(const Mesh &mesh, const std::string &path): MeshStore(mesh, path) {};
 };
 
+}
 }
 
 

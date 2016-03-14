@@ -9,7 +9,7 @@
 #define SquareGPCount 4
 #define SquareVTKCode 9
 
-namespace mesh {
+namespace espreso {
 
 class Square: public Element
 {

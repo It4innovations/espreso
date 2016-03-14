@@ -1,6 +1,8 @@
 
 #include "clustercpu.h"
 
+using namespace espreso;
+
 void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
 
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -87,7 +89,7 @@ void ClusterCPU::SetupKsolvers ( ) {
     cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-        switch (esconfig::solver::KSOLVER) {
+        switch (config::solver::KSOLVER) {
             case 0: {
                         domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
                         break;
@@ -109,26 +111,26 @@ void ClusterCPU::SetupKsolvers ( ) {
                         break;
                     }
             default:
-            		ESINFO(eslog::ERROR) << "Invalid KSOLVER value.";
+            		ESINFO(ERROR) << "Invalid KSOLVER value.";
                     exit(EXIT_FAILURE);
         }
 
-        if (esconfig::solver::KEEP_FACTORS == 1) {
+        if (config::solver::KEEP_FACTORS == 1) {
             std::stringstream ss;
-            ss << "init -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+            ss << "init -> rank: " << config::MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
-            if (esconfig::solver::KSOLVER != 1) {
+            if (config::solver::KSOLVER != 1) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {
             domains[d].Kplus.keep_factors = false;
-            domains[d].Kplus.MPIrank = esconfig::MPIrank;
+            domains[d].Kplus.MPIrank = config::MPIrank;
         }
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-        if ( d == 0 && esconfig::MPIrank == 0) domains[d].Kplus.msglvl=0;
-        if (esconfig::MPIrank == 0) std::cout << ".";
+        if ( d == 0 && config::MPIrank == 0) domains[d].Kplus.msglvl=0;
+        if (config::MPIrank == 0) std::cout << ".";
 
     }
 

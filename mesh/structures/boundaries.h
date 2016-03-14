@@ -5,7 +5,7 @@
 
 #include "../elements/elements.h"
 
-namespace mesh {
+namespace espreso {
 
 class Boundaries
 {

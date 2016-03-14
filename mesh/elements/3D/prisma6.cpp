@@ -1,6 +1,6 @@
 #include "prisma6.h"
 
-using namespace mesh;
+using namespace espreso;
 
 std::vector< std::vector< double> > Prisma6_rst()
 {
@@ -21,7 +21,7 @@ std::vector< std::vector< double> > Prisma6_rst()
 		return rst;
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Prisma6 GP count.";
+		ESINFO(ERROR) << "Unknown number of Prisma6 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -106,7 +106,7 @@ std::vector<double> Prisma6_weight()
 		return std::vector<double> (w, w + 9);
 	}
 	default:
-		ESINFO(eslog::ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -206,7 +206,7 @@ Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params): Elem
 		_indices[5] = indices[6];
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Prisma6 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Prisma6 from " << n << " elements.";
 	}
 }
 

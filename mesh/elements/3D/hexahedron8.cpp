@@ -1,6 +1,6 @@
 #include "hexahedron8.h"
 
-using namespace mesh;
+using namespace espreso;
 
 std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
@@ -159,7 +159,7 @@ Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *param
 		memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(eslog::ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
 	}
 }
 

@@ -1,5 +1,7 @@
 #include "cellzone.h"
 
+using namespace espreso::input;
+
 CellZone::CellZone()
 {
 
@@ -12,7 +14,7 @@ ParseError *CellZone::loadFromDictionary(Dictionary &dictionary)
     return NULL;
 }
 
-ParseError* parse(Tokenizer &ts, CellZone &cellZone)
+ParseError* espreso::input::parse(Tokenizer &ts, CellZone &cellZone)
 {
     Dictionary dictionary;
 

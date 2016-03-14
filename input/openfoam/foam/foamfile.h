@@ -6,6 +6,9 @@
 #include "../base/tokenizer.h"
 #include "../base/simplestream.h"
 
+namespace espreso {
+namespace input {
+
 class FoamFile
 {
 public:
@@ -29,5 +32,8 @@ protected:
     SimpleStream *stream;
     Tokenizer *tokenizer;
 };
+
+}
+}
 
 #endif // FOAMFILE_H

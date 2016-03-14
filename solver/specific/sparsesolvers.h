@@ -5,32 +5,47 @@
 
 #if defined(SOLVER_MKL)
 #include "cpu/solvermkl.h"
+
+namespace espreso {
 	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverMKL SparseSolverAcc;
+}
 
 
 #elif defined(SOLVER_PARDISO)
 #include "cpu/solverpardiso.h"
+
+namespace espreso {
 	typedef SparseSolverPardiso SparseSolverCPU;
 	typedef SparseSolverPardiso SparseSolverAcc;
+}
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/solvermumps.h"
+
+namespace espreso {
 	typedef SparseSolverMUMPS SparseSolverCPU;
 	typedef SparseSolverMUMPS SparseSolverAcc;
+}
 
 #elif defined(SOLVER_MIC)
 #include "cpu/solvermkl.h"
 #include "acc/mic.h"
+
+namespace espreso {
 	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverMIC SparseSolverAcc;
+}
 
 
 #elif defined(SOLVER_CUDA)
 #include "cpu/solvermkl.h"
 //#include "acc/cuda.h"
+
+namespace espreso {
 	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverMKL SparseSolverAcc;
+}
 
 
 #else

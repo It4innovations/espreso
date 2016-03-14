@@ -6,14 +6,14 @@
 #if ESPRESO_POINT_DIMENSION == 2
 	#include "point2d.h"
 
-	namespace mesh {
-		typedef mesh::Point2D Point;
+	namespace espreso {
+		typedef Point2D Point;
 	}
 #elif ESPRESO_POINT_DIMENSION == 3
 	#include "point3d.h"
 
-	namespace mesh {
-		typedef mesh::Point3D Point;
+	namespace espreso {
+		typedef Point3D Point;
 	}
 #else
 	#error "Incorrect user-supplied value for ESPRESO_POINT_DIMENSION"

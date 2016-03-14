@@ -5,7 +5,10 @@
 #include "../../loader.h"
 #include <vector>
 
-typedef std::vector< mesh::Point > Points;
+namespace espreso {
+namespace input {
+
+typedef std::vector< Point > Points;
 
 
 template<typename T> ParseError* parse(Tokenizer &ts, T &value)
@@ -66,7 +69,7 @@ template<> inline ParseError* parse(Tokenizer &ts, std::string &value)
     return ts.readIdentifier(value);
 }
 
-template<> inline ParseError* parse(Tokenizer &ts, mesh::Point &value)
+template<> inline ParseError* parse(Tokenizer &ts, Point &value)
 {
     double v;
     PARSE_GUARD(ts.consumeChar('('));
@@ -107,6 +110,9 @@ template<typename T> ParseError* parse(Tokenizer &ts, std::vector<T> &value)
     }
     PARSE_GUARD(ts.consumeChar(')'));
     return NULL;
+}
+
+}
 }
 
 #endif // PARSER_H

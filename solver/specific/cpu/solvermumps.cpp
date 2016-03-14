@@ -13,6 +13,8 @@
 #include "mkl_pardiso.h"
 #include "solvermumps.h"
 
+using namespace espreso;
+
 /************************************************************************************************
 *   DEFINE CONSTANTS   *
 ***********************/

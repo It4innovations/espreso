@@ -20,7 +20,7 @@ namespace Adaptor
   void Finalize();
 
   void CoProcess(
-			mesh::Mesh *mesh,
+			Mesh *mesh,
 			std::vector< std::vector<eslocal> > &l2g_vec,
 			std::vector< std::vector<double> > & prim_solution,
 			double time,

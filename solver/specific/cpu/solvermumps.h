@@ -14,6 +14,8 @@ using std::fixed;
 
 #pragma once
 
+namespace espreso {
+
 class SparseSolverMUMPS: public SparseSolver
 {
 
@@ -126,6 +128,7 @@ public:
 };
 //#endif //SPARSE_SOLVER_H_
 
+}
 
 
 

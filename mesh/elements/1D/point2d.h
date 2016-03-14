@@ -5,7 +5,7 @@
 #include <iostream>
 #include <set>
 
-namespace mesh {
+namespace espreso {
 
 class Point2D
 {

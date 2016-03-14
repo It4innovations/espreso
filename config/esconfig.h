@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <string>
 
-namespace esconfig {
+namespace config {
 
 enum FetiMethod {
 	TOTAL_FETI,

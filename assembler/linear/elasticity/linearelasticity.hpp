@@ -1,7 +1,7 @@
 
 #include "linearelasticity.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 void LinearElasticity<TInput>::inertia(std::vector<double> &inertia)

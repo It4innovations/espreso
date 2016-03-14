@@ -4,6 +4,8 @@
 
 #include "../cluster.h"
 
+namespace espreso {
+
 class ClusterCPU: public ClusterBase
 {
 
@@ -16,6 +18,8 @@ public:
     void Create_Kinv_perDomain();
 	void SetupKsolvers ( );
 };
+
+}
 
 
 #endif /* SOLVER_SPECIFIC_CPU_CLUSTERCPU_H_ */

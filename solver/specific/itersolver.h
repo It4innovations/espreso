@@ -32,6 +32,8 @@ using std::make_pair;
 
 #include "esbasis.h"
 
+namespace espreso {
+
 class IterSolverBase
 {
 public:
@@ -222,6 +224,6 @@ void parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	SEQ_VECTOR <double> & output,
 	SEQ_VECTOR <double> & send_buf) ;
 
-
+}
 
 #endif /* SOLVER_SPECIFIC_ITERSOLVER_H_ */

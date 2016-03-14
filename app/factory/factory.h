@@ -7,6 +7,8 @@
 #include "esoutput.h"
 #include "esassemblers.h"
 
+namespace espreso {
+
 class Factory {
 
 public:
@@ -18,12 +20,14 @@ public:
 	~Factory();
 
 private:
-	assembler::AssemblerBase *_assembler;
+	AssemblerBase *_assembler;
 	std::vector<std::vector<double> > _solution;
 
-	mesh::Mesh *_mesh;
-	mesh::Mesh *_surface;
+	Mesh *_mesh;
+	Mesh *_surface;
 };
+
+}
 
 
 
