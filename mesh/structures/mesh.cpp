@@ -1,6 +1,8 @@
 #include "mesh.h"
+#include "esoutput.h"
 
 using namespace espreso;
+
 
 Mesh::Mesh():_elements(0), _fixPoints(0)
 {
@@ -983,6 +985,14 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 
 	computeCommonFaces(commonFaces);
 	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
+
+	if (esconfig::output::saveFaces) {
+		esoutput::VTK_Full::mesh(commonFaces, "meshFaces", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	}
+	if (esconfig::output::saveLines) {
+		esoutput::VTK_Full::mesh(commonLines, "meshLines", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	}
+
 
 	auto faceToCluster = [&] (eslocal index, eslocal part) {
 		return commonFaces.coordinates().globalIndex(index, part);

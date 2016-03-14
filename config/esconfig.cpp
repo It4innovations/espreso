@@ -15,7 +15,7 @@ namespace mesh {
 	bool edgeCorners = true;
 	bool faceCorners = false;
 
-	bool averageEdges = false;
+	bool averageEdges = true;
 	bool averageFaces = false;
 
 	Input input = GENERATOR;
@@ -30,8 +30,11 @@ namespace output {
 
 	bool saveMesh = false;
 	bool saveFixPoints = false;
+	bool saveFaces = false;
+	bool saveLines = false;
 	bool saveCorners = false;
 	bool saveDirichlet = false;
+	bool saveAveraging = false;
 	bool saveResults = true;
 
 	double subdomainShrinkRatio = .95;
