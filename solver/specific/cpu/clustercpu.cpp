@@ -17,7 +17,9 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
         if (cluster_global_index == 1) cout << "."; // << i ;
 
         SparseSolverCPU tmpsps;
-        if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
+        if ( i == 0 && cluster_global_index == 1) {
+        	tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+        }
         tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
 
         if (USE_FLOAT){
@@ -49,7 +51,9 @@ void ClusterCPU::Create_Kinv_perDomain() {
 
         domains[i].KplusF.msglvl = 0;
 
-        if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
+        if ( i == 0 && cluster_global_index == 1) {
+        	domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+        }
 
         //SolveMatF is obsolete - use Schur complement instead
         domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
@@ -129,7 +133,9 @@ void ClusterCPU::SetupKsolvers ( ) {
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-        if ( d == 0 && config::MPIrank == 0) domains[d].Kplus.msglvl=0;
+        if ( d == 0 && config::MPIrank == 0) {
+        	domains[d].Kplus.msglvl = 0;
+        }
         if (config::MPIrank == 0) std::cout << ".";
 
     }

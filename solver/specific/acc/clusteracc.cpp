@@ -224,7 +224,9 @@ void ClusterAcc::Create_Kinv_perDomain() {
 
         domains[i].KplusF.msglvl = 0;
 
-        if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
+        if ( i == 0 && cluster_global_index == 1) {
+        	domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+        }
 
         //SolveMatF is obsolete - use Schur complement instead
         domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
@@ -322,7 +324,9 @@ void ClusterAcc::SetupKsolvers ( ) {
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-        if ( d == 0 && config::MPIrank == 0) domains[d].Kplus.msglvl=0;
+        if ( d == 0 && config::MPIrank == 0) {
+        	domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+        }
         if (config::MPIrank == 0) std::cout << ".";
 
     }

@@ -101,6 +101,9 @@ void TimeEvent::endWithoutBarrier(double time) {
 
 
 void TimeEvent::evaluate() {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	sumTime = 0;
 	avgTime = 0;
 	minTime = eventCount ? eventTime[0] : 0;
@@ -133,6 +136,9 @@ void TimeEvent::evaluate() {
 }
 
 void TimeEvent::evaluateMPI() {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	evaluate();
 
 	int rank, size;
@@ -153,6 +159,9 @@ void TimeEvent::evaluateMPI() {
 
 
 void TimeEvent::printStat(double totalTime) {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	evaluate();
 
 	std::cout << std::setw(name_length) << std::left << eventName;
@@ -167,6 +176,9 @@ void TimeEvent::printStat(double totalTime) {
 
 
 void TimeEvent::printLastStat(double totalTime) {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	avgTime = eventTime.back();
 
 	std::cout << std::setw(name_length) << std::left << eventName;
@@ -185,6 +197,9 @@ double TimeEvent::getLastStat(double totalTime) {
 
 
 void TimeEvent::printStatMPI(double totalTime) {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	evaluateMPI();
 
 	int rank;
@@ -207,6 +222,9 @@ void TimeEvent::printStatMPI(double totalTime) {
 
 
 void TimeEvent::printLastStatMPI(double totalTime) {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	double d_time = eventTime.back();
 
 	int rank, size;
@@ -234,8 +252,11 @@ void TimeEvent::printLastStatMPI(double totalTime) {
 }
 
 
-void TimeEvent::printLastStatMPIPerNode(double totalTime) {
-
+void TimeEvent::printLastStatMPIPerNode(double totalTime)
+{
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	double d_time = eventTime.back();
 	std::vector<double> d_all_times;
 
@@ -305,6 +326,9 @@ void TimeEval::printStats() {
 }
 
 void TimeEval::printStatsMPI() {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	int rank;
 	int size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);	/* get current process id */

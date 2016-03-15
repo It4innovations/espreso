@@ -1275,7 +1275,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		// Create Sparse Direct solver for GGt
-		GGt.msglvl = 1;
+		GGt.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 
 		t1 = omp_get_wtime();
 		GGt.ImportMatrix(GGt_Mat);
@@ -1462,8 +1462,9 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	GGt_bcast_time.end(); GGt_bcast_time.printStatMPI(); preproc_timing.addEvent(GGt_bcast_time);
 
 	// Create Sparse Direct solver for GGt
-	if (mpi_rank == mpi_root)
-		GGt_tmp.msglvl = 1;
+	if (mpi_rank == mpi_root) {
+		GGt_tmp.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	}
 
 	TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
 	GGt_tmp.ImportMatrix(GGt_Mat_tmp);

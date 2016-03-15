@@ -298,7 +298,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes ) {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		if ( d == 0 && config::MPIrank == 0) domains[d].Kplus.msglvl=1;
+		if ( d == 0 && config::MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 
 	    if (config::solver::REGULARIZATION == 0) {
 
@@ -1201,13 +1203,17 @@ void ClusterBase::CreateSa() {
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.start();
 	if (!PARDISO_SC) {
-		if (MPIrank == 0) F0_fast.msglvl = 1;
+		if (MPIrank == 0) {
+			F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		//SolaveMatF is obsolete - use Schur Complement Instead
 		F0_fast.SolveMatF(G0t,tmpM, true);
 		if (MPIrank == 0) F0_fast.msglvl = 0;
 	} else {
 		SparseSolverCPU tmpsps;
-		if (MPIrank == 0) tmpsps.msglvl = 1;
+		if (MPIrank == 0) {
+			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
         Salfa.ConvertDenseToCSR(1);
         Salfa.RemoveLower();

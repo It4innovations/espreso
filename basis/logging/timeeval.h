@@ -9,6 +9,8 @@
 #include <vector>
 #include <iomanip>
 
+#include "esconfig.h"
+
 namespace espreso {
 
 struct Checkpoint

@@ -800,7 +800,7 @@ void SparseSolverMIC::Create_SC(
 
                 maxfct = 1;           /* Maximum number of numerical factorizations. */
                 mnum = 1;             /* Which factorization to use. */
-                msglvl = 1;          /* Print statistical information in file */
+                msglvl = Info::report(LIBRARIES) ? 1 : 0;          /* Print statistical information in file */
                 error = 0;            /* Initialize error flag */
 
 

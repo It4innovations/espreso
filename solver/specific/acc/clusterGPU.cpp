@@ -63,7 +63,9 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		if (cluster_global_index == 1) cout << "."; // << i ;
 
 		SparseSolverCPU tmpsps;
-		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
+		if ( i == 0 && cluster_global_index == 1) {
+			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 0 );
 
 		if (USE_FLOAT){
@@ -162,7 +164,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 			break;
 		}
 		default:
-			ESLOG(ERROR) << "Invalid KSOLVER value.";
+			ESINFO(ERROR) << "Invalid KSOLVER value.";
 			exit(EXIT_FAILURE);
 		}
 
@@ -180,7 +182,9 @@ void ClusterGPU::SetupKsolvers ( ) {
 
 		domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-		if ( d == 0 && config::MPIrank == 0) domains[d].Kplus.msglvl=0;
+		if ( d == 0 && config::MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		if (config::MPIrank == 0) std::cout << ".";
 
 	}
