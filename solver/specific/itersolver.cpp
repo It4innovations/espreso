@@ -318,6 +318,25 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	// *** Calculate the stop condition *******************************************
 	tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
 
@@ -444,26 +463,13 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 		 norm_time.end();
 
 		 timing.totalTime.end();
-//TODO: if VERBOSE = 1
-		//timing.totalTime.printLastStatMPI();
 
-		if (mpi_rank == mpi_root) {
-			//printf (       "Iter MPI %5d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
-			int my_prec = 10; //log10(int(1./epsilon));
-		    std::cout.clear();
-		    std::cout<<"RegCG  MPI Iter: ";
-		    std::cout<<std::setw(my_prec+4);
-		    std::cout<<iter+1;
-		    std::cout.precision(my_prec+4);
-		    std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
-		    std::cout<<" ||residual|| = "        << norm_l;
-		    std::cout.precision(my_prec);
-		    std::cout<<", epsilon = "            << epsilon;
-		    std::cout.precision(my_prec+4);
-		    std::cout<<", tol = "                << tol;
-		    std::cout<<", Local time: " << timing.totalTime.getLastStat();
-		    std::cout<<"\n";
-		}
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
