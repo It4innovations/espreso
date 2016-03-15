@@ -136,8 +136,8 @@ void ClusterCPU::SetupKsolvers ( ) {
         if ( d == 0 && config::MPIrank == 0) {
         	domains[d].Kplus.msglvl = 0;
         }
-        if (config::MPIrank == 0) std::cout << ".";
-
+        ESINFO(PROGRESS2) << Info::plain() << ".";
     }
+    ESINFO(PROGRESS2);
 
 }

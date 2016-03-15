@@ -17,23 +17,13 @@ void Linear<TInput>::init()
 	_M.resize(this->subdomains());
 	_f.resize(this->subdomains());
 
-	if (this->_verbose && config::MPIrank == 0) {
-		std::cout << "Assembling matrices : ";
-	}
+	ESINFO(PROGRESS2) << "Assemble matrices K, M, T and right hand side";
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
-		//std::cout << s << " " ;
-		// TODO: set dynamics
 		KMf(s, false);
 		T(s);
-
-
-		if (this->_verbose && config::MPIrank == 0) {
-			std::cout << "." ;//<< s << " " ;
-		}
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
-	if (this->_verbose && config::MPIrank == 0) {
-		std::cout << std::endl;
-	}
+	ESINFO(PROGRESS2);
 
 	timeKasm.endWithBarrier();
 	this->_timeStatistics.addEvent(timeKasm);
@@ -43,18 +33,19 @@ void Linear<TInput>::init()
 		rows[s] = _K[s].rows;
 	}
 
-	TimeEvent timeParallelG("Gluing");
-	timeParallelG.startWithBarrier();
-
-	this->assembleConstraints(rows);
-
-	timeParallelG.end();
-	this->_timeStatistics.addEvent(timeParallelG);
-
 	TimeEvent timeBforces("Fill right hand side");
 	timeBforces.start();
 
 	RHS();
+
+	TimeEvent timeParallelG("Gluing");
+	timeParallelG.startWithBarrier();
+
+	ESINFO(PROGRESS2) << "Assemble equality constraints";
+	this->assembleConstraints(rows);
+
+	timeParallelG.end();
+	this->_timeStatistics.addEvent(timeParallelG);
 
 	if (config::info::printMatrices) {
 		for (size_t s = 0; s < this->subdomains(); s++) {

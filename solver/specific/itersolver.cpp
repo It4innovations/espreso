@@ -1228,10 +1228,8 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		count_cv += mpi_size/li;
-		if (mpi_rank == 0)
-			//printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size);
-			std::cout<<" Collecting matrices G : " << count_cv <<" of " << mpi_size << "\n";
 
+		ESINFO(PROGRESS2) << " Collecting matrices G : " << count_cv <<" of " << mpi_size;
 	}
 
 	//SparseMatrix Gtt;
@@ -1441,14 +1439,10 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 		GGt_l.Clear();
 
 		count_cv_l += mpi_size/li;
-		if (mpi_rank == 0)
-//			printf(" Collecting matrices G : %d of %d \r", count_cv_l, mpi_size);
-			std::cout<<" Collecting matrices G : " << count_cv_l <<" of " << mpi_size << "\n";
 
+		ESINFO(PROGRESS2) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
 	}
 	collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
-
-	if (mpi_rank == 0) cout << endl;
 
 	if (mpi_rank == 0)  {
 		GGt_Mat_tmp.RemoveLower();

@@ -20,6 +20,10 @@ Test::~Test()
 
 Info::~Info()
 {
+	if (_plain) {
+		std::cout << os.str();
+		return;
+	}
 	if (event == ERROR) {
 		fprintf(stderr, "%s\n", os.str().c_str());
 		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);

@@ -358,37 +358,9 @@ void LinearSolver::init(
 
 	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
 
-	if (MPI_rank == 0) std::cout << std::endl << "K regularization : ";
+	ESINFO(PROGRESS2) << "Make K regular";
 	cluster.ImportKmatrixAndRegularize( K_mat, fix_nodes );
-//	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//		//if (MPI_rank == 0) std::cout << "."; //<< d << " " ;
-//		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=1;
-//
-//	    if (R_from_mesh) {
-//
-//			cluster.domains[d].K.swap(K_mat[d]);
-//
-//      		if ( cluster.domains[d].K.type == 'G' )
-//		  		cluster.domains[d].K.RemoveLower();
-//
-//		  	if ( solver.USE_PREC == 11 )
-//		  		cluster.domains[d].Prec = cluster.domains[d].K;
-//
-//   			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
-//   	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
-//   					cluster.domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
-//
-//			cluster.domains[d].K_regularizationFromR ( cluster.domains[d].K );
-//			cluster.domains[d].enable_SP_refinement = true;
-//
-//			std::vector <eslocal> ().swap (cluster.domains[d].fix_dofs);
-//
-//	    }
-//
-//	    if (MPI_rank == 0) std::cout << ".";
-//
-//	}
-	if (MPI_rank == 0) std::cout << std::endl;
+
 	 KregMem.endWithoutBarrier( GetProcessMemory_u() );
 	 KregMem.printLastStatMPIPerNode();
 
@@ -406,66 +378,17 @@ void LinearSolver::init(
 
 	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
 
-	if (MPI_rank == 0) std::cout << std::endl << "K factorization : ";
+	ESINFO(PROGRESS2) << "Factorize K";
 	cluster.SetupKsolvers();
-//	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//
-//		// Import of Regularized matrix K into Kplus (Sparse Solver)
-//		switch (esconfig::solver::KSOLVER) {
-//		case 0: {
-//			cluster.domains[d].Kplus.ImportMatrix_wo_Copy (cluster.domains[d].K);
-//			break;
-//		}
-//		case 1: {
-//			cluster.domains[d].Kplus.ImportMatrix_wo_Copy (cluster.domains[d].K);
-//			break;
-//		}
-//		case 2: {
-//			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
-//			break;
-//		}
-//		case 3: {
-//			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
-//			break;
-//		}
-//		case 4: {
-//			cluster.domains[d].Kplus.ImportMatrix_fl(cluster.domains[d].K);
-//			break;
-//		}
-//		default:
-//			ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
-//			exit(EXIT_FAILURE);
-//		}
-//
-//		if (KEEP_FACTORS) {
-//			std::stringstream ss;
-//			ss << "init -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
-//			cluster.domains[d].Kplus.keep_factors = true;
-//			if (esconfig::solver::KSOLVER != 1) {
-//				cluster.domains[d].Kplus.Factorization (ss.str());
-//			}
-//		} else {
-//			cluster.domains[d].Kplus.keep_factors = false;
-//			cluster.domains[d].Kplus.MPIrank = MPI_rank;
-//		}
-//
-//		cluster.domains[d].domain_prim_size = cluster.domains[d].Kplus.cols;
-//
-//		//if ( cluster.cluster_global_index == 1 ) { std::cout < ".";}; //{ GetMemoryStat_u ( ); GetProcessMemoryStat_u ( ); }
-//	    if (MPI_rank == 0) std::cout << ".";
-//		if ( d == 0 && cluster.cluster_global_index == 1) cluster.domains[d].Kplus.msglvl=0;
-//	}
-	if (MPI_rank == 0) std::cout << std::endl;
-	 KFactMem.endWithoutBarrier( GetProcessMemory_u() );
-	 KFactMem.printLastStatMPIPerNode();
+
+	KFactMem.endWithoutBarrier( GetProcessMemory_u() );
+	KFactMem.printLastStatMPIPerNode();
 
 	ESLOG(MEMORY) << "After K solver setup process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-
-	if (MPI_rank == 0) std::cout << std::endl;
-	 timeSolKproc.endWithBarrier();
-	 timeEvalMain.addEvent(timeSolKproc);
+	timeSolKproc.endWithBarrier();
+	timeEvalMain.addEvent(timeSolKproc);
 	// *** END - Load Matrix K and regularization ******************************************************************************
 
 
@@ -673,6 +596,7 @@ void LinearSolver::set_R_from_K ()
 
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 	}
+	ESINFO(PROGRESS2) << "K kernel detected";
   // sum of ||K*R|| (all subdomains on the cluster)
 #ifdef VERBOSE_LEVEL_X
   double sum_per_sub_on_clst_norm_KR_d_pow_2 = 0;

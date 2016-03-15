@@ -3653,7 +3653,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   double end_time = omp_get_wtime();
 //12 - Total time in kernel detection
   elapsed_secs[12] = double(end_time - begin_time) ;
-  std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
+  //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
 
 #if VERBOSE_LEVEL>0
   os << std::fixed;
@@ -3672,7 +3672,5 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
   os.close();
 #endif
-
-
 }
 

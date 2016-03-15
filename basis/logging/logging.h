@@ -43,14 +43,14 @@ enum InfoEvent {
 	ERROR,
 	VERBOSE_LEVEL0,
 
-	BASIC,
+	PROGRESS1,
 	VERBOSE_LEVEL1,
 
-	DETAILED,
-	LIBRARIES,
+	PROGRESS2,
 	VERBOSE_LEVEL2,
 
 	EXHAUSTIVE,
+	LIBRARIES,
 	VERBOSE_LEVEL3
 };
 
@@ -107,10 +107,25 @@ protected:
 class Info
 {
 public:
-	Info(InfoEvent event): event(event) {};
+	Info(InfoEvent event): event(event), _plain(false) {};
 	~Info();
 
-	std::ostringstream& get() { return os; };
+	enum InfoMode { FORMATTED, PLAIN };
+	Info& operator<<(const InfoMode& mode)
+	{
+		_plain = mode == PLAIN;
+		return *this;
+	}
+	template<typename Ttype>
+	Info& operator<<(const Ttype &value)
+	{
+		os << value;
+		return *this;
+	}
+
+	Info& get() { return *this; };
+
+	static InfoMode plain() { return PLAIN; }
 
 	static bool report(InfoEvent event) {
 		switch (config::info::verboseLevel) {
@@ -125,6 +140,7 @@ public:
 protected:
 	std::ostringstream os;
 	InfoEvent event;
+	bool _plain;
 };
 
 

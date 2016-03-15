@@ -307,10 +307,9 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 
 	    }
 
-	    if (config::MPIrank == 0) std::cout << ".";
-
+	    ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
-
+	ESINFO(PROGRESS2);
 }
 
 
