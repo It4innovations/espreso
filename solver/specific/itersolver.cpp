@@ -1267,7 +1267,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 		G.Clear();
 		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl;
 
-		SpyText(GGt_Mat);
+		ESINFO(EXHAUSTIVE) << GGt_Mat.SpyText();
 
 		t1 = omp_get_wtime();
 		GGt_Mat.RemoveLower();
@@ -1452,8 +1452,9 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 	if (mpi_rank == 0)  {
 		GGt_Mat_tmp.RemoveLower();
-		SpyText(GGt_Mat_tmp);
 	}
+
+	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 

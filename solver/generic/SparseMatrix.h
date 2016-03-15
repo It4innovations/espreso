@@ -198,6 +198,7 @@ public:
 	void TestMatRow ( eslocal size, eslocal row_index);
 
 	void sortInCOO();
+	std::string SpyText();
 
 //	void get_kernel_from_K();
 	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
@@ -224,8 +225,5 @@ private:
   double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0e-5;
 
 };
-
-void sortMatrixInCOO(SparseMatrix & Matrix);
-void SpyText (SparseMatrix & A);
 
 }

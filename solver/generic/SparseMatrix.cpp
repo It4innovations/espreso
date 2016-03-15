@@ -84,91 +84,36 @@ static void q_sort_in(vector <eslocal>    & I_row_indices,
 }
 
 
-static void q_sort(SparseMatrix & Matrix, eslocal lo, eslocal hi ) {
-	eslocal h, l, p, p1, p2, t;
-	double p3, td;
-
-	if(lo>=hi)
-		return;
-
-	l = lo;
-	h = hi;
-	p = hi;
-
-	p1 = Matrix.J_col_indices[p];
-	p2 = Matrix.I_row_indices[p];
-	p3 = Matrix.V_values[p];
-
-	do {
-		while ((l < h) && (comp_x(Matrix.I_row_indices,Matrix.J_col_indices,l,p)<=0))
-			l = l+1;
-		while ((h > l) && (comp_x(Matrix.I_row_indices,Matrix.J_col_indices,h,p)>=0))
-			h = h-1;
-		if (l < h) {
-			t = Matrix.J_col_indices[l];
-			Matrix.J_col_indices[l] = Matrix.J_col_indices[h];
-			Matrix.J_col_indices[h] = t;
-
-			t = Matrix.I_row_indices[l];
-			Matrix.I_row_indices[l] = Matrix.I_row_indices[h];
-			Matrix.I_row_indices[h] = t;
-
-			td = Matrix.V_values[l];
-			Matrix.V_values[l] = Matrix.V_values[h];
-			Matrix.V_values[h] = td;
-
-		}
-	} while (l < h);
-
-	Matrix.J_col_indices[p] = Matrix.J_col_indices[l];
-	Matrix.J_col_indices[l] = p1;
-
-	Matrix.I_row_indices[p] = Matrix.I_row_indices[l];
-	Matrix.I_row_indices[l] = p2;
-
-	Matrix.V_values[p] = Matrix.V_values[l];
-	Matrix.V_values[l] = p3;
-
-	/* Sort smaller array first for less stack usage */
-	if (l-lo<hi-l) {
-		q_sort( Matrix, lo, l-1 );
-		q_sort( Matrix, l+1, hi );
-	} else {
-		q_sort( Matrix, l+1, hi );
-		q_sort( Matrix, lo, l-1 );
-	}
-}
-
-
-void espreso::SpyText (SparseMatrix & A) {
-
+std::string SparseMatrix::SpyText()
+{
+	std::stringstream ss;
 	SEQ_VECTOR<char> tmp (60,'-');
 
-	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
-		std::cout << *i << ' ';
+	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i) {
+		ss << *i << ' ';
+	}
+	ss << "\n";
 
-	cout << endl;
-
-	eslocal rows_coef = 1 + A.rows / 60;
-	eslocal cols_coef = 1 + A.cols / 60;
+	eslocal rows_coef = 1 + rows / 60;
+	eslocal cols_coef = 1 + cols / 60;
 
 	eslocal col_index = 0;
 	eslocal row_index = 0;
-	for (eslocal r = 0; r < A.rows; r = r + rows_coef) {
+	for (eslocal r = 0; r < rows; r = r + rows_coef) {
 		eslocal row_length = 0;
-		if (( r + rows_coef) < A.rows)
-			row_length = A.CSR_I_row_indices[r+rows_coef] - A.CSR_I_row_indices[r];
+		if (( r + rows_coef) < rows)
+			row_length = CSR_I_row_indices[r+rows_coef] - CSR_I_row_indices[r];
 		else
- 			row_length = A.CSR_I_row_indices[A.rows] - A.CSR_I_row_indices[r];
+ 			row_length = CSR_I_row_indices[rows] - CSR_I_row_indices[r];
 
 			SEQ_VECTOR<char> tmp (60,' ');
 			SEQ_VECTOR<eslocal> tmp_c (60,0);
 		for (eslocal c = 0; c < row_length; c++) {
-			if (A.CSR_V_values[col_index] != 0.0) {
-				tmp_c[A.CSR_J_col_indices[col_index] / cols_coef]++;
+			if (CSR_V_values[col_index] != 0.0) {
+				tmp_c[CSR_J_col_indices[col_index] / cols_coef]++;
 			} else {
-				if (tmp_c[A.CSR_J_col_indices[col_index] / cols_coef] == 0)
-					tmp_c[A.CSR_J_col_indices[col_index] / cols_coef] = -1;
+				if (tmp_c[CSR_J_col_indices[col_index] / cols_coef] == 0)
+					tmp_c[CSR_J_col_indices[col_index] / cols_coef] = -1;
 			}
 			col_index++;
 		}
@@ -183,65 +128,28 @@ void espreso::SpyText (SparseMatrix & A) {
 			}
 		}
 
-		cout << "|";
-		for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
-			std::cout << *i << ' ';
+		ss << "|";
+		for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i) {
+			ss << *i << ' ';
+		}
 
-		cout << "|" << endl;
+		ss << "|" << endl;
 	}
 
 	//SEQ_VECTOR<char> tmp (60,'-');
 
-	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
-		std::cout << *i << ' ';
+	for( std::SEQ_VECTOR<char>::const_iterator i = tmp.begin(); i != tmp.end(); ++i) {
+		ss << *i << ' ';
+	}
 
-	cout << endl << endl;
-}
+	ss << "\n";
 
-void espreso::sortMatrixInCOO(SparseMatrix & Matrix)
-{
-	q_sort(Matrix, 0, Matrix.nnz - 1);
-
-	//eslocal k = 0;
-	///*  Remove duplicates */
-	//for( eslocal i = 1; i < Matrix.nnz; i++) {
-	//	if ( (Matrix.I_row_indices[k] != Matrix.I_row_indices[i]) || (Matrix.J_col_indices[k] != Matrix.J_col_indices[i]) ){
-	//		k++;
-	//		Matrix.I_row_indices[k] = Matrix.I_row_indices[i];
-	//		Matrix.J_col_indices[k] = Matrix.J_col_indices[i];
-	//		Matrix.V_values[k] = Matrix.V_values[i];
-	//	} else {
-	//		Matrix.V_values[k] += Matrix.V_values[i];
-	//	}
-	//}
-	//Matrix.nnz = k+1;
-	//Matrix.I_row_indices.resize(k+1);
-	//Matrix.J_col_indices.resize(k+1);
-	//Matrix.V_values.resize(k+1);
-
+	return ss.str();
 }
 
 void SparseMatrix::sortInCOO()
 {
 	q_sort_in(I_row_indices, J_col_indices,V_values, 0, nnz - 1);
-
-	//eslocal k = 0;
-	///*  Remove duplicates */
-	//for( eslocal i = 1; i < Matrix.nnz; i++) {
-	//	if ( (Matrix.I_row_indices[k] != Matrix.I_row_indices[i]) || (Matrix.J_col_indices[k] != Matrix.J_col_indices[i]) ){
-	//		k++;
-	//		Matrix.I_row_indices[k] = Matrix.I_row_indices[i];
-	//		Matrix.J_col_indices[k] = Matrix.J_col_indices[i];
-	//		Matrix.V_values[k] = Matrix.V_values[i];
-	//	} else {
-	//		Matrix.V_values[k] += Matrix.V_values[i];
-	//	}
-	//}
-	//Matrix.nnz = k+1;
-	//Matrix.I_row_indices.resize(k+1);
-	//Matrix.J_col_indices.resize(k+1);
-	//Matrix.V_values.resize(k+1);
-
 }
 
 
