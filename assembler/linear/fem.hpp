@@ -202,8 +202,6 @@ void Linear<FEM>::T(size_t part)
 			for (size_t a = 0; a < av.size(); a++) {
 				eslocal j = coords.localIndex(av[a], part);
 				for (int d = 0; d < this->DOFs(); d++) {
-//					_T(i * this->DOFs() + d, j * this->DOFs() + d) = -1;
-//					_T(j * this->DOFs() + d, i * this->DOFs() + d) = 1;
 					_T(i * this->DOFs() + d, j * this->DOFs() + d) = -1;
 					_T(j * this->DOFs() + d, i * this->DOFs() + d) = 1;
 				}
@@ -212,6 +210,8 @@ void Linear<FEM>::T(size_t part)
 	}
 
 	SparseCSRMatrix<eslocal> tmpT = _T;
+
+	this->_T[part] = tmpT;
 }
 
 template <>
