@@ -119,19 +119,20 @@ double Measure::processMemory()
 	return 0;
 }
 
-double Measure::globalMemory()
+double Measure::usedRAM()
 {
 	struct sysinfo memInfo;
 	sysinfo(&memInfo);
 	return ((memInfo.totalram - memInfo.freeram) * memInfo.mem_unit) / 1024.0 / 1024.0;
 }
 
-double Measure::availableMemory()
+double Measure::availableRAM()
 {
 	struct sysinfo memInfo;
 	sysinfo(&memInfo);
 	return (memInfo.totalram * memInfo.mem_unit) / 1024.0 / 1024.0;
 }
+
 }
 
 

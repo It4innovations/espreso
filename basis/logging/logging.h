@@ -16,7 +16,7 @@
 
 #define ESTEST(EVENT) if (!espreso::Test::report(EVENT))    ; else espreso::Test(EVENT).get()
 #define ESINFO(EVENT) if (!espreso::Info::report(EVENT))    ; else espreso::Info(EVENT).get()
-#define ESTIME(EVENT) if (!espreso::Measure::report(EVENT)) ; else espreso::Measure(EVENT).get()
+#define ESLOG(EVENT)  if (!espreso::Measure::report(EVENT)) ; else espreso::Measure(EVENT).get()
 
 namespace espreso {
 
@@ -48,7 +48,6 @@ enum InfoEvent {
 
 	DETAILED,
 	LIBRARIES,
-	MEMORY,
 	VERBOSE_LEVEL2,
 
 	EXHAUSTIVE,
@@ -65,6 +64,7 @@ enum MeasureEvent {
 	CHECKPOINT2,
 	MEASURE_LEVEL2,
 
+	MEMORY,
 	CHECKPOINT3,
 	MEASURE_LEVEL3
 };
@@ -140,8 +140,8 @@ public:
 	~Measure();
 
 	static double processMemory();
-	static double globalMemory();
-	static double availableMemory();
+	static double usedRAM();
+	static double availableRAM();
 
 	std::ostringstream& get() { return os; };
 

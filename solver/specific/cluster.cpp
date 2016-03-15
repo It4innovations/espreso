@@ -109,12 +109,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	//my_neighs = neigh_domains;
 
 
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** setting vectors for lambda map ******************************************************************************************** " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "Setting vectors for lambdas";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 
 	my_lamdas_indices.resize( lambda_map_sub.size() );
@@ -137,13 +134,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 	}
 
-
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** setting vectors for lambda communication  ********************************************************************************* " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_comm_lambdas_indices .resize(my_neighs.size());
 	my_comm_lambdas			.resize(my_neighs.size());
@@ -216,12 +209,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 
 	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** B1 compression ************************************************************************************************************ " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "B1 compression";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
@@ -272,12 +262,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 
 	//// *** Compression of Matrix G1 to work with compressed lambda vectors *******************
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** G1 compression ************************************************************************************************************ " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "G1 compression";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (USE_DYNAMIC == 0) {
 		if ( ! (USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
@@ -286,12 +273,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	}
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** setting vectors end ******************************************************************************************************* " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "Lambdas end";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
 
