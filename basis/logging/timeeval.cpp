@@ -261,7 +261,6 @@ TimeEval::TimeEval(std::string name):
 {
 }
 
-
 void TimeEval::addEvent(TimeEvent &timeEvent) {
 	timeEvents.push_back(timeEvent);
 }

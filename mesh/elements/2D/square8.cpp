@@ -1,6 +1,6 @@
 #include "square8.h"
 
-using namespace mesh;
+using namespace espreso;
 
 // TODO: Implement base functions
 std::vector<DenseMatrix> Square8::_dN;

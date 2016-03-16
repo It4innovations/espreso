@@ -157,14 +157,14 @@ Factory::Factory(const Options &options)
 	if (config::output::saveFixPoints) {
 		output::VTK_Full::fixPoints(*_mesh, "meshFixPoints", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
-	if (esconfig::output::saveCorners) {
-		esoutput::VTK_Full::corners(*_mesh, "meshCorners", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	if (config::output::saveCorners) {
+		output::VTK_Full::corners(*_mesh, "meshCorners", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
 	if (config::output::saveDirichlet) {
 		output::VTK_Full::dirichlet(*_mesh, "meshDirichlet", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
-	if (esconfig::output::saveAveraging) {
-		esoutput::VTK_Full::averaging(*_mesh, "meshAveraging", esconfig::output::subdomainShrinkRatio, esconfig::output::clusterShrinkRatio);
+	if (config::output::saveAveraging) {
+		output::VTK_Full::averaging(*_mesh, "meshAveraging", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
 
 	_assembler = getAssembler(_mesh, _surface);

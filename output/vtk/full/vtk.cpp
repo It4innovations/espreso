@@ -26,19 +26,19 @@ void VTK_Full::coordinatesDisplacement(const std::vector<std::vector<double> > &
 	}
 }
 
-void VTK_Full::mesh(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK_Full::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	VTK_Full output(mesh, path);
 	output.store(shrinkSubdomain, shringCluster);
 }
 
-void VTK_Full::fixPoints(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK_Full::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	VTK_Full output(mesh, path);
 	output.store(mesh.getFixPoints(), shrinkSubdomain, shringCluster);
 }
 
-void VTK_Full::corners(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK_Full::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	VTK_Full output(mesh, path);
 	std::vector<std::vector<eslocal> > corners(mesh.parts());
@@ -54,7 +54,7 @@ void VTK_Full::corners(const mesh::Mesh &mesh, const std::string &path, double s
 	output.store(corners, shrinkSubdomain, shringCluster);
 }
 
-void VTK_Full::dirichlet(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK_Full::dirichlet(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	VTK_Full outputx(mesh, path + "X");
 	VTK_Full outputy(mesh, path + "Y");
@@ -64,9 +64,9 @@ void VTK_Full::dirichlet(const mesh::Mesh &mesh, const std::string &path, double
 	std::vector<std::vector<eslocal> > dy(mesh.parts());
 	std::vector<std::vector<eslocal> > dz(mesh.parts());
 
-	auto &dxMap = mesh.coordinates().property(mesh::DIRICHLET_X).values();
-	auto &dyMap = mesh.coordinates().property(mesh::DIRICHLET_Y).values();
-	auto &dzMap = mesh.coordinates().property(mesh::DIRICHLET_Z).values();
+	auto &dxMap = mesh.coordinates().property(DIRICHLET_X).values();
+	auto &dyMap = mesh.coordinates().property(DIRICHLET_Y).values();
+	auto &dzMap = mesh.coordinates().property(DIRICHLET_Z).values();
 
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		auto &l2c = mesh.coordinates().localToCluster(p);
@@ -88,7 +88,7 @@ void VTK_Full::dirichlet(const mesh::Mesh &mesh, const std::string &path, double
 	outputz.store(dz, shrinkSubdomain, shringCluster);
 }
 
-void VTK_Full::averaging(const mesh::Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK_Full::averaging(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	VTK_Full output(mesh, path);
 	std::vector<std::vector<eslocal> > averaging(mesh.parts());

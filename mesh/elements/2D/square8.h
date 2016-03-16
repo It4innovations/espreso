@@ -10,7 +10,7 @@
 #define Square8GPCount 4
 #define Square8VTKCode 23
 
-namespace mesh {
+namespace espreso {
 
 class Square8: public Element
 {
