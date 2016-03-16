@@ -986,7 +986,9 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
     SC_out.RemoveLower();
     SC_out.type = 'S';
 
-    ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+	if (msglvl) {
+		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+	}
 
 //    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
 //    	SC_out.RemoveLower();
