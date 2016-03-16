@@ -2,7 +2,7 @@
 
 using namespace espreso;
 
-std::vector<DenseMatrix> Hexa_dN() {
+static std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
 		Hexahedron8GPCount,
 		DenseMatrix(Point::size(), Hexahedron8NodesCount)
@@ -52,7 +52,7 @@ std::vector<DenseMatrix> Hexa_dN() {
 	return dN;
 }
 
-std::vector<DenseMatrix> Hexa_N() {
+static std::vector<DenseMatrix> Hexa_N() {
 	std::vector<DenseMatrix> N(
 		Hexahedron8GPCount,
 		DenseMatrix(1, Hexahedron8NodesCount)
@@ -90,19 +90,19 @@ bool Hexahedron8::match(const eslocal *indices, eslocal n) {
 	return false;
 #endif
 
-	if (n != 8) {
-		return false;
-	}
-
-	for (eslocal i = 0; i < 7; i++) {
-		for (eslocal j = i + 1; j < 8; j++) {
-			if (Element::match(indices, i, j)) {
-				return false;
+	switch (n) {
+	case Hexahedron8NodesCount:
+		for (eslocal i = 0; i < Hexahedron8NodesCount - 1; i++) {
+			for (eslocal j = i + 1; j < Hexahedron8NodesCount; j++) {
+				if (Element::match(indices, i, j)) {
+					return false;
+				}
 			}
 		}
+		return true;
+	default:
+		return false;
 	}
-
-	return true;
 }
 
 std::vector<eslocal> Hexahedron8::getNeighbours(size_t nodeIndex) const

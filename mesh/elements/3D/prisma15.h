@@ -87,8 +87,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Prisma15NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

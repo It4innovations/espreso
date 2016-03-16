@@ -123,7 +123,7 @@ static std::vector<double> Pyramid13_weight()
 		return std::vector<double> (8, 1.0);
 	}
 	default:
-		ESINFO(ERROR) << "Unknown number of Tatrahedron10 GP count.";
+		ESINFO(ERROR) << "Unknown number of Pyramid13 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -265,6 +265,7 @@ std::vector<eslocal> Pyramid13::getNeighbours(size_t nodeIndex) const
 
 std::vector<eslocal> Pyramid13::getFace(size_t face) const
 {
+	ESINFO(ERROR) << "Pyramid13 getFace is not implemented";
   //TODO
 	// bottom
 	//if (face == 3) {
