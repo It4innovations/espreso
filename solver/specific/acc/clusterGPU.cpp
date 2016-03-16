@@ -7,8 +7,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
-	if (cluster_global_index == 1)
-		cout << "Creating B1*K+*B1t : using Pardiso SC : ";
+	ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using Pardiso SC";
 
 	this->NUM_MICS = 2;
 	#ifdef MIC
@@ -60,7 +59,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
-		if (cluster_global_index == 1) cout << "."; // << i ;
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 
 		SparseSolverCPU tmpsps;
 		if ( i == 0 && cluster_global_index == 1) {
@@ -101,12 +100,9 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		if ( USE_KINV == 1 ) {
 			cilk_for (eslocal d = 0; d < domains.size(); d++) {
 				cudaError_t status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
-				if (status != cudaSuccess)
-					printf("Error allocating pinned host memory \n");
-
-				//status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
-				//if (status != cudaSuccess)
-				//	printf("Error allocating pinned host memory \n");
+				if (status != cudaSuccess) {
+					ESINFO(ERROR) << "Error allocating pinned host memory";
+				}
 			}
 		}
 #endif
@@ -131,8 +127,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 		domains[i].B1t_comp_dom.Clear();
 
-	if (cluster_global_index == 1)
-		cout << endl;
+	ESINFO(PROGRESS2);
 
 }
 
@@ -185,8 +180,6 @@ void ClusterGPU::SetupKsolvers ( ) {
 		if ( d == 0 && config::MPIrank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
-		if (config::MPIrank == 0) std::cout << ".";
-
 	}
 
 }

@@ -162,15 +162,7 @@ void SparseSolverPardiso::ImportMatrix(SparseMatrix & A) {
 void SparseSolverPardiso::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs;
-	char * var = getenv("SOLVER_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-	else {
-    	printf("Set environment SOLVER_NUM_THREADS to 1");
-        exit(1);
-	}
-
+	int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
     iparm[2]  = num_procs;
 }
 
@@ -196,9 +188,9 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 	}
 
 #ifdef DEBUG
-	printf ("\nReordering completed ... ");
-	printf ("\nNumber of nonzeros in factors = %d", iparm[17]);
-	printf ("\nNumber of factorization MFLOPS = %d", iparm[18]);
+	ESINFO(PROGRESS2) << "Reordering completed ... ";
+	ESINFO(PROGRESS2) << "Number of nonzeros in factors = " <<  iparm[17];
+	ESINFO(PROGRESS2) << "Number of factorization MFLOPS = " << iparm[18];
 #endif
 
 	/* -------------------------------------------------------------------- */
@@ -216,7 +208,7 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 	}
 
 #ifdef DEBUG
-	printf ("\nFactorization completed ... ");
+	ESINFO(PROGRESS2) << "Factorization completed ...";
 #endif
 
 	//TODO:
@@ -251,7 +243,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
 
@@ -265,7 +257,6 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs_sol) {
 			&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 			iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -293,7 +284,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
 
@@ -307,7 +298,6 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 			&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 			iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -333,7 +323,7 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error, dparm);
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
 
@@ -347,7 +337,6 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 			&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 			iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -437,7 +426,6 @@ void SparseSolverPardiso::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B
 			&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 			iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -588,15 +576,7 @@ void SparseSolverPardiso::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, 
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -666,7 +646,7 @@ void SparseSolverPardiso::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, 
 
 	if (error != 0)
 	{
-		printf ("\nERROR during the solution of the system : %d", error);
+		ESINFO(ERROR) << "ERROR during the solution of the system: " << error;
 		exit (1);
 	} else {
 		initialized = true;
@@ -783,15 +763,7 @@ void SparseSolverPardiso::Create_SC( SparseMatrix & B_out, int sc_size, bool isT
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -837,19 +809,17 @@ void SparseSolverPardiso::Create_SC( SparseMatrix & B_out, int sc_size, bool isT
 	//msglvl = 0;			/* Supress printing statistical information */
 	error  = 0;			/* Initialize error flag */
 
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
+	switch (error) {
+	case -10:
+		ESINFO(ERROR) << "No licence file found";
+		break;
+	case -11:
+		ESINFO(ERROR) << "Licence is expired";
+		break;
+	case -12:
+		ESINFO(ERROR) << "Wrong username eor hostname";
+		break;
+	}
 
 
     int nrows_S = sc_size;
@@ -866,7 +836,7 @@ void SparseSolverPardiso::Create_SC( SparseMatrix & B_out, int sc_size, bool isT
 
     if (error != 0)
     {
-        printf("\nERROR during symbolic factorization: %d", error);
+        ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
         exit(1);
     } else {
     	initialized = true;
@@ -966,15 +936,7 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1020,20 +982,17 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
 	//msglvl = 0;		/* Supress printing statistical information */
 	error  = 0;			/* Initialize error flag */
 
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
-
+	switch (error) {
+	case -10:
+		ESINFO(ERROR) << "No licence file found";
+		break;
+	case -11:
+		ESINFO(ERROR) << "Licence is expired";
+		break;
+	case -12:
+		ESINFO(ERROR) << "Wrong username eor hostname";
+		break;
+	}
 
     int nrows_S = B_in.cols;
     phase       = 12;
@@ -1049,7 +1008,7 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
 
     if (error != 0)
     {
-        printf("\nERROR during symbolic factorization: %d", error);
+        ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
         exit(1);
     } else {
     	initialized = true;
@@ -1206,15 +1165,7 @@ void SparseSolverPardiso::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMa
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1260,19 +1211,17 @@ void SparseSolverPardiso::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMa
 	//msglvl = 1;		/* Supress printing statistical information */
 	error  = 0;			/* Initialize error flag */
 
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
+	switch (error) {
+	case -10:
+		ESINFO(ERROR) << "No licence file found";
+		break;
+	case -11:
+		ESINFO(ERROR) << "Licence is expired";
+		break;
+	case -12:
+		ESINFO(ERROR) << "Wrong username eor hostname";
+		break;
+	}
 
 
     int nrows_S = B1_in.cols;
@@ -1289,7 +1238,7 @@ void SparseSolverPardiso::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMa
 
     if (error != 0)
     {
-        printf("\nERROR during symbolic factorization: %d", error);
+        ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
         exit(1);
     } else {
     	initialized = true;

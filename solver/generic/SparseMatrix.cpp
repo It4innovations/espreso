@@ -573,26 +573,19 @@ eslocal  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
 
 	if ( out.is_open() ) {
-		char delim = ';';
-
 		//write parameters
 		out << "%% rows;cols;nnz;type" << endl;
 		out << rows << ";" << cols << ";" << nnz << ";" << type << endl;
 
 		out.write((char*)&CSR_I_row_indices[0], CSR_I_row_indices.size() * sizeof(eslocal));
-		cout << endl;
-
 		out.write((char*)&CSR_J_col_indices[0], CSR_J_col_indices.size() * sizeof(eslocal));
-		cout << endl;
-
 		out.write((char*)&CSR_V_values[0], CSR_V_values.size() * sizeof(double));
-		cout << endl;
 
 		out.close();
 		return 0;
 
 	} else {
-		cout << "Matrix file " << filename << " cannot be created ! " << endl;
+		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
 		return -1;
 	}
 
@@ -638,7 +631,7 @@ eslocal SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for
 
 	} else {
 
-		cout << "Matrix file " << filename << " not found ! " << endl;
+		ESINFO(ERROR) << "Matrix file " << filename << " not found ! ";
 		return -1;
 
 	}
@@ -739,10 +732,10 @@ void SparseMatrix::PrintMatSize( string Matname ) {
 	eslocal CSR_size   = CSR_I_row_indices.size() * sizeof(eslocal) + CSR_J_col_indices.size() * sizeof(eslocal) + CSR_V_values.size() * sizeof(double);
 	eslocal IJV_size   = I_row_indices.size() * sizeof(eslocal) 	+ J_col_indices.size() * sizeof(eslocal) 	  + V_values.size() * sizeof(double);
 
-	std::cout << std::endl << "Matrix " << Matname << " sizes: "<< std::endl;
-	std::cout << "DNS size: " << dense_size << " B" << std::endl;
-	std::cout << "CSR size: " << CSR_size << " B"  << std::endl;
-	std::cout << "IJV size: " << IJV_size << " B" << std::endl <<std::endl;
+	ESINFO(ALWAYS) << "Matrix " << Matname << " sizes:";
+	ESINFO(ALWAYS) << "DNS size: " << dense_size << " B";
+	ESINFO(ALWAYS) << "CSR size: " << CSR_size << " B";
+	ESINFO(ALWAYS) << "IJV size: " << IJV_size << " B";
 }
 
 
@@ -1075,7 +1068,7 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 				beta, &y_out[y_out_vector_start_index], 1);
 	} else {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-                    std::cout << "Transposition is not supported for packed symmetric matrices" << std::endl;
+                    ESINFO(ERROR) << "Transposition is not supported for packed symmetric matrices";
                     return;
 		} else {
 
@@ -1103,8 +1096,6 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 
 				for (eslocal i = 0; i < rows; i++)
 					y_out[i + y_out_vector_start_index] = (double)vec_fl_out[i];
-
-				//cout << "using float " << endl;
 
 			}
 		}
@@ -1187,8 +1178,6 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTO
 
 		cudaStreamCreate(&stream);
 		cublasSetStream(handle, stream);
-
-		cout << "Y";
 	}
 
 	// Set input matrices on device
@@ -1254,8 +1243,6 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 
 		cudaStreamCreate(       &stream);
 		cublasSetStream (handle, stream);
-
-		cout << "Y";
 	}
 
 	// Set input matrices on device
@@ -1333,7 +1320,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
 		if (status != cudaSuccess)   {
-      std::cout <<"Error allocating GPU memory \n";
+			ESINFO(ERROR) << "Error allocating GPU memory";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1341,7 +1328,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 		if (status != cudaSuccess) {
-      std::cout <<"Error allocating GPU memory for Matrix \n";
+			ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
 			//MPI_Finalize();
 			//exit(0);
 			error = -1;
@@ -1350,7 +1337,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
 		if (status != cudaSuccess) {
-      std::cout <<"Error allocating GPU memory for Vector \n";
+			ESINFO(ERROR) << "Error allocating GPU memory for Vector";
 			//MPI_Finalize();
 			//exit(0);
 			error = -1;
@@ -1367,10 +1354,6 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		cudaStreamCreate(&stream);
 		cublasSetStream(handle, stream);
-
-		cout << "X";
-
-
 	}
 
 #endif
@@ -1402,8 +1385,6 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 
 		cudaStreamCreate(       &stream);
 		cublasSetStream (handle, stream);
-
-		cout << "Y";
 	}
 
 	// Set input matrices on device
@@ -1468,7 +1449,7 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
 		if (status != cudaSuccess)   {
-      std::cout<< "Error allocating GPU memory \n";
+			ESINFO(ERROR) << "Error allocating GPU memory";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1476,7 +1457,7 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
 		if (status != cudaSuccess) {
-      std::cout<<"Error allocating GPU memory  \n";
+			ESINFO(ERROR) << "Error allocating GPU memory";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1484,7 +1465,7 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
 		if (status != cudaSuccess) {
-      std::cout<<"Error allocating GPU memory \n";
+			ESINFO(ERROR) << "Error allocating GPU memory";
 			MPI_Finalize();
 			exit(0);
 		}
@@ -1500,9 +1481,6 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		cudaStreamCreate(&stream);
 		cublasSetStream(handle, stream);
-
-		cout << "X";
-
 	}
 
 #endif
@@ -1976,33 +1954,35 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 }
 
 void SparseMatrix::printMatCSR(char *str0){
-  eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
-  printf("%s = [ ...\n",str0);
-  for (eslocal i = 0;i<rows;i++){
-    for (eslocal j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
-      printf("%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
-    }
-  }
-  printf("];%s = full(sparse(%s(:,1),%s(:,2),%s(:,3),%d,%d));\n",
-                str0,str0,str0,str0,rows,cols);
-  if (type=='S'){
-    printf("%s=%s+%s'-diag(diag(%s));\n",str0,str0,str0,str0);
-  }
+	eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
+	ESINFO(ALWAYS) << str0 << " = [ ...";
+
+	for (eslocal i = 0; i < rows; i++) {
+		for (eslocal j = CSR_I_row_indices[i]; j < CSR_I_row_indices[i + 1]; j++) {
+			ESINFO(ALWAYS) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
+		}
+	}
+	ESINFO(ALWAYS) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
+	if (type=='S'){
+		ESINFO(ALWAYS) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
+	}
 }
 
 void SparseMatrix::printMatCSR2(char *str0){
-  eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
+	eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
 
-  FILE *fid = fopen(str0,"w");
-  int isGeneral=0;
-  if (type=='G') isGeneral=1;
-  fprintf(fid,"%d %d %d\n",rows,cols,isGeneral);
+	FILE *fid = fopen(str0,"w");
+	int isGeneral = 0;
+	if (type=='G') {
+		isGeneral = 1;
+	}
+	fprintf(fid,"%d %d %d\n",rows,cols,isGeneral);
 
-  for (eslocal i = 0;i<rows;i++){
-    for (eslocal j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
-      fprintf(fid,"%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
-    }
-  }
+	for (eslocal i = 0;i<rows;i++){
+		for (eslocal j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
+			fprintf(fid,"%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
+		}
+	}
 #endif
 }
 
@@ -2157,34 +2137,34 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_
     }
   }
 //
-  if (plot_a_and_b_defines_tridiag){
-    printf("\n alpha beta \n");
-    for (eslocal i = 0 ; i < cnt; i++){
-      printf("%3.8e %3.8e\n",alphaVec[i],betaVec[i]);
-    }
-  }
+	if (plot_a_and_b_defines_tridiag) {
+		ESINFO(DETAILS) << "alpha beta";
+		for (eslocal i = 0 ; i < cnt; i++) {
+			ESINFO(DETAILS) << alphaVec[i] << " " << betaVec[i];
+		}
+	}
   char JOBZ = 'N';
   double *Z = new double[cnt];
   eslocal info;
   eslocal ldz = cnt;
   info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
-  if (plot_n_first_n_last_eigenvalues>0){
-    printf("cond(%s) = %3.15e\tit: %d\n",str0,estim_cond,cnt);
-  }
+	if (plot_n_first_n_last_eigenvalues > 0) {
+		ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
+	}
   *maxEig = alphaVec[cnt-1];
 
-  if (plot_n_first_n_last_eigenvalues>0){
-    std::cout<<"eigenvals of "<<str0 <<" d{1:" << plot_n_first_n_last_eigenvalues << "} and d{" <<
-         cnt-plot_n_first_n_last_eigenvalues+2 << ":\t"<< cnt<< "}\n";
+	if (plot_n_first_n_last_eigenvalues > 0) {
+		ESINFO(DETAILS)
+			<< "eigenvals of " << str0 << " d{1:" << plot_n_first_n_last_eigenvalues << "} and d{"
+			<< cnt-plot_n_first_n_last_eigenvalues+2 << ":\t" << cnt<< "}";
 
-
-    for (eslocal i = 0 ; i < cnt; i++){
-      if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues){
-        std::cout<< i+1 <<":"<< alphaVec[i] << "\n";
-      }
-    }
-  }
+		for (eslocal i = 0 ; i < cnt; i++) {
+			if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues) {
+				ESINFO(DETAILS) << i + 1 << ":" << alphaVec[i];
+			}
+		}
+	}
 //
   delete [] s;
   delete [] s_bef;
@@ -2239,12 +2219,12 @@ void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_
 
 
 	if (nnz == 0 && transa == 'T' && beta == 1.0) {
-		cout << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa << endl;
+		ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
 		return;
 	}
 
 	if (nnz == 0 && beta != 1.0) {
-		cout << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa << endl;
+		ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
 		return;
 	}
 
@@ -3060,7 +3040,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #endif
 //  - OWN
 #if VERBOSE_LEVEL == 4
-    std::cout << "debug set-up \n";
+    ESINFO(PROGRESS2) << "debug set-up";
 #endif
 
 
@@ -3235,7 +3215,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
       }
 #endif
     if (info){
-      std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse\n";
+      ESINFO(DETAILS) << "info = " << info << " something wrong with Schur complement in SparseSolver::generalIinverse";
     }
     delete [] WK_modif;
     delete [] ZK_modif;
@@ -3449,7 +3429,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   MKL_INT ldz = S.cols;
   info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
   if (info){
-    std::cout <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse\n";
+    ESINFO(DETAILS) <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse";
   }
 #if VERBOSE_LEVEL>0
 //6 - Schur complement eigenvalues obtained

@@ -15,11 +15,10 @@ Options::Options(int* argc, char*** argv)
 : verboseLevel(0), testingLevel(0), measureLevel(0)
 {
 	auto printOption = [] (const std::string &opt, const std::string &desc) {
-		std::cout << "\t" << opt;
 		if (opt.length() < 16) {
-			std::cout << "\t\t" << desc << "\n";
+			ESINFO(ALWAYS) << "\t" << opt << "\t\t" << desc;
 		} else {
-			std::cout << "\t" << desc << "\n";
+			ESINFO(ALWAYS) << "\t" << opt << "\t" << desc;
 		}
 	};
 
@@ -49,9 +48,9 @@ Options::Options(int* argc, char*** argv)
 			path.erase(0, path.find_first_not_of('='));
 			break;
 		case 'h':
-			std::cout << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
+			ESINFO(ALWAYS) << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
 
-			std::cout << "\nOPTIONS:\n";
+			ESINFO(ALWAYS) << "\nOPTIONS:\n";
 			printOption("-h, --help", "show this message");
 			printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
 			printOption("-p, --path=PATH", "path to an example");
@@ -59,8 +58,8 @@ Options::Options(int* argc, char*** argv)
 			printOption("-t,tt,ttt", "testing level");
 			printOption("-m,mm,mmm", "time measuring level");
 
-			std::cout << "\nPARAMETERS:\n";
-			std::cout << "\tlist of nameless parameters for a particular example\n";
+			ESINFO(ALWAYS) << "\nPARAMETERS:\n";
+			ESINFO(ALWAYS) << "\tlist of nameless parameters for a particular example\n";
 			exit(EXIT_SUCCESS);
 			break;
 		case '?':

@@ -14,7 +14,6 @@
 #include <map>
 
 using std::vector;
-using std::cout;
 using std::map;
 using std::make_pair;
 

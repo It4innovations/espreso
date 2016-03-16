@@ -15,8 +15,7 @@ ClusterAcc::~ClusterAcc() {
 
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
-    if (cluster_global_index == 1)
-        cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
+	ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
@@ -66,7 +65,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 #pragma omp parallel num_threads(N_MICS)
     {
         int  i = omp_get_thread_num();
-        std::cout << "DEVICE: " <<i << std::endl;
+        ESINFO(PROGRESS2) << "DEVICE: " << i;
         this->B1KplusPacks[i].AllocateVectors( );
         this->B1KplusPacks[i].SetDevice( i );
         SparseSolverAcc tmpsps_mic;
@@ -176,8 +175,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
-    if (cluster_global_index == 1)
-        cout << "Creating B1*K+*B1t on Xeon Phi accelerator : ";
+	ESINFO(PROGRESS2) << "Creating B1*K+*B1t on Xeon Phi accelerator";
 
 
     // compute sizes of data to be offloaded to MIC
@@ -220,6 +218,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
         offset += matrixPerPack;
     }
 
+    ESINFO(PROGRESS2) << "Creating B1*K+*B1t : ";
+
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
         domains[i].KplusF.msglvl = 0;
@@ -232,12 +232,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
         domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
         domains[i].B1Kplus.MatTranspose();
 
-        if (cluster_global_index == 1 && i == 0)
-            cout << "Creating B1*K+*B1t : ";
-
-        if (cluster_global_index == 1) {
-            cout << " " << i ;
-        }
+        ESINFO(PROGRESS2) << Info::plain() << " " << i;
 
         SparseMatrix Btmp;
         Btmp.MatAddInPlace(domains[i].B1Kplus, 'N', 1.0);
@@ -253,7 +248,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
 
     }
 
-    cout << endl;
+    ESINFO(PROGRESS2);
 
     delete [] dom2dev;
     delete [] offsets;
@@ -306,7 +301,7 @@ void ClusterAcc::SetupKsolvers ( ) {
                         break;
                     }
             default:
-                    ESLOG(ERROR) << "Invalid KSOLVER value.";
+                    ESINFO(ERROR) << "Invalid KSOLVER value.";
                     exit(EXIT_FAILURE);
         }
 
@@ -327,8 +322,6 @@ void ClusterAcc::SetupKsolvers ( ) {
         if ( d == 0 && config::MPIrank == 0) {
         	domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
-        if (config::MPIrank == 0) std::cout << ".";
-
     }
     // send matrices to Xeon Phi
     eslocal nMatrices = domains.size();  

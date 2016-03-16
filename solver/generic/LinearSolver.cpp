@@ -64,25 +64,8 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	solver.USE_DYNAMIC	 = cluster.USE_DYNAMIC;
 	// ***************************************************************************************************************************
 
-	/* Numbers of processors, value of SOLVER_NUM_THREADS */
-	int solv_num_procs;
-	char * var = getenv("SOLVER_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &solv_num_procs );
-	else {
-    	printf("Set environment SOLVER_NUM_THREADS to 1 - number of cores");
-        exit(1);
-	}
-
-	/* Numbers of processors, value of SOLVER_NUM_THREADS */
-	int par_num_procs;
-	char * var2 = getenv("PAR_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var2, "%d", &par_num_procs );
-	else {
-    	printf("Set environment PAR_NUM_THREADS to 1 - number of cores");
-        exit(1);
-	}
+	int solv_num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+	int par_num_procs = Esutils::getEnv<int>("PAR_NUM_THREADS");
 
 	cluster.PAR_NUM_THREADS	= par_num_procs;
 	cluster.SOLVER_NUM_THREADS = solv_num_procs;
@@ -265,8 +248,7 @@ void LinearSolver::init(
 	if (config::solver::PRECONDITIONER == 3 ) {
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
-		if (config::MPIrank == 0)
-			std::cout << "Calculating Dirichlet Preconditioner : ";
+		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
 		cilk_for (int d = 0; d < K_mat.size(); d++) {
 			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
 			SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
@@ -333,12 +315,9 @@ void LinearSolver::init(
 
 			cluster.domains[d].Prec = S;
 
-			if (config::MPIrank == 0)
-				std::cout << ".";
-
+			ESINFO(PROGRESS2) << Info::plain() << ".";
 		}
-		if (config::MPIrank == 0)
-			std::cout << std::endl;
+		ESINFO(PROGRESS2);
 
 		timeDirPrec.endWithBarrier(); timeEvalMain.addEvent(timeDirPrec);
 	}
@@ -535,11 +514,9 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 
 	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.startWithoutBarrier(0.0); max_sol_ev.endWithoutBarrier(max_v);
 
-	std::cout.precision(12);
 	double max_vg;
 	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
-	if (MPI_rank == 0)
-		std::cout << " Max value in_solution = " << max_vg << std::endl;
+	ESINFO(DETAILS) << "Maxvalue in solution = " << std::setprecision(12) << max_vg;
 
 	max_sol_ev.printLastStatMPIPerNode(max_vg);
 	// *** END - Solutin correctnes test ******************************************************************************************

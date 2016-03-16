@@ -8,6 +8,8 @@
 #include <string.h>
 #include "simplestream.h"
 
+#include "esbasis.h"
+
 namespace espreso {
 namespace input {
 

@@ -53,8 +53,9 @@
 #include "stdio.h"
 #include "string.h"
 
+#include "esbasis.h"
+
 using std::vector;
-using std::cout;
 using std::map; 
 using std::make_pair; 
 using std::string;

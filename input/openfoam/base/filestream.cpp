@@ -6,7 +6,7 @@ FileStream::FileStream(const std::string &filename)
     : SimpleStream(filename), file(filename.c_str())
 {
     if (!file.is_open()){
-        fprintf(stderr,"FileStream - can not open %s: ",filename.c_str());
+        ESINFO(ERROR) << "FileStream - can not open: " << filename;
         exit(0);
     }
     buffer = new char[BUFFER_SIZE];
@@ -25,7 +25,7 @@ GzFileStream::GzFileStream(const std::string &filename)
 {
     file = gzopen(filename.c_str(), "r");
     if (file == NULL) {
-        fprintf(stderr,"GzFileStream open failed: %s",filename.c_str());
+        ESINFO(ERROR) << "GzFileStream open failed: " << filename;
         exit(0);
     }
 }

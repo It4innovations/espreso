@@ -56,7 +56,7 @@ eslocal SaveBinVectorDouble(SEQ_VECTOR <double> & Vector, string filename) {
 
 	} else {
 
-		cout << "File " << filename << " not found ! " << endl; 
+		ESINFO(ERROR) << "File " << filename << " not found ! ";
 
 		return -1; 
 
@@ -106,7 +106,7 @@ eslocal LoadBinVectorInt(SEQ_VECTOR <eslocal> & Vector, string filename) {
 
 		return 0; 
 	} else {
-		cout << "File " << filename << " not found ! " << endl; 
+		ESINFO(ERROR) << "File " << filename << " not found ! ";
 		return -1; 
 	}
 }
@@ -141,7 +141,7 @@ eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <eslocal> > & outputVecVec, string 
 
 		return 0; 
 	} else {
-		cout << "File " << filename << " not found ! " << endl; 
+		ESINFO(ERROR) << "File " << filename << " not found ! ";
 		return -1; 
 	}
 }
@@ -176,7 +176,7 @@ eslocal LoadBinVecVec(SEQ_VECTOR <SEQ_VECTOR <double> > & outputVecVec, string f
 
 		return 0; 
 	} else {
-		cout << "File " << filename << " not found ! " << endl; 
+		ESINFO(ERROR) << "File " << filename << " not found ! ";
 		return -1; 
 	}
 }
@@ -193,9 +193,9 @@ void PrintVec(SEQ_VECTOR <T> vec, string name) {
 #pragma omp critical 
 #endif
 	{
-		cout << endl << "Thread " << omp_get_thread_num() << " - Printing vector : " << name << endl; 
+		ESINFO(ALWAYS) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
 		for (eslocal i = 0; i < vec.size(); i++) {
-			cout << vec[i] << endl; 
+			ESINFO(ALWAYS) << vec[i];
 		}
 	}
 #endif // DEBUG
@@ -207,9 +207,9 @@ void PrintVecND(SEQ_VECTOR <T> vec, string name) {
 #pragma omp critical 
 #endif
 	{
-		cout << endl << "Thread " << omp_get_thread_num() << " - Printing vector : " << name << endl; 
+		ESINFO(ALWAYS) << "Thread " << omp_get_thread_num() << " - Printing vector : " << name;
 		for (eslocal i = 0; i < vec.size(); i++) {
-			cout << vec[i] << endl; 
+			ESINFO(ALWAYS) << vec[i];
 		}
 	}
 }
@@ -239,15 +239,8 @@ void GetProcessMemoryStat_u ( ) {
 	}
 	fclose(file);
 
-	int MPIrank;
+	ESLOG(MEMORY) << " - Memory used by process " << config::MPIrank << " : " << result / 1024.0 << " MB";
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-
-	//cout << endl; 
-	//cout << " ******************************************************************************************************************************* " << endl; 
-	cout << " - Memory used by process " << MPIrank << " : " << result / 1024.0 << " MB"<< endl; 
-	//cout << " ******************************************************************************************************************************* " << endl; 
-	//cout << endl; 
 
 #endif
 
@@ -271,16 +264,7 @@ void GetMemoryStat_u( )
 	//Multiply in next statement to avoid int overflow on right hand side...
 	physMemUsed *= memInfo.mem_unit;
 
-	//	cout << endl; 
-	//	cout << " ******************************************************************************************************************************* " << endl; 
-	//	cout << " *** Memory Info ... " << endl; 
-	//	cout << "  - Total RAM memory : " << totalPhysMem << endl; 
-	//	cout << "  - Used RAM  memory : " << physMemUsed << endl;
-	//	cout << "  - Usage            : " << 100.0 * (double)physMemUsed/(double)totalPhysMem<< " % " << endl ; 
-	//	cout << " ******************************************************************************************************************************* " << endl; 
-	//	cout << endl; 
-	cout << " - Total used RAM : " << 100.0 * (double)physMemUsed/(double)totalPhysMem<< " %  - " << physMemUsed/1024/1024 << " MB of " << totalPhysMem/1024/1024 << " MB" << endl;
-
+	ESLOG(MEMORY) << " - Total used RAM : " << 100.0 * (double)physMemUsed/(double)totalPhysMem<< " %  - " << physMemUsed/1024/1024 << " MB of " << totalPhysMem/1024/1024 << " MB";
 #endif
 }
 

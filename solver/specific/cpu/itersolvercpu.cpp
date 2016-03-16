@@ -8,7 +8,6 @@ using namespace espreso;
 void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
        time_eval.totalTime.start();
 
-
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
         time_eval.timeEvents[0].start();
         cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
@@ -97,10 +96,11 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
         time_eval.timeEvents[1].start();
         if (cluster.USE_HFETI == 0) {
-            cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
+            cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
                 cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
-            } else {
-                cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
+            }
+		} else {
+			cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
         }
         time_eval.timeEvents[1].end();
 

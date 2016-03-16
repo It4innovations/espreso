@@ -179,11 +179,11 @@ void DenseMatrixPack::PreparePack(
     size = ( ( 1.0 + ( double ) nRows ) * ( ( double ) nRows ) / 2.0 );
   }
 
-  if ( i > maxNMatrices ) {
-    printf( "Could not add matrix. Maximum number of matrices stored." );
-  } else if ( size > freeSpace ) {
-    printf( "Could not add matrix. Not enough allocated memory." );
-  }
+	if ( i > maxNMatrices ) {
+		ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+	} else if ( size > freeSpace ) {
+		ESINFO(ERROR) << "Could not add matrix. Not enough allocated memory.";
+	}
 
   this->packed[ i ] = isPacked;
   this->rows[ i ] = nRows;
@@ -207,8 +207,7 @@ void DenseMatrixPack::AddDenseMatrix(
 ) {
 
   if ( i >= nMatrices ) {
-    std::cout << "Could not add matrix. Maximum number of matrices stored."
-      << std::endl;
+    ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
     return;
   }
   long size = this->lengths[i];
@@ -233,8 +232,7 @@ void DenseMatrixPack::SetX(
   if ( this->mic_x_in != NULL ) {
     this->mic_x_in[position + this->colOffsets[ vector ]] = value;
   } else {
-    std::cout << "Could not set vector element. Vector not yet allocated."
-      << std::endl;
+    ESINFO(ERROR) << "Could not set vector element. Vector not yet allocated.";
   }
 }
 
@@ -251,8 +249,7 @@ void DenseMatrixPack::GetY(
     //  y[i] = 1.0;
     //}
    } else {
-    std::cout << "Could not copy vector. Vector not yet allocated."
-      << std::endl;
+    ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
   }
 }
 

@@ -132,8 +132,6 @@ void AnsysMatsol::boundaryConditions(Coordinates &coordinates)
 				property[coordinate - 1] = value;
 			}
 			file.close();
-		} else {
-			std::cout << "Warning: File '" << conditions[i] << "' not found.\n";
 		}
 	}
 }

@@ -8,10 +8,6 @@ OpenFOAM::OpenFOAM(const Options &options, int rank, int size)
 	solveParseError(computePolyMeshPath(rank, size));
 	_rank = rank;
 	_size = size;
-	std::stringstream ss;
-	ss<< "Rank " << rank << "- PolyMesh path: " << _polyMeshPath
-			<< std::endl;
-	std::cout << ss.str();
 }
 
 void OpenFOAM::solveParseError(ParseError *error) {
@@ -141,10 +137,6 @@ void OpenFOAM::elements(std::vector<Element*> &elements) {
 	//reads also cell zones
 	FoamFile cellZonesFile(_polyMeshPath + "cellZones");
 	solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
-	/*for (std::vector<CellZone>::iterator it = _cellZones.begin();
-				it != _cellZones.end(); ++it) {
-		std::cout<<*it;
-	}*/
 }
 
 void OpenFOAM::faces(Faces &faces) {
@@ -167,18 +159,6 @@ void OpenFOAM::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector
 		boundaries[i].push_back(_rank);
 	}
 	if (_size > 1) {
-
-/*		for (int i = 0; i < mesh.faces().size(); i++) {
-			std::cout << "Face " << i;
-			std::vector<eslocal> face = mesh.faces()[i];
-			std::cout << " (";
-			for (std::vector<eslocal>::iterator it = face.begin();
-					it != face.end(); ++it) {
-				std::cout << *it << ",";
-			}
-			std::cout << ")\n";
-
-		}*/
 
 		FoamFile boundaryFile(_polyMeshPath + "boundary");
 		std::vector<Dictionary> boundary;

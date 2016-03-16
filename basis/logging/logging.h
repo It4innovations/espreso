@@ -41,12 +41,14 @@ enum TestEvent {
 
 enum InfoEvent {
 	ERROR,
+	ALWAYS,
 	VERBOSE_LEVEL0,
 
 	CONVERGENCE,
 	PROGRESS1,
 	VERBOSE_LEVEL1,
 
+	DETAILS,
 	PROGRESS2,
 	VERBOSE_LEVEL2,
 
@@ -144,6 +146,7 @@ protected:
 	bool _plain;
 };
 
+struct Checkpoint;
 
 class Measure
 {
@@ -153,7 +156,7 @@ public:
 		return omp_get_wtime();
 	}
 
-	Measure(MeasureEvent event);
+	Measure(MeasureEvent event): event(event) {};
 	~Measure();
 
 	static double processMemory();

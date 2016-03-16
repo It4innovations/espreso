@@ -65,7 +65,7 @@ void Configuration::load(const Options &options)
 			for (it = _parameters.begin(); it != _parameters.end(); ++it) {
 				if (it->second->match(line)) {
 					if (it->second->isSet()) {
-						std::cout << "Warning: parameter " << it->second->name() << " is set more than once.";
+						ESINFO(ALWAYS) << "Warning: parameter " << it->second->name() << " is set more than once.";
 					}
 					it->second->set(line);
 					break;
@@ -110,7 +110,7 @@ void Configuration::load(const Options &options)
 		exit(EXIT_FAILURE);
 	}
 	if (options.nameless.size() > cmdLineSize) {
-		std::cout << "Warning: ESPRESO omits some command line arguments.\n";
+		ESINFO(ALWAYS) << "Warning: ESPRESO omits some command line arguments.\n";
 	}
 	for (size_t i = 0; i < cmdLine.size(); i++) {
 		_parameters[cmdLine[i].first]->set(std::string(_parameters[cmdLine[i].first]->name() + "=" + options.nameless[cmdLine[i].second]));
@@ -124,30 +124,31 @@ void Configuration::print() const
 		if (it->second->isSet()) {
 			continue;
 		}
-		std::cout << it->second->name() << " = ";
+		std::stringstream ss;
+		ss << it->second->name() << " = ";
 		switch (it->second->type()) {
 			case STRING_PARAMETER: {
-				std::cout << "'" << static_cast<StringParameter*>(it->second)->get() << "'";
+				ss << "'" << static_cast<StringParameter*>(it->second)->get() << "'";
 				break;
 			}
 			case INTEGER_PARAMETER: {
-				std::cout << "'" << static_cast<IntegerParameter*>(it->second)->get() << "'";
+				ss << "'" << static_cast<IntegerParameter*>(it->second)->get() << "'";
 				break;
 			}
 			case DOUBLE_PARAMETER: {
-				std::cout << "'" << static_cast<DoubleParameter*>(it->second)->get() << "'";
+				ss << "'" << static_cast<DoubleParameter*>(it->second)->get() << "'";
 				break;
 			}
 			case BOOLEAN_PARAMETER: {
 				if (static_cast<BooleanParameter*>(it->second)->get()) {
-					std::cout << "true";
+					ss << "true";
 				} else {
-					std::cout << "false";
+					ss << "false";
 				}
 				break;
 			}
 		}
-		std::cout << "\n";
+		ESINFO(ALWAYS) << ss.str();
 	}
 }
 

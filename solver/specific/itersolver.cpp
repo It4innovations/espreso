@@ -514,7 +514,7 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 #ifdef USE_MPI_3
 	if (mpi_rank == mpi_root)
-		std::cout << "Note: PipeCG is using non-blocking AllReduce ... " << std::endl;
+		ESINFO(DETAILS) << "Note: PipeCG is using non-blocking AllReduce";
 #endif
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
@@ -631,6 +631,25 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 	}
 
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
 	// *** Start the CG iteration loop ********************************************
 	for (eslocal iter = 0; iter < CG_max_iter; iter++) {
 
@@ -707,8 +726,16 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 #endif
 
 		norm_l  = sqrt(reduction_tmp[2]);
-		if (norm_l < tol)
+		if (norm_l < tol) {
+			timing.totalTime.end();
+			ESINFO(CONVERGENCE)
+				<< indent << std::setw(iterationWidth) << iter + 1
+				<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+				<< indent << std::scientific << std::setprecision(3) << norm_l
+				<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 			break;
+		}
 
 		gama_l  = reduction_tmp[0];
 		delta_l = reduction_tmp[1];
@@ -739,26 +766,14 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		norm_time.end();
 
 		 timing.totalTime.end();
-//TODO: if VERBOSE = 1
-		//timing.totalTime.printLastStatMPI();
 
-		 if (mpi_rank == mpi_root) {
-			 //printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 
-			 int my_prec = 10; //log10(int(1./epsilon));
-			 std::cout.clear();
-			 std::cout<<"PipeCG MPI Iter: ";
-			 std::cout<<std::setw(my_prec+4);
-			 std::cout<<iter+1;
-			 std::cout.precision(my_prec+4);
-			 std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
-			 std::cout<<" ||residual|| = "        << norm_l;
-			 std::cout.precision(my_prec);
-			 std::cout<<", epsilon = "            << epsilon;
-			 std::cout<<", tol = "                << tol;
-			 std::cout<<", Local time: " << timing.totalTime.getLastStat();
-			 std::cout<<"\n";
-		 }
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 	} // END of CG loop
 
@@ -883,6 +898,24 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 	tol = epsilon * parallel_norm_compressed(cluster, b_l);
 
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "tol" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
 	for ( iter = 0; iter < 1000; iter++) {
 		timing.totalTime.start();
 
@@ -932,19 +965,17 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 		norm_l = parallel_norm_compressed(cluster, r_l);
 
-		if (mpi_rank == mpi_root) {
-			printf ( "CG Iter %d - norm %1.30f - tol %1.30f \r" , iter+1, norm_l, tol);
-			//if (log_active == 1)
-			//	fprintf(stream,"Iter MPI %d - norm %1.30f - tol %1.30f \n", iter+1, norm_l, tol);
-		}
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << tol
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
 		if (norm_l < tol)
 			break;
 
 	} // end iter loop
-
-	if (mpi_rank == mpi_root) cout << endl;
 
 	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 	 timeGetSol.start();
@@ -1062,6 +1093,24 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 		tol = epsilon * parallel_norm_compressed(cluster, b_l);
 
+		int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+		int iterationWidth = ceil(log(CG_max_iter) / log(10));
+		std::string indent = "   ";
+
+		auto spaces = [] (int count) {
+			std::stringstream ss;
+			for (int i = 0; i < count; i++) {
+				ss << " ";
+			}
+			return ss.str();
+		};
+
+		ESINFO(CONVERGENCE)
+			<< spaces(indent.size() + iterationWidth - 4) << "iter"
+			<< spaces(indent.size() + 4) << "r" << spaces(4)
+			<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "tol" << spaces(precision / 2)
+			<< spaces(indent.size()) << "time[s]";
+
 		for ( iter = 0; iter < CG_max_iter; iter++) {
 
 			timing.totalTime.start();
@@ -1138,12 +1187,11 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			norm_l = parallel_norm_compressed(cluster, r_l);
 			norm_time.end();
 
-			if (mpi_rank == mpi_root) {
-				//printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
-				printf ( "CG Iter %d - norm %1.30f - tol %1.30f \r" , iter+1, norm_l, tol);
-				//if (log_active == 1)
-				//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
-			}
+			ESINFO(CONVERGENCE)
+				<< indent << std::setw(iterationWidth) << iter + 1
+				<< indent << std::scientific << std::setprecision(3) << norm_l
+				<< indent << tol
+				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 			if (norm_l < tol)
 				break;
@@ -1151,8 +1199,6 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		} // end iter loop
 
 		// reconstruction of u
-
-		if (mpi_rank == mpi_root) cout << endl;
 
 		 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 		 timeGetSol.start();
@@ -1259,23 +1305,23 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		double t1 = omp_get_wtime();
 		G.MatTranspose(Gt);
-		cout << "Gtranspose = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "Gtranspose = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		SparseMatrix GGt_Mat;
 		GGt_Mat.MatMat(G, 'N', Gt);
-		cout << "G x Gt = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "G x Gt = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		Gt.Clear();
 		G.Clear();
-		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "G and Gt clear = " << omp_get_wtime() - t1;
 
 		ESINFO(EXHAUSTIVE) << GGt_Mat.SpyText();
 
 		t1 = omp_get_wtime();
 		GGt_Mat.RemoveLower();
-		cout << "GGt remove lower = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "GGt remove lower = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		// Create Sparse Direct solver for GGt
@@ -1283,7 +1329,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		GGt.ImportMatrix(GGt_Mat);
-		cout << "ImportMatrix = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "ImportMatrix = " << omp_get_wtime() - t1;
 
 
 		t1 = omp_get_wtime();
@@ -1294,7 +1340,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 		std::stringstream ss;
 		ss << "Create GGt -> rank: " << config::MPIrank;
 		GGt.Factorization(ss.str());
-		cout << "Factorization = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "Factorization = " << omp_get_wtime() - t1;
 
 
 		t1 = omp_get_wtime();
@@ -1314,14 +1360,10 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 
 #if TIME_MEAS >= 1
-	eslocal rank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-	if (rank == 0) {
-		double end = omp_get_wtime();
-		cout <<	"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s \n";
-		cout <<	"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s \n";
-		cout <<	"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s \n\n";
-	}
+	double end = omp_get_wtime();
+	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s";
+	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s";
+	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s";
 #endif
 
 }
@@ -1339,16 +1381,8 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 
         /* Numbers of processors, value of OMP_NUM_THREADS */
-        int num_procs;
-        char * var = getenv("PAR_NUM_THREADS");
-        if(var != NULL)
-                sscanf( var, "%d", &num_procs );
-        else {
-                //printf("Set environment PAR_NUM_THREADS to 1");
-        	ESINFO(ERROR) << "Set environment PAR_NUM_THREADS to 1.";
-			exit(1);
-        }
-        GGt_tmp.iparm[2]  = num_procs;
+	int num_procs = Esutils::getEnv<int>("PAR_NUM_THREADS");
+	GGt_tmp.iparm[2]  = num_procs;
 
 
 //	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.start();

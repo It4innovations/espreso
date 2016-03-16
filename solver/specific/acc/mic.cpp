@@ -557,7 +557,7 @@ void SparseSolverMIC::Factorization(const std::string &str) {
 void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
 
     if (!m_factorized) {
-        std::cout << "NOT INITIALIED\n\n"<<std::endl;
+        //std::cout << "NOT INITIALIED\n\n"<<std::endl;
         std::stringstream ss;
         ss << "Solve -> rank: ";// << esconfig::MPIrank; // MPIrank link problem
         Factorization(ss.str());
@@ -666,9 +666,7 @@ myPhase = 33;
         for (eslocal i = 0; i < nMatrices; i++) {
             if (error[i]!=0) {
                 err = true;
-                printf ("\nERROR during solution: %d on process %d, matrix %d\n", error[i], 0, i);//  esconfig::MPIrank, i);
-
-
+                ESINFO(ERROR) << "ERROR during solution: " << error[i] << ", matrix " << i;
             }
         }
         if (err)
@@ -689,7 +687,6 @@ myPhase = 33;
                iparm[i], &msglvl, &ddum, &ddum, &error[i]);
                }
                initialized = false;
-               if (MPIrank == 0) printf(".");
                */
         }
 
@@ -721,7 +718,7 @@ void SparseSolverMIC::Create_SC(
         MKL_INT *SC_sizes,
         eslocal generate_symmetric_sc_1_generate_general_sc_0
         ) {
-    std::cout << "Creating Schur complements" << std::endl;
+    ESINFO(PROGRESS2) << "Creating Schur complements";
 
 
     // data to be transfered to MIC
@@ -770,7 +767,7 @@ void SparseSolverMIC::Create_SC(
             eslocal myRank = omp_get_thread_num();
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
         }
-        std::cout << "start" << std::endl;
+        ESINFO(PROGRESS2) << "start";
 #pragma omp parallel
         {
             eslocal myRank = omp_get_thread_num();
@@ -778,7 +775,6 @@ void SparseSolverMIC::Create_SC(
 
 #pragma omp for //schedule(static,1)
             for (eslocal i = 0 ; i < nMatrices; i++) {
-                printf("%d ", i);
                 for (eslocal j = 0; j < 64; j++) {
                     iparm[i][j] = 0;
                 }
@@ -860,14 +856,14 @@ void SparseSolverMIC::Create_SC(
         }
         if ( err )
         {
-            printf ("\nERROR during numerical factorization");
+            ESINFO(ERROR) << "ERROR during numerical factorization";
             exit (2);
         } else {
             initialized = true;
         }
 
 
-        std::cout << "end" << std::endl;
+        ESINFO(PROGRESS2) << "end";
     }
 }
 
@@ -908,7 +904,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
     eslocal matricesSize = SC_out.preallocSize - SC_out.freeSpace;
     bool * SC_out_packed = SC_out.packed;
 
-    std::cout << "test"<< SC_out.totalCols << std::endl;
+    //std::cout << "test"<< SC_out.totalCols << std::endl;
     // find the biggest SC matrix and preallocate output array for PARDISO
     for ( eslocal i = 0 ; i < nMatrices; ++i ) {
 
@@ -1055,7 +1051,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
 
 #pragma omp for //schedule(static,1)
             for (eslocal i = 0 ; i < nMatrices; i++) {
-                printf("%d ", i);
                 // for reordering and factorization
                 eslocal * perm = new eslocal[K_sc1_rows[i]];
                 for (eslocal j = 0; j < K_in_rows[i]; j++)
@@ -1096,7 +1091,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
                 }
                 if ( error != 0 )
                 {
-                    printf ("\nERROR during numerical factorization: %d", error);
+                    ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
                     exit (2);
                 } else {
                     initialized = true;

@@ -15,7 +15,7 @@ void CoordinatesProperty::load(const char* fileName)
 		}
 		file.close();
 	} else {
-		std::cout << "File '" << fileName << "' not found.\n";
+		ESINFO(ERROR) << "File '" << fileName << "' not found";
 	}
 }
 

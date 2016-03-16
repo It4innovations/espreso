@@ -322,8 +322,7 @@ void ClusterBase::SetClusterHFETI (bool R_from_mesh) {
 
 		int MPIrank;
 		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
-		if (MPIrank == 0 ) { cout << endl << "*** HFETI - Preprocessing start ************************************************************************************************ " << endl << endl; }
-
+		ESINFO(PROGRESS2) << "HFETI preprocessing start";
 
 		TimeEvent B0_time("Compress B0 per cluster");
 		B0_time.start();
@@ -512,6 +511,7 @@ void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double
 
 void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
+	ESINFO(PROGRESS2) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
 	cluster_time.totalTime.start();
@@ -635,7 +635,9 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		for (eslocal i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
+	ESINFO(PROGRESS2);
 	loop_2_1_time.end();
 
 	cluster_time.totalTime.end();
@@ -1049,7 +1051,7 @@ void ClusterBase::CreateF0() {
 
 	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
-	if (MPIrank == 0 ) {cout << "HFETI - Create F0 - domain : " << endl; };
+	ESINFO(PROGRESS2) << "HFETI - Create F0";
 
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple RHS solve");
 	 solve_F0_time.start();
@@ -1102,16 +1104,14 @@ void ClusterBase::CreateF0() {
 		domains[d].B0Kplus.Clear();
 
 		domains[d].Kplus.msglvl=0;
-		if (MPIrank == 0 ) cout << "."; //{cout << d << " "; };
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 
-	if (MPIrank == 0 ) {cout << endl; };
+	ESINFO(PROGRESS2);
 
 	 solve_F0_time.end();
 	 solve_F0_time.printStatMPI();
 	 F0_timing.addEvent(solve_F0_time);
-
-	if (MPIrank == 0 ) {cout << endl; };
 
 	 TimeEvent reduction_F0_time("F0 reduction time");
 	 reduction_F0_time.start();
@@ -1215,7 +1215,7 @@ void ClusterBase::CreateSa() {
 
 	 if (!get_kernel_from_mesh) {
 		 SparseMatrix Kernel_Sa;
-		 printf("Salfa - regularization from matrix \n");
+		 ESINFO(PROGRESS2) << "Salfa - regularization from matrix";
 
 		 SparseMatrix GGt;
 
@@ -1817,7 +1817,7 @@ void ClusterBase::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_v
 
 void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
 
-	std::cout << " B1_comp_MatVecSum - not implemented " << std::endl;
+	ESINFO(ERROR) << " B1_comp_MatVecSum - not implemented ";
 
 	exit(0);
 

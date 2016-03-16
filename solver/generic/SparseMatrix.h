@@ -10,7 +10,6 @@
 #endif
 
 using std::vector;
-using std::cout;
 using std::string;
 using std::ifstream;
 using std::stringstream;

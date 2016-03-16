@@ -21,7 +21,9 @@ Test::~Test()
 Info::~Info()
 {
 	if (_plain) {
-		std::cout << os.str();
+		if (config::MPIrank == 0) {
+			std::cout << os.str();
+		}
 		return;
 	}
 	if (event == ERROR) {
@@ -42,48 +44,23 @@ Info::~Info()
 }
 
 
-
-Measure::Measure(MeasureEvent event): event(event)
-{
-	auto indent = [&] (int tabs) { for (int t = 0; t < tabs; t++) { os << "  "; } };
-
-	switch (event) {
-	case CHECKPOINT3:
-		indent(2);
-		break;
-	case CHECKPOINT2:
-		indent(1);
-		break;
-	case ERROR:
-		os << "ESPRESO ERROR : ";
-		break;
-	}
-}
-
 Measure::~Measure()
 {
-	if (event == ERROR) {
-		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);
-		fflush(stderr);
-		exit(EXIT_FAILURE);
-	}
-
-	switch (event) {
-	case CHECKPOINT3:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 3));
-		break;
-	case CHECKPOINT2:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 2));
-		break;
-	case CHECKPOINT1:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 1));
-		break;
-	case SUMMARY:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 0));
-		evaluateCheckpoints();
-		return;
-	}
+//	switch (event) {
+//	case CHECKPOINT3:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 3));
+//		break;
+//	case CHECKPOINT2:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 2));
+//		break;
+//	case CHECKPOINT1:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 1));
+//		break;
+//	case SUMMARY:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 0));
+//		evaluateCheckpoints();
+//		return;
+//	}
 
 	os << std::endl;
 

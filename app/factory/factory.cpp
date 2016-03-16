@@ -90,11 +90,6 @@ static Mesh* getMesh(const Options &options)
 	case config::mesh::OPENFOAM: {
 		input::OpenFOAM loader(options, config::MPIrank, config::MPIsize);
 		loader.load(*mesh);
-
-		std::cout<<"Saving model to testX.vtk\n";
-		output::VTK_Full out(*mesh, "test");
-		out.store(1,1);
-
 		break;
 	}
 	case config::mesh::ESDATA: {

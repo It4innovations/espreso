@@ -7,7 +7,6 @@ template <class TInput>
 void Linear<TInput>::init()
 {
 	this->_timeStatistics.totalTime.startWithBarrier();
-	std::cout.precision(15);
 
 	TimeEvent timeKasm("Create K and RHS");
 	timeKasm.start();

@@ -122,7 +122,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		break;
 	}
 	case 3: { // DIRECT MIX - 2xSP
-		std::cout << "Not implemented ... " << std::endl;
+		ESINFO(ERROR) << "Not implemented KSOLVER (DIRECT MIX - 2xSP)";
 		exit(EXIT_FAILURE);
 
 //		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
@@ -205,15 +205,16 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 				norm = sqrt(norm);
 
 				if (norm < config::solver::KSOLVER_SP_iter_norm) {
-					std::cout << " " << step;
+					ESINFO(PROGRESS2) << " " << step;
 					success = true;
 					break;
 				}
 			}
 		}
 
-		if (!success)
-			std::cout << " F";
+		if (!success) {
+			ESINFO(PROGRESS2) << "FAILED";
+		}
 
 		for (eslocal i = 0; i < r.size(); i++)
 			y_out[i] = x[i];
@@ -275,15 +276,16 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 				norm = sqrt(norm);
 
 				if (norm < config::solver::KSOLVER_SP_iter_norm) {
-					std::cout << " " << step;
+					ESINFO(PROGRESS2) << " " << step;
 					break;
 				}
 
 			}
 		}
 
-		if (!success)
-			std::cout << " F";
+		if (!success) {
+			ESINFO(PROGRESS2) << "FAILED";
+		}
 
 		for (eslocal i = 0; i < r.size(); i++)
 			x_in_y_out[i] = x[i];

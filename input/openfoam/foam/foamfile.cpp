@@ -13,8 +13,6 @@ bool FoamFile::fileExists(const char *filename)
 
 FoamFile::FoamFile(const std::string &filename)
 {
-    printf("Loading %s ...\n", filename.c_str());
-
     std::string gzFilename = filename + ".gz";
     if (fileExists(gzFilename.c_str())) {
         GzFileStream *s = new GzFileStream(gzFilename);
@@ -49,17 +47,17 @@ void FoamFile::parseHeader()
     std::string ident;
     ParseError *err = tokenizer->readIdentifier(ident);
     if (err) {
-        fprintf(stderr, "parseHeader: %s\n", err->getMessage().c_str());
+        ESINFO(ERROR) << "parseHeader: " << err->getMessage();
         exit(1);
     }
     if (ident != "FoamFile") {
-        fprintf(stderr, "Invalid foam file\n");
+        ESINFO(ERROR) << "Invalid foam file";
         exit(1);
     }
     do {
         tokenizer->nextToken();
         if (tokenizer->failIfEnd() != NULL) {
-            fprintf(stderr, "Invalid FoamFile\n");
+            ESINFO(ERROR) << "Invalid FoamFile";
             exit(1);
         }
     } while (!tokenizer->isTokenChar('}'));
