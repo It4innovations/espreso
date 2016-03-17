@@ -231,6 +231,19 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << error << " during symbolic factorization";
 		exit (EXIT_FAILURE);
 	} else {
@@ -252,6 +265,19 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << error << " during numerical factorization";
 		exit (EXIT_FAILURE);
 	} else {
@@ -305,6 +331,19 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
@@ -366,6 +405,19 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
@@ -421,6 +473,19 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
@@ -750,6 +815,19 @@ void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during the solution of the system: " << error;
 		exit (1);
 	} else {
@@ -957,6 +1035,19 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 
     if ( error != 0 )
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
 		exit (2);
 	} else {
@@ -1153,6 +1244,10 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 
     if ( error != 0 )
 	{
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << K_sc1;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
 		exit (2);
 	} else {
@@ -1403,6 +1498,10 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 
     if ( error != 0 )
 	{
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << K_sc1;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
 		exit (2);
 	} else {
