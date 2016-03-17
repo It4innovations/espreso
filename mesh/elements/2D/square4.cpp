@@ -7,7 +7,7 @@ std::vector<DenseMatrix> Square4::_dN;
 std::vector<DenseMatrix> Square4::_N;
 std::vector<double> Square4::_weighFactor;
 
-bool Square4::match(eslocal *indices, eslocal n)
+bool Square4::match(const eslocal *indices, eslocal n)
 {
 	if (n != 4) {
 		return false;
@@ -55,7 +55,7 @@ Element* Square4::getCoarseFace(size_t face) const
 	return NULL;
 }
 
-Square4::Square4(eslocal *indices, eslocal *params): Element(params)
+Square4::Square4(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));
 }

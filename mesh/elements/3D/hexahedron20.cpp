@@ -364,14 +364,45 @@ std::vector<eslocal> Hexahedron20::getFace(size_t face) const
 
 Element* Hexahedron20::getFullFace(size_t face) const
 {
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
+	std::vector<eslocal> result(8);
 
-Element* Hexahedron20::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
+	switch (face) {
+	case 4:
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		result[2] = _indices[2];
+		result[3] = _indices[1];
+
+		result[4] = _indices[11];
+		result[5] = _indices[10];
+		result[6] = _indices[9];
+		result[7] = _indices[8];
+		break;
+	case 5:
+		result[0] = _indices[4];
+		result[1] = _indices[5];
+		result[2] = _indices[6];
+		result[3] = _indices[7];
+
+		result[4] = _indices[12];
+		result[5] = _indices[13];
+		result[6] = _indices[14];
+		result[7] = _indices[15];
+		break;
+	case 0: case 1: case 2: case 3:
+		result[0] = _indices[ face               ];
+		result[1] = _indices[(face + 1) % 4      ];
+		result[2] = _indices[(face + 1) % 4 + 4  ];
+		result[3] = _indices[ face + 4           ];
+
+		result[4] = _indices[ face          + 8  ];
+		result[5] = _indices[(face + 1) % 4 + 16 ];
+		result[6] = _indices[ face          + 12 ];
+		result[7] = _indices[ face          + 16 ];
+		break;
+	}
+
+	return new Square8(result.data(), _params);
 }
 
 Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params): Element(params)

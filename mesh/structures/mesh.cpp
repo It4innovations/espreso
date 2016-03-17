@@ -362,20 +362,20 @@ static bool isOuterFace(
 
 static eslocal findSubdomains(
 		std::vector<std::vector<eslocal> > &nodesElements,
-		std::vector<eslocal> &face,
+		Element *face,
 		const std::vector<eslocal> &partPtrs,
 		eslocal differentParts,
 		std::vector<eslocal> &subdomains)
 {
 	subdomains.clear();
 	eslocal NOT_ON_BOUNDARY = -1;
-	std::vector<eslocal> result(nodesElements[face[0]]);
+	std::vector<eslocal> result(nodesElements[face->node(0)]);
 	std::vector<eslocal>::iterator it = result.end();
 
-	for (size_t i = 1; i < face.size(); i++) {
+	for (size_t i = 1; i < face->size(); i++) {
 		std::vector<eslocal> tmp(result.begin(), it);
 		it = std::set_intersection(tmp.begin(), tmp.end(),
-				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
+				nodesElements[face->node(i)].begin(), nodesElements[face->node(i)].end(),
 				result.begin());
 		if (it - result.begin() == 1) {
 			return NOT_ON_BOUNDARY;
@@ -578,7 +578,7 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 	mesh._partPtrs.clear();
 
 	std::vector<std::vector<eslocal> > nodeToElements = getNodeToElementsMap(*this);
-	std::vector<std::vector<eslocal> > commonFaces;
+	std::vector<Element*> commonFaces;
 	std::vector<eslocal> eSub;
 	std::vector<bool> subdomains;
 	std::vector<eslocal> projection(_coordinates.clusterSize(), 0);
@@ -587,17 +587,17 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 		// compute number of elements and fill used nodes
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
-				std::vector<eslocal> face = _elements[j]->getFace(k);
-				for (size_t f = 0; f < face.size(); f++) {
-					face[f] = _coordinates.clusterIndex(face[f], i);
+				Element* face = _elements[j]->getFullFace(k);
+				for (size_t f = 0; f < face->size(); f++) {
+					face->node(f) = _coordinates.clusterIndex(face->node(f), i);
 				}
 				if (findSubdomains(nodeToElements, face, _partPtrs, 1, eSub) == j) {
 					subdomains.resize(subdomains.size() + parts(), false);
 					subdomains[subdomains.size() - parts() + eSub[0]] = true;
 					subdomains[subdomains.size() - parts() + eSub[1]] = true;
 					commonFaces.push_back(face);
-					for (size_t f = 0; f < face.size(); f++) {
-						projection[face[f]] = 1;
+					for (size_t f = 0; f < face->size(); f++) {
+						projection[face->node(f)] = 1;
 					}
 				}
 			}
@@ -614,13 +614,12 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 		}
 	}
 	for (size_t i = 0; i < commonFaces.size(); i++) {
-		for (size_t j = 0; j < commonFaces[i].size(); j++) {
-			commonFaces[i][j] = projection[commonFaces[i][j]];
+		for (size_t j = 0; j < commonFaces[i]->size(); j++) {
+			commonFaces[i]->node(j) = projection[commonFaces[i]->node(j)];
 		}
 	}
-	mesh._elements.reserve(commonFaces.size());
 
-	eslocal params[6] = {0, 0, 0, 0, 0, 0};
+	mesh._elements.reserve(commonFaces.size());
 
 	// create mesh
 	mesh._partPtrs.clear();
@@ -629,13 +628,7 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 		for (size_t j = i + 1; j < parts(); j++) {
 			for (size_t e = 0; e < commonFaces.size(); e++) {
 				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
-					if (commonFaces[e].size() == 3) {
-						el = new Triangle3(commonFaces[e].data(), params);
-					}
-					if (commonFaces[e].size() == 4) {
-						el = new Square4(commonFaces[e].data(), params);
-					}
-					mesh._elements.push_back(el);
+					mesh._elements.push_back(commonFaces[e]);
 				}
 			}
 			if (mesh._elements.size() > mesh._partPtrs.back()) {

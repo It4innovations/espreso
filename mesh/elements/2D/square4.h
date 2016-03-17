@@ -15,9 +15,9 @@ class Square4: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Square4(eslocal *indices, eslocal *params);
+	Square4(const eslocal *indices, const eslocal *params);
 
 	Element* copy() const
 	{

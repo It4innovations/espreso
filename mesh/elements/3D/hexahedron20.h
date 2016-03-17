@@ -3,7 +3,7 @@
 #define HEXAHEDRON20_H_
 
 #include "../element.h"
-#include "../2D/square4.h"
+#include "../2D/square8.h"
 #include "../1D/line.h"
 #include "hexahedron8.h"
 
@@ -78,10 +78,15 @@ public:
 		return 3;
 	}
 
+	Element* getCoarseFace(size_t face) const
+	{
+		return Hexahedron8::getF(_indices, _params, face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
+
 
 protected:
 

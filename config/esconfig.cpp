@@ -30,7 +30,7 @@ namespace output {
 
 	bool saveMesh = false;
 	bool saveFixPoints = false;
-	bool saveFaces = false;
+	bool saveFaces = true;
 	bool saveLines = false;
 	bool saveCorners = false;
 	bool saveDirichlet = false;

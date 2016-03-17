@@ -7,7 +7,7 @@ std::vector<DenseMatrix> Square8::_dN;
 std::vector<DenseMatrix> Square8::_N;
 std::vector<double> Square8::_weighFactor;
 
-bool Square8::match(eslocal *indices, eslocal n)
+bool Square8::match(const eslocal *indices, eslocal n)
 {
 	if (n != 8) {
 		return false;
@@ -66,7 +66,7 @@ Element* Square8::getCoarseFace(size_t face) const
 	return NULL;
 }
 
-Square8::Square8(eslocal *indices, eslocal *params): Element(params)
+Square8::Square8(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));
 }
