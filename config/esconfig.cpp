@@ -15,7 +15,7 @@ namespace mesh {
 	bool edgeCorners = true;
 	bool faceCorners = false;
 
-	bool averageEdges = true;
+	bool averageEdges = false;
 	bool averageFaces = false;
 
 	Input input = GENERATOR;
