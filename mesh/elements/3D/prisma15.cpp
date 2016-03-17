@@ -326,6 +326,18 @@ std::vector<eslocal> Prisma15::getFace(size_t face) const
 	return result;
 }
 
+Element* Prisma15::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Prisma15::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
 	switch (n) {

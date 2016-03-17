@@ -97,7 +97,12 @@ public:
 	virtual size_t coarseSize() const = 0;
 	virtual size_t gpSize() const = 0;
 	virtual size_t faces() const = 0;
+
 	virtual std::vector<eslocal> getFace(size_t face) const = 0;
+	virtual Element* getFullFace(size_t face) const = 0;
+	virtual Element* getCoarseFace(size_t face) const = 0;
+
+
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 	virtual const eslocal* indices() const = 0;
 

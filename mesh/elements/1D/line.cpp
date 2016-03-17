@@ -34,6 +34,18 @@ std::vector<eslocal> Line::getFace(size_t face) const
 	return std::vector<eslocal> ();
 }
 
+Element* Line::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Line::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Line::Line(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, LineNodesCount * sizeof(eslocal));

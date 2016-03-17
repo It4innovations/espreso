@@ -294,6 +294,18 @@ std::vector<eslocal> Pyramid13::getFace(size_t face) const
 	return result;
 }
 
+Element* Pyramid13::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Pyramid13::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
 	switch (n) {

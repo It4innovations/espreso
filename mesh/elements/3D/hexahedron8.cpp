@@ -152,6 +152,18 @@ std::vector<eslocal> Hexahedron8::getFace(size_t face) const
 	return result;
 }
 
+Element* Hexahedron8::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Hexahedron8::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
 	switch (n) {

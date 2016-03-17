@@ -43,6 +43,18 @@ std::vector<eslocal> Square4::getFace(size_t face) const
 	}
 }
 
+Element* Square4::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Square4::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Square4::Square4(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));

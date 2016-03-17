@@ -234,6 +234,18 @@ std::vector<eslocal> Tetrahedron4::getFace(size_t face) const
 	return result;
 }
 
+Element* Tetrahedron4::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Tetrahedron4::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {
 	switch (n) {

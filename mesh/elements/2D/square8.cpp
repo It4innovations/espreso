@@ -54,6 +54,18 @@ std::vector<eslocal> Square8::getFace(size_t face) const
 	return result;
 }
 
+Element* Square8::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Square8::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Square8::Square8(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));

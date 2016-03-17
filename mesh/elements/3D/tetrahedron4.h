@@ -78,6 +78,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 

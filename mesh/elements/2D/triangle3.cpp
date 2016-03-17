@@ -47,6 +47,18 @@ std::vector<eslocal> Triangle3::getFace(size_t face) const
 	}
 }
 
+Element* Triangle3::getFullFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Element* Triangle3::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
 Triangle3::Triangle3(eslocal *indices, eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Triangle3NodesCount * sizeof(eslocal));
