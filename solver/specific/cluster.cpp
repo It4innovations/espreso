@@ -511,7 +511,7 @@ void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double
 
 void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	ESINFO(PROGRESS2) << "K+ multiply HFETI";
+	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
 	cluster_time.totalTime.start();
@@ -635,9 +635,9 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		for (eslocal i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		//ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	//ESINFO(PROGRESS2);
 	loop_2_1_time.end();
 
 	cluster_time.totalTime.end();
