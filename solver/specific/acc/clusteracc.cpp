@@ -81,7 +81,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         this->B1KplusPacks[i].CopyToMIC();
         tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], matrixPP,  0, i);
     }
-
+std::cout <<" blabla " << std::endl;
     delete [] dom2dev;
     delete [] offsets;
     /*

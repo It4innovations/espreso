@@ -630,8 +630,7 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
 
         //iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
-        phase=331;
-#pragma omp parallel num_threads(21)
+#pragma omp parallel //num_threads(21)
         {
             int myPhase = 331;
 #pragma omp for schedule(dynamic)
@@ -906,7 +905,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
     eslocal matricesSize = SC_out.preallocSize - SC_out.freeSpace;
     bool * SC_out_packed = SC_out.packed;
 
-    std::cout << "test"<< SC_out.totalCols << std::endl;
     // find the biggest SC matrix and preallocate output array for PARDISO
     for ( eslocal i = 0 ; i < nMatrices; ++i ) {
 
@@ -991,8 +989,13 @@ void SparseSolverMIC::Create_SC_w_Mat(
                 maxSize = K_b_tmp_rows[i]*K_b_tmp_rows[i];
             }
         }
-
-        double ** matrixPerThread = new double*[nMatrices];
+        int nThreads = 1;
+#pragma omp parallel
+        {
+#pragma omp single
+           nThreads = omp_get_num_threads();
+            }
+        double ** matrixPerThread = new double*[nThreads];
 #pragma omp parallel
         {
             eslocal myRank = omp_get_thread_num();

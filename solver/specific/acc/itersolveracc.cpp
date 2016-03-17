@@ -14,6 +14,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
 
+std::cout << "INITIATING HFETI"<<std::endl;
         // HFETI on MIC using Schur
 
         time_eval.timeEvents[0].start();

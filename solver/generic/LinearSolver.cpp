@@ -754,7 +754,7 @@ void LinearSolver::init(
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
     //cluster.Create_G1_perCluster();
-
+std::cout << "TESTST"<<std::endl;
     if (cluster.USE_HFETI == 1 && !R_from_mesh ) {
     	solver.Preprocessing ( cluster );
     	cluster.G1.Clear();

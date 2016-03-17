@@ -136,9 +136,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=3 # subdomains size
+    d=8 # subdomains size
     c=0 # number of corners - nefunguje 
-    x=6 # cluster size in domains
+    x=10 # cluster size in domains
 
     y=$x
     z=$x
@@ -179,9 +179,10 @@ if [ "$1" = "run" ]; then
       export PARDISOLICMESSAGE=1
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
       export MIC_ENV_PREFIX=MIC
-      export MIC_OMP_NUM_THREADS=32
+      export MIC_OMP_NUM_THREADS=180
       export MIC_OMP_NESTED=FALSE
       export MIC_MKL_DYNAMIC=FALSE
+      export MIC_KMP_AFFINITY=balanced
       export MIC_MKL_NUM_THREADS=1
       export MIC_USE_2MB_BUFFERS=100k
       export OFFLOAD_INIT=on_start
