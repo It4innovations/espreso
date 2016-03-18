@@ -97,6 +97,8 @@ public:
 	// SEQ_VECTOR <double> tmp_sol; 
 
 	//Members
+	void ReorderMatrix(SparseMatrix & A);
+
 	void ImportMatrix(SparseMatrix & A);
 	void ImportMatrix_fl(SparseMatrix & A);
 	void ImportMatrix_wo_Copy(SparseMatrix & A);

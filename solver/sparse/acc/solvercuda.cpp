@@ -1,5 +1,4 @@
 #include "solvercuda.h"
-//#include "mkl_pardiso.h"
 #include <cuda_runtime_api.h>
 
 #define CHECK_SO(x) do {\
@@ -76,13 +75,13 @@ SparseSolverCUDA::SparseSolverCUDA(){
 //	/* Numbers of processors, value of OMP_NUM_THREADS */
 	int num_procs;
 	char * var = getenv("OMP_NUM_THREADS");
-   if(var != NULL)
-   	sscanf( var, "%d", &num_procs );
+   	if(var != NULL)
+   		sscanf( var, "%d", &num_procs );
 	else {
-   	printf("Set environment OMP_NUM_THREADS to 1");
-       exit(1);
+   		printf("Set environment OMP_NUM_THREADS to 1");
+    	exit(1);
 	}
-   iparm[2]  = num_procs;
+    iparm[2]  = num_procs;
 
 	m_nRhs		 = 1;
 	m_factorized = 0;
@@ -181,6 +180,104 @@ void SparseSolverCUDA::Clear() {
 	}			
 }
 
+void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
+		eslocal i;
+
+		MKL_INT rows_r 						= A.rows;
+		MKL_INT nnz_r					 	= A.nnz;
+		MKL_INT CSR_I_row_indices_size_r	= A.CSR_I_row_indices.size();
+		MKL_INT CSR_J_col_indices_size_r	= A.CSR_J_col_indices.size();
+		MKL_INT CSR_V_values_size_r			= A.CSR_V_values.size();
+
+		// printf("rows: %d nnz: %d i: %d j: %d v: %d \n", rows_r, nnz_r, CSR_I_row_indices_size_r, CSR_J_col_indices_size_r, A.CSR_V_values.size());
+		// SpyText(A);			
+
+		permutation_size = rows_r;
+		permutation = new int[permutation_size];
+
+		SEQ_VECTOR<double> CSR_V_values_reordered(CSR_V_values_size_r);
+
+		#if INT_WIDTH == 64 
+			SEQ_VECTOR<int> tmp_CSR_I_row_indices(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end());
+			SEQ_VECTOR<int> tmp_CSR_J_col_indices(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end());
+		#endif
+
+		// Create permutation vector
+		if(reorder == 1){
+			printf("Symrcm reordering method performed.\n");
+			#if INT_WIDTH == 64
+				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &tmp_CSR_I_row_indices.front(),
+				 &tmp_CSR_J_col_indices.front(), permutation));
+			#else
+				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &A.CSR_I_row_indices.front(),
+				 &A.CSR_J_col_indices.front(), permutation));
+			#endif
+		}
+		else if(reorder == 2){
+			printf("Symamd reordering method performed.\n");
+			#if INT_WIDTH == 64
+				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &tmp_CSR_I_row_indices.front(),
+				 &tmp_CSR_J_col_indices.front(), permutation));
+			#else
+				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &A.CSR_I_row_indices.front(),
+				 &A.CSR_J_col_indices.front(), permutation));
+			#endif
+		}
+
+		#ifdef DEBUG
+			printf("Permutation vector: ");
+			for (i = 0; i < rows_r; ++i)
+				printf("%d ", permutation[i]);
+			printf("\n");
+		#endif
+
+		// Allocate a buffer for reordering
+		size_t bufferSizeInBytes = 0;
+		#if INT_WIDTH == 64
+			CHECK_SO(cusolverSpXcsrperm_bufferSizeHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
+		 	 &tmp_CSR_I_row_indices.front(), &tmp_CSR_J_col_indices.front(), permutation, permutation, &bufferSizeInBytes));
+		#else
+			CHECK_SO(cusolverSpXcsrperm_bufferSizeHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
+		 	 &A.CSR_I_row_indices.front(), &A.CSR_J_col_indices.front(), permutation, permutation, &bufferSizeInBytes));
+		#endif
+
+		#ifdef DEBUG
+			printf("---Permutation bufferSizeInBytes: %zu B\n", bufferSizeInBytes);
+		#endif
+
+		void * buffer = malloc(bufferSizeInBytes);
+
+		int * map = new int[nnz_r];
+		for (i = 0; i < nnz_r; ++i){
+			map[i] = i;
+		}
+
+		// Perform the matrix reordering (get a map)
+		#if INT_WIDTH == 64
+			CHECK_SO(cusolverSpXcsrpermHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
+			 &tmp_CSR_I_row_indices.front(), &tmp_CSR_J_col_indices.front(), permutation, permutation, map, buffer));
+
+			for (i = 0; i < CSR_I_row_indices_size_r; ++i)
+				A.CSR_I_row_indices[i] = tmp_CSR_I_row_indices[i];
+
+			for (i = 0; i < CSR_J_col_indices_size_r; ++i)
+				A.CSR_J_col_indices[i] = tmp_CSR_J_col_indices[i];
+		#else
+			CHECK_SO(cusolverSpXcsrpermHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
+			 &A.CSR_I_row_indices.front(), &A.CSR_J_col_indices.front(), permutation, permutation, map, buffer));
+		#endif
+
+		// Get reordered values
+		for (i = 0; i < nnz_r; ++i){
+			CSR_V_values_reordered[i] = A.CSR_V_values[map[i]];
+		}
+
+		A.CSR_V_values = CSR_V_values_reordered;	
+
+		delete [] map;
+		free(buffer);
+}
+
 void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	// printf("---ImportMatrix\n");
 
@@ -209,8 +306,8 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 
 	if(reorder > 0)
 	{
-		// Extend upper part to full matrix 
 		A_sym = A_in;
+		// Extend upper part to full matrix for reordering
 		if(A_in.type == 'S'){
 			A_sym.type = 'G';
 			A_sym.SetDiagonalOfSymmetricMatrix(0.0);
@@ -218,98 +315,12 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 			A_sym.MatAddInPlace(A_in,'N',1.0);
 		}
 
-		MKL_INT rows_r 						= A_sym.rows;
-		MKL_INT nnz_r					 	= A_sym.nnz;
-		MKL_INT CSR_I_row_indices_size_r	= A_sym.CSR_I_row_indices.size();
-		MKL_INT CSR_J_col_indices_size_r	= A_sym.CSR_J_col_indices.size();
-		MKL_INT CSR_V_values_size_r			= A_sym.CSR_V_values.size();
-
-		// printf("rows: %d nnz: %d i: %d j: %d v: %d \n", rows_r, nnz_r, CSR_I_row_indices_size_r, CSR_J_col_indices_size_r, A_sym.CSR_V_values.size());
-		// SpyText(A_sym);			
-
-		permutation_size = rows_r;
-		permutation = new int[permutation_size];
-
-		std::vector<double> CSR_V_values_reordered(CSR_V_values_size_r);
-
-		// Cast long to int
-		#if INT_WIDTH == 64 
-			std::vector<int> tmp_CSR_I_row_indices(A_sym.CSR_I_row_indices.begin(), A_sym.CSR_I_row_indices.end());
-			std::vector<int> tmp_CSR_J_col_indices(A_sym.CSR_J_col_indices.begin(), A_sym.CSR_J_col_indices.end());
-		#endif
-
-		// Create permutation vector
-		if(reorder == 1){
-			printf("Symrcm reordering method performed.\n");
-			#if INT_WIDTH == 64
-				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &tmp_CSR_I_row_indices.front(),
-				 &tmp_CSR_J_col_indices.front(), permutation));
-			#else
-				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &A_sym.CSR_I_row_indices.front(),
-				 &A_sym.CSR_J_col_indices.front(), permutation));
-			#endif
-		}
-		else if(reorder == 2){
-			printf("Symamd reordering method performed.\n");
-			#if INT_WIDTH == 64
-				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &tmp_CSR_I_row_indices.front(),
-				 &tmp_CSR_J_col_indices.front(), permutation));
-			#else
-				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &A_sym.CSR_I_row_indices.front(),
-				 &A_sym.CSR_J_col_indices.front(), permutation));
-			#endif
-		}
+		ReorderMatrix(A_sym);
 
 		#ifdef DEBUG
-			printf("Permutation vector: ");
-			for (i = 0; i < rows_r; ++i)
-				printf("%d ", permutation[i]);
-			printf("\n");
+			SpyText(A_sym);
 		#endif
 
-		// Allocate a buffer for reordering
-		size_t bufferSizeInBytes = 0;
-		#if INT_WIDTH == 64
-			CHECK_SO(cusolverSpXcsrperm_bufferSizeHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-		 	 &tmp_CSR_I_row_indices.front(), &tmp_CSR_J_col_indices.front(), permutation, permutation, &bufferSizeInBytes));
-		#else
-			CHECK_SO(cusolverSpXcsrperm_bufferSizeHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-		 	 &A_sym.CSR_I_row_indices.front(), &A_sym.CSR_J_col_indices.front(), permutation, permutation, &bufferSizeInBytes));
-		#endif
-
-		#ifdef DEBUG
-			printf("---Permutation bufferSizeInBytes: %zu B\n", bufferSizeInBytes);
-		#endif
-
-		void * buffer = malloc(bufferSizeInBytes);
-
-		int * map = new int[nnz_r];
-		for (i = 0; i < nnz_r; ++i){
-			map[i] = i;
-		}
-
-		// Perform the matrix reordering (get a map)
-		#if INT_WIDTH == 64
-			CHECK_SO(cusolverSpXcsrpermHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-			 &tmp_CSR_I_row_indices.front(), &tmp_CSR_J_col_indices.front(), permutation, permutation, map, buffer));
-
-			for (i = 0; i < CSR_I_row_indices_size_r; ++i)
-				A_sym.CSR_I_row_indices[i] = tmp_CSR_I_row_indices[i];
-
-			for (i = 0; i < CSR_J_col_indices_size_r; ++i)
-				A_sym.CSR_J_col_indices[i] = tmp_CSR_J_col_indices[i];
-		#else
-			CHECK_SO(cusolverSpXcsrpermHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-			 &A_sym.CSR_I_row_indices.front(), &A_sym.CSR_J_col_indices.front(), permutation, permutation, map, buffer));
-		#endif
-
-		// Get reordered values
-		for (i = 0; i < nnz_r; ++i){
-			CSR_V_values_reordered[i] = A_sym.CSR_V_values[map[i]];
-		}
-		A_sym.CSR_V_values = CSR_V_values_reordered;	
-
-		SpyText(A_sym);
 		A_sym.RemoveLower();
 		A_sym.type = 'S';
 
@@ -318,11 +329,9 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 		#ifdef DEBUG
 			SpyText(*A);		
 		#endif
-
-		delete [] map;
-		free(buffer);
 	}
 	else{
+		// Import only lower part if stored as G
 		if(A_in.type == 'G'){
 			A_sym = A_in;
 			A_sym.RemoveLower();
@@ -363,7 +372,6 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	// CSR_J_col_indices = new int[CSR_J_col_indices_size];
 	// CSR_V_values	  = new double  [CSR_V_values_size];
 
-
 	CHECK_ERR(cudaMalloc ((void**)&D_CSR_I_row_indices, sizeof(int)*CSR_I_row_indices_size));
 	CHECK_ERR(cudaMalloc ((void**)&D_CSR_J_col_indices, sizeof(int)*CSR_J_col_indices_size));
 	CHECK_ERR(cudaMalloc ((void**)&D_CSR_V_values, sizeof(double)*CSR_V_values_size));
@@ -371,8 +379,8 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	CHECK_ERR(cudaMemcpy(D_CSR_V_values, &A->CSR_V_values.front(), sizeof(double)*CSR_V_values_size, cudaMemcpyHostToDevice));
 
 	#if INT_WIDTH == 64	
-		std::vector<int> tmp2_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
-		std::vector<int> tmp2_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
+		SEQ_VECTOR<int> tmp2_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
+		SEQ_VECTOR<int> tmp2_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
 
 		CHECK_ERR(cudaMemcpy(D_CSR_I_row_indices, &tmp2_CSR_I_row_indices.front(), sizeof(int)*CSR_I_row_indices_size, cudaMemcpyHostToDevice));
 		CHECK_ERR(cudaMemcpy(D_CSR_J_col_indices, &tmp2_CSR_J_col_indices.front(), sizeof(int)*CSR_J_col_indices_size, cudaMemcpyHostToDevice));
@@ -416,106 +424,19 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	if(reorder > 0)
 	{
 		A_sym = A_in;
-		// Extend upper part to full matrix 
+		// Extend upper part to full matrix for reordering
 		if(A_in.type == 'S'){
 			A_sym.type = 'G';
 			A_sym.SetDiagonalOfSymmetricMatrix(0.0);
 			A_sym.MatTranspose();
 			A_sym.MatAddInPlace(A_in,'N',1.0);	
 		}
-		
-		MKL_INT rows_r 						= A_sym.rows;
-		MKL_INT nnz_r					 	= A_sym.nnz;
-		MKL_INT CSR_I_row_indices_size_r	= A_sym.CSR_I_row_indices.size();
-		MKL_INT CSR_J_col_indices_size_r	= A_sym.CSR_J_col_indices.size();
-		MKL_INT CSR_V_values_size_r			= A_sym.CSR_V_values.size();
 
-		// printf("rows: %d nnz: %d i: %d j: %d v: %d \n", rows_r, nnz_r, CSR_I_row_indices_size_r, CSR_J_col_indices_size_r, A_sym.CSR_V_values.size());
-		// SpyText(A_sym);			
-
-		permutation_size = rows_r;
-		permutation = new int[permutation_size];
-
-		std::vector<double> CSR_V_values_reordered(CSR_V_values_size_r);
-
-		#if INT_WIDTH == 64 
-			std::vector<int> tmp_CSR_I_row_indices(A_sym.CSR_I_row_indices.begin(), A_sym.CSR_I_row_indices.end());
-			std::vector<int> tmp_CSR_J_col_indices(A_sym.CSR_J_col_indices.begin(), A_sym.CSR_J_col_indices.end());
-		#endif
-
-		// Create permutation vector
-		if(reorder == 1){
-			printf("Symrcm reordering method performed.\n");
-			#if INT_WIDTH == 64
-				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &tmp_CSR_I_row_indices.front(),
-				 &tmp_CSR_J_col_indices.front(), permutation));
-			#else
-				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &A_sym.CSR_I_row_indices.front(),
-				 &A_sym.CSR_J_col_indices.front(), permutation));
-			#endif
-		}
-		else if(reorder == 2){
-			printf("Symamd reordering method performed.\n");
-			#if INT_WIDTH == 64
-				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &tmp_CSR_I_row_indices.front(),
-				 &tmp_CSR_J_col_indices.front(), permutation));
-			#else
-				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &A_sym.CSR_I_row_indices.front(),
-				 &A_sym.CSR_J_col_indices.front(), permutation));
-			#endif
-		}
+		ReorderMatrix(A_sym);
 
 		#ifdef DEBUG
-			printf("Permutation vector: ");
-			for (i = 0; i < rows_r; ++i)
-				printf("%d ", permutation[i]);
-			printf("\n");
+			SpyText(A_sym);
 		#endif
-
-		// Allocate a buffer for reordering
-		size_t bufferSizeInBytes = 0;
-		#if INT_WIDTH == 64
-			CHECK_SO(cusolverSpXcsrperm_bufferSizeHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-		 	 &tmp_CSR_I_row_indices.front(), &tmp_CSR_J_col_indices.front(), permutation, permutation, &bufferSizeInBytes));
-		#else
-			CHECK_SO(cusolverSpXcsrperm_bufferSizeHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-		 	 &A_sym.CSR_I_row_indices.front(), &A_sym.CSR_J_col_indices.front(), permutation, permutation, &bufferSizeInBytes));
-		#endif
-
-		#ifdef DEBUG
-			printf("---Permutation bufferSizeInBytes: %zu B\n", bufferSizeInBytes);
-		#endif
-
-		void * buffer = malloc(bufferSizeInBytes);
-
-		int * map = new int[nnz_r];
-		for (i = 0; i < nnz_r; ++i){
-			map[i] = i;
-		}
-
-		// Perform the matrix reordering (get a map)
-		#if INT_WIDTH == 64
-			CHECK_SO(cusolverSpXcsrpermHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-			 &tmp_CSR_I_row_indices.front(), &tmp_CSR_J_col_indices.front(), permutation, permutation, map, buffer));
-
-			for (i = 0; i < CSR_I_row_indices_size_r; ++i)
-				A_sym.CSR_I_row_indices[i] = tmp_CSR_I_row_indices[i];
-
-			for (i = 0; i < CSR_J_col_indices_size_r; ++i)
-				A_sym.CSR_J_col_indices[i] = tmp_CSR_J_col_indices[i];
-		#else
-			CHECK_SO(cusolverSpXcsrpermHost(soHandle, rows_r, rows_r, nnz_r, matDescr,
-			 &A_sym.CSR_I_row_indices.front(), &A_sym.CSR_J_col_indices.front(), permutation, permutation, map, buffer));
-		#endif
-
-		// Get reordered values
-		for (i = 0; i < nnz_r; ++i){
-			CSR_V_values_reordered[i] = A_sym.CSR_V_values[map[i]];
-		}
-
-		A_sym.CSR_V_values = CSR_V_values_reordered;	
-
-		SpyText(A_sym);
 		A_sym.RemoveLower();
 		A_sym.type = 'S';
 
@@ -524,10 +445,8 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 		#ifdef DEBUG
 			SpyText(*A);		
 		#endif
-
-		delete [] map;
-		free(buffer);
 	} else {
+		// Import only lower part if stored as G
 		if(A_in.type == 'G'){
 			A_sym = A_in;
 			A_sym.RemoveLower();
@@ -567,7 +486,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	// CSR_V_values	  = new double  [CSR_V_values_size];
 
 	// Cast double to float
-	std::vector<float> CSR_V_values_fl(A->CSR_V_values.begin(), A->CSR_V_values.end());
+	SEQ_VECTOR<float> CSR_V_values_fl(A->CSR_V_values.begin(), A->CSR_V_values.end());
 
 	CHECK_ERR(cudaMalloc ((void**)&D_CSR_I_row_indices, sizeof(int)*CSR_I_row_indices_size));
 	CHECK_ERR(cudaMalloc ((void**)&D_CSR_J_col_indices, sizeof(int)*CSR_J_col_indices_size));
@@ -576,8 +495,8 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	CHECK_ERR(cudaMemcpy(D_CSR_V_values_fl, &CSR_V_values_fl.front(), sizeof(float)*CSR_V_values_fl_size, cudaMemcpyHostToDevice));
 	
 	#if INT_WIDTH == 64
-		std::vector<int> tmp_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
-		std::vector<int> tmp_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
+		SEQ_VECTOR<int> tmp_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
+		SEQ_VECTOR<int> tmp_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
 
 		CHECK_ERR(cudaMemcpy(D_CSR_I_row_indices, &tmp_CSR_I_row_indices.front(), sizeof(int)*CSR_I_row_indices_size, cudaMemcpyHostToDevice));
 		CHECK_ERR(cudaMemcpy(D_CSR_J_col_indices, &tmp_CSR_J_col_indices.front(), sizeof(int)*CSR_J_col_indices_size, cudaMemcpyHostToDevice));
