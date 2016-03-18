@@ -43,8 +43,9 @@ def build(ctx):
     if ctx.env.SOLVER == "MIC":
         sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp", "specific/acc/itersolveracc.cpp", "specific/acc/DenseMatrixPack.cpp")
 
+    # TODO
     if ctx.env.SOLVER == "CUDA":
-        sources = source_files + ("specific/acc/solvercuda.cpp",)
+        sources = source_files + ("specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/solvercuda.cpp",)
 
     if ctx.env.SOLVER == "MUMPS":
         sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
