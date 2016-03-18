@@ -4,7 +4,6 @@
 
 #include "../element.h"
 #include "../2D/square8.h"
-#include "../1D/line.h"
 #include "hexahedron8.h"
 
 #define Hexahedron20NodesCount 20

@@ -3,7 +3,7 @@
 
 #include "../element.h"
 #include "../2D/square4.h"
-#include "../1D/line.h"
+#include "../1D/line2.h"
 
 #define Hexahedron8NodesCount 8
 #define Hexahedron8FacesCount 6

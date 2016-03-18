@@ -43,6 +43,20 @@ std::vector<eslocal> Square4::getFace(size_t face) const
 	}
 }
 
+Element* getF(const eslocal *indices, const eslocal *params, size_t face)
+{
+	std::vector<eslocal> result(2);
+	if (face < 3) {
+		result[0] = indices[face];
+		result[1] = indices[face + 1];
+	} else {
+		result[0] = indices[3];
+		result[1] = indices[0];
+	}
+
+	return new Line2(indices, params);
+}
+
 Element* Square4::getFullFace(size_t face) const
 {
 	ESINFO(ERROR) << "get FACE is not implemented";

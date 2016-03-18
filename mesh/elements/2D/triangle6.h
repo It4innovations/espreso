@@ -1,8 +1,8 @@
 #ifndef TRIANGLE6_H_
 #define TRIANGLE6_H_
 
+#include "../1D/line2.h"
 #include "../element.h"
-#include "../1D/line.h"
 #include "triangle3.h"
 
 #define Triangle6NodesCount 6

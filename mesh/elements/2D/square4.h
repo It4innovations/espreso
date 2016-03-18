@@ -1,8 +1,8 @@
 #ifndef SQUARE4_H_
 #define SQUARE4_H_
 
+#include "../1D/line2.h"
 #include "../element.h"
-#include "../1D/line.h"
 
 #define Square4NodesCount 4
 #define Square4FacesCount 4
@@ -80,6 +80,7 @@ public:
 	Element* getCoarseFace(size_t face) const;
 
 protected:
+	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{

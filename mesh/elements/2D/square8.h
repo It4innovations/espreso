@@ -1,8 +1,8 @@
 #ifndef SQUARE8_H_
 #define SQUARE8_H_
 
+#include "../1D/line2.h"
 #include "../element.h"
-#include "../1D/line.h"
 #include "square4.h"
 
 #define Square8NodesCount 8

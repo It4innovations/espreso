@@ -1,32 +1,32 @@
-#ifndef LINE_H_
-#define LINE_H_
+#ifndef LINE2_H_
+#define LINE2_H_
 
 
 #include "../element.h"
 
-#define LineNodesCount 2
-#define LineFacesCount 0
-#define LineGPCount 2
-#define LineVTKCode 3
+#define Line2NodesCount 2
+#define Line2FacesCount 0
+#define Line2GPCount 2
+#define Line2VTKCode 3
 
 namespace espreso {
 
-class Line: public Element
+class Line2: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Line(eslocal *indices, eslocal *params);
+	Line2(const eslocal *indices, const eslocal *params);
 
 	Element* copy() const
 	{
-		return new Line(*this);
+		return new Line2(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return LineVTKCode;
+		return Line2VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -36,37 +36,37 @@ public:
 
 	size_t size() const
 	{
-		return LineNodesCount;
+		return Line2NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return LineNodesCount;
+		return Line2NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return LineGPCount;
+		return Line2GPCount;
 	}
 
 	size_t faces() const
 	{
-		return LineFacesCount;
+		return Line2FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Line::_dN;
+		return Line2::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Line::_N;
+		return Line2::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Line::_weighFactor;
+		return Line2::_weighFactor;
 	}
 
 	eslocal nCommon() const
@@ -87,7 +87,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[LineNodesCount];
+	eslocal _indices[Line2NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -97,4 +97,4 @@ private:
 }
 
 
-#endif /* LINE_H_ */
+#endif /* LINE2_H_ */

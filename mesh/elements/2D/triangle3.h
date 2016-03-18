@@ -2,7 +2,7 @@
 #define TRIANGLE3_H_
 
 #include "../element.h"
-#include "../1D/line.h"
+#include "../1D/line2.h"
 
 #define Triangle3NodesCount 3
 #define Triangle3FacesCount 3

@@ -3,7 +3,6 @@
 #define PRISMA6_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 
 #define Prisma6NodesCount 6
 #define Prisma6FacesCount 5

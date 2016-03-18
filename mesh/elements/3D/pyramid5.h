@@ -3,7 +3,6 @@
 #define PYRAMID5_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 
 #define Pyramid5NodesCount 5
 #define Pyramid5FacesCount 5

@@ -3,7 +3,6 @@
 #define PYRAMID13_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 #include "pyramid5.h"
 
 #define Pyramid13NodesCount 13
