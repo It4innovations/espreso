@@ -67,7 +67,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	D_rhs_sol = NULL;
 	D_rhs_sol_fl = NULL;
 
-	reorder = 0; // 0 - no reordering, 1 - symrcm, 2 - symamd
+	reorder = 2; // 0 - no reordering, 1 - symrcm, 2 - symamd
 
 	if(sizeof(eslocal) == 8){
 		printf("64-bit integer in use with cuSolver - results may be inaccurate!\n");
@@ -183,6 +183,10 @@ void SparseSolverCUDA::Clear() {
 
 void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	// printf("---ImportMatrix\n");
+
+	// Uncomment for KSOLVER = Direct SP
+	// ImportMatrix_fl(A_in);
+	// return;
 
 	CHECK_SP(cusparseCreateMatDescr(&matDescr));
 	cusparseSetMatType(matDescr, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -572,8 +576,8 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	CHECK_ERR(cudaMemcpy(D_CSR_V_values_fl, &CSR_V_values_fl.front(), sizeof(float)*CSR_V_values_fl_size, cudaMemcpyHostToDevice));
 	
 	#if INT_WIDTH == 64
-		std::vector<int> tmp_CSR_I_row_indices(A_sym.CSR_I_row_indices.begin(), A_sym.CSR_I_row_indices.end());
-		std::vector<int> tmp_CSR_J_col_indices(A_sym.CSR_J_col_indices.begin(), A_sym.CSR_J_col_indices.end());
+		std::vector<int> tmp_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
+		std::vector<int> tmp_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
 
 		CHECK_ERR(cudaMemcpy(D_CSR_I_row_indices, &tmp_CSR_I_row_indices.front(), sizeof(int)*CSR_I_row_indices_size, cudaMemcpyHostToDevice));
 		CHECK_ERR(cudaMemcpy(D_CSR_J_col_indices, &tmp_CSR_J_col_indices.front(), sizeof(int)*CSR_J_col_indices_size, cudaMemcpyHostToDevice));
@@ -651,8 +655,6 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 	
 	m_factorized = 1;
 	initialized = true; // necessary?
-
-	printf ("\nRHS ... %d Kplus size %d\n", m_nRhs, m_Kplus_size);
 
 	if (USE_FLOAT) {
 		D_rhs_sol_fl = NULL;
