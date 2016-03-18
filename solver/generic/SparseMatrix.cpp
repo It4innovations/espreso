@@ -192,7 +192,7 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 
 	// Sparse COO data
 	I_row_indices = A_in.I_row_indices;
-	J_col_indices = A_in.CSR_J_col_indices;
+	J_col_indices = A_in.J_col_indices;
 	V_values	  = A_in.V_values;
 
 	// Sparse CSR data
