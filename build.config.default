@@ -56,7 +56,7 @@ PARDISO::STLIBPATH =
 CUDA::CXXFLAGS =
 CUDA::LINKFLAGS =
 CUDA::INCLUDES = /usr/local/cuda-7.5/include
-CUDA::LIBPATH = /usr/local/cuda-7.5/lib
+CUDA::LIBPATH = /usr/local/cuda-7.5/lib64
 CUDA::STLIBPATH =
 
 MIC::CXXFLAGS =
