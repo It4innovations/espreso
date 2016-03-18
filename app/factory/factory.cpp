@@ -88,8 +88,10 @@ static Mesh* getMesh(const Options &options)
 		break;
 	}
 	case config::mesh::OPENFOAM: {
-		input::OpenFOAM loader(options, config::MPIrank, config::MPIsize);
-		loader.load(*mesh);
+		// TODO:
+		ESINFO(ERROR) << "OpenFOAM is not working";
+//		input::OpenFOAM loader(options, config::MPIrank, config::MPIsize);
+//		loader.load(*mesh);
 		break;
 	}
 	case config::mesh::ESDATA: {
