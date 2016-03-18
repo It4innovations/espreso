@@ -112,7 +112,7 @@ void LinearSolver::init(
 
 	cluster.cluster_global_index = MPI_rank + 1;
 	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
-	cluster.my_neighs = neigh_clusters;
+	cluster.my_neighs = std::vector<eslocal>(neigh_clusters.begin(), neigh_clusters.end());
 
 	vector<double> solver_parameters ( 10 );
 	solver.Setup ( solver_parameters, cluster );

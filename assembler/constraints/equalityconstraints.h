@@ -12,7 +12,7 @@ protected:
 	Constraints(const Mesh &mesh, size_t firstIndex);
 
 	const Mesh &_mesh;
-	std::vector<eslocal> _neighbours;
+	std::vector<int> _neighbours;
 
 	size_t _subdomains;
 	size_t _firstIndex;
