@@ -27,6 +27,8 @@
 	}\
 } while(0);
 
+using namespace espreso;
+
 SparseSolverCUDA::SparseSolverCUDA(){
 	// printf("---SparseSolverCUDA\n");
 
@@ -53,7 +55,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	CSR_V_values_size = 0;
 	CSR_V_values_fl_size = 0;
 	permutation_size = 0;
-	cuStream = NULL; 
+	cuStream = NULL;
 	soHandle = NULL;
 	soInfo = NULL;
 	matDescr = NULL;
@@ -124,9 +126,9 @@ void SparseSolverCUDA::Clear() {
 		// Destroys factorization and matrix settings
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
-			soInfo = NULL;	
+			soInfo = NULL;
 		}
-		
+
 		if (matDescr != NULL){
 			CHECK_SP(cusparseDestroyMatDescr(matDescr));
 			matDescr = NULL;
@@ -143,32 +145,32 @@ void SparseSolverCUDA::Clear() {
 		// delete [] CSR_I_row_indices; // TODO probably delete
 		// CSR_I_row_indices = NULL; // TODO probably delete
 
-		CHECK_ERR(cudaFree(D_CSR_I_row_indices)); 
+		CHECK_ERR(cudaFree(D_CSR_I_row_indices));
 		D_CSR_I_row_indices = NULL;
 
 		CSR_I_row_indices_size = 0;
-	}   
+	}
 	if (CSR_J_col_indices_size > 0)	{
 		// delete [] CSR_J_col_indices; // TODO probably delete
 		// CSR_J_col_indices = NULL; // TODO probably delete
 
-		CHECK_ERR(cudaFree(D_CSR_J_col_indices)); 
+		CHECK_ERR(cudaFree(D_CSR_J_col_indices));
 		D_CSR_J_col_indices = NULL;
 
 		CSR_J_col_indices_size = 0;
-	}	
+	}
 	if (CSR_V_values_size > 0){
 		// delete [] CSR_V_values;	// TODO probably delete
 		// CSR_V_values = NULL;	// TODO probably delete
 
 		CHECK_ERR(cudaFree(D_CSR_V_values));
-		D_CSR_V_values = NULL; 
+		D_CSR_V_values = NULL;
 
-		CSR_V_values_size = 0;	
+		CSR_V_values_size = 0;
 	}
 	if (CSR_V_values_fl_size > 0){
 		CHECK_ERR(cudaFree(D_CSR_V_values_fl));
-		D_CSR_V_values_fl = NULL; 
+		D_CSR_V_values_fl = NULL;
 
 		CSR_V_values_fl_size   = 0;
 	}
@@ -177,7 +179,7 @@ void SparseSolverCUDA::Clear() {
 		permutation = NULL;
 
 		permutation_size = 0;
-	}			
+	}
 }
 
 void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
@@ -190,14 +192,14 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 		MKL_INT CSR_V_values_size_r			= A.CSR_V_values.size();
 
 		// printf("rows: %d nnz: %d i: %d j: %d v: %d \n", rows_r, nnz_r, CSR_I_row_indices_size_r, CSR_J_col_indices_size_r, A.CSR_V_values.size());
-		// SpyText(A);			
+		// SpyText(A);
 
 		permutation_size = rows_r;
 		permutation = new int[permutation_size];
 
 		SEQ_VECTOR<double> CSR_V_values_reordered(CSR_V_values_size_r);
 
-		#if INT_WIDTH == 64 
+		#if INT_WIDTH == 64
 			SEQ_VECTOR<int> tmp_CSR_I_row_indices(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end());
 			SEQ_VECTOR<int> tmp_CSR_J_col_indices(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end());
 		#endif
@@ -272,7 +274,7 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 			CSR_V_values_reordered[i] = A.CSR_V_values[map[i]];
 		}
 
-		A.CSR_V_values = CSR_V_values_reordered;	
+		A.CSR_V_values = CSR_V_values_reordered;
 
 		delete [] map;
 		free(buffer);
@@ -295,7 +297,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	eslocal i;
 
 	#ifdef DEBUG
-		#if INT_WIDTH == 64 
+		#if INT_WIDTH == 64
 			printf("Input matrix: rows: %ld nnz: %ld i: %zu j: %zu v: %zu \n", A_in.rows, A_in.nnz, A_in.CSR_I_row_indices.size(), A_in.CSR_J_col_indices.size(), A_in.CSR_V_values.size());
 		#else
 			printf("Input matrix: rows: %d nnz: %d i: %zu j: %zu v: %zu \n", A_in.rows, A_in.nnz, A_in.CSR_I_row_indices.size(), A_in.CSR_J_col_indices.size(), A_in.CSR_V_values.size());
@@ -327,7 +329,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 		A = &A_sym;
 
 		#ifdef DEBUG
-			SpyText(*A);		
+			SpyText(*A);
 		#endif
 	}
 	else{
@@ -378,7 +380,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 
 	CHECK_ERR(cudaMemcpy(D_CSR_V_values, &A->CSR_V_values.front(), sizeof(double)*CSR_V_values_size, cudaMemcpyHostToDevice));
 
-	#if INT_WIDTH == 64	
+	#if INT_WIDTH == 64
 		SEQ_VECTOR<int> tmp2_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
 		SEQ_VECTOR<int> tmp2_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
 
@@ -388,7 +390,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 		CHECK_ERR(cudaMemcpy(D_CSR_I_row_indices, &A->CSR_I_row_indices.front(), sizeof(int)*CSR_I_row_indices_size, cudaMemcpyHostToDevice));
 		CHECK_ERR(cudaMemcpy(D_CSR_J_col_indices, &A->CSR_J_col_indices.front(), sizeof(int)*CSR_J_col_indices_size, cudaMemcpyHostToDevice));
 	#endif
-	
+
 	A->MatTranspose();
 
 	// ORIG
@@ -429,7 +431,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 			A_sym.type = 'G';
 			A_sym.SetDiagonalOfSymmetricMatrix(0.0);
 			A_sym.MatTranspose();
-			A_sym.MatAddInPlace(A_in,'N',1.0);	
+			A_sym.MatAddInPlace(A_in,'N',1.0);
 		}
 
 		ReorderMatrix(A_sym);
@@ -443,7 +445,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 		A = &A_sym;
 
 		#ifdef DEBUG
-			SpyText(*A);		
+			SpyText(*A);
 		#endif
 	} else {
 		// Import only lower part if stored as G
@@ -493,7 +495,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	CHECK_ERR(cudaMalloc ((void**)&D_CSR_V_values_fl, sizeof(float)*CSR_V_values_fl_size));
 
 	CHECK_ERR(cudaMemcpy(D_CSR_V_values_fl, &CSR_V_values_fl.front(), sizeof(float)*CSR_V_values_fl_size, cudaMemcpyHostToDevice));
-	
+
 	#if INT_WIDTH == 64
 		SEQ_VECTOR<int> tmp_CSR_I_row_indices(A->CSR_I_row_indices.begin(), A->CSR_I_row_indices.end());
 		SEQ_VECTOR<int> tmp_CSR_J_col_indices(A->CSR_J_col_indices.begin(), A->CSR_J_col_indices.end());
@@ -571,7 +573,7 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 
 		printf ("\nFactorization completed ... ");
 	#endif
-	
+
 	m_factorized = 1;
 	initialized = true; // necessary?
 
@@ -592,7 +594,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -607,7 +609,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		if(reorder){
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_fl[i] = (float)rhs_sol[permutation[i]];
-			}	
+			}
 		} else {
 			for (i = 0; i < rows; ++i){
 				rhs_sol_fl[i] = (float)rhs_sol[i];
@@ -627,7 +629,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	        }
 		} else {
 			for (i = 0; i < rows; i++){
-				rhs_sol[i] = (double)rhs_sol_fl[i];	
+				rhs_sol[i] = (double)rhs_sol_fl[i];
 			}
 		}
 
@@ -638,13 +640,13 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_reordered[i] = rhs_sol[permutation[i]];
-			}	
+			}
 		}
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs_sol.front(), sizeof(double)*rows, cudaMemcpyHostToDevice));
 
 		CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol, D_rhs_sol, soInfo, D_buffer));
 
-		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &rhs_sol.front(), D_rhs_sol, sizeof(double)*rows, cudaMemcpyDeviceToHost));	
+		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &rhs_sol.front(), D_rhs_sol, sizeof(double)*rows, cudaMemcpyDeviceToHost));
 
         // Reorder back the solution
         for (i = 0; i < permutation_size; ++i){
@@ -659,10 +661,10 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		int nRhs = 1;
 		initialized = false;
 		if (MPIrank == 0) printf(".");
-		
+
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
-			soInfo = NULL;	
+			soInfo = NULL;
 		}
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
@@ -681,7 +683,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -709,7 +711,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		if(reorder){
 			for (i = 0; i < total_size; ++i){
 				rhs_sol_fl[i] = (float)rhs[permutation[i % permutation_size] + (i / permutation_size) * permutation_size];
-			}	
+			}
 		} else {
 			for (i = 0; i < total_size; ++i){
 				rhs_sol_fl[i] = (float)rhs[i];
@@ -731,7 +733,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 	        }
 		} else {
 			for (i = 0; i < total_size; i++){
-				sol[i] = (double)rhs_sol_fl[i];	
+				sol[i] = (double)rhs_sol_fl[i];
 			}
 		}
 	} else {
@@ -748,7 +750,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 			for (i = 0; i < total_size; ++i){
 				rhs_sol_reordered[i] = rhs[ permutation[i % permutation_size] + (i/permutation_size)*permutation_size];
-			}	
+			}
 		}
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs.front(), sizeof(double) * total_size, cudaMemcpyHostToDevice));
@@ -757,7 +759,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol + i * rows, D_rhs_sol + i * rows, soInfo, D_buffer));
 		}
 
-		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol.front(), D_rhs_sol, sizeof(double) * total_size, cudaMemcpyDeviceToHost));	
+		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol.front(), D_rhs_sol, sizeof(double) * total_size, cudaMemcpyDeviceToHost));
 
 		if(reorder){
 			// Reorder back the solution
@@ -770,7 +772,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 	/* -------------------------------------------------------------------- */
 	/* .. Back substitution and iterative refinement. */
 	/* -------------------------------------------------------------------- */
-	
+
 	if (!keep_factors) {
 		/* -------------------------------------------------------------------- */
 		/* .. Termination and release of memory. */
@@ -781,7 +783,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
-			soInfo = NULL;	
+			soInfo = NULL;
 		}
 
 		if(USE_FLOAT){
@@ -801,7 +803,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -817,7 +819,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		if(reorder){
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_fl[i] = (float)rhs[rhs_start_index + permutation[i]];
-			}	
+			}
 		} else {
 			for (i = 0; i < rows; ++i){
 				rhs_sol_fl[i] = (float)rhs[rhs_start_index + i];
@@ -837,7 +839,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 	        }
 		} else {
 			for (i = 0; i < rows; i++){
-				sol[sol_start_index + i] = (double)rhs_sol_fl[i];	
+				sol[sol_start_index + i] = (double)rhs_sol_fl[i];
 			}
 		}
 	} else {
@@ -845,14 +847,14 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		if(reorder){
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_reordered[i] = rhs[rhs_start_index + permutation[i]];
-			}	
+			}
 		}
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs[rhs_start_index], sizeof(double)*rows, cudaMemcpyHostToDevice));
 
 		CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol, D_rhs_sol, soInfo, D_buffer));
 
-		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol[sol_start_index], D_rhs_sol, sizeof(double)*rows, cudaMemcpyDeviceToHost));	
+		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol[sol_start_index], D_rhs_sol, sizeof(double)*rows, cudaMemcpyDeviceToHost));
 
         // Reorder back the solution
         for (i = 0; i < permutation_size; ++i){
@@ -869,7 +871,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
-			soInfo = NULL;	
+			soInfo = NULL;
 		}
 
 		if(USE_FLOAT){
@@ -900,7 +902,7 @@ void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_ou
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -976,7 +978,7 @@ void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_ou
 
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
-			soInfo = NULL;	
+			soInfo = NULL;
 		}
 	}
 }
@@ -1371,7 +1373,7 @@ void SparseSolverCUDA::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool i
 //     iparm[2-1] = 2;         /* Fill-in reordering from METIS */
 //     iparm[10-1] = 8; //13   /* Perturb the pivot elements with 1E-13 */
 //     iparm[11-1] = 0;        /* Use nonsymmetric permutation and scaling MPS */
-//     iparm[13-1] = 0;         Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy 
+//     iparm[13-1] = 0;         Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy
 //     iparm[14-1] = 0;        /* Output: Number of perturbed pivots */
 //     iparm[18-1] = -1;       /* Output: Number of nonzeros in the factor LU */
 //     iparm[19-1] = -1;       /* Output: Mflops for LU factorization */
@@ -1577,7 +1579,7 @@ void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in
 //     iparm[2-1] = 2;         /* Fill-in reordering from METIS */
 //     iparm[10-1] = 8; //13   /* Perturb the pivot elements with 1E-13 */
 //     iparm[11-1] = 0;        /* Use nonsymmetric permutation and scaling MPS */
-//     iparm[13-1] = 0;         Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy 
+//     iparm[13-1] = 0;         Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy
 //     iparm[14-1] = 0;        /* Output: Number of perturbed pivots */
 //     iparm[18-1] = -1;       /* Output: Number of nonzeros in the factor LU */
 //     iparm[19-1] = -1;       /* Output: Mflops for LU factorization */
