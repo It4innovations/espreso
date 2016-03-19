@@ -4,11 +4,6 @@
 using namespace espreso::input;
 
 
-AnsysMatsol::AnsysMatsol(const Options &options, int rank, int size)
-{
-	_path = options.path;
-}
-
 void AnsysMatsol::points(Coordinates &coordinates)
 {
 	std::string fileName = _path + "/Model/COORDINATES.dat";
@@ -137,7 +132,7 @@ void AnsysMatsol::boundaryConditions(Coordinates &coordinates)
 }
 
 
-void AnsysMatsol::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours)
+void AnsysMatsol::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {

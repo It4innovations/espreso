@@ -3,11 +3,6 @@
 
 using namespace espreso::input;
 
-Esdata::Esdata(const Options &options, int rank, int size): _rank(rank), _size(size)
-{
-	_path = options.path;
-}
-
 
 void Esdata::points(Coordinates &coordinates)
 {
@@ -92,7 +87,7 @@ void Esdata::boundaryConditions(Coordinates &coordinates)
 }
 
 
-void Esdata::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours)
+void Esdata::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/clusterBoundaries.dat";

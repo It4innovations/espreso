@@ -7,23 +7,33 @@
 namespace espreso {
 namespace input {
 
-class API: public APILoader {
+class API: public Loader {
 
 public:
+	static void load(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
+	{
+		API api(mesh, eIndices, neighbours, size, ids);
+		api.fill();
+	}
+
+protected:
 	// TODO: elements with various DOFS
-	API(std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, esglobal *ids)
-	: _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
+	API(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
+	: Loader(mesh), _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
-	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
+	void boundaryConditions(Coordinates &coordinates) { }; // TODO: change dirichlet structure to array
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+
+	void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) { }
 
 private:
 	size_t _DOFs;
-	std::vector<std::vector<eslocal> > &_eIndices;
+	const std::vector<std::vector<eslocal> > &_eIndices;
 	std::vector<eslocal> &_neighbours;
 	size_t _size;
-	esglobal *_ids;
+	const esglobal *_ids;
 };
 
 }

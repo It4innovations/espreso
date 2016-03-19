@@ -3,12 +3,6 @@
 
 using namespace espreso::input;
 
-
-AnsysWorkbench::AnsysWorkbench(const Options &options, size_t index, size_t size)
-{
-	_path = options.path;
-}
-
 static std::string skip(std::ifstream &is, std::string str)
 {
 	std::string line;
@@ -143,7 +137,7 @@ void AnsysWorkbench::boundaryConditions(Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours)
+void AnsysWorkbench::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {

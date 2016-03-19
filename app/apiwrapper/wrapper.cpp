@@ -129,8 +129,7 @@ void FETI4ICreateInstance(
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
 	APIMesh *mesh = new APIMesh(matrix->eMatrices);
-	input::API loader(matrix->eIndices, neighClusters, size, l2g);
-	loader.load(*mesh);
+	input::API::load(*mesh, matrix->eIndices, neighClusters, size, l2g);
 
 	API api(mesh);
 	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));

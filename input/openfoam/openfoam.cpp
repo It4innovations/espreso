@@ -2,7 +2,7 @@
 
 using namespace espreso::input;
 
-OpenFOAM::OpenFOAM(const Options &options, int rank, int size)
+OpenFOAM::OpenFOAM(Mesh &mesh, const Options &options, int rank, int size): Loader(mesh)
 {
 	_projectPath = options.path;
 	solveParseError(computePolyMeshPath(rank, size));
@@ -151,7 +151,7 @@ void OpenFOAM::boundaryConditions(Coordinates &coordinates) {
 
 }
 
-void OpenFOAM::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours) {
+void OpenFOAM::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) {
 	std::set<int> neighs;
 
 	boundaries.resize(mesh.coordinates().clusterSize());

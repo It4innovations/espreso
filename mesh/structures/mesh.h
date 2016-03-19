@@ -29,6 +29,7 @@
 namespace espreso {
 
 namespace input {
+class Loader;
 class InternalLoader;
 class ExternalLoader;
 class APILoader;
@@ -42,6 +43,7 @@ class Mesh
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
+	friend class input::Loader;
 	friend class input::InternalLoader;
 	friend class input::ExternalLoader;
 

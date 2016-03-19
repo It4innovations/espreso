@@ -48,14 +48,14 @@ static void setCluster(size_t cluster[], const CubeSettings &settings)
 }
 
 template<class TElement>
-CubeGenerator<TElement>::CubeGenerator(const CubeSettings &settings)
-	: UniformGenerator<TElement>(settings), _settings(settings)
+CubeGenerator<TElement>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
+	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
 	setCluster(_cluster, _settings);
 }
 
 template<class TElement>
-void CubeGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements, std::vector<eslocal> &parts)
+void CubeGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 {
 	esglobal cubeElements[3], partSize[3], cOffset[3], offset[3];
 	eslocal subdomain[3], element[3], material, counter;

@@ -12,19 +12,23 @@
 namespace espreso {
 namespace input {
 
-class AnsysMatsol: public ExternalLoader {
+class AnsysMatsol: public Loader {
 
 public:
-	AnsysMatsol(const Options &options, int rank, int size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		AnsysMatsol matsol(mesh, options, rank, size);
+		matsol.fill();
+	}
+
+protected:
+	AnsysMatsol(Mesh &mesh, const Options &options, int rank, int size)
+	: Loader(mesh), _path(options.path) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
-	void faces(Faces &faces) {};
 	void boundaryConditions(Coordinates &coordinates);
-	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
-
-	void open() {};
-	void close() {};
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
 	static size_t getLinesCount(const std::string &file);

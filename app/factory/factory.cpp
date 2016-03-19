@@ -11,14 +11,12 @@ static void generateShape(const Options &options, Mesh *mesh)
 	switch (settings.shape) {
 	case input::CUBE: {
 		input::CubeSettings cube(options, config::MPIrank ,config::MPIsize);
-		input::CubeGenerator<TShape> generator(cube);
-		generator.load(*mesh);
+		input::CubeGenerator<TShape>::load(*mesh, cube);
 		break;
 	}
 	case input::SPHERE: {
 		input::SphereSettings sphere(options, config::MPIrank ,config::MPIsize);
-		input::SphereGenerator<TShape> generator(sphere);
-		generator.load(*mesh);
+		input::SphereGenerator<TShape>::load(*mesh, sphere);
 		break;
 	}
 	default: {
@@ -78,25 +76,21 @@ static Mesh* getMesh(const Options &options)
 	switch (config::mesh::input) {
 
 	case config::mesh::ANSYS_MATSOL: {
-		input::AnsysMatsol loader(options, config::MPIrank, config::MPIsize);
-		loader.load(*mesh);
+		input::AnsysMatsol::load(*mesh, options, config::MPIrank, config::MPIsize);
 		break;
 	}
 	case config::mesh::ANSYS_WORKBENCH: {
-		input::AnsysWorkbench loader(options, config::MPIrank, config::MPIsize);
-		loader.load(*mesh);
+		input::AnsysWorkbench::load(*mesh, options, config::MPIrank, config::MPIsize);
 		break;
 	}
 	case config::mesh::OPENFOAM: {
 		// TODO:
 		ESINFO(ERROR) << "OpenFOAM is not working";
-//		input::OpenFOAM loader(options, config::MPIrank, config::MPIsize);
-//		loader.load(*mesh);
+		//input::OpenFOAM::load(*mesh, options, config::MPIrank, config::MPIsize);
 		break;
 	}
 	case config::mesh::ESDATA: {
-		input::Esdata loader(options, config::MPIrank, config::MPIsize);
-		loader.load(*mesh);
+		input::Esdata::load(*mesh, options, config::MPIrank, config::MPIsize);
 		break;
 	}
 	case config::mesh::GENERATOR: {
