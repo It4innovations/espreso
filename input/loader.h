@@ -14,19 +14,45 @@ class Loader {
 public:
 	void fill()
 	{
+		TimeEval measurement("Mesh loader"); measurement.totalTime.startWithBarrier();
+
 		open();
 
+		TimeEvent tPoints("coordinates"); tPoints.start();
 		points(mesh._coordinates);
+		tPoints.end(); measurement.addEvent(tPoints);
+
+		TimeEvent tElements("elements"); tElements.start();
 		elements(mesh._elements);
+		tElements.end(); measurement.addEvent(tElements);
+
+		TimeEvent tFaces("faces"); tFaces.start();
 		faces(mesh._faces);
+		tFaces.end(); measurement.addEvent(tFaces);
+
+		TimeEvent tBoundaryConditions("boundary conditions"); tBoundaryConditions.start();
 		boundaryConditions(mesh._coordinates);
+		tBoundaryConditions.end(); measurement.addEvent(tBoundaryConditions);
+
+		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
 		clusterBoundaries(mesh._clusterBoundaries, mesh._neighbours);
+		tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
 
 		close();
 
+		TimeEvent tPartition("partition"); tPartition.start();
 		partitiate(mesh._partPtrs);
+		tPartition.end(); measurement.addEvent(tPartition);
+
+		TimeEvent tFixPoints("fix points"); tFixPoints.start();
 		fixPoints(mesh._fixPoints);
+		tFixPoints.end(); measurement.addEvent(tFixPoints);
+
+		TimeEvent tCorners("corners"); tCorners.start();
 		corners(mesh._subdomainBoundaries);
+		tCorners.end(); measurement.addEvent(tCorners);
+
+		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
 
 protected:
