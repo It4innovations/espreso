@@ -3615,6 +3615,11 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   Kplus_R.ConvertDenseToCSR(0);
 //
 //
+
+
+
+
+  
   if (diagonalRegularization){
     eslocal tmp_int0;
     if (d_sub!=-1) {
@@ -3689,11 +3694,15 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   int error_reg = K_solver.Factorization(ss2.str());
   
   
-  error_reg = 1; 
   
   
   ///////////////////////////////////////////////////////////////////////////////////
   if (error_reg){
+    // regMat---------------------------------------------------------------------
+    SparseMatrix se00 = regMat;
+    std::ofstream ose000(Logging::prepareFile(d_sub, "regMatErr"));
+    ose000 << se00;
+    ose000.close();
     // Kreg  ---------------------------------------------------------------------
     SparseMatrix se0 = K;
     std::ofstream ose00(Logging::prepareFile(d_sub, "K_regErr"));
@@ -3722,9 +3731,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
         ose3 << permVec[i] + 1<<" ";
       }
       ose3.close();
+    }
     std::cout << "factorization of K_regular failed." << "\n";
     exit(EXIT_FAILURE);
-    }
   }
   ///////////////////////////////////////////////////////////////////////////////////
 
