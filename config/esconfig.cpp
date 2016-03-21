@@ -28,7 +28,7 @@ namespace output {
 
 	Output output = VTK;
 
-	bool saveMesh = false;
+	bool saveMesh = true;
 	bool saveFixPoints = false;
 	bool saveFaces = false;
 	bool saveLines = false;
