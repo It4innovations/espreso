@@ -3413,9 +3413,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     // if SC_via_K_rr=false,  factorization is made redundantly later.
     createSchur.ImportMatrix(K_modif);
     createSchur.Create_SC(S,sc_size,false);
-    K_modif.Clear();
-    createSchur.Clear();
+//    createSchur.Clear();
   }
+  // K_modif.Clear added 
   S.type='S';
   S.ConvertCSRToDense(1);
 #if VERBOSE_LEVEL>0
@@ -3636,12 +3636,69 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
       regMat.ConvertToCOO(1);
     }
   }
+
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
 
-
   delete [] W;
   delete [] Z;
+
+
+
+  // TESTING OF REGULARIZED MATRIX
+  SparseSolverCPU K_solver;
+  std::stringstream ss2;
+  K_solver.ImportMatrix(K);
+  ss2 << "testing factorization of regularized K -> rank: " << config::MPIrank;
+  int error_reg = K_solver.Factorization(ss2.str());
+  if (error_reg){
+    // K -------------------------------------------------------------------------
+	  SparseMatrix s = K;
+	  std::ofstream os0(Logging::prepareFile(d_sub, "K_err"));
+	  os0 << s;
+	  os0.close();
+    // regMat --------------------------------------------------------------------
+    if (d_sub!=-1){
+      SparseMatrix s1 = regMat;
+      std::ofstream os1(Logging::prepareFile(d_sub, "regMat"));
+      os1 << s1;
+      os1.close();
+    }
+    // K_rs ----------------------------------------------------------------------
+    SparseMatrix s2 = K_rs;
+    std::ofstream os2(Logging::prepareFile(d_sub, "K_rs"));
+    os2 << s2;
+    os2.close();
+    // K_modif -------------------------------------------------------------------
+    SparseMatrix s3 = K_modif;
+    std::ofstream os3(Logging::prepareFile(d_sub, "K_modif"));
+    os3 << s3;
+    os3.close();
+    // 
+
+    
+    if (d_sub!=-1){
+      sprintf(filenameI, "error_file_%d_s%d.txt", MPI_rank,d_sub);
+      std::ofstream os4 (filenameI);
+      os4.precision(15);
+
+
+      eslocal ik=0,cnt_i=0;
+      for (eslocal i = 0;i<permVec.size();i++){
+        os4 << permVec[i] <<" ";
+      }// }
+
+
+
+    }
+
+  }
+
+
+  K_modif.Clear();
+
+
+
 
   double end_time = omp_get_wtime();
 //12 - Total time in kernel detection
