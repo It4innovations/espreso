@@ -291,6 +291,7 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 	} else {
 		tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
 	}
+  return 0;
 }
 
 void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
