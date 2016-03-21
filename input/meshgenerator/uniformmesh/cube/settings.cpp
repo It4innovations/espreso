@@ -30,7 +30,7 @@ static std::vector<Description> createCubeSetting()
 			INTEGER_PARAMETER, "CLUSTERS_" + axis[i].first, "Number of clusters in clusters in " + axis[i].second + "-axis."
 		});
 		description.push_back({
-			INTEGER_PARAMETER, "LENGTH_" + axis[i].first, "Length of the cube in " + axis[i].second + "-axis."
+			DOUBLE_PARAMETER, "LENGTH_" + axis[i].first, "Length of the cube in " + axis[i].second + "-axis."
 		});
 		for (size_t j = 0; j < properties.size(); j++) {
 			for (size_t k = 0; k < cube_faces.size(); k++) {
