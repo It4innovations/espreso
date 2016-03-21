@@ -15,6 +15,8 @@ class SphereGenerator: public UniformGenerator<TElement> {
 public:
 	static void load(Mesh &mesh, const SphereSettings &settings)
 	{
+		ESINFO(OVERVIEW) << "Generate sphere mesh";
+		ESINFO(DETAILS) << "Sphere parameters:\n" << settings;
 		SphereGenerator sphere(mesh, settings);
 		sphere.fill();
 	}

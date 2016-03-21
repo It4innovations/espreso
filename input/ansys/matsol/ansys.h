@@ -17,6 +17,8 @@ class AnsysMatsol: public Loader {
 public:
 	static void load(Mesh &mesh, const Options &options, int rank, int size)
 	{
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Matsol format from directory " << options.path;
+
 		AnsysMatsol matsol(mesh, options, rank, size);
 		matsol.fill();
 	}

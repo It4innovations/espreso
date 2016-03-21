@@ -18,6 +18,7 @@ class AnsysWorkbench: public Loader {
 public:
 	static void load(Mesh &mesh, const Options &options, int rank, int size)
 	{
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << options.path;
 		AnsysWorkbench workbench(mesh, options, rank, size);
 		workbench.fill();
 	}

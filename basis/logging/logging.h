@@ -45,6 +45,7 @@ enum InfoEvent {
 	VERBOSE_LEVEL0,
 
 	CONVERGENCE,
+	OVERVIEW,
 	PROGRESS1,
 	VERBOSE_LEVEL1,
 
@@ -130,6 +131,12 @@ public:
 
 	static InfoMode plain() { return PLAIN; }
 
+	template<typename Tvalue>
+	static std::string sumValue(const Tvalue &value);
+	template<typename Tvalue>
+	static std::string averageValue(const Tvalue &value);
+
+
 	static bool report(InfoEvent event) {
 		switch (config::info::verboseLevel) {
 		case 0: return event < VERBOSE_LEVEL0;
@@ -208,6 +215,8 @@ public:
 	}
 };
 }
+
+#include "logging.hpp"
 
 
 #endif /* BASIS_LOGGING_LOGGING_H_ */

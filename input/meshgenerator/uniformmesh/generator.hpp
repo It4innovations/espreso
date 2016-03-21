@@ -156,6 +156,13 @@ void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 		return;
 	}
 
+	if (_settings.corners) {
+		ESINFO(DETAILS) << "Set corners to vertices";
+	}
+	ESINFO(DETAILS)
+		<< "Number of corners on each edge is " << (_settings.edges ? _settings.cornerCount : 0) << "."
+		<< "Number of corners on each face is " << (_settings.edges ? _settings.cornerCount * _settings.cornerCount : 0);
+
 	eslocal nodes[3];
 	eslocal cNodes[3];
 	for (int i = 0; i < 3; i++) {

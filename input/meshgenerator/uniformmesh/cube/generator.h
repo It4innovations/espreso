@@ -15,6 +15,9 @@ class CubeGenerator: public UniformGenerator<TElement> {
 public:
 	static void load(Mesh &mesh, const CubeSettings &settings)
 	{
+		ESINFO(OVERVIEW) << "Generate cubic mesh";
+		ESINFO(DETAILS) << "Cube parameters:\n" << settings;
+
 		CubeGenerator cube(mesh, settings);
 		cube.fill();
 	}

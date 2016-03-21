@@ -12,6 +12,7 @@ class Esdata: public Loader {
 public:
 	static void load(Mesh &mesh, const Options &options, int rank, int size)
 	{
+		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << options.path;
 		Esdata esdata(mesh, options, rank, size);
 		esdata.fill();
 	}

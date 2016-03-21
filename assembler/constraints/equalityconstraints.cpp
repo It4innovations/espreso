@@ -165,6 +165,8 @@ size_t Dirichlet::assemble(
 		ESINFO(ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
 	}
 
+	ESINFO(DETAILS) << "Number of DOFs with Dirichlet in B1 is " << dirichletSize;
+
 	return dirichletSize;
 }
 
@@ -216,6 +218,8 @@ size_t Gluing::assembleB1(
 	}
 	std::sort(B1clustersMap.begin() + previousSize, B1clustersMap.end(), clusterMappingCompare);
 
+	ESINFO(DETAILS) << "Total number of lambdas in B1(including Dirichlet) is " << subdomainsGluingSize + clustersGluingSize;
+
 	return subdomainsGluingSize + clusterGluingSize;
 }
 
@@ -244,6 +248,7 @@ size_t Gluing::assembleB0(std::vector<SparseMatrix> &B0)
 		B0[s].V_values.insert(B0[s].V_values.end(), gluing[s].values().begin(), gluing[s].values().end());
 	}
 
+	ESINFO(DETAILS) << "Total number of lambdas in B0 is " << Info::averageValue(cornersGluingSize);
 	return cornersGluingSize;
 }
 

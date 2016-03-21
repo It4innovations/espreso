@@ -17,6 +17,7 @@ class OpenFOAM: public Loader {
 public:
 	static void load(Mesh &mesh, const Options &options, int rank, int size)
 	{
+		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << options.path;
 		OpenFOAM openfoam(mesh, options, rank, size);
 		openfoam.fill();
 	}

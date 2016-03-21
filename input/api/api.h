@@ -12,6 +12,7 @@ class API: public Loader {
 public:
 	static void load(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
 	{
+		ESINFO(OVERVIEW) << "Set mesh through API";
 		API api(mesh, eIndices, neighbours, size, ids);
 		api.fill();
 	}

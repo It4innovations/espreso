@@ -25,6 +25,7 @@ std::vector<Description> SphereSettings::description = createSphereSetting();
 SphereSettings::SphereSettings(const Options &options, size_t index, size_t size)
 : UniformSettings(options, index, size)
 {
+	ESINFO(OVERVIEW) << "Load sphere setting from file " << options.path;
 	Configuration configuration(SphereSettings::description, options);
 
 	layers = configuration.value<eslocal>("LAYERS", 1);
