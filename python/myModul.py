@@ -133,7 +133,8 @@ class KPLUS:
             else:
                 print('chose from: cg_x, cg_dx or pcg_x')
                     
-            print(numbOfIter,',',end=' ')            
+            print(numbOfIter,',',end='')   
+            print('%d,' % (numbOfIter),end='')
             return x            
         else:
             return self.iAreg.solve(b)  
@@ -266,11 +267,18 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp):
     
     
     w     = PMPg.copy()
+    strFormat= '%3.5f'
     
     if disp:
-        print('sqrt_gtPg0: ',   sqrt_gtPg0)
-        print('sqrt_gtPMPg0: ', sqrt_gtPMPg0)
-        print('  i: ',1, '||g||: ',1)
+#        print('sqrt_gtPg0: ',   sqrt_gtPg0)
+#        print('sqrt_gtPMPg0: ', sqrt_gtPMPg0)
+#        print('  i: ',1, '||g||: ',1)
+        print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
+        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
+#        print('  i:  %d, ||g||: ',1)
+#       kkk = 'i: %d, |g|: '+strFormat
+        print('i: %d, |g|: %3.5f' %  (0,1))        
+        
     for i in range(nDual):
         
         Fw          = F.mult(w)
@@ -290,28 +298,24 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp):
         w           = PMPg + w * gamma 
         
 #am_dbg        print('gtPMPg', gtPMPg)
-         
-        
-        
-        
+                
         if (np.dot(g,PMPg)<0): 
             raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
-
-       
-        
-        
+          
         sqrt_gtPMPg = np.sqrt(gtPMPg)
         normed_gi   = sqrt_gtPMPg/sqrt_gtPg0
         vec_normed_g[i]    = normed_gi
         
         #print('....',np.log10(normed_gi/vec_normed_g[:i+1].min()),end=' ')
         if np.log10(normed_gi/vec_normed_g[:i+1].min()) > 2:
-            print('... stagnate',end=' ')
+            print('... stagnate',end='')
             break
         
         if disp:
-            print('  i: ',i+2, '||g||: ',normed_gi)#,\
-                    #'log(||g||)/log(it): ', np.log2(normed_gi)/(i+2))
+#            print('  i: ',i+2, '||g||: ',normed_gi)#,\
+#                    #'log(||g||)/log(it): ', np.log2(normed_gi)/(i+2))
+            print('i: %d, |g|: %3.5f, log(|g|)/log(it): %3.5f' % \
+                                (i+2,normed_gi,np.log2(normed_gi)/(i+2)))
         if normed_gi<eps0:
             break
         if i==maxIt:
@@ -359,12 +363,12 @@ def cg(A,b,x0,R,eps0,maxIt,Prec,disp=False):
         
         #print('....',np.log10(normed_gi/vec_normed_g[:i+1].min()),end=' ')
         if np.log10(normed_gi/vec_normed_g[:i+1].min()) > 2:
-            print('... stagnate',end=' ')
+            print('... stagnate',end='')
             break        
         
         
         if disp:
-            print('  ___________ inner : ',i+2, '||g||: ',sqrt_gtMg/sqrt_gtMg0)
+            print('  ___________ inner : %d ||g||: ' % (i+2,sqrt_gtMg/sqrt_gtMg0))
         if i>maxIt or normed_gi<eps0:
             break
         
@@ -396,7 +400,7 @@ def feti(K,Kreg,f,B,R,diagR,weight):
      
     delta = np.linalg.norm(sparse.csc_matrix.dot(K,u)-f_m_BtLam)
     normf = np.linalg.norm(f)
-    print('||Ku-f+BtLam||/||f||=',delta/normf)
+    print('||Ku-f+BtLam||/||f||= %3.5e'% (delta/normf))
     return u,lam
 ###############################################################################    
 def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):

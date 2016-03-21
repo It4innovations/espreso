@@ -2909,6 +2909,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
+
+#define VERBOSE_LEVEL 4
+
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -2939,7 +2942,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
 // get and print 2*n K eigenvalues (K is temporarily converted to dense);
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
-  eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 0;
+  eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 10;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
@@ -3540,6 +3543,16 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #if VERBOSE_LEVEL>0
 //10 - R - Gram Schmidt Orthogonalization
   time1 = omp_get_wtime();
+  os << "null pivots: \n";
+  os << "[";
+  for (eslocal k = 0; k<null_pivots.size();k++){
+    os << null_pivots[k] ;
+    if (k<null_pivots.size()-1 ){
+     os << ", ";
+      }
+  }
+   os << "]\n";
+
   elapsed_secs[10] = double(time1 - begin_time) ;
 #endif
                //                                               |

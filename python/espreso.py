@@ -28,7 +28,7 @@ for i in range(n_clus):
     mat_B1.append([])
     mat_R.append([])
     vec_f.append([])
-    vec_weight.append([])
+    #vec_weight.append([])
     for j in range(n_subPerClust):  
         mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
         mat_Kreg[i].append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True)) 
@@ -62,7 +62,6 @@ for i in range(n_clus):
             #weight  = np.concatenate((weight,vec_weight[i][j]))
             diagR   = np.concatenate((diagR,np.sum(mat_R[i][j]*mat_R[i][j],axis=1)))           
             
-        
 diagR   = diagR
 #B0      = B0.tocsc()
 if n_clus*n_subPerClust==1:
