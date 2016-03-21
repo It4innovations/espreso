@@ -15,7 +15,7 @@ ne = [3,3,3]
 
 Lx = 30
 Ly = 30
-Lz = 300
+Lz = 30
 x = np.linspace(0,1,ne[0]+1)*Lx;y = np.linspace(0,1,ne[1]+1)*Ly;z = np.linspace(0,1,ne[2]+1)*Lz
 
 #Z,Y,X = np.meshgrid(z,y,x)
@@ -44,14 +44,14 @@ for i in range(xx.shape[0]):
 
 
 #null_pivots = np.array([12, 39, 115, 131, 134, 192])-1
-null_pivots = np.array([3, 4, 37, 38, 179, 181])-1   
+null_pivots = np.array([4, 23, 99, 182, 187, 192])-1   
 null_nodes = np.int64(np.floor(null_pivots/3))
 
 x_np = xx[null_nodes];y_np = yy[null_nodes];z_np = zz[null_nodes]
 u_np = x_np.copy();v_np = y_np.copy();w_np = z_np.copy()
 
 del1 = max([xx.max()-xx.min(),yy.max()-yy.min(),zz.max()-zz.min()])
-len1 = 0.05*del1
+len1 = 0.1*del1
 arr = null_pivots-3*null_nodes
 for i in range(null_pivots.shape[0]):
     if arr[i]==0:
