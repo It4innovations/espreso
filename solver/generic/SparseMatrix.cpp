@@ -3050,15 +3050,15 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
 #if VERBOSE_LEVEL>0
-    char filenameI[128];
+
+    std::string name; 
     if (d_sub==-1){
-      sprintf(filenameI, "kernel_detct_c_%d_GGt.txt", MPI_rank);
+      name = Logging::prepareFile("kernel_detct_GGt");
     }
     else{
-      sprintf(filenameI, "kernel_detct_c_%d_s%d.txt", MPI_rank,d_sub);
+      name = Logging::prepareFile(d_sub,"kernel_detct");
     }
-    std::ofstream os (filenameI);
-    os.precision(15);
+    std::ofstream os(name);
 
 
     os << "Verbose Level:       " ;
@@ -3430,9 +3430,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
           ose3 << permVec[i]+1 <<" ";
         }
         ose3.close();
+      }
       std::cout << "factorization of K_rr failed." << "\n";
       exit(EXIT_FAILURE);
-      }
     }
     ///////////////////////////////////////////////////////////////////////////////////
     
