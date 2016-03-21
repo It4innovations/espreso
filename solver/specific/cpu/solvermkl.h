@@ -21,7 +21,7 @@ public:
 
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
 
-	void Factorization(const std::string &str);
+	int Factorization(const std::string &str);
 	void Clear();
 	void SetThreaded();
 

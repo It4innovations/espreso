@@ -10,7 +10,7 @@ searchedString0="nan"
 #searchedString1="iter     |r|         r          e     time[s]"
 searchedString1="Projector_l"
 #
-N=10000
+N=100
 cnt1=0
 file_updated_each_sol="numberOfIter1.txt"
 rm $file_updated_each_sol
