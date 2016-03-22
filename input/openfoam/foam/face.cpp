@@ -16,14 +16,14 @@ Face::~Face()
 
 ParseError* Face::parse(Tokenizer &ts)
 {
-    PARSE_GUARD(ts.readInt(numberOfPoints));
+    PARSE_GUARD(ts.readeslocal(numberOfPoints));
     PARSE_GUARD(ts.consumeChar('('));
-    PARSE_GUARD(ts.readInt(p[0]));
-    PARSE_GUARD(ts.readInt(p[1]));
-    PARSE_GUARD(ts.readInt(p[2]));
+    PARSE_GUARD(ts.readeslocal(p[0]));
+    PARSE_GUARD(ts.readeslocal(p[1]));
+    PARSE_GUARD(ts.readeslocal(p[2]));
     if (numberOfPoints == 4)
     {
-        PARSE_GUARD(ts.readInt(p[3]));
+        PARSE_GUARD(ts.readeslocal(p[3]));
     }
     else if (numberOfPoints > 4)
     {

@@ -37,7 +37,7 @@ public:
 	}
 
 	eslocal p[4];
-	int numberOfPoints;
+	eslocal numberOfPoints;
 
 protected:
 private:
