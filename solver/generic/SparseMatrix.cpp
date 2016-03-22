@@ -3404,7 +3404,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix invKrrKrs = K_rs;
       K_rr_solver.SolveMat_Dense(invKrrKrs);
       SparseMatrix KsrInvKrrKrs;
-        KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+      KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
       S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
       S.RemoveLower();
     }
