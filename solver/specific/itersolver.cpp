@@ -1513,7 +1513,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	ss << "Create GGt_inv_dist-> rank: " << config::MPIrank;
 	GGt_tmp.Factorization(ss.str());
 	GGtFactor_time.end();
-	GGtFactor_time.printLastStatMPIPerNode();
+	//GGtFactor_time.printLastStatMPIPerNode();
 	GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
 
 	TimeEvent GGT_rhs_time("Time to create RHS for get GGTINV"); GGT_rhs_time.start();
