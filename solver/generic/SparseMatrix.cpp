@@ -2899,7 +2899,8 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 //	get_kernel_from_K(K, Kplus_R);
 //}
 
-void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
+void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, 
+      SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -2909,6 +2910,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
+#define VERBOSE_LEVEL 4
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -2982,7 +2984,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //eslocal  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
 //ESLOCAL SC_SIZE                                       = 50;
-  eslocal sc_size                                       = 50;
+  eslocal sc_size                                       = 150;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
@@ -3161,9 +3163,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   double time1 = omp_get_wtime();
 //0 - allocation of vectors, copying of matrix
   elapsed_secs[0] = (time1 - begin_time) ;
-
-
-
   // diagonal scaling of K_modif:
   // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
   for (eslocal i = 0;i<K_modif.rows;i++){
@@ -3184,8 +3183,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[1] = (time1 - begin_time) ;
 #endif
-               //                                               |
-
+  //                                               |
   //#################################################################################
   if (get_n_first_and_n_last_eigenvals_from_dense_K &&
       K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
@@ -3378,7 +3376,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[3] = (time1 - begin_time) ;
 #endif
-               //                                               |
+//                                               |
 
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
@@ -3391,31 +3389,36 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   SparseSolverCPU K_rr_solver;
   std::stringstream ss;
   bool SC_via_K_rr=true;
-  if (SC_via_K_rr){
-	S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-	if (K_rr.nnz > 0) {
-		K_rr_solver.ImportMatrix(K_rr);
-		K_rr.Clear();
-		ss << "get kerner from K -> rank: " << config::MPIrank;
-		K_rr_solver.Factorization(ss.str());
-
-		SparseMatrix invKrrKrs = K_rs;
-		K_rr_solver.SolveMat_Dense(invKrrKrs);
-		SparseMatrix KsrInvKrrKrs;
-		  KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
-		S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
-	}
+//
+  if (K_rr.cols==0){
+    S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
     S.RemoveLower();
   }
-  else{
-    SparseSolverCPU createSchur;
-    // TODO PARDISO_SC provides factor K_rr.
-    // if SC_via_K_rr=false,  factorization is made redundantly later.
-    createSchur.ImportMatrix(K_modif);
-    createSchur.Create_SC(S,sc_size,false);
-    K_modif.Clear();
-    createSchur.Clear();
+  else
+  {
+    if (SC_via_K_rr){
+      S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+      K_rr_solver.ImportMatrix(K_rr);
+      ss << "get kerner from K -> rank: " << config::MPIrank;
+      K_rr_solver.Factorization(ss.str());
+      SparseMatrix invKrrKrs = K_rs;
+      K_rr_solver.SolveMat_Dense(invKrrKrs);
+      SparseMatrix KsrInvKrrKrs;
+        KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+      S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+      S.RemoveLower();
+    }
+    else{
+      SparseSolverCPU createSchur;
+      // TODO PARDISO_SC provides factor K_rr.
+      // if SC_via_K_rr=false,  factorization is made redundantly later.
+      createSchur.ImportMatrix(K_modif);
+      createSchur.Create_SC(S,sc_size,false);
+      K_modif.Clear();
+      createSchur.Clear();
+    }
   }
+//
   S.type='S';
   S.ConvertCSRToDense(1);
 #if VERBOSE_LEVEL>0
@@ -3491,22 +3494,25 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   elapsed_secs[8] = double(time1 - begin_time) ;
 #endif
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
-	SparseMatrix R_r;
-	R_r.MatMat(K_rs,'N',R_s);
-  K_rs.Clear();
-  if (K_rr.nnz > 0) {
-	if (!SC_via_K_rr) {
-			K_rr_solver.ImportMatrix(K_rr);
-			K_rr.Clear();
-			//    std::stringstream ss;
-			ss << "get kerner from K -> rank: " << config::MPIrank;
-			K_rr_solver.Factorization(ss.str());
-		}
-		K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
-		K_rr_solver.Clear();
-  }
 
-  R_r.ConvertCSRToDense(0);
+  int R_r_rows = 0;
+  int R_r_cols = 0;
+  SparseMatrix R_r;
+  if (K_rr.cols!=0){
+    R_r.MatMat(K_rs,'N',R_s);
+    K_rs.Clear();
+    if (!SC_via_K_rr) {
+      K_rr_solver.ImportMatrix(K_rr);
+      K_rr.Clear();
+      ss << "get kerner from K -> rank: " << config::MPIrank;
+      K_rr_solver.Factorization(ss.str());
+    }
+    K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
+    K_rr_solver.Clear();
+    R_r.ConvertCSRToDense(0);
+    R_r_rows = R_r.rows;
+    R_r_cols = R_r.cols;
+  }
   R_s.ConvertCSRToDense(0);
 #if VERBOSE_LEVEL>0
 //9 - R_r created (applied K_rr)
@@ -3515,25 +3521,25 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #endif
                //                                               |
 // --------------- CREATING WHOLE KERNEL Kplus_R = [ (R_r)^T (R_s)^T ]^T
-  Kplus_R.rows = R_r.rows+R_s.rows;
-  Kplus_R.cols = R_r.cols;
+  Kplus_R.rows = R_r_rows+R_s.rows;
+  Kplus_R.cols = R_s.cols;
   Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
   Kplus_R.type = 'G';
 	Kplus_R.dense_values.resize(Kplus_R.nnz);
   cntR=0;
   for (eslocal j = 0; j < Kplus_R.cols; j++){
-    for (eslocal i = 0; i < R_r.rows; i++){
+    for (eslocal i = 0; i < R_r_rows; i++){
       if (diagonalScaling){
         di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
       }
-      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r.rows + i]/sqrt(di);
+      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
       cntR++;
     }
     for (eslocal i = 0; i < R_s.rows; i++){
       if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r.rows]]-offset];
+        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
       }
-	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r.rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
+	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
       cntR++;
     }
   }
@@ -3586,7 +3592,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     for (eslocal i = 0; i < null_pivots.size(); i++){
       tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
       K.CSR_V_values[tmp_int0]+=rho;
-      if (d_sub!=-1) {
+      // if d_sub==-1; it's G0G0t matrix (or S_alpha)
+      if (d_sub!=-1) { 
         regMat.I_row_indices[i] = null_pivots[i];
         regMat.J_col_indices[i] = null_pivots[i];
         regMat.V_values[i]      = rho ;
