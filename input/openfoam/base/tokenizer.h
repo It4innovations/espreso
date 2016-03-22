@@ -83,27 +83,27 @@ public:
         return NULL;
     }
 
-    ParseError *readInt(int &value)
+    /*ParseError *readInt(int &value)
     {
         PARSE_GUARD(expect(TOKEN_INT));
         value = intValue;
         PARSE_GUARD(nextToken());
         return NULL;
-    }
+    }*/
 
-    ParseError *readLong(long &value)
+    ParseError *readeslocal(eslocal &value)
     {
         PARSE_GUARD(expect(TOKEN_INT));
-        value = intValue;
+        value = (eslocal)intValue;
         PARSE_GUARD(nextToken());
         return NULL;
     }
 
 
-    ParseError *readInt(unsigned int &value)
+    ParseError *readesglobal(esglobal &value)
     {
         PARSE_GUARD(expect(TOKEN_INT));
-        value = intValue;
+        value = (esglobal)intValue;
         PARSE_GUARD(nextToken());
         return NULL;
     }

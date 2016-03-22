@@ -18,17 +18,26 @@ template<typename T> ParseError* parse(Tokenizer &ts, T &value)
 
 template<> inline ParseError* parse(Tokenizer &ts, int &value)
 {
-    return ts.readInt(value);
+	esglobal tmp;
+	PARSE_GUARD(ts.readesglobal(tmp));
+    value = (int)tmp;
+    return NULL;
 }
 
 template<> inline ParseError* parse(Tokenizer &ts, long &value)
 {
-    return ts.readLong(value);
+	esglobal tmp;
+	PARSE_GUARD(ts.readesglobal(tmp));
+    value = (long)tmp;
+    return NULL;
 }
 
 template<> inline ParseError* parse(Tokenizer &ts, unsigned int &value)
 {
-    return ts.readInt(value);
+	esglobal tmp;
+	PARSE_GUARD(ts.readesglobal(tmp));
+    value = (unsigned int)tmp;
+    return NULL;
 }
 
 template<> inline ParseError* parse(Tokenizer &ts, double &value)
@@ -97,8 +106,8 @@ template<typename T> ParseError* parse(Tokenizer &ts, std::vector<T> &value)
     }
     if (ts.isTokenInt())
     {
-        long i;
-        ts.readLong(i);
+        eslocal i;
+        ts.readeslocal(i);
         value.reserve(i);
     }
     PARSE_GUARD(ts.consumeChar('('));
