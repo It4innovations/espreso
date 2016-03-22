@@ -3392,16 +3392,19 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   std::stringstream ss;
   bool SC_via_K_rr=true;
   if (SC_via_K_rr){
-    K_rr_solver.ImportMatrix(K_rr);
-    K_rr.Clear();
-    ss << "get kerner from K -> rank: " << config::MPIrank;
-    K_rr_solver.Factorization(ss.str());
-    S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-    SparseMatrix invKrrKrs = K_rs;
-    K_rr_solver.SolveMat_Dense(invKrrKrs);
-    SparseMatrix KsrInvKrrKrs;
-	  KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
-    S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+	S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+	if (K_rr.nnz > 0) {
+		K_rr_solver.ImportMatrix(K_rr);
+		K_rr.Clear();
+		ss << "get kerner from K -> rank: " << config::MPIrank;
+		K_rr_solver.Factorization(ss.str());
+
+		SparseMatrix invKrrKrs = K_rs;
+		K_rr_solver.SolveMat_Dense(invKrrKrs);
+		SparseMatrix KsrInvKrrKrs;
+		  KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+		S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+	}
     S.RemoveLower();
   }
   else{
@@ -3491,15 +3494,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 	SparseMatrix R_r;
 	R_r.MatMat(K_rs,'N',R_s);
   K_rs.Clear();
-  if (!SC_via_K_rr){
-    K_rr_solver.ImportMatrix(K_rr);
-    K_rr.Clear();
-//    std::stringstream ss;
-    ss << "get kerner from K -> rank: " << config::MPIrank;
-    K_rr_solver.Factorization(ss.str());
+  if (K_rr.nnz > 0) {
+	if (!SC_via_K_rr) {
+			K_rr_solver.ImportMatrix(K_rr);
+			K_rr.Clear();
+			//    std::stringstream ss;
+			ss << "get kerner from K -> rank: " << config::MPIrank;
+			K_rr_solver.Factorization(ss.str());
+		}
+		K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
+		K_rr_solver.Clear();
   }
-  K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
-  K_rr_solver.Clear();
 
   R_r.ConvertCSRToDense(0);
   R_s.ConvertCSRToDense(0);
