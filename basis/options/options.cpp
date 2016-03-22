@@ -84,7 +84,7 @@ Options::Options(int* argc, char*** argv)
 	configure();
 }
 
-static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) < std::tolower(c2); }
+static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
 
 void Options::configure()
 {
@@ -102,13 +102,14 @@ void Options::configure()
 			{ "OPENFOAM", config::mesh::OPENFOAM },
 			{ "ESDATA", config::mesh::ESDATA },
 	};
-	for (size_t i = 0; i < inputs.size(); i++) {
-		if (!std::lexicographical_compare(
-				input.begin(), input.end(),
-				inputs[i].first.begin(), inputs[i].first.end(),
-				caseInsensitiveCmp)) {
 
+	for (size_t i = 0; i < inputs.size(); i++) {
+		if (input.size() == inputs[i].first.size() && std::equal(input.begin(), input.end(), inputs[i].first.begin(), caseInsensitiveCmp)) {
 			config::mesh::input = inputs[i].second;
+			break;
+		}
+		if (input.size() && i + 1 == inputs.size()) {
+			ESINFO(ERROR) << "Unknown input: '" << input << "'";
 		}
 	}
 
