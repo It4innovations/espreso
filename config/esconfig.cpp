@@ -7,7 +7,7 @@ int MPIrank = 0;
 int MPIsize = 1;
 
 namespace mesh {
-	size_t subdomains = 2;
+	size_t subdomains = 64;
 	size_t fixPoints = 8;
 
 	size_t corners = 1;
@@ -28,11 +28,11 @@ namespace output {
 
 	Output output = VTK;
 
-	bool saveMesh = true;
-	bool saveFixPoints = true;
+	bool saveMesh = false;
+	bool saveFixPoints = false;
 	bool saveFaces = false;
 	bool saveLines = false;
-	bool saveCorners = true;
+	bool saveCorners = false;
 	bool saveDirichlet = false;
 	bool saveAveraging = false;
 	bool saveResults = true;
@@ -64,7 +64,7 @@ namespace solver {
 	size_t F0_SOLVER             = 0;   // 0 - DIRECT DP if KSOLVER is DIRECT DP - the same precission as KSOLVER
 										// 0 - DIRECT SP if KSOLVER is DIRECT SP - the same precission as KSOLVER
 										// 1 - DIRECT DP if KSOLVER is DIRECT SP - F0 is in higher precision
-    size_t N_MICS                = 2;
+  size_t N_MICS                = 2;
 
 }
 
