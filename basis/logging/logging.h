@@ -21,8 +21,8 @@
 namespace espreso {
 
 enum ESPRESOTest {
-	FAILED,
-	PASSED
+	TEST_FAILED,
+	TEST_PASSED
 };
 
 enum TestEvent {
@@ -79,7 +79,7 @@ class Test
 public:
 	Test& operator<<(const ESPRESOTest &test)
 	{
-		if (test == FAILED) { error = true; }
+		if (test == TEST_FAILED) { error = true; }
 		return *this;
 	}
 	template<typename Ttype>

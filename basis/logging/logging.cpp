@@ -7,14 +7,11 @@ std::vector<Checkpoint> Measure::checkpoints = { Checkpoint("Start", Measure::ti
 
 Test::~Test()
 {
-	os << " : " << (error ? "FAILED" : "PASSED") << std::endl;
-
-	if (error) {
-		ESINFO(ERROR) << os.str();
+	if (!error) {
+		return;
 	}
 
-	fprintf(stdout, "%s", os.str().c_str());
-	fflush(stdout);
+	ESINFO(ERROR) << "ESPRESO INTERNAL TEST FAILED: "<< os.str();
 }
 
 

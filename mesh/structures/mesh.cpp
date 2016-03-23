@@ -102,6 +102,7 @@ void APIMesh::partitiate(size_t parts)
 			}
 		}
 		_partPtrs[part + 1] = index;
+		ESTEST(MANDATORY) << "subdomain without element" << (_partPtrs[part] == _partPtrs[part + 1] ? TEST_FAILED : TEST_PASSED);
 	}
 	delete[] ePartition;
 
