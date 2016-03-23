@@ -102,7 +102,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
-		if (2 * (shift_offset[i] + 1) < nodes[i] + 1) { // not enough nodes
+		if (2 * (shift_offset[i] + 1) > nodes[i] + 1) { // not enough nodes
 			shift_offset[i] = (nodes[i] + 1) / 2 - 1;
 		}
 		if (2 * shift_offset[i] == nodes[i]) { // offset to the same node
