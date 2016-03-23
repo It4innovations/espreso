@@ -2929,7 +2929,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    3) use_null_pivots_or_s_set
   // NtN_Mat from null pivots or fixing DOFs
 //BOOL USE_NULL_PIVOTS_OR_S_SET                         = TRUE;
-  bool use_null_pivots_or_s_set                         = true;
+  bool use_null_pivots_or_s_set                         = false;
 
 //    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)

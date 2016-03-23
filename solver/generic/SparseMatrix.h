@@ -209,7 +209,7 @@ private:
   //
   bool DIAGONALSCALING                                  = true;
   eslocal PERMUTVECTORACTIVE                            = 1; 
-  bool USE_NULL_PIVOTS_OR_S_SET                         = true;
+  bool USE_NULL_PIVOTS_OR_S_SET                         = false;
   bool DIAGONALREGULARIZATION                           = true;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
