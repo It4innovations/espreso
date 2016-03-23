@@ -3156,16 +3156,12 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   double di=1,dj=1;
   eslocal cnt_iter_check_nonsing=0;
 
-
   K_modif = K;
 
   double elapsed_secs[15];
-
   double time1 = omp_get_wtime();
 //0 - allocation of vectors, copying of matrix
   elapsed_secs[0] = (time1 - begin_time) ;
-
-
 
   // diagonal scaling of K_modif:
   // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
@@ -3224,19 +3220,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   }
   //#################################################################################
 
-
-//    std::cout<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << " and d{" <<
-//         K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
 //
-//        std::cout<< i+1 <<":"<< WK_modif[i] << "\n";
-
 #if VERBOSE_LEVEL>0
 //2 - before singular test
   time1 = omp_get_wtime();
   elapsed_secs[2] = (time1 - begin_time) ;
 #endif
                //                                               |
-
   while ( cond_of_regular_part > cond_numb_for_singular_matrix && cnt_iter_check_nonsing<(check_nonsing+1)) {
     // loop checking non-singularity of K_rr matrix
     if (cnt_iter_check_nonsing>0){
@@ -3256,7 +3246,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
         }
       }
     }
-
+    //
     if (permutVectorActive<2){
       // set row permVec = {0,1,2,3,4,...,K.rows};
       if (fixing_nodes_or_dof==0 || (permutVectorActive==0)){
