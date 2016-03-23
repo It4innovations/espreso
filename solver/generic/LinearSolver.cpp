@@ -341,7 +341,7 @@ void LinearSolver::init(
 	cluster.ImportKmatrixAndRegularize( K_mat, fix_nodes );
 
 	 KregMem.endWithoutBarrier( GetProcessMemory_u() );
-	 KregMem.printLastStatMPIPerNode();
+	 //KregMem.printLastStatMPIPerNode();
 
 	ESLOG(MEMORY) << "After import K process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
@@ -361,7 +361,7 @@ void LinearSolver::init(
 	cluster.SetupKsolvers();
 
 	KFactMem.endWithoutBarrier( GetProcessMemory_u() );
-	KFactMem.printLastStatMPIPerNode();
+	//KFactMem.printLastStatMPIPerNode();
 
 	ESLOG(MEMORY) << "After K solver setup process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
@@ -436,7 +436,7 @@ void LinearSolver::init(
 		cluster.Create_SC_perDomain(USE_FLOAT);
 		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
 		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
-		 KSCMem.printLastStatMPIPerNode();
+		 //KSCMem.printLastStatMPIPerNode();
 
 		ESLOG(MEMORY) << "After K inv. process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
@@ -518,7 +518,7 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
 	ESINFO(DETAILS) << "Maxvalue in solution = " << std::setprecision(12) << max_vg;
 
-	max_sol_ev.printLastStatMPIPerNode(max_vg);
+	//max_sol_ev.printLastStatMPIPerNode(max_vg);
 	// *** END - Solutin correctnes test ******************************************************************************************
 
 }
