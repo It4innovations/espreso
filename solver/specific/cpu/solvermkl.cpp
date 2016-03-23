@@ -209,7 +209,7 @@ void SparseSolverMKL::SetThreaded() {
     iparm[2]  = num_procs;
 }
 
-void SparseSolverMKL::Factorization(const std::string &str) {
+int SparseSolverMKL::Factorization(const std::string &str) {
 
 	double ddum;			/* Double dummy */
 	MKL_INT idum;			/* Integer dummy. */
@@ -231,6 +231,7 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
+    return error;
 		SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
@@ -290,6 +291,7 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 	} else {
 		tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
 	}
+  return 0;
 }
 
 void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
