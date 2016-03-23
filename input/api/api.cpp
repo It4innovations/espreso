@@ -68,7 +68,6 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 	std::vector<std::vector<esglobal> > rBuffer(_neighbours.size());
 	std::vector<MPI_Request> req(2 * _neighbours.size());
 	std::vector<size_t> sizes(_neighbours.size());
-	std::set<int> realNeighbour;
 
 	_size /= _DOFs;
 
@@ -101,10 +100,12 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 
 	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _size);
+	std::vector<std::set<int> > realNeighbour(threads);
 
 	size_t pushMyRank = std::lower_bound(_neighbours.begin(), _neighbours.end(), config::MPIrank) - _neighbours.begin();
 
 	boundaries.resize(_size);
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
@@ -115,7 +116,7 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), _ids[i * _DOFs] / _DOFs);
 				if (it != rBuffer[n].end() && *it == _ids[i * _DOFs] / _DOFs) {
 					boundaries[i].push_back(_neighbours[n]);
-					realNeighbour.insert(_neighbours[n]);
+					realNeighbour[t].insert(_neighbours[n]);
 				}
 			}
 			if (_neighbours.size() == pushMyRank) {
@@ -125,5 +126,9 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 		}
 	}
 
-	neighbours = std::vector<int>(realNeighbour.begin(), realNeighbour.end());
+	for (size_t t = 1; t < threads; t++) {
+		realNeighbour[0].insert(realNeighbour[t].begin(), realNeighbour[t].end());
+	}
+
+	neighbours = std::vector<int>(realNeighbour[0].begin(), realNeighbour[0].end());
 }
