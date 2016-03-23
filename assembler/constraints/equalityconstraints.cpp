@@ -109,6 +109,8 @@ size_t Dirichlet::assemble(
 		}
 	}
 
+	ESINFO(PROGRESS3) << "Dirichlet conditions assigned to subdomains";
+
 	std::vector<size_t> subdomainsCounters(_subdomains, 0);
 	cilk_for (size_t s = 0; s < _subdomains; s++) {
 		size_t size = 0;
@@ -180,19 +182,25 @@ size_t Gluing::assembleB1(
 	std::vector<std::vector<esglobal> > skippedNodes;
 
 	size_t subdomainsGluingSize = subdomainsLambdaCounters(ids, skippedNodes, excludes);
+	ESINFO(PROGRESS3) << "B1 lambdas IDs for subdomains gluing computed";
 
 	std::vector<SparseIJVMatrix<esglobal> > gluing;
 	std::vector<std::vector<double> > duplicity;
 	std::vector<std::vector<std::vector<esglobal> > > clusterMap;
 
 	composeSubdomainGluing(ids, gluing, duplicity, clusterMap);
+	ESINFO(PROGRESS3) << "Composed B1 for subdomains gluing";
 
 	std::vector<std::vector<eslocal> > multiplicity;
 
 	computeNodesMultiplicity(skippedNodes, multiplicity);
+	ESINFO(PROGRESS3) << "Computed lambdas multiplicity for cluster gluing";
 	size_t clustersGluingSize = clustersLambdaCounters(ids, multiplicity, subdomainsGluingSize);
+	ESINFO(PROGRESS3) << "Computed cluster lambdas size";
 	exchangeGlobalIds(ids, multiplicity);
+	ESINFO(PROGRESS3) << "Lambdas IDs exchanged";
 	composeClustersGluing(ids, multiplicity, gluing, duplicity, clusterMap);
+	ESINFO(PROGRESS3) << "Composed B1 for clusters gluing";
 
 	cilk_for (size_t s = 0; s < _subdomains; s++) {
 		B1[s].rows += subdomainsGluingSize + clustersGluingSize;
@@ -207,6 +215,7 @@ size_t Gluing::assembleB1(
 		B1[s].V_values.insert(B1[s].V_values.end(), gluing[s].values().begin(), gluing[s].values().end());
 		B1duplicity[s].insert(B1duplicity[s].end(), duplicity[s].begin(), duplicity[s].end());
 	}
+	ESINFO(PROGRESS3) << "B1 post-process finished";
 
 	size_t previousSize = B1clustersMap.size(), clusterGluingSize = 0;
 	for (size_t s = 0; s < _subdomains; s++) {
