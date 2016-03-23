@@ -2929,7 +2929,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    3) use_null_pivots_or_s_set
   // NtN_Mat from null pivots or fixing DOFs
 //BOOL USE_NULL_PIVOTS_OR_S_SET                         = TRUE;
-  bool use_null_pivots_or_s_set                         = false;
+  bool use_null_pivots_or_s_set                         = true;
 
 //    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
@@ -2984,7 +2984,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //eslocal  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
 //ESLOCAL SC_SIZE                                       = 50;
-  eslocal sc_size                                       = 150;
+  eslocal sc_size                                       = 50;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
@@ -3437,9 +3437,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
             ose3 << permVec[i]+1 <<" ";
           }
           ose3.close();
-        std::cout << "factorization of K_rr failed." << "\n";
-        exit(EXIT_FAILURE);
         }
+        os.close();
+        ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization)." << "\n";
+        exit(EXIT_FAILURE);
       }
       SparseMatrix invKrrKrs = K_rs;
       K_rr_solver.SolveMat_Dense(invKrrKrs);
@@ -3486,10 +3487,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   eslocal defect_K_in;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
+#if VERBOSE_LEVEL>1
+  os<<"ratio,      eig{i-1},          eig{i}\n";
+#endif
   for (eslocal i = itMax-1; i > 0;i--){
     ratio = fabs(W[i-1]/W[i]);
+#if VERBOSE_LEVEL>1
+    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
+#endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
       defect_K_in=i;
+      break;
     }
   }
 #if VERBOSE_LEVEL>0
@@ -3616,7 +3624,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   double tmp = K.getNorm_K_R(K,Kplus_R);
   *norm_KR_d_pow_2 = (tmp*tmp)/(lmx_K*lmx_K);
   *defect_d = Kplus_R.cols;
-  os << "defect(K):       " << Kplus_R.cols <<"\n";
+  os << "defect(K):       " << defect_K_in <<"\n";
   os << "norm_KR:         " << sqrt(*norm_KR_d_pow_2) <<"\n";
 #endif
                //                                               |
@@ -3726,6 +3734,11 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
     ose1 << se2;
     ose1.close();
+    // R -------------------------------------------------------------------
+    SparseMatrix seR = Kplus_R;
+    std::ofstream oseR(Logging::prepareFile(d_sub, "RErr"));
+    oseR << seR;
+    oseR.close();
     // K_modif -------------------------------------------------------------------
     SparseMatrix se3 = K_modif;
     std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
@@ -3735,12 +3748,18 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     if (d_sub!=-1){
       std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
       eslocal ik=0,cnt_i=0;
+      ose3 << "permut_vector\n";
       for (eslocal i = 0;i<permVec.size();i++){
         ose3 << permVec[i] + 1<<" ";
       }
+      ose3 << "\nnull_pivots\n";
+      for (eslocal i = 0; i < null_pivots.size(); i++){
+        ose3 << null_pivots[i] + 1<<" ";
+      }
       ose3.close();
     }
-    std::cout << "factorization of K_regular failed." << "\n";
+    os.close();
+    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization)." << "\n";
     exit(EXIT_FAILURE);
   }
   ///////////////////////////////////////////////////////////////////////////////////
