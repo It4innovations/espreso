@@ -2899,7 +2899,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 //	get_kernel_from_K(K, Kplus_R);
 //}
 
-void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, 
+void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
@@ -2910,7 +2910,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-#define VERBOSE_LEVEL 4
+#define VERBOSE_LEVEL 0
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -3052,7 +3052,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 #if VERBOSE_LEVEL>0
 
-    std::string name; 
+    std::string name;
     if (d_sub==-1){
       name = Logging::prepareFile("kernel_detct_GGt");
     }
@@ -3438,8 +3438,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
           }
           ose3.close();
         }
+#if VERBOSE_LEVEL > 0
         os.close();
-        ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization)." << "\n";
+#endif
+        ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization).";
         exit(EXIT_FAILURE);
       }
       SparseMatrix invKrrKrs = K_rs;
@@ -3651,7 +3653,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
       K.CSR_V_values[tmp_int0]+=rho;
       // if d_sub==-1; it's G0G0t matrix (or S_alpha)
-      if (d_sub!=-1) { 
+      if (d_sub!=-1) {
         regMat.I_row_indices[i] = null_pivots[i];
         regMat.J_col_indices[i] = null_pivots[i];
         regMat.V_values[i]      = rho ;
@@ -3708,10 +3710,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   K_solver.ImportMatrix(K);
   ss2 << "testing factorization of regularized K -> rank: " << config::MPIrank;
   int error_reg = K_solver.Factorization(ss2.str());
-  
-  
-  
-  
+
+
+
+
   ///////////////////////////////////////////////////////////////////////////////////
   if (error_reg){
     // regMat---------------------------------------------------------------------
@@ -3758,8 +3760,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       }
       ose3.close();
     }
+#if VERBOSE_LEVEL > 0
     os.close();
-    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization)." << "\n";
+#endif
+    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
     exit(EXIT_FAILURE);
   }
   ///////////////////////////////////////////////////////////////////////////////////
