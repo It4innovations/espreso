@@ -2910,7 +2910,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-#define VERBOSE_LEVEL 4
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -3438,7 +3437,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
           }
           ose3.close();
         }
+#if VERBOSE_LEVEL>0
         os.close();
+#endif
         ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization)." << "\n";
         exit(EXIT_FAILURE);
       }
@@ -3758,7 +3759,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       }
       ose3.close();
     }
+#if VERBOSE_LEVEL>0
     os.close();
+#endif
     ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization)." << "\n";
     exit(EXIT_FAILURE);
   }
