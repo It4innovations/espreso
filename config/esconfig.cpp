@@ -51,7 +51,7 @@ namespace solver {
 
 	double epsilon               = 1e-4;// Solver requested precision
 	size_t maxIterations         = 1000;
-	size_t FETI_METHOD           = 0;   // 0 - Total FETI; 1 - HFETI;
+	size_t FETI_METHOD           = 1;   // 0 - Total FETI; 1 - HFETI;
 	bool   REDUNDANT_LAGRANGE    = 1;
 	size_t USE_SCHUR_COMPLEMENT  = 0;   // 1 - YES
 	size_t KEEP_FACTORS          = 1;   // 1 - YES; 0 - NO

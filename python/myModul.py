@@ -2,6 +2,7 @@ import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg as spla
 import config_espreso_python as conf
+import pylab as plt
 #import sys  
  
 ###############################################################################
@@ -129,7 +130,7 @@ class KPLUS:
 
                 x, lam, numbOfIter = \
                         pcgp(mult_A, b, self.R, ee, Prec, \
-                        conf.eps_iter_Kplus, maxIt, False)
+                        conf.eps_iter_Kplus, maxIt, False,False)
             else:
                 print('chose from: cg_x, cg_dx or pcg_x')
                     
@@ -203,24 +204,28 @@ class PREC_DIR_OR_LUMPED:
 ###############################################################################
 def load_matrix(path,str0,i,j,makeSparse,makeSymmetric): 
     pathToFile = path+'/'+str(i)+'/'+str0+str(j)+'.txt' 
-    tmp = np.loadtxt(pathToFile)
-    I = tmp[1::,0]-1;    J = tmp[1::,1]-1;    V = tmp[1::,2]
-    n = np.int32(tmp[0,0])   
-    m = np.int32(tmp[0,1])
-    print(str0,i,j)
-    if (makeSymmetric):
-        logInd = J>I; 
-        I = np.concatenate((I,J[logInd]))
-        J = np.concatenate((J,I[logInd]))
-        V = np.concatenate((V,V[logInd]))    
-    
-    if (makeSparse):
-        tmp = sparse.coo_matrix((V,(I,J)),shape=(n,m)).tocsc()
+    tmp = np.loadtxt(pathToFile, ndmin=2)
+    if (tmp.shape[0]==1):
+        tmp = []
     else:
-        if (m==1):
-            tmp = V
-        else:                
-            tmp = sparse.coo_matrix((V,(I,J)),shape=(n,m)).toarray()
+        n = np.int32(tmp[0,0])   
+        m = np.int32(tmp[0,1])
+        I = tmp[1::,0]-1;    J = tmp[1::,1]-1;    V = tmp[1::,2]
+    
+        print(str0,i,j)
+        if (makeSymmetric):
+            logInd = J>I; 
+            I = np.concatenate((I,J[logInd]))
+            J = np.concatenate((J,I[logInd]))
+            V = np.concatenate((V,V[logInd]))    
+        
+        if (makeSparse):
+            tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).tocsc()
+        else:
+            if (m==1):
+                tmp = V
+            else:                
+                tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).toarray()
         
     return tmp
 ###############################################################################
@@ -229,9 +234,8 @@ def load_vector(path,str0,i,j):
     tmp = np.loadtxt(pathToFile)
     return tmp
 ###############################################################################  
-def pcgp(F, d, G, e, Prec, eps0, maxIt,disp):
-  
-    
+def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
+#
     GtG     = sparse.csc_matrix.dot(G.transpose(),G).tocsc()
     iGtG    = spla.splu(GtG)
     Proj    = PROJ(G,iGtG)
@@ -242,80 +246,58 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp):
     Pg      = Proj.mult(g) 
     MPg     = Prec.mult(Pg)
     PMPg    = Proj.mult(MPg)
-    
+#
     sqrt_gtPMPg0 = np.sqrt(np.dot(g,PMPg))
-    
+#
     if (np.dot(g,PMPg)<0): 
         raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
-    sqrt_gtPg0 = np.sqrt(np.dot(g,Pg))
-    
-    vec_normed_g   = np.zeros(nDual)
-    
-#################################################    
-#    PMP = np.zeros((nDual,nDual))
-#    M = np.zeros((nDual,nDual))
-#    e1  = np.zeros(nDual)
-#    for j in range(nDual):
-#        M[:,j] = Prec.mult(e1)
-#        PMP[:,j]  =  Proj.mult(Prec.mult(Proj.mult(e1)))
-#        if j<nDual-1:
-#            e1[j]=0
-#            e1[j+1]=1   
-#    np.savetxt('M',M)
-#    np.savetxt('PMP',PMP)
-#####################################################
-    
-    
+    sqrt_gtPg0 = np.sqrt(np.dot(g,Pg)) 
+    vec_normed_g   = np.zeros(nDual) 
+    vec_staggnat   = np.zeros(nDual)
+#
     w     = PMPg.copy()
     strFormat= '%3.5f'
-    
-    if disp:
-#        print('sqrt_gtPg0: ',   sqrt_gtPg0)
-#        print('sqrt_gtPMPg0: ', sqrt_gtPMPg0)
-#        print('  i: ',1, '||g||: ',1)
+#
+    if disp: 
         print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
-        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
-#        print('  i:  %d, ||g||: ',1)
-#       kkk = 'i: %d, |g|: '+strFormat
+        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0) 
         print('i: %d, |g|: %3.5f' %  (0,1))        
-        
+#   
     for i in range(nDual):
         
         Fw          = F.mult(w)
         rho         = -np.dot(g,PMPg)/np.dot(w,Fw)
         lam         += w * rho        
         gprev       = g.copy()                  
-        
+#
         g           += Fw * rho
         Pg          = Proj.mult(g)
         MPg         = Prec.mult(Pg)           
         PMPgprev    = PMPg.copy()      
-    
-
+#
         PMPg        = Proj.mult(MPg)
         gtPMPg      = np.dot(g,PMPg)
         gamma       = gtPMPg/np.dot(gprev,PMPgprev)
         w           = PMPg + w * gamma 
-        
-#am_dbg        print('gtPMPg', gtPMPg)
-                
+# 
         if (np.dot(g,PMPg)<0): 
             raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
-          
+#  
         sqrt_gtPMPg = np.sqrt(gtPMPg)
         normed_gi   = sqrt_gtPMPg/sqrt_gtPg0
+
         vec_normed_g[i]    = normed_gi
         
-        #print('....',np.log10(normed_gi/vec_normed_g[:i+1].min()),end=' ')
+        is_stagnating = np.log2(normed_gi)/(i+2)
+        vec_staggnat[i]    = is_stagnating
+#
         if np.log10(normed_gi/vec_normed_g[:i+1].min()) > 2:
             print('... stagnate',end='')
             break
-        
-        if disp:
-#            print('  i: ',i+2, '||g||: ',normed_gi)#,\
-#                    #'log(||g||)/log(it): ', np.log2(normed_gi)/(i+2))
+#
+        if disp: 
             print('i: %d, |g|: %3.5f, log(|g|)/log(it): %3.5f' % \
-                                (i+2,normed_gi,np.log2(normed_gi)/(i+2)))
+                        (i+2,normed_gi,is_stagnating))
         if normed_gi<eps0:
             break
         if i==maxIt:
@@ -323,8 +305,19 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp):
                        conf.maxIt_dual_feti,').')
             break
     alpha = iGtG.solve(sparse.csc_matrix.dot(G.transpose(),d-F.mult(lam)))
-    numbOfIter = i    
+    numbOfIter = i
+    
+    if disp:
+        plt.subplot(2,1,1)    
+        plt.plot(vec_staggnat[:i]);plt.ylim([vec_staggnat[:i].min()*2,0])
+        plt.subplot(2,1,2)
+        plt.semilogy(vec_normed_g[:i])#;plt.ylim([vec_staggnat[:i].min()*2,0])
+#   
+#  
     return lam, alpha, numbOfIter
+    
+    
+    
 ###############################################################################  
 def cg(A,b,x0,R,eps0,maxIt,Prec,disp=False):
      
@@ -392,7 +385,7 @@ def feti(K,Kreg,f,B,R,diagR,weight):
     d       = sparse.csc_matrix.dot(B,Kplus_sub.solve(f))    
     Prec    = PREC_DIR_OR_LUMPED(K,B)
     
-    lam, alpha, numbOfIter = pcgp(F,d, G, e, Prec,eps0,maxIt,True)        
+    lam, alpha, numbOfIter = pcgp(F,d, G, e, Prec,eps0,maxIt,True,True)        
     
     f_m_BtLam = f - sparse.csc_matrix.dot(B.transpose(),lam)    
     u = Kplus_sub.solve(f_m_BtLam) + \
@@ -425,7 +418,7 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
     G0tG0dense = G0tG0.todense()
     U,s,V = np.linalg.svd(G0tG0dense) 
       
-    
+    print('s = ',s)
     for i in range(1,s.shape[0]):
         rat = s[i]/s[i-1]
         if np.abs(rat)<1e-6:
@@ -472,7 +465,7 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
     Prec_hfeti = PREC_DIR_OR_LUMPED(K_hfeti,B_hfeti)
     
     lam_hfeti, alpha_hfeti, numbOfIter = pcgp(F_hfeti,d_hfeti, \
-                        G_hfeti, e_hfeti, Prec_hfeti,eps0,maxIt,True)        
+                        G_hfeti, e_hfeti, Prec_hfeti,eps0,maxIt,True,True)        
     f_m_BtLam_hfeti = f_hfeti - \
             sparse.csc_matrix.dot(B_hfeti.transpose(),lam_hfeti)
     

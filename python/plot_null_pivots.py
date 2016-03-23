@@ -11,7 +11,7 @@ plt.clf()
 #ax = fig.add_subplot(111, projection='3d')
 ax = fig.gca(projection='3d')
 
-ne = [3,3,3]
+ne = np.array([1,1,1])*3
 
 Lx = 30
 Ly = 30
@@ -32,19 +32,16 @@ for k in range(ne[2]+1):
             yy[cnt]=y[j]
             zz[cnt]=z[k]
             label = str(cnt)
-            ax.text(xx[cnt], yy[cnt], zz[cnt], label)            
+            ax.text(xx[cnt], yy[cnt], zz[cnt], label,fontsize=8)            
             
             cnt+=1
 
 
-for i in range(xx.shape[0]):
-    label = str(i)
-    ax.text(xx[i], yy[i], zz[i], label)
-
+ 
 
 
 #null_pivots = np.array([12, 39, 115, 131, 134, 192])-1
-null_pivots = np.array([4, 23, 99, 182, 187, 192])-1   
+null_pivots = np.array([39, 46, 47, 60, 147, 148])-1   
 null_nodes = np.int64(np.floor(null_pivots/3))
 
 x_np = xx[null_nodes];y_np = yy[null_nodes];z_np = zz[null_nodes]

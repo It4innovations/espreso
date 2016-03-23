@@ -12,11 +12,10 @@ eps_iter_Kplus                      = 1e-15
 single_precision                    = True     # True, False
 methodToImproveSolByIterMethod      = 'pcg_x'   # 'cg_x', 'pcg_x',       
 precondFrom_Areg_orA                = False
-precondPrimalSystem                 = 'LU_SP'    # 'diag', 'LU_SP', 'ILU,  'none'
+precondPrimalSystem                 = 'diag'    # 'diag', 'LU_SP', 'ILU,  'none'
 
 #       WARNING:  ILU (incomplete LU) can generate 
 #       unsymmetric preconditioner matrix!!!
-
 
 # if 'cg_x' or is set
 mult_Areg_or_A_RRt                  = True

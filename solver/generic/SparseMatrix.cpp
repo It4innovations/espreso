@@ -3187,8 +3187,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[1] = (time1 - begin_time) ;
 #endif
-               //                                               |
-
+  //                                               |
   //#################################################################################
   if (get_n_first_and_n_last_eigenvals_from_dense_K &&
       K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
@@ -3381,7 +3380,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[3] = (time1 - begin_time) ;
 #endif
-               //                                               |
+//                                               |
 
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
@@ -3430,9 +3429,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
           ose3 << permVec[i]+1 <<" ";
         }
         ose3.close();
-      }
       std::cout << "factorization of K_rr failed." << "\n";
       exit(EXIT_FAILURE);
+      }
     }
     ///////////////////////////////////////////////////////////////////////////////////
     
