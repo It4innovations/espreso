@@ -2899,7 +2899,8 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 //	get_kernel_from_K(K, Kplus_R);
 //}
 
-void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
+void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, 
+      SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -2909,6 +2910,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
+#define VERBOSE_LEVEL 4
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -3040,22 +3042,24 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #endif
 //  - OWN
 #if VERBOSE_LEVEL == 4
-    ESINFO(PROGRESS2) << "debug set-up";
+    if (d_sub==0){
+      ESINFO(PROGRESS2) << "debug set-up";
+    }
 #endif
 
 
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
 #if VERBOSE_LEVEL>0
-    char filenameI[128];
+
+    std::string name; 
     if (d_sub==-1){
-      sprintf(filenameI, "kernel_detct_c_%d_GGt.txt", MPI_rank);
+      name = Logging::prepareFile("kernel_detct_GGt");
     }
     else{
-      sprintf(filenameI, "kernel_detct_c_%d_s%d.txt", MPI_rank,d_sub);
+      name = Logging::prepareFile(d_sub,"kernel_detct");
     }
-    std::ofstream os (filenameI);
-    os.precision(15);
+    std::ofstream os(name);
 
 
     os << "Verbose Level:       " ;
@@ -3184,8 +3188,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[1] = (time1 - begin_time) ;
 #endif
-               //                                               |
-
+  //                                               |
   //#################################################################################
   if (get_n_first_and_n_last_eigenvals_from_dense_K &&
       K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
@@ -3378,7 +3381,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   time1 = omp_get_wtime();
   elapsed_secs[3] = (time1 - begin_time) ;
 #endif
-               //                                               |
+//                                               |
 
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
@@ -3391,28 +3394,72 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   SparseSolverCPU K_rr_solver;
   std::stringstream ss;
   bool SC_via_K_rr=true;
-  if (SC_via_K_rr){
-    K_rr_solver.ImportMatrix(K_rr);
-    K_rr.Clear();
-    ss << "get kerner from K -> rank: " << config::MPIrank;
-    K_rr_solver.Factorization(ss.str());
+//
+  if (K_rr.cols==0){
     S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-    SparseMatrix invKrrKrs = K_rs;
-    K_rr_solver.SolveMat_Dense(invKrrKrs);
-    SparseMatrix KsrInvKrrKrs;
-	  KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
-    S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
     S.RemoveLower();
   }
-  else{
-    SparseSolverCPU createSchur;
-    // TODO PARDISO_SC provides factor K_rr.
-    // if SC_via_K_rr=false,  factorization is made redundantly later.
-    createSchur.ImportMatrix(K_modif);
-    createSchur.Create_SC(S,sc_size,false);
-    K_modif.Clear();
-    createSchur.Clear();
+  else
+  {
+    if (SC_via_K_rr){
+      S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+      K_rr_solver.ImportMatrix(K_rr);
+      ss << "get kerner from K -> rank: " << config::MPIrank;
+      int error_K_rr = K_rr_solver.Factorization(ss.str());
+
+
+      if (error_K_rr){
+        // K  ------------------------------------------------------------------------
+        SparseMatrix se0 = K;
+        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
+        ose00 << se0;
+        ose00.close();
+        // K_rr ----------------------------------------------------------------------
+        SparseMatrix se1 = K_rr;
+        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
+        ose0 << se1;
+        ose0.close();
+        // K_rs ----------------------------------------------------------------------
+        SparseMatrix se2 = K_rs;
+        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
+        ose1 << se2;
+        ose1.close();
+        // K_modif -------------------------------------------------------------------
+        SparseMatrix se3 = K_modif;
+        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
+        ose2 << se3;
+        ose2.close();
+        // info file -----------------------------------------------------------------
+        if (d_sub!=-1){
+          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
+          eslocal ik=0,cnt_i=0;
+          for (eslocal i = 0;i<permVec.size();i++){
+            ose3 << permVec[i]+1 <<" ";
+          }
+          ose3.close();
+        }
+        os.close();
+        ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization)." << "\n";
+        exit(EXIT_FAILURE);
+      }
+      SparseMatrix invKrrKrs = K_rs;
+      K_rr_solver.SolveMat_Dense(invKrrKrs);
+      SparseMatrix KsrInvKrrKrs;
+      KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+      S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+      S.RemoveLower();
+    }
+    else{
+      SparseSolverCPU createSchur;
+      // TODO PARDISO_SC provides factor K_rr.
+      // if SC_via_K_rr=false,  factorization is made redundantly later.
+      createSchur.ImportMatrix(K_modif);
+      createSchur.Create_SC(S,sc_size,false);
+      K_modif.Clear();
+      createSchur.Clear();
+    }
   }
+//
   S.type='S';
   S.ConvertCSRToDense(1);
 #if VERBOSE_LEVEL>0
@@ -3440,10 +3487,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   eslocal defect_K_in;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
+#if VERBOSE_LEVEL>1
+  os<<"ratio,      eig{i-1},          eig{i}\n";
+#endif
   for (eslocal i = itMax-1; i > 0;i--){
     ratio = fabs(W[i-1]/W[i]);
+#if VERBOSE_LEVEL>1
+    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
+#endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
       defect_K_in=i;
+      break;
     }
   }
 #if VERBOSE_LEVEL>0
@@ -3488,20 +3542,25 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   elapsed_secs[8] = double(time1 - begin_time) ;
 #endif
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
-	SparseMatrix R_r;
-	R_r.MatMat(K_rs,'N',R_s);
-  K_rs.Clear();
-  if (!SC_via_K_rr){
-    K_rr_solver.ImportMatrix(K_rr);
-    K_rr.Clear();
-//    std::stringstream ss;
-    ss << "get kerner from K -> rank: " << config::MPIrank;
-    K_rr_solver.Factorization(ss.str());
-  }
-  K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
-  K_rr_solver.Clear();
 
-  R_r.ConvertCSRToDense(0);
+  int R_r_rows = 0;
+  int R_r_cols = 0;
+  SparseMatrix R_r;
+  if (K_rr.cols!=0){
+    R_r.MatMat(K_rs,'N',R_s);
+    K_rs.Clear();
+    if (!SC_via_K_rr) {
+      K_rr_solver.ImportMatrix(K_rr);
+      K_rr.Clear();
+      ss << "get kerner from K -> rank: " << config::MPIrank;
+      K_rr_solver.Factorization(ss.str());
+    }
+    K_rr_solver.SolveMat_Sparse(R_r); // inv(K_rr)*K_rs*R_s
+    K_rr_solver.Clear();
+    R_r.ConvertCSRToDense(0);
+    R_r_rows = R_r.rows;
+    R_r_cols = R_r.cols;
+  }
   R_s.ConvertCSRToDense(0);
 #if VERBOSE_LEVEL>0
 //9 - R_r created (applied K_rr)
@@ -3510,25 +3569,25 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #endif
                //                                               |
 // --------------- CREATING WHOLE KERNEL Kplus_R = [ (R_r)^T (R_s)^T ]^T
-  Kplus_R.rows = R_r.rows+R_s.rows;
-  Kplus_R.cols = R_r.cols;
+  Kplus_R.rows = R_r_rows+R_s.rows;
+  Kplus_R.cols = R_s.cols;
   Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
   Kplus_R.type = 'G';
 	Kplus_R.dense_values.resize(Kplus_R.nnz);
   cntR=0;
   for (eslocal j = 0; j < Kplus_R.cols; j++){
-    for (eslocal i = 0; i < R_r.rows; i++){
+    for (eslocal i = 0; i < R_r_rows; i++){
       if (diagonalScaling){
         di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
       }
-      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r.rows + i]/sqrt(di);
+      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
       cntR++;
     }
     for (eslocal i = 0; i < R_s.rows; i++){
       if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r.rows]]-offset];
+        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
       }
-	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r.rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
+	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
       cntR++;
     }
   }
@@ -3540,6 +3599,16 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 #if VERBOSE_LEVEL>0
 //10 - R - Gram Schmidt Orthogonalization
   time1 = omp_get_wtime();
+  os << "null pivots: \n";
+  os << "[";
+  for (eslocal k = 0; k<null_pivots.size();k++){
+    os << null_pivots[k] ;
+    if (k<null_pivots.size()-1 ){
+     os << ", ";
+      }
+  }
+   os << "]\n";
+
   elapsed_secs[10] = double(time1 - begin_time) ;
 #endif
                //                                               |
@@ -3555,7 +3624,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
   double tmp = K.getNorm_K_R(K,Kplus_R);
   *norm_KR_d_pow_2 = (tmp*tmp)/(lmx_K*lmx_K);
   *defect_d = Kplus_R.cols;
-  os << "defect(K):       " << Kplus_R.cols <<"\n";
+  os << "defect(K):       " << defect_K_in <<"\n";
   os << "norm_KR:         " << sqrt(*norm_KR_d_pow_2) <<"\n";
 #endif
                //                                               |
@@ -3581,7 +3650,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
     for (eslocal i = 0; i < null_pivots.size(); i++){
       tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
       K.CSR_V_values[tmp_int0]+=rho;
-      if (d_sub!=-1) {
+      // if d_sub==-1; it's G0G0t matrix (or S_alpha)
+      if (d_sub!=-1) { 
         regMat.I_row_indices[i] = null_pivots[i];
         regMat.J_col_indices[i] = null_pivots[i];
         regMat.V_values[i]      = rho ;
@@ -3629,6 +3699,84 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,Spars
 
   delete [] W;
   delete [] Z;
+
+
+
+  // TESTING OF REGULARIZED MATRIX
+  SparseSolverCPU K_solver;
+  std::stringstream ss2;
+  K_solver.ImportMatrix(K);
+  ss2 << "testing factorization of regularized K -> rank: " << config::MPIrank;
+  int error_reg = K_solver.Factorization(ss2.str());
+  
+  
+  
+  
+  ///////////////////////////////////////////////////////////////////////////////////
+  if (error_reg){
+    // regMat---------------------------------------------------------------------
+    SparseMatrix se00 = regMat;
+    std::ofstream ose000(Logging::prepareFile(d_sub, "regMatErr"));
+    ose000 << se00;
+    ose000.close();
+    // Kreg  ---------------------------------------------------------------------
+    SparseMatrix se0 = K;
+    std::ofstream ose00(Logging::prepareFile(d_sub, "K_regErr"));
+    ose00 << se0;
+    ose00.close();
+    // K_rr ----------------------------------------------------------------------
+    SparseMatrix se1 = K_rr;
+    std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
+    ose0 << se1;
+    ose0.close();
+    // K_rs ----------------------------------------------------------------------
+    SparseMatrix se2 = K_rs;
+    std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
+    ose1 << se2;
+    ose1.close();
+    // R -------------------------------------------------------------------
+    SparseMatrix seR = Kplus_R;
+    std::ofstream oseR(Logging::prepareFile(d_sub, "RErr"));
+    oseR << seR;
+    oseR.close();
+    // K_modif -------------------------------------------------------------------
+    SparseMatrix se3 = K_modif;
+    std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
+    ose2 << se3;
+    ose2.close();
+    // info file -----------------------------------------------------------------
+    if (d_sub!=-1){
+      std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
+      eslocal ik=0,cnt_i=0;
+      ose3 << "permut_vector\n";
+      for (eslocal i = 0;i<permVec.size();i++){
+        ose3 << permVec[i] + 1<<" ";
+      }
+      ose3 << "\nnull_pivots\n";
+      for (eslocal i = 0; i < null_pivots.size(); i++){
+        ose3 << null_pivots[i] + 1<<" ";
+      }
+      ose3.close();
+    }
+    os.close();
+    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization)." << "\n";
+    exit(EXIT_FAILURE);
+  }
+  ///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+  K_modif.Clear();
+  K_rr.Clear();
+  K_rs.Clear();
+
+
 
   double end_time = omp_get_wtime();
 //12 - Total time in kernel detection

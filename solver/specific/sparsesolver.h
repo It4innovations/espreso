@@ -19,7 +19,7 @@ public:
 
 	virtual void ImportMatrix_wo_Copy(SparseMatrix & A) = 0;
 
-	virtual void Factorization(const std::string &str) = 0;
+	virtual int Factorization(const std::string &str) = 0;
 	virtual void Clear() = 0;
 	virtual void SetThreaded() = 0;
 
