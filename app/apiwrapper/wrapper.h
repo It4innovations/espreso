@@ -8,6 +8,7 @@
 #include "esconfig.h"
 #include "esassemblers.h"
 #include "esinput.h"
+#include "esbasis.h"
 
 struct FETI4IStructMatrix {
 	FETI4IStructMatrix(eslocal offset): offset(offset), K(0, 0) { };
@@ -35,6 +36,7 @@ namespace espreso {
 struct DataHolder {
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;
+	static TimeEval timeStatistics;
 };
 
 }

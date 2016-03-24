@@ -3,6 +3,7 @@
 
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
+espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
 
 using namespace espreso;
 
@@ -87,6 +88,17 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix 	*matrix,
 		FETI4IInt		indexBase)
 {
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
+	config::info::verboseLevel = 3;
+	config::info::measureLevel = 3;
+
+	ESINFO(OVERVIEW) << "ESPRESO create stiffness matrix holder";
+
+	DataHolder::timeStatistics.totalTime.startWithBarrier();
+	TimeEvent event("Add element");
+	DataHolder::timeStatistics.addEvent(event);
+
 	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexBase));
 	*matrix = DataHolder::matrices.back();
 }
@@ -97,6 +109,8 @@ void FETI4IAddElement(
 		FETI4IInt* 		indices,
 		FETI4IReal* 	values)
 {
+	espreso::DataHolder::timeStatistics.timeEvents.back().startWithoutBarrier();
+
 	if (std::all_of(values, values + size, [] (double &value) { return value == 0; })) {
 		// Skip elements with zero values
 		return;
@@ -106,6 +120,8 @@ void FETI4IAddElement(
 	matrix->eIndices.push_back(std::vector<eslocal>(indices, indices + size));
 	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
 	matrix->eMatrices.push_back(std::vector<double>(values, values + size * size));
+
+	espreso::DataHolder::timeStatistics.timeEvents.back().endWithoutBarrier();
 }
 
 void FETI4ICreateInstance(
@@ -120,11 +136,9 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
+	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
-	config::info::verboseLevel = 3;
-	config::info::measureLevel = 3;
+	ESINFO(OVERVIEW) << "ESPRESO create solver instance";
 
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
@@ -147,6 +161,8 @@ void FETI4ICreateInstance(
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
+
+	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 }
 
 void FETI4ISolve(
@@ -154,12 +170,18 @@ void FETI4ISolve(
 		FETI4IInt 		solution_size,
 		FETI4IReal*		solution)
 {
+	TimeEvent event("Solve FETI4I instance"); event.startWithBarrier();
+
 	std::vector<std::vector<double> > solutions(1);
 	solutions[0] = std::vector<double>(solution, solution + solution_size);
 	instance->data.solve(solutions);
 	memcpy(solution, &solutions[0][0], solution_size * sizeof(double));
 
 	instance->data.finalize();
+
+	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
+	DataHolder::timeStatistics.totalTime.endWithBarrier();
+	DataHolder::timeStatistics.printStatsMPI();
 }
 
 template <typename TFETI4I>
