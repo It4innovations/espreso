@@ -14,6 +14,21 @@ class Loader {
 public:
 	void fill()
 	{
+		auto sizeStats = [] (const std::vector<std::vector<eslocal> > &data) {
+			std::vector<size_t> sizes(data.size());
+			for (size_t p = 0; p < data.size(); p++) {
+				sizes[p] = data[p].size();
+			}
+			return Info::averageValues(sizes);
+		};
+		auto intervalStats = [] (const std::vector<eslocal> &data) {
+			std::vector<size_t> sizes(data.size() - 1);
+			for (size_t p = 0; p < data.size() - 1; p++) {
+				sizes[p] = data[p + 1] - data[p];
+			}
+			return Info::averageValues(sizes);
+		};
+
 		TimeEval measurement("Mesh loader"); measurement.totalTime.startWithBarrier();
 
 		open();
@@ -47,22 +62,13 @@ public:
 		TimeEvent tPartition("partition"); tPartition.start();
 		partitiate(mesh._partPtrs);
 		tPartition.end(); measurement.addEvent(tPartition);
-		ESINFO(OVERVIEW) << "Mesh partitioned - total number of parts: " << Info::sumValue(mesh.parts());
+		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::MPIsize
+				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
 		TimeEvent tFixPoints("fix points"); tFixPoints.start();
 		fixPoints(mesh._fixPoints);
 		tFixPoints.end(); measurement.addEvent(tFixPoints);
-
-		auto computeMin = [&] () {
-			size_t min = mesh._fixPoints[0].size();
-			for (size_t p = 0; p < mesh._fixPoints.size(); p++) {
-				if (min > mesh._fixPoints[p].size()) {
-					min = mesh._fixPoints[p].size();
-				}
-			}
-			return Info::averageValue(min);
-		};
-		ESINFO(DETAILS) << "Fix points computed. Minimal number of points in a subdomain is " << computeMin();
+		ESINFO(DETAILS) << "Fix points computed. There is " << sizeStats(mesh._fixPoints) << " fix points in subdomain.";
 
 		TimeEvent tCorners("corners"); tCorners.start();
 		corners(mesh._subdomainBoundaries);

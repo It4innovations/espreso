@@ -136,6 +136,9 @@ public:
 	static std::string sumValue(const Tvalue &value);
 	template<typename Tvalue>
 	static std::string averageValue(const Tvalue &value);
+	template<typename Tvalue>
+	static std::string averageValues(const std::vector<Tvalue> &values);
+
 
 
 	static bool report(InfoEvent event) {
