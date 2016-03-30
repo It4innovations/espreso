@@ -2941,7 +2941,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
 // get and print 2*n K eigenvalues (K is temporarily converted to dense);
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
-  eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 0;
+  eslocal get_n_first_and_n_last_eigenvals_from_dense_K = 10;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
@@ -3456,8 +3456,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   S.ConvertCSRToDense(1);
 #if VERBOSE_LEVEL>0
 //5 - Schur complement created
-  time1 = omp_get_wtime();
-  elapsed_secs[5] = double(time1 - begin_time) ;
+    time1 = omp_get_wtime();
+    elapsed_secs[5] = double(time1 - begin_time) ;
 #endif
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
   char JOBZ = 'V';
@@ -3627,6 +3627,11 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   Kplus_R.ConvertDenseToCSR(0);
 //
 //
+
+
+
+
+  
   if (diagonalRegularization){
     eslocal tmp_int0;
     if (d_sub!=-1) {
@@ -3685,9 +3690,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       regMat.ConvertToCOO(1);
     }
   }
+
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
-
 
   delete [] W;
   delete [] Z;

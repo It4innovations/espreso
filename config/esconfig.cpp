@@ -51,7 +51,7 @@ namespace solver {
 
 	double epsilon               = 1e-4;// Solver requested precision
 	size_t maxIterations         = 1000;
-	size_t FETI_METHOD           = 1;   // 0 - Total FETI; 1 - HFETI;
+	size_t FETI_METHOD           = 0;   // 0 - Total FETI; 1 - HFETI;
 	bool   REDUNDANT_LAGRANGE    = 1;
 	size_t USE_SCHUR_COMPLEMENT  = 0;   // 1 - YES
 	size_t KEEP_FACTORS          = 1;   // 1 - YES; 0 - NO
@@ -64,7 +64,7 @@ namespace solver {
 	size_t F0_SOLVER             = 0;   // 0 - DIRECT DP if KSOLVER is DIRECT DP - the same precission as KSOLVER
 										// 0 - DIRECT SP if KSOLVER is DIRECT SP - the same precission as KSOLVER
 										// 1 - DIRECT DP if KSOLVER is DIRECT SP - F0 is in higher precision
-    size_t N_MICS                = 2;
+  size_t N_MICS                = 2;
 
 }
 
