@@ -266,6 +266,7 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
+		return error;
 		SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;

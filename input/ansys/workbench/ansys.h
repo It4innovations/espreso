@@ -13,16 +13,24 @@
 namespace espreso {
 namespace input {
 
-class AnsysWorkbench: public ExternalLoader {
+class AnsysWorkbench: public Loader {
 
 public:
-	AnsysWorkbench(const Options &options, size_t index, size_t size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << options.path;
+		AnsysWorkbench workbench(mesh, options, rank, size);
+		workbench.fill();
+	}
+
+protected:
+	AnsysWorkbench(Mesh &mesh, const Options &options, int rank, int size)
+	: Loader(mesh), _path(options.path) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
-	void faces(Faces &faces) {};
 	void boundaryConditions(Coordinates &coordinates);
-	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void open()
 	{

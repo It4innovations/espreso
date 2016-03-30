@@ -14,11 +14,14 @@ template<class TElement>
 class UniformGenerator: public Generator {
 
 public:
-	UniformGenerator(const UniformSettings &settings): Generator(settings), _settings(settings) { };
+	UniformGenerator(Mesh &mesh, const UniformSettings &settings)
+	: Generator(mesh, settings), _settings(settings) { };
 
 protected:
-	virtual void elementsMesh(std::vector<Element*> &elements, std::vector<eslocal> &parts);
-	virtual void elementsMaterials(std::vector<Element*> &elements, std::vector<eslocal> &parts) = 0;
+	virtual void elementsMesh(std::vector<Element*> &elements);
+	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
+
+	virtual void partitiate(std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void corners(Boundaries &boundaries);
 

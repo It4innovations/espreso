@@ -1038,23 +1038,28 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(commonLines.coordinates().globalIndex(*it)));
 		}
 		correctCycle(commonFaces, commonLines, averageEdges);
+		ESINFO(DETAILS) << "Set corners to vertices";
 	}
 
 	if (edges && !averageEdges) {
 		corners(commonLines, lineToCluster);
+		ESINFO(DETAILS) << "Set corners to edges - " << number << " per edge";
 	}
 
 	if (averageEdges) {
 		prepareAveragingLines(commonFaces, commonLines);
 		average(commonLines, lineToCluster);
+		ESINFO(DETAILS) << "Average edged";
 	}
 
 	if (faces) {
 		corners(commonFaces, faceToCluster);
+		ESINFO(DETAILS) << "Set corners to faces - " << number << " per face";
 	}
 	if (averageFaces) {
 		prepareAveragingFaces(commonFaces, commonFacesBorder);
 		average(commonFaces, faceToCluster);
+		ESINFO(DETAILS) << "Average faces";
 	}
 }
 

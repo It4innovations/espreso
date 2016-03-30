@@ -13,13 +13,23 @@ template<class TElement>
 class SphereGenerator: public UniformGenerator<TElement> {
 
 public:
-	SphereGenerator(const SphereSettings &settings);
+	static void load(Mesh &mesh, const SphereSettings &settings)
+	{
+		ESINFO(OVERVIEW) << "Generate sphere mesh";
+		ESINFO(DETAILS) << "Sphere parameters:\n" << settings;
+		SphereGenerator sphere(mesh, settings);
+		sphere.fill();
+	}
 
-private:
-	void elementsMaterials(std::vector<Element*> &elements, std::vector<eslocal> &parts);
-	void points(Coordinates &coordinates);
-	void boundaryConditions(Coordinates &coordinates);
-	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+protected:
+	SphereGenerator(Mesh &mesh, const SphereSettings &settings);
+
+	virtual void elementsMaterials(std::vector<Element*> &elements);
+	virtual void points(Coordinates &coordinates);
+	virtual void boundaryConditions(Coordinates &coordinates);
+	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+
+	virtual ~SphereGenerator() {};
 
 	const SphereSettings _settings;
 };

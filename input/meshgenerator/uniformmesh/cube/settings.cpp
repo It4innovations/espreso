@@ -51,6 +51,8 @@ std::vector<Description> CubeSettings::description = createCubeSetting();
 CubeSettings::CubeSettings(const Options &options, size_t index, size_t size)
 : UniformSettings(options, index, size)
 {
+	ESINFO(OVERVIEW) << "Load cube setting from file " << options.path;
+
 	Configuration configuration(CubeSettings::description, options);
 
 	std::vector<std::string> axis = { "X", "Y", "Z" };

@@ -62,7 +62,7 @@ void Configuration::load(const Options &options)
 			if (pos < std::string::npos) {
 				line = line.substr(0, pos);
 			}
-			for (it = _parameters.begin(); it != _parameters.end(); ++it) {
+			for (it = _parameters.begin(); it != _parameters.end(); ++it) {;
 				if (it->second->match(line)) {
 					if (it->second->isSet()) {
 						ESINFO(ALWAYS) << "Warning: parameter " << it->second->name() << " is set more than once.";

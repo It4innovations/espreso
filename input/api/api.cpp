@@ -60,7 +60,7 @@ void API::elements(std::vector<Element*> &elements)
 	}
 }
 
-void API::clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours)
+void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	// TODO: check neighbours correctness
 

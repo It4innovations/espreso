@@ -36,14 +36,14 @@ static void checkSettings(const SphereSettings &settings)
 
 
 template<class TElement>
-SphereGenerator<TElement>::SphereGenerator(const SphereSettings &settings)
-	: UniformGenerator<TElement>(_settings), _settings(settings)
+SphereGenerator<TElement>::SphereGenerator(Mesh &mesh, const SphereSettings &settings)
+	: UniformGenerator<TElement>(mesh, _settings), _settings(settings)
 {
 	checkSettings(_settings);
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements, std::vector<eslocal> &parts)
+void SphereGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 {
 	// TODO: set materials
 }

@@ -12,19 +12,24 @@
 namespace espreso {
 namespace input {
 
-class OpenFOAM: public ExternalLoader {
+class OpenFOAM: public Loader {
 
 public:
-	OpenFOAM(const Options &options, int rank, int size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << options.path;
+		OpenFOAM openfoam(mesh, options, rank, size);
+		openfoam.fill();
+	}
+
+protected:
+	OpenFOAM(Mesh &mesh, const Options &options, int rank, int size);
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
 	void faces(Faces &faces);
 	void boundaryConditions(Coordinates &coordinates);
-	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
-
-	void open() {};
-	void close() {};
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
 

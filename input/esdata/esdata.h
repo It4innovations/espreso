@@ -7,19 +7,24 @@
 namespace espreso {
 namespace input {
 
-class Esdata: public ExternalLoader {
+class Esdata: public Loader {
 
 public:
-	Esdata(const Options &options, int rank, int size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << options.path;
+		Esdata esdata(mesh, options, rank, size);
+		esdata.fill();
+	}
+
+protected:
+	Esdata(Mesh &mesh, const Options &options, int rank, int size)
+	: Loader(mesh), _path(options.path), _rank(rank), _size(size) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
-	void faces(Faces &faces) {};
 	void boundaryConditions(Coordinates &coordinates);
-	void clusterBoundaries(Mesh &mesh, Boundaries &boundaries, std::vector<int> &neighbours);
-
-	void open() {};
-	void close() {};
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
 	std::string _path;

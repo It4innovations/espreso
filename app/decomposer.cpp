@@ -25,8 +25,7 @@ int main(int argc, char** argv)
 	config::solver::FETI_METHOD = config::TOTAL_FETI;
 
 	Mesh m;
-	input::AnsysWorkbench loader(options, 0, 1);
-	loader.load(m);
+	input::AnsysWorkbench::load(m, options, 0, 1);
 	std::cout << "Mesh loaded\n";
 
 	for (size_t i = 1; i < options.nameless.size(); i++) {
