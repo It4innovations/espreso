@@ -208,8 +208,8 @@ private:
   // get_kernel_from_K: default parameters
   //
   bool DIAGONALSCALING                                  = true;
-  eslocal PERMUTVECTORACTIVE                            = 1; 
-  bool USE_NULL_PIVOTS_OR_S_SET                         = false;
+  eslocal PERMUTVECTORACTIVE                            = 1;
+  bool USE_NULL_PIVOTS_OR_S_SET                         = true;
   bool DIAGONALREGULARIZATION                           = true;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;

@@ -7,7 +7,7 @@ int MPIrank = 0;
 int MPIsize = 1;
 
 namespace mesh {
-	size_t subdomains = 2;
+	size_t subdomains = 8;
 	size_t fixPoints = 8;
 
 	size_t corners = 1;
@@ -28,11 +28,11 @@ namespace output {
 
 	Output output = VTK;
 
-	bool saveMesh = true;
-	bool saveFixPoints = true;
+	bool saveMesh = false;
+	bool saveFixPoints = false;
 	bool saveFaces = false;
 	bool saveLines = false;
-	bool saveCorners = true;
+	bool saveCorners = false;
 	bool saveDirichlet = false;
 	bool saveAveraging = false;
 	bool saveResults = true;
