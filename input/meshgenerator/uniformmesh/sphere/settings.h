@@ -4,7 +4,8 @@
 
 #include "../settings.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 struct SphereSettings: public UniformSettings {
 
@@ -27,6 +28,7 @@ inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
 	return os;
 }
 
+}
 }
 
 

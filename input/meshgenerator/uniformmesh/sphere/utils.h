@@ -5,7 +5,8 @@
 #include "settings.h"
 #include "../utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template <class TElement>
 class SphereUtils {
@@ -15,6 +16,7 @@ public:
 	static eslocal ringNodesCount(const SphereSettings &settings);
 };
 
+}
 }
 
 #include "utils.hpp"

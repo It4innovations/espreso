@@ -6,37 +6,36 @@
 #include "elements/elements.h"
 #include "settings.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
-class Generator: public InternalLoader {
+class Generator: public Loader {
 
 protected:
-	Generator(const Settings &settings): _settings(settings) { };
+	Generator(Mesh &mesh, const Settings &settings): Loader(mesh), _settings(settings) { };
 	virtual ~Generator() { };
 
-	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+	void elements(std::vector<Element*> &elements)
 	{
-		elementsMesh(elements, parts);
-		elementsMaterials(elements, parts);
+		elementsMesh(elements);
+		elementsMaterials(elements);
 	}
 
-	virtual void elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
-	virtual void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
+	virtual void elementsMesh(std::vector<Element*> &elements) = 0;
+	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
 
-	virtual void points(mesh::Coordinates &coordinates) = 0;
+	virtual void points(Coordinates &coordinates) = 0;
+	virtual void boundaryConditions(Coordinates &coordinates) = 0;
+	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;
+
+	virtual void partitiate(std::vector<eslocal> &parts) = 0;
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
-	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
-	virtual void corners(mesh::Boundaries &boundaries) = 0;
-	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
-
-	bool manualPartition()
-	{
-		return _settings.useMetis;
-	}
+	virtual void corners(Boundaries &boundaries) = 0;
 
 	const Settings _settings;
 };
 
+}
 }
 
 

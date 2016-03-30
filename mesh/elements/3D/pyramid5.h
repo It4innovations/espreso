@@ -10,7 +10,7 @@
 #define Pyramid5GPCount 8
 #define Pyramid5VTKCode 14
 
-namespace mesh {
+namespace espreso {
 
 class Pyramid5: public Element
 {
@@ -88,8 +88,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Pyramid5NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

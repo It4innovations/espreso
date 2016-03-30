@@ -1,6 +1,8 @@
 
 #include "timeeval.h"
 
+using namespace espreso;
+
 TimeEvent::TimeEvent(std::string name)
 {
 	eventName   = name;
@@ -123,23 +125,21 @@ void TimeEvent::evaluate() {
 		E += (eventTime[i] - avgTime) * (eventTime[i] - avgTime);
 	}
 
-	stdDev = sqrt(1 / eventCount * E);
+	if (eventCount * E) {
+		stdDev = sqrt(1 / eventCount * E);
+	} else {
+		stdDev = 0;
+	}
 }
 
 void TimeEvent::evaluateMPI() {
 	evaluate();
 
-	int rank, size;
-
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);	/* get current process id */
-	MPI_Comm_size(MPI_COMM_WORLD, &size);	/* get number of processes */
-	eslocal mpi_root = 0;
-
 	MPI_Reduce(&avgTime, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_avgTime = g_avgTime / size;
+	g_avgTime = g_avgTime / config::MPIsize;
 
 	MPI_Reduce(&sumTime, &g_sumTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_sumTime = g_sumTime / size;
+	g_sumTime = g_sumTime / config::MPIsize;
 
 	MPI_Reduce(&minTime, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&maxTime, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -149,28 +149,26 @@ void TimeEvent::evaluateMPI() {
 void TimeEvent::printStat(double totalTime) {
 	evaluate();
 
-	std::cout << std::setw(name_length) << std::left << eventName;
-	std::cout << " avg.: " << std::fixed << std::setw(val_length) << avgTime;
-	std::cout << " min.: " << std::setw(val_length) << minTime;
-	std::cout << " max.: " << std::setw(val_length) << maxTime;
-	if (totalTime != 0.0) {
-		std::cout << " % of avg tot: " << std::setw(val_length) << 100.0 * avgTime / totalTime;
-	}
-	std::cout << std::endl;
+	ESLOG(SUMMARY)
+		<< std::setw(name_length) << std::left << eventName
+		<< " avg.: " << std::fixed << std::setw(val_length) << avgTime
+		<< " min.: " << std::setw(val_length) << minTime
+		<< " max.: " << std::setw(val_length) << maxTime
+		<< " % of avg tot: " << std::setw(val_length)
+		<< (totalTime != 0 ? 100.0 * avgTime / totalTime : INFINITY);
 }
 
 
 void TimeEvent::printLastStat(double totalTime) {
 	avgTime = eventTime.back();
 
-	std::cout << std::setw(name_length) << std::left << eventName;
-	std::cout << " avg.: " << std::fixed << std::setw(val_length) << avgTime;
-	std::cout << " min.: " << std::setw(val_length) << " -- ";
-	std::cout << " max.: " << std::setw(val_length) << " -- ";
-	if (totalTime != 0.0) {
-		std::cout << " % of avg tot: " << std::setw(val_length) << 100.0 * avgTime / totalTime;
-	}
-	std::cout << std::endl;
+	ESLOG(SUMMARY)
+		<< std::setw(name_length) << std::left << eventName
+		<< " avg.: " << std::fixed << std::setw(val_length) << avgTime
+		<< " min.: " << std::setw(val_length) << " -- "
+		<< " max.: " << std::setw(val_length) << " -- "
+		<< " % of avg tot: " << std::setw(val_length)
+		<< (totalTime != 0 ? 100.0 * avgTime / totalTime : INFINITY);
 }
 
 double TimeEvent::getLastStat(double totalTime) {
@@ -181,65 +179,47 @@ double TimeEvent::getLastStat(double totalTime) {
 void TimeEvent::printStatMPI(double totalTime) {
 	evaluateMPI();
 
-	int rank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id */
-
-	if(rank != 0) {
-		return;
-	}
-	std::cout << std::setw(name_length) << std::left << eventName;
-	std::cout << " avg.: " << std::setw(val_length) << std::fixed << g_avgTime;
-	std::cout << " min.: " << std::setw(val_length) << g_minTime;
-	std::cout << " max.: " << std::setw(val_length) << g_maxTime;
-	std::cout << " sum.: " << std::setw(val_length) << g_sumTime;
-	std::cout << " count: " << std::setw(val_length) << eventCount;
-	if (totalTime != 0.0) {
-		std::cout << " % of avg tot: " << std::setw(val_length) << 100.0 * g_avgTime / totalTime;
-	}
-	std::cout << std::endl;
+	ESLOG(SUMMARY)
+		<< std::setw(name_length) << std::left << eventName
+		<< " avg.: " << std::setw(val_length) << std::fixed << g_avgTime
+		<< " min.: " << std::setw(val_length) << g_minTime
+		<< " max.: " << std::setw(val_length) << g_maxTime
+		<< " sum.: " << std::setw(val_length) << g_sumTime
+		<< " count: " << std::setw(val_length) << eventCount
+		<< " % of avg tot: " << std::setw(val_length)
+		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
 }
 
 
 void TimeEvent::printLastStatMPI(double totalTime) {
+	if (config::info::measureLevel == 0) {
+		return;
+	}
 	double d_time = eventTime.back();
 
-	int rank, size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);	/* get current process id */
-	MPI_Comm_size(MPI_COMM_WORLD, &size);	/* get number of processes */
-	eslocal mpi_root = 0;
-
 	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_avgTime = g_avgTime / size;
+	g_avgTime = g_avgTime / config::MPIsize;
 
 	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-	if(rank != 0) {
-		return;
-	}
-	std::cout << std::setw(name_length) << std::left << eventName;
-	std::cout << " last: " << std::fixed << std::setw(val_length) << g_avgTime;
-	std::cout << " min.: " << std::setw(val_length) << g_minTime;
-	std::cout << " max.: " << std::setw(val_length) << g_maxTime;
-	if (totalTime != 0.0) {
-		std::cout << " % of avg tot: " << std::setw(val_length) << 100.0 * g_avgTime / totalTime;
-	}
-	std::cout << std::endl;
+	ESLOG(SUMMARY)
+		<< std::setw(name_length) << std::left << eventName
+		<< " last: " << std::fixed << std::setw(val_length) << g_avgTime
+		<< " min.: " << std::setw(val_length) << g_minTime
+		<< " max.: " << std::setw(val_length) << g_maxTime
+		<< " % of avg tot: " << std::setw(val_length)
+		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
 }
 
 
-void TimeEvent::printLastStatMPIPerNode(double totalTime) {
-
+void TimeEvent::printLastStatMPIPerNode(double totalTime)
+{
 	double d_time = eventTime.back();
 	std::vector<double> d_all_times;
 
-	int rank, size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);	/* get current process id */
-	MPI_Comm_size(MPI_COMM_WORLD, &size);	/* get number of processes */
-	eslocal mpi_root = 0;
-
-	if(rank == 0) {
-		d_all_times.resize(size);
+	if(config::MPIrank == 0) {
+		d_all_times.resize(config::MPIsize);
 	} else {
 		d_all_times.resize(1);
 	}
@@ -247,31 +227,29 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime) {
 	MPI_Gather(&d_time, 1, MPI_DOUBLE, &d_all_times[0], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_avgTime= g_avgTime / size;
+	g_avgTime= g_avgTime / config::MPIsize;
 
 	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-	if(rank != 0) {
-		return;
-	}
-	std::cout << std::setw(name_length) << std::left << eventName;
-	std::cout << " last: " << std::fixed << std::setw(val_length) << g_avgTime;
-	std::cout << " min.: " << std::setw(val_length) << g_minTime;
-	std::cout << " max.: " << std::setw(val_length) << g_maxTime;
-	if (totalTime != 0.0) {
-		std::cout << " % of avg tot: " << std::setw(val_length) << 100.0 * g_avgTime / totalTime;
-	}
-	std::cout << std::endl;
+	ESLOG(SUMMARY)
+		<< std::setw(name_length) << std::left << eventName
+		<< " last: " << std::fixed << std::setw(val_length) << g_avgTime
+		<< " min.: " << std::setw(val_length) << g_minTime
+		<< " max.: " << std::setw(val_length) << g_maxTime
+		<< " % of avg tot: " << std::setw(val_length)
+		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
 
-	for (eslocal i = 0; i < size; i++) {
-		std::cout << std::fixed << std::setw(3) << "R: " << std::setw(5) << i << std::setw(15) << d_all_times[i];
+	std::stringstream ss;
+	for (eslocal i = 0; i < config::MPIsize; i++) {
+		ss << std::fixed << std::setw(3) << "R: " << std::setw(5) << i << std::setw(15) << d_all_times[i];
 
-		if ((i+1) % 10 == 0) {
-			std::cout << std::endl;
+		if ((i + 1) % 10 == 0) {
+			ESLOG(SUMMARY) << ss.str();
+			ss.clear();
 		}
 	}
-	std::cout << std::endl;
+	ESLOG(SUMMARY) << ss.str();
 }
 
 
@@ -282,7 +260,6 @@ TimeEval::TimeEval(std::string name):
 	remainingTime(TimeEvent(name + std::string("- Remaining ")))
 {
 }
-
 
 void TimeEval::addEvent(TimeEvent &timeEvent) {
 	timeEvents.push_back(timeEvent);
@@ -299,20 +276,21 @@ void TimeEval::printStats() {
 }
 
 void TimeEval::printStatsMPI() {
-	int rank;
-	int size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);	/* get current process id */
-	MPI_Comm_size(MPI_COMM_WORLD, &size);	/* get number of processes */
-	eslocal mpi_root = 0;
-
 	double sum_avg_time = 0;
 
-	if (rank == 0) {
-		std::cout << std::endl;
-		std::cout << "*****************************************************************************************************************************************************************************************" << std::endl;
-		std::cout << "*** " << evalName << " ***" << std::endl;
-		std::cout << "*****************************************************************************************************************************************************************************************" << std::endl;
-	}
+	auto separator = [] (int size, char character) {
+		std::stringstream ss;
+		for (int i = 0; i < size; i++) {
+			ss << character;
+		}
+		return ss.str();
+	};
+
+	int separator_size = 80;
+
+	ESLOG(SUMMARY) << separator(separator_size, '*');
+	ESLOG(SUMMARY) << "        " << evalName << "         ";
+	ESLOG(SUMMARY) << separator(separator_size, '*');
 	totalTime.evaluateMPI();
 
 	for (eslocal i = 0; i < timeEvents.size(); i++) {
@@ -320,15 +298,11 @@ void TimeEval::printStatsMPI() {
 		sum_avg_time += timeEvents[i].avgTime;
 	}
 
-	if (rank == 0) {
-		std::cout << "-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
-	}
+	ESLOG(SUMMARY) << separator(separator_size, '-');
 
 	totalTime.printStatMPI(totalTime.g_avgTime);
 
-	if (rank == 0) {
-		std::cout << "*****************************************************************************************************************************************************************************************" << std::endl << std::endl;
-	}
+	ESLOG(SUMMARY) << separator(separator_size, '*');
 }
 
 

@@ -8,6 +8,8 @@
 #include "sparseCSRMatrix.h"
 #include "sparseIJVMatrix.h"
 
+namespace espreso {
+
 #define DOKMatrixIndexing Matrix::ZeroBased
 
 template<typename Tindices>
@@ -72,6 +74,8 @@ private:
 
 	std::map<Tindices, std::map<Tindices, double> > _values;
 };
+
+}
 
 #include "sparseDOKMatrix.hpp"
 

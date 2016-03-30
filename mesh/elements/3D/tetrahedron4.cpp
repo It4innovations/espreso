@@ -1,16 +1,15 @@
 
 #include "tetrahedron4.h"
 
-using namespace mesh;
+using namespace espreso;
 
-std::vector<DenseMatrix> Tetra4_dN()
+static std::vector<DenseMatrix> Tetra4_dN()
 {
 	// dN contains [dNr, dNs, dNt]
 	std::vector<DenseMatrix> dN(
 		Tetrahedron4GPCount,
 		DenseMatrix(Point::size(), Tetrahedron4NodesCount)
 	);
-
 
 	for (unsigned int i = 0; i < Tetrahedron4GPCount; i++) {
 		//  N = [ r, s, t,  1 - r - s - t ];
@@ -38,7 +37,7 @@ std::vector<DenseMatrix> Tetra4_dN()
 	return dN;
 }
 
-std::vector<DenseMatrix> Tetra4_N()
+static std::vector<DenseMatrix> Tetra4_N()
 {
 	std::vector<DenseMatrix> N(
 			Tetrahedron4GPCount,
@@ -48,52 +47,50 @@ std::vector<DenseMatrix> Tetra4_N()
 	std::vector<double> sv;
 	std::vector<double> tv;
 
-	if (Tetrahedron4GPCount == 4) {
-		double _rv[] = {0.5854101966249685, 0.1381966011250105, 0.1381966011250105, 0.1381966011250105};
-		double _sv[] = {0.1381966011250105, 0.1381966011250105, 0.1381966011250105, 0.5854101966249685};
-		double _tv[] = {0.1381966011250105, 0.1381966011250105, 0.5854101966249685, 0.1381966011250105};
-		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		sv.assign(_sv, _sv + Tetrahedron4GPCount);
-		tv.assign(_tv, _tv + Tetrahedron4GPCount);
-	}
-	else if (Tetrahedron4GPCount == 5) {
-		double _rv[] = {0.2500000000000000, 0.5000000000000000, 0.1666666666666667, 0.1666666666666667, 0.1666666666666667};
-		double _sv[] = {0.2500000000000000, 0.1666666666666667, 0.1666666666666667, 0.1666666666666667, 0.5000000000000000};
-		double _tv[] = {0.2500000000000000, 0.1666666666666667, 0.1666666666666667, 0.5000000000000000, 0.1666666666666667};
-		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		sv.assign(_sv, _sv + Tetrahedron4GPCount);
-		tv.assign(_tv, _tv + Tetrahedron4GPCount);
-	}
-	else if (Tetrahedron4GPCount == 11) {
-		double _rv[] = {0.2500000000000000, 0.7857142857142857, 0.0714285714285714, 0.0714285714285714,
-		0.0714285714285714, 0.1005964238332008, 0.3994035761667992, 0.3994035761667992,
-		0.3994035761667992, 0.1005964238332008, 0.1005964238332008};
-		double _sv[] = {0.2500000000000000, 0.0714285714285714, 0.0714285714285714, 0.0714285714285714,
-		0.7857142857142857, 0.3994035761667992, 0.1005964238332008, 0.3994035761667992,
-		0.1005964238332008, 0.3994035761667992, 0.1005964238332008};
-		double _tv[] = {0.2500000000000000, 0.0714285714285714, 0.0714285714285714, 0.7857142857142857,
-		0.0714285714285714, 0.3994035761667992, 0.3994035761667992, 0.1005964238332008,
-		0.1005964238332008, 0.1005964238332008, 0.3994035761667992};
-		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		sv.assign(_sv, _sv + Tetrahedron4GPCount);
-		tv.assign(_tv, _tv + Tetrahedron4GPCount);
-	}
-	else if (Tetrahedron4GPCount == 15) {
-		double _rv[] = {0.2500000000000000, 0.0000000000000000, 0.3333333333333333, 0.3333333333333333,
-		0.3333333333333333, 0.7272727272727273, 0.0909090909090909, 0.0909090909090909,
-		0.0909090909090909, 0.4334498464263357, 0.0665501535736643, 0.0665501535736643,
-		0.0665501535736643, 0.4334498464263357, 0.4334498464263357};
-		double _sv[] = {0.2500000000000000, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333,
-		0.0000000000000000, 0.0909090909090909, 0.0909090909090909, 0.0909090909090909,
-		0.7272727272727273, 0.0665501535736643, 0.4334498464263357, 0.0665501535736643,
-		0.4334498464263357, 0.0665501535736643, 0.4334498464263357};
-		double _tv[] = {0.2500000000000000, 0.3333333333333333, 0.3333333333333333, 0.0000000000000000,
-		0.3333333333333333, 0.0909090909090909, 0.0909090909090909, 0.7272727272727273,
-		0.0909090909090909, 0.0665501535736643, 0.0665501535736643, 0.4334498464263357,
-		0.4334498464263357, 0.4334498464263357, 0.0665501535736643};
-		rv.assign(_rv, _rv + Tetrahedron4GPCount);
-		sv.assign(_sv, _sv + Tetrahedron4GPCount);
-		tv.assign(_tv, _tv + Tetrahedron4GPCount);
+	switch (Tetrahedron4GPCount) {
+	case 4:
+		rv = {0.5854101966249685, 0.1381966011250105, 0.1381966011250105, 0.1381966011250105};
+		sv = {0.1381966011250105, 0.1381966011250105, 0.1381966011250105, 0.5854101966249685};
+		tv = {0.1381966011250105, 0.1381966011250105, 0.5854101966249685, 0.1381966011250105};
+		break;
+	case 5:
+		rv = {0.2500000000000000, 0.5000000000000000, 0.1666666666666667, 0.1666666666666667, 0.1666666666666667};
+		sv = {0.2500000000000000, 0.1666666666666667, 0.1666666666666667, 0.1666666666666667, 0.5000000000000000};
+		tv = {0.2500000000000000, 0.1666666666666667, 0.1666666666666667, 0.5000000000000000, 0.1666666666666667};
+		break;
+	case 11:
+		rv = {
+				0.2500000000000000, 0.7857142857142857, 0.0714285714285714, 0.0714285714285714,
+				0.0714285714285714, 0.1005964238332008, 0.3994035761667992, 0.3994035761667992,
+				0.3994035761667992, 0.1005964238332008, 0.1005964238332008};
+		sv = {
+				0.2500000000000000, 0.0714285714285714, 0.0714285714285714, 0.0714285714285714,
+				0.7857142857142857, 0.3994035761667992, 0.1005964238332008, 0.3994035761667992,
+				0.1005964238332008, 0.3994035761667992, 0.1005964238332008};
+		tv = {
+				0.2500000000000000, 0.0714285714285714, 0.0714285714285714, 0.7857142857142857,
+				0.0714285714285714, 0.3994035761667992, 0.3994035761667992, 0.1005964238332008,
+				0.1005964238332008, 0.1005964238332008, 0.3994035761667992};
+		break;
+	case 15:
+		rv = {
+				0.2500000000000000, 0.0000000000000000, 0.3333333333333333, 0.3333333333333333,
+				0.3333333333333333, 0.7272727272727273, 0.0909090909090909, 0.0909090909090909,
+				0.0909090909090909, 0.4334498464263357, 0.0665501535736643, 0.0665501535736643,
+				0.0665501535736643, 0.4334498464263357, 0.4334498464263357};
+		sv = {
+				0.2500000000000000, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333,
+				0.0000000000000000, 0.0909090909090909, 0.0909090909090909, 0.0909090909090909,
+				0.7272727272727273, 0.0665501535736643, 0.4334498464263357, 0.0665501535736643,
+				0.4334498464263357, 0.0665501535736643, 0.4334498464263357};
+		tv = {
+				0.2500000000000000, 0.3333333333333333, 0.3333333333333333, 0.0000000000000000,
+				0.3333333333333333, 0.0909090909090909, 0.0909090909090909, 0.7272727272727273,
+				0.0909090909090909, 0.0665501535736643, 0.0665501535736643, 0.4334498464263357,
+				0.4334498464263357, 0.4334498464263357, 0.0665501535736643};
+		break;
+	default:
+		ESINFO(ERROR) << "Unknown number of Tatrahedron4 GP count.";
 	}
 
 
@@ -112,7 +109,7 @@ std::vector<DenseMatrix> Tetra4_N()
 	return N;
 }
 
-std::vector<double> Tetra4_Weight()
+static std::vector<double> Tetra4_Weight()
 {
 	switch (Tetrahedron4GPCount) {
 	case 4: {
@@ -139,7 +136,7 @@ std::vector<double> Tetra4_Weight()
 		return w;
 	}
 	default:
-		ESLOG(eslog::ERROR) << "Unknown number of Tatrahedron4 GP count.";
+		ESINFO(ERROR) << "Unknown number of Tatrahedron4 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -155,33 +152,42 @@ bool Tetrahedron4::match(const eslocal *indices, eslocal n) {
 	return false;
 #endif
 
-	if (n != 8) {
-		return false;
-	}
-
-	if (!Element::match(indices, 2, 3)) {
-		return false;
-	}
-	if (!Element::match(indices, 4, 5)) {
-		return false;
-	}
-	if (!Element::match(indices, 5, 6)) {
-		return false;
-	}
-	if (!Element::match(indices, 6, 7)) {
-		return false;
-	}
-
-	eslocal various[4] = { 0, 1, 2, 4 };
-	for (eslocal i = 0; i < 3; i++) {
-		for (eslocal j = i + 1; j < 4; j++) {
-			if (Element::match(indices, various[i], various[j])) {
-				return false;
+	switch (n) {
+	case 4:
+		for (eslocal i = 0; i < 3; i++) {
+			for (eslocal j = i + 1; j < 4; j++) {
+				if (Element::match(indices, i, j)) {
+					return false;
+				}
 			}
 		}
-	}
+		return true;
+	case 8:
+		if (!Element::match(indices, 2, 3)) {
+			return false;
+		}
+		if (!Element::match(indices, 4, 5)) {
+			return false;
+		}
+		if (!Element::match(indices, 5, 6)) {
+			return false;
+		}
+		if (!Element::match(indices, 6, 7)) {
+			return false;
+		}
 
-	return true;
+		eslocal various[4] = { 0, 1, 2, 4 };
+		for (eslocal i = 0; i < 3; i++) {
+			for (eslocal j = i + 1; j < 4; j++) {
+				if (Element::match(indices, various[i], various[j])) {
+					return false;
+				}
+			}
+		}
+		return true;
+	default:
+		return false;
+	}
 }
 
 std::vector<eslocal> Tetrahedron4::getNeighbours(size_t nodeIndex) const
@@ -239,7 +245,7 @@ Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *par
 		memcpy(_indices, indices, 4 * sizeof(eslocal));
 		break;
 	default:
-		ESLOG(eslog::ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
 	}
 }
 

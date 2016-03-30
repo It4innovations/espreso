@@ -2,15 +2,15 @@
 #ifndef TETRAHEDRON4_H_
 #define TETRAHEDRON4_H_
 
+#include "../2D/triangle3.h"
 #include "../element.h"
-#include "../2D/triangle.h"
 
 #define Tetrahedron4NodesCount 4
 #define Tetrahedron4FacesCount 4
 #define Tetrahedron4GPCount 4
 #define Tetrahedron4VTKCode 10
 
-namespace mesh {
+namespace espreso {
 
 class Tetrahedron4: public Element
 {
@@ -61,7 +61,7 @@ public:
 		return Tetrahedron4::_dN;
 	}
 
-	const std::vector<DenseMatrix>&  N() const
+	const std::vector<DenseMatrix>& N() const
 	{
 		return Tetrahedron4::_N;
 	}

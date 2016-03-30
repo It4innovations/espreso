@@ -17,7 +17,6 @@
 #include <map>
 
 using std::vector;
-using std::cout;
 using std::map;
 using std::make_pair;
 
@@ -31,6 +30,8 @@ using std::make_pair;
 #include "../generic/utils.h"
 
 #include "esbasis.h"
+
+namespace espreso {
 
 class IterSolverBase
 {
@@ -149,8 +150,8 @@ public:
 	void Projector_l_compG    ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
 	void Projector_l_inv_compG( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
-	// *** Apply A embers
-	void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out);
+	// *** Apply A embers - moved to children
+  virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 
 	// *** Preconditioner members
 	void apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
@@ -222,6 +223,6 @@ void parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	SEQ_VECTOR <double> & output,
 	SEQ_VECTOR <double> & send_buf) ;
 
-
+}
 
 #endif /* SOLVER_SPECIFIC_ITERSOLVER_H_ */

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <string>
 
-namespace esconfig {
+namespace config {
 
 enum FetiMethod {
 	TOTAL_FETI,
@@ -14,7 +14,9 @@ enum FetiMethod {
 
 enum Preconditioner {
 	NO_PRECONDITIONER,
-	LUMPED
+	LUMPED,
+	WEIGHT,
+	DIRICHLET
 };
 
 enum CGSolver {
@@ -44,13 +46,28 @@ namespace mesh {
 	extern bool averageEdges;
 	extern bool averageFaces;
 
-	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA_IN, GENERATOR };
+	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA, GENERATOR };
 	extern Input input;
 
-	enum Output { VTK_FULL, VTK_SURFACE, ESDATA_OUT }; // only VTK_FULL is working
+	extern double materialDifference;
+}
+
+namespace output {
+
+	enum Output { VTK, ESDATA }; // only VTK_FULL is working
 	extern Output output;
 
-	extern double materialDifference;
+	extern bool saveMesh;
+	extern bool saveFixPoints;
+	extern bool saveFaces;
+	extern bool saveLines;
+	extern bool saveCorners;
+	extern bool saveDirichlet;
+	extern bool saveAveraging;
+	extern bool saveResults;
+
+	extern double subdomainShrinkRatio;
+	extern double clusterShrinkRatio;
 }
 
 namespace assembler {
@@ -65,6 +82,7 @@ namespace solver {
 	extern double	epsilon;					// Solver requested precision
 	extern size_t	maxIterations;				//
 	extern size_t	FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
+	extern bool     REDUNDANT_LAGRANGE;
 	extern size_t	USE_SCHUR_COMPLEMENT; 		// 1 - YES
 	extern size_t	KEEP_FACTORS;				// 1 - YES; 0 - NO
 	extern size_t	PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
@@ -76,6 +94,7 @@ namespace solver {
 	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
 												// 1 - DIRECT SP if KSOLVER is DIRECT SP
 												// 1 - Direct DP if KSOLVER is DIRECT SP
+    extern size_t   N_MICS;
 
 
 }
@@ -85,6 +104,8 @@ namespace info {
 
 	extern size_t verboseLevel;
 	extern size_t testingLevel;
+	extern size_t measureLevel;
+
 	extern bool printMatrices;
 }
 

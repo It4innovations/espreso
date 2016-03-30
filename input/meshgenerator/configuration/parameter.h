@@ -9,7 +9,8 @@
 
 #include "esbasis.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 enum DataType {
 	STRING_PARAMETER,
@@ -71,7 +72,7 @@ protected:
 	{
 		size_t pos = line.find(_delimiter);
 		if (pos == std::string::npos) {
-			ESLOG(eslog::ERROR) << "Incorrect format of " << _name << ". Use " << _name << _delimiter << "value.";
+			ESINFO(ERROR) << "Incorrect format of " << _name << ". Use " << _name << _delimiter << "value.";
 		}
 		std::string val = line.substr(pos + 1);
 		val.erase(0, val.find_first_not_of(" "));
@@ -100,7 +101,7 @@ public:
 	{
 		_value = value(line);
 		if (!_value.size()) {
-			ESLOG(eslog::ERROR) << "Empty parameter " << _name << ".";
+			ESINFO(ERROR) << "Empty parameter " << _name << ".";
 		}
 		_set = true;
 	}
@@ -177,7 +178,7 @@ public:
 			_value = true;
 			_set = true;
 		} else {
-			ESLOG(eslog::ERROR) << "Boolean parameter " << _name << " should be without assignment.";
+			ESINFO(ERROR) << "Boolean parameter " << _name << " should be without assignment.";
 		}
 	}
 
@@ -192,6 +193,7 @@ private:
 	bool _value;
 };
 
+}
 }
 
 

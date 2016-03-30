@@ -5,6 +5,8 @@
 #include "mkl_pardiso.h"
 #include "../sparsesolver.h"
 
+namespace espreso {
+
 class SparseSolverMKL: public SparseSolver
 {
 
@@ -19,7 +21,7 @@ public:
 
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
 
-	void Factorization(const std::string &str);
+	int Factorization(const std::string &str);
 	void Clear();
 	void SetThreaded();
 
@@ -111,6 +113,7 @@ public:
 
 };
 
+}
 
 
 #endif /* SOLVER_SPECIFIC_CPU_SOLVERMKL_H_ */

@@ -2,7 +2,7 @@
 #define HEXAHEDRON8_H_
 
 #include "../element.h"
-#include "../2D/square.h"
+#include "../2D/square4.h"
 #include "../1D/line.h"
 
 #define Hexahedron8NodesCount 8
@@ -10,7 +10,7 @@
 #define Hexahedron8GPCount 8
 #define Hexahedron8VTKCode 12
 
-namespace mesh {
+namespace espreso {
 
 class Hexahedron8: public Element
 {
@@ -87,8 +87,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Hexahedron8NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

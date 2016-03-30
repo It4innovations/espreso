@@ -1,12 +1,12 @@
 
 #include "hexahedron20.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 size_t Hexahedron20::subelements = 1;
 size_t Hexahedron20::subnodes[] = { 1, 1, 1 };
 
-void Hexahedron20::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[], const eslocal params[])
+void Hexahedron20::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal hexa[20];
 	hexa[0] = indices[2];
@@ -30,7 +30,7 @@ void Hexahedron20::addElements(std::vector<mesh::Element*> &elements, const eslo
 	hexa[17] = indices[17];
 	hexa[18] = indices[15];
 	hexa[19] = indices[9];
-	elements.push_back(new mesh::Hexahedron20(hexa, 20, params));
+	elements.push_back(new espreso::Hexahedron20(hexa, 20, params));
 }
 
 

@@ -3,7 +3,7 @@
 #define HEXAHEDRON20_H_
 
 #include "../element.h"
-#include "../2D/square.h"
+#include "../2D/square4.h"
 #include "../1D/line.h"
 #include "hexahedron8.h"
 
@@ -12,7 +12,7 @@
 #define Hexahedron20GPCount 8
 #define Hexahedron20VTKCode 25
 
-namespace mesh {
+namespace espreso {
 
 class Hexahedron20: public Element
 {
@@ -89,8 +89,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Hexahedron20NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

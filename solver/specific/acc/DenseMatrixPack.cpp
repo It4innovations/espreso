@@ -1,5 +1,7 @@
 #include "DenseMatrixPack.h"
 
+namespace espreso {
+
 DenseMatrixPack::DenseMatrixPack() {
 
   this->device = 0;
@@ -25,6 +27,7 @@ DenseMatrixPack::DenseMatrixPack() {
   this->mic_x_in = NULL;
   this->mic_y_out = NULL;
 
+  this->copiedToMIC = false;
 }
 
 DenseMatrixPack::DenseMatrixPack(
@@ -176,11 +179,11 @@ void DenseMatrixPack::PreparePack(
     size = ( ( 1.0 + ( double ) nRows ) * ( ( double ) nRows ) / 2.0 );
   }
 
-  if ( i > maxNMatrices ) {
-    printf( "Could not add matrix. Maximum number of matrices stored." );
-  } else if ( size > freeSpace ) {
-    printf( "Could not add matrix. Not enough allocated memory." );
-  }
+	if ( i > maxNMatrices ) {
+		ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+	} else if ( size > freeSpace ) {
+		ESINFO(ERROR) << "Could not add matrix. Not enough allocated memory.";
+	}
 
   this->packed[ i ] = isPacked;
   this->rows[ i ] = nRows;
@@ -204,8 +207,7 @@ void DenseMatrixPack::AddDenseMatrix(
 ) {
 
   if ( i >= nMatrices ) {
-    std::cout << "Could not add matrix. Maximum number of matrices stored."
-      << std::endl;
+    ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
     return;
   }
   long size = this->lengths[i];
@@ -230,8 +232,7 @@ void DenseMatrixPack::SetX(
   if ( this->mic_x_in != NULL ) {
     this->mic_x_in[position + this->colOffsets[ vector ]] = value;
   } else {
-    std::cout << "Could not set vector element. Vector not yet allocated."
-      << std::endl;
+    ESINFO(ERROR) << "Could not set vector element. Vector not yet allocated.";
   }
 }
 
@@ -248,8 +249,7 @@ void DenseMatrixPack::GetY(
     //  y[i] = 1.0;
     //}
    } else {
-    std::cout << "Could not copy vector. Vector not yet allocated."
-      << std::endl;
+    ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
   }
 }
 
@@ -274,6 +274,7 @@ void DenseMatrixPack::CopyToMIC( ) {
   in( this : alloc_if( 1 ) free_if( 0 ) )
 
 #endif
+  this->copiedToMIC = true;
 }
 
 void DenseMatrixPack::DenseMatsVecs(
@@ -309,6 +310,8 @@ void DenseMatrixPack::DenseMatsVecsMIC(
   char T_for_transpose_N_for_not_transpose
 ) {
 #ifdef MIC
+
+
 	#pragma offload target(mic:device) if(1) \
 		in( matrices : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
 		in( mic_x_in : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -320,7 +323,7 @@ void DenseMatrixPack::DenseMatsVecsMIC(
     in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
 		out( mic_y_out : length( totalRows ) alloc_if( 0 ) free_if( 0 ) ) \
-    in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+    in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
 		{
 			double alpha = 1.0;
 			double beta  = 0.0;
@@ -409,4 +412,6 @@ void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
     in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
     {}
 #endif
+}
+
 }

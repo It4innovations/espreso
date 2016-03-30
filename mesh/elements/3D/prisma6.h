@@ -10,7 +10,7 @@
 #define Prisma6GPCount 9
 #define Prisma6VTKCode 13
 
-namespace mesh {
+namespace espreso {
 
 class Prisma6: public Element
 {
@@ -87,8 +87,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Prisma6NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

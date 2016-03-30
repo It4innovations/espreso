@@ -11,6 +11,8 @@
 
 #include "../cluster.h"
 
+namespace espreso {
+
 class ClusterGPU: public ClusterBase
 {
 
@@ -22,6 +24,8 @@ public:
 	void Create_SC_perDomain( bool USE_FLOAT );
 	void SetupKsolvers ( );
 };
+
+}
 
 
 

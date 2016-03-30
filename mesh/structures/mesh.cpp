@@ -1,9 +1,8 @@
 #include "mesh.h"
-
-#include "esinput.h"
 #include "esoutput.h"
 
-using namespace mesh;
+using namespace espreso;
+
 
 Mesh::Mesh():_elements(0), _fixPoints(0)
 {
@@ -14,6 +13,16 @@ Mesh::Mesh():_elements(0), _fixPoints(0)
 
 void Mesh::partitiate(size_t parts)
 {
+	if (parts == 1 && this->parts() == 1) {
+		_partPtrs.resize(parts + 1);
+		_partPtrs[0] = 0;
+		_partPtrs[1] = _elements.size();
+		remapElementsToSubdomain();
+		computeFixPoints(0);
+		computeBoundaries();
+		return;
+	}
+
 	if (this->parts()) {
 		this->remapElementsToCluster();
 	}
@@ -53,6 +62,16 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
+	if (parts == 1 && this->parts() == 1) {
+		_partPtrs.resize(parts + 1);
+		_partPtrs[0] = 0;
+		_partPtrs[1] = _elements.size();
+		remapElementsToSubdomain();
+		computeFixPoints(0);
+		computeBoundaries();
+		return;
+	}
+
 	if (this->parts()) {
 		this->remapElementsToCluster();
 	}
@@ -83,6 +102,7 @@ void APIMesh::partitiate(size_t parts)
 			}
 		}
 		_partPtrs[part + 1] = index;
+		ESTEST(MANDATORY) << "subdomain without element" << (_partPtrs[part] == _partPtrs[part + 1] ? TEST_FAILED : TEST_PASSED);
 	}
 	delete[] ePartition;
 
@@ -103,7 +123,10 @@ void Mesh::computeBoundaries()
 	for (size_t p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (size_t n = 0; n < _elements[e]->size(); n++) {
-				_subdomainBoundaries[_coordinates.clusterIndex(_elements[e]->node(n), p)].insert(p);
+				auto index = _coordinates.clusterIndex(_elements[e]->node(n), p);
+				if (!_subdomainBoundaries[index].size() || _subdomainBoundaries[index].back() != p) {
+					_subdomainBoundaries[index].push_back(p);
+				}
 			}
 		}
 	}
@@ -139,11 +162,11 @@ static void checkMETISResult(eslocal result)
 {
 	switch (result) {
 	case METIS_ERROR_INPUT:
-		ESLOG(eslog::ERROR) << "An input for METIS procedure is incorrect.\n";
+		ESINFO(ERROR) << "An input for METIS procedure is incorrect.\n";
 	case METIS_ERROR_MEMORY:
-		ESLOG(eslog::ERROR) << "There is not enough memory for compute a partition.\n";
+		ESINFO(ERROR) << "There is not enough memory for compute a partition.\n";
 	case METIS_ERROR:
-		ESLOG(eslog::ERROR) << "METIS fail computation.\n";
+		ESINFO(ERROR) << "METIS fail computation.\n";
 	}
 }
 
@@ -379,7 +402,7 @@ void Mesh::getSurface(Mesh &surface) const
 	std::vector<size_t> elementsCount(parts(), 0);
 
 	if (parts() < 1) {
-		ESLOG(eslog::ERROR) << "Internal error: _partPtrs.size().";
+		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
 	}
 
 	cilk_for (size_t i = 0; i < parts(); i++) {
@@ -429,7 +452,7 @@ void Mesh::getSurface(Mesh &surface) const
 		for (size_t j = 0; j < faces[i].size(); j++) {
 			std::vector<eslocal> &face = faces[i][j];
 			if (face.size() == 3) {
-				surface._elements.push_back(new Triangle(&face[0], params));
+				surface._elements.push_back(new Triangle3(&face[0], params));
 			}
 			// divide square to triangles
 			if (face.size() == 4) {
@@ -440,13 +463,13 @@ void Mesh::getSurface(Mesh &surface) const
 					}
 				}
 				if (min % 2 == 0) {
-					surface._elements.push_back(new Triangle(&face[0], params));
+					surface._elements.push_back(new Triangle3(&face[0], params));
 					face[1] = face[0];
-					surface._elements.push_back(new Triangle(&face[1], params));
+					surface._elements.push_back(new Triangle3(&face[1], params));
 				} else {
-					surface._elements.push_back(new Triangle(&face[1], params));
+					surface._elements.push_back(new Triangle3(&face[1], params));
 					face[2] = face[3];
-					surface._elements.push_back(new Triangle(&face[0], params));
+					surface._elements.push_back(new Triangle3(&face[0], params));
 				}
 			}
 		}
@@ -607,10 +630,10 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 			for (size_t e = 0; e < commonFaces.size(); e++) {
 				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
 					if (commonFaces[e].size() == 3) {
-						el = new Triangle(commonFaces[e].data(), params);
+						el = new Triangle3(commonFaces[e].data(), params);
 					}
 					if (commonFaces[e].size() == 4) {
-						el = new Square(commonFaces[e].data(), params);
+						el = new Square4(commonFaces[e].data(), params);
 					}
 					mesh._elements.push_back(el);
 				}
@@ -673,7 +696,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 						commonLines.push_back(std::make_tuple(line[0], line[1], line[2]));
 						break;
 					default:
-						ESLOG(eslog::ERROR) << "MESH ERROR: unknown line type.";
+						ESINFO(ERROR) << "MESH ERROR: unknown line type.";
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -800,8 +823,9 @@ void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
 
 		eslocal begin = lines._partPtrs[p], end = lines._partPtrs[p + 1];
 
-		int max = (end - begin) / 5 + 1;
-		size_t corners = std::min(max, 3);
+		// defense strategy -> it is better to add more corners than is necessary
+		int max = end - begin;
+		size_t corners = std::min(max, 4);
 		eslocal *ePartition = lines.getPartition(begin, end, corners);
 
 		if (average) {
@@ -945,12 +969,15 @@ void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces)
 {
 	if (parts() < 1) {
-		ESLOG(eslog::ERROR) << "Internal error: _partPtrs.size().";
+		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
 		exit(EXIT_FAILURE);
 	}
 	if (parts() == 1 || (!vertices && !edges && !faces && !averageEdges && !averageFaces)) {
 		return;
 	}
+
+	_subdomainBoundaries._corners.clear();
+	_subdomainBoundaries._corners.resize(_subdomainBoundaries.size(), false);
 
 	Mesh commonFaces;
 	Mesh commonLines;
@@ -959,6 +986,14 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 
 	computeCommonFaces(commonFaces);
 	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
+
+	if (config::output::saveFaces) {
+		output::VTK_Full::mesh(commonFaces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+	if (config::output::saveLines) {
+		output::VTK_Full::mesh(commonLines, "meshLines", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+
 
 	auto faceToCluster = [&] (eslocal index, eslocal part) {
 		return commonFaces.coordinates().globalIndex(index, part);
@@ -999,29 +1034,33 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 		}
 	};
 
-
 	if (vertices) {
 		for (auto it = commonVertices.begin(); it != commonVertices.end(); ++it) {
-			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(*it));
+			_subdomainBoundaries.setCorner(commonFaces.coordinates().globalIndex(commonLines.coordinates().globalIndex(*it)));
 		}
 		correctCycle(commonFaces, commonLines, averageEdges);
+		ESINFO(DETAILS) << "Set corners to vertices";
 	}
 
 	if (edges && !averageEdges) {
 		corners(commonLines, lineToCluster);
+		ESINFO(DETAILS) << "Set corners to edges - " << number << " per edge";
 	}
 
 	if (averageEdges) {
 		prepareAveragingLines(commonFaces, commonLines);
 		average(commonLines, lineToCluster);
+		ESINFO(DETAILS) << "Average edged";
 	}
 
 	if (faces) {
 		corners(commonFaces, faceToCluster);
+		ESINFO(DETAILS) << "Set corners to faces - " << number << " per face";
 	}
 	if (averageFaces) {
 		prepareAveragingFaces(commonFaces, commonFacesBorder);
 		average(commonFaces, faceToCluster);
+		ESINFO(DETAILS) << "Average faces";
 	}
 }
 
@@ -1075,7 +1114,7 @@ void Mesh::remapElementsToCluster()
 	}
 }
 
-std::ostream& mesh::operator<<(std::ostream& os, const Mesh &m)
+std::ostream& espreso::operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {
 		os << *(m._elements[i]) << "\n";

@@ -1,18 +1,10 @@
 
-source_files = (
-    #"linear/linear.cpp",
-    #"linear/elasticity/linearelasticity.cpp"
-)
-
 def configure(ctx):
     pass
 
 def build(ctx):
-    return
-
-    ctx.lib(
-        source          = source_files,
-        target          = "esassembler",
-        use             = "espreso_includes",
-        install_path    = ctx.LIBRARIES
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "assembler",
+        use    = "espreso_includes"
     )

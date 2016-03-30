@@ -25,13 +25,8 @@ class cxxprogram(link_task):
                -Wl,--end-group \
                ${SHLIB_MARKER}'
 
-source_files = (
-    "factory/factory.cpp",
-)
-
-apiwrapper_files = (
-    "apiwrapper/wrapper.cpp",
-)
+class cxxshlib(cxxprogram):
+    pass
 
 def configure(ctx):
     pass
@@ -39,24 +34,26 @@ def configure(ctx):
 
 def build(ctx):
     ctx.program(
-        source          = source_files + ("main.cpp",),
-        target          = "espreso",
-        use             = "espreso_includes esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
-        install_path    = ctx.ROOT
+        source       = ("factory/factory.cpp", "main.cpp"),
+        target       = "espreso",
+        use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in espreso_out vtk_out mesh bem assembler",
+        install_path = ctx.ROOT
     )
 
     ctx.program(
-        source          = source_files + ("decomposer.cpp",),
-        target          = "decomposer",
-        use             = "espreso_includes esbasis esconfig essolver_{0} esinput_ansys esinput_generator esinput_esdata esinput_openfoam esoutput_esdata esoutput_vtk esmesh esbem".format(ctx.env.SOLVER),
-        install_path    = ctx.ROOT
+        source       = ("decomposer.cpp"),
+        target       = "decomposer",
+        use          = "espreso_includes basis config ansys_in openfoam_in espreso_out vtk_out mesh",
+        install_path = ctx.ROOT
     )
 
+    ctx.lib = (ctx.stlib, ctx.shlib)[ctx.env.LIBTYPE == "SHARED"]
+
     ctx.lib(
-        source          = apiwrapper_files,
-        target          = "feti4i",
-        use             = "espreso_includes esbasis esconfig esinput_api essolver_{0} esmesh esbem".format(ctx.env.SOLVER),
-        install_path    = ctx.ROOT + "/libespreso"
+        source       = "apiwrapper/wrapper.cpp",
+        target       = "feti4i",
+        use          = "espreso_includes basis config api_in solver mesh bem assembler",
+        install_path = ctx.ROOT + "/libespreso"
     )
 
 

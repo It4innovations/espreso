@@ -4,20 +4,27 @@
 
 #include "../loader.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
-class Esdata: public ExternalLoader {
+class Esdata: public Loader {
 
 public:
-	Esdata(const Options &options, int rank, int size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << options.path;
+		Esdata esdata(mesh, options, rank, size);
+		esdata.fill();
+	}
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
+protected:
+	Esdata(Mesh &mesh, const Options &options, int rank, int size)
+	: Loader(mesh), _path(options.path), _rank(rank), _size(size) { };
 
-	void open() {};
-	void close() {};
+	void points(Coordinates &coordinates);
+	void elements(std::vector<Element*> &elements);
+	void boundaryConditions(Coordinates &coordinates);
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
 	std::string _path;
@@ -25,6 +32,7 @@ private:
 	int _size;
 };
 
+}
 }
 
 

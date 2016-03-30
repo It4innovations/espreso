@@ -1,5 +1,7 @@
 #include "matrix.h"
 
+using namespace espreso;
+
 NonZeroValue Matrix::nonZero;
 
 std::ostream& operator<<(std::ostream& os, const Matrix &m)

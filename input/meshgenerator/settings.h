@@ -4,7 +4,8 @@
 
 #include "configuration/configuration.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 enum GeneratorShape {
 	CUBE,
@@ -40,16 +41,20 @@ struct Settings {
 
 inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 {
-	os << "index: " << s.index << "\n";
-	os << "size: " << s.size << "\n";
-	os << "generated shape: " << s.shape << "\n";
-	os << "type of the element: " << s.elementType << "\n";
-	os << "use METIS: " << s.useMetis << "\n";
+	std::vector<std::string> shapes({ "CUBE", "SPHERE" });
+	std::vector<std::string> eTypes({ "HEXA8", "HEXA20", "TETRA4", "TETRA10", "PRISMA6", "PRISMA15", "PYRAMID5", "PYRAMID13" });
+
+	os << "clusters: " << s.size << "\n";
+	os << "generated shape: " << shapes[s.shape] << "\n";
+	os << "type of the element: " << eTypes[s.elementType] << "\n";
+	os << "partition: " << (s.useMetis ? "by METIS" : "regular") << "\n";
 	return os;
 }
 
+}
 }
 
 
 
 #endif /* INPUT_MESHGENERATOR_SETTINGS_H_ */
+

@@ -1,7 +1,8 @@
 
 #include "generator.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 
 //	###################################################
@@ -28,27 +29,27 @@ namespace esinput {
 static void checkSettings(const SphereSettings &settings)
 {
 	if (settings.layers * 6 != settings.size) {
-		ESLOG(eslog::ERROR) << "The number of clusters(" << settings.layers * 6
+		ESINFO(ERROR) << "The number of clusters(" << settings.layers * 6
 							<< ") does not accord the number of MPI processes(" << settings.size << ").";
 	}
 }
 
 
 template<class TElement>
-SphereGenerator<TElement>::SphereGenerator(const SphereSettings &settings)
-	: UniformGenerator<TElement>(_settings), _settings(settings)
+SphereGenerator<TElement>::SphereGenerator(Mesh &mesh, const SphereSettings &settings)
+	: UniformGenerator<TElement>(mesh, _settings), _settings(settings)
 {
 	checkSettings(_settings);
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+void SphereGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 {
 	// TODO: set materials
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
+void SphereGenerator<TElement>::points(Coordinates &coordinates)
 {
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
@@ -62,15 +63,15 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 	}
 
 	double layerSize = (_settings.outerRadius - _settings.innerRadius) / _settings.layers;
-	mesh::Point corner[3];
-	corner[0] = mesh::Point(          1,          -1,           1);
-	corner[1] = mesh::Point(         -1, corner[0].y, corner[0].z); // x-axis
-	corner[2] = mesh::Point(corner[0].x,           1, corner[0].z); // y-axis
+	Point corner[3];
+	corner[0] = Point(          1,          -1,           1);
+	corner[1] = Point(         -1, corner[0].y, corner[0].z); // x-axis
+	corner[2] = Point(corner[0].x,           1, corner[0].z); // y-axis
 
 	eslocal surface = SphereUtils<TElement>::surfaceNodesCount(_settings);
 	eslocal ring = SphereUtils<TElement>::ringNodesCount(_settings);
 
-	mesh::Point point;
+	Point point;
 	eslocal index = 0;
 	esglobal gIndex;
 	for (eslocal z = 0; z < cNodes[2]; z++) {
@@ -156,14 +157,14 @@ void SphereGenerator<TElement>::points(mesh::Coordinates &coordinates)
 
 
 template<class TElement>
-void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinates)
+void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 {
 	if (_settings.index > 5) {
 		return;
 	}
-	mesh::CoordinatesProperty &dirichlet_x = coordinates.property(mesh::DIRICHLET_X);
-	mesh::CoordinatesProperty &dirichlet_y = coordinates.property(mesh::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dirichlet_z = coordinates.property(mesh::DIRICHLET_Z);
+	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
+	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
+	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
 
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
@@ -177,25 +178,27 @@ void SphereGenerator<TElement>::boundaryConditions(mesh::Coordinates &coordinate
 
 
 template <class TElement>
-void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
+void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
+	std::set<int> neighs;
+
 	for (size_t i = 0; i < boundaries.size(); i++) {
-		boundaries[i].insert(_settings.index);
+		boundaries[i].push_back(_settings.index);
 	}
 
 	if (_settings.index / 6 > 0) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i].insert(_settings.index - 6);
+			boundaries[i].push_back(_settings.index - 6);
 		}
 	}
 
 	if (_settings.index / 6 < _settings.layers - 1) {
 		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].insert(_settings.index + 6);
+			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].push_back(_settings.index + 6);
 		}
 	}
 
@@ -204,40 +207,52 @@ void SphereGenerator<TElement>::clusterBoundaries(mesh::Boundaries &boundaries)
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].insert(6 * (_settings.index / 6) + 4);
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (_settings.index / 6) + 5);
+				boundaries[index + y].push_back(6 * (_settings.index / 6) + 4);
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6) + 5);
 			}
 			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].insert(6 * (_settings.index / 6) + (_settings.index + 3) % 4);
-				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (_settings.index / 6) + (_settings.index + 1) % 4);
+				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + (_settings.index + 3) % 4);
+				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + (_settings.index + 1) % 4);
 			}
 		}
 	} else if (_settings.index % 6 == 4) {
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].insert(6 * (_settings.index / 6) + 2);
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (_settings.index / 6));
+				boundaries[index + y].push_back(6 * (_settings.index / 6) + 2);
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6));
 			}
 			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].insert(6 * (_settings.index / 6) + 3);
-				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (_settings.index / 6) + 1);
+				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + 3);
+				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + 1);
 			}
 		}
 	} else {
 		for (eslocal z = 0; z < cNodes[2]; z++) {
 			index = z * cNodes[0] * cNodes[1];
 			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].insert(6 * (_settings.index / 6));
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].insert(6 * (_settings.index / 6) + 2);
+				boundaries[index + y].push_back(6 * (_settings.index / 6));
+				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6) + 2);
 			}
 			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].insert(6 * (_settings.index / 6) + 3);
-				boundaries[index + (x + 1) * cNodes[1] - 1].insert(6 * (_settings.index / 6) + 1);
+				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + 3);
+				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + 1);
 			}
 		}
 	}
+
+	// TODO: check if it is necessary
+	for (size_t i = 0; i < boundaries.size(); i++) {
+		std::sort(boundaries[i].begin(), boundaries[i].end());
+		auto end = std::unique(boundaries[i].begin(), boundaries[i].end());
+		boundaries[i].resize(end - boundaries[i].begin());
+		neighs.insert(boundaries[i].begin(), boundaries[i].end());
+	}
+
+	neighs.erase(config::MPIrank);
+	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 
+}
 }
 

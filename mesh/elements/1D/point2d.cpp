@@ -1,6 +1,6 @@
 #include "point2d.h"
 
-using namespace mesh;
+using namespace espreso;
 
 void Point2D::normalize()
 {

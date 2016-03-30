@@ -1,7 +1,7 @@
 
 #include "esdata.h"
 
-using namespace esoutput;
+using namespace espreso::output;
 
 void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 {
@@ -22,13 +22,13 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 	boundaries(_mesh);
 }
 
-void Esdata::coordinates(const mesh::Coordinates &coordinates)
+void Esdata::coordinates(const Coordinates &coordinates)
 {
-	std::ofstream os;
-	eslocal value;
-	esglobal index;
+	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
+		std::ofstream os;
+		eslocal value;
+		esglobal index;
 
-	for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/coordinates.dat";
 
@@ -39,20 +39,20 @@ void Esdata::coordinates(const mesh::Coordinates &coordinates)
 		for (eslocal i = 0; i < coordinates.localSize(p); i++) {
 			index = coordinates.globalIndex(i, p);
 			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
-			const mesh::Point &point = coordinates.get(i, p);
-			os.write(reinterpret_cast<const char*>(&point), mesh::Point::size() * sizeof(double));
+			const Point &point = coordinates.get(i, p);
+			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
 		}
 		os.close();
 	}
 }
 
 
-void Esdata::boundaryConditions(const mesh::Coordinates &coordinates)
+void Esdata::boundaryConditions(const Coordinates &coordinates)
 {
-	std::ofstream os;
-	eslocal value;
+	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
+		std::ofstream os;
+		eslocal value;
 
-	for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/boundaryConditions.dat";
 
@@ -78,14 +78,14 @@ void Esdata::boundaryConditions(const mesh::Coordinates &coordinates)
 	}
 }
 
-void Esdata::elements(const mesh::Mesh &mesh)
+void Esdata::elements(const Mesh &mesh)
 {
-	std::ofstream os;
-	const std::vector<eslocal> &parts = mesh.getPartition();
-	const std::vector<mesh::Element*> &elements = mesh.getElements();
-	eslocal value;
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		const std::vector<eslocal> &parts = mesh.getPartition();
+		const std::vector<Element*> &elements = mesh.getElements();
+		eslocal value;
 
-	for (size_t p = 0; p < mesh.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/elements.dat";
 
@@ -100,32 +100,31 @@ void Esdata::elements(const mesh::Mesh &mesh)
 	}
 }
 
-void Esdata::boundaries(const mesh::Mesh &mesh)
+void Esdata::boundaries(const Mesh &mesh)
 {
-	std::ofstream os;
-	const mesh::Boundaries &boundaries = mesh.subdomainBoundaries();
-	eslocal value, size;
-	esglobal index;
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		const Boundaries &boundaries = mesh.subdomainBoundaries();
+		eslocal value, size;
+		esglobal index;
 
-	for (size_t p = 0; p < mesh.parts(); p++) {
 		std::stringstream ss;
 		ss << _path << "/" << p << "/clusterBoundaries.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		size = 0;
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (boundaries[i].find(p) != boundaries[i].end()) {
+			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
 				size++;
 			}
 		}
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 
-		std::set<eslocal>::const_iterator it;
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (boundaries[i].find(p) != boundaries[i].end()) {
+			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
 				size = boundaries[i].size();
 				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-				for (it = boundaries[i].begin(); it != boundaries[i].end(); ++it) {
+				for (auto it = boundaries[i].begin(); it != boundaries[i].end(); ++it) {
 					value = *it;
 					os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
 				}

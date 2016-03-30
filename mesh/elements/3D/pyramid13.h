@@ -11,7 +11,7 @@
 #define Pyramid13GPCount 8
 #define Pyramid13VTKCode 27
 
-namespace mesh {
+namespace espreso {
 
 class Pyramid13: public Element
 {
@@ -88,8 +88,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Pyramid13NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

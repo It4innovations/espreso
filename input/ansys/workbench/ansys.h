@@ -10,24 +10,33 @@
 #include "../../loader.h"
 #include "../utils.h"
 
+namespace espreso {
+namespace input {
 
-namespace esinput {
-
-class AnsysWorkbench: public ExternalLoader {
+class AnsysWorkbench: public Loader {
 
 public:
-	AnsysWorkbench(const Options &options, size_t index, size_t size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << options.path;
+		AnsysWorkbench workbench(mesh, options, rank, size);
+		workbench.fill();
+	}
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
+protected:
+	AnsysWorkbench(Mesh &mesh, const Options &options, int rank, int size)
+	: Loader(mesh), _path(options.path) { };
+
+	void points(Coordinates &coordinates);
+	void elements(std::vector<Element*> &elements);
+	void boundaryConditions(Coordinates &coordinates);
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void open()
 	{
 		_file.open(_path.c_str());
 		if (!_file.is_open()) {
-			ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << _path;
+			ESINFO(ERROR) << "Cannot load mesh from file: " << _path;
 		}
 	}
 
@@ -41,6 +50,7 @@ private:
 	std::string _path;
 };
 
+}
 }
 
 

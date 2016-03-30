@@ -3,7 +3,7 @@
 
 #include "../linear.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 class LinearElasticity: public Linear<TInput> {

@@ -1,6 +1,6 @@
 #include "line.h"
 
-using namespace mesh;
+using namespace espreso;
 
 // TODO: Implement base functions
 std::vector<DenseMatrix> Line::_dN;

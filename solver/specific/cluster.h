@@ -18,7 +18,6 @@
 #include <map>
 
 using std::vector;
-using std::cout;
 using std::map;
 using std::make_pair;
 
@@ -32,6 +31,10 @@ using std::make_pair;
 #include "../generic/utils.h"
 #include "esconfig.h"
 #include "esbasis.h"
+
+using config::solver::N_MICS;
+
+namespace espreso {
 
 class Domain;
 
@@ -111,12 +114,6 @@ public:
 	SparseMatrix G0;
 	SparseMatrix F0_Mat;
 	SparseMatrix B0Kplus;
-
-	// Packed matrices (mainly for MIC computation)
-	SEQ_VECTOR <DenseMatrixPack> B1KplusPacks;
-
-	// number of MIC
-	eslocal NUM_MICS;
 
 	SparseSolverCPU F0;
 	SparseSolverCPU F0_fast;
@@ -225,7 +222,6 @@ public:
 	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
 };
 
-
-
+}
 
 #endif /* SOLVER_SPECIFIC_CLUSTER_H_ */

@@ -1,13 +1,12 @@
 
 #include "linear.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 void Linear<TInput>::init()
 {
 	this->_timeStatistics.totalTime.startWithBarrier();
-	std::cout.precision(15);
 
 	TimeEvent timeKasm("Create K and RHS");
 	timeKasm.start();
@@ -17,71 +16,54 @@ void Linear<TInput>::init()
 	_M.resize(this->subdomains());
 	_f.resize(this->subdomains());
 
-	if (this->_verbose && esconfig::MPIrank == 0) {
-		std::cout << "Assembling matrices : ";
-	}
+	ESINFO(PROGRESS2) << "Assemble matrices K, M, T and right hand side";
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
-		//std::cout << s << " " ;
-		// TODO: set dynamics
 		KMf(s, false);
 		T(s);
-
-
-		if (this->_verbose && esconfig::MPIrank == 0) {
-			std::cout << "." ;//<< s << " " ;
-		}
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
-	if (this->_verbose && esconfig::MPIrank == 0) {
-		std::cout << std::endl;
-	}
+	ESINFO(PROGRESS2);
 
 	timeKasm.endWithBarrier();
 	this->_timeStatistics.addEvent(timeKasm);
-
-	TimeEvent timeLocalB("Create local B");
-	timeLocalB.start();
-
-	this->computeSubdomainGluing();
-
-	timeLocalB.endWithBarrier();
-	this->_timeStatistics.addEvent(timeLocalB);
-
-	TimeEvent timeGlobalB("Create global B");
-	timeGlobalB.start();
 
 	std::vector<size_t> rows(this->subdomains());
 	for (size_t s = 0; s < this->subdomains(); s++) {
 		rows[s] = _K[s].rows;
 	}
 
-	this->computeClusterGluing(rows);
-
-	timeGlobalB.endWithBarrier();
-	this->_timeStatistics.addEvent(timeGlobalB);
-
 	TimeEvent timeBforces("Fill right hand side");
 	timeBforces.start();
 
 	RHS();
 
-	if (esconfig::info::printMatrices) {
+	TimeEvent timeParallelG("Gluing");
+	timeParallelG.startWithBarrier();
+
+	ESINFO(PROGRESS2) << "Assemble equality constraints";
+	this->assembleConstraints(rows);
+
+	timeParallelG.end();
+	this->_timeStatistics.addEvent(timeParallelG);
+
+	if (config::info::printMatrices) {
 		for (size_t s = 0; s < this->subdomains(); s++) {
-			std::ofstream osK(eslog::Logging::prepareFile(s, "K").c_str());
+			std::ofstream osK(Logging::prepareFile(s, "K").c_str());
 			osK << _K[s];
 			osK.close();
-			std::ofstream osT(eslog::Logging::prepareFile(s, "T").c_str());
+			std::ofstream osT(Logging::prepareFile(s, "T").c_str());
 			osT << _T[s];
 			osT.close();
 
-			std::ofstream osF(eslog::Logging::prepareFile(s, "f").c_str());
+			std::ofstream osF(Logging::prepareFile(s, "f").c_str());
 			osF << _f[s];
 			osF.close();
 
-			std::ofstream osB0(eslog::Logging::prepareFile(s, "B0").c_str());
+			std::ofstream osB0(Logging::prepareFile(s, "B0").c_str());
 			osB0 << this->_B0[s];
 			osB0.close();
 
-			std::ofstream osB1(eslog::Logging::prepareFile(s, "B1").c_str());
+			std::ofstream osB1(Logging::prepareFile(s, "B1").c_str());
 			osB1 << this->_B1[s];
 			osB1.close();
 		}
@@ -95,7 +77,7 @@ void Linear<TInput>::init()
 	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(esconfig::MPIrank, esconfig::MPIsize, true);
+	_lin_solver.setup(config::MPIrank, config::MPIsize, true);
 
 	initSolver();
 

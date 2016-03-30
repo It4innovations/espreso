@@ -13,7 +13,7 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
                            double *, int *);
 extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*);*/
 
-
+using namespace espreso;
 
 SparseSolverCUDA::SparseSolverCUDA(){
 
@@ -187,15 +187,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A) {
 void SparseSolverCUDA::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs;
-	char * var = getenv("SOLVER_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-	else {
-    	printf("Set environment SOLVER_NUM_THREADS to 1");
-        exit(1);
-	}
-
+	int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
     iparm[2]  = num_procs;
 }
 
@@ -214,17 +206,11 @@ void SparseSolverCUDA::Factorization() {
 
 	if (error != 0)
 	{
-		printf ("\nERROR during symbolic factorization: %d", error);
+		ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
 		exit (1);
 	} else {
 		initialized = true;
 	}
-
-#ifdef DEBUG
-	printf ("\nReordering completed ... ");
-	printf ("\nNumber of nonzeros in factors = %d", iparm[17]);
-	printf ("\nNumber of factorization MFLOPS = %d", iparm[18]);
-#endif
 
 	/* -------------------------------------------------------------------- */
 	/* .. Numerical factorization. */
@@ -234,15 +220,11 @@ void SparseSolverCUDA::Factorization() {
 	// 	&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 	if (error != 0)
 	{
-		printf ("\nERROR during numerical factorization: %d", error);
+		ESINFO(ERROR) << "during numerical factorization:" << error;
 		//exit (2);
 	} else {
 		m_factorized = 1;
 	}
-
-#ifdef DEBUG
-	printf ("\nFactorization completed ... ");
-#endif
 
 	//TODO:
 	tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
@@ -250,8 +232,9 @@ void SparseSolverCUDA::Factorization() {
 
 void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
-	if (!initialized)
-		Factorization();
+	if (!initialized) {
+		Factorization("");
+	}
 
 	double ddum  = 0;			/* Double dummy */
 	int idum     = 0;			/* Integer dummy. */
@@ -329,7 +312,6 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		// 	&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 		// 	iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -353,7 +335,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		ESINFO(ERROR) << "during solution:" << error;
 		exit (3);
 	}
 
@@ -367,7 +349,6 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		// 	&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 		// 	iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -390,7 +371,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 	// 	&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error, dparm);
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d", error);
+		ESINFO(ERROR) << "during solution: " << error;
 		exit (3);
 	}
 
@@ -404,7 +385,6 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		// 	&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 		// 	iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -491,7 +471,6 @@ void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_ou
 		// 	&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 		// 	iparm, &msglvl, &ddum, &ddum, &error, dparm);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 }
@@ -642,15 +621,7 @@ void SparseSolverCUDA::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, boo
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -720,7 +691,7 @@ void SparseSolverCUDA::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, boo
 
 	if (error != 0)
 	{
-		printf ("\nERROR during the solution of the system : %d", error);
+		ESINFO(ERROR) << "during the solution of the system: " << error;
 		exit (1);
 	} else {
 		initialized = true;
@@ -837,15 +808,7 @@ void SparseSolverCUDA::Create_SC( SparseMatrix & B_out, int sc_size, bool isThre
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -891,19 +854,17 @@ void SparseSolverCUDA::Create_SC( SparseMatrix & B_out, int sc_size, bool isThre
 	//msglvl = 0;			/* Supress printing statistical information */
 	error  = 0;			/* Initialize error flag */
 
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
+	switch (error) {
+	case -10:
+		ESINFO(ERROR) << "No licence file found";
+		break;
+	case -11:
+		ESINFO(ERROR) << "Licence is expired";
+		break;
+	case -12:
+		ESINFO(ERROR) << "Wrong username eor hostname";
+		break;
+	}
 
 
     int nrows_S = sc_size;
@@ -920,16 +881,11 @@ void SparseSolverCUDA::Create_SC( SparseMatrix & B_out, int sc_size, bool isThre
 
     if (error != 0)
     {
-        printf("\nERROR during symbolic factorization: %d", error);
+        ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
         exit(1);
     } else {
     	initialized = true;
     }
-//    printf("\nReordering completed ...\n");
-//    printf("Number of nonzeros in factors  = %d\n", iparm[17]);
-//    printf("Number of factorization MFLOPS = %d\n", iparm[18]);
-//    printf("Number of nonzeros is   S      = %d\n", iparm[38]);
-
     /* -------------------------------------------------------------------- */
     /* ..  allocate memory for the Schur-complement and copy it there.      */
     /* -------------------------------------------------------------------- */
@@ -1021,15 +977,7 @@ void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1075,19 +1023,17 @@ void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in
 	//msglvl = 0;		/* Supress printing statistical information */
 	error  = 0;			/* Initialize error flag */
 
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
+	switch (error) {
+	case -10:
+		ESINFO(ERROR) << "No licence file found";
+		break;
+	case -11:
+		ESINFO(ERROR) << "Licence is expired";
+		break;
+	case -12:
+		ESINFO(ERROR) << "Wrong username eor hostname";
+		break;
+	}
 
 
     int nrows_S = B_in.cols;
@@ -1104,7 +1050,7 @@ void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in
 
     if (error != 0)
     {
-        printf("\nERROR during symbolic factorization: %d", error);
+        ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
         exit(1);
     } else {
     	initialized = true;
@@ -1261,15 +1207,7 @@ void SparseSolverCUDA::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatri
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1315,19 +1253,17 @@ void SparseSolverCUDA::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatri
 	//msglvl = 1;		/* Supress printing statistical information */
 	error  = 0;			/* Initialize error flag */
 
-    if (error != 0)
-    {
-        if (error == -10 )
-           printf("No license file found \n");
-        if (error == -11 )
-           printf("License is expired \n");
-        if (error == -12 )
-           printf("Wrong username or hostname \n");
-         exit(1);
-    }
-    else {
-//        printf("[PARDISO]: License check was successful ... \n");
-    }
+	switch (error) {
+	case -10:
+		ESINFO(ERROR) << "No licence file found";
+		break;
+	case -11:
+		ESINFO(ERROR) << "Licence is expired";
+		break;
+	case -12:
+		ESINFO(ERROR) << "Wrong username eor hostname";
+		break;
+	}
 
 
     int nrows_S = B1_in.cols;
@@ -1344,7 +1280,7 @@ void SparseSolverCUDA::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatri
 
     if (error != 0)
     {
-        printf("\nERROR during symbolic factorization: %d", error);
+        ESINFO(ERROR) << "ERROR during symbolic factorization: " << error;
         exit(1);
     } else {
     	initialized = true;
@@ -1433,11 +1369,11 @@ void SparseSolverCUDA::ImportMatrix_wo_Copy(SparseMatrix & A) {
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
 
-	ESLOG(eslog::ERROR) << "Not implemented: SolveCG.";
+	ESINFO(ERROR) << "Not implemented: SolveCG.";
 	exit(EXIT_FAILURE);
 }
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
-	ESLOG(eslog::ERROR) << "Not implemented: SolveCG.";
+	ESINFO(ERROR) << "Not implemented: SolveCG.";
 	exit(EXIT_FAILURE);
 }

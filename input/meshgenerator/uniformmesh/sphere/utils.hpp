@@ -1,7 +1,8 @@
 
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template <class TElement>
 eslocal SphereUtils<TElement>::surfaceNodesCount(const SphereSettings &settings)
@@ -24,5 +25,6 @@ eslocal SphereUtils<TElement>::ringNodesCount(const SphereSettings &settings)
 	return 4 * cluster[1] - 4;
 }
 
+}
 }
 

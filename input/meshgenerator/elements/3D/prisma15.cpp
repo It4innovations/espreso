@@ -1,12 +1,12 @@
 
 #include "prisma15.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 size_t Prisma15::subelements = 2;
 size_t Prisma15::subnodes[] = { 1, 1, 1 };
 
-void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[], const eslocal params[])
+void Prisma15::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal prisma[15];
 	prisma[0] = indices[0];
@@ -25,7 +25,7 @@ void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal 
 	prisma[12] = indices[9];
 	prisma[13] = indices[11];
 	prisma[14] = indices[17];
-	elements.push_back(new mesh::Prisma15(prisma, 15, params));
+	elements.push_back(new espreso::Prisma15(prisma, 15, params));
 
 	prisma[0] = indices[0];
 	prisma[1] = indices[8];
@@ -43,7 +43,7 @@ void Prisma15::addElements(std::vector<mesh::Element*> &elements, const eslocal 
 	prisma[12] = indices[9];
 	prisma[13] = indices[17];
 	prisma[14] = indices[15];
-	elements.push_back(new mesh::Prisma15(prisma, 15, params));
+	elements.push_back(new espreso::Prisma15(prisma, 15, params));
 }
 
 

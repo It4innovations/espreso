@@ -1,6 +1,6 @@
 #include "point3d.h"
 
-using namespace mesh;
+using namespace espreso;
 
 void Point3D::normalize()
 {

@@ -1,10 +1,11 @@
 
 #include "generator.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template<class TElement>
-void UniformGenerator<TElement>::elementsMesh(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts)
+void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 {
 	eslocal cNodes[3];
 
@@ -14,8 +15,7 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<mesh::Element*> &eleme
 
 	elements.clear();
 	elements.reserve(UniformUtils<TElement>::clusterElementsCount(_settings));
-	parts.clear();
-	parts.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2] + 1);
+
 
 	eslocal subdomain[3];
 	eslocal element[3];
@@ -25,7 +25,7 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<mesh::Element*> &eleme
 
 	eslocal params[6] = {0, 0, 0, 0, 0, 0};
 
-	parts.push_back(elements.size());
+
 	for (subdomain[2] = 0; subdomain[2] < _settings.subdomainsInCluster[2]; subdomain[2]++) {
 		for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
 			for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
@@ -59,15 +59,40 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<mesh::Element*> &eleme
 						}
 					}
 				}
-				parts.push_back(elements.size());
 			}
 		}
 	}
 }
 
 template<class TElement>
+void UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
+{
+	config::mesh::subdomains = _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2];
+	if (_settings.useMetis) {
+		Loader::partitiate(parts);
+		return;
+	}
+
+	parts.clear();
+	parts.reserve(config::mesh::subdomains + 1);
+
+	parts.push_back(0);
+
+	for (size_t p = 0; p < config::mesh::subdomains; p++) {
+		parts.push_back(parts.back() + mesh.getElements().size() / config::mesh::subdomains);
+	}
+
+	Loader::remapElementsToSubdomains();
+}
+
+template<class TElement>
 void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
+	if (_settings.useMetis) {
+		Loader::fixPoints(fixPoints);
+		return;
+	}
+
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
 	eslocal SHIFT = 1;
 	eslocal shift_offset[3] = {SHIFT, SHIFT, SHIFT};
@@ -77,8 +102,11 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
-		if (2 * (shift_offset[i] + 1) < nodes[i] + 1) {
+		if (2 * (shift_offset[i] + 1) > nodes[i] + 1) { // not enough nodes
 			shift_offset[i] = (nodes[i] + 1) / 2 - 1;
+		}
+		if (2 * shift_offset[i] == nodes[i]) { // offset to the same node
+			shift_offset[i]--;
 		}
 	}
 
@@ -104,11 +132,37 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 			}
 		}
 	}
+
+	for (size_t p = 0; p < fixPoints.size(); p++) {
+		for (size_t i = 0; i < fixPoints[p].size(); i++) {
+			fixPoints[p][i] = mesh.coordinates().localIndex(fixPoints[p][i], p);
+		}
+		std::sort(fixPoints[p].begin(), fixPoints[p].end());
+	}
+
+	Loader::computeBoundaries();
 }
 
 template <class TElement>
-void UniformGenerator<TElement>::corners(mesh::Boundaries &boundaries)
+void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 {
+	if (config::solver::FETI_METHOD == config::TOTAL_FETI) {
+		// corners are not used in the case of TOTAL FETI
+		return;
+	}
+
+	if (_settings.useMetis) {
+		Loader::corners(boundaries);
+		return;
+	}
+
+	if (_settings.corners) {
+		ESINFO(DETAILS) << "Set corners to vertices";
+	}
+	ESINFO(DETAILS)
+		<< "Number of corners on each edge is " << (_settings.edges ? _settings.cornerCount : 0) << "."
+		<< "Number of corners on each face is " << (_settings.edges ? _settings.cornerCount * _settings.cornerCount : 0);
+
 	eslocal nodes[3];
 	eslocal cNodes[3];
 	for (int i = 0; i < 3; i++) {
@@ -177,7 +231,14 @@ void UniformGenerator<TElement>::corners(mesh::Boundaries &boundaries)
 			}
 		}
 	}
+
+	if (config::mesh::averageEdges || config::mesh::averageFaces) {
+		// TODO: check correctness
+		mesh.computeCorners(0, true, false, false, config::mesh::averageEdges, config::mesh::averageFaces);
+	}
+
 }
 
+}
 }
 

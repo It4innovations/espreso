@@ -6,39 +6,72 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
+#include <sys/sysinfo.h>
 
 #include "esconfig.h"
 #include "timeeval.h"
 
-#define ESLOG(EVENT) if (!eslog::Log::report(EVENT)) ; else eslog::Log(EVENT).get()
-#define ESTEST(EVENT) if (!eslog::Test::report(EVENT)) ; else eslog::Test(EVENT).get()
+#define ESTEST(EVENT) if (!espreso::Test::report(EVENT))    ; else espreso::Test(EVENT).get()
+#define ESINFO(EVENT) if (!espreso::Info::report(EVENT))    ; else espreso::Info(EVENT).get()
+#define ESLOG(EVENT)  if (!espreso::Measure::report(EVENT)) ; else espreso::Measure(EVENT).get()
 
-namespace eslog {
+namespace espreso {
 
 enum ESPRESOTest {
-	FAILED,
-	PASSED
+	TEST_FAILED,
+	TEST_PASSED
 };
 
 enum TestEvent {
+	MANDATORY,
+	TEST_LEVEL0,
+
 	SIMPLE,
+	TEST_LEVEL1,
+
 	EXPENSIVE,
-	PEDANTIC
+	TEST_LEVEL2,
+
+	PEDANTIC,
+	TEST_LEVEL3,
 };
 
-enum LogEvent {
+enum InfoEvent {
 	ERROR,
+	ALWAYS,
 	VERBOSE_LEVEL0,
-	INFO,
-	CHECKPOINT1,
-	SUMMARY,
+
+	CONVERGENCE,
+	OVERVIEW,
+	PROGRESS1,
 	VERBOSE_LEVEL1,
-	CHECKPOINT2,
+
+	DETAILS,
+	PROGRESS2,
 	VERBOSE_LEVEL2,
-	CHECKPOINT3,
+
+	EXHAUSTIVE,
+	PROGRESS3,
+	LIBRARIES,
 	VERBOSE_LEVEL3
+};
+
+enum MeasureEvent {
+	MEASURE_LEVEL0,
+
+	SUMMARY,
+	CHECKPOINT1,
+	MEASURE_LEVEL1,
+
+	CHECKPOINT2,
+	MEASURE_LEVEL2,
+
+	MEMORY,
+	CHECKPOINT3,
+	MEASURE_LEVEL3
 };
 
 class Test
@@ -46,7 +79,7 @@ class Test
 public:
 	Test& operator<<(const ESPRESOTest &test)
 	{
-		if (test == FAILED) { error = true; }
+		if (test == TEST_FAILED) { error = true; }
 		return *this;
 	}
 	template<typename Ttype>
@@ -62,7 +95,13 @@ public:
 	Test& get() { return *this; };
 
 	static bool report(TestEvent event) {
-		return event < esconfig::info::testingLevel;
+		switch (config::info::testingLevel) {
+		case 0: return event < TEST_LEVEL0;
+		case 1: return event < TEST_LEVEL1;
+		case 2: return event < TEST_LEVEL2;
+		case 3: return event < TEST_LEVEL3;
+		default : return true;
+		}
 	};
 
 protected:
@@ -70,7 +109,57 @@ protected:
 	bool error;
 };
 
-class Log
+class Info
+{
+public:
+	Info(InfoEvent event): event(event), _plain(false) {};
+	~Info();
+
+	enum InfoMode { FORMATTED, PLAIN };
+	Info& operator<<(const InfoMode& mode)
+	{
+		_plain = mode == PLAIN;
+		return *this;
+	}
+	template<typename Ttype>
+	Info& operator<<(const Ttype &value)
+	{
+		os << value;
+		return *this;
+	}
+
+	Info& get() { return *this; };
+
+	static InfoMode plain() { return PLAIN; }
+
+	template<typename Tvalue>
+	static std::string sumValue(const Tvalue &value);
+	template<typename Tvalue>
+	static std::string averageValue(const Tvalue &value);
+	template<typename Tvalue>
+	static std::string averageValues(const std::vector<Tvalue> &values);
+
+
+
+	static bool report(InfoEvent event) {
+		switch (config::info::verboseLevel) {
+		case 0: return event < VERBOSE_LEVEL0;
+		case 1: return event < VERBOSE_LEVEL1;
+		case 2: return event < VERBOSE_LEVEL2;
+		case 3: return event < VERBOSE_LEVEL3;
+		default : return true;
+		}
+	};
+
+protected:
+	std::ostringstream os;
+	InfoEvent event;
+	bool _plain;
+};
+
+struct Checkpoint;
+
+class Measure
 {
 public:
 	static double time()
@@ -78,17 +167,21 @@ public:
 		return omp_get_wtime();
 	}
 
-	Log(LogEvent event);
-	~Log();
+	Measure(MeasureEvent event): event(event) {};
+	~Measure();
+
+	static double processMemory();
+	static double usedRAM();
+	static double availableRAM();
 
 	std::ostringstream& get() { return os; };
 
-	static bool report(LogEvent event) {
-		switch (esconfig::info::verboseLevel) {
-		case 0: return event < VERBOSE_LEVEL0;
-		case 1: return event < VERBOSE_LEVEL1;
-		case 2: return event < VERBOSE_LEVEL2;
-		case 3: return event < VERBOSE_LEVEL3;
+	static bool report(MeasureEvent event) {
+		switch (config::info::measureLevel) {
+		case 0: return event < MEASURE_LEVEL0;
+		case 1: return event < MEASURE_LEVEL1;
+		case 2: return event < MEASURE_LEVEL2;
+		case 3: return event < MEASURE_LEVEL3;
 		default : return true;
 		}
 	};
@@ -99,10 +192,8 @@ protected:
 	void evaluateCheckpoints();
 
 	std::ostringstream os;
-	LogEvent event;
+	MeasureEvent event;
 };
-
-
 
 class Logging {
 
@@ -111,7 +202,7 @@ public:
 	{
 		std::stringstream dir, file, mkdir;
 
-		dir << esconfig::info::output << "/" << esconfig::MPIrank << "/";
+		dir << config::info::output << "/" << config::MPIrank << "/";
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();
@@ -128,6 +219,8 @@ public:
 	}
 };
 }
+
+#include "logging.hpp"
 
 
 #endif /* BASIS_LOGGING_LOGGING_H_ */

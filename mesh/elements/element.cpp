@@ -2,9 +2,9 @@
 #include <iomanip>
 #include <iostream>
 
-using namespace mesh;
+using namespace espreso;
 
-std::ostream& mesh::operator<<(std::ostream& os, const Element &e)
+std::ostream& espreso::operator<<(std::ostream& os, const Element &e)
 {
 	for (size_t i = 0; i < e.size(); i++) {
 		os << e.node(i) << " ";
@@ -12,7 +12,7 @@ std::ostream& mesh::operator<<(std::ostream& os, const Element &e)
 	return os;
 }
 
-std::ofstream& mesh::operator<<(std::ofstream& os, const Element &e)
+std::ofstream& espreso::operator<<(std::ofstream& os, const Element &e)
 {
 	eslocal value = e.vtkCode();
 	os.write(reinterpret_cast<const char *>(&value), sizeof(eslocal));

@@ -5,7 +5,8 @@
 #include "settings.h"
 #include "../utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template <class TElement>
 class CubeUtils {
@@ -14,6 +15,7 @@ public:
 	static void globalNodesCount(const CubeSettings &settings, esglobal nodes[]);
 };
 
+}
 }
 
 #include "utils.hpp"

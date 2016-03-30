@@ -2,31 +2,32 @@
 #ifndef ASSEMBLER_ASSEMBLER_H_
 #define ASSEMBLER_ASSEMBLER_H_
 
+#include "esbasis.h"
 #include "esoutput.h"
 #include "esmesh.h"
 #include "esbem.h"
 #include "../libespreso/feti4i.h"
 #include "../solver/essolver.h"
 
-namespace assembler {
+namespace espreso {
 
 struct FEM {
-	FEM(mesh::Mesh &mesh): mesh(mesh) { };
+	FEM(Mesh &mesh): mesh(mesh) { };
 
-	mesh::Mesh &mesh;
+	Mesh &mesh;
 };
 
 struct BEM {
-	BEM(mesh::Mesh &mesh, mesh::Mesh &surface): mesh(mesh), surface(surface) { };
+	BEM(Mesh &mesh, Mesh &surface): mesh(mesh), surface(surface) { };
 
-	mesh::Mesh &mesh;
-	mesh::Mesh &surface;
+	Mesh &mesh;
+	Mesh &surface;
 };
 
 struct API {
-	API(mesh::APIMesh &mesh): mesh(&mesh), K(NULL) { };
+	API(APIMesh *mesh): mesh(mesh), K(NULL) { };
 
-	mesh::APIMesh *mesh;
+	APIMesh *mesh;
 	SparseCSRMatrix<eslocal> *K;
 
 	eslocal size;

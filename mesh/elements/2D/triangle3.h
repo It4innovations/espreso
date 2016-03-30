@@ -1,32 +1,32 @@
-#ifndef TRIANGLE_H_
-#define TRIANGLE_H_
+#ifndef TRIANGLE3_H_
+#define TRIANGLE3_H_
 
 #include "../element.h"
 #include "../1D/line.h"
 
-#define TriangleNodesCount 3
-#define TriangleFacesCount 3
-#define TriangleGPCount 3
-#define TriangleVTKCode 5
+#define Triangle3NodesCount 3
+#define Triangle3FacesCount 3
+#define Triangle3GPCount 3
+#define Triangle3VTKCode 5
 
-namespace mesh {
+namespace espreso {
 
-class Triangle: public Element
+class Triangle3: public Element
 {
 
 public:
 	static bool match(eslocal *indices, eslocal n);
 
-	Triangle(eslocal *indices, eslocal *params);
+	Triangle3(eslocal *indices, eslocal *params);
 
 	Element* copy() const
 	{
-		return new Triangle(*this);
+		return new Triangle3(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return TriangleVTKCode;
+		return Triangle3VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -36,37 +36,37 @@ public:
 
 	size_t size() const
 	{
-		return TriangleNodesCount;
+		return Triangle3NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return TriangleNodesCount;
+		return Triangle3NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return TriangleGPCount;
+		return Triangle3GPCount;
 	}
 
 	size_t faces() const
 	{
-		return TriangleFacesCount;
+		return Triangle3FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Triangle::_dN;
+		return Triangle3::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Triangle::_N;
+		return Triangle3::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Triangle::_weighFactor;
+		return Triangle3::_weighFactor;
 	}
 
 	eslocal nCommon() const
@@ -85,7 +85,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[TriangleNodesCount];
+	eslocal _indices[Triangle3NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -96,4 +96,4 @@ private:
 
 
 
-#endif /* TRIANGLE_H_ */
+#endif /* TRIANGLE3_H_ */

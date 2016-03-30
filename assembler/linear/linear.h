@@ -2,12 +2,12 @@
 #ifndef ASSEMBLER_LINEAR_LINEAR_H_
 #define ASSEMBLER_LINEAR_LINEAR_H_
 
-#include "../gluing/gluing.h"
+#include "../constraints/equalityconstraints.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
-class Linear: public Gluing<TInput> {
+class Linear: public EqualityConstraints<TInput> {
 
 public:
 	virtual ~Linear() {};
@@ -19,7 +19,7 @@ public:
 	void finalize();
 
 protected:
-	Linear(TInput &input): Gluing<TInput>(input) {};
+	Linear(TInput &input): EqualityConstraints<TInput>(input) {};
 
 	// FEM specific
 	virtual void inertia(std::vector<double> &inertia) = 0;
@@ -42,11 +42,11 @@ private:
 
 	void KeMefe(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
-			DenseMatrix &Ce, const mesh::Element *e, size_t part, bool dynamics);
+			DenseMatrix &Ce, const Element *e, size_t part, bool dynamics);
 	void integrate(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f,
-			const mesh::Element *e, bool dynamics);
+			const Element *e, bool dynamics);
 
 
 };

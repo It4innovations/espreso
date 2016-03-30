@@ -1,13 +1,7 @@
 
 #include "ansys.h"
 
-using namespace esinput;
-
-
-AnsysWorkbench::AnsysWorkbench(const Options &options, size_t index, size_t size)
-{
-	_path = options.path;
-}
+using namespace espreso::input;
 
 static std::string skip(std::ifstream &is, std::string str)
 {
@@ -28,10 +22,10 @@ static eslocal last(std::string &line)
 	return code;
 }
 
-void AnsysWorkbench::points(mesh::Coordinates &coordinates)
+void AnsysWorkbench::points(Coordinates &coordinates)
 {
 	std::string line;
-	mesh::Point point;
+	Point point;
 	size_t id;
 
 	skip(_file, "nblock");
@@ -52,7 +46,7 @@ void AnsysWorkbench::points(mesh::Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
+void AnsysWorkbench::elements(std::vector<Element*> &elements)
 {
 	std::string line;
 	size_t lines;
@@ -63,7 +57,7 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 	case 186: lines = 2; break;
 	case 185: lines = 1; break;
 	default:
-		ESLOG(eslog::ERROR) << "Load error: unknown element type\n";
+		ESINFO(ERROR) << "Load error: unknown element type\n";
 	}
 
 	line = skip(_file, "eblock");
@@ -103,16 +97,33 @@ void AnsysWorkbench::elements(std::vector<mesh::Element*> &elements)
 	}
 }
 
-void AnsysWorkbench::boundaryConditions(mesh::Coordinates &coordinates)
+void AnsysWorkbench::boundaryConditions(Coordinates &coordinates)
 {
 	std::string line;
-	line = skip(_file, "CMBLOCK");
+	line = skip(_file, "CMBLOCK,SELECTION");
+
 	eslocal value, n = 0, size = last(line);
 	getline(_file, line);
 
-	mesh::CoordinatesProperty &dx = coordinates.property(mesh::DIRICHLET_X);
-	mesh::CoordinatesProperty &dy = coordinates.property(mesh::DIRICHLET_Y);
-	mesh::CoordinatesProperty &dz = coordinates.property(mesh::DIRICHLET_Z);
+	CoordinatesProperty &fx = coordinates.property(FORCES_X);
+	while (n < size) {
+		getline(_file, line);
+		std::stringstream ss(line);
+		while (ss >> value) {
+			fx[value - 1] = 10;
+			n++;
+		}
+	}
+
+	line = skip(_file, "CMBLOCK,_FIXEDSU");
+	n = 0;
+	size = last(line);
+
+	getline(_file, line);
+
+	CoordinatesProperty &dx = coordinates.property(DIRICHLET_X);
+	CoordinatesProperty &dy = coordinates.property(DIRICHLET_Y);
+	CoordinatesProperty &dz = coordinates.property(DIRICHLET_Z);
 	while (n < size) {
 		getline(_file, line);
 		std::stringstream ss(line);
@@ -126,11 +137,11 @@ void AnsysWorkbench::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void AnsysWorkbench::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].insert(0);
+		boundaries[i].push_back(0);
 	}
 }
 

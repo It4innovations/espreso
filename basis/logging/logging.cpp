@@ -1,55 +1,38 @@
 
 #include "logging.h"
 
-namespace eslog {
+namespace espreso {
 
-std::vector<Checkpoint> Log::checkpoints = { Checkpoint("Start", Log::time(), 0) };
+std::vector<Checkpoint> Measure::checkpoints = { Checkpoint("Start", Measure::time(), 0) };
 
-Log::Log(LogEvent event): event(event)
+Test::~Test()
 {
-	auto indent = [&] (int tabs) { for (int t = 0; t < tabs; t++) { os << "  "; } };
-
-	switch (event) {
-	case CHECKPOINT3:
-		indent(2);
-		break;
-	case CHECKPOINT2:
-		indent(1);
-		break;
-	case ERROR:
-		os << "ESPRESO ERROR : ";
-		break;
+	if (!error) {
+		return;
 	}
+
+	ESINFO(ERROR) << "ESPRESO INTERNAL TEST FAILED: "<< os.str();
 }
 
-Log::~Log()
+
+Info::~Info()
 {
+	if (_plain) {
+		if (config::MPIrank == 0) {
+			std::cout << os.str();
+		}
+		return;
+	}
 	if (event == ERROR) {
-		fprintf(stderr, "%s", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", esconfig::MPIrank);
+		fprintf(stderr, "%s\n", os.str().c_str());
+		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);
 		fflush(stderr);
 		exit(EXIT_FAILURE);
 	}
 
-	switch (event) {
-	case CHECKPOINT3:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 3));
-		break;
-	case CHECKPOINT2:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 2));
-		break;
-	case CHECKPOINT1:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 1));
-		break;
-	case SUMMARY:
-		checkpoints.push_back(Checkpoint(os.str(), time(), 0));
-		evaluateCheckpoints();
-		return;
-	}
-
 	os << std::endl;
 
-	if (esconfig::MPIrank != 0) {
+	if (config::MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -57,9 +40,38 @@ Log::~Log()
 	fflush(stdout);
 }
 
-void Log::evaluateCheckpoints()
+
+Measure::~Measure()
 {
-	if (esconfig::MPIrank != 0) {
+//	switch (event) {
+//	case CHECKPOINT3:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 3));
+//		break;
+//	case CHECKPOINT2:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 2));
+//		break;
+//	case CHECKPOINT1:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 1));
+//		break;
+//	case SUMMARY:
+//		checkpoints.push_back(Checkpoint(os.str(), time(), 0));
+//		evaluateCheckpoints();
+//		return;
+//	}
+
+	os << std::endl;
+
+	if (config::MPIrank != 0) {
+		return; // only first process print results
+	}
+
+	fprintf(stdout, "%s", os.str().c_str());
+	fflush(stdout);
+}
+
+void Measure::evaluateCheckpoints()
+{
+	if (config::MPIrank != 0) {
 		return;
 	}
 
@@ -68,17 +80,37 @@ void Log::evaluateCheckpoints()
 	}
 }
 
-Test::~Test()
+double Measure::processMemory()
 {
-	os << " : " << (error ? "FAILED" : "PASSED") << std::endl;
+	std::ifstream file("/proc/self/status");
+	eslocal result = -1;
+	std::string line, label("VmRSS:");
 
-	if (error) {
-		ESLOG(ERROR) << os.str();
+	while (getline(file, line)) {
+		if (line.find(label.c_str(), 0, label.size()) == 0) {
+			file.close();
+			std::stringstream(line) >> label >> result;
+			return result / 1024.0;
+		}
 	}
-
-	fprintf(stdout, "%s", os.str().c_str());
-	fflush(stdout);
+	file.close();
+	return 0;
 }
+
+double Measure::usedRAM()
+{
+	struct sysinfo memInfo;
+	sysinfo(&memInfo);
+	return ((memInfo.totalram - memInfo.freeram) * memInfo.mem_unit) / 1024.0 / 1024.0;
+}
+
+double Measure::availableRAM()
+{
+	struct sysinfo memInfo;
+	sysinfo(&memInfo);
+	return (memInfo.totalram * memInfo.mem_unit) / 1024.0 / 1024.0;
+}
+
 }
 
 

@@ -1,11 +1,14 @@
 
 #include "solvermkl.h"
 
+using namespace espreso;
+
 SparseSolverMKL::SparseSolverMKL(){
 
 	keep_factors=true;
 	initialized = false;
 	USE_FLOAT = false;
+	import_with_copy = false;
 
 	CSR_I_row_indices_size = 0;
 	CSR_J_col_indices_size = 0;
@@ -202,19 +205,11 @@ void SparseSolverMKL::ImportMatrix_wo_Copy(SparseMatrix & A) {
 void SparseSolverMKL::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs;
-	char * var = getenv("SOLVER_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-	else {
-    	printf("Set environment SOLVER_NUM_THREADS to 1");
-        exit(1);
-	}
-
+	int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
     iparm[2]  = num_procs;
 }
 
-void SparseSolverMKL::Factorization(const std::string &str) {
+int SparseSolverMKL::Factorization(const std::string &str) {
 
 	double ddum;			/* Double dummy */
 	MKL_INT idum;			/* Integer dummy. */
@@ -236,18 +231,25 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
-		//printf ("\nERROR during symbolic factorization: %d", error);
-		std::cout << "\nERROR : " << error << " during symbolic factorization on MPI rank : " << esconfig::MPIrank << std::endl;
+    return error;
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << error << " during symbolic factorization";
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
 	}
-
-#ifdef DEBUG
-	printf ("\nReordering completed ... ");
-	printf ("\nNumber of nonzeros in factors = %d", iparm[17]);
-	printf ("\nNumber of factorization MFLOPS = %d", iparm[18]);
-#endif
 
 	/* -------------------------------------------------------------------- */
 	/* .. Numerical factorization. */
@@ -264,17 +266,25 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 
 	if (error != 0)
 	{
-		std::cout << "\nERROR : " << error << " during numerical factorization on MPI rank : " << esconfig::MPIrank << std::endl;
-		//printf ("\nERROR during numerical factorization: %d", error);
+		return error;
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << error << " during numerical factorization";
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
 	}
-
-#ifdef DEBUG
-	printf ("\nFactorization completed ... ");
-#endif
-
 	//TODO:
 	if (USE_FLOAT) {
 		tmp_sol_fl1.resize(m_Kplus_size);
@@ -282,6 +292,7 @@ void SparseSolverMKL::Factorization(const std::string &str) {
 	} else {
 		tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
 	}
+  return 0;
 }
 
 void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
@@ -294,7 +305,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -323,7 +334,20 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
 
@@ -337,7 +361,6 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 	if( USE_FLOAT ) {
@@ -362,7 +385,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -385,7 +408,20 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
 
@@ -399,7 +435,6 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 	if( USE_FLOAT ) {
@@ -418,7 +453,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -441,7 +476,20 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
-		printf ("\nERROR during solution: %d on process %d\n", error, esconfig::MPIrank);
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
 
@@ -456,7 +504,6 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
 				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
-		if (MPIrank == 0) printf(".");
 	}
 
 
@@ -480,7 +527,7 @@ void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << esconfig::MPIrank;
+		ss << "Solve -> rank: " << config::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -702,15 +749,7 @@ void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool
 
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -779,7 +818,20 @@ void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool
 
 	if (error != 0)
 	{
-		printf ("\nERROR during the solution of the system : %d", error);
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during the solution of the system: " << error;
 		exit (1);
 	} else {
 		initialized = true;
@@ -892,15 +944,7 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -994,7 +1038,20 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 
     if ( error != 0 )
 	{
-		printf ("\nERROR during numerical factorization: %d", error);
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
 		exit (2);
 	} else {
 		initialized = true;
@@ -1023,8 +1080,9 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
     SC_out.RemoveLower();
     SC_out.type = 'S';
 
-    if (msglvl == 1)
-    	SpyText(SC_out);
+	if (msglvl) {
+		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+	}
 
 //    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
 //    	SC_out.RemoveLower();
@@ -1095,15 +1153,7 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		MKL_INT num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		MKL_INT num_procs = Esutils::getEnv<MKL_INT>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1197,7 +1247,11 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 
     if ( error != 0 )
 	{
-		printf ("\nERROR during numerical factorization: %d", error);
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << K_sc1;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
 		exit (2);
 	} else {
 		initialized = true;
@@ -1353,15 +1407,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	if (isThreaded) {
 		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs;
-		char * var = getenv("SOLVER_NUM_THREADS");
-	    if(var != NULL)
-	    	sscanf( var, "%d", &num_procs );
-		else {
-	    	printf("Set environment SOLVER_NUM_THREADS to 1");
-	        exit(1);
-		}
-
+		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 	    iparm[2] = num_procs;
 	} else {
 		iparm[2] = 1;
@@ -1455,7 +1501,11 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 
     if ( error != 0 )
 	{
-		printf ("\nERROR during numerical factorization: %d", error);
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << K_sc1;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
 		exit (2);
 	} else {
 		initialized = true;

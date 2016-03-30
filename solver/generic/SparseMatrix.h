@@ -10,7 +10,6 @@
 #endif
 
 using std::vector;
-using std::cout;
 using std::string;
 using std::ifstream;
 using std::stringstream;
@@ -20,6 +19,8 @@ using std::fill;
 
 
 #pragma once
+
+namespace espreso {
 
 class SparseMatrix
 {
@@ -196,6 +197,7 @@ public:
 	void TestMatRow ( eslocal size, eslocal row_index);
 
 	void sortInCOO();
+	std::string SpyText();
 
 //	void get_kernel_from_K();
 	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
@@ -206,7 +208,7 @@ private:
   // get_kernel_from_K: default parameters
   //
   bool DIAGONALSCALING                                  = true;
-  eslocal PERMUTVECTORACTIVE                            = 1; 
+  eslocal PERMUTVECTORACTIVE                            = 1;
   bool USE_NULL_PIVOTS_OR_S_SET                         = true;
   bool DIAGONALREGULARIZATION                           = true;
   eslocal GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
@@ -223,10 +225,4 @@ private:
 
 };
 
-void sortMatrixInCOO(SparseMatrix & Matrix);
-void SpyText (SparseMatrix & A);
-static void q_sort(SparseMatrix & Matrix, eslocal lo, eslocal hi );
-static void q_sort_in(vector <eslocal>    & I_row_indices,
-				   	  vector <eslocal>    & J_col_indices,
-					  vector <double> & V_values,
-					  eslocal lo, eslocal hi );
+}

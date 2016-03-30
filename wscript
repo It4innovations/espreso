@@ -5,6 +5,7 @@ import commands
 import sys
 import os
 
+
 sys.path.append(os.path.abspath("./python"))
 from wafutils import *
 
@@ -31,7 +32,6 @@ espreso_attributes = [
     ("INT_WIDTH", "ESPRESO integer datatype width.", "choice", [ "32", "64" ]),
     ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "SHARED", "STATIC" ]),
     ("SOLVER", "ESPRESO internal solver. Default: MKL", "choice", solvers),
-    ("VERBOSE", "Verbosity level.", "choice", [ "0", "1", "2", "3" ]),
     ("DEBUG", "Debug information.", "choice", [ "0", "1" ]),
     ("BUILD_TOOLS", "ESPRESO try to compile external tools. If the compilation is not successful set this attribute to 0 and build tools manually.", "choice", [ "0", "1" ]),
     ("METISLIB", "Name of METIS library.", "string", "name"),
@@ -55,12 +55,15 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
     ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
 
+    if ctx.env.LIBTYPE == "SHARED":
+        ctx.env.append_unique("CXXFLAGS", "-fPIC")
+
     if ctx.env.BUILD_TOOLS == "1":
         ctx.recurse("tools")
 
     # recurse to basic parts
-    ctx.recurse("basis")
     ctx.recurse("config")
+    ctx.recurse("basis")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")
@@ -76,57 +79,24 @@ def configure(ctx):
     check_environment(ctx)
 
 def build(ctx):
+
     ctx(
-        export_includes = "config",
-        name            = "incl_config"
+        export_includes = "include config basis mesh input output bem/src assembler",
+        name            = "espreso_includes"
     )
-    ctx(
-        export_includes = "basis",
-        name            = "incl_basis"
-    )
-    ctx(
-        export_includes = "input",
-        name            = "incl_input"
-    )
-    ctx(
-        export_includes = "output",
-        name            = "incl_output"
-    )
-    ctx(
-        export_includes = "mesh",
-        name            = "incl_mesh"
-    )
-    ctx(
-        export_includes = "assembler",
-        name            = "incl_assembler"
-    )
-    ctx(
-        export_includes = "bem/src",
-        name            = "incl_bem"
-    )
-    ctx(
-        export_includes = "/usr/local/cuda-7.0/include",
-        name            = "incl_cuda"
-    )
-    ctx(
-        export_includes = "include",
-        name            = "espreso_includes",
-        use             = "incl_basis incl_config incl_input incl_output incl_mesh incl_solver incl_bem incl_catalyst incl_composer incl_assembler incl_cuda"
-    )
+
+    # Waf INCLUDES policy is strange -> use export includes
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])
+    ctx.env.INCLUDES = []
 
     ctx.ROOT = ctx.path.abspath()
-    ctx.LIBRARIES = ctx.ROOT + "/libs"
 
-    if ctx.env.LIBTYPE == "STATIC":
-        ctx.lib = ctx.stlib
-    else:
-        ctx.lib = ctx.shlib
-
-    ctx.recurse("basis")
-    ctx.recurse("config")
     if ctx.env.BUILD_TOOLS == "1":
         ctx.recurse("tools")
     ctx.add_group()
+
+    ctx.recurse("basis")
+    ctx.recurse("config")
     ctx.recurse("bem")
     ctx.recurse("mesh")
     ctx.recurse("input")

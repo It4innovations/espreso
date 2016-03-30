@@ -1,5 +1,7 @@
 #include "denseMatrix.h"
 
+namespace espreso {
+
 template<typename Tindices>
 DenseMatrix::DenseMatrix(const SparseDOKMatrix<Tindices> &other): Matrix(other.rows(), other.columns(), DenseMatrixIndexing)
 {
@@ -68,3 +70,4 @@ DenseMatrix& DenseMatrix::operator=(const SparseIJVMatrix<Tindices> &other)
 	return *this;
 }
 
+}

@@ -1,7 +1,7 @@
 
 #include "temperature.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 void Temperature<TInput>::inertia(std::vector<double> &inertia)

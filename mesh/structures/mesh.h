@@ -21,18 +21,19 @@
 #include "../elements/elements.h"
 #include "coordinates.h"
 #include "boundaries.h"
+#include "faces.h"
 
 #include "esbasis.h"
 #include "esconfig.h"
 
-namespace esinput {
+namespace espreso {
+
+namespace input {
+class Loader;
 class InternalLoader;
 class ExternalLoader;
 class APILoader;
 }
-
-namespace mesh {
-
 
 class Boundaries;
 
@@ -42,8 +43,9 @@ class Mesh
 public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
-	friend class esinput::InternalLoader;
-	friend class esinput::ExternalLoader;
+	friend class input::Loader;
+	friend class input::InternalLoader;
+	friend class input::ExternalLoader;
 
 
 	Mesh();
@@ -56,6 +58,10 @@ public:
 	Coordinates& coordinates()
 	{
 		return _coordinates;
+	}
+
+	Faces& faces() {
+		return _faces;
 	}
 
 	const Boundaries& subdomainBoundaries() const
@@ -103,6 +109,11 @@ public:
 		return _coordinates.localSize(part);
 	}
 
+	const std::vector<int>& neighbours() const
+	{
+		return _neighbours;
+	}
+
 protected:
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
@@ -121,8 +132,11 @@ protected:
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
 
+	/** @brief Indexes of all faces, it's element contains an element reference.*/
+	Faces _faces;
+
 	/** @brief Array that stores all elements of the mesh. */
-	std::vector<mesh::Element*> _elements;
+	std::vector<Element*> _elements;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;
@@ -135,11 +149,27 @@ protected:
 
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
+
+	/** @brief list of neighbours MPI ranks/ */
+	std::vector<int> _neighbours;
+
+private:
+	Mesh(const Mesh &mesh)
+	{
+		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
+	}
+
+	Mesh& operator=(const Mesh &mesh)
+	{
+		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
+		return *this;
+	}
+
 };
 
 class APIMesh: public Mesh
 {
-	friend class esinput::APILoader;
+	friend class input::APILoader;
 
 public:
 	APIMesh(std::vector<std::vector<double> > &eMatrices): _eMatrices(eMatrices) { };

@@ -1,6 +1,6 @@
 #include "coordinates.h"
 
-using namespace mesh;
+using namespace espreso;
 
 void CoordinatesProperty::load(const char* fileName)
 {
@@ -15,11 +15,11 @@ void CoordinatesProperty::load(const char* fileName)
 		}
 		file.close();
 	} else {
-		std::cout << "File '" << fileName << "' not found.\n";
+		ESINFO(ERROR) << "File '" << fileName << "' not found";
 	}
 }
 
-std::ostream& mesh::operator<<(std::ostream& os, const CoordinatesProperty &cp)
+std::ostream& espreso::operator<<(std::ostream& os, const CoordinatesProperty &cp)
 {
 	std::map<eslocal, double>::const_iterator it;
 	for (it = cp._mapping.begin(); it != cp._mapping.end(); ++it) {
@@ -43,7 +43,7 @@ void Coordinates::computeLocal(eslocal part, std::vector<eslocal> &nodeMap, size
 	}
 }
 
-std::ostream& mesh::operator<<(std::ostream& os, const Coordinates &c)
+std::ostream& espreso::operator<<(std::ostream& os, const Coordinates &c)
 {
 	for (size_t i = 0; i < c.clusterSize(); i++)
 	{

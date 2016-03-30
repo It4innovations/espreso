@@ -9,6 +9,8 @@ using std::endl;
 using std::left;
 using std::fixed;
 
+namespace espreso {
+
 class SparseSolverPardiso: public SparseSolver
 {
 
@@ -118,5 +120,6 @@ public:
 
 };
 
+}
 
 #endif /* SOLVER_SPECIFIC_CPU_SOLVERPARDISO_H_ */

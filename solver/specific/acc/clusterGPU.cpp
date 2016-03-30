@@ -1,12 +1,13 @@
 #include "clusterGPU.h"
 
+using namespace espreso;
+
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
-	if (cluster_global_index == 1)
-		cout << "Creating B1*K+*B1t : using Pardiso SC : ";
+	ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using Pardiso SC";
 
 	this->NUM_MICS = 2;
 	#ifdef MIC
@@ -58,10 +59,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
-		if (cluster_global_index == 1) cout << "."; // << i ;
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 
 		SparseSolverCPU tmpsps;
-		if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
+		if ( i == 0 && cluster_global_index == 1) {
+			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 0 );
 
 		if (USE_FLOAT){
@@ -97,12 +100,9 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		if ( USE_KINV == 1 ) {
 			cilk_for (eslocal d = 0; d < domains.size(); d++) {
 				cudaError_t status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
-				if (status != cudaSuccess)
-					printf("Error allocating pinned host memory \n");
-
-				//status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
-				//if (status != cudaSuccess)
-				//	printf("Error allocating pinned host memory \n");
+				if (status != cudaSuccess) {
+					ESINFO(ERROR) << "Error allocating pinned host memory";
+				}
 			}
 		}
 #endif
@@ -127,8 +127,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 		domains[i].B1t_comp_dom.Clear();
 
-	if (cluster_global_index == 1)
-		cout << endl;
+	ESINFO(PROGRESS2);
 
 }
 
@@ -138,7 +137,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
-		switch (esconfig::solver::KSOLVER) {
+		switch (config::solver::KSOLVER) {
 		case 0: {
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
@@ -160,27 +159,27 @@ void ClusterGPU::SetupKsolvers ( ) {
 			break;
 		}
 		default:
-			ESLOG(eslog::ERROR) << "Invalid KSOLVER value.";
+			ESINFO(ERROR) << "Invalid KSOLVER value.";
 			exit(EXIT_FAILURE);
 		}
 
-		if (esconfig::solver::KEEP_FACTORS == 1) {
+		if (config::solver::KEEP_FACTORS == 1) {
 			std::stringstream ss;
-			ss << "init -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			ss << "init -> rank: " << config::MPIrank << ", subdomain: " << d;
 			domains[d].Kplus.keep_factors = true;
-			if (esconfig::solver::KSOLVER != 1) {
+			if (config::solver::KSOLVER != 1) {
 				domains[d].Kplus.Factorization (ss.str());
 			}
 		} else {
 			domains[d].Kplus.keep_factors = false;
-			domains[d].Kplus.MPIrank = esconfig::MPIrank;
+			domains[d].Kplus.MPIrank = config::MPIrank;
 		}
 
 		domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-		if ( d == 0 && esconfig::MPIrank == 0) domains[d].Kplus.msglvl=0;
-		if (esconfig::MPIrank == 0) std::cout << ".";
-
+		if ( d == 0 && config::MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 	}
 
 }

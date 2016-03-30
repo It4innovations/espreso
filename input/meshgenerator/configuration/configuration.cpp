@@ -1,7 +1,7 @@
 
 #include "configuration.h"
 
-namespace esinput {
+using namespace espreso::input;
 
 Configuration::Configuration(std::vector<Description> &description, const Options &options)
 {
@@ -62,10 +62,10 @@ void Configuration::load(const Options &options)
 			if (pos < std::string::npos) {
 				line = line.substr(0, pos);
 			}
-			for (it = _parameters.begin(); it != _parameters.end(); ++it) {
+			for (it = _parameters.begin(); it != _parameters.end(); ++it) {;
 				if (it->second->match(line)) {
 					if (it->second->isSet()) {
-						std::cout << "Warning: parameter " << it->second->name() << " is set more than once.";
+						ESINFO(ALWAYS) << "Warning: parameter " << it->second->name() << " is set more than once.";
 					}
 					it->second->set(line);
 					break;
@@ -75,7 +75,7 @@ void Configuration::load(const Options &options)
 
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "The example on path '" << options.path << "' not found.";
+		ESINFO(ERROR) << "The example on path '" << options.path << "' not found.";
 	}
 
 	// Read attributes from command line
@@ -106,11 +106,11 @@ void Configuration::load(const Options &options)
 	}
 
 	if (options.nameless.size() < cmdLineSize) {
-		ESLOG(eslog::ERROR) << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
+		ESINFO(ERROR) << "Too few command line arguments. ESPRESO assumes " << value<std::string>("CMD_LINE_ARGUMENTS", "") << "\n";
 		exit(EXIT_FAILURE);
 	}
 	if (options.nameless.size() > cmdLineSize) {
-		std::cout << "Warning: ESPRESO omits some command line arguments.\n";
+		ESINFO(ALWAYS) << "Warning: ESPRESO omits some command line arguments.\n";
 	}
 	for (size_t i = 0; i < cmdLine.size(); i++) {
 		_parameters[cmdLine[i].first]->set(std::string(_parameters[cmdLine[i].first]->name() + "=" + options.nameless[cmdLine[i].second]));
@@ -124,30 +124,31 @@ void Configuration::print() const
 		if (it->second->isSet()) {
 			continue;
 		}
-		std::cout << it->second->name() << " = ";
+		std::stringstream ss;
+		ss << it->second->name() << " = ";
 		switch (it->second->type()) {
 			case STRING_PARAMETER: {
-				std::cout << "'" << static_cast<StringParameter*>(it->second)->get() << "'";
+				ss << "'" << static_cast<StringParameter*>(it->second)->get() << "'";
 				break;
 			}
 			case INTEGER_PARAMETER: {
-				std::cout << "'" << static_cast<IntegerParameter*>(it->second)->get() << "'";
+				ss << "'" << static_cast<IntegerParameter*>(it->second)->get() << "'";
 				break;
 			}
 			case DOUBLE_PARAMETER: {
-				std::cout << "'" << static_cast<DoubleParameter*>(it->second)->get() << "'";
+				ss << "'" << static_cast<DoubleParameter*>(it->second)->get() << "'";
 				break;
 			}
 			case BOOLEAN_PARAMETER: {
 				if (static_cast<BooleanParameter*>(it->second)->get()) {
-					std::cout << "true";
+					ss << "true";
 				} else {
-					std::cout << "false";
+					ss << "false";
 				}
 				break;
 			}
 		}
-		std::cout << "\n";
+		ESINFO(ALWAYS) << ss.str();
 	}
 }
 
@@ -193,6 +194,4 @@ Configuration::~Configuration()
 	for (it = _parameters.begin(); it != _parameters.end(); ++it) {
 		delete it->second;
 	}
-}
-
 }

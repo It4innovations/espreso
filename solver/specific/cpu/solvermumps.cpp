@@ -13,6 +13,8 @@
 #include "mkl_pardiso.h"
 #include "solvermumps.h"
 
+using namespace espreso;
+
 /************************************************************************************************
 *   DEFINE CONSTANTS   *
 ***********************/
@@ -34,14 +36,7 @@
 void SparseSolverMUMPS::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs;
-	char * var = getenv("SOLVER_NUM_THREADS");
-    if(var != NULL)
-    	sscanf( var, "%d", &num_procs );
-	else {
-    	printf("Set environment SOLVER_NUM_THREADS to 1");
-        exit(1);
-	}
+	int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
 
 }
 
@@ -90,7 +85,7 @@ void SparseSolverMUMPS::Create_SC( SparseMatrix & B_out, int sc_size, bool isThr
 
 void SparseSolverMUMPS::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 )
 {
-	std::cout << "Not implemented in MUMPS" << std::endl;
+	ESINFO(ERROR) << "Not implemented in MUMPS";
 }
 /** @brief Constructor.
  *
@@ -217,7 +212,7 @@ void SparseSolverMUMPS::Factorization() {
 	dmumps_c(&id); // Factorization
 
 #ifdef DEBUG
-	printf ("\nFactorization completed ... ");
+	ESINFO(PROGRESS2) << "Factorization completed ... ";
 #endif
 
 	m_factorized = 1;
@@ -507,7 +502,7 @@ void SparseSolverMUMPS::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_ou
 
 void SparseSolverMUMPS::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded) {
 
- std::cout << "Not Implemented in MUMPS" << std::endl;
+ ESINFO(ERROR) << "Not Implemented in MUMPS";
 
 }
 

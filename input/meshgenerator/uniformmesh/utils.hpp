@@ -1,7 +1,8 @@
 
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 
 template <class TElement>
@@ -20,4 +21,5 @@ eslocal UniformUtils<TElement>::clusterElementsCount(const UniformSettings &sett
 	settings.elementsInSubdomain[2] * settings.elementsInSubdomain[1] * settings.elementsInSubdomain[0];
 }
 
+}
 }

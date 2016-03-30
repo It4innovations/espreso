@@ -1,7 +1,7 @@
 
 #include "settings.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 static std::vector<Description> createSetting()
 {
@@ -28,7 +28,7 @@ Settings::Settings(const Options &options, size_t index, size_t size)
 {
 	Configuration configuration(Settings::description, options);
 
-	useMetis = configuration.value<eslocal>("USE_METIS", false);
+	useMetis = configuration.value<bool>("USE_METIS", false);
 	shape = configuration.value<eslocal>("SHAPE", 0);
 	elementType = configuration.value<eslocal>("ELEMENT_TYPE", 0);
 }

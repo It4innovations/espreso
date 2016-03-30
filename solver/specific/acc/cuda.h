@@ -5,6 +5,8 @@
 #include "mkl_pardiso.h"
 #include "../sparsesolver.h"
 
+namespace espreso {
+
 class SparseSolverCUDA: public SparseSolver
 {
 
@@ -111,7 +113,7 @@ public:
 
 };
 
-
+}
 
 
 #endif /* SOLVER_SPECIFIC_ACC_CUDA_H_ */

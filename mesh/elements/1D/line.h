@@ -9,7 +9,7 @@
 #define LineGPCount 2
 #define LineVTKCode 3
 
-namespace mesh {
+namespace espreso {
 
 class Line: public Element
 {

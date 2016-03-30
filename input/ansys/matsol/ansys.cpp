@@ -1,15 +1,10 @@
 
 #include "ansys.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 
-AnsysMatsol::AnsysMatsol(const Options &options, int rank, int size)
-{
-	_path = options.path;
-}
-
-void AnsysMatsol::points(mesh::Coordinates &coordinates)
+void AnsysMatsol::points(Coordinates &coordinates)
 {
 	std::string fileName = _path + "/Model/COORDINATES.dat";
 
@@ -18,7 +13,7 @@ void AnsysMatsol::points(mesh::Coordinates &coordinates)
 
 	std::ifstream file(fileName);
 	std::string line;
-	mesh::Point point;
+	Point point;
 
 	if (file.is_open()) {
 		for (size_t c = 0; c < size; c++) {
@@ -30,12 +25,12 @@ void AnsysMatsol::points(mesh::Coordinates &coordinates)
 		}
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
+		ESINFO(ERROR) << "Cannot load mesh from file: " << fileName;
 	}
 }
 
 
-void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
+void AnsysMatsol::elements(std::vector<Element*> &elements)
 {
 	int lines;
 	std::string settingFile = _path + "/Model/BC/Elasticity/ELEMENT_TYPE.dat";
@@ -55,13 +50,13 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 				case 45:
 				case 185: lines = 1; break;
 				default:
-					ESLOG(eslog::ERROR) << "Load error: unknown element type\n";
+					ESINFO(ERROR) << "Load error: unknown element type\n";
 				}
 				break;
 			}
 		}
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load element settings from file: " << settingFile;
+		ESINFO(ERROR) << "Cannot load element settings from file: " << settingFile;
 	}
 
 	std::string fileName = _path + "/Model/ELEMENTS.dat";
@@ -104,11 +99,11 @@ void AnsysMatsol::elements(std::vector<mesh::Element*> &elements)
 		}
 		file.close();
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load mesh from file: " << fileName;
+		ESINFO(ERROR) << "Cannot load mesh from file: " << fileName;
 	}
 }
 
-void AnsysMatsol::boundaryConditions(mesh::Coordinates &coordinates)
+void AnsysMatsol::boundaryConditions(Coordinates &coordinates)
 {
 	std::vector<std::string> conditions = {
 		_path + "/Model/BC/Elasticity/NUX.dat",
@@ -120,7 +115,7 @@ void AnsysMatsol::boundaryConditions(mesh::Coordinates &coordinates)
 	};
 
 	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
-		mesh::CoordinatesProperty &property = coordinates.property(i);
+		CoordinatesProperty &property = coordinates.property(i);
 
 		std::ifstream file(conditions[i].c_str());
 
@@ -132,18 +127,16 @@ void AnsysMatsol::boundaryConditions(mesh::Coordinates &coordinates)
 				property[coordinate - 1] = value;
 			}
 			file.close();
-		} else {
-			std::cout << "Warning: File '" << conditions[i] << "' not found.\n";
 		}
 	}
 }
 
 
-void AnsysMatsol::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void AnsysMatsol::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].insert(0);
+		boundaries[i].push_back(0);
 	}
 }
 
@@ -160,7 +153,7 @@ size_t AnsysMatsol::getLinesCount(const std::string &file)
 		f.close();
 		return size;
 	} else {
-		ESLOG(eslog::ERROR) << "Cannot load file: " << file << "\n";
+		ESINFO(ERROR) << "Cannot load file: " << file << "\n";
 	}
 	return 0;
 }

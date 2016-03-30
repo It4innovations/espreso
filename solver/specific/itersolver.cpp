@@ -4,6 +4,8 @@
 
 #include "itersolver.h"
 
+using namespace espreso;
+
 IterSolverBase::IterSolverBase():
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
@@ -175,7 +177,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 		if (USE_HFETI == 1)
 
-			if ( esconfig::solver::REGULARIZATION == 0 )
+			if ( config::solver::REGULARIZATION == 0 )
 				cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
 		  	else
 		  		cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
@@ -316,6 +318,25 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	// *** Calculate the stop condition *******************************************
 	tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
 	// *** Start the CG iteration loop ********************************************
 	for (int iter = 0; iter < CG_max_iter; iter++) {
 
@@ -442,26 +463,13 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 		 norm_time.end();
 
 		 timing.totalTime.end();
-//TODO: if VERBOSE = 1
-		//timing.totalTime.printLastStatMPI();
 
-		if (mpi_rank == mpi_root) {
-			//printf (       "Iter MPI %5d - norm dual %1.20f - tol %1.20f \n", iter+1, norm_l, tol );
-			int my_prec = 10; //log10(int(1./epsilon));
-		    std::cout.clear();
-		    std::cout<<"RegCG  MPI Iter: ";
-		    std::cout<<std::setw(my_prec+4);
-		    std::cout<<iter+1;
-		    std::cout.precision(my_prec+4);
-		    std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
-		    std::cout<<" ||residual|| = "        << norm_l;
-		    std::cout.precision(my_prec);
-		    std::cout<<", epsilon = "            << epsilon;
-		    std::cout.precision(my_prec+4);
-		    std::cout<<", tol = "                << tol;
-		    std::cout<<", Local time: " << timing.totalTime.getLastStat();
-		    std::cout<<"\n";
-		}
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
@@ -506,7 +514,7 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 #ifdef USE_MPI_3
 	if (mpi_rank == mpi_root)
-		std::cout << "Note: PipeCG is using non-blocking AllReduce ... " << std::endl;
+		ESINFO(DETAILS) << "Note: PipeCG is using non-blocking AllReduce";
 #endif
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
@@ -623,6 +631,25 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 	}
 
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
 	// *** Start the CG iteration loop ********************************************
 	for (eslocal iter = 0; iter < CG_max_iter; iter++) {
 
@@ -699,8 +726,16 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 #endif
 
 		norm_l  = sqrt(reduction_tmp[2]);
-		if (norm_l < tol)
+		if (norm_l < tol) {
+			timing.totalTime.end();
+			ESINFO(CONVERGENCE)
+				<< indent << std::setw(iterationWidth) << iter + 1
+				<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+				<< indent << std::scientific << std::setprecision(3) << norm_l
+				<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 			break;
+		}
 
 		gama_l  = reduction_tmp[0];
 		delta_l = reduction_tmp[1];
@@ -731,26 +766,14 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		norm_time.end();
 
 		 timing.totalTime.end();
-//TODO: if VERBOSE = 1
-		//timing.totalTime.printLastStatMPI();
 
-		 if (mpi_rank == mpi_root) {
-			 //printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
 
-			 int my_prec = 10; //log10(int(1./epsilon));
-			 std::cout.clear();
-			 std::cout<<"PipeCG MPI Iter: ";
-			 std::cout<<std::setw(my_prec+4);
-			 std::cout<<iter+1;
-			 std::cout.precision(my_prec+4);
-			 std::cout<<" ||normed_residual|| = " << norm_l / tol * epsilon;
-			 std::cout<<" ||residual|| = "        << norm_l;
-			 std::cout.precision(my_prec);
-			 std::cout<<", epsilon = "            << epsilon;
-			 std::cout<<", tol = "                << tol;
-			 std::cout<<", Local time: " << timing.totalTime.getLastStat();
-			 std::cout<<"\n";
-		 }
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 	} // END of CG loop
 
@@ -875,6 +898,24 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 	tol = epsilon * parallel_norm_compressed(cluster, b_l);
 
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "tol" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
 	for ( iter = 0; iter < 1000; iter++) {
 		timing.totalTime.start();
 
@@ -924,19 +965,17 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 		norm_l = parallel_norm_compressed(cluster, r_l);
 
-		if (mpi_rank == mpi_root) {
-			printf ( "CG Iter %d - norm %1.30f - tol %1.30f \r" , iter+1, norm_l, tol);
-			//if (log_active == 1)
-			//	fprintf(stream,"Iter MPI %d - norm %1.30f - tol %1.30f \n", iter+1, norm_l, tol);
-		}
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << tol
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
 		if (norm_l < tol)
 			break;
 
 	} // end iter loop
-
-	if (mpi_rank == mpi_root) cout << endl;
 
 	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 	 timeGetSol.start();
@@ -1054,6 +1093,24 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 		tol = epsilon * parallel_norm_compressed(cluster, b_l);
 
+		int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+		int iterationWidth = ceil(log(CG_max_iter) / log(10));
+		std::string indent = "   ";
+
+		auto spaces = [] (int count) {
+			std::stringstream ss;
+			for (int i = 0; i < count; i++) {
+				ss << " ";
+			}
+			return ss.str();
+		};
+
+		ESINFO(CONVERGENCE)
+			<< spaces(indent.size() + iterationWidth - 4) << "iter"
+			<< spaces(indent.size() + 4) << "r" << spaces(4)
+			<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "tol" << spaces(precision / 2)
+			<< spaces(indent.size()) << "time[s]";
+
 		for ( iter = 0; iter < CG_max_iter; iter++) {
 
 			timing.totalTime.start();
@@ -1130,12 +1187,11 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			norm_l = parallel_norm_compressed(cluster, r_l);
 			norm_time.end();
 
-			if (mpi_rank == mpi_root) {
-				//printf (       "Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
-				printf ( "CG Iter %d - norm %1.30f - tol %1.30f \r" , iter+1, norm_l, tol);
-				//if (log_active == 1)
-				//fprintf(stream,"Iter MPI %d - norm %1.20f - tol %1.20f \n", iter+1, norm_l, tol);
-			}
+			ESINFO(CONVERGENCE)
+				<< indent << std::setw(iterationWidth) << iter + 1
+				<< indent << std::scientific << std::setprecision(3) << norm_l
+				<< indent << tol
+				<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 			if (norm_l < tol)
 				break;
@@ -1143,8 +1199,6 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		} // end iter loop
 
 		// reconstruction of u
-
-		if (mpi_rank == mpi_root) cout << endl;
 
 		 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 		 timeGetSol.start();
@@ -1226,10 +1280,8 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		count_cv += mpi_size/li;
-		if (mpi_rank == 0)
-			//printf(" Collecting matrices G : %d of %d \r", count_cv, mpi_size);
-			std::cout<<" Collecting matrices G : " << count_cv <<" of " << mpi_size << "\n";
 
+		ESINFO(PROGRESS2) << " Collecting matrices G : " << count_cv <<" of " << mpi_size;
 	}
 
 	//SparseMatrix Gtt;
@@ -1253,31 +1305,31 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		double t1 = omp_get_wtime();
 		G.MatTranspose(Gt);
-		cout << "Gtranspose = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "Gtranspose = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		SparseMatrix GGt_Mat;
 		GGt_Mat.MatMat(G, 'N', Gt);
-		cout << "G x Gt = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "G x Gt = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		Gt.Clear();
 		G.Clear();
-		cout << "G and Gt clear = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "G and Gt clear = " << omp_get_wtime() - t1;
 
-		SpyText(GGt_Mat);
+		ESINFO(EXHAUSTIVE) << GGt_Mat.SpyText();
 
 		t1 = omp_get_wtime();
 		GGt_Mat.RemoveLower();
-		cout << "GGt remove lower = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "GGt remove lower = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		// Create Sparse Direct solver for GGt
-		GGt.msglvl = 1;
+		GGt.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 
 		t1 = omp_get_wtime();
 		GGt.ImportMatrix(GGt_Mat);
-		cout << "ImportMatrix = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "ImportMatrix = " << omp_get_wtime() - t1;
 
 
 		t1 = omp_get_wtime();
@@ -1286,9 +1338,9 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		std::stringstream ss;
-		ss << "Create GGt -> rank: " << esconfig::MPIrank;
+		ss << "Create GGt -> rank: " << config::MPIrank;
 		GGt.Factorization(ss.str());
-		cout << "Factorization = " << omp_get_wtime() - t1 << endl;
+		ESINFO(PROGRESS2) << "Factorization = " << omp_get_wtime() - t1;
 
 
 		t1 = omp_get_wtime();
@@ -1308,14 +1360,10 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 
 #if TIME_MEAS >= 1
-	eslocal rank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-	if (rank == 0) {
-		double end = omp_get_wtime();
-		cout <<	"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s \n";
-		cout <<	"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s \n";
-		cout <<	"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s \n\n";
-	}
+	double end = omp_get_wtime();
+	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s";
+	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s";
+	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s";
 #endif
 
 }
@@ -1333,16 +1381,8 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 
         /* Numbers of processors, value of OMP_NUM_THREADS */
-        int num_procs;
-        char * var = getenv("PAR_NUM_THREADS");
-        if(var != NULL)
-                sscanf( var, "%d", &num_procs );
-        else {
-                //printf("Set environment PAR_NUM_THREADS to 1");
-        	ESLOG(eslog::ERROR) << "Set environment PAR_NUM_THREADS to 1.";
-			exit(1);
-        }
-        GGt_tmp.iparm[2]  = num_procs;
+	int num_procs = Esutils::getEnv<int>("PAR_NUM_THREADS");
+	GGt_tmp.iparm[2]  = num_procs;
 
 
 //	 TimeEvent SaRGlocal("Send a Receive local G1 matrices to neighs. "); SaRGlocal.start();
@@ -1439,19 +1479,16 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 		GGt_l.Clear();
 
 		count_cv_l += mpi_size/li;
-		if (mpi_rank == 0)
-//			printf(" Collecting matrices G : %d of %d \r", count_cv_l, mpi_size);
-			std::cout<<" Collecting matrices G : " << count_cv_l <<" of " << mpi_size << "\n";
 
+		ESINFO(PROGRESS2) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
 	}
 	collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
-	if (mpi_rank == 0) cout << endl;
-
 	if (mpi_rank == 0)  {
 		GGt_Mat_tmp.RemoveLower();
-		SpyText(GGt_Mat_tmp);
 	}
+
+	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 
@@ -1460,8 +1497,9 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	GGt_bcast_time.end(); GGt_bcast_time.printStatMPI(); preproc_timing.addEvent(GGt_bcast_time);
 
 	// Create Sparse Direct solver for GGt
-	if (mpi_rank == mpi_root)
-		GGt_tmp.msglvl = 1;
+	if (mpi_rank == mpi_root) {
+		GGt_tmp.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	}
 
 	TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
 	GGt_tmp.ImportMatrix(GGt_Mat_tmp);
@@ -1472,10 +1510,10 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
 	GGt_tmp.SetThreaded();
 	std::stringstream ss;
-	ss << "Create GGt_inv_dist-> rank: " << esconfig::MPIrank;
+	ss << "Create GGt_inv_dist-> rank: " << config::MPIrank;
 	GGt_tmp.Factorization(ss.str());
-	GGtFactor_time.end(); 
-	GGtFactor_time.printLastStatMPIPerNode();
+	GGtFactor_time.end();
+	//GGtFactor_time.printLastStatMPIPerNode();
 	GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
 
 	TimeEvent GGT_rhs_time("Time to create RHS for get GGTINV"); GGT_rhs_time.start();
@@ -1651,337 +1689,6 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 	time_eval.totalTime.end();
 
 }
-
-// *** Action of K+ routines *********************************************
-
-void IterSolverBase::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
-       time_eval.totalTime.start();
-
-       // number of Xeon Phi devices (0 for fallback to CPU)
-       eslocal numDevices = cluster.NUM_MICS;
-
-       #ifdef MIC
-       if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
-
-               // HFETI on MIC using Schur
-
-               time_eval.timeEvents[0].start();
-
-               eslocal maxDevNumber = numDevices;
-               if (numDevices == 0) {
-                       maxDevNumber = 1;               // if number of MICs is zero, we use a CPU
-               }
-               eslocal matrixPerPack = cluster.domains.size() / maxDevNumber;
-               eslocal offset = 0;
-
-               for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-                       if ( i == maxDevNumber - 1 ) {
-                               // add the remaining domains to the last pack
-                               matrixPerPack += cluster.domains.size() % maxDevNumber;
-                       }
-                       cilk_for (eslocal d = offset; d < offset + matrixPerPack; d++) {
-                               SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-                               for ( eslocal j = 0; j < cluster.domains[d].lambda_map_sub_local.size(); j++ ) {
-                                       cluster.B1KplusPacks[i].SetX(d - offset, j, x_in[ cluster.domains[d].lambda_map_sub_local[j]]);
-                                       x_in_tmp[j] = x_in[ cluster.domains[d].lambda_map_sub_local[j]];
-                               }
-                               cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-                       }
-                       offset += matrixPerPack;
-               }
-
-       #pragma omp parallel num_threads( maxDevNumber )
-       {
-               if ( numDevices > 0 ) {
-                       // start async. computation on MICs
-                       cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
-               } else {
-                       // perform matrix-vector multiplication on CPU using MIC data structures
-                       cluster.B1KplusPacks[ 0 ].DenseMatsVecs( 'N' );
-               }
-       }
-       time_eval.timeEvents[0].end();
-
-       // perform simultaneous computation on CPU
-       time_eval.timeEvents[1].start();
-       cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
-       time_eval.timeEvents[1].end();
-
-       time_eval.timeEvents[2].start();
-       std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-
-       #pragma omp parallel num_threads( maxDevNumber )
-       {
-               if ( numDevices > 0 ) {
-                       // synchronize computation
-                       cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
-               }
-       }
-
-       // extract the result
-       offset = 0;
-       matrixPerPack = cluster.domains.size() / maxDevNumber;
-       for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-               if ( i == maxDevNumber - 1 ) {
-                       matrixPerPack += cluster.domains.size() % maxDevNumber;
-               }
-               cilk_for ( eslocal d = offset ; d < offset + matrixPerPack; d++ ) {
-                       cluster.B1KplusPacks[i].GetY(d - offset, cluster.domains[d].compressed_tmp);
-               }
-               offset+=matrixPerPack;
-       }
-
-
-               time_eval.timeEvents[2].start();
-               std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-               for (eslocal d = 0; d < cluster.domains.size(); d++) {
-                       for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-                               cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
-               }
-               time_eval.timeEvents[2].end();
-               //std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-               SEQ_VECTOR < double > y_out_tmp;
-               for (eslocal d = 0; d < cluster.domains.size(); d++) {
-                       y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-                       cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
-
-                       for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-                               cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
-               }
-               time_eval.timeEvents[2].end();
-       }
-       #else
-
-
-	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
-		time_eval.timeEvents[0].start();
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-				x_in_tmp[i]                            = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-#ifdef CUDA
-				if (cluster.domains[d].isOnACC == 1) {
-					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-					//cluster.domains[d].cuda_pinned_buff_fl[i] = (float) x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-				}
-#endif
-			}
-
-#ifdef CUDA
-			if (cluster.domains[d].isOnACC == 1) {
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start( cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0 );
-			//cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start_fl( cluster.domains[d].cuda_pinned_buff_fl, cluster.domains[d].cuda_pinned_buff_fl,'N',0 );
-			} else {
-				cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
-			}
-#else
-			cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
-#endif
-
-			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-		}
-		time_eval.timeEvents[0].end();
-
-		time_eval.timeEvents[1].start();
-		cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
-		time_eval.timeEvents[1].end();
-
-		time_eval.timeEvents[2].start();
-		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-
-#ifdef CUDA
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			if (cluster.domains[d].isOnACC == 1) {
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
-			}
-		}
-
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			if (cluster.domains[d].isOnACC == 1) {
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
-					//cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += (double)cluster.domains[d].cuda_pinned_buff_fl[i];
-				}
-			} else {
-				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
-				}
-			}
-		}
-
-#else
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
-		}
-#endif
-
-		//std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-		SEQ_VECTOR < double > y_out_tmp;
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
-
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
-		}
-		time_eval.timeEvents[2].end();
-
-	}
-	time_eval.totalTime.start();
-	#endif
-
-#ifdef MIC
-if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
-
-       // classical FETI on MIC using Schur
-
-       time_eval.timeEvents[0].start();
-       time_eval.timeEvents[0].end();
-
-       time_eval.timeEvents[1].start();
-
-       eslocal maxDevNumber = numDevices;
-       if (numDevices == 0) {
-               maxDevNumber = 1;       // if number of MICs is zero, we use a CPU
-       }
-
-       eslocal matrixPerPack = cluster.domains.size() / maxDevNumber;
-       eslocal offset = 0;
-
-       for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-               if ( i == maxDevNumber - 1 ) {
-                       // add the remaining domains to the last pack
-                       matrixPerPack += cluster.domains.size() % maxDevNumber;
-               }
-               cilk_for (eslocal d = offset; d < offset + matrixPerPack; d++) {
-                       //SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-                       for ( eslocal j = 0; j < cluster.domains[d].lambda_map_sub_local.size(); j++ )
-                               cluster.B1KplusPacks[i].SetX(d - offset, j, x_in[ cluster.domains[d].lambda_map_sub_local[j]]);
-               }
-               offset += matrixPerPack;
-      }
-
-#pragma omp parallel num_threads( maxDevNumber )
-{
-       eslocal device = omp_get_thread_num();
-       if ( numDevices > 0 ) {
-               // run matrix-vector multiplication of MIC
-               cluster.B1KplusPacks[ device ].DenseMatsVecsMIC( 'N' );
-       } else {
-               // run matrix-vector multiplication on CPU
-               cluster.B1KplusPacks[ 0 ].DenseMatsVecs( 'N' );
-       }
-}
-       offset = 0;
-       matrixPerPack = cluster.domains.size() / maxDevNumber;
-       for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-               if ( i == maxDevNumber - 1 ) {
-                       matrixPerPack += cluster.domains.size() % maxDevNumber;
-               }
-               cilk_for ( eslocal d = offset ; d < offset + matrixPerPack; d++ ) {
-                       cluster.B1KplusPacks[i].GetY(d - offset, cluster.domains[d].compressed_tmp);
-               }
-               offset+=matrixPerPack;
-       }
-       time_eval.timeEvents[1].end();
-
-       time_eval.timeEvents[2].start();
-       std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-       for (eslocal d = 0; d < cluster.domains.size(); d++) {
-               for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-                       cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
-       }
-       time_eval.timeEvents[2].end();
-}
-#else
-
-
-	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
-		time_eval.timeEvents[0].start();
-		//// POZOR - jen pro porovnani vykonu CPU a GPU
-		//cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-		//	SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-		//	for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-		//		x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-		//	cluster.domains[d].B1Kplus.DenseMatVec(x_in_tmp, cluster.domains[d].compressed_tmp);
-		//}
-		//// POZOR - jen pro porovnani vykonu CPU a GPU
-		time_eval.timeEvents[0].end();
-
-		time_eval.timeEvents[1].start();
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-#ifdef CUDA
-			if (cluster.domains[d].isOnACC == 1) {
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy(x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
-			} else {
-				cluster.domains[d].B1Kplus.DenseMatVec            (x_in_tmp, cluster.domains[d].compressed_tmp);
-			}
-#elif MICEXP
-			cluster.domains[d].B1Kplus.DenseMatVecMIC_wo_Copy (x_in_tmp, cluster.domains[d].compressed_tmp,'N',0);
-#else
-			cluster.domains[d].B1Kplus.DenseMatVec            (x_in_tmp, cluster.domains[d].compressed_tmp);
-#endif
-		}
-		time_eval.timeEvents[1].end();
-
-		time_eval.timeEvents[2].start();
-		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
-		}
-		time_eval.timeEvents[2].end();
-	}
-
-#endif
-
-	if (cluster.USE_KINV == 0) {
-		time_eval.timeEvents[0].start();
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-			//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d]; // POZOR zbytecne kopirovani // prim norm
-		}
-		time_eval.timeEvents[0].end();
-
-		time_eval.timeEvents[1].start();
-		if (cluster.USE_HFETI == 0) {
-			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
-				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
-			} else {
-				cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
-		}
-		time_eval.timeEvents[1].end();
-
-
-		time_eval.timeEvents[2].start();
-		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-		SEQ_VECTOR < double > y_out_tmp;
-		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
-
-			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
-		}
-		time_eval.timeEvents[2].end();
-
-	}
-
-	time_eval.timeEvents[3].start();
-	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
-	time_eval.timeEvents[3].end();
-
-	time_eval.totalTime.end();
-
-}
-
 void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
 
 	time_eval.totalTime.start();
@@ -2049,6 +1756,7 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 // *** END - Iteration solver class *************************************
 // **********************************************************************
 
+namespace espreso {
 
 
 // **********************************************************************
@@ -2516,6 +2224,8 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 #endif
+
+}
 
 }
 

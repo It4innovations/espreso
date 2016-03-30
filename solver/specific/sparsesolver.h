@@ -6,6 +6,8 @@
 #include "../generic/utils.h"
 #include "../generic/SparseMatrix.h"
 
+namespace espreso {
+
 class SparseSolver
 {
 
@@ -17,7 +19,7 @@ public:
 
 	virtual void ImportMatrix_wo_Copy(SparseMatrix & A) = 0;
 
-	virtual void Factorization(const std::string &str) = 0;
+	virtual int Factorization(const std::string &str) = 0;
 	virtual void Clear() = 0;
 	virtual void SetThreaded() = 0;
 
@@ -44,6 +46,6 @@ public:
 	virtual void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) = 0;
 };
 
-
+}
 
 #endif /* SOLVER_SPECIFIC_SPARSESOLVER_H_ */

@@ -12,7 +12,8 @@
 #include <iostream>
 #include <stdlib.h>
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 class Configuration {
 
@@ -53,6 +54,7 @@ private:
 	std::map<std::string, Parameter*> _parameters;
 };
 
+}
 }
 
 #endif /* CONFIGURATION_H_ */

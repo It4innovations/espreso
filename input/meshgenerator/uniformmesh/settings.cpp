@@ -1,6 +1,6 @@
 #include "settings.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 static std::vector<Description> createUniformSetting()
 {

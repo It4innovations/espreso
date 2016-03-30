@@ -1,17 +1,10 @@
 
-source_files = (
-    "vtk.cpp",
-    "full/vtk.cpp",
-    "surface/vtk.cpp"
-)
-
 def configure(ctx):
     pass
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esoutput_vtk",
-        use             = "espreso_includes",
-        install_path    = ctx.LIBRARIES
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "vtk_out",
+        use    = "espreso_includes"
     )

@@ -6,23 +6,35 @@
 #include "settings.h"
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template<class TElement>
 class SphereGenerator: public UniformGenerator<TElement> {
 
 public:
-	SphereGenerator(const SphereSettings &settings);
+	static void load(Mesh &mesh, const SphereSettings &settings)
+	{
+		ESINFO(OVERVIEW) << "Generate sphere mesh";
+		ESINFO(DETAILS) << "Sphere parameters:\n" << settings;
+		SphereGenerator sphere(mesh, settings);
+		sphere.fill();
+	}
 
-private:
-	void elementsMaterials(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
-	void points(mesh::Coordinates &coordinates);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Boundaries &boundaries);
+protected:
+	SphereGenerator(Mesh &mesh, const SphereSettings &settings);
+
+	virtual void elementsMaterials(std::vector<Element*> &elements);
+	virtual void points(Coordinates &coordinates);
+	virtual void boundaryConditions(Coordinates &coordinates);
+	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+
+	virtual ~SphereGenerator() {};
 
 	const SphereSettings _settings;
 };
 
+}
 }
 
 #include "generator.hpp"

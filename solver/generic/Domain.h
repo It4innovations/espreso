@@ -14,7 +14,6 @@
 #include <map>
 
 using std::vector;
-using std::cout;
 using std::map;
 using std::make_pair;
 
@@ -29,6 +28,8 @@ using std::make_pair;
 #include "esbasis.h"
 
 #pragma once
+
+namespace espreso {
 
 class Domain {
 
@@ -81,7 +82,8 @@ public:
 	SEQ_VECTOR <eslocal> lambda_map_sub_local;
 
 	SparseSolverCPU Kplus;
-	SparseSolverCPU KplusF;
+	
+    SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> f;
 	SEQ_VECTOR <double> vec_c;
 
@@ -152,4 +154,5 @@ public:
 	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
 };
 
+}
 

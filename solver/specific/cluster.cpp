@@ -6,6 +6,7 @@
 // *******************************************************************
 // **** CLUSTER CLASS ************************************************
 
+using namespace espreso;
 
 void ClusterBase::ShowTiming()  {
 
@@ -108,12 +109,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	//my_neighs = neigh_domains;
 
 
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** setting vectors for lambda map ******************************************************************************************** " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "Setting vectors for lambdas";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 
 	my_lamdas_indices.resize( lambda_map_sub.size() );
@@ -136,13 +134,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 	}
 
-
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** setting vectors for lambda communication  ********************************************************************************* " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_comm_lambdas_indices .resize(my_neighs.size());
 	my_comm_lambdas			.resize(my_neighs.size());
@@ -215,12 +209,9 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 
 	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** B1 compression ************************************************************************************************************ " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "B1 compression";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
@@ -241,7 +232,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		if (esconfig::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
+		if (config::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
 			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
 			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
@@ -254,7 +245,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 
 		//************************
-		if ( esconfig::solver::REGULARIZATION == 0 )
+		if ( config::solver::REGULARIZATION == 0 )
                     domains[i].B1.Clear();
 
 		domains[i].B1t.Clear();
@@ -271,42 +262,38 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 
 	//// *** Compression of Matrix G1 to work with compressed lambda vectors *******************
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** G1 compression ************************************************************************************************************ " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "G1 compression";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (USE_DYNAMIC == 0) {
-		if ( ! (USE_HFETI == 1 && esconfig::solver::REGULARIZATION == 1 )) {
+		if ( ! (USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
 			Compress_G1();
 		}
 	}
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
-	if (MPIrank == 0) {
-		cout << " ******************************************************************************************************************************* " << endl;
-		cout << " *** setting vectors end ******************************************************************************************************* " << endl;
-		GetProcessMemoryStat_u ( ); GetMemoryStat_u( );
-		cout << endl;
-	}
+	ESLOG(MEMORY) << "Lambdas end";
+	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
 
 void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes ) {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		if ( d == 0 && esconfig::MPIrank == 0) domains[d].Kplus.msglvl=1;
+		if ( d == 0 && config::MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 
-	    if (esconfig::solver::REGULARIZATION == 0) {
+	    if (config::solver::REGULARIZATION == 0) {
 
 			domains[d].K.swap(K_in[d]);
 
       		if ( domains[d].K.type == 'G' )
 		  		domains[d].K.RemoveLower();
 
-		  	if ( esconfig::solver::PRECONDITIONER == 11 )
+		  	if ( config::solver::PRECONDITIONER == 11 )
 		  		domains[d].Prec = domains[d].K;
 
    			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
@@ -320,10 +307,9 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 
 	    }
 
-	    if (esconfig::MPIrank == 0) std::cout << ".";
-
+	    ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
-
+	ESINFO(PROGRESS2);
 }
 
 
@@ -336,8 +322,7 @@ void ClusterBase::SetClusterHFETI (bool R_from_mesh) {
 
 		int MPIrank;
 		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
-		if (MPIrank == 0 ) { cout << endl << "*** HFETI - Preprocessing start ************************************************************************************************ " << endl << endl; }
-
+		ESINFO(PROGRESS2) << "HFETI preprocessing start";
 
 		TimeEvent B0_time("Compress B0 per cluster");
 		B0_time.start();
@@ -526,6 +511,7 @@ void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double
 
 void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
+	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
 	cluster_time.totalTime.start();
@@ -649,7 +635,9 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		for (eslocal i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
+		//ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
+	//ESINFO(PROGRESS2);
 	loop_2_1_time.end();
 
 	cluster_time.totalTime.end();
@@ -1063,7 +1051,7 @@ void ClusterBase::CreateF0() {
 
 	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
-	if (MPIrank == 0 ) {cout << "HFETI - Create F0 - domain : " << endl; };
+	ESINFO(PROGRESS2) << "HFETI - Create F0";
 
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple RHS solve");
 	 solve_F0_time.start();
@@ -1076,13 +1064,13 @@ void ClusterBase::CreateF0() {
 			domains[d].Kplus.msglvl=0;
 
 		// FO solve in doble in case K is in single
-		if (   (esconfig::solver::KSOLVER == 2 || esconfig::solver::KSOLVER == 3 )
-			 && esconfig::solver::F0_SOLVER == 1
+		if (   (config::solver::KSOLVER == 2 || config::solver::KSOLVER == 3 )
+			 && config::solver::F0_SOLVER == 1
 			) {
 			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
-			ss << "Create F0 -> rank: " << esconfig::MPIrank << ", subdomain: " << d;
+			ss << "Create F0 -> rank: " << config::MPIrank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		} else {
@@ -1116,16 +1104,14 @@ void ClusterBase::CreateF0() {
 		domains[d].B0Kplus.Clear();
 
 		domains[d].Kplus.msglvl=0;
-		if (MPIrank == 0 ) cout << "."; //{cout << d << " "; };
+		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 
-	if (MPIrank == 0 ) {cout << endl; };
+	ESINFO(PROGRESS2);
 
 	 solve_F0_time.end();
 	 solve_F0_time.printStatMPI();
 	 F0_timing.addEvent(solve_F0_time);
-
-	if (MPIrank == 0 ) {cout << endl; };
 
 	 TimeEvent reduction_F0_time("F0 reduction time");
 	 reduction_F0_time.start();
@@ -1156,7 +1142,7 @@ void ClusterBase::CreateF0() {
 	//F0_Mat.Clear();
 	F0.SetThreaded();
 	std::stringstream ss;
-	ss << "F0 -> rank: " << esconfig::MPIrank;
+	ss << "F0 -> rank: " << config::MPIrank;
 	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);
@@ -1180,7 +1166,7 @@ void ClusterBase::CreateSa() {
 	bool PARDISO_SC = true;
 	bool get_kernel_from_mesh;
 
-	if ( esconfig::solver::REGULARIZATION == 0 )
+	if ( config::solver::REGULARIZATION == 0 )
   		get_kernel_from_mesh = true	;
   	else
   		get_kernel_from_mesh = false	;
@@ -1200,13 +1186,17 @@ void ClusterBase::CreateSa() {
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.start();
 	if (!PARDISO_SC) {
-		if (MPIrank == 0) F0_fast.msglvl = 1;
+		if (MPIrank == 0) {
+			F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		//SolaveMatF is obsolete - use Schur Complement Instead
 		F0_fast.SolveMatF(G0t,tmpM, true);
 		if (MPIrank == 0) F0_fast.msglvl = 0;
 	} else {
 		SparseSolverCPU tmpsps;
-		if (MPIrank == 0) tmpsps.msglvl = 1;
+		if (MPIrank == 0) {
+			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
         Salfa.ConvertDenseToCSR(1);
         Salfa.RemoveLower();
@@ -1225,7 +1215,7 @@ void ClusterBase::CreateSa() {
 
 	 if (!get_kernel_from_mesh) {
 		 SparseMatrix Kernel_Sa;
-		 printf("Salfa - regularization from matrix \n");
+		 ESINFO(PROGRESS2) << "Salfa - regularization from matrix";
 
 		 SparseMatrix GGt;
 
@@ -1310,6 +1300,7 @@ void ClusterBase::CreateSa() {
 	SaMat.ipiv.resize(SaMat.cols);
 	dsptrf( &U, &SaMat.cols, &SaMat.dense_values[0], &SaMat.ipiv[0], &info );
 	 factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+	Sa.m_Kplus_size = SaMat.cols;
 #endif
 
 
@@ -1452,7 +1443,7 @@ void ClusterBase::Create_G1_perCluster() {
 				SparseMatrix Rt;
 				SparseMatrix B;
 
-				if ( esconfig::solver::REGULARIZATION == 0 ) {
+				if ( config::solver::REGULARIZATION == 0 ) {
 					Rt = domains[j].Kplus_R;
 					Rt.ConvertDenseToCSR(1);
 					Rt.MatTranspose();
@@ -1523,7 +1514,7 @@ void ClusterBase::Create_G1_perCluster() {
 
 			} else {
 				Gcoo.cols = domains[j].B1.rows;
-				if ( esconfig::solver::REGULARIZATION == 0 )
+				if ( config::solver::REGULARIZATION == 0 )
 					Gcoo.rows = domains[j].Kplus_R.rows;
 				else
 					Gcoo.rows = domains[j].Kplus_Rb.rows;
@@ -1596,7 +1587,7 @@ void ClusterBase::Create_G1_perCluster() {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			if ( esconfig::solver::REGULARIZATION == 0 ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				Rt = domains[j].Kplus_R;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
@@ -1730,7 +1721,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	if ( USE_HFETI == 1) {
 		for (eslocal d = 0; d < domains.size(); d++) {
-			if ( esconfig::solver::REGULARIZATION == 0 ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 			} else {
 				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
@@ -1738,7 +1729,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		}
 	} else {
 		for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
-			if ( esconfig::solver::REGULARIZATION == 0 ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 			} else {
 				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
@@ -1801,147 +1792,6 @@ void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 
 
-void ClusterBase::Create_Kinv_perDomain() {
-
-	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
-		domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
-
-	if (cluster_global_index == 1)
-		cout << "Creating B1*K+*B1t : ";
-
-this->NUM_MICS = 2;
-
-#ifdef MIC
-
-	// compute sizes of data to be offloaded to MIC
-	eslocal maxDevNumber = this->NUM_MICS;
-	if (this->NUM_MICS == 0) {
-		maxDevNumber = 1;
-	}
-	eslocal matrixPerPack = domains.size() / maxDevNumber;
-	eslocal offset = 0;
-	bool symmetric = true;
-	this->B1KplusPacks.resize( maxDevNumber );
-	eslocal * dom2dev = new eslocal[ domains.size() ];
-	eslocal * offsets = new eslocal[maxDevNumber];
-
-	for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-		if ( i == maxDevNumber - 1 ) {
-			matrixPerPack += domains.size() % maxDevNumber;
-		}
-
-		long dataSize = 0;
-		offsets[i] = offset;
-
-		for ( eslocal j = offset; j < offset + matrixPerPack; j++ ) {
-			if (!symmetric) {
-				dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
-			} else {
-				// isPacked => is symmetric
-				dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
-					( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
-			}
-			dom2dev[ j ] = i;
-		}
-
-		this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
-
-		for ( eslocal j = offset; j < offset + matrixPerPack; j++ ) {
-			this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
-				domains[j].B1t_comp_dom.cols,  symmetric );
-		}
-		offset += matrixPerPack;
-	}
-//	tbb::mutex m;
-#endif
-
-	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
-
-		domains[i].KplusF.msglvl = 0;
-
-		if ( i == 0 && cluster_global_index == 1) domains[i].KplusF.msglvl=1;
-
-		//SolveMatF is obsolete - use Schur complement instead
-		domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
-		domains[i].B1Kplus.MatTranspose();
-
-		if (cluster_global_index == 1 && i == 0)
-			cout << "Creating B1*K+*B1t : ";
-
-		if (cluster_global_index == 1) {
-			//SpyText(domains[i].B1Kplus);
-			//cout << "B1Klus - sparsity - " << 100.0 * (double)domains[i].B1Kplus.nnz / (double)(domains[i].B1Kplus.cols * domains[i].B1Kplus.rows) << endl;
-			cout << " " << i ;
-		}
-
-		SparseMatrix Btmp;
-		Btmp.MatAddInPlace(domains[i].B1Kplus, 'N', 1.0);
-
-		domains[i].B1Kplus.Clear ();
-		domains[i].B1Kplus.MatMat(Btmp,'N', domains[i].B1t_comp_dom);
-		domains[i].B1Kplus.ConvertCSRToDense(0);
-		//domains[i].B1Kplus.ConvertDenseToDenseFloat(0);
-
-
-#ifdef CUDA
-
-	//domains[i].B1Kplus.RemoveLowerDense();
-	domains[i].B1Kplus.CopyToCUDA_Dev();
-	//domains[i].B1Kplus.CopyToCUDA_Dev_fl();
-
-#endif
-
-#ifdef MIC
-	this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
-	domains[i].B1Kplus.Clear();
-	//domains[i].B1t_comp_dom.Clear();
-	//if (numDevices > 0) {
-	//	domains[i].B1Kplus.CopyToMIC_Dev();
-	//}
-#endif
-
-#ifdef CUDA
-		if ( USE_KINV == 1 ) {
-			cilk_for (eslocal d = 0; d < domains.size(); d++) {
-				cudaError_t status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
-				if (status != cudaSuccess)
-					printf("Error allocating pinned host memory \n");
-
-				//status = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
-				//if (status != cudaSuccess)
-				//	printf("Error allocating pinned host memory \n");
-			}
-		}
-#endif
-
-
-	}
-
-	cout << endl;
-
-#ifdef MIC
-	delete [] dom2dev;
-	delete [] offsets;
-	if (this->NUM_MICS == 0) {
-		this->B1KplusPacks[0].AllocateVectors( );
-	}
-	for (eslocal i = 0; i < this->NUM_MICS ; i++ ) {
-		this->B1KplusPacks[i].AllocateVectors( );
-		this->B1KplusPacks[i].SetDevice( i );
-		this->B1KplusPacks[i].CopyToMIC();
-	}
-
-#endif
-
-	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
-		domains[i].B1t_comp_dom.Clear();
-
-//	std::cout << "This function is obsolete - use Create_SC_perDomain" << std::endl;
-//	return();
-
-}
-
-
 
 
 
@@ -1967,7 +1817,7 @@ void ClusterBase::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_v
 
 void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
 
-	std::cout << " B1_comp_MatVecSum - not implemented " << std::endl;
+	ESINFO(ERROR) << " B1_comp_MatVecSum - not implemented ";
 
 	exit(0);
 

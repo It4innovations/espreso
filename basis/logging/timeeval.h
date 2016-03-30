@@ -9,6 +9,11 @@
 #include <vector>
 #include <iomanip>
 
+#include "esconfig.h"
+#include "logging.h"
+
+namespace espreso {
+
 struct Checkpoint
 {
 	Checkpoint(const std::string &name, double time, size_t level)
@@ -49,6 +54,7 @@ struct TimeEvent
 	void start();
 	void startWithBarrier();
 	void startWithoutBarrier();
+
 	void start(double time);
 	void startWithBarrier(double time);
 	void startWithoutBarrier(double time);
@@ -56,6 +62,7 @@ struct TimeEvent
 	void end();
 	void endWithBarrier();
 	void endWithoutBarrier();
+
 	void end(double time);
 	void endWithBarrier(double time);
 	void endWithoutBarrier(double time);
@@ -112,5 +119,7 @@ struct TimeEval
 	std::vector<TimeEvent> timeEvents;
 
 };
+
+}
 
 #endif /* BASIS_LOGGING_TIMEEVAL_H_ */

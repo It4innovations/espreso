@@ -4,7 +4,7 @@
 
 #include "../linear.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 class Temperature: public Linear<TInput> {

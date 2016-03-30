@@ -1,14 +1,11 @@
 
-source_files = (
-    "esconfig.cpp",
-)
 
 def configure(ctx):
     pass
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esconfig",
-        install_path    = ctx.LIBRARIES
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "config"
     )
