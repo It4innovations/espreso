@@ -1,4 +1,3 @@
-
 #include "itersolvercpu.h"
 
 using namespace espreso;
@@ -11,15 +10,14 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
         time_eval.timeEvents[0].start();
         cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-            SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
+            //SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
             for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-                x_in_tmp[i]                            = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
-
+                cluster.domains[d].compressed_tmp2[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
             }
 
-            cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
+            cluster.domains[d].B1Kplus.DenseMatVec (cluster.domains[d].compressed_tmp2, cluster.domains[d].compressed_tmp);
 
-            cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+            cluster.domains[d].B1_comp_dom.MatVec (cluster.domains[d].compressed_tmp2, cluster.x_prim_cluster1[d], 'T');
         }
         time_eval.timeEvents[0].end();
 

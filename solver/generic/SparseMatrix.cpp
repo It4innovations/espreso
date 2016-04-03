@@ -1320,15 +1320,16 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
 		if (status != cudaSuccess)   {
-			ESINFO(ERROR) << "Error allocating GPU memory";
-			MPI_Finalize();
-			exit(0);
+			//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+			//MPI_Finalize();
+			//exit(0);
+			error = -1;
 		}
 
 
 		status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 		if (status != cudaSuccess) {
-			ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+			//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
 			//MPI_Finalize();
 			//exit(0);
 			error = -1;
@@ -1337,7 +1338,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 
 		status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
 		if (status != cudaSuccess) {
-			ESINFO(ERROR) << "Error allocating GPU memory for Vector";
+			//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
 			//MPI_Finalize();
 			//exit(0);
 			error = -1;
@@ -1439,7 +1440,8 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 #endif
 }
 
-void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
+eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
+	eslocal error = 0;
 #ifdef CUDA
 
 	eslocal mat_size = dense_values.size();// rows * cols;
@@ -1449,25 +1451,28 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 		cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
 		if (status != cudaSuccess)   {
-			ESINFO(ERROR) << "Error allocating GPU memory";
-			MPI_Finalize();
-			exit(0);
+			//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+			//MPI_Finalize();
+			//exit(0);
+			error = -1;
 		}
 
 
 		status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
 		if (status != cudaSuccess) {
-			ESINFO(ERROR) << "Error allocating GPU memory";
-			MPI_Finalize();
-			exit(0);
+			//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+			//MPI_Finalize();
+			//exit(0);
+			error = -1;
 		}
 
 
 		status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
 		if (status != cudaSuccess) {
-			ESINFO(ERROR) << "Error allocating GPU memory";
-			MPI_Finalize();
-			exit(0);
+			//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+			//MPI_Finalize();
+			//exit(0);
+			error = -1;
 		}
 
 
@@ -1484,6 +1489,9 @@ void SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 	}
 
 #endif
+
+	return error;
+
 }
 
 

@@ -127,7 +127,7 @@ public:
 	void RemoveLowerDense( );
 
 	eslocal  CopyToCUDA_Dev ();
-	void CopyToCUDA_Dev_fl ();
+	eslocal  CopyToCUDA_Dev_fl ();
 	void CopyFromCUDA_Dev();
 	void FreeFromCUDA_Dev();
 

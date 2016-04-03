@@ -127,6 +127,7 @@ public:
 
 	// temporary variables
 	SEQ_VECTOR <double> compressed_tmp;
+	SEQ_VECTOR <double> compressed_tmp2;
 
 	// variables for dynamic
 	double dynamic_timestep;
@@ -135,7 +136,7 @@ public:
 
 	// CUDA
 	double * cuda_pinned_buff;
-	//float  * cuda_pinned_buff_fl;
+	float  * cuda_pinned_buff_fl;
 	// END - CUDA
 
 	// Methods of the class
