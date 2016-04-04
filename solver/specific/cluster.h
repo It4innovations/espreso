@@ -32,9 +32,9 @@ using std::make_pair;
 #include "esconfig.h"
 #include "esbasis.h"
 
-using config::solver::N_MICS;
-
 namespace espreso {
+
+using config::solver::N_MICS;
 
 class Domain;
 

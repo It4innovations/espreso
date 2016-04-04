@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <string>
 
+namespace espreso {
+
 namespace config {
 
 enum FetiMethod {
@@ -113,7 +115,7 @@ namespace tmp{
 	extern size_t DOFS;
 }
 
-
+}
 
 }
 

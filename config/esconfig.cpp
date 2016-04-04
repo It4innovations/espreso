@@ -1,6 +1,7 @@
 
 #include "esconfig.h"
 
+namespace espreso {
 namespace config {
 
 int MPIrank = 0;
@@ -78,6 +79,7 @@ namespace info {
 	bool printMatrices = false;
 }
 
+}
 }
 
 
