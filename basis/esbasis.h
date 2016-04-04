@@ -5,6 +5,7 @@
 #include "matrices/matrices.h"
 #include "logging/logging.h"
 #include "logging/timeeval.h"
+#include "configuration/configuration.h"
 #include "options/options.h"
 #include "utilities/utils.h"
 

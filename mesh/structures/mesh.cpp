@@ -764,9 +764,9 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 			if (same_subdomains(begin, start) && same_subdomains(begin, end)) {
 				eslocal tmp[3] = { points[start], points[mid], points[end] };
 				if (std::get<2>(commonLines[i]) == -1) {
-					lines._elements.push_back(new Line(tmp, params));
+					lines._elements.push_back(new Line2(tmp, params));
 				} else {
-					lines._elements.push_back(new Line(tmp, params));
+					lines._elements.push_back(new Line3(tmp, params));
 				}
 			}
 			if (same_subdomains(begin, start) != same_subdomains(begin, end)) {

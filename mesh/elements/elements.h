@@ -2,6 +2,7 @@
 #define ELEMENTS_H_
 
 #include "1D/line2.h"
+#include "1D/line3.h"
 #include "1D/point.h"
 
 #include "2D/square4.h"

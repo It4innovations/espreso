@@ -2,7 +2,6 @@
 #ifndef INPUT_MESHGENERATOR_UNIFORMMESH_SETTINGS_H_
 #define INPUT_MESHGENERATOR_UNIFORMMESH_SETTINGS_H_
 
-#include "../configuration/configuration.h"
 #include "../settings.h"
 #include "esmesh.h"
 

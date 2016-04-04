@@ -2,7 +2,7 @@
 #ifndef INPUT_MESHGENERATOR_SETTINGS_H_
 #define INPUT_MESHGENERATOR_SETTINGS_H_
 
-#include "configuration/configuration.h"
+#include "esbasis.h"
 
 namespace espreso {
 namespace input {

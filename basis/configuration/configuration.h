@@ -3,7 +3,6 @@
 #define CONFIGURATION_H_
 
 #include "parameter.h"
-#include "esbasis.h"
 
 #include <map>
 #include <vector>

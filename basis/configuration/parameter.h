@@ -7,7 +7,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "esbasis.h"
+#include "../logging/logging.h"
+#include "../options/options.h"
 
 namespace espreso {
 namespace input {
