@@ -1,15 +1,18 @@
 
 #include "options.h"
+#include "esbasis.h"
 
 static struct option long_options[] = {
 		{"input",  required_argument, 0, 'i'},
 		{"path",  required_argument, 0, 'p'},
+		{"config",  required_argument, 0, 'c'},
 		{"testing", no_argument, 0, 't'},
 		{"help",  no_argument, 0, 'h'},
 		{0, 0, 0, 0}
 };
 
 using namespace espreso;
+using namespace input;
 
 Options::Options(int* argc, char*** argv)
 : verboseLevel(0), testingLevel(0), measureLevel(0)
@@ -24,7 +27,7 @@ Options::Options(int* argc, char*** argv)
 
 	int option_index, option;
 	while (true) {
-		option = getopt_long(*argc, *argv, "i:p:vtmh", long_options, &option_index);
+		option = getopt_long(*argc, *argv, "i:p:c:vtmh", long_options, &option_index);
 		if (option == -1) {
 			break;
 		}
@@ -47,13 +50,23 @@ Options::Options(int* argc, char*** argv)
 			path = std::string(optarg);
 			path.erase(0, path.find_first_not_of('='));
 			break;
+		case 'c': {
+			std::string config(optarg);
+			std::ifstream file(config);
+			if (!file.is_open()) {
+				ESINFO(ERROR) << "Cannot load configuration file '" << config << "'";
+			}
+			setFromFile(config);
+			break;
+		}
 		case 'h':
 			ESINFO(ALWAYS) << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
 
-			ESINFO(ALWAYS) << "\nOPTIONS:\n";
+			ESINFO(ALWAYS) << "OPTIONS:\n";
 			printOption("-h, --help", "show this message");
 			printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
 			printOption("-p, --path=PATH", "path to an example");
+			printOption("-c, --config=FILE", "file with ESPRESO configuration");
 			printOption("-v,vv,vvv", "verbose level");
 			printOption("-t,tt,ttt", "testing level");
 			printOption("-m,mm,mmm", "time measuring level");
@@ -67,14 +80,17 @@ Options::Options(int* argc, char*** argv)
 		}
 	}
 
-	if (optind == 1 || (optind > 1 && !path.size())) { // compatibility with old version of ESPRESO binary
-		if (*argc < 2) {
+	setFromFile("espreso.config");
+
+	if (!path.size()) {
+		if (*argc < 2) { // compatibility with old version of ESPRESO binary
 			ESINFO(ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
+		} else {
+			path = (*argv)[1];
+			verboseLevel = 3;
+			measureLevel = 3;
+			optind++;
 		}
-		path = (*argv)[1];
-		verboseLevel = 3;
-		measureLevel = 3;
-		optind++;
 	}
 
 	while (optind < *argc) {
@@ -84,6 +100,19 @@ Options::Options(int* argc, char*** argv)
 	configure();
 }
 
+void Options::setFromFile(const std::string &file)
+{
+	std::vector<Description> description = {
+			{STRING_PARAMETER, "PATH", "A path to an example."},
+			{STRING_PARAMETER, "INPUT", "An input format: [generator, matsol, workbench, esdata, openfoam]"}
+	};
+
+	Configuration configuration(description, file);
+
+	path = configuration.value("PATH", path);
+	input = configuration.value("INPUT", input);
+}
+
 static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
 
 void Options::configure()
@@ -91,9 +120,9 @@ void Options::configure()
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
 
-	config::info::verboseLevel = verboseLevel;
-	config::info::testingLevel = testingLevel;
-	config::info::measureLevel = measureLevel;
+	config::info::verboseLevel += verboseLevel;
+	config::info::testingLevel += testingLevel;
+	config::info::measureLevel += measureLevel;
 
 	std::vector<std::pair<std::string, config::mesh::Input> > inputs = {
 			{ "GENERATOR", config::mesh::GENERATOR },

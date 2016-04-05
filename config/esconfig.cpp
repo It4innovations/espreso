@@ -37,7 +37,7 @@ namespace mesh {
 	bool averageEdges  = configuration.value("AVERAGE_EDGES" , false);
 	bool averageFaces  = configuration.value("AVERAGE_FACES" , false);
 
-	Input input = GENERATOR;
+	Input input = GENERATOR; // set by command line options of in espreso.config file by parameter INPUT
 
 	double materialDifference = 1e-0;
 }

@@ -22,6 +22,7 @@ struct Options {
 	Options(int *argc, char*** argv);
 
 	void configure();
+	void setFromFile(const std::string &file);
 
 	std::string input;
 	std::string path;
