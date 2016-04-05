@@ -21,6 +21,11 @@ enum Preconditioner {
 	DIRICHLET
 };
 
+enum Regularization {
+	FIX_POINTS,
+	NULL_PIVOTS
+};
+
 enum CGSolver {
 	STANDARD,
 	PIPELINED
@@ -31,6 +36,11 @@ enum KSolver {
 	ITERATIVE,
 	DIRECT_SINGLE_PRECISION,
 	DIRECT_MIXED_PREXISION
+};
+
+enum F0Solver {
+	KSOLVER_PRECISION,
+	DOUBLE_PRECISION
 };
 
 extern int MPIrank;
@@ -81,16 +91,16 @@ namespace assembler {
 }
 
 namespace solver {
-	extern double	epsilon;					// Solver requested precision
-	extern size_t	maxIterations;				//
-	extern size_t	FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
+	extern double   epsilon;					// Solver requested precision
+	extern size_t   maxIterations;				//
+	extern size_t   FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
 	extern bool     REDUNDANT_LAGRANGE;
-	extern size_t	USE_SCHUR_COMPLEMENT; 		// 1 - YES
-	extern size_t	KEEP_FACTORS;				// 1 - YES; 0 - NO
-	extern size_t	PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
-	extern size_t	CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
-	extern size_t	REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
-	extern size_t	KSOLVER;					// 0 - Direct DP, 1 - Iter, 2 - Direct SP, 3 - Direct MIXED Prec
+	extern bool     USE_SCHUR_COMPLEMENT; 		// 1 - YES
+	extern bool     KEEP_FACTORS;				// 1 - YES; 0 - NO
+	extern size_t   PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
+	extern size_t   CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
+	extern size_t   REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
+	extern size_t   KSOLVER;					// 0 - Direct DP, 1 - Iter, 2 - Direct SP, 3 - Direct MIXED Prec
 	extern size_t   KSOLVER_SP_iter_steps;		// number of reiteration steps for SP direct solver
 	extern double   KSOLVER_SP_iter_norm;
 	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP

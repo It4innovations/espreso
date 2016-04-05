@@ -29,7 +29,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
   	else
   		R_from_mesh = false	;
 
-	if ( config::solver::KEEP_FACTORS == 0)
+	if (!config::solver::KEEP_FACTORS)
 		KEEP_FACTORS = false; // only suported by MKL Pardiso so far
 	else
 		KEEP_FACTORS = true;
@@ -45,7 +45,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 		cluster.USE_DYNAMIC		= 1;
 
 	cluster.USE_HFETI			= config::solver::FETI_METHOD;
-	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT;
+	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
 	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;

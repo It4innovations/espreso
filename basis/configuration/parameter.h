@@ -26,13 +26,31 @@ struct Description {
 	std::string description;
 };
 
+struct ParameterCompare {
+
+	bool operator()(const std::string &p1, const std::string &p2) const
+	{
+		return std::lexicographical_compare(p1.begin(), p1.end(), p2.begin(), p2.end(), caseInsensitive);
+	}
+
+	static bool caseInsensitive(const char &c1, const char &c2)
+	{
+		return std::tolower(c1) < std::tolower(c2);
+	}
+
+	static bool caseInsensitiveEq(const char &c1, const char &c2)
+	{
+		return std::tolower(c1) == std::tolower(c2);
+	}
+};
+
 class Parameter {
 
 public:
 	bool match(const std::string &line) const
 	{
 		std::string param = line.substr(0, line.find(" "));
-		return param.size() == _name.size() && param.compare(0, _name.size(), _name) == 0;
+		return param.size() == _name.size() && std::equal(param.begin(), param.end(), _name.begin(), ParameterCompare::caseInsensitiveEq);
 	}
 
 	const std::string& name() const

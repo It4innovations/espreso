@@ -3,37 +3,33 @@
 
 using namespace espreso::input;
 
-Configuration::Configuration(std::vector<Description> &description, const Options &options)
+static void fillParameters(std::map<std::string, Parameter*, ParameterCompare> &parameters, const std::vector<Description> &description)
 {
-	_parameters["CMD_LINE_ARGUMENTS"] = new StringParameter(
-		"CMD_LINE_ARGUMENTS",
-		"Arguments set from the command line."
-	);
 	for (size_t i = 0; i < description.size(); i++) {
 		switch (description[i].type) {
 		case STRING_PARAMETER: {
-			_parameters[description[i].name] = new StringParameter(
+			parameters[description[i].name] = new StringParameter(
 				description[i].name,
 				description[i].description
 			);
 			break;
 		}
 		case INTEGER_PARAMETER: {
-			_parameters[description[i].name] = new IntegerParameter(
+			parameters[description[i].name] = new IntegerParameter(
 				description[i].name,
 				description[i].description
 			);
 			break;
 		}
 		case DOUBLE_PARAMETER: {
-			_parameters[description[i].name] = new DoubleParameter(
+			parameters[description[i].name] = new DoubleParameter(
 				description[i].name,
 				description[i].description
 			);
 			break;
 		}
 		case BOOLEAN_PARAMETER: {
-			_parameters[description[i].name] = new BooleanParameter(
+			parameters[description[i].name] = new BooleanParameter(
 				description[i].name,
 				description[i].description
 			);
@@ -41,8 +37,34 @@ Configuration::Configuration(std::vector<Description> &description, const Option
 		}
 		}
 	}
+}
+
+Configuration::Configuration(std::vector<Description> &description, const Options &options)
+{
+	fillParameters(_parameters, description);
+
+	_parameters["CMD_LINE_ARGUMENTS"] = new StringParameter(
+		"CMD_LINE_ARGUMENTS",
+		"Arguments set from the command line."
+	);
 
 	load(options);
+}
+
+Configuration::Configuration(std::vector<Description> &description, const std::string &path)
+{
+	std::ifstream file(path);
+
+	if (file.is_open()) {
+		// check existence of the file
+		file.close();
+
+		fillParameters(_parameters, description);
+		Options options;
+		options.path = path;
+
+		load(options);
+	}
 }
 
 void Configuration::load(const Options &options)
@@ -170,7 +192,12 @@ double Configuration::_getValue(const std::string &parameter, double defaultValu
 	}
 }
 
-std::string Configuration::_getValue(const std::string &parameter, std::string &defaultValue) const
+const char* Configuration::_getValue(const std::string &parameter, const char* defaultValue) const
+{
+	return value<std::string>(parameter, defaultValue).c_str();
+}
+
+std::string Configuration::_getValue(const std::string &parameter, const std::string &defaultValue) const
 {
 	if (_parameters.find(parameter)->second->isSet()) {
 		return static_cast<StringParameter*>(_parameters.find(parameter)->second)->get();

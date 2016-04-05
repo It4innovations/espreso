@@ -7,5 +7,6 @@ def build(ctx):
 
     ctx.objects(
         source = ctx.path.ant_glob('**/*.cpp'),
-        target = "config"
+        target = "config",
+        use    = "espreso_includes"
     )

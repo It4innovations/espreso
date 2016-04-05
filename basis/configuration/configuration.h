@@ -18,6 +18,7 @@ class Configuration {
 
 public:
 	Configuration(std::vector<Description> &description, const Options &options);
+	Configuration(std::vector<Description> &description, const std::string &path);
 	~Configuration();
 
 	void print() const;
@@ -35,7 +36,7 @@ public:
 	const ParameterType value(const std::string &parameter, ParameterType defaultValue) const
 	{
 		if (_parameters.find(parameter) != _parameters.end()) {
-			return _getValue(parameter, defaultValue);
+			return static_cast<ParameterType>(_getValue(parameter, defaultValue));
 		} else {
 			return defaultValue;
 		}
@@ -45,12 +46,13 @@ private:
 
 	eslocal _getValue(const std::string &parameter, eslocal defaultValue) const;
 	double _getValue(const std::string &parameter, double defaultValue) const;
-	std::string _getValue(const std::string &parameter, std::string &defaultValue) const;
+	const char* _getValue(const std::string &parameter, const char* defaultValue) const;
+	std::string _getValue(const std::string &parameter, const std::string &defaultValue) const;
 	bool _getValue(const std::string &parameter, bool defaultValue) const;
 
 	void load(const Options &options);
 
-	std::map<std::string, Parameter*> _parameters;
+	std::map<std::string, Parameter*, ParameterCompare> _parameters;
 };
 
 }

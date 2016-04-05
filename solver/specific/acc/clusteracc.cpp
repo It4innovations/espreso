@@ -305,7 +305,7 @@ void ClusterAcc::SetupKsolvers ( ) {
                     exit(EXIT_FAILURE);
         }
 
-        if (config::solver::KEEP_FACTORS == 1) {
+        if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
             ss << "init -> rank: " << config::MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
@@ -324,24 +324,24 @@ void ClusterAcc::SetupKsolvers ( ) {
         }
     }
     // send matrices to Xeon Phi
-    eslocal nMatrices = domains.size();  
+    eslocal nMatrices = domains.size();
     this->matricesPerAcc.reserve(N_MICS);
     SEQ_VECTOR<eslocal> nMatPerMIC;
     nMatPerMIC.resize(N_MICS);
-    
+
     for (eslocal i = 0; i < N_MICS; i++) {
         nMatPerMIC[i] = nMatrices / N_MICS;
     }
-    
+
     for (eslocal i = 0 ; i < nMatrices % N_MICS; i++ ) {
         nMatPerMIC[i]++;
     }
-    
+
     eslocal offset = 0;
     for (eslocal i = 0; i < N_MICS; i++) {
         this->matricesPerAcc[i] = new SparseMatrix*[ nMatPerMIC[ i ] ];
         for (eslocal j = offset; j < offset + nMatPerMIC[ i ]; j++) {
-            (this->matricesPerAcc[i])[j - offset] = &(domains[j].K); 
+            (this->matricesPerAcc[i])[j - offset] = &(domains[j].K);
         }
         offset += nMatPerMIC[i];
     }
@@ -351,9 +351,9 @@ void ClusterAcc::SetupKsolvers ( ) {
 {
     eslocal myAcc = omp_get_thread_num();
         this->solver[myAcc].ImportMatrices_wo_Copy(this->matricesPerAcc[myAcc], nMatPerMIC[myAcc], myAcc);
-        this->solver[myAcc].Factorization(""); 
+        this->solver[myAcc].Factorization("");
 }
-    
+
 
     deleteMatrices = true  ;
 }

@@ -18,6 +18,7 @@ struct Options {
 
 	friend std::ostream& operator<<(std::ostream& os, const Options &options);
 
+	Options(): verboseLevel(0), testingLevel(0), measureLevel(0) {};
 	Options(int *argc, char*** argv);
 
 	void configure();

@@ -112,7 +112,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 			exit(EXIT_FAILURE);
 		}
 
-		if (config::solver::KEEP_FACTORS == 1) {
+		if (config::solver::KEEP_FACTORS) {
 			std::stringstream ss;
 			ss << "init -> rank: " << config::MPIrank << ", subdomain: " << d;
 			domains[d].Kplus.keep_factors = true;
