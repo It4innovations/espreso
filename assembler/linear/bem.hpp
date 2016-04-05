@@ -26,7 +26,7 @@ void Linear<BEM>::KMf(size_t part, bool dynamics)
 		}
 	}
 
-	bem4i::getLameSteklovPoincare(
+	bem4i::getLameSteklovPoincare<eslocal, double>(
 			_K.values(),
 			_input.surface.coordinates().localSize(part),
 			&nodes[0],
