@@ -4,7 +4,7 @@ eps_dual_feti   = 1e-4
 maxIt_dual_feti = 500
 
 
-iterative_Kplus                     = True     # True, False
+iterative_Kplus                     = False     # True, False
 
 
 

@@ -5,7 +5,7 @@ import myModul as mM
 import config_espreso_python  
 
 n_clus          = 1
-n_subPerClust   = 4
+n_subPerClust   = 2
 
 path = '../log/'
 
@@ -57,8 +57,7 @@ for i in range(n_clus):
             #weight  = np.concatenate((weight,vec_weight[i][j]))
             diagR   = np.concatenate((diagR,np.sum(mat_R[i][j]*mat_R[i][j],axis=1)))           
             
-diagR   = diagR
-#B0      = B0.tocsc()
+diagR   = diagR 
 if n_clus*n_subPerClust==1:
     R       = sparse.csc_matrix(R) 
 weight = 1
