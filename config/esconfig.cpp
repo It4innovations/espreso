@@ -15,14 +15,14 @@ namespace mesh {
 
 	static std::vector<Description> description = {
 			{INTEGER_PARAMETER, "SUBDOMAINS", "Number of subdomains in a cluster."},
-			{INTEGER_PARAMETER, "FIXPOINTS", "Number of fix points in a subdomain."},
+			{INTEGER_PARAMETER, "FIXPOINTS" , "Number of fix points in a subdomain."},
 
-			{INTEGER_PARAMETER, "CORNERS", "Number of corners on an edge or a face."},
-			{BOOLEAN_PARAMETER, "VERTEX_CORNERS", "Set corners to vertices."},
-			{BOOLEAN_PARAMETER, "EDGE_CORNERS", "Set corners on edges. The number is defined by parameter CORNERS."},
-			{BOOLEAN_PARAMETER, "FACE_CORNERS", "Set corners on faces. The number is defined by parameter CORNERS."},
-			{BOOLEAN_PARAMETER, "AVERAGE_EDGES", "Average nodes on edges."},
-			{BOOLEAN_PARAMETER, "AVERAGE_FACES", "Average nodes on faces."}
+			{INTEGER_PARAMETER, "CORNERS"        , "Number of corners on an edge or a face."},
+			{BOOLEAN_PARAMETER, "VERTEX_CORNERS" , "Set corners to vertices."},
+			{BOOLEAN_PARAMETER, "EDGE_CORNERS"   , "Set corners on edges. The number is defined by parameter CORNERS."},
+			{BOOLEAN_PARAMETER, "FACE_CORNERS"   , "Set corners on faces. The number is defined by parameter CORNERS."},
+			{BOOLEAN_PARAMETER, "AVERAGE_EDGES"  , "Average nodes on edges."},
+			{BOOLEAN_PARAMETER, "AVERAGE_FACES"  , "Average nodes on faces."}
 	};
 
 	static Configuration configuration(description, "espreso.config");
@@ -46,17 +46,17 @@ namespace mesh {
 namespace output {
 
 	static std::vector<Description> description = {
-			{BOOLEAN_PARAMETER, "SAVE_MESH", "Save an input mesh."},
-			{BOOLEAN_PARAMETER, "SAVE_FIXPOINTS", "Save a mesh fix points."},
-			{BOOLEAN_PARAMETER, "SAVE_FACES", "Save faces between subdomains."},
-			{BOOLEAN_PARAMETER, "SAVE_EDGES", "Save edges among subdomains."},
-			{BOOLEAN_PARAMETER, "SAVE_CORNERS", "Save corner nodes."},
-			{BOOLEAN_PARAMETER, "SAVE_DIRICHLET", "Save nodes with a dirichlet condition."},
-			{BOOLEAN_PARAMETER, "SAVE_AVERAGING", "Save averaged nodes."},
-			{BOOLEAN_PARAMETER, "SAVE_RESULTS", "Save the results."},
+			{BOOLEAN_PARAMETER, "SAVE_MESH"      , "Save an input mesh."},
+			{BOOLEAN_PARAMETER, "SAVE_FIXPOINTS" , "Save a mesh fix points."},
+			{BOOLEAN_PARAMETER, "SAVE_FACES"     , "Save faces between subdomains."},
+			{BOOLEAN_PARAMETER, "SAVE_EDGES"     , "Save edges among subdomains."},
+			{BOOLEAN_PARAMETER, "SAVE_CORNERS"   , "Save corner nodes."},
+			{BOOLEAN_PARAMETER, "SAVE_DIRICHLET" , "Save nodes with a dirichlet condition."},
+			{BOOLEAN_PARAMETER, "SAVE_AVERAGING" , "Save averaged nodes."},
+			{BOOLEAN_PARAMETER, "SAVE_RESULTS"   , "Save the results."},
 
 			{DOUBLE_PARAMETER, "SUBDOMAIN_SHRINK_RATIO", "Shrink ratio for subdomains."},
-			{DOUBLE_PARAMETER, "CLUSTER_SHRINK_RATIO", "Shrink ratio for clusters."}
+			{DOUBLE_PARAMETER, "CLUSTER_SHRINK_RATIO"  , "Shrink ratio for clusters."}
 	};
 
 	static Configuration configuration(description, "espreso.config");
@@ -85,20 +85,20 @@ namespace assembler {
 namespace solver {
 
 	static std::vector<Description> description = {
-			{DOUBLE_PARAMETER,  "EPSILON", "Solver requested precision."},
-			{INTEGER_PARAMETER, "ITERATIONS", "Solver maximum interations."},
-			{INTEGER_PARAMETER, "FETI_METHOD", "The method used by ESPRESO."},
-			{BOOLEAN_PARAMETER, "REDUNDANT_LAGRANGE", "Set Lagrange multipliers also among HFETI corners."},
-			{BOOLEAN_PARAMETER, "USE_SCHUR_COMPLEMENT", "Use schur complement to compute ...?"},
-			{BOOLEAN_PARAMETER, "KEEP_FACTORS", "Keep factors for whole iteration process."},
-			{INTEGER_PARAMETER, "PRECONDITIONER", "Preconditioner: 0 - NO preconditioner, 1 - Limped, 2 - weight function, 3 - Dirichlet"},
-			{INTEGER_PARAMETER, "CGSOLVER", "Conjugate gradients solver: 0 - standard, 1 - pipelined"},
-			{INTEGER_PARAMETER, "REGULARIZATION", "Regularization of stiffness matrix by: 0 - fix points, 1 - random detection of null pivots"},
-			{INTEGER_PARAMETER, "KSOLVER", "K is solved: 0 - directly with DP, 1 - iteratively, 2 - directly with SP, 3 - directly with mixed precision"},
+			{DOUBLE_PARAMETER,  "EPSILON"              , "Solver requested precision."},
+			{INTEGER_PARAMETER, "ITERATIONS"           , "Solver maximum interations."},
+			{INTEGER_PARAMETER, "FETI_METHOD"          , "The method used by ESPRESO."},
+			{BOOLEAN_PARAMETER, "REDUNDANT_LAGRANGE"   , "Set Lagrange multipliers also among HFETI corners."},
+			{BOOLEAN_PARAMETER, "USE_SCHUR_COMPLEMENT" , "Use schur complement to compute ...?"},
+			{BOOLEAN_PARAMETER, "KEEP_FACTORS"         , "Keep factors for whole iteration process."},
+			{INTEGER_PARAMETER, "PRECONDITIONER"       , "Preconditioner: 0 - NO preconditioner, 1 - Lumped, 2 - weight function, 3 - Dirichlet"},
+			{INTEGER_PARAMETER, "CGSOLVER"             , "Conjugate gradients solver: 0 - standard, 1 - pipelined"},
+			{INTEGER_PARAMETER, "REGULARIZATION"       , "Regularization of stiffness matrix by: 0 - fix points, 1 - random detection of null pivots"},
+			{INTEGER_PARAMETER, "KSOLVER"              , "K is solved: 0 - directly with DP, 1 - iteratively, 2 - directly with SP, 3 - directly with mixed precision"},
 			{INTEGER_PARAMETER, "KSOLVER_SP_iter_steps", "Number of reiteration steps for SP direct solver."},
-			{INTEGER_PARAMETER, "KSOLVER_SP_iter_norm", "Number of reiteration steps for SP direct solver."},
-			{INTEGER_PARAMETER, "F0SOLVER", "F0 is solved: 0 - with the same precision as KSOLVER, 1 - always with DP."},
-			{INTEGER_PARAMETER, "N_MICS", "Number of MIC accelerators."}
+			{INTEGER_PARAMETER, "KSOLVER_SP_iter_norm" , "Number of reiteration steps for SP direct solver."},
+			{INTEGER_PARAMETER, "F0SOLVER"             , "F0 is solved: 0 - with the same precision as KSOLVER, 1 - always with DP."},
+			{INTEGER_PARAMETER, "N_MICS"               , "Number of MIC accelerators."}
 	};
 
 	static Configuration configuration(description, "espreso.config");
@@ -126,9 +126,11 @@ namespace info {
 
 	static std::vector<Description> description = {
 			{STRING_PARAMETER, "OUTPUT", "An output destination for ESPRESO logs."},
+
 			{INTEGER_PARAMETER, "VERBOSE_LEVEL", "ESPRESO verbose level: <0, 3>"},
 			{INTEGER_PARAMETER, "TESTING_LEVEL", "ESPRESO testing level: <0, 3>"},
 			{INTEGER_PARAMETER, "MEASURE_LEVEL", "ESPRESO measure level: <0, 3>"},
+
 			{BOOLEAN_PARAMETER, "PRINT_MATRICES", "ESPRESO print all preprocessed matrices."}
 	};
 
