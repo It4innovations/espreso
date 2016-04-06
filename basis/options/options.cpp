@@ -25,6 +25,8 @@ Options::Options(int* argc, char*** argv)
 		}
 	};
 
+	setFromFile("espreso.config");
+
 	int option_index, option;
 	while (true) {
 		option = getopt_long(*argc, *argv, "i:p:c:vtmh", long_options, &option_index);
@@ -79,8 +81,6 @@ Options::Options(int* argc, char*** argv)
 			break;
 		}
 	}
-
-	setFromFile("espreso.config");
 
 	if (!path.size()) {
 		if (*argc < 2) { // compatibility with old version of ESPRESO binary
