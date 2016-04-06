@@ -37,7 +37,7 @@ static void checkSettings(const SphereSettings &settings)
 
 template<class TElement>
 SphereGenerator<TElement>::SphereGenerator(Mesh &mesh, const SphereSettings &settings)
-	: UniformGenerator<TElement>(mesh, _settings), _settings(settings)
+	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
 	checkSettings(_settings);
 }
