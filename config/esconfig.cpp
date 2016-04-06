@@ -87,9 +87,9 @@ namespace solver {
 	static std::vector<Description> description = {
 			{DOUBLE_PARAMETER,  "EPSILON"              , "Solver requested precision."},
 			{INTEGER_PARAMETER, "ITERATIONS"           , "Solver maximum interations."},
-			{INTEGER_PARAMETER, "FETI_METHOD"          , "The method used by ESPRESO."},
+			{INTEGER_PARAMETER, "FETI_METHOD"          , "The method used by ESPRESO. 0 - TotalFETI, 1 - Hybrid Total FETI"},
 			{BOOLEAN_PARAMETER, "REDUNDANT_LAGRANGE"   , "Set Lagrange multipliers also among HFETI corners."},
-			{BOOLEAN_PARAMETER, "USE_SCHUR_COMPLEMENT" , "Use schur complement to compute ...?"},
+			{BOOLEAN_PARAMETER, "USE_SCHUR_COMPLEMENT" , "Use schur complement for stiffnes matrix processing"},
 			{BOOLEAN_PARAMETER, "KEEP_FACTORS"         , "Keep factors for whole iteration process."},
 			{INTEGER_PARAMETER, "PRECONDITIONER"       , "Preconditioner: 0 - NO preconditioner, 1 - Lumped, 2 - weight function, 3 - Dirichlet"},
 			{INTEGER_PARAMETER, "CGSOLVER"             , "Conjugate gradients solver: 0 - standard, 1 - pipelined"},

@@ -39,8 +39,8 @@ enum KSolver {
 };
 
 enum F0Solver {
-	KSOLVER_PRECISION,
-	DOUBLE_PRECISION
+	KSOLVER_PRECISION = 0,
+	DOUBLE_PRECISION = 1
 };
 
 extern int MPIrank;
