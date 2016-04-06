@@ -12,7 +12,22 @@ namespace input {
 class Generator: public Loader {
 
 protected:
-	Generator(Mesh &mesh, const Settings &settings): Loader(mesh), _settings(settings) { };
+	Generator(Mesh &mesh, const Settings &settings): Loader(mesh), _settings(settings)
+	{
+		switch (_settings.assembler) {
+		case LinearElasticity:
+			config::assembler::assembler = config::assembler::LinearElasticity;
+			_DOFs = 3;
+			break;
+		case Temperature:
+			config::assembler::assembler = config::assembler::Temperature;
+			_DOFs = 1;
+			break;
+		default:
+			ESINFO(ERROR) << "Unknown assembler: ASSEMBLER = " << _settings.assembler;
+		}
+	};
+
 	virtual ~Generator() { };
 
 	void elements(std::vector<Element*> &elements)
@@ -24,15 +39,8 @@ protected:
 	virtual void elementsMesh(std::vector<Element*> &elements) = 0;
 	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
 
-	virtual void points(Coordinates &coordinates) = 0;
-	virtual void boundaryConditions(Coordinates &coordinates) = 0;
-	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;
-
-	virtual void partitiate(std::vector<eslocal> &parts) = 0;
-	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
-	virtual void corners(Boundaries &boundaries) = 0;
-
 	const Settings _settings;
+	size_t _DOFs;
 };
 
 }

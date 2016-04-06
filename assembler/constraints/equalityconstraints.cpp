@@ -73,7 +73,7 @@ static bool clusterMappingCompare(const std::vector<esglobal> &v1, const std::ve
 }
 
 Constraints::Constraints(const Mesh &mesh, size_t firstIndex)
-: _mesh(mesh), _subdomains(mesh.parts()), _firstIndex(firstIndex), _DOFs(3)
+: _mesh(mesh), _subdomains(mesh.parts()), _firstIndex(firstIndex), _DOFs(mesh.DOFs())
 {
 	_neighbours = mesh.neighbours();
 	_neighbours.push_back(config::MPIrank);

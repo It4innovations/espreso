@@ -27,7 +27,7 @@ protected:
 	AnsysWorkbench(Mesh &mesh, const Options &options, int rank, int size)
 	: Loader(mesh), _path(options.path) { };
 
-	void points(Coordinates &coordinates);
+	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
 	void boundaryConditions(Coordinates &coordinates);
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);

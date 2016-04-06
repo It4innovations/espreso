@@ -22,8 +22,9 @@ static eslocal last(std::string &line)
 	return code;
 }
 
-void AnsysWorkbench::points(Coordinates &coordinates)
+void AnsysWorkbench::points(Coordinates &coordinates, size_t &DOFs)
 {
+	DOFs = 3;
 	std::string line;
 	Point point;
 	size_t id;

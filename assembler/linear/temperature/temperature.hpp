@@ -10,7 +10,7 @@ void Temperature<TInput>::inertia(std::vector<double> &inertia)
 }
 
 template <class TInput>
-void Temperature<TInput>::C(DenseMatrix &C)
+void Temperature<TInput>::C(DenseMatrix &C, eslocal material)
 {
 	C.resize(3, 3);
 	C(0, 0) = C(1, 1) = C(2, 2) = 1;

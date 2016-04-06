@@ -21,7 +21,7 @@ protected:
 	Esdata(Mesh &mesh, const Options &options, int rank, int size)
 	: Loader(mesh), _path(options.path), _rank(rank), _size(size) { };
 
-	void points(Coordinates &coordinates);
+	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
 	void boundaryConditions(Coordinates &coordinates);
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);

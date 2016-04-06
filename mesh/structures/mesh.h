@@ -30,9 +30,6 @@ namespace espreso {
 
 namespace input {
 class Loader;
-class InternalLoader;
-class ExternalLoader;
-class APILoader;
 }
 
 class Boundaries;
@@ -44,9 +41,6 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 	friend class input::Loader;
-	friend class input::InternalLoader;
-	friend class input::ExternalLoader;
-
 
 	Mesh();
 
@@ -114,6 +108,11 @@ public:
 		return _neighbours;
 	}
 
+	size_t DOFs() const
+	{
+		return _DOFs;
+	}
+
 protected:
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
@@ -150,11 +149,14 @@ protected:
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
 
-	/** @brief list of neighbours MPI ranks/ */
+	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
 
+	/** @brief  the number of DOFs for all nodes*/
+	size_t _DOFs;
+
 private:
-	Mesh(const Mesh &mesh)
+	Mesh(const Mesh &mesh): _DOFs(mesh._DOFs)
 	{
 		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
 	}
@@ -169,7 +171,6 @@ private:
 
 class APIMesh: public Mesh
 {
-	friend class input::APILoader;
 
 public:
 	APIMesh(std::vector<std::vector<double> > &eMatrices): _eMatrices(eMatrices) { };
