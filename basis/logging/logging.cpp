@@ -15,6 +15,25 @@ Test::~Test()
 }
 
 
+static void printStack()
+{
+	std::vector<void*> stack(30);
+	size_t size = backtrace(stack.data(), 30);
+	char** functions = backtrace_symbols(stack.data(), size);
+
+	std::stringstream command;
+	command << "addr2line -sipfC -e " << config::executable;
+	for (size_t i = 2; i < size; i++) {
+		std::string function(functions[i]);
+		size_t begin = function.find_last_of('[') + 1;
+		size_t end = function.find_last_of(']');
+		command << " " << function.substr(begin, end - begin);
+	}
+	free(functions);
+	system(command.str().c_str()); // convert addresses to file lines
+}
+
+
 Info::~Info()
 {
 	if (_plain) {
@@ -26,6 +45,11 @@ Info::~Info()
 	if (event == ERROR) {
 		fprintf(stderr, "%s\n", os.str().c_str());
 		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);
+
+		if (config::executable.size()) {
+			printStack();
+		}
+
 		fflush(stderr);
 		exit(EXIT_FAILURE);
 	}

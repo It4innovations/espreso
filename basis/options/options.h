@@ -7,6 +7,8 @@
 #include <vector>
 #include <iostream>
 #include <getopt.h>
+#include <signal.h>
+#include <csignal>
 
 #include "esconfig.h"
 #include "../logging/logging.h"
@@ -24,6 +26,7 @@ struct Options {
 	void configure();
 	void setFromFile(const std::string &file);
 
+	std::string executable;
 	std::string input;
 	std::string path;
 	size_t verboseLevel;

@@ -9,6 +9,7 @@ namespace config {
 
 int MPIrank = 0;
 int MPIsize = 1;
+std::string executable;
 
 namespace mesh {
 

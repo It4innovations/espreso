@@ -45,6 +45,7 @@ enum F0Solver {
 
 extern int MPIrank;
 extern int MPIsize;
+extern std::string executable;
 
 namespace mesh {
 	extern size_t subdomains;

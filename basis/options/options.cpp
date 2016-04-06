@@ -15,7 +15,7 @@ using namespace espreso;
 using namespace input;
 
 Options::Options(int* argc, char*** argv)
-: verboseLevel(0), testingLevel(0), measureLevel(0)
+: executable((*argv)[0]), verboseLevel(0), testingLevel(0), measureLevel(0)
 {
 	auto printOption = [] (const std::string &opt, const std::string &desc) {
 		if (opt.length() < 16) {
@@ -115,10 +115,26 @@ void Options::setFromFile(const std::string &file)
 
 static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
 
+static void signalHandler(int signal)
+{
+	switch (signal) {
+	case SIGSEGV:
+		ESINFO(ERROR) << "Invalid memory reference";
+		break;
+	case SIGFPE:
+		ESINFO(ERROR) << "Erroneous arithmetic operation";
+		break;
+	}
+}
+
 void Options::configure()
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
+	config::executable = executable;
+
+	std::signal(SIGFPE, signalHandler);
+	std::signal(SIGSEGV, signalHandler);
 
 	config::info::verboseLevel += verboseLevel;
 	config::info::testingLevel += testingLevel;

@@ -10,6 +10,8 @@
 #include <vector>
 #include <algorithm>
 #include <sys/sysinfo.h>
+#include <execinfo.h>
+#include <cstring>
 
 #include "esconfig.h"
 #include "timeeval.h"
