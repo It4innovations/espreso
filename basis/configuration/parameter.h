@@ -49,7 +49,7 @@ class Parameter {
 public:
 	bool match(const std::string &line) const
 	{
-		std::string param = line.substr(0, line.find(" "));
+		std::string param = line.substr(0, line.find_first_of(" ="));
 		return param.size() == _name.size() && std::equal(param.begin(), param.end(), _name.begin(), ParameterCompare::caseInsensitiveEq);
 	}
 
