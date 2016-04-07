@@ -4,12 +4,17 @@ from scipy import sparse
 import myModul as mM
 import config_espreso_python  
 
-n_clus          = 1
+n_clus          = 2
 n_subPerClust   = 2
+
+
+
+problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
 path = '../log/'
 
 mat_K       = []
+mat_Salfa   = []
 mat_Kreg    = []
 mat_B0      = []
 mat_B1      = []
@@ -23,52 +28,28 @@ for i in range(n_clus):
     mat_B1.append([])
     mat_R.append([])
     vec_f.append([])
+    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
     #vec_weight.append([])
     for j in range(n_subPerClust):  
         mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
         mat_Kreg[i].append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True))      
         mat_B0[i].append(mM.load_matrix(path,'B0',i,j,makeSparse=True,makeSymmetric=False))
         mat_B1[i].append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
-        mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=False,makeSymmetric=False))
+        mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
         vec_f[i].append(mM.load_vector(path,'f',i,j))
         #vec_weight[i].append(mM.load_vector(path,'weight',i,j))
         
  
 for i in range(n_clus):
     for j in range(n_subPerClust):
-        if (i==0 and j==0):
-            B0      = mat_B0[0][0].copy()  
-            B1      = mat_B1[0][0].copy()      
-            K       = mat_K[0][0]   
-            Kreg    = mat_Kreg[0][0]
-            R       = mat_R[0][0]
+        if (i==0 and j==0): 
             f       = vec_f[0][0]
-            #weight  = vec_weight[0][0]
-            diagR   = np.sum(mat_R[0][0]*mat_R[0][0],axis=1)
+            #weight  = vec_weight[0][0] 
 
-        else: 
-            if (B0.__class__.__name__ != 'list'):
-                B0      = sparse.hstack((B0,mat_B0[i][j]))
-            B1      = sparse.hstack((B1,mat_B1[i][j]))
-            K       = sparse.block_diag((K,mat_K[i][j]))
-            Kreg    = sparse.block_diag((Kreg,mat_Kreg[i][j]))
-            R       = sparse.block_diag((R,mat_R[i][j]))            
+        else:            
             f       = np.concatenate((f,vec_f[i][j]))        
-            #weight  = np.concatenate((weight,vec_weight[i][j]))
-            diagR   = np.concatenate((diagR,np.sum(mat_R[i][j]*mat_R[i][j],axis=1)))           
-            
-diagR   = diagR 
-if n_clus*n_subPerClust==1:
-    R       = sparse.csc_matrix(R) 
-weight = 1
-            
-mat_K       = []
-mat_Kreg    = []
-mat_B0      = []
-mat_B1      = []
-mat_R       = []
-vec_f       = []
-vec_weight  = []            
+            #weight  = np.concatenate((weight,vec_weight[i][j]))          
+                      
 
 
 
@@ -91,10 +72,10 @@ vec_weight  = []
 
 conf = config_espreso_python
 
+weight = 1
+u,lam = mM.feti(mat_K,mat_Kreg,f,mat_B1,mat_R,weight)
 
-u,lam = mM.feti(K,Kreg,f,B1,R,diagR,weight)
-
-uHDP,lamH = mM.hfeti(K,Kreg,f,B0,B1,R,diagR,weight)
+uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,f,B0,B1,R,mat_Salfa,weight)
 
 
 

@@ -60,12 +60,13 @@ class MULT_SPARSE_MATRIX:
 ###############################################################################       
 class KPLUS:     
     # 
-    def __init__(self, A, Areg, R,diagR): 
+    def __init__(self, A, Areg, R): 
         
         self.Areg               = Areg    
-        self.A                  = A.copy()
-        self.iAreg              = np.ones(self.A.shape[0])
-        if conf.iterative_Kplus:      
+        self.A                  = A
+        
+        if conf.iterative_Kplus:  
+            self.iAreg              = np.ones(self.A.shape[0])
             self.R                  = R            
             #
             if conf.precondPrimalSystem == 'diag':
@@ -75,7 +76,7 @@ class KPLUS:
                     if conf.mult_Areg_or_A_RRt:
                         self.iAreg = self.A.diagonal()**-1
                     else:
-                        self.iAreg = (diagR+self.A.diagonal())**-1 
+                        self.iAreg = (self.A.diagonal())**-1 
             elif conf.precondPrimalSystem == 'none':
                     self.iAreg = 0
             else:
@@ -99,10 +100,13 @@ class KPLUS:
 
                 
         else:
-            self.iAreg = spla.splu(self.Areg)
+            self.iAreg=[] 
+            for i in range(len(self.A)):
+                self.iAreg.append([]) 
+                for j in range(len(self.A[i])):
+                    self.iAreg[i].append(spla.splu(self.Areg[i][j]))  
 
-
-    def solve(self,b): 
+    def solve(self,b,use_subset=-1): 
         if conf.iterative_Kplus:            
             maxIt   = conf.maxIt_dual_feti
             x0      = b*0 #self.iAreg.solve(b.astype(np.float32))
@@ -138,8 +142,104 @@ class KPLUS:
             print('%d,' % (numbOfIter),end='')
             return x            
         else:
-            return self.iAreg.solve(b)  
-###############################################################################       
+            x_out = np.zeros(b.shape[0])
+            cnt=0
+            if use_subset==-1:
+                indOfSub = np.arange(len(self.iAreg))
+            else:
+                indOfSub = np.arange(use_subset)
+            for i in indOfSub:
+                for j in range(len(self.iAreg[i])):
+                    nA = self.A[i][j].shape[0]
+                    ind = np.arange(0,nA)+cnt
+                    x_out[ind] = self.iAreg[i][j].solve(b[ind]) 
+                    cnt += nA
+#            else:
+#                for i in range(use_subset[0]):
+#                    for j in range(len(self.iAreg[i])):
+#                        nA = self.A[i][j].shape[0]
+#                        ind = np.arange(0,nA)+cnt
+#                        x_out[ind] = self.iAreg[i][j].solve(b[ind]) 
+#                        cnt += nA
+            return x_out  
+###############################################################################  
+            
+class MULT_BLOCK_DIAG:
+    def __init__(self,A):
+        self.A = A
+        self.n = 0
+        self.m = 0
+        for i in range(len(self.A)):
+            for j in range(len(self.A[i])):
+                self.n += A[i][j].shape[0]
+                self.m += A[i][j].shape[1]
+        
+    def mult(self,b):
+        x_out = np.zeros(self.n)
+        cnt_n=0
+        cnt_m=0
+        for i in range(len(self.A)):
+            for j in range(len(self.A[i])):
+                n = self.A[i][j].shape[0]
+                m = self.A[i][j].shape[1]
+                ind_n = np.arange(0,n)+cnt_n
+                ind_m = np.arange(0,m)+cnt_m
+                x_out[ind_n] = sparse.csc_matrix.dot(self.A[i][j],b[ind_m])                
+                cnt_n += n                 
+                cnt_m += m    
+        return x_out  
+        
+    def mult_t(self,b):
+        x_out = np.zeros(self.m)
+        cnt_n=0
+        cnt_m=0
+        for i in range(len(self.A)):
+            for j in range(len(self.A[i])):
+                n = self.A[i][j].shape[0]
+                m = self.A[i][j].shape[1]
+                ind_n = np.arange(0,n)+cnt_n
+                ind_m = np.arange(0,m)+cnt_m
+                x_out[ind_m] = sparse.csc_matrix.dot(self.A[i][j].transpose(),b[ind_n])                
+                cnt_n += n                 
+                cnt_m += m    
+        return x_out 
+            
+class MULT_BLOCK_RECTANGLE:
+    def __init__(self,B):
+        self.B = B
+        self.n = self.B[0][0].shape[0]
+        
+        self.m = 0 
+        for i in range(len(self.B)):
+            for j in range(len(self.B[i])):
+                self.m += self.B[i][j].shape[1]        
+        
+        
+        
+    def mult(self,b):
+        x_out = np.zeros(self.n)
+        cnt=0
+        for i in range(len(self.B)):
+            for j in range(len(self.B[i])):
+                m_i = self.B[i][j].shape[1]
+                ind = np.arange(0,m_i)+cnt
+                x_out += sparse.csc_matrix.dot(self.B[i][j],b[ind])                
+                cnt += m_i    
+        return x_out  
+
+    def mult_t(self,b):
+        x_out = np.zeros(self.m)
+        cnt=0
+        for i in range(len(self.B)):
+            for j in range(len(self.B[i])):
+                nB = self.B[i][j].shape[1]
+                ind = np.arange(0,nB)+cnt
+                x_out[ind] += sparse.csc_matrix.dot(self.B[i][j].T,b)                
+                cnt += nB    
+        return x_out  
+
+
+            
 class KPLUS_HFETI:
     def __init__(self, B0,G0,Kplus_sub,R,iF0,iS0):
         self.B0 = B0
@@ -151,21 +251,27 @@ class KPLUS_HFETI:
         self.iS0 = iS0
         
         self.B_Kplus_sub = np.zeros(B0.shape)
-        B0_array = B0.toarray()
+        for i in range(len(self.B0)):
+            for j in range(len(self.B[i])): 
+                B0_array = B0[i][j].toarray()
+        
+        
+        
         for i in range(B0.shape[0]):
             self.B_Kplus_sub[i,:] = self.Kplus_sub.solve(B0_array[i,:])
         
     def solve(self,bc):
-        b = bc[:-self.nB0:]
-        c = bc[-self.nB0::]      
-        Kplus_b = self.Kplus_sub.solve(b)
-        d0 = sparse.csc_matrix.dot(self.B0,Kplus_b)-c 
-        e0 = -sparse.csc_matrix.dot(self.R.transpose(),b)   
-        G0tiF0d0 = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))
-        beta = self.iS0.solve(G0tiF0d0-e0) 
-        mu = self.iF0.solve(d0 - sparse.csc_matrix.dot(self.G0,beta))    
-        x = Kplus_b-np.dot(self.B_Kplus_sub.transpose(),mu) + \
-           sparse.csc_matrix.dot(self.R,beta)  
+        for i in range(G0.shape[0]):
+            b = bc[:-self.nB0:]
+            c = bc[-self.nB0::]      
+            Kplus_b = self.Kplus_sub.solve(b)
+            d0 = sparse.csc_matrix.dot(self.B0,Kplus_b)-c 
+            e0 = -sparse.csc_matrix.dot(self.R.transpose(),b)   
+            G0tiF0d0 = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))
+            beta = self.iS0.solve(G0tiF0d0-e0) 
+            mu = self.iF0.solve(d0 - sparse.csc_matrix.dot(self.G0,beta))    
+            x = Kplus_b-np.dot(self.B_Kplus_sub.transpose(),mu) + \
+               sparse.csc_matrix.dot(self.R,beta)  
 #       x = Kplus_b-self.Kplus_sub.solve(sparse.csc_matrix.dot(self.B0.transpose(),mu)) + \
 #            sparse.csc_matrix.dot(self.R,beta)  
      
@@ -176,10 +282,32 @@ class FETIOPERATOR:
         self.Kplus_sub = Kplus_sub
         self.B    = B        
     def mult(self,x):
-        y = sparse.csc_matrix.dot(self.B.transpose(),x)
+        y = self.B.mult_t(x)
         y = self.Kplus_sub.solve(y) 
-        return sparse.csc_matrix.dot(self.B,y)
+        return self.B.mult(y)
 ###############################################################################
+class COARSE_PROBLEM:
+    def __init__(self,B,R):   
+        for i in range(len(B)):
+            for j in range(len(B[i])):  
+                if (i==0 and j==0):
+                    self.G = -sparse.csc_matrix.dot(B[i][j],R[i][j])   
+                else:
+                    Gi = -sparse.csc_matrix.dot(B[i][j],R[i][j])    
+                    self.G      = sparse.hstack((self.G,Gi))  
+    
+class COARSE_PROBLEM_HFETI:
+    def __init__(self,B0,R):   
+        for i in range(len(B)):
+            for j in range(len(B[i])):  
+                if (i==0 and j==0):
+                    self.G = -sparse.csc_matrix.dot(B[i][j],R[i][j])   
+                else:
+                    Gi = -sparse.csc_matrix.dot(B[i][j],R[i][j])    
+                    self.G      = sparse.hstack((self.G,Gi))   
+
+ 
+
 class PROJ:
     def __init__(self,G,iGtG):
         self.G = G
@@ -260,8 +388,9 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #
     if disp: 
         print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
-        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0) 
-        print('i: %d, |g|: %3.5f' %  (0,1))        
+        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
+        print('    i      |r|        r         e         stagnation ') 
+        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPMPg0,eps0,-1))     
 #   
     for i in range(nDual):
         
@@ -295,9 +424,11 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
             print('... stagnate',end='')
             break
 #
-        if disp: 
-            print('i: %d, |g|: %3.5f, log(|g|)/log(it): %3.5f' % \
-                        (i+2,normed_gi,is_stagnating))
+        if disp:
+            print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % \
+                            (i+2,normed_gi,sqrt_gtPMPg,eps0,is_stagnating))             
+            
+            
         if normed_gi<eps0:
             break
         if i==maxIt:
@@ -307,7 +438,7 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
     alpha = iGtG.solve(sparse.csc_matrix.dot(G.transpose(),d-F.mult(lam)))
     numbOfIter = i
     
-    if disp:
+    if graph:
         plt.subplot(2,1,1)    
         plt.plot(vec_staggnat[:i]);plt.ylim([vec_staggnat[:i].min()*2,0])
         plt.subplot(2,1,2)
@@ -369,34 +500,36 @@ def cg(A,b,x0,R,eps0,maxIt,Prec,disp=False):
     numb_it = i     
     return x, sqrt_gtMg/sqrt_gtMg0, numb_it
 ###############################################################################  
-def feti(K,Kreg,f,B,R,diagR,weight):
+def feti(K,Kreg,f,B,R,weight):
         
     weight = 1
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
               
      
-    Kplus_sub=  KPLUS(K,Kreg,R,diagR)
+    Koperator = MULT_BLOCK_DIAG(K) 
+    Kplus_sub = KPLUS(K,Kreg,R)
+    Boperator = MULT_BLOCK_RECTANGLE(B)
+    Roperator = MULT_BLOCK_DIAG(R)
     
       
-    F       = FETIOPERATOR(Kplus_sub,B)
-    G       = -sparse.csc_matrix.dot(B,R)
-    e       = -sparse.csc_matrix.dot(R.transpose(),f) 
-    d       = sparse.csc_matrix.dot(B,Kplus_sub.solve(f))    
+    F       = FETIOPERATOR(Kplus_sub,Boperator) 
+    CP      = COARSE_PROBLEM(B,R)
+    e       = -Roperator.mult_t(f) 
+    d       = Boperator.mult(Kplus_sub.solve(f))    
     Prec    = PREC_DIR_OR_LUMPED(K,B)
-    
-    lam, alpha, numbOfIter = pcgp(F,d, G, e, Prec,eps0,maxIt,True,True)        
-    
-    f_m_BtLam = f - sparse.csc_matrix.dot(B.transpose(),lam)    
-    u = Kplus_sub.solve(f_m_BtLam) + \
-                    sparse.csc_matrix.dot(R,alpha)      
      
-    delta = np.linalg.norm(sparse.csc_matrix.dot(K,u)-f_m_BtLam)
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,True)        
+    
+    f_m_BtLam = f -  Boperator.mult_t(lam)    
+    u = Kplus_sub.solve(f_m_BtLam) + Roperator.mult(alpha)      
+     
+    delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
     normf = np.linalg.norm(f)
     print('||Ku-f+BtLam||/||f||= %3.5e'% (delta/normf))
     return u,lam
 ###############################################################################    
-def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
+def hfeti(K,Kreg,f,B0,B1,R,mat_S0,weight):
     
     weight = 1
     maxIt = conf.maxIt_dual_feti
@@ -405,12 +538,12 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
     nB0         = B0.shape[0] 
     nB1         = B1.shape[0] 
     
-    Oblock   = sparse.spdiags(np.zeros(nB0),0,nB0,nB0) 
-    KB0t     = sparse.hstack((K,B0.transpose()))  
-    B0O      = sparse.hstack((B0,Oblock)) 
-    K_hfeti  = sparse.vstack((KB0t,B0O)) 
+#    Oblock   = sparse.spdiags(np.zeros(nB0),0,nB0,nB0) 
+#    KB0t     = sparse.hstack((K,B0.transpose()))  
+#    B0O      = sparse.hstack((B0,Oblock)) 
+#    K_hfeti  = sparse.vstack((KB0t,B0O)) 
     
-    Oblock2  = sparse.spdiags(np.zeros(nB1),0,nB1,nB0)
+#    Oblock2  = sparse.spdiags(np.zeros(nB1),0,nB1,nB0)
     B_hfeti  = sparse.hstack((B1,Oblock2))
     
     G0  = -sparse.csc_matrix.dot(B0,R)  
@@ -418,7 +551,7 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
     G0tG0dense = G0tG0.todense()
     U,s,V = np.linalg.svd(G0tG0dense) 
       
-    print('s = ',s)
+    #print('s = ',s)
     for i in range(1,s.shape[0]):
         rat = s[i]/s[i-1]
         if np.abs(rat)<1e-6:
@@ -428,7 +561,7 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
 # -----------------------------------------------------------------------------
     # F0 create
 
-    Kplus_sub=  KPLUS(K,Kreg,R,diagR) # Kplus_sub =  spla.splu(Kreg) 
+    Kplus_sub=  KPLUS(K,Kreg,R) # Kplus_sub =  spla.splu(Kreg) 
     B0tdenseKplus_sub = B0.copy().toarray()
     
     for i in range(B0tdenseKplus_sub.shape[0]):
@@ -438,9 +571,14 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
     iF0 = DENS_SOLVE(np.dot(B0tdenseKplus_sub,B0dense.transpose()))
    
     G0dense = G0.todense()    
-    S0  =  np.dot(G0dense.transpose(), iF0.solve(G0dense))  
-    for i in range(1,7):
-        S0[-i::,-i::]+=S0[-1,-1]; 
+    
+    S0_from_espreso = True
+    if S0_from_espreso:
+        S0  =  mat_S0[0]
+    else:
+        S0  =  np.dot(G0dense.transpose(), iF0.solve(G0dense))      
+        for i in range(1,7):
+            S0[-i::,-i::]+=S0[-1,-1]; 
     iS0 = DENS_SOLVE(S0)
     
     #iS0 = DENS_SOLVE(S0 + np.dot(H,H.transpose()))
@@ -462,7 +600,8 @@ def hfeti(K,Kreg,f,B0,B1,R,diagR,weight):
     d_hfeti = sparse.csc_matrix.dot(B_hfeti,Kplus_hfeti.solve(f_hfeti))    
     
     F_hfeti = FETIOPERATOR(Kplus_hfeti,B_hfeti)
-    Prec_hfeti = PREC_DIR_OR_LUMPED(K_hfeti,B_hfeti)
+    Prec_hfeti = PREC_DIR_OR_LUMPED(1,B_hfeti)
+    #Prec_hfeti = 1
     
     lam_hfeti, alpha_hfeti, numbOfIter = pcgp(F_hfeti,d_hfeti, \
                         G_hfeti, e_hfeti, Prec_hfeti,eps0,maxIt,True,True)        
