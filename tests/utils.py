@@ -30,9 +30,7 @@ class Espreso:
                                   cwd=self.example,
                                   env=dict(os.environ.items() + env.items()))
 
-        output, error = result.communicate()
-        print output
-        print error
+        return result.communicate()
 
 
 
