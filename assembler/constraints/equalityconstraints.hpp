@@ -107,8 +107,8 @@ void EqualityConstraints<API>::assembleConstraints(std::vector<size_t> columns)
 	postProcess(_B0, _B1, _B0subdomainsMap, _B1subdomainsMap, _B1duplicity, _B1c);
 }
 
-template <class TInput>
-void EqualityConstraints<TInput>::assembleConstraints(std::vector<size_t> columns)
+template <>
+void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 {
 	initColumns(_B0, _B1, columns);
 
@@ -157,7 +157,55 @@ void EqualityConstraints<TInput>::assembleConstraints(std::vector<size_t> column
 	postProcess(_B0, _B1, _B0subdomainsMap, _B1subdomainsMap, _B1duplicity, _B1c);
 }
 
+template<>
+void EqualityConstraints<BEM>::assembleConstraints(std::vector<size_t> columns)
+{
+	initColumns(_B0, _B1, columns);
 
+	const std::map<eslocal, double> &dx = this->_input.mesh.coordinates().property(DIRICHLET_X).values();
+	std::vector<eslocal> dirichlet(3 * dx.size());
+	std::vector<double> dirichletValues(3 * dx.size(), 0);
+
+	size_t ii = 0;
+	for (auto it = dx.begin(); it != dx.end(); ++it) {
+		dirichlet[ii + 0] = 3 * it->first;
+		dirichlet[ii + 1] = 3 * it->first + 1;
+		dirichlet[ii + 2] = 3 * it->first + 2;
+		ii += 3;
+	}
+
+	size_t lambdaCounter = 0;
+
+	Dirichlet dir(this->_input.surface, lambdaCounter, dirichlet, dirichletValues);
+	lambdaCounter += dir.assemble(_B1, _B1clustersMap, _B1c);
+
+	// TODO: duplicity is not important for dirichlet -> it is always 1
+	cilk_for (size_t p = 0; p < this->_input.surface.parts(); p++) {
+		_B1duplicity[p].clear();
+		_B1duplicity[p].resize(_B1[p].I_row_indices.size(), 1);
+	}
+
+	Gluing gluing(this->_input.surface, lambdaCounter, dirichlet);
+
+	std::vector<eslocal> corners;
+
+	if (config::solver::FETI_METHOD == config::HYBRID_FETI && !config::solver::REDUNDANT_LAGRANGE) {
+		// in this case B1 has to ignore corner nodes
+		for (size_t i = 0; i < this->_input.mesh.subdomainBoundaries().size(); i++) {
+			if (this->_input.mesh.subdomainBoundaries().isCorner(i)) {
+				corners.push_back(i);
+			}
+		}
+	}
+
+	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
+	if (config::solver::FETI_METHOD == config::HYBRID_FETI) {
+		gluing.assembleB0(_B0);
+	}
+
+	// TODO: get rid of the following
+	postProcess(_B0, _B1, _B0subdomainsMap, _B1subdomainsMap, _B1duplicity, _B1c);
+}
 
 
 }

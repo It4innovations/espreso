@@ -479,6 +479,7 @@ void Mesh::getSurface(Mesh &surface) const
 	surface.remapElementsToSubdomain();
 	surface.computeFixPoints(0);
 	surface.computeBoundaries();
+	surface._clusterBoundaries = _clusterBoundaries;
 }
 
 void Mesh::makePartContinuous(size_t part)
