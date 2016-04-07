@@ -480,6 +480,7 @@ void Mesh::getSurface(Mesh &surface) const
 	surface.computeFixPoints(0);
 	surface.computeBoundaries();
 	surface._clusterBoundaries = _clusterBoundaries;
+	surface._DOFs = _DOFs;
 }
 
 void Mesh::makePartContinuous(size_t part)
