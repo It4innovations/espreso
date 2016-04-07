@@ -148,8 +148,6 @@ void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 		ESINFO(ERROR) << "Invalid number of DOFs";
 	}
 
-
-
 	size_t lambdaCounter = 0;
 
 	Dirichlet dir(this->_input.mesh, lambdaCounter, dirichlet, dirichletValues);
@@ -183,21 +181,45 @@ void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 	postProcess(_B0, _B1, _B0subdomainsMap, _B1subdomainsMap, _B1duplicity, _B1c);
 }
 
-template<>
+template <>
 void EqualityConstraints<BEM>::assembleConstraints(std::vector<size_t> columns)
 {
 	initColumns(_B0, _B1, columns);
 
+	// TODO: refactor DIRICHLET
 	const std::map<eslocal, double> &dx = this->_input.mesh.coordinates().property(DIRICHLET_X).values();
-	std::vector<eslocal> dirichlet(3 * dx.size());
-	std::vector<double> dirichletValues(3 * dx.size(), 0);
+	const std::map<eslocal, double> &dy = this->_input.mesh.coordinates().property(DIRICHLET_Y).values();
+	const std::map<eslocal, double> &dz = this->_input.mesh.coordinates().property(DIRICHLET_Z).values();
+	std::vector<eslocal> dirichlet;
+	std::vector<double> dirichletValues;
 
-	size_t ii = 0;
-	for (auto it = dx.begin(); it != dx.end(); ++it) {
-		dirichlet[ii + 0] = 3 * it->first;
-		dirichlet[ii + 1] = 3 * it->first + 1;
-		dirichlet[ii + 2] = 3 * it->first + 2;
-		ii += 3;
+	switch (this->_input.mesh.DOFs()) {
+	case 1:
+		dirichlet.reserve(dx.size());
+		dirichletValues.reserve(dx.size());
+		for (auto it = dx.begin(); it != dx.end(); ++it) {
+			dirichlet.push_back(it->first);
+			dirichletValues.push_back(it->second);
+		}
+		break;
+	case 3:
+		dirichlet.reserve(dx.size() + dy.size() + dz.size());
+		dirichletValues.reserve(dx.size() + dy.size() + dz.size());
+		for (auto it = dx.begin(); it != dx.end(); ++it) {
+			dirichlet.push_back(3 * it->first);
+			dirichletValues.push_back(0);
+		}
+		for (auto it = dy.begin(); it != dy.end(); ++it) {
+			dirichlet.push_back(3 * it->first + 1);
+			dirichletValues.push_back(0);
+		}
+		for (auto it = dz.begin(); it != dz.end(); ++it) {
+			dirichlet.push_back(3 * it->first + 2);
+			dirichletValues.push_back(0);
+		}
+		break;
+	default:
+		ESINFO(ERROR) << "Invalid number of DOFs";
 	}
 
 	size_t lambdaCounter = 0;
