@@ -1266,7 +1266,16 @@ void ClusterBase::CreateSa() {
 		 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
 
 		SparseMatrix Eye, N, Nt, NNt;
-		Eye.CreateEye(6); N.CreateEye(6); Nt.CreateEye(6);
+		eslocal dtmp = 0;
+		if (DOFS_PER_NODE == 3) {
+			dtmp = 6;
+		}
+
+		if (DOFS_PER_NODE == 1) {
+			dtmp = 1;
+		}
+
+		Eye.CreateEye(dtmp); N.CreateEye(dtmp); Nt.CreateEye(dtmp);
 
 		for (int i=0; i < domains.size()-1; i++) {
 			N.MatAppend(Eye);

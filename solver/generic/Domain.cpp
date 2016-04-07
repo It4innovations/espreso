@@ -498,6 +498,16 @@ void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
     		//K.CSR_V_values[ K.CSR_I_row_indices[100] - 1 ] = +ro;
 
     		K_in.CSR_V_values[0] += ro;
+
+    		_RegMat.type = K_in.type;
+    		_RegMat.cols = K_in.cols;
+    		_RegMat.rows = K_in.rows;
+    		_RegMat.nnz  = 1;
+
+    		_RegMat.I_row_indices.push_back(1);
+    		_RegMat.J_col_indices.push_back(1);
+    		_RegMat.V_values.push_back(ro);
+
     	}
 
     }
