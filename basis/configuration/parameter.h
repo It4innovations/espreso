@@ -195,10 +195,14 @@ public:
 		size_t pos = line.find(_delimiter);
 		if (pos == std::string::npos) {
 			_value = true;
-			_set = true;
 		} else {
-			ESINFO(ERROR) << "Boolean parameter " << _name << " should be without assignment.";
+			if (value(line).compare("0") == 0) {
+				_value = false;
+			} else {
+				_value = true;
+			}
 		}
+		_set = true;
 	}
 
 	const bool& get() const { return _value; };
