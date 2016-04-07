@@ -1232,6 +1232,17 @@ void ClusterBase::CreateSa() {
 		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,&tmp_double, &tmp_int, -1);
 		 TSak.Clear();
 
+
+	   if (config::info::printMatrices) {
+			//SparseMatrix RT = cluster.domains[d].Kplus_R;
+			//RT.ConvertDenseToCSR(1);
+
+			std::ofstream osSa(Logging::prepareFile("Salfa"));
+			osSa << Salfa;
+			osSa.close();
+     }
+
+
 		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
 
 //		 Salfa.printMatCSR2("Salfa.txt");
