@@ -116,7 +116,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 }
 
-static AssemblerBase* getAssembler(Mesh *mesh, Mesh *surface)
+static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 {
 	switch (config::assembler::discretization) {
 
