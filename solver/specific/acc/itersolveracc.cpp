@@ -8,89 +8,98 @@
 void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
     time_eval.totalTime.start();
 
-    // number of Xeon Phi devices (0 for fallback to CPU)
+    // number of Xeon Phi devices 
     eslocal numDevices = N_MICS;
 
-
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
-
         // HFETI on MIC using Schur
 
         time_eval.timeEvents[0].start();
 
         eslocal maxDevNumber = numDevices;
-        if (numDevices == 0) {
-            maxDevNumber = 1;               // if number of MICs is zero, we use a CPU
-        }
-        eslocal matrixPerPack = cluster.domains.size() / maxDevNumber;
-        eslocal offset = 0;
 
+        // *** Part 1.1 - prepare vectors for FETI operator with SC
+        // at first - work with domains assigned to MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-            if ( i == maxDevNumber - 1 ) {
-                // add the remaining domains to the last pack
-                matrixPerPack += cluster.domains.size() % maxDevNumber;
-            }
-            cilk_for (eslocal d = offset; d < offset + matrixPerPack; d++) {
-                SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-                for ( eslocal j = 0; j < cluster.domains[d].lambda_map_sub_local.size(); j++ ) {
-                    cluster.B1KplusPacks[i].SetX(d - offset, j, x_in[ cluster.domains[d].lambda_map_sub_local[j]]);
-                    x_in_tmp[j] = x_in[ cluster.domains[d].lambda_map_sub_local[j]];
+            cilk_for (eslocal d = 0; d < cluster.accDomains[i].size(); ++d) {
+                eslocal domN = cluster.accDomains[i].at(d);
+                for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
+                    cluster.B1KplusPacks[i].SetX(d, j, x_in[ cluster.domains[domN].lambda_map_sub_local[j]]);
+                    cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
                 }
-                cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+                // *** Part 2.1 - prepare vectors for HFETI operator on CPU
+                cluster.domains[domN].B1_comp_dom.MatVec (cluster.domains[domN].compressed_tmp2, cluster.x_prim_cluster1[domN], 'T');
             }
-            offset += matrixPerPack;
         }
 
+        // *** Part 1.2 work with domains staying on CPU
+        cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+            eslocal domN = cluster.hostDomains.at(d);
+            for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
+                cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
+            }
+            // *** Part 2.2 - prepare vectors for HFETI operator on CPU
+           cluster.domains[domN].B1_comp_dom.MatVec (cluster.domains[domN].compressed_tmp2, cluster.x_prim_cluster1[domN], 'T');
+        }
+ 
+        // *** Part 3 - execute FETI SC operator 
+        // spawn the computation on MICs
 #pragma omp parallel num_threads( maxDevNumber )
         {
-            if ( numDevices > 0 ) {
-                // start async. computation on MICs
+            // start async. computation on MICs
+            if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
                 cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
-            } else {
-                // perform matrix-vector multiplication on CPU using MIC data structures
-                cluster.B1KplusPacks[ 0 ].DenseMatsVecs( 'N' );
             }
         }
+
+        // meanwhile compute the same for domains staying on CPU
+        cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+            eslocal domN = cluster.hostDomains.at(d);
+            cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
+        }
+
+
         time_eval.timeEvents[0].end();
 
+        // *** Part 4 - Execute HTFETI operator
         // perform simultaneous computation on CPU
         time_eval.timeEvents[1].start();
         cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
         time_eval.timeEvents[1].end();
 
         time_eval.timeEvents[2].start();
-        std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 
+        // *** Part 5 - Finalize transfers of the result of the FETI SC operator
+        // from MICs back to CPU
 #pragma omp parallel num_threads( maxDevNumber )
         {
-            if ( numDevices > 0 ) {
-                // synchronize computation
+            // synchronize computation
+            if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
                 cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
             }
         }
 
-        // extract the result
-        offset = 0;
-        matrixPerPack = cluster.domains.size() / maxDevNumber;
+        // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-            if ( i == maxDevNumber - 1 ) {
-                matrixPerPack += cluster.domains.size() % maxDevNumber;
+            cilk_for ( eslocal d = 0 ; d < cluster.accDomains[i].size(); ++d ) {
+                cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
-            cilk_for ( eslocal d = offset ; d < offset + matrixPerPack; d++ ) {
-                cluster.B1KplusPacks[i].GetY(d - offset, cluster.domains[d].compressed_tmp);
-            }
-            offset+=matrixPerPack;
         }
-
-
-        time_eval.timeEvents[2].start();
+        
+        // *** Part 6 - Lambda values, results of the FETI SC operator, are
+        // combined back into single lambda vector per cluster -
+        // cluster.compressed_tmp
         std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-        for (eslocal d = 0; d < cluster.domains.size(); d++) {
+        for (eslocal d = 0; d < cluster.domains.size(); ++d) {
             for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
                 cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
         }
-        time_eval.timeEvents[2].end();
-        //std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+        
+        // *** Part 7 - calculate lambda values from the results of the HTFETI
+        // operator (results are in cluster.x_prim_cluster1)
+        //      //              using cluster.domains[d].B1_comp_dom gluing
+        //      matrix and store them in the temp. vector y_out_tmp.
+        //              //  
         SEQ_VECTOR < double > y_out_tmp;
         for (eslocal d = 0; d < cluster.domains.size(); d++) {
             y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );

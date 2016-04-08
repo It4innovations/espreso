@@ -161,11 +161,13 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++ )
-		if (USE_KINV == 1 )
+		if (USE_KINV == 1 ) {
 			domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
-		else
+		    domains[d].compressed_tmp2.resize( my_lamdas_indices.size(), 0);
+        } else {
 			domains[d].compressed_tmp.resize( 1, 0);
-
+            domains[d].compressed_tmp2.resize( 1, 0);
+        }
 
 	// mapping/compression vector for cluster
 	for (eslocal i = 0; i <my_lamdas_indices.size(); i++)

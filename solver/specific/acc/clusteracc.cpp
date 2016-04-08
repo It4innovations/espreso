@@ -20,11 +20,11 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     long micMem[N_MICS];
     for (eslocal i = 0; i < N_MICS; ++i) {
         long currentMem = 0;
-        #pragma offload target(mic:0)
+        #pragma offload target(mic:i)
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
-            currentMem = pages * page_size;
+            currentMem = 66731520;//pages * page_size;
         }
         micMem[i] = currentMem;
     }
@@ -47,12 +47,10 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     bool symmetric = true;
     this->B1KplusPacks.resize( maxDevNumber );
     this->accDomains.resize( maxDevNumber );
-    eslocal * offsets = new eslocal[ maxDevNumber ];
 
     for ( int i = 0; i < maxDevNumber; i++ )
     {
         long dataSize = 0;
-        offsets[i] = offset;
         long currDataSize = 0;
         bool MICFull = false;
         eslocal numCPUDomains = 0;
@@ -67,6 +65,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
             }
             long dataInBytes = (currDataSize + dataSize) * sizeof(double);
             if (MICFull || (dataInBytes > 0.8 * micMem[i])) {
+                // when no more memory is available at MIC leave domain on CPU
                 MICFull = true;
                 hostDomains.push_back(j);
                 numCPUDomains++;
@@ -88,24 +87,43 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         }
     }
     
-#pragma omp parallel num_threads(N_MICS)
+//#pragma omp parallel num_threads(N_MICS)
+#pragma omp parallel     
     {
-        int  i = omp_get_thread_num();
-        std::cout << "DEVICE: " <<i << std::endl;
-        this->B1KplusPacks[i].AllocateVectors( );
-        this->B1KplusPacks[i].SetDevice( i );
-        SparseSolverAcc tmpsps_mic;
-        SparseMatrix** K = new SparseMatrix*[matrixPerPack[i]];
-        SparseMatrix** B = new SparseMatrix*[matrixPerPack[i]];
+        if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < N_MICS)) {
+            // the first N_MICS threads will communicate with MICs
+            // now copy data to MIC and assemble Schur complements
+            int  i = omp_get_thread_num();
+            this->B1KplusPacks[i].AllocateVectors( );
+            this->B1KplusPacks[i].SetDevice( i );
+            SparseSolverAcc tmpsps_mic;
+            SparseMatrix** K = new SparseMatrix*[matrixPerPack[i]];
+            SparseMatrix** B = new SparseMatrix*[matrixPerPack[i]];
 
-        for (eslocal j = 0; j < accDomains[i].size(); ++j) {
-            K[j] = &(domains[accDomains[i].at(j)].K);
-            B[j] = &(domains[accDomains[i].at(j)].B1t_comp_dom);
+            for (eslocal j = 0; j < accDomains[i].size(); ++j) {
+                K[j] = &(domains[accDomains[i].at(j)].K);
+                B[j] = &(domains[accDomains[i].at(j)].B1t_comp_dom);
+            }
+            this->B1KplusPacks[i].CopyToMIC();
+            tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], accDomains[i].size(),  0, i);
+        } else {
+            // the remaining threads will assemble SC on CPU if necessary
+            #pragma omp single nowait
+            {
+                for (eslocal d = 0; d < hostDomains.size(); ++d) {
+#pragma omp task
+                    {
+                        std::cout << ".";
+                        eslocal domN = hostDomains.at(d);
+                        SparseMatrix TmpB;
+                        domains[domN].B1_comp_dom.MatTranspose(TmpB);
+                        SparseSolverCPU tmpsps;
+                        tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, 0);
+                    }
+                }
+            }
         }
-        this->B1KplusPacks[i].CopyToMIC();
-        tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], accDomains[i].size(),  0, i);
     }
-    delete [] offsets;
     /*
        cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
        domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);

@@ -126,6 +126,7 @@ public:
 
 	// temporary variables
 	SEQ_VECTOR <double> compressed_tmp;
+    SEQ_VECTOR <double> compressed_tmp2;
 
 	// variables for dynamic
 	double dynamic_timestep;
