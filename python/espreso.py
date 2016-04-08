@@ -75,7 +75,7 @@ conf = config_espreso_python
 weight = 1
 u,lam = mM.feti(mat_K,mat_Kreg,f,mat_B1,mat_R,weight)
 
-uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,f,B0,B1,R,mat_Salfa,weight)
+#uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,f,mat_B0,mat_B1,mat_R,mat_Salfa,weight)
 
 
 
