@@ -4,8 +4,8 @@ from scipy import sparse
 import myModul as mM
 import config_espreso_python  
 
-n_clus          = 2
-n_subPerClust   = 2
+n_clus          = 8
+n_subPerClust   = 8
 
 
 
@@ -73,7 +73,7 @@ for i in range(n_clus):
 conf = config_espreso_python
 
 weight = 1
-u,lam = mM.feti(mat_K,mat_Kreg,f,mat_B1,mat_R,weight)
+u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,mat_R,weight)
 
 #uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,f,mat_B0,mat_B1,mat_R,mat_Salfa,weight)
 
