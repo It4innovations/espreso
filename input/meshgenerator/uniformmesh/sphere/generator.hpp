@@ -168,20 +168,60 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 template<class TElement>
 void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 {
-	if (_settings.index > 5) {
-		return;
-	}
 	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
 	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
 	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
+	CoordinatesProperty &forces_x = coordinates.property(FORCES_X);
+	CoordinatesProperty &forces_y = coordinates.property(FORCES_Y);
+	CoordinatesProperty &forces_z = coordinates.property(FORCES_Z);
 
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
-	for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
-		dirichlet_x[i] = 0;
-		dirichlet_y[i] = 0;
-		dirichlet_z[i] = 0;
+	if (_settings.index < 6) {
+		for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
+			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_X)->second) {
+				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_X)->second) {
+				forces_x[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_Y)->second) {
+				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_Y)->second) {
+				forces_y[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_Z)->second) {
+				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_Z)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_Z)->second) {
+				forces_z[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_Z)->second;
+			}
+		}
+	}
+
+	if (_settings.index + 7 > _settings.size) {
+		for (eslocal i = (cNodes[2] - 1) * cNodes[0] * cNodes[1]; i < cNodes[2] * cNodes[0] * cNodes[1]; i++) {
+			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_X)->second) {
+				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_X)->second) {
+				forces_x[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_Y)->second) {
+				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_Y)->second) {
+				forces_y[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_Z)->second) {
+				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_Z)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_Z)->second) {
+				forces_z[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_Z)->second;
+			}
+		}
 	}
 }
 

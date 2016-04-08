@@ -17,6 +17,32 @@ static std::vector<Description> createSphereSetting()
 		DOUBLE_PARAMETER, "OUTER_RADIUS", "Outer radius of the sphere."
 	});
 
+	std::vector<std::pair<std::string, std::string> > axis = {
+			{ "X", "x" },
+			{ "Y", "y" },
+			{ "Z", "z" }
+	};
+	std::vector<std::pair<std::string, std::string> > properties = {
+			{ "DIRICHLET", "Dirichlet" },
+			{ "FORCES", "Force" }
+	};
+	std::vector<std::pair<std::string, std::string> > sphere_faces = {
+			{ "INNER", "inner" },
+			{ "OUTER", "outer" }
+	};
+
+	for (size_t i = 0; i < axis.size(); i++) {
+		for (size_t j = 0; j < properties.size(); j++) {
+			for (size_t k = 0; k < sphere_faces.size(); k++) {
+				description.push_back({
+					DOUBLE_PARAMETER,
+					properties[j].first + "_" + sphere_faces[k].first + "_" + axis[i].first,
+					properties[j].second + " on the " + sphere_faces[k].second + " face in " + axis[i].second + "-axis."
+				});
+			}
+		}
+	}
+
 	return description;
 };
 
@@ -31,6 +57,21 @@ SphereSettings::SphereSettings(const Options &options, size_t index, size_t size
 	layers = configuration.value<eslocal>("LAYERS", 1);
 	innerRadius = configuration.value<double>("INNER_RADIUS", 9);
 	outerRadius = configuration.value<double>("OUTER_RADIUS", 12);
+
+	std::vector<std::string> axis = { "X", "Y", "Z" };
+	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };
+	std::vector<std::string> sphere_faces = { "INNER", "OUTER" };
+
+	fillCondition.resize(sphere_faces.size());
+	boundaryCondition.resize(sphere_faces.size());
+
+	for (size_t f = 0; f < sphere_faces.size(); f++) {
+		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
+			std::string name = properties[p / 3] + "_" + sphere_faces[f] + "_" + axis[p % 3];
+			fillCondition[f][p] = configuration.isSet(name);
+			boundaryCondition[f][p] = configuration.value<double>(name, 0);
+		}
+	}
 }
 
 SphereSettings::SphereSettings(size_t index, size_t size)
@@ -39,6 +80,20 @@ SphereSettings::SphereSettings(size_t index, size_t size)
 	layers = 1;
 	innerRadius = 9;
 	outerRadius = 12;
+
+	std::vector<std::string> axis = { "X", "Y", "Z" };
+	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };
+	std::vector<std::string> sphere_faces = { "INNER", "OUTER" };
+
+	fillCondition.resize(sphere_faces.size());
+	boundaryCondition.resize(sphere_faces.size());
+
+	for (size_t f = 0; f < sphere_faces.size(); f++) {
+		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
+			fillCondition[f][p] = false;
+			boundaryCondition[f][p] = 0;
+		}
+	}
 }
 
 
