@@ -16,51 +16,78 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     if (cluster_global_index == 1)
         cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
+    // First, get the available memory on coprocessors (in bytes)
+    long micMem[N_MICS];
+    for (eslocal i = 0; i < N_MICS; ++i) {
+        long currentMem = 0;
+        #pragma offload target(mic:0)
+        {
+            long pages = sysconf(_SC_AVPHYS_PAGES);
+            long page_size = sysconf(_SC_PAGE_SIZE);
+            currentMem = pages * page_size;
+        }
+        micMem[i] = currentMem;
+    }
+
+
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
     // compute sizes of data to be offloaded to MIC
-    int maxDevNumber = N_MICS;
-    if (N_MICS == 0) {
-        maxDevNumber = 1;
+    eslocal maxDevNumber = N_MICS;
+    eslocal matrixPerPack[N_MICS];
+    for (eslocal i = 0 ; i < N_MICS; ++i) {
+        matrixPerPack[i] = domains.size() / maxDevNumber;
     }
-    int matrixPerPack = domains.size() / maxDevNumber;
-    int offset = 0;
+    for (eslocal i = 0 ; i < domains.size() % maxDevNumber; ++i) {
+        matrixPerPack[i]++;
+    }
+    eslocal offset = 0;
     bool symmetric = true;
     this->B1KplusPacks.resize( maxDevNumber );
-    int * dom2dev = new int[ domains.size() ];
-    int * offsets = new int[ maxDevNumber ];
+    this->accDomains.resize( maxDevNumber );
+    eslocal * offsets = new eslocal[ maxDevNumber ];
 
     for ( int i = 0; i < maxDevNumber; i++ )
     {
-        if ( i == maxDevNumber - 1 ) {
-            matrixPerPack += domains.size() % maxDevNumber;
-        }
-
         long dataSize = 0;
         offsets[i] = offset;
+        long currDataSize = 0;
+        bool MICFull = false;
+        eslocal numCPUDomains = 0;
 
-        for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+        for ( int j = offset; j < offset + matrixPerPack[i]; j++ ) {
             if (!symmetric) {
-                dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
+                currDataSize = domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
             } else {
                 // isPacked => is symmetric
-                dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
+                currDataSize = ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
                         ( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
             }
-            dom2dev[ j ] = i;
+            long dataInBytes = (currDataSize + dataSize) * sizeof(double);
+            if (MICFull || (dataInBytes > 0.8 * micMem[i])) {
+                MICFull = true;
+                hostDomains.push_back(j);
+                numCPUDomains++;
+            } else {
+                accDomains[i].push_back(j);
+                dataSize += currDataSize;
+            }
         }
 
-        this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
+        // it is necessary to subtract numCPUDomains AFTER setting offset!
+        offset += matrixPerPack[i];
+        matrixPerPack[i] -= numCPUDomains;
+        
+        this->B1KplusPacks[i].Resize( matrixPerPack[i], dataSize );
 
-        for ( int j = offset; j < offset + matrixPerPack; j++ ) {
-            this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
-                    domains[j].B1t_comp_dom.cols,  symmetric );
+        for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
+            this->B1KplusPacks[ i ].PreparePack( j, domains[accDomains[i].at(j)].B1t_comp_dom.cols,
+                    domains[accDomains[i].at(j)].B1t_comp_dom.cols, symmetric );
         }
-        offset += matrixPerPack;
     }
-    int matrixPP = domains.size() / maxDevNumber;
+    
 #pragma omp parallel num_threads(N_MICS)
     {
         int  i = omp_get_thread_num();
@@ -68,21 +95,16 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         this->B1KplusPacks[i].AllocateVectors( );
         this->B1KplusPacks[i].SetDevice( i );
         SparseSolverAcc tmpsps_mic;
-        if ( i == maxDevNumber - 1 ) {
-            matrixPP += domains.size() % maxDevNumber;
-        }
-        SparseMatrix** K = new SparseMatrix*[matrixPP];
-        SparseMatrix** B = new SparseMatrix*[matrixPP];
+        SparseMatrix** K = new SparseMatrix*[matrixPerPack[i]];
+        SparseMatrix** B = new SparseMatrix*[matrixPerPack[i]];
 
-        for (int j = offsets[i]; j < offsets[i] + matrixPP; j++ ) {
-            K[j-offsets[i]] = &(domains[j].K);
-            B[j-offsets[i]] = &(domains[j].B1t_comp_dom);
+        for (eslocal j = 0; j < accDomains[i].size(); ++j) {
+            K[j] = &(domains[accDomains[i].at(j)].K);
+            B[j] = &(domains[accDomains[i].at(j)].B1t_comp_dom);
         }
         this->B1KplusPacks[i].CopyToMIC();
-        tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], matrixPP,  0, i);
+        tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], accDomains[i].size(),  0, i);
     }
-std::cout <<" blabla " << std::endl;
-    delete [] dom2dev;
     delete [] offsets;
     /*
        cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
@@ -167,6 +189,12 @@ std::cout <<" blabla " << std::endl;
     if (cluster_global_index == 1)
         cout << endl;
     */
+#pragma offload target(mic:0)
+    {
+        long pages = sysconf(_SC_AVPHYS_PAGES);
+        long page_size = sysconf(_SC_PAGE_SIZE);
+        std::cout << pages * page_size << std::endl;
+    }
 }
 
 void ClusterAcc::Create_Kinv_perDomain() {
@@ -271,6 +299,190 @@ void ClusterAcc::Create_Kinv_perDomain() {
 
 }
 
+//void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
+//
+//    if (cluster_global_index == 1)
+//        cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
+//
+//    // First, get the available memory on coprocessors (in bytes)
+//    long micMem[N_MICS];
+//    for (eslocal i = 0; i < N_MICS; ++i) {
+//        long currentMem = 0;
+//        #pragma offload target(mic:0)
+//        {
+//            long pages = sysconf(_SC_AVPHYS_PAGES);
+//            long page_size = sysconf(_SC_PAGE_SIZE);
+//            currentMem = pages * page_size;
+//        }
+//        micMem[i] = currentMem;
+//    }
+//    for (eslocal i = 0; i < N_MICS; ++i) {
+//        totalMem += micMem[i];
+//    }
+//
+//
+//    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+//        domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
+//    }
+//
+//    // compute sizes of data to be offloaded to MIC
+//    int maxDevNumber = N_MICS;
+//    if (N_MICS == 0) {
+//        maxDevNumber = 1;
+//    }
+//    int matrixPerPack = domains.size() / maxDevNumber;
+//    int offset = 0;
+//    bool symmetric = true;
+//    this->B1KplusPacks.resize( maxDevNumber );
+//    int * dom2dev = new int[ domains.size() ];
+//    int * offsets = new int[ maxDevNumber ];
+//
+//    for ( int i = 0; i < maxDevNumber; i++ )
+//    {
+//        if ( i == maxDevNumber - 1 ) {
+//            matrixPerPack += domains.size() % maxDevNumber;
+//        }
+//
+//        long dataSize = 0;
+//        offsets[i] = offset;
+//
+//        for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+//            if (!symmetric) {
+//                dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
+//            } else {
+//                // isPacked => is symmetric
+//                dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
+//                        ( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
+//            }
+//            dom2dev[ j ] = i;
+//        }
+//
+//        this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
+//
+//        for ( int j = offset; j < offset + matrixPerPack; j++ ) {
+//            this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
+//                    domains[j].B1t_comp_dom.cols,  symmetric );
+//        }
+//        offset += matrixPerPack;
+//    }
+//    int matrixPP = domains.size() / maxDevNumber;
+//#pragma omp parallel num_threads(N_MICS)
+//    {
+//        int  i = omp_get_thread_num();
+//        std::cout << "DEVICE: " <<i << std::endl;
+//        this->B1KplusPacks[i].AllocateVectors( );
+//        this->B1KplusPacks[i].SetDevice( i );
+//        SparseSolverAcc tmpsps_mic;
+//        if ( i == maxDevNumber - 1 ) {
+//            matrixPP += domains.size() % maxDevNumber;
+//        }
+//        SparseMatrix** K = new SparseMatrix*[matrixPP];
+//        SparseMatrix** B = new SparseMatrix*[matrixPP];
+//
+//        for (int j = offsets[i]; j < offsets[i] + matrixPP; j++ ) {
+//            K[j-offsets[i]] = &(domains[j].K);
+//            B[j-offsets[i]] = &(domains[j].B1t_comp_dom);
+//        }
+//        this->B1KplusPacks[i].CopyToMIC();
+//        tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], matrixPP,  0, i);
+//      //  MKL_INT * SC_sizes = new MKL_INT[matrixPP];
+//      //  for (eslocal j  = 0; j < matrixPP; j++) {
+//      //      SC_sizes[j] = domains[offsets[i]+j].B1t_comp_dom.cols;
+//      //  }
+//      //  this->solver[i].Create_SC(this->B1KplusPacks[i],SC_sizes, 0);
+//    }
+//    delete [] dom2dev;
+//    delete [] offsets;
+//    /*
+//       cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+//       domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
+//
+//       if (cluster_global_index == 1)
+//       cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
+//       this->NUM_MICS = 2;
+//
+//    // compute sizes of data to be offloaded to MIC
+//    eslocal maxDevNumber = this->NUM_MICS;
+//    if (this->NUM_MICS == 0) {
+//    maxDevNumber = 1;
+//    }
+//    eslocal matrixPerPack = domains.size() / maxDevNumber;
+//    eslocal offset = 0;
+//    bool symmetric = true;
+//    this->B1KplusPacks.resize( maxDevNumber );
+//    eslocal * dom2dev = new eslocal[ domains.size() ];
+//    eslocal * offsets = new eslocal[maxDevNumber];
+//
+//    for ( eslocal i = 0; i < maxDevNumber; i++ ) {
+//    if ( i == maxDevNumber - 1 ) {
+//    matrixPerPack += domains.size() % maxDevNumber;
+//    }
+//
+//    long dataSize = 0;
+//    offsets[i] = offset;
+//
+//    for ( eslocal j = offset; j < offset + matrixPerPack; j++ ) {
+//    if (!symmetric) {
+//    dataSize += domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
+//    } else {
+//    // isPacked => is symmetric
+//    dataSize += ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
+//    ( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
+//    }
+//    dom2dev[ j ] = i;
+//    }
+//
+//    this->B1KplusPacks[i].Resize( matrixPerPack, dataSize );
+//
+//    for ( eslocal j = offset; j < offset + matrixPerPack; j++ ) {
+//    this->B1KplusPacks[ i ].PreparePack( j - offset, domains[j].B1t_comp_dom.cols,
+//    domains[j].B1t_comp_dom.cols,  symmetric );
+//    }
+//    offset += matrixPerPack;
+//    }
+//
+//    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+//
+//    if (cluster_global_index == 1) cout << "."; // << i ;
+//
+//    SparseSolverCPU tmpsps;
+//    if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
+//    tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
+//
+//    if (USE_FLOAT){
+//    domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
+//    domains[i].B1Kplus.USE_FLOAT = true;
+//    }
+//
+//    this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
+//    domains[i].B1Kplus.Clear();
+//
+//    }
+//
+//    delete [] dom2dev;
+//    delete [] offsets;
+//    if (this->NUM_MICS == 0) {
+//    this->B1KplusPacks[0].AllocateVectors( );
+//    }
+//    for (eslocal i = 0; i < this->NUM_MICS ; i++ ) {
+//        this->B1KplusPacks[i].AllocateVectors( );
+//        this->B1KplusPacks[i].SetDevice( i );
+//        this->B1KplusPacks[i].CopyToMIC();
+//    }
+//
+//    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+//        domains[i].B1t_comp_dom.Clear();
+//
+//    if (cluster_global_index == 1)
+//        cout << endl;
+//    */
+//#pragma offload target(mic:0)
+//    {
+//        long pages = sysconf(_SC_AVPHYS_PAGES);
+//        long page_size = sysconf(_SC_PAGE_SIZE);
+//        std::cout << pages * page_size << std::endl;
+//    }
+//}
 
 
 //TODO:

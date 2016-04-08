@@ -1,5 +1,5 @@
 #!/bin/bash
-WORKDIR=~/espreso-results-pbs-static-pbs
+WORKDIR=~/espreso_git/espreso #espreso-results-pbs-static-pbs
 ESPRESODIR=~/espreso_git/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
@@ -136,9 +136,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=8 # subdomains size
+    d=5 # subdomains size
     c=0 # number of corners - nefunguje 
-    x=10 # cluster size in domains
+    x=8 # cluster size in domains
 
     y=$x
     z=$x
@@ -170,16 +170,16 @@ if [ "$1" = "run" ]; then
 
     if [ "$3" = "mpi" ]; then
 
-#export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
       export MKL_NUM_THREADS=1
-      export OMP_NUM_THREADS=1
+      export OMP_NUM_THREADS=24
       export SOLVER_NUM_THREADS=$THREADS_PER_MPI
       export PAR_NUM_THREADS=$THREADS_PER_MPI
       export CILK_NWORKERS=$THREADS_PER_MPI
       export PARDISOLICMESSAGE=1
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
       export MIC_ENV_PREFIX=MIC
-      export MIC_OMP_NUM_THREADS=180
+      export MIC_OMP_NUM_THREADS=240
       export MIC_OMP_NESTED=FALSE
       export MIC_MKL_DYNAMIC=FALSE
       export MIC_KMP_AFFINITY=balanced
@@ -188,12 +188,13 @@ if [ "$1" = "run" ]; then
       export OFFLOAD_INIT=on_start
       export LC_CTYPE=
 
-
       cd $WORKDIR/$out_dir
 
       #cat $PBS_NODEFILE | tee -a $node_file
       if [ "$2" = "intel" ]; then
       mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+      #./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}
+      
       fi
       
       if [ "$2" = "sgi" ]; then
