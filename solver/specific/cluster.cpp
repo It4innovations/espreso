@@ -1272,7 +1272,6 @@ void ClusterBase::CreateSa() {
 		if (MPIrank == 0) tmpsps.msglvl = 1;
 		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
         
-        std::cout <<"TESKTTT"<<std::endl;
         Salfa.ConvertDenseToCSR(1);
         Salfa.RemoveLower();
 		if (MPIrank == 0) tmpsps.msglvl = 0;

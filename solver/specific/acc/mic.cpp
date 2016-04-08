@@ -911,7 +911,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
     if (!SC_out.areDataOnMIC()) {
         SC_out.CopyToMIC();
     }
-
     // data to be transfered to MIC
     eslocal * K_in_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64); //new eslocal[nMatrices];
     eslocal * K_b_tmp_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64);//new eslocal[nMatrices];
@@ -921,7 +920,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
     double ** K_sc1_CSR_V_values = (double**) _mm_malloc(nMatrices * sizeof(double*), 64);// new double*[nMatrices];
     eslocal ** K_sc1_CSR_I_row_indices = (eslocal**) _mm_malloc(nMatrices * sizeof(eslocal*), 64); //new eslocal*[nMatrices];
     eslocal ** K_sc1_CSR_J_col_indices = (eslocal**) _mm_malloc(nMatrices * sizeof(eslocal*), 64);//new eslocal*[nMatrices];
-
     //double ** SC_out_dense_values = new double*[nMatrices];
     eslocal * SC_out_rows = SC_out.rows;
     eslocal * SC_out_cols = SC_out.cols;
@@ -959,12 +957,12 @@ void SparseSolverMIC::Create_SC_w_Mat(
         K_sc1_rows[i] = K_sc1.rows;
         nnz[i] = K_sc1.nnz;
 
-        K_sc1_CSR_V_values[i] = new double[ nnz[i] ];
+        K_sc1_CSR_V_values[i] = (double*) _mm_malloc(nnz[i] * sizeof(double), 64); // new double[ nnz[i] ];
         memcpy(K_sc1_CSR_V_values[i], &K_sc1.CSR_V_values[0], nnz[i] * sizeof(double) );
-        K_sc1_CSR_I_row_indices[i] = new eslocal[K_sc1_rows[i] + 1];
+        K_sc1_CSR_I_row_indices[i] = (eslocal*) _mm_malloc( (K_sc1_rows[i] +1) * sizeof(eslocal), 64);// new eslocal[K_sc1_rows[i] + 1];
         memcpy(K_sc1_CSR_I_row_indices[i], &K_sc1.CSR_I_row_indices[0], ( K_sc1_rows[i] + 1) * sizeof(eslocal));
         //K_sc1_CSR_I_row_indices[i][K_sc1_rows[i]] = nnz[i];
-        K_sc1_CSR_J_col_indices[i] = new eslocal[nnz[i]];
+        K_sc1_CSR_J_col_indices[i] = (eslocal*) _mm_malloc(nnz[i] * sizeof(eslocal), 64); //new eslocal[nnz[i]];
         memcpy(K_sc1_CSR_J_col_indices[i], &K_sc1.CSR_J_col_indices[0], nnz[i] * sizeof(eslocal));
 
     }
@@ -997,10 +995,10 @@ void SparseSolverMIC::Create_SC_w_Mat(
         }
     }
 #pragma offload target(mic : device ) \
-    in ( K_in_rows : length(0) alloc_if(0) free_if(0) ) \
-    in( K_b_tmp_rows : length(0) alloc_if(0) free_if(0) ) \
-    in( K_sc1_rows  : length(0) alloc_if(0) free_if(0) ) \
-    in( nnz : length(0) alloc_if(0) free_if(0))  \
+    in ( K_in_rows : length(0) alloc_if(0) free_if(1) ) \
+    in( K_b_tmp_rows : length(0) alloc_if(0) free_if(1) ) \
+    in( K_sc1_rows  : length(0) alloc_if(0) free_if(1) ) \
+    in( nnz : length(0) alloc_if(0) free_if(1))  \
     in( K_sc1_CSR_V_values : length(0) alloc_if(0) free_if(0)  ) \
     in(K_sc1_CSR_I_row_indices  : length(0) alloc_if(0) free_if(0) ) \
     in( K_sc1_CSR_J_col_indices : length(0) alloc_if(0) free_if(0) ) \
@@ -1031,12 +1029,11 @@ void SparseSolverMIC::Create_SC_w_Mat(
 #pragma omp parallel
         {
             eslocal myRank = omp_get_thread_num();
-            matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
-        }
 
-#pragma omp parallel
-        {
-            eslocal myRank = omp_get_thread_num();
+            // to overcome competition among threads allocate buffer one by one
+#pragma omp critical
+            matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
+
             /* Internal solver memory pointer pt, */
             /* 32-bit: int pt[64]; 64-bit: long int pt[64] */
             /* or void *pt[64] should be OK on both architectures */
@@ -1152,6 +1149,36 @@ void SparseSolverMIC::Create_SC_w_Mat(
 
                 delete [] perm;
             }
+            _mm_free(matrixPerThread[myRank]);
         }
     }
+    for ( eslocal i = 0 ; i < nMatrices; ++i ) {
+        _mm_free(K_sc1_CSR_V_values[i]);
+        _mm_free(K_sc1_CSR_I_row_indices[i]);
+        _mm_free(K_sc1_CSR_J_col_indices[i]);
+    }
+    _mm_free(K_sc1_CSR_V_values);
+    _mm_free(K_sc1_CSR_I_row_indices);
+    _mm_free(K_sc1_CSR_J_col_indices);
+    _mm_free(K_in_rows);
+    _mm_free(K_b_tmp_rows);
+    _mm_free(K_sc1_rows);
+    _mm_free(nnz);
+    
+    // remember to clear also MICs memory
+    for (eslocal i = 0 ; i < nMatrices; i++) {
+        double * valPointer = K_sc1_CSR_V_values[i];
+        eslocal * iPointer = K_sc1_CSR_I_row_indices[i];
+        eslocal * jPointer = K_sc1_CSR_J_col_indices[i];
+#pragma offload_transfer target(mic:device) \
+        nocopy( valPointer : alloc_if(0) free_if(1)) \
+        nocopy( iPointer :  alloc_if(0) free_if(1)) \
+        nocopy( jPointer :  alloc_if(0) free_if(1)) 
+    }
+  #pragma offload_transfer target(mic : device ) \
+    nocopy(K_sc1_CSR_V_values :alloc_if(0) free_if(1) ) \
+    nocopy(K_sc1_CSR_I_row_indices :  alloc_if(0) free_if(1) ) \
+    nocopy(K_sc1_CSR_J_col_indices : alloc_if(0) free_if(1) )
+
+ 
 }

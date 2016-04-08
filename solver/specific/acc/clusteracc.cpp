@@ -17,6 +17,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
     // First, get the available memory on coprocessors (in bytes)
+    double usableRAM = 0.5;
     long micMem[N_MICS];
     for (eslocal i = 0; i < N_MICS; ++i) {
         long currentMem = 0;
@@ -24,7 +25,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
-            currentMem = 66731520;//pages * page_size;
+            currentMem = pages * page_size;
         }
         micMem[i] = currentMem;
     }
@@ -64,7 +65,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                         ( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
             }
             long dataInBytes = (currDataSize + dataSize) * sizeof(double);
-            if (MICFull || (dataInBytes > 0.8 * micMem[i])) {
+            if (MICFull || (dataInBytes > usableRAM * micMem[i])) {
                 // when no more memory is available at MIC leave domain on CPU
                 MICFull = true;
                 hostDomains.push_back(j);
@@ -554,6 +555,7 @@ void ClusterAcc::SetupKsolvers ( ) {
         if (esconfig::MPIrank == 0) std::cout << ".";
 
     }
+    if (!USE_KINV) {
     // send matrices to Xeon Phi
     eslocal nMatrices = domains.size();  
     this->matricesPerAcc.reserve(N_MICS);
@@ -587,4 +589,5 @@ void ClusterAcc::SetupKsolvers ( ) {
     
 
     deleteMatrices = true  ;
+    }
 }
