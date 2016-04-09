@@ -39,17 +39,6 @@ for i in range(n_clus):
         vec_f[i].append(mM.load_vector(path,'f',i,j))
         #vec_weight[i].append(mM.load_vector(path,'weight',i,j))
         
- 
-for i in range(n_clus):
-    for j in range(n_subPerClust):
-        if (i==0 and j==0): 
-            f       = vec_f[0][0]
-            #weight  = vec_weight[0][0] 
-
-        else:            
-            f       = np.concatenate((f,vec_f[i][j]))        
-            #weight  = np.concatenate((weight,vec_weight[i][j]))          
-                      
 
 
 
@@ -73,9 +62,9 @@ for i in range(n_clus):
 conf = config_espreso_python
 
 weight = 1
-u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,mat_R,weight)
+#u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,mat_R,weight)
 
-#uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,f,mat_B0,mat_B1,mat_R,mat_Salfa,weight)
+uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_B0,mat_B1,mat_R,mat_Salfa,weight)
 
 
 
