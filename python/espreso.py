@@ -4,8 +4,8 @@ from scipy import sparse
 import myModul as mM
 import config_espreso_python  
 
-n_clus          = 8
-n_subPerClust   = 8
+n_clus          = 2
+n_subPerClust   = 2
 
 
 

@@ -246,44 +246,6 @@ class MULT_BLOCK_RECTANGLE:
         return x_out  
 
 
-#            
-#class KPLUS_HFETI:
-#    def __init__(self, B0,G0,Kplus_sub,R,iF0,iS0):
-#        self.B0 = B0
-#        self.G0 = G0
-#        self.nB0 = B0.shape[0]
-#        self.Kplus_sub = Kplus_sub
-#        self.R = R
-#        self.iF0 = iF0
-#        self.iS0 = iS0
-#        
-#        self.B_Kplus_sub = np.zeros(B0.shape)
-#        for i in range(len(self.B0)):
-#            for j in range(len(self.B[i])): 
-#                B0_array = B0[i][j].toarray()
-#        
-#        
-#        
-#        for i in range(B0.shape[0]):
-#            self.B_Kplus_sub[i,:] = self.Kplus_sub.solve(B0_array[i,:])
-#        
-#    def solve(self,bc):
-#        for i in range(G0.shape[0]):
-#            b = bc[:-self.nB0:]
-#            c = bc[-self.nB0::]      
-#            Kplus_b = self.Kplus_sub.solve(b)
-#            d0 = sparse.csc_matrix.dot(self.B0,Kplus_b)-c 
-#            e0 = -sparse.csc_matrix.dot(self.R.transpose(),b)   
-#            G0tiF0d0 = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))
-#            beta = self.iS0.solve(G0tiF0d0-e0) 
-#            mu = self.iF0.solve(d0 - sparse.csc_matrix.dot(self.G0,beta))    
-#            x = Kplus_b-np.dot(self.B_Kplus_sub.transpose(),mu) + \
-#               sparse.csc_matrix.dot(self.R,beta)  
-##       x = Kplus_b-self.Kplus_sub.solve(sparse.csc_matrix.dot(self.B0.transpose(),mu)) + \
-##            sparse.csc_matrix.dot(self.R,beta)  
-#     
-#        return np.concatenate((x,mu))        
-#        
 class  KPLUS_HTFETI:
     def __init__(self,Kplus,B0,R,S_alpha): 
         self.Kplus  = Kplus
@@ -317,9 +279,7 @@ class  KPLUS_HTFETI:
             for i in range(R[0].shape[1]):
                 S_alpha[i,i] += rho
                 
-#        for i in range(B0):
-#            np.savetxt('B0_Kplus'+int(i)+'.txt',self.B0_Kplus[i])
-#        np.savetxt('F0.txt',F0)
+
         self.iS_alpha = DENS_SOLVE(S_alpha)   
         
      
@@ -339,10 +299,6 @@ class  KPLUS_HTFETI:
         alpha0 = self.iS_alpha.solve(tmpV)
         lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G0,alpha0)) 
 
-#        np.savetxt('alpha0.txt',alpha0)
-#        raise
-
-
         cnt = 0
         uu = []
         for j in range(len(self.Kplus)):
@@ -355,34 +311,6 @@ class  KPLUS_HTFETI:
         return uu
         
 
-#
-#        def __mul__(self,b):
-#            for j in range(self.G0.shape[0]):
-#                Kplus_b = Kplus[j]*b
-#                d0 = sparse.csc_matrix.dot(self.B0[i],Kplus_b) 
-#                e0 = -sparse.csc_matrix.dot(self.R[i].transpose(),b)   
-#                G0tiF0d0 = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))
-#                beta = self.iS0.solve(G0tiF0d0-e0) 
-#                mu = self.iF0.solve(d0 - sparse.csc_matrix.dot(self.G0,beta))    
-#                x = Kplus_b-np.dot(self.B_Kplus_sub.transpose(),mu) + \
-#                   sparse.csc_matrix.dot(self.R,beta)
-#            return x_out
-      
-      
-      
-#    def __mult__(self,x_in):
-#        for i in range(G0.shape[0]):
-#            b = bc[:-self.nB0:]
-#            c = bc[-self.nB0::]      
-#            Kplus_b = self.Kplus_sub.solve(b)
-#            d0 = sparse.csc_matrix.dot(self.B0,Kplus_b)-c 
-#            e0 = -sparse.csc_matrix.dot(self.R.transpose(),b)   
-#            G0tiF0d0 = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))
-#            beta = self.iS0.solve(G0tiF0d0-e0) 
-#            mu = self.iF0.solve(d0 - sparse.csc_matrix.dot(self.G0,beta))    
-#            x = Kplus_b-np.dot(self.B_Kplus_sub.transpose(),mu) + \
-#               sparse.csc_matrix.dot(self.R,beta)
-#        return x_out
 ###############################################################################      
 class FETIOPERATOR: 
     def __init__(self,Kplus,B):
@@ -414,10 +342,7 @@ class FETIOPERATOR_HTFETI:
                 x_out += sparse.csc_matrix.dot(self.B1[i][j],x[j])
                 
                 
-            #Kpl_ = self.Kplus_HTFETI[i].mult(f[i])
-            #for j in range(len(K[i])):
-            #    d += sparse.csc_matrix.dot(B1[i][j],Kpl_[j])    
-        
+
         return x_out        
         
 class COARSE_PROBLEM:
@@ -445,20 +370,6 @@ class COARSE_PROBLEM_HTFETI:
                 self.G      = sparse.hstack((self.G,Gj))                
         self.G = self.G.tocsc()
     
- 
-
-   
-#class COARSE_PROBLEM_HTFETI_CLUSTER:
-#    def __init__(self,B0,R):
-#        self.G0 = []
-#        for i in range(len(B0)):
-#            for j in range(len(B0[i])):  
-#                if (j==0):
-#                    self.G0.append(-sparse.csc_matrix.dot(B0[i][j],R[i][j]))   
-#                else:
-#                    G0i = -sparse.csc_matrix.dot(B0[i][j],R[i][j])    
-#                    self.G0[i]      = sparse.hstack((self.G0[i],G0i))   
-
  
 
 class PROJ:
@@ -663,9 +574,6 @@ def hfeti(K,Kreg,f,B0,B1,R,mat_S0,weight):
     d   = np.zeros(B1[0][0].shape[0])    
     
     
-    
-    
-    
     Kplus = []
     for i in range(len(K)):
         Kplus.append([])
@@ -683,17 +591,11 @@ def hfeti(K,Kreg,f,B0,B1,R,mat_S0,weight):
         Kplus_HTFETI.append(KPLUS_HTFETI(Kplus[i],B0[i],R[i],mat_S0[i]))
 
 
-#    np.savetxt('G0.txt',Kplus_HTFETI[0].G0.todense())
-
 
     for i in range(len(K)):
         Kpl_ = Kplus_HTFETI[i]*f[i]
         for j in range(len(K[i])):
             d += sparse.csc_matrix.dot(B1[i][j],Kpl_[j])
-     
-            
-             
- 
     
     
     F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
@@ -708,6 +610,31 @@ def hfeti(K,Kreg,f,B0,B1,R,mat_S0,weight):
     print('type(B):',type(B1[0][0]))
     delta = 0.0
     norm_f = 0.0
+    
+    Kplus_f_B1t_lam = []
+    cnt = 0
+    R_alpha = []
+    for i in range(len(K)):
+        B1t_lam = []
+        ind = np.arange(0,R[i][0].shape[1]) + cnt
+        R_alpha.append([])
+        for j in range(len(K[i])):
+            B1t_lam.append(f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam))
+            R_alpha[i].append(sparse.csc_matrix.dot(R[i][j],alpha(ind)))
+        
+        cnt += R[i][0].shape[1]
+
+        
+        Kplus_f_B1t_lam.append(Kplus_HTFETI[i]*B1t_lam)
+        
+        
+    uu = []   
+    for i in range(len(K)):
+        uu.append([])
+        for j in range(len(K[i])):    
+            s=4
+
+
     for i in range(len(K)):
         uu.append([])
         for j in range(len(K[i])):
