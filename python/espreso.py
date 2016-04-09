@@ -61,11 +61,21 @@ for i in range(n_clus):
 
 conf = config_espreso_python
 
-weight = 1
-#u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,mat_R,weight)
 
+plt.clf()
+weight = 1
+
+u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,mat_R,weight)
 uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_B0,mat_B1,mat_R,mat_Salfa,weight)
 
+norm_del_u = 0
+norm_u = 0
+for i in range(len(u)):
+    for j in range(len(u[i])):
+        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
+        norm_u += np.linalg.norm(u[i][j])
+
+print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
 
 
 #conf.iterative_Kplus=False

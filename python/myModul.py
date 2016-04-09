@@ -601,7 +601,7 @@ def hfeti(K,Kreg,f,B0,B1,R,mat_S0,weight):
     F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
     Prec    = PREC_DIR_OR_LUMPED(K,B1)
      
-    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,True)        
 #    
     uu = []
     cnt = 0
@@ -613,45 +613,47 @@ def hfeti(K,Kreg,f,B0,B1,R,mat_S0,weight):
     
     Kplus_f_B1t_lam = []
     cnt = 0
-    R_alpha = []
     for i in range(len(K)):
         B1t_lam = []
-        ind = np.arange(0,R[i][0].shape[1]) + cnt
-        R_alpha.append([])
+
         for j in range(len(K[i])):
             B1t_lam.append(f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam))
-            R_alpha[i].append(sparse.csc_matrix.dot(R[i][j],alpha(ind)))
+            #tmp = sparse.csc_matrix.dot(R[i][j],alpha[ind])            
+            #R_alpha[i].append(tmp)
         
-        cnt += R[i][0].shape[1]
+        
 
         
         Kplus_f_B1t_lam.append(Kplus_HTFETI[i]*B1t_lam)
+     
         
         
     uu = []   
     for i in range(len(K)):
         uu.append([])
+        ind = np.arange(0,R[i][0].shape[1]) + cnt
         for j in range(len(K[i])):    
-            s=4
+            R_alpha = sparse.csc_matrix.dot(R[i][j],alpha[ind])
+            uu[i].append(Kplus_f_B1t_lam[i][j]+R_alpha)
+        cnt += R[i][0].shape[1]
 
-
-    for i in range(len(K)):
-        uu.append([])
-        for j in range(len(K[i])):
-            ind = np.arange(0,R[i][j].shape[1]) + cnt
-            f_BtLam_i_j = f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam)
-            KplusBtLam_i_j=Kplus[i][j]*f_BtLam_i_j
-            R_alpha_i_j = sparse.csc_matrix.dot(R[i][j],alpha[ind])
-            uu[i].append(KplusBtLam_i_j+R_alpha_i_j)
-            cnt += R[i][j].shape[1]
-            delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
-            norm_f += np.linalg.norm(f[i][j])
+#    for i in range(len(K)):
+#        uu.append([])
+#        for j in range(len(K[i])):
+#            ind = np.arange(0,R[i][j].shape[1]) + cnt
+#            f_BtLam_i_j = f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam)
+#            KplusBtLam_i_j=Kplus[i][j]*f_BtLam_i_j
+#            R_alpha_i_j = sparse.csc_matrix.dot(R[i][j],alpha[ind])
+#            uu[i].append(KplusBtLam_i_j+R_alpha_i_j)
+#            cnt += R[i][j].shape[1]
+#            delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
+#            norm_f += np.linalg.norm(f[i][j])
         
 #    u = Kplus_sub*f_m_BtLam + Roperator.mult(alpha)      
 #     
 #    delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
 #    normf = np.linalg.norm(f)
-    print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+#    print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ############################################################################### 
      
