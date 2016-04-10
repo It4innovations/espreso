@@ -3,6 +3,7 @@ import numpy as np
 from scipy import sparse 
 import myModul as mM
 import config_espreso_python  
+import pylab as plt
 
 n_clus          = 2
 n_subPerClust   = 2
@@ -20,6 +21,8 @@ mat_B0      = []
 mat_B1      = []
 mat_R       = []
 vec_f       = []
+vec_weight  = []
+vec_index_weight = []
 #vec_weight  = []
 for i in range(n_clus): 
     mat_K.append([])
@@ -28,6 +31,8 @@ for i in range(n_clus):
     mat_B1.append([])
     mat_R.append([])
     vec_f.append([])
+    vec_weight.append([])
+    vec_index_weight.append([])
     mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
     #vec_weight.append([])
     for j in range(n_subPerClust):  
@@ -37,11 +42,12 @@ for i in range(n_clus):
         mat_B1[i].append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
         mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
         vec_f[i].append(mM.load_vector(path,'f',i,j))
+        vec_weight[i].append(mM.load_vector(path,'weight',i,j))
+        tmp = mM.load_vector(path,'loc_ind_weight',i,j)
+        tmp = tmp.astype(np.int32)
+        vec_index_weight[i].append(tmp)
         #vec_weight[i].append(mM.load_vector(path,'weight',i,j))
         
-
-
-
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
 ###############################################################################            
@@ -63,19 +69,22 @@ conf = config_espreso_python
 
 
 plt.clf()
-weight = 1
 
-u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,mat_R,weight)
-uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_B0,mat_B1,mat_R,mat_Salfa,weight)
-
-norm_del_u = 0
-norm_u = 0
-for i in range(len(u)):
-    for j in range(len(u[i])):
-        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
-        norm_u += np.linalg.norm(u[i][j])
-
-print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
+u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,vec_weight,\
+                            vec_index_weight,mat_R)
+                            
+                            
+uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_B0,mat_B1,vec_weight,\
+                        vec_index_weight,mat_R,mat_Salfa)
+#
+#norm_del_u = 0
+#norm_u = 0
+#for i in range(len(u)):
+#    for j in range(len(u[i])):
+#        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
+#        norm_u += np.linalg.norm(u[i][j])
+#
+#print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
 
 
 #conf.iterative_Kplus=False

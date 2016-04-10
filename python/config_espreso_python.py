@@ -1,6 +1,6 @@
 #config
 
-eps_dual_feti   = 1e-7
+eps_dual_feti   = 1e-4
 maxIt_dual_feti = 500
 
 
