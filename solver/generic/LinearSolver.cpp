@@ -352,6 +352,29 @@ void LinearSolver::init(
 			SparseMatrix s = cluster.domains[d].K;
 			os << s;
 			os.close();
+
+
+///
+//			std::ofstream osK(Logging::prepareFile(d, "K").c_str());
+//			osK << _K[d];
+//			osK.close();
+//			std::ofstream osT(Logging::prepareFile(d, "T").c_str());
+//			osT << _T[d];
+//			osT.close();
+			std::ofstream os_in_weight(Logging::prepareFile(d, "loc_ind_weight").c_str());
+			os_in_weight << lambda_map_sub_B1[d];
+			os_in_weight.close();
+//      lambda_map_sub_B1[d]
+
+			std::ofstream os_weigth(Logging::prepareFile(d, "weight").c_str());
+			os_weigth << B1_duplicity[d];
+			os_weigth.close();
+///
+
+
+
+
+
 		}
 	}
 
@@ -542,6 +565,9 @@ void LinearSolver::set_B1(
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].B1_scale_vec = B1_duplicity[d];
 	}
+
+
+
 
 }
 
