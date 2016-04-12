@@ -3,6 +3,7 @@
 *.o
 *.so
 *.vtk
+*.pyc
 *.png
 *.a
 *.lic

@@ -79,8 +79,15 @@ namespace output {
 
 
 namespace assembler {
-	Discretization discretization = FEM;
-	Assembler assembler = LinearElasticity;
+	static std::vector<Description> description = {
+			{INTEGER_PARAMETER, "DISCRETIZATION", "Discretization: 0 - FEM, 1 - BEM"}
+	};
+
+	static Configuration configuration(description, "espreso.config");
+
+	Discretization discretization = configuration.value("DISCRETIZATION", config::assembler::FEM);
+
+	Assembler assembler = LinearElasticity; // Set by loader !!!
 }
 namespace solver {
 

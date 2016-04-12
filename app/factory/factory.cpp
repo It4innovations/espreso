@@ -108,7 +108,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 		return new LinearElasticity<TDiscretization>(discretization);
 	}
 	case config::assembler::Temperature: {
-		return new LinearElasticity<TDiscretization>(discretization);
+		return new Temperature<TDiscretization>(discretization);
 	}
 	default:
 		ESINFO(ERROR) << "Unknown assembler.";
@@ -116,7 +116,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 }
 
-static AssemblerBase* getAssembler(Mesh *mesh, Mesh *surface)
+static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 {
 	switch (config::assembler::discretization) {
 
@@ -197,7 +197,7 @@ void Factory::store(const std::string &file)
 	case config::assembler::FEM: {
 		if (config::output::saveResults) {
 			output::VTK_Full vtk(*_mesh, file);
-			vtk.store(_solution, _assembler->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+			vtk.store(_solution, _mesh->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 		}
 		break;
 	}
@@ -205,7 +205,7 @@ void Factory::store(const std::string &file)
 	case config::assembler::BEM: {
 		if (config::output::saveResults) {
 			output::VTK_Full vtk(*_surface, file);
-			vtk.store(_solution, _assembler->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+			vtk.store(_solution, _surface->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 		}
 		break;
 	}
@@ -213,7 +213,7 @@ void Factory::store(const std::string &file)
 	case config::assembler::API: {
 		if (config::output::saveResults) {
 			output::VTK_Full vtk(*_mesh, file);
-			vtk.store(_solution, _assembler->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+			vtk.store(_solution, _mesh->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 		}
 		break;
 	}

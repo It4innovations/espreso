@@ -23,6 +23,11 @@ enum ElementType {
 	PYRAMID13
 };
 
+enum Assembler {
+	LinearElasticity,
+	Temperature
+};
+
 struct Settings {
 
 	Settings(const Options &options, size_t index, size_t size);
@@ -35,6 +40,7 @@ struct Settings {
 
 	eslocal elementType;
 	eslocal shape;
+	eslocal assembler;
 
 	bool useMetis;
 };
@@ -43,10 +49,12 @@ inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 {
 	std::vector<std::string> shapes({ "CUBE", "SPHERE" });
 	std::vector<std::string> eTypes({ "HEXA8", "HEXA20", "TETRA4", "TETRA10", "PRISMA6", "PRISMA15", "PYRAMID5", "PYRAMID13" });
+	std::vector<std::string> assembler({ "LinearElasticity", "Temperature" });
 
 	os << "clusters: " << s.size << "\n";
 	os << "generated shape: " << shapes[s.shape] << "\n";
 	os << "type of the element: " << eTypes[s.elementType] << "\n";
+	os << "assembler: " << assembler[s.assembler] << "\n";
 	os << "partition: " << (s.useMetis ? "by METIS" : "regular") << "\n";
 	return os;
 }

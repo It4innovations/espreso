@@ -23,7 +23,7 @@ static void printStack()
 
 	std::stringstream command;
 	command << "addr2line -sipfC -e " << config::executable;
-	for (size_t i = 2; i < size; i++) {
+	for (size_t i = 0; i < size; i++) {
 		std::string function(functions[i]);
 		size_t begin = function.find_last_of('[') + 1;
 		size_t end = function.find_last_of(']');

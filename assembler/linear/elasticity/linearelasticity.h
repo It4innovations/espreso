@@ -12,7 +12,6 @@ public:
 	LinearElasticity(TInput &input): Linear<TInput>(input) {};
 
 protected:
-	size_t DOFs() { return 3; }
 	void inertia(std::vector<double> &inertia);
 	void C(DenseMatrix &C, eslocal material);
 	double CP() { return 1; }

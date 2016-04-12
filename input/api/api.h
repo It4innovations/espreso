@@ -22,7 +22,7 @@ protected:
 	API(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
 	: Loader(mesh), _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
 
-	void points(Coordinates &coordinates);
+	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
 	void boundaryConditions(Coordinates &coordinates) { }; // TODO: change dirichlet structure to array
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);

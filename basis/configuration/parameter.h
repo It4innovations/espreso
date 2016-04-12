@@ -49,7 +49,7 @@ class Parameter {
 public:
 	bool match(const std::string &line) const
 	{
-		std::string param = line.substr(0, line.find(" "));
+		std::string param = line.substr(0, line.find_first_of(" ="));
 		return param.size() == _name.size() && std::equal(param.begin(), param.end(), _name.begin(), ParameterCompare::caseInsensitiveEq);
 	}
 
@@ -195,10 +195,14 @@ public:
 		size_t pos = line.find(_delimiter);
 		if (pos == std::string::npos) {
 			_value = true;
-			_set = true;
 		} else {
-			ESINFO(ERROR) << "Boolean parameter " << _name << " should be without assignment.";
+			if (value(line).compare("0") == 0) {
+				_value = false;
+			} else {
+				_value = true;
+			}
 		}
+		_set = true;
 	}
 
 	const bool& get() const { return _value; };

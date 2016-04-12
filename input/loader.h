@@ -34,7 +34,7 @@ public:
 		open();
 
 		TimeEvent tPoints("coordinates"); tPoints.start();
-		points(mesh._coordinates);
+		points(mesh._coordinates, mesh._DOFs);
 		tPoints.end(); measurement.addEvent(tPoints);
 		ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 
@@ -78,7 +78,7 @@ public:
 	}
 
 protected:
-	virtual void points(Coordinates &coordinates) = 0;
+	virtual void points(Coordinates &coordinates, size_t &DOFs) = 0;
 	virtual void elements(std::vector<Element*> &elements) = 0;
 	virtual void faces(Faces &faces) { };
 	virtual void boundaryConditions(Coordinates &coordinates) = 0;

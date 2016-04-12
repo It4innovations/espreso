@@ -1232,6 +1232,17 @@ void ClusterBase::CreateSa() {
 		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,&tmp_double, &tmp_int, -1);
 		 TSak.Clear();
 
+
+	   if (config::info::printMatrices) {
+			//SparseMatrix RT = cluster.domains[d].Kplus_R;
+			//RT.ConvertDenseToCSR(1);
+
+			std::ofstream osSa(Logging::prepareFile("Salfa"));
+			osSa << Salfa;
+			osSa.close();
+     }
+
+
 		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
 
 //		 Salfa.printMatCSR2("Salfa.txt");
@@ -1266,7 +1277,16 @@ void ClusterBase::CreateSa() {
 		 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
 
 		SparseMatrix Eye, N, Nt, NNt;
-		Eye.CreateEye(6); N.CreateEye(6); Nt.CreateEye(6);
+		eslocal dtmp = 0;
+		if (DOFS_PER_NODE == 3) {
+			dtmp = 6;
+		}
+
+		if (DOFS_PER_NODE == 1) {
+			dtmp = 1;
+		}
+
+		Eye.CreateEye(dtmp); N.CreateEye(dtmp); Nt.CreateEye(dtmp);
 
 		for (int i=0; i < domains.size()-1; i++) {
 			N.MatAppend(Eye);

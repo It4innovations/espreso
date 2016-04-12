@@ -26,6 +26,13 @@ namespace input {
 //	#                                                 #
 //	###################################################
 
+// UP     0
+// READ   1
+// BOTTOM 2
+// FRONT  3
+// RIGHT  4
+// LEFT   5
+
 static void checkSettings(const SphereSettings &settings)
 {
 	if (settings.layers * 6 != settings.size) {
@@ -37,7 +44,7 @@ static void checkSettings(const SphereSettings &settings)
 
 template<class TElement>
 SphereGenerator<TElement>::SphereGenerator(Mesh &mesh, const SphereSettings &settings)
-	: UniformGenerator<TElement>(mesh, _settings), _settings(settings)
+	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
 	checkSettings(_settings);
 }
@@ -49,8 +56,9 @@ void SphereGenerator<TElement>::elementsMaterials(std::vector<Element*> &element
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::points(Coordinates &coordinates)
+void SphereGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 {
+	DOFs = this->_DOFs;
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
@@ -75,8 +83,8 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates)
 	eslocal index = 0;
 	esglobal gIndex;
 	for (eslocal z = 0; z < cNodes[2]; z++) {
-		for (eslocal x = 0; x < cNodes[0]; x++) {
-			for (eslocal y = 0; y < cNodes[1]; y++) {
+		for (eslocal y = 0; y < cNodes[1]; y++) {
+			for (eslocal x = cNodes[0] - 1; x >= 0; x--) {
 				point.z = 1;
 				point.y = (corner[0] * (1 - y * step[1]) + corner[2] * y * step[1]).y;
 				point.x = (corner[0] * (1 - x * step[0]) + corner[1] * x * step[0]).x;
@@ -149,6 +157,7 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates)
 				}
 				}
 
+				gIndex += _settings.index / 6 * surface * (cNodes[2] - 1);
 				coordinates.add(point, index++, gIndex);
 			}
 		}
@@ -159,20 +168,60 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates)
 template<class TElement>
 void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 {
-	if (_settings.index > 5) {
-		return;
-	}
 	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
 	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
 	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
+	CoordinatesProperty &forces_x = coordinates.property(FORCES_X);
+	CoordinatesProperty &forces_y = coordinates.property(FORCES_Y);
+	CoordinatesProperty &forces_z = coordinates.property(FORCES_Z);
 
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 
-	for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
-		dirichlet_x[i] = 0;
-		dirichlet_y[i] = 0;
-		dirichlet_z[i] = 0;
+	if (_settings.index < 6) {
+		for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
+			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_X)->second) {
+				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_X)->second) {
+				forces_x[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_Y)->second) {
+				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_Y)->second) {
+				forces_y[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_Z)->second) {
+				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_Z)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_Z)->second) {
+				forces_z[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_Z)->second;
+			}
+		}
+	}
+
+	if (_settings.index + 7 > _settings.size) {
+		for (eslocal i = (cNodes[2] - 1) * cNodes[0] * cNodes[1]; i < cNodes[2] * cNodes[0] * cNodes[1]; i++) {
+			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_X)->second) {
+				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_X)->second) {
+				forces_x[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_X)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_Y)->second) {
+				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_Y)->second) {
+				forces_y[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_Y)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_Z)->second) {
+				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_Z)->second;
+			}
+			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_Z)->second) {
+				forces_z[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_Z)->second;
+			}
+		}
 	}
 }
 
@@ -184,73 +233,58 @@ void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::v
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
-	std::set<int> neighs;
-
-	for (size_t i = 0; i < boundaries.size(); i++) {
-		boundaries[i].push_back(_settings.index);
-	}
-
-	if (_settings.index / 6 > 0) {
-		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i].push_back(_settings.index - 6);
+	std::vector<eslocal> clusterMap(15);
+	for (int i = -1; i < 2; i++) {
+		switch (_settings.index % 6) {
+		case 0: case 1: case 2: case 3:
+			clusterMap[5 + i * 5] = i * 6 + _settings.index / 6 * 6 + (_settings.index % 6 % 4 + 3) % 4;
+			clusterMap[6 + i * 5] = i * 6 + _settings.index / 6 * 6 + 5;
+			clusterMap[7 + i * 5] = i * 6 + _settings.index;
+			clusterMap[8 + i * 5] = i * 6 + _settings.index / 6 * 6 + 4;
+			clusterMap[9 + i * 5] = i * 6 + _settings.index / 6 * 6 + (_settings.index % 6 % 4 + 1) % 4;
+			break;
+		case 4:
+			clusterMap[5 + i * 5] = i * 6 + _settings.index / 6 * 6 + 3;
+			clusterMap[6 + i * 5] = i * 6 + _settings.index / 6 * 6 + 0;
+			clusterMap[7 + i * 5] = i * 6 + _settings.index;
+			clusterMap[8 + i * 5] = i * 6 + _settings.index / 6 * 6 + 2;
+			clusterMap[9 + i * 5] = i * 6 + _settings.index / 6 * 6 + 1;
+			break;
+		case 5:
+			clusterMap[5 + i * 5] = i * 6 + _settings.index / 6 * 6 + 3;
+			clusterMap[6 + i * 5] = i * 6 + _settings.index / 6 * 6 + 2;
+			clusterMap[7 + i * 5] = i * 6 + _settings.index;
+			clusterMap[8 + i * 5] = i * 6 + _settings.index / 6 * 6 + 0;
+			clusterMap[9 + i * 5] = i * 6 + _settings.index / 6 * 6 + 1;
+			break;
 		}
 	}
 
-	if (_settings.index / 6 < _settings.layers - 1) {
-		for (eslocal i = 0; i < cNodes[1] * cNodes[0]; i++) {
-			boundaries[i + (cNodes[2] - 1) * cNodes[1] * cNodes[0]].push_back(_settings.index + 6);
-		}
-	}
+	std::vector<eslocal> clusters(clusterMap);
+	std::sort(clusters.begin(), clusters.end());
 
-	eslocal index;
-	if  (_settings.index % 6 < 4) {
-		for (eslocal z = 0; z < cNodes[2]; z++) {
-			index = z * cNodes[0] * cNodes[1];
-			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].push_back(6 * (_settings.index / 6) + 4);
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6) + 5);
+	for (size_t i = 0; i < 15; i++) {
+		if (0 <= clusters[i] && clusters[i] < _settings.size) {
+			size_t index = std::find(clusterMap.begin(), clusterMap.end(), clusters[i]) - clusterMap.begin();
+			eslocal sx = index % 5 == 3 ? cNodes[0] - 1 : 0,
+					ex = index % 5 != 1 ? cNodes[0] - 1 : 0,
+					sy = index % 5 == 4 ? cNodes[1] - 1 : 0,
+					ey = index % 5 != 0 ? cNodes[1] - 1 : 0,
+					sz = index >= 10    ? cNodes[2] - 1 : 0,
+					ez = index >= 5     ? cNodes[2] - 1 : 0;
+
+			for (eslocal z = sz; z <= ez; z++) {
+				for (eslocal y = sy; y <= ey; y++) {
+					for (eslocal x = sx; x <= ex; x++) {
+						boundaries[z * cNodes[0] * cNodes[1] + y * cNodes[0] + x].push_back(clusters[i]);
+					}
+				}
 			}
-			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + (_settings.index + 3) % 4);
-				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + (_settings.index + 1) % 4);
-			}
-		}
-	} else if (_settings.index % 6 == 4) {
-		for (eslocal z = 0; z < cNodes[2]; z++) {
-			index = z * cNodes[0] * cNodes[1];
-			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].push_back(6 * (_settings.index / 6) + 2);
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6));
-			}
-			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + 3);
-				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + 1);
-			}
-		}
-	} else {
-		for (eslocal z = 0; z < cNodes[2]; z++) {
-			index = z * cNodes[0] * cNodes[1];
-			for (eslocal y = 0; y < cNodes[1]; y++) {
-				boundaries[index + y].push_back(6 * (_settings.index / 6));
-				boundaries[index + y + (cNodes[0] - 1) * cNodes[1]].push_back(6 * (_settings.index / 6) + 2);
-			}
-			for (eslocal x = 0; x < cNodes[0]; x++) {
-				boundaries[index + x * cNodes[1]].push_back(6 * (_settings.index / 6) + 3);
-				boundaries[index + (x + 1) * cNodes[1] - 1].push_back(6 * (_settings.index / 6) + 1);
+			if (clusters[i] != config::MPIrank) {
+				neighbours.push_back(clusters[i]);
 			}
 		}
 	}
-
-	// TODO: check if it is necessary
-	for (size_t i = 0; i < boundaries.size(); i++) {
-		std::sort(boundaries[i].begin(), boundaries[i].end());
-		auto end = std::unique(boundaries[i].begin(), boundaries[i].end());
-		boundaries[i].resize(end - boundaries[i].begin());
-		neighs.insert(boundaries[i].begin(), boundaries[i].end());
-	}
-
-	neighs.erase(config::MPIrank);
-	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 
 }

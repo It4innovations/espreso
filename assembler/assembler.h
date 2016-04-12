@@ -54,8 +54,6 @@ public:
 	virtual void solve(std::vector<std::vector<double> > &solution) = 0;
 	virtual void finalize() = 0;
 
-	virtual size_t DOFs() = 0;
-
 	virtual ~AssemblerBase() {};
 };
 
@@ -66,6 +64,7 @@ protected:
 	Assembler(TInput &input): _input(input), _verbose(true), _timeStatistics("Solver Overall Timing") {};
 
 	virtual size_t subdomains();
+	virtual size_t DOFs();
 
 	TInput _input;
 

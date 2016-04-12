@@ -53,7 +53,9 @@ ParseError* OpenFOAM::computePolyMeshPath(int rank, int size) {
 	return NULL;
 }
 
-void OpenFOAM::points(Coordinates &coordinates) {
+void OpenFOAM::points(Coordinates &coordinates, size_t &DOFs)
+{
+	DOFs = 3; // TODO
 	FoamFile pointsFile(_polyMeshPath + "points");
 	Points points;
 	solveParseError(parse(pointsFile.getTokenizer(), points));

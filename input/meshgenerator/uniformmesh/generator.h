@@ -19,7 +19,6 @@ public:
 
 protected:
 	virtual void elementsMesh(std::vector<Element*> &elements);
-	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
 
 	virtual void partitiate(std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
