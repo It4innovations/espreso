@@ -174,7 +174,16 @@ void Configuration::print() const
 	}
 }
 
-eslocal Configuration::_getValue(const std::string &parameter, eslocal defaultValue) const
+int Configuration::_getValue(const std::string &parameter, int defaultValue) const
+{
+	if (_parameters.find(parameter)->second->isSet()) {
+		return static_cast<IntegerParameter*>(_parameters.find(parameter)->second)->get();
+	} else {
+		return defaultValue;
+	}
+}
+
+long Configuration::_getValue(const std::string &parameter, long defaultValue) const
 {
 	if (_parameters.find(parameter)->second->isSet()) {
 		return static_cast<IntegerParameter*>(_parameters.find(parameter)->second)->get();
