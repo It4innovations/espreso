@@ -36,12 +36,12 @@ namespace input {
 static void checkSettings(eslocal cluster[], size_t &side, const SphereSettings &settings)
 {
 	if (settings.grid * settings.grid * settings.layers * 6 != settings.size) {
-		ESINFO(ERROR) << "The number of clusters(" << settings.grid * settings.grid * settings.layers * 6
+		ESINFO(GLOBAL_ERROR) << "The number of clusters(" << settings.grid * settings.grid * settings.layers * 6
 				<< ") does not accord the number of MPI processes(" << settings.size << ").";
 	}
 
 	if (settings.subdomainsInCluster[1] * settings.elementsInSubdomain[1] != settings.subdomainsInCluster[0] * settings.elementsInSubdomain[0]) {
-		ESINFO(ERROR) << "The number of elements in x-axis does not accord the number of elements in y-axis";
+		ESINFO(GLOBAL_ERROR) << "The number of elements in x-axis does not accord the number of elements in y-axis";
 	}
 
 	side = settings.index / (settings.size / 6);
