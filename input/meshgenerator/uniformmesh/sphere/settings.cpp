@@ -11,6 +11,9 @@ static std::vector<Description> createSphereSetting()
 		INTEGER_PARAMETER, "LAYERS", "Number of layers of the sphere."
 	});
 	description.push_back({
+		INTEGER_PARAMETER, "GRID", "Grid size of one side of the sphere."
+	});
+	description.push_back({
 		DOUBLE_PARAMETER, "INNER_RADIUS", "Inner radius of the sphere."
 	});
 	description.push_back({
@@ -54,9 +57,10 @@ SphereSettings::SphereSettings(const Options &options, size_t index, size_t size
 	ESINFO(OVERVIEW) << "Load sphere setting from file " << options.path;
 	Configuration configuration(SphereSettings::description, options);
 
-	layers = configuration.value<eslocal>("LAYERS", 1);
-	innerRadius = configuration.value<double>("INNER_RADIUS", 9);
-	outerRadius = configuration.value<double>("OUTER_RADIUS", 12);
+	layers = configuration.value("LAYERS", 1);
+	grid = configuration.value("GRID", 1);
+	innerRadius = configuration.value("INNER_RADIUS", 9.0);
+	outerRadius = configuration.value("OUTER_RADIUS", 12.0);
 
 	std::vector<std::string> axis = { "X", "Y", "Z" };
 	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };
@@ -78,6 +82,7 @@ SphereSettings::SphereSettings(size_t index, size_t size)
 : UniformSettings(index, size)
 {
 	layers = 1;
+	grid = 1;
 	innerRadius = 9;
 	outerRadius = 12;
 
