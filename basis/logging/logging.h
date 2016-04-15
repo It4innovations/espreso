@@ -43,6 +43,7 @@ enum TestEvent {
 
 enum InfoEvent {
 	ERROR,
+	GLOBAL_ERROR,
 	ALWAYS,
 	VERBOSE_LEVEL0,
 

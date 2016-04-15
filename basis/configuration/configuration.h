@@ -44,7 +44,8 @@ public:
 
 private:
 
-	eslocal _getValue(const std::string &parameter, eslocal defaultValue) const;
+	int _getValue(const std::string &parameter, int defaultValue) const;
+	long _getValue(const std::string &parameter, long defaultValue) const;
 	double _getValue(const std::string &parameter, double defaultValue) const;
 	const char* _getValue(const std::string &parameter, const char* defaultValue) const;
 	std::string _getValue(const std::string &parameter, const std::string &defaultValue) const;

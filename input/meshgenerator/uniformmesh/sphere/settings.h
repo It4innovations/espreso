@@ -22,6 +22,7 @@ struct SphereSettings: public UniformSettings {
 	static std::vector<Description> description;
 
 	size_t layers;
+	size_t grid;
 	double innerRadius;
 	double outerRadius;
 
@@ -33,6 +34,7 @@ inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
 {
 	os << UniformSettings(s);
 	os << "layers: " << s.layers << "\n";
+	os << "grid: " << s.grid << "\n";
 	os << "innerRadius: " << s.innerRadius << "\n";
 	os << "outerRadius: " << s.outerRadius << "\n";
 

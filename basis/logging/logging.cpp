@@ -42,9 +42,9 @@ Info::~Info()
 		}
 		return;
 	}
-	if (event == ERROR) {
+	if (event == ERROR || (event == GLOBAL_ERROR && config::MPIrank == 0)) {
 		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n", config::MPIrank);
+		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n\n\n", config::MPIrank);
 
 		if (config::executable.size()) {
 			printStack();
