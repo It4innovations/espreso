@@ -1052,21 +1052,66 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 	// CblasConjTrans=113};  /* trans='C' */
 
 	if (type == 'G') {
-		if ( T_for_transpose_N_for_not_transpose == 'T' )
-			cblas_dgemv
-				(CblasColMajor, CblasTrans,
-				rows, cols,
-				alpha, &dense_values[0], lda,
-				&x_in[x_in_vector_start_index], 1,
-				beta, &y_out[y_out_vector_start_index], 1);
-		else
-			cblas_dgemv
-				(CblasColMajor, CblasNoTrans,
-				rows, cols,
-				alpha, &dense_values[0], lda,
-				&x_in[x_in_vector_start_index], 1,
-				beta, &y_out[y_out_vector_start_index], 1);
-	} else {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+
+			if (!USE_FLOAT) {
+				cblas_dgemv
+					(CblasColMajor, CblasTrans,
+					rows, cols,
+					alpha, &dense_values[0], lda,
+					&x_in[x_in_vector_start_index], 1,
+					beta, &y_out[y_out_vector_start_index], 1);
+			} else {
+
+				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+
+				for (eslocal i = 0; i < rows; i++)
+					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
+
+				cblas_sgemv
+					(CblasColMajor, CblasTrans,
+					rows, cols,
+					alpha, &dense_values_fl[0], lda,
+					&vec_fl_in[0], 1,
+					beta, &vec_fl_out[0], 1);
+
+				for (eslocal i = 0; i < rows; i++)
+					y_out[i + y_out_vector_start_index] = (double)vec_fl_out[i];
+			}
+
+		} else {
+
+			if (!USE_FLOAT) {
+				cblas_dgemv
+					(CblasColMajor, CblasNoTrans,
+					rows, cols,
+					alpha, &dense_values[0], lda,
+					&x_in[x_in_vector_start_index], 1,
+					beta, &y_out[y_out_vector_start_index], 1);
+			} else {
+
+				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+
+				for (eslocal i = 0; i < rows; i++)
+					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
+
+				cblas_sgemv
+					(CblasColMajor, CblasNoTrans,
+					rows, cols,
+					alpha, &dense_values_fl[0], lda,
+					&vec_fl_in[0], 1,
+					beta, &vec_fl_out[0], 1);
+
+				for (eslocal i = 0; i < rows; i++)
+					y_out[i + y_out_vector_start_index] = (double)vec_fl_out[i];
+			}
+
+		}
+	}
+
+	if (type == 'S') {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
                     ESINFO(ERROR) << "Transposition is not supported for packed symmetric matrices";
                     return;
@@ -1254,23 +1299,27 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 	double alpha = 1.0;
 	double beta  = 0.0;
 
-	if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-		cublasDgemv(handle,
-			CUBLAS_OP_T,
-			rows, cols,
-			&alpha, d_dense_values, lda,
-			d_x_in, 1,
-			&beta, d_y_out, 1);
-	} else {
-		cublasDgemv(handle,
-			CUBLAS_OP_N,
-			rows, cols,
-			&alpha, d_dense_values, lda,
-			d_x_in, 1,
-			&beta, d_y_out, 1);
+	if (type == 'G') {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+			cublasDgemv(handle,
+				CUBLAS_OP_T,
+				rows, cols,
+				&alpha, d_dense_values, lda,
+				d_x_in, 1,
+				&beta, d_y_out, 1);
+		} else {
+			cublasDgemv(handle,
+				CUBLAS_OP_N,
+				rows, cols,
+				&alpha, d_dense_values, lda,
+				d_x_in, 1,
+				&beta, d_y_out, 1);
+		}
 	}
 
-		// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
+	if (type = 'S') {
+
+	// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
 		//cublasDsymv(handle,
 		//	CUBLAS_FILL_MODE_UPPER, //CUBLAS_FILL_MODE_LOWER
 		//	rows,
@@ -1279,13 +1328,17 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 		//	&beta, d_y_out, 1);
 
 		// POMALE
-		//cublasDspmv(handle,
-		//	CUBLAS_FILL_MODE_UPPER,
-		//	rows,
-		//	&alpha, d_dense_values,
-		//	d_x_in, 1,
-		//	&beta, d_y_out, 1);
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
 
+		} else {
+			cublasDspmv(handle,
+				CUBLAS_FILL_MODE_UPPER,
+				rows,
+				&alpha, d_dense_values,
+				d_x_in, 1,
+				&beta, d_y_out, 1);
+		}
+	}
 
 	// Retrieve result vector from device
 	//cublasGetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy)
@@ -1413,22 +1466,29 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 			&beta, d_y_out_fl, 1);
 	}
 
-	// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
-	//cublasDsymv(handle,
-	//	CUBLAS_FILL_MODE_UPPER, //CUBLAS_FILL_MODE_LOWER
-	//	rows,
-	//	&alpha, d_dense_values, lda,
-	//	d_x_in, 1,
-	//	&beta, d_y_out, 1);
 
-	// POMALE
-	//cublasDspmv(handle,
-	//	CUBLAS_FILL_MODE_UPPER,
-	//	rows,
-	//	&alpha, d_dense_values,
-	//	d_x_in, 1,
-	//	&beta, d_y_out, 1);
+	if (type = 'S') {
 
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+
+		} else {
+			// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
+			//cublasDsymv(handle,
+			//	CUBLAS_FILL_MODE_UPPER, //CUBLAS_FILL_MODE_LOWER
+			//	rows,
+			//	&alpha, d_dense_values, lda,
+			//	d_x_in, 1,
+			//	&beta, d_y_out, 1);
+
+			// POMALE
+			cublasSspmv(handle,
+				CUBLAS_FILL_MODE_UPPER,
+				rows,
+				&alpha, d_dense_values_fl,
+				d_x_in_fl, 1,
+				&beta, d_y_out_fl, 1);
+		}
+	}
 
 	// Retrieve result vector from device
 	//cublasGetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy)
@@ -1444,7 +1504,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 	eslocal error = 0;
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size();// rows * cols;
+	eslocal mat_size = dense_values_fl.size();// rows * cols;
 	eslocal lda = rows;
 
 	if ( d_dense_values_fl == NULL ) {
@@ -1519,12 +1579,18 @@ void SparseMatrix::RemoveLowerDense( ) {
 //                      LAPACK_COL_MAJOR
 //						LAPACK_ROW_MAJOR
 
-	vector <double> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+	if (USE_FLOAT) {
+		vector <float> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+		LAPACKE_strttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values_fl[0],           rows,  &tmp_dense[0] );
+		dense_values_fl.swap(tmp_dense);
 
-	LAPACKE_dtrttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values[0],           rows,  &tmp_dense[0] );
+	} else {
+		vector <double> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+		LAPACKE_dtrttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values[0],           rows,  &tmp_dense[0] );
+		dense_values.swap(tmp_dense);
+	}
 
-	dense_values.swap(tmp_dense);
-
+	type = 'S';
 }
 
 

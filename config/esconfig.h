@@ -97,6 +97,8 @@ namespace solver {
 	extern size_t   FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
 	extern bool     REDUNDANT_LAGRANGE;
 	extern bool     USE_SCHUR_COMPLEMENT; 		// 1 - YES
+	extern size_t   SCHUR_COMPLEMENT_PREC;		// Schur complement precission - 0 DP; 1 SP
+	extern bool 	COMBINE_SC_AND_SPDS;		// Combine usage of SC for Accelerator and Sparse Direct Solver for CPU
 	extern bool     KEEP_FACTORS;				// 1 - YES; 0 - NO
 	extern size_t   PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
 	extern size_t   CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG

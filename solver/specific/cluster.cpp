@@ -617,7 +617,6 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
-
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
 		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;

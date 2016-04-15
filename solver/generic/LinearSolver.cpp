@@ -328,8 +328,8 @@ void LinearSolver::init(
 
 
 
-	// *** Load Matrix K and regularization ******************************************************************************
-	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
+	// *** Load Matrix K, Regularization, Schur Complement and Factorization ******************************************************************************
+	TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
 	 timeSolKproc.start();
 
 	ESLOG(MEMORY) << "Before K reg. and fact. process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
@@ -353,8 +353,6 @@ void LinearSolver::init(
 			os << s;
 			os.close();
 
-
-///
 //			std::ofstream osK(Logging::prepareFile(d, "K").c_str());
 //			osK << _K[d];
 //			osK.close();
@@ -369,18 +367,37 @@ void LinearSolver::init(
 			std::ofstream os_weigth(Logging::prepareFile(d, "weight").c_str());
 			os_weigth << B1_duplicity[d];
 			os_weigth.close();
-///
-
-
-
-
 
 		}
 	}
 
-	 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
 
+	// *** Computation of the Schur Complement ***************************************************************************************
+	if ( cluster.USE_KINV == 1 ) {
+		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
+		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
+
+		bool USE_FLOAT = false;
+		if (config::solver::SCHUR_COMPLEMENT_PREC == 1 ) {
+			USE_FLOAT = true;
+		}
+
+		cluster.Create_SC_perDomain(USE_FLOAT);
+
+		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
+		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
+		 //KSCMem.printLastStatMPIPerNode();
+
+		ESLOG(MEMORY) << "After K inv. process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+	}
+	// *** END - Computation of the Schur Complement **************************************************************************
+
+
+	// *** K Factorization ****************************************************************************************************
+	TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
 	ESINFO(PROGRESS2) << "Factorize K";
+
 	cluster.SetupKsolvers();
 
 	KFactMem.endWithoutBarrier( GetProcessMemory_u() );
@@ -391,7 +408,7 @@ void LinearSolver::init(
 
 	timeSolKproc.endWithBarrier();
 	timeEvalMain.addEvent(timeSolKproc);
-	// *** END - Load Matrix K and regularization ******************************************************************************
+	// *** END - Load Matrix K, Regularization, Schur Complement and Factorization ******************************************************************************
 
 
 	// *** Setup Hybrid FETI part of the solver ********************************************************************************
@@ -443,30 +460,6 @@ void LinearSolver::init(
     	ESLOG(MEMORY) << "After HFETI full preprocess process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
     }
-
-
-	// *** Computation of the Schur Complement ***************************************************************************************
-	if ( cluster.USE_KINV == 1 ) {
-//		 TimeEvent timeSolSC1(string("Solver - Schur Complement asm. - using many RSH "));
-//		 timeSolSC1.start();
-//	//	cluster.Create_Kinv_perDomain();
-//		 timeSolSC1.endWithBarrier();
-//		 timeEvalMain.addEvent(timeSolSC1);
-
-		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
-		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
-		bool USE_FLOAT = false;
-		cluster.Create_SC_perDomain(USE_FLOAT);
-		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
-		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
-		 //KSCMem.printLastStatMPIPerNode();
-
-		ESLOG(MEMORY) << "After K inv. process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-
-	}
-	// *** END - Computation of the Schur Complement *********************************************************************************
-
 
 	// *** Final Solver Setup after K factorization **********************************************************************************
 	 TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));

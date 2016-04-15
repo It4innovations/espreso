@@ -122,6 +122,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 	time_eval.totalTime.start();
 
 
+
+
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 		time_eval.timeEvents[0].start();
 		//// POZOR - jen pro porovnani vykonu CPU a GPU
@@ -162,28 +164,34 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 		time_eval.timeEvents[2].end();
 	}
 
+
+
+
+
+
+
 	if (cluster.USE_KINV == 0) {
-		time_eval.timeEvents[0].start();
+
+		 time_eval.timeEvents[0].start();
 		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-			//cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d]; // POZOR zbytecne kopirovani // prim norm
 		}
-		time_eval.timeEvents[0].end();
+		 time_eval.timeEvents[0].end();
 
-		time_eval.timeEvents[1].start();
+		 time_eval.timeEvents[1].start();
 		if (cluster.USE_HFETI == 0) {
 			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
 				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
 		} else {
 			cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
 		}
-		time_eval.timeEvents[1].end();
+		 time_eval.timeEvents[1].end();
 
 
-		time_eval.timeEvents[2].start();
+		 time_eval.timeEvents[2].start();
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 		SEQ_VECTOR < double > y_out_tmp;
 		for (eslocal d = 0; d < cluster.domains.size(); d++) {
@@ -193,9 +201,12 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
 		}
-		time_eval.timeEvents[2].end();
+		 time_eval.timeEvents[2].end();
 
 	}
+
+
+	// *** Combine update lambdas among neighbors - shared by all methos above
 
 	time_eval.timeEvents[3].start();
 	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
@@ -222,17 +233,20 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 		//}
 
 		//cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-		  	if (cluster.domains[d].isOnACC == 0) {
-				// Automatic fall-back to CPU for sub-domains, which did not fit GPU memory
-				// Note: DenseMatVec - this is a blocking operation - it waits till its finished
-		  		//cilk_spawn
-				cluster.domains[d].B1Kplus.DenseMatVec (cluster.domains[d].compressed_tmp2, cluster.domains[d].compressed_tmp);
-			}
+		  	if (!config::solver::COMBINE_SC_AND_SPDS) {
+				if (cluster.domains[d].isOnACC == 0) {
+					// Automatic fall-back to CPU for sub-domains Schur complements, which did not fit GPU memory
+					// Note: DenseMatVec - this is a blocking operation - it waits till its finished
+					//cilk_spawn
+					cluster.domains[d].B1Kplus.DenseMatVec (cluster.domains[d].compressed_tmp2, cluster.domains[d].compressed_tmp);
+				}
+		  	}
 		}
 	}
 
 
 	void IterSolverGPU::apply_A_htfeti_SC ( Cluster & cluster )
 	{
-		cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
+		//cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
+		cluster.multKplusGlobal_GPU( cluster.x_prim_cluster1 );
 	}

@@ -23,6 +23,8 @@ public:
 
 	void Create_SC_perDomain( bool USE_FLOAT );
 	void SetupKsolvers ( );
+
+	void multKplusGlobal_GPU   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
 };
 
 }

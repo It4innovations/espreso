@@ -220,6 +220,8 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 	/* -------------------------------------------------------------------- */
 	phase = 11;
 
+	ESINFO(PROGRESS2) << Info::plain() << "f";
+
 	if (USE_FLOAT) {
 		iparm[27] = 1; //run PARDISO in FLOAT
 		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
