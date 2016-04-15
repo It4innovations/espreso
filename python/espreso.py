@@ -51,19 +51,8 @@ for i in range(n_clus):
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
 ###############################################################################            
-#np.hstack;np.vstack;np.column_stack;np.row_stack
 
 
-#FETI=False
-
-#if FETI:
-    #B = sparse.vstack((B0 ,B1 ))
-    #u,lam = mM.feti(K,Kreg,f,B1,R,weight)
-#else:    
-    #u,lam = mM.hfeti(K,Kreg,f,B0,B1,R,weight)
-
-#B = sparse.vstack((B0 ,B1 ))
-#u,lam = mM.feti(K,Kreg,f,B,R,weight)
 
 conf = config_espreso_python
 

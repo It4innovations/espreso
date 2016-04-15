@@ -4,8 +4,8 @@ import scipy.sparse.linalg as spla
 import config_espreso_python as conf
 import pylab as plt
 #import sys  
-
-
+#
+#
 def load_matrix(path,str0,i,j,makeSparse,makeSymmetric): 
     pathToFile = path+'/'+str(i)+'/'+str0+str(j)+'.txt' 
     tmp = np.loadtxt(pathToFile, ndmin=2)
@@ -15,7 +15,7 @@ def load_matrix(path,str0,i,j,makeSparse,makeSymmetric):
         n = np.int32(tmp[0,0])   
         m = np.int32(tmp[0,1])
         I = tmp[1::,0]-1;    J = tmp[1::,1]-1;    V = tmp[1::,2]
-    
+#    
         print(str0,i,j)
         if (makeSymmetric):
             logInd = J>I; 
@@ -30,7 +30,7 @@ def load_matrix(path,str0,i,j,makeSparse,makeSymmetric):
                 tmp = V
             else:                
                 tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).toarray()
-        
+#
     return tmp
 ###############################################################################
 def load_vector(path,str0,i,j):
@@ -51,7 +51,7 @@ class DENS_SOLVE:
 class KPLUS:
     def __init__(self,Areg):
         self.__iAreg = spla.splu(Areg)  
-                
+#                
     def __mul__(self,b):
         return self.__iAreg.solve(b) 
 ###############################################################################       
@@ -68,7 +68,7 @@ class  KPLUS_HTFETI:
                 self.G0      = sparse.hstack((self.G0,G0i))  
         self.G0 = self.G0.tocsc()
         self.B0_Kplus = []
-                
+#                
         F0 = 0 
         for j in range(len(B0)): 
             B0_array = B0[j].toarray()
@@ -77,7 +77,7 @@ class  KPLUS_HTFETI:
                 self.B0_Kplus[j][i,:] = self.Kplus[j]*B0_array[i,:]
             F0 = F0 + np.dot(self.B0_Kplus[j],B0_array.transpose())
         self.iF0 = DENS_SOLVE(F0)
-
+#
         S_alpha_from_ESPRESO = False
         if (not S_alpha_from_ESPRESO):
             G0d = self.G0.toarray();iF0_G0d = self.iF0.solve(G0d)        
@@ -85,11 +85,11 @@ class  KPLUS_HTFETI:
             rho = S_alpha[0,0]
             for i in range(R[0].shape[1]):
                 S_alpha[i,i] += rho
-
+#
         self.iS_alpha = DENS_SOLVE(S_alpha)           
-     
+#     
     def __mul__(self,f):
-
+#
         d0 = np.zeros(self.B0[0].shape[0])        
         for i in range(len(self.Kplus)):
             if i == 0:
@@ -98,11 +98,11 @@ class  KPLUS_HTFETI:
                 e0i = sparse.csc_matrix.dot(self.R[i].transpose(),-f[i])
                 e0 = np.concatenate((e0,e0i))
             d0 += np.dot(self.B0_Kplus[i],f[i])
-        
+#        
         tmpV = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))-e0
         alpha0 = self.iS_alpha.solve(tmpV)
         lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G0,alpha0)) 
-
+#
         cnt = 0
         uu = []
         for j in range(len(self.Kplus)):
@@ -140,7 +140,7 @@ class FETIOPERATOR_HTFETI:
             x = self.Kplus_HTFETI[i]*xx
             for j in range(len(self.B1[i])):
                 x_out += sparse.csc_matrix.dot(self.B1[i][j],x[j])           
-
+#
         return x_out        
 ###############################################################################       
 class COARSE_PROBLEM:
@@ -183,7 +183,7 @@ class PREC_DIR_OR_LUMPED:
         self.B  = B
         self.w  = weight
         self.iw = index_weight
-        
+#        
     def __mul__(self,x_in):
         usePrecond = True
         if usePrecond:    
@@ -191,11 +191,11 @@ class PREC_DIR_OR_LUMPED:
             for i in range(len(self.K)):
                 for j in range(len(self.K[i])):
                     x0  = x_in.copy()
-                    x0[self.iw[i][j]] *= self.w[i][j] 
+                    x0[self.iw[i][j]] *= self.w[i][j]
                     x   = sparse.csc_matrix.dot(self.B[i][j].transpose(),x0)
                     x   = sparse.csc_matrix.dot(self.K[i][j],x)
                     x1  = sparse.csc_matrix.dot(self.B[i][j],x)
-                    x_out[self.iw[i][j]]+=x1[self.iw[i][j]]*self.w[i][j]  
+                    x_out[self.iw[i][j]]+=x1[self.iw[i][j]]*self.w[i][j]
         else:
             x_out = x_in.copy() 
         return x_out        
@@ -229,7 +229,7 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
         print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
         print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
         print('    i      |r|        r         e         stagnation ') 
-        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPMPg0,eps0,-1))     
+        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPg0,eps0,-1))     
 #   
     for i in range(nDual):
 #        
@@ -240,7 +240,8 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #         
         PMPgprev    = PMPg.copy()      
         g           += Fw * rho
-        PMPg        = Proj*(Prec*(Proj*g))
+        Pg           = Proj*g
+        PMPg        = Proj*(Prec*Pg)
 
         gtPMPg      = np.dot(g,PMPg)
         gamma       = gtPMPg/np.dot(gprev,PMPgprev)
@@ -249,8 +250,8 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
         if (np.dot(g,PMPg)<0): 
             raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
 #  
-        sqrt_gtPMPg = np.sqrt(gtPMPg)
-        normed_gi   = sqrt_gtPMPg/sqrt_gtPg0
+        sqrt_gtPg = np.sqrt(np.dot(g,Pg))
+        normed_gi   = sqrt_gtPg/sqrt_gtPg0
 
         vec_normed_g[i]    = normed_gi
 #       
@@ -263,7 +264,7 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #
         if disp:
             print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % \
-                            (i+2,normed_gi,sqrt_gtPMPg,eps0,is_stagnating))             
+                            (i+2,normed_gi,sqrt_gtPg,eps0,is_stagnating))             
 #            
         if normed_gi<eps0:
             break
