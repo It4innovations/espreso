@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-namespace assembler {
+namespace espreso {
 
 template<>
 size_t Assembler<FEM>::subdomains()
@@ -18,7 +18,25 @@ size_t Assembler<BEM>::subdomains()
 template<>
 size_t Assembler<API>::subdomains()
 {
-	return 1;
+	return this->_input.mesh->parts();
+}
+
+template<>
+size_t Assembler<FEM>::DOFs()
+{
+	return this->_input.mesh.DOFs();
+}
+
+template<>
+size_t Assembler<BEM>::DOFs()
+{
+	return this->_input.surface.DOFs();
+}
+
+template<>
+size_t Assembler<API>::DOFs()
+{
+	return this->_input.mesh->DOFs();
 }
 
 }

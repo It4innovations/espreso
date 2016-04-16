@@ -2,7 +2,7 @@
 #define TETRAHEDRON10_H_
 
 #include "../element.h"
-#include "../2D/triangle.h"
+#include "../2D/triangle3.h"
 #include "tetrahedron4.h"
 
 #define Tetrahedron10NodesCount 10
@@ -10,15 +10,15 @@
 #define Tetrahedron10GPCount 15
 #define Tetrahedron10VTKCode 24
 
-namespace mesh {
+namespace espreso {
 
 class Tetrahedron10: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Tetrahedron10(eslocal *indices, eslocal n);
+	Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params);
 	Tetrahedron10(std::ifstream &is);
 
 	Element* copy() const
@@ -78,6 +78,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 

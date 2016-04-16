@@ -6,24 +6,37 @@
 #include "settings.h"
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template<class TElement>
 class CubeGenerator: public UniformGenerator<TElement> {
 
 public:
-	CubeGenerator(int argc, char** argv, size_t index, size_t size);
-	CubeGenerator(const CubeSettings &settings);
+	static void load(Mesh &mesh, const CubeSettings &settings)
+	{
+		ESINFO(OVERVIEW) << "Generate cubic mesh";
+		ESINFO(DETAILS) << "Cube parameters:\n" << settings;
+
+		CubeGenerator cube(mesh, settings);
+		cube.fill();
+	}
 
 protected:
-	void points(mesh::Coordinates &coordinates);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Boundaries &boundaries);
+	CubeGenerator(Mesh &mesh, const CubeSettings &settings);
+
+	virtual void elementsMaterials(std::vector<Element*> &elements);
+	virtual void points(Coordinates &coordinates, size_t &DOFs);
+	virtual void boundaryConditions(Coordinates &coordinates);
+	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+
+	virtual ~CubeGenerator() {};
 
 	const CubeSettings _settings;
 	size_t _cluster[3];
 };
 
+}
 }
 
 #include "generator.hpp"

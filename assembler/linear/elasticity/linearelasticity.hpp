@@ -1,19 +1,19 @@
 
 #include "linearelasticity.h"
 
-namespace assembler {
+namespace espreso {
 
 template <class TInput>
 void LinearElasticity<TInput>::inertia(std::vector<double> &inertia)
 {
 	inertia.resize(3, 0);
-	inertia[2] = 9810.0 * 7.85e-9;
+	inertia[2] = 9.8066 * 7850; //9810.0 * 7.85e-9;
 }
 
 template <class TInput>
-void LinearElasticity<TInput>::C(DenseMatrix &C)
+void LinearElasticity<TInput>::C(DenseMatrix &C, eslocal material)
 {
-	double ex = 2.1e5;
+	double ex = 2e11; //!material ? 2.1e5 : 2.1e5 * esconfig::mesh::materialDifference;
 	double mi = 0.3;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	C.resize(6, 6);

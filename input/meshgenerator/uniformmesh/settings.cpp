@@ -1,10 +1,10 @@
 #include "settings.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 static std::vector<Description> createUniformSetting()
 {
-	std::vector<Description> description;
+	std::vector<Description> description(Settings::description);
 	std::vector<std::pair<std::string, std::string> > axis = {
 			{"X", "x"},
 			{"Y", "y"},
@@ -18,6 +18,9 @@ static std::vector<Description> createUniformSetting()
 		description.push_back({
 			INTEGER_PARAMETER, "ELEMENTS_" + axis[i].first, "Number of elements in clusters in " + axis[i].second + "-axis."
 		});
+		description.push_back({
+			INTEGER_PARAMETER, "MATERIALS_" + axis[i].first, "Number of materials layers in " + axis[i].second + "-axis."
+		});
 	}
 
 	description.push_back({ INTEGER_PARAMETER, "CORNER_COUNT", "The number of corners."});
@@ -30,15 +33,16 @@ static std::vector<Description> createUniformSetting()
 
 std::vector<Description> UniformSettings::description = createUniformSetting();
 
-UniformSettings::UniformSettings(int argc, char** argv, size_t index, size_t size)
-: Settings(index, size)
+UniformSettings::UniformSettings(const Options &options, size_t index, size_t size)
+: Settings(options, index, size)
 {
-	Configuration configuration(UniformSettings::description, argc, argv);
+	Configuration configuration(UniformSettings::description, options);
 
 	std::vector<std::string> axis = { "X", "Y", "Z" };
 	for (size_t i = 0; i < axis.size(); i++) {
 		subdomainsInCluster[i] = configuration.value<eslocal>("SUBDOMAINS_" + axis[i], 2);
 		elementsInSubdomain[i] = configuration.value<eslocal>("ELEMENTS_" + axis[i], 5);
+		materialsLayers[i] = configuration.value<eslocal>("MATERIALS_" + axis[i], 2);
 	}
 
 	cornerCount = configuration.value<eslocal>("CORNER_COUNT", 0);

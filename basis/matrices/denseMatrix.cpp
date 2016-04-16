@@ -1,5 +1,7 @@
 #include "denseMatrix.h"
 
+using namespace espreso;
+
 DenseMatrix& DenseMatrix::operator=(double value)
 {
 	std::fill(_values.begin(), _values.end(), value);
@@ -19,8 +21,7 @@ void DenseMatrix::multiply(
 		bool transposeA, bool transposeB)
 {
 	if ( (transposeA ? A.rows() : A.columns()) != (transposeB ? B.columns() : B.rows()) ) {
-		std::cerr << "Matrix multiplication: matrices have incorrect dimensions.\n";
-		exit(EXIT_FAILURE);
+		ESINFO(ERROR) << "Matrix multiplication: matrices have incorrect dimensions.";
 	}
 	resize(transposeA ? A.columns() : A.rows(), transposeB ? B.rows() : B.columns());
 

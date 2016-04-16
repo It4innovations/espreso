@@ -9,21 +9,28 @@
 #include "../../loader.h"
 #include "../utils.h"
 
+namespace espreso {
+namespace input {
 
-namespace esinput {
-
-class AnsysMatsol: public ExternalLoader {
+class AnsysMatsol: public Loader {
 
 public:
-	AnsysMatsol(int argc, char** argv, int rank, int size);
+	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	{
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Matsol format from directory " << options.path;
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries);
+		AnsysMatsol matsol(mesh, options, rank, size);
+		matsol.fill();
+	}
 
-	void open() {};
-	void close() {};
+protected:
+	AnsysMatsol(Mesh &mesh, const Options &options, int rank, int size)
+	: Loader(mesh), _path(options.path) { };
+
+	void points(Coordinates &coordinates, size_t &DOFs);
+	void elements(std::vector<Element*> &elements);
+	void boundaryConditions(Coordinates &coordinates);
+	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:
 	static size_t getLinesCount(const std::string &file);
@@ -37,7 +44,7 @@ private:
 };
 
 }
-
+}
 
 
 

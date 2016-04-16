@@ -3,7 +3,6 @@
 #define PYRAMID13_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 #include "pyramid5.h"
 
 #define Pyramid13NodesCount 13
@@ -11,15 +10,15 @@
 #define Pyramid13GPCount 8
 #define Pyramid13VTKCode 27
 
-namespace mesh {
+namespace espreso {
 
 class Pyramid13: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Pyramid13(eslocal *indices);
+	Pyramid13(const eslocal *indices, eslocal n, const eslocal *params);
 	Pyramid13(std::ifstream &is);
 
 	Element* copy() const
@@ -79,6 +78,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 
@@ -88,8 +89,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Pyramid13NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

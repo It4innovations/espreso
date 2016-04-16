@@ -14,7 +14,6 @@ FC = ftn
 CHECK_ENV = 1           # turn { 0 - off, 1 - on } all checks for configuration
 SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC MUMPS
 LIBTYPE = STATIC        # ESPRESO is built to SHARED or STATIC libraries
-VERBOSE = 1             # Verbosity level { 0 - nothing, 1, 2, 3 - all }
 DEBUG = 0               # turn { 0 - off, 1 -on } print of debug information
 BUILD_TOOLS = 0         # ESPRESO try to compile external tools.
                         # If the compilation is not successful set this attribute to 0 and build tools and
@@ -31,7 +30,7 @@ METISLIB = metis		# Name of METIS library for 32b version.
 # Set global compiler attributes
 
 CXXFLAGS = -Wall -openmp -std=c++11 -O2 -fPIC -dynamic
-LINKFLAGS = -Wall -openmp -pie -dynamic
+LINKFLAGS = -Wall -openmp -dynamic
 INCLUDES =
 LIBPATH =
 STLIBPATH =

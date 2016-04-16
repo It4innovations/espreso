@@ -1,42 +1,31 @@
 
 #include "esdata.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
-Esdata::Esdata(int argc, char** argv, int rank, int size): _rank(rank), _size(size)
+
+void Esdata::points(Coordinates &coordinates, size_t &DOFs)
 {
-	if (argc < 2) {
-		if (rank == 0) {
-			std::cerr << "Specify the path to an example as the first command line attribute.\n";
-		}
-		exit(EXIT_FAILURE);
-	}
-
-	_path = argv[1];
-}
-
-
-void Esdata::points(mesh::Coordinates &coordinates)
-{
+	DOFs = 3; // TODO
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/coordinates.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
 	esglobal index;
-	mesh::Point point;
+	Point point;
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	coordinates.reserve(size);
 	for (eslocal i = 0; i < size; i++) {
 		is.read(reinterpret_cast<char *>(&index), sizeof(esglobal));
-		is.read(reinterpret_cast<char *>(&point), mesh::Point::size() * sizeof(double));
+		is.read(reinterpret_cast<char *>(&point), Point::size() * sizeof(double));
 		coordinates.add(point, i, index);
 	}
 }
 
 
-void Esdata::elements(std::vector<mesh::Element*> &elements)
+void Esdata::elements(std::vector<Element*> &elements)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/elements.dat";
@@ -49,28 +38,28 @@ void Esdata::elements(std::vector<mesh::Element*> &elements)
 		is.read(reinterpret_cast<char *>(&type), sizeof(eslocal));
 		switch(type) {
 		case Tetrahedron4VTKCode:
-			elements.push_back(new mesh::Tetrahedron4(is));
+			elements.push_back(new Tetrahedron4(is));
 			break;
 		case Tetrahedron10VTKCode:
-			elements.push_back(new mesh::Tetrahedron10(is));
+			elements.push_back(new Tetrahedron10(is));
 			break;
 		case Pyramid5VTKCode:
-			elements.push_back(new mesh::Pyramid5(is));
+			elements.push_back(new Pyramid5(is));
 			break;
 		case Pyramid13VTKCode:
-			elements.push_back(new mesh::Pyramid13(is));
+			elements.push_back(new Pyramid13(is));
 			break;
 		case Prisma6VTKCode:
-			elements.push_back(new mesh::Prisma6(is));
+			elements.push_back(new Prisma6(is));
 			break;
 		case Prisma15VTKCode:
-			elements.push_back(new mesh::Prisma15(is));
+			elements.push_back(new Prisma15(is));
 			break;
 		case Hexahedron8VTKCode:
-			elements.push_back(new mesh::Hexahedron8(is));
+			elements.push_back(new Hexahedron8(is));
 			break;
 		case Hexahedron20VTKCode:
-			elements.push_back(new mesh::Hexahedron20(is));
+			elements.push_back(new Hexahedron20(is));
 			break;
 		}
 	}
@@ -78,7 +67,7 @@ void Esdata::elements(std::vector<mesh::Element*> &elements)
 	is.close();
 }
 
-void Esdata::boundaryConditions(mesh::Coordinates &coordinates)
+void Esdata::boundaryConditions(Coordinates &coordinates)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/boundaryConditions.dat";
@@ -88,7 +77,7 @@ void Esdata::boundaryConditions(mesh::Coordinates &coordinates)
 	double value;
 
 	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
-		mesh::CoordinatesProperty &property = coordinates.property(i);
+		CoordinatesProperty &property = coordinates.property(i);
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
@@ -99,11 +88,13 @@ void Esdata::boundaryConditions(mesh::Coordinates &coordinates)
 }
 
 
-void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
+void Esdata::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/clusterBoundaries.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
+
+	std::set<int> neighs;
 
 	boundaries.clear();
 
@@ -116,8 +107,12 @@ void Esdata::clusterBoundaries(mesh::Mesh &mesh, mesh::Boundaries &boundaries)
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
-			boundaries[i].insert(value);
+			boundaries[i].push_back(value);
+			neighs.insert(value);
 		}
 	}
+
+	neighs.erase(config::MPIrank);
+	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

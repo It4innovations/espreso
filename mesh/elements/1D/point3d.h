@@ -6,7 +6,7 @@
 #include <set>
 #include <limits>
 
-namespace mesh {
+namespace espreso {
 
 class Point3D {
 

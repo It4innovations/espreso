@@ -4,18 +4,25 @@
 
 #include "../vtk.h"
 
-namespace esoutput {
+namespace espreso {
+namespace output {
 
 class VTK_Full: public VTK {
 
 public:
-	VTK_Full(const mesh::Mesh &mesh, const std::string &path): VTK(mesh, path) { };
+	VTK_Full(const Mesh &mesh, const std::string &path): VTK(mesh, path) { };
+
+	static void mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+	static void dirichlet(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+	static void averaging(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
 
 protected:
 	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
 };
 
-
+}
 }
 
 

@@ -1,8 +1,8 @@
 #include "hexahedron8.h"
 
-using namespace mesh;
+using namespace espreso;
 
-std::vector<DenseMatrix> Hexa_dN() {
+static std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
 		Hexahedron8GPCount,
 		DenseMatrix(Point::size(), Hexahedron8NodesCount)
@@ -52,7 +52,7 @@ std::vector<DenseMatrix> Hexa_dN() {
 	return dN;
 }
 
-std::vector<DenseMatrix> Hexa_N() {
+static std::vector<DenseMatrix> Hexa_N() {
 	std::vector<DenseMatrix> N(
 		Hexahedron8GPCount,
 		DenseMatrix(1, Hexahedron8NodesCount)
@@ -83,26 +83,26 @@ std::vector<DenseMatrix> Hexahedron8::_dN = Hexa_dN();
 std::vector<DenseMatrix> Hexahedron8::_N = Hexa_N();
 std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
 
-bool Hexahedron8::match(eslocal *indices, eslocal n) {
+bool Hexahedron8::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron8 is 3D element
 	return false;
 #endif
 
-	if (n != 8) {
-		return false;
-	}
-
-	for (eslocal i = 0; i < 7; i++) {
-		for (eslocal j = i + 1; j < 8; j++) {
-			if (Element::match(indices, i, j)) {
-				return false;
+	switch (n) {
+	case Hexahedron8NodesCount:
+		for (eslocal i = 0; i < Hexahedron8NodesCount - 1; i++) {
+			for (eslocal j = i + 1; j < Hexahedron8NodesCount; j++) {
+				if (Element::match(indices, i, j)) {
+					return false;
+				}
 			}
 		}
+		return true;
+	default:
+		return false;
 	}
-
-	return true;
 }
 
 std::vector<eslocal> Hexahedron8::getNeighbours(size_t nodeIndex) const
@@ -152,12 +152,46 @@ std::vector<eslocal> Hexahedron8::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron8::Hexahedron8(eslocal *indices)
+Element* Hexahedron8::getF(const eslocal *indices, const eslocal *params, size_t face)
 {
-	memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
+	std::vector<eslocal> result(4);
+
+	switch (face) {
+	case 4:
+		result[0] = indices[0];
+		result[1] = indices[3];
+		result[2] = indices[2];
+		result[3] = indices[1];
+		break;
+	case 5:
+		result[0] = indices[4];
+		result[1] = indices[5];
+		result[2] = indices[6];
+		result[3] = indices[7];
+		break;
+	case 0: case 1: case 2: case 3:
+		result[0] = indices[ face              ];
+		result[1] = indices[(face + 1) % 4     ];
+		result[2] = indices[(face + 1) % 4 + 4 ];
+		result[3] = indices[ face + 4          ];
+		break;
+	}
+
+	return new Square4(result.data(), params);
 }
 
-Hexahedron8::Hexahedron8(std::ifstream &is)
+Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+{
+	switch (n) {
+	case 8:
+		memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
+		break;
+	default:
+		ESINFO(ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
+	}
+}
+
+Hexahedron8::Hexahedron8(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

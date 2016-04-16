@@ -1,52 +1,34 @@
 
 #include "hexahedron20.h"
 
-using namespace mesh;
+using namespace espreso;
 
-std::vector< std::vector< double> > Hexa20_rst()
+static std::vector<std::vector< double> > Hexa20_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Hexahedron20GPCount));
 
 	switch (Hexahedron20GPCount) {
 	case 8: {
 		double v = 0.577350269189625953;
-		double r[] = {  v,  v,  v,  v, -v, -v, -v, -v };
-		double s[] = { -v, -v,  v,  v, -v, -v,  v,  v };
-		double t[] = { -v,  v, -v,  v, -v,  v, -v,  v };
-		rst[0].assign(r, r + 8);
-		rst[1].assign(s, s + 8);
-		rst[2].assign(t, t + 8);
+		rst[0] = {  v,  v,  v,  v, -v, -v, -v, -v };
+		rst[1] = { -v, -v,  v,  v, -v, -v,  v,  v };
+		rst[2] = { -v,  v, -v,  v, -v,  v, -v,  v };
 		return rst;
 	}
 	case 14: {
 		double v1 = 0.758786910639329015;
 		double v2 = 0.795822425754222018;
 		double v3 = 0;
-		double r[] = {
-			-v1,  v1,  v1, -v1, -v1,  v1,  v1, -v1,
-			 v3,  v3,  v2,  v3, -v2,  v3
-		};
-		double s[] = {
-			-v1, -v1,  v1,  v1, -v1, -v1,  v1,  v1,
-			 v3, -v2,  v3,  v2,  v3,  v3
-		};
-		double t[] = {
-			-v1, -v1, -v1, -v1,  v1,  v1,  v1,  v1,
-			-v2,  v3,  v3,  v3,  v3,  v2
-		};
-		rst[0].assign(r, r + 14);
-		rst[1].assign(s, s + 14);
-		rst[2].assign(t, t + 14);
+		rst[0] = { -v1,  v1,  v1, -v1, -v1,  v1,  v1, -v1,  v3,  v3,  v2, v3, -v2, v3 };
+		rst[1] = { -v1, -v1,  v1,  v1, -v1, -v1,  v1,  v1,  v3, -v2,  v3, v2,  v3, v3 };
+		rst[2] = { -v1, -v1, -v1, -v1,  v1,  v1,  v1,  v1, -v2,  v3,  v3, v3,  v3, v2 };
 		return rst;
 	}
 	default:
-		std::cerr << "Unknown number of Hexahedron20 GP count\n";
+		ESINFO(ERROR) << "Unknown number of Hexahedron20 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
-
-
-std::vector< std::vector< double> > _hexa20_rst = Hexa20_rst();
 
 std::vector<DenseMatrix> Hexa20_dN()
 {
@@ -55,12 +37,14 @@ std::vector<DenseMatrix> Hexa20_dN()
 		DenseMatrix(Point::size(), Hexahedron20NodesCount)
 	);
 
+	std::vector<std::vector< double> > rst = Hexa20_rst();
+
 	for (unsigned int i = 0; i < Hexahedron20GPCount; i++) {
 		DenseMatrix &m = dN[i];
 
-		double r = _hexa20_rst[0][i];
-		double s = _hexa20_rst[1][i];
-		double t = _hexa20_rst[2][i];
+		double r = rst[0][i];
+		double s = rst[1][i];
+		double t = rst[2][i];
 
 
 		// dNr - derivation of basis function
@@ -137,21 +121,20 @@ std::vector<DenseMatrix> Hexa20_dN()
 	return dN;
 }
 
-
-
-
-std::vector<DenseMatrix> Hexa20_N() {
+static std::vector<DenseMatrix> Hexa20_N() {
 	std::vector<DenseMatrix> N(
 		Hexahedron20GPCount,
 		DenseMatrix(1, Hexahedron20NodesCount)
 	);
 
+	std::vector< std::vector< double> > rst = Hexa20_rst();
+
 	for (unsigned int i = 0; i < Hexahedron20GPCount; i++) {
 		DenseMatrix &m = N[i];
 
-		double r = _hexa20_rst[0][i];
-		double s = _hexa20_rst[1][i];
-		double t = _hexa20_rst[2][i];
+		double r = rst[0][i];
+		double s = rst[1][i];
+		double t = rst[2][i];
 
 		// basis function
 		m(0, 0) = 0.125 * ((1.0 - r) * (1.0 - s) * (1.0 - t) * (-r - s - t - 2.0));
@@ -180,7 +163,7 @@ std::vector<DenseMatrix> Hexa20_N() {
 	return N;
 }
 
-std::vector<double> Hexa20_weight()
+static std::vector<double> Hexa20_weight()
 {
 	switch (Hexahedron20GPCount) {
 	case 8: {
@@ -196,7 +179,7 @@ std::vector<double> Hexa20_weight()
 		return w;
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron10 GP count\n";
+		ESINFO(ERROR) << "Unknown number of Hexahedron20 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
@@ -205,26 +188,26 @@ std::vector<DenseMatrix> Hexahedron20::_dN = Hexa20_dN();
 std::vector<DenseMatrix> Hexahedron20::_N = Hexa20_N();
 std::vector<double> Hexahedron20::_weighFactor = Hexa20_weight();
 
-bool Hexahedron20::match(eslocal *indices, eslocal n) {
+bool Hexahedron20::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Hexahedron20 is 3D element
 	return false;
 #endif
 
-	if (n != 20) {
-		return false;
-	}
-
-	for (eslocal i = 0; i < 19; i++) {
-		for (eslocal j = i + 1; j < 20; j++) {
-			if (Element::match(indices, i, j)) {
-				return false;
+	switch (n) {
+	case Hexahedron20NodesCount:
+		for (eslocal i = 0; i < Hexahedron20NodesCount - 1; i++) {
+			for (eslocal j = i + 1; j < Hexahedron20NodesCount; j++) {
+				if (Element::match(indices, i, j)) {
+					return false;
+				}
 			}
 		}
+		return true;
+	default:
+		return false;
 	}
-
-	return true;
 }
 
 std::vector<eslocal> Hexahedron20::getNeighbours(size_t nodeIndex) const
@@ -379,12 +362,61 @@ std::vector<eslocal> Hexahedron20::getFace(size_t face) const
 	return result;
 }
 
-Hexahedron20::Hexahedron20(eslocal *indices)
+Element* Hexahedron20::getFullFace(size_t face) const
 {
-	memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
+	std::vector<eslocal> result(8);
+
+	switch (face) {
+	case 4:
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		result[2] = _indices[2];
+		result[3] = _indices[1];
+
+		result[4] = _indices[11];
+		result[5] = _indices[10];
+		result[6] = _indices[9];
+		result[7] = _indices[8];
+		break;
+	case 5:
+		result[0] = _indices[4];
+		result[1] = _indices[5];
+		result[2] = _indices[6];
+		result[3] = _indices[7];
+
+		result[4] = _indices[12];
+		result[5] = _indices[13];
+		result[6] = _indices[14];
+		result[7] = _indices[15];
+		break;
+	case 0: case 1: case 2: case 3:
+		result[0] = _indices[ face               ];
+		result[1] = _indices[(face + 1) % 4      ];
+		result[2] = _indices[(face + 1) % 4 + 4  ];
+		result[3] = _indices[ face + 4           ];
+
+		result[4] = _indices[ face          + 8  ];
+		result[5] = _indices[(face + 1) % 4 + 16 ];
+		result[6] = _indices[ face          + 12 ];
+		result[7] = _indices[ face          + 16 ];
+		break;
+	}
+
+	return new Square8(result.data(), _params);
 }
 
-Hexahedron20::Hexahedron20(std::ifstream &is)
+Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+{
+	switch (n) {
+	case 20:
+		memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
+		break;
+	default:
+		ESINFO(ERROR) << "It is not possible to create Hexahedron20 from " << n << " elements.";
+	}
+}
+
+Hexahedron20::Hexahedron20(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

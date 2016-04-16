@@ -1,15 +1,11 @@
 
-source_files = (
-    "esdata.cpp",
-)
-
 def configure(ctx):
     pass
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esoutput_esdata",
-        use             = "espreso_includes",
-        install_path    = ctx.LIBRARIES
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "espreso_out",
+        use    = "espreso_includes"
     )

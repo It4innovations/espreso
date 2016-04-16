@@ -1,26 +1,22 @@
+import os
 
 source_files = (
-   "src/Cluster.cpp",
-   "src/Domain.cpp",
-   "src/IterSolver.cpp",
-   "src/SparseMatrix.cpp",
-   "src/TimeEval.cpp",
-   "src/utils.cpp",
-   "src/DenseMatrixPack.cpp",
-   "src/LinearSolver.cpp"
+   "generic/Domain.cpp",
+   "generic/SparseMatrix.cpp",
+   "generic/utils.cpp",
+   "generic/LinearSolver.cpp",
+   "specific/cluster.cpp",
+   "specific/itersolver.cpp"
 )
 
 def configure(ctx):
-#    ctx.env.append_unique("DEFINES", [ "XE6", "TM_BLOCK_START", "DEVEL"])
     ctx.env.append_unique("DEFINES", [ "XE6", "DEVEL"])
 
-    if ctx.env.INT_WIDTH == 32:
-        mkl = "mkl_intel_lp64"
-    if ctx.env.INT_WIDTH == 64:
-        mkl = "mkl_intel_ilp64"
+    mkl = ("mkl_intel_lp64", "mkl_intel_ilp64")[ctx.env.INT_WIDTH == 64]
 
     if ctx.env.SOLVER == "MKL":
-        ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+        ctx.env.append_unique(("LIB", "STLIB")[ctx.env.LIBTYPE == "STATIC"], [ mkl, "mkl_core", "mkl_intel_thread" ])
+        ctx.env.append_unique("LIB", [ "pthread" ])
 
     if ctx.env.SOLVER == "PARDISO":
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
@@ -42,25 +38,24 @@ def configure(ctx):
 
 def build(ctx):
     if ctx.env.SOLVER == "MIC":
-        sources = source_files + ("src/SparseSolver.cpp",)
+        sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp", "specific/acc/itersolveracc.cpp", "specific/acc/DenseMatrixPack.cpp")
 
     if ctx.env.SOLVER == "CUDA":
-        sources = source_files + ("src/SparseSolver.cpp",)
+        sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp")
 
     if ctx.env.SOLVER == "MUMPS":
-        sources = source_files + ("src/SparseSolverMumps.cpp",)
+        sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "PARDISO":
-        sources = source_files + ("src/SparseSolver.cpp",)
+        sources = source_files + ("specific/cpu/solverpardiso.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "MKL":
-        sources = source_files + ("src/SparseSolverPardisoMKL.cpp",)
+        sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
 
 
-    ctx.lib(
-        source          = sources,
-        target          = "essolver_{0}".format(ctx.env.SOLVER),
-        install_path    = ctx.LIBRARIES,
-        use             = "espreso_includes"
+    ctx.objects(
+        source = sources,
+        target = "solver",
+        use    = "espreso_includes"
     )
 

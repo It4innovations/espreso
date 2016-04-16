@@ -2,23 +2,23 @@
 #ifndef TETRAHEDRON4_H_
 #define TETRAHEDRON4_H_
 
+#include "../2D/triangle3.h"
 #include "../element.h"
-#include "../2D/triangle.h"
 
 #define Tetrahedron4NodesCount 4
 #define Tetrahedron4FacesCount 4
 #define Tetrahedron4GPCount 4
 #define Tetrahedron4VTKCode 10
 
-namespace mesh {
+namespace espreso {
 
 class Tetrahedron4: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Tetrahedron4(eslocal *indices);
+	Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params);
 	Tetrahedron4(std::ifstream &is);
 
 	Element* copy() const
@@ -61,7 +61,7 @@ public:
 		return Tetrahedron4::_dN;
 	}
 
-	const std::vector<DenseMatrix>&  N() const
+	const std::vector<DenseMatrix>& N() const
 	{
 		return Tetrahedron4::_N;
 	}
@@ -78,6 +78,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 

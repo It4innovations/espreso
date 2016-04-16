@@ -7,25 +7,28 @@
 #include "settings.h"
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template<class TElement>
 class UniformGenerator: public Generator {
 
-protected:
-	UniformGenerator(int argc, char** argv, size_t index, size_t size)
-	: Generator(argc, argv, index, size), _settings(argc, argv, index, size) { };
-	UniformGenerator(const UniformSettings &settings)
-	: Generator(settings), _settings(settings) { };
+public:
+	UniformGenerator(Mesh &mesh, const UniformSettings &settings)
+	: Generator(mesh, settings), _settings(settings) { };
 
-	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
+protected:
+	virtual void elementsMesh(std::vector<Element*> &elements);
+
+	virtual void partitiate(std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	virtual void corners(mesh::Boundaries &boundaries);
+	virtual void corners(Boundaries &boundaries);
 
 	TElement _e;
 	const UniformSettings _settings;
 };
 
+}
 }
 
 #include "generator.hpp"

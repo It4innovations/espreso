@@ -5,11 +5,11 @@ round()
 echo $(printf %.$2f $(echo "scale=$2;(((10^$2)*$1)+0.5)/(10^$2)" | bc))
 };
 
-module switch PrgEnv-cray/5.2.56 PrgEnv-intel/5.2.56
-module switch intel/14.0.4.211 intel/15.0.2.164
+module switch PrgEnv-cray PrgEnv-intel/5.2.56
+#module switch intel/14.0.4.211 intel/15.0.2.164
 module unload cray-libsci
 module load gcc/4.9.3
-module load cray-tpsl-64
+module load cray-tpsl
 
 export LC_CTYPE=""
 
@@ -29,11 +29,11 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --titan --static
+  ./waf configure --cray
 fi
 
 if [ "$1" = "build" ]; then
-  ./waf install -v --static --pardiso_mkl
+  ./waf install -v
 fi
 
 if [ "$1" = "clean" ]; then

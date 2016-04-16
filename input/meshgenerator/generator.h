@@ -6,58 +6,44 @@
 #include "elements/elements.h"
 #include "settings.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
-class Generator: public InternalLoader {
-
-	friend class MeshGenerator;
+class Generator: public Loader {
 
 protected:
-	Generator(int argc, char** argv, size_t index, size_t size): _settings(argc, argv, index, size) { };
-	Generator(const Settings &settings): _settings(settings) { };
-
-	virtual void points(mesh::Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts) = 0;
-	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) = 0;
-	virtual void boundaryConditions(mesh::Coordinates &coordinates) = 0;
-	virtual void corners(mesh::Boundaries &boundaries) = 0;
-	virtual void clusterBoundaries(mesh::Boundaries &boundaries) = 0;
-
-	bool manualPartition()
+	Generator(Mesh &mesh, const Settings &settings): Loader(mesh), _settings(settings)
 	{
-		return _settings.useMetis;
-	}
+		switch (_settings.assembler) {
+		case LinearElasticity:
+			config::assembler::assembler = config::assembler::LinearElasticity;
+			_DOFs = 3;
+			break;
+		case Temperature:
+			config::assembler::assembler = config::assembler::Temperature;
+			_DOFs = 1;
+			break;
+		default:
+			ESINFO(ERROR) << "Unknown assembler: ASSEMBLER = " << _settings.assembler;
+		}
+	};
 
 	virtual ~Generator() { };
 
-	const Settings _settings;
-};
-
-class MeshGenerator: public InternalLoader {
-
-public:
-	MeshGenerator(int argc, char** argv, size_t index, size_t size);
-	MeshGenerator(Generator *generator): _generator(generator) { };
-
-	~MeshGenerator()
+	void elements(std::vector<Element*> &elements)
 	{
-		delete _generator;
+		elementsMesh(elements);
+		elementsMaterials(elements);
 	}
 
-protected:
-	bool manualPartition();
+	virtual void elementsMesh(std::vector<Element*> &elements) = 0;
+	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
 
-	void points(mesh::Coordinates &coordinates);
-	void elements(std::vector<mesh::Element*> &elements, std::vector<eslocal> &parts);
-	void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	void boundaryConditions(mesh::Coordinates &coordinates);
-	void corners(mesh::Boundaries &boundaries);
-	void clusterBoundaries(mesh::Boundaries &boundaries);
-
-private:
-	Generator *_generator;
+	const Settings _settings;
+	size_t _DOFs;
 };
 
+}
 }
 
 

@@ -10,15 +10,15 @@
 #define Prisma15GPCount 9
 #define Prisma15VTKCode 26
 
-namespace mesh {
+namespace espreso {
 
 class Prisma15: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Prisma15(eslocal *indices);
+	Prisma15(const eslocal *indices, eslocal n, const eslocal *params);
 	Prisma15(std::ifstream &is);
 
 	Element* copy() const
@@ -78,6 +78,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 
@@ -87,8 +89,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Prisma15NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

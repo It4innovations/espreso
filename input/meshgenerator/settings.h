@@ -2,13 +2,35 @@
 #ifndef INPUT_MESHGENERATOR_SETTINGS_H_
 #define INPUT_MESHGENERATOR_SETTINGS_H_
 
-#include "configuration/configuration.h"
+#include "esbasis.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
+
+enum GeneratorShape {
+	CUBE,
+	SPHERE
+};
+
+enum ElementType {
+	HEXA8,
+	HEXA20,
+	TETRA4,
+	TETRA10,
+	PRISMA6,
+	PRISMA15,
+	PYRAMID5,
+	PYRAMID13
+};
+
+enum Assembler {
+	LinearElasticity,
+	Temperature
+};
 
 struct Settings {
 
-	Settings(int argc, char** argv, size_t index, size_t size);
+	Settings(const Options &options, size_t index, size_t size);
 	Settings(size_t index, size_t size);
 
 	static std::vector<Description> description;
@@ -16,19 +38,31 @@ struct Settings {
 	size_t index;
 	size_t size;
 
+	eslocal elementType;
+	eslocal shape;
+	eslocal assembler;
+
 	bool useMetis;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 {
-	os << "index: " << s.index << "\n";
-	os << "size: " << s.size << "\n";
-	os << "use METIS: " << s.useMetis << "\n";
+	std::vector<std::string> shapes({ "CUBE", "SPHERE" });
+	std::vector<std::string> eTypes({ "HEXA8", "HEXA20", "TETRA4", "TETRA10", "PRISMA6", "PRISMA15", "PYRAMID5", "PYRAMID13" });
+	std::vector<std::string> assembler({ "LinearElasticity", "Temperature" });
+
+	os << "clusters: " << s.size << "\n";
+	os << "generated shape: " << shapes[s.shape] << "\n";
+	os << "type of the element: " << eTypes[s.elementType] << "\n";
+	os << "assembler: " << assembler[s.assembler] << "\n";
+	os << "partition: " << (s.useMetis ? "by METIS" : "regular") << "\n";
 	return os;
 }
 
+}
 }
 
 
 
 #endif /* INPUT_MESHGENERATOR_SETTINGS_H_ */
+

@@ -12,15 +12,9 @@
 #include "mkl_lapacke.h"
 #include "mkl_trans.h"
 
-template<typename T>
-std::ostream& operator<< (std::ostream& os, const std::vector<T> &v)
-{
-	for(size_t i = 0; i < v.size(); ++i) {
-		os << v[i] << " ";
-	}
-	os << "\n";
-	return os;
-}
+#include "../logging/logging.h"
+
+namespace espreso {
 
 struct NonZeroValue
 {
@@ -93,5 +87,7 @@ protected:
 
 	static NonZeroValue nonZero;
 };
+
+}
 
 #endif /* MATRIX_H_ */

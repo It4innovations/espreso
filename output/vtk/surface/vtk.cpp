@@ -1,7 +1,7 @@
 
 #include "vtk.h"
 
-using namespace esoutput;
+using namespace espreso::output;
 
 void VTK_Surface::coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs)
 {

@@ -2,23 +2,24 @@
 #define HEXAHEDRON8_H_
 
 #include "../element.h"
-#include "../2D/square.h"
-#include "../1D/line.h"
+#include "../2D/square4.h"
+#include "../1D/line2.h"
 
 #define Hexahedron8NodesCount 8
 #define Hexahedron8FacesCount 6
 #define Hexahedron8GPCount 8
 #define Hexahedron8VTKCode 12
 
-namespace mesh {
+namespace espreso {
 
 class Hexahedron8: public Element
 {
+	friend class Hexahedron20;
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Hexahedron8(eslocal *indices);
+	Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params);
 	Hexahedron8(std::ifstream &is);
 
 	Element* copy() const
@@ -76,10 +77,22 @@ public:
 		return 3;
 	}
 
+	Element* getFullFace(size_t face) const
+	{
+		return getF(_indices, _params, face);
+	}
+
+	Element* getCoarseFace(size_t face) const
+	{
+		return getFullFace(face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 
+
 protected:
+	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{
@@ -87,8 +100,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Hexahedron8NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

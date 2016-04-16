@@ -1,7 +1,7 @@
 
 #include "linear.h"
 
-namespace assembler {
+namespace espreso {
 
 static double determinant3x3(DenseMatrix &m)
 {
@@ -66,7 +66,7 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND)
 template <>
 void Linear<FEM>::KeMefe(
 		DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
-		DenseMatrix &Ce, const mesh::Element *e, size_t part, bool dynamics)
+		DenseMatrix &Ce, const Element *e, size_t part, bool dynamics)
 {
 	const std::vector<DenseMatrix> &dN = e->dN();
 	const std::vector<DenseMatrix> &N = e->N();
@@ -74,9 +74,9 @@ void Linear<FEM>::KeMefe(
 	std::vector<double> inertia;
 	this->inertia(inertia);
 
-	DenseMatrix coordinates(e->size(), mesh::Point::size());
+	DenseMatrix coordinates(e->size(), Point::size());
 	for (size_t i = 0; i < e->size(); i++) {
-		coordinates.values() + i * mesh::Point::size() << _input.mesh.coordinates().get(e->node(i), part);
+		coordinates.values() + i * Point::size() << _input.mesh.coordinates().get(e->node(i), part);
 	}
 
 	eslocal Ksize = e->size() * this->DOFs();
@@ -123,7 +123,7 @@ template <>
 void Linear<FEM>::integrate(
 			DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
 			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, std::vector<double> &f,
-			const mesh::Element *e, bool dynamics)
+			const Element *e, bool dynamics)
 {
 	// Element ordering: xxxx, yyyy, zzzz,...
 	// Global ordering:  xyz, xyz, xyz, xyz, ...
@@ -168,11 +168,10 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 	DenseMatrix Ke, Me, Ce;
 	std::vector<double> fe;
 
-	this->C(Ce);
-
 	const std::vector<eslocal> &partition = _input.mesh.getPartition();
-	const std::vector<mesh::Element*> &elements = _input.mesh.getElements();
+	const std::vector<Element*> &elements = _input.mesh.getElements();
 	for (eslocal i = partition[part]; i < partition[part + 1]; i++) {
+		this->C(Ce, elements[i]->getParam(Element::MATERIAL));
 		KeMefe(Ke, Me, fe, Ce, elements[i], part, dynamics);
 		integrate(Ke, Me, fe, _K, _M, _f[part], elements[i], dynamics);
 	}
@@ -182,13 +181,6 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 	SparseCSRMatrix<eslocal> csrM = _M;
 
 	this->_K[part] = csrK;
-
-//	std::stringstream ss;
-//	ss << "K" << part << ".txt";
-//	std::ofstream os(ss.str().c_str());
-//	os << csrK;
-//	os.close();
-
 	this->_M[part] = csrM;
 }
 
@@ -201,8 +193,8 @@ void Linear<FEM>::T(size_t part)
 		_T(i, i) = 1;
 	}
 
-	const mesh::Coordinates& coords = _input.mesh.coordinates();
-	const mesh::Boundaries& boundary = _input.mesh.subdomainBoundaries();
+	const Coordinates& coords = _input.mesh.coordinates();
+	const Boundaries& boundary = _input.mesh.subdomainBoundaries();
 
 	for (size_t i = 0; i < coords.localSize(part); i++) {
 		if (boundary.isAveraging(coords.clusterIndex(i, part))) {
@@ -210,8 +202,6 @@ void Linear<FEM>::T(size_t part)
 			for (size_t a = 0; a < av.size(); a++) {
 				eslocal j = coords.localIndex(av[a], part);
 				for (int d = 0; d < this->DOFs(); d++) {
-//					_T(i * this->DOFs() + d, j * this->DOFs() + d) = -1;
-//					_T(j * this->DOFs() + d, i * this->DOFs() + d) = 1;
 					_T(i * this->DOFs() + d, j * this->DOFs() + d) = -1;
 					_T(j * this->DOFs() + d, i * this->DOFs() + d) = 1;
 				}
@@ -220,12 +210,6 @@ void Linear<FEM>::T(size_t part)
 	}
 
 	SparseCSRMatrix<eslocal> tmpT = _T;
-
-//	std::stringstream ss;
-//	ss << "T" << part << ".txt";
-//	std::ofstream os(ss.str().c_str());
-//	os << tmpT;
-//	os.close();
 
 	this->_T[part] = tmpT;
 }
@@ -237,25 +221,25 @@ void Linear<FEM>::initSolver()
 		_input.mesh,
 		_K,
 		_T,
-		_globalB,
-		_localB,
-		_lambda_map_sub_B1,
-		_lambda_map_sub_B0,
-		_lambda_map_sub_clst,
-		_B1_duplicity,
+		_B1,
+		_B0,
+		_B1subdomainsMap,
+		_B0subdomainsMap,
+		_B1clustersMap,
+		_B1duplicity,
 		_f,
-		_vec_c,
+		_B1c,
 		_input.mesh.getFixPoints(),
-		_neighClusters
+		_input.mesh.neighbours()
 	);
 }
 
 template <>
 void Linear<FEM>::RHS()
 {
-	const std::map<eslocal, double> &forces_x = this->_input.mesh.coordinates().property(mesh::FORCES_X).values();
-	const std::map<eslocal, double> &forces_y = this->_input.mesh.coordinates().property(mesh::FORCES_Y).values();
-	const std::map<eslocal, double> &forces_z = this->_input.mesh.coordinates().property(mesh::FORCES_Z).values();
+	const std::map<eslocal, double> &forces_x = this->_input.mesh.coordinates().property(FORCES_X).values();
+	const std::map<eslocal, double> &forces_y = this->_input.mesh.coordinates().property(FORCES_Y).values();
+	const std::map<eslocal, double> &forces_z = this->_input.mesh.coordinates().property(FORCES_Z).values();
 
 	for (size_t p = 0; p < this->_input.mesh.parts(); p++) {
 		const std::vector<eslocal> &l2g = this->_input.mesh.coordinates().localToCluster(p);
@@ -271,15 +255,10 @@ void Linear<FEM>::RHS()
 				_f[p][this->DOFs() * i + 2] = forces_z.at(l2g[i]) / n;
 			}
 		}
-//		std::stringstream ss;
-//		ss.precision(40);
-//		ss << "f" << p << ".txt";
-//		std::ofstream os(ss.str().c_str());
-//		os.precision(40);
-//		os << _f[p];
-//		os.close();
 	}
 
 }
 
+
 }
+

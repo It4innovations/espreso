@@ -9,7 +9,7 @@
 #include "../structures/coordinates.h"
 #include "esbasis.h"
 
-namespace mesh {
+namespace espreso {
 
 
 
@@ -31,13 +31,26 @@ public:
 		PARAMS_SIZE
 	};
 
-	inline static bool match(eslocal *indices, eslocal x, eslocal y)
+	inline static bool match(const eslocal *indices, eslocal x, eslocal y)
 	{
 		return indices[x] == indices[y];
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
 	friend std::ofstream& operator<<(std::ofstream& os, const Element &e);
+
+	Element(const eslocal *params)
+	{
+		memcpy(_params, params, sizeof(eslocal) * PARAMS_SIZE);
+	}
+
+	Element(std::ifstream &is)
+	{
+		// TODO:
+		for (size_t p = 0; p < PARAMS_SIZE; p++) {
+			_params[p] = 0;
+		}
+	}
 
 	virtual ~Element() {};
 
@@ -53,9 +66,17 @@ public:
 
 	void setParams(eslocal *params)
 	{
-		for (size_t i = 0; i < PARAMS_SIZE; i++) {
-			_params[i] = params[i];
-		}
+		memcpy(_params, params, sizeof(eslocal) * PARAMS_SIZE);
+	}
+
+	const eslocal* getParams()
+	{
+		return _params;
+	}
+
+	void setParam(Params param, eslocal value)
+	{
+		_params[param] = value;
 	}
 
 	eslocal getParam(Params param)
@@ -76,7 +97,12 @@ public:
 	virtual size_t coarseSize() const = 0;
 	virtual size_t gpSize() const = 0;
 	virtual size_t faces() const = 0;
+
 	virtual std::vector<eslocal> getFace(size_t face) const = 0;
+	virtual Element* getFullFace(size_t face) const = 0;
+	virtual Element* getCoarseFace(size_t face) const = 0;
+
+
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 	virtual const eslocal* indices() const = 0;
 

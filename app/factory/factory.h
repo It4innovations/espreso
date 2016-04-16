@@ -7,10 +7,12 @@
 #include "esoutput.h"
 #include "esassemblers.h"
 
+namespace espreso {
+
 class Factory {
 
 public:
-	Factory(int argc, char **argv);
+	Factory(const Options &options);
 
 	void solve( eslocal steps );
 	void store(const std::string &file);
@@ -18,13 +20,14 @@ public:
 	~Factory();
 
 private:
-	assembler::AssemblerBase *_assembler;
+	AssemblerBase *_assembler;
 	std::vector<std::vector<double> > _solution;
 
-	mesh::Mesh *_mesh;
-	mesh::Mesh *_surface;
-	assembler::APIHolder *_apiHolder;
+	Mesh *_mesh;
+	Mesh *_surface;
 };
+
+}
 
 
 

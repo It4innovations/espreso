@@ -3,22 +3,21 @@
 #define PYRAMID5_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 
 #define Pyramid5NodesCount 5
 #define Pyramid5FacesCount 5
 #define Pyramid5GPCount 8
 #define Pyramid5VTKCode 14
 
-namespace mesh {
+namespace espreso {
 
 class Pyramid5: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Pyramid5(eslocal *indices);
+	Pyramid5(const eslocal *indices, eslocal n, const eslocal *params);
 	Pyramid5(std::ifstream &is);
 
 
@@ -79,6 +78,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 
@@ -88,8 +89,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Pyramid5NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

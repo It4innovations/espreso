@@ -6,6 +6,8 @@
 #include "sparseIJVMatrix.h"
 #include "sparseVVPMatrix.h"
 
+namespace espreso {
+
 class DenseMatrix;
 template<typename Tindices> class SparseDOKMatrix;
 template<typename Tindices> class SparseIJVMatrix;
@@ -94,14 +96,13 @@ private:
 
 	double& operator()(size_t row, size_t column)
 	{
-		std::cerr << "It is not possible to insert to CRS matrix.\n";
+		ESINFO(ERROR) << "It is not possible to insert to CRS matrix.";
 		exit(EXIT_FAILURE);
 	}
 
 	void set(size_t row, size_t column, double value)
 	{
-		std::cerr << "It is not possible to insert to CRS matrix.\n";
-		exit(EXIT_FAILURE);
+		ESINFO(ERROR) << "It is not possible to insert to CRS matrix.";
 	}
 
 	static void assign(SparseCSRMatrix<Tindices> &m1, SparseCSRMatrix<Tindices> &m2)
@@ -117,6 +118,8 @@ private:
 	std::vector<Tindices> _columnIndices;
 	std::vector<double> _values;
 };
+
+}
 
 #include "sparseCSRMatrix.hpp"
 

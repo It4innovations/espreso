@@ -3,8 +3,7 @@
 #define HEXAHEDRON20_H_
 
 #include "../element.h"
-#include "../2D/square.h"
-#include "../1D/line.h"
+#include "../2D/square8.h"
 #include "hexahedron8.h"
 
 #define Hexahedron20NodesCount 20
@@ -12,15 +11,15 @@
 #define Hexahedron20GPCount 8
 #define Hexahedron20VTKCode 25
 
-namespace mesh {
+namespace espreso {
 
 class Hexahedron20: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Hexahedron20(eslocal *indices);
+	Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params);
 	Hexahedron20(std::ifstream &is);
 
 	Element* copy() const
@@ -78,8 +77,15 @@ public:
 		return 3;
 	}
 
+	Element* getCoarseFace(size_t face) const
+	{
+		return Hexahedron8::getF(_indices, _params, face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+
 
 protected:
 
@@ -89,8 +95,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Hexahedron20NodesCount];
 
 	static std::vector<DenseMatrix> _dN;

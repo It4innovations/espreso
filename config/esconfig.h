@@ -3,11 +3,49 @@
 #define ESCONFIG_H_
 
 #include <cstdlib>
+#include <string>
 
-namespace esconfig {
+namespace espreso {
+
+namespace config {
+
+enum FetiMethod {
+	TOTAL_FETI,
+	HYBRID_FETI
+};
+
+enum Preconditioner {
+	NO_PRECONDITIONER,
+	LUMPED,
+	WEIGHT,
+	DIRICHLET
+};
+
+enum Regularization {
+	FIX_POINTS,
+	NULL_PIVOTS
+};
+
+enum CGSolver {
+	STANDARD,
+	PIPELINED
+};
+
+enum KSolver {
+	DIRECT_DOUBLE_PRECISION,
+	ITERATIVE,
+	DIRECT_SINGLE_PRECISION,
+	DIRECT_MIXED_PREXISION
+};
+
+enum F0Solver {
+	KSOLVER_PRECISION = 0,
+	DOUBLE_PRECISION = 1
+};
 
 extern int MPIrank;
 extern int MPIsize;
+extern std::string executable;
 
 namespace mesh {
 	extern size_t subdomains;
@@ -21,11 +59,28 @@ namespace mesh {
 	extern bool averageEdges;
 	extern bool averageFaces;
 
-	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA_IN, GENERATOR };
+	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA, GENERATOR };
 	extern Input input;
 
-	enum Output { VTK_FULL, VTK_SURFACE, ESDATA_OUT }; // only VTK_FULL is working
+	extern double materialDifference;
+}
+
+namespace output {
+
+	enum Output { VTK, ESDATA }; // only VTK_FULL is working
 	extern Output output;
+
+	extern bool saveMesh;
+	extern bool saveFixPoints;
+	extern bool saveFaces;
+	extern bool saveLines;
+	extern bool saveCorners;
+	extern bool saveDirichlet;
+	extern bool saveAveraging;
+	extern bool saveResults;
+
+	extern double subdomainShrinkRatio;
+	extern double clusterShrinkRatio;
 }
 
 namespace assembler {
@@ -37,21 +92,43 @@ namespace assembler {
 }
 
 namespace solver {
-	extern double	epsilon;					// Solver requested precision
-	extern size_t	maxIterations;				//
-	extern size_t	FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
-	extern size_t	USE_SCHUR_COMPLEMENT; 		// 1 - YES
-	extern size_t	KEEP_FACTORS;				// 1 - YES; 0 - NO
-	extern size_t	PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
-	extern size_t	CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
-	extern size_t	REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
-	extern size_t	KSOLVER;					// 0 - Direct, 1 - Iter
+	extern double   epsilon;					// Solver requested precision
+	extern size_t   maxIterations;				//
+	extern size_t   FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
+	extern bool     REDUNDANT_LAGRANGE;
+	extern bool     USE_SCHUR_COMPLEMENT; 		// 1 - YES
+	extern size_t   SCHUR_COMPLEMENT_PREC;		// Schur complement precission - 0 DP; 1 SP
+	extern size_t   SCHUR_COMPLEMENT_TYPE;		// 0 - General; 1 - Symmeric
+	extern bool 	COMBINE_SC_AND_SPDS;		// Combine usage of SC for Accelerator and Sparse Direct Solver for CPU
+	extern bool     KEEP_FACTORS;				// 1 - YES; 0 - NO
+	extern size_t   PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
+	extern size_t   CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
+	extern size_t   REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
+	extern size_t   KSOLVER;					// 0 - Direct DP, 1 - Iter, 2 - Direct SP, 3 - Direct MIXED Prec
+	extern size_t   KSOLVER_SP_iter_steps;		// number of reiteration steps for SP direct solver
+	extern double   KSOLVER_SP_iter_norm;
+	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
+												// 1 - DIRECT SP if KSOLVER is DIRECT SP
+												// 1 - Direct DP if KSOLVER is DIRECT SP
+    extern size_t   N_MICS;
 
 
 }
 
+namespace info {
+	extern std::string output;
+
+	extern size_t verboseLevel;
+	extern size_t testingLevel;
+	extern size_t measureLevel;
+
+	extern bool printMatrices;
+}
+
 namespace tmp{
 	extern size_t DOFS;
+}
+
 }
 
 }

@@ -1,6 +1,8 @@
 
 #include "sparseIJVMatrix.h"
 
+namespace espreso {
+
 template<typename Tindices>
 std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix<Tindices> &m)
 {
@@ -177,5 +179,7 @@ void SparseIJVMatrix<Tindices>::sort(size_t begin, size_t end)
 		sort(h + 1, end);
 		sort(begin, l ? l - 1 : 0);
 	}
+}
+
 }
 

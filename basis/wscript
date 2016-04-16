@@ -1,16 +1,11 @@
 
-source_files = (
-    "matrices/denseMatrix.cpp",
-    "matrices/matrix.cpp",
-    "logging/logging.cpp",
-)
-
 def configure(ctx):
     pass
 
 def build(ctx):
-    ctx.lib(
-        source          = source_files,
-        target          = "esbasis",
-        install_path    = ctx.LIBRARIES
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "basis",
+        use    = "espreso_includes"
     )

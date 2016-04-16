@@ -4,12 +4,13 @@
 
 #include "../vtk.h"
 
-namespace esoutput {
+namespace espreso {
+namespace output {
 
 class VTK_Surface: public VTK {
 
 public:
-	VTK_Surface(const mesh::Mesh &mesh, const std::string &path): _full(mesh), VTK(_surface, path)
+	VTK_Surface(const Mesh &mesh, const std::string &path): _full(mesh), VTK(_surface, path)
 	{
 		mesh.getSurface(_surface);
 	};
@@ -17,11 +18,11 @@ public:
 protected:
 	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
 
-	const mesh::Mesh &_full;
-	mesh::Mesh _surface;
+	const Mesh &_full;
+	Mesh _surface;
 };
 
-
+}
 }
 
 

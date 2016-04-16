@@ -1,7 +1,8 @@
 
 #include "utils.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 template <class TElement>
 void CubeUtils<TElement>::globalNodesCount(const CubeSettings &settings, esglobal nodes[])
@@ -14,4 +15,4 @@ void CubeUtils<TElement>::globalNodesCount(const CubeSettings &settings, esgloba
 }
 
 }
-
+}

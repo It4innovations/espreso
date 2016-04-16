@@ -1,12 +1,12 @@
 
 #include "hexahedron8.h"
 
-using namespace esinput;
+using namespace espreso::input;
 
 size_t Hexahedron8::subelements = 1;
 size_t Hexahedron8::subnodes[] = { 0, 0, 0 };
 
-void Hexahedron8::addElements(std::vector<mesh::Element*> &elements, const eslocal indices[])
+void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {
 	eslocal hexa[8];
 	hexa[0] = indices[0];
@@ -17,7 +17,7 @@ void Hexahedron8::addElements(std::vector<mesh::Element*> &elements, const esloc
 	hexa[5] = indices[5];
 	hexa[6] = indices[7];
 	hexa[7] = indices[6];
-	elements.push_back(new mesh::Hexahedron8(hexa));
+	elements.push_back(new espreso::Hexahedron8(hexa, 8, params));
 }
 
 

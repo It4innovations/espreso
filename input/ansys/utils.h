@@ -6,14 +6,16 @@
 
 #include "esmesh.h"
 
-namespace esinput {
+namespace espreso {
+namespace input {
 
 class AnsysUtils {
 public:
-	static mesh::Element* createElement(eslocal *indices, eslocal n);
+	static Element* createElement(eslocal *indices, eslocal n, eslocal *params);
 };
 
 
+}
 }
 
 

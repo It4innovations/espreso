@@ -1,8 +1,8 @@
 #include "prisma15.h"
 
-using namespace mesh;
+using namespace espreso;
 
-std::vector< std::vector< double> > Prisma15_rst()
+static std::vector<std::vector< double> > Prisma15_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Prisma15GPCount));
 
@@ -12,36 +12,33 @@ std::vector< std::vector< double> > Prisma15_rst()
 		double v2 = 4.0 / 6.0;
 		double v3 = sqrt(3.0 / 5.0);
 		double v4 = 0.0;
-		double r[] = {  v1,  v2,  v1,  v1,  v2,  v1,  v1,  v2,  v1 };
-		double s[] = {  v1,  v1,  v2,  v1,  v1,  v2,  v1,  v1,  v2 };
-		double t[] = { -v3, -v3, -v3,  v4,  v4,  v4,  v3,  v3,  v3 };
-		rst[0].assign(r, r + 9);
-		rst[1].assign(s, s + 9);
-		rst[2].assign(t, t + 9);
+		rst[0] = {  v1,  v2,  v1,  v1,  v2,  v1,  v1,  v2,  v1 };
+		rst[1] = {  v1,  v1,  v2,  v1,  v1,  v2,  v1,  v1,  v2 };
+		rst[2] = { -v3, -v3, -v3,  v4,  v4,  v4,  v3,  v3,  v3 };
 		return rst;
 	}
 	default:
-		std::cerr << "Unknown number of Prisma15 GP count\n";
+		ESINFO(ERROR) << "Unknown number of Prisma15 GP count.";
 		exit(EXIT_FAILURE);
 	}
 }
 
 
-std::vector< std::vector< double> > _prisma15_rst = Prisma15_rst();
-
-std::vector<DenseMatrix> Prisma15_dN() {
+static std::vector<DenseMatrix> Prisma15_dN() {
 	std::vector<DenseMatrix> dN(
 		Prisma15GPCount,
 		DenseMatrix(Point::size(), Prisma15NodesCount)
 	);
 
+	std::vector<std::vector< double> > rst = Prisma15_rst();
+
 	for (unsigned int i = 0; i < Prisma15GPCount; i++) {
 		///dN contains [dNr, dNs, dNt]
 		DenseMatrix &m = dN[i];
 
-		double r = _prisma15_rst[0][i];
-		double s = _prisma15_rst[1][i];
-		double t = _prisma15_rst[2][i];
+		double r = rst[0][i];
+		double s = rst[1][i];
+		double t = rst[2][i];
 
 		// dNr - derivation of basis function
 		m(0, 0) = -(t - 1.0) * (r + s - 1.0) - ((t - 1.0) * (2.0 * r + 2.0 * s + t)) / 2.0;
@@ -98,18 +95,20 @@ std::vector<DenseMatrix> Prisma15_dN() {
 	return dN;
 }
 
-std::vector<DenseMatrix> Prisma15_N() {
+static std::vector<DenseMatrix> Prisma15_N() {
 	std::vector<DenseMatrix> N(
 		Prisma15GPCount,
 		DenseMatrix(1, Prisma15NodesCount)
 	);
 
+	std::vector<std::vector< double> > rst = Prisma15_rst();
+
 	for (unsigned int i = 0; i < Prisma15GPCount; i++) {
 		DenseMatrix &m = N[i];
 
-		double r = _prisma15_rst[0][i];
-		double s = _prisma15_rst[1][i];
-		double t = _prisma15_rst[2][i];
+		double r = rst[0][i];
+		double s = rst[1][i];
+		double t = rst[2][i];
 
 		// basis function
 		m(0, 0) = -(1.0 - r - s) * (1.0 - t) * (2.0 * r + 2.0 * s + t) / 2.0;
@@ -132,62 +131,73 @@ std::vector<DenseMatrix> Prisma15_N() {
 	return N;
 }
 
-std::vector<double> Prisma15_weight()
+static std::vector<double> Prisma15_weight()
 {
+	std::vector<double> w;
 	switch (Prisma15GPCount) {
 	case 9: {
 		double v1 = 5.0 / 54.0;
 		double v2 = 8.0 / 54.0;
-		double w[9] = { v1, v1, v1, v2, v2, v2, v1, v1, v1 };
-		return std::vector<double> (w, w + 9);
+		w = { v1, v1, v1, v2, v2, v2, v1, v1, v1 };
+		break;
 	}
 	default:
-		std::cerr << "Unknown number of Tatrahedron10 GP count\n";
+		ESINFO(ERROR) << "Unknown number of Prisma15 GP count.";
 		exit(EXIT_FAILURE);
 	}
+	return w;
 }
 
 std::vector<DenseMatrix> Prisma15::_dN = Prisma15_dN();
 std::vector<DenseMatrix> Prisma15::_N = Prisma15_N();
 std::vector<double> Prisma15::_weighFactor = Prisma15_weight();
 
-bool Prisma15::match(eslocal *indices, eslocal n) {
+bool Prisma15::match(const eslocal *indices, eslocal n) {
 
 #if ESPRESO_POINT_DIMENSION == 2
 	// Prisma15 is 3D element
 	return false;
 #endif
 
-	if (n != 20) {
-		return false;
-	}
-
-	if (!Element::match(indices, 2, 3)) {
-		return false;
-	}
-	if (!Element::match(indices, 3, 10)) {
-		return false;
-	}
-	if (!Element::match(indices, 6, 7)) {
-		return false;
-	}
-	if (!Element::match(indices, 7, 14)) {
-		return false;
-	}
-	if (!Element::match(indices, 18, 19)) {
-		return false;
-	}
-
-	eslocal various[Prisma15NodesCount] = { 0, 1, 2, 4, 5, 6, 8, 9, 11, 12, 13, 15, 16, 17, 18 };
-	for (eslocal i = 0; i < Prisma15NodesCount - 1; i++) {
-		for (eslocal j = i + 1; j < Prisma15NodesCount; j++) {
-			if (Element::match(indices, various[i], various[j])) {
-				return false;
+	switch (n) {
+	case Prisma15NodesCount:
+		for (eslocal i = 0; i < Prisma15NodesCount - 1; i++) {
+			for (eslocal j = i + 1; j < Prisma15NodesCount; j++) {
+				if (Element::match(indices, i, j)) {
+					return false;
+				}
 			}
 		}
-	}
+		return true;
+	case 20:
+		if (!Element::match(indices, 2, 3)) {
+			return false;
+		}
+		if (!Element::match(indices, 3, 10)) {
+			return false;
+		}
+		if (!Element::match(indices, 6, 7)) {
+			return false;
+		}
+		if (!Element::match(indices, 7, 14)) {
+			return false;
+		}
+		if (!Element::match(indices, 18, 19)) {
+			return false;
+		}
 
-	return true;
+		eslocal various[Prisma15NodesCount] = { 0, 1, 2, 4, 5, 6, 8, 9, 11, 12, 13, 15, 16, 17, 18 };
+		for (eslocal i = 0; i < Prisma15NodesCount - 1; i++) {
+			for (eslocal j = i + 1; j < Prisma15NodesCount; j++) {
+				if (Element::match(indices, various[i], various[j])) {
+					return false;
+				}
+			}
+		}
+		return true;
+	default:
+		return false;
+	}
 }
 
 std::vector<eslocal> Prisma15::getNeighbours(size_t nodeIndex) const
@@ -287,6 +297,8 @@ std::vector<eslocal> Prisma15::getNeighbours(size_t nodeIndex) const
 
 std::vector<eslocal> Prisma15::getFace(size_t face) const
 {
+	ESINFO(ERROR) << "Prisma15 getFace is not implemented";
+	// TODO:
 	// bottom
 	if (face == 3) {
 		std::vector<eslocal> result(3);
@@ -314,26 +326,47 @@ std::vector<eslocal> Prisma15::getFace(size_t face) const
 	return result;
 }
 
-Prisma15::Prisma15(eslocal *indices)
+Element* Prisma15::getFullFace(size_t face) const
 {
-	_indices[0] = indices[0];
-	_indices[1] = indices[1];
-	_indices[2] = indices[2];
-	_indices[3] = indices[4];
-	_indices[4] = indices[5];
-	_indices[5] = indices[6];
-	_indices[6] = indices[8];
-	_indices[7] = indices[9];
-	_indices[8] = indices[11];
-	_indices[9] = indices[12];
-	_indices[10] = indices[13];
-	_indices[11] = indices[15];
-	_indices[12] = indices[16];
-	_indices[13] = indices[17];
-	_indices[14] = indices[18];
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
 }
 
-Prisma15::Prisma15(std::ifstream &is)
+Element* Prisma15::getCoarseFace(size_t face) const
+{
+	ESINFO(ERROR) << "get FACE is not implemented";
+	return NULL;
+}
+
+Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+{
+	switch (n) {
+	case 20:
+		_indices[0] = indices[0];
+		_indices[1] = indices[1];
+		_indices[2] = indices[2];
+		_indices[3] = indices[4];
+		_indices[4] = indices[5];
+		_indices[5] = indices[6];
+		_indices[6] = indices[8];
+		_indices[7] = indices[9];
+		_indices[8] = indices[11];
+		_indices[9] = indices[12];
+		_indices[10] = indices[13];
+		_indices[11] = indices[15];
+		_indices[12] = indices[16];
+		_indices[13] = indices[17];
+		_indices[14] = indices[18];
+		break;
+	case 15:
+		memcpy(_indices, indices, 15 * sizeof(eslocal));
+		break;
+	default:
+		ESINFO(ERROR) << "It is not possible to create Prisma15 from " << n << " elements.";
+	}
+}
+
+Prisma15::Prisma15(std::ifstream &is): Element(is)
 {
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
 }

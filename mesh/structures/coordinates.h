@@ -2,13 +2,14 @@
 #define COORDINATES_H_
 
 #include "../elements/1D/point.h"
+#include "esbasis.h"
 
 #include <algorithm>
 #include <vector>
 #include <map>
 #include <fstream>
 
-namespace mesh
+namespace espreso
 {
 
 enum Property {
@@ -128,6 +129,11 @@ public:
 	size_t parts() const
 	{
 		return _clusterIndex.size();
+	}
+
+	const std::vector<esglobal>& clusterToGlobal() const
+	{
+		return _globalIndex;
 	}
 
 	const std::vector<eslocal>& localToCluster(eslocal part) const

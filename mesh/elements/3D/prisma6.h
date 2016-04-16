@@ -3,22 +3,21 @@
 #define PRISMA6_H_
 
 #include "../element.h"
-#include "../1D/line.h"
 
 #define Prisma6NodesCount 6
 #define Prisma6FacesCount 5
 #define Prisma6GPCount 9
 #define Prisma6VTKCode 13
 
-namespace mesh {
+namespace espreso {
 
 class Prisma6: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 
-	Prisma6(eslocal *indices);
+	Prisma6(const eslocal *indices, eslocal n, const eslocal *params);
 	Prisma6(std::ifstream &is);
 
 	Element* copy() const
@@ -78,6 +77,8 @@ public:
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 
@@ -87,8 +88,6 @@ protected:
 	}
 
 private:
-	inline void setFaceNodes(eslocal nodes[], eslocal face) const;
-
 	eslocal _indices[Prisma6NodesCount];
 
 	static std::vector<DenseMatrix> _dN;
