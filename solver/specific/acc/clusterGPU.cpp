@@ -8,98 +8,82 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	bool GPU_full = false;
 
-	GPU_full = true;
+	//GPU_full = true;
 
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
-		//cudaSetDevice(1);
-
-		if (!GPU_full || !config::solver::COMBINE_SC_AND_SPDS) {
-
-			SparseMatrix TmpB;
-			domains[i].B1_comp_dom.MatTranspose(TmpB);
-
-			SparseSolverCPU tmpsps;
-			if ( i == 0 && cluster_global_index == 1) {
-				tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
-			}
-
-			tmpsps.Create_SC_w_Mat( domains[i].K, TmpB, domains[i].B1Kplus, false, 0 );
-
-			if (USE_FLOAT){
-				domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
-				domains[i].B1Kplus.USE_FLOAT = true;
-			}
-
-			ESINFO(PROGRESS2) << Info::plain() << "s";
-
-		}
+		cudaSetDevice(1);
 
 //		SparseSolverCPU tmpsps2;
 //		if ( i == 0 && cluster_global_index == 1) tmpsps2.msglvl = 1;
 //		tmpsps2.Create_non_sym_SC_w_Mat( domains[i].K, TmpB, domains[i].B0t_comp, domains[i].B0KplusB1_comp, false, 0 );
 
+		eslocal status = 0;
+		cudaError_t status_c;
 
-		//domains[i].B1Kplus.RemoveLowerDense();
+		if (!GPU_full || !config::solver::COMBINE_SC_AND_SPDS) {
 
-		eslocal status;
+			GetSchurComplement(USE_FLOAT, i);
 
-		if (!GPU_full) {
-			if (USE_FLOAT){
-				status = domains[i].B1Kplus.CopyToCUDA_Dev_fl();
-			} else {
-				status = domains[i].B1Kplus.CopyToCUDA_Dev();
-			}
-		}
+			if (!GPU_full) {
+				if (USE_FLOAT){
+					status = domains[i].B1Kplus.CopyToCUDA_Dev_fl();
+				} else {
+					status = domains[i].B1Kplus.CopyToCUDA_Dev();
+				}
 
-		if (!GPU_full && status == 0) {
-			domains[i].isOnACC = 1;
-		} else {
-			domains[i].isOnACC = 0;
-			GPU_full = true;
-		}
-
-		if (!GPU_full) {
-
-			cudaError_t status_c;
-
-			if (USE_FLOAT){
-				status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff_fl, domains[i].B1_comp_dom.rows * sizeof(float));
-				if (status_c != cudaSuccess) {
-					ESINFO(ERROR) << "Error allocating pinned host memory";
-					domains[i].isOnACC = 0;
-					GPU_full = true;
+				if (USE_FLOAT){
+					status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff_fl, domains[i].B1_comp_dom.rows * sizeof(float));
+					if (status_c != cudaSuccess) {
+						ESINFO(ERROR) << "Error allocating pinned host memory";
+						status = 1;
+					}
+				} else {
+					status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff, domains[i].B1_comp_dom.rows * sizeof(double));
+					if (status_c != cudaSuccess) {
+						ESINFO(ERROR) << "Error allocating pinned host memory";
+						status = 1;
+					}
 				}
 			} else {
-				status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff, domains[i].B1_comp_dom.rows * sizeof(double));
-				if (status_c != cudaSuccess) {
-					ESINFO(ERROR) << "Error allocating pinned host memory";
-					domains[i].isOnACC = 0;
-					GPU_full = true;
+				status = 1;
+			}
+
+			// if status == 0 - all buffers in GPU mem were sucesfuly allocated
+			if (status == 0) {
+				domains[i].isOnACC = 1;
+				SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
+				SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
+				domains[i].Kplus.keep_factors = false;
+				if (USE_FLOAT)
+					ESINFO(PROGRESS2) << Info::plain() << "g";
+				else
+					ESINFO(PROGRESS2) << Info::plain() << "G";
+			} else {
+				domains[i].isOnACC = 0;
+				GPU_full = true;
+				if (config::solver::COMBINE_SC_AND_SPDS) {
+					SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
+					SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
+					if (USE_FLOAT)
+						ESINFO(PROGRESS2) << Info::plain() << "p";
+					else
+						ESINFO(PROGRESS2) << Info::plain() << "P";
+				} else {
+					if (USE_FLOAT)
+						ESINFO(PROGRESS2) << Info::plain() << "c";
+					else
+						ESINFO(PROGRESS2) << Info::plain() << "C";
 				}
 			}
-		}
-
-		if (domains[i].isOnACC == 1) {
-
-			SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
-			SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
-			domains[i].Kplus.keep_factors = false;
-
-			if (USE_FLOAT)
-				ESINFO(PROGRESS2) << Info::plain() << "g";
-			else
-				ESINFO(PROGRESS2) << Info::plain() << "G";
 
 		} else {
-
+                        domains[i].isOnACC = 0;
 			if (USE_FLOAT)
-				ESINFO(PROGRESS2) << Info::plain() << "c";
+				ESINFO(PROGRESS2) << Info::plain() << "p";
 			else
-				ESINFO(PROGRESS2) << Info::plain() << "C";
-
-
+				ESINFO(PROGRESS2) << Info::plain() << "P";
 		}
 
 		//GPU_full = true;
@@ -110,6 +94,30 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 }
 
+void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
+
+	SparseMatrix TmpB;
+	domains[i].B1_comp_dom.MatTranspose(TmpB);
+
+	SparseSolverCPU tmpsps;
+	if ( i == 0 && cluster_global_index == 1) {
+		tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	}
+
+	tmpsps.Create_SC_w_Mat( domains[i].K, TmpB, domains[i].B1Kplus, false, 0 );
+
+	if (USE_FLOAT){
+		domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
+		domains[i].B1Kplus.USE_FLOAT = true;
+	}
+
+	//ESINFO(PROGRESS2) << Info::plain() << "s";
+
+	// if Schur complement is symmetric - then remove lower part - slower for GPU but more mem. efficient
+	if (config::solver::SCHUR_COMPLEMENT_TYPE == 1)
+		domains[i].B1Kplus.RemoveLowerDense();
+
+}
 
 void ClusterGPU::SetupKsolvers ( ) {
 
@@ -171,7 +179,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 		domains[d].domain_prim_size = domains[d].Kplus.cols;
 
 		if ( d == 0 && config::MPIrank == 0) {
-			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+			domains[d].Kplus.msglvl = 0; //Info::report(LIBRARIES) ? 1 : 0;
 		}
 	}
 

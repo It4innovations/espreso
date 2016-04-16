@@ -22,6 +22,8 @@ public:
 	ClusterGPU(): ClusterBase() {};
 
 	void Create_SC_perDomain( bool USE_FLOAT );
+	void GetSchurComplement( bool USE_FLOAT, eslocal i );
+
 	void SetupKsolvers ( );
 
 	void multKplusGlobal_GPU   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );

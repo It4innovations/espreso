@@ -1269,10 +1269,12 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTO
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size(); //rows * cols;
 	eslocal lda = rows;
 
 	if ( d_dense_values == NULL ) {
+
+		eslocal mat_size = dense_values.size(); //rows * cols;
+
 		cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
 		cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 		cudaMalloc((void**)&d_y_out, rows * sizeof(double));
@@ -1280,7 +1282,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
 		cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
 
-		cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
+		//cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
 
 		// Create cublas instance - cublasHandle_t handle;
 
@@ -1317,7 +1319,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 		}
 	}
 
-	if (type = 'S') {
+	if (type == 'S') {
 
 	// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
 		//cublasDsymv(handle,
@@ -1401,7 +1403,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
 		cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
 
-		cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
+		//cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
 		// Create cublas instance - cublasHandle_t handle;
 
 		cublasCreate(&handle);
@@ -1420,10 +1422,12 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size(); //rows * cols;
 	eslocal lda = rows;
 
 	if ( d_dense_values_fl == NULL ) {
+
+		eslocal mat_size = dense_values.size(); //rows * cols;
+
 		cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
 		cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
 		cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
@@ -1431,7 +1435,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
 		cudaMemcpy(d_dense_values_fl, &dense_values_fl[0], dense_values_fl.size() * sizeof(float), cudaMemcpyHostToDevice);
 
-		cublasSetVector(rows,         sizeof(float), &dense_values_fl[0], 1,   d_y_out_fl,        1);
+		//cublasSetVector(rows,         sizeof(float), &dense_values_fl[0], 1,   d_y_out_fl,        1);
 
 		// Create cublas instance - cublasHandle_t handle;
 
@@ -1450,24 +1454,25 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 	float alpha = 1.0;
 	float beta  = 0.0;
 
-	if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-		cublasSgemv(handle,
-			CUBLAS_OP_T,
-			rows, cols,
-			&alpha, d_dense_values_fl, lda,
-			d_x_in_fl, 1,
-			&beta, d_y_out_fl, 1);
-	} else {
-		cublasSgemv(handle,
-			CUBLAS_OP_N,
-			rows, cols,
-			&alpha, d_dense_values_fl, lda,
-			d_x_in_fl, 1,
-			&beta, d_y_out_fl, 1);
-	}
+    if (type == 'G') {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+			cublasSgemv(handle,
+				CUBLAS_OP_T,
+				rows, cols,
+				&alpha, d_dense_values_fl, lda,
+				d_x_in_fl, 1,
+				&beta, d_y_out_fl, 1);
+		} else {
+			cublasSgemv(handle,
+				CUBLAS_OP_N,
+				rows, cols,
+				&alpha, d_dense_values_fl, lda,
+				d_x_in_fl, 1,
+				&beta, d_y_out_fl, 1);
+		}
+    }
 
-
-	if (type = 'S') {
+	if (type == 'S') {
 
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
 
@@ -1539,7 +1544,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
 		cudaMemcpy(d_dense_values_fl, &dense_values_fl[0], dense_values_fl.size() * sizeof(float), cudaMemcpyHostToDevice);
 
-		cublasSetVector(rows,         sizeof(float), &dense_values_fl[0], 1,   d_y_out_fl,        1);
+		//cublasSetVector(rows,         sizeof(float), &dense_values_fl[0], 1,   d_y_out_fl,        1);
 		// Create cublas instance - cublasHandle_t handle;
 
 		cublasCreate(&handle);
@@ -1560,8 +1565,8 @@ eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 void SparseMatrix::CopyFromCUDA_Dev() {
 #ifdef CCUDA
-	cudaFree(d_dense_values);
-	d_dense_values = NULL;
+//	cudaFree(d_dense_values);
+//	d_dense_values = NULL;
 #endif
 }
 

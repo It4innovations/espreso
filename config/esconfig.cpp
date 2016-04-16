@@ -98,6 +98,7 @@ namespace solver {
 			{BOOLEAN_PARAMETER, "REDUNDANT_LAGRANGE"   , "Set Lagrange multipliers also among HFETI corners."},
 			{BOOLEAN_PARAMETER, "USE_SCHUR_COMPLEMENT" , "Use schur complement for stiffnes matrix processing"},
 			{INTEGER_PARAMETER, "SCHUR_COMPLEMENT_PREC", "Schur complement precission - 0 double prec; 1 single prec."},
+			{INTEGER_PARAMETER, "SCHUR_COMPLEMENT_TYPE", "Schur complement type - 0 - stored as general matrix; 1 = stored as symmetric matrix"},
 			{BOOLEAN_PARAMETER, "COMBINE_SC_AND_SPDS"  , "Combine usage of SC for Accelerator and Sparse Direct Solver for CPU."},
 			{BOOLEAN_PARAMETER, "KEEP_FACTORS"         , "Keep factors for whole iteration process."},
 			{INTEGER_PARAMETER, "PRECONDITIONER"       , "Preconditioner: 0 - NO preconditioner, 1 - Lumped, 2 - weight function, 3 - Dirichlet"},
@@ -123,8 +124,9 @@ namespace solver {
 	bool   REDUNDANT_LAGRANGE    = configuration.value("REDUNDANT_LAGRANGE"   , true);
 	bool   USE_SCHUR_COMPLEMENT  = configuration.value("USE_SCHUR_COMPLEMENT" , false);
 	size_t SCHUR_COMPLEMENT_PREC = configuration.value("SCHUR_COMPLEMENT_PREC", 0);
-	bool   COMBINE_SC_AND_SPDS   = configuration.value("COMBINE_SC_AND_SPDS"  , true);
-	bool   KEEP_FACTORS          = configuration.value("KEEP_FACTORS"         , true);
+	size_t SCHUR_COMPLEMENT_TYPE = configuration.value("SCHUR_COMPLEMENT_TYPE", 0);
+	bool   COMBINE_SC_AND_SPDS   = configuration.value("COMBINE_SC_AND_SPDS"  , false);
+	bool   KEEP_FACTORS          = configuration.value("KEEP_FACTORS"         , false);
 
 	size_t KSOLVER_SP_iter_steps = configuration.value("KSOLVER_SP_iter_steps", 10);
 	double KSOLVER_SP_iter_norm  = configuration.value("KSOLVER_SP_iter_norm" , 1e-12);;
