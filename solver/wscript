@@ -11,7 +11,8 @@ source_files = (
 )
 
 def configure(ctx):
-    ctx.env.append_unique("DEFINES", [ "XE6", "TM_BLOCK_START", "DEVEL"])
+#    ctx.env.append_unique("DEFINES", [ "XE6", "TM_BLOCK_START", "DEVEL"])
+    ctx.env.append_unique("DEFINES", [ "XE6", "DEVEL"])
 
     if ctx.env.INT_WIDTH == 32:
         mkl = "mkl_intel_lp64"
