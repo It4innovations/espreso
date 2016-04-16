@@ -186,8 +186,7 @@ class PREC_DIR_OR_LUMPED:
         self.iw = index_weight
 #        
     def __mul__(self,x_in):
-        usePrecond = True
-        if usePrecond:    
+        if conf.precondDualSystem!='none':    
             x_out = np.zeros(self.B[0][0].shape[0])
             for i in range(len(self.K)):
                 for j in range(len(self.K[i])):

@@ -6,8 +6,8 @@ import config_espreso_python
 import pylab as plt
 import scipy.sparse.linalg as spla
 
-n_clus          = 2
-n_subPerClust   = 2
+n_clus          = 8
+n_subPerClust   = 8
 
 
 
@@ -64,7 +64,7 @@ if conf.precondDualSystem=='dirichlet':
         for j in range(len(mat_K[i])):
             I = np.arange(0,mat_K[i][j].shape[0])
             _B1 = mat_B1[i][j].copy()
-            J = _B1.tocoo().col            
+            J = np.unique(_B1.tocoo().col)            
             I = np.delete(I,J)
             K_II = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
             K_IJ = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(J)].toarray()
