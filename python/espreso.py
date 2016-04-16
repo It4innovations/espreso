@@ -4,6 +4,7 @@ from scipy import sparse
 import myModul as mM
 import config_espreso_python  
 import pylab as plt
+import scipy.sparse.linalg as spla
 
 n_clus          = 2
 n_subPerClust   = 2
@@ -23,6 +24,7 @@ mat_R       = []
 vec_f       = []
 vec_weight  = []
 vec_index_weight = []
+mat_Schur   = []
 #vec_weight  = []
 for i in range(n_clus): 
     mat_K.append([])
@@ -50,20 +52,38 @@ for i in range(n_clus):
         
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
-###############################################################################            
+###############################################################################   
 
 
 
 conf = config_espreso_python
 
+if conf.precondDualSystem=='dirichlet':
+    for i in range(len(mat_K)):
+        mat_Schur.append([])
+        for j in range(len(mat_K[i])):
+            I = np.arange(0,mat_K[i][j].shape[0])
+            _B1 = mat_B1[i][j].copy()
+            J = _B1.tocoo().col            
+            I = np.delete(I,J)
+            K_II = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
+            K_IJ = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(J)].toarray()
+            K_JJ = mat_K[i][j][np.array(J)[:,np.newaxis],np.array(J)].toarray()
+            iK_II = spla.splu(K_II)
+            iK_II_K_IJ = np.zeros(K_IJ.shape)
+            for k in range(K_IJ.shape[1]):
+                iK_II_K_IJ[:,k] = iK_II.solve(K_IJ[:,k])
+            mat_Schur[i].append([J,K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)])
 
-plt.clf()
 
-u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_B1,vec_weight,\
+
+#plt.clf()
+
+u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_weight,\
                             vec_index_weight,mat_R)
                             
                             
-uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_B0,mat_B1,vec_weight,\
+uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_weight,\
                         vec_index_weight,mat_R,mat_Salfa)
 #
 #norm_del_u = 0

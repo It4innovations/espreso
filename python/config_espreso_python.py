@@ -9,6 +9,7 @@ iterative_Kplus                     = False     # True, False
 
 
 eps_iter_Kplus                      = 1e-15
+precondDualSystem                   = 'dirichlet' # 'lumped', 'dirichlet'
 single_precision                    = True     # True, False
 methodToImproveSolByIterMethod      = 'pcg_x'   # 'cg_x', 'pcg_x',       
 precondFrom_Areg_orA                = False

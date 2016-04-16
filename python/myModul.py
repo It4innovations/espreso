@@ -178,8 +178,9 @@ class PROJ:
         return y        
 ###############################################################################
 class PREC_DIR_OR_LUMPED:
-    def __init__(self,K,B,weight,index_weight):
+    def __init__(self,K,Schur,B,weight,index_weight):
         self.K  = K
+        self.Schur  = Schur
         self.B  = B
         self.w  = weight
         self.iw = index_weight
@@ -193,7 +194,12 @@ class PREC_DIR_OR_LUMPED:
                     x0  = x_in.copy()
                     x0[self.iw[i][j]] *= self.w[i][j]
                     x   = sparse.csc_matrix.dot(self.B[i][j].transpose(),x0)
-                    x   = sparse.csc_matrix.dot(self.K[i][j],x)
+                    if conf.precondDualSystem=='dirichlet':
+                        x[self.Schur[i][j][0]]  =  \
+                        np.dot(self.Schur[i][j][1],x[self.Schur[i][j][0]])
+                    else:
+                        x   = sparse.csc_matrix.dot(self.K[i][j],x)
+                        
                     x1  = sparse.csc_matrix.dot(self.B[i][j],x)
                     x_out[self.iw[i][j]]+=x1[self.iw[i][j]]*self.w[i][j]
         else:
@@ -283,7 +289,7 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #  
     return lam, alpha, numbOfIter
 ###############################################################################       
-def feti(K,Kreg,f,B,weight,index_weight,R):
+def feti(K,Kreg,f,Schur,B,weight,index_weight,R):
 #        
     maxIt   = conf.maxIt_dual_feti
     eps0    = conf.eps_dual_feti   
@@ -303,9 +309,9 @@ def feti(K,Kreg,f,B,weight,index_weight,R):
             d += sparse.csc_matrix.dot(B[i][j],Kplus[i][j]*f[i][j])
 #
     F       = FETIOPERATOR(Kplus,B)
-    Prec    = PREC_DIR_OR_LUMPED(K,B,weight,index_weight)
+    Prec    = PREC_DIR_OR_LUMPED(K,Schur,B,weight,index_weight)
 #     
-    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,True)        
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
 #
     uu = []
     cnt = 0
@@ -329,7 +335,7 @@ def feti(K,Kreg,f,B,weight,index_weight,R):
     print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti(K,Kreg,f,B0,B1,weight,index_weight,R,mat_S0):
+def hfeti(K,Kreg,f,Schur,B0,B1,weight,index_weight,R,mat_S0):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
@@ -359,9 +365,9 @@ def hfeti(K,Kreg,f,B0,B1,weight,index_weight,R,mat_S0):
             d += sparse.csc_matrix.dot(B1[i][j],Kpl_[j])
 #    
     F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
-    Prec    = PREC_DIR_OR_LUMPED(K,B1,weight,index_weight)
+    Prec    = PREC_DIR_OR_LUMPED(K,Schur,B1,weight,index_weight)
      
-    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,True)        
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
 #    
     uu = []
     cnt = 0
