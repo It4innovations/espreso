@@ -288,13 +288,14 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #  
     return lam, alpha, numbOfIter
 ###############################################################################       
-def feti(K,Kreg,f,Schur,B,weight,index_weight,R):
+def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
 #        
     maxIt   = conf.maxIt_dual_feti
     eps0    = conf.eps_dual_feti   
 #              
     CP      = COARSE_PROBLEM(B,R)   
     d       = np.zeros(B[0][0].shape[0])    
+    dc       = np.zeros(B[0][0].shape[0])    
     Kplus   = []
 #    
     for i in range(len(K)):
@@ -306,7 +307,9 @@ def feti(K,Kreg,f,Schur,B,weight,index_weight,R):
             else:
                 e = np.concatenate((e,sparse.csc_matrix.dot(R[i][j].transpose(),-f[i][j])))
             d += sparse.csc_matrix.dot(B[i][j],Kplus[i][j]*f[i][j])
+            dc[index_weight[i][j]] = c[i][j]
 #
+    d      -= dc        
     F       = FETIOPERATOR(Kplus,B)
     Prec    = PREC_DIR_OR_LUMPED(K,Schur,B,weight,index_weight)
 #     
@@ -334,13 +337,14 @@ def feti(K,Kreg,f,Schur,B,weight,index_weight,R):
     print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti(K,Kreg,f,Schur,B0,B1,weight,index_weight,R,mat_S0):
+def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
 #                           
     CP  = COARSE_PROBLEM_HTFETI(B1,R)   
     d   = np.zeros(B1[0][0].shape[0])    
+    dc  = np.zeros(B1[0][0].shape[0])    
 #   
     Kplus = []
     for i in range(len(K)):
@@ -362,7 +366,9 @@ def hfeti(K,Kreg,f,Schur,B0,B1,weight,index_weight,R,mat_S0):
         Kpl_ = Kplus_HTFETI[i]*f[i]
         for j in range(len(K[i])):
             d += sparse.csc_matrix.dot(B1[i][j],Kpl_[j])
+            dc[index_weight[i][j]] = c[i][j]
 #    
+    d      -= dc
     F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
     Prec    = PREC_DIR_OR_LUMPED(K,Schur,B1,weight,index_weight)
      

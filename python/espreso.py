@@ -22,6 +22,7 @@ mat_B0      = []
 mat_B1      = []
 mat_R       = []
 vec_f       = []
+vec_c       = []
 vec_weight  = []
 vec_index_weight = []
 mat_Schur   = []
@@ -33,6 +34,7 @@ for i in range(n_clus):
     mat_B1.append([])
     mat_R.append([])
     vec_f.append([])
+    vec_c.append([])
     vec_weight.append([])
     vec_index_weight.append([])
     mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
@@ -44,6 +46,7 @@ for i in range(n_clus):
         mat_B1[i].append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
         mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
         vec_f[i].append(mM.load_vector(path,'f',i,j))
+        vec_c[i].append(mM.load_vector(path,'c',i,j))
         vec_weight[i].append(mM.load_vector(path,'weight',i,j))
         tmp = mM.load_vector(path,'loc_ind_weight',i,j)
         tmp = tmp.astype(np.int32)
@@ -76,15 +79,48 @@ if conf.precondDualSystem=='dirichlet':
             mat_Schur[i].append([J,K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)])
 
 
+if False:
+    mat_B0ker = []
+    for i in range(len(mat_B0)):
+        mat_B0ker.append([])
+        for j in range(len(mat_B0[i])-1):
+            for k in range(j+1,len(mat_B0[i])):
+                tmpB_jk = sparse.hstack([np.abs(mat_B0[i][j]),np.abs(mat_B0[i][k])])
+                indx = tmpB_jk.sum(1)==2            
+                if (np.sum(indx)>0):
+                    
+                    
+                    iB0_j_bool = np.zeros(mat_B0[i][j].shape[1],dtype=bool)
+                    ij         = mat_B0[i][j].tocsr().indices
+                    
+                    iB0_k_bool = np.zeros(mat_B0[i][k].shape[1],dtype=bool)
+                    ik         = mat_B0[i][k].tocsr().indices
+                    
+                
+    
+                    
+                    iB0_j = mat_B0[i][j][indx,:]
+                    iB0_k = mat_B0[i][k][indx,:]
+                    print([i,j,k],'YES ++++++++')
+                    gamma_j = mat_Schur[i][j][0]
+                    gamma_k = mat_Schur[i][k][0]
+                    
+                    print(mat_R[i][j][gamma_j,:]-\
+                    mat_R[i][k][gamma_k,:])
+                    
+                else:
+                    print([i,j,k],'NO  --------')
+                    
+                    
 
 #plt.clf()
 
-u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_weight,\
+u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
                             vec_index_weight,mat_R)
                             
                             
-uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_weight,\
-                        vec_index_weight,mat_R,mat_Salfa)
+uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
+                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
 #
 #norm_del_u = 0
 #norm_u = 0

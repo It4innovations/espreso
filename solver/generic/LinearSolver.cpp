@@ -361,7 +361,17 @@ void LinearSolver::init(
 //			std::ofstream osT(Logging::prepareFile(d, "T").c_str());
 //			osT << _T[d];
 //			osT.close();
-			std::ofstream os_in_weight(Logging::prepareFile(d, "loc_ind_weight").c_str());
+
+//		cluster.domains[d].vec_c = vec_c[d];
+
+
+      std::ofstream os_vec_c(Logging::prepareFile(d, "c").c_str());
+			os_vec_c << vec_c[d];
+			os_vec_c.close();
+
+
+
+      std::ofstream os_in_weight(Logging::prepareFile(d, "loc_ind_weight").c_str());
 			os_in_weight << lambda_map_sub_B1[d];
 			os_in_weight.close();
 //      lambda_map_sub_B1[d]
