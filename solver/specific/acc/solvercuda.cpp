@@ -121,8 +121,7 @@ void SparseSolverCUDA::Clear() {
 		}
 	}
 
-	if ( initialized == true)
-	{
+	if (initialized == true) {
 		MKL_INT nRhs = 1;
 
 		// Destroys factorization and matrix settings
@@ -131,13 +130,18 @@ void SparseSolverCUDA::Clear() {
 			soInfo = NULL;
 		}
 
-		if (D_buffer != NULL){
-			CHECK_ERR(cudaFree(D_buffer));
-			D_buffer = NULL;
-		}
+		// if (D_buffer != NULL){
+		// 	CHECK_ERR(cudaFree(D_buffer));
+		// 	D_buffer = NULL;
+		// }
 
 		initialized = false;
-	} else if (keep_buffer == true && D_buffer != NULL) {
+	} 
+	// else if (keep_buffer == true && D_buffer != NULL) {
+	// 	CHECK_ERR(cudaFree(D_buffer));
+	// 	D_buffer = NULL;
+	// }
+	if (D_buffer != NULL){
 		CHECK_ERR(cudaFree(D_buffer));
 		D_buffer = NULL;
 	}
@@ -567,7 +571,10 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 
 		CHECK_SO(cusolverSpScsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
 
-		// CHECK_ERR(cudaFree(D_buffer));
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 	} else {
 		CHECK_SO(cusolverSpDcsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
 
@@ -576,7 +583,10 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 
 		CHECK_SO(cusolverSpDcsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
 
-		// CHECK_ERR(cudaFree(D_buffer));
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 	}
 
 	#ifdef DEBUG
@@ -632,11 +642,15 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol_fl, &rhs_sol_fl.front(), sizeof(float)*rows, cudaMemcpyHostToDevice));
 
-		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+		if(D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
 		CHECK_SO(cusolverSpScsrcholSolve(soHandle, rows, D_rhs_sol_fl, D_rhs_sol_fl, soInfo, D_buffer));
 
-		// CHECK_ERR(cudaFree(D_buffer));
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 
 		CHECK_ERR(cudaMemcpy(&rhs_sol_fl.front(), D_rhs_sol_fl, sizeof(float)*rows, cudaMemcpyDeviceToHost));
 
@@ -662,7 +676,15 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		}
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs_sol.front(), sizeof(double)*rows, cudaMemcpyHostToDevice));
 
+		if(D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+
 		CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol, D_rhs_sol, soInfo, D_buffer));
+
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 
 		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &rhs_sol.front(), D_rhs_sol, sizeof(double)*rows, cudaMemcpyDeviceToHost));
 
@@ -685,11 +707,6 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 			soInfo = NULL;
 		}
 
-		if(!keep_buffer){
-			CHECK_ERR(cudaFree(D_buffer));
-			D_buffer = NULL;
-		}
-
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
 			D_rhs_sol_fl = NULL;
@@ -699,6 +716,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		}
 
 		// printf("Factors freed\n");
+	}
+
+	if (!keep_buffer){
+		CHECK_ERR(cudaFree(D_buffer));
+		D_buffer = NULL;
 	}
 }
 
@@ -744,13 +766,17 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol_fl, &rhs_sol_fl.front(), sizeof(float) * total_size, cudaMemcpyHostToDevice));
 
-		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+		if(D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
 		for (i = 0; i < n_rhs; ++i){
 			CHECK_SO(cusolverSpScsrcholSolve(soHandle, rows, D_rhs_sol_fl + i * rows, D_rhs_sol_fl + i * rows, soInfo, D_buffer));
 		}
 
-		// CHECK_ERR(cudaFree(D_buffer));
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 
 		CHECK_ERR(cudaMemcpy(&rhs_sol_fl.front(), D_rhs_sol_fl, sizeof(float) * total_size, cudaMemcpyDeviceToHost));
 
@@ -783,13 +809,17 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs.front(), sizeof(double) * total_size, cudaMemcpyHostToDevice));
 
-		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+		if(D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
 		for (i = 0; i < n_rhs; ++i){
 			CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol + i * rows, D_rhs_sol + i * rows, soInfo, D_buffer));
 		}
 
-		// CHECK_ERR(cudaFree(D_buffer));
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 
 		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol.front(), D_rhs_sol, sizeof(double) * total_size, cudaMemcpyDeviceToHost));
 
@@ -818,11 +848,6 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			soInfo = NULL;
 		}
 
-		if(!keep_buffer){
-			CHECK_ERR(cudaFree(D_buffer));
-			D_buffer = NULL;
-		}
-
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
 			D_rhs_sol_fl = NULL;
@@ -832,6 +857,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		}
 
 		// printf("Factors freed\n");
+	}
+
+	if (!keep_buffer){
+		CHECK_ERR(cudaFree(D_buffer));
+		D_buffer = NULL;
 	}
 }
 
@@ -865,11 +895,15 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol_fl, &rhs_sol_fl.front(), sizeof(float)*rows, cudaMemcpyHostToDevice));
 
-		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+		if(D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
 		CHECK_SO(cusolverSpScsrcholSolve(soHandle, rows, D_rhs_sol_fl, D_rhs_sol_fl, soInfo, D_buffer));
 
-		// CHECK_ERR(cudaFree(D_buffer));
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 
 		CHECK_ERR(cudaMemcpy(&rhs_sol_fl.front(), D_rhs_sol_fl, sizeof(float)*rows, cudaMemcpyDeviceToHost));
 
@@ -893,7 +927,15 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs[rhs_start_index], sizeof(double)*rows, cudaMemcpyHostToDevice));
 
+		if(D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+
 		CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol, D_rhs_sol, soInfo, D_buffer));
+
+		if (!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
 
 		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol[sol_start_index], D_rhs_sol, sizeof(double)*rows, cudaMemcpyDeviceToHost));
 
@@ -915,11 +957,6 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			soInfo = NULL;
 		}
 
-		if(!keep_buffer){
-			CHECK_ERR(cudaFree(D_buffer));
-			D_buffer = NULL;
-		}
-
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
 			D_rhs_sol_fl = NULL;
@@ -929,6 +966,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		}
 
 		// printf("Factors freed\n");
+	}
+
+	if (!keep_buffer){
+		CHECK_ERR(cudaFree(D_buffer));
+		D_buffer = NULL;
 	}
 }
 
