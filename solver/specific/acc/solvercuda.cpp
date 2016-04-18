@@ -49,6 +49,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	keep_factors=true;
 	initialized = false;
 	USE_FLOAT = false;
+	keep_buffer = true;
 
 	CSR_I_row_indices_size = 0;
 	CSR_J_col_indices_size = 0;
@@ -89,6 +90,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	m_factorized = 0;
 
 	// Initialize cuSolver context and CUDA stream
+	//CHECK_ERR(cudaSetDevice(1));
 	CHECK_SO(cusolverSpCreate(&soHandle));
 	CHECK_ERR(cudaStreamCreate(&cuStream));
 	CHECK_SO(cusolverSpSetStream(soHandle, cuStream));
@@ -113,13 +115,13 @@ void SparseSolverCUDA::Clear() {
 			D_rhs_sol_fl = NULL;
 		}
 	} else {
-		if(D_rhs_sol != NULL){
+		if (D_rhs_sol != NULL){
 			CHECK_ERR(cudaFree(D_rhs_sol));
 			D_rhs_sol = NULL;
 		}
 	}
 
-	if ( initialized == true )
+	if ( initialized == true)
 	{
 		MKL_INT nRhs = 1;
 
@@ -129,16 +131,20 @@ void SparseSolverCUDA::Clear() {
 			soInfo = NULL;
 		}
 
-		if (matDescr != NULL){
-			CHECK_SP(cusparseDestroyMatDescr(matDescr));
-			matDescr = NULL;
+		if (D_buffer != NULL){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
 		}
 
+		initialized = false;
+	} else if (keep_buffer == true && D_buffer != NULL) {
 		CHECK_ERR(cudaFree(D_buffer));
 		D_buffer = NULL;
+	}
 
-		initialized = false;
-
+	if (matDescr != NULL){
+		CHECK_SP(cusparseDestroyMatDescr(matDescr));
+		matDescr = NULL;
 	}
 
 	if (CSR_I_row_indices_size > 0){
@@ -206,7 +212,7 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 
 		// Create permutation vector
 		if(reorder == 1){
-			printf("Symrcm reordering method performed.\n");
+			// printf("Symrcm reordering method performed.\n");
 			#if INT_WIDTH == 64
 				CHECK_SO(cusolverSpXcsrsymrcmHost(soHandle, rows_r, nnz_r, matDescr,  &tmp_CSR_I_row_indices.front(),
 				 &tmp_CSR_J_col_indices.front(), permutation));
@@ -216,7 +222,7 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 			#endif
 		}
 		else if(reorder == 2){
-			printf("Symamd reordering method performed.\n");
+			// printf("Symamd reordering method performed.\n");
 			#if INT_WIDTH == 64
 				CHECK_SO(cusolverSpXcsrsymamdHost(soHandle, rows_r, nnz_r, matDescr, &tmp_CSR_I_row_indices.front(),
 				 &tmp_CSR_J_col_indices.front(), permutation));
@@ -283,9 +289,7 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	// printf("---ImportMatrix\n");
 
-	// Uncomment for KSOLVER = Direct SP
-	// ImportMatrix_fl(A_in);
-	// return;
+	USE_FLOAT = false;
 
 	CHECK_SP(cusparseCreateMatDescr(&matDescr));
 	cusparseSetMatType(matDescr, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -303,7 +307,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 			printf("Input matrix: rows: %d nnz: %d i: %zu j: %zu v: %zu \n", A_in.rows, A_in.nnz, A_in.CSR_I_row_indices.size(), A_in.CSR_J_col_indices.size(), A_in.CSR_V_values.size());
 		#endif
 
-		SpyText(A_in);
+		A_in.SpyText();
 	#endif
 
 	if(reorder > 0)
@@ -320,7 +324,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 		ReorderMatrix(A_sym);
 
 		#ifdef DEBUG
-			SpyText(A_sym);
+			A_sym.SpyText();
 		#endif
 
 		A_sym.RemoveLower();
@@ -329,7 +333,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 		A = &A_sym;
 
 		#ifdef DEBUG
-			SpyText(*A);
+			(*A).SpyText();
 		#endif
 	}
 	else{
@@ -345,7 +349,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 			A = &A_in;
 		}
 
-		printf("No reordering performed.\n");
+		// printf("No reordering performed.\n");
 	}
 
 	A->MatTranspose();
@@ -357,7 +361,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 			printf("Transposed matrix: rows: %d nnz: %d i: %zu j: %zu v: %zu \n", A->rows, A->nnz, A->CSR_I_row_indices.size(), A->CSR_J_col_indices.size(), A->CSR_V_values.size());
 		#endif
 
-		SpyText(*A);
+		(*A).SpyText();
 	#endif
 
 	rows	= A->rows;
@@ -404,6 +408,8 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	// std::printf("---ImportMatrix_fl\n");
 
+	USE_FLOAT = true;
+
 	CHECK_SP(cusparseCreateMatDescr(&matDescr));
 	cusparseSetMatType(matDescr, CUSPARSE_MATRIX_TYPE_GENERAL);
 	cusparseSetMatIndexBase(matDescr, CUSPARSE_INDEX_BASE_ONE);
@@ -420,7 +426,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 			printf("Input matrix: rows: %d nnz: %d i: %zu j: %zu v: %zu \n", A_in.rows, A_in.nnz, A_in.CSR_I_row_indices.size(), A_in.CSR_J_col_indices.size(), A_in.CSR_V_values.size());
 		#endif
 
-		SpyText(A_in);
+		A_in.SpyText();
 	#endif
 
 	if(reorder > 0)
@@ -437,7 +443,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 		ReorderMatrix(A_sym);
 
 		#ifdef DEBUG
-			SpyText(A_sym);
+			A_sym.SpyText();
 		#endif
 		A_sym.RemoveLower();
 		A_sym.type = 'S';
@@ -445,7 +451,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 		A = &A_sym;
 
 		#ifdef DEBUG
-			SpyText(*A);
+			(*A).SpyText();
 		#endif
 	} else {
 		// Import only lower part if stored as G
@@ -470,7 +476,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 			printf("Transposed matrix: rows: %d nnz: %d i: %zu j: %zu v: %zu \n", A->rows, A->nnz, A->CSR_I_row_indices.size(), A->CSR_J_col_indices.size(), A->CSR_V_values.size());
 		#endif
 
-		SpyText(*A);
+		(*A).SpyText();
 	#endif
 
 	rows	= A->rows;
@@ -518,7 +524,7 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 }
 
 void SparseSolverCUDA::ImportMatrix_wo_Copy(SparseMatrix & A) {
-	printf("ImportMatrix_wo_Copy: cuSolver used - Matrix will be imported to GPU!\n");
+	// printf("ImportMatrix_wo_Copy: cuSolver used - Matrix will be imported to GPU!\n");
 	ImportMatrix(A);
 }
 
@@ -550,21 +556,27 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 
 	CHECK_SO(cusolverSpXcsrcholAnalysis(soHandle, rows, nnz, matDescr, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo));
 
-	size_t internalDataInBytes = 0;
-	size_t workspaceInBytes = 0;
+	internalDataInBytes = 0;
+	workspaceInBytes = 0;
 
 	if (USE_FLOAT) {
 		CHECK_SO(cusolverSpScsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
 
-		CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+		if (D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
 		CHECK_SO(cusolverSpScsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
+
+		// CHECK_ERR(cudaFree(D_buffer));
 	} else {
 		CHECK_SO(cusolverSpDcsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
 
-		CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+		if (D_buffer == NULL)
+			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
 		CHECK_SO(cusolverSpDcsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
+
+		// CHECK_ERR(cudaFree(D_buffer));
 	}
 
 	#ifdef DEBUG
@@ -572,10 +584,12 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 		printf("---workspaceInBytes: %zu B\n", workspaceInBytes);
 
 		printf ("\nFactorization completed ... ");
+		printf("I: %d, J: %d, V: %d, RHS: %d, celkem: %d\n", (rows+1)*sizeof(int), nnz*sizeof(int), nnz*sizeof(float), rows*sizeof(float),
+			(rows+1)*sizeof(int)+ nnz*sizeof(int)+ nnz*sizeof(float)+ rows*sizeof(float));
 	#endif
 
-	m_factorized = 1;
-	initialized = true; // necessary?
+	m_factorized = 1; // used only in constructor and factorization
+	initialized = true;
 
 	if (USE_FLOAT) {
 		D_rhs_sol_fl = NULL;
@@ -618,7 +632,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol_fl, &rhs_sol_fl.front(), sizeof(float)*rows, cudaMemcpyHostToDevice));
 
+		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+
 		CHECK_SO(cusolverSpScsrcholSolve(soHandle, rows, D_rhs_sol_fl, D_rhs_sol_fl, soInfo, D_buffer));
+
+		// CHECK_ERR(cudaFree(D_buffer));
 
 		CHECK_ERR(cudaMemcpy(&rhs_sol_fl.front(), D_rhs_sol_fl, sizeof(float)*rows, cudaMemcpyDeviceToHost));
 
@@ -666,6 +684,12 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
 			soInfo = NULL;
 		}
+
+		if(!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
+
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
 			D_rhs_sol_fl = NULL;
@@ -674,7 +698,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 			D_rhs_sol = NULL;
 		}
 
-		printf("Factors freed\n");
+		// printf("Factors freed\n");
 	}
 }
 
@@ -720,9 +744,13 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol_fl, &rhs_sol_fl.front(), sizeof(float) * total_size, cudaMemcpyHostToDevice));
 
+		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+
 		for (i = 0; i < n_rhs; ++i){
 			CHECK_SO(cusolverSpScsrcholSolve(soHandle, rows, D_rhs_sol_fl + i * rows, D_rhs_sol_fl + i * rows, soInfo, D_buffer));
 		}
+
+		// CHECK_ERR(cudaFree(D_buffer));
 
 		CHECK_ERR(cudaMemcpy(&rhs_sol_fl.front(), D_rhs_sol_fl, sizeof(float) * total_size, cudaMemcpyDeviceToHost));
 
@@ -755,9 +783,13 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol, reorder ? &rhs_sol_reordered.front() : &rhs.front(), sizeof(double) * total_size, cudaMemcpyHostToDevice));
 
+		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+
 		for (i = 0; i < n_rhs; ++i){
 			CHECK_SO(cusolverSpDcsrcholSolve(soHandle, rows, D_rhs_sol + i * rows, D_rhs_sol + i * rows, soInfo, D_buffer));
 		}
+
+		// CHECK_ERR(cudaFree(D_buffer));
 
 		CHECK_ERR(cudaMemcpy(reorder ? &rhs_sol_reordered.front() : &sol.front(), D_rhs_sol, sizeof(double) * total_size, cudaMemcpyDeviceToHost));
 
@@ -786,6 +818,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			soInfo = NULL;
 		}
 
+		if(!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
+
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
 			D_rhs_sol_fl = NULL;
@@ -794,7 +831,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			D_rhs_sol = NULL;
 		}
 
-		printf("Factors freed\n");
+		// printf("Factors freed\n");
 	}
 }
 
@@ -828,7 +865,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 		CHECK_ERR(cudaMemcpy(D_rhs_sol_fl, &rhs_sol_fl.front(), sizeof(float)*rows, cudaMemcpyHostToDevice));
 
+		// CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+
 		CHECK_SO(cusolverSpScsrcholSolve(soHandle, rows, D_rhs_sol_fl, D_rhs_sol_fl, soInfo, D_buffer));
+
+		// CHECK_ERR(cudaFree(D_buffer));
 
 		CHECK_ERR(cudaMemcpy(&rhs_sol_fl.front(), D_rhs_sol_fl, sizeof(float)*rows, cudaMemcpyDeviceToHost));
 
@@ -874,6 +915,11 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			soInfo = NULL;
 		}
 
+		if(!keep_buffer){
+			CHECK_ERR(cudaFree(D_buffer));
+			D_buffer = NULL;
+		}
+
 		if(USE_FLOAT){
 			CHECK_ERR(cudaFree(D_rhs_sol_fl));
 			D_rhs_sol_fl = NULL;
@@ -882,7 +928,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			D_rhs_sol = NULL;
 		}
 
-		printf("Factors freed\n");
+		// printf("Factors freed\n");
 	}
 }
 
@@ -1099,7 +1145,7 @@ void SparseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out
 //Obsolete - to be removed
 void SparseSolverCUDA::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded ) {
 
-	printf("Method SolveMatF is not implemented yet.");
+	printf("Method SolveMatF is not implemented yet.\n");
 	exit(1);
 
 	// /* Internal solver memory pointer pt, */
@@ -1287,7 +1333,7 @@ void SparseSolverCUDA::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, boo
 
 void SparseSolverCUDA::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
 
-	printf("Method Create_SC is not implemented yet.");
+	printf("Method Create_SC is not implemented yet.\n");
 	exit(1);
 // 	/* Internal solver memory pointer pt, */
 // 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -1467,7 +1513,7 @@ void SparseSolverCUDA::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool i
 void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
-	printf("Method Create_SC_w_Mat is not implemented yet.");
+	printf("Method Create_SC_w_Mat is not implemented yet.\n");
 	exit(1);
 
 // 	//int msglvl = 0;
@@ -1690,7 +1736,7 @@ void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in
 
 void SparseSolverCUDA::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
-	printf("Method Create_non_sym_SC_w_Mat is not implemented yet.");
+	printf("Method Create_non_sym_SC_w_Mat is not implemented yet.\n");
 	exit(1);
 
 // 	//int msglvl = 0;
@@ -1946,7 +1992,7 @@ void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in
 
 void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
 
-	printf("Method SolveCG is not implemented yet.");
+	printf("Method SolveCG is not implemented yet.\n");
 	exit(1);
 
 

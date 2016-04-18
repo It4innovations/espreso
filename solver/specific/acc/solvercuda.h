@@ -81,6 +81,10 @@ public:
 	float*		D_rhs_sol_fl;
 	void*		D_buffer;
 
+	size_t 		internalDataInBytes;
+	size_t 		workspaceInBytes;
+	bool		keep_buffer;
+
 	// *** Pardiso Solver Variables
 	MKL_INT 	mtype;		/* Real symmetric matrix */
 	MKL_INT 	iparm[65]; // typ matice
