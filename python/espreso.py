@@ -6,8 +6,8 @@ import config_espreso_python
 import pylab as plt
 import scipy.sparse.linalg as spla
 
-n_clus          = 8
-n_subPerClust   = 8
+n_clus          = 2
+n_subPerClust   = 4
 
 
 
@@ -26,7 +26,6 @@ vec_c       = []
 vec_weight  = []
 vec_index_weight = []
 mat_Schur   = []
-#vec_weight  = []
 for i in range(n_clus): 
     mat_K.append([])
     mat_Kreg.append([])
@@ -38,7 +37,6 @@ for i in range(n_clus):
     vec_weight.append([])
     vec_index_weight.append([])
     mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
-    #vec_weight.append([])
     for j in range(n_subPerClust):  
         mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
         mat_Kreg[i].append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True))      
@@ -51,7 +49,6 @@ for i in range(n_clus):
         tmp = mM.load_vector(path,'loc_ind_weight',i,j)
         tmp = tmp.astype(np.int32)
         vec_index_weight[i].append(tmp)
-        #vec_weight[i].append(mM.load_vector(path,'weight',i,j))
         
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
@@ -79,38 +76,40 @@ if conf.precondDualSystem=='dirichlet':
             mat_Schur[i].append([J,K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)])
 
 
-if False:
-    mat_B0ker = []
+if True:
+    mat_B0ker   = []
+    
+    i_B0ker     = []
+    j_B0ker     = []
+    v_B0ker     = []
     for i in range(len(mat_B0)):
+
         mat_B0ker.append([])
+        i_B0ker.append([])
+        j_B0ker.append([])
+        v_B0ker.append([])
+        
         for j in range(len(mat_B0[i])-1):
             for k in range(j+1,len(mat_B0[i])):
                 tmpB_jk = sparse.hstack([np.abs(mat_B0[i][j]),np.abs(mat_B0[i][k])])
-                indx = tmpB_jk.sum(1)==2            
+                indx = np.ravel(tmpB_jk.sum(1)==2) 
+
                 if (np.sum(indx)>0):
-                    
-                    
+                                        
                     iB0_j_bool = np.zeros(mat_B0[i][j].shape[1],dtype=bool)
                     ij         = mat_B0[i][j].tocsr().indices
                     
                     iB0_k_bool = np.zeros(mat_B0[i][k].shape[1],dtype=bool)
                     ik         = mat_B0[i][k].tocsr().indices
                     
-                
-    
+                    iB0_j = mat_B0[i][j].tocsr()[indx,:].indices
+                    iB0_k = mat_B0[i][k].tocsr()[indx,:].indices
+
+                    R_g_j = mat_R[i][j].toarray()[iB0_j,:]
+                    R_g_k = mat_R[i][k].toarray()[iB0_k,:]
                     
-                    iB0_j = mat_B0[i][j][indx,:]
-                    iB0_k = mat_B0[i][k][indx,:]
-                    print([i,j,k],'YES ++++++++')
-                    gamma_j = mat_Schur[i][j][0]
-                    gamma_k = mat_Schur[i][k][0]
-                    
-                    print(mat_R[i][j][gamma_j,:]-\
-                    mat_R[i][k][gamma_k,:])
-                    
-                else:
-                    print([i,j,k],'NO  --------')
-                    
+                    print(R_g_j-R_g_k)
+
                     
 
 #plt.clf()
@@ -122,14 +121,14 @@ u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
 uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R,mat_Salfa)
 #
-#norm_del_u = 0
-#norm_u = 0
-#for i in range(len(u)):
-#    for j in range(len(u[i])):
-#        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
-#        norm_u += np.linalg.norm(u[i][j])
-#
-#print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
+norm_del_u = 0
+norm_u = 0
+for i in range(len(u)):
+    for j in range(len(u[i])):
+        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
+        norm_u += np.linalg.norm(u[i][j])
+
+print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
 
 
 #conf.iterative_Kplus=False

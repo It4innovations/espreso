@@ -228,7 +228,6 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
     vec_staggnat    = np.zeros(nDual)
 #
     w     = PMPg.copy()
-    strFormat= '%3.5f'
 #
     if disp: 
         print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
@@ -257,7 +256,6 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #  
         sqrt_gtPg = np.sqrt(np.dot(g,Pg))
         normed_gi   = sqrt_gtPg/sqrt_gtPg0
-
         vec_normed_g[i]    = normed_gi
 #       
         is_stagnating = np.log2(normed_gi)/(i+2)
@@ -334,7 +332,8 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
             delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
             norm_f += np.linalg.norm(f[i][j])
 #     
-    print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+    if np.abs(norm_f)>1e-10:
+        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
 def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
@@ -396,10 +395,12 @@ def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
             R_alpha = sparse.csc_matrix.dot(R[i][j],alpha[ind])
             uu[i].append(Kplus_f_B1t_lam[i][j]+R_alpha)
         cnt += R[i][0].shape[1]
+
+
 #    for i in range(len(K)):
 #        uu.append([])
+#        ind = np.arange(0,R[i][j].shape[1]) + cnt
 #        for j in range(len(K[i])):
-#            ind = np.arange(0,R[i][j].shape[1]) + cnt
 #            f_BtLam_i_j = f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam)
 #            KplusBtLam_i_j=Kplus[i][j]*f_BtLam_i_j
 #            R_alpha_i_j = sparse.csc_matrix.dot(R[i][j],alpha[ind])
@@ -408,10 +409,11 @@ def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #            delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
 #            norm_f += np.linalg.norm(f[i][j])
         
-#    u = Kplus_sub*f_m_BtLam + Roperator.mult(alpha)      
-#     
-#    delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
-#    normf = np.linalg.norm(f)
-#    print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+    #u = Kplus_sub*f_m_BtLam + Roperator.mult(alpha)      
+     
+    #delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
+    #norm_f = np.linalg.norm(f)
+#    if np.abs(norm_f)>1e-10:
+#        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ############################################################################### 
