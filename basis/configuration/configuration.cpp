@@ -49,6 +49,7 @@ Configuration::Configuration(std::vector<Description> &description, const Option
 	);
 
 	load(options);
+	set(description);
 }
 
 Configuration::Configuration(std::vector<Description> &description, const std::string &path)
@@ -64,6 +65,7 @@ Configuration::Configuration(std::vector<Description> &description, const std::s
 		options.path = path;
 
 		load(options);
+		set(description);
 	}
 }
 
@@ -139,11 +141,41 @@ void Configuration::load(const Options &options)
 	}
 }
 
+void Configuration::set(std::vector<Description> &description)
+{
+	for (size_t i = 0; i < description.size(); i++) {
+		auto it = _parameters.find(description[i].name);
+		if (it != _parameters.end() && it->second->isSet()) {
+			switch (description[i].type) {
+			case INTEGER_PARAMETER:
+				*(static_cast<int*>(description[i].value)) = static_cast<IntegerParameter*>(it->second)->get();
+				break;
+			case LONG_PARAMETER:
+				*(static_cast<long*>(description[i].value)) = static_cast<IntegerParameter*>(it->second)->get();
+				break;
+			case SIZE_PARAMETER:
+				*(static_cast<size_t*>(description[i].value)) = static_cast<IntegerParameter*>(it->second)->get();
+				break;
+			case DOUBLE_PARAMETER:
+				*(static_cast<double*>(description[i].value)) = static_cast<DoubleParameter*>(it->second)->get();
+				break;
+			case STRING_PARAMETER:
+				*(static_cast<std::string*>(description[i].value)) = static_cast<StringParameter*>(it->second)->get();
+				break;
+			case BOOLEAN_PARAMETER:
+				*(static_cast<bool*>(description[i].value)) = static_cast<BooleanParameter*>(it->second)->get();
+				break;
+			}
+		}
+	}
+
+}
+
 void Configuration::print() const
 {
 	std::map<std::string, Parameter*>::const_iterator it;
 	for (it = _parameters.begin(); it != _parameters.end(); ++it) {
-		if (it->second->isSet()) {
+		if (!it->second->isSet()) {
 			continue;
 		}
 		std::stringstream ss;
@@ -199,11 +231,6 @@ double Configuration::_getValue(const std::string &parameter, double defaultValu
 	} else {
 		return defaultValue;
 	}
-}
-
-const char* Configuration::_getValue(const std::string &parameter, const char* defaultValue) const
-{
-	return value<std::string>(parameter, defaultValue).c_str();
 }
 
 std::string Configuration::_getValue(const std::string &parameter, const std::string &defaultValue) const

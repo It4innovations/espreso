@@ -17,6 +17,16 @@ namespace input {
 class Configuration {
 
 public:
+	static void fill(std::vector<Description> &description, const Options &options)
+	{
+		Configuration conf(description, options);
+	}
+
+	static void fill(std::vector<Description> &description, const std::string &path)
+	{
+		Configuration conf(description, path);
+	}
+
 	Configuration(std::vector<Description> &description, const Options &options);
 	Configuration(std::vector<Description> &description, const std::string &path);
 	~Configuration();
@@ -47,11 +57,11 @@ private:
 	int _getValue(const std::string &parameter, int defaultValue) const;
 	long _getValue(const std::string &parameter, long defaultValue) const;
 	double _getValue(const std::string &parameter, double defaultValue) const;
-	const char* _getValue(const std::string &parameter, const char* defaultValue) const;
 	std::string _getValue(const std::string &parameter, const std::string &defaultValue) const;
 	bool _getValue(const std::string &parameter, bool defaultValue) const;
 
 	void load(const Options &options);
+	void set(std::vector<Description> &description);
 
 	std::map<std::string, Parameter*, ParameterCompare> _parameters;
 };

@@ -16,14 +16,62 @@ namespace input {
 enum DataType {
 	STRING_PARAMETER,
 	INTEGER_PARAMETER,
+	LONG_PARAMETER,
+	SIZE_PARAMETER,
 	DOUBLE_PARAMETER,
 	BOOLEAN_PARAMETER
 };
 
+enum HelpFlags {
+	INGNORE_IN_HELP,
+	WRITE_TO_HELP
+};
+
+
 struct Description {
 	DataType type;
 	std::string name;
+	void* value;
 	std::string description;
+	std::vector<std::string> options;
+	bool writeToHelp;
+
+	Description(std::string name, int &defaultValue, std::string description, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(INTEGER_PARAMETER), name(name), value(&defaultValue), description(description), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, long &defaultValue, std::string description, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(INTEGER_PARAMETER), name(name), value(&defaultValue), description(description), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, size_t &defaultValue, std::string description, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(INTEGER_PARAMETER), name(name), value(&defaultValue), description(description), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, double &defaultValue, std::string description, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(DOUBLE_PARAMETER), name(name), value(&defaultValue), description(description), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, std::string &defaultValue, std::string description, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(STRING_PARAMETER), name(name), value(&defaultValue), description(description), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, bool &defaultValue, std::string description, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(BOOLEAN_PARAMETER), name(name), value(&defaultValue), description(description), writeToHelp(writeToHelp) { };
+
+
+	Description(std::string name, int &defaultValue, std::string description, std::vector<std::string> options, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(INTEGER_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, long &defaultValue, std::string description, std::vector<std::string> options, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(INTEGER_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, size_t &defaultValue, std::string description, std::vector<std::string> options, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(INTEGER_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, double &defaultValue, std::string description, std::vector<std::string> options, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(DOUBLE_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, std::string &defaultValue, std::string description, std::vector<std::string> options, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(STRING_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
+
+	Description(std::string name, bool &defaultValue, std::string description, std::vector<std::string> options, HelpFlags writeToHelp = INGNORE_IN_HELP)
+	: type(BOOLEAN_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
 };
 
 struct ParameterCompare {
