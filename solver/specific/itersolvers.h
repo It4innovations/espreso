@@ -32,10 +32,10 @@ namespace espreso {
 }
 
 #elif defined(SOLVER_CUDA)
-#include "acc/itersolverGPU.h"
+#include "cpu/itersolvercpu.h"
 
 namespace espreso {
-	typedef IterSolverGPU	IterSolver;
+	typedef IterSolverCPU	IterSolver;
 }
 
 

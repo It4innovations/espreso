@@ -21,6 +21,7 @@ def check_libraries(ctx):
     libraries = {}
     stlibraries = {}
 
+    add(libraries, "z")
     add(libraries, "pthread")
     if ctx.env.BUILD_TOOLS == "0":
         if ctx.env.LIBTYPE == "STATIC":
@@ -37,7 +38,7 @@ def check_libraries(ctx):
         add(libraries, "imf", "intlc", "svml", "irng")
 
     if ctx.env.SOLVER == "CUDA":
-        add(libraries, "cudart", "cublas")
+        add(libraries, "cudart", "cublas", "cusolver", "cusparse")
 
     if ctx.env.SOLVER == "MUMPS":
         add(libraries, "ifcore")
@@ -130,14 +131,13 @@ def set_compiler_defines(ctx):
     if ctx.env.DEBUG == "1":
         ctx.env.append_unique("DEFINES", [ "DEBUG" ])
 
-def append_solver_attributes(ctx):
+def append_solver_attributes(ctx, attributes):
     if ctx.env.SOLVER == "MIC" or ctx.env.SOLVER == "CUDA":
         ctx.env.append_unique("DEFINES", ctx.env.SOLVER)
     ctx.env.append_unique("DEFINES", [ "SOLVER_{0}".format(ctx.env.SOLVER) ])
 
-    for attribute in ctx.env.table:
-        if attribute.find("SOLVER::") != -1:
-            ctx.env.append_unique(attribute.split("::")[1], ctx.env[attribute])
+    for attribute in attributes:
+        ctx.env.append_unique(attribute[0], ctx.env["SOLVER::" + attribute[0]])
 
 def check_environment(ctx):
     if ctx.env.CHECK_ENV == "0":
