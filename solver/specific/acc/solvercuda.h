@@ -2,7 +2,7 @@
 //#define SPARSE_SOLVER_H_
 
 #include <cusolverSp.h>
-#include </usr/local/cuda-7.5/include/cusolverSp_LOWLEVEL_PREVIEW.h> // Espreso-WS 
+#include </usr/local/cuda-7.5/include/cusolverSp_LOWLEVEL_PREVIEW.h> // Espreso-WS
 //#include </apps/all/CUDA/7.5/include/cusolverSp_LOWLEVEL_PREVIEW.h> // Anselm
 
 #include "../sparsesolver.h"
@@ -110,7 +110,7 @@ public:
 	void ImportMatrix_fl(SparseMatrix & A);
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
 
-	void Factorization(const std::string &str);
+	int Factorization(const std::string &str);
 	void Clear();
 	void SetThreaded();
 

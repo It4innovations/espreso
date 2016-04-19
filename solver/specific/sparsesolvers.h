@@ -39,10 +39,11 @@ namespace espreso {
 
 
 #elif defined(SOLVER_CUDA)
+#include "cpu/solvermkl.h"
 #include "acc/solvercuda.h"
 
 namespace espreso {
-	typedef SparseSolverCUDA SparseSolverCPU;
+	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverCUDA SparseSolverAcc;
 }
 

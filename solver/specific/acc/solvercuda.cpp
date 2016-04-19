@@ -90,7 +90,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	m_factorized = 0;
 
 	// Initialize cuSolver context and CUDA stream
-	CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS 
+	CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS
 	CHECK_SO(cusolverSpCreate(&soHandle));
 	CHECK_ERR(cudaStreamCreate(&cuStream));
 	CHECK_SO(cusolverSpSetStream(soHandle, cuStream));
@@ -136,7 +136,7 @@ void SparseSolverCUDA::Clear() {
 		// }
 
 		initialized = false;
-	} 
+	}
 	// else if (keep_buffer == true && D_buffer != NULL) {
 	// 	CHECK_ERR(cudaFree(D_buffer));
 	// 	D_buffer = NULL;
@@ -547,7 +547,7 @@ void SparseSolverCUDA::SetThreaded() {
     iparm[2]  = num_procs;
 }
 
-void SparseSolverCUDA::Factorization(const std::string &str) {
+int SparseSolverCUDA::Factorization(const std::string &str) {
 	// printf("---Factorization\n");
 
 	// Keeps factorization
@@ -611,6 +611,8 @@ void SparseSolverCUDA::Factorization(const std::string &str) {
 		if(reorder)
 			rhs_sol_reordered.resize(m_Kplus_size);
 	}
+
+	return 0;
 }
 
 void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
