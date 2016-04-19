@@ -176,7 +176,7 @@ void LinearSolver::init(
 			Tinv.mtype = 11;
 			Tinv.ImportMatrix(T_mat[d]);
 			std::stringstream ss;
-			ss << "Init averaging -> rank: " << config::MPIrank << ", subdomain: " << d;
+			ss << "Init averaging -> rank: " << config::env::MPIrank << ", subdomain: " << d;
 			Tinv.Factorization(ss.str());
 
 			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
@@ -340,7 +340,7 @@ void LinearSolver::init(
 	 TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
 	 timeSolKproc.start();
 
-	ESLOG(MEMORY) << "Before K reg. and fact. process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Before K reg. and fact. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
@@ -351,7 +351,7 @@ void LinearSolver::init(
 	 KregMem.endWithoutBarrier( GetProcessMemory_u() );
 	 //KregMem.printLastStatMPIPerNode();
 
-	ESLOG(MEMORY) << "After import K process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "After import K process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (config::info::printMatrices) {
@@ -404,7 +404,7 @@ void LinearSolver::init(
 	KFactMem.endWithoutBarrier( GetProcessMemory_u() );
 	//KFactMem.printLastStatMPIPerNode();
 
-	ESLOG(MEMORY) << "After K solver setup process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "After K solver setup process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	timeSolKproc.endWithBarrier();
@@ -420,7 +420,7 @@ void LinearSolver::init(
 		 timeHFETIprec.endWithBarrier();
 		 timeEvalMain.addEvent(timeHFETIprec);
 
-		ESLOG(MEMORY) << "After HFETI preprocessing process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "After HFETI preprocessing process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	}
@@ -432,7 +432,7 @@ void LinearSolver::init(
     	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
 
 		ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
-		ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
@@ -442,7 +442,7 @@ void LinearSolver::init(
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
 		ESLOG(MEMORY) << "Created G1 per cluster";
-		ESLOG(MEMORY) << "Before HFETI create GGt process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "Before HFETI create GGt process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
@@ -458,7 +458,7 @@ void LinearSolver::init(
 
     	timeSolPrec2.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec2);
 
-    	ESLOG(MEMORY) << "After HFETI full preprocess process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+    	ESLOG(MEMORY) << "After HFETI full preprocess process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
     }
 
@@ -479,7 +479,7 @@ void LinearSolver::init(
 		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
 		 //KSCMem.printLastStatMPIPerNode();
 
-		ESLOG(MEMORY) << "After K inv. process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "After K inv. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	}
@@ -746,7 +746,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
 		ESLOG(MEMORY) << "Solver Preprocessing";
-		ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
@@ -756,7 +756,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
 		ESLOG(MEMORY) << "Created G1 per cluster";
-		ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
@@ -765,7 +765,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	ESLOG(MEMORY) << "Preprocessing";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	 TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - pre-processing"); cluster_SetClusterPC_time.start();
@@ -774,7 +774,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 
 	ESLOG(MEMORY) << "Preprocessing end";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 

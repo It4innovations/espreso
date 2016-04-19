@@ -136,10 +136,10 @@ void TimeEvent::evaluateMPI() {
 	evaluate();
 
 	MPI_Reduce(&avgTime, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_avgTime = g_avgTime / config::MPIsize;
+	g_avgTime = g_avgTime / config::env::MPIsize;
 
 	MPI_Reduce(&sumTime, &g_sumTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_sumTime = g_sumTime / config::MPIsize;
+	g_sumTime = g_sumTime / config::env::MPIsize;
 
 	MPI_Reduce(&minTime, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&maxTime, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -198,7 +198,7 @@ void TimeEvent::printLastStatMPI(double totalTime) {
 	double d_time = eventTime.back();
 
 	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_avgTime = g_avgTime / config::MPIsize;
+	g_avgTime = g_avgTime / config::env::MPIsize;
 
 	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -218,8 +218,8 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 	double d_time = eventTime.back();
 	std::vector<double> d_all_times;
 
-	if(config::MPIrank == 0) {
-		d_all_times.resize(config::MPIsize);
+	if(config::env::MPIrank == 0) {
+		d_all_times.resize(config::env::MPIsize);
 	} else {
 		d_all_times.resize(1);
 	}
@@ -227,7 +227,7 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 	MPI_Gather(&d_time, 1, MPI_DOUBLE, &d_all_times[0], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	g_avgTime= g_avgTime / config::MPIsize;
+	g_avgTime= g_avgTime / config::env::MPIsize;
 
 	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -241,7 +241,7 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 		<< (totalTime != 0 ? 100.0 * g_avgTime / totalTime : INFINITY);
 
 	std::stringstream ss;
-	for (eslocal i = 0; i < config::MPIsize; i++) {
+	for (eslocal i = 0; i < config::env::MPIsize; i++) {
 		ss << std::fixed << std::setw(3) << "R: " << std::setw(5) << i << std::setw(15) << d_all_times[i];
 
 		if ((i + 1) % 10 == 0) {

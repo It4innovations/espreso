@@ -34,7 +34,7 @@ espreso::Point VTK::shrink(const Point &p,
 void VTK::store(const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << config::MPIrank << ".vtk";
+	ss << _path << config::env::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
@@ -48,7 +48,7 @@ void VTK::store(const std::vector<std::vector<eslocal> > &points, double shrinkS
 void VTK::store(double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << config::MPIrank << ".vtk";
+	ss << _path << config::env::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();
@@ -62,7 +62,7 @@ void VTK::store(double shrinkSubdomain, double shringCluster)
 void VTK::store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster)
 {
 	std::stringstream ss;
-	ss << _path << config::MPIrank << ".vtk";
+	ss << _path << config::env::MPIrank << ".vtk";
 	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head();

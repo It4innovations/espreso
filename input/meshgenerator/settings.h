@@ -33,7 +33,7 @@ struct Settings {
 	Settings(const Options &options, size_t index, size_t size);
 	Settings(size_t index, size_t size);
 
-	static std::vector<Description> description;
+	std::vector<Description> description;
 
 	size_t index;
 	size_t size;

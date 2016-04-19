@@ -205,7 +205,7 @@ public:
 	{
 		std::stringstream dir, file, mkdir;
 
-		dir << config::info::output << "/" << config::MPIrank << "/";
+		dir << config::info::output << "/" << config::env::MPIrank << "/";
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();

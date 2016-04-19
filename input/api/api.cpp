@@ -85,14 +85,14 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 	std::sort(sBuffer.begin(), sBuffer.end());
 
 	for (size_t n = 0; n < _neighbours.size(); n++) {
-		if (_neighbours[n] != config::MPIrank) {
+		if (_neighbours[n] != config::env::MPIrank) {
 			rBuffer[n].resize(sizes[n]);
 		}
 	}
 
 	size_t rCounter = 0;
 	for (size_t n = 0; n < _neighbours.size(); n++) {
-		if (_neighbours[n] != config::MPIrank) {
+		if (_neighbours[n] != config::env::MPIrank) {
 			MPI_Isend(sBuffer.data(),       _size * sizeof(esglobal), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + rCounter++);
 			MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(esglobal), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + rCounter++);
 		}
@@ -103,7 +103,7 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _size);
 	std::vector<std::set<int> > realNeighbour(threads);
 
-	size_t pushMyRank = std::lower_bound(_neighbours.begin(), _neighbours.end(), config::MPIrank) - _neighbours.begin();
+	size_t pushMyRank = std::lower_bound(_neighbours.begin(), _neighbours.end(), config::env::MPIrank) - _neighbours.begin();
 
 	boundaries.resize(_size);
 	#pragma cilk grainsize = 1
@@ -112,7 +112,7 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 
 			for (size_t n = 0; n < _neighbours.size(); n++) {
 				if (n == pushMyRank) {
-					boundaries[i].push_back(config::MPIrank);
+					boundaries[i].push_back(config::env::MPIrank);
 				}
 				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), _ids[i * _DOFs] / _DOFs);
 				if (it != rBuffer[n].end() && *it == _ids[i * _DOFs] / _DOFs) {
@@ -121,7 +121,7 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 				}
 			}
 			if (_neighbours.size() == pushMyRank) {
-				boundaries[i].push_back(config::MPIrank);
+				boundaries[i].push_back(config::env::MPIrank);
 			}
 
 		}

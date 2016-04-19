@@ -4,10 +4,17 @@
 
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 namespace espreso {
 
+namespace input {
+class Description;
+}
+
 namespace config {
+
+
 
 enum FetiMethod {
 	TOTAL_FETI,
@@ -43,11 +50,27 @@ enum F0Solver {
 	DOUBLE_PRECISION = 1
 };
 
-extern int MPIrank;
-extern int MPIsize;
-extern std::string executable;
+namespace env {
+	extern int MPIrank;
+	extern int MPIsize;
+
+	extern size_t MKL_NUM_THREADS;
+	extern size_t OMP_NUM_THREADS;
+	extern size_t SOLVER_NUM_THREADS;
+	extern size_t PAR_NUM_THREADS;
+	extern size_t CILK_NWORKERS;
+
+	extern std::string executable;
+	extern std::string configurationFile;
+
+	extern std::vector<input::Description> description;
+};
 
 namespace mesh {
+	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA, GENERATOR };
+	extern int input;
+	extern std::string path;
+
 	extern size_t subdomains;
 	extern size_t fixPoints;
 
@@ -59,16 +82,15 @@ namespace mesh {
 	extern bool averageEdges;
 	extern bool averageFaces;
 
-	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA, GENERATOR };
-	extern Input input;
-
 	extern double materialDifference;
-}
+
+	extern std::vector<input::Description> description;
+};
 
 namespace output {
 
 	enum Output { VTK, ESDATA }; // only VTK_FULL is working
-	extern Output output;
+	extern Output format;
 
 	extern bool saveMesh;
 	extern bool saveFixPoints;
@@ -81,15 +103,19 @@ namespace output {
 
 	extern double subdomainShrinkRatio;
 	extern double clusterShrinkRatio;
-}
+
+	extern std::vector<input::Description> description;
+};
 
 namespace assembler {
 	enum Discretization { FEM, BEM, API };
-	extern Discretization discretization;
+	extern int discretization;
 
-	enum Assembler { LinearElasticity, Temperature };
-	extern Assembler assembler;
-}
+	enum Physics { LinearElasticity, Temperature };
+	extern int physics;
+
+	extern std::vector<input::Description> description;
+};
 
 namespace solver {
 	extern double   epsilon;					// Solver requested precision
@@ -107,10 +133,10 @@ namespace solver {
 	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
 												// 1 - DIRECT SP if KSOLVER is DIRECT SP
 												// 1 - Direct DP if KSOLVER is DIRECT SP
-    extern size_t   N_MICS;
+	extern size_t   N_MICS;
 
-
-}
+	extern std::vector<input::Description> description;
+};
 
 namespace info {
 	extern std::string output;
@@ -120,11 +146,9 @@ namespace info {
 	extern size_t measureLevel;
 
 	extern bool printMatrices;
-}
 
-namespace tmp{
-	extern size_t DOFS;
-}
+	extern std::vector<input::Description> description;
+};
 
 }
 

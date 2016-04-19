@@ -307,19 +307,19 @@ void ClusterAcc::SetupKsolvers ( ) {
 
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
-            ss << "init -> rank: " << config::MPIrank << ", subdomain: " << d;
+            ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
             if (config::solver::KSOLVER != 1) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {
             domains[d].Kplus.keep_factors = false;
-            domains[d].Kplus.MPIrank = config::MPIrank;
+            domains[d].Kplus.MPIrank = config::env::MPIrank;
         }
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-        if ( d == 0 && config::MPIrank == 0) {
+        if ( d == 0 && config::env::MPIrank == 0) {
         	domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
     }

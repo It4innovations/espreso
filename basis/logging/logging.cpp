@@ -22,7 +22,7 @@ static void printStack()
 	char** functions = backtrace_symbols(stack.data(), size);
 
 	std::stringstream command;
-	command << "addr2line -sipfC -e " << config::executable;
+	command << "addr2line -sipfC -e " << config::env::executable;
 	for (size_t i = 0; i < size; i++) {
 		std::string function(functions[i]);
 		size_t begin = function.find_last_of('[') + 1;
@@ -37,16 +37,16 @@ static void printStack()
 Info::~Info()
 {
 	if (_plain) {
-		if (config::MPIrank == 0) {
+		if (config::env::MPIrank == 0) {
 			std::cout << os.str();
 		}
 		return;
 	}
-	if (event == ERROR || (event == GLOBAL_ERROR && config::MPIrank == 0)) {
+	if (event == ERROR || (event == GLOBAL_ERROR && config::env::MPIrank == 0)) {
 		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n\n\n", config::MPIrank);
+		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
 
-		if (config::executable.size()) {
+		if (config::env::executable.size()) {
 			printStack();
 		}
 
@@ -56,7 +56,7 @@ Info::~Info()
 
 	os << std::endl;
 
-	if (config::MPIrank != 0) {
+	if (config::env::MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -85,7 +85,7 @@ Measure::~Measure()
 
 	os << std::endl;
 
-	if (config::MPIrank != 0) {
+	if (config::env::MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -95,7 +95,7 @@ Measure::~Measure()
 
 void Measure::evaluateCheckpoints()
 {
-	if (config::MPIrank != 0) {
+	if (config::env::MPIrank != 0) {
 		return;
 	}
 

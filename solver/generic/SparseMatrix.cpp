@@ -3014,7 +3014,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  int MPI_rank=config::MPIrank;
+  int MPI_rank=config::env::MPIrank;
   double begin_time = omp_get_wtime();
 
 // DEFAULT SET-UP
@@ -3402,7 +3402,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     if (SC_via_K_rr){
       S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
       K_rr_solver.ImportMatrix(K_rr);
-      ss << "get kerner from K -> rank: " << config::MPIrank;
+      ss << "get kerner from K -> rank: " << config::env::MPIrank;
       int error_K_rr = K_rr_solver.Factorization(ss.str());
 
 
@@ -3552,7 +3552,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     if (!SC_via_K_rr) {
       K_rr_solver.ImportMatrix(K_rr);
       K_rr.Clear();
-      ss << "get kerner from K -> rank: " << config::MPIrank;
+      ss << "get kerner from K -> rank: " << config::env::MPIrank;
       K_rr_solver.Factorization(ss.str());
     }
     K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
@@ -3683,7 +3683,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
     std::stringstream sss;
-    sss << "get kernel from K -> rank: " << config::MPIrank;
+    sss << "get kernel from K -> rank: " << config::env::MPIrank;
     NtN.Factorization(ss.str());
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();
@@ -3711,7 +3711,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //  SparseSolverCPU K_solver;
 //  std::stringstream ss2;
 //  K_solver.ImportMatrix(K);
-//  ss2 << "testing factorization of regularized K -> rank: " << config::MPIrank;
+//  ss2 << "testing factorization of regularized K -> rank: " << config::env::MPIrank;
 //  int error_reg = K_solver.Factorization(ss2.str());
 //
 //

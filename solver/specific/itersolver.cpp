@@ -1338,7 +1338,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		std::stringstream ss;
-		ss << "Create GGt -> rank: " << config::MPIrank;
+		ss << "Create GGt -> rank: " << config::env::MPIrank;
 		GGt.Factorization(ss.str());
 		ESINFO(PROGRESS2) << "Factorization = " << omp_get_wtime() - t1;
 
@@ -1510,7 +1510,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
 	GGt_tmp.SetThreaded();
 	std::stringstream ss;
-	ss << "Create GGt_inv_dist-> rank: " << config::MPIrank;
+	ss << "Create GGt_inv_dist-> rank: " << config::env::MPIrank;
 	GGt_tmp.Factorization(ss.str());
 	GGtFactor_time.end();
 	//GGtFactor_time.printLastStatMPIPerNode();

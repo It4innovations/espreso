@@ -62,7 +62,7 @@ public:
 		TimeEvent tPartition("partition"); tPartition.start();
 		partitiate(mesh._partPtrs);
 		tPartition.end(); measurement.addEvent(tPartition);
-		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::MPIsize
+		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
 				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
 		TimeEvent tFixPoints("fix points"); tFixPoints.start();

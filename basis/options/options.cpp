@@ -15,7 +15,7 @@ using namespace espreso;
 using namespace input;
 
 Options::Options(int* argc, char*** argv)
-: executable((*argv)[0]), verboseLevel(0), testingLevel(0), measureLevel(0)
+: executable((*argv)[0])
 {
 	auto printOption = [] (const std::string &opt, const std::string &desc) {
 		if (opt.length() < 16) {
@@ -24,8 +24,6 @@ Options::Options(int* argc, char*** argv)
 			ESINFO(ALWAYS) << "\t" << opt << "\t" << desc;
 		}
 	};
-
-	setFromFile("espreso.config");
 
 	int option_index, option;
 	while (true) {
@@ -36,13 +34,13 @@ Options::Options(int* argc, char*** argv)
 
 		switch (option) {
 		case 'v':
-			verboseLevel++;
+			config::info::verboseLevel++;
 			break;
 		case 't':
-			testingLevel++;
+			config::info::testingLevel++;
 			break;
 		case 'm':
-			measureLevel++;
+			config::info::measureLevel++;
 			break;
 		case 'i':
 			input = std::string(optarg);
@@ -54,11 +52,11 @@ Options::Options(int* argc, char*** argv)
 			break;
 		case 'c': {
 			std::string config(optarg);
+			config::env::configurationFile = config;
 			std::ifstream file(config);
 			if (!file.is_open()) {
 				ESINFO(ERROR) << "Cannot load configuration file '" << config << "'";
 			}
-			setFromFile(config);
 			break;
 		}
 		case 'h':
@@ -82,13 +80,26 @@ Options::Options(int* argc, char*** argv)
 		}
 	}
 
+	Configuration::fill(config::env::description, config::env::configurationFile);
+	Configuration::fill(config::mesh::description, config::env::configurationFile);
+	Configuration::fill(config::solver::description, config::env::configurationFile);
+	Configuration::fill(config::output::description, config::env::configurationFile);
+	Configuration::fill(config::info::description, config::env::configurationFile);
+	Configuration::fill(config::assembler::description, config::env::configurationFile);
+
+	if (path.size()) {
+		config::mesh::path = path;
+	} else {
+		path = config::mesh::path;
+	}
+
 	if (!path.size()) {
 		if (*argc < 2) { // compatibility with old version of ESPRESO binary
 			ESINFO(ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
 		} else {
 			path = (*argv)[1];
-			verboseLevel = 3;
-			measureLevel = 3;
+			config::info::verboseLevel = 3;
+			config::info::measureLevel = 3;
 			optind++;
 		}
 	}
@@ -98,19 +109,6 @@ Options::Options(int* argc, char*** argv)
 	}
 
 	configure();
-}
-
-void Options::setFromFile(const std::string &file)
-{
-	std::vector<Description> description = {
-			{STRING_PARAMETER, "PATH", "A path to an example."},
-			{STRING_PARAMETER, "INPUT", "An input format: [generator, matsol, workbench, esdata, openfoam]"}
-	};
-
-	Configuration configuration(description, file);
-
-	path = configuration.value("PATH", path);
-	input = configuration.value("INPUT", input);
 }
 
 static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
@@ -129,16 +127,12 @@ static void signalHandler(int signal)
 
 void Options::configure()
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
-	config::executable = executable;
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
+	config::env::executable = executable;
 
 	std::signal(SIGFPE, signalHandler);
 	std::signal(SIGSEGV, signalHandler);
-
-	config::info::verboseLevel += verboseLevel;
-	config::info::testingLevel += testingLevel;
-	config::info::measureLevel += measureLevel;
 
 	std::vector<std::pair<std::string, config::mesh::Input> > inputs = {
 			{ "GENERATOR", config::mesh::GENERATOR },
@@ -164,9 +158,6 @@ std::ostream& operator<<(std::ostream& os, const Options &options)
 {
 	os << "input: '" << options.input << "'\n";
 	os << "path: '" << options.path << "'\n";
-	os << "verbosity level: " << options.verboseLevel << "\n";
-	os << "testing level: " << options.testingLevel << "\n";
-	os << "time measuring level: " << options.measureLevel << "\n";
 	os << "nameless: ";
 	for (size_t i = 0; i < options.nameless.size(); i++) {
 		os << options.nameless[i] << " ";

@@ -199,7 +199,7 @@ void OpenFOAM::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neigh
 		boundaries[i].resize(std::unique(boundaries[i].begin(), boundaries[i].end()) - boundaries[i].begin());
 	}
 
-	neighs.erase(config::MPIrank);
+	neighs.erase(config::env::MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 
