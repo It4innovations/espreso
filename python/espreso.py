@@ -6,8 +6,8 @@ import config_espreso_python
 import pylab as plt
 import scipy.sparse.linalg as spla
 
-n_clus          = 2
-n_subPerClust   = 4
+n_clus          = 8
+n_subPerClust   = 64
 
 
 
@@ -26,6 +26,7 @@ vec_c       = []
 vec_weight  = []
 vec_index_weight = []
 mat_Schur   = []
+#mat_SchurEspreso = []
 for i in range(n_clus): 
     mat_K.append([])
     mat_Kreg.append([])
@@ -36,6 +37,7 @@ for i in range(n_clus):
     vec_c.append([])
     vec_weight.append([])
     vec_index_weight.append([])
+#    mat_SchurEspreso.append([])
     mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
     for j in range(n_subPerClust):  
         mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
@@ -43,6 +45,7 @@ for i in range(n_clus):
         mat_B0[i].append(mM.load_matrix(path,'B0',i,j,makeSparse=True,makeSymmetric=False))
         mat_B1[i].append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
         mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
+#        mat_SchurEspreso[i].append(mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True))
         vec_f[i].append(mM.load_vector(path,'f',i,j))
         vec_c[i].append(mM.load_vector(path,'c',i,j))
         vec_weight[i].append(mM.load_vector(path,'weight',i,j))
@@ -53,66 +56,86 @@ for i in range(n_clus):
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
 ###############################################################################   
-
-
-
+S_from_espreso = True
 conf = config_espreso_python
-
 if conf.precondDualSystem=='dirichlet':
     for i in range(len(mat_K)):
         mat_Schur.append([])
         for j in range(len(mat_K[i])):
-            I = np.arange(0,mat_K[i][j].shape[0])
             _B1 = mat_B1[i][j].copy()
             J = np.unique(_B1.tocoo().col)            
-            I = np.delete(I,J)
-            K_II = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
-            K_IJ = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(J)].toarray()
-            K_JJ = mat_K[i][j][np.array(J)[:,np.newaxis],np.array(J)].toarray()
-            iK_II = spla.splu(K_II)
-            iK_II_K_IJ = np.zeros(K_IJ.shape)
-            for k in range(K_IJ.shape[1]):
-                iK_II_K_IJ[:,k] = iK_II.solve(K_IJ[:,k])
-            mat_Schur[i].append([J,K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)])
-
+            if S_from_espreso:
+                mat_Schur[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
+            else:
+                I = np.arange(0,mat_K[i][j].shape[0])
+                I = np.delete(I,J)
+                K_II = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
+                K_IJ = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(J)].toarray()
+                K_JJ = mat_K[i][j][np.array(J)[:,np.newaxis],np.array(J)].toarray()
+                iK_II = spla.splu(K_II)
+                iK_II_K_IJ = np.zeros(K_IJ.shape)
+                for k in range(K_IJ.shape[1]):
+                    iK_II_K_IJ[:,k] = iK_II.solve(K_IJ[:,k])
+                mat_Schur[i].append([J,K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)])
+            print('Dir. precond: ',i,j)
+ijv_B0ker     = []          
+for i in range(len(mat_K)):
+    ijv_B0ker.append([]) 
+    for j in range(len(mat_K[i])):
+        ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0])]) 
 
 if True:
-    mat_B0ker   = []
-    
-    i_B0ker     = []
-    j_B0ker     = []
-    v_B0ker     = []
     for i in range(len(mat_B0)):
-
-        mat_B0ker.append([])
-        i_B0ker.append([])
-        j_B0ker.append([])
-        v_B0ker.append([])
-        
+        cnt_ijv = 0
         for j in range(len(mat_B0[i])-1):
             for k in range(j+1,len(mat_B0[i])):
-                tmpB_jk = sparse.hstack([np.abs(mat_B0[i][j]),np.abs(mat_B0[i][k])])
+                tmpB_jk = sparse.hstack([np.abs(mat_B1[i][j]),np.abs(mat_B1[i][k])])
+                tmpB_jk = tmpB_jk.astype(bool)
+                tmpB_jk = tmpB_jk.astype(int)
                 indx = np.ravel(tmpB_jk.sum(1)==2) 
 
-                if (np.sum(indx)>0):
-                                        
-                    iB0_j_bool = np.zeros(mat_B0[i][j].shape[1],dtype=bool)
-                    ij         = mat_B0[i][j].tocsr().indices
+                if (np.sum(indx)>89):
+                    print('YES ............... clust: ',i,'--',j,k, np.sum(indx))
                     
-                    iB0_k_bool = np.zeros(mat_B0[i][k].shape[1],dtype=bool)
-                    ik         = mat_B0[i][k].tocsr().indices
-                    
-                    iB0_j = mat_B0[i][j].tocsr()[indx,:].indices
-                    iB0_k = mat_B0[i][k].tocsr()[indx,:].indices
+                    iB0_j = mat_B1[i][j].tocsr()[indx,:].indices
+                    iB0_k = mat_B1[i][k].tocsr()[indx,:].indices
 
                     R_g_j = mat_R[i][j].toarray()[iB0_j,:]
                     R_g_k = mat_R[i][k].toarray()[iB0_k,:]
                     
-                    print(R_g_j-R_g_k)
-
+                    _nj = iB0_j.shape[0];  _nk = iB0_k.shape[0]
                     
+                    for l in range(R_g_j.shape[1]):
 
-#plt.clf()
+                        _i_j = cnt_ijv*np.ones(_nj,dtype=np.int32)
+                        _j_j = iB0_j
+                        _v_j = R_g_j[:,l]
+                        ijv_B0ker[i][j][0] = np.concatenate((ijv_B0ker[i][j][0],_i_j))
+                        ijv_B0ker[i][j][1] = np.concatenate((ijv_B0ker[i][j][1],_j_j))
+                        ijv_B0ker[i][j][2] = np.concatenate((ijv_B0ker[i][j][2],_v_j))
+                                                
+                        _i_k = cnt_ijv*np.ones(_nk,dtype=np.int32)
+                        _j_k = iB0_k
+                        _v_k = -R_g_k[:,l]
+                        ijv_B0ker[i][k][0] = np.concatenate((ijv_B0ker[i][k][0],_i_k))
+                        ijv_B0ker[i][k][1] = np.concatenate((ijv_B0ker[i][k][1],_j_k))
+                        ijv_B0ker[i][k][2] = np.concatenate((ijv_B0ker[i][k][2],_v_k))
+                                                
+                        cnt_ijv += 1
+                else:
+                    print('NO  ............... clust: ',i,'--',j,k)                                
+    mat_B0ker      = []                    
+    for i in range(len(mat_B0)):
+        mat_B0ker.append([])
+        n = np.max(ijv_B0ker[i][-1][0])+1
+        for j in range(len(mat_B0[i])):
+            I = ijv_B0ker[i][j][0][1::]
+            J = ijv_B0ker[i][j][1][1::] 
+            V = ijv_B0ker[i][j][2][1::]
+            m = mat_B0[i][j].shape[1]
+            tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).tocsc()
+            mat_B0ker[i].append(tmp)
+    mat_B0 = mat_B0ker
 
 u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
                             vec_index_weight,mat_R)

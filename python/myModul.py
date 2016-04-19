@@ -86,6 +86,8 @@ class  KPLUS_HTFETI:
             for i in range(R[0].shape[1]):
                 S_alpha[i,i] += rho
 #
+        np.savetxt('F0',F0)
+        np.savetxt('S_alpha',S_alpha)
         self.iS_alpha = DENS_SOLVE(S_alpha)           
 #     
     def __mul__(self,f):

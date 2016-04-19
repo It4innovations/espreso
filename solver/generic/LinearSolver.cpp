@@ -315,6 +315,14 @@ void LinearSolver::init(
 
 			cluster.domains[d].Prec = S;
 
+	    if (config::info::printMatrices) {
+        std::ofstream osS(Logging::prepareFile(d, "S"));
+        osS << S;
+        osS.close();
+      }
+
+
+
 			ESINFO(PROGRESS2) << Info::plain() << ".";
 		}
 		ESINFO(PROGRESS2);
