@@ -2,7 +2,7 @@
 //#define SPARSE_SOLVER_H_
 
 #include <cusolverSp.h>
-#include </usr/local/cuda-7.5/include/cusolverSp_LOWLEVEL_PREVIEW.h> // Espreso-WS
+#include <cusolverSp_LOWLEVEL_PREVIEW.h> // Espreso-WS
 //#include </apps/all/CUDA/7.5/include/cusolverSp_LOWLEVEL_PREVIEW.h> // Anselm
 
 #include "../sparsesolver.h"
