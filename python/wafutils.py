@@ -52,6 +52,9 @@ def check_libraries(ctx):
 def check_headers(ctx):
     headers = [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]
 
+    if ctx.env.SOLVER == "CUDA":
+        headers += [ "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h" ]
+
     for header in headers:
         ctx.check_cxx(
             header_name = header,
