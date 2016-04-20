@@ -46,7 +46,22 @@ class DENS_SOLVE:
         self.L = np.linalg.cholesky(A) 
     def solve(self,x):
         z = np.linalg.solve(self.L,x)
-        return np.linalg.solve(self.L.transpose(),z)        
+        return np.linalg.solve(self.L.transpose(),z)    
+###############################################################################
+class SPARSE_SOLVE: 
+    # solving of A*x = b with A = L*Lt
+    # x = Lt^-1 * ( L^-1 * b)
+    def __init__(self, A):
+        self.A = A 
+        self.dA = np.sqrt(A.diagonal());
+        nA = A.shape[0]
+        S  = sparse.spdiags(1.0/self.dA,0,nA,nA)
+        SAS = sparse.csc_matrix.dot(S,A)
+        SAS = sparse.csc_matrix.dot(SAS,S)
+        self.iA = spla.splu(SAS) 
+    def solve(self,b):
+        z = self.iA.solve(b)*self.dA
+        return z        
 ###############################################################################       
 class KPLUS:
     def __init__(self,Areg):
@@ -103,8 +118,6 @@ class  KPLUS_HTFETI:
                 jF0 = np.concatenate((jF0,_j))               
                 vF0 = np.concatenate((vF0,F0i.ravel()))                
                 
-
-                
                 
                 #F0[np.ix_(_ind,_ind)] += F0i
               
@@ -112,15 +125,25 @@ class  KPLUS_HTFETI:
         F0_sp = sparse.csc_matrix((vF0,(iF0,jF0)),shape=(_m,_m)).tocsc()
             
         #np.savetxt('F0',F0)
-        np.savetxt('F0_sp',F0_sp.toarray())            
-            
-        self.iF0 = DENS_SOLVE(F0_sp.toarray())
-        #self.iF0 = spla.splu(F0_sp)
+#        np.savetxt('F0_sp',F0_sp.toarray())
+
+#        self.iF0 = DENS_SOLVE(F0_sp.toarray())
+#        self.iF0sp = SPARSE_SOLVE(F0_sp)
+        self.iF0 = spla.splu(F0_sp)
 #
+#        ee  = np.ones(_m)
+#        print(self.iF0.solve(ee))
+#        print(self.iF0sp_.solve(ee))
+#        err = np.linalg.norm(self.iF0sp_.solve(ee)-self.iF0.solve(ee))        
+#        print(err)
+        
+        
         S_alpha_from_ESPRESO = False
         if (not S_alpha_from_ESPRESO):
             G0d = self.G0.toarray()
-            iF0_G0d = self.iF0.solve(G0d)        
+            iF0_G0d = np.zeros(G0d.shape)
+            for i in range(G0d.shape[1]):
+                iF0_G0d[:,i] = self.iF0.solve(G0d[:,i])        
             S_alpha = np.dot(G0d.T,iF0_G0d)
             rho = S_alpha[0,0]
             for i in range(R[0].shape[1]):
