@@ -9,7 +9,7 @@ import scipy.sparse.linalg as spla
 
 
 n_clus          = 1
-n_subPerClust   = 4
+n_subPerClust   = 27
 
 
 
