@@ -128,8 +128,14 @@ public:
 
 	eslocal  CopyToCUDA_Dev ();
 	eslocal  CopyToCUDA_Dev_fl ();
+
+	eslocal MallocOnCUDA_Dev (  );
+	eslocal MallocOnCUDA_Dev_fl (  );
+
 	void CopyFromCUDA_Dev();
+
 	void FreeFromCUDA_Dev();
+	void FreeFromCUDA_Dev_fl();
 
 	void MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out);
 	void MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose);

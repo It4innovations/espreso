@@ -20,6 +20,7 @@ public:
 	void ImportMatrix_fl(SparseMatrix & A);
 
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
+	void ImportMatrix_wo_Copy_fl(SparseMatrix & A);
 
 	int Factorization(const std::string &str);
 	void Clear();

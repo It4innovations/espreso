@@ -45,9 +45,6 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         time_eval.timeEvents[2].end();
 
     }
-    time_eval.totalTime.start();
-
-
 
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
