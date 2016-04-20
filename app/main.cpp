@@ -11,9 +11,9 @@ int main(int argc, char **argv)
 
 	Options options(&argc, &argv);
 
-	std::cout << "USE_SCHUR_COMPLEMENT - " << config::solver::USE_SCHUR_COMPLEMENT << std::endl;
-	std::cout << "SCHUR_COMPLEMENT_PREC - " << config::solver::SCHUR_COMPLEMENT_PREC << std::endl;
-	std::cout << "COMBINE_SC_AND_SPDS - " << config::solver::COMBINE_SC_AND_SPDS << std::endl;
+	//std::cout << "USE_SCHUR_COMPLEMENT - " << config::solver::USE_SCHUR_COMPLEMENT << std::endl;
+	//std::cout << "SCHUR_COMPLEMENT_PREC - " << config::solver::SCHUR_COMPLEMENT_PREC << std::endl;
+	//std::cout << "COMBINE_SC_AND_SPDS - " << config::solver::COMBINE_SC_AND_SPDS << std::endl;
 
 	Factory factory(options);
 	factory.solve(1);

@@ -3,8 +3,8 @@
 WORKDIR=$MEMBERWORK/csc180/
 ESPRESODIR=~/espreso
 EXAMPLEDIR=examples/meshgenerator
-EXAMPLE=cube_elasticity_fixed_bottom.txt
-OUTPUTDIR=~/espreso/results/
+EXAMPLE=cube_temperature.txt #cube_elasticity_fixed_bottom.txt
+OUTPUTDIR=~/espreso/results-Apr2016-CPU-double-heat-cube/
 
 module switch PrgEnv-pgi/5.2.82 PrgEnv-intel/5.2.82
 #module switch intel/14.0.4.211 intel/15.0.2.164 
@@ -28,7 +28,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --cray
+  ./waf configure
 fi
 
 if [ "$1" = "build" ]; then
@@ -41,10 +41,10 @@ el_type=(   0     1      2       3       4       5        6         7)
 if [ "$1" = "run" ]; then
  
   export MKL_NUM_THREADS=1
-  export OMP_NUM_THREADS=8
-  export SOLVER_NUM_THREADS=8
-  export PAR_NUM_THREADS=8
-  export CILK_NWORKERS=8
+  export OMP_NUM_THREADS=1
+  export SOLVER_NUM_THREADS=15
+  export PAR_NUM_THREADS=15
+  export CILK_NWORKERS=15
   
   export PARDISOLICMESSAGE=1
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
@@ -65,23 +65,23 @@ if [ "$1" = "run" ]; then
     
     qsub_command_0="#!/bin/bash;"
     qsub_command_0+="export MKL_NUM_THREADS=1;"
-    qsub_command_0+="export OMP_NUM_THREADS=8;"
-    qsub_command_0+="export SOLVER_NUM_THREADS=8;"
-    qsub_command_0+="export PAR_NUM_THREADS=8;"
-    qsub_command_0+="export CILK_NWORKERS=8;"
+    qsub_command_0+="export OMP_NUM_THREADS=1;"
+    qsub_command_0+="export SOLVER_NUM_THREADS=15;"
+    qsub_command_0+="export PAR_NUM_THREADS=15;"
+    qsub_command_0+="export CILK_NWORKERS=15;"
     qsub_command_0+="export PARDISOLICMESSAGE=1;"
     qsub_command_0+="export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.;"
     qsub_command_0+="export LC_CTYPE=;"
 
 
-  for i in 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
+  for i in 5 6 7 8 9 10 #  11 12 13 # 21 22 23 24 25 26 # 11 12 13 14 15 16 17 18 19 20 # 1 2 3 4 5 6 7 8 9 10 # 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
   do
-    d=13 #${dom_size[${i}]}
+    d=18 #${dom_size[${i}]}
     c= #${corners[${i}]}
 
-    x=8 #${clustt_size_x[${i}]}
-    y=8 #${clustt_size_x[${i}]}
-    z=8 #${clustt_size_x[${i}]}
+    x=11 #${clustt_size_x[${i}]}
+    y=11 #${clustt_size_x[${i}]}
+    z=10 #${clustt_size_x[${i}]}
 
     X=$i #${clusters_x[${i}]}
     Y=$i #${clusters_x[${i}]}
@@ -102,7 +102,8 @@ if [ "$1" = "run" ]; then
     cp -R    $ESPRESODIR/libs/ 	        $WORKDIR/$out_dir
     cp -R    $ESPRESODIR/$EXAMPLEDIR/*  $WORKDIR/$out_dir/$EXAMPLEDIR
     cp       $ESPRESODIR/espreso        $WORKDIR/$out_dir
-    cp       $ESPRESODIR/titan.sh      $WORKDIR/$out_dir
+    cp       $ESPRESODIR/titan.sh       $WORKDIR/$out_dir
+    cp 	     $ESPRESODIR/espreso.config $WORKDIR/$out_dir
     
     qsub_command+="cd $WORKDIR/$out_dir;"
     qsub_command+="ls;"
@@ -120,9 +121,11 @@ if [ "$1" = "run" ]; then
 
     echo $qsub_command | tr ";" "\n" 
     echo $qsub_command | tr ";" "\n" | \
-    qsub -q batch -A $account -l nodes=$(( X * Y * Z )) -l walltime=00:15:00 -N $jobname
+    qsub -q batch -A $account -l nodes=$(( X * Y * Z )) -l walltime=00:20:00 -N $jobname
     #sbatch -N $(( X * Y * Z ))  -p test_large
     # queus: debug, batch, killable 
+
+    echo "watch -n 1 tail -n 60 $WORKDIR/$out_dir/$log_file"  
   done
 
 fi
