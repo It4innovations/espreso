@@ -10,7 +10,7 @@ static void defaultSettings(SphereSettings &settings)
 	settings.innerRadius = 9;
 	settings.outerRadius = 12;
 
-	settings.boundaryCondition = std::vector<double>(2 * 2 * 3);
+	settings.boundaryCondition = std::vector<double>(2 * 2 * 3, std::numeric_limits<double>::infinity());
 }
 
 SphereSettings::SphereSettings(const Options &options, size_t index, size_t size)
@@ -51,7 +51,7 @@ SphereSettings::SphereSettings(const Options &options, size_t index, size_t size
 		for (size_t j = 0; j < properties.size(); j++) {
 			for (size_t k = 0; k < sphere_faces.size(); k++) {
 				description.push_back({
-					properties[j].first + "_" + sphere_faces[k].first + "_" + axis[i].first, boundaryCondition[k * sphere_faces.size() + j * properties.size() + i],
+					properties[j].first + "_" + sphere_faces[k].first + "_" + axis[i].first, boundaryCondition[k * properties.size() * axis.size() + j * properties.size() + i],
 					properties[j].second + " on the " + sphere_faces[k].second + " face in " + axis[i].second + "-axis."
 				});
 			}

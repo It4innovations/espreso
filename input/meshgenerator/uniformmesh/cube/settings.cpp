@@ -47,7 +47,7 @@ CubeSettings::CubeSettings(const Options &options, size_t index, size_t size)
 		for (size_t j = 0; j < properties.size(); j++) {
 			for (size_t k = 0; k < cube_faces.size(); k++) {
 				description.push_back({
-					properties[j].first + "_" + cube_faces[k].first + "_" + axis[i].first, boundaryCondition[k * cube_faces.size() + j * properties.size() + i],
+					properties[j].first + "_" + cube_faces[k].first + "_" + axis[i].first, boundaryCondition[k * properties.size() * axis.size() + j * properties.size() + i],
 					properties[j].second + " on the " + cube_faces[k].second + " face in " + axis[i].second + "-axis."
 				});
 			}

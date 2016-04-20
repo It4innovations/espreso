@@ -44,8 +44,8 @@ inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
 	for (size_t f = 0; f < sphere_faces.size(); f++) {
 		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
 			std::string name = properties[p / 3] + "_" + sphere_faces[f] + "_" + axis[p % 3];
-			if (s.boundaryCondition[f * sphere_faces.size() + p] != std::numeric_limits<double>::infinity()) {
-				os << name << ": " << s.boundaryCondition[f * sphere_faces.size() + p] << "\n";
+			if (s.boundaryCondition[f * 6 + p] != std::numeric_limits<double>::infinity()) {
+				os << name << ": " << s.boundaryCondition[f * 6 + p] << "\n";
 			}
 		}
 	}
