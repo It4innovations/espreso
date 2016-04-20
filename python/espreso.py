@@ -6,8 +6,10 @@ import config_espreso_python
 import pylab as plt
 import scipy.sparse.linalg as spla
 
-n_clus          = 8
-n_subPerClust   = 64
+
+
+n_clus          = 1
+n_subPerClust   = 4
 
 
 
@@ -96,12 +98,22 @@ if True:
 
                 if (np.sum(indx)>89):
                     print('YES ............... clust: ',i,'--',j,k, np.sum(indx))
-                    
+#                    
                     iB0_j = mat_B1[i][j].tocsr()[indx,:].indices
                     iB0_k = mat_B1[i][k].tocsr()[indx,:].indices
 
                     R_g_j = mat_R[i][j].toarray()[iB0_j,:]
                     R_g_k = mat_R[i][k].toarray()[iB0_k,:]
+#
+                    if False:
+                        QQ,RR = np.linalg.qr(np.vstack((R_g_j,R_g_k)))
+                        log_ind = np.abs(np.diag(RR))>1e-10
+                        
+                        
+                        if np.sum(log_ind)<log_ind.shape[0]:
+                            nR = R_g_j.shape[0]
+                            print('B0 reduced -------------------------')
+                            R_g_j = QQ[:nR,log_ind];  R_g_k = QQ[nR:,log_ind]
                     
                     _nj = iB0_j.shape[0];  _nk = iB0_k.shape[0]
                     
@@ -135,14 +147,20 @@ if True:
             m = mat_B0[i][j].shape[1]
             tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).tocsc()
             mat_B0ker[i].append(tmp)
-    mat_B0 = mat_B0ker
+    #mat_B0 = mat_B0ker
 
+print('\nTFETI')
 u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
                             vec_index_weight,mat_R)
-                            
-                            
-uHDP,lamH = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
-                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
+                        
+print('\nHFETI - kernels')    
+uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0ker,mat_B1,vec_c,\
+                        vec_weight,vec_index_weight,mat_R,mat_Salfa)                        
+                        
+#print('\nHFETI - corners')
+#uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
+#                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
+#                        
 #
 norm_del_u = 0
 norm_u = 0

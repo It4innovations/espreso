@@ -69,24 +69,64 @@ class  KPLUS_HTFETI:
         self.G0 = self.G0.tocsc()
         self.B0_Kplus = []
 #                
-        F0 = 0 
-        for j in range(len(B0)): 
-            B0_array = B0[j].toarray()
-            self.B0_Kplus.append(np.zeros(B0_array.shape))
-            for i in range(B0_array.shape[0]):
-                self.B0_Kplus[j][i,:] = self.Kplus[j]*B0_array[i,:]
-            F0 = F0 + np.dot(self.B0_Kplus[j],B0_array.transpose())
-        self.iF0 = DENS_SOLVE(F0)
+#        F0 = 0 
+#        F0 = np.zeros((B0[0].shape[0],B0[0].shape[0]))
+        
+        iF0 = np.array([0],dtype=np.int32)
+        jF0 = np.array([0],dtype=np.int32)
+        vF0 = np.array([0])
+        for j in range(len(B0)):  
+            if False:
+                B0_array = B0[j].toarray()
+                self.B0_Kplus.append(np.zeros(B0_array.shape))
+                for i in range(B0_array.shape[0]):
+                    if B0_array[i,:].any():
+                        self.B0_Kplus[j][i,:] = self.Kplus[j]*B0_array[i,:]  
+                F0i = np.dot(self.B0_Kplus[j],B0_array.transpose())  
+                F0 += F0i
+            else:
+                B0_bool = B0[j]!=0
+                _lind = B0_bool.sum(1) 
+                _ind = _lind.nonzero()[0].A1
+                _n = _ind.shape[0]
+                self.B0_Kplus.append(np.zeros(B0[j].shape))
+                _j = np.zeros(_n*_n)
+                for i in range(_ind.shape[0]):
+                    B0_i = B0[j].getrow(_ind[i]).toarray()[0]  
+                    self.B0_Kplus[j][_ind[i],:] = self.Kplus[j]*B0_i  
+                    _j[i*_n:(i+1)*_n]=_ind
+                     
+                _B0 = B0[j].tocsr()[_ind,:].tocsc() 
+                F0i = sparse.csc_matrix.dot(_B0,self.B0_Kplus[j][_ind,:].T) 
+                
+                iF0 = np.concatenate((iF0,_ind.repeat(_n)))  
+                jF0 = np.concatenate((jF0,_j))               
+                vF0 = np.concatenate((vF0,F0i.ravel()))                
+                
+
+                
+                
+                #F0[np.ix_(_ind,_ind)] += F0i
+              
+        _m = B0[0].shape[0]
+        F0_sp = sparse.csc_matrix((vF0,(iF0,jF0)),shape=(_m,_m)).tocsc()
+            
+        #np.savetxt('F0',F0)
+        np.savetxt('F0_sp',F0_sp.toarray())            
+            
+        self.iF0 = DENS_SOLVE(F0_sp.toarray())
+        #self.iF0 = spla.splu(F0_sp)
 #
         S_alpha_from_ESPRESO = False
         if (not S_alpha_from_ESPRESO):
-            G0d = self.G0.toarray();iF0_G0d = self.iF0.solve(G0d)        
+            G0d = self.G0.toarray()
+            iF0_G0d = self.iF0.solve(G0d)        
             S_alpha = np.dot(G0d.T,iF0_G0d)
             rho = S_alpha[0,0]
             for i in range(R[0].shape[1]):
                 S_alpha[i,i] += rho
 #
-        np.savetxt('F0',F0)
+#        np.savetxt('F0',F0)
         np.savetxt('S_alpha',S_alpha)
         self.iS_alpha = DENS_SOLVE(S_alpha)           
 #     
@@ -317,8 +357,8 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
 #
     uu = []
     cnt = 0
-    print('size(lam):',lam.shape)
-    print('size(B):',B[0][0].shape)
+    #print('size(lam):',lam.shape)
+    #print('size(B):',B[0][0].shape)
 #
     delta = 0.0
     norm_f = 0.0
@@ -377,9 +417,9 @@ def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #    
     uu = []
     cnt = 0
-    print('size(lam):',lam.shape)
-    print('size(B):',B1[0][0].shape)
-    print('type(B):',type(B1[0][0]))
+    #print('size(lam):',lam.shape)
+    #print('size(B):',B1[0][0].shape)
+    #print('type(B):',type(B1[0][0]))
     delta = 0.0
     norm_f = 0.0
     Kplus_f_B1t_lam = []
