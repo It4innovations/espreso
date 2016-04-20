@@ -103,7 +103,7 @@ std::vector<Description> mesh::description = {
 			"matsol",
 			"workbench",
 			"openfoam",
-			"esdata"
+			"esdata",
 			"generator" },  WRITE_TO_HELP},
 
 	{ "SUBDOMAINS", mesh::subdomains, "Number of subdomains in a cluster.", WRITE_TO_HELP },
@@ -126,7 +126,7 @@ std::vector<Description> assembler::description = {
 std::vector<Description> solver::description = {
 	{ "EPSILON", solver::epsilon, "Solver requested precision.", WRITE_TO_HELP },
 	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", WRITE_TO_HELP },
-	{ "FETI_METHOD", solver::FETI_METHOD, "The method FETI used by ESPRESO.", {
+	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
 			"Total FETI",
 			"Hybrid Total FETI" }, WRITE_TO_HELP },
 
