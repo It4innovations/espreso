@@ -4,7 +4,7 @@
 
 
 #if defined(SOLVER_MKL)
-#include "cpu/solvermkl.h"
+#include "cpu/SparseSolverMKL.h"
 
 namespace espreso {
 	typedef SparseSolverMKL SparseSolverCPU;
@@ -29,7 +29,7 @@ namespace espreso {
 }
 
 #elif defined(SOLVER_MIC)
-#include "cpu/solvermkl.h"
+#include "cpu/SparseSolverMKL.h"
 #include "acc/mic.h"
 
 namespace espreso {
@@ -39,8 +39,8 @@ namespace espreso {
 
 
 #elif defined(SOLVER_CUDA)
-#include "cpu/solvermkl.h"
-#include "acc/solvercuda.h"
+#include "cpu/SparseSolverMKL.h"
+#include "acc/SparseSolverCUDA.h"
 
 namespace espreso {
 	typedef SparseSolverCUDA SparseSolverCPU;

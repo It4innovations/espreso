@@ -1,4 +1,4 @@
-#include "solvercuda.h"
+#include "SparseSolverCUDA.h"
 #include <cuda_runtime_api.h>
 
 #define CHECK_SO(x) do {\
