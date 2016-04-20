@@ -107,7 +107,6 @@ void SparseSolverMKL::Clear() {
 			iparm, &msglvl, &ddum, &ddum, &error);
 
 		initialized = false;
-
 	}
 
 	if (import_with_copy) {
@@ -115,13 +114,17 @@ void SparseSolverMKL::Clear() {
 		if (CSR_I_row_indices_size > 0)     delete [] CSR_I_row_indices;
 		if (CSR_J_col_indices_size > 0)		delete [] CSR_J_col_indices;
 		if (CSR_V_values_size > 0)			delete [] CSR_V_values;
+		//if (CSR_V_values_fl_size > 0)		delete [] CSR_V_values_fl;
+	}
+
+	if (USE_FLOAT) {
 		if (CSR_V_values_fl_size > 0)		delete [] CSR_V_values_fl;
 	}
 
-		CSR_I_row_indices_size = 0;
-		CSR_J_col_indices_size = 0;
-		CSR_V_values_size      = 0;
-		CSR_V_values_fl_size   = 0;
+	CSR_I_row_indices_size = 0;
+	CSR_J_col_indices_size = 0;
+	CSR_V_values_size      = 0;
+	CSR_V_values_fl_size   = 0;
 
 }
 
@@ -180,6 +183,29 @@ void SparseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
 
 }
 
+void SparseSolverMKL::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
+
+	USE_FLOAT = false;
+
+	rows	= A.rows;
+	cols	= A.cols;
+	nnz		= A.nnz;
+	m_Kplus_size = A.rows;
+
+	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
+	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
+	CSR_V_values_size	 = 0;
+	CSR_V_values_fl_size = A.CSR_V_values.size();
+
+	CSR_I_row_indices    = &A.CSR_I_row_indices[0];
+	CSR_J_col_indices    = &A.CSR_J_col_indices[0];
+
+	CSR_V_values_fl	  = new float  [CSR_V_values_fl_size];
+	for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+		CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
+
+	import_with_copy = false;
+}
 
 void SparseSolverMKL::ImportMatrix_wo_Copy(SparseMatrix & A) {
 
