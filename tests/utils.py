@@ -77,18 +77,22 @@ class Configuration:
 
 class Espreso:
 
-    def __init__(self, example, config):
+    def __init__(self, path, input, example, config):
+        self.path = path
+        self.input = input
         self.example = example
         self.config = config
 
     def run(self, processes, args, env=ENV):
         program = [ "mpirun", "-n", str(processes), os.path.join(ESPRESO_ROOT, "espreso")]
+        program += [ "-p", self.example ]
+        program += [ "-i", self.input ]
         program += [ "-c", self.config ]
         program += [ str(x) for x in args ]
 
         result = subprocess.Popen(program,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  cwd=os.path.join(EXAMPLES, self.example),
+                                  cwd=os.path.join(EXAMPLES, self.path),
                                   env=dict(os.environ.items() + env.items()))
 
         return result.communicate()
