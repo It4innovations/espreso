@@ -8,8 +8,8 @@ import scipy.sparse.linalg as spla
 
 
 
-n_clus          = 1
-n_subPerClust   = 27
+n_clus          = 8
+n_subPerClust   = 27 
 
 
 
@@ -40,7 +40,8 @@ for i in range(n_clus):
     vec_weight.append([])
     vec_index_weight.append([])
 #    mat_SchurEspreso.append([])
-    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
+#    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
+    mat_Salfa.append([])
     for j in range(n_subPerClust):  
         mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
         mat_Kreg[i].append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True))      
@@ -153,20 +154,21 @@ print('\nTFETI')
 u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
                             vec_index_weight,mat_R)
                         
+
+print('\nHFETI - corners')
+uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
+                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
 print('\nHFETI - kernels')    
 uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0ker,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R,mat_Salfa)                        
                         
-#print('\nHFETI - corners')
-#uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
-#                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
-#                        
+                        
 #
 norm_del_u = 0
 norm_u = 0
 for i in range(len(u)):
     for j in range(len(u[i])):
-        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
+        norm_del_u += np.linalg.norm(uHDPc[i][j]-uHDP[i][j])
         norm_u += np.linalg.norm(u[i][j])
 
 print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
