@@ -90,7 +90,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	m_factorized = 0;
 
 	// Initialize cuSolver context and CUDA stream
-	CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS
+	//CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS
 	CHECK_SO(cusolverSpCreate(&soHandle));
 	CHECK_ERR(cudaStreamCreate(&cuStream));
 	CHECK_SO(cusolverSpSetStream(soHandle, cuStream));
