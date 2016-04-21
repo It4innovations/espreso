@@ -46,12 +46,10 @@ private:
 
 class Coordinates
 {
-
-public:
-
 	friend class Mesh;
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
+public:
 	Coordinates(): _points(0), _clusterIndex(1), _property(PROPERTIES_COUNT) { };
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
@@ -150,8 +148,6 @@ public:
 	{
 		_clusterIndex.resize(size);
 	}
-
-	void computeLocal(eslocal part, std::vector<eslocal> &nodeMap, size_t size);
 
 	double* data()
 	{

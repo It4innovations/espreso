@@ -11,10 +11,12 @@
 
 namespace espreso {
 
-
+class Mesh;
 
 class Element
 {
+	friend class Mesh;
+
 public:
 	enum IndicesType {
 		GLOBAL,

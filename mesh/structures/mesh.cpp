@@ -1062,40 +1062,27 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 
 void Mesh::remapElementsToSubdomain()
 {
-	std::vector<eslocal> nodeMap(_coordinates.clusterSize(), -1);
 	_coordinates._clusterIndex.clear();
 	_coordinates._clusterIndex.resize(parts());
 
-	for (size_t p = 0; p < parts(); p++) {
-		std::fill(nodeMap.begin(), nodeMap.end(), -1);
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		std::vector<eslocal> l2g;
 
-		// Compute mask of nodes
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (size_t n = 0; n < _elements[e]->size(); n++) {
-				nodeMap[_elements[e]->node(n)] = 1;
-			}
+			l2g.insert(l2g.end(), _elements[e]->indices(), _elements[e]->indices() + _elements[e]->size());
 		}
 
-		// re-index nodes
-		eslocal nSize = 0;
-		for (size_t c = 0; c < _coordinates.clusterSize(); c++) {
-			if (nodeMap[c] == 1) {
-				nodeMap[c] = nSize++;
-			}
-		}
+		std::sort(l2g.begin(), l2g.end());
+		auto it = std::unique(l2g.begin(), l2g.end());
+		l2g.resize(std::distance(l2g.begin(), it));
 
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (eslocal n = 0; n < _elements[e]->size(); n++) {
-				_elements[e]->node(n) = nodeMap[_elements[e]->node(n)];
+				_elements[e]->node(n) = std::lower_bound(l2g.begin(), l2g.end(), _elements[e]->node(n)) - l2g.begin();
 			}
 		}
 
-		_coordinates._clusterIndex[p].reserve(nSize);
-		for (size_t c = 0; c < _coordinates.clusterSize(); c++) {
-			if (nodeMap[c] >= 0) {
-				_coordinates._clusterIndex[p].push_back(c);
-			}
-		}
+		_coordinates._clusterIndex[p].swap(l2g);
 	}
 }
 
