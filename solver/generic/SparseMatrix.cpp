@@ -1052,21 +1052,66 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 	// CblasConjTrans=113};  /* trans='C' */
 
 	if (type == 'G') {
-		if ( T_for_transpose_N_for_not_transpose == 'T' )
-			cblas_dgemv
-				(CblasColMajor, CblasTrans,
-				rows, cols,
-				alpha, &dense_values[0], lda,
-				&x_in[x_in_vector_start_index], 1,
-				beta, &y_out[y_out_vector_start_index], 1);
-		else
-			cblas_dgemv
-				(CblasColMajor, CblasNoTrans,
-				rows, cols,
-				alpha, &dense_values[0], lda,
-				&x_in[x_in_vector_start_index], 1,
-				beta, &y_out[y_out_vector_start_index], 1);
-	} else {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+
+			if (!USE_FLOAT) {
+				cblas_dgemv
+					(CblasColMajor, CblasTrans,
+					rows, cols,
+					alpha, &dense_values[0], lda,
+					&x_in[x_in_vector_start_index], 1,
+					beta, &y_out[y_out_vector_start_index], 1);
+			} else {
+
+				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+
+				for (eslocal i = 0; i < rows; i++)
+					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
+
+				cblas_sgemv
+					(CblasColMajor, CblasTrans,
+					rows, cols,
+					alpha, &dense_values_fl[0], lda,
+					&vec_fl_in[0], 1,
+					beta, &vec_fl_out[0], 1);
+
+				for (eslocal i = 0; i < rows; i++)
+					y_out[i + y_out_vector_start_index] = (double)vec_fl_out[i];
+			}
+
+		} else {
+
+			if (!USE_FLOAT) {
+				cblas_dgemv
+					(CblasColMajor, CblasNoTrans,
+					rows, cols,
+					alpha, &dense_values[0], lda,
+					&x_in[x_in_vector_start_index], 1,
+					beta, &y_out[y_out_vector_start_index], 1);
+			} else {
+
+				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+
+				for (eslocal i = 0; i < rows; i++)
+					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
+
+				cblas_sgemv
+					(CblasColMajor, CblasNoTrans,
+					rows, cols,
+					alpha, &dense_values_fl[0], lda,
+					&vec_fl_in[0], 1,
+					beta, &vec_fl_out[0], 1);
+
+				for (eslocal i = 0; i < rows; i++)
+					y_out[i + y_out_vector_start_index] = (double)vec_fl_out[i];
+			}
+
+		}
+	}
+
+	if (type == 'S') {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
                     ESINFO(ERROR) << "Transposition is not supported for packed symmetric matrices";
                     return;
@@ -1161,59 +1206,44 @@ void SparseMatrix::DenseMatVecCUDA_w_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR
 void SparseMatrix::DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
-	eslocal mat_size = rows * cols;
-	eslocal lda = rows;
+	DenseMatVecCUDA_wo_Copy_start( &x_in[0], &y_out[0], T_for_transpose_N_for_not_transpose, x_in_vector_start_index);
+	DenseMatVecCUDA_wo_Copy_sync();
 
-	if ( d_dense_values == NULL ) {
-		cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
-		cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
-		cudaMalloc((void**)&d_y_out, rows * sizeof(double));
-
-		cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
-		cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
-
-		// Create cublas instance - cublasHandle_t handle;
-
-		cublasCreate(&handle);
-
-		cudaStreamCreate(&stream);
-		cublasSetStream(handle, stream);
-	}
-
-	// Set input matrices on device
-	// cublasSetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy);
-	cublasSetVector(x_in.size() , sizeof(double), &x_in[0] , 1, d_x_in , 1);
-
-	// DGEMM: C = alpha*A*B + beta*C
-	double alpha = 1.0;
-	double beta  = 0.0;
-
-	if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-		cublasDgemv(handle,
-			CUBLAS_OP_T,
-			rows, cols,
-			&alpha, d_dense_values, lda,
-			d_x_in, 1,
-			&beta, d_y_out, 1);
-	} else {
-		cublasDgemv(handle,
-			CUBLAS_OP_N,
-			rows, cols,
-			&alpha, d_dense_values, lda,
-			d_x_in, 1,
-			&beta, d_y_out, 1);
-	}
-
-	// Retrieve result vector from device
-	//cublasGetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy)
-	cublasGetVector(rows , sizeof(double), d_y_out, 1, &y_out[0], 1);
-
-	//cudaFree(d_x_in_t);
-	//cudaFree(d_y_out_t);
-	//cudaFree(d_dense_values);
-	//cublasDestroy(handle);
-
-	cudaStreamSynchronize(stream);
+//	//eslocal mat_size = rows * cols;
+//	eslocal lda = rows;
+//
+//	if ( d_dense_values == NULL ) {
+//		CopyToCUDA_Dev( );
+//	}
+//
+//	// Set input matrices on device
+//	// cublasSetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy);
+//	cublasSetVector(x_in.size() , sizeof(double), &x_in[0] , 1, d_x_in , 1);
+//
+//	// DGEMM: C = alpha*A*B + beta*C
+//	double alpha = 1.0;
+//	double beta  = 0.0;
+//
+//	if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+//		cublasDgemv(handle,
+//			CUBLAS_OP_T,
+//			rows, cols,
+//			&alpha, d_dense_values, lda,
+//			d_x_in, 1,
+//			&beta, d_y_out, 1);
+//	} else {
+//		cublasDgemv(handle,
+//			CUBLAS_OP_N,
+//			rows, cols,
+//			&alpha, d_dense_values, lda,
+//			d_x_in, 1,
+//			&beta, d_y_out, 1);
+//	}
+//
+//	// Retrieve result vector from device
+//	cublasGetVector(rows , sizeof(double), d_y_out, 1, &y_out[0], 1);
+//
+//	cudaStreamSynchronize(stream);
 
 #endif
 }
@@ -1224,53 +1254,40 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTO
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size(); //rows * cols;
 	eslocal lda = rows;
 
 	if ( d_dense_values == NULL ) {
-		cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
-		cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
-		cudaMalloc((void**)&d_y_out, rows * sizeof(double));
-
-		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
-		cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
-
-		cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
-
-		// Create cublas instance - cublasHandle_t handle;
-
-		cublasCreate(&handle);
-
-		cudaStreamCreate(       &stream);
-		cublasSetStream (handle, stream);
+		CopyToCUDA_Dev ( );
 	}
 
 	// Set input matrices on device
-	// cublasSetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy);
-	//cublasSetVector(rows, sizeof(double), x_in , 1, d_x_in , 1);
 	cudaMemcpyAsync(d_x_in, x_in, rows * sizeof(double), cudaMemcpyHostToDevice, stream);
 
 	// DGEMM: C = alpha*A*B + beta*C
 	double alpha = 1.0;
 	double beta  = 0.0;
 
-	if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-		cublasDgemv(handle,
-			CUBLAS_OP_T,
-			rows, cols,
-			&alpha, d_dense_values, lda,
-			d_x_in, 1,
-			&beta, d_y_out, 1);
-	} else {
-		cublasDgemv(handle,
-			CUBLAS_OP_N,
-			rows, cols,
-			&alpha, d_dense_values, lda,
-			d_x_in, 1,
-			&beta, d_y_out, 1);
+	if (type == 'G') {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+			cublasDgemv(handle,
+				CUBLAS_OP_T,
+				rows, cols,
+				&alpha, d_dense_values, lda,
+				d_x_in, 1,
+				&beta, d_y_out, 1);
+		} else {
+			cublasDgemv(handle,
+				CUBLAS_OP_N,
+				rows, cols,
+				&alpha, d_dense_values, lda,
+				d_x_in, 1,
+				&beta, d_y_out, 1);
+		}
 	}
 
-		// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
+	if (type == 'S') {
+
+	// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
 		//cublasDsymv(handle,
 		//	CUBLAS_FILL_MODE_UPPER, //CUBLAS_FILL_MODE_LOWER
 		//	rows,
@@ -1279,85 +1296,162 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 		//	&beta, d_y_out, 1);
 
 		// POMALE
-		//cublasDspmv(handle,
-		//	CUBLAS_FILL_MODE_UPPER,
-		//	rows,
-		//	&alpha, d_dense_values,
-		//	d_x_in, 1,
-		//	&beta, d_y_out, 1);
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
 
+		} else {
+			cublasDspmv(handle,
+				CUBLAS_FILL_MODE_UPPER,
+				rows,
+				&alpha, d_dense_values,
+				d_x_in, 1,
+				&beta, d_y_out, 1);
+		}
+	}
 
 	// Retrieve result vector from device
-	//cublasGetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy)
-	//cublasGetVector(rows , sizeof(double), d_y_out, 1, &y_out[0], 1);
 	cudaMemcpyAsync(y_out, d_y_out, rows * sizeof(double), cudaMemcpyDeviceToHost, stream);
-
-	//cudaStreamSynchronize(stream);
 
 #endif
 }
 
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
 #ifdef CUDA
-
-	// Retrieve result vector from device
-	//cublasGetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy)
-	//cublasGetVector(rows , sizeof(double), d_y_out, 1, &y_out[0], 1);
 	cudaStreamSynchronize(stream);
-
 #endif
 }
+
+
+eslocal SparseMatrix::MallocOnCUDA_Dev ( ) {
+	eslocal error = 0;
+#ifdef CUDA
+
+	eslocal mat_size;
+
+	if (dense_values.size() > 0) {
+		mat_size = dense_values.size();
+	} else {
+		if (rows > 0 && cols > 0) {
+			if (type == 'G') {
+				mat_size = rows * cols;
+			} else {
+				mat_size = ((rows + 1) * cols) / 2;
+			}
+		} else {
+			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
+			exit(0);
+		}
+	}
+
+	if (d_dense_values != NULL) {
+		FreeFromCUDA_Dev();
+	}
+
+	cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
+	if (status != cudaSuccess)   {
+		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+		}
+
+	status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	cublasCreate(&handle);
+	cudaStreamCreate(&stream);
+	cublasSetStream(handle, stream);
+
+#endif
+	return error;
+}
+
+
+eslocal SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
+	eslocal error = 0;
+#ifdef CUDA
+
+	eslocal mat_size;
+
+	if (dense_values_fl.size() > 0) {
+		mat_size = dense_values_fl.size();
+	} else {
+		if (rows > 0 && cols > 0) {
+			if (type == 'G') {
+				mat_size = rows * cols;
+			} else {
+				mat_size = ((rows + 1) * cols) / 2;
+			}
+		} else {
+			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
+			exit(0);
+		}
+	}
+
+	if (d_dense_values_fl != NULL) {
+		FreeFromCUDA_Dev_fl();
+	}
+
+	cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
+	if (status != cudaSuccess)   {
+		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+
+	status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+
+	status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	cublasCreate(&handle);
+	cudaStreamCreate(&stream);
+	cublasSetStream(handle, stream);
+
+#endif
+	return error;
+}
+
 
 eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 	eslocal error = 0;
 
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size();// rows * cols;
-	eslocal lda = rows;
-
 	if ( d_dense_values == NULL ) {
-
-		cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
-		if (status != cudaSuccess)   {
-			//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
-			//MPI_Finalize();
-			//exit(0);
-			error = -1;
-		}
-
-
-		status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
-		if (status != cudaSuccess) {
-			//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
-			//MPI_Finalize();
-			//exit(0);
-			error = -1;
-		}
-
-
-		status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
-		if (status != cudaSuccess) {
-			//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
-			//MPI_Finalize();
-			//exit(0);
-			error = -1;
-		}
-
-
-		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
-		cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
-
-		cublasSetVector(rows,         sizeof(double), &dense_values[0], 1,   d_y_out,        1);
-		// Create cublas instance - cublasHandle_t handle;
-
-		cublasCreate(&handle);
-
-		cudaStreamCreate(&stream);
-		cublasSetStream(handle, stream);
+		error = MallocOnCUDA_Dev();
 	}
 
+	cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
+
 #endif
+
 	return error;
 
 }
@@ -1367,75 +1461,62 @@ eslocal SparseMatrix::CopyToCUDA_Dev( ) {
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size(); //rows * cols;
 	eslocal lda = rows;
 
 	if ( d_dense_values_fl == NULL ) {
-		cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
-		cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
-		cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
-
-		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
-		cudaMemcpy(d_dense_values_fl, &dense_values_fl[0], dense_values_fl.size() * sizeof(float), cudaMemcpyHostToDevice);
-
-		cublasSetVector(rows,         sizeof(float), &dense_values_fl[0], 1,   d_y_out_fl,        1);
-
-		// Create cublas instance - cublasHandle_t handle;
-
-		cublasCreate(&handle);
-
-		cudaStreamCreate(       &stream);
-		cublasSetStream (handle, stream);
+		CopyToCUDA_Dev_fl ( );
 	}
 
 	// Set input matrices on device
-	// cublasSetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy);
-	//cublasSetVector(rows, sizeof(double), x_in , 1, d_x_in , 1);
 	cudaMemcpyAsync(d_x_in_fl, x_in, rows * sizeof(float), cudaMemcpyHostToDevice, stream);
 
 	// DGEMM: C = alpha*A*B + beta*C
 	float alpha = 1.0;
 	float beta  = 0.0;
 
-	if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-		cublasSgemv(handle,
-			CUBLAS_OP_T,
-			rows, cols,
-			&alpha, d_dense_values_fl, lda,
-			d_x_in_fl, 1,
-			&beta, d_y_out_fl, 1);
-	} else {
-		cublasSgemv(handle,
-			CUBLAS_OP_N,
-			rows, cols,
-			&alpha, d_dense_values_fl, lda,
-			d_x_in_fl, 1,
-			&beta, d_y_out_fl, 1);
+    if (type == 'G') {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+			cublasSgemv(handle,
+				CUBLAS_OP_T,
+				rows, cols,
+				&alpha, d_dense_values_fl, lda,
+				d_x_in_fl, 1,
+				&beta, d_y_out_fl, 1);
+		} else {
+			cublasSgemv(handle,
+				CUBLAS_OP_N,
+				rows, cols,
+				&alpha, d_dense_values_fl, lda,
+				d_x_in_fl, 1,
+				&beta, d_y_out_fl, 1);
+		}
+    }
+
+	if (type == 'S') {
+
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+
+		} else {
+			// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
+			//cublasDsymv(handle,
+			//	CUBLAS_FILL_MODE_UPPER, //CUBLAS_FILL_MODE_LOWER
+			//	rows,
+			//	&alpha, d_dense_values, lda,
+			//	d_x_in, 1,
+			//	&beta, d_y_out, 1);
+
+			// POMALE
+			cublasSspmv(handle,
+				CUBLAS_FILL_MODE_UPPER,
+				rows,
+				&alpha, d_dense_values_fl,
+				d_x_in_fl, 1,
+				&beta, d_y_out_fl, 1);
+		}
 	}
 
-	// jen o neco malo pomalejsi - cca 5% porad dobre, ale usetri se 50% pameti
-	//cublasDsymv(handle,
-	//	CUBLAS_FILL_MODE_UPPER, //CUBLAS_FILL_MODE_LOWER
-	//	rows,
-	//	&alpha, d_dense_values, lda,
-	//	d_x_in, 1,
-	//	&beta, d_y_out, 1);
-
-	// POMALE
-	//cublasDspmv(handle,
-	//	CUBLAS_FILL_MODE_UPPER,
-	//	rows,
-	//	&alpha, d_dense_values,
-	//	d_x_in, 1,
-	//	&beta, d_y_out, 1);
-
-
 	// Retrieve result vector from device
-	//cublasGetVector(eslocal n, eslocal elemSize, const void *x, eslocal incx, void *y, eslocal incy)
-	//cublasGetVector(rows , sizeof(double), d_y_out, 1, &y_out[0], 1);
 	cudaMemcpyAsync(y_out, d_y_out_fl, rows * sizeof(float), cudaMemcpyDeviceToHost, stream);
-
-	//cudaStreamSynchronize(stream);
 
 #endif
 }
@@ -1444,49 +1525,11 @@ eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 	eslocal error = 0;
 #ifdef CUDA
 
-	eslocal mat_size = dense_values.size();// rows * cols;
-	eslocal lda = rows;
-
-	if ( d_dense_values_fl == NULL ) {
-
-		cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
-		if (status != cudaSuccess)   {
-			//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
-			//MPI_Finalize();
-			//exit(0);
-			error = -1;
-		}
-
-
-		status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
-		if (status != cudaSuccess) {
-			//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
-			//MPI_Finalize();
-			//exit(0);
-			error = -1;
-		}
-
-
-		status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
-		if (status != cudaSuccess) {
-			//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
-			//MPI_Finalize();
-			//exit(0);
-			error = -1;
-		}
-
-
-		//cublasSetMatrix(rows, cols  , sizeof(double), &dense_values[0], lda, d_dense_values, lda);
-		cudaMemcpy(d_dense_values_fl, &dense_values_fl[0], dense_values_fl.size() * sizeof(float), cudaMemcpyHostToDevice);
-
-		cublasSetVector(rows,         sizeof(float), &dense_values_fl[0], 1,   d_y_out_fl,        1);
-		// Create cublas instance - cublasHandle_t handle;
-
-		cublasCreate(&handle);
-
-		cudaStreamCreate(&stream);
-		cublasSetStream(handle, stream);
+	if ( d_dense_values == NULL ) {
+		error = MallocOnCUDA_Dev_fl();
 	}
+
+	cudaMemcpy(d_dense_values_fl, &dense_values_fl[0], dense_values_fl.size() * sizeof(float), cudaMemcpyHostToDevice);
 
 #endif
 
@@ -1499,16 +1542,39 @@ eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 
 void SparseMatrix::CopyFromCUDA_Dev() {
-#ifdef CCUDA
-	cudaFree(d_dense_values);
-	d_dense_values = NULL;
+#ifdef CUDA
+//	cudaFree(d_dense_values);
+//	d_dense_values = NULL;
 #endif
 }
 
 void SparseMatrix::FreeFromCUDA_Dev() {
-#ifdef CCUDA
+#ifdef CUDA
+
 	cudaFree(d_dense_values);
+	cudaFree(d_x_in);
+	cudaFree(d_y_out);
+
 	d_dense_values = NULL;
+
+	cublasDestroy(handle);
+	cudaStreamDestroy(stream);
+
+#endif
+}
+
+void SparseMatrix::FreeFromCUDA_Dev_fl() {
+#ifdef CUDA
+
+	cudaFree(d_dense_values_fl);
+	cudaFree(d_x_in_fl);
+	cudaFree(d_y_out_fl);
+
+	d_dense_values_fl = NULL;
+
+	cublasDestroy(handle);
+	cudaStreamDestroy(stream);
+
 #endif
 }
 
@@ -1519,12 +1585,18 @@ void SparseMatrix::RemoveLowerDense( ) {
 //                      LAPACK_COL_MAJOR
 //						LAPACK_ROW_MAJOR
 
-	vector <double> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+	if (USE_FLOAT) {
+		vector <float> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+		LAPACKE_strttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values_fl[0],           rows,  &tmp_dense[0] );
+		dense_values_fl.swap(tmp_dense);
 
-	LAPACKE_dtrttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values[0],           rows,  &tmp_dense[0] );
+	} else {
+		vector <double> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+		LAPACKE_dtrttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values[0],           rows,  &tmp_dense[0] );
+		dense_values.swap(tmp_dense);
+	}
 
-	dense_values.swap(tmp_dense);
-
+	type = 'S';
 }
 
 

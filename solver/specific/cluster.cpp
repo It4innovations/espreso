@@ -142,28 +142,37 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	my_comm_lambdas			.resize(my_neighs.size());
 	my_recv_lambdas			.resize(my_neighs.size());
 
+	//ESLOG(MEMORY) << "1 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+
 	cilk_for (eslocal i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices[i] = lambdas_per_subdomain[my_neighs[i]];
 		my_comm_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 	}
 
+	//ESLOG(MEMORY) << "2 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+
 	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
 	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
+	//ESLOG(MEMORY) << "3 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++ )
 		if (USE_KINV == 1 ) {
-			domains[d].compressed_tmp.resize( my_lamdas_indices.size(), 0);
-			domains[d].compressed_tmp2.resize( my_lamdas_indices.size(), 0);
+			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
+			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
 		} else {
 			domains[d].compressed_tmp.resize( 1, 0);
 			domains[d].compressed_tmp2.resize( 1, 0);
 		}
 
+	//ESLOG(MEMORY) << "4 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+
 	// mapping/compression vector for cluster
 	for (eslocal i = 0; i <my_lamdas_indices.size(); i++)
 		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
+
+	//ESLOG(MEMORY) << "5 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	// mapping/compression vector for domains
 	cilk_for (eslocal i = 0; i < domains.size(); i++) {
@@ -172,32 +181,35 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 	}
 
+	//ESLOG(MEMORY) << "6 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
             if (domains[d].lambda_map_sub.size() > 0 ) {
 
                 eslocal i = 0;
-		eslocal j = 0;
-		do
-		{
-			eslocal big_index   = my_lamdas_indices[i];
-			eslocal small_index = domains[d].lambda_map_sub[j];
+				eslocal j = 0;
+				do
+				{
+					eslocal big_index   = my_lamdas_indices[i];
+					eslocal small_index = domains[d].lambda_map_sub[j];
 
-			if (big_index >  small_index) j++;
+					if (big_index >  small_index) j++;
 
-			if (big_index  < small_index) i++;
+					if (big_index  < small_index) i++;
 
-			if (big_index == small_index) {
-				domains[d].lambda_map_sub_local.push_back(i);
-				i++; j++;
-			}
+					if (big_index == small_index) {
+						domains[d].lambda_map_sub_local.push_back(i);
+						i++; j++;
+					}
 
 
-		} while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
+				} while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
             }
         }
 	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
+	//ESLOG(MEMORY) << "7 process " << config::evn::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
@@ -208,6 +220,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 			my_comm_lambdas_indices_comp[i][j] = _my_lamdas_map_indices[lambdas_per_subdomain[my_neighs[i]][j]];
 	}
 	//// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
+
+	//ESLOG(MEMORY) << "8 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
@@ -616,7 +630,6 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
-
 
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
 		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)

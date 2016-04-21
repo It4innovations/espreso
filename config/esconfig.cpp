@@ -53,6 +53,9 @@ size_t   solver::REGULARIZATION         = FIX_POINTS;
 
 bool     solver::REDUNDANT_LAGRANGE     = true;
 bool     solver::USE_SCHUR_COMPLEMENT   = false;
+size_t   solver::SCHUR_COMPLEMENT_PREC  = SC_DOUBLE_PRECISION;
+size_t   solver::SCHUR_COMPLEMENT_TYPE  = GENERAL;
+bool     solver::COMBINE_SC_AND_SPDS    = true;
 bool     solver::KEEP_FACTORS           = true;
 
 size_t   solver::KSOLVER                = DIRECT_DOUBLE_PRECISION;
@@ -61,7 +64,6 @@ double   solver::KSOLVER_SP_iter_norm   = 1e-12;
 size_t   solver::F0_SOLVER              = KSOLVER_PRECISION;
 
 size_t   solver::N_MICS                 = 2;
-
 
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
 
@@ -157,6 +159,12 @@ std::vector<Description> solver::description = {
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
 	{ "USE_SCHUR_COMPLEMENT", solver::USE_SCHUR_COMPLEMENT, "Use schur complement for stiffness matrix processing" },
+	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision." },
+	{ "SCHUR_COMPLEMENT_TYPE", solver::SCHUR_COMPLEMENT_TYPE, "Schur complement matrix type.", {
+			"general",
+			"symmetric"}},
+
+	{ "COMBINE_SC_AND_SPDS", solver::COMBINE_SC_AND_SPDS, "Combine Schur complement for GPU and sparse direct solver for CPU." },
 	{ "KEEP_FACTORS", solver::KEEP_FACTORS, "Keep factors for whole iteration process." },
 
 	{ "KSOLVER_SP_iter_steps", solver::KSOLVER_SP_iter_steps, "Number of reiteration steps for SP direct solver." },

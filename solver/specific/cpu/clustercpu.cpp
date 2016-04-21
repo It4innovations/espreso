@@ -80,7 +80,7 @@ void ClusterCPU::SetupKsolvers ( ) {
                         break;
                     }
             case 2: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                        domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
                         break;
                     }
             case 3: {
