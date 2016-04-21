@@ -85,6 +85,8 @@ vec_weight  = []
 vec_index_weight = []
 mat_Schur   = []
 
+pool = multiprocessing.Pool()
+    
 for i in range(n_clus): 
     mat_K.append([])
     mat_Kreg.append([])
@@ -99,7 +101,6 @@ for i in range(n_clus):
 #    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
     mat_Salfa.append([])
 #    for j in range(n_subPerClust):  
-    pool = multiprocessing.Pool()
     ij = []
     for j in range(n_subPerClust):
         ij.append([i,j])
@@ -127,7 +128,7 @@ conf = config_espreso_python
 if conf.precondDualSystem=='dirichlet':
     for i in range(len(mat_K)):
         #mat_Schur.append([])
-        pool = multiprocessing.Pool()
+        #pool = multiprocessing.Pool()
         
         ij = []
         for j in range(len(mat_K[i])):
