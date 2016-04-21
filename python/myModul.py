@@ -84,8 +84,6 @@ class  KPLUS_HTFETI:
         self.G0 = self.G0.tocsc()
         self.B0_Kplus = []
 #                
-#        F0 = 0 
-#        F0 = np.zeros((B0[0].shape[0],B0[0].shape[0]))
         
         iF0 = np.array([0],dtype=np.int32)
         jF0 = np.array([0],dtype=np.int32)

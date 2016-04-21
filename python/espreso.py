@@ -9,10 +9,11 @@ import threading
 
 
 
-n_clus          = 1
-n_subPerClust   = 27
+n_clus          = 8
+n_subPerClust   = 125
 
 
+S_from_espreso = True 
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
@@ -29,7 +30,7 @@ vec_c       = []
 vec_weight  = []
 vec_index_weight = []
 mat_Schur   = []
-#mat_SchurEspreso = []
+
 for i in range(n_clus): 
     mat_K.append([])
     mat_Kreg.append([])
@@ -40,15 +41,15 @@ for i in range(n_clus):
     vec_c.append([])
     vec_weight.append([])
     vec_index_weight.append([])
-#    mat_SchurEspreso.append([])
-    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
+
+#    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
+    mat_Salfa.append([])
     for j in range(n_subPerClust):  
         mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
         mat_Kreg[i].append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True))      
         mat_B0[i].append(mM.load_matrix(path,'B0',i,j,makeSparse=True,makeSymmetric=False))
         mat_B1[i].append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
         mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
-#        mat_SchurEspreso[i].append(mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True))
         vec_f[i].append(mM.load_vector(path,'f',i,j))
         vec_c[i].append(mM.load_vector(path,'c',i,j))
         vec_weight[i].append(mM.load_vector(path,'weight',i,j))
@@ -59,7 +60,6 @@ for i in range(n_clus):
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
 ###############################################################################   
-S_from_espreso = True
 conf = config_espreso_python
 if conf.precondDualSystem=='dirichlet':
     for i in range(len(mat_K)):
@@ -86,7 +86,7 @@ for i in range(len(mat_K)):
     ijv_B0ker.append([]) 
     for j in range(len(mat_K[i])):
         ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0])]) 
-
+CONSTANT_89 = 25
 if True:
     for i in range(len(mat_B0)):
         cnt_ijv = 0
@@ -97,7 +97,7 @@ if True:
                 tmpB_jk = tmpB_jk.astype(int)
                 indx = np.ravel(tmpB_jk.sum(1)==2) 
 
-                if (np.sum(indx)>89):
+                if (np.sum(indx)>CONSTANT_89):
                     print('YES ............... clust: ',i,'--',j,k, np.sum(indx))
 #                    
                     iB0_j = mat_B1[i][j].tocsr()[indx,:].indices
@@ -154,20 +154,21 @@ print('\nTFETI')
 u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
                             vec_index_weight,mat_R)
                         
+
+print('\nHFETI - corners')
+uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
+                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
 print('\nHFETI - kernels')    
 uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0ker,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R,mat_Salfa)                        
                         
-#print('\nHFETI - corners')
-#uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
-#                        vec_weight,vec_index_weight,mat_R,mat_Salfa)
-#                        
+                        
 #
 norm_del_u = 0
 norm_u = 0
 for i in range(len(u)):
     for j in range(len(u[i])):
-        norm_del_u += np.linalg.norm(u[i][j]-uHDP[i][j])
+        norm_del_u += np.linalg.norm(uHDPc[i][j]-uHDP[i][j])
         norm_u += np.linalg.norm(u[i][j])
 
 print('|u_TFETI-u_HTFETI|/|u_TFETI| = ',norm_del_u/norm_u)
