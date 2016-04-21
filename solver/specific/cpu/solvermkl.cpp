@@ -185,7 +185,7 @@ void SparseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
 
 void SparseSolverMKL::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
 
-	USE_FLOAT = false;
+	USE_FLOAT = true;
 
 	rows	= A.rows;
 	cols	= A.cols;
