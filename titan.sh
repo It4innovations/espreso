@@ -3,8 +3,8 @@
 WORKDIR=$MEMBERWORK/csc180/
 ESPRESODIR=~/espreso
 EXAMPLEDIR=examples/meshgenerator
-EXAMPLE=cube_temperature.txt #cube_elasticity_fixed_bottom.txt
-OUTPUTDIR=~/espreso/results-Apr2016-CPU-double-heat-cube/
+EXAMPLE=cube_elasticity_fixed_bottom.txt  #cube_temperature.txt #cube_elasticity_fixed_bottom.txt
+OUTPUTDIR=~/espreso/results-Apr2016-CPUandGPU-2/
 
 module switch PrgEnv-pgi/5.2.82 PrgEnv-intel/5.2.82
 #module switch intel/14.0.4.211 intel/15.0.2.164 
@@ -74,13 +74,13 @@ if [ "$1" = "run" ]; then
     qsub_command_0+="export LC_CTYPE=;"
 
 
-  for i in 5 6 7 8 9 10 #  11 12 13 # 21 22 23 24 25 26 # 11 12 13 14 15 16 17 18 19 20 # 1 2 3 4 5 6 7 8 9 10 # 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
+  for i in 1 2 3 # 4 5 6 7 8 9 10 #  11 12 13 # 21 22 23 24 25 26 # 11 12 13 14 15 16 17 18 19 20 # 1 2 3 4 5 6 7 8 9 10 # 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
   do
-    d=18 #${dom_size[${i}]}
+    d=12 #${dom_size[${i}]}
     c= #${corners[${i}]}
 
-    x=11 #${clustt_size_x[${i}]}
-    y=11 #${clustt_size_x[${i}]}
+    x=10 #${clustt_size_x[${i}]}
+    y=10 #${clustt_size_x[${i}]}
     z=10 #${clustt_size_x[${i}]}
 
     X=$i #${clusters_x[${i}]}
