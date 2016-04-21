@@ -5,19 +5,73 @@ import myModul as mM
 import config_espreso_python  
 import pylab as plt
 import scipy.sparse.linalg as spla
-import threading
+import multiprocessing
 
 
 
-n_clus          = 8
-n_subPerClust   = 125
+n_clus          = 2
+n_subPerClust   = 8
 
 
-S_from_espreso = True 
+S_from_espreso = False 
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
 path = '../log/'
+
+
+
+def readClusterData(x):    
+    i = x[0];    j = x[1]    
+    y=[]    
+    #0 mat_K
+    y.append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
+    #1 mat_Kreg    
+    y.append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True))      
+    #2 mat_B0    
+    y.append(mM.load_matrix(path,'B0',i,j,makeSparse=True,makeSymmetric=False))
+    #3 mat_B1    
+    y.append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
+    #4 mat_R
+    y.append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
+    #5 vec_f    
+    y.append(mM.load_vector(path,'f',i,j))
+    #6 vec_c    
+    y.append(mM.load_vector(path,'c',i,j))
+    #7vec_weight    
+    y.append(mM.load_vector(path,'weight',i,j))
+    tmp = mM.load_vector(path,'loc_ind_weight',i,j)
+    tmp = tmp.astype(np.int32)
+    #8 vec_index_weight
+    y.append(tmp)
+    return y
+    
+    
+def getDirichletPrecond(x):
+    #for j in range(len(mat_K[i])):
+    #_B1 = mat_B1[i][j].copy()
+    i = x[0];    j = x[1]    
+    _B1 = x[2].copy()
+    mat_K_ij = x[3]
+    y = []
+    J = np.unique(_B1.tocoo().col)            
+    if S_from_espreso:
+        #mat_Schur[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
+        S = mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)
+    else:
+        I = np.arange(0,mat_K_ij.shape[0])
+        I = np.delete(I,J)
+        K_II = mat_K_ij[np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
+        K_IJ = mat_K_ij[np.array(I)[:,np.newaxis],np.array(J)].toarray()
+        K_JJ = mat_K_ij[np.array(J)[:,np.newaxis],np.array(J)].toarray()
+        iK_II = spla.splu(K_II)
+        iK_II_K_IJ = np.zeros(K_IJ.shape)
+        for k in range(K_IJ.shape[1]):
+            iK_II_K_IJ[:,k] = iK_II.solve(K_IJ[:,k])
+        S = K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)
+    print('Dir. precond: ',i,j)
+    return J, S
+
 
 mat_K       = []
 mat_Salfa   = []
@@ -44,18 +98,27 @@ for i in range(n_clus):
 
 #    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
     mat_Salfa.append([])
-    for j in range(n_subPerClust):  
-        mat_K[i].append(mM.load_matrix(path,'K',i,j,makeSparse=True,makeSymmetric=False))
-        mat_Kreg[i].append(mM.load_matrix(path,'Kreg',i,j,makeSparse=True,makeSymmetric=True))      
-        mat_B0[i].append(mM.load_matrix(path,'B0',i,j,makeSparse=True,makeSymmetric=False))
-        mat_B1[i].append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
-        mat_R[i].append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
-        vec_f[i].append(mM.load_vector(path,'f',i,j))
-        vec_c[i].append(mM.load_vector(path,'c',i,j))
-        vec_weight[i].append(mM.load_vector(path,'weight',i,j))
-        tmp = mM.load_vector(path,'loc_ind_weight',i,j)
-        tmp = tmp.astype(np.int32)
-        vec_index_weight[i].append(tmp)
+#    for j in range(n_subPerClust):  
+    pool = multiprocessing.Pool()
+    ij = []
+    for j in range(n_subPerClust):
+        ij.append([i,j])
+    k = pool.map(readClusterData,ij)
+
+    for j in range(n_subPerClust):
+        mat_K[i].append(k[j][0])
+        mat_Kreg[i].append(k[j][1])
+        mat_B0[i].append(k[j][2])
+        mat_B1[i].append(k[j][3])
+        mat_R[i].append(k[j][4])
+        vec_f[i].append(k[j][5])
+        vec_c[i].append(k[j][6])
+        vec_weight[i].append(k[j][7])
+        vec_index_weight[i].append(k[j][8])
+    
+    #print(k[0][0])
+print('done')
+    
         
 ###############################################################################
 ####################### FETI PREPROCESSING ####################################
@@ -63,30 +126,27 @@ for i in range(n_clus):
 conf = config_espreso_python
 if conf.precondDualSystem=='dirichlet':
     for i in range(len(mat_K)):
-        mat_Schur.append([])
+        #mat_Schur.append([])
+        pool = multiprocessing.Pool()
+        
+        ij = []
         for j in range(len(mat_K[i])):
-            _B1 = mat_B1[i][j].copy()
-            J = np.unique(_B1.tocoo().col)            
-            if S_from_espreso:
-                mat_Schur[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
-            else:
-                I = np.arange(0,mat_K[i][j].shape[0])
-                I = np.delete(I,J)
-                K_II = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
-                K_IJ = mat_K[i][j][np.array(I)[:,np.newaxis],np.array(J)].toarray()
-                K_JJ = mat_K[i][j][np.array(J)[:,np.newaxis],np.array(J)].toarray()
-                iK_II = spla.splu(K_II)
-                iK_II_K_IJ = np.zeros(K_IJ.shape)
-                for k in range(K_IJ.shape[1]):
-                    iK_II_K_IJ[:,k] = iK_II.solve(K_IJ[:,k])
-                mat_Schur[i].append([J,K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)])
-            print('Dir. precond: ',i,j)
+            ij.append([i,j,mat_B1[i][j],mat_K[i][j]])
+        #kkk = pool.map(getDirichletPrecond,ij)
+        mat_Schur.append(pool.map(getDirichletPrecond,ij))
+        #mat_Schur[i] = kkk
+    #    i = x[0];    j = x[1]    
+    #    _B1 = x[2].copy()
+    #    mat_K_ij = x[3]        
+
+
+
 ijv_B0ker     = []          
 for i in range(len(mat_K)):
     ijv_B0ker.append([]) 
     for j in range(len(mat_K[i])):
         ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0])]) 
-CONSTANT_89 = 25
+CONSTANT_89 = 18
 if True:
     for i in range(len(mat_B0)):
         cnt_ijv = 0
@@ -106,7 +166,7 @@ if True:
                     R_g_j = mat_R[i][j].toarray()[iB0_j,:]
                     R_g_k = mat_R[i][k].toarray()[iB0_k,:]
 #
-                    if False:
+                    if True:
                         QQ,RR = np.linalg.qr(np.vstack((R_g_j,R_g_k)))
                         log_ind = np.abs(np.diag(RR))>1e-10
                         
@@ -136,7 +196,7 @@ if True:
                                                 
                         cnt_ijv += 1
                 else:
-                    print('NO  ............... clust: ',i,'--',j,k)                                
+                    print('NO  ............... clust: ',i,'--',j,k,'\t\t',np.sum(indx))                                
     mat_B0ker      = []                    
     for i in range(len(mat_B0)):
         mat_B0ker.append([])
@@ -158,9 +218,12 @@ u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
 print('\nHFETI - corners')
 uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R,mat_Salfa)
+print('size(F0) =',mat_B0[0][0].shape[0],' (corners)')
 print('\nHFETI - kernels')    
 uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0ker,mat_B1,vec_c,\
-                        vec_weight,vec_index_weight,mat_R,mat_Salfa)                        
+                        vec_weight,vec_index_weight,mat_R,mat_Salfa)   
+                        
+print('size(F0) =',mat_B0ker[0][0].shape[0],' (kernels)')
                         
                         
 #
