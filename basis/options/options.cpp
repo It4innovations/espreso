@@ -97,7 +97,7 @@ static void printFileOptions()
 }
 
 Options::Options(int* argc, char*** argv)
-: executable((*argv)[0])
+: executable((*argv)[0]), verbose(0), measure(0), testing(0)
 {
 	int option_index, option;
 	while (true) {
@@ -108,13 +108,13 @@ Options::Options(int* argc, char*** argv)
 
 		switch (option) {
 		case 'v':
-			config::info::verboseLevel++;
+			verbose++;
 			break;
 		case 't':
-			config::info::testingLevel++;
+			testing++;
 			break;
 		case 'm':
-			config::info::measureLevel++;
+			measure++;
 			break;
 		case 'i':
 			input = std::string(optarg);
@@ -162,6 +162,10 @@ Options::Options(int* argc, char*** argv)
 	Configuration::fill(config::output::description, config::env::configurationFile);
 	Configuration::fill(config::info::description, config::env::configurationFile);
 	Configuration::fill(config::assembler::description, config::env::configurationFile);
+
+	config::info::verboseLevel += verbose;
+	config::info::measureLevel += measure;
+	config::info::testingLevel += testing;
 
 	if (path.size()) {
 		config::mesh::path = path;
