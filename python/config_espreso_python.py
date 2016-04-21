@@ -1,6 +1,6 @@
 #config
 
-eps_dual_feti   = 1e-3
+eps_dual_feti   = 1e-4
 maxIt_dual_feti = 500
 
 
@@ -9,7 +9,7 @@ iterative_Kplus                     = False     # True, False
 
 
 eps_iter_Kplus                      = 1e-15
-precondDualSystem                   = 'lumped' # 'none', 'lumped', 'dirichlet'
+precondDualSystem                   = 'dirichlet' # 'none', 'lumped', 'dirichlet'
 single_precision                    = True     # True, False
 methodToImproveSolByIterMethod      = 'pcg_x'   # 'cg_x', 'pcg_x',       
 precondFrom_Areg_orA                = False
