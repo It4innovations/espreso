@@ -12,8 +12,8 @@ import multiprocessing
 
 
 
-n_clus          = 8
-n_subPerClust   = 125
+n_clus          = 2
+n_subPerClust   = 2
 
 
 S_from_espreso = True 
@@ -75,6 +75,19 @@ def getDirichletPrecond(x):
     return J, S
 
 
+def creat_matB0_ker_from_IJV(ijv_B0ker):
+
+    #mat_B0ker.append([])
+    #n = np.max(ijv_B0ker[-1][0])+1 
+    I = ijv_B0ker[0][1::]
+    J = ijv_B0ker[1][1::] 
+    V = ijv_B0ker[2][1::]
+    n = ijv_B0ker[3][0]
+    m = ijv_B0ker[3][1]
+    return sparse.csc_matrix((V,(I,J)),shape=(m,n)).tocsc()
+
+
+
 mat_K       = []
 mat_Salfa   = []
 mat_Kreg    = []
@@ -88,7 +101,8 @@ vec_index_weight = []
 mat_Schur   = []
 
 
-pool = multiprocessing.Pool()
+if config_espreso_python.flag_multiprocessing:
+    pool = multiprocessing.Pool()
     
 for i in range(n_clus): 
     mat_K.append([])
@@ -107,8 +121,11 @@ for i in range(n_clus):
     ij = []
     for j in range(n_subPerClust):
         ij.append([i,j])
-    k = pool.map(readClusterData,ij)
-
+    if config_espreso_python.flag_multiprocessing:
+        k = pool.map(readClusterData,ij)
+    else:
+        k = list(map(readClusterData,ij))
+        
     for j in range(n_subPerClust):
         mat_K[i].append(k[j][0])
         mat_Kreg[i].append(k[j][1])
@@ -134,15 +151,18 @@ if conf.precondDualSystem=='dirichlet':
         ij = []
         for j in range(len(mat_K[i])):
             ij.append([i,j,mat_B1[i][j],mat_K[i][j]]) 
-        mat_Schur.append(pool.map(getDirichletPrecond,ij)) 
-
+        if config_espreso_python.flag_multiprocessing:
+            mat_Schur.append(pool.map(getDirichletPrecond,ij)) 
+        else:
+            mat_Schur.append(list(map(getDirichletPrecond,ij)))
 
 
 ijv_B0ker     = []          
 for i in range(len(mat_K)):
     ijv_B0ker.append([]) 
     for j in range(len(mat_K[i])):
-        ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0])]) 
+        ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0]),\
+            np.array([0,0])]) 
 CONSTANT_89 = 25
 if True:
     for i in range(len(mat_B0)):
@@ -196,15 +216,14 @@ if True:
 #                   print('NO  ............... clust: ',i,'--',j,k,'\t\t',np.sum(indx))                                
     mat_B0ker      = []                    
     for i in range(len(mat_B0)):
-        mat_B0ker.append([])
-        n = np.max(ijv_B0ker[i][-1][0])+1
+        n_lam = np.max(ijv_B0ker[i][-1][0])+1 
         for j in range(len(mat_B0[i])):
-            I = ijv_B0ker[i][j][0][1::]
-            J = ijv_B0ker[i][j][1][1::] 
-            V = ijv_B0ker[i][j][2][1::]
-            m = mat_B0[i][j].shape[1]
-            tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).tocsc()
-            mat_B0ker[i].append(tmp)
+            nDOFs = mat_K[i][j].shape[0] 
+            ijv_B0ker[i][j][3] = np.array([nDOFs,n_lam])  
+        if config_espreso_python.flag_multiprocessing:
+            mat_B0ker.append(pool.map(creat_matB0_ker_from_IJV,ijv_B0ker[i]))
+        else:
+            mat_B0ker.append(list(map(creat_matB0_ker_from_IJV,ijv_B0ker[i])))
     #mat_B0 = mat_B0ker
 
 print('\nTFETI')
