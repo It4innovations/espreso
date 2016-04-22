@@ -138,7 +138,7 @@ for i in range(len(mat_K)):
     ijv_B0ker.append([]) 
     for j in range(len(mat_K[i])):
         ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0])]) 
-CONSTANT_89 = 18
+CONSTANT_89 = 25
 if True:
     for i in range(len(mat_B0)):
         cnt_ijv = 0
