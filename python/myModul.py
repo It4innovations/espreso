@@ -3,6 +3,8 @@ from scipy import sparse
 import scipy.sparse.linalg as spla
 import config_espreso_python as conf
 import pylab as plt
+#import multiprocessing
+
 #import sys  
 #
 #
@@ -359,9 +361,13 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
     dc       = np.zeros(B[0][0].shape[0])    
     Kplus   = []
 #    
+    
     for i in range(len(K)):
         Kplus.append([])
+        
+        
         for j in range(len(K[i])):
+
             Kplus[i].append(KPLUS(Kreg[i][j]))
             if (i==0 and j==0):
                 e = sparse.csc_matrix.dot(R[i][j].transpose(),-f[i][j])
@@ -408,9 +414,13 @@ def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
     d   = np.zeros(B1[0][0].shape[0])    
     dc  = np.zeros(B1[0][0].shape[0])    
 #   
+#    pool = multiprocessing.Pool()
+
     Kplus = []
     for i in range(len(K)):
         Kplus.append([])
+#        Kplus.append(pool.map(KPLUS,Kreg[i]))
+        
         e_i_j = np.zeros(R[i][0].shape[1])
         for j in range(len(K[i])):
             Kplus[i].append(KPLUS(Kreg[i][j]))           
