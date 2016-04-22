@@ -10,7 +10,7 @@ import multiprocessing
 
 
 n_clus          = 2
-n_subPerClust   = 8
+n_subPerClust   = 8 
 
 
 S_from_espreso = False 
@@ -126,19 +126,11 @@ print('done')
 ###############################################################################   
 conf = config_espreso_python
 if conf.precondDualSystem=='dirichlet':
-    for i in range(len(mat_K)):
-        #mat_Schur.append([])
-        #pool = multiprocessing.Pool()
-        
+    for i in range(len(mat_K)): 
         ij = []
         for j in range(len(mat_K[i])):
-            ij.append([i,j,mat_B1[i][j],mat_K[i][j]])
-        #kkk = pool.map(getDirichletPrecond,ij)
-        mat_Schur.append(pool.map(getDirichletPrecond,ij))
-        #mat_Schur[i] = kkk
-    #    i = x[0];    j = x[1]    
-    #    _B1 = x[2].copy()
-    #    mat_K_ij = x[3]        
+            ij.append([i,j,mat_B1[i][j],mat_K[i][j]]) 
+        mat_Schur.append(pool.map(getDirichletPrecond,ij)) 
 
 
 
@@ -159,7 +151,7 @@ if True:
                 indx = np.ravel(tmpB_jk.sum(1)==2) 
 
                 if (np.sum(indx)>CONSTANT_89):
-                    print('YES ............... clust: ',i,'--',j,k, np.sum(indx))
+#                   print('YES ............... clust: ',i,'--',j,k, np.sum(indx))
 #                    
                     iB0_j = mat_B1[i][j].tocsr()[indx,:].indices
                     iB0_k = mat_B1[i][k].tocsr()[indx,:].indices
@@ -196,8 +188,8 @@ if True:
                         ijv_B0ker[i][k][2] = np.concatenate((ijv_B0ker[i][k][2],_v_k))
                                                 
                         cnt_ijv += 1
-                else:
-                    print('NO  ............... clust: ',i,'--',j,k,'\t\t',np.sum(indx))                                
+#                else:
+#                   print('NO  ............... clust: ',i,'--',j,k,'\t\t',np.sum(indx))                                
     mat_B0ker      = []                    
     for i in range(len(mat_B0)):
         mat_B0ker.append([])
