@@ -5,12 +5,15 @@ import myModul as mM
 import config_espreso_python  
 import pylab as plt
 import scipy.sparse.linalg as spla
+import multiprocessing
 
 
 
 
-n_clus          = 2
-n_subPerClust   = 8 
+
+
+n_clus          = 8
+n_subPerClust   = 125
 
 
 S_from_espreso = True 
@@ -85,6 +88,7 @@ vec_index_weight = []
 mat_Schur   = []
 
 
+pool = multiprocessing.Pool()
     
 for i in range(n_clus): 
     mat_K.append([])
@@ -103,7 +107,7 @@ for i in range(n_clus):
     ij = []
     for j in range(n_subPerClust):
         ij.append([i,j])
-    k = config_espreso_python.pool.map(readClusterData,ij)
+    k = pool.map(readClusterData,ij)
 
     for j in range(n_subPerClust):
         mat_K[i].append(k[j][0])
@@ -115,6 +119,7 @@ for i in range(n_clus):
         vec_c[i].append(k[j][6])
         vec_weight[i].append(k[j][7])
         vec_index_weight[i].append(k[j][8])
+        print('.',end='')
     
     #print(k[0][0])
 print('done')
@@ -129,7 +134,7 @@ if conf.precondDualSystem=='dirichlet':
         ij = []
         for j in range(len(mat_K[i])):
             ij.append([i,j,mat_B1[i][j],mat_K[i][j]]) 
-        mat_Schur.append(config_espreso_python.pool.map(getDirichletPrecond,ij)) 
+        mat_Schur.append(pool.map(getDirichletPrecond,ij)) 
 
 
 
