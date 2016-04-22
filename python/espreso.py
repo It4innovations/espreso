@@ -5,7 +5,7 @@ import myModul as mM
 import config_espreso_python  
 import pylab as plt
 import scipy.sparse.linalg as spla
-import multiprocessing
+
 
 
 
@@ -13,11 +13,13 @@ n_clus          = 2
 n_subPerClust   = 8 
 
 
-S_from_espreso = False 
+S_from_espreso = True 
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
 path = '../log/'
+
+
 
 
 
@@ -47,14 +49,11 @@ def readClusterData(x):
     return y
     
     
-def getDirichletPrecond(x):
-    #for j in range(len(mat_K[i])):
-    #_B1 = mat_B1[i][j].copy()
+def getDirichletPrecond(x): 
     i = x[0];    j = x[1]    
-    _B1 = x[2].copy()
-    mat_K_ij = x[3]
-    y = []
-    J = np.unique(_B1.tocoo().col)            
+    #_B1 = x[2].copy()
+    mat_K_ij = x[3] 
+    J = np.unique(x[2].tocoo().col)            
     if S_from_espreso:
         #mat_Schur[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
         S = mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)
@@ -85,7 +84,7 @@ vec_weight  = []
 vec_index_weight = []
 mat_Schur   = []
 
-pool = multiprocessing.Pool()
+
     
 for i in range(n_clus): 
     mat_K.append([])
@@ -104,7 +103,7 @@ for i in range(n_clus):
     ij = []
     for j in range(n_subPerClust):
         ij.append([i,j])
-    k = pool.map(readClusterData,ij)
+    k = config_espreso_python.pool.map(readClusterData,ij)
 
     for j in range(n_subPerClust):
         mat_K[i].append(k[j][0])
@@ -130,7 +129,7 @@ if conf.precondDualSystem=='dirichlet':
         ij = []
         for j in range(len(mat_K[i])):
             ij.append([i,j,mat_B1[i][j],mat_K[i][j]]) 
-        mat_Schur.append(pool.map(getDirichletPrecond,ij)) 
+        mat_Schur.append(config_espreso_python.pool.map(getDirichletPrecond,ij)) 
 
 
 
