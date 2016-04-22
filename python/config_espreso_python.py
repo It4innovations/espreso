@@ -1,4 +1,6 @@
 #config
+import multiprocessing
+
 
 eps_dual_feti   = 1e-4
 maxIt_dual_feti = 500
@@ -23,7 +25,7 @@ mult_Areg_or_A_RRt                  = True
 
 
 
-
+pool = multiprocessing.Pool()
 
 
 
