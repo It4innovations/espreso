@@ -27,7 +27,7 @@ flag_multiprocessing                = True
 
 
 
-pool = multiprocessing.Pool()
+#pool = multiprocessing.Pool()
 
 
 
