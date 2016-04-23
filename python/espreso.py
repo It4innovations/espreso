@@ -12,11 +12,11 @@ import multiprocessing
 
 
 
-n_clus          = 2
-n_subPerClust   = 2
+n_clus          = 1
+n_subPerClust   = 64    
 
+CONSTANT_89 = 24
 
-S_from_espreso = True 
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
@@ -57,8 +57,8 @@ def getDirichletPrecond(x):
     #_B1 = x[2].copy()
     mat_K_ij = x[3] 
     J = np.unique(x[2].tocoo().col)            
-    if S_from_espreso:
-        #mat_Schur[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
+    if config_espreso_python.Dirichlet_from_espreso:
+        #mat_Schur_Dirichlet[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
         S = mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)
     else:
         I = np.arange(0,mat_K_ij.shape[0])
@@ -98,7 +98,7 @@ vec_f       = []
 vec_c       = []
 vec_weight  = []
 vec_index_weight = []
-mat_Schur   = []
+mat_Schur_Dirichlet   = []
 
 
 if config_espreso_python.flag_multiprocessing:
@@ -152,9 +152,9 @@ if conf.precondDualSystem=='dirichlet':
         for j in range(len(mat_K[i])):
             ij.append([i,j,mat_B1[i][j],mat_K[i][j]]) 
         if config_espreso_python.flag_multiprocessing:
-            mat_Schur.append(pool.map(getDirichletPrecond,ij)) 
+            mat_Schur_Dirichlet.append(pool.map(getDirichletPrecond,ij)) 
         else:
-            mat_Schur.append(list(map(getDirichletPrecond,ij)))
+            mat_Schur_Dirichlet.append(list(map(getDirichletPrecond,ij)))
 
 
 ijv_B0ker     = []          
@@ -163,7 +163,6 @@ for i in range(len(mat_K)):
     for j in range(len(mat_K[i])):
         ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0]),\
             np.array([0,0])]) 
-CONSTANT_89 = 25
 if True:
     for i in range(len(mat_B0)):
         cnt_ijv = 0
@@ -227,16 +226,16 @@ if True:
     #mat_B0 = mat_B0ker
 
 print('\nTFETI')
-u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B1,vec_c,vec_weight,\
+u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
                             vec_index_weight,mat_R)
                         
 
 print('\nHFETI - corners')
-uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0,mat_B1,vec_c,\
+uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R,mat_Salfa)
 print('size(F0) =',mat_B0[0][0].shape[0],' (corners)')
 print('\nHFETI - kernels')    
-uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur,mat_B0ker,mat_B1,vec_c,\
+uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0ker,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R,mat_Salfa)   
                         
 print('size(F0) =',mat_B0ker[0][0].shape[0],' (kernels)')

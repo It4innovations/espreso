@@ -7,11 +7,12 @@ maxIt_dual_feti = 500
 
 
 iterative_Kplus                     = False     # True, False
-
-
-
 eps_iter_Kplus                      = 1e-15
+
+
+Dirichlet_from_espreso              = False
 precondDualSystem                   = 'dirichlet' # 'none', 'lumped', 'dirichlet'
+
 single_precision                    = True     # True, False
 methodToImproveSolByIterMethod      = 'pcg_x'   # 'cg_x', 'pcg_x',       
 precondFrom_Areg_orA                = False
