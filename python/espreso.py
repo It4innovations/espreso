@@ -12,8 +12,9 @@ import multiprocessing
 
 
 
-n_clus          = 1
-n_subPerClust   = 64    
+n_clus          = 2
+n_subPerClust   = 8
+
 
 CONSTANT_89 = 24
 
@@ -224,6 +225,9 @@ if True:
         else:
             mat_B0ker.append(list(map(creat_matB0_ker_from_IJV,ijv_B0ker[i])))
     #mat_B0 = mat_B0ker
+            
+if config_espreso_python.flag_multiprocessing:
+    pool.close()
 
 print('\nTFETI')
 u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
