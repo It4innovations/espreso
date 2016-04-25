@@ -2041,7 +2041,7 @@ void SparseMatrix::GramSchmidtOrtho(){
 }
 
 
-bool myfn(const double &i, const double &j) { return fabs(i)<=fabs(j); }
+bool compareDouble(const double &i, const double &j) { return fabs(i)<=fabs(j); }
 
 void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
 #ifdef GENINVtools
@@ -2059,7 +2059,7 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
   auto ij= [&]( eslocal ii, eslocal jj ) -> eslocal
    { return ii + rows*jj; };
   for (eslocal j=0;j<cols;j++){
-    it = std::max_element(N.begin(),N.end()-j*rows,myfn);
+    it = std::max_element(N.begin(),N.end()-j*rows,compareDouble);
     I = it - N.begin();
     colInd = I/rows;
     rowInd = I-colInd*rows;
@@ -2908,7 +2908,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 //}
 
 void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
-      SparseMatrix &Kplus_R,double *norm_KR_d_pow_2,eslocal *defect_d,eslocal d_sub){
+      SparseMatrix &Kplus_R,double *norm_KR_d_pow_2_approx,eslocal *defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -3172,6 +3172,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //0 - allocation of vectors, copying of matrix
   elapsed_secs[0] = (time1 - begin_time) ;
 
+
+  SEQ_VECTOR <double> tmp_approx_max_eig;
+  tmp_approx_max_eig.resize(K.rows);
+
+
+
+
   // diagonal scaling of K_modif:
   // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
   for (eslocal i = 0;i<K_modif.rows;i++){
@@ -3184,6 +3191,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
           K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
       }
       K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
+      tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
     }
   }
 
@@ -3615,22 +3623,31 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
   // norm of product K*R: second matrix has to be in dense format!!!
 //11 - max(eig(K))
-#if VERBOSE_LEVEL>1
+
+  std::vector <double>::iterator  it2;
+  it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble); 
+  double lmx_K_approx       = *it2;
+  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R);
+  *norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
+  *defect_d                 = Kplus_R.cols;
+
+
+#if VERBOSE_LEVEL>2
   double lmx_K;
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
+  double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
+  double norm_KR                  = sqrt(norm_KR_d_pow_2);
   os << std::scientific;
-  os << "max(eig(K)):     " << lmx_K << "\n";
-  os << "max(diag(K)):    " << rho << "\n";
-  double tmp = K.getNorm_K_R(K,Kplus_R);
-  *norm_KR_d_pow_2 = (tmp*tmp)/(lmx_K*lmx_K);
-  *defect_d = Kplus_R.cols;
-  os << "defect(K):       " << defect_K_in <<"\n";
-  os << "norm_KR:         " << sqrt(*norm_KR_d_pow_2) <<"\n";
+  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
+  os << "max(eig(K)):             " << lmx_K << "\n";
+  os << "max(diag(K)):            " << rho << "\n";
+  os << "defect(K):               " << defect_K_in <<"\n";
+  os << "norm_KR_approx:          " << sqrt(*norm_KR_d_pow_2_approx) <<"\n";
+  os << "norm_KR:                 " << norm_KR <<"\n";
 #endif
-               //                                               |
+//                                               |
   time1 = omp_get_wtime();
   elapsed_secs[11] = double(time1 - begin_time) ;
-
 //
   Kplus_R.ConvertDenseToCSR(0);
 //
