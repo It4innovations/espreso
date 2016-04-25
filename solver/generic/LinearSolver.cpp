@@ -612,6 +612,9 @@ void LinearSolver::set_R_from_K ()
 	}
 	ESINFO(PROGRESS2) << "K kernel detected";
   // sum of ||K*R|| (all subdomains on the cluster)
+  //
+  //
+ // ------------------------------------ GLOBAL GETHERING OF || K * R || / || K || FIXED !!!
 #ifdef VERBOSE_LEVEL_X
   double sum_per_sub_on_clst_norm_KR_d_pow_2 = 0;
 	for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
