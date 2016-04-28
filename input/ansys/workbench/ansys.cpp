@@ -98,6 +98,12 @@ void AnsysWorkbench::elements(std::vector<Element*> &elements)
 	}
 }
 
+void AnsysWorkbench::materials(std::vector<Material> &materials)
+{
+	// TODO: rad from file
+	materials.push_back({7850, 2.1e11, 0.3});
+}
+
 void AnsysWorkbench::boundaryConditions(Coordinates &coordinates)
 {
 	std::string line;

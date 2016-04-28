@@ -71,7 +71,7 @@ public:
 		memcpy(_params, params, sizeof(eslocal) * PARAMS_SIZE);
 	}
 
-	const eslocal* getParams()
+	const eslocal* getParams() const
 	{
 		return _params;
 	}
@@ -81,7 +81,7 @@ public:
 		_params[param] = value;
 	}
 
-	eslocal getParam(Params param)
+	eslocal getParam(Params param) const
 	{
 		return _params[param];
 	}

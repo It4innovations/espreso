@@ -92,8 +92,6 @@ namespace mesh {
 	extern bool averageEdges;
 	extern bool averageFaces;
 
-	extern double materialDifference;
-
 	extern std::vector<input::Description> description;
 };
 

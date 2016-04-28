@@ -22,6 +22,7 @@
 #include "coordinates.h"
 #include "boundaries.h"
 #include "faces.h"
+#include "material.h"
 
 #include "esbasis.h"
 #include "esconfig.h"
@@ -113,6 +114,11 @@ public:
 		return _DOFs;
 	}
 
+	const std::vector<Material>& materials() const
+	{
+		return _materials;
+	}
+
 protected:
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
@@ -152,8 +158,11 @@ protected:
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
 
-	/** @brief  the number of DOFs for all nodes*/
+	/** @brief the number of DOFs for all nodes*/
 	size_t _DOFs;
+
+	/** @brief list of materials in the mesh*/
+	std::vector<Material> _materials;
 
 private:
 	Mesh(const Mesh &mesh): _DOFs(mesh._DOFs)

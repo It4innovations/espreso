@@ -95,6 +95,7 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 			for (size_t i = 0; i < n; i++) {
 				values[i]--;
 			}
+			params[Element::MATERIAL] = 0;
 			elements[c] = AnsysUtils::createElement(values, n, params);
 			elements[c]->setParams(values + n);
 		}
@@ -102,6 +103,11 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 	} else {
 		ESINFO(ERROR) << "Cannot load mesh from file: " << fileName;
 	}
+}
+
+void AnsysMatsol::materials(std::vector<Material> &materials)
+{
+	materials.push_back({7850, 2.1e11, 0.3});
 }
 
 void AnsysMatsol::boundaryConditions(Coordinates &coordinates)

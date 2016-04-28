@@ -39,6 +39,11 @@ protected:
 	virtual void elementsMesh(std::vector<Element*> &elements) = 0;
 	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
 
+	void materials(std::vector<Material> &materials)
+	{
+		materials = _settings.materials;
+	}
+
 	const Settings _settings;
 	size_t _DOFs;
 };

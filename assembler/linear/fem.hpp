@@ -72,7 +72,7 @@ void Linear<FEM>::KeMefe(
 	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 	std::vector<double> inertia;
-	this->inertia(inertia);
+	this->inertia(inertia, this->_input.mesh.materials()[e->getParam(Element::MATERIAL)]);
 
 	DenseMatrix coordinates(e->size(), Point::size());
 	for (size_t i = 0; i < e->size(); i++) {
@@ -171,7 +171,7 @@ void Linear<FEM>::KMf(size_t part, bool dynamics)
 	const std::vector<eslocal> &partition = _input.mesh.getPartition();
 	const std::vector<Element*> &elements = _input.mesh.getElements();
 	for (eslocal i = partition[part]; i < partition[part + 1]; i++) {
-		this->C(Ce, elements[i]->getParam(Element::MATERIAL));
+		this->C(Ce, this->_input.mesh.materials()[elements[i]->getParam(Element::MATERIAL)]);
 		KeMefe(Ke, Me, fe, Ce, elements[i], part, dynamics);
 		integrate(Ke, Me, fe, _K, _M, _f[part], elements[i], dynamics);
 	}

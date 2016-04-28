@@ -3,6 +3,7 @@
 #define INPUT_MESHGENERATOR_SETTINGS_H_
 
 #include "esbasis.h"
+#include "esmesh.h"
 
 namespace espreso {
 namespace input {
@@ -42,6 +43,8 @@ struct Settings {
 	eslocal shape;
 	eslocal assembler;
 
+	std::vector<Material> materials;
+
 	bool useMetis;
 };
 
@@ -55,6 +58,17 @@ inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 	os << "generated shape: " << shapes[s.shape] << "\n";
 	os << "type of the element: " << eTypes[s.elementType] << "\n";
 	os << "assembler: " << assembler[s.assembler] << "\n";
+
+	os << "material 1:\n";
+	os << "\tdensity: " << s.materials[0].density << "\n";
+	os << "\tyoung's modulus: " << s.materials[0].youngModulus << "\n";
+	os << "\tpoisson's ratio: " << s.materials[0].poissonRatio << "\n";
+
+	os << "material 2:\n";
+	os << "\tdensity: " << s.materials[1].density << "\n";
+	os << "\tyoung's modulus: " << s.materials[1].youngModulus << "\n";
+	os << "\tpoisson's ratio: " << s.materials[1].poissonRatio << "\n";
+
 	os << "partition: " << (s.useMetis ? "by METIS" : "regular") << "\n";
 	return os;
 }

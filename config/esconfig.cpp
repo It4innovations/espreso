@@ -38,10 +38,6 @@ bool   mesh::faceCorners   = false;
 bool   mesh::averageEdges  = false;
 bool   mesh::averageFaces  = false;
 
-double mesh::materialDifference = 1e0;
-
-
-
 /////////////////////////////// SOLVER /////////////////////////////////////////
 
 double   solver::epsilon                = 1e-5;

@@ -141,6 +141,12 @@ void OpenFOAM::elements(std::vector<Element*> &elements) {
 	solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 }
 
+void OpenFOAM::materials(std::vector<Material> &materials)
+{
+	// TODO
+	materials.push_back({7850, 2.1e11, 0.3});
+}
+
 void OpenFOAM::faces(Faces &faces) {
 	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();
 			++it) {

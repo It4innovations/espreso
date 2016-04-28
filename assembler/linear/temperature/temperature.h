@@ -13,8 +13,8 @@ public:
 	Temperature(TInput &input): Linear<TInput>(input) {};
 
 protected:
-	void inertia(std::vector<double> &inertia);
-	void C(DenseMatrix &C, eslocal material);
+	void inertia(std::vector<double> &inertia, const Material &material);
+	void C(DenseMatrix &C, const Material &material);
 	double CP() { return 1; }
 	double rho() { return 7.85e-9; }
 };

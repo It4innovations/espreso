@@ -40,6 +40,7 @@ public:
 
 		TimeEvent tElements("elements"); tElements.start();
 		elements(mesh._elements);
+		materials(mesh._materials);
 		tElements.end(); measurement.addEvent(tElements);
 		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.getElements().size());
 
@@ -80,6 +81,7 @@ public:
 protected:
 	virtual void points(Coordinates &coordinates, size_t &DOFs) = 0;
 	virtual void elements(std::vector<Element*> &elements) = 0;
+	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void faces(Faces &faces) { };
 	virtual void boundaryConditions(Coordinates &coordinates) = 0;
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;

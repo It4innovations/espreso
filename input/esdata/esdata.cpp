@@ -67,6 +67,12 @@ void Esdata::elements(std::vector<Element*> &elements)
 	is.close();
 }
 
+void Esdata::materials(std::vector<Material> &materials)
+{
+	// TODO
+	materials.push_back({7850, 2.1e11, 0.3});
+}
+
 void Esdata::boundaryConditions(Coordinates &coordinates)
 {
 	std::stringstream fileName;

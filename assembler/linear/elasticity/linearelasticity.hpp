@@ -4,17 +4,17 @@
 namespace espreso {
 
 template <class TInput>
-void LinearElasticity<TInput>::inertia(std::vector<double> &inertia)
+void LinearElasticity<TInput>::inertia(std::vector<double> &inertia, const Material &material)
 {
 	inertia.resize(3, 0);
-	inertia[2] = 9.8066 * 7850; //9810.0 * 7.85e-9;
+	inertia[2] = 9.8066 * material.density;
 }
 
 template <class TInput>
-void LinearElasticity<TInput>::C(DenseMatrix &C, eslocal material)
+void LinearElasticity<TInput>::C(DenseMatrix &C, const Material &material)
 {
-	double ex = 2e11; //!material ? 2.1e5 : 2.1e5 * esconfig::mesh::materialDifference;
-	double mi = 0.3;
+	double ex = material.youngModulus;
+	double mi = material.poissonRatio;
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	C.resize(6, 6);
 
