@@ -11,7 +11,7 @@ class TransientElasticity: public LinearElasticity<TInput> {
 
 public:
 	TransientElasticity(TInput &input): LinearElasticity<TInput>(input),
-	_beta(0.25), _gama(0.5), _timestep(1e-6), _deltaT(_timestep), _time(0) { };
+	_beta(0.25), _gama(0.5), _timestep(1e-3), _deltaT(_timestep), _time(0) { };
 	virtual ~TransientElasticity() {};
 
 	virtual void init();

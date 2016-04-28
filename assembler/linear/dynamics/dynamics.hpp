@@ -36,7 +36,7 @@ void TransientElasticity<TInput>::init()
 	}
 
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
-		for (size_t i = 2; i < _w[s].size(); i += 3) {
+		for (size_t i = 1; i < _w[s].size(); i += 3) {
 			_w[s][i] = 1.0;
 		}
 	}
