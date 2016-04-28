@@ -26,7 +26,8 @@ enum ElementType {
 
 enum Assembler {
 	LinearElasticity,
-	Temperature
+	Temperature,
+	TransientElasticity
 };
 
 struct Settings {
@@ -52,7 +53,7 @@ inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 {
 	std::vector<std::string> shapes({ "CUBE", "SPHERE" });
 	std::vector<std::string> eTypes({ "HEXA8", "HEXA20", "TETRA4", "TETRA10", "PRISMA6", "PRISMA15", "PYRAMID5", "PYRAMID13" });
-	std::vector<std::string> assembler({ "LinearElasticity", "Temperature" });
+	std::vector<std::string> assembler({ "LinearElasticity", "Temperature", "TransientElasticity" });
 
 	os << "clusters: " << s.size << "\n";
 	os << "generated shape: " << shapes[s.shape] << "\n";

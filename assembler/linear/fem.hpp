@@ -71,8 +71,9 @@ void Linear<FEM>::KeMefe(
 	const std::vector<DenseMatrix> &dN = e->dN();
 	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
+	const Material &material = this->_input.mesh.materials()[e->getParam(Element::MATERIAL)];
 	std::vector<double> inertia;
-	this->inertia(inertia, this->_input.mesh.materials()[e->getParam(Element::MATERIAL)]);
+	this->inertia(inertia, material);
 
 	DenseMatrix coordinates(e->size(), Point::size());
 	for (size_t i = 0; i < e->size(); i++) {
@@ -114,7 +115,7 @@ void Linear<FEM>::KeMefe(
 
 		if (dynamics) {
 			// Me = Me + WF * (DENS * dJ) * (N' * N);
-			Me.multiply(N[gp], N[gp], this->rho() * detJ * weighFactor[gp] * this->CP(), 1, true);
+			Me.multiply(N[gp], N[gp], material.density * detJ * weighFactor[gp] * this->CP(), 1, true);
 		}
 	}
 }

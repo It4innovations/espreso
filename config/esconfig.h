@@ -119,8 +119,10 @@ namespace assembler {
 	enum Discretization { FEM, BEM, API };
 	extern int discretization;
 
-	enum Physics { LinearElasticity, Temperature };
+	enum Physics { LinearElasticity, Temperature, TransientElasticity };
 	extern int physics;
+
+	extern size_t timeSteps;
 
 	extern std::vector<input::Description> description;
 };

@@ -63,8 +63,9 @@ size_t   solver::N_MICS                 = 2;
 
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
 
-int assembler::discretization = FEM;
-int assembler::physics        = LinearElasticity;
+int    assembler::discretization = FEM;
+int    assembler::physics        = LinearElasticity;
+size_t assembler::timeSteps      = 1;
 
 /////////////////////////////// OUTPUT /////////////////////////////////////////
 

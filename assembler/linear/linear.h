@@ -12,20 +12,19 @@ class Linear: public EqualityConstraints<TInput> {
 public:
 	virtual ~Linear() {};
 
-	void init();
-	void pre_solve_update();
-	void post_solve_update();
-	void solve(std::vector<std::vector<double> > &solution);
-	void finalize();
+	virtual void init();
+	virtual void solve(std::vector<std::vector<double> > &solution);
+	virtual void finalize();
 
 protected:
 	Linear(TInput &input): EqualityConstraints<TInput>(input) {};
+
+	virtual double timeConstant() { return 1; }
 
 	// FEM specific
 	virtual void inertia(std::vector<double> &inertia, const Material &material) = 0;
 	virtual void C(DenseMatrix &C, const Material &material) = 0;
 	virtual double CP() = 0;
-	virtual double rho() = 0;
 
 	// Matrices for Linear Solver
 	std::vector<SparseMatrix> _K, _T, _M;

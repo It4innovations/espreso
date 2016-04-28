@@ -4,6 +4,7 @@
 
 #include "linear/elasticity/linearelasticity.h"
 #include "linear/temperature/temperature.h"
+#include "linear/dynamics/dynamics.h"
 
 
 

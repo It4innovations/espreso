@@ -69,7 +69,6 @@ static void generate(const Options &options, Mesh *mesh)
 }
 
 
-
 static Mesh* getMesh(const Options &options)
 {
 	Mesh *mesh = new Mesh();
@@ -109,6 +108,9 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 	case config::assembler::Temperature: {
 		return new Temperature<TDiscretization>(discretization);
+	}
+	case config::assembler::TransientElasticity: {
+		return new TransientElasticity<TDiscretization>(discretization);
 	}
 	default:
 		ESINFO(ERROR) << "Unknown assembler.";
@@ -177,11 +179,11 @@ Factory::~Factory()
 	}
 }
 
-void Factory::solve(eslocal steps)
+void Factory::solve()
 {
 	_assembler->init();
 
-	for (int i = 0; i < steps; i++) {
+	for (int i = 0; i < config::assembler::timeSteps; i++) {
 		_assembler->pre_solve_update();
 		_assembler->solve(_solution);
 		_assembler->post_solve_update();

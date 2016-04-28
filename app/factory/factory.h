@@ -14,7 +14,7 @@ class Factory {
 public:
 	Factory(const Options &options);
 
-	void solve( eslocal steps );
+	void solve();
 	void store(const std::string &file);
 
 	~Factory();

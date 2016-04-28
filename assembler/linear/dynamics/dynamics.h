@@ -2,18 +2,37 @@
 #ifndef ASSEMBLER_LINEAR_DYNAMICS_DYNAMICS_H_
 #define ASSEMBLER_LINEAR_DYNAMICS_DYNAMICS_H_
 
+#include "../elasticity/linearelasticity.h"
 
-//class Dynamics: public Assembler {
-//
-//public:
-//	Dynamics(const Instance &instance): Assembler(instance) { };
-//
-//	void init();
-//	void pre_solve_update();
-//	void post_solve_update();
-//	void solve();
-//	void finalize();
-//
+namespace espreso {
+
+template <class TInput>
+class TransientElasticity: public LinearElasticity<TInput> {
+
+public:
+	TransientElasticity(TInput &input): LinearElasticity<TInput>(input),
+	_beta(0.25), _gama(0.5), _timestep(1e-6), _deltaT(_timestep), _time(0) { };
+	virtual ~TransientElasticity() {};
+
+	virtual void init();
+	virtual void pre_solve_update();
+	virtual void post_solve_update();
+	virtual void solve(std::vector<std::vector<double> > &solution);
+
+protected:
+	virtual double timeConstant() { return 1 / (_beta * _timestep * _timestep); }
+
+	double _beta;
+	double _gama;
+	double _timestep;
+	double _deltaT;
+
+	size_t _time;
+
+	std::vector<double> _constantA;
+	std::vector<std::vector<double> > _u, _v, _w;    // old vectors
+	std::vector<std::vector<double> > _un, _vn, _wn; // new vectors
+	std::vector<std::vector<double> > _b, _tmp;
 //
 //private:
 //
@@ -80,11 +99,11 @@
 //	std::vector < std::vector <double> > vec_t_tmp;
 //
 //	std::vector <double> const_a;
-//
-//};
 
+};
 
+}
 
-
+#include "dynamics.hpp"
 
 #endif /* ASSEMBLER_LINEAR_DYNAMICS_DYNAMICS_H_ */

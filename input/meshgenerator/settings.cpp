@@ -30,7 +30,8 @@ Settings::Settings(const Options &options, size_t index, size_t size)
 		{ "MAT2_YOUNG"  , materials[1].youngModulus, "Young's modulus of the first material." },
 		{ "MAT2_POISSON", materials[1].poissonRatio, "Poisson's ratio of the first material." },
 
-		{ "ASSEMBLER"   , assembler  , "Assembler type: 0 - LinearElasticity, 1 - Temperature" }
+		{ "ASSEMBLER"   , assembler  , "Assembler type: 0 - LinearElasticity, 1 - Temperature" },
+		{ "TIME_STEPS", config::assembler::timeSteps, "Number of time steps for transient problems."}
 	};
 
 	Configuration configuration(Settings::description, options);

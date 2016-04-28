@@ -138,34 +138,37 @@ void LinearSolver::init(
 
 
 	// *** Setup R matrix ********************************************************************************************
-	 TimeEvent timeSetR(string("Solver - Set R")); timeSetR.start();
-	if (R_from_mesh){
-		set_R(mesh);
-	}
-	else{
-		cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-			cluster.domains[d].K = K_mat[d];
-			if ( cluster.domains[d].K.type == 'G' )
-				cluster.domains[d].K.RemoveLower();
-			if ( solver.USE_PREC == 11 )
-				cluster.domains[d].Prec = cluster.domains[d].K;
-		}
-		set_R_from_K();
-	}
+	 if (SINGULAR) {
+		 TimeEvent timeSetR(string("Solver - Set R"));
+		 timeSetR.start();
+		 if (R_from_mesh) {
+			 set_R(mesh);
+		 } else {
+			 cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+				 cluster.domains[d].K = K_mat[d];
+				 if (cluster.domains[d].K.type == 'G')
+					 cluster.domains[d].K.RemoveLower();
+				 if (solver.USE_PREC == 11)
+					 cluster.domains[d].Prec = cluster.domains[d].K;
+			 }
+			 set_R_from_K();
+		 }
 
-	if (config::info::printMatrices) {
-		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-			SparseMatrix s = cluster.domains[d].Kplus_R;
-			s.ConvertDenseToCSR(1);
+		 if (config::info::printMatrices) {
+			 for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+				 SparseMatrix s = cluster.domains[d].Kplus_R;
+				 s.ConvertDenseToCSR(1);
 
-			std::ofstream os(Logging::prepareFile(d, "R"));
-			os << s;
-			os.close();
-		}
-	}
+				 std::ofstream os(Logging::prepareFile(d, "R"));
+				 os << s;
+				 os.close();
+			 }
+		 }
 
-	 timeSetR.endWithBarrier(); timeEvalMain.addEvent(timeSetR);
-	// *** END - Setup R matrix **************************************************************************************
+		 timeSetR.endWithBarrier();
+		 timeEvalMain.addEvent(timeSetR);
+		 // *** END - Setup R matrix **************************************************************************************
+	 }
 
 
 	// *** HTFETI - averaging objects

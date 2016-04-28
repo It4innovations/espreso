@@ -49,8 +49,8 @@ class AssemblerBase {
 
 public:
 	virtual void init() = 0;
-	virtual void pre_solve_update() = 0;
-	virtual void post_solve_update() = 0;
+	virtual void pre_solve_update() {};
+	virtual void post_solve_update() {};
 	virtual void solve(std::vector<std::vector<double> > &solution) = 0;
 	virtual void finalize() = 0;
 

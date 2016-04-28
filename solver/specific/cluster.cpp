@@ -316,7 +316,9 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
    	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
    					domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
 
-			domains[d].K_regularizationFromR ( domains[d].K );
+   			if (!USE_DYNAMIC) {
+   				domains[d].K_regularizationFromR ( domains[d].K );
+   			}
 			domains[d].enable_SP_refinement = true;
 
 			std::vector <eslocal> ().swap (domains[d].fix_dofs);

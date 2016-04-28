@@ -17,11 +17,17 @@ protected:
 		switch (_settings.assembler) {
 		case LinearElasticity:
 			config::assembler::physics = config::assembler::LinearElasticity;
+			config::assembler::timeSteps = 1;
 			_DOFs = 3;
 			break;
 		case Temperature:
 			config::assembler::physics = config::assembler::Temperature;
+			config::assembler::timeSteps = 1;
 			_DOFs = 1;
+			break;
+		case TransientElasticity:
+			config::assembler::physics = config::assembler::TransientElasticity;
+			_DOFs = 3;
 			break;
 		default:
 			ESINFO(ERROR) << "Unknown assembler: ASSEMBLER = " << _settings.assembler;

@@ -18,7 +18,10 @@ void Linear<TInput>::init()
 
 	ESINFO(PROGRESS2) << "Assemble matrices K, M, T and right hand side";
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
-		KMf(s, false);
+		KMf(s, config::assembler::timeSteps > 1);
+		if (config::assembler::timeSteps > 1) {
+			_K[s].MatAddInPlace(_M[s], 'N', timeConstant());
+		}
 		T(s);
 		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
@@ -76,30 +79,12 @@ void Linear<TInput>::init()
 	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(config::env::MPIrank, config::env::MPIsize, true);
+	_lin_solver.setup(config::env::MPIrank, config::env::MPIsize, config::assembler::timeSteps == 1);
 
 	initSolver();
 
 	timeLSconv.endWithBarrier();
 	this->_timeStatistics.addEvent(timeLSconv);
-}
-
-template <class TInput>
-void Linear<TInput>::pre_solve_update()
-{
-
-}
-
-template <class TInput>
-void Linear<TInput>::post_solve_update()
-{
-//	TimeEvent timeSaveVTK("Solver - Save VTK");
-//	timeSaveVTK.start();
-//
-//	saveResult();
-//
-//	timeSaveVTK.endWithBarrier();
-//	this->_timeStatistics.addEvent(timeSaveVTK);
 }
 
 template <class TInput>
