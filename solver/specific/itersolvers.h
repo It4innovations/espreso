@@ -38,6 +38,13 @@ namespace espreso {
 	typedef IterSolverCPU	IterSolver;
 }
 
+#elif defined(SOLVER_CUDA_7)
+#include "cpu/itersolvercpu.h"
+
+namespace espreso {
+	typedef IterSolverCPU	IterSolver;
+}
+
 
 #else
 #error "Incorrect user-supplied value for SOLVER. Check your build.config script."

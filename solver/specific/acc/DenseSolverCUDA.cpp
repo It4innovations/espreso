@@ -125,8 +125,7 @@ DenseSolverCUDA::DenseSolverCUDA(){
 
 	// Initialize cuSolver context and CUDA stream
 	//CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS
-	while(1)
-		CHECK_SO(cusolverDnCreate(&soDnHandle));
+	CHECK_SO(cusolverDnCreate(&soDnHandle));
 	CHECK_ERR(cudaStreamCreate(&cuStream));
 	CHECK_SO(cusolverDnSetStream(soDnHandle, cuStream));
 }

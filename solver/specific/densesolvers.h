@@ -47,6 +47,15 @@ namespace espreso {
 	typedef DenseSolverCUDA DenseSolverAcc;
 }
 
+#elif defined(SOLVER_CUDA_7)
+#include "cpu/DenseSolverMKL.h"
+#include "acc/DenseSolverCUDA.h"
+
+namespace espreso {
+	typedef DenseSolverMKL DenseSolverCPU;
+	typedef DenseSolverCUDA DenseSolverAcc;
+}
+
 
 #else
 #error "Incorrect user-supplied value for SOLVER. Check your build.config script."

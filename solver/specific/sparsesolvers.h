@@ -47,6 +47,16 @@ namespace espreso {
 	typedef SparseSolverCUDA SparseSolverAcc;
 }
 
+#elif defined(SOLVER_CUDA_7)
+#include "cpu/SparseSolverMKL.h"
+// #include "acc/SparseSolverCUDA.h"
+
+namespace espreso {
+	typedef SparseSolverMKL SparseSolverCPU;
+	// typedef SparseSolverCUDA SparseSolverAcc;
+	typedef SparseSolverMKL SparseSolverAcc;
+}
+
 
 #else
 #error "Incorrect user-supplied value for SOLVER. Check your build.config script."

@@ -30,6 +30,9 @@ def configure(ctx):
     if ctx.env.SOLVER == "CUDA":
         ctx.env.append_unique("LIB", [ "cudart", "cublas", "cusolver", "cusparse", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
+    if ctx.env.SOLVER == "CUDA_7":
+        ctx.env.append_unique("LIB", [ "cudart", "cublas", "cusolver", "cusparse", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+
     if ctx.env.SOLVER == "MUMPS":
         ctx.env.append_unique("LIB", [ "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread", "ifcore" ])
         ctx.env.append_unique("STLIB", [ "dmumps", "mumps_common", "pord", "esmumps", "scotch", "scotcherr",  ])
@@ -42,6 +45,9 @@ def build(ctx):
     # TODO
     if ctx.env.SOLVER == "CUDA":
         sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/SparseSolverCUDA.cpp", "specific/acc/DenseSolverCUDA.cpp")
+
+    if ctx.env.SOLVER == "CUDA_7":
+        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/DenseSolverCUDA.cpp")
 
     if ctx.env.SOLVER == "MUMPS":
         sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
