@@ -579,11 +579,8 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 #ifdef SPARSE_SA
 	 Sa.Solve(tm2[0], vec_alfa,0,0);
 #else
-	char U = 'U';
 	eslocal nrhs = 1;
-	eslocal info = 0;
-	vec_alfa = tm2[0];
-	dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
+	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 #endif
 	 clus_Sa_time.end();
 
@@ -700,11 +697,8 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
  #ifdef SPARSE_SA
     Sa.Solve(tm2[0], vec_alfa,0,0);
  #else
-    char U = 'U';
     eslocal nrhs = 1;
-    eslocal info = 0;
-    vec_alfa = tm2[0];
-    dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
+    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
  #endif
      clus_Sa_time.end();
 
@@ -1316,12 +1310,16 @@ void ClusterBase::CreateSa() {
 #else
 	 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 	SaMat = Salfa;
+	#ifdef CUDA
+    	SaMat.type = 'G';
+    #endif
 	SaMat.ConvertCSRToDense(1);
-	eslocal info;
-	char U = 'U';
-	SaMat.ipiv.resize(SaMat.cols);
-	dsptrf( &U, &SaMat.cols, &SaMat.dense_values[0], &SaMat.ipiv[0], &info );
-	 factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+	SaMat.type = 'S';
+	Sa_dense.ImportMatrix(SaMat);
+	Sa_dense.Factorization("salfa");
+
+	factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+
 	Sa.m_Kplus_size = SaMat.cols;
 #endif
 

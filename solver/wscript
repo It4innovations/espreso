@@ -41,7 +41,7 @@ def build(ctx):
 
     # TODO
     if ctx.env.SOLVER == "CUDA":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/SparseSolverCUDA.cpp",)
+        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/SparseSolverCUDA.cpp", "specific/acc/DenseSolverCUDA.cpp")
 
     if ctx.env.SOLVER == "MUMPS":
         sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
@@ -50,7 +50,7 @@ def build(ctx):
         sources = source_files + ("specific/cpu/solverpardiso.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "MKL":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
+        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/cpu/DenseSolverMKL.cpp")
 
 
     ctx.objects(

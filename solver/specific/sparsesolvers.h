@@ -43,7 +43,7 @@ namespace espreso {
 #include "acc/SparseSolverCUDA.h"
 
 namespace espreso {
-	typedef SparseSolverCUDA SparseSolverCPU;
+	typedef SparseSolverMKL SparseSolverCPU;
 	typedef SparseSolverCUDA SparseSolverAcc;
 }
 

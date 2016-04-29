@@ -112,7 +112,7 @@ namespace solver {
 
 	double epsilon               = configuration.value("EPSILON"              , 1e-5);
 	size_t maxIterations         = configuration.value("ITERATIONS"           , 1000);
-	size_t FETI_METHOD           = configuration.value("FETI_METHOD"          , config::TOTAL_FETI);
+	size_t FETI_METHOD           = configuration.value("FETI_METHOD"          , config::HYBRID_FETI);
 	size_t PRECONDITIONER        = configuration.value("PRECONDITIONER"       , config::LUMPED);
 	size_t REGULARIZATION        = configuration.value("REGULARIZATION"       , config::FIX_POINTS);
 	size_t CG_SOLVER             = configuration.value("CGSOLVER"             , config::STANDARD);

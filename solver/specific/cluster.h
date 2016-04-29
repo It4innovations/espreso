@@ -27,6 +27,7 @@ using std::make_pair;
 #include "../generic/SparseMatrix.h"
 #include "../generic/Domain.h"
 #include "acc/DenseMatrixPack.h"
+#include "densesolvers.h"
 
 #include "../generic/utils.h"
 #include "esconfig.h"
@@ -118,6 +119,7 @@ public:
 	SparseSolverCPU F0;
 	SparseSolverCPU F0_fast;
 	SparseSolverCPU Sa;
+	DenseSolverAcc 	Sa_dense;
 	SparseMatrix SaMat;
 
 	SEQ_VECTOR <double> vec_d;

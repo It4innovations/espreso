@@ -5,9 +5,57 @@
 	cusolverStatus_t st = (x);\
 	if (st != CUSOLVER_STATUS_SUCCESS) {\
 		printf("API error (cusolverStatus) failed %s: %d Returned: %d\n", __FILE__, __LINE__, st);\
-		printf("STATUS %d %d %d %d %d %d %d\n ", st == CUSOLVER_STATUS_SUCCESS, st == CUSOLVER_STATUS_NOT_INITIALIZED, st == CUSOLVER_STATUS_ALLOC_FAILED,\
-			st == CUSOLVER_STATUS_INVALID_VALUE, st == CUSOLVER_STATUS_ARCH_MISMATCH, st == CUSOLVER_STATUS_INTERNAL_ERROR, st == CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED);\
-		exit(1);\
+		switch (st) {\
+			case CUSOLVER_STATUS_NOT_INITIALIZED:\
+				printf("\tStatus: CUSOLVER_STATUS_NOT_INITIALIZED\n");\
+				break;\
+			case CUSOLVER_STATUS_ALLOC_FAILED:\
+				printf("\tStatus: CUSOLVER_STATUS_ALLOC_FAILED\n");\
+				break;\
+			case CUSOLVER_STATUS_INVALID_VALUE:\
+				printf("\tStatus: CUSOLVER_STATUS_INVALID_VALUE\n");\
+				break;\
+			case CUSOLVER_STATUS_ARCH_MISMATCH:\
+				printf("\tStatus: CUSOLVER_STATUS_ARCH_MISMATCH\n");\
+				break;\
+			case CUSOLVER_STATUS_INTERNAL_ERROR:\
+				printf("\tStatus: CUSOLVER_STATUS_INTERNAL_ERROR\n");\
+				break;\
+			case CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED:\
+				printf("\tStatus: CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED\n");\
+			default:\
+				printf("\tUnknown status\n");\
+		}\
+		exit(st);\
+	}\
+} while(0);
+
+#define CHECK_SO_FACT(x) do {\
+	cusolverStatus_t st = (x);\
+	if (st != CUSOLVER_STATUS_SUCCESS) {\
+		printf("API error (cusolverStatus) failed %s: %d Returned: %d\n", __FILE__, __LINE__, st);\
+		switch (st) {\
+			case CUSOLVER_STATUS_NOT_INITIALIZED:\
+				printf("\tStatus: CUSOLVER_STATUS_NOT_INITIALIZED\n");\
+				break;\
+			case CUSOLVER_STATUS_ALLOC_FAILED:\
+				printf("\tStatus: CUSOLVER_STATUS_ALLOC_FAILED\n");\
+				break;\
+			case CUSOLVER_STATUS_INVALID_VALUE:\
+				printf("\tStatus: CUSOLVER_STATUS_INVALID_VALUE\n");\
+				break;\
+			case CUSOLVER_STATUS_ARCH_MISMATCH:\
+				printf("\tStatus: CUSOLVER_STATUS_ARCH_MISMATCH\n");\
+				break;\
+			case CUSOLVER_STATUS_INTERNAL_ERROR:\
+				printf("\tStatus: CUSOLVER_STATUS_INTERNAL_ERROR\n");\
+				break;\
+			case CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED:\
+				printf("\tStatus: CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED\n");\
+			default:\
+				printf("\tUnknown status\n");\
+		}\
+		return st;\
 	}\
 } while(0);
 
@@ -15,7 +63,7 @@
 	cusparseStatus_t st = (x);\
 	if (st != CUSPARSE_STATUS_SUCCESS) {\
 		printf("API error (cusparseStatus) failed %s: %d Returned: %d\n", __FILE__, __LINE__, st);\
-		exit(1);\
+		exit(st);\
 	}\
 } while(0);
 
@@ -23,7 +71,15 @@
 	cudaError_t err = (x);\
 	if (err != cudaSuccess) {\
 		printf("API error (cudaError) failed %s: %d Returned: %d %s\n", __FILE__, __LINE__, err, cudaGetErrorString(err));\
-		exit(1);\
+		exit(err);\
+	}\
+} while(0);
+
+#define CHECK_ERR_FACT(x) do {\
+	cudaError_t err = (x);\
+	if (err != cudaSuccess) {\
+		printf("API error (cudaError) failed %s: %d Returned: %d %s\n", __FILE__, __LINE__, err, cudaGetErrorString(err));\
+		return err;\
 	}\
 } while(0);
 
@@ -551,40 +607,40 @@ int SparseSolverCUDA::Factorization(const std::string &str) {
 	// printf("---Factorization\n");
 
 	// Keeps factorization
-	CHECK_SO(cusolverSpCreateCsrcholInfo(&soInfo));
+	CHECK_SO_FACT(cusolverSpCreateCsrcholInfo(&soInfo));
 
 	if(matDescr == NULL){
 		printf("Factorization error: cuSolver matrix description structure doesn't exist!\n");
 		exit(1);
 	}
 
-	CHECK_SO(cusolverSpXcsrcholAnalysis(soHandle, rows, nnz, matDescr, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo));
+	CHECK_SO_FACT(cusolverSpXcsrcholAnalysis(soHandle, rows, nnz, matDescr, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo));
 
 	internalDataInBytes = 0;
 	workspaceInBytes = 0;
 
 	if (USE_FLOAT) {
-		CHECK_SO(cusolverSpScsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
+		CHECK_SO_FACT(cusolverSpScsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
 
 		if (D_buffer == NULL)
-			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+			CHECK_ERR_FACT(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
-		CHECK_SO(cusolverSpScsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
+		CHECK_SO_FACT(cusolverSpScsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values_fl, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
 
 		if (!keep_buffer){
-			CHECK_ERR(cudaFree(D_buffer));
+			CHECK_ERR_FACT(cudaFree(D_buffer));
 			D_buffer = NULL;
 		}
 	} else {
-		CHECK_SO(cusolverSpDcsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
+		CHECK_SO_FACT(cusolverSpDcsrcholBufferInfo(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, &internalDataInBytes, &workspaceInBytes));
 
 		if (D_buffer == NULL)
-			CHECK_ERR(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
+			CHECK_ERR_FACT(cudaMalloc ((void**)&D_buffer, workspaceInBytes));
 
-		CHECK_SO(cusolverSpDcsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
+		CHECK_SO_FACT(cusolverSpDcsrcholFactor(soHandle, rows, nnz, matDescr, D_CSR_V_values, D_CSR_I_row_indices, D_CSR_J_col_indices, soInfo, D_buffer));
 
 		if (!keep_buffer){
-			CHECK_ERR(cudaFree(D_buffer));
+			CHECK_ERR_FACT(cudaFree(D_buffer));
 			D_buffer = NULL;
 		}
 	}
@@ -603,11 +659,11 @@ int SparseSolverCUDA::Factorization(const std::string &str) {
 
 	if (USE_FLOAT) {
 		D_rhs_sol_fl = NULL;
-		CHECK_ERR(cudaMalloc ((void**)&D_rhs_sol_fl, sizeof(float)*m_Kplus_size));
+		CHECK_ERR_FACT(cudaMalloc ((void**)&D_rhs_sol_fl, sizeof(float)*m_Kplus_size));
 		rhs_sol_fl.resize(m_Kplus_size);
 	} else {
 		D_rhs_sol = NULL;
-		CHECK_ERR(cudaMalloc ((void**)&D_rhs_sol, sizeof(double)*m_Kplus_size));
+		CHECK_ERR_FACT(cudaMalloc ((void**)&D_rhs_sol, sizeof(double)*m_Kplus_size));
 		if(reorder)
 			rhs_sol_reordered.resize(m_Kplus_size);
 	}
