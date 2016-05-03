@@ -34,8 +34,6 @@ using std::make_pair;
 
 namespace espreso {
 
-using config::solver::N_MICS;
-
 class Domain;
 
 

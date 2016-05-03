@@ -16,11 +16,11 @@ protected:
 	{
 		switch (_settings.assembler) {
 		case LinearElasticity:
-			config::assembler::assembler = config::assembler::LinearElasticity;
+			config::assembler::physics = config::assembler::LinearElasticity;
 			_DOFs = 3;
 			break;
 		case Temperature:
-			config::assembler::assembler = config::assembler::Temperature;
+			config::assembler::physics = config::assembler::Temperature;
 			_DOFs = 1;
 			break;
 		default:

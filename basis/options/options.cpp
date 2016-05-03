@@ -14,19 +14,91 @@ static struct option long_options[] = {
 using namespace espreso;
 using namespace input;
 
-Options::Options(int* argc, char*** argv)
-: executable((*argv)[0]), verboseLevel(0), testingLevel(0), measureLevel(0)
+static void printOption(const std::string &opt, const std::string &desc) {
+	if (opt.length() < 16) {
+		ESINFO(ALWAYS) << "\t" << opt << "\t\t" << desc;
+	} else {
+		ESINFO(ALWAYS) << "\t" << opt << "\t" << desc;
+	}
+};
+
+static void printConfigOption(const Description &option)
 {
-	auto printOption = [] (const std::string &opt, const std::string &desc) {
-		if (opt.length() < 16) {
-			ESINFO(ALWAYS) << "\t" << opt << "\t\t" << desc;
-		} else {
-			ESINFO(ALWAYS) << "\t" << opt << "\t" << desc;
+	auto tabs = [] (size_t size) {
+		std::string str;
+		for (int i = 0; i < size; i++) {
+			str += "\t";
 		}
+		return str;
 	};
 
-	setFromFile("espreso.config");
+	auto defaultValue = [] (const Description &option) {
+		std::stringstream ss;
+		switch (option.type) {
+		case INTEGER_PARAMETER:
+			ss << *(static_cast<int*>(option.value));
+			break;
+		case LONG_PARAMETER:
+			ss << *(static_cast<long*>(option.value));
+			break;
+		case SIZE_PARAMETER:
+			ss << *(static_cast<size_t*>(option.value));
+			break;
+		case DOUBLE_PARAMETER:
+			ss << *(static_cast<double*>(option.value));
+			break;
+		case STRING_PARAMETER:
+			ss << *(static_cast<std::string*>(option.value));
+			break;
+		case BOOLEAN_PARAMETER:
+			ss << *(static_cast<bool*>(option.value));
+			break;
+		}
+		return " [" + ss.str() + "] ";
+	};
 
+	std::string def = defaultValue(option);
+	ESINFO(ALWAYS) << tabs(1) << "  " << option.name << def << tabs((37 - option.name.size() - def.size()) / 8) << "  " << option.description;
+	for (size_t i = 0; i < option.options.size(); i++) {
+		ESINFO(ALWAYS) << tabs(6) << i << " -> " << option.options[i];
+	}
+}
+
+static void printFileOptions()
+{
+	ESINFO(ALWAYS) << "CONFIGURATION FILE:\n";
+
+
+	ESINFO(ALWAYS) << "\tThe computation of the ESPRESO depends on various parameters. ";
+	ESINFO(ALWAYS) << "\tParameters can be set by a configuration file specified by parameter -c. ";
+	ESINFO(ALWAYS) << "\tAll parameters in the file have the following form: ";
+
+	ESINFO(ALWAYS) << "\n\t\tPARAMETER = VALUE\n";
+
+	ESINFO(ALWAYS) << "\tThe ESPRESO accepts the following parameters: [default value]\n";
+
+	std::vector<std::pair<std::string, std::vector<Description> > > description = {
+			{ "mesher"   , config::mesh::description },
+			{ "solver"   , config::solver::description },
+			{ "assembler", config::assembler::description },
+			{ "output"   , config::output::description },
+			{ "debug"    , config::info::description }
+	};
+
+	for (size_t i = 0; i < description.size(); i++) {
+		ESINFO(ALWAYS) << "\tThe " << description[i].first << " parameters:";
+		for (size_t j = 0; j < description[i].second.size(); j++) {
+			if (description[i].second[j].writeToHelp == WRITE_TO_HELP) {
+				printConfigOption(description[i].second[j]);
+			}
+		}
+		ESINFO(ALWAYS) << "\n";
+	}
+}
+
+Options::Options(int* argc, char*** argv)
+: executable((*argv)[0]), verbose(0), measure(0), testing(0)
+{
 	int option_index, option;
 	while (true) {
 		option = getopt_long(*argc, *argv, "i:p:c:vtmh", long_options, &option_index);
@@ -36,13 +108,13 @@ Options::Options(int* argc, char*** argv)
 
 		switch (option) {
 		case 'v':
-			verboseLevel++;
+			verbose++;
 			break;
 		case 't':
-			testingLevel++;
+			testing++;
 			break;
 		case 'm':
-			measureLevel++;
+			measure++;
 			break;
 		case 'i':
 			input = std::string(optarg);
@@ -54,11 +126,11 @@ Options::Options(int* argc, char*** argv)
 			break;
 		case 'c': {
 			std::string config(optarg);
+			config::env::configurationFile = config;
 			std::ifstream file(config);
 			if (!file.is_open()) {
 				ESINFO(ERROR) << "Cannot load configuration file '" << config << "'";
 			}
-			setFromFile(config);
 			break;
 		}
 		case 'h':
@@ -75,6 +147,8 @@ Options::Options(int* argc, char*** argv)
 
 			ESINFO(ALWAYS) << "\nPARAMETERS:\n";
 			ESINFO(ALWAYS) << "\tlist of nameless parameters for a particular example\n";
+
+			printFileOptions();
 			exit(EXIT_SUCCESS);
 			break;
 		case '?':
@@ -82,13 +156,30 @@ Options::Options(int* argc, char*** argv)
 		}
 	}
 
+	Configuration::fill(config::env::description, config::env::configurationFile);
+	Configuration::fill(config::mesh::description, config::env::configurationFile);
+	Configuration::fill(config::solver::description, config::env::configurationFile);
+	Configuration::fill(config::output::description, config::env::configurationFile);
+	Configuration::fill(config::info::description, config::env::configurationFile);
+	Configuration::fill(config::assembler::description, config::env::configurationFile);
+
+	config::info::verboseLevel += verbose;
+	config::info::measureLevel += measure;
+	config::info::testingLevel += testing;
+
+	if (path.size()) {
+		config::mesh::path = path;
+	} else {
+		path = config::mesh::path;
+	}
+
 	if (!path.size()) {
 		if (*argc < 2) { // compatibility with old version of ESPRESO binary
 			ESINFO(ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
 		} else {
 			path = (*argv)[1];
-			verboseLevel = 3;
-			measureLevel = 3;
+			config::info::verboseLevel = 3;
+			config::info::measureLevel = 3;
 			optind++;
 		}
 	}
@@ -98,19 +189,6 @@ Options::Options(int* argc, char*** argv)
 	}
 
 	configure();
-}
-
-void Options::setFromFile(const std::string &file)
-{
-	std::vector<Description> description = {
-			{STRING_PARAMETER, "PATH", "A path to an example."},
-			{STRING_PARAMETER, "INPUT", "An input format: [generator, matsol, workbench, esdata, openfoam]"}
-	};
-
-	Configuration configuration(description, file);
-
-	path = configuration.value("PATH", path);
-	input = configuration.value("INPUT", input);
 }
 
 static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
@@ -129,16 +207,12 @@ static void signalHandler(int signal)
 
 void Options::configure()
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
-	config::executable = executable;
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
+	config::env::executable = executable;
 
 	std::signal(SIGFPE, signalHandler);
 	std::signal(SIGSEGV, signalHandler);
-
-	config::info::verboseLevel += verboseLevel;
-	config::info::testingLevel += testingLevel;
-	config::info::measureLevel += measureLevel;
 
 	std::vector<std::pair<std::string, config::mesh::Input> > inputs = {
 			{ "GENERATOR", config::mesh::GENERATOR },
@@ -164,9 +238,6 @@ std::ostream& operator<<(std::ostream& os, const Options &options)
 {
 	os << "input: '" << options.input << "'\n";
 	os << "path: '" << options.path << "'\n";
-	os << "verbosity level: " << options.verboseLevel << "\n";
-	os << "testing level: " << options.testingLevel << "\n";
-	os << "time measuring level: " << options.measureLevel << "\n";
 	os << "nameless: ";
 	for (size_t i = 0; i < options.nameless.size(); i++) {
 		os << options.nameless[i] << " ";

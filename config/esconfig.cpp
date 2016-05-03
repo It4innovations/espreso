@@ -7,154 +7,200 @@ using namespace input;
 
 namespace config {
 
-int MPIrank = 0;
-int MPIsize = 1;
-std::string executable;
+//////////////////////////// ENVIRONMENT ///////////////////////////////////////
 
-namespace mesh {
+int env::MPIrank = 0;
+int env::MPIsize = 1;
 
-	static std::vector<Description> description = {
-			{INTEGER_PARAMETER, "SUBDOMAINS", "Number of subdomains in a cluster."},
-			{INTEGER_PARAMETER, "FIXPOINTS" , "Number of fix points in a subdomain."},
+size_t env::MKL_NUM_THREADS    = Esutils::getEnv<size_t>("MKL_NUM_THREADS");
+size_t env::OMP_NUM_THREADS    = Esutils::getEnv<size_t>("OMP_NUM_THREADS");
+size_t env::SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
+size_t env::PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
+size_t env::CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
-			{INTEGER_PARAMETER, "CORNERS"        , "Number of corners on an edge or a face."},
-			{BOOLEAN_PARAMETER, "VERTEX_CORNERS" , "Set corners to vertices."},
-			{BOOLEAN_PARAMETER, "EDGE_CORNERS"   , "Set corners on edges. The number is defined by parameter CORNERS."},
-			{BOOLEAN_PARAMETER, "FACE_CORNERS"   , "Set corners on faces. The number is defined by parameter CORNERS."},
-			{BOOLEAN_PARAMETER, "AVERAGE_EDGES"  , "Average nodes on edges."},
-			{BOOLEAN_PARAMETER, "AVERAGE_FACES"  , "Average nodes on faces."}
-	};
+std::string env::executable;
+std::string env::configurationFile = "espreso.config";
 
-	static Configuration configuration(description, "espreso.config");
 
-	size_t subdomains  = configuration.value("SUBDOMAINS", 8);
-	size_t fixPoints   = configuration.value("FIXPOINTS" , 8);
+///////////////////////////////// MESH /////////////////////////////////////////
 
-	size_t corners     = configuration.value("CORNERS"       , 1);
-	bool vertexCorners = configuration.value("VERTEX_CORNERS", true);
-	bool edgeCorners   = configuration.value("EDGE_CORNERS"  , true);
-	bool faceCorners   = configuration.value("FACE_CORNERS"  , false);
+std::string mesh::path;
+int mesh::input = GENERATOR;
 
-	bool averageEdges  = configuration.value("AVERAGE_EDGES" , false);
-	bool averageFaces  = configuration.value("AVERAGE_FACES" , false);
+size_t mesh::subdomains = 8;
+size_t mesh::fixPoints  = 8;
 
-	Input input = GENERATOR; // set by command line options of in espreso.config file by parameter INPUT
+size_t mesh::corners       = 1;
+bool   mesh::vertexCorners = true;
+bool   mesh::edgeCorners   = true;
+bool   mesh::faceCorners   = false;
 
-	double materialDifference = 1e-0;
-}
+bool   mesh::averageEdges  = false;
+bool   mesh::averageFaces  = false;
+
+double mesh::materialDifference = 1e0;
+
+
+
+/////////////////////////////// SOLVER /////////////////////////////////////////
+
+double   solver::epsilon                = 1e-5;
+size_t   solver::maxIterations          = 1000;
+size_t   solver::FETI_METHOD            = TOTAL_FETI;
+size_t   solver::PRECONDITIONER         = LUMPED;
+size_t   solver::CG_SOLVER              = STANDARD;
+size_t   solver::REGULARIZATION         = FIX_POINTS;
+
+bool     solver::REDUNDANT_LAGRANGE     = true;
+bool     solver::USE_SCHUR_COMPLEMENT   = false;
+size_t   solver::SCHUR_COMPLEMENT_PREC  = SC_DOUBLE_PRECISION;
+size_t   solver::SCHUR_COMPLEMENT_TYPE  = GENERAL;
+bool     solver::COMBINE_SC_AND_SPDS    = true;
+bool     solver::KEEP_FACTORS           = true;
+
+size_t   solver::KSOLVER                = DIRECT_DOUBLE_PRECISION;
+size_t   solver::KSOLVER_SP_iter_steps  = 1000;
+double   solver::KSOLVER_SP_iter_norm   = 1e-12;
+size_t   solver::F0_SOLVER              = KSOLVER_PRECISION;
+
+size_t   solver::N_MICS                 = 2;
+
+/////////////////////////////// ASSEMBLER //////////////////////////////////////
+
+int assembler::discretization = FEM;
+int assembler::physics        = LinearElasticity;
+
+/////////////////////////////// OUTPUT /////////////////////////////////////////
+
+bool output::saveMesh      = false;
+bool output::saveFixPoints = false;
+bool output::saveFaces     = false;
+bool output::saveLines     = false;
+bool output::saveCorners   = false;
+bool output::saveDirichlet = false;
+bool output::saveAveraging = false;
+bool output::saveResults   = true;
+
+double output::subdomainShrinkRatio = .95;
+double output::clusterShrinkRatio   = .9;
+
+//////////////////////////////// INFO //////////////////////////////////////////
+
+std::string info::output = "log";
+
+size_t info::verboseLevel = 0;
+size_t info::testingLevel = 0;
+size_t info::measureLevel = 0;
+
+bool info::printMatrices = false;
+
+
+/////////////////////////////// DESCRIPTION ////////////////////////////////////
+
+std::vector<input::Description> env::description;
+
+std::vector<Description> mesh::description = {
+	{ "PATH", mesh::path, "A path to an example.", WRITE_TO_HELP},
+	{ "INPUT", mesh::input, "A format of an input.", {
+			"matsol",
+			"workbench",
+			"openfoam",
+			"esdata",
+			"generator" },  WRITE_TO_HELP},
+
+	{ "SUBDOMAINS", mesh::subdomains, "Number of subdomains in a cluster.", WRITE_TO_HELP },
+	{ "FIXPOINTS" , mesh::fixPoints , "Number of fix points in a subdomain." },
+
+	{ "CORNERS"        , mesh::corners      , "Number of corners on an edge or a face." },
+	{ "VERTEX_CORNERS" , mesh::vertexCorners, "Set corners to vertices." },
+	{ "EDGE_CORNERS"   , mesh::edgeCorners  , "Set corners on edges. The number is defined by parameter CORNERS." },
+	{ "FACE_CORNERS"   , mesh::faceCorners  , "Set corners on faces. The number is defined by parameter CORNERS." },
+
+	{ "AVERAGE_EDGES"  , mesh::averageEdges, "Average nodes on edges." },
+	{ "AVERAGE_FACES"  , mesh::averageFaces, "Average nodes on faces." }
+};
+
+std::vector<Description> assembler::description = {
+	{ "DISCRETIZATION", config::assembler::discretization, "A used discretization.",
+			{ "FEM", "BEM" }, WRITE_TO_HELP }
+};
+
+std::vector<Description> solver::description = {
+	{ "EPSILON", solver::epsilon, "Solver requested precision.", WRITE_TO_HELP },
+	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", WRITE_TO_HELP },
+	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
+			"Total FETI",
+			"Hybrid Total FETI" }, WRITE_TO_HELP },
+
+	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
+			"NO preconditioner",
+			"Lumped",
+			"weight function",
+			"Dirichlet" }, WRITE_TO_HELP },
+
+	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
+			"standard",
+			"pipelined" }, WRITE_TO_HELP },
+
+
+	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
+			"fix points",
+			"random detection of null pivots" }},
+
+	{ "KSOLVER", solver::KSOLVER, "K solver precision.", {
+			"directly with double precision",
+			"iteratively",
+			"directly with single precision",
+			"directly with mixed precision" }},
+
+	{ "F0SOLVER", solver::F0_SOLVER, "F0 solver precision.", {
+			"with the same precision as KSOLVER",
+			"always with double precision." }},
+
+	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
+	{ "USE_SCHUR_COMPLEMENT", solver::USE_SCHUR_COMPLEMENT, "Use schur complement for stiffness matrix processing" },
+	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision." },
+	{ "SCHUR_COMPLEMENT_TYPE", solver::SCHUR_COMPLEMENT_TYPE, "Schur complement matrix type.", {
+			"general",
+			"symmetric"}},
+
+	{ "COMBINE_SC_AND_SPDS", solver::COMBINE_SC_AND_SPDS, "Combine Schur complement for GPU and sparse direct solver for CPU." },
+	{ "KEEP_FACTORS", solver::KEEP_FACTORS, "Keep factors for whole iteration process." },
+
+	{ "KSOLVER_SP_iter_steps", solver::KSOLVER_SP_iter_steps, "Number of reiteration steps for SP direct solver." },
+	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_iter_norm , "Number of reiteration steps for SP direct solver." },
+
+	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP }
+};
 
 namespace output {
 
-	static std::vector<Description> description = {
-			{BOOLEAN_PARAMETER, "SAVE_MESH"      , "Save an input mesh."},
-			{BOOLEAN_PARAMETER, "SAVE_FIXPOINTS" , "Save a mesh fix points."},
-			{BOOLEAN_PARAMETER, "SAVE_FACES"     , "Save faces between subdomains."},
-			{BOOLEAN_PARAMETER, "SAVE_EDGES"     , "Save edges among subdomains."},
-			{BOOLEAN_PARAMETER, "SAVE_CORNERS"   , "Save corner nodes."},
-			{BOOLEAN_PARAMETER, "SAVE_DIRICHLET" , "Save nodes with a dirichlet condition."},
-			{BOOLEAN_PARAMETER, "SAVE_AVERAGING" , "Save averaged nodes."},
-			{BOOLEAN_PARAMETER, "SAVE_RESULTS"   , "Save the results."},
+std::vector<Description> description = {
+	{ "SAVE_MESH"      , saveMesh     , "Save an input mesh.", WRITE_TO_HELP },
+	{ "SAVE_FIXPOINTS" , saveFixPoints, "Save a mesh fix points." },
+	{ "SAVE_FACES"     , saveFaces    , "Save faces between subdomains." },
+	{ "SAVE_EDGES"     , saveLines    , "Save edges among subdomains." },
+	{ "SAVE_CORNERS"   , saveCorners  , "Save corner nodes." },
+	{ "SAVE_DIRICHLET" , saveDirichlet, "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
+	{ "SAVE_AVERAGING" , saveAveraging, "Save averaged nodes." },
+	{ "SAVE_RESULTS"   , saveResults  , "Save the results.", WRITE_TO_HELP },
 
-			{DOUBLE_PARAMETER, "SUBDOMAIN_SHRINK_RATIO", "Shrink ratio for subdomains."},
-			{DOUBLE_PARAMETER, "CLUSTER_SHRINK_RATIO"  , "Shrink ratio for clusters."}
-	};
-
-	static Configuration configuration(description, "espreso.config");
-
-	Output output = VTK;
-
-	bool saveMesh      = configuration.value("SAVE_MESH"     , false);
-	bool saveFixPoints = configuration.value("SAVE_FIXPOINTS", false);
-	bool saveFaces     = configuration.value("SAVE_FACES"    , false);
-	bool saveLines     = configuration.value("SAVE_EDGES"    , false);
-	bool saveCorners   = configuration.value("SAVE_CORNERS"  , false);
-	bool saveDirichlet = configuration.value("SAVE_DIRICHLET", false);
-	bool saveAveraging = configuration.value("SAVE_AVERAGING", false);
-	bool saveResults   = configuration.value("SAVE_RESULTS"  , true);
-
-	double subdomainShrinkRatio = configuration.value("SUBDOMAIN_SHRINK_RATIO", .95);
-	double clusterShrinkRatio   = configuration.value("CLUSTER_SHRINK_RATIO"  , .9);
-}
-
-
-
-namespace assembler {
-	static std::vector<Description> description = {
-			{INTEGER_PARAMETER, "DISCRETIZATION", "Discretization: 0 - FEM, 1 - BEM"}
-	};
-
-	static Configuration configuration(description, "espreso.config");
-
-	Discretization discretization = configuration.value("DISCRETIZATION", config::assembler::FEM);
-
-	Assembler assembler = LinearElasticity; // Set by loader !!!
-}
-namespace solver {
-
-	static std::vector<Description> description = {
-			{DOUBLE_PARAMETER,  "EPSILON"              , "Solver requested precision."},
-			{INTEGER_PARAMETER, "ITERATIONS"           , "Solver maximum interations."},
-			{INTEGER_PARAMETER, "FETI_METHOD"          , "The method used by ESPRESO. 0 - TotalFETI, 1 - Hybrid Total FETI"},
-			{BOOLEAN_PARAMETER, "REDUNDANT_LAGRANGE"   , "Set Lagrange multipliers also among HFETI corners."},
-			{BOOLEAN_PARAMETER, "USE_SCHUR_COMPLEMENT" , "Use schur complement for stiffnes matrix processing"},
-			{INTEGER_PARAMETER, "SCHUR_COMPLEMENT_PREC", "Schur complement precission - 0 double prec; 1 single prec."},
-			{INTEGER_PARAMETER, "SCHUR_COMPLEMENT_TYPE", "Schur complement type - 0 - stored as general matrix; 1 = stored as symmetric matrix"},
-			{BOOLEAN_PARAMETER, "COMBINE_SC_AND_SPDS"  , "Combine usage of SC for Accelerator and Sparse Direct Solver for CPU."},
-			{BOOLEAN_PARAMETER, "KEEP_FACTORS"         , "Keep factors for whole iteration process."},
-			{INTEGER_PARAMETER, "PRECONDITIONER"       , "Preconditioner: 0 - NO preconditioner, 1 - Lumped, 2 - weight function, 3 - Dirichlet"},
-			{INTEGER_PARAMETER, "CGSOLVER"             , "Conjugate gradients solver: 0 - standard, 1 - pipelined"},
-			{INTEGER_PARAMETER, "REGULARIZATION"       , "Regularization of stiffness matrix by: 0 - fix points, 1 - random detection of null pivots"},
-			{INTEGER_PARAMETER, "KSOLVER"              , "K is solved: 0 - directly with DP, 1 - iteratively, 2 - directly with SP, 3 - directly with mixed precision"},
-			{INTEGER_PARAMETER, "KSOLVER_SP_iter_steps", "Number of reiteration steps for SP direct solver."},
-			{INTEGER_PARAMETER, "KSOLVER_SP_iter_norm" , "Number of reiteration steps for SP direct solver."},
-			{INTEGER_PARAMETER, "F0SOLVER"             , "F0 is solved: 0 - with the same precision as KSOLVER, 1 - always with DP."},
-			{INTEGER_PARAMETER, "N_MICS"               , "Number of MIC accelerators."}
-	};
-
-	static Configuration configuration(description, "espreso.config");
-
-	double epsilon               = configuration.value("EPSILON"              , 1e-5);
-	size_t maxIterations         = configuration.value("ITERATIONS"           , 1000);
-	size_t FETI_METHOD           = configuration.value("FETI_METHOD"          , config::TOTAL_FETI);
-	size_t PRECONDITIONER        = configuration.value("PRECONDITIONER"       , config::LUMPED);
-	size_t REGULARIZATION        = configuration.value("REGULARIZATION"       , config::FIX_POINTS);
-	size_t CG_SOLVER             = configuration.value("CGSOLVER"             , config::STANDARD);
-	size_t KSOLVER               = configuration.value("KSOLVER"              , config::DIRECT_DOUBLE_PRECISION);
-
-	bool   REDUNDANT_LAGRANGE    = configuration.value("REDUNDANT_LAGRANGE"   , true);
-	bool   USE_SCHUR_COMPLEMENT  = configuration.value("USE_SCHUR_COMPLEMENT" , false);
-	size_t SCHUR_COMPLEMENT_PREC = configuration.value("SCHUR_COMPLEMENT_PREC", 0);
-	size_t SCHUR_COMPLEMENT_TYPE = configuration.value("SCHUR_COMPLEMENT_TYPE", 0);
-	bool   COMBINE_SC_AND_SPDS   = configuration.value("COMBINE_SC_AND_SPDS"  , false);
-	bool   KEEP_FACTORS          = configuration.value("KEEP_FACTORS"         , false);
-
-	size_t KSOLVER_SP_iter_steps = configuration.value("KSOLVER_SP_iter_steps", 10);
-	double KSOLVER_SP_iter_norm  = configuration.value("KSOLVER_SP_iter_norm" , 1e-12);;
-	size_t F0_SOLVER             = configuration.value("F0SOLVER"             , config::KSOLVER_PRECISION);
-	size_t N_MICS                = configuration.value("N_MICS"               , 2);
+	{ "SUBDOMAIN_SHRINK_RATIO", subdomainShrinkRatio, "Shrink ratio for subdomains.", WRITE_TO_HELP },
+	{ "CLUSTER_SHRINK_RATIO"  , clusterShrinkRatio  , "Shrink ratio for clusters.", WRITE_TO_HELP }
+};
 
 }
 
 namespace info {
 
-	static std::vector<Description> description = {
-			{STRING_PARAMETER, "OUTPUT", "An output destination for ESPRESO logs."},
+std::vector<Description> description = {
+	{ "OUTPUT", output, "A location for saving output informations.", WRITE_TO_HELP },
+	{ "VERBOSE_LEVEL", verboseLevel, "ESPRESO verbose level.", WRITE_TO_HELP },
+	{ "TESTING_LEVEL", verboseLevel, "ESPRESO testing level.", WRITE_TO_HELP },
+	{ "MEASURE_LEVEL", verboseLevel, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "PRINT_MATRICES", printMatrices, "ESPRESO print solver input matrices." }
+};
 
-			{INTEGER_PARAMETER, "VERBOSE_LEVEL", "ESPRESO verbose level: <0, 3>"},
-			{INTEGER_PARAMETER, "TESTING_LEVEL", "ESPRESO testing level: <0, 3>"},
-			{INTEGER_PARAMETER, "MEASURE_LEVEL", "ESPRESO measure level: <0, 3>"},
-			{BOOLEAN_PARAMETER, "PRINT_MATRICES", "ESPRESO print all preprocessed matrices."}
-	};
-
-	static Configuration configuration(description, "espreso.config");
-
-	std::string output = configuration.value("OUTPUT", "log");
-
-	size_t verboseLevel = configuration.value("VERBOSE_LEVEL", 0);
-	size_t testingLevel = configuration.value("TESTING_LEVEL", 0);
-	size_t measureLevel = configuration.value("MEASURE_LEVEL", 0);
-
-	bool printMatrices = configuration.value("PRINT_MATRICES", false);
 }
 
 }

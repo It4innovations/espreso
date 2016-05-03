@@ -6,16 +6,16 @@ using namespace espreso;
 template<class TShape>
 static void generateShape(const Options &options, Mesh *mesh)
 {
-	input::Settings settings(options, config::MPIrank ,config::MPIsize);
+	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
 
 	switch (settings.shape) {
 	case input::CUBE: {
-		input::CubeSettings cube(options, config::MPIrank ,config::MPIsize);
+		input::CubeSettings cube(options, config::env::MPIrank ,config::env::MPIsize);
 		input::CubeGenerator<TShape>::load(*mesh, cube);
 		break;
 	}
 	case input::SPHERE: {
-		input::SphereSettings sphere(options, config::MPIrank ,config::MPIsize);
+		input::SphereSettings sphere(options, config::env::MPIrank ,config::env::MPIsize);
 		input::SphereGenerator<TShape>::load(*mesh, sphere);
 		break;
 	}
@@ -27,7 +27,7 @@ static void generateShape(const Options &options, Mesh *mesh)
 
 static void generate(const Options &options, Mesh *mesh)
 {
-	input::Settings settings(options, config::MPIrank ,config::MPIsize);
+	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
 
 	switch (settings.elementType) {
 	case input::HEXA8: {
@@ -76,19 +76,19 @@ static Mesh* getMesh(const Options &options)
 	switch (config::mesh::input) {
 
 	case config::mesh::ANSYS_MATSOL: {
-		input::AnsysMatsol::load(*mesh, options, config::MPIrank, config::MPIsize);
+		input::AnsysMatsol::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::ANSYS_WORKBENCH: {
-		input::AnsysWorkbench::load(*mesh, options, config::MPIrank, config::MPIsize);
+		input::AnsysWorkbench::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::OPENFOAM: {
-		input::OpenFOAM::load(*mesh, options, config::MPIrank, config::MPIsize);
+		input::OpenFOAM::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::ESDATA: {
-		input::Esdata::load(*mesh, options, config::MPIrank, config::MPIsize);
+		input::Esdata::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::GENERATOR: {
@@ -102,7 +102,7 @@ static Mesh* getMesh(const Options &options)
 template<class TDiscretization>
 static AssemblerBase* createAssembler(TDiscretization discretization)
 {
-	switch (config::assembler::assembler) {
+	switch (config::assembler::physics) {
 
 	case config::assembler::LinearElasticity: {
 		return new LinearElasticity<TDiscretization>(discretization);
@@ -140,10 +140,10 @@ static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 Factory::Factory(const Options &options)
 :_assembler(NULL), _mesh(NULL), _surface(NULL)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 
-	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::MPIsize << " processes.";
+	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " processes.";
 
 	_mesh = getMesh(options);
 

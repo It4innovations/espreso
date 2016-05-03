@@ -66,13 +66,13 @@ static void readBinary(std::vector<double> &vector, std::string fileName) {
 
 void FETI4ITest()
 {
-//	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::MPIrank);
-//	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::MPIsize);
+//	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::env::MPIrank);
+//	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::env::MPIsize);
 //
-//	CubeSettings cube(esconfig::MPIrank, esconfig::MPIsize);
+//	CubeSettings cube(esconfig::env::MPIrank, esconfig::env::MPIsize);
 //	MeshGenerator generator(new CubeGenerator<Hexahedron8>(cube));
 //
-//	mesh::Mesh mesh(esconfig::MPIrank, esconfig::MPIsize);
+//	mesh::Mesh mesh(esconfig::env::MPIrank, esconfig::env::MPIsize);
 //	generator.load(mesh);
 //
 //	FEM fem(mesh);
@@ -88,8 +88,8 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix 	*matrix,
 		FETI4IInt		indexBase)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 	config::info::verboseLevel = 3;
 	config::info::measureLevel = 3;
 	config::solver::REGULARIZATION = config::NULL_PIVOTS;
@@ -208,13 +208,13 @@ void TEST4IGetElementsInfo(
 		FETI4IInt		*elements,
 		FETI4IInt		*elementSize)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 	std::vector<FETI4IInt> eCount;
 	std::vector<FETI4IInt> eSize;
 	std::stringstream ssEl, ssKi;
-	ssEl << "examples/api/cube/" << config::MPIrank << "/elements.txt";
-	ssKi << "examples/api/cube/" << config::MPIrank << "/Ki0.txt";
+	ssEl << "examples/api/cube/" << config::env::MPIrank << "/elements.txt";
+	ssKi << "examples/api/cube/" << config::env::MPIrank << "/Ki0.txt";
 	readFile(eCount, ssEl.str());
 	readFile(eSize, ssKi.str());
 
@@ -231,8 +231,8 @@ void TEST4IGetElement(
 	std::vector<FETI4IReal> Kv;
 
 	std::stringstream ssKi, ssKv;
-	ssKi << "examples/api/cube/" << config::MPIrank << "/Ki" << index << ".txt";
-	ssKv << "examples/api/cube/" << config::MPIrank << "/Ke" << index << ".bin";
+	ssKi << "examples/api/cube/" << config::env::MPIrank << "/Ki" << index << ".txt";
+	ssKv << "examples/api/cube/" << config::env::MPIrank << "/Ke" << index << ".bin";
 	readFile(Ki, ssKi.str());
 	Kv.resize(Ki.size() * Ki.size());
 	readBinary(Kv, ssKv.str());
@@ -250,9 +250,9 @@ void TEST4IGetInstanceInfo(
 	std::vector<FETI4IMPIInt> neighbours;
 
 	std::stringstream ssRhs, ssD, ssN;
-	ssRhs << "examples/api/cube/" << config::MPIrank << "/rhs.txt";
-	ssD << "examples/api/cube/" << config::MPIrank << "/dirichlet_indices.txt";
-	ssN << "examples/api/cube/" << config::MPIrank << "/neighbours.txt";
+	ssRhs << "examples/api/cube/" << config::env::MPIrank << "/rhs.txt";
+	ssD << "examples/api/cube/" << config::env::MPIrank << "/dirichlet_indices.txt";
+	ssN << "examples/api/cube/" << config::env::MPIrank << "/neighbours.txt";
 	readFile(rhs, ssRhs.str().c_str());
 	readFile(dirichlet, ssD.str().c_str());
 	readFile(neighbours, ssN.str().c_str());
@@ -276,11 +276,11 @@ void TEST4IGetInstance(
 	std::vector<FETI4IMPIInt> _neighbours;
 
 	std::stringstream ssRhs, ssL, ssDi, ssDv, ssN;
-	ssRhs << "examples/api/cube/" << config::MPIrank << "/rhs.txt";
-	ssL << "examples/api/cube/" << config::MPIrank << "/l2g.txt";
-	ssDi << "examples/api/cube/" << config::MPIrank << "/dirichlet_indices.txt";
-	ssDv << "examples/api/cube/" << config::MPIrank << "/dirichlet_values.txt";
-	ssN << "examples/api/cube/" << config::MPIrank << "/neighbours.txt";
+	ssRhs << "examples/api/cube/" << config::env::MPIrank << "/rhs.txt";
+	ssL << "examples/api/cube/" << config::env::MPIrank << "/l2g.txt";
+	ssDi << "examples/api/cube/" << config::env::MPIrank << "/dirichlet_indices.txt";
+	ssDv << "examples/api/cube/" << config::env::MPIrank << "/dirichlet_values.txt";
+	ssN << "examples/api/cube/" << config::env::MPIrank << "/neighbours.txt";
 	readFile(_rhs, ssRhs.str());
 	readFile(_dirichlet_indices, ssDi.str());
 	readFile(_dirichlet_values, ssDv.str());

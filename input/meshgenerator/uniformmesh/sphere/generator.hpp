@@ -213,46 +213,46 @@ void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 
 	if (_cluster[2] == 0) {
 		for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
-			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_X)->second) {
-				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_X)->second;
+			if (_settings.boundaryCondition[SphereSettings::INNER * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::INNER * 6 + DIRICHLET_X];
 			}
-			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_X)->second) {
-				forces_x[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_X)->second;
+			if (_settings.boundaryCondition[SphereSettings::INNER * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+				forces_x[i] = _settings.boundaryCondition[SphereSettings::INNER * 6 + FORCES_X];
 			}
-			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_Y)->second) {
-				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_Y)->second;
+			if (_settings.boundaryCondition[SphereSettings::INNER * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::INNER * 6 + DIRICHLET_Y];
 			}
-			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_Y)->second) {
-				forces_y[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_Y)->second;
+			if (_settings.boundaryCondition[SphereSettings::INNER * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+				forces_y[i] = _settings.boundaryCondition[SphereSettings::INNER * 6 + FORCES_Y];
 			}
-			if (_settings.fillCondition[SphereSettings::INNER].find(DIRICHLET_Z)->second) {
-				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::INNER].find(DIRICHLET_Z)->second;
+			if (_settings.boundaryCondition[SphereSettings::INNER * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::INNER * 6 + DIRICHLET_Z];
 			}
-			if (_settings.fillCondition[SphereSettings::INNER].find(FORCES_Z)->second) {
-				forces_z[i] = _settings.boundaryCondition[SphereSettings::INNER].find(FORCES_Z)->second;
+			if (_settings.boundaryCondition[SphereSettings::INNER * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+				forces_z[i] = _settings.boundaryCondition[SphereSettings::INNER * 6 + FORCES_Z];
 			}
 		}
 	}
 
 	if (_cluster[2] + 1 == _settings.layers) {
 		for (eslocal i = (cNodes[2] - 1) * cNodes[0] * cNodes[1]; i < cNodes[2] * cNodes[0] * cNodes[1]; i++) {
-			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_X)->second) {
-				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_X)->second;
+			if (_settings.boundaryCondition[SphereSettings::OUTER * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+				dirichlet_x[i] = _settings.boundaryCondition[SphereSettings::OUTER * 6 + DIRICHLET_X];
 			}
-			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_X)->second) {
-				forces_x[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_X)->second;
+			if (_settings.boundaryCondition[SphereSettings::OUTER * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+				forces_x[i] = _settings.boundaryCondition[SphereSettings::OUTER * 6 + FORCES_X];
 			}
-			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_Y)->second) {
-				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_Y)->second;
+			if (_settings.boundaryCondition[SphereSettings::OUTER * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+				dirichlet_y[i] = _settings.boundaryCondition[SphereSettings::OUTER * 6 + DIRICHLET_Y];
 			}
-			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_Y)->second) {
-				forces_y[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_Y)->second;
+			if (_settings.boundaryCondition[SphereSettings::OUTER * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+				forces_y[i] = _settings.boundaryCondition[SphereSettings::OUTER * 6 + FORCES_Y];
 			}
-			if (_settings.fillCondition[SphereSettings::OUTER].find(DIRICHLET_Z)->second) {
-				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(DIRICHLET_Z)->second;
+			if (_settings.boundaryCondition[SphereSettings::OUTER * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+				dirichlet_z[i] = _settings.boundaryCondition[SphereSettings::OUTER * 6 + DIRICHLET_Z];
 			}
-			if (_settings.fillCondition[SphereSettings::OUTER].find(FORCES_Z)->second) {
-				forces_z[i] = _settings.boundaryCondition[SphereSettings::OUTER].find(FORCES_Z)->second;
+			if (_settings.boundaryCondition[SphereSettings::OUTER * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+				forces_z[i] = _settings.boundaryCondition[SphereSettings::OUTER * 6 + FORCES_Z];
 			}
 		}
 	}
@@ -443,7 +443,7 @@ void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::v
 					}
 				}
 			}
-			if (sortedMap[i] != config::MPIrank) {
+			if (sortedMap[i] != config::env::MPIrank) {
 				neighbours.push_back(sortedMap[i]);
 			}
 		}

@@ -185,7 +185,7 @@ void SparseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
 
 void SparseSolverMKL::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
 
-	USE_FLOAT = false;
+	USE_FLOAT = true;
 
 	rows	= A.rows;
 	cols	= A.cols;
@@ -333,7 +333,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::MPIrank;
+		ss << "Solve -> rank: " << config::env::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -413,7 +413,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::MPIrank;
+		ss << "Solve -> rank: " << config::env::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -481,7 +481,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::MPIrank;
+		ss << "Solve -> rank: " << config::env::MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -555,7 +555,7 @@ void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::MPIrank;
+		ss << "Solve -> rank: " << config::env::MPIrank;
 		Factorization(ss.str());
 	}
 

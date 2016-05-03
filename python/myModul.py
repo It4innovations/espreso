@@ -4,8 +4,8 @@ import scipy.sparse.linalg as spla
 import config_espreso_python as conf
 import pylab as plt
 #import sys  
-
-
+#
+#
 def load_matrix(path,str0,i,j,makeSparse,makeSymmetric): 
     pathToFile = path+'/'+str(i)+'/'+str0+str(j)+'.txt' 
     tmp = np.loadtxt(pathToFile, ndmin=2)
@@ -15,7 +15,7 @@ def load_matrix(path,str0,i,j,makeSparse,makeSymmetric):
         n = np.int32(tmp[0,0])   
         m = np.int32(tmp[0,1])
         I = tmp[1::,0]-1;    J = tmp[1::,1]-1;    V = tmp[1::,2]
-    
+#    
         print(str0,i,j)
         if (makeSymmetric):
             logInd = J>I; 
@@ -30,7 +30,7 @@ def load_matrix(path,str0,i,j,makeSparse,makeSymmetric):
                 tmp = V
             else:                
                 tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).toarray()
-        
+#
     return tmp
 ###############################################################################
 def load_vector(path,str0,i,j):
@@ -51,7 +51,7 @@ class DENS_SOLVE:
 class KPLUS:
     def __init__(self,Areg):
         self.__iAreg = spla.splu(Areg)  
-                
+#                
     def __mul__(self,b):
         return self.__iAreg.solve(b) 
 ###############################################################################       
@@ -68,7 +68,7 @@ class  KPLUS_HTFETI:
                 self.G0      = sparse.hstack((self.G0,G0i))  
         self.G0 = self.G0.tocsc()
         self.B0_Kplus = []
-                
+#                
         F0 = 0 
         for j in range(len(B0)): 
             B0_array = B0[j].toarray()
@@ -77,7 +77,7 @@ class  KPLUS_HTFETI:
                 self.B0_Kplus[j][i,:] = self.Kplus[j]*B0_array[i,:]
             F0 = F0 + np.dot(self.B0_Kplus[j],B0_array.transpose())
         self.iF0 = DENS_SOLVE(F0)
-
+#
         S_alpha_from_ESPRESO = False
         if (not S_alpha_from_ESPRESO):
             G0d = self.G0.toarray();iF0_G0d = self.iF0.solve(G0d)        
@@ -85,11 +85,13 @@ class  KPLUS_HTFETI:
             rho = S_alpha[0,0]
             for i in range(R[0].shape[1]):
                 S_alpha[i,i] += rho
-
+#
+        np.savetxt('F0',F0)
+        np.savetxt('S_alpha',S_alpha)
         self.iS_alpha = DENS_SOLVE(S_alpha)           
-     
+#     
     def __mul__(self,f):
-
+#
         d0 = np.zeros(self.B0[0].shape[0])        
         for i in range(len(self.Kplus)):
             if i == 0:
@@ -98,11 +100,11 @@ class  KPLUS_HTFETI:
                 e0i = sparse.csc_matrix.dot(self.R[i].transpose(),-f[i])
                 e0 = np.concatenate((e0,e0i))
             d0 += np.dot(self.B0_Kplus[i],f[i])
-        
+#        
         tmpV = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))-e0
         alpha0 = self.iS_alpha.solve(tmpV)
         lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G0,alpha0)) 
-
+#
         cnt = 0
         uu = []
         for j in range(len(self.Kplus)):
@@ -140,7 +142,7 @@ class FETIOPERATOR_HTFETI:
             x = self.Kplus_HTFETI[i]*xx
             for j in range(len(self.B1[i])):
                 x_out += sparse.csc_matrix.dot(self.B1[i][j],x[j])           
-
+#
         return x_out        
 ###############################################################################       
 class COARSE_PROBLEM:
@@ -178,24 +180,29 @@ class PROJ:
         return y        
 ###############################################################################
 class PREC_DIR_OR_LUMPED:
-    def __init__(self,K,B,weight,index_weight):
+    def __init__(self,K,Schur,B,weight,index_weight):
         self.K  = K
+        self.Schur  = Schur
         self.B  = B
         self.w  = weight
         self.iw = index_weight
-        
+#        
     def __mul__(self,x_in):
-        usePrecond = True
-        if usePrecond:    
+        if conf.precondDualSystem!='none':    
             x_out = np.zeros(self.B[0][0].shape[0])
             for i in range(len(self.K)):
                 for j in range(len(self.K[i])):
                     x0  = x_in.copy()
-                    x0[self.iw[i][j]] *= self.w[i][j] 
+                    x0[self.iw[i][j]] *= self.w[i][j]
                     x   = sparse.csc_matrix.dot(self.B[i][j].transpose(),x0)
-                    x   = sparse.csc_matrix.dot(self.K[i][j],x)
+                    if conf.precondDualSystem=='dirichlet':
+                        x[self.Schur[i][j][0]]  =  \
+                        np.dot(self.Schur[i][j][1],x[self.Schur[i][j][0]])
+                    else:
+                        x   = sparse.csc_matrix.dot(self.K[i][j],x)
+                        
                     x1  = sparse.csc_matrix.dot(self.B[i][j],x)
-                    x_out[self.iw[i][j]]+=x1[self.iw[i][j]]*self.w[i][j]  
+                    x_out[self.iw[i][j]]+=x1[self.iw[i][j]]*self.w[i][j]
         else:
             x_out = x_in.copy() 
         return x_out        
@@ -223,13 +230,12 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
     vec_staggnat    = np.zeros(nDual)
 #
     w     = PMPg.copy()
-    strFormat= '%3.5f'
 #
     if disp: 
         print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
         print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
         print('    i      |r|        r         e         stagnation ') 
-        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPMPg0,eps0,-1))     
+        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPg0,eps0,-1))     
 #   
     for i in range(nDual):
 #        
@@ -240,7 +246,8 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #         
         PMPgprev    = PMPg.copy()      
         g           += Fw * rho
-        PMPg        = Proj*(Prec*(Proj*g))
+        Pg           = Proj*g
+        PMPg        = Proj*(Prec*Pg)
 
         gtPMPg      = np.dot(g,PMPg)
         gamma       = gtPMPg/np.dot(gprev,PMPgprev)
@@ -249,9 +256,8 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
         if (np.dot(g,PMPg)<0): 
             raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
 #  
-        sqrt_gtPMPg = np.sqrt(gtPMPg)
-        normed_gi   = sqrt_gtPMPg/sqrt_gtPg0
-
+        sqrt_gtPg = np.sqrt(np.dot(g,Pg))
+        normed_gi   = sqrt_gtPg/sqrt_gtPg0
         vec_normed_g[i]    = normed_gi
 #       
         is_stagnating = np.log2(normed_gi)/(i+2)
@@ -263,7 +269,7 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #
         if disp:
             print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % \
-                            (i+2,normed_gi,sqrt_gtPMPg,eps0,is_stagnating))             
+                            (i+2,normed_gi,sqrt_gtPg,eps0,is_stagnating))             
 #            
         if normed_gi<eps0:
             break
@@ -282,13 +288,14 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
 #  
     return lam, alpha, numbOfIter
 ###############################################################################       
-def feti(K,Kreg,f,B,weight,index_weight,R):
+def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
 #        
     maxIt   = conf.maxIt_dual_feti
     eps0    = conf.eps_dual_feti   
 #              
     CP      = COARSE_PROBLEM(B,R)   
     d       = np.zeros(B[0][0].shape[0])    
+    dc       = np.zeros(B[0][0].shape[0])    
     Kplus   = []
 #    
     for i in range(len(K)):
@@ -300,11 +307,13 @@ def feti(K,Kreg,f,B,weight,index_weight,R):
             else:
                 e = np.concatenate((e,sparse.csc_matrix.dot(R[i][j].transpose(),-f[i][j])))
             d += sparse.csc_matrix.dot(B[i][j],Kplus[i][j]*f[i][j])
+            dc[index_weight[i][j]] = c[i][j]
 #
+    d      -= dc        
     F       = FETIOPERATOR(Kplus,B)
-    Prec    = PREC_DIR_OR_LUMPED(K,B,weight,index_weight)
+    Prec    = PREC_DIR_OR_LUMPED(K,Schur,B,weight,index_weight)
 #     
-    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,True)        
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
 #
     uu = []
     cnt = 0
@@ -325,16 +334,18 @@ def feti(K,Kreg,f,B,weight,index_weight,R):
             delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
             norm_f += np.linalg.norm(f[i][j])
 #     
-    print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+    if np.abs(norm_f)>1e-10:
+        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti(K,Kreg,f,B0,B1,weight,index_weight,R,mat_S0):
+def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
 #                           
     CP  = COARSE_PROBLEM_HTFETI(B1,R)   
     d   = np.zeros(B1[0][0].shape[0])    
+    dc  = np.zeros(B1[0][0].shape[0])    
 #   
     Kplus = []
     for i in range(len(K)):
@@ -356,11 +367,13 @@ def hfeti(K,Kreg,f,B0,B1,weight,index_weight,R,mat_S0):
         Kpl_ = Kplus_HTFETI[i]*f[i]
         for j in range(len(K[i])):
             d += sparse.csc_matrix.dot(B1[i][j],Kpl_[j])
+            dc[index_weight[i][j]] = c[i][j]
 #    
+    d      -= dc
     F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
-    Prec    = PREC_DIR_OR_LUMPED(K,B1,weight,index_weight)
+    Prec    = PREC_DIR_OR_LUMPED(K,Schur,B1,weight,index_weight)
      
-    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,True)        
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
 #    
     uu = []
     cnt = 0
@@ -384,10 +397,12 @@ def hfeti(K,Kreg,f,B0,B1,weight,index_weight,R,mat_S0):
             R_alpha = sparse.csc_matrix.dot(R[i][j],alpha[ind])
             uu[i].append(Kplus_f_B1t_lam[i][j]+R_alpha)
         cnt += R[i][0].shape[1]
+
+
 #    for i in range(len(K)):
 #        uu.append([])
+#        ind = np.arange(0,R[i][j].shape[1]) + cnt
 #        for j in range(len(K[i])):
-#            ind = np.arange(0,R[i][j].shape[1]) + cnt
 #            f_BtLam_i_j = f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam)
 #            KplusBtLam_i_j=Kplus[i][j]*f_BtLam_i_j
 #            R_alpha_i_j = sparse.csc_matrix.dot(R[i][j],alpha[ind])
@@ -396,10 +411,11 @@ def hfeti(K,Kreg,f,B0,B1,weight,index_weight,R,mat_S0):
 #            delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
 #            norm_f += np.linalg.norm(f[i][j])
         
-#    u = Kplus_sub*f_m_BtLam + Roperator.mult(alpha)      
-#     
-#    delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
-#    normf = np.linalg.norm(f)
-#    print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+    #u = Kplus_sub*f_m_BtLam + Roperator.mult(alpha)      
+     
+    #delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
+    #norm_f = np.linalg.norm(f)
+#    if np.abs(norm_f)>1e-10:
+#        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ############################################################################### 

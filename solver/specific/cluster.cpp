@@ -110,7 +110,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 
@@ -135,14 +135,14 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	}
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_comm_lambdas_indices .resize(my_neighs.size());
 	my_comm_lambdas			.resize(my_neighs.size());
 	my_recv_lambdas			.resize(my_neighs.size());
 
-	ESLOG(MEMORY) << "1 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "1 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	cilk_for (eslocal i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices[i] = lambdas_per_subdomain[my_neighs[i]];
@@ -150,12 +150,12 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 	}
 
-	ESLOG(MEMORY) << "2 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "2 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
 	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
-	ESLOG(MEMORY) << "3 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "3 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++ )
 		if (USE_KINV == 1 ) {
@@ -166,13 +166,13 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 			domains[d].compressed_tmp2.resize( 1, 0);
 		}
 
-	ESLOG(MEMORY) << "4 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "4 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	// mapping/compression vector for cluster
 	for (eslocal i = 0; i <my_lamdas_indices.size(); i++)
 		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
 
-	ESLOG(MEMORY) << "5 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "5 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	// mapping/compression vector for domains
 	cilk_for (eslocal i = 0; i < domains.size(); i++) {
@@ -181,7 +181,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 	}
 
-	ESLOG(MEMORY) << "6 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "6 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
@@ -209,7 +209,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
         }
 	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
-	ESLOG(MEMORY) << "7 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "7 process " << config::evn::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
@@ -221,12 +221,12 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	}
 	//// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
 
-	ESLOG(MEMORY) << "8 process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "8 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
 	ESLOG(MEMORY) << "B1 compression";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -279,7 +279,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	//// *** Compression of Matrix G1 to work with compressed lambda vectors *******************
 	ESLOG(MEMORY) << "G1 compression";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (USE_DYNAMIC == 0) {
@@ -290,7 +290,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
 	ESLOG(MEMORY) << "Lambdas end";
-	ESLOG(MEMORY) << "process " << config::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
@@ -298,7 +298,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes ) {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-		if ( d == 0 && config::MPIrank == 0) {
+		if ( d == 0 && config::env::MPIrank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 
@@ -1085,7 +1085,7 @@ void ClusterBase::CreateF0() {
 			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
-			ss << "Create F0 -> rank: " << config::MPIrank << ", subdomain: " << d;
+			ss << "Create F0 -> rank: " << config::env::MPIrank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		} else {
@@ -1157,7 +1157,7 @@ void ClusterBase::CreateF0() {
 	//F0_Mat.Clear();
 	F0.SetThreaded();
 	std::stringstream ss;
-	ss << "F0 -> rank: " << config::MPIrank;
+	ss << "F0 -> rank: " << config::env::MPIrank;
 	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);

@@ -13,11 +13,12 @@ struct UniformSettings: public Settings {
 	UniformSettings(const Options &options, size_t index, size_t size);
 	UniformSettings(size_t index, size_t size);
 
-	static std::vector<Description> description;
+	std::vector<Description> description;
 
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
 	size_t materialsLayers[3];
+
 	size_t cornerCount;
 	bool corners;
 	bool edges;

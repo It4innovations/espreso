@@ -28,8 +28,7 @@ def configure(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread".format(os.environ['MKLROOT']) ])
 
     if ctx.env.SOLVER == "CUDA":
-        #ctx.env.append_unique("LIBPATH", [ "/usr/local/cuda-7.0/lib64" ])
-        ctx.env.append_unique("LIB", [ "cudart", "cublas", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+        ctx.env.append_unique("LIB", [ "cudart", "cublas", "cusolver", "cusparse", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
 
     if ctx.env.SOLVER == "MUMPS":
         ctx.env.append_unique("LIB", [ "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread", "ifcore" ])
@@ -40,8 +39,10 @@ def build(ctx):
     if ctx.env.SOLVER == "MIC":
         sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp", "specific/acc/itersolveracc.cpp", "specific/acc/DenseMatrixPack.cpp")
 
+    # TODO
     if ctx.env.SOLVER == "CUDA":
-        sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp")
+	sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp")
+        #sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/solvercuda.cpp",)
 
     if ctx.env.SOLVER == "MUMPS":
         sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")

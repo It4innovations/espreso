@@ -71,7 +71,7 @@ def configure(ctx):
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
-    append_solver_attributes(ctx)
+    append_solver_attributes(ctx, compiler_attributes)
     ctx.recurse("solver")
     ctx.recurse("assembler")
     ctx.recurse("app")

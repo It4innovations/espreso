@@ -28,21 +28,6 @@ std::ostream& espreso::operator<<(std::ostream& os, const CoordinatesProperty &c
 	return os;
 }
 
-void Coordinates::computeLocal(eslocal part, std::vector<eslocal> &nodeMap, size_t size)
-{
-	if (_clusterIndex.size() <= part) {
-		_clusterIndex.resize(part + 1);
-	}
-
-	_clusterIndex[part].clear();
-	_clusterIndex[part].reserve(size);
-	for (size_t i = 0; i < nodeMap.size(); i++) {
-		if (nodeMap[i] >= 0) {
-			_clusterIndex[part].push_back(i);
-		}
-	}
-}
-
 std::ostream& espreso::operator<<(std::ostream& os, const Coordinates &c)
 {
 	for (size_t i = 0; i < c.clusterSize(); i++)

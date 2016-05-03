@@ -83,6 +83,7 @@ void UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
 	}
 
 	Loader::remapElementsToSubdomains();
+	Loader::computeBoundaries();
 }
 
 template<class TElement>
@@ -139,8 +140,6 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 		}
 		std::sort(fixPoints[p].begin(), fixPoints[p].end());
 	}
-
-	Loader::computeBoundaries();
 }
 
 template <class TElement>

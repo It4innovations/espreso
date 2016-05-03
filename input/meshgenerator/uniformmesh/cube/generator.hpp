@@ -150,23 +150,23 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (_settings.fillCondition[CubeSettings::REAR].find(DIRICHLET_X)->second) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR].find(DIRICHLET_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_X];
 				}
-				if (_settings.fillCondition[CubeSettings::REAR].find(FORCES_X)->second) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR].find(FORCES_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_X];
 				}
-				if (_settings.fillCondition[CubeSettings::REAR].find(DIRICHLET_Y)->second) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR].find(DIRICHLET_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::REAR].find(FORCES_Y)->second) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR].find(FORCES_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::REAR].find(DIRICHLET_Z)->second) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR].find(DIRICHLET_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Z];
 				}
-				if (_settings.fillCondition[CubeSettings::REAR].find(FORCES_Z)->second) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR].find(FORCES_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Z];
 				}
 				index += nodes[0];
 			}
@@ -177,23 +177,23 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 		eslocal index = nodes[0] - 1;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (_settings.fillCondition[CubeSettings::FRONT].find(DIRICHLET_X)->second) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(DIRICHLET_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_X];
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT].find(FORCES_X)->second) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(FORCES_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_X];
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT].find(DIRICHLET_Y)->second) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(DIRICHLET_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT].find(FORCES_Y)->second) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(FORCES_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT].find(DIRICHLET_Z)->second) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(DIRICHLET_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Z];
 				}
-				if (_settings.fillCondition[CubeSettings::FRONT].find(FORCES_Z)->second) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::FRONT].find(FORCES_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Z];
 				}
 				index += nodes[0];
 			}
@@ -204,23 +204,23 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::LEFT].find(DIRICHLET_X)->second) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(DIRICHLET_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_X];
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT].find(FORCES_X)->second) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(FORCES_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_X];
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT].find(DIRICHLET_Y)->second) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(DIRICHLET_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT].find(FORCES_Y)->second) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(FORCES_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT].find(DIRICHLET_Z)->second) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(DIRICHLET_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Z];
 				}
-				if (_settings.fillCondition[CubeSettings::LEFT].find(FORCES_Z)->second) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT].find(FORCES_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Z];
 				}
 				index++;
 			}
@@ -232,23 +232,23 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 		eslocal index = nodes[1] * nodes[0] - 1;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::RIGHT].find(DIRICHLET_X)->second) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(DIRICHLET_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X];
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT].find(FORCES_X)->second) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(FORCES_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_X];
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT].find(DIRICHLET_Y)->second) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(DIRICHLET_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT].find(FORCES_Y)->second) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(FORCES_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT].find(DIRICHLET_Z)->second) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(DIRICHLET_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Z];
 				}
-				if (_settings.fillCondition[CubeSettings::RIGHT].find(FORCES_Z)->second) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT].find(FORCES_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Z];
 				}
 				index++;
 			}
@@ -260,23 +260,23 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 		eslocal index = 0;
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::BOTTOM].find(DIRICHLET_X)->second) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(DIRICHLET_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_X];
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM].find(FORCES_X)->second) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(FORCES_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_X];
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM].find(DIRICHLET_Y)->second) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(DIRICHLET_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM].find(FORCES_Y)->second) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(FORCES_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM].find(DIRICHLET_Z)->second) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(DIRICHLET_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Z];
 				}
-				if (_settings.fillCondition[CubeSettings::BOTTOM].find(FORCES_Z)->second) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM].find(FORCES_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Z];
 				}
 				index++;
 			}
@@ -287,23 +287,23 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
 		eslocal index = nodes[0] * nodes[1] * (nodes[2] - 1);
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.fillCondition[CubeSettings::TOP].find(DIRICHLET_X)->second) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP].find(DIRICHLET_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
+					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_X];
 				}
-				if (_settings.fillCondition[CubeSettings::TOP].find(FORCES_X)->second) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP].find(FORCES_X)->second;
+				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
+					forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_X];
 				}
-				if (_settings.fillCondition[CubeSettings::TOP].find(DIRICHLET_Y)->second) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP].find(DIRICHLET_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
+					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::TOP].find(FORCES_Y)->second) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP].find(FORCES_Y)->second;
+				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
+					forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Y];
 				}
-				if (_settings.fillCondition[CubeSettings::TOP].find(DIRICHLET_Z)->second) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP].find(DIRICHLET_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
+					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Z];
 				}
-				if (_settings.fillCondition[CubeSettings::TOP].find(FORCES_Z)->second) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP].find(FORCES_Z)->second;
+				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
+					forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Z];
 				}
 				index++;
 			}
@@ -362,7 +362,7 @@ void CubeGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::vec
 		}
 	}
 
-	neighs.erase(config::MPIrank);
+	neighs.erase(config::env::MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

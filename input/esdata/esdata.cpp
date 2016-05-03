@@ -112,7 +112,7 @@ void Esdata::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbo
 		}
 	}
 
-	neighs.erase(config::MPIrank);
+	neighs.erase(config::env::MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

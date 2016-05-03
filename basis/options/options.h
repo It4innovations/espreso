@@ -20,19 +20,20 @@ struct Options {
 
 	friend std::ostream& operator<<(std::ostream& os, const Options &options);
 
-	Options(): verboseLevel(0), testingLevel(0), measureLevel(0) {};
+	Options(): verbose(0), measure(0), testing(0) { };
 	Options(int *argc, char*** argv);
 
 	void configure();
-	void setFromFile(const std::string &file);
 
 	std::string executable;
-	std::string input;
 	std::string path;
-	size_t verboseLevel;
-	size_t testingLevel;
-	size_t measureLevel;
+	std::string input;
 	std::vector<std::string> nameless;
+
+private:
+	size_t verbose;
+	size_t measure;
+	size_t testing;
 };
 
 }

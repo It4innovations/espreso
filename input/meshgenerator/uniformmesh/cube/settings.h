@@ -23,13 +23,12 @@ struct CubeSettings: public UniformSettings {
 	CubeSettings(const Options &options, size_t index, size_t size);
 	CubeSettings(size_t index, size_t size);
 
-	static std::vector<Description> description;
+	std::vector<Description> description;
 
 	size_t clusters[3];
 	double problemLength[3];
 
-	std::vector<std::map<size_t, double> > boundaryCondition;
-	std::vector<std::map<size_t, bool> > fillCondition;
+	std::vector<double> boundaryCondition;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const CubeSettings &s)
@@ -45,8 +44,8 @@ inline std::ostream& operator<<(std::ostream& os, const CubeSettings &s)
 	for (size_t f = 0; f < cube_faces.size(); f++) {
 		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
 			std::string name = properties[p / 3] + "_" + cube_faces[f] + "_" + axis[p % 3];
-			if (s.fillCondition[f].find(p)->second) {
-				os << name << ": " << s.boundaryCondition[f].find(p)->second << "\n";
+			if (s.boundaryCondition[f * 6 + p] != std::numeric_limits<double>::infinity()) {
+				os << name << ": " << s.boundaryCondition[f * 6 + p] << "\n";
 			}
 		}
 	}

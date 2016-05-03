@@ -3,8 +3,8 @@
 WORKDIR=$MEMBERWORK/csc180/
 ESPRESODIR=~/espreso
 EXAMPLEDIR=examples/meshgenerator
-EXAMPLE=cube_elasticity_fixed_bottom.txt  #cube_temperature.txt #cube_elasticity_fixed_bottom.txt
-OUTPUTDIR=~/espreso/results-Apr2016-CPUandGPU-2/
+EXAMPLE=cube_temperature.txt #cube_elasticity_fixed_bottom.txt  #cube_temperature.txt #cube_elasticity_fixed_bottom.txt
+OUTPUTDIR=~/espreso/results-Apr2016-CPU-double-strong-cube-heat/
 
 module switch PrgEnv-pgi/5.2.82 PrgEnv-intel/5.2.82
 #module switch intel/14.0.4.211 intel/15.0.2.164 
@@ -51,17 +51,17 @@ if [ "$1" = "run" ]; then
   export LC_CTYPE=""
 
   #               OM OK OK
-  #                0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
-  dom_size=(       13  13  13  13  10  10  15  15  15  15  15  15  15  15  15  15  15  15  15  15)
-  clustt_size_x=(  8   8    8   8  11  11   9   9   9   9    9   9   9   9   9   9   9   9   9   9)
-#  clustt_size_y=(  11   3   9   9   9   9   9   9   9   9    9   9   9   9   9   9   9   9   9   9)
-#  clustt_size_z=(  11   3   9   9   9   9   9   9   9   9    9   9   9   9   9   9   9   9   9   9)
+  #                0    1   2   3   4   5   6   7   8   9     10  11  12  13    14  15  16  17  18  19  20
+  dom_size=(       18  17  21  15  19  15  19  15  20  14     16  13  15  21    15  15  15  15  15  15)
+  clustt_size_x=(  11  10   8  10   8   9   7   8   6   8      7   8   7   5     9   9   9   9   9   9)
+  clustt_size_y=(  11  10   8  10   8   9   7   8   6   8      7   8   7   5     9   9   9   9   9   9)
+  clustt_size_z=(  10  10   8  10   8   9   7   8   6   8      7   8   7   5     9   9   9   9   9   9)
 
-  clusters_x=(     1   1   1   1   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21)
-#  clusters_y=(    1   2   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21)
-#  clusters_z=(    1   2   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21)
+  clusters_x=(     14  16  16  18  18  20  20  22  22  24     24  26  26  26    16  17  18  19  20  21)
+#  clusters_y=(    1   2   4   5   6   7   8   9   10  11     12  13  14  15    16  17  18  19  20  21)
+#  clusters_z=(    1   2   4   5   6   7   8   9   10  11     12  13  14  15    16  17  18  19  20  21)
 
-  corners=(        0   0   0   0   0   0   0   0   0    0   0   0   0   0   0   0   0   0   0   0)
+  corners=(        0   0   0   0   0   0   0   0   0    0      0   0   0   0     0   0   0   0   0   0)
     
     qsub_command_0="#!/bin/bash;"
     qsub_command_0+="export MKL_NUM_THREADS=1;"
@@ -74,18 +74,18 @@ if [ "$1" = "run" ]; then
     qsub_command_0+="export LC_CTYPE=;"
 
 
-  for i in 1 2 3 # 4 5 6 7 8 9 10 #  11 12 13 # 21 22 23 24 25 26 # 11 12 13 14 15 16 17 18 19 20 # 1 2 3 4 5 6 7 8 9 10 # 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
+  for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13   # 21 22 23 24 25 26 # 11 12 13 14 15 16 17 18 19 20 # 1 2 3 4 5 6 7 8 9 10 # 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
   do
-    d=12 #${dom_size[${i}]}
+    d=${dom_size[${i}]}
     c= #${corners[${i}]}
 
-    x=10 #${clustt_size_x[${i}]}
-    y=10 #${clustt_size_x[${i}]}
-    z=10 #${clustt_size_x[${i}]}
+    x=${clustt_size_x[${i}]}
+    y=${clustt_size_y[${i}]}
+    z=${clustt_size_z[${i}]}
 
-    X=$i #${clusters_x[${i}]}
-    Y=$i #${clusters_x[${i}]}
-    Z=$i #${clusters_x[${i}]}
+    X=${clusters_x[${i}]}
+    Y=${clusters_x[${i}]}
+    Z=${clusters_x[${i}]}
 
     jobname=espreso
     mpiranks=$(( X * Y * Z ))
@@ -121,7 +121,7 @@ if [ "$1" = "run" ]; then
 
     echo $qsub_command | tr ";" "\n" 
     echo $qsub_command | tr ";" "\n" | \
-    qsub -q batch -A $account -l nodes=$(( X * Y * Z )) -l walltime=00:20:00 -N $jobname
+    qsub -q batch -A $account -l nodes=$(( X * Y * Z )) -l walltime=00:10:00 -N $jobname
     #sbatch -N $(( X * Y * Z ))  -p test_large
     # queus: debug, batch, killable 
 

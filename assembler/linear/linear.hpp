@@ -69,7 +69,6 @@ void Linear<TInput>::init()
 		}
 	}
 
-
 	timeBforces.endWithBarrier();
 	this->_timeStatistics.addEvent(timeBforces);
 
@@ -77,7 +76,7 @@ void Linear<TInput>::init()
 	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(config::MPIrank, config::MPIsize, true);
+	_lin_solver.setup(config::env::MPIrank, config::env::MPIsize, true);
 
 	initSolver();
 
