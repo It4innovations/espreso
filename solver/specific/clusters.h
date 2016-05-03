@@ -39,10 +39,10 @@ namespace espreso {
 }
 
 #elif defined(SOLVER_CUDA_7)
-#include "cpu/clustercpu.h"
+#include "acc/clusterGPU.h"
 
 namespace espreso {
-	typedef ClusterCPU	Cluster;
+	typedef ClusterGPU	Cluster;
 }
 
 

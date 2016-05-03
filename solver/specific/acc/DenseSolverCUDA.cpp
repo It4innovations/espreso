@@ -240,7 +240,7 @@ void DenseSolverCUDA::SetThreaded() {
 
 int DenseSolverCUDA::Factorization(const std::string &str) {
 
-	eslocal Lwork = 0;
+	int Lwork = 0;
 
 	if (USE_FLOAT) {
 		CHECK_SO_FACT(cusolverDnSpotrf_bufferSize(soDnHandle, CUBLAS_FILL_MODE_UPPER, m_rows, D_dense_values_fl, m_lda, &Lwork));

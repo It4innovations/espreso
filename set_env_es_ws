@@ -8,5 +8,9 @@ export CILK_NWORKERS=8
 export PARDISOLICMESSAGE=1
 
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/ParaView-bin/lib/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/Paraview-OSPRay/ParaView-v4.3.1-source/build/lib/
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/Paraview-OSPRay/ParaView-v4.3.1-source/build/lib/
+
+export PATH=/usr/local/cuda-7.0/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-7.0/lib64:$LD_LIBRARY_PATH
+
 

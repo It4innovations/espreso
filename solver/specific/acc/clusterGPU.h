@@ -10,7 +10,8 @@
 
 
 #include "../cluster.h"
-
+#include <cuda.h>
+#include <cuda_runtime.h>
 namespace espreso {
 
 class ClusterGPU: public ClusterBase

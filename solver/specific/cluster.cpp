@@ -1325,9 +1325,15 @@ void ClusterBase::CreateSa() {
 #else
 	 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 	SaMat = Salfa;
-	#ifdef CUDA
+
+#if defined(SOLVER_CUDA)
     	SaMat.type = 'G';
-    #endif
+#endif
+
+#if defined(SOLVER_CUDA_7)
+    	SaMat.type = 'G';
+#endif
+
 	SaMat.ConvertCSRToDense(1);
 	SaMat.type = 'S';
 	Sa_dense.ImportMatrix(SaMat);
