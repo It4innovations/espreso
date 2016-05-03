@@ -89,20 +89,20 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	ESINFO(PROGRESS2) << Info::plain() << "\n Domains on GPU : " << domains_on_GPU << "\n";
 	ESINFO(PROGRESS2) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
 
-	std::vector <int> on_gpu (config::MPIsize, 0);
+	std::vector <int> on_gpu (config::env::MPIsize, 0);
 	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
 
-	std::vector <int> on_cpu (config::MPIsize, 0);
+	std::vector <int> on_cpu (config::env::MPIsize, 0);
 	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
 
-	std::vector <int> don_gpu (config::MPIsize, 0);
+	std::vector <int> don_gpu (config::env::MPIsize, 0);
 	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
 
-	std::vector <int> don_cpu (config::MPIsize, 0);
+	std::vector <int> don_cpu (config::env::MPIsize, 0);
 	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
 
 
-	for (eslocal i = 0; i < config::MPIsize; i++) {
+	for (eslocal i = 0; i < config::env::MPIsize; i++) {
 		ESINFO(PROGRESS2) << Info::plain()
 			<< " MPI rank " << i <<
 			"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
@@ -381,7 +381,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 
 		domains[d].domain_prim_size = domains[d].Kplus.cols;
 
-		if ( d == 0 && config::MPIrank == 0) {
+		if ( d == 0 && config::env::MPIrank == 0) {
 			domains[d].Kplus.msglvl = 0; //Info::report(LIBRARIES) ? 1 : 0;
 		}
 	}

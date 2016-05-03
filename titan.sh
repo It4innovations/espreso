@@ -1,194 +1,131 @@
 #!/bin/bash
 
-module swap PrgEnv-pgi/5.2.82 PrgEnv-intel/5.2.40
-#module unload cray-libsci/13.0.4
-module swap intel/14.0.2.144  intel/15.0.2.164 #  intel/13.1.3.192 # intel/15.0.2.164
+WORKDIR=$MEMBERWORK/csc180/
+ESPRESODIR=~/espreso
+EXAMPLEDIR=examples/meshgenerator
+EXAMPLE=cube_temperature.txt #cube_elasticity_fixed_bottom.txt  #cube_temperature.txt #cube_elasticity_fixed_bottom.txt
+OUTPUTDIR=~/espreso/results-Apr2016-CPU-double-strong-cube-heat/
 
+module switch PrgEnv-pgi/5.2.82 PrgEnv-intel/5.2.82
+#module switch intel/14.0.4.211 intel/15.0.2.164 
 module unload cray-libsci
-module load gcc/4.8.2
-module load cray-tpsl #/1.5.0
-
-module load cudatoolkit/6.5.14-1.0502.9613.6.1
-#module load metis/5.1.0
+module load gcc/4.9.3
+module load cray-tpsl-64/1.5.0
+module load cudatoolkit/7.0.28-1.0502.10280.4.1
 module list
 
-#cc -craype-verbose
-#CC -craype-verbose
-#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../libs
-
-
-#cd build
-#CC -Wall -openmp mesh/src/settings.cpp.1.o mesh/src/loader.cpp.1.o mesh/src/structures/coordinates.cpp.1.o mesh/src/structures/mesh.cpp.1.o mesh/src/structures/boundaries.cpp.1.o mesh/src/matrices/matrix.cpp.1.o mesh/src/matrices/denseMatrix.cpp.1.o mesh/src/elements/element.cpp.1.o mesh/src/elements/3D/hexahedron8.cpp.1.o mesh/src/elements/3D/hexahedron20.cpp.1.o mesh/src/elements/3D/tetrahedron4.cpp.1.o mesh/src/elements/3D/tetrahedron10.cpp.1.o mesh/src/elements/3D/prisma6.cpp.1.o mesh/src/elements/3D/prisma15.cpp.1.o mesh/src/elements/3D/pyramid5.cpp.1.o mesh/src/elements/3D/pyramid13.cpp.1.o mesh/src/elements/2D/square.cpp.1.o mesh/src/elements/2D/triangle.cpp.1.o mesh/src/elements/1D/line.cpp.1.o mesh/src/elements/1D/point3d.cpp.1.o mesh/src/elements/1D/point2d.cpp.1.o mesh/src/main.cpp.1.o -o /autofs/nccs-svm1_home1/lriha/espreso-lriha/build/mesh/esmesh -Wl,-Bdynamic -L../libs -Lbem -lmetis32 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lesbem
-
-#./mesh/esmesh
-#exit
-
-#export CPATH=/apps/icc/2015.3.187-GNU-5.1.0-2.25/tbb/include/:$CPATH
-
-#module load impi/5.0.3.048-iccifort-2015.3.187
-#module load MPT/2.12
-
-#module load OpenMPI/1.8.6-GNU-5.1.0-2.25
-#module unload GCC/5.1.0-binutils-2.25 binutils/2.25-GCC-5.1.0-binutils-2.25 GNU/5.1.0-2.25 impi/5.0.3.048-iccifort-2015.3.187
-
-#module load icc/2015.3.187
-#module load imkl/11.2.3.187-iimpi-7.3.5
-#module load DDT/5.0.1
-
-#export OMPI_CXX=icpc
-
-#mpic++ -V
-
-#module load CMake/3.0.0-intel-2015b 
-#module load tbb/4.3.5.187
 export LC_CTYPE=""
 
 if [ "$#" -ne 1 ]; then
   echo "  Use one of the following commands:"
-  echo "    ./salomon configure"
-  echo "    ./salomon build"
-  echo "    ./salomon run"
-  echo "    ./salomon clean"
-  echo "    ./salomon distclean"
+  echo "    ./archer.sh configure"
+  echo "    ./archer.sh build"
+  echo "    ./archer.sh run"
   echo ""
   echo "  'configure' sets all parameters for the compiler. It is mandatory to run this command at the first time."
   echo "  'build' makes the runable application."
   echo "  'run' starts the computation. The result is put to Paraview input file 'mesh.vtk'."
-  echo "  'clean' removes all files created by build process."
-  echo "  'distclean' removes all files."
 fi
 
 if [ "$1" = "configure" ]; then
-  ./waf configure --titan --static --cuda
+  ./waf configure
 fi
 
 if [ "$1" = "build" ]; then
-  #./waf install -v --static --pardiso_mkl
-  ./waf install -v --static --pardiso_mkl 
-fi
-
-if [ "$1" = "clean" ]; then
-  ./waf uninstall
-  ./waf clean
-fi
-
-if [ "$1" = "distclean" ]; then
-  ./waf uninstall
-  ./waf distclean
+  ./waf install -v -j4
 fi
 
 #         HEXA8 HEXA20 TETRA4 TETRA10 PRISMA6 PRISMA15 PYRAMID5 PYRAMID13
 el_type=(   0     1      2       3       4       5        6         7)
 
 if [ "$1" = "run" ]; then
-  export PARDISOLICMESSAGE=1 
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
-
-  export OMP_NUM_THREADS=1
+ 
   export MKL_NUM_THREADS=1
+  export OMP_NUM_THREADS=1
   export SOLVER_NUM_THREADS=15
   export PAR_NUM_THREADS=15
-
-  export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
-  export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs/
-
-  log_file=output_8_nodes.log
-
-  dom_size=10      #20
-  clusters=3       #2
-  domains_p_c=5    #7
-
-
+  export CILK_NWORKERS=15
+  
+  export PARDISOLICMESSAGE=1
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
+  export LC_CTYPE=""
 
   #               OM OK OK
-  #               0   1   2   3   4   5   6   7   8   9
-  dom_size=(      13  12  11  10  9   14  15  5  13  14 )
-  clustt_size_x=( 4   4   5   5   6   4   4   3  10  10 )
-  clustt_size_y=( 4   4   5   5   6   4   4   3   5   5 )
-  clustt_size_z=( 4   4   4   6   6   3   3   3   5   5 )
+  #                0    1   2   3   4   5   6   7   8   9     10  11  12  13    14  15  16  17  18  19  20
+  dom_size=(       18  17  21  15  19  15  19  15  20  14     16  13  15  21    15  15  15  15  15  15)
+  clustt_size_x=(  11  10   8  10   8   9   7   8   6   8      7   8   7   5     9   9   9   9   9   9)
+  clustt_size_y=(  11  10   8  10   8   9   7   8   6   8      7   8   7   5     9   9   9   9   9   9)
+  clustt_size_z=(  10  10   8  10   8   9   7   8   6   8      7   8   7   5     9   9   9   9   9   9)
 
-  clusters_x=(    2   1   2   2   2   2   2   2   1   1 )
-  clusters_y=(    2   1   2   2   2   2   2   2   1   1 )
-  clusters_z=(    2   1   1   1   1   1   1   1   1   1 )
+  clusters_x=(     14  16  16  18  18  20  20  22  22  24     24  26  26  26    16  17  18  19  20  21)
+#  clusters_y=(    1   2   4   5   6   7   8   9   10  11     12  13  14  15    16  17  18  19  20  21)
+#  clusters_z=(    1   2   4   5   6   7   8   9   10  11     12  13  14  15    16  17  18  19  20  21)
 
-  corners=(       0   0   0   0   0   0   0   0   0   0 )
+  corners=(        0   0   0   0   0   0   0   0   0    0      0   0   0   0     0   0   0   0   0   0)
+    
+    qsub_command_0="#!/bin/bash;"
+    qsub_command_0+="export MKL_NUM_THREADS=1;"
+    qsub_command_0+="export OMP_NUM_THREADS=1;"
+    qsub_command_0+="export SOLVER_NUM_THREADS=15;"
+    qsub_command_0+="export PAR_NUM_THREADS=15;"
+    qsub_command_0+="export CILK_NWORKERS=15;"
+    qsub_command_0+="export PARDISOLICMESSAGE=1;"
+    qsub_command_0+="export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.;"
+    qsub_command_0+="export LC_CTYPE=;"
 
-    rm -rf $MEMBERWORK/csc180/*
-    #cp ./libs/*   $MEMBERWORK/csc180/
-    cp espreso    $MEMBERWORK/csc180/
-    #cp decomposer $MEMBERWORK/csc180/
-    cp -R examples $MEMBERWORK/csc180/   
 
-    cd            $MEMBERWORK/csc180/
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MEMBERWORK/csc180/
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/composer_xe_2015.2.164/compiler/lib/intel64/:/opt/gcc/4.8.2/snos/lib64/
-
-  for i in 1 # 6 5 0 1 2 3 4
+  for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13   # 21 22 23 24 25 26 # 11 12 13 14 15 16 17 18 19 20 # 1 2 3 4 5 6 7 8 9 10 # 19 20 21  # 4 5 6 # 1 2 3 # 4 # 11 12 # 6 5 0 1 2 3 4
   do
     d=${dom_size[${i}]}
-    c=${corners[${i}]}
+    c= #${corners[${i}]}
 
     x=${clustt_size_x[${i}]}
     y=${clustt_size_y[${i}]}
     z=${clustt_size_z[${i}]}
 
     X=${clusters_x[${i}]}
-    Y=${clusters_y[${i}]}
-    Z=${clusters_z[${i}]}
+    Y=${clusters_x[${i}]}
+    Z=${clusters_x[${i}]}
 
-
-    log_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.log
-
-    date | tee $log_file
+    jobname=espreso
+    mpiranks=$(( X * Y * Z ))
+    account=csc180
+    actualTime=$( date +%y%m%d_%H:%M:%S )
+    log_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime.log
+    out_dir=ESP-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime
+    qsub_command=$qsub_command_0
+    qsub_command+="date | tee -a $log_file;"
 
     echo "Config: dom_size=  $d | cluster_size = $x:$y:$z | clusters = $X:$Y:$Z  "
-
-    date | tee -a $log_file
+    mkdir    $WORKDIR/$out_dir
+    mkdir -p $WORKDIR/$out_dir/$EXAMPLEDIR
+    cp -R    $ESPRESODIR/libs/ 	        $WORKDIR/$out_dir
+    cp -R    $ESPRESODIR/$EXAMPLEDIR/*  $WORKDIR/$out_dir/$EXAMPLEDIR
+    cp       $ESPRESODIR/espreso        $WORKDIR/$out_dir
+    cp       $ESPRESODIR/titan.sh       $WORKDIR/$out_dir
+    cp 	     $ESPRESODIR/espreso.config $WORKDIR/$out_dir
+    
+    qsub_command+="cd $WORKDIR/$out_dir;"
+    qsub_command+="ls;"
 
     #                                          ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to-none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}   | tee -a $log_file
     #mpirun -bind-to none -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}               # | tee -a $log_file
 
 
-	
+    qsub_command+="aprun -cc none -N 1 -d 16 -n $(( X * Y * Z )) ./espreso $EXAMPLEDIR/$EXAMPLE 0 ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file;"
+
+    mkdir $OUTPUTDIR
+    qsub_command+="cp $log_file $OUTPUTDIR;"
 
 
-    aprun -cc none -N 1 -d 16 -n $(( X * Y * Z )) ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt 0 ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} | tee -a $log_file
- 
-    cp $MEMBERWORK/csc180/*.log $PBS_O_WORKDIR
-    cp $MEMBERWORK/csc180/*.vtk $PBS_O_WORKDIR
+    echo $qsub_command | tr ";" "\n" 
+    echo $qsub_command | tr ";" "\n" | \
+    qsub -q batch -A $account -l nodes=$(( X * Y * Z )) -l walltime=00:10:00 -N $jobname
+    #sbatch -N $(( X * Y * Z ))  -p test_large
+    # queus: debug, batch, killable 
 
-    #mpirun -n $(( X * Y * Z ))  ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
-
-   
-    #ddt -noqueue -start -n $(( X * Y * Z ))    ./espreso ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d} # | tee -a $log_file
-
-    #cp mesh.vtk mesh-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c.vtk
-    #rm mesh.vtk
+    echo "watch -n 1 tail -n 60 $WORKDIR/$out_dir/$log_file"  
   done
 
-fi
-
-
-if [ "$1" = "debug" ]; then
-  module load valgrind/3.9.0-impi
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
-  export OMP_NUM_THREADS=1
-  export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
-  export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
-
-  for i in 0 #1 2 3
-  do
-
-    log_file=LOG-1:1:1-2:2:2-5:5:5.log
-
-    date | tee $log_file
-
-    echo "Config: dom_size = 5 | cluster_size = 2:2:2 | clusters = 1:1:1"
-
-    date | tee -a $log_file
-
-    valgrind ./espreso ${el_type[${i}]} 1 1 1 2 2 2 5 5 5 | tee -a $log_file
-  done
 fi
