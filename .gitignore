@@ -21,3 +21,4 @@ kernel_statistic.txt
 log
 log/*
 *.config*
+decomposer

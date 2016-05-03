@@ -25,7 +25,7 @@ compiler_attributes = [
     ("STLIBPATH", "List of search path for static libraries.", "string", "paths")
 ]
 
-solvers = [ "MKL", "PARDISO", "CUDA", "MIC", "MUMPS" ]
+solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS" ]
 
 espreso_attributes = [
     ("CHECK_ENV", "Set to 1, if you want to test the build configuration.", "choice", [ "0", "1" ]),

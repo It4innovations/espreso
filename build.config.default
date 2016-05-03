@@ -59,6 +59,12 @@ CUDA::INCLUDES = /usr/local/cuda-7.5/include
 CUDA::LIBPATH = /usr/local/cuda-7.5/lib64
 CUDA::STLIBPATH =
 
+CUDA_7::CXXFLAGS =
+CUDA_7::LINKFLAGS =
+CUDA_7::INCLUDES = /usr/local/cuda-7.0/include
+CUDA_7::LIBPATH = /usr/local/cuda-7.0/lib64
+CUDA_7::STLIBPATH =
+
 MIC::CXXFLAGS =
 MIC::LINKFLAGS =
 MIC::INCLUDES =

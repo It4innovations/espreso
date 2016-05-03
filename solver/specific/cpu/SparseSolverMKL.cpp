@@ -1,5 +1,5 @@
 
-#include "solvermkl.h"
+#include "SparseSolverMKL.h"
 
 using namespace espreso;
 
