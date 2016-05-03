@@ -17,7 +17,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
     // First, get the available memory on coprocessors (in bytes)
-    double usableRAM = 0.5;
+    double usableRAM = 0.4;
     long micMem[N_MICS];
     for (eslocal i = 0; i < N_MICS; ++i) {
         long currentMem = 0;

@@ -907,7 +907,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
         eslocal nMatrices,
         eslocal generate_symmetric_sc_1_generate_general_sc_0,
         eslocal device ) {
-
     if (!SC_out.areDataOnMIC()) {
         SC_out.CopyToMIC();
     }
@@ -974,8 +973,8 @@ void SparseSolverMIC::Create_SC_w_Mat(
     in( nnz : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(K_sc1_CSR_V_values : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(K_sc1_CSR_I_row_indices : length(nMatrices) alloc_if(1) free_if(0) ) \
-    in(K_sc1_CSR_J_col_indices : length(nMatrices) alloc_if(1) free_if(0) )
-
+    in(K_sc1_CSR_J_col_indices : length(nMatrices) alloc_if(1) free_if(0) ) \
+    in(this : alloc_if(1) free_if(0) )
     // #pragma omp parallel for num_threads(24)
     for (eslocal i = 0 ; i < nMatrices; i++) {
         double * valPointer = K_sc1_CSR_V_values[i];
@@ -985,9 +984,10 @@ void SparseSolverMIC::Create_SC_w_Mat(
         in( valPointer : length(nnz[i]) alloc_if(1) free_if(0)) \
         in( iPointer : length(K_sc1_rows[i] + 1) alloc_if(1) free_if(0)) \
         in( jPointer : length(nnz[i]) alloc_if(1) free_if(0)) \
-        nocopy( K_sc1_CSR_V_values ) \
-        nocopy( K_sc1_CSR_I_row_indices ) \
-        nocopy( K_sc1_CSR_J_col_indices )
+        in( K_sc1_CSR_V_values : length(0) alloc_if(0) free_if(0) ) \
+        in( K_sc1_CSR_I_row_indices : length(0) alloc_if(0) free_if(0) ) \
+        in( K_sc1_CSR_J_col_indices : length(0) alloc_if(0) free_if(0) ) \
+        in(this : length(0) alloc_if(0) free_if(0))
         {
             K_sc1_CSR_V_values[i] = valPointer;
             K_sc1_CSR_I_row_indices[i] = iPointer;
@@ -1011,7 +1011,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
     in(SC_out_colOffsets : length(0) alloc_if(0) free_if (0)) \
     in(SC_out_mic_x_in : length(0) alloc_if(0) free_if(0)) \
     in(SC_out_mic_y_out : length(0) alloc_if(0) free_if(0)) \
-    in(SC_out_lengths : length(0) alloc_if(0) free_if(0)) if(1)
+    in(SC_out_lengths : length(0) alloc_if(0) free_if(0))  in(this : length(0) alloc_if(0) free_if(0)) if(1)
     {
         long maxSize = 0;
         for (eslocal i = 0; i < nMatrices; i++) {
@@ -1029,7 +1029,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
 #pragma omp parallel
         {
             eslocal myRank = omp_get_thread_num();
-
             // to overcome competition among threads allocate buffer one by one
 #pragma omp critical
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
@@ -1152,20 +1151,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
             _mm_free(matrixPerThread[myRank]);
         }
     }
-    for ( eslocal i = 0 ; i < nMatrices; ++i ) {
-        _mm_free(K_sc1_CSR_V_values[i]);
-        _mm_free(K_sc1_CSR_I_row_indices[i]);
-        _mm_free(K_sc1_CSR_J_col_indices[i]);
-    }
-    _mm_free(K_sc1_CSR_V_values);
-    _mm_free(K_sc1_CSR_I_row_indices);
-    _mm_free(K_sc1_CSR_J_col_indices);
-    _mm_free(K_in_rows);
-    _mm_free(K_b_tmp_rows);
-    _mm_free(K_sc1_rows);
-    _mm_free(nnz);
-    
-    // remember to clear also MICs memory
+        // remember to clear also MICs memory
     for (eslocal i = 0 ; i < nMatrices; i++) {
         double * valPointer = K_sc1_CSR_V_values[i];
         eslocal * iPointer = K_sc1_CSR_I_row_indices[i];
@@ -1180,5 +1166,18 @@ void SparseSolverMIC::Create_SC_w_Mat(
     nocopy(K_sc1_CSR_I_row_indices :  alloc_if(0) free_if(1) ) \
     nocopy(K_sc1_CSR_J_col_indices : alloc_if(0) free_if(1) )
 
- 
+ for ( eslocal i = 0 ; i < nMatrices; ++i ) {
+        _mm_free(K_sc1_CSR_V_values[i]);
+        _mm_free(K_sc1_CSR_I_row_indices[i]);
+        _mm_free(K_sc1_CSR_J_col_indices[i]);
+    }
+    _mm_free(K_sc1_CSR_V_values);
+    _mm_free(K_sc1_CSR_I_row_indices);
+    _mm_free(K_sc1_CSR_J_col_indices);
+    _mm_free(K_in_rows);
+    _mm_free(K_b_tmp_rows);
+    _mm_free(K_sc1_rows);
+    _mm_free(nnz);
+    
+
 }
