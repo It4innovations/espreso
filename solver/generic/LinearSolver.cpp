@@ -446,7 +446,6 @@ void LinearSolver::init(
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
 
-
     if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1) {
 
     	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();

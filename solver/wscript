@@ -25,7 +25,7 @@ def configure(ctx):
     if ctx.env.SOLVER == "MIC":
         ctx.env.append_unique("LIB", [ "imf", "intlc", "svml", "irng", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
         ctx.env.append_unique("STLIB", [ "ifcore" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread".format(os.environ['MKLROOT']) ])
+        ctx.env.append_unique("LINKFLAGS", [ "-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread ".format(os.environ['MKLROOT']) ])
 
     if ctx.env.SOLVER == "CUDA":
         ctx.env.append_unique("LIB", [ "cudart", "cublas", "cusolver", "cusparse", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])

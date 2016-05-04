@@ -121,6 +121,10 @@ public:
 	float ** tmp_sol_fl2;
     double ** tmp_sol_d1;
     double ** tmp_sol_d2;
+
+    // array of arrays of all vectors
+    double * vectors;
+    double * vectors_out;
 };
 
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
-WORKDIR=~/espreso-results-pbs-static-pbs
+WORKDIR=~/espreso_git/espreso #espreso-results-pbs-static-pbs
 ESPRESODIR=~/espreso_git/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
@@ -92,13 +92,21 @@ if [ "$1" = "run" ]; then
 
   qsub_command_0="#!/bin/bash;"
   qsub_command_0+="export MKL_NUM_THREADS=1;"
-  qsub_command_0+="export OMP_NUM_THREADS=1;"
+  qsub_command_0+="export OMP_NUM_THREADS=24;"
   qsub_command_0+="export SOLVER_NUM_THREADS=$THREADS_PER_MPI;"
   qsub_command_0+="export PAR_NUM_THREADS=$THREADS_PER_MPI;"
   qsub_command_0+="export CILK_NWORKERS=$THREADS_PER_MPI;"
   qsub_command_0+="export PARDISOLICMESSAGE=1;"
   qsub_command_0+="export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.;"
   qsub_command_0+="export LC_CTYPE=;"
+  qsub_command_0+="export MIC_ENV_PREFIX=MIC;"
+  qsub_command_0+="export MIC_OMP_NUM_THREADS=60;"
+  qsub_command_0+="export OFFLOAD_INIT=on_start;"
+  qsub_command_0+="export MIC_USE_2MB_BUFFERS=10k;"
+  qsub_command_0+="export MIC_OMP_NESTED=TRUE;"
+  qsub_command_0+="export MIC_MKL_DYNAMIC=FALSE;"
+  qsub_command_0+="export MIC_MKL_NUM_THREADS=3;"
+  qsub_command_0+="export MIC_OMP_PROC_BIND=spread,close;"
 
   if [ "$2" = "intel" ]; then
     qsub_command_0+="module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25;"
@@ -123,7 +131,7 @@ if [ "$1" = "run" ]; then
   
   qsub_command_0+="module list;"
 
-  for i in 1 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+  for i in 2 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -136,9 +144,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=3 # subdomains size
+    d=8 # subdomains size
     c=0 # number of corners - nefunguje 
-    x=6 # cluster size in domains
+    x=8 # cluster size in domains
 
     y=$x
     z=$x
@@ -149,7 +157,7 @@ if [ "$1" = "run" ]; then
 
     jobname=espreso
     mpiranks=$(( X * Y * Z ))
-    account=SERVICE
+    account=OPEN-7-46
     actualTime=$( date +%y%m%d_%H:%M:%S )
     log_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime.log
     node_file=LOG-$X:$Y:$Z-$x:$y:$z-$d:$d:$d-$c:$c:$c-$actualTime.node
@@ -170,29 +178,32 @@ if [ "$1" = "run" ]; then
 
     if [ "$3" = "mpi" ]; then
 
-#export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
       export MKL_NUM_THREADS=1
-      export OMP_NUM_THREADS=1
+      export OMP_NUM_THREADS=24
       export SOLVER_NUM_THREADS=$THREADS_PER_MPI
       export PAR_NUM_THREADS=$THREADS_PER_MPI
       export CILK_NWORKERS=$THREADS_PER_MPI
       export PARDISOLICMESSAGE=1
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
       export MIC_ENV_PREFIX=MIC
-      export MIC_OMP_NUM_THREADS=32
-      export MIC_OMP_NESTED=FALSE
+      export MIC_OMP_NUM_THREADS=60
+      export MIC_OMP_NESTED=TRUE
       export MIC_MKL_DYNAMIC=FALSE
-      export MIC_MKL_NUM_THREADS=1
+      #export MIC_KMP_AFFINITY=balanced
+      export MIC_OMP_PROC_BIND=spread,close
+      export MIC_MKL_NUM_THREADS=3
       export MIC_USE_2MB_BUFFERS=100k
       export OFFLOAD_INIT=on_start
       export LC_CTYPE=
-
 
       cd $WORKDIR/$out_dir
 
       #cat $PBS_NODEFILE | tee -a $node_file
       if [ "$2" = "intel" ]; then
       mpirun      -n $(( X * Y * Z ))                  ./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+      #./espreso examples/meshgenerator/cube_elasticity_fixed_bottom.txt ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}
+      
       fi
       
       if [ "$2" = "sgi" ]; then
@@ -214,7 +225,8 @@ if [ "$1" = "run" ]; then
       echo "qsub -q qmpp -A $account -l select=$(( ((X * Y * Z)/MPI_PER_NODE) + 1 )):ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:20:00 -N $jobname" | tee -a $WORKDIR/$out_dir/job.qsub
 
       echo $qsub_command | tr ";" "\n" | tr -d "¡" | \
-      qsub -q qmpp -A $account -l select=$(( ((X * Y * Z)/MPI_PER_NODE) + 1 )):ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:20:00 -N $jobname
+      qsub -q qmpp -A $account -l select=$(( ((X * Y * Z)/MPI_PER_NODE) + 1
+      )):ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI:perrin=true -l walltime=00:20:00 -N $jobname
     
     fi
 

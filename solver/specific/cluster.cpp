@@ -166,8 +166,6 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 			domains[d].compressed_tmp2.resize( 1, 0);
 		}
 
-	//ESLOG(MEMORY) << "4 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
-
 	// mapping/compression vector for cluster
 	for (eslocal i = 0; i <my_lamdas_indices.size(); i++)
 		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
@@ -1209,6 +1207,7 @@ void ClusterBase::CreateSa() {
 			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
+        
         Salfa.ConvertDenseToCSR(1);
         Salfa.RemoveLower();
 		if (MPIrank == 0) tmpsps.msglvl = 0;

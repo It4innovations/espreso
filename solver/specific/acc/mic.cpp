@@ -551,6 +551,16 @@ void SparseSolverMIC::Factorization(const std::string &str) {
         }
 
     }
+    
+    int totalLength = 0;
+    for (eslocal i = 0 ; i < nMatrices; i++) {
+        totalLength += m_Kplus_size[i];
+    }
+    vectors = (double*) _mm_malloc(totalLength * sizeof(double), 64);
+    vectors_out = (double*) _mm_malloc(totalLength * sizeof(double), 64);
+#pragma offload_transfer target(mic:device) \
+    in(vectors : length(totalLength) alloc_if(1) free_if(0)) \ 
+    in(vectors_out : length(totalLength) alloc_if(1) free_if(0)) 
 
     m_factorized = true;
 }
@@ -562,6 +572,15 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
         ss << "Solve -> rank: ";// << esconfig::env::MPIrank; // MPIrank link problem
         Factorization(ss.str());
     }
+    eslocal offset = 0;
+    
+    for (eslocal i = 0; i < nMatrices; i++) {
+        memcpy(vectors + offset, &(rhs_sol[i]->at(0)), m_Kplus_size[i] * sizeof(double));
+        tmp_sol_d1[i] = vectors + offset;
+        offset += m_Kplus_size[i];
+            }
+#pragma offload_transfer target(mic:device) in(vectors : length(offset) alloc_if(0) free_if(0)) \
+    in(tmp_sol_d1 : length(nMatrices) alloc_if(0) free_if(0))
     if( USE_FLOAT ) {
         for (eslocal i = 0; i < nMatrices; i++) {
             for (eslocal j = 0; j < m_Kplus_size[i]; j++)
@@ -591,8 +610,8 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
             double * tmpPointer2 = tmpVecPointers[i];
             eslocal tmpLength = m_Kplus_size[i];
             double * buffer = tmp_sol_d1[i];
-#pragma offload_transfer target(mic:device) \
-            in(tmpPointer2 : length(tmpLength) alloc_if(0) free_if(0) into(buffer))
+//#pragma offload_transfer target(mic:device) \
+//          :  in(tmpPointer2 : length(tmpLength) alloc_if(0) free_if(0) into(buffer))
             //{
             //    tmpVecPoeslocalers[i] = tmpPoeslocaler2;
             //}
@@ -617,23 +636,30 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
     in(m_Kplus_size : length(0) alloc_if(0) free_if(0)) \
     in(tmp_sol_d1 : length(0) alloc_if(0) free_if(0)) \
     in(tmp_sol_d2 : length(0) alloc_if(0) free_if(0)) \
+    in(vectors : length(0) alloc_if(0) free_if(0)) \ 
+    in(vectors_out : length(0) alloc_if(0) free_if(0)) \
     in(this : length(0) alloc_if(0) free_if(0))
     {
-
+        eslocal offset = 0;
+for (int i = 0; i < nMatrices; i++){
+    tmp_sol_d1[i] = &vectors[offset];
+    tmp_sol_d2[i] = &vectors_out[offset];
+    offset+=m_Kplus_size[i];
+}
 
         double ddum   = 0;			/* Double dummy */
         MKL_INT idum  = 0;			/* Integer dummy. */
         MKL_INT n_rhs = 1;
         msglvl        = 0;
-
+        mnum = 1;
+        maxfct = 1;
         /* -------------------------------------------------------------------- */
         /* .. Back substitution and iterative refinement. */
         /* -------------------------------------------------------------------- */
 
         //iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
-        phase=331;
-#pragma omp parallel num_threads(21)
+#pragma omp parallel //num_threads(21)
         {
             int myPhase = 331;
 #pragma omp for schedule(dynamic)
@@ -704,11 +730,16 @@ myPhase = 33;
             }
         }
     } else {
-        for (eslocal i = 0; i < nMatrices; i++) {
-            double * tmp = tmp_sol_d2[i];
-            double * output = tmpVecPointers[i];
 #pragma offload_transfer target(mic:device) \
-            out(tmp : length(m_Kplus_size[i]) alloc_if(0) free_if(0) into(output))
+        out(vectors_out : length(offset) alloc_if(0) free_if(0))
+        offset = 0;
+        for (eslocal i = 0; i < nMatrices; i++) {
+            memcpy(&(rhs_sol[i]->at(0)), vectors_out + offset, m_Kplus_size[i] * sizeof(double));
+            offset += m_Kplus_size[i];
+   //double * tmp = tmp_sol_d2[i];
+            //double * output = tmpVecPointers[i];
+//#pragma offload_transfer target(mic:device) \
+//            out(tmp : length(m_Kplus_size[i]) alloc_if(0) free_if(0) into(output))
         }
     }
 }
@@ -735,15 +766,14 @@ void SparseSolverMIC::Create_SC(
     bool * SC_out_packed = SC_out.packed;
 
 
-
 #pragma offload target(mic : device ) \
     in ( rows : length(0) alloc_if(0) free_if(0) ) \
     in( SC_sizes  : length(nMatrices) alloc_if(1) free_if(1) ) \
     in( nnz : length(0) alloc_if(0) free_if(0))  \
     in( perm : length(0) alloc_if(0) free_if(0)) \
-    in( V_values : length(0) alloc_if(0) free_if(0)  ) \
-    in( I_row_indices  : length(0) alloc_if(0) free_if(0) ) \
-    in( J_col_indices : length(0) alloc_if(0) free_if(0) ) \
+    in( CSR_V_values : length(0) alloc_if(0) free_if(0)  ) \
+    in( CSR_I_row_indices  : length(0) alloc_if(0) free_if(0) ) \
+    in( CSR_J_col_indices : length(0) alloc_if(0) free_if(0) ) \
     in(SC_out_rows : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(SC_out_cols : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(SC_out_offsets : length(nMatrices) alloc_if(1) free_if(0) ) \
@@ -751,7 +781,8 @@ void SparseSolverMIC::Create_SC(
     in(SC_out_packed : length(nMatrices) alloc_if(1) free_if(0)) \
     in(SC_out_rowOffsets : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(SC_out_colOffsets : length(nMatrices) alloc_if(1) free_if (0)) \
-    in(SC_out_lengths : length(nMatrices) alloc_if(1) free_if(0)) if(1)
+    in(SC_out_lengths : length(nMatrices) alloc_if(1) free_if(0)) if(1) \
+    in(this : length(0) alloc_if(0) free_if(0))
     {
 
         long maxSize = 0;
@@ -874,11 +905,9 @@ void SparseSolverMIC::Create_SC_w_Mat(
         eslocal nMatrices,
         eslocal generate_symmetric_sc_1_generate_general_sc_0,
         eslocal device ) {
-
     if (!SC_out.areDataOnMIC()) {
         SC_out.CopyToMIC();
     }
-
     // data to be transfered to MIC
     eslocal * K_in_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64); //new eslocal[nMatrices];
     eslocal * K_b_tmp_rows = (eslocal*) _mm_malloc(nMatrices * sizeof(eslocal), 64);//new eslocal[nMatrices];
@@ -888,7 +917,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
     double ** K_sc1_CSR_V_values = (double**) _mm_malloc(nMatrices * sizeof(double*), 64);// new double*[nMatrices];
     eslocal ** K_sc1_CSR_I_row_indices = (eslocal**) _mm_malloc(nMatrices * sizeof(eslocal*), 64); //new eslocal*[nMatrices];
     eslocal ** K_sc1_CSR_J_col_indices = (eslocal**) _mm_malloc(nMatrices * sizeof(eslocal*), 64);//new eslocal*[nMatrices];
-
     //double ** SC_out_dense_values = new double*[nMatrices];
     eslocal * SC_out_rows = SC_out.rows;
     eslocal * SC_out_cols = SC_out.cols;
@@ -904,7 +932,6 @@ void SparseSolverMIC::Create_SC_w_Mat(
     eslocal matricesSize = SC_out.preallocSize - SC_out.freeSpace;
     bool * SC_out_packed = SC_out.packed;
 
-    //std::cout << "test"<< SC_out.totalCols << std::endl;
     // find the biggest SC matrix and preallocate output array for PARDISO
     for ( eslocal i = 0 ; i < nMatrices; ++i ) {
 
@@ -927,12 +954,12 @@ void SparseSolverMIC::Create_SC_w_Mat(
         K_sc1_rows[i] = K_sc1.rows;
         nnz[i] = K_sc1.nnz;
 
-        K_sc1_CSR_V_values[i] = new double[ nnz[i] ];
+        K_sc1_CSR_V_values[i] = (double*) _mm_malloc(nnz[i] * sizeof(double), 64); // new double[ nnz[i] ];
         memcpy(K_sc1_CSR_V_values[i], &K_sc1.CSR_V_values[0], nnz[i] * sizeof(double) );
-        K_sc1_CSR_I_row_indices[i] = new eslocal[K_sc1_rows[i] + 1];
+        K_sc1_CSR_I_row_indices[i] = (eslocal*) _mm_malloc( (K_sc1_rows[i] +1) * sizeof(eslocal), 64);// new eslocal[K_sc1_rows[i] + 1];
         memcpy(K_sc1_CSR_I_row_indices[i], &K_sc1.CSR_I_row_indices[0], ( K_sc1_rows[i] + 1) * sizeof(eslocal));
         //K_sc1_CSR_I_row_indices[i][K_sc1_rows[i]] = nnz[i];
-        K_sc1_CSR_J_col_indices[i] = new eslocal[nnz[i]];
+        K_sc1_CSR_J_col_indices[i] = (eslocal*) _mm_malloc(nnz[i] * sizeof(eslocal), 64); //new eslocal[nnz[i]];
         memcpy(K_sc1_CSR_J_col_indices[i], &K_sc1.CSR_J_col_indices[0], nnz[i] * sizeof(eslocal));
 
     }
@@ -944,8 +971,8 @@ void SparseSolverMIC::Create_SC_w_Mat(
     in( nnz : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(K_sc1_CSR_V_values : length(nMatrices) alloc_if(1) free_if(0) ) \
     in(K_sc1_CSR_I_row_indices : length(nMatrices) alloc_if(1) free_if(0) ) \
-    in(K_sc1_CSR_J_col_indices : length(nMatrices) alloc_if(1) free_if(0) )
-
+    in(K_sc1_CSR_J_col_indices : length(nMatrices) alloc_if(1) free_if(0) ) \
+    in(this : alloc_if(1) free_if(0) )
     // #pragma omp parallel for num_threads(24)
     for (eslocal i = 0 ; i < nMatrices; i++) {
         double * valPointer = K_sc1_CSR_V_values[i];
@@ -955,9 +982,10 @@ void SparseSolverMIC::Create_SC_w_Mat(
         in( valPointer : length(nnz[i]) alloc_if(1) free_if(0)) \
         in( iPointer : length(K_sc1_rows[i] + 1) alloc_if(1) free_if(0)) \
         in( jPointer : length(nnz[i]) alloc_if(1) free_if(0)) \
-        nocopy( K_sc1_CSR_V_values ) \
-        nocopy( K_sc1_CSR_I_row_indices ) \
-        nocopy( K_sc1_CSR_J_col_indices )
+        in( K_sc1_CSR_V_values : length(0) alloc_if(0) free_if(0) ) \
+        in( K_sc1_CSR_I_row_indices : length(0) alloc_if(0) free_if(0) ) \
+        in( K_sc1_CSR_J_col_indices : length(0) alloc_if(0) free_if(0) ) \
+        in(this : length(0) alloc_if(0) free_if(0))
         {
             K_sc1_CSR_V_values[i] = valPointer;
             K_sc1_CSR_I_row_indices[i] = iPointer;
@@ -965,10 +993,10 @@ void SparseSolverMIC::Create_SC_w_Mat(
         }
     }
 #pragma offload target(mic : device ) \
-    in ( K_in_rows : length(0) alloc_if(0) free_if(0) ) \
-    in( K_b_tmp_rows : length(0) alloc_if(0) free_if(0) ) \
-    in( K_sc1_rows  : length(0) alloc_if(0) free_if(0) ) \
-    in( nnz : length(0) alloc_if(0) free_if(0))  \
+    in ( K_in_rows : length(0) alloc_if(0) free_if(1) ) \
+    in( K_b_tmp_rows : length(0) alloc_if(0) free_if(1) ) \
+    in( K_sc1_rows  : length(0) alloc_if(0) free_if(1) ) \
+    in( nnz : length(0) alloc_if(0) free_if(1))  \
     in( K_sc1_CSR_V_values : length(0) alloc_if(0) free_if(0)  ) \
     in(K_sc1_CSR_I_row_indices  : length(0) alloc_if(0) free_if(0) ) \
     in( K_sc1_CSR_J_col_indices : length(0) alloc_if(0) free_if(0) ) \
@@ -981,7 +1009,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
     in(SC_out_colOffsets : length(0) alloc_if(0) free_if (0)) \
     in(SC_out_mic_x_in : length(0) alloc_if(0) free_if(0)) \
     in(SC_out_mic_y_out : length(0) alloc_if(0) free_if(0)) \
-    in(SC_out_lengths : length(0) alloc_if(0) free_if(0)) if(1)
+    in(SC_out_lengths : length(0) alloc_if(0) free_if(0))  in(this : length(0) alloc_if(0) free_if(0)) if(1)
     {
         long maxSize = 0;
         for (eslocal i = 0; i < nMatrices; i++) {
@@ -989,17 +1017,20 @@ void SparseSolverMIC::Create_SC_w_Mat(
                 maxSize = K_b_tmp_rows[i]*K_b_tmp_rows[i];
             }
         }
-
-        double ** matrixPerThread = new double*[nMatrices];
+        int nThreads = 1;
+#pragma omp parallel
+        {
+#pragma omp single
+           nThreads = omp_get_num_threads();
+            }
+        double ** matrixPerThread = new double*[nThreads];
 #pragma omp parallel
         {
             eslocal myRank = omp_get_thread_num();
+            // to overcome competition among threads allocate buffer one by one
+#pragma omp critical
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
-        }
 
-#pragma omp parallel
-        {
-            eslocal myRank = omp_get_thread_num();
             /* Internal solver memory pointer pt, */
             /* 32-bit: int pt[64]; 64-bit: long int pt[64] */
             /* or void *pt[64] should be OK on both architectures */
@@ -1114,6 +1145,36 @@ void SparseSolverMIC::Create_SC_w_Mat(
 
                 delete [] perm;
             }
+            _mm_free(matrixPerThread[myRank]);
         }
     }
+        // remember to clear also MICs memory
+    for (eslocal i = 0 ; i < nMatrices; i++) {
+        double * valPointer = K_sc1_CSR_V_values[i];
+        eslocal * iPointer = K_sc1_CSR_I_row_indices[i];
+        eslocal * jPointer = K_sc1_CSR_J_col_indices[i];
+#pragma offload_transfer target(mic:device) \
+        nocopy( valPointer : alloc_if(0) free_if(1)) \
+        nocopy( iPointer :  alloc_if(0) free_if(1)) \
+        nocopy( jPointer :  alloc_if(0) free_if(1)) 
+    }
+  #pragma offload_transfer target(mic : device ) \
+    nocopy(K_sc1_CSR_V_values :alloc_if(0) free_if(1) ) \
+    nocopy(K_sc1_CSR_I_row_indices :  alloc_if(0) free_if(1) ) \
+    nocopy(K_sc1_CSR_J_col_indices : alloc_if(0) free_if(1) )
+
+ for ( eslocal i = 0 ; i < nMatrices; ++i ) {
+        _mm_free(K_sc1_CSR_V_values[i]);
+        _mm_free(K_sc1_CSR_I_row_indices[i]);
+        _mm_free(K_sc1_CSR_J_col_indices[i]);
+    }
+    _mm_free(K_sc1_CSR_V_values);
+    _mm_free(K_sc1_CSR_I_row_indices);
+    _mm_free(K_sc1_CSR_J_col_indices);
+    _mm_free(K_in_rows);
+    _mm_free(K_b_tmp_rows);
+    _mm_free(K_sc1_rows);
+    _mm_free(nnz);
+    
+
 }

@@ -4,6 +4,10 @@
 
 #include "../cluster.h"
 
+#pragma offload_attribute(push,target(mic))
+#include <unistd.h>
+#pragma offload_attribute(pop))
+
 namespace espreso {
 
 class ClusterAcc: public ClusterBase
@@ -39,6 +43,12 @@ public:
 
     // array of matrix pointers per accelerator
     SEQ_VECTOR<SparseMatrix **> matricesPerAcc;
+
+    // vector of length N_MIC of vectors of indices of subdomains on MICs
+    SEQ_VECTOR<SEQ_VECTOR<eslocal> > accDomains;
+
+    // vector of indices of domains on the host
+    SEQ_VECTOR<eslocal> hostDomains;
 
     bool deleteMatrices;
 };
