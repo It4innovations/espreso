@@ -40,7 +40,10 @@ def configure(ctx):
 
 def build(ctx):
     if ctx.env.SOLVER == "MIC":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp", "specific/acc/itersolveracc.cpp", "specific/acc/DenseMatrixPack.cpp")
+        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp",
+        "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp",
+        "specific/acc/itersolveracc.cpp", "specific/acc/DenseMatrixPack.cpp",
+        "specific/cpu/DenseSolverMKL.cpp")
 
     # TODO
     if ctx.env.SOLVER == "CUDA":

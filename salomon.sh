@@ -19,6 +19,8 @@ MPI_PER_NODE=1
 module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25
 module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25 
 module load tbb/4.4.2.152 
+module load zlib/1.2.8-intel-2016.01
+module load CMake/3.3.1-intel-2016.01
 
 if [ "$#" -eq 0 ]; then
   echo "  Use one of the following commands:"

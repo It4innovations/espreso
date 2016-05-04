@@ -5,7 +5,7 @@ using namespace espreso;
 
 ClusterAcc::~ClusterAcc() {
     if (this->deleteMatrices) {
-        for (eslocal i = 0; i < N_MICS; i++) {
+        for (eslocal i = 0; i < config::solver::N_MICS; i++) {
             if (matricesPerAcc[i]) {
                 //delete [] matricesPerAcc[i];
             }
@@ -19,8 +19,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.4;
-    long micMem[N_MICS];
-    for (eslocal i = 0; i < N_MICS; ++i) {
+    long micMem[config::solver::N_MICS];
+    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
         long currentMem = 0;
         #pragma offload target(mic:i)
         {
@@ -37,9 +37,9 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = N_MICS;
-    eslocal matrixPerPack[N_MICS];
-    for (eslocal i = 0 ; i < N_MICS; ++i) {
+    eslocal maxDevNumber = config::solver::N_MICS;
+    eslocal matrixPerPack[config::solver::N_MICS];
+    for (eslocal i = 0 ; i < config::solver::N_MICS; ++i) {
         matrixPerPack[i] = domains.size() / maxDevNumber;
     }
     for (eslocal i = 0 ; i < domains.size() % maxDevNumber; ++i) {
@@ -89,11 +89,11 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         }
     }
     
-//#pragma omp parallel num_threads(N_MICS)
+//#pragma omp parallel num_threads(config::solver::N_MICS)
 #pragma omp parallel     
     {
-        if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < N_MICS)) {
-            // the first N_MICS threads will communicate with MICs
+        if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < config::solver::N_MICS)) {
+            // the first config::solver::N_MICS threads will communicate with MICs
             // now copy data to MIC and assemble Schur complements
             int  i = omp_get_thread_num();
             this->B1KplusPacks[i].AllocateVectors( );
@@ -226,8 +226,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
 
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = N_MICS;
-    if (N_MICS == 0) {
+    eslocal maxDevNumber = config::solver::N_MICS;
+    if (config::solver::N_MICS == 0) {
         maxDevNumber = 1;
     }
     eslocal matrixPerPack = domains.size() / maxDevNumber;
@@ -299,10 +299,10 @@ void ClusterAcc::Create_Kinv_perDomain() {
 
     delete [] dom2dev;
     delete [] offsets;
-    if (N_MICS == 0) {
+    if (config::solver::N_MICS == 0) {
         this->B1KplusPacks[0].AllocateVectors( );
     }
-    for (eslocal i = 0; i < N_MICS ; i++ ) {
+    for (eslocal i = 0; i < config::solver::N_MICS ; i++ ) {
         this->B1KplusPacks[i].AllocateVectors( );
         this->B1KplusPacks[i].SetDevice( i );
         this->B1KplusPacks[i].CopyToMIC();
@@ -323,8 +323,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
 //        cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 //
 //    // First, get the available memory on coprocessors (in bytes)
-//    long micMem[N_MICS];
-//    for (eslocal i = 0; i < N_MICS; ++i) {
+//    long micMem[config::solver::N_MICS];
+//    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
 //        long currentMem = 0;
 //        #pragma offload target(mic:0)
 //        {
@@ -334,7 +334,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
 //        }
 //        micMem[i] = currentMem;
 //    }
-//    for (eslocal i = 0; i < N_MICS; ++i) {
+//    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
 //        totalMem += micMem[i];
 //    }
 //
@@ -344,8 +344,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
 //    }
 //
 //    // compute sizes of data to be offloaded to MIC
-//    int maxDevNumber = N_MICS;
-//    if (N_MICS == 0) {
+//    int maxDevNumber = config::solver::N_MICS;
+//    if (config::solver::N_MICS == 0) {
 //        maxDevNumber = 1;
 //    }
 //    int matrixPerPack = domains.size() / maxDevNumber;
@@ -384,7 +384,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
 //        offset += matrixPerPack;
 //    }
 //    int matrixPP = domains.size() / maxDevNumber;
-//#pragma omp parallel num_threads(N_MICS)
+//#pragma omp parallel num_threads(config::solver::N_MICS)
 //    {
 //        int  i = omp_get_thread_num();
 //        std::cout << "DEVICE: " <<i << std::endl;
@@ -557,29 +557,29 @@ void ClusterAcc::SetupKsolvers ( ) {
     if (!USE_KINV) {
     // send matrices to Xeon Phi
     eslocal nMatrices = domains.size();
-    this->matricesPerAcc.reserve(N_MICS);
+    this->matricesPerAcc.reserve(config::solver::N_MICS);
     SEQ_VECTOR<eslocal> nMatPerMIC;
-    nMatPerMIC.resize(N_MICS);
+    nMatPerMIC.resize(config::solver::N_MICS);
 
-    for (eslocal i = 0; i < N_MICS; i++) {
-        nMatPerMIC[i] = nMatrices / N_MICS;
+    for (eslocal i = 0; i < config::solver::N_MICS; i++) {
+        nMatPerMIC[i] = nMatrices / config::solver::N_MICS;
     }
 
-    for (eslocal i = 0 ; i < nMatrices % N_MICS; i++ ) {
+    for (eslocal i = 0 ; i < nMatrices % config::solver::N_MICS; i++ ) {
         nMatPerMIC[i]++;
     }
 
     eslocal offset = 0;
-    for (eslocal i = 0; i < N_MICS; i++) {
+    for (eslocal i = 0; i < config::solver::N_MICS; i++) {
         this->matricesPerAcc[i] = new SparseMatrix*[ nMatPerMIC[ i ] ];
         for (eslocal j = offset; j < offset + nMatPerMIC[ i ]; j++) {
             (this->matricesPerAcc[i])[j - offset] = &(domains[j].K);
         }
         offset += nMatPerMIC[i];
     }
-    this->solver.resize(N_MICS);
+    this->solver.resize(config::solver::N_MICS);
 
-#pragma omp parallel num_threads(N_MICS)
+#pragma omp parallel num_threads(config::solver::N_MICS)
 {
     eslocal myAcc = omp_get_thread_num();
         this->solver[myAcc].ImportMatrices_wo_Copy(this->matricesPerAcc[myAcc], nMatPerMIC[myAcc], myAcc);

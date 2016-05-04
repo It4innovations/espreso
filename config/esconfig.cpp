@@ -48,7 +48,7 @@ size_t   solver::CG_SOLVER              = STANDARD;
 size_t   solver::REGULARIZATION         = FIX_POINTS;
 
 bool     solver::REDUNDANT_LAGRANGE     = true;
-bool     solver::USE_SCHUR_COMPLEMENT   = false;
+bool     solver::USE_SCHUR_COMPLEMENT   = true;
 size_t   solver::SCHUR_COMPLEMENT_PREC  = SC_DOUBLE_PRECISION;
 size_t   solver::SCHUR_COMPLEMENT_TYPE  = GENERAL;
 bool     solver::COMBINE_SC_AND_SPDS    = true;
