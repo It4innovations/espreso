@@ -56,6 +56,7 @@ static void postProcess(
 		}
 
 		// _B0subdomainsMap is the same as row indices
+		_B0[p].sortInCOO();
 		_B0subdomainsMap[p] = _B0[p].I_row_indices;
 		std::for_each(_B0subdomainsMap[p].begin(), _B0subdomainsMap[p].end(), [] (esglobal &v) { v -= IJVMatrixIndexing; });
 	}
@@ -174,7 +175,14 @@ void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 
 	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
 	if (config::solver::FETI_METHOD == config::HYBRID_FETI) {
-		gluing.assembleB0(_B0);
+		switch (config::solver::B0_TYPE) {
+		case config::B0Type::CORNERS:
+			gluing.assembleB0(_B0);
+			break;
+		case config::B0Type::KERNELS:
+			gluing.assembleB0fromKernels(_B0);
+			break;
+		}
 	}
 
 	// TODO: get rid of the following

@@ -4,7 +4,7 @@
 using namespace espreso;
 
 
-Mesh::Mesh():_elements(0), _fixPoints(0)
+Mesh::Mesh():_elements(0), _fixPoints(0), _DOFs(3)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -574,11 +574,12 @@ static std::vector<std::vector<eslocal> > getNodeToElementsMap(const Mesh &mesh)
 	return map;
 }
 
-void Mesh::computeCommonFaces(Mesh &mesh)
+std::vector<std::pair<eslocal, eslocal> > Mesh::getCommonFaces(Mesh &faces) const
 {
-	mesh._coordinates.clear();
-	mesh._elements.clear();
-	mesh._partPtrs.clear();
+	faces._coordinates.clear();
+	faces._elements.clear();
+	faces._partPtrs.clear();
+	std::vector<std::pair<eslocal, eslocal> > sMap;
 
 	std::vector<std::vector<eslocal> > nodeToElements = getNodeToElementsMap(*this);
 	std::vector<Element*> commonFaces;
@@ -612,7 +613,7 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 	eslocal index = 0;
 	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
 		if (projection[i] == 1) {
-			mesh.coordinates().add(_coordinates[i], index, i);
+			faces.coordinates().add(_coordinates[i], index, i);
 			projection[i] = index++;
 		}
 	}
@@ -622,26 +623,29 @@ void Mesh::computeCommonFaces(Mesh &mesh)
 		}
 	}
 
-	mesh._elements.reserve(commonFaces.size());
+	faces._elements.reserve(commonFaces.size());
 
 	// create mesh
-	mesh._partPtrs.clear();
-	mesh._partPtrs.push_back(0);
+	faces._partPtrs.clear();
+	faces._partPtrs.push_back(0);
 	for (size_t i = 0; i < parts(); i++) {
 		for (size_t j = i + 1; j < parts(); j++) {
 			for (size_t e = 0; e < commonFaces.size(); e++) {
 				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
-					mesh._elements.push_back(commonFaces[e]);
+					faces._elements.push_back(commonFaces[e]);
 				}
 			}
-			if (mesh._elements.size() > mesh._partPtrs.back()) {
-				mesh._partPtrs.push_back(mesh._elements.size());
-				mesh.makePartContinuous(mesh.parts() - 1);
+			if (faces._elements.size() > faces._partPtrs.back()) {
+				faces._partPtrs.push_back(faces._elements.size());
+				faces.makePartContinuous(faces.parts() - 1);
+				sMap.insert(sMap.end(), faces.parts() - sMap.size(), std::make_pair(i, j));
 			}
 		}
 	}
-	mesh.remapElementsToSubdomain();
-	mesh.computeFixPoints(0);
+	faces.remapElementsToSubdomain();
+	faces.computeFixPoints(0);
+
+	return sMap;
 }
 
 void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &border, Mesh &lines, std::set<eslocal> &vertices)
@@ -980,7 +984,7 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	std::set<eslocal> commonVertices;
 	std::vector<bool> commonFacesBorder;
 
-	computeCommonFaces(commonFaces);
+	getCommonFaces(commonFaces);
 	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
 
 	if (config::output::saveFaces) {

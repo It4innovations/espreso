@@ -40,6 +40,9 @@ void Linear<TInput>::init()
 
 	RHS();
 
+	timeBforces.endWithBarrier();
+	this->_timeStatistics.addEvent(timeBforces);
+
 	TimeEvent timeParallelG("Gluing");
 	timeParallelG.startWithBarrier();
 
@@ -72,15 +75,13 @@ void Linear<TInput>::init()
 		}
 	}
 
-	timeBforces.endWithBarrier();
-	this->_timeStatistics.addEvent(timeBforces);
-
 	TimeEvent timeLSconv(string("Linear Solver - preprocessing"));
 	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
 	_lin_solver.setup(config::env::MPIrank, config::env::MPIsize, config::assembler::timeSteps == 1);
 
+	ESINFO(PROGRESS2) << "Solver preprocessing started";
 	initSolver();
 
 	timeLSconv.endWithBarrier();

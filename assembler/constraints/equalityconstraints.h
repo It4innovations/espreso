@@ -71,6 +71,10 @@ public:
 			std::vector<SparseMatrix> &B0
 	);
 
+	size_t assembleB0fromKernels(
+			std::vector<SparseMatrix> &B0
+	);
+
 protected:
 	const size_t _ignoredDOFsSize;
 	const eslocal _ignoredDOFsOffset;

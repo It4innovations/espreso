@@ -21,6 +21,11 @@ enum FetiMethod {
 	HYBRID_FETI
 };
 
+enum B0Type {
+	CORNERS,
+	KERNELS
+};
+
 enum Preconditioner {
 	NO_PRECONDITIONER,
 	LUMPED,
@@ -132,6 +137,7 @@ namespace solver {
 	extern size_t   maxIterations;				//
 	extern size_t   FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
 	extern bool     REDUNDANT_LAGRANGE;
+	extern size_t   B0_TYPE;                    // 0 - Corners, 1 - Kernels
 	extern bool     USE_SCHUR_COMPLEMENT; 		// 1 - YES
 	extern size_t   SCHUR_COMPLEMENT_PREC;		// Schur complement precission - 0 DP; 1 SP
 	extern size_t   SCHUR_COMPLEMENT_TYPE;		// 0 - General; 1 - Symmeric

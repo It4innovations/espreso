@@ -12,7 +12,7 @@ import multiprocessing
 
 
 
-n_clus          = 2
+n_clus          = 1
 n_subPerClust   = 8
 
 

@@ -1005,22 +1005,20 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 void ClusterBase::CompressB0() {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
-
 		domains[d].B0.MatTranspose(domains[d].B0t);
-
 		domains[d].B0_comp = domains[d].B0;
-		domains[d].B0_comp.ConvertToCOO(1);
-		domains[d].B0_comp_map_vec = domains[d].B0_comp.I_row_indices;
 
-		for (eslocal i = 0; i < domains[d].B0_comp.I_row_indices.size(); i++)
-			domains[d].B0_comp.I_row_indices[i] = i + 1;
+		for (size_t i = 0; i < domains[d].B0_comp.rows; i++) {
+			if (domains[d].B0_comp.CSR_I_row_indices[i] != domains[d].B0_comp.CSR_I_row_indices[i + 1]) {
+				domains[d].B0_comp_map_vec.push_back(i + 1);
+			}
+		}
 
-		domains[d].B0_comp.rows = domains[d].B0_comp.I_row_indices.size();
-		domains[d].B0_comp.ConvertToCSR(1);
+		auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
+		domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
+		domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
+
 		domains[d].B0_comp.MatTranspose(domains[d].B0t_comp);
-
-		//domains[d].Kplus_R.ConvertCSRToDense(0); // TODO: - keep CSR data
-
 	}
 
 }
@@ -1085,6 +1083,7 @@ void ClusterBase::CreateF0() {
 		} else {
 			// F0 uses same precision is K
 			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+			ESINFO(DETAILS) << "B0t size: " << domains[d].B0t_comp.rows << " " << domains[d].B0t_comp.cols << " " << domains[d].B0t_comp.nnz;
 		}
 
 		domains[d].B0t_comp.Clear();
@@ -1207,7 +1206,7 @@ void ClusterBase::CreateSa() {
 			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
-        
+
         Salfa.ConvertDenseToCSR(1);
         Salfa.RemoveLower();
 		if (MPIrank == 0) tmpsps.msglvl = 0;

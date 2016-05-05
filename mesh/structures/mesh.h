@@ -73,6 +73,8 @@ public:
 
 	void getSurface(Mesh &surface) const;
 
+	std::vector<std::pair<eslocal, eslocal> > getCommonFaces(Mesh &faces) const;
+
 	virtual ~Mesh();
 
 	virtual void partitiate(size_t parts);

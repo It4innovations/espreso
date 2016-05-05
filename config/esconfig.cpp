@@ -48,6 +48,7 @@ size_t   solver::CG_SOLVER              = STANDARD;
 size_t   solver::REGULARIZATION         = FIX_POINTS;
 
 bool     solver::REDUNDANT_LAGRANGE     = true;
+size_t   solver::B0_TYPE                = B0Type::KERNELS;
 bool     solver::USE_SCHUR_COMPLEMENT   = false;
 size_t   solver::SCHUR_COMPLEMENT_PREC  = SC_DOUBLE_PRECISION;
 size_t   solver::SCHUR_COMPLEMENT_TYPE  = GENERAL;
@@ -155,6 +156,7 @@ std::vector<Description> solver::description = {
 			"always with double precision." }},
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
+	{ "B0_TYPE", solver::B0_TYPE, "The source for B0 assembler." },
 	{ "USE_SCHUR_COMPLEMENT", solver::USE_SCHUR_COMPLEMENT, "Use schur complement for stiffness matrix processing" },
 	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision." },
 	{ "SCHUR_COMPLEMENT_TYPE", solver::SCHUR_COMPLEMENT_TYPE, "Schur complement matrix type.", {

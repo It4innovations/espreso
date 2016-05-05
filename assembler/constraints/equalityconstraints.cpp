@@ -261,6 +261,73 @@ size_t Gluing::assembleB0(std::vector<SparseMatrix> &B0)
 	return cornersGluingSize;
 }
 
+size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
+{
+	std::cout << "ASSEmble\n";
+	Mesh faces;
+	std::vector<std::pair<eslocal, eslocal> > sMap = _mesh.getCommonFaces(faces);
+
+	size_t rowsPerCorner = _mesh.DOFs() == 1 ? 1 : 6;
+	for (size_t s = 0; s < _subdomains; s++) {
+		B0[s].rows += rowsPerCorner * faces.parts();
+		B0[s].nnz = 0;
+
+		for (size_t i = 0; i < sMap.size(); i++) {
+			if (sMap[i].first == s || sMap[i].second == s) {
+				B0[s].nnz += faces.coordinates().localSize(i) * _mesh.DOFs() * _mesh.DOFs();
+			}
+		}
+		B0[s].I_row_indices.reserve(B0[s].nnz);
+		B0[s].J_col_indices.reserve(B0[s].nnz);
+		B0[s].V_values.reserve(B0[s].nnz);
+
+		for (size_t i = 0; i < sMap.size(); i++) {
+			if (sMap[i].first != s && sMap[i].second != s) {
+				continue;
+			}
+			eslocal sign = 1;
+			if (sMap[i].second == s) {
+				sign = -1;
+			}
+			for (eslocal r = 0; r < rowsPerCorner; r++) {
+				for (size_t n = 0; n < faces.coordinates().localSize(i); n++) {
+					eslocal column = _mesh.DOFs() * _mesh.coordinates().localIndex(faces.coordinates().globalIndex(n, i), s);
+					if (r < 3) {
+						B0[s].I_row_indices.push_back(i * rowsPerCorner + r + IJVMatrixIndexing);
+						B0[s].J_col_indices.push_back(column + r + IJVMatrixIndexing);
+						B0[s].V_values.push_back(sign);
+					} else {
+						const Point &p = _mesh.coordinates()[faces.coordinates().clusterIndex(n, i)];
+						B0[s].I_row_indices.insert(B0[s].I_row_indices.end(), 2, i * rowsPerCorner + r + IJVMatrixIndexing);
+						switch (r) {
+						case 3:
+							B0[s].J_col_indices.push_back(column + 0 + IJVMatrixIndexing);
+							B0[s].J_col_indices.push_back(column + 1 + IJVMatrixIndexing);
+							B0[s].V_values.push_back(-sign * p.y);
+							B0[s].V_values.push_back( sign * p.x);
+							break;
+						case 4:
+							B0[s].J_col_indices.push_back(column + 0 + IJVMatrixIndexing);
+							B0[s].J_col_indices.push_back(column + 2 + IJVMatrixIndexing);
+							B0[s].V_values.push_back(-sign * p.z);
+							B0[s].V_values.push_back( sign * p.x);
+							break;
+						case 5:
+							B0[s].J_col_indices.push_back(column + 1 + IJVMatrixIndexing);
+							B0[s].J_col_indices.push_back(column + 2 + IJVMatrixIndexing);
+							B0[s].V_values.push_back(-sign * p.z);
+							B0[s].V_values.push_back( sign * p.y);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return rowsPerCorner * faces.parts();
+}
+
 size_t Gluing::subdomainsLambdaCounters(std::vector<esglobal> &ids, std::vector<std::vector<esglobal> > &skippedNodes, const std::vector<eslocal> &excludes)
 {
 	ids.clear();
