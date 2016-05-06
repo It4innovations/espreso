@@ -297,7 +297,7 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 						B0[s].J_col_indices.push_back(column + r + IJVMatrixIndexing);
 						B0[s].V_values.push_back(sign);
 					} else {
-						const Point &p = _mesh.coordinates()[faces.coordinates().clusterIndex(n, i)];
+						const Point &p = _mesh.coordinates()[faces.coordinates().globalIndex(n, i)];
 						B0[s].I_row_indices.insert(B0[s].I_row_indices.end(), 2, i * rowsPerCorner + r + IJVMatrixIndexing);
 						switch (r) {
 						case 3:
