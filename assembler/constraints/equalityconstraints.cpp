@@ -263,12 +263,11 @@ size_t Gluing::assembleB0(std::vector<SparseMatrix> &B0)
 
 size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 {
-	std::cout << "ASSEmble\n";
 	Mesh faces;
 	std::vector<std::pair<eslocal, eslocal> > sMap = _mesh.getCommonFaces(faces);
 
 	size_t rowsPerCorner = _mesh.DOFs() == 1 ? 1 : 6;
-	for (size_t s = 0; s < _subdomains; s++) {
+	cilk_for (size_t s = 0; s < _subdomains; s++) {
 		B0[s].rows += rowsPerCorner * faces.parts();
 		B0[s].nnz = 0;
 

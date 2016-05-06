@@ -56,7 +56,6 @@ static void postProcess(
 		}
 
 		// _B0subdomainsMap is the same as row indices
-		_B0[p].sortInCOO();
 		_B0subdomainsMap[p] = _B0[p].I_row_indices;
 		std::for_each(_B0subdomainsMap[p].begin(), _B0subdomainsMap[p].end(), [] (esglobal &v) { v -= IJVMatrixIndexing; });
 	}
