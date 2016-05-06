@@ -13,10 +13,10 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 8
+n_subPerClust   = 2
 
 
-CONSTANT_89 = 24
+CONSTANT_89 = 11
 
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
