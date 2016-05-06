@@ -309,7 +309,16 @@ void LinearSolver::init(
 			}
 			K_modif.ConvertToCSRwithSort(0);
 
-			SparseMatrix S;
+
+                        eslocal SC_SIZE = perm_vec.size();
+                        SparseMatrix S;
+                        
+                        if (SC_SIZE == K_mat[d].rows){
+                            S = K_mat[d];
+                            cluster.domains[d].Prec = S;
+                        }
+                        else{
+			
 			SparseSolverCPU createSchur;
 			eslocal SC_SIZE = perm_vec.size();
 			createSchur.ImportMatrix(K_modif);
@@ -317,7 +326,7 @@ void LinearSolver::init(
 			S.type='S';
 
 			cluster.domains[d].Prec = S;
-
+                        }
 	    if (config::info::printMatrices) {
         std::ofstream osS(Logging::prepareFile(d, "S"));
         osS << S;
