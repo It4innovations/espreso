@@ -15,14 +15,14 @@ ClusterAcc::~ClusterAcc() {
 
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
-	ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
+    ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
     // First, get the available memory on coprocessors (in bytes)
-    double usableRAM = 0.4;
+    double usableRAM = 0.9;
     long micMem[config::solver::N_MICS];
     for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
         long currentMem = 0;
-        #pragma offload target(mic:i)
+#pragma offload target(mic:i)
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
@@ -80,7 +80,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         // it is necessary to subtract numCPUDomains AFTER setting offset!
         offset += matrixPerPack[i];
         matrixPerPack[i] -= numCPUDomains;
-        
+
         this->B1KplusPacks[i].Resize( matrixPerPack[i], dataSize );
 
         for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
@@ -88,44 +88,85 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                     domains[accDomains[i].at(j)].B1t_comp_dom.cols, symmetric );
         }
     }
-    
-//#pragma omp parallel num_threads(config::solver::N_MICS)
-#pragma omp parallel     
-    {
-        if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < config::solver::N_MICS)) {
-            // the first config::solver::N_MICS threads will communicate with MICs
-            // now copy data to MIC and assemble Schur complements
-            int  i = omp_get_thread_num();
+
+    bool assembleOnCPU = true;
+    if ( assembleOnCPU ) {
+        // iterate over available MICs and assemble their domains on CPU
+        for (eslocal i = 0 ; i < config::solver::N_MICS ; ++i) {
             this->B1KplusPacks[i].AllocateVectors( );
             this->B1KplusPacks[i].SetDevice( i );
-            SparseSolverAcc tmpsps_mic;
-            SparseMatrix** K = new SparseMatrix*[matrixPerPack[i]];
-            SparseMatrix** B = new SparseMatrix*[matrixPerPack[i]];
-
-            for (eslocal j = 0; j < accDomains[i].size(); ++j) {
-                K[j] = &(domains[accDomains[i].at(j)].K);
-                B[j] = &(domains[accDomains[i].at(j)].B1t_comp_dom);
+#pragma omp parallel for
+            for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
+                eslocal domN = accDomains[i].at(j);
+                double * matrixPointer = this->B1KplusPacks[i].getMatrixPointer(j);
+                SparseMatrix tmpB;
+                domains[domN].B1_comp_dom.MatTranspose(tmpB);
+                SparseSolverCPU tmpsps;
+                tmpsps.Create_SC_w_Mat( domains[domN].K, tmpB, domains[domN].B1Kplus, false, symmetric);
+                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]), 
+                        this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
+                SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
+                //domains[domN].B1Kplus.Clear();
+                std::cout << ".";
             }
-            this->B1KplusPacks[i].CopyToMIC();
-            tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], accDomains[i].size(),  0, i);
-        } else {
-            // the remaining threads will assemble SC on CPU if necessary
-            #pragma omp single nowait
-            {
-                for (eslocal d = 0; d < hostDomains.size(); ++d) {
+        }
+
+    #pragma omp parallel num_threads(config::solver::N_MICS)
+    {
+         this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
+    }
+
+#pragma omp parallel for
+        for (eslocal d = 0; d < hostDomains.size(); ++d) {
+
+            std::cout << "*";
+            eslocal domN = hostDomains.at(d);
+            SparseMatrix TmpB;
+            domains[domN].B1_comp_dom.MatTranspose(TmpB);
+            SparseSolverCPU tmpsps;
+            tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, symmetric);
+        }
+
+    } else {
+#pragma omp parallel     
+        {
+            if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < config::solver::N_MICS)) {
+                // the first config::solver::N_MICS threads will communicate with MICs
+                // now copy data to MIC and assemble Schur complements
+                int  i = omp_get_thread_num();
+                this->B1KplusPacks[i].AllocateVectors( );
+                this->B1KplusPacks[i].SetDevice( i );
+                SparseSolverAcc tmpsps_mic;
+                SparseMatrix** K = new SparseMatrix*[matrixPerPack[i]];
+                SparseMatrix** B = new SparseMatrix*[matrixPerPack[i]];
+
+                for (eslocal j = 0; j < accDomains[i].size(); ++j) {
+                    K[j] = &(domains[accDomains[i].at(j)].K);
+                    B[j] = &(domains[accDomains[i].at(j)].B1t_comp_dom);
+                }
+                this->B1KplusPacks[i].CopyToMIC();
+                tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], accDomains[i].size(),  0, i);
+            } else {
+                // the remaining threads will assemble SC on CPU if necessary
+#pragma omp single nowait
+                {
+                    for (eslocal d = 0; d < hostDomains.size(); ++d) {
 #pragma omp task
-                    {
-                        //std::cout << ".";
-                        eslocal domN = hostDomains.at(d);
-                        SparseMatrix TmpB;
-                        domains[domN].B1_comp_dom.MatTranspose(TmpB);
-                        SparseSolverCPU tmpsps;
-                        tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, 0);
+                        {
+                            //std::cout << ".";
+                            eslocal domN = hostDomains.at(d);
+                            SparseMatrix TmpB;
+                            domains[domN].B1_comp_dom.MatTranspose(TmpB);
+                            SparseSolverCPU tmpsps;
+                            tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, 0);
+                        }
                     }
                 }
             }
         }
     }
+
+
     /*
        cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
        domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
@@ -209,12 +250,6 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     if (cluster_global_index == 1)
         cout << endl;
     */
-#pragma offload target(mic:0)
-    {
-        long pages = sysconf(_SC_AVPHYS_PAGES);
-        long page_size = sysconf(_SC_PAGE_SIZE);
-        std::cout << pages * page_size << std::endl;
-    }
 }
 
 void ClusterAcc::Create_Kinv_perDomain() {
@@ -222,7 +257,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
-	ESINFO(PROGRESS2) << "Creating B1*K+*B1t on Xeon Phi accelerator";
+    ESINFO(PROGRESS2) << "Creating B1*K+*B1t on Xeon Phi accelerator";
 
 
     // compute sizes of data to be offloaded to MIC
@@ -272,7 +307,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
         domains[i].KplusF.msglvl = 0;
 
         if ( i == 0 && cluster_global_index == 1) {
-        	domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
 
         //SolveMatF is obsolete - use Schur complement instead
@@ -551,42 +586,41 @@ void ClusterAcc::SetupKsolvers ( ) {
         domains[d].domain_prim_size = domains[d].Kplus.cols;
 
         if ( d == 0 && config::env::MPIrank == 0) {
-        	domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
     }
     if (!USE_KINV) {
-    // send matrices to Xeon Phi
-    eslocal nMatrices = domains.size();
-    this->matricesPerAcc.reserve(config::solver::N_MICS);
-    SEQ_VECTOR<eslocal> nMatPerMIC;
-    nMatPerMIC.resize(config::solver::N_MICS);
+        // send matrices to Xeon Phi
+        eslocal nMatrices = domains.size();
+        this->matricesPerAcc.reserve(config::solver::N_MICS);
+        SEQ_VECTOR<eslocal> nMatPerMIC;
+        nMatPerMIC.resize(config::solver::N_MICS);
 
-    for (eslocal i = 0; i < config::solver::N_MICS; i++) {
-        nMatPerMIC[i] = nMatrices / config::solver::N_MICS;
-    }
-
-    for (eslocal i = 0 ; i < nMatrices % config::solver::N_MICS; i++ ) {
-        nMatPerMIC[i]++;
-    }
-
-    eslocal offset = 0;
-    for (eslocal i = 0; i < config::solver::N_MICS; i++) {
-        this->matricesPerAcc[i] = new SparseMatrix*[ nMatPerMIC[ i ] ];
-        for (eslocal j = offset; j < offset + nMatPerMIC[ i ]; j++) {
-            (this->matricesPerAcc[i])[j - offset] = &(domains[j].K);
+        for (eslocal i = 0; i < config::solver::N_MICS; i++) {
+            nMatPerMIC[i] = nMatrices / config::solver::N_MICS;
         }
-        offset += nMatPerMIC[i];
-    }
-    this->solver.resize(config::solver::N_MICS);
+
+        for (eslocal i = 0 ; i < nMatrices % config::solver::N_MICS; i++ ) {
+            nMatPerMIC[i]++;
+        }
+
+        eslocal offset = 0;
+        for (eslocal i = 0; i < config::solver::N_MICS; i++) {
+            for (eslocal j = offset; j < offset + nMatPerMIC[ i ]; j++) {
+                (this->matricesPerAcc[i])[j - offset] = &(domains[j].K);
+            }
+            offset += nMatPerMIC[i];
+        }
+        this->solver.resize(config::solver::N_MICS);
 
 #pragma omp parallel num_threads(config::solver::N_MICS)
-{
-    eslocal myAcc = omp_get_thread_num();
-        this->solver[myAcc].ImportMatrices_wo_Copy(this->matricesPerAcc[myAcc], nMatPerMIC[myAcc], myAcc);
-        this->solver[myAcc].Factorization("");
-}
+        {
+            eslocal myAcc = omp_get_thread_num();
+            this->solver[myAcc].ImportMatrices_wo_Copy(this->matricesPerAcc[myAcc], nMatPerMIC[myAcc], myAcc);
+            this->solver[myAcc].Factorization("");
+        }
 
 
-    deleteMatrices = true  ;
+        deleteMatrices = true  ;
     }
 }

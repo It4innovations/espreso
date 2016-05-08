@@ -1591,7 +1591,7 @@ void SparseMatrix::RemoveLowerDense( ) {
 		dense_values_fl.swap(tmp_dense);
 
 	} else {
-		vector <double> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
+		SEQ_VECTOR <double> tmp_dense ( (rows *(rows +1))/2, 0.0 ) ;
 		LAPACKE_dtrttp(  LAPACK_COL_MAJOR,       'U',         rows,    &dense_values[0],           rows,  &tmp_dense[0] );
 		dense_values.swap(tmp_dense);
 	}

@@ -42,13 +42,13 @@ bool   mesh::averageFaces  = false;
 
 double   solver::epsilon                = 1e-5;
 size_t   solver::maxIterations          = 1000;
-size_t   solver::FETI_METHOD            = TOTAL_FETI;
+size_t   solver::FETI_METHOD            = HYBRID_FETI;
 size_t   solver::PRECONDITIONER         = LUMPED;
 size_t   solver::CG_SOLVER              = STANDARD;
 size_t   solver::REGULARIZATION         = FIX_POINTS;
 
 bool     solver::REDUNDANT_LAGRANGE     = true;
-bool     solver::USE_SCHUR_COMPLEMENT   = false;
+bool     solver::USE_SCHUR_COMPLEMENT   = true;
 size_t   solver::SCHUR_COMPLEMENT_PREC  = SC_DOUBLE_PRECISION;
 size_t   solver::SCHUR_COMPLEMENT_TYPE  = GENERAL;
 bool     solver::COMBINE_SC_AND_SPDS    = true;

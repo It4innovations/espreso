@@ -1118,6 +1118,7 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 
 }
 
+
 void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
@@ -1142,7 +1143,6 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 
 
 	// *** END - Prepare matrix
-
 
 
 
@@ -1260,9 +1260,7 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
     /* -------------------------------------------------------------------- */
     /* .. Numerical factorization. */
     /* -------------------------------------------------------------------- */
-
 	SC_out.dense_values.resize(K_b_tmp.rows * K_b_tmp.rows);
-
     phase = 12;
     PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
 			&K_sc1.rows,

@@ -33,15 +33,15 @@ public:
 
   // prepares arrays containing offsets etc. (necessary to run in cycle before AddDenseMatrix)
   void PreparePack(
-    int i,
-    int nRows,
-    int nCols,
+    eslocal i,
+    eslocal nRows,
+    eslocal nCols,
     bool isPacked
   );
 
   // Adds dense matrix to the pack (if there is enough space)
   void AddDenseMatrix(
-    int i,
+    eslocal i,
     double * matrixData
   );
 
@@ -92,6 +92,16 @@ public:
 
   bool areDataOnMIC() {
     return this->copiedToMIC;  
+  }
+
+  double * getMatrixPointer( 
+    eslocal matrix
+  );
+
+  long getDataLength(
+    eslocal matrix
+  ) {
+    return this->lengths[matrix];
   }
 
 /*
@@ -248,11 +258,14 @@ private:
   // array of matrix values
   double * matrices;
 
+  // array of matrix values on MIC
+  double * matrices_mic;
+
   // array with numbers of rows of individual matrices
-  int * rows;
+  eslocal * rows;
 
   // array with numbers of cols of individual matrices
-  int * cols;
+  eslocal * cols;
 
   // total number of matrix rows
   long totalRows;
