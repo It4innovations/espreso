@@ -12,6 +12,7 @@ namespace input {
 class AnsysUtils {
 public:
 	static Element* createElement(eslocal *indices, eslocal n, eslocal *params);
+	static Element* createElement(eslocal *indices, eslocal n, eslocal *params, int eType);
 };
 
 

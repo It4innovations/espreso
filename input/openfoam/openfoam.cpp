@@ -144,7 +144,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements) {
 void OpenFOAM::materials(std::vector<Material> &materials)
 {
 	// TODO
-	materials.push_back({7850, 2.1e11, 0.3});
+	materials.resize(1);
 }
 
 void OpenFOAM::faces(Faces &faces) {
@@ -155,7 +155,7 @@ void OpenFOAM::faces(Faces &faces) {
 	_faces.clear();
 }
 
-void OpenFOAM::boundaryConditions(Coordinates &coordinates) {
+void OpenFOAM::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions) {
 
 }
 

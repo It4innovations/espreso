@@ -25,11 +25,9 @@ public:
 
 	enum Params {
 		MATERIAL,
-		TYPE,
 		CONSTANT,
 		COORDINATES,
 		BODY,
-		NUMBER,
 		PARAMS_SIZE
 	};
 

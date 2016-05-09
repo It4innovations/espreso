@@ -27,7 +27,7 @@ protected:
 
 	virtual void elementsMaterials(std::vector<Element*> &elements);
 	virtual void points(Coordinates &coordinates, size_t &DOFs);
-	virtual void boundaryConditions(Coordinates &coordinates);
+	virtual void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 	virtual ~CubeGenerator() {};

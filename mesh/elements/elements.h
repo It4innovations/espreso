@@ -6,7 +6,9 @@
 #include "1D/point.h"
 
 #include "2D/square4.h"
+#include "2D/square8.h"
 #include "2D/triangle3.h"
+#include "2D/triangle6.h"
 
 #include "3D/tetrahedron4.h"
 #include "3D/tetrahedron10.h"

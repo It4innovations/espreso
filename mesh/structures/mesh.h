@@ -21,6 +21,7 @@
 #include "../elements/elements.h"
 #include "coordinates.h"
 #include "boundaries.h"
+#include "boundarycondition.h"
 #include "faces.h"
 #include "material.h"
 
@@ -67,6 +68,11 @@ public:
 	const Boundaries& clusterBoundaries() const
 	{
 		return _clusterBoundaries;
+	}
+
+	const std::vector<BoundaryCondition*>& boundaryConditions() const
+	{
+		return _boundaryConditions;
 	}
 
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
@@ -156,6 +162,9 @@ protected:
 
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
+
+	/** @brief Array that stores all boundary conditions of the mesh. */
+	std::vector<BoundaryCondition*> _boundaryConditions;
 
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;

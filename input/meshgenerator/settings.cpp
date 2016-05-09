@@ -10,8 +10,7 @@ static void defaultSettings(Settings &settings)
 	settings.elementType = HEXA8;
 	settings.assembler   = LinearElasticity;
 
-	settings.materials.push_back({7850, 2.1e11, 0.3});
-	settings.materials.push_back({7850, 2.1e11, 0.3});
+	settings.materials.resize(2);
 }
 
 Settings::Settings(const Options &options, size_t index, size_t size)

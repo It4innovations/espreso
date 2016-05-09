@@ -50,7 +50,7 @@ public:
 		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
 
 		TimeEvent tBoundaryConditions("boundary conditions"); tBoundaryConditions.start();
-		boundaryConditions(mesh._coordinates);
+		boundaryConditions(mesh._coordinates, mesh._boundaryConditions);
 		tBoundaryConditions.end(); measurement.addEvent(tBoundaryConditions);
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
@@ -83,7 +83,7 @@ protected:
 	virtual void elements(std::vector<Element*> &elements) = 0;
 	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void faces(Faces &faces) { };
-	virtual void boundaryConditions(Coordinates &coordinates) = 0;
+	virtual void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions) = 0;
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual void open() {};

@@ -199,7 +199,7 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 
 
 template<class TElement>
-void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
+void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
 	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
 	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);

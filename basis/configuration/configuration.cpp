@@ -3,7 +3,7 @@
 
 using namespace espreso::input;
 
-static void fillParameters(std::map<std::string, Parameter*, ParameterCompare> &parameters, const std::vector<Description> &description)
+static void fillParameters(std::map<std::string, Parameter*, CaseInsensitiveCompare> &parameters, const std::vector<Description> &description)
 {
 	for (size_t i = 0; i < description.size(); i++) {
 		switch (description[i].type) {

@@ -134,7 +134,7 @@ void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 }
 
 template<class TElement>
-void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates)
+void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
 	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
 	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);

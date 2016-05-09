@@ -148,6 +148,14 @@ void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 		ESINFO(ERROR) << "Invalid number of DOFs";
 	}
 
+	const std::vector<BoundaryCondition*> &bc = this->_input.mesh.boundaryConditions();
+	for (size_t i = 0; i < bc.size(); i++) {
+		if (bc[i]->type() == ConditionType::DIRICHLET) {
+			dirichlet.insert(dirichlet.end(), bc[i]->DOFs().begin(), bc[i]->DOFs().end());
+			dirichletValues.insert(dirichletValues.end(), bc[i]->DOFs().size(), bc[i]->value());
+		}
+	}
+
 	size_t lambdaCounter = 0;
 
 	Dirichlet dir(this->_input.mesh, lambdaCounter, dirichlet, dirichletValues);

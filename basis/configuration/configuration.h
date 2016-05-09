@@ -63,7 +63,7 @@ private:
 	void load(const Options &options);
 	void set(std::vector<Description> &description);
 
-	std::map<std::string, Parameter*, ParameterCompare> _parameters;
+	std::map<std::string, Parameter*, CaseInsensitiveCompare> _parameters;
 };
 
 }

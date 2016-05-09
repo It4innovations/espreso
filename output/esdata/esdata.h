@@ -18,7 +18,7 @@ public:
 private:
 	void coordinates(const Coordinates &coordinates);
 	void elements(const Mesh &mesh);
-	void boundaryConditions(const Coordinates &coordinates);
+	void boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions);
 	void boundaries(const Mesh &mesh);
 };
 

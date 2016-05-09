@@ -70,10 +70,10 @@ void Esdata::elements(std::vector<Element*> &elements)
 void Esdata::materials(std::vector<Material> &materials)
 {
 	// TODO
-	materials.push_back({7850, 2.1e11, 0.3});
+	materials.resize(1);
 }
 
-void Esdata::boundaryConditions(Coordinates &coordinates)
+void Esdata::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/boundaryConditions.dat";
@@ -89,6 +89,20 @@ void Esdata::boundaryConditions(Coordinates &coordinates)
 			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
 			is.read(reinterpret_cast<char *>(&value), sizeof(double));
 			property[cIndex] = value;
+		}
+	}
+
+	size_t counter, DOFs;
+
+	is.read(reinterpret_cast<char *>(&counter), sizeof(size_t));
+	for (size_t i = 0; i < counter; i++) {
+		is.read(reinterpret_cast<char *>(&DOFs), sizeof(size_t));
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		conditions.push_back(new NodeCondition(value, ConditionType::DIRICHLET));
+		conditions.back()->DOFs().reserve(DOFs);
+		for (size_t j = 0; j < DOFs; j++) {
+			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
+			conditions.back()->DOFs().push_back(cIndex);
 		}
 	}
 }

@@ -18,7 +18,7 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
-	boundaryConditions(_mesh.coordinates());
+	boundaryConditions(_mesh.coordinates(), _mesh.boundaryConditions());
 	boundaries(_mesh);
 }
 
@@ -47,7 +47,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 }
 
 
-void Esdata::boundaryConditions(const Coordinates &coordinates)
+void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions)
 {
 	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
@@ -74,6 +74,21 @@ void Esdata::boundaryConditions(const Coordinates &coordinates)
 				}
 			}
 		}
+
+		size_t counter = conditions.size();
+		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));
+		for (size_t i = 0; i < conditions.size(); i++) {
+			if (conditions[i]->type() == ConditionType::DIRICHLET) {
+				size_t size = conditions[i]->DOFs().size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
+				double value = conditions[i]->value();
+				os.write(reinterpret_cast<const char*>(&value), sizeof(double));
+				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
+					os.write(reinterpret_cast<const char*>(&(conditions[i]->DOFs()[j])), sizeof(eslocal));
+				}
+			}
+		}
+
 		os.close();
 	}
 }

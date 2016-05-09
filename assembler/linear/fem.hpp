@@ -68,6 +68,8 @@ void Linear<FEM>::KeMefe(
 		DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
 		DenseMatrix &Ce, const Element *e, size_t part, bool dynamics)
 {
+	Point omega(50, 50, 0);
+
 	const std::vector<DenseMatrix> &dN = e->dN();
 	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
@@ -76,9 +78,12 @@ void Linear<FEM>::KeMefe(
 	this->inertia(inertia, material);
 
 	DenseMatrix coordinates(e->size(), Point::size());
+	Point mid;
 	for (size_t i = 0; i < e->size(); i++) {
 		coordinates.values() + i * Point::size() << _input.mesh.coordinates().get(e->node(i), part);
+		mid += _input.mesh.coordinates().get(e->node(i), part);
 	}
+	mid /= e->size();
 
 	eslocal Ksize = e->size() * this->DOFs();
 	double detJ;
@@ -92,6 +97,8 @@ void Linear<FEM>::KeMefe(
 		Me.resize(e->size(), e->size());
 		Me = 0;
 	}
+
+	double rotation[3] = { mid.x * omega.x * omega.x, mid.y * omega.y * omega.y, mid.z * omega.z * omega.z };
 
 	for (eslocal gp = 0; gp < e->gpSize(); gp++) {
 		J.multiply(dN[gp], coordinates);
@@ -111,6 +118,7 @@ void Linear<FEM>::KeMefe(
 
 		for (eslocal i = 0; i < Ksize; i++) {
 			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * inertia[i / e->size()];
+			//fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * 7850 * rotation[i / e->size()];
 		}
 
 		if (dynamics) {

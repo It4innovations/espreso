@@ -7,8 +7,10 @@
 #include <fstream>
 #include <vector>
 
+
 #include "../../loader.h"
 #include "../utils.h"
+#include "parser.h"
 
 namespace espreso {
 namespace input {
@@ -30,25 +32,22 @@ protected:
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
-	void boundaryConditions(Coordinates &coordinates);
+	void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void open()
 	{
-		_file.open(_path.c_str());
-		if (!_file.is_open()) {
-			ESINFO(ERROR) << "Cannot load mesh from file: " << _path;
-		}
+		_parser.open(_path);
 	}
 
 	void close()
 	{
-		_file.close();
+		_parser.close();
 	}
 
 private:
-	std::ifstream _file;
 	std::string _path;
+	WorkbenchParser _parser;
 };
 
 }

@@ -74,7 +74,7 @@ struct Description {
 	: type(BOOLEAN_PARAMETER), name(name), value(&defaultValue), description(description), options(options), writeToHelp(writeToHelp) { };
 };
 
-struct ParameterCompare {
+struct CaseInsensitiveCompare {
 
 	bool operator()(const std::string &p1, const std::string &p2) const
 	{
@@ -86,7 +86,7 @@ struct ParameterCompare {
 		return std::tolower(c1) < std::tolower(c2);
 	}
 
-	static bool caseInsensitiveEq(const char &c1, const char &c2)
+	static bool equals(const char &c1, const char &c2)
 	{
 		return std::tolower(c1) == std::tolower(c2);
 	}
@@ -98,7 +98,7 @@ public:
 	bool match(const std::string &line) const
 	{
 		std::string param = line.substr(0, line.find_first_of(" ="));
-		return param.size() == _name.size() && std::equal(param.begin(), param.end(), _name.begin(), ParameterCompare::caseInsensitiveEq);
+		return param.size() == _name.size() && std::equal(param.begin(), param.end(), _name.begin(), CaseInsensitiveCompare::equals);
 	}
 
 	const std::string& name() const

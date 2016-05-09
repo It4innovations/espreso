@@ -107,12 +107,13 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 
 void AnsysMatsol::materials(std::vector<Material> &materials)
 {
-	materials.push_back({7850, 2.1e11, 0.3});
+	// TODO:
+	materials.resize(1);
 }
 
-void AnsysMatsol::boundaryConditions(Coordinates &coordinates)
+void AnsysMatsol::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
-	std::vector<std::string> conditions = {
+	std::vector<std::string> files = {
 		_path + "/Model/BC/Elasticity/NUX.dat",
 		_path + "/Model/BC/Elasticity/NUY.dat",
 		_path + "/Model/BC/Elasticity/NUZ.dat",
@@ -124,7 +125,7 @@ void AnsysMatsol::boundaryConditions(Coordinates &coordinates)
 	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
 		CoordinatesProperty &property = coordinates.property(i);
 
-		std::ifstream file(conditions[i].c_str());
+		std::ifstream file(files[i].c_str());
 
 		if (file.is_open()) {
 			eslocal coordinate;
