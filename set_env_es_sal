@@ -4,6 +4,8 @@ module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25
 module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25
 module load tbb/4.4.2.152
 
+export MKL_CBWR=AUTO
+
 export MKL_NUM_THREADS=1;
 export OMP_NUM_THREADS=1;
 export SOLVER_NUM_THREADS=22;

@@ -5,6 +5,7 @@ export PAR_NUM_THREADS=8
 
 export CILK_NWORKERS=8
 
+export MKL_CBWR=AUTO
 export PARDISOLICMESSAGE=1
 
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/ParaView-bin/lib/
