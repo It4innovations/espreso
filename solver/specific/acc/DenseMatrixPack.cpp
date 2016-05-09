@@ -43,8 +43,8 @@ DenseMatrixPack::DenseMatrixPack(
 
   // preallocate data structures
   this->matrices = ( double * ) malloc( preallocSize * sizeof( double ) );
-  this->rows = ( int * ) malloc( maxNMatrices * sizeof( int ) );
-  this->cols = ( int * ) malloc( maxNMatrices * sizeof( int ) );
+  this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
+  this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
   this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
   this->rowOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
   this->colOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
@@ -81,8 +81,8 @@ void DenseMatrixPack::Resize( long maxNMatrices, long preallocSize ) {
 
   // preallocate data structures
   this->matrices = ( double * ) malloc( preallocSize * sizeof( double ) );
-  this->rows = ( int * ) malloc( maxNMatrices * sizeof( int ) );
-  this->cols = ( int * ) malloc( maxNMatrices * sizeof( int ) );
+  this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
+  this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
   this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
   this->rowOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
   this->colOffsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
@@ -107,6 +107,7 @@ DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
 
   // preallocate data structures
   this->matrices = orig.matrices;
+  this->matrices_mic = orig.matrices_mic;
   this->rows = orig.rows;
   this->cols = orig.cols;
   this->offsets = orig.offsets;
@@ -164,10 +165,16 @@ void DenseMatrixPack::SetDevice(
   this->device = device;
 }
 
+double * DenseMatrixPack::getMatrixPointer(
+  eslocal matrix
+  ) {
+  return this->matrices + this->offsets[matrix];
+}
+
 void DenseMatrixPack::PreparePack(
-  int i,
-  int nRows,
-  int nCols,
+  eslocal i,
+  eslocal nRows,
+  eslocal nCols,
   bool isPacked
 ) {
 
@@ -202,7 +209,7 @@ void DenseMatrixPack::PreparePack(
 }
 
 void DenseMatrixPack::AddDenseMatrix(
-  int i,
+  eslocal i,
   double * matrixData
 ) {
 
@@ -256,12 +263,18 @@ void DenseMatrixPack::GetY(
 void DenseMatrixPack::CopyToMIC( ) {
 #ifdef MIC
   long matrixLength = preallocSize - freeSpace;
+double * tmp_pointer;
+  // allocate targetptr array on MIC
+  #pragma offload_transfer target(mic:device) \
+  nocopy(tmp_pointer : length( matrixLength) alloc_if(1) free_if(0) targetptr) \
+  in(this : alloc_if(1) free_if(0))
 
   // preallocated input/output buffers
   //mic_x_in = ( double * ) malloc( totalCols * sizeof( double ) );
   //mic_y_out = ( double * ) malloc( totalRows * sizeof( double ) );
+  this->matrices_mic = tmp_pointer;
 #pragma offload_transfer target(mic:device) if(1) \
-  in( matrices : length( matrixLength ) alloc_if( 1 ) free_if( 0 ) ) \
+  in( matrices : length( matrixLength ) into(matrices_mic) alloc_if( 0 ) free_if( 0 ) targetptr ) \
   in( rows : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
   in( cols : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
   in( offsets : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
@@ -271,10 +284,12 @@ void DenseMatrixPack::CopyToMIC( ) {
   in( packed : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
   in( mic_x_in : length( totalCols ) alloc_if( 1 ) free_if( 0 ) ) \
   in( mic_y_out : length( totalRows ) alloc_if( 1 ) free_if( 0 ) ) \
-  in( this : alloc_if( 1 ) free_if( 0 ) )
+  in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
 
 #endif
   this->copiedToMIC = true;
+  free(this->matrices);
+  this->matrices = NULL;
 }
 
 void DenseMatrixPack::DenseMatsVecs(
@@ -283,7 +298,7 @@ void DenseMatrixPack::DenseMatsVecs(
 
 			double alpha = 1.0;
 			double beta  = 0.0;
-			int one = 1;
+			eslocal one = 1;
 
       omp_set_num_threads(24);
 
@@ -313,7 +328,7 @@ void DenseMatrixPack::DenseMatsVecsMIC(
 
 
 	#pragma offload target(mic:device) if(1) \
-		in( matrices : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+		in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
 		in( mic_x_in : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
     in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -327,22 +342,22 @@ void DenseMatrixPack::DenseMatsVecsMIC(
 		{
 			double alpha = 1.0;
 			double beta  = 0.0;
-			int one = 1;
+			eslocal one = 1;
 
     //  omp_set_num_threads(24);
 
       #pragma omp parallel for //schedule(dynamic,10)
-      for ( int i = 0 ; i < nMatrices; i++ ) {
+      for ( eslocal i = 0 ; i < nMatrices; i++ ) {
 
         if ( !packed[i] ) {
         dgemv(&T_for_transpose_N_for_not_transpose,
   				&(rows[i]), &(cols[i]),
-  				&alpha, matrices + offsets[i], &(rows[i]),
+  				&alpha, matrices_mic + offsets[i], &(rows[i]),
   				mic_x_in + colOffsets[i], &one,
   				&beta, mic_y_out + rowOffsets[i], &one);
         } else {
   				cblas_dspmv(CblasColMajor, CblasUpper,
-  					rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
+  					rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
             1, 0.0, mic_y_out + rowOffsets[i], 1);
         }
       }
@@ -357,7 +372,7 @@ void DenseMatrixPack::DenseMatsVecsMIC_Start(
 ) {
 #ifdef MIC
 	#pragma offload target(mic:device) if(1) \
-		in( matrices : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+		in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
 		in( mic_x_in : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
     in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -372,22 +387,22 @@ void DenseMatrixPack::DenseMatsVecsMIC_Start(
 		{
 			double alpha = 1.0;
 			double beta  = 0.0;
-			int one = 1;
+			eslocal one = 1;
 
     //  omp_set_num_threads(24);
 
       #pragma omp parallel for schedule(dynamic)
-      for ( int i = 0 ; i < nMatrices; i++ ) {
+      for ( eslocal i = 0 ; i < nMatrices; i++ ) {
 
         if ( !packed[i] ) {
         dgemv(&T_for_transpose_N_for_not_transpose,
   				&(rows[i]), &(cols[i]),
-  				&alpha, matrices + offsets[i], &(rows[i]),
+  				&alpha, matrices_mic + offsets[i], &(rows[i]),
   				mic_x_in + colOffsets[i], &one,
   				&beta, mic_y_out + rowOffsets[i], &one);
         } else {
   				cblas_dspmv(CblasColMajor, CblasUpper,
-  					rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
+  					rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
             1, 0.0, mic_y_out + rowOffsets[i], 1);
         }
       }
@@ -398,7 +413,7 @@ void DenseMatrixPack::DenseMatsVecsMIC_Start(
 void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
 #ifdef MIC
   #pragma offload target(mic:device) if(1) \
-    in( matrices : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
     in( mic_x_in : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -413,5 +428,7 @@ void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
     {}
 #endif
 }
+
+
 
 }

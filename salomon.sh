@@ -133,7 +133,7 @@ if [ "$1" = "run" ]; then
   
   qsub_command_0+="module list;"
 
-  for i in 2 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+  for i in 1 # 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
   do
     d=${dom_size[${i}]}
     c=${corners[${i}]}
@@ -146,9 +146,9 @@ if [ "$1" = "run" ]; then
     Y=${clusters_y[${i}]}
     Z=${clusters_z[${i}]}
 
-    d=8 # subdomains size
+    d=10 # subdomains size
     c=0 # number of corners - nefunguje 
-    x=8 # cluster size in domains
+    x=10 # cluster size in domains
 
     y=$x
     z=$x

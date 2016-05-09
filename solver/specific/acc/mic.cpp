@@ -641,7 +641,7 @@ void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
     in(this : length(0) alloc_if(0) free_if(0))
     {
         eslocal offset = 0;
-for (int i = 0; i < nMatrices; i++){
+for (eslocal i = 0; i < nMatrices; i++){
     tmp_sol_d1[i] = &vectors[offset];
     tmp_sol_d2[i] = &vectors_out[offset];
     offset+=m_Kplus_size[i];
@@ -661,7 +661,7 @@ for (int i = 0; i < nMatrices; i++){
 
 #pragma omp parallel //num_threads(21)
         {
-            int myPhase = 331;
+            eslocal myPhase = 331;
 #pragma omp for schedule(dynamic)
             for (eslocal i = 0; i < nMatrices; i++) {
                 myPhase=331;
@@ -1017,7 +1017,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
                 maxSize = K_b_tmp_rows[i]*K_b_tmp_rows[i];
             }
         }
-        int nThreads = 1;
+        eslocal nThreads = 1;
 #pragma omp parallel
         {
 #pragma omp single
