@@ -587,6 +587,8 @@ std::vector<std::pair<eslocal, eslocal> > Mesh::getCommonFaces(Mesh &faces) cons
 	std::vector<bool> subdomains;
 	std::vector<eslocal> projection(_coordinates.clusterSize(), 0);
 
+	std::vector<std::vector<Element*> > hack(parts() * parts());
+
 	for (eslocal i = 0; i < parts(); i++) {
 		// compute number of elements and fill used nodes
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
@@ -596,13 +598,13 @@ std::vector<std::pair<eslocal, eslocal> > Mesh::getCommonFaces(Mesh &faces) cons
 					face->node(f) = _coordinates.clusterIndex(face->node(f), i);
 				}
 				if (findSubdomains(nodeToElements, face, _partPtrs, 1, eSub) == j) {
-					subdomains.resize(subdomains.size() + parts(), false);
-					subdomains[subdomains.size() - parts() + eSub[0]] = true;
-					subdomains[subdomains.size() - parts() + eSub[1]] = true;
 					commonFaces.push_back(face);
 					for (size_t f = 0; f < face->size(); f++) {
 						projection[face->node(f)] = 1;
 					}
+					hack[eSub[0] * parts() + eSub[1]].push_back(face);
+				} else {
+					delete face;
 				}
 			}
 		}
@@ -629,19 +631,16 @@ std::vector<std::pair<eslocal, eslocal> > Mesh::getCommonFaces(Mesh &faces) cons
 	faces._partPtrs.clear();
 	faces._partPtrs.push_back(0);
 	for (size_t i = 0; i < parts(); i++) {
-		for (size_t j = i + 1; j < parts(); j++) {
-			for (size_t e = 0; e < commonFaces.size(); e++) {
-				if (subdomains[e * parts() + i] && subdomains[e * parts() + j]) {
-					faces._elements.push_back(commonFaces[e]);
-				}
-			}
-			if (faces._elements.size() > faces._partPtrs.back()) {
+		for (size_t j = 0; j < parts(); j++) {
+			if (hack[i * parts() + j].size()) {
+				faces._elements.insert(faces._elements.end(), hack[i * parts() + j].begin(), hack[i * parts() + j].end());
 				faces._partPtrs.push_back(faces._elements.size());
 				faces.makePartContinuous(faces.parts() - 1);
 				sMap.insert(sMap.end(), faces.parts() - sMap.size(), std::make_pair(i, j));
 			}
 		}
 	}
+
 	faces.remapElementsToSubdomain();
 	faces.computeFixPoints(0);
 

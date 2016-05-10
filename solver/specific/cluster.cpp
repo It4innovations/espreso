@@ -1083,7 +1083,6 @@ void ClusterBase::CreateF0() {
 		} else {
 			// F0 uses same precision is K
 			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
-			ESINFO(DETAILS) << "B0t size: " << domains[d].B0t_comp.rows << " " << domains[d].B0t_comp.cols << " " << domains[d].B0t_comp.nnz;
 		}
 
 		domains[d].B0t_comp.Clear();
