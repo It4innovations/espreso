@@ -418,6 +418,10 @@ void LinearSolver::init(
 
 		ESLOG(MEMORY) << "After K inv. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+	} else {
+		for (int d = 0; d < cluster.domains.size(); d++) {
+			cluster.domains[d].isOnACC = 0;
+		}
 	}
 	// *** END - Computation of the Schur Complement **************************************************************************
 

@@ -28,6 +28,20 @@ public:
 	void SetupKsolvers ( );
 
 	void multKplusGlobal_GPU   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
+
+
+	void multKplus_HF      (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+	void multKplus_HF_SC   (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+	void multKplus_HF_SC   (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, SEQ_VECTOR<SEQ_VECTOR<double> > & y_out);
+	void multKplus_HF_SPDS (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+
+	void multKplus_HF_Loop1 (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+	void multKplus_HF_CP    ();
+
+	void multKplus_HF_Loop2_SC   (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, SEQ_VECTOR<SEQ_VECTOR<double> > & y_out);
+	void multKplus_HF_Loop2_SPDS (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+	void multKplus_HF_Loop2_MIX  (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+
 };
 
 }

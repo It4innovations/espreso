@@ -116,9 +116,12 @@ public:
 
 	SparseSolverCPU F0;
 	SparseSolverCPU F0_fast;
+
 	SparseSolverCPU Sa;
-	DenseSolverAcc 	Sa_dense;
-	SparseMatrix SaMat;
+
+	DenseSolverCPU 	Sa_dense_cpu;
+	DenseSolverAcc  Sa_dense_acc;
+	//SparseMatrix    SaMat;
 
 	SEQ_VECTOR <double> vec_d;
 
@@ -196,6 +199,7 @@ public:
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster1;
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster2;
+	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster3;
 
 	// variables for time measurements
 	TimeEvent vec_fill_time;

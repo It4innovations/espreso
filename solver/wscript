@@ -53,7 +53,7 @@ def build(ctx):
         sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp", "specific/acc/SparseSolverCUDA.cpp", "specific/acc/DenseSolverCUDA.cpp")
 
     if ctx.env.SOLVER == "CUDA_7":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp", "specific/acc/DenseSolverCUDA.cpp")
+        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp", "specific/acc/DenseSolverCUDA.cpp", "specific/cpu/DenseSolverMKL.cpp")
 
     if ctx.env.SOLVER == "MUMPS":
         sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")

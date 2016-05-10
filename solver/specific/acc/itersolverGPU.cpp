@@ -178,11 +178,71 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
 
 
+	if (cluster.USE_KINV == 0 && cluster.USE_HFETI == 1) {
+
+		 time_eval.timeEvents[0].start();
+		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
+			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+		}
+		 time_eval.timeEvents[0].end();
+
+		 time_eval.timeEvents[1].start();
+
+		int method = 0;
+
+		if (method == 0) {
+			cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
+		}
+
+		if (method == 1) {
+				cluster.multKplus_HF(cluster.x_prim_cluster1);
+
+				cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+					cluster.domains[d].multKplusLocal( cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d] );
+				}
+		}
+
+		if (method == 2) {
+			cilk_spawn cluster.multKplus_HF_SC (cluster.x_prim_cluster1, cluster.x_prim_cluster3);
+
+			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+				cluster.domains[d].multKplusLocal( cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d] );
+			}
+
+			cilk_sync;
+
+			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+				for (int i = 0; i < cluster.domains[d].K.rows; i++) {
+					cluster.x_prim_cluster1[d][i] = cluster.x_prim_cluster2[d][i] + cluster.x_prim_cluster3[d][i];
+				}
+			}
 
 
+		}
+
+		 time_eval.timeEvents[1].end();
 
 
-	if (cluster.USE_KINV == 0) {
+		 time_eval.timeEvents[2].start();
+		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+		SEQ_VECTOR < double > y_out_tmp;
+		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
+			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
+		}
+		 time_eval.timeEvents[2].end();
+
+
+	}
+
+
+	if (cluster.USE_KINV == 0 && cluster.USE_HFETI == 0) {
 
 		 time_eval.timeEvents[0].start();
 		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
@@ -246,7 +306,6 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
 	void IterSolverGPU::apply_A_FETI_SC_forHFETI   ( Cluster & cluster )
 	{
-
 		//cilk_
 		for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		  	if (cluster.domains[d].isOnACC == 1) {
@@ -270,6 +329,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 				}
 		  	}
 		}
+
 	}
 
 

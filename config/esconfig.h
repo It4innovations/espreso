@@ -55,6 +55,12 @@ enum F0Solver {
 	DOUBLE_PRECISION = 1
 };
 
+enum SAsolver {
+	SA_DENSE_on_CPU = 0,
+	SA_DENSE_on_ACC = 1,
+	SA_SPARSE_on_CPU = 2
+};
+
 enum SCPrecision {
 	SC_DOUBLE_PRECISION,
 	SC_SINGLE_PRECISION
@@ -152,6 +158,8 @@ namespace solver {
 	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
 												// 1 - DIRECT SP if KSOLVER is DIRECT SP
 												// 1 - Direct DP if KSOLVER is DIRECT SP
+	extern size_t	SA_SOLVER;					// 0 - DENSE on CPU; 1 - DENSE on ACC; 2 - SPARSE on CPU
+
 	extern size_t   N_MICS;
 
 	extern std::vector<input::Description> description;

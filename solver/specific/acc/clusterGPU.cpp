@@ -391,14 +391,12 @@ void ClusterGPU::SetupKsolvers ( ) {
 
 void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
 	cluster_time.totalTime.start();
 
 	vec_fill_time.start();
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
 	vec_fill_time.end();
 
 	// loop over domains in the cluster
@@ -432,48 +430,62 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	clusCP_time.start();
 
 
-//	for (int i = 0; i < vec_g0.size(); i++)
-//	printf (       "Test probe 1: %d norm = %1.30f \n", i, vec_g0[i] );
+
 
 	clus_F0_1_time.start();
 	F0.Solve(vec_g0, tm1[0], 0, 0);
 	clus_F0_1_time.end();
 
-//	for (int i = 0; i < tm1[0].size(); i++)
-//	printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
+
 
 	clus_G0_time.start();
 	G0.MatVec(tm1[0], tm2[0], 'N');
 	clus_G0_time.end();
-
-//	for (int i = 0; i < tm1[0].size(); i++)
-//	printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
 	 clus_Sa_time.start();
-#ifdef SPARSE_SA
-	 Sa.Solve(tm2[0], vec_alfa,0,0);
-#else
-	char U = 'U';
-	eslocal nrhs = 1;
-	eslocal info = 0;
-	vec_alfa = tm2[0];
-	dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
-#endif
+//#ifdef SPARSE_SA
+//	 Sa.Solve(tm2[0], vec_alfa,0,0);
+//#else
+//	char U = 'U';
+//	eslocal nrhs = 1;
+//	eslocal info = 0;
+//	vec_alfa = tm2[0];
+//	dsptrs( &U, &SaMat.rows, &nrhs, &SaMat.dense_values[0], &SaMat.ipiv[0], &vec_alfa[0], &SaMat.rows, &info );
+//#endif
+//
+////TODO: New version with DenseSolver routine
+////#ifdef SPARSE_SA
+////	Sa.Solve(tm2[0], vec_alfa,0,0);
+////#else
+////	eslocal nrhs = 1;
+////	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
+////#endif
+
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+			eslocal nrhs = 1;
+			Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+			eslocal nrhs = 1;
+			Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
 	 clus_Sa_time.end();
 
-//		for (int i = 0; i < vec_alfa.size(); i++)
-//		printf (       "Test probe 4: %d norm = %1.30f \n", i, vec_alfa[i] );
+
 
 	 clus_G0t_time.start();
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
 	 clus_G0t_time.end();
-
-//		for (int i = 0; i < tm1[0].size(); i++)
-//		printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
@@ -485,8 +497,6 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	clusCP_time.end();
 
-//	for (int i = 0; i < vec_lambda.size(); i++)
-//	printf (       "Test probe 6: %d norm = %1.30f \n", i, vec_lambda[i] );
 
 	// Kplus_x
 	mkl_set_num_threads(1);
@@ -531,10 +541,267 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		for (eslocal i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
-		//ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
-	//ESINFO(PROGRESS2);
+
 	loop_2_1_time.end();
 
 	cluster_time.totalTime.end();
+}
+
+
+
+void ClusterGPU::multKplus_HF(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	cluster_time.totalTime.start();
+
+	multKplus_HF_Loop1(x_in);
+
+	multKplus_HF_CP();
+
+	multKplus_HF_Loop2_MIX(x_in);
+
+	cluster_time.totalTime.end();
+}
+
+void ClusterGPU::multKplus_HF_SC(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	cluster_time.totalTime.start();
+
+	multKplus_HF_Loop1(x_in);
+
+	multKplus_HF_CP();
+
+	multKplus_HF_Loop2_SC(x_in, x_in);
+
+	cluster_time.totalTime.end();
+}
+
+void ClusterGPU::multKplus_HF_SC(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, SEQ_VECTOR<SEQ_VECTOR<double> > & y_out) {
+
+	cluster_time.totalTime.start();
+
+	multKplus_HF_Loop1(x_in);
+
+	multKplus_HF_CP();
+
+	multKplus_HF_Loop2_SC(x_in, y_out);
+
+	cluster_time.totalTime.end();
+}
+
+
+void ClusterGPU::multKplus_HF_SPDS(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	cluster_time.totalTime.start();
+
+	multKplus_HF_Loop1(x_in);
+
+	multKplus_HF_CP();
+
+	multKplus_HF_Loop2_SPDS(x_in);
+
+	cluster_time.totalTime.end();
+}
+
+
+
+
+void ClusterGPU::multKplus_HF_Loop1(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	//mkl_set_num_threads(1);
+
+	vec_fill_time.start();
+	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+	vec_fill_time.end();
+
+	// loop over domains in the cluster
+	loop_1_1_time.start();
+	loop_1_1_time.end();
+	loop_1_2_time.start();
+	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	{
+
+		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
+		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');	    // e0
+
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+		for (eslocal i = e0_start; i < e0_end; i++ )
+			vec_e0[i] = - tm3[d][i - e0_start];
+	}
+
+	for (eslocal d = 0; d < domains.size(); d++)
+		for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+
+	loop_1_2_time.end();
+
+}
+
+void ClusterGPU::multKplus_HF_CP( ) {
+
+	//mkl_set_num_threads(PAR_NUM_THREADS);
+	 clusCP_time.start();
+
+	 clus_F0_1_time.start();
+	F0.Solve(vec_g0, tm1[0], 0, 0);
+	 clus_F0_1_time.end();
+
+	 clus_G0_time.start();
+	G0.MatVec(tm1[0], tm2[0], 'N');
+	 clus_G0_time.end();
+
+	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
+		tm2[0][i] = tm2[0][i] - vec_e0[i];
+	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
+
+
+	 clus_Sa_time.start();
+	if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		Sa.Solve(tm2[0], vec_alfa,0,0);
+	}
+
+	if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	}
+
+	if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);// lambda
+	}
+	 clus_Sa_time.end();
+
+
+	 clus_G0t_time.start();
+	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
+	 clus_G0t_time.end();
+
+	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
+		tm1[0][i] = vec_g0[i] - tm1[0][i];
+
+
+	 clus_F0_2_time.start();
+	F0.Solve(tm1[0], vec_lambda,0,0);
+	 clus_F0_2_time.end();
+
+	 clusCP_time.end();
+
+}
+
+void ClusterGPU::multKplus_HF_Loop2_SC(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, SEQ_VECTOR<SEQ_VECTOR<double> > & y_out) {
+
+	// Kplus_x
+	//mkl_set_num_threads(1);
+	 loop_2_1_time.start();
+
+	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	{
+		eslocal domain_size = domains[d].domain_prim_size;
+		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
+
+		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+
+		domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
+
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+
+		for (eslocal i = 0; i < domain_size; i++)
+			y_out[d][i] = tm2[d][i] + tm3[d][i];
+
+	}
+	 loop_2_1_time.end();
+
+}
+
+void ClusterGPU::multKplus_HF_Loop2_SPDS (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	// Kplus_x
+	//mkl_set_num_threads(1);
+	 loop_2_1_time.start();
+
+	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	{
+		eslocal domain_size = domains[d].domain_prim_size;
+		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
+
+		for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+
+		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+
+		for (eslocal i = 0; i < domain_size; i++)
+			tm1[d][i] = x_in[d][i] - tm1[d][i];
+
+		domains[d].multKplusLocal(tm1[d] , tm2[d]);
+
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+
+
+		for (eslocal i = 0; i < domain_size; i++)
+			x_in[d][i] = tm2[d][i] + tm3[d][i];
+
+	}
+	 loop_2_1_time.end();
+
+}
+
+void ClusterGPU::multKplus_HF_Loop2_MIX (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	// Kplus_x
+	// mkl_set_num_threads(1);
+	 loop_2_1_time.start();
+
+	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	{
+		eslocal domain_size = domains[d].domain_prim_size;
+		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
+
+		bool MIXED_SC_FACT = config::solver::COMBINE_SC_AND_SPDS;
+
+		if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !config::solver::USE_SCHUR_COMPLEMENT ) {
+
+			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+
+			domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+
+			for (eslocal i = 0; i < domain_size; i++)
+				tm1[d][i] = x_in[d][i] - tm1[d][i];
+
+			domains[d].multKplusLocal(tm1[d] , tm2[d]);
+
+			eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+			eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+			domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+
+		} else {
+
+			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+				tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+
+			domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
+
+			eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+			eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+			domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+
+		}
+
+		for (eslocal i = 0; i < domain_size; i++)
+			x_in[d][i] = tm2[d][i] + tm3[d][i];
+
+	}
+	 loop_2_1_time.end();
+
 }

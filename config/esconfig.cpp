@@ -61,7 +61,7 @@ double   solver::KSOLVER_SP_iter_norm   = 1e-12;
 size_t   solver::F0_SOLVER              = KSOLVER_PRECISION;
 
 size_t   solver::N_MICS                 = 2;
-
+size_t 	 solver::SA_SOLVER				= 0;
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
 
 int    assembler::discretization = FEM;
@@ -154,6 +154,12 @@ std::vector<Description> solver::description = {
 	{ "F0SOLVER", solver::F0_SOLVER, "F0 solver precision.", {
 			"with the same precision as KSOLVER",
 			"always with double precision." }},
+
+	{ "SASOLVER", solver::SA_SOLVER, "SA solver type.", {
+					"DENSE solver on CPU",
+					"DENSE solver on ACC,"
+					"SPARSE solver on CPU." }},
+
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
 	{ "B0_TYPE", solver::B0_TYPE, "The source for B0 assembler." },

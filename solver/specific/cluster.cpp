@@ -394,10 +394,12 @@ void ClusterBase::SetClusterPC_AfterKplus () {
 	//// *** - temporary vectors for work primal domain size *******************************
 	x_prim_cluster1.resize( domains.size() );
 	x_prim_cluster2.resize( domains.size() );
+	x_prim_cluster3.resize( domains.size() );
 
 	for (eslocal d = 0; d < domains.size(); d++) {
 		x_prim_cluster1[d].resize( domains[d].domain_prim_size );
 		x_prim_cluster2[d].resize( domains[d].domain_prim_size );
+		x_prim_cluster3[d].resize( domains[d].domain_prim_size );
 	}
 	//// *** END - Alocate temporarly vectors for Temporary vectors for Apply_A function ***
 
@@ -590,12 +592,27 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
 	 clus_Sa_time.start();
-#ifdef SPARSE_SA
-	 Sa.Solve(tm2[0], vec_alfa,0,0);
-#else
-	eslocal nrhs = 1;
-	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
-#endif
+//#ifdef SPARSE_SA
+//	 Sa.Solve(tm2[0], vec_alfa,0,0);
+//#else
+//	eslocal nrhs = 1;
+//	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
+//#endif
+
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
 	 clus_Sa_time.end();
 
 //		for (int i = 0; i < vec_alfa.size(); i++)
@@ -707,12 +724,27 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
 	 clus_Sa_time.start();
- #ifdef SPARSE_SA
-    Sa.Solve(tm2[0], vec_alfa,0,0);
- #else
-    eslocal nrhs = 1;
-    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
- #endif
+// #ifdef SPARSE_SA
+//    Sa.Solve(tm2[0], vec_alfa,0,0);
+// #else
+//    eslocal nrhs = 1;
+//    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
+// #endif
+
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
      clus_Sa_time.end();
 
 	 clus_G0t_time.start();
@@ -809,7 +841,20 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
 	clus_Sa_time.start();
-	Sa.Solve(tm2[0], vec_alfa,0,0);
+//	Sa.Solve(tm2[0], vec_alfa,0,0);
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
 	clus_Sa_time.end();
 
 	clus_G0t_time.start();
@@ -1312,34 +1357,51 @@ void ClusterBase::CreateSa() {
 		 reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
 	 }
 
-#ifdef SPARSE_SA
-	 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
-	if (MPIrank == 0) Sa.msglvl = 1;
-	Sa.ImportMatrix(Salfa);
-	Sa.Factorization("salfa");
-	if (MPIrank == 0) Sa.msglvl = 0;
-	 fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
-#else
-	 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
-	SaMat = Salfa;
 
-#if defined(SOLVER_CUDA)
-    	SaMat.type = 'G';
-#endif
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+     //#ifdef SPARSE_SA
+		 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
+		if (MPIrank == 0) Sa.msglvl = 1;
+		Sa.ImportMatrix(Salfa);
+		Sa.Factorization("salfa");
+		if (MPIrank == 0) Sa.msglvl = 0;
+		 fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
+     //#else
+	 }
 
-#if defined(SOLVER_CUDA_7)
-    	SaMat.type = 'G';
-#endif
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 
-	SaMat.ConvertCSRToDense(1);
-	SaMat.type = 'S';
-	Sa_dense.ImportMatrix(SaMat);
-	Sa_dense.Factorization("salfa");
+		Salfa.ConvertCSRToDense(1);
 
-	factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+		Sa_dense_cpu.ImportMatrix(Salfa);
+		Sa_dense_cpu.Factorization("Salfa - dense ");
 
-	Sa.m_Kplus_size = SaMat.cols;
-#endif
+		 factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
+
+//#if defined(SOLVER_CUDA)
+		 Salfa.type = 'G';
+//#endif
+//#if defined(SOLVER_CUDA_7)
+//	 Salfa.type = 'G';
+//#endif
+
+		Salfa.ConvertCSRToDense(1);
+		Salfa.type = 'S';
+
+		Sa_dense_acc.ImportMatrix(Salfa);
+		Sa_dense_acc.Factorization("Salfa - dense ");
+
+		factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+	 }
+
+	Sa.m_Kplus_size = Salfa.cols;
+
+//#endif // //#ifdef SPARSE_SA
 
 
 	Sa_timing.totalTime.end(); Sa_timing.printStatsMPI();
