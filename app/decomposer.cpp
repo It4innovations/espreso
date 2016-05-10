@@ -9,14 +9,13 @@ using namespace espreso;
 
 int main(int argc, char** argv)
 {
-	if (argc < 4) {
-		ESINFO(ERROR) << "Specify parameters: ANSYS_FILE OUTPUT_LOCATION [ NUMBER_OF_PARTS ]";
-	}
-
 
 	MPI_Init(&argc, &argv);
-
 	Options options(&argc, &argv);
+
+	if (options.nameless.size() < 2) {
+		ESINFO(ERROR) << "Specify parameters: ANSYS_FILE OUTPUT_LOCATION [ NUMBER_OF_PARTS ]";
+	}
 
 	config::mesh::subdomains = 1;
 	config::mesh::fixPoints = 0;

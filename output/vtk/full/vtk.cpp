@@ -92,10 +92,10 @@ void VTK_Full::dirichlet(const Mesh &mesh, const std::string &path, double shrin
 					if (bc[i]->DOFs()[j] % mesh.DOFs() == 0 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
 						dx[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs()) - l2c.begin());
 					}
-					if (bc[i]->DOFs()[j] % mesh.DOFs() == 0 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
+					if (bc[i]->DOFs()[j] % mesh.DOFs() == 1 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
 						dy[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs()) - l2c.begin());
 					}
-					if (bc[i]->DOFs()[j] % mesh.DOFs() == 0 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
+					if (bc[i]->DOFs()[j] % mesh.DOFs() == 2 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
 						dz[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs()) - l2c.begin());
 					}
 				}

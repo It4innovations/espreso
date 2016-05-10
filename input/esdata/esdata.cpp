@@ -69,8 +69,29 @@ void Esdata::elements(std::vector<Element*> &elements)
 
 void Esdata::materials(std::vector<Material> &materials)
 {
-	// TODO
-	materials.resize(1);
+	std::stringstream fileName;
+	fileName << _path << "/" << _rank << "/materials.dat";
+	std::ifstream is(fileName.str(), std::ifstream::binary);
+
+	int size;
+	double value;
+	is.read(reinterpret_cast<char *>(&size), sizeof(int));
+	materials.resize(size);
+	for (size_t i = 0; i < materials.size(); i++) {
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		materials[i].density = value;
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		materials[i].youngModulus = value;
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		materials[i].poissonRatio = value;
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		materials[i].termalExpansion = value;
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		materials[i].termalCapacity = value;
+		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+		materials[i].termalConduction = value;
+	}
+	is.close();
 }
 
 void Esdata::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
@@ -105,6 +126,8 @@ void Esdata::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCo
 			conditions.back()->DOFs().push_back(cIndex);
 		}
 	}
+
+	is.close();
 }
 
 

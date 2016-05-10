@@ -234,7 +234,7 @@ void Options::configure()
 
 }
 
-std::ostream& operator<<(std::ostream& os, const Options &options)
+std::ostream& espreso::operator<<(std::ostream& os, const Options &options)
 {
 	os << "input: '" << options.input << "'\n";
 	os << "path: '" << options.path << "'\n";

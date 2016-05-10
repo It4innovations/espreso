@@ -18,7 +18,8 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
-	boundaryConditions(_mesh.coordinates(), _mesh.boundaryConditions());
+	materials(_mesh, _mesh.materials());
+	boundaryConditions(_mesh.coordinates(), _mesh.boundaryConditions(), _mesh.DOFs());
 	boundaries(_mesh);
 }
 
@@ -47,7 +48,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 }
 
 
-void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions)
+void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions, size_t DOFs)
 {
 	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
@@ -77,14 +78,26 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 
 		size_t counter = conditions.size();
 		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));
+		auto &l2c = coordinates.localToCluster(p);
 		for (size_t i = 0; i < conditions.size(); i++) {
 			if (conditions[i]->type() == ConditionType::DIRICHLET) {
-				size_t size = conditions[i]->DOFs().size();
-				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-				double value = conditions[i]->value();
-				os.write(reinterpret_cast<const char*>(&value), sizeof(double));
+				size_t size = 0;
 				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
-					os.write(reinterpret_cast<const char*>(&(conditions[i]->DOFs()[j])), sizeof(eslocal));
+					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
+						size++;
+					}
+				}
+
+				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
+				double dirichletValue = conditions[i]->value();
+				os.write(reinterpret_cast<const char*>(&dirichletValue), sizeof(double));
+
+				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
+					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
+						value = std::lower_bound(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs) - l2c.begin();
+						value = DOFs * value + conditions[i]->DOFs()[j] % DOFs;
+						os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+					}
 				}
 			}
 		}
@@ -110,6 +123,28 @@ void Esdata::elements(const Mesh &mesh)
 		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
 		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
 			os << *(elements[e]);
+		}
+		os.close();
+	}
+}
+
+void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
+{
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		std::stringstream ss;
+		ss << _path << "/" << p << "/materials.dat";
+		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+
+		int size = materials.size();
+		os.write(reinterpret_cast<const char*>(&size), sizeof(int));
+		for (size_t i = 0; i < materials.size(); i++) {
+			os.write(reinterpret_cast<const char*>(&materials[i].density), sizeof(double));
+			os.write(reinterpret_cast<const char*>(&materials[i].youngModulus), sizeof(double));
+			os.write(reinterpret_cast<const char*>(&materials[i].poissonRatio), sizeof(double));
+			os.write(reinterpret_cast<const char*>(&materials[i].termalExpansion), sizeof(double));
+			os.write(reinterpret_cast<const char*>(&materials[i].termalCapacity), sizeof(double));
+			os.write(reinterpret_cast<const char*>(&materials[i].termalConduction), sizeof(double));
 		}
 		os.close();
 	}
