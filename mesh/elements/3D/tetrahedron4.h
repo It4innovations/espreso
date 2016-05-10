@@ -14,6 +14,7 @@ namespace espreso {
 
 class Tetrahedron4: public Element
 {
+	friend class Tetrahedron10;
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
@@ -76,12 +77,21 @@ public:
 		return 3;
 	}
 
+	Element* getFullFace(size_t face) const
+	{
+		return getF(_indices, _params, face);
+	}
+
+	Element* getCoarseFace(size_t face) const
+	{
+		return getFullFace(face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
+	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{

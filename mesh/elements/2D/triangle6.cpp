@@ -7,7 +7,7 @@ std::vector<DenseMatrix> Triangle6::_dN;
 std::vector<DenseMatrix> Triangle6::_N;
 std::vector<double> Triangle6::_weighFactor;
 
-bool Triangle6::match(eslocal *indices, eslocal n)
+bool Triangle6::match(const eslocal *indices, const eslocal n)
 {
 	if (n != 6) {
 		return false;
@@ -60,7 +60,7 @@ Element* Triangle6::getCoarseFace(size_t face) const
 	return NULL;
 }
 
-Triangle6::Triangle6(eslocal *indices, eslocal *params): Element(params)
+Triangle6::Triangle6(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));
 }

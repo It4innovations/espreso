@@ -234,17 +234,35 @@ std::vector<eslocal> Tetrahedron4::getFace(size_t face) const
 	return result;
 }
 
-Element* Tetrahedron4::getFullFace(size_t face) const
+Element* Tetrahedron4::getF(const eslocal *indices, const eslocal *params, size_t face)
 {
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
+	std::vector<eslocal> result(3);
+	switch (face){
+	case 0:
+		result[0] = indices[1];
+		result[1] = indices[0];
+		result[2] = indices[2];
+		break;
+	case 1:
+		result[0] = indices[0];
+		result[1] = indices[1];
+		result[2] = indices[3];
+		break;
+	case 2:
+		result[0] = indices[1];
+		result[1] = indices[2];
+		result[2] = indices[3];
+		break;
+	case 3:
+		result[0] = indices[2];
+		result[1] = indices[0];
+		result[2] = indices[3];
+		break;
+	}
+
+	return new Triangle3(result.data(), params);
 }
 
-Element* Tetrahedron4::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
 
 Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
 {

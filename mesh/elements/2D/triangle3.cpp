@@ -59,7 +59,7 @@ Element* Triangle3::getCoarseFace(size_t face) const
 	return NULL;
 }
 
-Triangle3::Triangle3(eslocal *indices, eslocal *params): Element(params)
+Triangle3::Triangle3(const eslocal *indices, const eslocal *params): Element(params)
 {
 	memcpy(_indices, indices, Triangle3NodesCount * sizeof(eslocal));
 }

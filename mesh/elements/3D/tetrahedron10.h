@@ -3,6 +3,7 @@
 
 #include "../element.h"
 #include "../2D/triangle3.h"
+#include "../2D/triangle6.h"
 #include "tetrahedron4.h"
 
 #define Tetrahedron10NodesCount 10
@@ -76,10 +77,14 @@ public:
 		return 3;
 	}
 
+	Element* getCoarseFace(size_t face) const
+	{
+		return Tetrahedron4::getF(_indices, _params, face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
 
