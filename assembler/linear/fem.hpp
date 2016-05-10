@@ -68,6 +68,7 @@ void Linear<FEM>::KeMefe(
 		DenseMatrix &Ke, DenseMatrix &Me, std::vector<double> &fe,
 		DenseMatrix &Ce, const Element *e, size_t part, bool dynamics)
 {
+	// TODO: set the omega from example
 	Point omega(50, 50, 0);
 
 	const std::vector<DenseMatrix> &dN = e->dN();
@@ -117,6 +118,7 @@ void Linear<FEM>::KeMefe(
 		}
 
 		for (eslocal i = 0; i < Ksize; i++) {
+			// TODO: set rotation from example
 			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * inertia[i / e->size()];
 			//fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * 7850 * rotation[i / e->size()];
 		}
