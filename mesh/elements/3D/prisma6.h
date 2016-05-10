@@ -3,6 +3,8 @@
 #define PRISMA6_H_
 
 #include "../element.h"
+#include "../2D/triangle3.h"
+#include "../2D/square4.h"
 
 #define Prisma6NodesCount 6
 #define Prisma6FacesCount 5
@@ -13,6 +15,7 @@ namespace espreso {
 
 class Prisma6: public Element
 {
+	friend class Prisma15;
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
@@ -75,12 +78,21 @@ public:
 		return 3;
 	}
 
+	Element* getFullFace(size_t face) const
+	{
+		return getF(_indices, _params, face);
+	}
+
+	Element* getCoarseFace(size_t face) const
+	{
+		return getFullFace(face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
+	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{

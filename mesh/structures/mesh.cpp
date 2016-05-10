@@ -993,7 +993,6 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 		output::VTK_Full::mesh(commonLines, "meshLines", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
 
-
 	auto faceToCluster = [&] (eslocal index, eslocal part) {
 		return commonFaces.coordinates().globalIndex(index, part);
 	};

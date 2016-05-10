@@ -4,6 +4,8 @@
 
 #include "../element.h"
 #include "prisma6.h"
+#include "../2D/triangle6.h"
+#include "../2D/square8.h"
 
 #define Prisma15NodesCount 15
 #define Prisma15FacesCount 5
@@ -76,10 +78,14 @@ public:
 		return 3;
 	}
 
+	Element* getCoarseFace(size_t face) const
+	{
+		return Prisma6::getF(_indices, _params, face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
 

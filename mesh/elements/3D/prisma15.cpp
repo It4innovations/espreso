@@ -297,45 +297,88 @@ std::vector<eslocal> Prisma15::getNeighbours(size_t nodeIndex) const
 
 std::vector<eslocal> Prisma15::getFace(size_t face) const
 {
-	ESINFO(ERROR) << "Prisma15 getFace is not implemented";
-	// TODO:
+	std::vector<eslocal> result;
 	// bottom
 	if (face == 3) {
-		std::vector<eslocal> result(3);
-		result[0] = _indices[0];
-		result[1] = _indices[1];
+		result.resize(6);
+		result[0] = _indices[1];
+		result[1] = _indices[0];
 		result[2] = _indices[2];
+
+		result[3] = _indices[6];
+		result[4] = _indices[8];
+		result[5] = _indices[7];
 		return result;
 	}
 
 	// top
 	if (face == 4) {
-		std::vector<eslocal> result(3);
+		result.resize(6);
 		result[0] = _indices[3];
 		result[1] = _indices[4];
 		result[2] = _indices[5];
+
+		result[3] = _indices[12];
+		result[4] = _indices[13];
+		result[5] = _indices[14];
 		return result;
 	}
 
 	//sides
-	std::vector<eslocal> result(4);
+	result.resize(8);
 	result[0] = _indices[ face              ];
 	result[1] = _indices[(face + 1) % 3     ];
 	result[2] = _indices[(face + 1) % 3 + 3 ];
-	result[3] = _indices[ face + 3          ];
+	result[3] = _indices[ face          + 3 ];
+
+	result[4] = _indices[ face          + 6 ];
+	result[5] = _indices[(face + 1) % 3 + 12];
+	result[6] = _indices[ face          + 9 ];
+	result[7] = _indices[ face          + 12];
 	return result;
 }
 
 Element* Prisma15::getFullFace(size_t face) const
 {
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
+	std::vector<eslocal> result;
+	// bottom
+	if (face == 3) {
+		result.resize(6);
+		result[0] = _indices[1];
+		result[1] = _indices[0];
+		result[2] = _indices[2];
 
-Element* Prisma15::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
+		result[3] = _indices[6];
+		result[4] = _indices[8];
+		result[5] = _indices[7];
+		return new Triangle6(result.data(), _params);
+	}
+
+	// top
+	if (face == 4) {
+		result.resize(6);
+		result[0] = _indices[3];
+		result[1] = _indices[4];
+		result[2] = _indices[5];
+
+		result[3] = _indices[12];
+		result[4] = _indices[13];
+		result[5] = _indices[14];
+		return new Triangle6(result.data(), _params);
+	}
+
+	//sides
+	result.resize(8);
+	result[0] = _indices[ face              ];
+	result[1] = _indices[(face + 1) % 3     ];
+	result[2] = _indices[(face + 1) % 3 + 3 ];
+	result[3] = _indices[ face          + 3 ];
+
+	result[4] = _indices[ face          + 6 ];
+	result[5] = _indices[(face + 1) % 3 + 12];
+	result[6] = _indices[ face          + 9 ];
+	result[7] = _indices[ face          + 12];
+	return new Square8(result.data(), _params);
 }
 
 Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
@@ -356,7 +399,7 @@ Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): El
 		_indices[11] = indices[15];
 		_indices[12] = indices[16];
 		_indices[13] = indices[17];
-		_indices[14] = indices[18];
+		_indices[14] = indices[19];
 		break;
 	case 15:
 		memcpy(_indices, indices, 15 * sizeof(eslocal));
