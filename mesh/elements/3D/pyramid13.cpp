@@ -265,45 +265,62 @@ std::vector<eslocal> Pyramid13::getNeighbours(size_t nodeIndex) const
 
 std::vector<eslocal> Pyramid13::getFace(size_t face) const
 {
-	ESINFO(ERROR) << "Pyramid13 getFace is not implemented";
-  //TODO
 	// bottom
-	//if (face == 3) {
-	//	std::vector<eslocal> result(3);
-	//	result[0] = _indices[0];
-	//	result[1] = _indices[1];
-	//	result[2] = _indices[2];
-	//	return result;
-	//}
+	if (face == 0) {
+		std::vector<eslocal> result(8);
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		result[2] = _indices[2];
+		result[3] = _indices[1];
 
-	//// top
-	//if (face == 4) {
-	//	std::vector<eslocal> result(3);
-	//	result[0] = _indices[3];
-	//	result[1] = _indices[4];
-	//	result[2] = _indices[5];
-	//	return result;
-	//}
+		result[4] = _indices[8];
+		result[5] = _indices[7];
+		result[6] = _indices[6];
+		result[7] = _indices[5];
 
-	////sides
-	std::vector<eslocal> result(4);
-	//result[0] = _indices[ face              ];
-	//result[1] = _indices[(face + 1) % 3     ];
-	//result[2] = _indices[(face + 1) % 3 + 3 ];
-	//result[3] = _indices[ face + 3          ];
+		return result;
+	}
+
+	////sides => faces 1, 2, 3, 4
+	std::vector<eslocal> result(6);
+	result[0] = _indices[face - 1];
+	result[1] = _indices[face % 4];
+	result[2] = _indices[4];
+
+	result[3] = _indices[face - 1 + 5];
+	result[4] = _indices[face % 4 + 9];
+	result[5] = _indices[face - 1 + 9];
 	return result;
 }
 
 Element* Pyramid13::getFullFace(size_t face) const
 {
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
+	// bottom
+	if (face == 0) {
+		std::vector<eslocal> result(8);
+		result[0] = _indices[0];
+		result[1] = _indices[3];
+		result[2] = _indices[2];
+		result[3] = _indices[1];
 
-Element* Pyramid13::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
+		result[4] = _indices[8];
+		result[5] = _indices[7];
+		result[6] = _indices[6];
+		result[7] = _indices[5];
+
+		return new Square8(result.data(), _params);
+	}
+
+	////sides => faces 1, 2, 3, 4
+	std::vector<eslocal> result(6);
+	result[0] = _indices[face - 1];
+	result[1] = _indices[face % 4];
+	result[2] = _indices[4];
+
+	result[3] = _indices[face - 1 + 5];
+	result[4] = _indices[face % 4 + 9];
+	result[5] = _indices[face - 1 + 9];
+	return new Triangle6(result.data(), _params);
 }
 
 Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): Element(params)

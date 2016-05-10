@@ -4,6 +4,8 @@
 
 #include "../element.h"
 #include "pyramid5.h"
+#include "../2D/triangle6.h"
+#include "../2D/square8.h"
 
 #define Pyramid13NodesCount 13
 #define Pyramid13FacesCount 5
@@ -76,10 +78,14 @@ public:
 		return 3;
 	}
 
+	Element* getCoarseFace(size_t face) const
+	{
+		return Pyramid5::getF(_indices, _params, face);
+	}
+
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
 

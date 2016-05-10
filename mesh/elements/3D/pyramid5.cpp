@@ -177,16 +177,24 @@ std::vector<eslocal> Pyramid5::getFace(size_t face) const
 	return result;
 }
 
-Element* Pyramid5::getFullFace(size_t face) const
+Element* Pyramid5::getF(const eslocal *indices, const eslocal *params, size_t face)
 {
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
+	// bottom
+	if (face == 0) {
+		std::vector<eslocal> result(4);
+		result[0] = indices[0];
+		result[1] = indices[3];
+		result[2] = indices[2];
+		result[3] = indices[1];
+		return new Square4(result.data(), params);
+	}
 
-Element* Pyramid5::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
+	////sides
+	std::vector<eslocal> result(3);
+	result[0] = indices[face - 1];
+	result[1] = indices[face % 4];
+	result[2] = indices[4];
+	return new Triangle3(result.data(), params);
 }
 
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
