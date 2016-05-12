@@ -79,7 +79,7 @@ public:
 
 	void getSurface(Mesh &surface) const;
 
-	std::vector<std::pair<eslocal, eslocal> > getCommonFaces(Mesh &faces) const;
+	std::vector<std::vector<eslocal> > subdomainsInterfaces(Mesh &interface) const;
 
 	virtual ~Mesh();
 

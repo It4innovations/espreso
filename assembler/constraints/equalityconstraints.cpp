@@ -264,7 +264,11 @@ size_t Gluing::assembleB0(std::vector<SparseMatrix> &B0)
 size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 {
 	Mesh faces;
-	std::vector<std::pair<eslocal, eslocal> > sMap = _mesh.getCommonFaces(faces);
+	std::vector<std::vector<eslocal> > sMap = _mesh.subdomainsInterfaces(faces);
+
+	if (config::output::saveFaces) {
+		output::VTK_Full::mesh(faces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
 
 	size_t rowsPerCorner = _mesh.DOFs() == 1 ? 1 : 6;
 	cilk_for (size_t s = 0; s < _subdomains; s++) {
@@ -272,7 +276,7 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 		B0[s].nnz = 0;
 
 		for (size_t i = 0; i < sMap.size(); i++) {
-			if (sMap[i].first == s || sMap[i].second == s) {
+			if (sMap[i][0] == s || sMap[i][1] == s) {
 				B0[s].nnz += faces.coordinates().localSize(i) * _mesh.DOFs() * _mesh.DOFs();
 			}
 		}
@@ -281,11 +285,11 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 		B0[s].V_values.reserve(B0[s].nnz);
 
 		for (size_t i = 0; i < sMap.size(); i++) {
-			if (sMap[i].first != s && sMap[i].second != s) {
+			if (sMap[i][0] != s && sMap[i][1] != s) {
 				continue;
 			}
 			eslocal sign = 1;
-			if (sMap[i].second == s) {
+			if (sMap[i][1] == s) {
 				sign = -1;
 			}
 			for (eslocal r = 0; r < rowsPerCorner; r++) {

@@ -67,7 +67,7 @@ public:
 		return _averaging[corner];
 	}
 
-	const std::vector<std::vector<eslocal> > boundary() const
+	const std::vector<std::vector<eslocal> >& boundary() const
 	{
 		return _boundaries;
 	}
