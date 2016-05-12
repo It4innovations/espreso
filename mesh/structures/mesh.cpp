@@ -361,40 +361,6 @@ static bool isOuterFace(
 	return false;
 }
 
-static eslocal findSubdomains(
-		std::vector<std::vector<eslocal> > &nodesElements,
-		Element *face,
-		const std::vector<eslocal> &partPtrs,
-		eslocal differentParts,
-		std::vector<eslocal> &subdomains)
-{
-	subdomains.clear();
-	eslocal NOT_ON_BOUNDARY = -1;
-	std::vector<eslocal> result(nodesElements[face->node(0)]);
-	std::vector<eslocal>::iterator it = result.end();
-
-	for (size_t i = 1; i < face->size(); i++) {
-		std::vector<eslocal> tmp(result.begin(), it);
-		it = std::set_intersection(tmp.begin(), tmp.end(),
-				nodesElements[face->node(i)].begin(), nodesElements[face->node(i)].end(),
-				result.begin());
-		if (it - result.begin() == 1) {
-			return NOT_ON_BOUNDARY;
-		}
-	}
-
-	size_t r = 0;
-	for (size_t p = 1; p < partPtrs.size(); p++) {
-		for ( ; r < it - result.begin() && result[r] < partPtrs[p]; r++) {
-			if (!subdomains.size() || subdomains.back() != p - 1) {
-				subdomains.push_back(p - 1);
-			}
-		}
-	}
-
-	return (subdomains.size() > differentParts) ? result[0] : NOT_ON_BOUNDARY;
-}
-
 void Mesh::getSurface(Mesh &surface) const
 {
 	// vector of faces in all parts
