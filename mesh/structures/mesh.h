@@ -132,8 +132,8 @@ protected:
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
 
 	void computeBoundaries();
-	void remapElementsToSubdomain();
-	void remapElementsToCluster();
+	void remapElementsToSubdomain() const;
+	void remapElementsToCluster() const;
 
 	void makePartContinuous(size_t part);
 	void computeCommonFaces(Mesh &faces);
@@ -143,13 +143,13 @@ protected:
 	void correctCycle(Mesh &faces, Mesh &lines, bool average);
 
 	/** @brief Reference to coordinates. */
-	Coordinates _coordinates;
+	mutable Coordinates _coordinates;
 
 	/** @brief Indexes of all faces, it's element contains an element reference.*/
 	Faces _faces;
 
 	/** @brief Array that stores all elements of the mesh. */
-	std::vector<Element*> _elements;
+	mutable std::vector<Element*> _elements;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;

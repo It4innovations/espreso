@@ -52,6 +52,7 @@ void Mesh::partitiate(size_t parts)
 			}
 		}
 		_partPtrs[part + 1] = index;
+		ESTEST(MANDATORY) << "subdomain without element" << (_partPtrs[part] == _partPtrs[part + 1] ? TEST_FAILED : TEST_PASSED);
 	}
 	delete[] ePartition;
 
@@ -555,94 +556,173 @@ void Mesh::makePartContinuous(size_t part)
 	}
 }
 
-static std::vector<std::vector<eslocal> > getNodeToElementsMap(const Mesh &mesh)
+
+static std::vector<eslocal> getSubdomains(
+		const Element *face,
+		const Boundaries &sBoundaries)
 {
-	auto &partPtrs = mesh.getPartition();
-	auto &elements = mesh.getElements();
+	std::vector<eslocal> intersection(sBoundaries[face->node(0)]);
+	std::vector<eslocal>::iterator it = intersection.end();
 
-	std::vector<std::vector<eslocal> > map(mesh.coordinates().clusterSize());
-
-	for (size_t i = 0; i < mesh.parts(); i++) {
-		for (eslocal j = partPtrs[i]; j < partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < elements[j]->size(); k++) {
-				// add node's adjacent element
-				map[mesh.coordinates().clusterIndex(elements[j]->node(k), i)].push_back(j);
-			}
-		}
+	// compute intersection of all nodes
+	for (size_t n = 1; it - intersection.begin() > 1 &&  n < face->size(); n++) {
+		std::vector<eslocal> tmp(intersection.begin(), it);
+		it = std::set_intersection(tmp.begin(), tmp.end(),
+				sBoundaries[face->node(n)].begin(), sBoundaries[face->node(n)].end(),
+				intersection.begin());
 	}
 
-	return map;
+	intersection.resize(it - intersection.begin());
+	return intersection;
 }
 
 std::vector<std::pair<eslocal, eslocal> > Mesh::getCommonFaces(Mesh &faces) const
 {
-	faces._coordinates.clear();
-	faces._elements.clear();
-	faces._partPtrs.clear();
 	std::vector<std::pair<eslocal, eslocal> > sMap;
 
-	std::vector<std::vector<eslocal> > nodeToElements = getNodeToElementsMap(*this);
-	std::vector<Element*> commonFaces;
-	std::vector<eslocal> eSub;
-	std::vector<bool> subdomains;
-	std::vector<eslocal> projection(_coordinates.clusterSize(), 0);
+	// 1st step -> create list of faces for each sub-domain
 
-	std::vector<std::vector<Element*> > hack(parts() * parts());
+	remapElementsToCluster();
 
-	for (eslocal i = 0; i < parts(); i++) {
-		// compute number of elements and fill used nodes
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->faces(); k++) {
-				Element* face = _elements[j]->getFullFace(k);
-				for (size_t f = 0; f < face->size(); f++) {
-					face->node(f) = _coordinates.clusterIndex(face->node(f), i);
-				}
-				if (findSubdomains(nodeToElements, face, _partPtrs, 1, eSub) == j) {
-					commonFaces.push_back(face);
-					for (size_t f = 0; f < face->size(); f++) {
-						projection[face->node(f)] = 1;
-					}
-					hack[eSub[0] * parts() + eSub[1]].push_back(face);
-				} else {
+	// 0 -> it is sure the face, 1 - the face needs to be checked
+	std::vector<std::vector<Element*> > partFaces(2 * parts());
+	std::vector<std::vector<std::vector<eslocal> > > subdomains(2 * parts());
+
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (size_t f = 0; f < _elements[e]->faces(); f++) {
+				Element* face = _elements[e]->getFullFace(f);
+				std::vector<eslocal> intersection = getSubdomains(face, _subdomainBoundaries);
+				switch (intersection.size()) {
+				case 1: // inner face
 					delete face;
+					break;
+				case 2: // sure on the border face
+					if (intersection[0] == p) {
+						partFaces[2 * p].push_back(face);
+						subdomains[2 * p].push_back(intersection);
+					} else { // only the face on the lower sub-domain is kept
+						delete face;
+					}
+					break;
+				default: // the face, but we need to check sub-domains
+					partFaces[2 * p + 1].push_back(face);
+					subdomains[2 * p + 1].push_back(intersection);
 				}
 			}
 		}
 	}
 
-	// create mesh from common faces
-	Element *el;
-	eslocal index = 0;
-	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
-		if (projection[i] == 1) {
-			faces.coordinates().add(_coordinates[i], index, i);
-			projection[i] = index++;
-		}
-	}
-	for (size_t i = 0; i < commonFaces.size(); i++) {
-		for (size_t j = 0; j < commonFaces[i]->size(); j++) {
-			commonFaces[i]->node(j) = projection[commonFaces[i]->node(j)];
+	// 2nd step -> check the correctness of each face
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		for (size_t f = 0; f < subdomains[2 * p + 1].size(); f++) {
+			if (subdomains[2 * p + 1][f][0] == p) { // only the lower sub-domain performs the check
+				for (size_t pp = 1; pp < subdomains[2 * p + 1][f].size(); pp++) {
+					for (size_t ff = 0; ff < subdomains[2 * subdomains[2 * p + 1][f][pp] + 1].size(); ff++) {
+						if (subdomains[2 * p + 1][f] == subdomains[2 * subdomains[2 * p + 1][f][pp] + 1][ff]) {
+							// sub-domains matched
+							if (*partFaces[2 * p + 1][f] == *partFaces[2 * subdomains[2 * p + 1][f][pp] + 1][ff]) {
+								partFaces[2 * p].push_back(partFaces[2 * p + 1][f]);
+								partFaces[2 * p + 1][f] = NULL;
+								subdomains[2 * p].push_back({(eslocal)p, subdomains[2 * p + 1][f][pp]});
+
+								pp = subdomains[2 * p + 1][f].size(); // it stops the correct cycle
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
-	faces._elements.reserve(commonFaces.size());
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		for (size_t f = 0; f < partFaces[2 * p + 1].size(); f++) {
+			if (partFaces[2 * p + 1][f] != NULL) {
+				delete partFaces[2 * p + 1][f];
+			}
+		}
+	}
 
-	// create mesh
+	// 3rd step -> make the final mesh
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _coordinates.clusterSize());
+	std::vector<size_t> offsets(threads);
+	std::vector<std::vector<eslocal> > indices(threads);
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		size_t offset = 0;
+		indices[t].reserve(distribution[t + 1] - distribution[t]);
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			indices[t].push_back(_subdomainBoundaries[i].size() > 1 ? offset++ : -1);
+		}
+		offsets[t] = offset;
+	}
+
+	size_t sum = 0, prev;
+	for (size_t t = 0; t < threads; t++) {
+		prev = offsets[t];
+		offsets[t] = sum;
+		sum += prev;
+	}
+
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		for (size_t i = 0; i < partFaces[2 * p].size(); i++) {
+			for (size_t n = 0; n < partFaces[2 * p][i]->size(); n++) {
+				eslocal offset = partFaces[2 * p][i]->node(n) / distribution[1];
+				partFaces[2 * p][i]->node(n) = indices[offset][partFaces[2 * p][i]->node(n) % distribution[1]] + offsets[offset];
+			}
+		}
+	}
+
+	faces._coordinates.reserve(sum);
+	size_t index = 0;
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = 0; i < indices[t].size(); i++) {
+			if (indices[t][i] >= 0) {
+				faces._coordinates.add(_coordinates[distribution[t] + i], index++, distribution[t] + i);
+			}
+		}
+	}
+
+	size_t fSize = 0;
+	for (size_t p = 0; p < parts(); p++) {
+		fSize += partFaces[2 * p].size();
+	}
+	faces._elements.reserve(fSize);
+
+	std::vector<std::vector<eslocal> > permutation(parts());
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		permutation[p].reserve(partFaces[2 * p].size());
+		for (size_t i = 0; i < partFaces[2 * p].size(); i++) {
+			permutation[p].push_back(i);
+		}
+		std::sort(permutation[p].begin(), permutation[p].end(), [&] (const eslocal &p1, const eslocal &p2) {
+			return subdomains[2 * p][p1] < subdomains[2 * p][p2];
+		});
+	}
+
 	faces._partPtrs.clear();
 	faces._partPtrs.push_back(0);
-	for (size_t i = 0; i < parts(); i++) {
-		for (size_t j = 0; j < parts(); j++) {
-			if (hack[i * parts() + j].size()) {
-				faces._elements.insert(faces._elements.end(), hack[i * parts() + j].begin(), hack[i * parts() + j].end());
+	for (size_t p = 0; p < parts(); p++) {
+		for (size_t i = 0; i < permutation[p].size(); i++) {
+			faces._elements.push_back(partFaces[2 * p][permutation[p][i]]);
+			if (i + 1 == permutation[p].size() || subdomains[2 * p][permutation[p][i]][1] != subdomains[2 * p][permutation[p][i + 1]][1]) {
 				faces._partPtrs.push_back(faces._elements.size());
 				faces.makePartContinuous(faces.parts() - 1);
-				sMap.insert(sMap.end(), faces.parts() - sMap.size(), std::make_pair(i, j));
+				sMap.insert(sMap.end(), faces.parts() - sMap.size(), std::make_pair((eslocal)p, subdomains[2 * p][permutation[p][i]][1]));
 			}
 		}
 	}
 
 	faces.remapElementsToSubdomain();
 	faces.computeFixPoints(0);
+
+	remapElementsToSubdomain();
+
+	if (config::output::saveFaces) {
+		output::VTK_Full::mesh(faces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
 
 	return sMap;
 }
@@ -986,9 +1066,6 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	getCommonFaces(commonFaces);
 	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
 
-	if (config::output::saveFaces) {
-		output::VTK_Full::mesh(commonFaces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
-	}
 	if (config::output::saveLines) {
 		output::VTK_Full::mesh(commonLines, "meshLines", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
@@ -1062,7 +1139,7 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	}
 }
 
-void Mesh::remapElementsToSubdomain()
+void Mesh::remapElementsToSubdomain() const
 {
 	_coordinates._clusterIndex.clear();
 	_coordinates._clusterIndex.resize(parts());
@@ -1084,13 +1161,13 @@ void Mesh::remapElementsToSubdomain()
 			}
 		}
 
-		_coordinates._clusterIndex[p].swap(l2g);
+		_coordinates._clusterIndex[p] = l2g;
 	}
 }
 
-void Mesh::remapElementsToCluster()
+void Mesh::remapElementsToCluster() const
 {
-	for (eslocal p = 0; p < this->parts(); p++) {
+	cilk_for (eslocal p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (eslocal n = 0; n < _elements[e]->size(); n++) {
 				_elements[e]->node(n) = _coordinates.clusterIndex(_elements[e]->node(n), p);

@@ -52,6 +52,14 @@ public:
 		}
 	}
 
+	inline bool operator==(const Element& other)
+	{
+		if (size() != other.size()) {
+			return false;
+		}
+		return std::is_permutation(indices(), indices() + size(), other.indices());
+	}
+
 	virtual ~Element() {};
 
 	const eslocal& node(size_t index) const
