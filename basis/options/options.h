@@ -20,7 +20,7 @@ struct Options {
 
 	friend std::ostream& operator<<(std::ostream& os, const Options &options);
 
-	Options(): verbose(0), measure(0), testing(0) { };
+	Options(): verbose(0), measure(0), testing(0), help(0) { };
 	Options(int *argc, char*** argv);
 
 	void configure();
@@ -34,6 +34,7 @@ private:
 	size_t verbose;
 	size_t measure;
 	size_t testing;
+	size_t help;
 };
 
 }

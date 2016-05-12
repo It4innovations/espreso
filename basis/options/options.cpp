@@ -64,19 +64,8 @@ static void printConfigOption(const Description &option)
 	}
 }
 
-static void printFileOptions()
+static void printFileOptions(size_t level)
 {
-	ESINFO(ALWAYS) << "CONFIGURATION FILE:\n";
-
-
-	ESINFO(ALWAYS) << "\tThe computation of the ESPRESO depends on various parameters. ";
-	ESINFO(ALWAYS) << "\tParameters can be set by a configuration file specified by parameter -c. ";
-	ESINFO(ALWAYS) << "\tAll parameters in the file have the following form: ";
-
-	ESINFO(ALWAYS) << "\n\t\tPARAMETER = VALUE\n";
-
-	ESINFO(ALWAYS) << "\tThe ESPRESO accepts the following parameters: [default value]\n";
-
 	std::vector<std::pair<std::string, std::vector<Description> > > description = {
 			{ "mesher"   , config::mesh::description },
 			{ "solver"   , config::solver::description },
@@ -85,19 +74,46 @@ static void printFileOptions()
 			{ "debug"    , config::info::description }
 	};
 
-	for (size_t i = 0; i < description.size(); i++) {
-		ESINFO(ALWAYS) << "\tThe " << description[i].first << " parameters:";
-		for (size_t j = 0; j < description[i].second.size(); j++) {
-			if (description[i].second[j].writeToHelp == WRITE_TO_HELP) {
-				printConfigOption(description[i].second[j]);
+	switch (level) {
+	case 0:
+		ESINFO(ALWAYS) << "CONFIGURATION FILE:\n";
+
+		ESINFO(ALWAYS) << "\tThe computation of the ESPRESO depends on various parameters. ";
+		ESINFO(ALWAYS) << "\tParameters can be set by a configuration file specified by parameter -c. ";
+		ESINFO(ALWAYS) << "\tAll parameters in the file have the following form: ";
+
+		ESINFO(ALWAYS) << "\n\t\tPARAMETER = VALUE\n";
+
+		ESINFO(ALWAYS) << "\tThe ESPRESO accepts the following parameters: [default value]\n";
+
+		for (size_t i = 0; i < description.size(); i++) {
+			ESINFO(ALWAYS) << "\tThe " << description[i].first << " parameters:";
+			for (size_t j = 0; j < description[i].second.size(); j++) {
+				if (description[i].second[j].writeToHelp == WRITE_TO_HELP) {
+					printConfigOption(description[i].second[j]);
+				}
 			}
+			ESINFO(ALWAYS) << "\n";
 		}
-		ESINFO(ALWAYS) << "\n";
+		break;
+	case 1:
+		ESINFO(ALWAYS) << "\t--- Internal parameters ---\n";
+
+		for (size_t i = 0; i < description.size(); i++) {
+			ESINFO(ALWAYS) << "\tThe " << description[i].first << " parameters:";
+			for (size_t j = 0; j < description[i].second.size(); j++) {
+				if (description[i].second[j].writeToHelp == INGNORE_IN_HELP) {
+					printConfigOption(description[i].second[j]);
+				}
+			}
+			ESINFO(ALWAYS) << "\n";
+		}
+		break;
 	}
 }
 
 Options::Options(int* argc, char*** argv)
-: executable((*argv)[0]), verbose(0), measure(0), testing(0)
+: executable((*argv)[0]), verbose(0), measure(0), testing(0), help(0)
 {
 	int option_index, option;
 	while (true) {
@@ -134,26 +150,31 @@ Options::Options(int* argc, char*** argv)
 			break;
 		}
 		case 'h':
-			ESINFO(ALWAYS) << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
+			if (!help) {
+				ESINFO(ALWAYS) << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
 
-			ESINFO(ALWAYS) << "OPTIONS:\n";
-			printOption("-h, --help", "show this message");
-			printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
-			printOption("-p, --path=PATH", "path to an example");
-			printOption("-c, --config=FILE", "file with ESPRESO configuration");
-			printOption("-v,vv,vvv", "verbose level");
-			printOption("-t,tt,ttt", "testing level");
-			printOption("-m,mm,mmm", "time measuring level");
+				ESINFO(ALWAYS) << "OPTIONS:\n";
+				printOption("-h, --help", "show this message");
+				printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
+				printOption("-p, --path=PATH", "path to an example");
+				printOption("-c, --config=FILE", "file with ESPRESO configuration");
+				printOption("-v,vv,vvv", "verbose level");
+				printOption("-t,tt,ttt", "testing level");
+				printOption("-m,mm,mmm", "time measuring level");
 
-			ESINFO(ALWAYS) << "\nPARAMETERS:\n";
-			ESINFO(ALWAYS) << "\tlist of nameless parameters for a particular example\n";
+				ESINFO(ALWAYS) << "\nPARAMETERS:\n";
+				ESINFO(ALWAYS) << "\tlist of nameless parameters for a particular example\n";
+			}
 
-			printFileOptions();
-			exit(EXIT_SUCCESS);
+			printFileOptions(help++);
 			break;
 		case '?':
 			break;
 		}
+	}
+
+	if (help) {
+		exit(EXIT_SUCCESS);
 	}
 
 	Configuration::fill(config::env::description, config::env::configurationFile);
