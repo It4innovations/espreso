@@ -527,11 +527,11 @@ static std::vector<eslocal> getSubdomains(
 		const Element *face,
 		const Boundaries &sBoundaries)
 {
-	std::vector<eslocal> intersection(sBoundaries[face->node(0)]);
+	std::vector<eslocal> intersection(sBoundaries[face->node(face->size() - 1)]);
 	std::vector<eslocal>::iterator it = intersection.end();
 
 	// compute intersection of all nodes
-	for (size_t n = 1; it - intersection.begin() > 1 &&  n < face->size(); n++) {
+	for (size_t n = face->size() - 2; it - intersection.begin() > 1 &&  n < face->size(); n--) {
 		std::vector<eslocal> tmp(intersection.begin(), it);
 		it = std::set_intersection(tmp.begin(), tmp.end(),
 				sBoundaries[face->node(n)].begin(), sBoundaries[face->node(n)].end(),
