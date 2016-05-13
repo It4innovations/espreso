@@ -1,3 +1,9 @@
+source /opt/intel/composer_xe_2015.2.164/bin/compilervars.sh intel64
+#source /opt/intel/parallel_studio_xe_2017.0.014/bin/psxevars.sh intel64 
+
+source /opt/intel/impi/5.1.2.150/bin64/mpivars.sh
+
+
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=1
 export SOLVER_NUM_THREADS=1
