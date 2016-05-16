@@ -6,7 +6,6 @@ static struct option long_options[] = {
 		{"input",  required_argument, 0, 'i'},
 		{"path",  required_argument, 0, 'p'},
 		{"config",  required_argument, 0, 'c'},
-		{"testing", no_argument, 0, 't'},
 		{"help",  no_argument, 0, 'h'},
 		{0, 0, 0, 0}
 };
@@ -112,17 +111,98 @@ static void printFileOptions(size_t level)
 	}
 }
 
+static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
+
 Options::Options(int* argc, char*** argv)
 : executable((*argv)[0]), verbose(0), measure(0), testing(0), help(0)
 {
 	int option_index, option;
+	std::vector<std::vector<Description> > description = {
+			config::mesh::description,
+			config::solver::description,
+			config::assembler::description,
+			config::output::description,
+			config::info::description
+	};
+
+	std::vector<struct option> opts;
+	for (size_t i = 0; i < description.size(); i++) {
+		for (size_t j = 0; j < description[i].size(); j++) {
+			opts.push_back({description[i][j].name.c_str(), required_argument, 0, i});
+		}
+	}
+
+	option_index = 0;
+	while (long_options[option_index].name != '\0') {
+		opts.push_back(long_options[option_index++]);
+	}
+
+
+	// load configuration first
 	while (true) {
-		option = getopt_long(*argc, *argv, "i:p:c:vtmh", long_options, &option_index);
+		option = getopt_long(*argc, *argv, "c:", opts.data(), &option_index);
 		if (option == -1) {
 			break;
 		}
 
 		switch (option) {
+		case 'c':
+			std::string config(optarg);
+			config::env::configurationFile = config;
+			std::ifstream file(config);
+			if (!file.is_open()) {
+				ESINFO(ERROR) << "Cannot load configuration file '" << config << "'";
+			}
+			break;
+		}
+	}
+
+	Configuration::fill(config::env::description, config::env::configurationFile);
+	for (size_t i = 0; i < description.size(); i++) {
+		Configuration::fill(description[i], config::env::configurationFile);
+	}
+
+	optind = 0;
+	while (true) {
+		option = getopt_long(*argc, *argv, "i:p:c:vtmh", opts.data(), &option_index);
+		if (option == -1) {
+			break;
+		}
+
+		switch (option) {
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4: {
+			std::string param(opts[option_index].name);
+			for (size_t i = 0; i < description[option].size(); i++) {
+				if (param.size() == description[option][i].name.size() && std::equal(param.begin(), param.end(), description[option][i].name.begin(), caseInsensitiveCmp)) {
+					switch (description[option][i].type) {
+					case INTEGER_PARAMETER:
+						*(static_cast<int*>(description[option][i].value)) = std::stoi(optarg);
+						break;
+					case LONG_PARAMETER:
+						*(static_cast<long*>(description[option][i].value)) = std::stol(optarg);
+						break;
+					case SIZE_PARAMETER:
+						*(static_cast<size_t*>(description[option][i].value)) = std::stoull(optarg);
+						break;
+					case DOUBLE_PARAMETER:
+						*(static_cast<double*>(description[option][i].value)) = std::stod(optarg);
+						break;
+					case STRING_PARAMETER:
+						*(static_cast<std::string*>(description[option][i].value)) = optarg;
+						break;
+					case BOOLEAN_PARAMETER:
+						*(static_cast<bool*>(description[option][i].value)) = std::stoi(optarg);
+						break;
+					}
+					break;
+				}
+			}
+			break;
+		}
 		case 'v':
 			verbose++;
 			break;
@@ -141,12 +221,7 @@ Options::Options(int* argc, char*** argv)
 			path.erase(0, path.find_first_not_of('='));
 			break;
 		case 'c': {
-			std::string config(optarg);
-			config::env::configurationFile = config;
-			std::ifstream file(config);
-			if (!file.is_open()) {
-				ESINFO(ERROR) << "Cannot load configuration file '" << config << "'";
-			}
+			// configuration is already loaded
 			break;
 		}
 		case 'h':
@@ -177,13 +252,6 @@ Options::Options(int* argc, char*** argv)
 		exit(EXIT_SUCCESS);
 	}
 
-	Configuration::fill(config::env::description, config::env::configurationFile);
-	Configuration::fill(config::mesh::description, config::env::configurationFile);
-	Configuration::fill(config::solver::description, config::env::configurationFile);
-	Configuration::fill(config::output::description, config::env::configurationFile);
-	Configuration::fill(config::info::description, config::env::configurationFile);
-	Configuration::fill(config::assembler::description, config::env::configurationFile);
-
 	config::info::verboseLevel += verbose;
 	config::info::measureLevel += measure;
 	config::info::testingLevel += testing;
@@ -211,8 +279,6 @@ Options::Options(int* argc, char*** argv)
 
 	configure();
 }
-
-static bool caseInsensitiveCmp(char c1, char c2) { return std::tolower(c1) == std::tolower(c2); }
 
 static void signalHandler(int signal)
 {
