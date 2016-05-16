@@ -140,13 +140,13 @@ Options::Options(int* argc, char*** argv)
 
 	// load configuration first
 	while (true) {
-		option = getopt_long(*argc, *argv, "c:", opts.data(), &option_index);
+		option = getopt_long(*argc, *argv, "hc:", opts.data(), &option_index);
 		if (option == -1) {
 			break;
 		}
 
 		switch (option) {
-		case 'c':
+		case 'c': {
 			std::string config(optarg);
 			config::env::configurationFile = config;
 			std::ifstream file(config);
@@ -155,7 +155,34 @@ Options::Options(int* argc, char*** argv)
 			}
 			break;
 		}
+		case 'h':
+			if (!help) {
+				ESINFO(ALWAYS) << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
+
+				ESINFO(ALWAYS) << "OPTIONS:\n";
+				printOption("-h, --help", "show this message");
+				printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
+				printOption("-p, --path=PATH", "path to an example");
+				printOption("-c, --config=FILE", "file with ESPRESO configuration");
+				printOption("-v,vv,vvv", "verbose level");
+				printOption("-t,tt,ttt", "testing level");
+				printOption("-m,mm,mmm", "time measuring level");
+
+				ESINFO(ALWAYS) << "\nPARAMETERS:\n";
+				ESINFO(ALWAYS) << "\tlist of nameless parameters for a particular example\n";
+			}
+
+			printFileOptions(help++);
+			break;
+		case '?':
+			break;
+		}
 	}
+
+	if (help) {
+		exit(EXIT_SUCCESS);
+	}
+
 
 	Configuration::fill(config::env::description, config::env::configurationFile);
 	for (size_t i = 0; i < description.size(); i++) {
@@ -220,36 +247,12 @@ Options::Options(int* argc, char*** argv)
 			path = std::string(optarg);
 			path.erase(0, path.find_first_not_of('='));
 			break;
-		case 'c': {
+		case 'c':
 			// configuration is already loaded
-			break;
-		}
-		case 'h':
-			if (!help) {
-				ESINFO(ALWAYS) << "Usage: espreso [OPTIONS] [PARAMETERS]\n";
-
-				ESINFO(ALWAYS) << "OPTIONS:\n";
-				printOption("-h, --help", "show this message");
-				printOption("-i, --input=INPUT", "input format: [generator, matsol, workbench, esdata, openfoam]");
-				printOption("-p, --path=PATH", "path to an example");
-				printOption("-c, --config=FILE", "file with ESPRESO configuration");
-				printOption("-v,vv,vvv", "verbose level");
-				printOption("-t,tt,ttt", "testing level");
-				printOption("-m,mm,mmm", "time measuring level");
-
-				ESINFO(ALWAYS) << "\nPARAMETERS:\n";
-				ESINFO(ALWAYS) << "\tlist of nameless parameters for a particular example\n";
-			}
-
-			printFileOptions(help++);
 			break;
 		case '?':
 			break;
 		}
-	}
-
-	if (help) {
-		exit(EXIT_SUCCESS);
 	}
 
 	config::info::verboseLevel += verbose;
