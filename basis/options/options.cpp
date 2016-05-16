@@ -140,7 +140,7 @@ Options::Options(int* argc, char*** argv)
 
 	// load configuration first
 	while (true) {
-		option = getopt_long(*argc, *argv, "hc:", opts.data(), &option_index);
+		option = getopt_long(*argc, *argv, "i:p:c:vtmh", opts.data(), &option_index);
 		if (option == -1) {
 			break;
 		}
