@@ -13,10 +13,11 @@ namespace espreso {
 
 #elif defined(SOLVER_PARDISO)
 #include "cpu/solverpardiso.h"
+#include "cpu/DenseSolverMKL.h"
 
 namespace espreso {
-	typedef DenseSolverPardiso DenseSolverCPU;
-	typedef DenseSolverPardiso DenseSolverAcc;
+	typedef DenseSolverMKL DenseSolverCPU;
+	typedef DenseSolverMKL DenseSolverAcc;
 }
 
 #elif defined(SOLVER_MUMPS)

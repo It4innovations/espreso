@@ -19,6 +19,40 @@ public:
 	~SparseSolverPardiso();
 
 
+	//Members
+	void ImportMatrix(SparseMatrix & A);
+	void ImportMatrix_fl(SparseMatrix & A);
+
+	void ImportMatrix_wo_Copy(SparseMatrix & A);
+	void ImportMatrix_wo_Copy_fl(SparseMatrix & A);
+
+
+	int  Factorization(const std::string &str);
+	void Clear();
+	void SetThreaded();
+
+
+	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index);
+	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs );
+	void Solve( SEQ_VECTOR <double> & rhs_sol);
+
+	void SolveMat_Dense( SparseMatrix & A_in_out );
+	void SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out );
+
+	void SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded );
+
+	void SolveMat_Sparse( SparseMatrix & A );
+	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out );
+	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed );
+
+	void Create_SC( SparseMatrix & B_out, MKL_INT sc_size, bool isThreaded );
+	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
+	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
+
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess);
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol);
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol);
+
 
 	// Matrix properties
 
@@ -86,36 +120,7 @@ public:
 	SEQ_VECTOR <float> tmp_sol_fl1;
 	SEQ_VECTOR <float> tmp_sol_fl2;
 
-	//Members
-	void ImportMatrix(SparseMatrix & A);
-	void ImportMatrix_fl(SparseMatrix & A);
 
-	void ImportMatrix_wo_Copy(SparseMatrix & A);
-
-	void Factorization(const std::string &str);
-	void Clear();
-	void SetThreaded();
-
-
-	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index);
-	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs );
-	void Solve( SEQ_VECTOR <double> & rhs_sol);
-
-	void SolveMat_Dense( SparseMatrix & A_in_out );
-	void SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out );
-
-	void SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded );
-
-	void SolveMat_Sparse( SparseMatrix & A );
-	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out );
-	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed );
-
-	void Create_SC( SparseMatrix & B_out, MKL_INT sc_size, bool isThreaded );
-	void Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
-	void Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 );
-
-	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol);
-	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol);
 
 
 };

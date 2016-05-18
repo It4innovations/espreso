@@ -140,6 +140,7 @@ void SparseSolverMKL::ImportMatrix(SparseMatrix & A) {
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	   = A.CSR_V_values.size();
+	CSR_V_values_fl_size   = 0;
 
 	CSR_I_row_indices = new MKL_INT[CSR_I_row_indices_size];
 	CSR_J_col_indices = new MKL_INT[CSR_J_col_indices_size];
@@ -944,12 +945,12 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 
 	/* Pardiso control parameters. */
 	MKL_INT 	iparm[64];
-	double  dparm[65];
+	double  	dparm[65];
 	MKL_INT 	maxfct, mnum, phase, error;
 
 	/* Auxiliary variables. */
 	MKL_INT 	i;
-	double 	ddum;			/* Double dummy */
+	double 		ddum;			/* Double dummy */
 	MKL_INT 	idum;			/* Integer dummy. */
 	MKL_INT 	solver;
 
@@ -970,13 +971,13 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 	MKL_INT 	mtype = 2;
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	if (isThreaded) {
-		/* Numbers of processors, value of OMP_NUM_THREADS */
-		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
-	    iparm[2] = num_procs;
-	} else {
-		iparm[2] = 1;
-	}
+//	if (isThreaded) {
+//		/* Numbers of processors, value of OMP_NUM_THREADS */
+//		int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+//	    iparm[2] = num_procs;
+//	} else {
+//		iparm[2] = 1;
+//	}
 
 //	iparm[0] = 1;		/* No solver default */
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */

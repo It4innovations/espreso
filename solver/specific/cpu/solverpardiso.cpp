@@ -1,4 +1,7 @@
+
 #include "solverpardiso.h"
+
+using namespace espreso;
 
 /* PARDISO prototype. */
 extern "C" void pardisoinit (void   *, int    *,   int *, int *, double *, int *);
@@ -11,12 +14,12 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
                            double *, int *);
 extern "C" void pardiso_get_schur  (void*, int*, int*, int*, double*, int*, int*);
 
-using namespace espreso;
-
 SparseSolverPardiso::SparseSolverPardiso() {
 
 	keep_factors=true;
 	initialized = false;
+	USE_FLOAT = false;
+	import_with_copy = false;
 
 	CSR_I_row_indices_size = 0;
 	CSR_J_col_indices_size = 0;
@@ -118,17 +121,126 @@ void SparseSolverPardiso::Clear() {
 
 	}
 
+	if (import_with_copy) {
+
 		if (CSR_I_row_indices_size > 0)     delete [] CSR_I_row_indices;
 		if (CSR_J_col_indices_size > 0)		delete [] CSR_J_col_indices;
 		if (CSR_V_values_size > 0)			delete [] CSR_V_values;
+		//if (CSR_V_values_fl_size > 0)		delete [] CSR_V_values_fl;
+	}
 
-		CSR_I_row_indices_size = 0;
-		CSR_J_col_indices_size = 0;
-		CSR_V_values_size      = 0;
+	if (USE_FLOAT) {
+		if (CSR_V_values_fl_size > 0)		delete [] CSR_V_values_fl;
+	}
+
+	CSR_I_row_indices_size = 0;
+	CSR_J_col_indices_size = 0;
+	CSR_V_values_size      = 0;
+	CSR_V_values_fl_size   = 0;
 
 }
 
 void SparseSolverPardiso::ImportMatrix(SparseMatrix & A) {
+
+	USE_FLOAT = false;
+
+	rows	= A.rows;
+	cols	= A.cols;
+	nnz		= A.nnz;
+	m_Kplus_size = A.rows;
+
+	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
+	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
+	CSR_V_values_size	   = A.CSR_V_values.size();
+	CSR_V_values_fl_size   = 0;
+
+	CSR_I_row_indices = new int[CSR_I_row_indices_size];
+	CSR_J_col_indices = new int[CSR_J_col_indices_size];
+	CSR_V_values	  = new double  [CSR_V_values_size];
+
+
+	// for 64 and 32 bit int - pardiso will work with 32 bit
+	if (sizeof(A.CSR_I_row_indices[0]) == sizeof(int)) {
+		copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
+		copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
+	} else {
+		for (int i = 0; i < A.CSR_I_row_indices.size(); i++)
+			CSR_I_row_indices[i] = A.CSR_I_row_indices[i];
+
+		for (int i = 0; i < A.CSR_J_col_indices.size(); i++)
+			CSR_J_col_indices[i] = A.CSR_J_col_indices[i];
+	}
+
+	copy(A.CSR_V_values     .begin(), A.CSR_V_values     .end(), CSR_V_values);
+
+	import_with_copy = true;
+}
+
+void SparseSolverPardiso::ImportMatrix_fl(SparseMatrix & A) {
+
+	USE_FLOAT = true;
+
+	rows	= A.rows;
+	cols	= A.cols;
+	nnz		= A.nnz;
+	m_Kplus_size = A.rows;
+
+	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
+	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
+
+	CSR_V_values_size	   = 0;
+	CSR_V_values_fl_size   = A.CSR_V_values.size();
+
+	CSR_I_row_indices = new MKL_INT[CSR_I_row_indices_size];
+	CSR_J_col_indices = new MKL_INT[CSR_J_col_indices_size];
+	CSR_V_values_fl	  = new float  [CSR_V_values_fl_size];
+
+	// for 64 and 32 bit int - pardiso will work with 32 bit
+	if (sizeof(A.CSR_I_row_indices[0]) == sizeof(int)) {
+		copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
+		copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
+	} else {
+		for (int i = 0; i < A.CSR_I_row_indices.size(); i++)
+			CSR_I_row_indices[i] = A.CSR_I_row_indices[i];
+
+		for (int i = 0; i < A.CSR_J_col_indices.size(); i++)
+			CSR_J_col_indices[i] = A.CSR_J_col_indices[i];
+	}
+
+	for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+		CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
+
+	import_with_copy = true;
+
+}
+
+void SparseSolverPardiso::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
+
+	USE_FLOAT = true;
+
+	rows	= A.rows;
+	cols	= A.cols;
+	nnz		= A.nnz;
+	m_Kplus_size = A.rows;
+
+	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
+	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
+	CSR_V_values_size	 = 0;
+	CSR_V_values_fl_size = A.CSR_V_values.size();
+
+	CSR_I_row_indices    = &A.CSR_I_row_indices[0];
+	CSR_J_col_indices    = &A.CSR_J_col_indices[0];
+
+	CSR_V_values_fl	  = new float  [CSR_V_values_fl_size];
+	for (eslocal i = 0; i < CSR_V_values_fl_size; i++)
+		CSR_V_values_fl[i] = (float) A.CSR_V_values[i];
+
+	import_with_copy = false;
+}
+
+void SparseSolverPardiso::ImportMatrix_wo_Copy(SparseMatrix & A) {
+
+	USE_FLOAT = false;
 
 	rows	= A.rows;
 	cols	= A.cols;
@@ -139,25 +251,15 @@ void SparseSolverPardiso::ImportMatrix(SparseMatrix & A) {
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	   = A.CSR_V_values.size();
 
-	CSR_I_row_indices = new int[CSR_I_row_indices_size];
-	CSR_J_col_indices = new int[CSR_J_col_indices_size];
-	CSR_V_values	  = new double  [CSR_V_values_size];
+	CSR_I_row_indices = &A.CSR_I_row_indices[0];
+	CSR_J_col_indices = &A.CSR_J_col_indices[0];
+	CSR_V_values	  = &A.CSR_V_values[0];
 
-	if (sizeof(A.CSR_I_row_indices[0]) == sizeof(int)) {
-		copy(A.CSR_I_row_indices.begin(), A.CSR_I_row_indices.end(), CSR_I_row_indices);
-		copy(A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end(), CSR_J_col_indices);
-		copy(A.CSR_V_values     .begin(), A.CSR_V_values     .end(), CSR_V_values);
-	} else {
-		for (int i = 0; i < A.CSR_I_row_indices.size(); i++)
-			CSR_I_row_indices[i] = A.CSR_I_row_indices[i];
+	import_with_copy = false;
 
-		for (int i = 0; i < A.CSR_J_col_indices.size(); i++)
-			CSR_J_col_indices[i] = A.CSR_J_col_indices[i];
-
-		for (int i = 0; i < A.CSR_V_values.size(); i++)
-			CSR_V_values[i] = A.CSR_V_values[i];
-	}
 }
+
+
 
 void SparseSolverPardiso::SetThreaded() {
 
@@ -166,7 +268,7 @@ void SparseSolverPardiso::SetThreaded() {
     iparm[2]  = num_procs;
 }
 
-void SparseSolverPardiso::Factorization(const std::string &str) {
+int SparseSolverPardiso::Factorization(const std::string &str) {
 
 	double ddum;			/* Double dummy */
 	int idum;				/* Integer dummy. */
@@ -176,12 +278,29 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 	/* all memory that is necessary for the factorization. */
 	/* -------------------------------------------------------------------- */
 	phase = 11;
+
+	ESINFO(PROGRESS2) << Info::plain() << "f";
+
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 
 	if (error != 0)
 	{
-		ESINFO(ERROR) << "ERROR during numerical factorization: " << str;
+    return error;
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << error << " during symbolic factorization";
 		exit (EXIT_FAILURE);
 	} else {
 		initialized = true;
@@ -199,17 +318,28 @@ void SparseSolverPardiso::Factorization(const std::string &str) {
 	phase = 22;
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
+
 	if (error != 0)
 	{
-		ESINFO(ERROR) << "ERROR during numerical factorization: " << str;
+		return error;
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
+		ESINFO(ERROR) << error << " during numerical factorization";
 		exit (EXIT_FAILURE);
 	} else {
 		m_factorized = 1;
 	}
-
-#ifdef DEBUG
-	ESINFO(PROGRESS2) << "Factorization completed ...";
-#endif
 
 	//TODO:
 	tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
@@ -243,6 +373,19 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
@@ -284,6 +427,19 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
@@ -321,8 +477,22 @@ void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> 
 
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &rhs[rhs_start_index], &sol[sol_start_index], &error, dparm);
+
 	if (error != 0)
 	{
+		SparseMatrix s;
+		s.rows = rows;
+		s.cols = cols;
+		s.type = 'S';
+		s.nnz = nnz;
+		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
+		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
+		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << s;
+		osK.close();
+
 		ESINFO(ERROR) << "ERROR during solution: " << error;
 		exit (3);
 	}
@@ -1048,11 +1218,11 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
 		SC_tmp.MatTranspose();
 
 		SC_out.MatAddInPlace(SC_tmp,'N',1.0);
-		SC_out.MatScale(-1.0);
+		//SC_out.MatScale(-1.0);
 		SC_out.ConvertCSRToDense(1);
 
     } else {
-		SC_out.MatScale(-1.0);
+		//SC_out.MatScale(-1.0);
 		SC_out.ConvertCSRToDense(1);
 		SC_out.RemoveLowerDense();
     }
@@ -1301,6 +1471,187 @@ void SparseSolverPardiso::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMa
 }
 
 
+void SparseSolverPardiso::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
+
+//	MKL_INT size = A_in.rows;
+//	SEQ_VECTOR <double> sol (size, 0);
+//
+//	SolveCG(A_in, rhs_sol, sol);
+//
+//	rhs_sol = sol;
+}
+
+void SparseSolverPardiso::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
+//	SEQ_VECTOR<double> init;
+//	SolveCG(A_in, rhs_in, sol, init);
+}
+
+void SparseSolverPardiso::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
+
+//
+//	  /*---------------------------------------------------------------------------   */
+//	  /* Define arrays for the upper triangle of the coefficient matrix and rhs vector */
+//	  /* Compressed sparse row storage is used for sparse representation              */
+//	  /*---------------------------------------------------------------------------   */
+//	  MKL_INT rci_request, itercount, i;
+//
+//	  //MKL_INT expected_itercount = 8;
+//	  MKL_INT n = A_in.rows; //rhs_in.size();
+//
+//
+//	  /* Fill all arrays containing matrix data. */
+//	  MKL_INT * ia  = &A_in.CSR_I_row_indices[0];
+//	  MKL_INT * ja  = &A_in.CSR_J_col_indices[0];
+//	  double  * a   = &A_in.CSR_V_values[0];
+//
+//
+////	  MKL_INT * ia  = CSR_I_row_indices;
+////	  MKL_INT * ja  = CSR_J_col_indices;
+////	  double  * a   = CSR_V_values;
+//
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Allocate storage for the solver ?par and temporary storage tmp            */
+//	  /*---------------------------------------------------------------------------*/
+//	  MKL_INT length = 128;
+//	  MKL_INT ipar[128];
+//	  double dpar[128];
+//	  char matdes[3];
+//	  double one = 1.E0;
+//
+//	  SEQ_VECTOR <double> tmp_vec (4 * n, 0);
+//	  double * tmp;
+//	  tmp = &tmp_vec[0];
+//
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Some additional variables to use with the RCI (P)CG solver                */
+//	  /*---------------------------------------------------------------------------*/
+//	  double * solution = &sol[0];
+//      double * rhs = &rhs_in[0];
+//
+//
+//	  double * temp;
+//	  SEQ_VECTOR <double> temp_vec (n,0);
+//	  temp = &temp_vec[0];
+//
+//	  double euclidean_norm;
+//
+//	  char tr = 'u';
+//	  double eone = -1.E0;
+//	  MKL_INT ione = 1;
+//
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Initialize the initial guess                                              */
+//	  /*---------------------------------------------------------------------------*/
+//	  if (initial_guess.size() > 0 ) {
+//		  for (i = 0; i < n; i++)
+//			solution[i] = initial_guess[i];
+//	  } else {
+//		  for (i = 0; i < n; i++)
+//			  solution[i] = 0.E0;
+//	  }
+//	  matdes[0] = 'd';
+//	  matdes[1] = 'l';
+//	  matdes[2] = 'n';
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Initialize the solver                                                     */
+//	  /*---------------------------------------------------------------------------*/
+//
+//	  dcg_init (&n, solution, rhs, &rci_request, ipar, dpar, tmp);
+//	  if (rci_request != 0)
+//	    goto failure;
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Set the desired parameters:                                               */
+//	  /* LOGICAL parameters:                                                       */
+//	  /* -                                                                         */
+//	  /* INTEGER parameters:                                                       */
+//	  /* set the maximal number of iterations to 100                               */
+//	  /* DOUBLE parameters                                                         */
+//	  /* -                                                                         */
+//	  /*---------------------------------------------------------------------------*/
+//	  ipar[4] = 10000;
+//	  ipar[10]=1;
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Check the correctness and consistency of the newly set parameters         */
+//	  /*---------------------------------------------------------------------------*/
+//	  dcg_check (&n, solution, rhs, &rci_request, ipar, dpar, tmp);
+//	  if (rci_request != 0)
+//	    goto failure;
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Compute the solution by RCI (P)CG solver                                  */
+//	  /* Reverse Communications starts here                                        */
+//	  /*---------------------------------------------------------------------------*/
+//	rci:dcg (&n, solution, rhs, &rci_request, ipar, dpar, tmp);
+//	  /*---------------------------------------------------------------------------*/
+//	  /* If rci_request=0, then the solution was found according to the requested  */
+//	  /* stopping tests. In this case, this means that it was found after 100      */
+//	  /* iterations.                                                               */
+//	  /*---------------------------------------------------------------------------*/
+//	  if (rci_request == 0)
+//	    goto getsln;
+//	  /*---------------------------------------------------------------------------*/
+//	  /* If rci_request=1, then compute the vector A*TMP[0]                        */
+//	  /* and put the result in vector TMP[n]                                       */
+//	  /*---------------------------------------------------------------------------*/
+//	  if (rci_request == 1)
+//	    {
+//	      mkl_dcsrsymv (&tr, &n, a, ia, ja, tmp, &tmp[n]);
+//	      goto rci;
+//	    }
+//	  /*---------------------------------------------------------------------------*/
+//	  /* If rci_request=2, then do the user-defined stopping test: compute the     */
+//	  /* Euclidean norm of the actual residual using MKL routines and check if     */
+//	  /* it is less than 1.E-8                                                     */
+//	  /*---------------------------------------------------------------------------*/
+//	  if (rci_request == 2)
+//	    {
+//	      mkl_dcsrsymv (&tr, &n, a, ia, ja, solution, temp);
+//	      daxpy (&n, &eone, rhs, &ione, temp, &ione);
+//	      euclidean_norm = dnrm2 (&n, temp, &ione);
+//	      /*---------------------------------------------------------------------------*/
+//	      /* The solution has not been found yet according to the user-defined stopping */
+//	      /* test. Continue RCI (P)CG iterations.                                      */
+//	      /*---------------------------------------------------------------------------*/
+//	      if (euclidean_norm > 1.E-10)
+//	        goto rci;
+//	      /*---------------------------------------------------------------------------*/
+//	      /* The solution has been found according to the user-defined stopping test   */
+//	      /*---------------------------------------------------------------------------*/
+//	      else
+//	        goto getsln;
+//	    }
+//	  /*---------------------------------------------------------------------------*/
+//	  /* If rci_request=3, then compute apply the preconditioner matrix C_inverse  */
+//	  /* on vector tmp[2*n] and put the result in vector tmp[3*n]                  */
+//	  /*---------------------------------------------------------------------------*/
+//	  if (rci_request == 3)
+//	    {
+//	      mkl_dcsrsv (&matdes[2], &n, &one, matdes, a, ja, ia, &ia[1], &tmp[2 * n], &tmp[3 * n]);
+//	      goto rci;
+//	    }	  /*---------------------------------------------------------------------------*/
+//	  /* If rci_request=anything else, then dcg subroutine failed                  */
+//	  /* to compute the solution vector: solution[n]                               */
+//	  /*---------------------------------------------------------------------------*/
+//	  goto failure;
+//	  /*---------------------------------------------------------------------------*/
+//	  /* Reverse Communication ends here                                           */
+//	  /* Get the current iteration number into itercount                           */
+//	  /*---------------------------------------------------------------------------*/
+//	getsln:dcg_get (&n, solution, rhs, &rci_request, ipar, dpar, tmp, &itercount);
+//
+//	//std::cout << " " << itercount;
+//
+//	  //printf ("\nNumber of iterations: %d\n", itercount);
+//
+//	  /*-------------------------------------------------------------------------*/
+//	  /* Release internal MKL memory that might be used for computations         */
+//	  /* NOTE: It is important to call the routine below to avoid memory leaks   */
+//	  /* unless you disable MKL Memory Manager                                   */
+//	  /*-------------------------------------------------------------------------*/
+//	failure: ; //printf ("This example FAILED as the solver has returned the ERROR code %d", rci_request);
+//	  //MKL_Free_Buffers ();
+
+
+}
 
 
 
