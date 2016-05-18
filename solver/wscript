@@ -20,7 +20,8 @@ def configure(ctx):
 
     if ctx.env.SOLVER == "PARDISO":
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-        ctx.env.append_value("STLIB", [ "ifcore" ])
+	ctx.env.append_value("STLIB", [ "ifcore" ])
+	#ctx.env.prepend_value(
 
     if ctx.env.SOLVER == "MIC":
         ctx.env.append_unique("LIB", [ "imf", "intlc", "svml", "irng", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
