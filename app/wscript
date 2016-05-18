@@ -47,6 +47,13 @@ def build(ctx):
         install_path = ctx.ROOT
     )
 
+    ctx.program(
+        source       = ("parallel_decomposer.cpp"),
+        target       = "parallel_decomposer",
+        use          = "espreso_includes basis config espreso_in openfoam_in espreso_out vtk_out mesh",
+        install_path = ctx.ROOT
+    )
+
     ctx.lib = (ctx.stlib, ctx.shlib)[ctx.env.LIBTYPE == "SHARED"]
 
     ctx.lib(

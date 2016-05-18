@@ -12,7 +12,7 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 	system(ss.str().c_str());
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::stringstream ssDir;
-		ssDir << ss.str() << "/" << p;
+		ssDir << ss.str() << "/" << p + _mesh.parts() * config::env::MPIrank;
 		system(ssDir.str().c_str());
 	}
 
@@ -31,7 +31,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 		esglobal index;
 
 		std::stringstream ss;
-		ss << _path << "/" << p << "/coordinates.dat";
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/coordinates.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
@@ -55,7 +55,7 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 		eslocal value;
 
 		std::stringstream ss;
-		ss << _path << "/" << p << "/boundaryConditions.dat";
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaryConditions.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
@@ -115,7 +115,7 @@ void Esdata::elements(const Mesh &mesh)
 		eslocal value;
 
 		std::stringstream ss;
-		ss << _path << "/" << p << "/elements.dat";
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/elements.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
@@ -133,7 +133,7 @@ void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
-		ss << _path << "/" << p << "/materials.dat";
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/materials.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		int size = materials.size();
@@ -152,26 +152,94 @@ void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 
 void Esdata::boundaries(const Mesh &mesh)
 {
+	Boundaries boundaries = mesh.subdomainBoundaries();
+	const Boundaries &cBoundaries = mesh.clusterBoundaries();
+
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, boundaries.size());
+
+	std::vector<std::vector<std::vector<esglobal> > > sBuffer(threads, std::vector<std::vector<esglobal> > (mesh.neighbours().size()));
+	std::vector<std::vector<esglobal> > rBuffer(mesh.neighbours().size());
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			for (size_t j = 0; j < boundaries[i].size(); j++) {
+				boundaries[i][j] += config::env::MPIrank * mesh.parts();
+			}
+			for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+				if (std::binary_search(cBoundaries[i].begin(), cBoundaries[i].end(), mesh.neighbours()[n])) {
+					sBuffer[t][n].push_back(mesh.coordinates().globalIndex(i));
+					sBuffer[t][n].push_back(boundaries[i].size());
+					sBuffer[t][n].insert(sBuffer[t][n].end(), boundaries[i].begin(), boundaries[i].end());
+				}
+			}
+		}
+	}
+
+	cilk_for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+		for (size_t t = 1; t < threads; t++) {
+			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
+		}
+	}
+
+	std::vector<MPI_Request> req(mesh.neighbours().size());
+
+	for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+		MPI_Isend(sBuffer[0][n].data(), sizeof(esglobal) * sBuffer[0][n].size(), MPI_BYTE, mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
+	}
+
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(mesh.neighbours().begin(), mesh.neighbours().end(), neighbour) - mesh.neighbours().begin();
+	};
+
+	int flag, counter = 0;
+	MPI_Status status;
+	while (counter < mesh.neighbours().size()) {
+		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+		if (flag) {
+			int count;
+			MPI_Get_count(&status, MPI_BYTE, &count);
+			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
+			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			counter++;
+		}
+	}
+
+	MPI_Waitall(mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
+
+	for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+		for (size_t i = 0; i < rBuffer[n].size(); i++) {
+			esglobal index = mesh.coordinates().clusterIndex(rBuffer[n][i]);
+			boundaries[index].insert(boundaries[index].end(), rBuffer[n].begin() + i + 2, rBuffer[n].begin() + i + 2 + rBuffer[n][i + 1]);
+			i += rBuffer[n][i + 1] + 1;
+		}
+	}
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			std::sort(boundaries[i].begin(), boundaries[i].end());
+		}
+	}
+
 	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
-		const Boundaries &boundaries = mesh.subdomainBoundaries();
 		eslocal value, size;
 		esglobal index;
 
 		std::stringstream ss;
-		ss << _path << "/" << p << "/clusterBoundaries.dat";
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/clusterBoundaries.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		size = 0;
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
+			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * config::env::MPIrank)) {
 				size++;
 			}
 		}
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 
 		for (size_t i = 0; i < boundaries.size(); i++) {
-			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p)) {
+			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * config::env::MPIrank)) {
 				size = boundaries[i].size();
 				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 				for (auto it = boundaries[i].begin(); it != boundaries[i].end(); ++it) {

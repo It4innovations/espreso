@@ -3,6 +3,7 @@
 #define INPUT_ESDATA_ESDATA_H_
 
 #include "../loader.h"
+#include "esbasis.h"
 
 namespace espreso {
 namespace input {
