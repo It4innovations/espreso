@@ -14,6 +14,11 @@ class Factory {
 public:
 	Factory(const Options &options);
 
+	Mesh* mesh()
+	{
+		return _mesh;
+	}
+
 	void solve();
 	void store(const std::string &file);
 
