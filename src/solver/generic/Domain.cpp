@@ -113,69 +113,73 @@ void Domain::CreateKplus_R ( std::vector < std::vector < double > > coordinates 
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
 	switch (config::solver::KSOLVER) {
-	case config::solver::KSOLVERalternative::DIRECT_DP:
+	case 0: {
 		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 		break;
-	case config::solver::KSOLVERalternative::DIRECT_SP:
-		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
-		exit(EXIT_FAILURE);
 	}
+	case 2: {
+		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
+		break;
+	}
+	case 3: { // DIRECT MIX - 2xSP
+		ESINFO(ERROR) << "Not implemented KSOLVER (DIRECT MIX - 2xSP)";
+		exit(EXIT_FAILURE);
 
+//		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+//		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
+//		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+//
+//		Kplus.Solve(x_in, x, x_in_vector_start_index, 0);
+//		if (enable_SP_refinement) {
+//			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
+//				K.MatVec(x,r,'N');
+//				for (eslocal i = 0; i < r.size(); i++)
+//					r[i] = x_in[i + x_in_vector_start_index] - r[i];
+//				Kplus.Solve(r, z, 0, 0);
+//				for (eslocal i = 0; i < r.size(); i++)
+//					x[i] = x[i] + z[i];
+//
+//				double norm = 0.0;
+//				for (eslocal i = 0; i < r.size(); i++)
+//					norm += r[i]*r[i];
+//
+//				norm = sqrt(norm);
+//
+//				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
+//					std::cout.precision(20);
+//					std::cout << "Refinement steps: " << step << " | norm: " << norm << std::endl;
+//					break;
+//				}
+//
+//			}
+//		}
+//
+//		for (eslocal i = 0; i < r.size(); i++)
+//			y_out[y_out_vector_start_index + i] = x[i];
 
-	//		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
-	//		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
-	//		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
-	//
-	//		Kplus.Solve(x_in, x, x_in_vector_start_index, 0);
-	//		if (enable_SP_refinement) {
-	//			for (eslocal step = 0; step <= esconfig::solver::KSOLVER_SP_iter_steps; step++) {
-	//				K.MatVec(x,r,'N');
-	//				for (eslocal i = 0; i < r.size(); i++)
-	//					r[i] = x_in[i + x_in_vector_start_index] - r[i];
-	//				Kplus.Solve(r, z, 0, 0);
-	//				for (eslocal i = 0; i < r.size(); i++)
-	//					x[i] = x[i] + z[i];
-	//
-	//				double norm = 0.0;
-	//				for (eslocal i = 0; i < r.size(); i++)
-	//					norm += r[i]*r[i];
-	//
-	//				norm = sqrt(norm);
-	//
-	//				if (norm < esconfig::solver::KSOLVER_SP_iter_norm) {
-	//					std::cout.precision(20);
-	//					std::cout << "Refinement steps: " << step << " | norm: " << norm << std::endl;
-	//					break;
-	//				}
-	//
-	//			}
-	//		}
-	//
-	//		for (eslocal i = 0; i < r.size(); i++)
-	//			y_out[y_out_vector_start_index + i] = x[i];
-
+		break;
+	}
 //	case 1: {
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
 //	}
-
+	default:
+		ESINFO(ERROR) << "Invalid KSOLVER value.";
+		exit(EXIT_FAILURE);
+	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out) {
 	switch (config::solver::KSOLVER) {
-	case config::solver::KSOLVERalternative::DIRECT_DP:
+	case 0: {
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
-	case config::solver::KSOLVERalternative::ITERATIVE:
-		Kplus.SolveCG(K, x_in, y_out);
-		break;
-	case config::solver::KSOLVERalternative::DIRECT_SP:
+	}
+	case 2: {
 		Kplus.Solve(x_in, y_out, 0, 0);
 		break;
-	case config::solver::KSOLVERalternative::DIRECT_MP: {
+	}
+	case 3: { // DIRECT MIX - 2xSP
 
 		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
 		SEQ_VECTOR<double> r (Kplus.m_Kplus_size, 0.0);
@@ -185,7 +189,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 		Kplus.Solve(x_in, x, 0, 0);
 		if (enable_SP_refinement) {
-			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_STEPS; step++) {
+			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_iter_steps; step++) {
 				K.MatVec(x,r,'N');
 				for (eslocal i = 0; i < r.size(); i++)
 					r[i] = x_in[i] - r[i];
@@ -200,7 +204,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 				norm = sqrt(norm);
 
-				if (norm < config::solver::KSOLVER_SP_NORM) {
+				if (norm < config::solver::KSOLVER_SP_iter_norm) {
 					ESINFO(PROGRESS2) << " " << step;
 					success = true;
 					break;
@@ -214,28 +218,40 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 		for (eslocal i = 0; i < r.size(); i++)
 			y_out[i] = x[i];
+
 		break;
 	}
-//	case 4:
-//		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
-//		Kplus.Solve(x_in, x, 0, 0);
-//		Kplus.SolveCG(K, x_in, y_out, x);
-//		break;
+	case 4: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in, x, 0, 0);
+		Kplus.SolveCG(K, x_in, y_out, x);
+
+		break;
+	}
+	case 1: {
+		Kplus.SolveCG(K, x_in, y_out);
+		break;
+	}
 	default:
-		ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
+		ESINFO(ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);
 	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 	switch (config::solver::KSOLVER) {
-	case config::solver::KSOLVERalternative::DIRECT_DP:
+	case 0: { //DIRECT DP
 		Kplus.Solve(x_in_y_out);
 		break;
-	case config::solver::KSOLVERalternative::DIRECT_SP:
+	}
+	case 2: { // DIRECT SP
 		Kplus.Solve(x_in_y_out);
 		break;
-	case config::solver::KSOLVERalternative::DIRECT_MP: {
+	}
+	case 3: { // DIRECT MIX - 2xSP
+
 		bool success = false;
 
 		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
@@ -245,7 +261,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		Kplus.Solve(x_in_y_out, x, 0, 0);
 
 		if (enable_SP_refinement) {
-			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_STEPS; step++) {
+			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_iter_steps; step++) {
 				K.MatVec(x,r,'N');
 				for (eslocal i = 0; i < r.size(); i++)
 					r[i] = x_in_y_out[i] - r[i];
@@ -259,7 +275,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 
 				norm = sqrt(norm);
 
-				if (norm < config::solver::KSOLVER_SP_NORM) {
+				if (norm < config::solver::KSOLVER_SP_iter_norm) {
 					ESINFO(PROGRESS2) << " " << step;
 					break;
 				}
@@ -276,22 +292,23 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 
 		break;
 	}
-//	case 4: { // DIRECT MIX - 2xSP
-//
-//		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
-//		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
-//
-//		Kplus.Solve(x_in_y_out, x, 0, 0);
-//		Kplus.SolveCG(K, x_in_y_out, z, x);
-//
-//		for (eslocal i = 0; i < z.size(); i++)
-//			x_in_y_out[i] = z[i];
-//
-//		break;
-//	}
-	case config::solver::KSOLVERalternative::ITERATIVE:
+	case 4: { // DIRECT MIX - 2xSP
+
+		SEQ_VECTOR<double> x (Kplus.m_Kplus_size, 0.0);
+		SEQ_VECTOR<double> z (Kplus.m_Kplus_size, 0.0);
+
+		Kplus.Solve(x_in_y_out, x, 0, 0);
+		Kplus.SolveCG(K, x_in_y_out, z, x);
+
+		for (eslocal i = 0; i < z.size(); i++)
+			x_in_y_out[i] = z[i];
+
+		break;
+	}
+	case 1: {
 		Kplus.SolveCG(K, x_in_y_out);
 		break;
+	}
 	default:
 		ESINFO(ERROR) << "Invalid KSOLVER value.";
 		exit(EXIT_FAILURE);

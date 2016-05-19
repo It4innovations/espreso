@@ -15,7 +15,7 @@ public:
 	virtual void store(const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster);
 
 	void store(double shrinkSubdomain, double shringCluster);
-	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster);
+	void store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster);
 
 protected:
 	static Point shrink(const Point &p,
@@ -27,7 +27,7 @@ protected:
 	virtual void coordinates(const Coordinates &coordinates, const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster);
 	virtual void elements(const Mesh &mesh);
 	virtual void points(const std::vector<std::vector<eslocal> > &points);
-	virtual void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement) = 0;
+	virtual void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs) = 0;
 
 	std::ofstream _vtk;
 

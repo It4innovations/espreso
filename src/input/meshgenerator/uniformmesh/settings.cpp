@@ -2,20 +2,26 @@
 
 using namespace espreso::input;
 
-void UniformSettings::defaultUniformSettings()
+static void defaultSettings(UniformSettings &settings)
 {
 	for (size_t i = 0; i < 3; i++) { // x, y, z
-		subdomainsInCluster[i] = 2;
-		elementsInSubdomain[i] = 5;
-		materialsLayers[i] = 1;
+		settings.subdomainsInCluster[i] = 2;
+		settings.elementsInSubdomain[i] = 5;
+		settings.materialsLayers[i] = 1;
 	}
 
-	cornerCount = 0;
-	corners     = true;
-	edges       = false;
-	faces       = false;
+	settings.cornerCount = 0;
+	settings.corners     = true;
+	settings.edges       = false;
+	settings.faces       = false;
+}
 
-	parameters = {
+UniformSettings::UniformSettings(const Options &options, size_t index, size_t size)
+: Settings(options, index, size)
+{
+	defaultSettings(*this);
+
+	description = {
 		{"SUBDOMAINS_X", subdomainsInCluster[0], "Number of sub-domains in a cluster in x-axis."},
 		{"SUBDOMAINS_Y", subdomainsInCluster[1], "Number of sub-domains in a cluster in y-axis."},
 		{"SUBDOMAINS_Z", subdomainsInCluster[2], "Number of sub-domains in a cluster in z-axis."},
@@ -33,19 +39,12 @@ void UniformSettings::defaultUniformSettings()
 		{"CORNERS_IN_EDGES"  , edges      , "Set corners on edges."},
 		{"CORNERS_IN_FACES"  , faces      , "Set corners on faces."},
 	};
-}
 
-UniformSettings::UniformSettings(const Configuration &configuration, size_t index, size_t size)
-: Settings(index, size)
-{
-	defaultUniformSettings();
-	parameters.insert(parameters.end(), Settings::parameters.begin(), Settings::parameters.end());
-	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+	Configuration configuration(UniformSettings::description, options);
 }
 
 UniformSettings::UniformSettings(size_t index, size_t size)
 : Settings(index, size)
 {
-	defaultUniformSettings();
-	parameters.insert(parameters.end(), Settings::parameters.begin(), Settings::parameters.end());
+	defaultSettings(*this);
 }

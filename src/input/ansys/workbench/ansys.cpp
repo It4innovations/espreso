@@ -2,8 +2,10 @@
 #include "ansys.h"
 using namespace espreso::input;
 
-void AnsysWorkbench::points(Coordinates &coordinates)
+void AnsysWorkbench::points(Coordinates &coordinates, size_t &DOFs)
 {
+	DOFs = 3;
+
 	while (true) {
 		switch (_parser.process()) {
 		case WorkbenchCommands::WB:

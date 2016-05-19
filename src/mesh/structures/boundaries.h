@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-#include "../elements/element.h"
+#include "../elements/elements.h"
 
 namespace espreso {
 

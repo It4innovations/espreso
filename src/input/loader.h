@@ -34,7 +34,7 @@ public:
 		open();
 
 		TimeEvent tPoints("coordinates"); tPoints.start();
-		points(mesh._coordinates);
+		points(mesh._coordinates, mesh._DOFs);
 		tPoints.end(); measurement.addEvent(tPoints);
 		ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 
@@ -79,7 +79,7 @@ public:
 	}
 
 protected:
-	virtual void points(Coordinates &coordinates) = 0;
+	virtual void points(Coordinates &coordinates, size_t &DOFs) = 0;
 	virtual void elements(std::vector<Element*> &elements) = 0;
 	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void faces(Faces &faces) { };
@@ -91,27 +91,26 @@ protected:
 
 	virtual void partitiate(std::vector<eslocal> &parts)
 	{
-		mesh.partitiate(config::mesh::SUBDOMAINS);
+		mesh.partitiate(config::mesh::subdomains);
 	}
 
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 	{
-		mesh.computeFixPoints(config::mesh::FIX_POINTS);
+		mesh.computeFixPoints(config::mesh::fixPoints);
 	}
 
 	virtual void corners(Boundaries &boundaries)
 	{
-		if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL_FETI
-				|| config::solver::B0_TYPE == config::solver::B0_TYPEalternative::KERNELS) {
+		if (config::solver::FETI_METHOD == config::TOTAL_FETI || config::solver::B0_TYPE == config::B0Type::KERNELS) {
 			return;
 		}
 		mesh.computeCorners(
-				config::mesh::CORNERS,
-				config::mesh::VERTEX_CORNERS,
-				config::mesh::EDGE_CORNERS,
-				config::mesh::FACE_CORNERS,
-				config::mesh::AVERAGE_EDGES,
-				config::mesh::AVERAGE_FACES);
+				config::mesh::corners,
+				config::mesh::vertexCorners,
+				config::mesh::edgeCorners,
+				config::mesh::faceCorners,
+				config::mesh::averageEdges,
+				config::mesh::averageFaces);
 	}
 
 	void remapElementsToSubdomains()

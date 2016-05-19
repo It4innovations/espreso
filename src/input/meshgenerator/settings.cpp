@@ -3,14 +3,24 @@
 
 using namespace espreso::input;
 
-void Settings::defaultSettings()
+static void defaultSettings(Settings &settings)
 {
-	useMetis    = false;
+	settings.useMetis    = false;
+	settings.shape       = CUBE;
+	settings.elementType = HEXA8;
+	settings.assembler   = LinearElasticity;
 
-	materials.resize(2);
+	settings.materials.resize(2);
+}
 
-	parameters = {
+Settings::Settings(const Options &options, size_t index, size_t size)
+: index(index), size(size)
+{
+	defaultSettings(*this);
+	description = {
 		{ "USE_METIS"   , useMetis   , "Use METIS for mesh partition." },
+		{ "SHAPE"       , shape      , "Generated shape. Supported values: 0 - CUBE, 1 - SPHERE" },
+		{ "ELEMENT_TYPE", elementType, "The type of generated element. Supported values: <0, 7>" },
 
 		{ "MAT1_DENSITY", materials[0].density     , "Density of the first material." },
 		{ "MAT1_YOUNG"  , materials[0].youngModulus, "Young's modulus of the first material." },
@@ -19,21 +29,17 @@ void Settings::defaultSettings()
 		{ "MAT2_YOUNG"  , materials[1].youngModulus, "Young's modulus of the first material." },
 		{ "MAT2_POISSON", materials[1].poissonRatio, "Poisson's ratio of the first material." },
 
-		{ "TIME_STEPS", config::solver::TIME_STEPS, "Number of time steps for transient problems."}
+		{ "ASSEMBLER"   , assembler  , "Assembler type: 0 - LinearElasticity, 1 - Temperature" },
+		{ "TIME_STEPS", config::assembler::timeSteps, "Number of time steps for transient problems."}
 	};
-}
 
-Settings::Settings(const Configuration &configuration, size_t index, size_t size)
-: index(index), size(size)
-{
-	defaultSettings();
-	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+	Configuration configuration(Settings::description, options);
 }
 
 Settings::Settings(size_t index, size_t size)
 : index(index), size(size)
 {
-	defaultSettings();
+	defaultSettings(*this);
 }
 
 

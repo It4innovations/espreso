@@ -3,9 +3,8 @@
 
 using namespace espreso::output;
 
-void VTK_Surface::coordinatesDisplacement(const std::vector<std::vector<double> > &displacement)
+void VTK_Surface::coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs)
 {
-	size_t DOFs = displacement[0].size() / _surface.coordinates().localSize(0);
 	size_t size = 0;
 	for (size_t p = 0; p < _surface.parts(); p++) {
 		size += _surface.coordinates().localSize(p);
@@ -13,7 +12,7 @@ void VTK_Surface::coordinatesDisplacement(const std::vector<std::vector<double> 
 
 	_vtk << "\n";
 	_vtk << "POINT_DATA " << size << "\n";
-	_vtk << "SCALARS displacements float " << DOFs << "\n";
+	_vtk << "SCALARS displacements float " << dofs << "\n";
 	_vtk << "LOOKUP_TABLE default\n";
 	for (size_t p = 0; p < displacement.size(); p++) {
 		const std::vector<eslocal> &full = _full.coordinates().localToCluster(p);
@@ -23,8 +22,8 @@ void VTK_Surface::coordinatesDisplacement(const std::vector<std::vector<double> 
 			while (full[j] < surface[i]) {
 				j++;
 			}
-			for (size_t d = 0; d < DOFs; d++) {
-				_vtk << displacement[p][DOFs * j + d] << " ";
+			for (size_t d = 0; d < dofs; d++) {
+				_vtk << displacement[p][dofs * j + d] << " ";
 			}
 			_vtk << "\n";
 		}

@@ -20,18 +20,15 @@ struct CubeSettings: public UniformSettings {
 		BOTTOM
 	};
 
-	CubeSettings(const Configuration &configuration, size_t index, size_t size);
+	CubeSettings(const Options &options, size_t index, size_t size);
 	CubeSettings(size_t index, size_t size);
 
-	std::vector<Parameter> parameters;
+	std::vector<Description> description;
 
 	size_t clusters[3];
 	double problemLength[3];
 
 	std::vector<double> boundaryCondition;
-
-protected:
-	void defaultCubeSettings();
 };
 
 inline std::ostream& operator<<(std::ostream& os, const CubeSettings &s)

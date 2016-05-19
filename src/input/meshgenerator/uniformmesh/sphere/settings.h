@@ -16,10 +16,10 @@ struct SphereSettings: public UniformSettings {
 		OUTER
 	};
 
-	SphereSettings(const Configuration &configuration, size_t index, size_t size);
+	SphereSettings(const Options &options, size_t index, size_t size);
 	SphereSettings(size_t index, size_t size);
 
-	std::vector<Parameter> parameters;
+	std::vector<Description> description;
 
 	size_t layers;
 	size_t grid;
@@ -27,9 +27,6 @@ struct SphereSettings: public UniformSettings {
 	double outerRadius;
 
 	std::vector<double> boundaryCondition;
-
-protected:
-	void defaultSphereSettings();
 };
 
 inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)

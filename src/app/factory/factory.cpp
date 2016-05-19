@@ -1,28 +1,22 @@
 
 #include "factory.h"
-#include "esbasis.h"
-#include "esinput.h"
-#include "esoutput.h"
 
-namespace espreso {
+using namespace espreso;
 
 template<class TShape>
-static void generateShape(Mesh &mesh, const Configuration &configuration, GeneratorShape shape)
+static void generateShape(const Options &options, Mesh *mesh)
 {
-	switch (shape) {
-	case GeneratorShape::CUBE: {
-		input::CubeSettings cube(configuration, config::env::MPIrank ,config::env::MPIsize);
-		input::CubeGenerator<TShape>::load(mesh, cube);
+	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
+
+	switch (settings.shape) {
+	case input::CUBE: {
+		input::CubeSettings cube(options, config::env::MPIrank ,config::env::MPIsize);
+		input::CubeGenerator<TShape>::load(*mesh, cube);
 		break;
 	}
-	case GeneratorShape::SPHERE: {
-		input::SphereSettings sphere(configuration, config::env::MPIrank ,config::env::MPIsize);
-		input::SphereGenerator<TShape>::load(mesh, sphere);
-		break;
-	}
-	case GeneratorShape::PLANE: {
-		input::PlaneSettings plane(configuration, config::env::MPIrank ,config::env::MPIsize);
-		input::PlaneGenerator<TShape>::load(mesh, plane);
+	case input::SPHERE: {
+		input::SphereSettings sphere(options, config::env::MPIrank ,config::env::MPIsize);
+		input::SphereGenerator<TShape>::load(*mesh, sphere);
 		break;
 	}
 	default: {
@@ -31,189 +25,201 @@ static void generateShape(Mesh &mesh, const Configuration &configuration, Genera
 	}
 }
 
-static void generate(Mesh &mesh, const Configuration &configuration, ElementType eType, GeneratorShape shape)
+static void generate(const Options &options, Mesh *mesh)
 {
-	switch (eType) {
-	case ElementType::HEXA8:
-		generateShape<input::Hexahedron8>(mesh, configuration, shape);
+	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
+
+	switch (settings.elementType) {
+	case input::HEXA8: {
+		generateShape<input::Hexahedron8>(options, mesh);
 		break;
-	case ElementType::HEXA20:
-		generateShape<input::Hexahedron20>(mesh, configuration, shape);
+	}
+	case input::HEXA20: {
+		generateShape<input::Hexahedron20>(options, mesh);
 		break;
-	case ElementType::TETRA4:
-		generateShape<input::Tetrahedron4>(mesh, configuration, shape);
+	}
+	case input::TETRA4: {
+		generateShape<input::Tetrahedron4>(options, mesh);
 		break;
-	case ElementType::TETRA10:
-		generateShape<input::Tetrahedron10>(mesh, configuration, shape);
+	}
+	case input::TETRA10: {
+		generateShape<input::Tetrahedron10>(options, mesh);
 		break;
-	case ElementType::PRISMA6:
-		generateShape<input::Prisma6>(mesh, configuration, shape);
+	}
+	case input::PRISMA6: {
+		generateShape<input::Prisma6>(options, mesh);
 		break;
-	case ElementType::PRISMA15:
-		generateShape<input::Prisma15>(mesh, configuration, shape);
+	}
+	case input::PRISMA15: {
+		generateShape<input::Prisma15>(options, mesh);
 		break;
-	case ElementType::PYRAMID5:
-		generateShape<input::Pyramid5>(mesh, configuration, shape);
+	}
+	case input::PYRAMID5: {
+		generateShape<input::Pyramid5>(options, mesh);
 		break;
-	case ElementType::PYRAMID13:
-		generateShape<input::Pyramid13>(mesh, configuration, shape);
+	}
+	case input::PYRAMID13: {
+		generateShape<input::Pyramid13>(options, mesh);
 		break;
-	case ElementType::SQUARE4:
-		generateShape<input::Square4>(mesh, configuration, shape);
-		break;
-	case ElementType::SQUARE8:
-		generateShape<input::Square8>(mesh, configuration, shape);
-		break;
-	case ElementType::TRIANGLE3:
-		generateShape<input::Triangle3>(mesh, configuration, shape);
-		break;
-	case ElementType::TRIANGLE6:
-		generateShape<input::Triangle6>(mesh, configuration, shape);
-		break;
-	default:
+	}
+	default: {
 		ESINFO(ERROR) << "Unknown element type.";
 	}
+	}
 }
 
-void Factory::readParameters(const Configuration &configuration)
+
+static Mesh* getMesh(const Options &options)
 {
-	std::vector<Parameter> parameters = {
-		{ "SHAPE", shape      , "Generated shape.", {
-				{ "CUBE"  , GeneratorShape::CUBE  , "Cubic." },
-				{ "SPHERE", GeneratorShape::SPHERE, "Spherical." },
-				{ "PLANE" , GeneratorShape::PLANE , "2D plane." }
-		} },
-		{ "ELEMENT_TYPE", eType, "The type of generated element.", {
-				{ "HEXA8"    , ElementType::HEXA8    , "Hexahedron."},
-				{ "HEXA20"   , ElementType::HEXA20   , "Hexahedron with midpoints."},
-				{ "TETRA4"   , ElementType::TETRA4   , "Tetrahedron."},
-				{ "TETRA10"  , ElementType::TETRA10  , "Tetrahedron with midpoints."},
-				{ "PRISMA6"  , ElementType::PRISMA6  , "Prisma."},
-				{ "PRISMA15" , ElementType::PRISMA15 , "Prisma with midpoints."},
-				{ "PYRAMID5" , ElementType::PYRAMID5 , "Pyramid."},
-				{ "PYRAMID13", ElementType::PYRAMID13, "Pyramid with midpoints."},
+	Mesh *mesh = new Mesh();
+	switch (config::mesh::input) {
 
-				{ "SQUARE4"  , ElementType::SQUARE4  , "Square."},
-				{ "SQUARE8"  , ElementType::SQUARE8  , "Square with midpoints."},
-				{ "TRIANGLE3", ElementType::TRIANGLE3, "Triangle."},
-				{ "TRIANGLE6", ElementType::TRIANGLE6, "Triangle with midpoints."},
-		} },
-		{ "PHYSICS", physics, "Physics used for compose matrices", {
-				{ "LINEAR_ELASTICITY", PhysicsAssembler::LINEAR_ELASTICITY, "Linear elasticity." },
-				{ "TEMPERATURE", PhysicsAssembler::TEMPERATURE, "Temperature." },
-				{ "TRANSIENT_ELASTICITY", PhysicsAssembler::TRANSIENT_ELASTICITY, "Transient elasticity." },
-				{ "ADVECTION_DIFFUSION", PhysicsAssembler::ADVECTION_DIFFUSION, "Advection diffusion"}
-		} }
-	};
-
-	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+	case config::mesh::ANSYS_MATSOL: {
+		input::AnsysMatsol::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		break;
+	}
+	case config::mesh::ANSYS_WORKBENCH: {
+		input::AnsysWorkbench::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		break;
+	}
+	case config::mesh::OPENFOAM: {
+		input::OpenFOAM::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		break;
+	}
+	case config::mesh::ESDATA: {
+		input::Esdata::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		break;
+	}
+	case config::mesh::GENERATOR: {
+		generate(options, mesh);
+		break;
+	}
+	}
+	return mesh;
 }
 
-static void fillMesh(const Configuration &configuration, Mesh &mesh, ElementType eType, GeneratorShape shape)
+template<class TDiscretization>
+static AssemblerBase* createAssembler(TDiscretization discretization)
 {
-	switch (config::mesh::INPUT) {
-	case config::mesh::INPUTalternative::MATSOL:
-		input::AnsysMatsol::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
-		break;
-	case config::mesh::INPUTalternative::WORKBENCH:
-		input::AnsysWorkbench::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
-		break;
-	case config::mesh::INPUTalternative::OPENFOAM:
-		input::OpenFOAM::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
-		break;
-	case config::mesh::INPUTalternative::ESDATA:
-		input::Esdata::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
-		break;
-	case config::mesh::INPUTalternative::GENERATOR:
-		generate(mesh, configuration, eType, shape);
-		break;
+	switch (config::assembler::physics) {
+
+	case config::assembler::LinearElasticity: {
+		return new LinearElasticity<TDiscretization>(discretization);
+	}
+	case config::assembler::Temperature: {
+		return new Temperature<TDiscretization>(discretization);
+	}
+	case config::assembler::TransientElasticity: {
+		return new TransientElasticity<TDiscretization>(discretization);
+	}
 	default:
-		ESINFO(GLOBAL_ERROR) << "Invalid user-supplied parameter: INPUT";
+		ESINFO(ERROR) << "Unknown assembler.";
+		exit(EXIT_FAILURE);
 	}
 }
 
-Factory::Factory(const Configuration &configuration)
+static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 {
-	readParameters(configuration);
+	switch (config::assembler::discretization) {
 
-	switch (config::assembler::DISCRETIZATION) {
-	case config::assembler::DISCRETIZATIONalternative::FEM:
-		fillMesh(configuration, mesh, eType, shape);
-		break;
-	case config::assembler::DISCRETIZATIONalternative::BEM: {
-		Mesh fullMesh;
-		fillMesh(configuration, fullMesh, eType, shape);
-		fullMesh.getSurface(mesh);
-		} break;
+	case config::assembler::FEM: {
+		FEM fem(*mesh);
+		return createAssembler<FEM>(fem);
+	}
+	case config::assembler::BEM: {
+		surface = new Mesh();
+		mesh->getSurface(*surface);
+		surface->computeFixPoints(config::mesh::fixPoints);
+		BEM bem(*mesh, *surface);
+		return createAssembler<BEM>(bem);
+	}
 	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown discretization";
-	}
-
-	if (config::output::SAVE_MESH) {
-		std::stringstream ss;
-		ss << "mesh" << config::env::MPIrank;
-		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_FIX_POINTS) {
-		std::stringstream ss;
-		ss << "meshFixPoints" << config::env::MPIrank;
-		output::VTK_Full::fixPoints(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_CORNERS) {
-		std::stringstream ss;
-		ss << "meshCorners" << config::env::MPIrank;
-		output::VTK_Full::corners(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_DIRICHLET) {
-		std::stringstream ss;
-		ss << "meshDirichlet" << config::env::MPIrank;
-		output::VTK_Full::dirichlet(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_AVERAGING) {
-		std::stringstream ss;
-		ss << "meshAveraging" << config::env::MPIrank;
-		output::VTK_Full::averaging(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-
-	switch (physics) {
-	case PhysicsAssembler::LINEAR_ELASTICITY:
-		instance = new LinearInstance<EqualityConstraints, LinearElasticity>(mesh);
-		break;
-	case PhysicsAssembler::TEMPERATURE:
-		instance = new LinearInstance<EqualityConstraints, Temperature>(mesh);
-		break;
-	case PhysicsAssembler::TRANSIENT_ELASTICITY:
-		instance = new DynamicsInstance<EqualityConstraints, TransientElasticity>(mesh);
-		break;
-	case PhysicsAssembler::ADVECTION_DIFFUSION:
-		instance = new LinearInstance<EqualityConstraints, AdvectionDiffusion>(mesh);
-		break;
+		ESINFO(ERROR) << "Unknown discretization.";
+		exit(EXIT_FAILURE);
 	}
 }
 
-void Factory::solve(const std::string &outputFile)
+Factory::Factory(const Options &options)
+:_assembler(NULL), _mesh(NULL), _surface(NULL)
 {
-	instance->init();
+	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 
-	for (int i = 0; i < config::solver::TIME_STEPS; i++) {
-		instance->pre_solve_update(_solution);
-		instance->solve(_solution);
-		instance->post_solve_update(_solution);
+	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " processes.";
 
-		if (config::output::SAVE_RESULTS) {
-			std::stringstream ss;
-			ss << outputFile << config::env::MPIrank;
-			if (config::solver::TIME_STEPS > 1) {
-				ss << "_" << i;
-			}
+	_mesh = getMesh(options);
 
-			output::VTK_Full vtk(mesh, ss.str());
-			vtk.store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	if (config::output::saveMesh) {
+		output::VTK_Full::mesh(*_mesh, "mesh", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+	if (config::output::saveFixPoints) {
+		output::VTK_Full::fixPoints(*_mesh, "meshFixPoints", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+	if (config::output::saveCorners) {
+		output::VTK_Full::corners(*_mesh, "meshCorners", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+	if (config::output::saveDirichlet) {
+		output::VTK_Full::dirichlet(*_mesh, "meshDirichlet", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+	if (config::output::saveAveraging) {
+		output::VTK_Full::averaging(*_mesh, "meshAveraging", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	}
+
+	_assembler = getAssembler(_mesh, _surface);
+}
+
+Factory::~Factory()
+{
+	delete _assembler;
+	if (_mesh != NULL) {
+		delete _mesh;
+	}
+	if (_surface != NULL) {
+		delete _surface;
+	}
+}
+
+void Factory::solve()
+{
+	_assembler->init();
+
+	for (int i = 0; i < config::assembler::timeSteps; i++) {
+		_assembler->pre_solve_update();
+		_assembler->solve(_solution);
+		_assembler->post_solve_update();
+	}
+
+	_assembler->finalize();
+}
+
+void Factory::store(const std::string &file)
+{
+	switch (config::assembler::discretization){
+
+	case config::assembler::FEM: {
+		if (config::output::saveResults) {
+			output::VTK_Full vtk(*_mesh, file);
+			vtk.store(_solution, _mesh->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 		}
+		break;
 	}
-	instance->finalize();
-}
 
+	case config::assembler::BEM: {
+		if (config::output::saveResults) {
+			output::VTK_Full vtk(*_surface, file);
+			vtk.store(_solution, _surface->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+		}
+		break;
+	}
+
+	case config::assembler::API: {
+		if (config::output::saveResults) {
+			output::VTK_Full vtk(*_mesh, file);
+			vtk.store(_solution, _mesh->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+		}
+		break;
+	}
+	}
 }
 
 

@@ -2,15 +2,14 @@
 #ifndef ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
 #define ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_
 
-#include "esmesh.h"
-#include "essolver.h"
+#include "../assembler.h"
 
 namespace espreso {
 
 class Constraints
 {
 protected:
-	Constraints(const Mesh &mesh, size_t DOFs, size_t firstIndex);
+	Constraints(const Mesh &mesh, size_t firstIndex);
 
 	const Mesh &_mesh;
 	std::vector<int> _neighbours;
@@ -23,13 +22,13 @@ protected:
 class Dirichlet: public Constraints
 {
 public:
-	Dirichlet(const Mesh &mesh, size_t DOFs, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
-	:Constraints(mesh, DOFs, offset),
+	Dirichlet(const Mesh &mesh, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
+	:Constraints(mesh, offset),
 	 _dirichletSize(indices.size()), _dirichletOffset(0),
 	 _dirichletIndices(indices.data()), _dirichletValues(values.data()) { };
 
-	Dirichlet(const Mesh &mesh, size_t DOFs, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
-	:Constraints(mesh, DOFs, firstIndex),
+	Dirichlet(const Mesh &mesh, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
+	:Constraints(mesh, firstIndex),
 	 _dirichletSize(size), _dirichletOffset(offset),
 	_dirichletIndices(indices), _dirichletValues(values) { };
 
@@ -49,23 +48,17 @@ protected:
 class Gluing: public Constraints
 {
 public:
-	Gluing(const Mesh &mesh, size_t DOFs, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
-	:Constraints(mesh, DOFs, firstIndex),
+	Gluing(Mesh &mesh, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
+	:Constraints(mesh, firstIndex),
 	  _ignoredDOFsSize(ignoredDOFs.size()), _ignoredDOFsOffset(0), _ignoredDOFs(ignoredDOFs.data()),
 	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
-	Gluing(const Mesh &mesh, size_t DOFs, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
-	:Constraints(mesh, DOFs, firstIndex),
+	Gluing(Mesh &mesh, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
+	:Constraints(mesh, firstIndex),
 	 _ignoredDOFsSize(ignoredDOFsSize), _ignoredDOFsOffset(ignoredDOFsOffset), _ignoredDOFs(ignoredDOFs),
 	 _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
 	 _c2g(mesh.coordinates().clusterToGlobal()) { };
-
-	Gluing(const Mesh &mesh, size_t DOFs)
-	:Constraints(mesh, DOFs, 0),
-	  _ignoredDOFsSize(0), _ignoredDOFsOffset(0), _ignoredDOFs(NULL),
-	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
-	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
 	size_t assembleB1(
 			std::vector<SparseMatrix> &B1,
@@ -109,49 +102,33 @@ private:
 	size_t composeCornersGluing(const std::vector<eslocal> &corners, std::vector<SparseIJVMatrix<esglobal> > &gluing);
 };
 
-struct EqualityConstraints {
+template <class TInput>
+class EqualityConstraints: public Assembler<TInput> {
 
-	// matrices for Hybrid FETI constraints
-	std::vector<SparseMatrix> B0;
-	std::vector<std::vector<esglobal> > B0subdomainsMap; // TODO: not needed
-
-	// matrices for FETI constraints
-	std::vector<SparseMatrix> B1;
-	std::vector<std::vector<esglobal> > B1subdomainsMap; // TODO: not needed
-	std::vector<std::vector<esglobal> > B1clustersMap; // TODO: get it directly
-
-	std::vector<std::vector<double> > B1c;
-	std::vector<std::vector<double> > B1duplicity;
-
-	EqualityConstraints(const Mesh &mesh, size_t DOFs);
-	EqualityConstraints(const Mesh &mesh, size_t DOFs, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase);
-
-	void assemble();
-
-	void save()
-	{
-		ESINFO(PROGRESS2) << "Save matrices B0 and B1";
-		for (size_t p = 0; p < _mesh.parts(); p++) {
-			std::ofstream osK(Logging::prepareFile(p, "B0").c_str());
-			osK << B0[p];
-			osK.close();
-
-			std::ofstream osF(Logging::prepareFile(p, "B1").c_str());
-			osF << B1[p];
-			osF.close();
-		}
-	}
+public:
+	virtual ~EqualityConstraints() {};
 
 protected:
-	const Mesh &_mesh;
-	size_t _DOFs;
+	EqualityConstraints(TInput &input);
 
-	// TODO: will be re-factored
-	std::vector<eslocal> dirichlet;
-	std::vector<double> dirichletValues;
+	void assembleConstraints(std::vector<size_t> columns);
+
+	// matrices for Hybrid FETI constraints
+	std::vector<SparseMatrix> _B0;
+	std::vector<std::vector<esglobal> > _B0subdomainsMap; // TODO: not needed
+
+	// matrices for FETI constraints
+	std::vector<SparseMatrix> _B1;
+	std::vector<std::vector<esglobal> > _B1subdomainsMap; // TODO: not needed
+	std::vector<std::vector<esglobal> > _B1clustersMap; // TODO: get it directly
+
+	std::vector<std::vector<double> > _B1c;
+	std::vector<std::vector<double> > _B1duplicity;
 };
 
 }
+
+#include "../constraints/equalityconstraints.hpp"
 
 
 #endif /* ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_ */

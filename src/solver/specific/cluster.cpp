@@ -246,7 +246,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET) {
+		if (config::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
 			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
 			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
@@ -259,9 +259,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		}
 
 		//************************
-		if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
-			domains[i].B1.Clear();
-		}
+		if ( config::solver::REGULARIZATION == 0 )
+                    domains[i].B1.Clear();
 
 		domains[i].B1t.Clear();
 //		domains[i].B1_comp.Clear();
@@ -282,7 +281,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (USE_DYNAMIC == 0) {
-		if ( ! (USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS )) {
+		if ( ! (USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
 			Compress_G1();
 		}
 	}
@@ -301,17 +300,15 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 
-	    if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
+	    if (config::solver::REGULARIZATION == 0) {
 
 			domains[d].K.swap(K_in[d]);
 
-      		if ( domains[d].K.type == 'G' && SYMMETRIC_SYSTEM ) {
+      		if ( domains[d].K.type == 'G' )
 		  		domains[d].K.RemoveLower();
-      		}
 
-		  	if ( config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::MAGIC ) {
+		  	if ( config::solver::PRECONDITIONER == 11 )
 		  		domains[d].Prec = domains[d].K;
-		  	}
 
    			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
    	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
@@ -602,20 +599,19 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 //#endif
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-	}
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
 
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
 
 	 clus_Sa_time.end();
 
@@ -735,19 +731,19 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 //    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 // #endif
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-	}
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
 
      clus_Sa_time.end();
 
@@ -846,21 +842,19 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 
 	clus_Sa_time.start();
 //	Sa.Solve(tm2[0], vec_alfa,0,0);
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+		 Sa.Solve(tm2[0], vec_alfa,0,0);
+	 }
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-	}
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		eslocal nrhs = 1;
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
+	 }
 
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		eslocal nrhs = 1;
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
+	 }
 	clus_Sa_time.end();
 
 	clus_G0t_time.start();
@@ -1065,24 +1059,13 @@ void ClusterBase::CompressB0() {
 			}
 		}
 
-		size_t unique = 0;
-		for (size_t i = 1; i < domains[d].B0_comp.CSR_I_row_indices.size(); i++) {
-			if (domains[d].B0_comp.CSR_I_row_indices[unique] != domains[d].B0_comp.CSR_I_row_indices[i]) {
-				domains[d].B0_comp.CSR_I_row_indices[++unique] = domains[d].B0_comp.CSR_I_row_indices[i];
-			}
-		}
-		domains[d].B0_comp.rows = unique;
-		domains[d].B0_comp.CSR_I_row_indices.resize(unique + 1);
-
-		// WARNING: There is a problem with 'std::unique'.
-		// WARNING: Combination of 'Cilk' and '-O2' results in memory error in 'std::unique'.
-		//
-		//auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
-		//domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
-		//domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
+		auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
+		domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
+		domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
 
 		domains[d].B0_comp.MatTranspose(domains[d].B0t_comp);
 	}
+
 }
 
 void ClusterBase::CreateG0() {
@@ -1132,11 +1115,9 @@ void ClusterBase::CreateF0() {
 		else
 			domains[d].Kplus.msglvl=0;
 
-		// FO solve in double in case K is in single
-		if (
-				config::solver::F0SOLVER == config::solver::F0SOLVERalternative::DOUBLE
-				&& (config::solver::KSOLVER == config::solver::KSOLVERalternative::DIRECT_SP
-				|| config::solver::KSOLVER == config::solver::KSOLVERalternative::DIRECT_MP )
+		// FO solve in doble in case K is in single
+		if (   (config::solver::KSOLVER == 2 || config::solver::KSOLVER == 3 )
+			 && config::solver::F0_SOLVER == 1
 			) {
 			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
@@ -1235,7 +1216,12 @@ void ClusterBase::CreateF0() {
 void ClusterBase::CreateSa() {
 
 	bool PARDISO_SC = true;
-	bool get_kernel_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
+	bool get_kernel_from_mesh;
+
+	if ( config::solver::REGULARIZATION == 0 )
+  		get_kernel_from_mesh = true	;
+  	else
+  		get_kernel_from_mesh = false	;
 
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -1298,7 +1284,7 @@ void ClusterBase::CreateSa() {
 		 TSak.Clear();
 
 
-	   if (config::info::PRINT_MATRICES) {
+	   if (config::info::printMatrices) {
 			//SparseMatrix RT = cluster.domains[d].Kplus_R;
 			//RT.ConvertDenseToCSR(1);
 
@@ -1371,35 +1357,38 @@ void ClusterBase::CreateSa() {
 		 reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
 	 }
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE: {
-		TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
-		if (MPIrank == 0)  {
-			Sa.msglvl = 1;
-		}
+
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
+     //#ifdef SPARSE_SA
+		 TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
+		if (MPIrank == 0) Sa.msglvl = 1;
 		Sa.ImportMatrix(Salfa);
 		Sa.Factorization("salfa");
-		if (MPIrank == 0) {
-			Sa.msglvl = 0;
-		}
-		fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
-		break;
-	}
-	case config::solver::SASOLVERalternative::CPU_DENSE: {
-		TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
+		if (MPIrank == 0) Sa.msglvl = 0;
+		 fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
+     //#else
+	 }
+
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
+		 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 
 		Salfa.ConvertCSRToDense(1);
 
 		Sa_dense_cpu.ImportMatrix(Salfa);
 		Sa_dense_cpu.Factorization("Salfa - dense ");
 
-		factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
-		break;
-	}
-	case config::solver::SASOLVERalternative::ACC_DENSE: {
-		TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
+		 factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+	 }
 
-		Salfa.type = 'G';
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
+		 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
+
+//#if defined(SOLVER_CUDA)
+		 Salfa.type = 'G';
+//#endif
+//#if defined(SOLVER_CUDA_7)
+//	 Salfa.type = 'G';
+//#endif
 
 		Salfa.ConvertCSRToDense(1);
 		Salfa.type = 'S';
@@ -1408,211 +1397,17 @@ void ClusterBase::CreateSa() {
 		Sa_dense_acc.Factorization("Salfa - dense ");
 
 		factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
-		break;
-	}
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-	}
+	 }
 
 	Sa.m_Kplus_size = Salfa.cols;
+
+//#endif // //#ifdef SPARSE_SA
+
 
 	Sa_timing.totalTime.end(); Sa_timing.printStatsMPI();
 	MKL_Set_Num_Threads(1);
 }
 
-void ClusterBase::Create_G_perCluster() {
-
-	SparseMatrix tmpM;
-
-	TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
-	G1_1_time.start();
-	TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
-	G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
-
-	int MPIrank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
-
-	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
-
-	cilk_for (eslocal j = 0; j < domains.size(); j++) {
-
-		SparseMatrix Rt;
-		SparseMatrix Rt2;
-
-		SparseMatrix B;
-		B = domains[j].B1;
-
-		switch (config::solver::REGULARIZATION) {
-		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
-			Rt = domains[j].Kplus_R;
-			Rt.ConvertDenseToCSR(1);
-			Rt.MatTranspose();
-
-			if (!SYMMETRIC_SYSTEM) {
-				Rt2 = domains[j].Kplus_R2;
-				Rt2.ConvertDenseToCSR(1);
-				Rt2.MatTranspose();
-			}
-
-			break;
-		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
-			Rt = domains[j].Kplus_Rb;
-			Rt.ConvertDenseToCSR(1);
-			Rt.MatTranspose();
-
-			if (!SYMMETRIC_SYSTEM) {
-				Rt2 = domains[j].Kplus_Rb2;
-				Rt2.ConvertDenseToCSR(1);
-				Rt2.MatTranspose();
-			}
-
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented type of regularization.";
-		}
-
-		Rt.ConvertCSRToDense(1);
-		//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
-		Create_G1_perSubdomain(Rt, B, tmp_Mat[j]);
-
-		if (!SYMMETRIC_SYSTEM) {
-			Rt2.ConvertCSRToDense(1);
-			//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
-			Create_G1_perSubdomain(Rt2, B, tmp_Mat2[j]);
-		}
-
-	}
-
-	G1_1_time.end();
-	G1_1_time.printStatMPI();
-	//G1_1_time.printLastStatMPIPerNode();
-	G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
-	G1_1_mem.printStatMPI();
-	//G1_1_mem.printLastStatMPIPerNode();
-
-	//G1_1_mem.printLastStatMPIPerNode();
-	TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
-	G1_2_time.start();
-	TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
-	G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
-
-	for (eslocal j = 1; j < tmp_Mat.size(); j = j * 2 ) {
-		cilk_for (eslocal i = 0; i < tmp_Mat.size(); i = i + 2*j) {
-
-			if ( i+j < tmp_Mat.size()) {
-				if (USE_HFETI == 1) {
-					tmp_Mat[i    ].MatAddInPlace( tmp_Mat[i + j], 'N', 1.0 );
-				} else {
-					tmp_Mat[i    ].MatAppend(tmp_Mat[i + j]);
-				}
-				tmp_Mat[i + j].Clear();
-
-				if (!SYMMETRIC_SYSTEM) {
-					if (USE_HFETI == 1) {
-						tmp_Mat2[i    ].MatAddInPlace( tmp_Mat2[i + j], 'N', 1.0 );
-					} else {
-						tmp_Mat2[i    ].MatAppend(tmp_Mat2[i + j]);
-					}
-					tmp_Mat2[i + j].Clear();
-				}
-
-			}
-		}
-	}
-
-	G1_2_time.end();
-	G1_2_time.printStatMPI();
-	//G1_2_time.printLastStatMPIPerNode();
-
-	G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
-	G1_2_mem.printStatMPI();
-	//G1_2_mem.printLastStatMPIPerNode();
-
-	// Save resulting matrix G1
-	G1 = tmp_Mat[0];
-	for (eslocal i = 0; i < G1.CSR_V_values.size(); i++)
-		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
-
-
-	if (!SYMMETRIC_SYSTEM) {
-		G2 = tmp_Mat2[0];
-		for (eslocal i = 0; i < G2.CSR_V_values.size(); i++)
-			G2.CSR_V_values[i] = -1.0 * G2.CSR_V_values[i];
-
-	} //else {
-	//G2 = G1;
-	//}
-
-}
-
-void ClusterBase::Create_G1_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out) {
-
-	if (B_in.nnz > 0) {
-
-		SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B_in.nnz, SEQ_VECTOR <double> (R_in.rows,0));
-		SEQ_VECTOR <eslocal > G_I_row_indices;
-
-		G_I_row_indices.resize(B_in.nnz);
-
-		eslocal indx = 0;
-		for (eslocal r = 0; r < R_in.rows; r++)
-			tmpG[indx][r] += B_in.V_values[0] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[0]-1) + r];
-
-		G_I_row_indices[indx] = B_in.I_row_indices[0];
-
-		for (eslocal i = 1; i < B_in.I_row_indices.size(); i++) {
-
-			if (B_in.I_row_indices[i-1] != B_in.I_row_indices[i])
-				indx++;
-
-			for (eslocal r = 0; r < R_in.rows; r++)
-				tmpG[indx][r] += B_in.V_values[i] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[i]-1) + r];
-
-			G_I_row_indices[indx] = B_in.I_row_indices[i];
-		}
-
-		G_I_row_indices.resize(indx+1);
-		tmpG.resize(indx+1);
-
-		SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-		SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-		SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
-
-		for (eslocal i = 0; i < tmpG.size(); i++) {
-			for (eslocal j = 0; j < tmpG[i].size(); j++){
-				if (tmpG[i][j] != 0) {
-					G_I.push_back(G_I_row_indices[i]);
-					G_J.push_back(j+1);
-					G_V.push_back(tmpG[i][j]);
-				}
-			}
-		}
-
-		G_out.I_row_indices = G_J;
-		G_out.J_col_indices = G_I;
-		G_out.V_values      = G_V;
-		G_out.cols = B_in.rows;
-		G_out.rows = R_in.rows;
-		G_out.nnz  = G_I.size();
-		G_out.type = 'G';
-
-	} else {
-
-		G_out.cols = B_in.rows;
-		G_out.rows = R_in.rows;
-
-		G_out.I_row_indices.resize(1,0);
-		G_out.J_col_indices.resize(1,0);
-		G_out.V_values.resize(0,0);
-
-		G_out.nnz  = 0;
-		G_out.type = 'G';
-	}
-
-	G_out.ConvertToCSRwithSort(1);
-
-}
 
 void ClusterBase::Create_G1_perCluster() {
 
@@ -1748,21 +1543,16 @@ void ClusterBase::Create_G1_perCluster() {
 				SparseMatrix Rt;
 				SparseMatrix B;
 
-				switch (config::solver::REGULARIZATION) {
-				case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+				if ( config::solver::REGULARIZATION == 0 ) {
 					Rt = domains[j].Kplus_R;
 					Rt.ConvertDenseToCSR(1);
 					Rt.MatTranspose();
 					//domains[j].Kplus_R.MatTranspose(Rt);
-					break;
-				case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+				} else {
 					Rt = domains[j].Kplus_Rb;
 					Rt.ConvertDenseToCSR(1);
 					Rt.MatTranspose();
 					//domains[j].Kplus_Rb.MatTranspose(Rt);
-					break;
-				default:
-					ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
 				}
 
 				//Rt = domains[j].Kplus_R;
@@ -1824,11 +1614,10 @@ void ClusterBase::Create_G1_perCluster() {
 
 			} else {
 				Gcoo.cols = domains[j].B1.rows;
-				if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
+				if ( config::solver::REGULARIZATION == 0 )
 					Gcoo.rows = domains[j].Kplus_R.rows;
-				} else {
+				else
 					Gcoo.rows = domains[j].Kplus_Rb.rows;
-				}
 				Gcoo.I_row_indices.resize(1,0);
 				Gcoo.J_col_indices.resize(1,0);
 				Gcoo.V_values.resize(0,0);
@@ -1898,21 +1687,16 @@ void ClusterBase::Create_G1_perCluster() {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			switch (config::solver::REGULARIZATION) {
-			case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+			if ( config::solver::REGULARIZATION == 0 ) {
 				Rt = domains[j].Kplus_R;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
 				//domains[j].Kplus_R.MatTranspose(Rt);
-				break;
-			case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+			} else {
 				Rt = domains[j].Kplus_Rb;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
 				//domains[j].Kplus_Rb.MatTranspose(Rt);
-				break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
 			}
 
 			Rt.ConvertCSRToDense(1);
@@ -2005,34 +1789,24 @@ void ClusterBase::Create_G1_perCluster() {
 
 void ClusterBase::Compress_G1() {
 
-	Compress_G(G1, G1_comp);
+	G1.ConvertToCOO( 1 );
+
+	cilk_for (eslocal j = 0; j < G1.J_col_indices.size(); j++ )
+		G1.J_col_indices[j] = _my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+
+	G1.cols = my_lamdas_indices.size();
+	G1.ConvertToCSRwithSort( 1 );
+
+	G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
+	G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
+	G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
+
+	G1_comp.rows = G1.rows;
+	G1_comp.cols = G1.cols;
+	G1_comp.nnz  = G1.nnz;
+	G1_comp.type = G1.type;
+
 	G1.Clear();
-
-	if (!SYMMETRIC_SYSTEM) {
-		Compress_G(G2, G2_comp);
-		G2.Clear();
-	}
-
-}
-
-void ClusterBase::Compress_G( SparseMatrix &G_in, SparseMatrix &G_comp_out ) {
-
-	G_in.ConvertToCOO( 1 );
-
-	cilk_for (eslocal j = 0; j < G_in.J_col_indices.size(); j++ )
-		G_in.J_col_indices[j] = _my_lamdas_map_indices[ G_in.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
-
-	G_in.cols = my_lamdas_indices.size();
-	G_in.ConvertToCSRwithSort( 1 );
-
-	G_comp_out.CSR_I_row_indices.swap( G_in.CSR_I_row_indices );
-	G_comp_out.CSR_J_col_indices.swap( G_in.CSR_J_col_indices );
-	G_comp_out.CSR_V_values     .swap( G_in.CSR_V_values		 );
-
-	G_comp_out.rows = G_in.rows;
-	G_comp_out.cols = G_in.cols;
-	G_comp_out.nnz  = G_in.nnz;
-	G_comp_out.type = G_in.type;
 
 }
 
@@ -2047,7 +1821,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	if ( USE_HFETI == 1) {
 		for (eslocal d = 0; d < domains.size(); d++) {
-			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 			} else {
 				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
@@ -2055,7 +1829,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		}
 	} else {
 		for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
-			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+			if ( config::solver::REGULARIZATION == 0 ) {
 				domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 			} else {
 				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI

@@ -192,7 +192,7 @@ void TimeEvent::printStatMPI(double totalTime) {
 
 
 void TimeEvent::printLastStatMPI(double totalTime) {
-	if (config::info::MEASURE_LEVEL == 0) {
+	if (config::info::measureLevel == 0) {
 		return;
 	}
 	double d_time = eventTime.back();

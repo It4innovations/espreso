@@ -1,10 +1,10 @@
-
 #include "mesh.h"
 #include "esoutput.h"
 
-namespace espreso {
+using namespace espreso;
 
-Mesh::Mesh():_elements(0), _fixPoints(0)
+
+Mesh::Mesh():_elements(0), _fixPoints(0), _DOFs(3)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -447,11 +447,8 @@ void Mesh::getSurface(Mesh &surface) const
 	surface.computeFixPoints(0);
 	surface.computeBoundaries();
 	surface._clusterBoundaries = _clusterBoundaries;
+	surface._DOFs = _DOFs;
 	surface._neighbours = _neighbours;
-	surface._materials = _materials;
-	for (size_t i = 0; i < _boundaryConditions.size(); i++) {
-		surface._boundaryConditions.push_back(_boundaryConditions[i]->copy());
-	}
 }
 
 void Mesh::makePartContinuous(size_t part)
@@ -1020,12 +1017,12 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	subdomainsInterfaces(commonFaces);
 	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
 
-	if (config::output::SAVE_FACES) {
-		output::VTK_Full::mesh(commonFaces, "meshFaces", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	if (config::output::saveFaces) {
+		output::VTK_Full::mesh(commonFaces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
 
-	if (config::output::SAVE_LINES) {
-		output::VTK_Full::mesh(commonLines, "meshLines", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	if (config::output::saveLines) {
+		output::VTK_Full::mesh(commonLines, "meshLines", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
 
 	auto faceToCluster = [&] (eslocal index, eslocal part) {
@@ -1134,14 +1131,12 @@ void Mesh::remapElementsToCluster() const
 	}
 }
 
-std::ostream& operator<<(std::ostream& os, const Mesh &m)
+std::ostream& espreso::operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {
 		os << *(m._elements[i]) << "\n";
 	}
 	return os;
-}
-
 }
 
 

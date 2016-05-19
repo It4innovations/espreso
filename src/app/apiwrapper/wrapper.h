@@ -6,26 +6,29 @@
 #include <list>
 
 #include "esconfig.h"
-#include "esassembler.h"
+#include "esassemblers.h"
 #include "esinput.h"
 #include "esbasis.h"
 
 struct FETI4IStructMatrix {
-	FETI4IStructMatrix(eslocal offset): offset(offset) {};
+	FETI4IStructMatrix(eslocal offset): offset(offset), K(0, 0) { };
 
 	std::vector<std::vector<eslocal> > eIndices;
 	std::vector<std::vector<double> > eMatrices;
+
+	// used in case of 1 subdomain
+	espreso::SparseVVPMatrix<eslocal> K;
 
 	eslocal offset;
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(FETI4IStructMatrix &matrix)
-	: instance(NULL), mesh(matrix.eMatrices) {};
-	~FETI4IStructInstance() { if (instance != NULL) { delete instance; } }
+	FETI4IStructInstance(espreso::LinearElasticity<espreso::API> data, espreso::Mesh *mesh): data(data), mesh(mesh), K(0, 0) { };
+	~FETI4IStructInstance() { delete mesh; }
 
-	espreso::Instance *instance;
-	espreso::APIMesh mesh;
+	espreso::LinearElasticity<espreso::API> data;
+	espreso::Mesh *mesh;
+	espreso::SparseCSRMatrix<eslocal> K;
 };
 
 namespace espreso {

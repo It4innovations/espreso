@@ -47,8 +47,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	eslocal SC_total_size = 0;
 	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 
-		switch (config::solver::SCHUR_COMPLEMENT_TYPE) {
-		case config::solver::SCHUR_COMPLEMENT_TYPEalternative::GENERAL:
+		if (config::solver::SCHUR_COMPLEMENT_TYPE == 0) { // SC is general matrix
 			if (USE_FLOAT) {
 				SC_total_size +=
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
@@ -60,24 +59,21 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 						  2 * domains[d].B1_comp_dom.rows
 						) * sizeof(double);
 			}
-			break;
-		case config::solver::SCHUR_COMPLEMENT_TYPEalternative::SYMMETRIC:
-			if (USE_FLOAT) {
-				SC_total_size +=
-						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
-						 + 2 * domains[d].B1_comp_dom.rows
-						) * sizeof(float);
-			} else {
-				SC_total_size +=
-						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
-						 + 2 * domains[d].B1_comp_dom.rows
-						) * sizeof(double);
-			}
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented type of Schur complement.";
 		}
 
+		if (config::solver::SCHUR_COMPLEMENT_TYPE == 1) { // SC is symmetric matrix
+			if (USE_FLOAT) {
+				SC_total_size +=
+						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
+						 + 2 * domains[d].B1_comp_dom.rows
+						) * sizeof(float);
+			} else {
+				SC_total_size +=
+						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
+						 + 2 * domains[d].B1_comp_dom.rows
+						) * sizeof(double);
+			}
+		}
 
 		if (SC_total_size < GPU_free_mem) {
 			domains_on_GPU++;
@@ -321,9 +317,8 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
 	//ESINFO(PROGRESS2) << Info::plain() << "s";
 
 	// if Schur complement is symmetric - then remove lower part - slower for GPU but more mem. efficient
-	if (config::solver::SCHUR_COMPLEMENT_TYPE == config::solver::SCHUR_COMPLEMENT_TYPEalternative::SYMMETRIC) {
+	if (config::solver::SCHUR_COMPLEMENT_TYPE == 1)
 		domains[i].B1Kplus.RemoveLowerDense();
-	}
 
 }
 
@@ -333,22 +328,27 @@ void ClusterGPU::SetupKsolvers ( ) {
 
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
 		switch (config::solver::KSOLVER) {
-		case config::solver::KSOLVERalternative::DIRECT_DP:
+		case 0: {
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::ITERATIVE:
+		}
+		case 1: {
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::DIRECT_SP:
+		}
+		case 2: {
 			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
 			//domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::DIRECT_MP:
+		}
+		case 3: {
 			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
-//		case 4:
-//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-//			break;
+		}
+		case 4: {
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+		}
 		default:
 			ESINFO(ERROR) << "Invalid KSOLVER value.";
 			exit(EXIT_FAILURE);
@@ -360,7 +360,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 				std::stringstream ss;
 				ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
 				domains[d].Kplus.keep_factors = true;
-				if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
+				if (config::solver::KSOLVER != 1) {
 					domains[d].Kplus.Factorization (ss.str());
 				}
 			} else {
@@ -368,7 +368,7 @@ void ClusterGPU::SetupKsolvers ( ) {
 					std::stringstream ss;
 					ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
 					domains[d].Kplus.keep_factors = true;
-					if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
+					if (config::solver::KSOLVER != 1) {
 						domains[d].Kplus.Factorization (ss.str());
 					}
 				}
@@ -465,16 +465,16 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 ////	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 ////#endif
 
-	 if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_SPARSE) {
+	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
 		 Sa.Solve(tm2[0], vec_alfa,0,0);
 	 }
 
-	 if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_DENSE) {
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
 			eslocal nrhs = 1;
 			Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	 }
 
-	 if (config::solver::SASOLVER == config::solver::SASOLVERalternative::ACC_DENSE) {
+	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
 			eslocal nrhs = 1;
 			Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
 	 }
@@ -658,16 +658,16 @@ void ClusterGPU::multKplus_HF_CP( ) {
 
 
 	 clus_Sa_time.start();
-	if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_SPARSE) {
+	if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {
 		Sa.Solve(tm2[0], vec_alfa,0,0);
 	}
 
-	if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_DENSE) {
+	if (config::solver::SA_SOLVER == config::SA_DENSE_on_CPU) {
 		eslocal nrhs = 1;
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	}
 
-	if (config::solver::SASOLVER == config::solver::SASOLVERalternative::ACC_DENSE) {
+	if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
 		eslocal nrhs = 1;
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);// lambda
 	}

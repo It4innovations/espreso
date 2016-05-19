@@ -1,8 +1,5 @@
 
 #include "wrapper.h"
-#include "../../../libespreso/feti4i.h"
-#include "../../assembler/instance/precomputed/instance.h"
-#include "../../assembler/physics/precomputed/uniformsymmetric3dofs/assembler.h"
 
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
@@ -39,70 +36,52 @@ static void readBinary(std::vector<double> &vector, std::string fileName) {
 	}
 }
 
-void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
+//int FETI4ICreateStiffnessMatrix(
+//		FETI4IMatrix *stiffnessMatrix,
+//		FETI4IInt n,
+//		FETI4IInt nelt,
+//		FETI4IInt* eltptr,
+//		FETI4IInt* eltvar,
+//		FETI4IReal* values)
+//{
+//	FETI4IInt indexing = eltptr[0];
+//
+//	SparseVVPMatrix<eslocal> matrix(n, n);
+//
+//	FETI4IInt value = 0;
+//	for (FETI4IInt e = 0; e < nelt; e++) {
+//		for (FETI4IInt i = eltptr[e] - indexing; i < eltptr[e + 1] - indexing; i++) {
+//			FETI4IInt size = eltptr[e + 1] - eltptr[e];
+//			for (FETI4IInt j = 0; j < size; j++) {
+//				matrix(eltvar[eltptr[e] - indexing + j] - indexing, eltvar[i] - indexing) = values[value++];
+//			}
+//		}
+//	}
+//
+//	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexing));
+//	DataHolder::matrices.back()->data = matrix;
+//	*stiffnessMatrix = DataHolder::matrices.back();
+//	return 0;
+//}
+
+void FETI4ITest()
 {
-	options[FETI4I_SUBDOMAINS] = config::mesh::SUBDOMAINS;
-
-	options[FETI4I_ITERATIONS] = config::solver::ITERATIONS;
-	options[FETI4I_FETI_METHOD] = static_cast<int>(config::solver::FETI_METHOD);
-	options[FETI4I_PRECONDITIONER] = static_cast<int>(config::solver::PRECONDITIONER);
-	options[FETI4I_CGSOLVER] = static_cast<int>(config::solver::CGSOLVER);
-	options[FETI4I_N_MICS] = config::solver::N_MICS;
-
-	options[FETI4I_VERBOSE_LEVEL] = config::info::VERBOSE_LEVEL;
-	options[FETI4I_TESTING_LEVEL] = config::info::TESTING_LEVEL;
-	options[FETI4I_MEASURE_LEVEL] = config::info::MEASURE_LEVEL;
-	options[FETI4I_PRINT_MATRICES] = config::info::PRINT_MATRICES;
-}
-
-void FETI4ISetDefaultRealOptions(FETI4IReal* options)
-{
-	options[FETI4I_EPSILON] = config::solver::EPSILON;
-}
-
-static void FETI4ISetIntegerOptions(FETI4IInt* options)
-{
-	ParametersReader reader(config::parameters);
-
-	if (!reader.setParameter(&config::mesh::SUBDOMAINS, options[FETI4I_SUBDOMAINS])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
-	}
-	if (!reader.setParameter(&config::solver::ITERATIONS, options[FETI4I_ITERATIONS])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'ITERATIONS' to " << options[FETI4I_ITERATIONS];
-	}
-	if (!reader.setParameter(&config::solver::FETI_METHOD, options[FETI4I_FETI_METHOD])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'FETI_METHOD' to " << options[FETI4I_FETI_METHOD];
-	}
-	if (!reader.setParameter(&config::solver::PRECONDITIONER, options[FETI4I_PRECONDITIONER])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRECONDITIONER' to " << options[FETI4I_PRECONDITIONER];
-	}
-	if (!reader.setParameter(&config::solver::CGSOLVER, options[FETI4I_CGSOLVER])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'CGSOLVER' to " << options[FETI4I_CGSOLVER];
-	}
-	if (!reader.setParameter(&config::solver::N_MICS, options[FETI4I_N_MICS])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'N_MICS' to " << options[FETI4I_N_MICS];
-	}
-	if (!reader.setParameter(&config::info::VERBOSE_LEVEL, options[FETI4I_VERBOSE_LEVEL])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'VERBOSE_LEVEL' to " << options[FETI4I_VERBOSE_LEVEL];
-	}
-	if (!reader.setParameter(&config::info::TESTING_LEVEL, options[FETI4I_TESTING_LEVEL])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'TESTING_LEVEL' to " << options[FETI4I_TESTING_LEVEL];
-	}
-	if (!reader.setParameter(&config::info::MEASURE_LEVEL, options[FETI4I_MEASURE_LEVEL])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MEASURE_LEVEL' to " << options[FETI4I_MEASURE_LEVEL];
-	}
-	if (!reader.setParameter(&config::info::PRINT_MATRICES, options[FETI4I_PRINT_MATRICES])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
-	}
-}
-
-static void FETI4ISetRealOptions(FETI4IReal* options)
-{
-	ParametersReader reader(config::parameters);
-
-	if (!reader.setParameter(&config::solver::EPSILON, options[FETI4I_EPSILON])) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'EPSILON' to " << options[FETI4I_PRINT_MATRICES];
-	}
+//	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::env::MPIrank);
+//	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::env::MPIsize);
+//
+//	CubeSettings cube(esconfig::env::MPIrank, esconfig::env::MPIsize);
+//	MeshGenerator generator(new CubeGenerator<Hexahedron8>(cube));
+//
+//	mesh::Mesh mesh(esconfig::env::MPIrank, esconfig::env::MPIsize);
+//	generator.load(mesh);
+//
+//	FEM fem(mesh);
+//	LinearElasticity<FEM> solver(fem);
+//
+//	std::vector<std::vector<double> > solution;
+//
+//	solver.init();
+//	solver.solve(solution);
 }
 
 void FETI4ICreateStiffnessMatrix(
@@ -111,7 +90,11 @@ void FETI4ICreateStiffnessMatrix(
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
-	config::solver::REGULARIZATION = config::solver::REGULARIZATIONalternative::NULL_PIVOTS;
+	config::info::verboseLevel = 3;
+	config::info::measureLevel = 3;
+	config::solver::REGULARIZATION = config::NULL_PIVOTS;
+
+	ESINFO(OVERVIEW) << "ESPRESO create stiffness matrix holder";
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
@@ -152,34 +135,32 @@ void FETI4ICreateInstance(
 		FETI4IMPIInt*	neighbours,
 		FETI4IInt 		dirichlet_size,
 		FETI4IInt* 		dirichlet_indices,
-		FETI4IReal* 	dirichlet_values,
-		FETI4IInt* 		integer_options,
-		FETI4IReal*		real_options)
+		FETI4IReal* 	dirichlet_values)
 {
-	FETI4ISetIntegerOptions(integer_options);
-	FETI4ISetRealOptions(real_options);
-	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);
-
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
 	ESINFO(OVERVIEW) << "ESPRESO create solver instance";
 
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
-	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix));
-	input::API::load(DataHolder::instances.back()->mesh, matrix->eIndices, neighClusters, size, l2g);
+	APIMesh *mesh = new APIMesh(matrix->eMatrices);
+	input::API::load(*mesh, matrix->eIndices, neighClusters, size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(
-			DataHolder::instances.back()->mesh,
-			rhs,
-			size,
-			dirichlet_size,
-			dirichlet_indices,
-			dirichlet_values,
-			matrix->offset
-	);
+	API api(mesh);
+	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
 
-	DataHolder::instances.back()->instance->init();
+	api.indexing = matrix->offset;
+	api.size = size;
+	api.rhs = rhs;
+	api.dirichlet_size = dirichlet_size;
+	api.dirichlet_indices = dirichlet_indices;
+	api.dirichlet_values = dirichlet_values;
+	api.l2g = l2g;
+	api.neighbours_size = neighbours_size;
+	api.neighbours = neighbours;
+	DataHolder::instances.back()->data = LinearElasticity<API>(api);
+
+	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
@@ -194,10 +175,10 @@ void FETI4ISolve(
 
 	std::vector<std::vector<double> > solutions(1);
 	solutions[0] = std::vector<double>(solution, solution + solution_size);
-	instance->instance->solve(solutions);
+	instance->data.solve(solutions);
 	memcpy(solution, &solutions[0][0], solution_size * sizeof(double));
 
-	instance->instance->finalize();
+	instance->data.finalize();
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 	DataHolder::timeStatistics.totalTime.endWithBarrier();

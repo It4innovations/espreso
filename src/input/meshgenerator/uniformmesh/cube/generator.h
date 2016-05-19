@@ -26,7 +26,7 @@ protected:
 	CubeGenerator(Mesh &mesh, const CubeSettings &settings);
 
 	virtual void elementsMaterials(std::vector<Element*> &elements);
-	virtual void points(Coordinates &coordinates);
+	virtual void points(Coordinates &coordinates, size_t &DOFs);
 	virtual void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
