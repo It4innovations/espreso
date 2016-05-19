@@ -6,7 +6,7 @@ import sys
 import os
 
 
-sys.path.append(os.path.abspath("./python"))
+sys.path.append(os.path.abspath("src/python"))
 from wafutils import *
 
 # Each attribute has this structure: ( "attribute", "description", "data type", "choices")
@@ -62,26 +62,26 @@ def configure(ctx):
         ctx.recurse("tools")
 
     # recurse to basic parts
-    ctx.recurse("config")
-    ctx.recurse("basis")
-    ctx.recurse("bem")
-    ctx.recurse("mesh")
-    ctx.recurse("input")
-    ctx.recurse("output")
+    ctx.recurse("src/config")
+    ctx.recurse("src/basis")
+    ctx.recurse("tools/bem4i")
+    ctx.recurse("src/mesh")
+    ctx.recurse("src/input")
+    ctx.recurse("src/output")
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
-    ctx.recurse("solver")
-    ctx.recurse("assembler")
-    ctx.recurse("app")
+    ctx.recurse("src/solver")
+    ctx.recurse("src/assembler")
+    ctx.recurse("src/app")
 
     check_environment(ctx)
 
 def build(ctx):
 
     ctx(
-        export_includes = "include config basis mesh input output bem/src assembler",
+        export_includes = "src/include src/config src/basis src/mesh src/input src/output tools/bem4i/src src/assembler",
         name            = "espreso_includes"
     )
 
@@ -95,17 +95,17 @@ def build(ctx):
         ctx.recurse("tools")
     ctx.add_group()
 
-    ctx.recurse("basis")
-    ctx.recurse("config")
-    ctx.recurse("bem")
-    ctx.recurse("mesh")
-    ctx.recurse("input")
-    ctx.recurse("output")
+    ctx.recurse("src/basis")
+    ctx.recurse("src/config")
+    ctx.recurse("tools/bem4i")
+    ctx.recurse("src/mesh")
+    ctx.recurse("src/input")
+    ctx.recurse("src/output")
 
     ctx.env = ctx.all_envs["solver"]
-    ctx.recurse("solver")
-    ctx.recurse("assembler")
-    ctx.recurse("app")
+    ctx.recurse("src/solver")
+    ctx.recurse("src/assembler")
+    ctx.recurse("src/app")
 
 
 def options(opt):

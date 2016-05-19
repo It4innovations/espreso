@@ -1,7 +1,0 @@
-export CPATH=/apps/icc/2015.3.187-GNU-5.1.0-2.25/tbb/include/:$CPATH
-
-module load impi/5.0.3.048-iccifort-2015.3.187
-module load icc/2015.3.187
-module load imkl/11.2.3.187-iimpi-7.3.5
-
-cd build; icpc -I/apps/all/impi/5.0.3.048-iccifort-2015.3.187/intel64/include -L/apps/all/impi/5.0.3.048-iccifort-2015.3.187/intel64/lib/release_mt -L/apps/all/impi/5.0.3.048-iccifort-2015.3.187/intel64/lib -Xlinker --enable-new-dtags -Xlinker -rpath -Xlinker /apps/all/impi/5.0.3.048-iccifort-2015.3.187/intel64/lib/release_mt -Xlinker -rpath -Xlinker /apps/all/impi/5.0.3.048-iccifort-2015.3.187/intel64/lib -Xlinker -rpath -Xlinker /opt/intel/mpi-rt/5.0/intel64/lib/release_mt -Xlinker -rpath -Xlinker /opt/intel/mpi-rt/5.0/intel64/lib -lmpicxx -lmpifort -lmpi -lmpigi -ldl -lrt -lpthread -Wall -openmp app/src/main.cpp.1.o -o /home/lriha/espreso/build/app/espreso -Wl,-Bdynamic -L/usr/lib64/ -L../libs -Lpermoncube -Lmesh -Lbem -Lsolver -lmetis32 -lpardiso500-INTEL120-X86-64 -lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lespmcube -lesmesh -lesbem -lessolver -Wl,-Bstatic -L../libs -lifcore; cd ..; cp build/app/espreso .

@@ -6,7 +6,7 @@
 #include "esoutput.h"
 #include "esmesh.h"
 #include "esbem.h"
-#include "../libespreso/feti4i.h"
+#include "../../libespreso/feti4i.h"
 #include "../solver/essolver.h"
 
 namespace espreso {
