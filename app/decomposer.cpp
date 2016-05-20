@@ -40,7 +40,8 @@ int main(int argc, char** argv)
 		factory.mesh()->partitiate(parts);
 		std::cout << "Mesh partitiated to " << parts * config::env::MPIsize << " parts\n";
 		output::Esdata data(*factory.mesh(), ss.str());
-		for (size_t p = 0; p < m.parts(); p++) {
+		std::vector<size_t> sizes(factory.mesh()->parts());
+		for (size_t p = 0; p < factory.mesh()->parts(); p++) {
 			sizes[p] = factory.mesh()->getPartNodesCount(p);
 		}
 		std::cout << Info::averageValues(sizes) << "\n";
