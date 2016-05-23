@@ -292,6 +292,13 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 			if (sMap[i][1] == s) {
 				sign = -1;
 			}
+
+			Point center(0, 0 ,0);
+			for (size_t n = 0; n < faces.coordinates().localSize(i); n++) {
+				center += _mesh.coordinates()[faces.coordinates().globalIndex(n, i)];
+			}
+			center /= faces.coordinates().localSize(i);
+
 			for (eslocal r = 0; r < rowsPerCorner; r++) {
 				for (size_t n = 0; n < faces.coordinates().localSize(i); n++) {
 					eslocal column = _mesh.DOFs() * _mesh.coordinates().localIndex(faces.coordinates().globalIndex(n, i), s);
@@ -300,7 +307,8 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 						B0[s].J_col_indices.push_back(column + r + IJVMatrixIndexing);
 						B0[s].V_values.push_back(sign);
 					} else {
-						const Point &p = _mesh.coordinates()[faces.coordinates().globalIndex(n, i)];
+						Point p = _mesh.coordinates()[faces.coordinates().globalIndex(n, i)];
+						p -= center;
 						B0[s].I_row_indices.insert(B0[s].I_row_indices.end(), 2, i * rowsPerCorner + r + IJVMatrixIndexing);
 						switch (r) {
 						case 3:
