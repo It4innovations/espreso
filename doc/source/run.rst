@@ -3,6 +3,12 @@
 Run the ESPRESO
 ===============
 
+test
+
+.. doxygenclass:: espreso::Mesh
+   :protected-members:
+
+
 How to set up
 -------------
 
