@@ -304,12 +304,12 @@ void Options::configure()
 	std::signal(SIGFPE, signalHandler);
 	std::signal(SIGSEGV, signalHandler);
 
-	std::vector<std::pair<std::string, config::mesh::Input> > inputs = {
-			{ "GENERATOR", config::mesh::GENERATOR },
-			{ "MATSOL", config::mesh::ANSYS_MATSOL },
-			{ "WORKBENCH", config::mesh::ANSYS_WORKBENCH },
-			{ "OPENFOAM", config::mesh::OPENFOAM },
-			{ "ESDATA", config::mesh::ESDATA },
+	std::vector<std::pair<std::string, config::Input> > inputs = {
+			{ "GENERATOR", config::GENERATOR },
+			{ "MATSOL", config::ANSYS_MATSOL },
+			{ "WORKBENCH", config::ANSYS_WORKBENCH },
+			{ "OPENFOAM", config::OPENFOAM },
+			{ "ESDATA", config::ESDATA },
 	};
 
 	for (size_t i = 0; i < inputs.size(); i++) {

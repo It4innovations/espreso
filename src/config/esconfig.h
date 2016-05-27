@@ -14,7 +14,13 @@ class Description;
 
 namespace config {
 
-
+enum Input {
+	ANSYS_MATSOL,
+	ANSYS_WORKBENCH,
+	OPENFOAM,
+	ESDATA,
+	GENERATOR
+};
 
 enum FetiMethod {
 	TOTAL_FETI,
@@ -88,10 +94,18 @@ namespace env {
 };
 
 namespace mesh {
-	enum Input { ANSYS_MATSOL, ANSYS_WORKBENCH, OPENFOAM, ESDATA, GENERATOR };
 	extern int input;
 	extern std::string path;
 
+	/// The number of sub-domains in each cluster.
+	/**
+	 * The number of sub-domains should be set appropriate to a problem size.
+	 * Big sub-domains increase time to solve them. Small sub-domains increase
+	 * the size of the coarse problem.
+	 *
+	 * The shared memory parallelization is mainly through sub-domains. Hence,
+	 * the minimal number should be kept higher that the number of threads.
+	 */
 	extern size_t subdomains;
 	extern size_t fixPoints;
 

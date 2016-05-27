@@ -24,9 +24,9 @@ int main(int argc, char** argv)
 	config::solver::FETI_METHOD = config::TOTAL_FETI;
 
 	if (config::env::MPIsize > 1) {
-		config::mesh::input = config::mesh::ESDATA;
+		config::mesh::input = config::ESDATA;
 	} else {
-		config::mesh::input = config::mesh::ANSYS_WORKBENCH;
+		config::mesh::input = config::ANSYS_WORKBENCH;
 	}
 
 	Factory factory(options);

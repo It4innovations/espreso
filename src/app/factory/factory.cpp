@@ -74,23 +74,23 @@ static Mesh* getMesh(const Options &options)
 	Mesh *mesh = new Mesh();
 	switch (config::mesh::input) {
 
-	case config::mesh::ANSYS_MATSOL: {
+	case config::ANSYS_MATSOL: {
 		input::AnsysMatsol::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::mesh::ANSYS_WORKBENCH: {
+	case config::ANSYS_WORKBENCH: {
 		input::AnsysWorkbench::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::mesh::OPENFOAM: {
+	case config::OPENFOAM: {
 		input::OpenFOAM::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::mesh::ESDATA: {
+	case config::ESDATA: {
 		input::Esdata::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::mesh::GENERATOR: {
+	case config::GENERATOR: {
 		generate(options, mesh);
 		break;
 	}
