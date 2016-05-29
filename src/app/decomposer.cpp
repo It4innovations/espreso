@@ -18,15 +18,15 @@ int main(int argc, char** argv)
 		ESINFO(ERROR) << "Specify parameters: INPUT_LOCATION  OUTPUT_LOCATION  [ NUMBER_OF_PARTS ]";
 	}
 
-	config::mesh::subdomains = 1;
-	config::mesh::fixPoints = 0;
+	config::mesh::SUBDOMAINS = 1;
+	config::mesh::FIX_POINTS = 0;
 	// turn off compute corners
 	config::solver::FETI_METHOD = config::TOTAL_FETI;
 
 	if (config::env::MPIsize > 1) {
-		config::mesh::input = config::ESDATA;
+		config::mesh::INPUT = config::mesh::ESDATA;
 	} else {
-		config::mesh::input = config::ANSYS_WORKBENCH;
+		config::mesh::INPUT = config::mesh::WORKBENCH;
 	}
 
 	Factory factory(options);

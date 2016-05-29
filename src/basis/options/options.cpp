@@ -65,14 +65,6 @@ static void printConfigOption(const Description &option)
 
 static void printFileOptions(size_t level)
 {
-	std::vector<std::pair<std::string, std::vector<Description> > > description = {
-			{ "mesher"   , config::mesh::description },
-			{ "solver"   , config::solver::description },
-			{ "assembler", config::assembler::description },
-			{ "output"   , config::output::description },
-			{ "debug"    , config::info::description }
-	};
-
 	switch (level) {
 	case 0:
 		ESINFO(ALWAYS) << "CONFIGURATION FILE:\n";
@@ -85,28 +77,22 @@ static void printFileOptions(size_t level)
 
 		ESINFO(ALWAYS) << "\tThe ESPRESO accepts the following parameters: [default value]\n";
 
-		for (size_t i = 0; i < description.size(); i++) {
-			ESINFO(ALWAYS) << "\tThe " << description[i].first << " parameters:";
-			for (size_t j = 0; j < description[i].second.size(); j++) {
-				if (description[i].second[j].writeToHelp == WRITE_TO_HELP) {
-					printConfigOption(description[i].second[j]);
-				}
+		for (size_t i = 0; i < config::description.size(); i++) {
+			if (config::description[i].writeToHelp == WRITE_TO_HELP) {
+				printConfigOption(config::description[i]);
 			}
-			ESINFO(ALWAYS) << "\n";
 		}
+		ESINFO(ALWAYS) << "\n";
 		break;
 	case 1:
 		ESINFO(ALWAYS) << "\t--- Internal parameters ---\n";
 
-		for (size_t i = 0; i < description.size(); i++) {
-			ESINFO(ALWAYS) << "\tThe " << description[i].first << " parameters:";
-			for (size_t j = 0; j < description[i].second.size(); j++) {
-				if (description[i].second[j].writeToHelp == INGNORE_IN_HELP) {
-					printConfigOption(description[i].second[j]);
-				}
+		for (size_t i = 0; i < config::description.size(); i++) {
+			if (config::description[i].writeToHelp == INGNORE_IN_HELP) {
+				printConfigOption(config::description[i]);
 			}
-			ESINFO(ALWAYS) << "\n";
 		}
+		ESINFO(ALWAYS) << "\n";
 		break;
 	}
 }
@@ -117,19 +103,10 @@ Options::Options(int* argc, char*** argv)
 : executable((*argv)[0]), verbose(0), measure(0), testing(0), help(0)
 {
 	int option_index, option;
-	std::vector<std::vector<Description> > description = {
-			config::mesh::description,
-			config::solver::description,
-			config::assembler::description,
-			config::output::description,
-			config::info::description
-	};
 
 	std::vector<struct option> opts;
-	for (size_t i = 0; i < description.size(); i++) {
-		for (size_t j = 0; j < description[i].size(); j++) {
-			opts.push_back({description[i][j].name.c_str(), required_argument, 0, i});
-		}
+	for (size_t i = 0; i < config::description.size(); i++) {
+		opts.push_back({config::description[i].name.c_str(), required_argument, 0, 'd'});
 	}
 
 	option_index = 0;
@@ -184,10 +161,7 @@ Options::Options(int* argc, char*** argv)
 	}
 
 
-	Configuration::fill(config::env::description, config::env::configurationFile);
-	for (size_t i = 0; i < description.size(); i++) {
-		Configuration::fill(description[i], config::env::configurationFile);
-	}
+	Configuration::fill(config::description, config::env::configurationFile);
 
 	optind = 0;
 	while (true) {
@@ -197,32 +171,28 @@ Options::Options(int* argc, char*** argv)
 		}
 
 		switch (option) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4: {
+		case 'd': {
 			std::string param(opts[option_index].name);
-			for (size_t i = 0; i < description[option].size(); i++) {
-				if (param.size() == description[option][i].name.size() && std::equal(param.begin(), param.end(), description[option][i].name.begin(), caseInsensitiveCmp)) {
-					switch (description[option][i].type) {
+			for (size_t i = 0; i < config::description.size(); i++) {
+				if (param.size() == config::description[i].name.size() && std::equal(param.begin(), param.end(), config::description[i].name.begin(), caseInsensitiveCmp)) {
+					switch (config::description[i].type) {
 					case INTEGER_PARAMETER:
-						*(static_cast<int*>(description[option][i].value)) = std::stoi(optarg);
+						*(static_cast<int*>(config::description[i].value)) = std::stoi(optarg);
 						break;
 					case LONG_PARAMETER:
-						*(static_cast<long*>(description[option][i].value)) = std::stol(optarg);
+						*(static_cast<long*>(config::description[i].value)) = std::stol(optarg);
 						break;
 					case SIZE_PARAMETER:
-						*(static_cast<size_t*>(description[option][i].value)) = std::stoull(optarg);
+						*(static_cast<size_t*>(config::description[i].value)) = std::stoull(optarg);
 						break;
 					case DOUBLE_PARAMETER:
-						*(static_cast<double*>(description[option][i].value)) = std::stod(optarg);
+						*(static_cast<double*>(config::description[i].value)) = std::stod(optarg);
 						break;
 					case STRING_PARAMETER:
-						*(static_cast<std::string*>(description[option][i].value)) = optarg;
+						*(static_cast<std::string*>(config::description[i].value)) = optarg;
 						break;
 					case BOOLEAN_PARAMETER:
-						*(static_cast<bool*>(description[option][i].value)) = std::stoi(optarg);
+						*(static_cast<bool*>(config::description[i].value)) = std::stoi(optarg);
 						break;
 					}
 					break;
@@ -260,9 +230,9 @@ Options::Options(int* argc, char*** argv)
 	config::info::testingLevel += testing;
 
 	if (path.size()) {
-		config::mesh::path = path;
+		config::mesh::PATH = path;
 	} else {
-		path = config::mesh::path;
+		path = config::mesh::PATH;
 	}
 
 	if (!path.size()) {
@@ -304,17 +274,17 @@ void Options::configure()
 	std::signal(SIGFPE, signalHandler);
 	std::signal(SIGSEGV, signalHandler);
 
-	std::vector<std::pair<std::string, config::Input> > inputs = {
-			{ "GENERATOR", config::GENERATOR },
-			{ "MATSOL", config::ANSYS_MATSOL },
-			{ "WORKBENCH", config::ANSYS_WORKBENCH },
-			{ "OPENFOAM", config::OPENFOAM },
-			{ "ESDATA", config::ESDATA },
+	std::vector<std::pair<std::string, config::mesh::INPUTalternatives> > inputs = {
+			{ "GENERATOR", config::mesh::GENERATOR },
+			{ "MATSOL", config::mesh::MATSOL },
+			{ "WORKBENCH", config::mesh::WORKBENCH },
+			{ "OPENFOAM", config::mesh::OPENFOAM },
+			{ "ESDATA", config::mesh::ESDATA },
 	};
 
 	for (size_t i = 0; i < inputs.size(); i++) {
 		if (input.size() == inputs[i].first.size() && std::equal(input.begin(), input.end(), inputs[i].first.begin(), caseInsensitiveCmp)) {
-			config::mesh::input = inputs[i].second;
+			config::mesh::INPUT = inputs[i].second;
 			break;
 		}
 		if (input.size() && i + 1 == inputs.size()) {

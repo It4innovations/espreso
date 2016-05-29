@@ -91,12 +91,12 @@ protected:
 
 	virtual void partitiate(std::vector<eslocal> &parts)
 	{
-		mesh.partitiate(config::mesh::subdomains);
+		mesh.partitiate(config::mesh::SUBDOMAINS);
 	}
 
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 	{
-		mesh.computeFixPoints(config::mesh::fixPoints);
+		mesh.computeFixPoints(config::mesh::FIX_POINTS);
 	}
 
 	virtual void corners(Boundaries &boundaries)
@@ -105,12 +105,12 @@ protected:
 			return;
 		}
 		mesh.computeCorners(
-				config::mesh::corners,
-				config::mesh::vertexCorners,
-				config::mesh::edgeCorners,
-				config::mesh::faceCorners,
-				config::mesh::averageEdges,
-				config::mesh::averageFaces);
+				config::mesh::CORNERS,
+				config::mesh::VERTEX_CORNERS,
+				config::mesh::EDGE_CORNERS,
+				config::mesh::FACE_CORNERS,
+				config::mesh::AVERAGE_EDGES,
+				config::mesh::AVERAGE_FACES);
 	}
 
 	void remapElementsToSubdomains()

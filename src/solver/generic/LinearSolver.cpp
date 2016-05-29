@@ -172,7 +172,7 @@ void LinearSolver::init(
 
 
 	// *** HTFETI - averaging objects
-	if ( config::mesh::averageEdges || config::mesh::averageFaces ) {
+	if ( config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES ) {
 		cilk_for (int d = 0; d < T_mat.size(); d++) {
 
 			SparseSolverCPU Tinv;
@@ -515,7 +515,7 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		//solver.timing.totalTime.Reset();
 	}
 
-	if ( config::mesh::averageEdges || config::mesh::averageFaces ) {
+	if ( config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES ) {
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 			vector < double >  tmp;
 			tmp = prim_solution[d];

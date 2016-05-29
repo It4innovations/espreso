@@ -24,19 +24,19 @@ std::string env::configurationFile = "espreso.config";
 
 ///////////////////////////////// MESH /////////////////////////////////////////
 
-std::string mesh::path;
-int mesh::input = GENERATOR;
+std::string mesh::PATH;
+int mesh::INPUT = GENERATOR;
 
-size_t mesh::subdomains = 8;
-size_t mesh::fixPoints  = 8;
+size_t mesh::SUBDOMAINS = 8;
+size_t mesh::FIX_POINTS  = 8;
 
-size_t mesh::corners       = 1;
-bool   mesh::vertexCorners = true;
-bool   mesh::edgeCorners   = true;
-bool   mesh::faceCorners   = false;
+size_t mesh::CORNERS       = 1;
+bool   mesh::VERTEX_CORNERS = true;
+bool   mesh::EDGE_CORNERS   = true;
+bool   mesh::FACE_CORNERS   = false;
 
-bool   mesh::averageEdges  = false;
-bool   mesh::averageFaces  = false;
+bool   mesh::AVERAGE_EDGES  = false;
+bool   mesh::AVERAGE_FACES  = false;
 
 /////////////////////////////// SOLVER /////////////////////////////////////////
 
@@ -95,35 +95,33 @@ bool info::printMatrices = false;
 
 /////////////////////////////// DESCRIPTION ////////////////////////////////////
 
-std::vector<input::Description> env::description;
+std::vector<input::Description> description = {
 
-std::vector<Description> mesh::description = {
-	{ "PATH", mesh::path, "A path to an example.", WRITE_TO_HELP},
-	{ "INPUT", mesh::input, "A format of an input.", {
+	// MESH DESCRIPTION
+	{ "PATH", mesh::PATH, "A path to an example.", WRITE_TO_HELP},
+	{ "INPUT", mesh::INPUT, "A format of an input.", {
 			"matsol",
 			"workbench",
 			"openfoam",
 			"esdata",
 			"generator" },  WRITE_TO_HELP},
 
-	{ "SUBDOMAINS", mesh::subdomains, "Number of subdomains in a cluster.", WRITE_TO_HELP },
-	{ "FIXPOINTS" , mesh::fixPoints , "Number of fix points in a subdomain." },
+	{ "SUBDOMAINS", mesh::SUBDOMAINS, "Number of subdomains in a cluster.", WRITE_TO_HELP },
+	{ "FIX_POINTS" , mesh::FIX_POINTS , "Number of fix points in a subdomain." },
 
-	{ "CORNERS"        , mesh::corners      , "Number of corners on an edge or a face." },
-	{ "VERTEX_CORNERS" , mesh::vertexCorners, "Set corners to vertices." },
-	{ "EDGE_CORNERS"   , mesh::edgeCorners  , "Set corners on edges. The number is defined by parameter CORNERS." },
-	{ "FACE_CORNERS"   , mesh::faceCorners  , "Set corners on faces. The number is defined by parameter CORNERS." },
+	{ "CORNERS"        , mesh::CORNERS      , "Number of corners on an edge or a face." },
+	{ "VERTEX_CORNERS" , mesh::VERTEX_CORNERS, "Set corners to vertices." },
+	{ "EDGE_CORNERS"   , mesh::EDGE_CORNERS  , "Set corners on edges. The number is defined by parameter CORNERS." },
+	{ "FACE_CORNERS"   , mesh::FACE_CORNERS  , "Set corners on faces. The number is defined by parameter CORNERS." },
 
-	{ "AVERAGE_EDGES"  , mesh::averageEdges, "Average nodes on edges." },
-	{ "AVERAGE_FACES"  , mesh::averageFaces, "Average nodes on faces." }
-};
+	{ "AVERAGE_EDGES"  , mesh::AVERAGE_EDGES, "Average nodes on edges." },
+	{ "AVERAGE_FACES"  , mesh::AVERAGE_FACES, "Average nodes on faces." },
 
-std::vector<Description> assembler::description = {
+	// ASSEMBLER DESCRIPTION
 	{ "DISCRETIZATION", config::assembler::discretization, "A used discretization.",
-			{ "FEM", "BEM" }, WRITE_TO_HELP }
-};
+			{ "FEM", "BEM" }, WRITE_TO_HELP },
 
-std::vector<Description> solver::description = {
+	// SOLVER DESCRIPTION
 	{ "EPSILON", solver::epsilon, "Solver requested precision.", WRITE_TO_HELP },
 	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", WRITE_TO_HELP },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
@@ -175,38 +173,28 @@ std::vector<Description> solver::description = {
 	{ "KSOLVER_SP_iter_steps", solver::KSOLVER_SP_iter_steps, "Number of reiteration steps for SP direct solver." },
 	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_iter_norm , "Number of reiteration steps for SP direct solver." },
 
-	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP }
+	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
+
+	// OUTPUT DESCRIPTION
+	{ "SAVE_MESH"      , output::saveMesh     , "Save an input mesh.", WRITE_TO_HELP },
+	{ "SAVE_FIXPOINTS" , output::saveFixPoints, "Save a mesh fix points." },
+	{ "SAVE_FACES"     , output::saveFaces    , "Save faces between subdomains." },
+	{ "SAVE_EDGES"     , output::saveLines    , "Save edges among subdomains." },
+	{ "SAVE_CORNERS"   , output::saveCorners  , "Save corner nodes." },
+	{ "SAVE_DIRICHLET" , output::saveDirichlet, "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
+	{ "SAVE_AVERAGING" , output::saveAveraging, "Save averaged nodes." },
+	{ "SAVE_RESULTS"   , output::saveResults  , "Save the results.", WRITE_TO_HELP },
+
+	{ "SUBDOMAIN_SHRINK_RATIO", output::subdomainShrinkRatio, "Shrink ratio for subdomains.", WRITE_TO_HELP },
+	{ "CLUSTER_SHRINK_RATIO"  , output::clusterShrinkRatio  , "Shrink ratio for clusters.", WRITE_TO_HELP },
+
+	// INFO DESCRIPTION
+	{ "OUTPUT", info::output, "A location for saving output informations.", WRITE_TO_HELP },
+	{ "VERBOSE_LEVEL", info::verboseLevel, "ESPRESO verbose level.", WRITE_TO_HELP },
+	{ "TESTING_LEVEL", info::verboseLevel, "ESPRESO testing level.", WRITE_TO_HELP },
+	{ "MEASURE_LEVEL", info::verboseLevel, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "PRINT_MATRICES", info::printMatrices, "ESPRESO print solver input matrices." }
 };
-
-namespace output {
-
-std::vector<Description> description = {
-	{ "SAVE_MESH"      , saveMesh     , "Save an input mesh.", WRITE_TO_HELP },
-	{ "SAVE_FIXPOINTS" , saveFixPoints, "Save a mesh fix points." },
-	{ "SAVE_FACES"     , saveFaces    , "Save faces between subdomains." },
-	{ "SAVE_EDGES"     , saveLines    , "Save edges among subdomains." },
-	{ "SAVE_CORNERS"   , saveCorners  , "Save corner nodes." },
-	{ "SAVE_DIRICHLET" , saveDirichlet, "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
-	{ "SAVE_AVERAGING" , saveAveraging, "Save averaged nodes." },
-	{ "SAVE_RESULTS"   , saveResults  , "Save the results.", WRITE_TO_HELP },
-
-	{ "SUBDOMAIN_SHRINK_RATIO", subdomainShrinkRatio, "Shrink ratio for subdomains.", WRITE_TO_HELP },
-	{ "CLUSTER_SHRINK_RATIO"  , clusterShrinkRatio  , "Shrink ratio for clusters.", WRITE_TO_HELP }
-};
-
-}
-
-namespace info {
-
-std::vector<Description> description = {
-	{ "OUTPUT", output, "A location for saving output informations.", WRITE_TO_HELP },
-	{ "VERBOSE_LEVEL", verboseLevel, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", verboseLevel, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", verboseLevel, "ESPRESO measure level.", WRITE_TO_HELP },
-	{ "PRINT_MATRICES", printMatrices, "ESPRESO print solver input matrices." }
-};
-
-}
 
 }
 }

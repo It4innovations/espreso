@@ -72,28 +72,30 @@ static void generate(const Options &options, Mesh *mesh)
 static Mesh* getMesh(const Options &options)
 {
 	Mesh *mesh = new Mesh();
-	switch (config::mesh::input) {
+	switch (config::mesh::INPUT) {
 
-	case config::ANSYS_MATSOL: {
+	case config::mesh::MATSOL: {
 		input::AnsysMatsol::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::ANSYS_WORKBENCH: {
+	case config::mesh::WORKBENCH: {
 		input::AnsysWorkbench::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::OPENFOAM: {
+	case config::mesh::OPENFOAM: {
 		input::OpenFOAM::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::ESDATA: {
+	case config::mesh::ESDATA: {
 		input::Esdata::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
-	case config::GENERATOR: {
+	case config::mesh::GENERATOR: {
 		generate(options, mesh);
 		break;
 	}
+	default:
+		ESINFO(GLOBAL_ERROR) << "Invalid user-supplied parameter: INPUT";
 	}
 	return mesh;
 }
@@ -129,7 +131,7 @@ static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 	case config::assembler::BEM: {
 		surface = new Mesh();
 		mesh->getSurface(*surface);
-		surface->computeFixPoints(config::mesh::fixPoints);
+		surface->computeFixPoints(config::mesh::FIX_POINTS);
 		BEM bem(*mesh, *surface);
 		return createAssembler<BEM>(bem);
 	}

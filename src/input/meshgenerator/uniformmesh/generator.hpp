@@ -67,19 +67,19 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 template<class TElement>
 void UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
 {
-	config::mesh::subdomains = _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2];
+	config::mesh::SUBDOMAINS = _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2];
 	if (_settings.useMetis) {
 		Loader::partitiate(parts);
 		return;
 	}
 
 	parts.clear();
-	parts.reserve(config::mesh::subdomains + 1);
+	parts.reserve(config::mesh::SUBDOMAINS + 1);
 
 	parts.push_back(0);
 
-	for (size_t p = 0; p < config::mesh::subdomains; p++) {
-		parts.push_back(parts.back() + mesh.getElements().size() / config::mesh::subdomains);
+	for (size_t p = 0; p < config::mesh::SUBDOMAINS; p++) {
+		parts.push_back(parts.back() + mesh.getElements().size() / config::mesh::SUBDOMAINS);
 	}
 
 	Loader::remapElementsToSubdomains();
@@ -231,9 +231,9 @@ void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 		}
 	}
 
-	if (config::mesh::averageEdges || config::mesh::averageFaces) {
+	if (config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES) {
 		// TODO: check correctness
-		mesh.computeCorners(0, true, false, false, config::mesh::averageEdges, config::mesh::averageFaces);
+		mesh.computeCorners(0, true, false, false, config::mesh::AVERAGE_EDGES, config::mesh::AVERAGE_FACES);
 	}
 
 }
