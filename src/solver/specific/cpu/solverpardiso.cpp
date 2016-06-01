@@ -1224,7 +1224,7 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
     } else {
 		SC_out.MatScale(-1.0);
 		SC_out.ConvertCSRToDense(1);
-		SC_out.RemoveLowerDense();
+		//SC_out.RemoveLowerDense();
     }
 
 
