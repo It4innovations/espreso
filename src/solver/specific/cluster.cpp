@@ -1059,13 +1059,24 @@ void ClusterBase::CompressB0() {
 			}
 		}
 
-		auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
-		domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
-		domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
+		size_t unique = 0;
+		for (size_t i = 1; i < domains[d].B0_comp.CSR_I_row_indices.size(); i++) {
+			if (domains[d].B0_comp.CSR_I_row_indices[unique] != domains[d].B0_comp.CSR_I_row_indices[i]) {
+				domains[d].B0_comp.CSR_I_row_indices[++unique] = domains[d].B0_comp.CSR_I_row_indices[i];
+			}
+		}
+		domains[d].B0_comp.rows = unique;
+		domains[d].B0_comp.CSR_I_row_indices.resize(unique + 1);
+
+		// WARNING: There is a problem with 'std::unique'.
+		// WARNING: Combination of 'Cilk' and '-O2' results in memory error in 'std::unique'.
+		//
+		//auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
+		//domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
+		//domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
 
 		domains[d].B0_comp.MatTranspose(domains[d].B0t_comp);
 	}
-
 }
 
 void ClusterBase::CreateG0() {
