@@ -143,7 +143,8 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 	case 4:
 		NDMAX = params[3].size() ? std::stol(params[3]) : 0;
 	case 3:
-		if (params[2].size() != solid.size() || !std::equal(params[2].begin(), params[2].end(), solid.begin(), CaseInsensitiveCompare::equals)) {
+		//if (params[2].size() != solid.size() || !std::equal(params[2].begin(), params[2].end(), solid.begin(), CaseInsensitiveCompare::equals)) {
+		if (StringCompare::caseInsensitiveEq(params[2], "SOLID")) {
 			SOLID = false;
 			ETYPE = 1;
 			CONSTANT = 2;

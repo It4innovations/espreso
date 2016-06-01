@@ -4,18 +4,19 @@
 using namespace espreso;
 
 template<class TShape>
-static void generateShape(const Options &options, Mesh *mesh)
+static void generateShape(const Configuration &configuration, Mesh *mesh)
 {
-	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
+	input::Settings settings(config::env::MPIrank ,config::env::MPIsize);
+	ParametersReader::pickParameter(configuration, "SHAPE", settings.parameters);
 
 	switch (settings.shape) {
 	case input::CUBE: {
-		input::CubeSettings cube(options, config::env::MPIrank ,config::env::MPIsize);
+		input::CubeSettings cube(configuration, config::env::MPIrank ,config::env::MPIsize);
 		input::CubeGenerator<TShape>::load(*mesh, cube);
 		break;
 	}
 	case input::SPHERE: {
-		input::SphereSettings sphere(options, config::env::MPIrank ,config::env::MPIsize);
+		input::SphereSettings sphere(configuration, config::env::MPIrank ,config::env::MPIsize);
 		input::SphereGenerator<TShape>::load(*mesh, sphere);
 		break;
 	}
@@ -25,41 +26,43 @@ static void generateShape(const Options &options, Mesh *mesh)
 	}
 }
 
-static void generate(const Options &options, Mesh *mesh)
+static void generate(const Configuration &configuration, Mesh *mesh)
 {
-	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
+	input::Settings settings(config::env::MPIrank ,config::env::MPIsize);
+	ParametersReader::pickParameter(configuration, "ELEMENT_TYPE", settings.parameters);
+
 
 	switch (settings.elementType) {
 	case input::HEXA8: {
-		generateShape<input::Hexahedron8>(options, mesh);
+		generateShape<input::Hexahedron8>(configuration, mesh);
 		break;
 	}
 	case input::HEXA20: {
-		generateShape<input::Hexahedron20>(options, mesh);
+		generateShape<input::Hexahedron20>(configuration, mesh);
 		break;
 	}
 	case input::TETRA4: {
-		generateShape<input::Tetrahedron4>(options, mesh);
+		generateShape<input::Tetrahedron4>(configuration, mesh);
 		break;
 	}
 	case input::TETRA10: {
-		generateShape<input::Tetrahedron10>(options, mesh);
+		generateShape<input::Tetrahedron10>(configuration, mesh);
 		break;
 	}
 	case input::PRISMA6: {
-		generateShape<input::Prisma6>(options, mesh);
+		generateShape<input::Prisma6>(configuration, mesh);
 		break;
 	}
 	case input::PRISMA15: {
-		generateShape<input::Prisma15>(options, mesh);
+		generateShape<input::Prisma15>(configuration, mesh);
 		break;
 	}
 	case input::PYRAMID5: {
-		generateShape<input::Pyramid5>(options, mesh);
+		generateShape<input::Pyramid5>(configuration, mesh);
 		break;
 	}
 	case input::PYRAMID13: {
-		generateShape<input::Pyramid13>(options, mesh);
+		generateShape<input::Pyramid13>(configuration, mesh);
 		break;
 	}
 	default: {
@@ -69,29 +72,29 @@ static void generate(const Options &options, Mesh *mesh)
 }
 
 
-static Mesh* getMesh(const Options &options)
+static Mesh* getMesh(const Configuration &configuration)
 {
 	Mesh *mesh = new Mesh();
 	switch (config::mesh::INPUT) {
 
 	case config::mesh::MATSOL: {
-		input::AnsysMatsol::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		input::AnsysMatsol::load(*mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::WORKBENCH: {
-		input::AnsysWorkbench::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		input::AnsysWorkbench::load(*mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::OPENFOAM: {
-		input::OpenFOAM::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		input::OpenFOAM::load(*mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::ESDATA: {
-		input::Esdata::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+		input::Esdata::load(*mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
 	}
 	case config::mesh::GENERATOR: {
-		generate(options, mesh);
+		generate(configuration, mesh);
 		break;
 	}
 	default:
@@ -141,7 +144,7 @@ static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 	}
 }
 
-Factory::Factory(const Options &options)
+Factory::Factory(const Configuration &configuration)
 :_assembler(NULL), _mesh(NULL), _surface(NULL)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
@@ -149,7 +152,7 @@ Factory::Factory(const Options &options)
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " processes.";
 
-	_mesh = getMesh(options);
+	_mesh = getMesh(configuration);
 
 	if (config::output::saveMesh) {
 		output::VTK_Full::mesh(*_mesh, "mesh", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);

@@ -3,7 +3,6 @@
 #include "esbasis.h"
 
 namespace espreso {
-using namespace input;
 
 namespace config {
 
@@ -18,7 +17,7 @@ size_t env::SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
 size_t env::PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
 size_t env::CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
-std::string env::executable;
+std::string env::executable	   = Esutils::getEnv<std::string>("_");
 std::string env::configurationFile = "espreso.config";
 
 
@@ -95,18 +94,19 @@ bool info::printMatrices = false;
 
 /////////////////////////////// DESCRIPTION ////////////////////////////////////
 
-std::vector<input::Description> description = {
+
+std::vector<espreso::Parameter> parameters = {
 
 	// MESH DESCRIPTION
-	{ "PATH", mesh::PATH, "A path to an example.", WRITE_TO_HELP},
+	{ "PATH", mesh::PATH, "A path to an example.", Parameter::Help::WRITE},
 	{ "INPUT", mesh::INPUT, "A format of an input.", {
 			"matsol",
 			"workbench",
 			"openfoam",
 			"esdata",
-			"generator" },  WRITE_TO_HELP},
+			"generator" },  Parameter::Help::WRITE},
 
-	{ "SUBDOMAINS", mesh::SUBDOMAINS, "Number of subdomains in a cluster.", WRITE_TO_HELP },
+	{ "SUBDOMAINS", mesh::SUBDOMAINS, "Number of subdomains in a cluster.", Parameter::Help::WRITE },
 	{ "FIX_POINTS" , mesh::FIX_POINTS , "Number of fix points in a subdomain." },
 
 	{ "CORNERS"        , mesh::CORNERS      , "Number of corners on an edge or a face." },
@@ -119,24 +119,24 @@ std::vector<input::Description> description = {
 
 	// ASSEMBLER DESCRIPTION
 	{ "DISCRETIZATION", config::assembler::discretization, "A used discretization.",
-			{ "FEM", "BEM" }, WRITE_TO_HELP },
+			{ "FEM", "BEM" }, Parameter::Help::WRITE },
 
 	// SOLVER DESCRIPTION
-	{ "EPSILON", solver::epsilon, "Solver requested precision.", WRITE_TO_HELP },
-	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", WRITE_TO_HELP },
+	{ "EPSILON", solver::epsilon, "Solver requested precision.", Parameter::Help::WRITE },
+	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", Parameter::Help::WRITE },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
 			"Total FETI",
-			"Hybrid Total FETI" }, WRITE_TO_HELP },
+			"Hybrid Total FETI" }, Parameter::Help::WRITE },
 
 	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
 			"NO preconditioner",
 			"Lumped",
 			"weight function",
-			"Dirichlet" }, WRITE_TO_HELP },
+			"Dirichlet" }, Parameter::Help::WRITE },
 
 	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
 			"standard",
-			"pipelined" }, WRITE_TO_HELP },
+			"pipelined" }, Parameter::Help::WRITE },
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
@@ -173,30 +173,31 @@ std::vector<input::Description> description = {
 	{ "KSOLVER_SP_iter_steps", solver::KSOLVER_SP_iter_steps, "Number of reiteration steps for SP direct solver." },
 	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_iter_norm , "Number of reiteration steps for SP direct solver." },
 
-	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
+	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", Parameter::Help::WRITE },
 
 	// OUTPUT DESCRIPTION
-	{ "SAVE_MESH"      , output::saveMesh     , "Save an input mesh.", WRITE_TO_HELP },
+	{ "SAVE_MESH"      , output::saveMesh     , "Save an input mesh.", Parameter::Help::WRITE },
 	{ "SAVE_FIXPOINTS" , output::saveFixPoints, "Save a mesh fix points." },
 	{ "SAVE_FACES"     , output::saveFaces    , "Save faces between subdomains." },
 	{ "SAVE_EDGES"     , output::saveLines    , "Save edges among subdomains." },
 	{ "SAVE_CORNERS"   , output::saveCorners  , "Save corner nodes." },
-	{ "SAVE_DIRICHLET" , output::saveDirichlet, "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
+	{ "SAVE_DIRICHLET" , output::saveDirichlet, "Save nodes with a dirichlet condition.", Parameter::Help::WRITE },
 	{ "SAVE_AVERAGING" , output::saveAveraging, "Save averaged nodes." },
-	{ "SAVE_RESULTS"   , output::saveResults  , "Save the results.", WRITE_TO_HELP },
+	{ "SAVE_RESULTS"   , output::saveResults  , "Save the results.", Parameter::Help::WRITE },
 
-	{ "SUBDOMAIN_SHRINK_RATIO", output::subdomainShrinkRatio, "Shrink ratio for subdomains.", WRITE_TO_HELP },
-	{ "CLUSTER_SHRINK_RATIO"  , output::clusterShrinkRatio  , "Shrink ratio for clusters.", WRITE_TO_HELP },
+	{ "SUBDOMAIN_SHRINK_RATIO", output::subdomainShrinkRatio, "Shrink ratio for subdomains.", Parameter::Help::WRITE },
+	{ "CLUSTER_SHRINK_RATIO"  , output::clusterShrinkRatio  , "Shrink ratio for clusters.", Parameter::Help::WRITE },
 
 	// INFO DESCRIPTION
-	{ "OUTPUT", info::output, "A location for saving output informations.", WRITE_TO_HELP },
-	{ "VERBOSE_LEVEL", info::verboseLevel, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", info::verboseLevel, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", info::verboseLevel, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "OUTPUT", info::output, "A location for saving output informations.", Parameter::Help::WRITE },
+	{ "VERBOSE_LEVEL", info::verboseLevel, "ESPRESO verbose level.", Parameter::Help::WRITE },
+	{ "TESTING_LEVEL", info::verboseLevel, "ESPRESO testing level.", Parameter::Help::WRITE },
+	{ "MEASURE_LEVEL", info::verboseLevel, "ESPRESO measure level.", Parameter::Help::WRITE },
 	{ "PRINT_MATRICES", info::printMatrices, "ESPRESO print solver input matrices." }
 };
 
 }
+
 }
 
 

@@ -15,15 +15,15 @@ namespace input {
 class OpenFOAM: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
 	{
-		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << options.path;
-		OpenFOAM openfoam(mesh, options, rank, size);
+		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
+		OpenFOAM openfoam(mesh, configuration, rank, size);
 		openfoam.fill();
 	}
 
 protected:
-	OpenFOAM(Mesh &mesh, const Options &options, int rank, int size);
+	OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size);
 
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);

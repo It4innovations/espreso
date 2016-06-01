@@ -6,9 +6,9 @@ source /opt/intel/impi/5.1.2.150/bin64/mpivars.sh
 
 export MKL_NUM_THREADS=1
 export OMP_NUM_THREADS=16
+
 export SOLVER_NUM_THREADS=16
 export PAR_NUM_THREADS=16
-
 export CILK_NWORKERS=16
 
 export MKL_CBWR=AUTO

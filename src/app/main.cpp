@@ -1,18 +1,33 @@
 
+#include <signal.h>
+#include <csignal>
+
 #include "factory/factory.h"
 
 using namespace espreso;
 
+static void signalHandler(int signal)
+{
+	switch (signal) {
+	case SIGSEGV:
+		ESINFO(ERROR) << "Invalid memory reference";
+		break;
+	case SIGFPE:
+		ESINFO(ERROR) << "Erroneous arithmetic operation";
+		break;
+	}
+}
+
 
 int main(int argc, char **argv)
 {
+	std::signal(SIGFPE, signalHandler);
+	std::signal(SIGSEGV, signalHandler);
+
 	MPI_Init(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 
-	Options options(&argc, &argv);
+	Factory factory(ParametersReader::arguments(&argc, &argv));
 
-	Factory factory(options);
 	factory.solve();
 	factory.store("result");
 

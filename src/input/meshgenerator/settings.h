@@ -32,10 +32,10 @@ enum Assembler {
 
 struct Settings {
 
-	Settings(const Options &options, size_t index, size_t size);
+	Settings(const Configuration &configuration, size_t index, size_t size);
 	Settings(size_t index, size_t size);
 
-	std::vector<Description> description;
+	std::vector<Parameter> parameters;
 
 	size_t index;
 	size_t size;
@@ -47,6 +47,9 @@ struct Settings {
 	std::vector<Material> materials;
 
 	bool useMetis;
+
+protected:
+	void defaultSettings();
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Settings &s)

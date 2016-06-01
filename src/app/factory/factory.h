@@ -12,7 +12,7 @@ namespace espreso {
 class Factory {
 
 public:
-	Factory(const Options &options);
+	Factory(const Configuration &configuration);
 
 	Mesh* mesh()
 	{

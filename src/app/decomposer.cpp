@@ -12,9 +12,16 @@ int main(int argc, char** argv)
 {
 
 	MPI_Init(&argc, &argv);
-	Options options(&argc, &argv);
 
-	if (options.nameless.size() < 2) {
+	if (config::env::MPIsize > 1) {
+		config::mesh::INPUT = config::mesh::ESDATA;
+	} else {
+		config::mesh::INPUT = config::mesh::WORKBENCH;
+	}
+
+	Configuration configuration = ParametersReader::arguments(&argc, &argv);
+
+	if (configuration.nameless.size() < 2) {
 		ESINFO(ERROR) << "Specify parameters: INPUT_LOCATION  OUTPUT_LOCATION  [ NUMBER_OF_PARTS ]";
 	}
 
@@ -23,19 +30,13 @@ int main(int argc, char** argv)
 	// turn off compute corners
 	config::solver::FETI_METHOD = config::TOTAL_FETI;
 
-	if (config::env::MPIsize > 1) {
-		config::mesh::INPUT = config::mesh::ESDATA;
-	} else {
-		config::mesh::INPUT = config::mesh::WORKBENCH;
-	}
-
-	Factory factory(options);
+	Factory factory(configuration);
 	std::cout << "Mesh loaded\n";
 
-	for (size_t i = 1; i < options.nameless.size(); i++) {
-		int parts = atoi(options.nameless[i].c_str());
+	for (size_t i = 1; i < configuration.nameless.size(); i++) {
+		int parts = atoi(configuration.nameless[i].c_str());
 		std::stringstream ss;
-		ss << options.nameless[0] << parts * config::env::MPIsize;
+		ss << configuration.nameless[0] << parts * config::env::MPIsize;
 
 		factory.mesh()->partitiate(parts);
 		std::cout << "Mesh partitiated to " << parts * config::env::MPIsize << " parts\n";

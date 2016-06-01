@@ -10,10 +10,10 @@ namespace input {
 
 struct UniformSettings: public Settings {
 
-	UniformSettings(const Options &options, size_t index, size_t size);
+	UniformSettings(const Configuration &configuration, size_t index, size_t size);
 	UniformSettings(size_t index, size_t size);
 
-	std::vector<Description> description;
+	std::vector<Parameter> parameters;
 
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
@@ -23,6 +23,9 @@ struct UniformSettings: public Settings {
 	bool corners;
 	bool edges;
 	bool faces;
+
+protected:
+	void defaultUniformSettings();
 };
 
 inline std::ostream& operator<<(std::ostream& os, const UniformSettings &s)

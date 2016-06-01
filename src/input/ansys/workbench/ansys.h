@@ -18,16 +18,16 @@ namespace input {
 class AnsysWorkbench: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
 	{
-		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << options.path;
-		AnsysWorkbench workbench(mesh, options, rank, size);
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
+		AnsysWorkbench workbench(mesh, configuration, rank, size);
 		workbench.fill();
 	}
 
 protected:
-	AnsysWorkbench(Mesh &mesh, const Options &options, int rank, int size)
-	: Loader(mesh), _path(options.path) { };
+	AnsysWorkbench(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	: Loader(mesh), _path(configuration.path) { };
 
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);

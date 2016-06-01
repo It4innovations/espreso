@@ -22,7 +22,7 @@ class Configuration:
         self.name = name
         self.config = {
             "SUBDOMAINS": 8,
-            "FIXPOINTS": 8,
+            "FIX_POINTS": 8,
             "CORNERS": 1,
             "VERTEX_CORNERS": 1,
             "EDGE_CORNERS": 1,

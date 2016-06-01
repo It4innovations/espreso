@@ -9,7 +9,7 @@ class TestESPRESO(unittest.TestCase):
             errorMsg = "ESPRESO fail computation for the following setting: \n"
             return errorMsg + error
 
-        result, error = Espreso("linearElasticity/cube", "generator", "regular_fixed_bottom.txt", config).run(procs, args)
+        result, error = Espreso("linearElasticity/cube", "4", "regular_fixed_bottom.txt", config).run(procs, args)
         self.assertEqual(result, "", result)
         self.assertEqual(error, "", error)
 

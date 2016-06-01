@@ -3,21 +3,16 @@
 
 using namespace espreso::input;
 
-static void defaultSettings(Settings &settings)
+void Settings::defaultSettings()
 {
-	settings.useMetis    = false;
-	settings.shape       = CUBE;
-	settings.elementType = HEXA8;
-	settings.assembler   = LinearElasticity;
+	useMetis    = false;
+	shape       = CUBE;
+	elementType = HEXA8;
+	assembler   = LinearElasticity;
 
-	settings.materials.resize(2);
-}
+	materials.resize(2);
 
-Settings::Settings(const Options &options, size_t index, size_t size)
-: index(index), size(size)
-{
-	defaultSettings(*this);
-	description = {
+	parameters = {
 		{ "USE_METIS"   , useMetis   , "Use METIS for mesh partition." },
 		{ "SHAPE"       , shape      , "Generated shape. Supported values: 0 - CUBE, 1 - SPHERE" },
 		{ "ELEMENT_TYPE", elementType, "The type of generated element. Supported values: <0, 7>" },
@@ -32,14 +27,19 @@ Settings::Settings(const Options &options, size_t index, size_t size)
 		{ "ASSEMBLER"   , assembler  , "Assembler type: 0 - LinearElasticity, 1 - Temperature" },
 		{ "TIME_STEPS", config::assembler::timeSteps, "Number of time steps for transient problems."}
 	};
+}
 
-	Configuration configuration(Settings::description, options);
+Settings::Settings(const Configuration &configuration, size_t index, size_t size)
+: index(index), size(size)
+{
+	defaultSettings();
+	ParametersReader::configuration(configuration, parameters);
 }
 
 Settings::Settings(size_t index, size_t size)
 : index(index), size(size)
 {
-	defaultSettings(*this);
+	defaultSettings();
 }
 
 
