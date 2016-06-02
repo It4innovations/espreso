@@ -183,7 +183,7 @@ void ParametersReader::setParameter(const std::string &parameter, const std::str
 
 static void printParameter(const Parameter &parameter)
 {
-	auto tabs = [] (size_t size) {
+	auto tabs = [] (int size) {
 		std::string str;
 		for (int i = 0; i < size; i++) {
 			str += "\t";
@@ -198,7 +198,7 @@ static void printParameter(const Parameter &parameter)
 			<< "  " << parameter.description;
 
 	for (size_t i = 0; i < parameter.options.size(); i++) {
-		ESINFO(ALWAYS) << tabs(6) << i << " -> " << parameter.options[i];
+		ESINFO(ALWAYS) << tabs(6) << "[" << i << "] " << parameter.options[i].first << " - " << parameter.options[i].second;
 	}
 }
 

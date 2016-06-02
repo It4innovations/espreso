@@ -100,11 +100,11 @@ std::vector<espreso::Parameter> parameters = {
 	// MESH DESCRIPTION
 	{ "PATH", mesh::PATH, "A path to an example.", Parameter::Help::WRITE},
 	{ "INPUT", mesh::INPUT, "A format of an input.", {
-			"matsol",
-			"workbench",
-			"openfoam",
-			"esdata",
-			"generator" },  Parameter::Help::WRITE},
+			{ "MATSOL", "IT4I internal library" },
+			{ "WORKBENCH", "Ansys Workbench input file" },
+			{ "OPENFOAM", "OpenFOAM input format" },
+			{ "ESDATA", "ESPRESO binary format" },
+			{ "GENERATOR", "ESPRESO internal generator" } },  Parameter::Help::WRITE},
 
 	{ "SUBDOMAINS", mesh::SUBDOMAINS, "Number of subdomains in a cluster.", Parameter::Help::WRITE },
 	{ "FIX_POINTS" , mesh::FIX_POINTS , "Number of fix points in a subdomain." },
@@ -118,45 +118,46 @@ std::vector<espreso::Parameter> parameters = {
 	{ "AVERAGE_FACES"  , mesh::AVERAGE_FACES, "Average nodes on faces." },
 
 	// ASSEMBLER DESCRIPTION
-	{ "DISCRETIZATION", config::assembler::discretization, "A used discretization.",
-			{ "FEM", "BEM" }, Parameter::Help::WRITE },
+	{ "DISCRETIZATION", config::assembler::discretization, "A used discretization.",{
+			{ "FEM", "desc" },
+			{ "BEM", "desc" } }, Parameter::Help::WRITE },
 
 	// SOLVER DESCRIPTION
 	{ "EPSILON", solver::epsilon, "Solver requested precision.", Parameter::Help::WRITE },
 	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", Parameter::Help::WRITE },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
-			"Total FETI",
-			"Hybrid Total FETI" }, Parameter::Help::WRITE },
+			{ "Total FETI", "desc" },
+			{ "Hybrid Total FETI", "desc" } }, Parameter::Help::WRITE },
 
 	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
-			"NO preconditioner",
-			"Lumped",
-			"weight function",
-			"Dirichlet" }, Parameter::Help::WRITE },
+			{ "NO preconditioner", "desc" },
+			{ "Lumped", "desc" },
+			{ "weight function", "desc" },
+			{ "Dirichlet", "desc" } }, Parameter::Help::WRITE },
 
 	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
-			"standard",
-			"pipelined" }, Parameter::Help::WRITE },
+			{ "standard", "desc" },
+			{ "pipelined", "desc" } }, Parameter::Help::WRITE },
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
-			"fix points",
-			"random detection of null pivots" }},
+			{ "fix points", "desc" },
+			{ "random detection of null pivots", "desc" } }},
 
 	{ "KSOLVER", solver::KSOLVER, "K solver precision.", {
-			"directly with double precision",
-			"iteratively",
-			"directly with single precision",
-			"directly with mixed precision" }},
+			{ "directly with double precision", "desc" },
+			{ "iteratively", "desc" },
+			{ "directly with single precision", "desc" },
+			{ "directly with mixed precision", "desc" } }},
 
 	{ "F0SOLVER", solver::F0_SOLVER, "F0 solver precision.", {
-			"with the same precision as KSOLVER",
-			"always with double precision." }},
+			{ "with the same precision as KSOLVER", "desc" },
+			{ "always with double precision.", "desc" } }},
 
 	{ "SASOLVER", solver::SA_SOLVER, "SA solver type.", {
-					"DENSE solver on CPU",
-					"DENSE solver on ACC,"
-					"SPARSE solver on CPU." }},
+			{ "DENSE solver on CPU", "desc" },
+			{ "DENSE solver on ACC", "desc" },
+			{ "SPARSE solver on CPU.", "desc" } }},
 
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
@@ -164,8 +165,8 @@ std::vector<espreso::Parameter> parameters = {
 	{ "USE_SCHUR_COMPLEMENT", solver::USE_SCHUR_COMPLEMENT, "Use schur complement for stiffness matrix processing" },
 	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision." },
 	{ "SCHUR_COMPLEMENT_TYPE", solver::SCHUR_COMPLEMENT_TYPE, "Schur complement matrix type.", {
-			"general",
-			"symmetric"}},
+			{ "general", "desc" },
+			{ "symmetric", "desc" } }},
 
 	{ "COMBINE_SC_AND_SPDS", solver::COMBINE_SC_AND_SPDS, "Combine Schur complement for GPU and sparse direct solver for CPU." },
 	{ "KEEP_FACTORS", solver::KEEP_FACTORS, "Keep factors for whole iteration process." },
