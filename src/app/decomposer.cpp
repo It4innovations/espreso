@@ -10,25 +10,27 @@ using namespace espreso;
 
 int main(int argc, char** argv)
 {
+	if (argc < 4) {
+		ESINFO(GLOBAL_ERROR) << "Specify parameters: INPUT_LOCATION  OUTPUT_LOCATION  [ NUMBER_OF_PARTS ]";
+	}
 
 	MPI_Init(&argc, &argv);
+
+	Configuration configuration;
+	configuration.path = argv[1];
+	for (int i = 2; i < argc; i++) {
+		configuration.nameless.push_back(argv[i]);
+	}
 
 	if (config::env::MPIsize > 1) {
 		config::mesh::INPUT = config::mesh::INPUTalternatives::ESDATA;
 	} else {
 		config::mesh::INPUT = config::mesh::INPUTalternatives::WORKBENCH;
 	}
-
-	Configuration configuration = ParametersReader::arguments(&argc, &argv);
-
-	if (configuration.nameless.size() < 2) {
-		ESINFO(ERROR) << "Specify parameters: INPUT_LOCATION  OUTPUT_LOCATION  [ NUMBER_OF_PARTS ]";
-	}
-
 	config::mesh::SUBDOMAINS = 1;
 	config::mesh::FIX_POINTS = 0;
-	// turn off compute corners
 	config::solver::FETI_METHOD = config::TOTAL_FETI;
+	config::info::verboseLevel = 2;
 
 	Factory factory(configuration);
 	std::cout << "Mesh loaded\n";
