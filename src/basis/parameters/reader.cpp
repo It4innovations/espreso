@@ -112,30 +112,17 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 Configuration ParametersReader::configuration(const Configuration &conf, const std::vector<Parameter> &params)
 {
 	ParametersReader reader(params);
-	return reader.read(conf);
+	return reader.read(conf, 1);
 }
 
-void ParametersReader::pickParameter(const Configuration &conf, const std::string parameter, const std::vector<Parameter> &params)
+Configuration ParametersReader::pickConfiguration(const Configuration &conf, const std::vector<Parameter> &params)
 {
 	ParametersReader reader(params);
-
-	std::ifstream file(conf.path);
-	if (!file.is_open()) {
-		ESINFO(ERROR) << "A configuration file on path '" << conf.path << "' not found.";
-	}
-
-	std::string line;
-	while (getline(file, line, '\n')) {
-		std::string p = Parser::getParameter(line);
-		if (StringCompare::caseInsensitiveEq(p, parameter)) {
-			reader.setParameter(p, Parser::getValue(line));
-			return;
-		}
-	}
+	return reader.read(conf, 0);
 }
 
 
-Configuration ParametersReader::read(const Configuration &configuration)
+Configuration ParametersReader::read(const Configuration &configuration, int verbose)
 {
 	std::ifstream file(configuration.path);
 	Configuration conf(configuration);
@@ -158,12 +145,16 @@ Configuration ParametersReader::read(const Configuration &configuration)
 				ESINFO(GLOBAL_ERROR) << "Too few nameless command line arguments. \n";
 			}
 			for (size_t i = 0; i < params.size(); i++) {
-				setParameter(params[i], conf.nameless[i]);
+				if (!setParameter(params[i], conf.nameless[i]) && verbose) {
+					ESINFO(ALWAYS) << "Unknown command line parameter '" << params[i] << "'";
+				}
 			}
 			// remove already red nameless parameters
 			conf.nameless.erase(conf.nameless.begin(), conf.nameless.begin() + params.size());
 		} else {
-			setParameter(parameter, Parser::getValue(line));
+			if (!setParameter(parameter, Parser::getValue(line)) && verbose) {
+				ESINFO(ALWAYS) << "Unknown parameter '" << parameter << "'";
+			}
 		}
 	}
 
@@ -171,13 +162,14 @@ Configuration ParametersReader::read(const Configuration &configuration)
 	return conf;
 }
 
-void ParametersReader::setParameter(const std::string &parameter, const std::string &value)
+bool ParametersReader::setParameter(const std::string &parameter, const std::string &value)
 {
 	auto it = std::lower_bound(_parameters.begin(), _parameters.end(), parameter);
 	if (it != _parameters.end() && StringCompare::caseInsensitiveEq(it->name, parameter)) {
 		it->set(value);
+		return true;
 	} else {
-		ESINFO(ALWAYS) << "Unknown parameter '" << parameter << "'";
+		return false;
 	}
 }
 

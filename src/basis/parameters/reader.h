@@ -18,20 +18,19 @@ class ParametersReader {
 public:
 	static Configuration arguments(int *argc, char*** argv, const std::vector<Parameter> &params = config::parameters);
 	static Configuration configuration(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
-
-	static void pickParameter(const Configuration &conf, const std::string parameter, const std::vector<Parameter> &params);
+	static Configuration pickConfiguration(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
 
 	static void printParameters(const std::vector<Parameter> &params, int level);
 
 protected:
 	ParametersReader(const std::vector<Parameter> &parameters);
-	Configuration read(const Configuration &configuration);
+	Configuration read(const Configuration &configuration, int verbose = 1);
 
 	std::vector<Parameter> _parameters;
 
 private:
 	static void printHelp(int level);
-	void setParameter(const std::string &parameter, const std::string &value);
+	bool setParameter(const std::string &parameter, const std::string &value);
 };
 
 }
