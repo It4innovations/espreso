@@ -150,7 +150,8 @@ Factory::Factory(const Configuration &configuration)
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 
-	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " processes.";
+	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " process(es).";
+	ParametersReader::printParameters(config::parameters, config::info::verboseLevel);
 
 	_mesh = getMesh(configuration);
 

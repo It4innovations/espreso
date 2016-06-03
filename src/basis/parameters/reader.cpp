@@ -230,10 +230,10 @@ void ParametersReader::printHelp(int level)
 
 	ESINFO(ALWAYS) << "\tThe ESPRESO accepts the following parameters: [default value]\n";
 
-	printParameters(config::parameters, level);
+	printParametersHelp(config::parameters, level);
 }
 
-void ParametersReader::printParameters(const std::vector<Parameter> &params, int level)
+void ParametersReader::printParametersHelp(const std::vector<Parameter> &params, int level)
 {
 	if (level < 1) {
 		return;
@@ -257,6 +257,29 @@ void ParametersReader::printParameters(const std::vector<Parameter> &params, int
 		}
 	}
 	ESINFO(ALWAYS) << "\n";
+}
+
+void ParametersReader::printParameters(const std::vector<Parameter> &params, int level)
+{
+	if (level < 1) {
+		return;
+	}
+
+	for (size_t i = 0; i < params.size(); i++) {
+		if (params[i].help == Parameter::Help::WRITE) {
+			ESINFO(ALWAYS) << "\t" << params[i].name << " == '" << params[i].get() << "'";
+		}
+	}
+
+	if (level < 2) {
+		return;
+	}
+
+	for (size_t i = 0; i < params.size(); i++) {
+		if (params[i].help == Parameter::Help::INGNORE) {
+			ESINFO(ALWAYS) << "\t" << params[i].name << " == '" << params[i].get() << "'";
+		}
+	}
 }
 
 

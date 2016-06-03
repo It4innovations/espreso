@@ -21,6 +21,7 @@ public:
 	static Configuration pickConfiguration(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
 
 	static void printParameters(const std::vector<Parameter> &params, int level);
+	static void printParametersHelp(const std::vector<Parameter> &params, int level);
 
 protected:
 	ParametersReader(const std::vector<Parameter> &parameters);
