@@ -405,7 +405,7 @@ Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): El
 		memcpy(_indices, indices, 15 * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Prisma15 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Prisma15 from " << n << " indices.";
 	}
 }
 

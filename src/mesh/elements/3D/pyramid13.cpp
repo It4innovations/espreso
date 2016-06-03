@@ -345,7 +345,7 @@ Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): 
 		_indices[12] = indices[19];
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Pyramid13 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Pyramid13 from " << n << " indices.";
 	}
 }
 

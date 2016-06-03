@@ -275,7 +275,7 @@ Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *par
 		memcpy(_indices, indices, 4 * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Tetrahedron4 from " << n << " indices.";
 	}
 }
 
