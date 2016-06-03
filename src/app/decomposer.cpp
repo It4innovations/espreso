@@ -14,9 +14,9 @@ int main(int argc, char** argv)
 	MPI_Init(&argc, &argv);
 
 	if (config::env::MPIsize > 1) {
-		config::mesh::INPUT = config::mesh::ESDATA;
+		config::mesh::INPUT = config::mesh::INPUTalternatives::ESDATA;
 	} else {
-		config::mesh::INPUT = config::mesh::WORKBENCH;
+		config::mesh::INPUT = config::mesh::INPUTalternatives::WORKBENCH;
 	}
 
 	Configuration configuration = ParametersReader::arguments(&argc, &argv);

@@ -197,8 +197,8 @@ static void printParameter(const Parameter &parameter)
 			<< tabs((34 - parameter.name.size() - parameter.get().size()) / 8)
 			<< "  " << parameter.description;
 
-	for (size_t i = 0; i < parameter.options.size(); i++) {
-		ESINFO(ALWAYS) << tabs(6) << "[" << i << "] " << parameter.options[i].first << " - " << parameter.options[i].second;
+	for (size_t i = 0; i < parameter.data->options(); i++) {
+		ESINFO(ALWAYS) << tabs(6) << "[" << i << "] " << parameter.data->optionName(i) << " - " << parameter.data->optionDesc(i);
 	}
 }
 

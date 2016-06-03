@@ -24,7 +24,7 @@ std::string env::configurationFile = "espreso.config";
 ///////////////////////////////// MESH /////////////////////////////////////////
 
 std::string mesh::PATH;
-int mesh::INPUT = GENERATOR;
+mesh::INPUTalternatives mesh::INPUT = mesh::INPUTalternatives::GENERATOR;
 
 size_t mesh::SUBDOMAINS = 8;
 size_t mesh::FIX_POINTS  = 8;
@@ -100,11 +100,11 @@ std::vector<espreso::Parameter> parameters = {
 	// MESH DESCRIPTION
 	{ "PATH", mesh::PATH, "A path to an example.", Parameter::Help::WRITE},
 	{ "INPUT", mesh::INPUT, "A format of an input.", {
-			{ "MATSOL", "IT4I internal library" },
-			{ "WORKBENCH", "Ansys Workbench input file" },
-			{ "OPENFOAM", "OpenFOAM input format" },
-			{ "ESDATA", "ESPRESO binary format" },
-			{ "GENERATOR", "ESPRESO internal generator" } },  Parameter::Help::WRITE},
+			{ "MATSOL", mesh::INPUTalternatives::MATSOL, "IT4I internal library" },
+			{ "WORKBENCH", mesh::INPUTalternatives::WORKBENCH, "Ansys Workbench input file" },
+			{ "OPENFOAM", mesh::INPUTalternatives::OPENFOAM, "OpenFOAM input format" },
+			{ "ESDATA", mesh::INPUTalternatives::ESDATA, "ESPRESO binary format" },
+			{ "GENERATOR", mesh::INPUTalternatives::GENERATOR, "ESPRESO internal generator" } },  Parameter::Help::WRITE},
 
 	{ "SUBDOMAINS", mesh::SUBDOMAINS, "Number of subdomains in a cluster.", Parameter::Help::WRITE },
 	{ "FIX_POINTS" , mesh::FIX_POINTS , "Number of fix points in a subdomain." },
