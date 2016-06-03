@@ -64,7 +64,7 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 			configured = true;
 		}
 	}
-	if (!configured) {
+	if (!configured && std::ifstream(config::env::configurationFile).good()) {
 		// read the default configuration file
 		conf.path = config::env::configurationFile;
 		conf = reader.read(conf);
@@ -101,9 +101,10 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 		if (conf.nameless.size()) {
 			conf.path = conf.nameless.front();
 			conf.nameless.erase(conf.nameless.begin());
-		} else {
-			ESINFO(GLOBAL_ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
 		}
+	}
+	if (!conf.path.size()) {
+		ESINFO(GLOBAL_ERROR) << "Specify path to an example. Run 'espreso -h' for more info.";
 	}
 
 	return conf;
