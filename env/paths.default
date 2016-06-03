@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ROOT=`pwd`
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOT/libs
+echo "LD_LIBRARY_PATH +=" $ROOT/libs
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOT/libespreso
+echo "LD_LIBRARY_PATH +=" $ROOT/libespreso
+
+export PATH=$PATH:$ROOT
+echo "PATH +=" $ROOT

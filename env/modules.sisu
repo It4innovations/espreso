@@ -1,0 +1,5 @@
+
+module switch PrgEnv-cray PrgEnv-intel/5.2.56
+module unload cray-libsci
+module load gcc/4.9.3
+module load cray-tpsl
