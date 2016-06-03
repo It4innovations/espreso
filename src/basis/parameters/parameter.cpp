@@ -43,7 +43,7 @@ Parameter::Parameter(std::string name, bool &defaultValue, std::string descripti
 
 void Parameter::set(const char* value)
 {
-	size_t option = 0;
+	size_t option = options.size();
 	for (size_t i = 0; i < options.size(); i++) {
 		if (StringCompare::caseInsensitiveEq(options[i].first, value)) {
 			option = i;
