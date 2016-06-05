@@ -32,36 +32,36 @@ static void generate(const Configuration &configuration, Mesh *mesh)
 	ParametersReader::pickConfiguration(configuration, settings.parameters);
 
 
-	switch (settings.elementType) {
-	case input::HEXA8: {
+	switch (settings.eType) {
+	case input::ElementType::HEXA8: {
 		generateShape<input::Hexahedron8>(configuration, mesh);
 		break;
 	}
-	case input::HEXA20: {
+	case input::ElementType::HEXA20: {
 		generateShape<input::Hexahedron20>(configuration, mesh);
 		break;
 	}
-	case input::TETRA4: {
+	case input::ElementType::TETRA4: {
 		generateShape<input::Tetrahedron4>(configuration, mesh);
 		break;
 	}
-	case input::TETRA10: {
+	case input::ElementType::TETRA10: {
 		generateShape<input::Tetrahedron10>(configuration, mesh);
 		break;
 	}
-	case input::PRISMA6: {
+	case input::ElementType::PRISMA6: {
 		generateShape<input::Prisma6>(configuration, mesh);
 		break;
 	}
-	case input::PRISMA15: {
+	case input::ElementType::PRISMA15: {
 		generateShape<input::Prisma15>(configuration, mesh);
 		break;
 	}
-	case input::PYRAMID5: {
+	case input::ElementType::PYRAMID5: {
 		generateShape<input::Pyramid5>(configuration, mesh);
 		break;
 	}
-	case input::PYRAMID13: {
+	case input::ElementType::PYRAMID13: {
 		generateShape<input::Pyramid13>(configuration, mesh);
 		break;
 	}

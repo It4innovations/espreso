@@ -6,8 +6,8 @@ using namespace espreso;
 std::string Parser::strip(const std::string &line)
 {
 	std::string result(line);
-	result.erase(0, line.find_first_not_of(" "));
-	result.erase(result.find_last_not_of(" ") + 1, std::string::npos);
+	result.erase(0, line.find_first_not_of(" \r\t\n"));
+	result.erase(result.find_last_not_of(" \r\t\n") + 1, std::string::npos);
 	return result.substr(0, result.find("#"));
 }
 

@@ -20,17 +20,17 @@ public:
 	static Configuration configuration(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
 	static Configuration pickConfiguration(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
 
-	static void printParameters(const std::vector<Parameter> &params, int level);
-	static void printParametersHelp(const std::vector<Parameter> &params, int level);
+	static void printParameters(const std::vector<Parameter> &params, size_t verboseLevel);
+	static void printParametersHelp(const std::vector<Parameter> &params, size_t verboseLevel);
 
 protected:
 	ParametersReader(const std::vector<Parameter> &parameters);
-	Configuration read(const Configuration &configuration, int verbose = 1);
+	Configuration read(const Configuration &configuration, size_t verboseLevel);
 
 	std::vector<Parameter> _parameters;
 
 private:
-	static void printHelp(int level);
+	static void printHelp(size_t verboseLevel);
 	bool setParameter(const std::string &parameter, const std::string &value);
 };
 

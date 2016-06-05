@@ -6,11 +6,12 @@ ESPRESO_ROOT = os.path.dirname(ESPRESO_TESTS)
 EXAMPLES = os.path.join(ESPRESO_TESTS, "examples")
 
 ENV = {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+
     "CILK_NWORKERS": "2",
     "SOLVER_NUM_THREADS": "2",
-    "MKL_NUM_THREADS": "2",
-    "PAR_NUM_THREADS": "2",
-    "OMP_NUM_THREADS": "2"
+    "PAR_NUM_THREADS": "2"
 }
 
 if not os.path.isdir(EXAMPLES):
@@ -75,6 +76,42 @@ class Configuration:
         file.close()
         return "espreso.config.{0}.{1}".format(self.name, suffix)
 
+class Iterator:
+
+    def __init__(self, items):
+        self.items = items
+        self.keys = items.keys()
+        self.pointers = [ 0 for i in items ]
+
+    def reset(self):
+        self.pointers = [ 0 for i in self.items ]
+
+    def next(self):
+        self.pointers[-1] += 1
+        for i in xrange(1, len(self.pointers)):
+            if self.pointers[-i] == len(self.items[self.keys[-i]]):
+                self.pointers[-i] = 0
+                self.pointers[-i - 1] += 1
+
+        if self.pointers[0] == len(self.items[self.keys[0]]):
+            # reset iterator
+            self.pointers[0] = 0
+            return False
+
+        return True
+
+    def __getitem__(self, i):
+        return self.get()[i]
+
+    def values(self):
+        return self.get().values()
+
+    def get(self):
+        result = {}
+        for i in xrange(0, len(self.pointers)):
+            result[self.keys[i]] = self.items[self.keys[i]][self.pointers[i]]
+        return result
+
 class Espreso:
 
     def __init__(self, path, input, example, config):
@@ -87,7 +124,8 @@ class Espreso:
         program = [ "mpirun", "-n", str(processes), os.path.join(ESPRESO_ROOT, "espreso")]
         program += [ "-p", self.example ]
         program += [ "-i", self.input ]
-        program += [ "-c", self.config ]
+        for key, value in self.config.items():
+            program += [ "--{0}={1}".format(key, value) ]
         program += [ str(x) for x in args ]
 
         result = subprocess.Popen(program,

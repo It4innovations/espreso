@@ -38,14 +38,14 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 	}
 
 	// check for help
-	int help_level = 0;
+	size_t helpVerboseLevel = 0;
 	while ((option = getopt_long(*argc, *argv, options.c_str(), opts.data(), &option_index)) != -1) {
 		if (option == 'h') {
-			help_level++;
+			helpVerboseLevel++;
 		}
 	}
-	if (help_level) {
-		printHelp(help_level);
+	if (helpVerboseLevel) {
+		printHelp(helpVerboseLevel + 1);
 		exit(0);
 	}
 
@@ -60,14 +60,14 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 	while ((option = getopt_long(*argc, *argv, options.c_str(), opts.data(), &option_index)) != -1) {
 		if (option == 'c') {
 			conf.path = optarg;
-			conf = reader.read(conf);
+			conf = reader.read(conf, 1);
 			configured = true;
 		}
 	}
 	if (!configured && std::ifstream(config::env::configurationFile).good()) {
 		// read the default configuration file
 		conf.path = config::env::configurationFile;
-		conf = reader.read(conf);
+		conf = reader.read(conf, 1);
 	}
 
 	// read the rest parameters
@@ -123,7 +123,7 @@ Configuration ParametersReader::pickConfiguration(const Configuration &conf, con
 }
 
 
-Configuration ParametersReader::read(const Configuration &configuration, int verbose)
+Configuration ParametersReader::read(const Configuration &configuration, size_t verboseLevel)
 {
 	std::ifstream file(configuration.path);
 	Configuration conf(configuration);
@@ -146,14 +146,14 @@ Configuration ParametersReader::read(const Configuration &configuration, int ver
 				ESINFO(GLOBAL_ERROR) << "Too few nameless command line arguments. \n";
 			}
 			for (size_t i = 0; i < params.size(); i++) {
-				if (!setParameter(params[i], conf.nameless[i]) && verbose) {
+				if (!setParameter(params[i], conf.nameless[i]) && verboseLevel) {
 					ESINFO(ALWAYS) << "Unknown command line parameter '" << params[i] << "'";
 				}
 			}
 			// remove already red nameless parameters
 			conf.nameless.erase(conf.nameless.begin(), conf.nameless.begin() + params.size());
 		} else {
-			if (!setParameter(parameter, Parser::getValue(line)) && verbose) {
+			if (!setParameter(parameter, Parser::getValue(line)) && verboseLevel) {
 				ESINFO(ALWAYS) << "Unknown parameter '" << parameter << "'";
 			}
 		}
@@ -195,7 +195,7 @@ static void printParameter(const Parameter &parameter)
 	}
 }
 
-void ParametersReader::printHelp(int level)
+void ParametersReader::printHelp(size_t verboseLevel)
 {
 	auto printOption = [](const std::string &opt, const std::string &desc) {
 		if (opt.length() < 16) {
@@ -231,54 +231,37 @@ void ParametersReader::printHelp(int level)
 
 	ESINFO(ALWAYS) << "\tThe ESPRESO accepts the following parameters: [default value]\n";
 
-	printParametersHelp(config::parameters, level);
+	printParametersHelp(config::parameters, verboseLevel);
 }
 
-void ParametersReader::printParametersHelp(const std::vector<Parameter> &params, int level)
+void ParametersReader::printParametersHelp(const std::vector<Parameter> &params, size_t verboseLevel)
 {
-	if (level < 1) {
-		return;
-	}
-
-	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i].help == Parameter::Help::WRITE) {
-			printParameter(params[i]);
+	for (size_t i = 0; i < verboseLevel; i++) {
+		size_t n = 0;
+		for (size_t j = 0; j < params.size(); j++) {
+			if (params[j].verboseLevel == i) {
+				printParameter(params[j]);
+				n++;
+			}
+		}
+		if (n) {
+			ESINFO(ALWAYS);
 		}
 	}
-	ESINFO(ALWAYS) << "\n";
-
-	if (level < 2) {
-		return;
-	}
-	ESINFO(ALWAYS) << "\t--- Internal parameters ---\n";
-
-	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i].help == Parameter::Help::INGNORE) {
-			printParameter(params[i]);
-		}
-	}
-	ESINFO(ALWAYS) << "\n";
 }
 
-void ParametersReader::printParameters(const std::vector<Parameter> &params, int level)
+void ParametersReader::printParameters(const std::vector<Parameter> &params, size_t verboseLevel)
 {
-	if (level < 1) {
-		return;
-	}
-
-	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i].help == Parameter::Help::WRITE) {
-			ESINFO(ALWAYS) << "\t" << params[i].name << " == '" << params[i].get() << "'";
+	for (size_t i = 0; i < verboseLevel; i++) {
+		size_t n = 0;
+		for (size_t j = 0; j < params.size(); j++) {
+			if (params[j].verboseLevel == i) {
+				ESINFO(ALWAYS) << "\t" << params[j].name << " == " << params[j].get();
+				n++;
+			}
 		}
-	}
-
-	if (level < 2) {
-		return;
-	}
-
-	for (size_t i = 0; i < params.size(); i++) {
-		if (params[i].help == Parameter::Help::INGNORE) {
-			ESINFO(ALWAYS) << "\t" << params[i].name << " == '" << params[i].get() << "'";
+		if (n) {
+			ESINFO(ALWAYS);
 		}
 	}
 }
