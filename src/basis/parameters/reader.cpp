@@ -101,6 +101,8 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 		if (conf.nameless.size()) {
 			conf.path = conf.nameless.front();
 			conf.nameless.erase(conf.nameless.begin());
+			config::info::verboseLevel = 3;
+			config::info::measureLevel = 3;
 		}
 	}
 	if (!conf.path.size()) {

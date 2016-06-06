@@ -31,6 +31,7 @@ int main(int argc, char** argv)
 	config::mesh::FIX_POINTS = 0;
 	config::solver::FETI_METHOD = config::TOTAL_FETI;
 	config::info::verboseLevel = 2;
+	config::info::measureLevel = 2;
 
 	Factory factory(configuration);
 	std::cout << "Mesh loaded\n";
