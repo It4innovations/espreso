@@ -177,7 +177,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 		if (USE_HFETI == 1)
 
-			if ( config::solver::REGULARIZATION == 0 )
+			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS )
 				cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
 		  	else
 		  		cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
@@ -347,8 +347,11 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 			yp_l[i] = y_l[i];				//	yp = y
 		}
 
-		if (USE_PREC > 0) {
-
+		switch (USE_PREC) {
+		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case config::solver::PRECONDITIONERalternative::MAGIC:
 			proj1_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -370,9 +373,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 				Projector_l_compG		  ( timeEvalProj, cluster, z_l, y_l, 0 );
 			}
 			proj2_time.end();
-
-		} else {
-
+			break;
+		case config::solver::PRECONDITIONERalternative::NONE:
 			proj_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -384,6 +386,9 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 			cilk_for (eslocal i = 0; i < w_l.size(); i++)
 				y_l[i] = w_l[i];
 
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 		}
 
 
@@ -492,12 +497,20 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
-	if (USE_PREC > 0) {
+	switch (USE_PREC) {
+	case config::solver::PRECONDITIONERalternative::LUMPED:
+	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+	case config::solver::PRECONDITIONERalternative::DIRICHLET:
+	case config::solver::PRECONDITIONERalternative::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
-	} else {
+		break;
+	case config::solver::PRECONDITIONERalternative::NONE:
 		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 	}
 
 	timing.addEvent(appA_time );
@@ -578,58 +591,57 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 
 	// *** r = b - Ax; ************************************************************
-	if (USE_PREC > 0) {
+	switch (USE_PREC) {
+	case config::solver::PRECONDITIONERalternative::LUMPED:
+	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+	case config::solver::PRECONDITIONERalternative::DIRICHLET:
+	case config::solver::PRECONDITIONERalternative::MAGIC:
 
-		cilk_for (eslocal i = 0; i < r_l.size(); i++)
+		cilk_for (eslocal i = 0; i < r_l.size(); i++) {
 			tmp_l[i] = b_l[i] - Ax_l[i];
+		}
 
-		if (USE_GGtINV == 1)
+		if (USE_GGtINV == 1) {
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, r_l, 0 );
-		else
+		} else {
 			Projector_l_compG    ( timeEvalProj, cluster, tmp_l, r_l, 0 );
+		}
 
 		tol = epsilon * parallel_norm_compressed(cluster, r_l);
 
-	} else {
-
-		cilk_for (eslocal i = 0; i < r_l.size(); i++)
-			r_l[i] = b_l[i] - Ax_l[i];
-	}
-
-
-	if (USE_PREC > 0) {
-
 		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, tmp_l);
-
-		if (USE_GGtINV == 1)
+		if (USE_GGtINV == 1) {
 			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, u_l, 0 );
-		else
+		} else {
 			Projector_l_compG    ( timeEvalProj, cluster, tmp_l, u_l, 0 );
+		}
 
-	} else {
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, tmp_l); //apply_A_l_compB(timeEvalAppa, cluster, u_l, tmp_l);
+		if (USE_GGtINV == 1) {
+			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, w_l, 0 );
+		} else {
+			Projector_l_compG    ( timeEvalProj, cluster, tmp_l, w_l, 0 );
+		}
 
-		if (USE_GGtINV == 1)
+		break;
+	case config::solver::PRECONDITIONERalternative::NONE:
+		cilk_for (eslocal i = 0; i < r_l.size(); i++) {
+			r_l[i] = b_l[i] - Ax_l[i];
+		}
+
+		if (USE_GGtINV == 1) {
 			Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l, 0 );
-		else
+		} else {
 			Projector_l_compG    ( timeEvalProj, cluster, r_l, u_l, 0 );
-
+		}
 		tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
-	}
-
-
-	if (USE_PREC > 0) {
-		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, tmp_l); //apply_A_l_compB(timeEvalAppa, cluster, u_l, tmp_l);
-		if (USE_GGtINV == 1)
-			Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, w_l, 0 );
-		else
-			Projector_l_compG    ( timeEvalProj, cluster, tmp_l, w_l, 0 );
-
-	} else {
-
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l); 	//apply_A_l_compB(timeEvalAppa, cluster, u_l, w_l);
-
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 	}
+
 
 	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
@@ -666,27 +678,24 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 		SEQ_VECTOR <double> reduction_tmp (3,0);
 		SEQ_VECTOR <double> send_buf      (3,0);
 
-		// POZOR - tady se to ukoncuje jinak = musime probrat
-		if (USE_PREC > 0)
+		switch (USE_PREC) {
+		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case config::solver::PRECONDITIONERalternative::MAGIC:
 			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, r_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, r_l);
-		else
-			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, u_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, u_l);
-
-		// parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, &mpi_req, reduction_tmp, send_buf);
-
-		ddot_time.end();
-
-		if (USE_PREC > 0) {
+			ddot_time.end();
 
 			prec_time.start();
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_l);
 			prec_time.end();
 
 			proj_time.start();
-			if (USE_GGtINV == 1)
+			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, m_l, 0 );
-			else
+			} else {
 				Projector_l_compG    ( timeEvalProj, cluster, tmp_l, m_l, 0 );
+			}
 			proj_time.end();
 
 			appA_time.start();
@@ -694,21 +703,25 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 			appA_time.end();
 
 			proj_time.start();
-			if (USE_GGtINV == 1)
+			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, tmp_l, n_l, 0 );
-			else
+			} else {
 				Projector_l_compG    ( timeEvalProj, cluster, tmp_l, n_l, 0 );
+			}
 			proj_time.end();
 
-		} else {
+			break;
+		case config::solver::PRECONDITIONERalternative::NONE:
+			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, u_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, u_l);
+			ddot_time.end();
 
-			//------------------------------------------
 			proj_time.start();
 
-			if (USE_GGtINV == 1)
+			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, w_l, m_l, 0 );
-			else
+			} else {
 				Projector_l_compG    ( timeEvalProj, cluster, w_l, m_l, 0 );
+			}
 
 			proj_time.end();
 
@@ -716,7 +729,9 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 			appA_time.start();
 			apply_A_l_comp_dom_B(timeEvalAppa, cluster, m_l, n_l); //apply_A_l_compB(timeEvalAppa, cluster, m_l, n_l);
 			appA_time.end();
-			//------------------------------------------
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 		}
 
 #ifndef WIN32
@@ -800,13 +815,21 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
-	if (USE_PREC > 0) {
+	switch (USE_PREC) {
+	case config::solver::PRECONDITIONERalternative::LUMPED:
+	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+	case config::solver::PRECONDITIONERalternative::DIRICHLET:
+	case config::solver::PRECONDITIONERalternative::MAGIC:
 		//timing.addEvent(proj1_time);
 		timing.addEvent(proj_time);
 		timing.addEvent(prec_time );
 		//timing.addEvent(proj2_time);
-	} else {
+		break;
+	case config::solver::PRECONDITIONERalternative::NONE:
 		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 	}
 
 	timing.addEvent(appA_time);
@@ -924,15 +947,26 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 			yp_l[i] = y_l[i];				//	yp = y
 		}
 
-		if (USE_PREC > 0) {
-			cilk_for (eslocal i = 0; i < w_l.size(); i++)
+		switch (USE_PREC) {
+		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case config::solver::PRECONDITIONERalternative::MAGIC:
+			cilk_for (eslocal i = 0; i < w_l.size(); i++) {
 				w_l[i] = r_l[i];
+			}
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
-		} else {
-			cilk_for (eslocal i = 0; i < w_l.size(); i++)
+			break;
+		case config::solver::PRECONDITIONERalternative::NONE:
+			cilk_for (eslocal i = 0; i < w_l.size(); i++) {
 				w_l[i] = r_l[i];
-			cilk_for (eslocal i = 0; i < w_l.size(); i++)
+			}
+			cilk_for (eslocal i = 0; i < w_l.size(); i++) {
 				y_l[i] = w_l[i];
+			}
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 		}
 
 
@@ -1082,11 +1116,20 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			yp_l[i] = 0.0;
 		}
 
-		if (USE_PREC > 0) {
+		switch (USE_PREC) {
+		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case config::solver::PRECONDITIONERalternative::MAGIC:
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
-		} else {
-			cilk_for (eslocal i = 0; i < r_l.size(); i++)
+			break;
+		case config::solver::PRECONDITIONERalternative::NONE:
+			cilk_for (eslocal i = 0; i < r_l.size(); i++) {
 				u_l = r_l;
+			}
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 		}
 
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, u_l, w_l);
@@ -1128,17 +1171,22 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 			ddot_time.end();
 
-			if (USE_PREC > 0) {
-
+			switch (USE_PREC) {
+			case config::solver::PRECONDITIONERalternative::LUMPED:
+			case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+			case config::solver::PRECONDITIONERalternative::DIRICHLET:
+			case config::solver::PRECONDITIONERalternative::MAGIC:
 				prec_time.start();
 				apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, m_l);
 				prec_time.end();
-
-			} else {
-
-				cilk_for (eslocal i = 0; i < m_l.size(); i++)
+				break;
+			case config::solver::PRECONDITIONERalternative::NONE:
+				cilk_for (eslocal i = 0; i < m_l.size(); i++) {
 					m_l[i] = w_l[i];
-
+				}
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 			}
 
 			//------------------------------------------
@@ -1700,28 +1748,27 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 
-		// Lumped Prec - memory efficient
-		if (USE_PREC == 1) {
+		switch (USE_PREC) {
+		case config::solver::PRECONDITIONERalternative::LUMPED:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
-		}
-
-		// Lumped Prec - fast - separate matrix
-		if (USE_PREC == 11 ) {
-			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
-		}
-
-		// Weight scaling function
-		if (USE_PREC == 2) {
+			break;
+		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
-		}
-
-		// Dirichlet Prec
-		if (USE_PREC == 3) {
+			break;
+		case config::solver::PRECONDITIONERalternative::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+			break;
+		case config::solver::PRECONDITIONERalternative::MAGIC:
+			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+			break;
+		case config::solver::PRECONDITIONERalternative::NONE:
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 		}
 
 	}
@@ -1731,11 +1778,21 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 	for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 
-		if (USE_PREC == 1 || USE_PREC == 2 || USE_PREC == 11 )
-			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
-		if (USE_PREC == 3)
+		switch (USE_PREC) {
+		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case config::solver::PRECONDITIONERalternative::MAGIC:
+			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+			break;
+		case config::solver::PRECONDITIONERalternative::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+			break;
+		case config::solver::PRECONDITIONERalternative::NONE:
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+		}
 
 
 		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)

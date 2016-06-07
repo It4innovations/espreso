@@ -70,37 +70,32 @@ void ClusterCPU::SetupKsolvers ( ) {
     cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-        switch (config::solver::KSOLVER) {
-            case 0: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                        break;
-                    }
-            case 1: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                        break;
-                    }
-            case 2: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
-                        break;
-                    }
-            case 3: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            case 4: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            default:
-            		ESINFO(ERROR) << "Invalid KSOLVER value.";
-                    exit(EXIT_FAILURE);
+    	switch (config::solver::KSOLVER) {
+		case config::solver::KSOLVERalternative::DIRECT_DP:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::ITERATIVE:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::DIRECT_SP:
+			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::DIRECT_MP:
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+//		case 4:
+//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+//			break;
+		default:
+			ESINFO(ERROR) << "Invalid KSOLVER value.";
+			exit(EXIT_FAILURE);
         }
 
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
             ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
-            if (config::solver::KSOLVER != 1) {
+            if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {

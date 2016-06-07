@@ -78,13 +78,13 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 			reader.setParameter(opts[option_index].name, optarg);
 			break;
 		case 'v':
-			config::info::verboseLevel++;
+			config::info::VERBOSE_LEVEL++;
 			break;
 		case 't':
-			config::info::testingLevel++;
+			config::info::TESTING_LEVEL++;
 			break;
 		case 'm':
-			config::info::measureLevel++;
+			config::info::MEASURE_LEVEL++;
 			break;
 		case 'i':
 			reader.setParameter("INPUT", optarg);
@@ -101,8 +101,8 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 		if (conf.nameless.size()) {
 			conf.path = conf.nameless.front();
 			conf.nameless.erase(conf.nameless.begin());
-			config::info::verboseLevel = 3;
-			config::info::measureLevel = 3;
+			config::info::VERBOSE_LEVEL = 3;
+			config::info::MEASURE_LEVEL = 3;
 		}
 	}
 	if (!conf.path.size()) {

@@ -95,7 +95,7 @@ void TransientElasticity<TInput>::post_solve_update()
 	ss << "results_" << config::env::MPIrank << "_" << _time;
 
 	output::VTK_Full vtk(this->_input.mesh, ss.str());
-	vtk.store(_u, this->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	vtk.store(_u, this->DOFs(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 
 //
 //	_instance.mesh().store(mesh::VTK_FULL, ss.str(), vec_u_n, 0.95, 0.9);

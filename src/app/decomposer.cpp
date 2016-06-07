@@ -23,15 +23,15 @@ int main(int argc, char** argv)
 	}
 
 	if (config::env::MPIsize > 1) {
-		config::mesh::INPUT = config::mesh::INPUTalternatives::ESDATA;
+		config::mesh::INPUT = config::mesh::INPUTalternative::ESDATA;
 	} else {
-		config::mesh::INPUT = config::mesh::INPUTalternatives::WORKBENCH;
+		config::mesh::INPUT = config::mesh::INPUTalternative::WORKBENCH;
 	}
 	config::mesh::SUBDOMAINS = 1;
 	config::mesh::FIX_POINTS = 0;
-	config::solver::FETI_METHOD = config::TOTAL_FETI;
-	config::info::verboseLevel = 2;
-	config::info::measureLevel = 2;
+	config::solver::FETI_METHOD = config::solver::FETI_METHODalternative::TOTAL;
+	config::info::VERBOSE_LEVEL = 2;
+	config::info::MEASURE_LEVEL = 2;
 
 	Factory factory(configuration);
 	std::cout << "Mesh loaded\n";

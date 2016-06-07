@@ -8,7 +8,7 @@ void Settings::defaultSettings()
 	useMetis    = false;
 	shape       = CUBE;
 	eType       = ElementType::HEXA8;
-	assembler   = LinearElasticity;
+	physics   = config::assembler::PHYSICSalternative::LINEAR_ELASTICITY;
 
 	materials.resize(2);
 
@@ -33,8 +33,12 @@ void Settings::defaultSettings()
 		{ "MAT2_YOUNG"  , materials[1].youngModulus, "Young's modulus of the first material." },
 		{ "MAT2_POISSON", materials[1].poissonRatio, "Poisson's ratio of the first material." },
 
-		{ "ASSEMBLER"   , assembler  , "Assembler type: 0 - LinearElasticity, 1 - Temperature" },
-		{ "TIME_STEPS", config::assembler::timeSteps, "Number of time steps for transient problems."}
+		{ "PHYSICS", physics, "Physics used for compose matrices", {
+				{ "LINEAR_ELASTICITY", config::assembler::PHYSICSalternative::LINEAR_ELASTICITY, "Linear elasticity." },
+				{ "TEMPERATURE", config::assembler::PHYSICSalternative::TEMPERATURE, "Temperature." },
+				{ "TRANSIENT_ELASTICITY", config::assembler::PHYSICSalternative::TRANSIENT_ELASTICITY, "Transient elasticity." }
+		} },
+		{ "TIME_STEPS", config::assembler::TIME_STEPS, "Number of time steps for transient problems."}
 	};
 }
 

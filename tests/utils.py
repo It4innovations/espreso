@@ -49,7 +49,7 @@ class Configuration:
             "AVERAGE_FACES": 0,
 
             "SAVE_MESH": 0,
-            "SAVE_FIXPOINTS": 0,
+            "SAVE_FIX_POINTS": 0,
             "SAVE_FACES": 0,
             "SAVE_EDGES": 0,
             "SAVE_CORNERS": 0,

@@ -66,7 +66,7 @@ public:
 	eslocal  USE_GGtINV;
 	eslocal  USE_HFETI;
 
-	eslocal  USE_PREC;
+	config::solver::PRECONDITIONERalternative  USE_PREC;
 	eslocal  USE_PIPECG;
 
 	eslocal  CG_max_iter;

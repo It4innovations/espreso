@@ -24,12 +24,6 @@ enum class ElementType {
 	PYRAMID13
 };
 
-enum Assembler {
-	LinearElasticity,
-	Temperature,
-	TransientElasticity
-};
-
 struct Settings {
 
 	Settings(const Configuration &configuration, size_t index, size_t size);
@@ -42,7 +36,7 @@ struct Settings {
 
 	ElementType eType;
 	eslocal shape;
-	eslocal assembler;
+	config::assembler::PHYSICSalternative physics;
 
 	std::vector<Material> materials;
 
@@ -55,12 +49,11 @@ protected:
 inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 {
        std::vector<std::string> shapes({ "CUBE", "SPHERE" });
-       std::vector<std::string> assembler({ "LinearElasticity", "Temperature", "TransientElasticity" });
 
        os << "clusters: " << s.size << "\n";
        os << "generated shape: " << shapes[s.shape] << "\n";
        os << "type of the element: " << static_cast<int>(s.eType) << "\n";
-       os << "assembler: " << assembler[s.assembler] << "\n";
+       os << "physics: " << static_cast<int>(s.physics) << "\n";
 
        os << "material 1:\n";
        os << "\tdensity: " << s.materials[0].density << "\n";

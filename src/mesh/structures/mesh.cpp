@@ -1017,12 +1017,12 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	subdomainsInterfaces(commonFaces);
 	computeBorderLinesAndVertices(commonFaces, commonFacesBorder, commonLines, commonVertices);
 
-	if (config::output::saveFaces) {
-		output::VTK_Full::mesh(commonFaces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	if (config::output::SAVE_FACES) {
+		output::VTK_Full::mesh(commonFaces, "meshFaces", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
-	if (config::output::saveLines) {
-		output::VTK_Full::mesh(commonLines, "meshLines", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	if (config::output::SAVE_LINES) {
+		output::VTK_Full::mesh(commonLines, "meshLines", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
 	auto faceToCluster = [&] (eslocal index, eslocal part) {

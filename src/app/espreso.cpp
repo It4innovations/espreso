@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	Configuration configuration = ParametersReader::arguments(&argc, &argv);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " process(es).";
-	ParametersReader::printParameters(config::parameters, config::info::verboseLevel);
+	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);
 
 	Factory factory(configuration);
 

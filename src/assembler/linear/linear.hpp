@@ -18,8 +18,8 @@ void Linear<TInput>::init()
 
 	ESINFO(PROGRESS2) << "Assemble matrices K, M, T and right hand side";
 	cilk_for (size_t s = 0; s < this->subdomains(); s++) {
-		KMf(s, config::assembler::timeSteps > 1);
-		if (config::assembler::timeSteps > 1) {
+		KMf(s, config::assembler::TIME_STEPS > 1);
+		if (config::assembler::TIME_STEPS > 1) {
 			_K[s].MatAddInPlace(_M[s], 'N', timeConstant());
 		}
 		T(s);
@@ -52,7 +52,7 @@ void Linear<TInput>::init()
 	timeParallelG.end();
 	this->_timeStatistics.addEvent(timeParallelG);
 
-	if (config::info::printMatrices) {
+	if (config::info::PRINT_MATRICES) {
 		for (size_t s = 0; s < this->subdomains(); s++) {
 			std::ofstream osK(Logging::prepareFile(s, "K").c_str());
 			osK << _K[s];
@@ -79,7 +79,7 @@ void Linear<TInput>::init()
 	timeLSconv.start();
 
 	_lin_solver.DOFS_PER_NODE = this->DOFs();
-	_lin_solver.setup(config::env::MPIrank, config::env::MPIsize, config::assembler::timeSteps == 1);
+	_lin_solver.setup(config::env::MPIrank, config::env::MPIsize, config::assembler::TIME_STEPS == 1);
 
 	ESINFO(PROGRESS2) << "Solver preprocessing started";
 	initSolver();
