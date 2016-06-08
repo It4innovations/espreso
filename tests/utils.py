@@ -14,67 +14,28 @@ ENV = {
     "PAR_NUM_THREADS": "2"
 }
 
-if not os.path.isdir(EXAMPLES):
-    os.mkdir(EXAMPLES)
 
-class Configuration:
+class TestCaseCreator:
 
-    def __init__(self, name, parameters={}):
-        self.name = name
-        self.config = {
-            "SUBDOMAINS": 8,
-            "FIX_POINTS": 8,
-            "CORNERS": 1,
-            "VERTEX_CORNERS": 1,
-            "EDGE_CORNERS": 1,
+    @staticmethod
+    def create_test(testClass, function, name, *args, **kwargs):
+        def test_method(self):
+            function(self, *args, **kwargs)
 
-            "EPSILON": 1e-5,
-            "ITERATIONS": 100,
-            "FETI_METHOD": 0,
-            "PRECONDITIONER": 1,
-            "REGULARIZATION": 0,
+        setattr(testClass, 'test_' + name, test_method)
+        test_method.__name__ = 'test_' + name
 
-            "REDUNDANT_LAGRANGE": 1,
-            "USE_SCHUR_COMPLEMENT": 0,
-            "KEEP_FACTORS": 1,
-            "CGSOLVER": 0,
-            "KSOLVER": 0,
-            "KSOLVER_SP_iter_steps": 0,
-            "KSOLVER_SP_iter_norm": 0,
-            "F0SOLVER": 0,
-            "N_MICS": 0,
+    @staticmethod
+    def iterate(function, *args, **kwargs):
+        next = [ True for arg in args]
 
-            "FACE_CORNERS": 0,
-            "AVERAGE_EDGES": 0,
-            "AVERAGE_FACES": 0,
+        while reduce(lambda x, y: x or y, next):
+            function(*args, **kwargs)
+            for i in range(0, len(next)):
+                next[i] = args[i].next()
+                if next[i]:
+                    break
 
-            "SAVE_MESH": 0,
-            "SAVE_FIX_POINTS": 0,
-            "SAVE_FACES": 0,
-            "SAVE_EDGES": 0,
-            "SAVE_CORNERS": 0,
-            "SAVE_DIRICHLET": 0,
-            "SAVE_AVERAGING": 0,
-            "SAVE_RESULTS": 0,
-
-            "VERBOSE_LEVEL": 0,
-            "TESTING_LEVEL": 0,
-            "MEASURE_LEVEL": 0,
-            "PRINT_MATRICES": 0
-        }
-
-        for key in parameters:
-            self.config[key] = parameters[key]
-
-    def set(self, parameter, value):
-        self.config[parameter] = value
-
-    def save(self, path, suffix):
-        file = open(os.path.join(ESPRESO_ROOT, EXAMPLES, path, "espreso.config.{0}.{1}".format(self.name, suffix)), 'w')
-        for key, value in self.config.items():
-            file.write("{0} = {1}\n".format(key, value))
-        file.close()
-        return "espreso.config.{0}.{1}".format(self.name, suffix)
 
 class Iterator:
 
@@ -82,9 +43,6 @@ class Iterator:
         self.items = items
         self.keys = items.keys()
         self.pointers = [ 0 for i in items ]
-
-    def reset(self):
-        self.pointers = [ 0 for i in self.items ]
 
     def next(self):
         self.pointers[-1] += 1
@@ -94,7 +52,6 @@ class Iterator:
                 self.pointers[-i - 1] += 1
 
         if self.pointers[0] == len(self.items[self.keys[0]]):
-            # reset iterator
             self.pointers[0] = 0
             return False
 
@@ -114,26 +71,37 @@ class Iterator:
 
 class Espreso:
 
-    def __init__(self, path, input, example, config):
+    def __init__(self, path):
         self.path = path
-        self.input = input
-        self.example = example
-        self.config = config
+        self.root = ESPRESO_ROOT
 
-    def run(self, processes, args, env=ENV):
-        program = [ "mpirun", "-n", str(processes), os.path.join(ESPRESO_ROOT, "espreso")]
-        program += [ "-p", self.example ]
-        program += [ "-i", self.input ]
-        for key, value in self.config.items():
-            program += [ "--{0}={1}".format(key, value) ]
+    def run_program(self, program, args, config, env=ENV):
         program += [ str(x) for x in args ]
+        for key, value in config.items():
+            program += [ "--{0}={1}".format(key, value) ]
 
+        env=dict(os.environ.items() + env.items())
+        env["LD_LIBRARY_PATH"] = os.path.join(self.root, "libs/") + ":" + env["LD_LIBRARY_PATH"]
         result = subprocess.Popen(program,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  cwd=os.path.join(EXAMPLES, self.path),
-                                  env=dict(os.environ.items() + env.items()))
+                                  cwd=os.path.join(EXAMPLES, self.path), env=env)
 
         return result.communicate()
+
+    def configure(self, config):
+        self.root = os.path.join(EXAMPLES, self.path)
+        program = [ os.path.join(self.root, "waf"), "configure"]
+        return self.run_program(program, [], config)
+
+    def build(self):
+        program = [ os.path.join(self.root, "waf"), "install"]
+        return self.run_program(program, [], {})
+
+    def run(self, processes, example, input, args, config, env=ENV):
+        program = [ "mpirun", "-n", str(processes), os.path.join(self.root, "espreso")]
+        program += [ "-p", example ]
+        program += [ "-i", input ]
+        return self.run_program(program, args, config, env)
 
 
 

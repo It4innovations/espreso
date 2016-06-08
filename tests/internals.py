@@ -5,60 +5,59 @@ import unittest
 class TestESPRESO(unittest.TestCase):
 
     def test_parameters(self):
-        result, error = Espreso("parameters", "GENERATOR", "correct.txt", {}).run(1, [])
+        result, error = Espreso("parameters").run(1, "correct.txt", "GENERATOR", [], {})
         self.assertEqual(result, "", result)
         self.assertEqual(error, "", error)
 
         for file in os.listdir(os.path.join(EXAMPLES, "parameters")):
             if file.startswith("error"):
-                result, error = Espreso("parameters", "GENERATOR", file, {}).run(1, [])
+                result, error = Espreso("parameters").run(1, file, "GENERATOR", [], {})
                 self.assertEqual(result, "", result)
                 self.assertNotEqual(error, "", error)
 
-        correct = {
-            "INPUT": "4",
-            "INPUT": "GENERATOR",
-            "INPUT": "GENErator",
-            "INPUT": "gENeRAtOR",
-            "REDUNDANT_LAGRANGE": "0",
-            "REDUNDANT_LAGRANGE": "1",
-            "SUBDOMAINS": "10",
-            "EPSILON": "0.005",
-            "EPSILON": "1e-3",
-            "PRECONDITIONER": "DIRICHLET",
-            "PRECONDITIONER": "3",
-            "PRECONDITIONER": "DIRICHlet",
-            "PRECONDITIONER": "dIRICHLET",
-        }
+        correct = [
+            ("INPUT", "4"),
+            ("INPUT", "GENERATOR"),
+            ("INPUT", "GENErator"),
+            ("INPUT", "gENeRAtOR"),
+            ("REDUNDANT_LAGRANGE", "0"),
+            ("REDUNDANT_LAGRANGE", "1"),
+            ("SUBDOMAINS", "10"),
+            ("EPSILON", "0.005"),
+            ("EPSILON", "1e-3"),
+            ("PRECONDITIONER", "DIRICHLET"),
+            ("PRECONDITIONER", "3"),
+            ("PRECONDITIONER", "DIRICHlet"),
+            ("PRECONDITIONER", "dIRICHLET"),
+        ]
 
-        result, error = Espreso("parameters", "GENERATOR", "correct.txt", correct).run(1, [])
-        self.assertEqual(result, "", result)
-        self.assertEqual(error, "", error)
+        for key, value in correct:
+            result, error = Espreso("parameters").run(1, "correct.txt", "GENERATOR", [], { key: value })
+            self.assertEqual(result, "", result)
+            self.assertEqual(error, "", error)
 
-        incorrect = {
-            "INPUT": "5",
-            "INPUT": "GENERATO",
-            "INPUT": "GENErators",
-            "INPUT": "gENeRAtOR4",
-            "INPUT": "4gENeRAtOR",
-            "INPUT": "-1",
-            "INPUT": "0.1",
-            "INPUT": "4.0",
-            "INPUT": "4ff",
-            "INPUT": "f4f",
-            "INPUT": "4-4",
-            "REDUNDANT_LAGRANGE": "0",
-            "REDUNDANT_LAGRANGE": "1",
-            "SUBDOMAINS": "10.0",
-            "EPSILON": "Hello",
-            "EPSILON": "ee4",
-            "REDUNDANT_LAGRANGE": "True",
-            "REDUNDANT_LAGRANGE": "False",
-            "USE_SCHUR_COMPLEMENT": "x",
-        }
+        incorrect = [
+            ("INPUT", "5"),
+            ("INPUT", "GENERATO"),
+            ("INPUT", "GENErators"),
+            ("INPUT", "gENeRAtOR4"),
+            ("INPUT", "4gENeRAtOR"),
+            ("INPUT", "-1"),
+            ("INPUT", "0.1"),
+            ("INPUT", "4.0"),
+            ("INPUT", "4ff"),
+            ("INPUT", "f4f"),
+            ("INPUT", "4-4"),
+            ("SUBDOMAINS", "10.0"),
+            ("EPSILON", "Hello"),
+            ("EPSILON", "ee4"),
+            ("REDUNDANT_LAGRANGE", "True"),
+            ("REDUNDANT_LAGRANGE", "False"),
+            ("USE_SCHUR_COMPLEMENT", "x"),
+        ]
 
-        for key, value in incorrect.items():
-            result, error = Espreso("parameters", "GENERATOR", "correct.txt", {key: value}).run(1, [])
+        for key, value in incorrect:
+            result, error = Espreso("parameters").run(1, "correct.txt", "GENERATOR", [], {key: value})
             self.assertEqual(result, "", result)
             self.assertEqual(error, "Parameter '" + key + "' has a wrong value '" + value + "'.\n")
 
@@ -83,7 +82,7 @@ class TestESPRESO(unittest.TestCase):
             "OUTPUT == out",
         ]
 
-        result, error = Espreso("parameters", "GENERATOR", "correct.txt", parameters).run(1, [])
+        result, error = Espreso("parameters", ).run(1, "correct.txt", "GENERATOR", [], parameters)
         self.assertEqual(error, "", error)
         found = 0
         for line in result.splitlines():
