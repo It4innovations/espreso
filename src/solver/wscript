@@ -20,12 +20,12 @@ def configure(ctx):
 
     if ctx.env.SOLVER == "PARDISO":
         ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-	ctx.env.append_value("STLIB", [ "ifcore" ])
+	ctx.env.append_value("POSTSTLIB", [ "ifcore" ])
 	#ctx.env.prepend_value(
 
     if ctx.env.SOLVER == "MIC":
         ctx.env.append_unique("LIB", [ "imf", "intlc", "svml", "irng", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-        ctx.env.append_unique("STLIB", [ "ifcore" ])
+        ctx.env.append_unique("POSTSTLIB", [ "ifcore" ])
         ctx.env.append_unique("LINKFLAGS", [
         "-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64  -lmkl_core -lmkl_intel_thread ".format(os.environ['MKLROOT']) ])
 

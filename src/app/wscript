@@ -14,15 +14,23 @@ class cxxprogram(link_task):
                ${FRAMEWORKPATH_ST:FRAMEWORKPATH} \
                ${FRAMEWORK_ST:FRAMEWORK} \
                ${ARCH_ST:ARCH} \
+\
+               -Wl,--start-group \
+               ${STLIBPATH_ST:STLIBPATH} \
+               ${STLIB_ST:STLIB} \
+               -Wl,--end-group \
+\
                ${SHLIB_MARKER} \
                ${LIBPATH_ST:LIBPATH} \
                ${LIB_ST:LIB} \
                ${LDFLAGS} \
                ${STLIB_MARKER} \
+\
                -Wl,--start-group \
                ${STLIBPATH_ST:STLIBPATH} \
-               ${STLIB_ST:STLIB} \
+               ${STLIB_ST:POSTSTLIB} \
                -Wl,--end-group \
+\
                ${SHLIB_MARKER}'
 
 class cxxshlib(cxxprogram):
