@@ -76,17 +76,26 @@ class Espreso:
     def __init__(self, path):
         self.path = path
         self.root = ESPRESO_ROOT
+        self.env = os.environ
 
-    def run_program(self, program, args, config, env=ENV):
+        for key, value in ENV.items():
+            self.set_env(key, value)
+
+    def append_env(self, key, value):
+        self.env[key] = value + ":" + self.env[key]
+
+    def set_env(self, key, value):
+        self.env[key] = value
+
+    def run_program(self, program, args, config):
         program += [ str(x) for x in args ]
         for key, value in config.items():
             program += [ "--{0}={1}".format(key, value) ]
 
-        env=dict(os.environ.items() + env.items())
-        env["LD_LIBRARY_PATH"] = os.path.join(self.root, "libs/") + ":" + env["LD_LIBRARY_PATH"]
+        self.append_env("LD_LIBRARY_PATH", os.path.join(self.root, "libs/"))
         result = subprocess.Popen(program,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  cwd=os.path.join(EXAMPLES, self.path), env=env)
+                                  cwd=os.path.join(EXAMPLES, self.path), env=self.env)
 
         return result.communicate()
 
@@ -99,11 +108,11 @@ class Espreso:
         program = [ os.path.join(self.root, "waf"), "install"]
         return self.run_program(program, [], {})
 
-    def run(self, processes, example, input, args, config, env=ENV):
+    def run(self, processes, example, input, args, config):
         program = [ "mpirun", "-n", str(processes), os.path.join(self.root, "espreso")]
         program += [ "-p", example ]
         program += [ "-i", input ]
-        return self.run_program(program, args, config, env)
+        return self.run_program(program, args, config)
 
 
 

@@ -15,6 +15,7 @@ class cxxprogram(link_task):
                ${FRAMEWORK_ST:FRAMEWORK} \
                ${ARCH_ST:ARCH} \
 \
+               ${STLIB_MARKER} \
                -Wl,--start-group \
                ${STLIBPATH_ST:STLIBPATH} \
                ${STLIB_ST:STLIB} \
@@ -24,8 +25,8 @@ class cxxprogram(link_task):
                ${LIBPATH_ST:LIBPATH} \
                ${LIB_ST:LIB} \
                ${LDFLAGS} \
-               ${STLIB_MARKER} \
 \
+               ${STLIB_MARKER} \
                -Wl,--start-group \
                ${STLIBPATH_ST:STLIBPATH} \
                ${STLIB_ST:POSTSTLIB} \

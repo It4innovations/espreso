@@ -16,9 +16,10 @@ class TestBuild(unittest.TestCase):
     def setUp(self):
         shutil.rmtree(os.path.join(EXAMPLES, TEST_DIR), ignore_errors=True)
         subprocess.call(["git", "clone", "git@code.it4i.cz:mec059/espreso.git", TEST_DIR, "-q"], cwd=EXAMPLES)
-        subprocess.call(["mkdir", TEST_LIBS], cwd=EXAMPLES)
-        subprocess.call(["cp", ESPRESO_LIBS + "libpardiso500-INTEL120-X86-64.so", TEST_LIBS], cwd=EXAMPLES)
-        subprocess.call(["cp", ESPRESO_LIBS + "libifcore.a", TEST_LIBS], cwd=EXAMPLES)
+        if os.path.isfile(ESPRESO_LIBS + "libpardiso500-INTEL120-X86-64.so"):
+            subprocess.call(["mkdir", TEST_LIBS], cwd=EXAMPLES)
+            subprocess.call(["cp", ESPRESO_LIBS + "libpardiso500-INTEL120-X86-64.so", TEST_LIBS], cwd=EXAMPLES)
+            subprocess.call(["cp", ESPRESO_LIBS + "libifcore.a", TEST_LIBS], cwd=EXAMPLES)
 
     def tearDown(self):
         shutil.rmtree(os.path.join(EXAMPLES, TEST_DIR))
@@ -40,12 +41,15 @@ class TestBuild(unittest.TestCase):
         result, error = espreso.build()
         check(result, error, "install")
 
-        config = {
+        esconfig = {
           "FETI_METHOD": "HYBRID_FETI",
           "PRECONDITIONER": "DIRICHLET"
         }
 
-        result, error = espreso.run(4, "examples/meshgenerator/metis_cube_elasticity_fixed_bottom.txt", "GENERATOR", [ 0, 2, 2, 1, 2, 2, 2, 4, 4, 4], config)
+        if config["SOLVER"] == "CUDA":
+            espreso.append_env("LD_LIBRARY_PATH", "/usr/local/cuda-7.5/lib64")
+
+        result, error = espreso.run(4, "examples/meshgenerator/metis_cube_elasticity_fixed_bottom.txt", "GENERATOR", [ 0, 2, 2, 1, 2, 2, 2, 4, 4, 4], esconfig)
         self.assertEqual(result, "", result)
         self.assertEqual(error, "", error)
 
@@ -57,7 +61,7 @@ if __name__ == '__main__':
         TestCaseCreator.create_test(TestBuild, TestBuild.build, name, settings.get())
 
     settings = Iterator({
-      "SOLVER": [ "MKL" ],
+      "SOLVER": [ "MKL", "CUDA" ],
       "LIBTYPE": [ "SHARED", "STATIC" ],
       "INT_WIDTH": [ "32", "64" ]
     })
