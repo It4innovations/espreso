@@ -22,7 +22,7 @@ struct OptionEnvelope: public Envelope {
 		std::stringstream ss(value);
 		size_t number;
 		ss >> number;
-		if (ss.eof() && number < _options.size()) {
+		if (!ss.fail() && ss.eof() && number < _options.size()) {
 			_data = _options[number].value;
 			return true;
 		}
