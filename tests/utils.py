@@ -11,7 +11,9 @@ ENV = {
 
     "CILK_NWORKERS": "2",
     "SOLVER_NUM_THREADS": "2",
-    "PAR_NUM_THREADS": "2"
+    "PAR_NUM_THREADS": "2",
+
+    "PARDISOLICMESSAGE": "1"
 }
 
 
