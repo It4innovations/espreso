@@ -16,5 +16,5 @@ if [ "$#" -eq 1 ]; then
  export PAR_NUM_THREADS=$1
  export CILK_NWORKERS=$1
 
- echo "  ESPRESO is configured for" $1 "threads at each MPI process."
+ echo "ESPRESO is configured for" $1 "threads at each MPI process."
 fi

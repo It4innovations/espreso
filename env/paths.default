@@ -2,6 +2,11 @@
 
 ROOT=`pwd`
 
+if [ "$#" -eq 1 ]; then
+  ROOT=$1
+fi
+
+
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOT/libs
 echo "LD_LIBRARY_PATH +=" $ROOT/libs
 
