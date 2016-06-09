@@ -1,5 +1,8 @@
+
 import subprocess
 import os
+import shutil
+from apt_pkg import config
 
 ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
 ESPRESO_ROOT = os.path.dirname(ESPRESO_TESTS)
@@ -73,13 +76,19 @@ class Iterator:
 
 class Espreso:
 
-    def __init__(self, path):
+    def __init__(self, path=ESPRESO_ROOT, config={}):
         self.path = path
-        self.root = ESPRESO_ROOT
-        self.env = os.environ
+        if path != ESPRESO_ROOT:
+            self.path = os.path.join(ESPRESO_TESTS, path)
 
+        self.env = os.environ
+        self.append_env("LD_LIBRARY_PATH", os.path.join(self.path, "libs/"))
+        self.append_env("LD_LIBRARY_PATH", "/usr/local/cuda-7.5/lib64")
         for key, value in ENV.items():
             self.set_env(key, value)
+
+        if path != ESPRESO_ROOT:
+            self.clone()
 
     def append_env(self, key, value):
         self.env[key] = value + ":" + self.env[key]
@@ -87,34 +96,81 @@ class Espreso:
     def set_env(self, key, value):
         self.env[key] = value
 
-    def run_program(self, program, args, config):
+
+    def clone(self):
+        self.remove()
+
+        subprocess.call(["git", "clone", "git@code.it4i.cz:mec059/espreso.git", self.path, "-q"], cwd=ESPRESO_TESTS)
+        subprocess.call(["mkdir", "libs"], cwd=self.path)
+
+        origin = os.path.join(ESPRESO_ROOT, "libs/")
+        target = os.path.join(self.path, "libs/")
+        if os.path.isfile(origin + "libpardiso500-INTEL120-X86-64.so"):
+            subprocess.call(["cp", origin + "libpardiso500-INTEL120-X86-64.so", target])
+        if os.path.isfile(origin + "libifcore.a"):
+            subprocess.call(["cp", origin + "libifcore.a", target])
+
+    def remove(self):
+        shutil.rmtree(self.path, ignore_errors=True)
+
+
+    def waf(self, args=[], config={}):
+        return self.run_program([os.path.join(self.path, "waf")], self.path, config, args)
+
+    def install(self, config={}):
+        def check(result, error, method):
+            success = False
+            for line in result.splitlines():
+                if line.find("'" + method + "' finished successfully") != -1:
+                    success = True
+
+            if error != "":
+                raise Exception(error)
+            if success == False:
+                raise Exception(result)
+
+        result, error = self.waf(["configure"], config)
+        check(result, error, "configure")
+        result, error = self.waf(["install"])
+        check(result, error, "install")
+
+    def run_program(self, program, cwd="", config={}, args=[]):
         program += [ str(x) for x in args ]
         for key, value in config.items():
             program += [ "--{0}={1}".format(key, value) ]
 
-        self.append_env("LD_LIBRARY_PATH", os.path.join(self.root, "libs/"))
         result = subprocess.Popen(program,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  cwd=os.path.join(EXAMPLES, self.path), env=self.env)
+                                  cwd=cwd or self.path, env=self.env)
 
         return result.communicate()
 
-    def configure(self, config):
-        self.root = os.path.join(EXAMPLES, self.path)
-        program = [ os.path.join(self.root, "waf"), "configure"]
-        return self.run_program(program, [], config)
 
-    def build(self):
-        program = [ os.path.join(self.root, "waf"), "install"]
-        return self.run_program(program, [], {})
+    def run(self, processes, *args, **kwargs):
+        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
 
-    def run(self, processes, example, input, args, config):
-        program = [ "mpirun", "-n", str(processes), os.path.join(self.root, "espreso")]
-        program += [ "-p", example ]
-        program += [ "-i", input ]
-        return self.run_program(program, args, config)
+        output, error = self.run_program(program, *args, **kwargs)
+        if error != "":
+            raise Exception(error)
+        if output != "":
+            raise Exception(output)
 
 
+    def output(self, processes, *args, **kwargs):
+        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
+
+        output, error = self.run_program(program, *args, **kwargs)
+        if error != "":
+            raise Exception(error)
+
+        return output
+
+    def fail(self, processes, *args, **kwargs):
+        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
+
+        output, error = self.run_program(program, *args, **kwargs)
+        if error == "":
+            raise Exception("Expected fail, but run was correct.")
 
 
 

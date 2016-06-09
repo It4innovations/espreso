@@ -2,18 +2,25 @@
 from utils import *
 import unittest
 
-class TestESPRESO(unittest.TestCase):
+class ESPRESOInternalTests(unittest.TestCase):
+
+    espreso = Espreso()
 
     def test_parameters(self):
-        result, error = Espreso("parameters").run(1, "correct.txt", "GENERATOR", [], {})
-        self.assertEqual(result, "", result)
-        self.assertEqual(error, "", error)
+        esconfig = {
+            "INPUT": "GENERATOR",
+            "PATH": "correct.txt",
+        }
+        example_dir = "tests/examples/parameters"
 
-        for file in os.listdir(os.path.join(EXAMPLES, "parameters")):
+        self.espreso.run(1, example_dir, esconfig)
+
+        for file in os.listdir(os.path.dirname(os.path.abspath(__file__)) + "/examples/parameters"):
             if file.startswith("error"):
-                result, error = Espreso("parameters").run(1, file, "GENERATOR", [], {})
-                self.assertEqual(result, "", result)
-                self.assertNotEqual(error, "", error)
+                esconfig["PATH"] = file
+                self.espreso.fail(1, example_dir, esconfig)
+
+        esconfig["PATH"] = "correct.txt"
 
         correct = [
             ("INPUT", "4"),
@@ -32,9 +39,9 @@ class TestESPRESO(unittest.TestCase):
         ]
 
         for key, value in correct:
-            result, error = Espreso("parameters").run(1, "correct.txt", "GENERATOR", [], { key: value })
-            self.assertEqual(result, "", result)
-            self.assertEqual(error, "", error)
+            config = esconfig.copy()
+            config.update({key: value})
+            self.espreso.run(1, example_dir, config)
 
         incorrect = [
             ("INPUT", "5"),
@@ -57,11 +64,13 @@ class TestESPRESO(unittest.TestCase):
         ]
 
         for key, value in incorrect:
-            result, error = Espreso("parameters").run(1, "correct.txt", "GENERATOR", [], {key: value})
-            self.assertEqual(result, "", result)
-            self.assertEqual(error, "Parameter '" + key + "' has a wrong value '" + value + "'.\n")
+            config = esconfig.copy()
+            config.update({key: value})
+            self.espreso.fail(1, example_dir, config)
 
         parameters = {
+            "INPUT": "GENERATOR",
+            "PATH": "correct.txt",
             "SUBDOMAINS": "1024",
             "EPSILON": "1e-3",
             "USE_SCHUR_COMPLEMENT": "",
@@ -82,10 +91,9 @@ class TestESPRESO(unittest.TestCase):
             "OUTPUT == out",
         ]
 
-        result, error = Espreso("parameters", ).run(1, "correct.txt", "GENERATOR", [], parameters)
-        self.assertEqual(error, "", error)
+        output = self.espreso.output(1, example_dir, parameters)
         found = 0
-        for line in result.splitlines():
+        for line in output.splitlines():
             for out in parameters_output:
                 if line.find(out) != -1:
                     found += 1

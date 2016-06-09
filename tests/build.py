@@ -4,70 +4,41 @@ import shutil
 from utils import *
 import unittest
 
-ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
-ESPRESO_ROOT = os.path.dirname(ESPRESO_TESTS)
-ESPRESO_LIBS = os.path.join(ESPRESO_ROOT, "libs/")
-EXAMPLES = os.path.join(ESPRESO_TESTS, "examples")
-TEST_DIR = "__espreso__"
-TEST_LIBS = os.path.join(TEST_DIR, "libs/")
+class ESPRESOBuildTests(unittest.TestCase):
 
-class TestBuild(unittest.TestCase):
+    espreso = Espreso("__ESPRESO__")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.espreso.remove()
 
     def setUp(self):
-        shutil.rmtree(os.path.join(EXAMPLES, TEST_DIR), ignore_errors=True)
-        subprocess.call(["git", "clone", "git@code.it4i.cz:mec059/espreso.git", TEST_DIR, "-q"], cwd=EXAMPLES)
-        if os.path.isfile(ESPRESO_LIBS + "libpardiso500-INTEL120-X86-64.so"):
-            subprocess.call(["mkdir", TEST_LIBS], cwd=EXAMPLES)
-            subprocess.call(["cp", ESPRESO_LIBS + "libpardiso500-INTEL120-X86-64.so", TEST_LIBS], cwd=EXAMPLES)
-            subprocess.call(["cp", ESPRESO_LIBS + "libifcore.a", TEST_LIBS], cwd=EXAMPLES)
-
-    def tearDown(self):
-        shutil.rmtree(os.path.join(EXAMPLES, TEST_DIR))
+        self.espreso.waf(["distclean"])
 
     def build(self, config):
-        def check(result, error, method):
-            success = False
-            for line in result.splitlines():
-                if line.find("'" + method + "' finished successfully") != -1:
-                    success = True
-
-            self.assertEqual(error, "", error)
-            self.assertTrue(success, result)
-
-
-        espreso = Espreso(TEST_DIR)
-        result, error = espreso.configure(config)
-        check(result, error, "configure")
-        result, error = espreso.build()
-        check(result, error, "install")
+        self.espreso.install(config)
 
         esconfig = {
           "FETI_METHOD": "HYBRID_FETI",
-          "PRECONDITIONER": "DIRICHLET"
+          "PRECONDITIONER": "DIRICHLET",
+          "INPUT": "GENERATOR",
+          "PATH": "metis_cube_elasticity_fixed_bottom.txt"
         }
 
-        if config["SOLVER"] == "CUDA":
-            espreso.append_env("LD_LIBRARY_PATH", "/usr/local/cuda-7.5/lib64")
-
-        result, error = espreso.run(4, "examples/meshgenerator/metis_cube_elasticity_fixed_bottom.txt", "GENERATOR", [ 0, 2, 2, 1, 2, 2, 2, 4, 4, 4], esconfig)
-        self.assertEqual(result, "", result)
-        self.assertEqual(error, "", error)
+        self.espreso.run(4, "examples/meshgenerator/", esconfig, [0,  2, 2, 1,  2, 2, 2,  4, 4, 4])
 
 
 if __name__ == '__main__':
 
     def create_instance(settings):
         name = "_".join(settings.values())
-        TestCaseCreator.create_test(TestBuild, TestBuild.build, name, settings.get())
+        TestCaseCreator.create_test(ESPRESOBuildTests, ESPRESOBuildTests.build, name, settings.get())
 
     settings = Iterator({
-      "SOLVER": [ "MKL", "CUDA" ],
+      "SOLVER": [ "MKL", "CUDA", "PARDISO" ],
       "LIBTYPE": [ "SHARED", "STATIC" ],
       "INT_WIDTH": [ "32", "64" ]
     })
-
-    if os.path.isfile(ESPRESO_LIBS + "libpardiso500-INTEL120-X86-64.so"):
-        settings.items["SOLVER"].append("PARDISO")
 
 
     TestCaseCreator.iterate(create_instance, settings)
