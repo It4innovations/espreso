@@ -165,7 +165,7 @@ std::vector<espreso::Parameter> parameters = {
 			{ "DOUBLE", solver::F0SOLVERalternative::DOUBLE, "Always with double precision" } }},
 
 	{ "solver::SASOLVER", solver::SASOLVER, "SA solver type.", {
-			{ "COU_DENSE", solver::SASOLVERalternative::CPU_DENSE, "DENSE solver on CPU" },
+			{ "CPU_DENSE", solver::SASOLVERalternative::CPU_DENSE, "DENSE solver on CPU" },
 			{ "ACC_DENSE", solver::SASOLVERalternative::ACC_DENSE, "DENSE solver on ACC" },
 			{ "CPU_SPARSE", solver::SASOLVERalternative::CPU_SPARSE, "SPARSE solver on CPU." } }},
 
