@@ -92,7 +92,7 @@ void FETI4ICreateStiffnessMatrix(
 	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 	config::info::VERBOSE_LEVEL = 3;
 	config::info::MEASURE_LEVEL = 3;
-	config::solver::REGULARIZATION = config::NULL_PIVOTS;
+	config::solver::REGULARIZATION = config::solver::REGULARIZATIONalternative::NULL_PIVOTS;
 
 	ESINFO(OVERVIEW) << "ESPRESO create stiffness matrix holder";
 

@@ -55,15 +55,15 @@ typedef struct FETI4IStructInstance* FETI4IInstance;
 ------------------------------------------------------------------------------*/
 
 void FETI4ICreateStiffnessMatrix(
-		FETI4IMatrix 	*matrix, //TODO size?
-		FETI4IInt		indexBase
+		FETI4IMatrix 	*matrix,           // pointer to a created matrix
+		FETI4IInt		indexBase          // value of the first index
 );
 
-void FETI4IAddElement(   //TODO CRS or CCS ?
-		FETI4IMatrix 	matrix,
-		FETI4IInt 		size,
-		FETI4IInt* 		indices,
-		FETI4IReal* 	values
+void FETI4IAddElement(
+		FETI4IMatrix 	matrix,            // pointer to a matrix
+		FETI4IInt 		size,              // number of rows of square element matrix
+		FETI4IInt* 		indices,           // vector of indices (size)
+		FETI4IReal* 	values             // vector of values (size x size)
 );
 
 /*-----------------------------------------------------------------------------
@@ -71,23 +71,24 @@ void FETI4IAddElement(   //TODO CRS or CCS ?
 ------------------------------------------------------------------------------*/
 
 void FETI4ICreateInstance(
-		FETI4IInstance 	*instance,
-		FETI4IMatrix 	matrix,
-		FETI4IInt 		size,
-		FETI4IReal* 	rhs,
-		FETI4IInt* 		l2g,                     /* length of both rhs and l2g is size */ 
-		FETI4IMPIInt 	neighbours_size,
-		FETI4IMPIInt*	neighbours,
-		FETI4IInt 		dirichlet_size,
-		FETI4IInt* 		dirichlet_indices,  //TODO which numbering? we prefer global numbering
-		FETI4IReal* 	dirichlet_values
+		FETI4IInstance 	*instance,         // pointer to a created instance
+		FETI4IMatrix 	matrix,            // stiffness matrix
+		FETI4IInt 		size,              // size of rhs and l2g
+		FETI4IReal* 	rhs,               // right-hand side
+		FETI4IInt* 		l2g,               // local to global mapping
+		FETI4IMPIInt 	neighbours_size,   // number of neighbours
+		FETI4IMPIInt*	neighbours,        // vector of neighbours
+		FETI4IInt 		dirichlet_size,    // number of DOFs with dirichlet
+		FETI4IInt* 		dirichlet_indices, // vector of dirichlet indices in local indexing
+		FETI4IReal* 	dirichlet_values   // vector of dirichlet values
 );
 
 void FETI4ISolve(
-		FETI4IInstance 	instance,
-		FETI4IInt 		solution_size,
-		FETI4IReal*		solution
+		FETI4IInstance 	instance,          // pointer to an instance
+		FETI4IInt 		solution_size,     // size of solution vector
+		FETI4IReal*		solution           // solution
 );
+
 
 /*-----------------------------------------------------------------------------
  Functions for updating a created instance
