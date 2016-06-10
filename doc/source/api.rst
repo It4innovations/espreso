@@ -95,4 +95,16 @@ Data holders can be destroyed by ``FETI4IDestroy``.
 
    **dirichlet_indices** are in local numbering.
 
+A description of API methods
+----------------------------
+
+.. doxygenfunction:: FETI4ICreateStiffnessMatrix
+
+.. doxygenfunction:: FETI4IAddElement
+
+.. doxygenfunction:: FETI4ICreateInstance
+
+.. doxygenfunction:: FETI4ISolve
+
+.. doxygenfunction:: FETI4IDestroy
 
