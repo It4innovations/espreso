@@ -17,7 +17,7 @@ size_t env::SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
 size_t env::PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
 size_t env::CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
-std::string env::executable	   = Esutils::getEnv<std::string>("_");
+std::string env::executable    = "espreso"; // Esutils::getEnv<std::string>("_") not works with DDT;
 std::string env::configurationFile = "espreso.config";
 
 
