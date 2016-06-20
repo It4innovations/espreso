@@ -130,6 +130,8 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 	std::ifstream file(configuration.path);
 	Configuration conf(configuration);
 
+	std::vector<std::string> cmdArgs;
+
 	if (!file.is_open()) {
 		ESINFO(ERROR) << "A configuration file on path '" << configuration.path << "' not found.";
 	}
@@ -143,23 +145,24 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 		}
 
 		if (StringCompare::caseInsensitiveEq(parameter, "CMD_LINE_ARGUMENTS")) {
-			std::vector<std::string> params = Parser::split(Parser::getValue(line), " ");
-			if (conf.nameless.size() < params.size()) {
+			cmdArgs = Parser::split(Parser::getValue(line), " ");
+			if (conf.nameless.size() < cmdArgs.size()) {
 				ESINFO(GLOBAL_ERROR) << "Too few nameless command line arguments. \n";
 			}
-			for (size_t i = 0; i < params.size(); i++) {
-				if (!setParameter(params[i], conf.nameless[i]) && verboseLevel) {
-					ESINFO(ALWAYS) << "Unknown command line parameter '" << params[i] << "'";
-				}
-			}
-			// remove already red nameless parameters
-			conf.nameless.erase(conf.nameless.begin(), conf.nameless.begin() + params.size());
 		} else {
 			if (!setParameter(parameter, Parser::getValue(line)) && verboseLevel) {
 				ESINFO(ALWAYS) << "Unknown parameter '" << parameter << "'";
 			}
 		}
 	}
+
+	for (size_t i = 0; i < cmdArgs.size(); i++) {
+		if (!setParameter(cmdArgs[i], conf.nameless[i]) && verboseLevel) {
+			ESINFO(ALWAYS) << "Unknown command line parameter '" << cmdArgs[i] << "'";
+		}
+	}
+	// remove already red nameless parameters
+	conf.nameless.erase(conf.nameless.begin(), conf.nameless.begin() + cmdArgs.size());
 
 	file.close();
 	return conf;
