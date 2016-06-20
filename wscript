@@ -37,8 +37,25 @@ espreso_attributes = [
     ("METISLIB", "Name of METIS library.", "string", "name"),
 ]
 
+from waflib.Configure import conf
+@conf
+def check_header(self, header):
+    self.headers += [ header ]
+
+@conf
+def check_lib(self, library, dependencies=[]):
+    self.libs[library] = [ library ] + dependencies
+
+@conf
+def check_stlib(self, library, dependencies=[]):
+    self.stlibs[library] = [ library ] + dependencies
+
 
 def configure(ctx):
+    ctx.headers = []
+    ctx.libs = {}
+    ctx.stlibs = {}
+
     try:
         ctx.load("icpc")
     except ctx.errors.ConfigurationError:
@@ -60,6 +77,9 @@ def configure(ctx):
 
     if ctx.env.BUILD_TOOLS == "1":
         ctx.recurse("tools")
+
+    for header in [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]:
+        ctx.check_header(header)
 
     # recurse to basic parts
     ctx.recurse("src/config")
