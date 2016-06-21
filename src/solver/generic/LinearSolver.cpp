@@ -45,7 +45,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 		cluster.USE_HFETI = false;
 		break;
 	case config::solver::FETI_METHODalternative::HYBRID:
-		cluster.USE_HFETI = false;
+		cluster.USE_HFETI = true;
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
