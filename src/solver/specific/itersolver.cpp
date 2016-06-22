@@ -645,14 +645,15 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
       AW_l.cols++;
 
   
-      ztg_prew = ztg;
       ztg = parallel_ddot_compressed(cluster, z_l, g_l);
       wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
       rho_l = -ztg/wtAw;
 
 		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		  	x_l[i] = x_l[i] + rho_l * w_l[i];
         g_l[i] += Aw_l[i] * rho_l; 
-      }
+		  }
+      ztg_prew = ztg;
     }
 // preconditioning part 
     switch (USE_PREC) {
@@ -696,14 +697,13 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
     default:
       ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
     }
+
+
+    ztg = parallel_ddot_compressed(cluster, z_l, g_l);
 // preconditioning part 
 
     if (iter > -1) {
-		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
-		  	x_l[i] = x_l[i] + rho_l * w_l[i];
-		  }
-      ztAw = parallel_ddot_compressed(cluster, z_l, Aw_l);
-      wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
+//      ztAw = parallel_ddot_compressed(cluster, z_l, Aw_l);
 //      gamma_l = -ztAw/wtAw;
       gamma_l = ztg/ztg_prew;
 		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
@@ -714,7 +714,6 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	    cilk_for (eslocal i = 0; i < w_l.size(); i++){
 		  	w_l[i] = z_l[i];	
 		  }
-      ztg = parallel_ddot_compressed(cluster, z_l, g_l);
     }
 
 	  norm_time.start();
@@ -741,20 +740,20 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	
   
 	cilk_for (eslocal i = 0; i < x_l.size(); i++) {
-		z_l[i] = -z_l[i];
+		g_l[i] = -g_l[i];
 	}
   
   
   dual_soultion_compressed_parallel   = x_l;
-	dual_residuum_compressed_parallel   = z_l;
+	dual_residuum_compressed_parallel   = g_l;
 
 
 
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, z_l, amplitudes, 2 );
+		Projector_l_inv_compG ( timeEvalProj, cluster, g_l, amplitudes, 2 );
 	} else {
-		Projector_l_compG	  ( timeEvalProj, cluster, z_l, amplitudes, 2 );
+		Projector_l_compG	  ( timeEvalProj, cluster, g_l, amplitudes, 2 );
 	}
 	// *** end - save solution - in dual and amplitudes ***************************************
 
