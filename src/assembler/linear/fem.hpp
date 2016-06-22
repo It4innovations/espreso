@@ -101,6 +101,8 @@ void Linear<FEM>::KeMefe(
 
 	double rotation[3] = { mid.x * omega.x * omega.x, mid.y * omega.y * omega.y, mid.z * omega.z * omega.z };
 
+  //bool flagNew = true;
+
 	for (eslocal gp = 0; gp < e->gpSize(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
@@ -115,6 +117,10 @@ void Linear<FEM>::KeMefe(
 			Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
 		} else {
 			Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
+   //   if (flagNew) {
+
+
+    //  }
 		}
 
 		for (eslocal i = 0; i < Ksize; i++) {
