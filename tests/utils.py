@@ -31,13 +31,14 @@ class TestCaseCreator:
         test_method.__name__ = 'test_' + name
 
     @staticmethod
-    def iterate(function, *args, **kwargs):
+    def iterate(function, *args):
         next = [ True for arg in args]
+        iterators = [ Iterator(arg) for arg in args ]
 
         while reduce(lambda x, y: x or y, next):
-            function(*args, **kwargs)
+            function(*[ it.get() for it in iterators ])
             for i in range(0, len(next)):
-                next[i] = args[i].next()
+                next[i] = iterators[i].next()
                 if next[i]:
                     break
 
