@@ -2439,7 +2439,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	SparseSolverCPU GGt_tmp;
 
 
-        /* Numbers of processors, value of OMP_NUM_THREADS */
+    /* Numbers of processors, value of OMP_NUM_THREADS */
 	int num_procs = Esutils::getEnv<int>("PAR_NUM_THREADS");
 	GGt_tmp.iparm[2]  = num_procs;
 
