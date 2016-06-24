@@ -1434,11 +1434,13 @@ void ClusterBase::Create_G_perCluster() {
 	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
 
-
 	cilk_for (eslocal j = 0; j < domains.size(); j++) {
 
 		SparseMatrix Rt;
 		SparseMatrix Rt2;
+
+		SparseMatrix B;
+		B = domains[j].B1;
 
 		switch (config::solver::REGULARIZATION) {
 		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
@@ -1470,15 +1472,23 @@ void ClusterBase::Create_G_perCluster() {
 		}
 
 		Rt.ConvertCSRToDense(1);
-		Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
+		//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
+		Create_G1_perSubdomain(Rt, B, tmp_Mat[j]);
 
 		if (!SYMMETRIC_SYSTEM) {
 			Rt2.ConvertCSRToDense(1);
-			Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
+			//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
+			Create_G1_perSubdomain(Rt2, B, tmp_Mat2[j]);
 		}
 
 	}
 
+	G1_1_time.end();
+	G1_1_time.printStatMPI();
+	//G1_1_time.printLastStatMPIPerNode();
+	G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+	G1_1_mem.printStatMPI();
+	//G1_1_mem.printLastStatMPIPerNode();
 
 	//G1_1_mem.printLastStatMPIPerNode();
 	TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
@@ -1518,15 +1528,20 @@ void ClusterBase::Create_G_perCluster() {
 	G1_2_mem.printStatMPI();
 	//G1_2_mem.printLastStatMPIPerNode();
 
-
 	// Save resulting matrix G1
+	G1 = tmp_Mat[0];
+	for (eslocal i = 0; i < G1.CSR_V_values.size(); i++)
+		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
+
+
 	if (!SYMMETRIC_SYSTEM) {
 		G2 = tmp_Mat2[0];
-		G1 = tmp_Mat[0];
-	} else {
-		G1 = tmp_Mat[0];
-		//G2 = tmp_Mat[0];
-	}
+		for (eslocal i = 0; i < G2.CSR_V_values.size(); i++)
+			G2.CSR_V_values[i] = -1.0 * G2.CSR_V_values[i];
+
+	} //else {
+	//G2 = G1;
+	//}
 
 }
 
