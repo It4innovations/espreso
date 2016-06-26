@@ -8,9 +8,10 @@
 namespace espreso {
 namespace input {
 
-enum GeneratorShape {
+enum class GeneratorShape {
 	CUBE,
-	SPHERE
+	SPHERE,
+	PLANE
 };
 
 enum class ElementType {
@@ -21,7 +22,12 @@ enum class ElementType {
 	PRISMA6,
 	PRISMA15,
 	PYRAMID5,
-	PYRAMID13
+	PYRAMID13,
+
+	SQUARE4,
+	SQUARE8,
+	TRIANGLE3,
+	TRIANGLE6
 };
 
 struct Settings {
@@ -35,7 +41,7 @@ struct Settings {
 	size_t size;
 
 	ElementType eType;
-	eslocal shape;
+	GeneratorShape shape;
 	config::assembler::PHYSICSalternative physics;
 
 	std::vector<Material> materials;
@@ -48,10 +54,8 @@ protected:
 
 inline std::ostream& operator<<(std::ostream& os, const Settings &s)
 {
-       std::vector<std::string> shapes({ "CUBE", "SPHERE" });
-
        os << "clusters: " << s.size << "\n";
-       os << "generated shape: " << shapes[s.shape] << "\n";
+       os << "generated shape: " << static_cast<int>(s.shape) << "\n";
        os << "type of the element: " << static_cast<int>(s.eType) << "\n";
        os << "physics: " << static_cast<int>(s.physics) << "\n";
 

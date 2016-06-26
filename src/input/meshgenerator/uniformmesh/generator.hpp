@@ -139,6 +139,10 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 			fixPoints[p][i] = mesh.coordinates().localIndex(fixPoints[p][i], p);
 		}
 		std::sort(fixPoints[p].begin(), fixPoints[p].end());
+
+		// Remove the same points
+		auto it = std::unique(fixPoints[p].begin(), fixPoints[p].end());
+		fixPoints[p].resize(it - fixPoints[p].begin());
 	}
 }
 

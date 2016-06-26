@@ -51,7 +51,20 @@ template<class TElement>
 CubeGenerator<TElement>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
 	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
-	setCluster(_cluster, _settings);
+	switch (settings.eType) {
+	case ElementType::HEXA8:
+	case ElementType::HEXA20:
+	case ElementType::TETRA4:
+	case ElementType::TETRA10:
+	case ElementType::PRISMA6:
+	case ElementType::PRISMA15:
+	case ElementType::PYRAMID5:
+	case ElementType::PYRAMID13:
+		setCluster(_cluster, _settings);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Cube does not support chosen element type";
+	}
 }
 
 template<class TElement>

@@ -10,14 +10,19 @@ static void generateShape(const Configuration &configuration, Mesh *mesh)
 	ParametersReader::pickConfiguration(configuration, settings.parameters);
 
 	switch (settings.shape) {
-	case input::CUBE: {
+	case input::GeneratorShape::CUBE: {
 		input::CubeSettings cube(configuration, config::env::MPIrank ,config::env::MPIsize);
 		input::CubeGenerator<TShape>::load(*mesh, cube);
 		break;
 	}
-	case input::SPHERE: {
+	case input::GeneratorShape::SPHERE: {
 		input::SphereSettings sphere(configuration, config::env::MPIrank ,config::env::MPIsize);
 		input::SphereGenerator<TShape>::load(*mesh, sphere);
+		break;
+	}
+	case input::GeneratorShape::PLANE: {
+		input::PlaneSettings plane(configuration, config::env::MPIrank ,config::env::MPIsize);
+		input::PlaneGenerator<TShape>::load(*mesh, plane);
 		break;
 	}
 	default: {
@@ -63,6 +68,10 @@ static void generate(const Configuration &configuration, Mesh *mesh)
 	}
 	case input::ElementType::PYRAMID13: {
 		generateShape<input::Pyramid13>(configuration, mesh);
+		break;
+	}
+	case input::ElementType::SQUARE4: {
+		generateShape<input::Square4>(configuration, mesh);
 		break;
 	}
 	default: {

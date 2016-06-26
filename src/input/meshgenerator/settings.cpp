@@ -6,7 +6,7 @@ using namespace espreso::input;
 void Settings::defaultSettings()
 {
 	useMetis    = false;
-	shape       = CUBE;
+	shape       = GeneratorShape::CUBE;
 	eType       = ElementType::HEXA8;
 	physics   = config::assembler::PHYSICSalternative::LINEAR_ELASTICITY;
 
@@ -14,7 +14,11 @@ void Settings::defaultSettings()
 
 	parameters = {
 		{ "USE_METIS"   , useMetis   , "Use METIS for mesh partition." },
-		{ "SHAPE"       , shape      , "Generated shape. Supported values: 0 - CUBE, 1 - SPHERE" },
+		{ "SHAPE"       , shape      , "Generated shape.", {
+				{ "CUBE"  , GeneratorShape::CUBE  , "Cubic." },
+				{ "SPHERE", GeneratorShape::SPHERE, "Spherical." },
+				{ "PLANE" , GeneratorShape::PLANE , "2D plane." }
+		} },
 		{ "ELEMENT_TYPE", eType, "The type of generated element.", {
 				{ "HEXA8"    , ElementType::HEXA8    , "Hexahedron."},
 				{ "HEXA20"   , ElementType::HEXA20   , "Hexahedron with midpoints."},
@@ -24,6 +28,11 @@ void Settings::defaultSettings()
 				{ "PRISMA15" , ElementType::PRISMA15 , "Prisma with midpoints."},
 				{ "PYRAMID5" , ElementType::PYRAMID5 , "Pyramid."},
 				{ "PYRAMID13", ElementType::PYRAMID13, "Pyramid with midpoints."},
+
+				{ "SQUARE4"  , ElementType::SQUARE4  , "Square."},
+				{ "SQUARE8"  , ElementType::SQUARE8  , "Square with midpoints."},
+				{ "TRIANGLE3", ElementType::TRIANGLE3, "Triangle."},
+				{ "TRIANGLE6", ElementType::TRIANGLE6, "Triangle with midpoints."},
 		} },
 
 		{ "MAT1_DENSITY", materials[0].density     , "Density of the first material." },
