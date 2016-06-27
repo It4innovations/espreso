@@ -145,7 +145,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 template <class TElement>
 void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 {
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL_FETI) {
 		// corners are not used in the case of TOTAL FETI
 		return;
 	}

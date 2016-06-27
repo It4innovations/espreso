@@ -192,9 +192,9 @@ namespace solver {
 
 	enum class FETI_METHODalternative {
 		/// Total FETI
-		TOTAL = 0,
+		TOTAL_FETI = 0,
 		/// Hybrid Total FETI
-		HYBRID = 1
+		HYBRID_FETI = 1
 	};
 	/// A variant of FETI method used by the solver
 	extern FETI_METHODalternative FETI_METHOD;

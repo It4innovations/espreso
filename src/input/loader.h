@@ -101,7 +101,7 @@ protected:
 
 	virtual void corners(Boundaries &boundaries)
 	{
-		if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL
+		if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL_FETI
 				|| config::solver::B0_TYPE == config::solver::B0_TYPEalternative::KERNELS) {
 			return;
 		}

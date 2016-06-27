@@ -41,10 +41,10 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 		cluster.USE_DYNAMIC		= 1;
 
 	switch (config::solver::FETI_METHOD) {
-	case config::solver::FETI_METHODalternative::TOTAL:
+	case config::solver::FETI_METHODalternative::TOTAL_FETI:
 		cluster.USE_HFETI = false;
 		break;
-	case config::solver::FETI_METHODalternative::HYBRID:
+	case config::solver::FETI_METHODalternative::HYBRID_FETI:
 		cluster.USE_HFETI = true;
 		break;
 	default:

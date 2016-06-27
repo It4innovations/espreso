@@ -41,7 +41,7 @@ bool   mesh::AVERAGE_FACES  = false;
 
 double                                   solver::EPSILON               = 1e-5;
 size_t                                   solver::ITERATIONS            = 1000;
-solver::FETI_METHODalternative           solver::FETI_METHOD           = solver::FETI_METHODalternative::TOTAL;
+solver::FETI_METHODalternative           solver::FETI_METHOD           = solver::FETI_METHODalternative::TOTAL_FETI;
 solver::PRECONDITIONERalternative        solver::PRECONDITIONER        = solver::PRECONDITIONERalternative::LUMPED;
 solver::REGULARIZATIONalternative        solver::REGULARIZATION        = solver::REGULARIZATIONalternative::FIX_POINTS;
 
@@ -135,8 +135,8 @@ std::vector<espreso::Parameter> parameters = {
 	{ "EPSILON", solver::EPSILON, "Solver requested precision.", WRITE_TO_HELP },
 	{ "ITERATIONS", solver::ITERATIONS, "Solver maximum iterations.", WRITE_TO_HELP },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
-			{ "TOTAL_FETI", solver::FETI_METHODalternative::TOTAL, "Total FETI." },
-			{ "HYBRID_FETI", solver::FETI_METHODalternative::HYBRID, "Hybrid Total FETI." } }, WRITE_TO_HELP },
+			{ "TOTAL_FETI", solver::FETI_METHODalternative::TOTAL_FETI, "Total FETI." },
+			{ "HYBRID_FETI", solver::FETI_METHODalternative::HYBRID_FETI, "Hybrid Total FETI." } }, WRITE_TO_HELP },
 
 	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
 			{ "NONE", solver::PRECONDITIONERalternative::NONE, "Use no preconditioner" },
