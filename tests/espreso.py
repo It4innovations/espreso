@@ -27,7 +27,7 @@ if __name__ == '__main__':
     }
 
     example = {
-      "ETYPE":  [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5" ],
+      "ETYPE":  [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ],
       "CLUSTERS": [ [1, 1, 1], [1, 1, 4], [2, 2, 2] ]
     }
 
