@@ -21,9 +21,9 @@ if __name__ == '__main__':
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.stability, name, procs, config, args)
 
     config = {
-      "FETI_METHOD": [ "0", "1" ],
-      "PRECONDITIONER": [ "0", "1", "2", "3" ],
-      "REGULARIZATION": [ "0", "1" ],
+      "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
+      "PRECONDITIONER": [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ],
+      "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
     }
 
     example = {
