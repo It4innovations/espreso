@@ -4,6 +4,8 @@
 
 #include "2D/square4.h"
 #include "2D/square8.h"
+#include "2D/triangle3.h"
+#include "2D/triangle6.h"
 
 #include "3D/hexahedron20.h"
 #include "3D/hexahedron8.h"
