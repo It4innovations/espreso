@@ -33,8 +33,8 @@ int main(int argc, char **argv)
 
 	Factory factory(configuration);
 
-//	factory.solve();
-//	factory.store("result");
+	factory.solve();
+	factory.store("result");
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
