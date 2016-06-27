@@ -74,6 +74,10 @@ static void generate(const Configuration &configuration, Mesh *mesh)
 		generateShape<input::Square4>(configuration, mesh);
 		break;
 	}
+	case input::ElementType::SQUARE8: {
+		generateShape<input::Square8>(configuration, mesh);
+		break;
+	}
 	default: {
 		ESINFO(ERROR) << "Unknown element type.";
 	}

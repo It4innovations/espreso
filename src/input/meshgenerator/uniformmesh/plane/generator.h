@@ -24,6 +24,7 @@ public:
 protected:
 	PlaneGenerator(Mesh &mesh, const PlaneSettings &settings);
 
+	virtual void elementsMesh(std::vector<Element*> &elements);
 	virtual void elementsMaterials(std::vector<Element*> &elements);
 	virtual void points(Coordinates &coordinates, size_t &DOFs);
 	virtual void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);

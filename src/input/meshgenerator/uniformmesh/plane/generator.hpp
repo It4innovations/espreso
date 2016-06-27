@@ -77,6 +77,63 @@ void PlaneGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 }
 
 template<class TElement>
+void PlaneGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
+{
+	eslocal cNodes[3];
+
+	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
+
+	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]));
+
+	elements.clear();
+	elements.reserve(UniformUtils<TElement>::clusterElementsCount(_settings));
+
+
+	eslocal subdomain[2];
+	eslocal element[2];
+
+	eslocal subdomainOffset[2];
+	eslocal elementOffset[2];
+
+	eslocal params[6] = {0, 0, 0, 0, 0, 0};
+
+
+	for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
+		for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
+			// for each sub-domain
+
+			for (eslocal i = 0; i < 2; i++) {
+				subdomainOffset[i] = subdomain[i] * (_settings.elementsInSubdomain[i] * (1 + TElement::subnodes[i]));
+			}
+			for (element[1] = 0; element[1] < _settings.elementsInSubdomain[1]; element[1]++) {
+				for (element[0] = 0; element[0] < _settings.elementsInSubdomain[0]; element[0]++) {
+					// for each element
+
+					for (eslocal i = 0; i < 2; i++) {
+						elementOffset[i] = subdomainOffset[i] + element[i] * (1 + TElement::subnodes[i]);
+					}
+					eslocal i = 0;
+					for (eslocal y = 0; y < 2 + TElement::subnodes[1]; y++) {
+						for (eslocal x = 0; x < 2 + TElement::subnodes[0]; x++) {
+							// fill node indices
+
+							indices[i++] =
+									(elementOffset[1] + y) * cNodes[0] +
+									(elementOffset[0] + x);
+						}
+					}
+					for (size_t i = 0; i < indices.size(); i++) {
+						std::cout << indices[i] << " ";
+					}
+					std::cout << "\n";
+					this->_e.addElements(elements, &indices[0], params);
+				}
+			}
+		}
+	}
+}
+
+template<class TElement>
 void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 {
 	esglobal cubeElements[3], partSize[3], cOffset[3], offset[3];
@@ -261,8 +318,8 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 	for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
 		for (eslocal sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
 			fixPoints.push_back(std::vector<eslocal>());
-			fixPoints.back().reserve(8);
-			for (int i = 0; i < 8; i++) {
+			fixPoints.back().reserve(4);
+			for (int i = 0; i < 4; i++) {
 				offset[0] = (i & 1) ? 1 : 0;
 				offset[1] = (i & 2) ? 1 : 0;
 				shift[0] = (i & 1) ? -shift_offset[0] : shift_offset[0];
