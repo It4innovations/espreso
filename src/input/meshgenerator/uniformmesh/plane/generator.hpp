@@ -122,10 +122,6 @@ void PlaneGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 									(elementOffset[0] + x);
 						}
 					}
-					for (size_t i = 0; i < indices.size(); i++) {
-						std::cout << indices[i] << " ";
-					}
-					std::cout << "\n";
 					this->_e.addElements(elements, &indices[0], params);
 				}
 			}
@@ -297,8 +293,7 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 	}
 
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1]);
-	eslocal SHIFT = 1;
-	eslocal shift_offset[2] = {SHIFT, SHIFT};
+	eslocal shift_offset[2] = {TElement::subnodes[0] + 1, TElement::subnodes[1] + 1};
 
 	eslocal nodes[2];
 	eslocal cNodes[2];
@@ -306,10 +301,10 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 	for (int i = 0; i < 2; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
 		if (2 * (shift_offset[i] + 1) > nodes[i] + 1) { // not enough nodes
-			shift_offset[i] = (nodes[i] + 1) / 2 - 1;
+			shift_offset[i] = (nodes[i] + 1) / 2 - TElement::subnodes[i] - 1;
 		}
 		if (2 * shift_offset[i] == nodes[i]) { // offset to the same node
-			shift_offset[i]--;
+			shift_offset[i] -= TElement::subnodes[i] + 1;
 		}
 	}
 

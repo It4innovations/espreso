@@ -95,8 +95,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	}
 
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
-	eslocal SHIFT = 1;
-	eslocal shift_offset[3] = {SHIFT, SHIFT, SHIFT};
+	eslocal shift_offset[3] = {TElement::subnodes[0] + 1, TElement::subnodes[1] + 1, TElement::subnodes[2] + 1};
 
 	eslocal nodes[3];
 	eslocal cNodes[3];
@@ -104,10 +103,10 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	for (int i = 0; i < 3; i++) {
 		nodes[i] = (TElement::subnodes[i] + 1) * _settings.elementsInSubdomain[i];
 		if (2 * (shift_offset[i] + 1) > nodes[i] + 1) { // not enough nodes
-			shift_offset[i] = (nodes[i] + 1) / 2 - 1;
+			shift_offset[i] = (nodes[i] + 1) / 2 - TElement::subnodes[i] - 1;
 		}
 		if (2 * shift_offset[i] == nodes[i]) { // offset to the same node
-			shift_offset[i]--;
+			shift_offset[i] -= TElement::subnodes[i] + 1;
 		}
 	}
 
