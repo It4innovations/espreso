@@ -140,9 +140,12 @@ class Espreso:
         for key, value in config.items():
             program += [ "--{0}={1}".format(key, value) ]
 
+        if cwd:
+            cwd = os.path.join(ESPRESO_ROOT, cwd)
         result = subprocess.Popen(program,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  cwd=cwd or self.path, env=self.env)
+                                  cwd=cwd or self.path,
+                                  env=self.env)
 
         return result.communicate()
 
