@@ -108,6 +108,9 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 		if (2 * shift_offset[i] == nodes[i]) { // offset to the same node
 			shift_offset[i] -= TElement::subnodes[i] + 1;
 		}
+		if (shift_offset[i] < 0) {
+			shift_offset[i] = 0;
+		}
 	}
 
 	eslocal offset[3];
