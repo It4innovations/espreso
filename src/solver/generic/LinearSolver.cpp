@@ -22,7 +22,7 @@ LinearSolver::~LinearSolver() {
 
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
-	cluster.SYMMETRIC_SYSTEM = true;
+	cluster.SYMMETRIC_SYSTEM = false;
 
 	SINGULAR 	= IS_SINGULAR;
 	R_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
@@ -752,6 +752,13 @@ void LinearSolver::set_R (
 			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
 		}
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
+
+		//TODO: *** test nesymetrickeho systemu pro GGt - smazat !!
+		if (!cluster.SYMMETRIC_SYSTEM) {
+			cluster.domains[d].Kplus_R2 = cluster.domains[d].Kplus_R;
+		}
+		//***
+
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 
 	}
