@@ -103,11 +103,18 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
 
-	if ( USE_PIPECG == 1 ) {
+	switch (config::solver::CGSOLVER) {
+	case config::solver::CGSOLVERalternative::STANDARD:
+		Solve_RegCG_singular_dom ( cluster, in_right_hand_side_primal );
+		break;
+	case config::solver::CGSOLVERalternative::PIPELINED:
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
-	} else {
-//		Solve_RegCG_singular_dom ( cluster, in_right_hand_side_primal );
+		break;
+	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
 		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
 	}
 
 	 postproc_timing.totalTime.start();
@@ -129,13 +136,18 @@ void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
-
-	if ( USE_PIPECG == 1 ) {
-		Solve_PipeCG_nonsingular ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
-	} else {
+	switch (config::solver::CGSOLVER) {
+	case config::solver::CGSOLVERalternative::STANDARD:
 		Solve_RegCG_nonsingular  ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
+		break;
+	case config::solver::CGSOLVERalternative::PIPELINED:
+		Solve_PipeCG_nonsingular ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
+		break;
+//	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
+//		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
 	}
-
 }
 
 
@@ -545,8 +557,8 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	double tol;
   double ztg;
   double ztg_prew;
-  double ztAw; 
-  double wtAw; 
+  double ztAw;
+  double wtAw;
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
 	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
@@ -556,12 +568,12 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
   W_l.rows = dl_size;
   W_l.cols = 0;
 
-  
+
   SparseMatrix AW_l;
   AW_l.type = 'G';
   AW_l.rows = dl_size;
   AW_l.cols = 0;
-  
+
 	SEQ_VECTOR <double> Gamma_l  (dl_size, 0);
 	SEQ_VECTOR <double> WtAW_l(dl_size, 0);
 
@@ -627,7 +639,7 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
       W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
       W_l.nnz+=w_l.size();
       W_l.cols++;
-      
+
       appA_time.start();
       apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
       appA_time.end();
@@ -641,7 +653,7 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 
 		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
 		  	x_l[i] = x_l[i] + rho_l * w_l[i];
-        g_l[i] += Aw_l[i] * rho_l; 
+        g_l[i] += Aw_l[i] * rho_l;
 		  }
       ztg_prew = ztg;
     }
@@ -695,7 +707,7 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
     }
     else {
 	    cilk_for (eslocal i = 0; i < w_l.size(); i++){
-		  	w_l[i] = z_l[i];	
+		  	w_l[i] = z_l[i];
 		  }
     }
 
@@ -720,13 +732,13 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 
 
 	// *** save solution - in dual and amplitudes *********************************************
-	
-  
+
+
 	cilk_for (eslocal i = 0; i < x_l.size(); i++) {
 		g_l[i] = -g_l[i];
 	}
-  
-  
+
+
   dual_soultion_compressed_parallel   = x_l;
 	dual_residuum_compressed_parallel   = g_l;
 
@@ -796,8 +808,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	double norm_l;
 	double tol;
   double ztg;
-  double ztAw; 
-  double wtAw; 
+  double ztAw;
+  double wtAw;
   int cnt_iter=0;
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
@@ -812,12 +824,12 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
   W_l.rows = dl_size;
   W_l.cols = 0;
 
-  
+
   SparseMatrix AW_l;
   AW_l.type = 'G';
   AW_l.rows = dl_size;
   AW_l.cols = 0;
-  
+
 	SEQ_VECTOR <double> Gamma_l  (CG_max_iter, 0);
 	SEQ_VECTOR <double> _Gamma_l  (CG_max_iter, 0);
 	SEQ_VECTOR <double> WtAW_l(CG_max_iter, 0);
@@ -886,7 +898,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
       W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
       W_l.nnz+=w_l.size();
       W_l.cols++;
-      
+
       appA_time.start();
       apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
       appA_time.end();
@@ -920,7 +932,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 
 		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
 		  	x_l[i] = x_l[i] + rho_l * w_l[i];
-        g_l[i] += Aw_l[i] * rho_l; 
+        g_l[i] += Aw_l[i] * rho_l;
 		  }
       //ztg_prew = ztg;
     }
@@ -966,7 +978,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 
     if (iter > 0) {
 
-      // filtering duplicit Lambda entries  
+      // filtering duplicit Lambda entries
       cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
         _z_l[i] = z_l[i] * cluster.my_lamdas_ddot_filter[i];
       }
@@ -979,7 +991,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 
 	    MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       W_l.DenseMatVec(Gamma_l,v_tmp_l);
- 
+
 		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
 		  	w_l[i] = z_l[i] +  v_tmp_l[i];
 		  }
@@ -987,7 +999,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
     }
     else {
 	    cilk_for (eslocal i = 0; i < w_l.size(); i++){
-		  	w_l[i] = z_l[i];	
+		  	w_l[i] = z_l[i];
 		  }
     }
 
@@ -1012,7 +1024,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 
 
 // EIGENVALUES AND EIGENVECTORS OF LANCZOS MATRIX
-// Evaluation of cond(P*F*P) is limited by 1000 iter. 
+// Evaluation of cond(P*F*P) is limited by 1000 iter.
 // Tridiagonal Lanczos' matrix is assembled at each node.
   bool cond_numb_FETI_operator=true;
   if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && config::env::MPIrank==0){
@@ -1021,19 +1033,19 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
     eslocal info;
     eslocal ldz = cnt_iter;
     info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
-    ESINFO(CONVERGENCE) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
+    ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
     delete [] Z;
   }
 
 
 	// *** save solution - in dual and amplitudes *********************************************
-	
-  
+
+
 	cilk_for (eslocal i = 0; i < x_l.size(); i++) {
 		g_l[i] = -g_l[i];
 	}
-  
-  
+
+
   dual_soultion_compressed_parallel   = x_l;
 	dual_residuum_compressed_parallel   = g_l;
 

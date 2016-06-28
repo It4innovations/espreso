@@ -61,7 +61,6 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	solver.CG_max_iter	 = config::solver::ITERATIONS;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = config::solver::EPSILON;
-	solver.USE_PIPECG	 = config::solver::CG_SOLVER == config::solver::CG_SOLVERalternative::PIPELINED;
 	solver.USE_PREC		 = config::solver::PRECONDITIONER;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;

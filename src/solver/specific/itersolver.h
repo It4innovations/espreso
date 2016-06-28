@@ -67,7 +67,6 @@ public:
 	eslocal  USE_HFETI;
 
 	config::solver::PRECONDITIONERalternative  USE_PREC;
-	eslocal  USE_PIPECG;
 
 	eslocal  CG_max_iter;
 

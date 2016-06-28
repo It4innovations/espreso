@@ -57,7 +57,7 @@ bool                                     solver::COMBINE_SC_AND_SPDS   = true;
 bool                                     solver::KEEP_FACTORS          = true;
 
 
-solver::CG_SOLVERalternative             solver::CG_SOLVER             = solver::CG_SOLVERalternative::STANDARD;
+solver::CGSOLVERalternative             solver::CGSOLVER             = solver::CGSOLVERalternative::STANDARD;
 
 solver::KSOLVERalternative               solver::KSOLVER               = solver::KSOLVERalternative::DIRECT_DP;
 double                                   solver::KSOLVER_SP_NORM       = 1e-12;
@@ -145,9 +145,10 @@ std::vector<espreso::Parameter> parameters = {
 			{ "DIRICHLET", solver::PRECONDITIONERalternative::DIRICHLET, "Dirichlet preconditioner" },
 			{ "MAGIC", solver::PRECONDITIONERalternative::MAGIC}}, WRITE_TO_HELP },
 
-	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
-			{ "STANDARD", solver::CG_SOLVERalternative::STANDARD, "Standard" },
-			{ "PIPELINED", solver::CG_SOLVERalternative::PIPELINED, "Pipelined" } }, WRITE_TO_HELP },
+	{ "CGSOLVER", solver::CGSOLVER, "Conjugate gradients solver", {
+			{ "STANDARD", solver::CGSOLVERalternative::STANDARD, "Standard" },
+			{ "PIPELINED", solver::CGSOLVERalternative::PIPELINED, "Pipelined" },
+			{ "FULL_ORTOGONAL", solver::CGSOLVERalternative::FULL_ORTOGONAL, "Full ortogonalization" },}, WRITE_TO_HELP },
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {

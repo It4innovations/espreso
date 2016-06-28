@@ -283,13 +283,14 @@ namespace solver {
 	extern bool KEEP_FACTORS;
 
 
-	enum class CG_SOLVERalternative {
+	enum class CGSOLVERalternative {
 		STANDARD = 0,
-		PIPELINED = 1
+		PIPELINED = 1,
+		FULL_ORTOGONAL = 2
 	};
 
 	/// A type of conjugate gradient solver
-	extern CG_SOLVERalternative CG_SOLVER;
+	extern CGSOLVERalternative CGSOLVER;
 
 
 	enum class KSOLVERalternative {
