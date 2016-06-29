@@ -330,6 +330,8 @@ void LinearSolver::init(
 				S.type='S';
 
 				cluster.domains[d].Prec = S;
+
+				cluster.domains[d].Prec.ConvertCSRToDense(1);
 			}
 	    if (config::info::PRINT_MATRICES) {
         std::ofstream osS(Logging::prepareFile(d, "S"));

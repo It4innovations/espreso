@@ -3011,7 +3011,8 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 			break;
 		case config::solver::PRECONDITIONERalternative::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
-			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+			//cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+			cluster.domains[d].Prec.DenseMatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
 		case config::solver::PRECONDITIONERalternative::MAGIC:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
