@@ -756,6 +756,18 @@ void LinearSolver::set_R (
 		//TODO: *** test nesymetrickeho systemu pro GGt - smazat !!
 		if (!cluster.SYMMETRIC_SYSTEM) {
 			cluster.domains[d].Kplus_R2 = cluster.domains[d].Kplus_R;
+
+//			int rows = cluster.domains[d].Kplus_R2.rows;
+//			int cols = cluster.domains[d].Kplus_R2.cols;
+//			for (int c = 0; c < cols; c++) {
+//				int s1 = c * rows;
+//				int s2 = (cols - 1 - c) * rows;
+//				for (int r = 0; r < rows; r++) {
+//					cluster.domains[d].Kplus_R2.dense_values[s2 + r] =
+//							cluster.domains[d].Kplus_R.dense_values[s1 + r];
+//				}
+//			}
+
 		}
 		//***
 
