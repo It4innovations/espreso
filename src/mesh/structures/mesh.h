@@ -4,9 +4,6 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
-#include <tuple>
-#include <iostream>
-#include <stdlib.h>
 #include <functional>
 
 #include "cilk/cilk.h"
@@ -21,7 +18,6 @@
 #include "material.h"
 
 #include "esbasis.h"
-#include "esconfig.h"
 
 namespace espreso {
 

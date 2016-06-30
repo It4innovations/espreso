@@ -2,7 +2,7 @@
 #ifndef MESH_STRUCTURES_BOUNDARYCONDITION_H_
 #define MESH_STRUCTURES_BOUNDARYCONDITION_H_
 
-#include "../elements/elements.h"
+#include "../elements/element.h"
 
 namespace espreso {
 

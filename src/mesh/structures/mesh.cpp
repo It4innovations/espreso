@@ -1,8 +1,8 @@
+
 #include "mesh.h"
 #include "esoutput.h"
 
-using namespace espreso;
-
+namespace espreso {
 
 Mesh::Mesh():_elements(0), _fixPoints(0), _DOFs(3)
 {
@@ -1131,12 +1131,14 @@ void Mesh::remapElementsToCluster() const
 	}
 }
 
-std::ostream& espreso::operator<<(std::ostream& os, const Mesh &m)
+std::ostream& operator<<(std::ostream& os, const Mesh &m)
 {
 	for (size_t i = 0; i < m._elements.size(); i++) {
 		os << *(m._elements[i]) << "\n";
 	}
 	return os;
+}
+
 }
 
 
