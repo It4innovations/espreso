@@ -1159,7 +1159,6 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
   SEQ_VECTOR <double> H_l_modif(n_mat*n_mat, 0);
   SEQ_VECTOR <double> tmp_H_l(n_mat*n_mat, 0);
 
-
   for (int i = 0 ; i < n_mat; i++){
    Permut_l[n_mat*i + i] = 1; 
    Permut_tmp_l[n_mat*i + i] = 1; 
@@ -1343,7 +1342,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     default:
       ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
     }
-// 
+//
+//  Modified Gram-Schmidt
     for (int k = 0;k<iter+1;k++){ 
       _z_l.insert(_z_l.begin(),&(V_l.dense_values[v_l.size()*k]), &(V_l.dense_values[v_l.size()*(k+1)]));
       H_l[ij(k,iter)] =parallel_ddot_compressed(cluster, _z_l, z_l); 
@@ -1359,13 +1359,9 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
       v_l[i] = z_l[i]/H_l[ij(iter+1,iter)];
     }
 
-
     V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
     V_l.nnz+=v_l.size();
     V_l.cols++;
-
-
-
 
     // cblas set-up
      _alpha = 1;
@@ -1378,7 +1374,6 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     _ldc      = n_mat;
 
     // next line isn't obligatory 
-    std::fill(_z_l.begin(), _z_l.end(), 0);
     //
     _z_l.insert(_z_l.begin(),&(H_l[n_mat*iter]),&(H_l[n_mat*iter+iter+2]));
     //
