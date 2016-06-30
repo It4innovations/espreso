@@ -1345,11 +1345,16 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 //
 //  Modified Gram-Schmidt
     for (int k = 0;k<iter+1;k++){ 
-      _z_l.insert(_z_l.begin(),&(V_l.dense_values[v_l.size()*k]), &(V_l.dense_values[v_l.size()*(k+1)]));
-      H_l[ij(k,iter)] =parallel_ddot_compressed(cluster, _z_l, z_l); 
+      //TODO !!! nonoptimal step: change 'parallel_ddot_compressed' 
+      //_z_l.insert(_z_l.begin(),&(V_l.dense_values[v_l.size()*k]), &(V_l.dense_values[v_l.size()*(k+1)]));
+//      H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(_z_l[0]), &(z_l[0])); 
+      H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(V_l.dense_values[v_l.size()*k]), &(z_l[0])); 
+
 //
       cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
-         z_l[i] -= _z_l[i] * H_l[ij(k,iter)];
+//         z_l[i] -= _z_l[i] * H_l[ij(k,iter)];
+         z_l[i] -= V_l.dense_values[v_l.size()*k + i] * H_l[ij(k,iter)];
+
       }
     }
 //
@@ -1487,39 +1492,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
   }
 #endif
 
-
-  
-  ESINFO(CONVERGENCE) << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-
-	// *** Start the CG iteration loop ********************************************
-
-// EIGENVALUES AND EIGENVECTORS OF LANCZOS MATRIX
-// Evaluation of cond(P*F*P) is limited by 1000 iter. 
-// Tridiagonal Lanczos' matrix is assembled at each node.
-//  bool cond_numb_FETI_operator=true;
-//  if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && config::env::MPIrank==0){
-//    char JOBZ = 'N';
-//    double *Z = new double[cnt_iter];
-//    eslocal info;
-//    eslocal ldz = cnt_iter;
-//    info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
-//    ESINFO(CONVERGENCE) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
-//    delete [] Z;
-//  }
-
-
-	// *** save solution - in dual and amplitudes *********************************************
-	
-  
-//	cilk_for (eslocal i = 0; i < x_l.size(); i++) {
-//		g_l[i] = -g_l[i];
-//	}
-  
-  
   dual_soultion_compressed_parallel   = x_l;
 	dual_residuum_compressed_parallel   = _z_l;
-
-
 
 
 	if (USE_GGtINV == 1) {
@@ -3250,6 +3224,18 @@ double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 }
 
 
+double parallel_ddot_compressed_double( Cluster & cluster, double * input_vector1, double * input_vector2 )
+{
+	double a1 = 0; double a1g = 0;
+
+	for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++)  {
+		a1 = a1 + (input_vector1[i] * input_vector2[i] * cluster.my_lamdas_ddot_filter[i]);
+	}
+
+	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	return a1g;
+}
 
 
 double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 )
