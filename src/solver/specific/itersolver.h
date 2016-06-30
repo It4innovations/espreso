@@ -208,6 +208,7 @@ void decompress_lambda_vector(Cluster & cluster, SEQ_VECTOR <double> & compresse
 
 double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector );
 
+double parallel_ddot_compressed_double( Cluster & cluster, double *input_vector1, double *input_vector2 );
 double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 );
 
 void parallel_ddot_compressed_non_blocking( Cluster & cluster,
