@@ -22,7 +22,7 @@ LinearSolver::~LinearSolver() {
 
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
-	cluster.SYMMETRIC_SYSTEM = false;
+	cluster.SYMMETRIC_SYSTEM = !(config::solver::CGSOLVER == config::solver::CGSOLVERalternative::GMRES);
 
 	SINGULAR 	= IS_SINGULAR;
 	R_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
