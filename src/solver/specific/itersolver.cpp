@@ -111,8 +111,10 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
 		break;
 	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
-//		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
-    Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
+		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
+		break;
+	case config::solver::CGSOLVERalternative::GMRES:
+		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
@@ -145,6 +147,8 @@ void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 		Solve_PipeCG_nonsingular ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
 		break;
 //	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
+//		break;
+//	case config::solver::CGSOLVERalternative::GMRES:
 //		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
@@ -1120,8 +1124,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 	double norm_l;
 	double tol;
   double ztg;
-  double ztAw; 
-  double wtAw; 
+  double ztAw;
+  double wtAw;
   double c_H,s_H;
   double norm_h;
   int cnt_iter=0;
@@ -1138,7 +1142,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 
 
 
-#ifdef FLAG_VALIDATION 
+#ifdef FLAG_VALIDATION
   SparseMatrix V_lt_V_l;
   V_lt_V_l.type = 'G';
   V_lt_V_l.rows = n_mat;
@@ -1161,11 +1165,11 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 #endif
 
   for (int i = 0 ; i < n_mat; i++){
-   Permut_l[n_mat*i + i] = 1; 
-   Permut_tmp_l[n_mat*i + i] = 1; 
+   Permut_l[n_mat*i + i] = 1;
+   Permut_tmp_l[n_mat*i + i] = 1;
   }
 
-  
+
 	if (USE_GGtINV == 1) {
 		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
 	} else {
@@ -1236,10 +1240,10 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 
 	// *** Calculate the stop condition *******************************************
 	//tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
-  
+
   norm_l = parallel_norm_compressed(cluster, z_l);
 	tol = epsilon * norm_l;
-  
+
 	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
@@ -1260,7 +1264,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 		<< spaces(indent.size()) << "time[s]";
 
 
-  
+
 	//norm_l = parallel_norm_compressed(cluster, Pg_l);
 
   ESINFO(CONVERGENCE)
@@ -1283,7 +1287,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 
 
 
-  tmp_double0 = parallel_ddot_compressed(cluster, v_l, v_l); 
+  tmp_double0 = parallel_ddot_compressed(cluster, v_l, v_l);
 
 
   V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
@@ -1345,8 +1349,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     }
 //
 //  Modified Gram-Schmidt
-    for (int k = 0;k<iter+1;k++){ 
-      H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(V_l.dense_values[v_l.size()*k]), &(z_l[0])); 
+    for (int k = 0;k<iter+1;k++){
+      H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(V_l.dense_values[v_l.size()*k]), &(z_l[0]));
 
 //
       cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
@@ -1355,7 +1359,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
       }
     }
 //
-    H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, z_l, z_l)); 
+    H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
 //
     cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
       v_l[i] = z_l[i]/H_l[ij(iter+1,iter)];
@@ -1375,7 +1379,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     _ldb      = n_mat;
     _ldc      = n_mat;
 
-    // next line isn't obligatory 
+    // next line isn't obligatory
     //
     w_l.insert(w_l.begin(),&(H_l[n_mat*iter]),&(H_l[n_mat*iter+iter+2]));
     //
@@ -1394,14 +1398,14 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     if (iter>0){
       Permut_tmp_l[ij(iter-1,iter-1)] =  1;
       Permut_tmp_l[ij(iter  ,iter-1)] =  0;
-      Permut_tmp_l[ij(iter-1,iter  )] =  0; 
-      Permut_tmp_l[ij(iter  ,iter  )] =  1; 
+      Permut_tmp_l[ij(iter-1,iter  )] =  0;
+      Permut_tmp_l[ij(iter  ,iter  )] =  1;
     }
 
     Permut_tmp_l[ij(iter  ,iter  )] =  c_H;
     Permut_tmp_l[ij(iter+1,iter  )] = -s_H;
-    Permut_tmp_l[ij(iter  ,iter+1)] =  s_H; 
-    Permut_tmp_l[ij(iter+1,iter+1)] =  c_H; 
+    Permut_tmp_l[ij(iter  ,iter+1)] =  s_H;
+    Permut_tmp_l[ij(iter+1,iter+1)] =  c_H;
 
     H_l_modif[ij(iter  ,iter)] =  norm_h;
     H_l_modif[ij(iter+1,iter)] =  0;
@@ -1410,7 +1414,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     _m        = iter+2;
     _n        = iter+2;
     _k        = iter+2;
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha, 
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha,
                       &(Permut_tmp_l[0]), _lda, &(Permut_l[0]), _ldb, _beta, &(P_tmp_P[0]), _ldc);
 
     // TODO: Do it better!
@@ -1434,10 +1438,10 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 
-    
+
 #ifdef FLAG_VALIDATION
     _n = iter+1;
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha, 
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha,
                       &(Permut_l[0]), _lda, &(H_l[0]), _ldb, _beta, &(tmp_H_l[0]), _ldc);
 #endif
 
@@ -1449,7 +1453,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 
 
   for (int i = cnt_iter-1;i>=0;i-- ){
-    tmp_double0 = -g_H[i]; 
+    tmp_double0 = -g_H[i];
     for (int j = cnt_iter-1 ; j > i ; j-- ){
       tmp_double0-=H_l_modif[ij(i,j)] * y_H[j];
     }
@@ -1483,7 +1487,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
     for (int j = 0; j<cnt_iter+1;j++){
       w_l.insert(w_l.begin(),&(V_l.dense_values[dl_size*i]), &(V_l.dense_values[dl_size*(i+1)]));
       z_l.insert(  z_l.begin(),&(V_l.dense_values[dl_size*j]), &(V_l.dense_values[dl_size*(j+1)]));
-      V_lt_V_l.dense_values[i*n_mat+j] = parallel_ddot_compressed(cluster, w_l, z_l); 
+      V_lt_V_l.dense_values[i*n_mat+j] = parallel_ddot_compressed(cluster, w_l, z_l);
     }
   }
 #endif
