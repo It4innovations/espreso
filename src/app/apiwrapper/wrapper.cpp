@@ -215,8 +215,6 @@ void FETI4ICreateInstance(
 	input::API::load(*mesh, matrix->eIndices, neighClusters, size, l2g);
 
 	API api(mesh);
-	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
-
 	api.indexing = matrix->offset;
 	api.size = size;
 	api.rhs = rhs;
@@ -226,8 +224,8 @@ void FETI4ICreateInstance(
 	api.l2g = l2g;
 	api.neighbours_size = neighbours_size;
 	api.neighbours = neighbours;
-	DataHolder::instances.back()->data = LinearElasticity<API>(api);
 
+	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();
 

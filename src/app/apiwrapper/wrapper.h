@@ -23,7 +23,7 @@ struct FETI4IStructMatrix {
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(espreso::LinearElasticity<espreso::API> data, espreso::Mesh *mesh): data(data), mesh(mesh), K(0, 0) { };
+	FETI4IStructInstance(espreso::API &api, espreso::Mesh *mesh): data(api), mesh(mesh), K(0, 0) { };
 	~FETI4IStructInstance() { delete mesh; }
 
 	espreso::LinearElasticity<espreso::API> data;
