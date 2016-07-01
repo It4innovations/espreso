@@ -101,7 +101,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx(
-        export_includes = "src/include src/config src/basis src/mesh src/input src/output tools/bem4i/src src/assembler",
+        export_includes = "src/include src/config src/basis src/mesh src/input src/output tools/bem4i/src src/assembler src/solver",
         name            = "espreso_includes"
     )
 

@@ -19,7 +19,7 @@ public:
 	static void averaging(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
 
 protected:
-	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
+	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement);
 };
 
 }

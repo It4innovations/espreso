@@ -29,7 +29,7 @@ protected:
 	AnsysWorkbench(Mesh &mesh, const Configuration &configuration, int rank, int size)
 	: Loader(mesh), _path(configuration.path) { };
 
-	void points(Coordinates &coordinates, size_t &DOFs);
+	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
 	void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);

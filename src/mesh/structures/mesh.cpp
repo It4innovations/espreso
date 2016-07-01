@@ -4,7 +4,7 @@
 
 namespace espreso {
 
-Mesh::Mesh():_elements(0), _fixPoints(0), _DOFs(3)
+Mesh::Mesh():_elements(0), _fixPoints(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -447,8 +447,11 @@ void Mesh::getSurface(Mesh &surface) const
 	surface.computeFixPoints(0);
 	surface.computeBoundaries();
 	surface._clusterBoundaries = _clusterBoundaries;
-	surface._DOFs = _DOFs;
 	surface._neighbours = _neighbours;
+	surface._materials = _materials;
+	for (size_t i = 0; i < _boundaryConditions.size(); i++) {
+		surface._boundaryConditions.push_back(_boundaryConditions[i]->copy());
+	}
 }
 
 void Mesh::makePartContinuous(size_t part)

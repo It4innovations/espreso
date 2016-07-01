@@ -81,7 +81,7 @@ static std::vector<DenseMatrix> Hexa_N() {
 
 std::vector<DenseMatrix> Hexahedron8::_dN = Hexa_dN();
 std::vector<DenseMatrix> Hexahedron8::_N = Hexa_N();
-std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
+std::vector<double> Hexahedron8::_weighFactor(Hexahedron8GPCount, 1);
 
 bool Hexahedron8::match(const eslocal *indices, eslocal n) {
 

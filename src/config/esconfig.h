@@ -154,32 +154,15 @@ namespace assembler {
 		/// Finite Element Method
 		FEM = 0,
 		/// Boundary Element Method
-		BEM = 1,
-		/// Set by API
-		API = 2
+		BEM = 1
 	};
 	/// Discretization of an example.
 	/**
 	 * Stiffness matrices are computed based on the discretization:
 	 * - Finite Element Method is used
 	 * - Boundary Element Method is used
-	 * - stiffness matrices are set by API
 	 */
 	extern DISCRETIZATIONalternative DISCRETIZATION;
-
-	enum class PHYSICSalternative {
-		/// Linear Elasticity
-		LINEAR_ELASTICITY = 0,
-		/// Temperature
-		TEMPERATURE = 1,
-		// Transient Linear Elasticity
-		TRANSIENT_ELASTICITY = 2
-	};
-	/// Physics used for assemble matrices
-	extern PHYSICSalternative PHYSICS;
-
-	/// The number of time steps for transient problems
-	extern size_t TIME_STEPS;
 };
 
 namespace solver {
@@ -332,6 +315,9 @@ namespace solver {
 
 	/// Number of used MIC accelerators
 	extern size_t N_MICS;
+
+	/// The number of time steps for transient problems
+	extern size_t TIME_STEPS;
 };
 
 namespace info {

@@ -27,25 +27,13 @@ template<class TElement>
 PlaneGenerator<TElement>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
 	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
-	switch (settings.eType) {
-	case ElementType::SQUARE4:
-	case ElementType::SQUARE8:
-	case ElementType::TRIANGLE3:
-	case ElementType::TRIANGLE6:
-		setCluster(_cluster, _settings);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Plane does not support chosen element type";
-	}
-
+	setCluster(_cluster, _settings);
 }
 
 
 template<class TElement>
-void PlaneGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
+void PlaneGenerator<TElement>::points(Coordinates &coordinates)
 {
-	DOFs = this->_DOFs;
-
 	eslocal cNodes[3];
 	esglobal gNodes[3];
 

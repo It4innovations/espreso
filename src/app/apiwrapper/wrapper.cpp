@@ -1,5 +1,8 @@
 
 #include "wrapper.h"
+#include "../../../libespreso/feti4i.h"
+#include "../../assembler/instance/precomputed/instance.h"
+#include "../../assembler/physics/precomputed/uniformsymmetric3dofs/assembler.h"
 
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
@@ -35,55 +38,6 @@ static void readBinary(std::vector<double> &vector, std::string fileName) {
 		exit(EXIT_FAILURE);
 	}
 }
-
-//int FETI4ICreateStiffnessMatrix(
-//		FETI4IMatrix *stiffnessMatrix,
-//		FETI4IInt n,
-//		FETI4IInt nelt,
-//		FETI4IInt* eltptr,
-//		FETI4IInt* eltvar,
-//		FETI4IReal* values)
-//{
-//	FETI4IInt indexing = eltptr[0];
-//
-//	SparseVVPMatrix<eslocal> matrix(n, n);
-//
-//	FETI4IInt value = 0;
-//	for (FETI4IInt e = 0; e < nelt; e++) {
-//		for (FETI4IInt i = eltptr[e] - indexing; i < eltptr[e + 1] - indexing; i++) {
-//			FETI4IInt size = eltptr[e + 1] - eltptr[e];
-//			for (FETI4IInt j = 0; j < size; j++) {
-//				matrix(eltvar[eltptr[e] - indexing + j] - indexing, eltvar[i] - indexing) = values[value++];
-//			}
-//		}
-//	}
-//
-//	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexing));
-//	DataHolder::matrices.back()->data = matrix;
-//	*stiffnessMatrix = DataHolder::matrices.back();
-//	return 0;
-//}
-
-void FETI4ITest()
-{
-//	MPI_Comm_rank(MPI_COMM_WORLD, &esconfig::env::MPIrank);
-//	MPI_Comm_size(MPI_COMM_WORLD, &esconfig::env::MPIsize);
-//
-//	CubeSettings cube(esconfig::env::MPIrank, esconfig::env::MPIsize);
-//	MeshGenerator generator(new CubeGenerator<Hexahedron8>(cube));
-//
-//	mesh::Mesh mesh(esconfig::env::MPIrank, esconfig::env::MPIsize);
-//	generator.load(mesh);
-//
-//	FEM fem(mesh);
-//	LinearElasticity<FEM> solver(fem);
-//
-//	std::vector<std::vector<double> > solution;
-//
-//	solver.init();
-//	solver.solve(solution);
-}
-
 
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
@@ -212,22 +166,20 @@ void FETI4ICreateInstance(
 
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
-	APIMesh *mesh = new APIMesh(matrix->eMatrices);
-	input::API::load(*mesh, matrix->eIndices, neighClusters, size, l2g);
+	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix));
+	input::API::load(DataHolder::instances.back()->mesh, matrix->eIndices, neighClusters, size, l2g);
 
-	API api(mesh);
-	api.indexing = matrix->offset;
-	api.size = size;
-	api.rhs = rhs;
-	api.dirichlet_size = dirichlet_size;
-	api.dirichlet_indices = dirichlet_indices;
-	api.dirichlet_values = dirichlet_values;
-	api.l2g = l2g;
-	api.neighbours_size = neighbours_size;
-	api.neighbours = neighbours;
+	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(
+			DataHolder::instances.back()->mesh,
+			rhs,
+			size,
+			dirichlet_size,
+			dirichlet_indices,
+			dirichlet_values,
+			matrix->offset
+	);
 
-	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
-	DataHolder::instances.back()->data.init();
+	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
@@ -242,10 +194,10 @@ void FETI4ISolve(
 
 	std::vector<std::vector<double> > solutions(1);
 	solutions[0] = std::vector<double>(solution, solution + solution_size);
-	instance->data.solve(solutions);
+	instance->instance->solve(solutions);
 	memcpy(solution, &solutions[0][0], solution_size * sizeof(double));
 
-	instance->data.finalize();
+	instance->instance->finalize();
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 	DataHolder::timeStatistics.totalTime.endWithBarrier();

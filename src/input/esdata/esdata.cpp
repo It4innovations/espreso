@@ -4,9 +4,8 @@
 using namespace espreso::input;
 
 
-void Esdata::points(Coordinates &coordinates, size_t &DOFs)
+void Esdata::points(Coordinates &coordinates)
 {
-	DOFs = 3; // TODO
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/coordinates.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);

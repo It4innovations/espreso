@@ -51,20 +51,7 @@ template<class TElement>
 CubeGenerator<TElement>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
 	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
-	switch (settings.eType) {
-	case ElementType::HEXA8:
-	case ElementType::HEXA20:
-	case ElementType::TETRA4:
-	case ElementType::TETRA10:
-	case ElementType::PRISMA6:
-	case ElementType::PRISMA15:
-	case ElementType::PYRAMID5:
-	case ElementType::PYRAMID13:
-		setCluster(_cluster, _settings);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Cube does not support chosen element type";
-	}
+	setCluster(_cluster, _settings);
 }
 
 template<class TElement>
@@ -110,10 +97,8 @@ void CubeGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 
 
 template<class TElement>
-void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
+void CubeGenerator<TElement>::points(Coordinates &coordinates)
 {
-	DOFs = this->_DOFs;
-
 	eslocal cNodes[3];
 	esglobal gNodes[3];
 

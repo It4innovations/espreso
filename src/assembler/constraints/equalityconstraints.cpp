@@ -1,5 +1,6 @@
 
-#include "../constraints/equalityconstraints.h"
+#include "equalityconstraints.h"
+#include "esoutput.h"
 
 using namespace espreso;
 
@@ -72,8 +73,8 @@ static bool clusterMappingCompare(const std::vector<esglobal> &v1, const std::ve
 	return v1[0] < v2[0];
 }
 
-Constraints::Constraints(const Mesh &mesh, size_t firstIndex)
-: _mesh(mesh), _subdomains(mesh.parts()), _firstIndex(firstIndex), _DOFs(mesh.DOFs())
+Constraints::Constraints(const Mesh &mesh, size_t DOFs, size_t firstIndex)
+: _mesh(mesh), _subdomains(mesh.parts()), _DOFs(DOFs), _firstIndex(firstIndex)
 {
 	_neighbours = mesh.neighbours();
 	_neighbours.push_back(config::env::MPIrank);
@@ -270,14 +271,14 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 		output::VTK_Full::mesh(faces, "meshFaces", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
-	size_t rowsPerCorner = _mesh.DOFs() == 1 ? 1 : 6;
+	size_t rowsPerCorner = _DOFs == 1 ? 1 : 6;
 	cilk_for (size_t s = 0; s < _subdomains; s++) {
 		B0[s].rows += rowsPerCorner * faces.parts();
 		B0[s].nnz = 0;
 
 		for (size_t i = 0; i < sMap.size(); i++) {
 			if (sMap[i][0] == s || sMap[i][1] == s) {
-				B0[s].nnz += faces.coordinates().localSize(i) * _mesh.DOFs() * _mesh.DOFs();
+				B0[s].nnz += faces.coordinates().localSize(i) * _DOFs * _DOFs;
 			}
 		}
 		B0[s].I_row_indices.reserve(B0[s].nnz);
@@ -301,7 +302,7 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 
 			for (eslocal r = 0; r < rowsPerCorner; r++) {
 				for (size_t n = 0; n < faces.coordinates().localSize(i); n++) {
-					eslocal column = _mesh.DOFs() * _mesh.coordinates().localIndex(faces.coordinates().globalIndex(n, i), s);
+					eslocal column = _DOFs * _mesh.coordinates().localIndex(faces.coordinates().globalIndex(n, i), s);
 					if (r < 3) {
 						B0[s].I_row_indices.push_back(i * rowsPerCorner + r + IJVMatrixIndexing);
 						B0[s].J_col_indices.push_back(column + r + IJVMatrixIndexing);
@@ -738,6 +739,170 @@ size_t Gluing::composeCornersGluing(const std::vector<eslocal> &corners, std::ve
 	return lambdas.back() + _DOFs * (_sBoundary[corners.back()].size() - 1);
 }
 
+static void postProcess(
+		std::vector<SparseMatrix> &_B0,
+		std::vector<SparseMatrix> &_B1,
+		std::vector<std::vector<esglobal> > &_B0subdomainsMap,
+		std::vector<std::vector<esglobal> > &_B1subdomainsMap,
+		std::vector<std::vector<double> > &_B1duplicity,
+		std::vector<std::vector<double> > &_B1c)
+{
+	cilk_for (size_t p = 0; p < _B1subdomainsMap.size(); p++) {
+		// _B1subdomainsMap is the same as row indices
+		_B1subdomainsMap[p] = _B1[p].I_row_indices;
+		std::for_each(_B1subdomainsMap[p].begin(), _B1subdomainsMap[p].end(), [] (esglobal &v) { v -= IJVMatrixIndexing; });
+		_B1c[p].resize(_B1[p].I_row_indices.size(), 0);
+		std::sort(_B1subdomainsMap[p].begin(), _B1subdomainsMap[p].end());
+
+		// because we sort subdomains map, we need to sort duplicity
+		std::vector<double> origin(_B1duplicity[p].begin(), _B1duplicity[p].end());
+		for (size_t i = 0; i < _B1[p].I_row_indices.size(); i++) {
+			auto it = std::lower_bound(_B1subdomainsMap[p].begin(), _B1subdomainsMap[p].end(), _B1[p].I_row_indices[i] - 1);
+			_B1duplicity[p][it - _B1subdomainsMap[p].begin()] = origin[i];
+		}
+
+		// _B0subdomainsMap is the same as row indices
+		_B0subdomainsMap[p] = _B0[p].I_row_indices;
+		std::for_each(_B0subdomainsMap[p].begin(), _B0subdomainsMap[p].end(), [] (esglobal &v) { v -= IJVMatrixIndexing; });
+	}
+}
+
+EqualityConstraints::EqualityConstraints(const Mesh &mesh, size_t DOFs): _mesh(mesh), _DOFs(DOFs)
+{
+	B0.resize(_mesh.parts());
+	B0subdomainsMap.resize(_mesh.parts());
+
+	B1.resize(_mesh.parts());
+	B1subdomainsMap.resize(_mesh.parts());
+	B1duplicity.resize(_mesh.parts());
+	B1c.resize(_mesh.parts());
+
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		B0[p].rows = 0;
+		B0[p].cols = _mesh.coordinates().localSize(p) * _DOFs;
+		B0[p].nnz = 0;
+		B0[p].type = 'G';
+
+		B1[p].rows = 0;
+		B1[p].cols = _mesh.coordinates().localSize(p) * _DOFs;
+		B1[p].nnz = 0;
+		B1[p].type = 'G';
+	}
+
+	// TODO: refactor DIRICHLET
+	const std::map<eslocal, double> &dx = this->_mesh.coordinates().property(DIRICHLET_X).values();
+	const std::map<eslocal, double> &dy = this->_mesh.coordinates().property(DIRICHLET_Y).values();
+	const std::map<eslocal, double> &dz = this->_mesh.coordinates().property(DIRICHLET_Z).values();
+
+	switch (_DOFs) {
+	case 1:
+		dirichlet.reserve(dx.size());
+		dirichletValues.reserve(dx.size());
+		for (auto it = dx.begin(); it != dx.end(); ++it) {
+			dirichlet.push_back(it->first);
+			dirichletValues.push_back(it->second);
+		}
+		break;
+	case 3:
+		dirichlet.reserve(dx.size() + dy.size() + dz.size());
+		dirichletValues.reserve(dx.size() + dy.size() + dz.size());
+		for (auto it = dx.begin(); it != dx.end(); ++it) {
+			dirichlet.push_back(3 * it->first);
+			dirichletValues.push_back(0);
+		}
+		for (auto it = dy.begin(); it != dy.end(); ++it) {
+			dirichlet.push_back(3 * it->first + 1);
+			dirichletValues.push_back(0);
+		}
+		for (auto it = dz.begin(); it != dz.end(); ++it) {
+			dirichlet.push_back(3 * it->first + 2);
+			dirichletValues.push_back(0);
+		}
+		break;
+	default:
+		ESINFO(ERROR) << "Invalid number of DOFs";
+	}
+
+	const std::vector<BoundaryCondition*> &bc = this->_mesh.boundaryConditions();
+	for (size_t i = 0; i < bc.size(); i++) {
+		if (bc[i]->type() == ConditionType::DIRICHLET) {
+			dirichlet.insert(dirichlet.end(), bc[i]->DOFs().begin(), bc[i]->DOFs().end());
+			dirichletValues.insert(dirichletValues.end(), bc[i]->DOFs().size(), bc[i]->value());
+		}
+	}
+}
+
+EqualityConstraints::EqualityConstraints(const Mesh &mesh, size_t DOFs, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase)
+: _mesh(mesh), _DOFs(DOFs)
+{
+	B0.resize(_mesh.parts());
+	B0subdomainsMap.resize(_mesh.parts());
+
+	B1.resize(_mesh.parts());
+	B1subdomainsMap.resize(_mesh.parts());
+	B1duplicity.resize(_mesh.parts());
+	B1c.resize(_mesh.parts());
+
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		B0[p].rows = 0;
+		B0[p].cols = _mesh.coordinates().localSize(p) * _DOFs;
+		B0[p].nnz = 0;
+		B0[p].type = 'G';
+
+		B1[p].rows = 0;
+		B1[p].cols = _mesh.coordinates().localSize(p) * _DOFs;
+		B1[p].nnz = 0;
+		B1[p].type = 'G';
+	}
+
+	dirichlet = std::vector<eslocal>(dirichlet_indices, dirichlet_indices + dirichlet_size);
+	std::for_each(dirichlet.begin(), dirichlet.end(), [ &indexBase ] (eslocal &index) { index -= indexBase; });
+	dirichletValues = std::vector<double>(dirichlet_values, dirichlet_values + dirichlet_size);
+}
+
+void EqualityConstraints::assemble()
+{
+	size_t lambdaCounter = 0;
+
+	Dirichlet dir(_mesh, _DOFs, lambdaCounter, dirichlet, dirichletValues);
+	lambdaCounter += dir.assemble(B1, B1clustersMap, B1c);
+
+	// TODO: duplicity is not important for dirichlet -> it is always 1
+	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+		B1duplicity[p].clear();
+		B1duplicity[p].resize(B1[p].I_row_indices.size(), 1);
+	}
+
+	Gluing gluing(_mesh, _DOFs, lambdaCounter, dirichlet);
+
+	std::vector<eslocal> corners;
+	if (
+			!config::solver::REDUNDANT_LAGRANGE &&
+			config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI &&
+			config::solver::B0_TYPE == config::solver::B0_TYPEalternative::CORNERS) {
+
+		for (size_t i = 0; i < _mesh.subdomainBoundaries().size(); i++) {
+			if (_mesh.subdomainBoundaries().isCorner(i)) {
+				corners.push_back(i);
+			}
+		}
+	}
+	lambdaCounter += gluing.assembleB1(B1, B1clustersMap, B1duplicity, corners);
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		switch (config::solver::B0_TYPE) {
+		case config::solver::B0_TYPEalternative::CORNERS:
+			gluing.assembleB0(B0);
+			break;
+	   case config::solver::B0_TYPEalternative::KERNELS:
+		   gluing.assembleB0fromKernels(B0);
+			break;
+	   }
+   }
+
+
+	// TODO: get rid of the following
+	postProcess(B0, B1, B0subdomainsMap, B1subdomainsMap, B1duplicity, B1c);
+}
 
 
 

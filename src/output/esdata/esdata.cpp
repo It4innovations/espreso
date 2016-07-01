@@ -19,7 +19,7 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
 	materials(_mesh, _mesh.materials());
-	boundaryConditions(_mesh.coordinates(), _mesh.boundaryConditions(), _mesh.DOFs());
+	boundaryConditions(_mesh.coordinates(), _mesh.boundaryConditions());
 	boundaries(_mesh);
 }
 
@@ -48,7 +48,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 }
 
 
-void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions, size_t DOFs)
+void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions)
 {
 	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
@@ -81,6 +81,7 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 		auto &l2c = coordinates.localToCluster(p);
 		for (size_t i = 0; i < conditions.size(); i++) {
 			if (conditions[i]->type() == ConditionType::DIRICHLET) {
+				eslocal DOFs = conditions[i]->DOFsPerNode();
 				size_t size = 0;
 				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
 					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
