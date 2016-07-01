@@ -200,10 +200,11 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		dirichlet_indices,
 		FETI4IReal* 	dirichlet_values,
 		FETI4IInt* 		integer_options,
-		FETI4IReal* 		real_options)
+		FETI4IReal*		real_options)
 {
 	FETI4ISetIntegerOptions(integer_options);
 	FETI4ISetRealOptions(real_options);
+	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 

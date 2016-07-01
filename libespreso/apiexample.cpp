@@ -8,10 +8,6 @@
 
 #include "feti4i.h"
 
-#include <csignal>
-#include <sys/sysinfo.h>
-#include <execinfo.h>
-
 template <typename Ttype>
 static void readFile(typename std::vector<Ttype> &vector, std::string fileName) {
 	vector.clear();
