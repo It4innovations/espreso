@@ -79,7 +79,7 @@ public:
 		iter_cnt_comm = 0;
 	}
 
-	virtual ~ClusterBase() { std::cout << "DELETE CLUSTER\n"; };
+	virtual ~ClusterBase() {};
 
 	// Cluster specific variables
 	eslocal cluster_global_index;
