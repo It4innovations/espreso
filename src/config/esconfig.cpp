@@ -208,8 +208,8 @@ std::vector<espreso::Parameter> parameters = {
 	// INFO DESCRIPTION
 	{ "OUTPUT", info::OUTPUT, "A location for saving output informations.", WRITE_TO_HELP },
 	{ "VERBOSE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", info::VERBOSE_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "TESTING_LEVEL", info::TESTING_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
+	{ "MEASURE_LEVEL", info::MEASURE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
 	{ "PRINT_MATRICES", info::PRINT_MATRICES, "ESPRESO print solver input matrices." }
 };
 
