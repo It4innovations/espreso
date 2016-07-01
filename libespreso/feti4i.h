@@ -56,6 +56,28 @@ typedef struct FETI4IStructInstance* FETI4IInstance;
  Functions for manipulating with FETI4I internal structures
 ------------------------------------------------------------------------------*/
 
+/// Fill integer options to the default values
+/**
+ * ESPRESO is controlled by options passed to FETI4ICreateInstance method.
+ * This method set all integer options to its default values.
+ *
+ * @param options an array of size FETI4I_INTEGER_OPTIONS_SIZE
+ */
+void FETI4ISetDefaultIntegerOptions(
+		FETI4IInt*		options
+);
+
+/// Fill integer options to the default values
+/**
+ * ESPRESO is controlled by options passed to FETI4ICreateInstance method.
+ * This method set all real options to its default values.
+ *
+ * @param options an array of size FETI4I_REAL_OPTIONS_SIZE
+ */
+void FETI4ISetDefaultRealOptions(
+		FETI4IReal*		options
+);
+
 /// Create the data holder for a stiffness matrix
 /**
  * Create an ESPRESO internal representation of a stiffness matrix.
@@ -93,7 +115,8 @@ void FETI4IAddElement(
 /// Create the data holder for a problem solvable in the ESPRESO solver
 /**
  * Create an ESPRESO internal representation of a problem.
- * Created instance can be directly passed to the ESPRESO solver
+ * Created instance can be directly passed to the ESPRESO solver or edited
+ * by appropriate API methods.
  *
  * @param instance an address of a data holder of an ESPRESO instance
  * @param matrix a data holder of a stiffness matrix
@@ -105,6 +128,8 @@ void FETI4IAddElement(
  * @param dirichlet_size a number of DOFs with dirichlet condition
  * @param dirichlet_indices an array of DOFs (local)
  * @param dirichlet_values an array of dirichlet value
+ * @param integer_options an array of integer parameters - see enum 'FETI4IIntegerOptions'
+ * @param real_options an array of real parameters - see enum 'FETI4IRealOptions'
  */
 void FETI4ICreateInstance(
 		FETI4IInstance 	*instance,
@@ -116,7 +141,9 @@ void FETI4ICreateInstance(
 		FETI4IMPIInt*	neighbours,
 		FETI4IInt 		dirichlet_size,
 		FETI4IInt* 		dirichlet_indices,
-		FETI4IReal* 	dirichlet_values
+		FETI4IReal* 	dirichlet_values,
+		FETI4IInt*		integer_options,
+		FETI4IReal*		real_options
 );
 
 
@@ -150,15 +177,11 @@ void FETI4IUpdateRhs(
 		FETI4IReal* 	rhs_values
 );
 
-//TODO VH: neighbours perhaps should not be passed here and they are FETI4IMPIInt
 void FETI4IUpdateDirichlet(
 		FETI4IInstance 	instance,
 		FETI4IInt 		dirichlet_size,
 		FETI4IInt* 		dirichlet_indices,
-		FETI4IReal* 	dirichlet_values,
-		FETI4IReal* 	l2g,
-		FETI4IInt 		neighbour_size,
-		FETI4IReal* 	neighbour
+		FETI4IReal* 	dirichlet_values
 );
 
 
@@ -212,6 +235,40 @@ void TEST4IGetInstance(
 }
 #endif
 
+/// List of allowed ESPRESO integer options.
+/**
+ * ESPRESO is controlled by passing parameters to FETI4ICreateInstance.
+ * Integer parameters are in an array of size FETI4I_INTEGER_OPTIONS_SIZE.
+ * See ESPRESO documentation for detailed description of each parameter.
+ */
+typedef enum {
+	FETI4I_SUBDOMAINS,
+
+	FETI4I_ITERATIONS,
+	FETI4I_FETI_METHOD,
+	FETI4I_PRECONDITIONER,
+	FETI4I_CGSOLVER,
+	FETI4I_N_MICS,
+
+	FETI4I_VERBOSE_LEVEL,
+	FETI4I_TESTING_LEVEL,
+	FETI4I_MEASURE_LEVEL,
+	FETI4I_PRINT_MATRICES,
+
+	FETI4I_INTEGER_OPTIONS_SIZE
+} FETI4IIntegerOptions;
+
+/// List of allowed ESPRESO real options.
+/**
+ * ESPRESO is controlled by passing parameters to FETI4ICreateInstance.
+ * Real parameters are in an array of size FETI4I_REAL_OPTIONS_SIZE.
+ * See ESPRESO documentation for detailed description of each parameter.
+ */
+typedef enum {
+	FETI4I_EPSILON,
+
+	FETI4I_REAL_OPTIONS_SIZE
+} FETI4IRealOptions;
 
 #endif /* FETI4I_H_ */
 

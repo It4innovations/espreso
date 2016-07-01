@@ -7,7 +7,10 @@
 #include <cstdlib>
 
 #include "feti4i.h"
-#include "../src/config/esconfig.h"
+
+#include <csignal>
+#include <sys/sysinfo.h>
+#include <execinfo.h>
 
 template <typename Ttype>
 static void readFile(typename std::vector<Ttype> &vector, std::string fileName) {
@@ -82,9 +85,44 @@ static void loadStructures(
 
 }
 
+static void printStack()
+{
+	std::vector<void*> stack(30);
+	size_t size = backtrace(stack.data(), 30);
+	char** functions = backtrace_symbols(stack.data(), size);
+
+	std::stringstream command;
+	command << "addr2line -sipfC -e " << "apiexample";
+	for (size_t i = 0; i < size; i++) {
+		std::string function(functions[i]);
+		size_t begin = function.find_last_of('[') + 1;
+		size_t end = function.find_last_of(']');
+		command << " " << function.substr(begin, end - begin);
+	}
+	free(functions);
+	system(command.str().c_str()); // convert addresses to file lines
+}
+
+static void signalHandler(int signal)
+{
+	std::cout << "ERROR\n";
+	switch (signal) {
+	case SIGSEGV:
+		std::cout << "Invalid memory reference";
+		//printStack();
+		break;
+	case SIGFPE:
+		std::cout << "Erroneous arithmetic operation";
+		//printStack();
+		break;
+	}
+}
 
 int main(int argc, char** argv)
 {
+//	std::signal(SIGFPE, signalHandler);
+//	std::signal(SIGSEGV, signalHandler);
+
 	// Always initialize MPI before call ESPRESO!
 	MPI_Init(&argc, &argv);
 
@@ -114,9 +152,17 @@ int main(int argc, char** argv)
 		FETI4IAddElement(K, K_indices[i].size(), K_indices[i].data(), K_values[i].data());
 	}
 
+	FETI4IInt iopts[FETI4I_INTEGER_OPTIONS_SIZE];
+	FETI4IReal ropts[FETI4I_REAL_OPTIONS_SIZE];
+
+	FETI4ISetDefaultIntegerOptions(iopts);
+	FETI4ISetDefaultRealOptions(ropts);
+
 	// Configure ESPRESO solver
-	espreso::config::mesh::SUBDOMAINS = 8;
-	espreso::config::solver::PRECONDITIONER = espreso::config::solver::PRECONDITIONERalternative::DIRICHLET;
+	iopts[FETI4I_SUBDOMAINS] = 8;
+	iopts[FETI4I_PRECONDITIONER] = 3;
+	iopts[FETI4I_VERBOSE_LEVEL] = 3;
+	iopts[FETI4I_MEASURE_LEVEL] = 3;
 
 	// Create instance of a problem
 	FETI4IInstance instance;
@@ -130,7 +176,9 @@ int main(int argc, char** argv)
 			neighbours.data(),
 			dirichlet_indices.size(),
 			dirichlet_indices.data(),
-			dirichlet_values.data());
+			dirichlet_values.data(),
+			iopts,
+			ropts);
 
 	// Prepare memory for save solution
 	std::vector<FETI4IReal> solution(rhs.size());
@@ -140,8 +188,13 @@ int main(int argc, char** argv)
 
 	// Process solution
 
+	// Remove data
+	FETI4IDestroy(K);
+	FETI4IDestroy(instance);
+
 	MPI_Finalize();
 }
+
 
 
 

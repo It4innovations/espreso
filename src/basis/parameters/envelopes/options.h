@@ -40,6 +40,11 @@ struct OptionEnvelope: public Envelope {
 		return "Unrecognized value";
 	}
 
+	void* value() const
+	{
+		return &_data;
+	}
+
 	Envelope* copy()
 	{
 		return new OptionEnvelope<TPointer>(*this);

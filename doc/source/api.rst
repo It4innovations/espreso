@@ -17,7 +17,7 @@ The example is written in C++ for its simplicity:
 
 .. code-block:: cpp
    :linenos:
-   :emphasize-lines: 22, 24, 28, 32, 33 - 43, 49, 53, 54
+   :emphasize-lines: 22, 24, 28, 31 - 35, 38 - 41, 44 - 57, 63, 67 - 68
 
    // Always initialize MPI before call ESPRESO!
    MPI_Init(&argc, &argv);
@@ -49,6 +49,18 @@ The example is written in C++ for its simplicity:
       FETI4IAddElement(K, K_indices[i].size(), K_indices[i].data(), K_values[i].data());
    }
 
+   FETI4IInt iopts[FETI4I_INTEGER_OPTIONS_SIZE];
+   FETI4IReal ropts[FETI4I_REAL_OPTIONS_SIZE];
+
+   FETI4ISetDefaultIntegerOptions(iopts);
+   FETI4ISetDefaultRealOptions(ropts);
+
+   // Configure ESPRESO solver
+   iopts[FETI4I_SUBDOMAINS] = 8;
+   iopts[FETI4I_PRECONDITIONER] = 3;
+   iopts[FETI4I_VERBOSE_LEVEL] = 3;
+   iopts[FETI4I_MEASURE_LEVEL] = 3;
+
    // Create instance of a problem
    FETI4IInstance instance;
    FETI4ICreateInstance(
@@ -61,7 +73,9 @@ The example is written in C++ for its simplicity:
          neighbours.data(),
          dirichlet_indices.size(),
          dirichlet_indices.data(),
-         dirichlet_values.data());
+         dirichlet_values.data(),
+         iopts,
+         ropts);
 
    // Prepare memory for save solution
    std::vector<FETI4IReal> solution(rhs.size());
@@ -82,12 +96,25 @@ The method ``FETI4ICreateStiffnessMatrix`` (line 24)
 accepts a data holder ``FETI4IMatrix`` and ``indexBase``.
 When the stiffness matrix data holder is created,
 element matrices can be added by method ``FETI4IAddElement`` (line 28).
+
+The settings of ESPRESO is controlled by arrays of integer and real values (lines 31, 32).
+These arrays have to be passed to ``FETI4ICreateInstance``. You can set all parameters
+to appropriate values (see `complete list <parameters.html>`__ for the description of parameters)
+or you can use default values set by ``FETI4ISetDefaultIntegerOptions`` (``FETI4ISetDefaultRealOptions``).
+
 A filled stiffness matrix and other needed data can passed to the ESPRESO solver
 by method ``FETI4ICreateInstance`` (lines 33 - 43).
 Again, the method returns a data holder for a created instance.
+
+.. note::
+
+   The instance is prepared according to passed parameters. Hence, a later change of
+   parameters or options has no effect on the instance.
+   Instance can be changed by API ``Update`` methods.
+
 The instance can be solved by method ``FETI4ISolve`` (line 49).
 The solution is saved to prepared vector (line 46).
-Data holders can be destroyed by ``FETI4IDestroy``.
+Data holders should be destroyed by ``FETI4IDestroy``.
 
 .. note::
 
