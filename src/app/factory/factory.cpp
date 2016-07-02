@@ -7,7 +7,7 @@ template<class TShape>
 static void generateShape(const Configuration &configuration, Mesh *mesh)
 {
 	input::Settings settings(config::env::MPIrank ,config::env::MPIsize);
-	ParametersReader::pickConfiguration(configuration, settings.parameters);
+	ParametersReader::fromConfigurationFileWOcheck(configuration, settings.parameters);
 
 	switch (settings.shape) {
 	case input::GeneratorShape::CUBE: {
@@ -34,7 +34,7 @@ static void generateShape(const Configuration &configuration, Mesh *mesh)
 static void generate(const Configuration &configuration, Mesh *mesh)
 {
 	input::Settings settings(config::env::MPIrank ,config::env::MPIsize);
-	ParametersReader::pickConfiguration(configuration, settings.parameters);
+	ParametersReader::fromConfigurationFileWOcheck(configuration, settings.parameters);
 
 
 	switch (settings.eType) {

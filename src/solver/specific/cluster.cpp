@@ -1419,6 +1419,199 @@ void ClusterBase::CreateSa() {
 	MKL_Set_Num_Threads(1);
 }
 
+void ClusterBase::Create_G_perCluster() {
+
+	SparseMatrix tmpM;
+
+	TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
+	G1_1_time.start();
+	TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
+	G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
+
+	int MPIrank;
+	MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+
+	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
+	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
+
+	cilk_for (eslocal j = 0; j < domains.size(); j++) {
+
+		SparseMatrix Rt;
+		SparseMatrix Rt2;
+
+		SparseMatrix B;
+		B = domains[j].B1;
+
+		switch (config::solver::REGULARIZATION) {
+		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+			Rt = domains[j].Kplus_R;
+			Rt.ConvertDenseToCSR(1);
+			Rt.MatTranspose();
+
+			if (!SYMMETRIC_SYSTEM) {
+				Rt2 = domains[j].Kplus_R2;
+				Rt2.ConvertDenseToCSR(1);
+				Rt2.MatTranspose();
+			}
+
+			break;
+		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+			Rt = domains[j].Kplus_Rb;
+			Rt.ConvertDenseToCSR(1);
+			Rt.MatTranspose();
+
+			if (!SYMMETRIC_SYSTEM) {
+				Rt2 = domains[j].Kplus_Rb2;
+				Rt2.ConvertDenseToCSR(1);
+				Rt2.MatTranspose();
+			}
+
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented type of regularization.";
+		}
+
+		Rt.ConvertCSRToDense(1);
+		//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
+		Create_G1_perSubdomain(Rt, B, tmp_Mat[j]);
+
+		if (!SYMMETRIC_SYSTEM) {
+			Rt2.ConvertCSRToDense(1);
+			//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
+			Create_G1_perSubdomain(Rt2, B, tmp_Mat2[j]);
+		}
+
+	}
+
+	G1_1_time.end();
+	G1_1_time.printStatMPI();
+	//G1_1_time.printLastStatMPIPerNode();
+	G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+	G1_1_mem.printStatMPI();
+	//G1_1_mem.printLastStatMPIPerNode();
+
+	//G1_1_mem.printLastStatMPIPerNode();
+	TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
+	G1_2_time.start();
+	TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
+	G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
+
+	for (eslocal j = 1; j < tmp_Mat.size(); j = j * 2 ) {
+		cilk_for (eslocal i = 0; i < tmp_Mat.size(); i = i + 2*j) {
+
+			if ( i+j < tmp_Mat.size()) {
+				if (USE_HFETI == 1) {
+					tmp_Mat[i    ].MatAddInPlace( tmp_Mat[i + j], 'N', 1.0 );
+				} else {
+					tmp_Mat[i    ].MatAppend(tmp_Mat[i + j]);
+				}
+				tmp_Mat[i + j].Clear();
+
+				if (!SYMMETRIC_SYSTEM) {
+					if (USE_HFETI == 1) {
+						tmp_Mat2[i    ].MatAddInPlace( tmp_Mat2[i + j], 'N', 1.0 );
+					} else {
+						tmp_Mat2[i    ].MatAppend(tmp_Mat2[i + j]);
+					}
+					tmp_Mat2[i + j].Clear();
+				}
+
+			}
+		}
+	}
+
+	G1_2_time.end();
+	G1_2_time.printStatMPI();
+	//G1_2_time.printLastStatMPIPerNode();
+
+	G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
+	G1_2_mem.printStatMPI();
+	//G1_2_mem.printLastStatMPIPerNode();
+
+	// Save resulting matrix G1
+	G1 = tmp_Mat[0];
+	for (eslocal i = 0; i < G1.CSR_V_values.size(); i++)
+		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
+
+
+	if (!SYMMETRIC_SYSTEM) {
+		G2 = tmp_Mat2[0];
+		for (eslocal i = 0; i < G2.CSR_V_values.size(); i++)
+			G2.CSR_V_values[i] = -1.0 * G2.CSR_V_values[i];
+
+	} //else {
+	//G2 = G1;
+	//}
+
+}
+
+void ClusterBase::Create_G1_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out) {
+
+	if (B_in.nnz > 0) {
+
+		SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B_in.nnz, SEQ_VECTOR <double> (R_in.rows,0));
+		SEQ_VECTOR <eslocal > G_I_row_indices;
+
+		G_I_row_indices.resize(B_in.nnz);
+
+		eslocal indx = 0;
+		for (eslocal r = 0; r < R_in.rows; r++)
+			tmpG[indx][r] += B_in.V_values[0] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[0]-1) + r];
+
+		G_I_row_indices[indx] = B_in.I_row_indices[0];
+
+		for (eslocal i = 1; i < B_in.I_row_indices.size(); i++) {
+
+			if (B_in.I_row_indices[i-1] != B_in.I_row_indices[i])
+				indx++;
+
+			for (eslocal r = 0; r < R_in.rows; r++)
+				tmpG[indx][r] += B_in.V_values[i] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[i]-1) + r];
+
+			G_I_row_indices[indx] = B_in.I_row_indices[i];
+		}
+
+		G_I_row_indices.resize(indx+1);
+		tmpG.resize(indx+1);
+
+		SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+		SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+		SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+
+		for (eslocal i = 0; i < tmpG.size(); i++) {
+			for (eslocal j = 0; j < tmpG[i].size(); j++){
+				if (tmpG[i][j] != 0) {
+					G_I.push_back(G_I_row_indices[i]);
+					G_J.push_back(j+1);
+					G_V.push_back(tmpG[i][j]);
+				}
+			}
+		}
+
+		G_out.I_row_indices = G_J;
+		G_out.J_col_indices = G_I;
+		G_out.V_values      = G_V;
+		G_out.cols = B_in.rows;
+		G_out.rows = R_in.rows;
+		G_out.nnz  = G_I.size();
+		G_out.type = 'G';
+
+	} else {
+
+		G_out.cols = B_in.rows;
+		G_out.rows = R_in.rows;
+
+		G_out.I_row_indices.resize(1,0);
+		G_out.J_col_indices.resize(1,0);
+		G_out.V_values.resize(0,0);
+
+		G_out.nnz  = 0;
+		G_out.type = 'G';
+	}
+
+	G_out.ConvertToCSRwithSort(1);
+
+}
 
 void ClusterBase::Create_G1_perCluster() {
 
@@ -1811,24 +2004,34 @@ void ClusterBase::Create_G1_perCluster() {
 
 void ClusterBase::Compress_G1() {
 
-	G1.ConvertToCOO( 1 );
-
-	cilk_for (eslocal j = 0; j < G1.J_col_indices.size(); j++ )
-		G1.J_col_indices[j] = _my_lamdas_map_indices[ G1.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
-
-	G1.cols = my_lamdas_indices.size();
-	G1.ConvertToCSRwithSort( 1 );
-
-	G1_comp.CSR_I_row_indices.swap( G1.CSR_I_row_indices );
-	G1_comp.CSR_J_col_indices.swap( G1.CSR_J_col_indices );
-	G1_comp.CSR_V_values     .swap( G1.CSR_V_values		 );
-
-	G1_comp.rows = G1.rows;
-	G1_comp.cols = G1.cols;
-	G1_comp.nnz  = G1.nnz;
-	G1_comp.type = G1.type;
-
+	Compress_G(G1, G1_comp);
 	G1.Clear();
+
+	if (!SYMMETRIC_SYSTEM) {
+		Compress_G(G2, G2_comp);
+		G2.Clear();
+	}
+
+}
+
+void ClusterBase::Compress_G( SparseMatrix &G_in, SparseMatrix &G_comp_out ) {
+
+	G_in.ConvertToCOO( 1 );
+
+	cilk_for (eslocal j = 0; j < G_in.J_col_indices.size(); j++ )
+		G_in.J_col_indices[j] = _my_lamdas_map_indices[ G_in.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+
+	G_in.cols = my_lamdas_indices.size();
+	G_in.ConvertToCSRwithSort( 1 );
+
+	G_comp_out.CSR_I_row_indices.swap( G_in.CSR_I_row_indices );
+	G_comp_out.CSR_J_col_indices.swap( G_in.CSR_J_col_indices );
+	G_comp_out.CSR_V_values     .swap( G_in.CSR_V_values		 );
+
+	G_comp_out.rows = G_in.rows;
+	G_comp_out.cols = G_in.cols;
+	G_comp_out.nnz  = G_in.nnz;
+	G_comp_out.type = G_in.type;
 
 }
 

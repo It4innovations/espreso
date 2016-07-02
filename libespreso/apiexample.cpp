@@ -7,7 +7,6 @@
 #include <cstdlib>
 
 #include "feti4i.h"
-#include "../src/config/esconfig.h"
 
 template <typename Ttype>
 static void readFile(typename std::vector<Ttype> &vector, std::string fileName) {
@@ -114,9 +113,17 @@ int main(int argc, char** argv)
 		FETI4IAddElement(K, K_indices[i].size(), K_indices[i].data(), K_values[i].data());
 	}
 
+	FETI4IInt iopts[FETI4I_INTEGER_OPTIONS_SIZE];
+	FETI4IReal ropts[FETI4I_REAL_OPTIONS_SIZE];
+
+	FETI4ISetDefaultIntegerOptions(iopts);
+	FETI4ISetDefaultRealOptions(ropts);
+
 	// Configure ESPRESO solver
-	espreso::config::mesh::SUBDOMAINS = 8;
-	espreso::config::solver::PRECONDITIONER = espreso::config::solver::PRECONDITIONERalternative::DIRICHLET;
+	iopts[FETI4I_SUBDOMAINS] = 8;
+	iopts[FETI4I_PRECONDITIONER] = 3;
+	iopts[FETI4I_VERBOSE_LEVEL] = 3;
+	iopts[FETI4I_MEASURE_LEVEL] = 0;
 
 	// Create instance of a problem
 	FETI4IInstance instance;
@@ -130,7 +137,9 @@ int main(int argc, char** argv)
 			neighbours.data(),
 			dirichlet_indices.size(),
 			dirichlet_indices.data(),
-			dirichlet_values.data());
+			dirichlet_values.data(),
+			iopts,
+			ropts);
 
 	// Prepare memory for save solution
 	std::vector<FETI4IReal> solution(rhs.size());
@@ -140,8 +149,13 @@ int main(int argc, char** argv)
 
 	// Process solution
 
+	// Remove data
+	FETI4IDestroy(K);
+	FETI4IDestroy(instance);
+
 	MPI_Finalize();
 }
+
 
 
 

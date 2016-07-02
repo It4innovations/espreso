@@ -22,6 +22,8 @@ LinearSolver::~LinearSolver() {
 
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
+	cluster.SYMMETRIC_SYSTEM = !(config::solver::CGSOLVER == config::solver::CGSOLVERalternative::GMRES);
+
 	SINGULAR 	= IS_SINGULAR;
 	R_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
 
@@ -328,6 +330,8 @@ void LinearSolver::init(
 				S.type='S';
 
 				cluster.domains[d].Prec = S;
+
+				cluster.domains[d].Prec.ConvertCSRToDense(1);
 			}
 	    if (config::info::PRINT_MATRICES) {
         std::ofstream osS(Logging::prepareFile(d, "S"));
@@ -471,7 +475,7 @@ void LinearSolver::init(
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
 		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		cluster.Create_G1_perCluster   ();
+		cluster.Create_G_perCluster   ();
 		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
@@ -749,6 +753,25 @@ void LinearSolver::set_R (
 			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
 		}
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
+
+		//TODO: *** test nesymetrickeho systemu pro GGt - smazat !!
+		if (!cluster.SYMMETRIC_SYSTEM) {
+			cluster.domains[d].Kplus_R2 = cluster.domains[d].Kplus_R;
+
+//			int rows = cluster.domains[d].Kplus_R2.rows;
+//			int cols = cluster.domains[d].Kplus_R2.cols;
+//			for (int c = 0; c < cols; c++) {
+//				int s1 = c * rows;
+//				int s2 = (cols - 1 - c) * rows;
+//				for (int r = 0; r < rows; r++) {
+//					cluster.domains[d].Kplus_R2.dense_values[s2 + r] =
+//							cluster.domains[d].Kplus_R.dense_values[s1 + r];
+//				}
+//			}
+
+		}
+		//***
+
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 
 	}
@@ -764,7 +787,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
 		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		cluster.Create_G1_perCluster   ();
+		cluster.Create_G_perCluster   ();
 		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 

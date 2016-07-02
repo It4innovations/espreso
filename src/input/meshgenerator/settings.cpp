@@ -55,7 +55,7 @@ Settings::Settings(const Configuration &configuration, size_t index, size_t size
 : index(index), size(size)
 {
 	defaultSettings();
-	ParametersReader::configuration(configuration, parameters);
+	ParametersReader::fromConfigurationFile(configuration, parameters);
 }
 
 Settings::Settings(size_t index, size_t size)

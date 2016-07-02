@@ -24,6 +24,11 @@ struct DataEnvelope: public Envelope {
 		return ss.str();
 	}
 
+	void* value() const
+	{
+		return &_data;
+	}
+
 	Envelope* copy()
 	{
 		return new DataEnvelope<TPointer>(*this);
@@ -54,6 +59,11 @@ struct DataEnvelope<bool>: public Envelope {
 		std::stringstream ss;
 		ss << _data;
 		return ss.str();
+	}
+
+	void* value() const
+	{
+		return &_data;
 	}
 
 	Envelope* copy()

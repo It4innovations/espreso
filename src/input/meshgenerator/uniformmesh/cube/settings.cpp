@@ -54,7 +54,7 @@ CubeSettings::CubeSettings(const Configuration &configuration, size_t index, siz
 	defaultCubeSettings();
 	ESINFO(OVERVIEW) << "Load cube setting from file " << configuration.path;
 	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
-	ParametersReader::configuration(configuration, parameters);
+	ParametersReader::fromConfigurationFile(configuration, parameters);
 }
 
 CubeSettings::CubeSettings(size_t index, size_t size)

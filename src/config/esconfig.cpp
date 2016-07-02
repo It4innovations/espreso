@@ -148,7 +148,8 @@ std::vector<espreso::Parameter> parameters = {
 	{ "CGSOLVER", solver::CGSOLVER, "Conjugate gradients solver", {
 			{ "STANDARD", solver::CGSOLVERalternative::STANDARD, "Standard" },
 			{ "PIPELINED", solver::CGSOLVERalternative::PIPELINED, "Pipelined" },
-			{ "FULL_ORTOGONAL", solver::CGSOLVERalternative::FULL_ORTOGONAL, "Full ortogonalization" },}, WRITE_TO_HELP },
+			{ "FULL_ORTOGONAL", solver::CGSOLVERalternative::FULL_ORTOGONAL, "Full ortogonalization" },
+			{ "GMRES", solver::CGSOLVERalternative::GMRES, "GMRES - allows non-symmetric systems" }}, WRITE_TO_HELP },
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
@@ -208,8 +209,8 @@ std::vector<espreso::Parameter> parameters = {
 	// INFO DESCRIPTION
 	{ "OUTPUT", info::OUTPUT, "A location for saving output informations.", WRITE_TO_HELP },
 	{ "VERBOSE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", info::VERBOSE_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "TESTING_LEVEL", info::TESTING_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
+	{ "MEASURE_LEVEL", info::MEASURE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
 	{ "PRINT_MATRICES", info::PRINT_MATRICES, "ESPRESO print solver input matrices." }
 };
 

@@ -286,7 +286,8 @@ namespace solver {
 	enum class CGSOLVERalternative {
 		STANDARD = 0,
 		PIPELINED = 1,
-		FULL_ORTOGONAL = 2
+		FULL_ORTOGONAL = 2,
+		GMRES = 3
 	};
 
 	/// A type of conjugate gradient solver

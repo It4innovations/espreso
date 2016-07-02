@@ -58,7 +58,7 @@ SphereSettings::SphereSettings(const Configuration &configuration, size_t index,
 
 	defaultSphereSettings();
 	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
-	ParametersReader::configuration(configuration, parameters);
+	ParametersReader::fromConfigurationFile(configuration, parameters);
 }
 
 SphereSettings::SphereSettings(size_t index, size_t size)
