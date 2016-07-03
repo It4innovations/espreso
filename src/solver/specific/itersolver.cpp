@@ -1461,24 +1461,6 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
   cilk_for (eslocal i = 0; i < g_l.size(); i++){
     w_l[i] = -(Ax_l[i] - b_l[i]);
   }
-//    // tmp_vec = H_l * y_H
-//    _m = cnt_iter + 1;
-//    _n = cnt_iter;
-//    _beta  = 0;
-//    _lda = n_mat;
-//    cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(H_l[0]), _lda, &(y_H[0]),
-//                                                    1,_beta, &(z_l[0]), 1);
-//
-//
-//    // V_l * tmp_vec 
-//    _m = dl_size;
-//    _n = cnt_iter + 1;
-//    _alpha = -1;
-//    _beta = -1;
-//    _lda = dl_size;
-//    w_l = g_l;
-//    cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(V_l.dense_values[0]), _lda, &(z_l[0]),
-//                                                    1,_beta, &(w_l[0]), 1);
 
 
 
