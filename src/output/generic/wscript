@@ -1,0 +1,24 @@
+
+import os.path
+
+def configure(ctx):
+    if os.path.isfile(os.path.join(ctx.ROOT, "tools/vtk/output/resultstore.o")):
+        ctx.env.VTK = True
+        ctx.msg("Checking for VTK", "found")
+    else:
+        ctx.env.VTK = False
+        ctx.msg("Checking for VTK", "not found - only VTK Legacy format is supported (see tools/vtk/README.txt)", color='YELLOW')
+
+def build(ctx):
+    if ctx.env.VTK:
+        ctx(
+            features = "link",
+            source = "../../../tools/vtk/output/resultstore.o",
+            target = "generic_out"
+        )
+    else:
+        ctx.objects(
+            source = ctx.path.ant_glob('**/*.cpp'),
+            target = "generic_out",
+            use    = "espreso_includes"
+        )

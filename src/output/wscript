@@ -2,7 +2,9 @@
 def configure(ctx):
     ctx.recurse("vtk")
     ctx.recurse("esdata")
+    ctx.recurse("generic")
 
 def build(ctx):
     ctx.recurse("vtk")
     ctx.recurse("esdata")
+    ctx.recurse("generic")

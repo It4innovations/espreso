@@ -251,6 +251,19 @@ void Factory::solve()
 		_assembler->pre_solve_update();
 		_assembler->solve(_solution);
 		_assembler->post_solve_update();
+		if (config::output::SAVE_RESULTS) {
+			std::stringstream ss;
+			ss << outputFile << config::env::MPIrank;
+			if (config::solver::TIME_STEPS > 1) {
+				ss << "_" << i;
+			}
+
+			output::VTK_Full vtk(mesh, ss.str());
+			vtk.store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+
+			output::Generic test(mesh, ss.str());
+			test.store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		}
 	}
 
 	_assembler->finalize();

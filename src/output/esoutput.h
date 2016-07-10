@@ -5,6 +5,7 @@
 #include "esdata/esdata.h"
 #include "vtk/full/vtk.h"
 #include "vtk/surface/vtk.h"
+#include "generic/vtk.h"
 
 
 

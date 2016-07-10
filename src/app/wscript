@@ -33,17 +33,24 @@ def configure(ctx):
 
 
 def build(ctx):
+
+    ctx.objects(
+        source = ("factory/factory.cpp",),
+        target = "factory",
+        use    = "espreso_includes"
+    )
+
     ctx.program(
-        source       = ("factory/factory.cpp", "main.cpp"),
+        source       = "espreso.cpp",
         target       = "espreso",
-        use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in espreso_out vtk_out mesh bem assembler",
+        use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in vtk_out generic_out mesh bem assembler factory",
         install_path = ctx.ROOT
     )
 
     ctx.program(
-        source       = ("factory/factory.cpp", "decomposer.cpp"),
+        source       = "decomposer.cpp",
         target       = "decomposer",
-        use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in espreso_out vtk_out mesh bem assembler",
+        use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in espreso_out vtk_out generic_out mesh bem assembler factory",
         install_path = ctx.ROOT
     )
     return
