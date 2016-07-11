@@ -2595,6 +2595,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	// temp variables
 	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
 	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
+	SparseMatrix G1t_l;
 	SparseMatrix GGt_l;
 	SparseMatrix GGt_Mat_tmp;
 	SparseSolverCPU GGt_tmp;
@@ -2611,18 +2612,29 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	}
 	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
 
-	 TimeEvent Gt_l_trans("---"); Gt_l_trans.start();
+	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.start();
+	if (cluster.USE_HFETI == 0) {
+		cluster.G1.MatTranspose(G1t_l);
+	}
 	 Gt_l_trans.end(); Gt_l_trans.printStatMPI(); preproc_timing.addEvent(Gt_l_trans);
 
 
 	 if (cluster.SYMMETRIC_SYSTEM)  {
 		  TimeEvent GxGtMatMat("Local G1 x G1t MatMat "); GxGtMatMat.start();
-		 GGt_l.MatMatT(cluster.G1, cluster.G1);
+			if (cluster.USE_HFETI == 0) {
+				GGt_l.MatMat(cluster.G1, 'N', G1t_l);
+			} else {
+				GGt_l.MatMatT(cluster.G1, cluster.G1);
+			}
 		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
 	 } else {
 		  TimeEvent GxGtMatMat("Local G2 x G1t MatMat "); GxGtMatMat.start();
-		 GGt_l.MatMatT(cluster.G2, cluster.G1);
-		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
+			if (cluster.USE_HFETI == 0) {
+				GGt_l.MatMat(cluster.G2, 'N', G1t_l);
+			} else {
+				GGt_l.MatMatT(cluster.G2, cluster.G1);
+			}
+		   GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
 	 }
 	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
 

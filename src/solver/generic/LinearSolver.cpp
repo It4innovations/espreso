@@ -32,7 +32,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	else
 		KEEP_FACTORS = true;
 
-    MPI_rank = rank;
+	    MPI_rank = rank;
     MPI_size = size;
 
     // ***************************************************************************************************************************
