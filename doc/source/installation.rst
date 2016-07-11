@@ -140,8 +140,14 @@ The following environment variables has to be set:
 
  - MKL_NUM_THREADS
  - OMP_NUM_THREADS
+
  - SOLVER_NUM_THREADS
  - PAR_NUM_THREADS
+ - CILK_NWORKERS
+
+The first two variables should be set to 1.
+The last three variables should be set according to number of processes.
+
 
 Testing the installation
 ------------------------
