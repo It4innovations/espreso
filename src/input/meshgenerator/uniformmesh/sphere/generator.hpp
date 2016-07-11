@@ -67,7 +67,21 @@ template<class TElement>
 SphereGenerator<TElement>::SphereGenerator(Mesh &mesh, const SphereSettings &settings)
 	: UniformGenerator<TElement>(mesh, settings), _settings(settings)
 {
-	checkSettings(_cluster, _side, _settings);
+	switch (settings.eType) {
+	case ElementType::HEXA8:
+	case ElementType::HEXA20:
+	case ElementType::TETRA4:
+	case ElementType::TETRA10:
+	case ElementType::PRISMA6:
+	case ElementType::PRISMA15:
+	case ElementType::PYRAMID5:
+	case ElementType::PYRAMID13:
+		checkSettings(_cluster, _side, _settings);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Sphere does not support chosen element type";
+	}
+
 }
 
 template<class TElement>

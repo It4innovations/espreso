@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 	}
 	config::mesh::SUBDOMAINS = 1;
 	config::mesh::FIX_POINTS = 0;
-	config::solver::FETI_METHOD = config::solver::FETI_METHODalternative::TOTAL;
+	config::solver::FETI_METHOD = config::solver::FETI_METHODalternative::TOTAL_FETI;
 	config::info::VERBOSE_LEVEL = 2;
 	config::info::MEASURE_LEVEL = 2;
 

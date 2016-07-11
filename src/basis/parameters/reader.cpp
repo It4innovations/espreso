@@ -17,7 +17,7 @@ ParametersReader::ParametersReader(const std::vector<Parameter> &parameters)
 	std::sort(_parameters.begin(), _parameters.end());
 }
 
-Configuration ParametersReader::arguments(int *argc, char*** argv, const std::vector<Parameter> &params)
+Configuration ParametersReader::fromArguments(int *argc, char*** argv, const std::vector<Parameter> &params)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
@@ -75,7 +75,7 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 	while ((option = getopt_long(*argc, *argv, "i:p:c:vtmh",opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'd':
-			reader.setParameter(opts[option_index].name, optarg);
+			reader._setParameter(opts[option_index].name, optarg);
 			break;
 		case 'v':
 			config::info::VERBOSE_LEVEL++;
@@ -87,10 +87,10 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 			config::info::MEASURE_LEVEL++;
 			break;
 		case 'i':
-			reader.setParameter("INPUT", optarg);
+			reader._setParameter("INPUT", optarg);
 			break;
 		case 'p':
-			reader.setParameter("PATH", optarg);
+			reader._setParameter("PATH", optarg);
 			break;
 		}
 	}
@@ -112,13 +112,13 @@ Configuration ParametersReader::arguments(int *argc, char*** argv, const std::ve
 	return conf;
 }
 
-Configuration ParametersReader::configuration(const Configuration &conf, const std::vector<Parameter> &params)
+Configuration ParametersReader::fromConfigurationFile(const Configuration &conf, const std::vector<Parameter> &params)
 {
 	ParametersReader reader(params);
 	return reader.read(conf, 1);
 }
 
-Configuration ParametersReader::pickConfiguration(const Configuration &conf, const std::vector<Parameter> &params)
+Configuration ParametersReader::fromConfigurationFileWOcheck(const Configuration &conf, const std::vector<Parameter> &params)
 {
 	ParametersReader reader(params);
 	return reader.read(conf, 0);
@@ -150,14 +150,14 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 				ESINFO(GLOBAL_ERROR) << "Too few nameless command line arguments. \n";
 			}
 		} else {
-			if (!setParameter(parameter, Parser::getValue(line)) && verboseLevel) {
+			if (!_setParameter(parameter, Parser::getValue(line)) && verboseLevel) {
 				ESINFO(ALWAYS) << "Unknown parameter '" << parameter << "'";
 			}
 		}
 	}
 
 	for (size_t i = 0; i < cmdArgs.size(); i++) {
-		if (!setParameter(cmdArgs[i], conf.nameless[i]) && verboseLevel) {
+		if (!_setParameter(cmdArgs[i], conf.nameless[i]) && verboseLevel) {
 			ESINFO(ALWAYS) << "Unknown command line parameter '" << cmdArgs[i] << "'";
 		}
 	}
@@ -168,7 +168,7 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 	return conf;
 }
 
-bool ParametersReader::setParameter(const std::string &parameter, const std::string &value)
+bool ParametersReader::_setParameter(const std::string &parameter, const std::string &value)
 {
 	auto it = std::lower_bound(_parameters.begin(), _parameters.end(), parameter);
 	if (it != _parameters.end() && StringCompare::caseInsensitiveEq(it->name, parameter)) {

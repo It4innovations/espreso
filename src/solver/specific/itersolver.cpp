@@ -103,10 +103,21 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
 
-	if ( USE_PIPECG == 1 ) {
-		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
-	} else {
+	switch (config::solver::CGSOLVER) {
+	case config::solver::CGSOLVERalternative::STANDARD:
 		Solve_RegCG_singular_dom ( cluster, in_right_hand_side_primal );
+		break;
+	case config::solver::CGSOLVERalternative::PIPELINED:
+		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
+		break;
+	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
+		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
+		break;
+	case config::solver::CGSOLVERalternative::GMRES:
+		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
 	}
 
 	 postproc_timing.totalTime.start();
@@ -128,13 +139,20 @@ void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
-
-	if ( USE_PIPECG == 1 ) {
-		Solve_PipeCG_nonsingular ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
-	} else {
+	switch (config::solver::CGSOLVER) {
+	case config::solver::CGSOLVERalternative::STANDARD:
 		Solve_RegCG_nonsingular  ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
+		break;
+	case config::solver::CGSOLVERalternative::PIPELINED:
+		Solve_PipeCG_nonsingular ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
+		break;
+//	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
+//		break;
+//	case config::solver::CGSOLVERalternative::GMRES:
+//		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
 	}
-
 }
 
 
@@ -520,6 +538,999 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
 
 }
+
+void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
+{
+
+	eslocal dl_size = cluster.my_lamdas_indices.size();
+
+	SEQ_VECTOR <double> x_l (dl_size, 0);
+
+	SEQ_VECTOR <double> Ax_l(dl_size, 0);
+	SEQ_VECTOR <double> g_l(dl_size, 0);
+	SEQ_VECTOR <double> Pg_l(dl_size, 0);
+	SEQ_VECTOR <double> MPg_l(dl_size, 0);
+	SEQ_VECTOR <double> z_l(dl_size, 0);
+	SEQ_VECTOR <double> w_l(dl_size, 0);
+	SEQ_VECTOR <double> Aw_l(dl_size, 0);
+	SEQ_VECTOR <double> b_l(dl_size, 0);
+
+	double gamma_l;
+	double rho_l;
+	double norm_l;
+	double tol;
+  double ztg;
+  double ztg_prew;
+  double ztAw;
+  double wtAw;
+
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+
+  SparseMatrix W_l;
+  W_l.type = 'G';
+  W_l.rows = dl_size;
+  W_l.cols = 0;
+
+
+  SparseMatrix AW_l;
+  AW_l.type = 'G';
+  AW_l.rows = dl_size;
+  AW_l.cols = 0;
+
+	SEQ_VECTOR <double> Gamma_l  (dl_size, 0);
+	SEQ_VECTOR <double> WtAW_l(dl_size, 0);
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	} else {
+		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	}
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (eslocal d = 0; d < cluster.domains.size(); d++){
+		norm_prim_fl += cluster.domains[d].norm_f;
+  }
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	norm_prim_fg = sqrt(norm_prim_fg);
+
+	// *** g = Ax - b *************************************************************
+	cilk_for (eslocal i = 0; i < g_l.size(); i++){
+		g_l[i] = Ax_l[i] - b_l[i];
+  }
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l , 0);
+	} else {
+		Projector_l_compG    ( timeEvalProj, cluster, g_l, Pg_l , 0);
+	}
+	// *** Calculate the stop condition *******************************************
+	tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
+	// *** Start the CG iteration loop ********************************************
+	for (int iter = -1; iter < CG_max_iter; iter++) {
+
+		timing.totalTime.start();
+
+    if (iter > -1) {
+      W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+      W_l.nnz+=w_l.size();
+      W_l.cols++;
+
+      appA_time.start();
+      apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
+      appA_time.end();
+
+      AW_l.dense_values.insert(AW_l.dense_values.end(), Aw_l.begin(), Aw_l.end());
+      AW_l.nnz+=Aw_l.size();
+      AW_l.cols++;
+
+      wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
+      rho_l = -ztg/wtAw;
+
+		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		  	x_l[i] = x_l[i] + rho_l * w_l[i];
+        g_l[i] += Aw_l[i] * rho_l;
+		  }
+      ztg_prew = ztg;
+    }
+    switch (USE_PREC) {
+    case config::solver::PRECONDITIONERalternative::LUMPED:
+    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+    case config::solver::PRECONDITIONERalternative::DIRICHLET:
+    case config::solver::PRECONDITIONERalternative::MAGIC:
+      proj1_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+      }
+      proj1_time.end();
+
+      // Scale
+      prec_time.start();
+      apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, MPg_l);
+      prec_time.end();
+      // Re-Scale
+
+      proj2_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, MPg_l, z_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, MPg_l, z_l, 0 );
+      }
+      proj2_time.end();
+      break;
+    case config::solver::PRECONDITIONERalternative::NONE:
+      proj_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, g_l, z_l, 0 );
+      }
+      proj_time.end();
+      break;
+    default:
+      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    }
+
+    ztg = parallel_ddot_compressed(cluster, z_l, g_l);
+
+    if (iter > -1) {
+      gamma_l = ztg/ztg_prew;
+		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		  	w_l[i] = z_l[i] +  w_l[i]*gamma_l;
+		  }
+    }
+    else {
+	    cilk_for (eslocal i = 0; i < w_l.size(); i++){
+		  	w_l[i] = z_l[i];
+		  }
+    }
+
+	  norm_time.start();
+		norm_l = parallel_norm_compressed(cluster, Pg_l);
+		norm_time.end();
+
+		timing.totalTime.end();
+
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+
+		// *** Stop condition ******************************************************************
+		if (norm_l < tol)
+			break;
+
+	} // end of CG iterations
+
+
+	// *** save solution - in dual and amplitudes *********************************************
+
+
+	cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		g_l[i] = -g_l[i];
+	}
+
+
+  dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = g_l;
+
+
+
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+	} else {
+		Projector_l_compG	  ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+	}
+	// *** end - save solution - in dual and amplitudes ***************************************
+
+
+	// *** Preslocal out the timing for the iteration loop ***************************************
+
+	switch (USE_PREC) {
+	case config::solver::PRECONDITIONERalternative::LUMPED:
+	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+	case config::solver::PRECONDITIONERalternative::DIRICHLET:
+	case config::solver::PRECONDITIONERalternative::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case config::solver::PRECONDITIONERalternative::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+	}
+
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
+
+	// *** END - Preslocal out the timing for the iteration loop ***********************************
+
+}
+
+void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
+{
+
+	eslocal dl_size = cluster.my_lamdas_indices.size();
+
+	SEQ_VECTOR <double> x_l (dl_size, 0);
+
+	SEQ_VECTOR <double> Ax_l(dl_size, 0);
+	SEQ_VECTOR <double> g_l(dl_size, 0);
+	SEQ_VECTOR <double> Pg_l(dl_size, 0);
+	SEQ_VECTOR <double> MPg_l(dl_size, 0);
+	SEQ_VECTOR <double> z_l(dl_size, 0);
+	SEQ_VECTOR <double> _z_l(dl_size, 0);
+	SEQ_VECTOR <double> w_l(dl_size, 0);
+	SEQ_VECTOR <double> Aw_l(dl_size, 0);
+	SEQ_VECTOR <double> b_l(dl_size, 0);
+	SEQ_VECTOR <double> v_tmp_l(dl_size, 0);
+
+	SEQ_VECTOR <double> d_H(CG_max_iter, 0);
+	SEQ_VECTOR <double> e_H(CG_max_iter, 0);
+
+
+
+	double rho_l;
+	double rho_l_prew = 1;
+	double norm_l;
+	double tol;
+  double ztg;
+  double ztAw;
+  double wtAw;
+  int cnt_iter=0;
+
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+
+
+
+
+
+  SparseMatrix W_l;
+  W_l.type = 'G';
+  W_l.rows = dl_size;
+  W_l.cols = 0;
+
+
+  SparseMatrix AW_l;
+  AW_l.type = 'G';
+  AW_l.rows = dl_size;
+  AW_l.cols = 0;
+
+	SEQ_VECTOR <double> Gamma_l  (CG_max_iter, 0);
+	SEQ_VECTOR <double> _Gamma_l  (CG_max_iter, 0);
+	SEQ_VECTOR <double> WtAW_l(CG_max_iter, 0);
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	} else {
+		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	}
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (eslocal d = 0; d < cluster.domains.size(); d++){
+		norm_prim_fl += cluster.domains[d].norm_f;
+  }
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	norm_prim_fg = sqrt(norm_prim_fg);
+
+	// *** g = Ax - b *************************************************************
+	cilk_for (eslocal i = 0; i < g_l.size(); i++){
+		g_l[i] = Ax_l[i] - b_l[i];
+  }
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l , 0);
+	} else {
+		Projector_l_compG    ( timeEvalProj, cluster, g_l, Pg_l , 0);
+	}
+	// *** Calculate the stop condition *******************************************
+	tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
+	// *** Start the CG iteration loop ********************************************
+	for (int iter = 0; iter < CG_max_iter; iter++) {
+
+		timing.totalTime.start();
+
+    cnt_iter = iter - 1;
+
+    if (iter > 0) {
+      W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+      W_l.nnz+=w_l.size();
+      W_l.cols++;
+
+      appA_time.start();
+      apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
+      appA_time.end();
+
+      AW_l.dense_values.insert(AW_l.dense_values.end(), Aw_l.begin(), Aw_l.end());
+      AW_l.nnz+=Aw_l.size();
+      AW_l.cols++;
+
+      wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
+      WtAW_l[iter-1] = wtAw;
+
+      ztg = parallel_ddot_compressed(cluster, z_l, g_l);
+
+
+      rho_l = -ztg/wtAw;
+
+
+      if (iter == 1)
+      {
+        d_H[iter-1] = -1.0/rho_l;
+      }
+      else
+      {
+        d_H[iter-1] = -(Gamma_l[iter-1]/rho_l_prew + 1.0/rho_l);
+        e_H[iter-2] = sqrt(Gamma_l[iter-1])/rho_l_prew;
+      }
+
+
+      rho_l_prew = rho_l;
+
+
+		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		  	x_l[i] = x_l[i] + rho_l * w_l[i];
+        g_l[i] += Aw_l[i] * rho_l;
+		  }
+      //ztg_prew = ztg;
+    }
+    switch (USE_PREC) {
+    case config::solver::PRECONDITIONERalternative::LUMPED:
+    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+    case config::solver::PRECONDITIONERalternative::DIRICHLET:
+    case config::solver::PRECONDITIONERalternative::MAGIC:
+      proj1_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+      }
+      proj1_time.end();
+
+      // Scale
+      prec_time.start();
+      apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, MPg_l);
+      prec_time.end();
+      // Re-Scale
+
+      proj2_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, MPg_l, z_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, MPg_l, z_l, 0 );
+      }
+      proj2_time.end();
+      break;
+    case config::solver::PRECONDITIONERalternative::NONE:
+      proj_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, g_l, z_l, 0 );
+      }
+      Pg_l = z_l;
+      proj_time.end();
+      break;
+    default:
+      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    }
+
+    if (iter > 0) {
+
+      // filtering duplicit Lambda entries
+      cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+        _z_l[i] = z_l[i] * cluster.my_lamdas_ddot_filter[i];
+      }
+
+      AW_l.DenseMatVec(_z_l,_Gamma_l,'T');
+
+		  cilk_for (eslocal i = 0; i < iter; i++) {
+        _Gamma_l[i] /= -WtAW_l[i];
+      }
+
+	    MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      W_l.DenseMatVec(Gamma_l,v_tmp_l);
+
+		  cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		  	w_l[i] = z_l[i] +  v_tmp_l[i];
+		  }
+
+    }
+    else {
+	    cilk_for (eslocal i = 0; i < w_l.size(); i++){
+		  	w_l[i] = z_l[i];
+		  }
+    }
+
+	  norm_time.start();
+		norm_l = parallel_norm_compressed(cluster, Pg_l);
+		norm_time.end();
+
+		timing.totalTime.end();
+
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+
+		// *** Stop condition ******************************************************************
+		if (norm_l < tol)
+			break;
+
+	} // end of CG iterations
+
+
+// EIGENVALUES AND EIGENVECTORS OF LANCZOS MATRIX
+// Evaluation of cond(P*F*P) is limited by 1000 iter.
+// Tridiagonal Lanczos' matrix is assembled at each node.
+  bool cond_numb_FETI_operator=true;
+  if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && config::env::MPIrank==0){
+    char JOBZ = 'N';
+    double *Z = new double[cnt_iter];
+    eslocal info;
+    eslocal ldz = cnt_iter;
+    info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
+    ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
+    delete [] Z;
+  }
+
+
+	// *** save solution - in dual and amplitudes *********************************************
+
+
+	cilk_for (eslocal i = 0; i < x_l.size(); i++) {
+		g_l[i] = -g_l[i];
+	}
+
+
+  dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = g_l;
+
+
+
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+	} else {
+		Projector_l_compG	  ( timeEvalProj, cluster, g_l, amplitudes, 2 );
+	}
+	// *** end - save solution - in dual and amplitudes ***************************************
+
+
+	// *** Preslocal out the timing for the iteration loop ***************************************
+
+	switch (USE_PREC) {
+	case config::solver::PRECONDITIONERalternative::LUMPED:
+	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+	case config::solver::PRECONDITIONERalternative::DIRICHLET:
+	case config::solver::PRECONDITIONERalternative::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case config::solver::PRECONDITIONERalternative::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+	}
+
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
+
+	// *** END - Preslocal out the timing for the iteration loop ***********************************
+
+}
+
+void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
+{
+
+
+	eslocal dl_size = cluster.my_lamdas_indices.size();
+
+	SEQ_VECTOR <double> x_l (dl_size, 0);
+	SEQ_VECTOR <double> Ax_l(dl_size, 0);
+	SEQ_VECTOR <double> g_l(dl_size, 0);
+	SEQ_VECTOR <double> Pg_l(dl_size, 0);
+	SEQ_VECTOR <double> MPg_l(dl_size, 0);
+	SEQ_VECTOR <double> Pw_l(dl_size, 0);
+	SEQ_VECTOR <double> MPw_l(dl_size, 0);
+	SEQ_VECTOR <double> z_l(dl_size, 0);
+	SEQ_VECTOR <double> v_l(dl_size, 0);
+	SEQ_VECTOR <double> w_l(dl_size, 0);
+	SEQ_VECTOR <double> Aw_l(dl_size, 0);
+	SEQ_VECTOR <double> b_l(dl_size, 0);
+	SEQ_VECTOR <double> v_tmp_l(dl_size, 0);
+
+  int n_mat = CG_max_iter + 1;
+	SEQ_VECTOR <double> b_H(n_mat, 0);
+	SEQ_VECTOR <double> y_H(n_mat, 0);
+	SEQ_VECTOR <double> g_H(n_mat, 0);
+
+	double rho_l;
+	double rho_l_prew = 1;
+  double beta;
+	double norm_l;
+	double tol;
+  double ztg;
+  double ztAw;
+  double wtAw;
+  double c_H,s_H;
+  double norm_h;
+  int cnt_iter=0;
+  int k_;
+  double tmp_double0;
+  double tmp_double1;
+
+  //cblas_
+  double _alpha, _beta;
+  int _m, _n, _k, _lda, _ldb, _ldc;
+
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+
+
+
+#ifdef FLAG_VALIDATION
+  SparseMatrix V_lt_V_l;
+  V_lt_V_l.type = 'G';
+  V_lt_V_l.rows = n_mat;
+  V_lt_V_l.cols = n_mat;
+  V_lt_V_l.dense_values.resize(n_mat*n_mat);
+#endif
+
+  SparseMatrix V_l;
+  V_l.type = 'G';
+  V_l.rows = dl_size;
+  V_l.cols = 0;
+
+  SEQ_VECTOR <double> Permut_l(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> Permut_tmp_l(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> P_tmp_P(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> H_l(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> H_l_modif(n_mat*n_mat, 0);
+#ifdef FLAG_VALIDATION
+  SEQ_VECTOR <double> tmp_H_l(n_mat*n_mat, 0);
+#endif
+
+  for (int i = 0 ; i < n_mat; i++){
+   Permut_l[n_mat*i + i] = 1;
+   Permut_tmp_l[n_mat*i + i] = 1;
+  }
+
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	} else {
+		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	}
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (eslocal d = 0; d < cluster.domains.size(); d++){
+		norm_prim_fl += cluster.domains[d].norm_f;
+  }
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	norm_prim_fg = sqrt(norm_prim_fg);
+
+	// *** g = Ax - b *************************************************************
+	cilk_for (eslocal i = 0; i < g_l.size(); i++){
+		g_l[i] = Ax_l[i] - b_l[i];
+  }
+
+  switch (USE_PREC) {
+  case config::solver::PRECONDITIONERalternative::LUMPED:
+  case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+  case config::solver::PRECONDITIONERalternative::DIRICHLET:
+  case config::solver::PRECONDITIONERalternative::MAGIC:
+    proj1_time.start();
+    if (USE_GGtINV == 1) {
+      Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
+    } else {
+      Projector_l_compG		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+    }
+    proj1_time.end();
+
+    // Scale
+    prec_time.start();
+    apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, MPg_l);
+    prec_time.end();
+    // Re-Scale
+
+    proj2_time.start();
+    if (USE_GGtINV == 1) {
+      Projector_l_inv_compG( timeEvalProj, cluster, MPg_l, z_l, 0 );
+    } else {
+      Projector_l_compG		  ( timeEvalProj, cluster, MPg_l, z_l, 0 );
+    }
+    proj2_time.end();
+    break;
+  case config::solver::PRECONDITIONERalternative::NONE:
+    proj_time.start();
+    if (USE_GGtINV == 1) {
+      Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
+    } else {
+      Projector_l_compG		  ( timeEvalProj, cluster, g_l, z_l, 0 );
+    }
+    Pg_l = z_l;
+    proj_time.end();
+    break;
+  default:
+    ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+  }
+
+
+	// *** Calculate the stop condition *******************************************
+	//tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+
+  norm_l = parallel_norm_compressed(cluster, z_l);
+	tol = epsilon * norm_l;
+
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
+
+
+	//norm_l = parallel_norm_compressed(cluster, Pg_l);
+
+  ESINFO(CONVERGENCE)
+  	<< indent << std::setw(iterationWidth) << 1
+  	<< indent << std::fixed << std::setprecision(precision) <<  1.0000000
+  	<< indent << std::scientific << std::setprecision(3) << norm_l
+  	<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+  	<< indent << std::fixed << std::setprecision(5) ;
+
+
+
+  // initial gradient
+  beta = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
+  // RHS for system H_{i+1,i} * y{i} = b_H
+  b_H[0] = beta;
+  // set-up first basis vector   (A * V_{i} = V_{i+1} * H_{i+1,i})
+  cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+     v_l[i] = z_l[i]/beta;
+  }
+
+
+
+  tmp_double0 = parallel_ddot_compressed(cluster, v_l, v_l);
+
+
+  V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
+  V_l.nnz+=v_l.size();
+  V_l.cols++;
+
+
+//
+  auto ij= [&]( eslocal ii, eslocal jj ) -> eslocal
+   { return ii + n_mat*jj; };
+  //
+	// *** Start the CG iteration loop ********************************************
+	for (int iter = 0; iter < CG_max_iter; iter++) {
+
+		timing.totalTime.start();
+
+    appA_time.start();
+    apply_A_l_comp_dom_B(timeEvalAppa, cluster, v_l, w_l);
+    appA_time.end();
+
+    switch (USE_PREC) {
+    case config::solver::PRECONDITIONERalternative::LUMPED:
+    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+    case config::solver::PRECONDITIONERalternative::DIRICHLET:
+    case config::solver::PRECONDITIONERalternative::MAGIC:
+      proj1_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, w_l, Pw_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, w_l, Pw_l, 0 );
+      }
+      proj1_time.end();
+
+      // Scale
+      prec_time.start();
+      apply_prec_comp_dom_B(timeEvalPrec, cluster, Pw_l, MPw_l);
+      prec_time.end();
+      // Re-Scale
+
+      proj2_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, MPw_l, z_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, MPw_l, z_l, 0 );
+      }
+      proj2_time.end();
+      break;
+    case config::solver::PRECONDITIONERalternative::NONE:
+      proj_time.start();
+      if (USE_GGtINV == 1) {
+        Projector_l_inv_compG( timeEvalProj, cluster, w_l, z_l, 0 );
+      } else {
+        Projector_l_compG		  ( timeEvalProj, cluster, w_l, z_l, 0 );
+      }
+      proj_time.end();
+      break;
+    default:
+      ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+    }
+//
+//  Modified Gram-Schmidt
+    for (int k = 0;k<iter+1;k++){
+      H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(V_l.dense_values[v_l.size()*k]), &(z_l[0]));
+
+//
+      cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+         z_l[i] -= V_l.dense_values[v_l.size()*k + i] * H_l[ij(k,iter)];
+
+      }
+    }
+//
+    H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
+//
+    cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+      v_l[i] = z_l[i]/H_l[ij(iter+1,iter)];
+    }
+
+    V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
+    V_l.nnz+=v_l.size();
+    V_l.cols++;
+
+    // cblas set-up
+     _alpha   = 1;
+    _beta     = 0;
+    _m        = iter+1;
+    _n        = iter+1;
+    _k        = iter+1;
+    _lda      = n_mat;
+    _ldb      = n_mat;
+    _ldc      = n_mat;
+
+    // next line isn't obligatory
+    //
+    w_l.insert(w_l.begin(),&(H_l[n_mat*iter]),&(H_l[n_mat*iter+iter+2]));
+    //
+		cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(Permut_l[0]), _lda, &(w_l[0]),
+                                                  1,_beta, &(H_l_modif[n_mat*iter]), 1);
+    //
+    H_l_modif[n_mat*iter+iter+1] = H_l[n_mat*iter+iter+1];
+
+
+
+    norm_h = sqrt(H_l_modif[ij(iter+1,iter)]*H_l_modif[ij(iter+1,iter)] +  H_l_modif[ij(iter,iter)]*H_l_modif[ij(iter,iter)]);
+    c_H = H_l_modif[ij(iter  ,iter)] / norm_h;
+    s_H = H_l_modif[ij(iter+1,iter)] / norm_h;
+
+
+    if (iter>0){
+      Permut_tmp_l[ij(iter-1,iter-1)] =  1;
+      Permut_tmp_l[ij(iter  ,iter-1)] =  0;
+      Permut_tmp_l[ij(iter-1,iter  )] =  0;
+      Permut_tmp_l[ij(iter  ,iter  )] =  1;
+    }
+
+    Permut_tmp_l[ij(iter  ,iter  )] =  c_H;
+    Permut_tmp_l[ij(iter+1,iter  )] = -s_H;
+    Permut_tmp_l[ij(iter  ,iter+1)] =  s_H;
+    Permut_tmp_l[ij(iter+1,iter+1)] =  c_H;
+
+    H_l_modif[ij(iter  ,iter)] =  norm_h;
+    H_l_modif[ij(iter+1,iter)] =  0;
+
+    // cblas reset
+    _m        = iter+2;
+    _n        = iter+2;
+    _k        = iter+2;
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha,
+                      &(Permut_tmp_l[0]), _lda, &(Permut_l[0]), _ldb, _beta, &(P_tmp_P[0]), _ldc);
+
+    // TODO: Do it better!
+    for (int i = 0; i < n_mat*(iter+1)+iter+2;i++){
+      Permut_l[i] = P_tmp_P[i];
+    }
+
+		cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(Permut_l[0]), _lda, &(b_H[0]),
+                                                  1,_beta, &(g_H[0]), 1);
+
+
+    norm_l = fabs(g_H[iter+1]);
+
+		timing.totalTime.end();
+
+		ESINFO(CONVERGENCE)
+			<< indent << std::setw(iterationWidth) << iter + 2
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
+			<< indent << std::scientific << std::setprecision(3) << norm_l
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+
+
+
+#ifdef FLAG_VALIDATION
+    _n = iter+1;
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha,
+                      &(Permut_l[0]), _lda, &(H_l[0]), _ldb, _beta, &(tmp_H_l[0]), _ldc);
+#endif
+
+    cnt_iter = iter;
+		if (norm_l < tol)
+			break;
+//
+	}
+
+
+  for (int i = cnt_iter-1;i>=0;i-- ){
+    tmp_double0 = -g_H[i];
+    for (int j = cnt_iter-1 ; j > i ; j-- ){
+      tmp_double0-=H_l_modif[ij(i,j)] * y_H[j];
+    }
+    y_H[i] = tmp_double0 / H_l_modif[ij(i,i)];
+  }
+
+  _m = dl_size;
+  _n = cnt_iter;
+  _beta = 1;
+  _lda = dl_size;
+	cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(V_l.dense_values[0]), _lda, &(y_H[0]),
+                                                  1,_beta, &(x_l[0]), 1);
+
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	cilk_for (eslocal i = 0; i < g_l.size(); i++){
+		w_l[i] = -(Ax_l[i] - b_l[i]);
+  }
+
+  dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = w_l;
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	} else {
+		Projector_l_compG	  ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	}
+
+#ifdef FLAG_VALIDATION
+  for (int i = 0; i<cnt_iter+1;i++){
+    for (int j = 0; j<cnt_iter+1;j++){
+      w_l.insert(w_l.begin(),&(V_l.dense_values[dl_size*i]), &(V_l.dense_values[dl_size*(i+1)]));
+      z_l.insert(  z_l.begin(),&(V_l.dense_values[dl_size*j]), &(V_l.dense_values[dl_size*(j+1)]));
+      V_lt_V_l.dense_values[i*n_mat+j] = parallel_ddot_compressed(cluster, w_l, z_l);
+    }
+  }
+#endif
+
+  dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = w_l;
+
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	} else {
+		Projector_l_compG	  ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	}
+	// *** end - save solution - in dual and amplitudes ***************************************
+
+
+	// *** Preslocal out the timing for the iteration loop ***************************************
+
+	switch (USE_PREC) {
+	case config::solver::PRECONDITIONERalternative::LUMPED:
+	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+	case config::solver::PRECONDITIONERalternative::DIRICHLET:
+	case config::solver::PRECONDITIONERalternative::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case config::solver::PRECONDITIONERalternative::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+	}
+
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
+
+	// *** END - Preslocal out the timing for the iteration loop ***********************************
+
+} //  Solve_GMRES_singular_dom
+
+
 
 void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
@@ -1593,6 +2604,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	// temp variables
 	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
 	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
+	SparseMatrix G1t_l;
 	SparseMatrix GGt_l;
 	SparseMatrix GGt_Mat_tmp;
 	SparseSolverCPU GGt_tmp;
@@ -1609,18 +2621,29 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	}
 	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
 
-	 TimeEvent Gt_l_trans("---"); Gt_l_trans.start();
+	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.start();
+	if (cluster.USE_HFETI == 0) {
+		cluster.G1.MatTranspose(G1t_l);
+	}
 	 Gt_l_trans.end(); Gt_l_trans.printStatMPI(); preproc_timing.addEvent(Gt_l_trans);
 
 
 	 if (cluster.SYMMETRIC_SYSTEM)  {
 		  TimeEvent GxGtMatMat("Local G1 x G1t MatMat "); GxGtMatMat.start();
-		 GGt_l.MatMatT(cluster.G1, cluster.G1);
+			if (cluster.USE_HFETI == 0) {
+				GGt_l.MatMat(cluster.G1, 'N', G1t_l);
+			} else {
+				GGt_l.MatMatT(cluster.G1, cluster.G1);
+			}
 		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
 	 } else {
 		  TimeEvent GxGtMatMat("Local G2 x G1t MatMat "); GxGtMatMat.start();
-		 GGt_l.MatMatT(cluster.G2, cluster.G1);
-		  GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
+			if (cluster.USE_HFETI == 0) {
+				GGt_l.MatMat(cluster.G2, 'N', G1t_l);
+			} else {
+				GGt_l.MatMatT(cluster.G2, cluster.G1);
+			}
+		   GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
 	 }
 	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
 
@@ -2453,6 +3476,21 @@ double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 
 	return norm_l;
 }
+
+
+double parallel_ddot_compressed_double( Cluster & cluster, double * input_vector1, double * input_vector2 )
+{
+	double a1 = 0; double a1g = 0;
+
+	for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++)  {
+		a1 = a1 + (input_vector1[i] * input_vector2[i] * cluster.my_lamdas_ddot_filter[i]);
+	}
+
+	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	return a1g;
+}
+
 
 double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 )
 {

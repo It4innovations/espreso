@@ -41,7 +41,7 @@ bool   mesh::AVERAGE_FACES  = false;
 
 double                                   solver::EPSILON               = 1e-5;
 size_t                                   solver::ITERATIONS            = 1000;
-solver::FETI_METHODalternative           solver::FETI_METHOD           = solver::FETI_METHODalternative::TOTAL;
+solver::FETI_METHODalternative           solver::FETI_METHOD           = solver::FETI_METHODalternative::TOTAL_FETI;
 solver::PRECONDITIONERalternative        solver::PRECONDITIONER        = solver::PRECONDITIONERalternative::LUMPED;
 solver::REGULARIZATIONalternative        solver::REGULARIZATION        = solver::REGULARIZATIONalternative::FIX_POINTS;
 
@@ -57,7 +57,7 @@ bool                                     solver::COMBINE_SC_AND_SPDS   = true;
 bool                                     solver::KEEP_FACTORS          = true;
 
 
-solver::CG_SOLVERalternative             solver::CG_SOLVER             = solver::CG_SOLVERalternative::STANDARD;
+solver::CGSOLVERalternative             solver::CGSOLVER             = solver::CGSOLVERalternative::STANDARD;
 
 solver::KSOLVERalternative               solver::KSOLVER               = solver::KSOLVERalternative::DIRECT_DP;
 double                                   solver::KSOLVER_SP_NORM       = 1e-12;
@@ -135,8 +135,8 @@ std::vector<espreso::Parameter> parameters = {
 	{ "EPSILON", solver::EPSILON, "Solver requested precision.", WRITE_TO_HELP },
 	{ "ITERATIONS", solver::ITERATIONS, "Solver maximum iterations.", WRITE_TO_HELP },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
-			{ "TOTAL_FETI", solver::FETI_METHODalternative::TOTAL, "Total FETI." },
-			{ "HYBRID_FETI", solver::FETI_METHODalternative::HYBRID, "Hybrid Total FETI." } }, WRITE_TO_HELP },
+			{ "TOTAL_FETI", solver::FETI_METHODalternative::TOTAL_FETI, "Total FETI." },
+			{ "HYBRID_FETI", solver::FETI_METHODalternative::HYBRID_FETI, "Hybrid Total FETI." } }, WRITE_TO_HELP },
 
 	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
 			{ "NONE", solver::PRECONDITIONERalternative::NONE, "Use no preconditioner" },
@@ -145,9 +145,11 @@ std::vector<espreso::Parameter> parameters = {
 			{ "DIRICHLET", solver::PRECONDITIONERalternative::DIRICHLET, "Dirichlet preconditioner" },
 			{ "MAGIC", solver::PRECONDITIONERalternative::MAGIC}}, WRITE_TO_HELP },
 
-	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
-			{ "STANDARD", solver::CG_SOLVERalternative::STANDARD, "Standard" },
-			{ "PIPELINED", solver::CG_SOLVERalternative::PIPELINED, "Pipelined" } }, WRITE_TO_HELP },
+	{ "CGSOLVER", solver::CGSOLVER, "Conjugate gradients solver", {
+			{ "STANDARD", solver::CGSOLVERalternative::STANDARD, "Standard" },
+			{ "PIPELINED", solver::CGSOLVERalternative::PIPELINED, "Pipelined" },
+			{ "FULL_ORTOGONAL", solver::CGSOLVERalternative::FULL_ORTOGONAL, "Full ortogonalization" },
+			{ "GMRES", solver::CGSOLVERalternative::GMRES, "GMRES - allows non-symmetric systems" }}, WRITE_TO_HELP },
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
@@ -207,8 +209,8 @@ std::vector<espreso::Parameter> parameters = {
 	// INFO DESCRIPTION
 	{ "OUTPUT", info::OUTPUT, "A location for saving output informations.", WRITE_TO_HELP },
 	{ "VERBOSE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", info::VERBOSE_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "TESTING_LEVEL", info::TESTING_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
+	{ "MEASURE_LEVEL", info::MEASURE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
 	{ "PRINT_MATRICES", info::PRINT_MATRICES, "ESPRESO print solver input matrices." }
 };
 

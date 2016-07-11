@@ -192,9 +192,9 @@ namespace solver {
 
 	enum class FETI_METHODalternative {
 		/// Total FETI
-		TOTAL = 0,
+		TOTAL_FETI = 0,
 		/// Hybrid Total FETI
-		HYBRID = 1
+		HYBRID_FETI = 1
 	};
 	/// A variant of FETI method used by the solver
 	extern FETI_METHODalternative FETI_METHOD;
@@ -283,13 +283,15 @@ namespace solver {
 	extern bool KEEP_FACTORS;
 
 
-	enum class CG_SOLVERalternative {
+	enum class CGSOLVERalternative {
 		STANDARD = 0,
-		PIPELINED = 1
+		PIPELINED = 1,
+		FULL_ORTOGONAL = 2,
+		GMRES = 3
 	};
 
 	/// A type of conjugate gradient solver
-	extern CG_SOLVERalternative CG_SOLVER;
+	extern CGSOLVERalternative CGSOLVER;
 
 
 	enum class KSOLVERalternative {

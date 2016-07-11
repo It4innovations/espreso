@@ -22,7 +22,7 @@ LinearSolver::~LinearSolver() {
 
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
-	cluster.SYMMETRIC_SYSTEM = false;
+	cluster.SYMMETRIC_SYSTEM = !(config::solver::CGSOLVER == config::solver::CGSOLVERalternative::GMRES);
 
 	SINGULAR 	= IS_SINGULAR;
 	R_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
@@ -32,7 +32,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	else
 		KEEP_FACTORS = true;
 
-    MPI_rank = rank;
+	    MPI_rank = rank;
     MPI_size = size;
 
     // ***************************************************************************************************************************
@@ -43,10 +43,10 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 		cluster.USE_DYNAMIC		= 1;
 
 	switch (config::solver::FETI_METHOD) {
-	case config::solver::FETI_METHODalternative::TOTAL:
+	case config::solver::FETI_METHODalternative::TOTAL_FETI:
 		cluster.USE_HFETI = false;
 		break;
-	case config::solver::FETI_METHODalternative::HYBRID:
+	case config::solver::FETI_METHODalternative::HYBRID_FETI:
 		cluster.USE_HFETI = true;
 		break;
 	default:
@@ -63,7 +63,6 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	solver.CG_max_iter	 = config::solver::ITERATIONS;
 	solver.USE_GGtINV	 = 1;
 	solver.epsilon		 = config::solver::EPSILON;
-	solver.USE_PIPECG	 = config::solver::CG_SOLVER == config::solver::CG_SOLVERalternative::PIPELINED;
 	solver.USE_PREC		 = config::solver::PRECONDITIONER;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;

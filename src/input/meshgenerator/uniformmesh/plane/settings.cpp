@@ -3,9 +3,9 @@
 
 using namespace espreso::input;
 
-void CubeSettings::defaultCubeSettings()
+void PlaneSettings::defaultPlaneSettings()
 {
-	for (size_t i = 0; i < 3; i++) {
+	for (size_t i = 0; i < 2; i++) {
 		clusters[i] = 1;
 		problemLength[i] = 30;
 	}
@@ -21,47 +21,56 @@ void CubeSettings::defaultCubeSettings()
 			{ "DIRICHLET", "Dirichlet" },
 			{ "FORCES", "Force" }
 	};
-	std::vector<std::pair<std::string, std::string> > cube_faces = {
-			{ "FRONT", "front" },
-			{ "REAR", "rear" },
+	std::vector<std::pair<std::string, std::string> > plane_faces = {
+			{ "FRONT", "not supported" },
+			{ "REAR", "not supported" },
 			{ "LEFT", "left" },
 			{ "RIGHT", "right" },
 			{ "TOP", "top" },
 			{ "BOTTOM", "bottom" }
 	};
 
-	for (size_t i = 0; i < axis.size(); i++) {
+	for (size_t i = 0; i < 2; i++) {
 		parameters.push_back({
 			"CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis."
 		});
 		parameters.push_back({
 			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis."
 		});
+	}
+
+	for (size_t i = 0; i < axis.size(); i++) {
 		for (size_t j = 0; j < properties.size(); j++) {
-			for (size_t k = 0; k < cube_faces.size(); k++) {
+			for (size_t k = 0; k < plane_faces.size(); k++) {
 				parameters.push_back({
-					properties[j].first + "_" + cube_faces[k].first + "_" + axis[i].first, boundaryCondition[k * properties.size() * axis.size() + j * properties.size() + i],
-					properties[j].second + " on the " + cube_faces[k].second + " face in " + axis[i].second + "-axis."
+					properties[j].first + "_" + plane_faces[k].first + "_" + axis[i].first, boundaryCondition[k * properties.size() * axis.size() + j * properties.size() + i],
+					properties[j].second + " on the " + plane_faces[k].second + " face in " + axis[i].second + "-axis."
 				});
 			}
 		}
 	}
 }
 
-CubeSettings::CubeSettings(const Configuration &configuration, size_t index, size_t size)
-: UniformSettings(index, size)
+PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size)
+: CubeSettings(index, size)
 {
-	defaultCubeSettings();
-	ESINFO(OVERVIEW) << "Load cube setting from file " << configuration.path;
+	parameters.clear();
+	defaultPlaneSettings();
+	ESINFO(OVERVIEW) << "Load plane setting from file " << configuration.path;
 	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
 	ParametersReader::fromConfigurationFile(configuration, parameters);
+	subdomainsInCluster[2] = 1;
+	elementsInSubdomain[2] = 1;
 }
 
-CubeSettings::CubeSettings(size_t index, size_t size)
-: UniformSettings(index, size)
+PlaneSettings::PlaneSettings(size_t index, size_t size)
+: CubeSettings(index, size)
 {
-	defaultCubeSettings();
+	parameters.clear();
+	defaultPlaneSettings();
 	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
+	subdomainsInCluster[2] = 1;
+	elementsInSubdomain[2] = 1;
 }
 
 

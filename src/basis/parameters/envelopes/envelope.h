@@ -17,6 +17,8 @@ struct Envelope {
 	virtual bool set(const std::string &value) =0;
 	virtual std::string get() const =0;
 
+	virtual void* value() const =0;
+
 	virtual Envelope* copy() =0;
 	virtual size_t options() const
 	{

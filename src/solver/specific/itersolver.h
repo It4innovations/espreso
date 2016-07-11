@@ -67,7 +67,6 @@ public:
 	eslocal  USE_HFETI;
 
 	config::solver::PRECONDITIONERalternative  USE_PREC;
-	eslocal  USE_PIPECG;
 
 	eslocal  CG_max_iter;
 
@@ -168,6 +167,9 @@ public:
 
 	// *** CG solvers
 	void Solve_RegCG_singular_dom  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_full_ortho_CG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_GMRES_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_new_CG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_PipeCG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 
 	// *** Dynamic solvers
@@ -208,6 +210,7 @@ void decompress_lambda_vector(Cluster & cluster, SEQ_VECTOR <double> & compresse
 
 double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector );
 
+double parallel_ddot_compressed_double( Cluster & cluster, double *input_vector1, double *input_vector2 );
 double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 );
 
 void parallel_ddot_compressed_non_blocking( Cluster & cluster,

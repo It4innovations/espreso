@@ -89,7 +89,7 @@ void EqualityConstraints<API>::assembleConstraints(std::vector<size_t> columns)
 
 	std::vector<eslocal> corners;
 
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID && !config::solver::REDUNDANT_LAGRANGE) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI && !config::solver::REDUNDANT_LAGRANGE) {
 		// in this case B1 has to ignore corner nodes
 		for (size_t i = 0; i < this->_input.mesh->subdomainBoundaries().size(); i++) {
 			if (this->_input.mesh->subdomainBoundaries().isCorner(i)) {
@@ -99,7 +99,7 @@ void EqualityConstraints<API>::assembleConstraints(std::vector<size_t> columns)
 	}
 
 	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		gluing.assembleB0(_B0);
 	}
 
@@ -171,7 +171,7 @@ void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 
 	std::vector<eslocal> corners;
 
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID && !config::solver::REDUNDANT_LAGRANGE) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI && !config::solver::REDUNDANT_LAGRANGE) {
 		// in this case B1 has to ignore corner nodes
 		for (size_t i = 0; i < this->_input.mesh.subdomainBoundaries().size(); i++) {
 			if (this->_input.mesh.subdomainBoundaries().isCorner(i)) {
@@ -181,7 +181,7 @@ void EqualityConstraints<FEM>::assembleConstraints(std::vector<size_t> columns)
 	}
 
 	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
 			gluing.assembleB0(_B0);
@@ -252,7 +252,7 @@ void EqualityConstraints<BEM>::assembleConstraints(std::vector<size_t> columns)
 
 	std::vector<eslocal> corners;
 
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID && !config::solver::REDUNDANT_LAGRANGE) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI && !config::solver::REDUNDANT_LAGRANGE) {
 		// in this case B1 has to ignore corner nodes
 		for (size_t i = 0; i < this->_input.mesh.subdomainBoundaries().size(); i++) {
 			if (this->_input.mesh.subdomainBoundaries().isCorner(i)) {
@@ -262,7 +262,7 @@ void EqualityConstraints<BEM>::assembleConstraints(std::vector<size_t> columns)
 	}
 
 	lambdaCounter += gluing.assembleB1(_B1, _B1clustersMap, _B1duplicity, corners);
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID) {
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		gluing.assembleB0(_B0);
 	}
 

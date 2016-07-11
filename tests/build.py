@@ -32,13 +32,13 @@ if __name__ == '__main__':
 
     def create_instance(settings):
         name = "_".join(settings.values())
-        TestCaseCreator.create_test(ESPRESOBuildTests, ESPRESOBuildTests.build, name, settings.get())
+        TestCaseCreator.create_test(ESPRESOBuildTests, ESPRESOBuildTests.build, name, settings)
 
-    settings = Iterator({
+    settings = {
       "SOLVER": [ "MKL", "CUDA", "PARDISO" ],
       "LIBTYPE": [ "SHARED", "STATIC" ],
       "INT_WIDTH": [ "32", "64" ]
-    })
+    }
 
 
     TestCaseCreator.iterate(create_instance, settings)

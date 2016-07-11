@@ -23,16 +23,16 @@ class ESPRESOExhaustiveTests(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    espreso_config = Iterator({
+    espreso_config = {
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
       "PRECONDITIONER": [ "LUMPED", "DIRICHLET" ]
-    })
+    }
 
-    build_config = Iterator({
+    build_config = {
       "SOLVER": [ "MKL", "PARDISO", "CUDA" ],
       "LIBTYPE": [ "SHARED", "STATIC" ],
       "INT_WIDTH": [ "32", "64" ]
-    })
+    }
 
     testClasses = unittest.TestSuite()
     loader = unittest.TestLoader()
@@ -42,11 +42,11 @@ if __name__ == '__main__':
 
     def create_test(config):
         name = "_".join(config.values())
-        TestCaseCreator.create_test(ESPRESOExhaustiveTests, ESPRESOExhaustiveTests.simple, name, config.get())
+        TestCaseCreator.create_test(ESPRESOExhaustiveTests, ESPRESOExhaustiveTests.simple, name, config)
 
     def create_class(config):
         name = "_".join(config.values())
-        testClass = type(name, (ESPRESOExhaustiveTests, ), {'config': config.get()})
+        testClass = type(name, (ESPRESOExhaustiveTests, ), {'config': config})
         testClasses.addTest(loader.loadTestsFromTestCase(testClass))
 
 

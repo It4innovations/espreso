@@ -40,7 +40,7 @@ UniformSettings::UniformSettings(const Configuration &configuration, size_t inde
 {
 	defaultUniformSettings();
 	parameters.insert(parameters.end(), Settings::parameters.begin(), Settings::parameters.end());
-	ParametersReader::configuration(configuration, parameters);
+	ParametersReader::fromConfigurationFile(configuration, parameters);
 }
 
 UniformSettings::UniformSettings(size_t index, size_t size)

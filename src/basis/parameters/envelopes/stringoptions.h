@@ -34,6 +34,11 @@ struct StringOptionEnvelope: public Envelope {
 		return _options[_data].first;
 	}
 
+	void* value() const
+	{
+		return &_data;
+	}
+
 	Envelope* copy()
 	{
 		return new StringOptionEnvelope<TPointer>(*this);

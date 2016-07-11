@@ -18,18 +18,18 @@ if __name__ == '__main__':
             procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
             args = [example["ETYPE"]] + example["CLUSTERS"]
             name = "_".join(str(x) for x in args + config.values())
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.stability, name, procs, config.get(), args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.stability, name, procs, config, args)
 
-    config = Iterator({
-      "FETI_METHOD": [ "0", "1" ],
-      "PRECONDITIONER": [ "0", "1", "2", "3" ],
-      "REGULARIZATION": [ "0", "1" ],
-    })
+    config = {
+      "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
+      "PRECONDITIONER": [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ],
+      "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
+    }
 
-    example = Iterator({
-      "ETYPE":  [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5" ],
+    example = {
+      "ETYPE":  [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ],
       "CLUSTERS": [ [1, 1, 1], [1, 1, 4], [2, 2, 2] ]
-    })
+    }
 
     TestCaseCreator.iterate(create_instance, config, example)
     unittest.main()
