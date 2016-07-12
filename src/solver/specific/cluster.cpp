@@ -311,8 +311,8 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 		  		domains[d].Prec = domains[d].K;
 
    			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
-   	 			for (eslocal d_i = 0; d_i < DOFS_PER_NODE; d_i++)
-   					domains[d].fix_dofs.push_back( DOFS_PER_NODE * fix_nodes[d][i] + d_i);
+   	 			for (eslocal d_i = 0; d_i < 1; d_i++)
+   					domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
 
    			if (!USE_DYNAMIC) {
    				domains[d].K_regularizationFromR ( domains[d].K );

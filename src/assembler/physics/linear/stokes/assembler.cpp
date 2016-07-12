@@ -46,18 +46,16 @@ static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, 
 
 	double omega = (81 / 40.0) * nu *(y12 * y12 + x21 * x21 + y20 * y20 + x02 * x02 + y12 * y20 + x21 * x02) / tarea + (81 / 280.0) * alpha * tarea;
 
-	DenseMatrix Kh(3, 3), ytt(3, 3), xtt(3, 3), ztt(3, 3), ytztt, xtztt;
+	DenseMatrix ytt(3, 3), xtt(3, 3), ztt(3, 3), ytztt, xtztt;
 	xtt.multiply(xt, xt, 1, 0, false, true);
 	ytt.multiply(yt, yt, 1, 0, false, true);
 	ztt.multiply(zt, zt, 1, 0, false, true);
 	ytztt.multiply(yt, zt, 1, 0, false, true);
 	xtztt.multiply(xt, zt, 1, 0, false, true);
 
-	Kh.multiply(xtt, ytt, 0.25 / tarea, 0);
-
 	for (size_t i = 0; i < 3; i++) {
 		for (size_t j = 0; j < 3; j ++) {
-			Ah(i, j)  = nu * Kh(i, j) + ztt(i, j) / omega;
+			Ah(i, j)  = (nu * 0.25 / tarea) * (xtt(i, j) + ytt(i, j)) + ztt(i, j) / omega;
 			B1h(i, j) = - (1 / 6.0) * yt(j, 0) - (9.0 / (40 * omega)) * ytztt(i, j);
 			B2h(i, j) = - (1 / 6.0) * xt(j, 0) - (9.0 / (40 * omega)) * xtztt(i, j);
 			Eh(i, j)  = 81.0 / (1600 * omega) * (ytt(i, j) + xtt(i, j));
@@ -89,18 +87,23 @@ void Stokes::composeSubdomain(size_t subdomain)
 				eslocal column = 3 * e->node(j);
 				_K(row + 0, column + 0) =   Ah(i, j);
 				_K(row + 1, column + 1) =   Ah(i, j);
+
 				_K(row + 2, column + 2) = - Eh(i, j);
-				_K(row + 0, column + 2) =   B1h(i, j);
+
+				_K(row + 0, column + 2) =   B1h(j, i);
 				_K(row + 2, column + 0) =   B1h(i, j);
-				_K(row + 1, column + 2) =   B2h(i, j);
+
+				_K(row + 1, column + 2) =   B2h(j, i);
 				_K(row + 2, column + 1) =   B2h(i, j);
 			}
 			f[subdomain][row] += fe[i];
 		}
 	}
 
+
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
+
 	K[subdomain] = csrK;
 }
 

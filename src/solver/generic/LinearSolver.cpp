@@ -738,12 +738,12 @@ void LinearSolver::set_R (
 	coordinates.resize( number_of_subdomains_per_cluster );
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		coordinates[d].resize(mesh.coordinates().localSize(d), std::vector <double> (3, 0.0));
-		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
-			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
-			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
-			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
-		}
+		coordinates[d].resize(mesh.coordinates().localSize(d), std::vector <double> (2, 0.0));
+//		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
+//			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
+//			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
+//			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
+//		}
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 

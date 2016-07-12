@@ -96,6 +96,8 @@ void ClusterCPU::SetupKsolvers ( ) {
                     exit(EXIT_FAILURE);
         }
 
+    	domains[d].Kplus.mtype = -2;
+
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
             ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
