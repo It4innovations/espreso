@@ -208,8 +208,8 @@ public:
 //	void get_kernel_from_K();
 	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
         double * norm_KR, eslocal * defect, eslocal d_sub);
-  void get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusRl,
-        SparseMatrix &KplusRr,
+  void get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
+        SparseMatrix &KplusR2,
         double *norm_KR,eslocal *defect,eslocal d_sub);
 
 private:

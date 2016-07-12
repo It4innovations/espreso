@@ -152,7 +152,7 @@ void LinearSolver::init(
 		 } else {
 			 cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 				 cluster.domains[d].K = K_mat[d];
-				 if (cluster.domains[d].K.type == 'G')
+				 if (cluster.SYMMETRIC_SYSTEM && cluster.domains[d].K.type == 'G')
 					 cluster.domains[d].K.RemoveLower();
 				 if (solver.USE_PREC == config::solver::PRECONDITIONERalternative::MAGIC)
 					 cluster.domains[d].Prec = cluster.domains[d].K;
@@ -623,10 +623,22 @@ void LinearSolver::set_R_from_K ()
 
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
+
+
+		if (cluster.SYMMETRIC_SYSTEM) {
+		  cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
                                             cluster.domains[d]._RegMat,
                                             cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]),
                                             &(defect_K_d[d]),d);
+    }
+    else
+    {
+		  cluster.domains[d].K.get_kernels_from_nonsym_K(cluster.domains[d].K,
+                                            cluster.domains[d]._RegMat,
+                                            cluster.domains[d].Kplus_R,
+                                            cluster.domains[d].Kplus_R2,&(norm_KR_d_pow_2[d]),
+                                            &(defect_K_d[d]),d);
+    }
 
 
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
