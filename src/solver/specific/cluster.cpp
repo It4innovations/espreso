@@ -305,8 +305,9 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 
 			domains[d].K.swap(K_in[d]);
 
-      		if ( domains[d].K.type == 'G' )
+      		if ( domains[d].K.type == 'G' && SYMMETRIC_SYSTEM ) {
 		  		domains[d].K.RemoveLower();
+      		}
 
 		  	if ( config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::MAGIC ) {
 		  		domains[d].Prec = domains[d].K;

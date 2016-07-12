@@ -105,6 +105,16 @@ void ClusterCPU::SetupKsolvers ( ) {
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
 
+        //TODO: Hot Fix - needs to be done better
+        if ( !SYMMETRIC_SYSTEM ) {
+        	// 11 = Real and unsymmetric matrix
+        	domains[d].Kplus.mtype = 11;
+        } else {
+        	// 2 = Real and symmetric positive definite
+        	domains[d].Kplus.mtype = 2;
+        }
+        //TODO: else stokes = -2 = Real and symmetric indefinite
+
         if ( d == 0 && config::env::MPIrank == 0) {
         	domains[d].Kplus.msglvl = 0;
         }
