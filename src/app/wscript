@@ -62,12 +62,12 @@ def build(ctx):
         install_path = ctx.ROOT
     )
 
-#    ctx.lib = (ctx.stlib, ctx.shlib)[ctx.env.LIBTYPE == "SHARED"]
-#    ctx.lib(
-#        source       = "apiwrapper/wrapper.cpp",
-#        target       = "feti4i",
-#        use          = "espreso_includes basis config api_in solver vtk_out mesh bem assembler",
-#        install_path = ctx.ROOT + "/libespreso"
-#    )
+    ctx.lib = (ctx.stlib, ctx.shlib)[ctx.env.LIBTYPE == "SHARED"]
+    ctx.lib(
+        source       = "apiwrapper/wrapper.cpp",
+        target       = "feti4i",
+        use          = "espreso_includes basis config api_in solver vtk_out mesh bem assembler",
+        install_path = ctx.ROOT + "/libespreso"
+    )
 
 
