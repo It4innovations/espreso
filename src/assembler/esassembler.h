@@ -8,6 +8,7 @@
 #include "instance/dynamics/instance.h"
 #include "physics/linear/advectiondiffusion3d/assembler.h"
 #include "physics/linear/advectiondiffusion2d/assembler.h"
+#include "physics/linear/stokes/assembler.h"
 
 #include "physics/linear/elasticity/assembler.h"
 #include "physics/linear/temperature/assembler.h"

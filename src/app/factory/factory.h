@@ -14,7 +14,18 @@ class Factory {
 public:
 	Factory(const Options &options);
 
-	Mesh* mesh()
+enum class PhysicsAssembler {
+	LINEAR_ELASTICITY,
+	TEMPERATURE,
+	TRANSIENT_ELASTICITY,
+	ADVECTION_DIFFUSION,
+	STOKES
+};
+
+struct Factory {
+
+	Factory(const Configuration &configuration);
+	~Factory()
 	{
 		return _mesh;
 	}

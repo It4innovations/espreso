@@ -68,6 +68,40 @@ static void generate(const Options &options, Mesh *mesh)
 	}
 }
 
+void Factory::readParameters(const Configuration &configuration)
+{
+	std::vector<Parameter> parameters = {
+		{ "SHAPE", shape      , "Generated shape.", {
+				{ "CUBE"  , GeneratorShape::CUBE  , "Cubic." },
+				{ "SPHERE", GeneratorShape::SPHERE, "Spherical." },
+				{ "PLANE" , GeneratorShape::PLANE , "2D plane." }
+		} },
+		{ "ELEMENT_TYPE", eType, "The type of generated element.", {
+				{ "HEXA8"    , ElementType::HEXA8    , "Hexahedron."},
+				{ "HEXA20"   , ElementType::HEXA20   , "Hexahedron with midpoints."},
+				{ "TETRA4"   , ElementType::TETRA4   , "Tetrahedron."},
+				{ "TETRA10"  , ElementType::TETRA10  , "Tetrahedron with midpoints."},
+				{ "PRISMA6"  , ElementType::PRISMA6  , "Prisma."},
+				{ "PRISMA15" , ElementType::PRISMA15 , "Prisma with midpoints."},
+				{ "PYRAMID5" , ElementType::PYRAMID5 , "Pyramid."},
+				{ "PYRAMID13", ElementType::PYRAMID13, "Pyramid with midpoints."},
+
+				{ "SQUARE4"  , ElementType::SQUARE4  , "Square."},
+				{ "SQUARE8"  , ElementType::SQUARE8  , "Square with midpoints."},
+				{ "TRIANGLE3", ElementType::TRIANGLE3, "Triangle."},
+				{ "TRIANGLE6", ElementType::TRIANGLE6, "Triangle with midpoints."},
+		} },
+		{ "PHYSICS", physics, "Physics used for compose matrices", {
+				{ "LINEAR_ELASTICITY", PhysicsAssembler::LINEAR_ELASTICITY, "Linear elasticity." },
+				{ "TEMPERATURE", PhysicsAssembler::TEMPERATURE, "Temperature." },
+				{ "TRANSIENT_ELASTICITY", PhysicsAssembler::TRANSIENT_ELASTICITY, "Transient elasticity." },
+				{ "ADVECTION_DIFFUSION", PhysicsAssembler::ADVECTION_DIFFUSION, "Advection diffusion"},
+				{ "STOKES", PhysicsAssembler::STOKES, "Stokes"}
+		} }
+	};
+
+	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+}
 
 static Mesh* getMesh(const Options &options)
 {
@@ -177,6 +211,9 @@ Factory::Factory(const Options &options)
 		break;
 	case PhysicsAssembler::ADVECTION_DIFFUSION:
 		instance = new LinearInstance<EqualityConstraints, AdvectionDiffusion2D>(mesh);
+		break;
+	case PhysicsAssembler::STOKES:
+		instance = new LinearInstance<EqualityConstraints, Stokes>(mesh);
 		break;
 	}
 }
