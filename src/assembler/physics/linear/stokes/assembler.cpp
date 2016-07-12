@@ -65,7 +65,7 @@ static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, 
 
 void Stokes::composeSubdomain(size_t subdomain)
 {
-	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);
+	eslocal subdomainSize = 3 * _mesh.coordinates().localSize(subdomain);
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ah(3, 3), B1h(3, 3), B2h(3, 3), Eh(3, 3);
 	std::vector<double> fe;
