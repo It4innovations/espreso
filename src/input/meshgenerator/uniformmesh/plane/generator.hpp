@@ -247,7 +247,7 @@ void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std:
 	}
 
 	if (_cluster[1] == _settings.clusters[1] - 1) {
-		eslocal index = nodes[1] * nodes[0] - 1;
+		eslocal index = nodes[1] * (nodes[0] - 1);
 		for (eslocal x = 0; x < nodes[0]; x++) {
 			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
 				dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X];

@@ -165,17 +165,19 @@ Factory::Factory(const Options &options)
 		output::VTK_Full::averaging(*_mesh, "meshAveraging", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
 
-	_assembler = getAssembler(_mesh, _surface);
-}
-
-Factory::~Factory()
-{
-	delete _assembler;
-	if (_mesh != NULL) {
-		delete _mesh;
-	}
-	if (_surface != NULL) {
-		delete _surface;
+	switch (physics) {
+	case PhysicsAssembler::LINEAR_ELASTICITY:
+		instance = new LinearInstance<EqualityConstraints, LinearElasticity>(mesh);
+		break;
+	case PhysicsAssembler::TEMPERATURE:
+		instance = new LinearInstance<EqualityConstraints, Temperature>(mesh);
+		break;
+	case PhysicsAssembler::TRANSIENT_ELASTICITY:
+		instance = new DynamicsInstance<EqualityConstraints, TransientElasticity>(mesh);
+		break;
+	case PhysicsAssembler::ADVECTION_DIFFUSION:
+		instance = new LinearInstance<EqualityConstraints, AdvectionDiffusion2D>(mesh);
+		break;
 	}
 }
 
