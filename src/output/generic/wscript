@@ -2,20 +2,24 @@
 import os.path
 
 def configure(ctx):
-    if os.path.isfile(os.path.join(ctx.ROOT, "tools/vtk/output/resultstore.o")):
+#    if os.path.isfile(os.path.join(ctx.ROOT, "tools/vtk/output/resultstore.o")):
+    if os.path.isfile(os.path.join(ctx.ROOT, "libs/libplib.a")):
         ctx.env.VTK = True
         ctx.msg("Checking for VTK", "found")
+        ctx.env.append_unique("STLIB", "plib")
     else:
         ctx.env.VTK = False
         ctx.msg("Checking for VTK", "not found - only VTK Legacy format is supported (see tools/vtk/README.txt)", color='YELLOW')
 
 def build(ctx):
     if ctx.env.VTK:
-        ctx(
-            features = "link",
-            source = "../../../tools/vtk/output/resultstore.o",
-            target = "generic_out"
-        )
+#        ctx(
+#            features = "link",
+#            source = "../../../tools/vtk/output/resultstore.o",
+#            target = "generic_out"
+#        )
+#        ctx.env.append_unique("STLIB", "plib")
+        pass
     else:
         ctx.objects(
             source = ctx.path.ant_glob('**/*.cpp'),
