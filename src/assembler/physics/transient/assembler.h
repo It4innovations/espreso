@@ -18,7 +18,7 @@ struct TransientPhysics: public Physics {
 		K.resize(_mesh.parts());
 		M.resize(_mesh.parts());
 		f.resize(_mesh.parts());
-		for (size_t p = 0; p < _mesh.parts(); p++) {
+		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 
 			const std::vector<eslocal> &l2g = _mesh.coordinates().localToCluster(p);
