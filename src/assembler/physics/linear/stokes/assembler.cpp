@@ -105,6 +105,7 @@ void Stokes::composeSubdomain(size_t subdomain)
 	SparseCSRMatrix<eslocal> csrK = _K;
 
 	K[subdomain] = csrK;
+	K[subdomain].mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE;
 }
 
 

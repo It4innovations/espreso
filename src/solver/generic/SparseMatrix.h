@@ -26,6 +26,13 @@ class SparseMatrix
 {
 
 public:
+
+	enum class MatrixType {
+		REAL_SYMMETRIC_POSITIVE_DEFINITE,
+		REAL_SYMMETRIC_INDEFINITE,
+		REAL_UNSYMMETRIC
+	};
+
 	//Constructors
 	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric, string filename);
 	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric);
@@ -52,6 +59,7 @@ public:
 	eslocal  cols;		// number of columns
 	eslocal  nnz;		// number of non zero elements
 	char type;		// 'G' for general or 'S' for symmetric
+	MatrixType mtype;
 
 	// Sparse COO data
 	SEQ_VECTOR <eslocal>	I_row_indices;

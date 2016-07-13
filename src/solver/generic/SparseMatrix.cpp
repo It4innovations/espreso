@@ -159,6 +159,7 @@ SparseMatrix::SparseMatrix() {
 	cols = 0;
 	rows = 0;
 	type = 0;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	USE_FLOAT = false;
 
@@ -187,6 +188,7 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	cols = A_in.cols;
 	nnz  = A_in.nnz;
 	type = A_in.type;
+	mtype = A_in.mtype;
 
 	USE_FLOAT = A_in.USE_FLOAT;
 
@@ -226,6 +228,7 @@ SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
 	cols = A_in.columns();
 	nnz  = A_in.rowPtrs()[rows];
 	type = 'G';
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	USE_FLOAT = false;
 
@@ -278,11 +281,14 @@ void SparseMatrix::swap ( SparseMatrix &A_in) {
 
 	eslocal tmp;
 	char ttype;
+	MatrixType tmtype;
 
 	tmp = rows; rows = A_in.rows; A_in.rows = tmp;
 	tmp = cols; cols = A_in.cols; A_in.cols = tmp;
 	tmp = nnz;  nnz  = A_in.nnz;  A_in.nnz  = tmp;
 	ttype = type; type = A_in.type; A_in.type = ttype;
+	tmtype = mtype; mtype = A_in.mtype; A_in.mtype = tmtype;
+
 
 	bool tb = USE_FLOAT; USE_FLOAT = A_in.USE_FLOAT; A_in.USE_FLOAT = tb;
 
@@ -327,6 +333,7 @@ SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in )
 	cols = A_in.columns();
 	nnz  = A_in.rowPtrs()[rows];
 	type = type_in;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	USE_FLOAT = false;
 
@@ -379,6 +386,7 @@ SparseMatrix& SparseMatrix::operator= ( const SparseIJVMatrix<eslocal> &A_in ) {
 	cols = A_in.columns();
 	nnz  = A_in.nonZeroValues();
 	type = 'G';
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	USE_FLOAT = false;
 
@@ -433,6 +441,7 @@ SparseMatrix::SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in )
 	cols = A_in.columns();
 	nnz  = A_in.nonZeroValues();
 	type = type_in;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	USE_FLOAT = false;
 
@@ -492,6 +501,7 @@ SparseMatrix& SparseMatrix::operator= (const SparseMatrix &A_in) {
 		cols = A_in.cols;
 		nnz  = A_in.nnz;
 		type = A_in.type;
+		mtype = A_in.mtype;
 
 		USE_FLOAT = A_in.USE_FLOAT;
 
@@ -594,6 +604,7 @@ eslocal  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 eslocal SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric) {
 
 	type = matrix_type_G_for_general_S_for_symmetric;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	ifstream in (filename.c_str(), std::ios::binary);
 
@@ -1762,7 +1773,7 @@ void SparseMatrix::MatMat(SparseMatrix & A_in, char MatA_T_for_transpose_N_for_n
 	}
 
 	type ='G';
-
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 }
 
 
@@ -1844,6 +1855,7 @@ void SparseMatrix::MatMatSorted(SparseMatrix & A_in, char MatA_T_for_transpose_N
 	}
 
 	type ='G';
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 }
 
@@ -2283,6 +2295,7 @@ void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_
 		rows = B_in.rows;
 		nnz  = B_in.nnz;
 		type = B_in.type;
+		mtype = MatrixType::REAL_UNSYMMETRIC;
 
 		CSR_I_row_indices = B_in.CSR_I_row_indices;
 		CSR_J_col_indices = B_in.CSR_J_col_indices;
@@ -2668,6 +2681,7 @@ void SparseMatrix::MatAppend(SparseMatrix & A) {
 		cols = A.cols;
 		nnz = A.nnz;
 		type = A.type;
+		mtype = MatrixType::REAL_UNSYMMETRIC;
 
 		CSR_I_row_indices = A.CSR_I_row_indices;
 		CSR_J_col_indices = A.CSR_J_col_indices;
@@ -2688,8 +2702,8 @@ void SparseMatrix::MatAppend(SparseMatrix & A) {
 
 		rows = rows + A.rows;
 		nnz  = nnz + A.nnz;
-		cols = cols;
 		type = 'G';
+		mtype = MatrixType::REAL_UNSYMMETRIC;
 	}
 }
 
@@ -2703,6 +2717,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 	rows = A_in.rows;
 	cols = A_in.cols;
 	type = A_in.type;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	CSR_I_row_indices.resize( rows + 1 );
 
@@ -2743,6 +2758,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_
 	rows = rows_to_add.size();
 	cols = A_in.cols;
 	type = A_in.type;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	//CSR_I_row_indices.resize( rows + 1 );
 
@@ -2843,6 +2859,7 @@ void SparseMatrix::CreateEye(eslocal size) {
 	cols = size;
 	nnz  = size;
 	type = 'G';
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	ConvertToCSR();
 
@@ -2861,6 +2878,7 @@ void SparseMatrix::CreateEye(eslocal size, double value, eslocal offset_row, esl
 	cols = offset_col + size;
 	nnz  = size;
 	type = 'G';
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	ConvertToCSR();
 
@@ -2880,6 +2898,7 @@ void SparseMatrix::TestEye(eslocal size) {
 	cols = size;
 	nnz  = size;
 	type = 'G';
+	mtype = MatrixType::REAL_UNSYMMETRIC;
 
 	ConvertToCSR();
 
@@ -2970,6 +2989,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 	cols = A_in.rows;
 	nnz  = CSR_V_values.size();
 	type = 'G';
+	mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
 }
 

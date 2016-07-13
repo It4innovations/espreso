@@ -26,7 +26,7 @@ SparseSolverPardiso::SparseSolverPardiso() {
 	CSR_V_values_size = 0;
 
 
-	mtype = 2; 			/* Real symmetric positive definite matrix */
+	mtype = 11; 			/* Real unsymmetric matrix */
 
 	/* -------------------------------------------------------------------- */
 	/* .. Setup Pardiso control parameters. */
@@ -149,6 +149,18 @@ void SparseSolverPardiso::ImportMatrix(SparseMatrix & A) {
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
 
+	switch (A.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
+
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	   = A.CSR_V_values.size();
@@ -184,6 +196,18 @@ void SparseSolverPardiso::ImportMatrix_fl(SparseMatrix & A) {
 	cols	= A.cols;
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
+
+	switch (A.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
 
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
@@ -223,6 +247,18 @@ void SparseSolverPardiso::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
 
+	switch (A.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
+
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	 = 0;
@@ -246,6 +282,18 @@ void SparseSolverPardiso::ImportMatrix_wo_Copy(SparseMatrix & A) {
 	cols	= A.cols;
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
+
+	switch (A.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
 
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
@@ -736,7 +784,18 @@ void SparseSolverPardiso::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, 
 		iparm[i] = 0;
 	}
 
-	int mtype = 2;
+	//int mtype = 2;
+	switch (A_in.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
 
 	iparm[0] = 1;		/* No solver default */
 	iparm[1] = 2;		/* Fill-in reordering from METIS */
@@ -925,7 +984,7 @@ void SparseSolverPardiso::Create_SC( SparseMatrix & B_out, int sc_size, bool isT
 		pt[i] = 0;
 	}
 
-	int 	mtype = 2;
+	// int 	mtype = 2; // Set while importing
 
 //	iparm[0] = 1;		/* No solver default */
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */
@@ -1098,7 +1157,18 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
 		pt[i] = 0;
 	}
 
-	int 	mtype = 2;
+	//int 	mtype = 2;
+	switch (K_in.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
 
 //	iparm[0] = 1;		/* No solver default */
 //	iparm[1] = 2;		/* Fill-in reordering from METIS */

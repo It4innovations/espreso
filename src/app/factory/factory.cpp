@@ -154,7 +154,9 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 
 static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 {
-	switch (config::assembler::discretization) {
+	physics = PhysicsAssembler::LINEAR_ELASTICITY;
+
+	readParameters(configuration);
 
 	case config::assembler::FEM: {
 		FEM fem(*mesh);
@@ -215,6 +217,8 @@ Factory::Factory(const Options &options)
 	case PhysicsAssembler::STOKES:
 		instance = new LinearInstance<EqualityConstraints, Stokes>(mesh);
 		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown Physics";
 	}
 }
 

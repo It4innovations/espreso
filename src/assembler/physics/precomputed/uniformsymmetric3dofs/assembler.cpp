@@ -27,6 +27,7 @@ void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
+	K[subdomain].mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
 
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(p);
