@@ -1944,7 +1944,6 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
 // Function 'getSubDiagBlockmatrix' returns the diagonal block A_in(r,r) from original A_in,
 // where r = { i_start , i_start+1 , i_start+2 , ... , istart + size_rr - 1 }
 //
-//
 // rev. 2015-10-10 (A.M.)
 //
 // step 1: getting nnz of submatrix
@@ -1965,7 +1964,7 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
   A_out.rows=size_rr;
   A_out.cols=size_rr;
   A_out.nnz=nnz_new;
-	A_out.type = 'S';
+	A_out.type = A_in.type;
 // step 3: filling 1d arrays
   eslocal ijcnt=0;
   A_out.CSR_I_row_indices[0]=offset;
@@ -3007,7 +3006,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
 //BOOL DIAGONALSCALING                                  = true;
-  bool diagonalScaling                                  = true;
+  bool diagonalScaling                                  = false;
 
 //    2) permutVectorActive
 //  random selection of singular DOFs
@@ -3909,7 +3908,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 
 void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat,
-      SparseMatrix &Kplus_R,SparseMatrix &Kplus_R2,
+      SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
       double *norm_KR_d_pow_2_approx,eslocal *defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
@@ -4131,6 +4130,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   SparseMatrix S;
   SparseMatrix K_rr;
   SparseMatrix K_rs;
+  SparseMatrix K_sr;
   eslocal i_start = 0;
 
   if (K.rows<sc_size){
@@ -4187,10 +4187,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
   
 
+  //K.printMatCSR("K");
   SEQ_VECTOR <double> diagonals;
   diagonals.resize(K.rows);
   eslocal cnt;
 
+
+  // get diagonal from general (unsymmetric) K and calc. approx of max(eig(K))
   for (eslocal i = 0;i<K_modif.rows;i++){
     for (eslocal j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
        if ((K_modif.CSR_J_col_indices[j-offset]-offset)==i) {
@@ -4214,6 +4217,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       }
     }
   }
+
+
+//  K_modif.printMatCSR("K_scaled");
 
 #if VERBOSE_LEVEL>0
 //1 - diagonal scaling
@@ -4387,11 +4393,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       }
       K_modif.ConvertToCSRwithSort(0);
     }
+
+
+//    K_modif.printMatCSR("K_scaled_permuted");
 //
     for (eslocal i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
     K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
 
-    K_rr.printMatCSR("K_rr");
+//    K_rr.printMatCSR("K_rr");
 
     if (check_nonsing!=0){
       double lmx_K_rr;
@@ -4418,6 +4427,12 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+  K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
+
+//  K_rs.printMatCSR("K_rs");
+//  K_sr.printMatCSR("K_sr");
+
+
 #if VERBOSE_LEVEL>0
 //4 - creation of block K_rs
   time1 = omp_get_wtime();
@@ -4430,13 +4445,18 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
   if (K_rr.cols==0){
     S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-    S.RemoveLower();
+//    S.RemoveLower();
   }
   else
   {
     if (SC_via_K_rr){
       S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+//      S.printMatCSR("K_ss");
       K_rr_solver.ImportMatrix(K_rr);
+//      K_rr.printMatCSR("K_rr");
+      K_rr_solver.mtype = 11;
+      K_rr_solver.msglvl= 1;
+      
       ss << "get kerner from K -> rank: " << config::env::MPIrank;
       int error_K_rr = K_rr_solver.Factorization(ss.str());
 
@@ -4480,9 +4500,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       SparseMatrix invKrrKrs = K_rs;
       K_rr_solver.SolveMat_Dense(invKrrKrs);
       SparseMatrix KsrInvKrrKrs;
-      KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+      KsrInvKrrKrs.MatMat(K_sr,'N',invKrrKrs);
       S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
-      S.RemoveLower();
+//      S.RemoveLower();
     }
     else{
       SparseSolverCPU createSchur;
@@ -4495,7 +4515,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     }
   }
 //
-  S.type='S';
+  S.printMatCSR("S");
+  S.type='G';
   S.ConvertCSRToDense(1);
 #if VERBOSE_LEVEL>0
 //5 - Schur complement created
@@ -4503,13 +4524,20 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     elapsed_secs[5] = double(time1 - begin_time) ;
 #endif
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
-  char JOBZ = 'V';
-  char UPLO = 'U';
-  double *W = new double[S.cols];
-  double *Z = new double[S.cols*S.cols];
+  double *S_S     = new double[S.cols];
+  double *U_S     = new double[S.cols*S.cols];
+  double *Vt_S    = new double[S.cols*S.cols];
+  double *superb  = new double[S.cols-1];
+  double *W= new double[S.cols*S.cols];
+  double *Z= new double[S.cols*S.cols];
   MKL_INT info;
-  MKL_INT ldz = S.cols;
-  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
+  MKL_INT lds = S.cols, Scols= S.cols, Srows = S.rows;
+//  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
+  info = LAPACKE_dgesvd( LAPACK_COL_MAJOR, 'A', 'A', Scols, Srows, &(S.dense_values[0]), lds,
+                        S_S, U_S, lds, Vt_S, lds, superb );
+
+
+
   if (info){
     ESINFO(DETAILS) <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse";
   }
@@ -4520,18 +4548,20 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
   eslocal defect_K_in;// R_s_cols;
+  eslocal ind_U_V;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
 #if VERBOSE_LEVEL>1
   os<<"ratio,      eig{i-1},          eig{i}\n";
 #endif
-  for (eslocal i = itMax-1; i > 0;i--){
-    ratio = fabs(W[i-1]/W[i]);
+  for (eslocal i = itMax-1; i < sc_size-1;i++){
+    ratio = fabs(S_S[i+1]/S_S[i]);
 #if VERBOSE_LEVEL>1
-    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
+    os<<ratio <<" "<< S_S[i] << " " << S_S[i+1] << "\n";
 #endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
-      defect_K_in=i;
+      ind_U_V = i+1;
+      defect_K_in=sc_size-(i+1);
       break;
     }
   }
@@ -4557,6 +4587,12 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   }
 #endif
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
+  
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // right kernel   K * R = 0
   SparseMatrix R_s;
   R_s.nnz  = defect_K_in*S.rows;
   R_s.dense_values.resize(R_s.nnz);
@@ -4566,18 +4602,19 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   eslocal cntR=0;
   for (eslocal j = 0; j < defect_K_in; j++){
     for (eslocal i = 0; i < R_s.rows; i++){
-	    R_s.dense_values[cntR] = Z[j*R_s.rows + i];
+	    R_s.dense_values[cntR] = Vt_S[j + ind_U_V + i*R_s.rows];
       cntR++;
     }
   }
   R_s.ConvertDenseToCSR(0);
+
+
 #if VERBOSE_LEVEL>0
 //8 - R_s created
   time1 = omp_get_wtime();
   elapsed_secs[8] = double(time1 - begin_time) ;
 #endif
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
-
   int R_r_rows = 0;
   int R_r_cols = 0;
   SparseMatrix R_r;
@@ -4591,7 +4628,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       K_rr_solver.Factorization(ss.str());
     }
     K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
-    K_rr_solver.Clear();
+//    K_rr_solver.Clear();
     R_r.ConvertCSRToDense(0);
     R_r_rows = R_r.rows;
     R_r_cols = R_r.cols;
@@ -4602,34 +4639,35 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   time1 = omp_get_wtime();
   elapsed_secs[9] = double(time1 - begin_time) ;
 #endif
-               //                                               |
-// --------------- CREATING WHOLE KERNEL Kplus_R2 = [ (R_r)^T (R_s)^T ]^T
-  Kplus_R2.rows = R_r_rows+R_s.rows;
-  Kplus_R2.cols = R_s.cols;
-  Kplus_R2.nnz  = Kplus_R2.cols*Kplus_R2.rows;
-  Kplus_R2.type = 'G';
-	Kplus_R2.dense_values.resize(Kplus_R2.nnz);
+//                                               |
+// --------------- CREATING WHOLE KERNEL Kplus_Rl = [ (R_r)^T (R_s)^T ]^T
+  Kplus_R.rows = R_r_rows+R_s.rows;
+  Kplus_R.cols = R_s.cols;
+  Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
+  Kplus_R.type = 'G';
+	Kplus_R.dense_values.resize(Kplus_R.nnz);
   cntR=0;
-  for (eslocal j = 0; j < Kplus_R2.cols; j++){
+  for (eslocal j = 0; j < Kplus_R.cols; j++){
     for (eslocal i = 0; i < R_r_rows; i++){
       if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
+        di=diagonals[permVec[i]];
       }
-      Kplus_R2.dense_values[j*Kplus_R2.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
+      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
       cntR++;
     }
     for (eslocal i = 0; i < R_s.rows; i++){
       if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
+//        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
+        di=diagonals[permVec[i + R_r_rows]];
       }
-	    Kplus_R2.dense_values[j*Kplus_R2.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
+	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
       cntR++;
     }
   }
 //
-  Kplus_R2.GramSchmidtOrtho();
+  Kplus_R.GramSchmidtOrtho();
   SEQ_VECTOR <eslocal > null_pivots;
-  Kplus_R2.getNullPivots(null_pivots);
+  Kplus_R.getNullPivots(null_pivots);
 
 #if VERBOSE_LEVEL>0
 //10 - R - Gram Schmidt Orthogonalization
@@ -4646,6 +4684,95 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
   elapsed_secs[10] = double(time1 - begin_time) ;
 #endif
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// left kernel   Rl_t * K = 0
+  SparseMatrix Rl_s;
+  Rl_s.nnz  = defect_K_in*S.rows;
+  Rl_s.dense_values.resize(Rl_s.nnz);
+  Rl_s.rows = S.rows;
+  Rl_s.cols = defect_K_in;
+  Rl_s.type = 'G';
+  cntR=0;
+  for (eslocal j = 0; j < defect_K_in; j++){
+    for (eslocal i = 0; i < Rl_s.rows; i++){
+	    Rl_s.dense_values[cntR] = U_S[(j + ind_U_V)*Rl_s.rows + i ];
+      cntR++;
+    }
+  }
+//
+  Rl_s.ConvertDenseToCSR(0);
+  int Rl_r_rows = 0;
+  int Rl_r_cols = 0;
+  SparseMatrix Rl_r;
+//
+  if (K_rr.cols!=0){
+    Rl_r.MatMat(K_sr,'T',Rl_s);
+    K_sr.Clear();
+    K_rr_solver.iparm[12]=2;
+    K_rr_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
+    K_rr_solver.Clear();
+    Rl_r.ConvertCSRToDense(0);
+    Rl_r_rows = R_r.rows;
+    Rl_r_cols = R_r.cols;
+  }
+//
+//                                               |
+// --------------- CREATING WHOLE KERNEL Kplus_Rl = [ (R_r)^T (R_s)^T ]^T
+//
+  Kplus_Rl.rows = Rl_r_rows+Rl_s.rows;
+  Kplus_Rl.cols = R_s.cols;
+  Kplus_Rl.nnz  = Kplus_Rl.cols*Kplus_Rl.rows;
+  Kplus_Rl.type = 'G';
+	Kplus_Rl.dense_values.resize(Kplus_Rl.nnz);
+  cntR=0;
+  for (eslocal j = 0; j < Kplus_Rl.cols; j++){
+    for (eslocal i = 0; i < R_r_rows; i++){
+      if (diagonalScaling){
+        di=diagonals[permVec[i]];
+      }
+      Kplus_Rl.dense_values[j*Kplus_Rl.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
+      cntR++;
+    }
+    for (eslocal i = 0; i < R_s.rows; i++){
+      if (diagonalScaling){
+//        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
+        di=diagonals[permVec[i + R_r_rows]];
+      }
+	    Kplus_Rl.dense_values[j*Kplus_Rl.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
+      cntR++;
+    }
+  }
+//
+  Kplus_Rl.GramSchmidtOrtho();
+  SEQ_VECTOR <eslocal > null_pivotsl;
+  Kplus_Rl.getNullPivots(null_pivotsl);
+
+
+
+
+
+//#if VERBOSE_LEVEL>0
+////10 - R - Gram Schmidt Orthogonalization
+//  time1 = omp_get_wtime();
+//  os << "null pivots: \n";
+//  os << "[";
+//  for (eslocal k = 0; k<null_pivotsl.size();k++){
+//    os << null_pivotsl[k] ;
+//    if (k<null_pivotsl.size()-1 ){
+//     os << ", ";
+//      }
+//  }
+//   os << "]\n";
+//
+//  elapsed_secs[10] = double(time1 - begin_time) ;
+//#endif
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
                //                                               |
 
   // norm of product K*R: second matrix has to be in dense format!!!
@@ -4654,9 +4781,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   std::vector <double>::iterator  it2;
   it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
   double lmx_K_approx       = *it2;
-  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R2);
+  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R);
   *norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
-  *defect_d                 = Kplus_R2.cols;
+  *defect_d                 = Kplus_R.cols;
 
 
 #if VERBOSE_LEVEL>2
@@ -4676,10 +4803,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   time1 = omp_get_wtime();
   elapsed_secs[11] = double(time1 - begin_time) ;
 //
-  Kplus_R2.ConvertDenseToCSR(0);
+  Kplus_R.ConvertDenseToCSR(0);
+  Kplus_Rl.ConvertDenseToCSR(0);
 //
 //
 
+  Kplus_R.printMatCSR("R");
+  Kplus_Rl.printMatCSR("Rl");
 
 
 
@@ -4689,7 +4819,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     if (d_sub!=-1) {
 	    regMat.rows = K.rows;
 	    regMat.cols = K.cols;
-	    regMat.type = 'S';
+	    regMat.type = 'G';
 	    regMat.nnz= null_pivots.size();
 
       regMat.I_row_indices.resize(regMat.nnz);
@@ -4710,11 +4840,11 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   else{
     SparseMatrix N;
     if (use_null_pivots_or_s_set){
-      N.CreateMatFromRowsFromMatrix( Kplus_R2, null_pivots);
+      N.CreateMatFromRowsFromMatrix( Kplus_R, null_pivots);
     }
     else
     {
-      N.CreateMatFromRowsFromMatrix( Kplus_R2, fix_dofs);
+      N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
     }
   //null_pivots
     SparseMatrix Nt;
@@ -4745,10 +4875,15 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
+//S_S  
+//U_S  
+//Vt_S 
+//
 
-  delete [] W;
-  delete [] Z;
-
+  delete [] S_S ;
+  delete [] U_S ;
+  delete [] Vt_S; 
+  delete [] superb; 
 
 
 //  // TESTING OF REGULARIZED MATRIX
