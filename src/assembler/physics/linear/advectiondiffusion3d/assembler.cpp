@@ -136,7 +136,6 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
-	K[subdomain].mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
 }
 
 

@@ -10,11 +10,59 @@ namespace espreso {
 struct Physics {
 
 	virtual void assemble() =0;
-	virtual void save() =0;
+	virtual void save()
+	{
+		ESINFO(PROGRESS2) << "Save matrices K and RHS";
+		for (size_t p = 0; p < K.size(); p++) {
+			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
+			osK << K[p];
+			osK.close();
+		}
+
+		for (size_t p = 0; p < f.size(); p++) {
+			std::ofstream osF(Logging::prepareFile(p, "f").c_str());
+			osF << f[p];
+			osF.close();
+		}
+
+		for (size_t p = 0; p < R1.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R1").c_str());
+			osR << R1[p];
+			osR.close();
+		}
+
+		for (size_t p = 0; p < R2.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
+			osR << R2[p];
+			osR.close();
+		}
+
+		for (size_t p = 0; p < R1H.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R1H").c_str());
+			osR << R1H[p];
+			osR.close();
+		}
+
+		for (size_t p = 0; p < R2H.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R2H").c_str());
+			osR << R2H[p];
+			osR.close();
+		}
+
+		for (size_t p = 0; p < RegMat.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "RegMat").c_str());
+			osR << RegMat[p];
+			osR.close();
+		}
+	}
 
 	size_t DOFs;
 
-	Physics(const Mesh &mesh, size_t DOFs): _mesh(mesh), DOFs(DOFs) {};
+	SparseMatrix::MatrixType mtype;
+	std::vector<SparseMatrix> K, T, R1, R2, R1H, R2H, RegMat; // T will be deleted
+	std::vector<std::vector<double> > f;
+
+	Physics(const Mesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype): _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
 	virtual ~Physics() {};
 
 protected:

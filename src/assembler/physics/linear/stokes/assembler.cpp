@@ -63,6 +63,11 @@ static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, 
 	}
 }
 
+static void computeKernels(SparseMatrix &R1, size_t nElements)
+{
+
+}
+
 void Stokes::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = 3 * _mesh.coordinates().localSize(subdomain);
@@ -100,12 +105,13 @@ void Stokes::composeSubdomain(size_t subdomain)
 		}
 	}
 
+	computeKernels(R1[subdomain], partition[subdomain + 1] - partition[subdomain]);
+
 
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 
 	K[subdomain] = csrK;
-	K[subdomain].mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE;
 }
 
 

@@ -16,9 +16,15 @@ struct LinearPhysics: public Physics {
 		const std::map<eslocal, double> &forces_z = _mesh.coordinates().property(FORCES_Z).values();
 
 		K.resize(_mesh.parts());
+		R1.resize(_mesh.parts());
+		R2.resize(_mesh.parts());
+		R1H.resize(_mesh.parts());
+		R2H.resize(_mesh.parts());
+		RegMat.resize(_mesh.parts());
 		f.resize(_mesh.parts());
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
+			K[p].mtype = mtype;
 
 			const std::vector<eslocal> &l2g = _mesh.coordinates().localToCluster(p);
 			for (eslocal i = 0; i < l2g.size(); i++) {
@@ -39,25 +45,8 @@ struct LinearPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	virtual void save()
-	{
-		ESINFO(PROGRESS2) << "Save matrices K and RHS";
-		for (size_t p = 0; p < _mesh.parts(); p++) {
-			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
-			osK << K[p];
-			osK.close();
-
-			std::ofstream osF(Logging::prepareFile(p, "f").c_str());
-			osF << f[p];
-			osF.close();
-		}
-	}
-
-	LinearPhysics(const Mesh &mesh, size_t DOFs): Physics(mesh, DOFs) {};
+	LinearPhysics(const Mesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype): Physics(mesh, DOFs, mtype) {};
 	virtual ~LinearPhysics() {};
-
-	std::vector<SparseMatrix> K, T; // T will be deleted
-	std::vector<std::vector<double> > f;
 
 protected:
 	virtual void composeSubdomain(size_t subdomain) =0;

@@ -8,7 +8,7 @@ namespace espreso {
 
 struct LameSteklovPoincare: public LinearPhysics
 {
-	LameSteklovPoincare(const Mesh &mesh): LinearPhysics(mesh, 3) {};
+	LameSteklovPoincare(const Mesh &mesh): LinearPhysics(mesh, 3, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
 
 protected:
 	void composeSubdomain(size_t subdomain);

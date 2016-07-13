@@ -20,6 +20,7 @@ struct TransientPhysics: public Physics {
 		f.resize(_mesh.parts());
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
+			K[p].mtype = mtype;
 
 			const std::vector<eslocal> &l2g = _mesh.coordinates().localToCluster(p);
 			for (eslocal i = 0; i < l2g.size(); i++) {
@@ -62,11 +63,10 @@ struct TransientPhysics: public Physics {
 		osA.close();
 	}
 
-	TransientPhysics(const Mesh &mesh, size_t DOFs): Physics(mesh, DOFs) {};
+	TransientPhysics(const Mesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype): Physics(mesh, DOFs, mtype) {};
 	virtual ~TransientPhysics() {};
 
-	std::vector<SparseMatrix> K, M, T; // T will be deleted
-	std::vector<std::vector<double> > f;
+	std::vector<SparseMatrix> M; // T will be deleted
 	std::vector<double> A;
 
 protected:

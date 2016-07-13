@@ -8,7 +8,7 @@ namespace espreso {
 
 struct LinearElasticity: public LinearPhysics
 {
-	LinearElasticity(const Mesh &mesh): LinearPhysics(mesh, 3) {};
+	LinearElasticity(const Mesh &mesh): LinearPhysics(mesh, 3, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
 
 protected:
 	void composeSubdomain(size_t subdomain);

@@ -175,7 +175,6 @@ void TransientElasticity::composeSubdomain(size_t subdomain)
 	M[subdomain] = csrM;
 
 	K[subdomain].MatAddInPlace(M[subdomain], 'N', timeConstant);
-	K[subdomain].mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
 
 
