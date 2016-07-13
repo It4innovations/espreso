@@ -4515,7 +4515,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     }
   }
 //
-  S.printMatCSR("S");
+//  S.printMatCSR("S");
   S.type='G';
   S.ConvertCSRToDense(1);
 #if VERBOSE_LEVEL>0
@@ -4808,8 +4808,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
 //
 
-  Kplus_R.printMatCSR("R");
-  Kplus_Rl.printMatCSR("Rl");
+//  Kplus_R.printMatCSR("R");
+//  Kplus_Rl.printMatCSR("Rl");
 
 
 
