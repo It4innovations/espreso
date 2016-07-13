@@ -79,6 +79,27 @@ The following example shows the installation on ``Sisu`` ::
   $ ./waf install
 
 
+Using ESPRESO as the solver in Elmer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following examples assumes successfuly installed ESPRESO: ::
+
+  $ mkdir elmer
+  $ cd elmer
+  $ git clone git@code.it4i.cz:mec059/elmer.git src
+
+  $ mkdir build
+  $ FETI4I_ROOT=${PATH_TO_ESPRESO}/libespreso cmake -DWITH_ELMERGUI:BOOL=FALSE -DWITH_MPI:BOOL=TRUE -DWITH_FETI4I:BOOL=TRUE -DCMAKE_INSTALL_PREFIX=../ ../src/
+  $ make install
+
+  $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PATH_TO_ELMER}/elmer/lib/elmersolver
+  $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PATH_TO_ESPRESO}/libespreso
+  $ export PATH=$PATH:${PATH_TO_ELMER}/bin
+  $ cd fem/tests/WinkelNavierPartitionUniform/
+  $ ElmerGrid 1 2 winkel.grd -partition 2 2 2 2
+  $ mpirun -n 4 ElmerSolver_mpi
+
+
 Run the solver
 --------------
 
