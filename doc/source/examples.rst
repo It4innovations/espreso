@@ -106,3 +106,33 @@ Run the solver
 All examples assume that the environment is set (See `environment settings <installation.html#set-up-the-environment>`__).
 
 
+Linear elasticity tested on a cubic mesh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A cube is fixed on the bottom plane and only the gravity is applied ::
+
+  # generator generates 8 (2x2x2) clusters
+  # each cluster contains 125 (5x5x5) subdomains
+  # each subdomain constains 512 (8x8x8) hexahedrons
+  $ mpirun -n 8 ./espreso -p examples/meshgenerator/cube_elasticity_fixed_bottom.txt HEXA8 2 2 2  5 5 5  8 8 8
+
+Detailed description of generator parameters contains the example file ``cube_elasticity_fixed_bottom.txt``.
+
+Other examples for generator are in directory ``examples/meshgenerator/``.
+
+
+Ansys Workbench example
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Workbench contains description for one process.
+Hence, we firstly decompose example to more clusters: ::
+
+  $ ./decomposer workbench_test_case.dat decomposition 4
+  $ mpirun -n 4 ./espreso -i esdata -p decomposition4/
+
+
+
+
+
+
+
