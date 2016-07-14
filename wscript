@@ -71,6 +71,10 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", [ ctx.ROOT + "/libs" ])
     ctx.env.append_unique("STLIBPATH", [ ctx.ROOT + "/libs" ])
 
+    # Waf INCLUDES policy is strange -> use export includes
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])
+    ctx.env.INCLUDES = []
+
     if ctx.env.LIBTYPE == "SHARED":
         ctx.env.append_unique("CXXFLAGS", "-fPIC")
 
@@ -105,10 +109,6 @@ def build(ctx):
         export_includes = "src/include src/config src/basis src/mesh src/input src/output tools/bem4i/src src/assembler src/solver",
         name            = "espreso_includes"
     )
-
-    # Waf INCLUDES policy is strange -> use export includes
-    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env.INCLUDES ])
-    ctx.env.INCLUDES = []
 
     ctx.ROOT = ctx.path.abspath()
 
@@ -184,4 +184,5 @@ def options(opt):
         default=False,
         help="Compile for Cray"
     )
+
 
