@@ -2438,7 +2438,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	} else {
 		GGt_tmp.mtype = 11; // non-symmetric
 	}
-	GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE;
+	GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
 	 importGGt_time.end(); importGGt_time.printStatMPI(); preproc_timing.addEvent(importGGt_time);
 

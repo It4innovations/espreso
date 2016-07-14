@@ -96,7 +96,7 @@ void ClusterCPU::SetupKsolvers ( ) {
                     exit(EXIT_FAILURE);
         }
 
-    	domains[d].Kplus.mtype = -2;
+    	//domains[d].Kplus.mtype = -2;
 
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
