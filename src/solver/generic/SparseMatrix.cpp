@@ -3979,9 +3979,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
 //ESLOCAL FIXING_NODES_OR_DOF                           = 0;
-  eslocal fixing_nodes_or_dof                           = 40;
+  eslocal fixing_nodes_or_dof                           = 20;
 //ESLOCAL DOFPERNODE                                    = 3;
-  eslocal dofPerNode                                    = 3;
+  eslocal dofPerNode                                    = 1;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -4820,9 +4820,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
 //
 
-  K.printMatCSR("K");
-  Kplus_R.printMatCSR("R");
-  Kplus_Rl.printMatCSR("Rl");
+//  K.printMatCSR("K");
+//  Kplus_R.printMatCSR("R");
+//  Kplus_Rl.printMatCSR("Rl");
 
 
 
@@ -4854,8 +4854,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     SparseMatrix N;
     SparseMatrix Nl;
     if (use_null_pivots_or_s_set){
-      N.CreateMatFromRowsFromMatrix( Kplus_R, null_pivots);
-      Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, null_pivotsl);
+       N.CreateMatFromRowsFromMatrix( Kplus_R,  null_pivots);
+      Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, null_pivots);
     }
     else
     {
@@ -4866,27 +4866,28 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     SparseMatrix Nt;
     SparseMatrix Nlt;
     N.MatTranspose( Nt );
-    Nl.MatTranspose( Nt );
-    SparseMatrix NtN_Mat;
-    NtN_Mat.MatMat( Nt,'N',N );
-    NtN_Mat.MatTranspose();
-    NtN_Mat.RemoveLower();
-    SparseSolverCPU NtN;
-    NtN.ImportMatrix(NtN_Mat);
-    NtN_Mat.Clear();
+    Nl.MatTranspose( Nlt );
+    SparseMatrix NtNl;
+    NtNl.MatMat( Nt,'N',Nl );
+//    NtN_Mat.MatTranspose();
+//    NtN_Mat.RemoveLower();
+    SparseSolverCPU inv_NtNl;
+    inv_NtNl.ImportMatrix(NtNl);
+    NtNl.Clear();
     std::stringstream sss;
     sss << "get kernel from K -> rank: " << config::env::MPIrank;
-    NtN.Factorization(ss.str());
-    NtN.SolveMat_Sparse(Nt);
-    NtN.Clear();
-    NtN_Mat.MatMat(N,'N',Nt);
-    NtN_Mat.MatScale(rho);
-    NtN_Mat.RemoveLower();
-    K.MatAddInPlace (NtN_Mat,'N', 1);
+    inv_NtNl.Factorization(ss.str());
+    // Nt replaced (!) Nt = inv(NtNl) * Nt
+    inv_NtNl.SolveMat_Sparse(Nt);
+    inv_NtNl.Clear();
+    NtNl.MatMat(Nl,'N',Nt);
+    NtNl.MatScale(rho);
+//    NtNl.RemoveLower();
+    K.MatAddInPlace (NtNl,'N', 1);
     // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
     if (d_sub!=-1)
     {
-      regMat=NtN_Mat;
+      regMat=NtNl;
       regMat.ConvertToCOO(1);
     }
   }
