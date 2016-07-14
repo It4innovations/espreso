@@ -2081,19 +2081,40 @@ void SparseMatrix::printMatCSR2(char *str0){
 
 double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
 #ifdef GENINVtools
-  double * AR =  new double [K.rows];
   double norm_AR_row,norm_AR = 0.0;
-  for (eslocal i = 0;i<R_in_dense_format.cols;i++){
-    memset(AR,0,R_in_dense_format.rows * sizeof(double));
-  	K.spmv_( K,&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),AR);
-    norm_AR_row=0.0;
-    for (eslocal j = 0; j < R_in_dense_format.rows;j++){
-      norm_AR_row+=AR[j]*AR[j];
-    }
-    norm_AR+=norm_AR_row;
+  if (false){
+    int cnt=0;
+
+//    mkl_dcsrmv (const char *transa , const MKL_INT *m , const MKL_INT *k ,
+//         const double *alpha , const char *matdescra , 
+//         const double *val , const MKL_INT *indx , const MKL_INT *pntrb , const MKL_INT *pntre , 
+//         const double *x , const double *beta , double *y );
+
+//	    mkl_dcsrmv (&trans,       &rows,      &cols,      &alpha, 
+//            matdescra, &CSR_V_values[0],  &CSR_J_col_indices[0],  &CSR_I_row_indices[0],  
+//            &CSR_I_row_indices[1],  
+//            &x_in[x_in_vector_start_index],   
+//            &beta,         
+//            &y_out[y_out_vector_start_index]);
+
+
   }
-  delete [] AR;
-  norm_AR=sqrt(norm_AR);
+  else
+  {
+    double * AR =  new double [K.rows];
+    double norm_AR_row,norm_AR = 0.0;
+    for (eslocal i = 0;i<R_in_dense_format.cols;i++){
+      memset(AR,0,R_in_dense_format.rows * sizeof(double));
+      K.spmv_( K,&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),AR);
+      norm_AR_row=0.0;
+      for (eslocal j = 0; j < R_in_dense_format.rows;j++){
+        norm_AR_row+=AR[j]*AR[j];
+      }
+      norm_AR+=norm_AR_row;
+    }
+    delete [] AR;
+    norm_AR=sqrt(norm_AR);
+  }
   return norm_AR;
 #endif
 }
@@ -4795,32 +4816,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   int Rl_r_rows = 0;
   int Rl_r_cols = 0;
   SparseMatrix Rl_r;
-
-
-
-
-
-//  {
-//   SparseMatrix s2 = Rl_s;
-//   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "Rl_s"));
-//   os2 << s2;
-//   os2.close();
-//  }
-
-
-//  {
-//   SparseMatrix s2 = R_s;
-//   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "R_s"));
-//   os2 << s2;
-//   os2.close();
-//  }
-
-
-   
-
-
 //
 
 
@@ -4839,23 +4834,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     Rl_r_rows = Rl_r.rows;
     Rl_r_cols = Rl_r.cols;
   }
-
-//  {
-//   SparseMatrix s2 = R_r;
-//   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "R_r"));
-//   os2 << s2;
-//   os2.close();
-//  }
-//
-//  {
-//   SparseMatrix s2 = Rl_r;
-//   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "Rl_r"));
-//   os2 << s2;
-//   os2.close();
-//  }
-
 
 //
 //                                               |
@@ -4926,6 +4904,11 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   *defect_d                 = Kplus_R.cols;
 
 
+//  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_R);
+//  *norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
+  *defect_d                 = Kplus_R.cols;
+
+
 #if VERBOSE_LEVEL>2
   double lmx_K;
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
@@ -4937,6 +4920,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   os << "max(diag(K)):            " << rho << "\n";
   os << "defect(K):               " << defect_K_in <<"\n";
   os << "norm_KR_approx:          " << sqrt(*norm_KR_d_pow_2_approx) <<"\n";
+//  os << "norm_KtRl_approx:        " << sqrt(*norm_KtRl_d_pow_2_approx) <<"\n";
   os << "norm_KR:                 " << norm_KR <<"\n";
 #endif
 //                                               |
@@ -4951,9 +4935,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  K.printMatCSR("K");
 //  Kplus_R.printMatCSR("R");
 //  Kplus_Rl.printMatCSR("Rl");
-
-
-
 
   if (diagonalRegularization){
     eslocal tmp_int0;
@@ -4997,11 +4978,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     Nl.MatTranspose( Nlt );
     SparseMatrix NtNl;
     NtNl.MatMat( Nt,'N',Nl );
-
-//    NtNl.printMatCSR("NtNl");
-
-//    NtN_Mat.MatTranspose();
-//    NtN_Mat.RemoveLower();
     SparseSolverCPU inv_NtNl;
     inv_NtNl.ImportMatrix(NtNl);
     NtNl.Clear();
@@ -5009,13 +4985,10 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     sss << "get kernel from K -> rank: " << config::env::MPIrank;
     inv_NtNl.Factorization(ss.str());
     // Nt replaced (!) Nt = inv(NtNl) * Nt
-//    Nt.printMatCSR("Nt");
     inv_NtNl.SolveMat_Sparse(Nt);
-//    Nt.printMatCSR("Nt_");
     inv_NtNl.Clear();
     NtNl.MatMat(Nl,'N',Nt);
     NtNl.MatScale(rho);
-//    NtNl.RemoveLower();
     K.MatAddInPlace (NtNl,'N', 1);
     // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
     if (d_sub!=-1)
@@ -5024,13 +4997,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       regMat.ConvertToCOO(1);
     }
   }
-
-//  K.printMatCSR("K_regularized");
-//  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
-//S_S
-//U_S
-//Vt_S
-//
 
   delete [] S_S ;
   delete [] U_S ;
@@ -5103,11 +5069,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  ///////////////////////////////////////////////////////////////////////////////////
 //
 //
-
-
-
-
-
 
 
   K_modif.Clear();
