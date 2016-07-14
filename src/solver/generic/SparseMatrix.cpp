@@ -4445,43 +4445,43 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  K_sr.printMatCSR("K_sr");
 
 
-  {
-   SparseMatrix s2 = K;
-   //s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "K"));
-   os2 << s2;
-   os2.close();
-  }
+//  {
+//   SparseMatrix s2 = K;
+//   //s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "K"));
+//   os2 << s2;
+//   os2.close();
+//  }
+//
+//  {
+//   SparseMatrix s2 = K_rr;
+////   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "K_rr"));
+//   os2 << s2;
+//   os2.close();
+//   }
+//   {
+//   SparseMatrix s2 = K_rs;
+////   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "K_rs"));
+//   os2 << s2;
+//   os2.close();
+//   } 
+//   {
+//   SparseMatrix s2 = K_sr;
+////   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "K_sr"));
+//   os2 << s2;
+//   os2.close();
+//   } 
 
-  {
-   SparseMatrix s2 = K_rr;
-//   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "K_rr"));
-   os2 << s2;
-   os2.close();
-   }
-   {
-   SparseMatrix s2 = K_rs;
-//   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "K_rs"));
-   os2 << s2;
-   os2.close();
-   } 
-   {
-   SparseMatrix s2 = K_sr;
-//   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "K_sr"));
-   os2 << s2;
-   os2.close();
-   } 
-
-   {
-   SparseMatrix s2 = K_modif;
-   //s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "K_modif"));
-   os2 << s2;
-   os2.close();
-   }
+//   {
+//   SparseMatrix s2 = K_modif;
+//   //s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "K_modif"));
+//   os2 << s2;
+//   os2.close();
+//   }
 
 
 
@@ -4570,11 +4570,11 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
 
 
-   SparseMatrix s2 = S;
-   //s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "S"));
-   os2 << s2;
-   os2.close();
+//   SparseMatrix s2 = S;
+//   //s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "S"));
+//   os2 << s2;
+//   os2.close();
 
 
 
@@ -4781,22 +4781,22 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 
-  {
-   SparseMatrix s2 = Rl_s;
-   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "Rl_s"));
-   os2 << s2;
-   os2.close();
-  }
+//  {
+//   SparseMatrix s2 = Rl_s;
+//   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "Rl_s"));
+//   os2 << s2;
+//   os2.close();
+//  }
 
 
-  {
-   SparseMatrix s2 = R_s;
-   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "R_s"));
-   os2 << s2;
-   os2.close();
-  }
+//  {
+//   SparseMatrix s2 = R_s;
+//   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "R_s"));
+//   os2 << s2;
+//   os2.close();
+//  }
 
 
    
@@ -4821,21 +4821,21 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     Rl_r_cols = Rl_r.cols;
   }
 
-  {
-   SparseMatrix s2 = R_r;
-   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "R_r"));
-   os2 << s2;
-   os2.close();
-  }
-
-  {
-   SparseMatrix s2 = Rl_r;
-   s2.ConvertDenseToCSR(1);
-   std::ofstream os2(Logging::prepareFile(0, "Rl_r"));
-   os2 << s2;
-   os2.close();
-  }
+//  {
+//   SparseMatrix s2 = R_r;
+//   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "R_r"));
+//   os2 << s2;
+//   os2.close();
+//  }
+//
+//  {
+//   SparseMatrix s2 = Rl_r;
+//   s2.ConvertDenseToCSR(1);
+//   std::ofstream os2(Logging::prepareFile(0, "Rl_r"));
+//   os2 << s2;
+//   os2.close();
+//  }
 
 
 //
