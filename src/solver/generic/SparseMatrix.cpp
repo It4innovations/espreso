@@ -3979,7 +3979,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
 //ESLOCAL FIXING_NODES_OR_DOF                           = 0;
-  eslocal fixing_nodes_or_dof                           = 20;
+  eslocal fixing_nodes_or_dof                           = 40;
 //ESLOCAL DOFPERNODE                                    = 3;
   eslocal dofPerNode                                    = 1;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4445,6 +4445,46 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  K_sr.printMatCSR("K_sr");
 
 
+  {
+   SparseMatrix s2 = K;
+   //s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "K"));
+   os2 << s2;
+   os2.close();
+  }
+
+  {
+   SparseMatrix s2 = K_rr;
+//   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "K_rr"));
+   os2 << s2;
+   os2.close();
+   }
+   {
+   SparseMatrix s2 = K_rs;
+//   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "K_rs"));
+   os2 << s2;
+   os2.close();
+   } 
+   {
+   SparseMatrix s2 = K_sr;
+//   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "K_sr"));
+   os2 << s2;
+   os2.close();
+   } 
+
+   {
+   SparseMatrix s2 = K_modif;
+   //s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "K_modif"));
+   os2 << s2;
+   os2.close();
+   }
+
+
+
 #if VERBOSE_LEVEL>0
 //4 - creation of block K_rs
   time1 = omp_get_wtime();
@@ -4455,7 +4495,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   std::stringstream ss;
   bool SC_via_K_rr=true;
 //
-  if (K_rr.cols==0){
+  int K_rr_cols = K_rr.cols;
+  if (K_rr_cols==0){
     S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
 //    S.RemoveLower();
   }
@@ -4467,7 +4508,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       K_rr_solver.ImportMatrix(K_rr);
 //      K_rr.printMatCSR("K_rr");
       K_rr_solver.mtype = 11;
-      K_rr_solver.msglvl= 1;
+      K_rr_solver.msglvl= 0;
 
       ss << "get kerner from K -> rank: " << config::env::MPIrank;
       int error_K_rr = K_rr_solver.Factorization(ss.str());
@@ -4527,9 +4568,26 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     }
   }
 //
+
+
+   SparseMatrix s2 = S;
+   //s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "S"));
+   os2 << s2;
+   os2.close();
+
+
+
 //  S.printMatCSR("S");
   S.type='G';
   S.ConvertCSRToDense(1);
+
+
+
+  
+  
+
+
 #if VERBOSE_LEVEL>0
 //5 - Schur complement created
     time1 = omp_get_wtime();
@@ -4630,12 +4688,12 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   int R_r_rows = 0;
   int R_r_cols = 0;
   SparseMatrix R_r;
-  if (K_rr.cols!=0){
+  if (K_rr_cols!=0){
     R_r.MatMat(K_rs,'N',R_s);
     K_rs.Clear();
     if (!SC_via_K_rr) {
       K_rr_solver.ImportMatrix(K_rr);
-      K_rr.Clear();
+//      K_rr.Clear();
       ss << "get kerner from K -> rank: " << config::env::MPIrank;
       K_rr_solver.Factorization(ss.str());
     }
@@ -4718,17 +4776,68 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   int Rl_r_rows = 0;
   int Rl_r_cols = 0;
   SparseMatrix Rl_r;
+
+
+
+
+
+  {
+   SparseMatrix s2 = Rl_s;
+   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "Rl_s"));
+   os2 << s2;
+   os2.close();
+  }
+
+
+  {
+   SparseMatrix s2 = R_s;
+   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "R_s"));
+   os2 << s2;
+   os2.close();
+  }
+
+
+   
+
+
 //
-  if (K_rr.cols!=0){
+
+
+
+  if (K_rr_cols!=0){
+    SparseSolverCPU K_rr_t_solver;
+    SparseMatrix K_rr_t;
+    K_rr.MatTranspose( K_rr_t );
+    K_rr_t_solver.ImportMatrix(K_rr_t);
     Rl_r.MatMat(K_sr,'T',Rl_s);
     K_sr.Clear();
-    K_rr_solver.iparm[12]=2;
-    K_rr_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
-    K_rr_solver.Clear();
+    K_rr_t_solver.mtype=11;
+    K_rr_t_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
+    K_rr_t_solver.Clear();
     Rl_r.ConvertCSRToDense(0);
-    Rl_r_rows = R_r.rows;
-    Rl_r_cols = R_r.cols;
+    Rl_r_rows = Rl_r.rows;
+    Rl_r_cols = Rl_r.cols;
   }
+
+  {
+   SparseMatrix s2 = R_r;
+   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "R_r"));
+   os2 << s2;
+   os2.close();
+  }
+
+  {
+   SparseMatrix s2 = Rl_r;
+   s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "Rl_r"));
+   os2 << s2;
+   os2.close();
+  }
+
+
 //
 //                                               |
 // --------------- CREATING WHOLE KERNEL Kplus_Rl = [ (R_r)^T (R_s)^T ]^T
@@ -4860,7 +4969,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     else
     {
       N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
-      Nl.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
+      Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, fix_dofs);
     }
   //null_pivots
     SparseMatrix Nt;
@@ -4869,6 +4978,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     Nl.MatTranspose( Nlt );
     SparseMatrix NtNl;
     NtNl.MatMat( Nt,'N',Nl );
+
+//    NtNl.printMatCSR("NtNl");
+
 //    NtN_Mat.MatTranspose();
 //    NtN_Mat.RemoveLower();
     SparseSolverCPU inv_NtNl;
@@ -4878,7 +4990,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     sss << "get kernel from K -> rank: " << config::env::MPIrank;
     inv_NtNl.Factorization(ss.str());
     // Nt replaced (!) Nt = inv(NtNl) * Nt
+//    Nt.printMatCSR("Nt");
     inv_NtNl.SolveMat_Sparse(Nt);
+//    Nt.printMatCSR("Nt_");
     inv_NtNl.Clear();
     NtNl.MatMat(Nl,'N',Nt);
     NtNl.MatScale(rho);
