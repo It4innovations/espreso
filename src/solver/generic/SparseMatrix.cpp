@@ -4062,6 +4062,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // FOR UNSYMMETRIC MATRIX HAS TO BE SET-UP FOLLOWING PARAMETERS - ALWAYS
   use_null_pivots_or_s_set          = false;
   fixing_nodes_or_dof               = 40;
+  dofPerNode                        = 1;
 
 
     
@@ -4586,16 +4587,18 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
 
 
-//   SparseMatrix s2 = S;
-//   //s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "S"));
-//   os2 << s2;
-//   os2.close();
+  S.type='G';
+  if (true){
+   SparseMatrix s2 = S;
+   //s2.ConvertDenseToCSR(1);
+   std::ofstream os2(Logging::prepareFile(0, "S"));
+   os2 << s2;
+   os2.close();
+   }
 
 
 
 //  S.printMatCSR("S");
-  S.type='G';
   S.ConvertCSRToDense(1);
 
 
