@@ -3013,6 +3013,42 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 
 }
 
+std::vector<double> SparseMatrix::getDiagonal()
+{
+	std::vector<double> diagonal;
+	diagonal.reserve(rows);
+
+	const std::vector<eslocal> &ROWS = CSR_I_row_indices;
+	const std::vector<eslocal> &COLS = CSR_J_col_indices;
+	const std::vector<double>  &VALS = CSR_V_values;
+
+	for (eslocal i = 0; i < rows; i++) {
+		auto it = std::lower_bound(COLS.begin() + ROWS[i] - 1, COLS.begin() + ROWS[i + 1] - 1, i + 1);
+		diagonal.push_back(*it == i + 1 ? VALS[it - COLS.begin()] : 0);
+	}
+
+	return diagonal;
+}
+
+double SparseMatrix::getDiagonalMaximum()
+{
+	double max = -1e10;
+
+	const std::vector<eslocal> &ROWS = CSR_I_row_indices;
+	const std::vector<eslocal> &COLS = CSR_J_col_indices;
+	const std::vector<double>  &VALS = CSR_V_values;
+
+	for (eslocal i = 0; i < rows; i++) {
+		auto it = std::lower_bound(COLS.begin() + ROWS[i] - 1, COLS.begin() + ROWS[i + 1] - 1, i + 1);
+		double tmp = *it == i + 1 ? VALS[it - COLS.begin()] : 0;
+		if (max < tmp) {
+			max = tmp;
+		}
+	}
+
+	return max;
+}
+
 
 
 //void SparseMatrix::get_kernel_from_K() {

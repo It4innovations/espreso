@@ -4,6 +4,126 @@
 
 using namespace espreso;
 
+static void computeKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
+{
+	size_t nodes = coordinates.localSize(subdomain);
+	R1.rows = 3 * nodes;
+	R1.cols = 6;
+	R1.nnz = R1.rows * R1.cols;
+	R1.type = 'G';
+
+	R1.dense_values.reserve(R1.nnz);
+
+	for (size_t c = 0; c < 3; c++) {
+		std::vector<double> kernel = { 0, 0, 0 };
+		kernel[c] = 1;
+		for (size_t i = 0; i < nodes; i++) {
+			R1.dense_values.insert(R1.dense_values.end(), kernel.begin(), kernel.end());
+		}
+	}
+
+	for (size_t i = 0; i < coordinates.localSize(subdomain); i++) {
+		const Point &p = coordinates.get(i, subdomain);
+		R1.dense_values.push_back(-p.y);
+		R1.dense_values.push_back( p.x);
+		R1.dense_values.push_back(   0);
+	}
+
+	for (size_t i = 0; i < coordinates.localSize(subdomain); i++) {
+		const Point &p = coordinates.get(i, subdomain);
+		R1.dense_values.push_back(-p.z);
+		R1.dense_values.push_back(   0);
+		R1.dense_values.push_back( p.x);
+	}
+
+	for (size_t i = 0; i < coordinates.localSize(subdomain); i++) {
+		const Point &p = coordinates.get(i, subdomain);
+		R1.dense_values.push_back(   0);
+		R1.dense_values.push_back(-p.z);
+		R1.dense_values.push_back( p.y);
+	}
+}
+
+static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<eslocal> &fixPoints, const Coordinates &coordinates, size_t subdomain)
+{
+	SparseMatrix Nt; // CSR matice s DOFY
+	Nt.rows = 6;
+	Nt.cols = K.cols;
+	Nt.nnz  = 9 * fixPoints.size();
+	Nt.type = 'G';
+
+	std::vector<eslocal> &ROWS = Nt.CSR_I_row_indices;
+	std::vector<eslocal> &COLS = Nt.CSR_J_col_indices;
+	std::vector<double>  &VALS = Nt.CSR_V_values;
+
+	ROWS.reserve(Nt.rows + 1);
+	COLS.reserve(Nt.nnz);
+	VALS.reserve(Nt.nnz);
+
+	ROWS.push_back(1);
+	ROWS.push_back(ROWS.back() + fixPoints.size());
+	ROWS.push_back(ROWS.back() + fixPoints.size());
+	ROWS.push_back(ROWS.back() + fixPoints.size());
+	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
+	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
+	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
+
+	for (size_t c = 0; c < 3; c++) {
+		std::vector<double> kernel = { 0, 0, 0 };
+		kernel[c] = 1;
+
+		for (size_t i = 0; i < fixPoints.size(); i++) {
+			COLS.push_back(3 * fixPoints[i] + 1);
+			COLS.push_back(3 * fixPoints[i] + 2);
+			COLS.push_back(3 * fixPoints[i] + 3);
+			VALS.insert(VALS.end(), kernel.begin(), kernel.end());
+		}
+	}
+
+	for (size_t i = 0; i < fixPoints.size(); i++) {
+		const Point &p = coordinates.get(fixPoints[i], subdomain);
+		COLS.push_back(3 * fixPoints[i] + 1);
+		COLS.push_back(3 * fixPoints[i] + 2);
+		VALS.push_back(-p.y);
+		VALS.push_back( p.x);
+	}
+
+	for (size_t i = 0; i < fixPoints.size(); i++) {
+		const Point &p = coordinates.get(fixPoints[i], subdomain);
+		COLS.push_back(3 * fixPoints[i] + 1);
+		COLS.push_back(3 * fixPoints[i] + 3);
+		VALS.push_back(-p.z);
+		VALS.push_back( p.x);
+	}
+
+	for (size_t i = 0; i < fixPoints.size(); i++) {
+		const Point &p = coordinates.get(fixPoints[i], subdomain);
+		COLS.push_back(3 * fixPoints[i] + 2);
+		COLS.push_back(3 * fixPoints[i] + 3);
+		VALS.push_back(-p.z);
+		VALS.push_back( p.y);
+	}
+
+	SparseMatrix N;
+	Nt.MatTranspose( N );
+
+	RegMat.MatMat(Nt, 'N', N);
+	RegMat.MatTranspose();
+	RegMat.RemoveLower();
+
+	SparseSolverCPU NtN;
+	NtN.ImportMatrix(RegMat);
+	RegMat.Clear();
+
+	NtN.Factorization("Create RegMat");
+	NtN.SolveMat_Sparse(Nt);
+	NtN.Clear();
+
+	RegMat.MatMat(N, 'N', Nt);
+	RegMat.MatScale(K.getDiagonalMaximum());
+}
+
+
 void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 {
 	const std::vector<eslocal> &partition = _mesh.getPartition();
@@ -65,4 +185,10 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 
 	f[subdomain].clear();
 	f[subdomain].resize(_K.rows(), 0);
+
+	computeKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+	computeRegMat(K[subdomain], RegMat[subdomain], _mesh.getFixPoints()[subdomain], _mesh.coordinates(), subdomain);
+
+	K[subdomain].RemoveLower();
+	RegMat[subdomain].RemoveLower();
 }

@@ -8,6 +8,11 @@ namespace espreso {
 
 struct PrecomputedPhysics: public Physics {
 
+	virtual bool singular() const
+	{
+		return true;
+	}
+
 	virtual void assemble()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K and RHS";

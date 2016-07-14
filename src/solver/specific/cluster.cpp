@@ -293,7 +293,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 }
 
-void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes ) {
+void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat ) {
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
 		if ( d == 0 && config::env::MPIrank == 0) {
@@ -303,26 +303,17 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 	    if (config::solver::REGULARIZATION == 0) {
 
 			domains[d].K.swap(K_in[d]);
+			domains[d]._RegMat.swap(RegMat[d]);
 
-      		if ( domains[d].K.type == 'G' )
-		  		domains[d].K.RemoveLower();
 
-		  	if ( config::solver::PRECONDITIONER == 11 )
-		  		domains[d].Prec = domains[d].K;
+		  	if ( config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::MAGIC ) {
+		  		//domains[d].Prec = domains[d].K;
+		  		domains[d]._RegMat.ConvertToCSR(0);
+		  		domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
+		  	}
 
-   			for (eslocal i = 0; i < fix_nodes[d].size(); i++)
-   	 			for (eslocal d_i = 0; d_i < 1; d_i++)
-   					domains[d].fix_dofs.push_back( 3 * fix_nodes[d][i] + d_i);
-
-   			if (!USE_DYNAMIC) {
-   				domains[d].K_regularizationFromR ( domains[d].K );
-   			}
 			domains[d].enable_SP_refinement = true;
-
-			std::vector <eslocal> ().swap (domains[d].fix_dofs);
-
 	    }
-
 	    ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS2);

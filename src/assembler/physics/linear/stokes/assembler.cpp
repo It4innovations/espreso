@@ -63,9 +63,41 @@ static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, 
 	}
 }
 
-static void computeKernels(SparseMatrix &R1, size_t nElements)
+static void computeKernels(SparseMatrix &R1, size_t nodes)
 {
+	R1.rows = 3 * nodes;
+	R1.cols = 2;
+	R1.nnz = R1.rows * R1.cols;
+	R1.type = 'G';
 
+	R1.dense_values.reserve(R1.nnz);
+
+	std::vector<double> kernel;
+
+	kernel = { 1, 0, 0 };
+	for (size_t i = 0; i < nodes; i++) {
+		R1.dense_values.insert(R1.dense_values.end(), kernel.begin(), kernel.end());
+	}
+
+	kernel = { 0, 1, 0 };
+	for (size_t i = 0; i < nodes; i++) {
+		R1.dense_values.insert(R1.dense_values.end(), kernel.begin(), kernel.end());
+	}
+}
+
+static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat)
+{
+	RegMat.rows = K.rows;
+	RegMat.cols = K.cols;
+	RegMat.nnz  = 2;
+	RegMat.type = K.type;
+
+	RegMat.I_row_indices.push_back(1);
+	RegMat.J_col_indices.push_back(1);
+	RegMat.I_row_indices.push_back(2);
+	RegMat.J_col_indices.push_back(2);
+	RegMat.V_values.resize(2, K.getDiagonalMaximum());
+	RegMat.ConvertToCSR(1);
 }
 
 void Stokes::composeSubdomain(size_t subdomain)
@@ -83,13 +115,12 @@ void Stokes::composeSubdomain(size_t subdomain)
 
 	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
 
-		const Element* e = _mesh.getElements()[i];
-		processElement(Ah, B1h, B2h, Eh, fe, _mesh, subdomain, e);
+		processElement(Ah, B1h, B2h, Eh, fe, _mesh, subdomain, elements[i]);
 
-		for (size_t i = 0; i < e->size(); i++) {
-			eslocal row = 3 * e->node(i);
-			for (size_t j = 0; j < e->size(); j++) {
-				eslocal column = 3 * e->node(j);
+		for (size_t i = 0; i < elements[i]->size(); i++) {
+			eslocal row = 3 * elements[i]->node(i);
+			for (size_t j = 0; j < elements[i]->size(); j++) {
+				eslocal column = 3 * elements[i]->node(j);
 				_K(row + 0, column + 0) =   Ah(i, j);
 				_K(row + 1, column + 1) =   Ah(i, j);
 
@@ -105,13 +136,15 @@ void Stokes::composeSubdomain(size_t subdomain)
 		}
 	}
 
-	computeKernels(R1[subdomain], partition[subdomain + 1] - partition[subdomain]);
-
-
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
-
 	K[subdomain] = csrK;
+
+	computeKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
+	computeRegMat(K[subdomain], RegMat[subdomain]);
+
+	K[subdomain].RemoveLower();
+	RegMat[subdomain].RemoveLower();
 }
 
 

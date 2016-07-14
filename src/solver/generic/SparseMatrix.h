@@ -193,6 +193,10 @@ public:
 	void   getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, eslocal i_start, eslocal i_size,
                                           eslocal j_start, eslocal j_size);
 
+	// Return diagonal of CSR matrix. Columns indices have to be sorted!!
+	std::vector<double> getDiagonal();
+	double getDiagonalMaximum();
+
 	void MatAppend(SparseMatrix & A);
 	void RemoveLower();
 

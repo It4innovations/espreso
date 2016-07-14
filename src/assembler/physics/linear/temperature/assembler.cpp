@@ -73,6 +73,29 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
+static void computeKernels(SparseMatrix &R1, size_t nodes)
+{
+	R1.rows = nodes;
+	R1.cols = 1;
+	R1.nnz = R1.rows * R1.cols;
+	R1.type = 'G';
+
+	R1.dense_values.resize(R1.nnz, 1 / sqrt(nodes));
+}
+
+static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat)
+{
+	RegMat.rows = K.rows;
+	RegMat.cols = K.cols;
+	RegMat.nnz  = 1;
+	RegMat.type = K.type;
+
+	RegMat.I_row_indices.push_back(1);
+	RegMat.J_col_indices.push_back(1);
+	RegMat.V_values.push_back(K.getDiagonalMaximum());
+	RegMat.ConvertToCSR(1);
+}
+
 void Temperature::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);
@@ -104,6 +127,12 @@ void Temperature::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
+
+	computeKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
+	computeRegMat(K[subdomain], RegMat[subdomain]);
+
+	K[subdomain].RemoveLower();
+	RegMat[subdomain].RemoveLower();
 }
 
 

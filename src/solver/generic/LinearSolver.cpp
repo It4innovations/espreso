@@ -24,11 +24,6 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	SINGULAR 	= IS_SINGULAR;
 
-	if ( config::solver::REGULARIZATION == 0 )
-  		R_from_mesh = true	;
-  	else
-  		R_from_mesh = false	;
-
 	if (!config::solver::KEEP_FACTORS)
 		KEEP_FACTORS = false; // only suported by MKL Pardiso so far
 	else
@@ -77,186 +72,122 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 }
 
+// TODO: const parameters
 void LinearSolver::init(
-		const Mesh &mesh,
+		Physics &physics,
+		EqualityConstraints &constraints,
+		const std::vector<int> &neighbours)
+{
 
-		std::vector < SparseMatrix >	& K_mat,
-		std::vector < SparseMatrix >	& T_mat,
-		std::vector < SparseMatrix >	& B1_mat,
-		std::vector < SparseMatrix >	& B0_mat,
-
-		std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
-		std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
-		std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
-		std::vector < std::vector <double> >	& B1_duplicity,
-
-		std::vector < std::vector <double > >	& f_vec,
-		std::vector < std::vector <double > >	& vec_c,
-
-		const std::vector < std::vector <eslocal > >	& fix_nodes,
-
-		const std::vector < int > & neigh_clusters
-
-) {
-
-	number_of_subdomains_per_cluster = K_mat.size();
+	number_of_subdomains_per_cluster = physics.K.size();
 
 	// Overall Linear Solver Time measurement structure
-	 timeEvalMain.totalTime.startWithBarrier();
+	timeEvalMain.totalTime.startWithBarrier();
 
-	 TimeEvent timeSetClust(string("Solver - Set cluster")); timeSetClust.start();
+	TimeEvent timeSetClust(string("Solver - Set cluster")); timeSetClust.start();
 	// Setup Cluster and Solver
-	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster,0);
-	for (eslocal i = 0; i<number_of_subdomains_per_cluster; i++)
-		domain_list[i] = i;
 
-	cluster.cluster_global_index = MPI_rank + 1;
+	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster, 0);
+	for (eslocal i = 0; i < number_of_subdomains_per_cluster; i++) {
+		domain_list[i] = i;
+	}
+
+	cluster.cluster_global_index = config::env::MPIrank + 1;
 	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
-	cluster.my_neighs = std::vector<eslocal>(neigh_clusters.begin(), neigh_clusters.end());
+	cluster.my_neighs = std::vector<eslocal>(neighbours.begin(), neighbours.end());
+	switch (physics.mtype) {
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		cluster.SYMMETRIC_SYSTEM = true;
+		break;
+	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		cluster.SYMMETRIC_SYSTEM = true;
+		break;
+	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+		cluster.SYMMETRIC_SYSTEM = false;
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+	}
+
+	if (!cluster.SYMMETRIC_SYSTEM && config::solver::CGSOLVER != config::solver::CGSOLVERalternative::GMRES) {
+		ESINFO(GLOBAL_ERROR) << "Only GMRES Solver supports non-symmetric systems.";
+	}
+
+	SINGULAR = physics.singular();
+
 
 	vector<double> solver_parameters ( 10 );
 	solver.Setup ( solver_parameters, cluster );
+
 	// END - Setup Cluster and Solver
-	 timeSetClust.endWithBarrier(); timeEvalMain.addEvent(timeSetClust);
+	timeSetClust.endWithBarrier(); timeEvalMain.addEvent(timeSetClust);
 
 
 	// *** Setup B0 matrix *******************************************************************************************
 	if (cluster.USE_HFETI == 1 ) {
-		 TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.start();
-		set_B0(B0_mat);
-		 timeSetB0.endWithBarrier(); timeEvalMain.addEvent(timeSetB0);
-
+		TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.start();
+		set_B0(constraints.B0);
+		timeSetB0.endWithBarrier(); timeEvalMain.addEvent(timeSetB0);
 	}
 	// *** END - Setup B0 matrix *************************************************************************************
 
 
 	// *** Setup B1 matrix *******************************************************************************************
-	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.start();
-	set_B1(B1_mat,B1_duplicity);
-	 timeSetB1.endWithBarrier(); timeEvalMain.addEvent(timeSetB1);
+	TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.start();
+	set_B1(constraints.B1, constraints.B1duplicity);
+	timeSetB1.endWithBarrier(); timeEvalMain.addEvent(timeSetB1);
 	// *** END - Setup B1 matrix *************************************************************************************
 
 
 	// *** Setup R matrix ********************************************************************************************
-	 if (SINGULAR) {
-		 TimeEvent timeSetR(string("Solver - Set R"));
-		 timeSetR.start();
-		 if (R_from_mesh) {
-			 set_R(mesh);
-		 } else {
-			 cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-				 cluster.domains[d].K = K_mat[d];
-				 if (cluster.domains[d].K.type == 'G')
-					 cluster.domains[d].K.RemoveLower();
-				 if (solver.USE_PREC == 11)
-					 cluster.domains[d].Prec = cluster.domains[d].K;
-			 }
-			 set_R_from_K();
-		 }
+	if (SINGULAR) {
+		TimeEvent timeSetR(string("Solver - Set R"));
+		timeSetR.start();
 
-		 if (config::info::printMatrices) {
-			 for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-				 SparseMatrix s = cluster.domains[d].Kplus_R;
-				 s.ConvertDenseToCSR(1);
-				 std::ofstream os(Logging::prepareFile(d, "R"));
-				 os << s;
-				 os.close();
-
-
-
-		    if (!cluster.SYMMETRIC_SYSTEM) {
-				 SparseMatrix s2 = cluster.domains[d].Kplus_R2;
-				 s2.ConvertDenseToCSR(1);
-				 std::ofstream os2(Logging::prepareFile(d, "Rl"));
-				 os2 << s2;
-				 os2.close();
-
-        }
-
-
-			 }
-		 }
-
-		 timeSetR.endWithBarrier();
-		 timeEvalMain.addEvent(timeSetR);
-		 // *** END - Setup R matrix **************************************************************************************
-	 }
-
-
-	// *** HTFETI - averaging objects
-	if ( config::mesh::averageEdges || config::mesh::averageFaces ) {
-		cilk_for (int d = 0; d < T_mat.size(); d++) {
-
-			SparseSolverCPU Tinv;
-			Tinv.mtype = 11;
-			Tinv.ImportMatrix(T_mat[d]);
-			std::stringstream ss;
-			ss << "Init averaging -> rank: " << config::env::MPIrank << ", subdomain: " << d;
-			Tinv.Factorization(ss.str());
-
-			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
-			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
-			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
-
-			cluster.domains[d].T = T_mat[d];
-
-			SparseMatrix Ktmp;
-			Ktmp = K_mat[d];
-
-			Ktmp.MatMat( T_mat[d], 'T', K_mat[d] );
-
-			K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
-
-			vector <double > tmp;
-			tmp = f_vec[d];
-
-			T_mat[d].MatVec(tmp,f_vec[d],'T');
-
-
+		if (physics.precomputedR()) {
+			// TODO: remove copying of R1
+			cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+				cluster.domains[d].Kplus_R = physics.R1[d];
+			}
+		} else {
+			cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+				cluster.domains[d].K = physics.K[d];
+				if (solver.USE_PREC == config::solver::PRECONDITIONERalternative::MAGIC) {
+					cluster.domains[d].Prec = cluster.domains[d].K;
+					cluster.domains[d].Prec.MatAddInPlace(physics.RegMat[d], 'N', -1);
+				}
+			}
+			set_R_from_K();
 		}
 
+		timeSetR.endWithBarrier();
+		timeEvalMain.addEvent(timeSetR);
 	}
-	// *** END - HTFETI - averaging objects
-
-
-	if (config::info::printMatrices) {
-		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-			SparseMatrix RT = cluster.domains[d].Kplus_R;
-			RT.ConvertDenseToCSR(1);
-
-			std::ofstream osKT(Logging::prepareFile(d, "KT"));
-			osKT << K_mat[d];
-			osKT.close();
-
-			std::ofstream osRT(Logging::prepareFile(d, "RT"));
-			osRT << RT;
-			osRT.close();
-		}
-	}
-
 
 	// *** Load RHS for dirichelt
-	 TimeEvent timeSetRHS(string("Solver - Set Dirichlet RHS points"));
-	 timeSetRHS.start();
+	TimeEvent timeSetRHS(string("Solver - Set Dirichlet RHS points"));
+	timeSetRHS.start();
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
-		cluster.domains[d].vec_c = vec_c[d];
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		cluster.domains[d].vec_c = constraints.B1c[d];
+	}
 
-	 timeSetRHS.endWithBarrier();
-	 timeEvalMain.addEvent(timeSetRHS);
+	timeSetRHS.endWithBarrier();
+	timeEvalMain.addEvent(timeSetRHS);
 	// *** END - Load RHS for dirichelt
 
 
 
 	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
-	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
+	TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
-		cluster.domains[d].lambda_map_sub = lambda_map_sub_B1[d];
-	Preprocessing( lambda_map_sub_clst );
+	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		cluster.domains[d].lambda_map_sub = constraints.B1subdomainsMap[d];
+	}
+	Preprocessing( constraints.B1clustersMap );
 
 	timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
-	 // *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+	// *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
 
 
 	// **** Calculate Dirichlet Preconditioner ********************************
@@ -264,19 +195,21 @@ void LinearSolver::init(
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
 		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
-		cilk_for (int d = 0; d < K_mat.size(); d++) {
+		cilk_for (int d = 0; d < physics.K.size(); d++) {
 			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
-			SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
-			SEQ_VECTOR <eslocal> perm_vec_diff ( K_mat[d].rows );
+			SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
+			SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
 
-			SEQ_VECTOR <eslocal> I_row_indices_p (K_mat[d].nnz);
-			SEQ_VECTOR <eslocal> J_col_indices_p (K_mat[d].nnz);
+			SEQ_VECTOR <eslocal> I_row_indices_p (physics.K[d].nnz);
+			SEQ_VECTOR <eslocal> J_col_indices_p (physics.K[d].nnz);
 
-			for (eslocal i = 0; i < perm_vec.size(); i++)
+			for (eslocal i = 0; i < perm_vec.size(); i++) {
 				perm_vec[i] = perm_vec[i] - 1;
+			}
 
-			for (eslocal i = 0; i < perm_vec_full.size(); i++)
+			for (eslocal i = 0; i < perm_vec_full.size(); i++) {
 				perm_vec_full[i] = i;
+			}
 
 			auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
 			perm_vec_diff.resize(it - perm_vec_diff.begin());
@@ -284,8 +217,8 @@ void LinearSolver::init(
 			perm_vec_full = perm_vec_diff;
 			perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-			SparseMatrix K_modif = K_mat[d];
-			K_modif.RemoveLower();
+			SparseMatrix K_modif = physics.K[d];
+			// K_modif.RemoveLower();
 
 			SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
 			eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
@@ -295,23 +228,18 @@ void LinearSolver::init(
 				vec_I1_i2[i][1] = i; // position to create reverse permutation
 			}
 
-			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
-					[](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
-				return a[0] < b[0];
-			});
-
+			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
 
 			// permutations made on matrix in COO format
 			K_modif.ConvertToCOO(0);
 			eslocal I_index,J_index;
-			for (eslocal i = 0;i<K_modif.nnz;i++){
-				I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
-				J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
-				if (I_index>J_index){
-					I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
-				}
-				else{
-					I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+			for (eslocal i = 0; i < K_modif.nnz;i++) {
+				I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
+				J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
+				if (I_index > J_index) {
+					I_row_indices_p[i] = J_index; J_col_indices_p[i] = I_index;
+				} else {
+					I_row_indices_p[i] = I_index; J_col_indices_p[i] = J_index;
 				}
 			}
 			//
@@ -325,25 +253,24 @@ void LinearSolver::init(
 			eslocal SC_SIZE = perm_vec.size();
 			SparseMatrix S;
 
-			if (SC_SIZE == K_mat[d].rows){
-				S = K_mat[d];
+			if (SC_SIZE == physics.K[d].rows) {
+				S = physics.K[d];
 				cluster.domains[d].Prec = S;
 			} else {
 				SparseSolverCPU createSchur;
 				eslocal SC_SIZE = perm_vec.size();
 				createSchur.ImportMatrix_wo_Copy(K_modif);
-				createSchur.Create_SC(S,SC_SIZE,false);
+				createSchur.Create_SC(S, SC_SIZE,false);
 				S.type='S';
 
 				cluster.domains[d].Prec = S;
+				cluster.domains[d].Prec.ConvertCSRToDense(1);
 			}
-	    if (config::info::printMatrices) {
-        std::ofstream osS(Logging::prepareFile(d, "S"));
-        osS << S;
-        osS.close();
-      }
-
-
+			if (config::info::PRINT_MATRICES) {
+				std::ofstream osS(Logging::prepareFile(d, "S"));
+				osS << S;
+				osS.close();
+			}
 
 			ESINFO(PROGRESS2) << Info::plain() << ".";
 		}
@@ -360,62 +287,26 @@ void LinearSolver::init(
 
 	// *** Load Matrix K, Regularization, Schur Complement and Factorization ******************************************************************************
 	TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
-	 timeSolKproc.start();
+	timeSolKproc.start();
 
 	ESLOG(MEMORY) << "Before K reg. and fact. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
+	TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
 
 	ESINFO(PROGRESS2) << "Make K regular";
-	cluster.ImportKmatrixAndRegularize( K_mat, fix_nodes );
+	cluster.ImportKmatrixAndRegularize( physics.K, physics.RegMat );
 
-	 KregMem.endWithoutBarrier( GetProcessMemory_u() );
-	 //KregMem.printLastStatMPIPerNode();
+	KregMem.endWithoutBarrier( GetProcessMemory_u() );
+	//KregMem.printLastStatMPIPerNode();
 
 	ESLOG(MEMORY) << "After import K process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-	if (config::info::printMatrices) {
-		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-			std::ofstream os(Logging::prepareFile(d, "Kreg"));
-			SparseMatrix s = cluster.domains[d].K;
-			os << s;
-			os.close();
-
-//			std::ofstream osK(Logging::prepareFile(d, "K").c_str());
-//			osK << _K[d];
-//			osK.close();
-//			std::ofstream osT(Logging::prepareFile(d, "T").c_str());
-//			osT << _T[d];
-//			osT.close();
-
-//		cluster.domains[d].vec_c = vec_c[d];
-
-
-      std::ofstream os_vec_c(Logging::prepareFile(d, "c").c_str());
-			os_vec_c << vec_c[d];
-			os_vec_c.close();
-
-
-
-      std::ofstream os_in_weight(Logging::prepareFile(d, "loc_ind_weight").c_str());
-			os_in_weight << lambda_map_sub_B1[d];
-			os_in_weight.close();
-//      lambda_map_sub_B1[d]
-
-			std::ofstream os_weigth(Logging::prepareFile(d, "weight").c_str());
-			os_weigth << B1_duplicity[d];
-			os_weigth.close();
-
-		}
-	}
-
-
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
-		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
-		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
+		TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
+		TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
 
 		bool USE_FLOAT = false;
 		if (config::solver::SCHUR_COMPLEMENT_PREC == 1 ) {
@@ -424,9 +315,9 @@ void LinearSolver::init(
 
 		cluster.Create_SC_perDomain(USE_FLOAT);
 
-		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
-		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
-		 //KSCMem.printLastStatMPIPerNode();
+		timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
+		KSCMem.endWithoutBarrier( GetProcessMemory_u() );
+		//KSCMem.printLastStatMPIPerNode();
 
 		ESLOG(MEMORY) << "After K inv. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
@@ -457,60 +348,486 @@ void LinearSolver::init(
 
 	// *** Setup Hybrid FETI part of the solver ********************************************************************************
 	if (cluster.USE_HFETI == 1) {
-		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
-		 timeHFETIprec.start();
-		cluster.SetClusterHFETI( R_from_mesh );
-		 timeHFETIprec.endWithBarrier();
-		 timeEvalMain.addEvent(timeHFETIprec);
+		TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
+		timeHFETIprec.start();
+		cluster.SetClusterHFETI( physics.precomputedR() );
+		timeHFETIprec.endWithBarrier();
+		timeEvalMain.addEvent(timeHFETIprec);
 
 		ESLOG(MEMORY) << "After HFETI preprocessing process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
 
-    if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1) {
+	if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS) {
 
-    	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
+		TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
 
 		ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
 		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
-		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		cluster.Create_G1_perCluster   ();
-		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
-		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
+		TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
+		TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
+		cluster.Create_G_perCluster   ();
+		G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
+		G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
 		ESLOG(MEMORY) << "Created G1 per cluster";
 		ESLOG(MEMORY) << "Before HFETI create GGt process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
+		TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
 		solver.Preprocessing ( cluster );
-		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
+		solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
 
-      	cluster.Compress_G1();
+		cluster.Compress_G1();
 
-      	// Cleanup - of uncessary objects
-    	cluster._my_lamdas_map_indices.clear();
-    	cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
-    		cluster.domains[d].B1.Clear();
+		// Cleanup - of uncessary objects
+		cluster._my_lamdas_map_indices.clear();
+		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			cluster.domains[d].B1.Clear();
+		}
 
-    	timeSolPrec2.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec2);
+		timeSolPrec2.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec2);
 
-    	ESLOG(MEMORY) << "After HFETI full preprocess process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "After HFETI full preprocess process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-    }
+	}
 
 	// *** Final Solver Setup after K factorization **********************************************************************************
-	 TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));
-	 timeSolAkpl.start();
+	TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));
+	timeSolAkpl.start();
 	cluster.SetClusterPC_AfterKplus();
-	 timeSolAkpl.endWithBarrier();
-	 timeEvalMain.addEvent(timeSolAkpl);
+	timeSolAkpl.endWithBarrier();
+	timeEvalMain.addEvent(timeSolAkpl);
 	// *** END - Final Solver Setup after K factorization ****************************************************************************
+}
+
+void LinearSolver::init(
+		const Mesh &mesh,
+
+		std::vector < SparseMatrix >	& K_mat,
+		std::vector < SparseMatrix >	& T_mat,
+		std::vector < SparseMatrix >	& B1_mat,
+		std::vector < SparseMatrix >	& B0_mat,
+
+		std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
+		std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
+		std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
+		std::vector < std::vector <double> >	& B1_duplicity,
+
+		std::vector < std::vector <double > >	& f_vec,
+		std::vector < std::vector <double > >	& vec_c,
+
+		const std::vector < std::vector <eslocal > >	& fix_nodes,
+
+		const std::vector < int > & neigh_clusters
+
+) {
+
+//	number_of_subdomains_per_cluster = K_mat.size();
+//
+//	// Overall Linear Solver Time measurement structure
+//	 timeEvalMain.totalTime.startWithBarrier();
+//
+//	 TimeEvent timeSetClust(string("Solver - Set cluster")); timeSetClust.start();
+//	// Setup Cluster and Solver
+//	std::vector <eslocal> domain_list (number_of_subdomains_per_cluster,0);
+//	for (eslocal i = 0; i<number_of_subdomains_per_cluster; i++)
+//		domain_list[i] = i;
+//
+//	cluster.cluster_global_index = MPI_rank + 1;
+//	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
+//	cluster.my_neighs = std::vector<eslocal>(neigh_clusters.begin(), neigh_clusters.end());
+//
+//	vector<double> solver_parameters ( 10 );
+//	solver.Setup ( solver_parameters, cluster );
+//	// END - Setup Cluster and Solver
+//	 timeSetClust.endWithBarrier(); timeEvalMain.addEvent(timeSetClust);
+//
+//
+//	// *** Setup B0 matrix *******************************************************************************************
+//	if (cluster.USE_HFETI == 1 ) {
+//		 TimeEvent timeSetB0(string("Solver - Set B0")); timeSetB0.start();
+//		set_B0(B0_mat);
+//		 timeSetB0.endWithBarrier(); timeEvalMain.addEvent(timeSetB0);
+//
+//	}
+//	// *** END - Setup B0 matrix *************************************************************************************
+//
+//
+//	// *** Setup B1 matrix *******************************************************************************************
+//	 TimeEvent timeSetB1(string("Solver - Set B1")); timeSetB1.start();
+//	set_B1(B1_mat,B1_duplicity);
+//	 timeSetB1.endWithBarrier(); timeEvalMain.addEvent(timeSetB1);
+//	// *** END - Setup B1 matrix *************************************************************************************
+//
+//
+//	// *** Setup R matrix ********************************************************************************************
+//	 if (SINGULAR) {
+//		 TimeEvent timeSetR(string("Solver - Set R"));
+//		 timeSetR.start();
+//		 if (R_from_mesh) {
+//			 set_R(mesh);
+//		 } else {
+//			 cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//				 cluster.domains[d].K = K_mat[d];
+//				 if (cluster.SYMMETRIC_SYSTEM && cluster.domains[d].K.type == 'G')
+//					 cluster.domains[d].K.RemoveLower();
+//				 if (solver.USE_PREC == config::solver::PRECONDITIONERalternative::MAGIC)
+//					 cluster.domains[d].Prec = cluster.domains[d].K;
+//			 }
+//			 set_R_from_K();
+//		 }
+//
+//		 if (config::info::PRINT_MATRICES) {
+//			 for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//				 SparseMatrix s = cluster.domains[d].Kplus_R;
+//				 s.ConvertDenseToCSR(1);
+//
+//				 std::ofstream os(Logging::prepareFile(d, "R"));
+//				 os << s;
+//				 os.close();
+//			 }
+//		 }
+//
+//		 timeSetR.endWithBarrier();
+//		 timeEvalMain.addEvent(timeSetR);
+//		 // *** END - Setup R matrix **************************************************************************************
+//	 }
+//
+//
+//	// *** HTFETI - averaging objects
+//	if ( config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES ) {
+//		cilk_for (int d = 0; d < T_mat.size(); d++) {
+//
+//			SparseSolverCPU Tinv;
+//			Tinv.mtype = 11;
+//			Tinv.ImportMatrix(T_mat[d]);
+//			std::stringstream ss;
+//			ss << "Init averaging -> rank: " << config::env::MPIrank << ", subdomain: " << d;
+//			Tinv.Factorization(ss.str());
+//
+//			cluster.domains[d].Kplus_R.ConvertDenseToCSR(1);
+//			Tinv.SolveMat_Dense( cluster.domains[d].Kplus_R );
+//			cluster.domains[d].Kplus_R.ConvertCSRToDense(1);
+//
+//			cluster.domains[d].T = T_mat[d];
+//
+//			SparseMatrix Ktmp;
+//			Ktmp = K_mat[d];
+//
+//			Ktmp.MatMat( T_mat[d], 'T', K_mat[d] );
+//
+//			K_mat[d].MatMat( Ktmp, 'N', T_mat[d] );
+//
+//			vector <double > tmp;
+//			tmp = f_vec[d];
+//
+//			T_mat[d].MatVec(tmp,f_vec[d],'T');
+//
+//
+//		}
+//
+//	}
+//	// *** END - HTFETI - averaging objects
+//
+//
+//	if (config::info::PRINT_MATRICES) {
+//		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//			SparseMatrix RT = cluster.domains[d].Kplus_R;
+//			RT.ConvertDenseToCSR(1);
+//
+//			std::ofstream osKT(Logging::prepareFile(d, "KT"));
+//			osKT << K_mat[d];
+//			osKT.close();
+//
+//			std::ofstream osRT(Logging::prepareFile(d, "RT"));
+//			osRT << RT;
+//			osRT.close();
+//		}
+//	}
+//
+//
+//	// *** Load RHS for dirichelt
+//	 TimeEvent timeSetRHS(string("Solver - Set Dirichlet RHS points"));
+//	 timeSetRHS.start();
+//
+//	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+//		cluster.domains[d].vec_c = vec_c[d];
+//
+//	 timeSetRHS.endWithBarrier();
+//	 timeEvalMain.addEvent(timeSetRHS);
+//	// *** END - Load RHS for dirichelt
+//
+//
+//
+//	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
+//	 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
+//
+//	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++)
+//		cluster.domains[d].lambda_map_sub = lambda_map_sub_B1[d];
+//	Preprocessing( lambda_map_sub_clst );
+//
+//	timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
+//	 // *** END - Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *************
+//
+//
+//	// **** Calculate Dirichlet Preconditioner ********************************
+//	if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET ) {
+//		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
+//
+//		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
+//		cilk_for (int d = 0; d < K_mat.size(); d++) {
+//			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
+//			SEQ_VECTOR <eslocal> perm_vec_full ( K_mat[d].rows );
+//			SEQ_VECTOR <eslocal> perm_vec_diff ( K_mat[d].rows );
+//
+//			SEQ_VECTOR <eslocal> I_row_indices_p (K_mat[d].nnz);
+//			SEQ_VECTOR <eslocal> J_col_indices_p (K_mat[d].nnz);
+//
+//			for (eslocal i = 0; i < perm_vec.size(); i++)
+//				perm_vec[i] = perm_vec[i] - 1;
+//
+//			for (eslocal i = 0; i < perm_vec_full.size(); i++)
+//				perm_vec_full[i] = i;
+//
+//			auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
+//			perm_vec_diff.resize(it - perm_vec_diff.begin());
+//
+//			perm_vec_full = perm_vec_diff;
+//			perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+//
+//			SparseMatrix K_modif = K_mat[d];
+//			K_modif.RemoveLower();
+//
+//			SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
+//			eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+//
+//			for (eslocal i = 0; i < K_modif.rows;i++){
+//				vec_I1_i2[i][0] = perm_vec_full[i];
+//				vec_I1_i2[i][1] = i; // position to create reverse permutation
+//			}
+//
+//			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+//					[](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR <eslocal >& b) {
+//				return a[0] < b[0];
+//			});
+//
+//
+//			// permutations made on matrix in COO format
+//			K_modif.ConvertToCOO(0);
+//			eslocal I_index,J_index;
+//			for (eslocal i = 0;i<K_modif.nnz;i++){
+//				I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+//				J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+//				if (I_index>J_index){
+//					I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+//				}
+//				else{
+//					I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+//				}
+//			}
+//			//
+//			for (eslocal i = 0; i<K_modif.nnz;i++){
+//				K_modif.I_row_indices[i] = I_row_indices_p[i];
+//				K_modif.J_col_indices[i] = J_col_indices_p[i];
+//			}
+//			K_modif.ConvertToCSRwithSort(1);
+//
+//
+//			eslocal SC_SIZE = perm_vec.size();
+//			SparseMatrix S;
+//
+//			if (SC_SIZE == K_mat[d].rows){
+//				S = K_mat[d];
+//				cluster.domains[d].Prec = S;
+//			} else {
+//				SparseSolverCPU createSchur;
+//				eslocal SC_SIZE = perm_vec.size();
+//				createSchur.ImportMatrix_wo_Copy(K_modif);
+//				createSchur.Create_SC(S,SC_SIZE,false);
+//				S.type='S';
+//
+//				cluster.domains[d].Prec = S;
+//
+//				cluster.domains[d].Prec.ConvertCSRToDense(1);
+//			}
+//	    if (config::info::PRINT_MATRICES) {
+//        std::ofstream osS(Logging::prepareFile(d, "S"));
+//        osS << S;
+//        osS.close();
+//      }
+//
+//
+//
+//			ESINFO(PROGRESS2) << Info::plain() << ".";
+//		}
+//		ESINFO(PROGRESS2);
+//
+//		timeDirPrec.endWithBarrier(); timeEvalMain.addEvent(timeDirPrec);
+//	}
+//	// *** END - Calculate Dirichlet Preconditioner ********************************
+//
+//
+//
+//
+//
+//
+//	// *** Load Matrix K, Regularization, Schur Complement and Factorization ******************************************************************************
+//	TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
+//	 timeSolKproc.start();
+//
+//	ESLOG(MEMORY) << "Before K reg. and fact. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//	 TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
+//
+//	ESINFO(PROGRESS2) << "Make K regular";
+//	cluster.ImportKmatrixAndRegularize( K_mat, fix_nodes );
+//
+//	 KregMem.endWithoutBarrier( GetProcessMemory_u() );
+//	 //KregMem.printLastStatMPIPerNode();
+//
+//	ESLOG(MEMORY) << "After import K process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//	if (config::info::PRINT_MATRICES) {
+//		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//			std::ofstream os(Logging::prepareFile(d, "Kreg"));
+//			SparseMatrix s = cluster.domains[d].K;
+//			os << s;
+//			os.close();
+//
+////			std::ofstream osK(Logging::prepareFile(d, "K").c_str());
+////			osK << _K[d];
+////			osK.close();
+////			std::ofstream osT(Logging::prepareFile(d, "T").c_str());
+////			osT << _T[d];
+////			osT.close();
+//
+////		cluster.domains[d].vec_c = vec_c[d];
+//
+//
+//      std::ofstream os_vec_c(Logging::prepareFile(d, "c").c_str());
+//			os_vec_c << vec_c[d];
+//			os_vec_c.close();
+//
+//
+//
+//      std::ofstream os_in_weight(Logging::prepareFile(d, "loc_ind_weight").c_str());
+//			os_in_weight << lambda_map_sub_B1[d];
+//			os_in_weight.close();
+////      lambda_map_sub_B1[d]
+//
+//			std::ofstream os_weigth(Logging::prepareFile(d, "weight").c_str());
+//			os_weigth << B1_duplicity[d];
+//			os_weigth.close();
+//
+//		}
+//	}
+//
+//
+//	// *** Computation of the Schur Complement ***************************************************************************************
+//	if ( cluster.USE_KINV == 1 ) {
+//		 TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
+//		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
+//
+//		bool USE_FLOAT = false;
+//		if (config::solver::SCHUR_COMPLEMENT_PREC == config::solver::SCHUR_COMPLEMENT_PRECalternative::SINGLE ) {
+//			USE_FLOAT = true;
+//		}
+//
+//		cluster.Create_SC_perDomain(USE_FLOAT);
+//
+//		 timeSolSC2.endWithBarrier(); timeEvalMain.addEvent(timeSolSC2);
+//		 KSCMem.endWithoutBarrier( GetProcessMemory_u() );
+//		 //KSCMem.printLastStatMPIPerNode();
+//
+//		ESLOG(MEMORY) << "After K inv. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//	} else {
+//		for (int d = 0; d < cluster.domains.size(); d++) {
+//			cluster.domains[d].isOnACC = 0;
+//		}
+//	}
+//	// *** END - Computation of the Schur Complement **************************************************************************
+//
+//
+//	// *** K Factorization ****************************************************************************************************
+//	TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
+//	ESINFO(PROGRESS2) << "Factorize K";
+//
+//	cluster.SetupKsolvers();
+//
+//	KFactMem.endWithoutBarrier( GetProcessMemory_u() );
+//	//KFactMem.printLastStatMPIPerNode();
+//
+//	ESLOG(MEMORY) << "After K solver setup process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//	timeSolKproc.endWithBarrier();
+//	timeEvalMain.addEvent(timeSolKproc);
+//	// *** END - Load Matrix K, Regularization, Schur Complement and Factorization ******************************************************************************
+//
+//
+//	// *** Setup Hybrid FETI part of the solver ********************************************************************************
+//	if (cluster.USE_HFETI == 1) {
+//		 TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
+//		 timeHFETIprec.start();
+//		cluster.SetClusterHFETI( R_from_mesh );
+//		 timeHFETIprec.endWithBarrier();
+//		 timeEvalMain.addEvent(timeHFETIprec);
+//
+//		ESLOG(MEMORY) << "After HFETI preprocessing process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//	}
+//	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
+//
+//    if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS) {
+//
+//    	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
+//
+//		ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
+//		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
+//		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
+//		cluster.Create_G_perCluster   ();
+//		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
+//		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
+//
+//		ESLOG(MEMORY) << "Created G1 per cluster";
+//		ESLOG(MEMORY) << "Before HFETI create GGt process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
+//		solver.Preprocessing ( cluster );
+//		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
+//
+//      	cluster.Compress_G1();
+//
+//      	// Cleanup - of uncessary objects
+//    	cluster._my_lamdas_map_indices.clear();
+//    	cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
+//    		cluster.domains[d].B1.Clear();
+//
+//    	timeSolPrec2.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec2);
+//
+//    	ESLOG(MEMORY) << "After HFETI full preprocess process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+//		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//    }
+//
+//	// *** Final Solver Setup after K factorization **********************************************************************************
+//	 TimeEvent timeSolAkpl(string("Solver - Set Solver After Kplus"));
+//	 timeSolAkpl.start();
+//	cluster.SetClusterPC_AfterKplus();
+//	 timeSolAkpl.endWithBarrier();
+//	 timeEvalMain.addEvent(timeSolAkpl);
+//	// *** END - Final Solver Setup after K factorization ****************************************************************************
 }
 
 void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
@@ -584,8 +901,8 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 
 
 void LinearSolver::set_B1(
-		std::vector < SparseMatrix >			& B1_mat,
-		std::vector < std::vector <double> >	& B1_duplicity) {
+		const std::vector < SparseMatrix >			& B1_mat,
+		const std::vector < std::vector <double> >	& B1_duplicity) {
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
@@ -607,7 +924,7 @@ void LinearSolver::set_B1(
 
 }
 
-void LinearSolver::set_B0 ( std::vector < SparseMatrix >	& B0_mat ) {
+void LinearSolver::set_B0 ( const std::vector < SparseMatrix >	& B0_mat ) {
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].B0 = B0_mat[d];
@@ -753,11 +1070,11 @@ void LinearSolver::set_R (
 
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		coordinates[d].resize(mesh.coordinates().localSize(d), std::vector <double> (2, 0.0));
-//		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
-//			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
-//			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
-//			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
-//		}
+		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
+			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
+			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
+			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
+		}
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 

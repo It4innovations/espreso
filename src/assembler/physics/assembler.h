@@ -9,6 +9,12 @@ namespace espreso {
 
 struct Physics {
 
+	virtual bool precomputedR() const
+	{
+		return true;
+	}
+
+	virtual bool singular() const =0;
 	virtual void assemble() =0;
 	virtual void save()
 	{
@@ -27,33 +33,43 @@ struct Physics {
 
 		for (size_t p = 0; p < R1.size(); p++) {
 			std::ofstream osR(Logging::prepareFile(p, "R1").c_str());
-			osR << R1[p];
+			SparseMatrix tmpR = R1[p];
+			tmpR.ConvertDenseToCSR(0);
+			osR << tmpR;
 			osR.close();
 		}
 
-		for (size_t p = 0; p < R2.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
-			osR << R2[p];
-			osR.close();
-		}
-
-		for (size_t p = 0; p < R1H.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R1H").c_str());
-			osR << R1H[p];
-			osR.close();
-		}
-
-		for (size_t p = 0; p < R2H.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R2H").c_str());
-			osR << R2H[p];
-			osR.close();
-		}
-
-		for (size_t p = 0; p < RegMat.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "RegMat").c_str());
-			osR << RegMat[p];
-			osR.close();
-		}
+//		for (size_t p = 0; p < R2.size(); p++) {
+//			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
+//			SparseMatrix tmpR = R2[p];
+//			tmpR.ConvertDenseToCSR(0);
+//			osR << tmpR;
+//			osR.close();
+//		}
+//
+//		for (size_t p = 0; p < R1H.size(); p++) {
+//			std::ofstream osR(Logging::prepareFile(p, "R1H").c_str());
+//			SparseMatrix tmpR = R1H[p];
+//			tmpR.ConvertDenseToCSR(0);
+//			osR << tmpR;
+//			osR.close();
+//		}
+//
+//		for (size_t p = 0; p < R2H.size(); p++) {
+//			std::ofstream osR(Logging::prepareFile(p, "R2H").c_str());
+//			SparseMatrix tmpR = R2H[p];
+//			tmpR.ConvertDenseToCSR(0);
+//			osR << tmpR;
+//			osR.close();
+//		}
+//
+//		for (size_t p = 0; p < RegMat.size(); p++) {
+//			std::ofstream osR(Logging::prepareFile(p, "RegMat").c_str());
+//			SparseMatrix tmpR = RegMat[p];
+//			tmpR.ConvertDenseToCSR(0);
+//			osR << tmpR;
+//			osR.close();
+//		}
 	}
 
 	size_t DOFs;

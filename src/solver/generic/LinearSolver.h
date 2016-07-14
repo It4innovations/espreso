@@ -13,7 +13,14 @@
 #include "esconfig.h"
 #include "esmesh.h"
 
+//#include "../../assembler/esassembler.h"
+#include "../../assembler/physics/assembler.h"
+#include "../../assembler/constraints/equalityconstraints.h"
+
 namespace espreso {
+
+class Physics;
+class EqualityConstraints;
 
 class LinearSolver {
 public:
@@ -23,6 +30,12 @@ public:
 	virtual ~LinearSolver();
 
 	void setup( eslocal rank, eslocal size, bool SINGULAR );
+
+	void init(
+			Physics &physics,
+			EqualityConstraints &constraints,
+			const std::vector<int> &neighbours
+	);
 
 	void init(
 			const Mesh &mesh,
@@ -56,11 +69,11 @@ public:
 	void CheckSolution( std::vector < std::vector < double > > & prim_solution );
 
 	void set_B1(
-			std::vector < SparseMatrix >				& B1_mat,
-			std::vector < std::vector <double> >        & B1_duplicity);
+			const std::vector < SparseMatrix >				& B1_mat,
+			const std::vector < std::vector <double> >        & B1_duplicity);
 
 	void set_B0(
-			std::vector < SparseMatrix >				& B0_mat );
+			const std::vector < SparseMatrix >				& B0_mat );
 
 	void set_R(
 			const Mesh &mesh
@@ -78,7 +91,6 @@ private:
 
 	bool 	SINGULAR;
 	bool 	KEEP_FACTORS;
-  	bool 	R_from_mesh;
 
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 

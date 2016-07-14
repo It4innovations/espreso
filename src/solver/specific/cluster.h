@@ -151,7 +151,7 @@ public:
 	void SetClusterHFETI ( bool R_from_mesh );
 
 	virtual void SetupKsolvers ( ) = 0;
-	void ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, const SEQ_VECTOR < SEQ_VECTOR < eslocal >> & fix_nodes );
+	void ImportKmatrixAndRegularize (  SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat  );
 
 	void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
 	void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );

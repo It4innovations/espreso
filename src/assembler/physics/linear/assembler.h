@@ -8,6 +8,11 @@ namespace espreso {
 
 struct LinearPhysics: public Physics {
 
+	virtual bool singular() const
+	{
+		return true;
+	}
+
 	virtual void assemble()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K and RHS";
@@ -25,6 +30,8 @@ struct LinearPhysics: public Physics {
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
+			K[p].MatAddInPlace(RegMat[p], 'N', 1);
+			RegMat[p].ConvertToCOO(1);
 
 			const std::vector<eslocal> &l2g = _mesh.coordinates().localToCluster(p);
 			for (eslocal i = 0; i < l2g.size(); i++) {

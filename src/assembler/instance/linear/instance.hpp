@@ -28,20 +28,7 @@ void LinearInstance<TConstrains, TPhysics>::init()
 	ESINFO(PROGRESS2) << "Initialize linear solver";
 	_linearSolver.DOFS_PER_NODE = _physics.DOFs;
 	_linearSolver.setup(config::env::MPIrank, config::env::MPIsize, true);
-	_linearSolver.init(
-			_mesh,
-			_physics.K,
-			_physics.T,
-			_constrains.B1,
-			_constrains.B0,
-			_constrains.B1subdomainsMap,
-			_constrains.B0subdomainsMap,
-			_constrains.B1clustersMap,
-			_constrains.B1duplicity,
-			_physics.f,
-			_constrains.B1c,
-			_mesh.getFixPoints(),
-			_mesh.neighbours());
+	_linearSolver.init(_physics, _constrains, _mesh.neighbours());
 	timeSolver.end(); _timeStatistics.addEvent(timeSolver);
 }
 
