@@ -1,25 +1,27 @@
 
 import os.path
+import glob
 
 def configure(ctx):
-#    if os.path.isfile(os.path.join(ctx.ROOT, "tools/vtk/output/resultstore.o")):
-    if os.path.isfile(os.path.join(ctx.ROOT, "libs/libplib.a")):
+    if os.path.isfile(os.path.join(ctx.ROOT, "tools/vtk/output/resultstore.o")):
         ctx.env.VTK = True
         ctx.msg("Checking for VTK", "found")
-        ctx.env.append_unique("STLIB", "plib")
+
+        vtklibs = glob.glob("/home/mec059/projects/vtk/install/lib/*.so")
+        vtklibs = [ lib.split('/')[-1].lstrip("lib").rstrip(".so") for lib in vtklibs ]
+        ctx.env.append_unique("LIBPATH", [ "/home/mec059/projects/vtk/install/lib" ])
+        ctx.env.append_unique("LIB", vtklibs)
     else:
         ctx.env.VTK = False
         ctx.msg("Checking for VTK", "not found - only VTK Legacy format is supported (see tools/vtk/README.txt)", color='YELLOW')
 
 def build(ctx):
     if ctx.env.VTK:
-#        ctx(
-#            features = "link",
-#            source = "../../../tools/vtk/output/resultstore.o",
-#            target = "generic_out"
-#        )
-#        ctx.env.append_unique("STLIB", "plib")
-        pass
+        ctx(
+            features = "link",
+            source = "../../../tools/vtk/output/resultstore.o",
+            target = "generic_out"
+        )
     else:
         ctx.objects(
             source = ctx.path.ant_glob('**/*.cpp'),
