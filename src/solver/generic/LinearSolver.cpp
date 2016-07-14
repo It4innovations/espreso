@@ -158,10 +158,22 @@ void LinearSolver::init(
 			 for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 				 SparseMatrix s = cluster.domains[d].Kplus_R;
 				 s.ConvertDenseToCSR(1);
-
 				 std::ofstream os(Logging::prepareFile(d, "R"));
 				 os << s;
 				 os.close();
+
+
+
+		    if (!cluster.SYMMETRIC_SYSTEM) {
+				 SparseMatrix s2 = cluster.domains[d].Kplus_R2;
+				 s2.ConvertDenseToCSR(1);
+				 std::ofstream os2(Logging::prepareFile(d, "Rl"));
+				 os2 << s2;
+				 os2.close();
+
+        }
+
+
 			 }
 		 }
 

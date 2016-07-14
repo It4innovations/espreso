@@ -3,6 +3,8 @@ from scipy import sparse
 import scipy.sparse.linalg as spla
 import config_espreso_python as conf
 import pylab as plt
+import os.path
+
 #import multiprocessing
 
 #import sys  
@@ -10,34 +12,45 @@ import pylab as plt
 #
 def load_matrix(path,str0,i,j,makeSparse,makeSymmetric): 
     pathToFile = path+'/'+str(i)+'/'+str0+str(j)+'.txt' 
-    tmp = np.loadtxt(pathToFile, ndmin=2)
-    if (tmp.shape[0]==1):
-        tmp = []
+    print(pathToFile)
+    isFile = os.path.isfile(pathToFile)
+    
+    if isFile:
+      tmp = np.loadtxt(pathToFile, ndmin=2)
+      if (tmp.shape[0]==1):
+          tmp = []
+      else:
+          n = np.int32(tmp[0,0])   
+          m = np.int32(tmp[0,1])
+          I = tmp[1::,0]-1;    J = tmp[1::,1]-1;    V = tmp[1::,2]
+  #    
+          print(str0,i,j)
+          if (makeSymmetric):
+              logInd = J>I; 
+              I = np.concatenate((I,J[logInd]))
+              J = np.concatenate((J,I[logInd]))
+              V = np.concatenate((V,V[logInd]))    
+          
+          if (makeSparse):
+              tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).tocsc()
+          else:
+              if (m==1):
+                  tmp = V
+              else:                
+                  tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).toarray()
     else:
-        n = np.int32(tmp[0,0])   
-        m = np.int32(tmp[0,1])
-        I = tmp[1::,0]-1;    J = tmp[1::,1]-1;    V = tmp[1::,2]
-#    
-        print(str0,i,j)
-        if (makeSymmetric):
-            logInd = J>I; 
-            I = np.concatenate((I,J[logInd]))
-            J = np.concatenate((J,I[logInd]))
-            V = np.concatenate((V,V[logInd]))    
-        
-        if (makeSparse):
-            tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).tocsc()
-        else:
-            if (m==1):
-                tmp = V
-            else:                
-                tmp = sparse.csc_matrix((V,(I,J)),shape=(n,m)).toarray()
+      tmp = []
 #
     return tmp
 ###############################################################################
 def load_vector(path,str0,i,j):
     pathToFile = path+'/'+str(i)+'/'+str0+str(j)+'.txt' 
-    tmp = np.loadtxt(pathToFile)
+    print(pathToFile)
+    isFile = os.path.isfile(pathToFile)
+    if isFile:
+      tmp = np.loadtxt(pathToFile)
+    else:
+      tmp = []
     return tmp 
 ###############################################################################
 class DENS_SOLVE: 

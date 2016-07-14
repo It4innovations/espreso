@@ -48,7 +48,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	DenseMatrix u(2, 1);
 	u(0, 0) = 0;
-	u(1, 0) = 0;
+	u(1, 0) = -1;
 	double sigma = 0;
 
 	for (eslocal gp = 0; gp < element->gpSize(); gp++) {

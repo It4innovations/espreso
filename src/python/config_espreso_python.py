@@ -23,7 +23,7 @@ precondPrimalSystem                 = 'diag'    # 'diag', 'LU_SP', 'ILU,  'none'
 
 # if 'cg_x' or is set
 mult_Areg_or_A_RRt                  = True
-flag_multiprocessing                = True
+flag_multiprocessing                = False
 
 
 

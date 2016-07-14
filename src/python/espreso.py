@@ -12,8 +12,8 @@ import multiprocessing
 
 
 
-n_clus          = 2
-n_subPerClust   = 8
+n_clus          = 1
+n_subPerClust   = 1
 
 
 CONSTANT_89 = 24 
@@ -40,6 +40,8 @@ def readClusterData(x):
     y.append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
     #4 mat_R
     y.append(mM.load_matrix(path,'R',i,j,makeSparse=True,makeSymmetric=False))
+    #4 mat_R
+    y.append(mM.load_matrix(path,'Rl',i,j,makeSparse=True,makeSymmetric=False))
     #5 vec_f    
     y.append(mM.load_vector(path,'f',i,j))
     #6 vec_c    
@@ -47,7 +49,10 @@ def readClusterData(x):
     #7vec_weight    
     y.append(mM.load_vector(path,'weight',i,j))
     tmp = mM.load_vector(path,'loc_ind_weight',i,j)
-    tmp = tmp.astype(np.int32)
+    if not tmp:
+      tmp = []
+    else:
+      tmp = tmp.astype(np.int32)
     #8 vec_index_weight
     y.append(tmp)
     return y
@@ -95,6 +100,7 @@ mat_Kreg    = []
 mat_B0      = []
 mat_B1      = []
 mat_R       = []
+mat_Rl      = []
 vec_f       = []
 vec_c       = []
 vec_weight  = []
@@ -111,6 +117,7 @@ for i in range(n_clus):
     mat_B0.append([])
     mat_B1.append([])
     mat_R.append([])
+    mat_Rl.append([])
     vec_f.append([])
     vec_c.append([])
     vec_weight.append([])
@@ -133,10 +140,11 @@ for i in range(n_clus):
         mat_B0[i].append(k[j][2])
         mat_B1[i].append(k[j][3])
         mat_R[i].append(k[j][4])
-        vec_f[i].append(k[j][5])
-        vec_c[i].append(k[j][6])
-        vec_weight[i].append(k[j][7])
-        vec_index_weight[i].append(k[j][8])
+        mat_Rl[i].append(k[j][5])
+        vec_f[i].append(k[j][6])
+        vec_c[i].append(k[j][7])
+        vec_weight[i].append(k[j][8])
+        vec_index_weight[i].append(k[j][9])
         print('.',end='')
     
     #print(k[0][0])
