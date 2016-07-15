@@ -4,7 +4,7 @@
 using namespace espreso;
 
 
-Mesh::Mesh():_elements(0), _fixPoints(0), _DOFs(3)
+Mesh::Mesh():_elements(0)
 {
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
@@ -18,7 +18,6 @@ void Mesh::partitiate(size_t parts)
 		_partPtrs[0] = 0;
 		_partPtrs[1] = _elements.size();
 		remapElementsToSubdomain();
-		computeFixPoints(0);
 		computeBoundaries();
 		return;
 	}
@@ -57,7 +56,6 @@ void Mesh::partitiate(size_t parts)
 	delete[] ePartition;
 
 	remapElementsToSubdomain();
-	computeFixPoints(0);
 	computeBoundaries();
 }
 
@@ -68,7 +66,6 @@ void APIMesh::partitiate(size_t parts)
 		_partPtrs[0] = 0;
 		_partPtrs[1] = _elements.size();
 		remapElementsToSubdomain();
-		computeFixPoints(0);
 		computeBoundaries();
 		return;
 	}
@@ -108,7 +105,6 @@ void APIMesh::partitiate(size_t parts)
 	delete[] ePartition;
 
 	remapElementsToSubdomain();
-	computeFixPoints(0);
 	computeBoundaries();
 }
 
@@ -133,30 +129,32 @@ void Mesh::computeBoundaries()
 	}
 }
 
-void Mesh::computeFixPoints(size_t fixPoints)
+std::vector<eslocal> Mesh::computeFixPoints(size_t part, size_t number) const
 {
-	_fixPoints.clear();
-	_fixPoints.resize(parts(), std::vector<eslocal>(fixPoints));
+	if (_fixPoints[part].size()) {
+		return _fixPoints[part];
+	}
+	std::vector<eslocal> fixPoints(number);
 
-	if (fixPoints == 0) {
-		return;
+	if (number == 0) {
+		return fixPoints;
 	}
 
-	cilk_for (eslocal i = 0; i < parts(); i++) {
-		size_t max = (_partPtrs[i + 1] - _partPtrs[i]) / 20 + 1;
-		eslocal *eSubPartition = getPartition(_partPtrs[i], _partPtrs[i + 1], std::min(fixPoints, max));
+	size_t max = (_partPtrs[part + 1] - _partPtrs[part]) / 20 + 1;
+	eslocal *eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], std::min(number, max));
 
-		for (eslocal j = 0; j < fixPoints; j++) {
-			_fixPoints[i][j] = getCentralNode(_partPtrs[i], _partPtrs[i + 1], eSubPartition, i, j);
-		}
-		std::sort(_fixPoints[i].begin(), _fixPoints[i].end());
-
-		// Remove the same points
-		auto it = std::unique(_fixPoints[i].begin(), _fixPoints[i].end());
-		_fixPoints[i].resize(it - _fixPoints[i].begin());
-
-		delete[] eSubPartition;
+	for (eslocal j = 0; j < number; j++) {
+		fixPoints[j] = getCentralNode(_partPtrs[part], _partPtrs[part + 1], eSubPartition, part, j);
 	}
+	std::sort(fixPoints.begin(), fixPoints.end());
+
+	// Remove the same points
+	auto it = std::unique(fixPoints.begin(), fixPoints.end());
+	fixPoints.resize(it - fixPoints.begin());
+
+	delete[] eSubPartition;
+
+	return fixPoints;
 }
 
 static void checkMETISResult(eslocal result)
@@ -444,7 +442,6 @@ void Mesh::getSurface(Mesh &surface) const
 	}
 
 	surface.remapElementsToSubdomain();
-	surface.computeFixPoints(0);
 	surface.computeBoundaries();
 	surface._clusterBoundaries = _clusterBoundaries;
 	surface._DOFs = _DOFs;
@@ -670,7 +667,6 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 	}
 
 	interface.remapElementsToSubdomain();
-	interface.computeFixPoints(0);
 	interface.computeBoundaries();
 
 	remapElementsToSubdomain();
@@ -830,7 +826,6 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 	}
 
 	lines.remapElementsToSubdomain();
-	lines.computeFixPoints(0);
 }
 
 void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
@@ -909,7 +904,7 @@ void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
 	lines._partPtrs.swap(partPtrs);
 	if (average) {
 		lines.remapElementsToSubdomain();
-		lines.computeFixPoints(1);
+		//lines.computeFixPoints(1);
 	}
 }
 
@@ -1035,18 +1030,18 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 	};
 
 	auto corners = [&] (Mesh &mesh, std::function<eslocal(eslocal, eslocal)> map) {
-		mesh.computeFixPoints(number);
 		for (size_t p = 0; p < mesh.parts(); p++) {
-			for (size_t i = 0; i < mesh.getFixPoints()[p].size(); i++) {
-				_subdomainBoundaries.setCorner(map(mesh.getFixPoints()[p][i], p));
+			std::vector<eslocal> fixPoints = mesh.computeFixPoints(p, number);
+			for (size_t i = 0; i < fixPoints.size(); i++) {
+				_subdomainBoundaries.setCorner(map(fixPoints[i], p));
 			}
 		}
 	};
 
 	auto average = [&] (Mesh &mesh, std::function<eslocal(eslocal, eslocal)> map) {
-		mesh.computeFixPoints(1);
 		for (size_t p = 0; p < mesh.parts(); p++) {
-			eslocal corner = map(mesh._fixPoints[p][0], p);
+			std::vector<eslocal> fixPoints = mesh.computeFixPoints(p, 1);
+			eslocal corner = map(fixPoints[0], p);
 			_subdomainBoundaries.setCorner(corner);
 
 			std::set<eslocal> aPoints;

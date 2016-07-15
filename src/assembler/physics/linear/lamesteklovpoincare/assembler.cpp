@@ -197,7 +197,7 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 	switch (config::solver::REGULARIZATION) {
 	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
 		analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.getFixPoints()[subdomain], _mesh.coordinates(), subdomain);
+		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.computeFixPoints(subdomain, config::mesh::FIX_POINTS), _mesh.coordinates(), subdomain);
 		K[subdomain].RemoveLower();
 		RegMat[subdomain].RemoveLower();
 		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);

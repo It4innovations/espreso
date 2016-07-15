@@ -66,10 +66,7 @@ public:
 		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
 				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
-		TimeEvent tFixPoints("fix points"); tFixPoints.start();
 		fixPoints(mesh._fixPoints);
-		tFixPoints.end(); measurement.addEvent(tFixPoints);
-		ESINFO(DETAILS) << "Fix points computed. There is " << sizeStats(mesh._fixPoints) << " fix points in subdomain.";
 
 		TimeEvent tCorners("corners"); tCorners.start();
 		corners(mesh._subdomainBoundaries);
@@ -94,10 +91,7 @@ protected:
 		mesh.partitiate(config::mesh::subdomains);
 	}
 
-	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
-	{
-		mesh.computeFixPoints(config::mesh::fixPoints);
-	}
+	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) {};
 
 	virtual void corners(Boundaries &boundaries)
 	{

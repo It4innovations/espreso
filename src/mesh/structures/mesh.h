@@ -84,7 +84,7 @@ public:
 	virtual ~Mesh();
 
 	virtual void partitiate(size_t parts);
-	void computeFixPoints(size_t fixPoints);
+	std::vector<eslocal> computeFixPoints(size_t part, size_t number) const;
 	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
 
 	const std::vector<Element*>& getElements() const
@@ -100,11 +100,6 @@ public:
 	const std::vector<eslocal>& getPartition() const
 	{
 		return _partPtrs;
-	}
-
-	const std::vector<std::vector<eslocal> >& getFixPoints() const
-	{
-		return _fixPoints;
 	}
 
 	eslocal getPartNodesCount(eslocal part) const

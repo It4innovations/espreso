@@ -35,7 +35,11 @@ void VTK_Full::mesh(const Mesh &mesh, const std::string &path, double shrinkSubd
 void VTK_Full::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	VTK_Full output(mesh, path);
-	output.store(mesh.getFixPoints(), shrinkSubdomain, shringCluster);
+	std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		fixPoints[p] = mesh.computeFixPoints(p, config::mesh::FIX_POINTS);
+	}
+	output.store(fixPoints, shrinkSubdomain, shringCluster);
 }
 
 void VTK_Full::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
