@@ -2434,13 +2434,13 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 	 TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
 	//TODO: Toto se musi nejak korektne vyresit pomoci fyziky
-	if (cluster.SYMMETRIC_SYSTEM)  {
-		GGt_tmp.mtype = 2; // non-symmetric; // GGt_tmp.mtype = 2;  // Real symmetric positive definite matrix - this is default setting of the PARDISO solver
-		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	} else {
-		GGt_tmp.mtype = 11; // non-symmetric
-		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
-	}
+//	if (cluster.SYMMETRIC_SYSTEM)  {
+//		GGt_tmp.mtype = 2; // non-symmetric; // GGt_tmp.mtype = 2;  // Real symmetric positive definite matrix - this is default setting of the PARDISO solver
+//		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+//	} else {
+//		GGt_tmp.mtype = 11; // non-symmetric
+//		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+//	}
 	GGt_Mat_tmp.mtype = cluster.domains[0].K.mtype;
 
 	GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
