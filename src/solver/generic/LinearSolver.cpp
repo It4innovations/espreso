@@ -634,6 +634,8 @@ void LinearSolver::set_R_from_K ()
 
 
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
+		cluster.domains[d].Kplus_Rb2 = cluster.domains[d].Kplus_R2;
+
 	}
 	ESINFO(PROGRESS2) << "K kernel detected";
   // sum of ||K*R|| (all subdomains on the cluster)
