@@ -30,7 +30,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
 
-	Ce(0, 0) = Ce(1, 1) = material.termalConduction;
+	Ce(0, 0) = Ce(1, 1) = 1e-1 ; //material.termalConduction;
 	inertia = 0;
 
 	coordinates.resize(element->size(), 2);
@@ -47,8 +47,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	fill(fe.begin(), fe.end(), 0);
 
 	DenseMatrix u(2, 1);
-	u(0, 0) = 0;
-	u(1, 0) = -1;
+	u(0, 0) = 0.5;
+	u(1, 0) = 0.5;
 	double sigma = 0;
 
 	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
