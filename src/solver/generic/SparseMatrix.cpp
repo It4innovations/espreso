@@ -4274,21 +4274,22 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
   //K.printMatCSR("K");
-  SEQ_VECTOR <double> diagonals;
-  diagonals.resize(K.rows);
-  eslocal cnt;
+  SEQ_VECTOR <double> diagonals = K_modif.getDiagonal();
+  std::for_each(diagonals.begin(),diagonals.end(),[](double & value ){value = fabs(value);});
 
+//	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
+ 
 
-  // get diagonal from general (unsymmetric) K and calc. approx of max(eig(K))
-  for (eslocal i = 0;i<K_modif.rows;i++){
-    for (eslocal j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
-       if ((K_modif.CSR_J_col_indices[j-offset]-offset)==i) {
-          diagonals[cnt]=fabs(K_modif.CSR_V_values[j-offset]);
-          cnt++;
-         break;
-       }
-    }
-  }
+//  // get diagonal from general (unsymmetric) K and calc. approx of max(eig(K))
+//  for (eslocal i = 0;i<K_modif.rows;i++){
+//    for (eslocal j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+//       if ((K_modif.CSR_J_col_indices[j-offset]-offset)==i) {
+//          diagonals[cnt]=fabs(K_modif.CSR_V_values[j-offset]);
+//          cnt++;
+//         break;
+//       }
+//    }
+//  }
 
 
   eslocal tmp_j;
