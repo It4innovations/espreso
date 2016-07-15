@@ -27,7 +27,7 @@ For advanced users an exhaustive list can be listed be: ::
   $ ./espreso -hh
 
 Parameters from this list adjust internal settings that are not fully tested
-or support development. Hence, wrong values can lead to unexpected behaviour.
+or are under development. Hence, wrong values can lead to unexpected behaviour.
 
 **Configuration file** serves the prefered way of settings input parameters.
 In the default, ``espreso`` assumes configuration file with name ``espreso.config``.
@@ -122,19 +122,15 @@ It is used for a simple generation of a mesh with an arbitrary number of element
 This is the key tool for evaluation of scalability of the library at a very large scale.
 It is able to generate a multi-billion problem in a few seconds.
 
-.. note::
-   TODO: describe parameters for generator, load some pictures
+Scripts with generator settings can be found in directory ``examples/meshgenerator/``.
+Scripts are in the same format as ESPRESO configuration file (``PARAMETER = VALUE``)
+and usualy accepts list of nameless command line parameters.
+Parameters usualy specify the size of generated problem and element types.
+For example, the following command creates and solves a cube composed from
+hexahedrons and divided into 8 clusters.
+All clusters are divided to 4 subdomains and each subdomain is composed from 16 cubes. ::
 
-
-Proper setting of solver
-------------------------
-
-Correct setting of solver influences the effectivity of computation.
-Hence, it is the most important part.
-
-.. note::
-   TODO: Lubos - rict podle ceho nastavovat solver (dekompozice + metoda)
-
+  $ mpirun -n 8 ./espreso -p examples/meshgenerator/cube_elasticity_fixed_bottom.txt HEXA8  2 2 2  2 2 1  2 2 4
 
 Check the results
 -----------------

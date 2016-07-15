@@ -9,9 +9,6 @@ Documentation of the library ESPRESO
 .. toctree::
    :maxdepth: 2
 
-   overview
-   background
-
    installation
    run
    hpc
