@@ -150,7 +150,7 @@ public:
 	void InitClusterPC ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
 	void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map);
 	void SetClusterPC_AfterKplus ();
-	void SetClusterHFETI ( bool R_from_mesh );
+	void SetClusterHFETI ();
 
 	virtual void SetupKsolvers ( ) = 0;
 	void ImportKmatrixAndRegularize (  SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat  );

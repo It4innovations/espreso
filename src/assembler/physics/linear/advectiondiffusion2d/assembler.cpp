@@ -89,6 +89,14 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1, SparseMatrix &R2, SparseMatrix &RegMat, size_t subdomain)
+{
+	double norm;
+	eslocal defect;
+
+	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
+}
+
 void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);
@@ -120,6 +128,10 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
+
+	algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+	R1H[subdomain] = R1[subdomain];
+	R2H[subdomain] = R2[subdomain];
 }
 
 

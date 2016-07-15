@@ -3056,7 +3056,7 @@ double SparseMatrix::getDiagonalMaximum()
 //}
 
 void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
-      SparseMatrix &Kplus_R,double *norm_KR_d_pow_2_approx,eslocal *defect_d,eslocal d_sub){
+      SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -3777,8 +3777,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble); 
   double lmx_K_approx       = *it2;
   double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R);
-  *norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
-  *defect_d                 = Kplus_R.cols;
+  norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
+  defect_d                 = Kplus_R.cols;
 
 
 #if VERBOSE_LEVEL>2
@@ -3978,7 +3978,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
-      double *norm_KR_d_pow_2_approx,eslocal *defect_d,eslocal d_sub){
+      double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub){
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -4278,7 +4278,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   std::for_each(diagonals.begin(),diagonals.end(),[](double & value ){value = fabs(value);});
 
 //	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
- 
+
 
 //  // get diagonal from general (unsymmetric) K and calc. approx of max(eig(K))
 //  for (eslocal i = 0;i<K_modif.rows;i++){
@@ -4937,13 +4937,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
   double lmx_K_approx       = *it2;
   double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R);
-  *norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
-  *defect_d                 = Kplus_R.cols;
+  norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
+  defect_d                 = Kplus_R.cols;
 
 
 //  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_R);
 //  *norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
-  *defect_d                 = Kplus_R.cols;
+//  *defect_d                 = Kplus_R.cols;
 
 
 #if VERBOSE_LEVEL>2

@@ -300,27 +300,27 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 
-	    if (config::solver::REGULARIZATION == 0) {
 
-			domains[d].K.swap(K_in[d]);
-			domains[d]._RegMat.swap(RegMat[d]);
+		domains[d].K.swap(K_in[d]);
+		domains[d]._RegMat.swap(RegMat[d]);
 
 
-		  	if ( config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::MAGIC ) {
-		  		//domains[d].Prec = domains[d].K;
-		  		domains[d]._RegMat.ConvertToCSR(0);
-		  		domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
-		  	}
+		if ( config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::MAGIC ) {
+			//domains[d].Prec = domains[d].K;
+			domains[d]._RegMat.ConvertToCSR(1);
+			domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
+			domains[d]._RegMat.ConvertToCOO(1);
+		}
 
-			domains[d].enable_SP_refinement = true;
-	    }
+		domains[d].enable_SP_refinement = true;
+	    //}
 	    ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS2);
 }
 
 
-void ClusterBase::SetClusterHFETI (bool R_from_mesh) {
+void ClusterBase::SetClusterHFETI () {
 	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
 	if (USE_HFETI == 1) {
 
@@ -1271,7 +1271,7 @@ void ClusterBase::CreateSa() {
 		 double tmp_double;
 		 eslocal tmp_int;
 		 SparseMatrix TSak, _tmpSparseMat;
-		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,&tmp_double, &tmp_int, -1);
+		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1);
 		 TSak.Clear();
 
 

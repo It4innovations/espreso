@@ -9,11 +9,6 @@ namespace espreso {
 
 struct Physics {
 
-	virtual bool precomputedR() const
-	{
-		return true;
-	}
-
 	virtual bool singular() const =0;
 	virtual void assemble() =0;
 	virtual void save()

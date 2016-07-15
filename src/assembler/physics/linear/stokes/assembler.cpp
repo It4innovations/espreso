@@ -63,7 +63,7 @@ static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, 
 	}
 }
 
-static void computeKernels(SparseMatrix &R1, size_t nodes)
+static void analyticsKernels(SparseMatrix &R1, size_t nodes)
 {
 	R1.rows = 3 * nodes;
 	R1.cols = 2;
@@ -85,7 +85,7 @@ static void computeKernels(SparseMatrix &R1, size_t nodes)
 	}
 }
 
-static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat)
+static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat)
 {
 	RegMat.rows = K.rows;
 	RegMat.cols = K.cols;
@@ -98,6 +98,14 @@ static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat)
 	RegMat.J_col_indices.push_back(2);
 	RegMat.V_values.resize(2, K.getDiagonalMaximum());
 	RegMat.ConvertToCSR(1);
+}
+
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain)
+{
+	double norm;
+	eslocal defect;
+
+	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
 void Stokes::composeSubdomain(size_t subdomain)
@@ -140,11 +148,22 @@ void Stokes::composeSubdomain(size_t subdomain)
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
 
-	computeKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
-	computeRegMat(K[subdomain], RegMat[subdomain]);
+	switch (config::solver::REGULARIZATION) {
+	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+		analyticsKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
+		analyticsRegMat(K[subdomain], RegMat[subdomain]);
+		K[subdomain].RemoveLower();
+		RegMat[subdomain].RemoveLower();
+		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+		RegMat[subdomain].ConvertToCOO(1);
+		break;
+	case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+		K[subdomain].RemoveLower();
+		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+		break;
+	}
 
-	K[subdomain].RemoveLower();
-	RegMat[subdomain].RemoveLower();
+	R1H[subdomain] = R1[subdomain];
 }
 
 

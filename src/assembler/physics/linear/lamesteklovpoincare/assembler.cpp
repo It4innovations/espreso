@@ -4,7 +4,7 @@
 
 using namespace espreso;
 
-static void computeKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
+static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
 {
 	size_t nodes = coordinates.localSize(subdomain);
 	R1.rows = 3 * nodes;
@@ -44,7 +44,7 @@ static void computeKernels(SparseMatrix &R1, const Coordinates &coordinates, siz
 	}
 }
 
-static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<eslocal> &fixPoints, const Coordinates &coordinates, size_t subdomain)
+static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<eslocal> &fixPoints, const Coordinates &coordinates, size_t subdomain)
 {
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;
@@ -123,6 +123,14 @@ static void computeRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vect
 	RegMat.MatScale(K.getDiagonalMaximum());
 }
 
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain)
+{
+	double norm;
+	eslocal defect;
+
+	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
+}
+
 
 void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 {
@@ -186,9 +194,21 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 	f[subdomain].clear();
 	f[subdomain].resize(_K.rows(), 0);
 
-	computeKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-	computeRegMat(K[subdomain], RegMat[subdomain], _mesh.getFixPoints()[subdomain], _mesh.coordinates(), subdomain);
+	switch (config::solver::REGULARIZATION) {
+	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+		analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.getFixPoints()[subdomain], _mesh.coordinates(), subdomain);
+		K[subdomain].RemoveLower();
+		RegMat[subdomain].RemoveLower();
+		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+		RegMat[subdomain].ConvertToCOO(1);
+		break;
+	case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+		K[subdomain].RemoveLower();
+		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+		break;
+	}
 
-	K[subdomain].RemoveLower();
-	RegMat[subdomain].RemoveLower();
+	// TODO:
+	R1H[subdomain] = R1[subdomain];
 }
