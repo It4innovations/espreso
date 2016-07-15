@@ -27,9 +27,7 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
 	ESINFO(PROGRESS2) << "Initialize linear solver";
-	_linearSolver.DOFS_PER_NODE = _physics.DOFs;
-	_linearSolver.setup(config::env::MPIrank, config::env::MPIsize, false);
-	_linearSolver.init(_physics, _constrains, _mesh.neighbours());
+	_linearSolver.init(_mesh.neighbours());
 	timeSolver.end(); _timeStatistics.addEvent(timeSolver);
 
 

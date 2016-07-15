@@ -12,25 +12,18 @@
 
 using namespace espreso;
 
-LinearSolver::LinearSolver(): timeEvalMain("ESPRESO Solver Overal Timing") {
-
-}
-
 LinearSolver::~LinearSolver() {
 	// TODO Auto-generated destructor stub
 }
 
-void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
+void LinearSolver::setup() {
 
-	SINGULAR 	= IS_SINGULAR;
+	SINGULAR 	= physics.singular();
 
 	if (!config::solver::KEEP_FACTORS)
 		KEEP_FACTORS = false; // only suported by MKL Pardiso so far
 	else
 		KEEP_FACTORS = true;
-
-    MPI_rank = rank;
-    MPI_size = size;
 
     // ***************************************************************************************************************************
 	// Cluster structure  setup
@@ -42,8 +35,8 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	cluster.USE_HFETI			= config::solver::FETI_METHOD;
 	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
-	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
-	cluster.DOFS_PER_NODE		= DOFS_PER_NODE;
+	cluster.NUMBER_OF_CLUSTERS	= config::env::MPIsize;
+	cluster.DOFS_PER_NODE		= physics.DOFs;
 	// ***************************************************************************************************************************
 
 	// ***************************************************************************************************************************
@@ -73,10 +66,7 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 }
 
 // TODO: const parameters
-void LinearSolver::init(
-		Physics &physics,
-		EqualityConstraints &constraints,
-		const std::vector<int> &neighbours)
+void LinearSolver::init(const std::vector<int> &neighbours)
 {
 
 	number_of_subdomains_per_cluster = physics.K.size();
@@ -95,6 +85,7 @@ void LinearSolver::init(
 	cluster.cluster_global_index = config::env::MPIrank + 1;
 	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
 	cluster.my_neighs = std::vector<eslocal>(neighbours.begin(), neighbours.end());
+	cluster.mtype = physics.mtype;
 	switch (physics.mtype) {
 	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		cluster.SYMMETRIC_SYSTEM = true;

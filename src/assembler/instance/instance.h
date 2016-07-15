@@ -24,7 +24,6 @@ struct Instance {
 
 protected:
 	const Mesh &_mesh;
-	LinearSolver _linearSolver;
 	TimeEval _timeStatistics;
 };
 

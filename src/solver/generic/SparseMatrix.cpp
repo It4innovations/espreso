@@ -2086,15 +2086,15 @@ double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_form
     int cnt=0;
 
 //    mkl_dcsrmv (const char *transa , const MKL_INT *m , const MKL_INT *k ,
-//         const double *alpha , const char *matdescra , 
-//         const double *val , const MKL_INT *indx , const MKL_INT *pntrb , const MKL_INT *pntre , 
+//         const double *alpha , const char *matdescra ,
+//         const double *val , const MKL_INT *indx , const MKL_INT *pntrb , const MKL_INT *pntre ,
 //         const double *x , const double *beta , double *y );
 
-//	    mkl_dcsrmv (&trans,       &rows,      &cols,      &alpha, 
-//            matdescra, &CSR_V_values[0],  &CSR_J_col_indices[0],  &CSR_I_row_indices[0],  
-//            &CSR_I_row_indices[1],  
-//            &x_in[x_in_vector_start_index],   
-//            &beta,         
+//	    mkl_dcsrmv (&trans,       &rows,      &cols,      &alpha,
+//            matdescra, &CSR_V_values[0],  &CSR_J_col_indices[0],  &CSR_I_row_indices[0],
+//            &CSR_I_row_indices[1],
+//            &x_in[x_in_vector_start_index],
+//            &beta,
 //            &y_out[y_out_vector_start_index]);
 
 
@@ -4122,7 +4122,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   dofPerNode                        = 1;
 
 
-    
+
 // STATISTICS MADE AND PRINTED TO FILE
 //        'kernel_detct_cX_dY.txt  (X - clust. number, Y - subdomain. number)
 //  -BRIEF
@@ -4541,14 +4541,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //   std::ofstream os2(Logging::prepareFile(0, "K_rs"));
 //   os2 << s2;
 //   os2.close();
-//   } 
+//   }
 //   {
 //   SparseMatrix s2 = K_sr;
 ////   s2.ConvertDenseToCSR(1);
 //   std::ofstream os2(Logging::prepareFile(0, "K_sr"));
 //   os2 << s2;
 //   os2.close();
-//   } 
+//   }
 
 //   {
 //   SparseMatrix s2 = K_modif;
@@ -4661,8 +4661,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 
-  
-  
+
+
 
 
 #if VERBOSE_LEVEL>0

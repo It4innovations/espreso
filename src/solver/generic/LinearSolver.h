@@ -25,17 +25,17 @@ class EqualityConstraints;
 class LinearSolver {
 public:
 
-	LinearSolver();
+	LinearSolver(Physics &physics, EqualityConstraints &constraints)
+	: timeEvalMain("ESPRESO Solver Overal Timing"), physics(physics), constraints(constraints)
+	{
+		setup();
+	}
 
 	virtual ~LinearSolver();
 
-	void setup( eslocal rank, eslocal size, bool SINGULAR );
+	void setup();
 
-	void init(
-			Physics &physics,
-			EqualityConstraints &constraints,
-			const std::vector<int> &neighbours
-	);
+	void init(const std::vector<int> &neighbours);
 
 	void init(
 			const Mesh &mesh,
@@ -80,13 +80,11 @@ public:
 	);
 
   	void set_R_from_K();
-
-	eslocal DOFS_PER_NODE;
-
 private:
 
-	eslocal MPI_rank;
-	eslocal MPI_size;
+	Physics &physics;
+	EqualityConstraints &constraints;
+
 	eslocal number_of_subdomains_per_cluster;
 
 	bool 	SINGULAR;

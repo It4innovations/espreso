@@ -2441,7 +2441,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 //		GGt_tmp.mtype = 11; // non-symmetric
 //		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
 //	}
-	GGt_Mat_tmp.mtype = cluster.domains[0].K.mtype;
+	GGt_Mat_tmp.mtype = cluster.mtype;
 
 	GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
 	 importGGt_time.end(); importGGt_time.printStatMPI(); preproc_timing.addEvent(importGGt_time);
