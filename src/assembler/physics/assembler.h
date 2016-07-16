@@ -34,13 +34,14 @@ struct Physics {
 			osR.close();
 		}
 
-//		for (size_t p = 0; p < R2.size(); p++) {
-//			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
-//			SparseMatrix tmpR = R2[p];
-//			tmpR.ConvertDenseToCSR(0);
-//			osR << tmpR;
-//			osR.close();
-//		}
+    // AM uncomment for unsymmetric case
+    for (size_t p = 0; p < R2.size(); p++) {
+        std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
+        SparseMatrix tmpR = R2[p];
+        tmpR.ConvertDenseToCSR(0);
+        osR << tmpR;
+        osR.close();
+    }
 //
 //		for (size_t p = 0; p < R1H.size(); p++) {
 //			std::ofstream osR(Logging::prepareFile(p, "R1H").c_str());

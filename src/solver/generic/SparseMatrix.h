@@ -174,7 +174,7 @@ public:
 	void tridiagFromCSR( SparseMatrix & A_in, char *str0);
 	double dot_e(double *x, double *y, eslocal n);
 
-	double getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format);
+	double getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format , char str0);
 	void GramSchmidtOrtho();
 
 	void MatScale(double alpha);

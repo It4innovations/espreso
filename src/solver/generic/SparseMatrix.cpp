@@ -1690,7 +1690,13 @@ void SparseMatrix::MatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_ou
 	// y := alpha*A*x + beta*y
 	// void mkl_dcsrmv (char *transa, eslocal *m, eslocal *k, double *alpha, char *matdescra, double *val,       eslocal *indx,          eslocal *pntrb,     eslocal *pntre,     double *x,						   double *beta,  double *y);
 	// mkl_ccsrmv      (&transa,      &m,         &m,         &alpha,              matdescra, values,            columns,                rowIndex,           &(rowIndex[1]),     sol_vec,						   &beta,         rhs_vec);
-	mkl_dcsrmv         (&trans,       &rows,      &cols,      &alpha,              matdescra, &CSR_V_values[0],  &CSR_J_col_indices[0],  &CSR_I_row_indices[0],  &CSR_I_row_indices[1],  &x_in[x_in_vector_start_index],   &beta,         &y_out[y_out_vector_start_index]);
+	mkl_dcsrmv         (&trans,       &rows,      &cols,      &alpha,              matdescra, 
+      &CSR_V_values[0],  
+      &CSR_J_col_indices[0],  
+      &CSR_I_row_indices[0],  
+      &CSR_I_row_indices[1],  
+      &x_in[x_in_vector_start_index],   &beta,         
+      &y_out[y_out_vector_start_index]);
 
 }
 
@@ -2079,30 +2085,42 @@ void SparseMatrix::printMatCSR2(char *str0){
 }
 
 
-double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format){
+double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format, char transa){
 #ifdef GENINVtools
-  double norm_AR_row,norm_AR = 0.0;
-  if (false){
+  double norm_AR_row=0,norm_AR = 0;
+  double * AR =  new double [K.rows];
+
+
+  if (true){
     int cnt=0;
+	  char matdescra[] = {0,0,0,0,0,0};
+	  matdescra[0] = K.type; // General matrix
+	  if (K.type == 'S') {
+	  	matdescra[1] = 'U'; // Triangular indicator: upper
+	  	matdescra[2] = 'N'; // Main diagonal type: non-unit
+	  }
+	  matdescra[3] = 'F'; // One based indexing
 
-//    mkl_dcsrmv (const char *transa , const MKL_INT *m , const MKL_INT *k ,
-//         const double *alpha , const char *matdescra ,
-//         const double *val , const MKL_INT *indx , const MKL_INT *pntrb , const MKL_INT *pntre ,
-//         const double *x , const double *beta , double *y );
-
-//	    mkl_dcsrmv (&trans,       &rows,      &cols,      &alpha,
-//            matdescra, &CSR_V_values[0],  &CSR_J_col_indices[0],  &CSR_I_row_indices[0],
-//            &CSR_I_row_indices[1],
-//            &x_in[x_in_vector_start_index],
-//            &beta,
-//            &y_out[y_out_vector_start_index]);
-
-
+    double alpha=1,beta=0;
+    for (eslocal i = 0;i<R_in_dense_format.cols;i++){
+      mkl_dcsrmv (&transa,       &K.rows,      &K.cols,      &alpha,
+                  matdescra, 
+                  &K.CSR_V_values[0],  
+                  &K.CSR_J_col_indices[0],  
+                  &K.CSR_I_row_indices[0],
+                  &K.CSR_I_row_indices[1],
+                  &(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),
+                  &beta, AR);
+      norm_AR_row = 0;
+      for (eslocal j = 0; j < R_in_dense_format.rows;j++){
+        norm_AR_row+=AR[j]*AR[j];
+      }
+    norm_AR+=norm_AR_row;
+    }
+    norm_AR=sqrt(norm_AR);
   }
   else
   {
-    double * AR =  new double [K.rows];
-    double norm_AR_row,norm_AR = 0.0;
     for (eslocal i = 0;i<R_in_dense_format.cols;i++){
       memset(AR,0,R_in_dense_format.rows * sizeof(double));
       K.spmv_( K,&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),AR);
@@ -2112,9 +2130,9 @@ double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_form
       }
       norm_AR+=norm_AR_row;
     }
-    delete [] AR;
     norm_AR=sqrt(norm_AR);
   }
+  delete [] AR;
   return norm_AR;
 #endif
 }
@@ -3066,7 +3084,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-#define VERBOSE_LEVEL 0
+#define VERBOSE_LEVEL 3
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -3644,14 +3662,14 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   eslocal defect_K_in;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
-#if VERBOSE_LEVEL>1
-  os<<"ratio,      eig{i-1},          eig{i}\n";
-#endif
+//#if VERBOSE_LEVEL>1
+//  os<<"ratio,      eig{i-1},          eig{i}\n";
+//#endif
   for (eslocal i = itMax-1; i > 0;i--){
     ratio = fabs(W[i-1]/W[i]);
-#if VERBOSE_LEVEL>1
-    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
-#endif
+//#if VERBOSE_LEVEL>1
+//    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
+//#endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
       defect_K_in=i;
       break;
@@ -3776,23 +3794,27 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   std::vector <double>::iterator  it2;
   it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble); 
   double lmx_K_approx       = *it2;
-  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R);
+  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
   norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
   defect_d                 = Kplus_R.cols;
 
 
 #if VERBOSE_LEVEL>2
+  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
+#endif
+#if VERBOSE_LEVEL>3
   double lmx_K;
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
   double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
   double norm_KR                  = sqrt(norm_KR_d_pow_2);
   os << std::scientific;
-  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
   os << "max(eig(K)):             " << lmx_K << "\n";
   os << "max(diag(K)):            " << rho << "\n";
   os << "defect(K):               " << defect_K_in <<"\n";
-  os << "norm_KR_approx:          " << sqrt(*norm_KR_d_pow_2_approx) <<"\n";
   os << "norm_KR:                 " << norm_KR <<"\n";
+#endif
+#if VERBOSE_LEVEL>2
+  os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
   time1 = omp_get_wtime();
@@ -4118,7 +4140,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 // FOR UNSYMMETRIC MATRIX HAS TO BE SET-UP FOLLOWING PARAMETERS - ALWAYS
   use_null_pivots_or_s_set          = false;
-  fixing_nodes_or_dof               = 40;
+  fixing_nodes_or_dof               = 60;
   dofPerNode                        = 1;
 
 
@@ -4253,6 +4275,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   double di=1,dj=1;
   eslocal cnt_iter_check_nonsing=0;
 
+  K.type = 'G';
   K_modif = K; // TODO not necessary to do
 
   double elapsed_secs[15];
@@ -4279,12 +4302,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 //	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
 
-
+//  int cnt=0;
+//  SEQ_VECTOR <double> diagonals_;
+//  diagonals_.resize(K.rows);
 //  // get diagonal from general (unsymmetric) K and calc. approx of max(eig(K))
 //  for (eslocal i = 0;i<K_modif.rows;i++){
 //    for (eslocal j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
 //       if ((K_modif.CSR_J_col_indices[j-offset]-offset)==i) {
-//          diagonals[cnt]=fabs(K_modif.CSR_V_values[j-offset]);
+//          diagonals_[cnt]=fabs(K_modif.CSR_V_values[j-offset]);
 //          cnt++;
 //         break;
 //       }
@@ -4489,14 +4514,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 //    K_rr.printMatCSR("K_rr");
 
-    if (check_nonsing!=0){
-      double lmx_K_rr;
-      cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
-
-#if VERBOSE_LEVEL>2
-        os << "cond of regular part = "<< cond_of_regular_part <<"\n" << std::flush ;
-#endif
-    }
+//    if (check_nonsing!=0){
+//      double lmx_K_rr;
+//      cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
+//
+//#if VERBOSE_LEVEL>2
+//        os << "cond of regular part = "<< cond_of_regular_part <<"\n" << std::flush ;
+//#endif
+//    }
 //
     cnt_iter_check_nonsing++;
   }
@@ -4516,47 +4541,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
   K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
 
-//  K_rs.printMatCSR("K_rs");
-//  K_sr.printMatCSR("K_sr");
-
-
-//  {
-//   SparseMatrix s2 = K;
-//   //s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "K"));
-//   os2 << s2;
-//   os2.close();
-//  }
-//
-//  {
-//   SparseMatrix s2 = K_rr;
-////   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "K_rr"));
-//   os2 << s2;
-//   os2.close();
-//   }
-//   {
-//   SparseMatrix s2 = K_rs;
-////   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "K_rs"));
-//   os2 << s2;
-//   os2.close();
-//   }
-//   {
-//   SparseMatrix s2 = K_sr;
-////   s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "K_sr"));
-//   os2 << s2;
-//   os2.close();
-//   }
-
-//   {
-//   SparseMatrix s2 = K_modif;
-//   //s2.ConvertDenseToCSR(1);
-//   std::ofstream os2(Logging::prepareFile(0, "K_modif"));
-//   os2 << s2;
-//   os2.close();
-//   }
 
 
 
@@ -4698,14 +4682,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   eslocal ind_U_V;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? sc_size-twenty-1 : 0 ;
-#if VERBOSE_LEVEL>1
-  os<<"ratio,      eig{i-1},          eig{i}\n";
-#endif
+//#if VERBOSE_LEVEL>1
+//  os<<"ratio,      eig{i-1},          eig{i}\n";
+//#endif
   for (eslocal i = itMax; i < sc_size-1;i++){
     ratio = fabs(S_S[i+1]/S_S[i]);
-#if VERBOSE_LEVEL>1
-    os<<ratio <<" "<< S_S[i] << " " << S_S[i+1] << "\n";
-#endif
+//#if VERBOSE_LEVEL>1
+//    os<<ratio <<" "<< S_S[i] << " " << S_S[i+1] << "\n";
+//#endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
       ind_U_V = i+1;
       defect_K_in=sc_size-(i+1);
@@ -4728,7 +4712,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     for (eslocal i = 0 ; i < S.rows; i++){
       if (i < get_n_first_and_n_last_eigenvals_from_dense_S ||
             i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
-        os<< i+1 <<":\t"<< W[i] << "\n";
+        os<< i+1 <<":\t"<< S_S[i] << "\n";
       }
     }
   }
@@ -4936,29 +4920,35 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   std::vector <double>::iterator  it2;
   it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
   double lmx_K_approx       = *it2;
-  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R);
+  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
   norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
   defect_d                 = Kplus_R.cols;
 
 
-//  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_R);
-//  *norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
-//  *defect_d                 = Kplus_R.cols;
+  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_Rl,'T');
+  double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
 
 
 #if VERBOSE_LEVEL>2
+  os << std::scientific;
+  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
+#endif
+#if VERBOSE_LEVEL>3
   double lmx_K;
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
   double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
+  double norm_KtRl_d_pow_2          = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K*lmx_K);
   double norm_KR                  = sqrt(norm_KR_d_pow_2);
-  os << std::scientific;
-  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
+  double norm_KtRl                = sqrt(norm_KtRl_d_pow_2);
   os << "max(eig(K)):             " << lmx_K << "\n";
   os << "max(diag(K)):            " << rho << "\n";
   os << "defect(K):               " << defect_K_in <<"\n";
-  os << "norm_KR_approx:          " << sqrt(*norm_KR_d_pow_2_approx) <<"\n";
-//  os << "norm_KtRl_approx:        " << sqrt(*norm_KtRl_d_pow_2_approx) <<"\n";
   os << "norm_KR:                 " << norm_KR <<"\n";
+  os << "norm_KtRl:               " << norm_KtRl <<"\n";
+#endif
+#if VERBOSE_LEVEL>2
+  os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
+  os << "norm_KtRl_approx:        " << sqrt(norm_KtRl_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
   time1 = omp_get_wtime();
