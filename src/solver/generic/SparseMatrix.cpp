@@ -4396,7 +4396,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
           if (diagonalScaling) {
             K_modif.CSR_V_values[j-offset] /= sqrt(diagonals[i]*diagonals[tmp_j]);
           }
-          if (i>=tmp_j){
+          if (i!=tmp_j){
             tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
           }
         }
@@ -4630,15 +4630,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
   S.type='G';
-  if (true){
+
+  if (false){
    SparseMatrix s2 = S;
    //s2.ConvertDenseToCSR(1);
    std::ofstream os2(Logging::prepareFile(0, "S"));
    os2 << s2;
    os2.close();
    }
-
-
 
 //  S.printMatCSR("S");
   S.ConvertCSRToDense(1);
