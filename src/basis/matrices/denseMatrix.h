@@ -76,6 +76,17 @@ public:
 		return &_values[0];
 	}
 
+	double norm() const
+	{
+		double n = 0;
+		for (size_t i = 0; i < rows(); i++) {
+			for (size_t j = 0; j < columns(); j++) {
+				n += get(i, j) * get(i, j);
+			}
+		}
+		return sqrt(n);
+	}
+
 private:
 
 	static void assign(DenseMatrix &m1, DenseMatrix &m2)

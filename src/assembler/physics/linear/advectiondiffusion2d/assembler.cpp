@@ -22,8 +22,11 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
 {
+	bool CAU = true;
 	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
-	double detJ, inertia;
+	double detJ;
+	DenseMatrix f(1, element->size());
+	f = 0;
 
 	const Material &material = mesh.materials()[element->getParam(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
@@ -31,7 +34,6 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	const std::vector<double> &weighFactor = element->weighFactor();
 
 	Ce(0, 0) = Ce(1, 1) = 1e-1 ; //material.termalConduction;
-	inertia = 0;
 
 	coordinates.resize(element->size(), 2);
 	for (size_t i = 0; i < element->size(); i++) {
@@ -46,10 +48,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
-	DenseMatrix u(2, 1);
+	DenseMatrix u(1, 2), v(1, 2), Re(1, element->size());
 	u(0, 0) = 0.5;
-	u(1, 0) = 0.5;
+	u(0, 1) = 0.5;
 	double sigma = 0;
+
+	double normGradN = 0;
 
 	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
 		J.multiply(dN[gp], coordinates);
@@ -58,10 +62,35 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		dND.multiply(invJ, dN[gp]);
 
-		DenseMatrix b_e(1, element->size());
-		b_e.multiply(u, dND, 1, 0, true);
-		double norm_u_e = pow(pow(u(0, 0), 2) + pow(u(1, 0), 2), 0.5);
+		DenseMatrix b_e(1, element->size()), b_e_c(1, element->size());
+		b_e.multiply(u, dND, 1, 0);
+
+		if (CAU) {
+			for (size_t i = 0; i < dND.rows(); i++) {
+				for (size_t j = 0; j < dND.columns(); j++) {
+					normGradN += dND(i, j) * dND(i, j);
+				}
+			}
+			normGradN = sqrt(normGradN);
+			if (normGradN >= 1e-12) {
+				for (size_t i = 0; i < Re.columns(); i++) {
+					Re(0, i) = b_e(0, i) - f(0, i);
+				}
+				DenseMatrix ReBt(1, 2);
+				ReBt.multiply(Re, dND, 1 / pow(normGradN, 2), 0, false, true);
+				for (size_t i = 0; i < ReBt.columns(); i++) {
+					v(0, i) = u(0, i) - ReBt(0, i);
+				}
+			} else {
+				v = u;
+			}
+		}
+
+
+		double norm_u_e = pow(pow(u(0, 0), 2) + pow(u(0, 1), 2), 0.5);
 		double h_e = 0, tau_e = 0, konst = 0;
+		double C_e;
+
 		if (norm_u_e != 0) {
 			double nn = 0;
 			for (size_t i = 0; i < element->size(); i++) {
@@ -71,19 +100,41 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			double P_e = h_e * norm_u_e / 2 * Ce(0, 0);
 			tau_e = std::max(0.0, 1 - 1 / P_e);
 			konst = h_e * tau_e / (2 * norm_u_e);
+
+			if (CAU) {
+				DenseMatrix u_v(1, 2);
+				u_v(0, 0) = u(0, 0) - v(0, 0);
+				u_v(0, 1) = u(0, 1) - v(0, 1);
+				b_e_c.multiply(u_v, dND, 1, 0);
+				double norm_u_v = u_v.norm();
+				double h_e_c = 2 * norm_u_v / b_e_c.norm();
+				double P_e_c = h_e_c * norm_u_v / (2 * Ce.norm());
+				double tau_e_c = std::max(0.0, 1 - 1 / P_e_c);
+
+				double konst1 = Re.norm() / normGradN;
+				double konst2 = tau_e * h_e != 0 ? tau_e_c * h_e_c / (tau_e * h_e) : 0;
+				if (konst1 / norm_u_e < konst2) {
+					C_e = tau_e * h_e * konst1 * (konst2 - konst1 / norm_u_e) / 2;
+				} else {
+					C_e = 0;
+				}
+			}
 		}
 
 		Ce(0, 0) += sigma * h_e * norm_u_e;
 		Ce(1, 1) += sigma * h_e * norm_u_e;
 
-		Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
-		Ke.multiply(N[0], b_e, detJ * weighFactor[gp], 1, true);
 		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
+		Ke.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
+		Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
+		if (CAU) {
+			Ke.multiply(dND, dND, C_e * weighFactor[gp] * detJ, 1, true);
+		}
 
 		for (eslocal i = 0; i < Ksize; i++) {
-			fe[i] += detJ * weighFactor[gp] * N[gp](0, i) * inertia;
+			fe[i] += detJ * weighFactor[gp] * N[gp](0, i) * f(0, i);
 			if (norm_u_e != 0) {
-				fe[i] += detJ * weighFactor[gp] * h_e * tau_e * b_e(0, i) * inertia / (2 * norm_u_e);
+				fe[i] += detJ * weighFactor[gp] * h_e * tau_e * b_e(0, i) * f(0, i) / (2 * norm_u_e);
 			}
 		}
 	}
@@ -130,6 +181,7 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	K[subdomain] = csrK;
 
 	algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+
 	R1H[subdomain] = R1[subdomain];
 	R2H[subdomain] = R2[subdomain];
 }
