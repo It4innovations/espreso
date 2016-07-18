@@ -50,28 +50,12 @@ struct Physics {
 //			osR << tmpR;
 //			osR.close();
 //		}
-//
-//		for (size_t p = 0; p < R2H.size(); p++) {
-//			std::ofstream osR(Logging::prepareFile(p, "R2H").c_str());
-//			SparseMatrix tmpR = R2H[p];
-//			tmpR.ConvertDenseToCSR(0);
-//			osR << tmpR;
-//			osR.close();
-//		}
-//
-//		for (size_t p = 0; p < RegMat.size(); p++) {
-//			std::ofstream osR(Logging::prepareFile(p, "RegMat").c_str());
-//			SparseMatrix tmpR = RegMat[p];
-//			tmpR.ConvertDenseToCSR(0);
-//			osR << tmpR;
-//			osR.close();
-//		}
 	}
 
 	size_t DOFs;
 
 	SparseMatrix::MatrixType mtype;
-	std::vector<SparseMatrix> K, T, R1, R2, R1H, R2H, RegMat; // T will be deleted
+	std::vector<SparseMatrix> K, T, R1, R2, RegMat; // T will be deleted
 	std::vector<std::vector<double> > f;
 
 	Physics(const Mesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype): _mesh(mesh), DOFs(DOFs), mtype(mtype) {};

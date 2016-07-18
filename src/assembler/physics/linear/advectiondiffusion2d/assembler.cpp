@@ -66,12 +66,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		b_e.multiply(u, dND, 1, 0);
 
 		if (CAU) {
-			for (size_t i = 0; i < dND.rows(); i++) {
-				for (size_t j = 0; j < dND.columns(); j++) {
-					normGradN += dND(i, j) * dND(i, j);
-				}
-			}
-			normGradN = sqrt(normGradN);
+			normGradN = dND.norm();
 			if (normGradN >= 1e-12) {
 				for (size_t i = 0; i < Re.columns(); i++) {
 					Re(0, i) = b_e(0, i) - f(0, i);
@@ -87,16 +82,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		}
 
 
-		double norm_u_e = pow(pow(u(0, 0), 2) + pow(u(0, 1), 2), 0.5);
+		double norm_u_e = u.norm();
 		double h_e = 0, tau_e = 0, konst = 0;
 		double C_e;
 
 		if (norm_u_e != 0) {
-			double nn = 0;
-			for (size_t i = 0; i < element->size(); i++) {
-				nn += b_e(0, i) * b_e(0, i);
-			}
-			h_e = 2 * norm_u_e / sqrt(nn);
+			h_e = 2 * norm_u_e / b_e.norm();
 			double P_e = h_e * norm_u_e / 2 * Ce(0, 0);
 			tau_e = std::max(0.0, 1 - 1 / P_e);
 			konst = h_e * tau_e / (2 * norm_u_e);
@@ -181,9 +172,6 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	K[subdomain] = csrK;
 
 	algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
-
-	R1H[subdomain] = R1[subdomain];
-	R2H[subdomain] = R2[subdomain];
 }
 
 

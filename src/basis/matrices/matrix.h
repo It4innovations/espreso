@@ -60,6 +60,8 @@ public:
 	virtual double get(size_t row, size_t column) const = 0;
 	virtual void set(size_t row, size_t column, double value) = 0;
 
+	virtual double norm() const = 0;
+
 	virtual void transpose() = 0;
 	virtual size_t nonZeroValues() const = 0;
 

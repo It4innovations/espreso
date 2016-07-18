@@ -208,7 +208,4 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 		break;
 	}
-
-	// TODO:
-	R1H[subdomain] = R1[subdomain];
 }

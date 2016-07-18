@@ -162,8 +162,6 @@ void Stokes::composeSubdomain(size_t subdomain)
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 		break;
 	}
-
-	R1H[subdomain] = R1[subdomain];
 }
 
 

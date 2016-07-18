@@ -61,6 +61,12 @@ public:
 		return _values;
 	}
 
+	double norm() const
+	{
+		ESINFO(ERROR) << "Sparse VVP matrix norm is not implemented.";
+		return 0;
+	}
+
 
 private:
 

@@ -92,6 +92,15 @@ public:
 		return &_columnIndices[0];
 	}
 
+	double norm() const
+	{
+		double n = 0;
+		for (size_t i = 0; i < _values.size(); i++) {
+				n += _values[i] * _values[i];
+		}
+		return sqrt(n);
+	}
+
 private:
 
 	double& operator()(size_t row, size_t column)

@@ -138,8 +138,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			cluster.domains[d].Kplus_R = physics.R1[d];
 			cluster.domains[d].Kplus_R2 = physics.R2[d];
-			cluster.domains[d].Kplus_Rb = physics.R1H[d];
-			cluster.domains[d].Kplus_Rb2 = physics.R2H[d];
+			cluster.domains[d].Kplus_Rb = physics.R1[d];
+			cluster.domains[d].Kplus_Rb2 = physics.R2[d];
 		}
 //		cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 //			cluster.domains[d].K = physics.K[d];

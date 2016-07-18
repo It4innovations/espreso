@@ -23,8 +23,6 @@ struct LinearPhysics: public Physics {
 		K.resize(_mesh.parts());
 		R1.resize(_mesh.parts());
 		R2.resize(_mesh.parts());
-		R1H.resize(_mesh.parts());
-		R2H.resize(_mesh.parts());
 		RegMat.resize(_mesh.parts());
 		f.resize(_mesh.parts());
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {

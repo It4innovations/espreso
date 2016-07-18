@@ -64,6 +64,12 @@ public:
 		return _values;
 	}
 
+	double norm() const
+	{
+		ESINFO(ERROR) << "Sparse DOK matrix norm is not implemented.";
+		return 0;
+	}
+
 private:
 
 	static void assign(SparseDOKMatrix<Tindices> &m1, SparseDOKMatrix<Tindices> &m2)

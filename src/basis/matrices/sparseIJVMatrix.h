@@ -128,16 +128,19 @@ public:
 
 	double& operator()(size_t row, size_t column)
 	{
-//		for(size_t i = 0; i < _rowIndices.size(); i++)
-//		{
-//			if (_rowIndices[i] == row + _indexing && _columnIndices[i] == column + _indexing) {
-//				return _values[i];
-//			}
-//		}
 		_rowIndices.push_back(row + _indexing);
 		_columnIndices.push_back(column + _indexing);
 		_values.push_back(0);
 		return _values.back();
+	}
+
+	double norm() const
+	{
+		double n = 0;
+		for (size_t i = 0; i < _values.size(); i++) {
+				n += _values[i] * _values[i];
+		}
+		return sqrt(n);
 	}
 
 private:
