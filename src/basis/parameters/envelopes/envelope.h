@@ -15,8 +15,11 @@ struct Option {
 
 struct Envelope {
 	virtual bool set(const std::string &value) =0;
+	virtual bool set(const std::string &attribute, const std::string &value) { return false; };
 	virtual std::string get() const =0;
+	virtual std::string get(const std::string &attribute) const { return ""; };
 
+	virtual std::vector<std::string> attributes() const { return std::vector<std::string>(); };
 	virtual void* value() const =0;
 
 	virtual Envelope* copy() =0;

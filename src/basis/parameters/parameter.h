@@ -10,6 +10,7 @@
 #include "envelopes/data.h"
 #include "envelopes/options.h"
 #include "envelopes/stringoptions.h"
+#include "envelopes/map.h"
 
 namespace espreso {
 
@@ -67,6 +68,13 @@ struct Parameter {
 		data = new OptionEnvelope<TParameter>(defaultValue, options);
 	}
 
+	template <typename TParameter>
+	Parameter(std::string name, std::map<std::string, TParameter> &defaultValue, std::string description, size_t verboseLevel = 2)
+	: name(name), description(description), verboseLevel(verboseLevel)
+	{
+		data = new MapEnvelope<TParameter>(defaultValue);
+	}
+
 	Parameter(const Parameter &other)
 	{
 		name = other.name;
@@ -98,9 +106,21 @@ struct Parameter {
 		}
 	}
 
+	void set(const std::string &attribute, const std::string &value)
+	{
+		if (!data->set(attribute, value)) {
+			ESINFO(GLOBAL_ERROR) << "Parameter '" << name << "', attribute '" << attribute << "' has a wrong value '" << value << "'.";
+		}
+	}
+
 	std::string get() const
 	{
 		return data->get();
+	}
+
+	std::string get(const std::string &parameter) const
+	{
+		return data->get(parameter);
 	}
 };
 

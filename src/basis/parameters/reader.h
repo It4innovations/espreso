@@ -46,6 +46,7 @@ protected:
 private:
 	static void printHelp(size_t verboseLevel);
 	bool _setParameter(const std::string &parameter, const std::string &value);
+	bool _setParameters(const std::string &parameter, const std::vector<std::string> &attributes, const std::vector<std::string> &values);
 };
 
 }

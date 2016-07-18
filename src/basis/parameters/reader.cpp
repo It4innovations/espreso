@@ -130,7 +130,7 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 	std::ifstream file(configuration.path);
 	Configuration conf(configuration);
 
-	std::vector<std::string> cmdArgs;
+	std::vector<std::string> cmdArgs, attributes, values;
 
 	if (!file.is_open()) {
 		ESINFO(ERROR) << "A configuration file on path '" << configuration.path << "' not found.";
@@ -141,6 +141,22 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 		std::string parameter = Parser::getParameter(line);
 		if (parameter.size() == 0) {
 			// skip empty line
+			continue;
+		}
+		if (Parser::getValue(line) == "{") {
+			attributes.clear();
+			values.clear();
+			while (getline(file, line, '\n')) {
+				if (Parser::getParameter(line) == "}") {
+					if (!_setParameters(parameter, attributes, values) && verboseLevel) {
+						ESINFO(ALWAYS) << TextColor::RED << "Unknown parameter '" << parameter << "'";
+					}
+					break;
+				} else {
+					attributes.push_back(Parser::getParameter(line));
+					values.push_back(Parser::getValue(line));
+				}
+			}
 			continue;
 		}
 
@@ -173,6 +189,19 @@ bool ParametersReader::_setParameter(const std::string &parameter, const std::st
 	auto it = std::lower_bound(_parameters.begin(), _parameters.end(), parameter);
 	if (it != _parameters.end() && StringCompare::caseInsensitiveEq(it->name, parameter)) {
 		it->set(value);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool ParametersReader::_setParameters(const std::string &parameter, const std::vector<std::string> &attributes, const std::vector<std::string> &values)
+{
+	auto it = std::lower_bound(_parameters.begin(), _parameters.end(), parameter);
+	if (it != _parameters.end() && StringCompare::caseInsensitiveEq(it->name, parameter)) {
+		for (size_t i = 0; i < attributes.size(); i++) {
+			it->set(attributes[i], values[i]);
+		}
 		return true;
 	} else {
 		return false;
@@ -261,7 +290,16 @@ void ParametersReader::printParameters(const std::vector<Parameter> &params, siz
 		size_t n = 0;
 		for (size_t j = 0; j < params.size(); j++) {
 			if (params[j].verboseLevel == i) {
-				ESINFO(ALWAYS) << "\t" << params[j].name << " == " << params[j].get();
+				auto attributes = params[j].data->attributes();
+				if (attributes.size()) {
+					ESINFO(ALWAYS) << "\t" << params[j].name << " == {";
+					for (size_t k = 0; k < attributes.size(); k++) {
+						ESINFO(ALWAYS) << "\t  " << attributes[k] << " == " << params[j].get(attributes[k]);
+					}
+					ESINFO(ALWAYS) << "\t}";
+				} else {
+					ESINFO(ALWAYS) << "\t" << params[j].name << " == " << params[j].get();
+				}
 				n++;
 			}
 		}
