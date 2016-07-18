@@ -144,13 +144,13 @@ protected:
 	Faces _faces;
 
 	/** @brief Array that stores all elements of the mesh. */
-	mutable std::vector<Element*> _elements;
+	std::vector<Element*> _elements;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;
 
 	/** @brief Fix points for all parts. */
-	std::vector<std::vector<eslocal> > _fixPoints;
+	mutable std::vector<std::vector<eslocal> > _fixPoints;
 
 	/** @brief Map of points to sub-domains. */
 	Boundaries _subdomainBoundaries;

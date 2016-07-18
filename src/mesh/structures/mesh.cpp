@@ -131,7 +131,7 @@ void Mesh::computeBoundaries()
 
 std::vector<eslocal> Mesh::computeFixPoints(size_t part, size_t number) const
 {
-	if (_fixPoints[part].size()) {
+	if (_fixPoints.size() && _fixPoints[part].size()) {
 		return _fixPoints[part];
 	}
 	std::vector<eslocal> fixPoints(number);
@@ -154,6 +154,8 @@ std::vector<eslocal> Mesh::computeFixPoints(size_t part, size_t number) const
 
 	delete[] eSubPartition;
 
+	_fixPoints.resize(parts());
+	_fixPoints[part] = fixPoints;
 	return fixPoints;
 }
 
