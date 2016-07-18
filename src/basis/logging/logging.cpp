@@ -43,8 +43,10 @@ Info::~Info()
 		return;
 	}
 	if (event == ERROR || (event == GLOBAL_ERROR && config::env::MPIrank == 0)) {
-		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
+		fprintf(stderr, "\x1b[31m%s\x1b[0m\n", os.str().c_str());
+		if (event == ERROR) {
+			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
+		}
 
 		if (config::env::executable.size()) {
 			printStack();
@@ -60,7 +62,21 @@ Info::~Info()
 		return; // only first process print results
 	}
 
-	fprintf(stdout, "%s", os.str().c_str());
+	switch (color) {
+	case TextColor::WHITE:
+		fprintf(stdout, "%s", os.str().c_str());
+		break;
+	case TextColor::RED:
+		fprintf(stdout, "\x1b[31m%s\x1b[0m", os.str().c_str());
+		break;
+	case TextColor::GREEN:
+		fprintf(stdout, "\x1b[32m%s\x1b[0m", os.str().c_str());
+		break;
+	case TextColor::BLUE:
+		fprintf(stdout, "\x1b[34m%s\x1b[0m", os.str().c_str());
+		break;
+	}
+
 	fflush(stdout);
 }
 

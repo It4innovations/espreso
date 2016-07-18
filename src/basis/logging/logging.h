@@ -77,6 +77,13 @@ enum MeasureEvent {
 	MEASURE_LEVEL3
 };
 
+enum class TextColor {
+	WHITE,
+	RED,
+	GREEN,
+	BLUE
+};
+
 class Test
 {
 public:
@@ -115,13 +122,18 @@ protected:
 class Info
 {
 public:
-	Info(InfoEvent event): event(event), _plain(false) {};
+	Info(InfoEvent event): event(event), color(TextColor::WHITE), _plain(false) {};
 	~Info();
 
 	enum InfoMode { FORMATTED, PLAIN };
 	Info& operator<<(const InfoMode& mode)
 	{
 		_plain = mode == PLAIN;
+		return *this;
+	}
+	Info& operator<<(const TextColor& color)
+	{
+		this->color = color;
 		return *this;
 	}
 	template<typename Ttype>
@@ -157,6 +169,7 @@ public:
 protected:
 	std::ostringstream os;
 	InfoEvent event;
+	TextColor color;
 	bool _plain;
 };
 
