@@ -24,6 +24,12 @@ INT_WIDTH = 32          # ESPRESO supports only { 32, 64 } integer width
 HYPRE::INCLUDE =    # Path to Hypre headers
 HYPRE::LIBPATH =    # PATH to Hypre library
 
+VTK::INCLUDE =    # Path to VTK headers
+VTK::LIBPATH =    # Path to VTK libraries
+
+PARAVIEW::INCLUDE =    # Path to Paraview headers
+PARAVIEW::LIBPATH =    # Path to Paraview libraries
+
 METISLIB = metis		# Name of METIS library for 32b version.
 #METISLIB = metis-64     # 64b version of METIS
 

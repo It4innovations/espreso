@@ -5,6 +5,12 @@ import commands
 import sys
 import os
 
+<<<<<<< HEAD
+=======
+from waflib import Logs
+
+
+>>>>>>> ENH: wscript support for VTK and Paraview
 sys.path.append(os.path.abspath("src/python"))
 from wafutils import *
 from waflib import Logs
@@ -99,6 +105,13 @@ def configure(ctx):
     ctx.recurse("src/app")
 
     check_environment(ctx)
+
+
+    if not ctx.env.VTK:
+        Logs.warn("VTK library was not founded. ESPRESO supports only VTK legacy format!")
+
+    if not ctx.env.PARAVIEW:
+        Logs.warn("Paraview library was not founded. ESPRESO does not support data visualisation through Catalyst!")
 
     if not ctx.env.HYPRE:
         Logs.warn("HYPRE library was not founded. ESPRESO does not support HYPRE solver!")

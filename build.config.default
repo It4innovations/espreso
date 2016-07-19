@@ -15,13 +15,18 @@ CHECK_ENV = 1           # turn { 0 - off, 1 - on } all checks for configuration
 INT_WIDTH = 32          # ESPRESO supports only { 32, 64 } integer width
 SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC MUMPS
 LIBTYPE = SHARED        # ESPRESO is built to SHARED or STATIC libraries
-DEBUG = 0               # turn { 0 - off, 1 -on } print of debug information
 BUILD_TOOLS = 1         # ESPRESO try to compile external tools.
                         # If the compilation is not successful set this attribute to 0 and build tools and
                         # set library names
 
 HYPRE::INCLUDE =    # Path to Hypre headers
 HYPRE::LIBPATH =    # PATH to Hypre library
+
+VTK::INCLUDE =    # Path to VTK headers
+VTK::LIBPATH =    # Path to VTK libraries
+
+PARAVIEW::INCLUDE =    # Path to Paraview headers
+PARAVIEW::LIBPATH =    # Path to Paraview libraries
 
 # Next lines are ignored if BUILD_TOOLS == 0
 METISLIB = metis		# Name of METIS library

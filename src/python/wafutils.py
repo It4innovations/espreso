@@ -50,14 +50,10 @@ def check_libraries(ctx):
         check_library("STLIB", name, library)
 
 def check_headers(ctx):
-    headers = [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]
-
-    if ctx.env.SOLVER == "CUDA":
-        headers += [ "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h" ]
-
-    for header in headers:
-        ctx.check_cxx(
+    for header in ctx.headers:
+        ctx.check_cc(
             header_name = header,
+            execute     = False,
             msg         = "Checking for header '{0}'".format(header),
             errmsg      = "not found - add path to header '{0}' to INCLUDES".format(header),
             okmsg       = "found"
@@ -116,6 +112,9 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
 
     for attribute, description, type, value in compiler_attributes:
         print_attribute(attribute, type, ctx.env[attribute])
+
+    for out_attribute in ["VTK::INCLUDE", "VTK::LIBPATH", "PARAVIEW::INCLUDE", "PARAVIEW::LIBPATH"]:
+        print_attribute(out_attribute, "string", ctx.env[out_attribute])
 
     for attribute, description, type, value in compiler_attributes:
         print_attribute("SOLVER::" + attribute, type, ctx.env["SOLVER::" + attribute])

@@ -3,8 +3,10 @@ def configure(ctx):
     ctx.recurse("vtk")
     ctx.recurse("esdata")
     ctx.recurse("generic")
+    ctx.recurse("paraview")
 
 def build(ctx):
     ctx.recurse("vtk")
     ctx.recurse("esdata")
     ctx.recurse("generic")
+    ctx.recurse("paraview")
