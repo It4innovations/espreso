@@ -109,17 +109,23 @@ namespace mesh {
 
 namespace output {
 
-	enum Output { VTK, ESDATA }; // only VTK_FULL is working
-	extern Output format;
+	enum class OUTPUT_FORMATAlternatives {
+		VTK_LEGACY = 0,
+		VTK_BINARY = 1,
+		VTK_MULTIBLOCK = 2,
+		ENSIGHT = 3
+	};
+	/// Format of output data
+	extern OUTPUT_FORMATAlternatives OUTPUT_FORMAT;
 
-	extern bool saveMesh;
-	extern bool saveFixPoints;
-	extern bool saveFaces;
-	extern bool saveLines;
-	extern bool saveCorners;
-	extern bool saveDirichlet;
-	extern bool saveAveraging;
-	extern bool saveResults;
+	/// All results are compressed by VTK Decimation
+	extern bool OUTPUT_COMPRESSION;
+
+	/// Save input to VTK files.
+	extern bool SAVE_MESH;
+
+	/// Save fix points to VTK files.
+	extern bool SAVE_FIX_POINTS;
 
 	/// Save sub-domains common edges to VTK files.
 	extern bool SAVE_EDGES;

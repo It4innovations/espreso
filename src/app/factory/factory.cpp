@@ -245,28 +245,28 @@ Factory::Factory(const Options &options)
 
 void Factory::solve()
 {
-	_assembler->init();
+	output::Generic *output;
 
-	for (int i = 0; i < config::assembler::timeSteps; i++) {
-		_assembler->pre_solve_update();
-		_assembler->solve(_solution);
-		_assembler->post_solve_update();
+	instance->init();
+	if (config::output::SAVE_RESULTS) {
+		std::stringstream ss;
+		ss << outputFile << config::env::MPIrank;
+		output = new output::Generic(mesh, ss.str());
+	}
+
+	for (int i = 0; i < config::solver::TIME_STEPS; i++) {
+		instance->pre_solve_update(_solution);
+		instance->solve(_solution);
+		instance->post_solve_update(_solution);
 		if (config::output::SAVE_RESULTS) {
-			std::stringstream ss;
-			ss << outputFile << config::env::MPIrank;
-			if (config::solver::TIME_STEPS > 1) {
-				ss << "_" << i;
-			}
-
-			output::VTK_Full vtk(mesh, ss.str());
-			vtk.store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-
-			output::Generic test(mesh, ss.str());
-			test.store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			output->store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 		}
 	}
 
-	_assembler->finalize();
+	instance->finalize();
+	if (config::output::SAVE_RESULTS) {
+		delete output;
+	}
 }
 
 double Factory::norm() const

@@ -78,6 +78,9 @@ assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS
 
 /////////////////////////////// OUTPUT /////////////////////////////////////////
 
+output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATAlternatives::VTK_LEGACY;
+
+bool output::OUTPUT_COMPRESSION     = false;
 bool output::SAVE_MESH       = false;
 bool output::SAVE_FIX_POINTS = false;
 bool output::SAVE_FACES      = false;
@@ -198,8 +201,17 @@ std::vector<Description> assembler::description = {
 	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
 
 	// OUTPUT DESCRIPTION
-	{ "SAVE_MESH"       , output::SAVE_MESH      , "Save an input mesh.", WRITE_TO_HELP },
-	{ "SAVE_FIX_POINTS" , output::SAVE_FIX_POINTS, "Save a mesh fix points." },
+	{ "OUTPUT_FORMAT"   , output::OUTPUT_FORMAT   , "Format of output data.", {
+			{ "VTK_LEGACY", output::OUTPUT_FORMATAlternatives::VTK_LEGACY, "*.vtk files" },
+			{ "VTK_BINARY", output::OUTPUT_FORMATAlternatives::VTK_BINARY, "*.vtu files" },
+			{ "VTK_MULTIBLOCK", output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK, "*.vtu + *.vtm files" },
+			{ "ENSIGHT", output::OUTPUT_FORMATAlternatives::ENSIGHT, "EnSight files" }
+	}, WRITE_TO_HELP },
+
+	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by VTK Decimation.", WRITE_TO_HELP },
+
+	{ "SAVE_MESH"       , output::SAVE_MESH       , "Save an input mesh.", WRITE_TO_HELP },
+	{ "SAVE_FIX_POINTS" , output::SAVE_FIX_POINTS , "Save a mesh fix points." },
 	{ "SAVE_FACES"      , output::SAVE_FACES      , "Save faces between subdomains." },
 	{ "SAVE_EDGES"      , output::SAVE_EDGES      , "Save edges among subdomains." },
 	{ "SAVE_CORNERS"    , output::SAVE_CORNERS    , "Save corner nodes." },
