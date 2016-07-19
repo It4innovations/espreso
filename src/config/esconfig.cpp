@@ -80,7 +80,9 @@ assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS
 
 output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATAlternatives::VTK_LEGACY;
 
-bool output::OUTPUT_COMPRESSION     = false;
+bool   output::OUTPUT_COMPRESSION = false;
+double output::OUTPUT_DECIMATION  = 0.5;
+
 bool output::SAVE_MESH       = false;
 bool output::SAVE_FIX_POINTS = false;
 bool output::SAVE_FACES      = false;
@@ -208,7 +210,8 @@ std::vector<Description> assembler::description = {
 			{ "ENSIGHT", output::OUTPUT_FORMATAlternatives::ENSIGHT, "EnSight files" }
 	}, WRITE_TO_HELP },
 
-	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by VTK Decimation.", WRITE_TO_HELP },
+	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by 'z' library.", WRITE_TO_HELP },
+	{ "OUTPUT_DECIMATION" , output::OUTPUT_DECIMATION,  "Output mesh size is reduced by VTK Decimation.", WRITE_TO_HELP },
 
 	{ "SAVE_MESH"       , output::SAVE_MESH       , "Save an input mesh.", WRITE_TO_HELP },
 	{ "SAVE_FIX_POINTS" , output::SAVE_FIX_POINTS , "Save a mesh fix points." },

@@ -118,8 +118,11 @@ namespace output {
 	/// Format of output data
 	extern OUTPUT_FORMATAlternatives OUTPUT_FORMAT;
 
-	/// All results are compressed by VTK Decimation
+	/// All results are compressed by 'z' library
 	extern bool OUTPUT_COMPRESSION;
+
+	/// Mesh is decimated by this ratio
+	extern double OUTPUT_DECIMATION;
 
 	/// Save input to VTK files.
 	extern bool SAVE_MESH;
