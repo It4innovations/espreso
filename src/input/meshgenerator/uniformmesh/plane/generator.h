@@ -15,7 +15,7 @@ public:
 	static void load(Mesh &mesh, const PlaneSettings &settings)
 	{
 		ESINFO(OVERVIEW) << "Generate plane mesh";
-		ESINFO(DETAILS) << "Plane parameters:\n" << settings;
+		ParametersReader::printParameters(settings.parameters, config::info::VERBOSE_LEVEL);
 
 		PlaneGenerator plane(mesh, settings);
 		plane.fill();

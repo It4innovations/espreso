@@ -147,7 +147,12 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 			attributes.clear();
 			values.clear();
 			while (getline(file, line, '\n')) {
-				if (Parser::getParameter(line) == "}") {
+				std::string attribute = Parser::getParameter(line);
+				if (attribute.size() == 0) {
+					// skip empty line
+					continue;
+				}
+				if (attribute == "}") {
 					if (!_setParameters(parameter, attributes, values) && verboseLevel) {
 						ESINFO(ALWAYS) << TextColor::RED << "Unknown parameter '" << parameter << "'";
 					}

@@ -10,24 +10,10 @@ void PlaneSettings::defaultPlaneSettings()
 		problemLength[i] = 30;
 	}
 
-	boundaryCondition = std::vector<double>(6 * 2 * 3, std::numeric_limits<double>::infinity());
-
 	std::vector<std::pair<std::string, std::string> > axis = {
 			{ "X", "x" },
 			{ "Y", "y" },
 			{ "Z", "z" }
-	};
-	std::vector<std::pair<std::string, std::string> > properties = {
-			{ "DIRICHLET", "Dirichlet" },
-			{ "FORCES", "Force" }
-	};
-	std::vector<std::pair<std::string, std::string> > plane_faces = {
-			{ "FRONT", "not supported" },
-			{ "REAR", "not supported" },
-			{ "LEFT", "left" },
-			{ "RIGHT", "right" },
-			{ "TOP", "top" },
-			{ "BOTTOM", "bottom" }
 	};
 
 	for (size_t i = 0; i < 2; i++) {
@@ -39,16 +25,8 @@ void PlaneSettings::defaultPlaneSettings()
 		});
 	}
 
-	for (size_t i = 0; i < axis.size(); i++) {
-		for (size_t j = 0; j < properties.size(); j++) {
-			for (size_t k = 0; k < plane_faces.size(); k++) {
-				parameters.push_back({
-					properties[j].first + "_" + plane_faces[k].first + "_" + axis[i].first, boundaryCondition[k * properties.size() * axis.size() + j * properties.size() + i],
-					properties[j].second + " on the " + plane_faces[k].second + " face in " + axis[i].second + "-axis."
-				});
-			}
-		}
-	}
+	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions" });
+	parameters.push_back({ "FORCES", forces, "Boundary forces" });
 }
 
 PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size)

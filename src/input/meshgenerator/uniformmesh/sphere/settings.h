@@ -26,32 +26,12 @@ struct SphereSettings: public UniformSettings {
 	double innerRadius;
 	double outerRadius;
 
-	std::vector<double> boundaryCondition;
+	std::map<std::string, double> dirichlet;
+	std::map<std::string, double> forces;
+
+protected:
+	void defaultSphereSettings();
 };
-
-inline std::ostream& operator<<(std::ostream& os, const SphereSettings &s)
-{
-	os << UniformSettings(s);
-	os << "layers: " << s.layers << "\n";
-	os << "grid: " << s.grid << "\n";
-	os << "innerRadius: " << s.innerRadius << "\n";
-	os << "outerRadius: " << s.outerRadius << "\n";
-
-	std::vector<std::string> properties = { "DIRICHLET", "FORCES" };
-	std::vector<std::string> sphere_faces = { "INNER", "OUTER" };
-	std::vector<std::string> axis = { "X", "Y", "Z" };
-
-	for (size_t f = 0; f < sphere_faces.size(); f++) {
-		for (size_t p = DIRICHLET_X; p <= FORCES_Z; p++) {
-			std::string name = properties[p / 3] + "_" + sphere_faces[f] + "_" + axis[p % 3];
-			if (s.boundaryCondition[f * 6 + p] != std::numeric_limits<double>::infinity()) {
-				os << name << ": " << s.boundaryCondition[f * 6 + p] << "\n";
-			}
-		}
-	}
-
-	return os;
-}
 
 }
 }

@@ -156,24 +156,26 @@ void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std:
 	if (_cluster[0] == 0) {
 		eslocal index = 0;
 		for (eslocal y = 0; y < nodes[1]; y++) {
-			if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-				dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_X];
+			if (_settings.dirichlet.find("TOP_X") != _settings.dirichlet.end()) {
+				dirichlet_x[index] = _settings.dirichlet.find("TOP_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-				forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_X];
+			if (_settings.dirichlet.find("TOP_Y") != _settings.dirichlet.end()) {
+				dirichlet_y[index] = _settings.dirichlet.find("TOP_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-				dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Y];
+			if (_settings.dirichlet.find("TOP_Z") != _settings.dirichlet.end()) {
+				dirichlet_z[index] = _settings.dirichlet.find("TOP_Z")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-				forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Y];
+
+			if (_settings.forces.find("TOP_X") != _settings.forces.end()) {
+				forces_x[index] = _settings.forces.find("TOP_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-				dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Z];
+			if (_settings.forces.find("TOP_Y") != _settings.forces.end()) {
+				forces_y[index] = _settings.forces.find("TOP_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-				forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Z];
+			if (_settings.forces.find("TOP_Z") != _settings.forces.end()) {
+				forces_z[index] = _settings.forces.find("TOP_Z")->second;
 			}
+
 			index += nodes[0];
 		}
 	}
@@ -181,24 +183,26 @@ void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std:
 	if (_cluster[0] == _settings.clusters[0] - 1) {
 		eslocal index = nodes[0] - 1;
 		for (eslocal y = 0; y < nodes[1]; y++) {
-			if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-				dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_X];
+			if (_settings.dirichlet.find("BOTTOM_X") != _settings.dirichlet.end()) {
+				dirichlet_x[index] = _settings.dirichlet.find("BOTTOM_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-				forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_X];
+			if (_settings.dirichlet.find("BOTTOM_Y") != _settings.dirichlet.end()) {
+				dirichlet_y[index] = _settings.dirichlet.find("BOTTOM_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-				dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Y];
+			if (_settings.dirichlet.find("BOTTOM_Z") != _settings.dirichlet.end()) {
+				dirichlet_z[index] = _settings.dirichlet.find("BOTTOM_Z")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-				forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Y];
+
+			if (_settings.forces.find("BOTTOM_X") != _settings.forces.end()) {
+				forces_x[index] = _settings.forces.find("BOTTOM_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-				dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Z];
+			if (_settings.forces.find("BOTTOM_Y") != _settings.forces.end()) {
+				forces_y[index] = _settings.forces.find("BOTTOM_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-				forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Z];
+			if (_settings.forces.find("BOTTOM_Z") != _settings.forces.end()) {
+				forces_z[index] = _settings.forces.find("BOTTOM_Z")->second;
 			}
+
 			index += nodes[0];
 		}
 	}
@@ -206,51 +210,101 @@ void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std:
 	if (_cluster[1] == 0) {
 		eslocal index = 0;
 		for (eslocal x = 0; x < nodes[0]; x++) {
-			if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-				dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_X];
+			if (_settings.dirichlet.find("LEFT_X") != _settings.dirichlet.end()) {
+				dirichlet_x[index] = _settings.dirichlet.find("LEFT_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-				forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_X];
+			if (_settings.dirichlet.find("LEFT_Y") != _settings.dirichlet.end()) {
+				dirichlet_y[index] = _settings.dirichlet.find("LEFT_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-				dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Y];
+			if (_settings.dirichlet.find("LEFT_Z") != _settings.dirichlet.end()) {
+				dirichlet_z[index] = _settings.dirichlet.find("LEFT_Z")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-				forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Y];
+
+			if (_settings.forces.find("LEFT_X") != _settings.forces.end()) {
+				forces_x[index] = _settings.forces.find("LEFT_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-				dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Z];
+			if (_settings.forces.find("LEFT_Y") != _settings.forces.end()) {
+				forces_y[index] = _settings.forces.find("LEFT_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-				forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Z];
+			if (_settings.forces.find("LEFT_Z") != _settings.forces.end()) {
+				forces_z[index] = _settings.forces.find("LEFT_Z")->second;
 			}
+
 			index++;
 		}
 	}
 
 	if (_cluster[1] == _settings.clusters[1] - 1) {
-		eslocal index = nodes[1] * (nodes[0] - 1);
+		eslocal index = nodes[0] * (nodes[1] - 1);
 		for (eslocal x = 0; x < nodes[0]; x++) {
-			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-				dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X];
+			if (_settings.dirichlet.find("RIGHT_X") != _settings.dirichlet.end()) {
+				dirichlet_x[index] = _settings.dirichlet.find("RIGHT_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-				forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_X];
+			if (_settings.dirichlet.find("RIGHT_Y") != _settings.dirichlet.end()) {
+				dirichlet_y[index] = _settings.dirichlet.find("RIGHT_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-				dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Y];
+			if (_settings.dirichlet.find("RIGHT_Z") != _settings.dirichlet.end()) {
+				dirichlet_z[index] = _settings.dirichlet.find("RIGHT_Z")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-				forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Y];
+
+			if (_settings.forces.find("RIGHT_X") != _settings.forces.end()) {
+				forces_x[index] = _settings.forces.find("RIGHT_X")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-				dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Z];
+			if (_settings.forces.find("RIGHT_Y") != _settings.forces.end()) {
+				forces_y[index] = _settings.forces.find("RIGHT_Y")->second;
 			}
-			if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-				forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Z];
+			if (_settings.forces.find("RIGHT_Z") != _settings.forces.end()) {
+				forces_z[index] = _settings.forces.find("RIGHT_Z")->second;
 			}
+
 			index++;
 		}
+	}
+
+	auto fill = [&] (const std::map<std::string, double> &map, const std::string &key1, const std::string &key2, CoordinatesProperty &cp, eslocal index) {
+		if (map.find(key1) != map.end() && map.find(key2) != map.end()) {
+			cp[index] = (map.find(key1)->second + map.find(key2)->second) / 2;
+		}
+	};
+
+	if (_cluster[0] == 0 && _cluster[1] == 0) {
+		eslocal index = 0;
+		fill(_settings.dirichlet, "TOP_X", "LEFT_X", dirichlet_x, index);
+		fill(_settings.dirichlet, "TOP_Y", "LEFT_Y", dirichlet_y, index);
+		fill(_settings.dirichlet, "TOP_Z", "LEFT_Z", dirichlet_z, index);
+		fill(_settings.forces, "TOP_X", "LEFT_X", forces_x, index);
+		fill(_settings.forces, "TOP_Y", "LEFT_Y", forces_y, index);
+		fill(_settings.forces, "TOP_Z", "LEFT_Z", forces_z, index);
+	}
+
+	if (_cluster[0] == 0 && _cluster[1] == _settings.clusters[1] - 1) {
+		eslocal index = nodes[0] * (nodes[1] - 1);
+		fill(_settings.dirichlet, "TOP_X", "RIGHT_X", dirichlet_x, index);
+		fill(_settings.dirichlet, "TOP_Y", "RIGHT_Y", dirichlet_y, index);
+		fill(_settings.dirichlet, "TOP_Z", "RIGHT_Z", dirichlet_z, index);
+		fill(_settings.forces, "TOP_X", "RIGHT_X", forces_x, index);
+		fill(_settings.forces, "TOP_Y", "RIGHT_Y", forces_y, index);
+		fill(_settings.forces, "TOP_Z", "RIGHT_Z", forces_z, index);
+	}
+
+	if (_cluster[0] == _settings.clusters[0] - 1 && _cluster[1] == 0) {
+		eslocal index = nodes[0] - 1;
+		fill(_settings.dirichlet, "BOTTOM_X", "LEFT_X", dirichlet_x, index);
+		fill(_settings.dirichlet, "BOTTOM_Y", "LEFT_Y", dirichlet_y, index);
+		fill(_settings.dirichlet, "BOTTOM_Z", "LEFT_Z", dirichlet_z, index);
+		fill(_settings.forces, "BOTTOM_X", "LEFT_X", forces_x, index);
+		fill(_settings.forces, "BOTTOM_Y", "LEFT_Y", forces_y, index);
+		fill(_settings.forces, "BOTTOM_Z", "LEFT_Z", forces_z, index);
+	}
+
+	if (_cluster[0] == _settings.clusters[0] - 1 && _cluster[1] == _settings.clusters[1] - 1) {
+		eslocal index = nodes[0] * nodes[1] - 1;
+		fill(_settings.dirichlet, "BOTTOM_X", "RIGHT_X", dirichlet_x, index);
+		fill(_settings.dirichlet, "BOTTOM_Y", "RIGHT_Y", dirichlet_y, index);
+		fill(_settings.dirichlet, "BOTTOM_Z", "RIGHT_Z", dirichlet_z, index);
+		fill(_settings.forces, "BOTTOM_X", "RIGHT_X", forces_x, index);
+		fill(_settings.forces, "BOTTOM_Y", "RIGHT_Y", forces_y, index);
+		fill(_settings.forces, "BOTTOM_Z", "RIGHT_Z", forces_z, index);
 	}
 }
 

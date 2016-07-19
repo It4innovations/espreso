@@ -125,28 +125,22 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 	eslocal nodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, nodes);
 
+	auto fill = [&] (const std::map<std::string, double> &map, const std::string &key, CoordinatesProperty &cp, eslocal index) {
+		if (map.find(key) != map.end()) {
+			cp[index] = map.find(key)->second;
+		}
+	};
+
 	if (_cluster[0] == 0) {
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + DIRICHLET_Z];
-				}
-				if (_settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::REAR * 6 + FORCES_Z];
-				}
+				fill(_settings.dirichlet, "REAR_X", dirichlet_x, index);
+				fill(_settings.dirichlet, "REAR_Y", dirichlet_y, index);
+				fill(_settings.dirichlet, "REAR_Z", dirichlet_z, index);
+				fill(_settings.forces, "REAR_X", forces_x, index);
+				fill(_settings.forces, "REAR_Y", forces_y, index);
+				fill(_settings.forces, "REAR_Z", forces_z, index);
 				index += nodes[0];
 			}
 		}
@@ -156,24 +150,12 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 		eslocal index = nodes[0] - 1;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal y = 0; y < nodes[1]; y++) {
-				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + DIRICHLET_Z];
-				}
-				if (_settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::FRONT * 6 + FORCES_Z];
-				}
+				fill(_settings.dirichlet, "FRONT_X", dirichlet_x, index);
+				fill(_settings.dirichlet, "FRONT_Y", dirichlet_y, index);
+				fill(_settings.dirichlet, "FRONT_Z", dirichlet_z, index);
+				fill(_settings.forces, "FRONT_X", forces_x, index);
+				fill(_settings.forces, "FRONT_Y", forces_y, index);
+				fill(_settings.forces, "FRONT_Z", forces_z, index);
 				index += nodes[0];
 			}
 		}
@@ -183,24 +165,12 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 		eslocal index = 0;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + DIRICHLET_Z];
-				}
-				if (_settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::LEFT * 6 + FORCES_Z];
-				}
+				fill(_settings.dirichlet, "LEFT_X", dirichlet_x, index);
+				fill(_settings.dirichlet, "LEFT_Y", dirichlet_y, index);
+				fill(_settings.dirichlet, "LEFT_Z", dirichlet_z, index);
+				fill(_settings.forces, "LEFT_X", forces_x, index);
+				fill(_settings.forces, "LEFT_Y", forces_y, index);
+				fill(_settings.forces, "LEFT_Z", forces_z, index);
 				index++;
 			}
 			index = (z + 1) * nodes[1] * nodes[0];
@@ -211,24 +181,12 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 		eslocal index = nodes[1] * nodes[0] - 1;
 		for (eslocal z = 0; z < nodes[2]; z++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + DIRICHLET_Z];
-				}
-				if (_settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::RIGHT * 6 + FORCES_Z];
-				}
+				fill(_settings.dirichlet, "RIGHT_X", dirichlet_x, index);
+				fill(_settings.dirichlet, "RIGHT_Y", dirichlet_y, index);
+				fill(_settings.dirichlet, "RIGHT_Z", dirichlet_z, index);
+				fill(_settings.forces, "RIGHT_X", forces_x, index);
+				fill(_settings.forces, "RIGHT_Y", forces_y, index);
+				fill(_settings.forces, "RIGHT_Z", forces_z, index);
 				index++;
 			}
 			index = (z + 2) * nodes[1] * nodes[0] - 1;
@@ -239,24 +197,12 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 		eslocal index = 0;
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + DIRICHLET_Z];
-				}
-				if (_settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::BOTTOM * 6 + FORCES_Z];
-				}
+				fill(_settings.dirichlet, "BOTTOM_X", dirichlet_x, index);
+				fill(_settings.dirichlet, "BOTTOM_Y", dirichlet_y, index);
+				fill(_settings.dirichlet, "BOTTOM_Z", dirichlet_z, index);
+				fill(_settings.forces, "BOTTOM_X", forces_x, index);
+				fill(_settings.forces, "BOTTOM_Y", forces_y, index);
+				fill(_settings.forces, "BOTTOM_Z", forces_z, index);
 				index++;
 			}
 		}
@@ -266,24 +212,12 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 		eslocal index = nodes[0] * nodes[1] * (nodes[2] - 1);
 		for (eslocal y = 0; y < nodes[1]; y++) {
 			for (eslocal x = 0; x < nodes[0]; x++) {
-				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_X] != std::numeric_limits<double>::infinity()) {
-					dirichlet_x[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_X] != std::numeric_limits<double>::infinity()) {
-					forces_x[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_X];
-				}
-				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Y] != std::numeric_limits<double>::infinity()) {
-					dirichlet_y[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Y] != std::numeric_limits<double>::infinity()) {
-					forces_y[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Y];
-				}
-				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Z] != std::numeric_limits<double>::infinity()) {
-					dirichlet_z[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + DIRICHLET_Z];
-				}
-				if (_settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Z] != std::numeric_limits<double>::infinity()) {
-					forces_z[index] = _settings.boundaryCondition[CubeSettings::TOP * 6 + FORCES_Z];
-				}
+				fill(_settings.dirichlet, "TOP_X", dirichlet_x, index);
+				fill(_settings.dirichlet, "TOP_Y", dirichlet_y, index);
+				fill(_settings.dirichlet, "TOP_Z", dirichlet_z, index);
+				fill(_settings.forces, "TOP_X", forces_x, index);
+				fill(_settings.forces, "TOP_Y", forces_y, index);
+				fill(_settings.forces, "TOP_Z", forces_z, index);
 				index++;
 			}
 		}

@@ -16,7 +16,7 @@ public:
 	static void load(Mesh &mesh, const CubeSettings &settings)
 	{
 		ESINFO(OVERVIEW) << "Generate cubic mesh";
-		ESINFO(DETAILS) << "Cube parameters:\n" << settings;
+		ParametersReader::printParameters(settings.parameters, config::info::VERBOSE_LEVEL);
 
 		CubeGenerator cube(mesh, settings);
 		cube.fill();
