@@ -27,7 +27,7 @@ def configure(ctx):
         vtklibs = [ lib.split('/')[-1].lstrip("lib").rstrip(".so") for lib in glob.glob(ctx.env["PARAVIEW::LIBPATH"][0] + "/*.so") ]
 
     ctx.start_msg("Checking for Paraview libraries")
-    if len(vtklibs) and all(lib.startswith("vtk") for lib in vtklibs):
+    if len(vtklibs) and any(lib.startswith("vtk") for lib in vtklibs):
         ctx.end_msg("found")
     else:
         ctx.end_msg("not found - set path to Paraview libraries (parameter PARAVIEW::LIBPATH)", color='YELLOW')
