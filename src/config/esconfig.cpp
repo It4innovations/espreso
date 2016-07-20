@@ -81,7 +81,7 @@ assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS
 output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT;
 
 bool   output::OUTPUT_COMPRESSION = false;
-double output::OUTPUT_DECIMATION  = 0.5;
+double output::OUTPUT_DECIMATION  = 0;
 
 bool output::SAVE_MESH       = false;
 bool output::SAVE_FIX_POINTS = false;

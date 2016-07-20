@@ -50,10 +50,28 @@ void Generic::store(double shrinkSubdomain, double shrinkCluster)
 void Generic::store(std::vector<std::vector<double> > &displasment, double shrinkSubdomain, double shrinkCluster)
 {
 
+	switch (config::output::OUTPUT_FORMAT) {
+	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+		std::cout << "LEGACY\n";
+		break;
+	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+		std::cout << "BINARY\n";
+		break;
+	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+		std::cout << "MULTIBLOCK\n";
+		break;
+	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+		std::cout << "ENSIGHT\n";
+		break;
+	}
+
+	std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION << "\n";
+	std::cout << "Decimation: " << config::output::OUTPUT_DECIMATION << "\n";
+
 	const std::vector<Element*> &elements = _mesh.getElements();
 	const std::vector<eslocal> &_partPtrs = _mesh.getPartition();
-	
-	VTKGrid = vtkUnstructuredGrid::New();        
+
+	VTKGrid = vtkUnstructuredGrid::New();
 
 	size_t n_nodsClust = 0;
 	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
@@ -110,10 +128,10 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 		}
 		cnt += _coordinates.localSize(part);
 	}
-	//decompositon	
-	
+	//decompositon
+
 	float *decomposition_array = new float[elements.size()];
-	
+
 	counter = 0;
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
@@ -122,10 +140,10 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 			counter++;
 		}
 	}
-	
+
 	vtkNew<vtkFloatArray> decomposition;
 	decomposition->SetName("decomposition");
-	decomposition->SetNumberOfComponents(1);	
+	decomposition->SetNumberOfComponents(1);
 
 	//vtkFloatArray* decomposition = vtkFloatArray::SafeDownCast(VTKGrid->GetCellData()->GetArray("decomposition"));
 	decomposition->SetArray(decomposition_array, static_cast<vtkIdType>(elements.size()), 1);
@@ -136,7 +154,7 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 	for (size_t i = 0; i < displasment.size(); i++) {
 		mycounter += displasment[i].size();
 	}
-	
+
 	double displacement_array[mycounter];
 
 	counter=0;
@@ -150,7 +168,7 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 			counter++;
 		}
 	}
-	
+
 	vtkNew<vtkDoubleArray> displacement;
 	displacement->SetName("displacement");
 	displacement->SetNumberOfComponents(3);
@@ -165,12 +183,12 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 				displacementData[i * 3 + 1],
 				displacementData[i * 3 + 2]
 		};
-		displacement->SetTupleValue(counter, values);
+		displacement->SetTypedTuple(counter, values);
 	}
 
 
 	//writer vtu
-	
+
 
 	vtkZLibDataCompressor *myZlibCompressor=vtkZLibDataCompressor::New();
 	myZlibCompressor->SetCompressionLevel(25);
@@ -183,14 +201,12 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 	writer->SetDataModeToBinary();
 	writer->Write();
 
-        
+
 	//mbds->SetBlock(rank,writer->GetInput());
 
-	config::env::MPIrank;
-	config::env::MPIsize;
 	//writer vtm
 	MPI_Barrier(MPI_COMM_WORLD);
-	int size=config::env::MPIsize;
+	int size = config::env::MPIsize;
 	ofstream result;
 	result.open("result.vtm");
 	result<<"<?xml version=\"1.0\"?>\n";
@@ -204,9 +220,9 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 	result.close();
 
 	/*vtkMultiBlockDataSet *mbds=vtkMultiBlockDataSet::New();
-	vtkXMLMultiBlockDataWriter *vtmwriter=vtkXMLMultiBlockDataWriter::New();	
+	vtkXMLMultiBlockDataWriter *vtmwriter=vtkXMLMultiBlockDataWriter::New();
 	vtmwriter->SetFileName("res.vtm");
-	
+
 	MPI_Barrier(MPI_COMM_WORLD);
 	for(int i=0;i<config::env::MPIsize;i++){
 	  vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
@@ -217,10 +233,10 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 
 	  mbds->SetBlock(i,reader->GetOutput());
 	}
-	vtmwriter->SetInputData(mbds);	  
+	vtmwriter->SetInputData(mbds);
 	vtmwriter->SetCompressor(myZlibCompressor);
 	vtmwriter->Write();*/
-	
+
 	/*for(int i=0;i<config::env::MPIsize;i++)
 	  {
 	    if(config::env::MPIrank==0){
@@ -243,60 +259,4 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 	  vtmwriter->SetCompressor(myZlibCompressor);
 	  vtmwriter->Update();
 	  }*/
-	
-	std::cout << "SAVE GENERIC VTK RESULT XX\n";
 }
-
-
-
-
-
-
-
-
-
-
-
-/*int main(int argc, char *argv[])
-{
-  std::string inputFilename=argv[1];
-  std::string outputFilename=argv[2];
-
-  //input
-  vtkSmartPointer<vtkGenericDataObjectReader> reader = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-  reader->SetFileName(inputFilename.c_str());
-  reader->Update();
-
-  //output
-  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-  writer->SetFileName(outputFilename.c_str());
-  writer->SetInputConnection(reader->GetOutputPort());
-  writer->Update();
-
-  //mapper a actor
-  vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-  mapper->SetInputConnection(reader->GetOutputPort());
-
-  vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-  actor->SetMapper(mapper);
-
-  //renderer
-  vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-
-  vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-
-  renderWindow->AddRenderer(renderer);
-
-  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-
-  renderWindowInteractor->SetRenderWindow(renderWindow);
-
-  renderer->AddActor(actor);
-  renderer->SetBackground(1,1,1);
-
-  renderWindow->Render();
-  renderWindowInteractor->Start();
-
-
-  return EXIT_SUCCESS;
-}*/
