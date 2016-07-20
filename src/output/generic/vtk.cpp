@@ -1,8 +1,16 @@
 #include <vtkGenericDataObjectReader.h>
+#include <vtkXMLUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkSmartPointer.h>
+#include <vtkPoints.h>
 #include <string>
 #include <vtkPoints.h>
+#include <vtkXMLMultiBlockDataWriter.h>
+#include <vtkMultiBlockDataSet.h>
+
+#include <vtkObjectFactory.h>
+#include <vtkZLibDataCompressor.h>
+#include <vtk_zlib.h>
 
 #include <vtkDataSetMapper.h>
 #include <vtkActor.h>
@@ -44,6 +52,8 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 
 	const std::vector<Element*> &elements = _mesh.getElements();
 	const std::vector<eslocal> &_partPtrs = _mesh.getPartition();
+	
+	VTKGrid = vtkUnstructuredGrid::New();        
 
 	size_t n_nodsClust = 0;
 	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
@@ -78,10 +88,10 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 
 	vtkNew < vtkDoubleArray > pointArray;
 	pointArray->SetNumberOfComponents(3);
-//
+
 	size_t numpoints = n_points * 3;
 	pointArray->SetArray(coord_xyz, numpoints, 1);
-	vtkNew < vtkPoints > points;
+	vtkNew <vtkPoints > points;
 	points->SetData(pointArray.GetPointer());
 	VTKGrid->SetPoints(points.GetPointer());
 
@@ -100,12 +110,140 @@ void Generic::store(std::vector<std::vector<double> > &displasment, double shrin
 		}
 		cnt += _coordinates.localSize(part);
 	}
+	//decompositon	
+	
+	float *decomposition_array = new float[elements.size()];
+	
+	counter = 0;
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+			float part_redefine =  part;
+			decomposition_array[counter] = part_redefine;
+			counter++;
+		}
+	}
+	
+	vtkNew<vtkFloatArray> decomposition;
+	decomposition->SetName("decomposition");
+	decomposition->SetNumberOfComponents(1);	
+
+	//vtkFloatArray* decomposition = vtkFloatArray::SafeDownCast(VTKGrid->GetCellData()->GetArray("decomposition"));
+	decomposition->SetArray(decomposition_array, static_cast<vtkIdType>(elements.size()), 1);
+	VTKGrid->GetCellData()->AddArray(decomposition.GetPointer());
+
+	//displacement
+	int mycounter=0;
+	for (size_t i = 0; i < displasment.size(); i++) {
+		mycounter += displasment[i].size();
+	}
+	
+	double displacement_array[mycounter];
+
+	counter=0;
+
+	for (size_t i = 0; i < displasment.size(); i++) {
+	  for (size_t j = 0; j < (displasment[i].size() / 3); j++) {
+			displacement_array[3 * counter + 0] = displasment[i][3 * j + 0];
+			displacement_array[3 * counter + 1] = displasment[i][3 * j + 1];
+			displacement_array[3 * counter + 2] = displasment[i][3 * j + 2];
+
+			counter++;
+		}
+	}
+	
+	vtkNew<vtkDoubleArray> displacement;
+	displacement->SetName("displacement");
+	displacement->SetNumberOfComponents(3);
+	displacement->SetNumberOfTuples(static_cast<vtkIdType>(counter));
+	VTKGrid->GetPointData()->AddArray(displacement.GetPointer());
+
+	double* displacementData = displacement_array;
+	vtkIdType numTuples = displacement->GetNumberOfTuples();
+	for (vtkIdType i = 0, counter = 0; i < numTuples; i++, counter++) {
+		double values[3] = {
+				displacementData[i * 3],
+				displacementData[i * 3 + 1],
+				displacementData[i * 3 + 2]
+		};
+		displacement->SetTupleValue(counter, values);
+	}
+
+
+	//writer vtu
+	
+
+	vtkZLibDataCompressor *myZlibCompressor=vtkZLibDataCompressor::New();
+	myZlibCompressor->SetCompressionLevel(25);
 
 	vtkSmartPointer< vtkXMLUnstructuredGridWriter > writer = vtkSmartPointer< vtkXMLUnstructuredGridWriter > ::New();
-	writer->SetFileName("resultX.vtu");
+	std::stringstream ss;
+	ss << _path << ".vtu";
+	writer->SetFileName(ss.str().c_str());
 	writer->SetInputData(VTKGrid);
+	writer->SetDataModeToBinary();
 	writer->Write();
 
+        
+	//mbds->SetBlock(rank,writer->GetInput());
+
+	config::env::MPIrank;
+	config::env::MPIsize;
+	//writer vtm
+	MPI_Barrier(MPI_COMM_WORLD);
+	int size=config::env::MPIsize;
+	ofstream result;
+	result.open("result.vtm");
+	result<<"<?xml version=\"1.0\"?>\n";
+	result<<"<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
+	result<<" <vtkMultiBlockDataSet>\n";
+	for(int i=0 ; i < size ; i++){
+	  result<<"  <DataSet index=\""<< i <<"\" file=\"result"<< i <<".vtu\">\n  </DataSet>\n";
+	}
+	result<<" </vtkMultiBlockDataSet>\n";
+	result<<"</VTKFile>\n";
+	result.close();
+
+	/*vtkMultiBlockDataSet *mbds=vtkMultiBlockDataSet::New();
+	vtkXMLMultiBlockDataWriter *vtmwriter=vtkXMLMultiBlockDataWriter::New();	
+	vtmwriter->SetFileName("res.vtm");
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	for(int i=0;i<config::env::MPIsize;i++){
+	  vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+	  std::stringstream sss;
+	  sss << "result"<<i << ".vtu";
+	  reader->SetFileName(sss.str().c_str());
+	  reader->Update();
+
+	  mbds->SetBlock(i,reader->GetOutput());
+	}
+	vtmwriter->SetInputData(mbds);	  
+	vtmwriter->SetCompressor(myZlibCompressor);
+	vtmwriter->Write();*/
+	
+	/*for(int i=0;i<config::env::MPIsize;i++)
+	  {
+	    if(config::env::MPIrank==0){
+	      mbds->SetBlock(0,VTKGrid);
+	      vtmwriter->Update();
+	    }
+            else if(config::env::MPIrank==i){
+	      mbds->SetBlock(i,VTKGrid);
+	    }
+	    MPI_Barrier(MPI_COMM_WORLD);
+	  }
+	  MPI_Barrier(MPI_COMM_WORLD);
+	if(rank==0){
+	  vtmwriter->SetInputData(mbds);
+	  vtmwriter->SetCompressor(myZlibCompressor);
+	  vtmwriter->Write();
+	}
+	if(rank==1){
+	  vtmwriter->SetInputData(mbds);
+	  vtmwriter->SetCompressor(myZlibCompressor);
+	  vtmwriter->Update();
+	  }*/
+	
 	std::cout << "SAVE GENERIC VTK RESULT XX\n";
 }
 
