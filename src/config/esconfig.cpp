@@ -78,7 +78,7 @@ assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS
 
 /////////////////////////////// OUTPUT /////////////////////////////////////////
 
-output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATAlternatives::VTK_LEGACY;
+output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT;
 
 bool   output::OUTPUT_COMPRESSION = false;
 double output::OUTPUT_DECIMATION  = 0.5;
@@ -204,10 +204,10 @@ std::vector<Description> assembler::description = {
 
 	// OUTPUT DESCRIPTION
 	{ "OUTPUT_FORMAT"   , output::OUTPUT_FORMAT   , "Format of output data.", {
-			{ "VTK_LEGACY", output::OUTPUT_FORMATAlternatives::VTK_LEGACY, "*.vtk files" },
-			{ "VTK_BINARY", output::OUTPUT_FORMATAlternatives::VTK_BINARY, "*.vtu files" },
-			{ "VTK_MULTIBLOCK", output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK, "*.vtu + *.vtm files" },
-			{ "ENSIGHT", output::OUTPUT_FORMATAlternatives::ENSIGHT, "EnSight files" }
+			{ "VTK_LEGACY_FORMAT", output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT, "*.vtk files" },
+			{ "VTK_BINARY_FORMAT", output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT, "*.vtu files" },
+			{ "VTK_MULTIBLOCK_FORMAT", output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT, "*.vtu + *.vtm files" },
+			{ "ENSIGHT_FORMAT", output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT, "EnSight files" }
 	}, WRITE_TO_HELP },
 
 	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by 'z' library.", WRITE_TO_HELP },

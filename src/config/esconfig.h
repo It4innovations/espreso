@@ -110,10 +110,10 @@ namespace mesh {
 namespace output {
 
 	enum class OUTPUT_FORMATAlternatives {
-		VTK_LEGACY = 0,
-		VTK_BINARY = 1,
-		VTK_MULTIBLOCK = 2,
-		ENSIGHT = 3
+		VTK_LEGACY_FORMAT = 0,
+		VTK_BINARY_FORMAT = 1,
+		VTK_MULTIBLOCK_FORMAT = 2,
+		ENSIGHT_FORMAT = 3
 	};
 	/// Format of output data
 	extern OUTPUT_FORMATAlternatives OUTPUT_FORMAT;
