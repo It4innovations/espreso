@@ -28,8 +28,10 @@ struct CubeSettings: public UniformSettings {
 	size_t clusters[3];
 	double problemLength[3];
 
-	std::map<std::string, double> dirichlet;
-	std::map<std::string, double> forces;
+	std::map<std::string, std::string> dirichlet;
+	std::map<std::string, std::string> forces;
+
+	std::map<std::string, Interval> regions;
 
 protected:
 	void defaultCubeSettings();

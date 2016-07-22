@@ -80,5 +80,33 @@ CubeGenerator<Pyramid13>::CubeGenerator(Mesh &mesh, const CubeSettings &settings
 	setCluster(_cluster, _settings);
 }
 
+template<>
+CubeGenerator<Square4>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
+	: UniformGenerator<Square4>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the element Square4.";
+}
+
+template<>
+CubeGenerator<Square8>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
+	: UniformGenerator<Square8>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the element Square8.";
+}
+
+template<>
+CubeGenerator<Triangle3>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
+	: UniformGenerator<Triangle3>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the element Triangle3.";
+}
+
+template<>
+CubeGenerator<Triangle6>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
+	: UniformGenerator<Triangle6>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the element Triangle6.";
+}
+
 
 

@@ -16,17 +16,21 @@ static void defaultSettings(CubeSettings &settings)
 			{ "Z", "z" }
 	};
 
+	size_t verbosity = 1;
+
 	for (size_t i = 0; i < axis.size(); i++) {
-		description.push_back({
-			"CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis."
+		parameters.push_back({
+			"CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis.", verbosity
 		});
-		description.push_back({
-			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis."
+		parameters.push_back({
+			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
 		});
 	}
 
-	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions" });
-	parameters.push_back({ "FORCES", forces, "Boundary forces" });
+	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions.", verbosity });
+	parameters.push_back({ "FORCES", forces, "Boundary forces.", verbosity });
+
+	parameters.push_back({ "REGIONS", regions, "Named sets of nodes.", verbosity });
 }
 
 	Configuration configuration(CubeSettings::description, options);

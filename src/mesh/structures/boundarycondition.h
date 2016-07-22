@@ -12,6 +12,7 @@ enum class ConditionElements {
 };
 
 enum class ConditionType {
+	UNKNOWN,
 	DIRICHLET,
 	FORCES
 };
@@ -29,12 +30,12 @@ public:
 		return _DOFs;
 	}
 
-	double value()
-	{
-		return _value;
-	}
+	virtual void set(const std::string &expression, ConditionType type) = 0;
 
-	virtual void set(double value, ConditionType type, const std::vector<bool> &DOFs) = 0;
+	double value(const Point3D &p)
+	{
+		return _expression.evaluate(p.x, p.y, p.z);
+	}
 
 	ConditionType type()
 	{
@@ -44,19 +45,23 @@ public:
 	virtual ~BoundaryCondition() {};
 
 protected:
-	BoundaryCondition(double value, ConditionType type): _value(value), _type(type) {};
+	BoundaryCondition(): _type(ConditionType::UNKNOWN), _expression("0") {};
 
-	std::vector<eslocal> _DOFs;
-	double _value;
 	ConditionType _type;
+	Expression _expression;
+	std::vector<eslocal> _DOFs;
 };
 
 class ElementCondition: public BoundaryCondition {
 
 public:
-	ElementCondition(): BoundaryCondition(0, ConditionType::DIRICHLET) {};
+	ElementCondition(): BoundaryCondition() {};
+	BoundaryCondition* copy()
+	{
+		return new ElementCondition(*this);
+	}
 
-	void set(double value, ConditionType type, const std::vector<bool> &DOFs);
+	void set(const std::string &expression, ConditionType type);
 
 	const std::vector<eslocal>& elements() const
 	{
@@ -76,9 +81,13 @@ protected:
 class SurfaceCondition: public BoundaryCondition {
 
 public:
-	SurfaceCondition(): BoundaryCondition(0, ConditionType::DIRICHLET) {};
+	SurfaceCondition(): BoundaryCondition() {};
+	BoundaryCondition* copy()
+	{
+		return new SurfaceCondition(*this);
+	}
 
-	void set(double value, ConditionType type, const std::vector<bool> &DOFs);
+	void set(const std::string &expression, ConditionType type);
 
 	const std::vector<Element*>& faces() const
 	{
@@ -101,10 +110,14 @@ protected:
 class NodeCondition: public BoundaryCondition {
 
 public:
-	NodeCondition(): BoundaryCondition(0, ConditionType::DIRICHLET) {};
-	NodeCondition(double value, ConditionType type): BoundaryCondition(value, type) {};
+	NodeCondition(): BoundaryCondition() {};
+	NodeCondition(double value, ConditionType type): BoundaryCondition() {};
+	BoundaryCondition* copy()
+	{
+		return new NodeCondition(*this);
+	}
 
-	void set(double value, ConditionType type, const std::vector<bool> &DOFs);
+	void set(const std::string &expression, ConditionType type);
 
 	const std::vector<eslocal>& nodes() const
 	{

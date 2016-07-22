@@ -26,12 +26,14 @@ namespace input {
 //	#                                                 #
 //	###################################################
 
-template<class TElement>
-CubeGenerator<TElement>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
-: UniformGenerator<TElement>(mesh, settings), _settings(settings)
-{
-	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the selected element type.";
-}
+// Intel compilator error: do not use generic contructor
+
+//template<class TElement>
+//CubeGenerator<TElement>::CubeGenerator(Mesh &mesh, const CubeSettings &settings)
+//: UniformGenerator<TElement>(mesh, settings), _settings(settings)
+//{
+//	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the selected element type.";
+//}
 
 template<class TElement>
 void CubeGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
@@ -115,112 +117,32 @@ void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 template<class TElement>
 void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
-	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
-	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
-	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
-	CoordinatesProperty &forces_x = coordinates.property(FORCES_X);
-	CoordinatesProperty &forces_y = coordinates.property(FORCES_Y);
-	CoordinatesProperty &forces_z = coordinates.property(FORCES_Z);
+	for (auto it = _settings.regions.begin(); it != _settings.regions.end(); ++it) {
 
-	eslocal nodes[3];
-	UniformUtils<TElement>::clusterNodesCount(_settings, nodes);
+		if (_settings.forces.find(it->first) == _settings.forces.end() &&
+			_settings.dirichlet.find(it->first) == _settings.dirichlet.end()
+			) {
 
-	auto fill = [&] (const std::map<std::string, double> &map, const std::string &key, CoordinatesProperty &cp, eslocal index) {
-		if (map.find(key) != map.end()) {
-			cp[index] = map.find(key)->second;
+			ESINFO(ALWAYS) << TextColor::YELLOW << "Warning: Region without dirichlet or forces.";
+			continue;
 		}
-	};
 
-	if (_cluster[0] == 0) {
-		eslocal index = 0;
-		for (eslocal z = 0; z < nodes[2]; z++) {
-			for (eslocal y = 0; y < nodes[1]; y++) {
-				fill(_settings.dirichlet, "REAR_X", dirichlet_x, index);
-				fill(_settings.dirichlet, "REAR_Y", dirichlet_y, index);
-				fill(_settings.dirichlet, "REAR_Z", dirichlet_z, index);
-				fill(_settings.forces, "REAR_X", forces_x, index);
-				fill(_settings.forces, "REAR_Y", forces_y, index);
-				fill(_settings.forces, "REAR_Z", forces_z, index);
-				index += nodes[0];
+		const Interval &interval = it->second;
+		NodeCondition *region = new NodeCondition();
+
+		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
+			if (interval.isIn(coordinates[i])) {
+				region->nodes().push_back(i);
 			}
 		}
-	}
 
-	if (_cluster[0] == _settings.clusters[0] - 1) {
-		eslocal index = nodes[0] - 1;
-		for (eslocal z = 0; z < nodes[2]; z++) {
-			for (eslocal y = 0; y < nodes[1]; y++) {
-				fill(_settings.dirichlet, "FRONT_X", dirichlet_x, index);
-				fill(_settings.dirichlet, "FRONT_Y", dirichlet_y, index);
-				fill(_settings.dirichlet, "FRONT_Z", dirichlet_z, index);
-				fill(_settings.forces, "FRONT_X", forces_x, index);
-				fill(_settings.forces, "FRONT_Y", forces_y, index);
-				fill(_settings.forces, "FRONT_Z", forces_z, index);
-				index += nodes[0];
-			}
+		if (_settings.dirichlet.find(it->first) != _settings.dirichlet.end()) {
+			region->set(_settings.dirichlet.find(it->first)->second, ConditionType::DIRICHLET);
+		} else if (_settings.forces.find(it->first) != _settings.forces.end()) {
+			region->set(_settings.forces.find(it->first)->second, ConditionType::FORCES);
 		}
-	}
 
-	if (_cluster[1] == 0) {
-		eslocal index = 0;
-		for (eslocal z = 0; z < nodes[2]; z++) {
-			for (eslocal x = 0; x < nodes[0]; x++) {
-				fill(_settings.dirichlet, "LEFT_X", dirichlet_x, index);
-				fill(_settings.dirichlet, "LEFT_Y", dirichlet_y, index);
-				fill(_settings.dirichlet, "LEFT_Z", dirichlet_z, index);
-				fill(_settings.forces, "LEFT_X", forces_x, index);
-				fill(_settings.forces, "LEFT_Y", forces_y, index);
-				fill(_settings.forces, "LEFT_Z", forces_z, index);
-				index++;
-			}
-			index = (z + 1) * nodes[1] * nodes[0];
-		}
-	}
-
-	if (_cluster[1] == _settings.clusters[1] - 1) {
-		eslocal index = nodes[1] * nodes[0] - 1;
-		for (eslocal z = 0; z < nodes[2]; z++) {
-			for (eslocal x = 0; x < nodes[0]; x++) {
-				fill(_settings.dirichlet, "RIGHT_X", dirichlet_x, index);
-				fill(_settings.dirichlet, "RIGHT_Y", dirichlet_y, index);
-				fill(_settings.dirichlet, "RIGHT_Z", dirichlet_z, index);
-				fill(_settings.forces, "RIGHT_X", forces_x, index);
-				fill(_settings.forces, "RIGHT_Y", forces_y, index);
-				fill(_settings.forces, "RIGHT_Z", forces_z, index);
-				index++;
-			}
-			index = (z + 2) * nodes[1] * nodes[0] - 1;
-		}
-	}
-
-	if (_cluster[2] == 0) {
-		eslocal index = 0;
-		for (eslocal y = 0; y < nodes[1]; y++) {
-			for (eslocal x = 0; x < nodes[0]; x++) {
-				fill(_settings.dirichlet, "BOTTOM_X", dirichlet_x, index);
-				fill(_settings.dirichlet, "BOTTOM_Y", dirichlet_y, index);
-				fill(_settings.dirichlet, "BOTTOM_Z", dirichlet_z, index);
-				fill(_settings.forces, "BOTTOM_X", forces_x, index);
-				fill(_settings.forces, "BOTTOM_Y", forces_y, index);
-				fill(_settings.forces, "BOTTOM_Z", forces_z, index);
-				index++;
-			}
-		}
-	}
-
-	if (_cluster[2] == _settings.clusters[2] - 1) {
-		eslocal index = nodes[0] * nodes[1] * (nodes[2] - 1);
-		for (eslocal y = 0; y < nodes[1]; y++) {
-			for (eslocal x = 0; x < nodes[0]; x++) {
-				fill(_settings.dirichlet, "TOP_X", dirichlet_x, index);
-				fill(_settings.dirichlet, "TOP_Y", dirichlet_y, index);
-				fill(_settings.dirichlet, "TOP_Z", dirichlet_z, index);
-				fill(_settings.forces, "TOP_X", forces_x, index);
-				fill(_settings.forces, "TOP_Y", forces_y, index);
-				fill(_settings.forces, "TOP_Z", forces_z, index);
-				index++;
-			}
-		}
+		conditions.push_back(region);
 	}
 }
 

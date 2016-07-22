@@ -81,6 +81,7 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 		auto &l2c = coordinates.localToCluster(p);
 		for (size_t i = 0; i < conditions.size(); i++) {
 			if (conditions[i]->type() == ConditionType::DIRICHLET) {
+				eslocal DOFs = 3;
 				size_t size = 0;
 				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
 					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
@@ -89,7 +90,7 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 				}
 
 				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-				double dirichletValue = conditions[i]->value();
+				double dirichletValue = conditions[i]->value(Point3D());
 				os.write(reinterpret_cast<const char*>(&dirichletValue), sizeof(double));
 
 				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {

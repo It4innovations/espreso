@@ -826,7 +826,9 @@ EqualityConstraints::EqualityConstraints(const Mesh &mesh, size_t DOFs): _mesh(m
 	for (size_t i = 0; i < bc.size(); i++) {
 		if (bc[i]->type() == ConditionType::DIRICHLET) {
 			dirichlet.insert(dirichlet.end(), bc[i]->DOFs().begin(), bc[i]->DOFs().end());
-			dirichletValues.insert(dirichletValues.end(), bc[i]->DOFs().size(), bc[i]->value());
+			for (size_t j = 0; j < bc[i]->DOFs().size(); j++) {
+				dirichletValues.push_back(bc[i]->value(mesh.coordinates()[bc[i]->DOFs()[j] / _DOFs]));
+			}
 		}
 	}
 }

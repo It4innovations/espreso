@@ -10,35 +10,25 @@ SurfaceCondition::~SurfaceCondition()
 	}
 }
 
-void ElementCondition::set(double value, ConditionType type, const std::vector<bool> &DOFs)
+void ElementCondition::set(const std::string &expression, ConditionType type)
 {
 
 }
 
-void SurfaceCondition::set(double value, ConditionType type, const std::vector<bool> &DOFs)
+void SurfaceCondition::set(const std::string &expression, ConditionType type)
 {
 
 }
 
-void NodeCondition::set(double value, ConditionType type, const std::vector<bool> &DOFs)
+void NodeCondition::set(const std::string &expression, ConditionType type)
 {
-	_value = value;
+	_expression = Expression(expression);
 	_type = type;
 
-	size_t size = 0;
-	for (int d = 0; d < DOFs.size(); d++) {
-		if (DOFs[d]) {
-			size++;
-		}
-	}
-	size *= _nodes.size();
-
-	_DOFs.reserve(size);
+	_DOFs.reserve(_nodes.size());
 	for (size_t n = 0; n < _nodes.size(); n++) {
-		for (int d = 0; d < DOFs.size(); d++) {
-			if (DOFs[d]) {
-				_DOFs.push_back(DOFs.size() * _nodes[n] + d);
-			}
+		for (int d = 0; d < 3; d++) {
+			_DOFs.push_back(3 * _nodes[n] + d);
 		}
 	}
 }

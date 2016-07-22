@@ -72,6 +72,9 @@ Info::~Info()
 	case TextColor::GREEN:
 		fprintf(stdout, "\x1b[32m%s\x1b[0m", os.str().c_str());
 		break;
+	case TextColor::YELLOW:
+		fprintf(stdout, "\x1b[33m%s\x1b[0m", os.str().c_str());
+		break;
 	case TextColor::BLUE:
 		fprintf(stdout, "\x1b[34m%s\x1b[0m", os.str().c_str());
 		break;

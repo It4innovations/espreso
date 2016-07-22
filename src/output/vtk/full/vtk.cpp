@@ -90,6 +90,7 @@ void VTK_Full::dirichlet(const Mesh &mesh, const std::string &path, double shrin
 	const std::vector<BoundaryCondition*> &bc = mesh.boundaryConditions();
 	for (size_t i = 0; i < bc.size(); i++) {
 		if (bc[i]->type() == ConditionType::DIRICHLET) {
+			eslocal DOFs = 3;
 			for (size_t p = 0; p < mesh.parts(); p++) {
 				auto &l2c = mesh.coordinates().localToCluster(p);
 				for (size_t j = 0; j < bc[i]->DOFs().size(); j++) {

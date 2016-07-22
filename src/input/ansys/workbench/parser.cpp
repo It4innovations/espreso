@@ -245,7 +245,7 @@ void WorkbenchParser::displacement(std::vector<BoundaryCondition*> &conditions)
 			if (nSelection == -1) {
 				ESINFO(GLOBAL_ERROR) << "Displacement on all nodes is not supported";
 			} else {
-				conditions[nSelection]->set(0, ConditionType::DIRICHLET, { true, true, true });
+				conditions[nSelection]->set("0", ConditionType::DIRICHLET);
 			}
 		} else {
 			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";

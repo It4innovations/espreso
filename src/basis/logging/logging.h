@@ -81,6 +81,7 @@ enum class TextColor {
 	WHITE,
 	RED,
 	GREEN,
+	YELLOW,
 	BLUE
 };
 

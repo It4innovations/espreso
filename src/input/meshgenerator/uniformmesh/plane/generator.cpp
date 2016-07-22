@@ -49,3 +49,58 @@ PlaneGenerator<Triangle6>::PlaneGenerator(Mesh &mesh, const PlaneSettings &setti
 	setCluster(_cluster, _settings);
 }
 
+template<>
+PlaneGenerator<Hexahedron8>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Hexahedron8>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Hexahedron8.";
+}
+
+template<>
+PlaneGenerator<Hexahedron20>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Hexahedron20>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Hexahedron20.";
+}
+
+template<>
+PlaneGenerator<Tetrahedron4>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Tetrahedron4>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Tetrahedron4.";
+}
+
+template<>
+PlaneGenerator<Tetrahedron10>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Tetrahedron10>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Tetrahedron10.";
+}
+
+template<>
+PlaneGenerator<Prisma6>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Prisma6>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Prisma6.";
+}
+
+template<>
+PlaneGenerator<Prisma15>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Prisma15>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Prisma15.";
+}
+
+template<>
+PlaneGenerator<Pyramid5>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Pyramid5>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Pyramid5.";
+}
+
+template<>
+PlaneGenerator<Pyramid13>::PlaneGenerator(Mesh &mesh, const PlaneSettings &settings)
+	: UniformGenerator<Pyramid13>(mesh, settings), _settings(settings)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Pyramid13.";
+}
