@@ -16,17 +16,23 @@ void PlaneSettings::defaultPlaneSettings()
 			{ "Z", "z" }
 	};
 
+	size_t verbosity = 1;
+
 	for (size_t i = 0; i < 2; i++) {
 		parameters.push_back({
-			"CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis."
+			"CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis.", verbosity
 		});
 		parameters.push_back({
-			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis."
+			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
 		});
 	}
 
-	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions" });
-	parameters.push_back({ "FORCES", forces, "Boundary forces" });
+	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions", verbosity });
+	parameters.push_back({ "FORCES", forces, "Boundary forces", verbosity });
+	parameters.push_back({ "TRANSLATION_MOTION", u, "Translation motion of a region", verbosity });
+	parameters.push_back({ "HEAT_SOURCES", heat_sources, "Sources of a heat", verbosity });
+
+	parameters.push_back({ "REGIONS", regions, "Named sets of nodes.", verbosity });
 }
 
 PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size)

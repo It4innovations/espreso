@@ -25,15 +25,6 @@ struct UniformSettings: public Settings {
 	bool faces;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const UniformSettings &s)
-{
-	os << Settings(s);
-	os << "subdomainsInCluster: " << s.subdomainsInCluster[0] << " : " << s.subdomainsInCluster[1] << " : " << s.subdomainsInCluster[2] << "\n";
-	os << "elementsInSubdomain: " << s.elementsInSubdomain[0] << " : " << s.elementsInSubdomain[1] << " : " << s.elementsInSubdomain[2] << "\n";
-	os << "materialsLayers: " << s.materialsLayers[0] << " : " << s.materialsLayers[1] << " : " << s.materialsLayers[2] << "\n";
-	return os;
-}
-
 }
 }
 

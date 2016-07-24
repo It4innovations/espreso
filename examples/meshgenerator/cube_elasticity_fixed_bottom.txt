@@ -42,5 +42,5 @@ REGIONS = {
 }
 
 DIRICHLET = {
-  BOTTOM = [0, 0, 0]
+  BOTTOM = all: x + y
 }

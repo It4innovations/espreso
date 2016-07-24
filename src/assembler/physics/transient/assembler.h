@@ -31,13 +31,13 @@ struct TransientPhysics: public Physics {
 			for (eslocal i = 0; i < l2g.size(); i++) {
 				size_t n = _mesh.subdomainBoundaries()[l2g[i]].size();
 				if (forces_x.find(l2g[i]) != forces_x.end()) {
-					f[p][DOFs * i + 0] = forces_x.at(l2g[i]) / n;
+					f[p][DOFs.size() * i + 0] = forces_x.at(l2g[i]) / n;
 				}
 				if (forces_y.find(l2g[i]) != forces_y.end()) {
-					f[p][DOFs * i + 1] = forces_y.at(l2g[i]) / n;
+					f[p][DOFs.size() * i + 1] = forces_y.at(l2g[i]) / n;
 				}
 				if (forces_z.find(l2g[i]) != forces_z.end()) {
-					f[p][DOFs * i + 2] = forces_z.at(l2g[i]) / n;
+					f[p][DOFs.size() * i + 2] = forces_z.at(l2g[i]) / n;
 				}
 			}
 
@@ -68,7 +68,7 @@ struct TransientPhysics: public Physics {
 		osA.close();
 	}
 
-	TransientPhysics(const Mesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype): Physics(mesh, DOFs, mtype) {};
+	TransientPhysics(const Mesh &mesh, std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype): Physics(mesh, DOFs, mtype) {};
 	virtual ~TransientPhysics() {};
 
 	std::vector<SparseMatrix> M; // T will be deleted

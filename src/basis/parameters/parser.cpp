@@ -31,15 +31,15 @@ std::vector<std::string> Parser::split(const std::string &line, const std::strin
 	return result;
 }
 
-std::string Parser::getParameter(const std::string &line)
+std::string Parser::getParameter(const std::string &line, const std::string &separator)
 {
-	return strip(split(strip(line), "=")[0]);
+	return strip(split(strip(line), separator)[0]);
 }
 
-std::string Parser::getValue(const std::string &line)
+std::string Parser::getValue(const std::string &line, const std::string &separator)
 {
-	if (split(strip(line), "=").size() > 1) {
-		return strip(split(strip(line), "=")[1]);
+	if (split(strip(line), separator).size() > 1) {
+		return strip(split(strip(line), separator)[1]);
 	}
 	return "";
 }

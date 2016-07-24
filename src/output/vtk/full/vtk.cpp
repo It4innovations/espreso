@@ -87,26 +87,27 @@ void VTK_Full::dirichlet(const Mesh &mesh, const std::string &path, double shrin
 		}
 	}
 
-	const std::vector<BoundaryCondition*> &bc = mesh.boundaryConditions();
-	for (size_t i = 0; i < bc.size(); i++) {
-		if (bc[i]->type() == ConditionType::DIRICHLET) {
-			eslocal DOFs = 3;
-			for (size_t p = 0; p < mesh.parts(); p++) {
-				auto &l2c = mesh.coordinates().localToCluster(p);
-				for (size_t j = 0; j < bc[i]->DOFs().size(); j++) {
-					if (bc[i]->DOFs()[j] % mesh.DOFs() == 0 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
-						dx[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs()) - l2c.begin());
-					}
-					if (bc[i]->DOFs()[j] % mesh.DOFs() == 1 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
-						dy[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs()) - l2c.begin());
-					}
-					if (bc[i]->DOFs()[j] % mesh.DOFs() == 2 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs())) {
-						dz[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / mesh.DOFs()) - l2c.begin());
-					}
-				}
-			}
-		}
-	}
+	ESINFO(GLOBAL_ERROR) << "Broken VTK out dirichlet";
+//	const std::vector<BoundaryCondition*> &bc = mesh.boundaryConditions();
+//	for (size_t i = 0; i < bc.size(); i++) {
+//		if (bc[i]->type() == ConditionType::DIRICHLET) {
+//			eslocal DOFs = 3;
+//			for (size_t p = 0; p < mesh.parts(); p++) {
+//				auto &l2c = mesh.coordinates().localToCluster(p);
+//				for (size_t j = 0; j < bc[i]->DOFs().size(); j++) {
+//					if (bc[i]->DOFs()[j] % DOFs == 0 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / DOFs)) {
+//						dx[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / DOFs) - l2c.begin());
+//					}
+//					if (bc[i]->DOFs()[j] % DOFs == 1 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / DOFs)) {
+//						dy[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / DOFs) - l2c.begin());
+//					}
+//					if (bc[i]->DOFs()[j] % DOFs == 2 && std::binary_search(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / DOFs)) {
+//						dz[p].push_back(std::lower_bound(l2c.begin(), l2c.end(), bc[i]->DOFs()[j] / DOFs) - l2c.begin());
+//					}
+//				}
+//			}
+//		}
+//	}
 
 	outputx.store(dx, shrinkSubdomain, shringCluster);
 	outputy.store(dy, shrinkSubdomain, shringCluster);

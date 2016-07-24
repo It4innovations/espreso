@@ -8,7 +8,7 @@ namespace espreso {
 
 struct Temperature: public LinearPhysics
 {
-	Temperature(const Mesh &mesh): LinearPhysics(mesh, 1, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
+	Temperature(const Mesh &mesh): LinearPhysics(mesh, { DOFType::TEMPERATURE }, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
 
 protected:
 	void composeSubdomain(size_t subdomain);

@@ -52,13 +52,13 @@ struct Physics {
 //		}
 	}
 
-	size_t DOFs;
+	std::vector<DOFType> DOFs;
 
 	SparseMatrix::MatrixType mtype;
 	std::vector<SparseMatrix> K, T, R1, R2, RegMat; // T will be deleted
 	std::vector<std::vector<double> > f;
 
-	Physics(const Mesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype): _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
+	Physics(const Mesh &mesh, const std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype): _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
 	virtual ~Physics() {};
 
 protected:

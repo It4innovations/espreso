@@ -36,7 +36,7 @@ void LinearSolver::setup() {
 	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= config::env::MPIsize;
-	cluster.DOFS_PER_NODE		= physics.DOFs;
+	cluster.DOFS_PER_NODE		= physics.DOFs.size();
 	// ***************************************************************************************************************************
 
 	// ***************************************************************************************************************************

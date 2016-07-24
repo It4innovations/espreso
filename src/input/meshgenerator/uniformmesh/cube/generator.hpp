@@ -119,27 +119,54 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 {
 	for (auto it = _settings.regions.begin(); it != _settings.regions.end(); ++it) {
 
-		if (_settings.forces.find(it->first) == _settings.forces.end() &&
-			_settings.dirichlet.find(it->first) == _settings.dirichlet.end()
-			) {
-
-			ESINFO(ALWAYS) << TextColor::YELLOW << "Warning: Region without dirichlet or forces.";
+		if (_settings.dirichlet.find(it->first) == _settings.dirichlet.end()) {
+			ESINFO(ALWAYS) << TextColor::YELLOW << "Warning: Region without dirichlet.";
 			continue;
 		}
 
 		const Interval &interval = it->second;
 		NodeCondition *region = new NodeCondition();
+		region->setType(ConditionType::DIRICHLET);
 
 		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
 			if (interval.isIn(coordinates[i])) {
-				region->nodes().push_back(i);
+				region->nodes.push_back(i);
 			}
 		}
 
-		if (_settings.dirichlet.find(it->first) != _settings.dirichlet.end()) {
-			region->set(_settings.dirichlet.find(it->first)->second, ConditionType::DIRICHLET);
-		} else if (_settings.forces.find(it->first) != _settings.forces.end()) {
-			region->set(_settings.forces.find(it->first)->second, ConditionType::FORCES);
+		std::vector<std::string> expressions = Parser::split(Parser::strip(_settings.dirichlet.find(it->first)->second), ",");
+
+		for (size_t i = 0; i < expressions.size(); i++) {
+			std::string param = Parser::getParameter(expressions[i], ":");
+			if (StringCompare::caseInsensitiveEq(param, "all")) {
+				region->setValue(DOFType::DISPLACEMENT_X, Parser::getValue(expressions[i], ":"));
+				region->setValue(DOFType::DISPLACEMENT_Y, Parser::getValue(expressions[i], ":"));
+				region->setValue(DOFType::DISPLACEMENT_Z, Parser::getValue(expressions[i], ":"));
+				region->setValue(DOFType::TEMPERATURE, Parser::getValue(expressions[i], ":"));
+				region->setValue(DOFType::PRESSURE, Parser::getValue(expressions[i], ":"));
+				continue;
+			}
+			if (StringCompare::caseInsensitiveEq(param, "ux")) {
+				region->setValue(DOFType::DISPLACEMENT_X, Parser::getValue(expressions[i], ":"));
+				continue;
+			}
+			if (StringCompare::caseInsensitiveEq(param, "uy")) {
+				region->setValue(DOFType::DISPLACEMENT_Y, Parser::getValue(expressions[i], ":"));
+				continue;
+			}
+			if (StringCompare::caseInsensitiveEq(param, "uz")) {
+				region->setValue(DOFType::DISPLACEMENT_Z, Parser::getValue(expressions[i], ":"));
+				continue;
+			}
+			if (StringCompare::caseInsensitiveEq(param, "t")) {
+				region->setValue(DOFType::TEMPERATURE, Parser::getValue(expressions[i], ":"));
+				continue;
+			}
+			if (StringCompare::caseInsensitiveEq(param, "p")) {
+				region->setValue(DOFType::PRESSURE, Parser::getValue(expressions[i], ":"));
+				continue;
+			}
+			ESINFO(GLOBAL_ERROR) << "Unknown DOF type " << param;
 		}
 
 		conditions.push_back(region);

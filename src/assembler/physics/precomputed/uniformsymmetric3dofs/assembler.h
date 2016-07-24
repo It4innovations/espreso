@@ -9,7 +9,7 @@ namespace espreso {
 struct UniformSymmetric3DOFs: public PrecomputedPhysics
 {
 	UniformSymmetric3DOFs(const APIMesh &mesh, double *rhs, size_t rhs_size)
-	: PrecomputedPhysics(mesh, 3, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE, rhs, rhs_size) {};
+	: PrecomputedPhysics(mesh, { DOFType::DISPLACEMENT_X, DOFType::DISPLACEMENT_Y, DOFType::DISPLACEMENT_Z }, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE, rhs, rhs_size) {};
 
 protected:
 	void composeSubdomain(size_t subdomain);

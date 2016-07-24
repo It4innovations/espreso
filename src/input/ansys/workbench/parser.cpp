@@ -226,7 +226,7 @@ void WorkbenchParser::mp(std::vector<Material> &materials)
 		materials[mNumber].termalCapacity = std::stod(params[3]);
 	}
 	if (!params[1].compare(0, 3, "KXX")) {
-		materials[mNumber].termalConduction = std::stod(params[3]);
+		materials[mNumber].termalConduction.x = std::stod(params[3]);
 	}
 	if (!params[1].compare(0, 2, "EX")) {
 		materials[mNumber].youngModulus = std::stod(params[3]);
@@ -245,7 +245,8 @@ void WorkbenchParser::displacement(std::vector<BoundaryCondition*> &conditions)
 			if (nSelection == -1) {
 				ESINFO(GLOBAL_ERROR) << "Displacement on all nodes is not supported";
 			} else {
-				conditions[nSelection]->set("0", ConditionType::DIRICHLET);
+				ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+				//conditions[nSelection]->set("0", ConditionType::DIRICHLET);
 			}
 		} else {
 			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
@@ -273,9 +274,10 @@ void WorkbenchParser::cmblock(std::vector<BoundaryCondition*> &conditions)
 
 		getline(_file, _line);
 		int start = 0, n = 0;
-		nc->nodes().reserve(size);
-		while (nc->nodes().size() < size) {
-			nc->nodes().push_back(std::stol(_line.substr(start, sizes[n])) - 1);
+		ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+		//nc->nodes().reserve(size);
+		while (0) { //nc->nodes().size() < size) {
+			//nc->nodes().push_back(std::stol(_line.substr(start, sizes[n])) - 1);
 			start += sizes[n++];
 			if (n % sizes.size() == 0) {
 				getline(_file, _line);
@@ -283,8 +285,8 @@ void WorkbenchParser::cmblock(std::vector<BoundaryCondition*> &conditions)
 				n = 0;
 			}
 		}
-		conditions.push_back(nc);
-		selections.push_back({params[1], ConditionElements::NODES});
+		//conditions.push_back(nc);
+		//selections.push_back({params[1], ConditionElements::NODES});
 	} else {
 		ESINFO(GLOBAL_ERROR) << "Not implemented loading of cmblock of elements";
 	}
@@ -292,10 +294,11 @@ void WorkbenchParser::cmblock(std::vector<BoundaryCondition*> &conditions)
 
 void WorkbenchParser::eblock(std::vector<BoundaryCondition*> &conditions)
 {
-	SurfaceCondition *ec = new SurfaceCondition();
-	eblock(ec->faces());
+	ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+	//SurfaceCondition *ec = new SurfaceCondition();
+	//eblock(ec->faces());
 
-	conditions.push_back(ec);
+	//conditions.push_back(ec);
 	std::stringstream ss;
 	ss << eType.back();
 	selections.push_back({ss.str(), ConditionElements::ELEMENTS});

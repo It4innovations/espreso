@@ -76,32 +76,33 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 			}
 		}
 
-		size_t counter = conditions.size();
-		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));
-		auto &l2c = coordinates.localToCluster(p);
-		for (size_t i = 0; i < conditions.size(); i++) {
-			if (conditions[i]->type() == ConditionType::DIRICHLET) {
-				eslocal DOFs = 3;
-				size_t size = 0;
-				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
-					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
-						size++;
-					}
-				}
-
-				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-				double dirichletValue = conditions[i]->value(Point3D());
-				os.write(reinterpret_cast<const char*>(&dirichletValue), sizeof(double));
-
-				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
-					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
-						value = std::lower_bound(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs) - l2c.begin();
-						value = DOFs * value + conditions[i]->DOFs()[j] % DOFs;
-						os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
-					}
-				}
-			}
-		}
+		ESINFO(GLOBAL_ERROR) << "Broken VTK OUTPUT";
+//		size_t counter = conditions.size();
+//		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));
+//		auto &l2c = coordinates.localToCluster(p);
+//		for (size_t i = 0; i < conditions.size(); i++) {
+//			if (conditions[i]->type() == ConditionType::DIRICHLET) {
+//				eslocal DOFs = 3;
+//				size_t size = 0;
+//				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
+//					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
+//						size++;
+//					}
+//				}
+//
+//				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
+//				double dirichletValue = conditions[i]->value(Point3D());
+//				os.write(reinterpret_cast<const char*>(&dirichletValue), sizeof(double));
+//
+//				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
+//					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
+//						value = std::lower_bound(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs) - l2c.begin();
+//						value = DOFs * value + conditions[i]->DOFs()[j] % DOFs;
+//						os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+//					}
+//				}
+//			}
+//		}
 
 		os.close();
 	}

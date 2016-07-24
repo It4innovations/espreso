@@ -26,7 +26,7 @@ struct PrecomputedPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	PrecomputedPhysics(const APIMesh &mesh, size_t DOFs, SparseMatrix::MatrixType mtype, double *rhs, size_t rhs_size)
+	PrecomputedPhysics(const APIMesh &mesh, std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype, double *rhs, size_t rhs_size)
 	: Physics(mesh, DOFs, mtype), _apimesh(mesh), rhs(rhs), rhs_size(rhs_size) {};
 	virtual ~PrecomputedPhysics() {};
 

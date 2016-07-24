@@ -8,7 +8,7 @@ namespace espreso {
 
 struct Stokes: public LinearPhysics
 {
-	Stokes(const Mesh &mesh): LinearPhysics(mesh, 3, SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE) {};
+	Stokes(const Mesh &mesh): LinearPhysics(mesh, { DOFType::DISPLACEMENT_X, DOFType::DISPLACEMENT_Y, DOFType::PRESSURE }, SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE) {};
 
 protected:
 	void composeSubdomain(size_t subdomain);

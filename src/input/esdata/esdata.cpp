@@ -69,6 +69,7 @@ void Esdata::elements(std::vector<Element*> &elements)
 
 void Esdata::materials(std::vector<Material> &materials)
 {
+	ESINFO(GLOBAL_ERROR) << "Broken ESDATA INPUT";
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/materials.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
@@ -77,20 +78,20 @@ void Esdata::materials(std::vector<Material> &materials)
 	double value;
 	is.read(reinterpret_cast<char *>(&size), sizeof(int));
 	materials.resize(size);
-	for (size_t i = 0; i < materials.size(); i++) {
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		materials[i].density = value;
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		materials[i].youngModulus = value;
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		materials[i].poissonRatio = value;
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		materials[i].termalExpansion = value;
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		materials[i].termalCapacity = value;
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		materials[i].termalConduction = value;
-	}
+//	for (size_t i = 0; i < materials.size(); i++) {
+//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+//		materials[i].density = value;
+//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+//		materials[i].youngModulus = value;
+//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+//		materials[i].poissonRatio = value;
+//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+//		materials[i].termalExpansion = value;
+//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+//		materials[i].termalCapacity = value;
+//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
+//		materials[i].termalConduction = value;
+//	}
 	is.close();
 }
 
@@ -119,11 +120,12 @@ void Esdata::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCo
 	for (size_t i = 0; i < counter; i++) {
 		is.read(reinterpret_cast<char *>(&DOFs), sizeof(size_t));
 		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		conditions.push_back(new NodeCondition(value, ConditionType::DIRICHLET));
-		conditions.back()->DOFs().reserve(DOFs);
+		ESINFO(GLOBAL_ERROR) << "Broken ESDATA INPUT";
+		//conditions.push_back(new NodeCondition(value, ConditionType::DIRICHLET));
+		//conditions.back()->DOFs().reserve(DOFs);
 		for (size_t j = 0; j < DOFs; j++) {
 			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
-			conditions.back()->DOFs().push_back(cIndex);
+			//conditions.back()->DOFs().push_back(cIndex);
 		}
 	}
 

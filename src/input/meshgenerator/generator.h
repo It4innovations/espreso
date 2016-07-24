@@ -47,7 +47,26 @@ protected:
 
 	void materials(std::vector<Material> &materials)
 	{
-		materials = _settings.materials;
+		auto set = [] (double &value, const std::map<std::string, double> &settings, const std::string &param) {
+			if (settings.find(param) != settings.end()) {
+				value = settings.find(param)->second;
+			}
+		};
+
+		auto fillMaterial = [ &set ] (Material &material, const std::map<std::string, double> &settings) {
+			set(material.density           , settings, "DENSITY");
+			set(material.poissonRatio      , settings, "POISSON");
+			set(material.youngModulus      , settings, "YOUNG");
+			set(material.termalCapacity    , settings, "CP");
+			set(material.termalConduction.x, settings, "KX");
+			set(material.termalConduction.y, settings, "KY");
+			set(material.termalConduction.z, settings, "KZ");
+			set(material.termalExpansion   , settings, "ALPHA");
+		};
+
+		materials.resize(2);
+		fillMaterial(materials[0], _settings.material1);
+		fillMaterial(materials[1], _settings.material2);
 	}
 
 	const Settings _settings;

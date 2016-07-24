@@ -16,7 +16,7 @@ public:
 	static void load(Mesh &mesh, const SphereSettings &settings)
 	{
 		ESINFO(OVERVIEW) << "Generate sphere mesh";
-		ESINFO(DETAILS) << "Sphere parameters:\n" << settings;
+		ParametersReader::printParameters(settings.parameters, config::info::VERBOSE_LEVEL);
 		SphereGenerator sphere(mesh, settings);
 		sphere.fill();
 	}
