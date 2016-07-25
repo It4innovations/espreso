@@ -22,6 +22,7 @@
 #include "coordinates.h"
 #include "boundaries.h"
 #include "boundarycondition.h"
+#include "initialcondition.h"
 #include "faces.h"
 #include "material.h"
 
@@ -73,6 +74,11 @@ public:
 	const std::vector<BoundaryCondition*>& boundaryConditions() const
 	{
 		return _boundaryConditions;
+	}
+
+	const std::vector<InitialCondition*>& initialConditions() const
+	{
+		return _initialConditions;
 	}
 
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
@@ -160,6 +166,9 @@ protected:
 
 	/** @brief Array that stores all boundary conditions of the mesh. */
 	std::vector<BoundaryCondition*> _boundaryConditions;
+
+	/** @brief Array that stores all initial conditions of the mesh. */
+	std::vector<InitialCondition*> _initialConditions;
 
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;

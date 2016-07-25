@@ -51,10 +51,10 @@ FORCES = {
   ALL = T: 1
 }
 
-HEAT_SOURCE = {
+HEAT_SOURCES = {
   ALL = 1
 }
 
-TRANSLATION_MOTION = {
+TRANSLATION_MOTIONS = {
   ALL = x: -y, y: x
 }

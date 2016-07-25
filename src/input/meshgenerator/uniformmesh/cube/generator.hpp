@@ -173,6 +173,12 @@ void CubeGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::
 	}
 }
 
+template <class TElement>
+void CubeGenerator<TElement>::initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions)
+{
+
+}
+
 
 template <class TElement>
 void CubeGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)

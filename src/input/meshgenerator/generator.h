@@ -69,6 +69,11 @@ protected:
 		fillMaterial(materials[1], _settings.material2);
 	}
 
+	void initialConditions(std::vector<InitialCondition*> &conditions)
+	{
+
+	}
+
 	const Settings _settings;
 	size_t _DOFs;
 };

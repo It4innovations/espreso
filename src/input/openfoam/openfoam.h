@@ -30,6 +30,7 @@ protected:
 	void materials(std::vector<Material> &materials);
 	void faces(Faces &faces);
 	void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);
+	void initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions) {};
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:

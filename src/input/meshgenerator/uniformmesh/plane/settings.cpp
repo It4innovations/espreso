@@ -29,7 +29,7 @@ void PlaneSettings::defaultPlaneSettings()
 
 	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions", verbosity });
 	parameters.push_back({ "FORCES", forces, "Boundary forces", verbosity });
-	parameters.push_back({ "TRANSLATION_MOTION", u, "Translation motion of a region", verbosity });
+	parameters.push_back({ "TRANSLATION_MOTIONS", u, "Translation motion of a region", verbosity });
 	parameters.push_back({ "HEAT_SOURCES", heat_sources, "Sources of a heat", verbosity });
 
 	parameters.push_back({ "REGIONS", regions, "Named sets of nodes.", verbosity });

@@ -210,6 +210,12 @@ void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std
 	}
 }
 
+template <class TElement>
+void SphereGenerator<TElement>::initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions)
+{
+
+}
+
 
 /*
  *
