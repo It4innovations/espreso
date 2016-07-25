@@ -29,18 +29,9 @@ struct LinearPhysics: public Physics {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
 
-			const std::vector<eslocal> &l2g = _mesh.coordinates().localToCluster(p);
-			for (eslocal i = 0; i < l2g.size(); i++) {
-				size_t n = _mesh.subdomainBoundaries()[l2g[i]].size();
-				if (forces_x.find(l2g[i]) != forces_x.end()) {
-					f[p][DOFs.size() * i + 0] = forces_x.at(l2g[i]) / n;
-				}
-				if (forces_y.find(l2g[i]) != forces_y.end()) {
-					f[p][DOFs.size() * i + 1] = forces_y.at(l2g[i]) / n;
-				}
-				if (forces_z.find(l2g[i]) != forces_z.end()) {
-					f[p][DOFs.size() * i + 2] = forces_z.at(l2g[i]) / n;
-				}
+			const std::vector<BoundaryCondition*> &bc = _mesh.boundaryConditions();
+			for (size_t i = 0; i < bc.size(); i++) {
+				bc[i]->fillForces(DOFs, _mesh, f[p], p);
 			}
 
 			ESINFO(PROGRESS2) << Info::plain() << ".";
