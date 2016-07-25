@@ -76,9 +76,9 @@ public:
 		return _boundaryConditions;
 	}
 
-	const std::vector<InitialCondition*>& initialConditions() const
+	const InitialCondition* initialConditions(InitialConditionType type) const
 	{
-		return _initialConditions;
+		return _initialConditions[static_cast<int>(type)];
 	}
 
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;

@@ -15,7 +15,7 @@ public:
 	Expression(const Expression &other);
 	Expression& operator=(const Expression &other);
 
-	double evaluate(double x, double y, double z)
+	double evaluate(double x, double y, double z) const
 	{
 		_x = x;
 		_y = y;
@@ -29,7 +29,7 @@ private:
 	std::string _str;
 	exprtk::symbol_table<double> _symbol_table;
 	exprtk::expression<double> _expression;
-	double _x, _y, _z;
+	mutable double _x, _y, _z;
 };
 
 }

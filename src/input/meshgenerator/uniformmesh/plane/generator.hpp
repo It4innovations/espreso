@@ -138,7 +138,6 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 				}
 			}
 	}
-
 }
 
 template<class TElement>
@@ -200,38 +199,52 @@ void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std:
 template <class TElement>
 void PlaneGenerator<TElement>::initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions)
 {
-//	for (auto it = _settings.heat_sources.begin(); it != _settings.heat_sources.end(); ++it) {
-//		if (_settings.regions.find(it->first) == _settings.regions.end()) {
-//			ESINFO(GLOBAL_ERROR) << "Not specified region " << it->first;
-//		}
-//
-//		const Interval &interval = _settings.regions.find(it->first)->second;
-//		NodeInitialization *region = new NodeInitialization();
-//		region->setValue("", Parser::strip(it->second));
-//		conditions.push_back(region);
-//	}
-//
-//	for (auto it = _settings.u.begin(); it != _settings.u.end(); ++it) {
-//		if (_settings.regions.find(it->first) == _settings.regions.end()) {
-//			ESINFO(GLOBAL_ERROR) << "Not specified region " << it->first;
-//		}
-//
-//		const Interval &interval = _settings.regions.find(it->first)->second;
-//		NodeInitialization *region = new NodeInitialization();
-//
-//		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
-//			if (interval.isIn(coordinates[i])) {
-//				region->nodes.push_back(i);
-//			}
-//		}
-//
-//		std::vector<std::string> expressions = Parser::split(Parser::strip(it->second), ",");
-//		for (size_t i = 0; i < expressions.size(); i++) {
-//			std::string param = Parser::getParameter(expressions[i], ":");
-//			region->setValue(param, Parser::getValue(expressions[i], ":"));
-//		}
-//		conditions.push_back(region);
-//	}
+	auto getInterval = [] (const std::map<std::string, Interval> &regions, const std::string &name) {
+		if (regions.find(name) == regions.end()) {
+			ESINFO(GLOBAL_ERROR) << "Not specified region " << name;
+		}
+		return regions.find(name)->second;
+	};
+
+	if (_settings.heat_sources.size()) {
+		if (_settings.heat_sources.size() == 1) {
+			const Interval &interval = getInterval(_settings.regions, _settings.heat_sources.begin()->first);
+			if (!interval.isIn(0, 0, 0) || !interval.isIn(_settings.problemLength[0], _settings.problemLength[1], 0)) {
+				ESINFO(GLOBAL_ERROR) << "Heat source has to be set to whole problem.";
+			}
+			conditions[InitialCondition::index(InitialConditionType::HEAT_SOURCE)] = new ExpressionInitialization(_settings.heat_sources.begin()->second);
+		} else {
+			IntervalInitialization *condition = new IntervalInitialization();
+			for (auto it = _settings.heat_sources.begin(); it != _settings.heat_sources.end(); ++it) {
+				condition->add(getInterval(_settings.regions, it->first), it->second);
+			}
+		}
+	}
+
+	if (_settings.u.size()) {
+		if (_settings.heat_sources.size() == 1) {
+			const Interval &interval = getInterval(_settings.regions, _settings.u.begin()->first);
+			if (!interval.isIn(0, 0, 0) || !interval.isIn(_settings.problemLength[0], _settings.problemLength[1], 0)) {
+				ESINFO(GLOBAL_ERROR) << "Translation motion has to be set to whole problem.";
+			}
+			std::vector<std::string> expressions = Parser::split(Parser::strip(_settings.u.begin()->second), ",");
+			if (expressions.size() != 2) {
+				ESINFO(GLOBAL_ERROR) << "Invalid translation motion: INTERVAL = x: ? , y: ?";
+			}
+			conditions[InitialCondition::index(InitialConditionType::TRANSLATION_MOTION_X)] = new ExpressionInitialization(Parser::getValue(expressions[0], ":"));
+			conditions[InitialCondition::index(InitialConditionType::TRANSLATION_MOTION_Y)] = new ExpressionInitialization(Parser::getValue(expressions[1], ":"));
+		} else {
+			IntervalInitialization *condition = new IntervalInitialization();
+			for (auto it = _settings.u.begin(); it != _settings.u.end(); ++it) {
+				std::vector<std::string> expressions = Parser::split(Parser::strip(it->second), ",");
+				if (expressions.size() != 2) {
+					ESINFO(GLOBAL_ERROR) << "Invalid translation motion: INTERVAL = x: ? , y: ?";
+				}
+				condition->add(getInterval(_settings.regions, it->first), Parser::getValue(expressions[0], ":"));
+				condition->add(getInterval(_settings.regions, it->first), Parser::getValue(expressions[0], ":"));
+			}
+		}
+	}
 }
 
 template<class TElement>

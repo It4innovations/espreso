@@ -48,7 +48,7 @@ DIRICHLET = {
 }
 
 FORCES = {
-  ALL = T: 1
+  ALL = T: 0
 }
 
 HEAT_SOURCES = {
@@ -56,5 +56,5 @@ HEAT_SOURCES = {
 }
 
 TRANSLATION_MOTIONS = {
-  ALL = x: -y, y: x
+  ALL = x: -y / 30, y: x / 30
 }

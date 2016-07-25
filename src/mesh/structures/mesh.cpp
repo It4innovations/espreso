@@ -9,6 +9,7 @@ Mesh::Mesh():_elements(0)
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
+	_initialConditions.resize(static_cast<int>(InitialConditionType::INITIAL_CONDITION_SIZE), NULL);
 }
 
 void Mesh::partitiate(size_t parts)
@@ -335,8 +336,10 @@ Mesh::~Mesh()
 	for (size_t i = 0; i < _boundaryConditions.size(); i++) {
 		delete _boundaryConditions[i];
 	}
-	for (size_t i = 0; i < _initialConditions.size(); i++) {
-		delete _initialConditions[i];
+	for (auto i = 0; i < _initialConditions.size(); i++) {
+		if (_initialConditions[i] != NULL) {
+			delete _initialConditions[i];
+		}
 	}
 }
 
@@ -460,7 +463,11 @@ void Mesh::getSurface(Mesh &surface) const
 		surface._boundaryConditions.push_back(_boundaryConditions[i]->copy());
 	}
 	for (size_t i = 0; i < _initialConditions.size(); i++) {
-		surface._initialConditions.push_back(_initialConditions[i]->copy());
+		if (_initialConditions[i] != NULL) {
+			surface._initialConditions.push_back(_initialConditions[i]->copy());
+		} else {
+			surface._initialConditions.push_back(NULL);
+		}
 	}
 }
 
