@@ -25,7 +25,7 @@ public:
 protected:
 	OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size);
 
-	void points(Coordinates &coordinates, size_t &DOFs);
+	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
 	void faces(Faces &faces);

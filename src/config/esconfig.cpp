@@ -64,15 +64,14 @@ double                                   solver::KSOLVER_SP_NORM       = 1e-12;
 size_t                                   solver::KSOLVER_SP_STEPS      = 1000;
 
 solver::F0SOLVERalternative              solver::F0SOLVER              = solver::F0SOLVERalternative::K_PRECISION;
-solver::SASOLVERalternative 	         solver::SASOLVER              = solver::SASOLVERalternative::CPU_DENSE;
+solver::SASOLVERalternative              solver::SASOLVER              = solver::SASOLVERalternative::CPU_DENSE;
 
 size_t                                   solver::N_MICS                = 2;
+size_t                                   solver::TIME_STEPS            = 1;
 
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
 
 assembler::DISCRETIZATIONalternative assembler::DISCRETIZATION = assembler::DISCRETIZATIONalternative::FEM;
-assembler::PHYSICSalternative        assembler::PHYSICS        = assembler::PHYSICSalternative::LINEAR_ELASTICITY;
-size_t                               assembler::TIME_STEPS      = 1;
 
 /////////////////////////////// OUTPUT /////////////////////////////////////////
 

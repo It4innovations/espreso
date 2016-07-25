@@ -58,7 +58,7 @@ PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, s
 	defaultPlaneSettings();
 	ESINFO(OVERVIEW) << "Load plane setting from file " << configuration.path;
 	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
-	ParametersReader::fromConfigurationFile(configuration, parameters);
+	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
 	subdomainsInCluster[2] = 1;
 	elementsInSubdomain[2] = 1;
 }

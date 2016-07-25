@@ -12,27 +12,7 @@ namespace input {
 class Generator: public Loader {
 
 protected:
-	Generator(Mesh &mesh, const Settings &settings): Loader(mesh), _settings(settings)
-	{
-		switch (_settings.physics) {
-		case config::assembler::PHYSICSalternative::LINEAR_ELASTICITY:
-			config::assembler::PHYSICS = config::assembler::PHYSICSalternative::LINEAR_ELASTICITY;
-			config::assembler::TIME_STEPS = 1;
-			_DOFs = 3;
-			break;
-		case config::assembler::PHYSICSalternative::TEMPERATURE:
-			config::assembler::PHYSICS = config::assembler::PHYSICSalternative::TEMPERATURE;
-			config::assembler::TIME_STEPS = 1;
-			_DOFs = 1;
-			break;
-		case config::assembler::PHYSICSalternative::TRANSIENT_ELASTICITY:
-			config::assembler::PHYSICS = config::assembler::PHYSICSalternative::TRANSIENT_ELASTICITY;
-			_DOFs = 3;
-			break;
-		default:
-			ESINFO(ERROR) << "Unknown assembler: ASSEMBLER = " << static_cast<int>(_settings.physics);
-		}
-	};
+	Generator(Mesh &mesh, const Settings &settings): Loader(mesh), _settings(settings) {};
 
 	virtual ~Generator() { };
 
@@ -51,7 +31,6 @@ protected:
 	}
 
 	const Settings _settings;
-	size_t _DOFs;
 };
 
 }

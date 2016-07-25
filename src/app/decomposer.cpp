@@ -41,12 +41,12 @@ int main(int argc, char** argv)
 		std::stringstream ss;
 		ss << configuration.nameless[0] << parts * config::env::MPIsize;
 
-		factory.mesh()->partitiate(parts);
+		factory.mesh.partitiate(parts);
 		std::cout << "Mesh partitiated to " << parts * config::env::MPIsize << " parts\n";
-		output::Esdata data(*factory.mesh(), ss.str());
-		std::vector<size_t> sizes(factory.mesh()->parts());
-		for (size_t p = 0; p < factory.mesh()->parts(); p++) {
-			sizes[p] = factory.mesh()->getPartNodesCount(p);
+		output::Esdata data(factory.mesh, ss.str());
+		std::vector<size_t> sizes(factory.mesh.parts());
+		for (size_t p = 0; p < factory.mesh.parts(); p++) {
+			sizes[p] = factory.mesh.getPartNodesCount(p);
 		}
 		std::cout << Info::averageValues(sizes) << "\n";
 		data.store(1, 1);

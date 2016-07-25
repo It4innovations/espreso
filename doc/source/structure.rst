@@ -34,11 +34,12 @@ Set up the environment
 
 The environment is set by ``waf``.
 It checks the availability of headers and libraries for chosen solver.
-Checking is based on the settings in source file ``src/python/wafutils.py``.
-The file contains method ``check_libraries``, where the libraries are listed.
+The check is done by the following commands in wscript while the configuration: ::
 
-.. warning::
-   TODO: check will be refactored
+  def configure(ctx):
+      ctx.check_header("header")
+      ctx.check_stlib("static_lib")
+      ctx.check_lib("shared_lib")
 
 
 Compilation of selected classes

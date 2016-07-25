@@ -26,7 +26,7 @@ protected:
 
 	virtual void elementsMesh(std::vector<Element*> &elements);
 	virtual void elementsMaterials(std::vector<Element*> &elements);
-	virtual void points(Coordinates &coordinates, size_t &DOFs);
+	virtual void points(Coordinates &coordinates);
 	virtual void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);

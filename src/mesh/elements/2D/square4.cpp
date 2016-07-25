@@ -2,10 +2,67 @@
 
 using namespace espreso;
 
-// TODO: Implement base functions
-std::vector<DenseMatrix> Square4::_dN;
-std::vector<DenseMatrix> Square4::_N;
-std::vector<double> Square4::_weighFactor;
+static std::vector<DenseMatrix> get_dN() {
+	std::vector<DenseMatrix> dN(
+		Square4GPCount,
+		DenseMatrix(Point::size(), Square4NodesCount)
+	);
+
+	double CsQ_scale = 0.577350269189626;
+
+	for (unsigned int i = 0; i < Square4GPCount; i++) {
+		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
+		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
+
+		///dN contains [dNr, dNs, dNt]
+		DenseMatrix &m = dN[i];
+
+		// dNs - derivation of basis function
+		m(0, 0) = 0.25 * ( t - 1);
+		m(0, 1) = 0.25 * (-t + 1);
+		m(0, 2) = 0.25 * ( t + 1);
+		m(0, 3) = 0.25 * (-t - 1);
+
+		// dNt - derivation of basis function
+		m(1, 0) = 0.25 * ( s - 1);
+		m(1, 1) = 0.25 * (-s - 1);
+		m(1, 2) = 0.25 * ( s + 1);
+		m(1, 3) = 0.25 * (-s + 1);
+
+		m(2, 0) = 0;
+		m(2, 1) = 0;
+		m(2, 2) = 0;
+		m(2, 3) = 0;
+	}
+
+	return dN;
+}
+
+static std::vector<DenseMatrix> get_N() {
+	std::vector<DenseMatrix> N(
+		Square4GPCount,
+		DenseMatrix(1, Square4NodesCount)
+	);
+
+	double CsQ_scale = 0.5773502691896258;
+
+	for (unsigned int i = 0; i < Square4GPCount; i++) {
+		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
+		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
+
+		// basis function
+		N[i](0, 0) = 0.25 * (1 - s) * (1 - t);
+		N[i](0, 1) = 0.25 * (s + 1) * (1 - t);
+		N[i](0, 2) = 0.25 * (s + 1) * (t + 1);
+		N[i](0, 3) = 0.25 * (1 - s) * (t + 1);
+	}
+
+	return N;
+}
+
+std::vector<DenseMatrix> Square4::_dN = get_dN();
+std::vector<DenseMatrix> Square4::_N = get_N();
+std::vector<double> Square4::_weighFactor(Square4GPCount, 1);
 
 bool Square4::match(const eslocal *indices, eslocal n)
 {

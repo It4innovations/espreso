@@ -3,10 +3,10 @@
 Support for HPC
 ===============
 
-popis sh skriptu pro clustery
+This section describes scripts for running ESPRESO on clusters.
 
 
-Solving Ansys Generated Problems on Salomon 
+Solving Ansys Generated Problems on Salomon
 -------------------------------------------
 
 To process Ansys generated problems using ESPRESO a section has been added to the following script: ::
@@ -34,7 +34,7 @@ The following arguments are used: ::
                 pbs        scripts generates PBS jobs and submits a job to PBS
 
 
-Problem decomposition 
+Problem decomposition
 ---------------------
 
 To process the problem on multiple nodes it has to be decomposed into clusters using the **decomposer** utility: ::
@@ -93,7 +93,7 @@ Sample output can looks like this::
    Mesh partitiated to 8 parts saved
 
 Basic example to solve the problem
---------------------------------
+----------------------------------
 
 For this example ESPRESO can be executed as: ::
 
@@ -109,8 +109,8 @@ Where following parameters are used: ::
  
 Please note: This example requires that your environment is setup and you are in a interactive session on a compute node. To avoid this you can use the **salomon.sh** script.
 
-Running the solver using salomon.sh script 
--------------------------------------------
+Running the solver using salomon.sh script
+------------------------------------------
 
 The **salomon.sh** contains a tool to submit multiple jobs to Salomons PBS queue to measure scalability characteristics. 
 

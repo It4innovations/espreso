@@ -12,7 +12,7 @@ The source codes can be easily obtained by clone this repository: ::
 
   $ git clone git@code.it4i.cz:mec059/espreso.git
 
-The repository contains several developing braneches. The last stabil version is in branch ``master``.
+The repository contains several developing branches. The last stabil version is in branch ``master``.
 It is the default branch after the clone.
 
 Directory structure
@@ -20,7 +20,7 @@ Directory structure
 
 The main directory of ESPRESO contains the following directories:
 
- - **doc** - the source of this documentation [`ESPRESO <intex.html>`__]
+ - **doc** - the source of this documentation [`ESPRESO <index.html>`__]
  - **env** - scripts for environment settings [`Set up the environment`_]
  - **examples** - simple examples runable with ESPRESO [`examples <examples.html>`__]
  - **libespreso** - API for usage in other softwares [`ESPRESO API <api.html>`__]
