@@ -59,23 +59,6 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
-		for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
-			const std::map<eslocal, double> &property = coordinates.property(i).values();
-			eslocal counter = 0;
-			for (size_t j = 0; j < coordinates.localSize(p); j++) {
-				if (property.find(coordinates.clusterIndex(j, p)) != property.end()) {
-					counter++;
-				}
-			}
-			os.write(reinterpret_cast<const char*>(&counter), sizeof(eslocal));
-			for (eslocal j = 0; j < coordinates.localSize(p); j++) {
-				if (property.find(coordinates.clusterIndex(j, p)) != property.end()) {
-					os.write(reinterpret_cast<const char*>(&j), sizeof(eslocal));
-					os.write(reinterpret_cast<const char*>(&property.find(coordinates.clusterIndex(j, p))->second), sizeof(double));
-				}
-			}
-		}
-
 		ESINFO(GLOBAL_ERROR) << "Broken VTK OUTPUT";
 //		size_t counter = conditions.size();
 //		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));

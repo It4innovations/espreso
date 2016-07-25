@@ -914,12 +914,13 @@ void Mesh::prepareAveragingLines(Mesh &faces, Mesh &lines)
 {
 	// check whether a point has dirichler condition
 	auto has_dirichlet = [&] (eslocal i) {
-		eslocal index = lines.coordinates().globalIndex(i);
-		index = faces.coordinates().globalIndex(index);
-		auto &dx = coordinates().property(DIRICHLET_X).values();
-		auto &dy = coordinates().property(DIRICHLET_Y).values();
-		auto &dz = coordinates().property(DIRICHLET_Z).values();
-		return dx.find(index) != dx.end() || dy.find(index) != dy.end() || dz.find(index) != dz.end();
+		return false;
+//		eslocal index = lines.coordinates().globalIndex(i);
+//		index = faces.coordinates().globalIndex(index);
+//		auto &dx = coordinates().property(DIRICHLET_X).values();
+//		auto &dy = coordinates().property(DIRICHLET_Y).values();
+//		auto &dz = coordinates().property(DIRICHLET_Z).values();
+//		return dx.find(index) != dx.end() || dy.find(index) != dy.end() || dz.find(index) != dz.end();
 	};
 
 	// check whether a point is on cluster boundary

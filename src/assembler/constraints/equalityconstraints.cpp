@@ -788,40 +788,6 @@ EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<DOFType> 
 		B1[p].type = 'G';
 	}
 
-	// TODO: refactor DIRICHLET
-	const std::map<eslocal, double> &dx = this->_mesh.coordinates().property(DIRICHLET_X).values();
-	const std::map<eslocal, double> &dy = this->_mesh.coordinates().property(DIRICHLET_Y).values();
-	const std::map<eslocal, double> &dz = this->_mesh.coordinates().property(DIRICHLET_Z).values();
-
-	switch (_DOFs.size()) {
-	case 1:
-		dirichlet.reserve(dx.size());
-		dirichletValues.reserve(dx.size());
-		for (auto it = dx.begin(); it != dx.end(); ++it) {
-			dirichlet.push_back(it->first);
-			dirichletValues.push_back(it->second);
-		}
-		break;
-	case 3:
-		dirichlet.reserve(dx.size() + dy.size() + dz.size());
-		dirichletValues.reserve(dx.size() + dy.size() + dz.size());
-		for (auto it = dx.begin(); it != dx.end(); ++it) {
-			dirichlet.push_back(3 * it->first);
-			dirichletValues.push_back(it->second);
-		}
-		for (auto it = dy.begin(); it != dy.end(); ++it) {
-			dirichlet.push_back(3 * it->first + 1);
-			dirichletValues.push_back(it->second);
-		}
-		for (auto it = dz.begin(); it != dz.end(); ++it) {
-			dirichlet.push_back(3 * it->first + 2);
-			dirichletValues.push_back(it->second);
-		}
-		break;
-	default:
-		ESINFO(ERROR) << "Invalid number of DOFs";
-	}
-
 	const std::vector<BoundaryCondition*> &bc = mesh.boundaryConditions();
 	for (size_t i = 0; i < bc.size(); i++) {
 		bc[i]->fillDirichlet(DOFs, mesh, dirichlet, dirichletValues);

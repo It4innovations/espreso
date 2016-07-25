@@ -101,19 +101,8 @@ void Esdata::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCo
 	fileName << _path << "/" << _rank << "/boundaryConditions.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
-	eslocal size, cIndex;
+	eslocal cIndex;
 	double value;
-
-	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
-		CoordinatesProperty &property = coordinates.property(i);
-		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-		for (eslocal j = 0; j < size; j++) {
-			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
-			is.read(reinterpret_cast<char *>(&value), sizeof(double));
-			property[cIndex] = value;
-		}
-	}
-
 	size_t counter, DOFs;
 
 	is.read(reinterpret_cast<char *>(&counter), sizeof(size_t));

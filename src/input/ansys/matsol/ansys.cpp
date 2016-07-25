@@ -113,30 +113,31 @@ void AnsysMatsol::materials(std::vector<Material> &materials)
 
 void AnsysMatsol::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
-	std::vector<std::string> files = {
-		_path + "/Model/BC/Elasticity/NUX.dat",
-		_path + "/Model/BC/Elasticity/NUY.dat",
-		_path + "/Model/BC/Elasticity/NUZ.dat",
-		_path + "/Model/BC/Elasticity/NFX.dat",
-		_path + "/Model/BC/Elasticity/NFY.dat",
-		_path + "/Model/BC/Elasticity/NFZ.dat"
-	};
-
-	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
-		CoordinatesProperty &property = coordinates.property(i);
-
-		std::ifstream file(files[i].c_str());
-
-		if (file.is_open()) {
-			eslocal coordinate;
-			double value;
-
-			while (file >> coordinate && file.ignore(10, '.') && file >> value) {
-				property[coordinate - 1] = value;
-			}
-			file.close();
-		}
-	}
+	ESINFO(GLOBAL_ERROR) << "MATSOL format is not longer supported.";
+//	std::vector<std::string> files = {
+//		_path + "/Model/BC/Elasticity/NUX.dat",
+//		_path + "/Model/BC/Elasticity/NUY.dat",
+//		_path + "/Model/BC/Elasticity/NUZ.dat",
+//		_path + "/Model/BC/Elasticity/NFX.dat",
+//		_path + "/Model/BC/Elasticity/NFY.dat",
+//		_path + "/Model/BC/Elasticity/NFZ.dat"
+//	};
+//
+//	for (size_t i = 0; i < coordinates.propertiesSize(); i++) {
+//		CoordinatesProperty &property = coordinates.property(i);
+//
+//		std::ifstream file(files[i].c_str());
+//
+//		if (file.is_open()) {
+//			eslocal coordinate;
+//			double value;
+//
+//			while (file >> coordinate && file.ignore(10, '.') && file >> value) {
+//				property[coordinate - 1] = value;
+//			}
+//			file.close();
+//		}
+//	}
 }
 
 

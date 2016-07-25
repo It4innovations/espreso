@@ -68,25 +68,6 @@ void VTK_Full::dirichlet(const Mesh &mesh, const std::string &path, double shrin
 	std::vector<std::vector<eslocal> > dy(mesh.parts());
 	std::vector<std::vector<eslocal> > dz(mesh.parts());
 
-	auto &dxMap = mesh.coordinates().property(DIRICHLET_X).values();
-	auto &dyMap = mesh.coordinates().property(DIRICHLET_Y).values();
-	auto &dzMap = mesh.coordinates().property(DIRICHLET_Z).values();
-
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		auto &l2c = mesh.coordinates().localToCluster(p);
-		for (size_t i = 0; i < l2c.size(); i++) {
-			if (dxMap.find(l2c[i]) != dxMap.end()) {
-				dx[p].push_back(i);
-			}
-			if (dyMap.find(l2c[i]) != dyMap.end()) {
-				dy[p].push_back(i);
-			}
-			if (dzMap.find(l2c[i]) != dzMap.end()) {
-				dz[p].push_back(i);
-			}
-		}
-	}
-
 	ESINFO(GLOBAL_ERROR) << "Broken VTK out dirichlet";
 //	const std::vector<BoundaryCondition*> &bc = mesh.boundaryConditions();
 //	for (size_t i = 0; i < bc.size(); i++) {

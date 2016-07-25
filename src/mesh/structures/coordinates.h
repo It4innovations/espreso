@@ -12,45 +12,13 @@
 namespace espreso
 {
 
-enum Property {
-	DIRICHLET_X,
-	DIRICHLET_Y,
-	DIRICHLET_Z,
-	FORCES_X,
-	FORCES_Y,
-	FORCES_Z,
-	PROPERTIES_COUNT
-};
-
-class CoordinatesProperty
-{
-public:
-	friend std::ostream& operator<<(std::ostream& os, const CoordinatesProperty &cp);
-
-	CoordinatesProperty() { };
-	void load(const char *fileName);
-
-	double& operator[](eslocal index)
-	{
-		return _mapping[index];
-	}
-
-	const std::map<eslocal, double>& values() const
-	{
-		return _mapping;
-	}
-
-private:
-	std::map<eslocal, double> _mapping;
-};
-
 class Coordinates
 {
 	friend class Mesh;
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 public:
-	Coordinates(): _points(0), _clusterIndex(1), _property(PROPERTIES_COUNT) { };
+	Coordinates(): _points(0), _clusterIndex(1) { };
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -164,31 +132,6 @@ public:
 		return _points[index];
 	}
 
-	CoordinatesProperty& property(Property property)
-	{
-		return _property[property];
-	}
-
-	const CoordinatesProperty& property(Property property) const
-	{
-		return _property[property];
-	}
-
-	CoordinatesProperty& property(size_t property)
-	{
-		return _property[property];
-	}
-
-	const CoordinatesProperty& property(size_t property) const
-	{
-		return _property[property];
-	}
-
-	size_t propertiesSize() const
-	{
-		return _property.size();
-	}
-
 private:
 	std::vector<Point> _points;
 
@@ -197,10 +140,7 @@ private:
 
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
-	std::map<esglobal,eslocal> _globalMap;
-
-	/** @brief Coordinates properties */
-	std::vector<CoordinatesProperty> _property;
+	std::map<esglobal, eslocal> _globalMap;
 };
 
 }

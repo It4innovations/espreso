@@ -171,43 +171,44 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 template<class TElement>
 void SphereGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
 {
-	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
-	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
-	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
-	CoordinatesProperty &forces_x = coordinates.property(FORCES_X);
-	CoordinatesProperty &forces_y = coordinates.property(FORCES_Y);
-	CoordinatesProperty &forces_z = coordinates.property(FORCES_Z);
-
-	eslocal cNodes[3];
-	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
-
-	auto fill = [&] (const std::map<std::string, double> &map, const std::string &key, CoordinatesProperty &cp, eslocal index) {
-		if (map.find(key) != map.end()) {
-			cp[index] = map.find(key)->second;
-		}
-	};
-
-	if (_cluster[2] == 0) {
-		for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
-			fill(_settings.dirichlet, "INNER_X", dirichlet_x, i);
-			fill(_settings.dirichlet, "INNER_Y", dirichlet_y, i);
-			fill(_settings.dirichlet, "INNER_Z", dirichlet_z, i);
-			fill(_settings.forces, "INNER_X", forces_x, i);
-			fill(_settings.forces, "INNER_Y", forces_y, i);
-			fill(_settings.forces, "INNER_Z", forces_z, i);
-		}
-	}
-
-	if (_cluster[2] + 1 == _settings.layers) {
-		for (eslocal i = (cNodes[2] - 1) * cNodes[0] * cNodes[1]; i < cNodes[2] * cNodes[0] * cNodes[1]; i++) {
-			fill(_settings.dirichlet, "OUTER_X", dirichlet_x, i);
-			fill(_settings.dirichlet, "OUTER_Y", dirichlet_y, i);
-			fill(_settings.dirichlet, "OUTER_Z", dirichlet_z, i);
-			fill(_settings.forces, "OUTER_X", forces_x, i);
-			fill(_settings.forces, "OUTER_Y", forces_y, i);
-			fill(_settings.forces, "OUTER_Z", forces_z, i);
-		}
-	}
+	ESINFO(GLOBAL_ERROR) << "BOUNDARY CONDITIONS not implemented";
+//	CoordinatesProperty &dirichlet_x = coordinates.property(DIRICHLET_X);
+//	CoordinatesProperty &dirichlet_y = coordinates.property(DIRICHLET_Y);
+//	CoordinatesProperty &dirichlet_z = coordinates.property(DIRICHLET_Z);
+//	CoordinatesProperty &forces_x = coordinates.property(FORCES_X);
+//	CoordinatesProperty &forces_y = coordinates.property(FORCES_Y);
+//	CoordinatesProperty &forces_z = coordinates.property(FORCES_Z);
+//
+//	eslocal cNodes[3];
+//	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
+//
+//	auto fill = [&] (const std::map<std::string, double> &map, const std::string &key, CoordinatesProperty &cp, eslocal index) {
+//		if (map.find(key) != map.end()) {
+//			cp[index] = map.find(key)->second;
+//		}
+//	};
+//
+//	if (_cluster[2] == 0) {
+//		for (eslocal i = 0; i < cNodes[0] * cNodes[1]; i++) {
+//			fill(_settings.dirichlet, "INNER_X", dirichlet_x, i);
+//			fill(_settings.dirichlet, "INNER_Y", dirichlet_y, i);
+//			fill(_settings.dirichlet, "INNER_Z", dirichlet_z, i);
+//			fill(_settings.forces, "INNER_X", forces_x, i);
+//			fill(_settings.forces, "INNER_Y", forces_y, i);
+//			fill(_settings.forces, "INNER_Z", forces_z, i);
+//		}
+//	}
+//
+//	if (_cluster[2] + 1 == _settings.layers) {
+//		for (eslocal i = (cNodes[2] - 1) * cNodes[0] * cNodes[1]; i < cNodes[2] * cNodes[0] * cNodes[1]; i++) {
+//			fill(_settings.dirichlet, "OUTER_X", dirichlet_x, i);
+//			fill(_settings.dirichlet, "OUTER_Y", dirichlet_y, i);
+//			fill(_settings.dirichlet, "OUTER_Z", dirichlet_z, i);
+//			fill(_settings.forces, "OUTER_X", forces_x, i);
+//			fill(_settings.forces, "OUTER_Y", forces_y, i);
+//			fill(_settings.forces, "OUTER_Z", forces_z, i);
+//		}
+//	}
 }
 
 template <class TElement>

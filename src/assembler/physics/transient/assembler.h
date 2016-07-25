@@ -16,9 +16,6 @@ struct TransientPhysics: public Physics {
 	virtual void assemble()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS";
-		const std::map<eslocal, double> &forces_x = _mesh.coordinates().property(FORCES_X).values();
-		const std::map<eslocal, double> &forces_y = _mesh.coordinates().property(FORCES_Y).values();
-		const std::map<eslocal, double> &forces_z = _mesh.coordinates().property(FORCES_Z).values();
 
 		K.resize(_mesh.parts());
 		M.resize(_mesh.parts());
