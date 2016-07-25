@@ -331,6 +331,13 @@ Mesh::~Mesh()
 	for (size_t i = 0; i < _elements.size(); i++) {
 		delete _elements[i];
 	}
+
+	for (size_t i = 0; i < _boundaryConditions.size(); i++) {
+		delete _boundaryConditions[i];
+	}
+	for (size_t i = 0; i < _initialConditions.size(); i++) {
+		delete _initialConditions[i];
+	}
 }
 
 void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) const
@@ -448,6 +455,13 @@ void Mesh::getSurface(Mesh &surface) const
 	surface._clusterBoundaries = _clusterBoundaries;
 	surface._DOFs = _DOFs;
 	surface._neighbours = _neighbours;
+	surface._materials = _materials;
+	for (size_t i = 0; i < _boundaryConditions.size(); i++) {
+		surface._boundaryConditions.push_back(_boundaryConditions[i]->copy());
+	}
+	for (size_t i = 0; i < _initialConditions.size(); i++) {
+		surface._initialConditions.push_back(_initialConditions[i]->copy());
+	}
 }
 
 void Mesh::makePartContinuous(size_t part)
