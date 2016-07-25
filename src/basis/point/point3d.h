@@ -20,20 +20,91 @@ public:
 		return 3;
 	}
 
-	void normalize();
-	double length() const;
-	const Point3D operator-() const;
-	void flip();
-	const Point3D operator-(const Point3D &) const;
-	const Point3D operator+(const Point3D &) const;
-	const Point3D operator*(double) const;
-	const Point3D operator/(double) const;
-	double scalar_product_with(const Point3D &);
-	Point3D &operator*=(double);
-	Point3D &operator+=(const Point3D &);
-	Point3D &operator-=(const Point3D &);
-	Point3D &operator=(const Point3D &);
-	Point3D &operator/=(double);
+	void normalize()
+	{
+		double l = 1.0 / sqrt(x * x + y * y + z * z);
+		x *= l;
+		y *= l;
+		z *= l;
+	}
+
+	double length() const
+	{
+		return sqrt(x * x + y * y + z * z);
+	}
+
+	const Point3D operator-() const
+	{
+		return Point3D(-x, -y, -z);
+	}
+
+	void flip()
+	{
+		x = -x;
+		y = -y;
+		z = -z;
+	}
+
+	const Point3D operator-(const Point3D &p) const
+	{
+		return Point3D(x - p.x, y - p.y, z - p.z);
+	}
+
+	const Point3D operator+(const Point3D &p) const
+	{
+		return Point3D(x + p.x, y + p.y, z + p.z);
+	}
+
+	const Point3D operator*(double scalar) const
+	{
+		return Point3D(x * scalar, y * scalar, z * scalar);
+	}
+
+	const Point3D operator/(double scalar) const
+	{
+		double xscalar = 1. / scalar;
+		return Point3D(x * xscalar, y * xscalar, z * xscalar);
+	}
+
+	Point3D &operator*=(double scalar)
+	{
+		x *= scalar;
+		y *= scalar;
+		z *= scalar;
+		return *this;
+	}
+
+	Point3D &operator+=(const Point3D &p)
+	{
+		x += p.x;
+		y += p.y;
+		z += p.z;
+		return *this;
+	}
+
+	Point3D &operator-=(const Point3D &p)
+	{
+		x -= p.x;
+		y -= p.y;
+		z -= p.z;
+		return *this;
+	}
+
+	Point3D &operator=(const Point3D &p)
+	{
+		x = p.x;
+		y = p.y;
+		z = p.z;
+		return *this;
+	}
+
+	Point3D &operator/=(double scalar)
+	{
+		x /= scalar;
+		y /= scalar;
+		z /= scalar;
+		return *this;
+	}
 
 	double x, y, z;
 };

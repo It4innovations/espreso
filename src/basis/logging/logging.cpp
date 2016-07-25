@@ -3,8 +3,6 @@
 
 namespace espreso {
 
-std::vector<Checkpoint> Measure::checkpoints = { Checkpoint("Start", Measure::time(), 0) };
-
 Test::~Test()
 {
 	if (!error) {
@@ -110,17 +108,6 @@ Measure::~Measure()
 
 	fprintf(stdout, "%s", os.str().c_str());
 	fflush(stdout);
-}
-
-void Measure::evaluateCheckpoints()
-{
-	if (config::env::MPIrank != 0) {
-		return;
-	}
-
-	for (size_t i = 0; i < checkpoints.size(); i++) {
-		std::cout << std::fixed << std::setprecision(3) << checkpoints[i].name << " : " << checkpoints[i].time << "\n";
-	}
 }
 
 double Measure::processMemory()

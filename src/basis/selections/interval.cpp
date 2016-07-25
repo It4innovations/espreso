@@ -1,10 +1,12 @@
 
 #include "interval.h"
 
+#include <vector>
+#include <string>
 
 using namespace espreso;
 
-std::ostream& espreso::input::operator<<(std::ostream& os, const espreso::input::Interval& interval)
+std::ostream& espreso::operator<<(std::ostream& os, const espreso::Interval& interval)
 {
 	for (size_t i = 0; i < 3; i++) {
 		os << (interval.excludeStart[i] ? "(" : "<");
@@ -17,7 +19,7 @@ std::ostream& espreso::input::operator<<(std::ostream& os, const espreso::input:
     return os;
 }
 
-std::istream& espreso::input::operator>>(std::istream& is, espreso::input::Interval& interval)
+std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
 {
 	std::string str;
 	getline(is, str);

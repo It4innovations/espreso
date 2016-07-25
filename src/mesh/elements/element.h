@@ -4,8 +4,6 @@
 #include <vector>
 #include <cstring>
 
-#include "1D/point.h"
-
 #include "../structures/coordinates.h"
 #include "esbasis.h"
 

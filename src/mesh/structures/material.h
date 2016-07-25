@@ -2,7 +2,7 @@
 #ifndef MESH_STRUCTURES_MATERIAL_H_
 #define MESH_STRUCTURES_MATERIAL_H_
 
-#include "../elements/1D/point.h"
+#include "esbasis.h"
 
 namespace espreso {
 

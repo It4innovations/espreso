@@ -2,11 +2,11 @@
 #ifndef SRC_INPUT_MESHGENERATOR_PARSERS_INTERVAL_H_
 #define SRC_INPUT_MESHGENERATOR_PARSERS_INTERVAL_H_
 
-#include "esbasis.h"
-#include "esmesh.h"
+#include <iostream>
+
+#include "../esbasis.h"
 
 namespace espreso {
-namespace input {
 
 class Interval {
 
@@ -27,7 +27,7 @@ public:
 			(((start[2] < z) || (!excludeStart[2] && start[2] == z)) && ((z < end[2]) || (!excludeEnd[2] && z == end[2])));
 	}
 
-	double isIn(const Point3D &p) const
+	double isIn(const Point &p) const
 	{
 		return isIn(p.x, p.y, p.z);
 	}
@@ -37,8 +37,6 @@ private:
 	bool excludeStart[3], excludeEnd[3];
 };
 
-
-}
 }
 
 

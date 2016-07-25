@@ -200,38 +200,38 @@ void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std:
 template <class TElement>
 void PlaneGenerator<TElement>::initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions)
 {
-	for (auto it = _settings.heat_sources.begin(); it != _settings.heat_sources.end(); ++it) {
-		if (_settings.regions.find(it->first) == _settings.regions.end()) {
-			ESINFO(GLOBAL_ERROR) << "Not specified region " << it->first;
-		}
-
-		const Interval &interval = _settings.regions.find(it->first)->second;
-		NodeInitialization *region = new NodeInitialization();
-		region->setValue("", Parser::strip(it->second));
-		conditions.push_back(region);
-	}
-
-	for (auto it = _settings.u.begin(); it != _settings.u.end(); ++it) {
-		if (_settings.regions.find(it->first) == _settings.regions.end()) {
-			ESINFO(GLOBAL_ERROR) << "Not specified region " << it->first;
-		}
-
-		const Interval &interval = _settings.regions.find(it->first)->second;
-		NodeInitialization *region = new NodeInitialization();
-
-		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
-			if (interval.isIn(coordinates[i])) {
-				region->nodes.push_back(i);
-			}
-		}
-
-		std::vector<std::string> expressions = Parser::split(Parser::strip(it->second), ",");
-		for (size_t i = 0; i < expressions.size(); i++) {
-			std::string param = Parser::getParameter(expressions[i], ":");
-			region->setValue(param, Parser::getValue(expressions[i], ":"));
-		}
-		conditions.push_back(region);
-	}
+//	for (auto it = _settings.heat_sources.begin(); it != _settings.heat_sources.end(); ++it) {
+//		if (_settings.regions.find(it->first) == _settings.regions.end()) {
+//			ESINFO(GLOBAL_ERROR) << "Not specified region " << it->first;
+//		}
+//
+//		const Interval &interval = _settings.regions.find(it->first)->second;
+//		NodeInitialization *region = new NodeInitialization();
+//		region->setValue("", Parser::strip(it->second));
+//		conditions.push_back(region);
+//	}
+//
+//	for (auto it = _settings.u.begin(); it != _settings.u.end(); ++it) {
+//		if (_settings.regions.find(it->first) == _settings.regions.end()) {
+//			ESINFO(GLOBAL_ERROR) << "Not specified region " << it->first;
+//		}
+//
+//		const Interval &interval = _settings.regions.find(it->first)->second;
+//		NodeInitialization *region = new NodeInitialization();
+//
+//		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
+//			if (interval.isIn(coordinates[i])) {
+//				region->nodes.push_back(i);
+//			}
+//		}
+//
+//		std::vector<std::string> expressions = Parser::split(Parser::strip(it->second), ",");
+//		for (size_t i = 0; i < expressions.size(); i++) {
+//			std::string param = Parser::getParameter(expressions[i], ":");
+//			region->setValue(param, Parser::getValue(expressions[i], ":"));
+//		}
+//		conditions.push_back(region);
+//	}
 }
 
 template<class TElement>

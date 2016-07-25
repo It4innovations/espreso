@@ -5,8 +5,6 @@
 #include "esbasis.h"
 #include "esmesh.h"
 
-#include "parsers/interval.h"
-
 namespace espreso {
 namespace input {
 

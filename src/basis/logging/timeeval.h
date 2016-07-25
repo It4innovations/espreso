@@ -14,32 +14,6 @@
 
 namespace espreso {
 
-struct Checkpoint
-{
-	Checkpoint(const std::string &name, double time, size_t level)
-	:name(name), time(time), level(level) { };
-
-	double time;
-	size_t level;
-	std::string name;
-};
-
-class Interval
-{
-public:
-	Interval(const std::string &name, double duration): name(name), duration(duration) {};
-
-	void insert(const Interval &interval)
-	{
-		subIntervals.push_back(interval);
-	}
-protected:
-	double duration;
-	std::string name;
-
-	std::vector<Interval> subIntervals;
-};
-
 struct TimeEvent
 {
 	friend class TimeEval;
