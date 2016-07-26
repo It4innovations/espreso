@@ -15,7 +15,7 @@ struct Physics {
 	{
 		ESINFO(PROGRESS2) << "Save matrices K and RHS";
 		for (size_t p = 0; p < K.size(); p++) {
-			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
+			std::ofstream osK(Logging::prepareFile(p, "Kreg").c_str());
 			osK << K[p];
 			osK.close();
 		}
