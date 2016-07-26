@@ -250,14 +250,14 @@ void SparseSolverMUMPS::Solve(SEQ_VECTOR <double> & rhs_sol) {
 void SparseSolverMUMPS::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, int n_rhs) {
 	id.job		   = 3; // set MUMPS to solve the system
 
-	int rhs_size   = rhs.size() / n_rhs; // size of one RHS
+	int rhs_size   = rhs.size() / n_rhs; // size of one InitialCondition
 
     sol = rhs;
 
-	id.ICNTL(20) = 0; // dense RHS
-	id.nrhs		 = n_rhs; // number of RHS vectors
-	id.lrhs		 = rhs_size; // size of one RHS vector
-	id.rhs		 = &sol[0]; // init MUMPS instance with vector of RHS ('rhs' param)
+	id.ICNTL(20) = 0; // dense InitialCondition
+	id.nrhs		 = n_rhs; // number of InitialCondition vectors
+	id.lrhs		 = rhs_size; // size of one InitialCondition vector
+	id.rhs		 = &sol[0]; // init MUMPS instance with vector of InitialCondition ('rhs' param)
 
 	dmumps_c(&id); // solve the system
 
@@ -273,7 +273,7 @@ void SparseSolverMUMPS::Solve(SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 }
 
 /** @brief Solves the system of equations, with multiple right-hand sides,
- *         where the user can choose the starting index of RHS.
+ *         where the user can choose the starting index of InitialCondition.
  *
  * TODO poresit nejasnosti s indexy a dopsat jejich popis
  * @param[out] sol Solution of the system
@@ -342,8 +342,8 @@ void SparseSolverMUMPS::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_o
 	id.irhs_ptr	   = &tmpM.CSR_I_row_indices[0]; // "pointers" to the columns
 	id.irhs_sparse = &tmpM.CSR_J_col_indices[0]; // row indices
 	id.rhs_sparse  = &tmpM.CSR_V_values[0]; // non-zero values
-	id.nz_rhs	   = tmpM.nnz; // total amount of non-zero values in RHS
-	id.nrhs		   = tmpM.cols; // number of RHS vectors
+	id.nz_rhs	   = tmpM.nnz; // total amount of non-zero values in InitialCondition
+	id.nrhs		   = tmpM.cols; // number of InitialCondition vectors
     id.lrhs        = tmpM.rows; // TODO zjistit, jestli je nutne
 
 	unsigned int id_rhs_len = A_in.cols * A_in.rows;
@@ -413,7 +413,7 @@ void SparseSolverMUMPS::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_ou
 	MKL_INT info;
 
 
-	// Convert input matrix (RHS) to dense format
+	// Convert input matrix (InitialCondition) to dense format
 
 	//void mkl_ddnscsr (
 	//	MKL_INT *job,
@@ -422,7 +422,7 @@ void SparseSolverMUMPS::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_ou
 	//	double *Acsr, MKL_INT *AJ, MKL_INT *AI,
 	//	MKL_INT *info);
 
-//TODO sparse RHS misto dense - i v SolveMatSparse
+//TODO sparse InitialCondition misto dense - i v SolveMatSparse
 	mkl_ddnscsr (
 		job,
 		&m, &n,

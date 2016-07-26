@@ -49,13 +49,9 @@ public:
 		tFaces.end(); measurement.addEvent(tFaces);
 		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
 
-		TimeEvent tBoundaryConditions("boundary conditions"); tBoundaryConditions.start();
-		boundaryConditions(mesh._coordinates, mesh._boundaryConditions);
-		tBoundaryConditions.end(); measurement.addEvent(tBoundaryConditions);
-
-		TimeEvent tInitialConditions("boundary conditions"); tInitialConditions.start();
-		initialConditions(mesh.coordinates(), mesh._initialConditions);
-		tBoundaryConditions.end(); measurement.addEvent(tBoundaryConditions);
+		TimeEvent tSettings("settings"); tSettings.start();
+		settings(mesh._evaluators, mesh._elements, mesh._coordinates);
+		tSettings.end(); measurement.addEvent(tSettings);
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
 		clusterBoundaries(mesh._clusterBoundaries, mesh._neighbours);
@@ -84,8 +80,7 @@ protected:
 	virtual void elements(std::vector<Element*> &elements) = 0;
 	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void faces(Faces &faces) { };
-	virtual void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions) = 0;
-	virtual void initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions) = 0;
+	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;
 
 	virtual void open() {};

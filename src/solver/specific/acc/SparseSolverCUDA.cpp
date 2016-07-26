@@ -650,7 +650,7 @@ int SparseSolverCUDA::Factorization(const std::string &str) {
 		printf("---workspaceInBytes: %zu B\n", workspaceInBytes);
 
 		printf ("\nFactorization completed ... ");
-		printf("I: %d, J: %d, V: %d, RHS: %d, celkem: %d\n", (rows+1)*sizeof(int), nnz*sizeof(int), nnz*sizeof(float), rows*sizeof(float),
+		printf("I: %d, J: %d, V: %d, InitialCondition: %d, celkem: %d\n", (rows+1)*sizeof(int), nnz*sizeof(int), nnz*sizeof(float), rows*sizeof(float),
 			(rows+1)*sizeof(int)+ nnz*sizeof(int)+ nnz*sizeof(float)+ rows*sizeof(float));
 	#endif
 
@@ -687,7 +687,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	/* .. Back substitution and iterative refinement. */
 	/* -------------------------------------------------------------------- */
 	if (USE_FLOAT){
-		// Reordering RHS
+		// Reordering InitialCondition
 		if(reorder){
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_fl[i] = (float)rhs_sol[permutation[i]];
@@ -724,7 +724,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		}
 
 	} else {
-		// Reordering RHS
+		// Reordering InitialCondition
 		if(reorder){
 			// rhs_sol_reordered.resize(permutation_size);
 
@@ -811,7 +811,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			CHECK_ERR(cudaMalloc ((void**)&D_rhs_sol_fl, sizeof(float) * total_size));
 		}
 
-		// Reordering RHS
+		// Reordering InitialCondition
 		if(reorder){
 			for (i = 0; i < total_size; ++i){
 				rhs_sol_fl[i] = (float)rhs[permutation[i % permutation_size] + (i / permutation_size) * permutation_size];
@@ -855,7 +855,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			CHECK_ERR(cudaMalloc ((void**)&D_rhs_sol, sizeof(double) * total_size));
 		}
 
-		// Reordering RHS
+		// Reordering InitialCondition
 		if(reorder){
 			if(m_Kplus_size < total_size)
 				rhs_sol_reordered.resize(total_size);
@@ -940,7 +940,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 	// copy(one_rhs_sol.begin(), one_rhs_sol.end(), &sol[sol_start_index]);
 
 	if (USE_FLOAT){
-		// Reordering RHS
+		// Reordering InitialCondition
 		if(reorder){
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_fl[i] = (float)rhs[rhs_start_index + permutation[i]];
@@ -976,7 +976,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 			}
 		}
 	} else {
-		// Reordering RHS
+		// Reordering InitialCondition
 		if(reorder){
 			for (i = 0; i < permutation_size; ++i){
 				rhs_sol_reordered[i] = rhs[rhs_start_index + permutation[i]];
@@ -1093,7 +1093,7 @@ void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_ou
 				}
 			}
 
-			//Reset RHS and SOL
+			//Reset InitialCondition and SOL
 			fill(rhs.begin(), rhs.end(), 0); // reset entire vector to 0
 			//fill(sol.begin(), sol.end(), 0); // reset entire vector to 0
 		}
@@ -1163,7 +1163,7 @@ void SparseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out
 	MKL_INT info;
 
 
-	// Convert input matrix (RHS) to dense format
+	// Convert input matrix (InitialCondition) to dense format
 
 	//void mkl_ddnscsr (
 	//	int *job,

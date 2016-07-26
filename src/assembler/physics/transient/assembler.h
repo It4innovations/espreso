@@ -15,7 +15,7 @@ struct TransientPhysics: public Physics {
 
 	virtual void assemble()
 	{
-		ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS";
+		ESINFO(PROGRESS2) << "Assemble matrices K, M, and InitialCondition";
 
 		K.resize(_mesh.parts());
 		M.resize(_mesh.parts());
@@ -23,12 +23,6 @@ struct TransientPhysics: public Physics {
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
-
-			const std::vector<BoundaryCondition*> &bc = _mesh.boundaryConditions();
-			for (size_t i = 0; i < bc.size(); i++) {
-				bc[i]->fillForces(DOFs, _mesh, f[p], p);
-			}
-
 			ESINFO(PROGRESS2) << Info::plain() << ".";
 		}
 		ESINFO(PROGRESS2);
@@ -36,7 +30,7 @@ struct TransientPhysics: public Physics {
 
 	virtual void save()
 	{
-		ESINFO(PROGRESS2) << "Save matrices K, M, RHS, and A constant";
+		ESINFO(PROGRESS2) << "Save matrices K, M, InitialCondition, and A constant";
 		for (size_t p = 0; p < _mesh.parts(); p++) {
 			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
 			osK << K[p];
@@ -56,7 +50,8 @@ struct TransientPhysics: public Physics {
 		osA.close();
 	}
 
-	TransientPhysics(const Mesh &mesh, std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype): Physics(mesh, DOFs, mtype) {};
+	TransientPhysics(const Mesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype)
+	: Physics(mesh, unknowns, dirichlet, mtype) {};
 	virtual ~TransientPhysics() {};
 
 	std::vector<SparseMatrix> M; // T will be deleted

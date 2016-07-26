@@ -28,9 +28,10 @@ static void defaultSettings(CubeSettings &settings)
 	}
 
 	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions.", verbosity });
-	parameters.push_back({ "FORCES", forces, "Boundary forces.", verbosity });
 
-	parameters.push_back({ "REGIONS", regions, "Named sets of nodes.", verbosity });
+	parameters.push_back({ "NODES", nodes, "Named sets of nodes.", verbosity });
+	parameters.push_back({ "FACES", faces, "Named sets of nodes.", verbosity });
+	parameters.push_back({ "ELEMENTS", elements, "Named sets of nodes.", verbosity });
 }
 
 	Configuration configuration(CubeSettings::description, options);

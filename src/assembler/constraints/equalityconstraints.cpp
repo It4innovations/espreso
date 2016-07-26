@@ -72,7 +72,7 @@ static bool clusterMappingCompare(const std::vector<esglobal> &v1, const std::ve
 	return v1[0] < v2[0];
 }
 
-Constraints::Constraints(const Mesh &mesh, std::vector<DOFType> &DOFs, size_t firstIndex)
+Constraints::Constraints(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex)
 : _mesh(mesh), _subdomains(mesh.parts()), _DOFs(DOFs), _firstIndex(firstIndex)
 {
 	_neighbours = mesh.neighbours();
@@ -80,7 +80,7 @@ Constraints::Constraints(const Mesh &mesh, std::vector<DOFType> &DOFs, size_t fi
 	std::sort(_neighbours.begin(), _neighbours.end());
 }
 
-size_t Dirichlet::assemble(
+size_t FixedDOFs::assemble(
 		std::vector<SparseMatrix> &B1,
 		std::vector<std::vector<esglobal> > &B1clustersMap,
 		std::vector<std::vector<double> > &values)
@@ -766,7 +766,7 @@ static void postProcess(
 	}
 }
 
-EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<DOFType> &DOFs): _mesh(mesh), _DOFs(DOFs)
+EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<Property> &DOFs): _mesh(mesh), _DOFs(DOFs)
 {
 	B0.resize(_mesh.parts());
 	B0subdomainsMap.resize(_mesh.parts());
@@ -788,13 +788,18 @@ EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<DOFType> 
 		B1[p].type = 'G';
 	}
 
-	const std::vector<BoundaryCondition*> &bc = mesh.boundaryConditions();
-	for (size_t i = 0; i < bc.size(); i++) {
-		bc[i]->fillDirichlet(DOFs, mesh, dirichlet, dirichletValues);
+	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
+		const Point &p = mesh.coordinates()[i];
+		for (size_t d = 0; d < DOFs.size(); d++) {
+			if (mesh.coordinates().settings(i).isSet(DOFs[d])) {
+				dirichlet.push_back(DOFs.size() * i + d);
+				dirichletValues.push_back(mesh.coordinates().settings(i)[DOFs[d]].back()->evaluate(p.x, p.y, p.z));
+			}
+		}
 	}
 }
 
-EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<DOFType> &DOFs, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase)
+EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<Property> &DOFs, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase)
 : _mesh(mesh), _DOFs(DOFs)
 {
 	B0.resize(_mesh.parts());
@@ -826,7 +831,7 @@ void EqualityConstraints::assemble()
 {
 	size_t lambdaCounter = 0;
 
-	Dirichlet dir(_mesh, _DOFs, lambdaCounter, dirichlet, dirichletValues);
+	FixedDOFs dir(_mesh, _DOFs, lambdaCounter, dirichlet, dirichletValues);
 	lambdaCounter += dir.assemble(B1, B1clustersMap, B1c);
 
 	// TODO: duplicity is not important for dirichlet -> it is always 1

@@ -236,73 +236,73 @@ void WorkbenchParser::mp(std::vector<Material> &materials)
 	}
 }
 
-void WorkbenchParser::displacement(std::vector<BoundaryCondition*> &conditions)
-{
-	std::vector<std::string> params = divide(_line);
-
-	if (!params[1].compare(0, 3, "all")) {
-		if (!params[2].compare(0, 3, "all")) {
-			if (nSelection == -1) {
-				ESINFO(GLOBAL_ERROR) << "Displacement on all nodes is not supported";
-			} else {
-				ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
-				//conditions[nSelection]->set("0", ConditionType::DIRICHLET);
-			}
-		} else {
-			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
-		}
-	} else {
-		ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[1] << "'";
-	}
-}
+//void WorkbenchParser::displacement(std::vector<Dirichlet*> &dirichlet)
+//{
+//	std::vector<std::string> params = divide(_line);
+//
+//	if (!params[1].compare(0, 3, "all")) {
+//		if (!params[2].compare(0, 3, "all")) {
+//			if (nSelection == -1) {
+//				ESINFO(GLOBAL_ERROR) << "Displacement on all nodes is not supported";
+//			} else {
+//				ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+//				//conditions[nSelection]->set("0", ConditionType::DIRICHLET);
+//			}
+//		} else {
+//			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
+//		}
+//	} else {
+//		ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[1] << "'";
+//	}
+//}
 
 void WorkbenchParser::loadvar()
 {
 
 }
 
-void WorkbenchParser::cmblock(std::vector<BoundaryCondition*> &conditions)
-{
-	std::vector<std::string> params = divide(_line);
+//void WorkbenchParser::cmblock(std::vector<Dirichlet*> &dirichlet)
+//{
+//	std::vector<std::string> params = divide(_line);
+//
+//	if (params[2].compare(0, 4, "NODE") == 0) {
+//		eslocal size = std::stol(params[3]);
+////		NodeCondition *nc = new NodeCondition();
+//
+//		getline(_file, _line);
+//		std::vector<int> sizes = parseBlockHeader(_line);
+//
+//		getline(_file, _line);
+//		int start = 0, n = 0;
+//		ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+//		//nc->nodes().reserve(size);
+//		while (0) { //nc->nodes().size() < size) {
+//			//nc->nodes().push_back(std::stol(_line.substr(start, sizes[n])) - 1);
+//			start += sizes[n++];
+//			if (n % sizes.size() == 0) {
+//				getline(_file, _line);
+//				start = 0;
+//				n = 0;
+//			}
+//		}
+//		//conditions.push_back(nc);
+//		//selections.push_back({params[1], ConditionElements::NODES});
+//	} else {
+//		ESINFO(GLOBAL_ERROR) << "Not implemented loading of cmblock of elements";
+//	}
+//}
 
-	if (params[2].compare(0, 4, "NODE") == 0) {
-		eslocal size = std::stol(params[3]);
-		NodeCondition *nc = new NodeCondition();
-
-		getline(_file, _line);
-		std::vector<int> sizes = parseBlockHeader(_line);
-
-		getline(_file, _line);
-		int start = 0, n = 0;
-		ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
-		//nc->nodes().reserve(size);
-		while (0) { //nc->nodes().size() < size) {
-			//nc->nodes().push_back(std::stol(_line.substr(start, sizes[n])) - 1);
-			start += sizes[n++];
-			if (n % sizes.size() == 0) {
-				getline(_file, _line);
-				start = 0;
-				n = 0;
-			}
-		}
-		//conditions.push_back(nc);
-		//selections.push_back({params[1], ConditionElements::NODES});
-	} else {
-		ESINFO(GLOBAL_ERROR) << "Not implemented loading of cmblock of elements";
-	}
-}
-
-void WorkbenchParser::eblock(std::vector<BoundaryCondition*> &conditions)
-{
-	ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
-	//SurfaceCondition *ec = new SurfaceCondition();
-	//eblock(ec->faces());
-
-	//conditions.push_back(ec);
-	std::stringstream ss;
-	ss << eType.back();
-	selections.push_back({ss.str(), ConditionElements::ELEMENTS});
-}
+//void WorkbenchParser::eblock(std::vector<Dirichlet*> &dirichlet)
+//{
+//	ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+//	//SurfaceCondition *ec = new SurfaceCondition();
+//	//eblock(ec->faces());
+//
+//	//conditions.push_back(ec);
+//	std::stringstream ss;
+//	ss << eType.back();
+//	selections.push_back({ss.str(), ConditionElements::ELEMENTS});
+//}
 
 void WorkbenchParser::et()
 {

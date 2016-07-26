@@ -111,7 +111,7 @@ void AnsysMatsol::materials(std::vector<Material> &materials)
 	materials.resize(1);
 }
 
-void AnsysMatsol::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
+void AnsysMatsol::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
 {
 	ESINFO(GLOBAL_ERROR) << "MATSOL format is not longer supported.";
 //	std::vector<std::string> files = {

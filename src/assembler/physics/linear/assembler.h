@@ -15,7 +15,7 @@ struct LinearPhysics: public Physics {
 
 	virtual void assemble()
 	{
-		ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and RHS";
+		ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and InitialCondition";
 
 		K.resize(_mesh.parts());
 		R1.resize(_mesh.parts());
@@ -25,18 +25,13 @@ struct LinearPhysics: public Physics {
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
-
-			const std::vector<BoundaryCondition*> &bc = _mesh.boundaryConditions();
-			for (size_t i = 0; i < bc.size(); i++) {
-				bc[i]->fillForces(DOFs, _mesh, f[p], p);
-			}
-
 			ESINFO(PROGRESS2) << Info::plain() << ".";
 		}
 		ESINFO(PROGRESS2);
 	}
 
-	LinearPhysics(const Mesh &mesh, std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype): Physics(mesh, DOFs, mtype) {};
+	LinearPhysics(const Mesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype)
+	: Physics(mesh, unknowns, dirichlet, mtype) {};
 	virtual ~LinearPhysics() {};
 
 protected:

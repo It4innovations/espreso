@@ -1250,7 +1250,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 
   // initial gradient
   beta = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
-  // RHS for system H_{i+1,i} * y{i} = b_H
+  // InitialCondition for system H_{i+1,i} * y{i} = b_H
   b_H[0] = beta;
   // set-up first basis vector   (A * V_{i} = V_{i+1} * H_{i+1,i})
   cilk_for (eslocal i = 0; i < cluster.my_lamdas_indices.size(); i++) {
@@ -2748,6 +2748,28 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	 //GGtFactor_time.printLastStatMPIPerNode();
 	 GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
 
+	 TimeEvent GGT_rhs_time("Time to create InitialCondition for get GGTINV"); GGT_rhs_time.start();
+	 //TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
+	SEQ_VECTOR <double> rhs   (cluster.G1.rows * GGt_tmp.rows, 0.0);
+	cluster.GGtinvV.resize    (cluster.G1.rows * GGt_tmp.rows, 0.0);
+
+	//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
+	for (eslocal i = 0; i < cluster.G1.rows; i++) {
+		eslocal index = (GGt_tmp.rows * i) + (cluster.G1.rows * mpi_rank) + i;
+		rhs[index] = 1;
+	}
+	GGT_rhs_time.end(); GGT_rhs_time.printStatMPI(); preproc_timing.addEvent(GGT_rhs_time);
+
+	 TimeEvent GGt_solve_time("Running solve to get stripe(s) of GGtINV"); GGt_solve_time.start();
+
+	GGt_tmp.Solve(rhs, cluster.GGtinvV, cluster.G1.rows);
+
+	cluster.GGtinvM.dense_values = cluster.GGtinvV;
+	cluster.GGtinvM.cols 		 = cluster.G1.rows;
+	cluster.GGtinvM.rows	 	 = GGt_tmp.rows;
+    cluster.GGtinvM.type 		 = 'G';
+
+	GGtsize  = GGt_tmp.cols;
 	GGt.cols = GGt_tmp.cols;
 	GGt.rows = GGt_tmp.rows;
 	GGt.nnz  = GGt_tmp.nnz;

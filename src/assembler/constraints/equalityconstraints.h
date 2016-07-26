@@ -9,25 +9,25 @@ namespace espreso {
 class Constraints
 {
 protected:
-	Constraints(const Mesh &mesh, std::vector<DOFType> &DOFs, size_t firstIndex);
+	Constraints(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex);
 
 	const Mesh &_mesh;
 	std::vector<int> _neighbours;
 
 	size_t _subdomains;
 	size_t _firstIndex;
-	std::vector<DOFType> _DOFs;
+	std::vector<Property> _DOFs;
 };
 
-class Dirichlet: public Constraints
+class FixedDOFs: public Constraints
 {
 public:
-	Dirichlet(const Mesh &mesh, std::vector<DOFType>& DOFs, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
+	FixedDOFs(const Mesh &mesh, std::vector<Property>& DOFs, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
 	:Constraints(mesh, DOFs, offset),
 	 _dirichletSize(indices.size()), _dirichletOffset(0),
 	 _dirichletIndices(indices.data()), _dirichletValues(values.data()) { };
 
-	Dirichlet(const Mesh &mesh, std::vector<DOFType> &DOFs, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
+	FixedDOFs(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
 	:Constraints(mesh, DOFs, firstIndex),
 	 _dirichletSize(size), _dirichletOffset(offset),
 	_dirichletIndices(indices), _dirichletValues(values) { };
@@ -48,19 +48,19 @@ protected:
 class Gluing: public Constraints
 {
 public:
-	Gluing(const Mesh &mesh, std::vector<DOFType> &DOFs, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
+	Gluing(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
 	:Constraints(mesh, DOFs, firstIndex),
 	  _ignoredDOFsSize(ignoredDOFs.size()), _ignoredDOFsOffset(0), _ignoredDOFs(ignoredDOFs.data()),
 	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
-	Gluing(const Mesh &mesh, std::vector<DOFType> &DOFs, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
+	Gluing(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
 	:Constraints(mesh, DOFs, firstIndex),
 	 _ignoredDOFsSize(ignoredDOFsSize), _ignoredDOFsOffset(ignoredDOFsOffset), _ignoredDOFs(ignoredDOFs),
 	 _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
 	 _c2g(mesh.coordinates().clusterToGlobal()) { };
 
-	Gluing(const Mesh &mesh, std::vector<DOFType> &DOFs)
+	Gluing(const Mesh &mesh, std::vector<Property> &DOFs)
 	:Constraints(mesh, DOFs, 0),
 	  _ignoredDOFsSize(0), _ignoredDOFsOffset(0), _ignoredDOFs(NULL),
 	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
@@ -111,8 +111,8 @@ private:
 template <class TInput>
 class EqualityConstraints: public Assembler<TInput> {
 
-	EqualityConstraints(const Mesh &mesh, std::vector<DOFType> &DOFs);
-	EqualityConstraints(const Mesh &mesh, std::vector<DOFType> &DOFs, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase);
+	EqualityConstraints(const Mesh &mesh, std::vector<Property> &DOFs);
+	EqualityConstraints(const Mesh &mesh, std::vector<Property> &DOFs, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase);
 
 protected:
 	EqualityConstraints(TInput &input);
@@ -125,7 +125,7 @@ protected:
 
 protected:
 	const Mesh &_mesh;
-	std::vector<DOFType> _DOFs;
+	std::vector<Property> _DOFs;
 
 	std::vector<std::vector<double> > _B1c;
 	std::vector<std::vector<double> > _B1duplicity;

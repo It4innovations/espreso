@@ -95,7 +95,7 @@ void Esdata::materials(std::vector<Material> &materials)
 	is.close();
 }
 
-void Esdata::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
+void Esdata::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/boundaryConditions.dat";

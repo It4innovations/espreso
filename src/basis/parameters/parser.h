@@ -51,6 +51,7 @@ class Parser {
 public:
 	static std::string getParameter(const std::string &line, const std::string &separator = "=");
 	static std::string getValue(const std::string &line, const std::string &separator = "=");
+	static bool contains(const std::string &line, const std::string &separator);
 
 	static std::string strip(const std::string &line);
 	static std::vector<std::string> split(const std::string &line, const std::string &separator);

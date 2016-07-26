@@ -1097,7 +1097,7 @@ void ClusterBase::CreateF0() {
 
 	ESINFO(PROGRESS2) << "HFETI - Create F0";
 
-	 TimeEvent solve_F0_time("B0 compression; F0 multiple RHS solve");
+	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
 	 solve_F0_time.start();
 
 	cilk_for (eslocal d = 0; d < domains.size(); d++) {
@@ -1228,7 +1228,7 @@ void ClusterBase::CreateSa() {
 	G0.MatTranspose(G0t);
 	 G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time);
 
-	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as RHS"); G0solve_Sa_time.start();
+	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); G0solve_Sa_time.start();
 	if (!PARDISO_SC) {
 		if (MPIrank == 0) {
 			F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0;

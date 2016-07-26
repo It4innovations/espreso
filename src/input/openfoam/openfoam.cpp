@@ -155,10 +155,6 @@ void OpenFOAM::faces(Faces &faces) {
 	_faces.clear();
 }
 
-void OpenFOAM::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions) {
-
-}
-
 void OpenFOAM::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) {
 	std::set<int> neighs;
 

@@ -25,8 +25,7 @@ protected:
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials) { }; // unimportant
-	void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions) { }; // TODO: change dirichlet structure to array
-	void initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions) { };
+	void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 	void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) { }

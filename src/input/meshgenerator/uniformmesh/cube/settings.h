@@ -29,11 +29,8 @@ struct CubeSettings: public UniformSettings {
 	double problemLength[3];
 
 	std::map<std::string, std::string> dirichlet;
-	std::map<std::string, std::string> forces;
-	std::map<std::string, std::string> u;
-	std::map<std::string, std::string> heat_sources;
-
-	std::map<std::string, Interval> regions;
+	std::map<std::string, std::map<std::string, std::string> > rhs;
+	std::map<std::string, std::map<std::string, std::string> > initialization;
 
 protected:
 	void defaultCubeSettings();

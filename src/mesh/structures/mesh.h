@@ -21,8 +21,6 @@
 #include "../elements/elements.h"
 #include "coordinates.h"
 #include "boundaries.h"
-#include "boundarycondition.h"
-#include "initialcondition.h"
 #include "faces.h"
 #include "material.h"
 
@@ -57,7 +55,8 @@ public:
 		return _coordinates;
 	}
 
-	Faces& faces() {
+	Faces& faces()
+	{
 		return _faces;
 	}
 
@@ -69,16 +68,6 @@ public:
 	const Boundaries& clusterBoundaries() const
 	{
 		return _clusterBoundaries;
-	}
-
-	const std::vector<BoundaryCondition*>& boundaryConditions() const
-	{
-		return _boundaryConditions;
-	}
-
-	const InitialCondition* initialConditions(InitialConditionType type) const
-	{
-		return _initialConditions[static_cast<int>(type)];
 	}
 
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
@@ -164,12 +153,6 @@ protected:
 	/** @brief Map of points to clusters. */
 	Boundaries _clusterBoundaries;
 
-	/** @brief Array that stores all boundary conditions of the mesh. */
-	std::vector<BoundaryCondition*> _boundaryConditions;
-
-	/** @brief Array that stores all initial conditions of the mesh. */
-	std::vector<InitialCondition*> _initialConditions;
-
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
 
@@ -178,6 +161,9 @@ protected:
 
 	/** @brief list of materials in the mesh*/
 	std::vector<Material> _materials;
+
+	/** @brief list of evaluators */
+	std::vector<Evaluator*> _evaluators;
 
 private:
 	Mesh(const Mesh &mesh): _DOFs(mesh._DOFs)

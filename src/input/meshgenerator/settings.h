@@ -2,6 +2,7 @@
 #ifndef INPUT_MESHGENERATOR_SETTINGS_H_
 #define INPUT_MESHGENERATOR_SETTINGS_H_
 
+#include "selections/interval.h"
 #include "esbasis.h"
 #include "esmesh.h"
 
@@ -42,6 +43,12 @@ struct Settings {
 
 	std::map<std::string, double> material1;
 	std::map<std::string, double> material2;
+
+	std::map<std::string, Interval> nodes;
+	std::map<std::string, Interval> faces;
+	std::map<std::string, Interval> elements;
+
+	std::map<std::string, std::map<std::string, std::string> > properties;
 
 	bool useMetis;
 };

@@ -9,12 +9,7 @@ using namespace espreso;
 std::ostream& espreso::operator<<(std::ostream& os, const espreso::Interval& interval)
 {
 	for (size_t i = 0; i < 3; i++) {
-		os << (interval.excludeStart[i] ? "(" : "<");
-		os << interval.start[i];
-		os << ",";
-		os << interval.end[i];
-		os << (interval.excludeEnd[i] ? ")" : ">");
-		os << " ";
+		os << "(" << interval.start[i] << "," << interval.end[i] << ")";
 	}
     return os;
 }
@@ -23,6 +18,11 @@ std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
 {
 	std::string str;
 	getline(is, str);
+
+	if (StringCompare::caseInsensitiveEq(Parser::strip(str), "ALL")) {
+		return is;
+	}
+	interval._all = false;
 
 	std::vector<std::string> values;
 	while (str.size()) {
@@ -38,18 +38,20 @@ std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
 		str.erase(0, end + 1);
 	}
 
+	bool excludeStart, excludeEnd;
 	for (size_t i = 0; i < values.size() && i < 3; i++) {
+		excludeStart = excludeEnd = false;
 		std::vector<std::string> bounds = Parser::split(Parser::strip(values[i]), ",;");
 		if (bounds.size() != 2) {
 			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << values[i] << "'. Illegal delimiter.";
 		}
 		if (bounds[0][0] == '(') {
-			interval.excludeStart[i] = true;
+			excludeStart = true;
 		} else if (bounds[0][0] != '<') {
 			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << values[i] << "'. Unknown bracer '" << bounds[0][0] << "'.";
 		}
 		if (bounds[1][bounds[1].size() - 1] == ')') {
-			interval.excludeEnd[i] = true;
+			excludeEnd = true;
 		} else if (bounds[1][bounds[1].size() - 1] != '>') {
 			ESINFO(GLOBAL_ERROR) << "Cannot parse interval '" << values[i] << "'. Unknown bracer '" << bounds[1][bounds[1].size() - 1] << "'.";
 		}
@@ -59,9 +61,15 @@ std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
 
 		std::stringstream ss1(bounds[0]);
 		ss1 >> interval.start[i];
+		if (!excludeStart) {
+			interval.start[i] -= interval.epsilon;
+		}
 
 		std::stringstream ss2(bounds[1]);
 		ss2 >> interval.end[i];
+		if (!excludeEnd) {
+			interval.end[i] += interval.epsilon;
+		}
 	}
 
 	return is;

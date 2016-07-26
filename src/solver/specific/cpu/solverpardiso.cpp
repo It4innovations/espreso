@@ -617,7 +617,7 @@ void SparseSolverPardiso::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B
 				}
 			}
 
-			//Reset RHS and SOL
+			//Reset InitialCondition and SOL
 			fill(rhs.begin(), rhs.end(), 0); // reset entire vector to 0
 			//fill(sol.begin(), sol.end(), 0); // reset entire vector to 0
 		}
@@ -682,7 +682,7 @@ void SparseSolverPardiso::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_
 	eslocal info;
 
 
-	// Convert input matrix (RHS) to dense format
+	// Convert input matrix (InitialCondition) to dense format
 
 	//void mkl_ddnscsr (
 	//	MKL_INT *job,

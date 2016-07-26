@@ -19,7 +19,6 @@ void Esdata::store(double shrinkSubdomain, double shrinkCluster)
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
 	materials(_mesh, _mesh.materials());
-	boundaryConditions(_mesh.coordinates(), _mesh.boundaryConditions(), _mesh.DOFs());
 	boundaries(_mesh);
 }
 
@@ -48,18 +47,18 @@ void Esdata::coordinates(const Coordinates &coordinates)
 }
 
 
-void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vector<BoundaryCondition*> &conditions, size_t DOFs)
-{
-	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
-		std::ofstream os;
-		eslocal value;
-
-		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaryConditions.dat";
-
-		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-
-		ESINFO(GLOBAL_ERROR) << "Broken VTK OUTPUT";
+//void Esdata::dirichlet(const Coordinates &coordinates, const std::vector<Dirichlet*> &dirichlet)
+//{
+//	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
+//		std::ofstream os;
+//		eslocal value;
+//
+//		std::stringstream ss;
+//		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaryConditions.dat";
+//
+//		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+//
+//		ESINFO(GLOBAL_ERROR) << "Broken VTK OUTPUT";
 //		size_t counter = conditions.size();
 //		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));
 //		auto &l2c = coordinates.localToCluster(p);
@@ -86,10 +85,10 @@ void Esdata::boundaryConditions(const Coordinates &coordinates, const std::vecto
 //				}
 //			}
 //		}
-
-		os.close();
-	}
-}
+//
+//		os.close();
+//	}
+//}
 
 void Esdata::elements(const Mesh &mesh)
 {

@@ -106,145 +106,42 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 	esglobal cubeElements[3], partSize[3], cOffset[3], offset[3];
 	eslocal subdomain[3], element[3], material, counter;
 
-	for (size_t i = 0; i < 3; i++) {
+	for (size_t i = 0; i < 2; i++) {
 		cubeElements[i] = _settings.clusters[i] * _settings.subdomainsInCluster[i] * _settings.elementsInSubdomain[i];
 		cOffset[i] = _cluster[i] * _settings.subdomainsInCluster[i] * _settings.elementsInSubdomain[i];
 		partSize[i] = std::ceil(cubeElements[i] / (double)_settings.materialsLayers[i]);
 	}
 
 	counter = 0;
-	for (subdomain[2] = 0; subdomain[2] < _settings.subdomainsInCluster[2]; subdomain[2]++) {
-			for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
-				for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
+	for (subdomain[1] = 0; subdomain[1] < _settings.subdomainsInCluster[1]; subdomain[1]++) {
+		for (subdomain[0] = 0; subdomain[0] < _settings.subdomainsInCluster[0]; subdomain[0]++) {
 
-					for (element[2] = 0; element[2] < _settings.elementsInSubdomain[2]; element[2]++) {
-						for (element[1] = 0; element[1] < _settings.elementsInSubdomain[1]; element[1]++) {
-							for (element[0] = 0; element[0] < _settings.elementsInSubdomain[0]; element[0]++) {
+				for (element[1] = 0; element[1] < _settings.elementsInSubdomain[1]; element[1]++) {
+					for (element[0] = 0; element[0] < _settings.elementsInSubdomain[0]; element[0]++) {
 
-								material = 0;
-								for (eslocal i = 0; i < 3; i++) {
-									offset[i] = cOffset[i] + subdomain[i] * _settings.elementsInSubdomain[i] + element[i];
-									if (offset[i] / partSize[i] % 2 == 1) {
-										material = (material + 1) % 2;
-									}
-								}
-								for (size_t e = 0; e < TElement::subelements; e++) {
-									elements[counter++]->setParam(Element::MATERIAL, material);
-								}
+						material = 0;
+						for (eslocal i = 0; i < 2; i++) {
+							offset[i] = cOffset[i] + subdomain[i] * _settings.elementsInSubdomain[i] + element[i];
+							if (offset[i] / partSize[i] % 2 == 1) {
+								material = (material + 1) % 2;
 							}
 						}
+						for (size_t e = 0; e < TElement::subelements; e++) {
+							elements[counter++]->setParam(Element::MATERIAL, material);
+						}
 					}
-
 				}
-			}
+
+		}
 	}
 }
 
 template<class TElement>
-void PlaneGenerator<TElement>::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
+void PlaneGenerator<TElement>::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
 {
-	for (auto it = _settings.regions.begin(); it != _settings.regions.end(); ++it) {
-		const Interval &interval = it->second;
-
-		NodeCondition *region = new NodeCondition();
-		std::vector<std::string> expressions;
-
-		if (_settings.dirichlet.find(it->first) != _settings.dirichlet.end()) {
-			region->setType(ConditionType::DIRICHLET);
-			expressions = Parser::split(Parser::strip(_settings.dirichlet.find(it->first)->second), ",");
-		}
-		if (_settings.forces.find(it->first) != _settings.forces.end()) {
-			region->setType(ConditionType::FORCES);
-			expressions = Parser::split(Parser::strip(_settings.forces.find(it->first)->second), ",");
-		}
-
-		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
-			if (interval.isIn(coordinates[i])) {
-				region->nodes.push_back(i);
-			}
-		}
-
-		for (size_t i = 0; i < expressions.size(); i++) {
-			std::string param = Parser::getParameter(expressions[i], ":");
-			if (StringCompare::caseInsensitiveEq(param, "all")) {
-				region->setValue(DOFType::DISPLACEMENT_X, Parser::getValue(expressions[i], ":"));
-				region->setValue(DOFType::DISPLACEMENT_Y, Parser::getValue(expressions[i], ":"));
-				region->setValue(DOFType::TEMPERATURE, Parser::getValue(expressions[i], ":"));
-				region->setValue(DOFType::PRESSURE, Parser::getValue(expressions[i], ":"));
-				continue;
-			}
-			if (StringCompare::caseInsensitiveEq(param, "ux")) {
-				region->setValue(DOFType::DISPLACEMENT_X, Parser::getValue(expressions[i], ":"));
-				continue;
-			}
-			if (StringCompare::caseInsensitiveEq(param, "uy")) {
-				region->setValue(DOFType::DISPLACEMENT_Y, Parser::getValue(expressions[i], ":"));
-				continue;
-			}
-			if (StringCompare::caseInsensitiveEq(param, "t")) {
-				region->setValue(DOFType::TEMPERATURE, Parser::getValue(expressions[i], ":"));
-				continue;
-			}
-			if (StringCompare::caseInsensitiveEq(param, "p")) {
-				region->setValue(DOFType::PRESSURE, Parser::getValue(expressions[i], ":"));
-				continue;
-			}
-			ESINFO(GLOBAL_ERROR) << "Unknown DOF type " << param;
-		}
-
-		conditions.push_back(region);
-	}
-}
-
-template <class TElement>
-void PlaneGenerator<TElement>::initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions)
-{
-	auto getInterval = [] (const std::map<std::string, Interval> &regions, const std::string &name) {
-		if (regions.find(name) == regions.end()) {
-			ESINFO(GLOBAL_ERROR) << "Not specified region " << name;
-		}
-		return regions.find(name)->second;
-	};
-
-	if (_settings.heat_sources.size()) {
-		if (_settings.heat_sources.size() == 1) {
-			const Interval &interval = getInterval(_settings.regions, _settings.heat_sources.begin()->first);
-			if (!interval.isIn(0, 0, 0) || !interval.isIn(_settings.problemLength[0], _settings.problemLength[1], 0)) {
-				ESINFO(GLOBAL_ERROR) << "Heat source has to be set to whole problem.";
-			}
-			conditions[InitialCondition::index(InitialConditionType::HEAT_SOURCE)] = new ExpressionInitialization(_settings.heat_sources.begin()->second);
-		} else {
-			IntervalInitialization *condition = new IntervalInitialization();
-			for (auto it = _settings.heat_sources.begin(); it != _settings.heat_sources.end(); ++it) {
-				condition->add(getInterval(_settings.regions, it->first), it->second);
-			}
-		}
-	}
-
-	if (_settings.u.size()) {
-		if (_settings.heat_sources.size() == 1) {
-			const Interval &interval = getInterval(_settings.regions, _settings.u.begin()->first);
-			if (!interval.isIn(0, 0, 0) || !interval.isIn(_settings.problemLength[0], _settings.problemLength[1], 0)) {
-				ESINFO(GLOBAL_ERROR) << "Translation motion has to be set to whole problem.";
-			}
-			std::vector<std::string> expressions = Parser::split(Parser::strip(_settings.u.begin()->second), ",");
-			if (expressions.size() != 2) {
-				ESINFO(GLOBAL_ERROR) << "Invalid translation motion: INTERVAL = x: ? , y: ?";
-			}
-			conditions[InitialCondition::index(InitialConditionType::TRANSLATION_MOTION_X)] = new ExpressionInitialization(Parser::getValue(expressions[0], ":"));
-			conditions[InitialCondition::index(InitialConditionType::TRANSLATION_MOTION_Y)] = new ExpressionInitialization(Parser::getValue(expressions[1], ":"));
-		} else {
-			IntervalInitialization *condition = new IntervalInitialization();
-			for (auto it = _settings.u.begin(); it != _settings.u.end(); ++it) {
-				std::vector<std::string> expressions = Parser::split(Parser::strip(it->second), ",");
-				if (expressions.size() != 2) {
-					ESINFO(GLOBAL_ERROR) << "Invalid translation motion: INTERVAL = x: ? , y: ?";
-				}
-				condition->add(getInterval(_settings.regions, it->first), Parser::getValue(expressions[0], ":"));
-				condition->add(getInterval(_settings.regions, it->first), Parser::getValue(expressions[0], ":"));
-			}
-		}
-	}
+	this->loadProperties(evaluators, elements, coordinates, "DIRICHLET", { "T" }, { Property::FIXED_TEMPERATURE });
+	this->loadProperties(evaluators, elements, coordinates, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
+	this->loadProperties(evaluators, elements, coordinates, "TRANSLATION_MOTIONS", { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 }
 
 template<class TElement>

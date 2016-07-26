@@ -59,7 +59,7 @@ void AnsysWorkbench::materials(std::vector<Material> &materials)
 	}
 }
 
-void AnsysWorkbench::boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions)
+void AnsysWorkbench::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
 {
 	while (true) {
 		switch (_parser.process()) {
@@ -69,13 +69,13 @@ void AnsysWorkbench::boundaryConditions(Coordinates &coordinates, std::vector<Bo
 			}
 			break;
 		case WorkbenchCommands::CMBLOCK:
-			_parser.cmblock(conditions);
+			//_parser.cmblock(dirichlet);
 			break;
 		case WorkbenchCommands::DISPLACEMENT:
-			_parser.displacement(conditions);
+			//_parser.displacement(dirichlet);
 			break;
 		case WorkbenchCommands::EBLOCK:
-			_parser.eblock(conditions);
+			//_parser.eblock(dirichlet);
 			break;
 		default:
 			return;

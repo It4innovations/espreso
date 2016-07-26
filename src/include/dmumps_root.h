@@ -15,7 +15,7 @@
         INTEGER :: MBLOCK, NBLOCK, NPROW, NPCOL
         INTEGER :: MYROW, MYCOL
         INTEGER :: SCHUR_MLOC, SCHUR_NLOC, SCHUR_LLD
-        INTEGER :: RHS_NLOC
+        INTEGER :: InitialCondition_NLOC
         INTEGER :: ROOT_SIZE, TOT_ROOT_SIZE
 !       descriptor for scalapack
         INTEGER, DIMENSION( 9 ) :: DESCRIPTOR
@@ -24,15 +24,15 @@
         INTEGER, DIMENSION(:), POINTER :: RG2L_COL
         INTEGER , DIMENSION(:), POINTER :: IPIV, rootpad1
 !       Centralized master of root
-        DOUBLE PRECISION, DIMENSION(:), POINTER :: RHS_CNTR_MASTER_ROOT
+        DOUBLE PRECISION, DIMENSION(:), POINTER :: InitialCondition_CNTR_MASTER_ROOT
 !       Used to access Schur easily from root structure
         DOUBLE PRECISION, DIMENSION(:), POINTER :: SCHUR_POINTER
 !       for try_null_space preprocessing constant only:
         DOUBLE PRECISION, DIMENSION(:), POINTER :: QR_TAU, rootpad2
 !       Fwd in facto: 
-!           case of scalapack root: to store RHS in 2D block cyclic
+!           case of scalapack root: to store InitialCondition in 2D block cyclic
 !           format compatible with root distribution
-        DOUBLE PRECISION, DIMENSION(:,:), POINTER :: RHS_ROOT, rootpad
+        DOUBLE PRECISION, DIMENSION(:,:), POINTER :: InitialCondition_ROOT, rootpad
 !       for try_nullspace preprocessing constant only:
         DOUBLE PRECISION :: QR_RCOND, rootpad3
         LOGICAL :: yes, gridinit_done

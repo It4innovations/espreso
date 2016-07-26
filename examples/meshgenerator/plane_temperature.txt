@@ -8,11 +8,6 @@ SHAPE = 2
 #ELEMENT_TYPE = 0 # <8, 12> : SQUARE4 SQUARE8 TRIANGLE3 TRIANGLE6
 PHYSICS = ADVECTION_DIFFUSION
 
-
-MATERIALS_X = 1
-MATERIALS_Y = 1
-MATERIALS_Z = 1
-
 MATERIAL1 = {
   DENSITY = 1
   KX = 1
@@ -25,17 +20,19 @@ LENGTH_Y = 30
 
 CORNERS_IN_CORNERS
 
-REGIONS = {
+NODES = {
   LEFT = <0, 30) <0, 0>
-  TOP = <0, 0> (0, 30)
+  TOP = <0, 0> <0, 30)
 
   BOTTOM = <30, 30> (0, 30>
-  RIGHT = (0, 30) <30, 30>
+  RIGHT = (0, 30> <30, 30>
 
   CORNER_UP = <0, 0> <30, 30>
-  CORNER_DOWN = <0, 0> <30, 30>
+  CORNER_DOWN = <30, 30> <0, 0>
+}
 
-  ALL = <0, 30> <0, 30>
+ELEMENTS = {
+  ALL_EL = ALL
 }
 
 DIRICHLET = {
@@ -48,9 +45,9 @@ DIRICHLET = {
 }
 
 HEAT_SOURCES = {
-  ALL = 0
+  ALL_EL = 0
 }
 
 TRANSLATION_MOTIONS = {
-  ALL = x: -y, y: x
+  ALL_EL = x: -y, y: x
 }

@@ -28,9 +28,9 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix f(1, element->size());
 	DenseMatrix U(element->size(), 2);
 
-	const InitialCondition *heat_source = mesh.initialConditions(InitialConditionType::HEAT_SOURCE);
-	const InitialCondition *ux = mesh.initialConditions(InitialConditionType::TRANSLATION_MOTION_X);
-	const InitialCondition *uy = mesh.initialConditions(InitialConditionType::TRANSLATION_MOTION_Y);
+	const std::vector<Evaluator*> &heat_sources = element->settings(Property::HEAT_SOURCE);
+	const std::vector<Evaluator*> &ux = element->settings(Property::TRANSLATION_MOTION_X);
+	const std::vector<Evaluator*> &uy = element->settings(Property::TRANSLATION_MOTION_Y);
 
 	const Material &material = mesh.materials()[element->getParam(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
@@ -42,11 +42,14 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	coordinates.resize(element->size(), 2);
 	for (size_t i = 0; i < element->size(); i++) {
-		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
-		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
-		f(0, i) = heat_source->get(mesh.coordinates().get(element->node(i), subdomain));
-		U(i, 0) = ux->get(mesh.coordinates().get(element->node(i), subdomain)) * material.density * material.termalCapacity;
-		U(i, 1) = uy->get(mesh.coordinates().get(element->node(i), subdomain)) * material.density * material.termalCapacity;
+		const Point &p = mesh.coordinates().get(element->node(i), subdomain);
+		coordinates(i, 0) = p.x;
+		coordinates(i, 1) = p.y;
+		U(i, 0) = ux.back()->evaluate(p.x, p.y, p.z) * material.density * material.termalCapacity;
+		U(i, 1) = uy.back()->evaluate(p.x, p.y, p.z) * material.density * material.termalCapacity;
+		for (size_t j = 0; j < heat_sources.size(); j++) {
+			f(0, i) += heat_sources[j]->evaluate(p.x, p.y, p.z);
+		}
 	}
 
 	eslocal Ksize = element->size();
@@ -157,7 +160,6 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	f[subdomain].resize(subdomainSize);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.getElements();
 
 	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
 
@@ -173,6 +175,8 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 			f[subdomain][row] += fe[i];
 		}
 	}
+
+
 
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;

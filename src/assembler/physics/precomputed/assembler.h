@@ -15,7 +15,7 @@ struct PrecomputedPhysics: public Physics {
 
 	virtual void assemble()
 	{
-		ESINFO(PROGRESS2) << "Assemble matrices K and RHS";
+		ESINFO(PROGRESS2) << "Assemble matrices K and InitialCondition";
 		K.resize(_mesh.parts());
 		f.resize(_mesh.parts());
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
@@ -26,8 +26,8 @@ struct PrecomputedPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	PrecomputedPhysics(const APIMesh &mesh, std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype, double *rhs, size_t rhs_size)
-	: Physics(mesh, DOFs, mtype), _apimesh(mesh), rhs(rhs), rhs_size(rhs_size) {};
+	PrecomputedPhysics(const APIMesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype, double *rhs, size_t rhs_size)
+	: Physics(mesh, unknowns, dirichlet, mtype), _apimesh(mesh), rhs(rhs), rhs_size(rhs_size) {};
 	virtual ~PrecomputedPhysics() {};
 
 protected:

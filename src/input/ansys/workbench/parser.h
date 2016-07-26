@@ -27,6 +27,12 @@ enum class WorkbenchCommands {
 	ESEL
 };
 
+enum ConditionElements {
+	NODES,
+	FACES,
+	ELEMENTS
+};
+
 class WorkbenchParser {
 
 public:
@@ -54,9 +60,9 @@ public:
 	void eblock(std::vector<Element*> &elements);
 	void mp(std::vector<Material> &materials);
 
-	void eblock(std::vector<BoundaryCondition*> &conditions);
-	void cmblock(std::vector<BoundaryCondition*> &conditions);
-	void displacement(std::vector<BoundaryCondition*> &conditions);
+//	void eblock(std::vector<Dirichlet*> &dirichlet);
+//	void cmblock(std::vector<Dirichlet*> &dirichlet);
+//	void displacement(std::vector<Dirichlet*> &dirichlet);
 	void loadvar();
 
 protected:

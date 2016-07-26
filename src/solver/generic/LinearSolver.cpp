@@ -36,7 +36,7 @@ void LinearSolver::setup() {
 	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= config::env::MPIsize;
-	cluster.DOFS_PER_NODE		= physics.DOFs.size();
+	cluster.DOFS_PER_NODE		= physics.unknowns.size();
 	// ***************************************************************************************************************************
 
 	// ***************************************************************************************************************************
@@ -153,17 +153,17 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		timeEvalMain.addEvent(timeSetR);
 	}
 
-	// *** Load RHS for dirichelt
-	TimeEvent timeSetRHS(string("Solver - Set Dirichlet RHS points"));
-	timeSetRHS.start();
+	// *** Load InitialCondition for dirichelt
+	TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet InitialCondition points"));
+	timeSetInitialCondition.start();
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].vec_c = constraints.B1c[d];
 	}
 
-	timeSetRHS.endWithBarrier();
-	timeEvalMain.addEvent(timeSetRHS);
-	// *** END - Load RHS for dirichelt
+	timeSetInitialCondition.endWithBarrier();
+	timeEvalMain.addEvent(timeSetInitialCondition);
+	// *** END - Load InitialCondition for dirichelt
 
 
 

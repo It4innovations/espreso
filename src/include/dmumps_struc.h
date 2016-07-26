@@ -73,17 +73,17 @@
 ! INPUT/OUTPUT data 
 ! ******************
 !    --------------------------------------------------------
-!    RHS / SOL_loc
+!    InitialCondition / SOL_loc
 !    -------------
 !       right-hand side and solution
 !    -------------------------------------------------------
-        DOUBLE PRECISION, DIMENSION(:), POINTER :: RHS, REDRHS
-        DOUBLE PRECISION, DIMENSION(:), POINTER :: RHS_SPARSE
+        DOUBLE PRECISION, DIMENSION(:), POINTER :: InitialCondition, REDInitialCondition
+        DOUBLE PRECISION, DIMENSION(:), POINTER :: InitialCondition_SPARSE
         DOUBLE PRECISION, DIMENSION(:), POINTER :: SOL_loc
-        INTEGER, DIMENSION(:), POINTER :: IRHS_SPARSE
-        INTEGER, DIMENSION(:), POINTER :: IRHS_PTR
+        INTEGER, DIMENSION(:), POINTER :: IInitialCondition_SPARSE
+        INTEGER, DIMENSION(:), POINTER :: IInitialCondition_PTR
         INTEGER, DIMENSION(:), POINTER :: ISOL_loc
-        INTEGER ::  LRHS, NRHS, NZ_RHS, LSOL_loc, LREDRHS
+        INTEGER ::  LInitialCondition, NInitialCondition, NZ_InitialCondition, LSOL_loc, LREDInitialCondition
         INTEGER ::  pad5
 !    ----------------------------
 !    Control parameters,
@@ -189,11 +189,11 @@
         LOGICAL, DIMENSION(:),   POINTER :: I_AM_CAND
 !       For heterogeneous architecture
         INTEGER, DIMENSION(:), POINTER :: MEM_DIST
-!       Compressed RHS
-        INTEGER, DIMENSION(:),   POINTER :: POSINRHSCOMP_ROW
-        INTEGER, DIMENSION(:),   POINTER :: POSINRHSCOMP_COL
-        LOGICAL  :: POSINRHSCOMP_COL_ALLOC, pad111
-        DOUBLE PRECISION, DIMENSION(:),   POINTER :: RHSCOMP
+!       Compressed InitialCondition
+        INTEGER, DIMENSION(:),   POINTER :: POSINInitialConditionCOMP_ROW
+        INTEGER, DIMENSION(:),   POINTER :: POSINInitialConditionCOMP_COL
+        LOGICAL  :: POSINInitialConditionCOMP_COL_ALLOC, pad111
+        DOUBLE PRECISION, DIMENSION(:),   POINTER :: InitialConditionCOMP
 !       Info on the subtrees to be used during factorization
         DOUBLE PRECISION, DIMENSION(:), POINTER :: MEM_SUBTREE
         DOUBLE PRECISION, DIMENSION(:), POINTER :: COST_TRAV

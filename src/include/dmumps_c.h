@@ -83,7 +83,7 @@ typedef struct {
     MUMPS_INT colsca_from_mumps;
     MUMPS_INT rowsca_from_mumps;
 
-    /* RHS, solution, ouptput data and statistics */
+    /* InitialCondition, solution, ouptput data and statistics */
     DMUMPS_COMPLEX *rhs, *redrhs, *rhs_sparse, *sol_loc;
     MUMPS_INT      *irhs_sparse, *irhs_ptr, *isol_loc;
     MUMPS_INT      nrhs, lrhs, lredrhs, nz_rhs, lsol_loc;

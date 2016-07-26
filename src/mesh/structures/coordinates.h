@@ -2,6 +2,7 @@
 #define COORDINATES_H_
 
 #include "esbasis.h"
+#include "../settings/setting.h"
 
 #include <algorithm>
 #include <vector>
@@ -32,6 +33,7 @@ public:
 		_points.reserve(size);
 		_globalIndex.reserve(size);
 		_clusterIndex[0].reserve(size);
+		_settings.resize(size);
 	}
 
 	void clear()
@@ -40,6 +42,7 @@ public:
 		_globalIndex.clear();
 		_clusterIndex.resize(1);
 		_clusterIndex[0].clear();
+		_settings.clear();
 	}
 
 	const Point& get(eslocal index, eslocal part) const
@@ -115,12 +118,6 @@ public:
 		_clusterIndex.resize(size);
 	}
 
-	double* data()
-	{
-		void *tmp = &_points[0];
-		return static_cast<double*>(tmp);
-	}
-
 	const Point& operator[](eslocal index) const
 	{
 		return _points[index];
@@ -131,8 +128,19 @@ public:
 		return _points[index];
 	}
 
+	const Settings& settings(eslocal index) const
+	{
+		return _settings[index];
+	}
+
+	Settings& settings(eslocal index)
+	{
+		return _settings[index];
+	}
+
 private:
 	std::vector<Point> _points;
+	std::vector<Settings> _settings;
 
 	/** @brief Local point to cluster index. */
 	std::vector<std::vector<eslocal> > _clusterIndex;

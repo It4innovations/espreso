@@ -8,7 +8,8 @@ namespace espreso {
 
 struct AdvectionDiffusion3D: public LinearPhysics
 {
-	AdvectionDiffusion3D(const Mesh &mesh): LinearPhysics(mesh, { DOFType::TEMPERATURE }, SparseMatrix::MatrixType::REAL_UNSYMMETRIC) {};
+	AdvectionDiffusion3D(const Mesh &mesh)
+	: LinearPhysics(mesh, { Property::TEMPERATURE }, { Property::FIXED_TEMPERATURE }, SparseMatrix::MatrixType::REAL_UNSYMMETRIC) {};
 
 protected:
 	void composeSubdomain(size_t subdomain);

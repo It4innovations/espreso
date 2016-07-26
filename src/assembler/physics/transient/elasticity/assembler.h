@@ -8,7 +8,12 @@ namespace espreso {
 
 struct TransientElasticity: public TransientPhysics
 {
-	TransientElasticity(const Mesh &mesh): TransientPhysics(mesh, { DOFType::DISPLACEMENT_X, DOFType::DISPLACEMENT_Y, DOFType::DISPLACEMENT_Z }, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE)
+	TransientElasticity(const Mesh &mesh)
+	: TransientPhysics(
+			mesh,
+			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
+			{ Property::FIXED_DISPLACEMENT_X, Property::FIXED_DISPLACEMENT_Y, Property::FIXED_DISPLACEMENT_Z },
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE)
 	{
 		beta = 0.25;
 		gama = 0.5;

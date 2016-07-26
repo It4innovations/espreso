@@ -80,6 +80,26 @@ public:
 		return _params;
 	}
 
+	Settings& settings()
+	{
+		return _settings;
+	}
+
+	const Settings& settings() const
+	{
+		return _settings;
+	}
+
+	 std::vector<Evaluator*>& settings(Property property)
+	{
+		return _settings[property];
+	}
+
+	const std::vector<Evaluator*>& settings(Property property) const
+	{
+		return _settings[property];
+	}
+
 	void setParam(Params param, eslocal value)
 	{
 		_params[param] = value;
@@ -116,6 +136,7 @@ protected:
 	virtual eslocal* indices() = 0;
 
 	eslocal _params[PARAMS_SIZE];
+	Settings _settings;
 
 };
 

@@ -10,7 +10,6 @@
 #include "options/options.h"
 #include "utilities/utils.h"
 #include "expression/expression.h"
-#include "selections/interval.h"
 
 
 

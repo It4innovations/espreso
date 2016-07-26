@@ -29,8 +29,7 @@ protected:
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
 	void faces(Faces &faces);
-	void boundaryConditions(Coordinates &coordinates, std::vector<BoundaryCondition*> &conditions);
-	void initialConditions(const Coordinates &coordinates, std::vector<InitialCondition*> &conditions) {};
+	void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
 private:

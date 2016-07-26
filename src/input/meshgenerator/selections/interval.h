@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "../esbasis.h"
+#include "esbasis.h"
 
 namespace espreso {
 
@@ -15,16 +15,20 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Interval& obj);
 	friend std::istream& operator>>(std::istream& is, Interval& obj);
 
-	Interval()
-	: start{0, 0, 0}, end{0, 0, 0}, excludeStart{false, false, false}, excludeEnd{false, false, false} {};
+	Interval(): _all(true), epsilon(1e-10)
+	{
+		start[0] = start[1] = start[2] = -epsilon;
+		end[0] = end[1] = end[2] = epsilon;
+	};
 
+	bool all() const
+	{
+		return _all;
+	}
 
 	double isIn(double x, double y, double z) const
 	{
-		return
-			(((start[0] < x) || (!excludeStart[0] && start[0] == x)) && ((x < end[0]) || (!excludeEnd[0] && x == end[0]))) &&
-			(((start[1] < y) || (!excludeStart[1] && start[1] == y)) && ((y < end[1]) || (!excludeEnd[1] && y == end[1]))) &&
-			(((start[2] < z) || (!excludeStart[2] && start[2] == z)) && ((z < end[2]) || (!excludeEnd[2] && z == end[2])));
+		return all() || (start[0] < x && x < end[0] && start[1] < y && y < end[1] && start[2] < z && z < end[2]);
 	}
 
 	double isIn(const Point &p) const
@@ -33,8 +37,9 @@ public:
 	}
 
 private:
+	bool _all;
+	double epsilon;
 	double start[3], end[3];
-	bool excludeStart[3], excludeEnd[3];
 };
 
 }

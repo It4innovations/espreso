@@ -13,7 +13,7 @@ struct Physics {
 	virtual void assemble() =0;
 	virtual void save()
 	{
-		ESINFO(PROGRESS2) << "Save matrices K and RHS";
+		ESINFO(PROGRESS2) << "Save matrices K and InitialCondition";
 		for (size_t p = 0; p < K.size(); p++) {
 			std::ofstream osK(Logging::prepareFile(p, "Kreg").c_str());
 			osK << K[p];
@@ -34,31 +34,24 @@ struct Physics {
 			osR.close();
 		}
 
-    // AM uncomment for unsymmetric case
-    for (size_t p = 0; p < R2.size(); p++) {
-        std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
-        SparseMatrix tmpR = R2[p];
-        tmpR.ConvertDenseToCSR(0);
-        osR << tmpR;
-        osR.close();
-    }
-//
-//		for (size_t p = 0; p < R1H.size(); p++) {
-//			std::ofstream osR(Logging::prepareFile(p, "R1H").c_str());
-//			SparseMatrix tmpR = R1H[p];
-//			tmpR.ConvertDenseToCSR(0);
-//			osR << tmpR;
-//			osR.close();
-//		}
+		for (size_t p = 0; p < R2.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
+			SparseMatrix tmpR = R2[p];
+			tmpR.ConvertDenseToCSR(0);
+			osR << tmpR;
+			osR.close();
+		}
 	}
 
-	std::vector<DOFType> DOFs;
+	std::vector<Property> unknowns;
+	std::vector<Property> dirichlet;
 
 	SparseMatrix::MatrixType mtype;
 	std::vector<SparseMatrix> K, T, R1, R2, RegMat; // T will be deleted
 	std::vector<std::vector<double> > f;
 
-	Physics(const Mesh &mesh, const std::vector<DOFType> DOFs, SparseMatrix::MatrixType mtype): _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
+	Physics(const Mesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype)
+	: _mesh(mesh), unknowns(unknowns), dirichlet(dirichlet), mtype(mtype) {};
 	virtual ~Physics() {};
 
 protected:
