@@ -11,7 +11,7 @@ eps_iter_Kplus                      = 1e-15
 
 
 Dirichlet_from_espreso              = False
-precondDualSystem                   = 'dirichlet' # 'none', 'lumped', 'dirichlet'
+precondDualSystem                   = 'none' # 'none', 'lumped', 'dirichlet'
 
 single_precision                    = True     # True, False
 methodToImproveSolByIterMethod      = 'pcg_x'   # 'cg_x', 'pcg_x',       
@@ -24,6 +24,7 @@ precondPrimalSystem                 = 'diag'    # 'diag', 'LU_SP', 'ILU,  'none'
 # if 'cg_x' or is set
 mult_Areg_or_A_RRt                  = True
 flag_multiprocessing                = False
+symmetric                           = False
 
 
 

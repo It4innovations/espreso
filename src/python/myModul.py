@@ -246,15 +246,33 @@ class COARSE_PROBLEM_HTFETI:
                 self.G      = sparse.hstack((self.G,Gj))                
         self.G = self.G.tocsc()
 ###############################################################################       
+class PROJ_UNSYM:
+    def __init__(self,G1,G2,iG2tG1):
+        self.G1 = G1
+        self.G2 = G2
+        self.iG2tG1 = iG2tG1
+    def __mul__(self,x):
+        y = x - sparse.csc_matrix.dot(self.G1,\
+                (self.iG2tG1.solve(sparse.csc_matrix.dot(self.G2.transpose(),x))))
+        return y                  
+###############################################################################
 class PROJ:
-    def __init__(self,G,iGtG):
+    def __init__(self,G1,G2,iG1tG):
         self.G = G
         self.iGtG = iGtG
     def __mul__(self,x):
         y = x - sparse.csc_matrix.dot(self.G,\
                 (self.iGtG.solve(sparse.csc_matrix.dot(self.G.transpose(),x))))
-        return y        
+        return y          
 ###############################################################################
+class PFP_OPERATOR:
+    def __init__(self,F,Proj):
+        self.F = F
+        self.Proj = Proj
+
+    def __mul__(self,x_in):
+        return self.Proj*self.F*self.Proj*x_in     
+        
 class PREC_DIR_OR_LUMPED:
     def __init__(self,K,Schur,B,weight,index_weight):
         self.K  = K
@@ -363,7 +381,175 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
         plt.semilogy(vec_normed_g[:i])#;plt.ylim([vec_staggnat[:i].min()*2,0])   
 #  
     return lam, alpha, numbOfIter
+###############################################################################   
+def gmres(F, d, G1, G2, e, Prec, eps0, maxIt,disp,graph):
+#
+#
+    from scipy.sparse.linalg import LinearOperator
+    G2tG1       = sparse.csc_matrix.dot(G2.transpose(),G1).tocsc()
+    iG2tG1      = spla.splu(G2tG1)
+    Proj        = PROJ_UNSYM(G1,G2,iG2tG1)
+    lamIm       = sparse.csc_matrix.dot(G1,iG2tG1.solve(e))
+    nDual       = lamIm.shape[0]
+    lam         = lamIm.copy()
+    g           = F*lam - d     
+    i           = 0
+    #PFP         = PFP_OPERATOR(F, Proj)
+    
+    def mv(v):
+        return Proj*(F*(Proj*v))
+    
+    PFP         = LinearOperator((nDual, nDual), matvec=mv,dtype=np.float64)
+
+    
+    d_          = Proj * (d - F * lamIm)
+    
+    out         = sparse.linalg.gmres(PFP,d_)
+    lamKer      = out[0] 
+    lam         = lamKer + lamIm
+    print('lam = ')
+    print( lam )
+    
+    
+    if os.path.isfile('lam_old.txt'):     
+        lam_old = np.loadtxt('lam_old.txt')
+        print('norm = ',np.linalg.norm(lam-lam_old)/np.linalg.norm(lam))
+    np.savetxt('lam_old.txt',lam)
+    
+#    if os.path.isfile('lam_espreso.txt'):    
+#        lam_espreso = np.loadtxt('lam_espreso.txt')[:,1]
+#        print(lam_espreso)
+        #print('norm = ',np.linalg.norm(lam-lam_espreso)/np.linalg.norm(lam))
+    #np.l
+    
+#    Pg          = Proj*g 
+#    MPg         = Prec*Pg
+#    PMPg        = Proj*MPg
+##
+#    sqrt_gtPMPg0 = np.sqrt(np.dot(g,PMPg))
+##
+#    if (np.dot(g,PMPg)<0): 
+#        raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
+#    sqrt_gtPg0      = np.sqrt(np.dot(g,Pg)) 
+#    vec_normed_g    = np.zeros(nDual) 
+#    vec_staggnat    = np.zeros(nDual)
+##
+#    w     = PMPg.copy()
+##
+#    if disp: 
+#        print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
+#        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
+#        print('    i      |r|        r         e         stagnation ') 
+#        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPg0,eps0,-1))     
+##   
+#    for i in range(nDual):
+##        
+#        Fw          = F*w
+#        rho         = -np.dot(g,PMPg)/np.dot(w,Fw)
+#        lam         += w * rho        
+#        gprev       = g.copy()                  
+##         
+#        PMPgprev    = PMPg.copy()      
+#        g           += Fw * rho
+#        Pg           = Proj*g
+#        PMPg        = Proj*(Prec*Pg)
+#
+#        gtPMPg      = np.dot(g,PMPg)
+#        gamma       = gtPMPg/np.dot(gprev,PMPgprev)
+#        w           = PMPg + w * gamma 
+## 
+#        if (np.dot(g,PMPg)<0): 
+#            raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
+##  
+#        sqrt_gtPg = np.sqrt(np.dot(g,Pg))
+#        normed_gi   = sqrt_gtPg/sqrt_gtPg0
+#        vec_normed_g[i]    = normed_gi
+##       
+#        is_stagnating = np.log2(normed_gi)/(i+2)
+#        vec_staggnat[i]    = is_stagnating
+##
+#        if np.log10(normed_gi/vec_normed_g[:i+1].min()) > 2:
+#            print('... stagnate',end='')
+#            break
+##
+#        if disp:
+#            print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % \
+#                            (i+2,normed_gi,sqrt_gtPg,eps0,is_stagnating))             
+##            
+#        if normed_gi<eps0:
+#            break
+#        if i==maxIt:
+#            print('PCPG does not converge within maxNumbIter (',
+#                       conf.maxIt_dual_feti,').')
+#            break
+    alpha = iG2tG1.solve(sparse.csc_matrix.dot(G2.transpose(),d-F*lam))
+    numbOfIter = i
+#   
+#    if graph:
+#        plt.subplot(2,1,1)    
+#        plt.plot(vec_staggnat[:i]);plt.ylim([vec_staggnat[:i].min()*2,0])
+#        plt.subplot(2,1,2)
+#        plt.semilogy(vec_normed_g[:i])#;plt.ylim([vec_staggnat[:i].min()*2,0])   
+#  
+    return lam, alpha, numbOfIter
 ###############################################################################       
+def feti_unsym(K,Kreg,f,Schur,B,c,weight,index_weight,R1,R2):
+#        
+    maxIt   = conf.maxIt_dual_feti
+    eps0    = conf.eps_dual_feti   
+#              
+    CP1      = COARSE_PROBLEM(B,R1)  
+    CP2      = COARSE_PROBLEM(B,R2)   
+    d       = np.zeros(B[0][0].shape[0])    
+    dc       = np.zeros(B[0][0].shape[0])    
+    Kplus   = []
+#    
+    
+    for i in range(len(K)):
+        Kplus.append([])
+        
+        
+        for j in range(len(K[i])):
+
+            Kplus[i].append(KPLUS(Kreg[i][j]))
+            if (i==0 and j==0):
+                e = sparse.csc_matrix.dot(R1[i][j].transpose(),-f[i][j])
+            else:
+                e = np.concatenate((e,sparse.csc_matrix.dot(R1[i][j].transpose(),-f[i][j])))
+            d += sparse.csc_matrix.dot(B[i][j],Kplus[i][j]*f[i][j])
+            dc[index_weight[i][j]] = c[i][j]
+#
+    
+    d      -= dc    
+    F       = FETIOPERATOR(Kplus,B)
+    Prec    = PREC_DIR_OR_LUMPED(K,Schur,B,weight,index_weight)
+#     
+    lam, alpha, numbOfIter = gmres(F,d, CP1.G,CP2.G, e, Prec,eps0,maxIt,True,False)        
+#
+    uu = []
+    cnt = 0
+    #print('size(lam):',lam.shape)
+    #print('size(B):',B[0][0].shape)
+#
+    delta = 0.0
+    norm_f = 0.0
+    for i in range(len(K)):
+        uu.append([])
+        for j in range(len(K[i])):
+            ind = np.arange(0,R1[i][j].shape[1]) + cnt
+            f_BtLam_i_j = f[i][j]-sparse.csc_matrix.dot(B[i][j].transpose(),lam)
+            KplusBtLam_i_j=Kplus[i][j]*f_BtLam_i_j
+            R_alpha_i_j = sparse.csc_matrix.dot(R1[i][j],alpha[ind])
+            uu[i].append(KplusBtLam_i_j+R_alpha_i_j)
+            cnt += R1[i][j].shape[1]
+            delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
+            norm_f += np.linalg.norm(f[i][j])
+#     
+    if np.abs(norm_f)>1e-10:
+        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+    return uu,lam
+
+
 def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
 #        
     maxIt   = conf.maxIt_dual_feti

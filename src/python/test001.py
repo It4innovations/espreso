@@ -2,24 +2,37 @@
 import numpy as np
 import scipy.sparse as spm
 import pylab as plt
-import scipy.sparse.linalg as sla
+import scipy.sparse.linalg as spla
+from scipy import sparse 
 
-nS  = 10
 
-K = []; f = []; B0 = []
-print('... reading data ...')
-for i in range(nS):
-    tmp0 = np.loadtxt('../dumped_files/K_mat_'+str(i))
-    tmp1 = spm.coo_matrix((tmp0[1::,2],(np.int32(tmp0[1::,0]-1),np.int32(tmp0[1::,1]-1))), shape=(tmp0[0,0],tmp0[0,1])).tocsr()
-    K.append(tmp1)
-    tmp0 = np.loadtxt('../dumped_files/B0_mat_'+str(i))
-    tmp1 = spm.coo_matrix((tmp0[1::,2],(np.int32(tmp0[1::,0]-1),np.int32(tmp0[1::,1]-1))), shape=(tmp0[0,0],tmp0[0,1])).tocsr()
-    B0.append(tmp1)
-    tmp0 = np.loadtxt('../dumped_files/f_vec_'+str(i))
-    f.append(tmp0)
-    print('%d-th sub.' % i)
-
-P = []; L = []; U = []
-print(' lu decomposition')
-for i in range(nS):
-    Kplus_Bt = spm.linalg.splu(K[i],B0[0].transpose())
+ 
+def fun1(K,Kreg,R,Rl):
+    normK = np.max(np.abs(K.diagonal()))
+    n1 = np.linalg.norm(sparse.csc_matrix.dot(K,R.toarray()))#/normK
+    n2 = np.linalg.norm(sparse.csc_matrix.dot(K.transpose(),Rl.toarray()))#/normK
+#    #
+    print('||K  * R1||=',n1)
+    print('||Kt * R2||=',n2)
+    print('||K||=',normK)
+#    
+    #K_full=K.toarray()
+    
+    iKreg = spla.splu(Kreg)
+    MP_cond = np.zeros((K.shape[0],K.shape[0]))
+    for i in range(K.shape[0]):
+        MP_cond[:,i] = \
+                sparse.csc_matrix.dot(K,iKreg.solve(K[:,i].toarray()[:,0]))\
+                -K[:,i].toarray()[:,0]
+                      
+    print("||K-K*pinv(K)*K|| =",np.abs(MP_cond).sum())
+    return 0
+ 
+ 
+for i in range(len(mat_K)):
+    for j in range(len(mat_K[i])):
+        out_ = fun1(mat_K[i][j],mat_Kreg[i][j],mat_R1[i][j],mat_R2[i][j])
+        
+        
+        
+        
