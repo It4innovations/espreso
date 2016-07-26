@@ -57,7 +57,6 @@ public:
 				return _intervals[i].second.evaluate(p.x, p.y, p.z);
 			}
 		}
-		ESINFO(ERROR) << "Not filled initial condition for point " << p;
 		return 0;
 	}
 

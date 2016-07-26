@@ -26,6 +26,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
 	double detJ;
 	DenseMatrix f(1, element->size());
+	DenseMatrix U(element->size(), 2);
 
 	const InitialCondition *heat_source = mesh.initialConditions(InitialConditionType::HEAT_SOURCE);
 	const InitialCondition *ux = mesh.initialConditions(InitialConditionType::TRANSLATION_MOTION_X);
@@ -44,6 +45,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
 		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
 		f(0, i) = heat_source->get(mesh.coordinates().get(element->node(i), subdomain));
+		U(i, 0) = ux->get(mesh.coordinates().get(element->node(i), subdomain)) * material.density * material.termalCapacity;
+		U(i, 1) = uy->get(mesh.coordinates().get(element->node(i), subdomain)) * material.density * material.termalCapacity;
 	}
 
 	eslocal Ksize = element->size();
@@ -58,8 +61,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	double normGradN = 0;
 
 	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
-		u(0, 0) = ux->get(mesh.coordinates().get(element->node(gp), subdomain));
-		u(0, 1) = uy->get(mesh.coordinates().get(element->node(gp), subdomain));
+		u.multiply(N[gp], U, 1, 0);
 
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant2x2(J);

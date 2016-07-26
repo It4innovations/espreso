@@ -14,7 +14,7 @@ MATERIALS_Y = 1
 MATERIALS_Z = 1
 
 MATERIAL1 = {
-  DENSITY = 7850
+  DENSITY = 1
   KX = 1
   KY = 1
   CP = 1
@@ -26,35 +26,31 @@ LENGTH_Y = 30
 CORNERS_IN_CORNERS
 
 REGIONS = {
-  LEFT = (0, 30> <0, 0>
-  BOTTOM = <30, 30> (0, 30)
-
-  RIGHT = <0, 30) <30, 30>
+  LEFT = <0, 30) <0, 0>
   TOP = <0, 0> (0, 30)
 
-  CORNER_UP = <0, 0> <0, 0>
-  CORNER_DOWN = <30, 30> <30, 30>
+  BOTTOM = <30, 30> (0, 30>
+  RIGHT = (0, 30) <30, 30>
+
+  CORNER_UP = <0, 0> <30, 30>
+  CORNER_DOWN = <0, 0> <30, 30>
 
   ALL = <0, 30> <0, 30>
 }
 
 DIRICHLET = {
-  BOTTOM = T: 0
+  BOTTOM = T: 1
   LEFT = T: 0
-  TOP = T: 1
+  TOP = T: 0
   RIGHT = T: 1
   CORNER_UP = T: 0.5
   CORNER_DOWN = T: 0.5
 }
 
-FORCES = {
-  ALL = T: 0
-}
-
 HEAT_SOURCES = {
-  ALL = 1
+  ALL = 0
 }
 
 TRANSLATION_MOTIONS = {
-  ALL = x: -y / 30, y: x / 30
+  ALL = x: -y, y: x
 }
