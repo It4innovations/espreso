@@ -178,6 +178,12 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
 
+
+  if (config::info::PRINT_MATRICES){
+			std::ofstream osK(Logging::prepareFile(subdomain, "K").c_str());
+			osK << K[subdomain];
+			osK.close();
+  }
 	algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 }
 
