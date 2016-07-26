@@ -4841,15 +4841,17 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
   if (K_rr_cols!=0){
-    SparseSolverCPU K_rr_t_solver;
-    SparseMatrix K_rr_t;
-    K_rr.MatTranspose( K_rr_t );
-    K_rr_t_solver.ImportMatrix(K_rr_t);
+//    SparseSolverCPU K_rr_t_solver;
+//    SparseMatrix K_rr_t;
+//    K_rr.MatTranspose( K_rr_t );
+//    K_rr_t_solver.ImportMatrix(K_rr_t);
     Rl_r.MatMat(K_sr,'T',Rl_s);
     K_sr.Clear();
-    K_rr_t_solver.mtype=11;
-    K_rr_t_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
-    K_rr_t_solver.Clear();
+//    K_rr_t_solver.mtype=11;
+//    K_rr_t_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
+//    K_rr_t_solver.Clear();
+    K_rr_solver.iparm[11] = 2;
+    K_rr_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
     Rl_r.ConvertCSRToDense(0);
     Rl_r_rows = Rl_r.rows;
     Rl_r_cols = Rl_r.cols;
