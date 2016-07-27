@@ -13,7 +13,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 2
+n_subPerClust   = 25
 
 
 CONSTANT_89 = 24 
@@ -240,8 +240,10 @@ if config_espreso_python.flag_multiprocessing:
 print('\nTFETI unsym')
 u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
                            vec_index_weight,mat_R1,mat_R2)
-
-
+plt.clf()
+for i in range(len(u)):
+    for j in range(len(u[i])):
+        plt.plot(u[i][j])
 #print('\nTFETI')
 #u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
 #                           vec_index_weight,mat_R1)

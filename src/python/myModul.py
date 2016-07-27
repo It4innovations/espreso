@@ -381,7 +381,21 @@ def pcgp(F, d, G, e, Prec, eps0, maxIt,disp,graph):
         plt.semilogy(vec_normed_g[:i])#;plt.ylim([vec_staggnat[:i].min()*2,0])   
 #  
     return lam, alpha, numbOfIter
-###############################################################################   
+###############################################################################
+class gmres_counter(object):
+    def __init__(self, disp=True):
+        self._disp = disp
+        self.niter = 0
+    def __call__(self, rk=None):
+        self.niter += 1
+        if self._disp:
+            print('iter %3i\trk = %s' % (self.niter, str(rk)))    
+    
+    
+    
+    
+    
+    
 def gmres(F, d, G1, G2, e, Prec, eps0, maxIt,disp,graph):
 #
 #
@@ -397,91 +411,30 @@ def gmres(F, d, G1, G2, e, Prec, eps0, maxIt,disp,graph):
     #PFP         = PFP_OPERATOR(F, Proj)
     
     def mv(v):
-        return Proj*(F*(Proj*v))
+        return Proj*(F*(v))
     
-    PFP         = LinearOperator((nDual, nDual), matvec=mv,dtype=np.float64)
+    PF         = LinearOperator((nDual, nDual), matvec=mv,dtype=np.float64)
 
     
     d_          = Proj * (d - F * lamIm)
-    
-    out         = sparse.linalg.gmres(PFP,d_)
-    lamKer      = out[0] 
+    counter     = gmres_counter()
+    lamKer,out  = sparse.linalg.gmres(PF,d_) 
     lam         = lamKer + lamIm
-    print('lam = ')
-    print( lam )
+    print('out: ',out)
+    print('it: ',counter.niter)
+    print('||lam||=',np.linalg.norm( lam) )
+    
+    print('lam: ')
+    print(lam-11)
     
     
     if os.path.isfile('lam_old.txt'):     
         lam_old = np.loadtxt('lam_old.txt')
-        print('norm = ',np.linalg.norm(lam-lam_old)/np.linalg.norm(lam))
+        if lam.shape[0] == lam_old.shape[0]:
+            print('norm = ',np.linalg.norm(lam-lam_old)/np.linalg.norm(lam))
     np.savetxt('lam_old.txt',lam)
     
-#    if os.path.isfile('lam_espreso.txt'):    
-#        lam_espreso = np.loadtxt('lam_espreso.txt')[:,1]
-#        print(lam_espreso)
-        #print('norm = ',np.linalg.norm(lam-lam_espreso)/np.linalg.norm(lam))
-    #np.l
-    
-#    Pg          = Proj*g 
-#    MPg         = Prec*Pg
-#    PMPg        = Proj*MPg
-##
-#    sqrt_gtPMPg0 = np.sqrt(np.dot(g,PMPg))
-##
-#    if (np.dot(g,PMPg)<0): 
-#        raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
-#    sqrt_gtPg0      = np.sqrt(np.dot(g,Pg)) 
-#    vec_normed_g    = np.zeros(nDual) 
-#    vec_staggnat    = np.zeros(nDual)
-##
-#    w     = PMPg.copy()
-##
-#    if disp: 
-#        print('sqrt_gtPg0: %3.5e' %   (sqrt_gtPg0))
-#        print('sqrt_gtPMPg0:  %3.5e' % sqrt_gtPMPg0)
-#        print('    i      |r|        r         e         stagnation ') 
-#        print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % (1,1,sqrt_gtPg0,eps0,-1))     
-##   
-#    for i in range(nDual):
-##        
-#        Fw          = F*w
-#        rho         = -np.dot(g,PMPg)/np.dot(w,Fw)
-#        lam         += w * rho        
-#        gprev       = g.copy()                  
-##         
-#        PMPgprev    = PMPg.copy()      
-#        g           += Fw * rho
-#        Pg           = Proj*g
-#        PMPg        = Proj*(Prec*Pg)
-#
-#        gtPMPg      = np.dot(g,PMPg)
-#        gamma       = gtPMPg/np.dot(gprev,PMPgprev)
-#        w           = PMPg + w * gamma 
-## 
-#        if (np.dot(g,PMPg)<0): 
-#            raise SystemExit("Problem, precond. M is unsymmetric. Change it.") 
-##  
-#        sqrt_gtPg = np.sqrt(np.dot(g,Pg))
-#        normed_gi   = sqrt_gtPg/sqrt_gtPg0
-#        vec_normed_g[i]    = normed_gi
-##       
-#        is_stagnating = np.log2(normed_gi)/(i+2)
-#        vec_staggnat[i]    = is_stagnating
-##
-#        if np.log10(normed_gi/vec_normed_g[:i+1].min()) > 2:
-#            print('... stagnate',end='')
-#            break
-##
-#        if disp:
-#            print('%5d   %3.5f   %3.3e   %3.6f     %3.5f' % \
-#                            (i+2,normed_gi,sqrt_gtPg,eps0,is_stagnating))             
-##            
-#        if normed_gi<eps0:
-#            break
-#        if i==maxIt:
-#            print('PCPG does not converge within maxNumbIter (',
-#                       conf.maxIt_dual_feti,').')
-#            break
+
     alpha = iG2tG1.solve(sparse.csc_matrix.dot(G2.transpose(),d-F*lam))
     numbOfIter = i
 #   
