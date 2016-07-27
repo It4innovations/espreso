@@ -3872,7 +3872,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     NtN_Mat.Clear();
     std::stringstream sss;
     sss << "get kernel from K -> rank: " << config::env::MPIrank;
-    NtN.Factorization(ss.str());
+    NtN.Factorization(sss.str());
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();
     NtN_Mat.MatMat(N,'N',Nt);
@@ -4058,7 +4058,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
 //ESLOCAL FIXING_NODES_OR_DOF                           = 0;
-  eslocal fixing_nodes_or_dof                           = 40;
+  eslocal fixing_nodes_or_dof                           = 0;
 //ESLOCAL DOFPERNODE                                    = 3;
   eslocal dofPerNode                                    = 1;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4140,7 +4140,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 // FOR UNSYMMETRIC MATRIX HAS TO BE SET-UP FOLLOWING PARAMETERS - ALWAYS
   use_null_pivots_or_s_set          = false;
-  fixing_nodes_or_dof               = 60;
+  fixing_nodes_or_dof               = 0;
   dofPerNode                        = 1;
 
 
@@ -4414,16 +4414,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       }
     }
 //
+  srand(time(NULL));
+//    srand(0); // random will be constant until next compiling
     if (permutVectorActive==1){
-      srand(time(NULL));
-//      srand(0); // random will be constant until next compiling
-
       if (fixing_nodes_or_dof==0){
         random_shuffle ( permVec.begin(), permVec.end() );
       }
       else
       {
-        std::srand(std::time(0));
         std::random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
         for (eslocal i=n_nodsSub;i>0;i--){
           for (eslocal j=0;j<dofPerNode;j++){
@@ -4439,7 +4437,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       // random permutation
       n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to sc_size
       cnt_permut_vec=0;
-      srand(time(NULL));
       // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
       // If not, missing numbers are added and checked again.
       do {
@@ -4510,8 +4507,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //    K_modif.printMatCSR("K_scaled_permuted");
 //
     for (eslocal i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
+    
+
     K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
 
+//    std::cout<< "K_rr.size()="<<K_rr.rows << std::endl;
+//    std::cout<< "i_start="<<i_start << std::endl;
+//    std::cout<< "nonsing_size="<<nonsing_size<< std::endl;
+//
 //    K_rr.printMatCSR("K_rr");
 
 //    if (check_nonsing!=0){
@@ -4564,12 +4567,20 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     if (SC_via_K_rr){
       S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
 //      S.printMatCSR("K_ss");
-      K_rr_solver.ImportMatrix(K_rr);
+      K_rr_solver.ImportMatrix_wo_Copy(K_rr);
 //      K_rr.printMatCSR("K_rr");
       K_rr_solver.mtype = 11;
       K_rr_solver.msglvl= 0;
 
       ss << "get kerner from K -> rank: " << config::env::MPIrank;
+
+
+      {
+        SparseMatrix se0 = K_rr;
+        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
+        ose00 << se0;
+        ose00.close();
+      }
       int error_K_rr = K_rr_solver.Factorization(ss.str());
 
 
@@ -4658,8 +4669,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   double *U_S     = new double[S.cols*S.cols];
   double *Vt_S    = new double[S.cols*S.cols];
   double *superb  = new double[S.cols-1];
-  double *W= new double[S.cols*S.cols];
-  double *Z= new double[S.cols*S.cols];
+//  double *W= new double[S.cols*S.cols];
+//  double *Z= new double[S.cols*S.cols];
   MKL_INT info;
   MKL_INT lds = S.cols, Scols= S.cols, Srows = S.rows;
 //  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
@@ -4797,7 +4808,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
   Kplus_R.GramSchmidtOrtho();
   SEQ_VECTOR <eslocal > null_pivots;
-  Kplus_R.getNullPivots(null_pivots);
+//  Kplus_R.getNullPivots(null_pivots);
 
 #if VERBOSE_LEVEL>0
 //10 - R - Gram Schmidt Orthogonalization
@@ -4887,7 +4898,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
   Kplus_Rl.GramSchmidtOrtho();
   SEQ_VECTOR <eslocal > null_pivotsl;
-  Kplus_Rl.getNullPivots(null_pivotsl);
+//  Kplus_Rl.getNullPivots(null_pivotsl);
 
 
 
@@ -5007,11 +5018,11 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     SparseMatrix NtNl;
     NtNl.MatMat( Nt,'N',Nl );
     SparseSolverCPU inv_NtNl;
-    inv_NtNl.ImportMatrix(NtNl);
-    NtNl.Clear();
+    inv_NtNl.ImportMatrix_wo_Copy(NtNl);
+    //NtNl.Clear();
     std::stringstream sss;
     sss << "get kernel from K -> rank: " << config::env::MPIrank;
-    inv_NtNl.Factorization(ss.str());
+    inv_NtNl.Factorization(sss.str());
     // Nt replaced (!) Nt = inv(NtNl) * Nt
     inv_NtNl.SolveMat_Sparse(Nt);
     inv_NtNl.Clear();
