@@ -2334,6 +2334,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 			} else {
 				GGt_l.MatMatT(cluster.G2, cluster.G1);
 			}
+                        GGt_l.MatTranspose(); 
 		   GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
 	 }
 	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
