@@ -1,6 +1,7 @@
 
 import numpy as np 
 from scipy import sparse 
+import scipy 
 import myModul as mM
 import config_espreso_python  
 import pylab as plt
@@ -13,7 +14,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 25
+n_subPerClust   = 1
 
 
 CONSTANT_89 = 24 
@@ -65,18 +66,36 @@ def getDirichletPrecond(x):
     J = np.unique(x[2].tocoo().col)            
     if config_espreso_python.Dirichlet_from_espreso:
         #mat_Schur_Dirichlet[i].append([J,mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)])
-        S = mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=True)
+        S = mM.load_matrix(path,'S',i,j,makeSparse=False,makeSymmetric=False)
     else:
         I = np.arange(0,mat_K_ij.shape[0])
         I = np.delete(I,J)
-        K_II = mat_K_ij[np.array(I)[:,np.newaxis],np.array(I)].tocsc()           
-        K_IJ = mat_K_ij[np.array(I)[:,np.newaxis],np.array(J)].toarray()
-        K_JJ = mat_K_ij[np.array(J)[:,np.newaxis],np.array(J)].toarray()
-        iK_II = spla.splu(K_II)
+        K_II = mat_K_ij[np.array(I)[:,np.newaxis],np.array(I)]            
+        K_IJ = mat_K_ij[np.array(I)[:,np.newaxis],np.array(J)]        
+        K_JI = mat_K_ij[np.array(J)[:,np.newaxis],np.array(I)]
+        K_JJ = mat_K_ij[np.array(J)[:,np.newaxis],np.array(J)]
+        iK_II = spla.splu(K_II.tocsc())
         iK_II_K_IJ = np.zeros(K_IJ.shape)
+
+        print(K_II.shape)
+        print(K_IJ.shape)   
+
+        print(K_JI.shape)
+        print(K_JJ.shape)        
+        
+        K1 = scipy.sparse.hstack((K_II,K_IJ))
+        K2 = scipy.sparse.hstack((K_JI ,K_JJ ))
+        
+        K_modif_python  =  scipy.sparse.vstack((K1,K2)).toarray()
+        
+          
+        np.savetxt("K_modif_python.txt",K_modif_python)         
+        
+        
+        
         for k in range(K_IJ.shape[1]):
-            iK_II_K_IJ[:,k] = iK_II.solve(K_IJ[:,k])
-        S = K_JJ-np.dot(K_IJ.transpose(),iK_II_K_IJ)
+            iK_II_K_IJ[:,k] = iK_II.solve(K_IJ.toarray()[:,k])
+        S = K_JJ.toarray()-np.dot(K_JI.toarray(),iK_II_K_IJ)
     print('Dir. precond: ',i,j)
     return J, S
 
