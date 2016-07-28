@@ -1163,11 +1163,18 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 
     SC_out.cols = sc_size;
     SC_out.rows = sc_size;
-    SC_out.type = 'G';
+//    SC_out.type = 'G';
 
     SC_out.ConvertDenseToCSR(1);
-    SC_out.RemoveLower();
-    SC_out.type = 'S';
+    // TODO - changed for AD-system
+    if ( mtype == 11){
+      SC_out.type = 'G';
+    }
+    else
+    {
+      SC_out.RemoveLower();
+      SC_out.type = 'S';
+    }
 
 	if (msglvl) {
 		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
