@@ -207,6 +207,9 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 			perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
 			SparseMatrix K_modif = physics.K[d];
+      SparseMatrix RegMatCRS = physics.RegMat[d];
+      RegMatCRS.ConvertToCSRwithSort(0);
+			K_modif.MatAddInPlace(RegMatCRS,'N',-1);
 			// K_modif.RemoveLower();
 
 			SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
@@ -220,7 +223,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
 
 			// permutations made on matrix in COO format
-			K_modif.ConvertToCOO(0);
+/*	K_modif.ConvertToCOO(0);
 			eslocal I_index,J_index;
 			for (eslocal i = 0; i < K_modif.nnz;i++) {
 				I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
@@ -236,21 +239,96 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 				K_modif.I_row_indices[i] = I_row_indices_p[i];
 				K_modif.J_col_indices[i] = J_col_indices_p[i];
 			}
-			K_modif.ConvertToCSRwithSort(1);
+			K_modif.ConvertToCSRwithSort(1); */
+// -----------------------------------------------------------------------------
+      K_modif.ConvertToCOO(0);
+      eslocal I_index,J_index;
+      bool unsymmetric=!cluster.SYMMETRIC_SYSTEM;
+      for (eslocal i = 0;i<K_modif.nnz;i++){
+        I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+        J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+        if (unsymmetric || I_index<=J_index){
+          I_row_indices_p[i]=I_index;
+          J_col_indices_p[i]=J_index;
+        }
+        else{
+          I_row_indices_p[i]=J_index;
+          J_col_indices_p[i]=I_index;
+        }
+      }
+//
+      for (eslocal i = 0; i<K_modif.nnz;i++){
+        K_modif.I_row_indices[i] = I_row_indices_p[i];
+        K_modif.J_col_indices[i] = J_col_indices_p[i];
+      }
+      K_modif.ConvertToCSRwithSort(1);
+      {
+			if (config::info::PRINT_MATRICES) {
+				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+				osS << K_modif;
+				osS.close();
+			}
+      }
+// -----------------------------------------------------------------------------
 
 
-			eslocal SC_SIZE = perm_vec.size();
+			eslocal sc_size = perm_vec.size();
 			SparseMatrix S;
 
-			if (SC_SIZE == physics.K[d].rows) {
+			if (sc_size == physics.K[d].rows) {
 				S = physics.K[d];
 				cluster.domains[d].Prec = S;
 			} else {
-				SparseSolverCPU createSchur;
-				eslocal SC_SIZE = perm_vec.size();
-				createSchur.ImportMatrix_wo_Copy(K_modif);
-				createSchur.Create_SC(S, SC_SIZE,false);
-				S.type='S';
+
+        bool dirichlet_SC= false;
+        bool only_diagonals = true;
+        if (dirichlet_SC) {
+          SparseSolverCPU createSchur;
+          createSchur.msglvl=1;
+          eslocal sc_size = perm_vec.size();
+          createSchur.ImportMatrix_wo_Copy(K_modif);
+          createSchur.Create_SC(S, sc_size,false);
+        }
+        else
+        {
+          SparseMatrix K_rr;
+          SparseMatrix K_rs;
+          SparseMatrix K_sr;
+          eslocal i_start = 0;
+          eslocal nonsing_size = K_modif.rows - sc_size - i_start;
+          eslocal j_start = nonsing_size;
+
+          K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
+          K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+          K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
+      
+          S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+          
+          SEQ_VECTOR <double> diagonals;
+          SparseSolverCPU K_rr_solver;
+          if (only_diagonals){
+            diagonals = K_modif.getDiagonal();
+            for (eslocal i = 0; i < K_rs.rows; i++) {
+              for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+                K_rs.CSR_V_values[j - offset] /= diagonals[i];
+              }
+            }
+          }
+          else
+          {
+            K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+            K_rr_solver.mtype = 11;
+            K_rr_solver.msglvl= 0;
+          }
+
+          SparseMatrix invKrrKrs = K_rs;
+          if (!only_diagonals){
+            K_rr_solver.SolveMat_Dense(invKrrKrs);
+          }
+          SparseMatrix KsrInvKrrKrs;
+          KsrInvKrrKrs.MatMat(K_sr,'N',invKrrKrs);
+          S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+        }
 
 				cluster.domains[d].Prec = S;
 				cluster.domains[d].Prec.ConvertCSRToDense(1);
