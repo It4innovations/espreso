@@ -140,30 +140,160 @@ namespace assembler {
 };
 
 namespace solver {
-	extern double   epsilon;					// Solver requested precision
-	extern size_t   maxIterations;				//
-	extern size_t   FETI_METHOD;				// 0 - Total FETI; 1 - HFETI;
-	extern bool     REDUNDANT_LAGRANGE;
-	extern size_t   B0_TYPE;                    // 0 - Corners, 1 - Kernels
-	extern bool     USE_SCHUR_COMPLEMENT; 		// 1 - YES
-	extern size_t   SCHUR_COMPLEMENT_PREC;		// Schur complement precission - 0 DP; 1 SP
-	extern size_t   SCHUR_COMPLEMENT_TYPE;		// 0 - General; 1 - Symmeric
-	extern bool 	COMBINE_SC_AND_SPDS;		// Combine usage of SC for Accelerator and Sparse Direct Solver for CPU
-	extern bool     KEEP_FACTORS;				// 1 - YES; 0 - NO
-	extern size_t   PRECONDITIONER;				// 0 - NO preconditioner; 1 - Lumped
-	extern size_t   CG_SOLVER;					// 0 - Standard CG; 1 - Pipelined CG
-	extern size_t   REGULARIZATION;				// 0 - from mesh; 1 - from stifness matrix
-	extern size_t   KSOLVER;					// 0 - Direct DP, 1 - Iter, 2 - Direct SP, 3 - Direct MIXED Prec
-	extern size_t   KSOLVER_SP_iter_steps;		// number of reiteration steps for SP direct solver
-	extern double   KSOLVER_SP_iter_norm;
-	extern size_t   F0_SOLVER;					// 0 - Direct DP if KSOLVER is DIRECT DP
-												// 1 - DIRECT SP if KSOLVER is DIRECT SP
-												// 1 - Direct DP if KSOLVER is DIRECT SP
-	extern size_t	SA_SOLVER;					// 0 - DENSE on CPU; 1 - DENSE on ACC; 2 - SPARSE on CPU
+	/// The solver requested precision.
+	extern double EPSILON;
 
-	extern size_t   N_MICS;
+	/// Maximum iterations for the solver.
+	extern size_t ITERATIONS;
 
-	extern std::vector<input::Description> description;
+
+	enum class FETI_METHODalternative {
+		/// Total FETI
+		TOTAL_FETI = 0,
+		/// Hybrid Total FETI
+		HYBRID_FETI = 1
+	};
+	/// A variant of FETI method used by the solver
+	extern FETI_METHODalternative FETI_METHOD;
+
+
+	enum class PRECONDITIONERalternative {
+		/// No preconditioner is used
+		NONE = 0,
+		/// Lumped preconditioner     S = K_ss
+		LUMPED = 1,
+		/// Weight function   
+		WEIGHT_FUNCTION = 2,
+		/// Dirichlet preconditioner  S = K_ss - K_sr * inv(K_rr) * K_sr
+		DIRICHLET = 3,
+		/// simplified Dirichlet      S = K_ss - K_sr * 1/diag(K_rr) * K_sr 
+		SUPER_DIRICHLET = 4,
+		/// Lubos's preconditioner
+		MAGIC = 5
+	};
+	/// Used preconditioner
+	extern PRECONDITIONERalternative PRECONDITIONER;
+
+
+	enum class REGULARIZATIONalternative {
+		/// Fix points
+		FIX_POINTS = 0,
+		/// Randomly found null pivots of stiffness matrix
+		NULL_PIVOTS = 1
+	};
+
+	/// A type of regularization of stiffness matrix.
+	/**
+	 * In the case of a singular stiffness matrix, regularization has to be applied.
+	 * When an example is loaded with mesh, it is possible to use regularization
+	 * from fix points. It is faster then regularization from null pivots.
+	 * However, null pivots are more general and usable even without mesh
+	 * (e.g. when API is used).
+	 */
+	extern REGULARIZATIONalternative REGULARIZATION;
+
+	/// Use redundant Lagrange multipliers.
+	/**
+	 * In the case of Hybrid Total FETI, ESPRESO compose gluing matrix for
+	 * each cluster. If this option is on, the multipliers from the cluster
+	 * gluing matrix will be also in global gluing matrix.
+	 */
+	extern bool REDUNDANT_LAGRANGE;
+
+	enum class B0_TYPEalternative {
+		/// Gluing based on corners
+		CORNERS = 0,
+		/// Gluing based on kernels of faces
+		KERNELS = 1
+	};
+	/// Type of cluster gluing matrix.
+	/**
+	 * Sub-domains in each cluster have to be glued together. Gluing can be based
+	 * on corners (random nodes at interfaces between sub-domains) or kernels of
+	 * faces between sub-domains.
+	 */
+	extern B0_TYPEalternative B0_TYPE;
+
+
+	/// Schur complement will be used.
+	extern bool USE_SCHUR_COMPLEMENT;
+
+	enum class SCHUR_COMPLEMENT_PRECalternative {
+		/// Double precision
+		DOUBLE = 0,
+		/// Single precision
+		SINGLE = 1
+	};
+	/// Precision of Schur complement
+	extern SCHUR_COMPLEMENT_PRECalternative SCHUR_COMPLEMENT_PREC;
+
+	enum class SCHUR_COMPLEMENT_TYPEalternative {
+		/// A full matrix is stored
+		GENERAL = 0,
+		/// Store only triangle
+		SYMMETRIC = 1
+	};
+	extern SCHUR_COMPLEMENT_TYPEalternative SCHUR_COMPLEMENT_TYPE;
+
+	/// Combine usage of SC for Accelerator and Sparse Direct Solver for CPU
+	extern bool COMBINE_SC_AND_SPDS;
+
+	/// Keep factors between iterations
+	extern bool KEEP_FACTORS;
+
+
+	enum class CGSOLVERalternative {
+		STANDARD = 0,
+		PIPELINED = 1,
+		FULL_ORTOGONAL = 2,
+		GMRES = 3
+	};
+
+	/// A type of conjugate gradient solver
+	extern CGSOLVERalternative CGSOLVER;
+
+
+	enum class KSOLVERalternative {
+		/// A direct solver with double precision
+		DIRECT_DP = 0,
+		/// An iterative solver
+		ITERATIVE = 1,
+		/// A direct solver with single precision
+		DIRECT_SP = 2,
+		/// A direct solver with mixed precision
+		DIRECT_MP = 3
+	};
+	/// A type of stiffness matrix solver
+	extern KSOLVERalternative KSOLVER;
+
+	/// Number of reiteration steps for single precision direct solver
+	extern size_t   KSOLVER_SP_STEPS;
+	/// Iterative norm single precision direct solver
+	extern double   KSOLVER_SP_NORM;
+
+
+	enum class F0SOLVERalternative {
+		/// The same precision as K solver
+		K_PRECISION = 0,
+		/// Double precision
+		DOUBLE = 1
+	};
+	/// A type of F0 solver
+	extern F0SOLVERalternative F0SOLVER;
+
+	enum class SASOLVERalternative {
+		CPU_DENSE = 0,
+		ACC_DENSE = 1,
+		CPU_SPARSE = 2
+	};
+	/// A type of S alfa solver
+	extern SASOLVERalternative SASOLVER;
+
+	/// Number of used MIC accelerators
+	extern size_t N_MICS;
+
+	/// The number of time steps for transient problems
+	extern size_t TIME_STEPS;
 };
 
 namespace info {
