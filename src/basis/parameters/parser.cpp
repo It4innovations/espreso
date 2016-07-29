@@ -25,7 +25,8 @@ std::vector<std::string> Parser::split(const std::string &line, const std::strin
 		if (reminder.find_first_of(separator) == std::string::npos) {
 			reminder.erase(0, std::string::npos);
 		} else {
-			reminder.erase(0, reminder.find_first_of(separator) + 1);
+			reminder.erase(0, reminder.find_first_of(separator));
+			reminder.erase(0, reminder.find_first_not_of(separator));
 		}
 	}
 	return result;

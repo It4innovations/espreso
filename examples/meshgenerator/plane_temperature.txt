@@ -23,7 +23,6 @@ CORNERS_IN_CORNERS
 NODES = {
   LEFT = <0, 30) <0, 0>
   TOP = <0, 0> <0, 30)
-
   BOTTOM = <30, 30> (0, 30>
   RIGHT = (0, 30> <30, 30>
 
