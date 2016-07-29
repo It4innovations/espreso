@@ -246,7 +246,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		if (config::solver::PRECONDITIONER == 3) { // Dirichlet preconditioner
+		if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET || 
+        config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET) {
 			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
 			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
