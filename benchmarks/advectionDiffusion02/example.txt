@@ -1,0 +1,60 @@
+
+## Arguments read from the command line
+CMD_LINE_ARGUMENTS = CLUSTERS_X CLUSTERS_Y SUBDOMAINS_X SUBDOMAINS_Y ELEMENTS_X ELEMENTS_Y
+
+#USE_METIS # mesh will be partitiated by METIS. Also corners and fix points will be computed by METIS.
+
+SHAPE = 2
+ELEMENT_TYPE = 8 # <8, 12> : SQUARE4 SQUARE8 TRIANGLE3 TRIANGLE6
+PHYSICS = ADVECTION_DIFFUSION
+
+CONSISTENT_STABILIZATION = CAU # SUPG, CAU
+INCONSISTENT_STABILIZATION_PARAMETER = 0 # sigma
+
+MATERIAL1 = {
+  DENSITY = 1
+  KX = 1e-5
+  KY = 1e-5
+  CP = 1
+}
+
+LENGTH_X = 1
+LENGTH_Y = 1
+
+CORNERS_IN_CORNERS
+
+NODES = {
+  TOP1 = <0, 0> <0   , 0.6 )
+  TOP2 = <0, 0> <0.6 , 0.65)
+  TOP3 = <0, 0> <0.65, 0.7 >
+  TOP4 = <0, 0> (0.7 , 0.75>
+  TOP5 = <0, 0> (0.75, 1   >
+
+  RIGHT = (0, 1> <1, 1>
+  LEFT = (0, 1> <0, 0>
+  BOTTOM = <1, 1> (0, 1>
+}
+
+ELEMENTS = {
+  ALL_EL = ALL
+}
+
+DIRICHLET = {
+  TOP1 = T: 0
+  TOP2 = T: y - 0.6
+  TOP3 = T: 18 * (y - 0.65) + 0.05
+  TOP4 = T: (y - 0.7) + 0.95
+  TOP5 = T: 1
+  RIGHT = T: 1
+
+  LEFT = T: 0
+  BOTTOM = T: 0
+}
+
+HEAT_SOURCES = {
+  ALL_EL = 0
+}
+
+TRANSLATION_MOTIONS = {
+  ALL_EL = x: y, y: -x
+}
