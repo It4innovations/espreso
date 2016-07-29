@@ -23,6 +23,8 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
 {
 	bool CAU = true;
+	double sigma = 0;
+
 	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
 	double detJ;
 	DenseMatrix f(1, element->size());
@@ -60,7 +62,6 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	fill(fe.begin(), fe.end(), 0);
 
 	DenseMatrix u(1, 2), v(1, 2), Re(1, element->size());
-	double sigma = 0;
 	double normGradN = 0;
 
 	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
@@ -98,7 +99,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		if (norm_u_e != 0) {
 			h_e = 2 * norm_u_e / b_e.norm();
-			double P_e = h_e * norm_u_e / 2 * Ce(0, 0);
+			double P_e = h_e * norm_u_e / (2 * Ce(0, 0));
 			tau_e = std::max(0.0, 1 - 1 / P_e);
 			konst = h_e * tau_e / (2 * norm_u_e);
 
