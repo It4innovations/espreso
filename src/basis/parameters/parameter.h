@@ -87,6 +87,7 @@ struct Parameter {
 	{
 		if (this != &other) {
 			name = other.name;
+			delete data;
 			data = other.data->copy();
 			description = other.description;
 			verboseLevel = other.verboseLevel;

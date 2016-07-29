@@ -13,7 +13,7 @@ static void signalHandler(int signal)
 		ESINFO(ERROR) << "Invalid memory reference";
 		break;
 	case SIGFPE:
-		ESINFO(ERROR) << "Erroneous arithmetic operation";
+		ESINFO(ERROR) << "Errorneous arithmetic operation";
 		break;
 	}
 }
