@@ -1813,18 +1813,18 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	if ( USE_HFETI == 1) {
 		for (eslocal d = 0; d < domains.size(); d++) {
-			if ( config::solver::REGULARIZATION == 0 ) {
-				domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+				domains[d].Kplus_R2 .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 			} else {
-				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+				domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 			}
 		}
 	} else {
 		for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
-			if ( config::solver::REGULARIZATION == 0 ) {
-				domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+				domains[d].Kplus_R2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 			} else {
-				domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+				domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 			}
 		}
 	}
