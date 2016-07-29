@@ -1130,7 +1130,7 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 		SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
-		s.type = 'S';
+//		s.type = 'S';
 		s.nnz = nnz;
 		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
 		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
@@ -1169,6 +1169,7 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
     // TODO - changed for AD-system
     if ( mtype == 11){
       SC_out.type = 'G';
+      SC_out.MatTranspose();
     }
     else
     {
