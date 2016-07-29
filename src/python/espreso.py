@@ -77,24 +77,28 @@ def getDirichletPrecond(x):
         iK_II = spla.splu(K_II.tocsc())
         iK_II_K_IJ = np.zeros(K_IJ.shape)
 
-        print(K_II.shape)
-        print(K_IJ.shape)   
+        #print(K_II.shape)
+        #print(K_IJ.shape)   
 
-        print(K_JI.shape)
-        print(K_JJ.shape)        
+        #print(K_JI.shape)
+        #print(K_JJ.shape)        
         
-        K1 = scipy.sparse.hstack((K_II,K_IJ))
-        K2 = scipy.sparse.hstack((K_JI ,K_JJ ))
+        #K1 = scipy.sparse.hstack((K_II,K_IJ))
+        #K2 = scipy.sparse.hstack((K_JI ,K_JJ ))
         
-        K_modif_python  =  scipy.sparse.vstack((K1,K2)).toarray()
+        #K_modif_python  =  scipy.sparse.vstack((K1,K2)).toarray()
         
           
-        np.savetxt("K_modif_python.txt",K_modif_python)         
+        #np.savetxt("K_modif_python.txt",K_modif_python)         
         
         
         
         for k in range(K_IJ.shape[1]):
-            iK_II_K_IJ[:,k] = iK_II.solve(K_IJ.toarray()[:,k])
+            if config_espreso_python.SUPER_DIRICHLET:
+                diagK = K_II.diagonal()
+                iK_II_K_IJ[:,k] = (1./diagK)*K_IJ.toarray()[:,k]
+            else:
+                iK_II_K_IJ[:,k] = iK_II.solve(K_IJ.toarray()[:,k])
         S = K_JJ.toarray()-np.dot(K_JI.toarray(),iK_II_K_IJ)
     print('Dir. precond: ',i,j)
     return J, S

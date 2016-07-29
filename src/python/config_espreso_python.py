@@ -11,7 +11,8 @@ eps_iter_Kplus                      = 1e-15
 
 
 Dirichlet_from_espreso              = False
-precondDualSystem                   = 'none' # 'none', 'lumped', 'dirichlet'
+precondDualSystem                   = 'dirichlet' # 'none', 'lumped', 'dirichlet'
+SUPER_DIRICHLET                     = False
 
 single_precision                    = True     # True, False
 methodToImproveSolByIterMethod      = 'pcg_x'   # 'cg_x', 'pcg_x',       
