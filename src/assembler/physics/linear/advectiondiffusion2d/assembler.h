@@ -8,8 +8,17 @@ namespace espreso {
 
 struct AdvectionDiffusion2D: public LinearPhysics
 {
+	enum class STABILIZATION {
+		SUPG = 0,
+		CAU = 1
+	};
+
 	AdvectionDiffusion2D(const Mesh &mesh)
 	: LinearPhysics(mesh, { Property::TEMPERATURE }, { Property::FIXED_TEMPERATURE }, SparseMatrix::MatrixType::REAL_UNSYMMETRIC) {};
+
+	static double sigma;
+	static STABILIZATION stabilization;
+
 
 protected:
 	void composeSubdomain(size_t subdomain);

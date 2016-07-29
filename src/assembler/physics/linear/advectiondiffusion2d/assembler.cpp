@@ -3,6 +3,9 @@
 
 using namespace espreso;
 
+double AdvectionDiffusion2D::sigma = 0;
+AdvectionDiffusion2D::STABILIZATION AdvectionDiffusion2D::stabilization = AdvectionDiffusion2D::STABILIZATION::CAU;
+
 static double determinant2x2(DenseMatrix &m)
 {
 	return fabs(
@@ -22,8 +25,8 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
 {
-	bool CAU = true;
-	double sigma = 0;
+	bool CAU = AdvectionDiffusion2D::stabilization == AdvectionDiffusion2D::STABILIZATION::CAU;
+	double sigma = AdvectionDiffusion2D::sigma;
 
 	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
 	double detJ;

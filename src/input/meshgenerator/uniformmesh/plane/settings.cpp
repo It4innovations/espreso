@@ -1,6 +1,8 @@
 
 #include "settings.h"
 
+#include "esassembler.h"
+
 using namespace espreso::input;
 
 void PlaneSettings::defaultPlaneSettings()
@@ -34,6 +36,12 @@ void PlaneSettings::defaultPlaneSettings()
 	parameters.push_back({ "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity });
 	parameters.push_back({ "HEAT_SOURCES", properties["HEAT_SOURCES"], "Sources of a heat.", verbosity });
 	parameters.push_back({ "TRANSLATION_MOTIONS", properties["TRANSLATION_MOTIONS"], "Translation motion of a region.", verbosity });
+
+	parameters.push_back({ "INCONSISTENT_STABILIZATION_PARAMETER", AdvectionDiffusion2D::sigma, "Inconsistent stabilization.", verbosity });
+	parameters.push_back({ "CONSISTENT_STABILIZATION", AdvectionDiffusion2D::stabilization, "Inconsistent stabilization.", {
+			{ "CAU", AdvectionDiffusion2D::STABILIZATION::CAU, "CAU stabilization." },
+			{ "SUPG", AdvectionDiffusion2D::STABILIZATION::SUPG, "SUPG stabilization." }
+	}, verbosity });
 }
 
 PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size)

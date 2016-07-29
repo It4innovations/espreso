@@ -84,12 +84,12 @@ def configure(ctx):
     ctx.recurse("src/config")
     ctx.recurse("src/basis")
     ctx.recurse("src/mesh")
-    ctx.recurse("src/input")
     ctx.recurse("src/output")
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
+    ctx.recurse("src/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
     ctx.recurse("src/app")
@@ -116,10 +116,10 @@ def build(ctx):
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
     ctx.recurse("src/mesh")
-    ctx.recurse("src/input")
     ctx.recurse("src/output")
 
     ctx.env = ctx.all_envs["solver"]
+    ctx.recurse("src/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
     ctx.recurse("src/app")
