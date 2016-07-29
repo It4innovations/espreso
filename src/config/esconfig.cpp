@@ -131,10 +131,12 @@ std::vector<Description> solver::description = {
 			"Hybrid Total FETI" }, WRITE_TO_HELP },
 
 	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
-			"NO preconditioner",
-			"Lumped",
-			"weight function",
-			"Dirichlet" }, WRITE_TO_HELP },
+			{ "NONE", solver::PRECONDITIONERalternative::NONE, "Use no preconditioner" },
+			{ "LUMPED", solver::PRECONDITIONERalternative::LUMPED, "Lumber preconditioner" },
+			{ "WEIGHT_FUNCTION", solver::PRECONDITIONERalternative::WEIGHT_FUNCTION, "Use weight function" },
+			{ "DIRICHLET", solver::PRECONDITIONERalternative::DIRICHLET, "Dirichlet preconditioner" },
+			{ "SUPER_DIRICHLET", solver::PRECONDITIONERalternative::SUPER_DIRICHLET, "simplified Dirichlet preconditioner" },
+			{ "MAGIC", solver::PRECONDITIONERalternative::MAGIC}}, WRITE_TO_HELP },
 
 	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
 			"standard",
