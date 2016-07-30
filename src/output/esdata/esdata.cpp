@@ -3,10 +3,13 @@
 
 using namespace espreso::output;
 
-void Esdata::store(double shrinkSubdomain, double shrinkCluster)
+void Esdata::mesh(const Mesh &mesh, const std::string &path)
 {
-	// shrink is ignored!!!
+	Esdata(mesh, path);
+}
 
+Esdata::Esdata(const Mesh &mesh, const std::string &path): _mesh(mesh), _path(path)
+{
 	std::stringstream ss;
 	ss << "mkdir -p " << _path;
 	system(ss.str().c_str());

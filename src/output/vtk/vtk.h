@@ -1,43 +1,27 @@
 
-#ifndef OUTPUT_VTK_VTK_H_
-#define OUTPUT_VTK_VTK_H_
+#ifndef SRC_OUTPUT_VTK_VTK_H_
+#define SRC_OUTPUT_VTK_VTK_H_
 
-#include "../store.h"
+#include "../results.h"
 
 namespace espreso {
 namespace output {
 
-class VTK: public ResultStore {
+class VTK: public Results {
 
 public:
 	VTK(const Mesh &mesh, const std::string &path);
 
-	virtual void store(const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster);
+	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster);
 
-	void store(double shrinkSubdomain, double shringCluster);
-	void store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster);
+	static void mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
+	static void properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster);
 
-protected:
-	static Point shrink(const Point &p,
-			const Point &subdomainCenter, double subdomainShrinkRatio,
-			const Point &clusterCenter, double clusterShrinkRatio);
-
-	void head();
-	virtual void coordinates(const Coordinates &coordinates, double shrinkSubdomain, double shringCluster);
-	virtual void coordinates(const Coordinates &coordinates, const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster);
-	virtual void elements(const Mesh &mesh);
-	virtual void points(const std::vector<std::vector<eslocal> > &points);
-	virtual void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs) = 0;
-
-	std::ofstream _vtk;
-
-	std::vector<Point> _subdomainsCenter;
-	Point _clusterCenter;
+	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
 };
 
-
 }
 }
 
-
-#endif /* OUTPUT_VTK_VTK_H_ */
+#endif /* SRC_OUTPUT_VTK_VTK_H_ */

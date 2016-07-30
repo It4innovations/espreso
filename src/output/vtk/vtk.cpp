@@ -1,228 +1,277 @@
+#include <vtkGenericDataObjectReader.h>
+#include <vtkXMLUnstructuredGridReader.h>
+#include <vtkXMLUnstructuredGridWriter.h>
+#include <vtkSmartPointer.h>
+#include <vtkPoints.h>
+#include <string>
+#include <vtkPoints.h>
+#include <vtkXMLMultiBlockDataWriter.h>
+#include <vtkMultiBlockDataSet.h>
 
-#include "vtk.h"
+#include <vtkObjectFactory.h>
+#include <vtkZLibDataCompressor.h>
+#include <vtk_zlib.h>
+
+#include <vtkDataSetMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+
+#include <iostream>
+#include <fstream>
+
+#include "esmesh.h"
+#include "esoutput.h"
+
+#include "vtkCellData.h"
+#include "vtkCellType.h"
+#include "vtkDoubleArray.h"
+#include "vtkFloatArray.h"
+#include "vtkNew.h"
+#include "vtkPoints.h"
+#include "vtkPointData.h"
+#include "vtkUnstructuredGrid.h"
 
 using namespace espreso::output;
 
-VTK::VTK(const Mesh &mesh, const std::string &path): ResultStore(mesh, path)
+vtkUnstructuredGrid* VTKGrid;
+
+VTK::VTK(const Mesh &mesh, const std::string &path): Results(mesh, path)
 {
-	const Coordinates &coordinates = mesh.coordinates();
+	// constructor
+}
 
-	for (size_t i = 0; i < coordinates.clusterSize(); i++) {
-		_clusterCenter += coordinates[i];
+void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+{
+	std::cout << "SAVE GENERIC VTK DATA\n";
+}
+
+void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
+{
+	std::cout << "SAVE PROPERTIES TO VTK\n";
+}
+
+void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+{
+	std::cout << "SAVE FIX POINTS TO VTK\n";
+}
+
+void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+{
+	std::cout << "SAVE CORNERS TO VTK\n";
+}
+
+void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSubdomain, double shrinkCluster)
+{
+
+	switch (config::output::OUTPUT_FORMAT) {
+	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+		std::cout << "LEGACY\n";
+		break;
+	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+		std::cout << "BINARY\n";
+		break;
+	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+		std::cout << "MULTIBLOCK\n";
+		break;
+	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+		std::cout << "ENSIGHT\n";
+		break;
 	}
-	_clusterCenter /= coordinates.clusterSize();
 
-	_subdomainsCenter.resize(_mesh.parts());
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		for (size_t i = 0; i < coordinates.localSize(p); i++) {
-			_subdomainsCenter[p] += coordinates.get(i, p);
+	std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION << "\n";
+	std::cout << "Decimation: " << config::output::OUTPUT_DECIMATION << "\n";
+
+	const std::vector<Element*> &elements = _mesh.getElements();
+	const std::vector<eslocal> &_partPtrs = _mesh.getPartition();
+
+	VTKGrid = vtkUnstructuredGrid::New();
+
+	size_t n_nodsClust = 0;
+	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
+		n_nodsClust += elements[iEl]->size();
+	}
+	size_t cnt = 0, n_points = 0;
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		n_points += _mesh.coordinates().localSize(d);
+	}
+
+	double shrinking = 0.90;
+	const Coordinates &_coordinates = _mesh.coordinates();
+	double *coord_xyz = new double[n_points * 3];
+
+	int counter = 0;
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		Point center;
+		for (size_t c = 0; c < _coordinates.localSize(d); c++) {
+			center += _coordinates.get(c, d);
 		}
-		_subdomainsCenter[p] /= coordinates.localSize(p);
-	}
-}
+		center /= _coordinates.localSize(d);
 
-espreso::Point VTK::shrink(const Point &p,
-			const Point &subdomainCenter, double subdomainShrinkRatio,
-			const Point &clusterCenter, double clusterShrinkRatio)
-{
-	Point x = p;
-	x = subdomainCenter + (x - subdomainCenter) * subdomainShrinkRatio;
-	x = clusterCenter + (x - clusterCenter) * clusterShrinkRatio;
-	return x;
-}
-
-void VTK::store(const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
-{
-	std::stringstream ss;
-	ss << _path << config::env::MPIrank << ".vtk";
-	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-	head();
-	coordinates(_mesh.coordinates(), points, shrinkSubdomain, shringCluster);
-	this->points(points);
-
-	_vtk.close();
-}
-
-
-void VTK::store(double shrinkSubdomain, double shringCluster)
-{
-	std::stringstream ss;
-	ss << _path << config::env::MPIrank << ".vtk";
-	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-	head();
-	coordinates(_mesh.coordinates(), shrinkSubdomain, shringCluster);
-	elements(_mesh);
-
-	_vtk.close();
-}
-
-
-void VTK::store(std::vector<std::vector<double> > &displacement, size_t dofs, double shrinkSubdomain, double shringCluster)
-{
-	std::stringstream ss;
-	ss << _path << config::env::MPIrank << ".vtk";
-	_vtk.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-	head();
-	coordinates(_mesh.coordinates(), shrinkSubdomain, shringCluster);
-	elements(_mesh);
-	coordinatesDisplacement(displacement, dofs);
-
-	_vtk.close();
-}
-
-void VTK::head()
-{
-	_vtk << "# vtk DataFile Version 3.0\n";
-	_vtk << "Test\n";
-	_vtk << "ASCII\n";
-	_vtk << "\n";
-}
-
-void VTK::coordinates(const Coordinates &coordinates, double shrinkSubdomain, double shringCluster)
-{
-	size_t parts = coordinates.parts();
-
-	size_t cSize = 0;
-	for (size_t p = 0; p < parts; p++) {
-		cSize += coordinates.localToCluster(p).size();
-	}
-
-	_vtk << "DATASET UNSTRUCTURED_GRID\n";
-	_vtk << "POINTS " << cSize << " float\n";
-
-	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = 0; i < coordinates.localToCluster(p).size(); i++) {
-			_vtk << shrink(coordinates.get(i, p), _subdomainsCenter[p], shrinkSubdomain, _clusterCenter, shringCluster) << "\n";
+		for (size_t i = 0; i < _coordinates.localSize(d); i++) {
+			Point xyz = _coordinates.get(i, d);
+			xyz = center + (xyz - center) * shrinking;
+			coord_xyz[3 * counter + 0] = xyz.x;
+			coord_xyz[3 * counter + 1] = xyz.y;
+			coord_xyz[3 * counter + 2] = xyz.z;
+			counter++;
 		}
 	}
-	_vtk << "\n";
-}
 
-void VTK::coordinates(const Coordinates &coordinates, const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
-{
-	size_t parts = coordinates.parts();
+	vtkNew < vtkDoubleArray > pointArray;
+	pointArray->SetNumberOfComponents(3);
 
-	size_t cSize = 0;
-	for (size_t p = 0; p < parts; p++) {
-		cSize += points[p].size();
-	}
+	size_t numpoints = n_points * 3;
+	pointArray->SetArray(coord_xyz, numpoints, 1);
+	vtkNew <vtkPoints > points;
+	points->SetData(pointArray.GetPointer());
+	VTKGrid->SetPoints(points.GetPointer());
 
-	_vtk << "DATASET UNSTRUCTURED_GRID\n";
-	_vtk << "POINTS " << cSize << " float\n";
+	VTKGrid->Allocate(static_cast<vtkIdType>(n_nodsClust));
+	vtkIdType tmp[100]; //max number of  node
 
-	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = 0; i < points[p].size(); i++) {
-			_vtk << shrink(coordinates[points[p][i]], _subdomainsCenter[p], shrinkSubdomain, _clusterCenter, shringCluster) << "\n";
-		}
-	}
-	_vtk << "\n";
-}
-
-void VTK::elements(const Mesh &mesh)
-{
-	const std::vector<Element*> &elements = mesh.elements();
-	const std::vector<eslocal> &partition = mesh.getPartition();
-	size_t parts = mesh.parts();
-
-	size_t size = 0;
-	for (size_t i = 0; i < elements.size(); i++) {
-		size += elements[i]->nodes() + 1;
-	}
-
-	// ELEMENTS
-	size_t offset = 0;
-	_vtk << "CELLS " << elements.size() << " " << size << "\n";
-	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = partition[p]; i < partition[p + 1]; i++) {
-			// elements
-			_vtk << elements[i]->nodes();
-			for (size_t j = 0; j < elements[i]->nodes(); j++) {
-				_vtk << " " << mesh.coordinates().localIndex(elements[i]->node(j), p) + offset;
+	size_t i = 0;
+	cnt = 0;
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+		for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
+			for (size_t j = 0; j < elements[i]->size(); j++) {
+				tmp[j] = elements[i]->node(j) + cnt;
 			}
-			_vtk << "\n";
+			VTKGrid->InsertNextCell(elements[i]->vtkCode(), elements[i]->size(), &tmp[0]);
+			i++;
 		}
-
-		offset += mesh.coordinates().localSize(p);
+		cnt += _coordinates.localSize(part);
 	}
+	//decompositon
 
-	_vtk << "\n";
+	float *decomposition_array = new float[elements.size()];
 
-	// ELEMENTS TYPES
-	_vtk << "CELL_TYPES " << elements.size() << "\n";
-	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = partition[p]; i < partition[p + 1]; i++) {
-			_vtk << elements[i]->vtkCode() << "\n";
-		}
-	}
-	_vtk << "\n";
-
-	// DECOMPOSITION TO SUBDOMAINS
-	_vtk << "CELL_DATA " << elements.size() << "\n";
-	_vtk << "SCALARS decomposition int 1\n";
-	_vtk << "LOOKUP_TABLE decomposition\n";
-	for (size_t p = 0; p < parts; p++) {
-		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			_vtk << p << "\n";
-
+	counter = 0;
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+		for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+			float part_redefine =  part;
+			decomposition_array[counter] = part_redefine;
+			counter++;
 		}
 	}
-	_vtk << "\n";
 
-	// DECOMPOSITION TO MATERIAL
-	_vtk << "SCALARS materials int 1\n";
-	_vtk << "LOOKUP_TABLE materials\n";
-	for (size_t p = 0; p < parts; p++) {
-		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			if (elements[i]->params()) {
-				_vtk << elements[i]->param(Element::MATERIAL) << "\n";
-			} else {
-				_vtk << "0\n";
-			}
+	vtkNew<vtkFloatArray> decomposition;
+	decomposition->SetName("decomposition");
+	decomposition->SetNumberOfComponents(1);
+
+	//vtkFloatArray* decomposition = vtkFloatArray::SafeDownCast(VTKGrid->GetCellData()->GetArray("decomposition"));
+	decomposition->SetArray(decomposition_array, static_cast<vtkIdType>(elements.size()), 1);
+	VTKGrid->GetCellData()->AddArray(decomposition.GetPointer());
+
+	//displacement
+	int mycounter=0;
+	for (size_t i = 0; i < displasment.size(); i++) {
+		mycounter += displasment[i].size();
+	}
+
+	double displacement_array[mycounter];
+
+	counter=0;
+
+	for (size_t i = 0; i < displasment.size(); i++) {
+	  for (size_t j = 0; j < (displasment[i].size() / 3); j++) {
+			displacement_array[3 * counter + 0] = displasment[i][3 * j + 0];
+			displacement_array[3 * counter + 1] = displasment[i][3 * j + 1];
+			displacement_array[3 * counter + 2] = displasment[i][3 * j + 2];
+
+			counter++;
 		}
 	}
-	_vtk << "\n";
+
+	vtkNew<vtkDoubleArray> displacement;
+	displacement->SetName("displacement");
+	displacement->SetNumberOfComponents(3);
+	displacement->SetNumberOfTuples(static_cast<vtkIdType>(counter));
+	VTKGrid->GetPointData()->AddArray(displacement.GetPointer());
+
+	double* displacementData = displacement_array;
+	vtkIdType numTuples = displacement->GetNumberOfTuples();
+	for (vtkIdType i = 0, counter = 0; i < numTuples; i++, counter++) {
+		double values[3] = {
+				displacementData[i * 3],
+				displacementData[i * 3 + 1],
+				displacementData[i * 3 + 2]
+		};
+		displacement->SetTypedTuple(counter, values);
+	}
+
+
+	//writer vtu
+
+
+	vtkZLibDataCompressor *myZlibCompressor=vtkZLibDataCompressor::New();
+	myZlibCompressor->SetCompressionLevel(25);
+
+	vtkSmartPointer< vtkXMLUnstructuredGridWriter > writer = vtkSmartPointer< vtkXMLUnstructuredGridWriter > ::New();
+	std::stringstream ss;
+	ss << _path << ".vtu";
+	writer->SetFileName(ss.str().c_str());
+	writer->SetInputData(VTKGrid);
+	writer->SetDataModeToBinary();
+	writer->Write();
+
+
+	//mbds->SetBlock(rank,writer->GetInput());
+
+	//writer vtm
+	MPI_Barrier(MPI_COMM_WORLD);
+	int size = config::env::MPIsize;
+	ofstream result;
+	result.open("result.vtm");
+	result<<"<?xml version=\"1.0\"?>\n";
+	result<<"<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
+	result<<" <vtkMultiBlockDataSet>\n";
+	for(int i=0 ; i < size ; i++){
+	  result<<"  <DataSet index=\""<< i <<"\" file=\"result"<< i <<".vtu\">\n  </DataSet>\n";
+	}
+	result<<" </vtkMultiBlockDataSet>\n";
+	result<<"</VTKFile>\n";
+	result.close();
+
+	/*vtkMultiBlockDataSet *mbds=vtkMultiBlockDataSet::New();
+	vtkXMLMultiBlockDataWriter *vtmwriter=vtkXMLMultiBlockDataWriter::New();
+	vtmwriter->SetFileName("res.vtm");
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	for(int i=0;i<config::env::MPIsize;i++){
+	  vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+	  std::stringstream sss;
+	  sss << "result"<<i << ".vtu";
+	  reader->SetFileName(sss.str().c_str());
+	  reader->Update();
+
+	  mbds->SetBlock(i,reader->GetOutput());
+	}
+	vtmwriter->SetInputData(mbds);
+	vtmwriter->SetCompressor(myZlibCompressor);
+	vtmwriter->Write();*/
+
+	/*for(int i=0;i<config::env::MPIsize;i++)
+	  {
+	    if(config::env::MPIrank==0){
+	      mbds->SetBlock(0,VTKGrid);
+	      vtmwriter->Update();
+	    }
+            else if(config::env::MPIrank==i){
+	      mbds->SetBlock(i,VTKGrid);
+	    }
+	    MPI_Barrier(MPI_COMM_WORLD);
+	  }
+	  MPI_Barrier(MPI_COMM_WORLD);
+	if(rank==0){
+	  vtmwriter->SetInputData(mbds);
+	  vtmwriter->SetCompressor(myZlibCompressor);
+	  vtmwriter->Write();
+	}
+	if(rank==1){
+	  vtmwriter->SetInputData(mbds);
+	  vtmwriter->SetCompressor(myZlibCompressor);
+	  vtmwriter->Update();
+	  }*/
 }
-
-void VTK::points(const std::vector<std::vector<eslocal> > &points)
-{
-	size_t size = 0;
-	for (size_t p = 0; p < points.size(); p++) {
-		size += points[p].size() + 1;
-	}
-
-	size_t offset = 0;
-	_vtk << "CELLS " << points.size() << " " << size << "\n";
-	for (size_t p = 0; p < points.size(); p++) {
-		_vtk << points[p].size();
-		for (size_t j = 0; j < points[p].size(); j++) {
-			_vtk << " " << offset + j;
-		}
-		_vtk << "\n";
-
-		offset += points[p].size();
-	}
-
-	_vtk << "\n";
-
-	_vtk << "CELL_TYPES " << points.size() << "\n";
-	for (size_t p = 0; p < points.size(); p++) {
-		_vtk << "2\n";
-	}
-	_vtk << "\n";
-
-	// DECOMPOSITION TO SUBDOMAINS
-	_vtk << "CELL_DATA " << points.size() << "\n";
-	_vtk << "SCALARS decomposition int 1\n";
-	_vtk << "LOOKUP_TABLE decomposition\n";
-	for (size_t p = 0; p < points.size(); p++) {
-			_vtk << p << "\n";
-	}
-	_vtk << "\n";
-}
-
-
-
-

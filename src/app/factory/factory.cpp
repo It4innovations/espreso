@@ -197,29 +197,19 @@ Factory::Factory(const Configuration &configuration)
 	}
 }
 
-Factory::Factory(const Options &options)
-:_assembler(NULL), _mesh(NULL), _surface(NULL)
-{
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
-
-	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " processes.";
-
-	_mesh = getMesh(options);
-
-	if (config::output::saveMesh) {
-		output::VTK_Full::mesh(*_mesh, "mesh", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	if (config::output::SAVE_MESH) {
+		output::VTK::mesh(mesh, "mesh", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
-	if (config::output::saveFixPoints) {
-		output::VTK_Full::fixPoints(*_mesh, "meshFixPoints", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	if (config::output::SAVE_FIX_POINTS) {
+		output::VTK::fixPoints(mesh, "meshFixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	}
+	if (config::output::SAVE_CORNERS) {
+		output::VTK::corners(mesh, "meshCorners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 	if (config::output::SAVE_DIRICHLET) {
-		std::stringstream ss;
-		ss << "meshDirichlet" << config::env::MPIrank;
-		output::VTK_Full::dirichlet(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::saveAveraging) {
-		output::VTK_Full::averaging(*_mesh, "meshAveraging", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+		output::VTK::properties(mesh, "meshdirichlet",
+				{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
+				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
 	switch (physics) {
@@ -245,13 +235,11 @@ Factory::Factory(const Options &options)
 
 void Factory::solve()
 {
-	output::Generic *output;
+	output::Results *results = NULL;
 
 	instance->init();
 	if (config::output::SAVE_RESULTS) {
-		std::stringstream ss;
-		ss << outputFile << config::env::MPIrank;
-		output = new output::Generic(mesh, ss.str());
+		results = new output::VTK(mesh, "results");
 	}
 
 	for (int i = 0; i < config::solver::TIME_STEPS; i++) {
@@ -259,13 +247,13 @@ void Factory::solve()
 		instance->solve(_solution);
 		instance->post_solve_update(_solution);
 		if (config::output::SAVE_RESULTS) {
-			output->store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			results->store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 		}
 	}
 
 	instance->finalize();
-	if (config::output::SAVE_RESULTS) {
-		delete output;
+	if (results != NULL) {
+		delete results;
 	}
 }
 
