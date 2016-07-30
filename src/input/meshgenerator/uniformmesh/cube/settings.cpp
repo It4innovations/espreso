@@ -26,12 +26,6 @@ static void defaultSettings(CubeSettings &settings)
 			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
 		});
 	}
-
-	parameters.push_back({ "DIRICHLET", dirichlet, "Dirichlet boundary conditions.", verbosity });
-
-	parameters.push_back({ "NODES", nodes, "Named sets of nodes.", verbosity });
-	parameters.push_back({ "FACES", faces, "Named sets of nodes.", verbosity });
-	parameters.push_back({ "ELEMENTS", elements, "Named sets of nodes.", verbosity });
 }
 
 	Configuration configuration(CubeSettings::description, options);

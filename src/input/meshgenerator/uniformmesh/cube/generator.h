@@ -29,6 +29,8 @@ protected:
 	virtual void points(Coordinates &coordinates);
 	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
 
+	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates);
+
 	virtual ~CubeGenerator() {};
 
 	const CubeSettings _settings;

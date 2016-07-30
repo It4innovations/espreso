@@ -29,11 +29,6 @@ void PlaneSettings::defaultPlaneSettings()
 		});
 	}
 
-	parameters.push_back({ "NODES", nodes, "Named sets of nodes.", verbosity });
-	parameters.push_back({ "FACES", faces, "Named sets of nodes.", verbosity });
-	parameters.push_back({ "ELEMENTS", elements, "Named sets of nodes.", verbosity });
-
-	parameters.push_back({ "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity });
 	parameters.push_back({ "HEAT_SOURCES", properties["HEAT_SOURCES"], "Sources of a heat.", verbosity });
 	parameters.push_back({ "TRANSLATION_MOTIONS", properties["TRANSLATION_MOTIONS"], "Translation motion of a region.", verbosity });
 
