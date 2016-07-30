@@ -327,8 +327,6 @@ int SparseSolverPardiso::Factorization(const std::string &str) {
 	/* -------------------------------------------------------------------- */
 	phase = 11;
 
-	ESINFO(PROGRESS2) << Info::plain() << "f";
-
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 

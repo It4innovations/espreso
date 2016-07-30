@@ -12,7 +12,6 @@ struct Stokes: public LinearPhysics
 	: LinearPhysics(
 			mesh,
 			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE },
-			{ Property::FIXED_DISPLACEMENT_X, Property::FIXED_DISPLACEMENT_Y, Property::FIXED_PRESSURE },
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE) {};
 
 protected:

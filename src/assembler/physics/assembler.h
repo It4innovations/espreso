@@ -13,7 +13,7 @@ struct Physics {
 	virtual void assemble() =0;
 	virtual void save()
 	{
-		ESINFO(PROGRESS2) << "Save matrices K and InitialCondition";
+		ESINFO(PROGRESS2) << "Save matrices K and RHS.";
 		for (size_t p = 0; p < K.size(); p++) {
 			std::ofstream osK(Logging::prepareFile(p, "Kreg").c_str());
 			osK << K[p];
@@ -43,15 +43,14 @@ struct Physics {
 		}
 	}
 
-	std::vector<Property> unknowns;
-	std::vector<Property> dirichlet;
+	std::vector<Property> DOFs;
 
 	SparseMatrix::MatrixType mtype;
-	std::vector<SparseMatrix> K, T, R1, R2, RegMat; // T will be deleted
+	std::vector<SparseMatrix> K, R1, R2, RegMat;
 	std::vector<std::vector<double> > f;
 
-	Physics(const Mesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype)
-	: _mesh(mesh), unknowns(unknowns), dirichlet(dirichlet), mtype(mtype) {};
+	Physics(const Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
+	: _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
 	virtual ~Physics() {};
 
 protected:

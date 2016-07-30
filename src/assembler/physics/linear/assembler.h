@@ -15,7 +15,7 @@ struct LinearPhysics: public Physics {
 
 	virtual void assemble()
 	{
-		ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and InitialCondition";
+		ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and RHS.";
 
 		K.resize(_mesh.parts());
 		R1.resize(_mesh.parts());
@@ -30,8 +30,8 @@ struct LinearPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	LinearPhysics(const Mesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype)
-	: Physics(mesh, unknowns, dirichlet, mtype) {};
+	LinearPhysics(const Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
+	: Physics(mesh, DOFs, mtype) {};
 	virtual ~LinearPhysics() {};
 
 protected:

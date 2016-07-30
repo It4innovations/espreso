@@ -7,12 +7,6 @@
 namespace espreso {
 
 enum class Property : int {
-	FIXED_DISPLACEMENT_X,
-	FIXED_DISPLACEMENT_Y,
-	FIXED_DISPLACEMENT_Z,
-	FIXED_TEMPERATURE,
-	FIXED_PRESSURE,
-
 	DISPLACEMENT_X,
 	DISPLACEMENT_Y,
 	DISPLACEMENT_Z,
@@ -29,12 +23,6 @@ enum class Property : int {
 inline std::ostream& espreso::operator<<(std::ostream& os, const Property& property)
 {
 	switch (property) {
-		case Property::FIXED_DISPLACEMENT_X: return os << "FIXED_DISPLACEMENT_X";
-		case Property::FIXED_DISPLACEMENT_Y: return os << "FIXED_DISPLACEMENT_Y";
-		case Property::FIXED_DISPLACEMENT_Z: return os << "FIXED_DISPLACEMENT_Z";
-		case Property::FIXED_TEMPERATURE: return os << "FIXED_TEMPERATURE";
-		case Property::FIXED_PRESSURE: return os << "FIXED_PRESSURE";
-
 		case Property::DISPLACEMENT_X: return os << "DISPLACEMENT_X";
 		case Property::DISPLACEMENT_Y: return os << "DISPLACEMENT_Y";
 		case Property::DISPLACEMENT_Z: return os << "DISPLACEMENT_Z";

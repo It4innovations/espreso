@@ -15,7 +15,7 @@ struct TransientPhysics: public Physics {
 
 	virtual void assemble()
 	{
-		ESINFO(PROGRESS2) << "Assemble matrices K, M, and InitialCondition";
+		ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS.";
 
 		K.resize(_mesh.parts());
 		M.resize(_mesh.parts());
@@ -30,7 +30,7 @@ struct TransientPhysics: public Physics {
 
 	virtual void save()
 	{
-		ESINFO(PROGRESS2) << "Save matrices K, M, InitialCondition, and A constant";
+		ESINFO(PROGRESS2) << "Save matrices K, M, RHS, and A constant";
 		for (size_t p = 0; p < _mesh.parts(); p++) {
 			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
 			osK << K[p];
@@ -50,11 +50,11 @@ struct TransientPhysics: public Physics {
 		osA.close();
 	}
 
-	TransientPhysics(const Mesh &mesh, const std::vector<Property> unknowns, const std::vector<Property> dirichlet, SparseMatrix::MatrixType mtype)
-	: Physics(mesh, unknowns, dirichlet, mtype) {};
+	TransientPhysics(const Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
+	: Physics(mesh, DOFs, mtype) {};
 	virtual ~TransientPhysics() {};
 
-	std::vector<SparseMatrix> M; // T will be deleted
+	std::vector<SparseMatrix> M;
 	std::vector<double> A;
 
 protected:
