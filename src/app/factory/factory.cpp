@@ -235,34 +235,19 @@ void Factory::solve()
 	_assembler->finalize();
 }
 
-void Factory::store(const std::string &file)
+double Factory::norm() const
 {
-	switch (config::assembler::discretization){
-
-	case config::assembler::FEM: {
-		if (config::output::saveResults) {
-			output::VTK_Full vtk(*_mesh, file);
-			vtk.store(_solution, _mesh->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	double n = 0, sum = 0;
+	for (size_t i = 0; i < _solution.size(); i++) {
+		for (size_t j = 0; j < _solution[i].size(); j++) {
+			n += _solution[i][j] * _solution[i][j];
 		}
-		break;
 	}
 
-	case config::assembler::BEM: {
-		if (config::output::saveResults) {
-			output::VTK_Full vtk(*_surface, file);
-			vtk.store(_solution, _surface->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
-		}
-		break;
-	}
+	MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	return sqrt(sum);
+}
 
-	case config::assembler::API: {
-		if (config::output::saveResults) {
-			output::VTK_Full vtk(*_mesh, file);
-			vtk.store(_solution, _mesh->DOFs(), config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
-		}
-		break;
-	}
-	}
 }
 
 

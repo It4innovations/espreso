@@ -33,7 +33,10 @@ struct Factory {
 	void solve();
 	void store(const std::string &file);
 
-	~Factory();
+	double norm() const;
+
+	Instance *instance;
+	Mesh mesh;
 
 private:
 	AssemblerBase *_assembler;

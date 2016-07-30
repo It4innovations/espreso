@@ -140,6 +140,9 @@ namespace assembler {
 };
 
 namespace solver {
+	/// ESPRESO checks the norm of the solution if NORM is not zero
+	extern double NORM;
+
 	/// The solver requested precision.
 	extern double EPSILON;
 

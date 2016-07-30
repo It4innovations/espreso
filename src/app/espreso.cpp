@@ -32,8 +32,11 @@ int main(int argc, char **argv)
 	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);
 
 	Factory factory(configuration);
-
 	factory.solve("result");
+
+	ESTEST(SIMPLE)
+		<< (fabs(factory.norm() - config::solver::NORM) > 1e-3 && !config::env::MPIrank ? TEST_FAILED : TEST_PASSED)
+		<< "Norm of the solution " << factory.norm() << " is not " << config::solver::NORM << ".";
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

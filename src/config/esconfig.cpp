@@ -40,28 +40,37 @@ bool   mesh::averageFaces  = false;
 
 /////////////////////////////// SOLVER /////////////////////////////////////////
 
-double   solver::epsilon                = 1e-5;
-size_t   solver::maxIterations          = 1000;
-size_t   solver::FETI_METHOD            = TOTAL_FETI;
-size_t   solver::PRECONDITIONER         = LUMPED;
-size_t   solver::CG_SOLVER              = STANDARD;
-size_t   solver::REGULARIZATION         = FIX_POINTS;
+double                                   solver::NORM                  = 0;
+double                                   solver::EPSILON               = 1e-5;
+size_t                                   solver::ITERATIONS            = 1000;
+solver::FETI_METHODalternative           solver::FETI_METHOD           = solver::FETI_METHODalternative::TOTAL_FETI;
+solver::PRECONDITIONERalternative        solver::PRECONDITIONER        = solver::PRECONDITIONERalternative::LUMPED;
+solver::REGULARIZATIONalternative        solver::REGULARIZATION        = solver::REGULARIZATIONalternative::FIX_POINTS;
 
-bool     solver::REDUNDANT_LAGRANGE     = true;
-size_t   solver::B0_TYPE                = B0Type::KERNELS;
-bool     solver::USE_SCHUR_COMPLEMENT   = false;
-size_t   solver::SCHUR_COMPLEMENT_PREC  = SC_DOUBLE_PRECISION;
-size_t   solver::SCHUR_COMPLEMENT_TYPE  = GENERAL;
-bool     solver::COMBINE_SC_AND_SPDS    = true;
-bool     solver::KEEP_FACTORS           = true;
+bool                                     solver::REDUNDANT_LAGRANGE    = true;
+solver::B0_TYPEalternative               solver::B0_TYPE               = solver::B0_TYPEalternative::KERNELS;
 
-size_t   solver::KSOLVER                = DIRECT_DOUBLE_PRECISION;
-size_t   solver::KSOLVER_SP_iter_steps  = 1000;
-double   solver::KSOLVER_SP_iter_norm   = 1e-12;
-size_t   solver::F0_SOLVER              = KSOLVER_PRECISION;
+bool                                     solver::USE_SCHUR_COMPLEMENT  = false;
+solver::SCHUR_COMPLEMENT_PRECalternative solver::SCHUR_COMPLEMENT_PREC = solver::SCHUR_COMPLEMENT_PRECalternative::DOUBLE;
+solver::SCHUR_COMPLEMENT_TYPEalternative solver::SCHUR_COMPLEMENT_TYPE = solver::SCHUR_COMPLEMENT_TYPEalternative::GENERAL;
 
-size_t   solver::N_MICS                 = 2;
-size_t 	 solver::SA_SOLVER				= 0;
+
+bool                                     solver::COMBINE_SC_AND_SPDS   = true;
+bool                                     solver::KEEP_FACTORS          = true;
+
+
+solver::CGSOLVERalternative             solver::CGSOLVER             = solver::CGSOLVERalternative::STANDARD;
+
+solver::KSOLVERalternative               solver::KSOLVER               = solver::KSOLVERalternative::DIRECT_DP;
+double                                   solver::KSOLVER_SP_NORM       = 1e-12;
+size_t                                   solver::KSOLVER_SP_STEPS      = 1000;
+
+solver::F0SOLVERalternative              solver::F0SOLVER              = solver::F0SOLVERalternative::K_PRECISION;
+solver::SASOLVERalternative              solver::SASOLVER              = solver::SASOLVERalternative::CPU_DENSE;
+
+size_t                                   solver::N_MICS                = 2;
+size_t                                   solver::TIME_STEPS            = 1;
+
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
 
 int    assembler::discretization = FEM;
@@ -123,9 +132,10 @@ std::vector<Description> assembler::description = {
 			{ "FEM", "BEM" }, WRITE_TO_HELP }
 };
 
-std::vector<Description> solver::description = {
-	{ "EPSILON", solver::epsilon, "Solver requested precision.", WRITE_TO_HELP },
-	{ "ITERATIONS", solver::maxIterations, "Solver maximum iterations.", WRITE_TO_HELP },
+	// SOLVER DESCRIPTION
+	{ "NORM", solver::NORM, "Solver requested norm.", WRITE_TO_HELP },
+	{ "EPSILON", solver::EPSILON, "Solver requested precision.", WRITE_TO_HELP },
+	{ "ITERATIONS", solver::ITERATIONS, "Solver maximum iterations.", WRITE_TO_HELP },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
 			"Total FETI",
 			"Hybrid Total FETI" }, WRITE_TO_HELP },
