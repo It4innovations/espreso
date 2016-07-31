@@ -1806,27 +1806,52 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	eslocal size_d = domains[0].Kplus_R.cols; // because transpose of R
 
-	if ( USE_HFETI == 1 )
+	if ( USE_HFETI == 1 ) {
 		vec_d.resize( size_d );
-	else
-		vec_d.resize( domains.size() * size_d );	// MFETI
-
-	if ( USE_HFETI == 1) {
-		for (eslocal d = 0; d < domains.size(); d++) {
-			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
-				domains[d].Kplus_R2 .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
-			} else {
-				domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
-			}
-		}
 	} else {
-		for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
-			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
-				domains[d].Kplus_R2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
-			} else {
-				domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+		vec_d.resize( domains.size() * size_d );	// MFETI
+	}
+
+	if (SYMMETRIC_SYSTEM) {
+
+		if ( USE_HFETI == 1) {
+			for (eslocal d = 0; d < domains.size(); d++) {
+				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+					domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+				} else {
+					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+				}
+			}
+		} else {
+			for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
+				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+					domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+				} else {
+					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+				}
 			}
 		}
+
+	} else {
+
+		if ( USE_HFETI == 1) {
+			for (eslocal d = 0; d < domains.size(); d++) {
+				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+					domains[d].Kplus_R2 .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+				} else {
+					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+				}
+			}
+		} else {
+			for (eslocal d = 0; d < domains.size(); d++) {											// MFETI
+				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+					domains[d].Kplus_R2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+				} else {
+					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+				}
+			}
+		}
+
 	}
 
 	for (eslocal i = 0; i < vec_d.size(); i++)
