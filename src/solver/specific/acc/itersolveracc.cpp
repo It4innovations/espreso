@@ -51,23 +51,33 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
             }
         }
-
-        // meanwhile compute the same for domains staying on CPU
+                // meanwhile compute the same for domains staying on CPU
+        double startCPU = Measure::time();
         cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
         }
 
+        for ( eslocal i = 0 ; i < numDevices; ++i ) {
+            cluster.B1KplusPacks[ i ].DenseMatsVecsRestCPU( 'N' );    
+            long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
+            cilk_for (  long d = cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio() ; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
+                cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
+        }
+
+        }
 
         time_eval.timeEvents[0].end();
-
+        
         // *** Part 4 - Execute HTFETI operator
         // perform simultaneous computation on CPU
         time_eval.timeEvents[1].start();
         cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
         time_eval.timeEvents[1].end();
+                time_eval.timeEvents[2].start();
+        double endCPU = Measure::time();
+        double CPUtime = endCPU - startCPU;
 
-        time_eval.timeEvents[2].start();
 
         // *** Part 5 - Finalize transfers of the result of the FETI SC operator
         // from MICs back to CPU
@@ -78,15 +88,15 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
             }
         }
-
+        
         // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-            cilk_for ( eslocal d = 0 ; d < cluster.accDomains[i].size(); ++d ) {
+            long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio()); 
+            cilk_for ( eslocal d = 0 ; d < end; ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
-        
-        // *** Part 6 - Lambda values, results of the FETI SC operator, are
+                // *** Part 6 - Lambda values, results of the FETI SC operator, are
         // combined back into single lambda vector per cluster -
         // cluster.compressed_tmp
         std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
@@ -108,6 +118,22 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
                 cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
         }
+
+        // update the ratio between the cpu and mic
+        double r = cluster.B1KplusPacks[0].getMICratio();
+        if (r >= 1.0) {
+            r = 0.9;
+        }
+        double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
+        double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
+        std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+
+ #pragma omp parallel num_threads( maxDevNumber )
+        {
+            cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
+        }
+       
+
         time_eval.timeEvents[2].end();
     }
 

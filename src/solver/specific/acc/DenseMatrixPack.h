@@ -63,6 +63,18 @@ public:
     char T_for_transpose_N_for_not_transpose
   );
 
+  // Multiplies input vectors with matrices in pack on mic
+  void DenseMatsVecsCPU(
+    long start,
+    long end,
+    char T_for_transpose_N_for_not_transpose
+  );
+
+  void DenseMatsVecsRestCPU(
+    char T_for_transpose_N_for_not_transpose
+  );
+
+
   // Multiplies input vectors with matrices in pack on mic - start of async. c.
   void DenseMatsVecsMIC_Start(
     char T_for_transpose_N_for_not_transpose
@@ -103,6 +115,24 @@ public:
   ) {
     return this->lengths[matrix];
   }
+
+  void setMICratio( 
+    double MICratio
+   ) {
+    this->MICratio = MICratio; 
+  }
+
+  double getMICratio() {
+    return MICratio;    
+  }
+
+long getNMatrices() {
+    return this->nMatrices;
+  }
+
+double getElapsedTime() {
+    return this->elapsedTime;
+}
 
 /*
   void setDevice(int device) {
@@ -296,6 +326,14 @@ private:
 
   // are data copied to MIC
   bool copiedToMIC;
+
+  #pragma offload_attribute(push,target(mic))
+  // ratio of work during mv multiplication 
+  double MICratio;
+
+  // time for one mv
+  double elapsedTime;
+#pragma offload_attribute(pop)
 };
 
 }
