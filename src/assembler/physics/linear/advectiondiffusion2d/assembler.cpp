@@ -18,8 +18,8 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv.resize(m.rows(), m.columns());
 	double detJx = 1 / det;
 	inv(0, 0) =   detJx * m(1, 1);
-	inv(0, 1) = - detJx * m(1, 0);
-	inv(1, 0) = - detJx * m(0, 1);
+	inv(0, 1) = - detJx * m(0, 1);
+	inv(1, 0) = - detJx * m(1, 0);
 	inv(1, 1) =   detJx * m(0, 0);
 }
 
