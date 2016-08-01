@@ -131,7 +131,9 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
 		Ke.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
-		Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
+		if (konst * weighFactor[gp] * detJ != 0) {
+			Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
+		}
 		if (CAU) {
 			Ke.multiply(dND, dND, C_e * weighFactor[gp] * detJ, 1, true);
 		}
@@ -165,9 +167,9 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
 
-	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
+	for (eslocal p = partition[subdomain]; p < partition[subdomain + 1]; p++) {
 
-		const Element* e = _mesh.getElements()[i];
+		const Element* e = _mesh.getElements()[p];
 		processElement(Ke, fe, _mesh, subdomain, e);
 
 		for (size_t i = 0; i < e->size(); i++) {
@@ -180,18 +182,16 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 		}
 	}
 
-
-
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
 
 
-  if (config::info::PRINT_MATRICES){
-			std::ofstream osK(Logging::prepareFile(subdomain, "K").c_str());
-			osK << K[subdomain];
-			osK.close();
-  }
+	if (config::info::PRINT_MATRICES){
+		std::ofstream osK(Logging::prepareFile(subdomain, "K").c_str());
+		osK << K[subdomain];
+		osK.close();
+	}
 	algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 }
 

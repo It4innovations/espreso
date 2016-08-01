@@ -3084,7 +3084,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-#define VERBOSE_LEVEL 3
+#define VERBOSE_LEVEL 0
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif
@@ -3284,7 +3284,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   //TODO if K.rows<=sc_size, use directly input K instead of S
   //
   int n_nodsSub = 0;
-  double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
+  double rho = K.getDiagonalMaximum();
   if (fixing_nodes_or_dof>0){
     sc_size = fixing_nodes_or_dof*dofPerNode;
     n_nodsSub = round(K.rows/dofPerNode);
@@ -4575,12 +4575,12 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       ss << "get kerner from K -> rank: " << config::env::MPIrank;
 
 
-      {
-        SparseMatrix se0 = K_rr;
-        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
-        ose00 << se0;
-        ose00.close();
-      }
+//      {
+//        SparseMatrix se0 = K_rr;
+//        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
+//        ose00 << se0;
+//        ose00.close();
+//      }
       int error_K_rr = K_rr_solver.Factorization(ss.str());
 
 
