@@ -2,10 +2,106 @@
 
 using namespace espreso;
 
-// TODO: Implement base functions
-std::vector<DenseMatrix> Triangle3::_dN;
-std::vector<DenseMatrix> Triangle3::_N;
-std::vector<double> Triangle3::_weighFactor;
+static std::vector<std::vector<double> > get_st()
+{
+	std::vector< std::vector<double> > st(2, std::vector<double>(Triangle3GPCount));
+
+	switch (Triangle3GPCount) {
+	case 1:
+		st[0] = { 1.0 / 3 };
+		st[1] = { 1.0 / 3 };
+		return st;
+	case 6: {
+		st[0] = {
+			0.091576213509771,
+			0.816847572980459,
+			0.091576213509771,
+			0.445948490915965,
+			0.108103018168070,
+			0.445948490915965
+		};
+
+		st[1] =  {
+			0.091576213509771,
+			0.091576213509771,
+			0.816847572980459,
+			0.445948490915965,
+			0.445948490915965,
+			0.108103018168070
+		};
+		return st;
+	}
+	default:
+		ESINFO(ERROR) << "Unknown number of Triangle3 GP count.";
+		exit(EXIT_FAILURE);
+	}
+}
+
+static std::vector<DenseMatrix> get_dN()
+{
+	std::vector<DenseMatrix> dN(
+		Triangle3GPCount,
+		DenseMatrix(2, Triangle3NodesCount)
+	);
+
+	std::vector<std::vector<double> > st = get_st();
+	const std::vector<double> &s = st[0];
+	const std::vector<double> &t = st[1];
+
+	for (unsigned int i = 0; i < Triangle3GPCount; i++) {
+		///dN contains [dNr, dNs, dNt]
+		DenseMatrix &m = dN[i];
+
+		// dNs - derivation of basis function
+		m(0, 0) = -1;
+		m(0, 1) =  1;
+		m(0, 2) =  0;
+
+		// dNt - derivation of basis function
+		m(1, 0) = -1;
+		m(1, 1) =  0;
+		m(1, 2) =  1;
+	}
+
+	return dN;
+}
+
+static std::vector<DenseMatrix> get_N()
+{
+	std::vector<DenseMatrix> N(
+		Triangle3GPCount,
+		DenseMatrix(1, Triangle3NodesCount)
+	);
+
+	std::vector<std::vector<double> > st = get_st();
+	const std::vector<double> &s = st[0];
+	const std::vector<double> &t = st[1];
+
+	for (unsigned int i = 0; i < Triangle3GPCount; i++) {
+		N[i](0, 0) = 1 - s[i] - t[i];
+		N[i](0, 1) = s[i];
+		N[i](0, 2) = t[i];
+	}
+
+	return N;
+}
+
+static std::vector<double> get_w()
+{
+	switch (Triangle3GPCount) {
+	case 1:
+		return { 1. / 2 };
+	case 6:
+		return { 0.109951743655322 / 2.0, 0.109951743655322 / 2.0,  0.109951743655322 / 2.0, 0.223381589678011 / 2.0, 0.223381589678011 / 2.0, 0.223381589678011 / 2.0 };
+	default:
+		ESINFO(ERROR) << "Unknown number of Triangle3 GP count.";
+		exit(EXIT_FAILURE);
+	}
+}
+
+std::vector<DenseMatrix> Triangle3::_dN = get_dN();
+std::vector<DenseMatrix> Triangle3::_N = get_N();
+std::vector<double> Triangle3::_weighFactor = get_w();
 
 bool Triangle3::match(eslocal *indices, eslocal n)
 {
