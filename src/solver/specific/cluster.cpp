@@ -1176,7 +1176,12 @@ void ClusterBase::CreateF0() {
 	 TimeEvent fact_F0_time("B0 Kplus Factorization "); fact_F0_time.start();
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	F0_Mat.RemoveLower();
+
+	if (SYMMETRIC_SYSTEM) {
+		F0_Mat.RemoveLower();
+	}
+
+	F0_Mat.mtype = mtype;
 	F0.ImportMatrix(F0_Mat);
 
 	bool PARDISO_SC = true;
