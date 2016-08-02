@@ -5011,21 +5011,24 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, fix_dofs);
     }
   //null_pivots
+    bool use_invNtN_in_regMat=false;
     SparseMatrix Nt;
     SparseMatrix Nlt;
     N.MatTranspose( Nt );
-    Nl.MatTranspose( Nlt );
     SparseMatrix NtNl;
-    NtNl.MatMat( Nt,'N',Nl );
-    SparseSolverCPU inv_NtNl;
-    inv_NtNl.ImportMatrix_wo_Copy(NtNl);
-    //NtNl.Clear();
     std::stringstream sss;
     sss << "get kernel from K -> rank: " << config::env::MPIrank;
-    inv_NtNl.Factorization(sss.str());
-    // Nt replaced (!) Nt = inv(NtNl) * Nt
-    inv_NtNl.SolveMat_Sparse(Nt);
-    inv_NtNl.Clear();
+    if (use_invNtN_in_regMat){
+      Nl.MatTranspose( Nlt );
+      NtNl.MatMat( Nt,'N',Nl );
+      SparseSolverCPU inv_NtNl;
+      inv_NtNl.ImportMatrix_wo_Copy(NtNl);
+      //NtNl.Clear();
+      inv_NtNl.Factorization(sss.str());
+      // Nt replaced (!) Nt = inv(NtNl) * Nt
+      inv_NtNl.SolveMat_Sparse(Nt);
+      inv_NtNl.Clear();
+    }
     NtNl.MatMat(Nl,'N',Nt);
     NtNl.MatScale(rho);
     K.MatAddInPlace (NtNl,'N', 1);
