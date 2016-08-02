@@ -116,6 +116,12 @@ public:
 	virtual const std::vector<DenseMatrix>&  N() const = 0;
 	virtual const std::vector<double>& weighFactor() const = 0;
 
+	virtual const std::vector<Property>& DOFElement() const = 0;
+	virtual const std::vector<Property>& DOFFace() const = 0;
+	virtual const std::vector<Property>& DOFEdge() const = 0;
+	virtual const std::vector<Property>& DOFPoint() const = 0;
+	virtual const std::vector<Property>& DOFMidPoint() const = 0;
+
 	// Virtual methods
 	virtual eslocal nCommon() const = 0;
 	virtual eslocal vtkCode() const = 0;

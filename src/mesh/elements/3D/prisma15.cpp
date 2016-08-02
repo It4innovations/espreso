@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Prisma15::_DOFElement;
+std::vector<Property> Prisma15::_DOFFace;
+std::vector<Property> Prisma15::_DOFEdge;
+std::vector<Property> Prisma15::_DOFPoint;
+std::vector<Property> Prisma15::_DOFMidPoint;
+
 static std::vector<std::vector< double> > Prisma15_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Prisma15GPCount));

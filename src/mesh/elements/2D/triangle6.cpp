@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Triangle6::_DOFElement;
+std::vector<Property> Triangle6::_DOFFace;
+std::vector<Property> Triangle6::_DOFEdge;
+std::vector<Property> Triangle6::_DOFPoint;
+std::vector<Property> Triangle6::_DOFMidPoint;
+
 static std::vector<std::vector<double> > get_st()
 {
 	std::vector< std::vector<double> > st(2, std::vector<double>(Triangle6GPCount));

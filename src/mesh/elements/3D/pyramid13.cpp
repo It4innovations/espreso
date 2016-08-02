@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Pyramid13::_DOFElement;
+std::vector<Property> Pyramid13::_DOFFace;
+std::vector<Property> Pyramid13::_DOFEdge;
+std::vector<Property> Pyramid13::_DOFPoint;
+std::vector<Property> Pyramid13::_DOFMidPoint;
+
 static std::vector< std::vector< double> > Pyramid13_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Pyramid13GPCount));

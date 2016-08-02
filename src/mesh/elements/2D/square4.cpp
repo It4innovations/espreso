@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Square4::_DOFElement;
+std::vector<Property> Square4::_DOFFace;
+std::vector<Property> Square4::_DOFEdge;
+std::vector<Property> Square4::_DOFPoint;
+std::vector<Property> Square4::_DOFMidPoint;
+
 static std::vector<DenseMatrix> get_dN() {
 	std::vector<DenseMatrix> dN(
 		Square4GPCount,

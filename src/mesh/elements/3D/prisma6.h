@@ -73,6 +73,31 @@ public:
 		return Prisma6::_weighFactor;
 	}
 
+	const std::vector<Property>& DOFElement() const
+	{
+		return Prisma6::_DOFElement;
+	}
+
+	const std::vector<Property>& DOFFace() const
+	{
+		return Prisma6::_DOFFace;
+	}
+
+	const std::vector<Property>& DOFEdge() const
+	{
+		return Prisma6::_DOFEdge;
+	}
+
+	const std::vector<Property>& DOFPoint() const
+	{
+		return Prisma6::_DOFPoint;
+	}
+
+	const std::vector<Property>& DOFMidPoint() const
+	{
+		return Prisma6::_DOFMidPoint;
+	}
+
 	eslocal nCommon() const
 	{
 		return 3;
@@ -105,6 +130,12 @@ private:
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
+
+	static std::vector<Property> _DOFElement;
+	static std::vector<Property> _DOFFace;
+	static std::vector<Property> _DOFEdge;
+	static std::vector<Property> _DOFPoint;
+	static std::vector<Property> _DOFMidPoint;
 };
 
 }

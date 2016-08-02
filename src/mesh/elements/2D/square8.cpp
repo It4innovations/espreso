@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Square8::_DOFElement;
+std::vector<Property> Square8::_DOFFace;
+std::vector<Property> Square8::_DOFEdge;
+std::vector<Property> Square8::_DOFPoint;
+std::vector<Property> Square8::_DOFMidPoint;
+
 static std::vector<std::vector<double> > get_st()
 {
 	std::vector< std::vector<double> > st(2, std::vector<double>(Square8GPCount));

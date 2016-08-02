@@ -3,6 +3,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Hexahedron20::_DOFElement;
+std::vector<Property> Hexahedron20::_DOFFace;
+std::vector<Property> Hexahedron20::_DOFEdge;
+std::vector<Property> Hexahedron20::_DOFPoint;
+std::vector<Property> Hexahedron20::_DOFMidPoint;
+
 static std::vector<std::vector< double> > Hexa20_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Hexahedron20GPCount));

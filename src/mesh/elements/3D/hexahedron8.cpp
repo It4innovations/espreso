@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Hexahedron8::_DOFElement;
+std::vector<Property> Hexahedron8::_DOFFace;
+std::vector<Property> Hexahedron8::_DOFEdge;
+std::vector<Property> Hexahedron8::_DOFPoint;
+std::vector<Property> Hexahedron8::_DOFMidPoint;
+
 static std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
 		Hexahedron8GPCount,

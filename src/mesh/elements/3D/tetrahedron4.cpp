@@ -3,6 +3,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Tetrahedron4::_DOFElement;
+std::vector<Property> Tetrahedron4::_DOFFace;
+std::vector<Property> Tetrahedron4::_DOFEdge;
+std::vector<Property> Tetrahedron4::_DOFPoint;
+std::vector<Property> Tetrahedron4::_DOFMidPoint;
+
 static std::vector<DenseMatrix> Tetra4_dN()
 {
 	// dN contains [dNr, dNs, dNt]

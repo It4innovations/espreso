@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Line2::_DOFElement;
+std::vector<Property> Line2::_DOFFace;
+std::vector<Property> Line2::_DOFEdge;
+std::vector<Property> Line2::_DOFPoint;
+std::vector<Property> Line2::_DOFMidPoint;
+
 // TODO: Implement base functions
 std::vector<DenseMatrix> Line2::_dN;
 std::vector<DenseMatrix> Line2::_N;

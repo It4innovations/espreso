@@ -70,6 +70,31 @@ public:
 		return Square8::_weighFactor;
 	}
 
+	const std::vector<Property>& DOFElement() const
+	{
+		return Square8::_DOFElement;
+	}
+
+	const std::vector<Property>& DOFFace() const
+	{
+		return Square8::_DOFFace;
+	}
+
+	const std::vector<Property>& DOFEdge() const
+	{
+		return Square8::_DOFEdge;
+	}
+
+	const std::vector<Property>& DOFPoint() const
+	{
+		return Square8::_DOFPoint;
+	}
+
+	const std::vector<Property>& DOFMidPoint() const
+	{
+		return Square8::_DOFMidPoint;
+	}
+
 	eslocal nCommon() const
 	{
 		return 2;
@@ -93,6 +118,12 @@ private:
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
+
+	static std::vector<Property> _DOFElement;
+	static std::vector<Property> _DOFFace;
+	static std::vector<Property> _DOFEdge;
+	static std::vector<Property> _DOFPoint;
+	static std::vector<Property> _DOFMidPoint;
 };
 
 }

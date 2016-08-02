@@ -2,6 +2,12 @@
 
 using namespace espreso;
 
+std::vector<Property> Tetrahedron10::_DOFElement;
+std::vector<Property> Tetrahedron10::_DOFFace;
+std::vector<Property> Tetrahedron10::_DOFEdge;
+std::vector<Property> Tetrahedron10::_DOFPoint;
+std::vector<Property> Tetrahedron10::_DOFMidPoint;
+
 static std::vector<DenseMatrix> Tetra10_dN()
 {
 	std::vector<DenseMatrix> dN(

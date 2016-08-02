@@ -69,6 +69,31 @@ public:
 		return Line2::_weighFactor;
 	}
 
+	const std::vector<Property>& DOFElement() const
+	{
+		return Line2::_DOFElement;
+	}
+
+	const std::vector<Property>& DOFFace() const
+	{
+		return Line2::_DOFFace;
+	}
+
+	const std::vector<Property>& DOFEdge() const
+	{
+		return Line2::_DOFEdge;
+	}
+
+	const std::vector<Property>& DOFPoint() const
+	{
+		return Line2::_DOFPoint;
+	}
+
+	const std::vector<Property>& DOFMidPoint() const
+	{
+		return Line2::_DOFMidPoint;
+	}
+
 	eslocal nCommon() const
 	{
 		return 1;
@@ -92,6 +117,12 @@ private:
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
+
+	static std::vector<Property> _DOFElement;
+	static std::vector<Property> _DOFFace;
+	static std::vector<Property> _DOFEdge;
+	static std::vector<Property> _DOFPoint;
+	static std::vector<Property> _DOFMidPoint;
 };
 
 }
