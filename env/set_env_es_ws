@@ -11,7 +11,7 @@ export PAR_NUM_THREADS=16
 
 export CILK_NWORKERS=16
 
-export MKL_CBWR=AUTO
+export MKL_CBWR=""
 export PARDISOLICMESSAGE=1
 
 #export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/lriha/projects/ParaView-bin/lib/
