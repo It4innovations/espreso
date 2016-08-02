@@ -1,122 +1,55 @@
 {
-   optimized strrchr
+   DGEMM Cond
    Memcheck:Cond
-   fun:__intel_sse2_strrchr
-   fun:__kmp_query_cpuid
-   fun:__kmp_runtime_initialize
-   fun:__kmp_do_serial_initialize
-   fun:__kmp_do_middle_initialize
-   fun:__kmp_middle_initialize
-   fun:omp_get_num_procs@@VERSION
-   fun:mkl_serv_domain_get_max_threads
-   fun:mkl_blas_dgemm_host
-   fun:mkl_blas_dgemm
+   ...
    fun:DGEMM
    fun:cblas_dgemm
-   fun:_ZN7espreso11DenseMatrix8multiplyERKS0_S2_ddbb
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9114processElementERN7espreso11DenseMatrixERSt6vectorIdSaIdEERKNS0_4MeshEmPKNS0_7ElementE
+   ...
 }
 {
-   OMP num procs
+   DGEMM Leak
+   Memcheck:Leak
+   ...
+   fun:DGEMM
+   fun:cblas_dgemm
+   ...
+}
+{
+   DGEMM Param
    Memcheck:Param
    sched_setaffinity(mask)
-   fun:syscall
-   fun:__kmp_affinity_determine_capable
-   fun:_Z20__kmp_env_initializePKc
-   fun:__kmp_do_serial_initialize
-   fun:__kmp_do_middle_initialize
-   fun:__kmp_middle_initialize
-   fun:omp_get_num_procs@@VERSION
-   fun:mkl_serv_domain_get_max_threads
-   fun:mkl_blas_dgemm_host
-   fun:mkl_blas_dgemm
+   ...
    fun:DGEMM
    fun:cblas_dgemm
-   fun:_ZN7espreso11DenseMatrix8multiplyERKS0_S2_ddbb
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9114processElementERN7espreso11DenseMatrixERSt6vectorIdSaIdEERKNS0_4MeshEmPKNS0_7ElementE
+   ...
 }
 {
    PARDISO jump
    Memcheck:Cond
-   fun:mkl_pds_lp64_flops_pardiso
-   fun:mkl_pds_lp64_do_all_pardiso_fc
-   fun:mkl_pds_lp64_pardiso_c
+   ...
    fun:mkl_pds_lp64_pardiso
-   fun:_ZN7espreso15SparseSolverMKL13FactorizationERKSs
-   fun:_ZN7espreso12SparseMatrix25get_kernels_from_nonsym_KERS0_S1_S1_S1_RdRii
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9133algebraicKernelsAndRegularizationERN7espreso12SparseMatrixES2_S2_S2_m
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-   fun:_ZN7espreso13LinearPhysics8assembleEv
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE4initEv
-   fun:_ZN7espreso7Factory5solveERKSs
-   fun:main
+   ...
 }
 {
-   PARDISO jump
-   Memcheck:Cond
-   fun:mkl_pds_lp64_new_pdist_calc
-   fun:mkl_pds_lp64_pardiso_c
+   PARDISO leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
    fun:mkl_pds_lp64_pardiso
-   fun:_ZN7espreso15SparseSolverMKL13FactorizationERKSs
-   fun:_ZN7espreso12SparseMatrix25get_kernels_from_nonsym_KERS0_S1_S1_S1_RdRii
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9133algebraicKernelsAndRegularizationERN7espreso12SparseMatrixES2_S2_S2_m
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-   fun:_ZN7espreso13LinearPhysics8assembleEv
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE4initEv
-   fun:_ZN7espreso7Factory5solveERKSs
-   fun:main
-}
-{
-   PARDISO jump
-   Memcheck:Cond
-   fun:mkl_pds_lp64_alloc_data
-   fun:mkl_pds_lp64_pardiso_c
-   fun:mkl_pds_lp64_pardiso
-   fun:_ZN7espreso15SparseSolverMKL13FactorizationERKSs
-   fun:_ZN7espreso12SparseMatrix25get_kernels_from_nonsym_KERS0_S1_S1_S1_RdRii
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9133algebraicKernelsAndRegularizationERN7espreso12SparseMatrixES2_S2_S2_m
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-   fun:_ZN7espreso13LinearPhysics8assembleEv
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE4initEv
-   fun:_ZN7espreso7Factory5solveERKSs
-   fun:main
-}
-{
-   PARDISO jump
-   Memcheck:Cond
-   fun:mkl_pds_lp64_alloc_data
-   fun:mkl_pds_lp64_pardiso_c
-   fun:mkl_pds_lp64_pardiso
-   fun:_ZN7espreso15SparseSolverMKL13FactorizationERKSs
-   fun:_ZN7espreso12SparseMatrix25get_kernels_from_nonsym_KERS0_S1_S1_S1_RdRii
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9133algebraicKernelsAndRegularizationERN7espreso12SparseMatrixES2_S2_S2_m
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-   fun:_ZN7espreso13LinearPhysics8assembleEv
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE4initEv
-   fun:_ZN7espreso7Factory5solveERKSs
-   fun:main
+   ...
 }
 {
    sqrt
    Memcheck:Cond
    fun:__libm_sqrt_ex
    fun:sqrt
-   fun:_ZN7espreso14IterSolverBase24Solve_GMRES_singular_domERNS_10ClusterCPUERSt6vectorIS3_IdSaIdEESaIS5_EE
-   fun:_ZN7espreso14IterSolverBase14Solve_singularERNS_10ClusterCPUERSt6vectorIS3_IdSaIdEESaIS5_EES8_
-   fun:_ZN7espreso12LinearSolver5SolveERSt6vectorIS1_IdSaIdEESaIS3_EES6_
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE5solveERSt6vectorIS4_IdSaIdEESaIS6_EE
-   fun:_ZN7espreso7Factory5solveERKSs
-   fun:main
+   ...
 }
 {
    MPI_Init leak
    Memcheck:Leak
    match-leak-kinds: definite
-   fun:malloc
-   fun:iPMI_Init_Ext
-   fun:init_pg
-   fun:MPID_Init
-   fun:MPIR_Init_thread
+   ...
    fun:PMPI_Init
    fun:main
 }
@@ -124,139 +57,6 @@
    MKL leak
    Memcheck:Leak
    match-leak-kinds: possible
-   fun:malloc
-   fun:mkl_serv_allocate
-   fun:mkl_lapack_lp64_dlaswp
-   fun:mkl_pds_lp64_fwd_nrhs_real
-   fun:mkl_pds_lp64_blkslv_ll_real
-   fun:__kmp_invoke_microtask
-   fun:__kmp_fork_call
-   fun:__kmpc_fork_call
-   fun:mkl_pds_lp64_blkslv_ll_real
-   fun:mkl_pds_lp64_sssslv_pardiso
-   fun:mkl_pds_lp64_solve_pardiso
-   fun:mkl_pds_lp64_do_all_pardiso_fc
-}
-{
-   DGEMM leak
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:mkl_serv_malloc
-   fun:mkl_serv_domain_get_max_threads
-   fun:mkl_blas_dgemm_host
-   fun:mkl_blas_dgemm
-   fun:DGEMM
-   fun:cblas_dgemm
-   fun:_ZN7espreso11DenseMatrix8multiplyERKS0_S2_ddbb
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9114processElementERN7espreso11DenseMatrixERSt6vectorIdSaIdEERKNS0_4MeshEmPKNS0_7ElementE
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-   fun:_ZN7espreso13LinearPhysics8assembleEv
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE4initEv
-}
-{
-   MPI_Init leak
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:iPMI_Get_r2h_table
-   fun:iPMI_Init_Ext
-   fun:init_pg
-   fun:MPID_Init
-   fun:MPIR_Init_thread
-   fun:PMPI_Init
-   fun:main
-}
-{
-   MPI_Init leak
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:iPMI_Init_Ext
-   fun:init_pg
-   fun:MPID_Init
-   fun:MPIR_Init_thread
-   fun:PMPI_Init
-   fun:main
-}
-{
-   MKL PARDISO leak
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:mkl_serv_malloc
-   fun:mkl_pds_lp64_lnnt_pardiso
-   fun:mkl_pds_lp64_sfinit_pardiso
-   fun:mkl_pds_lp64_reorder1_pardiso
-   fun:mkl_pds_lp64_do_all_pardiso_fc
-   fun:mkl_pds_lp64_pardiso_c
-   fun:mkl_pds_lp64_pardiso
-   fun:_ZN7espreso15SparseSolverMKL13FactorizationERKSs
-   fun:_ZN7espreso12SparseMatrix25get_kernels_from_nonsym_KERS0_S1_S1_S1_RdRii
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9133algebraicKernelsAndRegularizationERN7espreso12SparseMatrixES2_S2_S2_m
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-}
-{
-   MPI_Init leak
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:calloc
-   obj:*
-   obj:*
-   obj:/opt/intel/compilers_and_libraries_2016.3.210/linux/mpi/intel64/lib/release_mt/libmpi.so.12.0
-   fun:MPID_Init
-   fun:MPIR_Init_thread
-   fun:PMPI_Init
-   fun:main
-}
-{
-   DGEMM leak
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:mkl_serv_malloc
-   fun:mkl_serv_domain_get_max_threads
-   fun:mkl_blas_dgemm_host
-   fun:mkl_blas_dgemm
-   fun:DGEMM
-   fun:cblas_dgemm
-   fun:_ZN7espreso11DenseMatrix8multiplyERKS0_S2_ddbb
-   fun:_ZN88_INTERNAL_66____src_assembler_physics_linear_advectiondiffusion2d_assembler_cpp_97802e9114processElementERN7espreso11DenseMatrixERSt6vectorIdSaIdEERKNS0_4MeshEmPKNS0_7ElementE
-   fun:_ZN7espreso20AdvectionDiffusion2D16composeSubdomainEm
-   fun:_ZN7espreso13LinearPhysics8assembleEv
-   fun:_ZN7espreso14LinearInstanceINS_19EqualityConstraintsENS_20AdvectionDiffusion2DEE4initEv
-}
-{
-   MKL leak
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:mkl_serv_allocate
-   fun:mkl_blas_avx2_xdtrsm_v1
-   fun:mkl_blas_avx2_xdtrsm
-   fun:mkl_pds_lp64_fct_real_block
-   fun:mkl_pds_lp64_blkl_ll_real
-   fun:__kmp_invoke_microtask
-   fun:__kmp_fork_call
-   fun:__kmpc_fork_call
-   fun:mkl_pds_lp64_blkl_ll_real
-   fun:mkl_pds_lp64_sssfct_pardiso
-   fun:mkl_pds_lp64_factorize_pardiso
-}
-{
-   MKL leak
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc
-   fun:mkl_serv_allocate
-   fun:mkl_blas_avx2_xdtrsm_v1
-   fun:mkl_blas_avx2_xdtrsm
-   fun:mkl_pds_lp64_fwd_nrhs_real
-   fun:mkl_pds_lp64_blkslv_ll_real
-   fun:__kmp_invoke_microtask
-   fun:__kmp_fork_call
-   fun:__kmpc_fork_call
-   fun:mkl_pds_lp64_blkslv_ll_real
-   fun:mkl_pds_lp64_sssslv_pardiso
-   fun:mkl_pds_lp64_solve_pardiso
+   ...
+   fun:mkl_pds_lp64_*
 }
