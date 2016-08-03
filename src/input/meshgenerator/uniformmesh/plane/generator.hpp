@@ -246,7 +246,7 @@ void PlaneGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 }
 
 template <class TElement>
-void PlaneGenerator<TElement>::corners(Boundaries &boundaries)
+void PlaneGenerator<TElement>::corners(std::vector<eslocal> &corners)
 {
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL_FETI) {
 		// corners are not used in the case of TOTAL FETI
@@ -254,7 +254,7 @@ void PlaneGenerator<TElement>::corners(Boundaries &boundaries)
 	}
 
 	if (_settings.useMetis) {
-		Loader::corners(boundaries);
+		Loader::corners(corners);
 		return;
 	}
 
@@ -308,10 +308,14 @@ void PlaneGenerator<TElement>::corners(Boundaries &boundaries)
 
 				index = i * nodes[d] * mul[d];
 				index += offsets[(d + 1) % 2][j] * mul[(d + 1) % 2];
-				boundaries.setCorner(index);
+				corners.push_back(index);
 			}
 		}
 	}
+
+	std::sort(corners.begin(), corners.end());
+	auto it = std::unique(corners.begin(), corners.end());
+	corners.resize(it - corners.begin());
 
 	if (config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES) {
 		// TODO: check correctness

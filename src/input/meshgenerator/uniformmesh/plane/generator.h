@@ -29,7 +29,7 @@ protected:
 	virtual void points(Coordinates &coordinates);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
-	virtual void corners(Boundaries &boundaries);
+	virtual void corners(std::vector<eslocal> &corners);
 
 	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates);
 

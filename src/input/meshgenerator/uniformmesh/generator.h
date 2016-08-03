@@ -22,7 +22,7 @@ protected:
 
 	virtual void partitiate(std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	virtual void corners(Boundaries &boundaries);
+	virtual void corners(std::vector<eslocal> &corners);
 
 	TElement _e;
 	const UniformSettings _settings;

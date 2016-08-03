@@ -19,8 +19,6 @@ typedef std::pair<Element*, unsigned char> FaceIndex;
 
 class Faces {
 public:
-	Faces();
-	virtual ~Faces();
 
 	void reserve(std::size_t size) {
 		_faces.reserve(size);

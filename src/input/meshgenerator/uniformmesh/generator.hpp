@@ -143,7 +143,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 }
 
 template <class TElement>
-void UniformGenerator<TElement>::corners(Boundaries &boundaries)
+void UniformGenerator<TElement>::corners(std::vector<eslocal> &corners)
 {
 	if (config::solver::FETI_METHOD == config::TOTAL_FETI) {
 		// corners are not used in the case of TOTAL FETI
@@ -151,7 +151,7 @@ void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 	}
 
 	if (_settings.useMetis) {
-		Loader::corners(boundaries);
+		Loader::corners(corners);
 		return;
 	}
 
@@ -225,13 +225,17 @@ void UniformGenerator<TElement>::corners(Boundaries &boundaries)
 					index = i * nodes[d] * mul[d];
 					index += offsets[(d + 1) % 3][j] * mul[(d + 1) % 3];
 					index += offsets[(d + 2) % 3][k] * mul[(d + 2) % 3];
-					boundaries.setCorner(index);
+					corners.push_back(index);
 				}
 			}
 		}
 	}
 
-	if (config::mesh::averageEdges || config::mesh::averageFaces) {
+	std::sort(corners.begin(), corners.end());
+	auto it = std::unique(corners.begin(), corners.end());
+	corners.resize(it - corners.begin());
+
+	if (config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES) {
 		// TODO: check correctness
 		mesh.computeCorners(0, true, false, false, config::mesh::averageEdges, config::mesh::averageFaces);
 	}

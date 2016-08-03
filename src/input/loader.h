@@ -73,7 +73,7 @@ public:
 		fixPoints(mesh._fixPoints);
 
 		TimeEvent tCorners("corners"); tCorners.start();
-		corners(mesh._subdomainBoundaries);
+		corners(mesh._corners);
 		tCorners.end(); measurement.addEvent(tCorners);
 
 		mesh.init();
@@ -85,7 +85,6 @@ protected:
 	virtual void points(Coordinates &coordinates, size_t &DOFs) = 0;
 	virtual void elements(std::vector<Element*> &elements) = 0;
 	virtual void materials(std::vector<Material> &materials) = 0;
-	virtual void faces(Faces &faces) { };
 	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;
 
@@ -99,7 +98,7 @@ protected:
 
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) {};
 
-	virtual void corners(Boundaries &boundaries)
+	virtual void corners(std::vector<eslocal> &corners)
 	{
 		if (config::solver::FETI_METHOD == config::TOTAL_FETI || config::solver::B0_TYPE == config::B0Type::KERNELS) {
 			return;
@@ -120,7 +119,7 @@ protected:
 
 	void computeBoundaries()
 	{
-		mesh.computeBoundaries();
+		//mesh.computeBoundaries();
 	}
 
 	Loader(Mesh &mesh): mesh(mesh) {};

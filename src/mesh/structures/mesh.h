@@ -20,8 +20,6 @@
 
 #include "../elements/elements.h"
 #include "coordinates.h"
-#include "boundaries.h"
-#include "faces.h"
 #include "material.h"
 
 #include "esbasis.h"
@@ -97,7 +95,6 @@ protected:
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
 
-	void computeBoundaries();
 	void remapElementsToSubdomain() const;
 	void remapElementsToCluster() const;
 
@@ -111,6 +108,9 @@ protected:
 	/** @brief Reference to coordinates. */
 	mutable Coordinates _coordinates;
 
+	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
+	std::vector<eslocal> _partPtrs;
+
 	/// Elements of the mesh.
 	std::vector<Element*> _elements;
 
@@ -123,17 +123,12 @@ protected:
 	/// Nodes of the elements.
 	std::vector<Element*> _nodes;
 
-	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
-	std::vector<eslocal> _partPtrs;
 
 	/** @brief Fix points for all parts. */
 	mutable std::vector<std::vector<eslocal> > _fixPoints;
 
-	/** @brief Map of points to sub-domains. */
-	Boundaries _subdomainBoundaries;
-
-	/** @brief Map of points to clusters. */
-	Boundaries _clusterBoundaries;
+	/// Corners for HFETI
+	std::vector<eslocal> _corners;
 
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
