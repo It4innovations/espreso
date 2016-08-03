@@ -113,6 +113,8 @@ public:
 
 	// Matrices and vectors of the cluster
 	SparseMatrix G0;
+	SparseMatrix G02;
+
 	SparseMatrix F0_Mat;
 	SparseMatrix B0Kplus;
 

@@ -1413,6 +1413,10 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 
 void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
+        // |  K_in      B1_in |
+        // | (B0_in)t     0   |
+        
+
 	//int msglvl = 0;
 
 	//SpyText(K_in);
@@ -1423,7 +1427,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 	SparseMatrix K;
 
 	// Create "non-symmetric" K matrix;
-	if (K_in.type = 'S') {
+	if (K_in.type == 'S') {
 		K = K_in;
 		K.SetDiagonalOfSymmetricMatrix(0.0);
 		K.MatTranspose();
@@ -1473,7 +1477,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
     K_sc1 = K;
 
 	// *** END - Prepare matrix
-	//SpyText(K_sc1);
+	K_sc1.SpyText();;
 
 
 	/* Internal solver memory pointer pt, */
@@ -1632,9 +1636,12 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
     SC_out.cols = K_b_tmp.rows;
     SC_out.rows = B0_in.cols;
     SC_out.type = 'G';
-    SC_out.dense_values.resize( SC_out.cols * SC_out.rows);
+    //SC_out.dense_values.resize( SC_out.cols * SC_out.rows);
 
-    //SC_out.ConvertDenseToCSR(1);
+    SC_out.ConvertDenseToCSR(1);
+    SC_out.MatTranspose();
+    SC_out.ConvertCSRToDense(0);
+    //TODO:
 
 }
 

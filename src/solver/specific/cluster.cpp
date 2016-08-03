@@ -573,7 +573,12 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //	printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	clus_G0_time.start();
-	G0.MatVec(tm1[0], tm2[0], 'N');
+	if (SYMMETRIC_SYSTEM) {
+		G0.MatVec(tm1[0], tm2[0], 'N');
+	} else {
+		G02.MatVec(tm1[0], tm2[0], 'N');
+	}
+
 	clus_G0_time.end();
 
 //	for (int i = 0; i < tm1[0].size(); i++)
@@ -1082,6 +1087,29 @@ void ClusterBase::CreateG0() {
 		G0LocalTemp[i].Clear();
 	}
 
+	if (!SYMMETRIC_SYSTEM) {
+
+		SEQ_VECTOR <SparseMatrix> G0LocalTemp2( domains.size() );
+
+		cilk_for (eslocal i = 0; i<domains.size(); i++) {
+			domains[i].Kplus_R2.ConvertDenseToCSR(0);
+
+			G0LocalTemp2[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R2 );
+			G0LocalTemp2[i].MatTranspose(-1.0);
+
+			SEQ_VECTOR<eslocal>().swap( domains[i].Kplus_R2.CSR_I_row_indices );
+			SEQ_VECTOR<eslocal>().swap( domains[i].Kplus_R2.CSR_J_col_indices );
+			SEQ_VECTOR<double> ().swap( domains[i].Kplus_R2.CSR_V_values );
+		}
+
+		for (eslocal i = 0; i<domains.size(); i++) {
+			G02.MatAppend(G0LocalTemp2[i]);
+			G0LocalTemp2[i].Clear();
+		}
+
+	}
+
+
 }
 
 void ClusterBase::CreateF0() {
@@ -1228,12 +1256,14 @@ void ClusterBase::CreateSa() {
 
 	TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); Sa_timing.totalTime.start();
 
-	 TimeEvent G0trans_Sa_time("G0 transpose"); G0trans_Sa_time.start();
+	TimeEvent G0trans_Sa_time("G0 transpose"); G0trans_Sa_time.start();
 	SparseMatrix G0t;
-	G0.MatTranspose(G0t);
-	 G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time);
+	SparseMatrix G02t;
 
-	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); G0solve_Sa_time.start();
+	G0.MatTranspose(G0t);
+	G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time);
+
+	TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); G0solve_Sa_time.start();
 	if (!PARDISO_SC) {
 		if (MPIrank == 0) {
 			F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0;
@@ -1246,83 +1276,133 @@ void ClusterBase::CreateSa() {
 		if (MPIrank == 0) {
 			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
-		tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
 
-        Salfa.ConvertDenseToCSR(1);
-        Salfa.RemoveLower();
+		if (SYMMETRIC_SYSTEM) {
+			tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
+			Salfa.ConvertDenseToCSR(1);
+			Salfa.RemoveLower();
+		} else {
+			G02.MatTranspose(G02t);
+			tmpsps.Create_non_sym_SC_w_Mat( F0_Mat, G0t, G02t, Salfa, true, 0 );
+			//TODO: SC je dive transponopvany
+			//Salfa.ConvertDenseToCSR(1);
+			//Salfa.MatTranspose();
+		}
+
 		if (MPIrank == 0) tmpsps.msglvl = 0;
 	}
 	F0_Mat.Clear();
-	 G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time);
+	G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time);
 
-	 TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution "); SaMatMat_Sa_time.start();
+	TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution "); SaMatMat_Sa_time.start();
 	if (!PARDISO_SC) {
 		Salfa.MatMat(G0, 'N', tmpM);
 		Salfa.RemoveLower();
 		tmpM.Clear();
 	}
-	 SaMatMat_Sa_time.end(); SaMatMat_Sa_time.printStatMPI(); Sa_timing.addEvent(SaMatMat_Sa_time);
-
-	 if (!get_kernel_from_mesh) {
-		 SparseMatrix Kernel_Sa;
-		 ESINFO(PROGRESS2) << "Salfa - regularization from matrix";
-
-		 SparseMatrix GGt;
-
-		 GGt.MatMat(G0,'N',G0t);
-		 GGt.RemoveLower();
-//		 GGt.get_kernel_from_K(GGt, Kernel_Sa);
+	SaMatMat_Sa_time.end(); SaMatMat_Sa_time.printStatMPI(); Sa_timing.addEvent(SaMatMat_Sa_time);
 
 
-		 double tmp_double;
-		 eslocal tmp_int;
-		 SparseMatrix TSak, _tmpSparseMat;
-		 Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1);
-		 TSak.Clear();
+	// Regularization of Sa from NULL PIVOTS
+	if (!get_kernel_from_mesh) {
+
+		SparseMatrix Kernel_Sa;
+		SparseMatrix Kernel_Sa2;
+		ESINFO(PROGRESS2) << "Salfa - regularization from matrix";
+
+		//SparseMatrix GGt;
+		//GGt.MatMat(G0,'N',G0t);
+		//GGt.RemoveLower();
+		//GGt.get_kernel_from_K(GGt, Kernel_Sa);
 
 
-	   if (config::info::printMatrices) {
-			//SparseMatrix RT = cluster.domains[d].Kplus_R;
-			//RT.ConvertDenseToCSR(1);
+		double tmp_double;
+		eslocal tmp_int;
+		SparseMatrix TSak, _tmpSparseMat;
+		if (SYMMETRIC_SYSTEM) {
+			Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1);
+		} else {
+			Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1);
+		}
+		TSak.Clear();
 
+
+		if (config::info::PRINT_MATRICES) {
 			std::ofstream osSa(Logging::prepareFile("Salfa"));
 			osSa << Salfa;
 			osSa.close();
-     }
+		}
 
 
-		 //domains[0].get_kernel_from_K(Salfa, Kernel_Sa);
+		if (SYMMETRIC_SYSTEM) {
+			for (int d = 0; d < domains.size(); d++) {
+				SparseMatrix tR;
 
-//		 Salfa.printMatCSR2("Salfa.txt");
+				SEQ_VECTOR < eslocal > rows_inds (Kernel_Sa.cols);
+				for (int i = 0; i < Kernel_Sa.cols; i++)
+					rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
 
-//		 SparseMatrix T1;
-//		 T1.MatMat(G0t,'N', Kernel_Sa);
-//		 SpyText(T1);
-//		 T1.printMatCSR("BlMat");
-//		 Kernel_Sa.printMatCSR2("H.txt");
+				tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
 
-		 char str000[128];
-		 for (int d = 0; d < domains.size(); d++) {
-			 SparseMatrix tR;
-			 SEQ_VECTOR < eslocal > rows_inds (Kernel_Sa.cols);
-			 for (int i = 0; i < Kernel_Sa.cols; i++)
-				 rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
-			 tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
-			 sprintf(str000,"%s%d%s","tr",d,".txt");
-//			 tR.printMatCSR2(str000);
-			 SparseMatrix TmpR;
-			 domains[d].Kplus_R.ConvertDenseToCSR(0);
-			 TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
-			 domains[d].Kplus_Rb = TmpR;
-			 domains[d].Kplus_Rb.ConvertCSRToDense(0);
-			 //SparseMatrix T2;
-			 //T2.MatMat(domains[d].Prec, 'N', domains[d].Kplus_R);
-		 }
+				SparseMatrix TmpR;
+				domains[d].Kplus_R.ConvertDenseToCSR(0);
+				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
+
+				domains[d].Kplus_Rb = TmpR;
+				domains[d].Kplus_Rb.ConvertCSRToDense(0);
+
+			}
+		} else { // NON SYMMETRIC SYSTEMS
+			for (int d = 0; d < domains.size(); d++) {
+
+				SparseMatrix tR; SparseMatrix tR2;
+
+				SEQ_VECTOR < eslocal > rows_inds (Kernel_Sa.cols);
+				for (int i = 0; i < Kernel_Sa.cols; i++)
+					rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
+
+				tR. CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa ,rows_inds);
+				tR2.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa2,rows_inds);
+
+				SparseMatrix TmpR;
+				domains[d].Kplus_R.ConvertDenseToCSR(0);
+				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
+				domains[d].Kplus_Rb = TmpR;
+				domains[d].Kplus_Rb.ConvertCSRToDense(0);
+
+				SparseMatrix TmpR2;
+				domains[d].Kplus_R2.ConvertDenseToCSR(0);
+				TmpR2.MatMat( domains[d].Kplus_R2, 'N', tR2 );
+				domains[d].Kplus_Rb2 = TmpR2;
+				domains[d].Kplus_Rb2.ConvertCSRToDense(0);
+
+				if (config::info::PRINT_MATRICES) {
+					std::ofstream osR(Logging::prepareFile(d, "Rb_").c_str());
+					SparseMatrix tmpR = domains[d].Kplus_Rb;
+					tmpR.ConvertDenseToCSR(0);
+					osR << tmpR;
+					osR.close();
+
+				}
+
+				if (config::info::PRINT_MATRICES) {
+					std::ofstream osR(Logging::prepareFile(d, "Rb2_").c_str());
+					SparseMatrix tmpR = domains[d].Kplus_Rb2;
+					tmpR.ConvertDenseToCSR(0);
+					osR << tmpR;
+					osR.close();
+
+				}
 
 
-	 } else {
-		// Regularization of Salfa
-		 TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
+			}
+
+		}
+
+	} else {
+
+		// Regularization of Salfa from FIX points
+		TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
 
 		SparseMatrix Eye, N, Nt, NNt;
 		eslocal dtmp = 0;
@@ -1351,8 +1431,10 @@ void ClusterBase::CreateSa() {
 		Salfa.MatAddInPlace(NNt,'N', ro);
 		// End regularization of Salfa
 
-		 reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
-	 }
+		reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
+	}
+	// END of Sa regularization part
+
 
 
 	 if (config::solver::SA_SOLVER == config::SA_SPARSE_on_CPU) {

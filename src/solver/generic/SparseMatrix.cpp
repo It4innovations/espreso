@@ -4414,8 +4414,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       }
     }
 //
-  srand(time(NULL));
-//    srand(0); // random will be constant until next compiling
+//  srand(time(NULL));
+    srand(0); // random will be constant until next compiling
     if (permutVectorActive==1){
       if (fixing_nodes_or_dof==0){
         random_shuffle ( permVec.begin(), permVec.end() );

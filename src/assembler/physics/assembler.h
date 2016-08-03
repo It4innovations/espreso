@@ -27,7 +27,7 @@ struct Physics {
 		}
 
 		for (size_t p = 0; p < R1.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R1").c_str());
+			std::ofstream osR(Logging::prepareFile(p, "R1_").c_str());
 			SparseMatrix tmpR = R1[p];
 			tmpR.ConvertDenseToCSR(0);
 			osR << tmpR;
@@ -35,7 +35,7 @@ struct Physics {
 		}
 
 		for (size_t p = 0; p < R2.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
+			std::ofstream osR(Logging::prepareFile(p, "R2_").c_str());
 			SparseMatrix tmpR = R2[p];
 			tmpR.ConvertDenseToCSR(0);
 			osR << tmpR;
