@@ -121,9 +121,9 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
         // update the ratio between the cpu and mic
         double r = cluster.B1KplusPacks[0].getMICratio();
-        if (r >= 1.0) {
-            r = 0.9;
-        }
+        //if (r >= 1.0) {
+        //    r = 0.9;
+        //}
         double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
         double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
         std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;

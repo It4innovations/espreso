@@ -18,7 +18,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
     // ratio of work done on MIC
-    double MICr = 1.0;
+    double MICr = 0.1;
 
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;
