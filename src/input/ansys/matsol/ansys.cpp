@@ -97,7 +97,7 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 			}
 			params[Element::MATERIAL] = 0;
 			elements[c] = AnsysUtils::createElement(values, n, params);
-			elements[c]->setParams(values + n);
+			//elements[c]->setParams(values + n);
 		}
 		file.close();
 	} else {

@@ -3,8 +3,6 @@
 
 using namespace espreso;
 
-eslocal Node::_nparams[PARAMS_SIZE] = { 0 };
-
 std::vector<Property> Node::_DOFElement;
 std::vector<Property> Node::_DOFFace;
 std::vector<Property> Node::_DOFEdge;

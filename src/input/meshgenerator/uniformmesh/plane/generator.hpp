@@ -127,7 +127,7 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 							}
 						}
 						for (size_t e = 0; e < TElement::subelements; e++) {
-							elements[counter++]->setParam(Element::MATERIAL, material);
+							elements[counter++]->param(Element::MATERIAL, material);
 						}
 					}
 				}

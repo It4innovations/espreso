@@ -38,24 +38,7 @@ std::vector<eslocal> Line2::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Line2::getFace(size_t face) const
-{
-	return std::vector<eslocal> (0);
-}
-
-Element* Line2::getFullFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not possible on Line2";
-	return NULL;
-}
-
-Element* Line2::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not possible on Line2";
-	return NULL;
-}
-
-Line2::Line2(const eslocal *indices, const eslocal *params): Element(params)
+Line2::Line2(const eslocal *indices)
 {
 	memcpy(_indices, indices, Line2NodesCount * sizeof(eslocal));
 }

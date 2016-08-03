@@ -167,46 +167,7 @@ std::vector<eslocal> Pyramid5::getNeighbours(size_t nodeIndex) const
 	}
 }
 
-std::vector<eslocal> Pyramid5::getFace(size_t face) const
-{
-	// bottom
-	if (face == 0) {
-		std::vector<eslocal> result(4);
-		result[0] = _indices[0];
-		result[1] = _indices[3];
-		result[2] = _indices[2];
-		result[3] = _indices[1];
-		return result;
-	}
-	////sides
-	std::vector<eslocal> result(3);
-	result[0] = _indices[ face -1   ];
-	result[1] = _indices[(face) % 3 ];
-	result[2] = _indices[4];
-	return result;
-}
-
-Element* Pyramid5::getF(const eslocal *indices, const eslocal *params, size_t face)
-{
-	// bottom
-	if (face == 0) {
-		std::vector<eslocal> result(4);
-		result[0] = indices[0];
-		result[1] = indices[3];
-		result[2] = indices[2];
-		result[3] = indices[1];
-		return new Square4(result.data(), params);
-	}
-
-	////sides
-	std::vector<eslocal> result(3);
-	result[0] = indices[face - 1];
-	result[1] = indices[face % 4];
-	result[2] = indices[4];
-	return new Triangle3(result.data(), params);
-}
-
-Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 8:
@@ -222,11 +183,14 @@ Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params): El
 	default:
 		ESINFO(ERROR) << "It is not possible to create Tetrahedron5 from " << n << " elements.";
 	}
+
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Pyramid5::Pyramid5(std::ifstream &is): Element(is)
+Pyramid5::Pyramid5(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 

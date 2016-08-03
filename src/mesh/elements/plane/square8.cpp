@@ -131,36 +131,15 @@ std::vector<eslocal> Square8::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Square8::getFace(size_t face) const
-{
-	std::vector<eslocal> result(3);
-	if (face < 3) {
-		result[0] = _indices[face];
-		result[1] = _indices[face + 1];
-		result[2] = _indices[face + 4];
-	} else {
-		result[0] = _indices[3];
-		result[1] = _indices[0];
-		result[2] = _indices[7];
-	}
-	return result;
-}
-
-Element* Square8::getFullFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
-
-Element* Square8::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
-
-Square8::Square8(const eslocal *indices, const eslocal *params): Element(params)
+Square8::Square8(const eslocal *indices)
 {
 	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));
+}
+
+Square8::Square8(const eslocal *indices, const eslocal *params)
+{
+	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));
+	_params.insert(_params.end(), params, params + PARAMS_SIZE);
 }
 
 

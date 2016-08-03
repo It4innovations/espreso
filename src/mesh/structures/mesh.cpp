@@ -15,7 +15,7 @@ void Mesh::init()
 {
 	for (size_t p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (size_t n = 0; n < _elements[e]->size(); n++) {
+			for (size_t n = 0; n < _elements[e]->nodes(); n++) {
 				auto index = _coordinates.clusterIndex(_elements[e]->node(n), p);
 				if (!_nodes[index]->_domains.size() || _nodes[index]->_domains.back() != p) {
 					_nodes[index]->_domains.push_back(p);
@@ -203,7 +203,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	e = new eslocal[eSize + 1];
 	e[0] = 0;
 	for (eslocal i = first, index = 0; i < last; i++, index++) {
-		e[index + 1] = e[index] + _elements[i]->coarseSize();
+		e[index + 1] = e[index] + _elements[i]->coarseNodes();
 	}
 
 	// create array of nodes
@@ -212,7 +212,7 @@ eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
 	ncommon = 4;
 	for (eslocal i = first, index = 0; i < last; i++, index++) {
 		const Element* el = _elements[i];
-		memcpy(n + e[index], el->indices(), el->coarseSize() * sizeof(eslocal));
+		memcpy(n + e[index], el->indices(), el->coarseNodes() * sizeof(eslocal));
 		if (ncommon > _elements[i]->nCommon()) {
 			ncommon = _elements[i]->nCommon();
 		}
@@ -258,7 +258,7 @@ eslocal Mesh::getCentralNode(
 	std::vector<std::set<eslocal> > neighbours(_coordinates.localSize(part));
 	for (eslocal i = first, index = 0; i < last; i++, index++) {
 		if (ePartition[index] == subpart) {
-			for (size_t j = 0; j < _elements[i]->size(); j++) {
+			for (size_t j = 0; j < _elements[i]->nodes(); j++) {
 				std::vector<eslocal> neigh = _elements[i]->getNeighbours(j);
 				for (size_t k = 0; k < neigh.size(); k++) {
 					if (_elements[i]->node(j) < neigh[k]) {
@@ -342,7 +342,7 @@ void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) const
 {
 	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
 		const Element* e = _elements[i];
-		memcpy(nodeArray + i * e->size(), e->indices(), e->size() * sizeof(eslocal));
+		memcpy(nodeArray + i * e->nodes(), e->indices(), e->nodes() * sizeof(eslocal));
 	}
 }
 
@@ -381,7 +381,7 @@ void Mesh::getSurface(Mesh &surface) const
 		// Compute nodes' adjacent elements
 		std::vector<std::vector<eslocal> > nodesElements(_coordinates.localSize(i));
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->size(); k++) {
+			for (size_t k = 0; k < _elements[j]->nodes(); k++) {
 				nodesElements[_elements[j]->node(k)].push_back(j);
 			}
 		}
@@ -389,7 +389,7 @@ void Mesh::getSurface(Mesh &surface) const
 		// compute number of elements and fill used nodes
 		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
 			for (size_t k = 0; k < _elements[j]->faces(); k++) {
-				std::vector<eslocal> face = _elements[j]->getFace(k);
+				std::vector<eslocal> face(_elements[j]->face(k)->indices(), _elements[j]->face(k)->indices() + _elements[j]->face(k)->nodes());
 				if (isOuterFace(nodesElements, face)) {
 					for (size_t f = 0; f < face.size(); f++) {
 						face[f] = _coordinates.clusterIndex(face[f], i);
@@ -472,14 +472,14 @@ void Mesh::makePartContinuous(size_t part)
 	ePtr = new eslocal[ne + 1];
 	ePtr[0] = 0;
 	for (size_t e = begin, i = 1; e < end; e++, i++) {
-		ePtr[i] = ePtr[i - 1] + _elements[e]->coarseSize();
+		ePtr[i] = ePtr[i - 1] + _elements[e]->coarseNodes();
 	}
 
 	nCommon = 4;
 	eInd = new eslocal[ePtr[ne]];
 	for (size_t e = begin, i = 0; e < end; e++, i++) {
 		const Element* el = _elements[e];
-		memcpy(eInd + ePtr[i], el->indices(), el->coarseSize() * sizeof(eslocal));
+		memcpy(eInd + ePtr[i], el->indices(), el->coarseNodes() * sizeof(eslocal));
 		if (nCommon > _elements[i]->nCommon()) {
 			nCommon = _elements[i]->nCommon();
 		}
@@ -535,11 +535,11 @@ static std::vector<eslocal> getIntersection(
 		const Element *face,
 		const std::vector<std::vector<eslocal> > &boundaries)
 {
-	std::vector<eslocal> intersection(boundaries[face->node(face->size() - 1)]);
+	std::vector<eslocal> intersection(boundaries[face->node(face->nodes() - 1)]);
 	std::vector<eslocal>::iterator it = intersection.end();
 
 	// compute intersection of all nodes
-	for (size_t n = face->size() - 2; it - intersection.begin() >= 1 &&  n < face->size(); n--) {
+	for (size_t n = face->nodes() - 2; it - intersection.begin() >= 1 &&  n < face->nodes(); n--) {
 		std::vector<eslocal> tmp(intersection.begin(), it);
 		it = std::set_intersection(tmp.begin(), tmp.end(),
 				boundaries[face->node(n)].begin(), boundaries[face->node(n)].end(),
@@ -563,7 +563,7 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 	cilk_for (size_t p = 0; p < parts(); p++) {
 		elements[p].resize(_coordinates.localSize(p));
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (size_t n = 0; n < _elements[e]->size(); n++) {
+			for (size_t n = 0; n < _elements[e]->nodes(); n++) {
 				elements[p][_elements[e]->node(n)].push_back(e);
 			}
 		}
@@ -574,16 +574,16 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 	cilk_for (size_t p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (size_t f = 0; f < _elements[e]->faces(); f++) {
-				Element* face = _elements[e]->getFullFace(f);
+				Element* face = _elements[e]->face(f);
 				ESINFO(GLOBAL_ERROR) << "subdomainInterfaces";
 				std::vector<eslocal> intersection; // = getIntersection(face, _subdomainBoundaries.boundary());
 				if (intersection.size() == 1 || intersection[0] != p) {
 					delete face; // inner face
 				} else {
 					bool pass = false;
-					std::vector<eslocal> clusterIndices(face->indices(), face->indices() + face->size());
+					std::vector<eslocal> clusterIndices(face->indices(), face->indices() + face->nodes());
 					for (size_t i = 1; i < intersection.size(); i++) {
-						for (size_t j = 0; j < face->size(); j++) {
+						for (size_t j = 0; j < face->nodes(); j++) {
 							face->node(j) = _coordinates.localIndex(clusterIndices[j], intersection[i]);
 						}
 						if (getIntersection(face, elements[intersection[i]]).size()) {
@@ -596,7 +596,7 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 						}
 					}
 					if (pass) {
-						for (size_t j = 0; j < face->size(); j++) {
+						for (size_t j = 0; j < face->nodes(); j++) {
 							face->node(j) = clusterIndices[j];
 						}
 					} else {
@@ -631,7 +631,7 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 
 	cilk_for (size_t p = 0; p < parts(); p++) {
 		for (size_t i = 0; i < partFaces[p].size(); i++) {
-			for (size_t n = 0; n < partFaces[p][i]->size(); n++) {
+			for (size_t n = 0; n < partFaces[p][i]->nodes(); n++) {
 				eslocal offset = partFaces[p][i]->node(n) / distribution[1];
 				partFaces[p][i]->node(n) = indices[offset][partFaces[p][i]->node(n) % distribution[1]] + offsets[offset];
 			}
@@ -699,7 +699,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 	for (size_t p = 0; p < faces.parts(); p++) {
 		nodesFaces[p].resize(faces.coordinates().localSize(p));
 		for (eslocal e = faces._partPtrs[p]; e < faces._partPtrs[p + 1]; e++) {
-			for (size_t n = 0; n < faces._elements[e]->size(); n++) {
+			for (size_t n = 0; n < faces._elements[e]->nodes(); n++) {
 				// add node's adjacent element
 				nodesFaces[p][faces._elements[e]->node(n)].push_back(e);
 			}
@@ -714,7 +714,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 	for (size_t p = 0; p < faces.parts(); p++) {
 		for (size_t e = faces._partPtrs[p]; e < faces._partPtrs[p + 1]; e++) {
 			for (size_t f = 0; f < faces._elements[e]->faces(); f++) {
-				std::vector<eslocal> line = faces._elements[e]->getFace(f);
+				std::vector<eslocal> line(faces._elements[e]->face(f)->indices(), faces._elements[e]->face(f)->indices() + faces._elements[e]->face(f)->nodes());
 				if (isOuterFace(nodesFaces[p], line)) {
 					for (size_t n = 0; n < line.size(); n++) {
 						line[n] = faces.coordinates().clusterIndex(line[n], p);
@@ -810,9 +810,9 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 			if (same_subdomains(begin, start) && same_subdomains(begin, end)) {
 				eslocal tmp[3] = { points[start], points[mid], points[end] };
 				if (std::get<2>(commonLines[i]) == -1) {
-					lines._elements.push_back(new Line2(tmp, params));
+					lines._elements.push_back(new Line2(tmp));
 				} else {
-					lines._elements.push_back(new Line3(tmp, params));
+					lines._elements.push_back(new Line3(tmp));
 				}
 			}
 			if (same_subdomains(begin, start) != same_subdomains(begin, end)) {
@@ -825,7 +825,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 		}
 		for (eslocal e = lines._elements.size() - 1; e >= lines._partPtrs.back(); e--) {
 			if (vertices.find(lines._elements[e]->node(0)) != vertices.end() ||
-				vertices.find(lines._elements[e]->node(lines._elements[e]->size() - 1)) != vertices.end()) {
+				vertices.find(lines._elements[e]->node(lines._elements[e]->nodes() - 1)) != vertices.end()) {
 
 				// erase elements with vertex corners
 				lines._elements.erase(lines._elements.begin() + e);
@@ -847,7 +847,7 @@ void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
 		std::vector<int> counter(lines._coordinates.clusterSize());
 		for (size_t e = lines._partPtrs[part]; e < lines._partPtrs[part + 1]; e++) {
 			counter[lines._elements[e]->node(0)]++;
-			counter[lines._elements[e]->node(lines._elements[e]->size() - 1)]++;
+			counter[lines._elements[e]->node(lines._elements[e]->nodes() - 1)]++;
 		}
 		return std::all_of(counter.begin(), counter.end(), [] (int count) { return count % 2 == 0; });
 	};
@@ -945,7 +945,7 @@ void Mesh::prepareAveragingLines(Mesh &faces, Mesh &lines)
 	lines.remapElementsToCluster();
 
 	for (size_t e = 0; e < lines._partPtrs.back(); e++) {
-		for (size_t n = 0; n < lines._elements[e]->size(); n++) {
+		for (size_t n = 0; n < lines._elements[e]->nodes(); n++) {
 			if (has_dirichlet(lines._elements[e]->node(n)) || on_cluster_boundary(lines._elements[e]->node(n))) {
 				delete lines._elements[e];
 				lines._elements[e] = NULL;
@@ -977,7 +977,7 @@ void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 	faces.remapElementsToCluster();
 
 	for (size_t e = 0; e < faces._partPtrs.back(); e++) {
-		for (size_t n = 0; n < faces._elements[e]->size(); n++) {
+		for (size_t n = 0; n < faces._elements[e]->nodes(); n++) {
 			if (border[faces._elements[e]->node(n)]) {
 				delete faces._elements[e];
 				faces._elements[e] = NULL;
@@ -1112,7 +1112,7 @@ void Mesh::remapElementsToSubdomain() const
 		std::vector<eslocal> l2g;
 
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			l2g.insert(l2g.end(), _elements[e]->indices(), _elements[e]->indices() + _elements[e]->size());
+			l2g.insert(l2g.end(), _elements[e]->indices(), _elements[e]->indices() + _elements[e]->nodes());
 		}
 
 		std::sort(l2g.begin(), l2g.end());
@@ -1120,7 +1120,7 @@ void Mesh::remapElementsToSubdomain() const
 		l2g.resize(std::distance(l2g.begin(), it));
 
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (eslocal n = 0; n < _elements[e]->size(); n++) {
+			for (eslocal n = 0; n < _elements[e]->nodes(); n++) {
 				_elements[e]->node(n) = std::lower_bound(l2g.begin(), l2g.end(), _elements[e]->node(n)) - l2g.begin();
 			}
 		}
@@ -1133,7 +1133,7 @@ void Mesh::remapElementsToCluster() const
 {
 	cilk_for (eslocal p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (eslocal n = 0; n < _elements[e]->size(); n++) {
+			for (eslocal n = 0; n < _elements[e]->nodes(); n++) {
 				_elements[e]->node(n) = _coordinates.clusterIndex(_elements[e]->node(n), p);
 			}
 		}

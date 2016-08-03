@@ -168,7 +168,7 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 		nodes[i * Point::size() + 2] = _mesh.coordinates().get(i, subdomain).z;
 	}
 	for (size_t i = partition[subdomain], index = 0; i < partition[subdomain + 1]; i++, index++) {
-		for (size_t j = 0; j < elements[i]->size(); j++) {
+		for (size_t j = 0; j < elements[i]->nodes(); j++) {
 			elems[3 * index + j] = elements[i]->node(j);
 		}
 	}

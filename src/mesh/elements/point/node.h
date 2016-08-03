@@ -5,8 +5,10 @@
 #include "../element.h"
 
 #define NodeNodesCount 0
+#define NodeEdgeCount 0
 #define NodeFacesCount 0
 #define NodeGPCount 0
+#define NodeCommonNodes 1
 #define NodeVTKCode 2
 
 namespace espreso {
@@ -29,124 +31,40 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Node(): Element(_nparams) { };
+	Node() {};
+	Element* copy() const { return new Node(*this); }
 
-	Element* copy() const
-	{
-		return new Node(*this);
-	}
+	eslocal nCommon() const { return NodeCommonNodes; }
+	eslocal vtkCode() const { return NodeVTKCode; }
+	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Node has no params"; return 0; };
+	void param(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Node has no params"; }
 
-	eslocal vtkCode() const
-	{
-		return NodeVTKCode;
-	}
+	size_t faces() const { return NodeFacesCount; }
+	size_t edges() const { return NodeEdgeCount; }
+	size_t nodes() const { return NodeNodesCount; }
+	size_t coarseNodes() const { return NodeNodesCount; }
+	size_t gaussePoints() const { return NodeGPCount; }
 
-	const eslocal* indices() const
-	{
-		return indices();
-	}
+	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Node has no face"; return NULL; };
+	virtual Element* edge(size_t index) const { ESINFO(GLOBAL_ERROR) << "Node has no edge"; return NULL; };
 
-	size_t size() const
-	{
-		return NodeNodesCount;
-	}
+	const std::vector<DenseMatrix>& dN() const { return Node::_dN; }
+	const std::vector<DenseMatrix>& N() const { return Node::_N; }
+	const std::vector<double>& weighFactor() const { return Node::_weighFactor; }
 
-	size_t coarseSize() const
-	{
-		return NodeNodesCount;
-	}
-
-	size_t gpSize() const
-	{
-		return NodeGPCount;
-	}
-
-	size_t faces() const
-	{
-		return NodeFacesCount;
-	}
-
-	const std::vector<DenseMatrix>& dN() const
-	{
-		return Node::_dN;
-	}
-
-	const std::vector<DenseMatrix>&  N() const
-	{
-		return Node::_N;
-	}
-
-	const std::vector<double>& weighFactor() const
-	{
-		return Node::_weighFactor;
-	}
-
-	const std::vector<Property>& DOFElement() const
-	{
-		return Node::_DOFElement;
-	}
-
-	const std::vector<Property>& DOFFace() const
-	{
-		return Node::_DOFFace;
-	}
-
-	const std::vector<Property>& DOFEdge() const
-	{
-		return Node::_DOFEdge;
-	}
-
-	const std::vector<Property>& DOFPoint() const
-	{
-		return Node::_DOFPoint;
-	}
-
-	const std::vector<Property>& DOFMidPoint() const
-	{
-		return Node::_DOFMidPoint;
-	}
-
-	eslocal nCommon() const
-	{
-		return 1;
-	}
-
-	std::vector<eslocal> getNeighbours(size_t nodeIndex) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Node does not have neighbours.";
-		return std::vector<eslocal>();
-	}
-
-	std::vector<eslocal> getFace(size_t face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Node does not have faces.";
-		return std::vector<eslocal>();
-	}
-
-	Element* getFullFace(size_t face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Node does not have faces.";
-		return NULL;
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Node does not have faces.";
-		return NULL;
-	}
+	const std::vector<Property>& elementDOFs() const { return Node::_DOFElement; }
+	const std::vector<Property>& faceDOFs() const { return Node::_DOFFace; }
+	const std::vector<Property>& edgeDOFs() const { return Node::_DOFEdge; }
+	const std::vector<Property>& pointDOFs() const { return Node::_DOFPoint; }
+	const std::vector<Property>& midPointDOFs() const { return Node::_DOFMidPoint; }
 
 protected:
-
-	eslocal* indices()
-	{
-		ESINFO(GLOBAL_ERROR) << "Node does not have indices.";
-		return NULL;
-	}
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const { ESINFO(GLOBAL_ERROR) << "Node has no neighbours"; return {}; };
+	eslocal* indices() { ESINFO(GLOBAL_ERROR) << "Node has no indices"; return NULL; }
+	const eslocal* indices() const { ESINFO(GLOBAL_ERROR) << "Node has no indices"; return NULL; }
 
 private:
 	static size_t _counter;
-
-	static eslocal _nparams[PARAMS_SIZE];
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

@@ -55,7 +55,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix Ce(3, 3), coordinates, J, invJ, dND;
 	double detJ, inertia;
 
-	const Material &material = mesh.materials()[element->getParam(Element::MATERIAL)];
+	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -65,14 +65,14 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	Ce(2, 2) = material.termalConduction.z;
 	inertia = 0;
 
-	coordinates.resize(element->size(), 3);
-	for (size_t i = 0; i < element->size(); i++) {
+	coordinates.resize(element->nodes(), 3);
+	for (size_t i = 0; i < element->nodes(); i++) {
 		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
 		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
 		coordinates(i, 2) = mesh.coordinates().get(element->node(i), subdomain).z;
 	}
 
-	eslocal Ksize = element->size();
+	eslocal Ksize = element->nodes();
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
@@ -85,20 +85,20 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	u(2, 0) = 0;
 	double sigma = 0;
 
-	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
+	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
 
 		dND.multiply(invJ, dN[gp]);
 
-		DenseMatrix b_e(1, element->size());
+		DenseMatrix b_e(1, element->nodes());
 		b_e.multiply(u, dND, 1, 0, true);
 		double norm_u_e = pow(pow(u(0, 0), 2) + pow(u(1, 0), 2) + pow(u(2, 0), 2), 0.5);
 		double h_e = 0, tau_e = 0, konst = 0;
 		if (norm_u_e != 0) {
 			double nn = 0;
-			for (size_t i = 0; i < element->size(); i++) {
+			for (size_t i = 0; i < element->nodes(); i++) {
 				nn += b_e(0, i) * b_e(0, i);
 			}
 			h_e = 2 * norm_u_e / sqrt(nn);
@@ -142,9 +142,9 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 		const Element* e = _mesh.elements()[i];
 		processElement(Ke, fe, _mesh, subdomain, e);
 
-		for (size_t i = 0; i < e->size(); i++) {
+		for (size_t i = 0; i < e->nodes(); i++) {
 			eslocal row = e->node(i);
-			for (size_t j = 0; j < e->size(); j++) {
+			for (size_t j = 0; j < e->nodes(); j++) {
 				eslocal column = e->node(j);
 				_K(row, column) = Ke(i, j);
 			}

@@ -272,67 +272,8 @@ std::vector<eslocal> Pyramid13::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Pyramid13::getFace(size_t face) const
-{
-	// bottom
-	if (face == 0) {
-		std::vector<eslocal> result(8);
-		result[0] = _indices[0];
-		result[1] = _indices[3];
-		result[2] = _indices[2];
-		result[3] = _indices[1];
 
-		result[4] = _indices[8];
-		result[5] = _indices[7];
-		result[6] = _indices[6];
-		result[7] = _indices[5];
-
-		return result;
-	}
-
-	////sides => faces 1, 2, 3, 4
-	std::vector<eslocal> result(6);
-	result[0] = _indices[face - 1];
-	result[1] = _indices[face % 4];
-	result[2] = _indices[4];
-
-	result[3] = _indices[face - 1 + 5];
-	result[4] = _indices[face % 4 + 9];
-	result[5] = _indices[face - 1 + 9];
-	return result;
-}
-
-Element* Pyramid13::getFullFace(size_t face) const
-{
-	// bottom
-	if (face == 0) {
-		std::vector<eslocal> result(8);
-		result[0] = _indices[0];
-		result[1] = _indices[3];
-		result[2] = _indices[2];
-		result[3] = _indices[1];
-
-		result[4] = _indices[8];
-		result[5] = _indices[7];
-		result[6] = _indices[6];
-		result[7] = _indices[5];
-
-		return new Square8(result.data(), _params);
-	}
-
-	////sides => faces 1, 2, 3, 4
-	std::vector<eslocal> result(6);
-	result[0] = _indices[face - 1];
-	result[1] = _indices[face % 4];
-	result[2] = _indices[4];
-
-	result[3] = _indices[face - 1 + 5];
-	result[4] = _indices[face % 4 + 9];
-	result[5] = _indices[face - 1 + 9];
-	return new Triangle6(result.data(), _params);
-}
-
-Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 13:
@@ -356,11 +297,14 @@ Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params): 
 	default:
 		ESINFO(ERROR) << "It is not possible to create Pyramid13 from " << n << " elements.";
 	}
+
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Pyramid13::Pyramid13(std::ifstream &is): Element(is)
+Pyramid13::Pyramid13(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 

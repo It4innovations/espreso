@@ -8,8 +8,10 @@
 #include "pyramid5.h"
 
 #define Pyramid13NodesCount 13
+#define Pyramid13EdgeCount 8
 #define Pyramid13FacesCount 5
 #define Pyramid13GPCount 8
+#define Pyramid13CommonNodes 4
 #define Pyramid13VTKCode 27
 
 namespace espreso {
@@ -39,105 +41,42 @@ public:
 
 	Pyramid13(const eslocal *indices, eslocal n, const eslocal *params);
 	Pyramid13(std::ifstream &is);
+	Element* copy() const { return new Pyramid13(*this); }
 
-	Element* copy() const
-	{
-		return new Pyramid13(*this);
-	}
+	eslocal nCommon() const { return Pyramid13CommonNodes; }
+	eslocal vtkCode() const { return Pyramid13VTKCode; }
+	eslocal param(Params param) const { return _params[param]; };
+	void param(Params param, eslocal value) { _params[param] = value; }
 
-	eslocal vtkCode() const
-	{
-		return Pyramid13VTKCode;
-	}
+	size_t faces() const { return Pyramid13FacesCount; }
+	size_t edges() const { return Pyramid13EdgeCount; }
+	size_t nodes() const { return Pyramid13NodesCount; }
+	size_t coarseNodes() const { return Pyramid5NodesCount; }
+	size_t gaussePoints() const { return Pyramid13GPCount; }
 
-	const eslocal* indices() const
-	{
-		return _indices;
-	}
+	virtual Element* face(size_t index) const { return _faces[index]; };
+	virtual Element* edge(size_t index) const { return _edges[index]; };
 
-	size_t size() const
-	{
-		return Pyramid13NodesCount;
-	}
+	const std::vector<DenseMatrix>& dN() const { return Pyramid13::_dN; }
+	const std::vector<DenseMatrix>& N() const { return Pyramid13::_N; }
+	const std::vector<double>& weighFactor() const { return Pyramid13::_weighFactor; }
 
-	size_t coarseSize() const
-	{
-		return Pyramid5NodesCount;
-	}
-
-	size_t gpSize() const
-	{
-		return Pyramid13GPCount;
-	}
-
-	size_t faces() const
-	{
-		return Pyramid13FacesCount;
-	}
-
-	const std::vector<DenseMatrix>& dN() const
-	{
-		return Pyramid13::_dN;
-	}
-
-	const std::vector<DenseMatrix>&  N() const
-	{
-		return Pyramid13::_N;
-	}
-
-	const std::vector<double>& weighFactor() const
-	{
-		return Pyramid13::_weighFactor;
-	}
-
-	const std::vector<Property>& DOFElement() const
-	{
-		return Pyramid13::_DOFElement;
-	}
-
-	const std::vector<Property>& DOFFace() const
-	{
-		return Pyramid13::_DOFFace;
-	}
-
-	const std::vector<Property>& DOFEdge() const
-	{
-		return Pyramid13::_DOFEdge;
-	}
-
-	const std::vector<Property>& DOFPoint() const
-	{
-		return Pyramid13::_DOFPoint;
-	}
-
-	const std::vector<Property>& DOFMidPoint() const
-	{
-		return Pyramid13::_DOFMidPoint;
-	}
-
-	eslocal nCommon() const
-	{
-		return 3;
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return Pyramid5::getF(_indices, _params, face);
-	}
-
-	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
-	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
+	const std::vector<Property>& elementDOFs() const { return Pyramid13::_DOFElement; }
+	const std::vector<Property>& faceDOFs() const { return Pyramid13::_DOFFace; }
+	const std::vector<Property>& edgeDOFs() const { return Pyramid13::_DOFEdge; }
+	const std::vector<Property>& pointDOFs() const { return Pyramid13::_DOFPoint; }
+	const std::vector<Property>& midPointDOFs() const { return Pyramid13::_DOFMidPoint; }
 
 protected:
-
-	eslocal* indices()
-	{
-		return _indices;
-	}
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	eslocal* indices() { return _indices; }
+	const eslocal* indices() const { return _indices; }
 
 private:
 	eslocal _indices[Pyramid13NodesCount];
+	eslocal _params[PARAMS_SIZE];
+	std::vector<Element*> _edges;
+	std::vector<Element*> _faces;
 
 	static size_t _counter;
 

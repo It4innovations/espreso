@@ -7,8 +7,10 @@
 #include "../plane/square4.h"
 
 #define Prisma6NodesCount 6
+#define Prisma6EdgeCount 9
 #define Prisma6FacesCount 5
 #define Prisma6GPCount 9
+#define Prisma6CommonNodes 3
 #define Prisma6VTKCode 13
 
 namespace espreso {
@@ -19,10 +21,7 @@ class Prisma6: public Element
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter()
-	{
-		return _counter;
-	}
+	static size_t counter() { return _counter; }
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -39,110 +38,42 @@ public:
 
 	Prisma6(const eslocal *indices, eslocal n, const eslocal *params);
 	Prisma6(std::ifstream &is);
+	Element* copy() const { return new Prisma6(*this); }
 
-	Element* copy() const
-	{
-		return new Prisma6(*this);
-	}
+	eslocal nCommon() const { return Prisma6CommonNodes; }
+	eslocal vtkCode() const { return Prisma6VTKCode; }
+	eslocal param(Params param) const { return _params[param]; };
+	void param(Params param, eslocal value) { _params[param] = value; }
 
-	eslocal vtkCode() const
-	{
-		return Prisma6VTKCode;
-	}
+	size_t faces() const { return Prisma6FacesCount; }
+	size_t edges() const { return Prisma6EdgeCount; }
+	size_t nodes() const { return Prisma6NodesCount; }
+	size_t coarseNodes() const { return Prisma6NodesCount; }
+	size_t gaussePoints() const { return Prisma6GPCount; }
 
-	const eslocal* indices() const
-	{
-		return _indices;
-	}
+	virtual Element* face(size_t index) const { return _faces[index]; };
+	virtual Element* edge(size_t index) const { return _edges[index]; };
 
-	size_t size() const
-	{
-		return Prisma6NodesCount;
-	}
+	const std::vector<DenseMatrix>& dN() const { return Prisma6::_dN; }
+	const std::vector<DenseMatrix>& N() const { return Prisma6::_N; }
+	const std::vector<double>& weighFactor() const { return Prisma6::_weighFactor; }
 
-	size_t coarseSize() const
-	{
-		return Prisma6NodesCount;
-	}
-
-	size_t gpSize() const
-	{
-		return Prisma6GPCount;
-	}
-
-	size_t faces() const
-	{
-		return Prisma6FacesCount;
-	}
-
-	const std::vector<DenseMatrix>& dN() const
-	{
-		return Prisma6::_dN;
-	}
-
-	const std::vector<DenseMatrix>&  N() const
-	{
-		return Prisma6::_N;
-	}
-
-	const std::vector<double>& weighFactor() const
-	{
-		return Prisma6::_weighFactor;
-	}
-
-	const std::vector<Property>& DOFElement() const
-	{
-		return Prisma6::_DOFElement;
-	}
-
-	const std::vector<Property>& DOFFace() const
-	{
-		return Prisma6::_DOFFace;
-	}
-
-	const std::vector<Property>& DOFEdge() const
-	{
-		return Prisma6::_DOFEdge;
-	}
-
-	const std::vector<Property>& DOFPoint() const
-	{
-		return Prisma6::_DOFPoint;
-	}
-
-	const std::vector<Property>& DOFMidPoint() const
-	{
-		return Prisma6::_DOFMidPoint;
-	}
-
-	eslocal nCommon() const
-	{
-		return 3;
-	}
-
-	Element* getFullFace(size_t face) const
-	{
-		return getF(_indices, _params, face);
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return getFullFace(face);
-	}
-
-	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
-	std::vector<eslocal> getFace(size_t face) const;
+	const std::vector<Property>& elementDOFs() const { return Prisma6::_DOFElement; }
+	const std::vector<Property>& faceDOFs() const { return Prisma6::_DOFFace; }
+	const std::vector<Property>& edgeDOFs() const { return Prisma6::_DOFEdge; }
+	const std::vector<Property>& pointDOFs() const { return Prisma6::_DOFPoint; }
+	const std::vector<Property>& midPointDOFs() const { return Prisma6::_DOFMidPoint; }
 
 protected:
-	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
-
-	eslocal* indices()
-	{
-		return _indices;
-	}
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	eslocal* indices() { return _indices; }
+	const eslocal* indices() const { return _indices; }
 
 private:
 	eslocal _indices[Prisma6NodesCount];
+	eslocal _params[PARAMS_SIZE];
+	std::vector<Element*> _edges;
+	std::vector<Element*> _faces;
 
 	static size_t _counter;
 

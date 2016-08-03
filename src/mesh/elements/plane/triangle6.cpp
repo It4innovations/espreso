@@ -135,29 +135,14 @@ std::vector<eslocal> Triangle6::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Triangle6::getFace(size_t face) const
-{
-	if (face < 2) {
-		return std::vector<eslocal> (_indices + face, _indices + face + 2);
-	} else {
-		return std::vector<eslocal> ({_indices[2], _indices[0]});
-	}
-}
-
-Element* Triangle6::getFullFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
-
-Element* Triangle6::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
-
-Triangle6::Triangle6(const eslocal *indices, const eslocal *params): Element(params)
+Triangle6::Triangle6(const eslocal *indices)
 {
 	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));
+}
+
+Triangle6::Triangle6(const eslocal *indices, const eslocal *params)
+{
+	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));
+	_params.insert(_params.end(), params, params + PARAMS_SIZE);
 }
 

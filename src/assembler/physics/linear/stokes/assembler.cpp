@@ -24,13 +24,13 @@ static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, 
 {
 	DenseMatrix coordinates;
 
-	coordinates.resize(element->size(), 2);
-	for (size_t i = 0; i < element->size(); i++) {
+	coordinates.resize(element->nodes(), 2);
+	for (size_t i = 0; i < element->nodes(); i++) {
 		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
 		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
 	}
 
-	eslocal Ksize = 3 * element->size();
+	eslocal Ksize = 3 * element->nodes();
 
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
@@ -142,9 +142,9 @@ void Stokes::composeSubdomain(size_t subdomain)
 
 		processElement(Ah, B1h, B2h, Eh, fe, _mesh, subdomain, elements[i]);
 
-		for (size_t i = 0; i < elements[i]->size(); i++) {
+		for (size_t i = 0; i < elements[i]->nodes(); i++) {
 			eslocal row = 3 * elements[i]->node(i);
-			for (size_t j = 0; j < elements[i]->size(); j++) {
+			for (size_t j = 0; j < elements[i]->nodes(); j++) {
 				eslocal column = 3 * elements[i]->node(j);
 				_K(row + 0, column + 0) =   Ah(i, j);
 				_K(row + 1, column + 1) =   Ah(i, j);

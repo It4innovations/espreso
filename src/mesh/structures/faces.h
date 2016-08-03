@@ -32,7 +32,9 @@ public:
 
 	const std::vector<eslocal> operator[](esglobal index) const {
 		const FaceIndex &ind = _faces[index];
-		return (ind.first)->getFace(ind.second);
+		std::vector<eslocal> ret;
+		ESINFO(GLOBAL_ERROR) << "Not working Faces class";
+		return ret;
 	}
 	std::size_t size() const{
 		return _faces.size();

@@ -362,85 +362,8 @@ std::vector<eslocal> Tetrahedron10::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Tetrahedron10::getFace(size_t face) const
-{
-	std::vector<eslocal> result(3);
-	switch (face){
-	case 0: {
-		result[0] = _indices[1];
-		result[1] = _indices[0];
-		result[2] = _indices[2];
-		break;
-	}
-	case 1: {
-		result[0] = _indices[0];
-		result[1] = _indices[1];
-		result[2] = _indices[3];
-		break;
-	}
-	case 2: {
-		result[0] = _indices[1];
-		result[1] = _indices[2];
-		result[2] = _indices[3];
-		break;
-	}
-	case 3: {
-		result[0] = _indices[2];
-		result[1] = _indices[0];
-		result[2] = _indices[3];
-		break;
-	}
-	}
-	return result;
-}
 
-Element* Tetrahedron10::getFullFace(size_t face) const
-{
-	std::vector<eslocal> result(6);
-	switch (face){
-	case 0:
-		result[0] = _indices[1];
-		result[1] = _indices[0];
-		result[2] = _indices[2];
-
-		result[3] = _indices[4];
-		result[4] = _indices[6];
-		result[5] = _indices[5];
-		break;
-	case 1:
-		result[0] = _indices[0];
-		result[1] = _indices[1];
-		result[2] = _indices[3];
-
-		result[3] = _indices[4];
-		result[4] = _indices[8];
-		result[5] = _indices[7];
-		break;
-	case 2:
-		result[0] = _indices[1];
-		result[1] = _indices[2];
-		result[2] = _indices[3];
-
-		result[3] = _indices[5];
-		result[4] = _indices[9];
-		result[5] = _indices[8];
-		break;
-	case 3:
-		result[0] = _indices[2];
-		result[1] = _indices[0];
-		result[2] = _indices[3];
-
-		result[3] = _indices[6];
-		result[4] = _indices[7];
-		result[5] = _indices[9];
-		break;
-	}
-
-	return new Triangle6(result.data(), _params);
-}
-
-
-Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 10:
@@ -462,11 +385,13 @@ Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *p
 		ESINFO(ERROR) << "It is not possible to create Tetrahedron10 from " << n << " elements.";
 	}
 
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Tetrahedron10::Tetrahedron10(std::ifstream &is): Element(is)
+Tetrahedron10::Tetrahedron10(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 

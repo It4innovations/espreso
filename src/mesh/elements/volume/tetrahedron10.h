@@ -7,8 +7,10 @@
 #include "tetrahedron4.h"
 
 #define Tetrahedron10NodesCount 10
+#define Tetrahedron10EdgeCount 6
 #define Tetrahedron10FacesCount 4
 #define Tetrahedron10GPCount 15
+#define Tetrahedron10CommonNodes 4
 #define Tetrahedron10VTKCode 24
 
 namespace espreso {
@@ -38,105 +40,42 @@ public:
 
 	Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params);
 	Tetrahedron10(std::ifstream &is);
+	Element* copy() const { return new Tetrahedron10(*this); }
 
-	Element* copy() const
-	{
-		return new Tetrahedron10(*this);
-	}
+	eslocal nCommon() const { return Tetrahedron10CommonNodes; }
+	eslocal vtkCode() const { return Tetrahedron10VTKCode; }
+	eslocal param(Params param) const { return _params[param]; };
+	void param(Params param, eslocal value) { _params[param] = value; }
 
-	eslocal vtkCode() const
-	{
-		return Tetrahedron10VTKCode;
-	}
+	size_t faces() const { return Tetrahedron10FacesCount; }
+	size_t edges() const { return Tetrahedron10EdgeCount; }
+	size_t nodes() const { return Tetrahedron10NodesCount; }
+	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
+	size_t gaussePoints() const { return Tetrahedron10GPCount; }
 
-	const eslocal* indices() const
-	{
-		return _indices;
-	}
+	virtual Element* face(size_t index) const { return _faces[index]; };
+	virtual Element* edge(size_t index) const { return _edges[index]; };
 
-	size_t size() const
-	{
-		return Tetrahedron10NodesCount;
-	}
+	const std::vector<DenseMatrix>& dN() const { return Tetrahedron10::_dN; }
+	const std::vector<DenseMatrix>& N() const { return Tetrahedron10::_N; }
+	const std::vector<double>& weighFactor() const { return Tetrahedron10::_weighFactor; }
 
-	size_t coarseSize() const
-	{
-		return Tetrahedron4NodesCount;
-	}
-
-	size_t gpSize() const
-	{
-		return Tetrahedron10GPCount;
-	}
-
-	size_t faces() const
-	{
-		return Tetrahedron10FacesCount;
-	}
-
-	const std::vector<DenseMatrix>& dN() const
-	{
-		return Tetrahedron10::_dN;
-	}
-
-	const std::vector<DenseMatrix>&  N() const
-	{
-		return Tetrahedron10::_N;
-	}
-
-	const std::vector<double>& weighFactor() const
-	{
-		return Tetrahedron10::_weighFactor;
-	}
-
-	const std::vector<Property>& DOFElement() const
-	{
-		return Tetrahedron10::_DOFElement;
-	}
-
-	const std::vector<Property>& DOFFace() const
-	{
-		return Tetrahedron10::_DOFFace;
-	}
-
-	const std::vector<Property>& DOFEdge() const
-	{
-		return Tetrahedron10::_DOFEdge;
-	}
-
-	const std::vector<Property>& DOFPoint() const
-	{
-		return Tetrahedron10::_DOFPoint;
-	}
-
-	const std::vector<Property>& DOFMidPoint() const
-	{
-		return Tetrahedron10::_DOFMidPoint;
-	}
-
-	eslocal nCommon() const
-	{
-		return 3;
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return Tetrahedron4::getF(_indices, _params, face);
-	}
-
-	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
-	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
+	const std::vector<Property>& elementDOFs() const { return Tetrahedron10::_DOFElement; }
+	const std::vector<Property>& faceDOFs() const { return Tetrahedron10::_DOFFace; }
+	const std::vector<Property>& edgeDOFs() const { return Tetrahedron10::_DOFEdge; }
+	const std::vector<Property>& pointDOFs() const { return Tetrahedron10::_DOFPoint; }
+	const std::vector<Property>& midPointDOFs() const { return Tetrahedron10::_DOFMidPoint; }
 
 protected:
-
-	eslocal* indices()
-	{
-		return _indices;
-	}
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	eslocal* indices() { return _indices; }
+	const eslocal* indices() const { return _indices; }
 
 private:
 	eslocal _indices[Tetrahedron10NodesCount];
+	eslocal _params[PARAMS_SIZE];
+	std::vector<Element*> _edges;
+	std::vector<Element*> _faces;
 
 	static size_t _counter;
 

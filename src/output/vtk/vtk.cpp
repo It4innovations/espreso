@@ -129,7 +129,7 @@ void VTK::elements(const Mesh &mesh)
 
 	size_t size = 0;
 	for (size_t i = 0; i < elements.size(); i++) {
-		size += elements[i]->size() + 1;
+		size += elements[i]->nodes() + 1;
 	}
 
 	// ELEMENTS
@@ -138,8 +138,8 @@ void VTK::elements(const Mesh &mesh)
 	for (size_t p = 0; p < parts; p++) {
 		for (size_t i = partition[p]; i < partition[p + 1]; i++) {
 			// elements
-			_vtk << elements[i]->size();
-			for (size_t j = 0; j < elements[i]->size(); j++) {
+			_vtk << elements[i]->nodes();
+			for (size_t j = 0; j < elements[i]->nodes(); j++) {
 				_vtk << " " << elements[i]->node(j) + offset;
 			}
 			_vtk << "\n";
@@ -176,7 +176,7 @@ void VTK::elements(const Mesh &mesh)
 	_vtk << "LOOKUP_TABLE materials\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			_vtk << elements[i]->getParam(Element::MATERIAL) << "\n";
+			_vtk << elements[i]->param(Element::MATERIAL) << "\n";
 
 		}
 	}

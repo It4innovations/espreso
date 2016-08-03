@@ -210,69 +210,8 @@ std::vector<eslocal> Tetrahedron4::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Tetrahedron4::getFace(size_t face) const
-{
-	std::vector<eslocal> result(3);
-	switch (face){
-	case 0: {
-		result[0] = _indices[1];
-		result[1] = _indices[0];
-		result[2] = _indices[2];
-		break;
-	}
-	case 1: {
-		result[0] = _indices[0];
-		result[1] = _indices[1];
-		result[2] = _indices[3];
-		break;
-	}
-	case 2: {
-		result[0] = _indices[1];
-		result[1] = _indices[2];
-		result[2] = _indices[3];
-		break;
-	}
-	case 3: {
-		result[0] = _indices[2];
-		result[1] = _indices[0];
-		result[2] = _indices[3];
-		break;
-	}
-	}
-	return result;
-}
 
-Element* Tetrahedron4::getF(const eslocal *indices, const eslocal *params, size_t face)
-{
-	std::vector<eslocal> result(3);
-	switch (face){
-	case 0:
-		result[0] = indices[1];
-		result[1] = indices[0];
-		result[2] = indices[2];
-		break;
-	case 1:
-		result[0] = indices[0];
-		result[1] = indices[1];
-		result[2] = indices[3];
-		break;
-	case 2:
-		result[0] = indices[1];
-		result[1] = indices[2];
-		result[2] = indices[3];
-		break;
-	case 3:
-		result[0] = indices[2];
-		result[1] = indices[0];
-		result[2] = indices[3];
-		break;
-	}
-
-	return new Triangle3(result.data(), params);
-}
-
-
-Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 8:
@@ -285,11 +224,14 @@ Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *par
 	default:
 		ESINFO(ERROR) << "It is not possible to create Tetrahedron4 from " << n << " elements.";
 	}
+
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Tetrahedron4::Tetrahedron4(std::ifstream &is): Element(is)
+Tetrahedron4::Tetrahedron4(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 

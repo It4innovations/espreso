@@ -6,22 +6,20 @@
 #include "../line/line2.h"
 
 #define Hexahedron8NodesCount 8
+#define Hexahedron8EdgeCount 12
 #define Hexahedron8FacesCount 6
 #define Hexahedron8GPCount 8
+#define Hexahedron8CommonNodes 3
 #define Hexahedron8VTKCode 12
 
 namespace espreso {
 
 class Hexahedron8: public Element
 {
-	friend class Hexahedron20;
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter()
-	{
-		return _counter;
-	}
+	static size_t counter() { return _counter; }
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -38,111 +36,42 @@ public:
 
 	Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params);
 	Hexahedron8(std::ifstream &is);
+	Element* copy() const { return new Hexahedron8(*this); }
 
-	Element* copy() const
-	{
-		return new Hexahedron8(*this);
-	}
+	eslocal nCommon() const { return Hexahedron8CommonNodes; }
+	eslocal vtkCode() const { return Hexahedron8VTKCode; }
+	eslocal param(Params param) const { return _params[param]; };
+	void param(Params param, eslocal value) { _params[param] = value; }
 
-	eslocal vtkCode() const
-	{
-		return Hexahedron8VTKCode;
-	}
+	size_t faces() const { return Hexahedron8FacesCount; }
+	size_t edges() const { return Hexahedron8EdgeCount; }
+	size_t nodes() const { return Hexahedron8NodesCount; }
+	size_t coarseNodes() const { return Hexahedron8NodesCount; }
+	size_t gaussePoints() const { return Hexahedron8GPCount; }
 
-	const eslocal* indices() const
-	{
-		return _indices;
-	}
+	virtual Element* face(size_t index) const { return _faces[index]; };
+	virtual Element* edge(size_t index) const { return _edges[index]; };
 
-	size_t size() const
-	{
-		return Hexahedron8NodesCount;
-	}
+	const std::vector<DenseMatrix>& dN() const { return Hexahedron8::_dN; }
+	const std::vector<DenseMatrix>& N() const { return Hexahedron8::_N; }
+	const std::vector<double>& weighFactor() const { return Hexahedron8::_weighFactor; }
 
-	size_t coarseSize() const
-	{
-		return Hexahedron8NodesCount;
-	}
-
-	size_t gpSize() const
-	{
-		return Hexahedron8GPCount;
-	}
-
-	size_t faces() const
-	{
-		return Hexahedron8FacesCount;
-	}
-
-	const std::vector<DenseMatrix>& dN() const
-	{
-		return Hexahedron8::_dN;
-	}
-
-	const std::vector<DenseMatrix>&  N() const
-	{
-		return Hexahedron8::_N;
-	}
-
-	const std::vector<double>& weighFactor() const
-	{
-		return Hexahedron8::_weighFactor;
-	}
-
-	const std::vector<Property>& DOFElement() const
-	{
-		return Hexahedron8::_DOFElement;
-	}
-
-	const std::vector<Property>& DOFFace() const
-	{
-		return Hexahedron8::_DOFFace;
-	}
-
-	const std::vector<Property>& DOFEdge() const
-	{
-		return Hexahedron8::_DOFEdge;
-	}
-
-	const std::vector<Property>& DOFPoint() const
-	{
-		return Hexahedron8::_DOFPoint;
-	}
-
-	const std::vector<Property>& DOFMidPoint() const
-	{
-		return Hexahedron8::_DOFMidPoint;
-	}
-
-	eslocal nCommon() const
-	{
-		return 3;
-	}
-
-	Element* getFullFace(size_t face) const
-	{
-		return getF(_indices, _params, face);
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return getFullFace(face);
-	}
-
-	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
-	std::vector<eslocal> getFace(size_t face) const;
-
+	const std::vector<Property>& elementDOFs() const { return Hexahedron8::_DOFElement; }
+	const std::vector<Property>& faceDOFs() const { return Hexahedron8::_DOFFace; }
+	const std::vector<Property>& edgeDOFs() const { return Hexahedron8::_DOFEdge; }
+	const std::vector<Property>& pointDOFs() const { return Hexahedron8::_DOFPoint; }
+	const std::vector<Property>& midPointDOFs() const { return Hexahedron8::_DOFMidPoint; }
 
 protected:
-	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
-
-	eslocal* indices()
-	{
-		return _indices;
-	}
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	eslocal* indices() { return _indices; }
+	const eslocal* indices() const { return _indices; }
 
 private:
 	eslocal _indices[Hexahedron8NodesCount];
+	eslocal _params[PARAMS_SIZE];
+	std::vector<Element*> _edges;
+	std::vector<Element*> _faces;
 
 	static size_t _counter;
 

@@ -340,80 +340,9 @@ std::vector<eslocal> Hexahedron20::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Hexahedron20::getFace(size_t face) const
-{
-	std::vector<eslocal> result(4);
 
-	// bottom
-	if (face == 4) {
-		result[0] = _indices[0];
-		result[1] = _indices[3];
-		result[2] = _indices[2];
-		result[3] = _indices[1];
-		return result;
-	}
 
-	// top
-	if (face == 5) {
-		result[0] = _indices[4];
-		result[1] = _indices[5];
-		result[2] = _indices[6];
-		result[3] = _indices[7];
-		return result;
-	}
-
-	//sides
-	result[0] = _indices[ face              ];
-	result[1] = _indices[(face + 1) % 4     ];
-	result[2] = _indices[(face + 1) % 4 + 4 ];
-	result[3] = _indices[ face + 4          ];
-	return result;
-}
-
-Element* Hexahedron20::getFullFace(size_t face) const
-{
-	std::vector<eslocal> result(8);
-
-	switch (face) {
-	case 4:
-		result[0] = _indices[0];
-		result[1] = _indices[3];
-		result[2] = _indices[2];
-		result[3] = _indices[1];
-
-		result[4] = _indices[11];
-		result[5] = _indices[10];
-		result[6] = _indices[9];
-		result[7] = _indices[8];
-		break;
-	case 5:
-		result[0] = _indices[4];
-		result[1] = _indices[5];
-		result[2] = _indices[6];
-		result[3] = _indices[7];
-
-		result[4] = _indices[12];
-		result[5] = _indices[13];
-		result[6] = _indices[14];
-		result[7] = _indices[15];
-		break;
-	case 0: case 1: case 2: case 3:
-		result[0] = _indices[ face               ];
-		result[1] = _indices[(face + 1) % 4      ];
-		result[2] = _indices[(face + 1) % 4 + 4  ];
-		result[3] = _indices[ face + 4           ];
-
-		result[4] = _indices[ face          + 8  ];
-		result[5] = _indices[(face + 1) % 4 + 16 ];
-		result[6] = _indices[ face          + 12 ];
-		result[7] = _indices[ face          + 16 ];
-		break;
-	}
-
-	return new Square8(result.data(), _params);
-}
-
-Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 20:
@@ -422,11 +351,14 @@ Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *par
 	default:
 		ESINFO(ERROR) << "It is not possible to create Hexahedron20 from " << n << " elements.";
 	}
+
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Hexahedron20::Hexahedron20(std::ifstream &is): Element(is)
+Hexahedron20::Hexahedron20(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 

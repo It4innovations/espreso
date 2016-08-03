@@ -181,68 +181,7 @@ std::vector<eslocal> Prisma6::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Prisma6::getFace(size_t face) const
-{
-	std::vector<eslocal> result;
-	// bottom
-	if (face == 3) {
-		result.resize(3);
-		result[0] = _indices[1];
-		result[1] = _indices[0];
-		result[2] = _indices[2];
-		return result;
-	}
-
-	// top
-	if (face == 4) {
-		result.resize(3);
-		result[0] = _indices[3];
-		result[1] = _indices[4];
-		result[2] = _indices[5];
-		return result;
-	}
-
-	//sides
-	result.resize(4);
-	result[0] = _indices[ face              ];
-	result[1] = _indices[(face + 1) % 3     ];
-	result[2] = _indices[(face + 1) % 3 + 3 ];
-	result[3] = _indices[ face + 3          ];
-	return result;
-}
-
-Element* Prisma6::getF(const eslocal *indices, const eslocal *params, size_t face)
-{
-	std::vector<eslocal> result;
-	// bottom
-	if (face == 3) {
-		result.resize(3);
-		result[0] = indices[1];
-		result[1] = indices[0];
-		result[2] = indices[2];
-		return new Triangle3(result.data(), params);
-	}
-
-	// top
-	if (face == 4) {
-		result.resize(3);
-		result[0] = indices[3];
-		result[1] = indices[4];
-		result[2] = indices[5];
-		return new Triangle3(result.data(), params);
-	}
-
-	//sides
-	result.resize(4);
-	result[0] = indices[ face              ];
-	result[1] = indices[(face + 1) % 3     ];
-	result[2] = indices[(face + 1) % 3 + 3 ];
-	result[3] = indices[ face          + 3 ];
-	return new Square4(result.data(), params);
-}
-
-
-Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 6:
@@ -259,11 +198,14 @@ Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params): Elem
 	default:
 		ESINFO(ERROR) << "It is not possible to create Prisma6 from " << n << " elements.";
 	}
+
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Prisma6::Prisma6(std::ifstream &is): Element(is)
+Prisma6::Prisma6(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 

@@ -100,44 +100,15 @@ std::vector<eslocal> Square4::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Square4::getFace(size_t face) const
-{
-	if (face < 3) {
-		return std::vector<eslocal>(_indices + face, _indices + face + 2);
-	} else {
-		return std::vector<eslocal>({_indices[3], _indices[0]});
-	}
-}
-
-Element* getF(const eslocal *indices, const eslocal *params, size_t face)
-{
-	std::vector<eslocal> result(2);
-	if (face < 3) {
-		result[0] = indices[face];
-		result[1] = indices[face + 1];
-	} else {
-		result[0] = indices[3];
-		result[1] = indices[0];
-	}
-
-	return new Line2(indices, params);
-}
-
-Element* Square4::getFullFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
-
-Element* Square4::getCoarseFace(size_t face) const
-{
-	ESINFO(ERROR) << "get FACE is not implemented";
-	return NULL;
-}
-
-Square4::Square4(const eslocal *indices, const eslocal *params): Element(params)
+Square4::Square4(const eslocal *indices)
 {
 	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));
+}
+
+Square4::Square4(const eslocal *indices, const eslocal *params)
+{
+	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));
+	_params.insert(_params.end(), params, params + PARAMS_SIZE);
 }
 
 

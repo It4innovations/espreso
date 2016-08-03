@@ -4,8 +4,10 @@
 #include "../element.h"
 
 #define Line2NodesCount 2
+#define Line2EdgeCount 0
 #define Line2FacesCount 0
 #define Line2GPCount 2
+#define Line2CommonNodes 1
 #define Line2VTKCode 3
 
 namespace espreso {
@@ -15,10 +17,7 @@ class Line2: public Element
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter()
-	{
-		return _counter;
-	}
+	static size_t counter() { return _counter; }
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -33,99 +32,38 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Line2(const eslocal *indices, const eslocal *params);
+	Line2(const eslocal *indices);
+	Element* copy() const { return new Line2(*this); }
 
-	Element* copy() const
-	{
-		return new Line2(*this);
-	}
+	eslocal nCommon() const { return Line2CommonNodes; }
+	eslocal vtkCode() const { return Line2VTKCode; }
+	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; return 0; };
+	void param(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; };
 
-	eslocal vtkCode() const
-	{
-		return Line2VTKCode;
-	}
+	size_t faces() const { return Line2FacesCount; }
+	size_t edges() const { return Line2EdgeCount; }
+	size_t nodes() const { return Line2NodesCount; }
+	size_t coarseNodes() const { return Line2NodesCount; }
+	size_t gaussePoints() const { return Line2GPCount; }
 
-	const eslocal* indices() const
-	{
-		return _indices;
-	}
+	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; return NULL; };
+	virtual Element* edge(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; return NULL; };
 
-	size_t size() const
-	{
-		return Line2NodesCount;
-	}
+	const std::vector<DenseMatrix>& dN() const { return Line2::_dN; }
+	const std::vector<DenseMatrix>& N() const { return Line2::_N; }
+	const std::vector<double>& weighFactor() const { return Line2::_weighFactor; }
 
-	size_t coarseSize() const
-	{
-		return Line2NodesCount;
-	}
+	const std::vector<Property>& elementDOFs() const { return Line2::_DOFElement; }
+	const std::vector<Property>& faceDOFs() const { return Line2::_DOFFace; }
+	const std::vector<Property>& edgeDOFs() const { return Line2::_DOFEdge; }
+	const std::vector<Property>& pointDOFs() const { return Line2::_DOFPoint; }
+	const std::vector<Property>& midPointDOFs() const { return Line2::_DOFMidPoint; }
 
-	size_t gpSize() const
-	{
-		return Line2GPCount;
-	}
-
-	size_t faces() const
-	{
-		return Line2FacesCount;
-	}
-
-	const std::vector<DenseMatrix>& dN() const
-	{
-		return Line2::_dN;
-	}
-
-	const std::vector<DenseMatrix>&  N() const
-	{
-		return Line2::_N;
-	}
-
-	const std::vector<double>& weighFactor() const
-	{
-		return Line2::_weighFactor;
-	}
-
-	const std::vector<Property>& DOFElement() const
-	{
-		return Line2::_DOFElement;
-	}
-
-	const std::vector<Property>& DOFFace() const
-	{
-		return Line2::_DOFFace;
-	}
-
-	const std::vector<Property>& DOFEdge() const
-	{
-		return Line2::_DOFEdge;
-	}
-
-	const std::vector<Property>& DOFPoint() const
-	{
-		return Line2::_DOFPoint;
-	}
-
-	const std::vector<Property>& DOFMidPoint() const
-	{
-		return Line2::_DOFMidPoint;
-	}
-
-	eslocal nCommon() const
-	{
-		return 1;
-	}
-
-	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
-	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
-
-	eslocal* indices()
-	{
-		return _indices;
-	}
+	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
+	const eslocal* indices() const { return _indices; }
+	eslocal* indices() { return _indices; }
 
 private:
 	eslocal _indices[Line2NodesCount];

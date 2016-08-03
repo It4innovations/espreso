@@ -63,14 +63,14 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
 	double detJ;
-	DenseMatrix f(1, element->size());
-	DenseMatrix U(element->size(), 2);
+	DenseMatrix f(1, element->nodes());
+	DenseMatrix U(element->nodes(), 2);
 
 	const std::vector<Evaluator*> &heat_sources = element->settings(Property::HEAT_SOURCE);
 	const std::vector<Evaluator*> &ux = element->settings(Property::TRANSLATION_MOTION_X);
 	const std::vector<Evaluator*> &uy = element->settings(Property::TRANSLATION_MOTION_Y);
 
-	const Material &material = mesh.materials()[element->getParam(Element::MATERIAL)];
+	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -78,8 +78,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	Ce(0, 0) = material.termalConduction.x;
 	Ce(1, 1) = material.termalConduction.y;
 
-	coordinates.resize(element->size(), 2);
-	for (size_t i = 0; i < element->size(); i++) {
+	coordinates.resize(element->nodes(), 2);
+	for (size_t i = 0; i < element->nodes(); i++) {
 		const Point &p = mesh.coordinates().get(element->node(i), subdomain);
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
@@ -90,17 +90,17 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		}
 	}
 
-	eslocal Ksize = element->size();
+	eslocal Ksize = element->nodes();
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
-	DenseMatrix u(1, 2), v(1, 2), Re(1, element->size());
+	DenseMatrix u(1, 2), v(1, 2), Re(1, element->nodes());
 	double normGradN = 0;
 
-	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
+	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
 		u.multiply(N[gp], U, 1, 0);
 
 		J.multiply(dN[gp], coordinates);
@@ -109,7 +109,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		dND.multiply(invJ, dN[gp]);
 
-		DenseMatrix b_e(1, element->size()), b_e_c(1, element->size());
+		DenseMatrix b_e(1, element->nodes()), b_e_c(1, element->nodes());
 		b_e.multiply(u, dND, 1, 0);
 
 		if (CAU) {
@@ -205,9 +205,9 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 		const Element* e = _mesh.elements()[p];
 		processElement(Ke, fe, _mesh, subdomain, e);
 
-		for (size_t i = 0; i < e->size(); i++) {
+		for (size_t i = 0; i < e->nodes(); i++) {
 			eslocal row = e->node(i);
-			for (size_t j = 0; j < e->size(); j++) {
+			for (size_t j = 0; j < e->nodes(); j++) {
 				eslocal column = e->node(j);
 				_K(row, column) = Ke(i, j);
 			}

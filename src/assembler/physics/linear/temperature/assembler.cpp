@@ -62,21 +62,21 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = 1;
 	inertia = 0;
 
-	coordinates.resize(element->size(), 3);
-	for (size_t i = 0; i < element->size(); i++) {
+	coordinates.resize(element->nodes(), 3);
+	for (size_t i = 0; i < element->nodes(); i++) {
 		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
 		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
 		coordinates(i, 2) = mesh.coordinates().get(element->node(i), subdomain).z;
 	}
 
-	eslocal Ksize = element->size();
+	eslocal Ksize = element->nodes();
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
-	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
+	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
@@ -139,9 +139,9 @@ void Temperature::composeSubdomain(size_t subdomain)
 		const Element* e = _mesh.elements()[i];
 		processElement(Ke, fe, _mesh, subdomain, e);
 
-		for (size_t i = 0; i < e->size(); i++) {
+		for (size_t i = 0; i < e->nodes(); i++) {
 			eslocal row = e->node(i);
-			for (size_t j = 0; j < e->size(); j++) {
+			for (size_t j = 0; j < e->nodes(); j++) {
 				eslocal column = e->node(j);
 				_K(row, column) = Ke(i, j);
 			}

@@ -87,7 +87,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	std::vector<double> inertia(3, 0);
 	double detJ, CP;
 
-	const Material &material = mesh.materials()[element->getParam(Element::MATERIAL)];
+	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -106,29 +106,29 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	inertia[2] = 9.8066 * material.density;
 	CP = 1;
 
-	coordinates.resize(element->size(), DOFs);
+	coordinates.resize(element->nodes(), DOFs);
 
 	Point mid;
-	for (size_t i = 0; i < element->size(); i++) {
+	for (size_t i = 0; i < element->nodes(); i++) {
 		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
 		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
 		coordinates(i, 2) = mesh.coordinates().get(element->node(i), subdomain).z;
 		mid += mesh.coordinates().get(element->node(i), subdomain);
 	}
-	mid /= element->size();
+	mid /= element->nodes();
 
-	eslocal Ksize = DOFs * element->size();
+	eslocal Ksize = DOFs * element->nodes();
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
-	Me.resize(element->size(), element->size());
+	Me.resize(element->nodes(), element->nodes());
 	Me = 0;
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
 	double rotation[3] = { mid.x * omega.x * omega.x, mid.y * omega.y * omega.y, mid.z * omega.z * omega.z };
 
-	for (eslocal gp = 0; gp < element->gpSize(); gp++) {
+	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
@@ -141,7 +141,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 
 		for (eslocal i = 0; i < Ksize; i++) {
 			// TODO: set rotation from example
-			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % element->size()) * inertia[i / element->size()];
+			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
 			//fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * 7850 * rotation[i / e->size()];
 		}
 	}
@@ -168,17 +168,17 @@ void TransientElasticity::composeSubdomain(size_t subdomain)
 		const Element* element = elements[i];
 		processElement(Ke, Me, fe, _mesh, subdomain, element);
 
-		for (size_t i = 0; i < DOFs.size() * element->size(); i++) {
-			size_t row = DOFs.size() * (element->node(i % element->size())) + i / element->size();
-			for (size_t j = 0; j < DOFs.size() * element->size(); j++) {
-				size_t column = DOFs.size() * (element->node(j % element->size())) + j / element->size();
+		for (size_t i = 0; i < DOFs.size() * element->nodes(); i++) {
+			size_t row = DOFs.size() * (element->node(i % element->nodes())) + i / element->nodes();
+			for (size_t j = 0; j < DOFs.size() * element->nodes(); j++) {
+				size_t column = DOFs.size() * (element->node(j % element->nodes())) + j / element->nodes();
 				_K(row, column) = Ke(i, j);
 			}
 			f[subdomain][row] += fe[i];
 		}
 
-		for (size_t r = 0; r < element->size(); r++) {
-			for (size_t c = 0; c < element->size(); c++) {
+		for (size_t r = 0; r < element->nodes(); r++) {
+			for (size_t c = 0; c < element->nodes(); c++) {
 				for (size_t k = 0; k < DOFs.size(); k++) {
 					_M(DOFs.size() * element->node(r) + k, DOFs.size() * element->node(c) + k) = Me(r, c);
 				}

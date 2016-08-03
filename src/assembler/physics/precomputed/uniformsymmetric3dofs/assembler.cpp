@@ -34,11 +34,11 @@ void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 	size_t row, column;
 
 	for (size_t e = parts[subdomain]; e < parts[subdomain + 1]; e++) {
-		for (size_t i = 0; i < elements[e]->size() * DOFs.size(); i++) {
+		for (size_t i = 0; i < elements[e]->nodes() * DOFs.size(); i++) {
 			row = DOFs.size() * elements[e]->node(i / DOFs.size()) + (i % DOFs.size());
-			for (size_t j = 0; j < elements[e]->size() * DOFs.size(); j++) {
+			for (size_t j = 0; j < elements[e]->nodes() * DOFs.size(); j++) {
 				column = DOFs.size() * elements[e]->node(j / DOFs.size()) + (j % DOFs.size());
-				_K(row, column) = matrices[e][i * elements[e]->size() * DOFs.size() + j];
+				_K(row, column) = matrices[e][i * elements[e]->nodes() * DOFs.size() + j];
 			}
 		}
 	}

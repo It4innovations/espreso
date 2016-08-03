@@ -131,65 +131,8 @@ std::vector<eslocal> Hexahedron8::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-std::vector<eslocal> Hexahedron8::getFace(size_t face) const
-{
-	std::vector<eslocal> result(4);
 
-	// bottom
-	if (face == 4) {
-		result[0] = _indices[0];
-		result[1] = _indices[3];
-		result[2] = _indices[2];
-		result[3] = _indices[1];
-		return result;
-	}
-
-	// top
-	if (face == 5) {
-		result[0] = _indices[4];
-		result[1] = _indices[5];
-		result[2] = _indices[6];
-		result[3] = _indices[7];
-		return result;
-	}
-
-	//sides
-	result[0] = _indices[ face              ];
-	result[1] = _indices[(face + 1) % 4     ];
-	result[2] = _indices[(face + 1) % 4 + 4 ];
-	result[3] = _indices[ face + 4          ];
-	return result;
-}
-
-Element* Hexahedron8::getF(const eslocal *indices, const eslocal *params, size_t face)
-{
-	std::vector<eslocal> result(4);
-
-	switch (face) {
-	case 4:
-		result[0] = indices[0];
-		result[1] = indices[3];
-		result[2] = indices[2];
-		result[3] = indices[1];
-		break;
-	case 5:
-		result[0] = indices[4];
-		result[1] = indices[5];
-		result[2] = indices[6];
-		result[3] = indices[7];
-		break;
-	case 0: case 1: case 2: case 3:
-		result[0] = indices[ face              ];
-		result[1] = indices[(face + 1) % 4     ];
-		result[2] = indices[(face + 1) % 4 + 4 ];
-		result[3] = indices[ face + 4          ];
-		break;
-	}
-
-	return new Square4(result.data(), params);
-}
-
-Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params): Element(params)
+Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
 	case 8:
@@ -198,11 +141,14 @@ Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *param
 	default:
 		ESINFO(ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
 	}
+
+	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));
 }
 
-Hexahedron8::Hexahedron8(std::ifstream &is): Element(is)
+Hexahedron8::Hexahedron8(std::ifstream &is)
 {
-	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * size());
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
 
