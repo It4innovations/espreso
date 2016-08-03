@@ -5038,6 +5038,26 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       regMat=NtNl;
       regMat.ConvertToCOO(1);
     }
+
+
+    {
+    	if (config::info::PRINT_MATRICES) {
+    		std::ofstream osS(Logging::prepareFile(0, "N"));
+    		osS << N;
+    		osS.close();
+    	}
+    }
+    {
+    	if (config::info::PRINT_MATRICES) {
+    		std::ofstream osS(Logging::prepareFile(0, "Nl"));
+    		osS << Nl;
+    		osS.close();
+    	}
+    }
+
+
+
+
   }
 
   delete [] S_S ;
