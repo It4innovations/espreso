@@ -15,6 +15,7 @@ Documentation of the library ESPRESO
    installation
    run
    hpc
+   acc
 
    api
 
