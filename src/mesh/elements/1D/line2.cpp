@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Line2::_counter = 0;
+
 std::vector<Property> Line2::_DOFElement;
 std::vector<Property> Line2::_DOFFace;
 std::vector<Property> Line2::_DOFEdge;

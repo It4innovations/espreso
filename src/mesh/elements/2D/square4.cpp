@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Square4::_counter = 0;
+
 std::vector<Property> Square4::_DOFElement;
 std::vector<Property> Square4::_DOFFace;
 std::vector<Property> Square4::_DOFEdge;

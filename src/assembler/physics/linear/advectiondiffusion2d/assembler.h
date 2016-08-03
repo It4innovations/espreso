@@ -16,6 +16,8 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	AdvectionDiffusion2D(const Mesh &mesh)
 	: LinearPhysics(mesh, { Property::TEMPERATURE }, SparseMatrix::MatrixType::REAL_UNSYMMETRIC) {};
 
+	void init();
+
 	static double sigma;
 	static STABILIZATION stabilization;
 

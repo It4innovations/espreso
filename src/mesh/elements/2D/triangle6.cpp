@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Triangle6::_counter = 0;
+
 std::vector<Property> Triangle6::_DOFElement;
 std::vector<Property> Triangle6::_DOFFace;
 std::vector<Property> Triangle6::_DOFEdge;

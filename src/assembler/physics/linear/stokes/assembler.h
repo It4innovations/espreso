@@ -14,6 +14,8 @@ struct Stokes: public LinearPhysics
 			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE },
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE) {};
 
+	void init();
+
 protected:
 	void composeSubdomain(size_t subdomain);
 };

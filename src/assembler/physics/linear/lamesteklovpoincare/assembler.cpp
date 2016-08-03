@@ -4,6 +4,24 @@
 
 using namespace espreso;
 
+void LameSteklovPoincare::init()
+{
+	std::vector<Property> lsp = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+	Hexahedron8::setDOFs({}, {}, {}, lsp, lsp);
+	Hexahedron20::setDOFs({}, {}, {}, lsp, lsp);
+	Tetrahedron4::setDOFs({}, {}, {}, lsp, lsp);
+	Tetrahedron10::setDOFs({}, {}, {}, lsp, lsp);
+	Prisma6::setDOFs({}, {}, {}, lsp, lsp);
+	Prisma15::setDOFs({}, {}, {}, lsp, lsp);
+	Pyramid5::setDOFs({}, {}, {}, lsp, lsp);
+	Pyramid13::setDOFs({}, {}, {}, lsp, lsp);
+
+	Square4::setDOFs({}, {}, {}, lsp, lsp);
+	Square8::setDOFs({}, {}, {}, lsp, lsp);
+	Triangle3::setDOFs({}, {}, {}, lsp, lsp);
+	Triangle6::setDOFs({}, {}, {}, lsp, lsp);
+}
+
 static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
 {
 	size_t nodes = coordinates.localSize(subdomain);

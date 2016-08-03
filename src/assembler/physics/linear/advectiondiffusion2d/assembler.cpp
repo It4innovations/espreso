@@ -6,6 +6,39 @@ using namespace espreso;
 double AdvectionDiffusion2D::sigma = 0;
 AdvectionDiffusion2D::STABILIZATION AdvectionDiffusion2D::stabilization = AdvectionDiffusion2D::STABILIZATION::CAU;
 
+void AdvectionDiffusion2D::init()
+{
+	if (Hexahedron8::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Hexahedron8.";
+	}
+	if (Hexahedron20::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Hexahedron20.";
+	}
+	if (Tetrahedron4::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Tetrahedron4.";
+	}
+	if (Tetrahedron10::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Tetrahedron10.";
+	}
+	if (Prisma6::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Prisma6.";
+	}
+	if (Prisma15::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Prisma15.";
+	}
+	if (Pyramid5::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Pyramid5.";
+	}
+	if (Pyramid13::counter()) {
+		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Pyramid13.";
+	}
+
+	Square4::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Square8::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Triangle3::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Triangle6::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+}
+
 static double determinant2x2(DenseMatrix &m)
 {
 	return fabs(

@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Hexahedron8::_counter = 0;
+
 std::vector<Property> Hexahedron8::_DOFElement;
 std::vector<Property> Hexahedron8::_DOFFace;
 std::vector<Property> Hexahedron8::_DOFEdge;

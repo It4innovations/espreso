@@ -3,6 +3,23 @@
 
 using namespace espreso;
 
+void Temperature::init()
+{
+	Hexahedron8::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Hexahedron20::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Tetrahedron4::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Tetrahedron10::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Prisma6::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Prisma15::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Pyramid5::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Pyramid13::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+
+	Square4::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Square8::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Triangle3::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Triangle6::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+}
+
 static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();

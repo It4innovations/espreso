@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Pyramid13::_counter = 0;
+
 std::vector<Property> Pyramid13::_DOFElement;
 std::vector<Property> Pyramid13::_DOFFace;
 std::vector<Property> Pyramid13::_DOFEdge;

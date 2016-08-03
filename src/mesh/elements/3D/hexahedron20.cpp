@@ -3,6 +3,8 @@
 
 using namespace espreso;
 
+size_t Hexahedron20::_counter = 0;
+
 std::vector<Property> Hexahedron20::_DOFElement;
 std::vector<Property> Hexahedron20::_DOFFace;
 std::vector<Property> Hexahedron20::_DOFEdge;

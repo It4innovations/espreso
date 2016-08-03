@@ -3,6 +3,24 @@
 
 using namespace espreso;
 
+void UniformSymmetric3DOFs::init()
+{
+	std::vector<Property> elasticity = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+	Hexahedron8::setDOFs({}, {}, {}, elasticity, elasticity);
+	Hexahedron20::setDOFs({}, {}, {}, elasticity, elasticity);
+	Tetrahedron4::setDOFs({}, {}, {}, elasticity, elasticity);
+	Tetrahedron10::setDOFs({}, {}, {}, elasticity, elasticity);
+	Prisma6::setDOFs({}, {}, {}, elasticity, elasticity);
+	Prisma15::setDOFs({}, {}, {}, elasticity, elasticity);
+	Pyramid5::setDOFs({}, {}, {}, elasticity, elasticity);
+	Pyramid13::setDOFs({}, {}, {}, elasticity, elasticity);
+
+	Square4::setDOFs({}, {}, {}, elasticity, elasticity);
+	Square8::setDOFs({}, {}, {}, elasticity, elasticity);
+	Triangle3::setDOFs({}, {}, {}, elasticity, elasticity);
+	Triangle6::setDOFs({}, {}, {}, elasticity, elasticity);
+}
+
 void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;

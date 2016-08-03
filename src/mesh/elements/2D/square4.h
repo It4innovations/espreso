@@ -16,6 +16,23 @@ class Square4: public Element
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
+	static size_t counter()
+	{
+		return _counter;
+	}
+	static void setDOFs(
+			const std::vector<Property> element,
+			const std::vector<Property> face,
+			const std::vector<Property> edge,
+			const std::vector<Property> point,
+			const std::vector<Property> midPoint)
+	{
+		_DOFElement = element;
+		_DOFFace = face;
+		_DOFEdge = edge;
+		_DOFPoint = point;
+		_DOFMidPoint = midPoint;
+	}
 
 	Square4(const eslocal *indices, const eslocal *params);
 
@@ -114,6 +131,8 @@ protected:
 
 private:
 	eslocal _indices[Square4NodesCount];
+
+	static size_t _counter;
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;

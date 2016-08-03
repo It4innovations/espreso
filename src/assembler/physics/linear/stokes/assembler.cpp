@@ -3,6 +3,23 @@
 
 using namespace espreso;
 
+void Stokes::init()
+{
+	Hexahedron8::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Hexahedron20::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Tetrahedron4::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Tetrahedron10::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Prisma6::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Prisma15::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Pyramid5::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Pyramid13::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+
+	Square4::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Square8::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Triangle3::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Triangle6::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+}
+
 static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, DenseMatrix &Eh, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
 {
 	DenseMatrix coordinates;

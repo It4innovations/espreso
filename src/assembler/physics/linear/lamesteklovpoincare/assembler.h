@@ -13,6 +13,9 @@ struct LameSteklovPoincare: public LinearPhysics
 			mesh,
 			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
+
+	void init();
+
 protected:
 	void composeSubdomain(size_t subdomain);
 };

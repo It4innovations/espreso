@@ -14,6 +14,8 @@ struct UniformSymmetric3DOFs: public PrecomputedPhysics
 			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE, rhs, rhs_size) {};
 
+	void init();
+
 protected:
 	void composeSubdomain(size_t subdomain);
 };

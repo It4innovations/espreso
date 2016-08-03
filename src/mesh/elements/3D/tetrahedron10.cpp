@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Tetrahedron10::_counter = 0;
+
 std::vector<Property> Tetrahedron10::_DOFElement;
 std::vector<Property> Tetrahedron10::_DOFFace;
 std::vector<Property> Tetrahedron10::_DOFEdge;

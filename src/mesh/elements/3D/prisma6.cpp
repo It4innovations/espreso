@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+size_t Prisma6::_counter = 0;
+
 std::vector<Property> Prisma6::_DOFElement;
 std::vector<Property> Prisma6::_DOFFace;
 std::vector<Property> Prisma6::_DOFEdge;

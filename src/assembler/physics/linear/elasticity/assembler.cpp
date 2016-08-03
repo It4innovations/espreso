@@ -3,6 +3,24 @@
 
 using namespace espreso;
 
+void LinearElasticity::init()
+{
+	std::vector<Property> elasticity = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+	Hexahedron8::setDOFs({}, {}, {}, elasticity, elasticity);
+	Hexahedron20::setDOFs({}, {}, {}, elasticity, elasticity);
+	Tetrahedron4::setDOFs({}, {}, {}, elasticity, elasticity);
+	Tetrahedron10::setDOFs({}, {}, {}, elasticity, elasticity);
+	Prisma6::setDOFs({}, {}, {}, elasticity, elasticity);
+	Prisma15::setDOFs({}, {}, {}, elasticity, elasticity);
+	Pyramid5::setDOFs({}, {}, {}, elasticity, elasticity);
+	Pyramid13::setDOFs({}, {}, {}, elasticity, elasticity);
+
+	Square4::setDOFs({}, {}, {}, elasticity, elasticity);
+	Square8::setDOFs({}, {}, {}, elasticity, elasticity);
+	Triangle3::setDOFs({}, {}, {}, elasticity, elasticity);
+	Triangle6::setDOFs({}, {}, {}, elasticity, elasticity);
+}
+
 static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();

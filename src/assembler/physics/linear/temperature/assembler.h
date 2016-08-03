@@ -11,6 +11,8 @@ struct Temperature: public LinearPhysics
 	Temperature(const Mesh &mesh)
 	: LinearPhysics(mesh, { Property::TEMPERATURE }, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
 
+	void init();
+
 protected:
 	void composeSubdomain(size_t subdomain);
 };

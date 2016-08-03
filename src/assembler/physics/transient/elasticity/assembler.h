@@ -33,6 +33,8 @@ struct TransientElasticity: public TransientPhysics
 		};
 	};
 
+	void init();
+
 	double timeConstant;
 
 	double beta;
