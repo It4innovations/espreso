@@ -15,10 +15,12 @@ public:
 	virtual ~Results() {};
 
 protected:
-	Results(const Mesh &mesh, const std::string &path): _mesh(mesh), _path(path) {};
+	Results(const Mesh &mesh, const std::string &path): _mesh(mesh), _path(path), counter(0) {};
 
 	const Mesh &_mesh;
 	std::string _path;
+
+	size_t counter;
 };
 
 }
