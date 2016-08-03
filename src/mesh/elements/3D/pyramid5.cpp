@@ -211,7 +211,7 @@ Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params): El
 		memcpy(_indices, indices, 5 * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Tetrahedron5 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Tetrahedron5 from " << n << " indices.";
 	}
 }
 

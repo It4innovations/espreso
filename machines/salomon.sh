@@ -1,6 +1,7 @@
 #!/bin/bash
-WORKDIR=~/espreso_git/espreso #espreso-results-pbs-static-pbs
-ESPRESODIR=~/espreso_git/espreso
+
+WORKDIR=~/espreso-results #espreso-results-pbs-static-pbs
+ESPRESODIR=~/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
 THREADS_PER_MPI=24
@@ -174,13 +175,14 @@ if [ "$1" = "run" ]; then
     cp -R    $ESPRESODIR/$EXAMPLEDIR/*  $WORKDIR/$out_dir/$EXAMPLEDIR
     cp       $ESPRESODIR/espreso        $WORKDIR/$out_dir
     cp       $ESPRESODIR/salomon.sh     $WORKDIR/$out_dir
+    cp       $ESPRESODIR/*.config       $WORKDIR/$out_dir
 
     qsub_command+="cd $WORKDIR/$out_dir;"
     qsub_command+="cat $¡PBS_NODEFILE | tee -a $node_file;"
 
     if [ "$3" = "mpi" ]; then
 
-export LD_LIBRARY_PATH=/home/mer126/espreso_git/espreso/libs:$LD_LIBRARY_PATH
+      export LD_LIBRARY_PATH=/home/lriha/espreso/libs:$LD_LIBRARY_PATH
       export MKL_NUM_THREADS=1
       export OMP_NUM_THREADS=24
       export SOLVER_NUM_THREADS=$THREADS_PER_MPI
@@ -238,6 +240,198 @@ fi
 
 
 
+if [ "$1" = "run_ansys" ]; then
+
+. ansys_run.conf
+
+  qsub_command_0="#!/bin/bash;"
+  qsub_command_0+="export MKL_NUM_THREADS=1;"
+  qsub_command_0+="export OMP_NUM_THREADS=1;"
+  qsub_command_0+="export SOLVER_NUM_THREADS=$THREADS_PER_MPI;"
+  qsub_command_0+="export PAR_NUM_THREADS=$THREADS_PER_MPI;"
+  qsub_command_0+="export CILK_NWORKERS=$THREADS_PER_MPI;"
+  qsub_command_0+="export PARDISOLICMESSAGE=1;"
+  qsub_command_0+="export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.;"
+
+  qsub_command_0+="export LC_CTYPE=;"
+
+  qsub_command_0+="export MIC_ENV_PREFIX=MIC;"
+  qsub_command_0+="export MIC_OMP_NUM_THREADS=60;"
+  qsub_command_0+="export OFFLOAD_INIT=on_start;"
+  qsub_command_0+="export MIC_USE_2MB_BUFFERS=10k;"
+  qsub_command_0+="export MIC_OMP_NESTED=TRUE;"
+  qsub_command_0+="export MIC_MKL_DYNAMIC=FALSE;"
+  qsub_command_0+="export MIC_MKL_NUM_THREADS=3;"
+  qsub_command_0+="export MIC_OMP_PROC_BIND=spread,close;"
+
+  if [ "$2" = "sgi" ]; then
+    #START - SGI MPI
+    module unload impi
+    module unload iimpi
+    module load perfboost
+    module load mpt/2.12
+
+    export MPI_DSM_DISTRIBUTE=0
+    export MPI_SHEPHERD=1
+    export PERFBOOST_VERBOSE=1
+    export MPI_VERBOSE=1
+    export MPI_BUFS_PER_PROC=512
+    #END -  SGI MPI
+  fi
+
+  if [ "$2" = "intel" ]; then
+    qsub_command_0+="module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25;"
+  fi
+
+  qsub_command_0+="module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25;"
+  qsub_command_0+="module load tbb/4.4.2.152;"
+
+  if [ "$2" = "sgi" ]; then
+    qsub_command_0+="module unload impi;"
+    qsub_command_0+="module unload iimpi;"
+
+    qsub_command_0+="module load perfboost;"
+    qsub_command_0+="module load mpt/2.12;"
+
+    qsub_command_0+="export MPI_DSM_DISTRIBUTE=0;"
+    qsub_command_0+="export MPI_SHEPHERD=1;"
+    qsub_command_0+="export PERFBOOST_VERBOSE=1;"
+    qsub_command_0+="export MPI_VERBOSE=1;"
+    qsub_command_0+="export MPI_BUFS_PER_PROC=512;"
+  fi
+
+  qsub_command_0+="module list;"
+
+  # Select 1.) Number of nodes and number of rans per node 
+#  for NODES in 32 #16 32 64 128 256 # compute nodes 
+#  do
+#   for MPI_PER_NODE in 22 #1 #2 6 12 24   # MPI processes per node 
+#   do 
+#    THREADS_PER_MPI=$(( (24)/(MPI_PER_NODE) ))    # number of threads per MPI process 
+#    echo "THREADS_PER_MPI = " $THREADS_PER_MPI
+#    RANKS=$(( (NODES)*(MPI_PER_NODE) ))      # MPI ranks
+
+  # OR 
+  # Select 2.) define number of ranks ... 
+  #for RANKS in 1200 2400 4800 9600  #16 32 64 128 256 # compute nodes 
+  for RANKS in "${MPIRANKS[@]}"
+  do
+   #for MPI_PER_NODE in 22
+   #do
+   # THREADS_PER_MPI=1
+    NODES=$(( 1 + (RANKS)/(MPI_PER_NODE) ))
+   
+  # END 
+
+    name=$EXAMPLE"_"$RANKS"_"$MPI_PER_NODE"_"$THREADS_PER_MPI
+    echo "Directory name is: " $name
+
+    actualTime=$( date +%y%m%d_%H:%M:%S )
+    log_file=LOG-$name"_"$actualTime.log
+    node_file=LOG-$name"_"$actualTime.node
+    out_dir=ESP-$name"_"$actualTime
+    qsub_command=$qsub_command_0
+    qsub_command+="date | tee -a $log_file;"
+    
+    jobname=es_ans
+
+    exadir=$EXAMPLE_DIR/$EXAMPLE"_"$RANKS
+    echo $exadir
+
+    mkdir  -p $WORKDIR
+    mkdir  -p $WORKDIR/$out_dir
+    cp -R    $ESPRESODIR/libs/               $WORKDIR/$out_dir
+    cp       $ESPRESODIR/espreso             $WORKDIR/$out_dir
+    cp       $ESPRESODIR/salomon.sh          $WORKDIR/$out_dir
+    cp       $ESPRESODIR/*.config            $WORKDIR/$out_dir
+    cp       $ESPRESODIR/ansys_run.conf      $WORKDIR/$out_dir
+
+    qsub_command+="cd $WORKDIR/$out_dir;"
+    qsub_command+="cat $¡PBS_NODEFILE | tee -a $node_file;"
+
+    if [ "$3" = "mpi" ]; then
+
+      # CPU Enviroment setup
+      export MKL_NUM_THREADS=1
+      export OMP_NUM_THREADS=1 #$THREADS_PER_MPI
+      export SOLVER_NUM_THREADS=$THREADS_PER_MPI
+      export PAR_NUM_THREADS=$THREADS_PER_MPI
+      export CILK_NWORKERS=$THREADS_PER_MPI
+      export PARDISOLICMESSAGE=1
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs:.
+
+      # MIC environment setup 
+      export MIC_ENV_PREFIX=MIC
+      export MIC_OMP_NUM_THREADS=60
+      export MIC_OMP_NESTED=TRUE
+      export MIC_MKL_DYNAMIC=FALSE
+      export MIC_KMP_AFFINITY=balanced
+      export MIC_OMP_PROC_BIND=spread,close
+      export MIC_MKL_NUM_THREADS=3
+      export MIC_USE_2MB_BUFFERS=100k
+      export OFFLOAD_INIT=on_start
+
+      #OS X fix
+      export LC_CTYPE=
+
+      cd $WORKDIR/$out_dir
+      cat $PBS_NODEFILE > $node_file
+
+      if [ "$2" = "intel" ]; then
+	for f in "${FILES[@]}"
+        do
+          echo "mpirun -n $RANKS                       ./espreso -i esdata -p $exadir -c $f                -vvv -mmm | tee -a $log_file"
+	        mpirun -n $RANKS                       ./espreso -i esdata -p $exadir -c $f                -vvv -mmm | tee -a $log_file
+	done
+      fi
+
+      if [ "$2" = "sgi" ]; then
+	for f in "${FILES[@]}"
+        do
+          echo "mpiexec_mpt -n $RANKS perfboost -impi  ./espreso -i esdata -p $exadir -c $f                -vvv -mmm | tee -a $log_file"
+                mpiexec_mpt -n $RANKS perfboost -impi  ./espreso -i esdata -p $exadir -c $f                -vvv -mmm | tee -a $log_file
+	done
+      fi
+    fi
+
+
+    if [ "$3" = "pbs" ]; then
+      cd $WORKDIR/$out_dir
+
+      if [ "$2" = "sgi" ]; then
+	for f in "${FILES[@]}"
+        do
+          qsub_command+="mpiexec_mpt -n $RANKS perfboost -impi ./espreso -i esdata -p ${exadir} -c ${f} -vvv -mmm | tee -a $log_file;"
+	done
+      fi
+
+      if [ "$2" = "intel" ]; then
+	for f in "${FILES[@]}"
+	do
+          qsub_command+="mpirun      -n $RANKS                 ./espreso -i esdata -p ${exadir} -c ${f} -vvv -mmm | tee -a $log_file;"
+	done
+      fi
+
+      echo $qsub_command | tr ";" "\n" | tr -d "¡" | tee $WORKDIR/$out_dir/job.qsub
+      echo "qsub -q $QUEUE -A $account -l select=$NODES:ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:60:00 -N $jobname" | tee -a $WORKDIR/$out_dir/job.qsub
+
+      echo $qsub_command | tr ";" "\n" | tr -d "¡" | \
+            qsub -q $QUEUE -A $account -l select=$NODES:ncpus=24:mpiprocs=$MPI_PER_NODE:ompthreads=$THREADS_PER_MPI -l walltime=00:60:00 -N $jobname
+
+    fi
+
+   #done 
+  done
+
+fi
+
+
+
+
+
+
+
+
 if [ "$1" = "debug" ]; then
   module load valgrind/3.9.0-impi
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./libs
@@ -245,7 +439,7 @@ if [ "$1" = "debug" ]; then
   export MKL_PARDISO_OOC_MAX_CORE_SIZE=3500
   export MKL_PARDISO_OOC_MAX_SWAP_SIZE=2000
 
-  for i in 0 #1 2 3
+  for i in 0 #1 2 3 do
   do
 
     log_file=LOG-1:1:1-2:2:2-5:5:5.log

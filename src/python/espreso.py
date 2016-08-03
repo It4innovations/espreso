@@ -21,7 +21,7 @@ CONSTANT_89 = 24
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
-path = '../log/'
+path = '../../log/'
 
 
 

@@ -91,6 +91,7 @@ public:
 	eslocal DOFS_PER_NODE;
 	eslocal PAR_NUM_THREADS;
 	eslocal SOLVER_NUM_THREADS;
+	bool SYMMETRIC_SYSTEM;
 
 	eslocal dual_size;
 	string data_directory;
@@ -106,6 +107,12 @@ public:
 	SparseMatrix G1;
 	SparseMatrix G1_comp;
 	SparseMatrix G1t_comp;
+
+	SparseMatrix G2;
+	SparseMatrix G2_comp;
+	SparseMatrix G2t_comp;
+
+
 	SparseMatrix GGtinvM;
 	SEQ_VECTOR <double> GGtinvV;
 
@@ -165,7 +172,12 @@ public:
 	void CreateSa();
 
 	void Create_G1_perCluster();
+	void Create_G_perCluster();
+	void Create_G1_perSubdomain ( SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out );
+
+
 	void Compress_G1();
+	void Compress_G(SparseMatrix &G_in, SparseMatrix &G_comp_out);
 	void CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 	void CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 

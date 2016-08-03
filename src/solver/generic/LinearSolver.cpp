@@ -22,19 +22,17 @@ LinearSolver::~LinearSolver() {
 
 void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
-	SINGULAR 	= IS_SINGULAR;
+	cluster.SYMMETRIC_SYSTEM = !(config::solver::CGSOLVER == config::solver::CGSOLVERalternative::GMRES);
 
-	if ( config::solver::REGULARIZATION == 0 )
-  		R_from_mesh = true	;
-  	else
-  		R_from_mesh = false	;
+	SINGULAR 	= IS_SINGULAR;
+	R_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
 
 	if (!config::solver::KEEP_FACTORS)
 		KEEP_FACTORS = false; // only suported by MKL Pardiso so far
 	else
 		KEEP_FACTORS = true;
 
-    MPI_rank = rank;
+	    MPI_rank = rank;
     MPI_size = size;
 
     // ***************************************************************************************************************************
@@ -44,7 +42,16 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= config::solver::FETI_METHOD;
+	switch (config::solver::FETI_METHOD) {
+	case config::solver::FETI_METHODalternative::TOTAL_FETI:
+		cluster.USE_HFETI = false;
+		break;
+	case config::solver::FETI_METHODalternative::HYBRID_FETI:
+		cluster.USE_HFETI = true;
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
+	}
 	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= MPI_size;
@@ -53,10 +60,9 @@ void LinearSolver::setup( eslocal rank, eslocal size, bool IS_SINGULAR ) {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = config::solver::maxIterations;
+	solver.CG_max_iter	 = config::solver::ITERATIONS;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = config::solver::epsilon;
-	solver.USE_PIPECG	 = config::solver::CG_SOLVER;
+	solver.epsilon		 = config::solver::EPSILON;
 	solver.USE_PREC		 = config::solver::PRECONDITIONER;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
@@ -146,15 +152,15 @@ void LinearSolver::init(
 		 } else {
 			 cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 				 cluster.domains[d].K = K_mat[d];
-				 if (cluster.domains[d].K.type == 'G')
+				 if (cluster.SYMMETRIC_SYSTEM && cluster.domains[d].K.type == 'G')
 					 cluster.domains[d].K.RemoveLower();
-				 if (solver.USE_PREC == 11)
+				 if (solver.USE_PREC == config::solver::PRECONDITIONERalternative::MAGIC)
 					 cluster.domains[d].Prec = cluster.domains[d].K;
 			 }
 			 set_R_from_K();
 		 }
 
-		 if (config::info::printMatrices) {
+		 if (config::info::PRINT_MATRICES) {
 			 for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 				 SparseMatrix s = cluster.domains[d].Kplus_R;
 				 s.ConvertDenseToCSR(1);
@@ -207,7 +213,7 @@ void LinearSolver::init(
 	// *** END - HTFETI - averaging objects
 
 
-	if (config::info::printMatrices) {
+	if (config::info::PRINT_MATRICES) {
 		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			SparseMatrix RT = cluster.domains[d].Kplus_R;
 			RT.ConvertDenseToCSR(1);
@@ -248,7 +254,7 @@ void LinearSolver::init(
 
 
 	// **** Calculate Dirichlet Preconditioner ********************************
-	if (config::solver::PRECONDITIONER == 3 ) {
+	if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET ) {
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
 		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
@@ -324,8 +330,10 @@ void LinearSolver::init(
 				S.type='S';
 
 				cluster.domains[d].Prec = S;
+
+				cluster.domains[d].Prec.ConvertCSRToDense(1);
 			}
-	    if (config::info::printMatrices) {
+	    if (config::info::PRINT_MATRICES) {
         std::ofstream osS(Logging::prepareFile(d, "S"));
         osS << S;
         osS.close();
@@ -364,7 +372,7 @@ void LinearSolver::init(
 	ESLOG(MEMORY) << "After import K process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-	if (config::info::printMatrices) {
+	if (config::info::PRINT_MATRICES) {
 		for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			std::ofstream os(Logging::prepareFile(d, "Kreg"));
 			SparseMatrix s = cluster.domains[d].K;
@@ -406,7 +414,7 @@ void LinearSolver::init(
 		 TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
 
 		bool USE_FLOAT = false;
-		if (config::solver::SCHUR_COMPLEMENT_PREC == 1 ) {
+		if (config::solver::SCHUR_COMPLEMENT_PREC == config::solver::SCHUR_COMPLEMENT_PRECalternative::SINGLE ) {
 			USE_FLOAT = true;
 		}
 
@@ -457,7 +465,7 @@ void LinearSolver::init(
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
 
-    if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1) {
+    if (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS) {
 
     	TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
 
@@ -467,7 +475,7 @@ void LinearSolver::init(
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
 		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		cluster.Create_G1_perCluster   ();
+		cluster.Create_G_perCluster   ();
 		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
@@ -544,7 +552,7 @@ void LinearSolver::finilize() {
 
 	if (SINGULAR) solver.timeEvalProj.printStatsMPI();
 
-	if ( solver.USE_PREC   > 0 ) solver.timeEvalPrec.printStatsMPI();
+	if ( solver.USE_PREC != config::solver::PRECONDITIONERalternative::NONE ) solver.timeEvalPrec.printStatsMPI();
 
 	if ( cluster.USE_HFETI == 1 ) cluster.ShowTiming();
 
@@ -615,10 +623,22 @@ void LinearSolver::set_R_from_K ()
 
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
+
+
+		if (cluster.SYMMETRIC_SYSTEM) {
+		  cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
                                             cluster.domains[d]._RegMat,
                                             cluster.domains[d].Kplus_R,&(norm_KR_d_pow_2[d]),
                                             &(defect_K_d[d]),d);
+    }
+    else
+    {
+		  cluster.domains[d].K.get_kernels_from_nonsym_K(cluster.domains[d].K,
+                                            cluster.domains[d]._RegMat,
+                                            cluster.domains[d].Kplus_R,
+                                            cluster.domains[d].Kplus_R2,&(norm_KR_d_pow_2[d]),
+                                            &(defect_K_d[d]),d);
+    }
 
 
 		cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
@@ -745,6 +765,25 @@ void LinearSolver::set_R (
 			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
 		}
 		cluster.domains[d].CreateKplus_R( coordinates[d] );
+
+		//TODO: *** test nesymetrickeho systemu pro GGt - smazat !!
+		if (!cluster.SYMMETRIC_SYSTEM) {
+			cluster.domains[d].Kplus_R2 = cluster.domains[d].Kplus_R;
+
+//			int rows = cluster.domains[d].Kplus_R2.rows;
+//			int cols = cluster.domains[d].Kplus_R2.cols;
+//			for (int c = 0; c < cols; c++) {
+//				int s1 = c * rows;
+//				int s2 = (cols - 1 - c) * rows;
+//				for (int r = 0; r < rows; r++) {
+//					cluster.domains[d].Kplus_R2.dense_values[s2 + r] =
+//							cluster.domains[d].Kplus_R.dense_values[s1 + r];
+//				}
+//			}
+
+		}
+		//***
+
 		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
 
 	}
@@ -753,14 +792,14 @@ void LinearSolver::set_R (
 
 void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
 
-	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
+	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS )) {
 		ESLOG(MEMORY) << "Solver Preprocessing";
 		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
 		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		cluster.Create_G1_perCluster   ();
+		cluster.Create_G_perCluster   ();
 		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 

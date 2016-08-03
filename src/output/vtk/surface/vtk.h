@@ -16,7 +16,7 @@ public:
 	};
 
 protected:
-	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement, size_t dofs);
+	void coordinatesDisplacement(const std::vector<std::vector<double> > &displacement);
 
 	const Mesh &_full;
 	Mesh _surface;

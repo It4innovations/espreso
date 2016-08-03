@@ -81,7 +81,7 @@ static std::vector<DenseMatrix> Hexa_N() {
 
 std::vector<DenseMatrix> Hexahedron8::_dN = Hexa_dN();
 std::vector<DenseMatrix> Hexahedron8::_N = Hexa_N();
-std::vector<double> Hexahedron8::_weighFactor(Hexahedron8NodesCount, 1);
+std::vector<double> Hexahedron8::_weighFactor(Hexahedron8GPCount, 1);
 
 bool Hexahedron8::match(const eslocal *indices, eslocal n) {
 
@@ -187,7 +187,7 @@ Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *param
 		memcpy(_indices, indices, Hexahedron8NodesCount * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Hexahedron8 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Hexahedron8 from " << n << " indices.";
 	}
 }
 

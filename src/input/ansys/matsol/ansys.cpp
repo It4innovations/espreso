@@ -4,9 +4,8 @@
 using namespace espreso::input;
 
 
-void AnsysMatsol::points(Coordinates &coordinates, size_t &DOFs)
+void AnsysMatsol::points(Coordinates &coordinates)
 {
-	DOFs = 3;
 	std::string fileName = _path + "/Model/COORDINATES.dat";
 
 	size_t size = getLinesCount(fileName);

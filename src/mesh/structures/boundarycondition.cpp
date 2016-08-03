@@ -31,6 +31,7 @@ void NodeCondition::set(double value, ConditionType type, const std::vector<bool
 			size++;
 		}
 	}
+	_DOFsPerNode = size;
 	size *= _nodes.size();
 
 	_DOFs.reserve(size);

@@ -12,58 +12,110 @@ source_files = (
 def configure(ctx):
     ctx.env.append_unique("DEFINES", [ "XE6", "DEVEL"])
 
-    mkl = ("mkl_intel_lp64", "mkl_intel_ilp64")[ctx.env.INT_WIDTH == 64]
-
-    if ctx.env.SOLVER == "MKL":
-        ctx.env.append_unique(("LIB", "STLIB")[ctx.env.LIBTYPE == "STATIC"], [ mkl, "mkl_core", "mkl_intel_thread" ])
+    def link_MKL():
+        mkl = ("mkl_intel_lp64", "mkl_intel_ilp64")[ctx.env.INT_WIDTH == 64]
+        if ctx.env.LIBTYPE == "STATIC":
+            ctx.check_stlib(mkl, [ "mkl_core", "mkl_intel_thread" ])
+            ctx.env.append_unique("STLIB", [ mkl, "mkl_core", "mkl_intel_thread" ])
+        else:
+            ctx.check_lib(mkl, [ "mkl_core", "mkl_intel_thread" ])
+            ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread" ])
+        ctx.check_lib("pthread")
         ctx.env.append_unique("LIB", [ "pthread" ])
 
+
+    if ctx.env.SOLVER == "MKL":
+        link_MKL()
+
+
     if ctx.env.SOLVER == "PARDISO":
-        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-	ctx.env.append_value("STLIB", [ "ifcore" ])
-	#ctx.env.prepend_value(
+        ctx.check_lib("pardiso500-INTEL120-X86-64", [ "mkl_intel_lp64", "mkl_core", "mkl_intel_thread", "ifcore" ])
+        ctx.env.append_unique("LIB", [ "pardiso500-INTEL120-X86-64" ]) # PARDISO needs to be linked before MKL
+        link_MKL()
+        ctx.check_stlib("ifcore")
+        ctx.env.append_value("POSTSTLIB", [ "ifcore" ])
+
 
     if ctx.env.SOLVER == "MIC":
-        ctx.env.append_unique("LIB", [ "imf", "intlc", "svml", "irng", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
-        ctx.env.append_unique("STLIB", [ "ifcore" ])
-        ctx.env.append_unique("LINKFLAGS", [
-        "-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64  -lmkl_core -lmkl_intel_thread ".format(os.environ['MKLROOT']) ])
+        for lib in [ "imf", "intlc", "svml", "irng" ]:
+            ctx.check_lib(lib)
+            ctx.env.append_unique("LIB", [ lib ])
 
-    if ctx.env.SOLVER == "CUDA":
-        ctx.env.append_unique("LIB", [ "cudart", "cublas", "cusolver", "cusparse", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+        link_MKL()
+        ctx.check_stlib("ifcore")
+        ctx.env.append_unique("POSTSTLIB", [ "ifcore" ])
+        ctx.env.append_unique("LINKFLAGS", ["-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64  -lmkl_core -lmkl_intel_thread ".format(os.environ['MKLROOT']) ])
 
-    if ctx.env.SOLVER == "CUDA_7":
-        ctx.env.append_unique("LIB", [ "cudart", "cublas", "cusolver", "cusparse", mkl, "mkl_core", "mkl_intel_thread", "pthread" ])
+
+    if ctx.env.SOLVER == "CUDA" or ctx.env.SOLVER == "CUDA_7":
+        for header in [ "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h" ]:
+            ctx.check_header(header)
+
+        for lib in [ "cudart", "cublas", "cusolver", "cusparse" ]:
+            ctx.check_lib(lib)
+            ctx.env.append_unique("LIB", [ lib ])
+
+        link_MKL()
+
 
     if ctx.env.SOLVER == "MUMPS":
-        ctx.env.append_unique("LIB", [ "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64", mkl, "mkl_core", "mkl_intel_thread", "pthread", "ifcore" ])
-        ctx.env.append_unique("STLIB", [ "dmumps", "mumps_common", "pord", "esmumps", "scotch", "scotcherr",  ])
+        for lib in [ "mkl_scalapack_lp64", "mkl_blacs_intelmpi_lp64" ]:
+            ctx.check_lib(lib)
+            ctx.env.append_unique("LIB", [ lib ])
+        link_MKL()
+        ctx.check_lib("ifcore")
+        ctx.env.append_unique("LIB", [ "ifcore" ])
+
+        for lib in [ "dmumps", "mumps_common", "pord", "esmumps", "scotch", "scotcherr" ]:
+            ctx.check_stlib(lib)
+            ctx.env.append_unique("STLIB", [ lib ])
 
 
 def build(ctx):
     if ctx.env.SOLVER == "MIC":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp",
-        "specific/acc/mic.cpp", "specific/acc/clusteracc.cpp",
-        "specific/acc/itersolveracc.cpp", "specific/acc/DenseMatrixPack.cpp",
-        "specific/cpu/DenseSolverMKL.cpp")
+        sources = source_files + (
+            "specific/cpu/SparseSolverMKL.cpp",
+            "specific/acc/mic.cpp",
+            "specific/acc/clusteracc.cpp",
+            "specific/acc/itersolveracc.cpp",
+            "specific/acc/DenseMatrixPack.cpp",
+            "specific/cpu/DenseSolverMKL.cpp")
 
-    # TODO
     if ctx.env.SOLVER == "CUDA":
-	#sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp")
-        #sources = source_files + ("specific/cpu/solvermkl.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/acc/solvercuda.cpp",)
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp", "specific/acc/SparseSolverCUDA.cpp", "specific/acc/DenseSolverCUDA.cpp")
+        sources = source_files + (
+            "specific/cpu/SparseSolverMKL.cpp",
+            "specific/acc/clusterGPU.cpp",
+            "specific/acc/itersolverGPU.cpp",
+            "specific/acc/DenseSolverCUDA.cpp",
+            "specific/cpu/DenseSolverMKL.cpp")
 
     if ctx.env.SOLVER == "CUDA_7":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/acc/clusterGPU.cpp", "specific/acc/itersolverGPU.cpp", "specific/acc/DenseSolverCUDA.cpp", "specific/cpu/DenseSolverMKL.cpp")
+        sources = source_files + (
+            "specific/cpu/SparseSolverMKL.cpp",
+            "specific/acc/clusterGPU.cpp",
+            "specific/acc/itersolverGPU.cpp",
+            "specific/acc/DenseSolverCUDA.cpp",
+            "specific/cpu/DenseSolverMKL.cpp")
 
     if ctx.env.SOLVER == "MUMPS":
-        sources = source_files + ("specific/cpu/solvermumps.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp")
+        sources = source_files + (
+            "specific/cpu/solvermumps.cpp",
+            "specific/cpu/clustercpu.cpp",
+            "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "PARDISO":
-        sources = source_files + ("specific/cpu/solverpardiso.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/cpu/DenseSolverMKL.cpp")
+        sources = source_files + (
+            "specific/cpu/solverpardiso.cpp",
+            "specific/cpu/clustercpu.cpp",
+            "specific/cpu/itersolvercpu.cpp",
+            "specific/cpu/DenseSolverMKL.cpp")
 
     if ctx.env.SOLVER == "MKL":
-        sources = source_files + ("specific/cpu/SparseSolverMKL.cpp", "specific/cpu/clustercpu.cpp", "specific/cpu/itersolvercpu.cpp", "specific/cpu/DenseSolverMKL.cpp")
+        sources = source_files + (
+            "specific/cpu/SparseSolverMKL.cpp",
+            "specific/cpu/clustercpu.cpp",
+            "specific/cpu/itersolvercpu.cpp",
+            "specific/cpu/DenseSolverMKL.cpp")
 
 
     ctx.objects(

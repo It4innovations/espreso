@@ -44,10 +44,12 @@ Info::~Info()
 	}
 	if (event == ERROR || (event == GLOBAL_ERROR && config::env::MPIrank == 0)) {
 		fprintf(stderr, "%s\n", os.str().c_str());
-		fprintf(stderr, "ESPRESO EXITED WITH ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
+		if (event == ERROR) {
+			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
 
-		if (config::env::executable.size()) {
-			printStack();
+			if (config::env::executable.size()) {
+				printStack();
+			}
 		}
 
 		fflush(stderr);

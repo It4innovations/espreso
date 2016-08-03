@@ -4,15 +4,7 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
-#include <tuple>
-#include <iostream>
-#include <stdlib.h>
 #include <functional>
-
-#include "mkl_spblas.h"
-#include "mkl_blas.h"
-#include "mkl_cblas.h"
-#include "mkl_lapacke.h"
 
 #include "cilk/cilk.h"
 
@@ -26,7 +18,6 @@
 #include "material.h"
 
 #include "esbasis.h"
-#include "esconfig.h"
 
 namespace espreso {
 
@@ -117,11 +108,6 @@ public:
 		return _neighbours;
 	}
 
-	size_t DOFs() const
-	{
-		return _DOFs;
-	}
-
 	const std::vector<Material>& materials() const
 	{
 		return _materials;
@@ -169,14 +155,11 @@ protected:
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
 
-	/** @brief the number of DOFs for all nodes*/
-	size_t _DOFs;
-
 	/** @brief list of materials in the mesh*/
 	std::vector<Material> _materials;
 
 private:
-	Mesh(const Mesh &mesh): _DOFs(mesh._DOFs)
+	Mesh(const Mesh &mesh)
 	{
 		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
 	}

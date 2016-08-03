@@ -318,9 +318,9 @@ std::vector<eslocal> Prisma15::getFace(size_t face) const
 		result[1] = _indices[4];
 		result[2] = _indices[5];
 
-		result[3] = _indices[12];
-		result[4] = _indices[13];
-		result[5] = _indices[14];
+		result[3] = _indices[9];
+		result[4] = _indices[10];
+		result[5] = _indices[11];
 		return result;
 	}
 
@@ -361,9 +361,9 @@ Element* Prisma15::getFullFace(size_t face) const
 		result[1] = _indices[4];
 		result[2] = _indices[5];
 
-		result[3] = _indices[12];
-		result[4] = _indices[13];
-		result[5] = _indices[14];
+		result[3] = _indices[9];
+		result[4] = _indices[10];
+		result[5] = _indices[11];
 		return new Triangle6(result.data(), _params);
 	}
 
@@ -405,7 +405,7 @@ Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params): El
 		memcpy(_indices, indices, 15 * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Prisma15 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Prisma15 from " << n << " indices.";
 	}
 }
 

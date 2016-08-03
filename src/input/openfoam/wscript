@@ -1,6 +1,7 @@
 
 def configure(ctx):
     ctx.env.append_unique("LIB", [ "z" ])
+    ctx.check_lib("z")
 
 def build(ctx):
     ctx.objects(

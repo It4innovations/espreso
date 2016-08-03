@@ -21,4 +21,9 @@ kernel_statistic.txt
 log
 log/*
 *.config*
+threading.*
+paths.*
+modules.*
+doc/html/*
+doc/xml/*
 decomposer

@@ -3,14 +3,10 @@ import os
 import subprocess
 
 def check_libraries(ctx):
-    def add(map, *libraries):
-        for library in libraries:
-            map[library] = [ library ]
-
     def check_library(type, name, library):
         env = ctx.env
         ctx.setenv("tmp", ctx.env.derive());
-        ctx.env.append_unique("LIB", library)
+        ctx.env.append_unique(type, library)
         ctx.check(
             msg     = "Checking for library '{0}'".format(name),
             errmsg  = "not found - add path to library '{0}' to {1}PATH".format(name, type),
@@ -18,44 +14,15 @@ def check_libraries(ctx):
         )
         ctx.env = env
 
-    libraries = {}
-    stlibraries = {}
-
-    add(libraries, "z")
-    add(libraries, "pthread")
-    if ctx.env.BUILD_TOOLS == "0":
-        if ctx.env.LIBTYPE == "STATIC":
-            add(stlibraries, "metis")
-        else:
-            add(libraries, "metis")
-    libraries["mkl"] = [ "mkl_intel_lp64", "mkl_core", "mkl_intel_thread" ]
-
-    if ctx.env.SOLVER == "PARDISO":
-        libraries["pardiso500-INTEL120-X86-64"] = [ "pardiso500-INTEL120-X86-64", "mkl_intel_lp64", "mkl_core", "mkl_intel_thread", "ifcore" ]
-        add(stlibraries, "ifcore")
-
-    if ctx.env.SOLVER == "MIC":
-        add(libraries, "imf", "intlc", "svml", "irng")
-
-    if ctx.env.SOLVER == "CUDA":
-        add(libraries, "cudart", "cublas", "cusolver", "cusparse")
-
-    if ctx.env.SOLVER == "MUMPS":
-        add(libraries, "ifcore")
-
-    for name, library in libraries.items():
+    for name, library in ctx.libs.items():
         check_library("LIB", name, library)
 
-    for name, library in stlibraries.items():
+    for name, library in ctx.stlibs.items():
         check_library("STLIB", name, library)
 
+
 def check_headers(ctx):
-    headers = [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]
-
-    if ctx.env.SOLVER == "CUDA":
-        headers += [ "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h" ]
-
-    for header in headers:
+    for header in ctx.headers:
         ctx.check_cxx(
             header_name = header,
             msg         = "Checking for header '{0}'".format(header),

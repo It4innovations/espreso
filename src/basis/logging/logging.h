@@ -98,7 +98,7 @@ public:
 	Test& get() { return *this; };
 
 	static bool report(TestEvent event) {
-		switch (config::info::testingLevel) {
+		switch (config::info::TESTING_LEVEL) {
 		case 0: return event < TEST_LEVEL0;
 		case 1: return event < TEST_LEVEL1;
 		case 2: return event < TEST_LEVEL2;
@@ -145,7 +145,7 @@ public:
 
 
 	static bool report(InfoEvent event) {
-		switch (config::info::verboseLevel) {
+		switch (config::info::VERBOSE_LEVEL) {
 		case 0: return event < VERBOSE_LEVEL0;
 		case 1: return event < VERBOSE_LEVEL1;
 		case 2: return event < VERBOSE_LEVEL2;
@@ -180,7 +180,7 @@ public:
 	std::ostringstream& get() { return os; };
 
 	static bool report(MeasureEvent event) {
-		switch (config::info::measureLevel) {
+		switch (config::info::MEASURE_LEVEL) {
 		case 0: return event < MEASURE_LEVEL0;
 		case 1: return event < MEASURE_LEVEL1;
 		case 2: return event < MEASURE_LEVEL2;
@@ -205,7 +205,7 @@ public:
 	{
 		std::stringstream dir, file, mkdir;
 
-		dir << config::info::output << "/" << config::env::MPIrank << "/";
+		dir << config::info::OUTPUT << "/" << config::env::MPIrank << "/";
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();
