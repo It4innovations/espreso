@@ -39,36 +39,17 @@ class Mesh
 {
 
 public:
-
-	friend std::ostream& operator<<(std::ostream& os, const Mesh &m);
 	friend class input::Loader;
 
 	Mesh();
 
-	const Coordinates& coordinates() const
-	{
-		return _coordinates;
-	}
+	const Coordinates& coordinates() const { return _coordinates; }
+	const std::vector<Element*>& elements() const { return _elements; };
+	const std::vector<Element*>& faces() const { return _faces; };
+	const std::vector<Element*>& edges() const { return _edges; };
+	const std::vector<Element*>& nodes() const { return _nodes; };
 
-	Coordinates& coordinates()
-	{
-		return _coordinates;
-	}
-
-	Faces& faces()
-	{
-		return _faces;
-	}
-
-	const Boundaries& subdomainBoundaries() const
-	{
-		return _subdomainBoundaries;
-	}
-
-	const Boundaries& clusterBoundaries() const
-	{
-		return _clusterBoundaries;
-	}
+	void init();
 
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 
@@ -81,11 +62,6 @@ public:
 	virtual void partitiate(size_t parts);
 	std::vector<eslocal> computeFixPoints(size_t part, size_t number) const;
 	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
-
-	const std::vector<Element*>& getElements() const
-	{
-		return _elements;
-	};
 
 	size_t parts() const
 	{
@@ -135,11 +111,17 @@ protected:
 	/** @brief Reference to coordinates. */
 	mutable Coordinates _coordinates;
 
-	/** @brief Indexes of all faces, it's element contains an element reference.*/
-	Faces _faces;
-
-	/** @brief Array that stores all elements of the mesh. */
+	/// Elements of the mesh.
 	std::vector<Element*> _elements;
+
+	/// Faces of the elements.
+	std::vector<Element*> _faces;
+
+	/// Edges of the elements.
+	std::vector<Element*> _edges;
+
+	/// Nodes of the elements.
+	std::vector<Element*> _nodes;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;

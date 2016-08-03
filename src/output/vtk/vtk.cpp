@@ -123,7 +123,7 @@ void VTK::coordinates(const Coordinates &coordinates, const std::vector<std::vec
 
 void VTK::elements(const Mesh &mesh)
 {
-	const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &partition = mesh.getPartition();
 	size_t parts = mesh.parts();
 

@@ -78,8 +78,8 @@ void UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
 
 	parts.push_back(0);
 
-	for (size_t p = 0; p < config::mesh::subdomains; p++) {
-		parts.push_back(parts.back() + mesh.getElements().size() / config::mesh::subdomains);
+	for (size_t p = 0; p < config::mesh::SUBDOMAINS; p++) {
+		parts.push_back(parts.back() + mesh.elements().size() / config::mesh::SUBDOMAINS);
 	}
 
 	Loader::remapElementsToSubdomains();

@@ -34,7 +34,11 @@ public:
 		open();
 
 		TimeEvent tPoints("coordinates"); tPoints.start();
-		points(mesh._coordinates, mesh._DOFs);
+		points(mesh._coordinates);
+		mesh._nodes.reserve(mesh._coordinates.clusterSize());
+		for (size_t i = 0; i < mesh._coordinates.clusterSize(); i++) {
+			mesh._nodes.push_back(new Node());
+		}
 		tPoints.end(); measurement.addEvent(tPoints);
 		ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 
@@ -42,19 +46,19 @@ public:
 		elements(mesh._elements);
 		materials(mesh._materials);
 		tElements.end(); measurement.addEvent(tElements);
-		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.getElements().size());
+		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
 
-		TimeEvent tFaces("faces"); tFaces.start();
-		faces(mesh._faces);
-		tFaces.end(); measurement.addEvent(tFaces);
-		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
+//		TimeEvent tFaces("faces"); tFaces.start();
+//		faces(mesh._faces);
+//		tFaces.end(); measurement.addEvent(tFaces);
+//		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
 
 		TimeEvent tSettings("settings"); tSettings.start();
 		settings(mesh._evaluators, mesh._elements, mesh._coordinates);
 		tSettings.end(); measurement.addEvent(tSettings);
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
-		clusterBoundaries(mesh._clusterBoundaries, mesh._neighbours);
+		clusterBoundaries(mesh._nodes, mesh._neighbours);
 		tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
 		ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
 
@@ -72,6 +76,8 @@ public:
 		corners(mesh._subdomainBoundaries);
 		tCorners.end(); measurement.addEvent(tCorners);
 
+		mesh.init();
+
 		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
 
@@ -81,7 +87,7 @@ protected:
 	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void faces(Faces &faces) { };
 	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
-	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours) = 0;
+	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;
 
 	virtual void open() {};
 	virtual void close() {};

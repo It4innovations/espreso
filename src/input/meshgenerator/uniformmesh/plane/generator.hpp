@@ -199,13 +199,12 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 }
 
 template <class TElement>
-void PlaneGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
+void PlaneGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	esglobal gNodes[3];
 	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
-	boundaries.resize(cNodes[0] * cNodes[1]);
 
 	bool border[2];
 	eslocal cIndex = _cluster[0] + _cluster[1] * _settings.clusters[0];
@@ -232,12 +231,12 @@ void PlaneGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::ve
 				if (border[1] && (i & 2)) {
 					tmp += ((y == cs[1]) ? -1 : 1) * _settings.clusters[0];
 				}
-				boundaries[index].push_back(tmp);
+				nodes[index]->clusters().push_back(tmp);
 				neighs.insert(tmp);
 			}
-			std::sort(boundaries[index].begin(), boundaries[index].end());
-			auto end = std::unique(boundaries[index].begin(), boundaries[index].end());
-			boundaries[index].resize(end - boundaries[index].begin());
+			std::sort(nodes[index]->clusters().begin(), nodes[index]->clusters().end());
+			auto end = std::unique(nodes[index]->clusters().begin(), nodes[index]->clusters().end());
+			nodes[index]->clusters().resize(end - nodes[index]->clusters().begin());
 			index++;
 		}
 	}

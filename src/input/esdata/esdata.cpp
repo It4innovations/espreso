@@ -122,7 +122,7 @@ void Esdata::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*>
 }
 
 
-void Esdata::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
+void Esdata::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/clusterBoundaries.dat";
@@ -130,18 +130,15 @@ void Esdata::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbo
 
 	std::set<int> neighs;
 
-	boundaries.clear();
-
 	eslocal size, value;
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 
-	boundaries.resize(size);
-	for (size_t i = 0; i < boundaries.size(); i++) {
+	for (size_t i = 0; i < nodes.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));
-			boundaries[i].push_back(value);
+			nodes[i]->clusters().push_back(value);
 			neighs.insert(value);
 		}
 	}

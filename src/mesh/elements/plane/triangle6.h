@@ -1,24 +1,22 @@
-
-#ifndef PYRAMID5_H_
-#define PYRAMID5_H_
+#ifndef TRIANGLE6_H_
+#define TRIANGLE6_H_
 
 #include "../element.h"
-#include "../2D/triangle3.h"
-#include "../2D/square4.h"
+#include "../line/line2.h"
+#include "triangle3.h"
 
-#define Pyramid5NodesCount 5
-#define Pyramid5FacesCount 5
-#define Pyramid5GPCount 8
-#define Pyramid5VTKCode 14
+#define Triangle6NodesCount 6
+#define Triangle6FacesCount 3
+#define Triangle6GPCount 6
+#define Triangle6VTKCode 22
 
 namespace espreso {
 
-class Pyramid5: public Element
+class Triangle6: public Element
 {
-	friend class Pyramid13;
 
 public:
-	static bool match(const eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, const eslocal n);
 	static size_t counter()
 	{
 		return _counter;
@@ -37,18 +35,16 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Pyramid5(const eslocal *indices, eslocal n, const eslocal *params);
-	Pyramid5(std::ifstream &is);
-
+	Triangle6(const eslocal *indices, const eslocal *params);
 
 	Element* copy() const
 	{
-		return new Pyramid5(*this);
+		return new Triangle6(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Pyramid5VTKCode;
+		return Triangle6VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -58,84 +54,75 @@ public:
 
 	size_t size() const
 	{
-		return Pyramid5NodesCount;
+		return Triangle6NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Pyramid5NodesCount;
+		return Triangle3NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Pyramid5GPCount;
+		return Triangle6GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Pyramid5FacesCount;
+		return Triangle6FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Pyramid5::_dN;
+		return Triangle6::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Pyramid5::_N;
+		return Triangle6::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Pyramid5::_weighFactor;
+		return Triangle6::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Pyramid5::_DOFElement;
+		return Triangle6::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Pyramid5::_DOFFace;
+		return Triangle6::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Pyramid5::_DOFEdge;
+		return Triangle6::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Pyramid5::_DOFPoint;
+		return Triangle6::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Pyramid5::_DOFMidPoint;
+		return Triangle6::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
 	{
-		return 3;
-	}
-
-	Element* getFullFace(size_t face) const
-	{
-		return getF(_indices, _params, face);
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return getFullFace(face);
+		return 2;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
-	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{
@@ -143,7 +130,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Pyramid5NodesCount];
+	eslocal _indices[Triangle6NodesCount];
 
 	static size_t _counter;
 
@@ -161,4 +148,5 @@ private:
 }
 
 
-#endif /* PYRAMID5_H_ */
+
+#endif /* TRIANGLE6_H_ */

@@ -80,26 +80,6 @@ public:
 		return _params;
 	}
 
-	Settings& settings()
-	{
-		return _settings;
-	}
-
-	const Settings& settings() const
-	{
-		return _settings;
-	}
-
-	 std::vector<Evaluator*>& settings(Property property)
-	{
-		return _settings[property];
-	}
-
-	const std::vector<Evaluator*>& settings(Property property) const
-	{
-		return _settings[property];
-	}
-
 	void setParam(Params param, eslocal value)
 	{
 		_params[param] = value;
@@ -134,15 +114,55 @@ public:
 	virtual Element* getFullFace(size_t face) const = 0;
 	virtual Element* getCoarseFace(size_t face) const = 0;
 
-
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 	virtual const eslocal* indices() const = 0;
+
+
+	Settings& settings()
+	{
+		return _settings;
+	}
+
+	const Settings& settings() const
+	{
+		return _settings;
+	}
+
+	std::vector<Evaluator*>& settings(Property property)
+	{
+		return _settings[property];
+	}
+
+	const std::vector<Evaluator*>& settings(Property property) const
+	{
+		return _settings[property];
+	}
+
+	/// Returns sub-domains where is the element
+	const std::vector<eslocal>& domains() const
+	{
+		return _domains;
+	}
+
+	/// Returns clusters where is the element
+	const std::vector<eslocal>& clusters() const
+	{
+		return _clusters;
+	}
+
+	std::vector<eslocal>& clusters()
+	{
+		return _clusters;
+	}
 
 protected:
 	virtual eslocal* indices() = 0;
 
 	eslocal _params[PARAMS_SIZE];
+
 	Settings _settings;
+	std::vector<eslocal> _domains;
+	std::vector<eslocal> _clusters;
 
 };
 

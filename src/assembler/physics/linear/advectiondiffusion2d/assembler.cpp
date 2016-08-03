@@ -202,7 +202,7 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 
 	for (eslocal p = partition[subdomain]; p < partition[subdomain + 1]; p++) {
 
-		const Element* e = _mesh.getElements()[p];
+		const Element* e = _mesh.elements()[p];
 		processElement(Ke, fe, _mesh, subdomain, e);
 
 		for (size_t i = 0; i < e->size(); i++) {

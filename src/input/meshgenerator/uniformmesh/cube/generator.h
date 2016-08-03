@@ -27,7 +27,7 @@ protected:
 
 	virtual void elementsMaterials(std::vector<Element*> &elements);
 	virtual void points(Coordinates &coordinates);
-	virtual void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates);
 

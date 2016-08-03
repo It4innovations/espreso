@@ -1,3 +1,4 @@
+
 #include "square4.h"
 
 using namespace espreso;

@@ -153,7 +153,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 {
 	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.getElements();
+	const std::vector<Element*> &elements = _mesh.elements();
 
 	DenseMatrix _K;
 	eslocal nK = _mesh.coordinates().localSize(subdomain) * Point::size();

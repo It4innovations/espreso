@@ -31,7 +31,7 @@ protected:
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
 	void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates);
-	void clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours);
+	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 private:
 	static size_t getLinesCount(const std::string &file);

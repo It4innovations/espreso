@@ -61,7 +61,7 @@ void API::elements(std::vector<Element*> &elements)
 	}
 }
 
-void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
+void API::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	// TODO: check neighbours correctness
 
@@ -105,23 +105,26 @@ void API::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours
 
 	size_t pushMyRank = std::lower_bound(_neighbours.begin(), _neighbours.end(), config::env::MPIrank) - _neighbours.begin();
 
-	boundaries.resize(_size);
+	nodes.reserve(_size);
+	for (size_t i = 0; i < _size; i++) {
+		nodes.push_back(new Node());
+	}
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			for (size_t n = 0; n < _neighbours.size(); n++) {
 				if (n == pushMyRank) {
-					boundaries[i].push_back(config::env::MPIrank);
+					nodes[i]->clusters().push_back(config::env::MPIrank);
 				}
 				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), _ids[i * _DOFs] / _DOFs);
 				if (it != rBuffer[n].end() && *it == _ids[i * _DOFs] / _DOFs) {
-					boundaries[i].push_back(_neighbours[n]);
+					nodes[i]->clusters().push_back(_neighbours[n]);
 					realNeighbour[t].insert(_neighbours[n]);
 				}
 			}
 			if (_neighbours.size() == pushMyRank) {
-				boundaries[i].push_back(config::env::MPIrank);
+				nodes[i]->clusters().push_back(config::env::MPIrank);
 			}
 
 		}

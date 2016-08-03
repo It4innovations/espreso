@@ -1,3 +1,4 @@
+
 #include "line3.h"
 
 using namespace espreso;

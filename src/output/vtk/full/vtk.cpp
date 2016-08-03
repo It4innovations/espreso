@@ -47,13 +47,13 @@ void VTK_Full::corners(const Mesh &mesh, const std::string &path, double shrinkS
 	VTK_Full output(mesh, path);
 	std::vector<std::vector<eslocal> > corners(mesh.parts());
 
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
-			if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(p)[i])) {
-				corners[p].push_back(i);
-			}
-		}
-	}
+//	for (size_t p = 0; p < mesh.parts(); p++) {
+//		for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
+//			if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(p)[i])) {
+//				corners[p].push_back(i);
+//			}
+//		}
+//	}
 
 	output.store(corners, shrinkSubdomain, shringCluster);
 }
@@ -100,16 +100,16 @@ void VTK_Full::averaging(const Mesh &mesh, const std::string &path, double shrin
 	VTK_Full output(mesh, path);
 	std::vector<std::vector<eslocal> > averaging(mesh.parts());
 
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
-			if (mesh.subdomainBoundaries().isAveraging(mesh.coordinates().localToCluster(p)[i])) {
-				auto &nodes = mesh.subdomainBoundaries().averaging(mesh.coordinates().localToCluster(p)[i]);
-				for (size_t n = 0; n < nodes.size(); n++) {
-					averaging[p].push_back(mesh.coordinates().localIndex(nodes[n], p));
-				}
-			}
-		}
-	}
+//	for (size_t p = 0; p < mesh.parts(); p++) {
+//		for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
+//			if (mesh.subdomainBoundaries().isAveraging(mesh.coordinates().localToCluster(p)[i])) {
+//				auto &nodes = mesh.subdomainBoundaries().averaging(mesh.coordinates().localToCluster(p)[i]);
+//				for (size_t n = 0; n < nodes.size(); n++) {
+//					averaging[p].push_back(mesh.coordinates().localIndex(nodes[n], p));
+//				}
+//			}
+//		}
+//	}
 
 	output.store(averaging, shrinkSubdomain, shringCluster);
 }

@@ -141,11 +141,10 @@ void AnsysMatsol::settings(std::vector<Evaluator*> &evaluators, std::vector<Elem
 }
 
 
-void AnsysMatsol::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
+void AnsysMatsol::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
-	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].push_back(0);
+		nodes[i]->clusters().push_back(0);
 	}
 }
 

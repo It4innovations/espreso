@@ -3,8 +3,8 @@
 #define PRISMA6_H_
 
 #include "../element.h"
-#include "../2D/triangle3.h"
-#include "../2D/square4.h"
+#include "../plane/triangle3.h"
+#include "../plane/square4.h"
 
 #define Prisma6NodesCount 6
 #define Prisma6FacesCount 5

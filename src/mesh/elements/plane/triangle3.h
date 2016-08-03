@@ -1,23 +1,21 @@
-#ifndef HEXAHEDRON8_H_
-#define HEXAHEDRON8_H_
+#ifndef TRIANGLE3_H_
+#define TRIANGLE3_H_
 
 #include "../element.h"
-#include "../2D/square4.h"
-#include "../1D/line2.h"
+#include "../line/line2.h"
 
-#define Hexahedron8NodesCount 8
-#define Hexahedron8FacesCount 6
-#define Hexahedron8GPCount 8
-#define Hexahedron8VTKCode 12
+#define Triangle3NodesCount 3
+#define Triangle3FacesCount 3
+#define Triangle3GPCount 1
+#define Triangle3VTKCode 5
 
 namespace espreso {
 
-class Hexahedron8: public Element
+class Triangle3: public Element
 {
-	friend class Hexahedron20;
 
 public:
-	static bool match(const eslocal *indices, eslocal n);
+	static bool match(eslocal *indices, eslocal n);
 	static size_t counter()
 	{
 		return _counter;
@@ -36,17 +34,16 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params);
-	Hexahedron8(std::ifstream &is);
+	Triangle3(const eslocal *indices, const eslocal *params);
 
 	Element* copy() const
 	{
-		return new Hexahedron8(*this);
+		return new Triangle3(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Hexahedron8VTKCode;
+		return Triangle3VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -56,85 +53,75 @@ public:
 
 	size_t size() const
 	{
-		return Hexahedron8NodesCount;
+		return Triangle3NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Hexahedron8NodesCount;
+		return Triangle3NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Hexahedron8GPCount;
+		return Triangle3GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Hexahedron8FacesCount;
+		return Triangle3FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Hexahedron8::_dN;
+		return Triangle3::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Hexahedron8::_N;
+		return Triangle3::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Hexahedron8::_weighFactor;
+		return Triangle3::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Hexahedron8::_DOFElement;
+		return Triangle3::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Hexahedron8::_DOFFace;
+		return Triangle3::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Hexahedron8::_DOFEdge;
+		return Triangle3::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Hexahedron8::_DOFPoint;
+		return Triangle3::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Hexahedron8::_DOFMidPoint;
+		return Triangle3::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
 	{
-		return 3;
-	}
-
-	Element* getFullFace(size_t face) const
-	{
-		return getF(_indices, _params, face);
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return getFullFace(face);
+		return 2;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
-
+	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
-	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{
@@ -142,7 +129,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Hexahedron8NodesCount];
+	eslocal _indices[Triangle3NodesCount];
 
 	static size_t _counter;
 
@@ -159,4 +146,6 @@ private:
 
 }
 
-#endif /* HEXAHEDRON8_H_ */
+
+
+#endif /* TRIANGLE3_H_ */

@@ -161,7 +161,7 @@ void TransientElasticity::composeSubdomain(size_t subdomain)
 	f[subdomain].resize(subdomainSize);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.getElements();
+	const std::vector<Element*> &elements = _mesh.elements();
 
 	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
 

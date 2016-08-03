@@ -1,19 +1,20 @@
 
-#ifndef HEXAHEDRON20_H_
-#define HEXAHEDRON20_H_
+#ifndef PYRAMID13_H_
+#define PYRAMID13_H_
 
 #include "../element.h"
-#include "../2D/square8.h"
-#include "hexahedron8.h"
+#include "../plane/square8.h"
+#include "../plane/triangle6.h"
+#include "pyramid5.h"
 
-#define Hexahedron20NodesCount 20
-#define Hexahedron20FacesCount 6
-#define Hexahedron20GPCount 8
-#define Hexahedron20VTKCode 25
+#define Pyramid13NodesCount 13
+#define Pyramid13FacesCount 5
+#define Pyramid13GPCount 8
+#define Pyramid13VTKCode 27
 
 namespace espreso {
 
-class Hexahedron20: public Element
+class Pyramid13: public Element
 {
 
 public:
@@ -36,17 +37,17 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params);
-	Hexahedron20(std::ifstream &is);
+	Pyramid13(const eslocal *indices, eslocal n, const eslocal *params);
+	Pyramid13(std::ifstream &is);
 
 	Element* copy() const
 	{
-		return new Hexahedron20(*this);
+		return new Pyramid13(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Hexahedron20VTKCode;
+		return Pyramid13VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -56,62 +57,62 @@ public:
 
 	size_t size() const
 	{
-		return Hexahedron20NodesCount;
+		return Pyramid13NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Hexahedron8NodesCount;
+		return Pyramid5NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Hexahedron20GPCount;
+		return Pyramid13GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Hexahedron20FacesCount;
+		return Pyramid13FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Hexahedron20::_dN;
+		return Pyramid13::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Hexahedron20::_N;
+		return Pyramid13::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Hexahedron20::_weighFactor;
+		return Pyramid13::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Hexahedron20::_DOFElement;
+		return Pyramid13::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Hexahedron20::_DOFFace;
+		return Pyramid13::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Hexahedron20::_DOFEdge;
+		return Pyramid13::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Hexahedron20::_DOFPoint;
+		return Pyramid13::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Hexahedron20::_DOFMidPoint;
+		return Pyramid13::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
@@ -121,13 +122,12 @@ public:
 
 	Element* getCoarseFace(size_t face) const
 	{
-		return Hexahedron8::getF(_indices, _params, face);
+		return Pyramid5::getF(_indices, _params, face);
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
-
 
 protected:
 
@@ -137,7 +137,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Hexahedron20NodesCount];
+	eslocal _indices[Pyramid13NodesCount];
 
 	static size_t _counter;
 
@@ -152,7 +152,7 @@ private:
 	static std::vector<Property> _DOFMidPoint;
 };
 
-
 }
 
-#endif /* HEXAHEDRON20_H_ */
+
+#endif /* PYRAMID5_H_ */

@@ -182,7 +182,7 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
  *           /x
  */
 template <class TElement>
-void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
+void SphereGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	eslocal line   = _settings.grid;
 	eslocal square = _settings.grid * line;
@@ -330,7 +330,6 @@ void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::v
 
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
-	boundaries.resize(cNodes[0] * cNodes[1] * cNodes[2]);
 
 	std::vector<int> sortedMap(neighboursMap);
 	std::sort(sortedMap.begin(), sortedMap.end());
@@ -348,7 +347,7 @@ void SphereGenerator<TElement>::clusterBoundaries(Boundaries &boundaries, std::v
 			for (eslocal x = sx; x <= ex; x++) {
 				for (eslocal y = sy; y <= ey; y++) {
 					for (eslocal z = sz; z <= ez; z++) {
-						boundaries[z * cNodes[0] * cNodes[1] + y * cNodes[0] + x].push_back(sortedMap[i]);
+						nodes[z * cNodes[0] * cNodes[1] + y * cNodes[0] + x]->clusters().push_back(sortedMap[i]);
 					}
 				}
 			}

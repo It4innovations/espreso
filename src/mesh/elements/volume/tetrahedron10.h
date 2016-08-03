@@ -1,21 +1,23 @@
-#ifndef TRIANGLE3_H_
-#define TRIANGLE3_H_
+#ifndef TETRAHEDRON10_H_
+#define TETRAHEDRON10_H_
 
 #include "../element.h"
-#include "../1D/line2.h"
+#include "../plane/triangle3.h"
+#include "../plane/triangle6.h"
+#include "tetrahedron4.h"
 
-#define Triangle3NodesCount 3
-#define Triangle3FacesCount 3
-#define Triangle3GPCount 1
-#define Triangle3VTKCode 5
+#define Tetrahedron10NodesCount 10
+#define Tetrahedron10FacesCount 4
+#define Tetrahedron10GPCount 15
+#define Tetrahedron10VTKCode 24
 
 namespace espreso {
 
-class Triangle3: public Element
+class Tetrahedron10: public Element
 {
 
 public:
-	static bool match(eslocal *indices, eslocal n);
+	static bool match(const eslocal *indices, eslocal n);
 	static size_t counter()
 	{
 		return _counter;
@@ -34,16 +36,17 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Triangle3(const eslocal *indices, const eslocal *params);
+	Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params);
+	Tetrahedron10(std::ifstream &is);
 
 	Element* copy() const
 	{
-		return new Triangle3(*this);
+		return new Tetrahedron10(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Triangle3VTKCode;
+		return Tetrahedron10VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -53,73 +56,77 @@ public:
 
 	size_t size() const
 	{
-		return Triangle3NodesCount;
+		return Tetrahedron10NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Triangle3NodesCount;
+		return Tetrahedron4NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Triangle3GPCount;
+		return Tetrahedron10GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Triangle3FacesCount;
+		return Tetrahedron10FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Triangle3::_dN;
+		return Tetrahedron10::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Triangle3::_N;
+		return Tetrahedron10::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Triangle3::_weighFactor;
+		return Tetrahedron10::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Triangle3::_DOFElement;
+		return Tetrahedron10::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Triangle3::_DOFFace;
+		return Tetrahedron10::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Triangle3::_DOFEdge;
+		return Tetrahedron10::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Triangle3::_DOFPoint;
+		return Tetrahedron10::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Triangle3::_DOFMidPoint;
+		return Tetrahedron10::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
 	{
-		return 2;
+		return 3;
+	}
+
+	Element* getCoarseFace(size_t face) const
+	{
+		return Tetrahedron4::getF(_indices, _params, face);
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
 
@@ -129,7 +136,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Triangle3NodesCount];
+	eslocal _indices[Tetrahedron10NodesCount];
 
 	static size_t _counter;
 
@@ -146,6 +153,4 @@ private:
 
 }
 
-
-
-#endif /* TRIANGLE3_H_ */
+#endif /* TETRAHEDRON10_H_ */

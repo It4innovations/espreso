@@ -1,22 +1,24 @@
 #ifndef ELEMENTS_H_
 #define ELEMENTS_H_
 
-#include "1D/line2.h"
-#include "1D/line3.h"
+#include "point/node.h"
 
-#include "2D/square4.h"
-#include "2D/square8.h"
-#include "2D/triangle3.h"
-#include "2D/triangle6.h"
+#include "line/line2.h"
+#include "line/line3.h"
 
-#include "3D/tetrahedron4.h"
-#include "3D/tetrahedron10.h"
-#include "3D/hexahedron8.h"
-#include "3D/hexahedron20.h"
-#include "3D/prisma6.h"
-#include "3D/prisma15.h"
-#include "3D/pyramid5.h"
-#include "3D/pyramid13.h"
+#include "plane/square4.h"
+#include "plane/square8.h"
+#include "plane/triangle3.h"
+#include "plane/triangle6.h"
+
+#include "volume/hexahedron20.h"
+#include "volume/hexahedron8.h"
+#include "volume/prisma15.h"
+#include "volume/prisma6.h"
+#include "volume/pyramid13.h"
+#include "volume/pyramid5.h"
+#include "volume/tetrahedron10.h"
+#include "volume/tetrahedron4.h"
 
 
 

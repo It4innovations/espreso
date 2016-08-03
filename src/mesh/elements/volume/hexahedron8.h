@@ -1,20 +1,20 @@
-#ifndef TETRAHEDRON10_H_
-#define TETRAHEDRON10_H_
+#ifndef HEXAHEDRON8_H_
+#define HEXAHEDRON8_H_
 
 #include "../element.h"
-#include "../2D/triangle3.h"
-#include "../2D/triangle6.h"
-#include "tetrahedron4.h"
+#include "../plane/square4.h"
+#include "../line/line2.h"
 
-#define Tetrahedron10NodesCount 10
-#define Tetrahedron10FacesCount 4
-#define Tetrahedron10GPCount 15
-#define Tetrahedron10VTKCode 24
+#define Hexahedron8NodesCount 8
+#define Hexahedron8FacesCount 6
+#define Hexahedron8GPCount 8
+#define Hexahedron8VTKCode 12
 
 namespace espreso {
 
-class Tetrahedron10: public Element
+class Hexahedron8: public Element
 {
+	friend class Hexahedron20;
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
@@ -36,17 +36,17 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params);
-	Tetrahedron10(std::ifstream &is);
+	Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params);
+	Hexahedron8(std::ifstream &is);
 
 	Element* copy() const
 	{
-		return new Tetrahedron10(*this);
+		return new Hexahedron8(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Tetrahedron10VTKCode;
+		return Hexahedron8VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -56,62 +56,62 @@ public:
 
 	size_t size() const
 	{
-		return Tetrahedron10NodesCount;
+		return Hexahedron8NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Tetrahedron4NodesCount;
+		return Hexahedron8NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Tetrahedron10GPCount;
+		return Hexahedron8GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Tetrahedron10FacesCount;
+		return Hexahedron8FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Tetrahedron10::_dN;
+		return Hexahedron8::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Tetrahedron10::_N;
+		return Hexahedron8::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Tetrahedron10::_weighFactor;
+		return Hexahedron8::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Tetrahedron10::_DOFElement;
+		return Hexahedron8::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Tetrahedron10::_DOFFace;
+		return Hexahedron8::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Tetrahedron10::_DOFEdge;
+		return Hexahedron8::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Tetrahedron10::_DOFPoint;
+		return Hexahedron8::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Tetrahedron10::_DOFMidPoint;
+		return Hexahedron8::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
@@ -119,16 +119,22 @@ public:
 		return 3;
 	}
 
+	Element* getFullFace(size_t face) const
+	{
+		return getF(_indices, _params, face);
+	}
+
 	Element* getCoarseFace(size_t face) const
 	{
-		return Tetrahedron4::getF(_indices, _params, face);
+		return getFullFace(face);
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
+
 
 protected:
+	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
 
 	eslocal* indices()
 	{
@@ -136,7 +142,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Tetrahedron10NodesCount];
+	eslocal _indices[Hexahedron8NodesCount];
 
 	static size_t _counter;
 
@@ -153,4 +159,4 @@ private:
 
 }
 
-#endif /* TETRAHEDRON10_H_ */
+#endif /* HEXAHEDRON8_H_ */

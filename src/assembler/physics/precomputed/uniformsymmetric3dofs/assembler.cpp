@@ -28,7 +28,7 @@ void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 	_K.resize(nK, nK);
 
 	const std::vector<eslocal> &parts = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.getElements();
+	const std::vector<Element*> &elements = _mesh.elements();
 	const std::vector<std::vector<double> > &matrices = _apimesh.getMatrices();
 
 	size_t row, column;
@@ -48,10 +48,9 @@ void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(p);
-		const Boundaries &boundaries = _mesh.subdomainBoundaries();
 		f[p].resize(_mesh.coordinates().localSize(p) * DOFs.size(), 0);
 		for (size_t i = 0; i < l2c.size() * DOFs.size(); i++) {
-			f[p][i] = rhs[DOFs.size() * l2c[i / DOFs.size()] + i % DOFs.size()] / boundaries[l2c[i / DOFs.size()]].size();
+			f[p][i] = rhs[DOFs.size() * l2c[i / DOFs.size()] + i % DOFs.size()] / _mesh.nodes()[l2c[i / DOFs.size()]]->domains().size();
 		}
 	}
 }

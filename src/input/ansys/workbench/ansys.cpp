@@ -84,11 +84,10 @@ void AnsysWorkbench::settings(std::vector<Evaluator*> &evaluators, std::vector<E
 }
 
 
-void AnsysWorkbench::clusterBoundaries(Boundaries &boundaries, std::vector<int> &neighbours)
+void AnsysWorkbench::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
-	boundaries.resize(mesh.coordinates().clusterSize());
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
-		boundaries[i].push_back(0);
+		nodes[i]->clusters().push_back(0);
 	}
 }
 

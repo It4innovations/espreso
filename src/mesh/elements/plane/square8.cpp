@@ -1,3 +1,4 @@
+
 #include "square8.h"
 
 using namespace espreso;

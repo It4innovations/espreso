@@ -51,19 +51,19 @@ public:
 	Gluing(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
 	:Constraints(mesh, DOFs, firstIndex),
 	  _ignoredDOFsSize(ignoredDOFs.size()), _ignoredDOFsOffset(0), _ignoredDOFs(ignoredDOFs.data()),
-	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
+	  _nodes(mesh.nodes()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
 	Gluing(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
 	:Constraints(mesh, DOFs, firstIndex),
 	 _ignoredDOFsSize(ignoredDOFsSize), _ignoredDOFsOffset(ignoredDOFsOffset), _ignoredDOFs(ignoredDOFs),
-	 _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
+	 _nodes(mesh.nodes()),
 	 _c2g(mesh.coordinates().clusterToGlobal()) { };
 
 	Gluing(const Mesh &mesh, std::vector<Property> &DOFs)
 	:Constraints(mesh, DOFs, 0),
 	  _ignoredDOFsSize(0), _ignoredDOFsOffset(0), _ignoredDOFs(NULL),
-	  _sBoundary(mesh.subdomainBoundaries()), _cBoundary(mesh.clusterBoundaries()),
+	  _nodes(mesh.nodes()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
 	size_t assembleB1(
@@ -86,8 +86,7 @@ protected:
 	const eslocal _ignoredDOFsOffset;
 	const eslocal *_ignoredDOFs;
 
-	const Boundaries &_sBoundary;
-	const Boundaries &_cBoundary;
+	const std::vector<Element*> &_nodes;
 	const std::vector<esglobal> &_c2g;
 
 private:

@@ -96,7 +96,7 @@ size_t FixedDOFs::assemble(
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			const eslocal index = (_dirichletIndices[i] - _dirichletOffset) / _DOFs.size();
-			const std::vector<eslocal> &neighs = _mesh.subdomainBoundaries()[index];
+			const std::vector<eslocal> &neighs = _mesh.nodes()[index]->domains();
 			for(size_t s = 0; s < neighs.size(); s++) {
 				const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(neighs[s]);
 				auto it = lower_bound(l2c.begin(), l2c.end(), index);
@@ -237,10 +237,11 @@ size_t Gluing::assembleB0(std::vector<SparseMatrix> &B0)
 	std::vector<SparseIJVMatrix<esglobal> > gluing;
 
 	std::vector<eslocal> corners;
-	for (size_t i = 0; i < _mesh.subdomainBoundaries().size(); i++) {
-		if (_mesh.subdomainBoundaries().isCorner(i)) {
-			corners.push_back(i);
-		}
+	for (size_t i = 0; i < _mesh.nodes().size(); i++) {
+		ESINFO(GLOBAL_ERROR) << "B0 is not working";
+//		if (_mesh.subdomainBoundaries().isCorner(i)) {
+//			corners.push_back(i);
+//		}
 	}
 
 	size_t cornersGluingSize = composeCornersGluing(corners, gluing);
@@ -342,10 +343,10 @@ size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 size_t Gluing::subdomainsLambdaCounters(std::vector<esglobal> &ids, std::vector<std::vector<esglobal> > &skippedNodes, const std::vector<eslocal> &excludes)
 {
 	ids.clear();
-	ids.resize(_DOFs.size() * _sBoundary.size(), 0);
+	ids.resize(_DOFs.size() * _nodes.size(), 0);
 
 	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _sBoundary.size());
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	skippedNodes.resize(threads);
 	std::vector<size_t> offsets(threads, 0);
@@ -357,17 +358,17 @@ size_t Gluing::subdomainsLambdaCounters(std::vector<esglobal> &ids, std::vector<
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 
-			if (_sBoundary[n].size() > 1) { // node 'n' belongs to more sub-domains
+			if (_nodes[n]->domains().size() > 1) { // node 'n' belongs to more sub-domains
 				if (excludes.size() && excludes[exclude_pointer] == n) {
 					exclude_pointer++;
 					continue;
 				}
-				if (_cBoundary[n].size() > 1) {
+				if (_nodes[n]->clusters().size() > 1) {
 					skippedNodes[t].push_back(n);
 					continue; // skip nodes belong to more clusters -> it will be glued later
 				}
 
-				size_t pairs = gluingPairs(_sBoundary[n].size());
+				size_t pairs = gluingPairs(_nodes[n]->domains().size());
 				for (size_t i = 0; i < _DOFs.size(); i++) {
 					ids[n * _DOFs.size() + i] = pairs;
 					offset += pairs;
@@ -385,10 +386,10 @@ size_t Gluing::subdomainsLambdaCounters(std::vector<esglobal> &ids, std::vector<
 size_t Gluing::clustersLambdaCounters(std::vector<esglobal> &ids, const std::vector<std::vector<eslocal> > &multiplicity, size_t localGluingSize)
 {
 	ids.clear();
-	ids.resize(_cBoundary.size() * _DOFs.size(), 0);
+	ids.resize(_nodes.size() * _DOFs.size(), 0);
 
 	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _cBoundary.size());
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	std::vector<size_t> offsets(threads, 0);
 
@@ -398,7 +399,7 @@ size_t Gluing::clustersLambdaCounters(std::vector<esglobal> &ids, const std::vec
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 
-			if (_cBoundary[n].size() > 1 && config::env::MPIrank == _cBoundary[n][0]) {
+			if (_nodes[n]->clusters().size() > 1 && config::env::MPIrank == _nodes[n]->clusters()[0]) {
 				size_t pairs = gluingPairs(multiplicity[n].back());
 				for (size_t i = 0; i < _DOFs.size(); i++) {
 					ids[n * _DOFs.size() + i] = pairs;
@@ -478,7 +479,7 @@ void Gluing::composeSubdomainGluing(const std::vector<esglobal> &ids, std::vecto
 				if (ids[l2c[n] * _DOFs.size() + d] >= 0) {
 					// for each DOF in sub-domain s
 
-					const std::vector<eslocal> &neighs = _sBoundary[l2c[n]];
+					const std::vector<eslocal> &neighs = _nodes[l2c[n]]->domains();
 					size_t index = std::lower_bound(neighs.begin(), neighs.end(), s) - neighs.begin();
 					for (size_t i = 0; i < neighs.size(); i++) {
 						if (i != index) {
@@ -510,13 +511,13 @@ void Gluing::composeClustersGluing(
 				continue;
 			}
 			size_t index = 0, myFirst;
-			const std::vector<eslocal> &neighs = _cBoundary[l2c[n]];
+			const std::vector<eslocal> &neighs = _nodes[l2c[n]]->clusters();
 			for (size_t i = 0; i < neighs.size(); i++) {
 				if (neighs[i] != config::env::MPIrank) {
 					index += multiplicity[l2c[n]][i];
 				} else {
 					myFirst = index;
-					index += std::lower_bound(_sBoundary[l2c[n]].begin(), _sBoundary[l2c[n]].end(), s) - _sBoundary[l2c[n]].begin();
+					index += std::lower_bound(_nodes[l2c[n]]->domains().begin(), _nodes[l2c[n]]->domains().end(), s) - _nodes[l2c[n]]->domains().begin();
 					break;
 				}
 			}
@@ -532,12 +533,12 @@ void Gluing::composeClustersGluing(
 								esglobal offset = i < index ? pairOffset(i, index, multiplicity[l2c[n]].back()) : pairOffset(index, i, multiplicity[l2c[n]].back());
 								gluing[s].push(ids[l2c[n] * _DOFs.size() + d] + offset, n * _DOFs.size() + d, index < i ? 1 : -1);
 								duplicity[s].push_back(1. / multiplicity[l2c[n]].back());
-								if (_cBoundary[l2c[n]][r] == config::env::MPIrank) {
+								if (_nodes[l2c[n]]->clusters()[r] == config::env::MPIrank) {
 									if (index < i) {
 										clusterMap[s].push_back({ ids[l2c[n] * _DOFs.size() + d] + offset, config::env::MPIrank });
 									}
 								} else {
-									clusterMap[s].push_back({ ids[l2c[n] * _DOFs.size() + d] + offset, config::env::MPIrank, _cBoundary[l2c[n]][r] });
+									clusterMap[s].push_back({ ids[l2c[n] * _DOFs.size() + d] + offset, config::env::MPIrank, _nodes[l2c[n]]->clusters()[r] });
 								}
 							}
 						}
@@ -556,15 +557,15 @@ void Gluing::computeNodesMultiplicity(const std::vector<std::vector<esglobal> > 
 	};
 
 	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _cBoundary.size());
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	std::vector<std::vector<std::pair<esglobal, esglobal> > > sBuffer(_neighbours.size());
 	std::vector<std::vector<std::pair<esglobal, esglobal> > > rBuffer(_neighbours.size());
 
 	for (size_t t = 0; t < skippedNodes.size(); t++) {
 		for (size_t i = 0; i < skippedNodes[t].size(); i++) {
-			for (size_t c = 0; c < _cBoundary[skippedNodes[t][i]].size(); c++) {
-				sBuffer[n2i(_cBoundary[skippedNodes[t][i]][c])].push_back({ _c2g[skippedNodes[t][i]], _sBoundary[skippedNodes[t][i]].size() });
+			for (size_t c = 0; c < _nodes[skippedNodes[t][i]]->clusters().size(); c++) {
+				sBuffer[n2i(_nodes[skippedNodes[t][i]]->clusters()[c])].push_back({ _c2g[skippedNodes[t][i]], _nodes[skippedNodes[t][i]]->domains().size() });
 			}
 		}
 	}
@@ -595,17 +596,17 @@ void Gluing::computeNodesMultiplicity(const std::vector<std::vector<esglobal> > 
 
 	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
-	multiplicity.resize(_cBoundary.size());
+	multiplicity.resize(_nodes.size());
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-			multiplicity[n].reserve(_cBoundary[n].size());
+			multiplicity[n].reserve(_nodes[n]->clusters().size());
 			size_t size = 0;
-			for (size_t i = 0; i < _cBoundary[n].size(); i++) {
+			for (size_t i = 0; i < _nodes[n]->clusters().size(); i++) {
 
 				std::pair<esglobal, esglobal> node(_c2g[n], 0);
-				auto it = std::lower_bound(rBuffer[n2i(_cBoundary[n][i])].begin(), rBuffer[n2i(_cBoundary[n][i])].end(), node, compareAccordingFirst);
-				if (it != rBuffer[n2i(_cBoundary[n][i])].end() && it->first == _c2g[n]) {
+				auto it = std::lower_bound(rBuffer[n2i(_nodes[n]->clusters()[i])].begin(), rBuffer[n2i(_nodes[n]->clusters()[i])].end(), node, compareAccordingFirst);
+				if (it != rBuffer[n2i(_nodes[n]->clusters()[i])].end() && it->first == _c2g[n]) {
 					multiplicity[n].push_back(it->second);
 				} else {
 					multiplicity[n].push_back(1);
@@ -624,21 +625,21 @@ void Gluing::exchangeGlobalIds(std::vector<esglobal> &ids, const std::vector<std
 	};
 
 	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _cBoundary.size());
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > nodesIds(threads, std::vector<std::vector<std::pair<esglobal, esglobal> > >(_neighbours.size()));
 
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-			if (_cBoundary[n].size() > 1) {
-				if (config::env::MPIrank == _cBoundary[n][0]) {
+			if (_nodes[n]->clusters().size() > 1) {
+				if (config::env::MPIrank == _nodes[n]->clusters()[0]) {
 					// send my ids to higher ranks
-					for (size_t i = 1; i < _cBoundary[n].size(); i++) {
-						nodesIds[t][n2i(_cBoundary[n][i])].push_back({ _c2g[n], ids[_DOFs.size() * n] });
+					for (size_t i = 1; i < _nodes[n]->clusters().size(); i++) {
+						nodesIds[t][n2i(_nodes[n]->clusters()[i])].push_back({ _c2g[n], ids[_DOFs.size() * n] });
 					}
 				} else {
 					// get id from the smallest rank
-					nodesIds[t][n2i(_cBoundary[n][0])].push_back({ 0, 0 }); // buffer for ids from neighbours
+					nodesIds[t][n2i(_nodes[n]->clusters()[0])].push_back({ 0, 0 }); // buffer for ids from neighbours
 				}
 			}
 		}
@@ -677,10 +678,10 @@ void Gluing::exchangeGlobalIds(std::vector<esglobal> &ids, const std::vector<std
 	for (size_t t = 0; t < threads; t++) {
 		size_t size = 0;
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-			if (_cBoundary[n].size() > 1 && _cBoundary[n][0] < config::env::MPIrank) {
+			if (_nodes[n]->clusters().size() > 1 && _nodes[n]->clusters()[0] < config::env::MPIrank) {
 				size_t pairs = gluingPairs(multiplicity[n].back());
 				std::pair<esglobal, esglobal> node(_c2g[n], 0);
-				auto it = std::lower_bound(nodesIds[0][n2i(_cBoundary[n][0])].begin(), nodesIds[0][n2i(_cBoundary[n][0])].end(), node, compareAccordingFirst);
+				auto it = std::lower_bound(nodesIds[0][n2i(_nodes[n]->clusters()[0])].begin(), nodesIds[0][n2i(_nodes[n]->clusters()[0])].end(), node, compareAccordingFirst);
 				if (it->second == LAMBDA_REMOVED) {
 					continue; // skip dirichlet
 				}
@@ -702,7 +703,7 @@ size_t Gluing::composeCornersGluing(const std::vector<eslocal> &corners, std::ve
 	}
 
 	auto s2i = [&] (eslocal n, eslocal s) {
-		return std::lower_bound(_sBoundary[n].begin(), _sBoundary[n].end(), s) - _sBoundary[n].begin();
+		return std::lower_bound(_nodes[n]->domains().begin(), _nodes[n]->domains().end(), s) - _nodes[n]->domains().begin();
 	};
 
 	std::vector<eslocal> lambdas;
@@ -710,24 +711,24 @@ size_t Gluing::composeCornersGluing(const std::vector<eslocal> &corners, std::ve
 
 	lambdas.push_back(0);
 	for (size_t l = 1; l < corners.size(); l++) {
-		lambdas.push_back(lambdas.back() + _DOFs.size() * (_sBoundary[corners[l - 1]].size() - 1));
+		lambdas.push_back(lambdas.back() + _DOFs.size() * (_nodes[corners[l - 1]]->domains().size() - 1));
 	}
 
 	cilk_for (size_t s = 0; s < _subdomains; s++) {
 		const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(s);
 		for (size_t l = 0; l < lambdas.size(); l++) {
 
-			if (!std::binary_search(_sBoundary[corners[l]].begin(), _sBoundary[corners[l]].end(), s)) {
+			if (!std::binary_search(_nodes[corners[l]]->domains().begin(), _nodes[corners[l]]->domains().end(), s)) {
 				continue;
 			}
 
 			auto index = std::lower_bound(l2c.begin(), l2c.end(), corners[l]) - l2c.begin();
-			if (s > _sBoundary[corners[l]].front()) {
+			if (s > _nodes[corners[l]]->domains().front()) {
 				for (size_t d = 0; d < _DOFs.size(); d++) {
 					gluing[s].push(lambdas[l] + _DOFs.size() * (s2i(corners[l], s) - 1) + d, _DOFs.size() * index + d, -1);
 				}
 			}
-			if (s < _sBoundary[corners[l]].back()) {
+			if (s < _nodes[corners[l]]->domains().back()) {
 				for (size_t d = 0; d < _DOFs.size(); d++) {
 					gluing[s].push(lambdas[l] + _DOFs.size() * s2i(corners[l], s) + d, _DOFs.size() * index + d, 1);
 				}
@@ -735,7 +736,7 @@ size_t Gluing::composeCornersGluing(const std::vector<eslocal> &corners, std::ve
 		}
 	}
 
-	return lambdas.back() + _DOFs.size() * (_sBoundary[corners.back()].size() - 1);
+	return lambdas.back() + _DOFs.size() * (_nodes[corners.back()]->domains().size() - 1);
 }
 
 static void postProcess(
@@ -848,10 +849,11 @@ void EqualityConstraints::assemble()
 			config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI &&
 			config::solver::B0_TYPE == config::solver::B0_TYPEalternative::CORNERS) {
 
-		for (size_t i = 0; i < _mesh.subdomainBoundaries().size(); i++) {
-			if (_mesh.subdomainBoundaries().isCorner(i)) {
-				corners.push_back(i);
-			}
+		for (size_t i = 0; i < _mesh.nodes().size(); i++) {
+			ESINFO(GLOBAL_ERROR) << "B0 is not implemented.";
+//			if (_mesh.subdomainBoundaries().isCorner(i)) {
+//				corners.push_back(i);
+//			}
 		}
 	}
 	lambdaCounter += gluing.assembleB1(B1, B1clustersMap, B1duplicity, corners);

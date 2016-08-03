@@ -132,11 +132,11 @@ void Temperature::composeSubdomain(size_t subdomain)
 	f[subdomain].resize(subdomainSize);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.getElements();
+	const std::vector<Element*> &elements = _mesh.elements();
 
 	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
 
-		const Element* e = _mesh.getElements()[i];
+		const Element* e = _mesh.elements()[i];
 		processElement(Ke, fe, _mesh, subdomain, e);
 
 		for (size_t i = 0; i < e->size(); i++) {

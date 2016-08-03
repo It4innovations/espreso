@@ -11,6 +11,20 @@ Mesh::Mesh():_elements(0)
 	_partPtrs[1] = 0;
 }
 
+void Mesh::init()
+{
+	for (size_t p = 0; p < parts(); p++) {
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			for (size_t n = 0; n < _elements[e]->size(); n++) {
+				auto index = _coordinates.clusterIndex(_elements[e]->node(n), p);
+				if (!_nodes[index]->_domains.size() || _nodes[index]->_domains.back() != p) {
+					_nodes[index]->_domains.push_back(p);
+				}
+			}
+		}
+	}
+}
+
 void Mesh::partitiate(size_t parts)
 {
 	if (parts == 1 && this->parts() == 1) {
@@ -332,6 +346,10 @@ Mesh::~Mesh()
 		delete _elements[i];
 	}
 
+	for (size_t i = 0; i < _nodes.size(); i++) {
+		delete _nodes[i];
+	}
+
 	for (size_t i = 0; i < _evaluators.size(); i++) {
 		delete _evaluators[i];
 	}
@@ -405,7 +423,7 @@ void Mesh::getSurface(Mesh &surface) const
 		}
 	}
 
-	surface.coordinates() = _coordinates;
+	surface._coordinates = _coordinates;
 
 	size_t count = 0;
 	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
@@ -935,8 +953,7 @@ void Mesh::prepareAveragingLines(Mesh &faces, Mesh &lines)
 	auto on_cluster_boundary = [&] (eslocal i) {
 		eslocal index = lines.coordinates().globalIndex(i);
 		index = faces.coordinates().globalIndex(index);
-		auto &cb = clusterBoundaries();
-		return cb[index].size() > 1;
+		return _nodes[index]->clusters().size() > 1;
 	};
 
 	lines.remapElementsToCluster();
@@ -1137,12 +1154,6 @@ void Mesh::remapElementsToCluster() const
 	}
 }
 
-std::ostream& espreso::operator<<(std::ostream& os, const Mesh &m)
-{
-	for (size_t i = 0; i < m._elements.size(); i++) {
-		os << *(m._elements[i]) << "\n";
-	}
-	return os;
 }
 
 

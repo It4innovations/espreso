@@ -1,20 +1,20 @@
 
-#ifndef PYRAMID13_H_
-#define PYRAMID13_H_
+#ifndef PRISMA15_H_
+#define PRISMA15_H_
 
 #include "../element.h"
-#include "pyramid5.h"
-#include "../2D/triangle6.h"
-#include "../2D/square8.h"
+#include "../plane/square8.h"
+#include "../plane/triangle6.h"
+#include "prisma6.h"
 
-#define Pyramid13NodesCount 13
-#define Pyramid13FacesCount 5
-#define Pyramid13GPCount 8
-#define Pyramid13VTKCode 27
+#define Prisma15NodesCount 15
+#define Prisma15FacesCount 5
+#define Prisma15GPCount 9
+#define Prisma15VTKCode 26
 
 namespace espreso {
 
-class Pyramid13: public Element
+class Prisma15: public Element
 {
 
 public:
@@ -37,17 +37,17 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Pyramid13(const eslocal *indices, eslocal n, const eslocal *params);
-	Pyramid13(std::ifstream &is);
+	Prisma15(const eslocal *indices, eslocal n, const eslocal *params);
+	Prisma15(std::ifstream &is);
 
 	Element* copy() const
 	{
-		return new Pyramid13(*this);
+		return new Prisma15(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Pyramid13VTKCode;
+		return Prisma15VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -57,62 +57,62 @@ public:
 
 	size_t size() const
 	{
-		return Pyramid13NodesCount;
+		return Prisma15NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Pyramid5NodesCount;
+		return Prisma6NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Pyramid13GPCount;
+		return Prisma15GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Pyramid13FacesCount;
+		return Prisma15FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Pyramid13::_dN;
+		return Prisma15::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Pyramid13::_N;
+		return Prisma15::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Pyramid13::_weighFactor;
+		return Prisma15::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Pyramid13::_DOFElement;
+		return Prisma15::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Pyramid13::_DOFFace;
+		return Prisma15::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Pyramid13::_DOFEdge;
+		return Prisma15::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Pyramid13::_DOFPoint;
+		return Prisma15::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Pyramid13::_DOFMidPoint;
+		return Prisma15::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
@@ -122,7 +122,7 @@ public:
 
 	Element* getCoarseFace(size_t face) const
 	{
-		return Pyramid5::getF(_indices, _params, face);
+		return Prisma6::getF(_indices, _params, face);
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -137,7 +137,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Pyramid13NodesCount];
+	eslocal _indices[Prisma15NodesCount];
 
 	static size_t _counter;
 
@@ -155,4 +155,4 @@ private:
 }
 
 
-#endif /* PYRAMID5_H_ */
+#endif /* PRISMA6_H_ */

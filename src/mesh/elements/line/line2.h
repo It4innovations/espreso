@@ -1,18 +1,16 @@
-#ifndef SQUARE8_H_
-#define SQUARE8_H_
+#ifndef LINE2_H_
+#define LINE2_H_
 
-#include "../1D/line2.h"
 #include "../element.h"
-#include "square4.h"
 
-#define Square8NodesCount 8
-#define Square8FacesCount 4
-#define Square8GPCount 9
-#define Square8VTKCode 23
+#define Line2NodesCount 2
+#define Line2FacesCount 0
+#define Line2GPCount 2
+#define Line2VTKCode 3
 
 namespace espreso {
 
-class Square8: public Element
+class Line2: public Element
 {
 
 public:
@@ -35,16 +33,16 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Square8(const eslocal *indices, const eslocal *params);
+	Line2(const eslocal *indices, const eslocal *params);
 
 	Element* copy() const
 	{
-		return new Square8(*this);
+		return new Line2(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Square8VTKCode;
+		return Line2VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -54,67 +52,67 @@ public:
 
 	size_t size() const
 	{
-		return Square8NodesCount;
+		return Line2NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Square4NodesCount;
+		return Line2NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Square8GPCount;
+		return Line2GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Square8FacesCount;
+		return Line2FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Square8::_dN;
+		return Line2::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Square8::_N;
+		return Line2::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Square8::_weighFactor;
+		return Line2::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Square8::_DOFElement;
+		return Line2::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Square8::_DOFFace;
+		return Line2::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Square8::_DOFEdge;
+		return Line2::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Square8::_DOFPoint;
+		return Line2::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Square8::_DOFMidPoint;
+		return Line2::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
 	{
-		return 2;
+		return 1;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -130,7 +128,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Square8NodesCount];
+	eslocal _indices[Line2NodesCount];
 
 	static size_t _counter;
 
@@ -148,4 +146,4 @@ private:
 }
 
 
-#endif /* SQUARE8_H_ */
+#endif /* LINE2_H_ */

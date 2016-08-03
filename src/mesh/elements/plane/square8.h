@@ -1,20 +1,18 @@
-
-#ifndef PRISMA15_H_
-#define PRISMA15_H_
+#ifndef SQUARE8_H_
+#define SQUARE8_H_
 
 #include "../element.h"
-#include "prisma6.h"
-#include "../2D/triangle6.h"
-#include "../2D/square8.h"
+#include "../line/line2.h"
+#include "square4.h"
 
-#define Prisma15NodesCount 15
-#define Prisma15FacesCount 5
-#define Prisma15GPCount 9
-#define Prisma15VTKCode 26
+#define Square8NodesCount 8
+#define Square8FacesCount 4
+#define Square8GPCount 9
+#define Square8VTKCode 23
 
 namespace espreso {
 
-class Prisma15: public Element
+class Square8: public Element
 {
 
 public:
@@ -37,17 +35,16 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Prisma15(const eslocal *indices, eslocal n, const eslocal *params);
-	Prisma15(std::ifstream &is);
+	Square8(const eslocal *indices, const eslocal *params);
 
 	Element* copy() const
 	{
-		return new Prisma15(*this);
+		return new Square8(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Prisma15VTKCode;
+		return Square8VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -57,77 +54,73 @@ public:
 
 	size_t size() const
 	{
-		return Prisma15NodesCount;
+		return Square8NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Prisma6NodesCount;
+		return Square4NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Prisma15GPCount;
+		return Square8GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Prisma15FacesCount;
+		return Square8FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Prisma15::_dN;
+		return Square8::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Prisma15::_N;
+		return Square8::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Prisma15::_weighFactor;
+		return Square8::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Prisma15::_DOFElement;
+		return Square8::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Prisma15::_DOFFace;
+		return Square8::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Prisma15::_DOFEdge;
+		return Square8::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Prisma15::_DOFPoint;
+		return Square8::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Prisma15::_DOFMidPoint;
+		return Square8::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
 	{
-		return 3;
-	}
-
-	Element* getCoarseFace(size_t face) const
-	{
-		return Prisma6::getF(_indices, _params, face);
+		return 2;
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
 	Element* getFullFace(size_t face) const;
+	Element* getCoarseFace(size_t face) const;
 
 protected:
 
@@ -137,7 +130,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Prisma15NodesCount];
+	eslocal _indices[Square8NodesCount];
 
 	static size_t _counter;
 
@@ -155,4 +148,4 @@ private:
 }
 
 
-#endif /* PRISMA6_H_ */
+#endif /* SQUARE8_H_ */

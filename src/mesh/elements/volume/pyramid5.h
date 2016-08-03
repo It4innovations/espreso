@@ -1,18 +1,21 @@
-#ifndef SQUARE4_H_
-#define SQUARE4_H_
 
-#include "../1D/line2.h"
+#ifndef PYRAMID5_H_
+#define PYRAMID5_H_
+
 #include "../element.h"
+#include "../plane/triangle3.h"
+#include "../plane/square4.h"
 
-#define Square4NodesCount 4
-#define Square4FacesCount 4
-#define Square4GPCount 4
-#define Square4VTKCode 9
+#define Pyramid5NodesCount 5
+#define Pyramid5FacesCount 5
+#define Pyramid5GPCount 8
+#define Pyramid5VTKCode 14
 
 namespace espreso {
 
-class Square4: public Element
+class Pyramid5: public Element
 {
+	friend class Pyramid13;
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
@@ -34,16 +37,18 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Square4(const eslocal *indices, const eslocal *params);
+	Pyramid5(const eslocal *indices, eslocal n, const eslocal *params);
+	Pyramid5(std::ifstream &is);
+
 
 	Element* copy() const
 	{
-		return new Square4(*this);
+		return new Pyramid5(*this);
 	}
 
 	eslocal vtkCode() const
 	{
-		return Square4VTKCode;
+		return Pyramid5VTKCode;
 	}
 
 	const eslocal* indices() const
@@ -53,73 +58,81 @@ public:
 
 	size_t size() const
 	{
-		return Square4NodesCount;
+		return Pyramid5NodesCount;
 	}
 
 	size_t coarseSize() const
 	{
-		return Square4NodesCount;
+		return Pyramid5NodesCount;
 	}
 
 	size_t gpSize() const
 	{
-		return Square4GPCount;
+		return Pyramid5GPCount;
 	}
 
 	size_t faces() const
 	{
-		return Square4FacesCount;
+		return Pyramid5FacesCount;
 	}
 
 	const std::vector<DenseMatrix>& dN() const
 	{
-		return Square4::_dN;
+		return Pyramid5::_dN;
 	}
 
 	const std::vector<DenseMatrix>&  N() const
 	{
-		return Square4::_N;
+		return Pyramid5::_N;
 	}
 
 	const std::vector<double>& weighFactor() const
 	{
-		return Square4::_weighFactor;
+		return Pyramid5::_weighFactor;
 	}
 
 	const std::vector<Property>& DOFElement() const
 	{
-		return Square4::_DOFElement;
+		return Pyramid5::_DOFElement;
 	}
 
 	const std::vector<Property>& DOFFace() const
 	{
-		return Square4::_DOFFace;
+		return Pyramid5::_DOFFace;
 	}
 
 	const std::vector<Property>& DOFEdge() const
 	{
-		return Square4::_DOFEdge;
+		return Pyramid5::_DOFEdge;
 	}
 
 	const std::vector<Property>& DOFPoint() const
 	{
-		return Square4::_DOFPoint;
+		return Pyramid5::_DOFPoint;
 	}
 
 	const std::vector<Property>& DOFMidPoint() const
 	{
-		return Square4::_DOFMidPoint;
+		return Pyramid5::_DOFMidPoint;
 	}
 
 	eslocal nCommon() const
 	{
-		return 2;
+		return 3;
+	}
+
+	Element* getFullFace(size_t face) const
+	{
+		return getF(_indices, _params, face);
+	}
+
+	Element* getCoarseFace(size_t face) const
+	{
+		return getFullFace(face);
 	}
 
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	std::vector<eslocal> getFace(size_t face) const;
-	Element* getFullFace(size_t face) const;
-	Element* getCoarseFace(size_t face) const;
 
 protected:
 	static Element* getF(const eslocal *indices, const eslocal *params, size_t face);
@@ -130,7 +143,7 @@ protected:
 	}
 
 private:
-	eslocal _indices[Square4NodesCount];
+	eslocal _indices[Pyramid5NodesCount];
 
 	static size_t _counter;
 
@@ -148,4 +161,4 @@ private:
 }
 
 
-#endif /* SQUARE4_H_ */
+#endif /* PYRAMID5_H_ */

@@ -1,3 +1,4 @@
+
 #include "triangle3.h"
 
 using namespace espreso;
