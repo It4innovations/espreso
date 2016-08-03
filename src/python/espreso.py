@@ -40,9 +40,9 @@ def readClusterData(x):
     #3 mat_B1    
     y.append(mM.load_matrix(path,'B1',i,j,makeSparse=True,makeSymmetric=False))
     #4 mat_R1
-    y.append(mM.load_matrix(path,'R1',i,j,makeSparse=True,makeSymmetric=False))
+    y.append(mM.load_matrix(path,'R1_',i,j,makeSparse=True,makeSymmetric=False))
     #4 mat_R
-    y.append(mM.load_matrix(path,'R2',i,j,makeSparse=True,makeSymmetric=False))
+    y.append(mM.load_matrix(path,'R2_',i,j,makeSparse=True,makeSymmetric=False))
     #5 vec_f    
     y.append(mM.load_vector(path,'f',i,j))
     #6 vec_c    

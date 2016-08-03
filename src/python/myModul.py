@@ -86,17 +86,21 @@ class KPLUS:
         return self.__iAreg.solve(b) 
 ###############################################################################       
 class  KPLUS_HTFETI:
-    def __init__(self,Kplus,B0,R,S_alpha): 
+    def __init__(self,Kplus,B0,R1,R2,S_alpha): 
         self.Kplus  = Kplus
         self.B0     = B0
         self.R      = R
         for j in range(len(B0)):  
             if (j==0):       
-                self.G0 = -sparse.csc_matrix.dot(B0[j],R[j])   
+                self.G01 = -sparse.csc_matrix.dot(B0[j],R1[j])  
+                self.G02 = -sparse.csc_matrix.dot(B0[j],R2[j])   
             else:
-                G0i = -sparse.csc_matrix.dot(B0[j],R[j])    
-                self.G0      = sparse.hstack((self.G0,G0i))  
-        self.G0 = self.G0.tocsc()
+                G01i = -sparse.csc_matrix.dot(B0[j],R1[j])  
+                G02i = -sparse.csc_matrix.dot(B0[j],R2[j])    
+                self.G01      = sparse.hstack((self.G01,G01i))   
+                self.G02      = sparse.hstack((self.G02,G02i))  
+        self.G01 = self.G01.tocsc()
+        self.G02 = self.G02.tocsc()
         self.B0_Kplus = []
 #                
         
@@ -153,13 +157,14 @@ class  KPLUS_HTFETI:
         
         S_alpha_from_ESPRESO = False
         if (not S_alpha_from_ESPRESO):
-            G0d = self.G0.toarray()
-            iF0_G0d = np.zeros(G0d.shape)
-            for i in range(G0d.shape[1]):
-                iF0_G0d[:,i] = self.iF0.solve(G0d[:,i])        
-            S_alpha = np.dot(G0d.T,iF0_G0d)
+            G01d = self.G01.toarray()
+            G02d = self.G02.toarray()
+            iF0_G01d = np.zeros(G01d.shape)
+            for i in range(G01d.shape[1]):
+                iF0_G01d[:,i] = self.iF0.solve(G01d[:,i])        
+            S_alpha = np.dot(G02d.T,iF0_G01d)
             rho = S_alpha[0,0]
-            for i in range(R[0].shape[1]):
+            for i in range(R1[0].shape[1]):
                 S_alpha[i,i] += rho
 #
 #        np.savetxt('F0',F0)
@@ -171,13 +176,13 @@ class  KPLUS_HTFETI:
         d0 = np.zeros(self.B0[0].shape[0])        
         for i in range(len(self.Kplus)):
             if i == 0:
-                e0 = sparse.csc_matrix.dot(self.R[i].transpose(),-f[i])
+                e0 = sparse.csc_matrix.dot(self.R2[i].transpose(),-f[i])
             else:
-                e0i = sparse.csc_matrix.dot(self.R[i].transpose(),-f[i])
+                e0i = sparse.csc_matrix.dot(self.R2[i].transpose(),-f[i])
                 e0 = np.concatenate((e0,e0i))
             d0 += np.dot(self.B0_Kplus[i],f[i])
 #        
-        tmpV = sparse.csc_matrix.dot(self.G0.transpose(),self.iF0.solve(d0))-e0
+        tmpV = sparse.csc_matrix.dot(self.G02.transpose(),self.iF0.solve(d0))-e0
         alpha0 = self.iS_alpha.solve(tmpV)
         lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G0,alpha0)) 
 #
@@ -186,9 +191,9 @@ class  KPLUS_HTFETI:
         for j in range(len(self.Kplus)):
             fj_B0t_lam0 = f[j]-sparse.csc_matrix.dot(self.B0[j].transpose(),lam0)
             uu.append(self.Kplus[j]*(fj_B0t_lam0))
-            ind0 = np.arange(0,self.R[j].shape[1])+cnt            
-            uu[j] += sparse.csc_matrix.dot(self.R[j],alpha0[ind0])
-            cnt += self.R[j].shape[1]            
+            ind0 = np.arange(0,self.R1[j].shape[1])+cnt            
+            uu[j] += sparse.csc_matrix.dot(self.R1[j],alpha0[ind0])
+            cnt += self.R1[j].shape[1]            
         return uu
 ###############################################################################      
 class FETIOPERATOR: 
@@ -557,7 +562,7 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
         print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
+def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
@@ -641,4 +646,88 @@ def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #    if np.abs(norm_f)>1e-10:
 #        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
-############################################################################### 
+###############################################################################  
+def hfeti(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,mat_S0):
+#        
+    maxIt = conf.maxIt_dual_feti
+    eps0  = conf.eps_dual_feti   
+#                           
+    CP  = COARSE_PROBLEM_HTFETI(B1,R)   
+    d   = np.zeros(B1[0][0].shape[0])    
+    dc  = np.zeros(B1[0][0].shape[0])    
+#   
+#    pool = multiprocessing.Pool()
+
+    Kplus = []
+    for i in range(len(K)):
+        Kplus.append([])
+#        Kplus.append(pool.map(KPLUS,Kreg[i]))
+        
+        e_i_j = np.zeros(R2[i][0].shape[1])
+        for j in range(len(K[i])):
+            Kplus[i].append(KPLUS(Kreg[i][j]))           
+            e_i_j += sparse.csc_matrix.dot(R2[i][j].transpose(),-f[i][j])
+        if (i==0):
+            e = e_i_j
+        else:
+            e = np.concatenate((e,e_i_j))
+#           
+    Kplus_HTFETI = []       
+    for i in range(len(K)):
+        Kplus_HTFETI.append(KPLUS_HTFETI(Kplus[i],B0[i],R1[i],R2[i],mat_S0[i]))
+#
+    for i in range(len(K)):
+        Kpl_ = Kplus_HTFETI[i]*f[i]
+        for j in range(len(K[i])):
+            d += sparse.csc_matrix.dot(B1[i][j],Kpl_[j])
+            dc[index_weight[i][j]] = c[i][j]
+#    
+    d      -= dc
+    F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
+    Prec    = PREC_DIR_OR_LUMPED(K,Schur,B1,weight,index_weight)
+     
+    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
+#    
+    uu = []
+    cnt = 0
+    #print('size(lam):',lam.shape)
+    #print('size(B):',B1[0][0].shape)
+    #print('type(B):',type(B1[0][0]))
+    delta = 0.0
+    norm_f = 0.0
+    Kplus_f_B1t_lam = []
+    cnt = 0
+    for i in range(len(K)):
+        B1t_lam = []
+        for j in range(len(K[i])):
+            B1t_lam.append(f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam))
+        Kplus_f_B1t_lam.append(Kplus_HTFETI[i]*B1t_lam)
+    uu = []   
+    for i in range(len(K)):
+        uu.append([])
+        ind = np.arange(0,R[i][0].shape[1]) + cnt
+        for j in range(len(K[i])):    
+            R_alpha = sparse.csc_matrix.dot(R[i][j],alpha[ind])
+            uu[i].append(Kplus_f_B1t_lam[i][j]+R_alpha)
+        cnt += R[i][0].shape[1]
+
+
+#    for i in range(len(K)):
+#        uu.append([])
+#        ind = np.arange(0,R[i][j].shape[1]) + cnt
+#        for j in range(len(K[i])):
+#            f_BtLam_i_j = f[i][j]-sparse.csc_matrix.dot(B1[i][j].transpose(),lam)
+#            KplusBtLam_i_j=Kplus[i][j]*f_BtLam_i_j
+#            R_alpha_i_j = sparse.csc_matrix.dot(R[i][j],alpha[ind])
+#            uu[i].append(KplusBtLam_i_j+R_alpha_i_j)
+#            cnt += R[i][j].shape[1]
+#            delta += np.linalg.norm(sparse.csc_matrix.dot(K[i][j],uu[i][j])-f_BtLam_i_j)                
+#            norm_f += np.linalg.norm(f[i][j])
+        
+    #u = Kplus_sub*f_m_BtLam + Roperator.mult(alpha)      
+     
+    #delta = np.linalg.norm(Koperator.mult(u)-f_m_BtLam)
+    #norm_f = np.linalg.norm(f)
+#    if np.abs(norm_f)>1e-10:
+#        print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
+    return uu,lam
