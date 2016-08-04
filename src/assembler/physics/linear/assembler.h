@@ -30,8 +30,15 @@ struct LinearPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	LinearPhysics(Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
-	: Physics(mesh, DOFs, mtype) {};
+	LinearPhysics(
+			Mesh &mesh,
+			SparseMatrix::MatrixType mtype,
+			const std::vector<Property> elementDOFs,
+			const std::vector<Property> faceDOFs,
+			const std::vector<Property> edgeDOFs,
+			const std::vector<Property> pointDOFs,
+			const std::vector<Property> midPointDOFs)
+	: Physics(mesh, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 	virtual ~LinearPhysics() {};
 
 protected:

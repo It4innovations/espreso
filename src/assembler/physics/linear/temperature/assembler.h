@@ -9,7 +9,10 @@ namespace espreso {
 struct Temperature: public LinearPhysics
 {
 	Temperature(Mesh &mesh)
-	: LinearPhysics(mesh, { Property::TEMPERATURE }, SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
+	: LinearPhysics(
+			mesh,
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void init();
 

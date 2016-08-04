@@ -282,7 +282,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void LinearElasticity::composeSubdomain(size_t subdomain)
 {
-	eslocal subdomainSize = DOFs.size() * _mesh.coordinates().localSize(subdomain);
+	eslocal subdomainSize = pointDOFs.size() * _mesh.coordinates().localSize(subdomain);
 
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke;
@@ -298,10 +298,10 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 
 		processElement(Ke, fe, _mesh, subdomain, elements[e]);
 
-		for (size_t i = 0; i < DOFs.size() * elements[e]->nodes(); i++) {
-			size_t row = DOFs.size() * (elements[e]->node(i % elements[e]->nodes())) + i / elements[e]->nodes();
-			for (size_t j = 0; j < DOFs.size() * elements[e]->nodes(); j++) {
-				size_t column = DOFs.size() * (elements[e]->node(j % elements[e]->nodes())) + j / elements[e]->nodes();
+		for (size_t i = 0; i < pointDOFs.size() * elements[e]->nodes(); i++) {
+			size_t row = pointDOFs.size() * (elements[e]->node(i % elements[e]->nodes())) + i / elements[e]->nodes();
+			for (size_t j = 0; j < pointDOFs.size() * elements[e]->nodes(); j++) {
+				size_t column = pointDOFs.size() * (elements[e]->node(j % elements[e]->nodes())) + j / elements[e]->nodes();
 				_K(row, column) = Ke(i, j);
 			}
 			f[subdomain][row] += fe[i];

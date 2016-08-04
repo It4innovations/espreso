@@ -11,8 +11,8 @@ struct TransientElasticity: public TransientPhysics
 	TransientElasticity(Mesh &mesh)
 	: TransientPhysics(
 			mesh,
-			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE)
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs)
 	{
 		beta = 0.25;
 		gama = 0.5;

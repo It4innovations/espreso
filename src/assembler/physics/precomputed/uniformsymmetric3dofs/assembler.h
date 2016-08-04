@@ -11,8 +11,9 @@ struct UniformSymmetric3DOFs: public PrecomputedPhysics
 	UniformSymmetric3DOFs(APIMesh &mesh, double *rhs, size_t rhs_size)
 	: PrecomputedPhysics(
 			mesh,
-			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE, rhs, rhs_size) {};
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs,
+			rhs, rhs_size) {};
 
 	void init();
 

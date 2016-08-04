@@ -44,14 +44,31 @@ struct Physics {
 		}
 	}
 
-	std::vector<Property> DOFs;
+	std::vector<Property> elementDOFs;
+	std::vector<Property> faceDOFs;
+	std::vector<Property> edgeDOFs;
+	std::vector<Property> pointDOFs;
+	std::vector<Property> midPointDOFs;
 
 	SparseMatrix::MatrixType mtype;
 	std::vector<SparseMatrix> K, R1, R2, RegMat;
 	std::vector<std::vector<double> > f;
 
-	Physics(Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
-	: _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
+	Physics(Mesh &mesh,
+			SparseMatrix::MatrixType mtype,
+			const std::vector<Property> elementDOFs,
+			const std::vector<Property> faceDOFs,
+			const std::vector<Property> edgeDOFs,
+			const std::vector<Property> pointDOFs,
+			const std::vector<Property> midPointDOFs):
+	_mesh(mesh),
+	mtype(mtype),
+	elementDOFs(elementDOFs),
+	faceDOFs(faceDOFs),
+	edgeDOFs(edgeDOFs),
+	pointDOFs(pointDOFs),
+	midPointDOFs(midPointDOFs) {};
+
 	virtual ~Physics() {};
 
 protected:

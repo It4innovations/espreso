@@ -11,8 +11,8 @@ struct LameSteklovPoincare: public LinearPhysics
 	LameSteklovPoincare(Mesh &mesh)
 	: LinearPhysics(
 			mesh,
-			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {};
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void init();
 

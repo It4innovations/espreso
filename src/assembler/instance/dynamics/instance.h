@@ -10,7 +10,7 @@ template <class TConstrains, class TPhysics>
 struct DynamicsInstance: public Instance
 {
 public:
-	DynamicsInstance(Mesh &mesh): Instance(mesh), _physics(mesh), _constrains(mesh, _physics.DOFs), _linearSolver(_physics, _constrains), _time(0)
+	DynamicsInstance(Mesh &mesh): Instance(mesh), _physics(mesh), _constrains(mesh, _physics.pointDOFs), _linearSolver(_physics, _constrains), _time(0)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};

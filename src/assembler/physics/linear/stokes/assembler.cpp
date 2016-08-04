@@ -133,7 +133,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void Stokes::composeSubdomain(size_t subdomain)
 {
-	eslocal subdomainSize = DOFs.size() * _mesh.coordinates().localSize(subdomain);
+	eslocal subdomainSize = pointDOFs.size() * _mesh.coordinates().localSize(subdomain);
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ah(3, 3), B1h(3, 3), B2h(3, 3), Eh(3, 3);
 	std::vector<double> fe;

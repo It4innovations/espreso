@@ -47,8 +47,8 @@ void PrecomputedInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<d
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(p);
 		for (size_t i = 0; i < l2c.size(); i++) {
-			for (size_t d = 0; d < _physics.DOFs.size(); d++) {
-				solution[0][_physics.DOFs.size() * l2c[i] + d] += tmpSolution[p][_physics.DOFs.size() * i + d] / _mesh.nodes()[l2c[i]]->domains().size();
+			for (size_t d = 0; d < _physics.pointDOFs.size(); d++) {
+				solution[0][_physics.pointDOFs.size() * l2c[i] + d] += tmpSolution[p][_physics.pointDOFs.size() * i + d] / _mesh.nodes()[l2c[i]]->domains().size();
 			}
 		}
 	}

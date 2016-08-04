@@ -154,7 +154,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 
 void TransientElasticity::composeSubdomain(size_t subdomain)
 {
-	eslocal subdomainSize = DOFs.size() * _mesh.coordinates().localSize(subdomain);
+	eslocal subdomainSize = pointDOFs.size() * _mesh.coordinates().localSize(subdomain);
 	DenseMatrix Ke, Me;
 	std::vector<double> fe;
 
@@ -173,10 +173,10 @@ void TransientElasticity::composeSubdomain(size_t subdomain)
 		const Element* element = elements[i];
 		processElement(Ke, Me, fe, _mesh, subdomain, element);
 
-		for (size_t i = 0; i < DOFs.size() * element->nodes(); i++) {
-			size_t row = DOFs.size() * (element->node(i % element->nodes())) + i / element->nodes();
-			for (size_t j = 0; j < DOFs.size() * element->nodes(); j++) {
-				size_t column = DOFs.size() * (element->node(j % element->nodes())) + j / element->nodes();
+		for (size_t i = 0; i < pointDOFs.size() * element->nodes(); i++) {
+			size_t row = pointDOFs.size() * (element->node(i % element->nodes())) + i / element->nodes();
+			for (size_t j = 0; j < pointDOFs.size() * element->nodes(); j++) {
+				size_t column = pointDOFs.size() * (element->node(j % element->nodes())) + j / element->nodes();
 				_K(row, column) = Ke(i, j);
 			}
 			f[subdomain][row] += fe[i];
@@ -184,8 +184,8 @@ void TransientElasticity::composeSubdomain(size_t subdomain)
 
 		for (size_t r = 0; r < element->nodes(); r++) {
 			for (size_t c = 0; c < element->nodes(); c++) {
-				for (size_t k = 0; k < DOFs.size(); k++) {
-					_M(DOFs.size() * element->node(r) + k, DOFs.size() * element->node(c) + k) = Me(r, c);
+				for (size_t k = 0; k < pointDOFs.size(); k++) {
+					_M(pointDOFs.size() * element->node(r) + k, pointDOFs.size() * element->node(c) + k) = Me(r, c);
 				}
 			}
 		}

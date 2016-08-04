@@ -11,8 +11,8 @@ struct Stokes: public LinearPhysics
 	Stokes(Mesh &mesh)
 	: LinearPhysics(
 			mesh,
-			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE },
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE) {};
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE,
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void init();
 
