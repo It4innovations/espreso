@@ -54,7 +54,7 @@ public:
 		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
 
 		TimeEvent tSettings("settings"); tSettings.start();
-		settings(mesh._evaluators, mesh._elements, mesh._coordinates);
+		settings(mesh._evaluators, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 		tSettings.end(); measurement.addEvent(tSettings);
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
@@ -89,11 +89,16 @@ public:
 
 protected:
 	virtual void points(Coordinates &coordinates) = 0;
-	virtual void elements(std::vector<Element*> &elements) = 0; // Generator, Workbench
-	virtual void faces(std::vector<Element*> &faces) { }; // OpenFOAM, TODO: domluvit se s Markem jak to chce
+	virtual void elements(std::vector<Element*> &elements) { }; // Generator, Workbench
+	virtual void faces(std::vector<Element*> &faces) { }; // OpenFOAM
 	virtual void materials(std::vector<Material> &materials) = 0;
-	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;
+	virtual void settings(
+			std::vector<Evaluator*> &evaluators,
+			std::vector<Element*> &elements,
+			std::vector<Element*> &faces,
+			std::vector<Element*> &edges,
+			std::vector<Element*> &nodes) {};
 
 	virtual void open() {};
 	virtual void close() {};

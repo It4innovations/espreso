@@ -137,11 +137,16 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 }
 
 template<class TElement>
-void PlaneGenerator<TElement>::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
+void PlaneGenerator<TElement>::settings(
+		std::vector<Evaluator*> &evaluators,
+		std::vector<Element*> &elements,
+		std::vector<Element*> &faces,
+		std::vector<Element*> &edges,
+		std::vector<Element*> &nodes)
 {
-	this->loadProperties(evaluators, elements, coordinates, "DIRICHLET", { "T" }, { Property::TEMPERATURE });
-	this->loadProperties(evaluators, elements, coordinates, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
-	this->loadProperties(evaluators, elements, coordinates, "TRANSLATION_MOTIONS", { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "DIRICHLET", { "T" }, { Property::TEMPERATURE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "TRANSLATION_MOTIONS", { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 }
 
 template<class TElement>

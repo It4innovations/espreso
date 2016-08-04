@@ -1275,6 +1275,11 @@ void Mesh::mapNodesToDomains()
 	assignDomains(_nodes);
 }
 
+void Mesh::prepare(bool faces, bool edges)
+{
+
+}
+
 void Mesh::remapElementsToSubdomain() const
 {
 	_coordinates._clusterIndex.clear();

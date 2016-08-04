@@ -60,7 +60,8 @@ static void setFaces(
 
 static void setNodes(
 		std::vector<espreso::Evaluator*> &evaluators,
-		espreso::Coordinates &coordinates,
+		std::vector<espreso::Element*> &nodes,
+		const espreso::Coordinates &coordinates,
 		const espreso::Interval &interval,
 		const std::string &values,
 		const std::vector<std::string> &parameters,
@@ -71,7 +72,7 @@ static void setNodes(
 		evaluators.push_back(new espreso::ExpressionEvaluator(value));
 		for (size_t i = 0; i < coordinates.clusterSize(); i++) {
 			if (interval.isIn(coordinates[i])) {
-				coordinates.settings(i)[properties[p]].push_back(evaluators.back());
+				nodes[i]->settings(properties[p]).push_back(evaluators.back());
 			}
 		}
 	}
@@ -80,7 +81,9 @@ static void setNodes(
 void Generator::loadProperties(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Element*> &elements,
-		Coordinates &coordinates,
+		std::vector<Element*> &faces,
+		std::vector<Element*> &edges,
+		std::vector<Element*> &nodes,
 		const std::string &name,
 		std::vector<std::string> parameters,
 		std::vector<Property> properties)
@@ -93,10 +96,10 @@ void Generator::loadProperties(
 
 	for (auto it = values.begin(); it != values.end(); ++it) {
 		if (checkInterval(_settings.nodes, it->first)) {
-			setNodes(evaluators, coordinates, _settings.nodes.find(it->first)->second, it->second, parameters, properties);
+			setNodes(evaluators, nodes, mesh.coordinates(), _settings.nodes.find(it->first)->second, it->second, parameters, properties);
 		}
 		if (checkInterval(_settings.faces, it->first)) {
-			setFaces(evaluators, elements, _settings.faces.find(it->first)->second, it->second, parameters, properties);
+			setFaces(evaluators, faces, _settings.faces.find(it->first)->second, it->second, parameters, properties);
 		}
 		if (checkInterval(_settings.elements, it->first)) {
 			setElements(evaluators, elements, _settings.elements.find(it->first)->second, it->second, parameters, properties);

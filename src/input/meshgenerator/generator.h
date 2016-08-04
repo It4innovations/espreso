@@ -72,7 +72,9 @@ protected:
 	void loadProperties(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Element*> &elements,
-			Coordinates &coordinates,
+			std::vector<Element*> &faces,
+			std::vector<Element*> &edges,
+			std::vector<Element*> &nodes,
 			const std::string &name,
 			std::vector<std::string> parameters,
 			std::vector<Property> properties);

@@ -792,9 +792,9 @@ EqualityConstraints::EqualityConstraints(const Mesh &mesh, std::vector<Property>
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		const Point &p = mesh.coordinates()[i];
 		for (size_t d = 0; d < DOFs.size(); d++) {
-			if (mesh.coordinates().settings(i).isSet(DOFs[d])) {
+			if (mesh.nodes()[i]->settings().isSet(DOFs[d])) {
 				dirichlet.push_back(DOFs.size() * i + d);
-				dirichletValues.push_back(mesh.coordinates().settings(i)[DOFs[d]].back()->evaluate(p.x, p.y, p.z));
+				dirichletValues.push_back(mesh.nodes()[i]->settings(DOFs[d]).back()->evaluate(p.x, p.y, p.z));
 			}
 		}
 	}

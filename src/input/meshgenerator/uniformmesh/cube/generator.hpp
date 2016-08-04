@@ -115,9 +115,16 @@ void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 }
 
 template<class TElement>
-void CubeGenerator<TElement>::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
+void CubeGenerator<TElement>::settings(
+		std::vector<Evaluator*> &evaluators,
+		std::vector<Element*> &elements,
+		std::vector<Element*> &faces,
+		std::vector<Element*> &edges,
+		std::vector<Element*> &nodes)
 {
-	this->loadProperties(evaluators, elements, coordinates, "DIRICHLET", { "x", "y", "z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
+	this->loadProperties(
+			evaluators, elements, faces, edges, nodes,
+			"DIRICHLET", { "x", "y", "z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
 }
 
 
