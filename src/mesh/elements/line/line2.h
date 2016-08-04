@@ -37,8 +37,8 @@ public:
 
 	eslocal nCommon() const { return Line2CommonNodes; }
 	eslocal vtkCode() const { return Line2VTKCode; }
-	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; return 0; };
-	void param(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; };
+	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; return 0; }
+	void param(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; }
 
 	size_t faces() const { return Line2FacesCount; }
 	size_t edges() const { return Line2EdgeCount; }
@@ -46,8 +46,8 @@ public:
 	size_t coarseNodes() const { return Line2NodesCount; }
 	size_t gaussePoints() const { return Line2GPCount; }
 
-	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; return NULL; };
-	virtual Element* edge(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; return NULL; };
+	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; return NULL; }
+	virtual Element* edge(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; return NULL; }
 
 	const std::vector<DenseMatrix>& dN() const { return Line2::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Line2::_N; }
@@ -64,6 +64,12 @@ protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	const eslocal* indices() const { return _indices; }
 	eslocal* indices() { return _indices; }
+
+	void face(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; }
+	void edge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; }
+
+	void fillFaces() {};
+	void fillEdges() {};
 
 private:
 	eslocal _indices[Line2NodesCount];

@@ -30,13 +30,27 @@ public:
 	}
 
 	friend std::ofstream& operator<<(std::ofstream& os, const Element &e);
+	friend std::ostream& operator<<(std::ostream& os, const Element &e);
 
-	inline bool operator==(const Element& other)
+	bool operator<(const Element& other) const
 	{
-		if (nodes() != other.nodes()) {
+		if (coarseNodes() != other.coarseNodes()) {
+			return coarseNodes() < other.coarseNodes();
+		}
+
+		std::vector<eslocal> e1(indices(), indices() + coarseNodes());
+		std::vector<eslocal> e2(other.indices(), other.indices() + other.coarseNodes());
+		std::sort(e1.begin(), e1.end());
+		std::sort(e2.begin(), e2.end());
+		return e1 < e2;
+	}
+
+	bool operator==(const Element& other) const
+	{
+		if (coarseNodes() != other.coarseNodes()) {
 			return false;
 		}
-		return std::is_permutation(indices(), indices() + nodes(), other.indices());
+		return std::is_permutation(indices(), indices() + coarseNodes(), other.indices());
 	}
 
 	virtual ~Element() {};
@@ -74,6 +88,9 @@ public:
 	std::vector<Evaluator*>& settings(Property property) { return _settings[property]; }
 	const std::vector<Evaluator*>& settings(Property property) const { return _settings[property]; }
 
+	std::vector<Element*>& elements() { return _elements; }
+	const std::vector<Element*>& elements() const { return _elements; }
+
 	std::vector<eslocal>& domains() { return _domains; }
 	const std::vector<eslocal>& domains() const { return _domains; }
 
@@ -85,7 +102,14 @@ protected:
 	virtual const eslocal* indices() const = 0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 
+	virtual void face(size_t index, Element* face) = 0;
+	virtual void edge(size_t index, Element* edge) = 0;
+
+	virtual void fillFaces() = 0;
+	virtual void fillEdges() = 0;
+
 	Settings _settings;
+	std::vector<Element*> _elements;
 	std::vector<eslocal> _domains;
 	std::vector<eslocal> _clusters;
 };
@@ -95,6 +119,14 @@ inline std::ofstream& espreso::operator<<(std::ofstream& os, const Element &e)
 	eslocal value = e.vtkCode();
 	os.write(reinterpret_cast<const char *>(&value), sizeof(eslocal));
 	os.write(reinterpret_cast<const char *>(e.indices()), sizeof(eslocal) * e.nodes());
+	return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Element &e)
+{
+	for (size_t i = 0; i < e.nodes(); i++) {
+		os << e.node(i) << " ";
+	}
 	return os;
 }
 

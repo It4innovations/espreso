@@ -1,5 +1,8 @@
 
 #include "prisma15.h"
+#include "../line/line3.h"
+#include "../plane/triangle6.h"
+#include "../plane/square8.h"
 
 using namespace espreso;
 
@@ -302,6 +305,73 @@ std::vector<eslocal> Prisma15::getNeighbours(size_t nodeIndex) const
 	}
 	}
 	return result;
+}
+
+void Prisma15::fillEdges()
+{
+	eslocal line[Line3NodesCount];
+	_edges.reserve(Prisma15EdgeCount);
+
+	for (size_t edge = 0; edge < 3; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 3];
+		line[2] = _indices[ edge + 6     ];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[ edge          +  3];
+		line[1] = _indices[(edge + 1) % 3 +  3];
+		line[2] = _indices[ edge          + 9];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[edge     ];
+		line[1] = _indices[edge +  3];
+		line[2] = _indices[edge + 12];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+	}
+}
+
+void Prisma15::fillFaces()
+{
+	eslocal square[Square8NodesCount];
+	eslocal triangle[Triangle6NodesCount];
+	_faces.reserve(Prisma15FacesCount);
+
+	for (size_t face = 0; face < 4; face++) {
+		square[0] = _indices[ face              ];
+		square[1] = _indices[(face + 1) % 3     ];
+		square[2] = _indices[(face + 1) % 3 + 3 ];
+		square[3] = _indices[ face          + 3 ];
+
+		square[4] = _indices[ face          + 6 ];
+		square[5] = _indices[(face + 1) % 3 + 12];
+		square[6] = _indices[ face          + 9 ];
+		square[7] = _indices[ face          + 12];
+		_faces.push_back(new Square8(square));
+		_faces.back()->elements().push_back(this);
+	}
+
+	triangle[0] = _indices[1];
+	triangle[1] = _indices[0];
+	triangle[2] = _indices[2];
+
+	triangle[3] = _indices[6];
+	triangle[4] = _indices[8];
+	triangle[5] = _indices[7];
+	_faces.push_back(new Triangle6(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[3];
+	triangle[1] = _indices[4];
+	triangle[2] = _indices[5];
+
+	triangle[3] = _indices[9];
+	triangle[4] = _indices[10];
+	triangle[5] = _indices[11];
+	_faces.push_back(new Triangle6(triangle));
+	_faces.back()->elements().push_back(this);
 }
 
 Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params)

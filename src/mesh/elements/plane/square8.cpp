@@ -1,5 +1,6 @@
 
 #include "square8.h"
+#include "../line/line3.h"
 
 using namespace espreso;
 
@@ -129,6 +130,20 @@ std::vector<eslocal> Square8::getNeighbours(size_t nodeIndex) const
 	}
 
 	return result;
+}
+
+void Square8::fillEdges()
+{
+	eslocal line[Line3NodesCount];
+	_edges.reserve(Square8EdgeCount);
+
+	for (size_t edge = 0; edge < 4; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 4];
+		line[2] = _indices[ edge + 4     ];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+	}
 }
 
 Square8::Square8(const eslocal *indices)

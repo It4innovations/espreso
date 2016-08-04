@@ -147,13 +147,18 @@ void OpenFOAM::materials(std::vector<Material> &materials)
 	materials.resize(1);
 }
 
-void OpenFOAM::faces(Faces &faces) {
-	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();
-			++it) {
-		faces.push_back((*it).getFaceIndex());
-	}
-	_faces.clear();
+void OpenFOAM::faces(std::vector<Element*> &faces)
+{
+	// Implement me
 }
+
+//void OpenFOAM::faces(Faces &faces) {
+//	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();
+//			++it) {
+//		faces.push_back((*it).getFaceIndex());
+//	}
+//	_faces.clear();
+//}
 
 void OpenFOAM::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) {
 	std::set<int> neighs;

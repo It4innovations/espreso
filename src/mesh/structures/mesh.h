@@ -47,8 +47,6 @@ public:
 	const std::vector<Element*>& edges() const { return _edges; };
 	const std::vector<Element*>& nodes() const { return _nodes; };
 
-	void init();
-
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 
 	void getSurface(Mesh &surface) const;
@@ -92,6 +90,19 @@ public:
 	}
 
 protected:
+	void fillFacesFromElements();
+	void fillEdgesFromElements();
+	void fillNodesFromElements();
+
+	void mapFacesToClusters();
+	void mapEdgesToClusters();
+
+	void mapElementsToDomains();
+	void mapFacesToDomains();
+	void mapEdgesToDomains();
+	void mapNodesToDomains();
+
+
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
 

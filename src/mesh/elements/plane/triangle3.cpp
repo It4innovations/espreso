@@ -1,5 +1,6 @@
 
 #include "triangle3.h"
+#include "../line/line2.h"
 
 using namespace espreso;
 
@@ -141,6 +142,19 @@ std::vector<eslocal> Triangle3::getNeighbours(size_t nodeIndex) const
 	}
 
 	return result;
+}
+
+void Triangle3::fillEdges()
+{
+	eslocal line[Line2NodesCount];
+	_edges.reserve(Triangle3EdgeCount);
+
+	for (size_t edge = 0; edge < 3; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 3];
+		_edges.push_back(new Line2(line));
+		_edges.back()->elements().push_back(this);
+	}
 }
 
 Triangle3::Triangle3(const eslocal *indices)

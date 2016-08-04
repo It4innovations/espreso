@@ -2,7 +2,6 @@
 #define SQUARE8_H_
 
 #include "../element.h"
-#include "../line/line2.h"
 #include "square4.h"
 
 #define Square8NodesCount 8
@@ -49,7 +48,7 @@ public:
 	size_t coarseNodes() const { return Square4NodesCount; }
 	size_t gaussePoints() const { return Square8GPCount; }
 
-	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; return NULL; };
+	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; return NULL; }
 	virtual Element* edge(size_t index) const { return _edges[index]; };
 
 	const std::vector<DenseMatrix>& dN() const { return Square8::_dN; }
@@ -66,6 +65,12 @@ protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
+
+	void face(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; }
+	void edge(size_t index, Element* edge) { _edges[index] = edge; }
+
+	void fillFaces() {};
+	void fillEdges();
 
 private:
 	eslocal _indices[Square8NodesCount];

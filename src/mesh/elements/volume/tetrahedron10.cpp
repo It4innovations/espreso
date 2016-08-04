@@ -1,5 +1,7 @@
 
 #include "tetrahedron10.h"
+#include "../line/line3.h"
+#include "../plane/triangle6.h"
 
 using namespace espreso;
 
@@ -362,6 +364,71 @@ std::vector<eslocal> Tetrahedron10::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
+void Tetrahedron10::fillEdges()
+{
+	eslocal line[Line3NodesCount];
+	_edges.reserve(Tetrahedron10EdgeCount);
+
+	for (size_t edge = 0; edge < 3; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 3];
+		line[2] = _indices[ edge + 4     ];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[edge    ];
+		line[1] = _indices[       3];
+		line[2] = _indices[edge + 7];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+	}
+}
+
+void Tetrahedron10::fillFaces()
+{
+	eslocal triangle[Triangle6NodesCount];
+	_faces.reserve(Tetrahedron10FacesCount);
+
+	triangle[0] = _indices[1];
+	triangle[1] = _indices[0];
+	triangle[2] = _indices[2];
+
+	triangle[3] = _indices[4];
+	triangle[4] = _indices[6];
+	triangle[5] = _indices[5];
+	_faces.push_back(new Triangle6(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[0];
+	triangle[1] = _indices[1];
+	triangle[2] = _indices[3];
+
+	triangle[3] = _indices[4];
+	triangle[4] = _indices[8];
+	triangle[5] = _indices[7];
+	_faces.push_back(new Triangle6(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[1];
+	triangle[1] = _indices[2];
+	triangle[2] = _indices[3];
+
+	triangle[3] = _indices[5];
+	triangle[4] = _indices[9];
+	triangle[5] = _indices[8];
+	_faces.push_back(new Triangle6(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[2];
+	triangle[1] = _indices[0];
+	triangle[2] = _indices[3];
+
+	triangle[3] = _indices[6];
+	triangle[4] = _indices[7];
+	triangle[5] = _indices[9];
+	_faces.push_back(new Triangle6(triangle));
+	_faces.back()->elements().push_back(this);
+}
 
 Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params)
 {

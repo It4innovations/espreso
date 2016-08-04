@@ -21,6 +21,9 @@ struct Esutils
 
 	template<typename Ttype>
 	static std::vector<Ttype> getDistribution(size_t parts, Ttype start, Ttype end);
+
+	template<typename Ttype>
+	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
 };
 
 

@@ -27,8 +27,8 @@ protected:
 
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
+	void faces(std::vector<Element*> &faces);
 	void materials(std::vector<Material> &materials);
-	void faces(Faces &faces);
 	void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 

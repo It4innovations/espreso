@@ -41,7 +41,7 @@ public:
 
 	eslocal nCommon() const { return Hexahedron20CommonNodes; }
 	eslocal vtkCode() const { return Hexahedron20VTKCode; }
-	eslocal param(Params param) const { return _params[param]; };
+	eslocal param(Params param) const { return _params[param]; }
 	void param(Params param, eslocal value) { _params[param] = value; }
 
 	size_t faces() const { return Hexahedron20FacesCount; }
@@ -50,8 +50,8 @@ public:
 	size_t coarseNodes() const { return Hexahedron8NodesCount; }
 	size_t gaussePoints() const { return Hexahedron20GPCount; }
 
-	virtual Element* face(size_t index) const { return _faces[index]; };
-	virtual Element* edge(size_t index) const { return _edges[index]; };
+	virtual Element* face(size_t index) const { return _faces[index]; }
+	virtual Element* edge(size_t index) const { return _edges[index]; }
 
 	const std::vector<DenseMatrix>& dN() const { return Hexahedron20::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Hexahedron20::_N; }
@@ -67,6 +67,12 @@ protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
+
+	void face(size_t index, Element* face) { _faces[index] = face; }
+	void edge(size_t index, Element* edge) { _edges[index] = edge; }
+
+	void fillFaces();
+	void fillEdges();
 
 private:
 	eslocal _indices[Hexahedron20NodesCount];

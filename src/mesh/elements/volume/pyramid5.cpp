@@ -1,5 +1,8 @@
 
 #include "pyramid5.h"
+#include "../line/line2.h"
+#include "../plane/triangle3.h"
+#include "../plane/square4.h"
 
 using namespace espreso;
 
@@ -165,6 +168,46 @@ std::vector<eslocal> Pyramid5::getNeighbours(size_t nodeIndex) const
 	  std::vector<eslocal> result(_indices,_indices + 4);
 	  return result;
 	}
+}
+
+void Pyramid5::fillEdges()
+{
+	eslocal line[Line2NodesCount];
+	_edges.reserve(Pyramid5EdgeCount);
+
+	for (size_t edge = 0; edge < 4; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 4];
+		_edges.push_back(new Line2(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[edge];
+		line[1] = _indices[   4];
+		_edges.push_back(new Line2(line));
+		_edges.back()->elements().push_back(this);
+	}
+}
+
+void Pyramid5::fillFaces()
+{
+	eslocal square[Square4NodesCount];
+	eslocal triangle[Triangle3NodesCount];
+	_faces.reserve(Pyramid5FacesCount);
+
+	for (size_t face = 0; face < 4; face++) {
+		triangle[0] = _indices[face - 1];
+		triangle[1] = _indices[face % 4];
+		triangle[2] = _indices[4];
+		_faces.push_back(new Triangle3(square));
+		_faces.back()->elements().push_back(this);
+	}
+
+	square[0] = _indices[0];
+	square[1] = _indices[3];
+	square[2] = _indices[2];
+	square[3] = _indices[1];
+	_faces.push_back(new Square4(triangle));
+	_faces.back()->elements().push_back(this);
 }
 
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)

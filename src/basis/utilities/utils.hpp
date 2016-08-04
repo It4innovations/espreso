@@ -53,4 +53,16 @@ std::vector<Ttype> Esutils::getDistribution(size_t parts, Ttype start, Ttype end
 	return distribution;
 }
 
+template<typename Ttype>
+Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
+{
+	Ttype sum = 0;
+	for (size_t i = 0; i < sizes.size(); i++) {
+		Ttype tmp = sizes[i];
+		sizes[i] = sum;
+		sum += tmp;
+	}
+	return sum;
+}
+
 }

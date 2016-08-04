@@ -35,10 +35,6 @@ public:
 
 		TimeEvent tPoints("coordinates"); tPoints.start();
 		points(mesh._coordinates);
-		mesh._nodes.reserve(mesh._coordinates.clusterSize());
-		for (size_t i = 0; i < mesh._coordinates.clusterSize(); i++) {
-			mesh._nodes.push_back(new Node());
-		}
 		tPoints.end(); measurement.addEvent(tPoints);
 		ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 
@@ -48,10 +44,14 @@ public:
 		tElements.end(); measurement.addEvent(tElements);
 		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
 
-//		TimeEvent tFaces("faces"); tFaces.start();
-//		faces(mesh._faces);
-//		tFaces.end(); measurement.addEvent(tFaces);
-//		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
+		mesh.fillFacesFromElements();
+		mesh.fillEdgesFromElements();
+		mesh.fillNodesFromElements();
+
+		TimeEvent tFaces("faces"); tFaces.start();
+		faces(mesh._faces);
+		tFaces.end(); measurement.addEvent(tFaces);
+		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
 
 		TimeEvent tSettings("settings"); tSettings.start();
 		settings(mesh._evaluators, mesh._elements, mesh._coordinates);
@@ -61,6 +61,9 @@ public:
 		clusterBoundaries(mesh._nodes, mesh._neighbours);
 		tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
 		ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
+
+		mesh.mapFacesToClusters();
+		mesh.mapEdgesToClusters();
 
 		close();
 
@@ -76,14 +79,18 @@ public:
 		corners(mesh._corners);
 		tCorners.end(); measurement.addEvent(tCorners);
 
-		mesh.init();
+		mesh.mapElementsToDomains();
+		mesh.mapFacesToDomains();
+		mesh.mapEdgesToDomains();
+		mesh.mapNodesToDomains();
 
 		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
 
 protected:
-	virtual void points(Coordinates &coordinates, size_t &DOFs) = 0;
-	virtual void elements(std::vector<Element*> &elements) = 0;
+	virtual void points(Coordinates &coordinates) = 0;
+	virtual void elements(std::vector<Element*> &elements) = 0; // Generator, Workbench
+	virtual void faces(std::vector<Element*> &faces) { }; // OpenFOAM, TODO: domluvit se s Markem jak to chce
 	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;

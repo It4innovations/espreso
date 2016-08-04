@@ -1,5 +1,7 @@
 
 #include "hexahedron20.h"
+#include "../line/line3.h"
+#include "../plane/square8.h"
 
 using namespace espreso;
 
@@ -340,7 +342,75 @@ std::vector<eslocal> Hexahedron20::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
+void Hexahedron20::fillEdges()
+{
+	eslocal line[Line3NodesCount];
+	_edges.reserve(Hexahedron20EdgeCount);
 
+	for (size_t edge = 0; edge < 4; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 4];
+		line[2] = _indices[ edge + 8     ];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[ edge          +  4];
+		line[1] = _indices[(edge + 1) % 4 +  4];
+		line[2] = _indices[ edge          + 12];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[edge     ];
+		line[1] = _indices[edge +  4];
+		line[2] = _indices[edge + 16];
+		_edges.push_back(new Line3(line));
+		_edges.back()->elements().push_back(this);
+	}
+}
+
+void Hexahedron20::fillFaces()
+{
+	eslocal square[Square8NodesCount];
+	_faces.reserve(Hexahedron20FacesCount);
+
+	for (size_t face = 0; face < 4; face++) {
+		square[0] = _indices[ face               ];
+		square[1] = _indices[(face + 1) % 4      ];
+		square[2] = _indices[(face + 1) % 4 + 4  ];
+		square[3] = _indices[ face + 4           ];
+
+		square[4] = _indices[ face          + 8  ];
+		square[5] = _indices[(face + 1) % 4 + 16 ];
+		square[6] = _indices[ face          + 12 ];
+		square[7] = _indices[ face          + 16 ];
+		_faces.push_back(new Square8(square));
+		_faces.back()->elements().push_back(this);
+	}
+
+	square[0] = _indices[0];
+	square[1] = _indices[3];
+	square[2] = _indices[2];
+	square[3] = _indices[1];
+
+	square[4] = _indices[11];
+	square[5] = _indices[10];
+	square[6] = _indices[9];
+	square[7] = _indices[8];
+	_faces.push_back(new Square8(square));
+	_faces.back()->elements().push_back(this);
+
+	square[0] = _indices[4];
+	square[1] = _indices[5];
+	square[2] = _indices[6];
+	square[3] = _indices[7];
+
+	square[4] = _indices[12];
+	square[5] = _indices[13];
+	square[6] = _indices[14];
+	square[7] = _indices[15];
+	_faces.push_back(new Square8(square));
+	_faces.back()->elements().push_back(this);
+}
 
 Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params)
 {

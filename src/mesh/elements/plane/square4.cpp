@@ -1,5 +1,6 @@
 
 #include "square4.h"
+#include "../line/line2.h"
 
 using namespace espreso;
 
@@ -98,6 +99,19 @@ std::vector<eslocal> Square4::getNeighbours(size_t nodeIndex) const
 	result[1] = _indices[(nodeIndex + 3) % 4];
 
 	return result;
+}
+
+void Square4::fillEdges()
+{
+	eslocal line[Line2NodesCount];
+	_edges.reserve(Square4EdgeCount);
+
+	for (size_t edge = 0; edge < 4; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 4];
+		_edges.push_back(new Line2(line));
+		_edges.back()->elements().push_back(this);
+	}
 }
 
 Square4::Square4(const eslocal *indices)

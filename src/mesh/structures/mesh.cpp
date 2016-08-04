@@ -11,20 +11,6 @@ Mesh::Mesh():_elements(0)
 	_partPtrs[1] = 0;
 }
 
-void Mesh::init()
-{
-	for (size_t p = 0; p < parts(); p++) {
-		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (size_t n = 0; n < _elements[e]->nodes(); n++) {
-				auto index = _coordinates.clusterIndex(_elements[e]->node(n), p);
-				if (!_nodes[index]->_domains.size() || _nodes[index]->_domains.back() != p) {
-					_nodes[index]->_domains.push_back(p);
-				}
-			}
-		}
-	}
-}
-
 void Mesh::partitiate(size_t parts)
 {
 	if (parts == 1 && this->parts() == 1) {
@@ -91,34 +77,18 @@ void APIMesh::partitiate(size_t parts)
 		this->remapElementsToCluster();
 	}
 
-	_partPtrs.resize(parts + 1);
-	_partPtrs[0] = 0;
-
 	eslocal *ePartition = getPartition(0, _elements.size(), parts);
 
-	Element *e;
-	eslocal p;
-	for (size_t part = 0; part < parts; part++) {
-		eslocal index = _partPtrs[part];	// index of last ordered element
-		for (size_t i = _partPtrs[part]; i < _elements.size(); i++) {
-			if (ePartition[i] == part) {
-				if (i == index) {
-					index++;
-				} else {
-					e = _elements[i];
-					_elements[i] = _elements[index];
-					_elements[index] = e;
-					p = ePartition[i];
-					ePartition[i] = ePartition[index];
-					ePartition[index] = p;
-					index++;
-					_eMatrices[i].swap(_eMatrices[index]);
-				}
-			}
-		}
-		_partPtrs[part + 1] = index;
-		ESTEST(MANDATORY) << "subdomain without element" << (_partPtrs[part] == _partPtrs[part + 1] ? TEST_FAILED : TEST_PASSED);
+	_partPtrs = std::vector<eslocal>(parts + 1, 0);
+	for (size_t i = 0; i < _elements.size(); i++) {
+		_elements[i]->domains().push_back(ePartition[i]);
+		_partPtrs[ePartition[i]]++;
 	}
+
+	std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
+	ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
+	Esutils::sizesToOffsets(_partPtrs);
+
 	delete[] ePartition;
 
 	remapElementsToSubdomain();
@@ -327,6 +297,14 @@ Mesh::~Mesh()
 {
 	for (size_t i = 0; i < _elements.size(); i++) {
 		delete _elements[i];
+	}
+
+	for (size_t i = 0; i < _faces.size(); i++) {
+		delete _faces[i];
+	}
+
+	for (size_t i = 0; i < _edges.size(); i++) {
+		delete _edges[i];
 	}
 
 	for (size_t i = 0; i < _nodes.size(); i++) {
@@ -680,7 +658,6 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 
 	interface.remapElementsToSubdomain();
 	//interface.computeBoundaries();
-	interface.init();
 
 	remapElementsToSubdomain();
 
@@ -1101,6 +1078,204 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 //		average(commonFaces, faceToCluster);
 //		ESINFO(DETAILS) << "Average faces";
 //	}
+}
+
+void Mesh::fillFacesFromElements()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
+	std::vector<size_t> offsets(threads + 1, 0);
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			_elements[e]->fillFaces();
+			offsets[t] += _elements[e]->faces();
+		}
+	}
+
+	_faces.resize(Esutils::sizesToOffsets(offsets));
+	cilk_for (size_t t = 0; t < threads; t++) {
+		size_t offset = 0;
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			for (size_t f = 0; f < _elements[e]->faces(); f++) {
+				_faces[offsets[t] + offset++] = _elements[e]->face(f);
+			}
+		}
+	}
+
+	std::sort(_faces.begin(), _faces.end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
+
+	auto it = _faces.begin();
+	auto last = it;
+	while (++it != _faces.end()) {
+		if (!(**last == **it)) {
+			*(++last) = *it;
+		} else { // Merge two faces
+			(*last)->elements().push_back((*it)->elements().back()); // Face can be only between two elements
+			for (size_t i = 0; i < (*it)->elements()[0]->faces(); i++) {
+				if (**last == *(*it)->elements()[0]->face(i)) {
+					(*it)->elements()[0]->face(i, *last);
+					break;
+				}
+			}
+			delete *it;
+		}
+	}
+
+	_faces.resize(++last - _faces.begin());
+}
+
+
+void Mesh::fillEdgesFromElements()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
+	std::vector<size_t> offsets(threads + 1, 0);
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			_elements[e]->fillEdges();
+			offsets[t] += _elements[e]->edges();
+		}
+	}
+
+	_edges.resize(Esutils::sizesToOffsets(offsets));
+	cilk_for (size_t t = 0; t < threads; t++) {
+		size_t offset = 0;
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			for (size_t i = 0; i < _elements[e]->edges(); i++) {
+				_edges[offsets[t] + offset++] = _elements[e]->edge(i);
+			}
+		}
+	}
+
+	std::sort(_edges.begin(), _edges.end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
+
+	auto it = _edges.begin();
+	auto last = it;
+	while (++it != _edges.end()) {
+		if (!(**last == **it)) {
+			*(++last) = *it;
+		} else { // Merge two edges
+			(*last)->elements().insert((*last)->elements().end(), (*it)->elements().begin(), (*it)->elements().end());
+			for (size_t e = 1; e < (*it)->elements().size(); e++) {
+				for (size_t i = 0; i < (*it)->elements()[e]->edges(); i++) {
+					if (**last == *(*it)->elements()[e]->edge(i)) {
+						(*it)->elements()[e]->edge(i, *last);
+						break;
+					}
+				}
+			}
+			delete *it;
+		}
+	}
+
+	_edges.resize(++last - _edges.begin());
+}
+
+void Mesh::fillNodesFromElements()
+{
+
+	_nodes.reserve(_coordinates.clusterSize());
+	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
+		_nodes.push_back(new Node());
+	}
+
+	for (size_t e = 0; e < _elements.size(); e++) {
+		for (size_t n = 0; n < _elements[e]->nodes(); n++) {
+			_nodes[_elements[e]->node(n)]->elements().push_back(_elements[e]);
+		}
+	}
+}
+
+static void setCluster(Element* &element, std::vector<Element*> &nodes)
+{
+	std::vector<eslocal> intersection = nodes[element->node(0)]->clusters();
+	for (size_t i = 1; i < element->nodes(); i++) {
+		auto tmp(intersection);
+		auto it = std::set_intersection(
+				nodes[element->node(i)]->clusters().begin(), nodes[element->node(i)]->clusters().end(),
+				tmp.begin(), tmp.end(), intersection.begin());
+		intersection.resize(it - intersection.begin());
+	}
+	element->clusters() = intersection;
+}
+
+void Mesh::mapFacesToClusters()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
+	std::vector<size_t> offsets(threads + 1, 0);
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
+			if (_faces[f]->elements().size() == 1) { // Only faces with one element can have more clusters
+				if (std::all_of(_faces[f]->indices(), _faces[f]->indices() + _faces[f]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
+					setCluster(_faces[f], _nodes);
+				}
+			}
+		}
+	}
+}
+
+void Mesh::mapEdgesToClusters()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
+	std::vector<size_t> offsets(threads + 1, 0);
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			if (std::all_of(_edges[e]->indices(), _edges[e]->indices() + _edges[e]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
+				setCluster(_edges[e], _nodes);
+			}
+		}
+	}
+}
+
+static void assignDomains(std::vector<Element*> &elements)
+{
+	if (!elements.size()) {
+		ESINFO(GLOBAL_ERROR) << "You try to assign domains to empty vector of elements.";
+	}
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+	std::vector<size_t> offsets(threads + 1, 0);
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
+			for (size_t e = 0; e < elements[f]->elements().size(); e++) {
+				elements[f]->domains().push_back(elements[f]->elements()[e]->domains()[0]);
+			}
+			std::sort(elements[f]->domains().begin(), elements[f]->domains().end());
+			auto it = std::unique(elements[f]->domains().begin(), elements[f]->domains().end());
+			elements[f]->domains().resize(it - elements[f]->domains().begin());
+		}
+	}
+}
+
+void Mesh::mapElementsToDomains()
+{
+	cilk_for (size_t p = 0; p < parts(); p++) {
+		for (size_t e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			_elements[e]->domains().push_back(p);
+		}
+	}
+}
+
+void Mesh::mapFacesToDomains()
+{
+	assignDomains(_faces);
+}
+
+void Mesh::mapEdgesToDomains()
+{
+	assignDomains(_edges);
+}
+
+void Mesh::mapNodesToDomains()
+{
+	assignDomains(_nodes);
 }
 
 void Mesh::remapElementsToSubdomain() const

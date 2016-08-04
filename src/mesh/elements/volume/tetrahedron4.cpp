@@ -1,5 +1,7 @@
 
 #include "tetrahedron4.h"
+#include "../line/line2.h"
+#include "../plane/triangle3.h"
 
 using namespace espreso;
 
@@ -210,6 +212,53 @@ std::vector<eslocal> Tetrahedron4::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
+void Tetrahedron4::fillEdges()
+{
+	eslocal line[Line2NodesCount];
+	_edges.reserve(Tetrahedron4EdgeCount);
+
+	for (size_t edge = 0; edge < 3; edge++) {
+		line[0] = _indices[ edge         ];
+		line[1] = _indices[(edge + 1) % 3];
+		_edges.push_back(new Line2(line));
+		_edges.back()->elements().push_back(this);
+
+		line[0] = _indices[edge];
+		line[1] = _indices[   3];
+		_edges.push_back(new Line2(line));
+		_edges.back()->elements().push_back(this);
+	}
+}
+
+void Tetrahedron4::fillFaces()
+{
+	eslocal triangle[Triangle3NodesCount];
+	_faces.reserve(Tetrahedron4FacesCount);
+
+	triangle[0] = _indices[1];
+	triangle[1] = _indices[0];
+	triangle[2] = _indices[2];
+	_faces.push_back(new Triangle3(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[0];
+	triangle[1] = _indices[1];
+	triangle[2] = _indices[3];
+	_faces.push_back(new Triangle3(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[1];
+	triangle[1] = _indices[2];
+	triangle[2] = _indices[3];
+	_faces.push_back(new Triangle3(triangle));
+	_faces.back()->elements().push_back(this);
+
+	triangle[0] = _indices[2];
+	triangle[1] = _indices[0];
+	triangle[2] = _indices[3];
+	_faces.push_back(new Triangle3(triangle));
+	_faces.back()->elements().push_back(this);
+}
 
 Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params)
 {
