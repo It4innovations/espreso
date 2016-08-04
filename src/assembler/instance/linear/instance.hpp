@@ -6,6 +6,7 @@ namespace espreso {
 template <class TConstrains, class TPhysics>
 void LinearInstance<TConstrains, TPhysics>::init()
 {
+	_physics.init();
 	TimeEvent timePhysics("Assemble problem"); timePhysics.start();
 	ESINFO(PROGRESS2) << "Assemble problem";
 	_physics.assemble();
