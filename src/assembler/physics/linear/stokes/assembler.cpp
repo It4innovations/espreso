@@ -3,21 +3,27 @@
 
 using namespace espreso;
 
+std::vector<Property> Stokes::elementDOFs;
+std::vector<Property> Stokes::faceDOFs;
+std::vector<Property> Stokes::edgeDOFs;
+std::vector<Property> Stokes::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE };
+std::vector<Property> Stokes::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
+
 void Stokes::init()
 {
-	Hexahedron8::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Hexahedron20::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Tetrahedron4::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Tetrahedron10::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Prisma6::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Prisma15::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Pyramid5::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Pyramid13::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron10::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma15::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid5::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid13::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	Square4::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Square8::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Triangle3::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	Triangle6::setDOFs({}, {}, {}, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
 static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, DenseMatrix &Eh, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)

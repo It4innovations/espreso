@@ -6,6 +6,12 @@ using namespace espreso;
 double AdvectionDiffusion2D::sigma = 0;
 AdvectionDiffusion2D::STABILIZATION AdvectionDiffusion2D::stabilization = AdvectionDiffusion2D::STABILIZATION::CAU;
 
+std::vector<Property> AdvectionDiffusion2D::elementDOFs;
+std::vector<Property> AdvectionDiffusion2D::faceDOFs;
+std::vector<Property> AdvectionDiffusion2D::edgeDOFs;
+std::vector<Property> AdvectionDiffusion2D::pointDOFs = { Property::TEMPERATURE };
+std::vector<Property> AdvectionDiffusion2D::midPointDOFs = { Property::TEMPERATURE };
+
 void AdvectionDiffusion2D::init()
 {
 	if (Hexahedron8::counter()) {
@@ -33,10 +39,16 @@ void AdvectionDiffusion2D::init()
 		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Pyramid13.";
 	}
 
-	Square4::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Square8::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Triangle3::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Triangle6::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+
+	_mesh.prepare(
+		false,
+		config::solver::B0_TYPE == config::solver::B0_TYPEalternative::KERNELS &&
+		config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI
+	);
 }
 
 static double determinant2x2(DenseMatrix &m)

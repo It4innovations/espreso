@@ -8,7 +8,7 @@ namespace espreso {
 
 struct TransientElasticity: public TransientPhysics
 {
-	TransientElasticity(const Mesh &mesh)
+	TransientElasticity(Mesh &mesh)
 	: TransientPhysics(
 			mesh,
 			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
@@ -34,6 +34,12 @@ struct TransientElasticity: public TransientPhysics
 	};
 
 	void init();
+
+	static std::vector<Property> elementDOFs;
+	static std::vector<Property> faceDOFs;
+	static std::vector<Property> edgeDOFs;
+	static std::vector<Property> pointDOFs;
+	static std::vector<Property> midPointDOFs;
 
 	double timeConstant;
 

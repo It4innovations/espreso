@@ -1235,9 +1235,6 @@ void Mesh::mapEdgesToClusters()
 
 static void assignDomains(std::vector<Element*> &elements)
 {
-	if (!elements.size()) {
-		ESINFO(GLOBAL_ERROR) << "You try to assign domains to empty vector of elements.";
-	}
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 	std::vector<size_t> offsets(threads + 1, 0);

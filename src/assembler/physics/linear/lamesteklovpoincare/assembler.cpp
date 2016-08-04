@@ -4,22 +4,27 @@
 
 using namespace espreso;
 
+std::vector<Property> LameSteklovPoincare::elementDOFs;
+std::vector<Property> LameSteklovPoincare::faceDOFs;
+std::vector<Property> LameSteklovPoincare::edgeDOFs;
+std::vector<Property> LameSteklovPoincare::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> LameSteklovPoincare::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+
 void LameSteklovPoincare::init()
 {
-	std::vector<Property> lsp = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-	Hexahedron8::setDOFs({}, {}, {}, lsp, lsp);
-	Hexahedron20::setDOFs({}, {}, {}, lsp, lsp);
-	Tetrahedron4::setDOFs({}, {}, {}, lsp, lsp);
-	Tetrahedron10::setDOFs({}, {}, {}, lsp, lsp);
-	Prisma6::setDOFs({}, {}, {}, lsp, lsp);
-	Prisma15::setDOFs({}, {}, {}, lsp, lsp);
-	Pyramid5::setDOFs({}, {}, {}, lsp, lsp);
-	Pyramid13::setDOFs({}, {}, {}, lsp, lsp);
+	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron10::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma15::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid5::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid13::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	Square4::setDOFs({}, {}, {}, lsp, lsp);
-	Square8::setDOFs({}, {}, {}, lsp, lsp);
-	Triangle3::setDOFs({}, {}, {}, lsp, lsp);
-	Triangle6::setDOFs({}, {}, {}, lsp, lsp);
+	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
 static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)

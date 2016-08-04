@@ -3,22 +3,27 @@
 
 using namespace espreso;
 
+std::vector<Property> UniformSymmetric3DOFs::elementDOFs;
+std::vector<Property> UniformSymmetric3DOFs::faceDOFs;
+std::vector<Property> UniformSymmetric3DOFs::edgeDOFs;
+std::vector<Property> UniformSymmetric3DOFs::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> UniformSymmetric3DOFs::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+
 void UniformSymmetric3DOFs::init()
 {
-	std::vector<Property> elasticity = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-	Hexahedron8::setDOFs({}, {}, {}, elasticity, elasticity);
-	Hexahedron20::setDOFs({}, {}, {}, elasticity, elasticity);
-	Tetrahedron4::setDOFs({}, {}, {}, elasticity, elasticity);
-	Tetrahedron10::setDOFs({}, {}, {}, elasticity, elasticity);
-	Prisma6::setDOFs({}, {}, {}, elasticity, elasticity);
-	Prisma15::setDOFs({}, {}, {}, elasticity, elasticity);
-	Pyramid5::setDOFs({}, {}, {}, elasticity, elasticity);
-	Pyramid13::setDOFs({}, {}, {}, elasticity, elasticity);
+	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron10::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma15::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid5::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid13::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	Square4::setDOFs({}, {}, {}, elasticity, elasticity);
-	Square8::setDOFs({}, {}, {}, elasticity, elasticity);
-	Triangle3::setDOFs({}, {}, {}, elasticity, elasticity);
-	Triangle6::setDOFs({}, {}, {}, elasticity, elasticity);
+	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
 void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)

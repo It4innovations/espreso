@@ -50,12 +50,12 @@ struct Physics {
 	std::vector<SparseMatrix> K, R1, R2, RegMat;
 	std::vector<std::vector<double> > f;
 
-	Physics(const Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
+	Physics(Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
 	: _mesh(mesh), DOFs(DOFs), mtype(mtype) {};
 	virtual ~Physics() {};
 
 protected:
-	const Mesh& _mesh;
+	Mesh& _mesh;
 };
 
 }

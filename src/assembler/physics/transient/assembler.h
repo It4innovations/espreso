@@ -50,7 +50,7 @@ struct TransientPhysics: public Physics {
 		osA.close();
 	}
 
-	TransientPhysics(const Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
+	TransientPhysics(Mesh &mesh, const std::vector<Property> DOFs, SparseMatrix::MatrixType mtype)
 	: Physics(mesh, DOFs, mtype) {};
 	virtual ~TransientPhysics() {};
 

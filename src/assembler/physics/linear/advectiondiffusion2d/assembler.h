@@ -13,7 +13,7 @@ struct AdvectionDiffusion2D: public LinearPhysics
 		CAU = 1
 	};
 
-	AdvectionDiffusion2D(const Mesh &mesh)
+	AdvectionDiffusion2D(Mesh &mesh)
 	: LinearPhysics(mesh, { Property::TEMPERATURE }, SparseMatrix::MatrixType::REAL_UNSYMMETRIC) {};
 
 	void init();
@@ -21,6 +21,11 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	static double sigma;
 	static STABILIZATION stabilization;
 
+	static std::vector<Property> elementDOFs;
+	static std::vector<Property> faceDOFs;
+	static std::vector<Property> edgeDOFs;
+	static std::vector<Property> pointDOFs;
+	static std::vector<Property> midPointDOFs;
 
 protected:
 	void composeSubdomain(size_t subdomain);

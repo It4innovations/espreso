@@ -8,13 +8,19 @@ namespace espreso {
 
 struct Stokes: public LinearPhysics
 {
-	Stokes(const Mesh &mesh)
+	Stokes(Mesh &mesh)
 	: LinearPhysics(
 			mesh,
 			{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE },
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE) {};
 
 	void init();
+
+	static std::vector<Property> elementDOFs;
+	static std::vector<Property> faceDOFs;
+	static std::vector<Property> edgeDOFs;
+	static std::vector<Property> pointDOFs;
+	static std::vector<Property> midPointDOFs;
 
 protected:
 	void composeSubdomain(size_t subdomain);

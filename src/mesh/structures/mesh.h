@@ -40,6 +40,12 @@ public:
 	friend class input::Loader;
 
 	Mesh();
+	virtual ~Mesh();
+
+	virtual void partitiate(size_t parts);
+	void prepare(bool faces, bool edges);
+	std::vector<eslocal> computeFixPoints(size_t part, size_t number) const;
+	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
 
 	const Coordinates& coordinates() const { return _coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
@@ -47,47 +53,16 @@ public:
 	const std::vector<Element*>& edges() const { return _edges; };
 	const std::vector<Element*>& nodes() const { return _nodes; };
 
+	size_t parts() const { return _partPtrs.size() - 1; }
+	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
+
+	const std::vector<int>& neighbours() const { return _neighbours; }
+	const std::vector<Material>& materials() const { return _materials; }
+
+
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
-
 	void getSurface(Mesh &surface) const;
-
 	std::vector<std::vector<eslocal> > subdomainsInterfaces(Mesh &interface) const;
-
-	virtual ~Mesh();
-
-	virtual void partitiate(size_t parts);
-	std::vector<eslocal> computeFixPoints(size_t part, size_t number) const;
-	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
-
-	size_t parts() const
-	{
-		return _partPtrs.size() - 1;
-	}
-
-	const std::vector<eslocal>& getPartition() const
-	{
-		return _partPtrs;
-	}
-
-	eslocal getPartNodesCount(eslocal part) const
-	{
-		return _coordinates.localSize(part);
-	}
-
-	const std::vector<int>& neighbours() const
-	{
-		return _neighbours;
-	}
-
-	size_t DOFs() const
-	{
-		return _DOFs;
-	}
-
-	const std::vector<Material>& materials() const
-	{
-		return _materials;
-	}
 
 protected:
 	void fillFacesFromElements();

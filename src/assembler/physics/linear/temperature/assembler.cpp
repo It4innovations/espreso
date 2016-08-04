@@ -3,21 +3,27 @@
 
 using namespace espreso;
 
+std::vector<Property> Temperature::elementDOFs;
+std::vector<Property> Temperature::faceDOFs;
+std::vector<Property> Temperature::edgeDOFs;
+std::vector<Property> Temperature::pointDOFs = { Property::TEMPERATURE };
+std::vector<Property> Temperature::midPointDOFs = { Property::TEMPERATURE };
+
 void Temperature::init()
 {
-	Hexahedron8::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Hexahedron20::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Tetrahedron4::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Tetrahedron10::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Prisma6::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Prisma15::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Pyramid5::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Pyramid13::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron10::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma15::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid5::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid13::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	Square4::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Square8::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Triangle3::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
-	Triangle6::setDOFs({}, {}, {}, { Property::TEMPERATURE }, { Property::TEMPERATURE });
+	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
 static double determinant3x3(DenseMatrix &m)

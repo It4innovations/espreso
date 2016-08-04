@@ -3,22 +3,33 @@
 
 using namespace espreso;
 
+std::vector<Property> LinearElasticity::elementDOFs;
+std::vector<Property> LinearElasticity::faceDOFs;
+std::vector<Property> LinearElasticity::edgeDOFs;
+std::vector<Property> LinearElasticity::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> LinearElasticity::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+
 void LinearElasticity::init()
 {
-	std::vector<Property> elasticity = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-	Hexahedron8::setDOFs({}, {}, {}, elasticity, elasticity);
-	Hexahedron20::setDOFs({}, {}, {}, elasticity, elasticity);
-	Tetrahedron4::setDOFs({}, {}, {}, elasticity, elasticity);
-	Tetrahedron10::setDOFs({}, {}, {}, elasticity, elasticity);
-	Prisma6::setDOFs({}, {}, {}, elasticity, elasticity);
-	Prisma15::setDOFs({}, {}, {}, elasticity, elasticity);
-	Pyramid5::setDOFs({}, {}, {}, elasticity, elasticity);
-	Pyramid13::setDOFs({}, {}, {}, elasticity, elasticity);
+	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Tetrahedron10::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Prisma15::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid5::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Pyramid13::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	Square4::setDOFs({}, {}, {}, elasticity, elasticity);
-	Square8::setDOFs({}, {}, {}, elasticity, elasticity);
-	Triangle3::setDOFs({}, {}, {}, elasticity, elasticity);
-	Triangle6::setDOFs({}, {}, {}, elasticity, elasticity);
+	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+
+	_mesh.prepare(
+		config::solver::B0_TYPE == config::solver::B0_TYPEalternative::KERNELS &&
+		config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI,
+		false
+	);
 }
 
 static double determinant3x3(DenseMatrix &m)
