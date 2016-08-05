@@ -8,6 +8,8 @@ namespace espreso {
 
 struct LameSteklovPoincare: public LinearPhysics
 {
+	bool uniformDOFs() const { return true; }
+
 	LameSteklovPoincare(Mesh &mesh)
 	: LinearPhysics(
 			mesh,

@@ -8,6 +8,8 @@ namespace espreso {
 
 struct Stokes: public LinearPhysics
 {
+	bool uniformDOFs() const { return false; }
+
 	Stokes(Mesh &mesh)
 	: LinearPhysics(
 			mesh,

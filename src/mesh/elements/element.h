@@ -97,6 +97,14 @@ public:
 	std::vector<eslocal>& clusters() { return _clusters; }
 	const std::vector<eslocal>& clusters() const { return _clusters; }
 
+	std::vector<eslocal>& DOFsIndices() { return _DOFsIndices; }
+	eslocal DOFIndex(eslocal domain, size_t DOFIndex)
+	{
+		auto it = std::lower_bound(_domains.begin(), _domains.end(), domain);
+		auto DOFs = _DOFsIndices.size() / _domains.size();
+		return _DOFsIndices[DOFs * (it - _domains.begin()) + DOFIndex];
+	}
+
 protected:
 	virtual eslocal* indices() = 0;
 	virtual const eslocal* indices() const = 0;
@@ -112,6 +120,7 @@ protected:
 	std::vector<Element*> _elements;
 	std::vector<eslocal> _domains;
 	std::vector<eslocal> _clusters;
+	std::vector<eslocal> _DOFsIndices;
 };
 
 inline std::ofstream& espreso::operator<<(std::ofstream& os, const Element &e)

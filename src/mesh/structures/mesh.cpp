@@ -1130,13 +1130,15 @@ void Mesh::fillEdgesFromElements()
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
-	std::vector<size_t> offsets(threads + 1, 0);
+	std::vector<size_t> offsets(threads + 1);
 
 	cilk_for (size_t t = 0; t < threads; t++) {
+		size_t offset = 0;
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			_elements[e]->fillEdges();
-			offsets[t] += _elements[e]->edges();
+			offset += _elements[e]->edges();
 		}
+		offsets[t] = offset;
 	}
 
 	_edges.resize(Esutils::sizesToOffsets(offsets));
@@ -1205,7 +1207,6 @@ void Mesh::mapFacesToClusters()
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
-	std::vector<size_t> offsets(threads + 1, 0);
 
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
@@ -1222,7 +1223,6 @@ void Mesh::mapEdgesToClusters()
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
-	std::vector<size_t> offsets(threads + 1, 0);
 
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
@@ -1237,7 +1237,6 @@ static void assignDomains(std::vector<Element*> &elements)
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
-	std::vector<size_t> offsets(threads + 1, 0);
 
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
@@ -1278,6 +1277,225 @@ void Mesh::mapNodesToDomains()
 void Mesh::prepare(bool faces, bool edges)
 {
 
+}
+
+//static void prepareDOFsIndicesVectors(std::vector<Element*> &elements, size_t DOFs)
+//{
+//	size_t threads = config::env::CILK_NWORKERS;
+//	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+//
+//	cilk_for (size_t t = 0; t < threads; t++) {
+//		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+//			elements[e]->DOFsIndices().resize(DOFs * elements[e]->domains().size(), -1);
+//		}
+//	}
+//}
+
+//static void assignDOFsIndices(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &startOffsets)
+//{
+//	size_t threads = config::env::CILK_NWORKERS;
+//	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+//
+//	// first
+//	std::vector<std::vector<size_t> > offsets(1 + threads, std::vector<std::vector<size_t> >(DOFs.size(), 0));
+//
+//	cilk_for (size_t t = 0; t < threads; t++) {
+//		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+//
+//		}
+//	}
+//}
+
+static void setDOFsIndices(
+		std::vector<Element*> &elements,
+		size_t parts,
+		const std::vector<Property> &DOFs,
+		const std::vector<size_t> &offsets,
+		const std::vector<std::vector<std::vector<size_t> > > &threadsOffsets)
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		std::vector<std::vector<size_t> > counters(parts);
+		for (size_t p = 0; p < parts; p++) {
+			switch (config::assembler::DOFS_ORDER) {
+			case config::assembler::DOFS_ORDERalternative::GROUP_ELEMENTS:
+				counters[p].resize(1, 0);
+				for (size_t dof = 0; dof < DOFs.size(); dof++) {
+					counters[p][0] += threadsOffsets[p][dof][t];
+				}
+				counters[p][0] += offsets[p];
+				break;
+			case config::assembler::DOFS_ORDERalternative::GROUP_DOFS:
+				counters[p].resize(3, offsets[p]);
+				counters[p][0] += threadsOffsets[p][0][t];
+				counters[p][1] += threadsOffsets[p][1][t] + threadsOffsets[p][0][threads];
+				counters[p][2] += threadsOffsets[p][2][t] + threadsOffsets[p][0][threads] + threadsOffsets[p][1][threads];
+				break;
+			}
+		}
+
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
+
+				for (size_t dof = 0; dof < DOFs.size(); dof++) {
+					if (elements[i]->DOFsIndices()[d * DOFs.size() + dof] == 1) {
+
+						switch (config::assembler::DOFS_ORDER) {
+						case config::assembler::DOFS_ORDERalternative::GROUP_ELEMENTS:
+							elements[i]->DOFsIndices()[d * DOFs.size() + dof] = counters[elements[i]->domains()[d]][0]++;
+							break;
+						case config::assembler::DOFS_ORDERalternative::GROUP_DOFS:
+							elements[i]->DOFsIndices()[d * DOFs.size() + dof] = counters[elements[i]->domains()[d]][dof]++;
+							break;
+						}
+
+					}
+				}
+			}
+		}
+	}
+}
+
+std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
+{
+	auto findDOF = [&] (const std::vector<Property> &DOFs, size_t &added, std::vector<bool> &addDOF) {
+		for (size_t dof = 0; dof < DOFs.size(); dof++) {
+			if (!addDOF[dof] && std::find(DOFs.begin(), DOFs.end(), DOFs[dof]) != DOFs.end()) {
+				added++;
+				addDOF[dof] = true;
+			}
+		}
+	};
+
+	auto fillDOFs = [&] (Element *node, eslocal i, eslocal domain, std::vector<bool> &addDOF) {
+		for (size_t e = 0, added = 0; e < node->elements().size() && added < DOFs.size(); e++) {
+			const Element *el = node->elements()[e];
+			if (el->domains()[0] == domain) {
+				if (std::find(el->indices(), el->indices() + el->coarseNodes(), i) == el->indices() + el->coarseNodes()) {
+					findDOF(el->midPointDOFs(), added, addDOF);
+				} else {
+					findDOF(el->pointDOFs(), added, addDOF);
+				}
+			}
+		}
+	};
+
+
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
+
+	// domains x DOFs x (threads + 1)
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1, 0)));
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		std::vector<std::vector<size_t> > threadOffsets(parts(), std::vector<size_t>(DOFs.size(), 0));
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			_nodes[i]->DOFsIndices().resize(DOFs.size() * _nodes[i]->domains().size(), -1);
+
+			for (size_t d = 0; d < _nodes[i]->domains().size(); d++) {
+				std::vector<bool> addDOF(DOFs.size(), false);
+
+				fillDOFs(_nodes[i], i, _nodes[i]->domains()[d], addDOF);
+
+				for (size_t dof = 0; dof < DOFs.size(); dof++) {
+					if (addDOF[dof]) {
+						_nodes[i]->DOFsIndices()[d * DOFs.size() + dof] = 1;
+						threadOffsets[_nodes[i]->domains()[d]][dof]++;
+					}
+				}
+			}
+		}
+
+		for (size_t p = 0; p < parts(); p++) {
+			for (size_t d = 0; d < DOFs.size(); d++) {
+				threadsOffsets[p][d][t] = threadOffsets[p][d];
+			}
+		}
+	}
+
+	std::vector<size_t> sizes(offsets);
+	for (size_t p = 0; p < parts(); p++) {
+		for (size_t d = 0; d < DOFs.size(); d++) {
+			sizes[p] += Esutils::sizesToOffsets(threadsOffsets[p][d]);
+		}
+	}
+
+	setDOFsIndices(_nodes, parts(), DOFs, offsets, threadsOffsets);
+
+	return sizes;
+}
+
+static void computeDOFsIndicesOffsets(
+		std::vector<std::vector<std::vector<size_t> > > &threadsSizes,
+		std::vector<Element*> &elements,
+		size_t parts,
+		const std::vector<Property> &DOFs,
+		const std::vector<size_t> &offsets)
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+	threadsSizes.resize(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1, 0)));
+
+	cilk_for (size_t t = 0; t < threads; t++) {
+		std::vector<size_t> threadOffsets(parts, 0);
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			elements[i]->DOFsIndices().resize(DOFs.size() * elements[i]->domains().size(), 1);
+
+			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
+				threadOffsets[elements[i]->domains()[d]]++;
+			}
+		}
+
+		for (size_t p = 0; p < parts; p++) {
+			for (size_t d = 0; d < DOFs.size(); d++) {
+				threadsSizes[p][d][t] = threadOffsets[p];
+			}
+		}
+	}
+}
+
+static std::vector<size_t> fillUniformDOFs(
+		std::vector<Element*> &elements,
+		size_t parts,
+		const std::vector<Property> &DOFs,
+		const std::vector<size_t> &offsets)
+{
+	// domains x DOF x (threads + 1)
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets;
+	computeDOFsIndicesOffsets(threadsOffsets, elements, parts, DOFs, offsets);
+
+	std::vector<size_t> sizes(offsets);
+	for (size_t p = 0; p < parts; p++) {
+		for (size_t d = 0; d < DOFs.size(); d++) {
+			sizes[p] += Esutils::sizesToOffsets(threadsOffsets[p][d]);
+		}
+	}
+
+	setDOFsIndices(elements, parts, DOFs, offsets, threadsOffsets);
+
+	return sizes;
+}
+
+std::vector<size_t> Mesh::assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
+{
+	return fillUniformDOFs(_nodes, parts(), DOFs, offsets);
+}
+
+std::vector<size_t> Mesh::assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
+{
+	return fillUniformDOFs(_edges, parts(), DOFs, offsets);
+}
+
+std::vector<size_t> Mesh::assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
+{
+	return fillUniformDOFs(_faces, parts(), DOFs, offsets);
+}
+
+std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
+{
+	return fillUniformDOFs(_elements, parts(), DOFs, offsets);
 }
 
 void Mesh::remapElementsToSubdomain() const

@@ -136,7 +136,30 @@ namespace assembler {
 
 	extern size_t timeSteps;
 
-	extern std::vector<input::Description> description;
+namespace assembler {
+	enum class DISCRETIZATIONalternative {
+		/// Finite Element Method
+		FEM = 0,
+		/// Boundary Element Method
+		BEM = 1
+	};
+	/// Discretization of an example.
+	/**
+	 * Stiffness matrices are computed based on the discretization:
+	 * - Finite Element Method is used
+	 * - Boundary Element Method is used
+	 */
+	extern DISCRETIZATIONalternative DISCRETIZATION;
+
+	enum class DOFS_ORDERalternative {
+		/// Group elements - x1, y1, z1, x2, y2, z2, ....
+		GROUP_ELEMENTS = 0,
+
+		/// Group elements - x1, x2, ..., y1, y2, ..., z1, z2, ....
+		GROUP_DOFS = 1
+	};
+
+	extern DOFS_ORDERalternative DOFS_ORDER;
 };
 
 namespace solver {

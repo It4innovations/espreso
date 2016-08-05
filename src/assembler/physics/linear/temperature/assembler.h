@@ -8,6 +8,8 @@ namespace espreso {
 
 struct Temperature: public LinearPhysics
 {
+	bool uniformDOFs() const { return true; }
+
 	Temperature(Mesh &mesh)
 	: LinearPhysics(
 			mesh,

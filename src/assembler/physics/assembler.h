@@ -10,6 +10,7 @@ namespace espreso {
 struct Physics {
 
 	virtual bool singular() const =0;
+	virtual bool uniformDOFs() const =0;
 	virtual void init() =0;
 	virtual void assemble() =0;
 	virtual void save()

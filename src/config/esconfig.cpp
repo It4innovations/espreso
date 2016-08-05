@@ -73,9 +73,9 @@ size_t                                   solver::TIME_STEPS            = 1;
 
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
 
-int    assembler::discretization = FEM;
-int    assembler::physics        = LinearElasticity;
-size_t assembler::timeSteps      = 1;
+assembler::DISCRETIZATIONalternative assembler::DISCRETIZATION = assembler::DISCRETIZATIONalternative::FEM;
+assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS_ORDERalternative::GROUP_ELEMENTS;
+>>>>>>> ENH: stiffness matrix get indices from nodes
 
 /////////////////////////////// OUTPUT /////////////////////////////////////////
 
@@ -128,9 +128,14 @@ std::vector<Description> mesh::description = {
 };
 
 std::vector<Description> assembler::description = {
-	{ "DISCRETIZATION", config::assembler::discretization, "A used discretization.",
-			{ "FEM", "BEM" }, WRITE_TO_HELP }
-};
+	// ASSEMBLER DESCRIPTION
+	{ "DISCRETIZATION", config::assembler::DISCRETIZATION, "A used discretization.", {
+			{ "FEM", assembler::DISCRETIZATIONalternative::FEM, "Finite Element Method" },
+			{ "BEM", assembler::DISCRETIZATIONalternative::BEM, "Boundary Element Method" } }},
+
+	{ "DOFS_ORDER", config::assembler::DOFS_ORDER, "Order of DOFs in stiffness matrices.", {
+			{ "GROUP_ELEMENTS", assembler::DOFS_ORDERalternative::GROUP_ELEMENTS, "Order: x1, y1, x2, y2, ..." },
+			{ "GROUP_DOFS", assembler::DOFS_ORDERalternative::GROUP_DOFS, "Order: x1, x2, ..., y1, y2, ..." } }},
 
 	// SOLVER DESCRIPTION
 	{ "NORM", solver::NORM, "Solver requested norm.", WRITE_TO_HELP },

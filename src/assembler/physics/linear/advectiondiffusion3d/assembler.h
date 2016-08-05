@@ -8,6 +8,8 @@ namespace espreso {
 
 struct AdvectionDiffusion3D: public LinearPhysics
 {
+	bool uniformDOFs() const { return true; }
+
 	AdvectionDiffusion3D(Mesh &mesh)
 	: LinearPhysics(
 			mesh,

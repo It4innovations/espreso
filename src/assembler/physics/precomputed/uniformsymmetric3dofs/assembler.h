@@ -8,6 +8,8 @@ namespace espreso {
 
 struct UniformSymmetric3DOFs: public PrecomputedPhysics
 {
+	bool uniformDOFs() const { return true; }
+
 	UniformSymmetric3DOFs(APIMesh &mesh, double *rhs, size_t rhs_size)
 	: PrecomputedPhysics(
 			mesh,

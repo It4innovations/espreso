@@ -8,6 +8,8 @@ namespace espreso {
 
 struct TransientElasticity: public TransientPhysics
 {
+	bool uniformDOFs() const { return true; }
+
 	TransientElasticity(Mesh &mesh)
 	: TransientPhysics(
 			mesh,

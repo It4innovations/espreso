@@ -8,6 +8,8 @@ namespace espreso {
 
 struct LinearElasticity: public LinearPhysics
 {
+	bool uniformDOFs() const { return true; }
+
 	LinearElasticity(Mesh &mesh)
 	: LinearPhysics(
 			mesh,

@@ -30,6 +30,9 @@ void LinearElasticity::init()
 		config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI,
 		false
 	);
+
+	std::vector<size_t> offsets(_mesh.parts(), 0);
+	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
 }
 
 static double determinant3x3(DenseMatrix &m)
@@ -293,18 +296,32 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
 	const std::vector<Element*> &elements = _mesh.elements();
+	const std::vector<Element*> &nodes = _mesh.nodes();
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
 		processElement(Ke, fe, _mesh, subdomain, elements[e]);
 
-		for (size_t i = 0; i < pointDOFs.size() * elements[e]->nodes(); i++) {
-			size_t row = pointDOFs.size() * (elements[e]->node(i % elements[e]->nodes())) + i / elements[e]->nodes();
-			for (size_t j = 0; j < pointDOFs.size() * elements[e]->nodes(); j++) {
-				size_t column = pointDOFs.size() * (elements[e]->node(j % elements[e]->nodes())) + j / elements[e]->nodes();
-				_K(row, column) = Ke(i, j);
+//		for (size_t i = 0; i < pointDOFs.size() * elements[e]->nodes(); i++) {
+//			size_t row = pointDOFs.size() * (elements[e]->node(i % elements[e]->nodes())) + i / elements[e]->nodes();
+//			for (size_t j = 0; j < pointDOFs.size() * elements[e]->nodes(); j++) {
+//				size_t column = pointDOFs.size() * (elements[e]->node(j % elements[e]->nodes())) + j / elements[e]->nodes();
+//				_K(row, column) = Ke(i, j);
+//			}
+//			f[subdomain][row] += fe[i];
+//		}
+
+		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
+			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
+				size_t row = nodes[_mesh.coordinates().clusterIndex(elements[e]->node(nx), subdomain)]->DOFIndex(subdomain, dx);
+				for (size_t ny = 0; ny < elements[e]->nodes(); ny++) {
+					for (size_t dy = 0; dy < pointDOFs.size(); dy++) {
+						size_t column = nodes[_mesh.coordinates().clusterIndex(elements[e]->node(ny), subdomain)]->DOFIndex(subdomain, dy);
+						_K(row, column) = Ke(dx * elements[e]->nodes()+ nx, dy * elements[e]->nodes()+ ny);
+					}
+				}
+				f[subdomain][row] += fe[dx * elements[e]->nodes()+ nx];
 			}
-			f[subdomain][row] += fe[i];
 		}
 	}
 

@@ -15,6 +15,7 @@
 #include "mkl_lapacke.h"
 
 #include "cilk/cilk.h"
+#include "mkl.h"
 
 #include "metis.h"
 
@@ -59,6 +60,11 @@ public:
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Material>& materials() const { return _materials; }
 
+	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
+	std::vector<size_t> assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
+	std::vector<size_t> assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
+	std::vector<size_t> assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
+	std::vector<size_t> assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
 
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 	void getSurface(Mesh &surface) const;

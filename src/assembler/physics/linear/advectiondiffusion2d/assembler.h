@@ -13,6 +13,8 @@ struct AdvectionDiffusion2D: public LinearPhysics
 		CAU = 1
 	};
 
+	bool uniformDOFs() const { return true; }
+
 	AdvectionDiffusion2D(Mesh &mesh)
 	: LinearPhysics(
 			mesh,
