@@ -2,7 +2,7 @@
 import multiprocessing
 
 
-eps_dual_feti   = 1e-4
+eps_dual_feti   = 1e-3
 maxIt_dual_feti = 500
 
 
@@ -11,7 +11,7 @@ eps_iter_Kplus                      = 1e-15
 
 
 Dirichlet_from_espreso              = False
-precondDualSystem                   = 'dirichlet' # 'none', 'lumped', 'dirichlet'
+precondDualSystem                   = 'none' # 'none', 'lumped', 'dirichlet'
 SUPER_DIRICHLET                     = False
 
 single_precision                    = True     # True, False

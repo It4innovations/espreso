@@ -14,7 +14,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 1
+n_subPerClust   = 2
 
 
 CONSTANT_89 = 24 
@@ -43,6 +43,10 @@ def readClusterData(x):
     y.append(mM.load_matrix(path,'R1_',i,j,makeSparse=True,makeSymmetric=False))
     #4 mat_R
     y.append(mM.load_matrix(path,'R2_',i,j,makeSparse=True,makeSymmetric=False))
+    #4 mat_R1
+    y.append(mM.load_matrix(path,'Rb_',i,j,makeSparse=True,makeSymmetric=False))
+    #4 mat_R
+    y.append(mM.load_matrix(path,'Rb2_',i,j,makeSparse=True,makeSymmetric=False))
     #5 vec_f    
     y.append(mM.load_vector(path,'f',i,j))
     #6 vec_c    
@@ -122,8 +126,10 @@ mat_Salfa   = []
 mat_Kreg    = []
 mat_B0      = []
 mat_B1      = []
-mat_R1       = []
+mat_R1      = []
 mat_R2      = []
+mat_Rb1       = []
+mat_Rb2      = []
 vec_f       = []
 vec_c       = []
 vec_weight  = []
@@ -141,6 +147,8 @@ for i in range(n_clus):
     mat_B1.append([])
     mat_R1.append([])
     mat_R2.append([])
+    mat_Rb1.append([])
+    mat_Rb2.append([])
     vec_f.append([])
     vec_c.append([])
     vec_weight.append([])
@@ -164,10 +172,12 @@ for i in range(n_clus):
         mat_B1[i].append(k[j][3])
         mat_R1[i].append(k[j][4])
         mat_R2[i].append(k[j][5])
-        vec_f[i].append(k[j][6])
-        vec_c[i].append(k[j][7])
-        vec_weight[i].append(k[j][8])
-        vec_index_weight[i].append(k[j][9])
+        mat_Rb1[i].append(k[j][6])
+        mat_Rb2[i].append(k[j][7])
+        vec_f[i].append(k[j][8])
+        vec_c[i].append(k[j][9])
+        vec_weight[i].append(k[j][10])
+        vec_index_weight[i].append(k[j][11])
         print('.',end='')
     
     #print(k[0][0])
@@ -195,7 +205,7 @@ for i in range(len(mat_K)):
     for j in range(len(mat_K[i])):
         ijv_B0ker[i].append([np.array([0]),np.array([0]),np.array([0]),\
             np.array([0,0])]) 
-if True:
+if False:
     for i in range(len(mat_B0)):
         cnt_ijv = 0
         for j in range(len(mat_B0[i])-1):
@@ -262,26 +272,34 @@ if config_espreso_python.flag_multiprocessing:
 
 print('\nTFETI unsym')
 u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
-                           vec_index_weight,mat_R1,mat_R2)
+                           vec_index_weight,mat_Rb1,mat_Rb2)
 plt.clf()
-for i in range(len(u)):
-    for j in range(len(u[i])):
-        plt.plot(u[i][j])
+#for i in range(len(u)):
+#    for j in range(len(u[i])):
+#        plt.plot(u[i][j],'ro')
 #print('\nTFETI')
 #u,lam = mM.feti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
-#                           vec_index_weight,mat_R1)
+#                           vec_index_weight,mat_R1,mat_R2)
 
-
-
-
-        
-                        
-                        
+                    
                         
 #
-#print('\nHFETI - corners')
-#uHDPc,lamHc = mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
-#                        vec_weight,vec_index_weight,mat_R1,mat_Salfa)
+print('\nHFETI - corners')
+uHDPc,lamHc = mM.hfeti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
+                        vec_weight,vec_index_weight,mat_Rb1,mat_Rb2,mat_Salfa)
+for i in range(len(u)):
+    for j in range(len(u[i])):
+        plt.plot(u[i][j],'r.') 
+        plt.plot(uHDPc[i][j],'b.')               
+
+delta_feti_hfeti = 0
+norm_u = 0
+for i in range(len(u)):
+    for j in range(len(u[i])):
+        delta_feti_hfeti += np.linalg.norm(uHDPc[i][j]-u[i][j])  
+        norm_u += np.linalg.norm(u[i][j])
+print ("||u_feti-u_hfeti|| = ",delta_feti_hfeti/norm_u)
+        
 #print('size(F0) =',mat_B0[0][0].shape[0],' (corners)')
 #print('\nHFETI - kernels')    
 #uHDP,lamH= mM.hfeti(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0ker,mat_B1,vec_c,\

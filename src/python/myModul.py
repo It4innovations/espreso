@@ -61,7 +61,16 @@ class DENS_SOLVE:
         self.L = np.linalg.cholesky(A) 
     def solve(self,x):
         z = np.linalg.solve(self.L,x)
-        return np.linalg.solve(self.L.transpose(),z)    
+        return np.linalg.solve(self.L.transpose(),z)   
+
+class DENS_SOLVE_FOR_LU:   
+    # solving of A*x = b with A = L*Lt
+    # x = Lt^-1 * ( L^-1 * b)
+    def __init__(self, A): 
+        self.iA = spla.splu(sparse.csc_matrix( A )) 
+    def solve(self,x): 
+        return self.iA.solve(x)   
+   
 ###############################################################################
 class SPARSE_SOLVE: 
     # solving of A*x = b with A = L*Lt
@@ -89,7 +98,8 @@ class  KPLUS_HTFETI:
     def __init__(self,Kplus,B0,R1,R2,S_alpha): 
         self.Kplus  = Kplus
         self.B0     = B0
-        self.R      = R
+        self.R1     = R1
+        self.R2     = R2
         for j in range(len(B0)):  
             if (j==0):       
                 self.G01 = -sparse.csc_matrix.dot(B0[j],R1[j])  
@@ -169,7 +179,7 @@ class  KPLUS_HTFETI:
 #
 #        np.savetxt('F0',F0)
         np.savetxt('S_alpha',S_alpha)
-        self.iS_alpha = DENS_SOLVE(S_alpha)           
+        self.iS_alpha = DENS_SOLVE_FOR_LU(S_alpha)           
 #     
     def __mul__(self,f):
 #
@@ -184,7 +194,7 @@ class  KPLUS_HTFETI:
 #        
         tmpV = sparse.csc_matrix.dot(self.G02.transpose(),self.iF0.solve(d0))-e0
         alpha0 = self.iS_alpha.solve(tmpV)
-        lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G0,alpha0)) 
+        lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G01,alpha0)) 
 #
         cnt = 0
         uu = []
@@ -262,7 +272,7 @@ class PROJ_UNSYM:
         return y                  
 ###############################################################################
 class PROJ:
-    def __init__(self,G1,G2,iG1tG):
+    def __init__(self,G,iGtG):
         self.G = G
         self.iGtG = iGtG
     def __mul__(self,x):
@@ -270,13 +280,13 @@ class PROJ:
                 (self.iGtG.solve(sparse.csc_matrix.dot(self.G.transpose(),x))))
         return y          
 ###############################################################################
-class PFP_OPERATOR:
+class PF_OPERATOR:
     def __init__(self,F,Proj):
         self.F = F
         self.Proj = Proj
 
     def __mul__(self,x_in):
-        return self.Proj*self.F*self.Proj*x_in     
+        return self.Proj*self.F*x_in     
         
 class PREC_DIR_OR_LUMPED:
     def __init__(self,K,Schur,B,weight,index_weight):
@@ -396,7 +406,38 @@ class gmres_counter(object):
         if self._disp:
             print('iter %3i\trk = %s' % (self.niter, str(rk)))    
     
+def GMRes(A, b, x0, e, nmax_iter, restart=None):
     
+    
+    r = b -  A*x0 
+
+    x = []
+    q = [0] * (nmax_iter)
+
+    #x.append(r)
+    #x  = np.zeros(b.shape[0])
+    q[0] = r / np.linalg.norm(r)
+
+    h = np.zeros((nmax_iter + 1, nmax_iter))
+    
+    for k in range(nmax_iter):
+        y = np.asarray(A*q[k]).reshape(-1)
+
+        for j in range(k):
+            h[j, k] = np.dot(q[j], y)
+            y = y - h[j, k] * q[j]
+        h[k + 1, k] = np.linalg.norm(y)
+        if (h[k + 1, k] != 0 and k != nmax_iter - 1):
+            q[k + 1] = y / h[k + 1, k]
+
+        b = np.zeros(nmax_iter + 1)
+        b[0] = np.linalg.norm(r)
+
+        result = np.linalg.lstsq(h, b)[0]
+
+        x = (np.dot(np.asarray(q).transpose(), result) + x0)
+    niter = k
+    return x, niter    
     
     
     
@@ -416,21 +457,24 @@ def gmres(F, d, G1, G2, e, Prec, eps0, maxIt,disp,graph):
     #PFP         = PFP_OPERATOR(F, Proj)
     
     def mv(v):
-        return Proj*(F*(v))
+        return Proj*(F*(Proj*v))
     
     PF         = LinearOperator((nDual, nDual), matvec=mv,dtype=np.float64)
-
+    PF2        = PF_OPERATOR(F,Proj)
     
     d_          = Proj * (d - F * lamIm)
     counter     = gmres_counter()
-    lamKer,out  = sparse.linalg.gmres(PF,d_) 
+    if 0:    
+        lamKer,out  = sparse.linalg.gmres(PF,d_,d_*0,1e-8) 
+        niter = out.niter
+    else:
+        lamKer, niter = GMRes(PF, d_, d_*0, 1e-4, 333, restart=None)
     lam         = lamKer + lamIm
-    print('out: ',out)
-    print('it: ',counter.niter)
+    print('it: ',niter)
     print('||lam||=',np.linalg.norm( lam) )
     
     print('lam: ')
-    print(lam-11)
+    print(lam)
     
     
     if os.path.isfile('lam_old.txt'):     
@@ -440,7 +484,9 @@ def gmres(F, d, G1, G2, e, Prec, eps0, maxIt,disp,graph):
     np.savetxt('lam_old.txt',lam)
     
 
-    alpha = iG2tG1.solve(sparse.csc_matrix.dot(G2.transpose(),d-F*lam))
+    F_lam = F*lam
+    dmFlam = d - F_lam
+    alpha = iG2tG1.solve(sparse.csc_matrix.dot(G2.transpose(),dmFlam))
     numbOfIter = i
 #   
 #    if graph:
@@ -458,9 +504,9 @@ def feti_unsym(K,Kreg,f,Schur,B,c,weight,index_weight,R1,R2):
 #              
     CP1      = COARSE_PROBLEM(B,R1)  
     CP2      = COARSE_PROBLEM(B,R2)   
-    d       = np.zeros(B[0][0].shape[0])    
+    d        = np.zeros(B[0][0].shape[0])    
     dc       = np.zeros(B[0][0].shape[0])    
-    Kplus   = []
+    Kplus    = []
 #    
     
     for i in range(len(K)):
@@ -562,14 +608,16 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
         print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
+def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,mat_S0):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
-#                           
-    CP  = COARSE_PROBLEM_HTFETI(B1,R)   
-    d   = np.zeros(B1[0][0].shape[0])    
-    dc  = np.zeros(B1[0][0].shape[0])    
+#
+#    CP          = COARSE_PROBLEM_HTFETI(B1,R)   
+    CP1         = COARSE_PROBLEM_HTFETI(B1,R1)  
+    CP2         = COARSE_PROBLEM_HTFETI(B1,R2)  
+    d           = np.zeros(B1[0][0].shape[0])    
+    dc          = np.zeros(B1[0][0].shape[0])    
 #   
 #    pool = multiprocessing.Pool()
 
@@ -578,10 +626,10 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
         Kplus.append([])
 #        Kplus.append(pool.map(KPLUS,Kreg[i]))
         
-        e_i_j = np.zeros(R[i][0].shape[1])
+        e_i_j = np.zeros(R2[i][0].shape[1])
         for j in range(len(K[i])):
             Kplus[i].append(KPLUS(Kreg[i][j]))           
-            e_i_j += sparse.csc_matrix.dot(R[i][j].transpose(),-f[i][j])
+            e_i_j += sparse.csc_matrix.dot(R2[i][j].transpose(),-f[i][j])
         if (i==0):
             e = e_i_j
         else:
@@ -589,7 +637,7 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
 #           
     Kplus_HTFETI = []       
     for i in range(len(K)):
-        Kplus_HTFETI.append(KPLUS_HTFETI(Kplus[i],B0[i],R[i],mat_S0[i]))
+        Kplus_HTFETI.append(KPLUS_HTFETI(Kplus[i],B0[i],R1[i],R2[i],mat_S0[i]))
 #
     for i in range(len(K)):
         Kpl_ = Kplus_HTFETI[i]*f[i]
@@ -601,7 +649,11 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
     F       = FETIOPERATOR_HTFETI(Kplus_HTFETI,B1)
     Prec    = PREC_DIR_OR_LUMPED(K,Schur,B1,weight,index_weight)
      
-    lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
+    #lam, alpha, numbOfIter = pcgp(F,d, CP.G, e, Prec,eps0,maxIt,True,False)        
+    #Prec    = PREC_DIR_OR_LUMPED(K,Schur,B1,weight,index_weight)
+#     
+    lam, alpha, numbOfIter = gmres(F,d, CP1.G,CP2.G, e, Prec,eps0,maxIt,True,False)
+
 #    
     uu = []
     cnt = 0
@@ -620,11 +672,11 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R,mat_S0):
     uu = []   
     for i in range(len(K)):
         uu.append([])
-        ind = np.arange(0,R[i][0].shape[1]) + cnt
+        ind = np.arange(0,R1[i][0].shape[1]) + cnt
         for j in range(len(K[i])):    
-            R_alpha = sparse.csc_matrix.dot(R[i][j],alpha[ind])
+            R_alpha = sparse.csc_matrix.dot(R1[i][j],alpha[ind])
             uu[i].append(Kplus_f_B1t_lam[i][j]+R_alpha)
-        cnt += R[i][0].shape[1]
+        cnt += R1[i][0].shape[1]
 
 
 #    for i in range(len(K)):
