@@ -75,6 +75,72 @@ VTK::VTK(const Mesh &mesh, const std::string &path): Results(mesh, path)
 
 void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
+  const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<eslocal> &_partPtrs = mesh.getPartition();
+
+	vtkUnstructuredGrid* m = vtkUnstructuredGrid::New();
+
+	size_t n_nodsClust = 0;
+	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
+		n_nodsClust += elements[iEl]->size();
+	}
+	size_t cnt = 0, n_points = 0;
+	for (size_t d = 0; d < mesh.parts(); d++) {
+		n_points += mesh.coordinates().localSize(d);
+	}
+
+	double shrinking = 0.90;
+	const Coordinates &_coordinates = mesh.coordinates();
+	double *coord_xyz = new double[n_points * 3];
+
+	int counter = 0;
+	for (size_t d = 0; d < mesh.parts(); d++) {
+		Point center;
+		for (size_t c = 0; c < _coordinates.localSize(d); c++) {
+			center += _coordinates.get(c, d);
+		}
+		center /= _coordinates.localSize(d);
+
+		for (size_t i = 0; i < _coordinates.localSize(d); i++) {
+			Point xyz = _coordinates.get(i, d);
+			xyz = center + (xyz - center) * shrinking;
+			coord_xyz[3 * counter + 0] = xyz.x;
+			coord_xyz[3 * counter + 1] = xyz.y;
+			coord_xyz[3 * counter + 2] = xyz.z;
+			counter++;
+		}
+	}
+
+	vtkNew < vtkDoubleArray > pointArray;
+	pointArray->SetNumberOfComponents(3);
+
+	size_t numpoints = n_points * 3;
+	pointArray->SetArray(coord_xyz, numpoints, 1);
+	vtkNew < vtkPoints > points;
+	points->SetData(pointArray.GetPointer());
+	m->SetPoints(points.GetPointer());
+
+	m->Allocate(static_cast<vtkIdType>(n_nodsClust));
+	vtkIdType tmp[100]; //max number of  node
+
+	size_t i = 0;
+	cnt = 0;
+	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+	  for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
+	    for (size_t j = 0; j < elements[i]->size(); j++) {
+	      tmp[j] = elements[i]->node(j) + cnt;
+	    }
+	    m->InsertNextCell(elements[i]->vtkCode(), elements[i]->size(),
+				    &tmp[0]);
+	    i++;
+	  }
+	  cnt += _coordinates.localSize(part);
+	}
+	vtkSmartPointer<vtkGenericDataObjectWriter> mw=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
+	mw->SetFileName("mesh.vtk");
+	mw->SetInputData(m);
+	mw->Write();
+
 	std::cout << "SAVE GENERIC VTK DATA\n";
 }
 
@@ -85,12 +151,189 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 
 void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
-	std::cout << "SAVE FIX POINTS TO VTK\n";
+  vtkUnstructuredGrid* fp=vtkUnstructuredGrid::New();
+  std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
+  const Coordinates &_coordinates = mesh.coordinates();
+  const std::vector<eslocal> &_partPtrs = mesh.getPartition();
+  const std::vector<Element*> &elements = mesh.getElements();
+  size_t parts = _coordinates.parts();
+  double shrinking=0.90;
+  
+
+  //points
+  for (size_t p = 0; p < mesh.parts(); p++) {
+    fixPoints[p] = mesh.computeFixPoints(p, config::mesh::FIX_POINTS);     
+  }
+  
+
+  size_t n_nodsClust = 0;
+  for (size_t iEl = 0; iEl < elements.size(); iEl++) {
+    n_nodsClust += elements[iEl]->size();
+  } 
+  double *coord_xyz = new double[mesh.parts() * fixPoints.size()*3];
+  
+  
+	int counter = 0;
+	for (size_t d = 0; d < mesh.parts(); d++) {
+		Point center;
+		for (size_t c = 0; c < fixPoints[d].size(); c++) {
+			center += _coordinates.get(fixPoints[d][c], d);
+			
+		}
+		center /= fixPoints[d].size();
+		//std::cout<<center<<std::endl;
+		for (size_t i = 0; i < fixPoints[d].size(); i++) {
+			Point xyz = _coordinates.get(fixPoints[d][i], d);
+			xyz = center + (xyz - center) * shrinking;			
+			coord_xyz[3 * counter + 0] = xyz.x;
+			coord_xyz[3 * counter + 1] = xyz.y;
+			coord_xyz[3 * counter + 2] = xyz.z;
+			counter++;
+		}
+	}
+	//std::cout<<std::endl<<mesh.parts()*fixPoints.size()<<std::endl;
+  vtkNew < vtkDoubleArray > pointArray;
+  pointArray->SetNumberOfComponents(3);
+  size_t numpoints = mesh.parts()* fixPoints.size()*3;  
+  pointArray->SetArray(coord_xyz, numpoints, 1);
+  vtkNew < vtkPoints > points;
+  points->SetData(pointArray.GetPointer());
+  fp->SetPoints(points.GetPointer());
+  fp->Allocate(static_cast<vtkIdType>(n_nodsClust));
+  
+  //cells
+  size_t offset = 0;
+  size_t cnt = 0;
+  size_t i=0;
+  vtkIdType tmp[100]; //max number of  nodevtkIdType
+
+  for (size_t p = 0; p < fixPoints.size(); p++) {
+    for (size_t j = 0; j < fixPoints[i].size(); j++) {
+      tmp[j] = cnt+j;
+    }
+    fp->InsertNextCell(2, fixPoints[p].size(),&tmp[0]);
+    
+    i++;
+    cnt += fixPoints[p].size();
+  }
+  //decomposition
+  	float *decomposition_array = new float[fixPoints.size()];
+
+	
+	for (size_t p = 0; p < fixPoints.size(); p++) {
+	        decomposition_array[p] =p;
+				
+	}
+
+	vtkNew < vtkFloatArray > decomposition;
+	decomposition->SetName("decomposition");
+	decomposition->SetNumberOfComponents(1);
+	decomposition->SetArray(decomposition_array,static_cast<vtkIdType>(fixPoints.size()), 1);
+	fp->GetCellData()->AddArray(decomposition.GetPointer());
+
+  //writer
+  vtkSmartPointer<vtkGenericDataObjectWriter> fpw=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
+  fpw->SetFileName("fixpoints.vtk");
+  fpw->SetInputData(fp);
+  fpw->Write();
+  std::cout << "SAVE FIX POINTS TO VTK\n";
 }
 
 void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
-	std::cout << "SAVE CORNERS TO VTK\n";
+  vtkUnstructuredGrid* c=vtkUnstructuredGrid::New();
+  const Coordinates &_coordinates = mesh.coordinates();
+  const std::vector<eslocal> &_partPtrs = mesh.getPartition();
+  const std::vector<Element*> &elements = mesh.getElements();
+  size_t parts = _coordinates.parts();
+  double shrinking=0.90;
+  std::vector<std::vector<eslocal> > corners(mesh.parts());
+  for (size_t p = 0; p < mesh.parts(); p++) {
+    for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
+      if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(p)[i])){
+	corners[p].push_back(i);
+      }
+    }
+  }
+  
+
+  size_t n_nodsClust = 0;
+  for (size_t iEl = 0; iEl < elements.size(); iEl++) {
+    n_nodsClust += elements[iEl]->size();
+  } 
+  double *coord_xyz = new double[mesh.parts() * corners.size()*3];
+  
+  
+	int counter = 0;
+	for (size_t d = 0; d < mesh.parts(); d++) {
+		Point center;
+		for (size_t c = 0; c < corners[d].size(); c++) {
+		  if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(d)[c])){
+			center += _coordinates.get(corners[d][c], d);
+		  }
+			
+		}
+		center /= corners[d].size();
+		//std::cout<<center<<std::endl;
+		for (size_t i = 0; i < corners[d].size(); i++) {
+			Point xyz = _coordinates.get(corners[d][i], d);
+			if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(d)[i])){
+			  xyz = center + (xyz - center) * shrinking;
+			  
+			  coord_xyz[3 * counter + 0] = xyz.x;
+			  coord_xyz[3 * counter + 1] = xyz.y;
+			  coord_xyz[3 * counter + 2] = xyz.z;
+			  counter++;
+			}
+		}
+	}
+	//std::cout<<std::endl<<mesh.parts()*fixPoints.size()<<std::endl;
+  vtkNew < vtkDoubleArray > pointArray;
+  pointArray->SetNumberOfComponents(3);
+  size_t numpoints = mesh.parts()* corners.size()*3;  
+  pointArray->SetArray(coord_xyz, numpoints, 1);
+  vtkNew < vtkPoints > points;
+  points->SetData(pointArray.GetPointer());
+  c->SetPoints(points.GetPointer());
+  c->Allocate(static_cast<vtkIdType>(n_nodsClust));
+  
+  //cells
+  size_t offset = 0;
+  size_t cnt = 0;
+  size_t i=0;
+  vtkIdType tmp[100]; //max number of  nodevtkIdType
+
+  for (size_t p = 0; p < corners.size(); p++) {
+    for (size_t j = 0; j < corners[i].size(); j++) {
+      tmp[j] = cnt+j;
+    }
+    c->InsertNextCell(2, corners[p].size(),&tmp[0]);
+    
+    i++;
+    cnt += corners[p].size();
+  }
+  //decomposition
+  	float *decomposition_array = new float[corners.size()];
+
+	
+	for (size_t p = 0; p < corners.size(); p++) {
+	        decomposition_array[p] =p;
+				
+	}
+
+	vtkNew < vtkFloatArray > decomposition;
+	decomposition->SetName("decomposition");
+	decomposition->SetNumberOfComponents(1);
+	decomposition->SetArray(decomposition_array,static_cast<vtkIdType>(corners.size()), 1);
+	c->GetCellData()->AddArray(decomposition.GetPointer());
+
+  //writer
+  vtkSmartPointer<vtkGenericDataObjectWriter> fpw=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
+  fpw->SetFileName("corners.vtk");
+  fpw->SetInputData(c);
+  fpw->Write();
+
+  std::cout << "SAVE CORNERS TO VTK\n";
 }
 
 void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSubdomain, double shrinkCluster)
