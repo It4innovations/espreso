@@ -8,13 +8,17 @@
 
 #include "instance/linear/instance.h"
 #include "instance/dynamics/instance.h"
+#include "instance/hypre/instance.h"
+
+#include "physics/hypre/advectiondiffusion2d/assembler.h"
+
 #include "physics/linear/advectiondiffusion3d/assembler.h"
 #include "physics/linear/advectiondiffusion2d/assembler.h"
 #include "physics/linear/elasticity2d/assembler.h"
 #include "physics/linear/elasticity3d/assembler.h"
 #include "physics/linear/stokes/assembler.h"
-
 #include "physics/linear/temperature/assembler.h"
+
 #include "physics/transient/elasticity/assembler.h"
 
 

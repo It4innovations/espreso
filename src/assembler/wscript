@@ -1,6 +1,6 @@
 
 def configure(ctx):
-    pass
+    ctx.env.append_unique("STLIB", [ "HYPRE" ])
 
 def build(ctx):
     ctx.objects(
