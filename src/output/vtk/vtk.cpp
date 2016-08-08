@@ -463,6 +463,8 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 		}
 	}
 
+	std::cout << "NUMBER OF DOFS: " << displasment[0].size() / _mesh.coordinates().localSize(0) << "\n";
+
 	vtkNew < vtkDoubleArray > displacement;
 	displacement->SetName("displacement");
 	displacement->SetNumberOfComponents(3);
