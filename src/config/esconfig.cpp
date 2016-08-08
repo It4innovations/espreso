@@ -88,7 +88,7 @@ bool output::SAVE_FIX_POINTS = false;
 bool output::SAVE_FACES      = false;
 bool output::SAVE_EDGES      = false;
 bool output::SAVE_CORNERS    = false;
-bool output::SAVE_DIRICHLET  = false;
+bool output::SAVE_PROPERTIES  = false;
 bool output::SAVE_AVERAGING  = false;
 bool output::SAVE_RESULTS    = true;
 
@@ -218,7 +218,7 @@ std::vector<Description> assembler::description = {
 	{ "SAVE_FACES"      , output::SAVE_FACES      , "Save faces between subdomains." },
 	{ "SAVE_EDGES"      , output::SAVE_EDGES      , "Save edges among subdomains." },
 	{ "SAVE_CORNERS"    , output::SAVE_CORNERS    , "Save corner nodes." },
-	{ "SAVE_DIRICHLET"  , output::SAVE_DIRICHLET  , "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
+	{ "SAVE_PROPERTIES" , output::SAVE_PROPERTIES , "Save properties of mesh elements.", WRITE_TO_HELP },
 	{ "SAVE_AVERAGING"  , output::SAVE_AVERAGING  , "Save averaged nodes." },
 	{ "SAVE_RESULTS"    , output::SAVE_RESULTS    , "Save the results.", WRITE_TO_HELP },
 

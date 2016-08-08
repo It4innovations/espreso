@@ -146,7 +146,23 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 
 void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
 {
-	std::cout << "SAVE PROPERTIES TO VTK\n";
+	std::cout << path << "\n";
+	const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<eslocal> &partition = mesh.getPartition();
+
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
+			Point mid;
+			for (size_t i = 0; i < elements[e]->size(); i++) {
+				mid += mesh.coordinates().get(elements[e]->node(i), p);
+			}
+			mid /= elements[e]->size();
+			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
+			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);
+
+			std::cout << ux.back()->evaluate(mid.x, mid.y, mid.z) << " : " << uy.back()->evaluate(mid.x, mid.y, mid.z) << "\n";
+		}
+	}
 }
 
 void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)

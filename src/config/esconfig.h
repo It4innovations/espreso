@@ -133,8 +133,14 @@ namespace output {
 	/// Save sub-domains common edges to VTK files.
 	extern bool SAVE_EDGES;
 
-	extern std::vector<input::Description> description;
-};
+	/// Save sub-domains common vertices to VTK files.
+	extern bool SAVE_CORNERS;
+
+	/// Save nodes with Dirichlet condition to VTK files.
+	extern bool SAVE_PROPERTIES;
+
+	/// Save nodes averaged in stiffness matrix to VTK files.
+	extern bool SAVE_AVERAGING;
 
 namespace assembler {
 	enum Discretization { FEM, BEM, API };

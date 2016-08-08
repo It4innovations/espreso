@@ -206,9 +206,21 @@ Factory::Factory(const Configuration &configuration)
 	if (config::output::SAVE_CORNERS) {
 		output::VTK::corners(mesh, "meshCorners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
-	if (config::output::SAVE_DIRICHLET) {
-		output::VTK::properties(mesh, "meshdirichlet",
-				{ Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z },
+	if (config::output::SAVE_PROPERTIES) {
+//		output::VTK::properties(mesh, "meshDirichletX",
+//				{ Property::DISPLACEMENT_X },
+//				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+//
+//		output::VTK::properties(mesh, "meshDirichletY",
+//				{ Property::DISPLACEMENT_Y },
+//				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+//
+//		output::VTK::properties(mesh, "meshDirichletZ",
+//				{ Property::DISPLACEMENT_Z },
+//				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+
+		output::VTK::properties(mesh, "meshTranslationMotion",
+				{ Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y },
 				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
