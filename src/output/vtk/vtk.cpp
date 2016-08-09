@@ -1178,3 +1178,23 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 		break;
 	}
 }
+
+void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+{
+	const Boundaries &sBoundaries = mesh.subdomainBoundaries();
+//	sBoundaries[5] -> vector subdomen
+//	const Boundaries &cBoundaries = mesh.clusterBoundaries();
+
+//	constraints.B1[0].I_row_indices
+//	constraints.B1[0].J_col_indices
+//	constraints.B1[0].V_values
+
+
+
+}
+
+
+
+
+
+

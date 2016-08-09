@@ -5,12 +5,8 @@ import commands
 import sys
 import os
 
-<<<<<<< HEAD
-=======
 from waflib import Logs
 
-
->>>>>>> ENH: wscript support for VTK and Paraview
 sys.path.append(os.path.abspath("src/python"))
 from wafutils import *
 from waflib import Logs
@@ -92,12 +88,18 @@ def configure(ctx):
     # recurse to basic parts
     ctx.recurse("src/config")
     ctx.recurse("src/basis")
+<<<<<<< HEAD
     ctx.recurse("src/mesh")
     ctx.recurse("src/output")
+=======
+    ctx.recurse("tools/bem4i")
+>>>>>>> ENH: starting of B1 output
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
+    ctx.recurse("src/mesh")
+    ctx.recurse("src/output")
     ctx.recurse("src/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
@@ -130,10 +132,16 @@ def build(ctx):
 
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
+<<<<<<< HEAD
     ctx.recurse("src/mesh")
     ctx.recurse("src/output")
+=======
+    ctx.recurse("tools/bem4i")
+>>>>>>> ENH: starting of B1 output
 
     ctx.env = ctx.all_envs["solver"]
+    ctx.recurse("src/mesh")
+    ctx.recurse("src/output")
     ctx.recurse("src/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")

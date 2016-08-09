@@ -363,3 +363,9 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
 	os.close();
 }
+
+void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+{
+
+}
+
