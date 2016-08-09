@@ -1,6 +1,8 @@
 
 #include "assembler.h"
 
+#include "../../../constraints/equalitygluing.h"
+
 using namespace espreso;
 
 std::vector<Property> LinearElasticity::elementDOFs;
@@ -33,6 +35,14 @@ void LinearElasticity::init()
 
 	std::vector<size_t> offsets(_mesh.parts(), 0);
 	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
+
+	EqualityGluing eq(_mesh, *this);
+
+	eq.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+
+	eq.insertDomainGluingToB1(_mesh.nodes(), pointDOFs);
+	eq.insertClusterGluingToB1(_mesh.nodes(), pointDOFs);
+
 }
 
 static double determinant3x3(DenseMatrix &m)

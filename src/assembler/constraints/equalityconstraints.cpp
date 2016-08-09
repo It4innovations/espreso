@@ -15,7 +15,7 @@ static void offsetSum(void *in, void *out, int *len, MPI_Datatype *datatype)
 static size_t scanOffsets(size_t &offset)
 {
 	size_t size = offset;
-	if (config::env::MPIsize == 1) { // because MPI hates all users
+	if (config::env::MPIsize == 1) {
 		offset = 0;
 		return size;
 	}
@@ -27,7 +27,6 @@ static size_t scanOffsets(size_t &offset)
 	size = offset + size;
 	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, config::env::MPIsize - 1, MPI_COMM_WORLD);
 	if (config::env::MPIrank == 0) {
-		// MPI really hates all -> it set offset on all processes to zero except on process 0
 		offset = 0;
 	}
 
@@ -227,7 +226,7 @@ size_t Gluing::assembleB1(
 	}
 	std::sort(B1clustersMap.begin() + previousSize, B1clustersMap.end(), clusterMappingCompare);
 
-	ESINFO(DETAILS) << "Total number of lambdas in B1(including Dirichlet) is " << subdomainsGluingSize + clustersGluingSize;
+	ESINFO(DETAILS) << "Total number of lambdas in B1(excluding Dirichlet) is " << subdomainsGluingSize + clustersGluingSize;
 
 	return subdomainsGluingSize + clusterGluingSize;
 }
