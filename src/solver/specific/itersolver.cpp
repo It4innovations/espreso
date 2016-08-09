@@ -1529,6 +1529,12 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
+  //  FLAG_SOLUTION =  0;   solution found to the tolerance
+  //  FLAG_SOLUTION =  1;   no convergence for for given tolerance
+  //  FLAG_SOLUTION = -1;   breakdown: delta = 0
+  //  FLAG_SOLUTION = -2;   breakdown: omega = 0
+
+
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
@@ -1556,7 +1562,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
   double bnrm2    = 0; 
   double resid    = 0;
   double resid0   = 0;
-  double error_    = 1;
+  double error_   = 1;
+  int FLAG_SOLUTION = 0;
 
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
@@ -1679,13 +1686,15 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 
   //
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+  int iter;
+	for (iter = 0; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
     delta = parallel_ddot_compressed(cluster, z_l, ztld_l);
 
 //    if (delta < 0.0001*epsilon){
-    if (delta == 0){
+    if (fabs(delta) == 1e-14){
+      FLAG_SOLUTION=-1;
       break;
     }
 
@@ -1836,14 +1845,27 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 
     
     cnt_iter = iter;
-		if (norm_l< tol || omega == 0){
+		if (norm_l< tol){
 			break;
+    }
+
+    if ( fabs(omega) < 1e-14) {
+      FLAG_SOLUTION=-2;
+      break;
     }
     delta_1 = delta;
 
 //
 	}
 
+
+  if (iter == CG_max_iter){
+      FLAG_SOLUTION=1;
+  }
+
+
+  ESINFO(CONVERGENCE)  << "FLAG_SOLUTION = " << FLAG_SOLUTION;
+  
 
 
   dual_soultion_compressed_parallel   = x_l;
