@@ -148,9 +148,12 @@ std::vector<Description> assembler::description = {
 			{ "SUPER_DIRICHLET", solver::PRECONDITIONERalternative::SUPER_DIRICHLET, "simplified Dirichlet preconditioner" },
 			{ "MAGIC", solver::PRECONDITIONERalternative::MAGIC}}, WRITE_TO_HELP },
 
-	{ "CGSOLVER", solver::CG_SOLVER, "Conjugate gradients solver", {
-			"standard",
-			"pipelined" }, WRITE_TO_HELP },
+	{ "CGSOLVER", solver::CGSOLVER, "Conjugate gradients solver", {
+			{ "STANDARD", solver::CGSOLVERalternative::STANDARD, "Standard" },
+			{ "PIPELINED", solver::CGSOLVERalternative::PIPELINED, "Pipelined" },
+			{ "FULL_ORTOGONAL", solver::CGSOLVERalternative::FULL_ORTOGONAL, "Full ortogonalization" },
+			{ "GMRES", solver::CGSOLVERalternative::GMRES, "GMRES - allows non-symmetric systems" },
+      { "BICGSTAB", solver::CGSOLVERalternative::BICGSTAB, "BICGSTAB - allows non-symmetric systems" }}, WRITE_TO_HELP },
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {

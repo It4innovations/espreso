@@ -249,7 +249,8 @@ namespace solver {
 		STANDARD = 0,
 		PIPELINED = 1,
 		FULL_ORTOGONAL = 2,
-		GMRES = 3
+		GMRES = 3,
+		BICGSTAB = 4
 	};
 
 	/// A type of conjugate gradient solver

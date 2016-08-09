@@ -99,8 +99,9 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
 	}
 
-	if (!cluster.SYMMETRIC_SYSTEM && config::solver::CGSOLVER != config::solver::CGSOLVERalternative::GMRES) {
-		ESINFO(GLOBAL_ERROR) << "Only GMRES Solver supports non-symmetric systems.";
+	if (!cluster.SYMMETRIC_SYSTEM && (config::solver::CGSOLVER != config::solver::CGSOLVERalternative::GMRES &&
+      config::solver::CGSOLVER != config::solver::CGSOLVERalternative::BICGSTAB)) {
+		ESINFO(GLOBAL_ERROR) << "Only GMRES or BICGSTAB solver supports non-symmetric systems.";
 	}
 
 	SINGULAR = physics.singular();
