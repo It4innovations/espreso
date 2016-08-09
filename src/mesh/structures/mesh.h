@@ -66,6 +66,10 @@ public:
 	std::vector<size_t> assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
 	std::vector<size_t> assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
 
+	void connectNodesDOFsAmongClusters(const std::vector<Property> &DOFs);
+	void connectEdgesDOFsAmongClusters(const std::vector<Property> &DOFs);
+	void connectFacesDOFsAmongClusters(const std::vector<Property> &DOFs);
+
 	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 	void getSurface(Mesh &surface) const;
 	std::vector<std::vector<eslocal> > subdomainsInterfaces(Mesh &interface) const;

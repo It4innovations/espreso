@@ -35,6 +35,7 @@ void LinearElasticity::init()
 
 	std::vector<size_t> offsets(_mesh.parts(), 0);
 	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
+	_mesh.connectNodesDOFsAmongClusters(pointDOFs);
 
 	EqualityGluing eq(_mesh, *this);
 

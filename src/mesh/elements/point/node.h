@@ -4,7 +4,7 @@
 
 #include "../element.h"
 
-#define NodeNodesCount 0
+#define NodeNodesCount 1
 #define NodeEdgeCount 0
 #define NodeFacesCount 0
 #define NodeGPCount 0
@@ -31,7 +31,7 @@ public:
 		_DOFMidPoint = midPoint;
 	}
 
-	Node() {};
+	Node(eslocal index): _index(index) {};
 	Element* copy() const { return new Node(*this); }
 
 	eslocal nCommon() const { return NodeCommonNodes; }
@@ -60,8 +60,8 @@ public:
 
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const { ESINFO(GLOBAL_ERROR) << "Node has no neighbours"; return {}; }
-	eslocal* indices() { ESINFO(GLOBAL_ERROR) << "Node has no indices"; return NULL; }
-	const eslocal* indices() const { ESINFO(GLOBAL_ERROR) << "Node has no indices"; return NULL; }
+	eslocal* indices() { return &_index; }
+	const eslocal* indices() const { return &_index; }
 
 	void face(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Node has no face"; }
 	void edge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Node has no edge"; }
@@ -70,6 +70,8 @@ protected:
 	void fillEdges() {};
 
 private:
+	eslocal _index;
+
 	static size_t _counter;
 
 	static std::vector<DenseMatrix> _dN;

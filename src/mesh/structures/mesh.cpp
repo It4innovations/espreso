@@ -1180,7 +1180,7 @@ void Mesh::fillNodesFromElements()
 
 	_nodes.reserve(_coordinates.clusterSize());
 	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
-		_nodes.push_back(new Node());
+		_nodes.push_back(new Node(i));
 	}
 
 	for (size_t e = 0; e < _elements.size(); e++) {
@@ -1496,6 +1496,185 @@ std::vector<size_t> Mesh::assignUniformDOFsIndicesToFaces(const std::vector<size
 std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
 {
 	return fillUniformDOFs(_elements, parts(), DOFs, offsets);
+}
+
+
+void connectDOFsAmongClusters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
+{
+	std::vector<int> neighbours = mesh.neighbours();
+	neighbours.push_back(config::env::MPIrank);
+	std::sort(neighbours.begin(), neighbours.end());
+
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
+	};
+
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+
+	// threads x neighbour x data
+	std::vector<std::vector<std::vector<esglobal> > > sBuffer(threads, std::vector<std::vector<esglobal> >(neighbours.size()));
+	// neighbour x data
+	std::vector<std::vector<esglobal> > rBuffer(neighbours.size());
+
+	// Compute send buffers
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+
+			if (elements[e]->clusters().size() > 1) {
+				for (auto c = elements[e]->clusters().begin(); c != elements[e]->clusters().end(); ++c) {
+					if (*c == config::env::MPIrank) {
+						continue;
+					}
+
+					sBuffer[t][*c].push_back(elements[e]->vtkCode());
+					for (size_t n = 0; n < elements[e]->coarseNodes(); n++) {
+						sBuffer[t][*c].push_back(mesh.coordinates().globalIndex(elements[e]->node(n)));
+					}
+
+					for (size_t i = 0; i < DOFs.size(); i++) {
+						sBuffer[t][*c].push_back(elements[e]->numberOfDomainsWithDOF(i));
+					}
+				}
+			}
+
+		}
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		for (size_t n = 0; n < neighbours.size(); n++) {
+			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
+		}
+	}
+
+	std::vector<MPI_Request> req(neighbours.size());
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		MPI_Isend(sBuffer[0][n].data(), sizeof(esglobal) * sBuffer[0][n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+	}
+
+	int flag, counter = 0;
+	MPI_Status status;
+	while (counter < neighbours.size()) {
+		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+		if (flag) {
+			int count;
+			MPI_Get_count(&status, MPI_BYTE, &count);
+			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
+			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			counter++;
+		}
+	}
+
+	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+	// All data are exchanged
+
+	// Create list of neighbours elements
+	std::vector<std::vector<Element*> > nElements(neighbours.size());
+	cilk_for (size_t n = 0; n < neighbours.size(); n++) {
+		size_t p = 0;
+		while (p + 1 < rBuffer[n].size()) {
+			switch (rBuffer[n][p++]) {
+			case NodeVTKCode:
+				nElements[n].push_back(new Node(rBuffer[n][p]));
+				break;
+			case Square4VTKCode:
+				nElements[n].push_back(new Square4(&rBuffer[n][p]));
+				break;
+			case Square8VTKCode:
+				nElements[n].push_back(new Square8(&rBuffer[n][p]));
+				break;
+			case Triangle3VTKCode:
+				nElements[n].push_back(new Triangle3(&rBuffer[n][p]));
+				break;
+			case Triangle6VTKCode:
+				nElements[n].push_back(new Triangle6(&rBuffer[n][p]));
+				break;
+			default:
+				// Volume elements are never exchanged
+				ESINFO(GLOBAL_ERROR) << "Unknown neighbour element";
+			}
+			p += nElements[n].back()->nodes();
+			for (size_t i = 0; i < nElements[n].back()->nodes(); i++) {
+				nElements[n].back()->node(i) = mesh.coordinates().clusterIndex(nElements[n].back()->node(i));
+			}
+
+			nElements[n].back()->neighbourDOFsCounter() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
+			p += DOFs.size();
+		}
+	}
+
+	// some clusters can incorrectly identify neighbours elements
+	std::vector<std::vector<eslocal> > notFounded(neighbours.size());
+	std::vector<std::vector<eslocal> > incorectlyFounded(neighbours.size());
+
+	// include neighbours DOFs to my DOFs
+	// TODO: parallelization
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		for (size_t e = 0; e < nElements[n].size(); e++) {
+			auto it = std::lower_bound(elements.begin(), elements.end(), nElements[n][e], [&] (Element *el1, Element *el2) { return *el1 < *el2; });
+			if (it != elements.end() && **it == *(nElements[n][e])) {
+				(*it)->neighbourDOFsCounter().resize(DOFs.size());
+				for (size_t dof = 0; dof < DOFs.size(); dof++) {
+					(*it)->neighbourDOFsCounter()[dof] += nElements[n][e]->neighbourDOFsCounter()[dof];
+				}
+			} else {
+				notFounded[n].push_back(e);
+			}
+		}
+	}
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		for (size_t e = 0; e < nElements[n].size(); e++) {
+			delete nElements[n][e];
+		}
+	}
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		MPI_Isend(notFounded[n].data(), sizeof(eslocal) * notFounded[n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+	}
+
+	counter = 0;
+	while (counter < neighbours.size()) {
+		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+		if (flag) {
+			int count;
+			MPI_Get_count(&status, MPI_BYTE, &count);
+			incorectlyFounded[n2i(status.MPI_SOURCE)].resize(count / sizeof(eslocal));
+			MPI_Recv(incorectlyFounded[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			counter++;
+		}
+	}
+
+	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		size_t p = 0, c = 0;
+		for (size_t i = 0; i < incorectlyFounded[n].size(); i++) {
+			while (c != incorectlyFounded[n][i]) {
+				auto it = std::find(elements[p]->clusters().begin(), elements[p]->clusters().end(), n);
+				(it != elements[p]->clusters().end()) ? c++ : p++;
+			}
+			auto er = std::find(elements[p]->clusters().begin(), elements[p]->clusters().end(), n);
+			elements[p++]->clusters().erase(er);
+		}
+	}
+}
+
+
+void Mesh::connectNodesDOFsAmongClusters(const std::vector<Property> &DOFs)
+{
+	connectDOFsAmongClusters(_nodes, DOFs, *this);
+}
+
+void Mesh::connectEdgesDOFsAmongClusters(const std::vector<Property> &DOFs)
+{
+	connectDOFsAmongClusters(_edges, DOFs, *this);
+}
+
+void Mesh::connectFacesDOFsAmongClusters(const std::vector<Property> &DOFs)
+{
+	connectDOFsAmongClusters(_faces, DOFs, *this);
 }
 
 void Mesh::remapElementsToSubdomain() const

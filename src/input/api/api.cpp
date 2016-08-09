@@ -107,7 +107,7 @@ void API::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neig
 
 	nodes.reserve(_size);
 	for (size_t i = 0; i < _size; i++) {
-		nodes.push_back(new Node());
+		nodes.push_back(new Node(i));
 	}
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {

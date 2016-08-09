@@ -15,15 +15,9 @@ void EqualityGluing::insertDomainGluingToB1(const std::vector<Element*> &element
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
 			if (elements[e]->domains().size() > 1 && elements[e]->clusters().size() < 2) {
-				const std::vector<eslocal> &DOFIndices = elements[e]->DOFsIndices();
 				for (size_t i = 0; i < DOFs.size(); i++) {
 					if (!elements[e]->settings().isSet(DOFs[i])) { // Dirichlet is not glued
-						size_t n = 0;
-						for (size_t d = 0; d < elements[e]->domains().size(); d++) {
-							if (DOFIndices[d * DOFs.size() + i] != -1) {
-								n++;
-							}
-						}
+						size_t n = elements[e]->numberOfDomainsWithDOF(i);
 						lambdasSize += n * (n - 1) / 2;
 					}
 				}
