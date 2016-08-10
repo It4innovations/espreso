@@ -35,13 +35,13 @@ void LinearElasticity::init()
 
 	std::vector<size_t> offsets(_mesh.parts(), 0);
 	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
-	_mesh.connectNodesDOFsAmongClusters(pointDOFs);
+	_mesh.computeNodesDOFsCounters(pointDOFs);
 
 	EqualityGluing eq(_mesh, *this);
 
 	eq.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
 
-	eq.insertDomainGluingToB1(_mesh.nodes(), pointDOFs);
+	//eq.insertDomainGluingToB1(_mesh.nodes(), pointDOFs);
 	eq.insertClusterGluingToB1(_mesh.nodes(), pointDOFs);
 
 }

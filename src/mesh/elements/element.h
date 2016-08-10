@@ -100,17 +100,33 @@ public:
 	std::vector<eslocal>& DOFsIndices() { return _DOFsIndices; }
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFsIndices; }
 
-	std::vector<eslocal>& neighbourDOFsCounter() { return _neighbourDOFsCounter; }
-	const std::vector<eslocal>& neighbourDOFsCounter() const { return _neighbourDOFsCounter; }
+	std::vector<eslocal>& DOFsDomainsCounters() { return _DOFsDomainsCounters; }
+	const std::vector<eslocal>& DOFsDomainsCounters() const { return _DOFsDomainsCounters; }
 
-	eslocal DOFIndex(eslocal domain, size_t DOFIndex)
+	eslocal DOFIndex(eslocal domain, size_t DOFIndex) const
 	{
 		auto it = std::lower_bound(_domains.begin(), _domains.end(), domain);
 		auto DOFs = _DOFsIndices.size() / _domains.size();
 		return _DOFsIndices[DOFs * (it - _domains.begin()) + DOFIndex];
 	}
 
-	size_t numberOfDomainsWithDOF(size_t index)
+	eslocal DOFCounter(eslocal cluster, size_t DOFIndex) const
+	{
+		auto it = std::lower_bound(_clusters.begin(), _clusters.end(), cluster);
+		auto DOFs = _DOFsDomainsCounters.size() / _clusters.size();
+		return _DOFsDomainsCounters[DOFs * (it - _clusters.begin()) + DOFIndex];
+	}
+
+	size_t numberOfGlobalDomainsWithDOF(size_t index) const
+	{
+		size_t n = 0;
+		for (size_t c = 0; c < _clusters.size(); c++) {
+			n += _DOFsDomainsCounters[c * _DOFsDomainsCounters.size() / _clusters.size() + index];
+		}
+		return n;
+	}
+
+	size_t numberOfLocalDomainsWithDOF(size_t index) const
 	{
 		size_t n = 0;
 		for (size_t d = 0; d < _domains.size(); d++) {
@@ -137,7 +153,7 @@ protected:
 	std::vector<eslocal> _domains;
 	std::vector<eslocal> _clusters;
 	std::vector<eslocal> _DOFsIndices;
-	std::vector<eslocal> _neighbourDOFsCounter;
+	std::vector<eslocal> _DOFsDomainsCounters;
 };
 
 inline std::ofstream& espreso::operator<<(std::ofstream& os, const Element &e)

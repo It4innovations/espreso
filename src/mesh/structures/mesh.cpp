@@ -1499,8 +1499,10 @@ std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<s
 }
 
 
-void connectDOFsAmongClusters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
+void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
 {
+	int rank = 0;
+
 	std::vector<int> neighbours = mesh.neighbours();
 	neighbours.push_back(config::env::MPIrank);
 	std::sort(neighbours.begin(), neighbours.end());
@@ -1522,6 +1524,11 @@ void connectDOFsAmongClusters(std::vector<Element*> &elements, const std::vector
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
+			elements[e]->DOFsDomainsCounters().resize(DOFs.size() * elements[e]->clusters().size(), -1);
+			size_t cluster = std::lower_bound(elements[e]->clusters().begin(), elements[e]->clusters().end(), config::env::MPIrank) - elements[e]->clusters().begin();
+			for (size_t i = 0; i < DOFs.size(); i++) {
+				elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i] = elements[e]->numberOfLocalDomainsWithDOF(i);
+			}
 			if (elements[e]->clusters().size() > 1) {
 				for (auto c = elements[e]->clusters().begin(); c != elements[e]->clusters().end(); ++c) {
 					if (*c == config::env::MPIrank) {
@@ -1534,7 +1541,7 @@ void connectDOFsAmongClusters(std::vector<Element*> &elements, const std::vector
 					}
 
 					for (size_t i = 0; i < DOFs.size(); i++) {
-						sBuffer[t][*c].push_back(elements[e]->numberOfDomainsWithDOF(i));
+						sBuffer[t][*c].push_back(elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i]);
 					}
 				}
 			}
@@ -1599,82 +1606,63 @@ void connectDOFsAmongClusters(std::vector<Element*> &elements, const std::vector
 				nElements[n].back()->node(i) = mesh.coordinates().clusterIndex(nElements[n].back()->node(i));
 			}
 
-			nElements[n].back()->neighbourDOFsCounter() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
+			nElements[n].back()->DOFsDomainsCounters() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
 			p += DOFs.size();
 		}
 	}
 
-	// some clusters can incorrectly identify neighbours elements
-	std::vector<std::vector<eslocal> > notFounded(neighbours.size());
-	std::vector<std::vector<eslocal> > incorectlyFounded(neighbours.size());
-
-	// include neighbours DOFs to my DOFs
 	// TODO: parallelization
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		for (size_t e = 0; e < nElements[n].size(); e++) {
 			auto it = std::lower_bound(elements.begin(), elements.end(), nElements[n][e], [&] (Element *el1, Element *el2) { return *el1 < *el2; });
 			if (it != elements.end() && **it == *(nElements[n][e])) {
-				(*it)->neighbourDOFsCounter().resize(DOFs.size());
+				size_t cluster = std::lower_bound((*it)->clusters().begin(), (*it)->clusters().end(), n) - (*it)->clusters().begin();
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
-					(*it)->neighbourDOFsCounter()[dof] += nElements[n][e]->neighbourDOFsCounter()[dof];
+					(*it)->DOFsDomainsCounters()[cluster * DOFs.size() + dof] = nElements[n][e]->DOFsDomainsCounters()[dof];
 				}
-			} else {
-				notFounded[n].push_back(e);
 			}
 		}
 	}
 
-	for (size_t n = 0; n < neighbours.size(); n++) {
+	cilk_for (size_t n = 0; n < neighbours.size(); n++) {
 		for (size_t e = 0; e < nElements[n].size(); e++) {
 			delete nElements[n][e];
 		}
 	}
 
-	for (size_t n = 0; n < neighbours.size(); n++) {
-		MPI_Isend(notFounded[n].data(), sizeof(eslocal) * notFounded[n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
-	}
+	// Remove elements that are not in both clusters
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
-	counter = 0;
-	while (counter < neighbours.size()) {
-		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
-		if (flag) {
-			int count;
-			MPI_Get_count(&status, MPI_BYTE, &count);
-			incorectlyFounded[n2i(status.MPI_SOURCE)].resize(count / sizeof(eslocal));
-			MPI_Recv(incorectlyFounded[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			counter++;
-		}
-	}
-
-	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-
-	for (size_t n = 0; n < neighbours.size(); n++) {
-		size_t p = 0, c = 0;
-		for (size_t i = 0; i < incorectlyFounded[n].size(); i++) {
-			while (c != incorectlyFounded[n][i]) {
-				auto it = std::find(elements[p]->clusters().begin(), elements[p]->clusters().end(), n);
-				(it != elements[p]->clusters().end()) ? c++ : p++;
+			if (elements[e]->clusters().size() > 1) {
+				std::vector<eslocal> &counters = elements[e]->DOFsDomainsCounters();
+				for (size_t c = 0; c < elements[e]->clusters().size(); c++) {
+					if (std::all_of(counters.begin() + c * DOFs.size(), counters.begin() + (c + 1) * DOFs.size(), [] (eslocal &c) { return c == -1; })) {
+						counters.erase(counters.begin() + c * DOFs.size(), counters.begin() + (c + 1) * DOFs.size());
+						elements[e]->clusters().erase(elements[e]->clusters().begin() + c--);
+					}
+				}
 			}
-			auto er = std::find(elements[p]->clusters().begin(), elements[p]->clusters().end(), n);
-			elements[p++]->clusters().erase(er);
+
 		}
 	}
 }
 
 
-void Mesh::connectNodesDOFsAmongClusters(const std::vector<Property> &DOFs)
+void Mesh::computeNodesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	connectDOFsAmongClusters(_nodes, DOFs, *this);
+	computeDOFsCounters(_nodes, DOFs, *this);
 }
 
-void Mesh::connectEdgesDOFsAmongClusters(const std::vector<Property> &DOFs)
+void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	connectDOFsAmongClusters(_edges, DOFs, *this);
+	computeDOFsCounters(_edges, DOFs, *this);
 }
 
-void Mesh::connectFacesDOFsAmongClusters(const std::vector<Property> &DOFs)
+void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	connectDOFsAmongClusters(_faces, DOFs, *this);
+	computeDOFsCounters(_faces, DOFs, *this);
 }
 
 void Mesh::remapElementsToSubdomain() const

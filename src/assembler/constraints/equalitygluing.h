@@ -16,6 +16,9 @@ public:
 
 	void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
 
+private:
+	std::vector<esglobal> computeLambdasID(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
+
 };
 
 }
