@@ -126,13 +126,26 @@ public:
     return MICratio;    
   }
 
-long getNMatrices() {
+  long getNMatrices() {
     return this->nMatrices;
   }
 
-double getElapsedTime() {
-    return this->elapsedTime;
-}
+  double getElapsedTime() {
+    return *this->elapsedTime;
+  }
+
+  void enableLoadBalancing() {
+    this->loadBalancing = true;
+  }
+
+  void disableLoadBalancing() {
+    this->loadBalancing = false;
+  }
+
+  bool getLoadBalancing() {
+    return this->loadBalancing;
+  }
+
 
 /*
   void setDevice(int device) {
@@ -273,6 +286,7 @@ private:
   // MIC number
   int device;
 
+  #pragma offload_attribute(push,target(mic))
   // maximum number of matrices in pack
   long maxNMatrices;
 
@@ -326,14 +340,19 @@ private:
 
   // are data copied to MIC
   bool copiedToMIC;
+  
+  // whether to use load balancing between host and MIC
+  bool loadBalancing;
 
-  #pragma offload_attribute(push,target(mic))
   // ratio of work during mv multiplication 
   double MICratio;
 
   // time for one mv
-  double elapsedTime;
+  double * elapsedTime;
+
+  // signal
 #pragma offload_attribute(pop)
+  char signal;
 };
 
 }
