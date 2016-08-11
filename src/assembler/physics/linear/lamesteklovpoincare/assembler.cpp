@@ -10,7 +10,7 @@ std::vector<Property> LameSteklovPoincare::edgeDOFs;
 std::vector<Property> LameSteklovPoincare::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 std::vector<Property> LameSteklovPoincare::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 
-void LameSteklovPoincare::init()
+void LameSteklovPoincare::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);

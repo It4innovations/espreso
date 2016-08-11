@@ -149,16 +149,15 @@ void FETI4ICreateInstance(
 	API api(mesh);
 	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
 
-	api.indexing = matrix->offset;
-	api.size = size;
-	api.rhs = rhs;
-	api.dirichlet_size = dirichlet_size;
-	api.dirichlet_indices = dirichlet_indices;
-	api.dirichlet_values = dirichlet_values;
-	api.l2g = l2g;
-	api.neighbours_size = neighbours_size;
-	api.neighbours = neighbours;
-	DataHolder::instances.back()->data = LinearElasticity<API>(api);
+	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityGluing, UniformSymmetric3DOFs>(
+			DataHolder::instances.back()->mesh,
+			rhs,
+			size,
+			dirichlet_size,
+			dirichlet_indices,
+			dirichlet_values,
+			matrix->offset
+	);
 
 	DataHolder::instances.back()->data.init();
 	*instance = DataHolder::instances.back();

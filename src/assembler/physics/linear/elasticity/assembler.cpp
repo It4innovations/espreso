@@ -11,7 +11,7 @@ std::vector<Property> LinearElasticity::edgeDOFs;
 std::vector<Property> LinearElasticity::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 std::vector<Property> LinearElasticity::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 
-void LinearElasticity::init()
+void LinearElasticity::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
@@ -36,14 +36,19 @@ void LinearElasticity::init()
 	std::vector<size_t> offsets(_mesh.parts(), 0);
 	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
+}
 
-	EqualityGluing eq(_mesh, *this);
+void LinearElasticity::assembleGluingMatrices()
+{
+	std::vector<size_t> sizes;
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		sizes.push_back(K[p].cols);
+	}
 
-	eq.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+	_constraints.initMatrices(sizes);
 
-	//eq.insertDomainGluingToB1(_mesh.nodes(), pointDOFs);
-	eq.insertClusterGluingToB1(_mesh.nodes(), pointDOFs);
-
+	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
 }
 
 static double determinant3x3(DenseMatrix &m)

@@ -9,7 +9,7 @@ std::vector<Property> AdvectionDiffusion3D::edgeDOFs;
 std::vector<Property> AdvectionDiffusion3D::pointDOFs = { Property::TEMPERATURE };
 std::vector<Property> AdvectionDiffusion3D::midPointDOFs = { Property::TEMPERATURE };
 
-void AdvectionDiffusion3D::init()
+void AdvectionDiffusion3D::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);

@@ -8,16 +8,15 @@ namespace espreso {
 
 struct UniformSymmetric3DOFs: public PrecomputedPhysics
 {
-	bool uniformDOFs() const { return true; }
-
-	UniformSymmetric3DOFs(APIMesh &mesh, double *rhs, size_t rhs_size)
+	UniformSymmetric3DOFs(APIMesh &mesh, Constraints &constraints, double *rhs, size_t rhs_size)
 	: PrecomputedPhysics(
-			mesh,
+			mesh, constraints,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs,
 			rhs, rhs_size) {};
 
-	void init();
+	void prepareMeshStructures();
+	void assembleGluingMatrices() {};
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

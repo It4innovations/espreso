@@ -10,7 +10,7 @@ template <class TConstrains, class TPhysics>
 struct LinearInstance: public Instance
 {
 public:
-	LinearInstance(Mesh &mesh): Instance(mesh), _physics(mesh), _constrains(mesh, _physics.pointDOFs), _linearSolver(_physics, _constrains)
+	LinearInstance(Mesh &mesh): Instance(mesh), _constrains(mesh), _physics(mesh, _constrains), _linearSolver(_physics, _constrains)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};
@@ -22,8 +22,8 @@ public:
 	virtual ~LinearInstance() {};
 
 protected:
-	TPhysics _physics;
 	TConstrains _constrains;
+	TPhysics _physics;
 	LinearSolver _linearSolver;
 };
 

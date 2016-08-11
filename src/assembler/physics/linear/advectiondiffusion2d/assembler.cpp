@@ -12,7 +12,7 @@ std::vector<Property> AdvectionDiffusion2D::edgeDOFs;
 std::vector<Property> AdvectionDiffusion2D::pointDOFs = { Property::TEMPERATURE };
 std::vector<Property> AdvectionDiffusion2D::midPointDOFs = { Property::TEMPERATURE };
 
-void AdvectionDiffusion2D::init()
+void AdvectionDiffusion2D::prepareMeshStructures()
 {
 	if (Hexahedron8::counter()) {
 		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Hexahedron8.";

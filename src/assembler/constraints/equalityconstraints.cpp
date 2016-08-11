@@ -71,7 +71,7 @@ static bool clusterMappingCompare(const std::vector<esglobal> &v1, const std::ve
 	return v1[0] < v2[0];
 }
 
-Constraints::Constraints(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex)
+OldConstraints::OldConstraints(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex)
 : _mesh(mesh), _subdomains(mesh.parts()), _DOFs(DOFs), _firstIndex(firstIndex)
 {
 	_neighbours = mesh.neighbours();

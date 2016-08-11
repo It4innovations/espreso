@@ -80,6 +80,9 @@ void Dirichlet::insertDirichletToB1(const std::vector<Element*> &nodes, const Co
 			B1c[s].insert(B1c[s].end(), dirichletValues[s][t].begin(), dirichletValues[s][t].end());
 		}
 		B1duplicity[s].resize(B1[s].I_row_indices.size(), 1);
+		for (size_t r = B1subdomainsMap[s].size(); r < B1[s].nnz; r++) {
+			B1subdomainsMap[s].push_back(B1[s].I_row_indices[r] - 1);
+		}
 	}
 
 	B1clustersMap.reserve(B1clustersMap.size() + clusterDirichletSize);

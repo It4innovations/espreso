@@ -8,15 +8,14 @@ namespace espreso {
 
 struct Stokes: public LinearPhysics
 {
-	bool uniformDOFs() const { return false; }
-
-	Stokes(Mesh &mesh)
+	Stokes(Mesh &mesh, Constraints &constraints)
 	: LinearPhysics(
-			mesh,
+			mesh, constraints,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
-	void init();
+	void prepareMeshStructures();
+	void assembleGluingMatrices() {};
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

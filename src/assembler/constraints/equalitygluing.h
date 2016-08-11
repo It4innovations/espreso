@@ -9,10 +9,9 @@ namespace espreso {
 class EqualityGluing: public Dirichlet
 {
 public:
-	EqualityGluing(Mesh &mesh, Physics &physics): Dirichlet(mesh, physics) {};
+	EqualityGluing(Mesh &mesh): Dirichlet(mesh) {};
 
-	void insertDomainGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
-	void insertClusterGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
+	void insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
 
 	void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
 

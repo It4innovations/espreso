@@ -9,7 +9,7 @@ std::vector<Property> UniformSymmetric3DOFs::edgeDOFs;
 std::vector<Property> UniformSymmetric3DOFs::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 std::vector<Property> UniformSymmetric3DOFs::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 
-void UniformSymmetric3DOFs::init()
+void UniformSymmetric3DOFs::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);

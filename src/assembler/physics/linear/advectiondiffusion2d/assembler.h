@@ -13,15 +13,14 @@ struct AdvectionDiffusion2D: public LinearPhysics
 		CAU = 1
 	};
 
-	bool uniformDOFs() const { return true; }
-
-	AdvectionDiffusion2D(Mesh &mesh)
+	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints)
 	: LinearPhysics(
-			mesh,
+			mesh, constraints,
 			SparseMatrix::MatrixType::REAL_UNSYMMETRIC,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
-	void init();
+	void prepareMeshStructures();
+	void assembleGluingMatrices() {};
 
 	static double sigma;
 	static STABILIZATION stabilization;

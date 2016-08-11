@@ -9,7 +9,7 @@ std::vector<Property> Temperature::edgeDOFs;
 std::vector<Property> Temperature::pointDOFs = { Property::TEMPERATURE };
 std::vector<Property> Temperature::midPointDOFs = { Property::TEMPERATURE };
 
-void Temperature::init()
+void Temperature::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);

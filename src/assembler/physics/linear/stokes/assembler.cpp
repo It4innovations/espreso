@@ -9,7 +9,7 @@ std::vector<Property> Stokes::edgeDOFs;
 std::vector<Property> Stokes::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::PRESSURE };
 std::vector<Property> Stokes::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 
-void Stokes::init()
+void Stokes::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);

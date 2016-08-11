@@ -13,7 +13,7 @@ struct TransientPhysics: public Physics {
 		return false;
 	}
 
-	virtual void assemble()
+	virtual void assembleStiffnessMatrices()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS.";
 
@@ -52,13 +52,14 @@ struct TransientPhysics: public Physics {
 
 	TransientPhysics(
 			Mesh &mesh,
+			Constraints &constraints,
 			SparseMatrix::MatrixType mtype,
 			const std::vector<Property> elementDOFs,
 			const std::vector<Property> faceDOFs,
 			const std::vector<Property> edgeDOFs,
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs)
-	: Physics(mesh, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
+	: Physics(mesh, constraints, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 	virtual ~TransientPhysics() {};
 
 	std::vector<SparseMatrix> M;

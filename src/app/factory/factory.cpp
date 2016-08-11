@@ -203,19 +203,19 @@ Factory::Factory(const Options &options)
 
 	switch (physics) {
 	case PhysicsAssembler::LINEAR_ELASTICITY:
-		instance = new LinearInstance<EqualityConstraints, LinearElasticity>(mesh);
+		instance = new LinearInstance<EqualityGluing, LinearElasticity>(mesh);
 		break;
 	case PhysicsAssembler::TEMPERATURE:
-		instance = new LinearInstance<EqualityConstraints, Temperature>(mesh);
+		instance = new LinearInstance<EqualityGluing, Temperature>(mesh);
 		break;
 	case PhysicsAssembler::TRANSIENT_ELASTICITY:
-		instance = new DynamicsInstance<EqualityConstraints, TransientElasticity>(mesh);
+		instance = new DynamicsInstance<EqualityGluing, TransientElasticity>(mesh);
 		break;
 	case PhysicsAssembler::ADVECTION_DIFFUSION:
-		instance = new LinearInstance<EqualityConstraints, AdvectionDiffusion2D>(mesh);
+		instance = new LinearInstance<EqualityGluing, AdvectionDiffusion2D>(mesh);
 		break;
 	case PhysicsAssembler::STOKES:
-		instance = new LinearInstance<EqualityConstraints, Stokes>(mesh);
+		instance = new LinearInstance<EqualityGluing, Stokes>(mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown Physics";

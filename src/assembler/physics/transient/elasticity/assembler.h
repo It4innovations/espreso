@@ -8,11 +8,9 @@ namespace espreso {
 
 struct TransientElasticity: public TransientPhysics
 {
-	bool uniformDOFs() const { return true; }
-
-	TransientElasticity(Mesh &mesh)
+	TransientElasticity(Mesh &mesh, Constraints &constraints)
 	: TransientPhysics(
-			mesh,
+			mesh, constraints,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs)
 	{
@@ -35,7 +33,8 @@ struct TransientElasticity: public TransientPhysics
 		};
 	};
 
-	void init();
+	void prepareMeshStructures();
+	void assembleGluingMatrices() {};
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

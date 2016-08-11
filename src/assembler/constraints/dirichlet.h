@@ -6,10 +6,10 @@
 
 namespace espreso {
 
-class Dirichlet: public ConstraintsBase
+class Dirichlet: public Constraints
 {
 public:
-	Dirichlet(Mesh &mesh, Physics &physics): ConstraintsBase(mesh, physics) {};
+	Dirichlet(Mesh &mesh): Constraints(mesh) {};
 
 	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const Coordinates &coordinates, const std::vector<Property> &DOFs);
 

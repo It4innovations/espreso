@@ -6,10 +6,10 @@
 
 namespace espreso {
 
-class Constraints
+class OldConstraints
 {
 protected:
-	Constraints(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex);
+	OldConstraints(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex);
 
 	const Mesh &_mesh;
 	std::vector<int> _neighbours;
@@ -19,16 +19,16 @@ protected:
 	std::vector<Property> _DOFs;
 };
 
-class FixedDOFs: public Constraints
+class FixedDOFs: public OldConstraints
 {
 public:
 	FixedDOFs(const Mesh &mesh, std::vector<Property>& DOFs, size_t offset, const std::vector<eslocal> &indices, const std::vector<double> &values)
-	:Constraints(mesh, DOFs, offset),
+	:OldConstraints(mesh, DOFs, offset),
 	 _dirichletSize(indices.size()), _dirichletOffset(0),
 	 _dirichletIndices(indices.data()), _dirichletValues(values.data()) { };
 
 	FixedDOFs(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, size_t size, eslocal offset, const eslocal *indices, const double *values)
-	:Constraints(mesh, DOFs, firstIndex),
+	:OldConstraints(mesh, DOFs, firstIndex),
 	 _dirichletSize(size), _dirichletOffset(offset),
 	_dirichletIndices(indices), _dirichletValues(values) { };
 
@@ -45,23 +45,23 @@ protected:
 	const double *_dirichletValues;
 };
 
-class Gluing: public Constraints
+class Gluing: public OldConstraints
 {
 public:
 	Gluing(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, const std::vector<eslocal> &ignoredDOFs)
-	:Constraints(mesh, DOFs, firstIndex),
+	:OldConstraints(mesh, DOFs, firstIndex),
 	  _ignoredDOFsSize(ignoredDOFs.size()), _ignoredDOFsOffset(0), _ignoredDOFs(ignoredDOFs.data()),
 	  _nodes(mesh.nodes()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };
 
 	Gluing(const Mesh &mesh, std::vector<Property> &DOFs, size_t firstIndex, size_t ignoredDOFsSize, eslocal ignoredDOFsOffset, const eslocal *ignoredDOFs)
-	:Constraints(mesh, DOFs, firstIndex),
+	:OldConstraints(mesh, DOFs, firstIndex),
 	 _ignoredDOFsSize(ignoredDOFsSize), _ignoredDOFsOffset(ignoredDOFsOffset), _ignoredDOFs(ignoredDOFs),
 	 _nodes(mesh.nodes()),
 	 _c2g(mesh.coordinates().clusterToGlobal()) { };
 
 	Gluing(const Mesh &mesh, std::vector<Property> &DOFs)
-	:Constraints(mesh, DOFs, 0),
+	:OldConstraints(mesh, DOFs, 0),
 	  _ignoredDOFsSize(0), _ignoredDOFsOffset(0), _ignoredDOFs(NULL),
 	  _nodes(mesh.nodes()),
 	  _c2g(mesh.coordinates().clusterToGlobal()) { };

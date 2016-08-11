@@ -8,15 +8,14 @@ namespace espreso {
 
 struct Temperature: public LinearPhysics
 {
-	bool uniformDOFs() const { return true; }
-
-	Temperature(Mesh &mesh)
+	Temperature(Mesh &mesh, Constraints &constraints)
 	: LinearPhysics(
-			mesh,
+			mesh, constraints,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
-	void init();
+	void prepareMeshStructures();
+	void assembleGluingMatrices() {};
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

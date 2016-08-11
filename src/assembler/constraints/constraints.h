@@ -3,11 +3,11 @@
 #define SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
 
 #include "esmesh.h"
-#include "essolver.h"
+#include "../../solver/generic/SparseMatrix.h"
 
 namespace espreso {
 
-class ConstraintsBase
+class Constraints
 {
 public:
 	// matrices for Hybrid FETI constraints
@@ -23,22 +23,22 @@ public:
 	std::vector<std::vector<double> > B1duplicity;
 
 
-	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const Coordinates &coordinates, const std::vector<Property> &DOFs) =0;
+	void initMatrices(const std::vector<size_t> &columns);
+	void save();
 
-	virtual void insertDomainGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
-	virtual void insertClusterGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
+	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const Coordinates &coordinates, const std::vector<Property> &DOFs) =0;
+	virtual void insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 
 	virtual void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 
-	virtual ~ConstraintsBase() {};
+	virtual ~Constraints() {};
 
 protected:
-	ConstraintsBase(Mesh &mesh, Physics &physics);
+	Constraints(Mesh &mesh): _mesh(mesh) {};
 
 	size_t synchronizeOffsets(size_t &offset);
 
 	Mesh &_mesh;
-	Physics &_physics;
 };
 
 }

@@ -4,15 +4,18 @@
 
 #include "esmesh.h"
 #include "essolver.h"
+#include "../constraints/constraints.h"
 
 namespace espreso {
 
 struct Physics {
 
 	virtual bool singular() const =0;
-	virtual bool uniformDOFs() const =0;
-	virtual void init() =0;
-	virtual void assemble() =0;
+
+	virtual void prepareMeshStructures() =0;
+	virtual void assembleStiffnessMatrices() =0;
+	virtual void assembleGluingMatrices() =0;
+
 	virtual void save()
 	{
 		ESINFO(PROGRESS2) << "Save matrices K and RHS.";
@@ -56,6 +59,7 @@ struct Physics {
 	std::vector<std::vector<double> > f;
 
 	Physics(Mesh &mesh,
+			Constraints &constraints,
 			SparseMatrix::MatrixType mtype,
 			const std::vector<Property> elementDOFs,
 			const std::vector<Property> faceDOFs,
@@ -63,6 +67,7 @@ struct Physics {
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs):
 	_mesh(mesh),
+	_constraints(constraints),
 	mtype(mtype),
 	elementDOFs(elementDOFs),
 	faceDOFs(faceDOFs),
@@ -74,6 +79,7 @@ struct Physics {
 
 protected:
 	Mesh& _mesh;
+	Constraints &_constraints;
 };
 
 }

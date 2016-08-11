@@ -7,30 +7,32 @@ namespace espreso {
 template <class TConstrains, class TPhysics>
 void DynamicsInstance<TConstrains, TPhysics>::init()
 {
-	_physics.init();
-	TimeEvent timePhysics("Assemble problem"); timePhysics.start();
-	ESINFO(PROGRESS2) << "Assemble problem";
-	_physics.assemble();
+	TimeEvent timePreparation("Prepare mesh structures"); timePreparation.start();
+	_physics.prepareMeshStructures();
+	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
+
+
+	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
+	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
+
 	if (config::info::PRINT_MATRICES) {
 		_physics.save();
 	}
 
 
-	TimeEvent timeConstrains("Equality constrains"); timeConstrains.startWithBarrier();
-	ESINFO(PROGRESS2) << "Assemble equality constraints";
-	_constrains.assemble();
+	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
+	_physics.assembleGluingMatrices();
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
+
 	if (config::info::PRINT_MATRICES) {
 		_constrains.save();
 	}
 
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
-	ESINFO(PROGRESS2) << "Initialize linear solver";
 	_linearSolver.init(_mesh.neighbours());
 	timeSolver.end(); _timeStatistics.addEvent(timeSolver);
-
 
 	TimeEvent timePrep("Prepare vectors for transient problem"); timePrep.startWithBarrier();
 

@@ -15,17 +15,17 @@
 
 //#include "../../assembler/esassembler.h"
 #include "../../assembler/physics/assembler.h"
-#include "../../assembler/constraints/equalityconstraints.h"
+#include "../../assembler/constraints/equalitygluing.h"
 
 namespace espreso {
 
 class Physics;
-class EqualityConstraints;
+class EqualityGluing;
 
 class LinearSolver {
 public:
 
-	LinearSolver(Physics &physics, EqualityConstraints &constraints)
+	LinearSolver(Physics &physics, EqualityGluing &constraints)
 	: timeEvalMain("ESPRESO Solver Overal Timing"), physics(physics), constraints(constraints)
 	{
 		setup();
@@ -83,7 +83,7 @@ public:
 private:
 
 	Physics &physics;
-	EqualityConstraints &constraints;
+	EqualityGluing &constraints;
 
 	eslocal number_of_subdomains_per_cluster;
 
