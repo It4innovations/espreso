@@ -3,23 +3,27 @@
 ESPRESO API
 ===========
 
-For usage with other software, a general API was developed.
-The API was successfully tested with cooperation with `Elmer <https://csc.fi/web/elmer/elmer>`_.
-Even the ESPRESO is C++ library, the API use only plain C.
-Hence, it is simple to use it with various other languages (e.g. Fortran).
+To interface the ESPRESO with the third party software, a general API has been implemented.
+The API has been successfully used to connect the ESPRESO with the `Elmer <https://csc.fi/web/elmer/elmer>`_.
 
-Usage of the API contains three steps:
-create stiffness matrix,
-create an instance of a problem,
-and run the solver.
+Even though the ESPRESO is C++ library, the API uses plain C only.
+Hence, it is easy to use it with various other languages such as Fortran.
+
+To setup and solve problem using the API is done in the following steps: 
+
+ - create a stiffness matrix,
+ - create an instance of a problem,
+ - configure the solver,
+ - run the solver.
+
 A simple working example can be found at ``libespreso/apiexample.cpp``.
-The example is written in C++ for its simplicity:
+Fo simplicity the example is written in C++:
 
 .. code-block:: cpp
    :linenos:
    :emphasize-lines: 22, 24, 28, 31 - 35, 38 - 41, 44 - 57, 63, 67 - 68
 
-   // Always initialize MPI before call ESPRESO!
+   // Always initialize the MPI before calling the ESPRESO
    MPI_Init(&argc, &argv);
 
    // The following data are considered to be computed by a library
@@ -31,7 +35,7 @@ The example is written in C++ for its simplicity:
    std::vector<FETI4IInt>                l2g;
    std::vector<FETI4IMPIInt>             neighbours;
 
-   // We load data stored in ESPRESO example directory
+   // The input data can be loaded from the ESPRESO example directory
    loadStructures(
       "../examples/api/cube",
       K_indices, K_values, rhs,
@@ -39,7 +43,7 @@ The example is written in C++ for its simplicity:
       l2g, neighbours);
 
 
-   // At first create stiffness matrix
+   // Step 1: Create the stiffness matrix
    FETI4IMatrix K;
    FETI4IInt indexBase = 0;
    FETI4ICreateStiffnessMatrix(&K, indexBase);
@@ -49,19 +53,19 @@ The example is written in C++ for its simplicity:
       FETI4IAddElement(K, K_indices[i].size(), K_indices[i].data(), K_values[i].data());
    }
 
+   // Step 2: Configure the ESPRESO solver
    FETI4IInt iopts[FETI4I_INTEGER_OPTIONS_SIZE];
    FETI4IReal ropts[FETI4I_REAL_OPTIONS_SIZE];
 
    FETI4ISetDefaultIntegerOptions(iopts);
    FETI4ISetDefaultRealOptions(ropts);
 
-   // Configure ESPRESO solver
    iopts[FETI4I_SUBDOMAINS] = 8;
    iopts[FETI4I_PRECONDITIONER] = 3;
    iopts[FETI4I_VERBOSE_LEVEL] = 3;
    iopts[FETI4I_MEASURE_LEVEL] = 3;
 
-   // Create instance of a problem
+   // Step 3: Create an instance of a problem
    FETI4IInstance instance;
    FETI4ICreateInstance(
          &instance,
@@ -77,50 +81,54 @@ The example is written in C++ for its simplicity:
          iopts,
          ropts);
 
-   // Prepare memory for save solution
+
+   // Step 4: Solve the problem
+   // Allocate the memory for the solution
    std::vector<FETI4IReal> solution(rhs.size());
 
    // Solve the system
    FETI4ISolve(instance, solution.size(), solution.data());
 
-   // Process solution
+   // Process the solution
+   // ... 
 
    FETI4IDestroy(K);
    FETI4IDestroy(instance);
 
    MPI_Finalize();
 
-The highlighted lines are ESPRESO API functions.
+The highlighted lines are the ESPRESO API functions.
 At first, a stiffness matrix has to be created (lines 22, 23).
 The method ``FETI4ICreateStiffnessMatrix`` (line 24)
-accepts a data holder ``FETI4IMatrix`` and ``indexBase``.
+accepts the data holder ``FETI4IMatrix`` and ``indexBase``.
 When the stiffness matrix data holder is created,
-element matrices can be added by method ``FETI4IAddElement`` (line 28).
+the element matrices can be added by the ``FETI4IAddElement`` method (line 28).
 
-The settings of ESPRESO is controlled by arrays of integer and real values (lines 31, 32).
-These arrays have to be passed to ``FETI4ICreateInstance``. You can set all parameters
-to appropriate values (see `complete list <parameters.html>`__ for the description of parameters)
-or you can use default values set by ``FETI4ISetDefaultIntegerOptions`` (``FETI4ISetDefaultRealOptions``).
+The ESPRESO settings are defined by an array of integers and an array of floating point values (lines 31, 32).
+These arrays have to be passed to the ``FETI4ICreateInstance`` method. 
+User should setup the ESPRESO to the default values by calling the ``FETI4ISetDefaultIntegerOptions`` and ``FETI4ISetDefaultRealOptions`` functions.
+Then it can change any of the parameters to the required value (see the `complete list <parameters.html>`__ for the description of the parameters).
 
-A filled stiffness matrix and other needed data can passed to the ESPRESO solver
-by method ``FETI4ICreateInstance`` (lines 33 - 43).
-Again, the method returns a data holder for a created instance.
+
+The stiffness matrix and other required data structures are passed to the ESPRESO solver
+by calling the method ``FETI4ICreateInstance`` (lines 33 - 43). The method returns a data holder for the created instance.
 
 .. note::
 
-   The instance is prepared according to passed parameters. Hence, a later change of
+   The instance is prepared according to the passed parameters. Hence, a later change of
    parameters or options has no effect on the instance.
-   Instance can be changed by API ``Update`` methods.
+   Instance can be changed by the API ``Update`` method.
 
-The instance can be solved by method ``FETI4ISolve`` (line 49).
-The solution is saved to prepared vector (line 46).
-Data holders should be destroyed by ``FETI4IDestroy``.
+The problem can be solved by the ``FETI4ISolve`` method (line 49).
+The solution is then saved to the vector that needs to be preallocated (line 46).
+
+The data holders should be destroyed by calling the ``FETI4IDestroy`` method.
 
 .. note::
 
-   **neighbours** is an array of neighbours MPI ranks. Hence, the first rank is 0.
+   **neighbours** is an array of neighbouring MPI ranks. Hence, the first rank is 0.
 
-   **dirichlet_indices** are in local numbering.
+   **dirichlet_indices** are in the local numbering.
 
 A description of API methods
 ----------------------------
