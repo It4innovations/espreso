@@ -3,38 +3,37 @@
 Structure of the library
 ========================
 
-This section describes the structure of source files.
-Source files are in directory ``src`` and have the following structure:
+This section describes the structure of the source files.
+Source files are located in the ``src`` directory which has the following structure:
 
  - **app** - final applications and factory for loading the problem from input parameters
- - **assembler** - assemblers of matrices for the solver
- - **basis** - general classes for load parameters, logging, etc.
- - **catalyst** - Paraview Catalyst wrapper
+ - **assembler** - matrix assemblers for the solver
+ - **basis** - general classes for parameters loading, logging, etc.
+ - **catalyst** - Paraview Catalyst interface
  - **config** - the main ESPRESO configuration file
- - **include** - headers of third parties libraries
+ - **include** - headers of the third party libraries
  - **input** - ESPRESO mesh loaders
- - **mesh** - main classes for description of a problem
- - **output** - classes for saving the ESPRESO mesh
+ - **mesh** - main classes for mesh processing and problem description
+ - **output** - classes for saving the mesh from ESPRESO
  - **python** - python scripts
- - **solver** - ESPRESO solver
+ - **solver** - ESPRESO FETI solver
 
-Except **solver**, all directories contains general code that is used in all configurations.
-An appropriate solver is builded based on the `build configuration <installation.html#configuration>`_.
-A user is responsible only for selection a correct solver on a given architecture.
-ESPRESO adjust everything else. The next section describes how this feature is implemented.
+Except for the **solver**, all directories contains general code that is used by all configurations.
+The requested type of solver is built based on the `build configuration <installation.html#configuration>`_ which is defined by the user.
+ESPRESO adjusts everything else. The next section describes how this feature is implemented.
 
-Implementation of compilation an appropriate solver
-___________________________________________________
+Implementation of solver switching
+__________________________________
 
-The implementation can be divided into the two parts:
+The implementation can be divided into two parts:
 ``set up the environment`` and ``compilation of selected classes``.
 
 Set up the environment
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The environment is set by ``waf``.
-It checks the availability of headers and libraries for chosen solver.
-The check is done by the following commands in wscript while the configuration: ::
+It checks the availability of headers and libraries for the selected solver.
+The check is done by the following set of commands in the ``wscript``: ::
 
   def configure(ctx):
       ctx.check_header("header")
@@ -45,8 +44,8 @@ The check is done by the following commands in wscript while the configuration: 
 Compilation of selected classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Classes for a selected solver are set in file ``src/solver/wscript``.
-The ``wscript`` file contains the configuration method with rules of type: ::
+Classes for the selected solver are defined in the ``src/solver/wscript`` file.
+The ``wscript`` file contains the configuration method with following rules: ::
 
     if ctx.env.SOLVER == "SOLVER_TYPE":
         ctx.env.append_unique("LIB", [ "library1" ])
@@ -54,7 +53,7 @@ The ``wscript`` file contains the configuration method with rules of type: ::
         ctx.env.append_unique("STLIB", [ "stlibrary1", "stlibrary2" ])
 
 Where ``SOLVER_TYPE`` is value of parameter ``SOLVER`` from `build configuration <installation.html#configuration>`_,
-``LIB``, ``POSTSTLIB``, and ``STLIB`` are constants separated libraries into three groups:
+``LIB``, ``POSTSTLIB``, and ``STLIB`` are libraries from the following groups:
 
   :STLIB: static libraries
   :LIB: shared libraries
@@ -69,27 +68,27 @@ The compilation command generated from the above examples is: ::
 
    The libraries should also be adjusted for both static and dynamic ``LIBTYPE``.
 
-The ``wscript`` file also contains the build method the simillar rules: ::
+The ``wscript`` file also contains the build method with similiar rules: ::
 
     if ctx.env.SOLVER == "SOLVER_TYPE":
         sources = source_files + ("file1", "file2", "file2")
 
-By this rule, appropriate source files are added to sources for compilation.
-The list has to contains all files needed by the selected solver.
+By this rule, the appropriate source files are compiled.
+The list has to contain all the files needed by the selected solver.
 
 At this point the build framework should be correctly set.
-The next step prepares the source files.
+The next step is to prepare the content of the source files.
 
 The solver is not aware of the selected solver type.
-The solver only distinguishes between CPU or accelerated version,
-and a particular type is set in the following files:
+The solver only distinguishes between the CPU and the accelerated version.
+The particular type is set in the following files:
 
  - src/solver/specific/clusters.h
  - src/solver/specific/densesolvers.h
  - src/solver/specific/sparsesolvers.h
  - src/solver/specific/itersolvers.h
 
-The files contains typedefs for generic types.
+The files contain typedefs for generic types.
 For example the sparsesolvers.h has the following tepedefs: ::
 
    #if defined(SOLVER_MKL)
@@ -101,7 +100,7 @@ For example the sparsesolvers.h has the following tepedefs: ::
    }
 
 The meaning of the above example is:
-if ``SOLVER==MKL`` then include ``SparseSolverMKL`` and use it for both CPU and Accelerated computation.
+if ``SOLVER==MKL`` then include ``SparseSolverMKL`` and use it for both CPU and Accelerated version.
 
 
 
