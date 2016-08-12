@@ -308,6 +308,7 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 	const std::vector<Element*> &elements = _mesh.elements();
 	const std::vector<Element*> &nodes = _mesh.nodes();
 
+
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
 		processElement(Ke, fe, _mesh, subdomain, elements[e]);

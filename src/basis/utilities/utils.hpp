@@ -65,4 +65,17 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 	return sum;
 }
 
+template<typename Ttype>
+void Esutils::unique(std::vector<Ttype> &elements)
+{
+	size_t unique = 0;
+	for (size_t d = 1; d < elements.size(); d++) {
+		if (elements[unique] != elements[d]) {
+			elements[++unique] = elements[d];
+		}
+	}
+
+	elements.resize(unique + 1);
+}
+
 }

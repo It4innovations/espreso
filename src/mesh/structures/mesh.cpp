@@ -1270,13 +1270,14 @@ static void assignDomains(std::vector<Element*> &elements)
 			// WARNING: std::unique is broken
 //			auto it = std::unique(elements[i]->domains().begin(), elements[i]->domains().end());
 //			elements[i]->domains().resize(it - elements[i]->domains().begin());
-			size_t unique = 0;
-			for (size_t d = 1; d < elements[i]->domains().size(); d++) {
-				if (elements[i]->domains()[unique] != elements[i]->domains()[d]) {
-					elements[i]->domains()[++unique] = elements[i]->domains()[d];
-				}
-			}
-			elements[i]->domains().resize(unique + 1);
+			Esutils::unique(elements[i]->domains());
+//			size_t unique = 0;
+//			for (size_t d = 1; d < elements[i]->domains().size(); d++) {
+//				if (elements[i]->domains()[unique] != elements[i]->domains()[d]) {
+//					elements[i]->domains()[++unique] = elements[i]->domains()[d];
+//				}
+//			}
+//			elements[i]->domains().resize(unique + 1);
 		}
 	}
 }
@@ -1682,8 +1683,9 @@ void Mesh::remapElementsToSubdomain() const
 		}
 
 		std::sort(l2g.begin(), l2g.end());
-		auto it = std::unique(l2g.begin(), l2g.end());
-		l2g.resize(std::distance(l2g.begin(), it));
+		Esutils::unique(l2g);
+//		auto it = std::unique(l2g.begin(), l2g.end());
+//		l2g.resize(std::distance(l2g.begin(), it));
 
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (eslocal n = 0; n < _elements[e]->nodes(); n++) {

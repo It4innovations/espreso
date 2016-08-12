@@ -24,6 +24,9 @@ struct Esutils
 
 	template<typename Ttype>
 	static Ttype sizesToOffsets(std::vector<Ttype> &sizes);
+
+	template<typename Ttype>
+	static void unique(std::vector<Ttype> &elements);
 };
 
 
