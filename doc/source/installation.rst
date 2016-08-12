@@ -7,43 +7,46 @@ Installation of the library ESPRESO
 Download the library
 --------------------
 
-ESPRESO is versioned in `Git <https://git-scm.com/>`_. The main repository is at `GitLab <https://code.it4i.cz/mec059/espreso>`_.
-The source codes can be easily obtained by clone this repository: ::
+ESPRESO is available through `Git <https://git-scm.com/>`_. The main repository is located at `GitLab <https://code.it4i.cz/mec059/espreso>`_.
+The source codes can be easily downloaded by cloning the following repository: ::
 
   $ git clone git@code.it4i.cz:mec059/espreso.git
+    
+If you do not have an account at code.it4i.cz and do not participate in the development of the ESPRESO please use the https interface: ::
 
-The repository contains several developing branches. The last stabil version is in branch ``master``.
-It is the default branch after the clone.
+  $ git clone https:/code.it4i.cz/mec059/espreso.git
+
+The repository contains several branches. The stable version of the library can be found in the ``master`` branch which is also the default branch when ``git clone`` is executed.
 
 Directory structure
 ^^^^^^^^^^^^^^^^^^^
 
-The main directory of ESPRESO contains the following directories:
+The main directory of the ESPRESO contains the following folders:
 
- - **doc** - the source of this documentation [`ESPRESO <index.html>`__]
- - **env** - scripts for environment settings [`Set up the environment`_]
- - **examples** - simple examples runable with ESPRESO [`examples <examples.html>`__]
- - **libespreso** - API for usage in other softwares [`ESPRESO API <api.html>`__]
- - **machines** - scripts for running ESPRESO on selected cupercomputers [`Support for HPC <api.html>`__]
+ - **doc** - the source code of this documentation [`ESPRESO <index.html>`__]
+ - **env** - scripts related to environment settings [`Set up the environment`_]
+ - **examples** - simple configuration examples for showing how to setup the ESPRESO [`examples <examples.html>`__]
+ - **libespreso** - API for interfacing with 3D party applications [`ESPRESO API <api.html>`__]
+ - **machines** - scripts for launching the ESPRESO on selected supercomputers [`Support for HPC <api.html>`__]
  - **src** - source files of the library [`Structure of the library <structure.html>`__]
- - **tests** - scripts for testing the installation [`Testing the installation`_]
- - **tools** - third party software used by ESPRESO [`Dependencies`_]
+ - **tests** - scripts for ESPRESO installation validation [`Testing the installation`_]
+ - **tools** - third party tools required by the ESPRESO [`Dependencies`_]
 
-Besides above directories, there are also building scripts described in `Building the ESPRESO`_.
+Besides the above directories, there are also configuration and build scripts which are described in the `Building the ESPRESO`_ section.
 
 
 Dependencies
 ------------
 
-In the current version ESPRESO can be compiler only in Linux.
-The main functionality is build upon the `Intel MKL <https://software.intel.com/en-us/intel-mkl>`_ and `METIS <http://glaros.dtc.umn.edu/gkhome/metis/metis/overview>`_ libraries.
-Prefered compiler is `Intel compiler <https://software.intel.com/en-us/intel-compilers>`_ - another compilers are also supported, but not tested.
+In the current version the ESPRESO can be compiled and executed on a Linux operating system only.
+As of now, the library requires the `Intel MKL <https://software.intel.com/en-us/intel-mkl>`_ and `METIS <http://glaros.dtc.umn.edu/gkhome/metis/metis/overview>`_ libraries.
+Prefered and tested compiler is the `Intel compiler <https://software.intel.com/en-us/intel-compilers>`_ - another compilers are also supported, but not fully tested.
 
-Depends on a selected direct solver (`Support for various direct solvers`_) ESPRESO needs the following libraries:
+ESPRESO has interface for several Sparse Direct solvers. Depending on the selected solver (`Support for various direct solvers`_) ESPRESO requires the following libraries:
 
- - Pardiso
- - MUMPS
- - Cublas, Cudard
+ - Pardiso (both the original version and the MKL versions are suported)  
+ - MUMPS - not thread-safe solver, works only if ESPRESO is compiled without threading support
+ - CuSolver - GPU accelerated solver (experimental support - low performance) 
 
 Another mandatory system libraries:
 
@@ -55,47 +58,46 @@ Another mandatory system libraries:
 Building the ESPRESO
 --------------------
 
-For compilation and instalation ESPRESO uses a Python-based framework `Waf <https://waf.io/book/>`_.
-The compilation includes two phases: ``configuration`` and ``installation``.
-The former configures persistend data and checks all required headers and libraries for your installation.
-The latter makes the library and produces the runable binary file ``espreso``.
+To compile and install the ESPRESO a Python-based framework `Waf <https://waf.io/book/>`_ is used. 
+The compilation process has two phases: ``configuration`` and ``installation``. 
+The former configures the persistent data and checks all required headers and libraries. 
+The latter builds the library and compile the main executable file ``espreso``. 
 
 Configuration
 ^^^^^^^^^^^^^
 
-The **configuration** is made by the command: ::
+The **configuration** process is started by the following command: ::
 
   $ ./waf configure
 
-It configures the library based on the default settings from the file ``build.config.default``.
-Configuration on a ``cray`` machine is made by the command: ::
+It configures the library based on the default settings described in the ``build.config.default`` file. Machine specific configurations are also supported.
+For instance, a configuration for ``Cray`` machines is done using: ::
 
   $ ./waf configure --cray
 
-In this case, the configuration default values are get from the file ``build.config.cray``.
+In this case, the default configuration values are taken from the ``build.config.cray`` file.
 
-When something goes wrong, you may want to change some attributes. It should not be done
-directly in the file ``build.config.default`` (or ``build.config.cray``). It is recommended to create new file ``build.config``
-from the default settings: ::
+When something goes wrong and configuration crashes, you may want to check and potentialy change some of the settings. This should not be done
+directly in the ``build.config.default`` (or ``build.config.cray``) file. Instead, it is recommended to create a new file ``build.config``
+from the default configuration file: ::
 
   $ cp build.config.default build.config
 
-When you create the file ``build.config``, all setttings from this file rewrite attributes
-from the default file.
+When you create the ``build.config`` file, all setttings defined in this file redefine the settings from the default configuration file.
 The configuration process accepts the following attributes:
 
 
- - CXX - C++/MPI compiler:
+ - CXX - C++ compiler (if MPI is used user needs to specifie the MPI/C++ compiler) 
  - CC - C compiler
  - FC - Fortran compiler
 
- + INT_WIDTH - integer width
- + SOLVER - direct solver (`Support for various direct solvers`_)
+ + INT_WIDTH - integer width (32 - default or 64 bits - for large problems of size over 2.1 billion unknowns)
+ + SOLVER - Sparse Direct Solver package (`Support for various direct solvers`_)
  + LIBTYPE - type of produced library
- + BUILD_TOOLS - ESPRESO compiles third party libraries
- + METISLIB - the name of METIS library, if BUILD_TOOLS is set to 0
+ + BUILD_TOOLS - ESPRESO compiles third party tools and libraries
+ + METISLIB - the file name of the METIS library, if BUILD_TOOLS is set to 0
 
- - CXXFLAGS - general compiler flags
+ - CXXFLAGS - general C++ compiler flags
  - LINKFLAGS - general linker flags
  - INCLUDES - general include directories
  - LIBPATH - general dynamic library paths
@@ -110,50 +112,55 @@ The configuration process accepts the following attributes:
 
 Support for various direct solvers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-MKL, PARDISO, MUMPS
+The suported sparse direct solvers are: 
+
+  - MKL
+  - PARDISO
+  - MUMPS
 
 
 Hardware Acceleration
 ^^^^^^^^^^^^^^^^^^^^^
-CPU, GPU, MIC
+By default the CPU is used for processing. However, ESPRESO supports also modern hardware in form of accelerators. The Intel Xeon Phi (MIC) and Nvidia GPU (GPU) accelerators are suported. The options are: 
+
+ - CPU
+ - GPU
+ - MIC
 
 
 Installation
 ^^^^^^^^^^^^
 
-After setting appropriate direct solver, hardware acceleration and successful configuration, ESPRESO is ready to install.
-Installing is done by the command: ::
+After setting the sparse direct solver, hardware accelerator and successful configuration, ESPRESO can be installed by calling the following command: ::
 
   $ ./waf install
 
-It builds all source files and produces executable file ``espreso``.
-Depend on ``LIBTYPE``, during installation is also created library ``libespreso/feti4i.so``
-of ``libespreso/feti4i.a``.
+This command builds all source files and creates the ``espreso`` executable file.
+Depending on the ``LIBTYPE``, the ``libespreso/feti4i.so`` or ``libespreso/feti4i.a``
+libraries are also created during the instalation. 
 
 
 Set up the environment
 ----------------------
 
-Before `run <run.html>`__ the ``espreso``, the environment variables has to be set.
-Sample settings files are in directory ``env``.
-The following environment variables has to be set:
+Before `running <run.html>`__ the ``espreso``, following environment variables needs to be set: 
 
- - MKL_NUM_THREADS
- - OMP_NUM_THREADS
+ - MKL_NUM_THREADS - in the current version it should be set to 1
+ - OMP_NUM_THREADS - in the current version it should be set to 1
 
- - SOLVER_NUM_THREADS
- - PAR_NUM_THREADS
- - CILK_NWORKERS
+The last three variables should be set according to the number of CPU cores per compute node (nCores) and number of MPI processes processed per node (PPN):
 
-The first two variables should be set to 1.
-The last three variables should be set according to number of processes.
+ - SOLVER_NUM_THREADS - should be set to nCores/PPN
+ - PAR_NUM_THREADS - should be set to nCores/PPN
+ - CILK_NWORKERS - should be set to nCores/PPN
 
+Sample environment setting files can be found in the ``env`` directory.
 
 Testing the installation
 ------------------------
 
-The installation can be simply tested by: ::
+The installation of ESPRESO can be validated by the included set of tests which can be executed as follows: ::
 
   $ python tests/espreso.py
 
-If all tests pass, ESPRESO is ready to use.
+If all tests pass, ESPRESO is ready to use. Congratulations !! 
