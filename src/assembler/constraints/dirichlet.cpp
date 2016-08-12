@@ -35,6 +35,7 @@ void Dirichlet::insertDirichletToB1(const std::vector<Element*> &nodes, const Co
 	}
 
 	std::vector<size_t> dirichletSizes(_mesh.parts());
+	#pragma cilk grainsize = 1
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 		size_t size = 0;
 		for (size_t t = 0; t < threads; t++) {
@@ -56,10 +57,12 @@ void Dirichlet::insertDirichletToB1(const std::vector<Element*> &nodes, const Co
 	size_t globalDirichletSize = synchronizeOffsets(clusterOffset);
 
 	clusterOffset += B1[0].rows;
+	#pragma cilk grainsize = 1
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 		B1[p].rows += globalDirichletSize;
 	}
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
 		B1[s].nnz += dirichletSizes[s];
@@ -70,6 +73,7 @@ void Dirichlet::insertDirichletToB1(const std::vector<Element*> &nodes, const Co
 
 
 	Esutils::sizesToOffsets(dirichletSizes);
+	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
 		for (size_t i = 0; i < B1[s].nnz; i++) {

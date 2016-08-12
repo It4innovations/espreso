@@ -27,12 +27,6 @@ void LinearElasticity::prepareMeshStructures()
 	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	_mesh.prepare(
-		config::solver::B0_TYPE == config::solver::B0_TYPEalternative::KERNELS &&
-		config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI,
-		false
-	);
-
 	std::vector<size_t> offsets(_mesh.parts(), 0);
 	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);

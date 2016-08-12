@@ -63,8 +63,8 @@ protected:
 	eslocal* indices() { return &_index; }
 	const eslocal* indices() const { return &_index; }
 
-	void face(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Node has no face"; }
-	void edge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Node has no edge"; }
+	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Node has no face"; }
+	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Node has no edge"; }
 
 	void fillFaces() {};
 	void fillEdges() {};

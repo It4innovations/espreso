@@ -142,8 +142,8 @@ protected:
 	virtual const eslocal* indices() const = 0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 
-	virtual void face(size_t index, Element* face) = 0;
-	virtual void edge(size_t index, Element* edge) = 0;
+	virtual void setFace(size_t index, Element* face) = 0;
+	virtual void setEdge(size_t index, Element* edge) = 0;
 
 	virtual void fillFaces() = 0;
 	virtual void fillEdges() = 0;

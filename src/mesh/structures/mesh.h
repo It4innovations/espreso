@@ -44,7 +44,6 @@ public:
 	virtual ~Mesh();
 
 	virtual void partitiate(size_t parts);
-	void prepare(bool faces, bool edges);
 	std::vector<eslocal> computeFixPoints(size_t part, size_t number) const;
 	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
 

@@ -52,6 +52,7 @@ std::vector<esglobal> EqualityGluing::computeLambdasID(const std::vector<Element
 		offsets[i] += clusterOffset + B1[0].rows;
 	}
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		esglobal offset = offsets[t];
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
@@ -74,6 +75,7 @@ std::vector<esglobal> EqualityGluing::computeLambdasID(const std::vector<Element
 
 	std::vector<std::vector<esglobal> > rBuffer(_mesh.neighbours().size());
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
 		size_t size = rLambdas[n][0].size();
 		for (size_t t = 1; t < threads; t++) {
@@ -113,6 +115,7 @@ std::vector<esglobal> EqualityGluing::computeLambdasID(const std::vector<Element
 		}
 	}
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 		B1[p].rows += totalNumberOfLambdas;
 	}
@@ -212,8 +215,7 @@ void EqualityGluing::insertElementGluingToB1(const std::vector<Element*> &elemen
 		}
 	}
 
-
-
+	#pragma cilk grainsize = 1
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 		for (size_t t = 0; t < threads; t++) {
 			B1[p].I_row_indices.insert(B1[p].I_row_indices.end(), rows[t][p].begin(), rows[t][p].end());

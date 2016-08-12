@@ -65,8 +65,8 @@ protected:
 	const eslocal* indices() const { return _indices; }
 	eslocal* indices() { return _indices; }
 
-	void face(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; }
-	void edge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; }
+	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; }
+	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; }
 
 	void fillFaces() {};
 	void fillEdges() {};

@@ -1080,104 +1080,124 @@ void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces,
 //	}
 }
 
-void Mesh::fillFacesFromElements()
+template<typename MergeFunction>
+static void uniqueWithMerge(std::vector<Element*> &elements, MergeFunction merge)
 {
-	size_t threads = config::env::CILK_NWORKERS;
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
-	std::vector<size_t> offsets(threads + 1, 0);
-
-	cilk_for (size_t t = 0; t < threads; t++) {
-		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			_elements[e]->fillFaces();
-			offsets[t] += _elements[e]->faces();
-		}
+	if (elements.size() == 0) {
+		return;
 	}
 
-	_faces.resize(Esutils::sizesToOffsets(offsets));
-	cilk_for (size_t t = 0; t < threads; t++) {
-		size_t offset = 0;
-		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			for (size_t f = 0; f < _elements[e]->faces(); f++) {
-				_faces[offsets[t] + offset++] = _elements[e]->face(f);
-			}
-		}
-	}
-
-	std::sort(_faces.begin(), _faces.end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
-
-	auto it = _faces.begin();
+	auto it = elements.begin();
 	auto last = it;
-	while (++it != _faces.end()) {
+	while (++it != elements.end()) {
 		if (!(**last == **it)) {
 			*(++last) = *it;
-		} else { // Merge two faces
-			(*last)->elements().push_back((*it)->elements().back()); // Face can be only between two elements
-			for (size_t i = 0; i < (*it)->elements()[0]->faces(); i++) {
-				if (**last == *(*it)->elements()[0]->face(i)) {
-					(*it)->elements()[0]->face(i, *last);
-					break;
-				}
-			}
+		} else { // Merge two edges
+			merge(*last, *it);
 			delete *it;
 		}
 	}
-
-	_faces.resize(++last - _faces.begin());
+	elements.resize(++last - elements.begin());
 }
 
+template<typename MergeFunction>
+static std::vector<Element*> mergeElements(size_t threads, std::vector<size_t> &distribution, std::vector<std::vector<Element*> > &elements, MergeFunction merge)
+{
+	std::vector<Element*> result;
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		std::sort(elements[t].begin(), elements[t].end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
+		uniqueWithMerge(elements[t], merge);
+	}
+
+	std::vector<std::vector<Element*> > divided;
+	std::vector<std::vector<Element*> > merged;
+
+	divided.swap(elements);
+	while (divided.size() > 1) {
+		divided.resize(divided.size() + divided.size() % 2); // keep the size even
+		merged.resize(divided.size() / 2);
+
+		#pragma cilk grainsize = 1
+		cilk_for (size_t t = 0; t < merged.size(); t++) {
+			merged[t].resize(divided[2 * t].size() + divided[2 * t + 1].size());
+			std::merge(
+					divided[2 * t    ].begin(), divided[2 * t    ].end(),
+					divided[2 * t + 1].begin(), divided[2 * t + 1].end(),
+					merged[t].begin(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
+			uniqueWithMerge(merged[t], merge);
+		}
+		divided.swap(merged);
+		merged.clear();
+	}
+
+	result.swap(divided[0]);
+	return result;
+}
 
 void Mesh::fillEdgesFromElements()
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
-	std::vector<size_t> offsets(threads + 1);
 
+	std::vector<std::vector<Element*> > edges(threads);
+
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
-		size_t offset = 0;
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			_elements[e]->fillEdges();
-			offset += _elements[e]->edges();
-		}
-		offsets[t] = offset;
-	}
 
-	_edges.resize(Esutils::sizesToOffsets(offsets));
-	cilk_for (size_t t = 0; t < threads; t++) {
-		size_t offset = 0;
-		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			for (size_t i = 0; i < _elements[e]->edges(); i++) {
-				_edges[offsets[t] + offset++] = _elements[e]->edge(i);
+			for (size_t edge = 0; edge < _elements[e]->edges(); edge++) {
+				edges[t].push_back(_elements[e]->edge(edge));
 			}
 		}
 	}
 
-	std::sort(_edges.begin(), _edges.end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
-
-	auto it = _edges.begin();
-	auto last = it;
-	while (++it != _edges.end()) {
-		if (!(**last == **it)) {
-			*(++last) = *it;
-		} else { // Merge two edges
-			(*last)->elements().insert((*last)->elements().end(), (*it)->elements().begin(), (*it)->elements().end());
-			for (size_t e = 1; e < (*it)->elements().size(); e++) {
-				for (size_t i = 0; i < (*it)->elements()[e]->edges(); i++) {
-					if (**last == *(*it)->elements()[e]->edge(i)) {
-						(*it)->elements()[e]->edge(i, *last);
-						break;
-					}
+	_edges = mergeElements(threads, distribution, edges, [] (Element* e1, Element *e2) {
+		e1->elements().insert(e1->elements().end(), e2->elements().begin(), e2->elements().end());
+		for (size_t e = 0; e < e2->elements().size(); e++) {
+			for (size_t i = 0; i < e2->elements()[e]->edges(); i++) {
+				if (*(e1) == *(e2->elements()[e]->edge(i))) {
+					e2->elements()[e]->setEdge(i, e1);
+					break;
 				}
 			}
-			delete *it;
+		}
+	});
+}
+
+void Mesh::fillFacesFromElements()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
+
+	std::vector<std::vector<Element*> > faces(threads);
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			_elements[e]->fillFaces();
+
+			for (size_t face = 0; face < _elements[e]->faces(); face++) {
+				faces[t].push_back(_elements[e]->face(face));
+			}
 		}
 	}
 
-	_edges.resize(++last - _edges.begin());
+	_faces = mergeElements(threads, distribution, faces, [] (Element* e1, Element *e2) {
+		e1->elements().push_back(e2->elements().back()); // Face can be only between two elements
+		for (size_t i = 0; i < e2->elements()[0]->faces(); i++) {
+			if (*e1 == *e2->elements()[0]->face(i)) {
+				e2->elements()[0]->setFace(i, e1);
+				break;
+			}
+		}
+	});
 }
 
 void Mesh::fillNodesFromElements()
 {
-
 	_nodes.reserve(_coordinates.clusterSize());
 	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
 		_nodes.push_back(new Node(i));
@@ -1208,6 +1228,7 @@ void Mesh::mapFacesToClusters()
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
 			if (_faces[f]->elements().size() == 1) { // Only faces with one element can have more clusters
@@ -1224,6 +1245,7 @@ void Mesh::mapEdgesToClusters()
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			if (std::all_of(_edges[e]->indices(), _edges[e]->indices() + _edges[e]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
@@ -1238,14 +1260,23 @@ static void assignDomains(std::vector<Element*> &elements)
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
-		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
-			for (size_t e = 0; e < elements[f]->elements().size(); e++) {
-				elements[f]->domains().push_back(elements[f]->elements()[e]->domains()[0]);
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			for (size_t e = 0; e < elements[i]->elements().size(); e++) {
+				elements[i]->domains().push_back(elements[i]->elements()[e]->domains()[0]);
 			}
-			std::sort(elements[f]->domains().begin(), elements[f]->domains().end());
-			auto it = std::unique(elements[f]->domains().begin(), elements[f]->domains().end());
-			elements[f]->domains().resize(it - elements[f]->domains().begin());
+			std::sort(elements[i]->domains().begin(), elements[i]->domains().end());
+			// WARNING: std::unique is broken
+//			auto it = std::unique(elements[i]->domains().begin(), elements[i]->domains().end());
+//			elements[i]->domains().resize(it - elements[i]->domains().begin());
+			size_t unique = 0;
+			for (size_t d = 1; d < elements[i]->domains().size(); d++) {
+				if (elements[i]->domains()[unique] != elements[i]->domains()[d]) {
+					elements[i]->domains()[++unique] = elements[i]->domains()[d];
+				}
+			}
+			elements[i]->domains().resize(unique + 1);
 		}
 	}
 }
@@ -1274,38 +1305,6 @@ void Mesh::mapNodesToDomains()
 	assignDomains(_nodes);
 }
 
-void Mesh::prepare(bool faces, bool edges)
-{
-
-}
-
-//static void prepareDOFsIndicesVectors(std::vector<Element*> &elements, size_t DOFs)
-//{
-//	size_t threads = config::env::CILK_NWORKERS;
-//	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
-//
-//	cilk_for (size_t t = 0; t < threads; t++) {
-//		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-//			elements[e]->DOFsIndices().resize(DOFs * elements[e]->domains().size(), -1);
-//		}
-//	}
-//}
-
-//static void assignDOFsIndices(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &startOffsets)
-//{
-//	size_t threads = config::env::CILK_NWORKERS;
-//	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
-//
-//	// first
-//	std::vector<std::vector<size_t> > offsets(1 + threads, std::vector<std::vector<size_t> >(DOFs.size(), 0));
-//
-//	cilk_for (size_t t = 0; t < threads; t++) {
-//		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-//
-//		}
-//	}
-//}
-
 static void setDOFsIndices(
 		std::vector<Element*> &elements,
 		size_t parts,
@@ -1316,6 +1315,7 @@ static void setDOFsIndices(
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		std::vector<std::vector<size_t> > counters(parts);
 		for (size_t p = 0; p < parts; p++) {
@@ -1389,6 +1389,7 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	// domains x DOFs x (threads + 1)
 	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1, 0)));
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		std::vector<std::vector<size_t> > threadOffsets(parts(), std::vector<size_t>(DOFs.size(), 0));
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -1438,6 +1439,7 @@ static void computeDOFsIndicesOffsets(
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 	threadsSizes.resize(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1, 0)));
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		std::vector<size_t> threadOffsets(parts, 0);
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -1578,6 +1580,7 @@ void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Prop
 
 	// Create list of neighbours elements
 	std::vector<std::vector<Element*> > nElements(neighbours.size());
+	#pragma cilk grainsize = 1
 	cilk_for (size_t n = 0; n < neighbours.size(); n++) {
 		size_t p = 0;
 		while (p + 1 < rBuffer[n].size()) {
@@ -1624,6 +1627,7 @@ void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Prop
 		}
 	}
 
+	#pragma cilk grainsize = 1
 	cilk_for (size_t n = 0; n < neighbours.size(); n++) {
 		for (size_t e = 0; e < nElements[n].size(); e++) {
 			delete nElements[n][e];

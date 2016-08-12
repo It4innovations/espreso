@@ -43,12 +43,6 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-
-	_mesh.prepare(
-		false,
-		config::solver::B0_TYPE == config::solver::B0_TYPEalternative::KERNELS &&
-		config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI
-	);
 }
 
 static double determinant2x2(DenseMatrix &m)
