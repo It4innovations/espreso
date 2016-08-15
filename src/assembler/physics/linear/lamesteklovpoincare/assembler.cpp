@@ -67,7 +67,7 @@ static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, s
 	}
 }
 
-static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<eslocal> &fixPoints, const Coordinates &coordinates, size_t subdomain)
+static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<Element*> &fixPoints, const Coordinates &coordinates, size_t subdomain)
 {
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;
@@ -96,33 +96,33 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 		kernel[c] = 1;
 
 		for (size_t i = 0; i < fixPoints.size(); i++) {
-			COLS.push_back(3 * fixPoints[i] + 1);
-			COLS.push_back(3 * fixPoints[i] + 2);
-			COLS.push_back(3 * fixPoints[i] + 3);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 2);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + 3);
 			VALS.insert(VALS.end(), kernel.begin(), kernel.end());
 		}
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates.get(fixPoints[i], subdomain);
-		COLS.push_back(3 * fixPoints[i] + 1);
-		COLS.push_back(3 * fixPoints[i] + 2);
+		const Point &p = coordinates[fixPoints[i]->node(0)];
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 2);
 		VALS.push_back(-p.y);
 		VALS.push_back( p.x);
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates.get(fixPoints[i], subdomain);
-		COLS.push_back(3 * fixPoints[i] + 1);
-		COLS.push_back(3 * fixPoints[i] + 3);
+		const Point &p = coordinates[fixPoints[i]->node(0)];
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + 3);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.x);
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates.get(fixPoints[i], subdomain);
-		COLS.push_back(3 * fixPoints[i] + 2);
-		COLS.push_back(3 * fixPoints[i] + 3);
+		const Point &p = coordinates[fixPoints[i]->node(0)];
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 2);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + 3);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.y);
 	}

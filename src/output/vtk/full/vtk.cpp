@@ -37,7 +37,9 @@ void VTK_Full::fixPoints(const Mesh &mesh, const std::string &path, double shrin
 	VTK_Full output(mesh, path);
 	std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
 	for (size_t p = 0; p < mesh.parts(); p++) {
-		fixPoints[p] = mesh.fixPoints(p);
+		for (size_t i = 0; i < mesh.fixPoints(p).size(); i++) {
+			fixPoints[p].push_back(mesh.fixPoints(p)[i]->node(0));
+		}
 	}
 	output.store(fixPoints, shrinkSubdomain, shringCluster);
 }

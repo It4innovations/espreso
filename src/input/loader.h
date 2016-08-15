@@ -68,7 +68,15 @@ public:
 		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
 				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
-		fixPoints(mesh._fixPoints);
+		std::vector<std::vector<eslocal> > fPoints;
+		fixPoints(fPoints);
+		mesh._fixPoints.resize(mesh.parts());
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			mesh._fixPoints[p].reserve(fPoints[p].size());
+			for (size_t i = 0; i < fPoints[p].size(); i++) {
+				mesh._fixPoints[p].push_back(mesh.nodes()[fPoints[p][i]]);
+			}
+		}
 
 		TimeEvent tCorners("corners"); tCorners.start();
 		corners(mesh._corners);

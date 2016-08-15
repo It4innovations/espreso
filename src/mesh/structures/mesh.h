@@ -53,7 +53,7 @@ public:
 	const std::vector<Element*>& edges() const { return _edges; };
 	const std::vector<Element*>& nodes() const { return _nodes; };
 
-	const std::vector<eslocal>& fixPoints(size_t part) const { return _fixPoints[part]; };
+	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; };
 
 	size_t parts() const { return _partPtrs.size() - 1; }
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
@@ -120,7 +120,7 @@ protected:
 	std::vector<Element*> _nodes;
 
 	/** @brief Fix points for all parts. */
-	std::vector<std::vector<eslocal> > _fixPoints;
+	std::vector<std::vector<Element*> > _fixPoints;
 
 	/// Corners for HFETI
 	std::vector<eslocal> _corners;

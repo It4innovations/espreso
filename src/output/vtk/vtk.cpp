@@ -115,7 +115,7 @@ void VTK::coordinates(const Coordinates &coordinates, const std::vector<std::vec
 
 	for (size_t p = 0; p < parts; p++) {
 		for (size_t i = 0; i < points[p].size(); i++) {
-			_vtk << shrink(coordinates.get(points[p][i], p), _subdomainsCenter[p], shrinkSubdomain, _clusterCenter, shringCluster) << "\n";
+			_vtk << shrink(coordinates[points[p][i]], _subdomainsCenter[p], shrinkSubdomain, _clusterCenter, shringCluster) << "\n";
 		}
 	}
 	_vtk << "\n";

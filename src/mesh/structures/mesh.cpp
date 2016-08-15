@@ -91,6 +91,7 @@ void APIMesh::partitiate(size_t parts)
 void Mesh::computeFixPoints(size_t number)
 {
 	std::vector<eslocal> fixPoints(number);
+	_fixPoints.resize(parts());
 
 	cilk_for (size_t part = 0; part < parts(); part++) {
 		size_t max = (_partPtrs[part + 1] - _partPtrs[part]) / 20 + 1;
@@ -106,8 +107,10 @@ void Mesh::computeFixPoints(size_t number)
 
 		delete[] eSubPartition;
 
-		_fixPoints.resize(parts());
-		_fixPoints[part] = fixPoints;
+		_fixPoints[part].reserve(fixPoints.size());
+		for (size_t i = 0; i < fixPoints.size(); i++) {
+			_fixPoints[part].push_back(_nodes[fixPoints[i]]);
+		}
 	}
 }
 
@@ -1363,8 +1366,8 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
-	// domains x DOFs x threads
-	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads)));
+	// domains x DOFs x (threads + 1)
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1)));
 
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
@@ -1415,8 +1418,8 @@ static std::vector<size_t> fillUniformDOFs(
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
-	// domains x DOF x threads
-	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads)));
+	// domains x DOF x (threads + 1)
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1)));
 
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {

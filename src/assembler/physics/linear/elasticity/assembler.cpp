@@ -205,7 +205,7 @@ static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, s
 	}
 }
 
-static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<eslocal> &fixPoints, const Coordinates &coordinates, size_t subdomain)
+static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<Element*> &fixPoints, const Coordinates &coordinates, size_t subdomain)
 {
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;
@@ -231,36 +231,36 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 
 	for (size_t c = 0; c < 3; c++) {
 		std::vector<double> kernel = { 0, 0, 0 };
-		kernel[c] = 1;
 
+		kernel[c] = 1;
 		for (size_t i = 0; i < fixPoints.size(); i++) {
-			COLS.push_back(3 * fixPoints[i] + 1);
-			COLS.push_back(3 * fixPoints[i] + 2);
-			COLS.push_back(3 * fixPoints[i] + 3);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
 			VALS.insert(VALS.end(), kernel.begin(), kernel.end());
 		}
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates.get(fixPoints[i], subdomain);
-		COLS.push_back(3 * fixPoints[i] + 1);
-		COLS.push_back(3 * fixPoints[i] + 2);
+		const Point &p = coordinates[fixPoints[i]->node(0)];
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
 		VALS.push_back(-p.y);
 		VALS.push_back( p.x);
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates.get(fixPoints[i], subdomain);
-		COLS.push_back(3 * fixPoints[i] + 1);
-		COLS.push_back(3 * fixPoints[i] + 3);
+		const Point &p = coordinates[fixPoints[i]->node(0)];
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.x);
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates.get(fixPoints[i], subdomain);
-		COLS.push_back(3 * fixPoints[i] + 2);
-		COLS.push_back(3 * fixPoints[i] + 3);
+		const Point &p = coordinates[fixPoints[i]->node(0)];
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.y);
 	}
@@ -305,7 +305,6 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 	const std::vector<Element*> &elements = _mesh.elements();
 	const std::vector<Element*> &nodes = _mesh.nodes();
 
-
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
 		processElement(Ke, fe, _mesh, subdomain, elements[e]);
@@ -316,10 +315,10 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 				for (size_t ny = 0; ny < elements[e]->nodes(); ny++) {
 					for (size_t dy = 0; dy < pointDOFs.size(); dy++) {
 						size_t column = nodes[elements[e]->node(ny)]->DOFIndex(subdomain, dy);
-						_K(row, column) = Ke(dx * elements[e]->nodes()+ nx, dy * elements[e]->nodes()+ ny);
+						_K(row, column) = Ke(dx * elements[e]->nodes() + nx, dy * elements[e]->nodes() + ny);
 					}
 				}
-				f[subdomain][row] += fe[dx * elements[e]->nodes()+ nx];
+				f[subdomain][row] += fe[dx * elements[e]->nodes() + nx];
 			}
 		}
 	}
@@ -330,6 +329,10 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 
 	switch (config::solver::REGULARIZATION) {
 	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+		if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {
+			ESINFO(GLOBAL_ERROR) << "Implement regularization for GROUP_DOFS alternative";
+		}
+
 		analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
 		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
 		K[subdomain].RemoveLower();
