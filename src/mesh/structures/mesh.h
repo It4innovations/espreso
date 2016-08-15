@@ -44,7 +44,7 @@ public:
 	virtual ~Mesh();
 
 	virtual void partitiate(size_t parts);
-	std::vector<eslocal> computeFixPoints(size_t part, size_t number) const;
+	void computeFixPoints(size_t number);
 	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
 
 	const Coordinates& coordinates() const { return _coordinates; }
@@ -52,6 +52,8 @@ public:
 	const std::vector<Element*>& faces() const { return _faces; };
 	const std::vector<Element*>& edges() const { return _edges; };
 	const std::vector<Element*>& nodes() const { return _nodes; };
+
+	const std::vector<eslocal>& fixPoints(size_t part) const { return _fixPoints[part]; };
 
 	size_t parts() const { return _partPtrs.size() - 1; }
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
@@ -81,17 +83,16 @@ protected:
 	void mapFacesToClusters();
 	void mapEdgesToClusters();
 
+	void mapCoordinatesToDomains();
 	void mapElementsToDomains();
 	void mapFacesToDomains();
 	void mapEdgesToDomains();
 	void mapNodesToDomains();
 
-
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
 
-	void remapElementsToSubdomain() const;
-	void remapElementsToCluster() const;
+
 
 	void makePartContinuous(size_t part);
 	void computeCommonFaces(Mesh &faces);
@@ -101,7 +102,7 @@ protected:
 	void correctCycle(Mesh &faces, Mesh &lines, bool average);
 
 	/** @brief Reference to coordinates. */
-	mutable Coordinates _coordinates;
+	Coordinates _coordinates;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;
@@ -118,9 +119,8 @@ protected:
 	/// Nodes of the elements.
 	std::vector<Element*> _nodes;
 
-
 	/** @brief Fix points for all parts. */
-	mutable std::vector<std::vector<eslocal> > _fixPoints;
+	std::vector<std::vector<eslocal> > _fixPoints;
 
 	/// Corners for HFETI
 	std::vector<eslocal> _corners;

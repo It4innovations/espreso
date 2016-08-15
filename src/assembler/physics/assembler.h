@@ -54,6 +54,8 @@ struct Physics {
 	std::vector<Property> pointDOFs;
 	std::vector<Property> midPointDOFs;
 
+	std::vector<size_t> matrixSize;
+
 	SparseMatrix::MatrixType mtype;
 	std::vector<SparseMatrix> K, R1, R2, RegMat;
 	std::vector<std::vector<double> > f;
@@ -73,7 +75,8 @@ struct Physics {
 	faceDOFs(faceDOFs),
 	edgeDOFs(edgeDOFs),
 	pointDOFs(pointDOFs),
-	midPointDOFs(midPointDOFs) {};
+	midPointDOFs(midPointDOFs),
+	matrixSize(mesh.parts()) {};
 
 	virtual ~Physics() {};
 

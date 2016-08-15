@@ -17,14 +17,10 @@ void Mesh::partitiate(size_t parts)
 		_partPtrs.resize(parts + 1);
 		_partPtrs[0] = 0;
 		_partPtrs[1] = _elements.size();
-		remapElementsToSubdomain();
+		mapCoordinatesToDomains();
 		//computeBoundaries();
 		// TODO: init
 		return;
-	}
-
-	if (this->parts()) {
-		this->remapElementsToCluster();
 	}
 
 	_partPtrs.resize(parts + 1);
@@ -56,7 +52,7 @@ void Mesh::partitiate(size_t parts)
 	}
 	delete[] ePartition;
 
-	remapElementsToSubdomain();
+	mapCoordinatesToDomains();
 	// TODO:
 	//computeBoundaries();
 }
@@ -67,14 +63,10 @@ void APIMesh::partitiate(size_t parts)
 		_partPtrs.resize(parts + 1);
 		_partPtrs[0] = 0;
 		_partPtrs[1] = _elements.size();
-		remapElementsToSubdomain();
+		mapCoordinatesToDomains();
 		// TODO: init
 		//computeBoundaries();
 		return;
-	}
-
-	if (this->parts()) {
-		this->remapElementsToCluster();
 	}
 
 	eslocal *ePartition = getPartition(0, _elements.size(), parts);
@@ -91,39 +83,32 @@ void APIMesh::partitiate(size_t parts)
 
 	delete[] ePartition;
 
-	remapElementsToSubdomain();
+	mapCoordinatesToDomains();
 	// TODO: init
 	//computeBoundaries();
 }
 
-std::vector<eslocal> Mesh::computeFixPoints(size_t part, size_t number) const
+void Mesh::computeFixPoints(size_t number)
 {
-	if (_fixPoints.size() && _fixPoints[part].size()) {
-		return _fixPoints[part];
-	}
 	std::vector<eslocal> fixPoints(number);
 
-	if (number == 0) {
-		return fixPoints;
+	cilk_for (size_t part = 0; part < parts(); part++) {
+		size_t max = (_partPtrs[part + 1] - _partPtrs[part]) / 20 + 1;
+		eslocal *eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], std::min(number, max));
+
+		for (eslocal j = 0; j < number; j++) {
+			fixPoints[j] = getCentralNode(_partPtrs[part], _partPtrs[part + 1], eSubPartition, part, j);
+		}
+		std::sort(fixPoints.begin(), fixPoints.end());
+
+		// Remove the same points
+		Esutils::unique(fixPoints);
+
+		delete[] eSubPartition;
+
+		_fixPoints.resize(parts());
+		_fixPoints[part] = fixPoints;
 	}
-
-	size_t max = (_partPtrs[part + 1] - _partPtrs[part]) / 20 + 1;
-	eslocal *eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], std::min(number, max));
-
-	for (eslocal j = 0; j < number; j++) {
-		fixPoints[j] = getCentralNode(_partPtrs[part], _partPtrs[part + 1], eSubPartition, part, j);
-	}
-	std::sort(fixPoints.begin(), fixPoints.end());
-
-	// Remove the same points
-	auto it = std::unique(fixPoints.begin(), fixPoints.end());
-	fixPoints.resize(it - fixPoints.begin());
-
-	delete[] eSubPartition;
-
-	_fixPoints.resize(parts());
-	_fixPoints[part] = fixPoints;
-	return fixPoints;
 }
 
 static void checkMETISResult(eslocal result)
@@ -426,7 +411,7 @@ void Mesh::getSurface(Mesh &surface) const
 		surface._partPtrs.push_back(surface._elements.size());
 	}
 
-	surface.remapElementsToSubdomain();
+	surface.mapCoordinatesToDomains();
 	ESINFO(GLOBAL_ERROR) << "Check boundaries for surface";
 //	surface.computeBoundaries();
 //	surface._clusterBoundaries = _clusterBoundaries;
@@ -547,8 +532,6 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 		}
 	}
 
-	remapElementsToCluster();
-
 	cilk_for (size_t p = 0; p < parts(); p++) {
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			for (size_t f = 0; f < _elements[e]->faces(); f++) {
@@ -655,11 +638,6 @@ std::vector<std::vector<eslocal> > Mesh::subdomainsInterfaces(Mesh &interface) c
 			}
 		}
 	}
-
-	interface.remapElementsToSubdomain();
-	//interface.computeBoundaries();
-
-	remapElementsToSubdomain();
 
 	return sMap;
 }
@@ -815,7 +793,7 @@ void Mesh::computeBorderLinesAndVertices(const Mesh &faces,std::vector<bool> &bo
 		}
 	}
 
-	lines.remapElementsToSubdomain();
+	lines.mapCoordinatesToDomains();
 }
 
 void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
@@ -889,12 +867,10 @@ void Mesh::correctCycle(Mesh &faces, Mesh &lines, bool average)
 				lines._elements.erase(lines._elements.begin() + lines._partPtrs[p], lines._elements.begin() + lines._partPtrs[p + 1]);
 			}
 		}
-	} else {
-		lines.remapElementsToCluster();
 	}
 	lines._partPtrs.swap(partPtrs);
 	if (average) {
-		lines.remapElementsToSubdomain();
+		lines.mapCoordinatesToDomains();
 		//lines.computeFixPoints(1);
 	}
 }
@@ -919,7 +895,7 @@ void Mesh::prepareAveragingLines(Mesh &faces, Mesh &lines)
 		return _nodes[index]->clusters().size() > 1;
 	};
 
-	lines.remapElementsToCluster();
+	//lines.remapElementsToCluster();
 
 	for (size_t e = 0; e < lines._partPtrs.back(); e++) {
 		for (size_t n = 0; n < lines._elements[e]->nodes(); n++) {
@@ -946,12 +922,12 @@ void Mesh::prepareAveragingLines(Mesh &faces, Mesh &lines)
 	lines._elements.resize(partition.back());
 	lines._partPtrs.swap(partition);
 
-	lines.remapElementsToSubdomain();
+	lines.mapCoordinatesToDomains();
 }
 
 void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 {
-	faces.remapElementsToCluster();
+	// faces.remapElementsToCluster();
 
 	for (size_t e = 0; e < faces._partPtrs.back(); e++) {
 		for (size_t n = 0; n < faces._elements[e]->nodes(); n++) {
@@ -978,7 +954,7 @@ void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 	faces._elements.resize(partition.back());
 	faces._partPtrs.swap(partition);
 
-	faces.remapElementsToSubdomain();
+	faces.mapCoordinatesToDomains();
 }
 
 
@@ -1387,12 +1363,12 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
-	// domains x DOFs x (threads + 1)
-	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1, 0)));
+	// domains x DOFs x threads
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads)));
 
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
-		std::vector<std::vector<size_t> > threadOffsets(parts(), std::vector<size_t>(DOFs.size(), 0));
+		std::vector<std::vector<size_t> > threadOffset(parts(), std::vector<size_t>(DOFs.size(), 0));
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 			_nodes[i]->DOFsIndices().resize(DOFs.size() * _nodes[i]->domains().size(), -1);
 
@@ -1404,7 +1380,7 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
 					if (addDOF[dof]) {
 						_nodes[i]->DOFsIndices()[d * DOFs.size() + dof] = 1;
-						threadOffsets[_nodes[i]->domains()[d]][dof]++;
+						threadOffset[_nodes[i]->domains()[d]][dof]++;
 					}
 				}
 			}
@@ -1412,7 +1388,7 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 
 		for (size_t p = 0; p < parts(); p++) {
 			for (size_t d = 0; d < DOFs.size(); d++) {
-				threadsOffsets[p][d][t] = threadOffsets[p][d];
+				threadsOffsets[p][d][t] = threadOffset[p][d];
 			}
 		}
 	}
@@ -1429,35 +1405,6 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	return sizes;
 }
 
-static void computeDOFsIndicesOffsets(
-		std::vector<std::vector<std::vector<size_t> > > &threadsSizes,
-		std::vector<Element*> &elements,
-		size_t parts,
-		const std::vector<Property> &DOFs,
-		const std::vector<size_t> &offsets)
-{
-	size_t threads = config::env::CILK_NWORKERS;
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
-	threadsSizes.resize(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1, 0)));
-
-	#pragma cilk grainsize = 1
-	cilk_for (size_t t = 0; t < threads; t++) {
-		std::vector<size_t> threadOffsets(parts, 0);
-		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			elements[i]->DOFsIndices().resize(DOFs.size() * elements[i]->domains().size(), 1);
-
-			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-				threadOffsets[elements[i]->domains()[d]]++;
-			}
-		}
-
-		for (size_t p = 0; p < parts; p++) {
-			for (size_t d = 0; d < DOFs.size(); d++) {
-				threadsSizes[p][d][t] = threadOffsets[p];
-			}
-		}
-	}
-}
 
 static std::vector<size_t> fillUniformDOFs(
 		std::vector<Element*> &elements,
@@ -1465,9 +1412,29 @@ static std::vector<size_t> fillUniformDOFs(
 		const std::vector<Property> &DOFs,
 		const std::vector<size_t> &offsets)
 {
-	// domains x DOF x (threads + 1)
-	std::vector<std::vector<std::vector<size_t> > > threadsOffsets;
-	computeDOFsIndicesOffsets(threadsOffsets, elements, parts, DOFs, offsets);
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+
+	// domains x DOF x threads
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads)));
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		std::vector<size_t> threadOffset(parts, 0);
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			elements[i]->DOFsIndices().resize(DOFs.size() * elements[i]->domains().size(), 1);
+
+			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
+				threadOffset[elements[i]->domains()[d]]++;
+			}
+		}
+
+		for (size_t p = 0; p < parts; p++) {
+			for (size_t d = 0; d < DOFs.size(); d++) {
+				threadsOffsets[p][d][t] = threadOffset[p];
+			}
+		}
+	}
 
 	std::vector<size_t> sizes(offsets);
 	for (size_t p = 0; p < parts; p++) {
@@ -1670,41 +1637,21 @@ void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 	computeDOFsCounters(_faces, DOFs, *this);
 }
 
-void Mesh::remapElementsToSubdomain() const
+void Mesh::mapCoordinatesToDomains()
 {
 	_coordinates._clusterIndex.clear();
 	_coordinates._clusterIndex.resize(parts());
 
 	cilk_for (size_t p = 0; p < parts(); p++) {
 		std::vector<eslocal> l2g;
-
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			l2g.insert(l2g.end(), _elements[e]->indices(), _elements[e]->indices() + _elements[e]->nodes());
 		}
 
 		std::sort(l2g.begin(), l2g.end());
 		Esutils::unique(l2g);
-//		auto it = std::unique(l2g.begin(), l2g.end());
-//		l2g.resize(std::distance(l2g.begin(), it));
-
-		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (eslocal n = 0; n < _elements[e]->nodes(); n++) {
-				_elements[e]->node(n) = std::lower_bound(l2g.begin(), l2g.end(), _elements[e]->node(n)) - l2g.begin();
-			}
-		}
 
 		_coordinates._clusterIndex[p] = l2g;
-	}
-}
-
-void Mesh::remapElementsToCluster() const
-{
-	cilk_for (eslocal p = 0; p < parts(); p++) {
-		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
-			for (eslocal n = 0; n < _elements[e]->nodes(); n++) {
-				_elements[e]->node(n) = _coordinates.clusterIndex(_elements[e]->node(n), p);
-			}
-		}
 	}
 }
 

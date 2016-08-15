@@ -34,7 +34,6 @@ void Esdata::coordinates(const Coordinates &coordinates)
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
-		value = coordinates.localSize(p);
 		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
 		for (eslocal i = 0; i < coordinates.localSize(p); i++) {
 			index = coordinates.globalIndex(i, p);

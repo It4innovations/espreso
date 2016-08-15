@@ -44,8 +44,6 @@ public:
 		tElements.end(); measurement.addEvent(tElements);
 		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
 
-		mesh.fillFacesFromElements();
-		mesh.fillEdgesFromElements();
 		mesh.fillNodesFromElements();
 
 		TimeEvent tFaces("faces"); tFaces.start();
@@ -62,9 +60,6 @@ public:
 		tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
 		ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
 
-		mesh.mapFacesToClusters();
-		mesh.mapEdgesToClusters();
-
 		close();
 
 		TimeEvent tPartition("partition"); tPartition.start();
@@ -80,9 +75,8 @@ public:
 		tCorners.end(); measurement.addEvent(tCorners);
 
 		mesh.mapElementsToDomains();
-		mesh.mapFacesToDomains();
-		mesh.mapEdgesToDomains();
 		mesh.mapNodesToDomains();
+		mesh.mapCoordinatesToDomains();
 
 		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
@@ -109,30 +103,7 @@ protected:
 	}
 
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) {};
-
-	virtual void corners(std::vector<eslocal> &corners)
-	{
-		if (config::solver::FETI_METHOD == config::TOTAL_FETI || config::solver::B0_TYPE == config::B0Type::KERNELS) {
-			return;
-		}
-		mesh.computeCorners(
-				config::mesh::corners,
-				config::mesh::vertexCorners,
-				config::mesh::edgeCorners,
-				config::mesh::faceCorners,
-				config::mesh::averageEdges,
-				config::mesh::averageFaces);
-	}
-
-	void remapElementsToSubdomains()
-	{
-		mesh.remapElementsToSubdomain();
-	}
-
-	void computeBoundaries()
-	{
-		//mesh.computeBoundaries();
-	}
+	virtual void corners(std::vector<eslocal> &corners) {};
 
 	Loader(Mesh &mesh): mesh(mesh) {};
 	virtual ~Loader() {};

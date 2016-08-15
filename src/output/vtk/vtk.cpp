@@ -140,7 +140,7 @@ void VTK::elements(const Mesh &mesh)
 			// elements
 			_vtk << elements[i]->nodes();
 			for (size_t j = 0; j < elements[i]->nodes(); j++) {
-				_vtk << " " << elements[i]->node(j) + offset;
+				_vtk << " " << mesh.coordinates().localIndex(elements[i]->node(j), p) + offset;
 			}
 			_vtk << "\n";
 		}

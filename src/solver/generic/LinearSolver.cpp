@@ -727,20 +727,41 @@ void LinearSolver::set_R (
 		const Mesh &mesh
 )
 {
-	std::vector < std::vector < std:: vector < double > > > coordinates;
-	coordinates.resize( number_of_subdomains_per_cluster );
+	ESINFO(GLOBAL_ERROR) << "SetR -> R is computed in assembler";
 
-	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		coordinates[d].resize(mesh.coordinates().localSize(d), std::vector <double> (2, 0.0));
-		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
-			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
-			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
-			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
-		}
-		cluster.domains[d].CreateKplus_R( coordinates[d] );
-		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
-
-	}
+//	std::vector < std::vector < std:: vector < double > > > coordinates;
+//	coordinates.resize( number_of_subdomains_per_cluster );
+//
+//	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+//		coordinates[d].resize(mesh.coordinates().localSize(d), std::vector <double> (2, 0.0));
+//		for (eslocal i = 0; i < mesh.coordinates().localSize(d); i++) {
+//			coordinates[d][i][0] = mesh.coordinates().get(i, d).x;
+//			coordinates[d][i][1] = mesh.coordinates().get(i, d).y;
+//			coordinates[d][i][2] = mesh.coordinates().get(i, d).z;
+//		}
+//		cluster.domains[d].CreateKplus_R( coordinates[d] );
+//
+//		//TODO: *** test nesymetrickeho systemu pro GGt - smazat !!
+//		if (!cluster.SYMMETRIC_SYSTEM) {
+//			cluster.domains[d].Kplus_R2 = cluster.domains[d].Kplus_R;
+//
+////			int rows = cluster.domains[d].Kplus_R2.rows;
+////			int cols = cluster.domains[d].Kplus_R2.cols;
+////			for (int c = 0; c < cols; c++) {
+////				int s1 = c * rows;
+////				int s2 = (cols - 1 - c) * rows;
+////				for (int r = 0; r < rows; r++) {
+////					cluster.domains[d].Kplus_R2.dense_values[s2 + r] =
+////							cluster.domains[d].Kplus_R.dense_values[s1 + r];
+////				}
+////			}
+//
+//		}
+//		//***
+//
+//		//cluster.domains[d].Kplus_Rb = cluster.domains[d].Kplus_R;
+//
+//	}
 
 }
 

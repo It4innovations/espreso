@@ -27,8 +27,7 @@ void LinearElasticity::prepareMeshStructures()
 	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	std::vector<size_t> offsets(_mesh.parts(), 0);
-	_mesh.assignUniformDOFsIndicesToNodes(offsets, pointDOFs);
+	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 }
 
@@ -132,10 +131,10 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	Point mid;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		coordinates(i, 0) = mesh.coordinates().get(element->node(i), subdomain).x;
-		coordinates(i, 1) = mesh.coordinates().get(element->node(i), subdomain).y;
-		coordinates(i, 2) = mesh.coordinates().get(element->node(i), subdomain).z;
-		mid += mesh.coordinates().get(element->node(i), subdomain);
+		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
+		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
+		coordinates(i, 2) = mesh.coordinates()[element->node(i)].z;
+		mid += mesh.coordinates()[element->node(i)];
 	}
 	mid /= element->nodes();
 
@@ -295,14 +294,12 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void LinearElasticity::composeSubdomain(size_t subdomain)
 {
-	eslocal subdomainSize = pointDOFs.size() * _mesh.coordinates().localSize(subdomain);
-
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke;
 	std::vector<double> fe;
 
-	_K.resize(subdomainSize, subdomainSize);
-	f[subdomain].resize(subdomainSize);
+	_K.resize(matrixSize[subdomain], matrixSize[subdomain]);
+	f[subdomain].resize(matrixSize[subdomain]);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
 	const std::vector<Element*> &elements = _mesh.elements();
@@ -313,21 +310,12 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 
 		processElement(Ke, fe, _mesh, subdomain, elements[e]);
 
-//		for (size_t i = 0; i < pointDOFs.size() * elements[e]->nodes(); i++) {
-//			size_t row = pointDOFs.size() * (elements[e]->node(i % elements[e]->nodes())) + i / elements[e]->nodes();
-//			for (size_t j = 0; j < pointDOFs.size() * elements[e]->nodes(); j++) {
-//				size_t column = pointDOFs.size() * (elements[e]->node(j % elements[e]->nodes())) + j / elements[e]->nodes();
-//				_K(row, column) = Ke(i, j);
-//			}
-//			f[subdomain][row] += fe[i];
-//		}
-
 		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
 			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
-				size_t row = nodes[_mesh.coordinates().clusterIndex(elements[e]->node(nx), subdomain)]->DOFIndex(subdomain, dx);
+				size_t row = nodes[elements[e]->node(nx)]->DOFIndex(subdomain, dx);
 				for (size_t ny = 0; ny < elements[e]->nodes(); ny++) {
 					for (size_t dy = 0; dy < pointDOFs.size(); dy++) {
-						size_t column = nodes[_mesh.coordinates().clusterIndex(elements[e]->node(ny), subdomain)]->DOFIndex(subdomain, dy);
+						size_t column = nodes[elements[e]->node(ny)]->DOFIndex(subdomain, dy);
 						_K(row, column) = Ke(dx * elements[e]->nodes()+ nx, dy * elements[e]->nodes()+ ny);
 					}
 				}
@@ -343,7 +331,7 @@ void LinearElasticity::composeSubdomain(size_t subdomain)
 	switch (config::solver::REGULARIZATION) {
 	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
 		analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.computeFixPoints(subdomain, config::mesh::FIX_POINTS), _mesh.coordinates(), subdomain);
+		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
 		K[subdomain].RemoveLower();
 		RegMat[subdomain].RemoveLower();
 		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
