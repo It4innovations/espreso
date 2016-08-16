@@ -17,55 +17,43 @@ void Mesh::partitiate(size_t parts)
 		_partPtrs.resize(parts + 1);
 		_partPtrs[0] = 0;
 		_partPtrs[1] = _elements.size();
-		mapCoordinatesToDomains();
-		//computeBoundaries();
-		// TODO: init
-		return;
-	}
+		mapElementsToDomains();
+	} else {
+		_partPtrs.resize(parts + 1);
+		_partPtrs[0] = 0;
 
-	_partPtrs.resize(parts + 1);
-	_partPtrs[0] = 0;
+		eslocal *ePartition = getPartition(0, _elements.size(), parts);
 
-	eslocal *ePartition = getPartition(0, _elements.size(), parts);
-
-	Element *e;
-	eslocal p;
-	for (size_t part = 0; part < parts; part++) {
-		eslocal index = _partPtrs[part];	// index of last ordered element
-		for (size_t i = _partPtrs[part]; i < _elements.size(); i++) {
-			if (ePartition[i] == part) {
-				if (i == index) {
-					index++;
-				} else {
-					e = _elements[i];
-					_elements[i] = _elements[index];
-					_elements[index] = e;
-					p = ePartition[i];
-					ePartition[i] = ePartition[index];
-					ePartition[index] = p;
-					index++;
-				}
-			}
+		_partPtrs = std::vector<eslocal>(parts + 1, 0);
+		for (size_t i = 0; i < _elements.size(); i++) {
+			_elements[i]->domains().clear();
+			_elements[i]->domains().push_back(ePartition[i]);
+			_partPtrs[ePartition[i]]++;
 		}
-		_partPtrs[part + 1] = index;
-		ESTEST(MANDATORY) << "subdomain without element" << (_partPtrs[part] == _partPtrs[part + 1] ? TEST_FAILED : TEST_PASSED);
-	}
-	delete[] ePartition;
 
+		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
+		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
+		Esutils::sizesToOffsets(_partPtrs);
+
+		delete[] ePartition;
+	}
+
+	_fixPoints.clear();
+	_corners.clear();
+	mapFacesToDomains();
+	mapEdgesToDomains();
+	mapNodesToDomains();
 	mapCoordinatesToDomains();
-	// TODO:
-	//computeBoundaries();
 }
 
 void APIMesh::partitiate(size_t parts)
 {
+	ESINFO(GLOBAL_ERROR) << "Fix API partition function";
 	if (parts == 1 && this->parts() == 1) {
 		_partPtrs.resize(parts + 1);
 		_partPtrs[0] = 0;
 		_partPtrs[1] = _elements.size();
-		mapCoordinatesToDomains();
-		// TODO: init
-		//computeBoundaries();
+		mapElementsToDomains();
 		return;
 	}
 
@@ -82,14 +70,13 @@ void APIMesh::partitiate(size_t parts)
 	Esutils::sizesToOffsets(_partPtrs);
 
 	delete[] ePartition;
-
-	mapCoordinatesToDomains();
-	// TODO: init
-	//computeBoundaries();
 }
 
 void Mesh::computeFixPoints(size_t number)
 {
+	if (_fixPoints.size() && _fixPoints[0].size() == 0) {
+		return;
+	}
 	std::vector<eslocal> fixPoints(number);
 	_fixPoints.resize(parts());
 
@@ -220,7 +207,7 @@ eslocal Mesh::getCentralNode(
 				std::vector<eslocal> neigh = _elements[i]->getNeighbours(j);
 				for (size_t k = 0; k < neigh.size(); k++) {
 					if (_elements[i]->node(j) < neigh[k]) {
-						neighbours[_elements[i]->node(j)].insert(neigh[k]);
+						neighbours[_coordinates.localIndex(_elements[i]->node(j), part)].insert(_coordinates.localIndex(neigh[k], part));
 					}
 				}
 			}
@@ -278,7 +265,7 @@ eslocal Mesh::getCentralNode(
 	delete[] x;
 	delete[] y;
 
-	return result;
+	return _coordinates.clusterIndex(result, part);
 }
 
 Mesh::~Mesh()
@@ -1242,21 +1229,12 @@ static void assignDomains(std::vector<Element*> &elements)
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			elements[i]->domains().clear();
 			for (size_t e = 0; e < elements[i]->elements().size(); e++) {
 				elements[i]->domains().push_back(elements[i]->elements()[e]->domains()[0]);
 			}
 			std::sort(elements[i]->domains().begin(), elements[i]->domains().end());
-			// WARNING: std::unique is broken
-//			auto it = std::unique(elements[i]->domains().begin(), elements[i]->domains().end());
-//			elements[i]->domains().resize(it - elements[i]->domains().begin());
 			Esutils::unique(elements[i]->domains());
-//			size_t unique = 0;
-//			for (size_t d = 1; d < elements[i]->domains().size(); d++) {
-//				if (elements[i]->domains()[unique] != elements[i]->domains()[d]) {
-//					elements[i]->domains()[++unique] = elements[i]->domains()[d];
-//				}
-//			}
-//			elements[i]->domains().resize(unique + 1);
 		}
 	}
 }
@@ -1265,6 +1243,7 @@ void Mesh::mapElementsToDomains()
 {
 	cilk_for (size_t p = 0; p < parts(); p++) {
 		for (size_t e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+			_elements[e]->domains().clear();
 			_elements[e]->domains().push_back(p);
 		}
 	}

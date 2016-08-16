@@ -20,7 +20,7 @@ public:
 protected:
 	virtual void elementsMesh(std::vector<Element*> &elements);
 
-	virtual void partitiate(std::vector<eslocal> &parts);
+	virtual bool partitiate(std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void corners(std::vector<eslocal> &corners);
 

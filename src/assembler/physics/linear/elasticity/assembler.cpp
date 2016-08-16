@@ -29,6 +29,10 @@ void LinearElasticity::prepareMeshStructures()
 
 	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
+
+	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
+		_mesh.computeFixPoints(config::mesh::FIX_POINTS);
+	}
 }
 
 void LinearElasticity::assembleGluingMatrices()

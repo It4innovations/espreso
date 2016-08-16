@@ -80,14 +80,14 @@ public:
 		}
 
 		TimeEvent tPartition("partition"); tPartition.start();
-		partitiate(mesh._partPtrs);
+		if (partitiate(mesh._partPtrs)) { // manual partition -> map elements to the domains
+			mesh.mapElementsToDomains();
+			mesh.mapNodesToDomains();
+			mesh.mapCoordinatesToDomains();
+		}
 		tPartition.end(); measurement.addEvent(tPartition);
 		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
 				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
-
-		mesh.mapElementsToDomains();
-		mesh.mapNodesToDomains();
-		mesh.mapCoordinatesToDomains();
 
 		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
@@ -108,9 +108,10 @@ protected:
 	virtual void open() {};
 	virtual void close() {};
 
-	virtual void partitiate(std::vector<eslocal> &parts)
+	virtual bool partitiate(std::vector<eslocal> &parts)
 	{
-		mesh.partitiate(config::mesh::subdomains);
+		mesh.partitiate(config::mesh::SUBDOMAINS);
+		return false;
 	}
 
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) {};

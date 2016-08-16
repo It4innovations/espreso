@@ -65,12 +65,11 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 }
 
 template<class TElement>
-void UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
+bool UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
 {
 	config::mesh::subdomains = _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2];
 	if (_settings.useMetis) {
-		Loader::partitiate(parts);
-		return;
+		return Loader::partitiate(parts);
 	}
 
 	parts.clear();
@@ -81,16 +80,12 @@ void UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
 	for (size_t p = 0; p < config::mesh::SUBDOMAINS; p++) {
 		parts.push_back(parts.back() + mesh.elements().size() / config::mesh::SUBDOMAINS);
 	}
+	return true;
 }
 
 template<class TElement>
 void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
-	if (_settings.useMetis) {
-		Loader::fixPoints(fixPoints);
-		return;
-	}
-
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
 	eslocal SHIFT = 1;
 	eslocal shift_offset[3] = {SHIFT, SHIFT, SHIFT};
@@ -132,15 +127,8 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 	}
 
 	for (size_t p = 0; p < fixPoints.size(); p++) {
-//		for (size_t i = 0; i < fixPoints[p].size(); i++) {
-//			fixPoints[p][i] = mesh.coordinates().localIndex(fixPoints[p][i], p);
-//		}
 		std::sort(fixPoints[p].begin(), fixPoints[p].end());
-
-		// Remove the same points
 		Esutils::unique(fixPoints[p]);
-//		auto it = std::unique(fixPoints[p].begin(), fixPoints[p].end());
-//		fixPoints[p].resize(it - fixPoints[p].begin());
 	}
 }
 
