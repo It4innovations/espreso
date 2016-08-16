@@ -70,6 +70,8 @@ public:
 		return _settings.find(property) != _settings.end();
 	}
 
+	size_t size() const { return _settings.size() - 1; }
+
 private:
 	std::map<Property, std::vector<Evaluator*> > _settings;
 };

@@ -319,14 +319,7 @@ void PlaneGenerator<TElement>::corners(std::vector<eslocal> &corners)
 	}
 
 	std::sort(corners.begin(), corners.end());
-	auto it = std::unique(corners.begin(), corners.end());
-	corners.resize(it - corners.begin());
-
-	if (config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES) {
-		// TODO: check correctness
-		this->mesh.computeCorners(0, true, false, false, config::mesh::AVERAGE_EDGES, config::mesh::AVERAGE_FACES);
-	}
-
+	Esutils::unique(corners);
 }
 
 }

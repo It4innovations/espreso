@@ -45,7 +45,12 @@ public:
 
 	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t number);
-	void computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces);
+	void computeCorners(eslocal number, bool vertices, bool edges, bool faces);
+
+	void computeFacesOfAllElements();
+	void computeFacesOnDomainsSurface();
+	void computeFacesSharedByDomains();
+	void clearFacesWithoutSettings();
 
 	const Coordinates& coordinates() const { return _coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
@@ -77,7 +82,7 @@ public:
 	std::vector<std::vector<eslocal> > subdomainsInterfaces(Mesh &interface) const;
 
 protected:
-	void fillFacesFromElements();
+	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
 	void fillEdgesFromElements();
 	void fillNodesFromElements();
 

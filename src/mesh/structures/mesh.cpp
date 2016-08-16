@@ -948,7 +948,7 @@ void Mesh::prepareAveragingFaces(Mesh &faces, std::vector<bool> &border)
 }
 
 
-void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces, bool averageEdges, bool averageFaces)
+void Mesh::computeCorners(eslocal number, bool vertices, bool edges, bool faces)
 {
 //	if (parts() < 1) {
 //		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
@@ -1133,7 +1133,7 @@ void Mesh::fillEdgesFromElements()
 	});
 }
 
-void Mesh::fillFacesFromElements()
+void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
@@ -1145,8 +1145,14 @@ void Mesh::fillFacesFromElements()
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			_elements[e]->fillFaces();
 
-			for (size_t face = 0; face < _elements[e]->faces(); face++) {
-				faces[t].push_back(_elements[e]->face(face));
+			for (size_t f = 0; f < _elements[e]->faces(); f++) {
+				Element* face = _elements[e]->face(f);
+				if (filter(_nodes, face)) {
+					faces[t].push_back(face);
+				} else {
+					_elements[e]->setFace(f, NULL);
+					delete face;
+				}
 			}
 		}
 	}
@@ -1154,7 +1160,7 @@ void Mesh::fillFacesFromElements()
 	_faces = mergeElements(threads, distribution, faces, [] (Element* e1, Element *e2) {
 		e1->elements().push_back(e2->elements().back()); // Face can be only between two elements
 		for (size_t i = 0; i < e2->elements()[0]->faces(); i++) {
-			if (*e1 == *e2->elements()[0]->face(i)) {
+			if (e2->elements()[0]->face(i) != NULL && *e1 == *e2->elements()[0]->face(i)) {
 				e2->elements()[0]->setFace(i, e1);
 				break;
 			}
@@ -1174,6 +1180,88 @@ void Mesh::fillNodesFromElements()
 			_nodes[_elements[e]->node(n)]->elements().push_back(_elements[e]);
 		}
 	}
+}
+
+
+void Mesh::computeFacesOfAllElements()
+{
+	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element* face) { return true;});
+	mapFacesToClusters();
+	mapFacesToDomains();
+}
+
+
+void Mesh::computeFacesOnDomainsSurface()
+{
+	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element *face) {
+		std::vector<Element*> intersection(nodes[face->node(face->nodes() - 1)]->elements()); // it is better to start from end (from mid points)
+		auto it = intersection.end();
+
+		for (size_t n = face->nodes() - 2; it - intersection.begin() > 1 &&  n < face->nodes(); n--) {
+			std::vector<Element*> tmp(intersection.begin(), it);
+			it = std::set_intersection(tmp.begin(), tmp.end(),
+					nodes[face->node(n)]->elements().begin(), nodes[face->node(n)]->elements().end(),
+					intersection.begin());
+		}
+
+		intersection.resize(it - intersection.begin());
+		return intersection.size() == 1;
+	});
+
+	mapFacesToClusters();
+	mapFacesToDomains();
+}
+
+void Mesh::computeFacesSharedByDomains()
+{
+	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element *face) {
+		std::vector<eslocal> intersection(nodes[face->node(face->nodes() - 1)]->domains()); // it is better to start from end (from mid points)
+		auto it = intersection.end();
+
+		for (size_t n = face->nodes() - 2; it - intersection.begin() > 1 &&  n < face->nodes(); n--) {
+			std::vector<eslocal> tmp(intersection.begin(), it);
+			it = std::set_intersection(tmp.begin(), tmp.end(),
+					nodes[face->node(n)]->domains().begin(), nodes[face->node(n)]->domains().end(),
+					intersection.begin());
+		}
+
+		intersection.resize(it - intersection.begin());
+		return intersection.size() > 1;
+	});
+
+	mapFacesToClusters();
+	mapFacesToDomains();
+}
+
+void Mesh::clearFacesWithoutSettings()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
+			if (!_faces[f]->settings().size()) {
+				for (size_t e = 0; e < _faces[f]->elements().size(); e++) {
+					for (size_t i = 0; i < _faces[f]->elements()[e]->faces(); i++) {
+						if (_faces[f]->elements()[e]->face(i) != NULL && *_faces[f] == *_faces[f]->elements()[e]->face(i)) {
+							_faces[f]->elements()[e]->setFace(i, NULL);
+						}
+					}
+				}
+				delete _faces[f];
+				_faces[f] = NULL;
+			}
+		}
+	}
+
+	size_t it = 0;
+	for (size_t i = 0; i < _faces.size(); i++) {
+		if (_faces[i] != NULL) {
+			_faces[it++] = _faces[i];
+		}
+	}
+	_faces.resize(it);
 }
 
 static void setCluster(Element* &element, std::vector<Element*> &nodes)
