@@ -121,8 +121,8 @@ namespace output {
 	extern bool saveAveraging;
 	extern bool saveResults;
 
-	extern double subdomainShrinkRatio;
-	extern double clusterShrinkRatio;
+	/// Save sub-domains common edges to VTK files.
+	extern bool SAVE_EDGES;
 
 	extern std::vector<input::Description> description;
 };

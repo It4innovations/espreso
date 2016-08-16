@@ -75,18 +75,17 @@ size_t                                   solver::TIME_STEPS            = 1;
 
 assembler::DISCRETIZATIONalternative assembler::DISCRETIZATION = assembler::DISCRETIZATIONalternative::FEM;
 assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS_ORDERalternative::GROUP_ELEMENTS;
->>>>>>> ENH: stiffness matrix get indices from nodes
 
 /////////////////////////////// OUTPUT /////////////////////////////////////////
 
-bool output::saveMesh      = false;
-bool output::saveFixPoints = false;
-bool output::saveFaces     = false;
-bool output::saveLines     = false;
-bool output::saveCorners   = false;
-bool output::saveDirichlet = false;
-bool output::saveAveraging = false;
-bool output::saveResults   = true;
+bool output::SAVE_MESH       = false;
+bool output::SAVE_FIX_POINTS = false;
+bool output::SAVE_FACES      = false;
+bool output::SAVE_EDGES      = false;
+bool output::SAVE_CORNERS    = false;
+bool output::SAVE_DIRICHLET  = false;
+bool output::SAVE_AVERAGING  = false;
+bool output::SAVE_RESULTS    = true;
 
 double output::subdomainShrinkRatio = .95;
 double output::clusterShrinkRatio   = .9;
@@ -192,26 +191,30 @@ std::vector<Description> assembler::description = {
 	{ "COMBINE_SC_AND_SPDS", solver::COMBINE_SC_AND_SPDS, "Combine Schur complement for GPU and sparse direct solver for CPU." },
 	{ "KEEP_FACTORS", solver::KEEP_FACTORS, "Keep factors for whole iteration process." },
 
-	{ "KSOLVER_SP_iter_steps", solver::KSOLVER_SP_iter_steps, "Number of reiteration steps for SP direct solver." },
-	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_iter_norm , "Number of reiteration steps for SP direct solver." },
+	{ "KSOLVER_SP_iter_steps", solver::KSOLVER_SP_STEPS, "Number of reiteration steps for SP direct solver." },
+	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_NORM , "Number of reiteration steps for SP direct solver." },
 
-	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP }
-};
+	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
 
-namespace output {
+	// OUTPUT DESCRIPTION
+	{ "SAVE_MESH"       , output::SAVE_MESH      , "Save an input mesh.", WRITE_TO_HELP },
+	{ "SAVE_FIX_POINTS" , output::SAVE_FIX_POINTS, "Save a mesh fix points." },
+	{ "SAVE_FACES"      , output::SAVE_FACES      , "Save faces between subdomains." },
+	{ "SAVE_EDGES"      , output::SAVE_EDGES      , "Save edges among subdomains." },
+	{ "SAVE_CORNERS"    , output::SAVE_CORNERS    , "Save corner nodes." },
+	{ "SAVE_DIRICHLET"  , output::SAVE_DIRICHLET  , "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
+	{ "SAVE_AVERAGING"  , output::SAVE_AVERAGING  , "Save averaged nodes." },
+	{ "SAVE_RESULTS"    , output::SAVE_RESULTS    , "Save the results.", WRITE_TO_HELP },
 
-std::vector<Description> description = {
-	{ "SAVE_MESH"      , saveMesh     , "Save an input mesh.", WRITE_TO_HELP },
-	{ "SAVE_FIXPOINTS" , saveFixPoints, "Save a mesh fix points." },
-	{ "SAVE_FACES"     , saveFaces    , "Save faces between subdomains." },
-	{ "SAVE_EDGES"     , saveLines    , "Save edges among subdomains." },
-	{ "SAVE_CORNERS"   , saveCorners  , "Save corner nodes." },
-	{ "SAVE_DIRICHLET" , saveDirichlet, "Save nodes with a dirichlet condition.", WRITE_TO_HELP },
-	{ "SAVE_AVERAGING" , saveAveraging, "Save averaged nodes." },
-	{ "SAVE_RESULTS"   , saveResults  , "Save the results.", WRITE_TO_HELP },
+	{ "SUBDOMAIN_SHRINK_RATIO", output::SUBDOMAINS_SHRINK_RATIO, "Shrink ratio for subdomains.", WRITE_TO_HELP },
+	{ "CLUSTER_SHRINK_RATIO"  , output::CLUSTERS_SHRINK_RATIO  , "Shrink ratio for clusters.", WRITE_TO_HELP },
 
-	{ "SUBDOMAIN_SHRINK_RATIO", subdomainShrinkRatio, "Shrink ratio for subdomains.", WRITE_TO_HELP },
-	{ "CLUSTER_SHRINK_RATIO"  , clusterShrinkRatio  , "Shrink ratio for clusters.", WRITE_TO_HELP }
+	// INFO DESCRIPTION
+	{ "OUTPUT", info::OUTPUT, "A location for saving output informations.", WRITE_TO_HELP },
+	{ "VERBOSE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO verbose level.", WRITE_TO_HELP },
+	{ "TESTING_LEVEL", info::TESTING_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
+	{ "MEASURE_LEVEL", info::MEASURE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
+	{ "PRINT_MATRICES", info::PRINT_MATRICES, "ESPRESO print solver input matrices." }
 };
 
 }
