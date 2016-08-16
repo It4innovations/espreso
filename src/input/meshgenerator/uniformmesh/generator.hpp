@@ -152,11 +152,6 @@ void UniformGenerator<TElement>::corners(std::vector<eslocal> &corners)
 		return;
 	}
 
-	if (_settings.useMetis) {
-		Loader::corners(corners);
-		return;
-	}
-
 	if (_settings.corners) {
 		ESINFO(DETAILS) << "Set corners to vertices";
 	}
@@ -234,14 +229,7 @@ void UniformGenerator<TElement>::corners(std::vector<eslocal> &corners)
 	}
 
 	std::sort(corners.begin(), corners.end());
-	auto it = std::unique(corners.begin(), corners.end());
-	corners.resize(it - corners.begin());
-
-	if (config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES) {
-		// TODO: check correctness
-		mesh.computeCorners(0, true, false, false, config::mesh::averageEdges, config::mesh::averageFaces);
-	}
-
+	Esutils::unique(corners);
 }
 
 }

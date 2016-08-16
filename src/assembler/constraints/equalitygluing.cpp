@@ -234,12 +234,52 @@ void EqualityGluing::insertElementGluingToB1(const std::vector<Element*> &elemen
 		B1clustersMap.insert(B1clustersMap.end(), cMap[t].begin(), cMap[t].end());
 	}
 
-	ESINFO(DETAILS) << "Lambdas gluing domains in B1: " << B1[0].rows;
+	ESINFO(DETAILS) << "Lambdas in B1: " << B1[0].rows;
 }
 
 void EqualityGluing::insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
+	if (!elements.size()) {
+		return;
+	}
 
+	size_t lambdas = B0[0].rows;
+
+	for (size_t e = 0; e < elements.size(); e++) {
+		for (size_t dof = 0; dof < DOFs.size(); dof++) {
+			size_t n = elements[e]->numberOfLocalDomainsWithDOF(dof);
+			if (n > 1 && !elements[e]->settings().isSet(DOFs[dof])) { // Dirichlet and inner nodes are not glued
+				const std::vector<eslocal> &DOFIndices = elements[e]->DOFsIndices();
+
+				for (size_t d1 = 0, d2 = 1; d2 < elements[e]->domains().size(); d1++, d2++) {
+
+					B0[elements[e]->domains()[d1]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
+					B0[elements[e]->domains()[d1]].J_col_indices.push_back(DOFIndices[d1 * DOFs.size() + dof] + IJVMatrixIndexing);
+					B0[elements[e]->domains()[d1]].V_values.push_back(1);
+
+					B0[elements[e]->domains()[d2]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
+					B0[elements[e]->domains()[d2]].J_col_indices.push_back(DOFIndices[d2 * DOFs.size() + dof] + IJVMatrixIndexing);
+					B0[elements[e]->domains()[d2]].V_values.push_back(-1);
+
+					lambdas++;
+				}
+
+			}
+		}
+	}
+
+
+	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+		B0[p].rows = lambdas;
+		B0[p].nnz = B0[p].I_row_indices.size();
+
+		B0subdomainsMap[p].reserve(B0[p].nnz);
+		for (size_t i = B0subdomainsMap[p].size(); i < B0[p].nnz; i++) {
+			B0subdomainsMap[p].push_back(B0[p].I_row_indices[i] - IJVMatrixIndexing);
+		}
+	}
+
+	ESINFO(DETAILS) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
 

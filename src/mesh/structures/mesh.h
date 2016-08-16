@@ -54,6 +54,7 @@ public:
 	const std::vector<Element*>& nodes() const { return _nodes; };
 
 	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; };
+	const std::vector<Element*>& corners() const { return _corners; };
 
 	size_t parts() const { return _partPtrs.size() - 1; }
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
@@ -123,7 +124,7 @@ protected:
 	std::vector<std::vector<Element*> > _fixPoints;
 
 	/// Corners for HFETI
-	std::vector<eslocal> _corners;
+	std::vector<Element*> _corners;
 
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;

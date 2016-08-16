@@ -49,13 +49,13 @@ void VTK_Full::corners(const Mesh &mesh, const std::string &path, double shrinkS
 	VTK_Full output(mesh, path);
 	std::vector<std::vector<eslocal> > corners(mesh.parts());
 
-//	for (size_t p = 0; p < mesh.parts(); p++) {
-//		for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
-//			if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(p)[i])) {
-//				corners[p].push_back(i);
-//			}
-//		}
-//	}
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		for (size_t i = 0; i < mesh.corners().size(); i++) {
+			for (size_t d = 0; d < mesh.corners()[i]->domains().size(); d++) {
+				corners[mesh.corners()[i]->domains()[d]].push_back(mesh.corners()[i]->node(0));
+			}
+		}
+	}
 
 	output.store(corners, shrinkSubdomain, shringCluster);
 }

@@ -62,25 +62,28 @@ public:
 
 		close();
 
-		TimeEvent tPartition("partition"); tPartition.start();
-		partitiate(mesh._partPtrs);
-		tPartition.end(); measurement.addEvent(tPartition);
-		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
-				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
-
 		std::vector<std::vector<eslocal> > fPoints;
 		fixPoints(fPoints);
-		mesh._fixPoints.resize(mesh.parts());
-		for (size_t p = 0; p < mesh.parts(); p++) {
+		mesh._fixPoints.resize(fPoints.size());
+		for (size_t p = 0; p < fPoints.size(); p++) {
 			mesh._fixPoints[p].reserve(fPoints[p].size());
 			for (size_t i = 0; i < fPoints[p].size(); i++) {
 				mesh._fixPoints[p].push_back(mesh.nodes()[fPoints[p][i]]);
 			}
 		}
 
-		TimeEvent tCorners("corners"); tCorners.start();
-		corners(mesh._corners);
-		tCorners.end(); measurement.addEvent(tCorners);
+		std::vector<eslocal> cornerPoints;
+		corners(cornerPoints);
+		mesh._corners.reserve(cornerPoints.size());
+		for (size_t i = 0; i < cornerPoints.size(); i++) {
+			mesh._corners.push_back(mesh.nodes()[cornerPoints[i]]);
+		}
+
+		TimeEvent tPartition("partition"); tPartition.start();
+		partitiate(mesh._partPtrs);
+		tPartition.end(); measurement.addEvent(tPartition);
+		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
+				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
 		mesh.mapElementsToDomains();
 		mesh.mapNodesToDomains();

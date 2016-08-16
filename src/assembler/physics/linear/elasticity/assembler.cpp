@@ -42,6 +42,8 @@ void LinearElasticity::assembleGluingMatrices()
 
 	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
+
+	_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
 }
 
 static double determinant3x3(DenseMatrix &m)
