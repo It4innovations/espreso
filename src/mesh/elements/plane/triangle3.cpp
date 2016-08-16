@@ -153,7 +153,7 @@ void Triangle3::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
 		_edges.push_back(new Line2(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 	}
 }
 

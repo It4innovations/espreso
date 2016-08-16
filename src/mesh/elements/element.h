@@ -80,7 +80,8 @@ public:
 	const eslocal& node(size_t index) const { return indices()[index]; }
 
 	virtual eslocal param(Params param) const =0;
-	virtual void param(Params param, eslocal value) =0;
+	virtual void setParam(Params param, eslocal value) =0;
+	virtual size_t params() const =0;
 
 	Settings& settings() { return _settings; }
 	const Settings& settings() const { return _settings; }
@@ -88,8 +89,14 @@ public:
 	std::vector<Evaluator*>& settings(Property property) { return _settings[property]; }
 	const std::vector<Evaluator*>& settings(Property property) const { return _settings[property]; }
 
-	std::vector<Element*>& elements() { return _elements; }
-	const std::vector<Element*>& elements() const { return _elements; }
+	std::vector<Element*>& parentElements() { return _parentElements; }
+	const std::vector<Element*>& parentElements() const { return _parentElements; }
+
+	std::vector<Element*>& parentFaces() { return _parentFaces; }
+	const std::vector<Element*>& parentFaces() const { return _parentFaces; }
+
+	std::vector<Element*>& parentEdge() { return _parentEdges; }
+	const std::vector<Element*>& parentEdge() const { return _parentEdges; }
 
 	std::vector<eslocal>& domains() { return _domains; }
 	const std::vector<eslocal>& domains() const { return _domains; }
@@ -138,6 +145,7 @@ public:
 	}
 
 protected:
+	virtual Element* copy() const =0;
 	virtual eslocal* indices() = 0;
 	virtual const eslocal* indices() const = 0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
@@ -149,7 +157,9 @@ protected:
 	virtual void fillEdges() = 0;
 
 	Settings _settings;
-	std::vector<Element*> _elements;
+	std::vector<Element*> _parentElements;
+	std::vector<Element*> _parentFaces;
+	std::vector<Element*> _parentEdges;
 	std::vector<eslocal> _domains;
 	std::vector<eslocal> _clusters;
 	std::vector<eslocal> _DOFsIndices;

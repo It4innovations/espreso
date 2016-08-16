@@ -179,12 +179,12 @@ void Pyramid5::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		_edges.push_back(new Line2(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 
 		line[0] = _indices[edge];
 		line[1] = _indices[   4];
 		_edges.push_back(new Line2(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 	}
 }
 
@@ -199,7 +199,7 @@ void Pyramid5::fillFaces()
 		triangle[1] = _indices[face % 4];
 		triangle[2] = _indices[4];
 		_faces.push_back(new Triangle3(square));
-		_faces.back()->elements().push_back(this);
+		_faces.back()->parentElements().push_back(this);
 	}
 
 	square[0] = _indices[0];
@@ -207,7 +207,7 @@ void Pyramid5::fillFaces()
 	square[2] = _indices[2];
 	square[3] = _indices[1];
 	_faces.push_back(new Square4(triangle));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 }
 
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)

@@ -176,8 +176,11 @@ void VTK::elements(const Mesh &mesh)
 	_vtk << "LOOKUP_TABLE materials\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			_vtk << elements[i]->param(Element::MATERIAL) << "\n";
-
+			if (elements[i]->params()) {
+				_vtk << elements[i]->param(Element::MATERIAL) << "\n";
+			} else {
+				_vtk << "0\n";
+			}
 		}
 	}
 	_vtk << "\n";

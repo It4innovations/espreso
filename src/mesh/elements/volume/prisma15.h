@@ -43,7 +43,8 @@ public:
 	eslocal nCommon() const { return Prisma15CommonNodes; }
 	eslocal vtkCode() const { return Prisma15VTKCode; }
 	eslocal param(Params param) const { return _params[param]; };
-	void param(Params param, eslocal value) { _params[param] = value; }
+	void setParam(Params param, eslocal value) { _params[param] = value; }
+	size_t params() const { return PARAMS_SIZE; }
 
 	size_t faces() const { return Prisma15FacesCount; }
 	size_t edges() const { return Prisma15EdgeCount; }

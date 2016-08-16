@@ -38,7 +38,8 @@ public:
 	eslocal nCommon() const { return Line2CommonNodes; }
 	eslocal vtkCode() const { return Line2VTKCode; }
 	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; return 0; }
-	void param(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; }
+	void setParam(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Line2 has no params"; }
+	size_t params() const { return 0; }
 
 	size_t faces() const { return Line2FacesCount; }
 	size_t edges() const { return Line2EdgeCount; }

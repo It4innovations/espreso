@@ -39,7 +39,8 @@ public:
 	eslocal nCommon() const { return Triangle3CommonNodes; }
 	eslocal vtkCode() const { return Triangle3VTKCode; }
 	eslocal param(Params param) const { return _params[param]; };
-	void param(Params param, eslocal value) { _params[param] = value; }
+	void setParam(Params param, eslocal value) { _params[param] = value; }
+	size_t params() const { return _params.size(); }
 
 	size_t faces() const { return Triangle3FacesCount; }
 	size_t edges() const { return Triangle3EdgeCount; }

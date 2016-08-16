@@ -142,17 +142,17 @@ void Hexahedron8::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];;
 		_edges.push_back(new Line2(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 
 		line[0] = _indices[ edge          +  4];
 		line[1] = _indices[(edge + 1) % 4 +  4];
 		_edges.push_back(new Line2(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  4];
 		_edges.push_back(new Line2(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 	}
 }
 
@@ -167,7 +167,7 @@ void Hexahedron8::fillFaces()
 		square[2] = _indices[(face + 1) % 4 + 4];
 		square[3] = _indices[ face + 4         ];
 		_faces.push_back(new Square4(square));
-		_faces.back()->elements().push_back(this);
+		_faces.back()->parentElements().push_back(this);
 	}
 
 	square[0] = _indices[0];
@@ -175,14 +175,14 @@ void Hexahedron8::fillFaces()
 	square[2] = _indices[2];
 	square[3] = _indices[1];
 	_faces.push_back(new Square4(square));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 
 	square[0] = _indices[4];
 	square[1] = _indices[5];
 	square[2] = _indices[6];
 	square[3] = _indices[7];
 	_faces.push_back(new Square4(square));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 }
 
 Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params)

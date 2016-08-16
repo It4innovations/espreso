@@ -33,6 +33,15 @@ void LinearElasticity::prepareMeshStructures()
 	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
 		_mesh.computeFixPoints(config::mesh::FIX_POINTS);
 	}
+
+//	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI &&
+//		config::solver::B0_TYPE == config::solver::B0_TYPEalternative::CORNERS) {
+//		_mesh.computeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
+//	}
+	_mesh.computeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
+
+	std::cout << "FACES: " << _mesh.faces().size() << "\n";
+	std::cout << "EDGES: " << _mesh.edges().size() << "\n";
 }
 
 void LinearElasticity::assembleGluingMatrices()

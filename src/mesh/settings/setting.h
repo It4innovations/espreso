@@ -46,6 +46,19 @@ public:
 		_settings[Property::EMPTY].push_back(new Evaluator());
 	}
 
+	Settings(const Settings &other)
+	{
+		_settings[Property::EMPTY].push_back(new Evaluator());
+	}
+
+	Settings& operator=(const Settings &other)
+	{
+		if (this != &other) {
+			_settings[Property::EMPTY].push_back(new Evaluator());
+		}
+		return *this;
+	}
+
 	~Settings()
 	{
 		delete _settings[Property::EMPTY][0];

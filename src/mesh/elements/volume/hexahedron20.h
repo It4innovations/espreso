@@ -42,7 +42,8 @@ public:
 	eslocal nCommon() const { return Hexahedron20CommonNodes; }
 	eslocal vtkCode() const { return Hexahedron20VTKCode; }
 	eslocal param(Params param) const { return _params[param]; }
-	void param(Params param, eslocal value) { _params[param] = value; }
+	void setParam(Params param, eslocal value) { _params[param] = value; }
+	size_t params() const { return PARAMS_SIZE; }
 
 	size_t faces() const { return Hexahedron20FacesCount; }
 	size_t edges() const { return Hexahedron20EdgeCount; }

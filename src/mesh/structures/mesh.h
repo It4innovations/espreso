@@ -52,6 +52,10 @@ public:
 	void computeFacesSharedByDomains();
 	void clearFacesWithoutSettings();
 
+	void computeEdgesOfAllElements();
+	void computeEdgesOnBordersOfFacesSharedByDomains();
+	void clearEdgesWithoutSettings();
+
 	const Coordinates& coordinates() const { return _coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
 	const std::vector<Element*>& faces() const { return _faces; };
@@ -83,8 +87,14 @@ public:
 
 protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
-	void fillEdgesFromElements();
+	void fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
 	void fillNodesFromElements();
+
+	void fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
+
+	void fillParentEdgesToNodes();
+	void fillParentFacesToNodes();
+	void fillParentElementsToNodes();
 
 	void mapFacesToClusters();
 	void mapEdgesToClusters();

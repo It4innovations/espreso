@@ -374,13 +374,13 @@ void Tetrahedron10::fillEdges()
 		line[1] = _indices[(edge + 1) % 3];
 		line[2] = _indices[ edge + 4     ];
 		_edges.push_back(new Line3(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 
 		line[0] = _indices[edge    ];
 		line[1] = _indices[       3];
 		line[2] = _indices[edge + 7];
 		_edges.push_back(new Line3(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 	}
 }
 
@@ -397,7 +397,7 @@ void Tetrahedron10::fillFaces()
 	triangle[4] = _indices[6];
 	triangle[5] = _indices[5];
 	_faces.push_back(new Triangle6(triangle));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 
 	triangle[0] = _indices[0];
 	triangle[1] = _indices[1];
@@ -407,7 +407,7 @@ void Tetrahedron10::fillFaces()
 	triangle[4] = _indices[8];
 	triangle[5] = _indices[7];
 	_faces.push_back(new Triangle6(triangle));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 
 	triangle[0] = _indices[1];
 	triangle[1] = _indices[2];
@@ -417,7 +417,7 @@ void Tetrahedron10::fillFaces()
 	triangle[4] = _indices[9];
 	triangle[5] = _indices[8];
 	_faces.push_back(new Triangle6(triangle));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 
 	triangle[0] = _indices[2];
 	triangle[1] = _indices[0];
@@ -427,7 +427,7 @@ void Tetrahedron10::fillFaces()
 	triangle[4] = _indices[7];
 	triangle[5] = _indices[9];
 	_faces.push_back(new Triangle6(triangle));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 }
 
 Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params)

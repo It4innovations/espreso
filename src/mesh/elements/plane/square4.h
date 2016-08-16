@@ -40,7 +40,8 @@ public:
 	eslocal nCommon() const { return Square4CommonNodes; }
 	eslocal vtkCode() const { return Square4VTKCode; }
 	eslocal param(Params param) const { return _params[param]; }
-	void param(Params param, eslocal value) { _params[param] = value; }
+	void setParam(Params param, eslocal value) { _params[param] = value; }
+	size_t params() const { return _params.size(); }
 
 	size_t faces() const { return Square4FacesCount; }
 	size_t edges() const { return Square4EdgeCount; }
@@ -67,10 +68,7 @@ protected:
 	const eslocal* indices() const { return _indices; }
 
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Square4 has no face"; }
-	void setEdge(size_t index, Element* edge) {
-		std::cout << "menim " << _edges[index] << " na " << edge << "\n";
-		_edges[index] = edge;
-	}
+	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
 
 	void fillFaces() {};
 	void fillEdges();

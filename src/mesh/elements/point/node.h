@@ -37,7 +37,8 @@ public:
 	eslocal nCommon() const { return NodeCommonNodes; }
 	eslocal vtkCode() const { return NodeVTKCode; }
 	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Node has no params"; return 0; }
-	void param(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Node has no params"; }
+	void setParam(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Node has no params"; }
+	size_t params() const { return 0; }
 
 	size_t faces() const { return NodeFacesCount; }
 	size_t edges() const { return NodeEdgeCount; }

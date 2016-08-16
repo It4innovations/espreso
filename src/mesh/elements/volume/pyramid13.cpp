@@ -285,13 +285,13 @@ void Pyramid13::fillEdges()
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 5     ];
 		_edges.push_back(new Line3(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 
 		line[0] = _indices[edge    ];
 		line[1] = _indices[       4];
 		line[2] = _indices[edge + 9];
 		_edges.push_back(new Line3(line));
-		_edges.back()->elements().push_back(this);
+		_edges.back()->parentElements().push_back(this);
 	}
 }
 
@@ -310,7 +310,7 @@ void Pyramid13::fillFaces()
 		triangle[4] = _indices[face % 4 + 9];
 		triangle[5] = _indices[face - 1 + 9];
 		_faces.push_back(new Triangle6(square));
-		_faces.back()->elements().push_back(this);
+		_faces.back()->parentElements().push_back(this);
 	}
 
 	square[0] = _indices[0];
@@ -323,7 +323,7 @@ void Pyramid13::fillFaces()
 	square[6] = _indices[6];
 	square[7] = _indices[5];
 	_faces.push_back(new Square8(triangle));
-	_faces.back()->elements().push_back(this);
+	_faces.back()->parentElements().push_back(this);
 }
 
 Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params)

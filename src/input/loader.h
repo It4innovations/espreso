@@ -45,6 +45,7 @@ public:
 		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
 
 		mesh.fillNodesFromElements();
+		mesh.fillParentElementsToNodes();
 
 		TimeEvent tFaces("faces"); tFaces.start();
 		faces(mesh._faces);

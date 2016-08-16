@@ -40,7 +40,8 @@ public:
 	eslocal nCommon() const { return Square8CommonNodes; }
 	eslocal vtkCode() const { return Square8VTKCode; }
 	eslocal param(Params param) const { return _params[param]; };
-	void param(Params param, eslocal value) { _params[param] = value; }
+	void setParam(Params param, eslocal value) { _params[param] = value; }
+	size_t params() const { return _params.size(); }
 
 	size_t faces() const { return Square8FacesCount; }
 	size_t edges() const { return Square8EdgeCount; }
