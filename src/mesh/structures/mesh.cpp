@@ -74,7 +74,7 @@ void APIMesh::partitiate(size_t parts)
 
 void Mesh::computeFixPoints(size_t number)
 {
-	if (_fixPoints.size() && _fixPoints[0].size() == 0) {
+	if (_fixPoints.size() && _fixPoints[0].size() == number) {
 		return;
 	}
 	std::vector<eslocal> fixPoints(number);
