@@ -85,9 +85,7 @@ public:
 	void computeEdgesDOFsCounters(const std::vector<Property> &DOFs);
 	void computeFacesDOFsCounters(const std::vector<Property> &DOFs);
 
-	void saveNodeArray(eslocal *nodeArray, size_t part) const;
 	void getSurface(Mesh &surface) const;
-	std::vector<std::vector<eslocal> > subdomainsInterfaces(Mesh &interface) const;
 
 protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);

@@ -291,14 +291,6 @@ Mesh::~Mesh()
 	}
 }
 
-void Mesh::saveNodeArray(eslocal *nodeArray, size_t part) const
-{
-	for (eslocal i = _partPtrs[part]; i < _partPtrs[part + 1]; i++) {
-		const Element* e = _elements[i];
-		memcpy(nodeArray + i * e->nodes(), e->indices(), e->nodes() * sizeof(eslocal));
-	}
-}
-
 static bool isOuterFace(
 		std::vector<std::vector<eslocal> > &nodesElements,
 		std::vector<eslocal> &face)
