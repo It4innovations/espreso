@@ -194,11 +194,11 @@ void Pyramid5::fillFaces()
 	eslocal triangle[Triangle3NodesCount];
 	_faces.reserve(Pyramid5FacesCount);
 
-	for (size_t face = 0; face < 4; face++) {
+	for (size_t face = 1; face < 5; face++) {
 		triangle[0] = _indices[face - 1];
 		triangle[1] = _indices[face % 4];
 		triangle[2] = _indices[4];
-		_faces.push_back(new Triangle3(square));
+		_faces.push_back(new Triangle3(triangle));
 		_faces.back()->parentElements().push_back(this);
 	}
 
@@ -206,7 +206,7 @@ void Pyramid5::fillFaces()
 	square[1] = _indices[3];
 	square[2] = _indices[2];
 	square[3] = _indices[1];
-	_faces.push_back(new Square4(triangle));
+	_faces.push_back(new Square4(square));
 	_faces.back()->parentElements().push_back(this);
 }
 

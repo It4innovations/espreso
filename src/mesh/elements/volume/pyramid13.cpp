@@ -301,7 +301,7 @@ void Pyramid13::fillFaces()
 	eslocal triangle[Triangle6NodesCount];
 	_faces.reserve(Pyramid13FacesCount);
 
-	for (size_t face = 0; face < 4; face++) {
+	for (size_t face = 1; face < 5; face++) {
 		triangle[0] = _indices[face - 1];
 		triangle[1] = _indices[face % 4];
 		triangle[2] = _indices[4];
@@ -309,7 +309,7 @@ void Pyramid13::fillFaces()
 		triangle[3] = _indices[face - 1 + 5];
 		triangle[4] = _indices[face % 4 + 9];
 		triangle[5] = _indices[face - 1 + 9];
-		_faces.push_back(new Triangle6(square));
+		_faces.push_back(new Triangle6(triangle));
 		_faces.back()->parentElements().push_back(this);
 	}
 
@@ -322,7 +322,7 @@ void Pyramid13::fillFaces()
 	square[5] = _indices[7];
 	square[6] = _indices[6];
 	square[7] = _indices[5];
-	_faces.push_back(new Square8(triangle));
+	_faces.push_back(new Square8(square));
 	_faces.back()->parentElements().push_back(this);
 }
 

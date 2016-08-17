@@ -1259,8 +1259,6 @@ std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<s
 
 void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
 {
-	int rank = 0;
-
 	std::vector<int> neighbours = mesh.neighbours();
 	neighbours.push_back(config::env::MPIrank);
 	std::sort(neighbours.begin(), neighbours.end());

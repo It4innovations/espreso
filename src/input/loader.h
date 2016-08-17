@@ -86,6 +86,9 @@ public:
 			mesh.mapNodesToDomains();
 			mesh.mapCoordinatesToDomains();
 		}
+
+		ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
+
 		tPartition.end(); measurement.addEvent(tPartition);
 		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
 				<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
