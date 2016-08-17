@@ -1293,13 +1293,13 @@ void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Prop
 						continue;
 					}
 
-					sBuffer[t][*c].push_back(elements[e]->vtkCode());
+					sBuffer[t][n2i(*c)].push_back(elements[e]->vtkCode());
 					for (size_t n = 0; n < elements[e]->coarseNodes(); n++) {
-						sBuffer[t][*c].push_back(mesh.coordinates().globalIndex(elements[e]->node(n)));
+						sBuffer[t][n2i(*c)].push_back(mesh.coordinates().globalIndex(elements[e]->node(n)));
 					}
 
 					for (size_t i = 0; i < DOFs.size(); i++) {
-						sBuffer[t][*c].push_back(elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i]);
+						sBuffer[t][n2i(*c)].push_back(elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i]);
 					}
 				}
 			}
