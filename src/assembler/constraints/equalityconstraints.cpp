@@ -264,7 +264,7 @@ size_t Gluing::assembleB0(std::vector<SparseMatrix> &B0)
 size_t Gluing::assembleB0fromKernels(std::vector<SparseMatrix> &B0)
 {
 	Mesh faces;
-	std::vector<std::vector<eslocal> > sMap = _mesh.subdomainsInterfaces(faces);
+	std::vector<std::vector<eslocal> > sMap;// = _mesh.subdomainsInterfaces(faces);
 
 	if (config::output::saveFaces) {
 		output::VTK_Full::mesh(faces, "meshFaces", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);

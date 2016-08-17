@@ -191,11 +191,10 @@ Factory::Factory(const Options &options)
 	if (config::output::saveFixPoints) {
 		output::VTK_Full::fixPoints(*_mesh, "meshFixPoints", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
 	}
-	if (config::output::saveCorners) {
-		output::VTK_Full::corners(*_mesh, "meshCorners", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
-	}
-	if (config::output::saveDirichlet) {
-		output::VTK_Full::dirichlet(*_mesh, "meshDirichlet", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);
+	if (config::output::SAVE_DIRICHLET) {
+		std::stringstream ss;
+		ss << "meshDirichlet" << config::env::MPIrank;
+		output::VTK_Full::dirichlet(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 	if (config::output::saveAveraging) {
 		output::VTK_Full::averaging(*_mesh, "meshAveraging", config::output::subdomainShrinkRatio, config::output::clusterShrinkRatio);

@@ -45,7 +45,7 @@ public:
 
 	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t number);
-	void computeCorners(eslocal number, bool vertices, bool edges, bool faces);
+	void computeCorners(size_t number, bool vertices, bool edges, bool faces);
 
 	void computeFacesOfAllElements();
 	void computeFacesOnDomainsSurface();
@@ -55,6 +55,10 @@ public:
 	void computeEdgesOfAllElements();
 	void computeEdgesOnBordersOfFacesSharedByDomains();
 	void clearEdgesWithoutSettings();
+
+	void computeCornersOnEdgesEnds();
+	void computeCornersOnEdges(size_t number);
+	void computeCornersOnFaces(size_t number);
 
 	const Coordinates& coordinates() const { return _coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
@@ -107,15 +111,7 @@ protected:
 
 	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
 	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
-
-
-
 	void makePartContinuous(size_t part);
-	void computeCommonFaces(Mesh &faces);
-	void computeBorderLinesAndVertices(const Mesh &faces, std::vector<bool> &border, Mesh &lines, std::set<eslocal> &vertices);
-	void prepareAveragingLines(Mesh &faces, Mesh &lines);
-	void prepareAveragingFaces(Mesh &faces, std::vector<bool> &border);
-	void correctCycle(Mesh &faces, Mesh &lines, bool average);
 
 	/** @brief Reference to coordinates. */
 	Coordinates _coordinates;
