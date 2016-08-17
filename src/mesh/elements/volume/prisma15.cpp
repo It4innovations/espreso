@@ -339,7 +339,7 @@ void Prisma15::fillFaces()
 	eslocal triangle[Triangle6NodesCount];
 	_faces.reserve(Prisma15FacesCount);
 
-	for (size_t face = 0; face < 4; face++) {
+	for (size_t face = 0; face < 3; face++) {
 		square[0] = _indices[ face              ];
 		square[1] = _indices[(face + 1) % 3     ];
 		square[2] = _indices[(face + 1) % 3 + 3 ];
