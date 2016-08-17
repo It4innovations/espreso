@@ -20,9 +20,10 @@ LENGTH_Z = 30
 
 CORNERS_IN_CORNERS
 
-DIRICHLET = {
-  BOTTOM_X = 0
-  BOTTOM_Y = 0
-  BOTTOM_Z = 0
+NODES = {
+  BOTTOM = <0, 30> <0, 30> <0, 0>
 }
 
+DIRICHLET = {
+  BOTTOM = 0
+}
