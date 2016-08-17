@@ -334,6 +334,8 @@ static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, s
 
 static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::vector<Element*> &fixPoints, const Coordinates &coordinates, size_t subdomain)
 {
+	ESTEST(MANDATORY) << "Too few FIX POINTS: " << fixPoints.size() << (fixPoints.size() > 3 ? TEST_PASSED : TEST_FAILED);
+
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;
 	Nt.cols = K.cols;
