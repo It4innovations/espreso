@@ -40,14 +40,111 @@ void LinearElasticity::prepareMeshStructures()
 			_mesh.computeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			ESINFO(GLOBAL_ERROR) << "implement me";
+			_mesh.computeFacesSharedByDomains();
 			break;
 		}
 	}
+}
 
-	std::cout << "FACES: " << _mesh.faces().size() << "\n";
-	std::cout << "EDGES: " << _mesh.edges().size() << "\n";
-	std::cout << "CORNERS: " << _mesh.corners().size() << "\n";
+
+static void composeFacesGluing(Mesh &mesh, Constraints &constrains)
+{
+	std::vector<Element*> faces;
+	for (size_t i = 0; i < mesh.faces().size(); i++) {
+		if (mesh.faces()[i]->domains().size() == 2) {
+			faces.push_back(mesh.faces()[i]);
+		}
+	}
+
+	std::sort(faces.begin(), faces.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
+
+	std::vector<size_t> distribution;
+	distribution.push_back(0);
+	for (size_t i = 1; i < faces.size(); i++) {
+		if (faces[i]->domains() != faces[i - 1]->domains()) {
+			distribution.push_back(i);
+		}
+	}
+	distribution.push_back(faces.size());
+
+	std::vector<std::vector<std::vector<eslocal> > > rows(mesh.parts(), std::vector<std::vector<eslocal> >(distribution.size() - 1));
+	std::vector<std::vector<std::vector<eslocal> > > cols(mesh.parts(), std::vector<std::vector<eslocal> >(distribution.size() - 1));
+	std::vector<std::vector<std::vector<double> > > vals(mesh.parts(), std::vector<std::vector<double> >(distribution.size() - 1));
+
+	cilk_for (size_t interface = 0; interface < distribution.size() - 1; interface++) {
+		std::vector<eslocal> nodes;
+		for (size_t f = distribution[interface]; f < distribution[interface + 1]; f++) {
+			for (size_t n = 0; n < faces[f]->nodes(); n++) {
+				nodes.push_back(faces[f]->node(n));
+			}
+			std::sort(nodes.begin(), nodes.end());
+			Esutils::unique(nodes);
+		}
+
+		Point center(0, 0 ,0);
+		for (size_t n = 0; n < nodes.size(); n++) {
+			center += mesh.coordinates()[nodes[n]];
+		}
+		center /= nodes.size();
+
+		std::vector<eslocal> domains = { faces[distribution[interface]]->domains()[0], faces[distribution[interface]]->domains()[1] };
+		for (size_t d = 0; d < domains.size(); d++) {
+			eslocal domain = domains[d];
+			eslocal sign = d ? -1 : 1;
+
+			for (size_t r = 0; r < 3; r++) {
+				rows[domain][interface].insert(rows[domain][interface].end(), nodes.size(), interface * 6 + r + IJVMatrixIndexing);
+				vals[domain][interface].insert(vals[domain][interface].end(), nodes.size(), sign);
+				for (size_t n = 0; n < nodes.size(); n++) {
+					cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, r) + IJVMatrixIndexing);
+				}
+			}
+
+			rows[domain][interface].insert(rows[domain][interface].end(), 2 * nodes.size(), interface * 6 + 3 + IJVMatrixIndexing);
+			for (size_t n = 0; n < nodes.size(); n++) {
+				Point p = mesh.coordinates()[nodes[n]];
+				p -= center;
+				cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, 0) + IJVMatrixIndexing);
+				cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, 1) + IJVMatrixIndexing);
+				vals[domain][interface].push_back(-sign * p.y);
+				vals[domain][interface].push_back( sign * p.x);
+			}
+
+			rows[domain][interface].insert(rows[domain][interface].end(), 2 * nodes.size(), interface * 6 + 4 + IJVMatrixIndexing);
+			for (size_t n = 0; n < nodes.size(); n++) {
+				Point p = mesh.coordinates()[nodes[n]];
+				p -= center;
+				cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, 0) + IJVMatrixIndexing);
+				cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, 2) + IJVMatrixIndexing);
+				vals[domain][interface].push_back(-sign * p.z);
+				vals[domain][interface].push_back( sign * p.x);
+			}
+
+			rows[domain][interface].insert(rows[domain][interface].end(), 2 * nodes.size(), interface * 6 + 5 + IJVMatrixIndexing);
+			for (size_t n = 0; n < nodes.size(); n++) {
+				Point p = mesh.coordinates()[nodes[n]];
+				p -= center;
+				cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, 1) + IJVMatrixIndexing);
+				cols[domain][interface].push_back(mesh.nodes()[nodes[n]]->DOFIndex(domain, 2) + IJVMatrixIndexing);
+				vals[domain][interface].push_back(-sign * p.z);
+				vals[domain][interface].push_back( sign * p.y);
+			}
+		}
+	}
+
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		for (size_t interface = 0; interface < distribution.size() - 1; interface++) {
+			constrains.B0[p].I_row_indices.insert(constrains.B0[p].I_row_indices.end(), rows[p][interface].begin(), rows[p][interface].end());
+			constrains.B0[p].J_col_indices.insert(constrains.B0[p].J_col_indices.end(), cols[p][interface].begin(), cols[p][interface].end());
+			constrains.B0[p].V_values     .insert(constrains.B0[p].V_values.end()     , vals[p][interface].begin(), vals[p][interface].end());
+		}
+		for (size_t i = 0; i < constrains.B0[p].I_row_indices.size(); i++) {
+			constrains.B0subdomainsMap[p].push_back(constrains.B0[p].I_row_indices[i] - IJVMatrixIndexing);
+		}
+		constrains.B0[p].nnz = constrains.B0[p].I_row_indices.size();
+		constrains.B0[p].rows = 6 * (distribution.size() - 1);
+		constrains.B0[p].cols = constrains.B1[p].cols;
+	}
 }
 
 void LinearElasticity::assembleGluingMatrices()
@@ -62,7 +159,16 @@ void LinearElasticity::assembleGluingMatrices()
 	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
 
-	_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		switch (config::solver::B0_TYPE) {
+		case config::solver::B0_TYPEalternative::CORNERS:
+			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+			break;
+		case config::solver::B0_TYPEalternative::KERNELS:
+			composeFacesGluing(_mesh, _constraints);
+			break;
+		}
+	}
 }
 
 static double determinant3x3(DenseMatrix &m)
