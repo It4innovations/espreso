@@ -95,8 +95,8 @@ public:
 	std::vector<Element*>& parentFaces() { return _parentFaces; }
 	const std::vector<Element*>& parentFaces() const { return _parentFaces; }
 
-	std::vector<Element*>& parentEdge() { return _parentEdges; }
-	const std::vector<Element*>& parentEdge() const { return _parentEdges; }
+	std::vector<Element*>& parentEdges() { return _parentEdges; }
+	const std::vector<Element*>& parentEdges() const { return _parentEdges; }
 
 	std::vector<eslocal>& domains() { return _domains; }
 	const std::vector<eslocal>& domains() const { return _domains; }

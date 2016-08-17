@@ -1148,6 +1148,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 
 	mapEdgesToClusters();
 	mapEdgesToDomains();
+	fillParentEdgesToNodes();
 }
 
 void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
@@ -1186,6 +1187,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 
 	mapFacesToClusters();
 	mapFacesToDomains();
+	fillParentFacesToNodes();
 
 	if (config::output::SAVE_FACES) {
 		Mesh mesh;
@@ -1205,7 +1207,9 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 		mesh.mapElementsToDomains();
 		mesh.mapCoordinatesToDomains();
 
-		output::VTK_Full::mesh(mesh, "meshFaces", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		std::stringstream ss;
+		ss << "meshFaces" << config::env::MPIrank;
+		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -1219,28 +1223,52 @@ void Mesh::fillNodesFromElements()
 
 void Mesh::fillParentElementsToNodes()
 {
+	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
+		_nodes[i]->parentElements().clear();
+	}
+
 	for (size_t e = 0; e < _elements.size(); e++) {
 		for (size_t n = 0; n < _elements[e]->nodes(); n++) {
 			_nodes[_elements[e]->node(n)]->parentElements().push_back(_elements[e]);
 		}
 	}
-}
 
-void Mesh::fillParentEdgesToNodes()
-{
-	for (size_t e = 0; e < _edges.size(); e++) {
-		for (size_t n = 0; n < _edges[e]->nodes(); n++) {
-			_nodes[_edges[e]->node(n)]->parentElements().push_back(_edges[e]);
-		}
+	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
+		std::sort(_nodes[i]->parentElements().begin(), _nodes[i]->parentElements().end());
 	}
 }
 
 void Mesh::fillParentFacesToNodes()
 {
+	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
+		_nodes[i]->parentFaces().clear();
+	}
+
 	for (size_t f = 0; f < _faces.size(); f++) {
 		for (size_t n = 0; n < _faces[f]->nodes(); n++) {
 			_nodes[_faces[f]->node(n)]->parentFaces().push_back(_faces[f]);
 		}
+	}
+
+	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
+		std::sort(_nodes[i]->parentFaces().begin(), _nodes[i]->parentFaces().end());
+	}
+}
+
+void Mesh::fillParentEdgesToNodes()
+{
+	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
+		_nodes[i]->parentEdges().clear();
+	}
+
+	for (size_t e = 0; e < _edges.size(); e++) {
+		for (size_t n = 0; n < _edges[e]->nodes(); n++) {
+			_nodes[_edges[e]->node(n)]->parentEdges().push_back(_edges[e]);
+		}
+	}
+
+	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
+		std::sort(_nodes[i]->parentEdges().begin(), _nodes[i]->parentEdges().end());
 	}
 }
 
@@ -1282,6 +1310,7 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 
 	mapEdgesToClusters();
 	mapEdgesToDomains();
+	fillParentEdgesToNodes();
 
 	if (config::output::SAVE_EDGES) {
 		Mesh mesh;
@@ -1301,7 +1330,9 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 		mesh.mapElementsToDomains();
 		mesh.mapCoordinatesToDomains();
 
-		output::VTK_Full::mesh(mesh, "meshEdges", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		std::stringstream ss;
+		ss << "meshEdges" << config::env::MPIrank;
+		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -1326,25 +1357,31 @@ void Mesh::computeFacesOnDomainsSurface()
 		}
 
 		intersection.resize(it - intersection.begin());
-		return intersection.size() == 1;
+		if (intersection.size() == 1) {
+			return true;
+		}
+		return intersection[0]->domains() != intersection[1]->domains();
 	});
 }
 
 void Mesh::computeFacesSharedByDomains()
 {
 	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element *face) {
-		std::vector<eslocal> intersection(nodes[face->node(face->nodes() - 1)]->domains()); // it is better to start from end (from mid points)
+		std::vector<Element*> intersection(nodes[face->node(face->nodes() - 1)]->parentElements()); // it is better to start from end (from mid points)
 		auto it = intersection.end();
 
 		for (size_t n = face->nodes() - 2; it - intersection.begin() > 1 &&  n < face->nodes(); n--) {
-			std::vector<eslocal> tmp(intersection.begin(), it);
+			std::vector<Element*> tmp(intersection.begin(), it);
 			it = std::set_intersection(tmp.begin(), tmp.end(),
-					nodes[face->node(n)]->domains().begin(), nodes[face->node(n)]->domains().end(),
+					nodes[face->node(n)]->parentElements().begin(), nodes[face->node(n)]->parentElements().end(),
 					intersection.begin());
 		}
 
 		intersection.resize(it - intersection.begin());
-		return intersection.size() > 1;
+		if (intersection.size() == 1) {
+			return false;
+		}
+		return intersection[0]->domains() != intersection[1]->domains();
 	});
 }
 
@@ -1386,47 +1423,60 @@ void Mesh::computeEdgesOfAllElements()
 
 void Mesh::computeEdgesOnBordersOfFacesSharedByDomains()
 {
-	fillParentFacesToNodes();
-
 	fillEdgesFromFaces([] (const std::vector<Element*> &nodes, const Element* edge) {
-//		if (edge->parentElements()[0]->domains().size() != 2) {
-//			return false;
-//		}
-//
-//		std::vector<eslocal> intersection(nodes[edge->node(edge->nodes() - 1)]->domains()); // it is better to start from end (from mid points)
-//		auto it = intersection.end();
-//
-//		for (size_t n = edge->nodes() - 2; it - intersection.begin() > 2 &&  n < edge->nodes(); n--) {
-//			std::vector<eslocal> tmp(intersection.begin(), it);
-//			it = std::set_intersection(tmp.begin(), tmp.end(),
-//					nodes[edge->node(n)]->domains().begin(), nodes[edge->node(n)]->domains().end(),
-//					intersection.begin());
-//		}
-//
-//		intersection.resize(it - intersection.begin());
-//		if (intersection.size() > 2) {
-//			return true;
-//		}
+		std::vector<Element*> intersection(nodes[edge->node(edge->nodes() - 1)]->parentFaces()); // it is better to start from end (from mid points)
+		auto it = intersection.end();
 
-		for (size_t n = edge->nodes() - 1; n < edge->nodes(); n--) {
-			if (nodes[edge->node(n)]->parentFaces().size() > 2) {
-//				for (size_t f = 1; f < nodes[edge->node(n)]->parentFaces().size(); f++) {
-//					if (nodes[edge->node(n)]->parentFaces()[f]->domains() != nodes[edge->node(n)]->parentFaces()[f - 1]->domains()) {
-//						return true;
-//					}
-//				}
-				return false;
+		for (size_t n = edge->nodes() - 2; it - intersection.begin() > 1 &&  n < edge->nodes(); n--) {
+			std::vector<Element*> tmp(intersection.begin(), it);
+			it = std::set_intersection(tmp.begin(), tmp.end(),
+					nodes[edge->node(n)]->parentFaces().begin(), nodes[edge->node(n)]->parentFaces().end(),
+					intersection.begin());
+		}
+
+		intersection.resize(it - intersection.begin());
+		if (intersection.size() == 1 && intersection[0]->domains().size() == 2) {
+			return true;
+		}
+
+		for (size_t i = 1; i < intersection.size(); i++) {
+			if (intersection[i]->domains() != intersection[i - 1]->domains()) {
+				return true;
 			}
 		}
-		return true;
+		return false;
 	});
-
-	fillParentEdgesToNodes();
 }
 
 void Mesh::clearEdgesWithoutSettings()
 {
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
+			if (!_edges[f]->settings().size()) {
+				for (size_t e = 0; e < _edges[f]->parentElements().size(); e++) {
+					for (size_t i = 0; i < _edges[f]->parentElements()[e]->edges(); i++) {
+						if (_edges[f]->parentElements()[e]->edge(i) != NULL && *_edges[f] == *_edges[f]->parentElements()[e]->edge(i)) {
+							_edges[f]->parentElements()[e]->setEdge(i, NULL);
+						}
+					}
+				}
+				delete _edges[f];
+				_edges[f] = NULL;
+			}
+		}
+	}
+
+	size_t it = 0;
+	for (size_t i = 0; i < _edges.size(); i++) {
+		if (_edges[i] != NULL) {
+			_edges[it++] = _edges[i];
+		}
+	}
+	_edges.resize(it);
 }
 
 static void setCluster(Element* &element, std::vector<Element*> &nodes)
