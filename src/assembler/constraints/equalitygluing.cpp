@@ -197,9 +197,12 @@ void EqualityGluing::insertElementGluingToB1(const std::vector<Element*> &elemen
 								cMap[t].push_back({ lambdasID[permutation[i]] + offset });
 								if (*c1 == *c2) {
 									cMap[t].back().push_back(*c1);
-								} else {
+								} else if (*c1 == config::env::MPIrank) {
 									cMap[t].back().push_back(*c1);
 									cMap[t].back().push_back(*c2);
+								} else {
+									cMap[t].back().push_back(*c2);
+									cMap[t].back().push_back(*c1);
 								}
 							}
 

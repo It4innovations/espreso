@@ -1375,7 +1375,7 @@ void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Prop
 		for (size_t e = 0; e < nElements[n].size(); e++) {
 			auto it = std::lower_bound(elements.begin(), elements.end(), nElements[n][e], [&] (Element *el1, Element *el2) { return *el1 < *el2; });
 			if (it != elements.end() && **it == *(nElements[n][e])) {
-				size_t cluster = std::lower_bound((*it)->clusters().begin(), (*it)->clusters().end(), n) - (*it)->clusters().begin();
+				size_t cluster = std::lower_bound((*it)->clusters().begin(), (*it)->clusters().end(), neighbours[n]) - (*it)->clusters().begin();
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
 					(*it)->DOFsDomainsCounters()[cluster * DOFs.size() + dof] = nElements[n][e]->DOFsDomainsCounters()[dof];
 				}
