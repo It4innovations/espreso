@@ -56,7 +56,6 @@ public:
 	void computeEdgesOnBordersOfFacesSharedByDomains();
 	void clearEdgesWithoutSettings();
 
-	void computeCornersOnEdgesEnds();
 	void computeCornersOnEdges(size_t number);
 	void computeCornersOnFaces(size_t number);
 

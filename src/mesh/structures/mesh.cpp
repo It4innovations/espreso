@@ -485,12 +485,7 @@ void Mesh::computeCorners(size_t number, bool vertices, bool edges, bool faces)
 	computeFacesSharedByDomains();
 	computeEdgesOnBordersOfFacesSharedByDomains();
 
-	if (vertices) {
-		computeCornersOnEdgesEnds();
-	}
-	if (edges) {
-		computeCornersOnEdges(number);
-	}
+	computeCornersOnEdges(number);
 	if (faces) {
 		computeCornersOnFaces(number);
 	}
@@ -927,59 +922,89 @@ void Mesh::clearEdgesWithoutSettings()
 	_edges.resize(it);
 }
 
-void Mesh::computeCornersOnEdgesEnds()
+void Mesh::computeCornersOnEdges(size_t number)
 {
+	if (_edges.size() == 0) {
+		ESINFO(ERROR) << "There are no edges for computation of corners.";
+	}
+
 	std::vector<Element*> edges = _edges;
 	std::sort(edges.begin(), edges.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
 
+	auto is_cycle = [] (std::vector<eslocal> &nodes) {
+		std::sort(nodes.begin(), nodes.end());
+		size_t fullSize = nodes.size();
+		Esutils::unique(nodes);
+		return fullSize / 2 == nodes.size();
+	};
+
+	auto next = [&] (Element* &edge, Element* &node) {
+		edge = edge == node->parentEdges()[0] ? node->parentEdges()[1] : node->parentEdges()[0];
+		node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
+	};
+
 	auto fixCycle = [&] (size_t begin, size_t end) {
-		Element* edge = edges[begin];
-		Element* node = _nodes[edge->node(0)];
+		Element *edge = edges[begin], *node = _nodes[edge->node(0)];
 		for (size_t e = begin; e < end; e++) {
 			if (((end - begin) / 3) == 0 || (e - begin) % ((end - begin) / 3) == 0) {
 				_corners.push_back(node);
 			}
-			edge = edge == node->parentEdges()[0] ? node->parentEdges()[1] : node->parentEdges()[0];
-			node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
+			next(edge, node);
 		}
 	};
 
-	size_t corners = 0;
-	size_t begin = 0;
-	for (size_t i = 1; i < edges.size(); i++) {
-		if (i && edges[i]->domains() != edges[i - 1]->domains()) {
-			if (corners == 0) {
-				fixCycle(begin, i);
+	auto setCorners = [&] (size_t begin, size_t end) {
+		if (number == 0) {
+			return;
+		}
+		size_t size = end - begin, n = 0, c = number + 1;
+		while (n == 0) {
+			n = std::ceil((double)size / c--);
+		}
+		Element *edge = edges[begin], *node = _nodes[edge->node(0)];
+		Element *begin_edge = edges[begin], *begin_node = _nodes[edge->node(0)];
+		while (edge->domains() == begin_edge->domains()) { // find first node
+			edge = begin_edge;
+			node = begin_node;
+			node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
+			next(begin_edge, begin_node);
+		}
+
+		for (size_t i = 1; i < size; i++) {
+			if (i % n == 0) {
+				_corners.push_back(node);
 			}
-			corners = 0;
+			next(edge, node);
+		}
+	};
+
+	size_t begin = 0;
+	std::vector<eslocal> edge_nodes = { edges[0]->node(0), edges[0]->node(edges[0]->nodes() - 1) };
+	for (size_t i = 1; i < edges.size(); i++) {
+		if (edges[i]->domains() != edges[i - 1]->domains()) {
+			is_cycle(edge_nodes) ? fixCycle(begin, i) : setCorners(begin, i);
 			begin = i;
+			edge_nodes.clear();
 		}
 
 		if (_nodes[edges[i]->node(0)]->domains().size() > _nodes[edges[i]->node(edges[i]->nodes() - 1)]->domains().size()) {
 			_corners.push_back(_nodes[edges[i]->node(0)]);
-			corners++;
 		}
 		if (_nodes[edges[i]->node(0)]->domains().size() < _nodes[edges[i]->node(edges[i]->nodes() - 1)]->domains().size()) {
 			_corners.push_back(_nodes[edges[i]->node(edges[i]->nodes() - 1)]);
-			corners++;
 		}
+		edge_nodes.push_back(edges[i]->node(0));
+		edge_nodes.push_back(edges[i]->node(edges[i]->nodes() - 1));
 	}
-	if (corners == 0) {
-		fixCycle(begin, edges.size());
-	}
+	is_cycle(edge_nodes) ? fixCycle(begin, edges.size()) : setCorners(begin, edges.size());
 
 	std::sort(_corners.begin(), _corners.end());
 	Esutils::unique(_corners);
 }
 
-void Mesh::computeCornersOnEdges(size_t number)
-{
-
-}
-
 void Mesh::computeCornersOnFaces(size_t number)
 {
-
+	ESINFO(GLOBAL_ERROR) << "Corners in faces are not implemented.";
 }
 
 static void setCluster(Element* &element, std::vector<Element*> &nodes)
