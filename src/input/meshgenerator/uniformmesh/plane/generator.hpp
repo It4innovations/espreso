@@ -251,11 +251,6 @@ void PlaneGenerator<TElement>::corners(std::vector<eslocal> &corners)
 		return;
 	}
 
-	if (_settings.useMetis) {
-		Loader::corners(corners);
-		return;
-	}
-
 	if (_settings.corners) {
 		ESINFO(DETAILS) << "Set corners to vertices";
 	}
