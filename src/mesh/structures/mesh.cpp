@@ -90,7 +90,7 @@ void Mesh::computeFixPoints(size_t number)
 		std::sort(fixPoints.begin(), fixPoints.end());
 
 		// Remove the same points
-		Esutils::unique(fixPoints);
+		Esutils::removeDuplicity(fixPoints);
 
 		delete[] eSubPartition;
 
@@ -934,7 +934,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 	auto is_cycle = [] (std::vector<eslocal> &nodes) {
 		std::sort(nodes.begin(), nodes.end());
 		size_t fullSize = nodes.size();
-		Esutils::unique(nodes);
+		Esutils::removeDuplicity(nodes);
 		return fullSize / 2 == nodes.size();
 	};
 
@@ -999,7 +999,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 	is_cycle(edge_nodes) ? fixCycle(begin, edges.size()) : setCorners(begin, edges.size());
 
 	std::sort(_corners.begin(), _corners.end());
-	Esutils::unique(_corners);
+	Esutils::removeDuplicity(_corners);
 }
 
 void Mesh::computeCornersOnFaces(size_t number)
@@ -1065,7 +1065,7 @@ static void assignDomains(std::vector<Element*> &elements)
 				elements[i]->domains().insert(elements[i]->domains().end(), elements[i]->parentElements()[e]->domains().begin(), elements[i]->parentElements()[e]->domains().end());
 			}
 			std::sort(elements[i]->domains().begin(), elements[i]->domains().end());
-			Esutils::unique(elements[i]->domains());
+			Esutils::removeDuplicity(elements[i]->domains());
 		}
 	}
 }
@@ -1460,7 +1460,7 @@ void Mesh::mapCoordinatesToDomains()
 		}
 
 		std::sort(l2g.begin(), l2g.end());
-		Esutils::unique(l2g);
+		Esutils::removeDuplicity(l2g);
 
 		_coordinates._clusterIndex[p] = l2g;
 	}

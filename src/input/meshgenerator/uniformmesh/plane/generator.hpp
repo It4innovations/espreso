@@ -193,7 +193,7 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 
 	for (size_t p = 0; p < fixPoints.size(); p++) {
 		std::sort(fixPoints[p].begin(), fixPoints[p].end());
-		Esutils::unique(fixPoints[p]);
+		Esutils::removeDuplicity(fixPoints[p]);
 	}
 }
 
@@ -234,8 +234,7 @@ void PlaneGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 				neighs.insert(tmp);
 			}
 			std::sort(nodes[index]->clusters().begin(), nodes[index]->clusters().end());
-			auto end = std::unique(nodes[index]->clusters().begin(), nodes[index]->clusters().end());
-			nodes[index]->clusters().resize(end - nodes[index]->clusters().begin());
+			Esutils::removeDuplicity(nodes[index]->clusters());
 			index++;
 		}
 	}
@@ -313,7 +312,7 @@ void PlaneGenerator<TElement>::corners(std::vector<eslocal> &corners)
 	}
 
 	std::sort(corners.begin(), corners.end());
-	Esutils::unique(corners);
+	Esutils::removeDuplicity(corners);
 }
 
 }

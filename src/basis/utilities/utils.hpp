@@ -66,7 +66,7 @@ Ttype Esutils::sizesToOffsets(std::vector<Ttype> &sizes)
 }
 
 template<typename Ttype>
-void Esutils::unique(std::vector<Ttype> &elements)
+void Esutils::removeDuplicity(std::vector<Ttype> &elements)
 {
 	if (elements.size() == 0) {
 		return;

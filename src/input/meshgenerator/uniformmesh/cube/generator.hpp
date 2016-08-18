@@ -170,7 +170,7 @@ void CubeGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, st
 					neighs.insert(tmp);
 				}
 				std::sort(nodes[index]->clusters().begin(), nodes[index]->clusters().end());
-				Esutils::unique(nodes[index]->clusters());
+				Esutils::removeDuplicity(nodes[index]->clusters());
 				index++;
 			}
 		}

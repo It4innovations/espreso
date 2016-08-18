@@ -128,7 +128,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 
 	for (size_t p = 0; p < fixPoints.size(); p++) {
 		std::sort(fixPoints[p].begin(), fixPoints[p].end());
-		Esutils::unique(fixPoints[p]);
+		Esutils::removeDuplicity(fixPoints[p]);
 	}
 }
 
@@ -217,7 +217,7 @@ void UniformGenerator<TElement>::corners(std::vector<eslocal> &corners)
 	}
 
 	std::sort(corners.begin(), corners.end());
-	Esutils::unique(corners);
+	Esutils::removeDuplicity(corners);
 }
 
 }

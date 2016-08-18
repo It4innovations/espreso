@@ -78,7 +78,7 @@ static void composeFacesGluing(Mesh &mesh, Constraints &constrains)
 				nodes.push_back(faces[f]->node(n));
 			}
 			std::sort(nodes.begin(), nodes.end());
-			Esutils::unique(nodes);
+			Esutils::removeDuplicity(nodes);
 		}
 
 		Point center(0, 0 ,0);
