@@ -37,7 +37,7 @@ void LinearElasticity::prepareMeshStructures()
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
-			_mesh.computeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
+			_mesh.computeVolumeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
 			_mesh.computeFacesSharedByDomains();

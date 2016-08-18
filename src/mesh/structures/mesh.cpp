@@ -473,7 +473,7 @@ void Mesh::makePartContinuous(size_t part)
 	}
 }
 
-void Mesh::computeCorners(size_t number, bool vertices, bool edges, bool faces)
+void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool faces)
 {
 	if (parts() == 1 || (!vertices && !edges && !faces)) {
 		return;
@@ -495,6 +495,31 @@ void Mesh::computeCorners(size_t number, bool vertices, bool edges, bool faces)
 	if (faces) {
 		computeCornersOnFaces(number);
 	}
+
+	if (config::output::SAVE_CORNERS) {
+		std::stringstream ss;
+		ss << "meshCorners" << config::env::MPIrank;
+		output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	}
+}
+
+void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
+{
+	if (parts() == 1 || (!vertices && !edges)) {
+		return;
+	}
+
+	if (_corners.size()) {
+		if (config::output::SAVE_CORNERS) {
+			std::stringstream ss;
+			ss << "meshCorners" << config::env::MPIrank;
+			output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		}
+		return;
+	}
+
+	computeEdgesSharedByDomains();
+	computeCornersOnEdges(number);
 
 	if (config::output::SAVE_CORNERS) {
 		std::stringstream ss;
@@ -598,6 +623,29 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 	mapEdgesToClusters();
 	mapEdgesToDomains();
 	fillParentEdgesToNodes();
+
+	if (config::output::SAVE_EDGES) {
+		Mesh mesh;
+		mesh._coordinates = _coordinates;
+		for (size_t i = 0; i < _edges.size(); i++) {
+			mesh._elements.push_back(_edges[i]->copy());
+		}
+		mesh._partPtrs.clear();
+		mesh._partPtrs.push_back(0);
+		std::sort(mesh._elements.begin(), mesh._elements.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
+		for (size_t i = 1; i < mesh._elements.size(); i++) {
+			if (mesh._elements[i]->domains() != mesh._elements[i - 1]->domains()) {
+				mesh._partPtrs.push_back(i);
+			}
+		}
+		mesh._partPtrs.push_back(mesh._elements.size());
+		mesh.mapElementsToDomains();
+		mesh.mapCoordinatesToDomains();
+
+		std::stringstream ss;
+		ss << "meshEdges" << config::env::MPIrank;
+		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	}
 }
 
 void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
@@ -870,6 +918,27 @@ void Mesh::computeEdgesOfAllElements()
 	fillEdgesFromElements([] (const std::vector<Element*> &nodes, const Element* edge) { return true; });
 }
 
+void Mesh::computeEdgesSharedByDomains()
+{
+	fillEdgesFromElements([] (const std::vector<Element*> &nodes, const Element *edge) {
+		std::vector<Element*> intersection(nodes[edge->node(edge->nodes() - 1)]->parentElements()); // it is better to start from end (from mid points)
+		auto it = intersection.end();
+
+		for (size_t n = edge->nodes() - 2; it - intersection.begin() > 1 &&  n < edge->nodes(); n--) {
+			std::vector<Element*> tmp(intersection.begin(), it);
+			it = std::set_intersection(tmp.begin(), tmp.end(),
+					nodes[edge->node(n)]->parentElements().begin(), nodes[edge->node(n)]->parentElements().end(),
+					intersection.begin());
+		}
+
+		intersection.resize(it - intersection.begin());
+		if (intersection.size() == 1) {
+			return false;
+		}
+		return intersection[0]->domains() != intersection[1]->domains();
+	});
+}
+
 void Mesh::computeEdgesOnBordersOfFacesSharedByDomains()
 {
 	fillEdgesFromFaces([] (const std::vector<Element*> &nodes, const Element* edge) {
@@ -947,6 +1016,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 	auto next = [&] (Element* &edge, Element* &node) {
 		edge = edge == node->parentEdges()[0] ? node->parentEdges()[1] : node->parentEdges()[0];
 		node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
+
 	};
 
 	auto fixCycle = [&] (size_t begin, size_t end) {
@@ -960,7 +1030,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 	};
 
 	auto setCorners = [&] (size_t begin, size_t end) {
-		if (number == 0) {
+		if (number == 0 || (end - begin) < 2) {
 			return;
 		}
 		size_t size = end - begin, n = 0, c = number + 1;
@@ -969,14 +1039,18 @@ void Mesh::computeCornersOnEdges(size_t number)
 		}
 		Element *edge = edges[begin], *node = _nodes[edge->node(0)];
 		Element *begin_edge = edges[begin], *begin_node = _nodes[edge->node(0)];
-		while (edge->domains() == begin_edge->domains()) { // find first node
+		while (edge->domains() == begin_edge->domains() && begin_node->parentEdges().size() == 2) { // find first node
 			edge = begin_edge;
 			node = begin_node;
-			node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
 			next(begin_edge, begin_node);
 		}
 
-		for (size_t i = 1; i < size; i++) {
+		if (begin_node->parentEdges().size() != 2) {
+			edge = begin_edge;
+			node = begin_node;
+			node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
+		}
+		for (size_t i = 1; i < size - 1; i++) {
 			if (i % n == 0) {
 				_corners.push_back(node);
 			}

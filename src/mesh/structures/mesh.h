@@ -45,7 +45,8 @@ public:
 
 	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t number);
-	void computeCorners(size_t number, bool vertices, bool edges, bool faces);
+	void computeVolumeCorners(size_t number, bool vertices, bool edges, bool faces);
+	void computePlaneCorners(size_t number, bool vertices, bool edges);
 
 	void computeFacesOfAllElements();
 	void computeFacesOnDomainsSurface();
@@ -53,6 +54,7 @@ public:
 	void clearFacesWithoutSettings();
 
 	void computeEdgesOfAllElements();
+	void computeEdgesSharedByDomains();
 	void computeEdgesOnBordersOfFacesSharedByDomains();
 	void clearEdgesWithoutSettings();
 

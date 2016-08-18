@@ -6,7 +6,7 @@
 
 #define Square4NodesCount 4
 #define Square4EdgeCount 4
-#define Square4FacesCount 4
+#define Square4FacesCount 0
 #define Square4GPCount 4
 #define Square4CommonNodes 2
 #define Square4VTKCode 9
