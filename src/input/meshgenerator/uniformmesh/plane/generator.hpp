@@ -192,14 +192,8 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 	}
 
 	for (size_t p = 0; p < fixPoints.size(); p++) {
-		for (size_t i = 0; i < fixPoints[p].size(); i++) {
-			fixPoints[p][i] = this->mesh.coordinates().localIndex(fixPoints[p][i], p);
-		}
 		std::sort(fixPoints[p].begin(), fixPoints[p].end());
-
-		// Remove the same points
-		auto it = std::unique(fixPoints[p].begin(), fixPoints[p].end());
-		fixPoints[p].resize(it - fixPoints[p].begin());
+		Esutils::unique(fixPoints[p]);
 	}
 }
 
