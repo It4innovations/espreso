@@ -149,12 +149,7 @@ static void composeFacesGluing(Mesh &mesh, Constraints &constrains)
 
 void LinearElasticity::assembleGluingMatrices()
 {
-	std::vector<size_t> sizes;
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		sizes.push_back(K[p].cols);
-	}
-
-	_constraints.initMatrices(sizes);
+	_constraints.initMatrices(matrixSize);
 
 	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);

@@ -43,6 +43,39 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+
+	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
+	_mesh.computeNodesDOFsCounters(pointDOFs);
+
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		switch (config::solver::B0_TYPE) {
+		case config::solver::B0_TYPEalternative::CORNERS:
+			_mesh.computeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
+			break;
+		case config::solver::B0_TYPEalternative::KERNELS:
+			ESINFO(GLOBAL_ERROR) << "Implement HFETI from kernels for AD2D";
+			break;
+		}
+	}
+}
+
+void AdvectionDiffusion2D::assembleGluingMatrices()
+{
+	_constraints.initMatrices(matrixSize);
+
+	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
+
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		switch (config::solver::B0_TYPE) {
+		case config::solver::B0_TYPEalternative::CORNERS:
+			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+			break;
+		case config::solver::B0_TYPEalternative::KERNELS:
+			ESINFO(GLOBAL_ERROR) << "Implement me.";
+			break;
+		}
+	}
 }
 
 static double determinant2x2(DenseMatrix &m)
@@ -86,7 +119,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	coordinates.resize(element->nodes(), 2);
 	for (size_t i = 0; i < element->nodes(); i++) {
-		const Point &p = mesh.coordinates().get(element->node(i), subdomain);
+		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
 		U(i, 0) = ux.back()->evaluate(p.x, p.y, p.z) * material.density * material.termalCapacity;
@@ -196,28 +229,32 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 
 void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 {
-	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke;
 	std::vector<double> fe;
 
-	_K.resize(subdomainSize, subdomainSize);
-	f[subdomain].resize(subdomainSize);
+	_K.resize(matrixSize[subdomain], matrixSize[subdomain]);
+	f[subdomain].resize(matrixSize[subdomain]);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
+	const std::vector<Element*> &elements = _mesh.elements();
+	const std::vector<Element*> &nodes = _mesh.nodes();
 
-	for (eslocal p = partition[subdomain]; p < partition[subdomain + 1]; p++) {
+	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		const Element* e = _mesh.elements()[p];
-		processElement(Ke, fe, _mesh, subdomain, e);
+		processElement(Ke, fe, _mesh, subdomain, elements[e]);
 
-		for (size_t i = 0; i < e->nodes(); i++) {
-			eslocal row = e->node(i);
-			for (size_t j = 0; j < e->nodes(); j++) {
-				eslocal column = e->node(j);
-				_K(row, column) = Ke(i, j);
+		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
+			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
+				size_t row = nodes[elements[e]->node(nx)]->DOFIndex(subdomain, dx);
+				for (size_t ny = 0; ny < elements[e]->nodes(); ny++) {
+					for (size_t dy = 0; dy < pointDOFs.size(); dy++) {
+						size_t column = nodes[elements[e]->node(ny)]->DOFIndex(subdomain, dy);
+						_K(row, column) = Ke(dx * elements[e]->nodes() + nx, dy * elements[e]->nodes() + ny);
+					}
+				}
+				f[subdomain][row] += fe[dx * elements[e]->nodes() + nx];
 			}
-			f[subdomain][row] += fe[i];
 		}
 	}
 

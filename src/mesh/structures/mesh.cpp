@@ -77,6 +77,7 @@ void Mesh::computeFixPoints(size_t number)
 	if (_fixPoints.size() && _fixPoints[0].size() == number) {
 		return;
 	}
+
 	std::vector<eslocal> fixPoints(number);
 	_fixPoints.resize(parts());
 

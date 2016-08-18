@@ -20,7 +20,7 @@ struct AdvectionDiffusion2D: public LinearPhysics
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void prepareMeshStructures();
-	void assembleGluingMatrices() {};
+	void assembleGluingMatrices();
 
 	static double sigma;
 	static STABILIZATION stabilization;
