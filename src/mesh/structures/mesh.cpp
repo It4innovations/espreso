@@ -480,6 +480,11 @@ void Mesh::computeCorners(size_t number, bool vertices, bool edges, bool faces)
 	}
 
 	if (_corners.size()) {
+		if (config::output::SAVE_CORNERS) {
+			std::stringstream ss;
+			ss << "meshCorners" << config::env::MPIrank;
+			output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		}
 		return;
 	}
 
