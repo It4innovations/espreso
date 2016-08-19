@@ -28,6 +28,7 @@ public:
 
 	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const Coordinates &coordinates, const std::vector<Property> &DOFs) =0;
 	virtual void insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
+	virtual void insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 
 	virtual void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 
