@@ -22,25 +22,32 @@ void PlaneSettings::defaultPlaneSettings()
 
 	for (size_t i = 0; i < 2; i++) {
 		parameters.push_back({
-			"CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis.", verbosity
+			prefix + "CLUSTERS_" + axis[i].first, clusters[i], "Number of clusters in " + axis[i].second + "-axis.", verbosity
 		});
+	}
+	for (size_t i = 0; i < 2; i++) {
 		parameters.push_back({
-			"LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
+			prefix + "ORIGIN_" + axis[i].first, problemOrigin[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
+		});
+	}
+	for (size_t i = 0; i < 2; i++) {
+		parameters.push_back({
+			prefix + "LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
 		});
 	}
 
-	parameters.push_back({ "HEAT_SOURCES", properties["HEAT_SOURCES"], "Sources of a heat.", verbosity });
-	parameters.push_back({ "TRANSLATION_MOTIONS", properties["TRANSLATION_MOTIONS"], "Translation motion of a region.", verbosity });
+	parameters.push_back({ prefix + "HEAT_SOURCES", properties["HEAT_SOURCES"], "Sources of a heat.", verbosity });
+	parameters.push_back({ prefix + "TRANSLATION_MOTIONS", properties["TRANSLATION_MOTIONS"], "Translation motion of a region.", verbosity });
 
-	parameters.push_back({ "INCONSISTENT_STABILIZATION_PARAMETER", AdvectionDiffusion2D::sigma, "Inconsistent stabilization.", verbosity });
-	parameters.push_back({ "CONSISTENT_STABILIZATION", AdvectionDiffusion2D::stabilization, "Inconsistent stabilization.", {
+	parameters.push_back({ prefix + "INCONSISTENT_STABILIZATION_PARAMETER", AdvectionDiffusion2D::sigma, "Inconsistent stabilization.", verbosity });
+	parameters.push_back({ prefix + "CONSISTENT_STABILIZATION", AdvectionDiffusion2D::stabilization, "Inconsistent stabilization.", {
 			{ "CAU", AdvectionDiffusion2D::STABILIZATION::CAU, "CAU stabilization." },
 			{ "SUPG", AdvectionDiffusion2D::STABILIZATION::SUPG, "SUPG stabilization." }
 	}, verbosity });
 }
 
-PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size)
-: CubeSettings(index, size)
+PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+: CubeSettings(index, size, prefix)
 {
 	parameters.clear();
 	defaultPlaneSettings();
@@ -51,8 +58,8 @@ PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, s
 	elementsInSubdomain[2] = 1;
 }
 
-PlaneSettings::PlaneSettings(size_t index, size_t size)
-: CubeSettings(index, size)
+PlaneSettings::PlaneSettings(size_t index, size_t size, std::string prefix)
+: CubeSettings(index, size, prefix)
 {
 	parameters.clear();
 	defaultPlaneSettings();

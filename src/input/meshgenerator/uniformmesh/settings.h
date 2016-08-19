@@ -10,8 +10,8 @@ namespace input {
 
 struct UniformSettings: public Settings {
 
-	UniformSettings(const Options &options, size_t index, size_t size);
-	UniformSettings(size_t index, size_t size);
+	UniformSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	UniformSettings(size_t index, size_t size, std::string prefix="");
 
 	std::vector<Description> description;
 

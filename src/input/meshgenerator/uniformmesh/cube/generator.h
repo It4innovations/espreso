@@ -11,7 +11,6 @@ namespace input {
 
 template<class TElement>
 class CubeGenerator: public UniformGenerator<TElement> {
-
 public:
 	static void load(Mesh &mesh, const CubeSettings &settings)
 	{
@@ -22,9 +21,8 @@ public:
 		cube.fill();
 	}
 
-protected:
 	CubeGenerator(Mesh &mesh, const CubeSettings &settings);
-
+protected:
 	virtual void elementsMaterials(std::vector<Element*> &elements);
 	virtual void points(Coordinates &coordinates);
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);

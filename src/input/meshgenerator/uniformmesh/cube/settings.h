@@ -20,12 +20,13 @@ struct CubeSettings: public UniformSettings {
 		BOTTOM
 	};
 
-	CubeSettings(const Options &options, size_t index, size_t size);
-	CubeSettings(size_t index, size_t size);
+	CubeSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	CubeSettings(size_t index, size_t size, std::string prefix="");
 
 	std::vector<Description> description;
 
 	size_t clusters[3];
+	double problemOrigin[3];
 	double problemLength[3];
 
 protected:

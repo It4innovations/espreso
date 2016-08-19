@@ -10,23 +10,28 @@ static void defaultSettings(Settings &settings)
 	size_t verbosity = 1;
 
 	parameters = {
-		{ "USE_METIS" , useMetis   , "Use METIS for mesh partition." },
-		{ "MATERIAL1" , material1  , "Parameters of the first material." },
-		{ "MATERIAL2" , material2  , "Parameters of the second material." },
-		{ "TIME_STEPS", config::solver::TIME_STEPS, "Number of time steps for transient problems."},
+		{ prefix + "USE_METIS" , useMetis   , "Use METIS for mesh partition." },
+		{ prefix + "MATERIAL1" , material1  , "Parameters of the first material." },
+		{ prefix + "MATERIAL2" , material2  , "Parameters of the second material." },
+		{ prefix + "TIME_STEPS", config::solver::TIME_STEPS, "Number of time steps for transient problems."},
 
-		{ "NODES", nodes, "Named sets of nodes.", verbosity },
-		{ "FACES", faces, "Named sets of nodes.", verbosity },
-		{ "ELEMENTS", elements, "Named sets of nodes.", verbosity },
+		{ prefix + "NODES", nodes, "Named sets of nodes.", verbosity },
+		{ prefix + "FACES", faces, "Named sets of nodes.", verbosity },
+		{ prefix + "ELEMENTS", elements, "Named sets of nodes.", verbosity },
 
-		{ "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity }
+		{ prefix + "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity }
 	};
-
-	Configuration configuration(Settings::description, options);
 }
 
-Settings::Settings(size_t index, size_t size)
-: index(index), size(size)
+Settings::Settings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+: index(index), size(size), clusterOffset(0), prefix(prefix)
+{
+	defaultSettings();
+	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+}
+
+Settings::Settings(size_t index, size_t size, std::string prefix)
+: index(index), size(size), clusterOffset(0), prefix(prefix)
 {
 	defaultSettings(*this);
 }

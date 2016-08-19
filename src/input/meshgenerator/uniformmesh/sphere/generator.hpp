@@ -347,12 +347,12 @@ void SphereGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, 
 			for (eslocal x = sx; x <= ex; x++) {
 				for (eslocal y = sy; y <= ey; y++) {
 					for (eslocal z = sz; z <= ez; z++) {
-						nodes[z * cNodes[0] * cNodes[1] + y * cNodes[0] + x]->clusters().push_back(sortedMap[i]);
+						nodes[z * cNodes[0] * cNodes[1] + y * cNodes[0] + x]->clusters().push_back(sortedMap[i] + _settings.clusterOffset);
 					}
 				}
 			}
 			if (sortedMap[i] != config::env::MPIrank) {
-				neighbours.push_back(sortedMap[i]);
+				neighbours.push_back(sortedMap[i] + _settings.clusterOffset);
 			}
 		}
 	}

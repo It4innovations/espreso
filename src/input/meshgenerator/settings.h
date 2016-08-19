@@ -33,13 +33,15 @@ enum Assembler {
 
 struct Settings {
 
-	Settings(const Options &options, size_t index, size_t size);
-	Settings(size_t index, size_t size);
+	Settings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	Settings(size_t index, size_t size, std::string prefix="");
 
-	std::vector<Description> description;
+	std::string prefix;
+	std::vector<Parameter> parameters;
 
 	size_t index;
 	size_t size;
+	size_t clusterOffset;
 
 	std::map<std::string, double> material1;
 	std::map<std::string, double> material2;

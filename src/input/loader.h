@@ -87,7 +87,9 @@ public:
 			mesh.mapCoordinatesToDomains();
 		}
 
-		ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
+		if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+			ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
+		}
 
 		tPartition.end(); measurement.addEvent(tPartition);
 		ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
@@ -96,7 +98,6 @@ public:
 		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
 
-protected:
 	virtual void points(Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<Element*> &elements) { }; // Generator, Workbench
 	virtual void faces(std::vector<Element*> &faces) { }; // OpenFOAM
@@ -121,10 +122,9 @@ protected:
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) {};
 	virtual void corners(std::vector<eslocal> &corners) {};
 
+protected:
 	Loader(Mesh &mesh): mesh(mesh) {};
 	virtual ~Loader() {};
-
-protected:
 	Mesh &mesh;
 };
 

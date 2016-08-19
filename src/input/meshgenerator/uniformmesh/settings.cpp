@@ -21,30 +21,28 @@ UniformSettings::UniformSettings(const Options &options, size_t index, size_t si
 {
 	defaultSettings(*this);
 
-	description = {
-		{"SUBDOMAINS_X", subdomainsInCluster[0], "Number of sub-domains in a cluster in x-axis."},
-		{"SUBDOMAINS_Y", subdomainsInCluster[1], "Number of sub-domains in a cluster in y-axis."},
-		{"SUBDOMAINS_Z", subdomainsInCluster[2], "Number of sub-domains in a cluster in z-axis."},
+	parameters = {
+		{ prefix + "SUBDOMAINS_X", subdomainsInCluster[0], "Number of sub-domains in a cluster in x-axis."},
+		{ prefix + "SUBDOMAINS_Y", subdomainsInCluster[1], "Number of sub-domains in a cluster in y-axis."},
+		{ prefix + "SUBDOMAINS_Z", subdomainsInCluster[2], "Number of sub-domains in a cluster in z-axis."},
 
-		{"ELEMENTS_X", elementsInSubdomain[0], "Number of elements in a sub-domain in x-axis."},
-		{"ELEMENTS_Y", elementsInSubdomain[1], "Number of elements in a sub-domain in y-axis."},
-		{"ELEMENTS_Z", elementsInSubdomain[2], "Number of elements in a sub-domain in z-axis."},
+		{ prefix + "ELEMENTS_X", elementsInSubdomain[0], "Number of elements in a sub-domain in x-axis."},
+		{ prefix + "ELEMENTS_Y", elementsInSubdomain[1], "Number of elements in a sub-domain in y-axis."},
+		{ prefix + "ELEMENTS_Z", elementsInSubdomain[2], "Number of elements in a sub-domain in z-axis."},
 
-		{"MATERIALS_X", materialsLayers[0], "Number of materials layers in x-axis."},
-		{"MATERIALS_Y", materialsLayers[1], "Number of materials layers in y-axis."},
-		{"MATERIALS_Z", materialsLayers[2], "Number of materials layers in z-axis."},
+		{ prefix + "MATERIALS_X", materialsLayers[0], "Number of materials layers in x-axis."},
+		{ prefix + "MATERIALS_Y", materialsLayers[1], "Number of materials layers in y-axis."},
+		{ prefix + "MATERIALS_Z", materialsLayers[2], "Number of materials layers in z-axis."},
 
-		{"CORNER_COUNT"      , cornerCount, "The number of corners."},
-		{"CORNERS_IN_CORNERS", corners    , "Set corners to corners points."},
-		{"CORNERS_IN_EDGES"  , edges      , "Set corners on edges."},
-		{"CORNERS_IN_FACES"  , faces      , "Set corners on faces."},
+		{ prefix + "CORNER_COUNT"      , cornerCount, "The number of corners."},
+		{ prefix + "CORNERS_IN_CORNERS", corners    , "Set corners to corners points."},
+		{ prefix + "CORNERS_IN_EDGES"  , edges      , "Set corners on edges."},
+		{ prefix + "CORNERS_IN_FACES"  , faces      , "Set corners on faces."},
 	};
-
-	Configuration configuration(UniformSettings::description, options);
 }
 
-UniformSettings::UniformSettings(size_t index, size_t size)
-: Settings(index, size)
+UniformSettings::UniformSettings(size_t index, size_t size, std::string prefix)
+: Settings(index, size, prefix)
 {
 	defaultSettings(*this);
 }

@@ -9,10 +9,12 @@
 
 namespace espreso {
 
-class Factory {
-
-public:
-	Factory(const Options &options);
+enum class GeneratorShape {
+	CUBE,
+	SPHERE,
+	PLANE,
+	CUBES
+};
 
 enum class PhysicsAssembler {
 	LINEAR_ELASTICITY,

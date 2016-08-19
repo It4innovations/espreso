@@ -43,6 +43,8 @@ public:
 	Mesh();
 	virtual ~Mesh();
 
+	void saveFaces();
+
 	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t number);
 	void computeVolumeCorners(size_t number, bool vertices, bool edges, bool faces);

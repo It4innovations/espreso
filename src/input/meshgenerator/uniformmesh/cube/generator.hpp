@@ -105,7 +105,7 @@ void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 		for (esglobal y = cs[1]; y <= ce[1]; y++) {
 			for (esglobal x = cs[0]; x <= ce[0]; x++) {
 				coordinates.add(
-					Point(x * step[0], y * step[1], z * step[2]),
+					Point(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1], _settings.problemOrigin[2] + z * step[2]),
 					(z - cs[2]) * cNodes[0] * cNodes[1] + (y - cs[1]) * cNodes[0] + (x - cs[0]),
 					z * gNodes[0] * gNodes[1] + y * gNodes[0] + x
 				);
@@ -156,7 +156,7 @@ void CubeGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, st
 			for (esglobal x = cs[0]; x <= ce[0]; x++) {
 				border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
 				for (int i = 0; i < 8; i++) {
-					eslocal tmp = cIndex;
+					eslocal tmp = cIndex + _settings.clusterOffset;
 					if (border[0] && (i & 1)) {
 						tmp += (x == cs[0]) ? -1 : 1;
 					}

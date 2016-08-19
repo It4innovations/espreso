@@ -153,6 +153,7 @@ void LinearElasticity::assembleGluingMatrices()
 
 	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
+	_constraints.insertMortarGluingToB1(_mesh.faces(), pointDOFs);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {

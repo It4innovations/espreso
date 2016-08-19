@@ -93,11 +93,8 @@ void EqualityGluing::insertDirichletToB1(const std::vector<Element*> &nodes, con
 		B1clustersMap.push_back({ i, config::env::MPIrank });
 	}
 
-	if (globalDirichletSize == 0) {
-		ESINFO(ERROR) << "ESPRESO requires some nodes with Dirichlet condition.";
-	}
-
 	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << B1[0].rows;
+	ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
 }
 
 std::vector<esglobal> EqualityGluing::computeLambdasID(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
@@ -339,7 +336,16 @@ void EqualityGluing::insertElementGluingToB1(const std::vector<Element*> &elemen
 
 void EqualityGluing::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
+	_mesh.saveFaces();
+	std::cout << "FACES: " << _mesh.faces().size() << "\n";
+	size_t cc = 0;
+	for (size_t i = 0; i < elements.size(); i++) {
+		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
+			cc++;
+		}
+	}
 
+	std::cout << "MORTAR FACES ON " << config::env::MPIrank << ": " << cc << "\n";
 }
 
 void EqualityGluing::insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)

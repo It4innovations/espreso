@@ -39,7 +39,7 @@ void PlaneGenerator<TElement>::points(Coordinates &coordinates)
 	for (esglobal y = cs[1]; y <= ce[1]; y++) {
 		for (esglobal x = cs[0]; x <= ce[0]; x++) {
 			coordinates.add(
-				Point(x * step[0], y * step[1], 0),
+				Point(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1], 0),
 				(y - cs[1]) * cNodes[0] + (x - cs[0]),
 				y * gNodes[0] + x
 			);
@@ -152,11 +152,6 @@ void PlaneGenerator<TElement>::settings(
 template<class TElement>
 void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
-	if (_settings.useMetis) {
-		Loader::fixPoints(fixPoints);
-		return;
-	}
-
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1]);
 	eslocal shift_offset[2] = {TElement::subnodes[0] + 1, TElement::subnodes[1] + 1};
 
@@ -223,7 +218,7 @@ void PlaneGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 		for (esglobal x = cs[0]; x <= ce[0]; x++) {
 			border[0] = (x == 0 || x == gNodes[0] - 1) ? false : x % ( cNodes[0] - 1) == 0;
 			for (int i = 0; i < 4; i++) {
-				eslocal tmp = cIndex;
+				eslocal tmp = cIndex + _settings.clusterOffset;
 				if (border[0] && (i & 1)) {
 					tmp += (x == cs[0]) ? -1 : 1;
 				}

@@ -14,6 +14,7 @@ public:
 	static size_t subnodes[3];
 
 	static void addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[]);
+	static void addFaces(std::vector<Element*> &faces, const eslocal indices[], size_t face);
 
 };
 
