@@ -1,14 +1,14 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY_ASSEMBLER_H_
-#define SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY_ASSEMBLER_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY3D_ASSEMBLER_H_
+#define SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY3D_ASSEMBLER_H_
 
 #include "../assembler.h"
 
 namespace espreso {
 
-struct LinearElasticity: public LinearPhysics
+struct LinearElasticity3D: public LinearPhysics
 {
-	LinearElasticity(Mesh &mesh, Constraints &constraints)
+	LinearElasticity3D(Mesh &mesh, Constraints &constraints)
 	: LinearPhysics(
 			mesh, constraints,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
@@ -30,4 +30,4 @@ protected:
 }
 
 
-#endif /* SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY_ASSEMBLER_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY3D_ASSEMBLER_H_ */

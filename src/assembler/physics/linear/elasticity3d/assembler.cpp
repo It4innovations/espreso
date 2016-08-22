@@ -5,13 +5,13 @@
 
 using namespace espreso;
 
-std::vector<Property> LinearElasticity::elementDOFs;
-std::vector<Property> LinearElasticity::faceDOFs;
-std::vector<Property> LinearElasticity::edgeDOFs;
-std::vector<Property> LinearElasticity::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-std::vector<Property> LinearElasticity::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> LinearElasticity3D::elementDOFs;
+std::vector<Property> LinearElasticity3D::faceDOFs;
+std::vector<Property> LinearElasticity3D::edgeDOFs;
+std::vector<Property> LinearElasticity3D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> LinearElasticity3D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 
-void LinearElasticity::prepareMeshStructures()
+void LinearElasticity3D::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
@@ -147,7 +147,7 @@ static void composeFacesGluing(Mesh &mesh, Constraints &constrains)
 	}
 }
 
-void LinearElasticity::assembleGluingMatrices()
+void LinearElasticity3D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
@@ -417,7 +417,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
-void LinearElasticity::composeSubdomain(size_t subdomain)
+void LinearElasticity3D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke;

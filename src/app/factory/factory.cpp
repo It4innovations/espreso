@@ -98,10 +98,12 @@ void Factory::readParameters(const Configuration &configuration)
 				{ "TRIANGLE6", ElementType::TRIANGLE6, "Triangle with midpoints."},
 		} },
 		{ "PHYSICS", physics, "Physics used for compose matrices", {
-				{ "LINEAR_ELASTICITY", PhysicsAssembler::LINEAR_ELASTICITY, "Linear elasticity." },
-				{ "TEMPERATURE", PhysicsAssembler::TEMPERATURE, "Temperature." },
-				{ "TRANSIENT_ELASTICITY", PhysicsAssembler::TRANSIENT_ELASTICITY, "Transient elasticity." },
-				{ "ADVECTION_DIFFUSION", PhysicsAssembler::ADVECTION_DIFFUSION, "Advection diffusion"},
+				{ "LINEAR_ELASTICITY_2D", PhysicsAssembler::LINEAR_ELASTICITY_2D, "2D linear elasticity." },
+				{ "LINEAR_ELASTICITY_3D", PhysicsAssembler::LINEAR_ELASTICITY_3D, "3D linear elasticity." },
+				{ "TRANSIENT_ELASTICITY_2D", PhysicsAssembler::TRANSIENT_ELASTICITY_2D, "2D transient elasticity." },
+				{ "TRANSIENT_ELASTICITY_3D", PhysicsAssembler::TRANSIENT_ELASTICITY_3D, "3D transient elasticity." },
+				{ "ADVECTION_DIFFUSION_2D", PhysicsAssembler::ADVECTION_DIFFUSION_2D, "2D advection diffusion"},
+				{ "ADVECTION_DIFFUSION_3D", PhysicsAssembler::ADVECTION_DIFFUSION_3D, "3D advection diffusion"},
 				{ "STOKES", PhysicsAssembler::STOKES, "Stokes"}
 		} }
 	};
@@ -160,7 +162,7 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 
 static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
 {
-	physics = PhysicsAssembler::LINEAR_ELASTICITY;
+	physics = PhysicsAssembler::LINEAR_ELASTICITY_3D;
 
 	readParameters(configuration);
 
@@ -207,16 +209,13 @@ Factory::Factory(const Options &options)
 	}
 
 	switch (physics) {
-	case PhysicsAssembler::LINEAR_ELASTICITY:
-		instance = new LinearInstance<EqualityGluing, LinearElasticity>(mesh);
+	case PhysicsAssembler::LINEAR_ELASTICITY_3D:
+		instance = new LinearInstance<EqualityGluing, LinearElasticity3D>(mesh);
 		break;
-	case PhysicsAssembler::TEMPERATURE:
-		instance = new LinearInstance<EqualityGluing, Temperature>(mesh);
-		break;
-	case PhysicsAssembler::TRANSIENT_ELASTICITY:
+	case PhysicsAssembler::TRANSIENT_ELASTICITY_3D:
 		instance = new DynamicsInstance<EqualityGluing, TransientElasticity>(mesh);
 		break;
-	case PhysicsAssembler::ADVECTION_DIFFUSION:
+	case PhysicsAssembler::ADVECTION_DIFFUSION_2D:
 		instance = new LinearInstance<EqualityGluing, AdvectionDiffusion2D>(mesh);
 		break;
 	case PhysicsAssembler::STOKES:
