@@ -537,11 +537,13 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
 
 }
-
 void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
-
+/*####################################################################################################
+#                            C G   -   N E W    I M P L E M E N T A T I O N                          # 
+//##################################################################################################*/
+//
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
@@ -781,11 +783,13 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
 
 }
-
 void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
-
+/*####################################################################################################
+#                              C G      F U L L    O R T H O G O N A L                               # 
+//##################################################################################################*/
+//
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
@@ -1095,6 +1099,10 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
+/*####################################################################################################
+#                                            G M R E S                                               # 
+//##################################################################################################*/
+//
 
 	eslocal dl_size = cluster.my_lamdas_indices.size();
 
@@ -1523,16 +1531,18 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
 
 } //  Solve_GMRES_singular_dom
-
-
+//
 void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
-
-  //  FLAG_SOLUTION =  0;   solution found to the tolerance
-  //  FLAG_SOLUTION =  1;   no convergence for for given tolerance
-  //  FLAG_SOLUTION = -1;   breakdown: delta = 0
-  //  FLAG_SOLUTION = -2;   breakdown: omega = 0
+/*####################################################################################################
+#                                         B I C G S T A B                                            # 
+//##################################################################################################*/
+//
+//  FLAG_SOLUTION =  0;   solution found to the tolerance
+//  FLAG_SOLUTION =  1;   no convergence for for given tolerance
+//  FLAG_SOLUTION = -1;   breakdown: delta = 0
+//  FLAG_SOLUTION = -2;   breakdown: omega = 0
 
 
 	eslocal dl_size = cluster.my_lamdas_indices.size();
@@ -1557,7 +1567,7 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
   double rho      = 0;
   double omega    = 1; 
   double delta    = 0;
-  double delta_1  = 0;
+  double delta_p  = 0;
   double gamma    = 0;
   double bnrm2    = 0; 
   double resid    = 0;
@@ -1568,10 +1578,6 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
 	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
-
-
-
-
 
 	if (USE_GGtINV == 1) {
 		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
@@ -1699,7 +1705,7 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
     }
 
     if (iter>0){
-      gamma = -(delta/delta_1)*(rho/omega);
+      gamma = -(delta/delta_p)*(rho/omega);
 		  cilk_for (eslocal i = 0; i < w_l.size(); i++) {
         w_l[i] = z_l[i] + gamma * (w_l[i] - omega*v_l[i]);
       }
@@ -1853,7 +1859,7 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
       FLAG_SOLUTION=-2;
       break;
     }
-    delta_1 = delta;
+    delta_p = delta;
 
 //
 	}
