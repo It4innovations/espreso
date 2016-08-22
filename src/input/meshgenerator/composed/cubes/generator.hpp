@@ -170,7 +170,7 @@ void CubesGenerator<TElement>::settings(
 
 		if (_cubeIndex) {
 			eslocal cNodes[3];
-			UniformUtils<TElement>::clusterNodesCount(_settings.cube[0], cNodes);
+			UniformUtils<TElement>::clusterNodesCount(_settings.cube[_cubeIndex], cNodes);
 			std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 			eslocal subdomain[3], element[3], subdomainOffset[3], elementOffset[3];
 
@@ -213,7 +213,7 @@ void CubesGenerator<TElement>::settings(
 			}
 		} else {
 			eslocal cNodes[3];
-			UniformUtils<TElement>::clusterNodesCount(_settings.cube[0], cNodes);
+			UniformUtils<TElement>::clusterNodesCount(_settings.cube[_cubeIndex], cNodes);
 			std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 			eslocal subdomain[3], element[3], subdomainOffset[3], elementOffset[3];
 
@@ -257,6 +257,8 @@ void CubesGenerator<TElement>::settings(
 		}
 
 		for (size_t i = 0; i < faces.size(); i++) {
+			faces[i]->clusters().push_back(0);
+			faces[i]->clusters().push_back(1);
 			faces[i]->settings(Property::NONMATCHING_ELEMENT);
 		}
 		return;
