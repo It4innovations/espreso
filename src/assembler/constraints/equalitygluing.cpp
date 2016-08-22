@@ -18,9 +18,8 @@ void EqualityGluing::insertDirichletToB1(const std::vector<Element*> &nodes, con
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				if (nodes[i]->settings().isSet(DOFs[dof])) {
-					const Point &p = coordinates[i];
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
-					double value = nodes[i]->settings(DOFs[dof]).back()->evaluate(p.x, p.y, p.z);
+					double value = nodes[i]->settings(DOFs[dof]).back()->evaluate(i);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (indices[d * DOFs.size() + dof] != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + IJVMatrixIndexing);

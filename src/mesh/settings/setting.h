@@ -39,7 +39,6 @@ inline std::ostream& espreso::operator<<(std::ostream& os, const Property& prope
 	}
 }
 
-
 class Settings {
 
 public:

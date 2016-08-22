@@ -20,6 +20,21 @@ void PlaneGenerator<TElement>::points(Coordinates &coordinates)
 	eslocal cNodes[3];
 	esglobal gNodes[3];
 
+	double phi1 = -M_PI_2 - M_PI_4;
+	double phi2 = M_PI_2;
+
+	auto project_x = [&] (double x, double y) {
+		return y * std::cos(-(phi1 + phi2 * x));
+	};
+
+	auto project_y = [&] (double x, double y) {
+		return y * std::sin(-(phi1 + phi2 * x));
+	};
+
+	auto rotate = [&] (double x, double y) {
+		return phi1 + phi2 * x;
+	};
+
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);
 
@@ -39,7 +54,13 @@ void PlaneGenerator<TElement>::points(Coordinates &coordinates)
 	for (esglobal y = cs[1]; y <= ce[1]; y++) {
 		for (esglobal x = cs[0]; x <= ce[0]; x++) {
 			coordinates.add(
-				Point(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1], 0),
+				Point(
+						project_x(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1]),
+						project_y(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1]),
+						0,
+						0, // alfa
+						0, // beta
+						rotate(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1])),
 				(y - cs[1]) * cNodes[0] + (x - cs[0]),
 				y * gNodes[0] + x
 			);

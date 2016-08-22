@@ -11,25 +11,23 @@ class Expression {
 
 public:
 
-	Expression(const std::string &str);
+	Expression(const std::string &str, std::vector<std::string> variables);
 	Expression(const Expression &other);
 	Expression& operator=(const Expression &other);
-
-	double evaluate(double x, double y, double z) const
+	double evaluate(const std::vector<double> &values) const
 	{
-		_x = x;
-		_y = y;
-		_z = z;
+		_values = values;
 		return _expression.value();
 	}
 
-private:
+protected:
 	void parse();
 
 	std::string _str;
 	exprtk::symbol_table<double> _symbol_table;
 	exprtk::expression<double> _expression;
-	mutable double _x, _y, _z;
+	std::vector<std::string> _variables;
+	mutable std::vector<double> _values;
 };
 
 }

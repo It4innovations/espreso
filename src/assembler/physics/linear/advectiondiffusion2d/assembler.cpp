@@ -122,10 +122,10 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		U(i, 0) = ux.back()->evaluate(p.x, p.y, p.z) * material.density * material.termalCapacity;
-		U(i, 1) = uy.back()->evaluate(p.x, p.y, p.z) * material.density * material.termalCapacity;
+		U(i, 0) = ux.back()->evaluate(element->node(i)) * material.density * material.termalCapacity;
+		U(i, 1) = uy.back()->evaluate(element->node(i)) * material.density * material.termalCapacity;
 		for (size_t j = 0; j < heat_sources.size(); j++) {
-			f(0, i) += heat_sources[j]->evaluate(p.x, p.y, p.z);
+			f(0, i) += heat_sources[j]->evaluate(element->node(i));
 		}
 	}
 

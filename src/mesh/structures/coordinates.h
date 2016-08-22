@@ -2,7 +2,6 @@
 #define COORDINATES_H_
 
 #include "esbasis.h"
-#include "../settings/setting.h"
 
 #include <algorithm>
 #include <vector>
