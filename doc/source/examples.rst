@@ -64,8 +64,11 @@ Now change the value of the ``SOLVER`` in the build.config to: SOLVER = MIC and 
 
 .. warning ::
   ``env/modules.salomon`` can be out of date.
-  It is recommended to check the modules on Salomon and change the modules in this script to the latest version,
+  It is recommended to check the modules on Salomon and change the modules in this script to the latest version
 
+.. warning ::
+  ``Salomon`` has incorrectly set MIC_LD_LIBRARY_PATH.
+  The correct path is: export MIC_LD_LIBRARY_PATH=/apps/compiler/icc/2016.1.150-GCC-4.9.3/mkl/lib/mic/:/apps/compiler/icc/2016.1.150-GCC-4.9.3/lib/mic/
 
 Installing on Cray
 ^^^^^^^^^^^^^^^^^^
@@ -97,10 +100,11 @@ The following examples assumes that ESPRESO is already installed: ::
 
   $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PATH_TO_ELMER}/elmer/lib/elmersolver
   $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PATH_TO_ESPRESO}/libespreso
+  $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${PATH_TO_ESPRESO}/libs
   $ export PATH=$PATH:${PATH_TO_ELMER}/bin
   $ cd fem/tests/WinkelNavierPartitionUniform/
   $ ElmerGrid 1 2 winkel.grd -partition 2 2 2 2
-  $ mpirun -n 4 ElmerSolver_mpi
+  $ mpirun -n 4 ElmerSolver
 
 
 Run the solver

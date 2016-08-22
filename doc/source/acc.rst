@@ -15,6 +15,9 @@ To enable the support for the accelerators compile and run the library with the 
 
   SOLVER = MIC
 
+.. warning ::
+  ``Salomon`` has incorrectly set MIC_LD_LIBRARY_PATH.
+  The correct path is: export MIC_LD_LIBRARY_PATH=/apps/compiler/icc/2016.1.150-GCC-4.9.3/mkl/lib/mic/:/apps/compiler/icc/2016.1.150-GCC-4.9.3/lib/mic/
 
 Change the run time configuration in the ESPRESO `configuration file <run.html#setting-input-parameters>`_ accordingly: ::
 
