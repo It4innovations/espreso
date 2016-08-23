@@ -20,19 +20,16 @@ void PlaneGenerator<TElement>::points(Coordinates &coordinates)
 	eslocal cNodes[3];
 	esglobal gNodes[3];
 
-	double phi1 = -M_PI_2 - M_PI_4;
-	double phi2 = M_PI_2;
-
-	auto project_x = [&] (double x, double y) {
-		return y * std::cos(-(phi1 + phi2 * x));
+	Expression projections[3] = {
+			Expression(_settings.projections[0].size() ? _settings.projections[0] : "x", { "x", "y", "z" }),
+			Expression(_settings.projections[1].size() ? _settings.projections[1] : "y", { "x", "y", "z" }),
+			Expression(_settings.projections[2].size() ? _settings.projections[2] : "z", { "x", "y", "z" })
 	};
 
-	auto project_y = [&] (double x, double y) {
-		return y * std::sin(-(phi1 + phi2 * x));
-	};
-
-	auto rotate = [&] (double x, double y) {
-		return phi1 + phi2 * x;
+	Expression rotations[3] = {
+			Expression(_settings.rotations[0].size() ? _settings.rotations[0] : "0", { "x", "y", "z" }),
+			Expression(_settings.rotations[1].size() ? _settings.rotations[1] : "0", { "x", "y", "z" }),
+			Expression(_settings.rotations[2].size() ? _settings.rotations[2] : "0", { "x", "y", "z" })
 	};
 
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
@@ -53,14 +50,9 @@ void PlaneGenerator<TElement>::points(Coordinates &coordinates)
 
 	for (esglobal y = cs[1]; y <= ce[1]; y++) {
 		for (esglobal x = cs[0]; x <= ce[0]; x++) {
+			std::vector<double> p = { _settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1], 0 };
 			coordinates.add(
-				Point(
-						project_x(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1]),
-						project_y(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1]),
-						0,
-						0, // alfa
-						0, // beta
-						rotate(_settings.problemOrigin[0] + x * step[0], _settings.problemOrigin[1] + y * step[1])),
+				Point(projections[0](p), projections[1](p), projections[2](p), rotations[0](p), rotations[1](p), rotations[2](p)),
 				(y - cs[1]) * cNodes[0] + (x - cs[0]),
 				y * gNodes[0] + x
 			);

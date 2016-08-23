@@ -336,7 +336,7 @@ void EqualityGluing::insertElementGluingToB1(const std::vector<Element*> &elemen
 void EqualityGluing::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
 	_mesh.saveFaces();
-	std::cout << "FACES: " << _mesh.faces().size() << "\n";
+	//std::cout << "FACES: " << _mesh.faces().size() << "\n";
 	size_t cc = 0;
 	for (size_t i = 0; i < elements.size(); i++) {
 		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
@@ -344,7 +344,7 @@ void EqualityGluing::insertMortarGluingToB1(const std::vector<Element*> &element
 		}
 	}
 
-	std::cout << "MORTAR FACES ON " << config::env::MPIrank << ": " << cc << "\n";
+	//std::cout << "MORTAR FACES ON " << config::env::MPIrank << ": " << cc << "\n";
 }
 
 void EqualityGluing::insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)

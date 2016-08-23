@@ -75,6 +75,35 @@ private:
 	bool &_data;
 };
 
+template <>
+struct DataEnvelope<std::string>: public Envelope {
+	DataEnvelope(std::string &data): _data(data) {};
+
+	bool set(const std::string &value)
+	{
+		_data = value;
+		return true;
+	}
+
+	std::string get() const
+	{
+		return _data;
+	}
+
+	void* value() const
+	{
+		return &_data;
+	}
+
+	Envelope* copy()
+	{
+		return new DataEnvelope<std::string>(*this);
+	}
+
+private:
+	std::string &_data;
+};
+
 }
 
 #endif /* SRC_BASIS_PARAMETERS_ENVELOPES_DATA_H_ */

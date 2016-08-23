@@ -19,10 +19,14 @@ MATERIAL1 = {
 }
 
 ORIGIN_X = 0
-ORIGIN_Y = 10
+ORIGIN_Y = 1
 
 LENGTH_X = 1
 LENGTH_Y = 1
+
+PROJECTION_X = y * cos(-(-3 * pi / 4 + (pi / 2) * x))
+PROJECTION_Y = y * sin(-(-3 * pi / 4 + (pi / 2) * x))
+ROTATION_Z = -3 * pi / 4 + (pi / 2) * x
 
 CORNERS_IN_CORNERS
 

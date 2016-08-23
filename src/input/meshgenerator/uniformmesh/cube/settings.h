@@ -29,6 +29,9 @@ struct CubeSettings: public UniformSettings {
 	double problemOrigin[3];
 	double problemLength[3];
 
+	std::string projections[3];
+	std::string rotations[3];
+
 protected:
 	void defaultCubeSettings();
 };

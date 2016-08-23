@@ -35,6 +35,14 @@ void PlaneSettings::defaultPlaneSettings()
 			prefix + "LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
 		});
 	}
+	for (size_t i = 0; i < 2; i++) {
+		parameters.push_back({
+			prefix + "PROJECTION_" + axis[i].first, projections[i], "Projection of " + axis[i].second + "-axis.", verbosity
+		});
+	}
+	parameters.push_back({
+		prefix + "ROTATION_" + axis[2].first, rotations[2], "Projection of " + axis[2].second + "-axis.", verbosity
+	});
 
 	parameters.push_back({ prefix + "HEAT_SOURCES", properties["HEAT_SOURCES"], "Sources of a heat.", verbosity });
 	parameters.push_back({ prefix + "TRANSLATION_MOTIONS", properties["TRANSLATION_MOTIONS"], "Translation motion of a region.", verbosity });
@@ -67,5 +75,6 @@ PlaneSettings::PlaneSettings(size_t index, size_t size, std::string prefix)
 	subdomainsInCluster[2] = 1;
 	elementsInSubdomain[2] = 1;
 }
+
 
 

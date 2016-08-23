@@ -14,6 +14,10 @@ public:
 	Expression(const std::string &str, std::vector<std::string> variables);
 	Expression(const Expression &other);
 	Expression& operator=(const Expression &other);
+	double operator()(const std::vector<double> &values) const
+	{
+		return evaluate(values);
+	}
 	double evaluate(const std::vector<double> &values) const
 	{
 		_values = values;
