@@ -36,6 +36,16 @@ public:
 		return isIn(p.x, p.y, p.z);
 	}
 
+	double getStart(size_t axis) const
+	{
+		return start[axis];
+	}
+
+	double getEnd(size_t axis) const
+	{
+		return end[axis];
+	}
+
 private:
 	bool _all;
 	double epsilon;

@@ -44,6 +44,9 @@ protected:
 
 	virtual void elementsMesh(std::vector<Element*> &elements) = 0;
 	virtual void elementsMaterials(std::vector<Element*> &elements) = 0;
+	virtual void generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval) =0;
+	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval) =0;
+	virtual void generateNodesInInterval(std::vector<Element*> &nodes, const Interval &interval) =0;
 
 	void materials(std::vector<Material> &materials)
 	{

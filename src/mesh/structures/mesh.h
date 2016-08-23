@@ -44,6 +44,7 @@ public:
 	virtual ~Mesh();
 
 	void saveFaces();
+	void saveEdges();
 
 	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t number);

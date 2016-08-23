@@ -65,6 +65,24 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 }
 
 template<class TElement>
+void UniformGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+}
+
+template<class TElement>
+void UniformGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+}
+
+template<class TElement>
+void UniformGenerator<TElement>::generateNodesInInterval(std::vector<Element*> &nodes, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+}
+
+template<class TElement>
 bool UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
 {
 	config::mesh::subdomains = _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2];

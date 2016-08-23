@@ -19,6 +19,9 @@ public:
 
 protected:
 	virtual void elementsMesh(std::vector<Element*> &elements);
+	virtual void generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval);
+	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval);
+	virtual void generateNodesInInterval(std::vector<Element*> &nodes, const Interval &interval);
 
 	virtual bool partitiate(std::vector<eslocal> &parts);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);

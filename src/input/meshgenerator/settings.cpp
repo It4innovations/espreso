@@ -16,10 +16,12 @@ static void defaultSettings(Settings &settings)
 		{ prefix + "TIME_STEPS", config::solver::TIME_STEPS, "Number of time steps for transient problems."},
 
 		{ prefix + "NODES", nodes, "Named sets of nodes.", verbosity },
-		{ prefix + "FACES", faces, "Named sets of nodes.", verbosity },
-		{ prefix + "ELEMENTS", elements, "Named sets of nodes.", verbosity },
+		{ prefix + "FACES", faces, "Named sets of faces.", verbosity },
+		{ prefix + "EDGES", edges, "Named sets of edges.", verbosity },
+		{ prefix + "ELEMENTS", elements, "Named sets of elements.", verbosity },
 
-		{ prefix + "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity }
+		{ prefix + "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity },
+		{ prefix + "NEUMAN", properties["NEUMAN"], "Neuman boundary conditions.", verbosity }
 	};
 }
 

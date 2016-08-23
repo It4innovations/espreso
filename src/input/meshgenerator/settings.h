@@ -48,6 +48,7 @@ struct Settings {
 
 	std::map<std::string, Interval> nodes;
 	std::map<std::string, Interval> faces;
+	std::map<std::string, Interval> edges;
 	std::map<std::string, Interval> elements;
 
 	std::map<std::string, std::map<std::string, std::string> > properties;

@@ -20,49 +20,49 @@ void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal ind
 	elements.push_back(new espreso::Hexahedron8(hexa, 8, params));
 }
 
-void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[], size_t face)
+void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
 {
 	eslocal square[4];
 
 	switch (face) {
-	case 0: // front
+	case CubeFaces::X_1:
 		square[0] = indices[1];
 		square[1] = indices[3];
 		square[2] = indices[7];
 		square[3] = indices[5];
 		break;
-	case 1: // right
+	case CubeFaces::Y_1:
 		square[0] = indices[3];
 		square[1] = indices[2];
 		square[2] = indices[6];
 		square[3] = indices[7];
 		break;
-	case 2: // back
+	case CubeFaces::X_0:
 		square[0] = indices[2];
 		square[1] = indices[0];
 		square[2] = indices[4];
 		square[3] = indices[6];
 		break;
-	case 3: // left
+	case CubeFaces::Y_0:
 		square[0] = indices[0];
 		square[1] = indices[1];
 		square[2] = indices[5];
 		square[3] = indices[4];
 		break;
-	case 4: // bottom
+	case CubeFaces::Z_0:
 		square[0] = indices[0];
 		square[1] = indices[2];
 		square[2] = indices[3];
 		square[3] = indices[1];
 		break;
-	case 5: // up
+	case CubeFaces::Z_1:
 		square[0] = indices[5];
 		square[1] = indices[7];
 		square[2] = indices[6];
 		square[3] = indices[4];
 		break;
 	default:
-		ESINFO(GLOBAL_ERROR) << "Incorrect face: " << face;
+		ESINFO(GLOBAL_ERROR) << "Incorrect face";
 	}
 
 	faces.push_back(new espreso::Square4(square));

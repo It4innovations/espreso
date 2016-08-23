@@ -96,6 +96,30 @@ void Mesh::saveFaces()
 	output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 }
 
+void Mesh::saveEdges()
+{
+	Mesh mesh;
+	mesh._coordinates = _coordinates;
+	for (size_t i = 0; i < _edges.size(); i++) {
+		mesh._elements.push_back(_edges[i]->copy());
+	}
+	mesh._partPtrs.clear();
+	mesh._partPtrs.push_back(0);
+	std::sort(mesh._elements.begin(), mesh._elements.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
+	for (size_t i = 1; i < mesh._elements.size(); i++) {
+		if (mesh._elements[i]->domains() != mesh._elements[i - 1]->domains()) {
+			mesh._partPtrs.push_back(i);
+		}
+	}
+	mesh._partPtrs.push_back(mesh._elements.size());
+	mesh.mapElementsToDomains();
+	mesh.mapCoordinatesToDomains();
+
+	std::stringstream ss;
+	ss << "meshEdges" << config::env::MPIrank;
+	output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+}
+
 void Mesh::computeFixPoints(size_t number)
 {
 	if (_fixPoints.size() && _fixPoints[0].size() == number) {

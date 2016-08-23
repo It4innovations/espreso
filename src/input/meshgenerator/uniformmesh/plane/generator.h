@@ -26,6 +26,11 @@ protected:
 
 	virtual void elementsMesh(std::vector<Element*> &elements);
 	virtual void elementsMaterials(std::vector<Element*> &elements);
+
+	virtual void generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval);
+	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval);
+	virtual void generateNodesInInterval(std::vector<Element*> &nodes, const Interval &interval);
+
 	virtual void points(Coordinates &coordinates);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);

@@ -56,6 +56,8 @@ public:
 		settings(mesh._evaluators, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 		tSettings.end(); measurement.addEvent(tSettings);
 
+		mesh.saveEdges();
+
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
 		clusterBoundaries(mesh._nodes, mesh._neighbours);
 		tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);

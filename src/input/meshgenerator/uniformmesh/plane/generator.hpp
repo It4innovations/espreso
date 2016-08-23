@@ -114,6 +114,80 @@ void PlaneGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 }
 
 template<class TElement>
+void PlaneGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane mesh has no faces";
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
+{
+	eslocal cNodes[3];
+	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
+	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]));
+
+	size_t start[2] = {
+			std::round((interval.getStart(0) / _settings.problemLength[0]) * _settings.subdomainsInCluster[0] * _settings.elementsInSubdomain[0]),
+			std::round((interval.getStart(1) / _settings.problemLength[1]) * _settings.subdomainsInCluster[1] * _settings.elementsInSubdomain[1])
+	};
+	size_t end[2] = {
+			std::round((interval.getEnd(0) / _settings.problemLength[0]) * _settings.subdomainsInCluster[0] * _settings.elementsInSubdomain[0]),
+			std::round((interval.getEnd(1) / _settings.problemLength[1]) * _settings.subdomainsInCluster[1] * _settings.elementsInSubdomain[1])
+	};
+
+	if (start[0] != end[0] && start[1] != end[1]) {
+		ESINFO(GLOBAL_ERROR) << "Faces interval has to be on the cube surface";
+	}
+	CubeEdges edge = CubeEdges::X_0_Y_0;
+	if (start[0] != end[0]) {
+		end[1] = start[1] + 1;
+		if (start[1]) {
+			if (_cluster[1] != _settings.clusters[1] - 1) {
+				return;
+			}
+			edge = CubeEdges::Y_1_Z_0;
+		} else {
+			if (_cluster[1] != 0) {
+				return;
+			}
+			edge = CubeEdges::Y_0_Z_0;
+		}
+	}
+	if (start[1] != end[1]) {
+		end[0] = start[0] + 1;
+		if (start[0]) {
+			if (_cluster[0] != _settings.clusters[0] - 1) {
+				return;
+			}
+			edge = CubeEdges::X_1_Z_0;
+		} else {
+			if (_cluster[0] != 0) {
+				return;
+			}
+			edge = CubeEdges::X_0_Z_0;
+		}
+	}
+
+	for (size_t ex = start[0]; ex < end[0]; ex++) {
+		for (size_t ey = start[1]; ey < end[1]; ey++) {
+
+			for (eslocal y = 0, i = 0; y <= 1 + TElement::subnodes[1]; y++) {
+				for (eslocal x = 0; x <= 1 + TElement::subnodes[0]; x++, i++) {
+					indices[i] = (ey * (1 + TElement::subnodes[1]) + y) * cNodes[0] + ex * (1 + TElement::subnodes[0]) + x;
+				}
+			}
+			this->_e.addEdges(edges, &indices[0], edge);
+		}
+	}
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::generateNodesInInterval(std::vector<Element*> &nodes, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+}
+
+template<class TElement>
 void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 {
 	esglobal cubeElements[3], partSize[3], cOffset[3], offset[3];
@@ -157,7 +231,8 @@ void PlaneGenerator<TElement>::settings(
 		std::vector<Element*> &edges,
 		std::vector<Element*> &nodes)
 {
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "DIRICHLET", { "T" }, { Property::TEMPERATURE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "DIRICHLET", { "T", "x", "y" }, { Property::TEMPERATURE, Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "NEUMAN", { "P"}, { Property::PRESSURE });
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "TRANSLATION_MOTIONS", { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 }
@@ -320,5 +395,6 @@ void PlaneGenerator<TElement>::corners(std::vector<eslocal> &corners)
 
 }
 }
+
 
 
