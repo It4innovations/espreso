@@ -84,7 +84,6 @@ def configure(ctx):
     # recurse to basic parts
     ctx.recurse("src/config")
     ctx.recurse("src/basis")
-    ctx.recurse("tools/bem4i")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
     ctx.recurse("src/output")
@@ -117,7 +116,6 @@ def build(ctx):
 
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
-    ctx.recurse("tools/bem4i")
     ctx.recurse("src/mesh")
     ctx.recurse("src/input")
     ctx.recurse("src/output")

@@ -1,6 +1,6 @@
 
 #include "assembler.h"
-#include "esbem.h"
+//#include "esbem.h"
 
 using namespace espreso;
 
@@ -26,7 +26,8 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 			elems[3 * index + j] = elements[i]->node(j);
 		}
 	}
-
+	ESINFO(GLOBAL_ERROR) << "missing BEM library";
+/*
 	bem4i::getLameSteklovPoincare<eslocal, double>(
 			_K.values(),
 			_mesh.coordinates().localSize(subdomain),
@@ -39,7 +40,7 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 			4,				// order far
 			false			// verbose
 			);
-
+*/
 	DenseMatrix tmp = _K;
 	eslocal n = _K.rows();
 	for (eslocal i = 0; i < n / 3; i++) {
