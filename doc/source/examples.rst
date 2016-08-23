@@ -15,8 +15,8 @@ CPU version with 32-bit integers
 
 This is the default settings for ESPRESO and no changes of the build scripts are required. ::
 
-  for users: $ git clone https://code.it4i.cz/mec059/espreso.git
-  for developers: $ git clone git@code.it4i.cz:mec059/espreso.git
+  for users: $ git clone https://github.com/It4innovations/espreso.git
+  for developers (with access to IT4I private repository): $ git clone git@code.it4i.cz:mec059/espreso.git
   $ cd espreso
   $ ./waf configure
   $ ./waf install
@@ -25,8 +25,8 @@ CPU version with 64-bit integers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The first part is the same as for the 32-bit version::
 
-  for users: $ git clone https://code.it4i.cz/mec059/espreso.git
-  for developers: $ git clone git@code.it4i.cz:mec059/espreso.git
+  for users: $ git clone https://github.com/It4innovations/espreso.git
+  for developers (with access to IT4I private repository): $ git clone git@code.it4i.cz:mec059/espreso.git
   $ cd espreso
 
 ESPRESO is a 32-bit solver by default.
@@ -78,8 +78,8 @@ The following example shows the installation on ``CSC Sisu`` Cray XC40 supercomp
 
   $ . env/modules.sisu
 
-  for users: $ git clone https://code.it4i.cz/mec059/espreso.git
-  for developers: $ git clone git@code.it4i.cz:mec059/espreso.git
+  for users: $ git clone https://github.com/It4innovations/espreso.git
+  for developers (with access to IT4I private repository): $ git clone git@code.it4i.cz:mec059/espreso.git
   $ cd espreso
   $ ./waf configure --cray
   $ ./waf install

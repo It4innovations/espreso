@@ -7,14 +7,14 @@ Installation of the library ESPRESO
 Download the library
 --------------------
 
-ESPRESO is available through `Git <https://git-scm.com/>`_. The main repository is located at `GitLab <https://code.it4i.cz/mec059/espreso>`_.
-The source codes can be easily downloaded by cloning the following repository: ::
+ESPRESO is available through `Git <https://git-scm.com/>`_. The release repository is located at `GitLab <https://github.com/It4innovations/espreso>`_.
+The source codes can be downloaded by cloning the following repository (for users woth access to private IT4I repositories): ::
 
   $ git clone git@code.it4i.cz:mec059/espreso.git
     
 If you do not have an account at code.it4i.cz and do not participate in the development of the ESPRESO please use the https interface: ::
 
-  $ git clone https:/code.it4i.cz/mec059/espreso.git
+  $ git clone https://github.com/It4innovations/espreso
 
 The repository contains several branches. The stable version of the library can be found in the ``master`` branch which is also the default branch when ``git clone`` is executed.
 
