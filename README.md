@@ -1,11 +1,6 @@
-This is the main ESPRESO repository.
+#HIGHLY PARALLEL SOLVERS FOR ENGINEERING APPLICATIONS.
 
-The source codes can be easily downloaded by cloning the following repository:
+ESPRESO is an ExaScale PaRallel FETI SOlver developed at Czech national supercomputing centre IT4Innovations. Main focus of the development team is to create a highly efficient parallel solver which contains several FETI based algorithms including Hybrid Total FETI method suitable for parallel machines with tens or hundreds of thousands of cores. The solver is based on highly efficient communication layer on top of pure MPI.
 
-> git clone git@code.it4i.cz:mec059/espreso.git
-    
-If you do not have an account at code.it4i.cz and do not participate in the development of the ESPRESO please use the https interface:
+The documentation and detailed description of the library can be found [here](http://espreso.it4i.cz/).
 
-> git clone https:/code.it4i.cz/mec059/espreso.git
-
-The repository contains several branches. The stable version of the library can be found in the ``master`` branch which is also the default branch when ``git clone`` is executed.
