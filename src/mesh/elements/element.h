@@ -16,6 +16,13 @@ class Element
 	friend class Mesh;
 
 public:
+	enum class Type {
+		POINT = 0,
+		LINE = 1,
+		PLANE = 2,
+		VOLUME = 3,
+	};
+
 	enum Params {
 		MATERIAL,
 		CONSTANT,
@@ -82,6 +89,8 @@ public:
 	virtual eslocal param(Params param) const =0;
 	virtual void setParam(Params param, eslocal value) =0;
 	virtual size_t params() const =0;
+
+	Type type() const { return _type; }
 
 	Settings& settings() { return _settings; }
 	const Settings& settings() const { return _settings; }
@@ -164,6 +173,7 @@ protected:
 	std::vector<eslocal> _clusters;
 	std::vector<eslocal> _DOFsIndices;
 	std::vector<eslocal> _DOFsDomainsCounters;
+	Type _type;
 };
 
 inline std::ofstream& espreso::operator<<(std::ofstream& os, const Element &e)
