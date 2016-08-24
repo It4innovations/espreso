@@ -209,6 +209,9 @@ Factory::Factory(const Options &options)
 	}
 
 	switch (physics) {
+//	case PhysicsAssembler::LINEAR_ELASTICITY_2D:
+//		instance = new LinearInstance<EqualityGluing, LinearElasticity2D>(mesh);
+//		break;
 	case PhysicsAssembler::LINEAR_ELASTICITY_3D:
 		instance = new LinearInstance<EqualityGluing, LinearElasticity3D>(mesh);
 		break;

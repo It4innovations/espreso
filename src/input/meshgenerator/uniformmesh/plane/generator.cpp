@@ -9,6 +9,8 @@ static void setCluster(size_t cluster[], const PlaneSettings &settings)
 		ESINFO(espreso::GLOBAL_ERROR) << "The number of clusters(" << settings.clusters[0] * settings.clusters[1]
 							<< ") does not accord the number of MPI processes(" << settings.size << ").";
 	}
+
+	cluster[2] = 0;
 	eslocal index = 0, i = 0;
 	for (size_t y = 0; y < settings.clusters[1]; y++) {
 		for (size_t x = 0; x < settings.clusters[0]; x++) {

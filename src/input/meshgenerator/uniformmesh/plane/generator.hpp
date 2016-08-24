@@ -114,57 +114,30 @@ void PlaneGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 }
 
 template<class TElement>
-void PlaneGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
+void PlaneGenerator<TElement>::pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Plane mesh has no faces";
+	ESINFO(GLOBAL_ERROR) << "Implement pick elements in interval";
 }
 
 template<class TElement>
-void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
+static void goThroughElements(const PlaneSettings &settings, const Interval &interval, size_t cluster[], std::function<void(std::vector<eslocal> &indices, CubeEdges edge)> fnc)
 {
 	eslocal cNodes[3];
-	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
+	UniformUtils<TElement>::clusterNodesCount(settings, cNodes);
 	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]));
 
-	size_t start[2] = {
-			std::round((interval.getStart(0) / _settings.problemLength[0]) * _settings.subdomainsInCluster[0] * _settings.elementsInSubdomain[0]),
-			std::round((interval.getStart(1) / _settings.problemLength[1]) * _settings.subdomainsInCluster[1] * _settings.elementsInSubdomain[1])
-	};
-	size_t end[2] = {
-			std::round((interval.getEnd(0) / _settings.problemLength[0]) * _settings.subdomainsInCluster[0] * _settings.elementsInSubdomain[0]),
-			std::round((interval.getEnd(1) / _settings.problemLength[1]) * _settings.subdomainsInCluster[1] * _settings.elementsInSubdomain[1])
-	};
+	size_t start[3], end[3];
+	CubeUtils<TElement>::computeInterval(settings, interval, start, end);
+	start[2] = end[2] = 0;
 
-	if (start[0] != end[0] && start[1] != end[1]) {
-		ESINFO(GLOBAL_ERROR) << "Faces interval has to be on the cube surface";
+	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, start, end);
+	if (edge == CubeEdges::NONE) {
+		return;
 	}
-	CubeEdges edge = CubeEdges::X_0_Y_0;
-	if (start[0] != end[0]) {
-		end[1] = start[1] + 1;
-		if (start[1]) {
-			if (_cluster[1] != _settings.clusters[1] - 1) {
-				return;
-			}
-			edge = CubeEdges::Y_1_Z_0;
-		} else {
-			if (_cluster[1] != 0) {
-				return;
-			}
-			edge = CubeEdges::Y_0_Z_0;
-		}
-	}
-	if (start[1] != end[1]) {
-		end[0] = start[0] + 1;
-		if (start[0]) {
-			if (_cluster[0] != _settings.clusters[0] - 1) {
-				return;
-			}
-			edge = CubeEdges::X_1_Z_0;
-		} else {
-			if (_cluster[0] != 0) {
-				return;
-			}
-			edge = CubeEdges::X_0_Z_0;
+
+	for (size_t i = 0; i < 3; i++) {
+		if (start[i] == end[i]) {
+			end[i] = start[i] + 1;
 		}
 	}
 
@@ -176,15 +149,34 @@ void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &ed
 					indices[i] = (ey * (1 + TElement::subnodes[1]) + y) * cNodes[0] + ex * (1 + TElement::subnodes[0]) + x;
 				}
 			}
-			this->_e.addEdges(edges, &indices[0], edge);
+			fnc(indices, edge);
 		}
 	}
 }
 
 template<class TElement>
-void PlaneGenerator<TElement>::generateNodesInInterval(std::vector<Element*> &nodes, const Interval &interval)
+void PlaneGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+	goThroughElements<TElement>(_settings, interval, _cluster, [ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+		this->_e.pickNodes(nodes, selection, indices.data(), edge);
+	});
+
+	std::sort(selection.begin(), selection.end());
+	Esutils::removeDuplicity(selection);
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane mesh has no faces";
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
+{
+	goThroughElements<TElement>(_settings, interval, _cluster, [ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+		this->_e.addEdges(edges, &indices[0], edge);
+	});
 }
 
 template<class TElement>

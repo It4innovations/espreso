@@ -42,5 +42,29 @@ void Square4::addEdges(std::vector<Element*> &edges, const eslocal indices[], Cu
 	edges.push_back(new espreso::Line2(line));
 }
 
+void Square4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdges edge)
+{
+	switch (edge) {
+	case CubeEdges::X_0_Z_0:
+		selection.push_back(nodes[indices[2]]);
+		selection.push_back(nodes[indices[0]]);
+		break;
+	case CubeEdges::X_1_Z_0:
+		selection.push_back(nodes[indices[1]]);
+		selection.push_back(nodes[indices[3]]);
+		break;
+	case CubeEdges::Y_0_Z_0:
+		selection.push_back(nodes[indices[0]]);
+		selection.push_back(nodes[indices[1]]);
+		break;
+	case CubeEdges::Y_1_Z_0:
+		selection.push_back(nodes[indices[3]]);
+		selection.push_back(nodes[indices[2]]);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown edge";
+	}
+}
+
 
 
