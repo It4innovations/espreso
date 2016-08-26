@@ -8,6 +8,13 @@ namespace espreso {
 
 struct LinearElasticity2D: public LinearPhysics
 {
+	enum class ELEMENT_BEHAVIOUR {
+		PLANE_STRAIN = 0,
+		AXISYMMETRIC = 1,
+		PLANE_STRESS = 2,
+		PLANE_STRESS_WITH_THICKNESS = 3
+	};
+
 	LinearElasticity2D(Mesh &mesh, Constraints &constraints)
 	: LinearPhysics(
 			mesh, constraints,
@@ -16,6 +23,9 @@ struct LinearElasticity2D: public LinearPhysics
 
 	void prepareMeshStructures();
 	void assembleGluingMatrices();
+
+	static ELEMENT_BEHAVIOUR elementBehaviour;
+	static Point angularVelocity;
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

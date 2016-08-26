@@ -43,8 +43,8 @@ struct Settings {
 	size_t size;
 	size_t clusterOffset;
 
-	std::map<std::string, double> material1;
-	std::map<std::string, double> material2;
+	std::map<std::string, std::string> material1;
+	std::map<std::string, std::string> material2;
 
 	std::map<std::string, Interval> nodes;
 	std::map<std::string, Interval> faces;

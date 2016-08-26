@@ -121,14 +121,14 @@ void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 
 		int size = materials.size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(int));
-		for (size_t i = 0; i < materials.size(); i++) {
-			os.write(reinterpret_cast<const char*>(&materials[i].density), sizeof(double));
-			os.write(reinterpret_cast<const char*>(&materials[i].youngModulus), sizeof(double));
-			os.write(reinterpret_cast<const char*>(&materials[i].poissonRatio), sizeof(double));
-			os.write(reinterpret_cast<const char*>(&materials[i].termalExpansion), sizeof(double));
-			os.write(reinterpret_cast<const char*>(&materials[i].termalCapacity), sizeof(double));
-			os.write(reinterpret_cast<const char*>(&materials[i].termalConduction), sizeof(double));
-		}
+//		for (size_t i = 0; i < materials.size(); i++) {
+//			os.write(reinterpret_cast<const char*>(&materials[i].density), sizeof(double));
+//			os.write(reinterpret_cast<const char*>(&materials[i].youngModulus), sizeof(double));
+//			os.write(reinterpret_cast<const char*>(&materials[i].poissonRatio), sizeof(double));
+//			os.write(reinterpret_cast<const char*>(&materials[i].termalExpansion), sizeof(double));
+//			os.write(reinterpret_cast<const char*>(&materials[i].termalCapacity), sizeof(double));
+//			os.write(reinterpret_cast<const char*>(&materials[i].termalConduction), sizeof(double));
+//		}
 		os.close();
 	}
 }

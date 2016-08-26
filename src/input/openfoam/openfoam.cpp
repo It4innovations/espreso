@@ -144,7 +144,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements) {
 void OpenFOAM::materials(std::vector<Material> &materials)
 {
 	// TODO
-	materials.resize(1);
+	materials.resize(1, Material(mesh.coordinates()));
 }
 
 void OpenFOAM::faces(std::vector<Element*> &faces)

@@ -36,7 +36,7 @@ enum ConditionElements {
 class WorkbenchParser {
 
 public:
-	WorkbenchParser();
+	WorkbenchParser(Mesh &mesh);
 
 	void open(std::string path)
 	{
@@ -85,6 +85,7 @@ protected:
 	std::vector<std::pair<std::string, ConditionElements> > selections;
 	int nSelection;
 	int eSelection;
+	Mesh &_mesh;
 };
 
 }

@@ -12,6 +12,9 @@ std::vector<Property> LinearElasticity2D::edgeDOFs;
 std::vector<Property> LinearElasticity2D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 std::vector<Property> LinearElasticity2D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 
+LinearElasticity2D::ELEMENT_BEHAVIOUR LinearElasticity2D::elementBehaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS;
+Point LinearElasticity2D::angularVelocity(0, 0, 0);
+
 void LinearElasticity2D::prepareMeshStructures()
 {
 	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
@@ -23,7 +26,7 @@ void LinearElasticity2D::prepareMeshStructures()
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 
 	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
-		_mesh.computeFixPoints(config::mesh::FIX_POINTS);
+		_mesh.computeFixPoints(config::mesh::FIX_POINTS / 2);
 	}
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
@@ -47,123 +50,223 @@ void LinearElasticity2D::assembleGluingMatrices()
 
 }
 
-static double determinant3x3(DenseMatrix &m)
+static double determinant2x2(DenseMatrix &m)
 {
-	const double *values = m.values();
 	return fabs(
-		values[0] * values[4] * values[8] +
-		values[1] * values[5] * values[6] +
-		values[2] * values[3] * values[7] -
-		values[2] * values[4] * values[6] -
-		values[1] * values[3] * values[8] -
-		values[0] * values[5] * values[7]
-   );
+		m(0, 0) * m(1, 1) - m(1, 0) * m(0, 1)
+	);
 }
 
 static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 {
-	const double *values = m.values();
 	inv.resize(m.rows(), m.columns());
-	double *invj = inv.values();
 	double detJx = 1 / det;
-	invj[0] = detJx * (values[8] * values[4] - values[7] * values[5]);
-	invj[1] = detJx * (-values[8] * values[1] + values[7] * values[2]);
-	invj[2] = detJx * (values[5] * values[1] - values[4] * values[2]);
-	invj[3] = detJx * (-values[8] * values[3] + values[6] * values[5]);
-	invj[4] = detJx * (values[8] * values[0] - values[6] * values[2]);
-	invj[5] = detJx * (-values[5] * values[0] + values[3] * values[2]);
-	invj[6] = detJx * (values[7] * values[3] - values[6] * values[4]);
-	invj[7] = detJx * (-values[7] * values[0] + values[6] * values[1]);
-	invj[8] = detJx * (values[4] * values[0] - values[3] * values[1]);
+	inv(0, 0) =   detJx * m(1, 1);
+	inv(0, 1) = - detJx * m(0, 1);
+	inv(1, 0) = - detJx * m(1, 0);
+	inv(1, 1) =   detJx * m(0, 0);
 }
 
 // B =
-// dX   0   0
-//  0  dY   0
-//  0   0  dZ
-// dY  dX   0
-//  0  dZ  dY
-// dZ   0  dX
+// dX   0
+//  0  dY
+// dY  dX
 static void distribute(DenseMatrix &B, DenseMatrix &dND)
 {
 	eslocal columns = dND.rows() * dND.columns();
 	const double *dNDx = dND.values();
 	const double *dNDy = dND.values() + dND.columns();
-	const double *dNDz = dND.values() + 2 * dND.columns();
+
+	double *v = B.values();
+
+	memcpy(&v[0], dNDx,                               sizeof(double) * dND.columns());
+	memcpy(&v[2 * columns + dND.columns()],     dNDx, sizeof(double) * dND.columns());
+
+	memcpy(&v[1 * columns + dND.columns()],     dNDy, sizeof(double) * dND.columns());
+	memcpy(&v[2 * columns],                     dNDy, sizeof(double) * dND.columns());
+}
+
+
+// B =
+// dX   0
+//  0  dY
+// N/x  0
+// dY  dX
+static void distribute(DenseMatrix &B, DenseMatrix &dND, const DenseMatrix &N, DenseMatrix &XY)
+{
+	eslocal columns = dND.rows() * dND.columns();
+	const double *dNDx = dND.values();
+	const double *dNDy = dND.values() + dND.columns();
 
 	double *v = B.values();
 
 	memcpy(&v[0], dNDx,                               sizeof(double) * dND.columns());
 	memcpy(&v[3 * columns + dND.columns()],     dNDx, sizeof(double) * dND.columns());
-	memcpy(&v[5 * columns + 2 * dND.columns()], dNDx, sizeof(double) * dND.columns());
 
 	memcpy(&v[1 * columns + dND.columns()],     dNDy, sizeof(double) * dND.columns());
 	memcpy(&v[3 * columns],                     dNDy, sizeof(double) * dND.columns());
-	memcpy(&v[4 * columns + 2 * dND.columns()], dNDy, sizeof(double) * dND.columns());
 
-	memcpy(&v[2 * columns + 2 * dND.columns()], dNDz, sizeof(double) * dND.columns());
-	memcpy(&v[4 * columns + dND.columns()],     dNDz, sizeof(double) * dND.columns());
-	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
+	for(size_t i = 0; i < N.columns(); i++) {
+		B(2, i) = N(0, i) / XY(0, 0);
+	}
+}
+
+static void fillC(DenseMatrix &C, LinearElasticity2D::ELEMENT_BEHAVIOUR behaviour, Material::MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &T)
+{
+	switch (model) {
+
+	case Material::MODEL::LINEAR_ELASTIC_ISOTROPIC:
+	{
+
+		switch (behaviour) {
+
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+		{
+			double k = E(0, 0) * (1 - mi(0, 0)) / ((1 + mi(0, 0)) * (1 - 2 * mi(0, 0)));
+			C.resize(3, 3);
+			C(0, 0) = C(1, 1) = k * 1;
+			C(1, 0) = C(0, 1) = k * (mi(0, 0) / (1 - mi(0, 0)));
+			C(2, 2) = k * ((1 - 2 * mi(0, 0)) / (2 * (1 - mi(0, 0))));
+			return;
+		}
+
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+		{
+			double k = E(0, 0) / (1 - mi(0, 0) * mi(0, 0));
+			C.resize(3, 3);
+			C(0, 0) = C(1, 1) = k * 1;
+			C(1, 0) = C(0, 1) = k * mi(0, 0);
+			C(2, 2) = k * ((1 -  mi(0, 0)) / 2);
+			return;
+		}
+
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+		{
+			double k = E(0, 0) * (1 - mi(0, 0)) / ((1 + mi(0, 0)) * (1 - 2 * mi(0, 0)));
+			C.resize(4, 4);
+			C(0, 0) = C(1, 1) = C(3, 3) = k * 1;
+			C(1, 0) = C(0, 1) = C(3, 0) = C(0, 3) = C(1, 3) = C(3, 1) = k * (mi(0, 0) / (1 - mi(0, 0)));
+			C(2, 2) = k * ((1 - 2 * mi(0, 0)) / (2 * (1 - mi(0, 0))));
+			return;
+		}
+		}
+	}
+
+	case Material::MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+	{
+		return;
+	}
+
+	case Material::MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+	{
+		return;
+	}
+	}
 }
 
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
 {
-	DenseMatrix Ce(6, 6), coordinates, J, invJ, dND, B;
-	std::vector<double> inertia(3, 0);
-	double detJ;
+	DenseMatrix Ce(4, 4), XY(1, 2), coordinates, J, invJ, dND, B, epsilon, rhsT;
+	DenseMatrix
+			matDENS(element->nodes(), 1), matE(element->nodes(), 2), matMI(element->nodes(), 1),
+			matTE(element->nodes(), 2), matT(element->nodes(), 1), matThickness(element->nodes(), 1),
+			matInitT(element->nodes(), 1);
+	DenseMatrix gpDENS(1, 1), gpE(1, 2), gpMI(1, 1), gpTE(1, 2), gpT(1, 1), gpInitT(1, 1), gpThickness(1, 1);
+	double detJ, inertia[2];
 
 	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
 
-	// TODO: set the omega from example
-	Point omega(50, 50, 0);
+	coordinates.resize(element->nodes(), 2);
 
-	double ex = material.youngModulus;
-	double mi = material.poissonRatio;
-	double E = ex / ((1 + mi) * (1 - 2 * mi));
-	Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = E * mi;
-	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
-	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
-
-	inertia[0] = inertia[1] = 0;
-	inertia[2] = 9.8066 * material.density;
-
-	coordinates.resize(element->nodes(), 3);
-
-	Point mid;
 	for (size_t i = 0; i < element->nodes(); i++) {
+		matDENS(i, 0) = material.density(element->node(i));
+		matE(i, 0) = material.youngModulusX(element->node(i));
+		matE(i, 1) = material.youngModulusY(element->node(i));
+		matMI(i, 0) = material.poissonRatioXY(element->node(i));
+		matTE(i, 0) = material.termalExpansionX(element->node(i));
+		matTE(i, 1) = material.termalExpansionY(element->node(i));
+		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
+		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
+			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
+		} else {
+			matT(i, 0) = matInitT(i, 0);
+		}
+
+		inertia[0] = element->settings(Property::ACCELERATION_X).back()->evaluate(element->node(i));
+		inertia[1] = element->settings(Property::ACCELERATION_Y).back()->evaluate(element->node(i));
+
+		matThickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
+
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
-		coordinates(i, 2) = mesh.coordinates()[element->node(i)].z;
-		mid += mesh.coordinates()[element->node(i)];
 	}
-	mid /= element->nodes();
 
-	eslocal Ksize = 3 * element->nodes();
+	eslocal Ksize = 2 * element->nodes();
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
-	fe.resize(Ksize);
-	fill(fe.begin(), fe.end(), 0);
-
-	double rotation[3] = { mid.x * omega.x * omega.x, mid.y * omega.y * omega.y, mid.z * omega.z * omega.z };
+	fe.resize(Ksize, 1);
+	std::fill(fe.begin(), fe.end(), 0);
+	rhsT.resize(Ksize, 1);
+	rhsT = 0;
 
 	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
-		detJ = determinant3x3(J);
+		detJ = determinant2x2(J);
 		inverse(J, invJ, detJ);
-
 		dND.multiply(invJ, dN[gp]);
-		B.resize(Ce.rows(), Ksize);
-		distribute(B, dND);
-		Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
+		XY.multiply(N[gp], coordinates);
+		gpDENS.multiply(N[gp], matDENS, 1, 0);
+		gpE.multiply(N[gp], matE, 1, 0);
+		gpMI.multiply(N[gp], matMI, 1, 0);
+		gpTE.multiply(N[gp], matTE, 1, 0);
+		gpT.multiply(N[gp], matT, 1, 0);
+		gpInitT.multiply(N[gp], matInitT, 1, 0);
 
-		for (eslocal i = 0; i < Ksize; i++) {
-			// TODO: set rotation from example
-			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
-			//fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * 7850 * rotation[i / e->size()];
+		gpThickness.multiply(N[gp], matThickness, 1, 0);
+
+		fillC(Ce, LinearElasticity2D::elementBehaviour, material.model(), gpDENS, gpE, gpMI, gpT);
+		B.resize(Ce.rows(), Ksize);
+		epsilon.resize(Ce.rows(), 1);
+		switch (LinearElasticity2D::elementBehaviour) {
+
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+			gpThickness(0, 0) = 1;
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+			epsilon(0, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 0);
+			epsilon(1, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 1);
+			epsilon(2, 0) = 0;
+			distribute(B, dND);
+			Ke.multiply(B, Ce * B, detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
+			rhsT.multiply(B, Ce * epsilon, detJ * weighFactor[gp] * gpThickness(0, 0), 0, true, false);
+			for (eslocal i = 0; i < Ksize; i++) {
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * XY(0, i / element->nodes()) * pow(LinearElasticity2D::angularVelocity.z, 2);
+				fe[i] += rhsT(i, 0);
+			}
+			break;
+
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+			epsilon(0, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 0);
+			epsilon(1, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 1);
+			epsilon(2, 0) = epsilon(3, 0) = 0;
+			distribute(B, dND, N[gp], XY);
+			Ke.multiply(B, Ce * B, detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0), 1, true);
+			rhsT.multiply(B, Ce * epsilon, detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0), 0, true, false);
+			for (eslocal i = 0; i < Ksize; i++) {
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
+				fe[i] += rhsT(i, 0);
+			}
+			for (eslocal i = 0; i < Ksize / 2; i++) {
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 0) * pow(LinearElasticity2D::angularVelocity.y, 2);
+				fe[Ksize / 2 + i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 1) * pow(LinearElasticity2D::angularVelocity.x, 2);
+			}
+			break;
 		}
 	}
 }
@@ -171,15 +274,15 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
 {
 	size_t nodes = coordinates.localSize(subdomain);
-	R1.rows = 3 * nodes;
-	R1.cols = 6;
+	R1.rows = 2 * nodes;
+	R1.cols = 3;
 	R1.nnz = R1.rows * R1.cols;
 	R1.type = 'G';
 
 	R1.dense_values.reserve(R1.nnz);
 
-	for (size_t c = 0; c < 3; c++) {
-		std::vector<double> kernel = { 0, 0, 0 };
+	for (size_t c = 0; c < 2; c++) {
+		std::vector<double> kernel = { 0, 0 };
 		kernel[c] = 1;
 		for (size_t i = 0; i < nodes; i++) {
 			R1.dense_values.insert(R1.dense_values.end(), kernel.begin(), kernel.end());
@@ -190,21 +293,6 @@ static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, s
 		const Point &p = coordinates.get(i, subdomain);
 		R1.dense_values.push_back(-p.y);
 		R1.dense_values.push_back( p.x);
-		R1.dense_values.push_back(   0);
-	}
-
-	for (size_t i = 0; i < coordinates.localSize(subdomain); i++) {
-		const Point &p = coordinates.get(i, subdomain);
-		R1.dense_values.push_back(-p.z);
-		R1.dense_values.push_back(   0);
-		R1.dense_values.push_back( p.x);
-	}
-
-	for (size_t i = 0; i < coordinates.localSize(subdomain); i++) {
-		const Point &p = coordinates.get(i, subdomain);
-		R1.dense_values.push_back(   0);
-		R1.dense_values.push_back(-p.z);
-		R1.dense_values.push_back( p.y);
 	}
 }
 
@@ -213,9 +301,9 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	ESTEST(MANDATORY) << "Too few FIX POINTS: " << fixPoints.size() << (fixPoints.size() > 3 ? TEST_PASSED : TEST_FAILED);
 
 	SparseMatrix Nt; // CSR matice s DOFY
-	Nt.rows = 6;
+	Nt.rows = 3;
 	Nt.cols = K.cols;
-	Nt.nnz  = 9 * fixPoints.size();
+	Nt.nnz  = 4 * fixPoints.size();
 	Nt.type = 'G';
 
 	std::vector<eslocal> &ROWS = Nt.CSR_I_row_indices;
@@ -229,19 +317,15 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	ROWS.push_back(1);
 	ROWS.push_back(ROWS.back() + fixPoints.size());
 	ROWS.push_back(ROWS.back() + fixPoints.size());
-	ROWS.push_back(ROWS.back() + fixPoints.size());
-	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
-	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 
-	for (size_t c = 0; c < 3; c++) {
-		std::vector<double> kernel = { 0, 0, 0 };
+	for (size_t c = 0; c < 2; c++) {
+		std::vector<double> kernel = { 0, 0 };
 
 		kernel[c] = 1;
 		for (size_t i = 0; i < fixPoints.size(); i++) {
 			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
 			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
 			VALS.insert(VALS.end(), kernel.begin(), kernel.end());
 		}
 	}
@@ -252,22 +336,6 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
 		VALS.push_back(-p.y);
 		VALS.push_back( p.x);
-	}
-
-	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates[fixPoints[i]->node(0)];
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
-		VALS.push_back(-p.z);
-		VALS.push_back( p.x);
-	}
-
-	for (size_t i = 0; i < fixPoints.size(); i++) {
-		const Point &p = coordinates[fixPoints[i]->node(0)];
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
-		VALS.push_back(-p.z);
-		VALS.push_back( p.y);
 	}
 
 	SparseMatrix N;
@@ -331,6 +399,12 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
+
+	if (config::info::PRINT_MATRICES){
+		std::ofstream osK(Logging::prepareFile(subdomain, "K").c_str());
+		osK << K[subdomain];
+		osK.close();
+	}
 
 	switch (config::solver::REGULARIZATION) {
 	case config::solver::REGULARIZATIONalternative::FIX_POINTS:

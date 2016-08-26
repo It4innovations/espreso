@@ -26,8 +26,8 @@ public:
 	}
 
 protected:
-	AnsysWorkbench(Mesh &mesh, const Options &options, int rank, int size)
-	: Loader(mesh), _path(options.path) { };
+	AnsysWorkbench(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	: Loader(mesh), _path(configuration.path), _parser(mesh) { };
 
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);

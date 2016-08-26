@@ -114,16 +114,16 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
 
-	Ce(0, 0) = material.termalConduction.x;
-	Ce(1, 1) = material.termalConduction.y;
+	Ce(0, 0) = material.termalConductionX(0);
+	Ce(1, 1) = material.termalConductionY(0);
 
 	coordinates.resize(element->nodes(), 2);
 	for (size_t i = 0; i < element->nodes(); i++) {
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		U(i, 0) = ux.back()->evaluate(element->node(i)) * material.density * material.termalCapacity;
-		U(i, 1) = uy.back()->evaluate(element->node(i)) * material.density * material.termalCapacity;
+		U(i, 0) = ux.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i));
+		U(i, 1) = uy.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i));
 		for (size_t j = 0; j < heat_sources.size(); j++) {
 			f(0, i) += heat_sources[j]->evaluate(element->node(i));
 		}

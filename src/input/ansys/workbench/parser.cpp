@@ -3,7 +3,7 @@
 
 using namespace espreso::input;
 
-WorkbenchParser::WorkbenchParser(): bodyCounter(0), nSelection(-1), eSelection(-1)
+WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), nSelection(-1), eSelection(-1), _mesh(mesh)
 {
 	_commands["/wb"] = WorkbenchCommands::WB;
 	_commands["nblock"] = WorkbenchCommands::NBLOCK;
@@ -214,26 +214,9 @@ void WorkbenchParser::mp(std::vector<Material> &materials)
 	std::vector<std::string> params = divide(_line);
 
 	int mNumber = std::stoi(params[2]);
-	materials.resize(mNumber--);
+	materials.resize(mNumber--, Material(_mesh.coordinates()));
 
-	if (!params[1].compare(0, 4, "DENS")) {
-		materials[mNumber].density = std::stod(params[3]);
-	}
-	if (!params[1].compare(0, 4, "ALPX")) {
-		materials[mNumber].termalExpansion = std::stod(params[3]);
-	}
-	if (!params[1].compare(0, 1, "C")) {
-		materials[mNumber].termalCapacity = std::stod(params[3]);
-	}
-	if (!params[1].compare(0, 3, "KXX")) {
-		materials[mNumber].termalConduction.x = std::stod(params[3]);
-	}
-	if (!params[1].compare(0, 2, "EX")) {
-		materials[mNumber].youngModulus = std::stod(params[3]);
-	}
-	if (!params[1].compare(0, 4, "NUXY")) {
-		materials[mNumber].poissonRatio = std::stod(params[3]);
-	}
+	materials[mNumber].setParameter(params[1], params[3]);
 }
 
 //void WorkbenchParser::displacement(std::vector<Dirichlet*> &dirichlet)

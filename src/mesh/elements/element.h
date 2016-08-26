@@ -95,7 +95,7 @@ public:
 	Settings& settings() { return _settings; }
 	const Settings& settings() const { return _settings; }
 
-	std::vector<Evaluator*>& settings(Property property) { return _settings[property]; }
+	void addSettings(Property property, Evaluator* evaluator) { return _settings[property].push_back(evaluator); }
 	const std::vector<Evaluator*>& settings(Property property) const { return _settings[property]; }
 
 	std::vector<Element*>& parentElements() { return _parentElements; }

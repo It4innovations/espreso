@@ -227,6 +227,10 @@ void PlaneGenerator<TElement>::settings(
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "NEUMAN", { "P"}, { Property::PRESSURE });
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "TRANSLATION_MOTIONS", { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "ACCELERATION", { "x", "y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "THICKNESS", { }, { Property::THICKNESS });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "INITIAL_TEMPERATURE", { }, { Property::INITIAL_TEMPERATURE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "TEMPERATURE", { }, { Property::TEMPERATURE });
 }
 
 template<class TElement>

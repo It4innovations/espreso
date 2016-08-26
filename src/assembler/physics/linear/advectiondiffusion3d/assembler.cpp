@@ -66,9 +66,9 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
 
-	Ce(0, 0) = material.termalConduction.x;
-	Ce(1, 1) = material.termalConduction.y;
-	Ce(2, 2) = material.termalConduction.z;
+//	Ce(0, 0) = material.termalConduction.x;
+//	Ce(1, 1) = material.termalConduction.y;
+//	Ce(2, 2) = material.termalConduction.z;
 	inertia = 0;
 
 	coordinates.resize(element->nodes(), 3);

@@ -100,15 +100,15 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	// TODO: set the omega from example
 	Point omega(50, 50, 0);
 
-	double ex = material.youngModulus;
-	double mi = material.poissonRatio;
+	double ex = material.youngModulusX(0);
+	double mi = material.poissonRatioXY(0);
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = E * mi;
 	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
 	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
 
 	inertia[0] = inertia[1] = 0;
-	inertia[2] = 9.8066 * material.density;
+	inertia[2] = 9.8066 * material.density(0);
 	CP = 1;
 
 	coordinates.resize(element->nodes(), DOFs);
@@ -142,7 +142,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 		B.resize(Ce.rows(), Ksize);
 		distribute(B, dND);
 		Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
-		Me.multiply(N[gp], N[gp], material.density * detJ * weighFactor[gp] * CP, 1, true);
+		Me.multiply(N[gp], N[gp], material.density(0) * detJ * weighFactor[gp] * CP, 1, true);
 
 		for (eslocal i = 0; i < Ksize; i++) {
 			// TODO: set rotation from example

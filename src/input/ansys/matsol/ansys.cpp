@@ -108,7 +108,7 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 void AnsysMatsol::materials(std::vector<Material> &materials)
 {
 	// TODO:
-	materials.resize(1);
+	materials.resize(1, Material(mesh.coordinates()));
 }
 
 void AnsysMatsol::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)

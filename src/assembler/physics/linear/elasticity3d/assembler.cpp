@@ -240,15 +240,15 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	// TODO: set the omega from example
 	Point omega(50, 50, 0);
 
-	double ex = material.youngModulus;
-	double mi = material.poissonRatio;
+	double ex = material.youngModulusX(0);
+	double mi = material.poissonRatioXY(0);
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = E * mi;
 	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
 	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
 
 	inertia[0] = inertia[1] = 0;
-	inertia[2] = 9.8066 * material.density;
+	inertia[2] = 9.8066 * material.density(0);
 
 	coordinates.resize(element->nodes(), 3);
 

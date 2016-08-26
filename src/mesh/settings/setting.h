@@ -13,6 +13,11 @@ enum class Property : int {
 	TEMPERATURE,
 	PRESSURE,
 
+	THICKNESS,
+	INITIAL_TEMPERATURE,
+	ACCELERATION_X,
+	ACCELERATION_Y,
+	ACCELERATION_Z,
 	HEAT_SOURCE,
 	TRANSLATION_MOTION_X,
 	TRANSLATION_MOTION_Y,
@@ -31,6 +36,11 @@ inline std::ostream& espreso::operator<<(std::ostream& os, const Property& prope
 		case Property::TEMPERATURE: return os << "TEMPERATURE";
 		case Property::PRESSURE: return os << "PRESSURE";
 
+		case Property::THICKNESS: return os << "THICKNESS";
+		case Property::INITIAL_TEMPERATURE: return os << "INITIAL_TEMPERATURE";
+		case Property::ACCELERATION_X: return os << "ACCELERATION_X";
+		case Property::ACCELERATION_Y: return os << "ACCELERATION_Y";
+		case Property::ACCELERATION_Z: return os << "ACCELERATION_Z";
 		case Property::HEAT_SOURCE: return os << "HEAT_SOURCE";
 		case Property::TRANSLATION_MOTION_X: return os << "TRANSLATION_MOTION_X";
 		case Property::TRANSLATION_MOTION_Y: return os << "TRANSLATION_MOTION_Y";

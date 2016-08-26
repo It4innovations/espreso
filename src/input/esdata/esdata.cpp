@@ -77,7 +77,7 @@ void Esdata::materials(std::vector<Material> &materials)
 	int size;
 	double value;
 	is.read(reinterpret_cast<char *>(&size), sizeof(int));
-	materials.resize(size);
+	materials.resize(size, Material(mesh.coordinates()));
 //	for (size_t i = 0; i < materials.size(); i++) {
 //		is.read(reinterpret_cast<char *>(&value), sizeof(double));
 //		materials[i].density = value;
