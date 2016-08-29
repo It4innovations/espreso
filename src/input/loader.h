@@ -56,7 +56,8 @@ public:
 		settings(mesh._evaluators, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 		tSettings.end(); measurement.addEvent(tSettings);
 
-		mesh.saveEdges();
+		mesh.fillFacesParents();
+		mesh.fillEdgesParents();
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
 		clusterBoundaries(mesh._nodes, mesh._neighbours);
@@ -85,6 +86,8 @@ public:
 		TimeEvent tPartition("partition"); tPartition.start();
 		if (partitiate(mesh._partPtrs)) { // manual partition -> map elements to the domains
 			mesh.mapElementsToDomains();
+			mesh.mapFacesToDomains();
+			mesh.mapEdgesToDomains();
 			mesh.mapNodesToDomains();
 			mesh.mapCoordinatesToDomains();
 		}

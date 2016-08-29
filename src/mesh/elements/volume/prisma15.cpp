@@ -374,6 +374,28 @@ void Prisma15::fillFaces()
 	_faces.back()->parentElements().push_back(this);
 }
 
+void Prisma15::setFace(Element* face)
+{
+	ESINFO(GLOBAL_ERROR) << "Set face";
+}
+
+void Prisma15::setEdge(Element* edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Set edge";
+}
+
+Point Prisma15::faceNormal(const Element *face)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
+Point Prisma15::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

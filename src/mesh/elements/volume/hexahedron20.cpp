@@ -412,6 +412,28 @@ void Hexahedron20::fillFaces()
 	_faces.back()->parentElements().push_back(this);
 }
 
+void Hexahedron20::setFace(Element* face)
+{
+	ESINFO(GLOBAL_ERROR) << "Set face";
+}
+
+void Hexahedron20::setEdge(Element* edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Set edge";
+}
+
+Point Hexahedron20::faceNormal(const Element *face)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
+Point Hexahedron20::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

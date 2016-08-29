@@ -47,6 +47,8 @@ public:
 	size_t coarseNodes() const { return Line2NodesCount; }
 	size_t gaussePoints() const { return Line2GPCount; }
 
+	virtual Point faceNormal(const Element *face) { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; return Point(); }
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; return Point(); }
 	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; return NULL; }
 	virtual Element* edge(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; return NULL; }
 
@@ -68,6 +70,8 @@ protected:
 
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; }
 	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; }
+	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Line2 has no face"; }
+	void setEdge(Element* edge) { ESINFO(GLOBAL_ERROR) << "Line2 has no edge"; }
 
 	void fillFaces() {};
 	void fillEdges() {};

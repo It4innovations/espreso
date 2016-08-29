@@ -146,6 +146,34 @@ void Square8::fillEdges()
 	}
 }
 
+void Square8::setEdge(Element* edge)
+{
+	eslocal line[Line3NodesCount];
+	_edges.resize(Square8EdgeCount, NULL);
+
+	for (size_t e = 0; e < 4; e++) {
+		line[0] = _indices[ e         ];
+		line[1] = _indices[(e + 1) % 4];
+		line[2] = _indices[ e + 4     ];
+		if (std::is_permutation(line, line + Line3NodesCount, edge->indices())) {
+			if (_edges[e] == NULL) {
+				_edges[e] = edge;
+				edge->parentElements().push_back(this);
+			} else {
+				ESINFO(GLOBAL_ERROR) << "Merge element";
+			}
+			return;
+		}
+	}
+	ESINFO(GLOBAL_ERROR) << "Invalid edge";
+}
+
+Point Square8::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Square8::Square8(const eslocal *indices)
 {
 	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));

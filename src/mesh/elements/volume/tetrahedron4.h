@@ -54,6 +54,8 @@ public:
 	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
 	size_t gaussePoints() const { return Tetrahedron4GPCount; }
 
+	virtual Point faceNormal(const Element *face);
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates);
 	virtual Element* face(size_t index) const { return _faces[index]; }
 	virtual Element* edge(size_t index) const { return _edges[index]; }
 
@@ -74,6 +76,8 @@ protected:
 
 	void setFace(size_t index, Element* face) { _faces[index] = face; }
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
+	void setFace(Element* face);
+	void setEdge(Element* edge);
 
 	void fillFaces();
 	void fillEdges();

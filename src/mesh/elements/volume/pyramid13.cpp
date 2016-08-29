@@ -326,6 +326,28 @@ void Pyramid13::fillFaces()
 	_faces.back()->parentElements().push_back(this);
 }
 
+void Pyramid13::setFace(Element* face)
+{
+	ESINFO(GLOBAL_ERROR) << "Set face";
+}
+
+void Pyramid13::setEdge(Element* edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Set edge";
+}
+
+Point Pyramid13::faceNormal(const Element *face)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
+Point Pyramid13::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

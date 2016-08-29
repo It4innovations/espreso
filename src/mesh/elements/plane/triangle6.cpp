@@ -150,6 +150,34 @@ void Triangle6::fillEdges()
 	}
 }
 
+void Triangle6::setEdge(Element* edge)
+{
+	eslocal line[Line3NodesCount];
+	_edges.resize(Triangle6EdgeCount, NULL);
+
+	for (size_t e = 0; e < 3; e++) {
+		line[0] = _indices[ e         ];
+		line[1] = _indices[(e + 1) % 3];
+		line[2] = _indices[ e + 3     ];
+		if (std::is_permutation(line, line + Line3NodesCount, edge->indices())) {
+			if (_edges[e] == NULL) {
+				_edges[e] = edge;
+				edge->parentElements().push_back(this);
+			} else {
+				ESINFO(GLOBAL_ERROR) << "Merge element";
+			}
+			return;
+		}
+	}
+	ESINFO(GLOBAL_ERROR) << "Invalid edge";
+}
+
+Point Triangle6::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Triangle6::Triangle6(const eslocal *indices)
 {
 	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));

@@ -48,6 +48,8 @@ public:
 	size_t coarseNodes() const { return Triangle3NodesCount; }
 	size_t gaussePoints() const { return Triangle3GPCount; }
 
+	virtual Point faceNormal(const Element *face) { ESINFO(GLOBAL_ERROR) << "Triangle3 has no face"; return Point(); }
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates);
 	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Triangle3 has no face"; return NULL; }
 	virtual Element* edge(size_t index) const { return _edges[index]; };
 
@@ -68,6 +70,8 @@ protected:
 
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Triangle3 has no face"; }
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
+	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Triangle3 has no face"; }
+	void setEdge(Element* edge);
 
 	void fillFaces() {};
 	void fillEdges();

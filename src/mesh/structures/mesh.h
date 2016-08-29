@@ -102,6 +102,9 @@ protected:
 	void fillParentFacesToNodes();
 	void fillParentElementsToNodes();
 
+	void fillEdgesParents();
+	void fillFacesParents();
+
 	void mapFacesToClusters();
 	void mapEdgesToClusters();
 

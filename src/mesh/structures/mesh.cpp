@@ -881,6 +881,47 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 	}
 }
 
+static Element* parentElement(const std::vector<Element*> &nodes, const Element *e)
+{
+	std::vector<Element*> intersection(nodes[e->node(e->nodes() - 1)]->parentElements()); // it is better to start from end (from mid points)
+	auto it = intersection.end();
+
+	for (size_t n = e->nodes() - 2; it - intersection.begin() > 1 &&  n < e->nodes(); n--) {
+		std::vector<Element*> tmp(intersection.begin(), it);
+		it = std::set_intersection(tmp.begin(), tmp.end(),
+				nodes[e->node(n)]->parentElements().begin(), nodes[e->node(n)]->parentElements().end(),
+				intersection.begin());
+	}
+
+	intersection.resize(it - intersection.begin());
+	return intersection[0];
+}
+
+void Mesh::fillEdgesParents()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			parentElement(_nodes, _edges[e])->setEdge(_edges[e]);
+		}
+	}
+}
+
+void Mesh::fillFacesParents()
+{
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			parentElement(_nodes, _faces[e])->setEdge(_faces[e]);
+		}
+	}
+}
 
 void Mesh::computeFacesOfAllElements()
 {

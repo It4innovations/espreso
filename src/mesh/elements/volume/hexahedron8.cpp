@@ -185,6 +185,28 @@ void Hexahedron8::fillFaces()
 	_faces.back()->parentElements().push_back(this);
 }
 
+void Hexahedron8::setFace(Element* face)
+{
+	ESINFO(GLOBAL_ERROR) << "Set face";
+}
+
+void Hexahedron8::setEdge(Element* edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Set edge";
+}
+
+Point Hexahedron8::faceNormal(const Element *face)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
+Point Hexahedron8::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

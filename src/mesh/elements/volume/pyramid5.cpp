@@ -210,6 +210,28 @@ void Pyramid5::fillFaces()
 	_faces.back()->parentElements().push_back(this);
 }
 
+void Pyramid5::setFace(Element* face)
+{
+	ESINFO(GLOBAL_ERROR) << "Set face";
+}
+
+void Pyramid5::setEdge(Element* edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Set edge";
+}
+
+Point Pyramid5::faceNormal(const Element *face)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
+Point Pyramid5::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

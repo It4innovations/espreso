@@ -81,10 +81,15 @@ public:
 	virtual size_t coarseNodes() const = 0;
 	virtual size_t gaussePoints() const = 0;
 
+	virtual Point faceNormal(const Element *face) = 0;
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) = 0;
+
 	virtual Element* face(size_t index) const = 0;
 	virtual Element* edge(size_t index) const = 0;
 	eslocal& node(size_t index) { return indices()[index]; }
 	const eslocal& node(size_t index) const { return indices()[index]; }
+	virtual eslocal* indices() = 0;
+	virtual const eslocal* indices() const = 0;
 
 	virtual eslocal param(Params param) const =0;
 	virtual void setParam(Params param, eslocal value) =0;
@@ -155,12 +160,12 @@ public:
 
 protected:
 	virtual Element* copy() const =0;
-	virtual eslocal* indices() = 0;
-	virtual const eslocal* indices() const = 0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
 
 	virtual void setFace(size_t index, Element* face) = 0;
 	virtual void setEdge(size_t index, Element* edge) = 0;
+	virtual void setFace(Element* face) = 0;
+	virtual void setEdge(Element* edge) = 0;
 
 	virtual void fillFaces() = 0;
 	virtual void fillEdges() = 0;

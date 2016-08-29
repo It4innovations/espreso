@@ -430,6 +430,28 @@ void Tetrahedron10::fillFaces()
 	_faces.back()->parentElements().push_back(this);
 }
 
+void Tetrahedron10::setFace(Element* face)
+{
+	ESINFO(GLOBAL_ERROR) << "Set face";
+}
+
+void Tetrahedron10::setEdge(Element* edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Set edge";
+}
+
+Point Tetrahedron10::faceNormal(const Element *face)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
+Point Tetrahedron10::edgeNormal(const Element *edge, const Coordinates &coordinates)
+{
+	ESINFO(GLOBAL_ERROR) << "compute normal";
+	return Point();
+}
+
 Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {
