@@ -1,5 +1,6 @@
 
 #include "instance.h"
+#include "esoutput.h"
 
 namespace espreso {
 
@@ -27,6 +28,8 @@ void LinearInstance<TConstrains, TPhysics>::init()
 	if (config::info::PRINT_MATRICES) {
 		_constrains.save();
 	}
+
+	output::VTK::gluing(_mesh, _constrains, "meshGluing", 0.95, 0.9);
 
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();

@@ -7,6 +7,9 @@
 #include <vtkBrownianPoints.h>
 #include <vtkSphereSource.h>
 #include <vtkStructuredGrid.h>
+#include <vtkLineSource.h>
+#include <vtkLine.h>
+#include <vtkTriangle.h>
 
 #include <vtkGenericDataObjectReader.h>
 #include <vtkPolyDataWriter.h>
@@ -306,7 +309,7 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 	vtkSmartPointer<vtkHedgeHog> hh=vtkSmartPointer<vtkHedgeHog>::New();
 	hh->SetInputData(pro);
 	hh->SetScaleFactor(0.1);
-	hh->SetOutputPointsPrecision(11);
+			hh->SetOutputPointsPrecision(11);
 	hh->Update();
 
 	vtkAppendFilter* ap = vtkAppendFilter::New();
@@ -1082,7 +1085,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
 		std::cout << "LEGACY\n";
-		ss << _path << ".vtk";
+		ss << _path << config::env::MPIrank<<".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		if (config::output::OUTPUT_DECIMATION == 0) {
 			writervtk->SetInputData(VTKGrid);
@@ -1181,20 +1184,287 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 
 void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
-	const Boundaries &sBoundaries = mesh.subdomainBoundaries();
-//	sBoundaries[5] -> vector subdomen
-//	const Boundaries &cBoundaries = mesh.clusterBoundaries();
+  vtkPolyData* gp=vtkPolyData::New();
+  vtkPoints* po=vtkPoints::New();
+  vtkCellArray* lines=vtkCellArray::New();
+  vtkGenericDataObjectWriter* wg=vtkGenericDataObjectWriter::New();	
+  vtkAppendPolyData* ap=vtkAppendPolyData::New();
+  int V=mesh.coordinates().localSize(0) * constraints.B1.size();
+  std::vector<int> row;
+  std::vector<int> val;
+  std::vector<int> clust;
+    
+  MPI_Status status;
+  int matr=0;
 
-//	constraints.B1[0].I_row_indices
-//	constraints.B1[0].J_col_indices
-//	constraints.B1[0].V_values
+  vtkSmartPointer<vtkCellArray> ver =vtkSmartPointer<vtkCellArray>::New();
+  vtkPoints* points=vtkPoints::New();
+
+        const Boundaries &sBoundaries = mesh.subdomainBoundaries();
+	//sBoundaries[5] -> vector subdomen
+	//const Boundaries &cBoundaries = mesh.clusterBoundaries();
+	//constraints.B1[0].I_row_indices
+	//constraints.B1[0].J_col_indices
+	//constraints.B1[0].V_values
+	
+	std::cout<<std::endl<<constraints.B1[0].J_col_indices.size()<<" "<<mesh.coordinates().localSize(0)<<std::endl<<std::endl;
+
+	int l=0;
+	for (int y = 0; y < mesh.parts(); y++) {
+	  for(int i=0;i<constraints.B1[y].I_row_indices.size();i++){
+	    int h=constraints.B1[y].I_row_indices[i];//I souradnice ke srovnani	
+		int index1=constraints.B1[y].J_col_indices[i]-1;
+		Point p1=mesh.coordinates().get(index1,y);
+		//ESINFO(ALWAYS) << h << ":" << index1 << "\n";
+
+		Point center1;
+		for(int c=0;c < mesh.coordinates().localSize(y);c++){
+		   center1 += mesh.coordinates().get(c,y);
+		}
+		center1 /= mesh.coordinates().localSize(y);
+		p1=center1+(p1-center1)*0.9;
+
+		row.push_back(h);
+		val.push_back(constraints.B1[y].V_values[i]);
+		clust.push_back(y);
+		matr++;
+
+		//std::cout<<row.at(i)<<::std::endl;
+
+		vtkIdType pid[1];
+		pid[0] = points->InsertNextPoint(p1.x,p1.y,p1.z);
+		ver->InsertNextCell(1,pid); 
+
+	    for(int p=0;p<mesh.parts();p++){
+	      if(y<=p){
+		for(int k=0;k<constraints.B1[p].I_row_indices.size();k++){
+		   if(constraints.B1[p].I_row_indices[k]==h){
+		    if((constraints.B1[y].V_values[i]+constraints.B1[p].V_values[k])==0){
+		      
+		      Point center2;
+		      for(int c=0;c < mesh.coordinates().localSize(p);c++){
+			center2 += mesh.coordinates().get(c,p);
+		      }		      
+		      center2 /= mesh.coordinates().localSize(p);
+
+		      int index2=constraints.B1[p].J_col_indices[k];
+
+		      Point p2=mesh.coordinates().get(index2-1,p);			
+		     
+		      p2=center2+(p2-center2)*0.9;
+			
+		     	po->InsertNextPoint(p1.x,p1.y,p1.z);
+			po->InsertNextPoint(p2.x,p2.y,p2.z);
+			//std::cout<<"prvni: "<<p1.x<<" "<<p1.y<<" "<<p1.z<<" druha: "<<p2.x<<" "<<p2.y<<" "<<p2.z<<std::endl;
+			
+			vtkLine* ls=vtkLine::New();			
+			ls->GetPointIds()->SetId(0,l);
+			ls->GetPointIds()->SetId(1,l+1);
+			lines->InsertNextCell(ls);			
+			l+=2;
+		    }
+		    else{
+		      //std::cout<<"!!!"<<std::endl;
+		    }		      
+		   }
+		}
+	      }	      
+	    }
+	  }
+	}
+
+	//MPI dirichlet control
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	vtkPolyData* PPoints=vtkPolyData::New();
+	PPoints->SetPoints(points);
+
+	vtkMPIController* controller = vtkMPIController::New();
+	if(init==false){
+	  controller->Initialize();
+	  init=true;
+	}
+	int rank = config::env::MPIrank;
+	
+	for(int i=0;i<config::env::MPIsize;i++){
+		std::vector<int> row2;
+		vtkPolyData* PPoints2=vtkPolyData::New();
+		std::vector<int> val2;
+		std::vector<int> clust2;
+		int vs;
+		
+		if(i==rank){
+			row2=row;
+			PPoints2->DeepCopy(PPoints);
+			val2=val;
+			clust2=clust;
+			vs=row2.size();
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Bcast(&vs,1,MPI_INT,i,MPI_COMM_WORLD);
+		
+		row2.resize(vs);
+		val2.resize(vs);
+		clust2.resize(vs);
+		
+		MPI_Bcast(row2.data(),row2.size(),MPI_INT,i,MPI_COMM_WORLD);
+		MPI_Bcast(val2.data(),val2.size(),MPI_INT,i,MPI_COMM_WORLD);
+		MPI_Bcast(clust2.data(),clust2.size(),MPI_INT,i,MPI_COMM_WORLD);
+		controller->Broadcast(PPoints2,i);
+		
+		if(i!=rank){
+			int lg;
+			if(row.size()<row2.size()){
+				lg=row.size();
+			}
+			else{
+				lg=row2.size();
+			}
+					
+			for(int i=0;i<lg;i++){
+				for(int y=0;y<lg;y++){
+					if(row.at(i)==row2.at(y)){
+						if((val.at(i)+val2.at(y))==0){
+							  Point pr;//=mesh.coordinates().get(col.at(i),clust.at(i));
+							  Point dr;//=mesh.coordinates().get(col2.at(y),clust2.at(y));
+							  double p1[3];
+							  double p2[3];
+							  vtkIdType jed=i;
+							  vtkIdType dru=y;
+							  PPoints->GetPoint(jed,p1);
+							  PPoints2->GetPoint(dru,p2);		    
+							  
+							  //std::cout<<constraints.B1clusterMap[1];
+							  //make line
+							  po->InsertNextPoint(p1[0],p1[1],p1[2]);
+							  po->InsertNextPoint(p2[0],p2[1],p2[2]);
+							  
+							  vtkLine* ls=vtkLine::New();			
+							  ls->GetPointIds()->SetId(0,l);
+							  ls->GetPointIds()->SetId(1,l+1);
+							  lines->InsertNextCell(ls);			
+							  l+=2;
+						}
+					}			  
+				}
+			}	
+		}
+		
+		
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+	
+
+	/*for(int i=0;i<config::env::MPIsize;i++){
+	  int clust2[2];
+	  std::vector<int> bufclust;
+	  std::vector<int> bufrow;
+	  std::vector<int> bufpointx;
+	  std::vector<int> bufpointy;	  
+	  int bufsize;
+	  vtkPolyData* PPoints2=vtkPolyData::New();
+	  std::cout<<"Proces "<<rank<<" "<<i<<std::endl;
+	  if(rank==i){
+	    //std::cout<<"cluster"<<i<<std::endl<<constraints.B1clustersMap<<std::endl;
+	    for(int j=0;j<mesh.parts();j++){
+	      for(int k=0;k<constraints.B1[j].I_row_indices.size();k++){
+		for(int c=0;c<constraints.B1clustersMap.size();c++){
+		  int row2=constraints.B1clustersMap[c][0];		  
+		  clust2[0]=constraints.B1clustersMap[c][1];
+		  clust2[1]=constraints.B1clustersMap[c][2];
+		  if(clust2[1]<config::env::MPIsize && clust2[1]>=0){
+		    if(row.at(k)==row2){
+		      //send message to cluster clust2[1] to give me point at row2
+		      //std::cout<<"Nasli se body mezi clustery "<<row.at(k)<<" "<<row2<<" "<<clust2[1]<<std::endl;
+		      bufclust.push_back(clust2[1]);
+		      bufrow.push_back(row2);
+		      
+		      double p1[3];
+		      PPoints->GetPoint(k,p1);
+		      bufpointx.push_back(p1[0]);
+		      bufpointy.push_back(p1[1]);
+		    }
+		  }
+		}
+	      }
+	    }
+	    bufsize=bufclust.size();
+	  }
+	  MPI_Bcast(&bufsize,1,MPI_INT,i,MPI_COMM_WORLD);
+
+	  bufclust.resize(bufsize);
+	  bufrow.resize(bufsize);
+	  bufpointx.resize(bufsize);
+	  bufpointy.resize(bufsize);
+
+	  MPI_Bcast(bufclust.data(),bufclust.size(),MPI_INT,i,MPI_COMM_WORLD);
+	  MPI_Bcast(bufrow.data(),bufrow.size(),MPI_INT,i,MPI_COMM_WORLD);
+	  MPI_Bcast(bufpointx.data(),bufpointx.size(),MPI_INT,i,MPI_COMM_WORLD);
+	  MPI_Bcast(bufpointy.data(),bufpointy.size(),MPI_INT,i,MPI_COMM_WORLD);
+	  
+	  //std::cout<<bufclust.at(0)<<std::endl;
+	  for(int c=0;c<bufclust.size();c++){
+	    if(bufclust.at(c)==rank){	   
+	      //std::cout<<"Poslany clust:  "<<bufclust.at(c)<<" "<<i<<" "<<rank<<" row: "<<bufrow.at(c)<<std::endl;
+	      for(int sm=0;sm<mesh.parts();sm++){
+		for(int s=0;s<constraints.B1[sm].I_row_indices.size();s++){
+		  if(bufrow.at(c)==constraints.B1[sm].I_row_indices[s]){
+		    double p1[3];
+		    vtkIdType it=s;
+		    PPoints->GetPoint(it,p1);
+		    
+		    double p2[3];
+		    p2[0]=bufpointx.at(c);
+		    p2[1]=bufpointy.at(c);
+		    p2[2]=0;
+
+		    //make line
+		    po->InsertNextPoint(p1[0],p1[1],p1[2]);
+		    po->InsertNextPoint(p2[0],p2[1],p2[2]);
+		    
+		    vtkLine* ls=vtkLine::New();			
+		    ls->GetPointIds()->SetId(0,l);
+		    ls->GetPointIds()->SetId(1,l+1);
+		    lines->InsertNextCell(ls);			
+		    l+=2;	
+		    //std::cout<<"Udelana lajna..."<<std::endl;
+		  }
+		}
+	      }		      
+	    }	    
+	  }
+	  
+	  MPI_Barrier(MPI_COMM_WORLD);
+	}*/	
+
+	 
 
 
+	//write the polydata
+	gp->SetPoints(po);
+	gp->SetLines(lines);	
+
+	ap->AddInputData(gp);
+
+	vtkPolyData* gp2=vtkPolyData::New();
+	gp2->SetPoints(points);
+	gp2->SetVerts(ver);
+
+	ap->AddInputData(gp2);
+	ap->Update();
+	
+	std::cout << "LEGACY\n";
+	std::stringstream ss;
+	ss << path << config::env::MPIrank<<".vtk";
+	wg->SetFileName(ss.str().c_str());
+	wg->SetInputData(ap->GetOutput());
+	if (config::output::OUTPUT_COMPRESSION) {
+		// writervtk->SetCompressor(myZlibCompressor);
+		std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION<< "\n";
+	}
+
+	wg->Write();
+
+		
 
 }
-
-
-
-
-
-

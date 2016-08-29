@@ -1622,7 +1622,7 @@ void Mesh::mapCoordinatesToDomains()
 	_coordinates._clusterIndex.clear();
 	_coordinates._clusterIndex.resize(parts());
 
-	cilk_for (size_t p = 0; p < parts(); p++) {
+	for (size_t p = 0; p < parts(); p++) {
 		std::vector<eslocal> l2g;
 		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			l2g.insert(l2g.end(), _elements[e]->indices(), _elements[e]->indices() + _elements[e]->nodes());
@@ -1632,6 +1632,7 @@ void Mesh::mapCoordinatesToDomains()
 		Esutils::removeDuplicity(l2g);
 
 		_coordinates._clusterIndex[p] = l2g;
+		std::cout << "SIZE: " << _coordinates._clusterIndex[p].size() << "\n";
 	}
 }
 
