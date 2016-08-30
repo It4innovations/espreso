@@ -158,6 +158,12 @@ public:
 		return n;
 	}
 
+	bool inDomain(eslocal domain)
+	{
+		auto it = std::lower_bound(_domains.begin(), _domains.end(), domain);
+		return it != _domains.end() && *it == domain;
+	}
+
 protected:
 	virtual Element* copy() const =0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;

@@ -7,7 +7,7 @@
 #define Line3NodesCount 3
 #define Line3EdgeCount 0
 #define Line3FacesCount 0
-#define Line3GPCount 2
+#define Line3GPCount 3
 #define Line3CommonNodes 1
 #define Line3VTKCode 4
 

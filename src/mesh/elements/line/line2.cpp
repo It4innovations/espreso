@@ -11,10 +11,48 @@ std::vector<Property> Line2::_DOFEdge;
 std::vector<Property> Line2::_DOFPoint;
 std::vector<Property> Line2::_DOFMidPoint;
 
-// TODO: Implement base functions
-std::vector<DenseMatrix> Line2::_dN;
-std::vector<DenseMatrix> Line2::_N;
-std::vector<double> Line2::_weighFactor;
+static std::vector<DenseMatrix> get_dN() {
+	std::vector<DenseMatrix> dN(
+			Line2GPCount,
+		DenseMatrix(1, Line2NodesCount)
+	);
+
+	double gp = 1 / sqrt(3);
+
+	for (unsigned int i = 0; i < Line2GPCount; i++) {
+		///dN contains [dNr, dNs, dNt]
+		DenseMatrix &m = dN[i];
+
+		// dNs - derivation of basis function
+		m(0, 0) = -1 / 2.0;
+		m(0, 1) =  1 / 2.0;
+	}
+
+	return dN;
+}
+
+static std::vector<DenseMatrix> get_N() {
+	std::vector<DenseMatrix> N(
+		Line2GPCount,
+		DenseMatrix(1, Line2NodesCount)
+	);
+
+	std::vector<double> s = { 1 / sqrt(3), -1 / sqrt(3) };
+
+	for (unsigned int i = 0; i < Line2GPCount; i++) {
+		std::cout << s[i] << "\n";
+		N[i](0, 0) = (1 - s[i]) / 2.0;
+		N[i](0, 1) = (1 + s[i]) / 2.0;
+		std::cout << N[i](0, 0) << ":" << N[i](0, 1) << "\n";
+	}
+
+
+	return N;
+}
+
+std::vector<DenseMatrix> Line2::_dN = get_dN();
+std::vector<DenseMatrix> Line2::_N = get_N();
+std::vector<double> Line2::_weighFactor = { 1, 1 };
 
 bool Line2::match(const eslocal *indices, eslocal n)
 {

@@ -209,7 +209,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
-	fe.resize(Ksize, 1);
+	fe.resize(Ksize);
 	std::fill(fe.begin(), fe.end(), 0);
 	rhsT.resize(Ksize, 1);
 	rhsT = 0;
@@ -267,6 +267,58 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 				fe[Ksize / 2 + i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 1) * pow(LinearElasticity2D::angularVelocity.x, 2);
 			}
 			break;
+		}
+	}
+}
+
+static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* edge)
+{
+	DenseMatrix coordinates(edge->nodes(), 2), dND(1, 2), P(edge->nodes(), 1), normal(2, 1), matThickness(edge->nodes(), 1), XY(1, 2);
+	DenseMatrix gpP(1, 1), gpQ(1, 2), gpThickness(1, 1);
+
+	const std::vector<DenseMatrix> &dN = edge->dN();
+	const std::vector<DenseMatrix> &N = edge->N();
+	const std::vector<double> &weighFactor = edge->weighFactor();
+
+	for (size_t n = 0; n < edge->nodes(); n++) {
+		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
+		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
+		P(n, 0) = edge->settings(Property::PRESSURE).back()->evaluate(edge->node(n));
+		matThickness(n, 0) = mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
+	}
+
+	eslocal Ksize = 2 * edge->nodes();
+	fe.resize(Ksize);
+	std::fill(fe.begin(), fe.end(), 0);
+
+	for (eslocal gp = 0; gp < edge->gaussePoints(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		double J = dND.norm();
+		normal(0, 0) = -dND(0, 1) / J;
+		normal(1, 0) =  dND(0, 0) / J;
+		gpP.multiply(N[gp], P);
+		gpQ.multiply(normal, gpP);
+		gpThickness.multiply(N[gp], matThickness);
+
+		for (eslocal i = 0; i < Ksize; i++) {
+			switch (LinearElasticity2D::elementBehaviour) {
+
+			case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+			case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+				gpThickness(0, 0) = 1;
+			case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+				for (eslocal i = 0; i < Ksize; i++) {
+					fe[i] += gpThickness(0, 0) * J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
+				}
+				break;
+
+			case LinearElasticity2D::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+				XY.multiply(N[gp], coordinates);
+				for (eslocal i = 0; i < Ksize; i++) {
+					fe[i] += gpThickness(0, 0) * J * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
+				}
+				break;
+			}
 		}
 	}
 }
@@ -395,6 +447,22 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 			}
 		}
 	}
+
+	for (size_t i = 0; i < _mesh.edges().size(); i++) {
+		if (_mesh.edges()[i]->inDomain(subdomain)) {
+			processEdge(fe, _mesh, subdomain, _mesh.edges()[i]);
+
+			for (size_t nx = 0; nx < _mesh.edges()[i]->nodes(); nx++) {
+				for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
+					size_t row = nodes[_mesh.edges()[i]->node(nx)]->DOFIndex(subdomain, dx);
+					f[subdomain][row] += fe[dx * _mesh.edges()[i]->nodes() + nx];
+				}
+			}
+
+		}
+	}
+
+	std::cout << f[subdomain];
 
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
