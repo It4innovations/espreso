@@ -26,9 +26,6 @@ struct SphereSettings: public UniformSettings {
 	double innerRadius;
 	double outerRadius;
 
-	std::map<std::string, double> dirichlet;
-	std::map<std::string, double> forces;
-
 protected:
 	void defaultSphereSettings();
 };

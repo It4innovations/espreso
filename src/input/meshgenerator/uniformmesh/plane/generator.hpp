@@ -216,24 +216,6 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 }
 
 template<class TElement>
-void PlaneGenerator<TElement>::settings(
-		std::vector<Evaluator*> &evaluators,
-		std::vector<Element*> &elements,
-		std::vector<Element*> &faces,
-		std::vector<Element*> &edges,
-		std::vector<Element*> &nodes)
-{
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "DIRICHLET", { "T", "x", "y" }, { Property::TEMPERATURE, Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "NEUMAN", { "P"}, { Property::PRESSURE });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "TRANSLATION_MOTIONS", { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "ACCELERATION", { "x", "y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "THICKNESS", { }, { Property::THICKNESS });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "INITIAL_TEMPERATURE", { }, { Property::INITIAL_TEMPERATURE });
-	this->loadProperties(evaluators, elements, faces, edges, nodes, "TEMPERATURE", { }, { Property::TEMPERATURE });
-}
-
-template<class TElement>
 void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1]);

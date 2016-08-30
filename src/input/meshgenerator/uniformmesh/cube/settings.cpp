@@ -34,6 +34,17 @@ static void defaultSettings(CubeSettings &settings)
 			prefix + "LENGTH_" + axis[i].first, problemLength[i], "Length of the cube in " + axis[i].second + "-axis.", verbosity
 		});
 	}
+
+	for (size_t i = 0; i < axis.size(); i++) {
+		parameters.push_back({
+			prefix + "PROJECTION_" + axis[i].first, projections[i], "Projection of " + axis[i].second + "-axis.", verbosity
+		});
+	}
+	for (size_t i = 0; i < axis.size(); i++) {
+		parameters.push_back({
+			prefix + "ROTATION_" + axis[i].first, rotations[i], "Projection of " + axis[i].second + "-axis.", verbosity
+		});
+	}
 }
 
 CubeSettings::CubeSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)

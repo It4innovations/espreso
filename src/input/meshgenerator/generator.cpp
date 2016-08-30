@@ -38,6 +38,23 @@ void Generator::materials(std::vector<Material> &materials)
 	}
 }
 
+void Generator::settings(
+			std::vector<Evaluator*> &evaluators,
+			std::vector<Element*> &elements,
+			std::vector<Element*> &faces,
+			std::vector<Element*> &edges,
+			std::vector<Element*> &nodes)
+{
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "DIRICHLET", { "T", "x", "y", "z" }, { Property::TEMPERATURE, Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "NEUMAN", { "P"}, { Property::PRESSURE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "HEAT_SOURCES", { "T" }, { Property::HEAT_SOURCE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "TRANSLATION_MOTIONS", { "x", "y", "z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "ACCELERATION", { "x", "y", "z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "THICKNESS", { }, { Property::THICKNESS });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "INITIAL_TEMPERATURE", { }, { Property::INITIAL_TEMPERATURE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "TEMPERATURE", { }, { Property::TEMPERATURE });
+}
+
 static void setProperty(
 		const espreso::Mesh &mesh,
 		std::vector<espreso::Evaluator*> &evaluators,

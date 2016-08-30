@@ -1,6 +1,8 @@
 
 #include "settings.h"
 
+#include "esassembler.h"
+
 using namespace espreso::input;
 
 static void defaultSettings(Settings &settings)
@@ -21,7 +23,20 @@ static void defaultSettings(Settings &settings)
 		{ prefix + "ELEMENTS", elements, "Named sets of elements.", verbosity },
 
 		{ prefix + "DIRICHLET", properties["DIRICHLET"], "Dirichlet boundary conditions.", verbosity },
-		{ prefix + "NEUMAN", properties["NEUMAN"], "Neuman boundary conditions.", verbosity }
+		{ prefix + "NEUMAN", properties["NEUMAN"], "Neuman boundary conditions.", verbosity },
+
+		{ prefix + "HEAT_SOURCES", properties["HEAT_SOURCES"], "Sources of a heat.", verbosity },
+		{ prefix + "TRANSLATION_MOTIONS", properties["TRANSLATION_MOTIONS"], "Translation motion of a region.", verbosity },
+		{ prefix + "ACCELERATION", properties["ACCELERATION"], "Acceleration of elements.", verbosity },
+		{ prefix + "THICKNESS", properties["THICKNESS"], "Thickness.", verbosity },
+		{ prefix + "INITIAL_TEMPERATURE", properties["INITIAL_TEMPERATURE"], "Initial temperature.", verbosity },
+		{ prefix + "TEMPERATURE", properties["TEMPERATURE"], "Temperature.", verbosity },
+
+		{ prefix + "INCONSISTENT_STABILIZATION_PARAMETER", AdvectionDiffusion2D::sigma, "Inconsistent stabilization.", verbosity },
+		{ prefix + "CONSISTENT_STABILIZATION", AdvectionDiffusion2D::stabilization, "Inconsistent stabilization.", {
+				{ "CAU", AdvectionDiffusion2D::STABILIZATION::CAU, "CAU stabilization." },
+				{ "SUPG", AdvectionDiffusion2D::STABILIZATION::SUPG, "SUPG stabilization." }
+		}, verbosity }
 	};
 }
 

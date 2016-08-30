@@ -22,9 +22,6 @@ static void defaultSettings(SphereSettings &settings)
 	parameters.push_back({
 		prefix + "OUTER_RADIUS", outerRadius, "Outer radius of the sphere."
 	});
-
-	parameters.push_back({ prefix + "DIRICHLET", dirichlet, "Dirichlet boundary conditions" });
-	parameters.push_back({ prefix + "FORCES", forces, "Boundary forces" });
 }
 
 SphereSettings::SphereSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
