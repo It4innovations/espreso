@@ -300,25 +300,23 @@ static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, size
 		gpQ.multiply(normal, gpP);
 		gpThickness.multiply(N[gp], matThickness);
 
-		for (eslocal i = 0; i < Ksize; i++) {
-			switch (LinearElasticity2D::elementBehaviour) {
+		switch (LinearElasticity2D::elementBehaviour) {
 
-			case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-			case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-				gpThickness(0, 0) = 1;
-			case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-				for (eslocal i = 0; i < Ksize; i++) {
-					fe[i] += gpThickness(0, 0) * J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
-				}
-				break;
-
-			case LinearElasticity2D::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-				XY.multiply(N[gp], coordinates);
-				for (eslocal i = 0; i < Ksize; i++) {
-					fe[i] += gpThickness(0, 0) * J * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
-				}
-				break;
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+			gpThickness(0, 0) = 1;
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+			for (eslocal i = 0; i < Ksize; i++) {
+				fe[i] += gpThickness(0, 0) * J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
 			}
+			break;
+
+		case LinearElasticity2D::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+			XY.multiply(N[gp], coordinates);
+			for (eslocal i = 0; i < Ksize; i++) {
+				fe[i] += gpThickness(0, 0) * J * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
+			}
+			break;
 		}
 	}
 }
