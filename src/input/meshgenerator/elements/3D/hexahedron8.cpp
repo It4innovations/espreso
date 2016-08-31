@@ -66,8 +66,50 @@ void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[]
 	}
 
 	faces.push_back(new espreso::Square4(square));
+}
 
-
+void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+{
+	switch (face) {
+	case CubeFaces::X_1:
+		selection.push_back(nodes[indices[1]]);
+		selection.push_back(nodes[indices[3]]);
+		selection.push_back(nodes[indices[7]]);
+		selection.push_back(nodes[indices[5]]);
+		break;
+	case CubeFaces::Y_1:
+		selection.push_back(nodes[indices[3]]);
+		selection.push_back(nodes[indices[2]]);
+		selection.push_back(nodes[indices[6]]);
+		selection.push_back(nodes[indices[7]]);
+		break;
+	case CubeFaces::X_0:
+		selection.push_back(nodes[indices[2]]);
+		selection.push_back(nodes[indices[0]]);
+		selection.push_back(nodes[indices[4]]);
+		selection.push_back(nodes[indices[6]]);
+		break;
+	case CubeFaces::Y_0:
+		selection.push_back(nodes[indices[0]]);
+		selection.push_back(nodes[indices[1]]);
+		selection.push_back(nodes[indices[5]]);
+		selection.push_back(nodes[indices[4]]);
+		break;
+	case CubeFaces::Z_0:
+		selection.push_back(nodes[indices[0]]);
+		selection.push_back(nodes[indices[2]]);
+		selection.push_back(nodes[indices[3]]);
+		selection.push_back(nodes[indices[1]]);
+		break;
+	case CubeFaces::Z_1:
+		selection.push_back(nodes[indices[5]]);
+		selection.push_back(nodes[indices[7]]);
+		selection.push_back(nodes[indices[6]]);
+		selection.push_back(nodes[indices[4]]);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Incorrect face";
+	}
 }
 
 

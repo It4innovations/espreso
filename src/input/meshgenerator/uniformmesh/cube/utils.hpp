@@ -144,6 +144,52 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 template <class TElement>
 CubeFaces CubeUtils<TElement>::cubeFace(const CubeSettings &settings, size_t cluster[], size_t start[], size_t end[])
 {
+	size_t fixed_x = (start[0] + 1 == end[0]) ? 1 : 0;
+	size_t fixed_y = (start[1] + 1 == end[1]) ? 1 : 0;
+	size_t fixed_z = (start[2] + 1 == end[2]) ? 1 : 0;
+
+	if (fixed_x + fixed_y + fixed_z != 1) {
+		return CubeFaces::NONE;
+	}
+
+	if (fixed_x) {
+		if (start[0] == 0) {
+			if (cluster[0] == 0) {
+				return CubeFaces::X_0;
+			}
+		} else {
+			if (cluster[0] == settings.clusters[0] - 1) {
+				return CubeFaces::X_1;
+			}
+		}
+	}
+
+	if (fixed_y) {
+		if (start[1] == 0) {
+			if (cluster[1] == 0) {
+				return CubeFaces::Y_0;
+			}
+		} else {
+			if (cluster[1] == settings.clusters[1] - 1) {
+				return CubeFaces::Y_1;
+			}
+		}
+	}
+
+	if (fixed_z) {
+		if (start[2] == 0) {
+			if (cluster[2] == 0) {
+				return CubeFaces::Z_0;
+			}
+		} else {
+			if (cluster[2] == settings.clusters[2] - 1) {
+				return CubeFaces::Z_1;
+			}
+		}
+	}
+
+
+
 	return CubeFaces::NONE;
 }
 

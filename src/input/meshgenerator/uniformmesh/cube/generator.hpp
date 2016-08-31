@@ -132,6 +132,7 @@ static void goThroughElements(
 
 	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, start, end);
 	CubeFaces face = CubeUtils<TElement>::cubeFace(settings, cluster, start, end);
+
 	if (edge == CubeEdges::NONE && face == CubeFaces::NONE) {
 		return;
 	}

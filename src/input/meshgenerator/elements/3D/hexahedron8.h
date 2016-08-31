@@ -18,7 +18,7 @@ public:
 	static void addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face);
 	static void addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdges edge) { ESINFO(GLOBAL_ERROR) << "generator Edge"; };
 	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdges edge) { ESINFO(GLOBAL_ERROR) << "generator Nodes"; };
-	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face) { ESINFO(GLOBAL_ERROR) << "generator Nodes"; };
+	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face);
 
 };
 
