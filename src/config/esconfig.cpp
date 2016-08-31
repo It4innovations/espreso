@@ -141,8 +141,9 @@ std::vector<Description> assembler::description = {
 	{ "EPSILON", solver::EPSILON, "Solver requested precision.", WRITE_TO_HELP },
 	{ "ITERATIONS", solver::ITERATIONS, "Solver maximum iterations.", WRITE_TO_HELP },
 	{ "FETI_METHOD", solver::FETI_METHOD, "The FETI method used by ESPRESO.", {
-			"Total FETI",
-			"Hybrid Total FETI" }, WRITE_TO_HELP },
+			{ "TOTAL_FETI", solver::FETI_METHODalternative::TOTAL_FETI, "Total FETI." },
+			{ "HYBRID_FETI", solver::FETI_METHODalternative::HYBRID_FETI, "Hybrid Total FETI." },
+			{ "HYPRE", solver::FETI_METHODalternative::HYPRE, "Hypre interface." } }, WRITE_TO_HELP },
 
 	{ "PRECONDITIONER", solver::PRECONDITIONER, "Preconditioner.", {
 			{ "NONE", solver::PRECONDITIONERalternative::NONE, "Use no preconditioner" },

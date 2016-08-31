@@ -127,6 +127,11 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
+void Temperature::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
 void Temperature::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);

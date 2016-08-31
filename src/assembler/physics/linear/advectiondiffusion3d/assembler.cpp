@@ -130,6 +130,11 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
+void AdvectionDiffusion3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
 void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);

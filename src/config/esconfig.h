@@ -177,7 +177,9 @@ namespace solver {
 		/// Total FETI
 		TOTAL_FETI = 0,
 		/// Hybrid Total FETI
-		HYBRID_FETI = 1
+		HYBRID_FETI = 1,
+		/// Multi-grid Hypre interface
+		HYPRE = 2
 	};
 	/// A variant of FETI method used by the solver
 	extern FETI_METHODalternative FETI_METHOD;

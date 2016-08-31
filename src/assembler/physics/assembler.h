@@ -13,6 +13,7 @@ struct Physics {
 	virtual bool singular() const =0;
 
 	virtual void prepareMeshStructures() =0;
+	virtual void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe) =0;
 	virtual void assembleStiffnessMatrices() =0;
 	virtual void assembleGluingMatrices() =0;
 

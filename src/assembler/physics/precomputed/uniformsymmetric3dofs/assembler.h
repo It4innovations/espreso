@@ -16,6 +16,7 @@ struct UniformSymmetric3DOFs: public PrecomputedPhysics
 			rhs, rhs_size) {};
 
 	void prepareMeshStructures();
+	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe);
 	void assembleGluingMatrices() {};
 
 	static std::vector<Property> elementDOFs;

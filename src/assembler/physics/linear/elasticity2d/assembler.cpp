@@ -415,6 +415,11 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
+void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
 void LinearElasticity2D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
@@ -459,8 +464,6 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 
 		}
 	}
-
-	std::cout << f[subdomain];
 
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;

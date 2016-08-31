@@ -11,7 +11,7 @@ template <class TConstrains, class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(Mesh &mesh): Instance(mesh), feiPtr(MPI_COMM_WORLD), _physics(mesh, feiPtr)
+	HypreInstance(Mesh &mesh): Instance(mesh), feiPtr(MPI_COMM_WORLD), _constrains(mesh), _physics(mesh, _constrains)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}
@@ -24,13 +24,14 @@ public:
 
 protected:
 	LLNL_FEI_Impl feiPtr;
+	TConstrains _constrains;
 	TPhysics _physics;
 
 };
 
 }
 
-#include "instance.hpp"
+#include "../hypre/instance.hpp"
 
 
 

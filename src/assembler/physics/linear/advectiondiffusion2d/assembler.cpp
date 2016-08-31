@@ -227,6 +227,11 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
 }
 
+void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
 void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;

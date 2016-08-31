@@ -26,6 +26,11 @@ void UniformSymmetric3DOFs::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
+void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
 void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;

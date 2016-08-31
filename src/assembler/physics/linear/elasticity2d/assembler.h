@@ -22,6 +22,7 @@ struct LinearElasticity2D: public LinearPhysics
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void prepareMeshStructures();
+	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe);
 	void assembleGluingMatrices();
 
 	static ELEMENT_BEHAVIOUR elementBehaviour;

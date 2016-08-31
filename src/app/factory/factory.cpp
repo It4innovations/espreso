@@ -160,7 +160,21 @@ static AssemblerBase* createAssembler(TDiscretization discretization)
 	}
 }
 
-static AssemblerBase* getAssembler(Mesh *mesh, Mesh* &surface)
+template<class TConstraints, class TPhysics, class TInstance>
+static void createInstance(Instance* &instance, Mesh &mesh)
+{
+	switch (config::solver::FETI_METHOD) {
+	case config::solver::FETI_METHODalternative::TOTAL_FETI:
+	case config::solver::FETI_METHODalternative::HYBRID_FETI:
+		instance = new TInstance(mesh);
+		break;
+	case config::solver::FETI_METHODalternative::HYPRE:
+		instance = new HypreInstance<TConstraints, TPhysics>(mesh);
+		break;
+	}
+}
+
+Factory::Factory(const Configuration &configuration)
 {
 	physics = PhysicsAssembler::LINEAR_ELASTICITY_3D;
 
@@ -210,19 +224,19 @@ Factory::Factory(const Options &options)
 
 	switch (physics) {
 	case PhysicsAssembler::LINEAR_ELASTICITY_2D:
-		instance = new LinearInstance<EqualityGluing, LinearElasticity2D>(mesh);
+		createInstance<EqualityGluing, LinearElasticity2D, LinearInstance<EqualityGluing, LinearElasticity2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::LINEAR_ELASTICITY_3D:
-		instance = new LinearInstance<EqualityGluing, LinearElasticity3D>(mesh);
+		createInstance<EqualityGluing, LinearElasticity3D, LinearInstance<EqualityGluing, LinearElasticity3D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::TRANSIENT_ELASTICITY_3D:
-		instance = new DynamicsInstance<EqualityGluing, TransientElasticity>(mesh);
+		createInstance<EqualityGluing, TransientElasticity, LinearInstance<EqualityGluing, TransientElasticity> >(instance, mesh);
 		break;
 	case PhysicsAssembler::ADVECTION_DIFFUSION_2D:
-		instance = new LinearInstance<EqualityGluing, AdvectionDiffusion2D>(mesh);
+		createInstance<EqualityGluing, AdvectionDiffusion2D, LinearInstance<EqualityGluing, AdvectionDiffusion2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::STOKES:
-		instance = new LinearInstance<EqualityGluing, Stokes>(mesh);
+		createInstance<EqualityGluing, Stokes, LinearInstance<EqualityGluing, Stokes> >(instance, mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown Physics";

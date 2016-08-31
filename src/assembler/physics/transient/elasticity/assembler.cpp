@@ -152,6 +152,11 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	}
 }
 
+void TransientElasticity::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
 void TransientElasticity::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = pointDOFs.size() * _mesh.coordinates().localSize(subdomain);
