@@ -9,7 +9,9 @@ using namespace espreso;
 std::ostream& espreso::operator<<(std::ostream& os, const espreso::Interval& interval)
 {
 	for (size_t i = 0; i < 3; i++) {
-		os << "(" << interval.start[i] << "," << interval.end[i] << ")";
+		os << (interval.excludeStart[i] ? "(" : "<");
+		os << interval.start[i] << "," << interval.end[i];
+		os << (interval.excludeEnd[i] ? ")" : ">");
 	}
     return os;
 }
@@ -61,15 +63,11 @@ std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
 
 		std::stringstream ss1(bounds[0]);
 		ss1 >> interval.start[i];
-		if (!excludeStart) {
-			interval.start[i] -= interval.epsilon;
-		}
+		interval.excludeStart[i] = excludeStart;
 
 		std::stringstream ss2(bounds[1]);
 		ss2 >> interval.end[i];
-		if (!excludeEnd) {
-			interval.end[i] += interval.epsilon;
-		}
+		interval.excludeEnd[i] = excludeEnd;
 	}
 
 	return is;

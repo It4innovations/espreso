@@ -24,6 +24,12 @@ public:
 	CubeGenerator(Mesh &mesh, const CubeSettings &settings);
 protected:
 	virtual void elementsMaterials(std::vector<Element*> &elements);
+
+	virtual void pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval);
+	virtual void pickNodesInInterval(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const Interval &interval);
+	virtual void generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval);
+	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval);
+
 	virtual void points(Coordinates &coordinates);
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 

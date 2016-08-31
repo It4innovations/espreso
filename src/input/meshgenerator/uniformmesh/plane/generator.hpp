@@ -113,71 +113,7 @@ void PlaneGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 	}
 }
 
-template<class TElement>
-void PlaneGenerator<TElement>::pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval)
-{
-	ESINFO(GLOBAL_ERROR) << "Implement pick elements in interval";
-}
 
-template<class TElement>
-static void goThroughElements(const PlaneSettings &settings, const Interval &interval, size_t cluster[], std::function<void(std::vector<eslocal> &indices, CubeEdges edge)> fnc)
-{
-	eslocal cNodes[3];
-	UniformUtils<TElement>::clusterNodesCount(settings, cNodes);
-	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]));
-
-	size_t start[3], end[3];
-	CubeUtils<TElement>::computeInterval(settings, interval, start, end);
-	start[2] = end[2] = 0;
-
-	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, start, end);
-	if (edge == CubeEdges::NONE) {
-		return;
-	}
-
-	for (size_t i = 0; i < 3; i++) {
-		if (start[i] == end[i]) {
-			end[i] = start[i] + 1;
-		}
-	}
-
-	for (size_t ex = start[0]; ex < end[0]; ex++) {
-		for (size_t ey = start[1]; ey < end[1]; ey++) {
-
-			for (eslocal y = 0, i = 0; y <= 1 + TElement::subnodes[1]; y++) {
-				for (eslocal x = 0; x <= 1 + TElement::subnodes[0]; x++, i++) {
-					indices[i] = (ey * (1 + TElement::subnodes[1]) + y) * cNodes[0] + ex * (1 + TElement::subnodes[0]) + x;
-				}
-			}
-			fnc(indices, edge);
-		}
-	}
-}
-
-template<class TElement>
-void PlaneGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const Interval &interval)
-{
-	goThroughElements<TElement>(_settings, interval, _cluster, [ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
-		this->_e.pickNodes(nodes, selection, indices.data(), edge);
-	});
-
-	std::sort(selection.begin(), selection.end());
-	Esutils::removeDuplicity(selection);
-}
-
-template<class TElement>
-void PlaneGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
-{
-	ESINFO(GLOBAL_ERROR) << "Plane mesh has no faces";
-}
-
-template<class TElement>
-void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
-{
-	goThroughElements<TElement>(_settings, interval, _cluster, [ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
-		this->_e.addEdges(edges, &indices[0], edge);
-	});
-}
 
 template<class TElement>
 void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
@@ -213,6 +149,50 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 
 		}
 	}
+}
+
+
+template<class TElement>
+void PlaneGenerator<TElement>::pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pick elements in interval";
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const Interval &interval)
+{
+	goThroughElements<TElement>(
+			_settings, interval, _cluster,
+			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+				this->_e.pickNodes(nodes, selection, indices.data(), edge);
+			},
+			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+				ESINFO(GLOBAL_ERROR) << "Interval is not on the border";
+			}
+	);
+
+	std::sort(selection.begin(), selection.end());
+	Esutils::removeDuplicity(selection);
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Plane mesh has no faces";
+}
+
+template<class TElement>
+void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
+{
+	goThroughElements<TElement>(
+			_settings, interval, _cluster,
+			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+				this->_e.addEdges(edges, &indices[0], edge);
+			},
+			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+				ESINFO(GLOBAL_ERROR) << "Interval is not on the border";
+			}
+	);
 }
 
 template<class TElement>

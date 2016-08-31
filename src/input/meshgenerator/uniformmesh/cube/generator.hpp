@@ -115,6 +115,128 @@ void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
 }
 
 
+template<class TElement>
+static void goThroughElements(
+		const CubeSettings &settings,
+		const Interval &interval,
+		size_t cluster[],
+		std::function<void(std::vector<eslocal> &indices, CubeEdges edge)> addEdge,
+		std::function<void(std::vector<eslocal> &indices, CubeFaces face)> addFace)
+{
+	eslocal cNodes[3];
+	UniformUtils<TElement>::clusterNodesCount(settings, cNodes);
+	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
+
+	size_t start[3], end[3];
+	CubeUtils<TElement>::computeInterval(settings, interval, start, end);
+
+	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, start, end);
+	CubeFaces face = CubeUtils<TElement>::cubeFace(settings, cluster, start, end);
+	if (edge == CubeEdges::NONE && face == CubeFaces::NONE) {
+		return;
+	}
+
+
+	size_t minOffset[3], maxOffset[3];
+	for (size_t i = 0; i < 3; i++) {
+		double min = (cNodes[i] - 1) * interval.start[i] / settings.problemLength[i];
+		double max = (cNodes[i] - 1) * interval.end[i] / settings.problemLength[i];
+		if (min == std::round(min)) {
+			minOffset[i] = std::round(min) + (interval.excludeStart[i] ? 1 : 0);
+		} else {
+			minOffset[i] = std::ceil(min);
+		}
+		if (max == std::round(max)) {
+			maxOffset[i] = std::round(max) - (interval.excludeEnd[i] ? 1 : 0);
+		} else {
+			maxOffset[i] = std::floor(max);
+		}
+	}
+
+	for (size_t ex = start[0]; ex < end[0]; ex++) {
+		for (size_t ey = start[1]; ey < end[1]; ey++) {
+			for (size_t ez = start[2]; ez < end[2]; ez++) {
+
+				for (eslocal z = 0, i = 0; z <= 1 + TElement::subnodes[2]; z++) {
+					for (eslocal y = 0; y <= 1 + TElement::subnodes[1]; y++) {
+						for (eslocal x = 0; x <= 1 + TElement::subnodes[0]; x++, i++) {
+
+
+							size_t offsetX = ex * (1 + TElement::subnodes[0]) + x;
+							size_t offsetY = ey * (1 + TElement::subnodes[1]) + y;
+							size_t offsetZ = ez * (1 + TElement::subnodes[2]) + z;
+
+							offsetX = offsetX < minOffset[0] ? minOffset[0] : maxOffset[0] < offsetX ? maxOffset[0] : offsetX;
+							offsetY = offsetY < minOffset[1] ? minOffset[1] : maxOffset[1] < offsetY ? maxOffset[1] : offsetY;
+							offsetZ = offsetZ < minOffset[2] ? minOffset[2] : maxOffset[2] < offsetZ ? maxOffset[2] : offsetZ;
+
+							indices[i] = offsetZ * cNodes[1] * cNodes[0] + offsetY * cNodes[0] + offsetX;
+						}
+					}
+				}
+				if (edge != CubeEdges::NONE) {
+					addEdge(indices, edge);
+				}
+				if (face != CubeFaces::NONE) {
+					addFace(indices, face);
+				}
+			}
+		}
+	}
+}
+
+template<class TElement>
+void CubeGenerator<TElement>::pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pick elements in interval";
+}
+
+template<class TElement>
+void CubeGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const Interval &interval)
+{
+	goThroughElements<TElement>(
+			_settings, interval, _cluster,
+			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+				this->_e.pickNodes(nodes, selection, indices.data(), edge);
+			},
+			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+				this->_e.pickNodes(nodes, selection, indices.data(), face);
+			}
+	);
+
+	std::sort(selection.begin(), selection.end());
+	Esutils::removeDuplicity(selection);
+}
+
+template<class TElement>
+void CubeGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
+{
+	goThroughElements<TElement>(
+			_settings, interval, _cluster,
+			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+				ESINFO(GLOBAL_ERROR) << "Invalid interval";
+			},
+			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+				this->_e.addFaces(faces, &indices[0], face);
+			}
+	);
+}
+
+template<class TElement>
+void CubeGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
+{
+	goThroughElements<TElement>(
+			_settings, interval, _cluster,
+			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+				this->_e.addEdges(edges, &indices[0], edge);
+			},
+			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+				ESINFO(GLOBAL_ERROR) << "Implement add edges on face";
+			}
+	);
+}
+
+
 template <class TElement>
 void CubeGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {

@@ -67,25 +67,25 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 template<class TElement>
 void UniformGenerator<TElement>::pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+	ESINFO(GLOBAL_ERROR) << "Implement pick elements in interval";
 }
 
 template<class TElement>
 void UniformGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+	ESINFO(GLOBAL_ERROR) << "Uniform Implement pick nodes in interval";
 }
 
 template<class TElement>
 void UniformGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+	ESINFO(GLOBAL_ERROR) << "Implement generate faces in interval";
 }
 
 template<class TElement>
 void UniformGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement generation of interval";
+	ESINFO(GLOBAL_ERROR) << "Implement generate edges in interval";
 }
 
 template<class TElement>

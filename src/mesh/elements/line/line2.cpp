@@ -40,12 +40,9 @@ static std::vector<DenseMatrix> get_N() {
 	std::vector<double> s = { 1 / sqrt(3), -1 / sqrt(3) };
 
 	for (unsigned int i = 0; i < Line2GPCount; i++) {
-		std::cout << s[i] << "\n";
 		N[i](0, 0) = (1 - s[i]) / 2.0;
 		N[i](0, 1) = (1 + s[i]) / 2.0;
-		std::cout << N[i](0, 0) << ":" << N[i](0, 1) << "\n";
 	}
-
 
 	return N;
 }
