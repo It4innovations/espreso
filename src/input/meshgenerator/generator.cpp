@@ -95,9 +95,8 @@ void Generator::loadProperties(
 
 	const std::map<std::string, std::string> &values = _settings.properties.find(name)->second;
 
-	std::vector<Element*> selection;
-
 	for (auto it = values.begin(); it != values.end(); ++it) {
+		std::vector<Element*> selection;
 		if (checkInterval(_settings.nodes, it->first)) {
 			if (_settings.nodes.find(it->first)->second.all()) {
 				setProperty(mesh, evaluators, nodes, it->second, parameters, properties);
