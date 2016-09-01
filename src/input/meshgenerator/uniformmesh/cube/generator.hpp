@@ -130,13 +130,12 @@ static void goThroughElements(
 	size_t start[3], end[3];
 	CubeUtils<TElement>::computeInterval(settings, interval, start, end);
 
-	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, start, end);
-	CubeFaces face = CubeUtils<TElement>::cubeFace(settings, cluster, start, end);
+	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, interval);
+	CubeFaces face = CubeUtils<TElement>::cubeFace(settings, cluster, interval);
 
 	if (edge == CubeEdges::NONE && face == CubeFaces::NONE) {
 		return;
 	}
-
 
 	size_t minOffset[3], maxOffset[3];
 	for (size_t i = 0; i < 3; i++) {
@@ -151,6 +150,9 @@ static void goThroughElements(
 			maxOffset[i] = std::round(max) - (interval.excludeEnd[i] ? 1 : 0);
 		} else {
 			maxOffset[i] = std::floor(max);
+		}
+		if (minOffset[i] > maxOffset[i]) {
+			return;
 		}
 	}
 

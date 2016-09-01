@@ -39,21 +39,21 @@ void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, const In
 }
 
 template <class TElement>
-CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t cluster[], size_t start[], size_t end[])
+CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t cluster[], const Interval &interval)
 {
-	size_t fixed_x = (start[0] + 1 == end[0]) ? 1 : 0;
-	size_t fixed_y = (start[1] + 1 == end[1]) ? 1 : 0;
-	size_t fixed_z = (start[2] + 1 == end[2]) ? 1 : 0;
+	size_t fixed_x = (interval.start[0] == interval.end[0]) ? 1 : 0;
+	size_t fixed_y = (interval.start[1] == interval.end[1]) ? 1 : 0;
+	size_t fixed_z = (interval.start[2] == interval.end[2]) ? 1 : 0;
 
 	if (fixed_x + fixed_y + fixed_z < 2) {
 		return CubeEdges::NONE;
 	}
 
 	if (fixed_z) {
-		if (start[2]) {
+		if (interval.start[2]) {
 			// Z == 1
 			if (fixed_y) {
-				if (start[1]) {
+				if (interval.start[1]) {
 					// Z == 1 && Y == 1
 					if (cluster[1] == settings.clusters[0] - 1 && cluster[2] == settings.clusters[2] - 1) {
 						return CubeEdges::Y_1_Z_1;
@@ -66,7 +66,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 				}
 			}
 			if (fixed_x) {
-				if (start[0]) {
+				if (interval.start[0]) {
 					// Z == 1 && X == 1
 					if (cluster[0] == settings.clusters[1] - 1 && cluster[2] == settings.clusters[2] - 1) {
 						return CubeEdges::X_1_Z_1;
@@ -81,7 +81,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 		} else {
 			// Z == 0
 			if (fixed_y) {
-				if (start[1]) {
+				if (interval.start[1]) {
 					// Z == 0 && Y == 1
 					if (cluster[1] == settings.clusters[0] - 1 && cluster[2] == 0) {
 						return CubeEdges::Y_1_Z_0;
@@ -94,7 +94,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 				}
 			}
 			if (fixed_x) {
-				if (start[0]) {
+				if (interval.start[0]) {
 					// Z == 0 && X == 1
 					if (cluster[0] == settings.clusters[1] - 1 && cluster[2] == 0) {
 						return CubeEdges::X_1_Z_0;
@@ -109,9 +109,9 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 
 		}
 	} else {
-		if (start[0]) {
+		if (interval.start[0]) {
 			// X == 1
-			if (start[1]) {
+			if (interval.start[1]) {
 				// X == 1 && Y == 1
 				if (cluster[0] == settings.clusters[0] - 1 && cluster[1] == settings.clusters[1] - 1) {
 					return CubeEdges::X_1_Y_1;
@@ -124,7 +124,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 			}
 		} else {
 			// X == 0
-			if (start[1]) {
+			if (interval.start[1]) {
 				// X == 0 && Y == 1
 				if (cluster[0] == 0 && cluster[1] == settings.clusters[1] - 1) {
 					return CubeEdges::X_0_Y_1;
@@ -142,18 +142,18 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 }
 
 template <class TElement>
-CubeFaces CubeUtils<TElement>::cubeFace(const CubeSettings &settings, size_t cluster[], size_t start[], size_t end[])
+CubeFaces CubeUtils<TElement>::cubeFace(const CubeSettings &settings, size_t cluster[], const Interval &interval)
 {
-	size_t fixed_x = (start[0] + 1 == end[0]) ? 1 : 0;
-	size_t fixed_y = (start[1] + 1 == end[1]) ? 1 : 0;
-	size_t fixed_z = (start[2] + 1 == end[2]) ? 1 : 0;
+	size_t fixed_x = (interval.start[0] == interval.end[0]) ? 1 : 0;
+	size_t fixed_y = (interval.start[1] == interval.end[1]) ? 1 : 0;
+	size_t fixed_z = (interval.start[2] == interval.end[2]) ? 1 : 0;
 
 	if (fixed_x + fixed_y + fixed_z != 1) {
 		return CubeFaces::NONE;
 	}
 
 	if (fixed_x) {
-		if (start[0] == 0) {
+		if (interval.start[0] == 0) {
 			if (cluster[0] == 0) {
 				return CubeFaces::X_0;
 			}
@@ -165,7 +165,7 @@ CubeFaces CubeUtils<TElement>::cubeFace(const CubeSettings &settings, size_t clu
 	}
 
 	if (fixed_y) {
-		if (start[1] == 0) {
+		if (interval.start[1] == 0) {
 			if (cluster[1] == 0) {
 				return CubeFaces::Y_0;
 			}
@@ -177,7 +177,7 @@ CubeFaces CubeUtils<TElement>::cubeFace(const CubeSettings &settings, size_t clu
 	}
 
 	if (fixed_z) {
-		if (start[2] == 0) {
+		if (interval.start[2] == 0) {
 			if (cluster[2] == 0) {
 				return CubeFaces::Z_0;
 			}
