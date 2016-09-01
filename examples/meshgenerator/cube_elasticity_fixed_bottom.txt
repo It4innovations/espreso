@@ -39,5 +39,5 @@ NODES = {
 }
 
 DIRICHLET = {
-  BOTTOM = 0
+  BOTTOM = x: 0, y: 0, z: 0
 }

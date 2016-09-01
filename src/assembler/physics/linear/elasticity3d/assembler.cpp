@@ -226,7 +226,7 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND)
 	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
 }
 
-static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
+static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element)
 {
 	DenseMatrix Ce(6, 6), coordinates, J, invJ, dND, B;
 	std::vector<double> inertia(3, 0);
@@ -419,7 +419,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+	processElement(Ke, fe, _mesh, e);
 }
 
 void LinearElasticity3D::composeSubdomain(size_t subdomain)
@@ -437,7 +437,7 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		processElement(Ke, fe, _mesh, subdomain, elements[e]);
+		processElement(Ke, fe, _mesh, elements[e]);
 
 		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
 			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {

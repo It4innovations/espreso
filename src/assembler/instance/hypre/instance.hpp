@@ -6,6 +6,7 @@ namespace espreso {
 template <class TConstrains, class TPhysics>
 void HypreInstance<TConstrains, TPhysics>::init()
 {
+	_physics.prepareMeshStructures();
 
 	std::cout << "FILL MESS\n";
 	const std::vector<Element*> &elements = _mesh.elements();
@@ -27,18 +28,46 @@ void HypreInstance<TConstrains, TPhysics>::init()
 
 	const std::vector<Element*> &nodes = _mesh.nodes();
 
+	std::vector<Property> DOFs = _physics.pointDOFs;
+
+	std::cout << DOFs;
+
 	for (size_t i = 0; i < nodes.size(); i++) {
-		if (nodes[i]->settings().isSet(Property::TEMPERATURE)) {
-			const Point &p = _mesh.coordinates()[i];
-			std::cout << "node " << i << " has fixed temperature " << nodes[i]->settings(Property::TEMPERATURE).back()->evaluate(0) << "\n";
+		for (size_t dof = 0; dof < DOFs.size(); dof++) {
+			if (nodes[i]->settings().isSet(DOFs[dof])) {
+				const Point &p = _mesh.coordinates()[i];
+				std::cout << "node " << i << " has fixed " << DOFs[dof] << " to " << nodes[i]->settings(DOFs[dof]).back()->evaluate(i) << "\n";
+			}
 		}
 	}
 
 	 DenseMatrix Ke;
 	 std::vector<double> fe;
 
-	 for (size_t i = 0; i < elements.size(); i++) {
-		 _physics.assembleStiffnessMatrix(elements[i], Ke, fe);
+	 const std::vector<eslocal> &partition = _mesh.getPartition();
+
+	 for (size_t subdomain = 0; subdomain < _mesh.parts(); subdomain++) {
+		 for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
+
+			 // compute element matrix
+			 _physics.assembleStiffnessMatrix(elements[e], Ke, fe);
+
+			 std::cout << "Element matrix: \n";
+			 for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
+				for (size_t dx = 0; dx < DOFs.size(); dx++) {
+					size_t row = nodes[elements[e]->node(nx)]->DOFIndex(subdomain, dx);
+					std::cout << "row:";
+					for (size_t ny = 0; ny < elements[e]->nodes(); ny++) {
+						for (size_t dy = 0; dy < DOFs.size(); dy++) {
+							size_t column = nodes[elements[e]->node(ny)]->DOFIndex(subdomain, dy);
+							std::cout << " " << std::setprecision(1) << Ke(dx * elements[e]->nodes() + nx, dy * elements[e]->nodes() + ny);
+						}
+					}
+					std::cout << " rhs: "<< fe[dx * elements[e]->nodes() + nx] << "\n";
+				}
+			}
+
+		 }
 	 }
 }
 
