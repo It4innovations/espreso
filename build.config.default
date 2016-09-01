@@ -20,6 +20,9 @@ BUILD_TOOLS = 1         # ESPRESO try to compile external tools.
                         # If the compilation is not successful set this attribute to 0 and build tools and
                         # set library names
 
+HYPRE::INCLUDE =    # Path to Hypre headers
+HYPRE::LIBPATH =    # PATH to Hypre library
+
 # Next lines are ignored if BUILD_TOOLS == 0
 METISLIB = metis		# Name of METIS library
 

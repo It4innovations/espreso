@@ -5,9 +5,9 @@ import commands
 import sys
 import os
 
-
 sys.path.append(os.path.abspath("src/python"))
 from wafutils import *
+from waflib import Logs
 
 # Each attribute has this structure: ( "attribute", "description", "data type", "choices")
 
@@ -95,6 +95,9 @@ def configure(ctx):
     ctx.recurse("src/app")
 
     check_environment(ctx)
+
+    if not ctx.env.HYPRE:
+        Logs.warn("HYPRE library was not founded. ESPRESO does not support HYPRE solver!")
 
 def build(ctx):
 

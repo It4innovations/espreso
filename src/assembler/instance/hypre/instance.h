@@ -3,6 +3,9 @@
 #define SRC_ASSEMBLER_INSTANCE_HYPRE_INSTANCE_H_
 
 #include "../instance.h"
+
+#ifdef HAVE_HYPRE
+
 #include "LLNL_FEI_Impl.h"
 
 namespace espreso {
@@ -33,6 +36,29 @@ protected:
 
 #include "../hypre/instance.hpp"
 
+#else
 
+namespace espreso {
+
+template <class TConstrains, class TPhysics>
+struct HypreInstance: public Instance
+{
+public:
+	HypreInstance(Mesh &mesh): Instance(mesh)
+	{
+		ESINFO(GLOBAL_ERROR) << "HYPRE is not linked! Specify HYPRE::INCLUDE and HYPRE::LIBPATH";
+	}
+
+	virtual void init() {};
+	virtual void solve(std::vector<std::vector<double> > &solution) {};
+	virtual void finalize() {};
+
+	virtual ~HypreInstance() {};
+
+};
+
+}
+
+#endif // HAVE_HYPRE
 
 #endif /* SRC_ASSEMBLER_INSTANCE_HYPRE_INSTANCE_H_ */
