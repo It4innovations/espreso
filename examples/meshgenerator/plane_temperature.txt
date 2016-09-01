@@ -52,4 +52,5 @@ HEAT_SOURCES = {
 
 TRANSLATION_MOTIONS = {
   ALL_EL = x: -y, y: x
+#  ALL_EL = x: 0, y: 0
 }

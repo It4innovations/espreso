@@ -3084,7 +3084,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-#define VERBOSE_LEVEL 0
+#define VERBOSE_LEVEL 3
 #ifndef VERBOSE_LEVEL
 #define VERBOSE_LEVEL 0
 #endif

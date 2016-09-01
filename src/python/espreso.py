@@ -14,7 +14,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 2
+n_subPerClust   = 4
 
 
 CONSTANT_89 = 24 
@@ -22,8 +22,8 @@ CONSTANT_89 = 24
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
-path = '../log/'
-
+path = '../../log/'
+#path = '/home/lriha/espreso/log/'
 
 
 
@@ -286,11 +286,14 @@ plt.clf()
 #
 print('\nHFETI - corners')
 uHDPc,lamHc = mM.hfeti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
-                        vec_weight,vec_index_weight,mat_Rb1,mat_Rb2,mat_Salfa)
+                        vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Rb1,mat_Rb2,mat_Salfa)
+
+plt.hold('on')
 for i in range(len(u)):
     for j in range(len(u[i])):
-        plt.plot(u[i][j],'r.') 
-        plt.plot(uHDPc[i][j],'b.')               
+        iii = np.arange(0,u[i][j].shape[0])
+        plt.plot(iii,u[i][j],'r*') 
+        plt.plot(iii,uHDPc[i][j],'b.')               
 
 delta_feti_hfeti = 0
 norm_u = 0
