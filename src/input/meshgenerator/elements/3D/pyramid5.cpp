@@ -48,4 +48,94 @@ void Pyramid5::addElements(std::vector<Element*> &elements, const eslocal indice
 }
 
 
+void Pyramid5::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+{
+	eslocal square[4];
 
+	switch (face) {
+	case CubeFaces::X_1:
+		square[0] = indices[ 2];
+		square[1] = indices[ 8];
+		square[2] = indices[26];
+		square[3] = indices[20];
+		break;
+	case CubeFaces::Y_1:
+		square[0] = indices[ 8];
+		square[1] = indices[ 6];
+		square[2] = indices[24];
+		square[3] = indices[26];
+		break;
+	case CubeFaces::X_0:
+		square[0] = indices[ 6];
+		square[1] = indices[ 0];
+		square[2] = indices[18];
+		square[3] = indices[24];
+		break;
+	case CubeFaces::Y_0:
+		square[0] = indices[ 0];
+		square[1] = indices[ 2];
+		square[2] = indices[20];
+		square[3] = indices[18];
+		break;
+	case CubeFaces::Z_0:
+		square[0] = indices[ 0];
+		square[1] = indices[ 6];
+		square[2] = indices[ 8];
+		square[3] = indices[ 2];
+		break;
+	case CubeFaces::Z_1:
+		square[0] = indices[20];
+		square[1] = indices[26];
+		square[2] = indices[24];
+		square[3] = indices[18];
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Incorrect face";
+	}
+
+	faces.push_back(new espreso::Square4(square));
+}
+
+void Pyramid5::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+{
+	switch (face) {
+	case CubeFaces::X_1:
+		selection.push_back(nodes[indices[ 2]]);
+		selection.push_back(nodes[indices[ 8]]);
+		selection.push_back(nodes[indices[20]]);
+		selection.push_back(nodes[indices[26]]);
+		break;
+	case CubeFaces::Y_1:
+		selection.push_back(nodes[indices[ 6]]);
+		selection.push_back(nodes[indices[ 8]]);
+		selection.push_back(nodes[indices[24]]);
+		selection.push_back(nodes[indices[26]]);
+		break;
+	case CubeFaces::X_0:
+		selection.push_back(nodes[indices[ 0]]);
+		selection.push_back(nodes[indices[ 6]]);
+		selection.push_back(nodes[indices[18]]);
+		selection.push_back(nodes[indices[24]]);
+		break;
+	case CubeFaces::Y_0:
+		selection.push_back(nodes[indices[ 0]]);
+		selection.push_back(nodes[indices[ 2]]);
+		selection.push_back(nodes[indices[18]]);
+		selection.push_back(nodes[indices[20]]);
+		break;
+	case CubeFaces::Z_0:
+		selection.push_back(nodes[indices[ 0]]);
+		selection.push_back(nodes[indices[ 2]]);
+		selection.push_back(nodes[indices[ 6]]);
+		selection.push_back(nodes[indices[ 8]]);
+		break;
+	case CubeFaces::Z_1:
+		selection.push_back(nodes[indices[18]]);
+		selection.push_back(nodes[indices[20]]);
+		selection.push_back(nodes[indices[24]]);
+		selection.push_back(nodes[indices[26]]);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Incorrect face";
+	}
+}

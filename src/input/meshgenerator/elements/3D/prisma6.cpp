@@ -1,5 +1,6 @@
 
 #include "prisma6.h"
+#include "hexahedron8.h"
 
 using namespace espreso::input;
 
@@ -27,4 +28,45 @@ void Prisma6::addElements(std::vector<Element*> &elements, const eslocal indices
 }
 
 
+void Prisma6::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+{
+	eslocal triangle1[3], triangle2[3];
 
+	switch (face) {
+	case CubeFaces::X_1:
+	case CubeFaces::Y_1:
+	case CubeFaces::X_0:
+	case CubeFaces::Y_0:
+		Hexahedron8::addFaces(faces, indices, face);
+		break;
+	case CubeFaces::Z_0:
+		triangle1[0] = indices[0];
+		triangle1[1] = indices[2];
+		triangle1[2] = indices[3];
+		faces.push_back(new espreso::Triangle3(triangle1));
+
+		triangle2[0] = indices[0];
+		triangle2[1] = indices[3];
+		triangle2[2] = indices[1];
+		faces.push_back(new espreso::Triangle3(triangle2));
+		break;
+	case CubeFaces::Z_1:
+		triangle1[0] = indices[4];
+		triangle1[1] = indices[5];
+		triangle1[2] = indices[7];
+		faces.push_back(new espreso::Triangle3(triangle1));
+
+		triangle2[0] = indices[4];
+		triangle2[1] = indices[7];
+		triangle2[2] = indices[6];
+		faces.push_back(new espreso::Triangle3(triangle2));
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Incorrect face";
+	}
+}
+
+void Prisma6::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+{
+	Hexahedron8::pickNodes(nodes, selection, indices, face);
+}
