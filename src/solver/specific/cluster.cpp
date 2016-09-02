@@ -1146,13 +1146,18 @@ void ClusterBase::CreateF0() {
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 		} else {
-			// F0 uses same precision is K
+			// F0 uses same precision as K
+
+			eslocal set_bckp = domains[d].Kplus.iparm[11];
+			domains[d].Kplus.iparm[11] = 2;
 			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+			domains[d].Kplus.iparm[11] = set_bckp;
+			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus);
 		}
 
 		domains[d].B0t_comp.Clear();
 
-		domains[d].B0Kplus = domains[d].B0Kplus_comp;
+		//domains[d].B0Kplus = domains[d].B0Kplus_comp;
 		domains[d].B0Kplus_comp.MatTranspose();
 		domains[d].B0Kplus_comp.ConvertCSRToDense(1);
 
@@ -1353,7 +1358,36 @@ void ClusterBase::CreateSa() {
 
 			}
 		} else { // NON SYMMETRIC SYSTEMS
+
+
+			SparseMatrix LAMN_RHS;
+			LAMN_RHS.MatMat(G02, 'T', Kernel_Sa2);
+
+			SparseMatrix LAMN;
+
+			eslocal set_bckp_F0 = F0.iparm[11];
+			F0.iparm[11] = 2;
+			F0.SolveMat_Sparse( LAMN_RHS, LAMN );
+			F0.iparm[11] = set_bckp_F0;
+
+
 			for (int d = 0; d < domains.size(); d++) {
+
+
+				SparseMatrix LAMN_local;
+				LAMN_local.CreateMatFromRowsFromMatrix_NewSize(LAMN, domains[d].B0_comp_map_vec);
+				SparseMatrix B0t_LAMNlocal;
+				B0t_LAMNlocal.MatMat(domains[d].B0_comp, 'T', LAMN_local);
+
+				eslocal set_bckp = domains[d].Kplus.iparm[11];
+				domains[d].Kplus.iparm[11] = 2;
+				domains[d].Kplus.SolveMat_Sparse(B0t_LAMNlocal);
+				domains[d].Kplus.iparm[11] = set_bckp;
+
+				SparseMatrix Rb2;
+				Rb2 = domains[d].Kplus_R2;
+				Rb2.ConvertDenseToCSR(1);
+
 
 				SparseMatrix tR; SparseMatrix tR2;
 
@@ -1373,6 +1407,9 @@ void ClusterBase::CreateSa() {
 				SparseMatrix TmpR2;
 				domains[d].Kplus_R2.ConvertDenseToCSR(0);
 				TmpR2.MatMat( domains[d].Kplus_R2, 'N', tR2 );
+
+				TmpR2.MatAddInPlace(B0t_LAMNlocal,'N', 1.0);
+
 				domains[d].Kplus_Rb2 = TmpR2;
 				domains[d].Kplus_Rb2.ConvertCSRToDense(0);
 
