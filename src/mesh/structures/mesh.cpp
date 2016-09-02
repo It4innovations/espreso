@@ -93,7 +93,7 @@ void Mesh::saveFaces()
 
 	std::stringstream ss;
 	ss << "meshFaces" << config::env::MPIrank;
-	output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 }
 
 void Mesh::saveEdges()
@@ -117,7 +117,7 @@ void Mesh::saveEdges()
 
 	std::stringstream ss;
 	ss << "meshEdges" << config::env::MPIrank;
-	output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 }
 
 void Mesh::computeFixPoints(size_t number)
@@ -531,7 +531,7 @@ void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool f
 		if (config::output::SAVE_CORNERS) {
 			std::stringstream ss;
 			ss << "meshCorners" << config::env::MPIrank;
-			output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 		}
 		return;
 	}
@@ -547,7 +547,7 @@ void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool f
 	if (config::output::SAVE_CORNERS) {
 		std::stringstream ss;
 		ss << "meshCorners" << config::env::MPIrank;
-		output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -561,7 +561,7 @@ void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
 		if (config::output::SAVE_CORNERS) {
 			std::stringstream ss;
 			ss << "meshCorners" << config::env::MPIrank;
-			output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 		}
 		return;
 	}
@@ -572,7 +572,7 @@ void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
 	if (config::output::SAVE_CORNERS) {
 		std::stringstream ss;
 		ss << "meshCorners" << config::env::MPIrank;
-		output::VTK_Full::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -692,7 +692,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 
 		std::stringstream ss;
 		ss << "meshEdges" << config::env::MPIrank;
-		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -754,7 +754,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 
 		std::stringstream ss;
 		ss << "meshFaces" << config::env::MPIrank;
-		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -877,7 +877,7 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 
 		std::stringstream ss;
 		ss << "meshEdges" << config::env::MPIrank;
-		output::VTK_Full::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -1632,7 +1632,6 @@ void Mesh::mapCoordinatesToDomains()
 		Esutils::removeDuplicity(l2g);
 
 		_coordinates._clusterIndex[p] = l2g;
-		std::cout << "SIZE: " << _coordinates._clusterIndex[p].size() << "\n";
 	}
 }
 

@@ -45,8 +45,8 @@ static espreso::Point shrink(
 
 static void head(std::ofstream &os)
 {
-	os << "# vtk DataFile Version 3.0\n";
-	os << "Test\n";
+	os << "# vtk DataFile Version 4.0\n";
+	os << "ESPRESO output\n";
 	os << "ASCII\n";
 	os << "\n";
 }
@@ -74,13 +74,13 @@ static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinat
 	os << "\n";
 }
 
-static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, const std::vector<std::vector<eslocal> > &points, double shrinkSubdomain, double shringCluster)
+static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, const std::vector<espreso::Element*> &nodes, double shrinkSubdomain, double shringCluster)
 {
 	size_t parts = coordinates.parts();
 
 	size_t cSize = 0;
-	for (size_t p = 0; p < parts; p++) {
-		cSize += points[p].size();
+	for (size_t i = 0; i < nodes.size(); i++) {
+		cSize += nodes[i]->domains().size();
 	}
 
 	os << "DATASET UNSTRUCTURED_GRID\n";
@@ -89,60 +89,72 @@ static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinat
 	espreso::Point cCenter = clusterCenter(coordinates);
 	std::vector<espreso::Point> sCenters = subdomainsCenter(coordinates);
 
-	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = 0; i < points[p].size(); i++) {
-			os << shrink(coordinates.get(points[p][i], p), sCenters[p], shrinkSubdomain, cCenter, shringCluster) << "\n";
+	for (size_t i = 0; i < nodes.size(); i++) {
+		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
+			os << shrink(coordinates[nodes[i]->node(0)], sCenters[nodes[i]->domains()[d]], shrinkSubdomain, cCenter, shringCluster) << "\n";
 		}
 	}
 	os << "\n";
 }
 
-static void points(std::ofstream &os, const std::vector<std::vector<eslocal> > &points)
+static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes, size_t domains)
 {
+	std::vector<size_t> domainSize(domains, 0);
 	size_t size = 0;
-	for (size_t p = 0; p < points.size(); p++) {
-		size += points[p].size() + 1;
+	for (size_t i = 0; i < nodes.size(); i++) {
+		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
+			domainSize[nodes[i]->domains()[d]] += nodes[i]->domains().size();
+		}
+	}
+
+	for (size_t i = 0; i < domains; i++) {
+		size += domainSize[i];
 	}
 
 	size_t offset = 0;
-	os << "CELLS " << points.size() << " " << size << "\n";
-	for (size_t p = 0; p < points.size(); p++) {
-		os << points[p].size();
-		for (size_t j = 0; j < points[p].size(); j++) {
-			os << " " << offset + j;
+	std::vector<std::vector<eslocal> > points(domains);
+	os << "CELLS " << domains << " " << size << "\n";
+	for (size_t i = 0; i < nodes.size(); i++) {
+		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
+			points[nodes[i]->domains()[d]].push_back(offset++);
+		}
+	}
+
+	for (size_t d = 0; d < domains; d++) {
+		os << points[d].size();
+		for (size_t i = 0; i < points[d].size(); i++) {
+			os << " " << points[d][i];
 		}
 		os << "\n";
-
-		offset += points[p].size();
 	}
 
 	os << "\n";
 
-	os << "CELL_TYPES " << points.size() << "\n";
-	for (size_t p = 0; p < points.size(); p++) {
+	os << "CELL_TYPES " << domains << "\n";
+	for (size_t d = 0; d < domains; d++) {
 		os << "2\n";
 	}
 	os << "\n";
 
 	// DECOMPOSITION TO SUBDOMAINS
-	os << "CELL_DATA " << points.size() << "\n";
+	os << "CELL_DATA " << domains << "\n";
 	os << "SCALARS decomposition int 1\n";
 	os << "LOOKUP_TABLE decomposition\n";
-	for (size_t p = 0; p < points.size(); p++) {
-		os << p << "\n";
+	for (size_t d = 0; d < domains; d++) {
+		os << d << "\n";
 	}
 	os << "\n";
 }
 
 static void elements(std::ofstream &os, const espreso::Mesh &mesh)
 {
-	const std::vector<espreso::Element*> &elements = mesh.getElements();
+	const std::vector<espreso::Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &partition = mesh.getPartition();
 	size_t parts = mesh.parts();
 
 	size_t size = 0;
 	for (size_t i = 0; i < elements.size(); i++) {
-		size += elements[i]->size() + 1;
+		size += elements[i]->nodes() + 1;
 	}
 
 	// ELEMENTS
@@ -151,9 +163,9 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh)
 	for (size_t p = 0; p < parts; p++) {
 		for (size_t i = partition[p]; i < partition[p + 1]; i++) {
 			// elements
-			os << elements[i]->size();
-			for (size_t j = 0; j < elements[i]->size(); j++) {
-				os << " " << elements[i]->node(j) + offset;
+			os << elements[i]->nodes();
+			for (size_t j = 0; j < elements[i]->nodes(); j++) {
+				os << " " << mesh.coordinates().localIndex(elements[i]->node(j), p) + offset;
 			}
 			os << "\n";
 		}
@@ -189,7 +201,7 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh)
 	os << "LOOKUP_TABLE materials\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			os << elements[i]->getParam(espreso::Element::MATERIAL) << "\n";
+			os << elements[i]->param(espreso::Element::MATERIAL) << "\n";
 
 		}
 	}
@@ -256,7 +268,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head(os);
-	coordinates(os, mesh.coordinates(),shrinkSubdomain, shrinkCluster);
+	coordinates(os, mesh.coordinates(), shrinkSubdomain, shrinkCluster);
 	elements(os, mesh);
 
 	os.close();
@@ -265,22 +277,23 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
 {
 	std::stringstream ss;
-	const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &partition = mesh.getPartition();
 
 	ss << path << config::env::MPIrank << ".vtk";
 
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-	os<<"# vtk DataFile Version 4.1\n"<<"vtk output\n"<<"ASCII\n"<<"DATASET POLYDATA\n";
-	os<<"POINTS "<<2*elements.size()<<" float\n";
+	head(os);
+	os << "DATASET POLYDATA\n";
+	os << "POINTS " << 2*elements.size() << " float\n";
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
 			Point mid;
-			for (size_t i = 0; i < elements[e]->size(); i++) {
+			for (size_t i = 0; i < elements[e]->nodes(); i++) {
 				mid += mesh.coordinates().get(elements[e]->node(i), p);
 			}
-			mid /= elements[e]->size();
+			mid /= elements[e]->nodes();
 			os<<mid.x<<" "<<mid.y<<" "<<mid.z<<"\n";
 
 			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
@@ -298,17 +311,18 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
 			Point mid;
-			for (size_t i = 0; i < elements[e]->size(); i++) {
+			for (size_t i = 0; i < elements[e]->nodes(); i++) {
 				mid += mesh.coordinates().get(elements[e]->node(i), p);
 			}
-			mid /= elements[e]->size();			
+			mid /= elements[e]->nodes();
 
 			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
 			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);
 
-			double x=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->size();
-			double y=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->size();
-			double z=0;
+			// TODO: change
+			double x = 0, y = 0, z = 0;
+//			double x=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
+//			double y=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
 			os<<x<<" "<<y<<" "<<z<<"\n";			
 			
 		}
@@ -324,10 +338,13 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 
 void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
-	std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
+	std::vector<Element*> fixPoints;
 	for (size_t p = 0; p < mesh.parts(); p++) {
-		fixPoints[p] = mesh.computeFixPoints(p, config::mesh::FIX_POINTS);
+		fixPoints.insert(fixPoints.end(), mesh.fixPoints(p).begin(), mesh.fixPoints(p).end());
 	}
+
+	std::sort(fixPoints.begin(), fixPoints.end());
+	Esutils::removeDuplicity(fixPoints);
 
 	std::stringstream ss;
 	ss << path << config::env::MPIrank << ".vtk";
@@ -336,35 +353,26 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 
 	head(os);
 	coordinates(os, mesh.coordinates(), fixPoints, shrinkSubdomain, shringCluster);
-	points(os, fixPoints);
+	nodes(os, fixPoints, mesh.parts());
 
 	os.close();
 }
 
 void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
-	std::vector<std::vector<eslocal> > corners(mesh.parts());
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
-			if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(p)[i])) {
-				corners[p].push_back(i);
-			}
-		}
-	}
-
 	std::stringstream ss;
 	ss << path << config::env::MPIrank << ".vtk";
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 	head(os);
-	coordinates(os, mesh.coordinates(), corners, shrinkSubdomain, shringCluster);
-	points(os, corners);
+	coordinates(os, mesh.coordinates(), mesh.corners(), shrinkSubdomain, shringCluster);
+	nodes(os, mesh.corners(), mesh.parts());
 
 	os.close();
 }
 
-void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const Mesh &mesh, const EqualityGluing &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
 
 }

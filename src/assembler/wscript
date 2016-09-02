@@ -21,7 +21,7 @@ def configure(ctx):
         ctx.end_msg("found")
     else:
         ctx.end_msg("not found - set path to HYPRE libraries (parameter HYPRE::LIBPATH)", color='YELLOW')
-        ctx.env.VTK = False
+        ctx.env.HYPRE = False
 
     ctx.env.append_unique("LIB", hyprelibs)
 

@@ -81,14 +81,14 @@ VTK::VTK(const Mesh &mesh, const std::string &path): Results(mesh, path)
 
 void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
-  const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &_partPtrs = mesh.getPartition();
 
 	vtkUnstructuredGrid* m = vtkUnstructuredGrid::New();
 
 	size_t n_nodsClust = 0;
 	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
-		n_nodsClust += elements[iEl]->size();
+		n_nodsClust += elements[iEl]->nodes();
 	}
 	size_t cnt = 0, n_points = 0;
 	for (size_t d = 0; d < mesh.parts(); d++) {
@@ -133,11 +133,10 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 	cnt = 0;
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 	  for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
-	    for (size_t j = 0; j < elements[i]->size(); j++) {
+	    for (size_t j = 0; j < elements[i]->nodes(); j++) {
 	      tmp[j] = elements[i]->node(j) + cnt;
 	    }
-	    m->InsertNextCell(elements[i]->vtkCode(), elements[i]->size(),
-				    &tmp[0]);
+	    m->InsertNextCell(elements[i]->vtkCode(), elements[i]->nodes(), &tmp[0]);
 	    i++;
 	  }
 	  cnt += _coordinates.localSize(part);
@@ -268,7 +267,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
 {
 	std::cout << path << "\n";
-	const std::vector<Element*> &elements = mesh.getElements();
+	const std::vector<Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &partition = mesh.getPartition();
 	vtkSmartPointer<vtkUnstructuredGrid> pro=vtkSmartPointer<vtkUnstructuredGrid>::New();
 	//pro->SetDimensions(elements.size(),elements.size(),0);
@@ -283,10 +282,10 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
 			Point mid;
-			for (size_t i = 0; i < elements[e]->size(); i++) {
+			for (size_t i = 0; i < elements[e]->nodes(); i++) {
 				mid += mesh.coordinates().get(elements[e]->node(i), p);
 			}
-			mid /= elements[e]->size();
+			mid /= elements[e]->nodes();
 
 			po->InsertNextPoint(mid.x,mid.y,mid.z);
 
@@ -294,8 +293,8 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);
 
 			double h[3];
-			h[0]=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->size();
-			h[1]=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->size();
+			h[0]=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
+			h[1]=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
 			h[2]=0;
 			sv->SetTuple(it,h);
 			it++;			
@@ -441,20 +440,20 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
   std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
   const Coordinates &_coordinates = mesh.coordinates();
   const std::vector<eslocal> &_partPtrs = mesh.getPartition();
-  const std::vector<Element*> &elements = mesh.getElements();
+  const std::vector<Element*> &elements = mesh.elements();
   size_t parts = _coordinates.parts();
   double shrinking=0.90;
   
 
   //points
   for (size_t p = 0; p < mesh.parts(); p++) {
-    fixPoints[p] = mesh.computeFixPoints(p, config::mesh::FIX_POINTS);     
+	  fixPoints[p] = mesh.computeFixPoints(p, config::mesh::FIX_POINTS);
   }
   
 
   size_t n_nodsClust = 0;
   for (size_t iEl = 0; iEl < elements.size(); iEl++) {
-    n_nodsClust += elements[iEl]->size();
+    n_nodsClust += elements[iEl]->nodes();
   } 
   double *coord_xyz = new double[mesh.parts() * fixPoints.size()*3];
   
@@ -640,7 +639,7 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
   vtkUnstructuredGrid* c=vtkUnstructuredGrid::New();
   const Coordinates &_coordinates = mesh.coordinates();
   const std::vector<eslocal> &_partPtrs = mesh.getPartition();
-  const std::vector<Element*> &elements = mesh.getElements();
+  const std::vector<Element*> &elements = mesh.elements();
   size_t parts = _coordinates.parts();
   double shrinking=0.90;
   std::vector<std::vector<eslocal> > corners(mesh.parts());
@@ -655,7 +654,7 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
   size_t n_nodsClust = 0;
   for (size_t iEl = 0; iEl < elements.size(); iEl++) {
-    n_nodsClust += elements[iEl]->size();
+    n_nodsClust += elements[iEl]->nodes();
   } 
   double *coord_xyz = new double[mesh.parts() * corners.size()*3];
   
@@ -847,14 +846,14 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION << "\n";
 //pokus();
 
-	const std::vector<Element*> &elements = _mesh.getElements();
+	const std::vector<Element*> &elements = _mesh.elements();
 	const std::vector<eslocal> &_partPtrs = _mesh.getPartition();
 
 	VTKGrid = vtkUnstructuredGrid::New();
 
 	size_t n_nodsClust = 0;
 	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
-		n_nodsClust += elements[iEl]->size();
+		n_nodsClust += elements[iEl]->nodes();
 	}
 	size_t cnt = 0, n_points = 0;
 	for (size_t d = 0; d < _mesh.parts(); d++) {
@@ -902,8 +901,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 			for (size_t j = 0; j < elements[i]->size(); j++) {
 				tmp[j] = elements[i]->node(j) + cnt;
 			}
-			VTKGrid->InsertNextCell(elements[i]->vtkCode(), elements[i]->size(),
-					&tmp[0]);
+			VTKGrid->InsertNextCell(elements[i]->vtkCode(), elements[i]->nodes(), &tmp[0]);
 			i++;
 		}
 		cnt += _coordinates.localSize(part);
@@ -1182,7 +1180,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	}
 }
 
-void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const Mesh &mesh, const EqualityGluing &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
   vtkPolyData* gp=vtkPolyData::New();
   vtkPoints* po=vtkPoints::New();

@@ -88,12 +88,7 @@ def configure(ctx):
     # recurse to basic parts
     ctx.recurse("src/config")
     ctx.recurse("src/basis")
-<<<<<<< HEAD
-    ctx.recurse("src/mesh")
-    ctx.recurse("src/output")
-=======
     ctx.recurse("tools/bem4i")
->>>>>>> ENH: starting of B1 output
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
@@ -106,7 +101,6 @@ def configure(ctx):
     ctx.recurse("src/app")
 
     check_environment(ctx)
-
 
     if not ctx.env.VTK:
         Logs.warn("VTK library was not founded. ESPRESO supports only VTK legacy format!")
@@ -132,12 +126,7 @@ def build(ctx):
 
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
-<<<<<<< HEAD
-    ctx.recurse("src/mesh")
-    ctx.recurse("src/output")
-=======
     ctx.recurse("tools/bem4i")
->>>>>>> ENH: starting of B1 output
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/mesh")
