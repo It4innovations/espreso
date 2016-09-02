@@ -196,6 +196,7 @@ public:
 	// Return diagonal of CSR matrix. Columns indices have to be sorted!!
 	std::vector<double> getDiagonal();
 	double getDiagonalMaximum();
+        double getDiagonalAbsMaximum();
 
 	void MatAppend(SparseMatrix & A);
 	void RemoveLower();

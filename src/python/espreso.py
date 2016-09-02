@@ -14,7 +14,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 2
+n_subPerClust   = 9
 
 
 CONSTANT_89 = 24 
@@ -22,8 +22,8 @@ CONSTANT_89 = 24
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
-#path = '../../log/'
-path = '/home/lriha/espreso/log/'
+path = '../../log/'
+#path = '/home/lriha/espreso/log/'
 
 
 
@@ -122,6 +122,7 @@ def creat_matB0_ker_from_IJV(ijv_B0ker):
 
 
 mat_K       = []
+mat_Salfa_reg   = []
 mat_Salfa   = []
 mat_Kreg    = []
 mat_B0      = []
@@ -134,7 +135,11 @@ vec_f       = []
 vec_c       = []
 vec_weight  = []
 vec_index_weight = []
+mat_LAMN   = []
 mat_Schur_Dirichlet   = []
+mat_Kernel_Salfa       = []
+mat_Kernel_Salfa2       = []
+
 
 
 if config_espreso_python.flag_multiprocessing:
@@ -154,8 +159,12 @@ for i in range(n_clus):
     vec_weight.append([])
     vec_index_weight.append([])
 
-#    mat_Salfa.append(mM.load_matrix(path,'Salfa',0,'',makeSparse=False,makeSymmetric=True))
-    mat_Salfa.append([])
+    mat_LAMN.append(mM.load_matrix(path,'LAMN',i,'',makeSparse=False,makeSymmetric=False))
+    mat_Salfa.append(mM.load_matrix(path,'Salfa',i,'',makeSparse=False,makeSymmetric=False))
+    mat_Salfa_reg.append(mM.load_matrix(path,'Salfa_reg',i,'',makeSparse=False,makeSymmetric=False))
+    mat_Kernel_Salfa.append(mM.load_matrix(path,'Kernel_Sa',i,'',makeSparse=False,makeSymmetric=False))
+    mat_Kernel_Salfa2.append(mM.load_matrix(path,'Kernel_Sa2',i,'',makeSparse=False,makeSymmetric=False))
+#    mat_Salfa.append([])
 #    for j in range(n_subPerClust):  
     ij = []
     for j in range(n_subPerClust):
@@ -270,10 +279,16 @@ if False:
 if config_espreso_python.flag_multiprocessing:
     pool.close()
 
-print('\nTFETI unsym')
-u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
-                           vec_index_weight,mat_R1,mat_R2)
-plt.clf()
+
+
+
+
+if 1:
+    print('\nTFETI unsym')
+    u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
+                               vec_index_weight,mat_R1,mat_R2)
+    plt.clf()
+    
 #for i in range(len(u)):
 #    for j in range(len(u[i])):
 #        plt.plot(u[i][j],'ro')
@@ -293,13 +308,15 @@ plt.clf()
 
 print('\nHFETI - corners')
 uHDPc,lamHc = mM.hfeti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
-                        vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Salfa)
+                        vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Rb1,mat_Rb2,\
+                                mat_Salfa,mat_Salfa_reg,\
+                        mat_Kernel_Salfa,mat_Kernel_Salfa2,mat_LAMN)
 
 plt.hold('on')
 for i in range(len(u)):
     for j in range(len(u[i])):
         iii = np.arange(0,u[i][j].shape[0])
-        plt.plot(iii,u[i][j],'r*') 
+        plt.plot(iii,u[i][j],'r<') 
         plt.plot(iii,uHDPc[i][j],'b.')               
 
 delta_feti_hfeti = 0

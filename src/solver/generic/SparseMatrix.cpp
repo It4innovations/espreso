@@ -3068,6 +3068,25 @@ double SparseMatrix::getDiagonalMaximum()
 }
 
 
+double SparseMatrix::getDiagonalAbsMaximum()
+{
+	double max = 0;
+
+	const std::vector<eslocal> &ROWS = CSR_I_row_indices;
+	const std::vector<eslocal> &COLS = CSR_J_col_indices;
+	const std::vector<double>  &VALS = CSR_V_values;
+
+	for (eslocal i = 0; i < rows; i++) {
+		auto it = std::lower_bound(COLS.begin() + ROWS[i] - 1, COLS.begin() + ROWS[i + 1] - 1, i + 1);
+		double tmp = *it == i + 1 ? VALS[it - COLS.begin()] : 0;
+		if (max < std::fabs(tmp)) {
+			max = std::fabs(tmp);
+		}
+	}
+
+	return max;
+}
+
 
 //void SparseMatrix::get_kernel_from_K() {
 //	get_kernel_from_K(K, Kplus_R);
@@ -4227,7 +4246,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   //TODO if K.rows<=sc_size, use directly input K instead of S
   //
   int n_nodsSub = 0;
-  double rho = K.GetMaxOfDiagonalOfSymmetricMatrix();
+  double rho = K.getDiagonalAbsMaximum();
   if (fixing_nodes_or_dof>0){
     sc_size = fixing_nodes_or_dof*dofPerNode;
     n_nodsSub = round(K.rows/dofPerNode);

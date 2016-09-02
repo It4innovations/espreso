@@ -1117,7 +1117,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 	SEQ_VECTOR <double> v_l(dl_size, 0);
 	SEQ_VECTOR <double> w_l(dl_size, 0);
 	SEQ_VECTOR <double> Aw_l(dl_size, 0);
-	SEQ_VECTOR <double> b_l(dl_size, 0);
+        SEQ_VECTOR <double> b_l(dl_size, 0);
+        SEQ_VECTOR <double> ones(dl_size, 1);
 
   int n_mat = CG_max_iter + 1;
 	SEQ_VECTOR <double> b_H(n_mat, 0);
@@ -1159,6 +1160,14 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 #ifdef FLAG_VALIDATION
   SEQ_VECTOR <double> tmp_H_l(n_mat*n_mat, 0);
 #endif
+
+
+
+
+
+    apply_A_l_comp_dom_B(timeEvalAppa, cluster, ones, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+
 
   for (int i = 0 ; i < n_mat; i++){
    Permut_l[n_mat*i + i] = 1;

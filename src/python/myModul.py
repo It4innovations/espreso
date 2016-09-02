@@ -95,13 +95,21 @@ class KPLUS:
         return self.__iAreg.solve(b) 
 ###############################################################################       
 class  KPLUS_HTFETI:
-    def __init__(self,K,Kplus,Kplust,B0,R1,R2,S_alpha): 
+    def __init__(self,K,Kplus,Kplust,B0,R1,R2,R1bb,R2bb,S_alpha,S_alpha_reg,Hr,Hl,LAMN): 
         self.K      = K
         self.Kplus  = Kplus
         self.Kplust = Kplust
         self.B0     = B0
         self.R1     = R1
         self.R2     = R2
+        self.R1bb   = R1bb
+        self.R2bb   = R2bb
+        self.S_alpha=S_alpha
+        self.S_alpha_reg =S_alpha_reg
+        self.Hr     = Hr
+        self.Hl     = Hl
+        self.LAMN   = LAMN
+        
         print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  R1[0].shape)
 
         for j in range(len(B0)):  
@@ -164,34 +172,56 @@ class  KPLUS_HTFETI:
 #                
 #        np.savetxt('F0_sp',F0_sp.toarray())        
         
-        S_alpha_from_ESPRESO = False
+        S_alpha_from_ESPRESO = True
 #         
-        if (not S_alpha_from_ESPRESO):
+        if 1:
 #           
-            G01d = self.G01.toarray()
-            G02d = self.G02.toarray()
-            iF0_G01d = np.zeros(G01d.shape)
-#            
-            for i in range(G01d.shape[1]):
-                iF0_G01d[:,i] = self.iF0.solve(G01d[:,i])        
-            S_alpha = np.dot(G02d.T,iF0_G01d)
-#            
-            US, sS, VS = np.linalg.svd(S_alpha)
-#            
-            Hl = -US[:,-1]
-            Hr = -VS[-1,:]
+            if S_alpha_from_ESPRESO:
+                print('happy')
+                S_alpha_reg = self.S_alpha_reg
+                S_alpha  = self.S_alpha
+                Hl      = -self.Hl
+                Hr      = self.Hr
+                LAMl    = self.LAMN
+            else:
+                G01d = self.G01.toarray()
+                G02d = self.G02.toarray()
+                iF0_G01d = np.zeros(G01d.shape)
+    #            
+                for i in range(G01d.shape[1]):
+                    iF0_G01d[:,i] = self.iF0.solve(G01d[:,i])        
+                S_alpha = np.dot(G02d.T,iF0_G01d)
+    #            
+                US, sS, VS = np.linalg.svd(S_alpha)
+    #            
+                Hl = US[:,-1]
+                Hr = VS[-1,:]
+                
+                rho = np.max(S_alpha.ravel()).max()
+                #rho = S_alpha[0,0]
+                NNt = np.outer(Hl,Hr)
+                print('aaaaaaaaaaaaaaaaaaaaa',NNt)
+                S_alpha_reg = S_alpha + NNt*rho
+                #for i in range(R1[0].shape[1]):
+                #    S_alpha_reg[i,i] += rho
+                ttt = sparse.csc_matrix.dot(self.G02,Hl)            
+                LAMl = -self.iF0t.solve(ttt)    
 # #  ##############         
-            LAMr = self.iF0.solve(sparse.csc_matrix.dot(self.G01,Hr))
+            LAMr = -self.iF0.solve(sparse.csc_matrix.dot(self.G01,Hr))
+            print('S_alpha_reg = ' , S_alpha_reg)
+            print('delta = ' , S_alpha_reg-self.S_alpha_reg)
             
-            
-            ttt = sparse.csc_matrix.dot(self.G02,Hl)            
-            LAMl = self.iF0t.solve(ttt)
+            F0_dense = F0_sp.toarray()
+
 #            
             
             #np.savetxt('LAMr',LAMr) 
-            #np.savetxt('LAMl',LAMl) 
-            self.R1b = list(R1)
-            self.R2b = list(R2) 
+            #np.savetxt('LAMl',LAMl)
+            self.R1b = []
+            self.R2b = []
+            for i in range(len(R1)):
+                self.R1b.append([]) 
+                self.R2b.append([])
 #            
             for j in range(len(self.R1b)):           
 #                
@@ -210,8 +240,8 @@ class  KPLUS_HTFETI:
 #                tmpp = -Kplust_B0tLAMl + R2_Hl
                 vvv = sparse.csc_matrix.dot(B0[j].T,LAMl)
                 Kplust_vvv = self.Kplust[j]*(vvv)
-                _R_H = (R2[j].data*Hl[j])                
-                tmp2 =  (Kplust_vvv +  _R_H)
+                R_H_a = (R2[j].data*Hl[j])                
+                tmp2 =  (-Kplust_vvv +  R_H_a)
 #                    
                 self.R2b[j] = sparse.csc_matrix((tmp2,(ii,jj)),shape=(tmp2.shape[0],1)).tocsc()
 #
@@ -227,13 +257,13 @@ class  KPLUS_HTFETI:
                 print('a||K*Rr  + B0t*Lamr|| = ',np.linalg.norm(vvr))
                 print('b||Kt*Rl + B0t*Laml|| = ',np.linalg.norm(vvl))
 #            
-            rho = S_alpha[0,0]
-            for i in range(R1[0].shape[1]):
-                S_alpha[i,i] += rho
+                
+            #if not S_alpha_from_ESPRESO:
+
 #
 # 
         np.savetxt('S_alpha',S_alpha)
-        self.iS_alpha = DENS_SOLVE_FOR_LU(S_alpha)           
+        self.iS_alpha = DENS_SOLVE_FOR_LU(S_alpha_reg)           
 #     
     def __mul__(self,f):
 #
@@ -508,6 +538,10 @@ def gmres(F, d, G1, G2, e, Prec, eps0, maxIt,disp,graph):
     lam         = lamIm.copy()
     g           = F*lam - d     
     i           = 0
+    ones        = np.ones(g.shape[0])
+    
+    
+    F_ones      = F*ones
     #PFP         = PFP_OPERATOR(F, Proj)
     
     def mv(v):
@@ -666,7 +700,7 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
         print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,mat_S0):
+def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,R1b_,R2b_,mat_S0,mat_S0_reg,N,Nl,LAMN):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
@@ -700,7 +734,9 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,mat_S0):
 #             
     Kplus_HTFETI = []       
     for i in range(len(K)): 
-        Kplus_HTFETI.append(KPLUS_HTFETI(K[i],Kplus[i],Kplust[i],B0[i],R1[i],R2[i],mat_S0[i]))
+        Kplus_HTFETI.append(KPLUS_HTFETI(K[i],Kplus[i],Kplust[i],B0[i],R1[i],R2[i],\
+                                R1b_[i],R2b_[i],mat_S0[i],\
+                                mat_S0_reg[i], N[i],Nl[i],LAMN[i]))
 #        
         
         
@@ -721,6 +757,9 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,mat_S0):
             
     CP1         = COARSE_PROBLEM_HTFETI(B1,R1b)  
     CP2         = COARSE_PROBLEM_HTFETI(B1,R2b) 
+
+    #R2b_0 = R2b[0][0].data
+    #R2b_1 = R2b[0][1].data 
 #
     for i in range(len(K)):
         Kpl_ = Kplus_HTFETI[i]*f[i]

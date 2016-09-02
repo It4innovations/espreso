@@ -1320,6 +1320,11 @@ void ClusterBase::CreateSa() {
 		//GGt.RemoveLower();
 		//GGt.get_kernel_from_K(GGt, Kernel_Sa);
 
+		if (config::info::PRINT_MATRICES) {
+			std::ofstream osSa(Logging::prepareFile("Salfa"));
+			osSa << Salfa;
+			osSa.close();
+		}
 
 		double tmp_double;
 		eslocal tmp_int;
@@ -1332,9 +1337,25 @@ void ClusterBase::CreateSa() {
 		TSak.Clear();
 
 
+    for (eslocal i = 0;i<Kernel_Sa.nnz;i++){
+      Kernel_Sa2.CSR_V_values[i] *=-1;
+
+    }
+
+
 		if (config::info::PRINT_MATRICES) {
-			std::ofstream osSa(Logging::prepareFile("Salfa"));
+			std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
 			osSa << Salfa;
+			osSa.close();
+		}
+		if (config::info::PRINT_MATRICES) {
+			std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
+			osSa << Kernel_Sa;
+			osSa.close();
+		}
+		if (config::info::PRINT_MATRICES) {
+			std::ofstream osSa(Logging::prepareFile("Kernel_Sa2"));
+			osSa << Kernel_Sa2;
 			osSa.close();
 		}
 
@@ -1370,6 +1391,12 @@ void ClusterBase::CreateSa() {
 			F0.SolveMat_Sparse( LAMN_RHS, LAMN );
 			F0.iparm[11] = set_bckp_F0;
 
+
+		  if (config::info::PRINT_MATRICES) {
+		  	std::ofstream osSa(Logging::prepareFile("LAMN"));
+		  	osSa << LAMN;
+		  	osSa.close();
+		  }
 
 			for (int d = 0; d < domains.size(); d++) {
 
