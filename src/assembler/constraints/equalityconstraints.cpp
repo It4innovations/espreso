@@ -335,7 +335,7 @@ void EqualityConstraints::insertElementGluingToB1(const std::vector<Element*> &e
 
 void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
-	_mesh.saveFaces();
+	//_mesh.saveFaces();
 	//std::cout << "FACES: " << _mesh.faces().size() << "\n";
 	size_t cc = 0;
 	for (size_t i = 0; i < elements.size(); i++) {
