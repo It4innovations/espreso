@@ -121,7 +121,8 @@ static void goThroughElements(
 		const Interval &interval,
 		size_t cluster[],
 		std::function<void(std::vector<eslocal> &indices, CubeEdges edge)> addEdge,
-		std::function<void(std::vector<eslocal> &indices, CubeFaces face)> addFace)
+		std::function<void(std::vector<eslocal> &indices, CubeFaces face)> addFace,
+		bool restrictNodes)
 {
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(settings, cNodes);
@@ -169,9 +170,11 @@ static void goThroughElements(
 							size_t offsetY = ey * (1 + TElement::subnodes[1]) + y;
 							size_t offsetZ = ez * (1 + TElement::subnodes[2]) + z;
 
-							offsetX = offsetX < minOffset[0] ? minOffset[0] : maxOffset[0] < offsetX ? maxOffset[0] : offsetX;
-							offsetY = offsetY < minOffset[1] ? minOffset[1] : maxOffset[1] < offsetY ? maxOffset[1] : offsetY;
-							offsetZ = offsetZ < minOffset[2] ? minOffset[2] : maxOffset[2] < offsetZ ? maxOffset[2] : offsetZ;
+							if (restrictNodes) {
+								offsetX = offsetX < minOffset[0] ? minOffset[0] : maxOffset[0] < offsetX ? maxOffset[0] : offsetX;
+								offsetY = offsetY < minOffset[1] ? minOffset[1] : maxOffset[1] < offsetY ? maxOffset[1] : offsetY;
+								offsetZ = offsetZ < minOffset[2] ? minOffset[2] : maxOffset[2] < offsetZ ? maxOffset[2] : offsetZ;
+							}
 
 							indices[i] = offsetZ * cNodes[1] * cNodes[0] + offsetY * cNodes[0] + offsetX;
 						}
@@ -204,7 +207,8 @@ void CubeGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &n
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
 				this->_e.pickNodes(nodes, selection, indices.data(), face);
-			}
+			},
+			true
 	);
 
 	std::sort(selection.begin(), selection.end());
@@ -221,7 +225,8 @@ void CubeGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &fac
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
 				this->_e.addFaces(faces, &indices[0], face);
-			}
+			},
+			false
 	);
 }
 
@@ -235,7 +240,8 @@ void CubeGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edg
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
 				ESINFO(GLOBAL_ERROR) << "Implement add edges on face";
-			}
+			},
+			false
 	);
 }
 

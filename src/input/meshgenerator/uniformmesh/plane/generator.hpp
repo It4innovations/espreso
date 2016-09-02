@@ -168,7 +168,8 @@ void PlaneGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
 				ESINFO(GLOBAL_ERROR) << "Interval is not on the border";
-			}
+			},
+			true
 	);
 
 	std::sort(selection.begin(), selection.end());
@@ -191,7 +192,8 @@ void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &ed
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
 				ESINFO(GLOBAL_ERROR) << "Interval is not on the border";
-			}
+			},
+			false
 	);
 }
 
