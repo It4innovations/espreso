@@ -4,8 +4,7 @@
 
 //#include "constraints/equalityconstraints.h"
 
-#include "constraints/equalitygluing.h"
-
+#include "constraints/equalityconstraints.h"
 #include "instance/linear/instance.h"
 #include "instance/dynamics/instance.h"
 #include "instance/hypre/instance.h"

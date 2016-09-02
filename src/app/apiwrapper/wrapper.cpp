@@ -149,7 +149,7 @@ void FETI4ICreateInstance(
 	API api(mesh);
 	DataHolder::instances.push_back(new FETI4IStructInstance(api, mesh));
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityGluing, UniformSymmetric3DOFs>(
+	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(
 			DataHolder::instances.back()->mesh,
 			rhs,
 			size,

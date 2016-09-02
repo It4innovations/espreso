@@ -1,8 +1,6 @@
 
 #include "assembler.h"
 
-#include "../../../constraints/equalitygluing.h"
-
 using namespace espreso;
 
 std::vector<Property> LinearElasticity3D::elementDOFs;

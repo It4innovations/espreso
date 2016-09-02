@@ -226,19 +226,19 @@ Factory::Factory(const Configuration &configuration)
 
 	switch (physics) {
 	case PhysicsAssembler::LINEAR_ELASTICITY_2D:
-		createInstance<EqualityGluing, LinearElasticity2D, LinearInstance<EqualityGluing, LinearElasticity2D> >(instance, mesh);
+		createInstance<EqualityConstraints, LinearElasticity2D, LinearInstance<EqualityConstraints, LinearElasticity2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::LINEAR_ELASTICITY_3D:
-		createInstance<EqualityGluing, LinearElasticity3D, LinearInstance<EqualityGluing, LinearElasticity3D> >(instance, mesh);
+		createInstance<EqualityConstraints, LinearElasticity3D, LinearInstance<EqualityConstraints, LinearElasticity3D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::TRANSIENT_ELASTICITY_3D:
-		createInstance<EqualityGluing, TransientElasticity, LinearInstance<EqualityGluing, TransientElasticity> >(instance, mesh);
+		createInstance<EqualityConstraints, TransientElasticity, LinearInstance<EqualityConstraints, TransientElasticity> >(instance, mesh);
 		break;
 	case PhysicsAssembler::ADVECTION_DIFFUSION_2D:
-		createInstance<EqualityGluing, AdvectionDiffusion2D, LinearInstance<EqualityGluing, AdvectionDiffusion2D> >(instance, mesh);
+		createInstance<EqualityConstraints, AdvectionDiffusion2D, LinearInstance<EqualityConstraints, AdvectionDiffusion2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::STOKES:
-		createInstance<EqualityGluing, Stokes, LinearInstance<EqualityGluing, Stokes> >(instance, mesh);
+		createInstance<EqualityConstraints, Stokes, LinearInstance<EqualityConstraints, Stokes> >(instance, mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown Physics";

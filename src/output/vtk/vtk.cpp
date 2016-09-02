@@ -1180,7 +1180,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	}
 }
 
-void VTK::gluing(const Mesh &mesh, const EqualityGluing &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
   vtkPolyData* gp=vtkPolyData::New();
   vtkPoints* po=vtkPoints::New();
