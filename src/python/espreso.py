@@ -14,7 +14,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 4
+n_subPerClust   = 2
 
 
 CONSTANT_89 = 24 
@@ -22,8 +22,8 @@ CONSTANT_89 = 24
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
-path = '../../log/'
-#path = '/home/lriha/espreso/log/'
+#path = '../../log/'
+path = '/home/lriha/espreso/log/'
 
 
 
@@ -272,7 +272,7 @@ if config_espreso_python.flag_multiprocessing:
 
 print('\nTFETI unsym')
 u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
-                           vec_index_weight,mat_Rb1,mat_Rb2)
+                           vec_index_weight,mat_R1,mat_R2)
 plt.clf()
 #for i in range(len(u)):
 #    for j in range(len(u[i])):
@@ -284,9 +284,16 @@ plt.clf()
                     
                         
 #
+                    
+
+#tmp1__ = list(mat_R1)   
+#tmp2__ = list(mat_R2)
+
+
+
 print('\nHFETI - corners')
 uHDPc,lamHc = mM.hfeti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
-                        vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Rb1,mat_Rb2,mat_Salfa)
+                        vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Salfa)
 
 plt.hold('on')
 for i in range(len(u)):

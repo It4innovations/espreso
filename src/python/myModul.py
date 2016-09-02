@@ -178,11 +178,14 @@ class  KPLUS_HTFETI:
 #            
             US, sS, VS = np.linalg.svd(S_alpha)
 #            
-            Hl = US[:,-1]
-            Hr = VS[-1,:]
+            Hl = -US[:,-1]
+            Hr = -VS[-1,:]
 # #  ##############         
-            LAMr = -self.iF0.solve(sparse.csc_matrix.dot(self.G01,Hr))
-            LAMl = -self.iF0t.solve(sparse.csc_matrix.dot(self.G02,Hl))
+            LAMr = self.iF0.solve(sparse.csc_matrix.dot(self.G01,Hr))
+            
+            
+            ttt = sparse.csc_matrix.dot(self.G02,Hl)            
+            LAMl = self.iF0t.solve(ttt)
 #            
             
             #np.savetxt('LAMr',LAMr) 
@@ -193,7 +196,7 @@ class  KPLUS_HTFETI:
             for j in range(len(self.R1b)):           
 #                
                 tmp1 = \
-                    (self.Kplus[j]*(-sparse.csc_matrix.dot(B0[j].T,LAMr)) + \
+                    (self.Kplus[j]*(sparse.csc_matrix.dot(B0[j].T,LAMr)) + \
                     R1[j].data*Hr[j])
                 ii = np.arange(0,tmp1.shape[0])
                 jj = np.zeros(tmp1.shape[0]) 
@@ -205,9 +208,10 @@ class  KPLUS_HTFETI:
 #                Kplust_B0tLAMl = self.Kplust[j] * B0tLAMl 
 #                R2_Hl = R2[j].toarray()*Hl[j]
 #                tmpp = -Kplust_B0tLAMl + R2_Hl
-                tmp2 = \
-                    (self.Kplust[j]*(-sparse.csc_matrix.dot(B0[j].T,LAMl)) + \
-                    (R2[j].data*Hl[j]))
+                vvv = sparse.csc_matrix.dot(B0[j].T,LAMl)
+                Kplust_vvv = self.Kplust[j]*(vvv)
+                _R_H = (R2[j].data*Hl[j])                
+                tmp2 =  (Kplust_vvv +  _R_H)
 #                    
                 self.R2b[j] = sparse.csc_matrix((tmp2,(ii,jj)),shape=(tmp2.shape[0],1)).tocsc()
 #
@@ -662,7 +666,7 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
         print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,R1b,R2b,mat_S0):
+def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,mat_S0):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
@@ -698,10 +702,22 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,R1b,R2b,mat_S0)
     for i in range(len(K)): 
         Kplus_HTFETI.append(KPLUS_HTFETI(K[i],Kplus[i],Kplust[i],B0[i],R1[i],R2[i],mat_S0[i]))
 #        
+        
+        
+    R1b = []
+    R2b = []
     for i in range(len(K)):
+        R1b.append([])
+        R2b.append([])
         for j in range(len(K[i])):
-            R1b[i][j] = Kplus_HTFETI[i].R1b[j]
-            R2b[i][j] = Kplus_HTFETI[i].R2b[j]
+#            print('a',R1b[i][j])
+#            print('b',Kplus_HTFETI[i].R1b[j])
+#            print('a',R2b[i][j])
+#            print('b',Kplus_HTFETI[i].R2b[j])
+            R1b[i].append(Kplus_HTFETI[i].R1b[j].copy())
+            R2b[i].append(Kplus_HTFETI[i].R2b[j].copy())
+#            print('c',R2b[i][j])
+            
             
     CP1         = COARSE_PROBLEM_HTFETI(B1,R1b)  
     CP2         = COARSE_PROBLEM_HTFETI(B1,R2b) 
