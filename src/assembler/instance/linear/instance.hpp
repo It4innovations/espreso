@@ -29,7 +29,7 @@ void LinearInstance<TConstrains, TPhysics>::init()
 		_constrains.save();
 	}
 
-	output::VTK::gluing(_mesh, _constrains, "meshGluing", _physics.DOFs.size(), 0.95, 0.9);
+	output::VTK::gluing(_mesh, _constrains, "meshGluing", _physics.pointDOFs.size(), 0.95, 0.9);
 
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();

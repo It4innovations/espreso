@@ -281,23 +281,24 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
         
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
-			Point mid;
-			for (size_t i = 0; i < elements[e]->nodes(); i++) {
-				mid += mesh.coordinates().get(elements[e]->node(i), p);
-			}
-			mid /= elements[e]->nodes();
-
-			po->InsertNextPoint(mid.x,mid.y,mid.z);
-
-			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
-			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);
-
-			double h[3];
-			h[0]=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
-			h[1]=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
-			h[2]=0;
-			sv->SetTuple(it,h);
-			it++;			
+			// TODO: first evaluate on nodes and then compute average
+//			Point mid;
+//			for (size_t i = 0; i < elements[e]->nodes(); i++) {
+//				mid += mesh.coordinates().get(elements[e]->node(i), p);
+//			}
+//			mid /= elements[e]->nodes();
+//
+//			po->InsertNextPoint(mid.x,mid.y,mid.z);
+//
+//			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
+//			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);
+//
+//			double h[3];
+//			h[0]=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
+//			h[1]=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
+//			h[2]=0;
+//			sv->SetTuple(it,h);
+//			it++;
 		}
 	}
 
@@ -447,7 +448,9 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 
   //points
   for (size_t p = 0; p < mesh.parts(); p++) {
-	  fixPoints[p] = mesh.computeFixPoints(p, config::mesh::FIX_POINTS);
+	  for (size_t i = 0; i < mesh.fixPoints(p).size(); i++) {
+		  fixPoints[p].push_back(mesh.fixPoints(p)[i]->node(0));
+	  }
   }
   
 
@@ -643,12 +646,12 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
   size_t parts = _coordinates.parts();
   double shrinking=0.90;
   std::vector<std::vector<eslocal> > corners(mesh.parts());
-  for (size_t p = 0; p < mesh.parts(); p++) {
-    for (size_t i = 0; i < mesh.coordinates().localToCluster(p).size(); i++) {
-      if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(p)[i])){
-	corners[p].push_back(i);
-      }
-    }
+
+  for (size_t i = 0; i < mesh.corners().size(); i++) {
+	  for (size_t d = 0; d < mesh.corners()[i]->domains().size(); d++) {
+		  size_t p = mesh.corners()[i]->domains()[d];
+		  corners[p].push_back(mesh.corners()[i]->node(0));
+	  }
   }
   
 
@@ -663,23 +666,18 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 	for (size_t d = 0; d < mesh.parts(); d++) {
 		Point center;
 		for (size_t c = 0; c < corners[d].size(); c++) {
-		  if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(d)[c])){
-			center += _coordinates.get(corners[d][c], d);
-		  }
-			
+			center += mesh.coordinates()[corners[d][c]];
 		}
 		center /= corners[d].size();
 		//std::cout<<center<<std::endl;
 		for (size_t i = 0; i < corners[d].size(); i++) {
-			Point xyz = _coordinates.get(corners[d][i], d);
-			if (mesh.subdomainBoundaries().isCorner(mesh.coordinates().localToCluster(d)[i])){
+			Point xyz = mesh.coordinates()[corners[d][i]];
 			  xyz = center + (xyz - center) * shrinking;
-			  
+
 			  coord_xyz[3 * counter + 0] = xyz.x;
 			  coord_xyz[3 * counter + 1] = xyz.y;
 			  coord_xyz[3 * counter + 2] = xyz.z;
 			  counter++;
-			}
 		}
 	}
 	//std::cout<<std::endl<<mesh.parts()*fixPoints.size()<<std::endl;
@@ -898,7 +896,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	cnt = 0;
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
-			for (size_t j = 0; j < elements[i]->size(); j++) {
+			for (size_t j = 0; j < elements[i]->nodes(); j++) {
 				tmp[j] = elements[i]->node(j) + cnt;
 			}
 			VTKGrid->InsertNextCell(elements[i]->vtkCode(), elements[i]->nodes(), &tmp[0]);
@@ -1208,7 +1206,7 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
   int l=0;
 
 
-        const Boundaries &sBoundaries = mesh.subdomainBoundaries();
+//        const Boundaries &sBoundaries = mesh.subdomainBoundaries();
 	//sBoundaries[5] -> vector subdomen
 	//const Boundaries &cBoundaries = mesh.clusterBoundaries();
 	//constraints.B1[0].I_row_indices
