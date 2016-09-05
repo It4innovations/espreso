@@ -11,6 +11,7 @@ namespace output {
 class VTK: public Store {
 
 public:
+	Point* centers;
 	VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain = config::output::SUBDOMAINS_SHRINK_RATIO, double shringCluster = config::output::CLUSTERS_SHRINK_RATIO);
 
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType);
