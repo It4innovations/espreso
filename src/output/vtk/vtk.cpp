@@ -108,6 +108,8 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		n_points += _mesh.coordinates().localSize(d);
 	}
 
+	std::cout<<_mesh.parts()*_mesh.coordinates().localSize(0)<<std::endl;
+
 	//Points
 	int counter = 0;
 	vtkPoints* points=vtkPoints::New();
@@ -130,9 +132,10 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
 		for (eslocal ii = 0; ii < _partPtrs[part + 1] - _partPtrs[part]; ii++) {
 			for (size_t j = 0; j < _mesh.elements()[i]->nodes(); j++) {
-				tmp[j] = _mesh.elements()[i]->node(j) + cnt;
+				tmp[j] = _mesh.coordinates().localIndex(elements[i]->node(j),part) + cnt;
 			}
-			VTKGrid->InsertNextCell(_mesh.elements()[i]->vtkCode(), _mesh.elements()[i]->nodes(), &tmp[0]);
+			int code=_mesh.elements()[i]->vtkCode();
+			VTKGrid->InsertNextCell(code, elements[i]->nodes(), &tmp[0]);
 			i++;
 		}
 		cnt += _mesh.coordinates().localSize(part);
@@ -157,40 +160,41 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	VTKGrid->GetCellData()->AddArray(decomposition.GetPointer());
 
 	//Values
-	int mycounter = 0;
-	for (size_t i = 0; i < values.size(); i++) {
-		mycounter += values[i].size();
-	}
+	if(eType==ElementType::NODES){
+		int mycounter = 0;
+		for (size_t i = 0; i < values.size(); i++) {
+			mycounter += values[i].size();
+		}
 
-	const unsigned int dofs= values[0].size() / _mesh.coordinates().localSize(0);
-	double value_array[mycounter];
-	counter = 0;
+		const unsigned int dofs= values[0].size() / _mesh.coordinates().localSize(0);
+		double value_array[mycounter];
+		counter = 0;
 
-	for (size_t i = 0; i < values.size(); i++) {
-		for (size_t j = 0; j < (values[i].size() / dofs); j++) {
-			for(int k=0;k<dofs;k++){
-				value_array[dofs * counter + k] = values[i][dofs * j + k];
+		for (size_t i = 0; i < values.size(); i++) {
+			for (size_t j = 0; j < (values[i].size() / dofs); j++) {
+				for(int k=0;k<dofs;k++){
+					value_array[dofs * counter + k] = values[i][dofs * j + k];
+				}
+				counter++;
 			}
-			counter++;
+		}
+
+		vtkNew < vtkDoubleArray > value;
+		value->SetName("Values");
+		value->SetNumberOfComponents(dofs);
+		value->SetNumberOfTuples(static_cast<vtkIdType>(counter));
+		VTKGrid->GetPointData()->AddArray(value.GetPointer());
+
+		double* valueData = value_array;
+		vtkIdType numTuples = value->GetNumberOfTuples();
+		for (vtkIdType i = 0, counter = 0; i < numTuples; i++, counter++) {
+			double values[dofs];
+			for(int k=0;k<dofs;k++){
+				values[k] = {valueData[i*dofs+k]} ;
+			}
+			value->SetTypedTuple(counter, values);
 		}
 	}
-
-	vtkNew < vtkDoubleArray > value;
-	value->SetName("Values");
-	value->SetNumberOfComponents(dofs);
-	value->SetNumberOfTuples(static_cast<vtkIdType>(counter));
-	VTKGrid->GetPointData()->AddArray(value.GetPointer());
-
-	double* valueData = value_array;
-	vtkIdType numTuples = value->GetNumberOfTuples();
-	for (vtkIdType i = 0, counter = 0; i < numTuples; i++, counter++) {
-		double values[dofs];
-		for(int k=0;k<dofs;k++){
-			values[k] = {valueData[i*dofs+k]} ;
-		}
-		value->SetTypedTuple(counter, values);
-	}
-
 	//surface and decimation
 
 	vtkSmartPointer < vtkDecimatePro > decimate = vtkSmartPointer< vtkDecimatePro > ::New();
@@ -245,7 +249,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		if (FCD == false) {
 			vtkIntArray *bids = vtkIntArray::New();
 			bids->SetName("BlockId");
-			for (i = 0; i < VTKGrid->GetNumberOfCells(); i++) {
+			for (int i = 0; i < VTKGrid->GetNumberOfCells(); i++) {
 				bids->InsertNextValue(1);
 			}
 			VTKGrid->GetCellData()->SetScalars(bids);
@@ -1452,29 +1456,27 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 
 void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
-	std::cout << dofs << "\n";
+	vtkPolyData* gp[dofs];
+	vtkPoints* po[dofs];
+	vtkPoints* points[dofs];
+	vtkCellArray* lines[dofs];
+	vtkSmartPointer<vtkCellArray> ver[dofs];
+	for(int i=0;i<dofs;i++){
+		gp[i]=vtkPolyData::New();
+		po[i]=vtkPoints::New();
+		points[i]=vtkPoints::New();
+		lines[i]=vtkCellArray::New();
+		ver[i]=vtkSmartPointer<vtkCellArray>::New();
+	}
+	vtkGenericDataObjectWriter* wg=vtkGenericDataObjectWriter::New();
+	vtkAppendPolyData* ap=vtkAppendPolyData::New();
+	//int V=mesh.coordinates().localSize(0) * constraints.B1.size();
+	std::vector<int> row;
+	std::vector<int> val;
 
-  vtkPolyData* gp[dofs];
-  vtkPoints* po[dofs];
-  vtkPoints* points[dofs];
-  vtkCellArray* lines[dofs];
-  vtkSmartPointer<vtkCellArray> ver[dofs];
-  for(int i=0;i<dofs;i++){
-	  gp[i]=vtkPolyData::New();
-	  po[i]=vtkPoints::New();
-	  points[i]=vtkPoints::New();
-  	  lines[i]=vtkCellArray::New();
-  	  ver[i]=vtkSmartPointer<vtkCellArray>::New();
-  }
-  vtkGenericDataObjectWriter* wg=vtkGenericDataObjectWriter::New();	
-  vtkAppendPolyData* ap=vtkAppendPolyData::New();
-  //int V=mesh.coordinates().localSize(0) * constraints.B1.size();
-  std::vector<int> row;
-  std::vector<int> val;
-    
-  MPI_Status status;
-  int matr=0;
-  int l=0;
+	MPI_Status status;
+	int matr=0;
+	int l=0;
 
 
 //        const Boundaries &sBoundaries = mesh.subdomainBoundaries();
@@ -1484,8 +1486,6 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 	//constraints.B1[0].J_col_indices
 	//constraints.B1[0].V_values
 	
-	std::cout<<std::endl<<constraints.B1[0].J_col_indices.size()<<" "<<mesh.coordinates().localSize(0)<<std::endl<<std::endl;
-
 
 	for (int y = 0; y < mesh.parts(); y++) {
 	  for(int i=0;i<constraints.B1[y].I_row_indices.size();i++){
