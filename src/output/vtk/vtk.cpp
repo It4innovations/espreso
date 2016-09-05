@@ -1054,9 +1054,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	  init=true;
 	}
 	int rank = config::env::MPIrank;
-	if (rank != 0) {
-		controller->Send(VTKGrid, 0, 1111 + rank);
-	}
+
 
 //Compresor
 	vtkZLibDataCompressor *myZlibCompressor = vtkZLibDataCompressor::New();
@@ -1155,6 +1153,9 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
 		std::cout << "ENSIGHT\n";
+		if (rank != 0) {
+			controller->Send(VTKGrid, 0, 1111 + rank);
+		}
 
 		//write ensight format
 		wcase->SetFileName("result.case");
@@ -1180,23 +1181,32 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	}
 }
 
-void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
-  vtkPolyData* gp=vtkPolyData::New();
-  vtkPoints* po=vtkPoints::New();
-  vtkCellArray* lines=vtkCellArray::New();
+	std::cout << dofs << "\n";
+
+  vtkPolyData* gp[dofs];
+  vtkPoints* po[dofs];
+  vtkPoints* points[dofs];
+  vtkCellArray* lines[dofs];
+  vtkSmartPointer<vtkCellArray> ver[dofs];
+  for(int i=0;i<dofs;i++){
+	  gp[i]=vtkPolyData::New();
+	  po[i]=vtkPoints::New();
+	  points[i]=vtkPoints::New();
+  	  lines[i]=vtkCellArray::New();
+  	  ver[i]=vtkSmartPointer<vtkCellArray>::New();
+  }
   vtkGenericDataObjectWriter* wg=vtkGenericDataObjectWriter::New();	
   vtkAppendPolyData* ap=vtkAppendPolyData::New();
-  int V=mesh.coordinates().localSize(0) * constraints.B1.size();
+  //int V=mesh.coordinates().localSize(0) * constraints.B1.size();
   std::vector<int> row;
   std::vector<int> val;
-  std::vector<int> clust;
     
   MPI_Status status;
   int matr=0;
+  int l=0;
 
-  vtkSmartPointer<vtkCellArray> ver =vtkSmartPointer<vtkCellArray>::New();
-  vtkPoints* points=vtkPoints::New();
 
         const Boundaries &sBoundaries = mesh.subdomainBoundaries();
 	//sBoundaries[5] -> vector subdomen
@@ -1207,12 +1217,12 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 	
 	std::cout<<std::endl<<constraints.B1[0].J_col_indices.size()<<" "<<mesh.coordinates().localSize(0)<<std::endl<<std::endl;
 
-	int l=0;
+
 	for (int y = 0; y < mesh.parts(); y++) {
 	  for(int i=0;i<constraints.B1[y].I_row_indices.size();i++){
 	    int h=constraints.B1[y].I_row_indices[i];//I souradnice ke srovnani	
 		int index1=constraints.B1[y].J_col_indices[i]-1;
-		Point p1=mesh.coordinates().get(index1,y);
+
 		//ESINFO(ALWAYS) << h << ":" << index1 << "\n";
 
 		Point center1;
@@ -1220,18 +1230,20 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 		   center1 += mesh.coordinates().get(c,y);
 		}
 		center1 /= mesh.coordinates().localSize(y);
-		p1=center1+(p1-center1)*0.9;
+
+		Point *p1=new Point[dofs];
+		for(int pd=0;pd<dofs;pd++){
+			p1[pd]=mesh.coordinates().get(index1/dofs,y);
+			p1[pd]=center1+(p1[pd]-center1)*0.9;
+			vtkIdType pid[1];
+			pid[0] = points[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+			ver[pd]->InsertNextCell(1,pid);
+		}
 
 		row.push_back(h);
 		val.push_back(constraints.B1[y].V_values[i]);
-		clust.push_back(y);
 		matr++;
 
-		//std::cout<<row.at(i)<<::std::endl;
-
-		vtkIdType pid[1];
-		pid[0] = points->InsertNextPoint(p1.x,p1.y,p1.z);
-		ver->InsertNextCell(1,pid); 
 
 	    for(int p=0;p<mesh.parts();p++){
 	      if(y<=p){
@@ -1241,25 +1253,28 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 		      
 		      Point center2;
 		      for(int c=0;c < mesh.coordinates().localSize(p);c++){
-			center2 += mesh.coordinates().get(c,p);
+		    	  center2 += mesh.coordinates().get(c,p);
 		      }		      
 		      center2 /= mesh.coordinates().localSize(p);
 
-		      int index2=constraints.B1[p].J_col_indices[k];
+		      int index2=constraints.B1[p].J_col_indices[k]-1;
 
-		      Point p2=mesh.coordinates().get(index2-1,p);			
+		      Point p2[dofs];
+		      for(int pd=0;pd<dofs;pd++){
+		    	  p2[pd]=mesh.coordinates().get(index2/dofs,p);
+		    	  p2[pd]=center2+(p2[pd]-center2)*0.9;
+		    	  po[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+		    	  po[pd]->InsertNextPoint(p2[pd].x,p2[pd].y,p2[pd].z);
+		    	  vtkLine* ls=vtkLine::New();
+		    	  ls->GetPointIds()->SetId(0,l);
+		    	  ls->GetPointIds()->SetId(1,l+1);
+		    	  lines[pd]->InsertNextCell(ls);
+		      }
 		     
-		      p2=center2+(p2-center2)*0.9;
-			
-		     	po->InsertNextPoint(p1.x,p1.y,p1.z);
-			po->InsertNextPoint(p2.x,p2.y,p2.z);
+		      l+=2;
 			//std::cout<<"prvni: "<<p1.x<<" "<<p1.y<<" "<<p1.z<<" druha: "<<p2.x<<" "<<p2.y<<" "<<p2.z<<std::endl;
 			
-			vtkLine* ls=vtkLine::New();			
-			ls->GetPointIds()->SetId(0,l);
-			ls->GetPointIds()->SetId(1,l+1);
-			lines->InsertNextCell(ls);			
-			l+=2;
+
 		    }
 		    else{
 		      //std::cout<<"!!!"<<std::endl;
@@ -1274,8 +1289,11 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 	//MPI dirichlet control
 	MPI_Barrier(MPI_COMM_WORLD);
 	
-	vtkPolyData* PPoints=vtkPolyData::New();
-	PPoints->SetPoints(points);
+	vtkPolyData* PPoints[dofs];
+	for(int i=0;i<dofs;i++){
+		PPoints[i]=vtkPolyData::New();
+		PPoints[i]->SetPoints(points[i]);
+	}
 
 	vtkMPIController* controller = vtkMPIController::New();
 	if(init==false){
@@ -1286,16 +1304,19 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 	
 	for(int i=0;i<config::env::MPIsize;i++){
 		std::vector<int> row2;
-		vtkPolyData* PPoints2=vtkPolyData::New();
+		vtkPolyData* PPoints2[dofs];
+		for(int pd=0;pd<dofs;pd++){
+			PPoints2[pd]=vtkPolyData::New();
+		}
 		std::vector<int> val2;
-		std::vector<int> clust2;
 		int vs;
 		
 		if(i==rank){
 			row2=row;
-			PPoints2->DeepCopy(PPoints);
+			for(int pd=0;pd<dofs;pd++){
+				PPoints2[pd]->DeepCopy(PPoints[pd]);
+			}
 			val2=val;
-			clust2=clust;
 			vs=row2.size();
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -1303,12 +1324,12 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 		
 		row2.resize(vs);
 		val2.resize(vs);
-		clust2.resize(vs);
 		
 		MPI_Bcast(row2.data(),row2.size(),MPI_INT,i,MPI_COMM_WORLD);
 		MPI_Bcast(val2.data(),val2.size(),MPI_INT,i,MPI_COMM_WORLD);
-		MPI_Bcast(clust2.data(),clust2.size(),MPI_INT,i,MPI_COMM_WORLD);
-		controller->Broadcast(PPoints2,i);
+		for(int pd=0;pd<dofs;pd++){
+			controller->Broadcast(PPoints2[pd],i);
+		}
 		
 		if(i!=rank){
 			int lg;
@@ -1323,24 +1344,21 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 				for(int y=0;y<lg;y++){
 					if(row.at(i)==row2.at(y)){
 						if((val.at(i)+val2.at(y))==0){
-							  Point pr;//=mesh.coordinates().get(col.at(i),clust.at(i));
-							  Point dr;//=mesh.coordinates().get(col2.at(y),clust2.at(y));
-							  double p1[3];
-							  double p2[3];
-							  vtkIdType jed=i;
-							  vtkIdType dru=y;
-							  PPoints->GetPoint(jed,p1);
-							  PPoints2->GetPoint(dru,p2);		    
-							  
-							  //std::cout<<constraints.B1clusterMap[1];
-							  //make line
-							  po->InsertNextPoint(p1[0],p1[1],p1[2]);
-							  po->InsertNextPoint(p2[0],p2[1],p2[2]);
-							  
-							  vtkLine* ls=vtkLine::New();			
-							  ls->GetPointIds()->SetId(0,l);
-							  ls->GetPointIds()->SetId(1,l+1);
-							  lines->InsertNextCell(ls);			
+							  vtkIdType dru=0;
+							  for(vtkIdType jed=0;jed<dofs;jed++){
+								  	  double p1[3];
+								  	  double p2[3];
+									  PPoints[jed]->GetPoint(i,p1);
+									  PPoints2[jed]->GetPoint(y,p2);
+									  dru++;
+									  po[jed]->InsertNextPoint(p1[0],p1[1],p1[2]);
+									  po[jed]->InsertNextPoint(p2[0],p2[1],p2[2]);
+
+									  vtkLine* ls=vtkLine::New();
+									  ls->GetPointIds()->SetId(0,l);
+									  ls->GetPointIds()->SetId(1,l+1);
+									  lines[jed]->InsertNextCell(ls);
+							  }
 							  l+=2;
 						}
 					}			  
@@ -1439,30 +1457,26 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 
 
 	//write the polydata
-	gp->SetPoints(po);
-	gp->SetLines(lines);	
+	for(int i=0;i<dofs;i++){
+		gp[i]->SetPoints(po[i]);
+		gp[i]->SetLines(lines[i]);
 
-	ap->AddInputData(gp);
+		ap->AddInputData(gp[i]);
 
-	vtkPolyData* gp2=vtkPolyData::New();
-	gp2->SetPoints(points);
-	gp2->SetVerts(ver);
-
-	ap->AddInputData(gp2);
-	ap->Update();
+		vtkPolyData* gp2=vtkPolyData::New();
+		gp2->SetPoints(points[i]);
+		gp2->SetVerts(ver[i]);
 	
-	std::cout << "LEGACY\n";
-	std::stringstream ss;
-	ss << path << config::env::MPIrank<<".vtk";
-	wg->SetFileName(ss.str().c_str());
-	wg->SetInputData(ap->GetOutput());
-	if (config::output::OUTPUT_COMPRESSION) {
-		// writervtk->SetCompressor(myZlibCompressor);
-		std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION<< "\n";
+		ap->AddInputData(gp2);
+		ap->Update();
+
+		std::cout << "LEGACY\n";
+		std::stringstream ss;
+		ss << path << config::env::MPIrank<<i<<".vtk";
+		wg->SetFileName(ss.str().c_str());
+		wg->SetInputData(ap->GetOutput());
+		wg->Write();
 	}
-
-	wg->Write();
-
 		
 
 }

@@ -15,7 +15,7 @@ public:
 
 	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster);
 
-	static void gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, double shrinkSubdomain, double shrinkCluster);
+	static void gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster);
 
 	static void mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
 	static void properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster);
