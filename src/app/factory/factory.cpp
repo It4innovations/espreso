@@ -247,7 +247,7 @@ Factory::Factory(const Configuration &configuration)
 
 void Factory::solve()
 {
-	output::Results *results = NULL;
+	output::Store *results = NULL;
 
 	instance->init();
 	if (config::output::SAVE_RESULTS) {

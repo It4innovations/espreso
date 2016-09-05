@@ -74,9 +74,19 @@ vtkUnstructuredGrid* VTKGrid;
 
 bool init=false;
 
-VTK::VTK(const Mesh &mesh, const std::string &path): Results(mesh, path)
+VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster): Store(mesh, path, shrinkSubdomain, shringCluster)
 {
 	// constructor
+}
+
+void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement store property";
+}
+
+void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement store values";
 }
 
 void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)

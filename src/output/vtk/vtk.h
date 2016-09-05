@@ -3,15 +3,18 @@
 #define SRC_OUTPUT_VTK_VTK_H_
 
 #include "../../assembler/constraints/equalityconstraints.h"
-#include "../results.h"
+#include "../store.h"
 
 namespace espreso {
 namespace output {
 
-class VTK: public Results {
+class VTK: public Store {
 
 public:
-	VTK(const Mesh &mesh, const std::string &path);
+	VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain = config::output::SUBDOMAINS_SHRINK_RATIO, double shringCluster = config::output::CLUSTERS_SHRINK_RATIO);
+
+	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType);
+	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType);
 
 	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster);
 
