@@ -14,7 +14,7 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 4
+n_subPerClust   = 2
 
 
 
@@ -286,11 +286,7 @@ if config_espreso_python.flag_multiprocessing:
 
 
 
-if 1:
-    print('\nTFETI unsym')
-    u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
-                               vec_index_weight,mat_R1,mat_R2)
-    plt.clf()
+
     
 #for i in range(len(u)):
 #    for j in range(len(u[i])):
@@ -314,6 +310,13 @@ uHDPc,lamHc = mM.hfeti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat
                         vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Rb1,mat_Rb2,\
                                 mat_F0 ,mat_Salfa,mat_Salfa_reg,\
                         mat_Kernel_Salfa,mat_Kernel_Salfa2,mat_LAMN)
+
+if 1:
+    print('\nTFETI unsym')
+    u,lam = mM.feti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B1,vec_c,vec_weight,\
+                               vec_index_weight,mat_R1,mat_R2)
+    plt.clf()
+
 
 plt.hold('on')
 for i in range(len(u)):

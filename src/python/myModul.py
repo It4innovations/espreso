@@ -285,7 +285,9 @@ class  KPLUS_HTFETI:
                 e0 = np.concatenate((e0,e0i))
             d0 += np.dot(self.B0_Kplus[i],f[i])
 #        
-        tmpV = sparse.csc_matrix.dot(self.G02.transpose(),self.iF0.solve(d0))-e0
+        iF0_d0 = self.iF0.solve(d0)
+        G02_iF0_d0 = sparse.csc_matrix.dot(self.G02.transpose(),iF0_d0)
+        tmpV = G02_iF0_d0-e0
         alpha0 = self.iS_alpha.solve(tmpV)
         lam0 = self.iF0.solve(d0-sparse.csc_matrix.dot(self.G01,alpha0)) 
 #
