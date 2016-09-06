@@ -129,7 +129,7 @@ static void goThroughElements(
 	std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
 
 	size_t start[3], end[3];
-	CubeUtils<TElement>::computeInterval(settings, interval, start, end);
+	CubeUtils<TElement>::computeInterval(settings, cluster, interval, start, end);
 
 	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, interval);
 	CubeFaces face = CubeUtils<TElement>::cubeFace(settings, cluster, interval);
@@ -140,8 +140,8 @@ static void goThroughElements(
 
 	size_t minOffset[3], maxOffset[3];
 	for (size_t i = 0; i < 3; i++) {
-		double min = (cNodes[i] - 1) * interval.start[i] / settings.problemLength[i];
-		double max = (cNodes[i] - 1) * interval.end[i] / settings.problemLength[i];
+		double min = settings.clusters[i] * (cNodes[i] - 1) * interval.start[i] / settings.problemLength[i];
+		double max = settings.clusters[i] * (cNodes[i] - 1) * interval.end[i] / settings.problemLength[i];
 		if (min == std::round(min)) {
 			minOffset[i] = std::round(min) + (interval.excludeStart[i] ? 1 : 0);
 		} else {
@@ -155,6 +155,15 @@ static void goThroughElements(
 		if (minOffset[i] > maxOffset[i]) {
 			return;
 		}
+
+		size_t cStart = cluster[i] * (cNodes[i] - 1);
+		size_t cEnd = (cluster[i] + 1) * (cNodes[i] - 1);
+
+		if (maxOffset[i] < cStart || cEnd < minOffset[i]) {
+			return;
+		}
+		minOffset[i] = minOffset[i] < cStart ? 0 : minOffset[i] - cStart;
+		maxOffset[i] = maxOffset[i] > cEnd ? cNodes[i] - 1 : maxOffset[i] - cStart;
 	}
 
 	for (size_t ex = start[0]; ex < end[0]; ex++) {

@@ -13,7 +13,7 @@ class CubeUtils {
 
 public:
 	static void globalNodesCount(const CubeSettings &settings, esglobal nodes[]);
-	static void computeInterval(const CubeSettings &settings, const Interval &interval, size_t start[], size_t end[]);
+	static void computeInterval(const CubeSettings &settings, size_t cluster[], const Interval &interval, size_t start[], size_t end[]);
 	static CubeEdges cubeEdge(const CubeSettings &settings, size_t cluster[], const Interval &interval);
 	static CubeFaces cubeFace(const CubeSettings &settings, size_t cluster[], const Interval &interval);
 };

@@ -15,9 +15,10 @@ void CubeUtils<TElement>::globalNodesCount(const CubeSettings &settings, esgloba
 }
 
 template <class TElement>
-void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, const Interval &interval, size_t start[], size_t end[])
+void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, size_t cluster[], const Interval &interval, size_t start[], size_t end[])
 {
 	for (size_t i = 0; i < 3; i++) {
+		size_t elements = settings.clusters[i] * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
 		if (interval.start[i] < 0 || interval.end[i] > settings.problemLength[i]) {
 			ESINFO(GLOBAL_ERROR) << "Invalid interval";
 		}
@@ -26,15 +27,25 @@ void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, const In
 				start[i] = 0;
 				end[i] = 1;
 			} else {
-				end[i] = settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
+				end[i] = elements;
 				start[i] = end[i] - 1;
 			}
 		} else {
-			double s = (interval.start[i] / settings.problemLength[i]) * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
-			double e = (interval.end[i] / settings.problemLength[i]) * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
+			double s = (interval.start[i] / settings.problemLength[i]) * elements;
+			double e = (interval.end[i] / settings.problemLength[i]) * elements;
 			start[i] = std::floor(s);
 			end[i] = std::ceil(e);
 		}
+
+		size_t cStart = cluster[i] * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
+		size_t cEnd = (cluster[i] + 1) * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
+
+		if (end[i] < cStart || cEnd < start[i]) {
+			// will be dropped lated
+			return;
+		}
+		start[i] = start[i] < cStart ? 0 : start[i] - cStart;
+		end[i] = end[i] > cEnd ? settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i] : end[i] - cStart;
 	}
 }
 
@@ -55,7 +66,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 			if (fixed_y) {
 				if (interval.start[1]) {
 					// Z == 1 && Y == 1
-					if (cluster[1] == settings.clusters[0] - 1 && cluster[2] == settings.clusters[2] - 1) {
+					if (cluster[1] == settings.clusters[1] - 1 && cluster[2] == settings.clusters[2] - 1) {
 						return CubeEdges::Y_1_Z_1;
 					}
 				} else {
@@ -68,7 +79,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 			if (fixed_x) {
 				if (interval.start[0]) {
 					// Z == 1 && X == 1
-					if (cluster[0] == settings.clusters[1] - 1 && cluster[2] == settings.clusters[2] - 1) {
+					if (cluster[0] == settings.clusters[0] - 1 && cluster[2] == settings.clusters[2] - 1) {
 						return CubeEdges::X_1_Z_1;
 					}
 				} else {
@@ -83,7 +94,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 			if (fixed_y) {
 				if (interval.start[1]) {
 					// Z == 0 && Y == 1
-					if (cluster[1] == settings.clusters[0] - 1 && cluster[2] == 0) {
+					if (cluster[1] == settings.clusters[1] - 1 && cluster[2] == 0) {
 						return CubeEdges::Y_1_Z_0;
 					}
 				} else {
@@ -96,7 +107,7 @@ CubeEdges CubeUtils<TElement>::cubeEdge(const CubeSettings &settings, size_t clu
 			if (fixed_x) {
 				if (interval.start[0]) {
 					// Z == 0 && X == 1
-					if (cluster[0] == settings.clusters[1] - 1 && cluster[2] == 0) {
+					if (cluster[0] == settings.clusters[0] - 1 && cluster[2] == 0) {
 						return CubeEdges::X_1_Z_0;
 					}
 				} else {
