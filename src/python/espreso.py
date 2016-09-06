@@ -14,7 +14,8 @@ import multiprocessing
 
 
 n_clus          = 1
-n_subPerClust   = 9
+n_subPerClust   = 4
+
 
 
 CONSTANT_89 = 24 
@@ -139,6 +140,7 @@ mat_LAMN   = []
 mat_Schur_Dirichlet   = []
 mat_Kernel_Salfa       = []
 mat_Kernel_Salfa2       = []
+mat_F0       = []
 
 
 
@@ -164,6 +166,7 @@ for i in range(n_clus):
     mat_Salfa_reg.append(mM.load_matrix(path,'Salfa_reg',i,'',makeSparse=False,makeSymmetric=False))
     mat_Kernel_Salfa.append(mM.load_matrix(path,'Kernel_Sa',i,'',makeSparse=False,makeSymmetric=False))
     mat_Kernel_Salfa2.append(mM.load_matrix(path,'Kernel_Sa2',i,'',makeSparse=False,makeSymmetric=False))
+    mat_F0.append(mM.load_matrix(path,'F0',i,'',makeSparse=False,makeSymmetric=False))
 #    mat_Salfa.append([])
 #    for j in range(n_subPerClust):  
     ij = []
@@ -309,7 +312,7 @@ if 1:
 print('\nHFETI - corners')
 uHDPc,lamHc = mM.hfeti_unsym(mat_K,mat_Kreg,vec_f,mat_Schur_Dirichlet,mat_B0,mat_B1,vec_c,\
                         vec_weight,vec_index_weight,mat_R1,mat_R2,mat_Rb1,mat_Rb2,\
-                                mat_Salfa,mat_Salfa_reg,\
+                                mat_F0 ,mat_Salfa,mat_Salfa_reg,\
                         mat_Kernel_Salfa,mat_Kernel_Salfa2,mat_LAMN)
 
 plt.hold('on')

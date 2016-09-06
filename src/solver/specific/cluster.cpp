@@ -1203,6 +1203,14 @@ void ClusterBase::CreateF0() {
 	}
 	F0_Mat = tmpF0v[0];
 
+
+	if (config::info::PRINT_MATRICES) {
+    SparseMatrix tmpF0 = F0_Mat;
+		std::ofstream osF0(Logging::prepareFile("F0"));
+		osF0 <<  tmpF0;
+		osF0.close();
+	}
+
 	 reduction_F0_time.end(); reduction_F0_time.printStatMPI(); F0_timing.addEvent(reduction_F0_time);
 
 
@@ -1337,12 +1345,6 @@ void ClusterBase::CreateSa() {
 		TSak.Clear();
 
 
-    for (eslocal i = 0;i<Kernel_Sa.nnz;i++){
-      Kernel_Sa2.CSR_V_values[i] *=-1;
-
-    }
-
-
 		if (config::info::PRINT_MATRICES) {
 			std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
 			osSa << Salfa;
@@ -1391,12 +1393,16 @@ void ClusterBase::CreateSa() {
 			F0.SolveMat_Sparse( LAMN_RHS, LAMN );
 			F0.iparm[11] = set_bckp_F0;
 
+      for (int i = 0;i<LAMN.nnz;i++){
+        LAMN.CSR_V_values[i] *= -1;
+      }
 
 		  if (config::info::PRINT_MATRICES) {
 		  	std::ofstream osSa(Logging::prepareFile("LAMN"));
 		  	osSa << LAMN;
 		  	osSa.close();
 		  }
+
 
 			for (int d = 0; d < domains.size(); d++) {
 

@@ -95,7 +95,7 @@ class KPLUS:
         return self.__iAreg.solve(b) 
 ###############################################################################       
 class  KPLUS_HTFETI:
-    def __init__(self,K,Kplus,Kplust,B0,R1,R2,R1bb,R2bb,S_alpha,S_alpha_reg,Hr,Hl,LAMN): 
+    def __init__(self,K,Kplus,Kplust,B0,R1,R2,R1bb,R2bb,F0,S_alpha,S_alpha_reg,Hr,Hl,LAMN): 
         self.K      = K
         self.Kplus  = Kplus
         self.Kplust = Kplust
@@ -109,6 +109,7 @@ class  KPLUS_HTFETI:
         self.Hr     = Hr
         self.Hl     = Hl
         self.LAMN   = LAMN
+        self.F0_esp = F0
         
         print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  R1[0].shape)
 
@@ -166,7 +167,10 @@ class  KPLUS_HTFETI:
               
         _m = B0[0].shape[0]
         F0_sp = sparse.csc_matrix((vF0,(iF0,jF0)),shape=(_m,_m)).tocsc()
-#            
+        
+        print('||F0 - F0_esp|| = \n',np.linalg.norm(self.F0_esp-F0_sp.toarray()))
+          
+          
         self.iF0  = spla.splu(F0_sp)
         self.iF0t = spla.splu(F0_sp.T)
 #                
@@ -180,7 +184,7 @@ class  KPLUS_HTFETI:
                 print('happy')
                 S_alpha_reg = self.S_alpha_reg
                 S_alpha  = self.S_alpha
-                Hl      = -self.Hl
+                Hl      = self.Hl
                 Hr      = self.Hr
                 LAMl    = self.LAMN
             else:
@@ -201,7 +205,12 @@ class  KPLUS_HTFETI:
                 #rho = S_alpha[0,0]
                 NNt = np.outer(Hl,Hr)
                 print('aaaaaaaaaaaaaaaaaaaaa',NNt)
+                
+                S_alpha_regEsp = S_alpha_reg.copy()                 
+                
                 S_alpha_reg = S_alpha + NNt*rho
+
+                print('delta = ' , S_alpha_regEsp-S_alpha_reg)
                 #for i in range(R1[0].shape[1]):
                 #    S_alpha_reg[i,i] += rho
                 ttt = sparse.csc_matrix.dot(self.G02,Hl)            
@@ -209,9 +218,9 @@ class  KPLUS_HTFETI:
 # #  ##############         
             LAMr = -self.iF0.solve(sparse.csc_matrix.dot(self.G01,Hr))
             print('S_alpha_reg = ' , S_alpha_reg)
-            print('delta = ' , S_alpha_reg-self.S_alpha_reg)
+
             
-            F0_dense = F0_sp.toarray()
+            #F0_dense = F0_sp.toarray()
 
 #            
             
@@ -700,7 +709,8 @@ def feti(K,Kreg,f,Schur,B,c,weight,index_weight,R):
         print('||Ku-f+BtLam||/||f||= %3.5e'% (np.sqrt(delta)/norm_f))
     return uu,lam
 ###############################################################################    
-def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,R1b_,R2b_,mat_S0,mat_S0_reg,N,Nl,LAMN):
+def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,R1b_,R2b_,\
+                                    mat_F0,mat_S0,mat_S0_reg,N,Nl,LAMN):
 #        
     maxIt = conf.maxIt_dual_feti
     eps0  = conf.eps_dual_feti   
@@ -735,7 +745,7 @@ def hfeti_unsym(K,Kreg,f,Schur,B0,B1,c,weight,index_weight,R1,R2,R1b_,R2b_,mat_S
     Kplus_HTFETI = []       
     for i in range(len(K)): 
         Kplus_HTFETI.append(KPLUS_HTFETI(K[i],Kplus[i],Kplust[i],B0[i],R1[i],R2[i],\
-                                R1b_[i],R2b_[i],mat_S0[i],\
+                                R1b_[i],R2b_[i],mat_F0[i],mat_S0[i],\
                                 mat_S0_reg[i], N[i],Nl[i],LAMN[i]))
 #        
         
