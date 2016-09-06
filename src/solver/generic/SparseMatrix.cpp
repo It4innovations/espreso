@@ -4161,6 +4161,10 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   use_null_pivots_or_s_set          = false;
   fixing_nodes_or_dof               = 0;
   dofPerNode                        = 1;
+//TODO diagonalScaling disabled for S_alpha in HTFETI !!!
+  if (d_sub==-1){
+    diagonalScaling=0;
+  }
 
 
 

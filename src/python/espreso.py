@@ -14,7 +14,8 @@ import multiprocessing
 
 
 n_clus          = 16
-n_subPerClust   = 16
+n_subPerClust   = 9
+
 
 
 
@@ -23,8 +24,8 @@ CONSTANT_89 = 24
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
-#path = '../../log/'
-path = '/home/lriha/espreso/log/'
+path = '../../log/'
+#path = '/home/lriha/espreso/log/'
 
 
 
