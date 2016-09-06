@@ -536,7 +536,7 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-		domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
 	}
 	loop_1_1_time.end();
 
@@ -1304,6 +1304,8 @@ void ClusterBase::CreateSa() {
 
 		if (MPIrank == 0) tmpsps.msglvl = 0;
 	}
+
+	Salfa.mtype = this->mtype;
 	F0_Mat.Clear();
 	G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time);
 
