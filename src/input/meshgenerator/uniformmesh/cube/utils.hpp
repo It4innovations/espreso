@@ -19,11 +19,10 @@ void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, size_t c
 {
 	for (size_t i = 0; i < 3; i++) {
 		size_t elements = settings.clusters[i] * settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i];
-		if (interval.start[i] < 0 || interval.end[i] > settings.problemLength[i]) {
-			ESINFO(GLOBAL_ERROR) << "Invalid interval";
-		}
-		if (interval.start[i] == interval.end[i]) {
-			if (interval.start[i] == 0) {
+		double istart = interval.start[i] < 0 ? 0 : interval.start[i];
+		double iend = interval.end[i] > settings.problemLength[i] ? settings.problemLength[i] : interval.end[i];
+		if (istart == iend) {
+			if (start[i] == 0) {
 				start[i] = 0;
 				end[i] = 1;
 			} else {
@@ -31,8 +30,8 @@ void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, size_t c
 				start[i] = end[i] - 1;
 			}
 		} else {
-			double s = (interval.start[i] / settings.problemLength[i]) * elements;
-			double e = (interval.end[i] / settings.problemLength[i]) * elements;
+			double s = (istart / settings.problemLength[i]) * elements;
+			double e = (iend / settings.problemLength[i]) * elements;
 			start[i] = std::floor(s);
 			end[i] = std::ceil(e);
 		}

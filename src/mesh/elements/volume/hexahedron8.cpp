@@ -192,7 +192,8 @@ void Hexahedron8::setFace(Element* face)
 
 void Hexahedron8::setEdge(Element* edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Set edge";
+	_edges.push_back(edge);
+	//ESINFO(GLOBAL_ERROR) << "Set edge";
 }
 
 Point Hexahedron8::faceNormal(const Element *face)

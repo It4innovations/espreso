@@ -91,9 +91,7 @@ void Mesh::saveFaces()
 	mesh.mapElementsToDomains();
 	mesh.mapCoordinatesToDomains();
 
-	std::stringstream ss;
-	ss << "meshFaces" << config::env::MPIrank;
-	output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	output::VTK::mesh(mesh, "meshFaces", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 }
 
 void Mesh::saveEdges()

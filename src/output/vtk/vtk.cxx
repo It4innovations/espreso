@@ -201,8 +201,11 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh)
 	os << "LOOKUP_TABLE materials\n";
 	for (size_t p = 0; p < parts; p++) {
 		for (eslocal i = partition[p]; i < partition[p + 1]; i++) {
-			os << elements[i]->param(espreso::Element::MATERIAL) << "\n";
-
+			if (elements[i]->params()) {
+				os << elements[i]->param(espreso::Element::MATERIAL) << "\n";
+			} else {
+				os << 0 << "\n";
+			}
 		}
 	}
 	os << "\n";
