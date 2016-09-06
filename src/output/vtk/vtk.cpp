@@ -50,8 +50,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <vtkMultiProcessController.h>
-#include <vtkMPICommunicator.h>
 #include <vtkAppendPolyData.h>
 #include <vtkMergeCells.h>
 
@@ -70,18 +68,19 @@
 
 using namespace espreso::output;
 
+
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster): Store(mesh, path, shrinkSubdomain, shringCluster)
 {
 	// constructor
-	vtkMPIController* controller = vtkMPIController::New();
-	controller->Initialize();
+	this->controller = vtkMPIController::New();
+	this->controller->Initialize();
 
-	centers=new Point[mesh.parts()];
+	this->centers=new Point[mesh.parts()];
 	for (size_t p = 0; p < mesh.coordinates().parts(); p++) {
 			for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
-				centers[p] += mesh.coordinates().get(i, p);
+				this->centers[p] += mesh.coordinates().get(i, p);
 			}
-			centers[p] /= mesh.coordinates().localSize(p);
+			this->centers[p] /= mesh.coordinates().localSize(p);
 	}
 
 }
@@ -93,7 +92,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 
 void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
 {
-	//ESINFO(GLOBAL_ERROR) << "Implement store values";
 	const std::vector<Element*> &elements = _mesh.elements();
 	const std::vector<eslocal> &_partPtrs = _mesh.getPartition();
 
@@ -107,8 +105,6 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	for (size_t d = 0; d < _mesh.parts(); d++) {
 		n_points += _mesh.coordinates().localSize(d);
 	}
-
-	std::cout<<_mesh.parts()*_mesh.coordinates().localSize(0)<<std::endl;
 
 	//Points
 	int counter = 0;
@@ -237,7 +233,6 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	ofstream result;
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
-	vtkMPIController* controller=vtkMPIController::New();
 	vtkUnstructuredGrid* ugcase=vtkUnstructuredGrid::New();
 	//add BlockId
 		bool FCD = false;
@@ -300,7 +295,9 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 				MPI_Barrier(MPI_COMM_WORLD);
 				int size = config::env::MPIsize;
 				if (config::env::MPIrank == 0) {
-					result.open("result.vtm");
+					stringstream sss;
+					sss<<name<<".vtm";
+					result.open(sss.str().c_str());
 					result << "<?xml version=\"1.0\"?>\n";
 					if (!config::output::OUTPUT_COMPRESSION) {
 						result
@@ -336,7 +333,8 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 				}
 
 				//write ensight format
-				wcase->SetFileName("result.case");
+				ss<<name<<".case";
+				wcase->SetFileName(ss.str().c_str());
 				wcase->SetNumberOfBlocks(1);
 				wcase->SetBlockIDs(blockids);
 				wcase->SetTimeStep(0);
@@ -365,6 +363,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 
 void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
+	ESINFO(GLOBAL_ERROR) << "Implement mesh";
 	const std::vector<Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &_partPtrs = mesh.getPartition();
 
@@ -547,6 +546,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 
 void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
 {
+	ESINFO(GLOBAL_ERROR) << "Implement properties";
 	std::cout << path << "\n";
 	const std::vector<Element*> &elements = mesh.elements();
 	const std::vector<eslocal> &partition = mesh.getPartition();
@@ -1456,6 +1456,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 
 void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
+	/*
 	vtkPolyData* gp[dofs];
 	vtkPoints* po[dofs];
 	vtkPoints* points[dofs];
@@ -1494,16 +1495,10 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 
 		//ESINFO(ALWAYS) << h << ":" << index1 << "\n";
 
-		Point center1;
-		for(int c=0;c < mesh.coordinates().localSize(y);c++){
-		   center1 += mesh.coordinates().get(c,y);
-		}
-		center1 /= mesh.coordinates().localSize(y);
-
 		Point *p1=new Point[dofs];
 		for(int pd=0;pd<dofs;pd++){
 			p1[pd]=mesh.coordinates().get(index1/dofs,y);
-			p1[pd]=center1+(p1[pd]-center1)*0.9;
+			p1[pd]=centers[y]+(p1[pd]-centers[y])*0.9;
 			vtkIdType pid[1];
 			pid[0] = points[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
 			ver[pd]->InsertNextCell(1,pid);
@@ -1519,19 +1514,14 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 		for(int k=0;k<constraints.B1[p].I_row_indices.size();k++){
 		   if(constraints.B1[p].I_row_indices[k]==h){
 		    if((constraints.B1[y].V_values[i]+constraints.B1[p].V_values[k])==0){
-		      
-		      Point center2;
-		      for(int c=0;c < mesh.coordinates().localSize(p);c++){
-		    	  center2 += mesh.coordinates().get(c,p);
-		      }		      
-		      center2 /= mesh.coordinates().localSize(p);
+
 
 		      int index2=constraints.B1[p].J_col_indices[k]-1;
 
 		      Point p2[dofs];
 		      for(int pd=0;pd<dofs;pd++){
 		    	  p2[pd]=mesh.coordinates().get(index2/dofs,p);
-		    	  p2[pd]=center2+(p2[pd]-center2)*0.9;
+		    	  p2[pd]=centers[p]+(p2[pd]-centers[p])*0.9;
 		    	  po[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
 		    	  po[pd]->InsertNextPoint(p2[pd].x,p2[pd].y,p2[pd].z);
 		    	  vtkLine* ls=vtkLine::New();
@@ -1565,7 +1555,6 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 			PPoints[i]->SetPoints(points[i]);
 		}
 	
-		vtkMPIController* controller = vtkMPIController::New();
 	
 		int rank = config::env::MPIrank;
 		
@@ -1637,7 +1626,7 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 			MPI_Barrier(MPI_COMM_WORLD);
 		}
 	}
-
+	*/
 	/*for(int i=0;i<config::env::MPIsize;i++){
 	  int clust2[2];
 	  std::vector<int> bufclust;
@@ -1720,7 +1709,7 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 	  MPI_Barrier(MPI_COMM_WORLD);
 	}*/	
 
-	 
+	 /*
 
 
 	//write the polydata
@@ -1745,5 +1734,5 @@ void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const
 		wg->Write();
 	}
 		
-
+*/
 }
