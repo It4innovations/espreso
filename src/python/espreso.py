@@ -23,8 +23,8 @@ CONSTANT_89 = 24
 
 problem_info = {'n_clus': n_clus,'n_subPerClust':n_subPerClust}
 
-path = '../../log/'
-#path = '/home/lriha/espreso/log/'
+#path = '../../log/'
+path = '/home/lriha/espreso/log/'
 
 
 
