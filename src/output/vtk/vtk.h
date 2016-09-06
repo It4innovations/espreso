@@ -4,9 +4,7 @@
 
 #include "../../assembler/constraints/equalityconstraints.h"
 #include "../store.h"
-#include <vtkMultiProcessController.h>
-#include <vtkMPICommunicator.h>
-#include <vtkMPIController.h>
+
 
 namespace espreso {
 namespace output {
@@ -14,11 +12,6 @@ namespace output {
 class VTK: public Store {
 
 public:
-	Point* centers;
-	vtkMPIController* controller;
-	bool init=false;
-	//static
-
 	VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain = config::output::SUBDOMAINS_SHRINK_RATIO, double shringCluster = config::output::CLUSTERS_SHRINK_RATIO);
 
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType);
@@ -33,6 +26,9 @@ public:
 
 	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
 	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+
+protected:
+	std::vector<Point> centers;
 };
 
 }

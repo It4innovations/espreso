@@ -66,23 +66,21 @@
 #include "vtkPointData.h"
 #include "vtkUnstructuredGrid.h"
 
-using namespace espreso::output;
+#include <vtkMultiProcessController.h>
+#include <vtkMPICommunicator.h>
+#include <vtkMPIController.h>
 
+using namespace espreso::output;
 
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster): Store(mesh, path, shrinkSubdomain, shringCluster)
 {
-	// constructor
-	this->controller = vtkMPIController::New();
-	this->controller->Initialize();
-
-	this->centers=new Point[mesh.parts()];
+	centers.resize(mesh.parts());
 	for (size_t p = 0; p < mesh.coordinates().parts(); p++) {
-			for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
-				this->centers[p] += mesh.coordinates().get(i, p);
-			}
-			this->centers[p] /= mesh.coordinates().localSize(p);
+		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
+			centers[p] += mesh.coordinates().get(i, p);
+		}
+		centers[p] /= mesh.coordinates().localSize(p);
 	}
-
 }
 
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
@@ -322,8 +320,11 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 				}
 				break;
 
-			case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+			case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
 				std::cout << "ENSIGHT\n";
+				vtkMPIController* controller;
+				controller = vtkMPIController::New();
+				controller->Initialize();
 				if (config::env::MPIrank != 0) {
 					if (config::output::OUTPUT_DECIMATION == 0) {
 						controller->Send(VTKGrid, 0, 1111 + config::env::MPIrank);
@@ -357,7 +358,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 					wcase->Write();
 					wcase->WriteCaseFile(1);
 				}
-				break;
+			} break;
 			}
 }
 
