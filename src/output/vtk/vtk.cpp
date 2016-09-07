@@ -72,6 +72,7 @@
 
 using namespace espreso::output;
 
+
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster): Store(mesh, path, shrinkSubdomain, shringCluster)
 {
 	centers.resize(mesh.parts());
@@ -81,10 +82,220 @@ VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, doub
 		}
 		centers[p] /= mesh.coordinates().localSize(p);
 	}
+
+	for (size_t i = 0; i < _mesh.coordinates().clusterSize(); i++) {
+		ccenter += _mesh.coordinates()[i];
+	}
+	ccenter /= _mesh.coordinates().clusterSize();
 }
 
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
 {
+	const std::vector<Element*> &elements = _mesh.elements();
+	const std::vector<eslocal> &partition = _mesh.getPartition();
+	vtkSmartPointer<vtkPolyData> pro=vtkSmartPointer<vtkPolyData>::New();
+	vtkSmartPointer<vtkUnstructuredGrid> prof=vtkSmartPointer<vtkUnstructuredGrid>::New();
+	vtkSmartPointer<vtkPoints> po=vtkSmartPointer<vtkPoints>::New();
+	vtkSmartPointer<vtkFloatArray>sv=vtkSmartPointer<vtkFloatArray>::New();
+	sv->SetName("Vectors");
+	sv->SetNumberOfComponents(3);
+
+	vtkIdType it=0;
+	int ite=0;
+	vtkSmartPointer<vtkCellArray> ver=vtkSmartPointer<vtkCellArray>::New();
+
+	if(eType==ElementType::NODES){
+		sv->SetNumberOfTuples(_mesh.nodes().size());
+		std::cout<<properties.size()<<std::endl;
+		for (size_t i = 0; i < _mesh.nodes().size(); i++)  {
+			if (_mesh.nodes()[i]->settings().isSet(properties[0])) {
+				//std::cout << _mesh.nodes()[i]->settings(properties[0]).back()->evaluate(i) << "\n";
+				int psize=properties.size();
+				Point point;
+				point = _mesh.coordinates()[_mesh.nodes()[i]->node(0)];
+				point=ccenter+(point-ccenter)*_shringCluster;
+				vtkIdType pid[1];
+				pid[0] = po->InsertNextPoint(point.x,point.y,point.z);
+				ver->InsertNextCell(1,pid);
+				double h[3];
+				h[1]=0;
+				h[2]=0;
+				h[3]=0;
+
+				for(int p=0;p<psize;p++){
+					h[p]=_mesh.nodes()[i]->settings(properties[p]).back()->evaluate(i);
+					//std::cout<< h[p]<<std::endl;
+				}
+				sv->SetTuple(it,h);
+				//po->InsertNextPoint(h);
+				ite++;
+
+			}
+
+		}
+	}
+	else if(eType==ElementType::ELEMENTS){
+		sv->SetNumberOfTuples(_mesh.elements().size());
+		for (size_t i = 0; i < _mesh.elements().size(); i++) {
+			if (_mesh.elements()[i]->settings().isSet(properties[0])) {
+				//std::cout << _mesh.nodes()[i]->settings(properties[0]).back()->evaluate(i) << "\n";
+				int psize=properties.size();
+				Point point;
+				point = _mesh.coordinates()[_mesh.elements()[i]->node(0)];
+				point=ccenter+(point-ccenter)*_shringCluster;
+				vtkIdType pid[1];
+				pid[0] = po->InsertNextPoint(point.x,point.y,point.z);
+				ver->InsertNextCell(1,pid);;
+				double h[3];
+				h[1]=0;
+				h[2]=0;
+				h[3]=0;
+
+				for(int p=0;p<psize;p++){
+					h[p]=_mesh.elements()[i]->settings(properties[p]).back()->evaluate(i);
+					std::cout<< h[p]<<std::endl;
+				}
+				sv->SetTuple(it,h);
+				//po->InsertNextPoint(h);
+				ite++;
+			}
+		}
+
+	}
+
+	pro->SetPoints(po);
+	pro->SetVerts(ver);
+	pro->GetPointData()->SetVectors(sv);
+
+	vtkSmartPointer<vtkHedgeHog> hh=vtkSmartPointer<vtkHedgeHog>::New();
+	vtkAppendFilter* ap = vtkAppendFilter::New();
+
+	hh->SetInputData(pro);
+	hh->SetScaleFactor(0.1);
+	hh->SetOutputPointsPrecision(11);
+	hh->Update();
+
+	ap->AddInputData(hh->GetOutput());
+	ap->Update();
+	pro->ShallowCopy(ap->GetOutput());
+	vtkAppendFilter* app = vtkAppendFilter::New();
+	app->AddInputData(pro);
+	app->Update();
+	prof->ShallowCopy(app->GetOutput());
+	//vtk
+	vtkSmartPointer < vtkGenericDataObjectWriter > writervtk = vtkSmartPointer< vtkGenericDataObjectWriter > ::New();
+	//vtu
+	vtkSmartPointer < vtkXMLUnstructuredGridWriter > writervtu = vtkSmartPointer< vtkXMLUnstructuredGridWriter > ::New();
+	//vtm
+	vtkSmartPointer < vtkXMLUnstructuredGridWriter > wvtu = vtkSmartPointer< vtkXMLUnstructuredGridWriter > ::New();
+	ofstream result;
+	//ensight
+	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
+	vtkUnstructuredGrid* ugcase=vtkUnstructuredGrid::New();
+	//add BlockId
+	bool FCD = false;
+	if (prof->GetCellData()) {
+		if (prof->GetCellData()->GetArray("BlockId")) {
+			FCD = true;
+		}
+	}
+	if (FCD == false) {
+		vtkIntArray *bids = vtkIntArray::New();
+		bids->SetName("BlockId");
+		for (int i = 0; i < pro->GetNumberOfCells(); i++) {
+			bids->InsertNextValue(1);
+		}
+		prof->GetCellData()->SetScalars(bids);
+	}
+	int blockids[2];
+	blockids[0] = 1;
+	blockids[1] = 0;
+	stringstream ss;
+	//Writers
+	switch (config::output::OUTPUT_FORMAT) {
+	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+		std::cout << "LEGACY\n";
+		ss << name << config::env::MPIrank<<".vtk";
+		writervtk->SetFileName(ss.str().c_str());
+		writervtk->SetInputData(pro);
+		writervtk->Write();
+		break;
+
+	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+		std::cout << "BINARY\n";
+		ss << name << config::env::MPIrank<<".vtu";
+		writervtu->SetFileName(ss.str().c_str());
+		writervtu->SetInputData(prof);
+		writervtu->SetDataModeToBinary();
+		writervtu->Write();
+		break;
+
+	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+			std::cout << "MULTIBLOCK\n";
+			ss << name <<config::env::MPIrank<< ".vtu";
+			wvtu->SetFileName(ss.str().c_str());
+			wvtu->SetInputData(prof);
+			wvtu->SetDataModeToBinary();
+			wvtu->Write();
+
+			MPI_Barrier(MPI_COMM_WORLD);
+			int size = config::env::MPIsize;
+			if (config::env::MPIrank == 0) {
+				stringstream sss;
+				sss<<name<<".vtm";
+				result.open(sss.str().c_str());
+				result << "<?xml version=\"1.0\"?>\n";
+				if (!config::output::OUTPUT_COMPRESSION) {
+					result<< "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
+					std::cout << "Compression: "<< config::output::OUTPUT_COMPRESSION << "\n";
+				} else {
+					result<< "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
+					std::cout << "Compression: "<< config::output::OUTPUT_COMPRESSION << "\n";
+				}
+
+				result << " <vtkMultiBlockDataSet>\n";
+				for (int i = 0; i < size; i++) {
+					result << "  <DataSet index=\"" << i << "\" file=\""<<name << i	<< ".vtu\">\n  </DataSet>\n";
+				}
+				result << " </vtkMultiBlockDataSet>\n";
+				result << "</VTKFile>\n";
+				result.close();
+			}
+			break;
+
+	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+		std::cout << "ENSIGHT\n";
+		if (config::env::MPIrank != 0) {
+			controller->Send(prof, 0, 1111 + config::env::MPIrank);
+		}
+		//write ensight format
+		ss<<name<<".case";
+		wcase->SetFileName(ss.str().c_str());
+		wcase->SetNumberOfBlocks(1);
+		wcase->SetBlockIDs(blockids);
+		wcase->SetTimeStep(0);
+		if (config::env::MPIrank == 0) {
+			vtkAppendFilter* app = vtkAppendFilter::New();
+			app->AddInputData(prof);
+
+			for (int i = 1; i < config::env::MPIsize; i++) {
+				vtkUnstructuredGrid* h = vtkUnstructuredGrid::New();
+				controller->Receive(h, i, 1111 + i);
+				app->AddInputData(h);
+				std::cout << "prijato\n";
+			}
+			app->Update();
+			ugcase->ShallowCopy(app->GetOutput());
+			wcase->SetInputData(ugcase);
+			wcase->Write();
+			wcase->WriteCaseFile(1);
+		}
+		break;
+
+	}
+
+
+
 	ESINFO(GLOBAL_ERROR) << "Implement store property";
 }
 
@@ -110,7 +321,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	for (size_t d = 0; d < _mesh.parts(); d++) {
 		for (size_t i = 0; i < _mesh.coordinates().localSize(d); i++) {
 			Point xyz = _mesh.coordinates().get(i, d);
-			xyz = centers[d] + (xyz - centers[d]) * _shrinkSubdomain;
+			xyz = centers.at(d) + (xyz-centers.at(d)) * _shrinkSubdomain;
 			points->InsertNextPoint(xyz.x, xyz.y, xyz.z);
 			counter++;
 		}
@@ -188,6 +399,26 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 			}
 			value->SetTypedTuple(counter, values);
 		}
+	}
+	else if(eType==ElementType::ELEMENTS){
+		float *value_array = new float[elements.size()];
+
+			counter = 0;
+			for (size_t part = 0; part + 1 < _partPtrs.size(); part++) {
+				for (eslocal i = 0; i < _partPtrs[part + 1] - _partPtrs[part]; i++) {
+					float part_redefine = part;
+					value_array[counter] = part_redefine;
+					counter++;
+				}
+			}
+
+			vtkNew < vtkFloatArray > value;
+			value->SetName("Values");
+			value->SetNumberOfComponents(1);
+			value->SetArray(decomposition_array,
+			static_cast<vtkIdType>(elements.size()), 1);
+			VTKGrid->GetCellData()->AddArray(value.GetPointer());
+
 	}
 	//surface and decimation
 

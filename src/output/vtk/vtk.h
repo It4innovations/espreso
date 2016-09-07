@@ -5,7 +5,6 @@
 #include "../../assembler/constraints/equalityconstraints.h"
 #include "../store.h"
 
-
 namespace espreso {
 namespace output {
 
@@ -29,6 +28,7 @@ public:
 
 protected:
 	std::vector<Point> centers;
+	Point ccenter;
 };
 
 }
