@@ -53,7 +53,8 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 			_mesh.computePlaneCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			ESINFO(GLOBAL_ERROR) << "Implement HFETI from kernels for AD2D";
+			_mesh.computeEdgesSharedByDomains();
+			_mesh.saveEdges();
 			break;
 		}
 	}
@@ -83,7 +84,8 @@ void AdvectionDiffusion2D::assembleGluingMatrices()
 			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			ESINFO(GLOBAL_ERROR) << "Implement me.";
+			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
+			_constraints.insertKernelsToB0(_mesh.edges(), pointDOFs, R1);
 			break;
 		}
 	}

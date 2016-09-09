@@ -357,8 +357,7 @@ void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &el
 
 	for (size_t e = 0; e < elements.size(); e++) {
 		for (size_t dof = 0; dof < DOFs.size(); dof++) {
-			size_t n = elements[e]->numberOfLocalDomainsWithDOF(dof);
-			if (n > 1 && !elements[e]->settings().isSet(DOFs[dof])) { // Dirichlet and inner nodes are not glued
+			if (elements[e]->numberOfLocalDomainsWithDOF(dof) > 1) { // inner nodes are not glued
 				const std::vector<eslocal> &DOFIndices = elements[e]->DOFsIndices();
 
 				for (size_t d1 = 0, d2 = 1; d2 < elements[e]->domains().size(); d1++, d2++) {
@@ -390,6 +389,60 @@ void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &el
 	}
 
 	ESINFO(DETAILS) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
+}
+
+void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel)
+{
+	std::vector<Element*> el(elements);
+	std::sort(el.begin(), el.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
+
+	std::vector<size_t> part = { 0 };
+	for (size_t i = 1; i < el.size(); i++) {
+		if (el[i - 1]->domains() != el[i]->domains()) {
+			part.push_back(i);
+		}
+	}
+	part.push_back(el.size());
+
+	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+		size_t nnz = 0;
+
+		for (size_t i = 0; i < part.size() - 1; i++) {
+			const std::vector<eslocal> &domains = el[part[i]]->domains();
+			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
+			if (sign == 0) {
+				continue;
+			}
+
+
+			std::vector<Element*> nodes;
+			for (size_t e = part[i]; e < part[i + 1]; e++) {
+				for (size_t n = 0; n < el[e]->nodes(); n++) {
+					nodes.push_back(_mesh.nodes()[el[e]->node(n)]);
+				}
+			}
+			std::sort(nodes.begin(), nodes.end());
+			Esutils::removeDuplicity(nodes);
+
+			for (size_t col = 0; col < kernel[domains[0]].cols; col++) {
+				for (size_t n = 0; n < nodes.size(); n++) {
+					for (size_t dof = 0; dof < DOFs.size(); dof++) {
+						B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
+						B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + IJVMatrixIndexing);
+						B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].cols * col + nodes[n]->DOFIndex(p, dof)]);
+					}
+				}
+			}
+		}
+
+
+		B0[p].rows = kernel[0].cols * (part.size() - 1);
+		B0[p].nnz = B0[p].I_row_indices.size();
+		B0subdomainsMap[p].reserve(B0[p].nnz);
+		for (size_t i = B0subdomainsMap[p].size(); i < B0[p].nnz; i++) {
+			B0subdomainsMap[p].push_back(B0[p].I_row_indices[i] - IJVMatrixIndexing);
+		}
+	}
 }
 
 
