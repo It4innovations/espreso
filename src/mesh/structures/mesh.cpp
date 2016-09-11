@@ -1,5 +1,4 @@
 #include "mesh.h"
-#include "esoutput.h"
 
 using namespace espreso;
 
@@ -70,52 +69,6 @@ void APIMesh::partitiate(size_t parts)
 	Esutils::sizesToOffsets(_partPtrs);
 
 	delete[] ePartition;
-}
-
-void Mesh::saveFaces()
-{
-	Mesh mesh;
-	mesh._coordinates = _coordinates;
-	for (size_t i = 0; i < _faces.size(); i++) {
-		mesh._elements.push_back(_faces[i]->copy());
-	}
-	mesh._partPtrs.clear();
-	mesh._partPtrs.push_back(0);
-	std::sort(mesh._elements.begin(), mesh._elements.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
-	for (size_t i = 1; i < mesh._elements.size(); i++) {
-		if (mesh._elements[i]->domains() != mesh._elements[i - 1]->domains()) {
-			mesh._partPtrs.push_back(i);
-		}
-	}
-	mesh._partPtrs.push_back(mesh._elements.size());
-	mesh.mapElementsToDomains();
-	mesh.mapCoordinatesToDomains();
-
-	output::VTK::mesh(mesh, "meshFaces", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-}
-
-void Mesh::saveEdges()
-{
-	Mesh mesh;
-	mesh._coordinates = _coordinates;
-	for (size_t i = 0; i < _edges.size(); i++) {
-		mesh._elements.push_back(_edges[i]->copy());
-	}
-	mesh._partPtrs.clear();
-	mesh._partPtrs.push_back(0);
-	std::sort(mesh._elements.begin(), mesh._elements.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
-	for (size_t i = 1; i < mesh._elements.size(); i++) {
-		if (mesh._elements[i]->domains() != mesh._elements[i - 1]->domains()) {
-			mesh._partPtrs.push_back(i);
-		}
-	}
-	mesh._partPtrs.push_back(mesh._elements.size());
-	mesh.mapElementsToDomains();
-	mesh.mapCoordinatesToDomains();
-
-	std::stringstream ss;
-	ss << "meshEdges" << config::env::MPIrank;
-	output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 }
 
 void Mesh::computeFixPoints(size_t number)
@@ -526,11 +479,6 @@ void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool f
 	}
 
 	if (_corners.size()) {
-		if (config::output::SAVE_CORNERS) {
-			std::stringstream ss;
-			ss << "meshCorners" << config::env::MPIrank;
-			output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-		}
 		return;
 	}
 
@@ -541,12 +489,6 @@ void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool f
 	if (faces) {
 		computeCornersOnFaces(number);
 	}
-
-	if (config::output::SAVE_CORNERS) {
-		std::stringstream ss;
-		ss << "meshCorners" << config::env::MPIrank;
-		output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
 }
 
 void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
@@ -556,22 +498,11 @@ void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
 	}
 
 	if (_corners.size()) {
-		if (config::output::SAVE_CORNERS) {
-			std::stringstream ss;
-			ss << "meshCorners" << config::env::MPIrank;
-			output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-		}
 		return;
 	}
 
 	computeEdgesSharedByDomains();
 	computeCornersOnEdges(number);
-
-	if (config::output::SAVE_CORNERS) {
-		std::stringstream ss;
-		ss << "meshCorners" << config::env::MPIrank;
-		output::VTK::corners(*this, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
 }
 
 template<typename MergeFunction>
@@ -687,10 +618,6 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 		mesh._partPtrs.push_back(mesh._elements.size());
 		mesh.mapElementsToDomains();
 		mesh.mapCoordinatesToDomains();
-
-		std::stringstream ss;
-		ss << "meshEdges" << config::env::MPIrank;
-		output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -749,10 +676,6 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 		mesh._partPtrs.push_back(mesh._elements.size());
 		mesh.mapElementsToDomains();
 		mesh.mapCoordinatesToDomains();
-
-		std::stringstream ss;
-		ss << "meshFaces" << config::env::MPIrank;
-		output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 
@@ -872,10 +795,6 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 		mesh._partPtrs.push_back(mesh._elements.size());
 		mesh.mapElementsToDomains();
 		mesh.mapCoordinatesToDomains();
-
-		std::stringstream ss;
-		ss << "meshEdges" << config::env::MPIrank;
-		output::VTK::mesh(mesh, ss.str(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 }
 

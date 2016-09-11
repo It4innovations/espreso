@@ -4,7 +4,7 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", ctx.env["HYPRE::LIBPATH"])
 
     ctx.env.HYPRE = ctx.check_cc(
-        fragment    = "#include #include \"LLNL_FEI_Impl.h\"\nint main() {{ return 0; }}\n",
+        fragment    = "#include \"LLNL_FEI_Impl.h\"\nint main() {{ return 0; }}\n",
         mandatory   = False,
         execute     = False,
         msg         = "Checking for HYPRE headers",
@@ -32,5 +32,16 @@ def build(ctx):
     ctx.objects(
         source = ctx.path.ant_glob('**/*.cpp'),
         target = "assembler",
+        use    = "espreso_includes"
+    )
+
+    ctx.objects(
+        source =
+            ctx.path.ant_glob('instance/*.cpp') +
+            ctx.path.ant_glob('instance/precomputed/*.cpp') +
+            ctx.path.ant_glob('constraints/**/*.cpp') +
+            ctx.path.ant_glob('physics/*.cpp') +
+            ctx.path.ant_glob('physics/precomputed/**/*.cpp'),
+        target = "assembler_api",
         use    = "espreso_includes"
     )

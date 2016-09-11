@@ -1,6 +1,5 @@
 
 #include "assembler.h"
-#include "esoutput.h"
 
 using namespace espreso;
 
@@ -43,9 +42,6 @@ void LinearElasticity3D::prepareMeshStructures()
 			break;
 		}
 	}
-
-	output::VTK vtk(_mesh, "xxx", 0.9, 0.95);
-	vtk.storeProperty("dirichletX", { Property::DISPLACEMENT_X }, output::Store::ElementType::NODES);
 }
 
 void LinearElasticity3D::saveMeshProperties(output::Store &store)

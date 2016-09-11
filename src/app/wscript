@@ -53,14 +53,14 @@ def build(ctx):
         use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in espreso_out generic_out paraview_out mesh bem assembler factory",
         install_path = ctx.ROOT
     )
-    return
- 
+
+    ctx.env = ctx.all_envs["solver"];
     ctx.lib = (ctx.stlib, ctx.shlib)[ctx.env.LIBTYPE == "SHARED"]
 
     ctx.lib(
         source       = "apiwrapper/wrapper.cpp",
         target       = "feti4i",
-        use          = "espreso_includes basis config api_in solver mesh bem assembler",
+        use          = "espreso_includes basis config api_in solver mesh bem assembler_api",
         install_path = ctx.ROOT + "/libespreso"
     )
 

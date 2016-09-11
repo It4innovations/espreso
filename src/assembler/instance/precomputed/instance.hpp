@@ -20,7 +20,6 @@ void PrecomputedInstance<TConstrains, TPhysics>::init()
 		_physics.saveMatrices();
 	}
 
-
 	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
 	_physics.assembleGluingMatrices();
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
@@ -28,7 +27,6 @@ void PrecomputedInstance<TConstrains, TPhysics>::init()
 	if (config::info::PRINT_MATRICES) {
 		_constrains.save();
 	}
-
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
 	_linearSolver.init(_mesh.neighbours());

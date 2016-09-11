@@ -94,10 +94,12 @@ def configure(ctx):
     ctx.setenv("solver", ctx.env.derive());
     append_solver_attributes(ctx, compiler_attributes)
     ctx.recurse("src/mesh")
-    ctx.recurse("src/output")
     ctx.recurse("src/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
+
+    ctx.setenv("espreso", ctx.env.derive());
+    ctx.recurse("src/output")
     ctx.recurse("src/app")
 
     check_environment(ctx)
@@ -130,10 +132,12 @@ def build(ctx):
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/mesh")
-    ctx.recurse("src/output")
     ctx.recurse("src/input")
     ctx.recurse("src/solver")
     ctx.recurse("src/assembler")
+
+    ctx.env = ctx.all_envs["espreso"]
+    ctx.recurse("src/output")
     ctx.recurse("src/app")
 
 def options(opt):
