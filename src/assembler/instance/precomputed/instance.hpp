@@ -17,7 +17,7 @@ void PrecomputedInstance<TConstrains, TPhysics>::init()
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
 	if (config::info::PRINT_MATRICES) {
-		_physics.save();
+		_physics.saveMatrices();
 	}
 
 

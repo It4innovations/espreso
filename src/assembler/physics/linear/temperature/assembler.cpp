@@ -26,6 +26,16 @@ void Temperature::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
+void Temperature::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void Temperature::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+
+}
+
 static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();

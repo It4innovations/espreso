@@ -38,6 +38,16 @@ void LinearElasticity2D::prepareMeshStructures()
 	}
 }
 
+void LinearElasticity2D::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void LinearElasticity2D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+	store.storeValues("displacement", 2, results, output::Store::ElementType::NODES);
+}
+
 void LinearElasticity2D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);

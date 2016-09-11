@@ -27,6 +27,16 @@ void LameSteklovPoincare::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
+void LameSteklovPoincare::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void LameSteklovPoincare::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+
+}
+
 static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
 {
 	size_t nodes = coordinates.localSize(subdomain);

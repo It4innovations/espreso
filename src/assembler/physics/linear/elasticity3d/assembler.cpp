@@ -48,6 +48,15 @@ void LinearElasticity3D::prepareMeshStructures()
 	vtk.storeProperty("dirichletX", { Property::DISPLACEMENT_X }, output::Store::ElementType::NODES);
 }
 
+void LinearElasticity3D::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+	store.storeValues("displacement", 3, results, output::Store::ElementType::NODES);
+}
 
 static void composeFacesGluing(Mesh &mesh, Constraints &constrains)
 {

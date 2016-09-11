@@ -1,6 +1,5 @@
 
 #include "instance.h"
-#include "esoutput.h"
 
 namespace espreso {
 
@@ -11,15 +10,17 @@ void LinearInstance<TConstrains, TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
+	if (config::output::SAVE_PROPERTIES) {
+		_physics.saveMeshProperties(_store);
+	}
 
 	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
 	if (config::info::PRINT_MATRICES) {
-		_physics.save();
+		_physics.saveMatrices();
 	}
-
 
 	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
 	_physics.assembleGluingMatrices();
@@ -29,8 +30,9 @@ void LinearInstance<TConstrains, TPhysics>::init()
 		_constrains.save();
 	}
 
-	output::VTK::gluing(_mesh, _constrains, "meshGluing", _physics.pointDOFs.size(), 0.95, 0.9);
-
+	if (config::output::SAVE_GLUING) {
+		output::VTK::gluing(_mesh, _constrains, "meshGluing", _physics.pointDOFs.size(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
 	_linearSolver.init(_mesh.neighbours());
@@ -43,6 +45,10 @@ void LinearInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
 	_linearSolver.Solve(_physics.f, solution);
 	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);
+
+	if (config::output::SAVE_RESULTS) {
+		_physics.saveMeshResults(_store, solution);
+	}
 }
 
 template <class TConstrains, class TPhysics>

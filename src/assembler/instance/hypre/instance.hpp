@@ -8,6 +8,10 @@ void HypreInstance<TConstrains, TPhysics>::init()
 {
 	_physics.prepareMeshStructures();
 
+	if (config::output::SAVE_PROPERTIES) {
+		_physics.saveMeshProperties(_store);
+	}
+
 	std::cout << "FILL MESS\n";
 	const std::vector<Element*> &elements = _mesh.elements();
 
@@ -84,6 +88,10 @@ void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double>
 	solution.resize(_mesh.parts());
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		solution[p].resize(_mesh.coordinates().localSize(p));
+	}
+
+	if (config::output::SAVE_RESULTS) {
+		_physics.saveMeshResults(_store, solution);
 	}
 }
 

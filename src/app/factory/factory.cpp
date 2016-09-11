@@ -1,5 +1,7 @@
 
 #include "factory.h"
+#include "esbasis.h"
+#include "esinput.h"
 
 using namespace espreso;
 
@@ -197,33 +199,6 @@ Factory::Factory(const Configuration &configuration)
 	}
 }
 
-	if (config::output::SAVE_MESH) {
-		output::VTK::mesh(mesh, "mesh", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_FIX_POINTS) {
-		output::VTK::fixPoints(mesh, "meshFixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_CORNERS) {
-		output::VTK::corners(mesh, "meshCorners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-	if (config::output::SAVE_PROPERTIES) {
-//		output::VTK::properties(mesh, "meshDirichletX",
-//				{ Property::DISPLACEMENT_X },
-//				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-//
-//		output::VTK::properties(mesh, "meshDirichletY",
-//				{ Property::DISPLACEMENT_Y },
-//				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-//
-//		output::VTK::properties(mesh, "meshDirichletZ",
-//				{ Property::DISPLACEMENT_Z },
-//				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-
-		output::VTK::properties(mesh, "meshTranslationMotion",
-				{ Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y },
-				config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
-
 	switch (physics) {
 	case PhysicsAssembler::LINEAR_ELASTICITY_2D:
 		createInstance<EqualityConstraints, LinearElasticity2D, LinearInstance<EqualityConstraints, LinearElasticity2D> >(instance, mesh);
@@ -247,26 +222,15 @@ Factory::Factory(const Configuration &configuration)
 
 void Factory::solve()
 {
-	output::Store *results = NULL;
-
 	instance->init();
-	if (config::output::SAVE_RESULTS) {
-		results = new output::VTK(mesh, "results");
-	}
 
 	for (int i = 0; i < config::solver::TIME_STEPS; i++) {
 		instance->pre_solve_update(_solution);
 		instance->solve(_solution);
 		instance->post_solve_update(_solution);
-		if (config::output::SAVE_RESULTS) {
-			results->store(_solution, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-		}
 	}
 
 	instance->finalize();
-	if (results != NULL) {
-		delete results;
-	}
 }
 
 double Factory::norm() const

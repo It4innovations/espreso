@@ -83,13 +83,11 @@ output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATA
 bool   output::OUTPUT_COMPRESSION = false;
 double output::OUTPUT_DECIMATION  = 0;
 
-bool output::SAVE_MESH       = false;
-bool output::SAVE_FIX_POINTS = false;
 bool output::SAVE_FACES      = false;
 bool output::SAVE_EDGES      = false;
 bool output::SAVE_CORNERS    = false;
-bool output::SAVE_PROPERTIES  = false;
-bool output::SAVE_AVERAGING  = false;
+bool output::SAVE_PROPERTIES = false;
+bool output::SAVE_GLUING     = false;
 bool output::SAVE_RESULTS    = true;
 
 double output::subdomainShrinkRatio = .95;
@@ -213,13 +211,11 @@ std::vector<Description> assembler::description = {
 	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by 'z' library.", WRITE_TO_HELP },
 	{ "OUTPUT_DECIMATION" , output::OUTPUT_DECIMATION,  "Output mesh size is reduced by VTK Decimation.", WRITE_TO_HELP },
 
-	{ "SAVE_MESH"       , output::SAVE_MESH       , "Save an input mesh.", WRITE_TO_HELP },
-	{ "SAVE_FIX_POINTS" , output::SAVE_FIX_POINTS , "Save a mesh fix points." },
 	{ "SAVE_FACES"      , output::SAVE_FACES      , "Save faces between subdomains." },
 	{ "SAVE_EDGES"      , output::SAVE_EDGES      , "Save edges among subdomains." },
 	{ "SAVE_CORNERS"    , output::SAVE_CORNERS    , "Save corner nodes." },
 	{ "SAVE_PROPERTIES" , output::SAVE_PROPERTIES , "Save properties of mesh elements.", WRITE_TO_HELP },
-	{ "SAVE_AVERAGING"  , output::SAVE_AVERAGING  , "Save averaged nodes." },
+	{ "SAVE_GLUING"     , output::SAVE_GLUING     , "Save gluing of sub-domains and clusters." },
 	{ "SAVE_RESULTS"    , output::SAVE_RESULTS    , "Save the results.", WRITE_TO_HELP },
 
 	{ "SUBDOMAIN_SHRINK_RATIO", output::SUBDOMAINS_SHRINK_RATIO, "Shrink ratio for subdomains.", WRITE_TO_HELP },

@@ -14,7 +14,11 @@ template <class TConstrains, class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(Mesh &mesh): Instance(mesh), feiPtr(MPI_COMM_WORLD), _constrains(mesh), _physics(mesh, _constrains)
+	HypreInstance(Mesh &mesh): Instance(mesh),
+	feiPtr(MPI_COMM_WORLD),
+	_constrains(mesh),
+	_physics(mesh, _constrains),
+	_store(mesh, "results", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO),
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}
@@ -29,6 +33,7 @@ protected:
 	LLNL_FEI_Impl feiPtr;
 	TConstrains _constrains;
 	TPhysics _physics;
+	output::VTK _store;
 
 };
 

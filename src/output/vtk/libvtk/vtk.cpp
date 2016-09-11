@@ -754,9 +754,8 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 	std::cout << "SAVE GENERIC VTK DATA\n";
 }
 
-void VTK::properties(const Mesh &mesh, const std::string &path,
-		std::vector<Property> properties, double shrinkSubdomain,
-		double shrinkCluster) {
+void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
+{
 	ESINFO(GLOBAL_ERROR) << "Implement properties";
 	std::cout << path << "\n";
 	const std::vector<Element*> &elements = mesh.elements();

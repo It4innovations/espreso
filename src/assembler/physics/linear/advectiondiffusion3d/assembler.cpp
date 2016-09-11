@@ -26,6 +26,16 @@ void AdvectionDiffusion3D::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
+void AdvectionDiffusion3D::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void AdvectionDiffusion3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+
+}
+
 static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();

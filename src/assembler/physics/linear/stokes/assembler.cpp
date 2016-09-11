@@ -26,6 +26,16 @@ void Stokes::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
+void Stokes::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void Stokes::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+
+}
+
 static void processElement(DenseMatrix &Ah, DenseMatrix &B1h, DenseMatrix &B2h, DenseMatrix &Eh, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
 {
 	DenseMatrix coordinates;

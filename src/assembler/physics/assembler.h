@@ -4,6 +4,7 @@
 
 #include "esmesh.h"
 #include "essolver.h"
+#include "esoutput.h"
 #include "../constraints/constraints.h"
 
 namespace espreso {
@@ -17,7 +18,9 @@ struct Physics {
 	virtual void assembleStiffnessMatrices() =0;
 	virtual void assembleGluingMatrices() =0;
 
-	virtual void save()
+	virtual void saveMeshProperties(output::Store &store) =0;
+	virtual void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results) =0;
+	virtual void saveMatrices()
 	{
 		ESINFO(PROGRESS2) << "Save matrices K and RHS.";
 		for (size_t p = 0; p < K.size(); p++) {

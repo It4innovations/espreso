@@ -124,11 +124,8 @@ namespace output {
 	/// Mesh is decimated by this ratio
 	extern double OUTPUT_DECIMATION;
 
-	/// Save input to VTK files.
-	extern bool SAVE_MESH;
-
-	/// Save fix points to VTK files.
-	extern bool SAVE_FIX_POINTS;
+	/// Save sub-domains common faces to VTK files.
+	extern bool SAVE_FACES;
 
 	/// Save sub-domains common edges to VTK files.
 	extern bool SAVE_EDGES;
@@ -139,8 +136,8 @@ namespace output {
 	/// Save nodes with Dirichlet condition to VTK files.
 	extern bool SAVE_PROPERTIES;
 
-	/// Save nodes averaged in stiffness matrix to VTK files.
-	extern bool SAVE_AVERAGING;
+	/// Save gluing of sub-domains and clusters
+	extern bool SAVE_GLUING;
 
 namespace assembler {
 	enum Discretization { FEM, BEM, API };

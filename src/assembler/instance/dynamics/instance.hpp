@@ -1,6 +1,5 @@
 
 #include "instance.h"
-#include "esoutput.h"
 
 namespace espreso {
 
@@ -11,13 +10,16 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
+	if (config::output::SAVE_PROPERTIES) {
+		_physics.saveMeshProperties(_store);
+	}
 
 	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
 	if (config::info::PRINT_MATRICES) {
-		_physics.save();
+		_physics.saveMatrices();
 	}
 
 
@@ -91,6 +93,10 @@ void DynamicsInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<doub
 
 	_linearSolver.Solve(_b, solution);
 	timeLSrun.endWithBarrier(); _timeStatistics.addEvent(timeLSrun);
+
+	if (config::output::SAVE_RESULTS) {
+		_physics.saveMeshResults(_store, solution);
+	}
 }
 
 template <class TConstrains, class TPhysics>

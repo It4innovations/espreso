@@ -23,6 +23,9 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe);
 	void assembleGluingMatrices();
 
+	void saveMeshProperties(output::Store &store);
+	void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results);
+
 	static double sigma;
 	static STABILIZATION stabilization;
 

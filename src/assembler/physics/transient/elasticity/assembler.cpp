@@ -26,6 +26,16 @@ void TransientElasticity::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
+void TransientElasticity::saveMeshProperties(output::Store &store)
+{
+
+}
+
+void TransientElasticity::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+{
+
+}
+
 static double determinant3x3(DenseMatrix &m)
 {
 	const double *values = m.values();
