@@ -11,10 +11,10 @@ def configure(ctx):
     ctx.env.append_unique("LIBPATH", ctx.env["VTK::LIBPATH"])
 
     includes = []
-    for file in glob.glob(ctx.path.abspath() + "/*.h") + glob.glob(ctx.path.abspath() + "/*.cpp"):
+    for file in glob.glob(ctx.path.abspath() + "/libvtk/*.cpp"):
         for line in open(file, "r"):
             if line.find("#include") != -1:
-                if line.find("vtk") != -1:
+                if line.find("vtk") != -1 and line.find("vtk.h") == -1:
                     includes += [ line ]
 
     ctx.env.VTK = ctx.check_cc(
@@ -42,13 +42,13 @@ def configure(ctx):
 def build(ctx):
     if ctx.env.VTK:
         ctx.objects(
-            source = ctx.path.ant_glob('**/*.cpp'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('libvtk/*.cpp'),
             target = "generic_out",
             use    = "espreso_includes"
         )
     else:
         ctx.objects(
-            source = ctx.path.ant_glob('**/*.cxx'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('espreso/*.cpp'),
             target = "generic_out",
             use    = "espreso_includes"
         )

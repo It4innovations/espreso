@@ -27,8 +27,11 @@ public:
 	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
 
 protected:
-	std::vector<Point> centers;
-	Point ccenter;
+	void computeCenters();
+	Point shrink(const Point &p, size_t part);
+
+	std::vector<Point> _sCenters;
+	Point _cCenter;
 };
 
 }
