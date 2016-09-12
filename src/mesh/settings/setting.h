@@ -27,7 +27,7 @@ enum class Property : int {
 	EMPTY
 };
 
-inline std::ostream& espreso::operator<<(std::ostream& os, const Property& property)
+inline std::ostream& operator<<(std::ostream& os, const Property& property)
 {
 	switch (property) {
 		case Property::DISPLACEMENT_X: return os << "DISPLACEMENT_X";
