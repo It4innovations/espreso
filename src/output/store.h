@@ -19,6 +19,7 @@ public:
 
 	virtual void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) = 0;
 
+	virtual void storeGeometry(size_t timeStep = -1) = 0;
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType) = 0;
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType) = 0;
 
@@ -26,14 +27,12 @@ public:
 
 protected:
 	Store(const Mesh &mesh, const std::string &path, double shrinkSubdomain = config::output::SUBDOMAINS_SHRINK_RATIO, double shringCluster = config::output::CLUSTERS_SHRINK_RATIO)
-	:_mesh(mesh), _path(path), _shrinkSubdomain(shrinkSubdomain), _shringCluster(shringCluster), counter(0) {};
+	:_mesh(mesh), _path(path), _shrinkSubdomain(shrinkSubdomain), _shringCluster(shringCluster) {};
 
 	const Mesh &_mesh;
 	std::string _path;
 	double _shrinkSubdomain;
 	double _shringCluster;
-
-	size_t counter;
 };
 
 }

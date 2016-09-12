@@ -10,6 +10,9 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
+	if (config::output::SAVE_PROPERTIES || config::output::SAVE_RESULTS) {
+		_store.storeGeometry(_time);
+	}
 	if (config::output::SAVE_PROPERTIES) {
 		_physics.saveMeshProperties(_store);
 	}
@@ -85,6 +88,10 @@ void DynamicsInstance<TConstrains, TPhysics>::pre_solve_update(std::vector<std::
 template <class TConstrains, class TPhysics>
 void DynamicsInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double> > &solution)
 {
+	if (_time && config::output::SAVE_RESULTS) {
+		_store.storeGeometry(_time);
+	}
+
 	TimeEvent timeLSrun("Linear Solver - runtime"); timeLSrun.start();
 	solution.resize(_mesh.parts());
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {

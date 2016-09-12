@@ -54,7 +54,6 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
 			_mesh.computeEdgesSharedByDomains();
-			_mesh.saveEdges();
 			break;
 		}
 	}

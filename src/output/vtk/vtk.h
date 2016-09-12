@@ -13,6 +13,7 @@ class VTK: public Store {
 public:
 	VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain = config::output::SUBDOMAINS_SHRINK_RATIO, double shringCluster = config::output::CLUSTERS_SHRINK_RATIO);
 
+	virtual void storeGeometry(size_t timeStep = -1);
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType);
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType);
 
@@ -23,13 +24,14 @@ public:
 	static void mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
 	static void properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster);
 
-	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
-	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster);
+	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
+	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
 
 protected:
 	void computeCenters();
 	Point shrink(const Point &p, size_t part);
 
+	std::ofstream _os;
 	std::vector<Point> _sCenters;
 	Point _cCenter;
 };

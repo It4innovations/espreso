@@ -168,6 +168,7 @@ void LinearElasticity3D::assembleGluingMatrices()
 			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
+			_constraints.insertKernelsToB0(_mesh.faces(), pointDOFs, R1);
 			composeFacesGluing(_mesh, _constraints);
 			break;
 		}

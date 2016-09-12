@@ -76,6 +76,11 @@ VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, doub
 	computeCenters();
 }
 
+void VTK::storeGeometry()
+{
+
+}
+
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
 {
 	const std::vector<Element*> &elements = _mesh.elements();

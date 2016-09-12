@@ -10,6 +10,9 @@ void LinearInstance<TConstrains, TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
+	if (config::output::SAVE_PROPERTIES || config::output::SAVE_RESULTS) {
+		_store.storeGeometry();
+	}
 	if (config::output::SAVE_PROPERTIES) {
 		_physics.saveMeshProperties(_store);
 	}
