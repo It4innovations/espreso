@@ -76,7 +76,7 @@ VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, doub
 	computeCenters();
 }
 
-void VTK::storeGeometry()
+void VTK::storeGeometry(size_t timeStep)
 {
 
 }
