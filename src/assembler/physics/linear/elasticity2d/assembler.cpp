@@ -427,6 +427,11 @@ void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
+void LinearElasticity2D::makeStiffnessMatricesRegular()
+{
+
+}
+
 void LinearElasticity2D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;

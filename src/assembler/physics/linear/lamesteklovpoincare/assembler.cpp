@@ -169,6 +169,11 @@ void LameSteklovPoincare::assembleStiffnessMatrix(const Element* e, DenseMatrix 
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
+void LameSteklovPoincare::makeStiffnessMatricesRegular()
+{
+
+}
+
 void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 {
 	const std::vector<eslocal> &partition = _mesh.getPartition();

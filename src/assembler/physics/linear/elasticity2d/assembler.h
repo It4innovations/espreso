@@ -23,6 +23,7 @@ struct LinearElasticity2D: public LinearPhysics
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe);
+	void makeStiffnessMatricesRegular();
 	void assembleGluingMatrices();
 
 	void saveMeshProperties(output::Store &store);

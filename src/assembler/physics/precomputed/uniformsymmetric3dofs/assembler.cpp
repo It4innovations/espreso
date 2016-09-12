@@ -31,6 +31,21 @@ void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatri
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain)
+{
+	double norm;
+	eslocal defect;
+
+	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
+}
+
+void UniformSymmetric3DOFs::makeStiffnessMatricesRegular()
+{
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+	}
+}
+
 void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;

@@ -21,6 +21,10 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
+	TimeEvent timeScaling("Assemble scaling matrices"); timeScaling.start();
+	_physics.assembleScalingMatrices();
+	timeScaling.endWithBarrier(); _timeStatistics.addEvent(timeScaling);
+
 	if (config::info::PRINT_MATRICES) {
 		_physics.saveMatrices();
 	}

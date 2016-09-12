@@ -140,9 +140,24 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1, SparseMatrix &R2, SparseMatrix &RegMat, size_t subdomain)
+{
+	double norm;
+	eslocal defect;
+
+	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
+}
+
 void AdvectionDiffusion3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+}
+
+void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
+{
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+	}
 }
 
 void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)

@@ -142,6 +142,11 @@ void Temperature::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
+void Temperature::makeStiffnessMatricesRegular()
+{
+
+}
+
 void Temperature::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = _mesh.coordinates().localSize(subdomain);

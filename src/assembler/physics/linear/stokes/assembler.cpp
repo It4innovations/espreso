@@ -146,6 +146,11 @@ void Stokes::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vec
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
+void Stokes::makeStiffnessMatricesRegular()
+{
+
+}
+
 void Stokes::composeSubdomain(size_t subdomain)
 {
 	eslocal subdomainSize = pointDOFs.size() * _mesh.coordinates().localSize(subdomain);

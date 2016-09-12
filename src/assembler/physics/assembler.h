@@ -16,6 +16,8 @@ struct Physics {
 	virtual void prepareMeshStructures() =0;
 	virtual void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe) =0;
 	virtual void assembleStiffnessMatrices() =0;
+	virtual void assembleScalingMatrices();
+	virtual void makeStiffnessMatricesRegular() =0;
 	virtual void assembleGluingMatrices() =0;
 
 	virtual void saveMeshProperties(output::Store &store) =0;
@@ -24,9 +26,15 @@ struct Physics {
 	{
 		ESINFO(PROGRESS2) << "Save matrices K and RHS.";
 		for (size_t p = 0; p < K.size(); p++) {
-			std::ofstream osK(Logging::prepareFile(p, "Kreg").c_str());
+			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
 			osK << K[p];
 			osK.close();
+		}
+
+		for (size_t p = 0; p < D.size(); p++) {
+			std::ofstream osD(Logging::prepareFile(p, "D").c_str());
+			osD << D[p];
+			osD.close();
 		}
 
 		for (size_t p = 0; p < f.size(); p++) {
@@ -36,7 +44,7 @@ struct Physics {
 		}
 
 		for (size_t p = 0; p < R1.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R1_").c_str());
+			std::ofstream osR(Logging::prepareFile(p, "R1").c_str());
 			SparseMatrix tmpR = R1[p];
 			tmpR.ConvertDenseToCSR(0);
 			osR << tmpR;
@@ -44,7 +52,7 @@ struct Physics {
 		}
 
 		for (size_t p = 0; p < R2.size(); p++) {
-			std::ofstream osR(Logging::prepareFile(p, "R2_").c_str());
+			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
 			SparseMatrix tmpR = R2[p];
 			tmpR.ConvertDenseToCSR(0);
 			osR << tmpR;
@@ -62,7 +70,7 @@ struct Physics {
 
 	SparseMatrix::MatrixType mtype;
 	std::vector<SparseMatrix> K, R1, R2, RegMat;
-	std::vector<std::vector<double> > f;
+	std::vector<std::vector<double> > f, D;
 
 	Physics(Mesh &mesh,
 			Constraints &constraints,

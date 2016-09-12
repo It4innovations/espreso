@@ -430,6 +430,30 @@ void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	processElement(Ke, fe, _mesh, e);
 }
 
+void LinearElasticity3D::makeStiffnessMatricesRegular()
+{
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		switch (config::solver::REGULARIZATION) {
+		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+			if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {
+				ESINFO(GLOBAL_ERROR) << "Implement regularization for GROUP_DOFS alternative";
+			}
+
+			analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+			analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
+			K[subdomain].RemoveLower();
+			RegMat[subdomain].RemoveLower();
+			K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+			RegMat[subdomain].ConvertToCOO(1);
+			break;
+		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+			K[subdomain].RemoveLower();
+			algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+			break;
+		}
+	}
+}
+
 void LinearElasticity3D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
@@ -464,25 +488,6 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
-
-	switch (config::solver::REGULARIZATION) {
-	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
-		if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {
-			ESINFO(GLOBAL_ERROR) << "Implement regularization for GROUP_DOFS alternative";
-		}
-
-		analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
-		K[subdomain].RemoveLower();
-		RegMat[subdomain].RemoveLower();
-		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
-		RegMat[subdomain].ConvertToCOO(1);
-		break;
-	case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
-		K[subdomain].RemoveLower();
-		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
-		break;
-	}
 }
 
 

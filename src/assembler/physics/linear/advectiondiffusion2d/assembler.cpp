@@ -244,6 +244,13 @@ void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
+void AdvectionDiffusion2D::makeStiffnessMatricesRegular()
+{
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+	}
+}
+
 void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
@@ -278,14 +285,6 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
-
-
-	if (config::info::PRINT_MATRICES){
-		std::ofstream osK(Logging::prepareFile(subdomain, "K").c_str());
-		osK << K[subdomain];
-		osK.close();
-	}
-	algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 }
 
 
