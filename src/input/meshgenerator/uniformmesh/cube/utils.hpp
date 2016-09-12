@@ -22,7 +22,7 @@ void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, size_t c
 		double istart = interval.start[i] < 0 ? 0 : interval.start[i];
 		double iend = interval.end[i] > settings.problemLength[i] ? settings.problemLength[i] : interval.end[i];
 		if (istart == iend) {
-			if (start[i] == 0) {
+			if (istart == 0) {
 				start[i] = 0;
 				end[i] = 1;
 			} else {
