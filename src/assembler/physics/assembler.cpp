@@ -89,7 +89,7 @@ void Physics::assembleScalingMatrices()
 					k += D[_mesh.nodes()[n]->domains()[d]][_mesh.nodes()[n]->DOFIndex(_mesh.nodes()[n]->domains()[d], dof)];
 				}
 				for (size_t c = 0; c < _mesh.nodes()[n]->clusters().size(); c++) {
-					if (_mesh.nodes()[i]->clusters()[c] != config::env::MPIrank) {
+					if (_mesh.nodes()[n]->clusters()[c] != config::env::MPIrank) {
 						size_t neigh = n2i(_mesh.nodes()[n]->clusters()[c]);
 						size_t index = std::lower_bound(commonNodes[neigh].begin(), commonNodes[neigh].end(), _mesh.coordinates().globalIndex(n)) - commonNodes[neigh].begin();
 						k += rBuffer[neigh][pointDOFs.size() * index + dof];
