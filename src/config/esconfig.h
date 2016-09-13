@@ -72,6 +72,7 @@ enum MatrixType {
 	SYMMETRIC
 };
 
+
 namespace env {
 	extern int MPIrank;
 	extern int MPIsize;
@@ -335,6 +336,27 @@ namespace solver {
 
 	/// The number of time steps for transient problems
 	extern size_t TIME_STEPS;
+};
+
+namespace hypre {
+	enum class SOLVERalternative { 
+		CG=0,
+		GMRES = 1,
+		FGMRES = 2,
+		BOOMERAMG = 3
+	};
+	
+	enum class PRECONDITIONERalternative {
+		DIAGONAL = 0,
+		PARASAILS = 1,
+		EUCLID = 2,
+		BOOMERAMG = 3,
+		MLI = 4
+	};
+	
+	extern SOLVERalternative HYPRE_SOLVER;
+	extern PRECONDITIONERalternative HYPRE_PRECONDITIONER;
+	extern double TOLERANCE;
 };
 
 namespace info {

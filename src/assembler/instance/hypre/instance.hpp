@@ -1,98 +1,442 @@
 
 #include "instance.h"
 
+#define TEST 1
+
 namespace espreso {
 
 template <class TConstrains, class TPhysics>
 void HypreInstance<TConstrains, TPhysics>::init()
 {
+	int rank, size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Status stat;
+//------------------------------------------------------------------------------
 	_physics.prepareMeshStructures();
+//------------------------------------------------------------------------------
+if(rank==TEST)	std::cout << "  > HYPRE INIT in "<<_physics.pointDOFs.size()<<"D\n";
+
+	// Set the matrix storage type to HYPRE
+	char **paramStrings = new char*[1];
+	paramStrings[0] = new char[100];
+	strcpy(paramStrings[0], "externalSolver HYPRE");
+	feiPtr.parameters(1, paramStrings);
+	delete paramStrings[0];
+	delete [] paramStrings;
 
 	if (config::output::SAVE_PROPERTIES) {
 		_physics.saveMeshProperties(_store);
 	}
 
-	std::cout << "FILL MESS\n";
 	const std::vector<Element*> &elements = _mesh.elements();
+	const std::vector<Element*> &nodes = _mesh.nodes();	
+	const std::vector<Property> DOFs = _physics.pointDOFs;
 
-	for (size_t i = 0; i < elements.size(); i++) {
-		std::cout << "cluster index: ";
-		for (size_t j = 0; j < elements[i]->nodes(); j++) {
-			std::cout << elements[i]->node(j) << " ";
-		}
-		std::cout << "\n";
-		std::cout << "global index: ";
-		for (size_t j = 0; j < elements[i]->nodes(); j++) {
-			std::cout << _mesh.coordinates().globalIndex(elements[i]->node(j)) << " ";
-		}
-		std::cout << "\n";
+	// Set FEI fields = set degree of freedom
+	const int nFields = 1;
+	int *fieldSizes = new int[nFields];  fieldSizes[0] = DOFs.size();
+	int *fieldIDs = new int[nFields];    fieldIDs[0] = 0;
+
+	// Pass the field information to the FEI
+	feiPtr.initFields(nFields, fieldSizes, fieldIDs);
+
+	// Elements are grouped into blocks (in this case one block), and we
+	// have to describe the number of elements in the block (nElems) as
+	// well as the fields (unknowns) per element.
+	const int elemBlkID = 0;
+	const int nElems = _mesh.elements().size();
+	const int elemNNodes = elements[0]->nodes();//TODO elements in one block must have same number of nodes
+
+	const int elemNFields = 0; 						// number of (non-shared) fields per element
+	int *elemFieldIDs = NULL; 					// element-fields IDs
+
+	int *nodeNFields = new int[elemNNodes];		// fields per node
+	int **nodeFieldIDs = new int*[elemNNodes];	// node-fields IDs
+	for (size_t i = 0; i < elemNNodes; i++)
+	{
+		nodeNFields[i] = 1;
+		nodeFieldIDs[i] = new int[nodeNFields[i]];
+		nodeFieldIDs[i][0] = fieldIDs[0];		//reference to field that sets the degree of freedom
 	}
 
-	std::cout << "FILL BC\n";
+	// Pass the block information to the FEI. The interleave parameter
+	// controls how different fields are ordered in the element matrices.
+	const int interleave = 0;
+	feiPtr.initElemBlock(elemBlkID, nElems, elemNNodes, nodeNFields, nodeFieldIDs, elemNFields, elemFieldIDs, interleave);
+//------------------------------------------------------------------------------
+if(rank==TEST)	std::cout << "  > FILL MESS\n";
 
-	const std::vector<Element*> &nodes = _mesh.nodes();
+	// List the global indexes (IDs) of the nodes in each element
+	int **elemConn = new int*[elements.size()];
+	for (size_t i = 0; i < elements.size(); i++)
+	{
+		elemConn[i] = new int[elements[i]->nodes()];
+		for (size_t j = 0; j < elements[i]->nodes(); j++)
+		{
+			elemConn[i][j] = _mesh.coordinates().globalIndex(elements[i]->node(j));
+//if(rank==TEST)			std::cout << elements[i]->node(j) << " ("<<_mesh.coordinates().globalIndex(elements[i]->node(j)) << ") ";
+		}
+//if(rank==TEST)		std::cout << "\n";
+	}
 
-	std::vector<Property> DOFs = _physics.pointDOFs;
+	// Pass the element topology information to the FEI
+	for (size_t i = 0; i < elements.size(); i++)
+		feiPtr.initElem(elemBlkID, i, elemConn[i]);
 
-	std::cout << DOFs;
+//------------------------------------------------------------------------------
+if(rank==TEST)	std::cout << "  > SET SHARED\n";	//size_t coarseNodes()
+	
+	std::vector <int> SharedIDs;
+	std::vector <int> SharedLengs;
+	std::vector <int *> SharedProcs;
 
-	for (size_t i = 0; i < nodes.size(); i++) {
-		for (size_t dof = 0; dof < DOFs.size(); dof++) {
-			if (nodes[i]->settings().isSet(DOFs[dof])) {
-				const Point &p = _mesh.coordinates()[i];
-				std::cout << "node " << i << " has fixed " << DOFs[dof] << " to " << nodes[i]->settings(DOFs[dof]).back()->evaluate(i) << "\n";
-			}
+	for (size_t i=0; i<nodes.size(); i++)
+	{
+		std::vector<int> shared = nodes[i]->clusters();							//TODO domains/clusters
+		if (shared.size() > 1) //more clusters = shared node
+		{
+			SharedIDs.push_back(_mesh.coordinates().globalIndex(i));
+			SharedLengs.push_back(shared.size());
+			int * procs = new int[shared.size()];
+			for (int j=0; j<shared.size();j++)
+				procs[j] = shared[j];
+			SharedProcs.push_back(procs);
+		}
+	}
+	// Pass the shared nodes information to the FEI
+	if (SharedIDs.size() > 0)
+		feiPtr.initSharedNodes(SharedIDs.size(), &SharedIDs[0], &SharedLengs[0], &SharedProcs[0]);
+
+	feiPtr.initComplete();
+
+/*
+if(rank==TEST)
+{
+	std::cout << "SH ("<<rank<<"): "<<SharedIDs;
+	for (int i=0; i<SharedIDs.size(); i++)
+	{
+		std::cout << SharedIDs[i]<< "] ";
+		for (int j=0; j<SharedLengs[i]; j++)
+			std::cout <<SharedProcs[i][j]<<" ";
+		std::cout <<std::endl;
+	}
+}
+// */
+//------------------------------------------------------------------------------
+	// Specify the boundary conditions
+if(rank==TEST)	std::cout << "  > FILL BC\n";
+
+	
+	std::vector<int> BCEqn;
+	for (size_t i = 0; i < nodes.size(); i++)
+	{
+		if (nodes[i]->settings().isSet(DOFs[0]))
+		{
+			BCEqn.push_back(_mesh.coordinates().globalIndex(i));
+//			if (rank==TEST) std::cout << _mesh.coordinates().globalIndex(i) << "\n";
 		}
 	}
 
-	 DenseMatrix Ke;
-	 std::vector<double> fe;
+	// The arrays alpha, beta and gamma specify the type of boundary
+	// condition (essential, natural, mixed). The most general form
+	// for Laplace problems is alpha U + beta dU/dn = gamma. In this
+	// example we impose zero Dirichlet boundary conditions.
+	double **alpha, **beta, **gamma;
+	alpha = new double*[BCEqn.size()];
+	beta  = new double*[BCEqn.size()];
+	gamma = new double*[BCEqn.size()];
+	for (size_t i = 0; i < BCEqn.size(); i++)
+	{
+		alpha[i] = new double[DOFs.size()];
+		beta[i]  = new double[DOFs.size()];
+		gamma[i] = new double[DOFs.size()];
+		for (int j=0; j<DOFs.size(); j++)
+		{
+			alpha[i][j] = 1.0;
+			beta[i][j]  = 0.0;
+			gamma[i][j] = 0.0;
+		}
+	}
+	
+	// Pass the boundary condition information to the FEI
+	feiPtr.loadNodeBCs(BCEqn.size(), &BCEqn[0], fieldIDs[0], alpha, beta, gamma);
 
-	 const std::vector<eslocal> &partition = _mesh.getPartition();
+//------------------------------------------------------------------------------
+if(rank==TEST)	std::cout << "  > FILL STIFFNESS\n";
 
-	 for (size_t subdomain = 0; subdomain < _mesh.parts(); subdomain++) {
-		 for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-			 // compute element matrix
-			 _physics.assembleStiffnessMatrix(elements[e], Ke, fe);
+	DenseMatrix Ke;
+	std::vector<double> fe;
+	double * rhs = new double[elements.size() * elemNNodes * DOFs.size()];
+	double ***elemStiff = new double**[elements.size()];
+	const std::vector<eslocal> &partition = _mesh.getPartition();
+	size_t elemRHSn= 0;
+	size_t elemCnt = 0;
 
-			 std::cout << "Element matrix: \n";
-			 for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
-				for (size_t dx = 0; dx < DOFs.size(); dx++) {
-					size_t row = nodes[elements[e]->node(nx)]->DOFIndex(subdomain, dx);
-					std::cout << "row:";
-					for (size_t ny = 0; ny < elements[e]->nodes(); ny++) {
-						for (size_t dy = 0; dy < DOFs.size(); dy++) {
-							size_t column = nodes[elements[e]->node(ny)]->DOFIndex(subdomain, dy);
-							std::cout << " " << std::setprecision(1) << Ke(dx * elements[e]->nodes() + nx, dy * elements[e]->nodes() + ny);
+	for (size_t subdomain = 0; subdomain < _mesh.parts(); subdomain++) 
+	{
+		for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) //element matrix for each element
+		{
+			_physics.assembleStiffnessMatrix(elements[e], Ke, fe);
+			
+			elemStiff[elemCnt] = new double * [elements[e]->nodes() * DOFs.size()];
+
+			for (size_t nx = 0; nx < elements[e]->nodes(); nx++) 
+			{
+				for (size_t dx = 0; dx < DOFs.size(); dx++) 
+				{
+					elemStiff[elemCnt][nx*DOFs.size()+dx] = new double [elements[e]->nodes() * DOFs.size()];
+					size_t row = nodes[elements[e]->node(nx)]->DOFIndex(subdomain, dx);				//TODO row?
+					for (size_t ny = 0; ny < elements[e]->nodes(); ny++) 
+					{
+						for (size_t dy = 0; dy < DOFs.size(); dy++)
+						{
+							elemStiff[elemCnt][nx*DOFs.size()+dx][ny*DOFs.size()+dy] = Ke(dx * elements[e]->nodes() + nx, dy * elements[e]->nodes() + ny);
+							size_t column = nodes[elements[e]->node(ny)]->DOFIndex(subdomain, dy);	//TODO column?
+//if (rank==TEST) std::cout << " " << std::setprecision(1) << Ke(dx * elements[e]->nodes() + nx, dy * elements[e]->nodes() + ny);
 						}
 					}
-					std::cout << " rhs: "<< fe[dx * elements[e]->nodes() + nx] << "\n";
+//					std::cout << " rhs: "<< fe[dx * elements[e]->nodes() + nx] << "\n";
+					rhs[elemRHSn++] = fe[dx * elements[e]->nodes() + nx];
+//if (rank==TEST) std::cout << fe[dx * elements[e]->nodes() + nx];
+//if (rank==TEST) std::cout << std::endl;
 				}
 			}
+			elemCnt++;
+		}
+	}
 
-		 }
-	 }
+
+	// Assemble the matrix. The elemFormat parameter describes
+	// the storage (symmetric/non-symmetric, row/column-wise)
+	// of the element stiffness matrices.
+	const int elemFormat = 0;
+	for (size_t i = 0; i < _mesh.elements().size(); i++)
+		feiPtr.sumInElem(elemBlkID, i, elemConn[i], elemStiff[i], &rhs[i*elements[i]->nodes()*DOFs.size()], elemFormat);
+
+if(rank==TEST)	std::cout << "  > LOAD COMPLETE\n"; MPI_Barrier(MPI_COMM_WORLD);
+	// Finish the FEI load phase
+	feiPtr.loadComplete();
+
+//------------------------------------------------------------------------------
+if(rank==TEST)	std::cout << "  > CLEANING\n";
+
+	for (size_t i = 0; i<elements.size(); i++)
+	{
+		for (size_t j=0; j<elemNNodes*DOFs.size(); j++)
+			delete [] elemStiff[i][j];
+		delete [] elemStiff[i];
+	}
+	delete [] elemStiff;
+	delete [] rhs;
+	
+	for (size_t i = 0; i < SharedProcs.size(); i++)
+		delete [] SharedProcs [i];
+
+	for (size_t i = 0; i < BCEqn.size(); i++)
+	{
+		delete [] alpha[i];
+		delete [] beta[i];
+		delete [] gamma[i];
+	}
+	delete [] alpha;
+	delete [] beta;
+	delete [] gamma;
+	
+	for (size_t i = 0; i < elements.size(); i++)
+		delete [] elemConn[i];
+	delete [] elemConn;
+
+	delete [] nodeNFields;
+	for (size_t i = 0; i < elemNNodes; i++)
+		delete [] nodeFieldIDs[i];
+	delete []nodeFieldIDs;
+
+	delete [] fieldSizes;
+	delete [] fieldIDs;
+
 }
 
 template <class TConstrains, class TPhysics>
 void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double> > &solution)
 {
-	// SOLVER HYPRE
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//------------------------------------------------------------------------------
+// SET SOLVER PARAMS
+	const int solver = 0;
+	const int preconditioner = 0;
+	const int nParams = 19;
+	char **paramStrings = new char*[nParams];
+	for (int i = 0; i < nParams; i++)
+		paramStrings[i] = new char[100];
+
+	strcpy(paramStrings[0],  "outputLevel 2");
+	//	SOLVER
+	switch(config::hypre::HYPRE_SOLVER)
+	{
+		default:
+		case config::hypre::SOLVERalternative::CG:
+			strcpy(paramStrings[1], "solver cg");
+			break;
+		case config::hypre::SOLVERalternative::GMRES:
+			strcpy(paramStrings[1], "solver gmres");
+			break;
+		case config::hypre::SOLVERalternative::FGMRES:
+			strcpy(paramStrings[1], "solver fgmres");
+			break;
+		case config::hypre::SOLVERalternative::BOOMERAMG:
+			strcpy(paramStrings[1], "solver boomeramg");
+			break;
+	}
+	//	PRECONDITIONER
+	switch(config::hypre::HYPRE_PRECONDITIONER)
+	{
+		default:
+		case config::hypre::PRECONDITIONERalternative::DIAGONAL:
+			strcpy(paramStrings[2], "preconditioner diagonal");
+			break;
+		case config::hypre::PRECONDITIONERalternative::PARASAILS:
+			strcpy(paramStrings[2], "preconditioner parasails");
+			break;
+		case config::hypre::PRECONDITIONERalternative::EUCLID:
+			strcpy(paramStrings[2], "preconditioner euclid");
+			break;
+		case config::hypre::PRECONDITIONERalternative::BOOMERAMG:
+			strcpy(paramStrings[2], "preconditioner boomeramg");
+			break;
+		case config::hypre::PRECONDITIONERalternative::MLI:
+			strcpy(paramStrings[2], "preconditioner mli");
+			break;
+	}
+	strcpy(paramStrings[3],  ("maxIterations "+std::to_string(config::solver::ITERATIONS)).c_str());
+	strcpy(paramStrings[4],  ("tolerance "+std::to_string(config::hypre::TOLERANCE)).c_str());
+	
+	strcpy(paramStrings[5],  "gmresDim 30");
+	strcpy(paramStrings[6],  "amgNumSweeps 1");
+	strcpy(paramStrings[7],  "amgCoarsenType falgout");
+	strcpy(paramStrings[8],  "amgRelaxType hybridsym");
+	strcpy(paramStrings[9],  "amgSystemSize 1");
+	strcpy(paramStrings[10], "amgStrongThreshold 0.25");
+	strcpy(paramStrings[11], "MLI smoother HSGS");
+	strcpy(paramStrings[12], "MLI numSweeps 1");
+	strcpy(paramStrings[13], "MLI smootherWeight 1.0");
+	strcpy(paramStrings[14], "MLI nodeDOF 1");
+	strcpy(paramStrings[15], "MLI nullSpaceDim 1");
+	strcpy(paramStrings[16], "MLI minCoarseSize 50");
+	strcpy(paramStrings[17], "MLI outputLevel 0");
+	strcpy(paramStrings[18], "parasailsSymmetric outputLevel 0");
+
+	feiPtr.parameters(nParams, paramStrings);
+
+	for (int i = 0; i < nParams; i++)
+		delete [] paramStrings[i];
+	delete [] paramStrings;
+//------------------------------------------------------------------------------
+// SOLVE AND COPY RESULTS
+
+if (rank==TEST)	std::cout << "  > SOLVER HYPRE\n";
 	int status;
 	feiPtr.solve(&status);
+if (rank==TEST)	std::cout << "  > SOLVED - "<< status<<"\n";
+
+	const std::vector<Element*> &nodes = _mesh.nodes();
+
+	int * nodeIDList = new int[nodes.size()];
+	int * solnOffsets = new int[nodes.size()];
+	feiPtr.getBlockNodeIDList(0, nodes.size(), nodeIDList);
+
+	//results are mixed - for visualisation we must put them to correct order
+	size_t sortIndex = 1;
+	while(sortIndex < nodes.size() && nodeIDList[sortIndex-1] < nodeIDList[sortIndex])
+		sortIndex++;
+	
+	std::vector <int> sortIndexList;
+	int baseIndex = 0;
+	for (size_t i=0; i<nodes.size(); i++)
+	{
+		if (sortIndex == nodes.size() || nodeIDList[baseIndex] < nodeIDList[sortIndex])
+			sortIndexList.push_back(baseIndex++);
+		else
+			sortIndexList.push_back(sortIndex++);
+	}
+	sortIndex = baseIndex+1;
 
 
-	std::cout << "SAVE SOLUTION\n";
+	//get results	
+	const int DOFsize = _physics.pointDOFs.size();
+	double * saver = new double [nodes.size()*DOFsize];
+	feiPtr.getBlockNodeSolution(0, nodes.size(), nodeIDList, solnOffsets, saver);
 
+	//solution resize
 	solution.resize(_mesh.parts());
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		solution[p].resize(_mesh.coordinates().localSize(p));
+	for (size_t p = 0; p < _mesh.parts(); p++)
+		solution[p].resize(_mesh.coordinates().localSize(p)*DOFsize);
+
+	
+	//solution sort
+/*
+	//predpoklad ze vsechny subdomeny maji stejny pocet elementu
+	size_t partSize = _mesh.coordinates().localSize(0);
+//XXX PRESUSPORADANI PRO LIBOVOLNE PROCESU a JEDNU SUBDOMENU
+	for (size_t i=0; i<_mesh.coordinates().localSize(0); i++)
+		for (int dof=0; dof<DOFsize; dof++)
+		{
+if (rank==TEST) std::cout << "["<<i*DOFsize+dof<< "] "<<sortIndexList[i]*DOFsize + dof<< " = " << saver[sortIndexList[i]*DOFsize + dof]<<"\n";
+			solution[0][i*DOFsize+dof] = saver[sortIndexList[i]*DOFsize + dof];
+		}
+
+//XXX PREUSPORADANI JEN PRO JEDEN PROCES a JEDNU SUBDOMENU
+	for (size_t p = 0; p < _mesh.parts(); p++)
+	{
+		for (size_t i=0; i<_mesh.coordinates().localSize(p)*DOFsize; i++)
+			solution[p][i] = saver[p*partSize + i];
 	}
 
-	if (config::output::SAVE_RESULTS) {
-		_physics.saveMeshResults(_store, solution);
+//XXX PREUSPORADANI JEN PRO JEDEN PROCES A LIBOVOLNY POCET SUBDOMEN
+	size_t idx;
+	size_t transferIndex = 0;
+	for (size_t i=0; i<nodes.size(); i++)
+	{
+		std::cout << i << "] \n";
+		std::vector<int> shared = nodes[i]->domains();
+		for (eslocal j=0; j<shared.size(); j++)
+		{
+			for (size_t k=0; k<DOFsize; k++)
+			{
+//				std::cout << partSize*DOFsize*shared[j] + nodes[i]->DOFIndex(j, k) << " ";
+				idx = partSize*DOFsize*shared[j] + nodes[i]->DOFIndex(shared[j], k);
+				solution[idx/(partSize*DOFsize)][idx%(partSize*DOFsize)] = saver[transferIndex];//saver[partSize*j + k];
+				std::cout << "["<<idx/(partSize*DOFsize) << "] ["<<idx%(partSize*DOFsize)<<"] = "<< saver[transferIndex] << "\n";
+				
+				transferIndex++;
+			}
+			transferIndex -= DOFsize;
+		}
+		transferIndex += DOFsize;
 	}
+std::cout << " CLK " << transferIndex << std::endl;
+*/
+
+//XXX PRESUSPORADANI PRO LIBOVOLNE PROCESU a LIBOVOLNE SUBDOMEN
+	for (size_t i=0; i<nodes.size(); i++)
+	{
+		std::vector<int> shared = nodes[i]->domains();
+		for (eslocal j=0; j<shared.size(); j++)
+			for (size_t dof=0; dof<DOFsize; dof++)
+				solution[shared[j]][nodes[i]->DOFIndex(shared[j], dof)] = saver[sortIndexList[i]*DOFsize + dof];
+	}
+
+	delete [] saver;	
+	delete [] nodeIDList;
+	delete [] solnOffsets;
+
+        if (config::output::SAVE_RESULTS) {
+                _physics.saveMeshResults(_store, solution);
+        }
+
+	return;
 }
 
 }

@@ -103,7 +103,13 @@ size_t info::measureLevel = 0;
 
 bool info::printMatrices = false;
 
+//////////////////////////////// HYPRE /////////////////////////////////////////
 
+hypre::SOLVERalternative hypre::HYPRE_SOLVER = hypre::SOLVERalternative::CG;
+hypre::PRECONDITIONERalternative hypre::HYPRE_PRECONDITIONER = hypre::PRECONDITIONERalternative::DIAGONAL;
+//int hypre::MAXITERATIONS = 100;
+double hypre::TOLERANCE = 1e-6;
+	
 /////////////////////////////// DESCRIPTION ////////////////////////////////////
 
 std::vector<input::Description> env::description;
@@ -120,10 +126,30 @@ std::vector<Description> mesh::description = {
 	{ "SUBDOMAINS", mesh::subdomains, "Number of subdomains in a cluster.", WRITE_TO_HELP },
 	{ "FIXPOINTS" , mesh::fixPoints , "Number of fix points in a subdomain." },
 
-	{ "CORNERS"        , mesh::corners      , "Number of corners on an edge or a face." },
-	{ "VERTEX_CORNERS" , mesh::vertexCorners, "Set corners to vertices." },
-	{ "EDGE_CORNERS"   , mesh::edgeCorners  , "Set corners on edges. The number is defined by parameter CORNERS." },
-	{ "FACE_CORNERS"   , mesh::faceCorners  , "Set corners on faces. The number is defined by parameter CORNERS." },
+	//HYPRE
+	{ "HYPRE_SOLVER", hypre::HYPRE_SOLVER, "Hypre solver type.", {
+			{"CG", hypre::SOLVERalternative::CG, "Hypre CG solver"},
+			{"GMRES", hypre::SOLVERalternative::GMRES, "Hypre GMRES solver"},
+			{"FGMRES", hypre::SOLVERalternative::FGMRES, "Hypre FGMRES solver"},
+			{"BOOMERAMG", hypre::SOLVERalternative::BOOMERAMG, "Hypre BOOMERAMG solver"} } },
+
+	{ "HYPRE_PRECONDITIONER", hypre::HYPRE_PRECONDITIONER, "Hypre preconditioner type.", {
+			{"DIAGONAL", hypre::PRECONDITIONERalternative::DIAGONAL, "Hypre DIAGONAL preconditioner"},
+			{"PARASAILS", hypre::PRECONDITIONERalternative::PARASAILS, "Hypre PARASAILS preconditioner"},
+			{"EUCLID", hypre::PRECONDITIONERalternative::EUCLID, "Hypre EUCLID preconditioner"},
+			{"BOOMERAMG", hypre::PRECONDITIONERalternative::BOOMERAMG, "Hypre BOOMERAMG preconditioner"},
+			{"MLI", hypre::PRECONDITIONERalternative::MLI, "Hypre MLI preconditioner"} } },	
+
+	{ "TOLERANCE", hypre::TOLERANCE, "Hypre solver tolerance"},
+	
+	// MESH DESCRIPTION
+	{ "PATH", mesh::PATH, "A path to an example.", WRITE_TO_HELP },
+	{ "INPUT", mesh::INPUT, "A format of an input.", {
+			{ "MATSOL", mesh::INPUTalternative::MATSOL, "IT4I internal library" },
+			{ "WORKBENCH", mesh::INPUTalternative::WORKBENCH, "Ansys Workbench input file" },
+			{ "OPENFOAM", mesh::INPUTalternative::OPENFOAM, "OpenFOAM input format" },
+			{ "ESDATA", mesh::INPUTalternative::ESDATA, "ESPRESO binary format" },
+			{ "GENERATOR", mesh::INPUTalternative::GENERATOR, "ESPRESO internal generator" } },  WRITE_TO_HELP },
 
 	{ "AVERAGE_EDGES"  , mesh::averageEdges, "Average nodes on edges." },
 	{ "AVERAGE_FACES"  , mesh::averageFaces, "Average nodes on faces." }
