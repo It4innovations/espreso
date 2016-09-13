@@ -538,7 +538,11 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	cilk_for (eslocal d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-		domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		if (SYMMETRIC_SYSTEM) {
+			domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		} else {
+			domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		}
 	}
 	loop_1_1_time.end();
 
@@ -1147,19 +1151,27 @@ void ClusterBase::CreateF0() {
 			ss << "Create F0 -> rank: " << config::env::MPIrank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+			domains[d].B0Kplus = domains[d].B0Kplus_comp;
 		} else {
 			// F0 uses same precision as K
 
-			eslocal set_bckp = domains[d].Kplus.iparm[11];
-			domains[d].Kplus.iparm[11] = 2;
-			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
-			domains[d].Kplus.iparm[11] = set_bckp;
-			domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus);
+			if (SYMMETRIC_SYSTEM) {
+				domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+				domains[d].B0Kplus = domains[d].B0Kplus_comp;
+			} else {
+				//TODO: The Klus.Solve - does not have to be called twice here - can be done with Transpose
+				//TODO: Alex
+				eslocal set_bckp = domains[d].Kplus.iparm[11];
+				domains[d].Kplus.iparm[11] = 2;
+				domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+				domains[d].Kplus.iparm[11] = set_bckp;
+				domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus);
+			}
 		}
 
 		domains[d].B0t_comp.Clear();
 
-		//domains[d].B0Kplus = domains[d].B0Kplus_comp;
+
 		domains[d].B0Kplus_comp.MatTranspose();
 		domains[d].B0Kplus_comp.ConvertCSRToDense(1);
 
@@ -1536,15 +1548,11 @@ void ClusterBase::CreateSa() {
 	 if (config::solver::SA_SOLVER == config::SA_DENSE_on_ACC) {
 		 TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 
-//#if defined(SOLVER_CUDA)
-		 Salfa.type = 'G';
-//#endif
-//#if defined(SOLVER_CUDA_7)
-//	 Salfa.type = 'G';
-//#endif
-
+		//TODO: This works only for CuSolver
+		//TODO: Radim Vavrik
+		Salfa.type = 'G'; // for cuSolver only
 		Salfa.ConvertCSRToDense(1);
-		Salfa.type = 'S';
+		Salfa.type = 'S'; //for cuSolver only
 
 		Sa_dense_acc.ImportMatrix(Salfa);
 		Sa_dense_acc.Factorization("Salfa - dense ");
