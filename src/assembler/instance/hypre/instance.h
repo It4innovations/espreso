@@ -18,7 +18,7 @@ public:
 	feiPtr(MPI_COMM_WORLD),
 	_constrains(mesh),
 	_physics(mesh, _constrains),
-	_store(mesh, "results", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO),
+	_store(mesh, "results", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}

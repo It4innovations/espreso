@@ -1,4 +1,8 @@
 
+import os
+import sys
+import glob
+
 def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["HYPRE::INCLUDE"] ])
     ctx.env.append_unique("LIBPATH", ctx.env["HYPRE::LIBPATH"])

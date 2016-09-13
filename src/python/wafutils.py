@@ -113,7 +113,7 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     for attribute, description, type, value in compiler_attributes:
         print_attribute(attribute, type, ctx.env[attribute])
 
-    for out_attribute in ["VTK::INCLUDE", "VTK::LIBPATH", "PARAVIEW::INCLUDE", "PARAVIEW::LIBPATH"]:
+    for out_attribute in [ "HYPRE::INCLUDE", "HYPRE::LIBPATH", "VTK::INCLUDE", "VTK::LIBPATH", "PARAVIEW::INCLUDE", "PARAVIEW::LIBPATH"]:
         print_attribute(out_attribute, "string", ctx.env[out_attribute])
 
     for attribute, description, type, value in compiler_attributes:
