@@ -394,11 +394,19 @@ void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &el
 void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel)
 {
 	std::vector<Element*> el(elements);
-	std::sort(el.begin(), el.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
 
-	std::vector<size_t> part = { 0 };
-	for (size_t i = 1; i < el.size(); i++) {
-		if (el[i - 1]->domains() != el[i]->domains()) {
+	std::sort(el.begin(), el.end(), [] (Element* e1, Element* e2) {
+		if (e1->domains().size() != e2->domains().size()) {
+			return e1->domains().size() < e2->domains().size();
+		}
+		return e1->domains() < e2->domains();
+	});
+
+	std::vector<size_t> part;
+	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, int size) { return e->domains().size() < size; }) - el.begin());
+	ESTEST(MANDATORY) << "There are not elements on the sub-domains interface." << ((elements.size() - part[0]) ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = part[0] + 1; i < el.size(); i++) {
+		if (i && el[i - 1]->domains() != el[i]->domains()) {
 			part.push_back(i);
 		}
 	}
