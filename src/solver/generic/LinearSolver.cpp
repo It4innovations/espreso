@@ -270,6 +270,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 			if (sc_size == physics.K[d].rows) {
 				cluster.domains[d].Prec = physics.K[d];
+				cluster.domains[d].Prec.ConvertCSRToDense(1);
         // if physics.K[d] does not contain inner DOF
 			} else {
 
@@ -340,10 +341,10 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 			if (config::info::PRINT_MATRICES) {
 				std::ofstream osS(Logging::prepareFile(d, "S"));
-        SparseMatrix SC =  cluster.domains[d].Prec;
-        if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET){
-          SC.ConvertDenseToCSR(1);
-        }
+				SparseMatrix SC =  cluster.domains[d].Prec;
+				if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET){
+				  SC.ConvertDenseToCSR(1);
+				}
 				osS << SC;
 				osS.close();
 			}
