@@ -28,7 +28,7 @@ struct TransientPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	virtual void saveMatrices()
+	virtual void saveStiffnessMatrices()
 	{
 		ESINFO(PROGRESS2) << "Save matrices K, M, RHS, and A constant";
 		for (size_t p = 0; p < _mesh.parts(); p++) {

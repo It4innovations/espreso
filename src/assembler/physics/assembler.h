@@ -22,7 +22,7 @@ struct Physics {
 
 	virtual void saveMeshProperties(output::Store &store) =0;
 	virtual void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results) =0;
-	virtual void saveMatrices()
+	virtual void saveStiffnessMatrices()
 	{
 		ESINFO(PROGRESS2) << "Save matrices K and RHS.";
 		for (size_t p = 0; p < K.size(); p++) {
@@ -56,6 +56,37 @@ struct Physics {
 			SparseMatrix tmpR = R2[p];
 			tmpR.ConvertDenseToCSR(0);
 			osR << tmpR;
+			osR.close();
+		}
+
+		for (size_t p = 0; p < RegMat.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "RegMat").c_str());
+			osR << RegMat;
+			osR.close();
+		}
+	}
+
+	virtual void saveKernelMatrices()
+	{
+		for (size_t p = 0; p < R1.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R1").c_str());
+			SparseMatrix tmpR = R1[p];
+			tmpR.ConvertDenseToCSR(0);
+			osR << tmpR;
+			osR.close();
+		}
+
+		for (size_t p = 0; p < R2.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "R2").c_str());
+			SparseMatrix tmpR = R2[p];
+			tmpR.ConvertDenseToCSR(0);
+			osR << tmpR;
+			osR.close();
+		}
+
+		for (size_t p = 0; p < RegMat.size(); p++) {
+			std::ofstream osR(Logging::prepareFile(p, "RegMat").c_str());
+			osR << RegMat;
 			osR.close();
 		}
 	}

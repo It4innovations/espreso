@@ -26,12 +26,16 @@ void LinearInstance<TConstrains, TPhysics>::init()
 	timeScaling.endWithBarrier(); _timeStatistics.addEvent(timeScaling);
 
 	if (config::info::PRINT_MATRICES) {
-		_physics.saveMatrices();
+		_physics.saveStiffnessMatrices();
 	}
 
 	TimeEvent timeReg("Make K regular"); timeReg.start();
 	_physics.makeStiffnessMatricesRegular();
 	timeReg.endWithBarrier(); _timeStatistics.addEvent(timeReg);
+
+	if (config::info::PRINT_MATRICES) {
+		_physics.saveKernelMatrices();
+	}
 
 	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
 	_physics.assembleGluingMatrices();

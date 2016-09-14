@@ -27,8 +27,8 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 
 	if (config::info::PRINT_MATRICES) {
 		_physics.saveMatrices();
+		_physics.saveKernelMatrices();
 	}
-
 
 	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
 	_physics.assembleGluingMatrices();
