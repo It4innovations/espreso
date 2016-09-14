@@ -316,20 +316,38 @@ void Prisma15::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
 		line[2] = _indices[ edge + 6     ];
-		_edges.push_back(new Line3(line));
-		_edges.back()->parentElements().push_back(this);
+		if (3 * edge < _edges.size()) {
+			if (_edges[3 * edge] == NULL) {
+				_edges[3 * edge] = new Line3(line);
+			}
+		} else {
+			_edges.push_back(new Line3(line));
+		}
+		_edges[3 * edge]->parentElements().push_back(this);
 
 		line[0] = _indices[ edge          +  3];
 		line[1] = _indices[(edge + 1) % 3 +  3];
 		line[2] = _indices[ edge          + 9];
-		_edges.push_back(new Line3(line));
-		_edges.back()->parentElements().push_back(this);
+		if (3 * edge + 1 < _edges.size()) {
+			if (_edges[3 * edge + 1] == NULL) {
+				_edges[3 * edge + 1] = new Line3(line);
+			}
+		} else {
+			_edges.push_back(new Line3(line));
+		}
+		_edges[3 * edge + 1]->parentElements().push_back(this);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  3];
 		line[2] = _indices[edge + 12];
-		_edges.push_back(new Line3(line));
-		_edges.back()->parentElements().push_back(this);
+		if (3 * edge + 2 < _edges.size()) {
+			if (_edges[3 * edge + 2] == NULL) {
+				_edges[3 * edge + 2] = new Line3(line);
+			}
+		} else {
+			_edges.push_back(new Line3(line));
+		}
+		_edges[3 * edge + 2]->parentElements().push_back(this);
 	}
 }
 

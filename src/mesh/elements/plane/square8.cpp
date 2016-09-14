@@ -141,8 +141,15 @@ void Square8::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 4     ];
-		_edges.push_back(new Line3(line));
-		_edges.back()->parentElements().push_back(this);
+		if (edge < _edges.size()) {
+			if (_edges[edge] == NULL) {
+				_edges[edge] = new Line3(line);
+
+			}
+		} else {
+			_edges.push_back(new Line3(line));
+		}
+		_edges[edge]->parentElements().push_back(this);
 	}
 }
 

@@ -109,8 +109,14 @@ void Square4::fillEdges()
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		_edges.push_back(new Line2(line));
-		_edges.back()->parentElements().push_back(this);
+		if (edge < _edges.size()) {
+			if (_edges[edge] == NULL) {
+				_edges[edge] = new Line2(line);
+			}
+		} else {
+			_edges.push_back(new Line2(line));
+		}
+		_edges[edge]->parentElements().push_back(this);
 	}
 }
 
