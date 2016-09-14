@@ -2,53 +2,54 @@
 ## Arguments read from the command line
 CMD_LINE_ARGUMENTS = ELEMENT_TYPE CLUSTERS_X CLUSTERS_Y SUBDOMAINS_X SUBDOMAINS_Y ELEMENTS_X ELEMENTS_Y
 
-#USE_METIS # mesh will be partitiated by METIS. Also corners and fix points will be computed by METIS.
-
-SHAPE = 2
+SHAPE = PLANE
 #ELEMENT_TYPE = 8 # <8, 12> : SQUARE4 SQUARE8 TRIANGLE3 TRIANGLE6
 PHYSICS = LINEAR_ELASTICITY_2D
 
-CONSISTENT_STABILIZATION = CAU # SUPG, CAU
-INCONSISTENT_STABILIZATION_PARAMETER = 0 # sigma
+ELEMENT_BEHAVIOUR = PLANE_STRESS_WITH_THICKNESS # PLANE_STRAIN, AXISYMMETRIC, PLANE_STRESS, PLANE_STRESS_WITH_THICKNESS
 
 MATERIAL1 = {
-  DENSITY = 1
-  KX = 1e-5
-  KY = 1e-5
-  CP = 1
+  MODEL = LINEAR_ELASTIC_ISOTROPIC
+  DENS = 7850
+  EX = 2.1e11 # Young modules
+  MIXY = 0.3 # Poisson ratio
 }
-
-ORIGIN_X = 0
-ORIGIN_Y = 1
 
 LENGTH_X = 1
 LENGTH_Y = 1
 
-PROJECTION_X = y * cos(-(-3 * pi / 4 + (pi / 2) * x))
-PROJECTION_Y = y * sin(-(-3 * pi / 4 + (pi / 2) * x))
-ROTATION_Z = -3 * pi / 4 + (pi / 2) * x
-
 CORNERS_IN_CORNERS
 
 NODES = {
-  LEFT = <0, 30) <0, 0>
-  TOP = <0, 0> <0, 30)
-  BOTTOM = <30, 30> (0, 30>
-  RIGHT = (0, 30> <30, 30>
+  LEFT = <0, 0> <0, 1>
+  N_ALL = ALL
+}
 
-  CORNER_UP = <0, 0> <30, 30>
-  CORNER_DOWN = <30, 30> <0, 0>
+EDGES = {
+  TOP = <0, 1> <1, 1>
 }
 
 ELEMENTS = {
-  ALL_EL = ALL
+  EL_ALL = ALL
 }
 
+
 DIRICHLET = {
-  BOTTOM = T: 1
-  LEFT = T: 0
-  TOP = T: 0
-  RIGHT = T: 1
-  CORNER_UP = T: 0.5
-  CORNER_DOWN = T: 0.5
+  LEFT = x: 0, y: 0
+}
+
+NEUMAN = {
+  TOP = P: 1000
+}
+
+ACCELERATION = {
+  EL_ALL = x: 0, y: 0
+}
+
+INITIAL_TEMPERATURE = {
+  EL_ALL = 20
+}
+
+THICKNESS = {
+  N_ALL = 0.5
 }
