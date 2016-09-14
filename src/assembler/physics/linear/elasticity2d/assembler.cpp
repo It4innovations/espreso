@@ -29,10 +29,10 @@ void LinearElasticity2D::prepareMeshStructures()
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
-			_mesh.computeVolumeCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS, config::mesh::FACE_CORNERS);
+			_mesh.computePlaneCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			_mesh.computeFacesSharedByDomains();
+			_mesh.computeEdgesSharedByDomains();
 			break;
 		}
 	}
@@ -55,6 +55,16 @@ void LinearElasticity2D::assembleGluingMatrices()
 	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
 
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		switch (config::solver::B0_TYPE) {
+		case config::solver::B0_TYPEalternative::CORNERS:
+			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+			break;
+		case config::solver::B0_TYPEalternative::KERNELS:
+			_constraints.insertKernelsToB0(_mesh.edges(), pointDOFs, R1);
+			break;
+		}
+	}
 }
 
 static double determinant2x2(DenseMatrix &m)
@@ -429,7 +439,26 @@ void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 
 void LinearElasticity2D::makeStiffnessMatricesRegular()
 {
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		switch (config::solver::REGULARIZATION) {
+		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+			if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {
+				ESINFO(GLOBAL_ERROR) << "Implement regularization for GROUP_DOFS alternative";
+			}
 
+			analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+			analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
+			K[subdomain].RemoveLower();
+			RegMat[subdomain].RemoveLower();
+			K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+			RegMat[subdomain].ConvertToCOO(1);
+			break;
+		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+			K[subdomain].RemoveLower();
+			algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+			break;
+		}
+	}
 }
 
 void LinearElasticity2D::composeSubdomain(size_t subdomain)
@@ -464,7 +493,7 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 	}
 
 	for (size_t i = 0; i < _mesh.edges().size(); i++) {
-		if (_mesh.edges()[i]->inDomain(subdomain)) {
+		if (_mesh.edges()[i]->inDomain(subdomain) && _mesh.edges()[i]->settings().size()) {
 			processEdge(fe, _mesh, subdomain, _mesh.edges()[i]);
 
 			for (size_t nx = 0; nx < _mesh.edges()[i]->nodes(); nx++) {
@@ -480,31 +509,6 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
-
-	if (config::info::PRINT_MATRICES){
-		std::ofstream osK(Logging::prepareFile(subdomain, "K").c_str());
-		osK << K[subdomain];
-		osK.close();
-	}
-
-	switch (config::solver::REGULARIZATION) {
-	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
-		if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {
-			ESINFO(GLOBAL_ERROR) << "Implement regularization for GROUP_DOFS alternative";
-		}
-
-		analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-		analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
-		K[subdomain].RemoveLower();
-		RegMat[subdomain].RemoveLower();
-		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
-		RegMat[subdomain].ConvertToCOO(1);
-		break;
-	case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
-		K[subdomain].RemoveLower();
-		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
-		break;
-	}
 }
 
 
