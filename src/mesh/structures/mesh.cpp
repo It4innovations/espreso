@@ -575,7 +575,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 
 			for (size_t i = 0; i < _elements[e]->edges(); i++) {
 				Element* edge = _elements[e]->edge(i);
-				if (filter(_nodes, edge)) {
+				if (edge->settings().size() || filter(_nodes, edge)) {
 					edges[t].push_back(edge);
 				} else {
 					_elements[e]->setEdge(i, NULL);
@@ -616,7 +616,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 
 			for (size_t f = 0; f < _elements[e]->faces(); f++) {
 				Element* face = _elements[e]->face(f);
-				if (filter(_nodes, face)) {
+				if (face->settings().size() || filter(_nodes, face)) {
 					faces[t].push_back(face);
 				} else {
 					_elements[e]->setFace(f, NULL);
@@ -714,7 +714,7 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 
 			for (size_t i = 0; i < _faces[e]->edges(); i++) {
 				Element* edge = _faces[e]->edge(i);
-				if (filter(_nodes, edge)) {
+				if (edge->settings().size() || filter(_nodes, edge)) {
 					edges[t].push_back(edge);
 				} else {
 					_faces[e]->setEdge(i, NULL);
