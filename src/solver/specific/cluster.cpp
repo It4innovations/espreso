@@ -65,7 +65,6 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 		domains[i].USE_KINV    	 = USE_KINV;
 		domains[i].USE_HFETI   	 = USE_HFETI;
 		domains[i].USE_DYNAMIC 	 = USE_DYNAMIC;
-		domains[i].DOFS_PER_NODE = DOFS_PER_NODE;
 		domains[i].domain_index  = i;
 
 	}
@@ -1490,19 +1489,11 @@ void ClusterBase::CreateSa() {
 		// Regularization of Salfa from FIX points
 		TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
 
-		SparseMatrix Eye, N, Nt, NNt;
-		eslocal dtmp = 0;
-		if (DOFS_PER_NODE == 3) {
-			dtmp = 6;
-		}
+		SparseMatrix N, Nt, NNt;
 
-		if (DOFS_PER_NODE == 1) {
-			dtmp = 1;
-		}
-
-		Eye.CreateEye(dtmp); N.CreateEye(dtmp); Nt.CreateEye(dtmp);
-
-		for (int i=0; i < domains.size()-1; i++) {
+		for (size_t i = 0; i < domains.size(); i++) {
+			SparseMatrix Eye;
+			Eye.CreateEye(domains[i].Kplus_R.cols);
 			N.MatAppend(Eye);
 			Nt.MatAppend(Eye);
 		}

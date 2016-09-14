@@ -44,7 +44,6 @@ public:
 	eslocal USE_DYNAMIC;
 	eslocal USE_KINV;
 	eslocal USE_HFETI;
-	eslocal DOFS_PER_NODE;
 	eslocal isOnACC;
 
 	eslocal domain_index;

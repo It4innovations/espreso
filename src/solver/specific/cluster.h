@@ -88,7 +88,6 @@ public:
 	eslocal USE_HFETI;
 	eslocal SUBDOM_PER_CLUSTER;
 	eslocal NUMBER_OF_CLUSTERS;
-	eslocal DOFS_PER_NODE;
 	eslocal PAR_NUM_THREADS;
 	eslocal SOLVER_NUM_THREADS;
 	bool SYMMETRIC_SYSTEM;

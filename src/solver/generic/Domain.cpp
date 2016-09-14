@@ -33,39 +33,40 @@ void Domain::SetDomain(eslocal USE_HFETI, eslocal use_dynamic_1_no_dynamic_0) {
 
 void Domain::CreateKplus_R ( std::vector < std::vector < double > > coordinates )
 {
-	if (DOFS_PER_NODE == 3) {
-
-		eslocal elem_index = 0;
-
-		SparseMatrix R_per_element;
-
-		R_per_element.rows = 3;
-		R_per_element.cols = 2;
-		R_per_element.nnz  = 2;
-		R_per_element.type = 'G';
-
-		R_per_element.CSR_I_row_indices.resize(4);
-		R_per_element.CSR_J_col_indices.resize(2);
-		R_per_element.CSR_V_values.resize(2);
-
-		R_per_element.CSR_V_values[0] = 1;
-		R_per_element.CSR_V_values[1] = 1;
-
-		R_per_element.CSR_J_col_indices[0] = 1;
-		R_per_element.CSR_J_col_indices[1] = 2;
-
-		R_per_element.CSR_I_row_indices[0] = 1;
-		R_per_element.CSR_I_row_indices[1] = 2;
-		R_per_element.CSR_I_row_indices[2] = 3;
-		R_per_element.CSR_I_row_indices[3] = 3;
-
-		for (elem_index = 0; elem_index < coordinates.size(); elem_index++) {
-			Kplus_R.MatAppend(R_per_element);
-		}
-
-		R_per_element.Clear();
-
-		Kplus_R.ConvertCSRToDense(1);
+	ESINFO(GLOBAL_ERROR) << "Create Kplus_R";
+//	if (DOFS_PER_NODE == 3) {
+//
+//		eslocal elem_index = 0;
+//
+//		SparseMatrix R_per_element;
+//
+//		R_per_element.rows = 3;
+//		R_per_element.cols = 2;
+//		R_per_element.nnz  = 2;
+//		R_per_element.type = 'G';
+//
+//		R_per_element.CSR_I_row_indices.resize(4);
+//		R_per_element.CSR_J_col_indices.resize(2);
+//		R_per_element.CSR_V_values.resize(2);
+//
+//		R_per_element.CSR_V_values[0] = 1;
+//		R_per_element.CSR_V_values[1] = 1;
+//
+//		R_per_element.CSR_J_col_indices[0] = 1;
+//		R_per_element.CSR_J_col_indices[1] = 2;
+//
+//		R_per_element.CSR_I_row_indices[0] = 1;
+//		R_per_element.CSR_I_row_indices[1] = 2;
+//		R_per_element.CSR_I_row_indices[2] = 3;
+//		R_per_element.CSR_I_row_indices[3] = 3;
+//
+//		for (elem_index = 0; elem_index < coordinates.size(); elem_index++) {
+//			Kplus_R.MatAppend(R_per_element);
+//		}
+//
+//		R_per_element.Clear();
+//
+//		Kplus_R.ConvertCSRToDense(1);
 
 //		eslocal elem_index = 0;
 //
@@ -121,26 +122,26 @@ void Domain::CreateKplus_R ( std::vector < std::vector < double > > coordinates 
 //		R_per_element.Clear();
 //
 //		Kplus_R.ConvertCSRToDense(1);
-
-	}
-
-
-	if (DOFS_PER_NODE == 1) {
-
-		Kplus_R.dense_values.resize( coordinates.size() );
-		double nsqrt = 1.0 / sqrt( coordinates.size() );
-
-		for (eslocal elem_index = 0; elem_index < coordinates.size(); elem_index++) {
-			Kplus_R.dense_values[elem_index] = nsqrt;
-		}
-
-		Kplus_R.rows = coordinates.size();
-		Kplus_R.cols = 1;
-		Kplus_R.nnz  = coordinates.size();
-		Kplus_R.type = 'G';
-
-		//Kplus_R.ConvertDenseToCSR(1);
-	}
+//
+//	}
+//
+//
+//	if (DOFS_PER_NODE == 1) {
+//
+//		Kplus_R.dense_values.resize( coordinates.size() );
+//		double nsqrt = 1.0 / sqrt( coordinates.size() );
+//
+//		for (eslocal elem_index = 0; elem_index < coordinates.size(); elem_index++) {
+//			Kplus_R.dense_values[elem_index] = nsqrt;
+//		}
+//
+//		Kplus_R.rows = coordinates.size();
+//		Kplus_R.cols = 1;
+//		Kplus_R.nnz  = coordinates.size();
+//		Kplus_R.type = 'G';
+//
+//		//Kplus_R.ConvertDenseToCSR(1);
+//	}
 }
 
 void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
@@ -475,7 +476,8 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 
 void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
 
-    if (USE_DYNAMIC == 0) {
+	ESINFO(GLOBAL_ERROR) << "K_regularizationFromR";
+//    if (USE_DYNAMIC == 0) {
 
 //    	if (DOFS_PER_NODE == 3) {
 //
@@ -522,49 +524,49 @@ void Domain::K_regularizationFromR ( SparseMatrix & K_in ) {
 //
 ////			K.    MatAddInPlace (NtN_Mat,'N', ro);
 //    	}
-
-    	if (DOFS_PER_NODE == 3) {
-    		double ro = K_in.GetMaxOfDiagonalOfSymmetricMatrix();
-
-    		//K.CSR_V_values[ K.CSR_I_row_indices[100] - 1 ] = +ro;
-
-    		//K_in.CSR_V_values[0] += ro;
-
-    		_RegMat.type = K_in.type;
-    		_RegMat.cols = K_in.cols;
-    		_RegMat.rows = K_in.rows;
-    		_RegMat.nnz  = 2;
-
-    		_RegMat.I_row_indices.push_back(1);
-    		_RegMat.J_col_indices.push_back(1);
-    		_RegMat.I_row_indices.push_back(2);
-			_RegMat.J_col_indices.push_back(2);
-    		_RegMat.V_values.push_back(ro);
-    		_RegMat.V_values.push_back(ro);
-
-    		_RegMat.ConvertToCSR(0);
-    		K_in.MatAddInPlace(_RegMat, 'N', ro);
-    	}
-
-    	if (DOFS_PER_NODE == 1) {
-    		double ro = K_in.GetMaxOfDiagonalOfSymmetricMatrix();
-
-    		//K.CSR_V_values[ K.CSR_I_row_indices[100] - 1 ] = +ro;
-
-    		K_in.CSR_V_values[0] += ro;
-
-    		_RegMat.type = K_in.type;
-    		_RegMat.cols = K_in.cols;
-    		_RegMat.rows = K_in.rows;
-    		_RegMat.nnz  = 1;
-
-    		_RegMat.I_row_indices.push_back(1);
-    		_RegMat.J_col_indices.push_back(1);
-    		_RegMat.V_values.push_back(ro);
-
-    	}
-
-    }
+//
+//    	if (DOFS_PER_NODE == 3) {
+//    		double ro = K_in.GetMaxOfDiagonalOfSymmetricMatrix();
+//
+//    		//K.CSR_V_values[ K.CSR_I_row_indices[100] - 1 ] = +ro;
+//
+//    		//K_in.CSR_V_values[0] += ro;
+//
+//    		_RegMat.type = K_in.type;
+//    		_RegMat.cols = K_in.cols;
+//    		_RegMat.rows = K_in.rows;
+//    		_RegMat.nnz  = 2;
+//
+//    		_RegMat.I_row_indices.push_back(1);
+//    		_RegMat.J_col_indices.push_back(1);
+//    		_RegMat.I_row_indices.push_back(2);
+//			_RegMat.J_col_indices.push_back(2);
+//    		_RegMat.V_values.push_back(ro);
+//    		_RegMat.V_values.push_back(ro);
+//
+//    		_RegMat.ConvertToCSR(0);
+//    		K_in.MatAddInPlace(_RegMat, 'N', ro);
+//    	}
+//
+//    	if (DOFS_PER_NODE == 1) {
+//    		double ro = K_in.GetMaxOfDiagonalOfSymmetricMatrix();
+//
+//    		//K.CSR_V_values[ K.CSR_I_row_indices[100] - 1 ] = +ro;
+//
+//    		K_in.CSR_V_values[0] += ro;
+//
+//    		_RegMat.type = K_in.type;
+//    		_RegMat.cols = K_in.cols;
+//    		_RegMat.rows = K_in.rows;
+//    		_RegMat.nnz  = 1;
+//
+//    		_RegMat.I_row_indices.push_back(1);
+//    		_RegMat.J_col_indices.push_back(1);
+//    		_RegMat.V_values.push_back(ro);
+//
+//    	}
+//
+//    }
 
 }
 
