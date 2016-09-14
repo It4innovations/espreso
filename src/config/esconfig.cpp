@@ -104,7 +104,7 @@ bool info::PRINT_MATRICES = false;
 hypre::SOLVERalternative hypre::HYPRE_SOLVER = hypre::SOLVERalternative::CG;
 hypre::PRECONDITIONERalternative hypre::HYPRE_PRECONDITIONER = hypre::PRECONDITIONERalternative::DIAGONAL;
 //int hypre::MAXITERATIONS = 100;
-double hypre::TOLERANCE = 1e-6;
+//double hypre::TOLERANCE = 1e-6;
 	
 /////////////////////////////// DESCRIPTION ////////////////////////////////////
 
@@ -126,8 +126,6 @@ std::vector<espreso::Parameter> parameters = {
 			{"EUCLID", hypre::PRECONDITIONERalternative::EUCLID, "Hypre EUCLID preconditioner"},
 			{"BOOMERAMG", hypre::PRECONDITIONERalternative::BOOMERAMG, "Hypre BOOMERAMG preconditioner"},
 			{"MLI", hypre::PRECONDITIONERalternative::MLI, "Hypre MLI preconditioner"} } },	
-
-	{ "TOLERANCE", hypre::TOLERANCE, "Hypre solver tolerance"},
 	
 	// MESH DESCRIPTION
 	{ "PATH", mesh::PATH, "A path to an example.", WRITE_TO_HELP },

@@ -360,7 +360,6 @@ namespace hypre {
 	
 	extern SOLVERalternative HYPRE_SOLVER;
 	extern PRECONDITIONERalternative HYPRE_PRECONDITIONER;
-	extern double TOLERANCE;
 };
 
 namespace info {

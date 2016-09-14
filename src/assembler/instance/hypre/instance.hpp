@@ -311,7 +311,7 @@ void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double>
 			break;
 	}
 	strcpy(paramStrings[3],  ("maxIterations "+std::to_string(config::solver::ITERATIONS)).c_str());
-	strcpy(paramStrings[4],  ("tolerance "+std::to_string(config::hypre::TOLERANCE)).c_str());
+	strcpy(paramStrings[4],  ("tolerance "+std::to_string(config::solver::EPSILON)).c_str());
 	
 	strcpy(paramStrings[5],  "gmresDim 30");
 	strcpy(paramStrings[6],  "amgNumSweeps 1");
