@@ -139,7 +139,7 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh)
 
 	std::vector<size_t> offset = { 0 };
 	for (size_t p = 1; p < mesh.parts(); p++) {
-		offset.push_back(offset[p - 1] + mesh.coordinates().localSize(p));
+		offset.push_back(offset[p - 1] + mesh.coordinates().localSize(p - 1));
 	}
 
 	// ELEMENTS
