@@ -405,8 +405,6 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 	part.push_back(el.size());
 
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
-		size_t nnz = 0;
-
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
 			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
@@ -429,7 +427,7 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 					for (size_t dof = 0; dof < DOFs.size(); dof++) {
 						B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
 						B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + IJVMatrixIndexing);
-						B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].cols * col + nodes[n]->DOFIndex(p, dof)]);
+						B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + nodes[n]->DOFIndex(domains[0], dof)]);
 					}
 				}
 			}
