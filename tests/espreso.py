@@ -15,6 +15,8 @@ class ESPRESOTests(unittest.TestCase):
 if __name__ == '__main__':
 
     def create_instance(config, example):
+            if config["FETI_METHOD"] == "TOTAL_FETI" and config["B0_TYPE"] == "KERNELS":
+                return
             procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
             args = [example["ETYPE"]] + example["CLUSTERS"]
             name = "_".join(str(x) for x in args + config.values())
@@ -24,6 +26,7 @@ if __name__ == '__main__':
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
       "PRECONDITIONER": [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ],
       "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
+      "B0_TYPE": [ "CORNERS", "KERNELS" ],
     }
 
     example = {
