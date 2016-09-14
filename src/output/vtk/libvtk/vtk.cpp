@@ -71,14 +71,10 @@
 
 using namespace espreso::output;
 
-vtkSmartPointer<vtkMPIController> controller;
-
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 : Store(mesh, path, shrinkSubdomain, shringCluster)
 {
 	computeCenters();
-	controller=vtkSmartPointer<vtkMPIController>::New();
-	controller->Initialize();
 }
 
 void VTK::storeGeometry(size_t timeStep)
@@ -233,7 +229,8 @@ void VTK::storeGeometry(size_t timeStep)
 		}
 		break;
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
-		vtkMPIController* controller = vtkMPIController::New();
+		vtkSmartPointer<vtkMPIController> controller=vtkSmartPointer<vtkMPIController>::New();
+		controller->Initialize();
 		bool FCD = false;
 		if (VTKGrid->GetCellData()) {
 			if (VTKGrid->GetCellData()->GetArray("BlockId")) {
@@ -277,6 +274,7 @@ void VTK::storeGeometry(size_t timeStep)
 			wcase->Write();
 			wcase->WriteCaseFile(1);
 		}
+		controller->Delete();
 		break;
 	}
 	}
@@ -451,6 +449,8 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
+		vtkSmartPointer<vtkMPIController> controller=vtkSmartPointer<vtkMPIController>::New();
+		controller->Initialize();
 		bool FCD = false;
 		if (prof->GetCellData()) {
 			if (prof->GetCellData()->GetArray("BlockId")) {
@@ -493,6 +493,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 			wcase->Write();
 			wcase->WriteCaseFile(1);
 		}
+		controller->Delete();
 		break;
 	}
 	}
@@ -643,7 +644,8 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
-		std::cout << "ENSIGHT\n";
+		vtkSmartPointer<vtkMPIController> controller=vtkSmartPointer<vtkMPIController>::New();
+		controller->Initialize();
 		bool FCD = false;
 		if (VTKGrid->GetCellData()) {
 			if (VTKGrid->GetCellData()->GetArray("BlockId")) {
@@ -687,6 +689,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 			wcase->Write();
 			wcase->WriteCaseFile(1);
 		}
+		controller->Delete();
 	}
 		break;
 	}
@@ -847,7 +850,8 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
-		std::cout << "ENSIGHT\n";
+		vtkSmartPointer<vtkMPIController> controller=vtkSmartPointer<vtkMPIController>::New();
+		controller->Initialize();
 
 		//write ensight format
 		wcase->SetFileName("result.case");
@@ -869,10 +873,10 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain
 			wcase->Write();
 			wcase->WriteCaseFile(1);
 		}
+		controller->Delete();
 		break;
 	}
 
-	std::cout << "SAVE GENERIC VTK DATA\n";
 }
 
 void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
