@@ -3103,9 +3103,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-//#define VERBOSE_LEVEL 3
-#ifndef VERBOSE_LEVEL
-#define VERBOSE_LEVEL 0
+#ifndef VERBOSE_KERNEL
+#define VERBOSE_KERNEL 0
 #endif
 //
 //    1) diagonalScaling
@@ -3203,7 +3202,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   double begin_time = omp_get_wtime();
 
 // DEFAULT SET-UP
-#if VERBOSE_LEVEL < 4
+#if VERBOSE_KERNEL < 4
     diagonalScaling                               = DIAGONALSCALING;
     permutVectorActive                            = PERMUTVECTORACTIVE;
     use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
@@ -3224,17 +3223,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // STATISTICS MADE AND PRINTED TO FILE
 //        'kernel_detct_cX_dY.txt  (X - clust. number, Y - subdomain. number)
 //  -BRIEF
-#if VERBOSE_LEVEL == 2
+#if VERBOSE_KERNEL == 2
     // print ||K*R|| to file
 #endif
 //  - DETAILED
-#if VERBOSE_LEVEL == 3
+#if VERBOSE_KERNEL == 3
     get_n_first_and_n_last_eigenvals_from_dense_S = 10;
     check_nonsing                                 = 1;
     // max(eig(K))
 #endif
 //  - OWN
-#if VERBOSE_LEVEL == 4
+#if VERBOSE_KERNEL == 4
     if (d_sub==0){
       ESINFO(PROGRESS2) << "debug set-up";
     }
@@ -3243,7 +3242,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 
     std::string name;
     if (d_sub==-1){
@@ -3256,16 +3255,16 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 
     os << "Verbose Level:       " ;
-    if (VERBOSE_LEVEL==1){
+    if (VERBOSE_KERNEL==1){
       os << "1/4   (times)\n";
     }
-    else if (VERBOSE_LEVEL==2){
+    else if (VERBOSE_KERNEL==2){
       os << "2/4   (brief)\n";
     }
-    else if (VERBOSE_LEVEL==3){
+    else if (VERBOSE_KERNEL==3){
       os << "3/4   (detailed)\n";
     }
-    else if (VERBOSE_LEVEL==4){
+    else if (VERBOSE_KERNEL==4){
       os << "4/4   (own)\n";
     }
     os << "diagonalScaling:     " << int(diagonalScaling)<< "\n";
@@ -3323,7 +3322,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   }
 
 
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
     os << "dim(SchurComplement):                      " <<  sc_size << "\n";
     os << "===================================================================================\n";
 #endif
@@ -3381,7 +3380,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     }
   }
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //1 - diagonal scaling
   time1 = omp_get_wtime();
   elapsed_secs[1] = (time1 - begin_time) ;
@@ -3403,7 +3402,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
             K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
 
 
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
       os<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << "} and d{" <<
            K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
 
@@ -3424,7 +3423,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   //#################################################################################
 
 //
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //2 - before singular test
   time1 = omp_get_wtime();
   elapsed_secs[2] = (time1 - begin_time) ;
@@ -3512,7 +3511,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
           cnt_i++;
         }
       }
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
         os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
 #endif
     }
@@ -3556,7 +3555,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       double lmx_K_rr;
       cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
 
-#if VERBOSE_LEVEL>2
+#if VERBOSE_KERNEL>2
         os << "cond of regular part = "<< cond_of_regular_part <<"\n" << std::flush ;
 #endif
     }
@@ -3568,7 +3567,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   delete [] J_col_indices_p;
 
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //3 - after singular test
   time1 = omp_get_wtime();
   elapsed_secs[3] = (time1 - begin_time) ;
@@ -3577,7 +3576,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 //
   K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //4 - creation of block K_rs
   time1 = omp_get_wtime();
   elapsed_secs[4] = double(time1 - begin_time) ;
@@ -3630,7 +3629,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
           }
           ose3.close();
         }
-#if VERBOSE_LEVEL > 0
+#if VERBOSE_KERNEL > 0
         os.close();
 #endif
         ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization).";
@@ -3656,7 +3655,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //
   S.type='S';
   S.ConvertCSRToDense(1);
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //5 - Schur complement created
     time1 = omp_get_wtime();
     elapsed_secs[5] = double(time1 - begin_time) ;
@@ -3672,7 +3671,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   if (info){
     ESINFO(DETAILS) <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse";
   }
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //6 - Schur complement eigenvalues obtained
   time1 = omp_get_wtime();
   elapsed_secs[6] = double(time1 - begin_time) ;
@@ -3681,12 +3680,12 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   eslocal defect_K_in;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
-//#if VERBOSE_LEVEL>1
+//#if VERBOSE_KERNEL>1
 //  os<<"ratio,      eig{i-1},          eig{i}\n";
 //#endif
   for (eslocal i = itMax-1; i > 0;i--){
     ratio = fabs(W[i-1]/W[i]);
-//#if VERBOSE_LEVEL>1
+//#if VERBOSE_KERNEL>1
 //    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
 //#endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
@@ -3694,13 +3693,13 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       break;
     }
   }
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //7 - zero eigenvalues detection
   time1 = omp_get_wtime();
   elapsed_secs[7] = double(time1 - begin_time) ;
 #endif
 //
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
   if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
     int i1i = get_n_first_and_n_last_eigenvals_from_dense_S;
     if (i1i>S.rows){i1i=S.rows;}
@@ -3730,7 +3729,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     }
   }
   R_s.ConvertDenseToCSR(0);
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //8 - R_s created
   time1 = omp_get_wtime();
   elapsed_secs[8] = double(time1 - begin_time) ;
@@ -3756,7 +3755,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     R_r_cols = R_r.cols;
   }
   R_s.ConvertCSRToDense(0);
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //9 - R_r created (applied K_rr)
   time1 = omp_get_wtime();
   elapsed_secs[9] = double(time1 - begin_time) ;
@@ -3790,7 +3789,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   SEQ_VECTOR <eslocal > null_pivots;
   Kplus_R.getNullPivots(null_pivots);
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //10 - R - Gram Schmidt Orthogonalization
   time1 = omp_get_wtime();
   os << "null pivots: \n";
@@ -3818,10 +3817,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   defect_d                 = Kplus_R.cols;
 
 
-#if VERBOSE_LEVEL>2
+#if VERBOSE_KERNEL>2
   os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
 #endif
-#if VERBOSE_LEVEL>3
+#if VERBOSE_KERNEL>3
   double lmx_K;
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
   double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
@@ -3832,7 +3831,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   os << "defect(K):               " << defect_K_in <<"\n";
   os << "norm_KR:                 " << norm_KR <<"\n";
 #endif
-#if VERBOSE_LEVEL>2
+#if VERBOSE_KERNEL>2
   os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
@@ -3970,7 +3969,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //      }
 //      ose3.close();
 //    }
-//#if VERBOSE_LEVEL > 0
+//#if VERBOSE_KERNEL > 0
 //    os.close();
 //#endif
 //    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
@@ -3997,7 +3996,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   elapsed_secs[12] = double(end_time - begin_time) ;
   //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
   os << std::fixed;
   os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
   os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
@@ -4029,9 +4028,9 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // rev. 2016-02-03 (A.M.)
 //==============================================================================
 //
-//#define VERBOSE_LEVEL 0
-#ifndef VERBOSE_LEVEL
-#define VERBOSE_LEVEL 0
+//#define VERBOSE_KERNEL 0
+#ifndef VERBOSE_KERNEL
+#define VERBOSE_KERNEL 0
 #endif
 //
 //    1) diagonalScaling
@@ -4133,7 +4132,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   double begin_time = omp_get_wtime();
 
 // DEFAULT SET-UP
-#if VERBOSE_LEVEL < 4
+#if VERBOSE_KERNEL < 4
     diagonalScaling                               = DIAGONALSCALING;
     permutVectorActive                            = PERMUTVECTORACTIVE;
     use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
@@ -4171,17 +4170,17 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // STATISTICS MADE AND PRINTED TO FILE
 //        'kernel_detct_cX_dY.txt  (X - clust. number, Y - subdomain. number)
 //  -BRIEF
-#if VERBOSE_LEVEL == 2
+#if VERBOSE_KERNEL == 2
     // print ||K*R|| to file
 #endif
 //  - DETAILED
-#if VERBOSE_LEVEL == 3
+#if VERBOSE_KERNEL == 3
     get_n_first_and_n_last_eigenvals_from_dense_S = 10;
     check_nonsing                                 = 1;
     // max(eig(K))
 #endif
 //  - OWN
-#if VERBOSE_LEVEL == 4
+#if VERBOSE_KERNEL == 4
     if (d_sub==0){
       ESINFO(PROGRESS2) << "debug set-up";
     }
@@ -4190,7 +4189,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
   if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 
     std::string name;
     if (d_sub==-1){
@@ -4203,16 +4202,16 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
     os << "Verbose Level:       " ;
-    if (VERBOSE_LEVEL==1){
+    if (VERBOSE_KERNEL==1){
       os << "1/4   (times)\n";
     }
-    else if (VERBOSE_LEVEL==2){
+    else if (VERBOSE_KERNEL==2){
       os << "2/4   (brief)\n";
     }
-    else if (VERBOSE_LEVEL==3){
+    else if (VERBOSE_KERNEL==3){
       os << "3/4   (detailed)\n";
     }
-    else if (VERBOSE_LEVEL==4){
+    else if (VERBOSE_KERNEL==4){
       os << "4/4   (own)\n";
     }
     os << "diagonalScaling:     " << int(diagonalScaling)<< "\n";
@@ -4270,7 +4269,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   }
 
 
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
     os << "dim(SchurComplement):                      " <<  sc_size << "\n";
     os << "===================================================================================\n";
 #endif
@@ -4356,7 +4355,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 //  K_modif.printMatCSR("K_scaled");
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //1 - diagonal scaling
   time1 = omp_get_wtime();
   elapsed_secs[1] = (time1 - begin_time) ;
@@ -4379,7 +4378,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
             K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
 
 
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
       os<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << "} and d{" <<
            K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
 
@@ -4401,7 +4400,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   //#################################################################################
 
 //
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //2 - before singular test
   time1 = omp_get_wtime();
   elapsed_secs[2] = (time1 - begin_time) ;
@@ -4485,7 +4484,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
           cnt_i++;
         }
       }
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
         os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
 #endif
     }
@@ -4544,7 +4543,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //      double lmx_K_rr;
 //      cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
 //
-//#if VERBOSE_LEVEL>2
+//#if VERBOSE_KERNEL>2
 //        os << "cond of regular part = "<< cond_of_regular_part <<"\n" << std::flush ;
 //#endif
 //    }
@@ -4556,7 +4555,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   delete [] J_col_indices_p;
 
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //3 - after singular test
   time1 = omp_get_wtime();
   elapsed_secs[3] = (time1 - begin_time) ;
@@ -4570,7 +4569,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //4 - creation of block K_rs
   time1 = omp_get_wtime();
   elapsed_secs[4] = double(time1 - begin_time) ;
@@ -4637,7 +4636,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
           }
           ose3.close();
         }
-#if VERBOSE_LEVEL > 0
+#if VERBOSE_KERNEL > 0
         os.close();
 #endif
         ESINFO(ERROR) << "factorization of K_rr failed (1/2 factorization).";
@@ -4682,7 +4681,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //5 - Schur complement created
     time1 = omp_get_wtime();
     elapsed_secs[5] = double(time1 - begin_time) ;
@@ -4705,7 +4704,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   if (info){
     ESINFO(DETAILS) <<"info = " << info << " something wrong with Schur complement in SparseSolverCPU::generalIinverse";
   }
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //6 - Schur complement eigenvalues obtained
   time1 = omp_get_wtime();
   elapsed_secs[6] = double(time1 - begin_time) ;
@@ -4715,12 +4714,12 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   eslocal ind_U_V;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? sc_size-twenty-1 : 0 ;
-//#if VERBOSE_LEVEL>1
+//#if VERBOSE_KERNEL>1
 //  os<<"ratio,      eig{i-1},          eig{i}\n";
 //#endif
   for (eslocal i = itMax; i < sc_size-1;i++){
     ratio = fabs(S_S[i+1]/S_S[i]);
-//#if VERBOSE_LEVEL>1
+//#if VERBOSE_KERNEL>1
 //    os<<ratio <<" "<< S_S[i] << " " << S_S[i+1] << "\n";
 //#endif
     if (ratio < jump_in_eigenvalues_alerting_singularity){
@@ -4729,13 +4728,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       break;
     }
   }
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //7 - zero eigenvalues detection
   time1 = omp_get_wtime();
   elapsed_secs[7] = double(time1 - begin_time) ;
 #endif
 //
-#if VERBOSE_LEVEL>1
+#if VERBOSE_KERNEL>1
   if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
     int i1i = get_n_first_and_n_last_eigenvals_from_dense_S;
     if (i1i>S.rows){i1i=S.rows;}
@@ -4773,7 +4772,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   R_s.ConvertDenseToCSR(0);
 
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //8 - R_s created
   time1 = omp_get_wtime();
   elapsed_secs[8] = double(time1 - begin_time) ;
@@ -4798,7 +4797,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     R_r_cols = R_r.cols;
   }
   R_s.ConvertCSRToDense(0);
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //9 - R_r created (applied K_rr)
   time1 = omp_get_wtime();
   elapsed_secs[9] = double(time1 - begin_time) ;
@@ -4833,7 +4832,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   SEQ_VECTOR <eslocal > null_pivots;
 //  Kplus_R.getNullPivots(null_pivots);
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
 //10 - R - Gram Schmidt Orthogonalization
   time1 = omp_get_wtime();
   os << "null pivots: \n";
@@ -4927,7 +4926,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 
-//#if VERBOSE_LEVEL>0
+//#if VERBOSE_KERNEL>0
 ////10 - R - Gram Schmidt Orthogonalization
 //  time1 = omp_get_wtime();
 //  os << "null pivots: \n";
@@ -4964,11 +4963,11 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
 
 
-#if VERBOSE_LEVEL>2
+#if VERBOSE_KERNEL>2
   os << std::scientific;
   os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
 #endif
-#if VERBOSE_LEVEL>3
+#if VERBOSE_KERNEL>3
   double lmx_K;
   K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
   double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
@@ -4981,7 +4980,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   os << "norm_KR:                 " << norm_KR <<"\n";
   os << "norm_KtRl:               " << norm_KtRl <<"\n";
 #endif
-#if VERBOSE_LEVEL>2
+#if VERBOSE_KERNEL>2
   os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
   os << "norm_KtRl_approx:        " << sqrt(norm_KtRl_d_pow_2_approx) <<"\n";
 #endif
@@ -5145,7 +5144,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //      }
 //      ose3.close();
 //    }
-//#if VERBOSE_LEVEL > 0
+//#if VERBOSE_KERNEL > 0
 //    os.close();
 //#endif
 //    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
@@ -5167,7 +5166,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   elapsed_secs[12] = double(end_time - begin_time) ;
   //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
 
-#if VERBOSE_LEVEL>0
+#if VERBOSE_KERNEL>0
   os << std::fixed;
   os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
   os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
