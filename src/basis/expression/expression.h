@@ -24,6 +24,8 @@ public:
 		return _expression.value();
 	}
 
+	std::string expression() const { return _str; }
+
 protected:
 	void parse();
 

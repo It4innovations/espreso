@@ -20,10 +20,13 @@ protected:
 	void coordinates(const Coordinates &coordinates);
 	void elements(const Mesh &mesh);
 	void materials(const Mesh &mesh, const std::vector<Material> &materials);
+	void settings(const Mesh &mesh);
 	void boundaries(const Mesh &mesh);
 
 	const Mesh &_mesh;
 	const std::string _path;
+
+	// sorted faces and edges
 };
 
 

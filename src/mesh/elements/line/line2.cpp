@@ -78,6 +78,12 @@ Line2::Line2(const eslocal *indices)
 	memcpy(_indices, indices, Line2NodesCount * sizeof(eslocal));
 }
 
-
+Line2::Line2(std::ifstream &is)
+{
+	eslocal params;
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
+	// line has not params
+}
 
 

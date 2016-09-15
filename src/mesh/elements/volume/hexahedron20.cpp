@@ -44,7 +44,7 @@ std::vector<DenseMatrix> Hexa20_dN()
 {
 	std::vector<DenseMatrix> dN(
 		Hexahedron20GPCount,
-		DenseMatrix(Point::size(), Hexahedron20NodesCount)
+		DenseMatrix(Point::dimension(), Hexahedron20NodesCount)
 	);
 
 	std::vector<std::vector< double> > rst = Hexa20_rst();
@@ -467,7 +467,9 @@ Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *par
 
 Hexahedron20::Hexahedron20(std::ifstream &is)
 {
+	eslocal params;
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
 	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 

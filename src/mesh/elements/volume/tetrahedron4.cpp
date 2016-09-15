@@ -18,7 +18,7 @@ static std::vector<DenseMatrix> Tetra4_dN()
 	// dN contains [dNr, dNs, dNt]
 	std::vector<DenseMatrix> dN(
 		Tetrahedron4GPCount,
-		DenseMatrix(Point::size(), Tetrahedron4NodesCount)
+		DenseMatrix(Point::dimension(), Tetrahedron4NodesCount)
 	);
 
 	for (unsigned int i = 0; i < Tetrahedron4GPCount; i++) {
@@ -313,7 +313,9 @@ Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *par
 
 Tetrahedron4::Tetrahedron4(std::ifstream &is)
 {
+	eslocal params;
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
 	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 

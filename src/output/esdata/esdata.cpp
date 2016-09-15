@@ -8,7 +8,8 @@ void Esdata::mesh(const Mesh &mesh, const std::string &path)
 	Esdata(mesh, path);
 }
 
-Esdata::Esdata(const Mesh &mesh, const std::string &path): _mesh(mesh), _path(path)
+Esdata::Esdata(const Mesh &mesh, const std::string &path)
+: _mesh(mesh), _path(path)
 {
 	std::stringstream ss;
 	ss << "mkdir -p " << _path;
@@ -19,9 +20,12 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path): _mesh(mesh), _path(pa
 		system(ssDir.str().c_str());
 	}
 
+
+
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
 	materials(_mesh, _mesh.materials());
+	settings(_mesh);
 	boundaries(_mesh);
 }
 
@@ -29,7 +33,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 {
 	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
-		eslocal value;
+		eslocal size;
 		esglobal index;
 
 		std::stringstream ss;
@@ -37,7 +41,8 @@ void Esdata::coordinates(const Coordinates &coordinates)
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
-		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+		size = coordinates.localSize(p);
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (eslocal i = 0; i < coordinates.localSize(p); i++) {
 			index = coordinates.globalIndex(i, p);
 			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
@@ -48,68 +53,26 @@ void Esdata::coordinates(const Coordinates &coordinates)
 	}
 }
 
-
-//void Esdata::dirichlet(const Coordinates &coordinates, const std::vector<Dirichlet*> &dirichlet)
-//{
-//	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
-//		std::ofstream os;
-//		eslocal value;
-//
-//		std::stringstream ss;
-//		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaryConditions.dat";
-//
-//		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-//
-//		ESINFO(GLOBAL_ERROR) << "Broken VTK OUTPUT";
-//		size_t counter = conditions.size();
-//		os.write(reinterpret_cast<const char*>(&counter), sizeof(size_t));
-//		auto &l2c = coordinates.localToCluster(p);
-//		for (size_t i = 0; i < conditions.size(); i++) {
-//			if (conditions[i]->type() == ConditionType::DIRICHLET) {
-//				eslocal DOFs = 3;
-//				size_t size = 0;
-//				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
-//					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
-//						size++;
-//					}
-//				}
-//
-//				os.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-//				double dirichletValue = conditions[i]->value(Point3D());
-//				os.write(reinterpret_cast<const char*>(&dirichletValue), sizeof(double));
-//
-//				for (size_t j = 0; j < conditions[i]->DOFs().size(); j++) {
-//					if (std::binary_search(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs)) {
-//						value = std::lower_bound(l2c.begin(), l2c.end(), conditions[i]->DOFs()[j] / DOFs) - l2c.begin();
-//						value = DOFs * value + conditions[i]->DOFs()[j] % DOFs;
-//						os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
-//					}
-//				}
-//			}
-//		}
-//
-//		os.close();
-//	}
-//}
-
 void Esdata::elements(const Mesh &mesh)
 {
 	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		const std::vector<eslocal> &parts = mesh.getPartition();
 		const std::vector<Element*> &elements = mesh.elements();
-		eslocal value;
+		eslocal size;
 
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/elements.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
-		value = parts[p + 1] - parts[p];
-		os.write(reinterpret_cast<const char*>(&value), sizeof(eslocal));
+		// elements
+		size = parts[p + 1] - parts[p];
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
-			os << *(elements[e]);
+			elements[e]->store(os, mesh.coordinates(), p);
 		}
+
 		os.close();
 	}
 }
@@ -122,16 +85,126 @@ void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/materials.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
-		int size = materials.size();
-		os.write(reinterpret_cast<const char*>(&size), sizeof(int));
-//		for (size_t i = 0; i < materials.size(); i++) {
-//			os.write(reinterpret_cast<const char*>(&materials[i].density), sizeof(double));
-//			os.write(reinterpret_cast<const char*>(&materials[i].youngModulus), sizeof(double));
-//			os.write(reinterpret_cast<const char*>(&materials[i].poissonRatio), sizeof(double));
-//			os.write(reinterpret_cast<const char*>(&materials[i].termalExpansion), sizeof(double));
-//			os.write(reinterpret_cast<const char*>(&materials[i].termalCapacity), sizeof(double));
-//			os.write(reinterpret_cast<const char*>(&materials[i].termalConduction), sizeof(double));
-//		}
+		eslocal size = materials.size();
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (size_t i = 0; i < materials.size(); i++) {
+			os << materials[i];
+		}
+		os.close();
+	}
+}
+
+void Esdata::settings(const Mesh &mesh)
+{
+	auto computeIntervals = [] (const std::vector<espreso::Element*> &elements, eslocal p) {
+		std::vector<size_t> intervals;
+		if (!elements.size()) {
+			return intervals;
+		}
+
+		if (std::find(elements[0]->domains().begin(), elements[0]->domains().end(), p) != elements[0]->domains().end()) {
+			intervals.push_back(0);
+		}
+		for (size_t i = 1; i < elements.size(); i++) {
+			if (elements[i - 1]->domains() != elements[i]->domains()) {
+				if (std::find(elements[i]->domains().begin(), elements[i]->domains().end(), p) != elements[i]->domains().end()) {
+					if (intervals.size() % 2 == 0) {
+						intervals.push_back(i);
+					}
+				} else {
+					if (intervals.size() % 2 == 1) {
+						intervals.push_back(i);
+					}
+				}
+			}
+		}
+		if (intervals.size() % 2 == 1) {
+			intervals.push_back(elements.size());
+		}
+		return intervals;
+	};
+
+	auto intervalsSize = [] (const std::vector<size_t> &intervals) {
+		size_t size = 0;
+		for (size_t i = 0; i < intervals.size(); i += 2) {
+			size += intervals[2 * i + 1] - intervals[2 * i];
+		}
+		return size;
+	};
+
+
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		std::stringstream ss;
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/settings.dat";
+
+		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+
+		eslocal size;
+		std::vector<Element*> faces(mesh.faces());
+		std::vector<Element*> edges(mesh.edges());
+		std::sort(faces.begin(), faces.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
+		std::sort(edges.begin(), edges.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
+
+		// faces
+		std::vector<size_t> fIntervals = computeIntervals(faces, p);
+		eslocal fSize = intervalsSize(fIntervals);
+		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
+		for (size_t i = 0; i < fIntervals.size(); i += 2) {
+			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
+				os << *(faces[f]);
+			}
+		}
+
+		// edges
+		std::vector<size_t> eIntervals = computeIntervals(edges, p);
+		eslocal eSize = intervalsSize(eIntervals);
+		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
+		for (size_t i = 0; i < eIntervals.size(); i += 2) {
+			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
+				os << *(edges[e]);
+			}
+		}
+
+		// evaluator
+		size = _mesh.evaluators().size();
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
+			_mesh.evaluators()[i]->store(os);
+		}
+
+		// elements
+		const std::vector<eslocal> &parts = mesh.getPartition();
+		const std::vector<Element*> &elements = mesh.elements();
+		size = parts[p + 1] - parts[p];
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
+			elements[e]->settings().store(os, mesh.evaluators());
+		}
+
+		// faces
+		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
+		for (size_t i = 0; i < fIntervals.size(); i += 2) {
+			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
+				faces[f]->settings().store(os, mesh.evaluators());
+			}
+		}
+
+		// edges
+		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
+		for (size_t i = 0; i < eIntervals.size(); i += 2) {
+			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
+				edges[e]->settings().store(os, mesh.evaluators());
+			}
+		}
+
+		// nodes
+		size = mesh.coordinates().localSize(p);
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
+			mesh.nodes()[mesh.coordinates().clusterIndex(i, p)]->settings().store(os, mesh.evaluators());
+		}
+
 		os.close();
 	}
 }
@@ -209,13 +282,12 @@ void Esdata::boundaries(const Mesh &mesh)
 //
 //	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 //		std::ofstream os;
-//		eslocal value, size;
-//		esglobal index;
-//
 //		std::stringstream ss;
-//		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/clusterBoundaries.dat";
+//		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaries.dat";
 //		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 //
+//		eslocal value, size;
+//		esglobal index;
 //		size = 0;
 //		for (size_t i = 0; i < boundaries.size(); i++) {
 //			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * config::env::MPIrank)) {
@@ -236,5 +308,31 @@ void Esdata::boundaries(const Mesh &mesh)
 //		}
 //		os.close();
 //	}
+
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		std::ofstream os;
+		std::stringstream ss;
+		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaries.dat";
+		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+
+		eslocal domain, size;
+
+		size = mesh.coordinates().localSize(p);
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+
+		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
+			const std::vector<eslocal> &domains = mesh.nodes()[mesh.coordinates().clusterIndex(i, p)]->domains();
+
+			eslocal dSize = domains.size();
+			os.write(reinterpret_cast<const char*>(&dSize), sizeof(eslocal));
+			for (size_t d = 0; d < domains.size(); d++) {
+				domain = domains[d];
+				os.write(reinterpret_cast<const char*>(&domain), sizeof(eslocal));
+			}
+		}
+
+		os.close();
+	}
+
 }
 

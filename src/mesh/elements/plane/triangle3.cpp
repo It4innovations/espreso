@@ -208,3 +208,14 @@ Triangle3::Triangle3(const eslocal *indices, const eslocal *params)
 	_params.insert(_params.end(), params, params + PARAMS_SIZE);
 }
 
+Triangle3::Triangle3(std::ifstream &is)
+{
+	eslocal params;
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
+	if (params) {
+		_params.resize(params);
+		is.read(reinterpret_cast<char *>(_params.data()), sizeof(eslocal) * params);
+	}
+}
+

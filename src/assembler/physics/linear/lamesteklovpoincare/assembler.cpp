@@ -180,16 +180,16 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 	const std::vector<Element*> &elements = _mesh.elements();
 
 	DenseMatrix _K;
-	eslocal nK = _mesh.coordinates().localSize(subdomain) * Point::size();
+	eslocal nK = _mesh.coordinates().localSize(subdomain) * Point::dimension();
 	eslocal eSize = partition[subdomain + 1] - partition[subdomain];
 	_K.resize(nK, nK);
 	std::vector<double> nodes(nK);
 	std::vector<eslocal> elems(3 * eSize);
 
 	for (size_t i = 0; i < _mesh.coordinates().localSize(subdomain); i++) {
-		nodes[i * Point::size() + 0] = _mesh.coordinates().get(i, subdomain).x;
-		nodes[i * Point::size() + 1] = _mesh.coordinates().get(i, subdomain).y;
-		nodes[i * Point::size() + 2] = _mesh.coordinates().get(i, subdomain).z;
+		nodes[i * Point::dimension() + 0] = _mesh.coordinates().get(i, subdomain).x;
+		nodes[i * Point::dimension() + 1] = _mesh.coordinates().get(i, subdomain).y;
+		nodes[i * Point::dimension() + 2] = _mesh.coordinates().get(i, subdomain).z;
 	}
 	for (size_t i = partition[subdomain], index = 0; i < partition[subdomain + 1]; i++, index++) {
 		for (size_t j = 0; j < elements[i]->nodes(); j++) {

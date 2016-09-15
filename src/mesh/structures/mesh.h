@@ -75,6 +75,7 @@ public:
 
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Material>& materials() const { return _materials; }
+	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
 	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
 	std::vector<size_t> assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);

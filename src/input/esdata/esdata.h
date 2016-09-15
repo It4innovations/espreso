@@ -25,7 +25,12 @@ protected:
 	void points(Coordinates &coordinates, size_t &DOFs);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
-	void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates);
+	void settings(
+			std::vector<Evaluator*> &evaluators,
+			std::vector<Element*> &elements,
+			std::vector<Element*> &faces,
+			std::vector<Element*> &edges,
+			std::vector<Element*> &nodes);
 	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 private:

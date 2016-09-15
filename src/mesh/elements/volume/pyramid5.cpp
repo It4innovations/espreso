@@ -34,7 +34,7 @@ static std::vector< std::vector< double> > Pyramid5_rst()
 static std::vector<DenseMatrix> Pyramid5_dN() {
 	std::vector<DenseMatrix> dN(
 		Pyramid5GPCount,
-		DenseMatrix(Point::size(), Pyramid5NodesCount)
+		DenseMatrix(Point::dimension(), Pyramid5NodesCount)
 	);
 
 	std::vector< std::vector< double> > _pyramid5_rst = Pyramid5_rst();
@@ -266,7 +266,9 @@ Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)
 
 Pyramid5::Pyramid5(std::ifstream &is)
 {
+	eslocal params;
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
 	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 

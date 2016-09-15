@@ -9,8 +9,10 @@ namespace espreso {
 
 class Material {
 
+	friend std::ofstream& operator<<(std::ofstream& os, const Material &m);
+
 public:
-	enum class MODEL {
+	enum class MODEL: int {
 			LINEAR_ELASTIC_ISOTROPIC = 0,
 			LINEAR_ELASTIC_ORTHOTROPIC = 1,
 			LINEAR_ELASTIC_ANISOTROPIC = 2
@@ -108,6 +110,25 @@ public:
 		_model(MODEL::LINEAR_ELASTIC_ISOTROPIC),
 		_coordinates(&coordinates) {};
 
+	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(&coordinates)
+	{
+		is.read(reinterpret_cast<char *>(&_model), sizeof(Material::MODEL));
+		_density             = Evaluator::create(is, coordinates);
+		_termalCapacity      = Evaluator::create(is, coordinates);
+		_youngModulus[0]     = Evaluator::create(is, coordinates);
+		_youngModulus[1]     = Evaluator::create(is, coordinates);
+		_youngModulus[2]     = Evaluator::create(is, coordinates);
+		_poissonRatio[0]     = Evaluator::create(is, coordinates);
+		_poissonRatio[1]     = Evaluator::create(is, coordinates);
+		_poissonRatio[2]     = Evaluator::create(is, coordinates);
+		_termalExpansion[0]  = Evaluator::create(is, coordinates);
+		_termalExpansion[1]  = Evaluator::create(is, coordinates);
+		_termalExpansion[2]  = Evaluator::create(is, coordinates);
+		_termalConduction[0] = Evaluator::create(is, coordinates);
+		_termalConduction[1] = Evaluator::create(is, coordinates);
+		_termalConduction[2] = Evaluator::create(is, coordinates);
+	}
+
 	Material(const Material &other)
 	: _model(other._model), _coordinates(other._coordinates)
 	{
@@ -194,6 +215,26 @@ protected:
 	MODEL _model;
 	const Coordinates* _coordinates;
 };
+
+inline std::ofstream& espreso::operator<<(std::ofstream& os, const Material &m)
+{
+	os.write(reinterpret_cast<const char*>(&m._model), sizeof(Material::MODEL));
+	m._density->store(os);
+	m._termalCapacity->store(os);
+	m._youngModulus[0]->store(os);
+	m._youngModulus[1]->store(os);
+	m._youngModulus[2]->store(os);
+	m._poissonRatio[0]->store(os);
+	m._poissonRatio[1]->store(os);
+	m._poissonRatio[2]->store(os);
+	m._termalExpansion[0]->store(os);
+	m._termalExpansion[1]->store(os);
+	m._termalExpansion[2]->store(os);
+	m._termalConduction[0]->store(os);
+	m._termalConduction[1]->store(os);
+	m._termalConduction[2]->store(os);
+	return os;
+}
 
 }
 

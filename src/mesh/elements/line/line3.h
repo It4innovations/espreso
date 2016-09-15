@@ -34,6 +34,7 @@ public:
 	}
 
 	Line3(const eslocal *indices);
+	Line3(std::ifstream &is);
 	Element* copy() const { return new Line3(*this); }
 
 	eslocal nCommon() const { return Line3CommonNodes; }

@@ -17,7 +17,7 @@ static std::vector<DenseMatrix> Tetra10_dN()
 {
 	std::vector<DenseMatrix> dN(
 		Tetrahedron10GPCount,
-		DenseMatrix(Point::size(), Tetrahedron10NodesCount)
+		DenseMatrix(Point::dimension(), Tetrahedron10NodesCount)
 	);
 
 	std::vector<double> rv;
@@ -491,7 +491,9 @@ Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *p
 
 Tetrahedron10::Tetrahedron10(std::ifstream &is)
 {
+	eslocal params;
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
 	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 

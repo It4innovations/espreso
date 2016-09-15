@@ -16,9 +16,14 @@ public:
 	Point(double x, double y, double z, double alfa, double beta, double gama): x(x), y(y), z(z), alfa(alfa), beta(beta), gama(gama) { };
 	Point(const Point &p): x(p.x), y(p.y), z(p.z), alfa(p.alfa), beta(p.beta), gama(p.gama) { };
 
-	static size_t size()
+	static size_t dimension()
 	{
 		return 3;
+	}
+
+	static size_t size()
+	{
+		return 6;
 	}
 
 	void normalize()

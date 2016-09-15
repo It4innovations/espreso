@@ -36,7 +36,26 @@ public:
 		return indices[x] == indices[y];
 	}
 
-	friend std::ofstream& operator<<(std::ofstream& os, const Element &e);
+	void store(std::ofstream& os, const Coordinates &coordinates, size_t part)
+	{
+		eslocal value = vtkCode(), pSize = params(), p;
+		os.write(reinterpret_cast<const char *>(&value), sizeof(eslocal));
+		for (size_t n = 0; n < nodes(); n++) {
+			eslocal index = coordinates.localIndex(node(n), part);
+			os.write(reinterpret_cast<const char *>(&index), sizeof(eslocal));
+		}
+		os.write(reinterpret_cast<const char *>(&pSize), sizeof(eslocal));
+		if (pSize) {
+			p = param(Element::MATERIAL);
+			os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
+			p = param(Element::CONSTANT);
+			os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
+			p = param(Element::COORDINATES);
+			os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
+			p = param(Element::BODY);
+			os.write(reinterpret_cast<const char *>(&p), sizeof(eslocal));
+		}
+	}
 	friend std::ostream& operator<<(std::ostream& os, const Element &e);
 
 	bool operator<(const Element& other) const
@@ -186,14 +205,6 @@ protected:
 	std::vector<eslocal> _DOFsDomainsCounters;
 	Type _type;
 };
-
-inline std::ofstream& espreso::operator<<(std::ofstream& os, const Element &e)
-{
-	eslocal value = e.vtkCode();
-	os.write(reinterpret_cast<const char *>(&value), sizeof(eslocal));
-	os.write(reinterpret_cast<const char *>(e.indices()), sizeof(eslocal) * e.nodes());
-	return os;
-}
 
 inline std::ostream& operator<<(std::ostream& os, const Element &e)
 {

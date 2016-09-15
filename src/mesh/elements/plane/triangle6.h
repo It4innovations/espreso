@@ -35,6 +35,7 @@ public:
 
 	Triangle6(const eslocal *indices);
 	Triangle6(const eslocal *indices, const eslocal *params);
+	Triangle6(std::ifstream &is);
 	Element* copy() const { return new Triangle6(*this); }
 
 	eslocal nCommon() const { return Triangle6CommonNodes; }

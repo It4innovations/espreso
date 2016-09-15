@@ -24,6 +24,57 @@ void Esdata::points(Coordinates &coordinates, size_t &DOFs)
 	}
 }
 
+static void addElements(std::ifstream &is, std::vector<espreso::Element*> &elements, size_t number)
+{
+	eslocal type;
+	for (eslocal i = 0; i < number; i++) {
+		is.read(reinterpret_cast<char *>(&type), sizeof(eslocal));
+		switch(type) {
+		case Tetrahedron4VTKCode:
+			elements.push_back(new espreso::Tetrahedron4(is));
+			break;
+		case Tetrahedron10VTKCode:
+			elements.push_back(new espreso::Tetrahedron10(is));
+			break;
+		case Pyramid5VTKCode:
+			elements.push_back(new espreso::Pyramid5(is));
+			break;
+		case Pyramid13VTKCode:
+			elements.push_back(new espreso::Pyramid13(is));
+			break;
+		case Prisma6VTKCode:
+			elements.push_back(new espreso::Prisma6(is));
+			break;
+		case Prisma15VTKCode:
+			elements.push_back(new espreso::Prisma15(is));
+			break;
+		case Hexahedron8VTKCode:
+			elements.push_back(new espreso::Hexahedron8(is));
+			break;
+		case Hexahedron20VTKCode:
+			elements.push_back(new espreso::Hexahedron20(is));
+			break;
+		case Square4VTKCode:
+			elements.push_back(new espreso::Square4(is));
+			break;
+		case Square8VTKCode:
+			elements.push_back(new espreso::Square8(is));
+			break;
+		case Triangle3VTKCode:
+			elements.push_back(new espreso::Triangle3(is));
+			break;
+		case Triangle6VTKCode:
+			elements.push_back(new espreso::Triangle6(is));
+			break;
+		case Line2VTKCode:
+			elements.push_back(new espreso::Line2(is));
+			break;
+		case Line3VTKCode:
+			elements.push_back(new espreso::Line3(is));
+			break;
+		}
+	}
+};
 
 void Esdata::elements(std::vector<Element*> &elements)
 {
@@ -31,91 +82,76 @@ void Esdata::elements(std::vector<Element*> &elements)
 	fileName << _path << "/" << _rank << "/elements.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 	eslocal size, type;
+
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	elements.reserve(size);
-
-	for (eslocal i = 0; i < size; i++) {
-		is.read(reinterpret_cast<char *>(&type), sizeof(eslocal));
-		switch(type) {
-		case Tetrahedron4VTKCode:
-			elements.push_back(new Tetrahedron4(is));
-			break;
-		case Tetrahedron10VTKCode:
-			elements.push_back(new Tetrahedron10(is));
-			break;
-		case Pyramid5VTKCode:
-			elements.push_back(new Pyramid5(is));
-			break;
-		case Pyramid13VTKCode:
-			elements.push_back(new Pyramid13(is));
-			break;
-		case Prisma6VTKCode:
-			elements.push_back(new Prisma6(is));
-			break;
-		case Prisma15VTKCode:
-			elements.push_back(new Prisma15(is));
-			break;
-		case Hexahedron8VTKCode:
-			elements.push_back(new Hexahedron8(is));
-			break;
-		case Hexahedron20VTKCode:
-			elements.push_back(new Hexahedron20(is));
-			break;
-		}
-	}
+	addElements(is, elements, size);
 
 	is.close();
 }
 
 void Esdata::materials(std::vector<Material> &materials)
 {
-	ESINFO(GLOBAL_ERROR) << "Broken ESDATA INPUT";
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/materials.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
-	int size;
-	double value;
-	is.read(reinterpret_cast<char *>(&size), sizeof(int));
-	materials.resize(size, Material(mesh.coordinates()));
-//	for (size_t i = 0; i < materials.size(); i++) {
-//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//		materials[i].density = value;
-//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//		materials[i].youngModulus = value;
-//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//		materials[i].poissonRatio = value;
-//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//		materials[i].termalExpansion = value;
-//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//		materials[i].termalCapacity = value;
-//		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-//		materials[i].termalConduction = value;
-//	}
+	eslocal size;
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	for (size_t i = 0; i < size; i++) {
+		materials.push_back(Material(is, mesh.coordinates()));
+	}
 	is.close();
 }
 
-void Esdata::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
+void Esdata::settings(
+		std::vector<Evaluator*> &evaluators,
+		std::vector<Element*> &elements,
+		std::vector<Element*> &faces,
+		std::vector<Element*> &edges,
+		std::vector<Element*> &nodes)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/boundaryConditions.dat";
+	fileName << _path << "/" << _rank << "/settings.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
-	eslocal cIndex;
-	double value;
-	size_t counter, DOFs;
+	eslocal size;
 
-	is.read(reinterpret_cast<char *>(&counter), sizeof(size_t));
-	for (size_t i = 0; i < counter; i++) {
-		is.read(reinterpret_cast<char *>(&DOFs), sizeof(size_t));
-		is.read(reinterpret_cast<char *>(&value), sizeof(double));
-		ESINFO(GLOBAL_ERROR) << "Broken ESDATA INPUT";
-		//conditions.push_back(new NodeCondition(value, ConditionType::DIRICHLET));
-		//conditions.back()->DOFs().reserve(DOFs);
-		for (size_t j = 0; j < DOFs; j++) {
-			is.read(reinterpret_cast<char *>(&cIndex), sizeof(eslocal));
-			//conditions.back()->DOFs().push_back(cIndex);
-		}
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	faces.reserve(size);
+	addElements(is, elements, size);
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	edges.reserve(size);
+	addElements(is, elements, size);
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	for (eslocal i = 0; i < size; i++) {
+		evaluators.push_back(Evaluator::create(is, mesh.coordinates()));
+	}
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	ESTEST(MANDATORY) << "Invalid size of element settings" << (size == elements.size() ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = 0; i < size; i++) {
+		elements[i]->settings().load(is, evaluators);
+	}
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	ESTEST(MANDATORY) << "Invalid size of faces settings" << (size == faces.size() ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = 0; i < size; i++) {
+		faces[i]->settings().load(is, evaluators);
+	}
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	ESTEST(MANDATORY) << "Invalid size of edge settings" << (size == edges.size() ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = 0; i < size; i++) {
+		edges[i]->settings().load(is, evaluators);
+	}
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	ESTEST(MANDATORY) << "Invalid size of node settings" << (size == nodes.size() ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = 0; i < size; i++) {
+		nodes[i]->settings().load(is, evaluators);
 	}
 
 	is.close();
@@ -125,16 +161,16 @@ void Esdata::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*>
 void Esdata::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/clusterBoundaries.dat";
+	fileName << _path << "/" << _rank << "/boundaries.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	std::set<int> neighs;
 
-	eslocal size, value;
+	eslocal size, nSize, value;
 
-	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-
-	for (size_t i = 0; i < nodes.size(); i++) {
+	is.read(reinterpret_cast<char *>(&nSize), sizeof(eslocal));
+	ESTEST(MANDATORY) << "Invalid node size of cluster boundaries" << (nSize == nodes.size() ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = 0; i < nSize; i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));

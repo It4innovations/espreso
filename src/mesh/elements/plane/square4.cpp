@@ -165,5 +165,14 @@ Square4::Square4(const eslocal *indices, const eslocal *params)
 	_params.insert(_params.end(), params, params + PARAMS_SIZE);
 }
 
-
+Square4::Square4(std::ifstream &is)
+{
+	eslocal params;
+	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
+	if (params) {
+		_params.resize(params);
+		is.read(reinterpret_cast<char *>(_params.data()), sizeof(eslocal) * params);
+	}
+}
 

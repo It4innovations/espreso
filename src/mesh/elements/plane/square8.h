@@ -35,6 +35,7 @@ public:
 
 	Square8(const eslocal *indices);
 	Square8(const eslocal *indices, const eslocal *params);
+	Square8(std::ifstream &is);
 	Element* copy() const { return new Square8(*this); }
 
 	eslocal nCommon() const { return Square8CommonNodes; }

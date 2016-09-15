@@ -39,7 +39,7 @@ static std::vector<std::vector< double> > Prisma15_rst()
 static std::vector<DenseMatrix> Prisma15_dN() {
 	std::vector<DenseMatrix> dN(
 		Prisma15GPCount,
-		DenseMatrix(Point::size(), Prisma15NodesCount)
+		DenseMatrix(Point::dimension(), Prisma15NodesCount)
 	);
 
 	std::vector<std::vector< double> > rst = Prisma15_rst();
@@ -446,7 +446,9 @@ Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params)
 
 Prisma15::Prisma15(std::ifstream &is)
 {
+	eslocal params;
 	is.read(reinterpret_cast<char *>(_indices), sizeof(eslocal) * nodes());
+	is.read(reinterpret_cast<char *>(&params), sizeof(eslocal));
 	is.read(reinterpret_cast<char *>(_params), sizeof(eslocal) * PARAMS_SIZE);
 }
 
