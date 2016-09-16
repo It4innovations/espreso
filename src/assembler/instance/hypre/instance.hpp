@@ -1,7 +1,7 @@
 
 #include "instance.h"
 
-#define TEST 1
+#define TEST 0
 
 namespace espreso {
 
@@ -265,9 +265,8 @@ void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double>
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 //------------------------------------------------------------------------------
 // SET SOLVER PARAMS
-	const int solver = 0;
-	const int preconditioner = 0;
-	const int nParams = 19;
+	const int DOFsize = _physics.pointDOFs.size();
+	const int nParams = 20;
 	char **paramStrings = new char*[nParams];
 	for (int i = 0; i < nParams; i++)
 		paramStrings[i] = new char[100];
@@ -314,19 +313,22 @@ void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double>
 	strcpy(paramStrings[4],  ("tolerance "+std::to_string(config::solver::EPSILON)).c_str());
 	
 	strcpy(paramStrings[5],  "gmresDim 30");
-	strcpy(paramStrings[6],  "amgNumSweeps 1");
+	strcpy(paramStrings[6],  "amgNumSweeps 2");	// 1
 	strcpy(paramStrings[7],  "amgCoarsenType falgout");
-	strcpy(paramStrings[8],  "amgRelaxType hybridsym");
-	strcpy(paramStrings[9],  "amgSystemSize 1");
-	strcpy(paramStrings[10], "amgStrongThreshold 0.25");
-	strcpy(paramStrings[11], "MLI smoother HSGS");
-	strcpy(paramStrings[12], "MLI numSweeps 1");
-	strcpy(paramStrings[13], "MLI smootherWeight 1.0");
-	strcpy(paramStrings[14], "MLI nodeDOF 1");
-	strcpy(paramStrings[15], "MLI nullSpaceDim 1");
-	strcpy(paramStrings[16], "MLI minCoarseSize 50");
-	strcpy(paramStrings[17], "MLI outputLevel 0");
-	strcpy(paramStrings[18], "parasailsSymmetric outputLevel 0");
+	strcpy(paramStrings[8],  "amgRelaxType jacobi"); //hybridsym
+	strcpy(paramStrings[9],  ("amgSystemSize "+std::to_string(DOFsize)).c_str());
+//	strcpy(paramStrings[10], "amgStrongThreshold 0.25");
+	strcpy(paramStrings[10], "amgMaxLevels 20");
+	strcpy(paramStrings[11], "amgMeasureType global"); // local / global
+	strcpy(paramStrings[12], "MLI smoother HSGS");
+	strcpy(paramStrings[13], "MLI numSweeps 1");
+	strcpy(paramStrings[14], "MLI smootherWeight 1.0");
+	strcpy(paramStrings[15], ("MLI nodeDOF "+std::to_string(DOFsize)).c_str());
+	strcpy(paramStrings[16], "MLI nullSpaceDim 1");
+	strcpy(paramStrings[17], "MLI minCoarseSize 50");
+	strcpy(paramStrings[18], "MLI outputLevel 0");
+	strcpy(paramStrings[19], "parasailsSymmetric outputLevel 0");
+	
 
 	feiPtr.parameters(nParams, paramStrings);
 
@@ -365,7 +367,6 @@ if (rank==TEST)	std::cout << "  > SOLVED - "<< status<<"\n";
 
 
 	//get results	
-	const int DOFsize = _physics.pointDOFs.size();
 	double * saver = new double [nodes.size()*DOFsize];
 	feiPtr.getBlockNodeSolution(0, nodes.size(), nodeIDList, solnOffsets, saver);
 
