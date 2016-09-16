@@ -152,7 +152,7 @@ void Esdata::settings(const Mesh &mesh)
 		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
 		for (size_t i = 0; i < fIntervals.size(); i += 2) {
 			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
-				os << *(faces[f]);
+				faces[f]->store(os, _mesh.coordinates(), p);
 			}
 		}
 
@@ -162,7 +162,7 @@ void Esdata::settings(const Mesh &mesh)
 		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
 		for (size_t i = 0; i < eIntervals.size(); i += 2) {
 			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
-				os << *(edges[e]);
+				edges[e]->store(os, _mesh.coordinates(), p);
 			}
 		}
 
