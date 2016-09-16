@@ -19,7 +19,7 @@ CLUSTERS_Z = 1 ### ERROR
 USE_METIS = 0
 
 SHAPE                                  = 0
-PHYSICS =            0
+PHYSICS =            LINEAR_ELASTICITY_3D
 
                                 SUBDOMAINS_X = 1           
      SUBDOMAINS_Y   =    1           
@@ -35,10 +35,17 @@ LENGTH_Z = 30
 
 CORNERS_IN_CORNERS
 
+
+NODES = {
+
+    BOTTOM = <0, 30> <0, 30> <0, 0> # <9, 0>
+#BOTTOM = <0, 0> <0, 0> <0, 0>     
+    
+}
+
 DIRICHLET = {
-  BOTTOM_X = 0
-  BOTTOM_Y = 0
-  
-  BOTTOM_Z = 0
+
+
+  BOTTOM = x: 0,    y: 0,              z: 0
 }
 
