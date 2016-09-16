@@ -266,44 +266,68 @@ void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double>
 //------------------------------------------------------------------------------
 // SET SOLVER PARAMS
 	const int DOFsize = _physics.pointDOFs.size();
-	const int nParams = 20;
+	const int nParams = 21;
 	char **paramStrings = new char*[nParams];
 	for (int i = 0; i < nParams; i++)
 		paramStrings[i] = new char[100];
 
 	strcpy(paramStrings[0],  "outputLevel 2");
 	//	SOLVER
-	switch(config::hypre::HYPRE_SOLVER)
+	switch(config::hypre::HYPRE_SOLVER)	//CG, GMRES, FGMRES, BICGS, BICGSTAB, TFQMR, SYMQMR, SUPERLU, SUPERLUX
 	{
-		default:
 		case config::hypre::SOLVERalternative::CG:
 			strcpy(paramStrings[1], "solver cg");
 			break;
+		default:
 		case config::hypre::SOLVERalternative::GMRES:
 			strcpy(paramStrings[1], "solver gmres");
 			break;
 		case config::hypre::SOLVERalternative::FGMRES:
 			strcpy(paramStrings[1], "solver fgmres");
 			break;
-		case config::hypre::SOLVERalternative::BOOMERAMG:
-			strcpy(paramStrings[1], "solver boomeramg");
+
+		case config::hypre::SOLVERalternative::BICGS:
+			strcpy(paramStrings[1], "solver bicgs");
 			break;
+		case config::hypre::SOLVERalternative::BICGSTAB:
+			strcpy(paramStrings[1], "solver bicgstab");
+			break;
+		case config::hypre::SOLVERalternative::TFQMR:
+			strcpy(paramStrings[1], "solver tfqmr");
+			break;
+		case config::hypre::SOLVERalternative::SYMQMR:
+			strcpy(paramStrings[1], "solver symqmr");
+			break;
+		case config::hypre::SOLVERalternative::SUPERLU:	//NOT PARALLEL
+			strcpy(paramStrings[1], "solver superlu");
+			break;
+		case config::hypre::SOLVERalternative::SUPERLUX: //NOT PARALLEL
+			strcpy(paramStrings[1], "solver superlux");
+			break;
+
+
 	}
 	//	PRECONDITIONER
-	switch(config::hypre::HYPRE_PRECONDITIONER)
+	switch(config::hypre::HYPRE_PRECONDITIONER) //DIAGONAL PILUT EUCLID PARASAILS BOOMERAMG POLY MLI
 	{
 		default:
 		case config::hypre::PRECONDITIONERalternative::DIAGONAL:
 			strcpy(paramStrings[2], "preconditioner diagonal");
 			break;
-		case config::hypre::PRECONDITIONERalternative::PARASAILS:
-			strcpy(paramStrings[2], "preconditioner parasails");
+		case config::hypre::PRECONDITIONERalternative::PILUT:
+			strcpy(paramStrings[2], "preconditioner pilut");
 			break;
 		case config::hypre::PRECONDITIONERalternative::EUCLID:
 			strcpy(paramStrings[2], "preconditioner euclid");
 			break;
+		case config::hypre::PRECONDITIONERalternative::PARASAILS:
+			strcpy(paramStrings[2], "preconditioner parasails");
+			break;
 		case config::hypre::PRECONDITIONERalternative::BOOMERAMG:
 			strcpy(paramStrings[2], "preconditioner boomeramg");
+			break;
+		case config::hypre::PRECONDITIONERalternative::POLY:
+			strcpy(paramStrings[2], "preconditioner poly");
 			break;
 		case config::hypre::PRECONDITIONERalternative::MLI:
 			strcpy(paramStrings[2], "preconditioner mli");
@@ -315,11 +339,11 @@ void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double>
 	strcpy(paramStrings[5],  "gmresDim 30");
 	strcpy(paramStrings[6],  "amgNumSweeps 2");	// 1
 	strcpy(paramStrings[7],  "amgCoarsenType falgout");
-	strcpy(paramStrings[8],  "amgRelaxType jacobi"); //hybridsym
+	strcpy(paramStrings[8],  "amgRelaxType hybridsym"); //hybridsym jacobi
 	strcpy(paramStrings[9],  ("amgSystemSize "+std::to_string(DOFsize)).c_str());
-//	strcpy(paramStrings[10], "amgStrongThreshold 0.25");
+	strcpy(paramStrings[20], "amgStrongThreshold 0.5"); //1D 0.25, 3D 0.5
 	strcpy(paramStrings[10], "amgMaxLevels 20");
-	strcpy(paramStrings[11], "amgMeasureType global"); // local / global
+	strcpy(paramStrings[11], "amgMeasureType local"); // local / global
 	strcpy(paramStrings[12], "MLI smoother HSGS");
 	strcpy(paramStrings[13], "MLI numSweeps 1");
 	strcpy(paramStrings[14], "MLI smootherWeight 1.0");

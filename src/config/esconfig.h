@@ -347,15 +347,22 @@ namespace hypre {
 		CG=0,
 		GMRES = 1,
 		FGMRES = 2,
-		BOOMERAMG = 3
-	};
+		BICGS = 3,
+		BICGSTAB = 4,
+		TFQMR = 5,
+		SYMQMR = 6,
+		SUPERLU = 7,
+		SUPERLUX = 8
+	}; 
 	
 	enum class PRECONDITIONERalternative {
 		DIAGONAL = 0,
-		PARASAILS = 1,
+		PILUT = 1,
 		EUCLID = 2,
-		BOOMERAMG = 3,
-		MLI = 4
+		PARASAILS = 3,
+		BOOMERAMG = 4,
+		POLY = 5,
+		MLI = 6
 	};
 	
 	extern SOLVERalternative HYPRE_SOLVER;

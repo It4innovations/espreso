@@ -101,7 +101,7 @@ bool info::PRINT_MATRICES = false;
 
 //////////////////////////////// HYPRE /////////////////////////////////////////
 
-hypre::SOLVERalternative hypre::HYPRE_SOLVER = hypre::SOLVERalternative::CG;
+hypre::SOLVERalternative hypre::HYPRE_SOLVER = hypre::SOLVERalternative::GMRES;
 hypre::PRECONDITIONERalternative hypre::HYPRE_PRECONDITIONER = hypre::PRECONDITIONERalternative::DIAGONAL;
 //int hypre::MAXITERATIONS = 100;
 //double hypre::TOLERANCE = 1e-6;
@@ -118,13 +118,20 @@ std::vector<espreso::Parameter> parameters = {
 			{"CG", hypre::SOLVERalternative::CG, "Hypre CG solver"},
 			{"GMRES", hypre::SOLVERalternative::GMRES, "Hypre GMRES solver"},
 			{"FGMRES", hypre::SOLVERalternative::FGMRES, "Hypre FGMRES solver"},
-			{"BOOMERAMG", hypre::SOLVERalternative::BOOMERAMG, "Hypre BOOMERAMG solver"} } },
+			{"BICGS", hypre::SOLVERalternative::BICGS, "Hypre BICGS solver"},
+			{"BICGSTAB", hypre::SOLVERalternative::BICGSTAB, "Hypre BICGSTAB solver"},
+			{"TFQMR", hypre::SOLVERalternative::TFQMR, "Hypre TFQMR solver"},
+			{"SYMQMR", hypre::SOLVERalternative::SYMQMR, "Hypre SYMQMR solver"},
+			{"SUPERLU", hypre::SOLVERalternative::SUPERLU, "Hypre SUPERLU solver"},
+			{"SUPERLUX", hypre::SOLVERalternative::SUPERLUX, "Hypre SUPERLUX solver"} } },
 
 	{ "HYPRE_PRECONDITIONER", hypre::HYPRE_PRECONDITIONER, "Hypre preconditioner type.", {
 			{"DIAGONAL", hypre::PRECONDITIONERalternative::DIAGONAL, "Hypre DIAGONAL preconditioner"},
-			{"PARASAILS", hypre::PRECONDITIONERalternative::PARASAILS, "Hypre PARASAILS preconditioner"},
+			{"PILUT", hypre::PRECONDITIONERalternative::PILUT, "Hypre PILUT preconditioner"},
 			{"EUCLID", hypre::PRECONDITIONERalternative::EUCLID, "Hypre EUCLID preconditioner"},
+			{"PARASAILS", hypre::PRECONDITIONERalternative::PARASAILS, "Hypre PARASAILS preconditioner"},
 			{"BOOMERAMG", hypre::PRECONDITIONERalternative::BOOMERAMG, "Hypre BOOMERAMG preconditioner"},
+			{"POLY", hypre::PRECONDITIONERalternative::POLY, "Hypre POLY preconditioner"},
 			{"MLI", hypre::PRECONDITIONERalternative::MLI, "Hypre MLI preconditioner"} } },	
 	
 	// MESH DESCRIPTION
