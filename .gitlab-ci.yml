@@ -1,0 +1,50 @@
+variables:
+  GIT_STRATEGY: fetch
+
+stages:
+  - install
+  - benchmarks
+  - tests
+
+cache:
+  paths:
+    - libs/
+    - build/
+    - espreso
+
+before_script: 
+  - source /opt/intel/bin/compilervars.sh intel64
+  - . env/paths.default
+  - . env/threading.default 5
+  - ./waf configure
+  - ./waf install
+
+default_instalation:
+  stage: install
+  script:
+    - ./espreso -h
+
+test_benchmarks:
+  stage: benchmarks
+  script:
+    - python tests/benchmarks.py -v
+
+
+basis_tests:
+  stage: tests
+  script:
+    - python tests/espreso.py -v
+
+internal_tests:
+  stage: tests
+  script:
+    - python tests/internals.py -v
+
+exhaustive_tests:
+  stage: tests
+  only:
+    - triggers
+  script:
+    - python tests/exhaustive.py -v
+
+
