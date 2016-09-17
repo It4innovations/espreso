@@ -2,49 +2,179 @@ variables:
   GIT_STRATEGY: fetch
 
 stages:
-  - install
   - benchmarks
-  - tests
+  - stability
+  - performance
+  - release
 
 cache:
   paths:
     - libs/
-    - build/
-    - espreso
 
-before_script: 
+before_script:
   - source /opt/intel/bin/compilervars.sh intel64
   - . env/paths.default
   - . env/threading.default 5
-  - ./waf configure
-  - ./waf install
 
-default_instalation:
-  stage: install
-  script:
-    - ./espreso -h
-
-test_benchmarks:
+MKL32:
   stage: benchmarks
   script:
-    - python tests/benchmarks.py -v
+    - ./waf configure --SOLVER=MKL --INT_WIDTH=32
+    - ./waf install -j8
+    - python tests/benchmarks.py
 
-
-basis_tests:
-  stage: tests
+MKL64:
+  stage: benchmarks
   script:
-    - python tests/espreso.py -v
+    - ./waf configure --SOLVER=MKL --INT_WIDTH=64
+    - ./waf install -j8
+    - python tests/benchmarks.py
 
-internal_tests:
-  stage: tests
+CUDA32:
+  stage: benchmarks
   script:
-    - python tests/internals.py -v
+    - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
+    - ./waf install -j8
+    - python tests/benchmarks.py
 
-exhaustive_tests:
-  stage: tests
+CUDA64:
+  stage: benchmarks
+  script:
+    - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
+    - ./waf install -j8
+    - python tests/benchmarks.py
+
+STATIC_LIBRARY:
+  stage: benchmarks
+  script:
+    - ./waf configure --LIBTYPE=STATIC
+    - ./waf install -j8
+
+HYPRE:
+  stage: benchmarks
+  script:
+    - ./waf configure --HYPRE::INCLUDE=/opt/hypre/include --HYPRE::LIBPATH=/opt/hypre/lib
+    - ./waf install -j8
+
+VTK:
+  stage: benchmarks
+  script:
+    - ./waf configure --VTK::INCLUDE=/opt/vtk/include/vtk-7.1  --VTK::LIBPATH=/opt/vtk/lib
+    - ./waf install -j8
+
+
+MKL_32:
+  stage: stability
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
   only:
     - triggers
   script:
-    - python tests/exhaustive.py -v
+    - ./waf configure --SOLVER=MKL --INT_WIDTH=32
+    - ./waf install -j8
+    - python tests/espreso.py
+
+MKL_64:
+  stage: stability
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=MKL --INT_WIDTH=64
+    - ./waf install -j8
+    - python tests/espreso.py
+
+CUDA_32:
+  stage: stability
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
+    - ./waf install -j8
+    - python tests/espreso.py
+
+CUDA_64:
+  stage: stability
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
+    - ./waf install -j8
+    - python tests/espreso.py
 
 
+MKL 32:
+  stage: performance
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=MKL --INT_WIDTH=32
+    - ./waf install -j8
+
+MKL 64:
+  stage: performance
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=MKL --INT_WIDTH=64
+    - ./waf install -j8
+
+CUDA 32:
+  stage: performance
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
+    - ./waf install -j8
+
+CUDA 64:
+  stage: performance
+  cache:
+    paths:
+      - libs/
+      - build/
+      - espreso
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
+    - ./waf install -j8
+
+GITHUB:
+  stage: release
+  only:
+    - triggers
+  script:
+    - echo "push to GitHub"
