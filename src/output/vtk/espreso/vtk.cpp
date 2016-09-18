@@ -222,7 +222,26 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 
 	switch (eType) {
 	case ElementType::ELEMENTS:
-		ESINFO(GLOBAL_ERROR) << "Implement store properties for elements";
+		for (size_t e = 0; e < _mesh.elements().size(); e++) {
+			const Element *element = _mesh.elements()[e];
+			for (size_t p = 0; p < properties.size(); p++) {
+				size_t domain = element->domains()[0];
+				double value = 0;
+				for (size_t n = 0; n < element->nodes(); n++) {
+					value += element->settings(properties[p]).back()->evaluate(element->node(n));
+				}
+				values[domain].push_back(value / element->nodes());
+			}
+		}
+		values.push_back(std::vector<double>(_mesh.faces().size() + _mesh.edges().size())); // set dummy values
+		_os << "\n";
+		if (_lastData != ElementType::ELEMENTS) {
+			_os << "CELL_DATA " << _mesh.elements().size() + _mesh.faces().size() + _mesh.edges().size() << "\n";
+			_lastData = ElementType::ELEMENTS;
+		}
+		_os << "SCALARS " << name << "FixedValue double " << properties.size() << "\n";
+		_os << "LOOKUP_TABLE fixed" << name << "\n";
+		results(_os, values, properties.size());
 		break;
 	case ElementType::FACES:
 		ESINFO(GLOBAL_ERROR) << "Implement store properties for faces";
@@ -234,7 +253,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		for (size_t n = 0; n < _mesh.nodes().size(); n++) {
 			const Element *node = _mesh.nodes()[n];
 			for (size_t p = 0; p < properties.size(); p++) {
-				for (size_t d = 0; d < _mesh.nodes()[n]->domains().size(); d++) {
+				for (size_t d = 0; d < node->domains().size(); d++) {
 					size_t domain = node->domains()[d];
 					selection[domain].push_back(node->settings().isSet(properties[p]) ? 1 : 0);
 					values[domain].push_back(node->settings(properties[p]).back()->evaluate(n));
