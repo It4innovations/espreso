@@ -33,19 +33,22 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "HAVE_HYPRE" ])
 
 def build(ctx):
-    ctx.objects(
-        source = ctx.path.ant_glob('**/*.cpp'),
-        target = "assembler",
-        use    = "espreso_includes"
-    )
+    base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'physics/*.cpp'])
+    library = ctx.path.ant_glob(['instance/precomputed/**/*.cpp', 'physics/precomputed/**/*.cpp'])
+    rest = list(set(ctx.path.ant_glob(['**/*.cpp'])) - set(base + library))
 
     ctx.objects(
-        source =
-            ctx.path.ant_glob('instance/*.cpp') +
-            ctx.path.ant_glob('instance/precomputed/*.cpp') +
-            ctx.path.ant_glob('constraints/**/*.cpp') +
-            ctx.path.ant_glob('physics/*.cpp') +
-            ctx.path.ant_glob('physics/precomputed/**/*.cpp'),
-        target = "assembler_api",
+        source = base,
+        target = "assembler_base",
         use    = "espreso_includes"
+    )
+    ctx.objects(
+        source = library,
+        target = "assembler_api",
+        use    = "espreso_includes assembler_base"
+    )
+    ctx.objects(
+        source = rest,
+        target = "assembler",
+        use    = "espreso_includes assembler_base"
     )
