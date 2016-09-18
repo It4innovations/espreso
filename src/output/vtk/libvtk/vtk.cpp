@@ -72,7 +72,7 @@
 using namespace espreso::output;
 
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
-: Store(mesh, path, shrinkSubdomain, shringCluster)
+: Store(mesh, path, shrinkSubdomain, shringCluster), _lastData(ElementType::ELEMENTS)
 {
 	computeCenters();
 }

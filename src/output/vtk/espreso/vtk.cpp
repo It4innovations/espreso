@@ -26,14 +26,19 @@ static void head(std::ofstream &os)
 	os << "\n";
 }
 
+static size_t coordinateSize(const espreso::Coordinates &coordinates)
+{
+	size_t cSize = 0;
+	for (size_t p = 0; p < coordinates.parts(); p++) {
+		cSize += coordinates.localToCluster(p).size();
+	}
+	return cSize;
+}
+
 static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, std::function<espreso::Point(const espreso::Point&, size_t)> shrink)
 {
 	size_t parts = coordinates.parts();
-
-	size_t cSize = 0;
-	for (size_t p = 0; p < parts; p++) {
-		cSize += coordinates.localToCluster(p).size();
-	}
+	size_t cSize = coordinateSize(coordinates);
 
 	os << "DATASET UNSTRUCTURED_GRID\n";
 	os << "POINTS " << cSize << " float\n";
@@ -49,11 +54,7 @@ static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinat
 static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, const std::vector<espreso::Element*> &nodes, std::function<espreso::Point(const espreso::Point&, size_t)> shrink)
 {
 	size_t parts = coordinates.parts();
-
-	size_t cSize = 0;
-	for (size_t i = 0; i < nodes.size(); i++) {
-		cSize += nodes[i]->domains().size();
-	}
+	size_t cSize = coordinateSize(coordinates);
 
 	os << "DATASET UNSTRUCTURED_GRID\n";
 	os << "POINTS " << cSize << " float\n";
@@ -72,7 +73,7 @@ static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes
 	size_t size = 0;
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
-			domainSize[nodes[i]->domains()[d]] += nodes[i]->domains().size();
+			domainSize[nodes[i]->domains()[d]]++;
 		}
 	}
 
@@ -82,7 +83,7 @@ static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes
 
 	size_t offset = 0;
 	std::vector<std::vector<eslocal> > points(domains);
-	os << "CELLS " << domains << " " << size << "\n";
+	os << "CELLS " << domains << " " << size + domains << "\n";
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
 			points[nodes[i]->domains()[d]].push_back(offset++);
@@ -180,28 +181,21 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh)
 	os << "\n";
 }
 
-static void coordinatesDisplacement(std::ofstream &os, const std::vector<std::vector<double> > &displacement, size_t DOFs)
+template <typename Ttype>
+static void results(std::ofstream &os, const std::vector<std::vector<Ttype> > &values, size_t DOFs)
 {
-	size_t size = 0;
-	for (size_t p = 0; p < displacement.size(); p++) {
-		size += displacement[p].size() / DOFs;
-	}
-
-	os << "\n";
-	os << "POINT_DATA " << size << "\n";
-	os << "SCALARS displacements float " << DOFs << "\n";
-	os << "LOOKUP_TABLE default\n";
-	for (size_t p = 0; p < displacement.size(); p++) {
-		for (size_t i = 0; i < displacement[p].size() / DOFs; i++) {
+	for (size_t p = 0; p < values.size(); p++) {
+		for (size_t i = 0; i < values[p].size() / DOFs; i++) {
 			for (size_t d = 0; d < DOFs; d++) {
-				os << displacement[p][DOFs * i + d] << " ";
+				os << values[p][DOFs * i + d] << " ";
 			}
 			os << "\n";
 		}
 	}
 }
 
-VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster): Store(mesh, path, shrinkSubdomain, shringCluster)
+VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+: Store(mesh, path, shrinkSubdomain, shringCluster), _lastData(ElementType::ELEMENTS)
 {
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
@@ -223,7 +217,46 @@ void VTK::storeGeometry(size_t timeStep)
 
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement store property";
+	std::vector<std::vector<int> > selection(_mesh.parts());
+	std::vector<std::vector<double> > values(_mesh.parts());
+
+	switch (eType) {
+	case ElementType::ELEMENTS:
+		ESINFO(GLOBAL_ERROR) << "Implement store properties for elements";
+		break;
+	case ElementType::FACES:
+		ESINFO(GLOBAL_ERROR) << "Implement store properties for faces";
+		break;
+	case ElementType::EDGES:
+		ESINFO(GLOBAL_ERROR) << "Implement store properties for edges";
+		break;
+	case ElementType::NODES:
+		for (size_t n = 0; n < _mesh.nodes().size(); n++) {
+			const Element *node = _mesh.nodes()[n];
+			for (size_t p = 0; p < properties.size(); p++) {
+				for (size_t d = 0; d < _mesh.nodes()[n]->domains().size(); d++) {
+					size_t domain = node->domains()[d];
+					selection[domain].push_back(node->settings().isSet(properties[p]) ? 1 : 0);
+					values[domain].push_back(node->settings(properties[p]).back()->evaluate(n));
+				}
+			}
+		}
+		_os << "\n";
+		if (_lastData != ElementType::NODES) {
+			_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";
+			_lastData = ElementType::NODES;
+		}
+		_os << "SCALARS " << name << "IsSet int " << properties.size() << "\n";
+		_os << "LOOKUP_TABLE setted" << name << "\n";
+		results(_os, selection, properties.size());
+		_os << "\n";
+		_os << "SCALARS " << name << "FixedValue double " << properties.size() << "\n";
+		_os << "LOOKUP_TABLE fixed" << name << "\n";
+		results(_os, values, properties.size());
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown element type";
+	}
 }
 
 void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
@@ -233,8 +266,16 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	case ElementType::FACES:
 	case ElementType::EDGES:
 		ESINFO(GLOBAL_ERROR) << "Implement store values";
+		break;
 	case ElementType::NODES:
-		coordinatesDisplacement(_os, values, dimension);
+		_os << "\n";
+		if (_lastData != ElementType::NODES) {
+			_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";
+			_lastData = ElementType::NODES;
+		}
+		_os << "SCALARS " << name << " float " << dimension << "\n";
+		_os << "LOOKUP_TABLE default\n";
+		results(_os, values, dimension);
 	}
 	_os.flush();
 }
@@ -250,7 +291,14 @@ void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSu
 	head(os);
 	coordinates(os, _mesh.coordinates(), [&] (const Point &point, size_t part) { return this->shrink(point, part); });
 	elements(os, _mesh);
-	coordinatesDisplacement(os, displacement, displacement[0].size() / _mesh.coordinates().localSize(0));
+	os << "\n";
+	if (_lastData != ElementType::NODES) {
+		_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";
+		_lastData = ElementType::NODES;
+	}
+	os << "SCALARS displacement float " << displacement[0].size() / _mesh.coordinates().localSize(0) << "\n";
+	os << "LOOKUP_TABLE default\n";
+	results(os, displacement, displacement[0].size() / _mesh.coordinates().localSize(0));
 
 	os.close();
 }

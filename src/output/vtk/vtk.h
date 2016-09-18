@@ -34,6 +34,7 @@ protected:
 	std::ofstream _os;
 	std::vector<Point> _sCenters;
 	Point _cCenter;
+	ElementType _lastData;
 };
 
 }

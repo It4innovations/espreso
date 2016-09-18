@@ -61,8 +61,9 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 
 void AdvectionDiffusion2D::saveMeshProperties(output::Store &store)
 {
-	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, output::Store::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, output::Store::ElementType::ELEMENTS);
+//	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, output::Store::ElementType::ELEMENTS);
+//	store.storeProperty("headSource", { Property::HEAT_SOURCE }, output::Store::ElementType::ELEMENTS);
+	store.storeProperty("temperature", { Property::TEMPERATURE }, output::Store::ElementType::NODES);
 }
 
 void AdvectionDiffusion2D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
