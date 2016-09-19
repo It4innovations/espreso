@@ -54,7 +54,11 @@ static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinat
 static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, const std::vector<espreso::Element*> &nodes, std::function<espreso::Point(const espreso::Point&, size_t)> shrink)
 {
 	size_t parts = coordinates.parts();
-	size_t cSize = coordinateSize(coordinates);
+
+	size_t cSize = 0;
+	for (size_t n = 0; n < nodes.size(); n++) {
+		cSize += nodes[n]->domains().size();
+	}
 
 	os << "DATASET UNSTRUCTURED_GRID\n";
 	os << "POINTS " << cSize << " float\n";
@@ -411,18 +415,12 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 	std::sort(fixPoints.begin(), fixPoints.end());
 	Esutils::removeDuplicity(fixPoints);
 
-	std::stringstream ss;
-	ss << path << config::env::MPIrank << ".vtk";
-	std::ofstream os;
-	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
 	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
 
-	head(os);
-	coordinates(os, mesh.coordinates(), fixPoints, [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
-	nodes(os, fixPoints, mesh.parts());
-
-	os.close();
+	open(vtk._os, vtk._path, -1);
+	head(vtk._os);
+	coordinates(vtk._os, mesh.coordinates(), fixPoints, [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
+	nodes(vtk._os, fixPoints, mesh.parts());
 }
 
 void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)

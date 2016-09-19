@@ -48,6 +48,9 @@ void LinearElasticity3D::saveMeshProperties(output::Store &store)
 {
 	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, output::Store::ElementType::NODES);
 	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, output::Store::ElementType::NODES);
+	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
+		output::VTK::fixPoints(_mesh, "fixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	}
 }
 
 void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
@@ -256,8 +259,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
 	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
 
-	inertia[0] = inertia[1] = inertia[2] = 0;
-	//inertia[2] = 9.8066 * material.density(0);
+	inertia[0] = inertia[1] = 0; // inertia[2] = 0;
+	inertia[2] = 9.8066 * material.density(0);
 
 	coordinates.resize(element->nodes(), 3);
 

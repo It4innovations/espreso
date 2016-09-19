@@ -77,14 +77,15 @@ void Mesh::computeFixPoints(size_t number)
 		return;
 	}
 
-	std::vector<eslocal> fixPoints(number);
 	_fixPoints.resize(parts());
 
 	cilk_for (size_t part = 0; part < parts(); part++) {
-		size_t max = (_partPtrs[part + 1] - _partPtrs[part]) / 20 + 1;
-		eslocal *eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], std::min(number, max));
+		size_t max = _partPtrs[part + 1] - _partPtrs[part];
+		size_t points = std::min(number, max);
+		std::vector<eslocal> fixPoints(points);
+		eslocal *eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], points);
 
-		for (eslocal j = 0; j < number; j++) {
+		for (eslocal j = 0; j < points; j++) {
 			fixPoints[j] = getCentralNode(_partPtrs[part], _partPtrs[part + 1], eSubPartition, part, j);
 		}
 		std::sort(fixPoints.begin(), fixPoints.end());
