@@ -2,7 +2,7 @@
 #ifndef SOLVER_SPECIFIC_CPU_SOLVERPARDISO_H_
 #define SOLVER_SPECIFIC_CPU_SOLVERPARDISO_H_
 
-#include "../../specific/sparsesolver.h"
+#include "../sparsesolver.h"
 
 using std::string;
 using std::endl;

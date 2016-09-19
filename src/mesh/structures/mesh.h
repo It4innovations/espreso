@@ -9,14 +9,6 @@
 #include <stdlib.h>
 #include <functional>
 
-#include "mkl_spblas.h"
-#include "mkl_blas.h"
-#include "mkl_cblas.h"
-#include "mkl_lapacke.h"
-
-#include "cilk/cilk.h"
-#include "mkl.h"
-
 #include "metis.h"
 
 #include "../elements/elements.h"

@@ -44,6 +44,12 @@ CUDA64:
     - ./waf install -j8
     - python tests/benchmarks.py
 
+PARDISO32:
+  stage: benchmarks
+  script:
+    - ./waf configure --SOLVER=PARDISO --INT_WIDTH=32 --LIBPATH=/opt/pardiso/
+    - ./waf install -j8
+
 STATIC_LIBRARY:
   stage: benchmarks
   script:

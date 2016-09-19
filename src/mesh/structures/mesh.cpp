@@ -1,4 +1,6 @@
 #include "mesh.h"
+#include "mkl.h"
+#include "cilk/cilk.h"
 
 using namespace espreso;
 
