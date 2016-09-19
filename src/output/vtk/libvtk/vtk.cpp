@@ -499,8 +499,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		break;
 	}
 	}
-
-	ESINFO(GLOBAL_ERROR) << "Implement store property";
 }
 
 void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)

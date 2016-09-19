@@ -443,6 +443,6 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
 void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
-
+	std::cout << "GLUING\n";
 }
 
