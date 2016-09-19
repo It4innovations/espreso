@@ -29,7 +29,12 @@ protected:
 	void elements(std::vector<Element*> &elements);
 	void faces(std::vector<Element*> &faces);
 	void materials(std::vector<Material> &materials);
-	void settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates) {};
+	void settings(
+				std::vector<Evaluator*> &evaluators,
+				std::vector<Element*> &elements,
+				std::vector<Element*> &faces,
+				std::vector<Element*> &edges,
+				std::vector<Element*> &nodes) { ESINFO(GLOBAL_ERROR) << "Implement setting of OpenFOAM project."; };
 	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 private:

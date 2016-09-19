@@ -113,7 +113,7 @@ public:
 			std::vector<Element*> &elements,
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,
-			std::vector<Element*> &nodes) {};
+			std::vector<Element*> &nodes) = 0;
 
 	virtual void open() {};
 	virtual void close() {};

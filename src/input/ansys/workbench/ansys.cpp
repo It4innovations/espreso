@@ -59,7 +59,12 @@ void AnsysWorkbench::materials(std::vector<Material> &materials)
 	}
 }
 
-void AnsysWorkbench::settings(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, Coordinates &coordinates)
+void AnsysWorkbench::settings(
+			std::vector<Evaluator*> &evaluators,
+			std::vector<Element*> &elements,
+			std::vector<Element*> &faces,
+			std::vector<Element*> &edges,
+			std::vector<Element*> &nodes)
 {
 	while (true) {
 		switch (_parser.process()) {
@@ -69,12 +74,15 @@ void AnsysWorkbench::settings(std::vector<Evaluator*> &evaluators, std::vector<E
 			}
 			break;
 		case WorkbenchCommands::CMBLOCK:
+			std::cout << "CMBLOCK\n";
 			//_parser.cmblock(dirichlet);
 			break;
 		case WorkbenchCommands::DISPLACEMENT:
+			std::cout << "DISPLACEMENT\n";
 			//_parser.displacement(dirichlet);
 			break;
 		case WorkbenchCommands::EBLOCK:
+			std::cout << "EBLOCK\n";
 			//_parser.eblock(dirichlet);
 			break;
 		default:

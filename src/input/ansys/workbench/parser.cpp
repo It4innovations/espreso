@@ -216,7 +216,9 @@ void WorkbenchParser::mp(std::vector<Material> &materials)
 	int mNumber = std::stoi(params[2]);
 	materials.resize(mNumber--, Material(_mesh.coordinates()));
 
-	materials[mNumber].setParameter(params[1], params[3]);
+	if (!materials[mNumber].setParameter(params[1], params[3])) {
+		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
+	}
 }
 
 //void WorkbenchParser::displacement(std::vector<Dirichlet*> &dirichlet)
