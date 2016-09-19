@@ -6,7 +6,6 @@ using namespace espreso;
 
 bool Material::setParameter(const std::string &parameter, const std::string &value)
 {
-	std::cout << parameter << ": " << value << "\n";
 	bool correctlySet = false;
 
 	auto set = [&] (Evaluator* &evaluator, const std::string &name) {
@@ -18,6 +17,13 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 			} else {
 				evaluator = new CoordinatesEvaluator(value, *_coordinates);
 			}
+			correctlySet = true;
+		}
+	};
+
+	auto skip = [&] (const std::string &name) {
+		if (StringCompare::caseInsensitiveEq(parameter, name)) {
+			ESINFO(ALWAYS) << TextColor::YELLOW << "Skipped material parameter '" << name << "'";
 			correctlySet = true;
 		}
 	};
@@ -41,14 +47,10 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 	set(_termalExpansion[1] , "ALPY");
 	set(_termalExpansion[2] , "ALPZ");
 
-	if (StringCompare::caseInsensitiveEq(parameter, "RSVX")) {
-		ESINFO(ALWAYS) << TextColor::YELLOW << "Skipped material parameter 'RSVX'";
-		return true;
-	}
-	if (StringCompare::caseInsensitiveEq(parameter, "RSVX")) {
-		ESINFO(ALWAYS) << TextColor::YELLOW << "Skipped material parameter 'RSVX'";
-		return true;
-	}
+	skip("RSVX");
+	skip("MURX");
+	skip("MURY");
+	skip("MURZ");
 
 	if (StringCompare::caseInsensitiveEq(parameter, "MODEL")) {
 		Parameter p("MODEL", _model, "model", {

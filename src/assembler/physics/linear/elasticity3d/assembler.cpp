@@ -46,7 +46,8 @@ void LinearElasticity3D::prepareMeshStructures()
 
 void LinearElasticity3D::saveMeshProperties(output::Store &store)
 {
-
+	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, output::Store::ElementType::NODES);
+	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, output::Store::ElementType::NODES);
 }
 
 void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
@@ -255,8 +256,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
 	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
 
-	inertia[0] = inertia[1] = 0;
-	inertia[2] = 9.8066 * material.density(0);
+	inertia[0] = inertia[1] = inertia[2] = 0;
+	//inertia[2] = 9.8066 * material.density(0);
 
 	coordinates.resize(element->nodes(), 3);
 
@@ -432,7 +433,7 @@ void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 
 void LinearElasticity3D::makeStiffnessMatricesRegular()
 {
-	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+	cilk_for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		switch (config::solver::REGULARIZATION) {
 		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
 			if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {
@@ -481,6 +482,16 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 					}
 				}
 				f[subdomain][row] += fe[dx * elements[e]->nodes() + nx];
+			}
+		}
+	}
+
+	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z };
+	for (size_t n = 0; n < _mesh.coordinates().localSize(subdomain); n++) {
+		Element *node = _mesh.nodes()[_mesh.coordinates().clusterIndex(n, subdomain)];
+		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
+			if (node->settings().isSet(forces[dof])) {
+				f[subdomain][node->DOFIndex(subdomain, dof)] = node->settings(forces[dof]).back()->evaluate(node->node(0)) / node->domains().size();
 			}
 		}
 	}

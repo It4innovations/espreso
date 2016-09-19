@@ -70,20 +70,21 @@ void AnsysWorkbench::settings(
 		switch (_parser.process()) {
 		case WorkbenchCommands::WB:
 			if (_parser.workbench("load", "end")) {
-				return;
+				// skip end because there can be another settings
+				// return;
 			}
 			break;
 		case WorkbenchCommands::CMBLOCK:
-			std::cout << "CMBLOCK\n";
-			//_parser.cmblock(dirichlet);
+			_parser.cmblock(elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::DISPLACEMENT:
-			std::cout << "DISPLACEMENT\n";
-			//_parser.displacement(dirichlet);
+			_parser.displacement(evaluators, elements, faces, edges, nodes);
+			break;
+		case WorkbenchCommands::FORCE:
+			_parser.force(evaluators, elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::EBLOCK:
-			std::cout << "EBLOCK\n";
-			//_parser.eblock(dirichlet);
+			_parser.eblock(elements, faces, edges, nodes);
 			break;
 		default:
 			return;

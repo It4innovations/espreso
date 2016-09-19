@@ -21,10 +21,14 @@ protected:
 	};
 
 public:
+	Evaluator(): _name("") {};
+	Evaluator(const std::string &name): _name(name) {};
+
 	static Evaluator* create(std::ifstream &is, const Coordinates &coordinates);
 
 	virtual Evaluator* copy() const { return new Evaluator(*this); }
-	virtual double evaluate(size_t index) const { return 0; }
+	virtual double evaluate(size_t index, size_t timeStep = 1, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
+	virtual const std::string& name() const { return _name; }
 	virtual ~Evaluator() {};
 
 	virtual void store(std::ofstream& os)
@@ -32,6 +36,9 @@ public:
 		Type type = Type::DEFAULT;
 		os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
 	}
+
+protected:
+	std::string _name;
 };
 
 class ConstEvaluator: public Evaluator {
@@ -41,7 +48,7 @@ public:
 	ConstEvaluator(std::ifstream &is) { is.read(reinterpret_cast<char *>(&_value), sizeof(double)); }
 
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
-	double evaluate(size_t index) const { return _value; }
+	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const { return _value; }
 
 	virtual void store(std::ofstream& os)
 	{
@@ -79,7 +86,7 @@ protected:
 	}
 
 	virtual Evaluator* copy() const =0;
-	virtual double evaluate(size_t index) const =0;
+	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const =0;
 
 	std::vector<Expression> _expression;
 	mutable std::vector<std::vector<double> >_values;
@@ -95,7 +102,7 @@ public:
 	: ExpressionEvaluator(is, { "x", "y", "z" }), _coordinates(coordinates) {};
 
 	virtual Evaluator* copy() const { return new CoordinatesEvaluator(*this); }
-	double evaluate(size_t index) const
+	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
 		_values[__cilkrts_get_worker_number()][0] = _coordinates[index].x;
 		_values[__cilkrts_get_worker_number()][1] = _coordinates[index].y;
@@ -112,6 +119,54 @@ public:
 
 private:
 	const Coordinates &_coordinates;
+};
+
+class TableEvaluator: public Evaluator {
+
+public:
+	enum class TableProperty {
+		TIME,
+		TEMPERATURE,
+		PRESSURE,
+		VELOCITY
+	};
+
+	TableEvaluator(
+			const std::string &name,
+			const std::vector<std::vector<std::vector<double> > > &table,
+			const std::vector<TableProperty> &properties,
+			const std::vector<std::vector<double> > &axis)
+	: Evaluator(name), _dimension(properties.size()), _table(table), _properties(properties), _axis(axis) {};
+
+	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
+	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
+	{
+		std::vector<size_t> cell(_dimension);
+
+		for (size_t i = 0; i < _dimension; i++) {
+			switch (_properties[i]) {
+			case TableProperty::TIME:
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), timeStep) - _axis[i].begin();
+				break;
+			case TableProperty::TEMPERATURE:
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), temperature) - _axis[i].begin();
+				break;
+			case TableProperty::PRESSURE:
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), pressure) - _axis[i].begin();
+				break;
+			case TableProperty::VELOCITY:
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), velocity) - _axis[i].begin();
+				break;
+			}
+		}
+		return _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
+	}
+
+protected:
+	size_t _dimension;
+	std::vector<std::vector<std::vector<double> > > _table;
+	std::vector<TableProperty> _properties;
+	std::vector<std::vector<double> > _axis;
 };
 
 }

@@ -18,7 +18,9 @@ enum class WorkbenchCommands {
 	EBLOCK,
 	MP,
 	DISPLACEMENT,
+	FORCE,
 	LOADVAR,
+	DIM,
 
 	CMBLOCK,
 	ET,
@@ -60,16 +62,28 @@ public:
 	void eblock(std::vector<Element*> &elements);
 	void mp(std::vector<Material> &materials);
 
-//	void eblock(std::vector<Dirichlet*> &dirichlet);
-//	void cmblock(std::vector<Dirichlet*> &dirichlet);
-//	void displacement(std::vector<Dirichlet*> &dirichlet);
+	void eblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
+	void cmblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
+	void displacement(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
+	void force(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void loadvar();
+
+	~WorkbenchParser()
+	{
+		for (size_t e = 0; e < _evaluators.size(); e++) {
+			delete _evaluators[e];
+		}
+		for (size_t t = 0; t < _tables.size(); t++) {
+			delete _tables[t];
+		}
+	}
 
 protected:
 	void et();
 	void cmsel();
 	void nsel();
 	void esel();
+	void dim();
 
 	std::vector<std::string> divide(std::string &line, std::string delim = ",");
 	std::vector<int> parseBlockHeader(std::string &line);
@@ -83,9 +97,10 @@ protected:
 	int bodyCounter;
 	std::vector<int> eType;
 	std::vector<std::pair<std::string, ConditionElements> > selections;
-	int nSelection;
-	int eSelection;
 	Mesh &_mesh;
+	std::vector<Evaluator*> _evaluators;
+	std::map<std::string, std::vector<Element*> > _regions;
+	std::vector<TableEvaluator*> _tables;
 };
 
 }
