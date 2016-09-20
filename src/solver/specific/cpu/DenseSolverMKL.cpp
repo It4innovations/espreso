@@ -237,7 +237,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 
 	char U = 'U';
 	eslocal info = 0;
-	int m_nRhs = n_rhs;
+	eslocal m_nRhs = n_rhs;
 //
 //	if (USE_FLOAT) {
 //		sol.resize(rhs.size());
