@@ -59,7 +59,7 @@ def check_headers(ctx):
             okmsg       = "found"
         )
 
-def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes):
+def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes, third_party):
     def read_config(config):
         for line in config:
             parts = line.split('#', 1)[0].partition('=')
@@ -91,6 +91,9 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     # Load configuration specified while the project configuration
     for attribute, description, type, value in espreso_attributes + compilers + compiler_attributes:
         read_attribute(attribute, type)
+    for attribute, description, type, value in third_party:
+        read_attribute(attribute + "::INCLUDE", type)
+        read_attribute(attribute + "::LIBPATH", type)
 
     for attribute, description, type, value in compiler_attributes:
         read_attribute("SOLVER::" + attribute, type)

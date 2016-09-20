@@ -29,6 +29,12 @@ compiler_attributes = [
 
 solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS" ]
 
+third_party = [
+    ("HYPRE", "Multigrid external solver.", "string", "PATH"),
+    ("VTK", "Improve output: different formats, compression, decimation.", "string", "PATH"),
+    ("PARAVIEW", "Allows to show results in real time.", "string", "PATH")
+]
+
 espreso_attributes = [
     ("CHECK_ENV", "Set to 1, if you want to test the build configuration.", "choice", [ "0", "1" ]),
     ("INT_WIDTH", "ESPRESO integer datatype width.", "choice", [ "32", "64" ]),
@@ -61,7 +67,7 @@ def configure(ctx):
     except ctx.errors.ConfigurationError:
         ctx.fatal("Install Intel compiler or load the appropriate module.")
 
-    read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes)
+    read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes, third_party)
     set_compiler_defines(ctx)
 
     ctx.ROOT = ctx.path.abspath()
@@ -187,6 +193,20 @@ def options(opt):
             opt.add_option_group("Solver specific compiler attributes", desc),
             "SOLVER" + "::" + attribute,
             description,
+            type, choices
+        )
+
+    for library, description, type, choices in third_party:
+        add_option(
+            opt.add_option_group("Third party libraries"),
+            library + "::INCLUDE",
+            description + "[PATH to headers]",
+            type, choices
+        )
+        add_option(
+            opt.add_option_group("Third party libraries"),
+            library + "::LIBPATH",
+            description + "[PATH to libraries]",
             type, choices
         )
 
