@@ -120,71 +120,6 @@ static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes
 	os << "\n";
 }
 
-static void elements(std::ofstream &os, const espreso::Mesh &mesh)
-{
-	std::vector<espreso::Element*> elements(mesh.elements());
-	elements.insert(elements.end(), mesh.faces().begin(), mesh.faces().end());
-	elements.insert(elements.end(), mesh.edges().begin(), mesh.edges().end());
-
-	std::sort(
-			elements.begin() + mesh.elements().size(),
-			elements.begin() + mesh.elements().size() + mesh.faces().size(),
-			[] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
-
-	std::sort(
-			elements.begin() + mesh.elements().size() + mesh.faces().size(),
-			elements.end(),
-			[] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
-
-	size_t nSize = 0, eSize = 0;
-	for (size_t i = 0; i < elements.size(); i++) {
-		nSize += elements[i]->domains().size() * (elements[i]->nodes() + 1);
-		eSize += elements[i]->domains().size();
-	}
-
-	std::vector<size_t> offset = { 0 };
-	for (size_t p = 1; p < mesh.parts(); p++) {
-		offset.push_back(offset[p - 1] + mesh.coordinates().localSize(p - 1));
-	}
-
-	// ELEMENTS
-	os << "CELLS " << eSize << " " << nSize << "\n";
-	for (size_t i = 0; i < elements.size(); i++) {
-		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-			os << elements[i]->nodes();
-			for (size_t j = 0; j < elements[i]->nodes(); j++) {
-				os << " " << mesh.coordinates().localIndex(elements[i]->node(j), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]];
-			}
-			os << "\n";
-		}
-	}
-	os << "\n";
-
-	// ELEMENTS TYPES
-	os << "CELL_TYPES " << eSize << "\n";
-	for (size_t i = 0; i < elements.size(); i++) {
-		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-			os << elements[i]->vtkCode() << "\n";
-		}
-	}
-	os << "\n";
-
-	// DECOMPOSITION TO SUBDOMAINS
-	os << "CELL_DATA " << eSize << "\n";
-	os << "SCALARS decomposition int 1\n";
-	os << "LOOKUP_TABLE decomposition\n";
-	size_t part = 0;
-	for (size_t i = 0; i < elements.size(); i++) {
-		if (i && elements[i]->domains() != elements[i - 1]->domains()) {
-			part++;
-		}
-		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-			os << part << "\n";
-		}
-	}
-	os << "\n";
-}
-
 static void elements(std::ofstream &os, const espreso::Mesh &mesh, espreso::output::Store::ElementType eType)
 {
 	std::vector<espreso::Element*> elements;
@@ -282,7 +217,7 @@ void VTK::storeGeometry(size_t timeStep)
 	open(_os, _path, timeStep);
 	head(_os);
 	coordinates(_os, _mesh.coordinates(), [&] (const Point &point, size_t part) { return shrink(point, part); });
-	elements(_os, _mesh);
+	elements(_os, _mesh, ElementType::ELEMENTS);
 	_os.flush();
 }
 
@@ -304,7 +239,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 				values[domain].push_back(value / element->nodes());
 			}
 		}
-		values.push_back(std::vector<double>(_mesh.faces().size() + _mesh.edges().size())); // set dummy values
 		_os << "\n";
 		if (_lastData != ElementType::ELEMENTS) {
 			_os << "CELL_DATA " << _mesh.elements().size() + _mesh.faces().size() + _mesh.edges().size() << "\n";
@@ -380,7 +314,7 @@ void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSu
 
 	head(os);
 	coordinates(os, _mesh.coordinates(), [&] (const Point &point, size_t part) { return this->shrink(point, part); });
-	elements(os, _mesh);
+	elements(os, _mesh, ElementType::ELEMENTS);
 	os << "\n";
 	if (_lastData != ElementType::NODES) {
 		_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";

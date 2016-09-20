@@ -51,6 +51,18 @@ void LinearElasticity3D::saveMeshProperties(output::Store &store)
 	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
 		output::VTK::fixPoints(_mesh, "fixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		switch (config::solver::B0_TYPE) {
+		case config::solver::B0_TYPEalternative::CORNERS:
+			output::VTK::mesh(_mesh, "faces", output::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			output::VTK::mesh(_mesh, "edges", output::Store::ElementType::EDGES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			output::VTK::corners(_mesh, "corners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			break;
+		case config::solver::B0_TYPEalternative::KERNELS:
+			output::VTK::mesh(_mesh, "faces", output::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			break;
+		}
+	}
 }
 
 void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
