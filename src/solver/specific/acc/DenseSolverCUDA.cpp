@@ -149,7 +149,7 @@ void DenseSolverCUDA::Clear() {
 	if(m_dense_values_size > 0) CHECK_ERR(cudaFree(D_dense_values));
 	if(m_dense_values_fl_size > 0) {
 		CHECK_ERR(cudaFree(D_dense_values_fl));
-		delete [] m_dense_values_fl;
+		//delete [] m_dense_values_fl;
 	}
 	if(D_B_dense_values != NULL) CHECK_ERR(cudaFree(D_B_dense_values));
 	if(D_B_dense_values_fl != NULL) CHECK_ERR(cudaFree(D_B_dense_values_fl));
