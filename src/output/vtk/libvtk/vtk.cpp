@@ -697,7 +697,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	}
 }
 
-void VTK::mesh(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, double shrinkSubdomain, double shrinkCluster)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement mesh";
 	const std::vector<Element*> &elements = mesh.elements();
