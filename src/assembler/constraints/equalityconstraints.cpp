@@ -242,7 +242,7 @@ void EqualityConstraints::insertElementGluingToB1(const std::vector<Element*> &e
 
 	std::vector<std::vector<std::vector<esglobal> > > cMap(threads);
 
-	auto findDomain = [&] (const Element *e, size_t d, size_t dof) {
+	auto findDomain = [&] (const Element *e, size_t d, size_t dof) -> eslocal {
 		auto &DOFIndices = e->DOFsIndices();
 		size_t c = 0, DOFs = DOFIndices.size() / e->domains().size();
 		for (size_t i = 0; i < e->domains().size(); i++) {
