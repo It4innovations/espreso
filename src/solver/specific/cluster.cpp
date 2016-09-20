@@ -251,7 +251,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 			Esutils::removeDuplicity(domains[i].B1t_DirPr.CSR_I_row_indices);
 //			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
 //			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
-			domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size();
+			domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size() - 1;
 
 			domains[i].B1t_Dir_perm_vec = domains[i].B1_comp_dom.CSR_J_col_indices;
 			std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
