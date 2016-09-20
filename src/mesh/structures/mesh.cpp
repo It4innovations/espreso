@@ -731,7 +731,7 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 		e1->parentElements().insert(e1->parentElements().end(), e2->parentElements().begin(), e2->parentElements().end());
 		for (size_t e = 0; e < e2->parentElements().size(); e++) {
 			for (size_t i = 0; i < e2->parentElements()[e]->edges(); i++) {
-				if (e2->parentElements()[0]->edge(i) != NULL && *(e1) == *(e2->parentElements()[e]->edge(i))) {
+				if (e2->parentElements()[e]->edge(i) != NULL && *(e1) == *(e2->parentElements()[e]->edge(i))) {
 					e2->parentElements()[e]->setEdge(i, e1);
 					break;
 				}
