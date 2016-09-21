@@ -66,6 +66,11 @@ PARDISO32:
   script:
     - ./waf configure --SOLVER=PARDISO --INT_WIDTH=32 --LIBPATH=/opt/pardiso/
     - ./waf install -j8
+    - export PARDISOLICMESSAGE=1
+    - echo $PARDISO_LICENCE > pardiso.lic
+    - export PARDISO_LIC_PATH=$PWD
+    - export LD_LIBRARY_PATH=/opt/pardiso/:$LD_LIBRARY_PATH
+    - python tests/benchmarks.py
 
 STATIC_LIBRARY:
   stage: benchmarks
