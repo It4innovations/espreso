@@ -92,7 +92,7 @@ protected:
 	std::ifstream _file;
 	std::string _line;
 
-	std::map<std::string, WorkbenchCommands, CaseInsensitiveCompare> _commands;
+	std::map<std::string, WorkbenchCommands, StringCompare> _commands;
 
 	int bodyCounter;
 	std::vector<int> eType;

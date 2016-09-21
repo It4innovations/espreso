@@ -47,9 +47,8 @@ void SphereGenerator<TElement>::elementsMaterials(std::vector<Element*> &element
 }
 
 template<class TElement>
-void SphereGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
+void SphereGenerator<TElement>::points(Coordinates &coordinates)
 {
-	DOFs = this->_DOFs;
 	eslocal cNodes[3];
 	UniformUtils<TElement>::clusterNodesCount(_settings, cNodes);
 

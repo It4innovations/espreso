@@ -70,30 +70,25 @@ void ClusterCPU::SetupKsolvers ( ) {
     cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-        switch (config::solver::KSOLVER) {
-            case 0: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                        break;
-                    }
-            case 1: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                        break;
-                    }
-            case 2: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
-                        break;
-                    }
-            case 3: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            case 4: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            default:
-            		ESINFO(ERROR) << "Invalid KSOLVER value.";
-                    exit(EXIT_FAILURE);
+    	switch (config::solver::KSOLVER) {
+		case config::solver::KSOLVERalternative::DIRECT_DP:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::ITERATIVE:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::DIRECT_SP:
+			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::DIRECT_MP:
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+//		case 4:
+//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+//			break;
+		default:
+			ESINFO(ERROR) << "Invalid KSOLVER value.";
+			exit(EXIT_FAILURE);
         }
 
     	//domains[d].Kplus.mtype = -2;
@@ -102,7 +97,7 @@ void ClusterCPU::SetupKsolvers ( ) {
             std::stringstream ss;
             ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
-            if (config::solver::KSOLVER != 1) {
+            if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {
@@ -111,6 +106,16 @@ void ClusterCPU::SetupKsolvers ( ) {
         }
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
+
+        //TODO: Hot Fix - needs to be done better
+        if ( !SYMMETRIC_SYSTEM ) {
+        	// 11 = Real and unsymmetric matrix
+        	domains[d].Kplus.mtype = 11;
+        } else {
+        	// 2 = Real and symmetric positive definite
+        	domains[d].Kplus.mtype = 2;
+        }
+        //TODO: else stokes = -2 = Real and symmetric indefinite
 
         if ( d == 0 && config::env::MPIrank == 0) {
         	domains[d].Kplus.msglvl = 0;

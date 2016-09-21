@@ -3,12 +3,12 @@
 
 using namespace espreso::input;
 
-static void defaultSettings(SphereSettings &settings)
+void SphereSettings::defaultSphereSettings()
 {
-	settings.layers = 1;
-	settings.grid = 1;
-	settings.innerRadius = 9;
-	settings.outerRadius = 12;
+	layers = 1;
+	grid = 1;
+	innerRadius = 9;
+	outerRadius = 12;
 
 	parameters.push_back({
 		prefix + "LAYERS", layers, "Number of layers of the sphere."
@@ -29,13 +29,16 @@ SphereSettings::SphereSettings(const Configuration &configuration, size_t index,
 {
 	ESINFO(OVERVIEW) << "Load sphere setting from file " << configuration.path;
 
-	Configuration configuration(SphereSettings::description, options);
+	defaultSphereSettings();
+	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
+	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
 }
 
 SphereSettings::SphereSettings(size_t index, size_t size, std::string prefix)
 : UniformSettings(index, size, prefix)
 {
-	defaultSettings(*this);
+	defaultSphereSettings();
+	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
 }
 
 

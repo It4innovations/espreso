@@ -6,8 +6,7 @@
 #include "matrices/matrices.h"
 #include "logging/logging.h"
 #include "logging/timeeval.h"
-#include "configuration/configuration.h"
-#include "options/options.h"
+#include "parameters/reader.h"
 #include "utilities/utils.h"
 #include "expression/expression.h"
 

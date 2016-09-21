@@ -11,18 +11,18 @@ namespace input {
 class Esdata: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Options &options, int rank, int size)
+	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
 	{
-		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << options.path;
-		Esdata esdata(mesh, options, rank, size);
+		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << configuration.path;
+		Esdata esdata(mesh, configuration, rank, size);
 		esdata.fill();
 	}
 
 protected:
-	Esdata(Mesh &mesh, const Options &options, int rank, int size)
-	: Loader(mesh), _path(options.path), _rank(rank), _size(size) { };
+	Esdata(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	: Loader(mesh), _path(configuration.path), _rank(rank), _size(size) { };
 
-	void points(Coordinates &coordinates, size_t &DOFs);
+	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials);
 	void settings(

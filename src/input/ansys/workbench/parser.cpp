@@ -139,14 +139,13 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 
 	std::vector<std::string> params = divide(_line);
 	eslocal NUMNODES, NDMAX, NDSEL;
-	std::string solid = "SOLID";
 	switch (params.size()) {
 	case 5:
 		NDSEL = params[4].size() ? std::stol(params[4]) : 0;
 	case 4:
 		NDMAX = params[3].size() ? std::stol(params[3]) : 0;
 	case 3:
-		if (params[2].size() != solid.size() || !std::equal(params[2].begin(), params[2].end(), solid.begin(), CaseInsensitiveCompare::equals)) {
+		if (!StringCompare::caseInsensitiveEq(params[2], "SOLID")) {
 			SOLID = false;
 			ETYPE = 1;
 			CONSTANT = 2;

@@ -89,6 +89,10 @@ public:
 	SparseMatrix Kplus_R;
 	SparseMatrix Kplus_Rb;
 
+	SparseMatrix Kplus_R2;
+	SparseMatrix Kplus_Rb2;
+
+
 	SparseMatrix R;
 	SparseMatrix K;
 	SparseMatrix T;

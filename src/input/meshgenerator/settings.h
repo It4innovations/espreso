@@ -9,28 +9,6 @@
 namespace espreso {
 namespace input {
 
-enum GeneratorShape {
-	CUBE,
-	SPHERE
-};
-
-enum ElementType {
-	HEXA8,
-	HEXA20,
-	TETRA4,
-	TETRA10,
-	PRISMA6,
-	PRISMA15,
-	PYRAMID5,
-	PYRAMID13
-};
-
-enum Assembler {
-	LinearElasticity,
-	Temperature,
-	TransientElasticity
-};
-
 struct Settings {
 
 	Settings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
@@ -54,6 +32,9 @@ struct Settings {
 	std::map<std::string, std::map<std::string, std::string> > properties;
 
 	bool useMetis;
+
+protected:
+	void defaultSettings();
 };
 
 }

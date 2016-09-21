@@ -44,10 +44,10 @@ Info::~Info()
 		fprintf(stderr, "\x1b[31m%s\x1b[0m\n", os.str().c_str());
 		if (event == ERROR) {
 			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
-		}
 
-		if (config::env::executable.size()) {
-			printStack();
+			if (config::env::executable.size()) {
+				printStack();
+			}
 		}
 
 		fflush(stderr);

@@ -1,9 +1,9 @@
+
 #include "mesh.h"
 #include "mkl.h"
 #include "cilk/cilk.h"
 
-using namespace espreso;
-
+namespace espreso {
 
 Mesh::Mesh():_elements(0)
 {

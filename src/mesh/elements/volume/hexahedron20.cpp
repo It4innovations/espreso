@@ -459,7 +459,7 @@ Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *par
 		memcpy(_indices, indices, Hexahedron20NodesCount * sizeof(eslocal));
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Hexahedron20 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Hexahedron20 from " << n << " indices.";
 	}
 
 	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));

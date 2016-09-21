@@ -103,7 +103,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 domains[domN].B1_comp_dom.MatTranspose(tmpB);
                 SparseSolverCPU tmpsps;
                 tmpsps.Create_SC_w_Mat( domains[domN].K, tmpB, domains[domN].B1Kplus, false, symmetric);
-                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]), 
+                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
                         this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
                 SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
                 //domains[domN].B1Kplus.Clear();
@@ -128,7 +128,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         }
 
     } else {
-#pragma omp parallel     
+#pragma omp parallel
         {
             if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < config::solver::N_MICS)) {
                 // the first config::solver::N_MICS threads will communicate with MICs
@@ -545,37 +545,32 @@ void ClusterAcc::SetupKsolvers ( ) {
     cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-        switch (config::solver::KSOLVER) {
-            case 0: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                        break;
-                    }
-            case 1: {
-                        domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                        break;
-                    }
-            case 2: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            case 3: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            case 4: {
-                        domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                        break;
-                    }
-            default:
-                    ESINFO(ERROR) << "Invalid KSOLVER value.";
-                    exit(EXIT_FAILURE);
-        }
+		switch (config::solver::KSOLVER) {
+		case config::solver::KSOLVERalternative::DIRECT_DP:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::ITERATIVE:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::DIRECT_SP:
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+		case config::solver::KSOLVERalternative::DIRECT_MP:
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+//		case 4:
+//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+//			break;
+		default:
+			ESINFO(ERROR) << "Invalid KSOLVER value.";
+			exit(EXIT_FAILURE);
+		}
 
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
             ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
-            if (config::solver::KSOLVER != 1) {
+            if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {

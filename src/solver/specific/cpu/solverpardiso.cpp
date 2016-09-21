@@ -330,9 +330,8 @@ int SparseSolverPardiso::Factorization(const std::string &str) {
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 
-	if (error != 0)
-	{
-    return error;
+	if (error != 0) {
+		return error;
 		SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
@@ -365,8 +364,7 @@ int SparseSolverPardiso::Factorization(const std::string &str) {
 	pardiso (pt, &maxfct, &mnum, &mtype, &phase,
 		&rows, CSR_V_values, CSR_I_row_indices, CSR_J_col_indices, &idum, &m_nRhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 
-	if (error != 0)
-	{
+	if (error != 0) {
 		return error;
 		SparseMatrix s;
 		s.rows = rows;
@@ -389,6 +387,7 @@ int SparseSolverPardiso::Factorization(const std::string &str) {
 
 	//TODO:
 	tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
+	return 0;
 }
 
 void SparseSolverPardiso::Solve( SEQ_VECTOR <double> & rhs_sol) {
@@ -1292,7 +1291,7 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
     } else {
 		SC_out.MatScale(-1.0);
 		SC_out.ConvertCSRToDense(1);
-		SC_out.RemoveLowerDense();
+		//SC_out.RemoveLowerDense();
     }
 
 

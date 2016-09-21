@@ -22,7 +22,7 @@ protected:
 	API(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
 	: Loader(mesh), _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
 
-	void points(Coordinates &coordinates, size_t &DOFs);
+	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
 	void materials(std::vector<Material> &materials) { }; // unimportant
 	void settings(

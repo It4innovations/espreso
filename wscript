@@ -94,7 +94,6 @@ def configure(ctx):
     # recurse to basic parts
     ctx.recurse("src/config")
     ctx.recurse("src/basis")
-    ctx.recurse("tools/bem4i")
 
     # recurse to ESPRESO solver
     ctx.setenv("solver", ctx.env.derive());
@@ -134,7 +133,6 @@ def build(ctx):
 
     ctx.recurse("src/basis")
     ctx.recurse("src/config")
-    ctx.recurse("tools/bem4i")
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/mesh")

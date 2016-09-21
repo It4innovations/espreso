@@ -3,7 +3,7 @@
 
 using namespace espreso::input;
 
-static void defaultSettings(CubeSettings &settings)
+void CubeSettings::defaultCubeSettings()
 {
 	for (size_t i = 0; i < 3; i++) {
 		clusters[i] = 1;
@@ -59,7 +59,8 @@ CubeSettings::CubeSettings(const Configuration &configuration, size_t index, siz
 CubeSettings::CubeSettings(size_t index, size_t size, std::string prefix)
 : UniformSettings(index, size, prefix)
 {
-	defaultSettings(*this);
+	defaultCubeSettings();
+	parameters.insert(parameters.end(), UniformSettings::parameters.begin(), UniformSettings::parameters.end());
 }
 
 

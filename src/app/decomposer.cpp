@@ -10,12 +10,16 @@ using namespace espreso;
 
 int main(int argc, char** argv)
 {
+	if (argc < 4) {
+		ESINFO(GLOBAL_ERROR) << "Specify parameters: INPUT_LOCATION  OUTPUT_LOCATION  [ NUMBER_OF_PARTS ]";
+	}
 
 	MPI_Init(&argc, &argv);
-	Options options(&argc, &argv);
 
-	if (options.nameless.size() < 2) {
-		ESINFO(ERROR) << "Specify parameters: INPUT_LOCATION  OUTPUT_LOCATION  [ NUMBER_OF_PARTS ]";
+	Configuration configuration;
+	configuration.path = argv[1];
+	for (int i = 2; i < argc; i++) {
+		configuration.nameless.push_back(argv[i]);
 	}
 
 	if (config::env::MPIsize > 1) {
@@ -31,10 +35,10 @@ int main(int argc, char** argv)
 	Factory factory(configuration);
 	std::cout << "Mesh loaded\n";
 
-	for (size_t i = 1; i < options.nameless.size(); i++) {
-		int parts = atoi(options.nameless[i].c_str());
+	for (size_t i = 1; i < configuration.nameless.size(); i++) {
+		int parts = atoi(configuration.nameless[i].c_str());
 		std::stringstream ss;
-		ss << options.nameless[0] << parts * config::env::MPIsize;
+		ss << configuration.nameless[0] << parts * config::env::MPIsize;
 
 		factory.mesh.partitiate(parts);
 		std::cout << "Mesh partitiated to " << parts * config::env::MPIsize << " parts\n";

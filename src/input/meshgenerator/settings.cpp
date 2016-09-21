@@ -5,7 +5,7 @@
 
 using namespace espreso::input;
 
-static void defaultSettings(Settings &settings)
+void Settings::defaultSettings()
 {
 	useMetis = false;
 
@@ -50,7 +50,7 @@ Settings::Settings(const Configuration &configuration, size_t index, size_t size
 Settings::Settings(size_t index, size_t size, std::string prefix)
 : index(index), size(size), clusterOffset(0), prefix(prefix)
 {
-	defaultSettings(*this);
+	defaultSettings();
 }
 
 

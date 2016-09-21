@@ -3,22 +3,25 @@
 #include "esbasis.h"
 #include "esinput.h"
 
-using namespace espreso;
+namespace espreso {
 
 template<class TShape>
-static void generateShape(const Options &options, Mesh *mesh)
+static void generateShape(Mesh &mesh, const Configuration &configuration, GeneratorShape shape)
 {
-	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
-
-	switch (settings.shape) {
-	case input::CUBE: {
-		input::CubeSettings cube(options, config::env::MPIrank ,config::env::MPIsize);
-		input::CubeGenerator<TShape>::load(*mesh, cube);
+	switch (shape) {
+	case GeneratorShape::CUBE: {
+		input::CubeSettings cube(configuration, config::env::MPIrank ,config::env::MPIsize);
+		input::CubeGenerator<TShape>::load(mesh, cube);
 		break;
 	}
-	case input::SPHERE: {
-		input::SphereSettings sphere(options, config::env::MPIrank ,config::env::MPIsize);
-		input::SphereGenerator<TShape>::load(*mesh, sphere);
+	case GeneratorShape::SPHERE: {
+		input::SphereSettings sphere(configuration, config::env::MPIrank ,config::env::MPIsize);
+		input::SphereGenerator<TShape>::load(mesh, sphere);
+		break;
+	}
+	case GeneratorShape::PLANE: {
+		input::PlaneSettings plane(configuration, config::env::MPIrank ,config::env::MPIsize);
+		input::PlaneGenerator<TShape>::load(mesh, plane);
 		break;
 	}
 	case GeneratorShape::CUBES: {
@@ -32,46 +35,47 @@ static void generateShape(const Options &options, Mesh *mesh)
 	}
 }
 
-static void generate(const Options &options, Mesh *mesh)
+static void generate(Mesh &mesh, const Configuration &configuration, ElementType eType, GeneratorShape shape)
 {
-	input::Settings settings(options, config::env::MPIrank ,config::env::MPIsize);
-
-	switch (settings.elementType) {
-	case input::HEXA8: {
-		generateShape<input::Hexahedron8>(options, mesh);
+	switch (eType) {
+	case ElementType::HEXA8:
+		generateShape<input::Hexahedron8>(mesh, configuration, shape);
 		break;
-	}
-	case input::HEXA20: {
-		generateShape<input::Hexahedron20>(options, mesh);
+	case ElementType::HEXA20:
+		generateShape<input::Hexahedron20>(mesh, configuration, shape);
 		break;
-	}
-	case input::TETRA4: {
-		generateShape<input::Tetrahedron4>(options, mesh);
+	case ElementType::TETRA4:
+		generateShape<input::Tetrahedron4>(mesh, configuration, shape);
 		break;
-	}
-	case input::TETRA10: {
-		generateShape<input::Tetrahedron10>(options, mesh);
+	case ElementType::TETRA10:
+		generateShape<input::Tetrahedron10>(mesh, configuration, shape);
 		break;
-	}
-	case input::PRISMA6: {
-		generateShape<input::Prisma6>(options, mesh);
+	case ElementType::PRISMA6:
+		generateShape<input::Prisma6>(mesh, configuration, shape);
 		break;
-	}
-	case input::PRISMA15: {
-		generateShape<input::Prisma15>(options, mesh);
+	case ElementType::PRISMA15:
+		generateShape<input::Prisma15>(mesh, configuration, shape);
 		break;
-	}
-	case input::PYRAMID5: {
-		generateShape<input::Pyramid5>(options, mesh);
+	case ElementType::PYRAMID5:
+		generateShape<input::Pyramid5>(mesh, configuration, shape);
 		break;
-	}
-	case input::PYRAMID13: {
-		generateShape<input::Pyramid13>(options, mesh);
+	case ElementType::PYRAMID13:
+		generateShape<input::Pyramid13>(mesh, configuration, shape);
 		break;
-	}
-	default: {
+	case ElementType::SQUARE4:
+		generateShape<input::Square4>(mesh, configuration, shape);
+		break;
+	case ElementType::SQUARE8:
+		generateShape<input::Square8>(mesh, configuration, shape);
+		break;
+	case ElementType::TRIANGLE3:
+		generateShape<input::Triangle3>(mesh, configuration, shape);
+		break;
+	case ElementType::TRIANGLE6:
+		generateShape<input::Triangle6>(mesh, configuration, shape);
+		break;
+	default:
 		ESINFO(ERROR) << "Unknown element type.";
-	}
 	}
 }
 
@@ -113,52 +117,26 @@ void Factory::readParameters(const Configuration &configuration)
 	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
 }
 
-static Mesh* getMesh(const Options &options)
+static void fillMesh(const Configuration &configuration, Mesh &mesh, ElementType eType, GeneratorShape shape)
 {
-	Mesh *mesh = new Mesh();
-	switch (config::mesh::input) {
-
-	case config::mesh::ANSYS_MATSOL: {
-		input::AnsysMatsol::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+	switch (config::mesh::INPUT) {
+	case config::mesh::INPUTalternative::MATSOL:
+		input::AnsysMatsol::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
-	}
-	case config::mesh::ANSYS_WORKBENCH: {
-		input::AnsysWorkbench::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+	case config::mesh::INPUTalternative::WORKBENCH:
+		input::AnsysWorkbench::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
-	}
-	case config::mesh::OPENFOAM: {
-		input::OpenFOAM::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+	case config::mesh::INPUTalternative::OPENFOAM:
+		input::OpenFOAM::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
-	}
-	case config::mesh::ESDATA: {
-		input::Esdata::load(*mesh, options, config::env::MPIrank, config::env::MPIsize);
+	case config::mesh::INPUTalternative::ESDATA:
+		input::Esdata::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;
-	}
-	case config::mesh::GENERATOR: {
-		generate(options, mesh);
+	case config::mesh::INPUTalternative::GENERATOR:
+		generate(mesh, configuration, eType, shape);
 		break;
-	}
-	}
-	return mesh;
-}
-
-template<class TDiscretization>
-static AssemblerBase* createAssembler(TDiscretization discretization)
-{
-	switch (config::assembler::physics) {
-
-	case config::assembler::LinearElasticity: {
-		return new LinearElasticity<TDiscretization>(discretization);
-	}
-	case config::assembler::Temperature: {
-		return new Temperature<TDiscretization>(discretization);
-	}
-	case config::assembler::TransientElasticity: {
-		return new TransientElasticity<TDiscretization>(discretization);
-	}
 	default:
-		ESINFO(ERROR) << "Unknown assembler.";
-		exit(EXIT_FAILURE);
+		ESINFO(GLOBAL_ERROR) << "Invalid user-supplied parameter: INPUT";
 	}
 }
 
@@ -182,22 +160,18 @@ Factory::Factory(const Configuration &configuration)
 
 	readParameters(configuration);
 
-	case config::assembler::FEM: {
-		FEM fem(*mesh);
-		return createAssembler<FEM>(fem);
-	}
-	case config::assembler::BEM: {
-		surface = new Mesh();
-		mesh->getSurface(*surface);
-		surface->computeFixPoints(config::mesh::fixPoints);
-		BEM bem(*mesh, *surface);
-		return createAssembler<BEM>(bem);
-	}
+	switch (config::assembler::DISCRETIZATION) {
+	case config::assembler::DISCRETIZATIONalternative::FEM:
+		fillMesh(configuration, mesh, eType, shape);
+		break;
+	case config::assembler::DISCRETIZATIONalternative::BEM: {
+		Mesh fullMesh;
+		fillMesh(configuration, fullMesh, eType, shape);
+		fullMesh.getSurface(mesh);
+		} break;
 	default:
-		ESINFO(ERROR) << "Unknown discretization.";
-		exit(EXIT_FAILURE);
+		ESINFO(GLOBAL_ERROR) << "Unknown discretization";
 	}
-}
 
 	switch (physics) {
 	case PhysicsAssembler::LINEAR_ELASTICITY_2D:
@@ -220,7 +194,7 @@ Factory::Factory(const Configuration &configuration)
 	}
 }
 
-void Factory::solve()
+void Factory::solve(const std::string &outputFile)
 {
 	instance->init();
 

@@ -1962,7 +1962,6 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
 // Function 'getSubDiagBlockmatrix' returns the diagonal block A_in(r,r) from original A_in,
 // where r = { i_start , i_start+1 , i_start+2 , ... , istart + size_rr - 1 }
 //
-//
 // rev. 2015-10-10 (A.M.)
 //
 // step 1: getting nnz of submatrix
@@ -1983,7 +1982,7 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
   A_out.rows=size_rr;
   A_out.cols=size_rr;
   A_out.nnz=nnz_new;
-	A_out.type = 'S';
+	A_out.type = A_in.type;
 // step 3: filling 1d arrays
   eslocal ijcnt=0;
   A_out.CSR_I_row_indices[0]=offset;
@@ -2069,18 +2068,27 @@ void SparseMatrix::printMatCSR(char *str0){
 void SparseMatrix::printMatCSR2(char *str0){
 	eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
 
-	FILE *fid = fopen(str0,"w");
-	int isGeneral = 0;
-	if (type=='G') {
-		isGeneral = 1;
-	}
-	fprintf(fid,"%d %d %d\n",rows,cols,isGeneral);
-
-	for (eslocal i = 0;i<rows;i++){
-		for (eslocal j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
-			fprintf(fid,"%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
+	std::ofstream os(str0);
+	os.precision(9);
+	os << rows << " " << cols << " " << (type == 'G' ? 1 : 0) << "\n";
+	for (eslocal i = 0; i < rows; i++){
+		for (eslocal j = CSR_I_row_indices[i]; j < CSR_I_row_indices[i+1]; j++) {
+			os << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset] << "\n";
 		}
 	}
+
+//	FILE *fid = fopen(str0,"w");
+//	int isGeneral = 0;
+//	if (type=='G') {
+//		isGeneral = 1;
+//	}
+//	fprintf(fid,"%d %d %d\n", rows, cols, isGeneral);
+//
+//	for (eslocal i = 0; i < rows; i++){
+//		for (eslocal j = CSR_I_row_indices[i];j<CSR_I_row_indices[i+1];j++){
+//			fprintf(fid,"%d %d %3.9e \n",i+1,CSR_J_col_indices[j-offset],CSR_V_values[j-offset]);
+//		}
+//	}
 #endif
 }
 
@@ -3110,7 +3118,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
 //BOOL DIAGONALSCALING                                  = true;
-  bool diagonalScaling                                  = true;
+  bool diagonalScaling                                  = false;
 
 //    2) permutVectorActive
 //  random selection of singular DOFs
@@ -3810,7 +3818,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //11 - max(eig(K))
 
   std::vector <double>::iterator  it2;
-  it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble); 
+  it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
   double lmx_K_approx       = *it2;
   double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
   norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
@@ -3845,7 +3853,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 
 
-  
+
   if (diagonalRegularization){
     eslocal tmp_int0;
     if (d_sub!=-1) {

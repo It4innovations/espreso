@@ -3,9 +3,7 @@
 #define APP_FACTORY_FACTORY_H_
 
 #include "esmesh.h"
-#include "esinput.h"
-#include "esoutput.h"
-#include "esassemblers.h"
+#include "esassembler.h"
 
 namespace espreso {
 
@@ -14,6 +12,22 @@ enum class GeneratorShape {
 	SPHERE,
 	PLANE,
 	CUBES
+};
+
+enum class ElementType {
+	HEXA8,
+	HEXA20,
+	TETRA4,
+	TETRA10,
+	PRISMA6,
+	PRISMA15,
+	PYRAMID5,
+	PYRAMID13,
+
+	SQUARE4,
+	SQUARE8,
+	TRIANGLE3,
+	TRIANGLE6
 };
 
 enum class PhysicsAssembler {
@@ -31,11 +45,10 @@ struct Factory {
 	Factory(const Configuration &configuration);
 	~Factory()
 	{
-		return _mesh;
+		delete instance;
 	}
 
-	void solve();
-	void store(const std::string &file);
+	void solve(const std::string &outputFile);
 
 	double norm() const;
 
@@ -43,11 +56,13 @@ struct Factory {
 	Mesh mesh;
 
 private:
-	AssemblerBase *_assembler;
 	std::vector<std::vector<double> > _solution;
 
-	Mesh *_mesh;
-	Mesh *_surface;
+	void readParameters(const Configuration &configuration);
+
+	ElementType eType;
+	GeneratorShape shape;
+	PhysicsAssembler physics;
 };
 
 }

@@ -19,7 +19,7 @@ struct SphereSettings: public UniformSettings {
 	SphereSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
 	SphereSettings(size_t index, size_t size, std::string prefix="");
 
-	std::vector<Description> description;
+	std::vector<Parameter> parameters;
 
 	size_t layers;
 	size_t grid;

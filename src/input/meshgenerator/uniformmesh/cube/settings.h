@@ -23,7 +23,7 @@ struct CubeSettings: public UniformSettings {
 	CubeSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
 	CubeSettings(size_t index, size_t size, std::string prefix="");
 
-	std::vector<Description> description;
+	std::vector<Parameter> parameters;
 
 	size_t clusters[3];
 	double problemOrigin[3];

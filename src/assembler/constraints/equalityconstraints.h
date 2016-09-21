@@ -25,8 +25,6 @@ protected:
 
 }
 
-#include "../constraints/equalityconstraints.hpp"
-
 
 
 #endif /* SRC_ASSEMBLER_CONSTRAINTS_EQUALITYCONSTRAINTS_H_ */

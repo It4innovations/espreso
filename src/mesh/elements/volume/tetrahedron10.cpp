@@ -483,7 +483,7 @@ Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *p
 		_indices[9] = indices[18];
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Tetrahedron10 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Tetrahedron10 from " << n << " indices.";
 	}
 
 	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));

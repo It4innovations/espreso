@@ -4,9 +4,8 @@
 using namespace espreso::input;
 
 
-void API::points(Coordinates &coordinates, size_t &DOFs)
+void API::points(Coordinates &coordinates)
 {
-	DOFs = _DOFs;
 	Point p;
 
 	eslocal max = 0;

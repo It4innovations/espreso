@@ -4,9 +4,6 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
-#include <tuple>
-#include <iostream>
-#include <stdlib.h>
 #include <functional>
 
 #include "metis.h"
@@ -16,7 +13,6 @@
 #include "material.h"
 
 #include "esbasis.h"
-#include "esconfig.h"
 
 namespace espreso {
 
@@ -135,9 +131,6 @@ protected:
 	/** @brief list of neighbours MPI ranks */
 	std::vector<int> _neighbours;
 
-	/** @brief the number of DOFs for all nodes*/
-	size_t _DOFs;
-
 	/** @brief list of materials in the mesh*/
 	std::vector<Material> _materials;
 
@@ -145,7 +138,7 @@ protected:
 	std::vector<Evaluator*> _evaluators;
 
 private:
-	Mesh(const Mesh &mesh): _DOFs(mesh._DOFs)
+	Mesh(const Mesh &mesh)
 	{
 		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
 	}

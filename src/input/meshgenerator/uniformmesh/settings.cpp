@@ -2,24 +2,18 @@
 
 using namespace espreso::input;
 
-static void defaultSettings(UniformSettings &settings)
+void UniformSettings::defaultUniformSettings()
 {
 	for (size_t i = 0; i < 3; i++) { // x, y, z
-		settings.subdomainsInCluster[i] = 2;
-		settings.elementsInSubdomain[i] = 5;
-		settings.materialsLayers[i] = 1;
+		subdomainsInCluster[i] = 2;
+		elementsInSubdomain[i] = 5;
+		materialsLayers[i] = 1;
 	}
 
-	settings.cornerCount = 0;
-	settings.corners     = true;
-	settings.edges       = false;
-	settings.faces       = false;
-}
-
-UniformSettings::UniformSettings(const Options &options, size_t index, size_t size)
-: Settings(options, index, size)
-{
-	defaultSettings(*this);
+	cornerCount = 0;
+	corners     = true;
+	edges       = false;
+	faces       = false;
 
 	parameters = {
 		{ prefix + "SUBDOMAINS_X", subdomainsInCluster[0], "Number of sub-domains in a cluster in x-axis."},
@@ -41,8 +35,17 @@ UniformSettings::UniformSettings(const Options &options, size_t index, size_t si
 	};
 }
 
+UniformSettings::UniformSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+: Settings(index, size, prefix)
+{
+	defaultUniformSettings();
+	parameters.insert(parameters.end(), Settings::parameters.begin(), Settings::parameters.end());
+	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+}
+
 UniformSettings::UniformSettings(size_t index, size_t size, std::string prefix)
 : Settings(index, size, prefix)
 {
-	defaultSettings(*this);
+	defaultUniformSettings();
+	parameters.insert(parameters.end(), Settings::parameters.begin(), Settings::parameters.end());
 }

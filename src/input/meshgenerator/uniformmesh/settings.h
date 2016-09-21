@@ -13,7 +13,7 @@ struct UniformSettings: public Settings {
 	UniformSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
 	UniformSettings(size_t index, size_t size, std::string prefix="");
 
-	std::vector<Description> description;
+	std::vector<Parameter> parameters;
 
 	size_t subdomainsInCluster[3];
 	size_t elementsInSubdomain[3];
@@ -23,6 +23,9 @@ struct UniformSettings: public Settings {
 	bool corners;
 	bool edges;
 	bool faces;
+
+protected:
+	void defaultUniformSettings();
 };
 
 }

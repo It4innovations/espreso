@@ -36,6 +36,7 @@ def configure(ctx):
     ctx.env.MUMPS["params"] = "cc='" + cc + "' fc='" + fc + "'";
     ctx.env.MUMPS["params"] += " opt='-nofor_main'"
 
+
 def check_libraries(libs, path, extension=".a"):
     for lib in libs:
         if not os.path.isfile(path + "lib" + lib + extension):

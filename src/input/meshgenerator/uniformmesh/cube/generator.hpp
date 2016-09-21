@@ -78,10 +78,8 @@ void CubeGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 
 
 template<class TElement>
-void CubeGenerator<TElement>::points(Coordinates &coordinates, size_t &DOFs)
+void CubeGenerator<TElement>::points(Coordinates &coordinates)
 {
-	DOFs = this->_DOFs;
-
 	eslocal cNodes[3];
 	esglobal gNodes[3];
 

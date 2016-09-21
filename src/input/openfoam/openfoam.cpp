@@ -2,9 +2,9 @@
 
 using namespace espreso::input;
 
-OpenFOAM::OpenFOAM(Mesh &mesh, const Options &options, int rank, int size): Loader(mesh)
+OpenFOAM::OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size): Loader(mesh)
 {
-	_projectPath = options.path;
+	_projectPath = configuration.path;
 	solveParseError(computePolyMeshPath(rank, size));
 	_rank = rank;
 	_size = size;
@@ -53,9 +53,8 @@ ParseError* OpenFOAM::computePolyMeshPath(int rank, int size) {
 	return NULL;
 }
 
-void OpenFOAM::points(Coordinates &coordinates, size_t &DOFs)
+void OpenFOAM::points(Coordinates &coordinates)
 {
-	DOFs = 3; // TODO
 	FoamFile pointsFile(_polyMeshPath + "points");
 	Points points;
 	solveParseError(parse(pointsFile.getTokenizer(), points));

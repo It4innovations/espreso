@@ -3,7 +3,6 @@
 #include "esbasis.h"
 
 namespace espreso {
-using namespace input;
 
 namespace config {
 
@@ -18,25 +17,25 @@ size_t env::SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
 size_t env::PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
 size_t env::CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
-std::string env::executable;
+std::string env::executable    = "espreso"; // Esutils::getEnv<std::string>("_") not works with DDT;
 std::string env::configurationFile = "espreso.config";
 
 
 ///////////////////////////////// MESH /////////////////////////////////////////
 
-std::string mesh::path;
-int mesh::input = GENERATOR;
+std::string mesh::PATH;
+mesh::INPUTalternative mesh::INPUT = mesh::INPUTalternative::GENERATOR;
 
-size_t mesh::subdomains = 8;
-size_t mesh::fixPoints  = 8;
+size_t mesh::SUBDOMAINS = 8;
+size_t mesh::FIX_POINTS  = 8;
 
-size_t mesh::corners       = 1;
-bool   mesh::vertexCorners = true;
-bool   mesh::edgeCorners   = true;
-bool   mesh::faceCorners   = false;
+size_t mesh::CORNERS       = 1;
+bool   mesh::VERTEX_CORNERS = true;
+bool   mesh::EDGE_CORNERS   = true;
+bool   mesh::FACE_CORNERS   = false;
 
-bool   mesh::averageEdges  = false;
-bool   mesh::averageFaces  = false;
+bool   mesh::AVERAGE_EDGES  = false;
+bool   mesh::AVERAGE_FACES  = false;
 
 /////////////////////////////// SOLVER /////////////////////////////////////////
 
@@ -90,18 +89,18 @@ bool output::SAVE_PROPERTIES = false;
 bool output::SAVE_GLUING     = false;
 bool output::SAVE_RESULTS    = true;
 
-double output::subdomainShrinkRatio = .95;
-double output::clusterShrinkRatio   = .9;
+double output::SUBDOMAINS_SHRINK_RATIO = .95;
+double output::CLUSTERS_SHRINK_RATIO   = .9;
 
 //////////////////////////////// INFO //////////////////////////////////////////
 
-std::string info::output = "log";
+std::string info::OUTPUT = "log";
 
-size_t info::verboseLevel = 0;
-size_t info::testingLevel = 0;
-size_t info::measureLevel = 0;
+size_t info::VERBOSE_LEVEL = 0;
+size_t info::TESTING_LEVEL = 0;
+size_t info::MEASURE_LEVEL = 0;
 
-bool info::printMatrices = false;
+bool info::PRINT_MATRICES = false;
 
 //////////////////////////////// HYPRE /////////////////////////////////////////
 
@@ -112,19 +111,10 @@ double hypre::TOLERANCE = 1e-6;
 	
 /////////////////////////////// DESCRIPTION ////////////////////////////////////
 
-std::vector<input::Description> env::description;
 
-std::vector<Description> mesh::description = {
-	{ "PATH", mesh::path, "A path to an example.", WRITE_TO_HELP},
-	{ "INPUT", mesh::input, "A format of an input.", {
-			"matsol",
-			"workbench",
-			"openfoam",
-			"esdata",
-			"generator" },  WRITE_TO_HELP},
+#define WRITE_TO_HELP  1
 
-	{ "SUBDOMAINS", mesh::subdomains, "Number of subdomains in a cluster.", WRITE_TO_HELP },
-	{ "FIXPOINTS" , mesh::fixPoints , "Number of fix points in a subdomain." },
+std::vector<espreso::Parameter> parameters = {
 
 	//HYPRE
 	{ "HYPRE_SOLVER", hypre::HYPRE_SOLVER, "Hypre solver type.", {
@@ -151,11 +141,17 @@ std::vector<Description> mesh::description = {
 			{ "ESDATA", mesh::INPUTalternative::ESDATA, "ESPRESO binary format" },
 			{ "GENERATOR", mesh::INPUTalternative::GENERATOR, "ESPRESO internal generator" } },  WRITE_TO_HELP },
 
-	{ "AVERAGE_EDGES"  , mesh::averageEdges, "Average nodes on edges." },
-	{ "AVERAGE_FACES"  , mesh::averageFaces, "Average nodes on faces." }
-};
+	{ "SUBDOMAINS", mesh::SUBDOMAINS, "Number of subdomains in a cluster.", WRITE_TO_HELP },
+	{ "FIX_POINTS" , mesh::FIX_POINTS , "Number of fix points in a subdomain." },
 
-std::vector<Description> assembler::description = {
+	{ "CORNERS"        , mesh::CORNERS      , "Number of corners on an edge or a face." },
+	{ "VERTEX_CORNERS" , mesh::VERTEX_CORNERS, "Set corners to vertices." },
+	{ "EDGE_CORNERS"   , mesh::EDGE_CORNERS  , "Set corners on edges. The number is defined by parameter CORNERS." },
+	{ "FACE_CORNERS"   , mesh::FACE_CORNERS  , "Set corners on faces. The number is defined by parameter CORNERS." },
+
+	{ "AVERAGE_EDGES"  , mesh::AVERAGE_EDGES, "Average nodes on edges." },
+	{ "AVERAGE_FACES"  , mesh::AVERAGE_FACES, "Average nodes on faces." },
+
 	// ASSEMBLER DESCRIPTION
 	{ "DISCRETIZATION", config::assembler::DISCRETIZATION, "A used discretization.", {
 			{ "FEM", assembler::DISCRETIZATIONalternative::FEM, "Finite Element Method" },
@@ -191,32 +187,37 @@ std::vector<Description> assembler::description = {
 
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
-			"fix points",
-			"random detection of null pivots" }},
+			{ "FIX_POINTS", solver::REGULARIZATIONalternative::FIX_POINTS, "From fix points" },
+			{ "NULL_PIVOTS", solver::REGULARIZATIONalternative::NULL_PIVOTS, "Random null pivots" } }},
 
-	{ "KSOLVER", solver::KSOLVER, "K solver precision.", {
-			"directly with double precision",
-			"iteratively",
-			"directly with single precision",
-			"directly with mixed precision" }},
+	{ "KSOLVER", solver::KSOLVER, "K solver type.", {
+			{ "DIRECT_DP", solver::KSOLVERalternative::DIRECT_DP, "Directly with double precision" },
+			{ "ITERATIVE", solver::KSOLVERalternative::ITERATIVE, "Iteratively" },
+			{ "DIRECT_SP", solver::KSOLVERalternative::DIRECT_SP, "Directly with single precision" },
+			{ "DIRECT_MX", solver::KSOLVERalternative::DIRECT_MP, "Directly with mixed precision" } }},
 
-	{ "F0SOLVER", solver::F0_SOLVER, "F0 solver precision.", {
-			"with the same precision as KSOLVER",
-			"always with double precision." }},
+	{ "F0SOLVER", solver::F0SOLVER, "F0 solver precision.", {
+			{ "K_PRECISION", solver::F0SOLVERalternative::K_PRECISION, "With the same precision as KSOLVER" },
+			{ "DOUBLE", solver::F0SOLVERalternative::DOUBLE, "Always with double precision" } }},
 
-	{ "SASOLVER", solver::SA_SOLVER, "SA solver type.", {
-					"DENSE solver on CPU",
-					"DENSE solver on ACC,"
-					"SPARSE solver on CPU." }},
+	{ "SASOLVER", solver::SASOLVER, "SA solver type.", {
+			{ "CPU_DENSE", solver::SASOLVERalternative::CPU_DENSE, "DENSE solver on CPU" },
+			{ "ACC_DENSE", solver::SASOLVERalternative::ACC_DENSE, "DENSE solver on ACC" },
+			{ "CPU_SPARSE", solver::SASOLVERalternative::CPU_SPARSE, "SPARSE solver on CPU." } }},
 
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
-	{ "B0_TYPE", solver::B0_TYPE, "The source for B0 assembler." },
+	{ "B0_TYPE", solver::B0_TYPE, "Type of cluster gluing matrix.", {
+			{"CORNERS", solver::B0_TYPEalternative::CORNERS, "Gluing based on corners."},
+			{"KERNELS", solver::B0_TYPEalternative::KERNELS, "Gluing based on kernels."} }},
+
 	{ "USE_SCHUR_COMPLEMENT", solver::USE_SCHUR_COMPLEMENT, "Use schur complement for stiffness matrix processing" },
-	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision." },
+	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision.", {
+			{"DOUBLE", solver::SCHUR_COMPLEMENT_PRECalternative::DOUBLE, "Double precision"},
+			{"SINGLE", solver::SCHUR_COMPLEMENT_PRECalternative::SINGLE, "Single precision"}} },
 	{ "SCHUR_COMPLEMENT_TYPE", solver::SCHUR_COMPLEMENT_TYPE, "Schur complement matrix type.", {
-			"general",
-			"symmetric"}},
+			{ "GENERAL", solver::SCHUR_COMPLEMENT_TYPEalternative::GENERAL, "Store a full matrix" },
+			{ "SYMMETRIC", solver::SCHUR_COMPLEMENT_TYPEalternative::SYMMETRIC, "Store only a triangle" } }},
 
 	{ "COMBINE_SC_AND_SPDS", solver::COMBINE_SC_AND_SPDS, "Combine Schur complement for GPU and sparse direct solver for CPU." },
 	{ "KEEP_FACTORS", solver::KEEP_FACTORS, "Keep factors for whole iteration process." },
@@ -257,19 +258,6 @@ std::vector<Description> assembler::description = {
 
 }
 
-namespace info {
-
-std::vector<Description> description = {
-	{ "OUTPUT", output, "A location for saving output informations.", WRITE_TO_HELP },
-	{ "VERBOSE_LEVEL", verboseLevel, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", verboseLevel, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", verboseLevel, "ESPRESO measure level.", WRITE_TO_HELP },
-	{ "PRINT_MATRICES", printMatrices, "ESPRESO print solver input matrices." }
-};
-
-}
-
-}
 }
 
 

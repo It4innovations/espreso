@@ -290,7 +290,7 @@ Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params)
 		_indices[5] = indices[6];
 		break;
 	default:
-		ESINFO(ERROR) << "It is not possible to create Prisma6 from " << n << " elements.";
+		ESINFO(ERROR) << "It is not possible to create Prisma6 from " << n << " indices.";
 	}
 
 	memcpy(_params, params, PARAMS_SIZE * sizeof(eslocal));

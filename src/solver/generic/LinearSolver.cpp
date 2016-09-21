@@ -32,7 +32,16 @@ void LinearSolver::setup() {
 	else
 		cluster.USE_DYNAMIC		= 1;
 
-	cluster.USE_HFETI			= config::solver::FETI_METHOD;
+	switch (config::solver::FETI_METHOD) {
+	case config::solver::FETI_METHODalternative::TOTAL_FETI:
+		cluster.USE_HFETI = false;
+		break;
+	case config::solver::FETI_METHODalternative::HYBRID_FETI:
+		cluster.USE_HFETI = true;
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
+	}
 	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
 	cluster.NUMBER_OF_CLUSTERS	= config::env::MPIsize;
@@ -40,10 +49,9 @@ void LinearSolver::setup() {
 
 	// ***************************************************************************************************************************
 	// Iter Solver Set-up
-	solver.CG_max_iter	 = config::solver::maxIterations;
+	solver.CG_max_iter	 = config::solver::ITERATIONS;
 	solver.USE_GGtINV	 = 1;
-	solver.epsilon		 = config::solver::epsilon;
-	solver.USE_PIPECG	 = config::solver::CG_SOLVER;
+	solver.epsilon		 = config::solver::EPSILON;
 	solver.USE_PREC		 = config::solver::PRECONDITIONER;
 
 	solver.USE_HFETI	 = cluster.USE_HFETI;
@@ -152,6 +160,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		timeSetR.endWithBarrier();
 		timeEvalMain.addEvent(timeSetR);
 	}
+	// *** END - Setup R matrix **************************************************************************************
 
 	// *** Load InitialCondition for dirichelt
 	TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet InitialCondition points"));
@@ -379,13 +388,14 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	ESLOG(MEMORY) << "After import K process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
+
 	// *** Computation of the Schur Complement ***************************************************************************************
 	if ( cluster.USE_KINV == 1 ) {
 		TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier( GetProcessMemory_u() );
 		TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC")); timeSolSC2.start();
 
 		bool USE_FLOAT = false;
-		if (config::solver::SCHUR_COMPLEMENT_PREC == 1 ) {
+		if (config::solver::SCHUR_COMPLEMENT_PREC == config::solver::SCHUR_COMPLEMENT_PRECalternative::SINGLE ) {
 			USE_FLOAT = true;
 		}
 
@@ -494,7 +504,7 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		//solver.timing.totalTime.Reset();
 	}
 
-	if ( config::mesh::averageEdges || config::mesh::averageFaces ) {
+	if ( config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES ) {
 		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
 			vector < double >  tmp;
 			tmp = prim_solution[d];
@@ -523,7 +533,7 @@ void LinearSolver::finilize() {
 
 	if (SINGULAR) solver.timeEvalProj.printStatsMPI();
 
-	if ( solver.USE_PREC   > 0 ) solver.timeEvalPrec.printStatsMPI();
+	if ( solver.USE_PREC != config::solver::PRECONDITIONERalternative::NONE ) solver.timeEvalPrec.printStatsMPI();
 
 	if ( cluster.USE_HFETI == 1 ) cluster.ShowTiming();
 
@@ -594,7 +604,11 @@ void LinearSolver::set_R_from_K ()
 
   // getting factors and kernels of stiffness matrix K (+ statistic)
 	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
+
+
+		if (cluster.SYMMETRIC_SYSTEM) {
+		  cluster.domains[d].K.get_kernel_from_K(cluster.domains[d].K,
+                                            cluster.domains[d]._RegMat,
                                             cluster.domains[d].Kplus_R,
 											norm_KR_d_pow_2[d],
                                             defect_K_d[d],
@@ -767,14 +781,14 @@ void LinearSolver::set_R (
 
 void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
 
-	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == 1 )) {
+	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS )) {
 		ESLOG(MEMORY) << "Solver Preprocessing";
 		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
 		 TimeEvent G1_perCluster_mem ("Setup G1 per Cluster mem - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		cluster.Create_G1_perCluster   ();
+		cluster.Create_G_perCluster   ();
 		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
