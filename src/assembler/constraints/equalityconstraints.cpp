@@ -368,6 +368,11 @@ void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &el
 		}
 	}
 
+	if (!masterElements.size() && !slaveElements.size()) {
+		// no MORTAR interface founded
+		return;
+	}
+
 	std::sort(nodes.begin(), nodes.end());
 	Esutils::removeDuplicity(nodes);
 
