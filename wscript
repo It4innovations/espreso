@@ -32,7 +32,8 @@ solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS" ]
 third_party = [
     ("HYPRE", "Multigrid external solver.", "string", "PATH"),
     ("VTK", "Improve output: different formats, compression, decimation.", "string", "PATH"),
-    ("PARAVIEW", "Allows to show results in real time.", "string", "PATH")
+    ("PARAVIEW", "Allows to show results in real time.", "string", "PATH"),
+    ("MORTAR", "Assembler for mortar interface", "string", "PATH"),
 ]
 
 espreso_attributes = [
@@ -117,6 +118,9 @@ def configure(ctx):
 
     if not ctx.env.HYPRE:
         Logs.warn("HYPRE library was not founded. ESPRESO does not support HYPRE solver!")
+
+    if not ctx.env.MORTAR:
+        Logs.warn("MORTAR library was not founded. ESPRESO does not support gluing of non-matching grids!")
 
 def build(ctx):
 

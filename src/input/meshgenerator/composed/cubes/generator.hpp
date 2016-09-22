@@ -77,7 +77,6 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemLength[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "Z UP";
 		return;
 	}
 
@@ -86,7 +85,6 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[1].problemLength[2] == _settings.cube[0].problemOrigin[2]) {
 
-		std::cout << "Z BOTTOM";
 		return;
 	}
 
@@ -94,9 +92,6 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 			_settings.cube[0].problemOrigin[0] == _settings.cube[1].problemOrigin[0] &&
 			_settings.cube[0].problemLength[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
-
-		std::cout << "Y RIGHT";
-
 
 		return;
 	}
@@ -106,7 +101,6 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 			_settings.cube[1].problemOrigin[0] == _settings.cube[0].problemLength[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "Y LEFT";
 		return;
 	}
 
@@ -115,7 +109,6 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "X FRONT";
 		return;
 	}
 
@@ -124,7 +117,6 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "X BACK";
 		return;
 	}
 
@@ -147,7 +139,6 @@ void CubesGenerator<TElement>::settings(
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemLength[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "Z UP";
 		return;
 	}
 
@@ -156,7 +147,6 @@ void CubesGenerator<TElement>::settings(
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[1].problemLength[2] == _settings.cube[0].problemOrigin[2]) {
 
-		std::cout << "Z BOTTOM";
 		return;
 	}
 
@@ -165,7 +155,6 @@ void CubesGenerator<TElement>::settings(
 			_settings.cube[0].problemLength[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "Y RIGHT";
 
 
 		if (_cubeIndex) {
@@ -259,7 +248,7 @@ void CubesGenerator<TElement>::settings(
 		for (size_t i = 0; i < faces.size(); i++) {
 			faces[i]->clusters().push_back(0);
 			faces[i]->clusters().push_back(1);
-			faces[i]->settings(Property::NONMATCHING_ELEMENT);
+			faces[i]->addSettings(Property::NONMATCHING_ELEMENT, new ConstEvaluator(_cubeIndex ? 0 : 1));
 		}
 		return;
 	}
@@ -269,7 +258,6 @@ void CubesGenerator<TElement>::settings(
 			_settings.cube[1].problemOrigin[0] == _settings.cube[0].problemLength[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "Y LEFT";
 		return;
 	}
 
@@ -278,7 +266,6 @@ void CubesGenerator<TElement>::settings(
 			_settings.cube[0].problemOrigin[1] == _settings.cube[1].problemOrigin[1] &&
 			_settings.cube[0].problemOrigin[2] == _settings.cube[1].problemOrigin[2]) {
 
-		std::cout << "X FRONT";
 		return;
 	}
 

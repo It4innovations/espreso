@@ -32,6 +32,35 @@ def configure(ctx):
     if ctx.env.HYPRE:
         ctx.env.append_unique("DEFINES", [ "HAVE_HYPRE" ])
 
+
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["MORTAR::INCLUDE"] ])
+    ctx.env.append_unique("LIBPATH", ctx.env["MORTAR::LIBPATH"])
+
+    ctx.env.MORTAR = ctx.check_cc(
+        fragment    = "#include \"mortar.h\"\nint main() {{ return 0; }}\n",
+        mandatory   = False,
+        execute     = False,
+        msg         = "Checking for MORTAR headers",
+        errmsg      = "not found - set path to MORTAR headers (parameter MORTAR::INCLUDE)",
+        okmsg       = "found"
+    )
+
+    mortarlibs = []
+    if len(ctx.env["MORTAR::LIBPATH"]) == 1:
+        mortarlibs = [ lib.split('/')[-1][3:-3] for lib in glob.glob(ctx.env["MORTAR::LIBPATH"][0] + "/*.so") ]
+
+    ctx.start_msg("Checking for MORTAR libraries")
+    if len(mortarlibs):
+        ctx.end_msg("found")
+    else:
+        ctx.end_msg("not found - set path to MORTAR libraries (parameter MORTAR::LIBPATH)", color='YELLOW')
+        ctx.env.HYPRE = False
+
+    ctx.env.append_unique("LIB", mortarlibs)
+
+    if ctx.env.MORTAR:
+        ctx.env.append_unique("DEFINES", [ "HAVE_MORTAR" ])
+
 def build(ctx):
     base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'physics/*.cpp'])
     library = ctx.path.ant_glob(['instance/precomputed/**/*.cpp', 'physics/precomputed/**/*.cpp'])

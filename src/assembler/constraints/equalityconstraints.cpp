@@ -333,19 +333,124 @@ void EqualityConstraints::insertElementGluingToB1(const std::vector<Element*> &e
 	ESINFO(DETAILS) << "Lambdas in B1: " << B1[0].rows;
 }
 
+#ifdef HAVE_MORTAR
+
+#include "mortar.h"
+
 void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
-	//_mesh.saveFaces();
-	//std::cout << "FACES: " << _mesh.faces().size() << "\n";
+	std::vector<int> rows;
+	std::vector<int> columns;
+	std::vector<double> values;
+
+	std::vector<std::vector<int> > masterElements;
+	std::vector<Point_3D> masterCoordinates;
+	std::vector<std::vector<int> > slaveElements;
+	std::vector<Point_3D> slaveCoordinates;
+	std::vector<int> nodes;
+
+	for (size_t i = 0; i < elements.size(); i++) {
+		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
+			if (config::env::MPIrank) {
+				masterElements.push_back(std::vector<int>());
+				for (size_t n = 0; n < elements[i]->nodes(); n++) {
+					masterElements.back().push_back(elements[i]->node(n));
+					nodes.push_back(elements[i]->node(n));
+				}
+			} else {
+				slaveElements.push_back(std::vector<int>());
+				for (size_t n = 0; n < elements[i]->nodes(); n++) {
+					slaveElements.back().push_back(elements[i]->node(n));
+					nodes.push_back(elements[i]->node(n));
+				}
+			}
+
+		}
+	}
+
+	std::sort(nodes.begin(), nodes.end());
+	Esutils::removeDuplicity(nodes);
+
+	for (size_t n = 0; n < nodes.size(); n++) {
+		if (config::env::MPIrank) {
+			masterCoordinates.push_back(Point_3D());
+			masterCoordinates.back().x = _mesh.coordinates()[nodes[n]].x;
+			masterCoordinates.back().y = _mesh.coordinates()[nodes[n]].y;
+			masterCoordinates.back().z = _mesh.coordinates()[nodes[n]].z;
+		} else {
+			slaveCoordinates.push_back(Point_3D());
+			slaveCoordinates.back().x = _mesh.coordinates()[nodes[n]].x;
+			slaveCoordinates.back().y = _mesh.coordinates()[nodes[n]].y;
+			slaveCoordinates.back().z = _mesh.coordinates()[nodes[n]].z;
+		}
+	}
+
+	std::vector<int> buffer;
+
+	for (size_t e = 0; e < masterElements.size(); e++) {
+		buffer.push_back(masterElements[e].size());
+		for (size_t n = 0; n < masterElements[e].size(); n++) {
+			masterElements[e][n] = std::lower_bound(nodes.begin(), nodes.end(), masterElements[e][n]) - nodes.begin();
+			buffer.push_back(masterElements[e][n]);
+		}
+	}
+
+	for (size_t e = 0; e < slaveElements.size(); e++) {
+		for (size_t n = 0; n < slaveElements[e].size(); n++) {
+			slaveElements[e][n] = std::lower_bound(nodes.begin(), nodes.end(), slaveElements[e][n]) - nodes.begin();
+		}
+	}
+
+	if (config::env::MPIrank) {
+		MPI_Send(buffer.data(), buffer.size() * sizeof(int), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(masterCoordinates.data(), masterCoordinates.size() * sizeof(Point_3D), MPI_BYTE, 0, 1, MPI_COMM_WORLD);
+	} else {
+		MPI_Status status;
+		int size;
+
+		// ELEMENTS
+		MPI_Probe(1, 0, MPI_COMM_WORLD, &status);
+		MPI_Get_count(&status, MPI_BYTE, &size);
+		buffer.resize(size / sizeof(int));
+		MPI_Recv(buffer.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+
+		// COORDINATES
+		MPI_Probe(1, 1, MPI_COMM_WORLD, &status);
+		MPI_Get_count(&status, MPI_BYTE, &size);
+		masterCoordinates.resize(size / sizeof(Point_3D));
+		MPI_Recv(masterCoordinates.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+
+		for (size_t i = 0; i < buffer.size(); i++) {
+			masterElements.push_back(std::vector<int>());
+			for (size_t n = 0; n < buffer[i - n]; n++, i++) {
+				masterElements.back().push_back(buffer[i + 1]);
+			}
+		}
+	}
+
+	if (!config::env::MPIrank && (masterElements.size() || slaveElements.size())) {
+		computeMortarEqualityConstraints(rows, columns, values, masterElements, masterCoordinates, slaveElements, slaveCoordinates);
+	}
+}
+
+#else
+
+void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+{
+	// TODO: improve!
 	size_t cc = 0;
 	for (size_t i = 0; i < elements.size(); i++) {
 		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
 			cc++;
 		}
 	}
-
-	//std::cout << "MORTAR FACES ON " << config::env::MPIrank << ": " << cc << "\n";
+	if (cc) {
+		ESINFO(GLOBAL_ERROR) << "Gluing of non-matching grids is not supported. Link MORTAR library!";
+	}
 }
+
+#endif
+
 
 void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {

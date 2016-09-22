@@ -19,6 +19,9 @@ BUILD_TOOLS = 1         # ESPRESO try to compile external tools.
                         # If the compilation is not successful set this attribute to 0 and build tools and
                         # set library names
 
+MORTAR::INCLUDE =    # Path to mortar headers
+MORTAR::LIBPATH =    # PATH to mortar library
+
 HYPRE::INCLUDE =    # Path to Hypre headers
 HYPRE::LIBPATH =    # PATH to Hypre library
 

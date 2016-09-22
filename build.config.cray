@@ -21,6 +21,9 @@ BUILD_TOOLS = 0         # ESPRESO try to compile external tools.
 
 INT_WIDTH = 32          # ESPRESO supports only { 32, 64 } integer width
 
+MORTAR::INCLUDE =    # Path to mortar headers
+MORTAR::LIBPATH =    # PATH to mortar library
+
 HYPRE::INCLUDE =    # Path to Hypre headers
 HYPRE::LIBPATH =    # PATH to Hypre library
 
