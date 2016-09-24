@@ -100,8 +100,10 @@ protected:
 	void mapEdgesToDomains();
 	void mapNodesToDomains();
 
-	eslocal* getPartition(eslocal first, eslocal last, eslocal parts) const;
-	eslocal getCentralNode(eslocal first, eslocal last, eslocal *ePartition, eslocal part, eslocal subpart) const;
+	std::vector<eslocal> getPartition(size_t begin, size_t end, eslocal parts) const;
+	std::vector<eslocal> getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const;
+	eslocal getCentralNode(eslocal begin, eslocal end, const std::vector<eslocal> &ePartition, eslocal part, eslocal subpart) const;
+	eslocal getCentralNode(const std::vector<Element*> &elements, size_t begin, size_t end, const std::vector<eslocal> &ePartition, eslocal subpart) const;
 	void makePartContinuous(size_t part);
 
 	/** @brief Reference to coordinates. */

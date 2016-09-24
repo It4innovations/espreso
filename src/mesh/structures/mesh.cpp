@@ -23,7 +23,7 @@ void Mesh::partitiate(size_t parts)
 		_partPtrs.resize(parts + 1);
 		_partPtrs[0] = 0;
 
-		eslocal *ePartition = getPartition(0, _elements.size(), parts);
+		std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
 
 		_partPtrs = std::vector<eslocal>(parts + 1, 0);
 		for (size_t i = 0; i < _elements.size(); i++) {
@@ -35,8 +35,6 @@ void Mesh::partitiate(size_t parts)
 		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
 		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
 		Esutils::sizesToOffsets(_partPtrs);
-
-		delete[] ePartition;
 	}
 
 	_fixPoints.clear();
@@ -58,7 +56,7 @@ void APIMesh::partitiate(size_t parts)
 		return;
 	}
 
-	eslocal *ePartition = getPartition(0, _elements.size(), parts);
+	std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
 
 	_partPtrs = std::vector<eslocal>(parts + 1, 0);
 	for (size_t i = 0; i < _elements.size(); i++) {
@@ -69,8 +67,6 @@ void APIMesh::partitiate(size_t parts)
 	std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
 	ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
 	Esutils::sizesToOffsets(_partPtrs);
-
-	delete[] ePartition;
 }
 
 void Mesh::computeFixPoints(size_t number)
@@ -85,7 +81,7 @@ void Mesh::computeFixPoints(size_t number)
 		size_t max = _partPtrs[part + 1] - _partPtrs[part];
 		size_t points = std::min(number, max);
 		std::vector<eslocal> fixPoints(points);
-		eslocal *eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], points);
+		std::vector<eslocal> eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], points);
 
 		for (eslocal j = 0; j < points; j++) {
 			fixPoints[j] = getCentralNode(_partPtrs[part], _partPtrs[part + 1], eSubPartition, part, j);
@@ -94,8 +90,6 @@ void Mesh::computeFixPoints(size_t number)
 
 		// Remove the same points
 		Esutils::removeDuplicity(fixPoints);
-
-		delete[] eSubPartition;
 
 		_fixPoints[part].reserve(fixPoints.size());
 		for (size_t i = 0; i < fixPoints.size(); i++) {
@@ -116,159 +110,252 @@ static void checkMETISResult(eslocal result)
 	}
 }
 
-eslocal* Mesh::getPartition(eslocal first, eslocal last, eslocal parts) const
+static std::vector<eslocal> computePartition(std::vector<eslocal> &elements, std::vector<eslocal> &nodes, eslocal eSize, eslocal nSize, eslocal nCommon, eslocal parts)
 {
 	if (parts == 1) {
-		eslocal *ePartition = new eslocal[last - first];
-		for (eslocal i = first; i < last; i++) {
-			ePartition[i - first] = 0;
-		}
-		return ePartition;
+		return std::vector<eslocal> (elements.size(), 0);
 	}
 	// INPUTS
-	eslocal ncommon, eSize, nSize, *e, *n, options[METIS_NOPTIONS];
+	eslocal options[METIS_NOPTIONS];
+	METIS_SetDefaultOptions(options);
+	options[METIS_OPTION_CONTIG] = 1;
 
 	// OUTPUTS
-	eslocal objval, *ePartition, *nPartition;
+	eslocal objval;
+	std::vector<eslocal> ePartition(eSize), nPartition(nSize);
 
-	// FILL INPUT VARIABLES
-	////////////////////////////////////////////////////////////////////////////
+	checkMETISResult(METIS_PartMeshDual(
+			&eSize,
+			&nSize,
+			elements.data(),
+			nodes.data(),
+			NULL,		// weights of nodes
+			NULL,		// size of nodes
+			&nCommon,
+			&parts,
+			NULL,		// weights of parts
+			options,
+			&objval,
+			ePartition.data(),
+			nPartition.data()));
 
-	// There is probably BUG in METIS numbering or I do not understand documentation.
-	// The solution is increase the size of 'nodesCount' and keep the default numbering
-	//options[METIS_OPTION_NUMBERING] = coordinates.getNumbering();
-	METIS_SetDefaultOptions(options);
-	//TODO:
-	options[METIS_OPTION_CONTIG]  = 1;
-//	options[METIS_OPTION_MINCONN] = 1;
-//	options[METIS_OPTION_NITER]   = 20;
-//	options[METIS_PTYPE_KWAY]     = 1;
+	return ePartition;
+}
 
-	eSize = last - first;
-	nSize = _coordinates.clusterSize();
+static eslocal localIndex(const std::vector<eslocal> &nodeProjection, eslocal index)
+{
+	return std::lower_bound(nodeProjection.begin(), nodeProjection.end(), index) - nodeProjection.begin();
+}
+
+static void METISMeshRepresentation(
+		const std::vector<Element*> &elements, size_t begin, size_t end,
+		std::vector<eslocal> &nodeProjection, std::vector<eslocal> &metisElements, std::vector<eslocal> &metisNodes, eslocal &nCommon)
+{
+	for (size_t e = begin; e < end; e++) {
+		for (size_t n = 0; n < elements[e]->coarseNodes(); n++) {
+			nodeProjection.push_back(elements[e]->node(n));
+		}
+	}
+
+	std::sort(nodeProjection.begin(), nodeProjection.end());
+	Esutils::removeDuplicity(nodeProjection);
 
 	// create array storing pointers to elements' nodes
-	e = new eslocal[eSize + 1];
-	e[0] = 0;
-	for (eslocal i = first, index = 0; i < last; i++, index++) {
-		e[index + 1] = e[index] + _elements[i]->coarseNodes();
+	metisElements.reserve(end - begin + 1);
+	metisElements.push_back(0);
+	for (eslocal i = begin; i < end; i++) {
+		metisElements.push_back(metisElements.back() + elements[i]->coarseNodes());
 	}
 
 	// create array of nodes
-	n = new eslocal[e[eSize]];
+	metisNodes.reserve(metisElements.back());
+	// number of common nodes to be neighbor
+	nCommon = 4;
+	for (eslocal i = begin; i < end; i++) {
+		for (size_t j = 0; j < elements[i]->coarseNodes(); j++) {
+			metisNodes.push_back(localIndex(nodeProjection, elements[i]->node(j)));
+		}
+		if (nCommon > elements[i]->nCommon()) {
+			nCommon = elements[i]->nCommon();
+		}
+	}
+}
+
+static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, size_t begin, size_t end)
+{
+	eslocal nCommon;
+	std::vector<eslocal> nodeProjection, metisElements, metisNodes;
+
+	METISMeshRepresentation(elements, begin, end, nodeProjection, metisElements, metisNodes, nCommon);
+
+	eslocal ne = end - begin, nn = nodeProjection.size(), numflag = 0, *xAdj, *adjncy;
+	checkMETISResult(METIS_MeshToDual(&ne, &nn, metisElements.data(), metisNodes.data(), &nCommon, &numflag, &xAdj, &adjncy));
+
+	std::vector<eslocal> partPtrs;
+	std::vector<Element*> eCopy(elements.begin() + begin, elements.begin() + end);
+
+	partPtrs.push_back(begin);
+	size_t back = begin;
+	for (size_t e = 0; e < eCopy.size(); e++) {
+		if (eCopy[e] != NULL) {
+			std::vector<eslocal> stack;
+			elements[back++] = eCopy[e];
+			eCopy[e] = NULL;
+			stack.push_back(e);
+			while (stack.size()) {
+				eslocal current = stack.back();
+				stack.pop_back();
+				for (size_t i = xAdj[current]; i < xAdj[current + 1]; i++) {
+					if (eCopy[adjncy[i]] != NULL) {
+						elements[back++] = eCopy[adjncy[i]];
+						eCopy[adjncy[i]] = NULL;
+						stack.push_back(adjncy[i]);
+					}
+				}
+			}
+			partPtrs.push_back(back);
+		}
+	}
+
+	METIS_Free(xAdj);
+	METIS_Free(adjncy);
+
+	return partPtrs;
+}
+
+std::vector<eslocal> Mesh::getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const
+{
+	if (parts == 1) {
+		return std::vector<eslocal> (end - begin, 0);
+	}
+	eslocal nCommon;
+	std::vector<eslocal> nodeProjection, metisElements, metisNodes;
+
+	METISMeshRepresentation(elements, begin, end, nodeProjection, metisElements, metisNodes, nCommon);
+
+	return computePartition(metisElements, metisNodes, end - begin, nodeProjection.size(), nCommon, parts);
+}
+
+std::vector<eslocal> Mesh::getPartition(size_t begin, size_t end, eslocal parts) const
+{
+	if (parts == 1) {
+		return std::vector<eslocal> (end - begin, 0);
+	}
+	eslocal ncommon;
+	std::vector<eslocal> e, n;
+
+	// create array storing pointers to elements' nodes
+	e.reserve(end - begin + 1);
+	e.push_back(0);
+	for (eslocal i = begin; i < end; i++) {
+		e.push_back(e.back() + _elements[i]->coarseNodes());
+	}
+
+	// create array of nodes
+	n.reserve(e.back());
 	// number of common nodes to be neighbor
 	ncommon = 4;
-	for (eslocal i = first, index = 0; i < last; i++, index++) {
-		const Element* el = _elements[i];
-		memcpy(n + e[index], el->indices(), el->coarseNodes() * sizeof(eslocal));
+	for (eslocal i = begin; i < end; i++) {
+		n.insert(n.end(), _elements[i]->indices(), _elements[i]->indices() + _elements[i]->coarseNodes());
 		if (ncommon > _elements[i]->nCommon()) {
 			ncommon = _elements[i]->nCommon();
 		}
 	}
 
-	// PREPARE OUTPUT VARIABLES
-	////////////////////////////////////////////////////////////////////////////
-	ePartition = new eslocal[eSize];
-	nPartition = new eslocal[nSize];
-
-	eslocal result = METIS_PartMeshDual(
-			&eSize,
-			&nSize,
-			e,
-			n,
-			NULL,		// weights of nodes
-			NULL,		// size of nodes
-			&ncommon,
-			&parts,
-			NULL,		// weights of parts
-			options,
-			&objval,
-			ePartition,
-			nPartition);
-	checkMETISResult(result);
-
-	delete[] e;
-	delete[] n;
-	delete[] nPartition;
-
-	return ePartition;
+	return computePartition(e, n, end - begin, _coordinates.clusterSize(), ncommon, parts);
 }
 
-eslocal Mesh::getCentralNode(
-		eslocal first,
-		eslocal last,
-		eslocal *ePartition,
-		eslocal part,
-		eslocal subpart) const
+static eslocal computeCenter(std::vector<std::vector<eslocal> > &neighbours)
 {
-	// Compute CSR format of symmetric adjacency matrix
-	////////////////////////////////////////////////////////////////////////////
-	std::vector<std::set<eslocal> > neighbours(_coordinates.localSize(part));
-	for (eslocal i = first, index = 0; i < last; i++, index++) {
-		if (ePartition[index] == subpart) {
-			for (size_t j = 0; j < _elements[i]->nodes(); j++) {
-				std::vector<eslocal> neigh = _elements[i]->getNeighbours(j);
-				for (size_t k = 0; k < neigh.size(); k++) {
-					if (_elements[i]->node(j) < neigh[k]) {
-						neighbours[_coordinates.localIndex(_elements[i]->node(j), part)].insert(_coordinates.localIndex(neigh[k], part));
+	std::vector<eslocal> ia, ja;
+
+	ia.reserve(neighbours.size() + 1);
+	ia.push_back(0);
+	for (size_t i = 0; i < neighbours.size(); i++) {
+		std::sort(neighbours[i].begin(), neighbours[i].end());
+		Esutils::removeDuplicity(neighbours[i]);
+		ia.push_back(ia.back() + neighbours[i].size());
+		ja.insert(ja.end(), neighbours[i].begin(), neighbours[i].end());
+	}
+
+	std::vector<float> a(ja.size(), 1);
+
+	eslocal nSize = neighbours.size();
+	std::vector<float> x(nSize, 1. / nSize), y(nSize);
+
+	// Initial vector
+	float last_l = nSize, l = 1;
+	eslocal incr = 1;
+
+	while (fabs((l - last_l) / l) > 1e-6) {
+		mkl_cspblas_scsrsymv("U", &nSize, a.data(), ia.data(), ja.data(), x.data(), y.data());
+		last_l = l;
+		l = snrm2(&nSize, y.data(), &incr);
+		cblas_sscal(nSize, 1 / l, y.data(), incr);
+		x.swap(y);
+	}
+
+	return cblas_isamax(nSize, x.data(), incr);
+}
+
+eslocal Mesh::getCentralNode(const std::vector<Element*> &elements, size_t begin, size_t end, const std::vector<eslocal> &ePartition, eslocal subpart) const
+{
+	std::vector<eslocal> nMap;
+	for (size_t e = begin; e < end; e++) {
+		if (ePartition[e - begin] == subpart) {
+			for (size_t n = 0; n < elements[e]->nodes(); n++) {
+				nMap.push_back(elements[e]->node(n));
+			}
+		}
+	}
+
+	if (!nMap.size()) {
+		return -1;
+	}
+
+	std::sort(nMap.begin(), nMap.end());
+	Esutils::removeDuplicity(nMap);
+
+	auto localIndex = [&] (eslocal index) {
+		return std::lower_bound(nMap.begin(), nMap.end(), index) - nMap.begin();
+	};
+
+	std::vector<std::vector<eslocal> > neighbours(nMap.size());
+	for (eslocal e = begin; e < end; e++) {
+		if (ePartition[e - begin] == subpart) {
+			for (size_t n = 0; n < elements[e]->nodes(); n++) {
+				std::vector<eslocal> neigh = elements[e]->getNeighbours(n);
+				for (size_t i = 0; i < neigh.size(); i++) {
+					if (elements[e]->node(n) < neigh[i]) {
+						neighbours[localIndex(elements[e]->node(n))].push_back(localIndex(neigh[i]));
 					}
 				}
 			}
 		}
 	}
-	eslocal nonZeroValues = 0;
-	for (size_t i = 0; i < neighbours.size(); i++) {
-		nonZeroValues += neighbours[i].size();
-	}
 
-	float *a;
-	eslocal *ia, *ja;
-	a = new float[nonZeroValues];
-	ia = new eslocal[_coordinates.localSize(part) + 1];
-	ja = new eslocal[nonZeroValues];
+	return nMap[computeCenter(neighbours)];
+}
 
-	eslocal i = 0;
-	std::set<eslocal>::const_iterator it;
-	for (size_t n = 0; n < neighbours.size(); n++) {
-		std::set<eslocal> &values = neighbours[n];
-		ia[n] = i;
-		for (it = values.begin(); it != values.end(); ++it, i++) {
-			a[i] = 1;
-			ja[i] = *it;
+eslocal Mesh::getCentralNode(eslocal begin, eslocal end, const std::vector<eslocal> &ePartition, eslocal part, eslocal subpart) const
+{
+	// Compute CSR format of symmetric adjacency matrix
+	////////////////////////////////////////////////////////////////////////////
+	std::vector<std::vector<eslocal> > neighbours(_coordinates.localSize(part));
+	for (eslocal i = begin; i < end; i++) {
+		if (ePartition[i - begin] == subpart) {
+			for (size_t j = 0; j < _elements[i]->nodes(); j++) {
+				std::vector<eslocal> neigh = _elements[i]->getNeighbours(j);
+				for (size_t k = 0; k < neigh.size(); k++) {
+					if (_elements[i]->node(j) < neigh[k]) {
+						neighbours[_coordinates.localIndex(_elements[i]->node(j), part)].push_back(_coordinates.localIndex(neigh[k], part));
+					}
+				}
+			}
 		}
 	}
-	ia[neighbours.size()] = i;
 
-	eslocal nSize = _coordinates.localSize(part);
-	float *x, *y, *swap;
-	x = new float[nSize];
-	y = new float[nSize];
-
-	// Initial vector
-	for (eslocal xi = 0; xi < nSize; xi++) {
-		x[xi] = 1. / nSize;
-	}
-	float last_l = nSize, l = 1;
-	eslocal incr = 1;
-
-	while (fabs((l - last_l) / l) > 1e-6) {
-		mkl_cspblas_scsrsymv("U", &nSize, a, ia, ja, x, y);
-		last_l = l;
-		l = snrm2(&nSize, y, &incr);
-		cblas_sscal(nSize, 1 / l, y, incr);
-		swap = x;
-		x = y;
-		y = swap;
-	}
-	eslocal result = cblas_isamax(nSize, x, incr);
-
-	delete[] a;
-	delete[] ia;
-	delete[] ja;
-	delete[] x;
-	delete[] y;
-
-	return _coordinates.clusterIndex(result, part);
+	return _coordinates.clusterIndex(computeCenter(neighbours), part);
 }
 
 Mesh::~Mesh()
@@ -401,77 +488,6 @@ void Mesh::getSurface(Mesh &surface) const
 	surface._materials = _materials;
 	for (size_t i = 0; i < _evaluators.size(); i++) {
 		surface._evaluators.push_back(_evaluators[i]->copy());
-	}
-}
-
-void Mesh::makePartContinuous(size_t part)
-{
-	size_t begin = _partPtrs[part];
-	size_t end = _partPtrs[part + 1];
-
-	eslocal ne, nn, *ePtr, *eInd, nCommon, numflag, *xAdj, *adjncy;
-
-	ne = end - begin;
-	nn = _coordinates.clusterSize();
-
-	ePtr = new eslocal[ne + 1];
-	ePtr[0] = 0;
-	for (size_t e = begin, i = 1; e < end; e++, i++) {
-		ePtr[i] = ePtr[i - 1] + _elements[e]->coarseNodes();
-	}
-
-	nCommon = 4;
-	eInd = new eslocal[ePtr[ne]];
-	for (size_t e = begin, i = 0; e < end; e++, i++) {
-		const Element* el = _elements[e];
-		memcpy(eInd + ePtr[i], el->indices(), el->coarseNodes() * sizeof(eslocal));
-		if (nCommon > _elements[i]->nCommon()) {
-			nCommon = _elements[i]->nCommon();
-		}
-	}
-
-	numflag = 0;
-	checkMETISResult(METIS_MeshToDual(&ne, &nn, ePtr, eInd, &nCommon, &numflag, &xAdj, &adjncy));
-
-	std::vector<int> color(ne, 0);
-
-	std::function<void(eslocal, int)> traverse = [&] (eslocal element, int eColor) {
-		if (color[element] > 0) {
-			return;
-		}
-		color[element] = eColor;
-		for (eslocal e = xAdj[element]; e < xAdj[element + 1]; e++) {
-			traverse(adjncy[e], eColor);
-		}
-	};
-
-	int colors = 0;
-	for (size_t i = 0; i < color.size(); i++) {
-		if (color[i] == 0) {
-			traverse(i, ++colors);
-		}
-	}
-
-	delete[] ePtr;
-	delete[] eInd;
-	METIS_Free(xAdj);
-	METIS_Free(adjncy);
-
-	if (colors == 1) {
-		return;
-	}
-
-	std::vector<Element*> tmp(_elements.begin() + begin, _elements.begin() + end);
-	size_t p = begin;
-	for (int c = 1; c <= colors; c++) {
-		for (size_t e = 0; e < tmp.size(); e++) {
-			if (color[e] == c) {
-				_elements[p++] = tmp[e];
-			}
-		}
-		if (c < colors) {
-			_partPtrs.insert(_partPtrs.begin() + part + c, p);
-		}
 	}
 }
 
@@ -955,81 +971,77 @@ void Mesh::computeCornersOnEdges(size_t number)
 		ESINFO(ERROR) << "There are no edges for computation of corners.";
 	}
 
-	std::vector<Element*> edges = _edges;
+	std::vector<Element*> edges;
+	if (config::mesh::EDGE_CORNERS) {
+		edges.reserve(_edges.size());
+	}
+	for (size_t e = 0; e < _edges.size(); e++) {
+		if (_edges[e]->domains().size()) {
+			if (config::mesh::VERTEX_CORNERS) {
+				if (_nodes[_edges[e]->node(0)]->domains().size() > _nodes[_edges[e]->node(_edges[e]->coarseNodes() - 1)]->domains().size()) {
+					_corners.push_back(_nodes[_edges[e]->node(0)]);
+				}
+				if (_nodes[_edges[e]->node(0)]->domains().size() < _nodes[_edges[e]->node(_edges[e]->coarseNodes() - 1)]->domains().size()) {
+					_corners.push_back(_nodes[_edges[e]->node(_edges[e]->coarseNodes() - 1)]);
+				}
+			}
+			if (config::mesh::EDGE_CORNERS) {
+				edges.push_back(_edges[e]);
+			}
+		}
+	}
+	if (!edges.size()) {
+		return;
+	}
+
 	std::sort(edges.begin(), edges.end(), [] (Element* e1, Element* e2) { return e1->domains() < e2->domains(); });
 
-	auto is_cycle = [] (std::vector<eslocal> &nodes) {
-		std::sort(nodes.begin(), nodes.end());
-		size_t fullSize = nodes.size();
-		Esutils::removeDuplicity(nodes);
-		return fullSize / 2 == nodes.size();
-	};
-
-	auto next = [&] (Element* &edge, Element* &node) {
-		edge = edge == node->parentEdges()[0] ? node->parentEdges()[1] : node->parentEdges()[0];
-		node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
-
-	};
-
-	auto fixCycle = [&] (size_t begin, size_t end) {
-		Element *edge = edges[begin], *node = _nodes[edge->node(0)];
-		for (size_t e = begin; e < end; e++) {
-			if (((end - begin) / 3) == 0 || (e - begin) % ((end - begin) / 3) == 0) {
-				_corners.push_back(node);
-			}
-			next(edge, node);
-		}
-	};
-
-	auto setCorners = [&] (size_t begin, size_t end) {
-		if (number == 0 || (end - begin) < 2) {
-			return;
-		}
-		size_t size = end - begin, n = 0, c = number + 1;
-		while (n == 0) {
-			n = std::ceil((double)size / c--);
-		}
-		Element *edge = edges[begin], *node = _nodes[edge->node(0)];
-		Element *begin_edge = edges[begin], *begin_node = _nodes[edge->node(0)];
-		while (edge->domains() == begin_edge->domains() && begin_node->parentEdges().size() == 2) { // find first node
-			edge = begin_edge;
-			node = begin_node;
-			next(begin_edge, begin_node);
-		}
-
-		if (begin_node->parentEdges().size() != 2) {
-			edge = begin_edge;
-			node = begin_node;
-			node = node == _nodes[edge->node(0)] ? _nodes[edge->node(edge->nodes() - 1)] : _nodes[edge->node(0)];
-		}
-		for (size_t i = 1; i < size - 1; i++) {
-			if (i % n == 0) {
-				_corners.push_back(node);
-			}
-			next(edge, node);
-		}
-	};
-
-	size_t begin = 0;
-	std::vector<eslocal> edge_nodes = { edges[0]->node(0), edges[0]->node(edges[0]->nodes() - 1) };
+	std::vector<size_t> partPtrs;
+	partPtrs.push_back(0);
 	for (size_t i = 1; i < edges.size(); i++) {
 		if (edges[i]->domains() != edges[i - 1]->domains()) {
-			is_cycle(edge_nodes) ? fixCycle(begin, i) : setCorners(begin, i);
-			begin = i;
-			edge_nodes.clear();
+			partPtrs.push_back(i);
 		}
-
-		if (_nodes[edges[i]->node(0)]->domains().size() > _nodes[edges[i]->node(edges[i]->nodes() - 1)]->domains().size()) {
-			_corners.push_back(_nodes[edges[i]->node(0)]);
-		}
-		if (_nodes[edges[i]->node(0)]->domains().size() < _nodes[edges[i]->node(edges[i]->nodes() - 1)]->domains().size()) {
-			_corners.push_back(_nodes[edges[i]->node(edges[i]->nodes() - 1)]);
-		}
-		edge_nodes.push_back(edges[i]->node(0));
-		edge_nodes.push_back(edges[i]->node(edges[i]->nodes() - 1));
 	}
-	is_cycle(edge_nodes) ? fixCycle(begin, edges.size()) : setCorners(begin, edges.size());
+	partPtrs.push_back(edges.size());
 
+	std::vector<std::vector<Element*> > corners(partPtrs.size() - 1);
+	for (size_t p = 0; p < partPtrs.size() - 1; p++) {
+		std::vector<eslocal> subPartPtrs = continuousReorder(edges, partPtrs[p], partPtrs[p + 1]);
+		for (size_t sp = 0; sp < subPartPtrs.size() - 1; sp++) {
+			std::vector<eslocal> ePartition = getPartition(edges, subPartPtrs[sp], subPartPtrs[sp + 1], number);
+			for (size_t n = 0; n < number; n++) {
+				std::vector<eslocal> nodes;
+				size_t eSize = 0;
+				for (size_t e = subPartPtrs[sp]; e < subPartPtrs[sp + 1]; e++) {
+					if (ePartition[e - subPartPtrs[sp]] == n) {
+						eSize++;
+						nodes.push_back(edges[e]->node(0));
+						nodes.push_back(edges[e]->node(edges[e]->coarseNodes() - 1));
+					}
+				}
+				if (eSize) {
+					std::sort(nodes.begin(), nodes.end());
+					size_t fullSize = nodes.size();
+					Esutils::removeDuplicity(nodes);
+					if (fullSize / 2 == nodes.size()) { // cycle
+						number = 4;
+					}
+					std::vector<eslocal> ePartition = getPartition(edges, subPartPtrs[sp], subPartPtrs[sp + 1], number);
+					for (size_t c = 0; c < number; c++) {
+						eslocal center = getCentralNode(edges, subPartPtrs[sp], subPartPtrs[sp + 1], ePartition, c);
+						if (center > -1) {
+							corners[p].push_back(_nodes[center]);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	for (size_t p = 0; p < corners.size(); p++) {
+		_corners.insert(_corners.end(), corners[p].begin(), corners[p].end());
+	}
 	std::sort(_corners.begin(), _corners.end());
 	Esutils::removeDuplicity(_corners);
 }
