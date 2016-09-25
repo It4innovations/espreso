@@ -1006,34 +1006,31 @@ void Mesh::computeCornersOnEdges(size_t number)
 	partPtrs.push_back(edges.size());
 
 	std::vector<std::vector<Element*> > corners(partPtrs.size() - 1);
-	for (size_t p = 0; p < partPtrs.size() - 1; p++) {
+	cilk_for (size_t p = 0; p < partPtrs.size() - 1; p++) {
 		std::vector<eslocal> subPartPtrs = continuousReorder(edges, partPtrs[p], partPtrs[p + 1]);
 		for (size_t sp = 0; sp < subPartPtrs.size() - 1; sp++) {
-			std::vector<eslocal> ePartition = getPartition(edges, subPartPtrs[sp], subPartPtrs[sp + 1], number);
-			for (size_t n = 0; n < number; n++) {
-				std::vector<eslocal> nodes;
-				size_t eSize = 0;
-				for (size_t e = subPartPtrs[sp]; e < subPartPtrs[sp + 1]; e++) {
-					if (ePartition[e - subPartPtrs[sp]] == n) {
-						eSize++;
-						nodes.push_back(edges[e]->node(0));
-						nodes.push_back(edges[e]->node(edges[e]->coarseNodes() - 1));
-					}
+			std::vector<eslocal> nodes;
+			for (size_t e = subPartPtrs[sp]; e < subPartPtrs[sp + 1]; e++) {
+				nodes.push_back(edges[e]->node(0));
+				nodes.push_back(edges[e]->node(edges[e]->coarseNodes() - 1));
+			}
+			std::sort(nodes.begin(), nodes.end());
+			bool cycle = nodes.size() % 2 == 0;
+			for (size_t i = 0; cycle && i < nodes.size(); i += 2) {
+				cycle = nodes[i + 1] == nodes[i];
+			}
+			if (cycle && nodes.size() < 12) {
+				Esutils::removeDuplicity(nodes);
+				for (size_t i = 0; i < nodes.size() && i < 4; i++) {
+					corners[p].push_back(_nodes[nodes[i]]);
 				}
-				if (eSize) {
-					std::sort(nodes.begin(), nodes.end());
-					size_t fullSize = nodes.size();
-					Esutils::removeDuplicity(nodes);
-					if (fullSize / 2 == nodes.size()) { // cycle
-						number = 4;
-					}
-					std::vector<eslocal> ePartition = getPartition(edges, subPartPtrs[sp], subPartPtrs[sp + 1], number);
-					for (size_t c = 0; c < number; c++) {
-						eslocal center = getCentralNode(edges, subPartPtrs[sp], subPartPtrs[sp + 1], ePartition, c);
-						if (center > -1) {
-							corners[p].push_back(_nodes[center]);
-						}
-					}
+				continue;
+			}
+			std::vector<eslocal> ePartition = getPartition(edges, subPartPtrs[sp], subPartPtrs[sp + 1], cycle ? 4 : number);
+			for (size_t c = 0; c < (cycle ? 4 : number); c++) {
+				eslocal center = getCentralNode(edges, subPartPtrs[sp], subPartPtrs[sp + 1], ePartition, c);
+				if (center > -1) {
+					corners[p].push_back(_nodes[center]);
 				}
 			}
 		}
