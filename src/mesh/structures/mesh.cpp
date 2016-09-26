@@ -990,6 +990,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 			}
 		}
 	}
+
 	if (!edges.size()) {
 		return;
 	}

@@ -6,10 +6,20 @@ class ESPRESOTests(unittest.TestCase):
 
     espreso = Espreso()
 
-    def stability(self, procs, config, args):
+    def regular_cube(self, procs, config, args):
         config["INPUT"] = "GENERATOR"
         config["PATH"] = "regular_fixed_bottom.txt"
         self.espreso.run(procs, "tests/examples/linearElasticity/cube", config, args)
+
+    def metis_cube(self, procs, config, args):
+        config["INPUT"] = "GENERATOR"
+        config["PATH"] = "metis_fixed_bottom.txt"
+        self.espreso.run(procs, "tests/examples/linearElasticity/cube", config, args + [2, 2, 2, 5, 5, 5])
+
+    def metis_cube_with_cyclic_edge(self, procs, config, args):
+        config["INPUT"] = "GENERATOR"
+        config["PATH"] = "metis_fixed_bottom.txt"
+        self.espreso.run(procs, "tests/examples/linearElasticity/cube", config, args + [2, 1, 1, 2, 4, 4])
 
 
 if __name__ == '__main__':
@@ -20,7 +30,9 @@ if __name__ == '__main__':
             procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
             args = [example["ETYPE"]] + example["CLUSTERS"]
             name = "_".join(str(x) for x in args + config.values())
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.stability, name, procs, config, args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, name, procs, config, args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, name + "_METIS", procs, config, args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube_with_cyclic_edge, name + "_METIS_TWO_SUBDOMAINS", procs, config, args)
 
     config = {
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
