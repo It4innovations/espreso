@@ -1026,6 +1026,9 @@ void Mesh::computeCornersOnEdges(size_t number)
 				}
 				continue;
 			}
+			if (!cycle && !number) {
+				continue;
+			}
 			std::vector<eslocal> ePartition = getPartition(edges, subPartPtrs[sp], subPartPtrs[sp + 1], cycle ? 4 : number);
 			for (size_t c = 0; c < (cycle ? 4 : number); c++) {
 				eslocal center = getCentralNode(edges, subPartPtrs[sp], subPartPtrs[sp + 1], ePartition, c);
