@@ -82,9 +82,6 @@ output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATA
 bool   output::OUTPUT_COMPRESSION = false;
 double output::OUTPUT_DECIMATION  = 0;
 
-bool output::SAVE_FACES      = false;
-bool output::SAVE_EDGES      = false;
-bool output::SAVE_CORNERS    = false;
 bool output::SAVE_PROPERTIES = false;
 bool output::SAVE_GLUING     = false;
 bool output::SAVE_RESULTS    = true;
@@ -208,8 +205,9 @@ std::vector<espreso::Parameter> parameters = {
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
 	{ "B0_TYPE", solver::B0_TYPE, "Type of cluster gluing matrix.", {
-			{"CORNERS", solver::B0_TYPEalternative::CORNERS, "Gluing based on corners."},
-			{"KERNELS", solver::B0_TYPEalternative::KERNELS, "Gluing based on kernels."} }},
+			{"CORNERS" , solver::B0_TYPEalternative::CORNERS , "Gluing based on corners."},
+			{"KERNELS" , solver::B0_TYPEalternative::KERNELS , "Gluing based on kernels."},
+			{"COMBINED", solver::B0_TYPEalternative::COMBINED, "Both corners and kernels."} }},
 
 	{ "USE_SCHUR_COMPLEMENT", solver::USE_SCHUR_COMPLEMENT, "Use schur complement for stiffness matrix processing" },
 	{ "SCHUR_COMPLEMENT_PREC", solver::SCHUR_COMPLEMENT_PREC, "Schur complement precision.", {
@@ -238,9 +236,6 @@ std::vector<espreso::Parameter> parameters = {
 	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by 'z' library.", WRITE_TO_HELP },
 	{ "OUTPUT_DECIMATION" , output::OUTPUT_DECIMATION,  "Output mesh size is reduced by VTK Decimation.", WRITE_TO_HELP },
 
-	{ "SAVE_FACES"      , output::SAVE_FACES      , "Save faces between subdomains." },
-	{ "SAVE_EDGES"      , output::SAVE_EDGES      , "Save edges among subdomains." },
-	{ "SAVE_CORNERS"    , output::SAVE_CORNERS    , "Save corner nodes." },
 	{ "SAVE_PROPERTIES" , output::SAVE_PROPERTIES , "Save properties of mesh elements.", WRITE_TO_HELP },
 	{ "SAVE_GLUING"     , output::SAVE_GLUING     , "Save gluing of sub-domains and clusters." },
 	{ "SAVE_RESULTS"    , output::SAVE_RESULTS    , "Save the results.", WRITE_TO_HELP },

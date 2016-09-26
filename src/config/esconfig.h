@@ -134,15 +134,6 @@ namespace output {
 	/// Mesh is decimated by this ratio
 	extern double OUTPUT_DECIMATION;
 
-	/// Save sub-domains common faces to VTK files.
-	extern bool SAVE_FACES;
-
-	/// Save sub-domains common edges to VTK files.
-	extern bool SAVE_EDGES;
-
-	/// Save sub-domains common vertices to VTK files.
-	extern bool SAVE_CORNERS;
-
 	/// Save nodes with Dirichlet condition to VTK files.
 	extern bool SAVE_PROPERTIES;
 
@@ -256,7 +247,9 @@ namespace solver {
 		/// Gluing based on corners
 		CORNERS = 0,
 		/// Gluing based on kernels of faces
-		KERNELS = 1
+		KERNELS = 1,
+		/// Both corners and kernels
+		COMBINED = 2
 	};
 	/// Type of cluster gluing matrix.
 	/**
