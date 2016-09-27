@@ -35,6 +35,7 @@ enum TestEvent {
 	TEST_LEVEL1,
 
 	EXPENSIVE,
+	EVALUATION,
 	TEST_LEVEL2,
 
 	PEDANTIC,
@@ -123,7 +124,16 @@ public:
 		BLUE
 	};
 
-	Info(InfoEvent event): event(event), color(TextColor::WHITE), _plain(false) {};
+	Info(InfoEvent event): event(event), color(TextColor::WHITE), _plain(false)
+	{
+		if (config::info::TESTING_LEVEL) {
+			switch (event) {
+			case CONVERGENCE:
+				os << "CONVERGENCE: ";
+				break;
+			}
+		}
+	};
 	~Info();
 
 	enum InfoMode { FORMATTED, PLAIN };

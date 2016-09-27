@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	Factory factory(configuration);
 	factory.solve("result");
 
-	ESTEST(SIMPLE)
+	ESTEST(EVALUATION)
 		<< (fabs(factory.norm() - config::solver::NORM) > 1e-3 && !config::env::MPIrank ? TEST_FAILED : TEST_PASSED)
 		<< "Norm of the solution " << factory.norm() << " is not " << config::solver::NORM << ".";
 

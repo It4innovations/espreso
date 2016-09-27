@@ -75,6 +75,13 @@ class Iterator:
             result[self.keys[i]] = self.items[self.keys[i]][self.pointers[i]]
         return result
 
+class RunInfo:
+
+    iterations = 0
+    precision = 1
+    oscilation = False
+    max_oscilation = 0
+
 class Espreso:
 
     def __init__(self, path=ESPRESO_ROOT, config={}):
@@ -168,6 +175,33 @@ class Espreso:
             raise Exception(error)
 
         return output
+
+    def info(self, processes, *args, **kwargs):
+        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
+
+        output, error = self.run_program(program, *args, **kwargs)
+        if error != "":
+            raise Exception(error)
+
+        info = RunInfo()
+        norm = 2
+        min = 2
+        for line in output.split("\n"):
+            if line.find("CONVERGENCE:") != -1:
+                try:
+                    info.iterations = int(line.split()[1])
+                except ValueError:
+                    continue
+                if norm < float(line.split()[2]):
+                    info.oscilation = True
+                norm = float(line.split()[2])
+                if min > norm:
+                    min = norm
+                if min < norm:
+                    info.max_oscilation = norm / min
+
+        info.precision = norm
+        return info
 
     def fail(self, processes, *args, **kwargs):
         program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
