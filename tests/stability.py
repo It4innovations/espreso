@@ -65,6 +65,15 @@ class ESPRESOTests(unittest.TestCase):
         info = RunInfo(self.espreso.output(procs, self.cube, config, []))
         self.ordinary_check(config, info)
 
+    def valgrind(self, procs, config, args):
+        config["ITERATIONS"] = 50
+        config["EPSILON"] = 1e-2
+        config["INPUT"] = "GENERATOR"
+        config["PATH"] = "metis_fixed_bottom.txt"
+        config["VERBOSE_LEVEL"] = 0
+        config["TESTING_LEVEL"] = 0
+        self.espreso.valgrind(procs, self.cube, config, args + [2, 2, 1, 3, 3, 5])
+
 if __name__ == '__main__':
 
     def create_instance(config, example):
@@ -80,6 +89,7 @@ if __name__ == '__main__':
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube_with_cyclic_edge, name + "_METIS_TWO_SUBDOMAINS", procs, config, args)
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_esdata, name + "_ESDATA", procs, config, args)
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_esdata, name + "_METIS_ESDATA", procs, config, args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.valgrind, name + "_VALGRIND", procs, config, args)
 
     config = {
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],

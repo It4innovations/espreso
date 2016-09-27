@@ -201,6 +201,15 @@ class Espreso:
         if output != "":
             raise Exception(output)
 
+    def valgrind(self, processes, *args, **kwargs):
+        program = [ "mpirun", "-n", str(processes), "valgrind", "-q", "--leak-check=full", "--suppressions={0}/espreso.supp".format(self.path), os.path.join(self.path, "espreso")]
+
+        output, error = self.run_program(program, *args, **kwargs)
+        if error != "":
+            raise Exception(error)
+        if output != "":
+            raise Exception(output)
+
     def decompose(self, *args, **kwargs):
         program = [ os.path.join(self.path, "generatordecomposer") ]
 
