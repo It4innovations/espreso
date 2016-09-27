@@ -60,6 +60,8 @@ bool                                     solver::KEEP_FACTORS          = true;
 
 solver::CGSOLVERalternative             solver::CGSOLVER             = solver::CGSOLVERalternative::STANDARD;
 
+
+
 solver::KSOLVERalternative               solver::KSOLVER               = solver::KSOLVERalternative::DIRECT_DP;
 double                                   solver::KSOLVER_SP_NORM       = 1e-12;
 size_t                                   solver::KSOLVER_SP_STEPS      = 1000;
@@ -185,8 +187,8 @@ std::vector<espreso::Parameter> parameters = {
 			{ "PIPELINED", solver::CGSOLVERalternative::PIPELINED, "Pipelined" },
 			{ "FULL_ORTOGONAL", solver::CGSOLVERalternative::FULL_ORTOGONAL, "Full ortogonalization" },
 			{ "GMRES", solver::CGSOLVERalternative::GMRES, "GMRES - allows non-symmetric systems" },
-      { "BICGSTAB", solver::CGSOLVERalternative::BICGSTAB, "BICGSTAB - allows non-symmetric systems" }}, WRITE_TO_HELP },
-
+			{ "BICGSTAB", solver::CGSOLVERalternative::BICGSTAB, "BICGSTAB - allows non-symmetric systems" },
+			{ "QPCE", solver::CGSOLVERalternative::QPCE, "QPCE - allows contact" }}, WRITE_TO_HELP },
 
 	{ "REGULARIZATION", solver::REGULARIZATION, "Regularization of stiffness matrix.", {
 			{ "FIX_POINTS", solver::REGULARIZATIONalternative::FIX_POINTS, "From fix points" },

@@ -165,6 +165,19 @@ public:
 	void Solve_non_singular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel );
 
 
+
+	// *** Power Method - Estimation of maximum eigenvalue of matrix
+	double Solve_power_method ( Cluster & cluster, double tol, eslocal maxit);
+
+	//  *** Projected gradient and its components
+	void proj_gradient ( SEQ_VECTOR <double> & x,SEQ_VECTOR <double> & g, SEQ_VECTOR <double> & lb,
+			double alpha, double prec, SEQ_VECTOR <double> & g_til, SEQ_VECTOR <double> & fi_til, SEQ_VECTOR <double> & beta_til,
+			SEQ_VECTOR <bool> & free );
+
+
+
+	void Solve_QPCE_singular_dom  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+
 	// *** CG solvers
 	void Solve_RegCG_singular_dom  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_full_ortho_CG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
