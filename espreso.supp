@@ -81,4 +81,19 @@
    fun:_intel_fast_memcpy
    ...
 }
+{
+   Cilk leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:pthread_create@@GLIBC_2.2.5
+   ...
+}
+{
+   mallock maybe MPI
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+}
+
 
