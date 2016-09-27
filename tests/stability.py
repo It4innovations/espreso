@@ -85,7 +85,8 @@ if __name__ == '__main__':
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
       "PRECONDITIONER": [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ],
       "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
-      "B0_TYPE": [ "CORNERS", "KERNELS" ]
+      "B0_TYPE": [ "CORNERS", "KERNELS" ],
+      "CGSOLVER": [ "STANDARD", "PIPELINED", "FULL_ORTOGONAL" ]
     }
 
     example = {
