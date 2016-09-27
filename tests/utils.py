@@ -77,10 +77,45 @@ class Iterator:
 
 class RunInfo:
 
-    iterations = 0
-    precision = 1
-    oscilation = False
-    max_oscilation = 0
+    def __init__(self, output):
+        self._iterations = 0
+        self._precision = 1
+        self._oscilated = False
+        self._max_oscilation = 0
+
+        norm = 2
+        min = 2
+        for line in output.split("\n"):
+            if line.find("CONVERGENCE:") != -1:
+                try:
+                    self._iterations = int(line.split()[1])
+                except ValueError:
+                    continue
+                if norm < float(line.split()[2]):
+                    self._oscilated = True
+                norm = float(line.split()[2])
+                if min > norm:
+                    min = norm
+                if min < norm:
+                    self._max_oscilation = norm / min
+
+        self._precision = norm
+
+    def iterations(self, min, max=None):
+        if self._iterations < min:
+            raise Exception("Unexpected number of iterations: {0}".format(self._iterations))
+        if max is not None and self._iterations > max:
+            raise Exception("Number of iterations is too high: {0}".format(self._iterations))
+
+    def precision(self, precision):
+        if self._precision > precision:
+            raise Exception("Example not convergated to a requested precision ({0} > {1}".format(self._precision, precision))
+
+    def oscilation(self, allowed, max=None):
+        if not allowed and self._oscilated:
+            raise Exception("Not allowed oscilation")
+        if max is not None and self._max_oscilation > max:
+            raise Exception("Oscilation {0} is higher than {1}".format(self._max_oscilation, max))
 
 class Espreso:
 
@@ -166,6 +201,13 @@ class Espreso:
         if output != "":
             raise Exception(output)
 
+    def decompose(self, *args, **kwargs):
+        program = [ os.path.join(self.path, "generatordecomposer") ]
+
+        output, error = self.run_program(program, *args, **kwargs)
+        if error != "":
+            raise Exception(error)
+        return output
 
     def output(self, processes, *args, **kwargs):
         program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
@@ -175,33 +217,6 @@ class Espreso:
             raise Exception(error)
 
         return output
-
-    def info(self, processes, *args, **kwargs):
-        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
-
-        output, error = self.run_program(program, *args, **kwargs)
-        if error != "":
-            raise Exception(error)
-
-        info = RunInfo()
-        norm = 2
-        min = 2
-        for line in output.split("\n"):
-            if line.find("CONVERGENCE:") != -1:
-                try:
-                    info.iterations = int(line.split()[1])
-                except ValueError:
-                    continue
-                if norm < float(line.split()[2]):
-                    info.oscilation = True
-                norm = float(line.split()[2])
-                if min > norm:
-                    min = norm
-                if min < norm:
-                    info.max_oscilation = norm / min
-
-        info.precision = norm
-        return info
 
     def fail(self, processes, *args, **kwargs):
         program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]

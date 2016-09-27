@@ -5,50 +5,65 @@ import unittest
 class ESPRESOTests(unittest.TestCase):
 
     espreso = Espreso()
+    cube = "tests/examples/linearElasticity/cube"
+
+    def ordinary_check(self, config, info):
+        info.precision(1e-4)
+        info.iterations(4)
+        if config["PRECONDITIONER"] == "DIRICHLET":
+            info.oscilation(True, 2);
+        else:
+            info.oscilation(True, 3);
 
     def regular_cube(self, procs, config, args):
         config["ITERATIONS"] = 300
         config["EPSILON"] = 1e-4
         config["INPUT"] = "GENERATOR"
         config["PATH"] = "regular_fixed_bottom.txt"
-        info = self.espreso.info(procs, "tests/examples/linearElasticity/cube", config, args + [2, 2, 2, 2, 2, 2])
-        if info.precision > config["EPSILON"]:
-            raise Exception("Example not convergated to a requested precision (" + str(info.precision) + " > " + str(config["EPSILON"]) + ")")
-        if config["PRECONDITIONER"] == "DIRICHLET":
-            if info.max_oscilation > 2:
-                raise Exception("Oscilation " + str(info.max_oscilation) + " is higher than 2")
-        else:
-            if info.max_oscilation > 3:
-                raise Exception("Oscilation " + str(info.max_oscilation) + " is higher than 3")
+        info = RunInfo(self.espreso.output(procs, self.cube, config, args + [2, 2, 2, 2, 2, 2]))
+        self.ordinary_check(config, info)
 
     def metis_cube(self, procs, config, args):
         config["ITERATIONS"] = 500
         config["EPSILON"] = 1e-4
         config["INPUT"] = "GENERATOR"
         config["PATH"] = "metis_fixed_bottom.txt"
-        info = self.espreso.info(procs, "tests/examples/linearElasticity/cube", config, args + [2, 2, 2, 5, 5, 5])
-        if info.precision > config["EPSILON"]:
-            raise Exception("Example not convergated to a requested precision (" + str(info.precision) + " > " + str(config["EPSILON"]) + ")")
-        if config["PRECONDITIONER"] == "DIRICHLET":
-            if info.max_oscilation > 2:
-                raise Exception("Oscilation " + str(info.max_oscilation) + " is higher than 2")
-        else:
-            if info.max_oscilation > 3:
-                raise Exception("Oscilation " + str(info.max_oscilation) + " is higher than 3")
+        info = RunInfo(self.espreso.output(procs, self.cube, config, args + [2, 2, 2, 5, 5, 5]))
+        self.ordinary_check(config, info)
 
     def metis_cube_with_cyclic_edge(self, procs, config, args):
         config["ITERATIONS"] = 300
         config["EPSILON"] = 1e-4
         config["INPUT"] = "GENERATOR"
         config["PATH"] = "metis_fixed_bottom.txt"
-        config["ITERATIONS"] = 20
-        info = self.espreso.info(procs, "tests/examples/linearElasticity/cube", config, args + [2, 1, 1, 2, 4, 4])
-        if config["PRECONDITIONER"] == "DIRICHLET":
-            if info.max_oscilation > 2:
-                raise Exception("Oscilation " + str(info.max_oscilation) + " is higher than 2")
-        else:
-            if info.max_oscilation > 3:
-                raise Exception("Oscilation " + str(info.max_oscilation) + " is higher than 3")
+        info = RunInfo(self.espreso.output(procs, self.cube, config, args + [2, 1, 1, 3, 6, 6]))
+        self.ordinary_check(config, info)
+
+    def regular_esdata(self, procs, config, args):
+        config["PATH"] = "regular_fixed_bottom.txt"
+        dArgs = args[0:1] + [1, 1, 1] + args[1:4] + [int(12 / args[1]), int(12 / args[2]), int(12 / args[3]), "REGULAR_" ]
+        self.espreso.decompose(self.cube, config, dArgs)
+
+        config["ITERATIONS"] = 300
+        config["EPSILON"] = 1e-4
+        config["SUBDOMAINS"] = 5
+        config["INPUT"] = "ESDATA"
+        config["PATH"] = "REGULAR_" + str(procs)
+        info = RunInfo(self.espreso.output(procs, self.cube, config, []))
+        self.ordinary_check(config, info)
+
+    def metis_esdata(self, procs, config, args):
+        config["PATH"] = "metis_fixed_bottom.txt"
+        dArgs = args[0:1] + [1, 1, 1] + args[1:4] + [int(12 / args[1]), int(12 / args[2]), int(12 / args[3]), "METIS_" ]
+        self.espreso.decompose(self.cube, config, dArgs)
+
+        config["ITERATIONS"] = 500
+        config["EPSILON"] = 1e-4
+        config["SUBDOMAINS"] = 4
+        config["INPUT"] = "ESDATA"
+        config["PATH"] = "METIS_" + str(procs)
+        info = RunInfo(self.espreso.output(procs, self.cube, config, []))
+        self.ordinary_check(config, info)
 
 if __name__ == '__main__':
 
@@ -63,6 +78,8 @@ if __name__ == '__main__':
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, name, procs, config, args)
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, name + "_METIS", procs, config, args)
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube_with_cyclic_edge, name + "_METIS_TWO_SUBDOMAINS", procs, config, args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_esdata, name + "_ESDATA", procs, config, args)
+            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_esdata, name + "_METIS_ESDATA", procs, config, args)
 
     config = {
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
