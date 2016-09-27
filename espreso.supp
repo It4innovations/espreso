@@ -27,7 +27,7 @@
    PARDISO jump
    Memcheck:Cond
    ...
-   fun:mkl_pds_lp64_pardiso
+   fun:mkl_*
    ...
 }
 {
@@ -35,7 +35,7 @@
    Memcheck:Leak
    match-leak-kinds: definite
    ...
-   fun:mkl_pds_lp64_pardiso
+   fun:mkl_*
    ...
 }
 {
@@ -54,9 +54,31 @@
    fun:main
 }
 {
+   MPI Cond
+   Memcheck:Cond
+   ...
+   fun:PMPI_Init
+   fun:main
+}
+{
    MKL leak
    Memcheck:Leak
    match-leak-kinds: possible
    ...
-   fun:mkl_pds_lp64_*
+   fun:mkl_*
 }
+{
+   OMP num procs
+   Memcheck:Param
+   sched_setaffinity(mask)
+   ...
+   fun:omp_get_num_procs@@VERSION
+   ...
+}
+{
+   intel memcpy
+   Memcheck:Overlap
+   fun:_intel_fast_memcpy
+   ...
+}
+
