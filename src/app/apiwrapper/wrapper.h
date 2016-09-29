@@ -13,7 +13,9 @@
 struct FETI4IStructMatrix {
 	FETI4IStructMatrix(eslocal offset): offset(offset) {};
 
-	std::vector<std::vector<eslocal> > eIndices;
+	std::vector<eslocal> types;
+	std::vector<std::vector<eslocal> > eNodes;
+	std::vector<std::vector<eslocal> > eDOFs;
 	std::vector<std::vector<double> > eMatrices;
 
 	eslocal offset;
@@ -21,7 +23,7 @@ struct FETI4IStructMatrix {
 
 struct FETI4IStructInstance {
 	FETI4IStructInstance(FETI4IStructMatrix &matrix)
-	: instance(NULL), mesh(matrix.eMatrices) {};
+	: instance(NULL), mesh(matrix.eDOFs, matrix.eMatrices) {};
 	~FETI4IStructInstance() { if (instance != NULL) { delete instance; } }
 
 	espreso::Instance *instance;

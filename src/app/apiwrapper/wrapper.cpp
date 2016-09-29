@@ -10,35 +10,6 @@ espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
 
 using namespace espreso;
 
-template <typename Ttype>
-static void readFile(typename std::vector<Ttype> &vector, std::string fileName) {
-	vector.clear();
-	std::ifstream file(fileName.c_str());
-	if (file.is_open()) {
-		Ttype value;
-		while (file >> value) {
-			vector.push_back(value);
-		}
-	} else {
-		ESINFO(ERROR) << "Cannot read file " << fileName;
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void readBinary(std::vector<double> &vector, std::string fileName) {
-	std::ifstream file(fileName.c_str(), std::fstream::binary);
-	if (file.is_open()) {
-		for (size_t i = 0; i < vector.size(); i++) {
-			double value;
-			file.read(reinterpret_cast<char *>(&value), sizeof(double));
-			vector[i] = value;
-		}
-	} else {
-		ESINFO(ERROR) << "Cannot read file " << fileName;
-		exit(EXIT_FAILURE);
-	}
-}
-
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
 	options[FETI4I_SUBDOMAINS] = config::mesh::SUBDOMAINS;
@@ -122,12 +93,13 @@ void FETI4ICreateStiffnessMatrix(
 }
 
 void FETI4IAddElement(
-		FETI4IMatrix 	matrix,
+		FETI4IMatrix	matrix,
+		FETI4IInt		type,
 		FETI4IInt		nodesSize,
 		FETI4IInt		nodes,
-		FETI4IInt 		dofsSize,
-		FETI4IInt* 		dofs,
-		FETI4IReal* 	values)
+		FETI4IInt		dofsSize,
+		FETI4IInt*		dofs,
+		FETI4IReal*		values)
 {
 	espreso::DataHolder::timeStatistics.timeEvents.back().startWithoutBarrier();
 
@@ -137,8 +109,11 @@ void FETI4IAddElement(
 	}
 
 	eslocal offset = matrix->offset;
-	matrix->eIndices.push_back(std::vector<eslocal>(dofs, dofs + dofsSize));
-	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
+	matrix->types.push_back(type);
+	matrix->eNodes.push_back(std::vector<eslocal>(nodes, nodes + nodesSize));
+	matrix->eDOFs.push_back(std::vector<eslocal>(dofs, dofs + dofsSize));
+	std::for_each(matrix->eNodes.back().begin(), matrix->eNodes.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
+	std::for_each(matrix->eDOFs.back().begin(), matrix->eDOFs.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
 	matrix->eMatrices.push_back(std::vector<double>(values, values + dofsSize * dofsSize));
 
 	espreso::DataHolder::timeStatistics.timeEvents.back().endWithoutBarrier();
@@ -169,7 +144,7 @@ void FETI4ICreateInstance(
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix));
-	input::API::load(DataHolder::instances.back()->mesh, matrix->eIndices, neighClusters, size, l2g);
+	input::API::load(DataHolder::instances.back()->mesh, matrix->eNodes, neighClusters, size, l2g);
 
 	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(
 			DataHolder::instances.back()->mesh,
@@ -224,93 +199,3 @@ void FETI4IDestroy(void *data)
 	destroy(DataHolder::instances, data);
 }
 
-
-void TEST4IGetElementsInfo(
-		FETI4IInt		*elements,
-		FETI4IInt		*elementSize)
-{
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
-	std::vector<FETI4IInt> eCount;
-	std::vector<FETI4IInt> eSize;
-	std::stringstream ssEl, ssKi;
-	ssEl << "examples/api/cube/" << config::env::MPIrank << "/elements.txt";
-	ssKi << "examples/api/cube/" << config::env::MPIrank << "/Ki0.txt";
-	readFile(eCount, ssEl.str());
-	readFile(eSize, ssKi.str());
-
-	*elements = eCount.size();
-	*elementSize = eSize.size();
-}
-
-void TEST4IGetElement(
-		FETI4IInt		index,
-		FETI4IInt*		*indices,
-		FETI4IReal*		*values)
-{
-	std::vector<FETI4IInt> Ki;
-	std::vector<FETI4IReal> Kv;
-
-	std::stringstream ssKi, ssKv;
-	ssKi << "examples/api/cube/" << config::env::MPIrank << "/Ki" << index << ".txt";
-	ssKv << "examples/api/cube/" << config::env::MPIrank << "/Ke" << index << ".bin";
-	readFile(Ki, ssKi.str());
-	Kv.resize(Ki.size() * Ki.size());
-	readBinary(Kv, ssKv.str());
-	memcpy(indices, Ki.data(), Ki.size() * sizeof(eslocal));
-	memcpy(values, Kv.data(), Kv.size() * sizeof(double));
-}
-
-void TEST4IGetInstanceInfo(
-		FETI4IInt		*rhs_size,
-		FETI4IInt		*dirichlet_size,
-		FETI4IInt		*neighbours_size)
-{
-	std::vector<FETI4IReal> rhs;
-	std::vector<FETI4IInt> dirichlet;
-	std::vector<FETI4IMPIInt> neighbours;
-
-	std::stringstream ssRhs, ssD, ssN;
-	ssRhs << "examples/api/cube/" << config::env::MPIrank << "/rhs.txt";
-	ssD << "examples/api/cube/" << config::env::MPIrank << "/dirichlet_indices.txt";
-	ssN << "examples/api/cube/" << config::env::MPIrank << "/neighbours.txt";
-	readFile(rhs, ssRhs.str().c_str());
-	readFile(dirichlet, ssD.str().c_str());
-	readFile(neighbours, ssN.str().c_str());
-
-	*rhs_size = rhs.size();
-	*dirichlet_size = dirichlet.size();
-	*neighbours_size = neighbours.size();
-}
-
-void TEST4IGetInstance(
-		FETI4IReal*		*rhs,
-		FETI4IInt*		*l2g,
-		FETI4IInt*		*dirichlet_indices,
-		FETI4IReal*		*dirichlet_values,
-		FETI4IInt*		*neighbours)
-{
-	std::vector<FETI4IReal> _rhs;
-	std::vector<FETI4IInt> _l2g;
-	std::vector<FETI4IInt> _dirichlet_indices;
-	std::vector<FETI4IReal> _dirichlet_values;
-	std::vector<FETI4IMPIInt> _neighbours;
-
-	std::stringstream ssRhs, ssL, ssDi, ssDv, ssN;
-	ssRhs << "examples/api/cube/" << config::env::MPIrank << "/rhs.txt";
-	ssL << "examples/api/cube/" << config::env::MPIrank << "/l2g.txt";
-	ssDi << "examples/api/cube/" << config::env::MPIrank << "/dirichlet_indices.txt";
-	ssDv << "examples/api/cube/" << config::env::MPIrank << "/dirichlet_values.txt";
-	ssN << "examples/api/cube/" << config::env::MPIrank << "/neighbours.txt";
-	readFile(_rhs, ssRhs.str());
-	readFile(_dirichlet_indices, ssDi.str());
-	readFile(_dirichlet_values, ssDv.str());
-	readFile(_l2g, ssL.str());
-	readFile(_neighbours, ssN.str());
-
-	memcpy(rhs, _rhs.data(), _rhs.size() * sizeof(double));
-	memcpy(l2g, _l2g.data(), _l2g.size() * sizeof(eslocal));
-	memcpy(dirichlet_indices, _dirichlet_indices.data(), _dirichlet_indices.size() * sizeof(eslocal));
-	memcpy(dirichlet_values, _dirichlet_values.data(), _dirichlet_values.size() * sizeof(double));
-	memcpy(neighbours, _neighbours.data(), _neighbours.size() * sizeof(eslocal));
-}

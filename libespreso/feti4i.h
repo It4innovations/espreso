@@ -87,7 +87,7 @@ void FETI4ISetDefaultRealOptions(
  * @param indexBase a value of the first matrix index
  */
 void FETI4ICreateStiffnessMatrix(
-		FETI4IMatrix 	*matrix,
+		FETI4IMatrix	*matrix,
 		FETI4IInt		indexBase
 );
 
@@ -97,6 +97,7 @@ void FETI4ICreateStiffnessMatrix(
  * The method assumes symmetric stiffness element matrix.
  *
  * @param matrix a data holder of a stiffness matrix
+ * @param type a type of the element
  * @param nodesSize the number of nodes of the added element
  * @param nodes an array of local nodes of the element matrix
  * @param dofsSize the number of rows of square matrix
@@ -104,12 +105,13 @@ void FETI4ICreateStiffnessMatrix(
  * @param values an array of values in row-major-order [size x size]
  */
 void FETI4IAddElement(
-		FETI4IMatrix 	matrix,
+		FETI4IMatrix	matrix,
+		FETI4IInt		type,
 		FETI4IInt		nodesSize,
 		FETI4IInt		nodes,
-		FETI4IInt 		dofsSize,
-		FETI4IInt* 		dofs,
-		FETI4IReal* 	values
+		FETI4IInt		dofsSize,
+		FETI4IInt*		dofs,
+		FETI4IReal*		values
 );
 
 /*-----------------------------------------------------------------------------
@@ -136,16 +138,16 @@ void FETI4IAddElement(
  * @param real_options an array of real parameters - see enum 'FETI4IRealOptions'
  */
 void FETI4ICreateInstance(
-		FETI4IInstance 	*instance,
-		FETI4IMatrix 	matrix,
-		FETI4IInt 		size,
-		FETI4IReal* 	rhs,
-		FETI4IInt* 		l2g,
-		FETI4IMPIInt 	neighbours_size,
+		FETI4IInstance	*instance,
+		FETI4IMatrix	matrix,
+		FETI4IInt		size,
+		FETI4IReal*		rhs,
+		FETI4IInt*		l2g,
+		FETI4IMPIInt	neighbours_size,
 		FETI4IMPIInt*	neighbours,
-		FETI4IInt 		dirichlet_size,
-		FETI4IInt* 		dirichlet_indices,
-		FETI4IReal* 	dirichlet_values,
+		FETI4IInt		dirichlet_size,
+		FETI4IInt*		dirichlet_indices,
+		FETI4IReal*		dirichlet_values,
 		FETI4IInt*		integer_options,
 		FETI4IReal*		real_options
 );
@@ -160,8 +162,8 @@ void FETI4ICreateInstance(
  * @param solution an array where is save the solution
  */
 void FETI4ISolve(
-		FETI4IInstance 	instance,          // pointer to an instance
-		FETI4IInt 		solution_size,     // size of solution vector
+		FETI4IInstance	instance,          // pointer to an instance
+		FETI4IInt		solution_size,     // size of solution vector
 		FETI4IReal*		solution           // solution
 );
 
@@ -171,21 +173,21 @@ void FETI4ISolve(
 ------------------------------------------------------------------------------*/
 
 void FETI4IUpdateStiffnessMatrix(
-		FETI4IInstance 	instance,
-		FETI4IMatrix 	stiffnessMatrix
+		FETI4IInstance	instance,
+		FETI4IMatrix	stiffnessMatrix
 );
 
 void FETI4IUpdateRhs(
-		FETI4IInstance 	instance,
-		FETI4IInt 		size,
-		FETI4IReal* 	values
+		FETI4IInstance	instance,
+		FETI4IInt		size,
+		FETI4IReal*		values
 );
 
 void FETI4IUpdateDirichlet(
-		FETI4IInstance 	instance,
-		FETI4IInt 		size,
-		FETI4IInt* 		indices,
-		FETI4IReal* 	values
+		FETI4IInstance	instance,
+		FETI4IInt		size,
+		FETI4IInt*		indices,
+		FETI4IReal*		values
 );
 
 
@@ -200,7 +202,7 @@ void FETI4IUpdateDirichlet(
  * @param ptr an address to a data holder
  */
 void FETI4IDestroy(
-		void* 			ptr
+		void*			ptr
 );
 
 #ifdef __cplusplus
@@ -241,6 +243,18 @@ typedef enum {
 
 	FETI4I_REAL_OPTIONS_SIZE
 } FETI4IRealOptions;
+
+/// List of allowed element types
+/**
+ * ESPRESO needs to know a type of mesh elements.
+ * The type corresponds with element dimension.
+ */
+typedef enum {
+	FETI4I_POINT,
+	FETI4I_LINE,
+	FETI4I_PLANE,
+	FETI4I_VOLUME,
+} FETI4IElementType;
 
 #endif /* FETI4I_H_ */
 
