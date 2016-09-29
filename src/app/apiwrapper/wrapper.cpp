@@ -123,21 +123,23 @@ void FETI4ICreateStiffnessMatrix(
 
 void FETI4IAddElement(
 		FETI4IMatrix 	matrix,
-		FETI4IInt 		size,
-		FETI4IInt* 		indices,
+		FETI4IInt		nodesSize,
+		FETI4IInt		nodes,
+		FETI4IInt 		dofsSize,
+		FETI4IInt* 		dofs,
 		FETI4IReal* 	values)
 {
 	espreso::DataHolder::timeStatistics.timeEvents.back().startWithoutBarrier();
 
-	if (std::all_of(values, values + size, [] (double &value) { return value == 0; })) {
+	if (std::all_of(values, values + dofsSize, [] (double &value) { return value == 0; })) {
 		// Skip elements with zero values
 		return;
 	}
 
 	eslocal offset = matrix->offset;
-	matrix->eIndices.push_back(std::vector<eslocal>(indices, indices + size));
+	matrix->eIndices.push_back(std::vector<eslocal>(dofs, dofs + dofsSize));
 	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
-	matrix->eMatrices.push_back(std::vector<double>(values, values + size * size));
+	matrix->eMatrices.push_back(std::vector<double>(values, values + dofsSize * dofsSize));
 
 	espreso::DataHolder::timeStatistics.timeEvents.back().endWithoutBarrier();
 }

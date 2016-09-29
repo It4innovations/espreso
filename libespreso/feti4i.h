@@ -97,14 +97,18 @@ void FETI4ICreateStiffnessMatrix(
  * The method assumes symmetric stiffness element matrix.
  *
  * @param matrix a data holder of a stiffness matrix
- * @param size the number of rows of square matrix
- * @param indices an array of local DOFs of an element matrix [size]
+ * @param nodesSize the number of nodes of the added element
+ * @param nodes an array of local nodes of the element matrix
+ * @param dofsSize the number of rows of square matrix
+ * @param dofs an array of local DOFs of the element matrix [size]
  * @param values an array of values in row-major-order [size x size]
  */
 void FETI4IAddElement(
 		FETI4IMatrix 	matrix,
-		FETI4IInt 		size,
-		FETI4IInt* 		indices,
+		FETI4IInt		nodesSize,
+		FETI4IInt		nodes,
+		FETI4IInt 		dofsSize,
+		FETI4IInt* 		dofs,
 		FETI4IReal* 	values
 );
 
@@ -173,15 +177,15 @@ void FETI4IUpdateStiffnessMatrix(
 
 void FETI4IUpdateRhs(
 		FETI4IInstance 	instance,
-		FETI4IInt 		rhs_size,
-		FETI4IReal* 	rhs_values
+		FETI4IInt 		size,
+		FETI4IReal* 	values
 );
 
 void FETI4IUpdateDirichlet(
 		FETI4IInstance 	instance,
-		FETI4IInt 		dirichlet_size,
-		FETI4IInt* 		dirichlet_indices,
-		FETI4IReal* 	dirichlet_values
+		FETI4IInt 		size,
+		FETI4IInt* 		indices,
+		FETI4IReal* 	values
 );
 
 
@@ -198,38 +202,6 @@ void FETI4IUpdateDirichlet(
 void FETI4IDestroy(
 		void* 			ptr
 );
-
-/*-----------------------------------------------------------------------------
- API testing functions
-------------------------------------------------------------------------------*/
-
-void FETI4ITest();
-
-void TEST4IGetElementsInfo(
-		FETI4IInt		*elements,
-		FETI4IInt		*elementSize
-);
-
-void TEST4IGetElement(
-		FETI4IInt		index,
-		FETI4IInt*		*indices,
-		FETI4IReal*		*values
-);
-
-void TEST4IGetInstanceInfo(
-		FETI4IInt		*rhs_size,
-		FETI4IInt		*dirichlet_size,
-		FETI4IInt		*neighbours_size
-);
-
-void TEST4IGetInstance(
-		FETI4IReal*		*rhs,
-		FETI4IInt*		*l2g,
-		FETI4IInt*		*dirichlet_indices,
-		FETI4IReal*		*dirichlet_values,
-		FETI4IInt*		*neighbours
-);
-
 
 #ifdef __cplusplus
 }
