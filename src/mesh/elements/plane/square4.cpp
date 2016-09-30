@@ -4,8 +4,6 @@
 
 using namespace espreso;
 
-size_t Square4::_counter = 0;
-
 std::vector<Property> Square4::_DOFElement;
 std::vector<Property> Square4::_DOFFace;
 std::vector<Property> Square4::_DOFEdge;
@@ -141,7 +139,7 @@ void Square4::setEdge(Element* edge)
 	ESINFO(GLOBAL_ERROR) << "Invalid edge";
 }
 
-Point Square4::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Square4::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	auto it = std::find(_edges.begin(), _edges.end(), edge);
 	size_t i = it - _edges.begin();

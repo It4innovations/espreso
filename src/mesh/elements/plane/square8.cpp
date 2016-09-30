@@ -4,8 +4,6 @@
 
 using namespace espreso;
 
-size_t Square8::_counter = 0;
-
 std::vector<Property> Square8::_DOFElement;
 std::vector<Property> Square8::_DOFFace;
 std::vector<Property> Square8::_DOFEdge;
@@ -175,7 +173,7 @@ void Square8::setEdge(Element* edge)
 	ESINFO(GLOBAL_ERROR) << "Invalid edge";
 }
 
-Point Square8::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Square8::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();

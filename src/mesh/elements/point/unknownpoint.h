@@ -1,23 +1,21 @@
 
-#ifndef SRC_MESH_ELEMENTS_POINT_DOF_H_
-#define SRC_MESH_ELEMENTS_POINT_DOF_H_
+#ifndef SRC_MESH_ELEMENTS_POINT_UNKNOWNPOINT_H_
+#define SRC_MESH_ELEMENTS_POINT_UNKNOWNPOINT_H_
 
 #include "pointelement.h"
 
-#define DOFGPCount 0
-#define DOFVTKCode -1
-
 namespace espreso {
 
-class DOF: public PointElement
+class UnknownPoint: public PointElement
 {
 
 public:
-	DOF(eslocal index): PointElement(index) {};
-	Element* copy() const { return new DOF(*this); }
+	UnknownPoint(eslocal index): PointElement(index) {};
+	Element* copy() const { return new UnknownPoint(*this); }
 
-	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of DOF."; return -1; }
-	size_t gaussePoints() const { return DOFGPCount; }
+	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of unknown point."; return -1; }
+
+	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown point has no gausse points."; return 0; }
 
 	const std::vector<DenseMatrix>& dN() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
 	const std::vector<DenseMatrix>& N() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
@@ -34,4 +32,4 @@ public:
 
 
 
-#endif /* SRC_MESH_ELEMENTS_POINT_DOF_H_ */
+#endif /* SRC_MESH_ELEMENTS_POINT_UNKNOWNPOINT_H_ */

@@ -4,8 +4,6 @@
 
 using namespace espreso;
 
-size_t Triangle3::_counter = 0;
-
 std::vector<Property> Triangle3::_DOFElement;
 std::vector<Property> Triangle3::_DOFFace;
 std::vector<Property> Triangle3::_DOFEdge;
@@ -184,7 +182,7 @@ void Triangle3::setEdge(Element* edge)
 	ESINFO(GLOBAL_ERROR) << "Invalid edge";
 }
 
-Point Triangle3::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Triangle3::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	auto it = std::find(_edges.begin(), _edges.end(), edge);
 	size_t i = it - _edges.begin();

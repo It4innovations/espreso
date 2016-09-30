@@ -100,8 +100,8 @@ public:
 	virtual size_t coarseNodes() const = 0;
 	virtual size_t gaussePoints() const = 0;
 
-	virtual Point faceNormal(const Element *face) = 0;
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) = 0;
+	virtual Point faceNormal(const Element *face) const = 0;
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const = 0;
 
 	virtual Element* face(size_t index) const = 0;
 	virtual Element* edge(size_t index) const = 0;
@@ -114,7 +114,7 @@ public:
 	virtual void setParam(Params param, eslocal value) =0;
 	virtual size_t params() const =0;
 
-	Type type() const { return _type; }
+	virtual Type type() const =0;
 
 	Settings& settings() { return _settings; }
 	const Settings& settings() const { return _settings; }
@@ -203,7 +203,6 @@ protected:
 	std::vector<eslocal> _clusters;
 	std::vector<eslocal> _DOFsIndices;
 	std::vector<eslocal> _DOFsDomainsCounters;
-	Type _type;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Element &e)

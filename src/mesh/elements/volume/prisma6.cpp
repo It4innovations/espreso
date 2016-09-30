@@ -6,8 +6,6 @@
 
 using namespace espreso;
 
-size_t Prisma6::_counter = 0;
-
 std::vector<Property> Prisma6::_DOFElement;
 std::vector<Property> Prisma6::_DOFFace;
 std::vector<Property> Prisma6::_DOFEdge;
@@ -263,13 +261,13 @@ void Prisma6::setEdge(Element* edge)
 	ESINFO(GLOBAL_ERROR) << "Set edge";
 }
 
-Point Prisma6::faceNormal(const Element *face)
+Point Prisma6::faceNormal(const Element *face) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();
 }
 
-Point Prisma6::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Prisma6::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();

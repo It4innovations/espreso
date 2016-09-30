@@ -6,8 +6,6 @@
 
 using namespace espreso;
 
-size_t Pyramid13::_counter = 0;
-
 std::vector<Property> Pyramid13::_DOFElement;
 std::vector<Property> Pyramid13::_DOFFace;
 std::vector<Property> Pyramid13::_DOFEdge;
@@ -348,13 +346,13 @@ void Pyramid13::setEdge(Element* edge)
 	ESINFO(GLOBAL_ERROR) << "Set edge";
 }
 
-Point Pyramid13::faceNormal(const Element *face)
+Point Pyramid13::faceNormal(const Element *face) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();
 }
 
-Point Pyramid13::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Pyramid13::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();

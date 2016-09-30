@@ -1,8 +1,8 @@
 
-#ifndef PYRAMID13_H_
-#define PYRAMID13_H_
+#ifndef SRC_MESH_ELEMENTS_VOLUME_PYRAMID13_H_
+#define SRC_MESH_ELEMENTS_VOLUME_PYRAMID13_H_
 
-#include "../element.h"
+#include "volumeelement.h"
 #include "../plane/square8.h"
 #include "../plane/triangle6.h"
 #include "pyramid5.h"
@@ -16,15 +16,11 @@
 
 namespace espreso {
 
-class Pyramid13: public Element
+class Pyramid13: public VolumeElement
 {
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter()
-	{
-		return _counter;
-	}
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -45,9 +41,6 @@ public:
 
 	eslocal nCommon() const { return Pyramid13CommonNodes; }
 	eslocal vtkCode() const { return Pyramid13VTKCode; }
-	eslocal param(Params param) const { return _params[param]; };
-	void setParam(Params param, eslocal value) { _params[param] = value; }
-	size_t params() const { return PARAMS_SIZE; }
 
 	size_t faces() const { return Pyramid13FacesCount; }
 	size_t edges() const { return Pyramid13EdgeCount; }
@@ -55,8 +48,8 @@ public:
 	size_t coarseNodes() const { return Pyramid5NodesCount; }
 	size_t gaussePoints() const { return Pyramid13GPCount; }
 
-	virtual Point faceNormal(const Element *face);
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates);
+	virtual Point faceNormal(const Element *face) const;
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
 	virtual Element* face(size_t index) const { return _faces[index]; }
 	virtual Element* edge(size_t index) const { return _edges[index]; }
 
@@ -85,11 +78,6 @@ protected:
 
 private:
 	eslocal _indices[Pyramid13NodesCount];
-	eslocal _params[PARAMS_SIZE];
-	std::vector<Element*> _edges;
-	std::vector<Element*> _faces;
-
-	static size_t _counter;
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -105,4 +93,4 @@ private:
 }
 
 
-#endif /* PYRAMID5_H_ */
+#endif /* SRC_MESH_ELEMENTS_VOLUME_PYRAMID13_H_ */

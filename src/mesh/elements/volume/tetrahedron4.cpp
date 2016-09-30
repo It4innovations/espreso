@@ -5,8 +5,6 @@
 
 using namespace espreso;
 
-size_t Tetrahedron4::_counter = 0;
-
 std::vector<Property> Tetrahedron4::_DOFElement;
 std::vector<Property> Tetrahedron4::_DOFFace;
 std::vector<Property> Tetrahedron4::_DOFEdge;
@@ -282,13 +280,13 @@ void Tetrahedron4::setEdge(Element* edge)
 	ESINFO(GLOBAL_ERROR) << "Set edge";
 }
 
-Point Tetrahedron4::faceNormal(const Element *face)
+Point Tetrahedron4::faceNormal(const Element *face) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();
 }
 
-Point Tetrahedron4::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Tetrahedron4::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();

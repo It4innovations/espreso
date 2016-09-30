@@ -1,24 +1,23 @@
-#ifndef SQUARE8_H_
-#define SQUARE8_H_
 
-#include "../element.h"
+#ifndef SRC_MESH_ELEMENTS_PLANE_SQUARE8_H_
+#define SRC_MESH_ELEMENTS_PLANE_SQUARE8_H_
+
+#include "planeelement.h"
 #include "square4.h"
 
 #define Square8NodesCount 8
 #define Square8EdgeCount 4
-#define Square8FacesCount 0
 #define Square8GPCount 9
 #define Square8CommonNodes 3
 #define Square8VTKCode 23
 
 namespace espreso {
 
-class Square8: public Element
+class Square8: public PlaneElement
 {
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter() { return _counter; }
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -40,20 +39,13 @@ public:
 
 	eslocal nCommon() const { return Square8CommonNodes; }
 	eslocal vtkCode() const { return Square8VTKCode; }
-	eslocal param(Params param) const { return _params[param]; };
-	void setParam(Params param, eslocal value) { _params[param] = value; }
-	size_t params() const { return _params.size(); }
 
-	size_t faces() const { return Square8FacesCount; }
 	size_t edges() const { return Square8EdgeCount; }
 	size_t nodes() const { return Square8NodesCount; }
 	size_t coarseNodes() const { return Square4NodesCount; }
 	size_t gaussePoints() const { return Square8GPCount; }
 
-	virtual Point faceNormal(const Element *face) { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; return Point(); }
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates);
-	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; return NULL; }
-	virtual Element* edge(size_t index) const { return _edges[index]; };
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
 
 	const std::vector<DenseMatrix>& dN() const { return Square8::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Square8::_N; }
@@ -70,20 +62,12 @@ protected:
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
 
-	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Square8 has no face"; }
 	void setEdge(Element* edge);
 
-	void fillFaces() {};
 	void fillEdges();
 
 private:
 	eslocal _indices[Square8NodesCount];
-	std::vector<eslocal> _params;
-	std::vector<Element*> _edges;
-
-	static size_t _counter;
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -99,4 +83,4 @@ private:
 }
 
 
-#endif /* SQUARE8_H_ */
+#endif /* SRC_MESH_ELEMENTS_PLANE_SQUARE8_H_ */

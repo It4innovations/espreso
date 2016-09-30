@@ -1,24 +1,22 @@
-#ifndef LINE3_H_
-#define LINE3_H_
 
-#include "../element.h"
+#ifndef SRC_MESH_ELEMENTS_LINE_LINE3_H_
+#define SRC_MESH_ELEMENTS_LINE_LINE3_H_
+
+#include "lineelement.h"
 #include "line2.h"
 
 #define Line3NodesCount 3
-#define Line3EdgeCount 0
-#define Line3FacesCount 0
 #define Line3GPCount 3
 #define Line3CommonNodes 1
 #define Line3VTKCode 4
 
 namespace espreso {
 
-class Line3: public Element
+class Line3: public LineElement
 {
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter() { return _counter; }
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -39,20 +37,10 @@ public:
 
 	eslocal nCommon() const { return Line3CommonNodes; }
 	eslocal vtkCode() const { return Line3VTKCode; }
-	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Line3 has no params"; return 0; }
-	void setParam(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Line3 has no params"; }
-	size_t params() const { return 0; }
 
-	size_t faces() const { return Line3FacesCount; }
-	size_t edges() const { return Line3EdgeCount; }
 	size_t nodes() const { return Line3NodesCount; }
 	size_t coarseNodes() const { return Line2NodesCount; }
 	size_t gaussePoints() const { return Line3GPCount; }
-
-	virtual Point faceNormal(const Element *face) { ESINFO(GLOBAL_ERROR) << "Line3 has no face"; return Point(); }
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) { ESINFO(GLOBAL_ERROR) << "Line3 has no edge"; return Point(); }
-	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line3 has no face"; return NULL; }
-	virtual Element* edge(size_t index) const { ESINFO(GLOBAL_ERROR) << "Line3 has no edge"; return NULL; }
 
 	const std::vector<DenseMatrix>& dN() const { return Line3::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Line3::_N; }
@@ -69,18 +57,8 @@ protected:
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
 
-	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Line3 has no face"; }
-	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Line3 has no edge"; }
-	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Line3 has no face"; }
-	void setEdge(Element* edge) { ESINFO(GLOBAL_ERROR) << "Line3 has no edge"; }
-
-	void fillFaces() {};
-	void fillEdges() {};
-
 private:
 	eslocal _indices[Line3NodesCount];
-
-	static size_t _counter;
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -96,4 +74,4 @@ private:
 }
 
 
-#endif /* LINE3_H_ */
+#endif /* SRC_MESH_ELEMENTS_LINE_LINE3_H_ */

@@ -1,24 +1,23 @@
-#ifndef SQUARE4_H_
-#define SQUARE4_H_
 
-#include "../element.h"
+#ifndef SRC_MESH_ELEMENTS_PLANE_SQUARE4_H_
+#define SRC_MESH_ELEMENTS_PLANE_SQUARE4_H_
+
+#include "planeelement.h"
 #include "../line/line2.h"
 
 #define Square4NodesCount 4
 #define Square4EdgeCount 4
-#define Square4FacesCount 0
 #define Square4GPCount 4
 #define Square4CommonNodes 2
 #define Square4VTKCode 9
 
 namespace espreso {
 
-class Square4: public Element
+class Square4: public PlaneElement
 {
 
 public:
 	static bool match(const eslocal *indices, eslocal n);
-	static size_t counter() { return _counter; }
 	static void setDOFs(
 			const std::vector<Property> element,
 			const std::vector<Property> face,
@@ -40,20 +39,13 @@ public:
 
 	eslocal nCommon() const { return Square4CommonNodes; }
 	eslocal vtkCode() const { return Square4VTKCode; }
-	eslocal param(Params param) const { return _params[param]; }
-	void setParam(Params param, eslocal value) { _params[param] = value; }
-	size_t params() const { return _params.size(); }
 
-	size_t faces() const { return Square4FacesCount; }
 	size_t edges() const { return Square4EdgeCount; }
 	size_t nodes() const { return Square4NodesCount; }
 	size_t coarseNodes() const { return Square4NodesCount; }
 	size_t gaussePoints() const { return Square4GPCount; }
 
-	virtual Point faceNormal(const Element *face) { ESINFO(GLOBAL_ERROR) << "Square4 has no face"; return Point(); }
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates);
-	virtual Element* face(size_t index) const { ESINFO(GLOBAL_ERROR) << "Square4 has no face"; return NULL; }
-	virtual Element* edge(size_t index) const { return _edges[index]; };
+	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
 
 	const std::vector<DenseMatrix>& dN() const { return Square4::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Square4::_N; }
@@ -70,20 +62,12 @@ protected:
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
 
-	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Square4 has no face"; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Square4 has no face"; }
 	void setEdge(Element* edge);
 
-	void fillFaces() {};
 	void fillEdges();
 
 private:
 	eslocal _indices[Square4NodesCount];
-	std::vector<eslocal> _params;
-	std::vector<Element*> _edges;
-
-	static size_t _counter;
 
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
@@ -99,4 +83,4 @@ private:
 }
 
 
-#endif /* SQUARE4_H_ */
+#endif /* SRC_MESH_ELEMENTS_PLANE_SQUARE4_H_ */

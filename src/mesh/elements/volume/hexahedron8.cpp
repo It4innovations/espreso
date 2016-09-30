@@ -5,8 +5,6 @@
 
 using namespace espreso;
 
-size_t Hexahedron8::_counter = 0;
-
 std::vector<Property> Hexahedron8::_DOFElement;
 std::vector<Property> Hexahedron8::_DOFFace;
 std::vector<Property> Hexahedron8::_DOFEdge;
@@ -214,13 +212,13 @@ void Hexahedron8::setEdge(Element* edge)
 	//ESINFO(GLOBAL_ERROR) << "Set edge";
 }
 
-Point Hexahedron8::faceNormal(const Element *face)
+Point Hexahedron8::faceNormal(const Element *face) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();
 }
 
-Point Hexahedron8::edgeNormal(const Element *edge, const Coordinates &coordinates)
+Point Hexahedron8::edgeNormal(const Element *edge, const Coordinates &coordinates) const
 {
 	ESINFO(GLOBAL_ERROR) << "compute normal";
 	return Point();
