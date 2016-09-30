@@ -10,17 +10,26 @@ namespace input {
 class API: public Loader {
 
 public:
-	static void load(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
+	static void load(
+			APIMesh &mesh,
+			const std::vector<eslocal> &eType,
+			std::vector<std::vector<eslocal> > &eNodes,
+			std::vector<eslocal> &neighbours,
+			size_t size, const esglobal *ids)
 	{
 		ESINFO(OVERVIEW) << "Set mesh through API";
-		API api(mesh, eIndices, neighbours, size, ids);
+		API api(mesh, eType, eNodes, neighbours, size, ids);
 		api.fill();
 	}
 
 protected:
-	// TODO: elements with various DOFS
-	API(Mesh &mesh, const std::vector<std::vector<eslocal> > &eIndices, std::vector<eslocal> &neighbours, size_t size, const esglobal *ids)
-	: Loader(mesh), _DOFs(3), _eIndices(eIndices), _neighbours(neighbours), _size(size), _ids(ids) { };
+	API(
+			APIMesh &mesh,
+			const std::vector<eslocal> &eType,
+			std::vector<std::vector<eslocal> > &eNodes,
+			std::vector<eslocal> &neighbours,
+			size_t size, const eslocal *ids)
+	: Loader(mesh), _mesh(mesh), _eType(eType), _eNodes(eNodes), _neighbours(neighbours), _size(size), _ids(ids) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
@@ -36,11 +45,12 @@ protected:
 	void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) { }
 
 private:
-	size_t _DOFs;
-	const std::vector<std::vector<eslocal> > &_eIndices;
+	APIMesh &_mesh;
+	const std::vector<eslocal> &_eType;
+	std::vector<std::vector<eslocal> > &_eNodes;
 	std::vector<eslocal> &_neighbours;
 	size_t _size;
-	const esglobal *_ids;
+	const eslocal *_ids;
 };
 
 }

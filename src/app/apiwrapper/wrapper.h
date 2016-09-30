@@ -13,7 +13,7 @@
 struct FETI4IStructMatrix {
 	FETI4IStructMatrix(eslocal offset): offset(offset) {};
 
-	std::vector<eslocal> types;
+	std::vector<eslocal> eType;
 	std::vector<std::vector<eslocal> > eNodes;
 	std::vector<std::vector<eslocal> > eDOFs;
 	std::vector<std::vector<double> > eMatrices;

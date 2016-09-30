@@ -14,31 +14,6 @@ std::vector<Property> AdvectionDiffusion2D::midPointDOFs = { Property::TEMPERATU
 
 void AdvectionDiffusion2D::prepareMeshStructures()
 {
-	if (Hexahedron8::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Hexahedron8.";
-	}
-	if (Hexahedron20::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Hexahedron20.";
-	}
-	if (Tetrahedron4::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Tetrahedron4.";
-	}
-	if (Tetrahedron10::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Tetrahedron10.";
-	}
-	if (Prisma6::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Prisma6.";
-	}
-	if (Prisma15::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Prisma15.";
-	}
-	if (Pyramid5::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Pyramid5.";
-	}
-	if (Pyramid13::counter()) {
-		ESINFO(GLOBAL_ERROR) << "2D advection diffusion does not support Pyramid13.";
-	}
-
 	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);

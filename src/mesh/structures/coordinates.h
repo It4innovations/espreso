@@ -17,7 +17,7 @@ class Coordinates
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 public:
-	Coordinates(): _points(0), _clusterIndex(1) { };
+	Coordinates(): _clusterIndex(1) { };
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
@@ -27,9 +27,21 @@ public:
 		_globalMap[globalIndex] = clusterIndex;
 	}
 
+	void add(eslocal clusterIndex, esglobal globalIndex)
+	{
+		_clusterIndex[0].push_back(clusterIndex);
+		_globalIndex.push_back(globalIndex);
+		_globalMap[globalIndex] = clusterIndex;
+	}
+
 	void reserve(size_t size)
 	{
 		_points.reserve(size);
+		reserveIndices(size);
+	}
+
+	void reserveIndices(size_t size)
+	{
 		_globalIndex.reserve(size);
 		_clusterIndex[0].reserve(size);
 	}
@@ -82,7 +94,7 @@ public:
 
 	size_t clusterSize() const
 	{
-		return _points.size();
+		return _globalIndex.size();
 	}
 
 	size_t localSize(eslocal part) const

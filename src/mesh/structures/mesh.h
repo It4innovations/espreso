@@ -157,17 +157,21 @@ class APIMesh: public Mesh
 {
 
 public:
-	APIMesh(std::vector<std::vector<double> > &eMatrices): _eMatrices(eMatrices) { };
+	APIMesh(std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices)
+	: _eDOFs(_eDOFs), _eMatrices(eMatrices) { };
 
 	void partitiate(size_t parts);
 
-	std::vector<std::vector<double> >& getMatrices() const
-	{
-		return _eMatrices;
-	}
+	const std::vector<Element*> DOFs() const { return _DOFs; }
+	std::vector<Element*> DOFs() { return _DOFs; }
+
+	const std::vector<eslocal>& eDOFs(size_t index) const { return _eDOFs[index]; }
+	const std::vector<double>& eMatrix(size_t index) const { return _eMatrices[index]; }
 
 protected:
-	std::vector<std::vector<double> > &_eMatrices;
+	std::vector<Element*> _DOFs;
+	const std::vector<std::vector<eslocal>> &_eDOFs;
+	const std::vector<std::vector<double> > &_eMatrices;
 };
 
 }
