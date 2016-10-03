@@ -2300,7 +2300,18 @@ void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 }
 
 
+void ClusterBase::CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out )  {
 
+	vec_c_out.resize(my_lamdas_indices.size(), 0.0);
+
+	for (eslocal d = 0; d < domains.size(); d++) {
+		for (eslocal i = 0; i < domains[d].lambda_map_sub_local.size(); i++){
+			vec_c_out[ domains[d].lambda_map_sub_local[i] ] = domains[d].vec_c[i];
+		}
+	}
+
+
+}
 
 
 

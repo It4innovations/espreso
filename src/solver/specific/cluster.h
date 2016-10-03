@@ -183,6 +183,9 @@ public:
 	void CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 	void CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 
+	void CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out );
+
+
 	void Create_Kinv_perDomain();
 	virtual void Create_SC_perDomain( bool USE_FLOAT ) = 0;
 

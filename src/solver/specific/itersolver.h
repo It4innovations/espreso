@@ -167,7 +167,7 @@ public:
 
 
 	// *** Power Method - Estimation of maximum eigenvalue of matrix
-	double Solve_power_method ( Cluster & cluster, double tol, eslocal maxit);
+	double Solve_power_method ( Cluster & cluster, double tol, eslocal maxit, eslocal method);
 
 	//  *** Projected gradient and its components
 	void proj_gradient ( SEQ_VECTOR <double> & x,SEQ_VECTOR <double> & g, SEQ_VECTOR <double> & lb,

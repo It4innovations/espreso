@@ -5,7 +5,9 @@ CMD_LINE_ARGUMENTS = ELEMENT_TYPE CLUSTERS_X CLUSTERS_Y CLUSTERS_Z SUBDOMAINS_X 
 #USE_METIS # mesh will be partitiated by METIS. Also corners and fix points will be computed by METIS.
 
 SHAPE = 0 # CUBE
+
 #ELEMENT_TYPE = 0 # <0, 7> : HEXA8, HEXA20, TETRA4, TETRA10, PRISMA6, PRISMA15, PYRAMID5, PYRAMID13
+
 PHYSICS = LINEAR_ELASTICITY_3D
 
 MATERIALS_X = 2
@@ -14,20 +16,19 @@ MATERIALS_Z = 2
 
 MATERIAL1 = {
   DENSITY = 7850
-  EX = 2.1e11
+  EX = 2.1e5
   MIXY = 0.3
 }
-
 
 MATERIAL2 = {
   DENSITY = 7850
-  EX = 2.1e11
+  EX = 2.1e5
   MIXY = 0.3
 }
 
-LENGTH_X = 30
-LENGTH_Y = 30
-LENGTH_Z = 30
+LENGTH_X = 1
+LENGTH_Y = 1
+LENGTH_Z = 1
 
 #CORNER_COUNT = 4
 #CORNERS_IN_FACES
@@ -35,14 +36,12 @@ LENGTH_Z = 30
 CORNERS_IN_CORNERS
 
 NODES = {
-  X_0 = <0, 0> <0, 30> <0, 30>
-  Y_0 = <0, 30> <0, 0> <0, 30>
-  Z_0 = <0, 30> <0, 30> <0, 0>
+  X_0 = <0, 0> <0, 1> <0, 1>
+  Y_0 = <0, 1> <0, 0> <0, 1>
+  Y_1 = <0, 1> <1, 1> <0, 1>
 }
 
 DIRICHLET = {
-  X_0 = x: 0
-  Y_0 = y: 0
-  Z_0 = z: 0
+   Y_0 = x: 0, y: 0.3, z: 0
+   Y_1 = y: 0.11 - 0.1 * sin(3.14159265359 * x) 
 }
-
