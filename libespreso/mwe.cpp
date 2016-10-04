@@ -10,7 +10,6 @@ int main(int argc, char** argv)
 	// Always initialize MPI before call ESPRESO!
 	MPI_Init(&argc, &argv);
 
-
 ///////////////////////////////////////////// CREATE INSTANCE /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	espreso::Mesh mesh; // for using ESPRESO to compute stiffness matrices we need to create mesh
@@ -91,10 +90,9 @@ int main(int argc, char** argv)
 	// Configure ESPRESO solver
 	iopts[FETI4I_SUBDOMAINS] = 1;
 	iopts[FETI4I_PRECONDITIONER] = 1;
-	iopts[FETI4I_VERBOSE_LEVEL] = 3;
+	iopts[FETI4I_VERBOSE_LEVEL] = 1;
 	iopts[FETI4I_TESTING_LEVEL] = 0;
 	iopts[FETI4I_MEASURE_LEVEL] = 0;
-	iopts[FETI4I_PRINT_MATRICES] = 1;
 
 	// Create instance of a problem
 	FETI4IInstance instance;

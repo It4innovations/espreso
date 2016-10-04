@@ -110,6 +110,9 @@ def configure(ctx):
 
     check_environment(ctx)
 
+    ctx.setenv("api", ctx.all_envs["espreso"].derive());
+    ctx.recurse("libespreso")
+
     if not ctx.env.VTK:
         Logs.warn("VTK library was not founded. ESPRESO supports only VTK legacy format!")
 
@@ -147,6 +150,9 @@ def build(ctx):
     ctx.env = ctx.all_envs["espreso"]
     ctx.recurse("src/output")
     ctx.recurse("src/app")
+
+    ctx.env = ctx.all_envs["api"]
+    ctx.recurse("libespreso")
 
 def options(opt):
     opt.parser.formatter.max_help_position = 32

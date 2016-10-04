@@ -2185,9 +2185,10 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
   eslocal *_nul_piv = new eslocal[rows];
   for (eslocal i = 0;i<rows;i++) _nul_piv[i]=i;
 
-//TODO Ask about to the efficiency of next 2 lines.
-  auto ij= [&]( eslocal ii, eslocal jj ) -> eslocal
-   { return ii + rows*jj; };
+  auto ij = [&]( eslocal ii, eslocal jj ) -> eslocal {
+	  return ii + rows * jj;
+  };
+
   for (eslocal j=0;j<cols;j++){
     it = std::max_element(N.begin(),N.end()-j*rows,compareDouble);
     I = it - N.begin();
@@ -2201,9 +2202,11 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
     tmp_int = _nul_piv[rowInd];
     _nul_piv[rowInd] = _nul_piv[rows-1-j];
     _nul_piv[rows-1-j] = tmp_int;
-    memcpy( tmpV, &(N[ij(0,cols-1-j)]) , sizeof( double ) * rows);
-    memcpy( &(N[ij(0,cols-1-j)]), &(N[ij(0,colInd)]) , sizeof( double ) * rows);
-    memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
+    if (cols - 1 - j != colInd) {
+		memcpy( tmpV, &(N[ij(0,cols-1-j)]) , sizeof( double ) * rows);
+		memcpy( &(N[ij(0, cols - 1 - j)]), &(N[ij(0, colInd)]), sizeof( double ) * rows);
+		memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
+    }
     pivot = N[ij(rows-1-j,cols-1-j)];
     for (eslocal J=0;J<cols-j-1;J++){
       for (eslocal I=0;I<rows-j;I++){
