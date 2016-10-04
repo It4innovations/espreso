@@ -81,4 +81,16 @@ void Esutils::removeDuplicity(std::vector<Ttype> &elements)
 	elements.resize(unique + 1);
 }
 
+template<typename Ttype>
+typename std::vector<Ttype>::const_iterator Esutils::max_element(const std::vector<Ttype> &elements)
+{
+	auto max = elements.begin();
+	for (size_t i = 1; i < elements.size(); i++) {
+		if (*max < elements[i]) {
+			max = elements.begin() + i;
+		}
+	}
+	return max;
+}
+
 }

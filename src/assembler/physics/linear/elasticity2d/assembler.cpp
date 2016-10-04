@@ -52,7 +52,7 @@ void LinearElasticity2D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
-	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+	_constraints.insertDirichletToB1(_mesh.nodes(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
@@ -432,7 +432,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
-void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }

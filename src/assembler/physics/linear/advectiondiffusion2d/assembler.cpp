@@ -51,7 +51,7 @@ void AdvectionDiffusion2D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
-	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+	_constraints.insertDirichletToB1(_mesh.nodes(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
@@ -216,7 +216,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
 }
 
-void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }

@@ -25,6 +25,7 @@ public:
 	SparseVVPMatrix(size_t rows, size_t columns): Matrix(rows, columns, VVPMatrixIndexing), _values(rows) {};
 
 	void shrink();
+	void sort();
 	void resize(size_t rows, size_t columns);
 	void transpose();
 	size_t nonZeroValues() const;

@@ -3113,8 +3113,23 @@ double SparseMatrix::getDiagonalAbsMaximum()
 //	get_kernel_from_K(K, Kplus_R);
 //}
 
+static ESPRESOTest testUpperTriangle(SparseMatrix &K)
+{
+	if (K.rows + 1 != K.CSR_I_row_indices.size()) {
+		return TEST_FAILED;
+	}
+	for (size_t row = 0; row < K.rows; row++) {
+		if (K.CSR_J_col_indices[K.CSR_I_row_indices[row] - 1] < row) {
+			return TEST_FAILED;
+		}
+	}
+	return TEST_PASSED;
+}
+
 void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub){
+
+	ESTEST(SIMPLE) << "Get kernel needs upper triangular matrix" << testUpperTriangle(K);
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)

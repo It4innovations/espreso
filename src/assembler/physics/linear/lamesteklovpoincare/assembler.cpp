@@ -164,7 +164,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
-void LameSteklovPoincare::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+void LameSteklovPoincare::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }

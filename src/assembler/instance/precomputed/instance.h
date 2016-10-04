@@ -9,8 +9,8 @@ namespace espreso {
 template <class TConstrains, class TPhysics>
 struct PrecomputedInstance: public Instance
 {
-	PrecomputedInstance(APIMesh &mesh, double* rhs, eslocal rhs_size, eslocal dirichlet_size, eslocal* dirichlet_indices, double* dirichlet_values, eslocal indexBase)
-	: Instance(mesh), _constrains(mesh /*, dirichlet_size, dirichlet_indices, dirichlet_values, indexBase*/), _physics(mesh, _constrains, rhs, rhs_size), _linearSolver(_physics, _constrains)
+	PrecomputedInstance(APIMesh &mesh, double* rhs, eslocal rhs_size)
+	: Instance(mesh), _constrains(mesh), _physics(mesh, _constrains, rhs, rhs_size), _linearSolver(_physics, _constrains)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};

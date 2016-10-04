@@ -108,7 +108,7 @@ void FETI4IAddElement(
 		FETI4IMatrix	matrix,
 		FETI4IInt		type,
 		FETI4IInt		nodesSize,
-		FETI4IInt		nodes,
+		FETI4IInt*		nodes,
 		FETI4IInt		dofsSize,
 		FETI4IInt*		dofs,
 		FETI4IReal*		values

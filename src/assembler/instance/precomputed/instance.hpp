@@ -6,7 +6,6 @@ namespace espreso {
 template <class TConstrains, class TPhysics>
 void PrecomputedInstance<TConstrains, TPhysics>::init()
 {
-
 	TimeEvent timePreparation("Prepare mesh structures"); timePreparation.start();
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);

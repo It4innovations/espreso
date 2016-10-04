@@ -16,10 +16,6 @@ struct TransientPhysics: public Physics {
 	virtual void assembleStiffnessMatrices()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS.";
-
-		K.resize(_mesh.parts());
-		M.resize(_mesh.parts());
-		f.resize(_mesh.parts());
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
@@ -60,7 +56,10 @@ struct TransientPhysics: public Physics {
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs)
 	: Physics(mesh, constraints, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
-	virtual ~TransientPhysics() {};
+	virtual ~TransientPhysics()
+	{
+		M.resize(_mesh.parts());
+	}
 
 	std::vector<SparseMatrix> M;
 	std::vector<double> A;

@@ -16,8 +16,6 @@ struct PrecomputedPhysics: public Physics {
 	virtual void assembleStiffnessMatrices()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
-		K.resize(_mesh.parts());
-		f.resize(_mesh.parts());
 		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
@@ -39,15 +37,15 @@ struct PrecomputedPhysics: public Physics {
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs,
 			double *rhs, size_t rhs_size)
-	: Physics(mesh, constraints, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs), _apimesh(mesh), rhs(rhs), rhs_size(rhs_size) {};
+	: Physics(mesh, constraints, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs), _apimesh(mesh), _rhs(rhs), _rhs_size(rhs_size) {};
 	virtual ~PrecomputedPhysics() {};
 
 protected:
 	virtual void composeSubdomain(size_t subdomain) =0;
 
-	const APIMesh &_apimesh;
-	double *rhs;
-	size_t rhs_size;
+	APIMesh &_apimesh;
+	double *_rhs;
+	size_t _rhs_size;
 };
 
 }

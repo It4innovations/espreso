@@ -14,7 +14,7 @@ struct Physics {
 	virtual bool singular() const =0;
 
 	virtual void prepareMeshStructures() =0;
-	virtual void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe) =0;
+	virtual void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) =0;
 	virtual void assembleStiffnessMatrices() =0;
 	virtual void assembleScalingMatrices();
 	virtual void makeStiffnessMatricesRegular() =0;
@@ -97,7 +97,15 @@ struct Physics {
 	edgeDOFs(edgeDOFs),
 	pointDOFs(pointDOFs),
 	midPointDOFs(midPointDOFs),
-	matrixSize(mesh.parts()) {};
+	matrixSize(mesh.parts())
+	{
+		K.resize(_mesh.parts());
+		R1.resize(_mesh.parts());
+		R2.resize(_mesh.parts());
+		RegMat.resize(_mesh.parts());
+		D.resize(_mesh.parts());
+		f.resize(_mesh.parts());
+	}
 
 	virtual ~Physics() {};
 

@@ -162,7 +162,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	}
 }
 
-void TransientElasticity::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+void TransientElasticity::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }

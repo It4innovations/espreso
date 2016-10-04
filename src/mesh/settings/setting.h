@@ -7,6 +7,7 @@
 namespace espreso {
 
 enum class Property : int {
+	UNKNOWN, // API has unknown properties
 	DISPLACEMENT_X,
 	DISPLACEMENT_Y,
 	DISPLACEMENT_Z,
@@ -34,6 +35,7 @@ enum class Property : int {
 inline std::ostream& operator<<(std::ostream& os, const Property& property)
 {
 	switch (property) {
+		case Property::UNKNOWN: return os << "UNKNOWN";
 		case Property::DISPLACEMENT_X: return os << "DISPLACEMENT_X";
 		case Property::DISPLACEMENT_Y: return os << "DISPLACEMENT_Y";
 		case Property::DISPLACEMENT_Z: return os << "DISPLACEMENT_Z";

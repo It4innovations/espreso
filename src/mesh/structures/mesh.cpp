@@ -15,14 +15,9 @@ Mesh::Mesh():_elements(0)
 void Mesh::partitiate(size_t parts)
 {
 	if (parts == 1 && this->parts() == 1) {
-		_partPtrs.resize(parts + 1);
-		_partPtrs[0] = 0;
-		_partPtrs[1] = _elements.size();
+		_partPtrs = { 0, (eslocal)_elements.size() };
 		mapElementsToDomains();
 	} else {
-		_partPtrs.resize(parts + 1);
-		_partPtrs[0] = 0;
-
 		std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
 
 		_partPtrs = std::vector<eslocal>(parts + 1, 0);
@@ -47,26 +42,27 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
-	ESINFO(GLOBAL_ERROR) << "Fix API partition function";
 	if (parts == 1 && this->parts() == 1) {
-		_partPtrs.resize(parts + 1);
-		_partPtrs[0] = 0;
-		_partPtrs[1] = _elements.size();
+		_partPtrs = { 0, (eslocal)_elements.size() };
 		mapElementsToDomains();
-		return;
+	} else {
+		std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
+
+		_partPtrs = std::vector<eslocal>(parts + 1, 0);
+		for (size_t i = 0; i < _elements.size(); i++) {
+			_elements[i]->domains().clear();
+			_elements[i]->domains().push_back(ePartition[i]);
+			_partPtrs[ePartition[i]]++;
+		}
+
+		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
+		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
+		Esutils::sizesToOffsets(_partPtrs);
 	}
 
-	std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
-
-	_partPtrs = std::vector<eslocal>(parts + 1, 0);
-	for (size_t i = 0; i < _elements.size(); i++) {
-		_elements[i]->domains().push_back(ePartition[i]);
-		_partPtrs[ePartition[i]]++;
-	}
-
-	std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
-	ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
-	Esutils::sizesToOffsets(_partPtrs);
+	mapNodesToDomains();
+	mapDOFsToDomains();
+	mapCoordinatesToDomains();
 }
 
 void Mesh::computeFixPoints(size_t number)
@@ -660,7 +656,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 	fillParentFacesToNodes();
 }
 
-void Mesh::fillNodesFromElements()
+void Mesh::fillNodesFromCoordinates()
 {
 	_nodes.reserve(_coordinates.clusterSize());
 	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
@@ -682,6 +678,25 @@ void Mesh::fillParentElementsToNodes()
 
 	cilk_for (size_t i = 0; i < _nodes.size(); i++) {
 		std::sort(_nodes[i]->parentElements().begin(), _nodes[i]->parentElements().end());
+	}
+}
+
+void APIMesh::fillParentElementsToDOFs(const std::vector<std::vector<eslocal> > &eDOFs)
+{
+	ESTEST(MANDATORY) << "Invalid number of recognized elements in API." << (eDOFs.size() != _elements.size() ? TEST_FAILED : TEST_PASSED);
+
+	cilk_for (size_t i = 0; i < _DOFs.size(); i++) {
+		_DOFs[i]->parentElements().clear();
+	}
+
+	for (size_t e = 0; e < eDOFs.size(); e++) {
+		for (size_t d = 0; d < eDOFs[e].size(); d++) {
+			_DOFs[eDOFs[e][d]]->parentElements().push_back(_elements[e]);
+		}
+	}
+
+	cilk_for (size_t i = 0; i < _DOFs.size(); i++) {
+		std::sort(_DOFs[i]->parentElements().begin(), _DOFs[i]->parentElements().end());
 	}
 }
 
@@ -1140,6 +1155,11 @@ void Mesh::mapNodesToDomains()
 	assignDomains(_nodes);
 }
 
+void APIMesh::mapDOFsToDomains()
+{
+	assignDomains(_DOFs);
+}
+
 static void setDOFsIndices(
 		std::vector<Element*> &elements,
 		size_t parts,
@@ -1326,8 +1346,12 @@ std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<s
 	return fillUniformDOFs(_elements, parts(), DOFs, offsets);
 }
 
+std::vector<size_t> APIMesh::distributeDOFsToDomains(const std::vector<size_t> &offsets)
+{
+	return fillUniformDOFs(_DOFs, parts(), { Property::UNKNOWN }, offsets);
+}
 
-void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
+static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
 {
 	std::vector<int> neighbours = mesh.neighbours();
 	neighbours.push_back(config::env::MPIrank);
@@ -1491,6 +1515,11 @@ void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
 	computeDOFsCounters(_faces, DOFs, *this);
+}
+
+void APIMesh::computeDOFsDOFsCounters()
+{
+	computeDOFsCounters(_DOFs, { Property::UNKNOWN }, *this);
 }
 
 void Mesh::mapCoordinatesToDomains()

@@ -79,4 +79,14 @@ def build(ctx):
         install_path = ctx.ROOT + "/libespreso"
     )
 
+    ctx.env = ctx.all_envs["espreso"];
+    ctx.env.append_unique("LIB", "feti4i")
+    ctx.env.append_unique("LIBPATH", ctx.ROOT + "/libespreso")
+    ctx.program(
+        source       = "../../libespreso/mwe.cpp",
+        target       = "mwe",
+        use          = "espreso_includes basis config solver generator ansys_in espreso_in openfoam_in espreso_out generic_out paraview_out mesh bem assembler factory",
+        install_path = ctx.ROOT + "/libespreso"
+    )
+
 

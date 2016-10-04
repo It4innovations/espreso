@@ -80,7 +80,7 @@ public:
 protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
 	void fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
-	void fillNodesFromElements();
+	void fillNodesFromCoordinates();
 
 	void fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
 
@@ -153,20 +153,28 @@ private:
 
 };
 
+namespace input { class API; }
+
 class APIMesh: public Mesh
 {
-
+	friend class input::API;
 public:
-	APIMesh(std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices)
-	: _eDOFs(_eDOFs), _eMatrices(eMatrices) { };
+	APIMesh(const std::vector<std::vector<eslocal> > &eDOFs, const std::vector<std::vector<double> > &eMatrices)
+	: _eDOFs(eDOFs), _eMatrices(eMatrices) { };
 
 	void partitiate(size_t parts);
 
+	void mapDOFsToDomains();
+	void fillParentElementsToDOFs(const std::vector<std::vector<eslocal> > &eDOFs);
+
+	void computeDOFsDOFsCounters();
+	std::vector<size_t> distributeDOFsToDomains(const std::vector<size_t> &offsets);
+
 	const std::vector<Element*> DOFs() const { return _DOFs; }
-	std::vector<Element*> DOFs() { return _DOFs; }
 
 	const std::vector<eslocal>& eDOFs(size_t index) const { return _eDOFs[index]; }
 	const std::vector<double>& eMatrix(size_t index) const { return _eMatrices[index]; }
+	size_t elementSize() const { return _eMatrices.size(); }
 
 protected:
 	std::vector<Element*> _DOFs;

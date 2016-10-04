@@ -87,7 +87,7 @@ void LinearElasticity3D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
-	_constraints.insertDirichletToB1(_mesh.nodes(), _mesh.coordinates(), pointDOFs);
+	_constraints.insertDirichletToB1(_mesh.nodes(), pointDOFs);
 	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
 	_constraints.insertMortarGluingToB1(_mesh.faces(), pointDOFs);
 
@@ -354,9 +354,15 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
-void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
 {
 	processElement(Ke, fe, _mesh, e);
+	dofs.resize(e->nodes() * pointDOFs.size());
+	for (size_t dof = 0, i = 0; dof < pointDOFs.size(); dof++) {
+		for (size_t n = 0; n < e->nodes(); n++, i++) {
+			dofs[i] = e->node(n) * pointDOFs.size() + dof;
+		}
+	}
 }
 
 void LinearElasticity3D::makeStiffnessMatricesRegular()

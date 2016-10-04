@@ -5,7 +5,6 @@ using namespace espreso;
 
 void Physics::assembleScalingMatrices()
 {
-	D.resize(K.size());
 	cilk_for (size_t p = 0; p < K.size(); p++) {
 		D[p] = K[p].getDiagonal();
 	}

@@ -3,30 +3,17 @@
 
 using namespace espreso;
 
-std::vector<Property> UniformSymmetric3DOFs::elementDOFs;
-std::vector<Property> UniformSymmetric3DOFs::faceDOFs;
-std::vector<Property> UniformSymmetric3DOFs::edgeDOFs;
-std::vector<Property> UniformSymmetric3DOFs::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-std::vector<Property> UniformSymmetric3DOFs::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-
 void UniformSymmetric3DOFs::prepareMeshStructures()
 {
-	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Tetrahedron4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Tetrahedron10::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Prisma6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Prisma15::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Pyramid5::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Pyramid13::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	matrixSize = _apimesh.distributeDOFsToDomains(matrixSize);
+	_apimesh.computeDOFsDOFsCounters();
 
-	Square4::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Square8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
-	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		ESINFO(GLOBAL_ERROR) << "Implement Hybrid FETI for API";
+	}
 }
 
-void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe)
+void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
@@ -41,40 +28,50 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void UniformSymmetric3DOFs::makeStiffnessMatricesRegular()
 {
-	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+	cilk_for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		K[subdomain].RemoveLower();
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 	}
+}
+
+void UniformSymmetric3DOFs::assembleGluingMatrices()
+{
+	_constraints.initMatrices(matrixSize);
+
+	_constraints.insertDirichletToB1(_apimesh.DOFs(), { Property::UNKNOWN });
+	_constraints.insertElementGluingToB1(_apimesh.DOFs(), { Property::UNKNOWN });
 }
 
 void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
-	eslocal nK = _mesh.coordinates().localSize(subdomain) * pointDOFs.size();
+	eslocal nK = matrixSize[subdomain];
 	_K.resize(nK, nK);
 
-	const std::vector<eslocal> &parts = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.elements();
+	const std::vector<eslocal> &partition = _apimesh.getPartition();
+	const std::vector<Element*> &DOFs = _apimesh.DOFs();
 
-	size_t row, column;
+	size_t dofIndex = 0;
 
-	for (size_t e = parts[subdomain]; e < parts[subdomain + 1]; e++) {
-		for (size_t i = 0; i < elements[e]->nodes() * pointDOFs.size(); i++) {
-			row = pointDOFs.size() * elements[e]->node(i / pointDOFs.size()) + (i % pointDOFs.size());
-			for (size_t j = 0; j < elements[e]->nodes() * pointDOFs.size(); j++) {
-				column = pointDOFs.size() * elements[e]->node(j / pointDOFs.size()) + (j % pointDOFs.size());
-				_K(row, column) = _apimesh.eMatrix(e)[i * elements[e]->nodes() * pointDOFs.size() + j];
+	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
+
+		for (size_t dx = 0; dx < _apimesh.eDOFs(e).size(); dx++) {
+			size_t row = DOFs[_apimesh.eDOFs(e)[dx]]->DOFIndex(subdomain, dofIndex);
+			for (size_t dy = 0; dy < _apimesh.eDOFs(e).size(); dy++) {
+				size_t column = DOFs[_apimesh.eDOFs(e)[dy]]->DOFIndex(subdomain, dofIndex);
+				_K(row, column) = _apimesh.eMatrix(e)[dx * _apimesh.eDOFs(e).size() + dy];
 			}
 		}
+
 	}
 
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
 
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(p);
-		f[p].resize(_mesh.coordinates().localSize(p) * pointDOFs.size(), 0);
-		for (size_t i = 0; i < l2c.size() * pointDOFs.size(); i++) {
-			f[p][i] = rhs[pointDOFs.size() * l2c[i / pointDOFs.size()] + i % pointDOFs.size()] / _mesh.nodes()[l2c[i / pointDOFs.size()]]->domains().size();
+	f[subdomain].resize(matrixSize[subdomain], 0);
+	for (size_t i = 0; i < DOFs.size(); i++) {
+		if (DOFs[i]->inDomain(subdomain)) {
+			f[subdomain][DOFs[i]->DOFIndex(subdomain, dofIndex)] = _rhs[i] / DOFs[i]->domains().size();
 		}
 	}
 }

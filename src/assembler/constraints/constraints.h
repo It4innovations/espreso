@@ -26,7 +26,7 @@ public:
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 
-	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const Coordinates &coordinates, const std::vector<Property> &DOFs) =0;
+	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const std::vector<Property> &DOFs) =0;
 	virtual void insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 	virtual void insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 

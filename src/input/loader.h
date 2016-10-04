@@ -44,7 +44,7 @@ public:
 		tElements.end(); measurement.addEvent(tElements);
 		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
 
-		mesh.fillNodesFromElements();
+		mesh.fillNodesFromCoordinates();
 		mesh.fillParentElementsToNodes();
 
 		TimeEvent tFaces("faces"); tFaces.start();

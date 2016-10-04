@@ -3,7 +3,7 @@
 
 using namespace espreso;
 
-void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes, const Coordinates &coordinates, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
 	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());

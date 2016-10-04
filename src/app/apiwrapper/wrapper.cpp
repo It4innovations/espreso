@@ -96,7 +96,7 @@ void FETI4IAddElement(
 		FETI4IMatrix	matrix,
 		FETI4IInt		type,
 		FETI4IInt		nodesSize,
-		FETI4IInt		nodes,
+		FETI4IInt*		nodes,
 		FETI4IInt		dofsSize,
 		FETI4IInt*		dofs,
 		FETI4IReal*		values)
@@ -109,7 +109,7 @@ void FETI4IAddElement(
 	}
 
 	eslocal offset = matrix->offset;
-	matrix->types.push_back(type);
+	matrix->eType.push_back(type);
 	matrix->eNodes.push_back(std::vector<eslocal>(nodes, nodes + nodesSize));
 	matrix->eDOFs.push_back(std::vector<eslocal>(dofs, dofs + dofsSize));
 	std::for_each(matrix->eNodes.back().begin(), matrix->eNodes.back().end(), [ &offset ] (eslocal &index) { index -= offset; });
@@ -144,18 +144,14 @@ void FETI4ICreateInstance(
 	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
 
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix));
-	input::API::load(DataHolder::instances.back()->mesh, matrix->eType, matrix->eNodes, neighClusters, size, l2g);
+	input::API::load(
+			DataHolder::instances.back()->mesh, matrix->offset,
+			matrix->eType, matrix->eNodes, matrix->eDOFs,
+			dirichlet_size, dirichlet_indices, dirichlet_values,
+			neighClusters,
+			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(
-			DataHolder::instances.back()->mesh,
-			rhs,
-			size,
-			dirichlet_size,
-			dirichlet_indices,
-			dirichlet_values,
-			matrix->offset
-	);
-
+	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(DataHolder::instances.back()->mesh, rhs, size);
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 

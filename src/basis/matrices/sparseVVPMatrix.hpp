@@ -31,6 +31,14 @@ static bool compare(const std::pair<eslocal, double> &a, const std::pair<eslocal
 }
 
 template<typename Tindices>
+void SparseVVPMatrix<Tindices>::sort()
+{
+	for (size_t row = 0; row < _rows; row++) {
+		std::sort(_values[row].begin(), _values[row].end(), compare);
+	}
+}
+
+template<typename Tindices>
 void SparseVVPMatrix<Tindices>::shrink()
 {
 	size_t unique;
