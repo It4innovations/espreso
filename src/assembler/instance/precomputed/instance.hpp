@@ -56,15 +56,15 @@ void PrecomputedInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<d
 
 	_linearSolver.Solve(_physics.f, tmpSolution);
 
-	std::for_each(solution[0].begin(), solution[0].end(), [] (double &v) { v = 0; });
+	const APIMesh &mesh = static_cast<const APIMesh&>(_mesh);
 
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		const std::vector<eslocal> &l2c = _mesh.coordinates().localToCluster(p);
-		for (size_t i = 0; i < l2c.size(); i++) {
-			for (size_t d = 0; d < _physics.pointDOFs.size(); d++) {
-				solution[0][_physics.pointDOFs.size() * l2c[i] + d] += tmpSolution[p][_physics.pointDOFs.size() * i + d] / _mesh.nodes()[l2c[i]]->domains().size();
-			}
+	size_t DOFIndex = 0;
+	for (size_t i = 0; i < mesh.DOFs().size(); i++) {
+		solution[0][i] = 0;
+		for (size_t d = 0; d < mesh.DOFs()[i]->domains().size(); d++) {
+			solution[0][i] += tmpSolution[mesh.DOFs()[i]->domains()[d]][mesh.DOFs()[i]->DOFIndex(mesh.DOFs()[i]->domains()[d], DOFIndex)];
 		}
+		solution[0][i] /= mesh.DOFs()[i]->domains().size();
 	}
 
 	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);

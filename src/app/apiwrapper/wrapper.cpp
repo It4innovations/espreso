@@ -124,7 +124,7 @@ void FETI4ICreateInstance(
 		FETI4IMatrix 	matrix,
 		FETI4IInt 		size,
 		FETI4IReal* 	rhs,
-		FETI4IInt* 		l2g,                     /* length of both rhs and l2g is size */
+		FETI4IInt* 		l2g,
 		FETI4IMPIInt 	neighbours_size,
 		FETI4IMPIInt*	neighbours,
 		FETI4IInt 		dirichlet_size,

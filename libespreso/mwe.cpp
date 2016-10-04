@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	espreso::input::CubeSettings settings(0, 1); // we assume only one MPI process
 	settings.subdomainsInCluster[0] = settings.subdomainsInCluster[1] = settings.subdomainsInCluster[2] = 1;
-	settings.elementsInSubdomain[0] = settings.elementsInSubdomain[1] = settings.elementsInSubdomain[2] = 2;
+	settings.elementsInSubdomain[0] = settings.elementsInSubdomain[1] = settings.elementsInSubdomain[2] = 6;
 	settings.nodes["BOTTOM"] = espreso::Interval(0, settings.problemLength[0], 0, settings.problemLength[1], 0, 0);
 	settings.properties["DIRICHLET"]["BOTTOM"] = "x: 0, y: 0, z: 0";
 
@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 	FETI4ISetDefaultRealOptions(ropts);
 
 	// Configure ESPRESO solver
-	iopts[FETI4I_SUBDOMAINS] = 1;
+	iopts[FETI4I_SUBDOMAINS] = 4;
 	iopts[FETI4I_PRECONDITIONER] = 1;
 	iopts[FETI4I_VERBOSE_LEVEL] = 1;
 	iopts[FETI4I_TESTING_LEVEL] = 0;
@@ -111,12 +111,16 @@ int main(int argc, char** argv)
 			ropts);
 
 	// Prepare memory for save solution
-	std::vector<FETI4IReal> solution(rhs.size());
+	std::vector<std::vector<FETI4IReal> > solution(1, std::vector<FETI4IReal>(rhs.size()));
 
 	// Solve the system
-	FETI4ISolve(instance, solution.size(), solution.data());
+	FETI4ISolve(instance, solution[0].size(), solution[0].data());
 
 	// Process solution
+
+	espreso::output::VTK vtk(mesh, "results");
+	vtk.storeGeometry();
+	vtk.storeValues("api_result", DOFs.size(), solution, espreso::output::Store::ElementType::NODES);
 
 	// Remove data
 	FETI4IDestroy(K);

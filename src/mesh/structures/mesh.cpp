@@ -55,6 +55,9 @@ void APIMesh::partitiate(size_t parts)
 			_partPtrs[ePartition[i]]++;
 		}
 
+		std::iota(_permutation.begin(), _permutation.end(), 0);
+		std::sort(_permutation.begin(), _permutation.end(), [&] (eslocal i, eslocal j) { return _elements[i]->domains()[0] < _elements[j]->domains()[0]; });
+
 		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
 		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
 		Esutils::sizesToOffsets(_partPtrs);
