@@ -544,7 +544,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	cluster.CreateVec_c_perCluster ( tmp );
 
 	for (eslocal i = 0; i < tmp.size(); i++){
-		if ( ((tmp[i]  ) > 0.0001)  && (tmp[i] < 0.29 ) ){
+		if ( ((tmp[i]  ) > 0.0001)  && (tmp[i] < 0.1 ) ){
 			lb[i] = 0.0;
 		}
 	}
