@@ -207,7 +207,7 @@ VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, doub
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
 		break;
 	default:
-		ESINFO(ALWAYS) << TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";
 	}
 	computeCenters();
 }

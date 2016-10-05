@@ -23,7 +23,7 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 
 	auto skip = [&] (const std::string &name) {
 		if (StringCompare::caseInsensitiveEq(parameter, name)) {
-			ESINFO(ALWAYS) << TextColor::YELLOW << "Skipped material parameter '" << name << "'";
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Skipped material parameter '" << name << "'";
 			correctlySet = true;
 		}
 	};

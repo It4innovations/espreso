@@ -154,7 +154,7 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 				}
 				if (attribute == "}") {
 					if (!_setParameters(parameter, attributes, values) && verboseLevel) {
-						ESINFO(ALWAYS) << TextColor::RED << "Unknown parameter '" << parameter << "'";
+						ESINFO(ALWAYS) << Info::TextColor::RED << "Unknown parameter '" << parameter << "'";
 					}
 					break;
 				} else {
@@ -172,7 +172,7 @@ Configuration ParametersReader::read(const Configuration &configuration, size_t 
 			}
 		} else {
 			if (!_setParameter(parameter, Parser::getValue(line)) && verboseLevel) {
-				ESINFO(ALWAYS) << TextColor::RED << "Unknown parameter '" << parameter << "'";
+				ESINFO(ALWAYS) << Info::TextColor::RED << "Unknown parameter '" << parameter << "'";
 			}
 		}
 	}

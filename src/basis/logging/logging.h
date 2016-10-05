@@ -77,14 +77,6 @@ enum MeasureEvent {
 	MEASURE_LEVEL3
 };
 
-enum class TextColor {
-	WHITE,
-	RED,
-	GREEN,
-	YELLOW,
-	BLUE
-};
-
 class Test
 {
 public:
@@ -123,6 +115,14 @@ protected:
 class Info
 {
 public:
+	enum class TextColor {
+		WHITE,
+		RED,
+		GREEN,
+		YELLOW,
+		BLUE
+	};
+
 	Info(InfoEvent event): event(event), color(TextColor::WHITE), _plain(false) {};
 	~Info();
 
