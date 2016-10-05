@@ -144,6 +144,9 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 		// TODO: remove copying of R1
 		cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+
+	//		physics.R1[d].GramSchmidtOrtho();
+
 			cluster.domains[d].Kplus_R = physics.R1[d];
 			cluster.domains[d].Kplus_R2 = physics.R2[d];
 			cluster.domains[d].Kplus_Rb = physics.R1[d];

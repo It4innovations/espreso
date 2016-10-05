@@ -440,7 +440,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
-	double _epsilon = 1e-4;
+	double _epsilon = 1e-6;
 	eslocal _maxit = 100;
 	eslocal _maxit_in = 200;
 	double _Gamma = 1;
@@ -454,6 +454,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	double _epsilon_power = 1e-8;
 	eslocal _maxit_power = 25;
 	eslocal _method = 0;
+	eslocal halfStep = 0;
 
 	eslocal output_n_it = 0;
 	eslocal output_n_it_in = 0;
@@ -489,6 +490,13 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	SEQ_VECTOR <double> w_l (dl_size, 0);
 	SEQ_VECTOR <double> y_l (dl_size, 0);
 	SEQ_VECTOR <double> tmp_2 (dl_size, 0);
+
+
+
+	SEQ_VECTOR <double> nx_l (dl_size, 0);
+	SEQ_VECTOR <double> ng_l (dl_size, 0);
+	double Lagnx = 0.0;
+	double Lagng = 0.0;
 
 
 
@@ -530,9 +538,9 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 
 
-	// double alpha = _alpham/maxeig;
+	//double alpha = _alpham/maxeig;
 	//double rho = _rho*maxeig;
-	//maxeig = maxeig/2.0;
+	//maxeig = 1.0;
 
 	double alpha = _alpham;
 	double rho = _rho;
@@ -544,7 +552,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	cluster.CreateVec_c_perCluster ( tmp );
 
 	for (eslocal i = 0; i < tmp.size(); i++){
-		if ( ((tmp[i]  ) > 0.0001)  && (tmp[i] < 0.1 ) ){
+		if ( ((tmp[i]  ) > 0.0001)  && (tmp[i] < 0.12 ) ){
 			lb[i] = 0.0;
 		}
 	}
@@ -561,8 +569,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	}
 	// END*** projection of right hand side b
 
-	double norm_b = parallel_norm_compressed(cluster, b_l);
-	double tol = _epsilon * norm_b;
+
 
 	// BEGIN*** Homogenization of the equality constraints and initialization
 	if (USE_GGtINV == 1) {
@@ -589,6 +596,10 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 		bCtmu[i] = b_l[i];
 	}
+
+
+	//double norm_b = parallel_norm_compressed(cluster, b_l);
+	//double tol = _epsilon * norm_b;
 	// END*** Homogenization of the equality constraints and initialization
 
     /// BEGIN*** Hessian PAP+rho*Ct*inv(C*Ct)*C
@@ -638,9 +649,9 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	// END*** Hessian PAP+rho*Ct*inv(C*Ct)*C
 	sum_output_n_hess++;
 
-	for (eslocal i = 0; i < x_l.size(); i++){
-		x_l[i] = std::max( lb[i], 0.0 );
-	}
+//	for (eslocal i = 0; i < x_l.size(); i++){
+//		x_l[i] = std::max( lb[i], 0.0 );
+//	}
 
 
 	for (eslocal i = 0; i < tmp.size(); i++){
@@ -651,7 +662,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 	for (eslocal i = 0; i < tmp.size(); i++){
 		p_l[i] = _free[i] * g_l[i];
-		test_vec[i] = g_til[i];
+		//test_vec[i] = g_til[i];
 	}
 
 
@@ -720,9 +731,9 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 		normCx_x = normCx/normx_l;
 	}
 
-	norm_b = parallel_norm_compressed(cluster, b_l);
-	tol = _epsilon * norm_b;
-	norm_test_vec = parallel_norm_compressed(cluster, test_vec);
+	double norm_b = parallel_norm_compressed(cluster, b_l);
+	double tol = _epsilon * norm_b;
+	norm_test_vec = parallel_norm_compressed(cluster, g_til);
 
 	double mchange = 0.0;
 
@@ -739,8 +750,9 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 	ESINFO(CONVERGENCE)<< std::setw(3) << output_n_it << std::setw(16) << lag1 << std::setw(15) << norm_test_vec*maxeig << std::setw(15)  <<normCx_x << std::setw(6)  <<  output_n_exp <<  std::setw(6) <<  output_n_prop <<  std::setw(6)  <<  output_n_cg <<  std::setw(6)  <<  output_n_hess <<  std::setw(15) <<  rho << std::setw(10) <<  _M ;
 
-	for (eslocal i=0; i < _maxit; i++){
-
+	eslocal stop = 0;
+	//for (eslocal i=0; i < _maxit; i++){
+	while ( stop == 0 ){
 		output_n_it_in = 0;
 
 		output_n_cg = 0;
@@ -884,117 +896,146 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 					sum_output_n_cg++;
 
 				} else {
-					for ( eslocal k = 0; k < x_l.size(); k++){
-						x_l[k] -= alpha_f * p_l[k];
-						g_l[k] -= alpha_f * PAPx_l[k];
-					}
 
-					proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
-					for ( eslocal k = 0; k < x_l.size(); k++){
-						x_l[k] -= alpha * g_til[k];
-					}
-					/// HESSS
-//					if (USE_GGtINV == 1) {
-//						Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
-//					} else {
-//						Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
-//					}
-//
-//					apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
-//
-//					for (eslocal k = 0; k < tmp.size(); k++) {
-//						Ax_l[k] = Ax_l[k] - rho * x_l[k];
-//					}
-//
-//					if (USE_GGtINV == 1) {
-//						Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, g_l, 0);
-//					} else {
-//						Projector_l_compG    ( timeEvalProj, cluster, Ax_l, g_l, 0);
-//					}
-//
-//					for (eslocal k = 0; k < tmp.size(); k++){
-//						g_l[k] = g_l[k] + rho * x_l[k];
-//					}
-					if (USE_GGtINV == 1) {
-						Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
+
+					if ( halfStep == 1){
+
+						for ( eslocal k = 0; k < nx_l.size(); k++){
+							nx_l[k] = std::max( lb[k], x_l[k] - alpha_cg * p_l[k]);
+						}
+						if (USE_GGtINV == 1) {
+							Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
+						} else {
+							Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
+						}
+
+						apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
+
+						if (USE_GGtINV == 1) {
+							Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, ng_l, 0);
+						} else {
+							Projector_l_compG    ( timeEvalProj, cluster, Ax_l, ng_l, 0);
+						}
+
+						for (eslocal k = 0; k < tmp.size(); k++){
+							ng_l[k] = ng_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
+						}
+						/// HESSS
+						output_n_hess++;
+						sum_output_n_hess++;
+						for (eslocal k = 0; k < tmp.size(); k++){
+							ng_l[k] -= bCtmu[k];
+						    tmp[k] = ng_l[k] - bCtmu[k];
+						    tmp_2[k] = g_l[k] - bCtmu[k];
+						}
+
+						Lagnx = parallel_ddot_compressed(cluster, nx_l, tmp) * 0.5;
+						Lagng = parallel_ddot_compressed(cluster, x_l, tmp_2) * 0.5;
+
+						if (Lagnx <= Lagng ){
+
+							for (eslocal k = 0; k < tmp.size(); k++){
+								x_l[k] = nx_l[k];
+							    g_l[k] = ng_l[k];
+							}
+
+						} else {
+
+
+							for ( eslocal k = 0; k < x_l.size(); k++){
+								x_l[k] -= alpha_f * p_l[k];
+								g_l[k] -= alpha_f * PAPx_l[k];
+							}
+
+							proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
+
+							for ( eslocal k = 0; k < x_l.size(); k++){
+								x_l[k] -= alpha * g_til[k];
+							}
+
+							if (USE_GGtINV == 1) {
+								Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
+							} else {
+								Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
+							}
+
+							apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
+
+							if (USE_GGtINV == 1) {
+								Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, g_l, 0);
+							} else {
+								Projector_l_compG    ( timeEvalProj, cluster, Ax_l, g_l, 0);
+							}
+
+							for (eslocal k = 0; k < tmp.size(); k++){
+								g_l[k] = g_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
+							}
+							/// HESSS
+							output_n_hess++;
+							sum_output_n_hess++;
+							for (eslocal k = 0; k < tmp.size(); k++){
+								g_l[k] -= bCtmu[k];
+							}
+
+						}
+
+						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
+						for (eslocal k = 0; k < p_l.size(); k++){
+							p_l[k] = _free[k] * g_l[k];
+						}
+
+						output_n_exp++;
+						sum_output_n_exp++;
+
+
+
 					} else {
-						Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
+
+
+
+						for ( eslocal k = 0; k < x_l.size(); k++){
+							x_l[k] -= alpha_f * p_l[k];
+							g_l[k] -= alpha_f * PAPx_l[k];
+						}
+
+						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
+
+						for ( eslocal k = 0; k < x_l.size(); k++){
+							x_l[k] -= alpha * g_til[k];
+						}
+
+						if (USE_GGtINV == 1) {
+							Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
+						} else {
+							Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
+						}
+
+						apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
+
+						if (USE_GGtINV == 1) {
+							Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, g_l, 0);
+						} else {
+							Projector_l_compG    ( timeEvalProj, cluster, Ax_l, g_l, 0);
+						}
+
+						for (eslocal k = 0; k < tmp.size(); k++){
+							g_l[k] = g_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
+						}
+						/// HESSS
+						output_n_hess++;
+						sum_output_n_hess++;
+						for (eslocal k = 0; k < tmp.size(); k++){
+							g_l[k] -= bCtmu[k];
+						}
+
+						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
+						for (eslocal k = 0; k < p_l.size(); k++){
+							p_l[k] = _free[k] * g_l[k];
+						}
+
+						output_n_exp++;
+						sum_output_n_exp++;
 					}
-
-					apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
-
-					if (USE_GGtINV == 1) {
-						Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, g_l, 0);
-					} else {
-						Projector_l_compG    ( timeEvalProj, cluster, Ax_l, g_l, 0);
-					}
-
-					for (eslocal k = 0; k < tmp.size(); k++){
-						g_l[k] = g_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
-					}
-					/// HESSS
-					output_n_hess++;
-					sum_output_n_hess++;
-					for (eslocal k = 0; k < tmp.size(); k++){
-						g_l[k] -= bCtmu[k];
-					}
-					proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
-					for (eslocal k = 0; k < p_l.size(); k++){
-						p_l[k] = _free[k] * g_l[k];
-					}
-
-
-
-
-
-
-
-
-//
-//					switch (USE_PREC) {
-//							case config::solver::PRECONDITIONERalternative::LUMPED:
-//							case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-//							case config::solver::PRECONDITIONERalternative::DIRICHLET:
-//							case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-//							case config::solver::PRECONDITIONERalternative::MAGIC:
-//
-//								if (USE_GGtINV == 1) {
-//									Projector_l_inv_compG( timeEvalProj, cluster, p_l, w_l, 0 );
-//								} else {
-//									Projector_l_compG( timeEvalProj, cluster, p_l, w_l, 0 );
-//								}
-//
-//								apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_2);
-//
-//								if (USE_GGtINV == 1) {
-//									Projector_l_inv_compG( timeEvalProj, cluster, tmp_2, y_l, 0 );
-//								} else {
-//									Projector_l_compG		  ( timeEvalProj, cluster, tmp_2, y_l, 0 );
-//								}
-//
-//								for (eslocal k = 0; k < p_l.size(); k++){
-//									p_l[k] = (y_l[k] * maxeig + 1.0 / rho * ( p_l[k]-w_l[k])) * _free[k];
-//
-//								}
-//
-//								break;
-//							case config::solver::PRECONDITIONERalternative::NONE:
-//
-//
-//								break;
-//							default:
-//								ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
-//							}
-
-
-
-
-
-
-
-
-					output_n_exp++;
-					sum_output_n_exp++;
 				}
 			} else {
 				for (eslocal k = 0; k < x_l.size(); k++){
@@ -1052,55 +1093,6 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 					p_l[k] = _free[k] * g_l[k];
 				}
 
-
-
-
-
-				switch (USE_PREC) {
-						case config::solver::PRECONDITIONERalternative::LUMPED:
-						case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-						case config::solver::PRECONDITIONERalternative::DIRICHLET:
-						case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-						case config::solver::PRECONDITIONERalternative::MAGIC:
-
-							if (USE_GGtINV == 1) {
-								Projector_l_inv_compG( timeEvalProj, cluster, p_l, w_l, 0 );
-							} else {
-								Projector_l_compG( timeEvalProj, cluster, p_l, w_l, 0 );
-							}
-
-							apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, tmp_2);
-
-							if (USE_GGtINV == 1) {
-								Projector_l_inv_compG( timeEvalProj, cluster, tmp_2, y_l, 0 );
-							} else {
-								Projector_l_compG		  ( timeEvalProj, cluster, tmp_2, y_l, 0 );
-							}
-
-							for (eslocal k = 0; k < p_l.size(); k++){
-								p_l[k] = (y_l[k] * maxeig + 1.0 / rho * ( p_l[k]-w_l[k])) * _free[k];
-
-							}
-
-							break;
-						case config::solver::PRECONDITIONERalternative::NONE:
-
-
-							break;
-						default:
-							ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
-						}
-
-
-
-
-
-
-
-
-
-
-
 				output_n_prop++;
 				sum_output_n_prop++;
 			}
@@ -1119,11 +1111,12 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 			normCx = sqrt( parallel_ddot_compressed(cluster, x_l, tmp) );
 
-			for (eslocal k = 0; k < tmp.size(); k++){
-				test_vec[k] = g_til[k];
-			}
+			//for (eslocal k = 0; k < tmp.size(); k++){
+			//	test_vec[k] = g_til[k];
+			//}
+			//norm_test_vec = parallel_norm_compressed(cluster, test_vec);
 
-			norm_test_vec = parallel_norm_compressed(cluster, test_vec);
+			norm_test_vec = parallel_norm_compressed(cluster, g_til);
 
 		}
 		output_n_it++;
@@ -1144,47 +1137,49 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 		ESINFO(CONVERGENCE)<< std::setw(3) << output_n_it << std::setw(16) << lag1 << std::setw(15) << norm_test_vec*maxeig << std::setw(15)  <<normCx_x << std::setw(6)  <<  output_n_exp <<  std::setw(6) <<  output_n_prop <<  std::setw(6)  <<  output_n_cg <<  std::setw(6)  <<  output_n_hess <<  std::setw(15) <<  rho << std::setw(10) <<  _M ;
 
-		if ( (norm_test_vec <= tol)  && (normCx <= _epsilon * normx_l)) {
-		 break;
-		}
 
 		for (eslocal k = 0; k < tmp.size(); k++) {
 			bCtmu_prev[k] = bCtmu[k];
 		}
 
-		for (eslocal k = 0; k < mu.size(); k++) {
-			mu[k] += rho * Cx_l[k];
-		}
-
-		if (USE_GGtINV == 1) {
-			Projector_l_inv_compG( timeEvalProj, cluster, mu, tmp, 1 );
+		if ( (norm_test_vec <= tol)  && (normCx <= _epsilon * normx_l)) {
+			stop = 1;
 		} else {
-			Projector_l_compG	 ( timeEvalProj, cluster, mu, tmp, 1 );
-		}
 
-		for (eslocal k = 0; k < bCtmu.size(); k++) {
-			bCtmu[k] = b_l[k] - tmp[k];
-		}
+			for (eslocal k = 0; k < mu.size(); k++) {
+				mu[k] += rho * Cx_l[k];
+			}
 
-		if ( !mchange && ( lag1 <= ( lag0 + rho* normCx*normCx*0.5 ))) {
-			_M = _beta * _M;
-		} else {
-		    mchange = 0.0;
+			if (USE_GGtINV == 1) {
+				Projector_l_inv_compG( timeEvalProj, cluster, mu, tmp, 1 );
+			} else {
+				Projector_l_compG	 ( timeEvalProj, cluster, mu, tmp, 1 );
+			}
+
+			for (eslocal k = 0; k < bCtmu.size(); k++) {
+				bCtmu[k] = b_l[k] - tmp[k];
+			}
+
+			if ( !mchange && ( lag1 <= ( lag0 + rho* normCx*normCx*0.5 ))) {
+				_M = _beta * _M;
+			} else {
+				mchange = 0.0;
+			}
+			lag0 = lag1;
 		}
-		lag0 = lag1;
 
 		for (eslocal k = 0; k < tmp.size(); k++) {
-			g_l[k] += bCtmu_prev[k]-bCtmu[k];
+			g_l[k] = g_l[k] + bCtmu_prev[k]-bCtmu[k];
 		}
 
 		proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
 		for (eslocal k = 0; k < tmp.size(); k++) {
 			p_l[k] = _free[k] * g_l[k];
-			test_vec[k] = g_til[k];
+		//	test_vec[k] = g_til[k];
 		}
-
-		norm_test_vec = parallel_norm_compressed(cluster, test_vec);
+		//norm_test_vec = parallel_norm_compressed(cluster, test_vec);
+		norm_test_vec = parallel_norm_compressed(cluster, g_til);
 	}
 
 
