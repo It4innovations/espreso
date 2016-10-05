@@ -114,7 +114,9 @@ void Factory::readParameters(const Configuration &configuration)
 		} }
 	};
 
-	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+	if (config::mesh::INPUT == config::mesh::INPUTalternative::GENERATOR) {
+		ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
+	}
 }
 
 static void fillMesh(const Configuration &configuration, Mesh &mesh, ElementType eType, GeneratorShape shape)
