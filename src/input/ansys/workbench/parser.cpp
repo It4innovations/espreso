@@ -230,15 +230,16 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Elemen
 	//eblock(ec->faces());
 
 	//conditions.push_back(ec);
-	std::stringstream ss;
-	ss << eType.back();
-	selections.push_back({ss.str(), ConditionElements::ELEMENTS});
+//	std::stringstream ss;
+//	ss << eType.back();
+//	selections.push_back({ss.str(), ConditionElements::ELEMENTS});
 }
 
 void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
 
+	params[1] = Parser::strip(params[1]);
 	std::vector<Element*> &region = _regions[params[1]];
 	if (params[2].compare(0, 4, "NODE") == 0) {
 		eslocal size = std::stol(params[3]);
@@ -268,33 +269,45 @@ void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vec
 
 	if (!params[1].compare(0, 3, "all")) {
 		if (!params[2].compare(0, 3, "all")) {
-			ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
+			evaluators.push_back(new ConstEvaluator(0));
+			std::vector<Element*> &region = _selectedRegion.size() ? _regions[_selectedRegion] : nodes;
+			for (size_t e = 0; e < region.size(); e++) {
+				region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
+				region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
+				region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
+			}
 		} else {
 			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
 		}
-	} else {
-		for (size_t t = 0; t < _tables.size(); t++) {
-			if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
-				const std::vector<Element*> &region = _regions[params[1]];
-				evaluators.push_back(_tables[t]->copy());
-				if (!params[2].compare(0, 2, "ux")) {
-					for (size_t e = 0; e < region.size(); e++) {
-						region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
-					}
+		return;
+	}
+
+	for (size_t t = 0; t < _tables.size(); t++) {
+		if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
+			const std::vector<Element*> &region = _regions[params[1]];
+			evaluators.push_back(_tables[t]->copy());
+			if (!params[2].compare(0, 2, "ux")) {
+				for (size_t e = 0; e < region.size(); e++) {
+					region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
 				}
-				if (!params[2].compare(0, 2, "uy")) {
-					for (size_t e = 0; e < region.size(); e++) {
-						region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
-					}
+				return;
+			}
+			if (!params[2].compare(0, 2, "uy")) {
+				for (size_t e = 0; e < region.size(); e++) {
+					region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
 				}
-				if (!params[2].compare(0, 2, "uz")) {
-					for (size_t e = 0; e < region.size(); e++) {
-						region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
-					}
+				return;
+			}
+			if (!params[2].compare(0, 2, "uz")) {
+				for (size_t e = 0; e < region.size(); e++) {
+					region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
 				}
+				return;
 			}
 		}
 	}
+
+	ESINFO(GLOBAL_ERROR) << "Unknown displacement settings " << _line;
 }
 
 void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
@@ -307,50 +320,35 @@ void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Ele
 		} else {
 			ESINFO(GLOBAL_ERROR) << "Not implemented f option '" << params[2] << "'";
 		}
-	} else {
-		for (size_t t = 0; t < _tables.size(); t++) {
-			if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
-				const std::vector<Element*> &region = _regions[params[1]];
-				evaluators.push_back(_tables[t]->copy());
-				if (!params[2].compare(0, 2, "fx")) {
-					for (size_t e = 0; e < region.size(); e++) {
-						region[e]->addSettings(Property::FORCE_X, evaluators.back());
-					}
+	}
+
+	for (size_t t = 0; t < _tables.size(); t++) {
+		if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
+			const std::vector<Element*> &region = _regions[params[1]];
+			evaluators.push_back(_tables[t]->copy());
+			if (!params[2].compare(0, 2, "fx")) {
+				for (size_t e = 0; e < region.size(); e++) {
+					region[e]->addSettings(Property::FORCE_X, evaluators.back());
 				}
-				if (!params[2].compare(0, 2, "fy")) {
-					for (size_t e = 0; e < region.size(); e++) {
-						region[e]->addSettings(Property::FORCE_Y, evaluators.back());
-					}
+				return;
+			}
+			if (!params[2].compare(0, 2, "fy")) {
+				for (size_t e = 0; e < region.size(); e++) {
+					region[e]->addSettings(Property::FORCE_Y, evaluators.back());
 				}
-				if (!params[2].compare(0, 2, "fz")) {
-					for (size_t e = 0; e < region.size(); e++) {
-						region[e]->addSettings(Property::FORCE_Z, evaluators.back());
-					}
+				return;
+			}
+			if (!params[2].compare(0, 2, "fz")) {
+				for (size_t e = 0; e < region.size(); e++) {
+					region[e]->addSettings(Property::FORCE_Z, evaluators.back());
 				}
+				return;
 			}
 		}
 	}
-}
 
-//void WorkbenchParser::displacement(std::vector<Dirichlet*> &dirichlet)
-//{
-//	std::vector<std::string> params = divide(_line);
-//
-//	if (!params[1].compare(0, 3, "all")) {
-//		if (!params[2].compare(0, 3, "all")) {
-//			if (nSelection == -1) {
-//				ESINFO(GLOBAL_ERROR) << "Displacement on all nodes is not supported";
-//			} else {
-//				ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
-//				//conditions[nSelection]->set("0", ConditionType::DIRICHLET);
-//			}
-//		} else {
-//			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
-//		}
-//	} else {
-//		ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[1] << "'";
-//	}
-//}
+	ESINFO(GLOBAL_ERROR) << "Unknown force settings " << _line;
+}
 
 void WorkbenchParser::loadvar()
 {
@@ -422,54 +420,14 @@ void WorkbenchParser::dim()
 		}
 
 		_tables.push_back(new TableEvaluator(params[1], table, properties, axis));
-	} else {
-		ESINFO(GLOBAL_ERROR) << "Not implemented *DIM option '" << params[2] << "'";
+		return;
 	}
 
+	if (!params[2].compare(0, 5, "string")) {
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Skip *DIM option 'string'";
+		return;
+	}
 }
-
-//void WorkbenchParser::cmblock(std::vector<Dirichlet*> &dirichlet)
-//{
-//	std::vector<std::string> params = divide(_line);
-//
-//	if (params[2].compare(0, 4, "NODE") == 0) {
-//		eslocal size = std::stol(params[3]);
-////		NodeCondition *nc = new NodeCondition();
-//
-//		getline(_file, _line);
-//		std::vector<int> sizes = parseBlockHeader(_line);
-//
-//		getline(_file, _line);
-//		int start = 0, n = 0;
-//		ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
-//		//nc->nodes().reserve(size);
-//		while (0) { //nc->nodes().size() < size) {
-//			//nc->nodes().push_back(std::stol(_line.substr(start, sizes[n])) - 1);
-//			start += sizes[n++];
-//			if (n % sizes.size() == 0) {
-//				getline(_file, _line);
-//				start = 0;
-//				n = 0;
-//			}
-//		}
-//		//conditions.push_back(nc);
-//		//selections.push_back({params[1], ConditionElements::NODES});
-//	} else {
-//		ESINFO(GLOBAL_ERROR) << "Not implemented loading of cmblock of elements";
-//	}
-//}
-
-//void WorkbenchParser::eblock(std::vector<Dirichlet*> &dirichlet)
-//{
-//	ESINFO(GLOBAL_ERROR) << "Broken WORKBENCH INPUT";
-//	//SurfaceCondition *ec = new SurfaceCondition();
-//	//eblock(ec->faces());
-//
-//	//conditions.push_back(ec);
-//	std::stringstream ss;
-//	ss << eType.back();
-//	selections.push_back({ss.str(), ConditionElements::ELEMENTS});
-//}
 
 void WorkbenchParser::et()
 {
@@ -481,49 +439,33 @@ void WorkbenchParser::et()
 
 void WorkbenchParser::cmsel()
 {
-	// ESINFO(GLOBAL_ERROR) << "cmsel";
-//	std::vector<std::string> params = divide(_line);
-//
-//	if (params[1].compare(0, 1, "s") == 0) {
-//		for (size_t i = 0; i < selections.size(); i++) {
-//			if (!selections[i].first.compare(0, params[2].size() - 1, params[2], 0, params[2].size() - 1)) {
-//				switch (selections[i].second) {
-//				case ConditionElements::NODES:
-//					nSelection = i;
-//					return;
-//				case ConditionElements::ELEMENTS:
-//					eSelection = i;
-//					return;
-//				}
-//			}
-//		}
-//	} else {
-//		ESINFO(GLOBAL_ERROR) << "Not implemented cmsel option '" << params[1] << "'";
-//	}
+	std::vector<std::string> params = divide(_line);
+	if (params[1].compare(0, 1, "s")) {
+		ESINFO(GLOBAL_ERROR) << Info::TextColor::YELLOW << "unknown cmsel parameters '" << params[1] << "'";
+	}
+	_selectedRegion = Parser::strip(params[2]);
 }
 
 void WorkbenchParser::nsel()
 {
-	// ESINFO(GLOBAL_ERROR) << "nsel";
-//	std::vector<std::string> params = divide(_line);
-//
-//	if (params[1].compare(0, 3, "all") == 0) {
-//		nSelection = -1;
-//	} else {
-//		ESINFO(GLOBAL_ERROR) << "Not implemented nsel option '" << params[1] << "'";
-//	}
+	std::vector<std::string> params = divide(_line);
+
+	if (params[1].compare(0, 3, "all") == 0) {
+		_selectedRegion.clear();
+	} else {
+		ESINFO(GLOBAL_ERROR) << "Not implemented nsel option '" << params[1] << "'";
+	}
 }
 
 void WorkbenchParser::esel()
 {
-	// ESINFO(GLOBAL_ERROR) << "esel";
-//	std::vector<std::string> params = divide(_line);
-//
-//	if (params[1].compare(0, 3, "all") == 0) {
-//		eSelection = - 1;
-//	} else {
-//		ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << params[1] << "'";
-//	}
+	std::vector<std::string> params = divide(_line);
+
+	if (params[1].compare(0, 3, "all") == 0) {
+		_selectedRegion.clear();
+	} else {
+		ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << params[1] << "'";
+	}
 }
 
 

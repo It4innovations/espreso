@@ -70,9 +70,6 @@ public:
 
 	~WorkbenchParser()
 	{
-		for (size_t e = 0; e < _evaluators.size(); e++) {
-			delete _evaluators[e];
-		}
 		for (size_t t = 0; t < _tables.size(); t++) {
 			delete _tables[t];
 		}
@@ -96,9 +93,9 @@ protected:
 
 	int bodyCounter;
 	std::vector<int> eType;
-	std::vector<std::pair<std::string, ConditionElements> > selections;
 	Mesh &_mesh;
-	std::vector<Evaluator*> _evaluators;
+
+	std::string _selectedRegion;
 	std::map<std::string, std::vector<Element*> > _regions;
 	std::vector<TableEvaluator*> _tables;
 };
