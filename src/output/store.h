@@ -22,6 +22,7 @@ public:
 	virtual void storeGeometry(size_t timeStep = -1) = 0;
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType) = 0;
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType) = 0;
+	virtual void finalize() =0;
 
 	virtual ~Store() {};
 

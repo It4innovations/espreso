@@ -68,6 +68,7 @@ void LinearElasticity3D::saveMeshProperties(output::Store &store)
 void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("displacement", 3, results, output::Store::ElementType::NODES);
+	store.finalize();
 }
 
 static void composeFacesGluing(Mesh &mesh, Constraints &constrains)

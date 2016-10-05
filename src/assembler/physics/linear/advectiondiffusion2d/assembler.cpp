@@ -69,6 +69,7 @@ void AdvectionDiffusion2D::saveMeshProperties(output::Store &store)
 void AdvectionDiffusion2D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("temperature", 1, results, output::Store::ElementType::NODES);
+	store.finalize();
 }
 
 void AdvectionDiffusion2D::assembleGluingMatrices()

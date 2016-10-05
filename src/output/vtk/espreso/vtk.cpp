@@ -221,6 +221,8 @@ void VTK::storeGeometry(size_t timeStep)
 	_os.flush();
 }
 
+void VTK::finalize() {};
+
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
 {
 	std::vector<std::vector<int> > selection(_mesh.parts());
