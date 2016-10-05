@@ -128,7 +128,11 @@ public:
 	virtual void corners(std::vector<eslocal> &corners) {};
 
 protected:
-	Loader(Mesh &mesh): mesh(mesh) {};
+	Loader(Mesh &mesh): mesh(mesh)
+	{
+		MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
+		MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
+	}
 	virtual ~Loader() {};
 	Mesh &mesh;
 };
