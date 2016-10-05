@@ -31,10 +31,14 @@ void Generator::materials(std::vector<Material> &materials)
 	materials.resize(2, Material(mesh.coordinates()));
 
 	for (auto it = _settings.material1.begin(); it != _settings.material1.end(); ++it) {
-		materials[0].setParameter(it->first, it->second);
+		if (!materials[0].setParameter(it->first, it->second)) {
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Unknown material parameter " << it->first;
+		}
 	}
 	for (auto it = _settings.material2.begin(); it != _settings.material2.end(); ++it) {
-		materials[1].setParameter(it->first, it->second);
+		if (materials[1].setParameter(it->first, it->second)) {
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Unknown material parameter " << it->first;
+		}
 	}
 }
 
