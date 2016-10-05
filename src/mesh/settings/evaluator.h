@@ -17,7 +17,9 @@ protected:
 	enum class Type: int {
 		DEFAULT,
 		CONST,
-		COORDINATE
+		COORDINATE,
+		TABLE,
+		ARRAY
 	};
 
 public:
@@ -138,6 +140,8 @@ public:
 			const std::vector<std::vector<double> > &axis)
 	: Evaluator(name), _dimension(properties.size()), _table(table), _properties(properties), _axis(axis) {};
 
+	TableEvaluator(std::ifstream &is);
+
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
 	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
@@ -162,11 +166,72 @@ public:
 		return _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
 	}
 
+	virtual void store(std::ofstream& os);
+
 protected:
 	size_t _dimension;
 	std::vector<std::vector<std::vector<double> > > _table;
 	std::vector<TableProperty> _properties;
 	std::vector<std::vector<double> > _axis;
+};
+
+namespace input { class API; }
+
+class ArrayEvaluator: public Evaluator {
+
+	friend class input::API;
+public:
+	ArrayEvaluator(const std::string &name, std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset)
+	: Evaluator(name)
+	{
+		std::vector<eslocal> permutation(indices.size());
+		std::iota(permutation.begin(), permutation.end(), 0);
+		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return indices[i] < indices[j]; });
+		_indices.reserve(indices.size());
+		_values.reserve(indices.size());
+		for (size_t i = 0; i < permutation.size(); i++) {
+			_indices.push_back(indices[permutation[i]] - offset);
+			_values.push_back(values[permutation[i]]);
+		}
+	}
+
+	ArrayEvaluator(const std::string &name, eslocal size, eslocal *indices, double *values, eslocal offset)
+	: Evaluator(name)
+	{
+		std::vector<eslocal> permutation(size);
+		std::iota(permutation.begin(), permutation.end(), 0);
+		std::sort(permutation.begin(), permutation.end(), [&] (eslocal i, eslocal j) { return indices[i] < indices[j]; });
+		_indices.reserve(size);
+		_values.reserve(size);
+		for (size_t i = 0; i < permutation.size(); i++) {
+			_indices.push_back(indices[permutation[i]] - offset);
+			_values.push_back(values[permutation[i]]);
+		}
+	}
+
+
+	virtual Evaluator* copy() const { return new ArrayEvaluator(*this); }
+	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
+	{
+		auto it = std::lower_bound(_indices.begin(), _indices.end(), index);
+		if (it != _indices.end() && *it == index) {
+			return _values[it - _indices.begin()];
+		} else {
+			ESINFO(ERROR) << "Array evaluator has no specified value for index '" << index << "'";
+			return 0;
+		}
+	}
+
+	virtual void store(std::ofstream& os)
+	{
+		Type type = Type::ARRAY;
+		ESINFO(GLOBAL_ERROR) << "implement store Array evaluator";
+	}
+
+protected:
+	std::vector<eslocal> _indices;
+	std::vector<double> _values;
+
 };
 
 }
