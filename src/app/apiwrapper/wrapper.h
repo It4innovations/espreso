@@ -22,8 +22,8 @@ struct FETI4IStructMatrix {
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(FETI4IStructMatrix &matrix)
-	: instance(NULL), mesh(matrix.eDOFs, matrix.eMatrices) {};
+	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
+	: instance(NULL), mesh(matrix.eDOFs, matrix.eMatrices, l2g, size) {};
 	~FETI4IStructInstance() { if (instance != NULL) { delete instance; } }
 
 	espreso::Instance *instance;

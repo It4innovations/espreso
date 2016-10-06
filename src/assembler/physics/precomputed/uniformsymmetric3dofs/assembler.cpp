@@ -13,7 +13,7 @@ void UniformSymmetric3DOFs::prepareMeshStructures()
 	}
 }
 
-void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
+void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }

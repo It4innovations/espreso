@@ -29,6 +29,9 @@ public:
 
 	virtual ~HypreInstance() {};
 
+	virtual const Physics& physics() const { return _physics; }
+	virtual const Constraints& constraints() const { return _constrains; }
+
 protected:
 	LLNL_FEI_Impl feiPtr;
 	TConstrains _constrains;
@@ -49,7 +52,7 @@ template <class TConstrains, class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(Mesh &mesh): Instance(mesh)
+	HypreInstance(Mesh &mesh): Instance(mesh), _constrains(mesh), _physics(mesh, _constrains)
 	{
 		ESINFO(GLOBAL_ERROR) << "HYPRE is not linked! Specify HYPRE::INCLUDE and HYPRE::LIBPATH";
 	}
@@ -60,6 +63,12 @@ public:
 
 	virtual ~HypreInstance() {};
 
+	virtual const Physics& physics() const { return _physics; }
+	virtual const Constraints& constraints() const { return _constrains; }
+
+protected:
+	TConstrains _constrains;
+	TPhysics _physics;
 };
 
 }

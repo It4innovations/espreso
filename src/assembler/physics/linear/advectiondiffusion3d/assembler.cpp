@@ -46,7 +46,7 @@ static double determinant3x3(DenseMatrix &m)
 		values[2] * values[4] * values[6] -
 		values[1] * values[3] * values[8] -
 		values[0] * values[5] * values[7]
-   );
+	);
 }
 
 static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
@@ -148,7 +148,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
 }
 
-void AdvectionDiffusion3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs)
+void AdvectionDiffusion3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }

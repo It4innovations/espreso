@@ -20,6 +20,9 @@ struct Instance {
 
 	virtual void finalize() = 0;
 
+	virtual const Physics& physics() const = 0;
+	virtual const Constraints& constraints() const = 0;
+
 	virtual ~Instance() {};
 
 protected:

@@ -42,6 +42,7 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
+	std::iota(_permutation.begin(), _permutation.end(), 0);
 	if (parts == 1 && this->parts() == 1) {
 		_partPtrs = { 0, (eslocal)_elements.size() };
 		mapElementsToDomains();
@@ -55,7 +56,6 @@ void APIMesh::partitiate(size_t parts)
 			_partPtrs[ePartition[i]]++;
 		}
 
-		std::iota(_permutation.begin(), _permutation.end(), 0);
 		std::sort(_permutation.begin(), _permutation.end(), [&] (eslocal i, eslocal j) { return _elements[i]->domains()[0] < _elements[j]->domains()[0]; });
 
 		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
@@ -1354,9 +1354,8 @@ std::vector<size_t> APIMesh::distributeDOFsToDomains(const std::vector<size_t> &
 	return fillUniformDOFs(_DOFs, parts(), { Property::UNKNOWN }, offsets);
 }
 
-static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, const Mesh &mesh)
+static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::map<esglobal, eslocal> &g2l)
 {
-	std::vector<int> neighbours = mesh.neighbours();
 	neighbours.push_back(config::env::MPIrank);
 	std::sort(neighbours.begin(), neighbours.end());
 
@@ -1390,7 +1389,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 					sBuffer[t][n2i(*c)].push_back(elements[e]->vtkCode());
 					for (size_t n = 0; n < elements[e]->coarseNodes(); n++) {
-						sBuffer[t][n2i(*c)].push_back(mesh.coordinates().globalIndex(elements[e]->node(n)));
+						sBuffer[t][n2i(*c)].push_back(l2g[elements[e]->node(n)]);
 					}
 
 					for (size_t i = 0; i < DOFs.size(); i++) {
@@ -1439,6 +1438,15 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 			case NodeVTKCode:
 				nElements[n].push_back(new Node(rBuffer[n][p]));
 				break;
+			case DOFVTKCode:
+				nElements[n].push_back(new DOF(rBuffer[n][p]));
+				break;
+			case Line2VTKCode:
+				nElements[n].push_back(new Line2(&rBuffer[n][p]));
+				break;
+			case Line3VTKCode:
+				nElements[n].push_back(new Line3(&rBuffer[n][p]));
+				break;
 			case Square4VTKCode:
 				nElements[n].push_back(new Square4(&rBuffer[n][p]));
 				break;
@@ -1451,13 +1459,18 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 			case Triangle6VTKCode:
 				nElements[n].push_back(new Triangle6(&rBuffer[n][p]));
 				break;
+			case UnknownPointVTKCode:
+			case UnknownLineVTKCode:
+			case UnknownPlaneVTKCode:
+				ESINFO(GLOBAL_ERROR) << "Unknown elements are not allowed to send";
+				break;
 			default:
 				// Volume elements are never exchanged
 				ESINFO(GLOBAL_ERROR) << "Unknown neighbour element";
 			}
 			p += nElements[n].back()->nodes();
 			for (size_t i = 0; i < nElements[n].back()->nodes(); i++) {
-				nElements[n].back()->node(i) = mesh.coordinates().clusterIndex(nElements[n].back()->node(i));
+				nElements[n].back()->node(i) = g2l.find(nElements[n].back()->node(i))->second;
 			}
 
 			nElements[n].back()->DOFsDomainsCounters() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
@@ -1507,22 +1520,22 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 void Mesh::computeNodesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_nodes, DOFs, *this);
+	computeDOFsCounters(_nodes, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMap);
 }
 
 void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_edges, DOFs, *this);
+	computeDOFsCounters(_edges, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMap);
 }
 
 void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_faces, DOFs, *this);
+	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMap);
 }
 
 void APIMesh::computeDOFsDOFsCounters()
 {
-	computeDOFsCounters(_DOFs, { Property::UNKNOWN }, *this);
+	computeDOFsCounters(_DOFs, { Property::UNKNOWN }, _neighbours, _l2g, _g2l);
 }
 
 void Mesh::mapCoordinatesToDomains()

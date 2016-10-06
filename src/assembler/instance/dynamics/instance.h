@@ -29,8 +29,10 @@ public:
 
 	virtual void finalize();
 
-
 	virtual ~DynamicsInstance() {};
+
+	virtual const Physics& physics() const { return _physics; }
+	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
 	TConstrains _constrains;

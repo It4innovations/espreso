@@ -159,8 +159,8 @@ class APIMesh: public Mesh
 {
 	friend class input::API;
 public:
-	APIMesh(const std::vector<std::vector<eslocal> > &eDOFs, const std::vector<std::vector<double> > &eMatrices)
-	: _permutation(eDOFs.size()), _eDOFs(eDOFs), _eMatrices(eMatrices) { };
+	APIMesh(const std::vector<std::vector<eslocal> > &eDOFs, const std::vector<std::vector<double> > &eMatrices, eslocal *l2g, size_t size)
+	: _l2g(l2g, l2g + size), _permutation(eDOFs.size()), _eDOFs(eDOFs), _eMatrices(eMatrices) { };
 
 	void partitiate(size_t parts);
 
@@ -178,6 +178,8 @@ public:
 
 protected:
 	std::vector<Element*> _DOFs;
+	std::vector<esglobal> _l2g;
+	std::map<esglobal, eslocal> _g2l;
 	std::vector<eslocal> _permutation;
 	const std::vector<std::vector<eslocal>> &_eDOFs;
 	const std::vector<std::vector<double> > &_eMatrices;

@@ -21,6 +21,9 @@ struct PrecomputedInstance: public Instance
 
 	virtual ~PrecomputedInstance() {};
 
+	virtual const Physics& physics() const { return _physics; }
+	virtual const Constraints& constraints() const { return _constrains; }
+
 protected:
 	TConstrains _constrains;
 	TPhysics _physics;
