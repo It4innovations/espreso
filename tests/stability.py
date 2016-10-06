@@ -85,6 +85,7 @@ if __name__ == '__main__':
             config["VERBOSE_LEVEL"] = 1
             config["TESTING_LEVEL"] = 1
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, name, procs, config, args)
+            return
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, name + "_METIS", procs, config, args)
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube_with_cyclic_edge, name + "_METIS_TWO_SUBDOMAINS", procs, config, args)
             TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_esdata, name + "_ESDATA", procs, config, args)
