@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_ELEMENTS_POINT_UNKNOWNPOINT_H_
 #define SRC_MESH_ELEMENTS_POINT_UNKNOWNPOINT_H_
 
+#define UnknownPointVTKCode 0
+
 #include "pointelement.h"
 
 namespace espreso {
@@ -13,8 +15,7 @@ public:
 	UnknownPoint(eslocal index): PointElement(index) {};
 	Element* copy() const { return new UnknownPoint(*this); }
 
-	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of unknown point."; return -1; }
-
+	eslocal vtkCode() const { return UnknownPointVTKCode; }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown point has no gausse points."; return 0; }
 
 	const std::vector<DenseMatrix>& dN() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }

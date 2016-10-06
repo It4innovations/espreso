@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_ELEMENTS_PLANE_UNKNOWNPLANE_H_
 #define SRC_MESH_ELEMENTS_PLANE_UNKNOWNPLANE_H_
 
+#define UnknownPlaneVTKCode -2
+
 #include "planeelement.h"
 
 namespace espreso {
@@ -13,7 +15,7 @@ public:
 	Element* copy() const { return new UnknownPlane(*this); }
 
 	eslocal nCommon() const { return _nodes.size() > 4 ? 3 : 2; }
-	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of unknown plane element."; return -1; }
+	eslocal vtkCode() const { return UnknownPlaneVTKCode; }
 
 	size_t edges() const { return _edges.size(); }
 	size_t nodes() const { return _nodes.size(); }

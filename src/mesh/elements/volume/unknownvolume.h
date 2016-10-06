@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_ELEMENTS_VOLUME_UNKNOWNVOLUME_H_
 #define SRC_MESH_ELEMENTS_VOLUME_UNKNOWNVOLUME_H_
 
+#define UnknownVolumeVTKCode -3
+
 #include "volumeelement.h"
 
 namespace espreso {
@@ -13,7 +15,7 @@ public:
 	Element* copy() const { return new UnknownVolume(*this); }
 
 	eslocal nCommon() const { return _nodes.size() > 8 ? 4 : 3; }
-	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of unknown volume element."; return -1; }
+	eslocal vtkCode() const { return UnknownVolumeVTKCode; }
 	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Call param of unknown volume element."; return -1; }
 	void setParam(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Set param of unknown volume element."; }
 	size_t params() const { return 0; }

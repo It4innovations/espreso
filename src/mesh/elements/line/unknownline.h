@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_ELEMENTS_LINE_UNKNOWNLINE_H_
 #define SRC_MESH_ELEMENTS_LINE_UNKNOWNLINE_H_
 
+#define UnknownLineVTKCode -1
+
 #include "lineelement.h"
 
 namespace espreso {
@@ -13,7 +15,7 @@ public:
 	Element* copy() const { return new UnknownLine(*this); }
 
 	eslocal nCommon() const { return _nodes.size() > 4 ? 3 : 2; }
-	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of unknown line element."; return -1; }
+	eslocal vtkCode() const { return UnknownLineVTKCode; }
 
 	size_t nodes() const { return _nodes.size(); }
 	size_t coarseNodes() const { return _nodes.size(); }

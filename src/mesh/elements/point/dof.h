@@ -5,7 +5,7 @@
 #include "pointelement.h"
 
 #define DOFGPCount 0
-#define DOFVTKCode -1
+#define DOFVTKCode -4
 
 namespace espreso {
 
@@ -16,7 +16,7 @@ public:
 	DOF(eslocal index): PointElement(index) {};
 	Element* copy() const { return new DOF(*this); }
 
-	eslocal vtkCode() const { ESINFO(GLOBAL_ERROR) << "Want VTK of DOF."; return -1; }
+	eslocal vtkCode() const { return DOFVTKCode; }
 	size_t gaussePoints() const { return DOFGPCount; }
 
 	const std::vector<DenseMatrix>& dN() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
