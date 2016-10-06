@@ -297,14 +297,9 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	ROWS.push_back(ROWS.back() + 2 * fixPoints.size());
 
 	for (size_t c = 0; c < 3; c++) {
-		std::vector<double> kernel = { 0, 0, 0 };
-
-		kernel[c] = 1;
 		for (size_t i = 0; i < fixPoints.size(); i++) {
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
-			VALS.insert(VALS.end(), kernel.begin(), kernel.end());
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, c) + IJVMatrixIndexing);
+			VALS.insert(VALS.end(), 1);
 		}
 	}
 
