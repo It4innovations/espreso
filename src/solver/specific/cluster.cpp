@@ -1236,7 +1236,7 @@ void ClusterBase::CreateF0() {
 
 
 	if (config::info::PRINT_MATRICES) {
-    SparseMatrix tmpF0 = F0_Mat;
+		SparseMatrix tmpF0 = F0_Mat;
 		std::ofstream osF0(Logging::prepareFile("F0"));
 		osF0 <<  tmpF0;
 		osF0.close();
