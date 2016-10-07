@@ -78,6 +78,7 @@ static void FETI4ISetRealOptions(FETI4IReal* options)
 
 void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix 	*matrix,
+		FETI4IInt		type,
 		FETI4IInt		indexBase)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
@@ -88,7 +89,7 @@ void FETI4ICreateStiffnessMatrix(
 	TimeEvent event("Add element");
 	DataHolder::timeStatistics.addEvent(event);
 
-	DataHolder::matrices.push_back(new FETI4IStructMatrix(indexBase));
+	DataHolder::matrices.push_back(new FETI4IStructMatrix(type, indexBase));
 	*matrix = DataHolder::matrices.back();
 }
 
@@ -151,7 +152,7 @@ void FETI4ICreateInstance(
 			neighClusters,
 			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(DataHolder::instances.back()->mesh, rhs, size);
+	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(DataHolder::instances.back()->mesh, (SparseMatrix::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 

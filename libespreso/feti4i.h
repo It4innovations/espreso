@@ -84,10 +84,12 @@ void FETI4ISetDefaultRealOptions(
  * Created matrix is an empty matrix prepared for later adding of element matrices.
  *
  * @param matrix an address of a data holder
+ * @param type a type of the matrix
  * @param indexBase a value of the first matrix index
  */
 void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix	*matrix,
+		FETI4IInt		type,
 		FETI4IInt		indexBase
 );
 
@@ -243,6 +245,16 @@ typedef enum {
 
 	FETI4I_REAL_OPTIONS_SIZE
 } FETI4IRealOptions;
+
+/// List of allowed matrix types
+/**
+ * ESPRESO matrix type allows some optimization of solver.
+ */
+typedef enum {
+	FETI4I_REAL_SYMMETRIC_POSITIVE_DEFINITE,
+	FETI4I_REAL_SYMMETRIC_INDEFINITE,
+	FETI4I_REAL_UNSYMMETRIC,
+} FETI4IMatrixType;
 
 /// List of allowed element types
 /**

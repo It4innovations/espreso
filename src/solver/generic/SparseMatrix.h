@@ -27,10 +27,10 @@ class SparseMatrix
 
 public:
 
-	enum class MatrixType {
-		REAL_SYMMETRIC_POSITIVE_DEFINITE,
-		REAL_SYMMETRIC_INDEFINITE,
-		REAL_UNSYMMETRIC
+	enum class MatrixType : int {
+		REAL_SYMMETRIC_POSITIVE_DEFINITE = 0,
+		REAL_SYMMETRIC_INDEFINITE = 1,
+		REAL_UNSYMMETRIC = 2
 	};
 
 	//Constructors

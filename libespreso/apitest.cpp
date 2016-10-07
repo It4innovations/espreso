@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 	// At first create stiffness matrix
 	FETI4IMatrix K;
 	FETI4IInt indexBase = 0;
-	FETI4ICreateStiffnessMatrix(&K, indexBase);
+	FETI4ICreateStiffnessMatrix(&K, (int)factory.instance->physics().mtype, indexBase);
 
 	std::vector<FETI4IReal> rhs(factory.instance->physics().f[0]);
 	std::vector<FETI4IMPIInt> neighbours(factory.mesh.neighbours());

@@ -8,10 +8,9 @@ namespace espreso {
 
 struct UniformSymmetric3DOFs: public PrecomputedPhysics
 {
-	UniformSymmetric3DOFs(APIMesh &mesh, Constraints &constraints, double *rhs, size_t rhs_size)
+	UniformSymmetric3DOFs(APIMesh &mesh, Constraints &constraints, SparseMatrix::MatrixType type, double *rhs, size_t rhs_size)
 	: PrecomputedPhysics(
-			mesh, constraints,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			mesh, constraints, type,
 			{}, {}, {}, {}, {},
 			rhs, rhs_size) {};
 

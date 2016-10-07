@@ -11,13 +11,14 @@
 #include "esbasis.h"
 
 struct FETI4IStructMatrix {
-	FETI4IStructMatrix(eslocal offset): offset(offset) {};
+	FETI4IStructMatrix(eslocal type, eslocal offset): type(type), offset(offset) {};
 
 	std::vector<eslocal> eType;
 	std::vector<std::vector<eslocal> > eNodes;
 	std::vector<std::vector<eslocal> > eDOFs;
 	std::vector<std::vector<double> > eMatrices;
 
+	eslocal type;
 	eslocal offset;
 };
 
