@@ -3,7 +3,7 @@
 
 using namespace espreso;
 
-void UniformSymmetric3DOFs::prepareMeshStructures()
+void SingularSystem::prepareMeshStructures()
 {
 	matrixSize = _apimesh.distributeDOFsToDomains(matrixSize);
 	_apimesh.computeDOFsDOFsCounters();
@@ -13,7 +13,7 @@ void UniformSymmetric3DOFs::prepareMeshStructures()
 	}
 }
 
-void UniformSymmetric3DOFs::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
+void SingularSystem::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
@@ -26,7 +26,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
-void UniformSymmetric3DOFs::makeStiffnessMatricesRegular()
+void SingularSystem::makeStiffnessMatricesRegular()
 {
 	cilk_for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		K[subdomain].RemoveLower();
@@ -34,7 +34,7 @@ void UniformSymmetric3DOFs::makeStiffnessMatricesRegular()
 	}
 }
 
-void UniformSymmetric3DOFs::assembleGluingMatrices()
+void SingularSystem::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
@@ -42,7 +42,7 @@ void UniformSymmetric3DOFs::assembleGluingMatrices()
 	_constraints.insertElementGluingToB1(_apimesh.DOFs(), { Property::UNKNOWN });
 }
 
-void UniformSymmetric3DOFs::composeSubdomain(size_t subdomain)
+void SingularSystem::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
 	eslocal nK = matrixSize[subdomain];

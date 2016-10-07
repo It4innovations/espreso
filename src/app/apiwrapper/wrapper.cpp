@@ -2,7 +2,7 @@
 #include "wrapper.h"
 #include "../../../libespreso/feti4i.h"
 #include "../../assembler/instance/precomputed/instance.h"
-#include "../../assembler/physics/precomputed/uniformsymmetric3dofs/assembler.h"
+#include "../../assembler/physics/precomputed/singular/assembler.h"
 
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
@@ -152,7 +152,7 @@ void FETI4ICreateInstance(
 			neighClusters,
 			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, UniformSymmetric3DOFs>(DataHolder::instances.back()->mesh, (SparseMatrix::MatrixType)matrix->type, rhs, size);
+	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, SingularSystem>(DataHolder::instances.back()->mesh, (SparseMatrix::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 

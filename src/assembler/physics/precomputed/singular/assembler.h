@@ -1,14 +1,14 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_PRECOMPUTED_UNIFORMSYMMETRIC3DOFS_ASSEMBLER_H_
-#define SRC_ASSEMBLER_PHYSICS_PRECOMPUTED_UNIFORMSYMMETRIC3DOFS_ASSEMBLER_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_PRECOMPUTED_SINGULAR_ASSEMBLER_H_
+#define SRC_ASSEMBLER_PHYSICS_PRECOMPUTED_SINGULAR_ASSEMBLER_H_
 
 #include "../assembler.h"
 
 namespace espreso {
 
-struct UniformSymmetric3DOFs: public PrecomputedPhysics
+struct SingularSystem: public PrecomputedPhysics
 {
-	UniformSymmetric3DOFs(APIMesh &mesh, Constraints &constraints, SparseMatrix::MatrixType type, double *rhs, size_t rhs_size)
+	SingularSystem(APIMesh &mesh, Constraints &constraints, SparseMatrix::MatrixType type, double *rhs, size_t rhs_size)
 	: PrecomputedPhysics(
 			mesh, constraints, type,
 			{}, {}, {}, {}, {},
@@ -26,4 +26,4 @@ protected:
 }
 
 
-#endif /* SRC_ASSEMBLER_PHYSICS_PRECOMPUTED_UNIFORMSYMMETRIC3DOFS_ASSEMBLER_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_PRECOMPUTED_SINGULAR_ASSEMBLER_H_ */
