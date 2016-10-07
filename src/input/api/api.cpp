@@ -73,7 +73,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 	}
 }
 
-void API::clusterBoundaries(std::vector<eslocal> &neighbours, size_t size, const eslocal *l2g)
+void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const eslocal *l2g)
 {
 	auto it = std::find(neighbours.begin(), neighbours.end(), config::env::MPIrank);
 	if (it != neighbours.end() && *it == config::env::MPIrank) {

@@ -142,7 +142,7 @@ void FETI4ICreateInstance(
 
 	ESINFO(OVERVIEW) << "ESPRESO create solver instance";
 
-	std::vector<eslocal> neighClusters = std::vector<eslocal>(neighbours, neighbours + neighbours_size);
+	std::vector<int> neighClusters = std::vector<int>(neighbours, neighbours + neighbours_size);
 
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 	input::API::load(

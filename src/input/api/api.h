@@ -19,7 +19,7 @@ public:
 			eslocal dirichletSize,
 			eslocal *dirichletIndices,
 			double *dirichletValues,
-			std::vector<eslocal> &neighbours,
+			std::vector<int> &neighbours,
 			size_t size, const eslocal *l2g)
 	{
 		ESINFO(OVERVIEW) << "Set mesh through API";
@@ -37,7 +37,7 @@ protected:
 	void points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize);
 	void elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, const std::vector<std::vector<eslocal> > &eDOFs);
 	void dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues);
-	void clusterBoundaries(std::vector<eslocal> &neighbours, size_t size, const eslocal *l2g);
+	void clusterBoundaries(std::vector<int> &neighbours, size_t size, const eslocal *l2g);
 
 	APIMesh &_mesh;
 	eslocal _offset;
