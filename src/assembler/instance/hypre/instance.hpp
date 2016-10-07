@@ -173,12 +173,13 @@ if(rank==TEST)	std::cout << "  > FILL STIFFNESS\n";
 	const std::vector<eslocal> &partition = _mesh.getPartition();
 	size_t elemRHSn= 0;
 	size_t elemCnt = 0;
+	std::vector<eslocal> dofs;
 
 	for (size_t subdomain = 0; subdomain < _mesh.parts(); subdomain++) 
 	{
 		for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) //element matrix for each element
 		{
-			_physics.assembleStiffnessMatrix(elements[e], Ke, fe);
+			_physics.assembleStiffnessMatrix(elements[e], Ke, fe, dofs);
 			
 			elemStiff[elemCnt] = new double * [elements[e]->nodes() * DOFs.size()];
 

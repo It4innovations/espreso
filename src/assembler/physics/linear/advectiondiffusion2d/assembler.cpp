@@ -84,7 +84,7 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv(1, 1) =   detJx * m(0, 0);
 }
 
-static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
+static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element)
 {
 	bool CAU = AdvectionDiffusion2D::stabilization == AdvectionDiffusion2D::STABILIZATION::CAU;
 	double sigma = AdvectionDiffusion2D::sigma;
@@ -218,7 +218,17 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 
 void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
-	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+	processElement(Ke, fe, _mesh, e);
+	dofs.resize(e->nodes());
+	for (size_t n = 0; n < e->nodes(); n++) {
+		dofs[n] = e->node(n);
+	}
+
+	for (size_t n = 0; n < e->nodes(); n++) {
+		if (_mesh.nodes()[e->node(n)]->settings().isSet(Property::TEMPERATURE)) {
+			fe[n] = _mesh.nodes()[e->node(n)]->settings(Property::TEMPERATURE).back()->evaluate(e->node(n)) / _mesh.nodes()[e->node(n)]->domains().size();
+		}
+	}
 }
 
 void AdvectionDiffusion2D::makeStiffnessMatricesRegular()
@@ -243,7 +253,7 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		processElement(Ke, fe, _mesh, subdomain, elements[e]);
+		processElement(Ke, fe, _mesh, elements[e]);
 
 		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
 			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
