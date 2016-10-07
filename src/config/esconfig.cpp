@@ -93,7 +93,7 @@ double output::CLUSTERS_SHRINK_RATIO   = .9;
 
 std::string info::OUTPUT = "log";
 
-size_t info::VERBOSE_LEVEL = 0;
+size_t info::VERBOSE_LEVEL = 1;
 size_t info::TESTING_LEVEL = 0;
 size_t info::MEASURE_LEVEL = 0;
 
