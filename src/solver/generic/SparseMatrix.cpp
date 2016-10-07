@@ -2332,6 +2332,8 @@ double SparseMatrix::dot_e(double *x, double *y, eslocal n){
 void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_N_for_non_transpose, double beta) {
 	//C := A+beta*op(B)
 
+	// TODO: change matrix type
+
 	char transa = MatB_T_for_transpose_N_for_non_transpose;
 
 	// if this matrix is empty then we copy the input matrix
@@ -2673,6 +2675,17 @@ void SparseMatrix::RemoveLower() {
 
 	nnz = l_nnz;
 	type = 'S';
+	switch (mtype) {
+	case MatrixType::REAL_UNSYMMETRIC:
+		mtype = MatrixType::REAL_SYMMETRIC_INDEFINITE;
+		break;
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		break;
+	default:
+		ESINFO(ERROR) << "Unknown mtype in remove lower";
+	}
+
 
 	//CSR_I_row_indices = t_CSR_I_row_indices;
 	//CSR_J_col_indices = t_CSR_J_col_indices;

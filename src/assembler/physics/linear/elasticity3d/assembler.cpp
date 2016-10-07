@@ -299,9 +299,9 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	for (size_t c = 0; c < 3; c++) {
 		for (size_t i = 0; i < fixPoints.size(); i++) {
 			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, c) + IJVMatrixIndexing);
-			VALS.insert(VALS.end(), 1);
 		}
 	}
+	VALS.insert(VALS.end(), 3 * fixPoints.size(), 1);
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
 		const Point &p = coordinates[fixPoints[i]->node(0)];
@@ -329,10 +329,10 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 
 	SparseMatrix N;
 	Nt.MatTranspose( N );
-
 	RegMat.MatMat(Nt, 'N', N);
 	RegMat.MatTranspose();
 	RegMat.RemoveLower();
+	RegMat.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
 	SparseSolverCPU NtN;
 	NtN.ImportMatrix(RegMat);

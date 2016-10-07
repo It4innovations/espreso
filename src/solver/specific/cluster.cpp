@@ -1499,6 +1499,7 @@ void ClusterBase::CreateSa() {
 
 	} else {
 
+		// TODO: GENERALIZE
 		// Regularization of Salfa from FIX points
 		TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
 
@@ -1519,6 +1520,8 @@ void ClusterBase::CreateSa() {
 		ro = 0.5 * ro;
 
 		Salfa.MatAddInPlace(NNt,'N', ro);
+		// TODO: not general
+		Salfa.mtype = this->mtype;
 		// End regularization of Salfa
 
 		reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
