@@ -182,7 +182,7 @@ static void fillC(DenseMatrix &C, LinearElasticity2D::ELEMENT_BEHAVIOUR behaviou
 	}
 }
 
-static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* element)
+static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element)
 {
 	DenseMatrix Ce(4, 4), XY(1, 2), coordinates, J, invJ, dND, B, epsilon, rhsT;
 	DenseMatrix
@@ -288,7 +288,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
-static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, size_t subdomain, const Element* edge)
+static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, const Element* edge)
 {
 	DenseMatrix coordinates(edge->nodes(), 2), dND(1, 2), P(edge->nodes(), 1), normal(2, 1), matThickness(edge->nodes(), 1), XY(1, 2);
 	DenseMatrix gpP(1, 1), gpQ(1, 2), gpThickness(1, 1);
@@ -434,7 +434,23 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
-	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
+	processElement(Ke, fe, _mesh, e);
+	dofs.resize(e->nodes() * pointDOFs.size());
+	for (size_t dof = 0, i = 0; dof < pointDOFs.size(); dof++) {
+		for (size_t n = 0; n < e->nodes(); n++, i++) {
+			dofs[i] = e->node(n) * pointDOFs.size() + dof;
+		}
+	}
+
+
+	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y };
+	for (size_t n = 0; n < e->nodes(); n++) {
+		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
+			if (_mesh.nodes()[e->node(n)]->settings().isSet(forces[dof])) {
+				fe[n * pointDOFs.size() + dof] = _mesh.nodes()[e->node(n)]->settings(forces[dof]).back()->evaluate(e->node(n)) / _mesh.nodes()[e->node(n)]->domains().size();
+			}
+		}
+	}
 }
 
 void LinearElasticity2D::makeStiffnessMatricesRegular()
@@ -476,7 +492,7 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		processElement(Ke, fe, _mesh, subdomain, elements[e]);
+		processElement(Ke, fe, _mesh, elements[e]);
 
 		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
 			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
@@ -494,7 +510,7 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 
 	for (size_t i = 0; i < _mesh.edges().size(); i++) {
 		if (_mesh.edges()[i]->inDomain(subdomain) && _mesh.edges()[i]->settings().size()) {
-			processEdge(fe, _mesh, subdomain, _mesh.edges()[i]);
+			processEdge(fe, _mesh, _mesh.edges()[i]);
 
 			for (size_t nx = 0; nx < _mesh.edges()[i]->nodes(); nx++) {
 				for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
