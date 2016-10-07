@@ -392,10 +392,10 @@ double IterSolverBase::Solve_power_method ( Cluster & cluster, double tol, esloc
     return lambda;
 }
 
-	static bool abs_compare(int a, int b)
-	{
-	    return (std::abs(a) < std::abs(b));
-	}
+//	static bool abs_compare(int a, int b)
+//	{
+//	    return (std::abs(a) < std::abs(b));
+//	}
 
 void IterSolverBase::proj_gradient ( SEQ_VECTOR <double> & x,
 		SEQ_VECTOR <double> & g,
@@ -404,15 +404,15 @@ void IterSolverBase::proj_gradient ( SEQ_VECTOR <double> & x,
 		SEQ_VECTOR <bool> & free )
 {
 
-	double norm_x_l =0;
-	double norm_x =0;
-
-	std::vector<int>::iterator result;
-	norm_x_l = *std::max_element(x.begin(), x.end(), abs_compare);
-
-	norm_x_l = fabs(norm_x_l);
-
-	MPI_Allreduce(&norm_x_l, &norm_x, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//	double norm_x_l =0;
+//	double norm_x =0;
+//
+//	std::vector<eslocal>::iterator result;
+//	norm_x_l = *std::max_element(x.begin(), x.end(), abs_compare);
+//
+//	norm_x_l = fabs(norm_x_l);
+//
+//	MPI_Allreduce(&norm_x_l, &norm_x, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
 	for ( eslocal i=0; i< x.size(); i++ )
 	{
@@ -423,7 +423,7 @@ void IterSolverBase::proj_gradient ( SEQ_VECTOR <double> & x,
 			g_til[i] = 0;
 		}
 
-		free[i] = ( x[i] - lb[i] ) > (prec * norm_x);
+		free[i] = ( x[i] - lb[i] ) > prec;//(prec * norm_x);
 
 
 		fi_til[i] = free[i] * g_til[i];
@@ -440,7 +440,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
-	double _epsilon = 1e-6;
+	double _epsilon = 1e-4;
 	eslocal _maxit = 100;
 	eslocal _maxit_in = 200;
 	double _Gamma = 1;
@@ -452,9 +452,9 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	double _alpham = 2;
 	double _precQ = 1e-12;
 	double _epsilon_power = 1e-8;
-	eslocal _maxit_power = 25;
+	eslocal _maxit_power = 35;
 	eslocal _method = 0;
-	eslocal halfStep = 0;
+	eslocal halfStep = 1;
 
 	eslocal output_n_it = 0;
 	eslocal output_n_it_in = 0;
@@ -501,6 +501,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 
 	SEQ_VECTOR <double> mu (cluster.G1_comp.rows, 0);
+	SEQ_VECTOR <double> mu_tmp (cluster.G1_comp.rows, 0);
 
 
 	SEQ_VECTOR <double> g_til (dl_size, 0);
@@ -536,11 +537,25 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 	double maxeig = Solve_power_method ( cluster, _epsilon_power, _maxit_power, _method);
 
+//	double maxeig_old = 0.0;
+//
+//	for (eslocal i = 0; i < 10; i++){
+//
+//		maxeig = Solve_power_method ( cluster, _epsilon_power, _maxit_power, maxeig_old);
+//
+//		if ( std::fabs( maxeig-maxeig_old ) < 1e-8){
+//
+//			break;
+//
+//		} else {
+//			maxeig_old = maxeig;
+//		}
+//
+//	}
 
-
-	//double alpha = _alpham/maxeig;
-	//double rho = _rho*maxeig;
-	//maxeig = 1.0;
+//	double alpha = _alpham/maxeig;
+//	double rho = _rho*maxeig;
+//	maxeig = 1.0;
 
 	double alpha = _alpham;
 	double rho = _rho;
@@ -754,11 +769,11 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	//for (eslocal i=0; i < _maxit; i++){
 	while ( stop == 0 ){
 		output_n_it_in = 0;
-
 		output_n_cg = 0;
 		output_n_exp = 0;
 		output_n_prop= 0;
 		output_n_hess= 0;
+
 
 		while ( (norm_test_vec > (std::min(_M * normCx ,_eta * norm_b)))  && (output_n_it_in < _maxit_in ) && (!((norm_test_vec <= tol) && (normCx <= _epsilon * normx_l))) ) {
 
@@ -834,8 +849,8 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 				if (alpha_cg <= alpha_f){
 
 					for ( eslocal k = 0; k < x_l.size(); k++){
-						x_l[k] -= alpha_cg * p_l[k];
-						g_l[k] -= alpha_cg * PAPx_l[k];
+						x_l[k] = x_l[k] - alpha_cg * p_l[k];
+						g_l[k] = g_l[k] - alpha_cg * PAPx_l[k];
 					}
 
 					proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
@@ -900,108 +915,22 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 					if ( halfStep == 1){
 
-						for ( eslocal k = 0; k < nx_l.size(); k++){
-							nx_l[k] = std::max( lb[k], x_l[k] - alpha_cg * p_l[k]);
-						}
-						if (USE_GGtINV == 1) {
-							Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
-						} else {
-							Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
-						}
-
-						apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
-
-						if (USE_GGtINV == 1) {
-							Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, ng_l, 0);
-						} else {
-							Projector_l_compG    ( timeEvalProj, cluster, Ax_l, ng_l, 0);
-						}
-
-						for (eslocal k = 0; k < tmp.size(); k++){
-							ng_l[k] = ng_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
-						}
-						/// HESSS
-						output_n_hess++;
-						sum_output_n_hess++;
-						for (eslocal k = 0; k < tmp.size(); k++){
-							ng_l[k] -= bCtmu[k];
-						    tmp[k] = ng_l[k] - bCtmu[k];
-						    tmp_2[k] = g_l[k] - bCtmu[k];
-						}
-
-						Lagnx = parallel_ddot_compressed(cluster, nx_l, tmp) * 0.5;
-						Lagng = parallel_ddot_compressed(cluster, x_l, tmp_2) * 0.5;
-
-						if (Lagnx <= Lagng ){
-
-							for (eslocal k = 0; k < tmp.size(); k++){
-								x_l[k] = nx_l[k];
-							    g_l[k] = ng_l[k];
-							}
-
-						} else {
-
-
-							for ( eslocal k = 0; k < x_l.size(); k++){
-								x_l[k] -= alpha_f * p_l[k];
-								g_l[k] -= alpha_f * PAPx_l[k];
-							}
-
-							proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
-
-							for ( eslocal k = 0; k < x_l.size(); k++){
-								x_l[k] -= alpha * g_til[k];
-							}
-
-							if (USE_GGtINV == 1) {
-								Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
-							} else {
-								Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
-							}
-
-							apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
-
-							if (USE_GGtINV == 1) {
-								Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, g_l, 0);
-							} else {
-								Projector_l_compG    ( timeEvalProj, cluster, Ax_l, g_l, 0);
-							}
-
-							for (eslocal k = 0; k < tmp.size(); k++){
-								g_l[k] = g_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
-							}
-							/// HESSS
-							output_n_hess++;
-							sum_output_n_hess++;
-							for (eslocal k = 0; k < tmp.size(); k++){
-								g_l[k] -= bCtmu[k];
-							}
-
-						}
-
-						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
-						for (eslocal k = 0; k < p_l.size(); k++){
-							p_l[k] = _free[k] * g_l[k];
-						}
-
-						output_n_exp++;
-						sum_output_n_exp++;
-
-
-
-					} else {
+//						for ( eslocal k = 0; k < nx_l.size(); k++){
+//						//	nx_l[k] = std::max( lb[k], x_l[k] - alpha_cg * p_l[k]);
+//							nx_l[k] = std::max( lb[k], x_l[k] - 10 * alpha_f * p_l[k]);
+//						}
 
 
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] -= alpha_f * p_l[k];
-							g_l[k] -= alpha_f * PAPx_l[k];
+							x_l[k] = x_l[k] -  (alpha_cg + alpha_f)/2.0 * p_l[k];
+							g_l[k] = g_l[k] -  (alpha_cg + alpha_f)/2.0 * PAPx_l[k];
 						}
 
 						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] -= alpha * g_til[k];
+							x_l[k] = x_l[k] - alpha * fi_til[k];
 						}
 
 						if (USE_GGtINV == 1) {
@@ -1025,7 +954,56 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 						output_n_hess++;
 						sum_output_n_hess++;
 						for (eslocal k = 0; k < tmp.size(); k++){
-							g_l[k] -= bCtmu[k];
+							g_l[k] = g_l[k] - bCtmu[k];
+						}
+
+						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
+						for (eslocal k = 0; k < p_l.size(); k++){
+							p_l[k] = _free[k] * g_l[k];
+						}
+
+						output_n_exp++;
+						sum_output_n_exp++;
+
+
+
+					} else {
+
+						//alpha_f =alpha_f * 10;
+
+						for ( eslocal k = 0; k < x_l.size(); k++){
+							x_l[k] = x_l[k] - alpha_f * p_l[k];
+							g_l[k] = g_l[k] - alpha_f * PAPx_l[k];
+						}
+
+						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
+
+						for ( eslocal k = 0; k < x_l.size(); k++){
+							x_l[k] = x_l[k] - alpha * g_til[k];
+						}
+
+						if (USE_GGtINV == 1) {
+							Projector_l_inv_compG( timeEvalProj, cluster, x_l, tmp , 0);
+						} else {
+							Projector_l_compG    ( timeEvalProj, cluster, x_l, tmp , 0);
+						}
+
+						apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp, Ax_l);
+
+						if (USE_GGtINV == 1) {
+							Projector_l_inv_compG( timeEvalProj, cluster, Ax_l, g_l, 0);
+						} else {
+							Projector_l_compG    ( timeEvalProj, cluster, Ax_l, g_l, 0);
+						}
+
+						for (eslocal k = 0; k < tmp.size(); k++){
+							g_l[k] = g_l[k]/maxeig + rho * ( x_l[k]-tmp[k]);
+						}
+						/// HESSS
+						output_n_hess++;
+						sum_output_n_hess++;
+						for (eslocal k = 0; k < tmp.size(); k++){
+							g_l[k] = g_l[k] - bCtmu[k];
 						}
 
 						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
@@ -1039,7 +1017,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 				}
 			} else {
 				for (eslocal k = 0; k < x_l.size(); k++){
-					x_l[k] -= alpha * g_til[k];
+					x_l[k] = x_l[k] -  alpha * beta_til[k];
 				}
 				/// HESSS
 //				if (USE_GGtINV == 1) {
@@ -1085,7 +1063,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 				sum_output_n_hess++;
 
 				for (eslocal k = 0; k < tmp.size(); k++){
-					g_l[k] -= bCtmu[k];
+					g_l[k] = g_l[k] - bCtmu[k];
 				}
 				proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
@@ -1142,12 +1120,12 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 			bCtmu_prev[k] = bCtmu[k];
 		}
 
-		if ( (norm_test_vec <= tol)  && (normCx <= _epsilon * normx_l)) {
+		if ( ((norm_test_vec <= tol)  && (normCx <= _epsilon * normx_l)) || ( _maxit == output_n_it )) {
 			stop = 1;
 		} else {
 
 			for (eslocal k = 0; k < mu.size(); k++) {
-				mu[k] += rho * Cx_l[k];
+				mu[k] = mu[k] + rho * Cx_l[k];
 			}
 
 			if (USE_GGtINV == 1) {
@@ -1161,7 +1139,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 			}
 
 			if ( !mchange && ( lag1 <= ( lag0 + rho* normCx*normCx*0.5 ))) {
-				_M = _beta * _M;
+				_M = _beta * _M; mchange = 1.0;
 			} else {
 				mchange = 0.0;
 			}
@@ -1192,23 +1170,43 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	}
 
 
-	cluster.G1_comp.MatVec(mu, tmp, 'T');
 
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, r_l);
 
-	for (eslocal k = 0; k < r_l.size(); k++) {
-		r_l[k] = r_l[k] - b_l_[k]-tmp[k];
-	}
 
-	dual_soultion_compressed_parallel   = x_l;
-	dual_residuum_compressed_parallel   = r_l;
+	for (eslocal k = 0; k < r_l.size(); k++) {
+			r_l[k] = r_l[k] - b_l_[k];
+		}
+
+	cluster.G1_comp.MatVec(r_l, mu_tmp, 'N');
+
+	for (eslocal k = 0; k < mu.size(); k++) {
+		mu_tmp[k] = mu_tmp[k] - mu[k];
+		}
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+		Projector_l_inv_compG ( timeEvalProj, cluster, mu_tmp, amplitudes, 3 );
 	} else {
-		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+		//TODO: Neni implementovan parametr 3
+		Projector_l_compG	  ( timeEvalProj, cluster, mu_tmp, amplitudes, 3 );
 	}
 
+//
+//	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, r_l);
+//
+//	for (eslocal k = 0; k < r_l.size(); k++) {
+//		r_l[k] = r_l[k] - b_l_[k]-tmp[k];
+//	}
+//
+	dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = r_l;
+//
+//	if (USE_GGtINV == 1) {
+//		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+//	} else {
+//		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+//	}
+//
 	for (eslocal k = 0; k < amplitudes.size(); k++) {
 		amplitudes[k] = -amplitudes[k];
 	}
@@ -4307,7 +4305,7 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 	SEQ_VECTOR<double> d_mpi  ( GGtsize );
 
 	 time_eval.timeEvents[0].start();
-	if ( output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 1) {
+	if ( output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 1 || output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3) {
 		d_local = x_in;
 	} else {
 		if (cluster.SYMMETRIC_SYSTEM) {
@@ -4335,7 +4333,7 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 	//	mpi_root, MPI_COMM_WORLD);
 	 time_eval.timeEvents[3].end();
 
-	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2) {
+	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2 || output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3) {
 		y_out = d_local; // for RBM amplitudes calculation
 	} else {
 
