@@ -68,7 +68,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			_mesh._DOFs[dirichletIndices[i]]->addSettings(Property::UNKNOWN, _mesh._evaluators.back());
+			_mesh._DOFs[dirichletIndices[i] - _offset]->addSettings(Property::UNKNOWN, _mesh._evaluators.back());
 		}
 	}
 }
