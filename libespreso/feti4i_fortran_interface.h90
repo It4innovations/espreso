@@ -7,19 +7,23 @@ INTERFACE
         BIND(c,NAME='FETI4ITest')
   END SUBROUTINE FETI4ITest
 
-  SUBROUTINE FETI4ICreateStiffnessMatrix(matrix, indexBase) &
+  SUBROUTINE FETI4ICreateStiffnessMatrix(matrix, type, indexBase) &
         BIND(c,NAME='FETI4ICreateStiffnessMatrix')
     IMPORT
     TYPE(C_PTR) :: matrix               ! FETI4IMatrix*     type in C (output)
+    INTEGER(KIND=FETI4IInt), VALUE :: type
     INTEGER(KIND=FETI4IInt), VALUE :: indexBase
   END SUBROUTINE FETI4ICreateStiffnessMatrix
 
-  SUBROUTINE FETI4IAddElement(matrix, size, indices, values) &
+  SUBROUTINE FETI4IAddElement(matrix, type, nodesSize, nodes, dofsSize, dofs, values) &
         BIND(c,NAME='FETI4IAddElement')
     IMPORT
     TYPE(C_PTR), VALUE :: matrix        ! FETI4IMatrix      type in C (input)
-    INTEGER(KIND=FETI4IInt), VALUE :: size
-    INTEGER(KIND=FETI4IInt) :: indices(*)
+    INTEGER(KIND=FETI4IInt), VALUE :: type
+    INTEGER(KIND=FETI4IInt), VALUE :: nodesSize
+    INTEGER(KIND=FETI4IInt) :: nodes(*)
+    INTEGER(KIND=FETI4IInt), VALUE :: dofsSize
+    INTEGER(KIND=FETI4IInt) :: dofs(*)
     REAL(KIND=FETI4IReal) :: values(*)
   END SUBROUTINE FETI4IAddElement
 
