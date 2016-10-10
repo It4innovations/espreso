@@ -32,7 +32,6 @@ def configure(ctx):
     if ctx.env.HYPRE:
         ctx.env.append_unique("DEFINES", [ "HAVE_HYPRE" ])
 
-
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["MORTAR::INCLUDE"] ])
     ctx.env.append_unique("LIBPATH", ctx.env["MORTAR::LIBPATH"])
 
@@ -54,7 +53,7 @@ def configure(ctx):
         ctx.end_msg("found")
     else:
         ctx.end_msg("not found - set path to MORTAR libraries (parameter MORTAR::LIBPATH)", color='YELLOW')
-        ctx.env.HYPRE = False
+        ctx.env.MORTAR = False
 
     ctx.env.append_unique("LIB", mortarlibs)
 
