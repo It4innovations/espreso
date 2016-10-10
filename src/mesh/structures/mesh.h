@@ -20,8 +20,6 @@ namespace input {
 class Loader;
 }
 
-class Boundaries;
-
 class Mesh
 {
 
@@ -159,8 +157,7 @@ class APIMesh: public Mesh
 {
 	friend class input::API;
 public:
-	APIMesh(const std::vector<std::vector<eslocal> > &eDOFs, const std::vector<std::vector<double> > &eMatrices, eslocal *l2g, size_t size)
-	: _l2g(l2g, l2g + size), _permutation(eDOFs.size()), _eDOFs(eDOFs), _eMatrices(eMatrices) { };
+	APIMesh(eslocal *l2g, size_t size): _l2g(l2g, l2g + size) { };
 
 	void partitiate(size_t parts);
 
@@ -172,17 +169,10 @@ public:
 
 	const std::vector<Element*> DOFs() const { return _DOFs; }
 
-	const std::vector<eslocal>& eDOFs(size_t index) const { return _eDOFs[_permutation[index]]; }
-	const std::vector<double>& eMatrix(size_t index) const { return _eMatrices[_permutation[index]]; }
-	size_t elementSize() const { return _eMatrices.size(); }
-
 protected:
 	std::vector<Element*> _DOFs;
 	std::vector<esglobal> _l2g;
 	std::map<esglobal, eslocal> _g2l;
-	std::vector<eslocal> _permutation;
-	const std::vector<std::vector<eslocal>> &_eDOFs;
-	const std::vector<std::vector<double> > &_eMatrices;
 };
 
 }

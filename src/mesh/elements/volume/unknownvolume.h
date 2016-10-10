@@ -11,10 +11,11 @@ namespace espreso {
 class UnknownVolume: public VolumeElement
 {
 public:
-	UnknownVolume(std::vector<eslocal> &nodes): _nodes(nodes) {};
+	UnknownVolume(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFs, std::vector<double> &stiffnessMatrix)
+	: _nodes(nodes), _indices(indices), _DOFs(DOFs), _stiffnessMatrix(stiffnessMatrix) {};
 	Element* copy() const { return new UnknownVolume(*this); }
 
-	eslocal nCommon() const { return _nodes.size() > 8 ? 4 : 3; }
+	eslocal nCommon() const { return _indices.size() > 8 ? 4 : 3; }
 	eslocal vtkCode() const { return UnknownVolumeVTKCode; }
 	eslocal param(Params param) const { ESINFO(GLOBAL_ERROR) << "Call param of unknown volume element."; return -1; }
 	void setParam(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Set param of unknown volume element."; }
@@ -22,8 +23,8 @@ public:
 
 	size_t faces() const { return _faces.size(); }
 	size_t edges() const { return _edges.size(); }
-	size_t nodes() const { return _nodes.size(); }
-	size_t coarseNodes() const { return _nodes.size(); }
+	size_t nodes() const { return _indices.size(); }
+	size_t coarseNodes() const { return _indices.size(); }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown volume has no gausse points."; return 0; }
 
 	virtual Point faceNormal(const Element *face) const
@@ -39,6 +40,9 @@ public:
 
 	virtual Element* face(size_t index) const { return _faces[index]; }
 	virtual Element* edge(size_t index) const { return _edges[index]; }
+
+	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
+	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 
 	const std::vector<DenseMatrix>& dN() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
 	const std::vector<DenseMatrix>& N() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
@@ -56,8 +60,8 @@ protected:
 		ESINFO(GLOBAL_ERROR) << "Call neighbour of unknown volume element node.";
 		return std::vector<eslocal>();
 	}
-	eslocal* indices() { return _nodes.data(); }
-	const eslocal* indices() const { return _nodes.data(); }
+	eslocal* indices() { return _indices.data(); }
+	const eslocal* indices() const { return _indices.data(); }
 
 	void setFace(size_t index, Element* face) { _faces[index] = face; }
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
@@ -68,7 +72,11 @@ protected:
 	void fillEdges() { ESINFO(GLOBAL_ERROR) << "Unknown volume element cannot fill edges."; }
 
 private:
-	std::vector<eslocal> &_nodes;
+	const std::vector<Element*> &_nodes;
+	std::vector<eslocal> &_indices;
+	std::vector<eslocal> &_DOFs;
+	std::vector<double> &_stiffnessMatrix;
+	std::vector<std::vector<eslocal> > _faceNodes;
 };
 
 

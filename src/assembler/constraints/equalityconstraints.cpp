@@ -561,5 +561,66 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 	}
 }
 
+void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel)
+{
+	std::vector<Element*> el(elements);
+
+	std::sort(el.begin(), el.end(), [] (Element* e1, Element* e2) {
+		if (e1->domains().size() != e2->domains().size()) {
+			return e1->domains().size() < e2->domains().size();
+		}
+		return e1->domains() < e2->domains();
+	});
+
+	std::vector<size_t> part;
+	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, int size) { return e->domains().size() < size; }) - el.begin());
+	ESTEST(MANDATORY) << "There are not elements on the sub-domains interface." << ((elements.size() - part[0]) ? TEST_PASSED : TEST_FAILED);
+	for (size_t i = part[0] + 1; i < el.size(); i++) {
+		if (i && el[i - 1]->domains() != el[i]->domains()) {
+			part.push_back(i);
+		}
+	}
+	part.push_back(el.size());
+
+//	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+//		for (size_t i = 0; i < part.size() - 1; i++) {
+//			const std::vector<eslocal> &domains = el[part[i]]->domains();
+//			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
+//			if (sign == 0) {
+//				continue;
+//			}
+//
+//			std::vector<Element*> interfaceDofs;
+//			for (size_t e = part[i]; e < part[i + 1]; e++) {
+//				eDOFs[el[e]->parentElements()[0]->]
+//				std::vector<eslocal> intersection()
+//				for (size_t n = 0; n < el[e]->nodes(); n++) {
+//					nodes.push_back(_mesh.nodes()[el[e]->node(n)]);
+//				}
+//			}
+//			std::sort(nodes.begin(), nodes.end());
+//			Esutils::removeDuplicity(nodes);
+//
+//			for (size_t col = 0; col < kernel[domains[0]].cols; col++) {
+//				for (size_t n = 0; n < nodes.size(); n++) {
+//					for (size_t dof = 0; dof < DOFs.size(); dof++) {
+//						B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
+//						B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + IJVMatrixIndexing);
+//						B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + nodes[n]->DOFIndex(domains[0], dof)]);
+//					}
+//				}
+//			}
+//		}
+//
+//
+//		B0[p].rows = kernel[0].cols * (part.size() - 1);
+//		B0[p].nnz = B0[p].I_row_indices.size();
+//		B0subdomainsMap[p].reserve(B0[p].nnz);
+//		for (size_t i = B0subdomainsMap[p].size(); i < B0[p].nnz; i++) {
+//			B0subdomainsMap[p].push_back(B0[p].I_row_indices[i] - IJVMatrixIndexing);
+//		}
+//	}
+}
+
 
 

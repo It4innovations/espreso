@@ -147,7 +147,7 @@ void FETI4ICreateInstance(
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 	input::API::load(
 			DataHolder::instances.back()->mesh, matrix->offset,
-			matrix->eType, matrix->eNodes, matrix->eDOFs,
+			matrix->eType, matrix->eNodes, matrix->eDOFs, matrix->eMatrices,
 			dirichlet_size, dirichlet_indices, dirichlet_values,
 			neighClusters,
 			size, l2g);

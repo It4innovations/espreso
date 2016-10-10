@@ -9,7 +9,7 @@ void SingularSystem::prepareMeshStructures()
 	_apimesh.computeDOFsDOFsCounters();
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
-		ESINFO(GLOBAL_ERROR) << "Implement Hybrid FETI for API";
+		_apimesh.computeFacesSharedByDomains();
 	}
 }
 
@@ -40,6 +40,10 @@ void SingularSystem::assembleGluingMatrices()
 
 	_constraints.insertDirichletToB1(_apimesh.DOFs(), { Property::UNKNOWN });
 	_constraints.insertElementGluingToB1(_apimesh.DOFs(), { Property::UNKNOWN });
+
+	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+		_constraints.insertKernelsToB0(_apimesh.faces(), { Property::UNKNOWN }, R1);
+	}
 }
 
 void SingularSystem::composeSubdomain(size_t subdomain)
@@ -55,11 +59,11 @@ void SingularSystem::composeSubdomain(size_t subdomain)
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		for (size_t dx = 0; dx < _apimesh.eDOFs(e).size(); dx++) {
-			size_t row = DOFs[_apimesh.eDOFs(e)[dx]]->DOFIndex(subdomain, dofIndex);
-			for (size_t dy = 0; dy < _apimesh.eDOFs(e).size(); dy++) {
-				size_t column = DOFs[_apimesh.eDOFs(e)[dy]]->DOFIndex(subdomain, dofIndex);
-				_K(row, column) = _apimesh.eMatrix(e)[dx * _apimesh.eDOFs(e).size() + dy];
+		for (size_t dx = 0; dx < _apimesh.elements()[e]->DOFsIndices().size(); dx++) {
+			size_t row = DOFs[_apimesh.elements()[e]->DOFsIndices()[dx]]->DOFIndex(subdomain, dofIndex);
+			for (size_t dy = 0; dy < _apimesh.elements()[e]->DOFsIndices().size(); dy++) {
+				size_t column = DOFs[_apimesh.elements()[e]->DOFsIndices()[dy]]->DOFIndex(subdomain, dofIndex);
+				_K(row, column) = _apimesh.elements()[e]->stiffnessMatrix()[dx * _apimesh.elements()[e]->DOFsIndices().size() + dy];
 			}
 		}
 

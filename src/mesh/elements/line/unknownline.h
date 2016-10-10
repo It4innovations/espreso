@@ -11,14 +11,17 @@ namespace espreso {
 class UnknownLine: public LineElement
 {
 public:
-	UnknownLine(std::vector<eslocal> &nodes): _nodes(nodes) {};
+	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFs, std::vector<double> &stiffnessMatrix)
+	: _nodes(nodes), _indices(indices), _DOFs(DOFs), _stiffnessMatrix(stiffnessMatrix) {};
+	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
+	: _nodes(nodes), _indices(indices), _DOFs(_DOFsIndices), _stiffnessMatrix(stiffnessMatrix) {};
 	Element* copy() const { return new UnknownLine(*this); }
 
-	eslocal nCommon() const { return _nodes.size() > 4 ? 3 : 2; }
+	eslocal nCommon() const { return _indices.size() > 4 ? 3 : 2; }
 	eslocal vtkCode() const { return UnknownLineVTKCode; }
 
-	size_t nodes() const { return _nodes.size(); }
-	size_t coarseNodes() const { return _nodes.size(); }
+	size_t nodes() const { return _indices.size(); }
+	size_t coarseNodes() const { return _indices.size(); }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown line has no gausse points."; return 0; }
 
 	virtual Point faceNormal(const Element *face) const
@@ -31,6 +34,9 @@ public:
 		ESINFO(GLOBAL_ERROR) << "Call normal of unknown line element.";
 		return Point();
 	}
+
+	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
+	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 
 	const std::vector<DenseMatrix>& dN() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
 	const std::vector<DenseMatrix>& N() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
@@ -48,11 +54,14 @@ protected:
 		ESINFO(GLOBAL_ERROR) << "Call neighbour of unknown plane element node.";
 		return std::vector<eslocal>();
 	}
-	eslocal* indices() { return _nodes.data(); }
-	const eslocal* indices() const { return _nodes.data(); }
+	eslocal* indices() { return _indices.data(); }
+	const eslocal* indices() const { return _indices.data(); }
 
 private:
-	std::vector<eslocal> &_nodes;
+	const std::vector<Element*> &_nodes;
+	std::vector<eslocal> &_indices;
+	std::vector<eslocal> &_DOFs;
+	std::vector<double> &_stiffnessMatrix;
 };
 
 

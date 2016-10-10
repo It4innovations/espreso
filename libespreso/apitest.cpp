@@ -80,6 +80,7 @@ int main(int argc, char** argv)
 	FETI4ISetDefaultRealOptions(ropts);
 
 	// Configure ESPRESO solver
+	iopts[FETI4I_FETI_METHOD] = 0;
 	iopts[FETI4I_SUBDOMAINS] = 4;
 	iopts[FETI4I_ITERATIONS] = 100;
 	iopts[FETI4I_PRECONDITIONER] = 1;

@@ -29,7 +29,7 @@ void API::points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSi
 	_mesh.fillNodesFromCoordinates();
 }
 
-void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, const std::vector<std::vector<eslocal> > &eDOFs)
+void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices)
 {
 	_mesh._elements.reserve(eNodes.size());
 
@@ -40,13 +40,13 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 			_mesh._elements.push_back(new UnknownPoint(eNodes[e][0]));
 			break;
 		case 1:
-			_mesh._elements.push_back(new UnknownLine(eNodes[e]));
+			_mesh._elements.push_back(new UnknownLine(_mesh.nodes(), eNodes[e], eDOFs[e], eMatrices[e]));
 			break;
 		case 2:
-			_mesh._elements.push_back(new UnknownPlane(eNodes[e]));
+			_mesh._elements.push_back(new UnknownPlane(_mesh.nodes(), eNodes[e], eDOFs[e], eMatrices[e]));
 			break;
 		case 3:
-			_mesh._elements.push_back(new UnknownVolume(eNodes[e]));
+			_mesh._elements.push_back(new UnknownVolume(_mesh.nodes(), eNodes[e], eDOFs[e], eMatrices[e]));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Unknown element type " << eType[e];

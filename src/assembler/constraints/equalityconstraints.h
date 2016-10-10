@@ -17,6 +17,7 @@ public:
 
 	void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
 	void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel);
+	void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel);
 
 protected:
 	std::vector<esglobal> computeLambdasID(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);

@@ -11,15 +11,18 @@ namespace espreso {
 class UnknownPlane: public PlaneElement
 {
 public:
-	UnknownPlane(std::vector<eslocal> &nodes): _nodes(nodes) {};
+	UnknownPlane(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFs, std::vector<double> &stiffnessMatrix)
+	: _nodes(nodes), _indices(indices), _DOFs(DOFs), _stiffnessMatrix(stiffnessMatrix) {};
+	UnknownPlane(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
+	: _nodes(nodes), _indices(indices), _DOFs(_DOFsIndices), _stiffnessMatrix(stiffnessMatrix) {};
 	Element* copy() const { return new UnknownPlane(*this); }
 
-	eslocal nCommon() const { return _nodes.size() > 4 ? 3 : 2; }
+	eslocal nCommon() const { return _indices.size() > 4 ? 3 : 2; }
 	eslocal vtkCode() const { return UnknownPlaneVTKCode; }
 
 	size_t edges() const { return _edges.size(); }
-	size_t nodes() const { return _nodes.size(); }
-	size_t coarseNodes() const { return _nodes.size(); }
+	size_t nodes() const { return _indices.size(); }
+	size_t coarseNodes() const { return _indices.size(); }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown plane has no gausse points."; return 0; }
 
 	virtual Point faceNormal(const Element *face) const
@@ -34,6 +37,9 @@ public:
 	}
 
 	virtual Element* edge(size_t index) const { return _edges[index]; }
+
+	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
+	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 
 	const std::vector<DenseMatrix>& dN() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
 	const std::vector<DenseMatrix>& N() const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
@@ -51,8 +57,8 @@ protected:
 		ESINFO(GLOBAL_ERROR) << "Call neighbour of unknown plane element node.";
 		return std::vector<eslocal>();
 	}
-	eslocal* indices() { return _nodes.data(); }
-	const eslocal* indices() const { return _nodes.data(); }
+	eslocal* indices() { return _indices.data(); }
+	const eslocal* indices() const { return _indices.data(); }
 
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
 	void setEdge(Element* edge) { _edges.push_back(edge); };
@@ -60,7 +66,11 @@ protected:
 	void fillEdges();
 
 private:
-	std::vector<eslocal> &_nodes;
+	const std::vector<Element*> &_nodes;
+	std::vector<eslocal> &_indices;
+	std::vector<eslocal> &_DOFs;
+	std::vector<double> &_stiffnessMatrix;
+	std::vector<std::vector<eslocal> > _edgeNodes;
 };
 
 

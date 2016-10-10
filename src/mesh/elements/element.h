@@ -138,10 +138,12 @@ public:
 	const std::vector<eslocal>& clusters() const { return _clusters; }
 
 	std::vector<eslocal>& DOFsIndices() { return _DOFsIndices; }
-	const std::vector<eslocal>& DOFsIndices() const { return _DOFsIndices; }
+	virtual const std::vector<eslocal>& DOFsIndices() const { return _DOFsIndices; }
 
 	std::vector<eslocal>& DOFsDomainsCounters() { return _DOFsDomainsCounters; }
 	const std::vector<eslocal>& DOFsDomainsCounters() const { return _DOFsDomainsCounters; }
+
+	virtual const std::vector<double>& stiffnessMatrix() const { ESINFO(GLOBAL_ERROR) << "Stiffness matrix of an element is not set."; exit(0); }
 
 	eslocal DOFIndex(eslocal domain, size_t DOFIndex) const
 	{

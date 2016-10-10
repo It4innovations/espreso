@@ -16,7 +16,6 @@ Ttype Esutils::getEnv(const std::string &name)
 template<typename Ttype>
 void Esutils::setFromEnv(Ttype &value, const std::string &name)
 {
-	int threads;
 	char *var = getenv(name.c_str());
 	if (var != NULL) {
 		std::stringstream ss(var);
