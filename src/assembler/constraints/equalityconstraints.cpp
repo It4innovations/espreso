@@ -303,9 +303,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 
 						}
 					}
-
 				}
-
 			}
 
 		}

@@ -1622,9 +1622,16 @@ void SparseMatrix::MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y
 }
 
 void SparseMatrix::MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose, double beta) {
+	double alpha = 0.0;
+	MatVecCOO(x_in, y_out, T_for_transpose_N_for_non_transpose, beta, alpha);
+}
+
+void SparseMatrix::MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose, double beta, double alpha) {
+
+	// y := alpha*A*x + beta*y
 
 	char trans		 = T_for_transpose_N_for_non_transpose;
-	double alpha	 = 1.0;
+	//double alpha	 = 1.0;
 	//double beta		 = 0.0;
 
 	char matdescra[] = {0,0,0,0,0,0};
@@ -1649,7 +1656,6 @@ void SparseMatrix::MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y
 	mkl_dcoomv			( &trans,	   &rows,      &cols,      &alpha,        matdescra,      &V_values[0],    &I_row_indices[0],  &J_col_indices[0],  &nnz,         &x_in[0],   &beta,        &y_out[0]);
 
 }
-
 
 
 void SparseMatrix::MatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {

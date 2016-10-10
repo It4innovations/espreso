@@ -187,6 +187,148 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 	MakeSolution_Primal_singular_parallel(cluster, in_right_hand_side_primal, primal_solution_out );
 	//primal_solution_out = primal_solution_parallel;
 
+
+	// KKT conditions
+	bool check_solution = true;
+	if (check_solution) {
+
+		eslocal dl_size = cluster.my_lamdas_indices.size();
+
+		eslocal ieq_size = 0;
+		eslocal eq_size = 0; //cluster.my_lamdas_indices.size();
+
+		SEQ_VECTOR <double> KKT1_norm (cluster.domains.size(), 0.0);
+		double KKT1_norm_cluster_local = 0.0;
+		double KKT1_norm_cluster_global = 0.0;
+
+		SEQ_VECTOR <double> KKT1_norm2 (cluster.domains.size(), 0.0);
+		double KKT1_norm_cluster_local2 = 0.0;
+		double KKT1_norm_cluster_global2 = 0.0;
+
+		// KKT 1
+
+		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
+			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+				x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d].lambda_map_sub_local[i]]; // * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
+			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T'); // Bt*lambda
+		}
+
+		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			cluster.domains[d].K.MatVec(primal_solution_out[d], cluster.x_prim_cluster2[d],'N');
+			cluster.domains[d]._RegMat.MatVecCOO(primal_solution_out[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
+		}
+
+		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			for (eslocal pi = 0; pi < primal_solution_out[d].size(); pi++ ) {
+				cluster.x_prim_cluster1[d][pi] =   in_right_hand_side_primal[d][pi]
+										         - cluster.x_prim_cluster1[d][pi];		// f - Bt*lambda
+
+
+				KKT1_norm2[d] += cluster.x_prim_cluster1[d][pi] * cluster.x_prim_cluster1[d][pi]; // norm (f - Bt*lambda)
+
+				cluster.x_prim_cluster1[d][pi] = cluster.x_prim_cluster2[d][pi] - cluster.x_prim_cluster1[d][pi]; // K*u - (f - bt*lambda)
+				KKT1_norm[d] += cluster.x_prim_cluster1[d][pi] * cluster.x_prim_cluster1[d][pi]; // norm (K*u - (f - bt*lambda))
+			}
+			KKT1_norm_cluster_local += KKT1_norm[d];
+			KKT1_norm_cluster_local2 += KKT1_norm2[d];
+
+		}
+
+		MPI_Allreduce( &KKT1_norm_cluster_local, &KKT1_norm_cluster_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		KKT1_norm_cluster_global = sqrt(KKT1_norm_cluster_global);
+
+		MPI_Allreduce( &KKT1_norm_cluster_local2, &KKT1_norm_cluster_global2, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		KKT1_norm_cluster_global2 = sqrt(KKT1_norm_cluster_global2);
+
+		ESINFO(CONVERGENCE) << " KKT1 norm:            " << std::setw(6) << KKT1_norm_cluster_global / KKT1_norm_cluster_global2;
+
+
+		// KKT2
+
+		SEQ_VECTOR <double> vec_c_l   (dl_size, 0);
+		SEQ_VECTOR <double> lb        (dl_size, -INFINITY);
+		SEQ_VECTOR <double> Bu_l      (dl_size, 0.0);
+		SEQ_VECTOR <double> Be_l      (dl_size, 0.0);
+		SEQ_VECTOR <double> Bn_l      (dl_size, 0.0);
+		SEQ_VECTOR <double> Bn_lLambda (dl_size, 0.0);
+		SEQ_VECTOR <double> lambdan_l (dl_size, 0.0);
+		SEQ_VECTOR <double> ce_l      (dl_size, 0.0);
+		SEQ_VECTOR <double> cn_l      (dl_size, 0.0);
+
+		double norm_ce = 0.0;
+		double norm_cn = 0.0;
+		double norm_Beu = 0.0;
+		double norm_Bnu = 0.0;
+		double norm_Bn_lLambda = 0.0;
+		double lambda_n_max = -INFINITY;
+		double lambda_n_max_g = 0.0;
+
+		cluster.CreateVec_c_perCluster ( vec_c_l );
+
+		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			cluster.domains[d].B1_comp_dom.MatVec (primal_solution_out[d], cluster.x_prim_cluster1[d], 'N', 0, 0, 0.0);
+			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.x_prim_cluster1[d][i];
+			}
+		}
+
+		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, Bu_l);
+
+		for (eslocal i = 0; i < vec_c_l.size(); i++){
+			if (0 == 1) {//( ((vec_c_l[i]  ) > 0.0001)  && (vec_c_l[i] < 0.12 ) ){
+				lb[i] = 0.0;
+				lambdan_l[i] = dual_soultion_compressed_parallel[i];
+
+				if (lambda_n_max < lambdan_l[i])
+					lambda_n_max = lambdan_l[i];
+
+				cn_l[i] = vec_c_l [i];
+				Bn_l[i] = Bu_l[i] - vec_c_l [i];
+				Bn_lLambda[i] = Bn_l[i] * lambdan_l[i];
+
+				ieq_size++;
+			} else {
+				ce_l[i] = vec_c_l[i];
+				Be_l[i] = Bu_l[i] - vec_c_l [i];
+				eq_size++;
+			}
+		}
+
+
+		MPI_Allreduce( &lambda_n_max, &lambda_n_max_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+		norm_ce  = parallel_norm_compressed(cluster, ce_l);
+		if (fabs(norm_ce) < 10e-8)
+			norm_ce += 1.0;
+
+		norm_cn  = parallel_norm_compressed(cluster, cn_l);
+		if (fabs(norm_ce) < 10e-8)
+			norm_cn += 1.0;
+
+		norm_Beu = parallel_norm_compressed(cluster, Be_l);
+		norm_Bnu = parallel_norm_compressed(cluster, Bn_l);
+		norm_Bn_lLambda = parallel_norm_compressed(cluster, Bn_lLambda);
+
+		ESINFO(CONVERGENCE) << " KKT2 norm:            " << std::setw(6) << norm_Beu / norm_ce;
+
+		// KKT3
+
+
+	//	ESINFO(CONVERGENCE) << " KKT3_A norm:            " << std::setw(6) <<  / norm_cn;
+	//	ESINFO(CONVERGENCE) << " KKT3_B norm:            " << std::setw(6) <<  / lambda_n_max;
+		ESINFO(CONVERGENCE) << " KKT3_C norm:            " << std::setw(6) << norm_Bn_lLambda / ( norm_cn * lambda_n_max );
+
+//		switch (config::solver::CGSOLVER) {
+//		case config::solver::CGSOLVERalternative::QPCE:
+//			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
+//			break;
+//		default:
+//			ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
+//		}
+
+
+	}
 }
 
 void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
@@ -448,13 +590,13 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	double _M = 1;
 	double _rho = 1;
 	double _eta = 1;
-	double _beta = 0.1;
+	double _beta = 0.8;
 	double _alpham = 2;
 	double _precQ = 1e-12;
 	double _epsilon_power = 1e-8;
 	eslocal _maxit_power = 35;
 	eslocal _method = 0;
-	eslocal halfStep = 1;
+	eslocal halfStep = 0;
 
 	eslocal output_n_it = 0;
 	eslocal output_n_it_in = 0;
@@ -920,17 +1062,24 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 //							nx_l[k] = std::max( lb[k], x_l[k] - 10 * alpha_f * p_l[k]);
 //						}
 
-
+						if (output_n_it < 4){
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
 							x_l[k] = x_l[k] -  (alpha_cg + alpha_f)/2.0 * p_l[k];
 							g_l[k] = g_l[k] -  (alpha_cg + alpha_f)/2.0 * PAPx_l[k];
 						}
+						}else{
+							for ( eslocal k = 0; k < x_l.size(); k++){
+								x_l[k] = x_l[k] -  (alpha_f) * p_l[k];
+								g_l[k] = g_l[k] -  (alpha_f) * PAPx_l[k];
+							}
+						}
+
 
 						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] = x_l[k] - alpha * fi_til[k];
+							x_l[k] = x_l[k] - alpha * g_til[k];
 						}
 
 						if (USE_GGtINV == 1) {
@@ -1017,7 +1166,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 				}
 			} else {
 				for (eslocal k = 0; k < x_l.size(); k++){
-					x_l[k] = x_l[k] -  alpha * beta_til[k];
+					x_l[k] = x_l[k] -  alpha * g_til[k];
 				}
 				/// HESSS
 //				if (USE_GGtINV == 1) {
@@ -4865,7 +5014,7 @@ void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, S
 
 	MPI_Waitall( 2 * cluster.my_neighs.size(), &request[0], MPI_STATUSES_IGNORE);
 
-	y_out = x_in; // POZOR pozor
+	y_out = x_in; // TODO: POZOR pozor
 	for (eslocal i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
 		for (eslocal j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
 			y_out[cluster.my_comm_lambdas_indices_comp[i][j]] += cluster.my_recv_lambdas[i][j];

@@ -16,13 +16,13 @@ MATERIALS_Z = 2
 
 MATERIAL1 = {
   DENS = 0
-  EX = 2.1e3
+  EX = 2.1e5
   MIXY = 0.3
 }
 
 MATERIAL2 = {
   DENS = 0
-  EX = 2.1e3
+  EX = 2.1e5
   MIXY = 0.3
 }
 
