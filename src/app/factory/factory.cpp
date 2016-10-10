@@ -188,6 +188,9 @@ Factory::Factory(const Configuration &configuration)
 	case PhysicsAssembler::ADVECTION_DIFFUSION_2D:
 		createInstance<EqualityConstraints, AdvectionDiffusion2D, LinearInstance<EqualityConstraints, AdvectionDiffusion2D> >(instance, mesh);
 		break;
+	case PhysicsAssembler::ADVECTION_DIFFUSION_3D:
+		createInstance<EqualityConstraints, AdvectionDiffusion3D, LinearInstance<EqualityConstraints, AdvectionDiffusion3D> >(instance, mesh);
+		break;
 	case PhysicsAssembler::STOKES:
 		createInstance<EqualityConstraints, Stokes, LinearInstance<EqualityConstraints, Stokes> >(instance, mesh);
 		break;
