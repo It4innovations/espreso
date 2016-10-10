@@ -8,7 +8,7 @@
 #define Triangle6NodesCount 6
 #define Triangle6EdgeCount 3
 #define Triangle6GPCount 6
-#define Triangle6CommonNodes 3
+#define Triangle6CommonNodes 2
 #define Triangle6VTKCode 22
 
 namespace espreso {

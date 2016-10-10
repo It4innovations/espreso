@@ -8,7 +8,7 @@
 #define Square8NodesCount 8
 #define Square8EdgeCount 4
 #define Square8GPCount 9
-#define Square8CommonNodes 3
+#define Square8CommonNodes 2
 #define Square8VTKCode 23
 
 namespace espreso {

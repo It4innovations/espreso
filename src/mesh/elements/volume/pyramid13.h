@@ -11,7 +11,7 @@
 #define Pyramid13EdgeCount 8
 #define Pyramid13FacesCount 5
 #define Pyramid13GPCount 8
-#define Pyramid13CommonNodes 4
+#define Pyramid13CommonNodes 3
 #define Pyramid13VTKCode 27
 
 namespace espreso {

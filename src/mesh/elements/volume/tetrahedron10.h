@@ -10,7 +10,7 @@
 #define Tetrahedron10EdgeCount 6
 #define Tetrahedron10FacesCount 4
 #define Tetrahedron10GPCount 15
-#define Tetrahedron10CommonNodes 4
+#define Tetrahedron10CommonNodes 3
 #define Tetrahedron10VTKCode 24
 
 namespace espreso {

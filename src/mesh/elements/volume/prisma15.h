@@ -11,7 +11,7 @@
 #define Prisma15EdgeCount 9
 #define Prisma15FacesCount 5
 #define Prisma15GPCount 9
-#define Prisma15CommonNodes 4
+#define Prisma15CommonNodes 3
 #define Prisma15VTKCode 26
 
 namespace espreso {
