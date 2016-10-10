@@ -6,33 +6,29 @@ using namespace espreso;
 
 void UnknownVolume::fillFaces()
 {
-	std::vector<eslocal> domains;
+	std::vector<Element*> elements;
 	for (size_t i = 0; i < _indices.size(); i++) {
-		domains.insert(domains.end(), _nodes[_indices[i]]->domains().begin(), _nodes[_indices[i]]->domains().end());
+		elements.insert(elements.end(), _nodes[_indices[i]]->parentElements().begin(), _nodes[_indices[i]]->parentElements().end());
 	}
-	std::sort(domains.begin(), domains.end());
-	Esutils::removeDuplicity(domains);
-	if (domains.size() == 1) {
-		return;
-	}
+	std::sort(elements.begin(), elements.end());
+	Esutils::removeDuplicity(elements);
 
-	_faceNodes.resize(domains.size());
-	for (size_t i = 0; i < _indices.size(); i++) {
-		for (size_t d = 0; d < _nodes[_indices[i]]->domains().size(); d++) {
-			_faceNodes[std::find(domains.begin(), domains.end(), _nodes[_indices[i]]->domains()[d]) - domains.begin()].push_back(_indices[i]);
+	for (size_t e = 0; e < elements.size(); e++) {
+		if (elements[e]->domains()[0] != domains()[0]) {
+			std::vector<eslocal> intersection(_indices.size());
+			std::vector<eslocal> ind0(elements[e]->indices(), elements[e]->indices() + elements[e]->nodes());
+			std::vector<eslocal> ind1 = _indices;
+			std::sort(ind0.begin(), ind0.end());
+			std::sort(ind1.begin(), ind1.end());
+			auto it = std::set_intersection(ind0.begin(), ind0.end(), ind1.begin(), ind1.end(), intersection.begin());
+			if (it - intersection.begin() > nCommon()) {
+				_faceNodes.push_back(std::vector<eslocal>(intersection.begin(), it));
+			}
 		}
 	}
 
-	std::sort(_faceNodes.begin(), _faceNodes.end(), [&] (const std::vector<eslocal> &i, const std::vector<eslocal> &j) {
-		if (i.size() > nCommon() && j.size() > nCommon()) {
-			return i.size() < j.size();
-		} else {
-			return i.size() > j.size();
-		}
-	});
-
-	for (size_t f = 0; f < _faceNodes.size() && _faceNodes[f].size() < _indices.size(); f++) {
-		_faces.push_back(new UnknownPlane(_nodes, _faceNodes[f], _stiffnessMatrix));
+	for (size_t i = 0; i < _faceNodes.size(); i++) {
+		_faces.push_back(new UnknownPlane(_nodes, _faceNodes[i], _stiffnessMatrix));
 		_faces.back()->parentElements().push_back(this);
 	}
 }

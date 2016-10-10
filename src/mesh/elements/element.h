@@ -137,7 +137,7 @@ public:
 	std::vector<eslocal>& clusters() { return _clusters; }
 	const std::vector<eslocal>& clusters() const { return _clusters; }
 
-	std::vector<eslocal>& DOFsIndices() { return _DOFsIndices; }
+	virtual std::vector<eslocal>& DOFsIndices() { return _DOFsIndices; }
 	virtual const std::vector<eslocal>& DOFsIndices() const { return _DOFsIndices; }
 
 	std::vector<eslocal>& DOFsDomainsCounters() { return _DOFsDomainsCounters; }

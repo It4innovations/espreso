@@ -42,7 +42,7 @@ void SingularSystem::assembleGluingMatrices()
 	_constraints.insertElementGluingToB1(_apimesh.DOFs(), { Property::UNKNOWN });
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
-		_constraints.insertKernelsToB0(_apimesh.faces(), { Property::UNKNOWN }, R1);
+		_constraints.insertKernelsToB0(_apimesh.faces(), _apimesh.DOFs(), R1);
 	}
 }
 

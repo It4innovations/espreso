@@ -35,6 +35,7 @@ public:
 		return Point();
 	}
 
+	std::vector<eslocal>& DOFsIndices() { return _DOFs; }
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 

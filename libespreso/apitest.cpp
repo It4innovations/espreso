@@ -87,6 +87,7 @@ int main(int argc, char** argv)
 	iopts[FETI4I_VERBOSE_LEVEL] = 1;
 	iopts[FETI4I_TESTING_LEVEL] = 0;
 	iopts[FETI4I_MEASURE_LEVEL] = 0;
+	iopts[FETI4I_PRINT_MATRICES] = 1;
 
 
 	// Create instance of a problem

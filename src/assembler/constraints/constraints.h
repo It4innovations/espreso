@@ -32,6 +32,7 @@ public:
 
 	virtual void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 	virtual void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel) = 0;
+	virtual void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel) = 0;
 
 	virtual ~Constraints() {};
 

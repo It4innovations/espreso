@@ -36,7 +36,7 @@ public:
 
 	void computeFacesOfAllElements();
 	void computeFacesOnDomainsSurface();
-	void computeFacesSharedByDomains();
+	virtual void computeFacesSharedByDomains();
 	void clearFacesWithoutSettings();
 
 	void computeEdgesOfAllElements();
@@ -164,10 +164,11 @@ public:
 	void mapDOFsToDomains();
 	void fillParentElementsToDOFs(const std::vector<std::vector<eslocal> > &eDOFs);
 
+	void computeFacesSharedByDomains();
 	void computeDOFsDOFsCounters();
 	std::vector<size_t> distributeDOFsToDomains(const std::vector<size_t> &offsets);
 
-	const std::vector<Element*> DOFs() const { return _DOFs; }
+	const std::vector<Element*>& DOFs() const { return _DOFs; }
 
 protected:
 	std::vector<Element*> _DOFs;

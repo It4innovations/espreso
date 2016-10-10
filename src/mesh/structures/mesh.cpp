@@ -865,6 +865,21 @@ void Mesh::computeFacesSharedByDomains()
 	});
 }
 
+void APIMesh::computeFacesSharedByDomains()
+{
+	fillFacesFromElements([] (const std::vector<Element*> &nodes, const Element* face) { return true; });
+
+	cilk_for (size_t f = 0; f < _faces.size(); f++) {
+		std::vector<eslocal> d0 = _faces[f]->parentElements()[0]->DOFsIndices();
+		std::vector<eslocal> d1 = _faces[f]->parentElements()[1]->DOFsIndices();
+		std::sort(d0.begin(), d0.end());
+		std::sort(d1.begin(), d1.end());
+		std::vector<eslocal> intersection(_faces[f]->parentElements()[0]->DOFsIndices().size());
+		auto it = std::set_intersection(d0.begin(), d0.end(), d1.begin(), d1.end(), intersection.begin());
+		_faces[f]->DOFsIndices().insert(_faces[f]->DOFsIndices().end(), intersection.begin(), it);
+	}
+}
+
 void Mesh::clearFacesWithoutSettings()
 {
 	size_t threads = config::env::CILK_NWORKERS;

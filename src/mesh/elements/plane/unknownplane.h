@@ -38,6 +38,7 @@ public:
 
 	virtual Element* edge(size_t index) const { return _edges[index]; }
 
+	std::vector<eslocal>& DOFsIndices() { return _DOFs; }
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 
