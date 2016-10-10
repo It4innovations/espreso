@@ -14,6 +14,13 @@ void HypreInstance<TConstrains, TPhysics>::init()
 	MPI_Status stat;
 //------------------------------------------------------------------------------
 	_physics.prepareMeshStructures();
+	if (config::output::SAVE_PROPERTIES || config::output::SAVE_RESULTS) {
+		_store.storeGeometry();
+	}
+
+	if (config::output::SAVE_PROPERTIES) {
+		_physics.saveMeshProperties(_store);
+	}
 //------------------------------------------------------------------------------
 if(rank==TEST)	std::cout << "  > HYPRE INIT in "<<_physics.pointDOFs.size()<<"D\n";
 
@@ -24,10 +31,6 @@ if(rank==TEST)	std::cout << "  > HYPRE INIT in "<<_physics.pointDOFs.size()<<"D\
 	feiPtr.parameters(1, paramStrings);
 	delete paramStrings[0];
 	delete [] paramStrings;
-
-	if (config::output::SAVE_PROPERTIES) {
-		_physics.saveMeshProperties(_store);
-	}
 
 	const std::vector<Element*> &elements = _mesh.elements();
 	const std::vector<Element*> &nodes = _mesh.nodes();	
