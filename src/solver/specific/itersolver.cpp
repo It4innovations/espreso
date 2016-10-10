@@ -189,6 +189,8 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 
 
 	// KKT conditions
+	// TODO: OPTIMIZATION
+
 	bool check_solution = true;
 	if (check_solution) {
 
@@ -241,7 +243,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		MPI_Allreduce( &KKT1_norm_cluster_local2, &KKT1_norm_cluster_global2, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		KKT1_norm_cluster_global2 = sqrt(KKT1_norm_cluster_global2);
 
-		ESINFO(CONVERGENCE) << " KKT1 norm:            " << std::setw(6) << KKT1_norm_cluster_global / KKT1_norm_cluster_global2;
+		//ESINFO(CONVERGENCE) << " KKT1 norm:              " << std::setw(6) << KKT1_norm_cluster_global / KKT1_norm_cluster_global2;
 
 
 		// KKT2
@@ -256,35 +258,54 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		SEQ_VECTOR <double> ce_l      (dl_size, 0.0);
 		SEQ_VECTOR <double> cn_l      (dl_size, 0.0);
 
+		double max_Bn_l = 0.0;
+		double max_Bn_l_g = 0.0;
+
 		double norm_ce = 0.0;
 		double norm_cn = 0.0;
 		double norm_Beu = 0.0;
 		double norm_Bnu = 0.0;
 		double norm_Bn_lLambda = 0.0;
+
 		double lambda_n_max = -INFINITY;
 		double lambda_n_max_g = 0.0;
 
+		double lambda_n_max_2 = 0.0;
+		double lambda_n_max_2_g = 0.0;
+
+
 		cluster.CreateVec_c_perCluster ( vec_c_l );
+
+		for (eslocal i = 0; i < cluster.compressed_tmp.size(); i++)
+			cluster.compressed_tmp[i] = 0.0;
 
 		for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].B1_comp_dom.MatVec (primal_solution_out[d], cluster.x_prim_cluster1[d], 'N', 0, 0, 0.0);
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.x_prim_cluster1[d][i];
+				//Bu_l[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.x_prim_cluster1[d][i];
 			}
 		}
 
 		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, Bu_l);
 
 		for (eslocal i = 0; i < vec_c_l.size(); i++){
-			if (0 == 1) {//( ((vec_c_l[i]  ) > 0.0001)  && (vec_c_l[i] < 0.12 ) ){
+			if ( ((vec_c_l[i]  ) > 0.0001)  && (vec_c_l[i] < 0.12 ) ){
 				lb[i] = 0.0;
 				lambdan_l[i] = dual_soultion_compressed_parallel[i];
 
 				if (lambda_n_max < lambdan_l[i])
 					lambda_n_max = lambdan_l[i];
 
+				if (lambda_n_max_2 < -lambdan_l[i])
+					lambda_n_max_2 = -lambdan_l[i];
+
 				cn_l[i] = vec_c_l [i];
 				Bn_l[i] = Bu_l[i] - vec_c_l [i];
+
+				if (max_Bn_l < Bn_l[i])
+					max_Bn_l = Bn_l[i];
+
 				Bn_lLambda[i] = Bn_l[i] * lambdan_l[i];
 
 				ieq_size++;
@@ -295,29 +316,42 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 			}
 		}
 
+		MPI_Allreduce( &max_Bn_l, &max_Bn_l_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		max_Bn_l_g = fabs(max_Bn_l_g);
 
 		MPI_Allreduce( &lambda_n_max, &lambda_n_max_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		if (fabs(lambda_n_max_g) < 10e-8)
+			lambda_n_max_g += 1.0;
+
+
+		MPI_Allreduce( &lambda_n_max_2, &lambda_n_max_2_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		lambda_n_max_2_g = fabs(lambda_n_max_2_g);
 
 		norm_ce  = parallel_norm_compressed(cluster, ce_l);
 		if (fabs(norm_ce) < 10e-8)
 			norm_ce += 1.0;
 
 		norm_cn  = parallel_norm_compressed(cluster, cn_l);
-		if (fabs(norm_ce) < 10e-8)
+		if (fabs(norm_cn) < 10e-8)
 			norm_cn += 1.0;
 
 		norm_Beu = parallel_norm_compressed(cluster, Be_l);
 		norm_Bnu = parallel_norm_compressed(cluster, Bn_l);
 		norm_Bn_lLambda = parallel_norm_compressed(cluster, Bn_lLambda);
 
-		ESINFO(CONVERGENCE) << " KKT2 norm:            " << std::setw(6) << norm_Beu / norm_ce;
+
+
+		ESINFO(CONVERGENCE) << " **** Karush-Kuhn-Tucker-conditions ****     ";
+
+
+		ESINFO(CONVERGENCE) << " Solution norm: norm(K*u - f + Bt*Lambda) =      				" << std::setw(6) << KKT1_norm_cluster_global / KKT1_norm_cluster_global2;
+
+		ESINFO(CONVERGENCE) << " Equality constraints: norm(Be*u - ce) =					" << std::setw(6) << norm_Beu / norm_ce;
 
 		// KKT3
-
-
-	//	ESINFO(CONVERGENCE) << " KKT3_A norm:            " << std::setw(6) <<  / norm_cn;
-	//	ESINFO(CONVERGENCE) << " KKT3_B norm:            " << std::setw(6) <<  / lambda_n_max;
-		ESINFO(CONVERGENCE) << " KKT3_C norm:            " << std::setw(6) << norm_Bn_lLambda / ( norm_cn * lambda_n_max );
+		ESINFO(CONVERGENCE) << " Inequality constraints: norm(max(Bn*u - cn,0)) =				" << std::setw(6) << max_Bn_l_g / norm_cn;
+		ESINFO(CONVERGENCE) << " Check Multipliers positiveness: norm(max(-Lambda_N,0) =			" << std::setw(6) << lambda_n_max_2_g / lambda_n_max_g;
+		ESINFO(CONVERGENCE) << " Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) =			" << std::setw(6) << norm_Bn_lLambda / ( norm_cn * lambda_n_max_g );
 
 //		switch (config::solver::CGSOLVER) {
 //		case config::solver::CGSOLVERalternative::QPCE:
@@ -594,7 +628,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	double _alpham = 2;
 	double _precQ = 1e-12;
 	double _epsilon_power = 1e-8;
-	eslocal _maxit_power = 35;
+	eslocal _maxit_power = 55;
 	eslocal _method = 0;
 	eslocal halfStep = 0;
 
@@ -1062,24 +1096,20 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 //							nx_l[k] = std::max( lb[k], x_l[k] - 10 * alpha_f * p_l[k]);
 //						}
 
-						if (output_n_it < 4){
 
-						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] = x_l[k] -  (alpha_cg + alpha_f)/2.0 * p_l[k];
-							g_l[k] = g_l[k] -  (alpha_cg + alpha_f)/2.0 * PAPx_l[k];
-						}
-						}else{
+
+
 							for ( eslocal k = 0; k < x_l.size(); k++){
 								x_l[k] = x_l[k] -  (alpha_f) * p_l[k];
 								g_l[k] = g_l[k] -  (alpha_f) * PAPx_l[k];
 							}
-						}
+
 
 
 						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] = x_l[k] - alpha * g_til[k];
+							x_l[k] = x_l[k] - (alpha) * g_til[k];
 						}
 
 						if (USE_GGtINV == 1) {
@@ -1128,7 +1158,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] = x_l[k] - alpha * g_til[k];
+							x_l[k] = std::max( lb[k], x_l[k] - ((alpha_f+alpha_cg)/1.62) * g_til[k]);
 						}
 
 						if (USE_GGtINV == 1) {
