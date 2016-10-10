@@ -11,7 +11,7 @@ class ESPRESOTests(unittest.TestCase):
         info.precision(1e-4)
         info.iterations(4)
         if config["PRECONDITIONER"] == "DIRICHLET":
-            info.oscilation(True, 2);
+            info.oscilation(True, 2.5);
         else:
             info.oscilation(True, 3);
 
