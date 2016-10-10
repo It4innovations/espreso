@@ -280,7 +280,7 @@ void SparseSolverMKL::ImportMatrix_wo_Copy(SparseMatrix & A) {
 void SparseSolverMKL::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+	int num_procs = config::env::SOLVER_NUM_THREADS;
     iparm[2]  = num_procs;
 }
 

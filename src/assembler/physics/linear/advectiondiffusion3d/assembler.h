@@ -11,13 +11,13 @@ struct AdvectionDiffusion3D: public LinearPhysics
 	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints)
 	: LinearPhysics(
 			mesh, constraints,
-			SparseMatrix::MatrixType::REAL_UNSYMMETRIC,
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
 	void makeStiffnessMatricesRegular();
-	void assembleGluingMatrices() {};
+	void assembleGluingMatrices();
 
 	void saveMeshProperties(output::Store &store);
 	void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results);

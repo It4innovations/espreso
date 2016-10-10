@@ -5,7 +5,7 @@ using namespace espreso;
 
 void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
-	size_t threads = Esutils::getEnv<size_t>("CILK_NWORKERS");
+	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
 	// part x thread x Dirichlet
