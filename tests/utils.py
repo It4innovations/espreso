@@ -103,19 +103,26 @@ class RunInfo:
 
     def iterations(self, min, max=None):
         if self._iterations < min:
-            raise Exception("Unexpected number of iterations: {0}".format(self._iterations))
+            raise EspresoError("Unexpected number of iterations: {0}".format(self._iterations))
         if max is not None and self._iterations > max:
-            raise Exception("Number of iterations is too high: {0}".format(self._iterations))
+            raise EspresoError("Number of iterations is too high: {0}".format(self._iterations))
 
     def precision(self, precision):
         if self._precision > precision:
-            raise Exception("Example not convergated to a requested precision ({0} > {1}".format(self._precision, precision))
+            raise EspresoError("Example not convergated to a requested precision ({0} > {1}".format(self._precision, precision))
 
     def oscilation(self, allowed, max=None):
         if not allowed and self._oscilated:
-            raise Exception("Not allowed oscilation")
+            raise EspresoError("Not allowed oscilation")
         if max is not None and self._max_oscilation > max:
-            raise Exception("Oscilation {0} is higher than {1}".format(self._max_oscilation, max))
+            raise EspresoError("Oscilation {0} is higher than {1}".format(self._max_oscilation, max))
+
+class EspresoError:
+
+    program = []
+
+    def __init__(self, error):
+        raise Exception("{0}\nProgram: {1}".format(error, self.program))
 
 class Espreso:
 
@@ -168,9 +175,9 @@ class Espreso:
                     success = True
 
             if error != "":
-                raise Exception(error)
+                raise EspresoError(error)
             if success == False:
-                raise Exception(result)
+                raise EspresoError(result)
 
         result, error = self.waf(["configure"], config)
         check(result, error, "configure")
@@ -184,6 +191,7 @@ class Espreso:
 
         if cwd:
             cwd = os.path.join(ESPRESO_ROOT, cwd)
+        EspresoError.program = program
         result = subprocess.Popen(program,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   cwd=cwd or self.path,
@@ -197,25 +205,25 @@ class Espreso:
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
-            raise Exception(error)
+            raise EspresoError(error)
         if output != "":
-            raise Exception(output)
+            raise EspresoError(output)
 
     def valgrind(self, processes, *args, **kwargs):
         program = [ "mpirun", "-n", str(processes), "valgrind", "-q", "--leak-check=full", "--suppressions={0}/espreso.supp".format(self.path), os.path.join(self.path, "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
-            raise Exception(error)
+            raise EspresoError(error)
         if output != "":
-            raise Exception(output)
+            raise EspresoError(output)
 
     def decompose(self, *args, **kwargs):
         program = [ os.path.join(self.path, "generatordecomposer") ]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
-            raise Exception(error)
+            raise EspresoError(error)
         return output
 
     def output(self, processes, *args, **kwargs):
@@ -223,7 +231,7 @@ class Espreso:
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
-            raise Exception(error)
+            raise EspresoError(error)
 
         return output
 
@@ -232,7 +240,7 @@ class Espreso:
 
         output, error = self.run_program(program, *args, **kwargs)
         if error == "":
-            raise Exception("Expected fail, but run was correct.")
+            raise EspresoError("Expected fail, but run was correct.")
 
 
 
