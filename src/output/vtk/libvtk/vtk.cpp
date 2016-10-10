@@ -397,7 +397,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 				}
 			}
 		}
-
+		std::cout<<name<<std::endl;
 		vtkNew < vtkFloatArray > value;
 		value->SetName(name.c_str());
 		value->SetNumberOfComponents(properties.size());
@@ -1646,14 +1646,18 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 vtkSmartPointer<vtkPolyData> gp[dofs];
 	 vtkSmartPointer<vtkPoints> po[dofs];
 	 vtkSmartPointer<vtkPoints> points[dofs];
+	 vtkSmartPointer<vtkPoints> dirpoints[dofs];
 	 vtkSmartPointer<vtkCellArray> lines[dofs];
 	 vtkSmartPointer<vtkCellArray> ver[dofs];
+	 vtkSmartPointer<vtkCellArray> verdir[dofs];
 	 for(int i=0;i<dofs;i++){
 		 gp[i]=vtkSmartPointer<vtkPolyData>::New();
 		 po[i]=vtkSmartPointer<vtkPoints>::New();
 		 points[i]=vtkSmartPointer<vtkPoints>::New();
 		 lines[i]=vtkSmartPointer<vtkCellArray>::New();
 		 ver[i]=vtkSmartPointer<vtkCellArray>::New();
+		 verdir[i]=vtkSmartPointer<vtkCellArray>::New();
+		 dirpoints[i]=vtkSmartPointer<vtkPoints>::New();
 	 }
 	 //int V=mesh.coordinates().localSize(0) * constraints.B1.size();
 	 std::vector<int> row;
@@ -1664,59 +1668,74 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 int l=0;
 
 
-	 //        const Boundaries &sBoundaries = mesh.subdomainBoundaries();
+	 //const Boundaries &sBoundaries = mesh.subdomainBoundaries();
 	 //sBoundaries[5] -> vector subdomen
 	 //const Boundaries &cBoundaries = mesh.clusterBoundaries();
 	 //constraints.B1[0].I_row_indices
 	 //constraints.B1[0].J_col_indices
 	 //constraints.B1[0].V_values
 
-
+	 std::vector<int> findex;
+	 std::vector<int> fpart;
 	 for (int y = 0; y < mesh.parts(); y++) {
 		 for(int i=0;i<constraints.B1[y].I_row_indices.size();i++){
 			 int h=constraints.B1[y].I_row_indices[i];
 			 int index1=constraints.B1[y].J_col_indices[i]-1;
-
-			 std::vector<Point> p1(dofs);
-			 for(int pd=0;pd<dofs;pd++){
-				 p1[pd]=mesh.coordinates().get(index1/dofs,y);
-				 p1[pd]=help->shrink(p1[pd],y);
-				 vtkIdType pid[1];
-				 pid[0] = points[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
-				 ver[pd]->InsertNextCell(1,pid);
-			 }
-
-			 row.push_back(h);
-			 val.push_back(constraints.B1[y].V_values[i]);
-			 matr++;
-
-
-			 for(int p=0;p<mesh.parts();p++){
-				 if(y<=p){
+			 bool dirp=true;
+			 if((y)<mesh.parts()){
+				 for(int p=y;p<mesh.parts();p++){
 					 for(int k=0;k<constraints.B1[p].I_row_indices.size();k++){
-					 if(constraints.B1[p].I_row_indices[k]==h){
-						 if((constraints.B1[y].V_values[i]+constraints.B1[p].V_values[k])==0){
-							 int index2=constraints.B1[p].J_col_indices[k]-1;
-
-							 Point p2[dofs];
-							 for(int pd=0;pd<dofs;pd++){
-								 p2[pd]=mesh.coordinates().get(index2/dofs,p);
-								 p2[pd]=help->shrink(p2[pd],p);
-								 po[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
-								 po[pd]->InsertNextPoint(p2[pd].x,p2[pd].y,p2[pd].z);
-								 vtkSmartPointer<vtkLine> ls=vtkSmartPointer<vtkLine>::New();
-								 ls->GetPointIds()->SetId(0,l);
-								 ls->GetPointIds()->SetId(1,l+1);
-								 lines[pd]->InsertNextCell(ls);
-							 }
-
-							 l+=2;
-							 }
-							 else{
-							 //std::cout<<"!!!"<<std::endl;
+						 if(constraints.B1[p].I_row_indices[k]==h){
+							 if((constraints.B1[y].V_values[i]+constraints.B1[p].V_values[k])==0){
+								 dirp=false;
+								 std::vector<Point> p1(dofs);
+								 for(int pd=0;pd<dofs;pd++){
+									 p1[pd]=mesh.coordinates().get(index1/dofs,y);
+									 p1[pd]=help->shrink(p1[pd],y);
+									 vtkIdType pid[1];
+									 pid[0] = points[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+									 ver[pd]->InsertNextCell(1,pid);
+								 }
+								 int index2=constraints.B1[p].J_col_indices[k]-1;
+								 findex.push_back(index2);
+								 fpart.push_back(p);
+								 Point p2[dofs];
+								 for(int pd=0;pd<dofs;pd++){
+									 p2[pd]=mesh.coordinates().get(index2/dofs,p);
+									 p2[pd]=help->shrink(p2[pd],p);
+									 po[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+									 po[pd]->InsertNextPoint(p2[pd].x,p2[pd].y,p2[pd].z);
+									 vtkSmartPointer<vtkLine> ls=vtkSmartPointer<vtkLine>::New();
+									 ls->GetPointIds()->SetId(0,l);
+									 ls->GetPointIds()->SetId(1,l+1);
+									 lines[pd]->InsertNextCell(ls);
+								 }
+								 l+=2;
+								 break;
 							 }
 						 }
 					 }
+				 }
+			 }
+			 if(dirp==true){
+				 for(int i=0;i<findex.size();i++){
+					 if(index1==findex[i] && fpart[i]==y){
+						 dirp=false;
+						 break;
+					 }
+				 }
+			 }
+			 if(dirp==true){
+				 row.push_back(h);
+				 val.push_back(constraints.B1[y].V_values[i]);
+				 matr++;
+				 std::vector<Point> p1(dofs);
+				 for(int pd=0;pd<dofs;pd++){
+					 p1[pd]=mesh.coordinates().get(index1/dofs,y);
+					 p1[pd]=help->shrink(p1[pd],y);
+					 vtkIdType pid[1];
+					 pid[0] = dirpoints[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+					 verdir[pd]->InsertNextCell(1,pid);
 				 }
 			 }
 		 }
@@ -1809,19 +1828,22 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 
 	 vtkSmartPointer<vtkGenericDataObjectWriter> wg=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	 vtkSmartPointer<vtkAppendFilter> ap=vtkSmartPointer<vtkAppendFilter>::New();
+	 vtkSmartPointer<vtkPolyData> dirichlet=vtkSmartPointer<vtkPolyData>::New();
 
 
 	 ap->AddInputData(VTKGrid);
-	 //write the polydata
 	 for(size_t i=0;i<dofs;i++){
+		 dirichlet->SetPoints(dirpoints[i]);
+		 dirichlet->SetVerts(verdir[i]);
+
 		 gp[i]->SetPoints(po[i]);
 		 gp[i]->SetLines(lines[i]);
 
 		 ap->AddInputData(gp[i]);
 
 		 vtkSmartPointer<vtkPolyData> gp2=vtkSmartPointer<vtkPolyData>::New();
-		 gp2->SetPoints(points[i]);
-		 gp2->SetVerts(ver[i]);
+		 //gp2->SetPoints(points[i]);
+		 //gp2->SetVerts(ver[i]);
 
 		 ap->AddInputData(gp2);
 
@@ -1833,9 +1855,13 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
 	 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	 		ss<<path<<config::env::MPIrank<<".vtk";
-	 		writervtk->SetFileName("gluing.vtk");
+	 		writervtk->SetFileName(ss.str().c_str());
 	 		writervtk->SetInputData(ap->GetOutput());
 	 		writervtk->Write();
+	 		vtkSmartPointer<vtkGenericDataObjectWriter> dw=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
+	 		dw->SetFileName("dirichlet.vtk");
+	 		dw->SetInputData(dirichlet);
+	 		dw->Write();
 	 	}
 	 	break;
 	 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
