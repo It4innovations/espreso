@@ -5,8 +5,8 @@
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
-void HypreInstance<TConstrains, TPhysics>::init()
+template <class TPhysics>
+void HypreInstance<TPhysics>::init()
 {
 	int rank, size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -270,8 +270,8 @@ if(rank==TEST)	std::cout << "  > CLEANING\n";
 
 }
 
-template <class TConstrains, class TPhysics>
-void HypreInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double> > &solution)
+template <class TPhysics>
+void HypreInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution)
 {
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);

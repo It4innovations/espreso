@@ -38,11 +38,11 @@ void SingularSystem::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
-	_constraints.insertDirichletToB1(_apimesh.DOFs(), { Property::UNKNOWN });
-	_constraints.insertElementGluingToB1(_apimesh.DOFs(), { Property::UNKNOWN });
+	EqualityConstraints::insertDirichletToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN });
+	EqualityConstraints::insertElementGluingToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN });
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
-		_constraints.insertKernelsToB0(_apimesh.faces(), _apimesh.DOFs(), R1);
+		EqualityConstraints::insertKernelsToB0(_constraints, _apimesh.faces(), _apimesh.DOFs(), R1);
 	}
 }
 

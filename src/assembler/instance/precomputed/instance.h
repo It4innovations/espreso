@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
+template <class TPhysics>
 struct PrecomputedInstance: public Instance
 {
 	PrecomputedInstance(APIMesh &mesh, SparseMatrix::MatrixType type, double* rhs, eslocal rhs_size)
@@ -25,7 +25,7 @@ struct PrecomputedInstance: public Instance
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
-	TConstrains _constrains;
+	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
 };

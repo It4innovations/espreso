@@ -10,7 +10,7 @@
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
+template <class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
@@ -34,7 +34,7 @@ public:
 
 protected:
 	LLNL_FEI_Impl feiPtr;
-	TConstrains _constrains;
+	Constraints _constrains;
 	TPhysics _physics;
 	output::VTK _store;
 
@@ -48,7 +48,7 @@ protected:
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
+template <class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
@@ -67,7 +67,7 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
-	TConstrains _constrains;
+	Constraints _constrains;
 	TPhysics _physics;
 };
 

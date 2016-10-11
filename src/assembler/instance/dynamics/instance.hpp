@@ -3,8 +3,8 @@
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
-void DynamicsInstance<TConstrains, TPhysics>::init()
+template <class TPhysics>
+void DynamicsInstance<TPhysics>::init()
 {
 	TimeEvent timePreparation("Prepare mesh structures"); timePreparation.start();
 	_physics.prepareMeshStructures();
@@ -26,7 +26,14 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 	timeScaling.endWithBarrier(); _timeStatistics.addEvent(timeScaling);
 
 	if (config::info::PRINT_MATRICES) {
-		_physics.saveMatrices();
+		_physics.saveStiffnessMatrices();
+	}
+
+	TimeEvent timeReg("Make K regular"); timeReg.start();
+	_physics.makeStiffnessMatricesRegular();
+	timeReg.endWithBarrier(); _timeStatistics.addEvent(timeReg);
+
+	if (config::info::PRINT_MATRICES) {
 		_physics.saveKernelMatrices();
 	}
 
@@ -76,8 +83,8 @@ void DynamicsInstance<TConstrains, TPhysics>::init()
 	timePrep.end(); _timeStatistics.addEvent(timePrep);
 }
 
-template <class TConstrains, class TPhysics>
-void DynamicsInstance<TConstrains, TPhysics>::pre_solve_update(std::vector<std::vector<double> > &solution)
+template <class TPhysics>
+void DynamicsInstance<TPhysics>::pre_solve_update(std::vector<std::vector<double> > &solution)
 {
 	ESINFO(PROGRESS1) << "Time: " << _time;
 
@@ -89,8 +96,8 @@ void DynamicsInstance<TConstrains, TPhysics>::pre_solve_update(std::vector<std::
 	}
 }
 
-template <class TConstrains, class TPhysics>
-void DynamicsInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double> > &solution)
+template <class TPhysics>
+void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution)
 {
 	if (_time && config::output::SAVE_RESULTS) {
 		_store.storeGeometry(_time);
@@ -110,8 +117,8 @@ void DynamicsInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<doub
 	}
 }
 
-template <class TConstrains, class TPhysics>
-void DynamicsInstance<TConstrains, TPhysics>::post_solve_update(std::vector<std::vector<double> > &solution)
+template <class TPhysics>
+void DynamicsInstance<TPhysics>::post_solve_update(std::vector<std::vector<double> > &solution)
 {
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 		for(size_t i = 0; i < _u[p].size(); i++) {
@@ -142,8 +149,8 @@ void DynamicsInstance<TConstrains, TPhysics>::post_solve_update(std::vector<std:
 	_time++;
 }
 
-template <class TConstrains, class TPhysics>
-void DynamicsInstance<TConstrains, TPhysics>::finalize()
+template <class TPhysics>
+void DynamicsInstance<TPhysics>::finalize()
 {
 	_linearSolver.finilize();
 

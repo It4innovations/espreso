@@ -3,8 +3,8 @@
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
-void PrecomputedInstance<TConstrains, TPhysics>::init()
+template <class TPhysics>
+void PrecomputedInstance<TPhysics>::init()
 {
 	TimeEvent timePreparation("Prepare mesh structures"); timePreparation.start();
 	_physics.prepareMeshStructures();
@@ -44,8 +44,8 @@ void PrecomputedInstance<TConstrains, TPhysics>::init()
 	timeSolver.end(); _timeStatistics.addEvent(timeSolver);
 }
 
-template <class TConstrains, class TPhysics>
-void PrecomputedInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<double> > &solution)
+template <class TPhysics>
+void PrecomputedInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution)
 {
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
 
@@ -70,8 +70,8 @@ void PrecomputedInstance<TConstrains, TPhysics>::solve(std::vector<std::vector<d
 	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);
 }
 
-template <class TConstrains, class TPhysics>
-void PrecomputedInstance<TConstrains, TPhysics>::finalize()
+template <class TPhysics>
+void PrecomputedInstance<TPhysics>::finalize()
 {
 	_linearSolver.finilize();
 

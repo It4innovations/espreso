@@ -152,7 +152,7 @@ void FETI4ICreateInstance(
 			neighClusters,
 			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<EqualityConstraints, SingularSystem>(DataHolder::instances.back()->mesh, (SparseMatrix::MatrixType)matrix->type, rhs, size);
+	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(DataHolder::instances.back()->mesh, (SparseMatrix::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 

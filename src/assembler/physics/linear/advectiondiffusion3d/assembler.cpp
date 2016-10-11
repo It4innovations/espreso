@@ -44,17 +44,17 @@ void AdvectionDiffusion3D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
-	_constraints.insertDirichletToB1(_mesh.nodes(), pointDOFs);
-	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
+	EqualityConstraints::insertDirichletToB1(_constraints, _mesh.nodes(), pointDOFs);
+	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
-			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
 			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
-			_constraints.insertKernelsToB0(_mesh.edges(), pointDOFs, R1);
+			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
 			break;
 		}
 	}

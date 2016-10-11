@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-template <class TConstrains, class TPhysics>
+template <class TPhysics>
 struct LinearInstance: public Instance
 {
 public:
@@ -30,7 +30,7 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
-	TConstrains _constrains;
+	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
 	output::VTK _store;

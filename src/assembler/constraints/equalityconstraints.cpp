@@ -3,14 +3,14 @@
 
 using namespace espreso;
 
-void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
 	// part x thread x Dirichlet
-	std::vector<std::vector<std::vector<esglobal> > > dirichlet(_mesh.parts(), std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<double> > > dirichletValues(_mesh.parts(), std::vector<std::vector<double> >(threads));
+	std::vector<std::vector<std::vector<esglobal> > > dirichlet(constraints._mesh.parts(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<double> > > dirichletValues(constraints._mesh.parts(), std::vector<std::vector<double> >(threads));
 
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
@@ -32,9 +32,9 @@ void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes
 		}
 	}
 
-	std::vector<size_t> dirichletSizes(_mesh.parts());
+	std::vector<size_t> dirichletSizes(constraints._mesh.parts());
 	#pragma cilk grainsize = 1
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		size_t size = 0;
 		for (size_t t = 0; t < threads; t++) {
 			size += dirichlet[p][t].size();
@@ -44,7 +44,7 @@ void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes
 
 	size_t clusterOffset = 0;
 	std::vector<eslocal> subdomainsWithDirichlet;
-	for (size_t p = 0; p < _mesh.parts(); p++) {
+	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		clusterOffset += dirichletSizes[p];
 		if (dirichletSizes[p]) {
 			subdomainsWithDirichlet.push_back(p);
@@ -52,21 +52,21 @@ void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes
 	}
 
 	size_t clusterDirichletSize = clusterOffset;
-	size_t globalDirichletSize = synchronizeOffsets(clusterOffset);
+	size_t globalDirichletSize = constraints.synchronizeOffsets(clusterOffset);
 
-	clusterOffset += B1[0].rows;
+	clusterOffset += constraints.B1[0].rows;
 	#pragma cilk grainsize = 1
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
-		B1[p].rows += globalDirichletSize;
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
+		constraints.B1[p].rows += globalDirichletSize;
 	}
 
 	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
-		B1[s].nnz += dirichletSizes[s];
-		B1[s].I_row_indices.reserve(B1[s].nnz);
-		B1[s].J_col_indices.reserve(B1[s].nnz);
-		B1[s].V_values.resize(B1[s].nnz, 1);
+		constraints.B1[s].nnz += dirichletSizes[s];
+		constraints.B1[s].I_row_indices.reserve(constraints.B1[s].nnz);
+		constraints.B1[s].J_col_indices.reserve(constraints.B1[s].nnz);
+		constraints.B1[s].V_values.resize(constraints.B1[s].nnz, 1);
 	}
 
 
@@ -74,34 +74,34 @@ void EqualityConstraints::insertDirichletToB1(const std::vector<Element*> &nodes
 	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
-		for (size_t i = 0; i < B1[s].nnz; i++) {
-			B1[s].I_row_indices.push_back(clusterOffset + dirichletSizes[s] + i + IJVMatrixIndexing);
+		for (size_t i = 0; i < constraints.B1[s].nnz; i++) {
+			constraints.B1[s].I_row_indices.push_back(clusterOffset + dirichletSizes[s] + i + IJVMatrixIndexing);
 		}
 		for (size_t t = 0; t < threads; t++) {
-			B1[s].J_col_indices.insert(B1[s].J_col_indices.end(), dirichlet[s][t].begin(), dirichlet[s][t].end());
-			B1c[s].insert(B1c[s].end(), dirichletValues[s][t].begin(), dirichletValues[s][t].end());
+			constraints.B1[s].J_col_indices.insert(constraints.B1[s].J_col_indices.end(), dirichlet[s][t].begin(), dirichlet[s][t].end());
+			constraints.B1c[s].insert(constraints.B1c[s].end(), dirichletValues[s][t].begin(), dirichletValues[s][t].end());
 		}
-		B1duplicity[s].resize(B1[s].I_row_indices.size(), 1);
-		for (size_t r = B1subdomainsMap[s].size(); r < B1[s].nnz; r++) {
-			B1subdomainsMap[s].push_back(B1[s].I_row_indices[r] - 1);
+		constraints.B1duplicity[s].resize(constraints.B1[s].I_row_indices.size(), 1);
+		for (size_t r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
+			constraints.B1subdomainsMap[s].push_back(constraints.B1[s].I_row_indices[r] - 1);
 		}
 	}
 
-	B1clustersMap.reserve(B1clustersMap.size() + clusterDirichletSize);
+	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterDirichletSize);
 	for (esglobal i = clusterOffset; i < clusterOffset + clusterDirichletSize; i++) {
-		B1clustersMap.push_back({ i, config::env::MPIrank });
+		constraints.B1clustersMap.push_back({ i, config::env::MPIrank });
 	}
 
-	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << B1[0].rows;
+	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << constraints.B1[0].rows;
 	ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
 }
 
-std::vector<esglobal> EqualityConstraints::computeLambdasID(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
 	std::vector<esglobal> lambdasID(elements.size() * DOFs.size(), -1);
 
 	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_mesh.neighbours().begin(), _mesh.neighbours().end(), neighbour) - _mesh.neighbours().begin();
+		return std::lower_bound(constraints._mesh.neighbours().begin(), constraints._mesh.neighbours().end(), neighbour) - constraints._mesh.neighbours().begin();
 	};
 
 	size_t threads = config::env::CILK_NWORKERS;
@@ -109,8 +109,8 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(const std::vector<El
 	std::vector<size_t> offsets(threads);
 
 	// neighbours x threads x data
-	std::vector<std::vector<std::vector<esglobal> > > sLambdas(_mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<esglobal> > > rLambdas(_mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<esglobal> > > sLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<esglobal> > > rLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
 
 
 	#pragma cilk grainsize = 1
@@ -139,10 +139,10 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(const std::vector<El
 
 	size_t numberOfClusterLambdas = Esutils::sizesToOffsets(offsets);
 	size_t clusterOffset = numberOfClusterLambdas;
-	size_t totalNumberOfLambdas = synchronizeOffsets(clusterOffset);
+	size_t totalNumberOfLambdas = constraints.synchronizeOffsets(clusterOffset);
 
 	for (size_t i = 0; i < offsets.size(); i++) {
-		offsets[i] += clusterOffset + B1[0].rows;
+		offsets[i] += clusterOffset + constraints.B1[0].rows;
 	}
 
 	#pragma cilk grainsize = 1
@@ -159,17 +159,17 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(const std::vector<El
 
 		}
 
-		for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
+		for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
 			for (size_t i = 0; i < sLambdas[n][t].size(); i++) {
 				sLambdas[n][t][i] = lambdasID[sLambdas[n][t][i]];
 			}
 		}
 	}
 
-	std::vector<std::vector<esglobal> > rBuffer(_mesh.neighbours().size());
+	std::vector<std::vector<esglobal> > rBuffer(constraints._mesh.neighbours().size());
 
 	#pragma cilk grainsize = 1
-	cilk_for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
+	cilk_for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
 		size_t size = rLambdas[n][0].size();
 		for (size_t t = 1; t < threads; t++) {
 			sLambdas[n][0].insert(sLambdas[n][0].end(), sLambdas[n][t].begin(), sLambdas[n][t].end());
@@ -179,23 +179,23 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(const std::vector<El
 	}
 
 
-	std::vector<MPI_Request> req(_mesh.neighbours().size());
-	for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
-		if (_mesh.neighbours()[n] > config::env::MPIrank) {
-			MPI_Isend(sLambdas[n][0].data(), sizeof(esglobal) * sLambdas[n][0].size(), MPI_BYTE, _mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
+	std::vector<MPI_Request> req(constraints._mesh.neighbours().size());
+	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
+		if (constraints._mesh.neighbours()[n] > config::env::MPIrank) {
+			MPI_Isend(sLambdas[n][0].data(), sizeof(esglobal) * sLambdas[n][0].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
 		}
-		if (_mesh.neighbours()[n] < config::env::MPIrank) {
-			MPI_Irecv(rBuffer[n].data(), sizeof(esglobal) * rBuffer[n].size(), MPI_BYTE, _mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
+		if (constraints._mesh.neighbours()[n] < config::env::MPIrank) {
+			MPI_Irecv(rBuffer[n].data(), sizeof(esglobal) * rBuffer[n].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
 		}
 	}
 
-	MPI_Waitall(_mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
+	MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
 
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
-			for (size_t n = 0; n < _mesh.neighbours().size(); n++) {
+			for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
 				size_t offset = 0;
 				for (size_t i = 0; i < t; i++) {
 					offset += rLambdas[n][i].size();
@@ -209,16 +209,16 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(const std::vector<El
 	}
 
 	#pragma cilk grainsize = 1
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
-		B1[p].rows += totalNumberOfLambdas;
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
+		constraints.B1[p].rows += totalNumberOfLambdas;
 	}
 
 	return lambdasID;
 }
 
-void EqualityConstraints::insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
-	std::vector<esglobal> lambdasID = computeLambdasID(elements, DOFs);
+	std::vector<esglobal> lambdasID = computeLambdasID(constraints, elements, DOFs);
 
 	std::vector<eslocal> permutation(lambdasID.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -235,10 +235,10 @@ void EqualityConstraints::insertElementGluingToB1(const std::vector<Element*> &e
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, permutation.size());
 
 	// threads x domains x data
-	std::vector<std::vector<std::vector<esglobal> > > rows(threads, std::vector<std::vector<esglobal> >(_mesh.parts()));
-	std::vector<std::vector<std::vector<eslocal> > > cols(threads, std::vector<std::vector<eslocal> >(_mesh.parts()));
-	std::vector<std::vector<std::vector<eslocal> > > vals(threads, std::vector<std::vector<eslocal> >(_mesh.parts()));
-	std::vector<std::vector<std::vector<double> > > dup(threads, std::vector<std::vector<double> >(_mesh.parts()));
+	std::vector<std::vector<std::vector<esglobal> > > rows(threads, std::vector<std::vector<esglobal> >(constraints._mesh.parts()));
+	std::vector<std::vector<std::vector<eslocal> > > cols(threads, std::vector<std::vector<eslocal> >(constraints._mesh.parts()));
+	std::vector<std::vector<std::vector<eslocal> > > vals(threads, std::vector<std::vector<eslocal> >(constraints._mesh.parts()));
+	std::vector<std::vector<std::vector<double> > > dup(threads, std::vector<std::vector<double> >(constraints._mesh.parts()));
 
 	std::vector<std::vector<std::vector<esglobal> > > cMap(threads);
 
@@ -312,32 +312,32 @@ void EqualityConstraints::insertElementGluingToB1(const std::vector<Element*> &e
 	}
 
 	#pragma cilk grainsize = 1
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t t = 0; t < threads; t++) {
-			B1[p].I_row_indices.insert(B1[p].I_row_indices.end(), rows[t][p].begin(), rows[t][p].end());
-			B1[p].J_col_indices.insert(B1[p].J_col_indices.end(), cols[t][p].begin(), cols[t][p].end());
-			B1[p].V_values.insert(B1[p].V_values.end(), vals[t][p].begin(), vals[t][p].end());
-			B1duplicity[p].insert(B1duplicity[p].end(), dup[t][p].begin(), dup[t][p].end());
+			constraints.B1[p].I_row_indices.insert(constraints.B1[p].I_row_indices.end(), rows[t][p].begin(), rows[t][p].end());
+			constraints.B1[p].J_col_indices.insert(constraints.B1[p].J_col_indices.end(), cols[t][p].begin(), cols[t][p].end());
+			constraints.B1[p].V_values.insert(constraints.B1[p].V_values.end(), vals[t][p].begin(), vals[t][p].end());
+			constraints.B1duplicity[p].insert(constraints.B1duplicity[p].end(), dup[t][p].begin(), dup[t][p].end());
 		}
-		B1[p].nnz = B1[p].I_row_indices.size();
-		B1c[p].resize(B1[p].nnz, 0);
-		for (size_t r = B1subdomainsMap[p].size(); r < B1[p].nnz; r++) {
-			B1subdomainsMap[p].push_back(B1[p].I_row_indices[r] - 1);
+		constraints.B1[p].nnz = constraints.B1[p].I_row_indices.size();
+		constraints.B1c[p].resize(constraints.B1[p].nnz, 0);
+		for (size_t r = constraints.B1subdomainsMap[p].size(); r < constraints.B1[p].nnz; r++) {
+			constraints.B1subdomainsMap[p].push_back(constraints.B1[p].I_row_indices[r] - 1);
 		}
 	}
 
 	for (size_t t = 0; t < threads; t++) {
-		B1clustersMap.insert(B1clustersMap.end(), cMap[t].begin(), cMap[t].end());
+		constraints.B1clustersMap.insert(constraints.B1clustersMap.end(), cMap[t].begin(), cMap[t].end());
 	}
 
-	ESINFO(DETAILS) << "Lambdas in B1: " << B1[0].rows;
+	ESINFO(DETAILS) << "Lambdas in B1: " << constraints.B1[0].rows;
 }
 
 #ifdef HAVE_MORTAR
 
 #include "mortar.h"
 
-void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
 	std::vector<int> rows;
 	std::vector<int> columns;
@@ -379,14 +379,14 @@ void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &el
 	for (size_t n = 0; n < nodes.size(); n++) {
 		if (config::env::MPIrank) {
 			masterCoordinates.push_back(Point_3D());
-			masterCoordinates.back().x = _mesh.coordinates()[nodes[n]].x;
-			masterCoordinates.back().y = _mesh.coordinates()[nodes[n]].y;
-			masterCoordinates.back().z = _mesh.coordinates()[nodes[n]].z;
+			masterCoordinates.back().x = constraints._mesh.coordinates()[nodes[n]].x;
+			masterCoordinates.back().y = constraints._mesh.coordinates()[nodes[n]].y;
+			masterCoordinates.back().z = constraints._mesh.coordinates()[nodes[n]].z;
 		} else {
 			slaveCoordinates.push_back(Point_3D());
-			slaveCoordinates.back().x = _mesh.coordinates()[nodes[n]].x;
-			slaveCoordinates.back().y = _mesh.coordinates()[nodes[n]].y;
-			slaveCoordinates.back().z = _mesh.coordinates()[nodes[n]].z;
+			slaveCoordinates.back().x = constraints._mesh.coordinates()[nodes[n]].x;
+			slaveCoordinates.back().y = constraints._mesh.coordinates()[nodes[n]].y;
+			slaveCoordinates.back().z = constraints._mesh.coordinates()[nodes[n]].z;
 		}
 	}
 
@@ -440,7 +440,7 @@ void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &el
 
 #else
 
-void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
 	// TODO: improve!
 	size_t cc = 0;
@@ -457,13 +457,13 @@ void EqualityConstraints::insertMortarGluingToB1(const std::vector<Element*> &el
 #endif
 
 
-void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertDomainGluingToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
 	if (!elements.size()) {
 		return;
 	}
 
-	size_t lambdas = B0[0].rows;
+	size_t lambdas = constraints.B0[0].rows;
 
 	for (size_t e = 0; e < elements.size(); e++) {
 		for (size_t dof = 0; dof < DOFs.size(); dof++) {
@@ -472,13 +472,13 @@ void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &el
 
 				for (size_t d1 = 0, d2 = 1; d2 < elements[e]->domains().size(); d1++, d2++) {
 
-					B0[elements[e]->domains()[d1]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
-					B0[elements[e]->domains()[d1]].J_col_indices.push_back(DOFIndices[d1 * DOFs.size() + dof] + IJVMatrixIndexing);
-					B0[elements[e]->domains()[d1]].V_values.push_back(1);
+					constraints.B0[elements[e]->domains()[d1]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
+					constraints.B0[elements[e]->domains()[d1]].J_col_indices.push_back(DOFIndices[d1 * DOFs.size() + dof] + IJVMatrixIndexing);
+					constraints.B0[elements[e]->domains()[d1]].V_values.push_back(1);
 
-					B0[elements[e]->domains()[d2]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
-					B0[elements[e]->domains()[d2]].J_col_indices.push_back(DOFIndices[d2 * DOFs.size() + dof] + IJVMatrixIndexing);
-					B0[elements[e]->domains()[d2]].V_values.push_back(-1);
+					constraints.B0[elements[e]->domains()[d2]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
+					constraints.B0[elements[e]->domains()[d2]].J_col_indices.push_back(DOFIndices[d2 * DOFs.size() + dof] + IJVMatrixIndexing);
+					constraints.B0[elements[e]->domains()[d2]].V_values.push_back(-1);
 
 					lambdas++;
 				}
@@ -488,20 +488,20 @@ void EqualityConstraints::insertDomainGluingToB0(const std::vector<Element*> &el
 	}
 
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
-		B0[p].rows = lambdas;
-		B0[p].nnz = B0[p].I_row_indices.size();
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
+		constraints.B0[p].rows = lambdas;
+		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 
-		B0subdomainsMap[p].reserve(B0[p].nnz);
-		for (size_t i = B0subdomainsMap[p].size(); i < B0[p].nnz; i++) {
-			B0subdomainsMap[p].push_back(B0[p].I_row_indices[i] - IJVMatrixIndexing);
+		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
+		for (size_t i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
+			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
 		}
 	}
 
 	ESINFO(DETAILS) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
-void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel)
+void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel)
 {
 	std::vector<Element*> el(elements);
 
@@ -522,7 +522,7 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 	}
 	part.push_back(el.size());
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
 			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
@@ -534,7 +534,7 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 			std::vector<Element*> nodes;
 			for (size_t e = part[i]; e < part[i + 1]; e++) {
 				for (size_t n = 0; n < el[e]->nodes(); n++) {
-					nodes.push_back(_mesh.nodes()[el[e]->node(n)]);
+					nodes.push_back(constraints._mesh.nodes()[el[e]->node(n)]);
 				}
 			}
 			std::sort(nodes.begin(), nodes.end());
@@ -543,25 +543,25 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 			for (size_t col = 0; col < kernel[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodes.size(); n++) {
 					for (size_t dof = 0; dof < DOFs.size(); dof++) {
-						B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
-						B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + IJVMatrixIndexing);
-						B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + nodes[n]->DOFIndex(domains[0], dof)]);
+						constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
+						constraints.B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + IJVMatrixIndexing);
+						constraints.B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + nodes[n]->DOFIndex(domains[0], dof)]);
 					}
 				}
 			}
 		}
 
 
-		B0[p].rows = kernel[0].cols * (part.size() - 1);
-		B0[p].nnz = B0[p].I_row_indices.size();
-		B0subdomainsMap[p].reserve(B0[p].nnz);
-		for (size_t i = B0subdomainsMap[p].size(); i < B0[p].nnz; i++) {
-			B0subdomainsMap[p].push_back(B0[p].I_row_indices[i] - IJVMatrixIndexing);
+		constraints.B0[p].rows = kernel[0].cols * (part.size() - 1);
+		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
+		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
+		for (size_t i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
+			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
 		}
 	}
 }
 
-void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel)
+void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel)
 {
 	std::vector<Element*> el(elements);
 
@@ -582,7 +582,7 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 	}
 	part.push_back(el.size());
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
 			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
@@ -601,19 +601,19 @@ void EqualityConstraints::insertKernelsToB0(const std::vector<Element*> &element
 			size_t DOFIndex = 0;
 			for (size_t col = 0; col < kernel[domains[0]].cols; col++) {
 				for (size_t n = 0; n < interfaceDOFs.size(); n++) {
-					B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
-					B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + IJVMatrixIndexing);
-					B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + DOFs[interfaceDOFs[n]]->DOFIndex(domains[0], DOFIndex)]);
+					constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
+					constraints.B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + IJVMatrixIndexing);
+					constraints.B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + DOFs[interfaceDOFs[n]]->DOFIndex(domains[0], DOFIndex)]);
 				}
 			}
 		}
 
 
-		B0[p].rows = kernel[0].cols * (part.size() - 1);
-		B0[p].nnz = B0[p].I_row_indices.size();
-		B0subdomainsMap[p].reserve(B0[p].nnz);
-		for (size_t i = B0subdomainsMap[p].size(); i < B0[p].nnz; i++) {
-			B0subdomainsMap[p].push_back(B0[p].I_row_indices[i] - IJVMatrixIndexing);
+		constraints.B0[p].rows = kernel[0].cols * (part.size() - 1);
+		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
+		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
+		for (size_t i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
+			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
 		}
 	}
 }

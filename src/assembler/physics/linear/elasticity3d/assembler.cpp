@@ -87,21 +87,21 @@ void LinearElasticity3D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
-	_constraints.insertDirichletToB1(_mesh.nodes(), pointDOFs);
-	_constraints.insertElementGluingToB1(_mesh.nodes(), pointDOFs);
-	_constraints.insertMortarGluingToB1(_mesh.faces(), pointDOFs);
+	EqualityConstraints::insertDirichletToB1(_constraints, _mesh.nodes(), pointDOFs);
+	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs);
+	EqualityConstraints::insertMortarGluingToB1(_constraints, _mesh.faces(), pointDOFs);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
-			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			_constraints.insertKernelsToB0(_mesh.faces(), pointDOFs, R1);
+			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, R1);
 			break;
 		case config::solver::B0_TYPEalternative::COMBINED:
-			_constraints.insertKernelsToB0(_mesh.faces(), pointDOFs, R1);
-			_constraints.insertDomainGluingToB0(_mesh.corners(), pointDOFs);
+			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, R1);
+			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented construction of B0";

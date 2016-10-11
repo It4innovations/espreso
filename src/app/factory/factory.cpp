@@ -142,7 +142,7 @@ static void fillMesh(const Configuration &configuration, Mesh &mesh, ElementType
 	}
 }
 
-template<class TConstraints, class TPhysics, class TInstance>
+template<class TPhysics, class TInstance>
 static void createInstance(Instance* &instance, Mesh &mesh)
 {
 	switch (config::solver::FETI_METHOD) {
@@ -151,7 +151,7 @@ static void createInstance(Instance* &instance, Mesh &mesh)
 		instance = new TInstance(mesh);
 		break;
 	case config::solver::FETI_METHODalternative::HYPRE:
-		instance = new HypreInstance<TConstraints, TPhysics>(mesh);
+		instance = new HypreInstance<TPhysics>(mesh);
 		break;
 	}
 }
@@ -177,22 +177,22 @@ Factory::Factory(const Configuration &configuration)
 
 	switch (physics) {
 	case PhysicsAssembler::LINEAR_ELASTICITY_2D:
-		createInstance<EqualityConstraints, LinearElasticity2D, LinearInstance<EqualityConstraints, LinearElasticity2D> >(instance, mesh);
+		createInstance<LinearElasticity2D, LinearInstance<LinearElasticity2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::LINEAR_ELASTICITY_3D:
-		createInstance<EqualityConstraints, LinearElasticity3D, LinearInstance<EqualityConstraints, LinearElasticity3D> >(instance, mesh);
+		createInstance<LinearElasticity3D, LinearInstance<LinearElasticity3D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::TRANSIENT_ELASTICITY_3D:
-		createInstance<EqualityConstraints, TransientElasticity, LinearInstance<EqualityConstraints, TransientElasticity> >(instance, mesh);
+		createInstance<TransientElasticity, DynamicsInstance<TransientElasticity> >(instance, mesh);
 		break;
 	case PhysicsAssembler::ADVECTION_DIFFUSION_2D:
-		createInstance<EqualityConstraints, AdvectionDiffusion2D, LinearInstance<EqualityConstraints, AdvectionDiffusion2D> >(instance, mesh);
+		createInstance<AdvectionDiffusion2D, LinearInstance<AdvectionDiffusion2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::ADVECTION_DIFFUSION_3D:
-		createInstance<EqualityConstraints, AdvectionDiffusion3D, LinearInstance<EqualityConstraints, AdvectionDiffusion3D> >(instance, mesh);
+		createInstance<AdvectionDiffusion3D, LinearInstance<AdvectionDiffusion3D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::STOKES:
-		createInstance<EqualityConstraints, Stokes, LinearInstance<EqualityConstraints, Stokes> >(instance, mesh);
+		createInstance<Stokes, LinearInstance<Stokes> >(instance, mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown Physics";

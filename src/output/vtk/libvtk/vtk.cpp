@@ -1636,7 +1636,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 }*/
 }
 
-void VTK::gluing(const Mesh &mesh, const EqualityConstraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
 	 VTK* help=new VTK(mesh,path,shrinkSubdomain,shrinkCluster);
 	 vtkSmartPointer<vtkUnstructuredGrid> VTKGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();

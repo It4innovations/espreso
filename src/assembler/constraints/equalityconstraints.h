@@ -6,21 +6,18 @@
 
 namespace espreso {
 
-class EqualityConstraints: public Constraints
+struct EqualityConstraints
 {
-public:
-	EqualityConstraints(Mesh &mesh): Constraints(mesh) {};
+	static void insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs);
+	static void insertElementGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
+	static void insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
 
-	void insertDirichletToB1(const std::vector<Element*> &nodes, const std::vector<Property> &DOFs);
-	void insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
-	void insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
-
-	void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
-	void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel);
-	void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel);
+	static void insertDomainGluingToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
+	static void insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel);
+	static void insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel);
 
 protected:
-	std::vector<esglobal> computeLambdasID(const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
+	static std::vector<esglobal> computeLambdasID(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
 
 };
 

@@ -14,17 +14,17 @@
 #include "esmesh.h"
 
 #include "../../assembler/physics/assembler.h"
-#include "../../assembler/constraints/equalityconstraints.h"
+#include "../../assembler/constraints/constraints.h"
 
 namespace espreso {
 
 class Physics;
-class EqualityConstraints;
+class Constraints;
 
 class LinearSolver {
 public:
 
-	LinearSolver(Physics &physics, EqualityConstraints &constraints)
+	LinearSolver(Physics &physics, Constraints &constraints)
 	: timeEvalMain("ESPRESO Solver Overal Timing"), physics(physics), constraints(constraints)
 	{
 		setup();
@@ -82,7 +82,7 @@ public:
 private:
 
 	Physics &physics;
-	EqualityConstraints &constraints;
+	Constraints &constraints;
 
 	eslocal number_of_subdomains_per_cluster;
 

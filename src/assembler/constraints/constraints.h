@@ -7,9 +7,18 @@
 
 namespace espreso {
 
-class Constraints
+struct EqualityConstraints;
+
+struct Constraints
 {
-public:
+	friend class EqualityConstraints;
+
+	enum BLOCK {
+		DIRICHLET = 0,
+		EQUALITY_CONSTRAINTS = 1,
+		INEQUALITY_CONSTRAINTS = 2,
+	};
+
 	// matrices for Hybrid FETI constraints
 	std::vector<SparseMatrix> B0;
 	std::vector<std::vector<esglobal> > B0subdomainsMap; // TODO: not needed
@@ -22,23 +31,15 @@ public:
 	std::vector<std::vector<double> > B1c;
 	std::vector<std::vector<double> > B1duplicity;
 
+	std::vector<size_t> block;
 
+	Constraints(Mesh &mesh): _mesh(mesh), block(4) {};
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 
-	virtual void insertDirichletToB1(const std::vector<Element*> &nodes, const std::vector<Property> &DOFs) =0;
-	virtual void insertElementGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
-	virtual void insertMortarGluingToB1(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
 
-	virtual void insertDomainGluingToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs) =0;
-	virtual void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel) = 0;
-	virtual void insertKernelsToB0(const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel) = 0;
-
-	virtual ~Constraints() {};
 
 protected:
-	Constraints(Mesh &mesh): _mesh(mesh) {};
-
 	size_t synchronizeOffsets(size_t &offset);
 
 	Mesh &_mesh;
