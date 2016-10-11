@@ -7,13 +7,10 @@ class ESPRESOTests(unittest.TestCase):
     espreso = Espreso()
     cube = "tests/examples/linearElasticity/cube"
 
-    def ordinary_check(self, config, info):
+    def ordinary_check(self, config, info, oscilation=3):
         info.precision(1e-4)
         info.iterations(4)
-        if config["PRECONDITIONER"] == "DIRICHLET":
-            info.oscilation(True, 2.5);
-        else:
-            info.oscilation(True, 3);
+        #info.oscilation(True, oscilation);
 
     def regular_cube(self, procs, config, args):
         config["ITERATIONS"] = 300
@@ -77,20 +74,28 @@ class ESPRESOTests(unittest.TestCase):
 if __name__ == '__main__':
 
     def create_instance(config, example):
-            if config["FETI_METHOD"] == "TOTAL_FETI" and config["B0_TYPE"] == "KERNELS":
-                return
-            procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
-            args = [example["ETYPE"]] + example["CLUSTERS"]
-            name = "_".join(str(x) for x in args + config.values())
-            config["VERBOSE_LEVEL"] = 1
-            config["TESTING_LEVEL"] = 1
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, name, procs, config, args)
+        if config["FETI_METHOD"] == "TOTAL_FETI" and config["B0_TYPE"] == "KERNELS":
             return
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, name + "_METIS", procs, config, args)
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube_with_cyclic_edge, name + "_METIS_TWO_SUBDOMAINS", procs, config, args)
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_esdata, name + "_ESDATA", procs, config, args)
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_esdata, name + "_METIS_ESDATA", procs, config, args)
-            TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.valgrind, name + "_VALGRIND", procs, config, args)
+        procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
+        args = [example["ETYPE"]] + example["CLUSTERS"]
+        name = "_".join(str(x) for x in args + config.values())
+        config["VERBOSE_LEVEL"] = 1
+        config["TESTING_LEVEL"] = 1
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, name, procs, config, args)
+        #TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, name + "_METIS", procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube_with_cyclic_edge, name + "_METIS_TWO_SUBDOMAINS", procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_esdata, name + "_ESDATA", procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_esdata, name + "_METIS_ESDATA", procs, config, args)
+
+    def create_valgrind_instance(config, example):
+        if config["FETI_METHOD"] == "TOTAL_FETI" and config["B0_TYPE"] == "KERNELS":
+            return
+        procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
+        args = [example["ETYPE"]] + example["CLUSTERS"]
+        name = "_".join(str(x) for x in args + config.values())
+        config["VERBOSE_LEVEL"] = 1
+        config["TESTING_LEVEL"] = 1
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.valgrind, name + "_VALGRIND", procs, config, args)
 
     config = {
       "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
@@ -106,4 +111,29 @@ if __name__ == '__main__':
     }
 
     TestCaseCreator.iterate(create_instance, config, example)
+
+    config = {
+      "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
+      "PRECONDITIONER": [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ],
+      "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
+      "B0_TYPE": [ "CORNERS", "KERNELS" ],
+      "CGSOLVER": [ "STANDARD", "PIPELINED", "FULL_ORTOGONAL" ]
+    }
+
+    TestCaseCreator.iterate(create_valgrind_instance, config, { "ETYPE": [ "HEXA8" ], "CLUSTERS": [ [1, 2, 2] ] })
+
+    config = {
+      "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
+      "PRECONDITIONER": [ "DIRICHLET" ],
+      "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
+      "B0_TYPE": [ "CORNERS", "KERNELS" ],
+      "CGSOLVER": [ "STANDARD" ]
+    }
+
+    example = {
+      "ETYPE":  [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ],
+      "CLUSTERS": [ [1, 2, 2] ]
+    }
+    TestCaseCreator.iterate(create_valgrind_instance, config, example)
+
     unittest.main()
