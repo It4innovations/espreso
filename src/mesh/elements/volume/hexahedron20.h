@@ -9,7 +9,7 @@
 #define Hexahedron20NodesCount 20
 #define Hexahedron20EdgeCount 12
 #define Hexahedron20FacesCount 6
-#define Hexahedron20GPCount 8
+#define Hexahedron20GPCount 14
 #define Hexahedron20CommonNodes 4
 #define Hexahedron20VTKCode 25
 

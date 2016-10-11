@@ -178,12 +178,8 @@ static std::vector<double> Hexa20_weight()
 		return std::vector<double> (8, 1.0);
 	}
 	case 14: {
-		std::vector<double> w(14, 0.0);
-		double WF_scale_1 = 0.335180055401662;
-		double WF_scale_2 = 0.886426592797784;
-		for (int i = 0; i < 8; i++) {
-			w[i] = (i < 8) ? WF_scale_1 : WF_scale_2;
-		}
+		std::vector<double> w(8, 0.335180055401662);
+		w.resize(14, 0.886426592797784);
 		return w;
 	}
 	default:
