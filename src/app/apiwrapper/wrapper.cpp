@@ -12,6 +12,12 @@ using namespace espreso;
 
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
+	if (std::ifstream("espreso.config").good()) {
+		Configuration conf;
+		conf.path = "espreso.config";
+		ParametersReader::fromConfigurationFile(conf, config::parameters);
+	}
+
 	options[FETI4I_SUBDOMAINS] = config::mesh::SUBDOMAINS;
 
 	options[FETI4I_ITERATIONS] = config::solver::ITERATIONS;
