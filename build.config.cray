@@ -13,7 +13,7 @@ FC = ftn
 
 CHECK_ENV = 1           # turn { 0 - off, 1 - on } all checks for configuration
 SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC MUMPS
-LIBTYPE = STATIC        # ESPRESO is built to SHARED or STATIC libraries
+LIBTYPE = SHARED        # ESPRESO is built to SHARED or STATIC libraries
 DEBUG = 0               # turn { 0 - off, 1 -on } print of debug information
 BUILD_TOOLS = 0         # ESPRESO try to compile external tools.
                         # If the compilation is not successful set this attribute to 0 and build tools and
