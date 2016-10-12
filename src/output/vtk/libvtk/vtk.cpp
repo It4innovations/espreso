@@ -396,7 +396,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 				}
 			}
 		}
-		std::cout<<name<<std::endl;
 		vtkNew < vtkFloatArray > value;
 		value->SetName(name.c_str());
 		value->SetNumberOfComponents(properties.size());
@@ -960,7 +959,6 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 			counter++;
 		}
 	}
-	//std::cout<<std::endl<<mesh.parts()*fixPoints.size()<<std::endl;
 	vtkNew<vtkDoubleArray> pointArray;
 	pointArray->SetNumberOfComponents(3);
 	size_t numpoints = mesh.parts() * fixPoints.size() * 3;
@@ -1143,7 +1141,6 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 			counter++;
 		}
 	}
-	//std::cout<<std::endl<<mesh.parts()*fixPoints.size()<<std::endl;
 	vtkNew<vtkDoubleArray> pointArray;
 	pointArray->SetNumberOfComponents(3);
 	size_t numpoints = mesh.parts() * corners.size() * 3;
@@ -1639,8 +1636,6 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 {
 	 VTK* help=new VTK(mesh,path,shrinkSubdomain,shrinkCluster);
 
-	 std::cout<<path<<std::endl;
-
 	 vtkSmartPointer<vtkPolyData> gp[dofs];
 	 vtkSmartPointer<vtkPolyData> dirichlet[dofs];
 	 vtkSmartPointer<vtkPoints> po[dofs];
@@ -1801,8 +1796,6 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 				 std::vector<int> fi;
 
 				 for(int i=0;i<lg;i++){
-					 std::cout<<constraints.B1clustersMap[i]<<std::endl;
-
 					 bool dir = true;
 					 for(int y=0;y<lg;y++){
 						 if(row[i] == row2[y]){
@@ -2164,8 +2157,4 @@ void VTK::finalize(){
 	}
 	break;
 	}
-
-
-
-	std::cout<<"Finalize"<<std::endl;
 }
