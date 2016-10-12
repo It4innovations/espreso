@@ -248,7 +248,7 @@ void CubesGenerator<TElement>::settings(
 		for (size_t i = 0; i < faces.size(); i++) {
 			faces[i]->clusters().push_back(0);
 			faces[i]->clusters().push_back(1);
-			faces[i]->addSettings(Property::NONMATCHING_ELEMENT, new ConstEvaluator(_cubeIndex ? 0 : 1));
+			faces[i]->addSettings(Property::NONMATCHING_ELEMENT, new ConstEvaluator(_cubeIndex ? 0 : 1, Property::NONMATCHING_ELEMENT));
 		}
 		return;
 	}

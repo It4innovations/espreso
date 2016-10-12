@@ -61,7 +61,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
-	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset));
+	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
 	size_t threads = config::env::CILK_NWORKERS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, dirichletSize);
 

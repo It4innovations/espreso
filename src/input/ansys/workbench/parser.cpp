@@ -269,7 +269,7 @@ void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vec
 
 	if (!params[1].compare(0, 3, "all")) {
 		if (!params[2].compare(0, 3, "all")) {
-			evaluators.push_back(new ConstEvaluator(0));
+			evaluators.push_back(new ConstEvaluator(0, Property::DISPLACEMENT_X)); // TODO: make displacement property
 			std::vector<Element*> &region = _selectedRegion.size() ? _regions[_selectedRegion] : nodes;
 			for (size_t e = 0; e < region.size(); e++) {
 				region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
@@ -286,6 +286,7 @@ void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vec
 		if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
 			const std::vector<Element*> &region = _regions[params[1]];
 			evaluators.push_back(_tables[t]->copy());
+			evaluators.back()->property() = Property::DISPLACEMENT_X;
 			if (!params[2].compare(0, 2, "ux")) {
 				for (size_t e = 0; e < region.size(); e++) {
 					region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
@@ -326,6 +327,7 @@ void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Ele
 		if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
 			const std::vector<Element*> &region = _regions[params[1]];
 			evaluators.push_back(_tables[t]->copy());
+			evaluators.back()->property() = Property::FORCE_X; // TODO: make FORCE property
 			if (!params[2].compare(0, 2, "fx")) {
 				for (size_t e = 0; e < region.size(); e++) {
 					region[e]->addSettings(Property::FORCE_X, evaluators.back());

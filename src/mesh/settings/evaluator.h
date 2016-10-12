@@ -3,6 +3,7 @@
 #define SRC_MESH_SETTINGS_EVALUATOR_H_
 
 #include "esbasis.h"
+#include "property.h"
 #include "../structures/coordinates.h"
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
@@ -23,8 +24,8 @@ protected:
 	};
 
 public:
-	Evaluator(): _name("") {};
-	Evaluator(const std::string &name): _name(name) {};
+	Evaluator(Property property = Property::EMPTY): _name(""), _property(property) {};
+	Evaluator(const std::string &name, Property property = Property::EMPTY): _name(name), _property(property) {};
 
 	static Evaluator* create(std::ifstream &is, const Coordinates &coordinates);
 
@@ -32,6 +33,9 @@ public:
 	virtual double evaluate(size_t index, size_t timeStep = 1, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
 	virtual const std::string& name() const { return _name; }
 	virtual ~Evaluator() {};
+
+	Property& property() { return _property; }
+	const Property& property() const { return _property; }
 
 	virtual void store(std::ofstream& os)
 	{
@@ -41,12 +45,13 @@ public:
 
 protected:
 	std::string _name;
+	Property _property;
 };
 
 class ConstEvaluator: public Evaluator {
 
 public:
-	ConstEvaluator(double value): _value(value) {};
+	ConstEvaluator(double value, Property property = Property::EMPTY): Evaluator(property), _value(value) {};
 	ConstEvaluator(std::ifstream &is) { is.read(reinterpret_cast<char *>(&_value), sizeof(double)); }
 
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
@@ -71,9 +76,10 @@ private:
 class ExpressionEvaluator: public Evaluator {
 
 protected:
-	ExpressionEvaluator(const std::string &expression, std::vector<std::string> variables)
-	: _expression(config::env::CILK_NWORKERS, Expression(expression, variables)),
-	  _values(config::env::CILK_NWORKERS, std::vector<double>(variables.size())) {};
+	ExpressionEvaluator(const std::string &expression, std::vector<std::string> variables, Property property = Property::EMPTY)
+	: Evaluator(property),
+	 _expression(config::env::CILK_NWORKERS, Expression(expression, variables)),
+	 _values(config::env::CILK_NWORKERS, std::vector<double>(variables.size())) {};
 
 	ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables)
 	{
@@ -97,8 +103,8 @@ protected:
 class CoordinatesEvaluator: public ExpressionEvaluator {
 
 public:
-	CoordinatesEvaluator(const std::string &expression, const Coordinates &coordinates)
-	: ExpressionEvaluator(expression, { "x", "y", "z" }), _coordinates(coordinates) {};
+	CoordinatesEvaluator(const std::string &expression, const Coordinates &coordinates, Property property = Property::EMPTY)
+	: ExpressionEvaluator(expression, { "x", "y", "z" }, property), _coordinates(coordinates) {};
 
 	CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates)
 	: ExpressionEvaluator(is, { "x", "y", "z" }), _coordinates(coordinates) {};
@@ -137,8 +143,9 @@ public:
 			const std::string &name,
 			const std::vector<std::vector<std::vector<double> > > &table,
 			const std::vector<TableProperty> &properties,
-			const std::vector<std::vector<double> > &axis)
-	: Evaluator(name), _dimension(properties.size()), _table(table), _properties(properties), _axis(axis) {};
+			const std::vector<std::vector<double> > &axis,
+			Property property = Property::EMPTY)
+	: Evaluator(name, property), _dimension(properties.size()), _table(table), _properties(properties), _axis(axis) {};
 
 	TableEvaluator(std::ifstream &is);
 
@@ -181,8 +188,8 @@ class ArrayEvaluator: public Evaluator {
 
 	friend class input::API;
 public:
-	ArrayEvaluator(const std::string &name, std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset)
-	: Evaluator(name)
+	ArrayEvaluator(const std::string &name, std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset, Property property = Property::EMPTY)
+	: Evaluator(name, property)
 	{
 		std::vector<eslocal> permutation(indices.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
@@ -195,8 +202,8 @@ public:
 		}
 	}
 
-	ArrayEvaluator(const std::string &name, eslocal size, eslocal *indices, double *values, eslocal offset)
-	: Evaluator(name)
+	ArrayEvaluator(const std::string &name, eslocal size, eslocal *indices, double *values, eslocal offset, Property property = Property::EMPTY)
+	: Evaluator(name, property)
 	{
 		std::vector<eslocal> permutation(size);
 		std::iota(permutation.begin(), permutation.end(), 0);

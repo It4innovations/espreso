@@ -72,9 +72,9 @@ static void setProperty(
 		if (value.size()) {
 			if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos && value.find("t") == std::string::npos) {
 				espreso::Expression expr(value, {});
-				evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({})));
+				evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({}), properties[p]));
 			} else {
-				evaluators.push_back(new espreso::CoordinatesEvaluator(value, mesh.coordinates()));
+				evaluators.push_back(new espreso::CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
 			}
 			for (size_t i = 0; i < elements.size(); i++) {
 				elements[i]->addSettings(properties[p], evaluators.back());
