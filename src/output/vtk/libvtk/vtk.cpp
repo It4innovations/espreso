@@ -177,7 +177,6 @@ void VTK::storeGeometry(size_t timeStep)
 		wvtu->SetDataModeToBinary();
 		wvtu->Write();
 
-		MPI_Barrier(MPI_COMM_WORLD);
 		int size = config::env::MPIsize;
 		if (config::env::MPIrank == 0) {
 			stringstream sss;
@@ -1639,11 +1638,11 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
 	 VTK* help=new VTK(mesh,path,shrinkSubdomain,shrinkCluster);
-	 vtkSmartPointer<vtkUnstructuredGrid> VTKGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
 	 std::cout<<path<<std::endl;
 
 	 vtkSmartPointer<vtkPolyData> gp[dofs];
+	 vtkSmartPointer<vtkPolyData> dirichlet[dofs];
 	 vtkSmartPointer<vtkPoints> po[dofs];
 	 vtkSmartPointer<vtkPoints> points[dofs];
 	 vtkSmartPointer<vtkPoints> dirpoints[dofs];
@@ -1652,6 +1651,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 vtkSmartPointer<vtkCellArray> verdir[dofs];
 	 for(int i=0;i<dofs;i++){
 		 gp[i]=vtkSmartPointer<vtkPolyData>::New();
+		 dirichlet[i]=vtkSmartPointer<vtkPolyData>::New();
 		 po[i]=vtkSmartPointer<vtkPoints>::New();
 		 points[i]=vtkSmartPointer<vtkPoints>::New();
 		 lines[i]=vtkSmartPointer<vtkCellArray>::New();
@@ -1679,60 +1679,58 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 std::vector<int> fpart;
 	 for (int y = 0; y < mesh.parts(); y++) {
 		 for(int i=0;i<constraints.B1[y].I_row_indices.size();i++){
-			 int h=constraints.B1[y].I_row_indices[i];
-			 int index1=constraints.B1[y].J_col_indices[i]-1;
-			 bool dirp=true;
-			 if((y)<mesh.parts()){
-				 for(int p=y;p<mesh.parts();p++){
-					 for(int k=0;k<constraints.B1[p].I_row_indices.size();k++){
-						 if(constraints.B1[p].I_row_indices[k]==h){
-							 if((constraints.B1[y].V_values[i]+constraints.B1[p].V_values[k])==0){
-								 dirp=false;
-								 std::vector<Point> p1(dofs);
-								 for(int pd=0;pd<dofs;pd++){
-									 p1[pd]=mesh.coordinates().get(index1/dofs,y);
-									 p1[pd]=help->shrink(p1[pd],y);
-									 vtkIdType pid[1];
-									 pid[0] = points[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
-									 ver[pd]->InsertNextCell(1,pid);
-								 }
-								 int index2=constraints.B1[p].J_col_indices[k]-1;
-								 findex.push_back(index2);
-								 fpart.push_back(p);
-								 Point p2[dofs];
-								 for(int pd=0;pd<dofs;pd++){
-									 p2[pd]=mesh.coordinates().get(index2/dofs,p);
-									 p2[pd]=help->shrink(p2[pd],p);
-									 po[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
-									 po[pd]->InsertNextPoint(p2[pd].x,p2[pd].y,p2[pd].z);
-									 vtkSmartPointer<vtkLine> ls=vtkSmartPointer<vtkLine>::New();
-									 ls->GetPointIds()->SetId(0,l);
-									 ls->GetPointIds()->SetId(1,l+1);
-									 lines[pd]->InsertNextCell(ls);
-								 }
-								 l+=2;
-								 break;
+			 int h = constraints.B1[y].I_row_indices[i];
+			 int index1 = constraints.B1[y].J_col_indices[i]-1;
+			 bool dirp = true;
+			 for(int p=y;p<mesh.parts();p++){
+				 for(int k=0;k<constraints.B1[p].I_row_indices.size();k++){
+					 if(constraints.B1[p].I_row_indices[k] == h){
+						 if((constraints.B1[y].V_values[i]+constraints.B1[p].V_values[k]) == 0){
+							 dirp=false;
+							 std::vector<Point> p1(dofs);
+							 for(int pd=0;pd<dofs;pd++){
+								 p1[pd]=mesh.coordinates().get(index1/dofs,y);
+								 p1[pd]=help->shrink(p1[pd],y);
+								 vtkIdType pid[1];
+								 pid[0] = points[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+								 ver[pd]->InsertNextCell(1,pid);
 							 }
+							 int index2 = constraints.B1[p].J_col_indices[k]-1;
+							 findex.push_back(index2);
+							 fpart.push_back(p);
+							 Point p2[dofs];
+							 for(int pd=0;pd<dofs;pd++){
+								 p2[pd] = mesh.coordinates().get(index2/dofs,p);
+								 p2[pd] = help->shrink(p2[pd],p);
+								 po[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
+								 po[pd]->InsertNextPoint(p2[pd].x,p2[pd].y,p2[pd].z);
+								 vtkSmartPointer<vtkLine> ls=vtkSmartPointer<vtkLine>::New();
+								 ls->GetPointIds()->SetId(0,l);
+								 ls->GetPointIds()->SetId(1,l+1);
+								 lines[pd]->InsertNextCell(ls);
+							 }
+							 l += 2;
+							 break;
 						 }
 					 }
 				 }
 			 }
-			 if(dirp==true){
+			 if(dirp == true){
 				 for(int i=0;i<findex.size();i++){
-					 if(index1==findex[i] && fpart[i]==y){
-						 dirp=false;
+					 if(index1 == findex[i] && fpart[i] == y){
+						 dirp = false;
 						 break;
 					 }
 				 }
 			 }
-			 if(dirp==true){
+			 if(dirp == true){
 				 row.push_back(h);
 				 val.push_back(constraints.B1[y].V_values[i]);
 				 matr++;
 				 std::vector<Point> p1(dofs);
 				 for(int pd=0;pd<dofs;pd++){
-					 p1[pd]=mesh.coordinates().get(index1/dofs,y);
-					 p1[pd]=help->shrink(p1[pd],y);
+					 p1[pd] = mesh.coordinates().get(index1/dofs,y);
+					 p1[pd] = help->shrink(p1[pd],y);
 					 vtkIdType pid[1];
 					 pid[0] = dirpoints[pd]->InsertNextPoint(p1[pd].x,p1[pd].y,p1[pd].z);
 					 verdir[pd]->InsertNextCell(1,pid);
@@ -1741,18 +1739,26 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 		 }
 	 }
 
+
+
 	 //MPI dirichlet control
-	 vtkMPIController* controller=vtkMPIController::New();
+	 vtkMPIController* controller = vtkMPIController::New();
 	 controller->Initialize();
+	 vtkSmartPointer<vtkCellArray> vdirMPI[dofs];
+	 vtkSmartPointer<vtkPoints> dirpMPI[dofs];
+	 for(int i=0;i<dofs;i++){
+		vdirMPI[i] = vtkSmartPointer<vtkCellArray>::New();
+		dirpMPI[i] = vtkSmartPointer<vtkPoints>::New();
+	 }
+
 	 if(config::env::MPIsize>1){
 		 MPI_Barrier(MPI_COMM_WORLD);
 
 		 vtkSmartPointer<vtkPolyData> PPoints[dofs];
 		 for(int i=0;i<dofs;i++){
-			 PPoints[i]=vtkSmartPointer<vtkPolyData>::New();
-			 PPoints[i]->SetPoints(points[i]);
+			 PPoints[i] = vtkSmartPointer<vtkPolyData>::New();
+			 PPoints[i]->SetPoints(dirpoints[i]);
 		 }
-
 
 		 int rank = config::env::MPIrank;
 
@@ -1770,8 +1776,8 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 				 for(int pd=0;pd<dofs;pd++){
 					 PPoints2[pd]->DeepCopy(PPoints[pd]);
 				 }
-				 val2=val;
-				 vs=row2.size();
+				 val2 = val;
+				 vs = row2.size();
 			 }
 			 MPI_Barrier(MPI_COMM_WORLD);
 			 MPI_Bcast(&vs,1,MPI_INT,i,MPI_COMM_WORLD);
@@ -1784,7 +1790,6 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 			 for(int pd=0;pd<dofs;pd++){
 				 controller->Broadcast(PPoints2[pd],i);
 			 }
-
 			 if(i!=rank){
 				 int lg;
 				 if(row.size()<row2.size()){
@@ -1793,18 +1798,22 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 				 else{
 					 lg=row2.size();
 				 }
+				 std::vector<int> fi;
 
 				 for(int i=0;i<lg;i++){
+					 std::cout<<constraints.B1clustersMap[i]<<std::endl;
+
+					 bool dir = true;
 					 for(int y=0;y<lg;y++){
-						 if(row[i]==row2[y]){
-							 if((val[i]+val2[y])==0){
-								 vtkIdType dru=0;
+						 if(row[i] == row2[y]){
+							 if((val[i] + val2[y]) == 0){
+								 dir = false;
+								 fi.push_back(row2[y]);
 								 for(vtkIdType jed=0;jed<dofs;jed++){
 									 double p1[3];
 									 double p2[3];
 									 PPoints[jed]->GetPoint(i,p1);
 									 PPoints2[jed]->GetPoint(y,p2);
-									 dru++;
 									 po[jed]->InsertNextPoint(p1[0],p1[1],p1[2]);
 									 po[jed]->InsertNextPoint(p2[0],p2[1],p2[2]);
 
@@ -1813,41 +1822,60 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 									 ls->GetPointIds()->SetId(1,l+1);
 									 lines[jed]->InsertNextCell(ls);
 								 }
-								 l+=2;
+								 l += 2;
+								 break;
+							 }
+						 }
+					 }
+					 if(dir == true){
+						 for(int n=0;n<fi.size();n++){
+							 if(row[i] == fi[n]){
+								 dir = false;
+								 break;
+							 }
+						 }
+						 if(dir == true){
+							 for(size_t t=0;t<constraints.B1clustersMap.size();t++){
+								 if((constraints.B1clustersMap[t][0]+1)==row[i] && constraints.B1clustersMap[t].size()==2){
+									 for(vtkIdType jed=0;jed<dofs;jed++){
+										 double p1[3];
+										 PPoints[jed]->GetPoint(i,p1);
+										 vtkIdType pid[1];
+										 pid[0] = dirpMPI[jed]->InsertNextPoint(p1[0],p1[1],p1[2]);
+										 vdirMPI[jed]->InsertNextCell(1,pid);
+									 }
+									 break;
+								 }
 							 }
 						 }
 					 }
 				 }
 			 }
-
-
-		 MPI_Barrier(MPI_COMM_WORLD);
+			 MPI_Barrier(MPI_COMM_WORLD);
 		 }
 	 }
 
-
-	 vtkSmartPointer<vtkGenericDataObjectWriter> wg=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	 vtkSmartPointer<vtkAppendFilter> ap=vtkSmartPointer<vtkAppendFilter>::New();
-	 vtkSmartPointer<vtkPolyData> dirichlet=vtkSmartPointer<vtkPolyData>::New();
+	 vtkSmartPointer<vtkAppendFilter> app=vtkSmartPointer<vtkAppendFilter>::New();
 
-
-	 ap->AddInputData(VTKGrid);
 	 for(size_t i=0;i<dofs;i++){
-		 dirichlet->SetPoints(dirpoints[i]);
-		 dirichlet->SetVerts(verdir[i]);
+		 if(config::env::MPIsize==1){
+			 dirichlet[i]->SetPoints(dirpoints[i]);
+			 dirichlet[i]->SetVerts(verdir[i]);
+		 }else{
+			 dirichlet[i]->SetPoints(dirpMPI[i]);
+			 dirichlet[i]->SetVerts(vdirMPI[i]);
+		 }
+
+		 app->AddInputData(dirichlet[i]);
 
 		 gp[i]->SetPoints(po[i]);
 		 gp[i]->SetLines(lines[i]);
 
 		 ap->AddInputData(gp[i]);
 
-		 vtkSmartPointer<vtkPolyData> gp2=vtkSmartPointer<vtkPolyData>::New();
-		 //gp2->SetPoints(points[i]);
-		 //gp2->SetVerts(ver[i]);
-
-		 ap->AddInputData(gp2);
-
 	 }
+	 app->Update();
 	 ap->Update();
 
 	 stringstream ss;
@@ -1859,8 +1887,10 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		writervtk->SetInputData(ap->GetOutput());
 	 		writervtk->Write();
 	 		vtkSmartPointer<vtkGenericDataObjectWriter> dw=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-	 		dw->SetFileName("dirichlet.vtk");
-	 		dw->SetInputData(dirichlet);
+	 		stringstream sd;
+	 		sd<<"dirichlet"<<config::env::MPIrank<<".vtk";
+	 		dw->SetFileName(sd.str().c_str());
+	 		dw->SetInputData(app->GetOutput());
 	 		dw->Write();
 	 	}
 	 	break;
@@ -1871,6 +1901,12 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		writervtu->SetInputData(ap->GetOutput());
 	 		writervtu->SetDataModeToBinary();
 	 		writervtu->Write();
+	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> dw1=vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+	 		stringstream sd;
+	 		sd<<"dirichlet"<<config::env::MPIrank<<".vtu";
+	 		dw1->SetFileName(sd.str().c_str());
+	 		dw1->SetInputData(app->GetOutput());
+	 		dw1->Write();
 	 	}
 	 	break;
 	 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
@@ -1881,15 +1917,107 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		wvtu->SetInputData(ap->GetOutput());
 	 		wvtu->SetDataModeToBinary();
 	 		wvtu->Write();
+	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> dw2=vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+	 		stringstream sd;
+	 		sd<<"dirichlet"<<config::env::MPIrank<<".vtu";
+	 		dw2->SetFileName(sd.str().c_str());
+	 		dw2->SetInputData(app->GetOutput());
+	 		dw2->Write();
+
+	 		int size = config::env::MPIsize;
+	 		if (config::env::MPIrank == 0) {
+	 			stringstream sss;
+	 			sss << path << ".vtm";
+	 			result.open(sss.str().c_str());
+	 			result << "<?xml version=\"1.0\"?>\n";
+	 			if (!config::output::OUTPUT_COMPRESSION) {
+	 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
+	 			} else {
+	 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
+	 			}
+	 			result << " <vtkMultiBlockDataSet>\n";
+	 			int vtmi=0;
+	 			for (int i = 0; i < size; i++) {
+	 				result << "  <DataSet index=\"" << vtmi << "\" file=\"" << path << i << ".vtu\">\n  </DataSet>\n";
+	 				result << "  <DataSet index=\"" << vtmi+1 << "\" file=\"" << "dirichlet" << i << ".vtu\">\n  </DataSet>\n";
+	 				vtmi+=2;
+	 			}
+	 			result << " </vtkMultiBlockDataSet>\n";
+	 			result << "</VTKFile>\n";
+	 			result.close();
+	 		}
 	 	}
 	 	break;
 	 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
-	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-	 		ss<<path<<config::env::MPIrank<<".vtu";
-	 		writervtu->SetFileName(ss.str().c_str());
-	 		writervtu->SetInputData(ap->GetOutput());
-	 		writervtu->SetDataModeToBinary();
-	 		writervtu->Write();
+	 		vtkMPIController* controller=vtkMPIController::New();
+	 		vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
+	 		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	 		vtkSmartPointer<vtkUnstructuredGrid> VTKGrid1 = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	 		vtkSmartPointer<vtkUnstructuredGrid> VTKGrid2 = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	 		VTKGrid1->ShallowCopy(ap->GetOutput());
+	 		VTKGrid2->ShallowCopy(app->GetOutput());
+	 		bool FCD = false;
+	 		if (VTKGrid1->GetCellData()) {
+	 			if (VTKGrid1->GetCellData()->GetArray("BlockId")) {
+	 				FCD = true;
+	 			}
+	 		}
+	 		if (FCD == false) {
+	 			vtkSmartPointer<vtkIntArray> bids = vtkSmartPointer<vtkIntArray>::New();
+	 			bids->SetName("BlockId");
+	 			for (int i = 0; i < VTKGrid1->GetNumberOfCells(); i++) {
+	 				bids->InsertNextValue(1);
+	 			}
+	 			VTKGrid1->GetCellData()->SetScalars(bids);
+	 		}
+	 		FCD = false;
+	 		if (VTKGrid2->GetCellData()) {
+	 			if (VTKGrid2->GetCellData()->GetArray("BlockId")) {
+	 				FCD = true;
+	 			}
+	 		}
+	 		if (FCD == false) {
+	 			vtkSmartPointer<vtkIntArray> bids = vtkSmartPointer<vtkIntArray>::New();
+	 			bids->SetName("BlockId");
+	 			for (int i = 0; i < VTKGrid2->GetNumberOfCells(); i++) {
+	 				bids->InsertNextValue(1);
+	 			}
+	 			VTKGrid2->GetCellData()->SetScalars(bids);
+	 		}
+	 		int blockids[2];
+	 		blockids[0] = 1;
+	 		blockids[1] = 0;
+
+	 		if (config::env::MPIrank != 0) {
+	 			controller->Send(VTKGrid1, 0, 1111 + config::env::MPIrank);
+	 			controller->Send(VTKGrid2, 0, 2222 + config::env::MPIrank);
+	 		}
+
+	 		if (config::env::MPIrank == 0) {
+	 			stringstream sc;
+	 			sc<<path<<".case";
+	 			wcase->SetFileName(sc.str().c_str());
+	 			wcase->SetNumberOfBlocks(1);
+	 			wcase->SetBlockIDs(blockids);
+	 			wcase->SetTimeStep(0);
+	 			vtkSmartPointer<vtkAppendFilter> appp = vtkSmartPointer<vtkAppendFilter>::New();
+	 			appp->AddInputData(VTKGrid1);
+	 			appp->AddInputData(VTKGrid2);
+	 			for (int i = 1; i < config::env::MPIsize; i++) {
+	 				vtkSmartPointer<vtkUnstructuredGrid> h = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	 				vtkSmartPointer<vtkUnstructuredGrid> h2 = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	 				controller->Receive(h2, i, 2222 + i);
+	 				controller->Receive(h, i, 1111 + i);
+	 				appp->AddInputData(h);
+	 				appp->AddInputData(h2);
+	 			}
+	 			appp->Update();
+	 			ugcase->ShallowCopy(appp->GetOutput());
+	 			wcase->SetInputData(ugcase);
+	 			wcase->Write();
+	 			wcase->WriteCaseFile(1);
+	 		}
+	 		controller->Delete();
 	 	}
 	 	break;
 	 }
