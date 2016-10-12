@@ -8,48 +8,79 @@ class ESPRESOTests(unittest.TestCase):
     cube = "tests/examples/linearElasticity/cube"
 
     def valgrind(self, procs, config, args):
-        config["ITERATIONS"] = 50
-        config["EPSILON"] = 1e-2
         config["INPUT"] = "GENERATOR"
         config["PATH"] = "metis_fixed_bottom.txt"
-        config["VERBOSE_LEVEL"] = 0
-        config["TESTING_LEVEL"] = 0
-        self.espreso.valgrind(procs, self.cube, config, args + [2, 2, 1, 3, 3, 5])
+        self.espreso.valgrind(procs, self.cube, config, args)
 
 if __name__ == '__main__':
 
-    def create_instance(config, example):
-        if config["FETI_METHOD"] == "TOTAL_FETI" and config["B0_TYPE"] == "KERNELS":
-            return
+    def parameters(config, example):
         procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
-        args = [example["ETYPE"]] + example["CLUSTERS"]
+        args = [example["ETYPE"]] + example["CLUSTERS"] + example["ARGS"]
         name = "_".join(str(x) for x in args + config.values())
         config["VERBOSE_LEVEL"] = 1
         config["TESTING_LEVEL"] = 1
-        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.valgrind, name + "_VALGRIND", procs, config, args)
+        return name, procs, args
 
-    config = {
-      "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
-      "PRECONDITIONER": [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ],
-      "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
-      "B0_TYPE": [ "CORNERS", "KERNELS" ],
-      "CGSOLVER": [ "STANDARD", "PIPELINED", "FULL_ORTOGONAL" ]
-    }
+    def valgrind(config, example):
+        name, procs, args = parameters(config, example)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.valgrind, "VALGRIND_" + name, procs, config, args)
 
-    TestCaseCreator.iterate(create_instance, config, { "ETYPE": [ "HEXA8" ], "CLUSTERS": [ [1, 2, 2] ] })
 
-    config = {
-      "FETI_METHOD": [ "TOTAL_FETI", "HYBRID_FETI" ],
-      "PRECONDITIONER": [ "DIRICHLET" ],
-      "REGULARIZATION": [ "FIX_POINTS", "NULL_PIVOTS" ],
-      "B0_TYPE": [ "CORNERS", "KERNELS" ],
-      "CGSOLVER": [ "STANDARD" ]
-    }
+    FETI_METHODS = [ "TOTAL_FETI", "HYBRID_FETI" ]
+    PRECONDITIONERS = [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ]
+    REGULARIZATIONS = [ "FIX_POINTS", "NULL_PIVOTS" ]
+    B0_TYPES = [ "CORNERS", "KERNELS" ]
+    CGSOLVERS = [ "STANDARD", "PIPELINED", "FULL_ORTOGONAL" ]
+    ETYPES = [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ]
 
-    example = {
-      "ETYPE":  [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ],
-      "CLUSTERS": [ [1, 2, 2] ]
-    }
-    TestCaseCreator.iterate(create_instance, config, example)
+    # Test leaks of various TOTAL FETI solvers
+    TestCaseCreator.iterate(
+        valgrind,
+        {
+            "FETI_METHOD": [ "TOTAL_FETI" ],
+            "PRECONDITIONER": PRECONDITIONERS,
+            "REGULARIZATION": REGULARIZATIONS,
+            "CGSOLVERS": CGSOLVERS
+            "ITERATIONS": [ 3 ]
+        },
+        {
+            "ETYPE": [ "HEXA8" ],
+            "CLUSTERS": [ [1, 1, 1] ],
+            "ARGS": [ [ 2, 1, 1, 2, 4, 4] ]
+        }
+    )
+
+    # Test leaks of various HYBRID FETI OBJECTS
+    TestCaseCreator.iterate(
+        valgrind,
+        {
+            "FETI_METHOD": [ "HYBRID_FETI" ],
+            "PRECONDITIONER": [ "DIRICHLET" ],
+            "B0_TYPE": B0_TYPES,
+            "ITERATIONS": [ 3 ]
+        },
+        {
+            "ETYPE": [ "HEXA8" ],
+            "CLUSTERS": [ [1, 1, 1] ],
+            "ARGS": [ [ 2, 1, 1, 2, 4, 4] ]
+        }
+    )
+
+    # Test leaks of various elements
+    TestCaseCreator.iterate(
+        valgrind,
+        {
+            "FETI_METHOD": [ "HYBRID_FETI" ],
+            "PRECONDITIONER": [ "DIRICHLET" ],
+            "B0_TYPE": B0_TYPES,
+            "ITERATIONS": [ 3 ]
+        },
+        {
+            "ETYPE": ETYPES,
+            "CLUSTERS": [ [1, 1, 1] ],
+            "ARGS": [ [ 2, 1, 1, 2, 4, 4] ]
+        }
+    )
 
     unittest.main()

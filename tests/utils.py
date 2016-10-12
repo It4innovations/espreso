@@ -12,9 +12,9 @@ ENV = {
     "MKL_NUM_THREADS": "1",
     "OMP_NUM_THREADS": "1",
 
-    "CILK_NWORKERS": "2",
-    "SOLVER_NUM_THREADS": "2",
-    "PAR_NUM_THREADS": "2",
+    "CILK_NWORKERS": "4",
+    "SOLVER_NUM_THREADS": "4",
+    "PAR_NUM_THREADS": "4",
 
     "PARDISOLICMESSAGE": "1"
 }
