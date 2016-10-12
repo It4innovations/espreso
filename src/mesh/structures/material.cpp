@@ -29,12 +29,13 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 	};
 
 	set(_density            , "DENS");
+	set(_density            , "DENSITY");
 	set(_poissonRatio[0]    , "MIXY");
 	set(_poissonRatio[0]    , "NUXY");
 	set(_poissonRatio[1]    , "MIXZ");
-	set(_poissonRatio[0]    , "NUXZ");
+	set(_poissonRatio[1]    , "NUXZ");
 	set(_poissonRatio[2]    , "MIYZ");
-	set(_poissonRatio[0]    , "NUYZ");
+	set(_poissonRatio[2]    , "NUYZ");
 	set(_youngModulus[0]    , "EX");
 	set(_youngModulus[1]    , "EY");
 	set(_youngModulus[2]    , "EZ");

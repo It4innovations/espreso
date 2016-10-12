@@ -14,15 +14,15 @@ MATERIALS_Z = 2
 
 MATERIAL1 = {
   DENSITY = 7850
-  YOUNG = 2.1e11
-  POISSON = 0.3
+  EX = 2.1e11
+  MIXY = 0.3
 }
 
 
 MATERIAL2 = {
   DENSITY = 7850
-  YOUNG = 2.1e11
-  POISSON = 0.3
+  EX = 2.1e11
+  MIXY = 0.3
 }
 
 LENGTH_X = 30

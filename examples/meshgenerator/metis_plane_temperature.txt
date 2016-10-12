@@ -13,8 +13,8 @@ INCONSISTENT_STABILIZATION_PARAMETER = 0 # sigma
 
 MATERIAL1 = {
   DENSITY = 1
-  KX = 1e-5
-  KY = 1e-5
+  KXX = 1e-5
+  KXY = 1e-5
   CP = 1
 }
 

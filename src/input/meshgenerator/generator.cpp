@@ -36,7 +36,7 @@ void Generator::materials(std::vector<Material> &materials)
 		}
 	}
 	for (auto it = _settings.material2.begin(); it != _settings.material2.end(); ++it) {
-		if (materials[1].setParameter(it->first, it->second)) {
+		if (!materials[1].setParameter(it->first, it->second)) {
 			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Unknown material parameter " << it->first;
 		}
 	}
