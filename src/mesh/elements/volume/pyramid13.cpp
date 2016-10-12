@@ -24,6 +24,15 @@ static std::vector< std::vector< double> > Pyramid13_rst()
 		rst[2] = { -v,  v, -v,  v, -v,  v, -v,  v };
 		return rst;
 	}
+	case 14: {
+		double v1 = 0.758786910639329015;
+		double v2 = 0.795822425754222018;
+		double v3 = 0;
+		rst[0] = { -v1,  v1,  v1, -v1, -v1,  v1,  v1, -v1,  v3,  v3,  v2, v3, -v2, v3 };
+		rst[1] = { -v1, -v1,  v1,  v1, -v1, -v1,  v1,  v1,  v3, -v2,  v3, v2,  v3, v3 };
+		rst[2] = { -v1, -v1, -v1, -v1,  v1,  v1,  v1,  v1, -v2,  v3,  v3, v3,  v3, v2 };
+		return rst;
+	}
 	default:
 		ESINFO(ERROR) << "Unknown number of Pyramid13 GP count.";
 		exit(EXIT_FAILURE);
@@ -131,6 +140,11 @@ static std::vector<double> Pyramid13_weight()
 	switch (Pyramid13GPCount) {
 	case 8: {
 		return std::vector<double> (8, 1.0);
+	}
+	case 14: {
+		std::vector<double> w(8, 0.335180055401662);
+		w.resize(14, 0.886426592797784);
+		return w;
 	}
 	default:
 		ESINFO(ERROR) << "Unknown number of Pyramid13 GP count.";

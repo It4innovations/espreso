@@ -9,7 +9,7 @@
 #define Tetrahedron10NodesCount 10
 #define Tetrahedron10EdgeCount 6
 #define Tetrahedron10FacesCount 4
-#define Tetrahedron10GPCount 15
+#define Tetrahedron10GPCount 11
 #define Tetrahedron10CommonNodes 3
 #define Tetrahedron10VTKCode 24
 
