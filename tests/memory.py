@@ -18,8 +18,6 @@ if __name__ == '__main__':
         procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
         args = [example["ETYPE"]] + example["CLUSTERS"] + example["ARGS"]
         name = "_".join(str(x) for x in args + config.values())
-        config["VERBOSE_LEVEL"] = 1
-        config["TESTING_LEVEL"] = 1
         return name, procs, args
 
     def valgrind(config, example):
@@ -34,14 +32,12 @@ if __name__ == '__main__':
     CGSOLVERS = [ "STANDARD", "PIPELINED", "FULL_ORTOGONAL" ]
     ETYPES = [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ]
 
-    # Test leaks of various TOTAL FETI solvers
+    # Test leaks of various preconditioners
     TestCaseCreator.iterate(
         valgrind,
         {
             "FETI_METHOD": [ "TOTAL_FETI" ],
             "PRECONDITIONER": PRECONDITIONERS,
-            "REGULARIZATION": REGULARIZATIONS,
-            "CGSOLVERS": CGSOLVERS
             "ITERATIONS": [ 3 ]
         },
         {
@@ -50,6 +46,37 @@ if __name__ == '__main__':
             "ARGS": [ [ 2, 1, 1, 2, 4, 4] ]
         }
     )
+
+    # Test leaks of various regularizations
+    TestCaseCreator.iterate(
+        valgrind,
+        {
+            "FETI_METHOD": [ "TOTAL_FETI" ],
+            "REGULARIZATION": REGULARIZATIONS,
+            "ITERATIONS": [ 3 ]
+        },
+        {
+            "ETYPE": [ "HEXA8" ],
+            "CLUSTERS": [ [1, 1, 1] ],
+            "ARGS": [ [ 2, 1, 1, 2, 4, 4] ]
+        }
+    )
+
+    # Test leaks of various cg solvers
+    TestCaseCreator.iterate(
+        valgrind,
+        {
+            "FETI_METHOD": [ "TOTAL_FETI" ],
+            "CGSOLVER": CGSOLVERS,
+            "ITERATIONS": [ 3 ]
+        },
+        {
+            "ETYPE": [ "HEXA8" ],
+            "CLUSTERS": [ [1, 1, 1] ],
+            "ARGS": [ [ 2, 1, 1, 2, 4, 4] ]
+        }
+    )
+
 
     # Test leaks of various HYBRID FETI OBJECTS
     TestCaseCreator.iterate(

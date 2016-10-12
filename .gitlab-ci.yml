@@ -136,6 +136,23 @@ CUDA_64:
     - ./waf install -j8
     - python tests/stability.py
 
+MKL_MEMORY_LEAKS:
+  stage: stability
+  only:
+    - triggers
+  script:
+    - ./waf configure --debug --SOLVER=MKL
+    - ./waf install -j8
+    - python tests/memory.py
+
+CUDA_MEMORY_LEAKS:
+  stage: stability
+  only:
+    - triggers
+  script:
+    - ./waf configure --debug --SOLVER=CUDA
+    - ./waf install -j8
+    - python tests/memory.py
 
 MKL 32:
   stage: performance

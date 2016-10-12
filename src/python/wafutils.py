@@ -53,6 +53,8 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     # Load default configuration
     if ctx.options.cray:
         read_config(open("build.config.cray", "r"))
+    elif ctx.options.debug:
+        read_config(open("build.config.debug", "r"))
     else:
         read_config(open("build.config.default", "r"))
 

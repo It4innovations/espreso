@@ -226,4 +226,12 @@ def options(opt):
         help="Compile for Cray"
     )
 
+    system.add_option(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Build ESPRESO without thread support and optimizations"
+    )
+
+
 
