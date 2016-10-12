@@ -48,11 +48,11 @@ if __name__ == '__main__':
 
     def regular_cube(config, example):
         name, procs, args = parameters(config, example)
-        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, "REGULAR_CUBE" + name, procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, "REGULAR_CUBE_" + name, procs, config, args)
 
     def metis_cube(config, example):
         name, procs, args = parameters(config, example)
-        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, "METIS_CUBE" + name, procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, "METIS_CUBE_" + name, procs, config, args)
 
     def esdata(config, example):
         name, procs, args = parameters(config, example)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         {
             "ETYPE": ETYPES,
             "CLUSTERS": [ [1, 2, 2] ],
-            "ARGS": [ [2, 4, 3, 5, 3, 3], [2, 2, 2, 5, 5, 5] ]
+            "ARGS": [ [3, 1, 2, 4, 6, 3] ]
         }
     )
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         {
             "ETYPE": ETYPES,
             "CLUSTERS": [ [1, 2, 2] ],
-            "ARGS": [ [2, 4, 3, 5, 3, 3], [2, 2, 2, 5, 5, 5] ]
+            "ARGS": [ [3, 1, 2, 4, 6, 3] ]
         }
     )
 
