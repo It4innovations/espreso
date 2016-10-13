@@ -96,8 +96,9 @@ VTK:
     paths:
       - libs/
   script:
-    - ./waf configure --VTK::INCLUDE=/opt/vtk/include/vtk-7.1  --VTK::LIBPATH=/opt/vtk/lib
+    - ./waf configure --VTK::INCLUDE=/opt/vtk/include/vtk-7.1 --VTK::LIBPATH=/opt/vtk/lib
     - ./waf install -j8
+    - python tests/output.py
 
 
 MKL_32:
