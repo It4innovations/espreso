@@ -8,10 +8,12 @@
 namespace espreso {
 
 struct EqualityConstraints;
+struct InequalityConstraints;
 
 struct Constraints
 {
 	friend class EqualityConstraints;
+	friend class InequalityConstraints;
 
 	enum BLOCK {
 		DIRICHLET = 0,
@@ -29,11 +31,12 @@ struct Constraints
 	std::vector<std::vector<esglobal> > B1clustersMap; // TODO: get it directly
 
 	std::vector<std::vector<double> > B1c;
+	std::vector<std::vector<double> > LB;
 	std::vector<std::vector<double> > B1duplicity;
 
 	std::vector<size_t> block;
 
-	Constraints(Mesh &mesh): _mesh(mesh), block(4) {};
+	Constraints(Mesh &mesh): _mesh(mesh), block(3) {};
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 

@@ -5,7 +5,9 @@
 #include "esmesh.h"
 #include "essolver.h"
 #include "esoutput.h"
-#include "../constraints/constraints.h"
+
+#include "../constraints/equalityconstraints.h"
+#include "../constraints/inequalityconstraints.h"
 
 namespace espreso {
 

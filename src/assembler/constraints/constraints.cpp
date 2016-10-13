@@ -13,6 +13,7 @@ void Constraints::initMatrices(const std::vector<size_t> &columns)
 	B1subdomainsMap.resize(_mesh.parts());
 	B1duplicity.resize(_mesh.parts());
 	B1c.resize(_mesh.parts());
+	LB.resize(_mesh.parts());
 
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		B0[p].rows = 0;

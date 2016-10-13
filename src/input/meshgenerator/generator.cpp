@@ -57,6 +57,8 @@ void Generator::settings(
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "THICKNESS", { }, { Property::THICKNESS });
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "INITIAL_TEMPERATURE", { }, { Property::INITIAL_TEMPERATURE });
 	this->loadProperties(evaluators, elements, faces, edges, nodes, "TEMPERATURE", { }, { Property::TEMPERATURE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "OBSTACLE", { }, { Property::OBSTACLE });
+	this->loadProperties(evaluators, elements, faces, edges, nodes, "NORMAL_DIRECTION", { }, { Property::NORMAL_DIRECTION });
 }
 
 static void setProperty(

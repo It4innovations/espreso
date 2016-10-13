@@ -31,6 +31,8 @@ void Settings::defaultSettings()
 		{ prefix + "THICKNESS", properties["THICKNESS"], "Thickness.", verbosity },
 		{ prefix + "INITIAL_TEMPERATURE", properties["INITIAL_TEMPERATURE"], "Initial temperature.", verbosity },
 		{ prefix + "TEMPERATURE", properties["TEMPERATURE"], "Temperature.", verbosity },
+		{ prefix + "OBSTACLE", properties["OBSTACLE"], "Obstacle.", verbosity },
+		{ prefix + "NORMAL_DIRECTION", properties["NORMAL_DIRECTION"], "Elements normal direction.", verbosity },
 
 		{ prefix + "INCONSISTENT_STABILIZATION_PARAMETER", AdvectionDiffusion2D::sigma, "Inconsistent stabilization.", verbosity },
 		{ prefix + "CONSISTENT_STABILIZATION", AdvectionDiffusion2D::stabilization, "Inconsistent stabilization.", {

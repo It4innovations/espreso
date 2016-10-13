@@ -15,13 +15,13 @@ MATERIALS_Y = 2
 MATERIALS_Z = 2
 
 MATERIAL1 = {
-  DENS = 7850
+  DENS = 0
   EX = 2.1e5
   MIXY = 0.3
 }
 
 MATERIAL2 = {
-  DENS = 7850
+  DENS = 0
   EX = 2.1e5
   MIXY = 0.3
 }
@@ -30,16 +30,25 @@ LENGTH_X = 1
 LENGTH_Y = 1
 LENGTH_Z = 1
 
+#CORNER_COUNT = 4
+#CORNERS_IN_FACES
+#CORNERS_IN_EDGES
 CORNERS_IN_CORNERS
 
 NODES = {
   X_0 = <0, 0> <0, 1> <0, 1>
   Y_0 = <0, 1> <0, 0> <0, 1>
-  Z_0 = <0, 1> <0, 1> <0, 0>
+  Y_1 = <0, 1> <1, 1> <0, 1>
 }
 
 DIRICHLET = {
-  X_0 = x: 0
-  Y_0 = y: 0
-  Z_0 = z: 0
+  Y_0 = x: 0, y: 0.12, z: 0
+}
+
+OBSTACLE = {
+  Y_1 = 0.11 - 0.1 * sin(1 * 3.14159265359 * x)
+}
+
+NORMAL_DIRECTION = {
+  Y_1 = y
 }

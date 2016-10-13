@@ -53,6 +53,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 
 	size_t clusterDirichletSize = clusterOffset;
 	size_t globalDirichletSize = constraints.synchronizeOffsets(clusterOffset);
+	constraints.block[Constraints::BLOCK::DIRICHLET] += globalDirichletSize;
 
 	clusterOffset += constraints.B1[0].rows;
 	#pragma cilk grainsize = 1
@@ -69,7 +70,6 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 		constraints.B1[s].V_values.resize(constraints.B1[s].nnz, 1);
 	}
 
-
 	Esutils::sizesToOffsets(dirichletSizes);
 	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
@@ -85,6 +85,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 		for (size_t r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
 			constraints.B1subdomainsMap[s].push_back(constraints.B1[s].I_row_indices[r] - 1);
 		}
+		constraints.LB[s].resize(constraints.B1[s].nnz, std::numeric_limits<double>::infinity());
 	}
 
 	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterDirichletSize);
@@ -212,6 +213,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		constraints.B1[p].rows += totalNumberOfLambdas;
 	}
+	constraints.block[Constraints::BLOCK::EQUALITY_CONSTRAINTS] += totalNumberOfLambdas;
 
 	return lambdasID;
 }
@@ -319,6 +321,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		}
 		constraints.B1[p].nnz = constraints.B1[p].I_row_indices.size();
 		constraints.B1c[p].resize(constraints.B1[p].nnz, 0);
+		constraints.LB[p].resize(constraints.B1[p].nnz, std::numeric_limits<double>::infinity());
 		for (size_t r = constraints.B1subdomainsMap[p].size(); r < constraints.B1[p].nnz; r++) {
 			constraints.B1subdomainsMap[p].push_back(constraints.B1[p].I_row_indices[r] - 1);
 		}

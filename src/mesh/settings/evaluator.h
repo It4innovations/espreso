@@ -31,6 +31,7 @@ public:
 
 	virtual Evaluator* copy() const { return new Evaluator(*this); }
 	virtual double evaluate(size_t index, size_t timeStep = 1, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
+	virtual double evaluate(const Point &p) const { return 0; }
 	virtual const std::string& name() const { return _name; }
 	virtual ~Evaluator() {};
 
@@ -56,6 +57,7 @@ public:
 
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
 	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const { return _value; }
+	double evaluate(const Point &p) const { return _value; }
 
 	virtual void store(std::ofstream& os)
 	{
@@ -95,6 +97,7 @@ protected:
 
 	virtual Evaluator* copy() const =0;
 	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const =0;
+	virtual double evaluate(const Point &p) const =0;
 
 	std::vector<Expression> _expression;
 	mutable std::vector<std::vector<double> >_values;
@@ -115,6 +118,14 @@ public:
 		_values[__cilkrts_get_worker_number()][0] = _coordinates[index].x;
 		_values[__cilkrts_get_worker_number()][1] = _coordinates[index].y;
 		_values[__cilkrts_get_worker_number()][2] = _coordinates[index].z;
+		return _expression[__cilkrts_get_worker_number()].evaluate(_values[__cilkrts_get_worker_number()]);
+	}
+
+	double evaluate(const Point &p) const
+	{
+		_values[__cilkrts_get_worker_number()][0] = p.x;
+		_values[__cilkrts_get_worker_number()][1] = p.y;
+		_values[__cilkrts_get_worker_number()][2] = p.z;
 		return _expression[__cilkrts_get_worker_number()].evaluate(_values[__cilkrts_get_worker_number()]);
 	}
 

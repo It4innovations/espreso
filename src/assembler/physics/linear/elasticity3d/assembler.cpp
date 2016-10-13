@@ -57,6 +57,8 @@ void LinearElasticity3D::saveMeshProperties(output::Store &store)
 {
 	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, output::Store::ElementType::NODES);
 	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, output::Store::ElementType::NODES);
+	store.storeProperty("obstacle", { Property::OBSTACLE }, output::Store::ElementType::NODES);
+	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, output::Store::ElementType::NODES);
 	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
 		output::VTK::fixPoints(_mesh, "fixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
@@ -105,6 +107,12 @@ void LinearElasticity3D::assembleGluingMatrices()
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented construction of B0";
+		}
+	}
+
+	for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
+		if (_mesh.evaluators()[i]->property() == Property::OBSTACLE) {
+			InequalityConstraints::insertLowerBoundToB1(_constraints, _mesh.nodes(), pointDOFs, { Property::OBSTACLE });
 		}
 	}
 }

@@ -2,9 +2,9 @@
 #ifndef SRC_ASSEMBLER_ESASSEMBLER_H_
 #define SRC_ASSEMBLER_ESASSEMBLER_H_
 
-//#include "constraints/equalityconstraints.h"
-
 #include "constraints/equalityconstraints.h"
+#include "constraints/inequalityconstraints.h"
+
 #include "instance/linear/instance.h"
 #include "instance/dynamics/instance.h"
 #include "instance/hypre/instance.h"
