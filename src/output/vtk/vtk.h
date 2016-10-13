@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_VTK_VTK_H_
 #define SRC_OUTPUT_VTK_VTK_H_
 
-#include "../../assembler/constraints/equalityconstraints.h"
+#include "../../assembler/constraints/constraints.h"
 #include "../store.h"
 
 namespace espreso {

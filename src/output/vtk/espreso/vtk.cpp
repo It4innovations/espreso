@@ -283,6 +283,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown element type";
 	}
+	_os.flush();
 }
 
 void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
