@@ -95,5 +95,12 @@
    match-leak-kinds: possible
    fun:malloc
 }
-
+{
+   cuda solver
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libcuda.so.352.68
+   ...
+}
 

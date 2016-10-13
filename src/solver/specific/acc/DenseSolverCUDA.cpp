@@ -103,6 +103,9 @@ DenseSolverCUDA::DenseSolverCUDA(){
 	D_dense_values_fl 	= NULL;
 	D_B_dense_values 	= NULL;
 	D_B_dense_values_fl = NULL;
+	m_dense_values_size = 0;
+	m_dense_values_fl_size = 0;
+	m_dense_values_fl = NULL;
 
 	// if(sizeof(eslocal) == 8){
 	// 	printf("64-bit integer in use with cuSolver - results may be inaccurate!\n");
