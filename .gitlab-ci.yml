@@ -98,6 +98,7 @@ VTK:
   script:
     - ./waf configure --VTK::INCLUDE=/opt/vtk/include/vtk-7.1 --VTK::LIBPATH=/opt/vtk/lib
     - ./waf install -j8
+    - export LD_LIBRARY_PATH=/opt/vtk/lib/:$LD_LIBRARY_PATH
     - python tests/output.py
 
 
