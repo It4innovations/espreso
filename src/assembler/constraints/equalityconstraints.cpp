@@ -91,7 +91,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 		for (size_t r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
 			constraints.B1subdomainsMap[s].push_back(constraints.B1[s].I_row_indices[r] - 1);
 		}
-		constraints.LB[s].resize(constraints.B1[s].nnz, std::numeric_limits<double>::infinity());
+		constraints.LB[s].resize(constraints.B1[s].nnz, -std::numeric_limits<double>::infinity());
 	}
 
 	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterDirichletSize);
@@ -337,7 +337,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		}
 		constraints.B1[p].nnz = constraints.B1[p].I_row_indices.size();
 		constraints.B1c[p].resize(constraints.B1[p].nnz, 0);
-		constraints.LB[p].resize(constraints.B1[p].nnz, std::numeric_limits<double>::infinity());
+		constraints.LB[p].resize(constraints.B1[p].nnz, -std::numeric_limits<double>::infinity());
 		for (size_t r = constraints.B1subdomainsMap[p].size(); r < constraints.B1[p].nnz; r++) {
 			constraints.B1subdomainsMap[p].push_back(constraints.B1[p].I_row_indices[r] - 1);
 		}
