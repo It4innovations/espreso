@@ -35,16 +35,19 @@ def configure(ctx):
 
     ctx.env.append_unique("LIB", vtklibs)
 
+    if ctx.env.PARAVIEW:
+        ctx.env.append_unique("DEFINES", [ "HAVE_PARAVIEW" ])
+
 def build(ctx):
     if ctx.env.PARAVIEW:
         ctx.objects(
-            source = ctx.path.ant_glob('**/*.cpp'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('libparaview/*.cpp'),
             target = "paraview_out",
             use    = "espreso_includes"
         )
     else:
         ctx.objects(
-            source = ctx.path.ant_glob('**/*.cxx'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('espreso/*.cpp'),
             target = "paraview_out",
             use    = "espreso_includes"
         )
