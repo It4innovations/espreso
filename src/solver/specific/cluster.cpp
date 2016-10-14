@@ -2313,7 +2313,16 @@ void ClusterBase::CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out )  {
 
 }
 
+void ClusterBase::CreateVec_lb_perCluster( SEQ_VECTOR <double> & vec_lb_out )  {
 
+	vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
+
+	for (eslocal d = 0; d < domains.size(); d++) {
+		for (eslocal i = 0; i < domains[d].lambda_map_sub_local.size(); i++){
+			vec_lb_out[ domains[d].lambda_map_sub_local[i] ] = domains[d].vec_lb[i];
+		}
+	}
+}
 
 
 void ClusterBase::compress_lambda_vector  ( SEQ_VECTOR <double> & decompressed_vec_lambda )

@@ -184,6 +184,7 @@ public:
 	void CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f );
 
 	void CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out );
+	void CreateVec_lb_perCluster( SEQ_VECTOR <double> & vec_lb_out );
 
 
 	void Create_Kinv_perDomain();

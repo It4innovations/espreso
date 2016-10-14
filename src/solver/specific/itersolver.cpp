@@ -249,7 +249,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		// KKT2
 
 		SEQ_VECTOR <double> vec_c_l   (dl_size, 0);
-		SEQ_VECTOR <double> lb        (dl_size, -INFINITY);
+		SEQ_VECTOR <double> lb        (dl_size, 0);
 		SEQ_VECTOR <double> Bu_l      (dl_size, 0.0);
 		SEQ_VECTOR <double> Be_l      (dl_size, 0.0);
 		SEQ_VECTOR <double> Bn_l      (dl_size, 0.0);
@@ -275,6 +275,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 
 
 		cluster.CreateVec_c_perCluster ( vec_c_l );
+		cluster.CreateVec_lb_perCluster ( lb );
 
 		for (eslocal i = 0; i < cluster.compressed_tmp.size(); i++)
 			cluster.compressed_tmp[i] = 0.0;
@@ -291,8 +292,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, Bu_l);
 
 		for (eslocal i = 0; i < vec_c_l.size(); i++){
-			if ( ((vec_c_l[i]  ) > 0.0001)  && (vec_c_l[i] < 0.12 ) ){
-				lb[i] = 0.0;
+			if ( lb[i] == 0 ) {
 				lambdan_l[i] = dual_soultion_compressed_parallel[i];
 
 				if (lambda_n_max < lambdan_l[i])
@@ -655,7 +655,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	SEQ_VECTOR <double> x_im  (dl_size, 0);
 	SEQ_VECTOR <double> Ax_im  (dl_size, 0);
 	SEQ_VECTOR <double> tmp  (dl_size, 0);
-	SEQ_VECTOR <double> lb (dl_size, -INFINITY);
+	SEQ_VECTOR <double> lb (dl_size, 0);
 	SEQ_VECTOR <double> x_l (dl_size, 0);
 	SEQ_VECTOR <double> bCtmu (dl_size, 0);
 	SEQ_VECTOR <double> g_l (dl_size, 0);
@@ -741,13 +741,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
 
-	cluster.CreateVec_c_perCluster ( tmp );
-
-	for (eslocal i = 0; i < tmp.size(); i++){
-		if ( ((tmp[i]  ) > 0.0001)  && (tmp[i] < 0.12 ) ){
-			lb[i] = 0.0;
-		}
-	}
+	cluster.CreateVec_lb_perCluster ( lb );
 
 	// BEGIN*** projection of right hand side b
 	for (eslocal i = 0; i < b_l.size(); i++){
@@ -1159,7 +1153,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 						proj_gradient( x_l, g_l, lb, alpha, _precQ, g_til, fi_til, beta_til, _free );
 
 						for ( eslocal k = 0; k < x_l.size(); k++){
-							x_l[k] = std::max( lb[k], x_l[k] - ((alpha_f+alpha_cg)/1.62) * g_til[k]);
+							x_l[k] = std::max( lb[k], x_l[k] - alpha_cg * g_til[k]);
 						}
 
 						if (USE_GGtINV == 1) {

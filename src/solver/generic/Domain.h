@@ -85,6 +85,7 @@ public:
     SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> f;
 	SEQ_VECTOR <double> vec_c;
+	SEQ_VECTOR <double> vec_lb;
 
 	SparseMatrix Kplus_R;
 	SparseMatrix Kplus_Rb;

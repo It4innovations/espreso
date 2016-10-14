@@ -171,6 +171,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].vec_c = constraints.B1c[d];
+		cluster.domains[d].vec_lb = constraints.LB[d];
 	}
 
 	timeSetInitialCondition.endWithBarrier();
