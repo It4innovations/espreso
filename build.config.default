@@ -22,14 +22,14 @@ BUILD_TOOLS = 1         # ESPRESO try to compile external tools.
 MORTAR::INCLUDE =    # Path to mortar headers
 MORTAR::LIBPATH =    # PATH to mortar library
 
-HYPRE::INCLUDE =    # Path to Hypre headers
-HYPRE::LIBPATH =    # PATH to Hypre library
+HYPRE::INCLUDE = #/opt/hypre/include/  # Path to Hypre headers
+HYPRE::LIBPATH = #/opt/hypre/lib   # PATH to Hypre library
 
-VTK::INCLUDE =    # Path to VTK headers
-VTK::LIBPATH =    # Path to VTK libraries
+VTK::INCLUDE = #/opt/vtk/include/vtk-7.1 # Path to VTK headers
+VTK::LIBPATH = #/opt/vtk/lib # Path to VTK libraries
 
-PARAVIEW::INCLUDE =    # Path to Paraview headers
-PARAVIEW::LIBPATH =    # Path to Paraview libraries
+PARAVIEW::INCLUDE = #/opt/paraview-5.1/include/ # Path to Paraview headers
+PARAVIEW::LIBPATH = #/opt/paraview-5.1/lib # Path to Paraview libraries
 
 # Next lines are ignored if BUILD_TOOLS == 0
 METISLIB = metis		# Name of METIS library
