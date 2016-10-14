@@ -17,11 +17,15 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 			for (size_t dof = 0; dof < boundDOFs.size(); dof++) {
+				if (nodes[n]->clusters()[0] != config::env::MPIrank) {
+					continue;
+				}
 				if (nodes[n]->settings().isSet(boundDOFs[dof])) {
 					double value = nodes[n]->settings(boundDOFs[dof]).back()->evaluate(n);
 					for(size_t d = 0; d < nodes[n]->domains().size(); d++) {
 						indices[nodes[n]->domains()[d]][t].push_back(n);
 						values[nodes[n]->domains()[d]][t].push_back(value);
+						break;
 					}
 				}
 			}
