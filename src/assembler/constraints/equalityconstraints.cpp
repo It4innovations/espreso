@@ -18,12 +18,18 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				if (nodes[i]->settings().isSet(DOFs[dof])) {
+					if (!config::solver::REDUNDANT_LAGRANGE && nodes[i]->clusters()[0] != config::env::MPIrank) {
+						continue;
+					}
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
 					double value = nodes[i]->settings(DOFs[dof]).back()->evaluate(i);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (indices[d * DOFs.size() + dof] != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + IJVMatrixIndexing);
 							dirichletValues[nodes[i]->domains()[d]][t].push_back(value);
+						}
+						if (!config::solver::REDUNDANT_LAGRANGE) {
+							break;
 						}
 					}
 				}
@@ -121,10 +127,15 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
-				if (n > 1 && !elements[e]->settings().isSet(DOFs[dof])) { // Dirichlet and inner nodes are not glued
+				if (n > 1 && (!config::solver::REDUNDANT_LAGRANGE || !elements[e]->settings().isSet(DOFs[dof]))) {
 					if (elements[e]->clusters()[0] == config::env::MPIrank) { // set lambda ID
-						lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;
-						lambdasSize += n * (n - 1) / 2;
+						if (config::solver::REDUNDANT_LAGRANGE) {
+							lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;
+							lambdasSize += n * (n - 1) / 2;
+						} else {
+							lambdasID[e * DOFs.size() + dof] = n - 1;
+							lambdasSize += n - 1;
+						}
 						for (size_t c = 1; c < elements[e]->clusters().size(); c++) { // send to higher clusters
 							sLambdas[n2i(elements[e]->clusters()[c])][t].push_back(e * DOFs.size() + dof);
 						}
@@ -302,9 +313,14 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 							}
 
 							offset++;
-
 						}
 					}
+					if (!config::solver::REDUNDANT_LAGRANGE) {
+						break;
+					}
+				}
+				if (!config::solver::REDUNDANT_LAGRANGE) {
+					break;
 				}
 			}
 
