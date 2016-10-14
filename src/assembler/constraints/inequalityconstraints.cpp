@@ -22,11 +22,8 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 				}
 				if (nodes[n]->settings().isSet(boundDOFs[dof])) {
 					double value = nodes[n]->settings(boundDOFs[dof]).back()->evaluate(n);
-					for(size_t d = 0; d < nodes[n]->domains().size(); d++) {
-						indices[nodes[n]->domains()[d]][t].push_back(n);
-						values[nodes[n]->domains()[d]][t].push_back(value);
-						break;
-					}
+					indices[nodes[n]->domains().front()][t].push_back(n);
+					values[nodes[n]->domains().front()][t].push_back(value);
 				}
 			}
 
@@ -65,16 +62,21 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithLowerBounds.size(); i++) {
 		size_t s = subdomainsWithLowerBounds[i];
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t n = 0; n < indices[s][t].size(); n++) {
+		for (size_t t = 0, row = clusterOffset + indicesSizes[s]; t < threads; t++) {
+			for (size_t n = 0; n < indices[s][t].size(); n++, row++) {
 				if (nodes[indices[s][t][n]]->settings().isSet(Property::NORMAL_DIRECTION)) {
-					Point p[3] { Point(1, 0, 0), Point(0, 1, 0), Point(0, 0, 1) };
+					Point normal;
+					normal.x = nodes[indices[s][t][n]]->settings(Property::NORMAL_DIRECTION).back()->evaluate(Point(1, 0, 0));
+					normal.y = nodes[indices[s][t][n]]->settings(Property::NORMAL_DIRECTION).back()->evaluate(Point(0, 1, 0));
+					normal.z = nodes[indices[s][t][n]]->settings(Property::NORMAL_DIRECTION).back()->evaluate(Point(0, 0, 1));
+					normal.normalize();
+					double value[3] { normal.x, normal.y, normal.z };
+
 					for (size_t dof = 0; dof < eDOFs.size(); dof++) {
-						double normal = nodes[indices[s][t][n]]->settings(Property::NORMAL_DIRECTION).back()->evaluate(p[dof]);
-						if (normal) {
-							constraints.B1[s].I_row_indices.push_back(clusterOffset + indicesSizes[s] + n + IJVMatrixIndexing);
+						if (value[dof]) {
+							constraints.B1[s].I_row_indices.push_back(row + IJVMatrixIndexing);
 							constraints.B1[s].J_col_indices.push_back(nodes[indices[s][t][n]]->DOFIndex(s, dof) + IJVMatrixIndexing);
-							constraints.B1[s].V_values.push_back(normal);
+							constraints.B1[s].V_values.push_back(value[dof]);
 							constraints.B1c[s].push_back(values[s][t][n]);
 						}
 					}
