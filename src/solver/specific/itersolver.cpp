@@ -280,9 +280,10 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 			cluster.compressed_tmp[i] = 0.0;
 
 		for (eslocal d = 0; d < cluster.domains.size(); d++) {
-			cluster.domains[d].B1_comp_dom.MatVec (primal_solution_out[d], cluster.x_prim_cluster1[d], 'N', 0, 0, 0.0);
+			SEQ_VECTOR <double> tmp_dual(cluster.domains[d].B1_comp_dom.rows, 0.0);
+			cluster.domains[d].B1_comp_dom.MatVec (primal_solution_out[d], tmp_dual, 'N', 0, 0, 0.0);
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.x_prim_cluster1[d][i];
+				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += tmp_dual[i];
 				//Bu_l[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.x_prim_cluster1[d][i];
 			}
 		}
