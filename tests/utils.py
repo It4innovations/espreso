@@ -214,7 +214,22 @@ class Espreso:
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
-            raise EspresoError(error)
+            skip = False
+            warningless = ""
+            for line in error.split("\n"):
+                tokens = line.split(" ")
+                if len(tokens) == 1:
+                    continue
+                if tokens[1] == "Warning:":
+                    skip = True
+                    continue
+                elif tokens[1] == "" and skip:
+                    continue
+                else:
+                    skip = False
+                warningless += line + "\n"
+            if warningless:
+                raise EspresoError("\n" + warningless)
         if output != "":
             raise EspresoError(output)
 
