@@ -13,7 +13,7 @@ using namespace espreso;
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
 	if (std::ifstream("espreso.config").good()) {
-		Configuration conf;
+		ArgsConfiguration conf;
 		conf.path = "espreso.config";
 		ParametersReader::fromConfigurationFile(conf, config::parameters);
 	}

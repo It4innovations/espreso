@@ -6,7 +6,7 @@
 namespace espreso {
 
 template<class TShape>
-static void generateShape(Mesh &mesh, const Configuration &configuration, GeneratorShape shape)
+static void generateShape(Mesh &mesh, const ArgsConfiguration &configuration, GeneratorShape shape)
 {
 	switch (shape) {
 	case GeneratorShape::CUBE: {
@@ -35,7 +35,7 @@ static void generateShape(Mesh &mesh, const Configuration &configuration, Genera
 	}
 }
 
-static void generate(Mesh &mesh, const Configuration &configuration, ElementType eType, GeneratorShape shape)
+static void generate(Mesh &mesh, const ArgsConfiguration &configuration, ElementType eType, GeneratorShape shape)
 {
 	switch (eType) {
 	case ElementType::HEXA8:
@@ -79,7 +79,7 @@ static void generate(Mesh &mesh, const Configuration &configuration, ElementType
 	}
 }
 
-void Factory::readParameters(const Configuration &configuration)
+void Factory::readParameters(const ArgsConfiguration &configuration)
 {
 	std::vector<Parameter> parameters = {
 		{ "SHAPE", shape      , "Generated shape.", {
@@ -119,7 +119,7 @@ void Factory::readParameters(const Configuration &configuration)
 	}
 }
 
-static void fillMesh(const Configuration &configuration, Mesh &mesh, ElementType eType, GeneratorShape shape)
+static void fillMesh(const ArgsConfiguration &configuration, Mesh &mesh, ElementType eType, GeneratorShape shape)
 {
 	switch (config::mesh::INPUT) {
 	case config::mesh::INPUTalternative::MATSOL:
@@ -156,7 +156,7 @@ static void createInstance(Instance* &instance, Mesh &mesh)
 	}
 }
 
-Factory::Factory(const Configuration &configuration)
+Factory::Factory(const ArgsConfiguration &configuration)
 {
 	physics = PhysicsAssembler::LINEAR_ELASTICITY_3D;
 

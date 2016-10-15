@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 
 ///////////////////////////////////////////// CREATE INSTANCE /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	espreso::Configuration configuration = espreso::ParametersReader::fromArguments(&argc, &argv);
+	espreso::ArgsConfiguration configuration = espreso::ParametersReader::fromArguments(&argc, &argv);
 
 	ESINFO(espreso::OVERVIEW) << "Run ESPRESO API test on " << espreso::config::env::MPIsize << " process(es).";
 	espreso::ParametersReader::printParameters(espreso::config::parameters, espreso::config::info::VERBOSE_LEVEL);

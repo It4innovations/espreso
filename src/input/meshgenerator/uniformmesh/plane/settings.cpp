@@ -52,7 +52,7 @@ void PlaneSettings::defaultPlaneSettings()
 	}, verbosity });
 }
 
-PlaneSettings::PlaneSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+PlaneSettings::PlaneSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix)
 : CubeSettings(index, size, prefix)
 {
 	parameters.clear();

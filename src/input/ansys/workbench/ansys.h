@@ -18,7 +18,7 @@ namespace input {
 class AnsysWorkbench: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	static void load(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	{
 		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
 		AnsysWorkbench workbench(mesh, configuration, rank, size);
@@ -26,7 +26,7 @@ public:
 	}
 
 protected:
-	AnsysWorkbench(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	AnsysWorkbench(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	: Loader(mesh), _path(configuration.path), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);

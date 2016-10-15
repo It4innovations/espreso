@@ -15,7 +15,7 @@ namespace input {
 class OpenFOAM: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	static void load(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	{
 		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
 		OpenFOAM openfoam(mesh, configuration, rank, size);
@@ -25,7 +25,7 @@ public:
 	bool faceBased() const { return true; }
 
 protected:
-	OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size);
+	OpenFOAM(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size);
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces);

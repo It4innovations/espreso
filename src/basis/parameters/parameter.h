@@ -14,7 +14,7 @@
 
 namespace espreso {
 
-struct Configuration {
+struct ArgsConfiguration {
 	std::string path;
 	std::vector<std::string> nameless;
 };
@@ -62,7 +62,7 @@ struct Parameter {
 	}
 
 	template <typename TParameter>
-	Parameter(std::string name, TParameter &defaultValue, std::string description, std::vector<Option<TParameter> > options, size_t verboseLevel = 2)
+	Parameter(std::string name, TParameter &defaultValue, std::string description, std::vector<Option2<TParameter> > options, size_t verboseLevel = 2)
 	: name(name), description(description), verboseLevel(verboseLevel)
 	{
 		data = new OptionEnvelope<TParameter>(defaultValue, options);
@@ -78,7 +78,7 @@ struct Parameter {
 	Parameter(const Parameter &other)
 	{
 		name = other.name;
-		data = other.data->copy();
+		data = other.data != NULL ? other.data->copy() : NULL;
 		description = other.description;
 		verboseLevel = other.verboseLevel;
 	}
@@ -87,17 +87,22 @@ struct Parameter {
 	{
 		if (this != &other) {
 			name = other.name;
-			delete data;
-			data = other.data->copy();
+			if (data != NULL) {
+				delete data;
+			}
+			data = other.data != NULL ? other.data->copy() : NULL;
 			description = other.description;
 			verboseLevel = other.verboseLevel;
 		}
 		return *this;
 	}
 
+	Parameter(): data(NULL), verboseLevel(-1) {};
 	~Parameter()
 	{
-		delete data;
+		if (data != NULL) {
+			delete data;
+		}
 	}
 
 	void set(const std::string &value)

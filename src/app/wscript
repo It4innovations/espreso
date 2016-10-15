@@ -44,7 +44,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx.objects(
-        source = ("factory/factory.cpp",),
+        source = "factory/factory.cpp",
         target = "factory",
         use    = "espreso_includes"
     )

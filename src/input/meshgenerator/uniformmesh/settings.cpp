@@ -35,7 +35,7 @@ void UniformSettings::defaultUniformSettings()
 	};
 }
 
-UniformSettings::UniformSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+UniformSettings::UniformSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix)
 : Settings(index, size, prefix)
 {
 	defaultUniformSettings();

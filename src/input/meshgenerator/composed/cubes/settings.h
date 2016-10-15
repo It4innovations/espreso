@@ -9,7 +9,7 @@ namespace input {
 
 struct CubesSettings {
 
-	CubesSettings(const Configuration &configuration, size_t index, size_t size);
+	CubesSettings(const ArgsConfiguration &configuration, size_t index, size_t size);
 	CubesSettings(size_t index, size_t size);
 
 	std::vector<Parameter> parameters;

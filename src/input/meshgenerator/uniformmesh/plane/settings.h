@@ -11,7 +11,7 @@ namespace input {
 
 struct PlaneSettings: public CubeSettings {
 
-	PlaneSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	PlaneSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix="");
 	PlaneSettings(size_t index, size_t size, std::string prefix="");
 
 protected:

@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "esbasis.h"
+
 namespace espreso {
 
 class Tokenizer {
@@ -17,12 +19,16 @@ public:
 		ASSIGN,
 		OBJECT_OPEN,
 		OBJECT_CLOSE,
+		EXPRESSION_END,
 		LINE_END,
 		END
 	};
 
 	Tokenizer(const std::string &file): _file(file), _token(Token::END)
 	{
+		if (!_file.good()) {
+			ESINFO(GLOBAL_ERROR) << "Invalid file '" << file << "'";
+		}
 		_buffer.reserve(80);
 	}
 

@@ -15,7 +15,7 @@ namespace input {
 class AnsysMatsol: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	static void load(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	{
 		ESINFO(OVERVIEW) << "Load mesh from Ansys/Matsol format from directory " << configuration.path;
 
@@ -24,7 +24,7 @@ public:
 	}
 
 protected:
-	AnsysMatsol(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	AnsysMatsol(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	: Loader(mesh), _path(configuration.path) { };
 
 	void points(Coordinates &coordinates);

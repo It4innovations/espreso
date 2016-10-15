@@ -7,7 +7,7 @@
 namespace espreso {
 
 template <typename TValue>
-struct Option {
+struct Option2 {
 	std::string name;
 	TValue value;
 	std::string description;

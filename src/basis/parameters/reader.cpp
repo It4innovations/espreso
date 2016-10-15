@@ -17,13 +17,13 @@ ParametersReader::ParametersReader(const std::vector<Parameter> &parameters)
 	std::sort(_parameters.begin(), _parameters.end());
 }
 
-Configuration ParametersReader::fromArguments(int *argc, char*** argv, const std::vector<Parameter> &params)
+ArgsConfiguration ParametersReader::fromArguments(int *argc, char*** argv, const std::vector<Parameter> &params)
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 
 	ParametersReader reader(params);
-	Configuration conf;
+	ArgsConfiguration conf;
 
 	int option_index, option;
 	std::string options("i:p:c:vtmh");
@@ -112,23 +112,23 @@ Configuration ParametersReader::fromArguments(int *argc, char*** argv, const std
 	return conf;
 }
 
-Configuration ParametersReader::fromConfigurationFile(const Configuration &conf, const std::vector<Parameter> &params)
+ArgsConfiguration ParametersReader::fromConfigurationFile(const ArgsConfiguration &conf, const std::vector<Parameter> &params)
 {
 	ParametersReader reader(params);
 	return reader.read(conf, 1);
 }
 
-Configuration ParametersReader::fromConfigurationFileWOcheck(const Configuration &conf, const std::vector<Parameter> &params)
+ArgsConfiguration ParametersReader::fromConfigurationFileWOcheck(const ArgsConfiguration &conf, const std::vector<Parameter> &params)
 {
 	ParametersReader reader(params);
 	return reader.read(conf, 0);
 }
 
 
-Configuration ParametersReader::read(const Configuration &configuration, size_t verboseLevel)
+ArgsConfiguration ParametersReader::read(const ArgsConfiguration &configuration, size_t verboseLevel)
 {
 	std::ifstream file(configuration.path);
-	Configuration conf(configuration);
+	ArgsConfiguration conf(configuration);
 
 	std::vector<std::string> cmdArgs, attributes, values;
 

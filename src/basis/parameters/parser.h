@@ -35,6 +35,26 @@ struct StringCompare {
 		return std::lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(), _caseInsensitive);
 	}
 
+	static bool caseSensitivePreffix(const std::string &s1, const std::string &s2)
+	{
+		return std::equal(s1.begin(), s1.end(), s2.begin());
+	}
+
+	static bool caseInsensitivePreffix(const std::string &s1, const std::string &s2)
+	{
+		return std::equal(s1.begin(), s1.end(), s2.begin(), _equals);
+	}
+
+	static bool caseSensitiveSuffix(const std::string &s1, const std::string &s2)
+	{
+		return std::equal(s1.begin() + s1.size() - s2.size(), s1.end(), s2.begin());
+	}
+
+	static bool caseInsensitiveSuffix(const std::string &s1, const std::string &s2)
+	{
+		return std::equal(s1.begin() + s1.size() - s2.size(), s1.end(), s2.begin(), _equals);
+	}
+
 private:
 	static bool _caseInsensitive(const char &c1, const char &c2)
 	{

@@ -47,7 +47,7 @@ void CubeSettings::defaultCubeSettings()
 	}
 }
 
-CubeSettings::CubeSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+CubeSettings::CubeSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix)
 : UniformSettings(index, size, prefix)
 {
 	defaultCubeSettings();

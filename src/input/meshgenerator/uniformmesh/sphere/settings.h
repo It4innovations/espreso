@@ -16,7 +16,7 @@ struct SphereSettings: public UniformSettings {
 		OUTER
 	};
 
-	SphereSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	SphereSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix="");
 	SphereSettings(size_t index, size_t size, std::string prefix="");
 
 	std::vector<Parameter> parameters;

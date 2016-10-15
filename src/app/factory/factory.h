@@ -42,7 +42,7 @@ enum class PhysicsAssembler {
 
 struct Factory {
 
-	Factory(const Configuration &configuration);
+	Factory(const ArgsConfiguration &configuration);
 	~Factory()
 	{
 		delete instance;
@@ -58,7 +58,7 @@ struct Factory {
 private:
 	std::vector<std::vector<double> > _solution;
 
-	void readParameters(const Configuration &configuration);
+	void readParameters(const ArgsConfiguration &configuration);
 
 	ElementType eType;
 	GeneratorShape shape;

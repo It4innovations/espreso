@@ -11,7 +11,7 @@ namespace input {
 
 struct Settings {
 
-	Settings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	Settings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix="");
 	Settings(size_t index, size_t size, std::string prefix="");
 
 	std::string prefix;

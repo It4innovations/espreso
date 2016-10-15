@@ -20,7 +20,7 @@ struct CubeSettings: public UniformSettings {
 		BOTTOM
 	};
 
-	CubeSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix="");
+	CubeSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix="");
 	CubeSettings(size_t index, size_t size, std::string prefix="");
 
 	std::vector<Parameter> parameters;

@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 {
 	MPI_Init(&argc, &argv);
 
-	Configuration configuration = ParametersReader::fromArguments(&argc, &argv);
+	ArgsConfiguration configuration = ParametersReader::fromArguments(&argc, &argv);
 
 	config::mesh::INPUT = config::mesh::INPUTalternative::GENERATOR;
 	config::mesh::SUBDOMAINS = 1;

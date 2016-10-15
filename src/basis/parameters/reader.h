@@ -16,9 +16,9 @@ namespace espreso {
 class ParametersReader {
 
 public:
-	static Configuration fromArguments(int *argc, char*** argv, const std::vector<Parameter> &params = config::parameters);
-	static Configuration fromConfigurationFile(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
-	static Configuration fromConfigurationFileWOcheck(const Configuration &conf, const std::vector<Parameter> &params = config::parameters);
+	static ArgsConfiguration fromArguments(int *argc, char*** argv, const std::vector<Parameter> &params = config::parameters);
+	static ArgsConfiguration fromConfigurationFile(const ArgsConfiguration &conf, const std::vector<Parameter> &params = config::parameters);
+	static ArgsConfiguration fromConfigurationFileWOcheck(const ArgsConfiguration &conf, const std::vector<Parameter> &params = config::parameters);
 
 	static void printParameters(const std::vector<Parameter> &params, size_t verboseLevel);
 	static void printParametersHelp(const std::vector<Parameter> &params, size_t verboseLevel);
@@ -39,7 +39,7 @@ public:
 	}
 
 protected:
-	Configuration read(const Configuration &configuration, size_t verboseLevel);
+	ArgsConfiguration read(const ArgsConfiguration &configuration, size_t verboseLevel);
 
 	std::vector<Parameter> _parameters;
 

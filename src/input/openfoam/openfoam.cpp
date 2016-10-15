@@ -2,7 +2,7 @@
 
 using namespace espreso::input;
 
-OpenFOAM::OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size): Loader(mesh)
+OpenFOAM::OpenFOAM(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size): Loader(mesh)
 {
 	_projectPath = configuration.path;
 	solveParseError(computePolyMeshPath(rank, size));

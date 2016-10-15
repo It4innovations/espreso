@@ -8,7 +8,7 @@ using namespace espreso;
 
 static bool isWhiteSpace(int c)
 {
-	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+	return c == ' ' || c == '\t' || c == '\r';
 }
 
 static bool isDelimiter(int c)
@@ -21,9 +21,14 @@ static bool isAssign(int c)
 	return c == '=' || c == ':';
 }
 
-static bool isLineEnd(int c)
+static bool isExpressionEnd(int c)
 {
 	return c == ';';
+}
+
+static bool isLineEnd(int c)
+{
+	return c == '\n';
 }
 
 static bool isObjectOpen(int c)
@@ -140,6 +145,9 @@ Tokenizer::Token Tokenizer::_next()
 		if (isAssign(_file.peek())) {
 			return specialToken(Token::ASSIGN);
 		}
+		if (isExpressionEnd(_file.peek())) {
+			return specialToken(Token::EXPRESSION_END);
+		}
 		if (isLineEnd(_file.peek())) {
 			return specialToken(Token::LINE_END);
 		}
@@ -190,7 +198,10 @@ std::string Tokenizer::lastLines(size_t number)
 		lines.pop();
 	}
 	ss << std::setw(4) << line++ << ":";
-	for (size_t i = 0; i < current - _file.tellg() + lines.back().size(); i++) {
+	if (_file.tellg() > current) {
+		return ss.str();
+	}
+	for (size_t i = 0; i < current - _file.tellg() + lines.size() ? lines.back().size() : 0 && i < 200; i++) {
 		ss << " ";
 	}
 	ss << "^";

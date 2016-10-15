@@ -24,7 +24,7 @@ void SphereSettings::defaultSphereSettings()
 	});
 }
 
-SphereSettings::SphereSettings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+SphereSettings::SphereSettings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix)
 : UniformSettings(index, size, prefix)
 {
 	ESINFO(OVERVIEW) << "Load sphere setting from file " << configuration.path;

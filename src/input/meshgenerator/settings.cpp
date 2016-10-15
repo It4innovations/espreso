@@ -42,7 +42,7 @@ void Settings::defaultSettings()
 	};
 }
 
-Settings::Settings(const Configuration &configuration, size_t index, size_t size, std::string prefix)
+Settings::Settings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix)
 : index(index), size(size), clusterOffset(0), prefix(prefix)
 {
 	defaultSettings();

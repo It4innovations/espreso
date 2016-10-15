@@ -9,7 +9,7 @@ void CubesSettings::defaultCubesSettings()
 
 }
 
-CubesSettings::CubesSettings(const Configuration &configuration, size_t index, size_t size)
+CubesSettings::CubesSettings(const ArgsConfiguration &configuration, size_t index, size_t size)
 : cube{CubeSettings(index, size, "MESH1_"), CubeSettings(index, size, "MESH2_")}
 {
 	parameters.insert(parameters.end(), cube[0].parameters.begin(), cube[0].parameters.end());

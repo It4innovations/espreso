@@ -9,10 +9,15 @@ namespace espreso {
 class Reader {
 
 public:
-	void read(int* argc, char ***argv) { _read(Tokenizer("espreso.config.new")); }
+	static void read(const std::string &file) { _read(file, {}); }
+	static void read(int* argc, char ***argv) { _read(argc, argv); }
+
+	static void print();
+	static void store();
 
 private:
-	void _read(Tokenizer &&tokenizer);
+	static void _read(const std::string &file, const std::vector<std::string> &args);
+	static void _read(int* argc, char ***argv);
 };
 
 }

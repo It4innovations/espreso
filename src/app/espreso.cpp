@@ -2,7 +2,9 @@
 #include <signal.h>
 #include <csignal>
 
+#include "../config/description.h"
 #include "factory/factory.h"
+
 
 using namespace espreso;
 
@@ -24,9 +26,13 @@ int main(int argc, char **argv)
 	std::signal(SIGFPE, signalHandler);
 	std::signal(SIGSEGV, signalHandler);
 
+	Configuration::read(&argc, &argv);
+	Configuration::print();
+	return 0;
+
 	MPI_Init(&argc, &argv);
 
-	Configuration configuration = ParametersReader::fromArguments(&argc, &argv);
+	ArgsConfiguration configuration = ParametersReader::fromArguments(&argc, &argv);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " process(es).";
 	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);

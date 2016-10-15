@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 
 	MPI_Init(&argc, &argv);
 
-	Configuration configuration;
+	ArgsConfiguration configuration;
 	configuration.path = argv[1];
 	for (int i = 2; i < argc; i++) {
 		configuration.nameless.push_back(argv[i]);

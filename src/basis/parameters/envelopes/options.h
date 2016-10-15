@@ -8,7 +8,7 @@ namespace espreso {
 
 template <typename TPointer>
 struct OptionEnvelope: public Envelope {
-	OptionEnvelope(TPointer &data, std::vector<Option<TPointer> > &options)
+	OptionEnvelope(TPointer &data, std::vector<Option2<TPointer> > &options)
 	: _data(data), _options(options) { };
 
 	bool set(const std::string &value)
@@ -67,7 +67,7 @@ struct OptionEnvelope: public Envelope {
 
 private:
 	TPointer &_data;
-	std::vector<Option<TPointer> > _options;
+	std::vector<Option2<TPointer> > _options;
 };
 
 }

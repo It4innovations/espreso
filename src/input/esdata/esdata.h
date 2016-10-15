@@ -11,7 +11,7 @@ namespace input {
 class Esdata: public Loader {
 
 public:
-	static void load(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	static void load(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	{
 		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << configuration.path;
 		Esdata esdata(mesh, configuration, rank, size);
@@ -19,7 +19,7 @@ public:
 	}
 
 protected:
-	Esdata(Mesh &mesh, const Configuration &configuration, int rank, int size)
+	Esdata(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	: Loader(mesh), _path(configuration.path), _rank(rank), _size(size) { };
 
 	void points(Coordinates &coordinates);
