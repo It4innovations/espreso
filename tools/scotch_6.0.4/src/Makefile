@@ -57,7 +57,7 @@ include Makefile.inc
 
 bindir		?= $(prefix)/bin
 includedir	?= $(prefix)/include
-libdir		?= $(prefix)/libs
+libdir		?= $(prefix)/libs${int_width}
 datarootdir	?= $(prefix)/share
 mandir		?= $(datarootdir)/man
 

@@ -60,13 +60,11 @@ def build(ctx):
             name    = "build METIS library with {0}b integers".format(ctx.env.INT_WIDTH)
         )
 
-    if (ctx.env.SOLVER == "MUMPS" or ctx.env.SOLVER == "DISSECTION") and not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/", extension):
+    if (ctx.env.SOLVER == "MUMPS" or ctx.env.SOLVER == "DISSECTION") and not check_libraries(ctx.env.SCOTCH["libs"], "{0}/libs{1}/".format(ctx.ROOT, ctx.env.INT_WIDTH), extension):
         ctx(
-            rule    = "cd " + ctx.env.SCOTCH["path"] + ";" \
-                      "make scotch esmumps " + ctx.env.SCOTCH["params"] + ";" \
-                      "make install " + ctx.env.PREFIX,
+            rule    = "cd {1}; ln -sf Makefile.{0} Makefile.inc; make scotch esmumps int_width={3}; make install {2} int_width={3}".format(ctx.env.LIBTYPE, ctx.env.SCOTCH["path"], ctx.env.PREFIX, ctx.env.INT_WIDTH),
             always  = True,
-            name    = "build scotch library"
+            name    = "build scotch library with {0}b integers".format(ctx.env.INT_WIDTH)
         )
 
     if ctx.env.SOLVER == "MUMPS" and not check_libraries(ctx.env.MUMPS["libs"], ctx.ROOT + "/libs/"):
@@ -79,10 +77,22 @@ def build(ctx):
         )
 
     # Create symlinks to correct version of library
-    if os.readlink("{0}/libs/libmetis{1}".format(ctx.ROOT, extension)) != "{0}/libs{1}/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension):
+    desc = "{0}/libs/libmetis{1}".format(ctx.ROOT, extension)
+    source = "{0}/libs{1}/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension)
+    if not os.path.isfile(desc) or os.readlink(desc) != source:
         ctx(
-            rule   = "ln -fs {0}/libs{1}/libmetis{2} {0}/libs/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension),
+            rule   = "ln -fs {0} {1}".format(source, desc),
             always = True,
             name   = "create symlink to metis"
         )
+
+    for lib in ctx.env.SCOTCH["libs"]:
+        desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, extension)
+        source = "{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, extension)
+        if not os.path.isfile(desc) or os.readlink(desc) != source:
+            ctx(
+                rule   = "ln -fs {0} {1}".format(source, desc),
+                always = True,
+                name   = "create symlink to {0}".format(lib)
+            )
 
