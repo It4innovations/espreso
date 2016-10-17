@@ -3,14 +3,14 @@ include_directories(.)
 # Find sources.
 file(GLOB metis_sources *.c)
 # Build libmetis.
-add_library(metis${IDXTYPEWIDTH} ${METIS_LIBRARY_TYPE} ${GKlib_sources} ${metis_sources})
+add_library(metis ${METIS_LIBRARY_TYPE} ${GKlib_sources} ${metis_sources})
 if(UNIX)
-  target_link_libraries(metis${IDXTYPEWIDTH} m)
+  target_link_libraries(metis m)
 endif()
 
 if(METIS_INSTALL)
-  install(TARGETS metis${IDXTYPEWIDTH}
-    LIBRARY DESTINATION libs
-    RUNTIME DESTINATION libs
-    ARCHIVE DESTINATION libs)
+  install(TARGETS metis
+    LIBRARY DESTINATION libs${IDXTYPEWIDTH}
+    RUNTIME DESTINATION libs${IDXTYPEWIDTH}
+    ARCHIVE DESTINATION libs${IDXTYPEWIDTH})
 endif()

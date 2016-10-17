@@ -6,8 +6,6 @@ TOOLS = "tools"
 def configure(ctx):
     ctx.setenv(TOOLS, ctx.all_envs[""].derive())
 
-#    ctx.env.EXTERNAL_LIBRARIES = True
-
     ctx.env.METIS = dict()
     ctx.env.SCOTCH = dict()
     ctx.env.MUMPS = dict()
@@ -19,7 +17,7 @@ def configure(ctx):
     ctx.env.SCOTCH["path"] = ctx.ROOT + "/tools/scotch_6.0.4/src"
     ctx.env.MUMPS["path"]  = ctx.ROOT + "/tools/MUMPS_5.0.1"
 
-    ctx.env.METIS["libs"]  = [ "metis32", "metis64" ]
+    ctx.env.METIS["libs"]  = [ "metis" ]
     ctx.env.SCOTCH["libs"] = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
     ctx.env.MUMPS["libs"]  = [ "dmumps", "mumps_common", "pord" ]
 
@@ -50,7 +48,19 @@ def build(ctx):
     if ctx.env.EXTERNAL_LIBRARIES:
         return
 
-    if ctx.env.SOLVER == "MUMPS" and not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/"):
+    if ctx.env.LIBTYPE == "STATIC":
+        extension = ".a"
+    else:
+        extension = ".so"
+
+    if not check_libraries(ctx.env.METIS["libs"], "{0}/libs{1}/".format(ctx.ROOT, ctx.env.INT_WIDTH), extension):
+        ctx(
+            rule    = "cd {0}; make config idx_width={1} {2}; make install".format(ctx.env.METIS["path"], ctx.env.INT_WIDTH, ctx.env.METIS["params"]),
+            always  = True,
+            name    = "build METIS library with {0}b integers".format(ctx.env.INT_WIDTH)
+        )
+
+    if (ctx.env.SOLVER == "MUMPS" or ctx.env.SOLVER == "DISSECTION") and not check_libraries(ctx.env.SCOTCH["libs"], ctx.ROOT + "/libs/", extension):
         ctx(
             rule    = "cd " + ctx.env.SCOTCH["path"] + ";" \
                       "make scotch esmumps " + ctx.env.SCOTCH["params"] + ";" \
@@ -68,27 +78,11 @@ def build(ctx):
             name    = "build MUMPS library"
         )
 
-    if ctx.env.LIBTYPE == "STATIC":
-        extension = ".a"
-    else:
-        extension = ".so"
-    if not check_libraries(ctx.env.METIS["libs"], ctx.ROOT + "/libs/", extension):
+    # Create symlinks to correct version of library
+    if os.readlink("{0}/libs/libmetis{1}".format(ctx.ROOT, extension)) != "{0}/libs{1}/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension):
         ctx(
-            rule    = "cd " + ctx.env.METIS["path"] + ";" \
-                      "make config idx_width=32 " + ctx.env.METIS["params"] + ";" \
-                      "make install",
-            always  = True,
-            name    = "build METIS library with 32b integers"
+            rule   = "ln -fs {0}/libs{1}/libmetis{2} {0}/libs/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension),
+            always = True,
+            name   = "create symlink to metis"
         )
-
-        ctx.add_group()
-
-        ctx(
-            rule    = "cd " + ctx.env.METIS["path"] + ";" \
-                      "make config idx_width=64 " + ctx.env.METIS["params"] + ";" \
-                      "make install",
-            always  = True,
-            name    = "build METIS library with 64b integers"
-        )
-
 
