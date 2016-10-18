@@ -86,6 +86,9 @@ def build(ctx):
             name   = "create symlink to metis"
         )
 
+    if ctx.env.SOLVER != "MUMPS" and ctx.env.SOLVER != "DISSECTION":
+        return
+
     for lib in ctx.env.SCOTCH["libs"]:
         desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, extension)
         source = "{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, extension)
