@@ -77,7 +77,7 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 							constraints.B1[s].I_row_indices.push_back(row + IJVMatrixIndexing);
 							constraints.B1[s].J_col_indices.push_back(nodes[indices[s][t][n]]->DOFIndex(s, dof) + IJVMatrixIndexing);
 							constraints.B1[s].V_values.push_back(value[dof]);
-							constraints.B1c[s].push_back(values[s][t][n]);
+							constraints.B1c[s].push_back(std::abs(value[dof]) * values[s][t][n]);
 						}
 					}
 				} else {
