@@ -19,6 +19,7 @@ enum class WorkbenchCommands {
 	MP,
 	DISPLACEMENT,
 	FORCE,
+	OBSTACLE,
 	LOADVAR,
 	DIM,
 
@@ -66,6 +67,7 @@ public:
 	void cmblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void displacement(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void force(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
+	void obstacle(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void loadvar();
 
 	~WorkbenchParser()

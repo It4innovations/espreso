@@ -81,6 +81,9 @@ void AnsysWorkbench::settings(
 		case WorkbenchCommands::FORCE:
 			_parser.force(evaluators, elements, faces, edges, nodes);
 			break;
+		case WorkbenchCommands::OBSTACLE:
+			_parser.obstacle(evaluators, elements, faces, edges, nodes);
+			break;
 		case WorkbenchCommands::EBLOCK:
 			_parser.eblock(elements, faces, edges, nodes);
 			break;

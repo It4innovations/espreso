@@ -16,6 +16,7 @@ WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
 	_commands["*DIM"] = WorkbenchCommands::DIM;
 	_commands["d"] = WorkbenchCommands::DISPLACEMENT;
 	_commands["f"] = WorkbenchCommands::FORCE;
+	_commands["obstacle"] = WorkbenchCommands::OBSTACLE;
 	_commands["nsel"] = WorkbenchCommands::NSEL;
 	_commands["_loadvari"] = WorkbenchCommands::LOADVAR;
 }
@@ -27,7 +28,7 @@ std::vector<std::string> WorkbenchParser::divide(std::string &line, std::string 
 	do {
 		start = end + 1;
 		end = line.find_first_of(delim, start);
-		parts.push_back(line.substr(start, end - start));
+		parts.push_back(Parser::strip(line.substr(start, end - start)));
 	} while(end != std::string::npos);
 
 	return parts;
@@ -113,6 +114,8 @@ void WorkbenchParser::nblock(Coordinates &coordinates)
 	Point point;
 	size_t id;
 
+	ESINFO(DETAILS) << "WB: CREATE NBLOCK";
+
 	while (true) {
 		getline(_file, _line);
 		id = std::stol(_line.substr(0, sizes[0]));
@@ -173,6 +176,9 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 	if (NDSEL) {
 		elements.reserve(elements.size() + NDSEL);
 	}
+
+	ESINFO(DETAILS) << "WB: CREATE EBLOCK";
+
 	std::vector<eslocal> values(38), eParams(Element::PARAMS_SIZE);
 	for (eslocal i = 0; i < (NDSEL ? NDSEL : i + 1); i++) {
 		getline(_file, _line);
@@ -242,6 +248,7 @@ void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Eleme
 	params[1] = Parser::strip(params[1]);
 	std::vector<Element*> &region = _regions[params[1]];
 	if (params[2].compare(0, 4, "NODE") == 0) {
+		ESINFO(DETAILS) << "WB: CREATE BLOCK OF NODES: " << params[1];
 		eslocal size = std::stol(params[3]);
 
 		getline(_file, _line);
@@ -263,52 +270,94 @@ void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Eleme
 	}
 }
 
+static void pushTableEvaluator(std::vector<espreso::Evaluator*> &evaluators, const std::vector<espreso::TableEvaluator*> &tables, const std::string &name)
+{
+	for (size_t t = 0; t < tables.size(); t++) {
+		if (!name.compare(1, tables[t]->name().size(), tables[t]->name())) {
+			evaluators.push_back(tables[t]->copy());
+			return;
+		}
+	}
+	ESINFO(espreso::GLOBAL_ERROR) << "Unknown table '" << name << "'";
+}
+
 void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
 
+	auto pushEvaluator = [&] (const std::string &value, Property property) {
+		if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos) {
+			espreso::Expression expr(value, {});
+			evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({}), property));
+		} else {
+			evaluators.push_back(new espreso::CoordinatesEvaluator(value, _mesh.coordinates(), property));
+		}
+	};
+
 	if (!params[1].compare(0, 3, "all")) {
+		std::vector<Element*> &region = _selectedRegion.size() ? _regions[_selectedRegion] : nodes;
 		if (!params[2].compare(0, 3, "all")) {
 			evaluators.push_back(new ConstEvaluator(0, Property::DISPLACEMENT_X)); // TODO: make displacement property
-			std::vector<Element*> &region = _selectedRegion.size() ? _regions[_selectedRegion] : nodes;
 			for (size_t e = 0; e < region.size(); e++) {
 				region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
 				region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
 				region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
 			}
+			return;
 		} else {
-			ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
+			if (params[3].compare(0, 1, "%") || params[3].compare(params[3].size() - 1, params[3].size(), "%")) {
+				if (!params[2].compare(0, 2, "ux")) {
+					ESINFO(DETAILS) << "WB: SET ux to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to " << params[3];
+					pushEvaluator(params[3], Property::DISPLACEMENT_X);
+					for (size_t e = 0; e < region.size(); e++) {
+						region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
+					}
+					return;
+				}
+				if (!params[2].compare(0, 2, "uy")) {
+					ESINFO(DETAILS) << "WB: SET uy to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to " << params[3];
+					pushEvaluator(params[3], Property::DISPLACEMENT_Y);
+					for (size_t e = 0; e < region.size(); e++) {
+						region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
+					}
+					return;
+				}
+				if (!params[2].compare(0, 2, "uz")) {
+					ESINFO(DETAILS) << "WB: SET uz to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to " << params[3];
+					pushEvaluator(params[3], Property::DISPLACEMENT_Z);
+					for (size_t e = 0; e < region.size(); e++) {
+						region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
+					}
+					return;
+				}
+				ESINFO(GLOBAL_ERROR) << "Not implemented d option '" << params[2] << "'";
+			}
 		}
-		return;
 	}
 
-	for (size_t t = 0; t < _tables.size(); t++) {
-		if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
-			const std::vector<Element*> &region = _regions[params[1]];
-			evaluators.push_back(_tables[t]->copy());
-			evaluators.back()->property() = Property::DISPLACEMENT_X;
-			if (!params[2].compare(0, 2, "ux")) {
-				for (size_t e = 0; e < region.size(); e++) {
-					region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
-				}
-				return;
-			}
-			if (!params[2].compare(0, 2, "uy")) {
-				for (size_t e = 0; e < region.size(); e++) {
-					region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
-				}
-				return;
-			}
-			if (!params[2].compare(0, 2, "uz")) {
-				for (size_t e = 0; e < region.size(); e++) {
-					region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
-				}
-				return;
-			}
+	pushTableEvaluator(evaluators, _tables, params[3]);
+	std::vector<Element*> &region = _selectedRegion.size() ? _regions[_selectedRegion] : nodes;
+	if (!params[2].compare(0, 2, "ux")) {
+		evaluators.back()->property() = Property::DISPLACEMENT_X;
+		ESINFO(DETAILS) << "WB: SET ux to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to table " << evaluators.back()->name();
+		for (size_t e = 0; e < region.size(); e++) {
+			region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
 		}
 	}
-
-	ESINFO(GLOBAL_ERROR) << "Unknown displacement settings " << _line;
+	if (!params[2].compare(0, 2, "uy")) {
+		evaluators.back()->property() = Property::DISPLACEMENT_Y;
+		ESINFO(DETAILS) << "WB: SET uy to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to table " << evaluators.back()->name();
+		for (size_t e = 0; e < region.size(); e++) {
+			region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
+		}
+	}
+	if (!params[2].compare(0, 2, "uz")) {
+		evaluators.back()->property() = Property::DISPLACEMENT_Z;
+		ESINFO(DETAILS) << "WB: SET uz to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to table " << evaluators.back()->name();
+		for (size_t e = 0; e < region.size(); e++) {
+			region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
+		}
+	}
 }
 
 void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
@@ -323,33 +372,48 @@ void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Ele
 		}
 	}
 
-	for (size_t t = 0; t < _tables.size(); t++) {
-		if (!params[3].compare(1, _tables[t]->name().size(), _tables[t]->name())) {
-			const std::vector<Element*> &region = _regions[params[1]];
-			evaluators.push_back(_tables[t]->copy());
-			evaluators.back()->property() = Property::FORCE_X; // TODO: make FORCE property
-			if (!params[2].compare(0, 2, "fx")) {
-				for (size_t e = 0; e < region.size(); e++) {
-					region[e]->addSettings(Property::FORCE_X, evaluators.back());
-				}
-				return;
-			}
-			if (!params[2].compare(0, 2, "fy")) {
-				for (size_t e = 0; e < region.size(); e++) {
-					region[e]->addSettings(Property::FORCE_Y, evaluators.back());
-				}
-				return;
-			}
-			if (!params[2].compare(0, 2, "fz")) {
-				for (size_t e = 0; e < region.size(); e++) {
-					region[e]->addSettings(Property::FORCE_Z, evaluators.back());
-				}
-				return;
-			}
+	pushTableEvaluator(evaluators, _tables, params[3]);
+	const std::vector<Element*> &region = _regions[params[1]];
+	if (!params[2].compare(0, 2, "fx")) {
+		evaluators.back()->property() = Property::FORCE_X;
+		ESINFO(DETAILS) << "WB: SET fx to region " << params[1] << " to table " << evaluators.back()->name();
+		for (size_t e = 0; e < region.size(); e++) {
+			region[e]->addSettings(Property::FORCE_X, evaluators.back());
 		}
 	}
+	if (!params[2].compare(0, 2, "fy")) {
+		evaluators.back()->property() = Property::FORCE_Y;
+		ESINFO(DETAILS) << "WB: SET fy to region " << params[1] << " to table " << evaluators.back()->name();
+		for (size_t e = 0; e < region.size(); e++) {
+			region[e]->addSettings(Property::FORCE_Y, evaluators.back());
+		}
+	}
+	if (!params[2].compare(0, 2, "fz")) {
+		evaluators.back()->property() = Property::FORCE_Z;
+		ESINFO(DETAILS) << "WB: SET fz to region " << params[1] << " to table " << evaluators.back()->name();
+		for (size_t e = 0; e < region.size(); e++) {
+			region[e]->addSettings(Property::FORCE_Z, evaluators.back());
+		}
+	}
+}
 
-	ESINFO(GLOBAL_ERROR) << "Unknown force settings " << _line;
+void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
+{
+	std::vector<std::string> params = divide(_line);
+
+	if (!_selectedRegion.size()) {
+		ESINFO(GLOBAL_ERROR) << "You have to set region for obstacle";
+	}
+	std::vector<Element*> &region = _regions[_selectedRegion];
+	evaluators.push_back(new CoordinatesEvaluator(params[1], _mesh.coordinates(), Property::OBSTACLE));
+	evaluators.push_back(new CoordinatesEvaluator(params[2], _mesh.coordinates(), Property::NORMAL_DIRECTION));
+
+	ESINFO(DETAILS) << "WB: SET obstacle to region " << _selectedRegion << " to " << params[1] << ", direction: " << params[2];
+
+	for (size_t e = 0; e < region.size(); e++) {
+		region[e]->addSettings(Property::OBSTACLE, evaluators[evaluators.size() - 2]);
+		region[e]->addSettings(Property::NORMAL_DIRECTION, evaluators[evaluators.size() - 1]);
+	}
 }
 
 void WorkbenchParser::loadvar()
@@ -362,6 +426,7 @@ void WorkbenchParser::dim()
 	std::vector<std::string> params = divide(_line);
 
 	if (!params[2].compare(0, 5, "TABLE")) {
+		ESINFO(DETAILS) << "WB: CREATE TABLE: " << params[1];
 		std::vector<std::vector<std::vector<double> > > table;
 		std::vector<TableEvaluator::TableProperty> properties;
 		std::vector<std::vector<double> > axis;
@@ -437,6 +502,7 @@ void WorkbenchParser::et()
 	int n = std::stoi(params[1]);
 	eType.resize(n);
 	eType[n - 1] = std::stoi(params[2]);
+	ESINFO(DETAILS) << "WB: SET ELEMENT TYPE: " << eType[n - 1];
 }
 
 void WorkbenchParser::cmsel()
@@ -446,6 +512,7 @@ void WorkbenchParser::cmsel()
 		ESINFO(GLOBAL_ERROR) << Info::TextColor::YELLOW << "unknown cmsel parameters '" << params[1] << "'";
 	}
 	_selectedRegion = Parser::strip(params[2]);
+	ESINFO(DETAILS) << "WB: SELECT REGION: " << _selectedRegion;
 }
 
 void WorkbenchParser::nsel()
@@ -454,6 +521,7 @@ void WorkbenchParser::nsel()
 
 	if (params[1].compare(0, 3, "all") == 0) {
 		_selectedRegion.clear();
+		ESINFO(DETAILS) << "WB: CLEAR SELECTION";
 	} else {
 		ESINFO(GLOBAL_ERROR) << "Not implemented nsel option '" << params[1] << "'";
 	}
@@ -465,6 +533,7 @@ void WorkbenchParser::esel()
 
 	if (params[1].compare(0, 3, "all") == 0) {
 		_selectedRegion.clear();
+		ESINFO(DETAILS) << "WB: CLEAR SELECTION";
 	} else {
 		ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << params[1] << "'";
 	}
