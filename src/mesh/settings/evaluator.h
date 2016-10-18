@@ -42,6 +42,7 @@ public:
 	{
 		Type type = Type::DEFAULT;
 		os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+		os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 	}
 
 protected:
@@ -53,7 +54,7 @@ class ConstEvaluator: public Evaluator {
 
 public:
 	ConstEvaluator(double value, Property property = Property::EMPTY): Evaluator(property), _value(value) {};
-	ConstEvaluator(std::ifstream &is) { is.read(reinterpret_cast<char *>(&_value), sizeof(double)); }
+	ConstEvaluator(std::ifstream &is, Property property): Evaluator(property) { is.read(reinterpret_cast<char *>(&_value), sizeof(double)); }
 
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
 	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const { return _value; }
@@ -63,6 +64,7 @@ public:
 	{
 		Type type = Type::CONST;
 		os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+		os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 		os.write(reinterpret_cast<const char *>(&_value), sizeof(double));
 	}
 
@@ -83,7 +85,8 @@ protected:
 	 _expression(config::env::CILK_NWORKERS, Expression(expression, variables)),
 	 _values(config::env::CILK_NWORKERS, std::vector<double>(variables.size())) {};
 
-	ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables)
+	ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables, Property property)
+	: Evaluator(property)
 	{
 		eslocal size;
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
@@ -109,8 +112,8 @@ public:
 	CoordinatesEvaluator(const std::string &expression, const Coordinates &coordinates, Property property = Property::EMPTY)
 	: ExpressionEvaluator(expression, { "x", "y", "z" }, property), _coordinates(coordinates) {};
 
-	CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates)
-	: ExpressionEvaluator(is, { "x", "y", "z" }), _coordinates(coordinates) {};
+	CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates, Property property)
+	: ExpressionEvaluator(is, { "x", "y", "z" }, property), _coordinates(coordinates) {};
 
 	virtual Evaluator* copy() const { return new CoordinatesEvaluator(*this); }
 	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
@@ -133,6 +136,9 @@ public:
 	{
 		Type type = Type::COORDINATE;
 		os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+		os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
+		eslocal size = _expression[0].expression().size();
+		os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
 		os.write(_expression[0].expression().c_str(), _expression[0].expression().size());
 	}
 
@@ -158,7 +164,7 @@ public:
 			Property property = Property::EMPTY)
 	: Evaluator(name, property), _dimension(properties.size()), _table(table), _properties(properties), _axis(axis) {};
 
-	TableEvaluator(std::ifstream &is);
+	TableEvaluator(std::ifstream &is, Property property);
 
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
 	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const

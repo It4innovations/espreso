@@ -7,12 +7,14 @@ Evaluator* Evaluator::create(std::ifstream &is, const Coordinates &coordinates)
 {
 	Evaluator::Type type;
 	is.read(reinterpret_cast<char *>(&type), sizeof(Evaluator::Type));
+	Property property;
+	is.read(reinterpret_cast<char *>(&property), sizeof(Property));
 
 	switch (type) {
-	case Type::DEFAULT: return new Evaluator();
-	case Type::CONST: return new ConstEvaluator(is);
-	case Type::COORDINATE: return new CoordinatesEvaluator(is, coordinates);
-	case Type::TABLE: return new TableEvaluator(is);
+	case Type::DEFAULT: return new Evaluator(property);
+	case Type::CONST: return new ConstEvaluator(is, property);
+	case Type::COORDINATE: return new CoordinatesEvaluator(is, coordinates, property);
+	case Type::TABLE: return new TableEvaluator(is, property);
 	case Type::ARRAY: ESINFO(GLOBAL_ERROR) << "Implement loading of Array evaluator"; return NULL;
 	default: ESINFO(GLOBAL_ERROR) << "Unknown evaluator type"; return NULL;
 	}
@@ -23,6 +25,7 @@ void TableEvaluator::store(std::ofstream& os)
 {
 	Type type = Type::TABLE;
 	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
 	size_t size = _dimension;
 	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
 
@@ -57,7 +60,7 @@ void TableEvaluator::store(std::ofstream& os)
 	}
 }
 
-TableEvaluator::TableEvaluator(std::ifstream &is)
+TableEvaluator::TableEvaluator(std::ifstream &is, Property property): Evaluator(property)
 {
 	is.read(reinterpret_cast<char *>(&_dimension), sizeof(size_t));
 
