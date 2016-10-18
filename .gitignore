@@ -20,3 +20,4 @@ decomposer
 generatordecomposer
 libespreso/apitest
 libs/*
+tools/*
