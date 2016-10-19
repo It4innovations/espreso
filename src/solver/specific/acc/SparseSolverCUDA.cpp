@@ -83,12 +83,15 @@
 	}\
 } while(0);
 
-using namespace espreso;
+// turn on print of debug information
+//#define DEBUG
+
+namespace espreso {
 
 SparseSolverCUDA::SparseSolverCUDA(){
 	// printf("---SparseSolverCUDA\n");
 
-	#ifdef DEBUG
+	if(Info::report(InfoEvent::VERBOSE_LEVEL3)) {
 		msglvl = 1;				/* Print statistical information in file */
 
 		int rtVersion;
@@ -98,9 +101,9 @@ SparseSolverCUDA::SparseSolverCUDA(){
 		CHECK_ERR(cudaDriverGetVersion(&driverVersion));
 
 		printf("CUDA runtime version: %d\nCUDA driver version: %d\n", rtVersion, driverVersion);
-	#else
+	} else {
 		msglvl = 0;
-	#endif
+	}
 
 	keep_factors=true;
 	initialized = false;
@@ -146,7 +149,10 @@ SparseSolverCUDA::SparseSolverCUDA(){
 	m_factorized = 0;
 
 	// Initialize cuSolver context and CUDA stream
-	//CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS
+	#if DEVICE_ID == 1
+		ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
+		CHECK_ERR(cudaSetDevice(1));
+	#endif
 	CHECK_SO(cusolverSpCreate(&soHandle));
 	CHECK_ERR(cudaStreamCreate(&cuStream));
 	CHECK_SO(cusolverSpSetStream(soHandle, cuStream));
@@ -248,7 +254,7 @@ void SparseSolverCUDA::Clear() {
 	}
 }
 
-void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
+void SparseSolverCUDA::ReorderMatrix(espreso::SparseMatrix & A) {
 		eslocal i;
 
 		MKL_INT rows_r 						= A.rows;
@@ -292,6 +298,7 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 			#endif
 		}
 
+		// Print the permutation vector
 		#ifdef DEBUG
 			printf("Permutation vector: ");
 			for (i = 0; i < rows_r; ++i)
@@ -346,7 +353,7 @@ void SparseSolverCUDA::ReorderMatrix(SparseMatrix & A) {
 		free(buffer);
 }
 
-void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
+void SparseSolverCUDA::ImportMatrix(espreso::SparseMatrix & A_in) {
 	// printf("---ImportMatrix\n");
 
 	USE_FLOAT = false;
@@ -355,8 +362,8 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	cusparseSetMatType(matDescr, CUSPARSE_MATRIX_TYPE_GENERAL);
 	cusparseSetMatIndexBase(matDescr, CUSPARSE_INDEX_BASE_ONE);
 
-	SparseMatrix* A;
-	SparseMatrix A_sym;
+	espreso::SparseMatrix* A;
+	espreso::SparseMatrix A_sym;
 
 	eslocal i;
 
@@ -465,7 +472,7 @@ void SparseSolverCUDA::ImportMatrix(SparseMatrix & A_in) {
 	import_with_copy = true;
 }
 
-void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
+void SparseSolverCUDA::ImportMatrix_fl(espreso::SparseMatrix & A_in) {
 	// std::printf("---ImportMatrix_fl\n");
 
 	USE_FLOAT = true;
@@ -474,8 +481,8 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	cusparseSetMatType(matDescr, CUSPARSE_MATRIX_TYPE_GENERAL);
 	cusparseSetMatIndexBase(matDescr, CUSPARSE_INDEX_BASE_ONE);
 
-	SparseMatrix* A;
-	SparseMatrix A_sym;
+	espreso::SparseMatrix* A;
+	espreso::SparseMatrix A_sym;
 
 	eslocal i;
 
@@ -583,9 +590,13 @@ void SparseSolverCUDA::ImportMatrix_fl(SparseMatrix & A_in) {
 	import_with_copy = true;
 }
 
-void SparseSolverCUDA::ImportMatrix_wo_Copy(SparseMatrix & A) {
+void SparseSolverCUDA::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 	// printf("ImportMatrix_wo_Copy: cuSolver used - Matrix will be imported to GPU!\n");
 	ImportMatrix(A);
+}
+
+void SparseSolverCUDA::ImportMatrix_wo_Copy_fl(espreso::SparseMatrix & A) {
+	ImportMatrix_fl(A);
 }
 
 void SparseSolverCUDA::SetThreaded() {
@@ -605,6 +616,7 @@ void SparseSolverCUDA::SetThreaded() {
 
 int SparseSolverCUDA::Factorization(const std::string &str) {
 	// printf("---Factorization\n");
+	ESINFO(LIBRARIES) << "CuSolver sparse factorization used (" << str << ")";
 
 	// Keeps factorization
 	CHECK_SO_FACT(cusolverSpCreateCsrcholInfo(&soInfo));
@@ -1033,15 +1045,15 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 }
 
 
-void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A) {
+void SparseSolverCUDA::SolveMat_Sparse( espreso::SparseMatrix & A) {
 	SolveMat_Sparse(A, A);
 };
 
-void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
+void SparseSolverCUDA::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out) {
 	SolveMat_Sparse(A_in, B_out, 'T');
 };
 
-void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
+void SparseSolverCUDA::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
 	// printf("---SolveMat_Sparse\n");
 
 	//SolveMat_Dense(A_in, B_out);
@@ -1057,7 +1069,7 @@ void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_ou
 
 	char trans = T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed;
 
-	SparseMatrix tmpM;
+	espreso::SparseMatrix tmpM;
 	if (trans == 'T')
 		A_in.MatTranspose(tmpM);
 	else
@@ -1130,11 +1142,11 @@ void SparseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_ou
 }
 
 
-void SparseSolverCUDA::SolveMat_Dense( SparseMatrix & A ) {
+void SparseSolverCUDA::SolveMat_Dense( espreso::SparseMatrix & A ) {
 	SolveMat_Dense(A, A);
 }
 
-void SparseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
+void SparseSolverCUDA::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out ) {
 	// printf("---SolveMat_Dense\n");
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
@@ -1243,7 +1255,7 @@ void SparseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out
 }
 
 //Obsolete - to be removed
-void SparseSolverCUDA::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded ) {
+void SparseSolverCUDA::SolveMatF( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out, bool isThreaded ) {
 
 	printf("Method SolveMatF is not implemented yet.\n");
 	exit(1);
@@ -1431,7 +1443,7 @@ void SparseSolverCUDA::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, boo
 	// }
 }
 
-void SparseSolverCUDA::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
+void SparseSolverCUDA::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
 
 	printf("Method Create_SC is not implemented yet.\n");
 	exit(1);
@@ -1610,7 +1622,7 @@ void SparseSolverCUDA::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool i
 
 }
 
-void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out,
+void SparseSolverCUDA::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B_in, espreso::SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
 	printf("Method Create_SC_w_Mat is not implemented yet.\n");
@@ -1834,7 +1846,7 @@ void SparseSolverCUDA::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in
 
 }
 
-void SparseSolverCUDA::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
+void SparseSolverCUDA::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B1_in, espreso::SparseMatrix & B0_in, espreso::SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
 	printf("Method Create_non_sym_SC_w_Mat is not implemented yet.\n");
 	exit(1);
@@ -2075,7 +2087,7 @@ void SparseSolverCUDA::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatri
 #include "mkl_spblas.h"
 #include "mkl_service.h"
 
-void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
+void SparseSolverCUDA::SolveCG(espreso::SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
 
 	MKL_INT size = A_in.rows;
 	SEQ_VECTOR <double> sol (size, 0);
@@ -2085,12 +2097,12 @@ void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_so
 	rhs_sol = sol;
 }
 
-void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
+void SparseSolverCUDA::SolveCG(espreso::SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
 	SEQ_VECTOR<double> init;
 	SolveCG(A_in, rhs_in, sol, init);
 }
 
-void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
+void SparseSolverCUDA::SolveCG(espreso::SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
 
 	printf("Method SolveCG is not implemented yet.\n");
 	exit(1);
@@ -2258,4 +2270,5 @@ void SparseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in
 // 	  //MKL_Free_Buffers ();
 
 
+}
 }

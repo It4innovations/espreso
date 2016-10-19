@@ -128,7 +128,7 @@ void SparseSolverMKL::Clear() {
 
 }
 
-void SparseSolverMKL::ImportMatrix(SparseMatrix & A) {
+void SparseSolverMKL::ImportMatrix(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
 
@@ -138,13 +138,13 @@ void SparseSolverMKL::ImportMatrix(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -165,7 +165,7 @@ void SparseSolverMKL::ImportMatrix(SparseMatrix & A) {
 	import_with_copy = true;
 }
 
-void SparseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
+void SparseSolverMKL::ImportMatrix_fl(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = true;
 
@@ -175,13 +175,13 @@ void SparseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -208,7 +208,7 @@ void SparseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
 
 }
 
-void SparseSolverMKL::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
+void SparseSolverMKL::ImportMatrix_wo_Copy_fl(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = true;
 
@@ -218,13 +218,13 @@ void SparseSolverMKL::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -244,7 +244,7 @@ void SparseSolverMKL::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
 	import_with_copy = false;
 }
 
-void SparseSolverMKL::ImportMatrix_wo_Copy(SparseMatrix & A) {
+void SparseSolverMKL::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
 
@@ -254,13 +254,13 @@ void SparseSolverMKL::ImportMatrix_wo_Copy(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -307,7 +307,7 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 	if (error != 0)
 	{
     return error;
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 		s.type = 'S';
@@ -342,7 +342,7 @@ int SparseSolverMKL::Factorization(const std::string &str) {
 	if (error != 0)
 	{
 		return error;
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 		s.type = 'S';
@@ -409,7 +409,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (error != 0)
 	{
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 		s.type = 'S';
@@ -483,7 +483,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 		s.type = 'S';
@@ -551,7 +551,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (error != 0)
 	{
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 		s.type = 'S';
@@ -590,15 +590,15 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 }
 
 
-void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A) {
+void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A) {
 	SolveMat_Sparse(A, A);
 };
 
-void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out) {
+void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out) {
 	SolveMat_Sparse(A_in, B_out, 'T');
 };
 
-void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
+void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
 
 	if (!initialized) {
 		std::stringstream ss;
@@ -611,7 +611,7 @@ void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out
 
 	char trans = T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed;
 
-	SparseMatrix tmpM;
+	espreso::SparseMatrix tmpM;
 	if (trans == 'T')
 		A_in.MatTranspose(tmpM);
 	else
@@ -679,11 +679,11 @@ void SparseSolverMKL::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out
 }
 
 
-void SparseSolverMKL::SolveMat_Dense( SparseMatrix & A ) {
+void SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A ) {
 	SolveMat_Dense(A, A);
 }
 
-void SparseSolverMKL::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) {
+void SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out ) {
 
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
@@ -792,7 +792,7 @@ void SparseSolverMKL::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out 
 }
 
 //Obsolete - to be removed
-void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded ) {
+void SparseSolverMKL::SolveMatF( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out, bool isThreaded ) {
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -816,13 +816,13 @@ void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool
 
 	//MKL_INT mtype = 2;
 	switch (A_in.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -904,7 +904,7 @@ void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool
 
 	if (error != 0)
 	{
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 		s.type = 'S';
@@ -991,7 +991,7 @@ void SparseSolverMKL::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool
 	}
 }
 
-void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
+void SparseSolverMKL::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
@@ -1121,7 +1121,7 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 
     if ( error != 0 )
 	{
-		SparseMatrix s;
+		espreso::SparseMatrix s;
 		s.rows = rows;
 		s.cols = cols;
 //		s.type = 'S';
@@ -1181,16 +1181,16 @@ void SparseSolverMKL::Create_SC( SparseMatrix & SC_out, MKL_INT sc_size, bool is
 }
 
 
-void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out,
+void SparseSolverMKL::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B_in, espreso::SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
 	//int msglvl = 0;
 
 	// *** Prepare matrix
 
-	SparseMatrix K_sc1;
-	SparseMatrix Sc_eye;
-	SparseMatrix K_b_tmp;
+	espreso::SparseMatrix K_sc1;
+	espreso::SparseMatrix Sc_eye;
+	espreso::SparseMatrix K_b_tmp;
 
 	K_b_tmp = B_in;
 	K_b_tmp.MatTranspose();
@@ -1238,13 +1238,13 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 
 	//MKL_INT 	mtype = 2;
 	switch (K_in.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -1404,7 +1404,7 @@ void SparseSolverMKL::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in,
 
 }
 
-void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B1_in, SparseMatrix & B0_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
+void SparseSolverMKL::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B1_in, espreso::SparseMatrix & B0_in, espreso::SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
         // |  K_in      B1_in |
         // | (B0_in)t     0   |
@@ -1417,7 +1417,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 	//SpyText(B0_in);
 
 
-	SparseMatrix K;
+	espreso::SparseMatrix K;
 
 	// Create "non-symmetric" K matrix;
 	if (K_in.type == 'S') {
@@ -1436,9 +1436,9 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 
 	// *** Prepare matrix
 
-	SparseMatrix K_sc1;
-	SparseMatrix Sc_eye;
-	SparseMatrix K_b_tmp;
+	espreso::SparseMatrix K_sc1;
+	espreso::SparseMatrix Sc_eye;
+	espreso::SparseMatrix K_b_tmp;
 
 	K_b_tmp = B1_in;
 	K_b_tmp.MatTranspose();
@@ -1451,7 +1451,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 
     //SpyText(K);
 
-	SparseMatrix K_b0_tmp;
+	espreso::SparseMatrix K_b0_tmp;
 	K_b0_tmp = B0_in;
 	K_b0_tmp.MatTranspose();
 	K_b0_tmp.ConvertToCOO(1);
@@ -1644,7 +1644,7 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( SparseMatrix & K_in, SparseMatrix
 #include "mkl_spblas.h"
 #include "mkl_service.h"
 
-void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
+void SparseSolverMKL::SolveCG(espreso::SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol) {
 
 	MKL_INT size = A_in.rows;
 	SEQ_VECTOR <double> sol (size, 0);
@@ -1654,12 +1654,12 @@ void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_sol
 	rhs_sol = sol;
 }
 
-void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
+void SparseSolverMKL::SolveCG(espreso::SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol) {
 	SEQ_VECTOR<double> init;
 	SolveCG(A_in, rhs_in, sol, init);
 }
 
-void SparseSolverMKL::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
+void SparseSolverMKL::SolveCG(espreso::SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess) {
 
 
 	  /*---------------------------------------------------------------------------   */

@@ -98,6 +98,7 @@ def build(ctx):
     if ctx.env.SOLVER == "CUDA":
         sources = source_files + (
             "specific/cpu/SparseSolverMKL.cpp",
+            "specific/acc/SparseSolverCUDA.cpp",
             "specific/acc/clusterGPU.cpp",
             "specific/acc/itersolverGPU.cpp",
             "specific/acc/DenseSolverCUDA.cpp",

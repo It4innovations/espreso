@@ -9,7 +9,7 @@ DenseSolverMKL::DenseSolverMKL(){
 	// initialized = false;
 	USE_FLOAT = false;
 	import_with_copy = false;
-	mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+	mtype = espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
 
 	m_dense_values_size = 0;
 	m_dense_values_fl_size = 0;
@@ -49,7 +49,7 @@ void DenseSolverMKL::Clear() {
 	m_dense_values_fl = NULL;
 }
 
-void DenseSolverMKL::ImportMatrix(SparseMatrix & A) {
+void DenseSolverMKL::ImportMatrix(espreso::SparseMatrix & A) {
 
 	USE_FLOAT 	= false;
 	
@@ -70,7 +70,7 @@ void DenseSolverMKL::ImportMatrix(SparseMatrix & A) {
 	mtype = A.mtype;
 }
 
-void DenseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
+void DenseSolverMKL::ImportMatrix_fl(espreso::SparseMatrix & A) {
 
 	USE_FLOAT 	= true;
 
@@ -93,7 +93,7 @@ void DenseSolverMKL::ImportMatrix_fl(SparseMatrix & A) {
 }
 
 
-void DenseSolverMKL::ImportMatrix_wo_Copy(SparseMatrix & A) {
+void DenseSolverMKL::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
 
@@ -129,7 +129,7 @@ int DenseSolverMKL::Factorization(const std::string &str) {
 	m_ipiv.resize(m_cols);
 
 	switch (mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 
 		if (USE_FLOAT) {
 			ssptrf( &U, &m_cols, &m_dense_values_fl[0], &m_ipiv[0] , &info );
@@ -138,7 +138,7 @@ int DenseSolverMKL::Factorization(const std::string &str) {
 		}
 
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 
 		if (USE_FLOAT) {
 			ssptrf( &U, &m_cols, &m_dense_values_fl[0], &m_ipiv[0] , &info );
@@ -147,7 +147,7 @@ int DenseSolverMKL::Factorization(const std::string &str) {
 		}
 
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 
 		if (USE_FLOAT) {
 			//sgetrf( m, n, a, lda, ipiv, info )
@@ -172,7 +172,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 
 	switch (mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		if (USE_FLOAT) {
 			tmp_sol_fl.resize(rhs_sol.size());
 
@@ -188,7 +188,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		}
 
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 
 		if (USE_FLOAT) {
 			tmp_sol_fl.resize(rhs_sol.size());
@@ -205,7 +205,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		}
 
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 
 		if (USE_FLOAT) {
 			tmp_sol_fl.resize(rhs_sol.size());
@@ -254,7 +254,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 //	}
 
 	switch (mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		if (USE_FLOAT) {
 			sol.resize(rhs.size());
 			tmp_sol_fl.resize(rhs.size());
@@ -272,7 +272,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 		}
 
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 
 		if (USE_FLOAT) {
 			sol.resize(rhs.size());
@@ -291,7 +291,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 		}
 
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 
 		char trans = 'N';
 

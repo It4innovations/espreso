@@ -79,7 +79,7 @@ using namespace espreso;
 
 DenseSolverCUDA::DenseSolverCUDA(){
 
-	#ifdef DEBUG
+	if(Info::report(InfoEvent::VERBOSE_LEVEL3)) {
 		int rtVersion;
 		int driverVersion;
 
@@ -87,7 +87,7 @@ DenseSolverCUDA::DenseSolverCUDA(){
 		CHECK_ERR(cudaDriverGetVersion(&driverVersion));
 
 		printf("CUDA runtime version: %d\nCUDA driver version: %d\n", rtVersion, driverVersion);
-	#endif
+	}
 
 // 	keep_factors=true;
 // 	initialized = false;
@@ -127,7 +127,10 @@ DenseSolverCUDA::DenseSolverCUDA(){
 	// m_factorized = 0;
 
 	// Initialize cuSolver context and CUDA stream
-	//CHECK_ERR(cudaSetDevice(1)); // uncomment for Espreso-WS
+	#if DEVICE_ID == 1
+		ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
+		CHECK_ERR(cudaSetDevice(1));
+	#endif
 	CHECK_SO(cusolverDnCreate(&soDnHandle));
 	CHECK_ERR(cudaStreamCreate(&cuStream));
 	CHECK_SO(cusolverDnSetStream(soDnHandle, cuStream));
@@ -243,6 +246,7 @@ void DenseSolverCUDA::SetThreaded() {
 
 int DenseSolverCUDA::Factorization(const std::string &str) {
 
+	ESINFO(LIBRARIES) << "CuSolver dense factorization used (" << str << ")";
 	int Lwork = 0;
 
 	if (USE_FLOAT) {
