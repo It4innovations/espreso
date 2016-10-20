@@ -1,5 +1,6 @@
 
 #include "clustercpu.h"
+#include "../../../assembler/physics/assembler.h"
 
 using namespace espreso;
 
@@ -14,7 +15,7 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
     cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         SparseSolverCPU tmpsps;
         if ( i == 0 && cluster_global_index == 1) {
-        	tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
         tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
 
@@ -42,7 +43,7 @@ void ClusterCPU::Create_Kinv_perDomain() {
         domains[i].KplusF.msglvl = 0;
 
         if ( i == 0 && cluster_global_index == 1) {
-        	domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            domains[i].KplusF.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
 
         //SolveMatF is obsolete - use Schur complement instead
@@ -70,28 +71,28 @@ void ClusterCPU::SetupKsolvers ( ) {
     cilk_for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-    	switch (config::solver::KSOLVER) {
-		case config::solver::KSOLVERalternative::DIRECT_DP:
-			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-			break;
-		case config::solver::KSOLVERalternative::ITERATIVE:
-			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-			break;
-		case config::solver::KSOLVERalternative::DIRECT_SP:
-			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
-			break;
-		case config::solver::KSOLVERalternative::DIRECT_MP:
-			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-			break;
-//		case 4:
-//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-//			break;
-		default:
-			ESINFO(ERROR) << "Invalid KSOLVER value.";
-			exit(EXIT_FAILURE);
+        switch (config::solver::KSOLVER) {
+            case config::solver::KSOLVERalternative::DIRECT_DP:
+                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+                break;
+            case config::solver::KSOLVERalternative::ITERATIVE:
+                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+                break;
+            case config::solver::KSOLVERalternative::DIRECT_SP:
+                domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
+                break;
+            case config::solver::KSOLVERalternative::DIRECT_MP:
+                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                break;
+                //		case 4:
+                //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                //			break;
+            default:
+                ESINFO(ERROR) << "Invalid KSOLVER value.";
+                exit(EXIT_FAILURE);
         }
 
-    	//domains[d].Kplus.mtype = -2;
+        //domains[d].Kplus.mtype = -2;
 
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
@@ -109,17 +110,188 @@ void ClusterCPU::SetupKsolvers ( ) {
 
         //TODO: Hot Fix - needs to be done better
         if ( !SYMMETRIC_SYSTEM ) {
-        	// 11 = Real and unsymmetric matrix
-        	domains[d].Kplus.mtype = 11;
+            // 11 = Real and unsymmetric matrix
+            domains[d].Kplus.mtype = 11;
         } else {
-        	// 2 = Real and symmetric positive definite
-        	domains[d].Kplus.mtype = 2;
+            // 2 = Real and symmetric positive definite
+            domains[d].Kplus.mtype = 2;
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
         if ( d == 0 && config::env::MPIrank == 0) {
-        	domains[d].Kplus.msglvl = 0;
+            domains[d].Kplus.msglvl = 0;
         }
+        ESINFO(PROGRESS2) << Info::plain() << ".";
+    }
+    ESINFO(PROGRESS2);
+
+}
+
+
+void ClusterCPU::CreateDirichletPrec( Physics &physics ) {
+    cilk_for (int d = 0; d < physics.K.size(); d++) {
+        SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
+        SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
+        SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
+
+        SEQ_VECTOR <eslocal> I_row_indices_p (physics.K[d].nnz);
+        SEQ_VECTOR <eslocal> J_col_indices_p (physics.K[d].nnz);
+
+        for (eslocal i = 0; i < perm_vec.size(); i++) {
+            perm_vec[i] = perm_vec[i] - 1;
+        }
+
+        for (eslocal i = 0; i < perm_vec_full.size(); i++) {
+            perm_vec_full[i] = i;
+        }
+
+        auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
+        perm_vec_diff.resize(it - perm_vec_diff.begin());
+
+        perm_vec_full = perm_vec_diff;
+        perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+
+        SparseMatrix K_modif = physics.K[d];
+        SparseMatrix RegMatCRS = physics.RegMat[d];
+        RegMatCRS.ConvertToCSRwithSort(0);
+        K_modif.MatAddInPlace(RegMatCRS,'N',-1);
+        // K_modif.RemoveLower();
+
+        SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
+        eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+
+        for (eslocal i = 0; i < K_modif.rows;i++){
+            vec_I1_i2[i][0] = perm_vec_full[i];
+            vec_I1_i2[i][1] = i; // position to create reverse permutation
+        }
+
+        std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
+
+        // permutations made on matrix in COO format
+        K_modif.ConvertToCOO(0);
+        eslocal I_index,J_index;
+        bool unsymmetric=!SYMMETRIC_SYSTEM;
+        for (eslocal i = 0;i<K_modif.nnz;i++){
+            I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+            J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+            if (unsymmetric || I_index<=J_index){
+                I_row_indices_p[i]=I_index;
+                J_col_indices_p[i]=J_index;
+            }
+            else{
+                I_row_indices_p[i]=J_index;
+                J_col_indices_p[i]=I_index;
+            }
+        }
+        for (eslocal i = 0; i<K_modif.nnz;i++){
+            K_modif.I_row_indices[i] = I_row_indices_p[i];
+            K_modif.J_col_indices[i] = J_col_indices_p[i];
+        }
+        K_modif.ConvertToCSRwithSort(1);
+        {
+            if (config::info::PRINT_MATRICES) {
+                std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+                osS << K_modif;
+                osS.close();
+            }
+        }
+
+
+        // ------------------------------------------------------------------------------------------------------------------
+        bool diagonalized_K_rr = config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET;
+        //        PRECONDITIONER==NONE              - 0
+        //        PRECONDITIONER==LUMPED            - 1
+        //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+        //        PRECONDITIONER==DIRICHLET         - 3
+        //        PRECONDITIONER==SUPER_DIRICHLET   - 4
+        //        
+        //        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+        //        bool diagonalized_K_rr = false
+        // ------------------------------------------------------------------------------------------------------------------
+
+        eslocal sc_size = perm_vec.size();
+
+        if (sc_size == physics.K[d].rows) {
+            domains[d].Prec = physics.K[d];
+            domains[d].Prec.ConvertCSRToDense(1);
+            // if physics.K[d] does not contain inner DOF
+        } else {
+
+            if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET) {
+                SparseSolverCPU createSchur;
+                //          createSchur.msglvl=1;
+                eslocal sc_size = perm_vec.size();
+                createSchur.ImportMatrix_wo_Copy(K_modif);
+                createSchur.Create_SC(domains[d].Prec, sc_size,false);
+                domains[d].Prec.ConvertCSRToDense(1);
+            }
+            else
+            {
+                SparseMatrix K_rr;
+                SparseMatrix K_rs;
+                SparseMatrix K_sr;
+                SparseMatrix KsrInvKrrKrs; 
+
+                eslocal i_start = 0;
+                eslocal nonsing_size = K_modif.rows - sc_size - i_start;
+                eslocal j_start = nonsing_size;
+
+                K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+
+                if (SYMMETRIC_SYSTEM){
+                    K_rs.MatTranspose(K_sr);
+                }
+                else
+                {
+                    K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
+                }
+
+                domains[d].Prec.getSubDiagBlockmatrix(K_modif,domains[d].Prec,nonsing_size,sc_size);
+                SEQ_VECTOR <double> diagonals;
+                SparseSolverCPU K_rr_solver;
+
+                // K_rs is replaced by:
+                // a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+                // b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+                if (diagonalized_K_rr){
+                    diagonals = K_modif.getDiagonal();
+                    // diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+                    //      K_modif = [K_rr, K_rs]
+                    //                [K_sr, K_ss]
+                    // 
+                    for (eslocal i = 0; i < K_rs.rows; i++) {
+                        for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+                            K_rs.CSR_V_values[j - offset] /= diagonals[i];
+                        }
+                    }
+                }
+                else
+                {
+                    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
+                    K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+                    //            K_rr_solver.msglvl = 1;
+                    K_rr_solver.SolveMat_Dense(K_rs);
+                }
+
+                KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
+                domains[d].Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+                //          if (!diagonalized_K_rr){
+                //				    domains[d].Prec.ConvertCSRToDense(1);
+                //          }
+            }
+
+        }
+
+        if (config::info::PRINT_MATRICES) {
+            std::ofstream osS(Logging::prepareFile(d, "S"));
+            SparseMatrix SC =  domains[d].Prec;
+            if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET){
+                SC.ConvertDenseToCSR(1);
+            }
+            osS << SC;
+            osS.close();
+        }
+
         ESINFO(PROGRESS2) << Info::plain() << ".";
     }
     ESINFO(PROGRESS2);

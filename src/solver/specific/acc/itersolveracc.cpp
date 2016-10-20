@@ -39,9 +39,9 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
             }
             // *** Part 2.2 - prepare vectors for HFETI operator on CPU
-           cluster.domains[domN].B1_comp_dom.MatVec (cluster.domains[domN].compressed_tmp2, cluster.x_prim_cluster1[domN], 'T');
+            cluster.domains[domN].B1_comp_dom.MatVec (cluster.domains[domN].compressed_tmp2, cluster.x_prim_cluster1[domN], 'T');
         }
- 
+
         // *** Part 3 - execute FETI SC operator 
         // spawn the computation on MICs
 #pragma omp parallel num_threads( maxDevNumber )
@@ -85,7 +85,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
-        
+
         // *** Part 6 - Lambda values, results of the FETI SC operator, are
         // combined back into single lambda vector per cluster -
         // cluster.compressed_tmp
@@ -94,7 +94,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
                 cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
         }
-        
+
         // *** Part 7 - calculate lambda values from the results of the HTFETI
         // operator (results are in cluster.x_prim_cluster1)
         //      //              using cluster.domains[d].B1_comp_dom gluing
@@ -208,7 +208,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                     (vectorsPerAcc[i])[j - offset] = &(cluster.x_prim_cluster1[j]); 
                 }
                 offset += nVecPerMIC[i];
-           //     cluster.solver[i].Solve(vectorsPerAcc[i]);
+                //     cluster.solver[i].Solve(vectorsPerAcc[i]);
             }
 
 #pragma omp parallel num_threads(config::solver::N_MICS)
@@ -249,4 +249,124 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
 }
 
+void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
 
+    time_eval.totalTime.start();
+
+    time_eval.timeEvents[0].start();
+
+    cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+        SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
+        for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+            x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
+
+        switch (USE_PREC) {
+            case config::solver::PRECONDITIONERalternative::LUMPED:
+                cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+                cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
+                break;
+            case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+                cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
+                break;
+            case config::solver::PRECONDITIONERalternative::DIRICHLET:
+                cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+                //cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                //cluster.domains[d].Prec.DenseMatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                break;
+            case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
+                cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
+                cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                break;
+            case config::solver::PRECONDITIONERalternative::MAGIC:
+                cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+                cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                break;
+           case config::solver::PRECONDITIONERalternative::NONE:
+                break;
+            default:
+                ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+        }
+
+    }
+
+    if ( USE_PREC == config::solver::PRECONDITIONERalternative::DIRICHLET || 
+            USE_PREC == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET ) {
+        for ( eslocal mic = 0 ; mic < config::solver::N_MICS ; ++mic ) {
+            cilk_for ( eslocal d = 0; d < cluster.accPreconditioners[mic].size(); ++d) {
+                eslocal domN = cluster.accPreconditioners[mic].at(d);
+                for ( eslocal j = 0; j < cluster.domains[domN].B1t_Dir_perm_vec.size(); j++ ) {
+                    cluster.DirichletPacks[mic].SetX(d, j, ( cluster.x_prim_cluster1[ domN ] )[ j ] );
+                }
+            }
+        }
+
+#pragma omp parallel num_threads( config::solver::N_MICS )
+        {
+            if (cluster.accPreconditioners[ omp_get_thread_num() ].size( ) > 0 ) {
+                cluster.DirichletPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
+            }
+        }
+        // meanwhile compute the same for domains staying on CPU
+        cilk_for (eslocal d = 0; d <
+                cluster.hostPreconditioners.size(); ++d ) {
+            eslocal domN = cluster.hostPreconditioners.at(d);
+            cluster.domains[domN].Prec.DenseMatVec(cluster.x_prim_cluster1[domN], cluster.x_prim_cluster2[domN],'N');
+        }
+#pragma omp parallel num_threads( config::solver::N_MICS )
+        {
+            // synchronize computation
+            if (cluster.accPreconditioners[omp_get_thread_num()].size() > 0) {
+                cluster.DirichletPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
+            }
+        }
+        // extract the result from MICs
+        for ( eslocal mic = 0; mic < config::solver::N_MICS; ++mic ) {
+            cilk_for ( eslocal d = 0 ; d < cluster.accPreconditioners[ mic ].size(); ++d ) {
+                cluster.DirichletPacks[ mic ].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
+            }
+        }
+
+
+    }
+
+    std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+    SEQ_VECTOR < double > y_out_tmp;
+    for (eslocal d = 0; d < cluster.domains.size(); d++) {
+        y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
+
+
+        switch (USE_PREC) {
+            case config::solver::PRECONDITIONERalternative::LUMPED:
+            case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+            case config::solver::PRECONDITIONERalternative::MAGIC:
+                cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+                break;
+                //TODO  check if MatVec is correct (DenseMatVec!!!) 
+            case config::solver::PRECONDITIONERalternative::DIRICHLET:
+                cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+                break;
+            case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
+                cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+                break;
+            case config::solver::PRECONDITIONERalternative::NONE:
+                break;
+            default:
+                ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+        }
+
+
+        for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+            cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
+    }
+    time_eval.timeEvents[0].end();
+
+
+    time_eval.timeEvents[1].start();
+    All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
+    time_eval.timeEvents[1].end();
+
+
+    time_eval.totalTime.end();
+
+}
