@@ -359,11 +359,22 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
             }
         }
         // meanwhile compute the same for domains staying on CPU
+        double startCPU = Measure::time();
         cilk_for (eslocal d = 0; d <
                 cluster.hostPreconditioners.size(); ++d ) {
             eslocal domN = cluster.hostPreconditioners.at(d);
             cluster.domains[domN].Prec.DenseMatVec(cluster.x_prim_cluster1[domN], cluster.x_prim_cluster2[domN],'N');
         }
+        
+        for ( eslocal mic = 0 ; mic < config::solver::N_MICS; ++mic ) {
+            cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
+            long start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
+            cilk_for (  long d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
+                cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
+            }
+        }
+        double CPUtime = Measure::time() - startCPU;
+
 #pragma omp parallel num_threads( config::solver::N_MICS )
         {
             // synchronize computation
@@ -373,11 +384,24 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         }
         // extract the result from MICs
         for ( eslocal mic = 0; mic < config::solver::N_MICS; ++mic ) {
-            cilk_for ( eslocal d = 0 ; d < cluster.accPreconditioners[ mic ].size(); ++d ) {
-                cluster.DirichletPacks[ mic ].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
+            long end = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
+            cilk_for ( eslocal d = 0 ; d < end; ++d ) {
+                cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
             }
         }
+        
+        if ( config::solver::LOAD_BALANCING ) {
+            // update the ratio between the cpu and mic
+            double r = cluster.DirichletPacks[0].getMICratio();
+            double MICtime = cluster.DirichletPacks[0].getElapsedTime();
+            double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
+            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
 
+#pragma omp parallel num_threads( config::solver::N_MICS )
+            {
+                cluster.DirichletPacks[omp_get_thread_num()].setMICratio( newRatio );
+            }
+        }
 
     }
 
