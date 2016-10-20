@@ -339,6 +339,9 @@ namespace solver {
 	/// Number of used MIC accelerators
 	extern size_t N_MICS;
 
+    /// Load balancing between host and Intel Xeon Phi
+    extern bool LOAD_BALANCING;
+
 	/// The number of time steps for transient problems
 	extern size_t TIME_STEPS;
 };

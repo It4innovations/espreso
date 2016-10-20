@@ -18,6 +18,12 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 
+    // Ratio of work done on MIC
+    double MICr = 1.0;
+    if ( config::solver::LOAD_BALANCING ) {
+        MICr = 0.1;
+    }
+
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;
     long micMem[config::solver::N_MICS];
@@ -83,6 +89,13 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         matrixPerPack[i] -= numCPUDomains;
 
         this->B1KplusPacks[i].Resize( matrixPerPack[i], dataSize );
+        this->B1KplusPacks[i].setMICratio( MICr );
+
+        if ( config::solver::LOAD_BALANCING ) {
+            this->B1KplusPacks[i].enableLoadBalancing();
+        } else {
+            this->B1KplusPacks[i].disableLoadBalancing();
+        }
 
         for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
             this->B1KplusPacks[ i ].PreparePack( j, domains[accDomains[i].at(j)].B1t_comp_dom.cols,
@@ -1041,7 +1054,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
             osS.close();
         }
 
-       ESINFO(PROGRESS2) << Info::plain() << ".";
+        ESINFO(PROGRESS2) << Info::plain() << ".";
     }
 
     ESINFO(PROGRESS2);   
