@@ -16,7 +16,116 @@ ClusterAcc::~ClusterAcc() {
 
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
-    ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
+    ESINFO(PROGRESS2) << "Creating Local Schur complements";
+
+    // detect how many MPI processes is running per node
+    int _MPIglobalRank;
+    int _MPIglobalSize;
+    int _MPInodeRank;
+    int _MPInodeSize;
+    std::string _nodeName;
+    MPI_Comm _currentNode;
+    MPI_Comm _storingProcs;
+    MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
+    int color;
+    int length;
+    std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
+    MPI_Get_processor_name(name.data(), &length);
+    _nodeName = std::string(name.begin(), name.begin() + length);
+    std::vector<int> rCounts(_MPIglobalSize);
+    std::vector<int> rDispl(_MPIglobalSize);
+    std::vector<int> colors(_MPIglobalSize);
+    std::vector<char> names;
+    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+    for (size_t i = 1; i < rCounts.size(); i++) {
+        rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
+    }
+    names.resize(rDispl.back() + rCounts.back());
+    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    std::map<std::string, size_t> nodes;
+    for (size_t i = 0; i < _MPIglobalSize; i++) {
+        std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
+        auto it = nodes.find(str);
+        if (it == nodes.end()) {
+            size_t s = nodes.size();
+            nodes[str] = s;
+        }
+        colors[i] = nodes[str];
+    }
+    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
+    MPI_Comm_rank(_currentNode, &_MPInodeRank);
+    MPI_Comm_size(_currentNode, &_MPInodeSize);
+    MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+    // END - detect how many MPI processes is running per node
+    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+    //TODO:
+    int accelerators_per_node = 2;
+    int target;
+    
+    if (_MPInodeRank < (_MPInodeSize/2)) //  .../accelerators_per_node
+        target = 0;
+    else
+        target = 1;
+    // Set process placement on Xeon Phi
+    int ranks_per_node = _MPInodeSize;
+    int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
+    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+        int used_core_num = 0;
+        int first_core = 0;
+        int last_core = 0;
+        // TODO: #pragma offload target(mic:i)
+#pragma offload target(mic:target)
+        {
+            //        	Logical to Physical Processor Mapping
+            //        	? Hardware:
+            //        	? Physical Cores are 0..60
+            //        	? Logical Cores are 0..243
+            //        	? Mapping is not what you are used to!
+            //        	? Logical Core 0 maps to Physical core 60, thread context 0
+            //        	? Logical Core 1 maps to Physical core 0, thread context 0
+            //        	? Logical Core 2 maps to Physical core 0, thread context 1
+            //        	? Logical Core 3 maps to Physical core 0, thread context 2
+            //        	? Logical Core 4 maps to Physical core 0, thread context 3
+            //        	? Logical Core 5 maps to Physical core 1, thread context 0
+            //        	? ...
+            //        	? Logical Core 240 maps to Physical core 59, thread context 3
+            //        	? Logical Core 241 maps to Physical core 60, thread context 1
+            //        	? Logical Core 242 maps to Physical core 60, thread context 2
+            //        	? Logical Core 243 maps to Physical core 60, thread context 3
+            //        	? OpenMP threads start binding to logical core 1, not logical core 0
+            //        	? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
+            //        	? No contention for the core containing logical core 0 ? the core that the O/S uses most
+            //        	? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
+            //        	? Not much performance impact unless O/S is very busy
+            //        	? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
+            //        	? KMP_PLACE_THREADS limits the range of cores & thread contexts
+            //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
+            //        	threads on each of the first 60 cores
+            cpu_set_t my_set;        /* Define your cpu_set bit mask. */
+            CPU_ZERO(&my_set);       /* Initialize it all to 0, i.e. no CPUs selected. */
+            int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
+            cores = (cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
+            //std::cout << sysconf(_SC_NPROCESSORS_ONLN) << " Cores\n";//std::thread::hardware_concurrency() << "Cores \n";
+            int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
+            for (int i = 0; i < cores_per_rank; i++) {
+                if (i == 0) {
+                    first_core = 1*(cores_per_rank)*rank + 1*i;
+                }
+                last_core = 1*(cores_per_rank)*rank + 1*i;
+                int core = 1 + 4*(cores_per_rank)*rank + 4*i;
+                CPU_SET(core, &my_set);     /* set the bit that represents core 7. */
+                used_core_num++;
+            }
+            omp_set_num_threads(cores_per_rank-0);
+            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
+            /* the defined mask, i.e. only 7. */
+        }
+        //ESINFO(PROGRESS2)
+        std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
+    }
+
 
     // Ratio of work done on MIC
     double MICr = 1.0;
@@ -29,7 +138,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     long micMem[config::solver::N_MICS];
     for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
         long currentMem = 0;
-#pragma offload target(mic:i)
+//#pragma offload target(mic:i)
+#pragma offload target(mic:target)
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
@@ -108,7 +218,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         // iterate over available MICs and assemble their domains on CPU
         for (eslocal i = 0 ; i < config::solver::N_MICS ; ++i) {
             this->B1KplusPacks[i].AllocateVectors( );
-            this->B1KplusPacks[i].SetDevice( i );
+            this->B1KplusPacks[i].SetDevice( target );
 #pragma omp parallel for
             for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
                 eslocal domN = accDomains[i].at(j);
@@ -121,7 +231,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                         this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
                 SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
                 //domains[domN].B1Kplus.Clear();
-                std::cout << ".";
+                ESINFO(PROGRESS2) << Info::plain() << ".";
             }
         }
 
@@ -133,7 +243,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 #pragma omp parallel for
         for (eslocal d = 0; d < hostDomains.size(); ++d) {
 
-            std::cout << "*";
+            ESINFO(PROGRESS2) << Info::plain() << "*";
             eslocal domN = hostDomains.at(d);
             SparseMatrix TmpB;
             domains[domN].B1_comp_dom.MatTranspose(TmpB);
