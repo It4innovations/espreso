@@ -76,6 +76,8 @@ def build(ctx):
             name    = "build MUMPS library"
         )
 
+    ctx.add_group()
+
     # Create symlinks to correct version of library
     desc = "{0}/libs/libmetis{1}".format(ctx.ROOT, extension)
     source = "{0}/libs{1}/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension)
@@ -98,4 +100,7 @@ def build(ctx):
                 always = True,
                 name   = "create symlink to {0}".format(lib)
             )
+            
+    if ctx.env.SOLVER != "MUMPS":
+        return
 
