@@ -83,7 +83,7 @@ def build(ctx):
         ctx.add_group()
         for lib in ctx.env.QD["libs"]:
             ctx(
-                rule    = "cp {0}/install/lib/lib{1}{2} {3}/libs32/".format(ctx.env.QD["path"], lib, extension, ctx.ROOT),
+                rule    = "cp {0}/src/.libs/lib{1}{2} {3}/libs32/".format(ctx.env.QD["path"], lib, extension, ctx.ROOT),
                 always  = True,
                 name    = "install lib{0}{1} library".format(lib, extension)
             )
