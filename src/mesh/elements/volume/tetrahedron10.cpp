@@ -23,6 +23,7 @@ static std::vector<DenseMatrix> Tetra10_dN()
 	std::vector<double> sv;
 	std::vector<double> tv;
 
+	// WARNINKG: use only 15 gausse points
 	switch (Tetrahedron10GPCount) {
 	case 4:
 		rv = {0.5854101966249685, 0.1381966011250105, 0.1381966011250105, 0.1381966011250105};
