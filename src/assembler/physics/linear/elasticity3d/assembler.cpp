@@ -443,7 +443,7 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 		Element *node = _mesh.nodes()[_mesh.coordinates().clusterIndex(n, subdomain)];
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
 			if (node->settings().isSet(forces[dof])) {
-				f[subdomain][node->DOFIndex(subdomain, dof)] = node->settings(forces[dof]).back()->evaluate(node->node(0)) / node->domains().size();
+				f[subdomain][node->DOFIndex(subdomain, dof)] += node->settings(forces[dof]).back()->evaluate(node->node(0)) / node->numberOfGlobalDomainsWithDOF(dof);
 			}
 		}
 	}
