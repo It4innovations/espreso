@@ -18,7 +18,6 @@ struct Physics {
 	virtual void prepareMeshStructures() =0;
 	virtual void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const =0;
 	virtual void assembleStiffnessMatrices() =0;
-	virtual void assembleScalingMatrices();
 	virtual void makeStiffnessMatricesRegular() =0;
 	virtual void assembleGluingMatrices() =0;
 
