@@ -336,24 +336,24 @@ void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vec
 	}
 
 	pushTableEvaluator(evaluators, _tables, params[3]);
-	std::vector<Element*> &region = _selectedRegion.size() ? _regions[_selectedRegion] : nodes;
+	std::vector<Element*> &region = _regions[params[1]];
 	if (!params[2].compare(0, 2, "ux")) {
 		evaluators.back()->property() = Property::DISPLACEMENT_X;
-		ESINFO(DETAILS) << "WB: SET ux to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to table " << evaluators.back()->name();
+		ESINFO(DETAILS) << "WB: SET ux to " << params[1] << " to table " << evaluators.back()->name();
 		for (size_t e = 0; e < region.size(); e++) {
 			region[e]->addSettings(Property::DISPLACEMENT_X, evaluators.back());
 		}
 	}
 	if (!params[2].compare(0, 2, "uy")) {
 		evaluators.back()->property() = Property::DISPLACEMENT_Y;
-		ESINFO(DETAILS) << "WB: SET uy to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to table " << evaluators.back()->name();
+		ESINFO(DETAILS) << "WB: SET uy to " << params[1] << " to table " << evaluators.back()->name();
 		for (size_t e = 0; e < region.size(); e++) {
 			region[e]->addSettings(Property::DISPLACEMENT_Y, evaluators.back());
 		}
 	}
 	if (!params[2].compare(0, 2, "uz")) {
 		evaluators.back()->property() = Property::DISPLACEMENT_Z;
-		ESINFO(DETAILS) << "WB: SET uz to " << (_selectedRegion.size() ? "region " + _selectedRegion : "all nodes") << " to table " << evaluators.back()->name();
+		ESINFO(DETAILS) << "WB: SET uz to " << params[1] << " to table " << evaluators.back()->name();
 		for (size_t e = 0; e < region.size(); e++) {
 			region[e]->addSettings(Property::DISPLACEMENT_Z, evaluators.back());
 		}
