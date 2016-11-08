@@ -47,6 +47,7 @@ solver::PRECONDITIONERalternative        solver::PRECONDITIONER        = solver:
 solver::REGULARIZATIONalternative        solver::REGULARIZATION        = solver::REGULARIZATIONalternative::FIX_POINTS;
 
 bool                                     solver::REDUNDANT_LAGRANGE    = true;
+bool                                     solver::SCALING               = false;
 solver::B0_TYPEalternative               solver::B0_TYPE               = solver::B0_TYPEalternative::KERNELS;
 
 bool                                     solver::USE_SCHUR_COMPLEMENT  = false;
@@ -211,6 +212,7 @@ std::vector<espreso::Parameter> parameters = {
 
 
 	{ "REDUNDANT_LAGRANGE", solver::REDUNDANT_LAGRANGE, "Set Lagrange multipliers also among HFETI corners." },
+	{ "SCALING"           , solver::SCALING           , "Compute weight function from diagonal of K." },
 	{ "B0_TYPE", solver::B0_TYPE, "Type of cluster gluing matrix.", {
 			{"CORNERS" , solver::B0_TYPEalternative::CORNERS , "Gluing based on corners."},
 			{"KERNELS" , solver::B0_TYPEalternative::KERNELS , "Gluing based on kernels."},

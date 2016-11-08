@@ -229,8 +229,12 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	return lambdasID;
 }
 
-void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &K)
 {
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(constraints._mesh.neighbours().begin(), constraints._mesh.neighbours().end(), neighbour) - constraints._mesh.neighbours().begin();
+	};
+
 	std::vector<esglobal> lambdasID = computeLambdasID(constraints, elements, DOFs);
 
 	std::vector<eslocal> permutation(lambdasID.size());
@@ -268,6 +272,86 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		return 0;
 	};
 
+	std::vector<std::vector<double> > diagonals;
+	if (config::solver::SCALING) {
+		diagonals.resize(permutation.size());
+		std::vector<std::vector<double> > D(constraints._mesh.parts());
+
+		cilk_for (size_t p = 0; p < K.size(); p++) {
+			D[p] = K[p].getDiagonal();
+		}
+
+		std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(constraints._mesh.neighbours().size()));
+		std::vector<std::vector<double> > rBuffer(constraints._mesh.neighbours().size());
+
+		#pragma cilk grainsize = 1
+		cilk_for (size_t t = 0; t < threads; t++) {
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+
+				const Element *e = elements[permutation[i] / DOFs.size()];
+				size_t dof = permutation[i] % DOFs.size();
+
+				for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
+					if (*c != config::env::MPIrank) {
+						for (auto d = e->domains().begin(); d != e->domains().end(); d++) {
+							sBuffer[t][n2i(*c)].push_back(D[*d][e->DOFIndex(*d, dof)]);
+						}
+					}
+				}
+
+			}
+		}
+
+		for (size_t t = 1; t < threads; t++) {
+			for (size_t n = 0; n < sBuffer[t].size(); n++) {
+				sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
+			}
+		}
+
+		std::vector<MPI_Request> req(constraints._mesh.neighbours().size());
+		for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
+			MPI_Isend(sBuffer[0][n].data(), sizeof(double) * sBuffer[0][n].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
+		}
+
+		int flag, counter = 0;
+		MPI_Status status;
+		while (counter < constraints._mesh.neighbours().size()) {
+			MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+			if (flag) {
+				int count;
+				MPI_Get_count(&status, MPI_BYTE, &count);
+				rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(double));
+				MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				counter++;
+			}
+		}
+
+		MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
+
+		std::vector<eslocal> nPointer(constraints._mesh.neighbours().size());
+		#pragma cilk grainsize = 1
+		cilk_for (size_t t = 0; t < threads; t++) {
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+
+				const Element *e = elements[permutation[i] / DOFs.size()];
+				size_t dof = permutation[i] % DOFs.size();
+
+				for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
+					if (*c == config::env::MPIrank) {
+						for (auto d = e->domains().begin(); d != e->domains().end(); d++) {
+							diagonals[i].push_back(D[*d][e->DOFIndex(*d, dof)]);
+						}
+					} else {
+						for (size_t d = 0; d < e->DOFCounter(*c, dof); d++) {
+							diagonals[i].push_back(rBuffer[n2i(*c)][nPointer[n2i(*c)]++]);
+						}
+					}
+				}
+
+			}
+		}
+	}
+
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -275,20 +359,31 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 			const Element *e = elements[permutation[i] / DOFs.size()];
 			size_t dof = permutation[i] % DOFs.size();
 			esglobal offset = 0;
-			double duplicity = 1. / e->numberOfGlobalDomainsWithDOF(dof);
+			double duplicity = 0;
+			if (config::solver::SCALING) {
+				std::for_each(diagonals[i].begin(), diagonals[i].end(), [&] (double v) { duplicity += v; });
+			} else {
+				duplicity = e->numberOfGlobalDomainsWithDOF(dof);
+			}
 
+			eslocal diag1 = 0, diag2 = 0;
 			for (auto c1 = e->clusters().begin(); c1 != e->clusters().end(); ++c1) {
-				for (size_t d1 = 0; d1 < e->DOFCounter(*c1, dof); d1++) {
+				for (size_t d1 = 0; d1 < e->DOFCounter(*c1, dof); d1++, diag1++) {
 
 					for (auto c2 = c1; c2 != e->clusters().end(); ++c2) {
-						for (size_t d2 = (*c1 == *c2 ? d1 + 1 : 0); d2 < e->DOFCounter(*c2, dof); d2++) {
+						diag2 = (*c1 == *c2) ? diag1 + 1 : diag1 + e->DOFCounter(*c1, dof) -  d1;
+						for (size_t d2 = (*c1 == *c2 ? d1 + 1 : 0); d2 < e->DOFCounter(*c2, dof); d2++, diag2++) {
 
 							if (*c1 == config::env::MPIrank) {
 								eslocal d = findDomain(e, d1, dof);
 								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
 								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
 								vals[t][d].push_back(1);
-								dup[t][d].push_back(duplicity);
+								if (config::solver::SCALING) {
+									dup[t][d].push_back(diagonals[i][diag2] / duplicity);
+								} else {
+									dup[t][d].push_back(1 / duplicity);
+								}
 							}
 
 							if (*c2 == config::env::MPIrank) {
@@ -296,7 +391,11 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
 								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
 								vals[t][d].push_back(-1);
-								dup[t][d].push_back(duplicity);
+								if (config::solver::SCALING) {
+									dup[t][d].push_back(diagonals[i][diag1] / duplicity);
+								} else {
+									dup[t][d].push_back(1 / duplicity);
+								}
 							}
 
 							if (*c1 == config::env::MPIrank || *c2 == config::env::MPIrank) {

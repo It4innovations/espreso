@@ -243,6 +243,9 @@ namespace solver {
 	 */
 	extern bool REDUNDANT_LAGRANGE;
 
+	/// Weight function is computed from diagonal values of stiffness matrix
+	extern bool SCALING;
+
 	enum class B0_TYPEalternative {
 		/// Gluing based on corners
 		CORNERS = 0,

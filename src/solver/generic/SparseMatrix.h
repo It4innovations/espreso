@@ -195,9 +195,9 @@ public:
                                           eslocal j_start, eslocal j_size);
 
 	// Return diagonal of CSR matrix. Columns indices have to be sorted!!
-	std::vector<double> getDiagonal();
-	double getDiagonalMaximum();
-        double getDiagonalAbsMaximum();
+	std::vector<double> getDiagonal() const;
+	double getDiagonalMaximum() const;
+	double getDiagonalAbsMaximum() const;
 
 	void MatAppend(SparseMatrix & A);
 	void RemoveLower();

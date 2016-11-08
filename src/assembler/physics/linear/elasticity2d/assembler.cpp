@@ -53,7 +53,7 @@ void LinearElasticity2D::assembleGluingMatrices()
 	_constraints.initMatrices(matrixSize);
 
 	EqualityConstraints::insertDirichletToB1(_constraints, _mesh.nodes(), pointDOFs);
-	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs);
+	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs, K);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {

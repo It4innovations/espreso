@@ -39,7 +39,7 @@ void SingularSystem::assembleGluingMatrices()
 	_constraints.initMatrices(matrixSize);
 
 	EqualityConstraints::insertDirichletToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN });
-	EqualityConstraints::insertElementGluingToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN });
+	EqualityConstraints::insertElementGluingToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN }, K);
 
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		EqualityConstraints::insertKernelsToB0(_constraints, _apimesh.faces(), _apimesh.DOFs(), R1);

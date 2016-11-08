@@ -3061,7 +3061,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 
 }
 
-std::vector<double> SparseMatrix::getDiagonal()
+std::vector<double> SparseMatrix::getDiagonal() const
 {
 	std::vector<double> diagonal;
 	diagonal.reserve(rows);
@@ -3078,7 +3078,7 @@ std::vector<double> SparseMatrix::getDiagonal()
 	return diagonal;
 }
 
-double SparseMatrix::getDiagonalMaximum()
+double SparseMatrix::getDiagonalMaximum() const
 {
 	double max = -1e10;
 
@@ -3098,7 +3098,7 @@ double SparseMatrix::getDiagonalMaximum()
 }
 
 
-double SparseMatrix::getDiagonalAbsMaximum()
+double SparseMatrix::getDiagonalAbsMaximum() const
 {
 	double max = 0;
 
