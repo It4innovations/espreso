@@ -9,6 +9,7 @@ def configure(ctx):
     ctx.env.METIS = dict()
     ctx.env.SCOTCH = dict()
     ctx.env.MUMPS = dict()
+    ctx.env.QD = dict()
 
     # there is problem with -C option. Hence, 'cd + path' is used
     ctx.env.PREFIX = "prefix=" + ctx.ROOT
@@ -16,24 +17,21 @@ def configure(ctx):
     ctx.env.METIS["path"]  = ctx.ROOT + "/tools/metis-5.1.0/"
     ctx.env.SCOTCH["path"] = ctx.ROOT + "/tools/scotch_6.0.4/src"
     ctx.env.MUMPS["path"]  = ctx.ROOT + "/tools/MUMPS_5.0.1"
+    ctx.env.QD["path"]     = ctx.ROOT + "/tools/qd-2.3.17"
 
     ctx.env.METIS["libs"]  = [ "metis" ]
     ctx.env.SCOTCH["libs"] = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
     ctx.env.MUMPS["libs"]  = [ "dmumps", "mumps_common", "pord" ]
+    ctx.env.QD["libs"]     = [ "qd" ]
 
-    if ctx.env.LIBTYPE == "STATIC":
-        ctx.env.METIS["params"] = ctx.env.PREFIX
-    else:
-        ctx.env.METIS["params"] = ctx.env.PREFIX + " shared=1"
-
+    ctx.env.METIS["params"]  = ctx.env.PREFIX
     ctx.env.SCOTCH["params"] = ""
+    ctx.env.MUMPS["params"]  = "cc={0} fc={1} opt='-nofor_main'".format(ctx.env.CC[0], ctx.env.FC[0])
+    ctx.env.QD["params"]     = "CXX={0} CC={1} FC={2} --prefix={3}/install -q".format(ctx.env.CXX[0], ctx.env.CC[0], ctx.env.FC[0], ctx.env.QD["path"])
 
-    cc = ctx.env.CC[0]
-    fc = ctx.env.FC[0]
-
-    ctx.env.MUMPS["params"] = "cc='" + cc + "' fc='" + fc + "'";
-    ctx.env.MUMPS["params"] += " opt='-nofor_main'"
-
+    if ctx.env.LIBTYPE == "SHARED":
+        ctx.env.METIS["params"] += " shared=1"
+        ctx.env.QD["params"] += " --enable-shared=yes"
 
 def check_libraries(libs, path, extension=".a"):
     for lib in libs:
@@ -76,6 +74,20 @@ def build(ctx):
             name    = "build MUMPS library"
         )
 
+    if ctx.env.SOLVER == "DISSECTION" and not check_libraries(ctx.env.QD["libs"], "{0}/libs32/".format(ctx.ROOT), extension):
+        ctx(
+            rule    = "cd {0}; ./configure {1}; make".format(ctx.env.QD["path"], ctx.env.QD["params"]),
+            always  = True,
+            name    = "build qd library"
+        )
+        ctx.add_group()
+        for lib in ctx.env.QD["libs"]:
+            ctx(
+                rule    = "cp {0}/install/lib/lib{1}{2} {3}/libs32/".format(ctx.env.QD["path"], lib, extension, ctx.ROOT),
+                always  = True,
+                name    = "install lib{0}{1} library".format(lib, extension)
+            )
+
     ctx.add_group()
 
     # Create symlinks to correct version of library
@@ -100,7 +112,17 @@ def build(ctx):
                 always = True,
                 name   = "create symlink to {0}".format(lib)
             )
-            
+
+    for lib in ctx.env.QD["libs"]:
+        desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, extension)
+        source = "{0}/libs32/lib{1}{2}".format(ctx.ROOT, lib, extension)
+        if not os.path.isfile(desc) or os.readlink(desc) != source:
+            ctx(
+                rule   = "ln -fs {0} {1}".format(source, desc),
+                always = True,
+                name   = "create symlink to {0}".format(lib)
+            )
+
     if ctx.env.SOLVER != "MUMPS":
         return
 
