@@ -9,7 +9,6 @@ stages:
 
 cache:
   paths:
-    - libs/
     - build/
     - espreso
 
@@ -20,9 +19,6 @@ before_script:
 
 MKL32:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --SOLVER=MKL --INT_WIDTH=32
     - ./waf install -j8
@@ -30,9 +26,6 @@ MKL32:
 
 MKL64:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --SOLVER=MKL --INT_WIDTH=64
     - ./waf install -j8
@@ -40,9 +33,6 @@ MKL64:
 
 CUDA32:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
     - ./waf install -j8
@@ -50,9 +40,6 @@ CUDA32:
 
 CUDA64:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
     - ./waf install -j8
@@ -60,9 +47,6 @@ CUDA64:
 
 PARDISO32:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --SOLVER=PARDISO --INT_WIDTH=32 --LIBPATH=/opt/pardiso/
     - ./waf install -j8
@@ -74,27 +58,18 @@ PARDISO32:
 
 STATIC_LIBRARY:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --LIBTYPE=STATIC
     - ./waf install -j8
 
 HYPRE:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --HYPRE::INCLUDE=/opt/hypre/include --HYPRE::LIBPATH=/opt/hypre/lib
     - ./waf install -j8
 
 VTK:
   stage: benchmarks
-  cache:
-    paths:
-      - libs/
   script:
     - ./waf configure --VTK::INCLUDE=/opt/vtk/include/vtk-7.1 --VTK::LIBPATH=/opt/vtk/lib
     - ./waf install -j8
