@@ -40,8 +40,7 @@ public:
 
 		TimeEvent tElements("elements"); tElements.start();
 		if (faceBased()) {
-			elements(mesh._faces);
-			mesh.computeElementsFromFaces();
+			elements(mesh._elements, mesh._faces);
 		} else {
 			elements(mesh._elements);
 		}
@@ -109,6 +108,7 @@ public:
 
 	virtual void points(Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<Element*> &elements) { }; // Generator, Workbench
+	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces) { }; // Generator, Workbench
 	virtual void faces(std::vector<Element*> &faces) { }; // OpenFOAM
 	virtual void materials(std::vector<Material> &materials) = 0;
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;

@@ -88,7 +88,7 @@ void OpenFOAM::points(Coordinates &coordinates)
 	}
 }
 
-void OpenFOAM::elements(std::vector<Element*> &elements) {
+void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &faces) {
 	FoamFile facesFile(_polyMeshPath + "faces");
 	solveParseError(parse(facesFile.getTokenizer(), _faces));
 	FoamFile ownerFile(_polyMeshPath + "owner");
@@ -146,10 +146,10 @@ void OpenFOAM::materials(std::vector<Material> &materials)
 	materials.resize(1, Material(mesh.coordinates()));
 }
 
-void OpenFOAM::faces(std::vector<Element*> &faces)
-{
-	// Implement me
-}
+//void OpenFOAM::faces(std::vector<Element*> &faces)
+//{
+//	// Implement me
+//}
 
 //void OpenFOAM::faces(Faces &faces) {
 //	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();

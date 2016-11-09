@@ -28,8 +28,7 @@ protected:
 	OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size);
 
 	void points(Coordinates &coordinates);
-	void elements(std::vector<Element*> &elements);
-	void faces(std::vector<Element*> &faces);
+	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces);
 	void materials(std::vector<Material> &materials);
 	void settings(
 				std::vector<Evaluator*> &evaluators,
