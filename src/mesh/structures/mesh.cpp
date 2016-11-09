@@ -664,6 +664,11 @@ void Mesh::fillNodesFromCoordinates()
 	}
 }
 
+void Mesh::computeElementsFromFaces()
+{
+	ESINFO(GLOBAL_ERROR) << "Implement computeElementFromFaces";
+}
+
 void Mesh::fillParentElementsToNodes()
 {
 	cilk_for (size_t i = 0; i < _nodes.size(); i++) {

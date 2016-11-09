@@ -39,7 +39,12 @@ public:
 		ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 
 		TimeEvent tElements("elements"); tElements.start();
-		elements(mesh._elements);
+		if (faceBased()) {
+			elements(mesh._faces);
+			mesh.computeElementsFromFaces();
+		} else {
+			elements(mesh._elements);
+		}
 		materials(mesh._materials);
 		tElements.end(); measurement.addEvent(tElements);
 		ESINFO(OVERVIEW) << "Elements loaded - total number of elements: " << Info::sumValue(mesh.elements().size());
@@ -47,16 +52,13 @@ public:
 		mesh.fillNodesFromCoordinates();
 		mesh.fillParentElementsToNodes();
 
-		TimeEvent tFaces("faces"); tFaces.start();
-		faces(mesh._faces);
-		tFaces.end(); measurement.addEvent(tFaces);
-		ESINFO(DETAILS) << "Faces loaded - total number of faces: " << Info::sumValue(mesh._faces.size());
-
 		TimeEvent tSettings("settings"); tSettings.start();
 		settings(mesh._evaluators, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 		tSettings.end(); measurement.addEvent(tSettings);
 
-		mesh.fillFacesParents();
+		if (!faceBased()) {
+			mesh.fillFacesParents();
+		}
 		mesh.fillEdgesParents();
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
@@ -102,6 +104,8 @@ public:
 
 		measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();
 	}
+
+	virtual bool faceBased() const { return false; }
 
 	virtual void points(Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<Element*> &elements) { }; // Generator, Workbench

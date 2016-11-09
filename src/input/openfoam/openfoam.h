@@ -22,6 +22,8 @@ public:
 		openfoam.fill();
 	}
 
+	bool faceBased() const { return true; }
+
 protected:
 	OpenFOAM(Mesh &mesh, const Configuration &configuration, int rank, int size);
 

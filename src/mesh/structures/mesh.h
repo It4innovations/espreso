@@ -34,6 +34,8 @@ public:
 	void computeVolumeCorners(size_t number, bool vertices, bool edges, bool faces);
 	void computePlaneCorners(size_t number, bool vertices, bool edges);
 
+	void computeElementsFromFaces();
+
 	void computeFacesOfAllElements();
 	void computeFacesOnDomainsSurface();
 	virtual void computeFacesSharedByDomains();
