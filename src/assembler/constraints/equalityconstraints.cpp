@@ -363,12 +363,12 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 				duplicity = e->numberOfGlobalDomainsWithDOF(dof);
 			}
 
-			eslocal diag1 = 0, diag2 = 0;
+			eslocal diag1 = 0;
 			for (auto c1 = e->clusters().begin(); c1 != e->clusters().end(); ++c1) {
 				for (size_t d1 = 0; d1 < e->DOFCounter(*c1, dof); d1++, diag1++) {
 
+					eslocal diag2 = diag1 + 1;
 					for (auto c2 = c1; c2 != e->clusters().end(); ++c2) {
-						diag2 = (*c1 == *c2) ? diag1 + 1 : diag1 + e->DOFCounter(*c1, dof) -  d1;
 						for (size_t d2 = (*c1 == *c2 ? d1 + 1 : 0); d2 < e->DOFCounter(*c2, dof); d2++, diag2++) {
 
 							if (*c1 == config::env::MPIrank) {
