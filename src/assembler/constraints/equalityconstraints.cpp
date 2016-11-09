@@ -329,26 +329,23 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
 
 		std::vector<eslocal> nPointer(constraints._mesh.neighbours().size());
-		#pragma cilk grainsize = 1
-		cilk_for (size_t t = 0; t < threads; t++) {
-			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+		for (size_t i = 0; i < diagonals.size(); i++) {
 
-				const Element *e = elements[permutation[i] / DOFs.size()];
-				size_t dof = permutation[i] % DOFs.size();
+			const Element *e = elements[permutation[i] / DOFs.size()];
+			size_t dof = permutation[i] % DOFs.size();
 
-				for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
-					if (*c == config::env::MPIrank) {
-						for (auto d = e->domains().begin(); d != e->domains().end(); d++) {
-							diagonals[i].push_back(D[*d][e->DOFIndex(*d, dof)]);
-						}
-					} else {
-						for (size_t d = 0; d < e->DOFCounter(*c, dof); d++) {
-							diagonals[i].push_back(rBuffer[n2i(*c)][nPointer[n2i(*c)]++]);
-						}
+			for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
+				if (*c == config::env::MPIrank) {
+					for (auto d = e->domains().begin(); d != e->domains().end(); d++) {
+						diagonals[i].push_back(D[*d][e->DOFIndex(*d, dof)]);
+					}
+				} else {
+					for (size_t d = 0; d < e->DOFCounter(*c, dof); d++) {
+						diagonals[i].push_back(rBuffer[n2i(*c)][nPointer[n2i(*c)]++]);
 					}
 				}
-
 			}
+
 		}
 	}
 
