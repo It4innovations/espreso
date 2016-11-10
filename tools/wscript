@@ -59,7 +59,7 @@ def build_scotch(ctx):
         create_symlink(ctx, lib)
 
 def build_mumps(ctx):
-    if ctx.env.INT_WIDTH:
+    if ctx.env.INT_WIDTH == 64:
         ctx.fatal("Cannot build MUMPS with 64b integers")
 
     libs = [ "dmumps", "mumps_common", "pord" ]
@@ -102,6 +102,25 @@ def build_qd(ctx):
 
     create_symlink(ctx, "qd")
 
+def build_dissection(ctx):
+    if ctx.env.INT_WIDTH == 64:
+        ctx.fatal("Cannot build DISSECTION with 64b integers")
+
+    if check_libraries(ctx, [ "dissection" ]):
+        return
+
+    path = ctx.ROOT + "/tools/dissection/src"
+    params = "ROOT={0} LIBTYPE={1}".format(ctx.ROOT, ctx.env.LIBTYPE)
+
+    ctx(
+        rule    = "cd {0}; make distclean; make {1}".format(path, params),
+        always  = True,
+        name    = "build dissection library"
+    )
+
+    create_symlink(ctx, "dissection")
+
+
 def configure(ctx):
     if ctx.env.LIBTYPE == "STATIC":
         ctx.env.LIBEXT = ".a"
@@ -121,5 +140,7 @@ def build(ctx):
     if ctx.env.SOLVER == "DISSECTION":
         build_scotch(ctx)
         build_qd(ctx)
+        ctx.add_group()
+        build_dissection(ctx)
 
 
