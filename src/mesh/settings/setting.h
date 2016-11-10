@@ -2,6 +2,7 @@
 #ifndef SRC_MESH_SETTINGS_SETTING_H_
 #define SRC_MESH_SETTINGS_SETTING_H_
 
+
 #include "evaluator.h"
 
 namespace espreso {

@@ -45,6 +45,14 @@ namespace espreso {
 	typedef ClusterGPU	Cluster;
 }
 
+#elif defined(SOLVER_DISSECTION)
+#include <Driver/DissectionSolver.hpp>
+#include "cpu/clustercpu.h"
+
+namespace espreso {
+	typedef ClusterCPU	Cluster;
+}
+
 
 #else
 #error "Incorrect user-supplied value for SOLVER. Check your build.config script."

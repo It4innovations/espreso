@@ -4,7 +4,7 @@
 
 #include <omp.h>
 #include "mpi.h"
-#include "mkl.h"
+// #include "mkl.h"
 
 #include <string>
 #include <sstream>
@@ -20,8 +20,8 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
+//#include <cilk/cilk.h>
+//#include <cilk/cilk_api.h>
 
 #include "../generic/SparseMatrix.h"
 #include "sparsesolvers.h"

@@ -54,6 +54,14 @@ namespace espreso {
 	typedef SparseSolverMKL SparseSolverAcc;
 }
 
+#elif defined(SOLVER_DISSECTION)
+#include "cpu/SparseSolverDissection.h"
+
+namespace espreso {
+	typedef SparseSolverDissection SparseSolverCPU;
+	typedef SparseSolverDissection SparseSolverAcc;
+}
+
 
 #else
 #error "Incorrect user-supplied value for SOLVER. Check your build.config script."

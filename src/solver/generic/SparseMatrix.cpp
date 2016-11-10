@@ -2,9 +2,9 @@
 
 #include "../specific/sparsesolvers.h"
 
-using namespace espreso;
+namespace espreso {
 
-std::ostream& espreso::operator<<(std::ostream& os, const SparseMatrix &m)
+std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 {
 	os << m.rows << " " << m.cols << " " << m.nnz << "\n";
 
@@ -5230,4 +5230,5 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 #endif
 } //get_kernels_from_nonsym_K
 
+}
 

@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 std::vector<Property> Stokes::elementDOFs;
 std::vector<Property> Stokes::faceDOFs;
@@ -205,6 +205,8 @@ void Stokes::composeSubdomain(size_t subdomain)
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 		break;
 	}
+}
+
 }
 
 

@@ -5,6 +5,7 @@
 #define SEQ_VECTOR vector
 
 #include "mpi.h"
+
 //#include "mkl.h"
 #include "mkl_spblas.h"
 #include "mkl_blas.h"

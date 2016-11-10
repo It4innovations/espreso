@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 std::vector<Property> LinearElasticity3D::elementDOFs;
 std::vector<Property> LinearElasticity3D::faceDOFs;
@@ -453,6 +453,7 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 	K[subdomain] = csrK;
 }
 
+}
 
 
 

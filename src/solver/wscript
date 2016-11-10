@@ -71,6 +71,16 @@ def configure(ctx):
             ctx.env.append_unique("STLIB", [ lib ])
 
 
+    if ctx.env.SOLVER == "DISSECTION":
+        ctx.env.append_unique("CXXFLAGS", [ "-I{0}/tools/dissection/src".format(ctx.ROOT) ])
+        link_MKL()
+
+        for lib in [ "Dissection", "qd" ]:
+            if ctx.env.LIBTYPE == "SHARED":
+                ctx.env.append_unique("LIB", [ lib ])
+            else:
+                ctx.env.append_unique("STLIB", [ lib ])
+
 def build(ctx):
     if ctx.env.SOLVER == "MIC":
         sources = source_files + (
@@ -117,6 +127,12 @@ def build(ctx):
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 
+    if ctx.env.SOLVER == "DISSECTION":
+        sources = source_files + (
+            "specific/cpu/SparseSolverDissection.cpp",
+            "specific/cpu/clustercpu.cpp",
+            "specific/cpu/itersolvercpu.cpp",
+            "specific/cpu/DenseSolverMKL.cpp")
 
     ctx.objects(
         source = sources,

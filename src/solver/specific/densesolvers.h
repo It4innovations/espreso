@@ -55,6 +55,15 @@ namespace espreso {
 	typedef DenseSolverCUDA DenseSolverAcc;
 }
 
+#elif defined(SOLVER_DISSECTION)
+#include <Driver/DissectionSolver.hpp>
+#include "cpu/DenseSolverMKL.h"
+
+namespace espreso {
+	typedef DenseSolverMKL DenseSolverCPU;
+	typedef DenseSolverMKL DenseSolverAcc;
+}
+
 
 #else
 #error "Incorrect user-supplied value for SOLVER. Check your build.config script."

@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 double AdvectionDiffusion2D::sigma = 0;
 AdvectionDiffusion2D::STABILIZATION AdvectionDiffusion2D::stabilization = AdvectionDiffusion2D::STABILIZATION::CAU;
@@ -274,5 +274,6 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	K[subdomain] = csrK;
 }
 
+}
 
 

@@ -45,6 +45,14 @@ namespace espreso {
 	typedef IterSolverGPU	IterSolver;
 }
 
+#elif defined(SOLVER_DISSECTION)
+#include <Driver/DissectionSolver.hpp>
+#include "cpu/itersolvercpu.h"
+
+namespace espreso {
+	typedef IterSolverCPU	IterSolver;
+}
+
 
 
 #else

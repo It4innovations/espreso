@@ -8,7 +8,6 @@
 #ifndef SOLVER_GENERIC_LINEARSOLVER_H_
 #define SOLVER_GENERIC_LINEARSOLVER_H_
 
-#include "../essolver.h"
 #include "../specific/itersolvers.h"
 #include "esconfig.h"
 #include "esmesh.h"

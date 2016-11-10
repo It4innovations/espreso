@@ -2,7 +2,7 @@
 #include "assembler.h"
 //#include "esbem.h"
 
-using namespace espreso;
+namespace espreso {
 
 std::vector<Property> LameSteklovPoincare::elementDOFs;
 std::vector<Property> LameSteklovPoincare::faceDOFs;
@@ -252,3 +252,6 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 		break;
 	}
 }
+
+}
+

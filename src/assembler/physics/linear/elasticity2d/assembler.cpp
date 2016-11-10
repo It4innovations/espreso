@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 std::vector<Property> LinearElasticity2D::elementDOFs;
 std::vector<Property> LinearElasticity2D::faceDOFs;
@@ -525,6 +525,8 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
+}
+
 }
 
 

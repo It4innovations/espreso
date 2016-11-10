@@ -1,4 +1,8 @@
 
+
+#include "../generic/SparseMatrix.h"
+#include "../specific/sparsesolvers.h"
+
 #include <omp.h>
 #include "mpi.h"
 #include "mkl.h"
@@ -20,9 +24,6 @@ using std::make_pair;
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 
-#include "../generic/SparseMatrix.h"
-#include "../specific/sparsesolvers.h"
-
 #include "../generic/utils.h"
 
 #include "esbasis.h"
@@ -30,7 +31,7 @@ using std::make_pair;
 #pragma once
 
 namespace espreso {
-
+	
 class Domain {
 
 public:
@@ -66,7 +67,7 @@ public:
 
 	SparseMatrix B1Kplus;
 	//SparseMatrix B1KplusB1t;
-	SparseMatrix B1; 
+	SparseMatrix B1;
 	SparseMatrix B1t;
 	SparseMatrix B1t_DirPr;
 	SEQ_VECTOR <eslocal> B1t_Dir_perm_vec;
@@ -81,8 +82,8 @@ public:
 	SEQ_VECTOR <eslocal> lambda_map_sub_local;
 
 	SparseSolverCPU Kplus;
-	
-    SparseSolverCPU KplusF;
+
+	SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> f;
 	SEQ_VECTOR <double> vec_c;
 	SEQ_VECTOR <double> vec_lb;

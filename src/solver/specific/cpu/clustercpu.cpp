@@ -88,8 +88,7 @@ void ClusterCPU::SetupKsolvers ( ) {
 //			break;
 		default:
 			ESINFO(ERROR) << "Invalid KSOLVER value.";
-			exit(EXIT_FAILURE);
-        }
+		}
 
     	//domains[d].Kplus.mtype = -2;
 

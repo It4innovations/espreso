@@ -2,8 +2,8 @@
 #ifndef SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
 #define SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
 
-#include "esmesh.h"
 #include "../../solver/generic/SparseMatrix.h"
+#include "esmesh.h"
 
 namespace espreso {
 

@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 std::vector<Property> Temperature::elementDOFs;
 std::vector<Property> Temperature::faceDOFs;
@@ -193,6 +193,8 @@ void Temperature::composeSubdomain(size_t subdomain)
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 		break;
 	}
+}
+
 }
 
 

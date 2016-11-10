@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 std::vector<Property> AdvectionDiffusion3D::elementDOFs;
 std::vector<Property> AdvectionDiffusion3D::faceDOFs;
@@ -208,5 +208,5 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 	K[subdomain] = csrK;
 }
 
-
+}
 

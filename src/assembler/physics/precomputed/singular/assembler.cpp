@@ -1,7 +1,7 @@
 
 #include "assembler.h"
 
-using namespace espreso;
+namespace espreso {
 
 void SingularSystem::prepareMeshStructures()
 {
@@ -78,4 +78,5 @@ void SingularSystem::composeSubdomain(size_t subdomain)
 			f[subdomain][DOFs[i]->DOFIndex(subdomain, dofIndex)] = _rhs[i] / DOFs[i]->domains().size();
 		}
 	}
+}
 }
