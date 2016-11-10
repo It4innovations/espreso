@@ -6,7 +6,11 @@
 #include <vector>
 #include <cmath>
 
-#include "mkl.h"
+#include "mkl_spblas.h"
+#include "mkl_blas.h"
+#include "mkl_cblas.h"
+#include "mkl_lapacke.h"
+#include "mkl_trans.h"
 
 #include "../logging/logging.h"
 
