@@ -18,14 +18,14 @@ def check_symlink(ctx, lib, suffix=""):
     return True
 
 def create_symlink(ctx, lib, suffix=""):
-    if check_symlink(ctx, lib, suffix):
+    if check_symlink(ctx, lib, suffix) and check_symlink(ctx, lib):
         return
 
-    desc = "{0}/libs/lib{1}{2}{3}".format(ctx.ROOT, lib, ctx.env.LIBEXT, suffix)
+    desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, ctx.env.LIBEXT)
     source = "{0}/libs{1}/lib{2}{3}{4}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT, suffix)
     if not os.path.isfile(desc) or os.readlink(desc) != source:
         ctx(
-            rule   = "ln -fs {0} {1}".format(source, desc),
+            rule   = "ln -fs {0} {1}; ln -fs {0} {1}{2}".format(source, desc, suffix),
             always = True,
             name   = "create symlink to {0}".format(lib)
         )
