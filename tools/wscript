@@ -4,25 +4,25 @@ import os
 # External libraries are builded to ROOT/libs32 and ROOT/libs64 directories.
 # Then, symlink to these libraries are created into ROOT/libs.
 
-def check_libraries(ctx, libs):
+def check_libraries(ctx, libs, suffix=""):
     for lib in libs:
-        if not os.path.isfile("{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
+        if not os.path.isfile("{0}/libs{1}/lib{2}{3}{4}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT, suffix)):
             return False
 
     return True
 
-def check_symlink(ctx, lib):
-    if not os.path.isfile("{0}/libs/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
+def check_symlink(ctx, lib, suffix=""):
+    if not os.path.isfile("{0}/libs/lib{2}{3}{4}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT, suffix)):
         return False
 
     return True
 
-def create_symlink(ctx, lib):
-    if check_symlink(ctx, lib):
+def create_symlink(ctx, lib, suffix=""):
+    if check_symlink(ctx, lib, suffix):
         return
 
-    desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, ctx.env.LIBEXT)
-    source = "{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)
+    desc = "{0}/libs/lib{1}{2}{3}".format(ctx.ROOT, lib, ctx.env.LIBEXT, suffix)
+    source = "{0}/libs{1}/lib{2}{3}{4}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT, suffix)
     if not os.path.isfile(desc) or os.readlink(desc) != source:
         ctx(
             rule   = "ln -fs {0} {1}".format(source, desc),
@@ -87,9 +87,13 @@ def build_mumps(ctx):
     )
 
 def build_qd(ctx):
-    create_symlink(ctx, "qd")
+    if ctx.env.LIBTYPE == "SHARED":
+        suffix = ".0"
+    else:
+        suffix = ""
+    create_symlink(ctx, "qd", suffix)
 
-    if check_libraries(ctx, [ "qd" ]):
+    if check_libraries(ctx, [ "qd" ], suffix):
         return
 
     path = ctx.ROOT + "/tools/qd-2.3.17"
@@ -104,7 +108,7 @@ def build_qd(ctx):
     )
     ctx.add_group()
     ctx(
-        rule    = "cp {0}/src/.libs/libqd{1} {2}/libs32/".format(path, ctx.env.LIBEXT, ctx.ROOT),
+        rule    = "cp {0}/src/.libs/libqd{1}{2} {3}/libs32/".format(path, ctx.env.LIBEXT, suffix, ctx.ROOT),
         always  = True,
         name    = "install libqd{0} library".format(ctx.env.LIBEXT)
     )
