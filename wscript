@@ -27,7 +27,7 @@ compiler_attributes = [
     ("STLIBPATH", "List of search path for static libraries.", "string", "paths")
 ]
 
-solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS" ]
+solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS", "DISSECTION" ]
 
 third_party = [
     ("HYPRE", "Multigrid external solver.", "string", "PATH"),

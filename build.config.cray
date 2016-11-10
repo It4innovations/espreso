@@ -12,7 +12,7 @@ FC = ftn
 # Set general ESPRESO settings
 
 CHECK_ENV = 1           # turn { 0 - off, 1 - on } all checks for configuration
-SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC MUMPS
+SOLVER = MKL            # Choose ESPRESO internal solver: MKL PARDISO CUDA MIC MUMPS DISSECTION
 LIBTYPE = SHARED        # ESPRESO is built to SHARED or STATIC libraries
 DEBUG = 0               # turn { 0 - off, 1 -on } print of debug information
 BUILD_TOOLS = 0         # ESPRESO try to compile external tools.
@@ -84,3 +84,10 @@ MUMPS::LINKFLAGS =
 MUMPS::INCLUDES =
 MUMPS::LIBPATH =
 MUMPS::STLIBPATH =
+
+DISSECTION::CXXFLAGS =
+DISSECTION::LINKFLAGS =
+DISSECTION::INCLUDES =
+DISSECTION::LIBPATH =
+DISSECTION::STLIBPATH =
+
