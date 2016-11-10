@@ -8,12 +8,19 @@ def check_libraries(ctx, libs):
     for lib in libs:
         if not os.path.isfile("{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
             return False
-        if not os.path.isfile("{0}/libs/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
-            return False
+
+    return True
+
+def check_symlink(ctx, lib):
+    if not os.path.isfile("{0}/libs/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
+        return False
 
     return True
 
 def create_symlink(ctx, lib):
+    if check_symlink(ctx, lib):
+        return
+
     desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, ctx.env.LIBEXT)
     source = "{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)
     if not os.path.isfile(desc) or os.readlink(desc) != source:
@@ -25,6 +32,8 @@ def create_symlink(ctx, lib):
 
 
 def build_metis(ctx):
+    create_symlink(ctx, "metis")
+
     if check_libraries(ctx, [ "metis" ]):
         return
 
@@ -39,10 +48,11 @@ def build_metis(ctx):
         name    = "build METIS library with {0}b integers".format(ctx.env.INT_WIDTH)
     )
 
-    create_symlink(ctx, "metis")
-
 def build_scotch(ctx):
     libs = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
+
+    for lib in libs:
+        create_symlink(ctx, lib)
 
     if check_libraries(ctx, libs):
         return
@@ -55,14 +65,14 @@ def build_scotch(ctx):
         name    = "build scotch library with {0}b integers".format(ctx.env.INT_WIDTH)
     )
 
-    for lib in libs:
-        create_symlink(ctx, lib)
-
 def build_mumps(ctx):
     if ctx.env.INT_WIDTH == 64:
         ctx.fatal("Cannot build MUMPS with 64b integers")
 
     libs = [ "dmumps", "mumps_common", "pord" ]
+
+    for lib in libs:
+        create_symlink(ctx, lib)
 
     if check_libraries(ctx, ctx.env.MUMPS["libs"]):
         return
@@ -76,10 +86,9 @@ def build_mumps(ctx):
         name    = "build MUMPS library"
     )
 
-    for lib in libs:
-        create_symlink(ctx, lib)
-
 def build_qd(ctx):
+    create_symlink(ctx, "qd")
+
     if check_libraries(ctx, [ "qd" ]):
         return
 
@@ -100,13 +109,13 @@ def build_qd(ctx):
         name    = "install libqd{0} library".format(ctx.env.LIBEXT)
     )
 
-    create_symlink(ctx, "qd")
-
 def build_dissection(ctx):
     if ctx.env.INT_WIDTH == 64:
         ctx.fatal("Cannot build DISSECTION with 64b integers")
 
-    if check_libraries(ctx, [ "dissection" ]):
+    create_symlink(ctx, "Dissection")
+
+    if check_libraries(ctx, [ "Dissection" ]):
         return
 
     path = ctx.ROOT + "/tools/dissection/src"
@@ -115,10 +124,8 @@ def build_dissection(ctx):
     ctx(
         rule    = "cd {0}; make distclean; make {1}".format(path, params),
         always  = True,
-        name    = "build dissection library"
+        name    = "build Dissection library"
     )
-
-    create_symlink(ctx, "dissection")
 
 
 def configure(ctx):
