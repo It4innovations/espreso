@@ -19,5 +19,5 @@ espreso
 decomposer
 generatordecomposer
 libespreso/apitest
-libs/*
+libs*/*
 tools/*
