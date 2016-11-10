@@ -1,128 +1,125 @@
 
 import os
 
-TOOLS = "tools"
+# External libraries are builded to ROOT/libs32 and ROOT/libs64 directories.
+# Then, symlink to these libraries are created into ROOT/libs.
 
-def configure(ctx):
-    ctx.setenv(TOOLS, ctx.all_envs[""].derive())
-
-    ctx.env.METIS = dict()
-    ctx.env.SCOTCH = dict()
-    ctx.env.MUMPS = dict()
-    ctx.env.QD = dict()
-
-    # there is problem with -C option. Hence, 'cd + path' is used
-    ctx.env.PREFIX = "prefix=" + ctx.ROOT
-
-    ctx.env.METIS["path"]  = ctx.ROOT + "/tools/metis-5.1.0/"
-    ctx.env.SCOTCH["path"] = ctx.ROOT + "/tools/scotch_6.0.4/src"
-    ctx.env.MUMPS["path"]  = ctx.ROOT + "/tools/MUMPS_5.0.1"
-    ctx.env.QD["path"]     = ctx.ROOT + "/tools/qd-2.3.17"
-
-    ctx.env.METIS["libs"]  = [ "metis" ]
-    ctx.env.SCOTCH["libs"] = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
-    ctx.env.MUMPS["libs"]  = [ "dmumps", "mumps_common", "pord" ]
-    ctx.env.QD["libs"]     = [ "qd" ]
-
-    ctx.env.METIS["params"]  = ctx.env.PREFIX
-    ctx.env.SCOTCH["params"] = ""
-    ctx.env.MUMPS["params"]  = "cc={0} fc={1} opt='-nofor_main'".format(ctx.env.CC[0], ctx.env.FC[0])
-    ctx.env.QD["params"]     = "CXX={0} CC={1} FC={2} --prefix={3}/install -q".format(ctx.env.CXX[0], ctx.env.CC[0], ctx.env.FC[0], ctx.env.QD["path"])
-
-    if ctx.env.LIBTYPE == "SHARED":
-        ctx.env.METIS["params"] += " shared=1"
-        ctx.env.QD["params"] += " --enable-shared=yes"
-
-def check_libraries(libs, path, extension=".a"):
+def check_libraries(ctx, libs):
     for lib in libs:
-        if not os.path.isfile(path + "lib" + lib + extension):
+        if not os.path.isfile("{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
+            return False
+        if not os.path.isfile("{0}/libs/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)):
             return False
 
     return True
 
-def build(ctx):
-    ctx.env = ctx.all_envs[TOOLS]
-
-    if ctx.env.EXTERNAL_LIBRARIES:
-        return
-
-    if ctx.env.LIBTYPE == "STATIC":
-        extension = ".a"
-    else:
-        extension = ".so"
-
-    if not check_libraries(ctx.env.METIS["libs"], "{0}/libs{1}/".format(ctx.ROOT, ctx.env.INT_WIDTH), extension):
-        ctx(
-            rule    = "cd {0}; make config idx_width={1} {2}; make install".format(ctx.env.METIS["path"], ctx.env.INT_WIDTH, ctx.env.METIS["params"]),
-            always  = True,
-            name    = "build METIS library with {0}b integers".format(ctx.env.INT_WIDTH)
-        )
-
-    if (ctx.env.SOLVER == "MUMPS" or ctx.env.SOLVER == "DISSECTION") and not check_libraries(ctx.env.SCOTCH["libs"], "{0}/libs{1}/".format(ctx.ROOT, ctx.env.INT_WIDTH), extension):
-        ctx(
-            rule    = "cd {1}; ln -sf Makefile.{0} Makefile.inc; make scotch esmumps int_width={3}; make install {2} int_width={3}".format(ctx.env.LIBTYPE, ctx.env.SCOTCH["path"], ctx.env.PREFIX, ctx.env.INT_WIDTH),
-            always  = True,
-            name    = "build scotch library with {0}b integers".format(ctx.env.INT_WIDTH)
-        )
-
-    if ctx.env.SOLVER == "MUMPS" and not check_libraries(ctx.env.MUMPS["libs"], ctx.ROOT + "/libs/"):
-        ctx(
-            rule    = "cd " + ctx.env.MUMPS["path"] + ";" \
-                      "make d " + ctx.env.MUMPS["params"] + ";" \
-                      "make install " + ctx.env.PREFIX,
-            always  = True,
-            name    = "build MUMPS library"
-        )
-
-    if ctx.env.SOLVER == "DISSECTION" and not check_libraries(ctx.env.QD["libs"], "{0}/libs32/".format(ctx.ROOT), extension):
-        ctx(
-            rule    = "cd {0}; ./configure {1}; make".format(ctx.env.QD["path"], ctx.env.QD["params"]),
-            always  = True,
-            name    = "build qd library"
-        )
-        ctx.add_group()
-        for lib in ctx.env.QD["libs"]:
-            ctx(
-                rule    = "cp {0}/src/.libs/lib{1}{2} {3}/libs32/".format(ctx.env.QD["path"], lib, extension, ctx.ROOT),
-                always  = True,
-                name    = "install lib{0}{1} library".format(lib, extension)
-            )
-
-    ctx.add_group()
-
-    # Create symlinks to correct version of library
-    desc = "{0}/libs/libmetis{1}".format(ctx.ROOT, extension)
-    source = "{0}/libs{1}/libmetis{2}".format(ctx.ROOT, ctx.env.INT_WIDTH, extension)
+def create_symlink(ctx, lib):
+    desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, ctx.env.LIBEXT)
+    source = "{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, ctx.env.LIBEXT)
     if not os.path.isfile(desc) or os.readlink(desc) != source:
         ctx(
             rule   = "ln -fs {0} {1}".format(source, desc),
             always = True,
-            name   = "create symlink to metis"
+            name   = "create symlink to {0}".format(lib)
         )
 
-    if ctx.env.SOLVER != "MUMPS" and ctx.env.SOLVER != "DISSECTION":
+
+def build_metis(ctx):
+    if check_libraries(ctx, [ "metis" ]):
         return
 
-    for lib in ctx.env.SCOTCH["libs"]:
-        desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, extension)
-        source = "{0}/libs{1}/lib{2}{3}".format(ctx.ROOT, ctx.env.INT_WIDTH, lib, extension)
-        if not os.path.isfile(desc) or os.readlink(desc) != source:
-            ctx(
-                rule   = "ln -fs {0} {1}".format(source, desc),
-                always = True,
-                name   = "create symlink to {0}".format(lib)
-            )
+    path = ctx.ROOT + "/tools/metis-5.1.0/"
+    params = "prefix={0}".format(ctx.ROOT)
+    if ctx.env.LIBTYPE == "SHARED":
+        params += " shared=1"
 
-    for lib in ctx.env.QD["libs"]:
-        desc = "{0}/libs/lib{1}{2}".format(ctx.ROOT, lib, extension)
-        source = "{0}/libs32/lib{1}{2}".format(ctx.ROOT, lib, extension)
-        if not os.path.isfile(desc) or os.readlink(desc) != source:
-            ctx(
-                rule   = "ln -fs {0} {1}".format(source, desc),
-                always = True,
-                name   = "create symlink to {0}".format(lib)
-            )
+    ctx(
+        rule    = "cd {0}; make config idx_width={1} {2}; make install".format(path, ctx.env.INT_WIDTH, params),
+        always  = True,
+        name    = "build METIS library with {0}b integers".format(ctx.env.INT_WIDTH)
+    )
 
-    if ctx.env.SOLVER != "MUMPS":
+    create_symlink(ctx, "metis")
+
+def build_scotch(ctx):
+    libs = [ "scotch", "scotcherr", "scotcherrexit", "esmumps" ]
+
+    if check_libraries(ctx, libs):
         return
+
+    path = ctx.ROOT + "/tools/scotch_6.0.4/src"
+
+    ctx(
+        rule    = "cd {1}; ln -sf Makefile.{0} Makefile.inc; make scotch esmumps int_width={3}; make install prefix={2} int_width={3}".format(ctx.env.LIBTYPE, path, ctx.ROOT, ctx.env.INT_WIDTH),
+        always  = True,
+        name    = "build scotch library with {0}b integers".format(ctx.env.INT_WIDTH)
+    )
+
+    for lib in libs:
+        create_symlink(ctx, lib)
+
+def build_mumps(ctx):
+    if ctx.env.INT_WIDTH:
+        ctx.fatal("Cannot build MUMPS with 64b integers")
+
+    libs = [ "dmumps", "mumps_common", "pord" ]
+
+    if check_libraries(ctx, ctx.env.MUMPS["libs"]):
+        return
+
+    path = ctx.ROOT + "/tools/MUMPS_5.0.1"
+    params = "cc={0} fc={1} opt='-nofor_main'".format(ctx.env.CC[0], ctx.env.FC[0])
+
+    ctx(
+        rule    = "cd {0}; make d {1}; make install prefix={2}".format(path, params, ctx.ROOT),
+        always  = True,
+        name    = "build MUMPS library"
+    )
+
+    for lib in libs:
+        create_symlink(ctx, lib)
+
+def build_qd(ctx):
+    if check_libraries(ctx, [ "qd" ]):
+        return
+
+    path = ctx.ROOT + "/tools/qd-2.3.17"
+    params = "CXX={0} CC={1} FC={2} --prefix={3}/install -q".format(ctx.env.CXX[0], ctx.env.CC[0], ctx.env.FC[0], path)
+    if ctx.env.LIBTYPE == "SHARED":
+        params += " --enable-shared=yes"
+
+    ctx(
+        rule    = "cd {0}; ./configure {1}; make".format(path, params),
+        always  = True,
+        name    = "build qd library"
+    )
+    ctx.add_group()
+    ctx(
+        rule    = "cp {0}/src/.libs/libqd{1} {2}/libs32/".format(path, ctx.env.LIBEXT, ctx.ROOT),
+        always  = True,
+        name    = "install libqd{0} library".format(ctx.env.LIBEXT)
+    )
+
+    create_symlink(ctx, "qd")
+
+def configure(ctx):
+    if ctx.env.LIBTYPE == "STATIC":
+        ctx.env.LIBEXT = ".a"
+    else:
+        ctx.env.LIBEXT = ".so"
+
+def build(ctx):
+    if ctx.env.EXTERNAL_LIBRARIES:
+        return
+
+    build_metis(ctx)
+
+    if ctx.env.SOLVER == "MUMPS":
+        build_scotch(ctx)
+        build_mumps(ctx)
+
+    if ctx.env.SOLVER == "DISSECTION":
+        build_scotch(ctx)
+        build_qd(ctx)
+
 
