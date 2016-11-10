@@ -75,7 +75,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-I{0}/tools/dissection/src".format(ctx.ROOT) ])
         link_MKL()
 
-        for lib in [ "Dissection", "qd" ]:
+        for lib in [ "Dissection", "qd", "scotch", "scotcherr" ]:
             if ctx.env.LIBTYPE == "SHARED":
                 ctx.env.append_unique("LIB", [ lib ])
             else:
