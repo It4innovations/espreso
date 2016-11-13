@@ -5,9 +5,11 @@
 #include <algorithm>
 
 #include "matrix.h"
-#include "sparseDOKMatrix.h"
-#include "sparseCSRMatrix.h"
-#include "sparseIJVMatrix.h"
+template<typename Tindices> class SparseDOKMatrix;
+template<typename Tindices> class SparseIJVMatrix;
+template<typename Tindices> class SparseCSRMatrix;
+template<typename Tindices> class SparseVVPMatrix;
+
 
 namespace espreso {
 

@@ -4,19 +4,19 @@
 #include <vector>
 #include <string>
 
-using namespace espreso;
+namespace espreso {
 
-std::ostream& espreso::operator<<(std::ostream& os, const espreso::Interval& interval)
+std::ostream& operator<<(std::ostream& os, const Interval& interval)
 {
 	for (size_t i = 0; i < 3; i++) {
 		os << (interval.excludeStart[i] ? "(" : "<");
 		os << interval.start[i] << "," << interval.end[i];
 		os << (interval.excludeEnd[i] ? ")" : ">");
 	}
-    return os;
+	return os;
 }
 
-std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
+std::istream& operator>>(std::istream& is, Interval& interval)
 {
 	std::string str;
 	getline(is, str);
@@ -71,4 +71,6 @@ std::istream& espreso::operator>>(std::istream& is, espreso::Interval& interval)
 	}
 
 	return is;
+}
+
 }

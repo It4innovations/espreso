@@ -3,8 +3,8 @@ import os
 import sys
 import glob
 
-sys.path.append(os.path.abspath("../../python"))
-from wafutils import *
+sys.path.append(os.path.abspath("../../python/waf"))
+from utils import *
 
 def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["VTK::INCLUDE"] ])

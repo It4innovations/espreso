@@ -216,7 +216,7 @@ protected:
 	const Coordinates* _coordinates;
 };
 
-inline std::ofstream& espreso::operator<<(std::ofstream& os, const Material &m)
+inline std::ofstream& operator<<(std::ofstream& os, const Material &m)
 {
 	os.write(reinterpret_cast<const char*>(&m._model), sizeof(Material::MODEL));
 	m._density->store(os);

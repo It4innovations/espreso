@@ -7,8 +7,8 @@ import os
 
 from waflib import Logs
 
-sys.path.append(os.path.abspath("src/python"))
-from wafutils import *
+sys.path.append(os.path.abspath("src/python/waf"))
+from utils import *
 from waflib import Logs
 
 # Each attribute has this structure: ( "attribute", "description", "data type", "choices")
@@ -63,12 +63,15 @@ def configure(ctx):
     ctx.libs = {}
     ctx.stlibs = {}
 
-    try:
-        ctx.load("icpc")
-    except ctx.errors.ConfigurationError:
-        ctx.fatal("Install Intel compiler or load the appropriate module.")
-
     read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_attributes, third_party)
+
+    try:
+        ctx.find_program(ctx.env.CC)
+        ctx.find_program(ctx.env.FC)
+        ctx.load(ctx.env.CXX)
+    except ctx.errors.ConfigurationError:
+        ctx.fatal("Install MPI compiler supporting icpc/gcc or load the appropriate module.")
+
     set_compiler_defines(ctx)
 
     ctx.ROOT = ctx.path.abspath()

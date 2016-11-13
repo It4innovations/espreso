@@ -229,7 +229,7 @@ bool Tetrahedron10::match(const eslocal *indices, eslocal n) {
 #endif
 
 	switch (n) {
-	case 20:
+	case 20: {
 		if (!Element::match(indices, 2, 3)) {
 			return false;
 		}
@@ -270,6 +270,7 @@ bool Tetrahedron10::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
+	}
 	case 10:
 		for (eslocal i = 0; i < 9; i++) {
 			for (eslocal j = i + 1; j < 10; j++) {

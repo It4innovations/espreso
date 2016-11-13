@@ -110,7 +110,7 @@ protected:
         }
         ByteArrayStream *stream = new ByteArrayStream(*text, s);
         TokenStream<ByteArrayStream> ts(stream);
-        return ::parse(ts, value);
+        return espreso::input::parse(ts, value);
     }
 
     std::vector<DictionaryEntry> entries;

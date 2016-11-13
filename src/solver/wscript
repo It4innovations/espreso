@@ -14,12 +14,16 @@ def configure(ctx):
 
     def link_MKL():
         mkl = ("mkl_intel_lp64", "mkl_intel_ilp64")[ctx.env.INT_WIDTH == 64]
+        threading = ("mkl_gnu_thread", "mkl_intel_thread")[ctx.env.CXX_NAME == "icc"]
         if ctx.env.LIBTYPE == "STATIC":
-            ctx.check_stlib(mkl, [ "mkl_core", "mkl_intel_thread" ])
-            ctx.env.append_unique("STLIB", [ mkl, "mkl_core", "mkl_intel_thread" ])
+            ctx.check_stlib(mkl, [ "mkl_core", threading ])
+            ctx.env.append_unique("STLIB", [ mkl, "mkl_core", threading ])
         else:
-            ctx.check_lib(mkl, [ "mkl_core", "mkl_intel_thread" ])
-            ctx.env.append_unique("LIB", [ mkl, "mkl_core", "mkl_intel_thread" ])
+            ctx.check_lib(mkl, [ "mkl_core", threading ])
+            ctx.env.append_unique("LIB", [ mkl, "mkl_core", threading ])
+        if ctx.env.CXX_NAME == "gcc":
+            ctx.check_lib("gomp")
+            ctx.env.append_unique("LIB", [ "cilkrts", "gomp" ])
         ctx.check_lib("pthread")
         ctx.env.append_unique("LIB", [ "pthread" ])
 

@@ -22,8 +22,8 @@ class SparseIJVMatrix: public Matrix
 
 public:
 
-	template<typename Tindices>
-	friend std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix<Tindices> &m);
+	template<typename TIndices>
+	friend std::ostream& operator<<(std::ostream& os, const SparseIJVMatrix<TIndices> &m);
 
 	SparseIJVMatrix(): Matrix(IJVMatrixIndexing) { };
 	SparseIJVMatrix(size_t rows, size_t columns): Matrix(rows, columns, IJVMatrixIndexing) { };

@@ -38,7 +38,7 @@ def build_metis(ctx):
         return
 
     path = ctx.ROOT + "/tools/metis-5.1.0/"
-    params = "prefix={0}".format(ctx.ROOT)
+    params = "cc={0} prefix={1}".format(ctx.env.CC[0], ctx.ROOT)
     if ctx.env.LIBTYPE == "SHARED":
         params += " shared=1"
 

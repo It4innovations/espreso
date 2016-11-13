@@ -1,7 +1,8 @@
 
 #include "generator.h"
 
-using namespace espreso::input;
+namespace espreso {
+namespace input {
 
 static void setCluster(size_t cluster[], const CubeSettings &settings)
 {
@@ -108,5 +109,6 @@ CubeGenerator<Triangle6>::CubeGenerator(Mesh &mesh, const CubeSettings &settings
 	ESINFO(GLOBAL_ERROR) << "Cube generator does not support the element Triangle6.";
 }
 
-
+}
+}
 

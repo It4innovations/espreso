@@ -18,8 +18,8 @@ class SparseVVPMatrix: public Matrix
 
 public:
 
-	template<typename Tindices>
-	friend std::ostream& operator<<(std::ostream& os, const SparseVVPMatrix<Tindices> &m);
+	template<typename TIndices>
+	friend std::ostream& operator<<(std::ostream& os, const SparseVVPMatrix<TIndices> &m);
 
 	SparseVVPMatrix(): Matrix(VVPMatrixIndexing) {};
 	SparseVVPMatrix(size_t rows, size_t columns): Matrix(rows, columns, VVPMatrixIndexing), _values(rows) {};

@@ -1,7 +1,8 @@
 
 #include "generator.h"
 
-using namespace espreso::input;
+namespace espreso {
+namespace input {
 
 static void checkSettings(eslocal cluster[], size_t &side, const SphereSettings &settings)
 {
@@ -89,4 +90,5 @@ SphereGenerator<Pyramid13>::SphereGenerator(Mesh &mesh, const SphereSettings &se
 }
 
 
-
+}
+}

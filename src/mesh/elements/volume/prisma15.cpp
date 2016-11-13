@@ -179,7 +179,7 @@ bool Prisma15::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
-	case 20:
+	case 20: {
 		if (!Element::match(indices, 2, 3)) {
 			return false;
 		}
@@ -205,6 +205,7 @@ bool Prisma15::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
+	}
 	default:
 		return false;
 	}

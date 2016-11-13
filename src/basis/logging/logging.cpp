@@ -28,7 +28,7 @@ static void printStack()
 		command << " " << function.substr(begin, end - begin);
 	}
 	free(functions);
-	system(command.str().c_str()); // convert addresses to file lines
+	int ret = system(command.str().c_str()); // convert addresses to file lines
 }
 
 

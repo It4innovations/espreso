@@ -143,7 +143,7 @@ bool Prisma6::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
-	case 8 :
+	case 8 : {
 		if (!Element::match(indices, 2, 3)) {
 			return false;
 		}
@@ -160,6 +160,7 @@ bool Prisma6::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
+	}
 	default:
 		return false;
 	}

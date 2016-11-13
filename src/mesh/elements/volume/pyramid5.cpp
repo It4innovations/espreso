@@ -17,12 +17,13 @@ static std::vector< std::vector< double> > Pyramid5_rst()
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Pyramid5GPCount));
 
 	switch (Pyramid5GPCount) {
-	case 8:
+	case 8: {
 		double v = 0.577350269189625953;
 		rst[0] = {  v,  v,  v,  v, -v, -v, -v, -v };
 		rst[1] = { -v, -v,  v,  v, -v, -v,  v,  v };
 		rst[2] = { -v,  v, -v,  v, -v,  v, -v,  v };
 		return rst;
+	}
 	default:
 		ESINFO(ERROR) << "Unknown number of Pyramid5 GP count.";
 		exit(EXIT_FAILURE);
@@ -129,7 +130,7 @@ bool Pyramid5::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
-	case 8:
+	case 8: {
 		if (!Element::match(indices, 4, 5)) {
 			return false;
 		}
@@ -149,6 +150,7 @@ bool Pyramid5::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
+	}
 	default:
 		return false;
 	}
@@ -157,14 +159,14 @@ bool Pyramid5::match(const eslocal *indices, eslocal n) {
 std::vector<eslocal> Pyramid5::getNeighbours(size_t nodeIndex) const
 {
 	if (nodeIndex < 4) {
-	  std::vector<eslocal> result(3);
+		std::vector<eslocal> result(3);
 		result[0] = _indices[4] ;
 		result[1] = _indices[(nodeIndex + 1) % 4];
 		result[2] = _indices[(nodeIndex + 3) % 4];
-	  return result;
+		return result;
 	} else {
-	  std::vector<eslocal> result(_indices,_indices + 4);
-	  return result;
+		std::vector<eslocal> result(_indices,_indices + 4);
+		return result;
 	}
 }
 

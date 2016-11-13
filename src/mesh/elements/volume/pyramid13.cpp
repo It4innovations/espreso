@@ -173,7 +173,7 @@ bool Pyramid13::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
-	case 20:
+	case 20: {
 		if (!Element::match(indices, 4, 5)) {
 			return false;
 		}
@@ -193,6 +193,7 @@ bool Pyramid13::match(const eslocal *indices, eslocal n) {
 			}
 		}
 		return true;
+	}
 	default:
 		return false;
 	}

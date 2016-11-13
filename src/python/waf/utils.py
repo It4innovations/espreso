@@ -80,9 +80,6 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     ctx.env.LINK_CXX = ctx.env.CXX
 
     # Print final configuration
-    ctx.find_program(ctx.env.CXX)
-    ctx.find_program(ctx.env.CC)
-    ctx.find_program(ctx.env.FC)
 
     for attribute, description, type, value in espreso_attributes:
         print_attribute(attribute, type, ctx.env[attribute])
@@ -129,11 +126,7 @@ def check_environment(ctx):
     ctx.env.LIB = []
     ctx.env.STLIB = []
 
-    ret = subprocess.Popen(ctx.env.CXX + ctx.env.CXXFLAGS + [ "--version" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    version = ret.communicate()[0].split()[2]
-    ctx.env.ICPC_VERSION = int(version[:2])
-    ctx.msg("Checking for Intel compiler version", ctx.env.ICPC_VERSION)
-
+    ctx.check_cc(fragment="int main(){return 0;}", msg="Build simple program", errmsg="fail - check build parameters")
     check_headers(ctx)
     check_libraries(ctx)
 

@@ -233,7 +233,7 @@ public:
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();
-		system(mkdir.str().c_str());
+		int ret = system(mkdir.str().c_str());
 
 		return file.str();
 	}

@@ -1,7 +1,8 @@
 
 #include "generator.h"
 
-using namespace espreso::input;
+namespace espreso {
+namespace input {
 
 static void setCluster(size_t cluster[], const PlaneSettings &settings)
 {
@@ -105,4 +106,7 @@ PlaneGenerator<Pyramid13>::PlaneGenerator(Mesh &mesh, const PlaneSettings &setti
 	: UniformGenerator<Pyramid13>(mesh, settings), _settings(settings)
 {
 	ESINFO(GLOBAL_ERROR) << "Plane generator does not support the element Pyramid13.";
+}
+
+}
 }

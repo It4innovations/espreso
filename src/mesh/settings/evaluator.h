@@ -7,6 +7,7 @@
 #include "../structures/coordinates.h"
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
+#include <numeric>
 
 namespace espreso {
 
