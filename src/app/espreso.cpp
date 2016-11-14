@@ -26,10 +26,6 @@ int main(int argc, char **argv)
 	std::signal(SIGFPE, signalHandler);
 	std::signal(SIGSEGV, signalHandler);
 
-	Configuration::read(&argc, &argv);
-	Configuration::print();
-	return 0;
-
 	MPI_Init(&argc, &argv);
 
 	ArgsConfiguration configuration = ParametersReader::fromArguments(&argc, &argv);

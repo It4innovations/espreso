@@ -78,17 +78,23 @@ inline bool ValueHolder<bool>::set(const std::string &value)
 }
 
 template <>
-inline bool ValueHolder<std::string>::set(const std::string &value)
-{
-	this->value = value;
-	return true;
-}
+struct ValueHolder<std::string>: public ParameterBase {
+	std::string &value;
 
-template <>
-inline std::string ValueHolder<std::string>::get() const
-{
-	return value;
-}
+	ValueHolder(std::string name, std::string description, std::string &value, std::string &defaultValue)
+	: ParameterBase(name, description), value(value) { value = defaultValue; }
+
+	bool set(const std::string &value)
+	{
+		this->value = value;
+		return true;
+	}
+
+	std::string get() const
+	{
+		return value;
+	}
+};
 
 template <typename Ttype>
 struct OptionsHolder: public ParameterBase {

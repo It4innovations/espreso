@@ -213,7 +213,7 @@ void Reader::_read(const std::string &file, const std::vector<std::string> &args
 static void printConfiguration(const Configuration &configuration, size_t indent)
 {
 	for (auto it = configuration.parameters.begin(); it != configuration.parameters.end(); ++it) {
-		ESINFO(ALWAYS) << spaces(indent) << uppercase(it->first) << " = " << uppercase(it->second->get());
+		ESINFO(ALWAYS) << spaces(indent) << uppercase(it->first) << " = " << it->second->get();
 	}
 
 	for (auto it = configuration.subconfigurations.begin(); it != configuration.subconfigurations.end(); ++it) {
@@ -227,7 +227,7 @@ static void storeConfiguration(std::ofstream &os, const Configuration &configura
 {
 	for (auto it = configuration.parameters.begin(); it != configuration.parameters.end(); ++it) {
 		os << "\n" << spaces(indent) << "# " << it->second->description << "\n";
-		os << spaces(indent) << uppercase(it->first) << " " << uppercase(it->second->get()) << ";\n";
+		os << spaces(indent) << uppercase(it->first) << " " << it->second->get() << ";\n";
 	}
 
 	for (auto it = configuration.subconfigurations.begin(); it != configuration.subconfigurations.end(); ++it) {

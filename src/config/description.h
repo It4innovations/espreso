@@ -19,6 +19,21 @@ enum class INPUT {
 	GENERATOR = 4
 };
 
+struct Environment: public Configuration {
+
+	PARAMETER(int, MPIrank, "Rank of an MPI process.", 0);
+	PARAMETER(int, MPIsize, "Size of an MPI communicator (MPI_COMM_WORLD).", 1);
+
+	PARAMETER(size_t, MKL_NUM_THREADS, "Number of MKL threads.", Esutils::getEnv<size_t>("MKL_NUM_THREADS"));
+	PARAMETER(size_t, OMP_NUM_THREADS, "Number of OMP threads.", Esutils::getEnv<size_t>("OMP_NUM_THREADS"));
+	PARAMETER(size_t, SOLVER_NUM_THREADS, "Number of threads used in ESPRESO solver.", Esutils::getEnv<size_t>("SOLVER_NUM_THREADS"));
+	PARAMETER(size_t, PAR_NUM_THREADS, "Number of parallel threads.", Esutils::getEnv<size_t>("PAR_NUM_THREADS"));
+	PARAMETER(size_t, CILK_NWORKERS, "Number of cilk++ threads.", Esutils::getEnv<size_t>("CILK_NWORKERS"));
+
+	std::string executable;
+
+};
+
 
 struct ESPRESOGenerator: public Configuration {
 
@@ -45,6 +60,7 @@ struct GlobalConfiguration: public Configuration {
 			{ "GENERATOR", INPUT::GENERATOR, "ESPRESO internal generator" }
 	}));
 
+	SUBCONFIG(Environment     , env);
 	SUBCONFIG(ESPRESOGenerator, generator);
 	SUBCONFIG(FETISolver      , solver);
 };
