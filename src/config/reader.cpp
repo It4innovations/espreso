@@ -218,7 +218,7 @@ static void printConfiguration(const Configuration &configuration, size_t indent
 	}
 
 	for (size_t i = 0; i < configuration.orderedSubconfiguration.size(); i++) {
-		ESINFO(ALWAYS) << spaces(indent) << configuration.orderedSubconfiguration[i]->name << " {";
+		ESINFO(ALWAYS) << spaces(indent) << uppercase(configuration.orderedSubconfiguration[i]->name) << " {";
 		printConfiguration(*configuration.orderedSubconfiguration[i], indent + 2);
 		ESINFO(ALWAYS) << spaces(indent) << "}";
 	}
