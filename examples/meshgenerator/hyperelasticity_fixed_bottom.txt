@@ -38,6 +38,14 @@ NODES = {
   BOTTOM = <0, 30> <0, 30> <0, 0>
 }
 
+ELEMENTS = {
+  EL_ALL = ALL
+}
+
 DIRICHLET = {
   BOTTOM = x: 0, y: 0, z: 0
+}
+
+ACCELERATION = {
+  EL_ALL = x: 0, y: 0, z: 9.8066
 }

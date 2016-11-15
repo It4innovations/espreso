@@ -196,7 +196,7 @@ Factory::Factory(const ArgsConfiguration &configuration)
 		createInstance<Stokes, LinearInstance<Stokes> >(instance, mesh);
 		break;
 	case PhysicsAssembler::HYPERELASTICITY:
-		createInstance<LinearElasticity3D, SemiSmoothNewtonMethod<LinearElasticity3D> >(instance, mesh);
+		createInstance<Elasticity3D, SemiSmoothNewtonMethod<Elasticity3D> >(instance, mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown Physics";

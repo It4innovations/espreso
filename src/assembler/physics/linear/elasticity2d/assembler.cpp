@@ -188,9 +188,9 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix
 			matDENS(element->nodes(), 1), matE(element->nodes(), 2), matMI(element->nodes(), 1),
 			matTE(element->nodes(), 2), matT(element->nodes(), 1), matThickness(element->nodes(), 1),
-			matInitT(element->nodes(), 1);
-	DenseMatrix gpDENS(1, 1), gpE(1, 2), gpMI(1, 1), gpTE(1, 2), gpT(1, 1), gpInitT(1, 1), gpThickness(1, 1);
-	double detJ, inertia[2];
+			matInitT(element->nodes(), 1), inertia(element->nodes(), 2);
+	DenseMatrix gpDENS(1, 1), gpE(1, 2), gpMI(1, 1), gpTE(1, 2), gpT(1, 1), gpInitT(1, 1), gpThickness(1, 1), gpInertia(1, 2);
+	double detJ;
 
 	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
@@ -199,6 +199,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	coordinates.resize(element->nodes(), 2);
 
+	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
 		matDENS(i, 0) = material.density(element->node(i));
 		matE(i, 0) = material.youngModulusX(element->node(i));
@@ -213,8 +214,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			matT(i, 0) = matInitT(i, 0);
 		}
 
-		inertia[0] = element->settings(Property::ACCELERATION_X).back()->evaluate(element->node(i));
-		inertia[1] = element->settings(Property::ACCELERATION_Y).back()->evaluate(element->node(i));
+		for (size_t j = 0; j < element->settings(Property::ACCELERATION_X).size(); j++) {
+			inertia(i, 0) += element->settings(Property::ACCELERATION_X)[j]->evaluate(element->node(i));
+		}
+		for (size_t j = 0; j < element->settings(Property::ACCELERATION_Y).size(); j++) {
+			inertia(i, 1) += element->settings(Property::ACCELERATION_Y)[j]->evaluate(element->node(i));
+		}
 
 		matThickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
 
@@ -237,12 +242,13 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		inverse(J, invJ, detJ);
 		dND.multiply(invJ, dN[gp]);
 		XY.multiply(N[gp], coordinates);
-		gpDENS.multiply(N[gp], matDENS, 1, 0);
-		gpE.multiply(N[gp], matE, 1, 0);
-		gpMI.multiply(N[gp], matMI, 1, 0);
-		gpTE.multiply(N[gp], matTE, 1, 0);
-		gpT.multiply(N[gp], matT, 1, 0);
-		gpInitT.multiply(N[gp], matInitT, 1, 0);
+		gpDENS.multiply(N[gp], matDENS);
+		gpE.multiply(N[gp], matE);
+		gpMI.multiply(N[gp], matMI);
+		gpTE.multiply(N[gp], matTE);
+		gpT.multiply(N[gp], matT);
+		gpInitT.multiply(N[gp], matInitT);
+		gpInertia.multiply(N[gp], inertia);
 
 		gpThickness.multiply(N[gp], matThickness, 1, 0);
 
@@ -262,7 +268,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			Ke.multiply(B, Ce * B, detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
 			rhsT.multiply(B, Ce * epsilon, detJ * weighFactor[gp] * gpThickness(0, 0), 0, true, false);
 			for (eslocal i = 0; i < Ksize; i++) {
-				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * gpInertia(0, i / element->nodes());
 				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * XY(0, i / element->nodes()) * pow(LinearElasticity2D::angularVelocity.z, 2);
 				fe[i] += rhsT(i, 0);
 			}
@@ -276,7 +282,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			Ke.multiply(B, Ce * B, detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0), 1, true);
 			rhsT.multiply(B, Ce * epsilon, detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0), 0, true, false);
 			for (eslocal i = 0; i < Ksize; i++) {
-				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * gpInertia(0, i / element->nodes());
 				fe[i] += rhsT(i, 0);
 			}
 			for (eslocal i = 0; i < Ksize / 2; i++) {

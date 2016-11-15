@@ -25,6 +25,19 @@ public:
 	double density(size_t node) const { return _density->evaluate(node); }
 	double termalCapacity(size_t node) const { return _termalCapacity->evaluate(node); }
 
+	double shearModulusXY(size_t node) const
+	{
+		return _shearModulus[0]->evaluate(node);
+	}
+	double shearModulusXZ(size_t node) const
+	{
+		return _shearModulus[1]->evaluate(node);
+	}
+	double shearModulusYZ(size_t node) const
+	{
+		return _shearModulus[2]->evaluate(node);
+	}
+
 	double youngModulusX(size_t node) const
 	{
 		return _youngModulus[0]->evaluate(node);
@@ -103,6 +116,7 @@ public:
 
 	Material(const Coordinates &coordinates):
 		_density(new ConstEvaluator(7850)), _termalCapacity(new ConstEvaluator(1)),
+		_shearModulus{new ConstEvaluator(1), new ConstEvaluator(1), new ConstEvaluator(1)},
 		_youngModulus{new ConstEvaluator(2.1e11), new ConstEvaluator(2.1e11), new ConstEvaluator(2.1e11)},
 		_poissonRatio{new ConstEvaluator(0.3), new ConstEvaluator(0.3), new ConstEvaluator(0.3)},
 		_termalExpansion{new ConstEvaluator(1), new ConstEvaluator(1), new ConstEvaluator(1)},
@@ -115,6 +129,9 @@ public:
 		is.read(reinterpret_cast<char *>(&_model), sizeof(Material::MODEL));
 		_density             = Evaluator::create(is, coordinates);
 		_termalCapacity      = Evaluator::create(is, coordinates);
+		_shearModulus[0]     = Evaluator::create(is, coordinates);
+		_shearModulus[1]     = Evaluator::create(is, coordinates);
+		_shearModulus[2]     = Evaluator::create(is, coordinates);
 		_youngModulus[0]     = Evaluator::create(is, coordinates);
 		_youngModulus[1]     = Evaluator::create(is, coordinates);
 		_youngModulus[2]     = Evaluator::create(is, coordinates);
@@ -134,6 +151,9 @@ public:
 	{
 		_density = other._density->copy();
 		_termalCapacity = other._termalCapacity->copy();
+		_shearModulus[0] = other._shearModulus[0]->copy();
+		_shearModulus[1] = other._shearModulus[1]->copy();
+		_shearModulus[2] = other._shearModulus[2]->copy();
 		_youngModulus[0] = other._youngModulus[0]->copy();
 		_youngModulus[1] = other._youngModulus[1]->copy();
 		_youngModulus[2] = other._youngModulus[2]->copy();
@@ -153,6 +173,9 @@ public:
 		if (this != &other) {
 			delete _density;
 			delete _termalCapacity;
+			delete _shearModulus[0];
+			delete _shearModulus[1];
+			delete _shearModulus[2];
 			delete _youngModulus[0];
 			delete _youngModulus[1];
 			delete _youngModulus[2];
@@ -169,6 +192,9 @@ public:
 			_coordinates = other._coordinates;
 			_density = other._density->copy();
 			_termalCapacity = other._termalCapacity->copy();
+			_shearModulus[0] = other._shearModulus[0]->copy();
+			_shearModulus[1] = other._shearModulus[1]->copy();
+			_shearModulus[2] = other._shearModulus[2]->copy();
 			_youngModulus[0] = other._youngModulus[0]->copy();
 			_youngModulus[1] = other._youngModulus[1]->copy();
 			_youngModulus[2] = other._youngModulus[2]->copy();
@@ -189,6 +215,9 @@ public:
 	{
 		delete _density;
 		delete _termalCapacity;
+		delete _shearModulus[0];
+		delete _shearModulus[1];
+		delete _shearModulus[2];
 		delete _youngModulus[0];
 		delete _youngModulus[1];
 		delete _youngModulus[2];
@@ -207,10 +236,13 @@ protected:
 	Evaluator* _density;
 	Evaluator* _termalCapacity;
 
+	Evaluator* _shearModulus[3];
 	Evaluator* _youngModulus[3];
 	Evaluator* _poissonRatio[3];
 	Evaluator* _termalExpansion[3];
 	Evaluator* _termalConduction[3];
+
+	double _anisotropicConstants[21];
 
 	MODEL _model;
 	const Coordinates* _coordinates;
@@ -221,6 +253,9 @@ inline std::ofstream& operator<<(std::ofstream& os, const Material &m)
 	os.write(reinterpret_cast<const char*>(&m._model), sizeof(Material::MODEL));
 	m._density->store(os);
 	m._termalCapacity->store(os);
+	m._shearModulus[0]->store(os);
+	m._shearModulus[1]->store(os);
+	m._shearModulus[2]->store(os);
 	m._youngModulus[0]->store(os);
 	m._youngModulus[1]->store(os);
 	m._youngModulus[2]->store(os);

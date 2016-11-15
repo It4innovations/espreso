@@ -36,6 +36,9 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 	set(_poissonRatio[1]    , "NUXZ");
 	set(_poissonRatio[2]    , "MIYZ");
 	set(_poissonRatio[2]    , "NUYZ");
+	set(_shearModulus[0]    , "GXY");
+	set(_shearModulus[1]    , "GXZ");
+	set(_shearModulus[2]    , "GYZ");
 	set(_youngModulus[0]    , "EX");
 	set(_youngModulus[1]    , "EY");
 	set(_youngModulus[2]    , "EZ");

@@ -10,6 +10,8 @@
 #include "instance/hypre/instance.h"
 #include "instance/nonlinear/ssnm/instance.h"
 
+#include "physics/elasticity3d/assembler.h"
+
 #include "physics/linear/advectiondiffusion3d/assembler.h"
 #include "physics/linear/advectiondiffusion2d/assembler.h"
 #include "physics/linear/elasticity2d/assembler.h"

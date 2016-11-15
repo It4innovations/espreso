@@ -3,13 +3,13 @@
 
 namespace espreso {
 
-std::vector<Property> LinearElasticity3D::elementDOFs;
-std::vector<Property> LinearElasticity3D::faceDOFs;
-std::vector<Property> LinearElasticity3D::edgeDOFs;
-std::vector<Property> LinearElasticity3D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
-std::vector<Property> LinearElasticity3D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> Elasticity3D::elementDOFs;
+std::vector<Property> Elasticity3D::faceDOFs;
+std::vector<Property> Elasticity3D::edgeDOFs;
+std::vector<Property> Elasticity3D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+std::vector<Property> Elasticity3D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 
-void LinearElasticity3D::prepareMeshStructures()
+void Elasticity3D::prepareMeshStructures()
 {
 	Hexahedron8::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Hexahedron20::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
@@ -53,7 +53,7 @@ void LinearElasticity3D::prepareMeshStructures()
 	}
 }
 
-void LinearElasticity3D::saveMeshProperties(output::Store &store)
+void Elasticity3D::saveMeshProperties(output::Store &store)
 {
 	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, output::Store::ElementType::NODES);
 	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, output::Store::ElementType::NODES);
@@ -79,13 +79,13 @@ void LinearElasticity3D::saveMeshProperties(output::Store &store)
 	}
 }
 
-void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+void Elasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("displacement", 3, results, output::Store::ElementType::NODES);
 	store.finalize();
 }
 
-void LinearElasticity3D::assembleGluingMatrices()
+void Elasticity3D::assembleGluingMatrices()
 {
 	_constraints.initMatrices(matrixSize);
 
@@ -176,10 +176,90 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND)
 	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
 }
 
+static void fillC(DenseMatrix &Ce, Material::MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &G)
+{
+	switch (model) {
+	case Material::MODEL::LINEAR_ELASTIC_ISOTROPIC:
+
+		double EE = E(0, 0) / ((1 + mi(0, 0)) * (1 - 2 * mi(0, 0)));
+
+		Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = EE * mi(0, 0);
+		Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = EE * (1.0 - mi(0, 0));
+		Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = EE * (0.5 - mi(0, 0));
+		break;
+
+	case Material::MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+
+//	       D11 = MATERIAL_Properties.D11;
+//	       D12 = MATERIAL_Properties.D12;
+//	       D13 = MATERIAL_Properties.D13;
+//	       D14 = MATERIAL_Properties.D14;
+//	       D15 = MATERIAL_Properties.D15;
+//	       D16 = MATERIAL_Properties.D16;
+//	       D22 = MATERIAL_Properties.D22;
+//	       D23 = MATERIAL_Properties.D23;
+//	       D24 = MATERIAL_Properties.D24;
+//	       D25 = MATERIAL_Properties.D25;
+//	       D26 = MATERIAL_Properties.D26;
+//	       D33 = MATERIAL_Properties.D33;
+//	       D34 = MATERIAL_Properties.D34;
+//	       D35 = MATERIAL_Properties.D35;
+//	       D36 = MATERIAL_Properties.D36;
+//	       D44 = MATERIAL_Properties.D44;
+//	       D45 = MATERIAL_Properties.D45;
+//	       D46 = MATERIAL_Properties.D46;
+//	       D55 = MATERIAL_Properties.D55;
+//	       D56 = MATERIAL_Properties.D56;
+//	       D66 = MATERIAL_Properties.D66;
+//
+//	       C =   [D11    D12   D13    D14   D15    D16
+//	           D12    D22   D23    D24   D25    D26
+//	           D13    D23   D33    D34   D35    D36
+//	           D14    D24   D34    D44   D45    D46
+//	           D15    D25   D35    D45   D55    D56
+//	           D16    D26   D36    D46   D56    D66];
+
+		break;
+
+	case Material::MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+
+		double miXY = mi(0, 0);
+		double miYZ = mi(0, 1);
+		double miXZ = mi(0, 2);
+		double miYX = miXY * E(0, 1) / E(0, 0);
+		double miZY = miYZ * E(0, 2) / E(0, 1);
+		double miZX = miXZ * E(0, 0) / E(0, 2);
+
+		double ksi = 1 - (miXY * miYX + miYZ * miZY + miXZ * miZX) - (miXY * miYZ * miZX + miYX * miZY * miXZ);
+
+		double dxx = E(0, 0) * (1 - miYZ * miZY) / ksi;
+		double dxy = E(0, 1) * (miXY + miXZ * miZY) / ksi;
+		double dxz = E(0, 2) * (miXZ + miYZ * miXY)  /ksi;
+		double dyy = E(0, 1) * (1 - miXZ * miZX) / ksi;
+		double dyz = E(0, 2) * (miYZ + miYX * miXZ) / ksi;
+		double dzz = E(0, 2) * (1 - miYX * miXY) / ksi;
+
+
+		Ce = 0;
+		Ce(0, 0) = dxx; Ce(0, 1) = dxy; Ce(0, 2) = dxz;
+		Ce(1, 0) = dxy; Ce(1, 1) = dyy; Ce(1, 2) = dyz;
+		Ce(2, 0) = dxz; Ce(2, 1) = dyz; Ce(2, 2) = dzz;
+		Ce(3, 3) = G(0, 0);
+		Ce(4, 4) = G(0, 2);
+		Ce(5, 5) = G(0, 1);
+		break;
+	}
+}
+
+
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element)
 {
-	DenseMatrix Ce(6, 6), coordinates, J, invJ, dND, B;
-	std::vector<double> inertia(3, 0);
+	DenseMatrix Ce(6, 6), XYZ(1, 3), coordinates, J, invJ, dND, B, epsilon, rhsT;
+	DenseMatrix
+			matDENS(element->nodes(), 1), matE(element->nodes(), 3), matMI(element->nodes(), 3), matG(element->nodes(), 3),
+			matTE(element->nodes(), 3), matT(element->nodes(), 1),
+			matInitT(element->nodes(), 1), inertia(element->nodes(), 3);
+	DenseMatrix gpDENS(1, 1), gpE(1, 3), gpMI(1, 3), gpG(1, 3), gpTE(1, 3), gpT(1, 1), gpInitT(1, 1), gpInertia(1, 3);
 	double detJ;
 
 	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
@@ -187,54 +267,92 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
 
-	// TODO: set the omega from example
-	Point omega(50, 50, 0);
-
-	double ex = material.youngModulusX(0);
-	double mi = material.poissonRatioXY(0);
-	double E = ex / ((1 + mi) * (1 - 2 * mi));
-
-	Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = E * mi;
-	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
-	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
-
-	inertia[0] = inertia[1] = 0; // inertia[2] = 0;
-	inertia[2] = 9.8066 * material.density(0);
-
 	coordinates.resize(element->nodes(), 3);
 
-	Point mid;
+	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
+		matDENS(i, 0) = material.density(element->node(i));
+
+		// dependent on temperature
+		matE(i, 0) = material.youngModulusX(element->node(i));
+		matE(i, 1) = material.youngModulusY(element->node(i));
+		matE(i, 2) = material.youngModulusZ(element->node(i));
+
+		matMI(i, 0) = material.poissonRatioXY(element->node(i));
+		matMI(i, 1) = material.poissonRatioXZ(element->node(i));
+		matMI(i, 2) = material.poissonRatioYZ(element->node(i));
+
+		matG(i, 0) = material.shearModulusXY(element->node(i));
+		matG(i, 1) = material.shearModulusXZ(element->node(i));
+		matG(i, 2) = material.shearModulusYZ(element->node(i));
+
+		matTE(i, 0) = material.termalExpansionX(element->node(i));
+		matTE(i, 1) = material.termalExpansionY(element->node(i));
+		matTE(i, 2) = material.termalExpansionZ(element->node(i));
+
+		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
+		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
+			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
+		} else {
+			matT(i, 0) = matInitT(i, 0);
+		}
+
+		for (size_t j = 0; j < element->settings(Property::ACCELERATION_X).size(); j++) {
+			inertia(i, 0) += element->settings(Property::ACCELERATION_X)[j]->evaluate(element->node(i));
+		}
+		for (size_t j = 0; j < element->settings(Property::ACCELERATION_Y).size(); j++) {
+			inertia(i, 1) += element->settings(Property::ACCELERATION_Y)[j]->evaluate(element->node(i));
+		}
+		for (size_t j = 0; j < element->settings(Property::ACCELERATION_Z).size(); j++) {
+			inertia(i, 2) += element->settings(Property::ACCELERATION_Z)[j]->evaluate(element->node(i));
+		}
+
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
 		coordinates(i, 2) = mesh.coordinates()[element->node(i)].z;
-		mid += mesh.coordinates()[element->node(i)];
 	}
-	mid /= element->nodes();
 
 	eslocal Ksize = 3 * element->nodes();
 
 	Ke.resize(Ksize, Ksize);
 	Ke = 0;
 	fe.resize(Ksize);
-	fill(fe.begin(), fe.end(), 0);
-
-	double rotation[3] = { mid.x * omega.x * omega.x, mid.y * omega.y * omega.y, mid.z * omega.z * omega.z };
+	std::fill(fe.begin(), fe.end(), 0);
+	rhsT.resize(Ksize, 1);
+	rhsT = 0;
 
 	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
-
 		dND.multiply(invJ, dN[gp]);
-		B.resize(Ce.rows(), Ksize);
-		distribute(B, dND);
-		Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
+		XYZ.multiply(N[gp], coordinates);
+		gpDENS.multiply(N[gp], matDENS);
+		gpE.multiply(N[gp], matE);
+		gpMI.multiply(N[gp], matMI);
+		gpG.multiply(N[gp], matG);
+		gpTE.multiply(N[gp], matTE);
+		gpT.multiply(N[gp], matT);
+		gpInitT.multiply(N[gp], matInitT);
+		gpInertia.multiply(N[gp], inertia);
 
+		fillC(Ce, material.model(), gpDENS, gpE, gpMI, gpG);
+		B.resize(Ce.rows(), Ksize);
+		epsilon.resize(Ce.rows(), 1);
+
+		epsilon(0, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 0);
+		epsilon(1, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 1);
+		epsilon(2, 0) = (gpT(0, 0) - gpInitT(0, 0)) * gpTE(0, 2);
+		epsilon(3, 0) = epsilon(4, 0) = epsilon(5, 0) = 0;
+
+		distribute(B, dND);
+
+		Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
+		rhsT.multiply(B, Ce * epsilon, detJ * weighFactor[gp], 0, true, false);
 		for (eslocal i = 0; i < Ksize; i++) {
-			// TODO: set rotation from example
-			fe[i] += detJ * weighFactor[gp] * N[gp](0, i % element->nodes()) * inertia[i / element->nodes()];
-			//fe[i] += detJ * weighFactor[gp] * N[gp](0, i % e->size()) * 7850 * rotation[i / e->size()];
+			fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % element->nodes()) * gpInertia(0, i / element->nodes());
+			// fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % element->nodes()) * XYZ(0, i / element->nodes()) * pow(LinearElasticity2D::angularVelocity.z, 2);
+			fe[i] += rhsT(i, 0);
 		}
 	}
 }
@@ -363,7 +481,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
 }
 
-void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
+void Elasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
 	processElement(Ke, fe, _mesh, e);
 	dofs.resize(e->nodes() * pointDOFs.size());
@@ -384,7 +502,7 @@ void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	}
 }
 
-void LinearElasticity3D::makeStiffnessMatricesRegular()
+void Elasticity3D::makeStiffnessMatricesRegular()
 {
 	cilk_for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		switch (config::solver::REGULARIZATION) {
@@ -408,7 +526,7 @@ void LinearElasticity3D::makeStiffnessMatricesRegular()
 	}
 }
 
-void LinearElasticity3D::composeSubdomain(size_t subdomain)
+void Elasticity3D::composeSubdomain(size_t subdomain)
 {
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke;
