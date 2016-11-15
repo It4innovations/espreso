@@ -204,9 +204,7 @@ void Factory::solve(const std::string &outputFile)
 	instance->init();
 
 	for (int i = 0; i < config::solver::TIME_STEPS; i++) {
-		instance->pre_solve_update(_solution);
 		instance->solve(_solution);
-		instance->post_solve_update(_solution);
 	}
 
 	instance->finalize();

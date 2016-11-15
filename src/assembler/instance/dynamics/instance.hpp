@@ -80,7 +80,7 @@ void DynamicsInstance<TPhysics>::init()
 }
 
 template <class TPhysics>
-void DynamicsInstance<TPhysics>::pre_solve_update(std::vector<std::vector<double> > &solution)
+void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution)
 {
 	ESINFO(PROGRESS1) << "Time: " << _time;
 
@@ -90,11 +90,7 @@ void DynamicsInstance<TPhysics>::pre_solve_update(std::vector<std::vector<double
 		}
 		_physics.M[p].MatVec(_tmp[p], _b[p], 'N');
 	}
-}
 
-template <class TPhysics>
-void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution)
-{
 	if (_time && config::output::SAVE_RESULTS) {
 		_store.storeGeometry(_time);
 	}
@@ -111,11 +107,7 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 	if (config::output::SAVE_RESULTS) {
 		_physics.saveMeshResults(_store, solution);
 	}
-}
 
-template <class TPhysics>
-void DynamicsInstance<TPhysics>::post_solve_update(std::vector<std::vector<double> > &solution)
-{
 	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
 		for(size_t i = 0; i < _u[p].size(); i++) {
 			_wn[p][i] = (_physics.A[0] * (solution[p][i] - _u[p][i])) - (_physics.A[2] * _v[p][i]) - (_physics.A[3] * _w[p][i]);
@@ -126,21 +118,6 @@ void DynamicsInstance<TPhysics>::post_solve_update(std::vector<std::vector<doubl
 			_w[p][i] = _wn[p][i];
 		}
 	}
-
-//#ifdef CATALYST
-//	unsigned int timeStep = tt;
-//	double time = timeStep * dynamic_timestep;
-//	Adaptor::CoProcess(input.mesh,l2g_vec, vec_u_n,  time, timeStep, timeStep == numberOfTimeSteps - 1);
-//#endif
-
-
-
-//
-//	_instance.mesh().store(mesh::VTK_FULL, ss.str(), vec_u_n, 0.95, 0.9);
-//	saveVTK(ss.str().c_str(), vec_u_n, l2g_vec, _instance.localBoundaries(), _instance.globalBoundaries(), 0.95, 0.9);
-//
-//
-
 
 	_time++;
 }

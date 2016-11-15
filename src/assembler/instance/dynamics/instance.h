@@ -23,9 +23,7 @@ public:
 
 	virtual void init();
 
-	virtual void pre_solve_update(std::vector<std::vector<double> > &solution);
 	virtual void solve(std::vector<std::vector<double> > &solution);
-	virtual void post_solve_update(std::vector<std::vector<double> > &solution);
 
 	virtual void finalize();
 
