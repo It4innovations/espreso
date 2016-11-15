@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
 	MPI_Init(&argc, &argv);
 
-	Configuration::print();
+	Configuration::store();
 
 	ArgsConfiguration configuration = ParametersReader::fromArguments(&argc, &argv);
 

@@ -13,9 +13,11 @@
 #define MAX_VECTOR_CONFIGURATION_SIZE 10
 
 #define OPTIONS(...) __VA_ARGS__
-#define OPTION(type, name, description, value, options) type name = DataHolder::create<type>(#name, description, name, value, options, this)
-#define PARAMETER(type, name, description, value)       type name = DataHolder::create<type>(#name, description, name, value, this)
-#define SUBCONFIG(type, name)                           type name = Configuration::create<type>(#name, this);
+#define OPTION(type, name, description, value, options)         type name = DataHolder::create<type>(#name, description, name, value, options, this)
+#define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, this)
+
+#define SUBVECTOR(type, name, description) ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, this)
+#define SUBCONFIG(type, name, description)                      type name = Configuration::create<type>(#name, description, this)
 
 namespace espreso {
 
@@ -82,7 +84,7 @@ struct ValueHolder<std::string>: public ParameterBase {
 	std::string &value;
 
 	ValueHolder(const std::string &name, const std::string &description, std::string &value, const std::string &defaultValue)
-	: ParameterBase(name, description), value(value) { }
+	: ParameterBase(name, description), value(value) { };
 
 	bool set(const std::string &value)
 	{
@@ -140,6 +142,7 @@ struct Configuration {
 	std::vector<ParameterBase*> orderedParameters;
 	std::vector<Configuration*> orderedSubconfiguration;
 	std::string name;
+	std::string description;
 
 	static void read(const std::string &file) { Reader::read(file); }
 	static void read(int *argc, char ***argv) { Reader::read(argc, argv); }
@@ -147,16 +150,17 @@ struct Configuration {
 	static void store() { Reader::store(); }
 
 	template <typename Ttype>
-	static Ttype create(const std::string &name, Configuration* conf)
+	static Ttype create(const std::string &name, const std::string &description, Configuration* conf)
 	{
 		Ttype configuration;
 		conf->subconfigurations[name] = &configuration;
 		conf->orderedSubconfiguration.push_back(&configuration);
 		configuration.name = name;
+		configuration.description = description;
 		return configuration;
 	}
 
-	Configuration& operator[](const std::string &subconfiguration)
+	virtual Configuration& operator[](const std::string &subconfiguration)
 	{
 		if (subconfigurations.find(subconfiguration) != subconfigurations.end()) {
 			return *subconfigurations.find(subconfiguration)->second;
@@ -176,10 +180,59 @@ struct Configuration {
 		}
 	}
 
-	~Configuration()
+	virtual const std::vector<Configuration*>& storeConfigurations() const { return orderedSubconfiguration; }
+	virtual const std::vector<ParameterBase*>& storeParameters() const { return orderedParameters; }
+
+	virtual ~Configuration()
 	{
 		for (auto it = parameters.begin(); it != parameters.end(); ++it) {
 			delete it->second;
+		}
+	}
+};
+
+template <typename Ttype>
+struct ConfigurationVector: public Configuration {
+	std::vector<Configuration*> configurations;
+	std::vector<Configuration*> dummy;
+
+	static ConfigurationVector<Ttype> create(const std::string &name, const std::string &description, Configuration* conf)
+	{
+		ConfigurationVector<Ttype> configuration;
+		conf->subconfigurations[name] = &configuration;
+		conf->orderedSubconfiguration.push_back(&configuration);
+		configuration.name = name;
+		configuration.description = description;
+		configuration.dummy.push_back(new Ttype{});
+		configuration.dummy.back()->name = "1";
+		configuration.dummy.back()->description = "First material settings.";
+		return configuration;
+	}
+
+	Configuration& operator[](const std::string &subconfiguration)
+	{
+		std::stringstream ss(subconfiguration);
+		size_t index;
+		ss >> index;
+		if (!ss.eof() || ss.fail()) {
+			ESINFO(GLOBAL_ERROR) << "Invalid vector index '" << subconfiguration << "'";
+		}
+		if (index > configurations.size()) {
+			configurations.resize(index, NULL);
+			configurations[index - 1] = new Ttype{};
+			subconfigurations[std::to_string(index - 1)] = configurations[index - 1];
+			orderedSubconfiguration.push_back(configurations[index - 1]);
+			configurations[index - 1]->name = std::to_string(index);
+		}
+		return *configurations[index];
+	}
+
+	virtual const std::vector<Configuration*>& storeConfigurations() const
+	{
+		if (orderedSubconfiguration.size()) {
+			return orderedSubconfiguration;
+		} else {
+			return dummy;
 		}
 	}
 };

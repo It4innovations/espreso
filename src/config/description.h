@@ -142,6 +142,22 @@ enum class OUTPUT_FORMAT {
 	ENSIGHT_FORMAT = 3
 };
 
+enum class PHYSICS {
+	LINEAR_ELASTICITY_2D,
+	LINEAR_ELASTICITY_3D,
+	TRANSIENT_ELASTICITY_2D,
+	TRANSIENT_ELASTICITY_3D,
+	ADVECTION_DIFFUSION_2D,
+	ADVECTION_DIFFUSION_3D,
+	STOKES
+};
+
+enum class MATERIAL_MODEL {
+	LINEAR_ELASTIC_ISOTROPIC = 0,
+	LINEAR_ELASTIC_ORTHOTROPIC = 1,
+	LINEAR_ELASTIC_ANISOTROPIC = 2
+};
+
 struct Environment: public Configuration {
 
 	PARAMETER(int, MPIrank, "Rank of an MPI process.", 0);
@@ -299,11 +315,31 @@ struct Output: public Configuration {
 	PARAMETER(bool, print_matrices, "Print assembler matrices.", false);
 };
 
-struct GlobalConfiguration: public Configuration {
+struct MaterialParameters: public Configuration {
 
-	PARAMETER(double, x, "test1", 1.5);
-	PARAMETER(double, y, "test2", 2.5);
-	PARAMETER(int   , z, "test3", 2);
+	PARAMETER(std::string, DENS, "Density"             , "7850");
+	PARAMETER(std::string, MIXY, "Poisson ratio XY."   , "0.3");
+	PARAMETER(std::string, MIXZ, "Poisson ratio XZ."   , "0.3");
+	PARAMETER(std::string, MIYZ, "Poisson ratio YZ."   , "0.3");
+	PARAMETER(std::string, EX  , "Young modulus X."    , "2.1e11");
+	PARAMETER(std::string, EY  , "Young modulus Y."    , "2.1e11");
+	PARAMETER(std::string, EZ  , "Young modulus Z."    , "2.1e11");
+	PARAMETER(std::string, C   , "Termal capacity."    , "1");
+	PARAMETER(std::string, KXX , "Termal conduction X.", "1");
+	PARAMETER(std::string, KXY , "Termal conduction Y.", "1");
+	PARAMETER(std::string, KXZ , "Termal conduction Z.", "1");
+	PARAMETER(std::string, ALPX, "Termal expansion X." , "1");
+	PARAMETER(std::string, ALPY, "Termal expansion Y." , "1");
+	PARAMETER(std::string, ALPZ, "Termal expansion Z." , "1");
+
+	OPTION(MATERIAL_MODEL, model, "Material model", MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC, OPTIONS({
+		{ "LINEAR_ELASTIC_ISOTROPIC"  , MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC  , "Isotropic." },
+		{ "LINEAR_ELASTIC_ORTHOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic." },
+		{ "LINEAR_ELASTIC_ANISOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic." }
+	}));
+};
+
+struct GlobalConfiguration: public Configuration {
 
 	OPTION(INPUT, input, "test input", INPUT::GENERATOR, OPTIONS({
 			{ "MATSOL", INPUT::MATSOL, "IT4I internal library" },
@@ -313,11 +349,23 @@ struct GlobalConfiguration: public Configuration {
 			{ "GENERATOR", INPUT::GENERATOR, "ESPRESO internal generator" }
 	}));
 
-	SUBCONFIG(Environment     , env);
-	SUBCONFIG(ESPRESOGenerator, generator);
-	SUBCONFIG(FETISolver      , feti);
-	SUBCONFIG(MULTIGRIDSolver , multigrid);
-	SUBCONFIG(Output          , output);
+	OPTION(PHYSICS, physics, "Used physics", PHYSICS::LINEAR_ELASTICITY_3D, OPTIONS({
+		{ "LINEAR_ELASTICITY_2D"   , PHYSICS::LINEAR_ELASTICITY_2D   , "2D linear elasticity." },
+		{ "LINEAR_ELASTICITY_3D"   , PHYSICS::LINEAR_ELASTICITY_3D   , "3D linear elasticity." },
+		{ "TRANSIENT_ELASTICITY_2D", PHYSICS::TRANSIENT_ELASTICITY_2D, "2D transient elasticity." },
+		{ "TRANSIENT_ELASTICITY_3D", PHYSICS::TRANSIENT_ELASTICITY_3D, "3D transient elasticity." },
+		{ "ADVECTION_DIFFUSION_2D" , PHYSICS::ADVECTION_DIFFUSION_2D , "2D advection diffusion"},
+		{ "ADVECTION_DIFFUSION_3D" , PHYSICS::ADVECTION_DIFFUSION_3D , "3D advection diffusion"},
+		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
+	}));
+
+	SUBCONFIG(Environment       , env      , "Environment dependent variables (set by ./env/scripts).");
+	SUBCONFIG(ESPRESOGenerator  , generator, "ESPRESO internal mesh generator.");
+	SUBCONFIG(FETISolver        , feti     , "Internal FETI solver options.");
+	SUBCONFIG(MULTIGRIDSolver   , multigrid, "Multigrid setting.");
+	SUBCONFIG(Output            , output   , "Output settings.");
+
+	SUBVECTOR(MaterialParameters, materials, "Vector of materials (counterd from 1).");
 };
 
 extern GlobalConfiguration configuration;

@@ -226,14 +226,16 @@ static void printConfiguration(const Configuration &configuration, size_t indent
 
 static void storeConfiguration(std::ofstream &os, const Configuration &configuration, size_t indent)
 {
-	for (auto it = configuration.parameters.begin(); it != configuration.parameters.end(); ++it) {
-		os << "\n" << spaces(indent) << "# " << it->second->description << "\n";
-		os << spaces(indent) << uppercase(it->first) << " " << it->second->get() << ";\n";
+	for (size_t i = 0; i < configuration.storeParameters().size(); i++) {
+		ParameterBase *parameter = configuration.storeParameters()[i];
+		os << "\n" << spaces(indent) << "# " << parameter->description << "\n";
+		os << spaces(indent) << uppercase(parameter->name) << " = " << parameter->get() << ";\n";
 	}
 
-	for (auto it = configuration.subconfigurations.begin(); it != configuration.subconfigurations.end(); ++it) {
-		os << "\n" << spaces(indent) << uppercase(it->first) << " {\n";
-		storeConfiguration(os, *it->second, indent + 2);
+	for (size_t i = 0; i < configuration.storeConfigurations().size(); i++) {
+		os << "\n" << spaces(indent) << uppercase(configuration.storeConfigurations()[i]->name) << " { ";
+		os << "# " << configuration.storeConfigurations()[i]->description << "\n";
+		storeConfiguration(os, *configuration.storeConfigurations()[i], indent + 2);
 		os << spaces(indent) << "}\n\n";
 	}
 }
@@ -266,6 +268,7 @@ void Reader::store()
 	storeConfiguration(os, configuration, 0);
 	ESINFO(ALWAYS) << "configuration stored to 'espreso.ecf.default'";
 }
+
 
 
 
