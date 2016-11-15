@@ -110,7 +110,8 @@ void Factory::readParameters(const ArgsConfiguration &configuration)
 				{ "TRANSIENT_ELASTICITY_3D", PhysicsAssembler::TRANSIENT_ELASTICITY_3D, "3D transient elasticity." },
 				{ "ADVECTION_DIFFUSION_2D", PhysicsAssembler::ADVECTION_DIFFUSION_2D, "2D advection diffusion"},
 				{ "ADVECTION_DIFFUSION_3D", PhysicsAssembler::ADVECTION_DIFFUSION_3D, "3D advection diffusion"},
-				{ "STOKES", PhysicsAssembler::STOKES, "Stokes"}
+				{ "STOKES", PhysicsAssembler::STOKES, "Stokes"},
+				{ "HYPERELASTICITY", PhysicsAssembler::HYPERELASTICITY, "Non linear problem." },
 		} }
 	};
 
@@ -193,6 +194,9 @@ Factory::Factory(const ArgsConfiguration &configuration)
 		break;
 	case PhysicsAssembler::STOKES:
 		createInstance<Stokes, LinearInstance<Stokes> >(instance, mesh);
+		break;
+	case PhysicsAssembler::HYPERELASTICITY:
+		createInstance<LinearElasticity3D, SemiSmoothNewtonMethod<LinearElasticity3D> >(instance, mesh);
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown Physics";
