@@ -30,7 +30,7 @@ struct Environment: public Configuration {
 	PARAMETER(size_t, PAR_NUM_THREADS, "Number of parallel threads.", Esutils::getEnv<size_t>("PAR_NUM_THREADS"));
 	PARAMETER(size_t, CILK_NWORKERS, "Number of cilk++ threads.", Esutils::getEnv<size_t>("CILK_NWORKERS"));
 
-	std::string executable;
+	PARAMETER(std::string, executable, "name", "espreso");
 
 };
 

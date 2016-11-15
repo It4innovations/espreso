@@ -212,13 +212,14 @@ void Reader::_read(const std::string &file, const std::vector<std::string> &args
 
 static void printConfiguration(const Configuration &configuration, size_t indent)
 {
-	for (auto it = configuration.parameters.begin(); it != configuration.parameters.end(); ++it) {
-		ESINFO(ALWAYS) << spaces(indent) << uppercase(it->first) << " = " << it->second->get();
+	for (size_t i = 0; i < configuration.orderedParameters.size(); i++) {
+		ParameterBase *parameter = configuration.orderedParameters[i];
+		ESINFO(ALWAYS) << spaces(indent) << uppercase(parameter->name) << " = " << parameter->get();
 	}
 
-	for (auto it = configuration.subconfigurations.begin(); it != configuration.subconfigurations.end(); ++it) {
-		ESINFO(ALWAYS) << spaces(indent) << uppercase(it->first) << " {";
-		printConfiguration(*it->second, indent + 2);
+	for (size_t i = 0; i < configuration.orderedSubconfiguration.size(); i++) {
+		ESINFO(ALWAYS) << spaces(indent) << configuration.orderedSubconfiguration[i]->name << " {";
+		printConfiguration(*configuration.orderedSubconfiguration[i], indent + 2);
 		ESINFO(ALWAYS) << spaces(indent) << "}";
 	}
 }
