@@ -20,6 +20,13 @@ namespace input {
 class Loader;
 }
 
+
+struct Region {
+	std::string name;
+	std::vector<Element*> elements;
+	Settings settings;
+};
+
 class Mesh
 {
 
@@ -62,6 +69,16 @@ public:
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
 
 	const std::vector<int>& neighbours() const { return _neighbours; }
+	const Region& region(const std::string &name) const
+	{
+		auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region &region) { return region.name.compare(name) == 0; });
+		if (it != _regions.end()) {
+			return *it;
+		}
+		ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
+		exit(EXIT_FAILURE);
+	}
+	const std::vector<Region>& regions() const { return _regions; }
 	const std::vector<Material>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
@@ -135,6 +152,9 @@ protected:
 
 	/** @brief list of materials in the mesh*/
 	std::vector<Material> _materials;
+
+	/** @brief list of mesh regions*/
+	std::vector<Region> _regions;
 
 	/** @brief list of evaluators */
 	std::vector<Evaluator*> _evaluators;
