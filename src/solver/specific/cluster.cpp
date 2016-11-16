@@ -1224,16 +1224,15 @@ void ClusterBase::CreateF0() {
 	 TimeEvent reduction_F0_time("F0 reduction time");
 	 reduction_F0_time.start();
 
-	for (eslocal j = 1; j < tmpF0v.size(); j = j * 2 ) {
-		cilk_for (eslocal i = 0; i < tmpF0v.size(); i = i + 2*j) {
-			if ( i+j < tmpF0v.size()) {
-				tmpF0v[i    ].MatAddInPlace( tmpF0v[i + j], 'N', 1.0 );
-				tmpF0v[i + j].Clear();
+	for (eslocal j = 1; j < tmpF0v.size(); j *= 2) {
+		cilk_for (eslocal i = 0; i <= tmpF0v.size() / (2 * j); i++) {
+			if (i * 2 * j + j < tmpF0v.size()) {
+				tmpF0v[i * 2 * j].MatAddInPlace( tmpF0v[i * 2 * j + j], 'N', 1.0 );
+				tmpF0v[i * 2 * j + j].Clear();
 			}
 		}
 	}
 	F0_Mat = tmpF0v[0];
-
 
 	if (config::info::PRINT_MATRICES) {
 		SparseMatrix tmpF0 = F0_Mat;
@@ -1656,24 +1655,24 @@ void ClusterBase::Create_G_perCluster() {
 	TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
 	G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
 
-	for (eslocal j = 1; j < tmp_Mat.size(); j = j * 2 ) {
-		cilk_for (eslocal i = 0; i < tmp_Mat.size(); i = i + 2*j) {
+	for (eslocal j = 1; j < tmp_Mat.size(); j *= 2) {
+		cilk_for (eslocal i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 
-			if ( i+j < tmp_Mat.size()) {
+			if (i * 2 * j + j < tmp_Mat.size()) {
 				if (USE_HFETI == 1) {
-					tmp_Mat[i    ].MatAddInPlace( tmp_Mat[i + j], 'N', 1.0 );
+					tmp_Mat[i * 2 * j].MatAddInPlace( tmp_Mat[i * 2 * j + j], 'N', 1.0 );
 				} else {
-					tmp_Mat[i    ].MatAppend(tmp_Mat[i + j]);
+					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
 				}
-				tmp_Mat[i + j].Clear();
+				tmp_Mat[i * 2 * j + j].Clear();
 
 				if (!SYMMETRIC_SYSTEM) {
 					if (USE_HFETI == 1) {
-						tmp_Mat2[i    ].MatAddInPlace( tmp_Mat2[i + j], 'N', 1.0 );
+						tmp_Mat2[i * 2 * j].MatAddInPlace(tmp_Mat2[i * 2 * j + j], 'N', 1.0 );
 					} else {
-						tmp_Mat2[i    ].MatAppend(tmp_Mat2[i + j]);
+						tmp_Mat2[i * 2 * j].MatAppend(tmp_Mat2[i * 2 * j + j]);
 					}
-					tmp_Mat2[i + j].Clear();
+					tmp_Mat2[i * 2 * j + j].Clear();
 				}
 
 			}
@@ -2019,11 +2018,11 @@ void ClusterBase::Create_G1_perCluster() {
 		TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
 		G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
 
-		for (eslocal j = 1; j < tmp_Mat.size(); j = j * 2 ) {
-			cilk_for (eslocal i = 0; i < tmp_Mat.size(); i = i + 2*j) {
-				if ( i+j < tmp_Mat.size()) {
-					tmp_Mat[i    ].MatAddInPlace( tmp_Mat[i + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
-					tmp_Mat[i + j].Clear();
+		for (eslocal j = 1; j < tmp_Mat.size(); j *= 2) {
+			cilk_for (eslocal i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+				if (i * 2 * j + j < tmp_Mat.size()) {
+					tmp_Mat[i * 2 * j].MatAddInPlace(tmp_Mat[i * 2 * j + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
+					tmp_Mat[i * 2 * j + j].Clear();
 				}
 			}
 		}
@@ -2130,11 +2129,11 @@ void ClusterBase::Create_G1_perCluster() {
 
 		}
 
-		for (eslocal j = 1; j < tmp_Mat.size(); j = j * 2 ) {
-			cilk_for (eslocal i = 0; i < tmp_Mat.size(); i = i + 2*j) {
-				if ( i+j < tmp_Mat.size()) {
-					tmp_Mat[i    ].MatAppend(tmp_Mat[i + j]);
-					tmp_Mat[i + j].Clear();
+		for (eslocal j = 1; j < tmp_Mat.size(); j *= 2) {
+			cilk_for (eslocal i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+				if (i * 2 * j + j < tmp_Mat.size()) {
+					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
+					tmp_Mat[i * 2 * j + j].Clear();
 				}
 			}
 		}
