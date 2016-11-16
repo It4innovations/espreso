@@ -228,7 +228,7 @@ static void storeConfiguration(std::ofstream &os, const Configuration &configura
 {
 	for (size_t i = 0; i < configuration.storeParameters().size(); i++) {
 		ParameterBase *parameter = configuration.storeParameters()[i];
-		os << "\n" << spaces(indent) << "# " << parameter->description << "\n";
+		os << "\n" << spaces(indent) << "# " << parameter->description << " [" << parameter->allowedValue << "]\n";
 		os << spaces(indent) << uppercase(parameter->name) << " = " << parameter->get() << ";\n";
 	}
 

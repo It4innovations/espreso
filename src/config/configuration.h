@@ -14,7 +14,7 @@
 
 #define OPTIONS(...) __VA_ARGS__
 #define OPTION(type, name, description, value, options)         type name = DataHolder::create<type>(#name, description, name, value, options, this)
-#define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, this)
+#define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, #type, this)
 
 #define SUBVECTOR(type, name, description) ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, this)
 #define SUBCONFIG(type, name, description)                      type name = Configuration::create<type>(#name, description, this)
@@ -24,12 +24,14 @@ namespace espreso {
 struct ParameterBase {
 	std::string name;
 	std::string description;
+	std::string allowedValue;
 
-	ParameterBase(const std::string &name, const std::string &description)
-	: name(name), description(description) {}
+	ParameterBase(const std::string &name, const std::string &description, const std::string &allowedValue)
+	: name(name), description(description), allowedValue(allowedValue) {}
 
 	virtual bool set(const std::string &value) =0;
 	virtual std::string get() const =0;
+
 	virtual ~ParameterBase() {};
 };
 
@@ -48,8 +50,8 @@ template <typename Ttype>
 struct ValueHolder: public ParameterBase {
 	Ttype &value;
 
-	ValueHolder(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue)
-	: ParameterBase(name, description), value(value) { value = defaultValue; }
+	ValueHolder(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, const std::string &type)
+	: ParameterBase(name, description, type), value(value) { value = defaultValue; }
 
 	bool set(const std::string &value)
 	{
@@ -83,8 +85,8 @@ template <>
 struct ValueHolder<std::string>: public ParameterBase {
 	std::string &value;
 
-	ValueHolder(const std::string &name, const std::string &description, std::string &value, const std::string &defaultValue)
-	: ParameterBase(name, description), value(value) { };
+	ValueHolder(const std::string &name, const std::string &description, std::string &value, const std::string &defaultValue, const std::string &type)
+	: ParameterBase(name, description, "*"), value(value) { };
 
 	bool set(const std::string &value)
 	{
@@ -104,7 +106,14 @@ struct OptionsHolder: public ParameterBase {
 	std::vector<Option<Ttype> > options;
 
 	OptionsHolder(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, std::vector<Option<Ttype> > options)
-	: ParameterBase(name, description), value(value), options(options) { value = defaultValue; }
+	: ParameterBase(name, description, ""), value(value), options(options)
+	{
+		if (options.size()) {
+			std::for_each(options.begin(), options.end() - 1, [&] (Option<Ttype> &option) { allowedValue += option.name + ", "; });
+			allowedValue += options.back().name;
+		}
+		value = defaultValue;
+	}
 
 	bool set(const std::string &value)
 	{
@@ -239,9 +248,9 @@ struct ConfigurationVector: public Configuration {
 
 struct DataHolder {
 	template <typename Ttype>
-	static Ttype create(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, Configuration* configuration)
+	static Ttype create(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, const std::string &type, Configuration* configuration)
 	{
-		ParameterBase *parameter = new ValueHolder<Ttype>(name, description, value, defaultValue);
+		ParameterBase *parameter = new ValueHolder<Ttype>(name, description, value, defaultValue, type);
 		configuration->parameters[name] = parameter;
 		configuration->orderedParameters.push_back(parameter);
 		return defaultValue;
