@@ -34,6 +34,7 @@ protected:
 	void materials(std::vector<Material> &materials);
 	void settings(
 			std::vector<Evaluator*> &evaluators,
+			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,

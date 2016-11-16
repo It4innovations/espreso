@@ -52,7 +52,7 @@ public:
 		mesh.fillParentElementsToNodes();
 
 		TimeEvent tSettings("settings"); tSettings.start();
-		settings(mesh._evaluators, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
+		settings(mesh._evaluators, mesh._regions, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 		tSettings.end(); measurement.addEvent(tSettings);
 
 		if (!faceBased()) {
@@ -114,6 +114,7 @@ public:
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;
 	virtual void settings(
 			std::vector<Evaluator*> &evaluators,
+			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,

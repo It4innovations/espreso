@@ -112,6 +112,7 @@ void AnsysMatsol::materials(std::vector<Material> &materials)
 
 void AnsysMatsol::settings(
 		std::vector<Evaluator*> &evaluators,
+		std::vector<Region> &regions,
 		std::vector<Element*> &elements,
 		std::vector<Element*> &faces,
 		std::vector<Element*> &edges,

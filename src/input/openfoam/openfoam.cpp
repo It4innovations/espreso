@@ -146,6 +146,17 @@ void OpenFOAM::materials(std::vector<Material> &materials)
 	materials.resize(1, Material(mesh.coordinates()));
 }
 
+void OpenFOAM::settings(
+				std::vector<Evaluator*> &evaluators,
+				std::vector<Region> &regions,
+				std::vector<Element*> &elements,
+				std::vector<Element*> &faces,
+				std::vector<Element*> &edges,
+				std::vector<Element*> &nodes)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement setting of OpenFOAM project.";
+};
+
 //void OpenFOAM::faces(std::vector<Element*> &faces)
 //{
 //	// Implement me

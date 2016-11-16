@@ -32,10 +32,11 @@ protected:
 	void materials(std::vector<Material> &materials);
 	void settings(
 				std::vector<Evaluator*> &evaluators,
+				std::vector<Region> &regions,
 				std::vector<Element*> &elements,
 				std::vector<Element*> &faces,
 				std::vector<Element*> &edges,
-				std::vector<Element*> &nodes) { ESINFO(GLOBAL_ERROR) << "Implement setting of OpenFOAM project."; };
+				std::vector<Element*> &nodes);
 	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 private:

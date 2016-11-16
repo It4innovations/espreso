@@ -31,6 +31,7 @@ protected:
 	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 	virtual void settings(
 			std::vector<Evaluator*> &evaluators,
+			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,
