@@ -367,6 +367,15 @@ struct GlobalConfiguration: public Configuration {
 
 	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).");
 	SUBMAP   (std::string       , material_set, "Assign materials to regions");
+
+	SUBMAP(std::string, initial_temperature, "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, temperature        , "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, heat_source        , "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, translation_motions, "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, acceleration       , "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, thickness          , "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, obstacle           , "<REGION> <EXPRESSION>;");
+	SUBMAP(std::string, normal_direction   , "<REGION> <EXPRESSION>;");
 };
 
 extern GlobalConfiguration configuration;

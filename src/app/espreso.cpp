@@ -28,8 +28,6 @@ int main(int argc, char **argv)
 
 	MPI_Init(&argc, &argv);
 
-	Configuration::store();
-
 	ArgsConfiguration configuration = ParametersReader::fromArguments(&argc, &argv);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " process(es).";
