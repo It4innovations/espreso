@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 #include <iostream>
 
@@ -17,6 +18,7 @@
 #define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, #type, this)
 
 #define SUBVECTOR(type, name, description) ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, this)
+#define SUBMAP(type, name, description)       ConfigurationMap<type> name = ConfigurationMap<type>::create(#name, description, #type, this)
 #define SUBCONFIG(type, name, description)                      type name = Configuration::create<type>(#name, description, this)
 
 namespace espreso {
@@ -245,6 +247,60 @@ struct ConfigurationVector: public Configuration {
 		}
 	}
 };
+
+template <typename Ttype>
+struct ConfigurationMap: public Configuration {
+	std::list<Ttype> values;
+	Ttype dummyValue;
+	std::vector<ParameterBase*> dummy;
+	std::string type;
+
+	static ConfigurationMap<Ttype> create(const std::string &name, const std::string &description, const std::string &type, Configuration* conf)
+	{
+		ConfigurationMap<Ttype> configuration;
+		conf->subconfigurations[name] = &configuration;
+		conf->orderedSubconfiguration.push_back(&configuration);
+		configuration.name = name;
+		configuration.description = description;
+		configuration.dummy.push_back(new ValueHolder<Ttype>("<REGION_NAME>", "Region value", configuration.dummyValue, configuration.dummyValue, type));
+		return configuration;
+	}
+
+	bool set(const std::string &parameter, const std::string &value)
+	{
+		if (parameters.find(parameter) != parameters.end()) {
+			return parameters.find(parameter)->second->set(value);
+		} else {
+			values.push_back({});
+			parameters[parameter] = new ValueHolder<Ttype>(parameter, "Region value", values.back(), values.back(), type, this);
+			parameters[parameter]->set(value);
+			orderedParameters.push_back(parameters[parameter]);
+			return false;
+		}
+	}
+
+	virtual const std::vector<ParameterBase*>& storeParameters() const
+	{
+		if (orderedParameters.size()) {
+			return orderedParameters;
+		} else {
+			return dummy;
+		}
+	}
+};
+
+template <>
+ConfigurationMap<std::string> ConfigurationMap<std::string>::create(const std::string &name, const std::string &description, const std::string &type, Configuration* conf)
+{
+	ConfigurationMap<std::string> configuration;
+	conf->subconfigurations[name] = &configuration;
+	conf->orderedSubconfiguration.push_back(&configuration);
+	configuration.name = name;
+	configuration.description = description;
+	configuration.dummy.push_back(new ValueHolder<std::string>("<REGION_NAME>", "Region value", configuration.dummyValue, configuration.dummyValue, type));
+	configuration.dummyValue = "<value>";
+	return configuration;
+}
 
 struct DataHolder {
 	template <typename Ttype>

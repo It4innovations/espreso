@@ -359,13 +359,14 @@ struct GlobalConfiguration: public Configuration {
 		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
 	}));
 
-	SUBCONFIG(Environment       , env      , "Environment dependent variables (set by ./env/scripts).");
-	SUBCONFIG(ESPRESOGenerator  , generator, "ESPRESO internal mesh generator.");
-	SUBCONFIG(FETISolver        , feti     , "Internal FETI solver options.");
-	SUBCONFIG(MULTIGRIDSolver   , multigrid, "Multigrid setting.");
-	SUBCONFIG(Output            , output   , "Output settings.");
+	SUBCONFIG(Environment       , env         , "Environment dependent variables (set by ./env/scripts).");
+	SUBCONFIG(ESPRESOGenerator  , generator   , "ESPRESO internal mesh generator.");
+	SUBCONFIG(FETISolver        , feti        , "Internal FETI solver options.");
+	SUBCONFIG(MULTIGRIDSolver   , multigrid   , "Multigrid setting.");
+	SUBCONFIG(Output            , output      , "Output settings.");
 
-	SUBVECTOR(MaterialParameters, materials, "Vector of materials (counterd from 1).");
+	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).");
+	SUBMAP   (std::string       , material_set, "Assign materials to regions");
 };
 
 extern GlobalConfiguration configuration;
