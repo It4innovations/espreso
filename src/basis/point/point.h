@@ -26,9 +26,14 @@ public:
 		return 6;
 	}
 
+	double norm()
+	{
+		return sqrt(x * x + y * y + z * z);
+	}
+
 	void normalize()
 	{
-		double l = 1.0 / sqrt(x * x + y * y + z * z);
+		double l = 1.0 / norm();
 		x *= l;
 		y *= l;
 		z *= l;
@@ -70,6 +75,14 @@ public:
 	{
 		double xscalar = 1. / scalar;
 		return Point(x * xscalar, y * xscalar, z * xscalar);
+	}
+
+	static Point cross(const Point &p1, const Point &p2)
+	{
+		return Point(
+				p1.y * p2.z - p1.z * p2.y,
+				p1.z * p2.x - p1.x * p2.z,
+				p1.x * p2.y - p1.y * p2.x);
 	}
 
 	Point &operator*=(double scalar)

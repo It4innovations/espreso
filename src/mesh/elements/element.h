@@ -100,9 +100,6 @@ public:
 	virtual size_t coarseNodes() const = 0;
 	virtual size_t gaussePoints() const = 0;
 
-//	virtual Point faceNormal(const Element *face) const = 0;
-//	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const = 0;
-
 	virtual Element* face(size_t index) const = 0;
 	virtual Element* edge(size_t index) const = 0;
 	eslocal& node(size_t index) { return indices()[index]; }
@@ -207,6 +204,22 @@ public:
 		}
 		faces.push_back(new TFace(face));
 		faces.back()->parentElements().push_back(this);
+	}
+
+	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const
+	{
+		Point eMid(0, 0, 0), mid(0, 0, 0);
+		for (size_t i = 0; i < parent->coarseNodes(); i++) {
+			eMid += coordinates[parent->node(i)];
+		}
+
+		for (size_t i = 0; i < coarseNodes(); i++) {
+			mid += coordinates[node(i)];
+		}
+		Point outside = mid - eMid;
+		if (outside.x * normal.x + outside.y * normal.y + outside.z * normal.z > 0) {
+			normal.flip();
+		}
 	}
 
 protected:

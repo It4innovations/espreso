@@ -357,6 +357,47 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
+static void processFace(std::vector<double> &fe, const espreso::Mesh &mesh, const Element* face)
+{
+	DenseMatrix coordinates(face->nodes(), 3), dND(1, 2), P(face->nodes(), 1), normal(3, 1), XYZ(1, 3);
+	DenseMatrix gpP(1, 1), gpQ(1, 3);
+
+	const std::vector<DenseMatrix> &dN = face->dN();
+	const std::vector<DenseMatrix> &N = face->N();
+	const std::vector<double> &weighFactor = face->weighFactor();
+
+	for (size_t n = 0; n < face->nodes(); n++) {
+		coordinates(n, 0) = mesh.coordinates()[face->node(n)].x;
+		coordinates(n, 1) = mesh.coordinates()[face->node(n)].y;
+		coordinates(n, 2) = mesh.coordinates()[face->node(n)].z;
+
+		P(n, 0) = face->settings(Property::PRESSURE).back()->evaluate(face->node(n));
+	}
+
+	eslocal Ksize = 3 * face->nodes();
+	fe.resize(Ksize);
+	std::fill(fe.begin(), fe.end(), 0);
+
+	for (eslocal gp = 0; gp < face->gaussePoints(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
+		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
+		Point va = Point::cross(v1, v2);
+		face->rotateOutside(face->parentElements()[0], mesh.coordinates(), va);
+		double J = va.norm();
+		normal(0, 0) = va.x / va.norm();
+		normal(0, 1) = va.y / va.norm();
+		normal(0, 2) = va.z / va.norm();
+
+		gpP.multiply(N[gp], P);
+		gpQ.multiply(normal, gpP);
+
+		for (eslocal i = 0; i < Ksize; i++) {
+			fe[i] += J * weighFactor[gp] * N[gp](0, i % face->nodes()) * gpQ(0, i / face->nodes());
+		}
+	}
+}
+
 static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
 {
 	size_t nodes = coordinates.localSize(subdomain);
@@ -554,6 +595,20 @@ void Elasticity3D::composeSubdomain(size_t subdomain)
 				}
 				f[subdomain][row] += fe[dx * elements[e]->nodes() + nx];
 			}
+		}
+	}
+
+	for (size_t i = 0; i < _mesh.faces().size(); i++) {
+		if (_mesh.faces()[i]->inDomain(subdomain) && _mesh.faces()[i]->settings().size()) {
+			processFace(fe, _mesh, _mesh.faces()[i]);
+
+			for (size_t nx = 0; nx < _mesh.faces()[i]->nodes(); nx++) {
+				for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
+					size_t row = nodes[_mesh.faces()[i]->node(nx)]->DOFIndex(subdomain, dx);
+					f[subdomain][row] += fe[dx * _mesh.faces()[i]->nodes() + nx];
+				}
+			}
+
 		}
 	}
 
