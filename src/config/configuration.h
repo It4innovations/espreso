@@ -246,6 +246,12 @@ struct ConfigurationVector: public Configuration {
 			return dummy;
 		}
 	}
+
+	~ConfigurationVector()
+	{
+		std::for_each(configurations.begin(), configurations.end(), [] (Configuration * c) { delete c; });
+		std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
+	}
 };
 
 template <typename Ttype>
@@ -286,6 +292,11 @@ struct ConfigurationMap: public Configuration {
 		} else {
 			return dummy;
 		}
+	}
+
+	~ConfigurationMap()
+	{
+		std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
 	}
 };
 
