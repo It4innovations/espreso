@@ -203,13 +203,14 @@ void Hexahedron8::fillFaces()
 
 void Hexahedron8::setFace(Element* face)
 {
-	ESINFO(GLOBAL_ERROR) << "Set face";
+	_faces.push_back(face);
+	face->parentElements().push_back(this);
 }
 
 void Hexahedron8::setEdge(Element* edge)
 {
 	_edges.push_back(edge);
-	//ESINFO(GLOBAL_ERROR) << "Set edge";
+	edge->parentElements().push_back(this);
 }
 
 Point Hexahedron8::faceNormal(const Element *face) const

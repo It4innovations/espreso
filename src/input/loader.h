@@ -55,9 +55,7 @@ public:
 		settings(mesh._evaluators, mesh._regions, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 		tSettings.end(); measurement.addEvent(tSettings);
 
-		if (!faceBased()) {
-			mesh.fillFacesParents();
-		}
+		mesh.fillFacesParents();
 		mesh.fillEdgesParents();
 
 		TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();

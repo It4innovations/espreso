@@ -817,7 +817,7 @@ void Mesh::fillFacesParents()
 	#pragma cilk grainsize = 1
 	cilk_for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			parentElement(_nodes, _faces[e])->setEdge(_faces[e]);
+			parentElement(_nodes, _faces[e])->setFace(_faces[e]);
 		}
 	}
 }
