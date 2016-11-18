@@ -113,19 +113,6 @@ void Square4::fillEdges()
 	}
 }
 
-Point Square4::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	auto it = std::find(_edges.begin(), _edges.end(), edge);
-	size_t i = it - _edges.begin();
-	Point s = coordinates[_indices[i]];
-	Point e = coordinates[_indices[(i + 1) % Square4NodesCount]];
-
-	Point t = e - s;
-	Point n(t.y, -t.x, 0);
-	n.normalize();
-	return n;
-}
-
 Square4::Square4(const eslocal *indices)
 {
 	memcpy(_indices, indices, Square4NodesCount * sizeof(eslocal));

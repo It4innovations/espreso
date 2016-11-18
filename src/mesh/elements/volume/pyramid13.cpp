@@ -339,18 +339,6 @@ void Pyramid13::fillFaces()
 	addFace<Square8>(_faces, square, filled, Square4NodesCount);
 }
 
-Point Pyramid13::faceNormal(const Element *face) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
-Point Pyramid13::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

@@ -25,19 +25,6 @@ public:
 	size_t coarseNodes() const { return _indices.size(); }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown plane has no gausse points."; return 0; }
 
-	virtual Point faceNormal(const Element *face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Call normal of unknown plane element.";
-		return Point();
-	}
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Call normal of unknown plane element.";
-		return Point();
-	}
-
-	virtual Element* edge(size_t index) const { return _edges[index]; }
-
 	std::vector<eslocal>& DOFsIndices() { return _DOFs; }
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
@@ -60,9 +47,6 @@ protected:
 	}
 	eslocal* indices() { return _indices.data(); }
 	const eslocal* indices() const { return _indices.data(); }
-
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	void setEdge(Element* edge) { _edges.push_back(edge); };
 
 	void fillEdges();
 

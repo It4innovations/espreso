@@ -18,11 +18,6 @@ public:
 
 	size_t faces() const { return 0; }
 
-	virtual Point faceNormal(const Element *face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Plane element has no face";
-		return Point();
-	}
 	virtual Element* face(size_t index) const
 	{
 		ESINFO(GLOBAL_ERROR) << "Plane element has no face";

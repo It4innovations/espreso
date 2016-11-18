@@ -181,18 +181,6 @@ void Hexahedron8::fillFaces()
 	addFace<Square4>(_faces, square, filled, Square4NodesCount);
 }
 
-Point Hexahedron8::faceNormal(const Element *face) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
-Point Hexahedron8::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

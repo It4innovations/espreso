@@ -47,9 +47,6 @@ public:
 	size_t coarseNodes() const { return Hexahedron8NodesCount; }
 	size_t gaussePoints() const { return Hexahedron20GPCount; }
 
-	virtual Point faceNormal(const Element *face) const;
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-
 	const std::vector<DenseMatrix>& dN() const { return Hexahedron20::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Hexahedron20::_N; }
 	const std::vector<double>& weighFactor() const { return Hexahedron20::_weighFactor; }

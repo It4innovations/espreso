@@ -48,9 +48,6 @@ public:
 	size_t coarseNodes() const { return Prisma6NodesCount; }
 	size_t gaussePoints() const { return Prisma6GPCount; }
 
-	virtual Point faceNormal(const Element *face) const;
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-
 	const std::vector<DenseMatrix>& dN() const { return Prisma6::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Prisma6::_N; }
 	const std::vector<double>& weighFactor() const { return Prisma6::_weighFactor; }

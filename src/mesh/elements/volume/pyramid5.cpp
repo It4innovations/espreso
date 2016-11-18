@@ -210,18 +210,6 @@ void Pyramid5::fillFaces()
 	addFace<Square4>(_faces, square, filled, Square4NodesCount);
 }
 
-Point Pyramid5::faceNormal(const Element *face) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
-Point Pyramid5::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

@@ -417,18 +417,6 @@ void Tetrahedron10::fillFaces()
 	addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 }
 
-Point Tetrahedron10::faceNormal(const Element *face) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
-Point Tetrahedron10::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Tetrahedron10::Tetrahedron10(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

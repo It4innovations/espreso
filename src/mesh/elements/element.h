@@ -100,8 +100,8 @@ public:
 	virtual size_t coarseNodes() const = 0;
 	virtual size_t gaussePoints() const = 0;
 
-	virtual Point faceNormal(const Element *face) const = 0;
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const = 0;
+//	virtual Point faceNormal(const Element *face) const = 0;
+//	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const = 0;
 
 	virtual Element* face(size_t index) const = 0;
 	virtual Element* edge(size_t index) const = 0;

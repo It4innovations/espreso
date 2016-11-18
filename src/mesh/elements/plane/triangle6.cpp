@@ -149,12 +149,6 @@ void Triangle6::fillEdges()
 	}
 }
 
-Point Triangle6::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Triangle6::Triangle6(const eslocal *indices)
 {
 	memcpy(_indices, indices, Triangle6NodesCount * sizeof(eslocal));

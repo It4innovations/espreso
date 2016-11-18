@@ -45,8 +45,6 @@ public:
 	size_t coarseNodes() const { return Square4NodesCount; }
 	size_t gaussePoints() const { return Square8GPCount; }
 
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-
 	const std::vector<DenseMatrix>& dN() const { return Square8::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Square8::_N; }
 	const std::vector<double>& weighFactor() const { return Square8::_weighFactor; }

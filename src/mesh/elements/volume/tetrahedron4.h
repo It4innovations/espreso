@@ -47,9 +47,6 @@ public:
 	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
 	size_t gaussePoints() const { return Tetrahedron4GPCount; }
 
-	virtual Point faceNormal(const Element *face) const;
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-
 	const std::vector<DenseMatrix>& dN() const { return Tetrahedron4::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Tetrahedron4::_N; }
 	const std::vector<double>& weighFactor() const { return Tetrahedron4::_weighFactor; }

@@ -29,16 +29,6 @@ public:
 	size_t nodes() const { return PointNodesCount; }
 	size_t coarseNodes() const { return PointNodesCount; }
 
-	virtual Point faceNormal(const Element *face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Point element has no face";
-		return Point();
-	}
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Point element has no edge";
-		return Point();
-	}
 	virtual Element* face(size_t index) const
 	{
 		ESINFO(GLOBAL_ERROR) << "Point element has no face";

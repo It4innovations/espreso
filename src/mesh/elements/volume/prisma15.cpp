@@ -371,18 +371,6 @@ void Prisma15::fillFaces()
 	addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 }
 
-Point Prisma15::faceNormal(const Element *face) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
-Point Prisma15::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

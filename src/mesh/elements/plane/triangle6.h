@@ -45,8 +45,6 @@ public:
 	size_t coarseNodes() const { return Triangle3NodesCount; }
 	size_t gaussePoints() const { return Triangle6GPCount; }
 
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-
 	const std::vector<DenseMatrix>& dN() const { return Triangle6::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Triangle6::_N; }
 	const std::vector<double>& weighFactor() const { return Triangle6::_weighFactor; }

@@ -145,12 +145,6 @@ void Square8::fillEdges()
 	}
 }
 
-Point Square8::edgeNormal(const Element *edge, const Coordinates &coordinates) const
-{
-	ESINFO(GLOBAL_ERROR) << "compute normal";
-	return Point();
-}
-
 Square8::Square8(const eslocal *indices)
 {
 	memcpy(_indices, indices, Square8NodesCount * sizeof(eslocal));

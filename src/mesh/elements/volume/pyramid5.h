@@ -48,9 +48,6 @@ public:
 	size_t coarseNodes() const { return Pyramid5NodesCount; }
 	size_t gaussePoints() const { return Pyramid5GPCount; }
 
-	virtual Point faceNormal(const Element *face) const;
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-
 	const std::vector<DenseMatrix>& dN() const { return Pyramid5::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Pyramid5::_N; }
 	const std::vector<double>& weighFactor() const { return Pyramid5::_weighFactor; }
