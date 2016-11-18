@@ -63,6 +63,7 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 				{"LINEAR_ELASTIC_ANISOTROPIC", MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic"},
 		});
 		p.set(value);
+		correctlySet = true;
 	}
 
 	return correctlySet;
