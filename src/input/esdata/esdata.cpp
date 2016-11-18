@@ -26,7 +26,7 @@ void Esdata::points(Coordinates &coordinates)
 static void addElements(std::ifstream &is, std::vector<espreso::Element*> &elements, size_t number)
 {
 	eslocal type;
-	for (eslocal i = 0; i < number; i++) {
+	for (size_t i = 0; i < number; i++) {
 		is.read(reinterpret_cast<char *>(&type), sizeof(eslocal));
 		switch(type) {
 		case Tetrahedron4VTKCode:
@@ -80,7 +80,7 @@ void Esdata::elements(std::vector<Element*> &elements)
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/elements.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
-	eslocal size, type;
+	eslocal size;
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	elements.reserve(size);
@@ -97,7 +97,7 @@ void Esdata::materials(std::vector<Material> &materials)
 
 	eslocal size;
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	for (size_t i = 0; i < size; i++) {
+	for (eslocal i = 0; i < size; i++) {
 		materials.push_back(Material(is, mesh.coordinates()));
 	}
 	is.close();
@@ -131,26 +131,26 @@ void Esdata::settings(
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of element settings" << (size == elements.size() ? TEST_PASSED : TEST_FAILED);
-	for (size_t i = 0; i < size; i++) {
+	ESTEST(MANDATORY) << "Invalid size of element settings" << (size == (int)elements.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < size; i++) {
 		elements[i]->settings().load(is, evaluators);
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of faces settings" << (size == faces.size() ? TEST_PASSED : TEST_FAILED);
-	for (size_t i = 0; i < size; i++) {
+	ESTEST(MANDATORY) << "Invalid size of faces settings" << (size == (int)faces.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < size; i++) {
 		faces[i]->settings().load(is, evaluators);
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of edge settings" << (size == edges.size() ? TEST_PASSED : TEST_FAILED);
-	for (size_t i = 0; i < size; i++) {
+	ESTEST(MANDATORY) << "Invalid size of edge settings" << (size == (int)edges.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < size; i++) {
 		edges[i]->settings().load(is, evaluators);
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of node settings" << (size == nodes.size() ? TEST_PASSED : TEST_FAILED);
-	for (size_t i = 0; i < size; i++) {
+	ESTEST(MANDATORY) << "Invalid size of node settings" << (size == (int)nodes.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < size; i++) {
 		nodes[i]->settings().load(is, evaluators);
 	}
 
@@ -169,8 +169,8 @@ void Esdata::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &n
 	eslocal size, nSize, value;
 
 	is.read(reinterpret_cast<char *>(&nSize), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid node size of cluster boundaries" << (nSize == nodes.size() ? TEST_PASSED : TEST_FAILED);
-	for (size_t i = 0; i < nSize; i++) {
+	ESTEST(MANDATORY) << "Invalid node size of cluster boundaries" << (nSize == (int)nodes.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < nSize; i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal j = 0; j < size; j++) {
 			is.read(reinterpret_cast<char *>(&value), sizeof(eslocal));

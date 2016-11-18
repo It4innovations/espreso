@@ -141,9 +141,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
-	double rotation[3] = { mid.x * omega.x * omega.x, mid.y * omega.y * omega.y, mid.z * omega.z * omega.z };
-
-	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);

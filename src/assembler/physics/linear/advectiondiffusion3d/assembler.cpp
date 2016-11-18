@@ -36,6 +36,8 @@ void AdvectionDiffusion3D::prepareMeshStructures()
 		case config::solver::B0_TYPEalternative::KERNELS:
 			_mesh.computeFacesSharedByDomains();
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -55,6 +57,8 @@ void AdvectionDiffusion3D::assembleGluingMatrices()
 		case config::solver::B0_TYPEalternative::KERNELS:
 			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
+			break;
+		default:
 			break;
 		}
 	}
@@ -130,7 +134,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
-	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
@@ -172,6 +176,8 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 			K[subdomain].RemoveLower();
 			algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -186,7 +192,6 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 	f[subdomain].resize(matrixSize[subdomain]);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.elements();
 
 	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
 

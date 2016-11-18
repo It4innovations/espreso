@@ -55,7 +55,7 @@ public:
 	double get(size_t row, size_t column) const
 	{
 		for(eslocal i = _rowPtrs[row]; i < _rowPtrs[row + 1]; i++) {
-			if (_columnIndices[i - _indexing] == column + _indexing) {
+			if (_columnIndices[i - _indexing] == (Tindices)(column + _indexing)) {
 				return _values[i - _indexing];
 			}
 		}

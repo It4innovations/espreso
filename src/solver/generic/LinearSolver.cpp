@@ -198,7 +198,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
 		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
-		cilk_for (int d = 0; d < physics.K.size(); d++) {
+		cilk_for (size_t d = 0; d < physics.K.size(); d++) {
 			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
 			SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
 			SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
@@ -206,11 +206,11 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 			SEQ_VECTOR <eslocal> I_row_indices_p (physics.K[d].nnz);
 			SEQ_VECTOR <eslocal> J_col_indices_p (physics.K[d].nnz);
 
-			for (eslocal i = 0; i < perm_vec.size(); i++) {
+			for (size_t i = 0; i < perm_vec.size(); i++) {
 				perm_vec[i] = perm_vec[i] - 1;
 			}
 
-			for (eslocal i = 0; i < perm_vec_full.size(); i++) {
+			for (size_t i = 0; i < perm_vec_full.size(); i++) {
 				perm_vec_full[i] = i;
 			}
 
@@ -412,7 +412,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		ESLOG(MEMORY) << "After K inv. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	} else {
-		for (int d = 0; d < cluster.domains.size(); d++) {
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].isOnACC = 0;
 		}
 	}
@@ -475,7 +475,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 		// Cleanup - of uncessary objects
 		cluster._my_lamdas_map_indices.clear();
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].B1.Clear();
 		}
 
@@ -509,7 +509,7 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	}
 
 	if ( config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES ) {
-		cilk_for (int d = 0; d < cluster.domains.size(); d++) {
+		cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
 			vector < double >  tmp;
 			tmp = prim_solution[d];
 			cluster.domains[d].T.MatVec(tmp, prim_solution[d], 'N');
@@ -549,7 +549,7 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
     // *** Solutin correctnes test **********************************************************************************************
 	double max_v = 0.0;
 		for (eslocal i = 0; i < number_of_subdomains_per_cluster; i++)
-			for (eslocal j = 0; j < prim_solution[i].size(); j++)
+			for (size_t j = 0; j < prim_solution[i].size(); j++)
 				if ( fabs ( prim_solution[i][j] ) > max_v) max_v = fabs( prim_solution[i][j] );
 
 	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.startWithoutBarrier(0.0); max_sol_ev.endWithoutBarrier(max_v);

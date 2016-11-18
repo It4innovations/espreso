@@ -97,7 +97,7 @@ ArgsConfiguration ParametersReader::fromArguments(int *argc, char*** argv, const
 
 	// compatibility with old version of ESPRESO
 	conf.path = config::mesh::PATH;
-	if (conf.path.size() == 0 && conf.nameless.size() + 1 == *argc) {
+	if (conf.path.size() == 0 && conf.nameless.size() + 1 == (size_t)(*argc)) {
 		if (conf.nameless.size()) {
 			conf.path = conf.nameless.front();
 			conf.nameless.erase(conf.nameless.begin());

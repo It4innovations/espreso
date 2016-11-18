@@ -80,7 +80,7 @@ private:
 	{
 		double value = 0;
 		for (size_t i = 0; i < _values[row].size(); i++) {
-			if (_values[row][i].first == column) {
+			if (_values[row][i].first == (Tindices)column) {
 				value += _values[row][i].second;
 			}
 		}

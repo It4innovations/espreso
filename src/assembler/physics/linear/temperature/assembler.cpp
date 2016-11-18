@@ -92,7 +92,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	fe.resize(Ksize);
 	fill(fe.begin(), fe.end(), 0);
 
-	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
@@ -158,7 +158,6 @@ void Temperature::composeSubdomain(size_t subdomain)
 	f[subdomain].resize(subdomainSize);
 
 	const std::vector<eslocal> &partition = _mesh.getPartition();
-	const std::vector<Element*> &elements = _mesh.elements();
 
 	for (eslocal i = partition[subdomain]; i < partition[subdomain + 1]; i++) {
 

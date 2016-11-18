@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 		s.ConvertToCOO(1);
 	}
 
-	for (size_t i = 0; i < s.nnz; i++) {
+	for (eslocal i = 0; i < s.nnz; i++) {
 		os << s.I_row_indices[i] << " ";
 		os << s.J_col_indices[i] << " ";
 		os << std::scientific << s.V_values[i] << "\n";
@@ -98,7 +98,6 @@ std::string SparseMatrix::SpyText()
 	eslocal cols_coef = 1 + cols / 60;
 
 	eslocal col_index = 0;
-	eslocal row_index = 0;
 	for (eslocal r = 0; r < rows; r = r + rows_coef) {
 		eslocal row_length = 0;
 		if (( r + rows_coef) < rows)
@@ -118,7 +117,7 @@ std::string SparseMatrix::SpyText()
 			col_index++;
 		}
 
-		for (eslocal c = 0; c < tmp_c.size(); c++) {
+		for (size_t c = 0; c < tmp_c.size(); c++) {
 			if (tmp_c[c] > 0) {
 				tmp[c] = '0' + tmp_c[c] / (cols_coef * 26);
 				if (tmp[c] == '0') tmp[c] = '.';
@@ -241,11 +240,11 @@ SparseMatrix& SparseMatrix::operator= ( const SparseCSRMatrix<eslocal> &A_in ) {
 
 	// Sparse CSR data
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (eslocal i = 0; i < CSR_I_row_indices.size(); i++)
+	for (size_t i = 0; i < CSR_I_row_indices.size(); i++)
 		CSR_I_row_indices[i] = A_in.rowPtrs()[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (eslocal i = 0; i < CSR_J_col_indices.size(); i++)
+	for (size_t i = 0; i < CSR_J_col_indices.size(); i++)
 		CSR_J_col_indices[i] = A_in.columnIndices()[i] + offset;
 
 	copy(A_in.values(), A_in.values() + nnz, CSR_V_values.begin());
@@ -346,11 +345,11 @@ SparseMatrix::SparseMatrix( const SparseCSRMatrix<eslocal> &A_in, char type_in )
 
 	// Sparse CSR data
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (eslocal i = 0; i < CSR_I_row_indices.size(); i++)
+	for (size_t i = 0; i < CSR_I_row_indices.size(); i++)
 		CSR_I_row_indices[i] = A_in.rowPtrs()[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (eslocal i = 0; i < CSR_J_col_indices.size(); i++)
+	for (size_t i = 0; i < CSR_J_col_indices.size(); i++)
 		CSR_J_col_indices[i] = A_in.columnIndices()[i] + offset;
 
 	copy(A_in.values(), A_in.values() + nnz, CSR_V_values.begin());
@@ -398,11 +397,11 @@ SparseMatrix& SparseMatrix::operator= ( const SparseIJVMatrix<eslocal> &A_in ) {
 
 	// Sparse CSR data
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (eslocal i = 0; i < I_row_indices.size(); i++)
+	for (size_t i = 0; i < I_row_indices.size(); i++)
 		I_row_indices[i] = A_in.rowIndices()[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (eslocal i = 0; i < J_col_indices.size(); i++)
+	for (size_t i = 0; i < J_col_indices.size(); i++)
 		J_col_indices[i] = A_in.columnIndices()[i] + offset;
 
 	copy(A_in.values().begin(), A_in.values().end(), V_values.begin());
@@ -453,11 +452,11 @@ SparseMatrix::SparseMatrix( const SparseIJVMatrix<eslocal> &A_in, char type_in )
 
 	// Sparse CSR data
 	//copy(rows, rows + n_cols + 1, K.CSR_I_row_indices.begin());
-	for (eslocal i = 0; i < I_row_indices.size(); i++)
+	for (size_t i = 0; i < I_row_indices.size(); i++)
 		I_row_indices[i] = A_in.rowIndices()[i] + offset;
 
 	//copy(cols, cols + nnz, K.CSR_J_col_indices.begin());
-	for (eslocal i = 0; i < J_col_indices.size(); i++)
+	for (size_t i = 0; i < J_col_indices.size(); i++)
 		J_col_indices[i] = A_in.columnIndices()[i] + offset;
 
 	copy(A_in.values().begin(), A_in.values().end(), V_values.begin());
@@ -989,7 +988,7 @@ void SparseMatrix::ConvertDenseToDenseFloat( eslocal clear_DoubleDense_1_keep_Do
 
 	dense_values_fl.resize( dense_values.size() );
 
-	for (eslocal i = 0; i < dense_values.size(); i++)
+	for (size_t i = 0; i < dense_values.size(); i++)
 		dense_values_fl[i] = (float)dense_values[i];
 
 	if ( clear_DoubleDense_1_keep_DoubleDense_0 == 1)
@@ -1074,8 +1073,8 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 					beta, &y_out[y_out_vector_start_index], 1);
 			} else {
 
-				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
-				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+				if ((eslocal)vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if ((eslocal)vec_fl_out.size() < rows) vec_fl_out.resize(rows);
 
 				for (eslocal i = 0; i < rows; i++)
 					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
@@ -1102,8 +1101,8 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 					beta, &y_out[y_out_vector_start_index], 1);
 			} else {
 
-				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
-				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+				if ((eslocal)vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if ((eslocal)vec_fl_out.size() < rows) vec_fl_out.resize(rows);
 
 				for (eslocal i = 0; i < rows; i++)
 					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
@@ -1137,8 +1136,8 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 						beta, &y_out[y_out_vector_start_index], 1);
 			} else {
 
-				if (vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
-				if (vec_fl_out.size() < rows) vec_fl_out.resize(rows);
+				if ((eslocal)vec_fl_in.size()  < rows) vec_fl_in. resize(rows);
+				if ((eslocal)vec_fl_out.size() < rows) vec_fl_out.resize(rows);
 
 				for (eslocal i = 0; i < rows; i++)
 					vec_fl_in[i] = (float)x_in[i + x_in_vector_start_index];
@@ -2106,7 +2105,6 @@ double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_form
 
 
   if (true){
-    int cnt=0;
 	  char matdescra[] = {0,0,0,0,0,0};
 	  matdescra[0] = K.type; // General matrix
 	  if (K.type == 'S') {
@@ -2438,7 +2436,7 @@ void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_
 }
 
 void SparseMatrix::MatScale(double alpha) {
-	for (eslocal i = 0; i < CSR_V_values.size(); i++) {
+	for (size_t i = 0; i < CSR_V_values.size(); i++) {
 		CSR_V_values[i] = alpha * CSR_V_values[i];
 	}
 }
@@ -2712,7 +2710,7 @@ double SparseMatrix::GetMeanOfDiagonalOfSymmetricMatrix() {
 	double sum = 0;
 	eslocal count = 0;
 
-	for (eslocal i = 0; i < CSR_I_row_indices.size() - 1; i++) {
+	for (size_t i = 0; i < CSR_I_row_indices.size() - 1; i++) {
 		double val = CSR_V_values[ CSR_I_row_indices[i] - 1 ];
 		sum = sum + val;
 		count++;
@@ -2724,7 +2722,7 @@ double SparseMatrix::GetMeanOfDiagonalOfSymmetricMatrix() {
 double SparseMatrix::GetMaxOfDiagonalOfSymmetricMatrix() {
 	double vmax = 0;
 
-	for (eslocal i = 0; i < CSR_I_row_indices.size() - 1; i++) {
+	for (size_t i = 0; i < CSR_I_row_indices.size() - 1; i++) {
 
 		if ( vmax < CSR_V_values[ CSR_I_row_indices[i] - 1 ] )
 			vmax = CSR_V_values[ CSR_I_row_indices[i] - 1 ];
@@ -2736,7 +2734,7 @@ double SparseMatrix::GetMaxOfDiagonalOfSymmetricMatrix() {
 
 
 void SparseMatrix::SetDiagonalOfSymmetricMatrix( double val ) {
-	for (eslocal i = 0; i < CSR_I_row_indices.size() - 1; i++) {
+	for (size_t i = 0; i < CSR_I_row_indices.size() - 1; i++) {
 			CSR_V_values[ CSR_I_row_indices[i] - 1 ] = val;
 	}
 }
@@ -2789,7 +2787,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 	CSR_I_row_indices.resize( rows + 1 );
 
-	for (eslocal i = 0; i < rows_to_add.size(); i++) {
+	for (size_t i = 0; i < rows_to_add.size(); i++) {
 
 		old_index  = next_index;
 		next_index = rows_to_add[i];
@@ -2863,15 +2861,15 @@ eslocal SparseMatrix::MatCompare(SparseMatrix & A) {
 		eslocal tmp1 = 0;
 		eslocal tmp2 = 0;
 
-		for (eslocal i = 0; i < CSR_I_row_indices.size(); i++)
+		for (size_t i = 0; i < CSR_I_row_indices.size(); i++)
 			if (CSR_I_row_indices[i] != A.CSR_I_row_indices[i])
 				tmp1=1;
 
-		for (eslocal i = 0; i < CSR_J_col_indices.size(); i++)
+		for (size_t i = 0; i < CSR_J_col_indices.size(); i++)
 			if (CSR_J_col_indices[i] != A.CSR_J_col_indices[i])
 				tmp1=1;
 
-		for (eslocal i = 0; i < CSR_V_values.size(); i++)
+		for (size_t i = 0; i < CSR_V_values.size(); i++)
 			if (CSR_V_values[i] != A.CSR_V_values[i])
 				tmp2=1;
 
@@ -2893,15 +2891,15 @@ eslocal SparseMatrix::MatCompareCOO(SparseMatrix & A) {
 		eslocal tmp2 = 0;
 		eslocal tmp3 = 0;
 
-		for (eslocal i = 0; i < I_row_indices.size(); i++)
+		for (size_t i = 0; i < I_row_indices.size(); i++)
 			if (I_row_indices[i] != A.I_row_indices[i])
 				tmp1=1;
 
-		for (eslocal i = 0; i < J_col_indices.size(); i++)
+		for (size_t i = 0; i < J_col_indices.size(); i++)
 			if (J_col_indices[i] != A.J_col_indices[i])
 				tmp2=1;
 
-		for (eslocal i = 0; i < V_values.size(); i++)
+		for (size_t i = 0; i < V_values.size(); i++)
 			if (V_values[i] != A.V_values[i])
 				tmp3=1;
 
@@ -3006,7 +3004,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 	eslocal glob_row_index = 0 + 1;
 	CSR_I_row_indices.push_back(glob_row_index);
 
-	for (eslocal i = 0; i < A_in.CSR_I_row_indices.size() - 1; i++ ) {
+	for (size_t i = 0; i < A_in.CSR_I_row_indices.size() - 1; i++ ) {
 
 		eslocal A_row_start = A_in.CSR_I_row_indices[i  ] - 1;
 		eslocal A_row_end   = A_in.CSR_I_row_indices[i+1] - 1;
@@ -3546,7 +3544,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
      } while (n_mv != sc_size && cnt_permut_vec < 100);
       //
       eslocal ik=0,cnt_i=0;
-      for (eslocal i = 0;i<permVec.size();i++){
+      for (size_t i = 0;i<permVec.size();i++){
         if (i==tmp_vec_s[ik]){
           permVec[ik+nonsing_size]=tmp_vec_s[ik];
           ik++;
@@ -3669,7 +3667,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
         if (d_sub!=-1){
           std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
           eslocal ik=0,cnt_i=0;
-          for (eslocal i = 0;i<permVec.size();i++){
+          for (size_t i = 0;i<permVec.size();i++){
             ose3 << permVec[i]+1 <<" ";
           }
           ose3.close();
@@ -3782,7 +3780,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 
   int R_r_rows = 0;
-  int R_r_cols = 0;
   SparseMatrix R_r;
   if (K_rr.cols!=0){
     R_r.MatMat(K_rs,'N',R_s);
@@ -3797,7 +3794,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     K_rr_solver.Clear();
     R_r.ConvertCSRToDense(0);
     R_r_rows = R_r.rows;
-    R_r_cols = R_r.cols;
   }
   R_s.ConvertCSRToDense(0);
 #if VERBOSE_KERNEL>0
@@ -3903,7 +3899,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       regMat.J_col_indices.resize(regMat.nnz);
       regMat.V_values.resize(regMat.nnz);
     }
-    for (eslocal i = 0; i < null_pivots.size(); i++){
+    for (size_t i = 0; i < null_pivots.size(); i++){
       tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
       K.CSR_V_values[tmp_int0]+=rho;
       // if d_sub==-1; it's G0G0t matrix (or S_alpha)
@@ -4519,7 +4515,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
      } while (n_mv != sc_size && cnt_permut_vec < 100);
       //
       eslocal ik=0,cnt_i=0;
-      for (eslocal i = 0;i<permVec.size();i++){
+      for (size_t i = 0;i<permVec.size();i++){
         if (i==tmp_vec_s[ik]){
           permVec[ik+nonsing_size]=tmp_vec_s[ik];
           ik++;
@@ -4676,7 +4672,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
         if (d_sub!=-1){
           std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
           eslocal ik=0,cnt_i=0;
-          for (eslocal i = 0;i<permVec.size();i++){
+          for (size_t i = 0;i<permVec.size();i++){
             ose3 << permVec[i]+1 <<" ";
           }
           ose3.close();
@@ -4824,7 +4820,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 #endif
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
   int R_r_rows = 0;
-  int R_r_cols = 0;
   SparseMatrix R_r;
   if (K_rr_cols!=0){
     R_r.MatMat(K_rs,'N',R_s);
@@ -4839,7 +4834,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //    K_rr_solver.Clear();
     R_r.ConvertCSRToDense(0);
     R_r_rows = R_r.rows;
-    R_r_cols = R_r.cols;
   }
   R_s.ConvertCSRToDense(0);
 #if VERBOSE_KERNEL>0
@@ -4912,7 +4906,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //
   Rl_s.ConvertDenseToCSR(0);
   int Rl_r_rows = 0;
-  int Rl_r_cols = 0;
   SparseMatrix Rl_r;
 //
 
@@ -4932,7 +4925,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     K_rr_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
     Rl_r.ConvertCSRToDense(0);
     Rl_r_rows = Rl_r.rows;
-    Rl_r_cols = Rl_r.cols;
   }
 
 //
@@ -5004,8 +4996,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   defect_d                 = Kplus_R.cols;
 
 
-  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_Rl,'T');
-  double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
+  K.getNorm_K_R(K,Kplus_Rl,'T');
+ //  double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
 
 
 #if VERBOSE_KERNEL>2
@@ -5054,7 +5046,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       regMat.J_col_indices.resize(regMat.nnz);
       regMat.V_values.resize(regMat.nnz);
     }
-    for (eslocal i = 0; i < null_pivots.size(); i++){
+    for (size_t i = 0; i < null_pivots.size(); i++){
       tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
       K.CSR_V_values[tmp_int0]+=rho;
       // if d_sub==-1; it's G0G0t matrix (or S_alpha)

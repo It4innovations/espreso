@@ -207,7 +207,7 @@ void Factory::solve(const std::string &outputFile)
 {
 	instance->init();
 
-	for (int i = 0; i < config::solver::TIME_STEPS; i++) {
+	for (size_t i = 0; i < config::solver::TIME_STEPS; i++) {
 		instance->solve(_solution);
 	}
 

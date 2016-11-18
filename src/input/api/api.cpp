@@ -33,7 +33,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 {
 	_mesh._elements.reserve(eNodes.size());
 
-	for (eslocal e = 0; e < eNodes.size(); e++) {
+	for (size_t e = 0; e < eNodes.size(); e++) {
 		switch (eType[e]) {
 		case 0:
 			ESTEST(MANDATORY) << "Point has to has only one index" << (eNodes[e].size() != 1 ? TEST_FAILED : TEST_PASSED);

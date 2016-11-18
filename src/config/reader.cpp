@@ -125,14 +125,6 @@ void Reader::_read(const std::string &file, const std::vector<std::string> &args
 	std::stack<Configuration*> confStack;
 	std::stack<Tokenizer*> tokenStack;
 
-	auto indent = [] (size_t size) {
-		std::stringstream _indent;
-		for (size_t i = 0; i < size; i++) {
-			_indent << "  ";
-		}
-		return _indent.str();
-	};
-
 	confStack.push(&configuration);
 	tokenStack.push(new Tokenizer(file));
 	while (tokenStack.size()) {
@@ -150,7 +142,7 @@ void Reader::_read(const std::string &file, const std::vector<std::string> &args
 				}
 				if (value.size() > 2 && StringCompare::caseInsensitivePreffix("ARG", value)) {
 					std::stringstream ss(std::string(value.begin() + 3, value.end()));
-					int index = args.size();
+					size_t index = args.size();
 					ss >> index;
 					if (!ss.fail() && ss.eof() && index < args.size()) {
 						values.push_back(args[index]);

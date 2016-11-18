@@ -36,7 +36,7 @@ struct Constraints
 
 	std::vector<size_t> block;
 
-	Constraints(Mesh &mesh): _mesh(mesh), block(3) {};
+	Constraints(Mesh &mesh): block(3), _mesh(mesh) {};
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 

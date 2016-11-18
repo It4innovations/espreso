@@ -14,13 +14,6 @@ class Loader {
 public:
 	void fill()
 	{
-		auto sizeStats = [] (const std::vector<std::vector<eslocal> > &data) {
-			std::vector<size_t> sizes(data.size());
-			for (size_t p = 0; p < data.size(); p++) {
-				sizes[p] = data[p].size();
-			}
-			return Info::averageValues(sizes);
-		};
 		auto intervalStats = [] (const std::vector<eslocal> &data) {
 			std::vector<size_t> sizes(data.size() - 1);
 			for (size_t p = 0; p < data.size() - 1; p++) {

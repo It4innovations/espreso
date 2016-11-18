@@ -15,8 +15,6 @@ static std::vector<DenseMatrix> get_dN() {
 		DenseMatrix(1, Line2NodesCount)
 	);
 
-	double gp = 1 / sqrt(3);
-
 	for (unsigned int i = 0; i < Line2GPCount; i++) {
 		///dN contains [dNr, dNs, dNt]
 		DenseMatrix &m = dN[i];

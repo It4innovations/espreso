@@ -81,7 +81,7 @@ public:
 			is.read(reinterpret_cast<char*>(&(property)), sizeof(Property));
 			eslocal eSize;
 			is.read(reinterpret_cast<char *>(&eSize), sizeof(eslocal));
-			for (size_t e = 0; e < eSize; e++) {
+			for (eslocal e = 0; e < eSize; e++) {
 				eslocal index;
 				is.read(reinterpret_cast<char *>(&index), sizeof(eslocal));
 				_settings[property].push_back(evaluators[index]);

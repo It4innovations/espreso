@@ -30,6 +30,8 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 		case config::solver::B0_TYPEalternative::KERNELS:
 			_mesh.computeEdgesSharedByDomains();
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -62,6 +64,8 @@ void AdvectionDiffusion2D::assembleGluingMatrices()
 		case config::solver::B0_TYPEalternative::KERNELS:
 			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
+			break;
+		default:
 			break;
 		}
 	}
@@ -128,7 +132,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix u(1, 2), v(1, 2), Re(1, element->nodes());
 	double normGradN = 0;
 
-	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		u.multiply(N[gp], U, 1, 0);
 
 		J.multiply(dN[gp], coordinates);

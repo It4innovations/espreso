@@ -77,8 +77,10 @@ public:
 			const Mesh &mesh
 	);
 
-  	void set_R_from_K();
+	void set_R_from_K();
 private:
+
+	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
 	Physics &physics;
 	Constraints &constraints;
@@ -87,8 +89,6 @@ private:
 
 	bool 	SINGULAR;
 	bool 	KEEP_FACTORS;
-
-	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
 	Cluster cluster;
 

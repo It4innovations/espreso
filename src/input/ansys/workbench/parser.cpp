@@ -94,25 +94,25 @@ bool WorkbenchParser::workbench(const std::string type, const std::string status
 void WorkbenchParser::nblock(Coordinates &coordinates)
 {
 	std::vector<std::string> params = divide(_line);
-	eslocal NUMFILED, Solkey, NDMAX, NDSEL; // TODO: use all parameters
-	switch (params.size()) {
-	case 5:
-		NDSEL = std::stol(params[3]);
-	case 4:
-		NDMAX = std::stol(params[3]);
-	case 3:
-		Solkey = std::stol(params[2]);
-		ESINFO(GLOBAL_ERROR) << "The input point format is not implemented in ESPRESO";
-	case 2:
-		NUMFILED = std::stol(params[1]);
-	}
+//	eslocal NUMFILED, Solkey, NDMAX, NDSEL; // TODO: use all parameters
+//	switch (params.size()) {
+//	case 5:
+//		NDSEL = std::stol(params[3]);
+//	case 4:
+//		NDMAX = std::stol(params[3]);
+//	case 3:
+//		Solkey = std::stol(params[2]);
+//		ESINFO(GLOBAL_ERROR) << "The input point format is not implemented in ESPRESO";
+//	case 2:
+//		NUMFILED = std::stol(params[1]);
+//	}
 
 	getline(_file, _line);
 	std::vector<int> sizes = parseBlockHeader(_line);
 	size_t offset;
 
 	Point point;
-	size_t id;
+	eslocal id;
 
 	ESINFO(DETAILS) << "WB: CREATE NBLOCK";
 
@@ -141,12 +141,12 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 	bool SOLID;
 
 	std::vector<std::string> params = divide(_line);
-	eslocal NUMNODES, NDMAX, NDSEL;
+	eslocal NUMNODES, NDSEL; //, NDMAX;
 	switch (params.size()) {
 	case 5:
 		NDSEL = params[4].size() ? std::stol(params[4]) : 0;
 	case 4:
-		NDMAX = params[3].size() ? std::stol(params[3]) : 0;
+		//NDMAX = params[3].size() ? std::stol(params[3]) : 0;
 	case 3:
 		if (!StringCompare::caseInsensitiveEq(params[2], "SOLID")) {
 			SOLID = false;
@@ -182,11 +182,11 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 	std::vector<eslocal> values(38), eParams(Element::PARAMS_SIZE);
 	for (eslocal i = 0; i < (NDSEL ? NDSEL : i + 1); i++) {
 		getline(_file, _line);
-		int start = 0;
+		size_t start = 0;
 		NODE_SIZE = 0;
 		for (size_t i = 0; i < sizes.size() && _line.size() > start + sizes[i]; i++) {
 			values[i] = std::stol(_line.substr(start, sizes[i]));
-			if (i >= PARAM_SIZE) {
+			if (i >= (size_t)PARAM_SIZE) {
 				values[i]--;
 				NODE_SIZE++;
 			}

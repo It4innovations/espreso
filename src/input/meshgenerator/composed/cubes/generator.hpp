@@ -162,7 +162,7 @@ void CubesGenerator<TElement>::settings(
 			eslocal cNodes[3];
 			UniformUtils<TElement>::clusterNodesCount(_settings.cube[_cubeIndex], cNodes);
 			std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
-			eslocal subdomain[3], element[3], subdomainOffset[3], elementOffset[3];
+			size_t subdomain[3], element[3], subdomainOffset[3], elementOffset[3];
 
 
 			for (subdomain[2] = 0; subdomain[2] < _settings.cube[_cubeIndex].subdomainsInCluster[2]; subdomain[2]++) {
@@ -182,9 +182,9 @@ void CubesGenerator<TElement>::settings(
 									// for each element
 
 									eslocal i = 0;
-									for (eslocal z = 0; z < 2 + TElement::subnodes[2]; z++) {
-										for (eslocal y = 0; y < 2 + TElement::subnodes[1]; y++) {
-											for (eslocal x = 0; x < 2 + TElement::subnodes[0]; x++) {
+									for (size_t z = 0; z < 2 + TElement::subnodes[2]; z++) {
+										for (size_t y = 0; y < 2 + TElement::subnodes[1]; y++) {
+											for (size_t x = 0; x < 2 + TElement::subnodes[0]; x++) {
 												// fill node indices
 
 												indices[i++] =
@@ -205,7 +205,7 @@ void CubesGenerator<TElement>::settings(
 			eslocal cNodes[3];
 			UniformUtils<TElement>::clusterNodesCount(_settings.cube[_cubeIndex], cNodes);
 			std::vector<eslocal> indices((2 + TElement::subnodes[0]) * (2 + TElement::subnodes[1]) * (2 + TElement::subnodes[2]));
-			eslocal subdomain[3], element[3], subdomainOffset[3], elementOffset[3];
+			size_t subdomain[3], element[3], subdomainOffset[3], elementOffset[3];
 
 
 			for (subdomain[2] = 0; subdomain[2] < _settings.cube[_cubeIndex].subdomainsInCluster[2]; subdomain[2]++) {
@@ -225,9 +225,9 @@ void CubesGenerator<TElement>::settings(
 									// for each element
 
 									eslocal i = 0;
-									for (eslocal z = 0; z < 2 + TElement::subnodes[2]; z++) {
-										for (eslocal y = 0; y < 2 + TElement::subnodes[1]; y++) {
-											for (eslocal x = 0; x < 2 + TElement::subnodes[0]; x++) {
+									for (size_t z = 0; z < 2 + TElement::subnodes[2]; z++) {
+										for (size_t y = 0; y < 2 + TElement::subnodes[1]; y++) {
+											for (size_t x = 0; x < 2 + TElement::subnodes[0]; x++) {
 												// fill node indices
 
 												indices[i++] =

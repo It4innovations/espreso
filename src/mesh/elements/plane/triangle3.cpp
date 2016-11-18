@@ -52,10 +52,6 @@ static std::vector<DenseMatrix> get_dN()
 		DenseMatrix(2, Triangle3NodesCount)
 	);
 
-	std::vector<std::vector<double> > st = get_st();
-	const std::vector<double> &s = st[0];
-	const std::vector<double> &t = st[1];
-
 	for (unsigned int i = 0; i < Triangle3GPCount; i++) {
 		///dN contains [dNr, dNs, dNt]
 		DenseMatrix &m = dN[i];
@@ -133,7 +129,7 @@ std::vector<eslocal> Triangle3::getNeighbours(size_t nodeIndex) const
 	std::vector<eslocal> result;
 	result.reserve(2);
 
-	for (eslocal i = 0; i < Triangle3NodesCount; i++) {
+	for (size_t i = 0; i < Triangle3NodesCount; i++) {
 		if (i != nodeIndex) {
 			result.push_back(_indices[i]);
 		}

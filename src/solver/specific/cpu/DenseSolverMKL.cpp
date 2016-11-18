@@ -37,8 +37,6 @@ DenseSolverMKL::~DenseSolverMKL() {
 
 void DenseSolverMKL::Clear() {
 
-	MKL_INT nRhs = 1;
-
 	if (import_with_copy) {
 		if(m_dense_values_size > 0)	delete [] m_dense_values;
 		if(m_dense_values_fl_size > 0)	delete [] m_dense_values_fl;
@@ -178,12 +176,12 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		if (USE_FLOAT) {
 			tmp_sol_fl.resize(rhs_sol.size());
 
-			for (eslocal i = 0; i < rhs_sol.size(); i++)
+			for (size_t i = 0; i < rhs_sol.size(); i++)
 				tmp_sol_fl[i] = (float)rhs_sol[i];
 
 			ssptrs( &U, &m_rows, &m_nRhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 
-			for (eslocal i = 0; i < rhs_sol.size(); i++)
+			for (size_t i = 0; i < rhs_sol.size(); i++)
 				rhs_sol[i] = (double)tmp_sol_fl[i];
 		} else {
 			dsptrs( &U, &m_rows, &m_nRhs, &m_dense_values[0], &m_ipiv[0], &rhs_sol[0], &m_rows, &info );
@@ -195,12 +193,12 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		if (USE_FLOAT) {
 			tmp_sol_fl.resize(rhs_sol.size());
 
-			for (eslocal i = 0; i < rhs_sol.size(); i++)
+			for (size_t i = 0; i < rhs_sol.size(); i++)
 				tmp_sol_fl[i] = (float)rhs_sol[i];
 
 			ssptrs( &U, &m_rows, &m_nRhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 
-			for (eslocal i = 0; i < rhs_sol.size(); i++)
+			for (size_t i = 0; i < rhs_sol.size(); i++)
 				rhs_sol[i] = (double)tmp_sol_fl[i];
 		} else {
 			dsptrs( &U, &m_rows, &m_nRhs, &m_dense_values[0], &m_ipiv[0], &rhs_sol[0], &m_rows, &info );
@@ -212,7 +210,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		if (USE_FLOAT) {
 			tmp_sol_fl.resize(rhs_sol.size());
 
-			for (eslocal i = 0; i < rhs_sol.size(); i++)
+			for (size_t i = 0; i < rhs_sol.size(); i++)
 				tmp_sol_fl[i] = (float)rhs_sol[i];
 
 			ssptrs( &U, &m_rows, &m_nRhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
@@ -220,7 +218,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 			char trans = 'N';
 			sgetrs(       &trans, &m_rows, &m_nRhs, &m_dense_values_fl[0], &m_rows, &m_ipiv[0], &tmp_sol_fl[0], &m_nRhs, &info);
 
-			for (eslocal i = 0; i < rhs_sol.size(); i++)
+			for (size_t i = 0; i < rhs_sol.size(); i++)
 				rhs_sol[i] = (double)tmp_sol_fl[i];
 		} else {
 			//dsptrs( &U, &m_rows, &m_nRhs, &m_dense_values[0], &m_ipiv[0], &rhs_sol[0], &m_rows, &info );
@@ -248,7 +246,7 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 //
 //		ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 //
-//		for (eslocal i = 0; i < rhs.size(); i++)
+//		for (size_t i = 0; i < rhs.size(); i++)
 //			sol[i] = (double)tmp_sol_fl[i];
 //	} else {
 //		sol = rhs;
@@ -261,12 +259,12 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 			sol.resize(rhs.size());
 			tmp_sol_fl.resize(rhs.size());
 
-			for (eslocal i = 0; i < rhs.size(); i++)
+			for (size_t i = 0; i < rhs.size(); i++)
 				tmp_sol_fl[i] = (float)rhs[i];
 
 			ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 
-			for (eslocal i = 0; i < rhs.size(); i++)
+			for (size_t i = 0; i < rhs.size(); i++)
 				sol[i] = (double)tmp_sol_fl[i];
 		} else {
 			sol = rhs;
@@ -280,12 +278,12 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 			sol.resize(rhs.size());
 			tmp_sol_fl.resize(rhs.size());
 
-			for (eslocal i = 0; i < rhs.size(); i++)
+			for (size_t i = 0; i < rhs.size(); i++)
 				tmp_sol_fl[i] = (float)rhs[i];
 
 			ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 
-			for (eslocal i = 0; i < rhs.size(); i++)
+			for (size_t i = 0; i < rhs.size(); i++)
 				sol[i] = (double)tmp_sol_fl[i];
 		} else {
 			sol = rhs;
@@ -301,14 +299,14 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 			sol.resize(rhs.size());
 			tmp_sol_fl.resize(rhs.size());
 
-			for (eslocal i = 0; i < rhs.size(); i++)
+			for (size_t i = 0; i < rhs.size(); i++)
 				tmp_sol_fl[i] = (float)rhs[i];
 
 			//ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 			sgetrs(       &trans, &m_rows, &m_nRhs, &m_dense_values_fl[0], &m_rows, &m_ipiv[0], &tmp_sol_fl[0], &m_nRhs, &info);
 
 
-			for (eslocal i = 0; i < rhs.size(); i++)
+			for (size_t i = 0; i < rhs.size(); i++)
 				sol[i] = (double)tmp_sol_fl[i];
 		} else {
 			sol = rhs;

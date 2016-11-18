@@ -16,14 +16,14 @@ public:
 	friend std::istream& operator>>(std::istream& is, Interval& obj);
 
 	Interval()
-	: _all(true),
-	  start{0, 0, 0}, end{0, 0, 0},
-	  excludeStart{false, false, false}, excludeEnd{false, false, false} {}
+	: start{0, 0, 0}, end{0, 0, 0},
+	  excludeStart{false, false, false}, excludeEnd{false, false, false},
+	  _all(true) {}
 
 	Interval(double sx, double ex, double sy, double ey, double sz, double ez)
-	: _all(false),
-	  start{sx, sy, sz}, end{ex, ey, ez},
-	  excludeStart{false, false, false}, excludeEnd{false, false, false} {}
+	: start{sx, sy, sz}, end{ex, ey, ez},
+	  excludeStart{false, false, false}, excludeEnd{false, false, false},
+	  _all(false) {}
 
 	bool all() const
 	{

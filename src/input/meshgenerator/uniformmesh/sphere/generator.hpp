@@ -82,11 +82,11 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates)
 	eslocal index = 0;
 	esglobal gIndex;
 
-	eslocal eNodes[2] = { (cNodes[0] - 1) * _settings.grid + 1, (cNodes[1] - 1) * _settings.grid + 1 };
+	size_t eNodes[2] = { (cNodes[0] - 1) * _settings.grid + 1, (cNodes[1] - 1) * _settings.grid + 1 };
 
-	for (eslocal z = (cNodes[2] - 1) * _cluster[2]; z < (cNodes[2] - 1) * _cluster[2] + cNodes[2]; z++) {
-		for (eslocal y = (cNodes[1] - 1) * _cluster[1]; y < (cNodes[1] - 1) * _cluster[1] + cNodes[1]; y++) {
-			for (eslocal x = (cNodes[0] - 1) * _cluster[0]; x < (cNodes[0] - 1) * _cluster[0] + cNodes[0]; x++) {
+	for (size_t z = (cNodes[2] - 1) * _cluster[2]; z < (cNodes[2] - 1) * _cluster[2] + cNodes[2]; z++) {
+		for (size_t y = (cNodes[1] - 1) * _cluster[1]; y < (cNodes[1] - 1) * _cluster[1] + cNodes[1]; y++) {
+			for (size_t x = (cNodes[0] - 1) * _cluster[0]; x < (cNodes[0] - 1) * _cluster[0] + cNodes[0]; x++) {
 				point.z = 1;
 				point.y = (corner[0] * (1 - y * step[1]) + corner[2] * y * step[1]).y;
 				point.x = (corner[0] * x * step[0] + corner[1] * (1 - x * step[0])).x;
@@ -334,7 +334,7 @@ void SphereGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, 
 	std::sort(sortedMap.begin(), sortedMap.end());
 
 	for (size_t i = 0; i < sortedMap.size(); i++) {
-		if (0 <= sortedMap[i] && sortedMap[i] < _settings.size) {
+		if (0 <= sortedMap[i] && sortedMap[i] < (int)_settings.size) {
 			eslocal index = std::find(neighboursMap.begin(), neighboursMap.end(), sortedMap[i]) - neighboursMap.begin();
 			eslocal sx = index % 3 == 2 ? cNodes[0] - 1 : 0,
 					ex = index % 3 != 0 ? cNodes[0] - 1 : 0,

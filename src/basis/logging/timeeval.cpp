@@ -255,9 +255,9 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 
 
 TimeEval::TimeEval(std::string name):
-	evalName(name),
 	totalTime(TimeEvent(name + std::string("- Total "))),
-	remainingTime(TimeEvent(name + std::string("- Remaining ")))
+	remainingTime(TimeEvent(name + std::string("- Remaining "))),
+	evalName(name)
 {
 }
 
@@ -268,7 +268,7 @@ void TimeEval::addEvent(TimeEvent &timeEvent) {
 void TimeEval::printStats() {
 	totalTime.evaluate();
 
-	for (eslocal i = 0; i < timeEvents.size(); i++) {
+	for (size_t i = 0; i < timeEvents.size(); i++) {
 		timeEvents[i].printStat(totalTime.avgTime);
 	}
 
@@ -293,7 +293,7 @@ void TimeEval::printStatsMPI() {
 	ESLOG(SUMMARY) << separator(separator_size, '*');
 	totalTime.evaluateMPI();
 
-	for (eslocal i = 0; i < timeEvents.size(); i++) {
+	for (size_t i = 0; i < timeEvents.size(); i++) {
 		timeEvents[i].printStatMPI(totalTime.g_avgTime);
 		sum_avg_time += timeEvents[i].avgTime;
 	}

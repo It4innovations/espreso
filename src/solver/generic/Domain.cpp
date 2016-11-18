@@ -218,18 +218,21 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 
 		Kplus.Solve(x_in, x, 0, 0);
 		if (enable_SP_refinement) {
-			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_STEPS; step++) {
+			for (size_t step = 0; step <= config::solver::KSOLVER_SP_STEPS; step++) {
 				K.MatVec(x,r,'N');
-				for (eslocal i = 0; i < r.size(); i++)
+				for (size_t i = 0; i < r.size(); i++) {
 					r[i] = x_in[i] - r[i];
+				}
 				Kplus.Solve(r, z, 0, 0);
 				//Kplus.SolveCG(K, r, z);
-				for (eslocal i = 0; i < r.size(); i++)
+				for (size_t i = 0; i < r.size(); i++) {
 					x[i] = x[i] + z[i];
+				}
 
 				double norm = 0.0;
-				for (eslocal i = 0; i < r.size(); i++)
+				for (size_t i = 0; i < r.size(); i++) {
 					norm += r[i]*r[i];
+				}
 
 				norm = sqrt(norm);
 
@@ -245,8 +248,9 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 			ESINFO(PROGRESS2) << "FAILED";
 		}
 
-		for (eslocal i = 0; i < r.size(); i++)
+		for (size_t i = 0; i < r.size(); i++) {
 			y_out[i] = x[i];
+		}
 		break;
 	}
 //	case 4:
@@ -278,17 +282,20 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		Kplus.Solve(x_in_y_out, x, 0, 0);
 
 		if (enable_SP_refinement) {
-			for (eslocal step = 0; step <= config::solver::KSOLVER_SP_STEPS; step++) {
+			for (size_t step = 0; step <= config::solver::KSOLVER_SP_STEPS; step++) {
 				K.MatVec(x,r,'N');
-				for (eslocal i = 0; i < r.size(); i++)
+				for (size_t i = 0; i < r.size(); i++) {
 					r[i] = x_in_y_out[i] - r[i];
+				}
 				Kplus.Solve(r, z, 0, 0);
-				for (eslocal i = 0; i < r.size(); i++)
+				for (size_t i = 0; i < r.size(); i++) {
 					x[i] = x[i] + z[i];
+				}
 
 				double norm = 0.0;
-				for (eslocal i = 0; i < r.size(); i++)
+				for (size_t i = 0; i < r.size(); i++) {
 					norm += r[i]*r[i];
+				}
 
 				norm = sqrt(norm);
 
@@ -304,8 +311,9 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 			ESINFO(PROGRESS2) << "FAILED";
 		}
 
-		for (eslocal i = 0; i < r.size(); i++)
+		for (size_t i = 0; i < r.size(); i++) {
 			x_in_y_out[i] = x[i];
+		}
 
 		break;
 	}

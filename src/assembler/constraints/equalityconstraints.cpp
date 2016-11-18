@@ -80,7 +80,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	#pragma cilk grainsize = 1
 	cilk_for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
-		for (size_t i = 0; i < constraints.B1[s].nnz; i++) {
+		for (eslocal i = 0; i < constraints.B1[s].nnz; i++) {
 			constraints.B1[s].I_row_indices.push_back(clusterOffset + dirichletSizes[s] + i + IJVMatrixIndexing);
 		}
 		for (size_t t = 0; t < threads; t++) {
@@ -88,15 +88,15 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 			constraints.B1c[s].insert(constraints.B1c[s].end(), dirichletValues[s][t].begin(), dirichletValues[s][t].end());
 		}
 		constraints.B1duplicity[s].resize(constraints.B1[s].I_row_indices.size(), 1);
-		for (size_t r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
+		for (eslocal r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
 			constraints.B1subdomainsMap[s].push_back(constraints.B1[s].I_row_indices[r] - 1);
 		}
 		constraints.LB[s].resize(constraints.B1[s].nnz, -std::numeric_limits<double>::infinity());
 	}
 
 	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterDirichletSize);
-	for (esglobal i = clusterOffset; i < clusterOffset + clusterDirichletSize; i++) {
-		constraints.B1clustersMap.push_back({ i, config::env::MPIrank });
+	for (size_t i = clusterOffset; i < clusterOffset + clusterDirichletSize; i++) {
+		constraints.B1clustersMap.push_back({ (esglobal)i, config::env::MPIrank });
 	}
 
 	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << constraints.B1[0].rows;
@@ -313,7 +313,8 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 			MPI_Isend(sBuffer[0][n].data(), sizeof(double) * sBuffer[0][n].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
 		}
 
-		int flag, counter = 0;
+		int flag;
+		size_t counter = 0;
 		MPI_Status status;
 		while (counter < constraints._mesh.neighbours().size()) {
 			MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
@@ -340,7 +341,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 						diagonals[i].push_back(D[*d][e->DOFIndex(*d, dof)]);
 					}
 				} else {
-					for (size_t d = 0; d < e->DOFCounter(*c, dof); d++) {
+					for (eslocal d = 0; d < e->DOFCounter(*c, dof); d++) {
 						diagonals[i].push_back(rBuffer[n2i(*c)][nPointer[n2i(*c)]++]);
 					}
 				}
@@ -365,11 +366,11 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 
 			eslocal diag1 = 0;
 			for (auto c1 = e->clusters().begin(); c1 != e->clusters().end(); ++c1) {
-				for (size_t d1 = 0; d1 < e->DOFCounter(*c1, dof); d1++, diag1++) {
+				for (eslocal d1 = 0; d1 < e->DOFCounter(*c1, dof); d1++, diag1++) {
 
 					eslocal diag2 = diag1 + 1;
 					for (auto c2 = c1; c2 != e->clusters().end(); ++c2) {
-						for (size_t d2 = (*c1 == *c2 ? d1 + 1 : 0); d2 < e->DOFCounter(*c2, dof); d2++, diag2++) {
+						for (eslocal d2 = (*c1 == *c2 ? d1 + 1 : 0); d2 < e->DOFCounter(*c2, dof); d2++, diag2++) {
 
 							if (*c1 == config::env::MPIrank) {
 								eslocal d = findDomain(e, d1, dof);
@@ -434,7 +435,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		constraints.B1[p].nnz = constraints.B1[p].I_row_indices.size();
 		constraints.B1c[p].resize(constraints.B1[p].nnz, 0);
 		constraints.LB[p].resize(constraints.B1[p].nnz, -std::numeric_limits<double>::infinity());
-		for (size_t r = constraints.B1subdomainsMap[p].size(); r < constraints.B1[p].nnz; r++) {
+		for (eslocal r = constraints.B1subdomainsMap[p].size(); r < constraints.B1[p].nnz; r++) {
 			constraints.B1subdomainsMap[p].push_back(constraints.B1[p].I_row_indices[r] - 1);
 		}
 	}
@@ -606,7 +607,7 @@ void EqualityConstraints::insertDomainGluingToB0(Constraints &constraints, const
 		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
-		for (size_t i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
+		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
 			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
 		}
 	}
@@ -626,7 +627,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	});
 
 	std::vector<size_t> part;
-	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, int size) { return e->domains().size() < size; }) - el.begin());
+	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, size_t size) { return e->domains().size() < size; }) - el.begin());
 	ESTEST(MANDATORY) << "There are not elements on the sub-domains interface." << ((elements.size() - part[0]) ? TEST_PASSED : TEST_FAILED);
 	for (size_t i = part[0] + 1; i < el.size(); i++) {
 		if (i && el[i - 1]->domains() != el[i]->domains()) {
@@ -638,7 +639,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
-			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
+			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
 			if (sign == 0) {
 				continue;
 			}
@@ -653,7 +654,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 			std::sort(nodes.begin(), nodes.end());
 			Esutils::removeDuplicity(nodes);
 
-			for (size_t col = 0; col < kernel[domains[0]].cols; col++) {
+			for (eslocal col = 0; col < kernel[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodes.size(); n++) {
 					for (size_t dof = 0; dof < DOFs.size(); dof++) {
 						constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
@@ -668,7 +669,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 		constraints.B0[p].rows = kernel[0].cols * (part.size() - 1);
 		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
-		for (size_t i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
+		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
 			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
 		}
 	}
@@ -686,7 +687,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	});
 
 	std::vector<size_t> part;
-	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, int size) { return e->domains().size() < size; }) - el.begin());
+	part.push_back(std::lower_bound(el.begin(), el.end(), 2, [] (Element *e, size_t size) { return e->domains().size() < size; }) - el.begin());
 	ESTEST(MANDATORY) << "There are not elements on the sub-domains interface." << ((elements.size() - part[0]) ? TEST_PASSED : TEST_FAILED);
 	for (size_t i = part[0] + 1; i < el.size(); i++) {
 		if (i && el[i - 1]->domains() != el[i]->domains()) {
@@ -698,7 +699,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
-			int sign = domains[0] == p ? 1 : domains[1] == p ? -1 : 0;
+			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
 			if (sign == 0) {
 				continue;
 			}
@@ -712,7 +713,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 			Esutils::removeDuplicity(interfaceDOFs);
 
 			size_t DOFIndex = 0;
-			for (size_t col = 0; col < kernel[domains[0]].cols; col++) {
+			for (eslocal col = 0; col < kernel[domains[0]].cols; col++) {
 				for (size_t n = 0; n < interfaceDOFs.size(); n++) {
 					constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
 					constraints.B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + IJVMatrixIndexing);
@@ -725,7 +726,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 		constraints.B0[p].rows = kernel[0].cols * (part.size() - 1);
 		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
-		for (size_t i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
+		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
 			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
 		}
 	}

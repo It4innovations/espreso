@@ -4,7 +4,7 @@
 namespace espreso {
 namespace input {
 
-static void checkSettings(eslocal cluster[], size_t &side, const SphereSettings &settings)
+static void checkSettings(size_t cluster[], size_t &side, const SphereSettings &settings)
 {
 	if (settings.grid * settings.grid * settings.layers * 6 != settings.size) {
 		ESINFO(espreso::GLOBAL_ERROR) << "The number of clusters(" << settings.grid * settings.grid * settings.layers * 6

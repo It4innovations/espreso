@@ -34,6 +34,8 @@ void LinearElasticity2D::prepareMeshStructures()
 		case config::solver::B0_TYPEalternative::KERNELS:
 			_mesh.computeEdgesSharedByDomains();
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -82,6 +84,8 @@ void LinearElasticity2D::assembleGluingMatrices()
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
+			break;
+		default:
 			break;
 		}
 	}
@@ -256,7 +260,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	rhsT.resize(Ksize, 1);
 	rhsT = 0;
 
-	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant2x2(J);
 		inverse(J, invJ, detJ);
@@ -334,7 +338,7 @@ static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 	fe.resize(Ksize);
 	std::fill(fe.begin(), fe.end(), 0);
 
-	for (eslocal gp = 0; gp < edge->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < edge->gaussePoints(); gp++) {
 		dND.multiply(dN[gp], coordinates);
 		double J = dND.norm();
 		Point n(-dND(0, 1), dND(0, 0), 0);

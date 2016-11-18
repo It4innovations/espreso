@@ -31,7 +31,7 @@ protected:
 	virtual ~SphereGenerator() {};
 
 	const SphereSettings _settings;
-	eslocal _cluster[3];
+	size_t _cluster[3];
 	size_t _side;
 };
 

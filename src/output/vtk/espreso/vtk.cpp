@@ -10,7 +10,7 @@ static void open(std::ofstream &os, const std::string &path, size_t timeStep)
 {
 	std::stringstream ss;
 	ss << path << espreso::config::env::MPIrank;
-	if (timeStep < -1) {
+	if (timeStep < (size_t)-1) {
 		ss << "_" << timeStep;
 	}
 	ss << ".vtk";
@@ -53,8 +53,6 @@ static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinat
 
 static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, const std::vector<espreso::Element*> &nodes, std::function<espreso::Point(const espreso::Point&, size_t)> shrink)
 {
-	size_t parts = coordinates.parts();
-
 	size_t cSize = 0;
 	for (size_t n = 0; n < nodes.size(); n++) {
 		cSize += nodes[n]->domains().size();
@@ -135,6 +133,8 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh, espreso::outp
 	case espreso::output::Store::ElementType::EDGES:
 		elements.insert(elements.end(), mesh.edges().begin(), mesh.edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
+		break;
+	default:
 		break;
 	}
 
@@ -361,36 +361,29 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 	os << "DATASET POLYDATA\n";
 	os << "POINTS " << 2*elements.size() << " float\n";
 	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
+		for (eslocal e = partition[p]; e < partition[p + 1]; e++) {
 			Point mid;
 			for (size_t i = 0; i < elements[e]->nodes(); i++) {
 				mid += mesh.coordinates().get(elements[e]->node(i), p);
 			}
 			mid /= elements[e]->nodes();
-			os<<mid.x<<" "<<mid.y<<" "<<mid.z<<"\n";
-
-			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
-			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);			
-			
+			os << mid.x << " " << mid.y << " " << mid.z << "\n";
 		}
 	}
 
-	os<<"LINES "<<elements.size()<<" "<<elements.size()*3<<"\n";
-	for(int i=0;i<elements.size();i++){
-	  os<<2<<" "<<i<<" "<<elements.size()+i<<"\n";
+	os << "LINES " << elements.size() << " " << elements.size() * 3 << "\n";
+	for(size_t i = 0; i < elements.size();i++){
+		os<< 2 << " " << i << " " << elements.size() + i << "\n";
 	}
 
 	os<<"\nPOINT_DATA "<<elements.size()*2<<"\nVECTORS Vectors float\n";
 	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (size_t e = partition[p]; e < partition[p + 1]; e++) {
+		for (eslocal e = partition[p]; e < partition[p + 1]; e++) {
 			Point mid;
 			for (size_t i = 0; i < elements[e]->nodes(); i++) {
 				mid += mesh.coordinates().get(elements[e]->node(i), p);
 			}
 			mid /= elements[e]->nodes();
-
-			const std::vector<Evaluator*> &ux = elements[e]->settings(properties[0]);
-			const std::vector<Evaluator*> &uy = elements[e]->settings(properties[1]);
 
 			// TODO: change
 			double x = 0, y = 0, z = 0;

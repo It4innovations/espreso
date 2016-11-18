@@ -31,7 +31,7 @@ public:
 	static Evaluator* create(std::ifstream &is, const Coordinates &coordinates);
 
 	virtual Evaluator* copy() const { return new Evaluator(*this); }
-	virtual double evaluate(size_t index, size_t timeStep = 1, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
+	virtual double evaluate(eslocal index, size_t timeStep = 1, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
 	virtual double evaluate(const Point &p) const { return 0; }
 	virtual const std::string& name() const { return _name; }
 	virtual ~Evaluator() {};
@@ -58,7 +58,7 @@ public:
 	ConstEvaluator(std::ifstream &is, Property property): Evaluator(property) { is.read(reinterpret_cast<char *>(&_value), sizeof(double)); }
 
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
-	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const { return _value; }
+	double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const { return _value; }
 	double evaluate(const Point &p) const { return _value; }
 
 	virtual void store(std::ofstream& os)
@@ -100,7 +100,7 @@ protected:
 	}
 
 	virtual Evaluator* copy() const =0;
-	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const =0;
+	virtual double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const =0;
 	virtual double evaluate(const Point &p) const =0;
 
 	std::vector<Expression> _expression;
@@ -117,7 +117,7 @@ public:
 	: ExpressionEvaluator(is, { "x", "y", "z" }, property), _coordinates(coordinates) {};
 
 	virtual Evaluator* copy() const { return new CoordinatesEvaluator(*this); }
-	double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
+	double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
 		_values[__cilkrts_get_worker_number()][0] = _coordinates[index].x;
 		_values[__cilkrts_get_worker_number()][1] = _coordinates[index].y;
@@ -168,7 +168,7 @@ public:
 	TableEvaluator(std::ifstream &is, Property property);
 
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
-	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
+	virtual double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
 		std::vector<size_t> cell(_dimension);
 
@@ -236,7 +236,7 @@ public:
 
 
 	virtual Evaluator* copy() const { return new ArrayEvaluator(*this); }
-	virtual double evaluate(size_t index, size_t timeStep, double temperature, double pressure, double velocity) const
+	virtual double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
 		auto it = std::lower_bound(_indices.begin(), _indices.end(), index);
 		if (it != _indices.end() && *it == index) {
@@ -249,7 +249,6 @@ public:
 
 	virtual void store(std::ofstream& os)
 	{
-		Type type = Type::ARRAY;
 		ESINFO(GLOBAL_ERROR) << "implement store Array evaluator";
 	}
 

@@ -43,14 +43,14 @@ void Settings::defaultSettings()
 }
 
 Settings::Settings(const ArgsConfiguration &configuration, size_t index, size_t size, std::string prefix)
-: index(index), size(size), clusterOffset(0), prefix(prefix)
+: prefix(prefix), index(index), size(size), clusterOffset(0)
 {
 	defaultSettings();
 	ParametersReader::fromConfigurationFileWOcheck(configuration, parameters);
 }
 
 Settings::Settings(size_t index, size_t size, std::string prefix)
-: index(index), size(size), clusterOffset(0), prefix(prefix)
+: prefix(prefix), index(index), size(size), clusterOffset(0)
 {
 	defaultSettings();
 }

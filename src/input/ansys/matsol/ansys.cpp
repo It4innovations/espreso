@@ -70,11 +70,10 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 	eslocal values[20];
 	eslocal params[6];
 	eslocal value;
-	eslocal minIndices = 10000;
 
 	if (file.is_open()) {
-		for (eslocal c = 0; c < elements.size(); c++) {
-			for (size_t l = 0; l < lines; l++) {
+		for (size_t c = 0; c < elements.size(); c++) {
+			for (eslocal l = 0; l < lines; l++) {
 				getline(file, line[l], '\n');
 			}
 
@@ -91,7 +90,7 @@ void AnsysMatsol::elements(std::vector<Element*> &elements)
 			}
 
 			// re-index to zero base
-			for (size_t i = 0; i < n; i++) {
+			for (eslocal i = 0; i < n; i++) {
 				values[i]--;
 			}
 			params[Element::MATERIAL] = 0;

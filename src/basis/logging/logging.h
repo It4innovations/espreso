@@ -131,6 +131,8 @@ public:
 			case CONVERGENCE:
 				os << "CONVERGENCE: ";
 				break;
+			default:
+				break;
 			}
 		}
 	};
@@ -233,7 +235,9 @@ public:
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();
-		int ret = system(mkdir.str().c_str());
+		if (system(mkdir.str().c_str())) {
+			ESINFO(ERROR) << "Cannot create log directory\n";
+		}
 
 		return file.str();
 	}

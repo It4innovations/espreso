@@ -28,7 +28,9 @@ static void printStack()
 		command << " " << function.substr(begin, end - begin);
 	}
 	free(functions);
-	int ret = system(command.str().c_str()); // convert addresses to file lines
+	if (system(command.str().c_str())) { // convert addresses to file lines
+		ESINFO(ALWAYS) << "Broken address to file lines command";
+	}
 }
 
 

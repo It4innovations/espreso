@@ -39,7 +39,7 @@ template<class TElement>
 void CubeGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements)
 {
 	esglobal cubeElements[3], partSize[3], cOffset[3], offset[3];
-	eslocal subdomain[3], element[3], material, counter;
+	size_t subdomain[3], element[3], material, counter;
 
 	for (size_t i = 0; i < 3; i++) {
 		cubeElements[i] = _settings.clusters[i] * _settings.subdomainsInCluster[i] * _settings.elementsInSubdomain[i];
@@ -168,9 +168,9 @@ static void goThroughElements(
 		for (size_t ey = start[1]; ey < end[1]; ey++) {
 			for (size_t ez = start[2]; ez < end[2]; ez++) {
 
-				for (eslocal z = 0, i = 0; z <= 1 + TElement::subnodes[2]; z++) {
-					for (eslocal y = 0; y <= 1 + TElement::subnodes[1]; y++) {
-						for (eslocal x = 0; x <= 1 + TElement::subnodes[0]; x++, i++) {
+				for (size_t z = 0, i = 0; z <= 1 + TElement::subnodes[2]; z++) {
+					for (size_t y = 0; y <= 1 + TElement::subnodes[1]; y++) {
+						for (size_t x = 0; x <= 1 + TElement::subnodes[0]; x++, i++) {
 
 
 							size_t offsetX = ex * (1 + TElement::subnodes[0]) + x;

@@ -21,7 +21,7 @@ public:
 	void setFaceIndex(Element *element, unsigned char index) {
 		_index = std::pair<Element*, unsigned char>(element, index);
 	}
-	FaceIndex &getFaceIndex() {
+	std::pair<Element*, unsigned char> &getFaceIndex() {
 		return _index;
 	}
 
@@ -41,7 +41,7 @@ public:
 
 protected:
 private:
-    FaceIndex _index;
+	std::pair<Element*, unsigned char> _index;
 
 };
 

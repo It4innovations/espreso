@@ -90,15 +90,15 @@ struct Physics {
 			const std::vector<Property> edgeDOFs,
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs):
-	_mesh(mesh),
-	_constraints(constraints),
-	mtype(mtype),
 	elementDOFs(elementDOFs),
 	faceDOFs(faceDOFs),
 	edgeDOFs(edgeDOFs),
 	pointDOFs(pointDOFs),
 	midPointDOFs(midPointDOFs),
-	matrixSize(mesh.parts())
+	matrixSize(mesh.parts()),
+	mtype(mtype),
+	_mesh(mesh),
+	_constraints(constraints)
 	{
 		K.resize(_mesh.parts());
 		R1.resize(_mesh.parts());

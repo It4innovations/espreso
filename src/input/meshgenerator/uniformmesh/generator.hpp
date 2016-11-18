@@ -17,11 +17,11 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 	elements.reserve(UniformUtils<TElement>::clusterElementsCount(_settings));
 
 
-	eslocal subdomain[3];
-	eslocal element[3];
+	size_t subdomain[3];
+	size_t element[3];
 
-	eslocal subdomainOffset[3];
-	eslocal elementOffset[3];
+	size_t subdomainOffset[3];
+	size_t elementOffset[3];
 
 	eslocal params[6] = {0, 0, 0, 0, 0, 0};
 
@@ -43,9 +43,9 @@ void UniformGenerator<TElement>::elementsMesh(std::vector<Element*> &elements)
 								elementOffset[i] = subdomainOffset[i] + element[i] * (1 + TElement::subnodes[i]);
 							}
 							eslocal i = 0;
-							for (eslocal z = 0; z < 2 + TElement::subnodes[2]; z++) {
-								for (eslocal y = 0; y < 2 + TElement::subnodes[1]; y++) {
-									for (eslocal x = 0; x < 2 + TElement::subnodes[0]; x++) {
+							for (size_t z = 0; z < 2 + TElement::subnodes[2]; z++) {
+								for (size_t y = 0; y < 2 + TElement::subnodes[1]; y++) {
+									for (size_t x = 0; x < 2 + TElement::subnodes[0]; x++) {
 										// fill node indices
 
 										indices[i++] =
@@ -111,7 +111,7 @@ template<class TElement>
 void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
 {
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
-	eslocal shift_offset[3] = {TElement::subnodes[0] + 1, TElement::subnodes[1] + 1, TElement::subnodes[2] + 1};
+	eslocal shift_offset[3] = { (int)(TElement::subnodes[0] + 1), (int)(TElement::subnodes[1] + 1), (int)(TElement::subnodes[2] + 1) };
 
 	eslocal nodes[3];
 	eslocal cNodes[3];
@@ -131,9 +131,9 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 
 	eslocal offset[3];
 	eslocal shift[3];
-	for (eslocal sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
-		for (eslocal sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
-			for (eslocal sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
+	for (size_t sz = 0; sz < _settings.subdomainsInCluster[2]; sz++) {
+		for (size_t sy = 0; sy < _settings.subdomainsInCluster[1]; sy++) {
+			for (size_t sx = 0; sx < _settings.subdomainsInCluster[0]; sx++) {
 				fixPoints.push_back(std::vector<eslocal>());
 				fixPoints.back().reserve(8);
 				for (int i = 0; i < 8; i++) {
@@ -206,7 +206,7 @@ void UniformGenerator<TElement>::corners(std::vector<eslocal> &corners)
 
 	eslocal index;
 	for (size_t d = 0; d < 3; d++) {
-		for (eslocal i = 1; i < _settings.subdomainsInCluster[d]; i++) {
+		for (size_t i = 1; i < _settings.subdomainsInCluster[d]; i++) {
 			for (size_t j = 0; j < offsets[(d + 1) % 3].size(); j++) {
 				for (size_t k = 0; k < offsets[(d + 2) % 3].size(); k++) {
 					if (!_settings.corners

@@ -79,7 +79,7 @@ void Mesh::computeFixPoints(size_t number)
 		std::vector<eslocal> fixPoints(points);
 		std::vector<eslocal> eSubPartition = getPartition(_partPtrs[part], _partPtrs[part + 1], points);
 
-		for (eslocal j = 0; j < points; j++) {
+		for (size_t j = 0; j < points; j++) {
 			fixPoints[j] = getCentralNode(_partPtrs[part], _partPtrs[part + 1], eSubPartition, part, j);
 		}
 		std::sort(fixPoints.begin(), fixPoints.end());
@@ -159,7 +159,7 @@ static void METISMeshRepresentation(
 	// create array storing pointers to elements' nodes
 	metisElements.reserve(end - begin + 1);
 	metisElements.push_back(0);
-	for (eslocal i = begin; i < end; i++) {
+	for (size_t i = begin; i < end; i++) {
 		metisElements.push_back(metisElements.back() + elements[i]->coarseNodes());
 	}
 
@@ -167,7 +167,7 @@ static void METISMeshRepresentation(
 	metisNodes.reserve(metisElements.back());
 	// number of common nodes to be neighbor
 	nCommon = 4;
-	for (eslocal i = begin; i < end; i++) {
+	for (size_t i = begin; i < end; i++) {
 		for (size_t j = 0; j < elements[i]->coarseNodes(); j++) {
 			metisNodes.push_back(localIndex(nodeProjection, elements[i]->node(j)));
 		}
@@ -201,7 +201,7 @@ static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, s
 			while (stack.size()) {
 				eslocal current = stack.back();
 				stack.pop_back();
-				for (size_t i = xAdj[current]; i < xAdj[current + 1]; i++) {
+				for (eslocal i = xAdj[current]; i < xAdj[current + 1]; i++) {
 					if (eCopy[adjncy[i]] != NULL) {
 						elements[back++] = eCopy[adjncy[i]];
 						eCopy[adjncy[i]] = NULL;
@@ -243,7 +243,7 @@ std::vector<eslocal> Mesh::getPartition(size_t begin, size_t end, eslocal parts)
 	// create array storing pointers to elements' nodes
 	e.reserve(end - begin + 1);
 	e.push_back(0);
-	for (eslocal i = begin; i < end; i++) {
+	for (size_t i = begin; i < end; i++) {
 		e.push_back(e.back() + _elements[i]->coarseNodes());
 	}
 
@@ -251,7 +251,7 @@ std::vector<eslocal> Mesh::getPartition(size_t begin, size_t end, eslocal parts)
 	n.reserve(e.back());
 	// number of common nodes to be neighbor
 	ncommon = 4;
-	for (eslocal i = begin; i < end; i++) {
+	for (size_t i = begin; i < end; i++) {
 		n.insert(n.end(), _elements[i]->indices(), _elements[i]->indices() + _elements[i]->coarseNodes());
 		if (ncommon > _elements[i]->nCommon()) {
 			ncommon = _elements[i]->nCommon();
@@ -317,7 +317,7 @@ eslocal Mesh::getCentralNode(const std::vector<Element*> &elements, size_t begin
 	};
 
 	std::vector<std::vector<eslocal> > neighbours(nMap.size());
-	for (eslocal e = begin; e < end; e++) {
+	for (size_t e = begin; e < end; e++) {
 		if (ePartition[e - begin] == subpart) {
 			for (size_t n = 0; n < elements[e]->nodes(); n++) {
 				std::vector<eslocal> neigh = elements[e]->getNeighbours(n);
@@ -1046,7 +1046,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 		std::vector<eslocal> subPartPtrs = continuousReorder(edges, partPtrs[p], partPtrs[p + 1]);
 		for (size_t sp = 0; sp < subPartPtrs.size() - 1; sp++) {
 			std::vector<eslocal> nodes;
-			for (size_t e = subPartPtrs[sp]; e < subPartPtrs[sp + 1]; e++) {
+			for (eslocal e = subPartPtrs[sp]; e < subPartPtrs[sp + 1]; e++) {
 				nodes.push_back(edges[e]->node(0));
 				nodes.push_back(edges[e]->node(edges[e]->coarseNodes() - 1));
 			}
@@ -1153,7 +1153,7 @@ static void assignDomains(std::vector<Element*> &elements)
 void Mesh::mapElementsToDomains()
 {
 	cilk_for (size_t p = 0; p < parts(); p++) {
-		for (size_t e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
+		for (eslocal e = _partPtrs[p]; e < _partPtrs[p + 1]; e++) {
 			_elements[e]->domains().clear();
 			_elements[e]->domains().push_back(p);
 		}
@@ -1429,7 +1429,8 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		MPI_Isend(sBuffer[0][n].data(), sizeof(esglobal) * sBuffer[0][n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
 	}
 
-	int flag, counter = 0;
+	int flag;
+	size_t counter = 0;
 	MPI_Status status;
 	while (counter < neighbours.size()) {
 		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);

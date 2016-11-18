@@ -43,7 +43,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 
 		size = coordinates.localSize(p);
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (eslocal i = 0; i < coordinates.localSize(p); i++) {
+		for (size_t i = 0; i < coordinates.localSize(p); i++) {
 			index = coordinates.globalIndex(i, p);
 			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
 			const Point &point = coordinates.get(i, p);

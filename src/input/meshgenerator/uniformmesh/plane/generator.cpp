@@ -12,7 +12,7 @@ static void setCluster(size_t cluster[], const PlaneSettings &settings)
 	}
 
 	cluster[2] = 0;
-	eslocal index = 0, i = 0;
+	size_t index = 0;
 	for (size_t y = 0; y < settings.clusters[1]; y++) {
 		for (size_t x = 0; x < settings.clusters[0]; x++) {
 			if (settings.index == index++) {

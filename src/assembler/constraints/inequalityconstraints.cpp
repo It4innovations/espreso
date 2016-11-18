@@ -88,15 +88,15 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 		}
 		constraints.B1[s].nnz = constraints.B1[s].I_row_indices.size();
 		constraints.B1duplicity[s].resize(constraints.B1[s].I_row_indices.size(), 1);
-		for (size_t r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
+		for (eslocal r = constraints.B1subdomainsMap[s].size(); r < constraints.B1[s].nnz; r++) {
 			constraints.B1subdomainsMap[s].push_back(constraints.B1[s].I_row_indices[r] - 1);
 		}
 		constraints.LB[s].resize(constraints.B1[s].nnz, 0);
 	}
 
 	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterIndicesSize);
-	for (esglobal i = clusterOffset; i < clusterOffset + clusterIndicesSize; i++) {
-		constraints.B1clustersMap.push_back({ i, config::env::MPIrank });
+	for (size_t i = clusterOffset; i < clusterOffset + clusterIndicesSize; i++) {
+		constraints.B1clustersMap.push_back({ (eslocal)i, config::env::MPIrank });
 	}
 
 	constraints.block[Constraints::BLOCK::INEQUALITY_CONSTRAINTS] += globalIndicesSize;

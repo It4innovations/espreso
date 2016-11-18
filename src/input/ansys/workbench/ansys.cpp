@@ -34,6 +34,8 @@ void AnsysWorkbench::elements(std::vector<Element*> &elements)
 		}
 		case WorkbenchCommands::END:
 			return;
+		default:
+			break;
 		}
 	}
 }
@@ -53,6 +55,8 @@ void AnsysWorkbench::materials(std::vector<Material> &materials)
 		}
 		case WorkbenchCommands::END:
 			return;
+		default:
+			break;
 		}
 	}
 }

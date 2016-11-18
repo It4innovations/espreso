@@ -5,13 +5,13 @@ using namespace espreso;
 
 void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
     ESINFO(PROGRESS2) << "Creating B1*K+*B1t : using Pardiso SC";
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
         SparseSolverCPU tmpsps;
         if ( i == 0 && cluster_global_index == 1) {
         	tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
@@ -27,17 +27,17 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
     ESINFO(PROGRESS2);
 
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+    cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
 }
 
 void ClusterCPU::Create_Kinv_perDomain() {
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+    cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
     ESINFO(PROGRESS2) << "Creating B1*K+*B1t";
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
         domains[i].KplusF.msglvl = 0;
 
@@ -60,14 +60,14 @@ void ClusterCPU::Create_Kinv_perDomain() {
     }
     ESINFO(PROGRESS2);
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+    cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
 }
 
 
 void ClusterCPU::SetupKsolvers ( ) {
 
-    cilk_for (eslocal d = 0; d < domains.size(); d++) {
+    cilk_for (size_t d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
     	switch (config::solver::KSOLVER) {
