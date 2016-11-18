@@ -337,8 +337,10 @@ static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 	for (eslocal gp = 0; gp < edge->gaussePoints(); gp++) {
 		dND.multiply(dN[gp], coordinates);
 		double J = dND.norm();
-		normal(0, 0) = -dND(0, 1) / J;
-		normal(1, 0) =  dND(0, 0) / J;
+		Point n(-dND(0, 1), dND(0, 0), 0);
+		edge->rotateOutside(edge->parentElements()[0], mesh.coordinates(), n);
+		normal(0, 0) = n.x / J;
+		normal(1, 0) = n.y / J;
 		gpP.multiply(N[gp], P);
 		gpQ.multiply(normal, gpP);
 		gpThickness.multiply(N[gp], matThickness);
