@@ -311,42 +311,23 @@ void Prisma15::fillEdges()
 	eslocal line[Line3NodesCount];
 	_edges.reserve(Prisma15EdgeCount);
 
+	size_t filled = _edges.size();
+
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
 		line[2] = _indices[ edge + 6     ];
-		if (3 * edge < _edges.size()) {
-			if (_edges[3 * edge] == NULL) {
-				_edges[3 * edge] = new Line3(line);
-			}
-		} else {
-			_edges.push_back(new Line3(line));
-		}
-		_edges[3 * edge]->parentElements().push_back(this);
+		addEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[ edge          +  3];
 		line[1] = _indices[(edge + 1) % 3 +  3];
 		line[2] = _indices[ edge          + 9];
-		if (3 * edge + 1 < _edges.size()) {
-			if (_edges[3 * edge + 1] == NULL) {
-				_edges[3 * edge + 1] = new Line3(line);
-			}
-		} else {
-			_edges.push_back(new Line3(line));
-		}
-		_edges[3 * edge + 1]->parentElements().push_back(this);
+		addEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  3];
 		line[2] = _indices[edge + 12];
-		if (3 * edge + 2 < _edges.size()) {
-			if (_edges[3 * edge + 2] == NULL) {
-				_edges[3 * edge + 2] = new Line3(line);
-			}
-		} else {
-			_edges.push_back(new Line3(line));
-		}
-		_edges[3 * edge + 2]->parentElements().push_back(this);
+		addEdge<Line3>(_edges, line, filled);
 	}
 }
 
@@ -355,6 +336,8 @@ void Prisma15::fillFaces()
 	eslocal square[Square8NodesCount];
 	eslocal triangle[Triangle6NodesCount];
 	_faces.reserve(Prisma15FacesCount);
+
+	size_t filled = _faces.size();
 
 	for (size_t face = 0; face < 3; face++) {
 		square[0] = _indices[ face              ];
@@ -366,8 +349,7 @@ void Prisma15::fillFaces()
 		square[5] = _indices[(face + 1) % 3 + 12];
 		square[6] = _indices[ face          + 9 ];
 		square[7] = _indices[ face          + 12];
-		_faces.push_back(new Square8(square));
-		_faces.back()->parentElements().push_back(this);
+		addFace<Square8>(_faces, square, filled, Square4NodesCount);
 	}
 
 	triangle[0] = _indices[1];
@@ -377,8 +359,7 @@ void Prisma15::fillFaces()
 	triangle[3] = _indices[6];
 	triangle[4] = _indices[8];
 	triangle[5] = _indices[7];
-	_faces.push_back(new Triangle6(triangle));
-	_faces.back()->parentElements().push_back(this);
+	addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[3];
 	triangle[1] = _indices[4];
@@ -387,18 +368,7 @@ void Prisma15::fillFaces()
 	triangle[3] = _indices[9];
 	triangle[4] = _indices[10];
 	triangle[5] = _indices[11];
-	_faces.push_back(new Triangle6(triangle));
-	_faces.back()->parentElements().push_back(this);
-}
-
-void Prisma15::setFace(Element* face)
-{
-	ESINFO(GLOBAL_ERROR) << "Set face";
-}
-
-void Prisma15::setEdge(Element* edge)
-{
-	ESINFO(GLOBAL_ERROR) << "Set edge";
+	addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 }
 
 Point Prisma15::faceNormal(const Element *face) const

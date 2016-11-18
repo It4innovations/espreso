@@ -293,30 +293,18 @@ void Pyramid13::fillEdges()
 	eslocal line[Line3NodesCount];
 	_edges.reserve(Pyramid13EdgeCount);
 
+	size_t filled = _edges.size();
+
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 5     ];
-		if (2 * edge < _edges.size()) {
-			if (_edges[2 * edge] == NULL) {
-				_edges[2 * edge] = new Line3(line);
-			}
-		} else {
-			_edges.push_back(new Line3(line));
-		}
-		_edges[2 * edge]->parentElements().push_back(this);
+		addEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[edge    ];
 		line[1] = _indices[       4];
 		line[2] = _indices[edge + 9];
-		if (2 * edge + 1 < _edges.size()) {
-			if (_edges[2 * edge + 1] == NULL) {
-				_edges[2 * edge + 1] = new Line3(line);
-			}
-		} else {
-			_edges.push_back(new Line3(line));
-		}
-		_edges[2 * edge + 1]->parentElements().push_back(this);
+		addEdge<Line3>(_edges, line, filled);
 	}
 }
 
@@ -326,6 +314,8 @@ void Pyramid13::fillFaces()
 	eslocal triangle[Triangle6NodesCount];
 	_faces.reserve(Pyramid13FacesCount);
 
+	size_t filled = _faces.size();
+
 	for (size_t face = 1; face < 5; face++) {
 		triangle[0] = _indices[face - 1];
 		triangle[1] = _indices[face % 4];
@@ -334,8 +324,7 @@ void Pyramid13::fillFaces()
 		triangle[3] = _indices[face - 1 + 5];
 		triangle[4] = _indices[face % 4 + 9];
 		triangle[5] = _indices[face - 1 + 9];
-		_faces.push_back(new Triangle6(triangle));
-		_faces.back()->parentElements().push_back(this);
+		addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 	}
 
 	square[0] = _indices[0];
@@ -347,18 +336,7 @@ void Pyramid13::fillFaces()
 	square[5] = _indices[7];
 	square[6] = _indices[6];
 	square[7] = _indices[5];
-	_faces.push_back(new Square8(square));
-	_faces.back()->parentElements().push_back(this);
-}
-
-void Pyramid13::setFace(Element* face)
-{
-	ESINFO(GLOBAL_ERROR) << "Set face";
-}
-
-void Pyramid13::setEdge(Element* edge)
-{
-	ESINFO(GLOBAL_ERROR) << "Set edge";
+	addFace<Square8>(_faces, square, filled, Square4NodesCount);
 }
 
 Point Pyramid13::faceNormal(const Element *face) const

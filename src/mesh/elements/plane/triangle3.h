@@ -61,8 +61,6 @@ protected:
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
 
-	void setEdge(Element* edge);
-
 	void fillEdges();
 
 private:

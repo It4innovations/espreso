@@ -104,39 +104,13 @@ void Square4::fillEdges()
 	eslocal line[Line2NodesCount];
 	_edges.reserve(Square4EdgeCount);
 
+	size_t filled = _edges.size();
+
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		if (edge < _edges.size()) {
-			if (_edges[edge] == NULL) {
-				_edges[edge] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[edge]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 	}
-}
-
-void Square4::setEdge(Element* edge)
-{
-	eslocal line[Line2NodesCount];
-	_edges.resize(Square4EdgeCount, NULL);
-
-	for (size_t e = 0; e < 4; e++) {
-		line[0] = _indices[ e         ];
-		line[1] = _indices[(e + 1) % 4];
-		if (std::is_permutation(line, line + Line2NodesCount, edge->indices())) {
-			if (_edges[e] == NULL) {
-				_edges[e] = edge;
-				edge->parentElements().push_back(this);
-			} else {
-				ESINFO(GLOBAL_ERROR) << "Merge element";
-			}
-			return;
-		}
-	}
-	ESINFO(GLOBAL_ERROR) << "Invalid edge";
 }
 
 Point Square4::edgeNormal(const Element *edge, const Coordinates &coordinates) const

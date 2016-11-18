@@ -34,6 +34,11 @@ protected:
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
 	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
+	virtual void setEdge(Element* edge)
+	{
+		_edges.push_back(edge);
+		edge->parentElements().push_back(this);
+	}
 
 	void fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on plane element."; }
 

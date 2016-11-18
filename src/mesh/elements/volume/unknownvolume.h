@@ -38,9 +38,6 @@ public:
 		return Point();
 	}
 
-	virtual Element* face(size_t index) const { return _faces[index]; }
-	virtual Element* edge(size_t index) const { return _edges[index]; }
-
 	std::vector<eslocal>& DOFsIndices() { return _DOFs; }
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
@@ -63,11 +60,6 @@ protected:
 	}
 	eslocal* indices() { return _indices.data(); }
 	const eslocal* indices() const { return _indices.data(); }
-
-	void setFace(size_t index, Element* face) { _faces[index] = face; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	void setFace(Element* face) { _faces.push_back(face); }
-	void setEdge(Element* edge) { _edges.push_back(edge); }
 
 	void fillFaces();
 	void fillEdges() { ESINFO(GLOBAL_ERROR) << "Unknown volume element cannot fill edges."; }

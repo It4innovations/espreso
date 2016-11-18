@@ -216,28 +216,16 @@ void Tetrahedron4::fillEdges()
 	eslocal line[Line2NodesCount];
 	_edges.reserve(Tetrahedron4EdgeCount);
 
+	size_t filled = _edges.size();
+
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
-		if (2 * edge < _edges.size()) {
-			if (_edges[2 * edge] == NULL) {
-				_edges[2 * edge] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[2 * edge]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 
 		line[0] = _indices[edge];
 		line[1] = _indices[   3];
-		if (2 * edge + 1 < _edges.size()) {
-			if (_edges[2 * edge + 1] == NULL) {
-				_edges[2 * edge + 1] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[2 * edge + 1]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 	}
 }
 
@@ -246,39 +234,27 @@ void Tetrahedron4::fillFaces()
 	eslocal triangle[Triangle3NodesCount];
 	_faces.reserve(Tetrahedron4FacesCount);
 
+	size_t filled = _faces.size();
+
 	triangle[0] = _indices[1];
 	triangle[1] = _indices[0];
 	triangle[2] = _indices[2];
-	_faces.push_back(new Triangle3(triangle));
-	_faces.back()->parentElements().push_back(this);
+	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[0];
 	triangle[1] = _indices[1];
 	triangle[2] = _indices[3];
-	_faces.push_back(new Triangle3(triangle));
-	_faces.back()->parentElements().push_back(this);
+	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[1];
 	triangle[1] = _indices[2];
 	triangle[2] = _indices[3];
-	_faces.push_back(new Triangle3(triangle));
-	_faces.back()->parentElements().push_back(this);
+	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[2];
 	triangle[1] = _indices[0];
 	triangle[2] = _indices[3];
-	_faces.push_back(new Triangle3(triangle));
-	_faces.back()->parentElements().push_back(this);
-}
-
-void Tetrahedron4::setFace(Element* face)
-{
-	ESINFO(GLOBAL_ERROR) << "Set face";
-}
-
-void Tetrahedron4::setEdge(Element* edge)
-{
-	ESINFO(GLOBAL_ERROR) << "Set edge";
+	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 }
 
 Point Tetrahedron4::faceNormal(const Element *face) const

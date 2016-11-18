@@ -136,39 +136,20 @@ void Hexahedron8::fillEdges()
 	eslocal line[Line2NodesCount];
 	_edges.reserve(Hexahedron8EdgeCount);
 
+	size_t filled = _edges.size();
+
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		if (3 * edge < _edges.size()) {
-			if (_edges[3 * edge] == NULL) {
-				_edges[3 * edge] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[3 * edge]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 
 		line[0] = _indices[ edge          +  4];
 		line[1] = _indices[(edge + 1) % 4 +  4];
-		if (3 * edge + 1 < _edges.size()) {
-			if (_edges[3 * edge + 1] == NULL) {
-				_edges[3 * edge + 1] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[3 * edge + 1]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  4];
-		if (3 * edge + 2 < _edges.size()) {
-			if (_edges[3 * edge + 2] == NULL) {
-				_edges[3 * edge + 2] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[3 * edge + 2]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 	}
 }
 
@@ -177,40 +158,27 @@ void Hexahedron8::fillFaces()
 	eslocal square[Square4NodesCount];
 	_faces.reserve(Hexahedron8FacesCount);
 
+	size_t filled = _faces.size();
+
 	for (size_t face = 0; face < 4; face++) {
 		square[0] = _indices[ face             ];
 		square[1] = _indices[(face + 1) % 4    ];
 		square[2] = _indices[(face + 1) % 4 + 4];
 		square[3] = _indices[ face + 4         ];
-		_faces.push_back(new Square4(square));
-		_faces.back()->parentElements().push_back(this);
+		addFace<Square4>(_faces, square, filled, Square4NodesCount);
 	}
 
 	square[0] = _indices[0];
 	square[1] = _indices[3];
 	square[2] = _indices[2];
 	square[3] = _indices[1];
-	_faces.push_back(new Square4(square));
-	_faces.back()->parentElements().push_back(this);
+	addFace<Square4>(_faces, square, filled, Square4NodesCount);
 
 	square[0] = _indices[4];
 	square[1] = _indices[5];
 	square[2] = _indices[6];
 	square[3] = _indices[7];
-	_faces.push_back(new Square4(square));
-	_faces.back()->parentElements().push_back(this);
-}
-
-void Hexahedron8::setFace(Element* face)
-{
-	_faces.push_back(face);
-	face->parentElements().push_back(this);
-}
-
-void Hexahedron8::setEdge(Element* edge)
-{
-	_edges.push_back(edge);
-	edge->parentElements().push_back(this);
+	addFace<Square4>(_faces, square, filled, Square4NodesCount);
 }
 
 Point Hexahedron8::faceNormal(const Element *face) const

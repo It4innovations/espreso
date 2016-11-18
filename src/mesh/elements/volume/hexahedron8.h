@@ -49,8 +49,6 @@ public:
 
 	virtual Point faceNormal(const Element *face) const;
 	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates) const;
-	virtual Element* face(size_t index) const { return _faces[index]; }
-	virtual Element* edge(size_t index) const { return _edges[index]; }
 
 	const std::vector<DenseMatrix>& dN() const { return Hexahedron8::_dN; }
 	const std::vector<DenseMatrix>& N() const { return Hexahedron8::_N; }
@@ -66,11 +64,6 @@ protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
-
-	void setFace(size_t index, Element* face) { _faces[index] = face; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	void setFace(Element* face);
-	void setEdge(Element* edge);
 
 	void fillFaces();
 	void fillEdges();

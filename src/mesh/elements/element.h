@@ -185,6 +185,30 @@ public:
 		return it != _domains.end() && *it == domain;
 	}
 
+	template <class TEdge>
+	void addEdge(std::vector<Element*> &edges, eslocal *line, size_t filled)
+	{
+		for (size_t i = 0; i < filled; i++) {
+			if (std::is_permutation(edges[i]->indices(), edges[i]->indices() + 2, line)) {
+				return;
+			}
+		}
+		edges.push_back(new TEdge(line));
+		edges.back()->parentElements().push_back(this);
+	}
+
+	template <class TFace>
+	void addFace(std::vector<Element*> &faces, eslocal *face, size_t filled, size_t coarseSize)
+	{
+		for (size_t i = 0; i < filled; i++) {
+			if (std::is_permutation(faces[i]->indices(), faces[i]->indices() + coarseSize, face)) {
+				return;
+			}
+		}
+		faces.push_back(new TFace(face));
+		faces.back()->parentElements().push_back(this);
+	}
+
 protected:
 	virtual Element* copy() const =0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;

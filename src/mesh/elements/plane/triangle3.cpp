@@ -147,39 +147,13 @@ void Triangle3::fillEdges()
 	eslocal line[Line2NodesCount];
 	_edges.reserve(Triangle3EdgeCount);
 
+	size_t filled = _edges.size();
+
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
-		if (edge < _edges.size()) {
-			if (_edges[edge] == NULL) {
-				_edges[edge] = new Line2(line);
-			}
-		} else {
-			_edges.push_back(new Line2(line));
-		}
-		_edges[edge]->parentElements().push_back(this);
+		addEdge<Line2>(_edges, line, filled);
 	}
-}
-
-void Triangle3::setEdge(Element* edge)
-{
-	eslocal line[Line2NodesCount];
-	_edges.resize(Triangle3EdgeCount, NULL);
-
-	for (size_t e = 0; e < 3; e++) {
-		line[0] = _indices[ e         ];
-		line[1] = _indices[(e + 1) % 3];
-		if (std::is_permutation(line, line + Line2NodesCount, edge->indices())) {
-			if (_edges[e] == NULL) {
-				_edges[e] = edge;
-				edge->parentElements().push_back(this);
-			} else {
-				ESINFO(GLOBAL_ERROR) << "Merge element";
-			}
-			return;
-		}
-	}
-	ESINFO(GLOBAL_ERROR) << "Invalid edge";
 }
 
 Point Triangle3::edgeNormal(const Element *edge, const Coordinates &coordinates) const
