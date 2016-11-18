@@ -301,7 +301,7 @@ struct ConfigurationMap: public Configuration {
 };
 
 template <>
-ConfigurationMap<std::string> ConfigurationMap<std::string>::create(const std::string &name, const std::string &description, const std::string &type, Configuration* conf)
+inline ConfigurationMap<std::string> ConfigurationMap<std::string>::create(const std::string &name, const std::string &description, const std::string &type, Configuration* conf)
 {
 	ConfigurationMap<std::string> configuration;
 	conf->subconfigurations[name] = &configuration;

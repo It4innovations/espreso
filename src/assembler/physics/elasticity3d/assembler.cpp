@@ -179,7 +179,7 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND)
 static void fillC(DenseMatrix &Ce, Material::MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &G)
 {
 	switch (model) {
-	case Material::MODEL::LINEAR_ELASTIC_ISOTROPIC:
+	case Material::MODEL::LINEAR_ELASTIC_ISOTROPIC: {
 
 		double EE = E(0, 0) / ((1 + mi(0, 0)) * (1 - 2 * mi(0, 0)));
 
@@ -187,7 +187,7 @@ static void fillC(DenseMatrix &Ce, Material::MODEL model, DenseMatrix &dens, Den
 		Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = EE * (1.0 - mi(0, 0));
 		Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = EE * (0.5 - mi(0, 0));
 		break;
-
+	}
 	case Material::MODEL::LINEAR_ELASTIC_ANISOTROPIC:
 
 //	       D11 = MATERIAL_Properties.D11;
