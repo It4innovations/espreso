@@ -137,11 +137,11 @@ void WorkbenchParser::nblock(Coordinates &coordinates)
 
 void WorkbenchParser::eblock(std::vector<Element*> &elements)
 {
-	int MATERIAL, ETYPE, CONSTANT, COORDINATES, NODES, PARAM_SIZE, NODE_SIZE;
-	bool SOLID;
+	int MATERIAL = 0, ETYPE, CONSTANT, COORDINATES, NODES, PARAM_SIZE = 6, NODE_SIZE;
+	bool SOLID = true;
 
 	std::vector<std::string> params = divide(_line);
-	eslocal NUMNODES, NDSEL; //, NDMAX;
+	eslocal NUMNODES = 0, NDSEL = 0; //, NDMAX;
 	switch (params.size()) {
 	case 5:
 		NDSEL = params[4].size() ? std::stol(params[4]) : 0;

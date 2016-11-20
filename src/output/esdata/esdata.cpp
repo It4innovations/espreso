@@ -13,14 +13,16 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path)
 {
 	std::stringstream ss;
 	ss << "mkdir -p " << _path;
-	system(ss.str().c_str());
+	int out = system(ss.str().c_str());
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::stringstream ssDir;
 		ssDir << ss.str() << "/" << p + _mesh.parts() * config::env::MPIrank;
-		system(ssDir.str().c_str());
+		out = system(ssDir.str().c_str());
 	}
 
-
+	if (out) {
+		ESINFO(ERROR) << "Cannot create output directory";
+	}
 
 	coordinates(_mesh.coordinates());
 	elements(_mesh);

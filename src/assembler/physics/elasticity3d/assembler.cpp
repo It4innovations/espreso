@@ -321,7 +321,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	rhsT.resize(Ksize, 1);
 	rhsT = 0;
 
-	for (eslocal gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant3x3(J);
 		inverse(J, invJ, detJ);
@@ -378,7 +378,7 @@ static void processFace(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 	fe.resize(Ksize);
 	std::fill(fe.begin(), fe.end(), 0);
 
-	for (eslocal gp = 0; gp < face->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < face->gaussePoints(); gp++) {
 		dND.multiply(dN[gp], coordinates);
 		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
 		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));

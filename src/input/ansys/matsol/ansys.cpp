@@ -32,7 +32,7 @@ void AnsysMatsol::points(Coordinates &coordinates)
 
 void AnsysMatsol::elements(std::vector<Element*> &elements)
 {
-	int lines;
+	int lines = 1;
 	std::string settingFile = _path + "/Model/BC/Elasticity/ELEMENT_TYPE.dat";
 	std::ifstream setting(settingFile);
 

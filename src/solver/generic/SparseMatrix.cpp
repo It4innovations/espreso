@@ -2180,9 +2180,8 @@ bool compareDouble(const double &i, const double &j) { return fabs(i)<=fabs(j); 
 void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
 #ifdef GENINVtools
 	SEQ_VECTOR <double> N(dense_values);
-  eslocal nEl = rows*cols;
   std::vector <double>::iterator  it;
-  eslocal I,J,K,colInd,rowInd;
+  eslocal I,colInd,rowInd;
   double *tmpV = new double[rows];
   double pivot;
   eslocal tmp_int;
@@ -2229,13 +2228,12 @@ void SparseMatrix::getNullPivots(SEQ_VECTOR <eslocal> & null_pivots){
 #endif
 }
 //
-double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues,
+double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, eslocal plot_n_first_n_last_eigenvalues,
                     double *maxEig,  int nMax_input){
 #ifdef GENINVtools
   bool plot_a_and_b_defines_tridiag=false;
   eslocal nA = A_in.rows;
   eslocal nMax = 200; // size of tridiagonal matrix
-  eslocal offset = CSR_I_row_indices[0] ? 1 : 0;
   //eslocal nEigToplot = 10;
   double *s = new double[nA];
   double *s_bef = new double[nA];
@@ -2290,9 +2288,8 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, char *str0, eslocal plot_
 	}
   char JOBZ = 'N';
   double *Z = new double[cnt];
-  eslocal info;
   eslocal ldz = cnt;
-  info = LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
+  LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
 	if (plot_n_first_n_last_eigenvalues > 0) {
 		ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
@@ -2606,7 +2603,6 @@ void SparseMatrix::MatTranspose() {
 	eslocal job [] = { 0, 1, 1, 0, 0, 1 };
 	eslocal info;
 	eslocal m;
-	eslocal row_size_backup = CSR_I_row_indices.size();
 
 	SEQ_VECTOR <eslocal> tCSR_I_row_indices;
 	SEQ_VECTOR <eslocal> tCSR_J_col_indices;
@@ -2663,13 +2659,13 @@ void SparseMatrix::RemoveLower() {
 	SEQ_VECTOR <double> t_CSR_V_values;
 	eslocal l_nnz = 0;
 
-	for (eslocal row = 0; row < CSR_I_row_indices.size() - 1; row++) {
+	for (size_t row = 0; row < CSR_I_row_indices.size() - 1; row++) {
 		t_CSR_I_row_indices.push_back(l_nnz+1);
 		eslocal cols_in_row = CSR_I_row_indices[row+1] - CSR_I_row_indices[row];
 
 		for (eslocal col = 0; col <cols_in_row; col++) {
 			eslocal i = CSR_I_row_indices[row] - 1 + col;
-			if ( CSR_J_col_indices[i] > row) {
+			if ( CSR_J_col_indices[i] > (eslocal)row) {
 				t_CSR_J_col_indices.push_back(CSR_J_col_indices[i]);
 				t_CSR_V_values.push_back(CSR_V_values[i]);
 				l_nnz++;
@@ -2763,7 +2759,7 @@ void SparseMatrix::MatAppend(SparseMatrix & A) {
 
 		eslocal last_row = CSR_I_row_indices[CSR_I_row_indices.size()-1];
 
-		for (eslocal i = 1; i < A.CSR_I_row_indices.size(); i++)
+		for (size_t i = 1; i < A.CSR_I_row_indices.size(); i++)
 			CSR_I_row_indices.push_back(last_row + A.CSR_I_row_indices[i]-1);
 
 		rows = rows + A.rows;
@@ -2817,8 +2813,6 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add) {
 
-	int old_index  = 0;
-	int next_index = 0;
 	int row_fill   = 1;
 
 	rows = rows_to_add.size();
@@ -2828,10 +2822,9 @@ void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_
 
 	//CSR_I_row_indices.resize( rows + 1 );
 
-	for (int i = 0; i < rows_to_add.size(); i++) {
+	for (size_t i = 0; i < rows_to_add.size(); i++) {
 
-		old_index  = next_index;
-		next_index = rows_to_add[i];
+		rows_to_add[i];
 
 		//fill(CSR_I_row_indices.begin() + old_index, CSR_I_row_indices.begin() + next_index, row_fill);
                 CSR_I_row_indices.push_back(row_fill);
@@ -3011,7 +3004,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 
 		if (A_row_start != A_row_end ) { // this row in B is NOT empty
 
-			for (eslocal ii = 0; ii < B_in.CSR_I_row_indices.size() - 1; ii++ ) {
+			for (size_t ii = 0; ii < B_in.CSR_I_row_indices.size() - 1; ii++ ) {
 
 				eslocal B_row_start = B_in.CSR_I_row_indices[ii  ] - 1;
 				eslocal B_row_end   = B_in.CSR_I_row_indices[ii+1] - 1;
@@ -3048,7 +3041,6 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 
 		}
 		CSR_I_row_indices.push_back(glob_row_index);
-		eslocal a = 10;
 	}
 
 	rows = A_in.rows;
@@ -3122,10 +3114,10 @@ double SparseMatrix::getDiagonalAbsMaximum() const
 
 static ESPRESOTest testUpperTriangle(SparseMatrix &K)
 {
-	if (K.rows + 1 != K.CSR_I_row_indices.size()) {
+	if ((size_t)K.rows + 1 != K.CSR_I_row_indices.size()) {
 		return TEST_FAILED;
 	}
-	for (size_t row = 0; row < K.rows; row++) {
+	for (eslocal row = 0; row < K.rows; row++) {
 		if (K.CSR_J_col_indices[K.CSR_I_row_indices[row] - 1] < row) {
 			return TEST_FAILED;
 		}
@@ -3181,7 +3173,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
+#if VERBOSE_KERNEL > 0
   eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+#endif
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
@@ -3241,17 +3235,17 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  int MPI_rank=config::env::MPIrank;
-  double begin_time = omp_get_wtime();
-
 // DEFAULT SET-UP
+#if VERBOSE_KERNEL > 0
+    double begin_time = omp_get_wtime();
+    get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
+#endif
 #if VERBOSE_KERNEL < 4
     diagonalScaling                               = DIAGONALSCALING;
     permutVectorActive                            = PERMUTVECTORACTIVE;
     use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
     diagonalRegularization                        = DIAGONALREGULARIZATION;
     get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
-    get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
     plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
     fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
     dofPerNode                                    = DOFPERNODE;
@@ -3395,11 +3389,11 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
   K_modif = K; // TODO not necessary to do
 
+#if VERBOSE_KERNEL > 0
   double elapsed_secs[15];
   double time1 = omp_get_wtime();
-//0 - allocation of vectors, copying of matrix
   elapsed_secs[0] = (time1 - begin_time) ;
-
+#endif
 
   SEQ_VECTOR <double> tmp_approx_max_eig;
   tmp_approx_max_eig.resize(K.rows);
@@ -3545,7 +3539,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       //
       eslocal ik=0,cnt_i=0;
       for (size_t i = 0;i<permVec.size();i++){
-        if (i==tmp_vec_s[ik]){
+        if (i==(size_t)tmp_vec_s[ik]){
           permVec[ik+nonsing_size]=tmp_vec_s[ik];
           ik++;
         }
@@ -3666,7 +3660,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
         // info file -----------------------------------------------------------------
         if (d_sub!=-1){
           std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
-          eslocal ik=0,cnt_i=0;
           for (size_t i = 0;i<permVec.size();i++){
             ose3 << permVec[i]+1 <<" ";
           }
@@ -3720,7 +3713,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  eslocal defect_K_in;// R_s_cols;
+  eslocal defect_K_in = 6;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
 //#if VERBOSE_KERNEL>1
@@ -3835,7 +3828,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   time1 = omp_get_wtime();
   os << "null pivots: \n";
   os << "[";
-  for (eslocal k = 0; k<null_pivots.size();k++){
+  for (size_t k = 0; k<null_pivots.size();k++){
     os << null_pivots[k] ;
     if (k<null_pivots.size()-1 ){
      os << ", ";
@@ -3876,8 +3869,10 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
+#if VERBOSE_KERNEL > 0
   time1 = omp_get_wtime();
   elapsed_secs[11] = double(time1 - begin_time) ;
+#endif
 //
   Kplus_R.ConvertDenseToCSR(0);
 //
@@ -4032,12 +4027,14 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 
 
-  double end_time = omp_get_wtime();
-//12 - Total time in kernel detection
-  elapsed_secs[12] = double(end_time - begin_time) ;
+
   //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
 
 #if VERBOSE_KERNEL>0
+  double end_time = omp_get_wtime();
+  //12 - Total time in kernel detection
+  elapsed_secs[12] = double(end_time - begin_time) ;
+
   os << std::fixed;
   os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
   os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
@@ -4105,12 +4102,16 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
+#if VERBOSE_KERNEL > 0
   eslocal get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+#endif
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
 //ESLOCAL PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
+#if VERBOSE_KERNEL > 0
   eslocal plot_n_first_n_last_eigenvalues               = 0;
+#endif
 
 //    8) fixing_nodes_or_dof
 // non-singular part determined by fixing nodes (FN),
@@ -4169,18 +4170,20 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  int MPI_rank=config::env::MPIrank;
-  double begin_time = omp_get_wtime();
+
 
 // DEFAULT SET-UP
+#if VERBOSE_KERNEL > 0
+    double begin_time = omp_get_wtime();
+    get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
+    plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
+#endif
 #if VERBOSE_KERNEL < 4
     diagonalScaling                               = DIAGONALSCALING;
     permutVectorActive                            = PERMUTVECTORACTIVE;
     use_null_pivots_or_s_set                      = USE_NULL_PIVOTS_OR_S_SET;
     diagonalRegularization                        = DIAGONALREGULARIZATION;
     get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
-    get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
-    plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
     fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
     dofPerNode                                    = DOFPERNODE;
     cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
@@ -4335,17 +4338,18 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   fix_dofs.resize(sc_size);
   SparseMatrix K_modif;
 
-  double di=1,dj=1;
+  double di=1;
   eslocal cnt_iter_check_nonsing=0;
 
   K.type = 'G';
   K_modif = K; // TODO not necessary to do
 
+#if VERBOSE_KERNEL > 0
   double elapsed_secs[15];
   double time1 = omp_get_wtime();
 //0 - allocation of vectors, copying of matrix
   elapsed_secs[0] = (time1 - begin_time) ;
-
+#endif
 
   SEQ_VECTOR <double> tmp_approx_max_eig;
   tmp_approx_max_eig.resize(K.rows);
@@ -4516,7 +4520,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       //
       eslocal ik=0,cnt_i=0;
       for (size_t i = 0;i<permVec.size();i++){
-        if (i==tmp_vec_s[ik]){
+        if ((eslocal)i==tmp_vec_s[ik]){
           permVec[ik+nonsing_size]=tmp_vec_s[ik];
           ik++;
         }
@@ -4671,7 +4675,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
         // info file -----------------------------------------------------------------
         if (d_sub!=-1){
           std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
-          eslocal ik=0,cnt_i=0;
           for (size_t i = 0;i<permVec.size();i++){
             ose3 << permVec[i]+1 <<" ";
           }
@@ -4751,8 +4754,8 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  eslocal defect_K_in;// R_s_cols;
-  eslocal ind_U_V;// R_s_cols;
+  eslocal defect_K_in = 6;// R_s_cols;
+  eslocal ind_U_V = 0;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? sc_size-twenty-1 : 0 ;
 //#if VERBOSE_KERNEL>1
@@ -4876,7 +4879,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   time1 = omp_get_wtime();
   os << "null pivots: \n";
   os << "[";
-  for (eslocal k = 0; k<null_pivots.size();k++){
+  for (size_t k = 0; k<null_pivots.size();k++){
     os << null_pivots[k] ;
     if (k<null_pivots.size()-1 ){
      os << ", ";
@@ -4996,9 +4999,10 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   defect_d                 = Kplus_R.cols;
 
 
-  K.getNorm_K_R(K,Kplus_Rl,'T');
- //  double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
-
+#if VERBOSE_KERNEL>2
+  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_Rl,'T');
+  double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
+#endif
 
 #if VERBOSE_KERNEL>2
   os << std::scientific;
@@ -5022,8 +5026,10 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   os << "norm_KtRl_approx:        " << sqrt(norm_KtRl_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
+#if VERBOSE_KERNEL > 0
   time1 = omp_get_wtime();
   elapsed_secs[11] = double(time1 - begin_time) ;
+#endif
 //
   Kplus_R.ConvertDenseToCSR(0);
   Kplus_Rl.ConvertDenseToCSR(0);
@@ -5197,11 +5203,12 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   K_rs.Clear();
 
 
-
+#if VERBOSE_KERNEL > 0
   double end_time = omp_get_wtime();
 //12 - Total time in kernel detection
   elapsed_secs[12] = double(end_time - begin_time) ;
   //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
+#endif
 
 #if VERBOSE_KERNEL>0
   os << std::fixed;

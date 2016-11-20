@@ -80,7 +80,7 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates)
 
 	Point point;
 	eslocal index = 0;
-	esglobal gIndex;
+	esglobal gIndex = 0;
 
 	size_t eNodes[2] = { (cNodes[0] - 1) * _settings.grid + 1, (cNodes[1] - 1) * _settings.grid + 1 };
 

@@ -163,7 +163,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		double norm_u_e = u.norm();
 		double h_e = 0, tau_e = 0, konst = 0;
-		double C_e;
+		double C_e = 0;
 
 		if (norm_u_e != 0) {
 			h_e = 2 * norm_u_e / b_e.norm();

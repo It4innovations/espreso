@@ -1719,8 +1719,8 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	double rho_l;
 	double norm_l;
 	double tol;
-  double ztg;
-  double ztg_prew;
+  double ztg = 0;
+  double ztg_prew = 0;
   double wtAw;
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
@@ -3141,7 +3141,7 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	double alpha_lp;
 
 	double norm_l;
-	double tol;
+	double tol = 1;
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
 	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );

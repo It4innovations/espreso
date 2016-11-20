@@ -184,7 +184,7 @@ void OpenFOAM::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> 
 
 		for (std::vector<Dictionary>::iterator it = boundary.begin(); it != boundary.end(); ++it) {
 			if ((*it).getName().find("procBoundary") == 0) {
-				int myProcNo;
+				int myProcNo = 0;
 				solveParseError((*it).readEntry("myProcNo", myProcNo));
 				if (myProcNo != _rank) {
 					std::stringstream ss;
@@ -193,11 +193,11 @@ void OpenFOAM::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> 
 					exit(EXIT_FAILURE);
 				}
 
-				int neighbProcNo;
+				int neighbProcNo = 0;
 				solveParseError((*it).readEntry("neighbProcNo", neighbProcNo));
-				int nFaces;
+				int nFaces = 0;
 				solveParseError((*it).readEntry("nFaces", nFaces));
-				int startFace;
+				int startFace = 0;
 				solveParseError((*it).readEntry("startFace", startFace));
 				ESINFO(GLOBAL_ERROR) << "Implement OpenFOAM";
 //				for (int i = 0; i < nFaces; i++) {

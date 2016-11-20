@@ -106,7 +106,7 @@ template<typename T> ParseError* parse(Tokenizer &ts, std::vector<T> &value)
     }
     if (ts.isTokenInt())
     {
-        eslocal i;
+        eslocal i = 0;
         ts.readeslocal(i);
         value.reserve(i);
     }

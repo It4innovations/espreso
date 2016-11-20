@@ -167,7 +167,7 @@ public:
 	void PrintMatSize( string Matname );
 
 
-	double MatCondNumb(SparseMatrix & A_in, char *str0, eslocal plot_n_first_n_last_eigenvalues,double *maxEig, int nMax_);
+	double MatCondNumb(SparseMatrix & A_in, const std::string &str0, eslocal plot_n_first_n_last_eigenvalues,double *maxEig, int nMax_);
 	void spmv_(SparseMatrix & A_in, double *x, double *Ax);
 	void printMatCSR( char *str0);
 	void printMatCSR2( char *str0);
