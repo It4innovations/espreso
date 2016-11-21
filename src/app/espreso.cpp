@@ -4,6 +4,7 @@
 
 #include "../config/description.h"
 #include "factory/factory.h"
+#include "esinput.h"
 
 
 using namespace espreso;

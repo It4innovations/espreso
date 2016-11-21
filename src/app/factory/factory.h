@@ -11,7 +11,8 @@ enum class GeneratorShape {
 	CUBE,
 	SPHERE,
 	PLANE,
-	CUBES
+	CUBES,
+	GRID
 };
 
 enum class ElementType {

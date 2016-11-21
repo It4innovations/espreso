@@ -49,18 +49,18 @@ void Prisma15::addElements(std::vector<Element*> &elements, const eslocal indice
 }
 
 
-void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal triangle1[6], triangle2[6];
 
 	switch (face) {
-	case CubeFaces::X_1:
-	case CubeFaces::Y_1:
-	case CubeFaces::X_0:
-	case CubeFaces::Y_0:
+	case CubeFace::X_1:
+	case CubeFace::Y_1:
+	case CubeFace::X_0:
+	case CubeFace::Y_0:
 		Hexahedron20::addFaces(faces, indices, face);
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		triangle1[0] = indices[20];
 		triangle1[1] = indices[26];
 		triangle1[2] = indices[18];
@@ -77,7 +77,7 @@ void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], C
 		triangle2[5] = indices[22];
 		faces.push_back(new Triangle6(triangle2));
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		triangle1[0] = indices[ 0];
 		triangle1[1] = indices[ 6];
 		triangle1[2] = indices[ 8];
@@ -99,17 +99,17 @@ void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], C
 	}
 }
 
-void Prisma15::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+void Prisma15::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
-	case CubeFaces::X_1:
-	case CubeFaces::Y_1:
-	case CubeFaces::X_0:
-	case CubeFaces::Y_0:
+	case CubeFace::X_1:
+	case CubeFace::Y_1:
+	case CubeFace::X_0:
+	case CubeFace::Y_0:
 		Hexahedron20::pickNodes(nodes, selection, indices, face);
 		break;
-	case CubeFaces::Z_0:
-	case CubeFaces::Z_1:
+	case CubeFace::Z_0:
+	case CubeFace::Z_1:
 		Tetrahedron10::pickNodes(nodes, selection, indices, face);
 		break;
 	default:

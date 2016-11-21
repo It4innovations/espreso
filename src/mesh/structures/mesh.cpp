@@ -1383,7 +1383,7 @@ std::vector<size_t> APIMesh::distributeDOFsToDomains(const std::vector<size_t> &
 	return fillUniformDOFs(_DOFs, parts(), { Property::UNKNOWN }, offsets);
 }
 
-static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::map<esglobal, eslocal> &g2l)
+static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::vector<std::pair<esglobal, eslocal> > &g2l)
 {
 	neighbours.push_back(config::env::MPIrank);
 	std::sort(neighbours.begin(), neighbours.end());
@@ -1500,7 +1500,9 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 			}
 			p += nElements[n].back()->nodes();
 			for (size_t i = 0; i < nElements[n].back()->nodes(); i++) {
-				nElements[n].back()->node(i) = g2l.find(nElements[n].back()->node(i))->second;
+				nElements[n].back()->node(i) = std::lower_bound(g2l.begin(), g2l.end(), nElements[n].back()->node(i), [] (const std::pair<esglobal, esglobal> &mapping, esglobal index) {
+					return mapping.first < index;
+				})->second;
 			}
 
 			nElements[n].back()->DOFsDomainsCounters() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
@@ -1550,17 +1552,17 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 void Mesh::computeNodesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_nodes, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMap);
+	computeDOFsCounters(_nodes, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMapping);
 }
 
 void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_edges, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMap);
+	computeDOFsCounters(_edges, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMapping);
 }
 
 void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMap);
+	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMapping);
 }
 
 void APIMesh::computeDOFsDOFsCounters()

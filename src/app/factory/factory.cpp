@@ -29,6 +29,10 @@ static void generateShape(Mesh &mesh, const ArgsConfiguration &configuration, Ge
 		input::CubesGenerator<TShape>::load(mesh, cubes);
 		break;
 	}
+	case GeneratorShape::GRID: {
+		input::Grid::load(mesh, config::env::MPIrank ,config::env::MPIsize);
+		break;
+	}
 	default: {
 		ESINFO(ERROR) << "Unknown shape.";
 	}
@@ -86,7 +90,8 @@ void Factory::readParameters(const ArgsConfiguration &configuration)
 				{ "CUBE"  , GeneratorShape::CUBE  , "Cubic." },
 				{ "SPHERE", GeneratorShape::SPHERE, "Spherical." },
 				{ "PLANE" , GeneratorShape::PLANE , "2D plane." },
-				{ "CUBES" , GeneratorShape::CUBES , "Cubes with Mortar interface." }
+				{ "CUBES" , GeneratorShape::CUBES , "Cubes with Mortar interface." },
+				{ "GRID" ,  GeneratorShape::GRID  , "Grid." }
 		} },
 		{ "ELEMENT_TYPE", eType, "The type of generated element.", {
 				{ "HEXA8"    , ElementType::HEXA8    , "Hexahedron."},

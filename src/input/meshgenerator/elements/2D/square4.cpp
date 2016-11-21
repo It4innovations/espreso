@@ -16,23 +16,23 @@ void Square4::addElements(std::vector<Element*> &elements, const eslocal indices
 	elements.push_back(new espreso::Square4(square, params));
 }
 
-void Square4::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdges edge)
+void Square4::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	eslocal line[2];
 	switch (edge) {
-	case CubeEdges::X_0_Z_0:
+	case CubeEdge::X_0_Z_0:
 		line[0] = indices[2];
 		line[1] = indices[0];
 		break;
-	case CubeEdges::X_1_Z_0:
+	case CubeEdge::X_1_Z_0:
 		line[0] = indices[1];
 		line[1] = indices[3];
 		break;
-	case CubeEdges::Y_0_Z_0:
+	case CubeEdge::Y_0_Z_0:
 		line[0] = indices[0];
 		line[1] = indices[1];
 		break;
-	case CubeEdges::Y_1_Z_0:
+	case CubeEdge::Y_1_Z_0:
 		line[0] = indices[3];
 		line[1] = indices[2];
 		break;
@@ -42,22 +42,22 @@ void Square4::addEdges(std::vector<Element*> &edges, const eslocal indices[], Cu
 	edges.push_back(new espreso::Line2(line));
 }
 
-void Square4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdges edge)
+void Square4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	switch (edge) {
-	case CubeEdges::X_0_Z_0:
+	case CubeEdge::X_0_Z_0:
 		selection.push_back(nodes[indices[2]]);
 		selection.push_back(nodes[indices[0]]);
 		break;
-	case CubeEdges::X_1_Z_0:
+	case CubeEdge::X_1_Z_0:
 		selection.push_back(nodes[indices[1]]);
 		selection.push_back(nodes[indices[3]]);
 		break;
-	case CubeEdges::Y_0_Z_0:
+	case CubeEdge::Y_0_Z_0:
 		selection.push_back(nodes[indices[0]]);
 		selection.push_back(nodes[indices[1]]);
 		break;
-	case CubeEdges::Y_1_Z_0:
+	case CubeEdge::Y_1_Z_0:
 		selection.push_back(nodes[indices[3]]);
 		selection.push_back(nodes[indices[2]]);
 		break;

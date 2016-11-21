@@ -48,12 +48,12 @@ void Tetrahedron4::addElements(std::vector<Element*> &elements, const eslocal in
 }
 
 
-void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal triangle1[3], triangle2[3];
 
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		triangle1[0] = indices[1];
 		triangle1[1] = indices[3];
 		triangle1[2] = indices[5];
@@ -62,7 +62,7 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		triangle2[1] = indices[7];
 		triangle2[2] = indices[5];
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		triangle1[0] = indices[3];
 		triangle1[1] = indices[2];
 		triangle1[2] = indices[6];
@@ -71,7 +71,7 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		triangle2[1] = indices[6];
 		triangle2[2] = indices[7];
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		triangle1[0] = indices[2];
 		triangle1[1] = indices[0];
 		triangle1[2] = indices[4];
@@ -80,7 +80,7 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		triangle2[1] = indices[4];
 		triangle2[2] = indices[6];
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		triangle1[0] = indices[0];
 		triangle1[1] = indices[1];
 		triangle1[2] = indices[4];
@@ -89,7 +89,7 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		triangle2[1] = indices[5];
 		triangle2[2] = indices[4];
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		triangle1[0] = indices[0];
 		triangle1[1] = indices[2];
 		triangle1[2] = indices[3];
@@ -98,7 +98,7 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		triangle2[1] = indices[3];
 		triangle2[2] = indices[1];
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		triangle1[0] = indices[5];
 		triangle1[1] = indices[7];
 		triangle1[2] = indices[4];
@@ -115,7 +115,7 @@ void Tetrahedron4::addFaces(std::vector<Element*> &faces, const eslocal indices[
 	faces.push_back(new espreso::Triangle3(triangle2));
 }
 
-void Tetrahedron4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+void Tetrahedron4::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
 {
 	Hexahedron8::pickNodes(nodes, selection, indices, face);
 }

@@ -118,8 +118,8 @@ static void goThroughElements(
 		const CubeSettings &settings,
 		const Interval &interval,
 		size_t cluster[],
-		std::function<void(std::vector<eslocal> &indices, CubeEdges edge)> addEdge,
-		std::function<void(std::vector<eslocal> &indices, CubeFaces face)> addFace,
+		std::function<void(std::vector<eslocal> &indices, CubeEdge edge)> addEdge,
+		std::function<void(std::vector<eslocal> &indices, CubeFace face)> addFace,
 		bool restrictNodes)
 {
 	eslocal cNodes[3];
@@ -129,10 +129,10 @@ static void goThroughElements(
 	size_t start[3], end[3];
 	CubeUtils<TElement>::computeInterval(settings, cluster, interval, start, end);
 
-	CubeEdges edge = CubeUtils<TElement>::cubeEdge(settings, cluster, interval);
-	CubeFaces face = CubeUtils<TElement>::cubeFace(settings, cluster, interval);
+	CubeEdge edge = CubeUtils<TElement>::cubeEdges(settings, cluster, interval);
+	CubeFace face = CubeUtils<TElement>::cubeFaces(settings, cluster, interval);
 
-	if (edge == CubeEdges::NONE && face == CubeFaces::NONE) {
+	if (edge == CubeEdge::NONE && face == CubeFace::NONE) {
 		return;
 	}
 
@@ -187,10 +187,10 @@ static void goThroughElements(
 						}
 					}
 				}
-				if (edge != CubeEdges::NONE) {
+				if (edge != CubeEdge::NONE) {
 					addEdge(indices, edge);
 				}
-				if (face != CubeFaces::NONE) {
+				if (face != CubeFace::NONE) {
 					addFace(indices, face);
 				}
 			}
@@ -209,10 +209,10 @@ void CubeGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &n
 {
 	goThroughElements<TElement>(
 			_settings, interval, _cluster,
-			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+			[ & ] (std::vector<eslocal> &indices, CubeEdge edge) {
 				this->_e.pickNodes(nodes, selection, indices.data(), edge);
 			},
-			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+			[ & ] (std::vector<eslocal> &indices, CubeFace face) {
 				this->_e.pickNodes(nodes, selection, indices.data(), face);
 			},
 			true
@@ -227,10 +227,10 @@ void CubeGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &fac
 {
 	goThroughElements<TElement>(
 			_settings, interval, _cluster,
-			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+			[ & ] (std::vector<eslocal> &indices, CubeEdge edge) {
 				ESINFO(GLOBAL_ERROR) << "Invalid interval";
 			},
-			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+			[ & ] (std::vector<eslocal> &indices, CubeFace face) {
 				this->_e.addFaces(faces, &indices[0], face);
 			},
 			false
@@ -242,10 +242,10 @@ void CubeGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edg
 {
 	goThroughElements<TElement>(
 			_settings, interval, _cluster,
-			[ & ] (std::vector<eslocal> &indices, CubeEdges edge) {
+			[ & ] (std::vector<eslocal> &indices, CubeEdge edge) {
 				this->_e.addEdges(edges, &indices[0], edge);
 			},
-			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
+			[ & ] (std::vector<eslocal> &indices, CubeFace face) {
 				ESINFO(GLOBAL_ERROR) << "Implement add edges on face";
 			},
 			false

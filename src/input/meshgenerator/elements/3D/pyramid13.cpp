@@ -101,12 +101,12 @@ void Pyramid13::addElements(std::vector<Element*> &elements, const eslocal indic
 	elements.push_back(new espreso::Pyramid13(pyramid, 13, params));
 }
 
-void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal square[8];
 
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		square[0] = indices[  4];
 		square[1] = indices[ 24];
 		square[2] = indices[124];
@@ -116,7 +116,7 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 		square[6] = indices[114];
 		square[7] = indices[ 54];
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		square[0] = indices[ 24];
 		square[1] = indices[ 20];
 		square[2] = indices[120];
@@ -126,7 +126,7 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 		square[6] = indices[122];
 		square[7] = indices[ 74];
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		square[0] = indices[ 20];
 		square[1] = indices[  0];
 		square[2] = indices[100];
@@ -136,7 +136,7 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 		square[6] = indices[110];
 		square[7] = indices[ 70];
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		square[0] = indices[  0];
 		square[1] = indices[  4];
 		square[2] = indices[104];
@@ -146,7 +146,7 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 		square[6] = indices[102];
 		square[7] = indices[ 50];
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		square[0] = indices[  0];
 		square[1] = indices[ 20];
 		square[2] = indices[ 24];
@@ -156,7 +156,7 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 		square[6] = indices[ 14];
 		square[7] = indices[  2];
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		square[0] = indices[104];
 		square[1] = indices[124];
 		square[2] = indices[120];
@@ -173,10 +173,10 @@ void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], 
 	faces.push_back(new espreso::Square8(square));
 }
 
-void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		selection.push_back(nodes[indices[  4]]);
 		selection.push_back(nodes[indices[ 14]]);
 		selection.push_back(nodes[indices[ 24]]);
@@ -186,7 +186,7 @@ void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 		selection.push_back(nodes[indices[114]]);
 		selection.push_back(nodes[indices[124]]);
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		selection.push_back(nodes[indices[ 20]]);
 		selection.push_back(nodes[indices[ 22]]);
 		selection.push_back(nodes[indices[ 24]]);
@@ -196,7 +196,7 @@ void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 		selection.push_back(nodes[indices[122]]);
 		selection.push_back(nodes[indices[124]]);
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		selection.push_back(nodes[indices[  0]]);
 		selection.push_back(nodes[indices[ 10]]);
 		selection.push_back(nodes[indices[ 20]]);
@@ -206,7 +206,7 @@ void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 		selection.push_back(nodes[indices[110]]);
 		selection.push_back(nodes[indices[120]]);
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		selection.push_back(nodes[indices[  0]]);
 		selection.push_back(nodes[indices[  2]]);
 		selection.push_back(nodes[indices[  4]]);
@@ -216,7 +216,7 @@ void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 		selection.push_back(nodes[indices[102]]);
 		selection.push_back(nodes[indices[104]]);
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		selection.push_back(nodes[indices[  0]]);
 		selection.push_back(nodes[indices[  2]]);
 		selection.push_back(nodes[indices[  4]]);
@@ -226,7 +226,7 @@ void Pyramid13::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 		selection.push_back(nodes[indices[ 22]]);
 		selection.push_back(nodes[indices[ 24]]);
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		selection.push_back(nodes[indices[100]]);
 		selection.push_back(nodes[indices[102]]);
 		selection.push_back(nodes[indices[104]]);

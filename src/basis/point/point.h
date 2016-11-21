@@ -77,6 +77,11 @@ public:
 		return Point(x * xscalar, y * xscalar, z * xscalar);
 	}
 
+	const Point operator/(const Point &p) const
+	{
+		return Point(x / p.x, y / p.y, z / p.z);
+	}
+
 	static Point cross(const Point &p1, const Point &p2)
 	{
 		return Point(

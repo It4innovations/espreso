@@ -89,12 +89,12 @@ void Tetrahedron10::addElements(std::vector<Element*> &elements, const eslocal i
 	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 }
 
-void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal triangle1[6], triangle2[6];
 
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		triangle1[0] = indices[ 2];
 		triangle1[1] = indices[ 8];
 		triangle1[2] = indices[20];
@@ -109,7 +109,7 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 		triangle2[4] = indices[23];
 		triangle2[5] = indices[14];
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		triangle1[0] = indices[ 8];
 		triangle1[1] = indices[ 6];
 		triangle1[2] = indices[26];
@@ -124,7 +124,7 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 		triangle2[4] = indices[25];
 		triangle2[5] = indices[16];
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		triangle1[0] = indices[ 0];
 		triangle1[1] = indices[ 6];
 		triangle1[2] = indices[18];
@@ -139,7 +139,7 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 		triangle2[4] = indices[21];
 		triangle2[5] = indices[12];
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		triangle1[0] = indices[ 0];
 		triangle1[1] = indices[ 2];
 		triangle1[2] = indices[20];
@@ -154,7 +154,7 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 		triangle2[4] = indices[19];
 		triangle2[5] = indices[ 9];
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		triangle1[0] = indices[ 0];
 		triangle1[1] = indices[ 6];
 		triangle1[2] = indices[ 2];
@@ -169,7 +169,7 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 		triangle2[4] = indices[ 5];
 		triangle2[5] = indices[ 4];
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		triangle1[0] = indices[20];
 		triangle1[1] = indices[26];
 		triangle1[2] = indices[24];
@@ -192,10 +192,10 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 	faces.push_back(new espreso::Triangle6(triangle2));
 }
 
-void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		selection.push_back(nodes[indices[ 2]]);
 		selection.push_back(nodes[indices[ 5]]);
 		selection.push_back(nodes[indices[ 8]]);
@@ -206,7 +206,7 @@ void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<El
 		selection.push_back(nodes[indices[23]]);
 		selection.push_back(nodes[indices[26]]);
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		selection.push_back(nodes[indices[ 6]]);
 		selection.push_back(nodes[indices[ 7]]);
 		selection.push_back(nodes[indices[ 8]]);
@@ -217,7 +217,7 @@ void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<El
 		selection.push_back(nodes[indices[25]]);
 		selection.push_back(nodes[indices[26]]);
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		selection.push_back(nodes[indices[ 0]]);
 		selection.push_back(nodes[indices[ 3]]);
 		selection.push_back(nodes[indices[ 6]]);
@@ -228,7 +228,7 @@ void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<El
 		selection.push_back(nodes[indices[21]]);
 		selection.push_back(nodes[indices[24]]);
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		selection.push_back(nodes[indices[ 0]]);
 		selection.push_back(nodes[indices[ 1]]);
 		selection.push_back(nodes[indices[ 2]]);
@@ -239,7 +239,7 @@ void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<El
 		selection.push_back(nodes[indices[19]]);
 		selection.push_back(nodes[indices[20]]);
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		selection.push_back(nodes[indices[ 0]]);
 		selection.push_back(nodes[indices[ 1]]);
 		selection.push_back(nodes[indices[ 2]]);
@@ -250,7 +250,7 @@ void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<El
 		selection.push_back(nodes[indices[ 7]]);
 		selection.push_back(nodes[indices[ 8]]);
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		selection.push_back(nodes[indices[18]]);
 		selection.push_back(nodes[indices[19]]);
 		selection.push_back(nodes[indices[20]]);

@@ -195,7 +195,7 @@ public:
 protected:
 	std::vector<Element*> _DOFs;
 	std::vector<esglobal> _l2g;
-	std::map<esglobal, eslocal> _g2l;
+	std::vector<std::pair<esglobal, eslocal> > _g2l;
 };
 
 }

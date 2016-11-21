@@ -20,42 +20,42 @@ void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal ind
 	elements.push_back(new espreso::Hexahedron8(hexa, 8, params));
 }
 
-void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal square[4];
 
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		square[0] = indices[1];
 		square[1] = indices[3];
 		square[2] = indices[7];
 		square[3] = indices[5];
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		square[0] = indices[3];
 		square[1] = indices[2];
 		square[2] = indices[6];
 		square[3] = indices[7];
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		square[0] = indices[2];
 		square[1] = indices[0];
 		square[2] = indices[4];
 		square[3] = indices[6];
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		square[0] = indices[0];
 		square[1] = indices[1];
 		square[2] = indices[5];
 		square[3] = indices[4];
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		square[0] = indices[0];
 		square[1] = indices[2];
 		square[2] = indices[3];
 		square[3] = indices[1];
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		square[0] = indices[5];
 		square[1] = indices[7];
 		square[2] = indices[6];
@@ -68,40 +68,40 @@ void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[]
 	faces.push_back(new espreso::Square4(square));
 }
 
-void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+void Hexahedron8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		selection.push_back(nodes[indices[1]]);
 		selection.push_back(nodes[indices[3]]);
 		selection.push_back(nodes[indices[7]]);
 		selection.push_back(nodes[indices[5]]);
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		selection.push_back(nodes[indices[3]]);
 		selection.push_back(nodes[indices[2]]);
 		selection.push_back(nodes[indices[6]]);
 		selection.push_back(nodes[indices[7]]);
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		selection.push_back(nodes[indices[2]]);
 		selection.push_back(nodes[indices[0]]);
 		selection.push_back(nodes[indices[4]]);
 		selection.push_back(nodes[indices[6]]);
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		selection.push_back(nodes[indices[0]]);
 		selection.push_back(nodes[indices[1]]);
 		selection.push_back(nodes[indices[5]]);
 		selection.push_back(nodes[indices[4]]);
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		selection.push_back(nodes[indices[0]]);
 		selection.push_back(nodes[indices[2]]);
 		selection.push_back(nodes[indices[3]]);
 		selection.push_back(nodes[indices[1]]);
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		selection.push_back(nodes[indices[5]]);
 		selection.push_back(nodes[indices[7]]);
 		selection.push_back(nodes[indices[6]]);

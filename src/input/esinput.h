@@ -13,6 +13,8 @@
 #include "openfoam/openfoam.h"
 #include "api/api.h"
 
+#include "generator/composition/grid.h"
+
 
 
 #endif /* INPUT_ESINPUT_H_ */

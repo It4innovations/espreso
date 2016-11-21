@@ -33,12 +33,12 @@ void Hexahedron20::addElements(std::vector<Element*> &elements, const eslocal in
 	elements.push_back(new espreso::Hexahedron20(hexa, 20, params));
 }
 
-void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face)
+void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal square[8];
 
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		square[0] = indices[ 2];
 		square[1] = indices[ 8];
 		square[2] = indices[26];
@@ -49,7 +49,7 @@ void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		square[6] = indices[23];
 		square[7] = indices[11];
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		square[0] = indices[ 8];
 		square[1] = indices[ 6];
 		square[2] = indices[24];
@@ -60,7 +60,7 @@ void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		square[6] = indices[25];
 		square[7] = indices[17];
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		square[0] = indices[ 6];
 		square[1] = indices[ 0];
 		square[2] = indices[18];
@@ -71,7 +71,7 @@ void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		square[6] = indices[21];
 		square[7] = indices[15];
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		square[0] = indices[ 0];
 		square[1] = indices[ 2];
 		square[2] = indices[20];
@@ -82,7 +82,7 @@ void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		square[6] = indices[19];
 		square[7] = indices[ 9];
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		square[0] = indices[ 0];
 		square[1] = indices[ 6];
 		square[2] = indices[ 8];
@@ -93,7 +93,7 @@ void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[
 		square[6] = indices[ 5];
 		square[7] = indices[ 1];
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		square[0] = indices[20];
 		square[1] = indices[26];
 		square[2] = indices[24];
@@ -111,10 +111,10 @@ void Hexahedron20::addFaces(std::vector<Element*> &faces, const eslocal indices[
 	faces.push_back(new espreso::Square8(square));
 }
 
-void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face)
+void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
 {
 	switch (face) {
-	case CubeFaces::X_1:
+	case CubeFace::X_1:
 		selection.push_back(nodes[indices[ 2]]);
 		selection.push_back(nodes[indices[ 8]]);
 		selection.push_back(nodes[indices[26]]);
@@ -125,7 +125,7 @@ void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Ele
 		selection.push_back(nodes[indices[23]]);
 		selection.push_back(nodes[indices[11]]);
 		break;
-	case CubeFaces::Y_1:
+	case CubeFace::Y_1:
 		selection.push_back(nodes[indices[ 8]]);
 		selection.push_back(nodes[indices[ 6]]);
 		selection.push_back(nodes[indices[24]]);
@@ -136,7 +136,7 @@ void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Ele
 		selection.push_back(nodes[indices[25]]);
 		selection.push_back(nodes[indices[17]]);
 		break;
-	case CubeFaces::X_0:
+	case CubeFace::X_0:
 		selection.push_back(nodes[indices[ 6]]);
 		selection.push_back(nodes[indices[ 0]]);
 		selection.push_back(nodes[indices[18]]);
@@ -147,7 +147,7 @@ void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Ele
 		selection.push_back(nodes[indices[21]]);
 		selection.push_back(nodes[indices[15]]);
 		break;
-	case CubeFaces::Y_0:
+	case CubeFace::Y_0:
 		selection.push_back(nodes[indices[ 0]]);
 		selection.push_back(nodes[indices[ 2]]);
 		selection.push_back(nodes[indices[20]]);
@@ -158,7 +158,7 @@ void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Ele
 		selection.push_back(nodes[indices[19]]);
 		selection.push_back(nodes[indices[ 9]]);
 		break;
-	case CubeFaces::Z_0:
+	case CubeFace::Z_0:
 		selection.push_back(nodes[indices[ 0]]);
 		selection.push_back(nodes[indices[ 6]]);
 		selection.push_back(nodes[indices[ 8]]);
@@ -169,7 +169,7 @@ void Hexahedron20::pickNodes(const std::vector<Element*> &nodes, std::vector<Ele
 		selection.push_back(nodes[indices[ 5]]);
 		selection.push_back(nodes[indices[ 1]]);
 		break;
-	case CubeFaces::Z_1:
+	case CubeFace::Z_1:
 		selection.push_back(nodes[indices[20]]);
 		selection.push_back(nodes[indices[26]]);
 		selection.push_back(nodes[indices[24]]);

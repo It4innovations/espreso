@@ -194,7 +194,7 @@ void CubesGenerator<TElement>::settings(
 											}
 										}
 									}
-									_e.addFaces(faces, &indices[0], CubeFaces::Y_0);
+									_e.addFaces(faces, &indices[0], CubeFace::Y_0);
 								}
 							}
 						}
@@ -237,7 +237,7 @@ void CubesGenerator<TElement>::settings(
 											}
 										}
 									}
-									_e.addFaces(faces, &indices[0], CubeFaces::Y_1);
+									_e.addFaces(faces, &indices[0], CubeFace::Y_1);
 								}
 							}
 						}

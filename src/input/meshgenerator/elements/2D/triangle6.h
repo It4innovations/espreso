@@ -15,10 +15,10 @@ public:
 	static size_t subnodes[3];
 
 	static void addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[]);
-	static void addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFaces face) { ESINFO(GLOBAL_ERROR) << "Generator: plane element has no faces."; }
-	static void addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdges edge);
-	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdges edge);
-	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFaces face) { ESINFO(GLOBAL_ERROR) << "generator Nodes"; };
+	static void addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face) { ESINFO(GLOBAL_ERROR) << "Generator: plane element has no faces."; }
+	static void addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge);
+	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge);
+	static void pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face) { ESINFO(GLOBAL_ERROR) << "generator Nodes"; };
 
 };
 

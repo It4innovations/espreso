@@ -21,26 +21,26 @@ void Square8::addElements(std::vector<Element*> &elements, const eslocal indices
 	elements.push_back(new espreso::Square8(square, params));
 }
 
-void Square8::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdges edge)
+void Square8::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	eslocal line[3];
 	switch (edge) {
-	case CubeEdges::X_0_Z_0:
+	case CubeEdge::X_0_Z_0:
 		line[0] = indices[6];
 		line[1] = indices[3];
 		line[2] = indices[0];
 		break;
-	case CubeEdges::X_1_Z_0:
+	case CubeEdge::X_1_Z_0:
 		line[0] = indices[2];
 		line[1] = indices[5];
 		line[2] = indices[8];
 		break;
-	case CubeEdges::Y_0_Z_0:
+	case CubeEdge::Y_0_Z_0:
 		line[0] = indices[0];
 		line[1] = indices[1];
 		line[2] = indices[2];
 		break;
-	case CubeEdges::Y_1_Z_0:
+	case CubeEdge::Y_1_Z_0:
 		line[0] = indices[8];
 		line[1] = indices[7];
 		line[2] = indices[6];
@@ -51,25 +51,25 @@ void Square8::addEdges(std::vector<Element*> &edges, const eslocal indices[], Cu
 	edges.push_back(new espreso::Line3(line));
 }
 
-void Square8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdges edge)
+void Square8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
 {
 	switch (edge) {
-	case CubeEdges::X_0_Z_0:
+	case CubeEdge::X_0_Z_0:
 		selection.push_back(nodes[indices[6]]);
 		selection.push_back(nodes[indices[3]]);
 		selection.push_back(nodes[indices[0]]);
 		break;
-	case CubeEdges::X_1_Z_0:
+	case CubeEdge::X_1_Z_0:
 		selection.push_back(nodes[indices[2]]);
 		selection.push_back(nodes[indices[5]]);
 		selection.push_back(nodes[indices[8]]);
 		break;
-	case CubeEdges::Y_0_Z_0:
+	case CubeEdge::Y_0_Z_0:
 		selection.push_back(nodes[indices[0]]);
 		selection.push_back(nodes[indices[1]]);
 		selection.push_back(nodes[indices[2]]);
 		break;
-	case CubeEdges::Y_1_Z_0:
+	case CubeEdge::Y_1_Z_0:
 		selection.push_back(nodes[indices[8]]);
 		selection.push_back(nodes[indices[7]]);
 		selection.push_back(nodes[indices[6]]);

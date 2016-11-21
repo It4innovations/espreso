@@ -28,6 +28,7 @@ public:
 
 		TimeEvent tPoints("coordinates"); tPoints.start();
 		points(mesh._coordinates);
+		std::sort(mesh._coordinates._globalMapping.begin(), mesh._coordinates._globalMapping.end());
 		tPoints.end(); measurement.addEvent(tPoints);
 		ESINFO(OVERVIEW) << "Coordinates loaded - total number of nodes: " << Info::sumValue(mesh.coordinates().clusterSize());
 

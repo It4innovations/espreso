@@ -11,28 +11,26 @@
 namespace espreso
 {
 
-class Coordinates
+struct Coordinates
 {
 	friend class Mesh;
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 public:
-	Coordinates(): _clusterSize(0), _clusterIndex(1) { };
+	Coordinates(): _clusterIndex(1) { };
 
 	void resize(size_t size)
 	{
-		_clusterSize = size;
 		_clusterIndex.resize(1);
 		_clusterIndex[0].resize(size);
 	}
 
 	void add(const Point &point, eslocal clusterIndex, esglobal globalIndex)
 	{
-		_clusterSize++;
 		_points.push_back(point);
 		_clusterIndex[0].push_back(clusterIndex);
 		_globalIndex.push_back(globalIndex);
-		_globalMap[globalIndex] = clusterIndex;
+		_globalMapping.push_back(std::make_pair(globalIndex, clusterIndex));
 	}
 
 	void reserve(size_t size)
@@ -44,7 +42,6 @@ public:
 
 	void clear()
 	{
-		_clusterSize = 0;
 		_points.clear();
 		_globalIndex.clear();
 		_clusterIndex.resize(1);
@@ -73,7 +70,9 @@ public:
 
 	eslocal clusterIndex(esglobal index) const
 	{
-		return _globalMap.find(index)->second;
+		return std::lower_bound(_globalMapping.begin(), _globalMapping.end(), index, [] (const std::pair<esglobal, esglobal> &mapping, esglobal index) {
+			return mapping.first < index;
+		})->second;
 	}
 
 	eslocal localIndex(eslocal index, eslocal part) const
@@ -91,7 +90,7 @@ public:
 
 	size_t clusterSize() const
 	{
-		return _clusterSize;
+		return _points.size();
 	}
 
 	size_t localSize(eslocal part) const
@@ -134,8 +133,7 @@ public:
 		return _points[index];
 	}
 
-private:
-	size_t _clusterSize;
+// private:
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */
@@ -143,7 +141,7 @@ private:
 
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
-	std::map<esglobal, eslocal> _globalMap;
+	std::vector<std::pair<esglobal, esglobal> > _globalMapping;
 };
 
 }
