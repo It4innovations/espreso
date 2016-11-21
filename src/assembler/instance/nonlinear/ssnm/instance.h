@@ -4,17 +4,20 @@
 
 #include "../../instance.h"
 #include "esoutput.h"
+#include "../../../../config/output.h"
 
 namespace espreso {
 
-template <class TPhysics>
+template <class TPhysics, class TConfiguration>
 struct SemiSmoothNewtonMethod: public Instance
 {
-	SemiSmoothNewtonMethod(const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	SemiSmoothNewtonMethod(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
 	_output(output),
-	_constrains(mesh),
-	_physics(mesh, _constrains),
-	_linearSolver(_physics, _constrains),
+	_configuration(configuration.espreso),
+	_constraints(mesh),
+	_physics(mesh, _constraints),
+	_linearSolver(configuration.espreso, _physics, _constraints),
+	_prevSolution(mesh.parts()),
 	_store(_output, mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();
@@ -27,13 +30,15 @@ struct SemiSmoothNewtonMethod: public Instance
 	virtual ~SemiSmoothNewtonMethod() {};
 
 	virtual const Physics& physics() const { return _physics; }
-	virtual const Constraints& constraints() const { return _constrains; }
+	virtual const Constraints& constraints() const { return _constraints; }
 
 protected:
 	const OutputConfiguration &_output;
-	Constraints _constrains;
+	const ESPRESOSolver &_configuration;
+	Constraints _constraints;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
+	std::vector<std::vector<double> > _prevSolution;
 	store::VTK _store;
 };
 

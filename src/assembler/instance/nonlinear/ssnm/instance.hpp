@@ -3,8 +3,8 @@
 
 namespace espreso {
 
-template <class TPhysics>
-void SemiSmoothNewtonMethod<TPhysics>::init()
+template <class TPhysics, class TConfiguration>
+void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::init()
 {
 	TimeEvent timePreparation("Prepare mesh structures"); timePreparation.start();
 	_physics.prepareMeshStructures();
@@ -42,7 +42,7 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	}
 
 	if (_output.gluing) {
-		store::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size());
+		store::VTK::gluing(_output, _mesh, _constrains, "B1", _physics.pointDOFs.size());
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
@@ -50,20 +50,64 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	timeSolver.end(); _timeStatistics.addEvent(timeSolver);
 }
 
-template <class TPhysics>
-void SemiSmoothNewtonMethod<TPhysics>::solve(std::vector<std::vector<double> > &solution)
+template <class TPhysics, class TConfiguration>
+void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::solve(std::vector<std::vector<double> > &solution)
 {
-	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
+	TimeEvent timeSolve("Linear Solver - runtime");
+
+	auto computeError = [] (const Mesh &mesh, const std::vector<std::vector<double> > &prev, const std::vector<std::vector<double> > &current) {
+		// norm(u - prev) / norm (u);
+		std::vector<double> n_prev(prev.size()), n_curr(current.size());
+		#pragma omp parallel for
+		for (size_t p = 0; p < prev.size(); p++) {
+			double _prev = 0, _curr = 0;
+			for (size_t i = 0; i < current[p].size(); i++) {
+				size_t commonDomains = mesh.getDOFsElement(p, i)->numberOfGlobalDomainsWithDOF(mesh.getDOFsElement(p, i)->DOFOffset(p, i));
+				_curr += current[p][i] * current[p][i] / commonDomains;
+				_prev += (current[p][i] - prev[p][i]) * (current[p][i] - prev[p][i]) / commonDomains;
+			}
+			n_prev[p] = _prev;
+			n_curr[p] = _curr;
+		}
+		double localSum[2] = { std::accumulate(n_prev.begin(), n_prev.end(), 0), std::accumulate(n_curr.begin(), n_curr.end(), 0) };
+		double globalSum[2];
+		MPI_Allreduce(localSum, globalSum, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		return sqrt(globalSum[0]) / sqrt(globalSum[1]);
+	};
+
+	timeSolve.start();
 	_linearSolver.Solve(_physics.f, solution);
-	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);
+	// reconstruct
+	timeSolve.endWithBarrier();
+
+	double error = 1;
+	for (size_t i = 1; i < 100 && error > 0.01; i++) {
+		#pragma omp parallel for
+		for (size_t p = 0; p < _mesh.parts(); p++) {
+			_prevSolution[p] = solution[p];
+		}
+
+		InequalityConstraints::removePositive(_constraints, solution, 1);
+		// recompute GGt
+
+		timeSolve.start();
+		_linearSolver.Solve(_physics.f, solution);
+		InequalityConstraints::reconstruct(_constraints);
+		// reconstruct
+		timeSolve.endWithBarrier();
+
+		error = computeError(_mesh, _prevSolution, solution);
+	}
+
+	_timeStatistics.addEvent(timeSolve);
 
 	if (_output.results) {
 		_physics.saveMeshResults(_store, solution);
 	}
 }
 
-template <class TPhysics>
-void SemiSmoothNewtonMethod<TPhysics>::finalize()
+template <class TPhysics, class TConfiguration>
+void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::finalize()
 {
 	_linearSolver.finilize();
 

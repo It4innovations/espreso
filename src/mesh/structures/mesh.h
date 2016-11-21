@@ -77,6 +77,8 @@ public:
 	const std::vector<Element*>& edges() const { return _edges; };
 	const std::vector<Element*>& nodes() const { return _nodes; };
 
+	const Element* getDOFsElement(size_t part, size_t DOF) const { return _DOFtoElement[part][DOF]; }
+
 	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; };
 	const std::vector<Element*>& corners() const { return _corners; };
 
@@ -158,6 +160,9 @@ protected:
 
 	/// Nodes of the elements.
 	std::vector<Element*> _nodes;
+
+	/// Back map from DOFs to Element
+	std::vector<std::vector<Element*> > _DOFtoElement;
 
 	/** @brief Fix points for all parts. */
 	std::vector<std::vector<Element*> > _fixPoints;

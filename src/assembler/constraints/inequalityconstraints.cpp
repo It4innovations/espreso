@@ -115,5 +115,109 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 	ESINFO(DETAILS) << "Lambdas with lower bounds in B1: " << globalIndicesSize;
 }
 
+void InequalityConstraints::removePositive(Constraints &constraints, const std::vector<std::vector<double> > &solution, double rho)
+{
+	size_t inequalityStart = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + IJVMatrixIndexing;
+	if (constraints.inequalityStored) {
+		#pragma omp parallel for
+		for(size_t p = 0; p < constraints._mesh.parts(); p++) {
+			size_t inequalityOffset = std::lower_bound(constraints.B1[p].I_row_indices.begin(), constraints.B1[p].I_row_indices.end(), inequalityStart) - constraints.B1[p].I_row_indices.begin();
+
+			constraints.inequality[p].I_row_indices.insert(
+					constraints.inequality[p].I_row_indices.end(),
+					constraints.B1[p].I_row_indices.begin() + inequalityOffset,
+					constraints.B1[p].I_row_indices.end());
+
+			constraints.inequality[p].J_col_indices.insert(
+					constraints.inequality[p].J_col_indices.end(),
+					constraints.B1[p].J_col_indices.begin() + inequalityOffset,
+					constraints.B1[p].J_col_indices.end());
+
+			constraints.inequality[p].V_values.insert(
+					constraints.inequality[p].V_values.end(),
+					constraints.B1[p].V_values.begin() + inequalityOffset,
+					constraints.B1[p].V_values.end());
+
+			constraints.inequalityC[p].insert(
+					constraints.inequalityC[p].end(),
+					constraints.B1c[p].begin() + inequalityOffset,
+					constraints.B1c[p].end());
+		}
+	}
+
+	auto copy = [&] (size_t p, size_t to, size_t from) {
+		constraints.B1[p].I_row_indices[to] = constraints.B1[p].I_row_indices[from];
+		constraints.B1[p].J_col_indices[to] = constraints.B1[p].J_col_indices[from];
+		constraints.B1[p].V_values[to] = constraints.B1[p].V_values[from];
+
+		constraints.B1c[p][to] = constraints.B1c[p][from];
+	};
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
+		size_t inequalityOffset = std::lower_bound(constraints.B1[p].I_row_indices.begin(), constraints.B1[p].I_row_indices.end(), inequalityStart) - constraints.B1[p].I_row_indices.begin();
+
+		// if (rho * (B * u - c) >= 0) -> remove
+		size_t end = inequalityOffset;
+		for (size_t i = inequalityOffset; i < constraints.B1[p].I_row_indices.size();) {
+			double value = 0;
+			for (size_t j = i; j < constraints.B1[p].I_row_indices.size() && constraints.B1[p].I_row_indices[j] == constraints.B1[p].I_row_indices[i]; j++) {
+				value += constraints.B1[p].V_values[j] * solution[p][constraints.B1[p].J_col_indices[j]] - constraints.B1c[p][j];
+			}
+			for (size_t j = i; j < constraints.B1[p].I_row_indices.size() && constraints.B1[p].I_row_indices[j] == constraints.B1[p].I_row_indices[i]; j++, i++) {
+				if (rho * value < 0) {
+					copy(p, end++, i);
+				}
+			}
+		}
+		constraints.B1[p].I_row_indices.resize(end);
+		constraints.B1[p].J_col_indices.resize(end);
+		constraints.B1[p].V_values.resize(end);
+		constraints.B1c[p].resize(end);
+		constraints.B1duplicity[p].resize(end);
+		constraints.LB[p].resize(end);
+	}
+
+	// TODO: update constraints.block[Constraints::INEQUALITY_CONSTRAINTS] ??
+}
+
+void InequalityConstraints::reconstruct(Constraints &constraints)
+{
+	size_t inequalityStart = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + IJVMatrixIndexing;
+
+	#pragma omp parallel for
+	for(size_t p = 0; p < constraints._mesh.parts(); p++) {
+		size_t inequalityOffset = std::lower_bound(constraints.B1[p].I_row_indices.begin(), constraints.B1[p].I_row_indices.end(), inequalityStart) - constraints.B1[p].I_row_indices.begin();
+
+		constraints.B1[p].I_row_indices.resize(inequalityOffset);
+		constraints.B1[p].I_row_indices.insert(
+				constraints.B1[p].I_row_indices.end(),
+				constraints.inequality[p].I_row_indices.begin(),
+				constraints.inequality[p].I_row_indices.end());
+
+		constraints.B1[p].J_col_indices.resize(inequalityOffset);
+		constraints.B1[p].J_col_indices.insert(
+				constraints.B1[p].J_col_indices.end(),
+				constraints.inequality[p].J_col_indices.begin(),
+				constraints.inequality[p].J_col_indices.end());
+
+		constraints.B1[p].V_values.resize(inequalityOffset);
+		constraints.B1[p].V_values.insert(
+				constraints.B1[p].V_values.end(),
+				constraints.inequality[p].V_values.begin(),
+				constraints.inequality[p].V_values.end());
+
+		constraints.B1c[p].resize(inequalityOffset);
+		constraints.B1c[p].insert(
+				constraints.B1c[p].end(),
+				constraints.inequalityC[p].begin(),
+				constraints.inequalityC[p].end());
+
+		constraints.B1duplicity[p].resize(constraints.B1c[p].size(), 1);
+		constraints.LB[p].resize(constraints.B1c[p].size(), 0);
+	}
+
+}
+
 
 

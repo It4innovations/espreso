@@ -8,6 +8,9 @@
 #include "../settings/setting.h"
 #include "../structures/region.h"
 
+#define __WITHOUT_DOF__ -1
+#define __HAS_DOF__ 1
+
 namespace espreso {
 
 class Mesh;
@@ -147,18 +150,29 @@ public:
 
 	virtual const std::vector<double>& stiffnessMatrix() const { ESINFO(GLOBAL_ERROR) << "Stiffness matrix of an element is not set."; exit(0); }
 
-	eslocal DOFIndex(eslocal domain, size_t DOFIndex) const
+	size_t DOFOffset(eslocal domain, eslocal DOFIndex) const
+	{
+		for (size_t i = 0; i < _DOFsIndices.size() / _domains.size(); i++) {
+			if (DOFIndex == this->DOFIndex(domain, i)) {
+				return i;
+			}
+		}
+		ESINFO(ERROR) << "Element has not requested DOF index";
+		return -1;
+	}
+
+	eslocal DOFIndex(eslocal domain, size_t DOFoffset) const
 	{
 		auto it = std::lower_bound(_domains.begin(), _domains.end(), domain);
 		auto DOFs = _DOFsIndices.size() / _domains.size();
-		return _DOFsIndices[DOFs * (it - _domains.begin()) + DOFIndex];
+		return _DOFsIndices[DOFs * (it - _domains.begin()) + DOFoffset];
 	}
 
-	eslocal DOFCounter(eslocal cluster, size_t DOFIndex) const
+	eslocal DOFCounter(eslocal cluster, size_t DOFoffset) const
 	{
 		auto it = std::lower_bound(_clusters.begin(), _clusters.end(), cluster);
 		auto DOFs = _DOFsDomainsCounters.size() / _clusters.size();
-		return _DOFsDomainsCounters[DOFs * (it - _clusters.begin()) + DOFIndex];
+		return _DOFsDomainsCounters[DOFs * (it - _clusters.begin()) + DOFoffset];
 	}
 
 	eslocal clusterOffset(eslocal cluster) const
@@ -166,20 +180,20 @@ public:
 		return _clusterOffsets[lower_bound(_clusters.begin(), _clusters.end(), cluster)  -_clusters.begin()];
 	}
 
-	size_t numberOfGlobalDomainsWithDOF(size_t index) const
+	size_t numberOfGlobalDomainsWithDOF(size_t DOFoffset) const
 	{
 		size_t n = 0;
 		for (size_t c = 0; c < _clusters.size(); c++) {
-			n += _DOFsDomainsCounters[c * _DOFsDomainsCounters.size() / _clusters.size() + index];
+			n += _DOFsDomainsCounters[c * _DOFsDomainsCounters.size() / _clusters.size() + DOFoffset];
 		}
 		return n;
 	}
 
-	size_t numberOfLocalDomainsWithDOF(size_t index) const
+	size_t numberOfLocalDomainsWithDOF(size_t DOFoffset) const
 	{
 		size_t n = 0;
 		for (size_t d = 0; d < _domains.size(); d++) {
-			if (_DOFsIndices[d * _DOFsIndices.size() / _domains.size() + index] != -1) {
+			if (_DOFsIndices[d * _DOFsIndices.size() / _domains.size() + DOFoffset] != __WITHOUT_DOF__) {
 				n++;
 			}
 		}

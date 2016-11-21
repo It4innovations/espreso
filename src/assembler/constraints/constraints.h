@@ -34,9 +34,12 @@ struct Constraints
 	std::vector<std::vector<double> > LB;
 	std::vector<std::vector<double> > B1duplicity;
 
+	std::vector<SparseMatrix> inequality;
+	std::vector<std::vector<double> > inequalityC;
+
 	std::vector<size_t> block;
 
-	Constraints(const ESPRESOSolver &configuration, Mesh &mesh): block(3), _configuration(configuration), _mesh(mesh) {};
+	Constraints(const ESPRESOSolver &configuration, Mesh &mesh): block(3), _configuration(configuration), _mesh(mesh), inequalityStored(false) {};
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 
@@ -47,6 +50,7 @@ protected:
 
 	const ESPRESOSolver &_configuration;
 	Mesh &_mesh;
+	bool inequalityStored;
 };
 
 }

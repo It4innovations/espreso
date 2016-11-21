@@ -11,7 +11,6 @@ namespace espreso {
 template <class TPhysics, class TConfiguration>
 struct LinearInstance: public Instance
 {
-public:
 	LinearInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
 	_output(output),
 	_configuration(configuration.espreso),
