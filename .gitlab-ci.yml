@@ -17,6 +17,10 @@ before_script:
   - . env/paths.default
   - . env/threading.default 5
 
+after_script:
+  - ./waf distclean
+  - rm -fr libs*
+
 MKL32:
   stage: benchmarks
   script:
