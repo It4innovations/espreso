@@ -17,6 +17,7 @@ public:
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType) { ESINFO(GLOBAL_ERROR) << "Implement store property"; }
 
 	void store(std::vector<std::vector<double> > &displacement);
+	int numb=0;
 };
 
 }
