@@ -216,7 +216,7 @@ struct ConfigurationVector: public Configuration {
 		configuration.description = description;
 		configuration.dummy.push_back(new Ttype{});
 		configuration.dummy.back()->name = "1";
-		configuration.dummy.back()->description = "First material settings.";
+		configuration.dummy.back()->description = "First configuration settings.";
 		return configuration;
 	}
 
@@ -235,7 +235,7 @@ struct ConfigurationVector: public Configuration {
 			orderedSubconfiguration.push_back(configurations[index - 1]);
 			configurations[index - 1]->name = std::to_string(index);
 		}
-		return *configurations[index];
+		return *configurations[index - 1];
 	}
 
 	virtual const std::vector<Configuration*>& storeConfigurations() const
@@ -268,7 +268,7 @@ struct ConfigurationMap: public Configuration {
 		conf->orderedSubconfiguration.push_back(&configuration);
 		configuration.name = name;
 		configuration.description = description;
-		configuration.dummy.push_back(new ValueHolder<Ttype>("<REGION_NAME>", "Region value", configuration.dummyValue, configuration.dummyValue, type));
+		configuration.dummy.push_back(new ValueHolder<Ttype>("/*PARAMETER*/", "List of values.", configuration.dummyValue, configuration.dummyValue, type));
 		return configuration;
 	}
 
@@ -278,7 +278,7 @@ struct ConfigurationMap: public Configuration {
 			return parameters.find(parameter)->second->set(value);
 		} else {
 			values.push_back({});
-			parameters[parameter] = new ValueHolder<Ttype>(parameter, "Region value", values.back(), values.back(), type, this);
+			parameters[parameter] = new ValueHolder<Ttype>(parameter, "Parameter value", values.back(), values.back(), type, this);
 			parameters[parameter]->set(value);
 			orderedParameters.push_back(parameters[parameter]);
 			return false;
@@ -308,8 +308,8 @@ inline ConfigurationMap<std::string> ConfigurationMap<std::string>::create(const
 	conf->orderedSubconfiguration.push_back(&configuration);
 	configuration.name = name;
 	configuration.description = description;
-	configuration.dummy.push_back(new ValueHolder<std::string>("<REGION_NAME>", "Region value", configuration.dummyValue, configuration.dummyValue, type));
-	configuration.dummyValue = "<value>";
+	configuration.dummy.push_back(new ValueHolder<std::string>("# PARAMETER", "List of values.", configuration.dummyValue, configuration.dummyValue, type));
+	configuration.dummyValue = "VALUE";
 	return configuration;
 }
 
