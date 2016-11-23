@@ -11,6 +11,8 @@ namespace input {
 struct BlockSetting;
 
 struct BlockBorder {
+	BlockBorder(const std::string &interval);
+
 	double epsilon = 0.001;
 	Triple<double> start, end;
 	Triple<bool> excludeStart, excludeEnd;

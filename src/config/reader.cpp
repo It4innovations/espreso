@@ -134,7 +134,7 @@ void Reader::_read(const std::string &file, const std::vector<std::string> &args
 			tokenStack.pop();
 			break;
 		case Tokenizer::Token::STRING:
-			if (tokenStack.top()->value()[0] == '<' && tokenStack.top()->value().back() == '>') {
+			if (tokenStack.top()->value()[0] == '[' && tokenStack.top()->value().back() == ']') {
 				std::string value = tokenStack.top()->value();
 				value = value.substr(1, value.size() - 2);
 				if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".ecf")) {

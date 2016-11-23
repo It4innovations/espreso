@@ -17,9 +17,9 @@
 #define OPTION(type, name, description, value, options)         type name = DataHolder::create<type>(#name, description, name, value, options, this)
 #define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, #type, this)
 
-#define SUBVECTOR(type, name, description) ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, this)
-#define SUBMAP(type, name, description)       ConfigurationMap<type> name = ConfigurationMap<type>::create(#name, description, #type, this)
-#define SUBCONFIG(type, name, description)                      type name = Configuration::create<type>(#name, description, this)
+#define SUBVECTOR(type, name, description, dparameter, dvalue)           ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, dparameter, dvalue, this)
+#define SUBMAP(ptype, vtype, name, description, dparameter, dvalue) ConfigurationMap<ptype, vtype> name = ConfigurationMap<ptype, vtype>::create(#name, description, #vtype, dparameter, dvalue, this)
+#define SUBCONFIG(type, name, description)                                                    type name = Configuration::create<type>(#name, description, this)
 
 namespace espreso {
 
@@ -181,7 +181,7 @@ struct Configuration {
 		}
 	}
 
-	bool set(const std::string &parameter, const std::string &value)
+	virtual bool set(const std::string &parameter, const std::string &value)
 	{
 		if (parameters.find(parameter) != parameters.end()) {
 			return parameters.find(parameter)->second->set(value);
@@ -207,7 +207,7 @@ struct ConfigurationVector: public Configuration {
 	std::vector<Configuration*> configurations;
 	std::vector<Configuration*> dummy;
 
-	static ConfigurationVector<Ttype> create(const std::string &name, const std::string &description, Configuration* conf)
+	static ConfigurationVector<Ttype> create(const std::string &name, const std::string &description, const std::string &dParameter, const std::string &dValue, Configuration* conf)
 	{
 		ConfigurationVector<Ttype> configuration;
 		conf->subconfigurations[name] = &configuration;
@@ -215,8 +215,8 @@ struct ConfigurationVector: public Configuration {
 		configuration.name = name;
 		configuration.description = description;
 		configuration.dummy.push_back(new Ttype{});
-		configuration.dummy.back()->name = "1";
-		configuration.dummy.back()->description = "First configuration settings.";
+		configuration.dummy.back()->name = dParameter;
+		configuration.dummy.back()->description = dValue;
 		return configuration;
 	}
 
@@ -254,21 +254,22 @@ struct ConfigurationVector: public Configuration {
 	}
 };
 
-template <typename Ttype>
+template <typename Tparameter, typename Tvalue>
 struct ConfigurationMap: public Configuration {
-	std::list<Ttype> values;
-	Ttype dummyValue;
+	std::map<Tparameter, Tvalue> values;
+	Tvalue dummyValue;
 	std::vector<ParameterBase*> dummy;
 	std::string type;
 
-	static ConfigurationMap<Ttype> create(const std::string &name, const std::string &description, const std::string &type, Configuration* conf)
+	static ConfigurationMap<Tparameter, Tvalue> create(const std::string &name, const std::string &description, const std::string &type, const std::string &dParameter, Tvalue dValue, Configuration* conf)
 	{
-		ConfigurationMap<Ttype> configuration;
+		ConfigurationMap<Tparameter, Tvalue> configuration;
 		conf->subconfigurations[name] = &configuration;
 		conf->orderedSubconfiguration.push_back(&configuration);
 		configuration.name = name;
 		configuration.description = description;
-		configuration.dummy.push_back(new ValueHolder<Ttype>("/*PARAMETER*/", "List of values.", configuration.dummyValue, configuration.dummyValue, type));
+		configuration.dummy.push_back(new ValueHolder<Tvalue>("# " + dParameter, "List of values.", configuration.dummyValue, dValue, type));
+		configuration.dummyValue = dValue;
 		return configuration;
 	}
 
@@ -277,11 +278,20 @@ struct ConfigurationMap: public Configuration {
 		if (parameters.find(parameter) != parameters.end()) {
 			return parameters.find(parameter)->second->set(value);
 		} else {
-			values.push_back({});
-			parameters[parameter] = new ValueHolder<Ttype>(parameter, "Parameter value", values.back(), values.back(), type, this);
-			parameters[parameter]->set(value);
+			Tparameter par;
+			ValueHolder<Tparameter> pholder(parameter, "", par, par, type);
+			if (!pholder.set(parameter)) {
+				return false;
+			}
+			Tparameter val;
+			ValueHolder<Tparameter> vholder(value, "", val, val, type);
+			if (!vholder.set(value)) {
+				return false;
+			}
+			values[pholder.value] = vholder.value;
+			parameters[parameter] = new ValueHolder<Tvalue>(parameter, "Parameter value", values[pholder.value], values[pholder.value], type);
 			orderedParameters.push_back(parameters[parameter]);
-			return false;
+			return true;
 		}
 	}
 
@@ -299,19 +309,6 @@ struct ConfigurationMap: public Configuration {
 		std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
 	}
 };
-
-template <>
-inline ConfigurationMap<std::string> ConfigurationMap<std::string>::create(const std::string &name, const std::string &description, const std::string &type, Configuration* conf)
-{
-	ConfigurationMap<std::string> configuration;
-	conf->subconfigurations[name] = &configuration;
-	conf->orderedSubconfiguration.push_back(&configuration);
-	configuration.name = name;
-	configuration.description = description;
-	configuration.dummy.push_back(new ValueHolder<std::string>("# PARAMETER", "List of values.", configuration.dummyValue, configuration.dummyValue, type));
-	configuration.dummyValue = "VALUE";
-	return configuration;
-}
 
 struct DataHolder {
 	template <typename Ttype>

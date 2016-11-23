@@ -10,7 +10,7 @@ namespace input {
 
 struct GridSettings {
 	Triple<double> start, end;
-	Triple<size_t> grid, clusters, domains, elements;
+	Triple<size_t> blocks, clusters, domains, elements;
 
 	std::vector<bool> nonempty;
 };
