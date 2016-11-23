@@ -2,6 +2,38 @@
 
 using namespace espreso;
 
+//#define STREAM_NUM 16
+//#define SHARE_SC
+
+ClusterGPU::~ClusterGPU() {
+	DestroyCudaStreamPool();
+
+	for(eslocal d = 0; d < domains_in_global_index.size(); d++) {
+		if(domains[d].isOnACC) {
+			domains[d].B1Kplus.ClearCUDA_Stream();
+#ifdef SHARE_SC
+			if(domains[d].B1Kplus.USE_FLOAT) {
+				// Return the original pointer from backup
+				domains[d].B1Kplus.d_dense_values_fl = SC_dense_val_orig_fl[d];
+
+				domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
+			} else {
+				// Return the original pointer from backup
+				domains[d].B1Kplus.d_dense_values = SC_dense_val_orig[d];
+
+				domains[d].B1Kplus.FreeFromCUDA_Dev();
+			}
+#else
+			if(domains[d].B1Kplus.USE_FLOAT) {
+				domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
+			} else {
+				domains[d].B1Kplus.FreeFromCUDA_Dev();
+			}
+#endif
+		}
+	}
+}
+
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	ESINFO(PROGRESS2) << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
@@ -34,7 +66,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	}
 
 	// GPU memory management
-	cudaSetDevice(0);
+	#if DEVICE_ID == 1
+		ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
+		cudaSetDevice(1);
+	#else
+		cudaSetDevice(0);
+	#endif
 
 	size_t GPU_free_mem, GPU_total_meml;
 	cudaMemGetInfo(&GPU_free_mem, &GPU_total_meml);
@@ -44,11 +81,42 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	eslocal DOFs_GPU = 0;
 	eslocal DOFs_CPU = 0;
 
-	eslocal SC_total_size = 0;
+	size_t SC_total_size = 0;
 	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		switch (config::solver::SCHUR_COMPLEMENT_TYPE) {
 		case config::solver::SCHUR_COMPLEMENT_TYPEalternative::GENERAL:
+#ifdef SHARE_SC
+			// SC_total_size will be halved in the case of 2 symmetric SCs in 1 full matrix
+			if (d%2 == 0) {
+				eslocal sc1_rows = domains[d].B1_comp_dom.rows;
+				eslocal sc2_rows = 0;
+				eslocal SC_size = 0;
+				eslocal vec_size = domains[d].B1_comp_dom.rows;
+
+				if(d+1 < domains_in_global_index.size()) {
+					sc2_rows = domains[d+1].B1_comp_dom.rows;
+					vec_size += domains[d+1].B1_comp_dom.rows;
+				}
+
+				if(sc1_rows > sc2_rows) {
+					SC_size = sc1_rows * sc1_rows;
+//					vec_size = sc1_rows;
+				} else if(sc1_rows == sc2_rows) {
+					SC_size = sc1_rows * sc2_rows;
+//					vec_size = sc1_rows;
+				} else { // sc1_rows < sc2_rows
+					SC_size = sc2_rows * sc2_rows;
+//					vec_size = sc2_rows;
+				}
+
+				if (USE_FLOAT) {
+					SC_total_size += (SC_size + 2 * vec_size) * sizeof(float);
+				} else {
+					SC_total_size += (SC_size + 2 * vec_size) * sizeof(double);
+				}
+			}
+#else
 			if (USE_FLOAT) {
 				SC_total_size +=
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
@@ -60,6 +128,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 						  2 * domains[d].B1_comp_dom.rows
 						) * sizeof(double);
 			}
+#endif
 			break;
 		case config::solver::SCHUR_COMPLEMENT_TYPEalternative::SYMMETRIC:
 			if (USE_FLOAT) {
@@ -115,15 +184,139 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 	// Schur complement calculation on CPU
-	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+//	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+//		if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
+//			// Calculates SC on CPU and keeps it CPU memory
+//			GetSchurComplement(USE_FLOAT, d);
+//			ESINFO(PROGRESS2) << Info::plain() << ".";
+//		}
+//	}
+
+
+#ifdef SHARE_SC
+	SEQ_VECTOR <eslocal> SC_dense_val_offsets(domains_in_global_index.size(), 0);
+
+	// 2 domains per iteration processed
+	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
+
 		if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d);
 			ESINFO(PROGRESS2) << Info::plain() << ".";
+
+			// Set if Upper or Lower part is referenced
+			domains[d].B1Kplus.uplo = 'U';
+
+			// Set the default lda
+			domains[d].B1Kplus.extern_lda = domains[d].B1Kplus.rows;
+		}
+
+		if (d+1 < domains_in_global_index.size() && (domains[d+1].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS)) {
+			// Calculates SC on CPU and keeps it CPU memory
+			GetSchurComplement(USE_FLOAT, d+1);
+			ESINFO(PROGRESS2) << Info::plain() << ".";
+
+			eslocal sc1_rows = domains[d].B1Kplus.rows;
+			eslocal sc2_rows = domains[d+1].B1Kplus.rows;
+
+			// Set if Upper or Lower part is referenced
+			domains[d+1].B1Kplus.uplo = 'L';
+
+			// Both SCs stored in the first domain [d]
+			if(sc1_rows > sc2_rows) {
+				// First SC -> U
+				if (USE_FLOAT) {
+					for(eslocal r = 0; r < sc2_rows; r++) {
+						std::copy(&domains[d+1].B1Kplus.dense_values_fl[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values_fl[(r+1) *sc2_rows],
+						 &domains[d].B1Kplus.dense_values_fl[r*sc1_rows + r+1]);
+					}
+				} else {
+					for(eslocal r = 0; r < sc2_rows; r++) {
+						std::copy(&domains[d+1].B1Kplus.dense_values[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values[(r+1) *sc2_rows],
+						 &domains[d].B1Kplus.dense_values[r*sc1_rows + r+1]);
+					}
+				}
+
+				SC_dense_val_offsets[d] = 0;
+				SC_dense_val_offsets[d+1] = 1;
+
+				domains[d+1].B1Kplus.extern_lda = sc1_rows;
+
+			} else if(sc1_rows == sc2_rows) {
+				// First SC -> U
+				if (USE_FLOAT) {
+					SEQ_VECTOR <float> sc1_tmp_fl(sc1_rows * (sc1_rows + 1));
+
+					for(eslocal r = 0; r < sc1_rows; r++) {
+						std::copy(&domains[d+1].B1Kplus.dense_values_fl[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values_fl[(r+1) *sc2_rows],
+						 &sc1_tmp_fl[r*sc1_rows + r]);
+						std::copy(&domains[d].B1Kplus.dense_values_fl[r*sc1_rows], &domains[d].B1Kplus.dense_values_fl[r*sc1_rows + r+1],
+						 &sc1_tmp_fl[(r+1)*sc1_rows]);
+					}
+					domains[d].B1Kplus.dense_values_fl.swap(sc1_tmp_fl);
+				} else {
+					SEQ_VECTOR <double> sc1_tmp(sc1_rows * (sc1_rows + 1));
+
+					for(eslocal r = 0; r < sc1_rows; r++) {
+						std::copy(&domains[d+1].B1Kplus.dense_values[r*sc2_rows + r], &domains[d+1].B1Kplus.dense_values[(r+1) *sc2_rows],
+						 &sc1_tmp[r*sc1_rows + r]);
+						std::copy(&domains[d].B1Kplus.dense_values[r*sc1_rows], &domains[d].B1Kplus.dense_values[r*sc1_rows + r+1],
+						 &sc1_tmp[(r+1)*sc1_rows]);
+					}
+					domains[d].B1Kplus.dense_values.swap(sc1_tmp);
+				}
+
+				SC_dense_val_offsets[d] = sc1_rows;
+				SC_dense_val_offsets[d+1] = 0;
+
+				domains[d].B1Kplus.extern_lda = sc1_rows;
+				domains[d+1].B1Kplus.extern_lda = sc2_rows;
+
+			} else { // sc1_rows < sc2_rows
+				// First SC -> U
+				if (USE_FLOAT) {
+					for(eslocal r = 0; r < sc1_rows; r++) {
+						std::copy(&domains[d].B1Kplus.dense_values_fl[r*sc1_rows], &domains[d].B1Kplus.dense_values_fl[r*sc1_rows + r + 1],
+						 &domains[d+1].B1Kplus.dense_values_fl[(r+1)*sc2_rows]);
+					}
+					domains[d].B1Kplus.dense_values_fl = std::move(domains[d+1].B1Kplus.dense_values_fl);
+				} else {
+					for(eslocal r = 0; r < sc1_rows; r++) {
+						std::copy(&domains[d].B1Kplus.dense_values[r*sc1_rows], &domains[d].B1Kplus.dense_values[r*sc1_rows + r + 1],
+						 &domains[d+1].B1Kplus.dense_values[(r+1)*sc2_rows]);
+//						std::copy(&domains[d].B1Kplus.dense_values[r*sc1_rows + r], &domains[d].B1Kplus.dense_values[(r+1) *sc1_rows],
+//						 &domains[d+1].B1Kplus.dense_values[r*sc2_rows + r+1]);
+					}
+					domains[d].B1Kplus.dense_values = std::move(domains[d+1].B1Kplus.dense_values);
+				}
+
+				SC_dense_val_offsets[d] = sc2_rows;
+				SC_dense_val_offsets[d+1] = 0;
+
+				domains[d].B1Kplus.extern_lda = sc2_rows;
+				domains[d+1].B1Kplus.extern_lda = sc2_rows;
+			}
 		}
 	}
+
+	if (USE_FLOAT){
+		SC_dense_val_orig_fl.resize(domains_in_global_index.size());
+	} else {
+		SC_dense_val_orig.resize(domains_in_global_index.size());
+	}
+#else
+	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+			if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
+				// Calculates SC on CPU and keeps it CPU memory
+				GetSchurComplement(USE_FLOAT, d);
+				ESINFO(PROGRESS2) << Info::plain() << ".";
+			}
+		}
+#endif
+
 	ESINFO(PROGRESS2) << Info::plain() << "\n";
 
+	CreateCudaStreamPool();
 
 	// SC transfer to GPU - now sequential
 	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
@@ -135,40 +328,139 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			// Calculates SC on CPU and keeps it CPU memory
 			//GetSchurComplement(USE_FLOAT, d);
 
-			if (USE_FLOAT){
-				status = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
-			} else {
-				status = domains[d].B1Kplus.CopyToCUDA_Dev();
-			}
 
+			// TODO Test performance (same streams)
+			// Assign CUDA stream from he pool
+			domains[d].B1Kplus.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
+
+#ifdef SHARE_SC
 			if (USE_FLOAT){
+				if(d%2==0) {
+					status = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
+
+					// Backup original pointer for freeing
+					SC_dense_val_orig_fl[d] = domains[d].B1Kplus.d_dense_values_fl;
+
+					// Add the specific offset for the device memory
+					domains[d].B1Kplus.d_dense_values_fl += SC_dense_val_offsets[d];
+				} else {
+					// Allocate GPU memory only for vectors
+					status = domains[d].B1Kplus.MallocVecsOnCUDA_Dev_fl();
+
+					// Backup original pointer for freeing
+					SC_dense_val_orig_fl[d] = NULL;
+
+					// Set the pointer to the device memory of the previous domain with the specific offset
+					domains[d].B1Kplus.d_dense_values_fl = domains[d-1].B1Kplus.d_dense_values_fl - SC_dense_val_offsets[d-1] + SC_dense_val_offsets[d];
+				}
+
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
 				if (status_c != cudaSuccess) {
 					ESINFO(ERROR) << "Error allocating pinned host memory";
 					status = -1;
 				}
 			} else {
+				if(d%2==0) {
+					status = domains[d].B1Kplus.CopyToCUDA_Dev();
+
+					// Backup original pointer for freeing
+					SC_dense_val_orig[d] = domains[d].B1Kplus.d_dense_values;
+
+					// Add the specific offset for the device memory;
+					domains[d].B1Kplus.d_dense_values += SC_dense_val_offsets[d];
+
+				} else {
+					// Allocate GPU memory only for vectors
+					status = domains[d].B1Kplus.MallocVecsOnCUDA_Dev();
+
+					// Backup original pointer for freeing
+					SC_dense_val_orig[d] = NULL;
+
+					// Set the pointer to the device memory of the previous domain with the specific offset
+					domains[d].B1Kplus.d_dense_values = domains[d-1].B1Kplus.d_dense_values - SC_dense_val_offsets[d-1] + SC_dense_val_offsets[d];
+				}
+
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
 				if (status_c != cudaSuccess) {
 					ESINFO(ERROR) << "Error allocating pinned host memory";
 					status = -1;
 				}
 			}
+#else
+			if (USE_FLOAT){
+				status = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
+
+				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
+				if (status_c != cudaSuccess) {
+					ESINFO(ERROR) << "Error allocating pinned host memory";
+					status = -1;
+				}
+			} else {
+				status = domains[d].B1Kplus.CopyToCUDA_Dev();
+
+				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
+				if (status_c != cudaSuccess) {
+					ESINFO(ERROR) << "Error allocating pinned host memory";
+					status = -1;
+				}
+			}
+#endif
 
 			if (status == 0) {
-
-				SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
-				SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 				domains[d].Kplus.keep_factors = false;
 
-				if (USE_FLOAT)
-					ESINFO(PROGRESS2) << Info::plain() << "g";
-				else
-					ESINFO(PROGRESS2) << Info::plain() << "G";
+				if (USE_FLOAT) {
+					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
+					ESINFO(PROGRESS2) << Info::plain() << "g";
+				} else {
+					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
+
+					ESINFO(PROGRESS2) << Info::plain() << "G";
+				}
 			} else {
 
 				domains[d].isOnACC = 0;
+				domains_on_CPU++;
+				domains_on_GPU--;
+				DOFs_CPU += domains[d].K.rows;
+				DOFs_GPU -= domains[d].K.rows;
+
+				domains[d].B1Kplus.ClearCUDA_Stream();
+
+#ifdef SHARE_SC
+				if(domains[d].B1Kplus.USE_FLOAT) {
+					// Return the original pointer from backup
+					domains[d].B1Kplus.d_dense_values_fl = SC_dense_val_orig_fl[d];
+
+					domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
+				} else {
+					// Return the original pointer from backup
+					domains[d].B1Kplus.d_dense_values = SC_dense_val_orig[d];
+
+					domains[d].B1Kplus.FreeFromCUDA_Dev();
+				}
+
+				if(d%2 == 0 && d+1 < domains_in_global_index.size()) {
+					domains[d+1].isOnACC = 0;
+					domains_on_CPU++;
+					domains_on_GPU--;
+					DOFs_CPU += domains[d].K.rows;
+					DOFs_GPU -= domains[d].K.rows;
+				}
+#else
+				if(domains[d].B1Kplus.USE_FLOAT) {
+					domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
+				} else {
+					domains[d].B1Kplus.FreeFromCUDA_Dev();
+				}
+#endif
+
+				if(domains[d].B1Kplus.USE_FLOAT) {
+					cudaFreeHost(domains[d].cuda_pinned_buff_fl);
+				} else {
+					cudaFreeHost(domains[d].cuda_pinned_buff);
+				}
 
 				if (config::solver::COMBINE_SC_AND_SPDS) {
 
@@ -186,9 +478,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 						ESINFO(PROGRESS2) << Info::plain() << "c";
 					else
 						ESINFO(PROGRESS2) << Info::plain() << "C";
-
 				}
-
 			}
 
 		} else {
@@ -213,10 +503,11 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 		}
 
-
+//		ESINFO(PROGRESS2) << Info::plain() << " Domain: " << d << " GPU : " << domains[d].isOnACC << "\n";
 	}
 
-
+	ESINFO(PROGRESS2) << Info::plain() << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
+	ESINFO(PROGRESS2) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
 
 //	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 //
@@ -311,7 +602,7 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
 //		tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 //	}
 
-	tmpsps.Create_SC_w_Mat( domains[i].K, TmpB, domains[i].B1Kplus, false, 0 );
+	tmpsps.Create_SC_w_Mat( domains[i].K, TmpB, domains[i].B1Kplus, false, 0 ); // general
 
 	if (USE_FLOAT){
 		domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
@@ -804,4 +1095,28 @@ void ClusterGPU::multKplus_HF_Loop2_MIX (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in)
 	}
 	 loop_2_1_time.end();
 
+}
+
+void ClusterGPU::CreateCudaStreamPool() {
+#ifdef STREAM_NUM
+	if (cuda_stream_pool.size() < STREAM_NUM) {
+
+		DestroyCudaStreamPool();
+
+		cuda_stream_pool.resize(STREAM_NUM);
+
+		for(eslocal i = 0; i < STREAM_NUM; i++) {
+			cudaStreamCreate(&cuda_stream_pool[i]);
+		}
+		ESINFO(VERBOSE_LEVEL3) << "CUDA stream pool created with " << STREAM_NUM << " streams per cluster";
+	}
+#endif
+}
+
+void ClusterGPU::DestroyCudaStreamPool() {
+	for(eslocal i = 0; i < cuda_stream_pool.size(); i++) {
+		cudaStreamDestroy(cuda_stream_pool[i]);
+	}
+
+	SEQ_VECTOR <cudaStream_t>().swap(cuda_stream_pool);
 }

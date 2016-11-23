@@ -60,16 +60,18 @@ public:
 	eslocal  nnz;		// number of non zero elements
 	char type;		// 'G' for general or 'S' for symmetric
 	MatrixType mtype;
+	char uplo; 		// 'L' for lower or 'U' for upper
+	eslocal extern_lda; // leading dimension of the array holding 2 SCs in the device memory
 
 	// Sparse COO data
 	SEQ_VECTOR <eslocal>	I_row_indices;
 	SEQ_VECTOR <eslocal>	J_col_indices;
-	SEQ_VECTOR <double> V_values;
+	SEQ_VECTOR <double> 	V_values;
 
 	// Sparse CSR data
 	SEQ_VECTOR <eslocal>	CSR_I_row_indices;
 	SEQ_VECTOR <eslocal>	CSR_J_col_indices;
-	SEQ_VECTOR <double> CSR_V_values;
+	SEQ_VECTOR <double> 	CSR_V_values;
 
 	// Dense data
 	SEQ_VECTOR <double> 	dense_values;
@@ -128,6 +130,8 @@ public:
 	void DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index);
 
 	void DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index );
+//	void DenseMatVecCUDA_shared_wo_Copy_start(double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal extren_rows, eslocal extern_lda, eslocal dense_val_offset, char U_for_upper_L_for_lower);
+	void DenseMatVecCUDA_shared_wo_Copy_start(double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index);
 	void DenseMatVecCUDA_wo_Copy_sync ( );
 
 	void DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index );
@@ -139,11 +143,19 @@ public:
 
 	eslocal MallocOnCUDA_Dev (  );
 	eslocal MallocOnCUDA_Dev_fl (  );
+	eslocal MallocVecsOnCUDA_Dev ( );
+	eslocal MallocVecsOnCUDA_Dev_fl ( );
 
 	void CopyFromCUDA_Dev();
 
 	void FreeFromCUDA_Dev();
 	void FreeFromCUDA_Dev_fl();
+	void FreeVecsFromCUDA_Dev();
+	void FreeVecsFromCUDA_Dev_fl();
+
+	void SetCUDA_Stream(cudaStream_t & in_stream);
+	void ClearCUDA_Stream();
+	const char * _cudaGetErrorEnum(cublasStatus_t error);
 
 	void MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out);
 	void MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose);

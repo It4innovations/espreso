@@ -2,6 +2,8 @@
 
 using namespace espreso;
 
+//#define SHARE_SC
+
 // *** Action of K+ routines *********************************************
 
 void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
@@ -297,10 +299,45 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 				}
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start (cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
-			}
-		}
 
+#ifdef SHARE_SC
+				cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
+#else
+				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
+#endif
+			}
+
+//			if (cluster.domains[d].isOnACC == 1 && d%2 == 0) {
+//				for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
+//					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+//				}
+//
+////				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
+//
+//				eslocal sc1_rows = cluster.domains[d].B1Kplus.rows;
+//				eslocal sc2_rows = 0;
+//
+//				if(d+1 < cluster.domains.size()) {
+//					for (eslocal i = 0; i < cluster.domains[d+1].lambda_map_sub_local.size(); i++) {
+//						cluster.domains[d+1].cuda_pinned_buff[i] = x_in[ cluster.domains[d+1].lambda_map_sub_local[i]];
+//					}
+//					sc2_rows = cluster.domains[d+1].B1Kplus.rows;
+//				}
+//
+//				if(sc1_rows > sc2_rows) {
+//					cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff, 'N', 0, sc1_rows, sc1_rows, 0, 'U');
+//					if(sc2_rows > 0) {
+//						cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d+1].cuda_pinned_buff, cluster.domains[d+1].cuda_pinned_buff, 'N', 0, sc2_rows, sc1_rows, 1, 'L');
+//					}
+//				} else if(sc1_rows == sc2_rows) {
+//					cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff, 'N', 0, sc1_rows, sc1_rows, sc1_rows, 'U');
+//					cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d+1].cuda_pinned_buff, cluster.domains[d+1].cuda_pinned_buff, 'N', 0, sc2_rows, sc2_rows, 0, 'L');
+//				} else { // sc1_rows < sc2_rows
+//					cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff, 'N', 0, sc1_rows, sc2_rows, 1, 'L');
+//					cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d+1].cuda_pinned_buff, cluster.domains[d+1].cuda_pinned_buff, 'N', 0, sc2_rows, sc2_rows, 0, 'U');
+//				}
+//			}
+		}
 	}
 
 

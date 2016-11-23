@@ -81,6 +81,7 @@ public:
 	SparseMatrix B1t_comp_dom;
 	SEQ_VECTOR <eslocal> lambda_map_sub_local;
 
+//	SparseSolverAcc Kplus;
 	SparseSolverCPU Kplus;
 
 	SparseSolverCPU KplusF;

@@ -21,6 +21,7 @@ public:
 	// Constructor
 	ClusterGPU(eslocal cluster_index): ClusterBase(cluster_index) {};
 	ClusterGPU(): ClusterBase() {};
+	~ClusterGPU();
 
 	void Create_SC_perDomain( bool USE_FLOAT );
 	void GetSchurComplement( bool USE_FLOAT, eslocal i );
@@ -42,6 +43,15 @@ public:
 	void multKplus_HF_Loop2_SPDS (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
 	void multKplus_HF_Loop2_MIX  (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
 
+	void CreateCudaStreamPool();
+	void DestroyCudaStreamPool();
+
+	SEQ_VECTOR <cudaStream_t> cuda_stream_pool;
+
+#ifdef SHARE_SC
+	SEQ_VECTOR <double *> SC_dense_val_orig;
+	SEQ_VECTOR <float *> SC_dense_val_orig_fl;
+#endif
 };
 
 }

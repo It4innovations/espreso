@@ -159,6 +159,8 @@ SparseMatrix::SparseMatrix() {
 	rows = 0;
 	type = 0;
 	mtype = MatrixType::REAL_UNSYMMETRIC;
+	uplo = 0;
+	extern_lda = 0;
 
 	USE_FLOAT = false;
 
@@ -547,6 +549,8 @@ void SparseMatrix::Clear() {
 	cols = 0;
 	nnz  = 0;
 	type = 0;
+	uplo = 0;
+	extern_lda = 0;
 
 	I_row_indices.clear();
 	J_col_indices.clear();
@@ -1324,150 +1328,6 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 #endif
 }
 
-void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
-#ifdef CUDA
-	cudaStreamSynchronize(stream);
-#endif
-}
-
-
-eslocal SparseMatrix::MallocOnCUDA_Dev ( ) {
-	eslocal error = 0;
-#ifdef CUDA
-
-	eslocal mat_size;
-
-	if (dense_values.size() > 0) {
-		mat_size = dense_values.size();
-	} else {
-		if (rows > 0 && cols > 0) {
-			if (type == 'G') {
-				mat_size = rows * cols;
-			} else {
-				mat_size = ((rows + 1) * cols) / 2;
-			}
-		} else {
-			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
-			exit(0);
-		}
-	}
-
-	if (d_dense_values != NULL) {
-		FreeFromCUDA_Dev();
-	}
-
-	cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
-	if (status != cudaSuccess)   {
-		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
-		//MPI_Finalize();
-		//exit(0);
-		error = -1;
-	}
-
-	status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
-	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
-		//MPI_Finalize();
-		//exit(0);
-		error = -1;
-		}
-
-	status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
-	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
-		//MPI_Finalize();
-		//exit(0);
-		error = -1;
-	}
-
-	cublasCreate(&handle);
-	cudaStreamCreate(&stream);
-	cublasSetStream(handle, stream);
-
-#endif
-	return error;
-}
-
-
-eslocal SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
-	eslocal error = 0;
-#ifdef CUDA
-
-	eslocal mat_size;
-
-	if (dense_values_fl.size() > 0) {
-		mat_size = dense_values_fl.size();
-	} else {
-		if (rows > 0 && cols > 0) {
-			if (type == 'G') {
-				mat_size = rows * cols;
-			} else {
-				mat_size = ((rows + 1) * cols) / 2;
-			}
-		} else {
-			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
-			exit(0);
-		}
-	}
-
-	if (d_dense_values_fl != NULL) {
-		FreeFromCUDA_Dev_fl();
-	}
-
-	cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
-	if (status != cudaSuccess)   {
-		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
-		//MPI_Finalize();
-		//exit(0);
-		error = -1;
-	}
-
-
-	status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
-	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
-		//MPI_Finalize();
-		//exit(0);
-		error = -1;
-	}
-
-
-	status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
-	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
-		//MPI_Finalize();
-		//exit(0);
-		error = -1;
-	}
-
-	cublasCreate(&handle);
-	cudaStreamCreate(&stream);
-	cublasSetStream(handle, stream);
-
-#endif
-	return error;
-}
-
-
-eslocal SparseMatrix::CopyToCUDA_Dev( ) {
-	eslocal error = 0;
-
-#ifdef CUDA
-
-	if ( d_dense_values == NULL ) {
-		error = MallocOnCUDA_Dev();
-	}
-
-	cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
-
-#endif
-
-	return error;
-
-}
-
-
-
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
@@ -1531,6 +1391,371 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 #endif
 }
 
+
+//void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal extern_rows, eslocal extern_lda, eslocal dense_val_offset, char U_for_upper_L_for_lower) {
+//#ifdef CUDA
+//
+//	cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
+//
+//	if ( d_dense_values == NULL ) {
+//		CopyToCUDA_Dev ( );
+//	}
+//
+//	// Set input matrices on device
+//	cudaError_t status = cudaMemcpyAsync(d_x_in, x_in, extern_rows * sizeof(double), cudaMemcpyHostToDevice, stream);
+//	if (status != cudaSuccess)   {
+//		ESINFO(ERROR) << "Error during host to device copy";
+//		MPI_Finalize();
+//		exit(0);
+//	}
+//
+//	double alpha = 1.0;
+//	double beta  = 0.0;
+//
+//	if (type == 'G') {
+//		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+//			ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for General transposed matrix not implemented yet";
+//			exit(1);
+//		} else {
+//			if(U_for_upper_L_for_lower == 'U') {
+//				cublas_status = cublasDsymv(handle,
+//					CUBLAS_FILL_MODE_UPPER,
+//					extern_rows, &alpha,
+//					d_dense_values + dense_val_offset, extern_lda,
+//					d_x_in, 1,
+//					&beta, d_y_out, 1);
+//			} else {
+//				cublas_status = cublasDsymv(handle,
+//					CUBLAS_FILL_MODE_LOWER,
+//					extern_rows, &alpha,
+//					d_dense_values + dense_val_offset, extern_lda,
+//					d_x_in, 1,
+//					&beta, d_y_out, 1);
+//			}
+//		}
+//	}
+//
+//	if (type == 'S') {
+//
+//		ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for Symmetric matrix not implemented yet";
+//		exit(1);
+//
+////		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+////
+////		} else {
+////
+////		}
+//	}
+//
+//	if (cublas_status != CUBLAS_STATUS_SUCCESS)   {
+//		ESINFO(ERROR) << "Error during cublas DenseMatVec";
+//		MPI_Finalize();
+//		exit(0);
+//	}
+//
+//
+//	// Retrieve result vector from device
+//	status = cudaMemcpyAsync(y_out, d_y_out, extern_rows * sizeof(double), cudaMemcpyDeviceToHost, stream);
+//	if (status != cudaSuccess)   {
+//		ESINFO(ERROR) << "Error during device to host copy";
+//		MPI_Finalize();
+//		exit(0);
+//	}
+//
+//#endif
+//}
+
+void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
+#ifdef CUDA
+
+	cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
+
+	if ( d_dense_values == NULL ) {
+		CopyToCUDA_Dev ( );
+	}
+
+	// Set input matrices on device
+	cudaError_t status = cudaMemcpyAsync(d_x_in, x_in, rows * sizeof(double), cudaMemcpyHostToDevice, stream);
+	if (status != cudaSuccess)   {
+		ESINFO(ERROR) << "Error " << cudaGetErrorString(status) << " during host to device copy";
+		MPI_Finalize();
+		exit(0);
+	}
+
+	double alpha = 1.0;
+	double beta  = 0.0;
+
+	if (type == 'G') {
+		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+			ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for General transposed matrix not implemented yet";
+			exit(1);
+		} else {
+			if(uplo == 'U') {
+				cublas_status = cublasDsymv(handle,
+					CUBLAS_FILL_MODE_UPPER,
+					rows, &alpha,
+					d_dense_values, extern_lda,
+					d_x_in, 1,
+					&beta, d_y_out, 1);
+			} else {
+				cublas_status = cublasDsymv(handle,
+					CUBLAS_FILL_MODE_LOWER,
+					rows, &alpha,
+					d_dense_values, extern_lda,
+					d_x_in, 1,
+					&beta, d_y_out, 1);
+			}
+		}
+	}
+
+	if (type == 'S') {
+
+		ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for Symmetric matrix not implemented yet";
+		exit(1);
+
+//		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
+//
+//		} else {
+//
+//		}
+	}
+
+	if (cublas_status != CUBLAS_STATUS_SUCCESS)   {
+		ESINFO(ERROR) << "Error " << _cudaGetErrorEnum(cublas_status) << " during cublas DenseMatVec";
+		MPI_Finalize();
+		exit(0);
+	}
+
+
+	// Retrieve result vector from device
+	status = cudaMemcpyAsync(y_out, d_y_out, rows * sizeof(double), cudaMemcpyDeviceToHost, stream);
+	if (status != cudaSuccess)   {
+		ESINFO(ERROR) << "Error during device to host copy";
+		MPI_Finalize();
+		exit(0);
+	}
+
+#endif
+}
+
+void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
+#ifdef CUDA
+	cudaStreamSynchronize(stream);
+#endif
+}
+
+
+eslocal SparseMatrix::MallocOnCUDA_Dev ( ) {
+	eslocal error = 0;
+#ifdef CUDA
+
+	eslocal mat_size;
+
+	if (dense_values.size() > 0) {
+		mat_size = dense_values.size();
+	} else {
+		if (rows > 0 && cols > 0) {
+			if (type == 'G') {
+				mat_size = rows * cols;
+			} else {
+				mat_size = ((rows + 1) * cols) / 2;
+			}
+		} else {
+			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
+			exit(0);
+		}
+	}
+
+	if (d_dense_values != NULL) {
+		FreeFromCUDA_Dev();
+	}
+
+	cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
+	if (status != cudaSuccess)   {
+		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+		}
+
+	status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	if (handle == NULL)
+		cublasCreate(&handle);
+	if(stream == NULL){
+		cudaStreamCreate(&stream);
+		cublasSetStream(handle, stream);
+	}
+
+#endif
+	return error;
+}
+
+
+eslocal SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
+	eslocal error = 0;
+#ifdef CUDA
+
+	eslocal mat_size;
+
+	if (dense_values_fl.size() > 0) {
+		mat_size = dense_values_fl.size();
+	} else {
+		if (rows > 0 && cols > 0) {
+			if (type == 'G') {
+				mat_size = rows * cols;
+			} else {
+				mat_size = ((rows + 1) * cols) / 2;
+			}
+		} else {
+			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
+			exit(0);
+		}
+	}
+
+	if (d_dense_values_fl != NULL) {
+		FreeFromCUDA_Dev_fl();
+	}
+
+	cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
+	if (status != cudaSuccess)   {
+		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+
+	status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+
+	status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	if (handle == NULL)
+		cublasCreate(&handle);
+	if(stream == NULL){
+		cudaStreamCreate(&stream);
+		cublasSetStream(handle, stream);
+	}
+
+#endif
+	return error;
+}
+
+eslocal SparseMatrix::MallocVecsOnCUDA_Dev ( ) {
+	eslocal error = 0;
+#ifdef CUDA
+
+	if (d_x_in != NULL || d_y_out != NULL) {
+		FreeVecsFromCUDA_Dev();
+	}
+
+	cudaError_t status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	if (handle == NULL)
+		cublasCreate(&handle);
+	if(stream == NULL){
+		cudaStreamCreate(&stream);
+		cublasSetStream(handle, stream);
+	}
+
+#endif
+	return error;
+}
+
+eslocal SparseMatrix::MallocVecsOnCUDA_Dev_fl ( ) {
+	eslocal error = 0;
+#ifdef CUDA
+
+	if (d_x_in_fl != NULL || d_y_out_fl != NULL) {
+		FreeVecsFromCUDA_Dev_fl();
+	}
+
+	cudaError_t status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
+	if (status != cudaSuccess) {
+		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		//MPI_Finalize();
+		//exit(0);
+		error = -1;
+	}
+
+	if (handle == NULL)
+		cublasCreate(&handle);
+	if(stream == NULL){
+		cudaStreamCreate(&stream);
+		cublasSetStream(handle, stream);
+	}
+
+#endif
+	return error;
+}
+
+
+eslocal SparseMatrix::CopyToCUDA_Dev( ) {
+	eslocal error = 0;
+
+#ifdef CUDA
+
+	if ( d_dense_values == NULL ) {
+		error = MallocOnCUDA_Dev();
+	}
+
+	cudaMemcpy(d_dense_values, &dense_values[0], dense_values.size() * sizeof(double), cudaMemcpyHostToDevice);
+
+#endif
+
+	return error;
+}
+
+
 eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 	eslocal error = 0;
 #ifdef CUDA
@@ -1544,11 +1769,7 @@ eslocal SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 #endif
 
 	return error;
-
 }
-
-
-
 
 
 void SparseMatrix::CopyFromCUDA_Dev() {
@@ -1558,35 +1779,106 @@ void SparseMatrix::CopyFromCUDA_Dev() {
 #endif
 }
 
+
 void SparseMatrix::FreeFromCUDA_Dev() {
 #ifdef CUDA
-
-	cudaFree(d_dense_values);
-	cudaFree(d_x_in);
-	cudaFree(d_y_out);
+	cudaError_t status = cudaFree(d_dense_values);
+	status = cudaFree(d_x_in);
+	status = cudaFree(d_y_out);
 
 	d_dense_values = NULL;
+	d_x_in = NULL;
+	d_y_out = NULL;
+
+	if(stream != NULL){
+		status = cudaStreamDestroy(stream);
+		stream = NULL;
+	}
 
 	cublasDestroy(handle);
-	cudaStreamDestroy(stream);
+	handle = NULL;
 
 #endif
 }
+
 
 void SparseMatrix::FreeFromCUDA_Dev_fl() {
 #ifdef CUDA
 
-	cudaFree(d_dense_values_fl);
-	cudaFree(d_x_in_fl);
-	cudaFree(d_y_out_fl);
+	cudaError_t status = cudaFree(d_dense_values_fl);
+	status = cudaFree(d_x_in_fl);
+	status = cudaFree(d_y_out_fl);
 
 	d_dense_values_fl = NULL;
+	d_x_in_fl = NULL;
+	d_y_out_fl = NULL;
+
+	if(stream != NULL) {
+		status = cudaStreamDestroy(stream);
+		stream = NULL;
+	}
 
 	cublasDestroy(handle);
-	cudaStreamDestroy(stream);
-
+	handle = NULL;
 #endif
 }
+
+
+void SparseMatrix::FreeVecsFromCUDA_Dev() {
+#ifdef CUDA
+	cudaError_t status = cudaFree(d_x_in);
+	status = cudaFree(d_y_out);
+
+	d_x_in = NULL;
+	d_y_out = NULL;
+
+	if(stream != NULL) {
+		status = cudaStreamDestroy(stream);
+		stream = NULL;
+	}
+
+	cublasDestroy(handle);
+	handle = NULL;
+#endif
+}
+
+
+void SparseMatrix::FreeVecsFromCUDA_Dev_fl() {
+#ifdef CUDA
+	cudaError_t status = cudaFree(d_x_in_fl);
+	status = cudaFree(d_y_out_fl);
+
+	d_x_in_fl = NULL;
+	d_y_out_fl = NULL;
+
+	if(stream != NULL) {
+		status = cudaStreamDestroy(stream);
+		stream = NULL;
+	}
+
+	cublasDestroy(handle);
+	handle = NULL;
+#endif
+}
+
+
+void SparseMatrix::SetCUDA_Stream(cudaStream_t & in_stream) {
+#ifdef CUDA
+	stream = in_stream;
+	if (handle == NULL) {
+		cublasCreate(&handle);
+	}
+	cublasSetStream(handle, in_stream);
+#endif
+}
+
+
+void SparseMatrix::ClearCUDA_Stream() {
+#ifdef CUDA
+	stream = NULL;
+#endif
+}
+
 
 void SparseMatrix::RemoveLowerDense( ) {
 
@@ -5229,5 +5521,42 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 #endif
 } //get_kernels_from_nonsym_K
 
+const char * SparseMatrix::_cudaGetErrorEnum(cublasStatus_t error)
+{
+    switch (error)
+    {
+        case CUBLAS_STATUS_SUCCESS:
+            return "CUBLAS_STATUS_SUCCESS";
+
+        case CUBLAS_STATUS_NOT_INITIALIZED:
+            return "CUBLAS_STATUS_NOT_INITIALIZED";
+
+        case CUBLAS_STATUS_ALLOC_FAILED:
+            return "CUBLAS_STATUS_ALLOC_FAILED";
+
+        case CUBLAS_STATUS_INVALID_VALUE:
+            return "CUBLAS_STATUS_INVALID_VALUE";
+
+        case CUBLAS_STATUS_ARCH_MISMATCH:
+            return "CUBLAS_STATUS_ARCH_MISMATCH";
+
+        case CUBLAS_STATUS_MAPPING_ERROR:
+            return "CUBLAS_STATUS_MAPPING_ERROR";
+
+        case CUBLAS_STATUS_EXECUTION_FAILED:
+            return "CUBLAS_STATUS_EXECUTION_FAILED";
+
+        case CUBLAS_STATUS_INTERNAL_ERROR:
+            return "CUBLAS_STATUS_INTERNAL_ERROR";
+
+        case CUBLAS_STATUS_NOT_SUPPORTED:
+            return "CUBLAS_STATUS_NOT_SUPPORTED";
+
+        case CUBLAS_STATUS_LICENSE_ERROR:
+            return "CUBLAS_STATUS_LICENSE_ERROR";
+    }
+
+    return "<unknown>";
 }
 
+}

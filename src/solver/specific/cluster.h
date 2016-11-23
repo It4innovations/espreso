@@ -123,7 +123,7 @@ public:
 	SparseMatrix F0_Mat;
 	SparseMatrix B0Kplus;
 
-	SparseSolverAcc F0;
+	SparseSolverCPU F0;
 	SparseSolverCPU F0_fast;
 
 	SparseSolverCPU Sa;
