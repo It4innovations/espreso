@@ -1862,22 +1862,21 @@ void SparseMatrix::FreeVecsFromCUDA_Dev_fl() {
 }
 
 
-void SparseMatrix::SetCUDA_Stream(cudaStream_t & in_stream) {
 #ifdef CUDA
+void SparseMatrix::SetCUDA_Stream(cudaStream_t & in_stream) {
 	stream = in_stream;
 	if (handle == NULL) {
 		cublasCreate(&handle);
 	}
 	cublasSetStream(handle, in_stream);
-#endif
 }
 
 
 void SparseMatrix::ClearCUDA_Stream() {
-#ifdef CUDA
 	stream = NULL;
-#endif
+
 }
+#endif
 
 
 void SparseMatrix::RemoveLowerDense( ) {
@@ -5521,6 +5520,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 #endif
 } //get_kernels_from_nonsym_K
 
+#ifdef CUDA
 const char * SparseMatrix::_cudaGetErrorEnum(cublasStatus_t error)
 {
     switch (error)
@@ -5558,5 +5558,6 @@ const char * SparseMatrix::_cudaGetErrorEnum(cublasStatus_t error)
 
     return "<unknown>";
 }
+#endif
 
 }

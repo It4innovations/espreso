@@ -94,6 +94,10 @@ public:
 #ifdef CUDA
 	cublasHandle_t handle;
 	cudaStream_t stream;
+
+	void SetCUDA_Stream(cudaStream_t & in_stream);
+	void ClearCUDA_Stream();
+	const char * _cudaGetErrorEnum(cublasStatus_t error);
 #endif
 
 
@@ -152,10 +156,6 @@ public:
 	void FreeFromCUDA_Dev_fl();
 	void FreeVecsFromCUDA_Dev();
 	void FreeVecsFromCUDA_Dev_fl();
-
-	void SetCUDA_Stream(cudaStream_t & in_stream);
-	void ClearCUDA_Stream();
-	const char * _cudaGetErrorEnum(cublasStatus_t error);
 
 	void MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out);
 	void MatVecCOO(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose);
