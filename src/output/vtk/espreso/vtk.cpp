@@ -347,61 +347,6 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 	os.close();
 }
 
-void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Property> properties, double shrinkSubdomain, double shrinkCluster)
-{
-	std::stringstream ss;
-	const std::vector<Element*> &elements = mesh.elements();
-	const std::vector<eslocal> &partition = mesh.getPartition();
-
-	ss << path << config::env::MPIrank << ".vtk";
-
-	std::ofstream os;
-	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-	head(os);
-	os << "DATASET POLYDATA\n";
-	os << "POINTS " << 2*elements.size() << " float\n";
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (eslocal e = partition[p]; e < partition[p + 1]; e++) {
-			Point mid;
-			for (size_t i = 0; i < elements[e]->nodes(); i++) {
-				mid += mesh.coordinates().get(elements[e]->node(i), p);
-			}
-			mid /= elements[e]->nodes();
-			os << mid.x << " " << mid.y << " " << mid.z << "\n";
-		}
-	}
-
-	os << "LINES " << elements.size() << " " << elements.size() * 3 << "\n";
-	for(size_t i = 0; i < elements.size();i++){
-		os<< 2 << " " << i << " " << elements.size() + i << "\n";
-	}
-
-	os<<"\nPOINT_DATA "<<elements.size()*2<<"\nVECTORS Vectors float\n";
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		for (eslocal e = partition[p]; e < partition[p + 1]; e++) {
-			Point mid;
-			for (size_t i = 0; i < elements[e]->nodes(); i++) {
-				mid += mesh.coordinates().get(elements[e]->node(i), p);
-			}
-			mid /= elements[e]->nodes();
-
-			// TODO: change
-			double x = 0, y = 0, z = 0;
-//			double x=ux.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
-//			double y=uy.back()->evaluate(mid.x,mid.y,mid.z)/elements[e]->nodes();
-			os<<x<<" "<<y<<" "<<z<<"\n";			
-			
-		}
-	}
-	//head(os);
-	//coordinates(os, mesh.coordinates(),shrinkSubdomain, shrinkCluster);
-	//elements(os, mesh);
-
-	// TODO:
-
-	os.close();
-}
-
 void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
 	std::vector<Element*> fixPoints;
@@ -438,6 +383,6 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
 void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
-	std::cout << "GLUING\n";
+	ESINFO(ALWAYS) << Info::TextColor::YELLOW << "GLUING is implemented only VTK library output";
 }
 
