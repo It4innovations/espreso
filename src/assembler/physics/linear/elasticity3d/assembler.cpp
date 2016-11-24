@@ -195,6 +195,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	double ex = material.youngModulusX(0);
 	double mi = material.poissonRatioXY(0);
+
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 
 	Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = E * mi;

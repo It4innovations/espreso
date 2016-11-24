@@ -186,7 +186,7 @@ Factory::Factory(const ArgsConfiguration &configuration)
 		createInstance<LinearElasticity2D, LinearInstance<LinearElasticity2D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::LINEAR_ELASTICITY_3D:
-		createInstance<LinearElasticity3D, LinearInstance<LinearElasticity3D> >(instance, mesh);
+		createInstance<Elasticity3D, LinearInstance<Elasticity3D> >(instance, mesh);
 		break;
 	case PhysicsAssembler::TRANSIENT_ELASTICITY_3D:
 		createInstance<TransientElasticity, DynamicsInstance<TransientElasticity> >(instance, mesh);

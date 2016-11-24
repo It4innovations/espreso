@@ -151,6 +151,7 @@ void Grid::settings(
 		} else {
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 1);
+			edges.insert(edges.end(), regions.back().elements.begin(), regions.back().elements.end());
 		}
 	}
 	for (auto it = configuration.generator.grid.faces.values.begin(); it != configuration.generator.grid.faces.values.end(); ++it) {
@@ -161,6 +162,7 @@ void Grid::settings(
 		} else {
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 2);
+			faces.insert(faces.end(), regions.back().elements.begin(), regions.back().elements.end());
 		}
 	}
 
@@ -171,7 +173,7 @@ void Grid::settings(
 			regions.back().elements = elements;
 		} else {
 			BlockBorder border(it->second);
-			_block->region(nodes, regions.back(), border, 3);
+			_block->region(elements, regions.back(), border, 3);
 		}
 	}
 }

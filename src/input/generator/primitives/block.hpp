@@ -153,7 +153,7 @@ void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector
 }
 
 template <class TElement>
-void Block<TElement>::region(const std::vector<Element*> &nodes, Region &region, const BlockBorder &border, size_t dimension)
+void Block<TElement>::region(const std::vector<Element*> &elements, Region &region, const BlockBorder &border, size_t dimension)
 {
 	if (!border.intersect(block)) {
 		return;
@@ -205,7 +205,7 @@ void Block<TElement>::region(const std::vector<Element*> &nodes, Region &region,
 		case 0:
 			forEachElement(start, end,
 			[&] (std::vector<eslocal> &indices) {
-				TElement::pickNodes(nodes, region.elements, indices.data(), face);
+				TElement::pickNodes(elements, region.elements, indices.data(), face);
 			},
 			[&] (Triple<size_t> &offset) {
 				offset.x = offset.x < minOffset.x ? minOffset.x : maxOffset.x < offset.x ? maxOffset.x : offset.x;

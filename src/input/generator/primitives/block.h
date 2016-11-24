@@ -19,7 +19,7 @@ struct BlockSetting {
 class BlockGenerator: public ClusterGenerator {
 
 public:
-	virtual void region(const std::vector<Element*> &nodes, Region &region, const BlockBorder &border, size_t dimension) =0;
+	virtual void region(const std::vector<Element*> &elements, Region &region, const BlockBorder &border, size_t dimension) =0;
 	virtual ~BlockGenerator() {};
 
 protected:
@@ -39,7 +39,7 @@ public:
 	void boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours);
 	void uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains);
 
-	void region(const std::vector<Element*> &nodes, Region &region, const BlockBorder &border, size_t dimension);
+	void region(const std::vector<Element*> &elements, Region &region, const BlockBorder &border, size_t dimension);
 
 private:
 	void forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation);
