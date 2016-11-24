@@ -3,6 +3,7 @@
 #define SRC_INPUT_GENERATOR_PRIMITIVES_BLOCK_H_
 
 #include "clustergenerator.h"
+#include "triple.h"
 #include "../selections/blockborder.h"
 
 namespace espreso {
@@ -36,6 +37,7 @@ public:
 	void points(std::vector<Point> &points);
 	void elements(std::vector<Element*> &elements);
 	void boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours);
+	void uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains);
 
 	void region(const std::vector<Element*> &nodes, Region &region, const BlockBorder &border, size_t dimension);
 

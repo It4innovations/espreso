@@ -20,6 +20,7 @@ Grid::Grid(Mesh &mesh, size_t index, size_t size)
 	_generator.start = Triple<double>(grid.start_x, grid.start_y, grid.start_z);
 	_generator.end   = Triple<double>(grid.start_x + grid.length_x, grid.start_y + grid.length_y, grid.start_z + grid.length_z);
 
+
 	for (auto it = grid.blocks.values.begin(); it != grid.blocks.values.end(); ++it) {
 		if (it->first >= _generator.nonempty.size()) {
 			ESINFO(GLOBAL_ERROR) << "Block index is out of range.";
@@ -86,6 +87,12 @@ void Grid::points(Coordinates &coordinates)
 void Grid::elements(std::vector<Element*> &elements)
 {
 	_block->elements(elements);
+}
+
+bool Grid::partitiate(std::vector<eslocal> &parts)
+{
+	_block->uniformPartition(parts, _generator.domains.mul());
+	return true;
 }
 
 void Grid::materials(std::vector<Material> &materials)

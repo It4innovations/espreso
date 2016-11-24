@@ -91,9 +91,31 @@ void Block<TElement>::elements(std::vector<Element*> &elements)
 
 	Triple<size_t> start(0, 0, 0), end = block.domains * block.elements;
 
-	forEachElement(start, end, [&] (std::vector<eslocal> &indices){
-		TElement::addElements(elements, indices.data(), params.data());
-	});
+	Triple<size_t> offset;
+	for (offset.z = 0; offset.z < block.domains.z; offset.z++) {
+		for (offset.y = 0; offset.y < block.domains.z; offset.y++) {
+			for (offset.x = 0; offset.x < block.domains.z; offset.x++) {
+				Triple<size_t> start = offset * block.elements;
+				Triple<size_t> end = (offset + 1) * block.elements;
+				forEachElement(start, end, [&] (std::vector<eslocal> &indices){
+					TElement::addElements(elements, indices.data(), params.data());
+				});
+			}
+		}
+	}
+}
+
+template<class TElement>
+void Block<TElement>::uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains)
+{
+	partsPtrs.clear();
+	partsPtrs.reserve(subdomains + 1);
+
+	size_t elements = TElement::subelements * (block.domains * block.elements).mul();
+	partsPtrs.push_back(0);
+	for (size_t p = 0; p < subdomains; p++) {
+		partsPtrs.push_back(partsPtrs.back() + elements / subdomains);
+	}
 }
 
 

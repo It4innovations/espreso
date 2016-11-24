@@ -40,6 +40,8 @@ public:
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
 
+	virtual bool partitiate(std::vector<eslocal> &parts);
+
 protected:
 	GridSettings _generator;
 	BlockGenerator* _block;

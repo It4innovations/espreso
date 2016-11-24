@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_GENERATOR_SELECTIONS_BLOCKBORDER_H_
 #define SRC_INPUT_GENERATOR_SELECTIONS_BLOCKBORDER_H_
 
-#include "../triple.h"
+#include "../primitives/triple.h"
 #include "../../meshgenerator/elements/element.h"
 
 namespace espreso {

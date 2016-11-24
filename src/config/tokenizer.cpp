@@ -13,12 +13,13 @@ static bool isWhiteSpace(int c)
 
 static bool isDelimiter(int c)
 {
-	return c == ',';
+	return false;
+	// return c == ',';
 }
 
 static bool isAssign(int c)
 {
-	return c == '=' || c == ':';
+	return c == '=';
 }
 
 static bool isExpressionEnd(int c)

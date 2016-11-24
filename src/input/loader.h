@@ -59,6 +59,8 @@ public:
 
 		close();
 
+		boundaryConditions();
+
 		std::vector<std::vector<eslocal> > fPoints;
 		fixPoints(fPoints);
 		mesh._fixPoints.resize(fPoints.size());
@@ -120,6 +122,8 @@ public:
 		mesh.partitiate(config::mesh::SUBDOMAINS);
 		return false;
 	}
+
+	virtual void boundaryConditions();
 
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints) {};
 	virtual void corners(std::vector<eslocal> &corners) {};

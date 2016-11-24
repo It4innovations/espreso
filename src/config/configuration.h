@@ -11,8 +11,6 @@
 #include "esbasis.h"
 #include "reader.h"
 
-#define MAX_VECTOR_CONFIGURATION_SIZE 10
-
 #define OPTIONS(...) __VA_ARGS__
 #define OPTION(type, name, description, value, options)         type name = DataHolder::create<type>(#name, description, name, value, options, this)
 #define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, #type, this)

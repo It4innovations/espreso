@@ -69,15 +69,6 @@ public:
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
 
 	const std::vector<int>& neighbours() const { return _neighbours; }
-	const Region& region(const std::string &name) const
-	{
-		auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region &region) { return region.name.compare(name) == 0; });
-		if (it != _regions.end()) {
-			return *it;
-		}
-		ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
-		exit(EXIT_FAILURE);
-	}
 	const std::vector<Region>& regions() const { return _regions; }
 	const std::vector<Material>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
@@ -95,6 +86,16 @@ public:
 	void getSurface(Mesh &surface) const;
 
 protected:
+	Region& region(const std::string &name)
+	{
+		auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region &region) { return region.name.compare(name) == 0; });
+		if (it != _regions.end()) {
+			return *it;
+		}
+		ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
+		exit(EXIT_FAILURE);
+	}
+
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
 	void fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
 	void fillNodesFromCoordinates();
