@@ -11,6 +11,10 @@
 #include <vtkLine.h>
 #include <vtkTriangle.h>
 
+#include <vtkMultiBlockDataSet.h>
+#include <vtkXMLCompositeDataWriter.h>
+#include <vtkCleanPolyData.h>
+
 #include <vtkGenericDataObjectReader.h>
 #include <vtkEnSightReader.h>
 #include <vtkPolyDataWriter.h>
@@ -269,28 +273,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	vtkSmartPointer<vtkCellArray> ver = vtkSmartPointer<vtkCellArray>::New();
 
 	if (eType == ElementType::NODES) {
-		/*sv->SetNumberOfTuples(_mesh.nodes().size());
-		for (size_t i = 0; i < _mesh.nodes().size(); i++) {
-			if (_mesh.nodes()[i]->settings().isSet(properties[0])) {
-				int psize = properties.size();
-				Point point;
-				point = _mesh.coordinates()[_mesh.nodes()[i]->node(0)];
-				point = _cCenter + (point - _cCenter) * _shringCluster;
-				vtkIdType pid[1];
-				pid[0] = po->InsertNextPoint(point.x, point.y, point.z);
-				ver->InsertNextCell(1, pid);
-				double h[3];
-				h[1] = 0;
-				h[2] = 0;
-				h[3] = 0;
-
-				for (int p = 0; p < psize; p++) {
-					h[p] = _mesh.nodes()[i]->settings(properties[p]).back()->evaluate(i);
-				}
-				sv->SetTuple(it, h);
-				it++;
-			}
-		}*/
 		int tupl=0;
 		for (size_t n = 0; n < _mesh.nodes().size(); n++) {
 			const Element *node = _mesh.nodes()[n];
@@ -348,30 +330,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 
 
 	} else if (eType == ElementType::ELEMENTS) {
-		/*sv->SetNumberOfTuples(_mesh.elements().size());
-		for (size_t i = 0; i < _mesh.elements().size(); i++) {
-			if (_mesh.elements()[i]->settings().isSet(properties[0])) {
-				//std::cout << _mesh.nodes()[i]->settings(properties[0]).back()->evaluate(i) << "\n";
-				int psize = properties.size();
-				Point point;
-				point = _mesh.coordinates()[_mesh.elements()[i]->node(0)];
-				point = _cCenter + (point - _cCenter) * _shringCluster;
-				vtkIdType pid[1];
-				pid[0] = po->InsertNextPoint(point.x, point.y, point.z);
-				ver->InsertNextCell(1, pid);
-				double h[3];
-				h[1] = 0;
-				h[2] = 0;
-				h[3] = 0;
-
-				for (int p = 0; p < psize; p++) {
-					h[p] = _mesh.elements()[i]->settings(properties[p]).back()->evaluate(_mesh.elements()[i]->node(p));
-				}
-				sv->SetTuple(it, h);
-				it++;
-			}
-		}*/
-
 		float* hvalues=new float[_mesh.elements().size()*properties.size()];
 
 		for (size_t e = 0; e < _mesh.elements().size(); e++) {
@@ -750,7 +708,16 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 				app->AddInputData(h);
 			}
 			app->Update();
-			ugcase->ShallowCopy(app->GetOutput());
+			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+			gf->SetInputData(app->GetOutput());
+			gf->Update();
+			vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+			cpd->SetInputData(gf->GetOutput());
+			cpd->Update();
+			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+			apc->SetInputData(cpd->GetOutput());
+			apc->Update();
+			ugcase->ShallowCopy(apc->GetOutput());
 			wcase->SetInputData(ugcase);
 			wcase->Write();
 			wcase->WriteCaseFile(1);
@@ -915,7 +882,16 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 				app->AddInputData(h);
 			}
 			app->Update();
-			ugcase->ShallowCopy(app->GetOutput());
+			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+			gf->SetInputData(app->GetOutput());
+			gf->Update();
+			vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+			cpd->SetInputData(gf->GetOutput());
+			cpd->Update();
+			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+			apc->SetInputData(cpd->GetOutput());
+			apc->Update();
+			ugcase->ShallowCopy(apc->GetOutput());
 			wcase->SetInputData(ugcase);
 			wcase->Write();
 			wcase->WriteCaseFile(1);
@@ -928,46 +904,36 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 {
 	vtkUnstructuredGrid* fp = vtkUnstructuredGrid::New();
-	std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
+	//std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
 	const Coordinates &_coordinates = mesh.coordinates();
 	const std::vector<eslocal> &_partPtrs = mesh.getPartition();
-	const std::vector<Element*> &elements = mesh.elements();
+	std::vector<Element*> fixPoints;
 	size_t parts = _coordinates.parts();
 	double shrinking = 0.90;
 
 	//points
-	for (size_t p = 0; p < mesh.parts(); p++) {
+	/*for (size_t p = 0; p < mesh.parts(); p++) {
 		for (size_t i = 0; i < mesh.fixPoints(p).size(); i++) {
 			fixPoints[p].push_back(mesh.fixPoints(p)[i]->node(0));
 		}
+	}*/
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		fixPoints.insert(fixPoints.end(), mesh.fixPoints(p).begin(), mesh.fixPoints(p).end());
 	}
-
-	size_t n_nodsClust = 0;
-	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
-		n_nodsClust += elements[iEl]->nodes();
-	}
-	double *coord_xyz = new double[mesh.parts() * fixPoints.size() * 3];
+	std::sort(fixPoints.begin(),fixPoints.end());
+	Esutils::removeDuplicity(fixPoints);
 
 	int counter = 0;
-	for (size_t d = 0; d < mesh.parts(); d++) {
-		for (size_t i = 0; i < fixPoints[d].size(); i++) {
-			Point xyz = _coordinates.get(fixPoints[d][i], d);
-			//xyz = shrink(xyz,d);
-			coord_xyz[3 * counter + 0] = xyz.x;
-			coord_xyz[3 * counter + 1] = xyz.y;
-			coord_xyz[3 * counter + 2] = xyz.z;
+	vtkSmartPointer<vtkPoints> point=vtkSmartPointer<vtkPoints>::New();
+	for (size_t d = 0; d < fixPoints.size(); d++) {
+		for (size_t i = 0; i < fixPoints[d]->domains().size(); i++) {
+			Point xyz = _coordinates[fixPoints[d]->node(0)];
+
+			point->InsertNextPoint(xyz.x,xyz.y,xyz.z);
 			counter++;
 		}
 	}
-	vtkNew<vtkDoubleArray> pointArray;
-	pointArray->SetNumberOfComponents(3);
-	size_t numpoints = mesh.parts() * fixPoints.size() * 3;
-	pointArray->SetArray(coord_xyz, numpoints, 1);
-	vtkNew<vtkPoints> points;
-	points->SetData(pointArray.GetPointer());
-	fp->SetPoints(points.GetPointer());
-	fp->Allocate(static_cast<vtkIdType>(n_nodsClust));
-
+	fp->SetPoints(point);
 	//cells
 	size_t offset = 0;
 	size_t cnt = 0;
@@ -975,13 +941,13 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 	vtkIdType tmp[100]; //max number of  nodevtkIdType
 
 	for (size_t p = 0; p < fixPoints.size(); p++) {
-		for (size_t j = 0; j < fixPoints[i].size(); j++) {
+		for (size_t j = 0; j < fixPoints[i]->domains().size(); j++) {
 			tmp[j] = cnt + j;
 		}
-		fp->InsertNextCell(2, fixPoints[p].size(), &tmp[0]);
+		fp->InsertNextCell(2, fixPoints[p]->domains().size(), &tmp[0]);
 
 		i++;
-		cnt += fixPoints[p].size();
+		cnt += fixPoints[p]->domains().size();
 	}
 	//decomposition
 	float *decomposition_array = new float[fixPoints.size()];
@@ -1097,7 +1063,16 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 				app->AddInputData(h);
 			}
 			app->Update();
-			ugcase->ShallowCopy(app->GetOutput());
+			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+			gf->SetInputData(app->GetOutput());
+			gf->Update();
+			vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+			cpd->SetInputData(gf->GetOutput());
+			cpd->Update();
+			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+			apc->SetInputData(cpd->GetOutput());
+			apc->Update();
+			ugcase->ShallowCopy(apc->GetOutput());
 			wcase->SetInputData(ugcase);
 			wcase->Write();
 			wcase->WriteCaseFile(1);
@@ -1278,7 +1253,16 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 				app->AddInputData(h);
 			}
 			app->Update();
-			ugcase->ShallowCopy(app->GetOutput());
+			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+			gf->SetInputData(app->GetOutput());
+			gf->Update();
+			vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+			cpd->SetInputData(gf->GetOutput());
+			cpd->Update();
+			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+			apc->SetInputData(cpd->GetOutput());
+			apc->Update();
+			ugcase->ShallowCopy(apc->GetOutput());
 			wcase->SetInputData(ugcase);
 			wcase->Write();
 			wcase->WriteCaseFile(1);
@@ -2148,7 +2132,16 @@ void VTK::finalize(){
 				app->AddInputData(h);
 			}
 			app->Update();
-			ugcase->ShallowCopy(app->GetOutput());
+			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+			gf->SetInputData(app->GetOutput());
+			gf->Update();
+			vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+			cpd->SetInputData(gf->GetOutput());
+			cpd->Update();
+			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+			apc->SetInputData(cpd->GetOutput());
+			apc->Update();
+			ugcase->ShallowCopy(apc->GetOutput());
 			wcase->SetInputData(ugcase);
 			wcase->Write();
 			wcase->WriteCaseFile(1);
