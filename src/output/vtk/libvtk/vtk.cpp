@@ -1988,8 +1988,17 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 	 				appp->AddInputData(h);
 	 				appp->AddInputData(h2);
 	 			}
-	 			appp->Update();
-	 			ugcase->ShallowCopy(appp->GetOutput());
+	 			app->Update();
+	 			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+	 			gf->SetInputData(app->GetOutput());
+	 			gf->Update();
+	 			vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+	 			cpd->SetInputData(gf->GetOutput());
+	 			cpd->Update();
+	 			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+	 			apc->SetInputData(cpd->GetOutput());
+	 			apc->Update();
+	 			ugcase->ShallowCopy(apc->GetOutput());
 	 			wcase->SetInputData(ugcase);
 	 			wcase->Write();
 	 			wcase->WriteCaseFile(1);
@@ -2094,6 +2103,7 @@ void VTK::finalize(){
 	break;
 	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		vtkMPIController* controller=vtkMPIController::New();
+		controller->Initialize();
 		vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
 		bool FCD = false;
@@ -2132,6 +2142,7 @@ void VTK::finalize(){
 				app->AddInputData(h);
 			}
 			app->Update();
+			//std::cout<<app->GetOutput()->GetNumberOfPoints()<<std::endl;
 			vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
 			gf->SetInputData(app->GetOutput());
 			gf->Update();
@@ -2141,6 +2152,7 @@ void VTK::finalize(){
 			vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
 			apc->SetInputData(cpd->GetOutput());
 			apc->Update();
+			//std::cout<<apc->GetOutput()->GetNumberOfPoints()<<std::endl;
 			ugcase->ShallowCopy(apc->GetOutput());
 			wcase->SetInputData(ugcase);
 			wcase->Write();
