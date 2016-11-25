@@ -1,12 +1,12 @@
 
-#ifndef INPUT_ANSYS_WORKBENCH_PARSER_H_
-#define INPUT_ANSYS_WORKBENCH_PARSER_H_
+#ifndef INPUT_ANSYS_PARSER_H_
+#define INPUT_ANSYS_PARSER_H_
 
 #include <map>
 
 #include "esbasis.h"
 #include "esmesh.h"
-#include "../utils.h"
+#include "utils.h"
 
 namespace espreso {
 namespace input {
@@ -105,4 +105,4 @@ protected:
 }
 }
 
-#endif /* INPUT_ANSYS_WORKBENCH_PARSER_H_ */
+#endif /* INPUT_ANSYS_PARSER_H_ */

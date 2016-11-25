@@ -1,31 +1,33 @@
 
-#ifndef INPUT_ANSYS_MATSOL_ANSYS_H_
-#define INPUT_ANSYS_MATSOL_ANSYS_H_
+#ifndef INPUT_ANSYS_ANSYS_H_
+#define INPUT_ANSYS_ANSYS_H_
 
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <vector>
 
-#include "../../loader.h"
-#include "../utils.h"
+
+#include "../loader.h"
+#include "utils.h"
+#include "parser.h"
 
 namespace espreso {
 namespace input {
 
-class AnsysMatsol: public Loader {
+class AnsysWorkbench: public Loader {
 
 public:
 	static void load(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
 	{
-		ESINFO(OVERVIEW) << "Load mesh from Ansys/Matsol format from directory " << configuration.path;
-
-		AnsysMatsol matsol(mesh, configuration, rank, size);
-		matsol.fill();
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
+		AnsysWorkbench workbench(mesh, configuration, rank, size);
+		workbench.fill();
 	}
 
 protected:
-	AnsysMatsol(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
-	: Loader(mesh), _path(configuration.path) { };
+	AnsysWorkbench(Mesh &mesh, const ArgsConfiguration &configuration, int rank, int size)
+	: Loader(mesh), _path(configuration.path), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements);
@@ -39,15 +41,19 @@ protected:
 			std::vector<Element*> &nodes);
 	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
-private:
-	static size_t getLinesCount(const std::string &file);
-	struct TestEOL {
-		bool operator()(char c) {
-			return c == '\n';
-		}
-	};
+	void open()
+	{
+		_parser.open(_path);
+	}
 
+	void close()
+	{
+		_parser.close();
+	}
+
+private:
 	std::string _path;
+	WorkbenchParser _parser;
 };
 
 }
@@ -56,4 +62,5 @@ private:
 
 
 
-#endif /* INPUT_ANSYS_MATSOL_ANSYS_H_ */
+
+#endif /* INPUT_ANSYS_ANSYS_H_ */
