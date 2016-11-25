@@ -20,25 +20,25 @@ def CreateCoProcessor():
       # ----------------------------------------------------------------
 
       #### disable automatic camera reset on 'Show'
-      paraview.simple._DisableFirstRenderCameraReset()
+      #paraview.simple._DisableFirstRenderCameraReset()
 
       # Create a new 'Render View'
       renderView2 = CreateView('RenderView')
-      renderView2.ViewSize = [1268, 1001]
-      renderView2.AxesGrid = 'GridAxes3DActor'
-      renderView2.CenterOfRotation = [15.0, 15.0, 15.0]
-      renderView2.StereoType = 0
-      renderView2.CameraPosition = [98.52626368708493, -76.30116325299662, -30.50288786032776]
-      renderView2.CameraFocalPoint = [16.662197115466938, 13.062278347419227, 21.00379719143666]
-      renderView2.CameraViewUp = [-0.3333254352084389, 0.2226836782305292, -0.9161365256842602]
-      renderView2.CameraParallelScale = 34.6254401549066
-      renderView2.Background = [0.32, 0.34, 0.43]
+      #renderView2.ViewSize = [1300, 1100]
+      #renderView2.AxesGrid = 'GridAxes3DActor'
+      #renderView2.CenterOfRotation = [15.0, 15.0, 15.0]
+      #renderView2.StereoType = 0
+      #renderView2.CameraPosition = [0, -1, -1]
+      #renderView2.CameraFocalPoint = [10, 10, 10]
+      #renderView2.CameraViewUp = [0, 0, 0]
+      #renderView2.CameraParallelScale = 50
+      #renderView2.Background = [0.32, 0.34, 0.43]
 
       # register the view with coprocessor
       # and provide it with information such as the filename to use,
       # how frequently to write the images, etc.
       coprocessor.RegisterView(renderView2,
-          filename='image_%t.png', freq=1, fittoscreen=0, magnification=1, width=1268, height=1001, cinema={})
+          filename='image_%t.png', freq=1, fittoscreen=0, magnification=1, width=1300, height=1100, cinema={})
 
       # ----------------------------------------------------------------
       # setup the data processing pipelines
@@ -51,7 +51,7 @@ def CreateCoProcessor():
       # create a new 'Warp By Vector'
       warpByVector1 = WarpByVector(Input=extractPVTrivialProducer1)
       warpByVector1.Vectors = ['POINTS', 'displacement']
-      warpByVector1.ScaleFactor = 1.0
+      warpByVector1.ScaleFactor = 4000000000000.0
 
       # ----------------------------------------------------------------
       # setup color maps and opacity mapes used in the visualization
@@ -60,12 +60,12 @@ def CreateCoProcessor():
 
       # get color transfer function/color map for 'displacement'
       displacementLUT = GetColorTransferFunction('displacement')
-      # displacementLUT.RGBPoints = [5.028988747889835e-18, 0.231373, 0.298039, 0.752941, 7.472436195608509e-13, 0.865003, 0.865003, 0.865003, 1.494482210132954e-12, 0.705882, 0.0156863, 0.14902]
+      displacementLUT.RGBPoints = [10e-18, 0.231373, 0.298039, 0.752941, 8e-13, 0.865003, 0.865003, 0.865003, 5e-12, 0.705882, 0.0156863, 0.14902]
       displacementLUT.ScalarRangeInitialized = 1.0
 
       # get opacity transfer function/opacity map for 'displacement'
       displacementPWF = GetOpacityTransferFunction('displacement')
-      displacementPWF.Points = [5.028988747889835e-18, 0.0, 0.5, 0.0, 1.494482210132954e-12, 1.0, 0.5, 0.0]
+      displacementPWF.Points = [10e-18, 0.0, 0.5, 0.0, 1e-12, 1.0, 0.5, 0.0]
       displacementPWF.ScalarRangeInitialized = 1
 
       # ----------------------------------------------------------------
@@ -77,7 +77,7 @@ def CreateCoProcessor():
       # trace defaults for the display properties.
       warpByVector1Display.ColorArrayName = ['POINTS', 'displacement']
       warpByVector1Display.LookupTable = displacementLUT
-      warpByVector1Display.ScalarOpacityUnitDistance = 1.6193839689753242
+      warpByVector1Display.ScalarOpacityUnitDistance = 2
 
       # show color legend
       warpByVector1Display.SetScalarBarVisibility(renderView2, True)

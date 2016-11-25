@@ -19,6 +19,9 @@
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkMPIController.h>
 #include <vtkEnSightWriter.h>
+#include <vtkCleanPolyData.h>
+#include <vtkAppendFilter.h>
+#include <vtkGeometryFilter.h>
 
 vtkSmartPointer<vtkCPProcessor> processor;
 vtkSmartPointer<vtkUnstructuredGrid> VTKGrid;
@@ -33,7 +36,7 @@ Paraview::Paraview(const Mesh &mesh, const std::string &path): Store(mesh, path)
 	processor->Initialize();
 
 	vtkNew<vtkCPPythonScriptPipeline> pipeline;
-	pipeline->Initialize("catalyst_pipeline_lopatka.py");
+	pipeline->Initialize("catalyst_pipeline_cube.py");
 	processor->AddPipeline(pipeline.GetPointer());
 
 	const std::vector<Element*> &elements = _mesh.elements();
@@ -422,7 +425,56 @@ void Paraview::finalize()
 			vtkMPIController* controller=vtkMPIController::New();
 			vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 			vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
+			bool FCD = false;
+			if (VTKGrid->GetCellData()) {
+				if (VTKGrid->GetCellData()->GetArray("BlockId")) {
+					FCD = true;
+				}
+			}
+			if (FCD == false) {
+				vtkSmartPointer<vtkIntArray> bids = vtkSmartPointer<vtkIntArray>::New();
+				bids->SetName("BlockId");
+				for (int i = 0; i < VTKGrid->GetNumberOfCells(); i++) {
+					bids->InsertNextValue(1);
+				}
+				VTKGrid->GetCellData()->SetScalars(bids);
+			}
+			int blockids[2];
+			blockids[0] = 1;
+			blockids[1] = 0;
 
+			if (config::env::MPIrank != 0) {
+				controller->Send(VTKGrid, 0, 1111 + config::env::MPIrank);
+			}
+
+			if (config::env::MPIrank == 0) {
+				wcase->SetFileName("result");
+				wcase->SetNumberOfBlocks(1);
+				wcase->SetBlockIDs(blockids);
+				wcase->SetTimeStep(0);
+				vtkSmartPointer<vtkAppendFilter> app = vtkSmartPointer<vtkAppendFilter>::New();
+				app->AddInputData(VTKGrid);
+				for (int i = 1; i < config::env::MPIsize; i++) {
+					vtkSmartPointer<vtkUnstructuredGrid> h = vtkSmartPointer<vtkUnstructuredGrid>::New();
+					controller->Receive(h, i, 1111 + i);
+					app->AddInputData(h);
+				}
+				app->Update();
+				vtkSmartPointer<vtkGeometryFilter> gf = vtkSmartPointer<vtkGeometryFilter>::New();
+				gf->SetInputData(app->GetOutput());
+				gf->Update();
+				vtkSmartPointer<vtkCleanPolyData> cpd = vtkSmartPointer<vtkCleanPolyData>::New();
+				cpd->SetInputData(gf->GetOutput());
+				cpd->Update();
+				vtkSmartPointer<vtkAppendFilter> apc = vtkSmartPointer<vtkAppendFilter>::New();
+				apc->SetInputData(cpd->GetOutput());
+				apc->Update();
+				ugcase->ShallowCopy(apc->GetOutput());
+				wcase->SetInputData(ugcase);
+				wcase->Write();
+				wcase->WriteCaseFile(1);
+			}
+			controller->Delete();
 		}
 		break;
 		}
