@@ -26,7 +26,7 @@ protected:
 
 	virtual void elementsMaterials(std::vector<Element*> &elements);
 	virtual void points(Coordinates &coordinates);
-	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 	virtual ~SphereGenerator() {};
 

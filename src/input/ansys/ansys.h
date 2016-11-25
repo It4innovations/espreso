@@ -30,16 +30,16 @@ protected:
 	: Loader(mesh), _path(configuration.path), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);
-	void elements(std::vector<Element*> &elements);
+	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void materials(std::vector<Material> &materials);
-	void settings(
+	void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
-	void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 	void open()
 	{

@@ -75,7 +75,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 	}
 };
 
-void Esdata::elements(std::vector<Element*> &elements)
+void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/elements.dat";
@@ -103,7 +103,7 @@ void Esdata::materials(std::vector<Material> &materials)
 	is.close();
 }
 
-void Esdata::settings(
+void Esdata::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region> &regions,
 		std::vector<Element*> &elements,
@@ -158,7 +158,7 @@ void Esdata::settings(
 }
 
 
-void Esdata::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void Esdata::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
 	fileName << _path << "/" << _rank << "/boundaries.dat";

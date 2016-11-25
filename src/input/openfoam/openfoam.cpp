@@ -88,7 +88,8 @@ void OpenFOAM::points(Coordinates &coordinates)
 	}
 }
 
-void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &faces) {
+void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+{
 	FoamFile facesFile(_polyMeshPath + "faces");
 	solveParseError(parse(facesFile.getTokenizer(), _faces));
 	FoamFile ownerFile(_polyMeshPath + "owner");
@@ -146,7 +147,7 @@ void OpenFOAM::materials(std::vector<Material> &materials)
 	materials.resize(1, Material(mesh.coordinates()));
 }
 
-void OpenFOAM::settings(
+void OpenFOAM::regions(
 				std::vector<Evaluator*> &evaluators,
 				std::vector<Region> &regions,
 				std::vector<Element*> &elements,
@@ -170,7 +171,7 @@ void OpenFOAM::settings(
 //	_faces.clear();
 //}
 
-void OpenFOAM::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours) {
+void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours) {
 	std::set<int> neighs;
 
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {

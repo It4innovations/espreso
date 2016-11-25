@@ -26,10 +26,10 @@ protected:
 	CubesGenerator(Mesh &mesh, CubesSettings &settings);
 
 	virtual void points(Coordinates &coordinates);
-	virtual void elements(std::vector<Element*> &elements);
+	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	virtual void materials(std::vector<Material> &materials);
-	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
-	virtual void settings(
+	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	virtual void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
@@ -37,9 +37,7 @@ protected:
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
 
-	virtual bool partitiate(std::vector<eslocal> &parts);
-	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	virtual void corners(std::vector<eslocal> &corners);
+	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
 
 	virtual ~CubesGenerator() {};
 

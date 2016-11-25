@@ -3,23 +3,27 @@
 #define SRC_INPUT_GENERATOR_COMPOSITION_GRID_H_
 
 #include "../../loader.h"
-#include "../primitives/block.h"
+
+#include "../primitives/triple.h"
 
 namespace espreso {
 namespace input {
+
+struct BlockGenerator;
 
 struct GridSettings {
 	Triple<double> start, end;
 	Triple<size_t> blocks, clusters, domains, elements;
 
 	std::vector<bool> nonempty;
+	bool uniformDecomposition;
 };
 
 class Grid: public Loader {
 
 public:
 	Grid(Mesh &mesh, size_t index, size_t size);
-	virtual ~Grid() { delete _block; };
+	virtual ~Grid();
 
 	static void load(Mesh &mesh, size_t index, size_t size)
 	{
@@ -29,10 +33,10 @@ public:
 	}
 
 	virtual void points(Coordinates &coordinates);
-	virtual void elements(std::vector<Element*> &elements);
+	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	virtual void materials(std::vector<Material> &materials);
-	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
-	virtual void settings(
+	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	virtual void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
@@ -40,7 +44,7 @@ public:
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
 
-	virtual bool partitiate(std::vector<eslocal> &parts);
+	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
 
 protected:
 	GridSettings _generator;

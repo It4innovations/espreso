@@ -29,6 +29,12 @@ struct Triple {
 	Triple<Ttype> operator-(TOther v) const { return Triple<Ttype>(x - v, y - v, z - v); }
 
 	template <typename TOther>
+	Triple<Ttype> operator*(TOther v) const { return Triple<Ttype>(x * v, y * v, z * v); }
+
+	template <typename TOther>
+	Triple<Ttype> operator/(TOther v) const { return Triple<Ttype>(x / v, y / v, z / v); }
+
+	template <typename TOther>
 	Triple<Ttype> operator+(const Triple<TOther> &p) const { return Triple<Ttype>(x + p.x, y + p.y, z + p.z); }
 
 	template <typename TOther>
@@ -39,6 +45,9 @@ struct Triple {
 
 	template <typename TOther>
 	Triple<Ttype> operator/(const Triple<TOther> &p) const { return Triple<Ttype>(x / p.x, y / p.y, z / p.z); }
+
+	template <typename TOther>
+	Triple<Ttype> operator%(const Triple<TOther> &p) const { return Triple<Ttype>(x % p.x, y % p.y, z % p.z); }
 
 	bool operator<(Ttype value) const { return x < value || y < value || z < value; }
 

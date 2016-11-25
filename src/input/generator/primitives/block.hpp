@@ -93,8 +93,8 @@ void Block<TElement>::elements(std::vector<Element*> &elements)
 
 	Triple<size_t> offset;
 	for (offset.z = 0; offset.z < block.domains.z; offset.z++) {
-		for (offset.y = 0; offset.y < block.domains.z; offset.y++) {
-			for (offset.x = 0; offset.x < block.domains.z; offset.x++) {
+		for (offset.y = 0; offset.y < block.domains.y; offset.y++) {
+			for (offset.x = 0; offset.x < block.domains.x; offset.x++) {
 				Triple<size_t> start = offset * block.elements;
 				Triple<size_t> end = (offset + 1) * block.elements;
 				forEachElement(start, end, [&] (std::vector<eslocal> &indices){
@@ -118,6 +118,119 @@ void Block<TElement>::uniformPartition(std::vector<eslocal> &partsPtrs, size_t s
 	}
 }
 
+template<class TElement>
+void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<Element*> > &fixPoints)
+{
+	fixPoints.resize(block.domains.mul(), std::vector<Element*>(8, NULL));
+
+	Triple<int>shift = Triple<int>(TElement::subnodes) + 1;
+	Triple<eslocal> dnodes = (Triple<int>(TElement::subnodes) + 1) * block.elements;
+	Triple<eslocal> size = (dnodes * block.domains + 1).toSize();
+
+	auto shiftCorrection = [] (int &shift, eslocal &nodes, eslocal subnodes) {
+		if (2 * (shift + 1) > nodes + 1) { // not enough nodes
+			shift = (nodes + 1) / 2 - subnodes - 1;
+		}
+		if (2 * shift == nodes) { // offset to the same node
+			shift -= subnodes + 1;
+		}
+		if (shift < 0) {
+			shift = 0;
+		}
+	};
+
+	shiftCorrection(shift.x, dnodes.x, TElement::subnodes[0]);
+	shiftCorrection(shift.y, dnodes.y, TElement::subnodes[1]);
+	shiftCorrection(shift.z, dnodes.z, TElement::subnodes[2]);
+
+	Triple<size_t> domain;
+	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
+		for (domain.y = 0; domain.y < block.domains.y; domain.y++) {
+			for (domain.x = 0; domain.x < block.domains.x; domain.x++) {
+				for (int i = 0; i < 8; i++) {
+					Triple<eslocal> corner((i & 1) ? domain.x + 1 : domain.x, (i & 2) ? domain.y + 1 : domain.y, (i & 4) ? domain.z + 1 : domain.z);
+					Triple<eslocal> offset((i & 1) ? -shift.x : shift.x, (i & 2) ? -shift.y : shift.y, (i & 4) ? -shift.z : shift.z);
+					fixPoints[(domain * block.domains.toSize()).sum()][i] = nodes[((corner * dnodes + offset) * size).sum()];
+				}
+			}
+		}
+	}
+}
+
+template<class TElement>
+void Block<TElement>::uniformCorners(const std::vector<Element*> &nodes, std::vector<Element*> &corners, size_t number, bool point, bool edge, bool face)
+{
+	Triple<size_t> dnodes = (Triple<int>(TElement::subnodes) + 1) * block.elements;
+	Triple<size_t> cnodes = block.domains * dnodes;
+	Triple<size_t> size = (cnodes + 1).toSize();
+	Triple<size_t> step = dnodes / (number + 1);
+
+
+	Triple<std::vector<size_t> > offsets;
+
+	auto addOffset = [&] (std::vector<size_t> &offset, size_t domains, size_t nodes, size_t step) {
+		for (size_t j = 0; j < domains; j++) {
+			for (size_t k = 0; k <= number / 2; k++) {
+				offset.push_back(j * nodes + k * step);
+				offset.push_back(j * nodes + nodes - k * step);
+			}
+			if (number % 2 == 1) {
+				offset.push_back(j * nodes + nodes / 2);
+			}
+		}
+		std::sort(offset.begin(), offset.end());
+		Esutils::removeDuplicity(offset);
+	};
+
+	addOffset(offsets.x, block.domains.x, dnodes.x, step.x);
+	addOffset(offsets.y, block.domains.y, dnodes.y, step.y);
+	addOffset(offsets.z, block.domains.z, dnodes.z, step.z);
+
+	auto zero = [] (const Triple<size_t> &offset, size_t n) {
+		size_t c = 0;
+		if (!offset.x) { c++; }
+		if (!offset.y) { c++; }
+		if (!offset.z) { c++; }
+		return c == n;
+	};
+
+	Triple<size_t> offset;
+	for (size_t z = 0; z < offsets.z.size(); z++) {
+		offset.z = offsets.z[z];
+		for (size_t y = 0; y < offsets.y.size(); y++) {
+			offset.y = offsets.y[y];
+			for (size_t x = 0; x < offsets.x.size(); x++) {
+				offset.x = offsets.x[x];
+
+				if (zero(offset % cnodes, 3)) {
+					continue;
+				}
+
+				if (zero(offset % cnodes, 2) && !zero(offset % dnodes, 3)) {
+					continue;
+				}
+
+				if (zero(offset % cnodes, 1) && zero(offset % dnodes, 1)) {
+					continue;
+				}
+
+				if (!point && zero(offset % dnodes, 3)) {
+					continue;
+				}
+
+				if (!edge && zero(offset % dnodes, 2)) {
+					continue;
+				}
+
+				if (!face && zero(offset % dnodes, 1)) {
+					continue;
+				}
+
+				corners.push_back(nodes[(offset * size).sum()]);
+			}
+		}
+	}
+}
 
 template <class TElement>
 void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours)

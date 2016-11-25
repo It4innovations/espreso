@@ -19,7 +19,7 @@ void AnsysWorkbench::points(Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::elements(std::vector<Element*> &elements)
+void AnsysWorkbench::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	while (true) {
 		switch (_parser.process()) {
@@ -61,7 +61,7 @@ void AnsysWorkbench::materials(std::vector<Material> &materials)
 	}
 }
 
-void AnsysWorkbench::settings(
+void AnsysWorkbench::regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,
 			std::vector<Element*> &elements,
@@ -99,7 +99,7 @@ void AnsysWorkbench::settings(
 }
 
 
-void AnsysWorkbench::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void AnsysWorkbench::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		nodes[i]->clusters().push_back(0);

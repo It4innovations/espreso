@@ -31,7 +31,7 @@ protected:
 	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval);
 
 	virtual void points(Coordinates &coordinates);
-	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 
 	virtual ~CubeGenerator() {};
 

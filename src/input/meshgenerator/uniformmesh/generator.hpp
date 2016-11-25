@@ -89,26 +89,26 @@ void UniformGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &
 }
 
 template<class TElement>
-bool UniformGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
+bool UniformGenerator<TElement>::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
 	config::mesh::SUBDOMAINS = _settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2];
 	if (_settings.useMetis) {
-		return Loader::partitiate(parts);
+		return Loader::partitiate(nodes, partsPtrs, fixPoints, corners);
 	}
 
-	parts.clear();
-	parts.reserve(config::mesh::SUBDOMAINS + 1);
+	partsPtrs.clear();
+	partsPtrs.reserve(config::mesh::SUBDOMAINS + 1);
 
-	parts.push_back(0);
+	partsPtrs.push_back(0);
 
 	for (size_t p = 0; p < config::mesh::SUBDOMAINS; p++) {
-		parts.push_back(parts.back() + mesh.elements().size() / config::mesh::SUBDOMAINS);
+		partsPtrs.push_back(partsPtrs.back() + mesh.elements().size() / config::mesh::SUBDOMAINS);
 	}
 	return true;
 }
 
 template<class TElement>
-void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
+void UniformGenerator<TElement>::fixPoints(const std::vector<Element*> &_nodes, std::vector<std::vector<eslocal> > &fixPoints)
 {
 	fixPoints.reserve(_settings.subdomainsInCluster[0] * _settings.subdomainsInCluster[1] * _settings.subdomainsInCluster[2]);
 	eslocal shift_offset[3] = { (int)(TElement::subnodes[0] + 1), (int)(TElement::subnodes[1] + 1), (int)(TElement::subnodes[2] + 1) };
@@ -159,7 +159,7 @@ void UniformGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &f
 }
 
 template <class TElement>
-void UniformGenerator<TElement>::corners(std::vector<eslocal> &corners)
+void UniformGenerator<TElement>::corners(const std::vector<Element*> &_nodes, std::vector<eslocal> &corners)
 {
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::TOTAL_FETI) {
 		// corners are not used in the case of TOTAL FETI

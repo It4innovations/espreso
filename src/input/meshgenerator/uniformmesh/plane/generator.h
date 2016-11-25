@@ -35,7 +35,7 @@ protected:
 
 	virtual void points(Coordinates &coordinates);
 	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	virtual void clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
 	virtual void corners(std::vector<eslocal> &corners);
 
 	virtual ~PlaneGenerator() {};

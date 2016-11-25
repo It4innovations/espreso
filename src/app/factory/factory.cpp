@@ -128,9 +128,6 @@ void Factory::readParameters(const ArgsConfiguration &configuration)
 static void fillMesh(const ArgsConfiguration &configuration, Mesh &mesh, ElementType eType, GeneratorShape shape)
 {
 	switch (config::mesh::INPUT) {
-	case config::mesh::INPUTalternative::MATSOL:
-		input::AnsysMatsol::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
-		break;
 	case config::mesh::INPUTalternative::WORKBENCH:
 		input::AnsysWorkbench::load(mesh, configuration, config::env::MPIrank, config::env::MPIsize);
 		break;

@@ -181,7 +181,7 @@ void SphereGenerator<TElement>::points(Coordinates &coordinates)
  *           /x
  */
 template <class TElement>
-void SphereGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void SphereGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	eslocal line   = _settings.grid;
 	eslocal square = _settings.grid * line;

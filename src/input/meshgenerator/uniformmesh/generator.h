@@ -26,9 +26,9 @@ protected:
 	virtual void generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval);
 	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval);
 
-	virtual bool partitiate(std::vector<eslocal> &parts);
-	virtual void fixPoints(std::vector<std::vector<eslocal> > &fixPoints);
-	virtual void corners(std::vector<eslocal> &corners);
+	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
+	virtual void fixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<eslocal> > &fixPoints);
+	virtual void corners(const std::vector<Element*> &nodes, std::vector<eslocal> &corners);
 
 	TElement _e;
 	const UniformSettings _settings;

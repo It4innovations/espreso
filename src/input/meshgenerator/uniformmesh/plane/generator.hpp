@@ -241,7 +241,7 @@ void PlaneGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fix
 }
 
 template <class TElement>
-void PlaneGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void PlaneGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	esglobal gNodes[3];
 	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);

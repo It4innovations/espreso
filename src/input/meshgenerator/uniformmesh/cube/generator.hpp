@@ -254,7 +254,7 @@ void CubeGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &edg
 
 
 template <class TElement>
-void CubeGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void CubeGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	esglobal gNodes[3];
 	CubeUtils<TElement>::globalNodesCount(_settings, gNodes);

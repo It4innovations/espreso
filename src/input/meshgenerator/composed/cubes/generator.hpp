@@ -54,9 +54,9 @@ void CubesGenerator<TElement>::points(Coordinates &coordinates)
 }
 
 template<class TElement>
-void CubesGenerator<TElement>::elements(std::vector<Element*> &elements)
+void CubesGenerator<TElement>::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
-	_loader->elements(elements);
+	_loader->elements(elements, faces, edges);
 }
 
 template<class TElement>
@@ -66,9 +66,9 @@ void CubesGenerator<TElement>::materials(std::vector<Material> &materials)
 }
 
 template<class TElement>
-void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void CubesGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
-	_loader->clusterBoundaries(nodes, neighbours);
+	_loader->neighbours(nodes, neighbours);
 
 	neighbours.push_back(_cubeIndex ? 0 : 1);
 
@@ -124,7 +124,7 @@ void CubesGenerator<TElement>::clusterBoundaries(std::vector<Element*> &nodes, s
 }
 
 template<class TElement>
-void CubesGenerator<TElement>::settings(
+void CubesGenerator<TElement>::regions(
 	std::vector<Evaluator*> &evaluators,
 	std::vector<Region> &regions,
 	std::vector<Element*> &elements,
@@ -132,7 +132,7 @@ void CubesGenerator<TElement>::settings(
 	std::vector<Element*> &edges,
 	std::vector<Element*> &nodes)
 {
-	_loader->settings(evaluators, regions, elements, faces, edges, nodes);
+	_loader->regions(evaluators, regions, elements, faces, edges, nodes);
 
 
 	if (
@@ -281,21 +281,9 @@ void CubesGenerator<TElement>::settings(
 }
 
 template<class TElement>
-bool CubesGenerator<TElement>::partitiate(std::vector<eslocal> &parts)
+bool CubesGenerator<TElement>::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
-	return _loader->partitiate(parts);
-}
-
-template<class TElement>
-void CubesGenerator<TElement>::fixPoints(std::vector<std::vector<eslocal> > &fixPoints)
-{
-	_loader->fixPoints(fixPoints);
-}
-
-template<class TElement>
-void CubesGenerator<TElement>::corners(std::vector<eslocal> &corners)
-{
-	_loader->corners(corners);
+	return _loader->partitiate(nodes, partsPtrs, fixPoints, corners);
 }
 
 }

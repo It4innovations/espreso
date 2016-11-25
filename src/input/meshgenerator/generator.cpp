@@ -42,7 +42,7 @@ void Generator::materials(std::vector<Material> &materials)
 	}
 }
 
-void Generator::settings(
+void Generator::regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,
 			std::vector<Element*> &elements,

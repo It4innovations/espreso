@@ -16,7 +16,7 @@ protected:
 
 	virtual ~Generator() { };
 
-	void elements(std::vector<Element*> &elements)
+	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 	{
 		elementsMesh(elements);
 		elementsMaterials(elements);
@@ -31,9 +31,8 @@ protected:
 	virtual void generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval) =0;
 	virtual void generateEdgesInInterval(std::vector<Element*> &edges, const Interval &interval) =0;
 
-
 	void materials(std::vector<Material> &materials);
-	virtual void settings(
+	virtual void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,
 			std::vector<Element*> &elements,

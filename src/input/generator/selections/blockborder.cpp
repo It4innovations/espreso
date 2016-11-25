@@ -1,6 +1,9 @@
 
+
 #include "blockborder.h"
-#include "../primitives/block.h"
+#include "../primitives/blocksetting.h"
+
+#include "esbasis.h"
 
 namespace espreso {
 namespace input {

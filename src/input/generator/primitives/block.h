@@ -3,18 +3,14 @@
 #define SRC_INPUT_GENERATOR_PRIMITIVES_BLOCK_H_
 
 #include "clustergenerator.h"
+
 #include "triple.h"
+#include "blocksetting.h"
 #include "../selections/blockborder.h"
 
 namespace espreso {
 namespace input {
 
-struct BlockSetting {
-	Triple<size_t> domains;
-	Triple<size_t> elements;
-
-	Triple<double> start, end;
-};
 
 class BlockGenerator: public ClusterGenerator {
 
@@ -23,7 +19,7 @@ public:
 	virtual ~BlockGenerator() {};
 
 protected:
-	BlockGenerator(Mesh &mesh, const BlockSetting &block): ClusterGenerator(mesh), block(block) {};
+	BlockGenerator(Mesh &mesh, const BlockSetting &block): block(block) {};
 
 	BlockSetting block;
 };
@@ -38,6 +34,8 @@ public:
 	void elements(std::vector<Element*> &elements);
 	void boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours);
 	void uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains);
+	void uniformFixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<Element*> > &fixPoints);
+	void uniformCorners(const std::vector<Element*> &nodes, std::vector<Element*> &corners, size_t number, bool point, bool edge, bool face);
 
 	void region(const std::vector<Element*> &elements, Region &region, const BlockBorder &border, size_t dimension);
 

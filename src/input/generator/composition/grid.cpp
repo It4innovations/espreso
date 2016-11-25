@@ -1,5 +1,6 @@
 
 #include "grid.h"
+#include "../primitives/block.h"
 
 #include "../../../config/description.h"
 
@@ -63,6 +64,11 @@ Grid::Grid(Mesh &mesh, size_t index, size_t size)
 	}
 }
 
+Grid::~Grid()
+{
+	delete _block;
+}
+
 void Grid::points(Coordinates &coordinates)
 {
 	_block->points(coordinates._points);
@@ -84,14 +90,16 @@ void Grid::points(Coordinates &coordinates)
 	}
 }
 
-void Grid::elements(std::vector<Element*> &elements)
+void Grid::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	_block->elements(elements);
 }
 
-bool Grid::partitiate(std::vector<eslocal> &parts)
+bool Grid::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
-	_block->uniformPartition(parts, _generator.domains.mul());
+	_block->uniformPartition(partsPtrs, _generator.domains.mul());
+	_block->uniformFixPoints(nodes, fixPoints);
+	_block->uniformCorners(nodes, corners, 1, true, true, true);
 	return true;
 }
 
@@ -100,7 +108,7 @@ void Grid::materials(std::vector<Material> &materials)
 	materials.push_back(Material(mesh.coordinates()));
 }
 
-void Grid::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void Grid::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	std::vector<int> map(27);
 
@@ -125,7 +133,7 @@ void Grid::clusterBoundaries(std::vector<Element*> &nodes, std::vector<int> &nei
 	std::sort(neighbours.begin(), neighbours.end());
 }
 
-void Grid::settings(
+void Grid::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region> &regions,
 		std::vector<Element*> &elements,
