@@ -36,27 +36,13 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 	Triple<size_t> _start = start;
 	Triple<size_t> _end = end;
 
-	if (_start.x == _end.x) {
-		if (_start.x == 0) {
-			_end.x++;
-		} else {
-			_start.x--;
-		}
-	}
-	if (_start.y == _end.y) {
-		if (_start.y == 0) {
-			_end.y++;
-		} else {
-			_start.y--;
-		}
-	}
-	if (_start.z == _end.z) {
-		if (_start.z == 0) {
-			_end.z++;
-		} else {
-			_start.z--;
-		}
-	}
+	auto correct = [] (size_t &s, size_t &e) {
+		if (s == e) { if (s == 0) { e++; } else { s--; } }
+	};
+
+	correct(_start.x, _end.x);
+	correct(_start.y, _end.y);
+	correct(_start.z, _end.z);
 
 	std::vector<eslocal> indices((nodes + 1).mul());
 
@@ -89,15 +75,11 @@ void Block<TElement>::elements(std::vector<Element*> &elements)
 	elements.reserve(TElement::subelements * (block.domains * block.elements).mul());
 	std::vector<eslocal> params(6);
 
-	Triple<size_t> start(0, 0, 0), end = block.domains * block.elements;
-
 	Triple<size_t> offset;
 	for (offset.z = 0; offset.z < block.domains.z; offset.z++) {
 		for (offset.y = 0; offset.y < block.domains.y; offset.y++) {
 			for (offset.x = 0; offset.x < block.domains.x; offset.x++) {
-				Triple<size_t> start = offset * block.elements;
-				Triple<size_t> end = (offset + 1) * block.elements;
-				forEachElement(start, end, [&] (std::vector<eslocal> &indices){
+				forEachElement(offset * block.elements, (offset + 1) * block.elements, [&] (std::vector<eslocal> &indices){
 					TElement::addElements(elements, indices.data(), params.data());
 				});
 			}
