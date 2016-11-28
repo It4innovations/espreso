@@ -192,7 +192,23 @@ struct Environment: public Configuration {
 
 };
 
-struct GridGenerator: Configuration {
+struct GridConfiguration: public Configuration {
+
+	OPTION(ELEMENT_TYPE, element_type, "Type of generated element", ELEMENT_TYPE::HEXA8, OPTIONS({
+		{ "HEXA8"    , ELEMENT_TYPE::HEXA8    , "Hexahedron."},
+		{ "HEXA20"   , ELEMENT_TYPE::HEXA20   , "Hexahedron with midpoints."},
+		{ "TETRA4"   , ELEMENT_TYPE::TETRA4   , "Tetrahedron."},
+		{ "TETRA10"  , ELEMENT_TYPE::TETRA10  , "Tetrahedron with midpoints."},
+		{ "PRISMA6"  , ELEMENT_TYPE::PRISMA6  , "Prisma."},
+		{ "PRISMA15" , ELEMENT_TYPE::PRISMA15 , "Prisma with midpoints."},
+		{ "PYRAMID5" , ELEMENT_TYPE::PYRAMID5 , "Pyramid."},
+		{ "PYRAMID13", ELEMENT_TYPE::PYRAMID13, "Pyramid with midpoints."},
+
+		{ "SQUARE4"  , ELEMENT_TYPE::SQUARE4  , "Square."},
+		{ "SQUARE8"  , ELEMENT_TYPE::SQUARE8  , "Square with midpoints."},
+		{ "TRIANGLE3", ELEMENT_TYPE::TRIANGLE3, "Triangle."},
+		{ "TRIANGLE6", ELEMENT_TYPE::TRIANGLE6, "Triangle with midpoints."},
+	}));
 
 	PARAMETER(double, start_x, "x-coordinate of grid starting point.", 0);
 	PARAMETER(double, start_y, "y-coordinate of grid starting point.", 0);
@@ -217,6 +233,8 @@ struct GridGenerator: Configuration {
 	PARAMETER(double, elements_y, "Number of elements in y-direction of each domain.", 5);
 	PARAMETER(double, elements_z, "Number of elements in z-direction of each domain.", 5);
 
+	PARAMETER(bool, uniform_decomposition, "Grid is uniformly decomposed", true);
+
 	SUBMAP(size_t, bool, blocks, "List of grid blocks [<INDEX> <VALUE>]. Where value indicate if a block will be generated.", "<INDEX>", true);
 
 	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
@@ -232,23 +250,7 @@ struct ESPRESOGenerator: public Configuration {
 		{ "SPHERE", GENERATOR_SHAPE::SPHERE, "Hollow sphere." }
 	}));
 
-	OPTION(ELEMENT_TYPE, element, "Type of generated element", ELEMENT_TYPE::HEXA8, OPTIONS({
-		{ "HEXA8"    , ELEMENT_TYPE::HEXA8    , "Hexahedron."},
-		{ "HEXA20"   , ELEMENT_TYPE::HEXA20   , "Hexahedron with midpoints."},
-		{ "TETRA4"   , ELEMENT_TYPE::TETRA4   , "Tetrahedron."},
-		{ "TETRA10"  , ELEMENT_TYPE::TETRA10  , "Tetrahedron with midpoints."},
-		{ "PRISMA6"  , ELEMENT_TYPE::PRISMA6  , "Prisma."},
-		{ "PRISMA15" , ELEMENT_TYPE::PRISMA15 , "Prisma with midpoints."},
-		{ "PYRAMID5" , ELEMENT_TYPE::PYRAMID5 , "Pyramid."},
-		{ "PYRAMID13", ELEMENT_TYPE::PYRAMID13, "Pyramid with midpoints."},
-
-		{ "SQUARE4"  , ELEMENT_TYPE::SQUARE4  , "Square."},
-		{ "SQUARE8"  , ELEMENT_TYPE::SQUARE8  , "Square with midpoints."},
-		{ "TRIANGLE3", ELEMENT_TYPE::TRIANGLE3, "Triangle."},
-		{ "TRIANGLE6", ELEMENT_TYPE::TRIANGLE6, "Triangle with midpoints."},
-	}));
-
-	SUBCONFIG(GridGenerator, grid, "Detailed specification of grid shape.");
+	SUBCONFIG(GridConfiguration, grid, "Detailed specification of grid shape.");
 };
 
 struct FETISolver: public Configuration {

@@ -56,23 +56,6 @@ void Loader::fill()
 
 	close();
 
-//		std::vector<std::vector<eslocal> > fPoints;
-//		fixPoints(fPoints);
-//		mesh._fixPoints.resize(fPoints.size());
-//		for (size_t p = 0; p < fPoints.size(); p++) {
-//			mesh._fixPoints[p].reserve(fPoints[p].size());
-//			for (size_t i = 0; i < fPoints[p].size(); i++) {
-//				mesh._fixPoints[p].push_back(mesh.nodes()[fPoints[p][i]]);
-//			}
-//		}
-//
-//		std::vector<eslocal> cornerPoints;
-//		corners(cornerPoints);
-//		mesh._corners.reserve(cornerPoints.size());
-//		for (size_t i = 0; i < cornerPoints.size(); i++) {
-//			mesh._corners.push_back(mesh.nodes()[cornerPoints[i]]);
-//		}
-
 	TimeEvent tPartition("partition"); tPartition.start();
 	if (partitiate(mesh._nodes, mesh._partPtrs, mesh._fixPoints, mesh._corners)) { // manual partition -> map elements to the domains
 		mesh.mapElementsToDomains();

@@ -7,11 +7,21 @@
 #include "../primitives/triple.h"
 
 namespace espreso {
+
+struct GridConfiguration;
+enum class ELEMENT_TYPE;
+
 namespace input {
 
 struct BlockGenerator;
 
 struct GridSettings {
+
+	GridSettings();
+	GridSettings(const GridConfiguration &configuration);
+
+	ELEMENT_TYPE etype;
+
 	Triple<double> start, end;
 	Triple<size_t> blocks, clusters, domains, elements;
 
@@ -22,15 +32,10 @@ struct GridSettings {
 class Grid: public Loader {
 
 public:
-	Grid(Mesh &mesh, size_t index, size_t size);
+	Grid(Mesh &mesh, const GridSettings &settings, size_t index, size_t size);
 	virtual ~Grid();
 
-	static void load(Mesh &mesh, size_t index, size_t size)
-	{
-		ESINFO(OVERVIEW) << "Generate grid";
-		Grid grid(mesh, index, size);
-		grid.fill();
-	}
+	static void load(Mesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
@@ -47,7 +52,7 @@ public:
 	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
 
 protected:
-	GridSettings _generator;
+	GridSettings _settings;
 	BlockGenerator* _block;
 	Triple<size_t> _clusterOffset;
 	Triple<size_t> _subnodes;
