@@ -113,8 +113,16 @@ void Loader::boundaryConditions()
 		}
 	};
 
-	loadProperty(configuration.displacement.values, { "x", "y", "z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
-	loadProperty(configuration.normal_presure.values, { "p" }, { Property::PRESSURE });
+	loadProperty(configuration.displacement.values       , { "T", "x", "y", "z" }, { Property::TEMPERATURE, Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
+	loadProperty(configuration.normal_presure.values     , { "P" }               , { Property::PRESSURE });
+	loadProperty(configuration.translation_motions.values, { "x", "y", "z" }     , { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
+	loadProperty(configuration.acceleration.values       , { "x", "y", "z" }     , { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
+	loadProperty(configuration.initial_temperature.values, { }                   , { Property::INITIAL_TEMPERATURE });
+	loadProperty(configuration.temperature.values        , { }                   , { Property::TEMPERATURE });
+	loadProperty(configuration.heat_source.values        , { "T" }               , { Property::HEAT_SOURCE });
+	loadProperty(configuration.thickness.values          , { }                   , { Property::THICKNESS });
+	loadProperty(configuration.obstacle.values           , { }                   , { Property::OBSTACLE });
+	loadProperty(configuration.normal_direction.values   , { }                   , { Property::NORMAL_DIRECTION });
 
 	for (auto it = configuration.material_set.values.begin(); it != configuration.material_set.values.end(); ++it) {
 		Region &region = mesh.region(it->second);
