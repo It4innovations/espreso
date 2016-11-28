@@ -60,7 +60,7 @@ void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], C
 	case CubeFace::Y_0:
 		Hexahedron20::addFaces(faces, indices, face);
 		break;
-	case CubeFace::Z_0:
+	case CubeFace::Z_1:
 		triangle1[0] = indices[20];
 		triangle1[1] = indices[26];
 		triangle1[2] = indices[18];
@@ -77,7 +77,7 @@ void Prisma15::addFaces(std::vector<Element*> &faces, const eslocal indices[], C
 		triangle2[5] = indices[22];
 		faces.push_back(new Triangle6(triangle2));
 		break;
-	case CubeFace::Z_1:
+	case CubeFace::Z_0:
 		triangle1[0] = indices[ 0];
 		triangle1[1] = indices[ 6];
 		triangle1[2] = indices[ 8];

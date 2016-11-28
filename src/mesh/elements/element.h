@@ -212,10 +212,13 @@ public:
 		for (size_t i = 0; i < parent->coarseNodes(); i++) {
 			eMid += coordinates[parent->node(i)];
 		}
+		eMid /= parent->coarseNodes();
 
 		for (size_t i = 0; i < coarseNodes(); i++) {
 			mid += coordinates[node(i)];
 		}
+		mid /= coarseNodes();
+
 		Point outside = mid - eMid;
 		if (outside.x * normal.x + outside.y * normal.y + outside.z * normal.z > 0) {
 			normal.flip();
