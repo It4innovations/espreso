@@ -10,9 +10,13 @@ GridSettings::GridSettings()
 : etype(ELEMENT_TYPE::HEXA8),
   start(0, 0, 0), end(1, 1, 1),
   blocks(1, 1, 1), clusters(1, 1, 1), domains(2, 2, 2), elements(5, 5, 5),
+  projection(Expression("x", { "x", "y", "z" }), Expression("y", { "x", "y", "z" }), Expression("z", { "x", "y", "z" })),
+  rotation(Expression("0", { "x", "y", "z" }), Expression("0", { "x", "y", "z" }), Expression("0", { "x", "y", "z" })),
   nonempty(1, true), uniformDecomposition(true) {}
 
 GridSettings::GridSettings(const GridConfiguration &configuration)
+: projection(Expression(configuration.projection_x, { "x", "y", "z" }), Expression(configuration.projection_y, { "x", "y", "z" }), Expression(configuration.projection_z, { "x", "y", "z" })),
+  rotation(Expression(configuration.rotation_x, { "x", "y", "z" }), Expression(configuration.rotation_y, { "x", "y", "z" }), Expression(configuration.rotation_z, { "x", "y", "z" }))
 {
 	etype = configuration.element_type;
 
@@ -25,7 +29,6 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 
 	start = Triple<double>(configuration.start_x, configuration.start_y, configuration.start_z);
 	end   = Triple<double>(configuration.start_x + configuration.length_x, configuration.start_y + configuration.length_y, configuration.start_z + configuration.length_z);
-
 
 	for (auto it = configuration.blocks.values.begin(); it != configuration.blocks.values.end(); ++it) {
 		if (it->first >= nonempty.size()) {
@@ -71,6 +74,8 @@ Grid::Grid(Mesh &mesh, const GridSettings &settings, size_t index, size_t size)
 					block.elements = _settings.elements;
 					block.start = _settings.start + (_settings.end - _settings.start) / _settings.clusters * offset;
 					block.end   = _settings.start + (_settings.end - _settings.start) / _settings.clusters * (offset + 1);
+					block.projection = _settings.projection;
+					block.rotation = _settings.rotation;
 					switch (_settings.etype) {
 					case ELEMENT_TYPE::HEXA8:
 						_block = new Block<Hexahedron8>(mesh, block);

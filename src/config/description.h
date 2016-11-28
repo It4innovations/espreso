@@ -217,6 +217,14 @@ struct GridConfiguration: public Configuration {
 	PARAMETER(double, length_y, "y-length of generated grid.", 1);
 	PARAMETER(double, length_z, "z-length of generated grid.", 1);
 
+	PARAMETER(std::string, projection_x, "Projection of x-coordinate.", "x");
+	PARAMETER(std::string, projection_y, "Projection of y-coordinate.", "y");
+	PARAMETER(std::string, projection_z, "Projection of z-coordinate.", "z");
+	PARAMETER(std::string, rotation_x, "Rotation of x-coordinate.", "0");
+	PARAMETER(std::string, rotation_y, "Rotation of y-coordinate.", "0");
+	PARAMETER(std::string, rotation_z, "Rotation of z-coordinate.", "0");
+
+
 	PARAMETER(double, blocks_x, "Number of blocks in x-direction of a grid.", 1);
 	PARAMETER(double, blocks_y, "Number of blocks in y-direction of a grid.", 1);
 	PARAMETER(double, blocks_z, "Number of blocks in z-direction of a grid.", 1);

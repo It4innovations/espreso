@@ -11,10 +11,12 @@ void Block<TElement>::points(std::vector<Point> &points)
 	Triple<double> step = (block.end - block.start) / Triple<double>(nodes.x, nodes.y, nodes.z ? nodes.z : 1);
 
 	points.reserve((nodes + 1).mul());
+	std::vector<double> p;
 	for (size_t z = 0; z <= nodes.z; z++) {
 		for (size_t y = 0; y <= nodes.y; y++) {
 			for (size_t x = 0; x <= nodes.x; x++) {
-				points.push_back(Point(block.start.x + x * step.x, block.start.y + y * step.y, block.start.z + z * step.z));
+				p = { block.start.x + x * step.x, block.start.y + y * step.y, block.start.z + z * step.z };
+				points.push_back(Point(block.projection.x(p), block.projection.y(p), block.projection.z(p), block.rotation.x(p), block.rotation.y(p), block.rotation.z(p)));
 			}
 		}
 	}

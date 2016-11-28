@@ -23,6 +23,7 @@ struct GridSettings {
 	ELEMENT_TYPE etype;
 
 	Triple<double> start, end;
+	Triple<Expression> projection, rotation;
 	Triple<size_t> blocks, clusters, domains, elements;
 
 	std::vector<bool> nonempty;

@@ -180,7 +180,7 @@ void Reader::_read(const std::string &file, const std::vector<std::string> &args
 			break;
 		case Tokenizer::Token::EXPRESSION_END:
 			if (values.size() != 2) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Incorrect assignment format. Use 'PARAMETER' 'VALUE';\n" << tokenStack.top()->lastLines(2);
+				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Incorrect assignment format on line " << tokenStack.top()->line() << ". Use 'PARAMETER' 'VALUE';\n" << tokenStack.top()->lastLines(2);
 			}
 			if (!confStack.top()->set(values[0], values[1])) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << values[1] << "'";
@@ -242,19 +242,19 @@ void Reader::store()
 {
 	std::ofstream os("espreso.ecf.default");
 
-	os << "*******************************************************************************\n";
+	os << "|*****************************************************************************|\n";
 	os << "|-----------------------------------------------------------------------------|\n";
 	os << "|                                      |                                      |\n";
-	os << "|     EPRESO CONFIGURATION FILE        |   ESPRESO Version:   1.0             |\n";
+	os << "|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |\n";
 	os << "|                                      |   http://espreso.it4i.cz             |\n";
 	os << "|-----------------------------------------------------------------------------|\n";
 	os << "|  Case Description:    Default ESPRESO configuration                         |\n";
 	os << "|                                                                             |\n";
 	os << "|-----------------------------------------------------------------------------|\n";
-	os << "*******************************************************************************\n";
+	os << "|*****************************************************************************|\n";
 	os << "                                                                               \n";
 	os << "                                                                               \n";
-	os << "*******************************************************************************\n";
+	os << "|*****************************************************************************|\n";
 	os << "|-------------------------  INPUT/OUTPUT DEFINITION --------------------------|\n\n";
 
 	storeConfiguration(os, configuration, 0);

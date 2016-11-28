@@ -54,7 +54,7 @@ static bool isStringEnd(int c)
 
 static bool isSingleCommentChar(int c)
 {
-	return c == '#' || c == '|' || c == '*';
+	return c == '#' || c == '|';
 }
 
 static bool isLineComment(int last, int currect)
@@ -103,6 +103,9 @@ Tokenizer::Token Tokenizer::_next()
 			_file.get();
 		}
 		while(_file.peek() == '\n' || _file.peek() == '\r') {
+			if (isLineEnd(_file.peek())) {
+				_line++;
+			}
 			_file.get();
 		}
 	};
@@ -130,6 +133,9 @@ Tokenizer::Token Tokenizer::_next()
 			_file.get();
 			int last = _file.get();
 			while(!isMultiLineCommentEnd(last, _file.peek())) {
+				if (isLineEnd(_file.peek())) {
+					_line++;
+				}
 				last = _file.get();
 			}
 			_file.get();
@@ -150,6 +156,7 @@ Tokenizer::Token Tokenizer::_next()
 			return specialToken(Token::EXPRESSION_END);
 		}
 		if (isLineEnd(_file.peek())) {
+			_line++;
 			return specialToken(Token::LINE_END);
 		}
 		if (isObjectOpen(_file.peek())) {
@@ -159,14 +166,26 @@ Tokenizer::Token Tokenizer::_next()
 			return specialToken(Token::OBJECT_CLOSE);
 		}
 		if (isStringStart(_file.peek())) {
-			if (_buffer.size()) {
-				return Token::STRING;
+			size_t stacked = 0, bsize = _buffer.size();
+			if (bsize) {
+				_buffer.push_back(_file.get());
+			} else {
+				_file.get();
 			}
-			_file.get();
-			while (!isStringEnd(_file.peek())) {
+			while (!isStringEnd(_file.peek()) || stacked) {
+				if (isStringStart(_file.peek())) {
+					stacked++;
+				}
+				if (isStringEnd(_file.peek())) {
+					stacked--;
+				}
 				_buffer.push_back(_file.get());
 			}
-			_file.get();
+			if (bsize) {
+				_buffer.push_back(_file.get());
+			} else {
+				_file.get();
+			}
 			if (_buffer.size()) {
 				return Token::STRING;
 			}

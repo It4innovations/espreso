@@ -24,7 +24,7 @@ public:
 		END
 	};
 
-	Tokenizer(const std::string &file): _file(file), _token(Token::END)
+	Tokenizer(const std::string &file): _file(file), _token(Token::END), _line(1)
 	{
 		if (!_file.good()) {
 			ESINFO(GLOBAL_ERROR) << "Invalid file '" << file << "'";
@@ -41,6 +41,7 @@ public:
 		return std::string(_buffer.begin(), _buffer.end());
 	}
 
+	size_t line() const { return _line; }
 	std::string lastLines(size_t number);
 
 protected:
@@ -48,6 +49,7 @@ protected:
 	std::ifstream _file;
 	Token _token;
 	std::vector<int> _buffer;
+	size_t _line;
 };
 
 }
