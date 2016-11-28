@@ -281,8 +281,8 @@ struct ConfigurationMap: public Configuration {
 			if (!pholder.set(parameter)) {
 				return false;
 			}
-			Tparameter val;
-			ValueHolder<Tparameter> vholder(value, "", val, val, type);
+			Tvalue val;
+			ValueHolder<Tvalue> vholder(value, "", val, val, type);
 			if (!vholder.set(value)) {
 				return false;
 			}

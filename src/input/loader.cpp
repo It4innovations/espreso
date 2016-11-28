@@ -116,6 +116,16 @@ void Loader::boundaryConditions()
 	loadProperty(configuration.displacement.values, { "x", "y", "z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
 	loadProperty(configuration.normal_presure.values, { "p" }, { Property::PRESSURE });
 
+	for (auto it = configuration.material_set.values.begin(); it != configuration.material_set.values.end(); ++it) {
+		Region &region = mesh.region(it->second);
+		for (size_t e = 0; e << region.elements.size(); e++) {
+			region.elements[e]->setParam(Element::MATERIAL, it->first -1);
+		}
+		for (auto p = configuration.materials.configurations[it->first - 1]->parameters.begin(); p != configuration.materials.configurations[it->first - 1]->parameters.end(); ++p) {
+			mesh._materials[it->first - 1].setParameter(p->first, p->second->get());
+		}
+	}
+
 }
 
 
