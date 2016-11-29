@@ -2,7 +2,6 @@
 def configure(ctx):
     ctx.recurse("esdata")
     ctx.recurse("ansys")
-    ctx.recurse("meshgenerator")
     ctx.recurse("generator")
     ctx.recurse("openfoam")
     ctx.recurse("api")
@@ -10,7 +9,6 @@ def configure(ctx):
 def build(ctx):
     ctx.recurse("esdata")
     ctx.recurse("ansys")
-    ctx.recurse("meshgenerator")
     ctx.recurse("generator")
     ctx.recurse("openfoam")
     ctx.recurse("api")

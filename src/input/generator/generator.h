@@ -1,6 +1,6 @@
 
-#ifndef SRC_INPUT_GENERATOR_FACTORY_H_
-#define SRC_INPUT_GENERATOR_FACTORY_H_
+#ifndef SRC_INPUT_GENERATOR_GENERATOR_H_
+#define SRC_INPUT_GENERATOR_GENERATOR_H_
 
 #include <cstddef>
 
@@ -11,7 +11,7 @@ class Mesh;
 
 namespace input {
 
-class Generator {
+struct Generator {
 
 	static void generate(const ESPRESOGenerator &configuration, Mesh &mesh, size_t index, size_t size);
 };
@@ -20,4 +20,4 @@ class Generator {
 
 
 
-#endif /* SRC_INPUT_GENERATOR_FACTORY_H_ */
+#endif /* SRC_INPUT_GENERATOR_GENERATOR_H_ */

@@ -7,7 +7,7 @@ using namespace espreso::input;
 void Esdata::points(Coordinates &coordinates)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/coordinates.dat";
+	fileName << _esdata.path << "/" << _rank << "/coordinates.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -78,7 +78,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/elements.dat";
+	fileName << _esdata.path << "/" << _rank << "/elements.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 	eslocal size;
 
@@ -92,7 +92,7 @@ void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &fa
 void Esdata::materials(std::vector<Material> &materials)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/materials.dat";
+	fileName << _esdata.path << "/" << _rank << "/materials.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -112,7 +112,7 @@ void Esdata::regions(
 		std::vector<Element*> &nodes)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/settings.dat";
+	fileName << _esdata.path << "/" << _rank << "/settings.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	eslocal size;
@@ -161,7 +161,7 @@ void Esdata::regions(
 void Esdata::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
 {
 	std::stringstream fileName;
-	fileName << _path << "/" << _rank << "/boundaries.dat";
+	fileName << _esdata.path << "/" << _rank << "/boundaries.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
 	std::set<int> neighs;

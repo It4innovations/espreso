@@ -2,9 +2,8 @@
 #ifndef SRC_INPUT_GENERATOR_GENERATOR_H_
 #define SRC_INPUT_GENERATOR_GENERATOR_H_
 
-#include "../../meshgenerator/elements/elements.h"
-
 namespace espreso {
+
 namespace input {
 
 class ClusterGenerator {

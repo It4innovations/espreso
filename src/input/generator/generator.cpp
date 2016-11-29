@@ -1,9 +1,9 @@
 
-#include "factory.h"
 #include "composition/grid.h"
 
 #include "../../config/description.h"
 #include "esmesh.h"
+#include "generator.h"
 
 using namespace espreso::input;
 
@@ -11,7 +11,7 @@ void Generator::generate(const ESPRESOGenerator &configuration, Mesh &mesh, size
 {
 	switch (configuration.shape) {
 	case GENERATOR_SHAPE::GRID:
-		Grid::load(mesh, index, size);
+		Grid::load(configuration.grid, mesh, index, size);
 		break;
 	case GENERATOR_SHAPE::SPHERE:
 		ESINFO(GLOBAL_ERROR) << "Implement sphere generator";

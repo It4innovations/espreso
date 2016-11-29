@@ -1,8 +1,10 @@
 
 #include "grid.h"
 #include "../primitives/block.h"
+#include "../elements/elements.h"
 
 #include "../../../config/description.h"
+
 
 using namespace espreso::input;
 
@@ -40,10 +42,10 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void Grid::load(Mesh &mesh, size_t index, size_t size)
+void Grid::load(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	ESINFO(OVERVIEW) << "Generate grid";
-	Grid grid(mesh, configuration.generator.grid, index, size);
+	Grid grid(mesh, configuration, index, size);
 	grid.fill();
 }
 

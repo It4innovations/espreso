@@ -4,7 +4,31 @@
 #include "../mesh/settings/property.h"
 #include "../config/description.h"
 
+#include "ansys/ansys.h"
+#include "openfoam/openfoam.h"
+#include "esdata/esdata.h"
+#include "generator/generator.h"
+
 using namespace espreso::input;
+
+
+void Loader::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+{
+	switch (configuration.input) {
+	case INPUT::WORKBENCH:
+		AnsysWorkbench::load(mesh, configuration.workbench, index, size);
+		break;
+	case INPUT::OPENFOAM:
+		OpenFOAM::load(mesh, configuration.openfoam, index, size);
+		break;
+	case INPUT::ESDATA:
+		Esdata::load(mesh, configuration.esdata, index, size);
+		break;
+	case INPUT::GENERATOR:
+		Generator::generate(configuration.generator, mesh, index, size);
+		break;
+	}
+}
 
 void Loader::fill()
 {
@@ -133,7 +157,6 @@ void Loader::boundaryConditions()
 			mesh._materials[it->first - 1].setParameter(p->first, p->second->get());
 		}
 	}
-
 }
 
 

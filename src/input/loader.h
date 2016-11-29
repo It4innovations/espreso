@@ -7,11 +7,16 @@
 #include <string>
 
 namespace espreso {
+
+struct GlobalConfiguration;
+
 namespace input {
 
 class Loader {
 
 public:
+	static void load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+
 	void fill();
 
 	virtual void points(Coordinates &coordinates) = 0;

@@ -7,8 +7,8 @@ namespace input {
 template <class TElement>
 void Block<TElement>::points(std::vector<Point> &points)
 {
-	Triple<size_t> nodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) + 1);
-	Triple<double> step = (block.end - block.start) / Triple<double>(nodes.x, nodes.y, nodes.z ? nodes.z : 1);
+	Triple<size_t> nodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1);
+	Triple<double> step = (block.end - block.start) / Triple<double>(nodes.x, nodes.y ? nodes.y : 1, nodes.z ? nodes.z : 1);
 
 	points.reserve((nodes + 1).mul());
 	std::vector<double> p;
@@ -31,9 +31,8 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 template <class TElement>
 void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation, std::function<void(Triple<size_t> &offset)> restriction)
 {
-	Triple<size_t> elems = block.domains * block.elements;
-	Triple<size_t> nodes = Triple<size_t>(TElement::subnodes) + 1;
-	Triple<size_t> size = (elems * nodes + 1).toSize();;
+	Triple<size_t> nodes = Triple<size_t>(TElement::subnodes) - 1;
+	Triple<size_t> size = (block.domains * block.elements * nodes + 1).toSize();
 
 	Triple<size_t> _start = start;
 	Triple<size_t> _end = end;
@@ -74,6 +73,7 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 template <class TElement>
 void Block<TElement>::elements(std::vector<Element*> &elements)
 {
+	Triple<size_t> elems = block.domains * block.elements;
 	elements.reserve(TElement::subelements * (block.domains * block.elements).mul());
 	std::vector<eslocal> params(6);
 
@@ -127,11 +127,16 @@ void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::
 	shiftCorrection(shift.y, dnodes.y, TElement::subnodes[1]);
 	shiftCorrection(shift.z, dnodes.z, TElement::subnodes[2]);
 
+	size_t number = 0;
+	number += TElement::subnodes[0] > 1 ? 1 : 0;
+	number += TElement::subnodes[1] > 1 ? 1 : 0;
+	number += TElement::subnodes[2] > 1 ? 1 : 0;
+
 	Triple<size_t> domain;
 	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
 		for (domain.y = 0; domain.y < block.domains.y; domain.y++) {
 			for (domain.x = 0; domain.x < block.domains.x; domain.x++) {
-				for (int i = 0; i < 8; i++) {
+				for (int i = 0; i < number; i++) {
 					Triple<eslocal> corner((i & 1) ? domain.x + 1 : domain.x, (i & 2) ? domain.y + 1 : domain.y, (i & 4) ? domain.z + 1 : domain.z);
 					Triple<eslocal> offset((i & 1) ? -shift.x : shift.x, (i & 2) ? -shift.y : shift.y, (i & 4) ? -shift.z : shift.z);
 					fixPoints[(domain * block.domains.toSize()).sum()][i] = nodes[((corner * dnodes + offset) * size).sum()];
@@ -223,7 +228,7 @@ void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector
 	std::iota(sorted.begin(), sorted.end(), 0);
 	std::sort(sorted.begin(), sorted.end(), [&] (int i, int j) { return neighbours[i] < neighbours[j]; });
 
-	Triple<size_t> count = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) + 1);
+	Triple<size_t> count = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1);
 	Triple<size_t> size = (count + 1).toSize();
 
 	for (int i = 0; i < 27; i++) {
@@ -293,7 +298,30 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region &regi
 
 	case 1: { // Line
 
-		ESINFO(GLOBAL_ERROR) << "Implement selection of edges";
+		CubeEdge edge = bborder.getEdge(block);
+		switch (dimension) {
+		case 0:
+			forEachElement(start, end,
+			[&] (std::vector<eslocal> &indices) {
+				TElement::pickNodes(elements, region.elements, indices.data(), edge);
+			},
+			[&] (Triple<size_t> &offset) {
+				offset.x = offset.x < minOffset.x ? minOffset.x : maxOffset.x < offset.x ? maxOffset.x : offset.x;
+				offset.y = offset.y < minOffset.y ? minOffset.y : maxOffset.y < offset.y ? maxOffset.y : offset.y;
+				offset.z = offset.z < minOffset.z ? minOffset.z : maxOffset.z < offset.z ? maxOffset.z : offset.z;
+			});
+			std::sort(region.elements.begin(), region.elements.end());
+			Esutils::removeDuplicity(region.elements);
+			break;
+		case 1:
+			forEachElement(start, end,
+			[&] (std::vector<eslocal> &indices) {
+				TElement::addEdges(region.elements, indices.data(), edge);
+			});
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Cannot select element of dimension " << dimension << " on 1D line.";
+		}
 	} break;
 
 	case 2: { // Face
