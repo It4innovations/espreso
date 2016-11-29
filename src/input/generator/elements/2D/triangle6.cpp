@@ -4,7 +4,7 @@
 using namespace espreso::input;
 
 size_t Triangle6::subelements = 2;
-size_t Triangle6::subnodes[] = { 1, 1, 1 };
+size_t Triangle6::subnodes[] = { 3, 3, 1 };
 
 void Triangle6::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {

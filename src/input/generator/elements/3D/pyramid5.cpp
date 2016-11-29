@@ -4,7 +4,7 @@
 using namespace espreso::input;
 
 size_t Pyramid5::subelements = 6;
-size_t Pyramid5::subnodes[] = { 1, 1, 1 };
+size_t Pyramid5::subnodes[] = { 3, 3, 3 };
 
 void Pyramid5::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {

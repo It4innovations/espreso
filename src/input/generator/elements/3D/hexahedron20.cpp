@@ -4,7 +4,7 @@
 using namespace espreso::input;
 
 size_t Hexahedron20::subelements = 1;
-size_t Hexahedron20::subnodes[] = { 1, 1, 1 };
+size_t Hexahedron20::subnodes[] = { 3, 3, 3 };
 
 void Hexahedron20::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {

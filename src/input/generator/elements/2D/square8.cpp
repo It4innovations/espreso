@@ -4,7 +4,7 @@
 using namespace espreso::input;
 
 size_t Square8::subelements = 1;
-size_t Square8::subnodes[] = { 1, 1, 1 };
+size_t Square8::subnodes[] = { 3, 3, 1 };
 
 void Square8::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {

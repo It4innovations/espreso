@@ -7,14 +7,14 @@ namespace input {
 template <class TElement>
 void Block<TElement>::points(std::vector<Point> &points)
 {
-	Triple<size_t> nodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1);
-	Triple<double> step = (block.end - block.start) / Triple<double>(nodes.x, nodes.y ? nodes.y : 1, nodes.z ? nodes.z : 1);
+	Triple<size_t> nodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1) + 1;
+	Triple<double> step = (block.end - block.start) / Triple<double>(nodes.x, nodes.y, nodes.z).steps();
 
-	points.reserve((nodes + 1).mul());
+	points.reserve(nodes.mul());
 	std::vector<double> p;
-	for (size_t z = 0; z <= nodes.z; z++) {
-		for (size_t y = 0; y <= nodes.y; y++) {
-			for (size_t x = 0; x <= nodes.x; x++) {
+	for (size_t z = 0; z < nodes.z; z++) {
+		for (size_t y = 0; y < nodes.y; y++) {
+			for (size_t x = 0; x < nodes.x; x++) {
 				p = { block.start.x + x * step.x, block.start.y + y * step.y, block.start.z + z * step.z };
 				points.push_back(Point(block.projection.x(p), block.projection.y(p), block.projection.z(p), block.rotation.x(p), block.rotation.y(p), block.rotation.z(p)));
 			}
@@ -31,8 +31,8 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 template <class TElement>
 void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation, std::function<void(Triple<size_t> &offset)> restriction)
 {
-	Triple<size_t> nodes = Triple<size_t>(TElement::subnodes) - 1;
-	Triple<size_t> size = (block.domains * block.elements * nodes + 1).toSize();
+	Triple<size_t> enodes = Triple<size_t>(TElement::subnodes) - 1;
+	Triple<size_t> size = (block.domains * block.elements * enodes + 1).toSize();
 
 	Triple<size_t> _start = start;
 	Triple<size_t> _end = end;
@@ -45,7 +45,7 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 	correct(_start.y, _end.y);
 	correct(_start.z, _end.z);
 
-	std::vector<eslocal> indices((nodes + 1).mul());
+	std::vector<eslocal> indices((enodes + 1).mul());
 
 	Triple<size_t> e;
 	for (e.z = _start.z; e.z < _end.z; e.z++) {
@@ -53,10 +53,10 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 			for (e.x = _start.x; e.x < _end.x; e.x++) {
 
 				size_t index = 0;
-				Triple<size_t> eOffset, offset = e * nodes;
-				for (eOffset.z = 0; eOffset.z <= nodes.z; eOffset.z++) {
-					for (eOffset.y = 0; eOffset.y <= nodes.y; eOffset.y++) {
-						for (eOffset.x = 0; eOffset.x <= nodes.x; eOffset.x++) {
+				Triple<size_t> eOffset, offset = e * enodes;
+				for (eOffset.z = 0; eOffset.z <= enodes.z; eOffset.z++) {
+					for (eOffset.y = 0; eOffset.y <= enodes.y; eOffset.y++) {
+						for (eOffset.x = 0; eOffset.x <= enodes.x; eOffset.x++) {
 							Triple<size_t> coffset = eOffset + offset;
 							restriction(coffset);
 							indices[index++] = (coffset * size).sum();
@@ -105,10 +105,8 @@ void Block<TElement>::uniformPartition(std::vector<eslocal> &partsPtrs, size_t s
 template<class TElement>
 void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<Element*> > &fixPoints)
 {
-	fixPoints.resize(block.domains.mul(), std::vector<Element*>(8, NULL));
-
-	Triple<int>shift = Triple<int>(TElement::subnodes) + 1;
-	Triple<eslocal> dnodes = (Triple<int>(TElement::subnodes) + 1) * block.elements;
+	Triple<int>shift = Triple<int>(TElement::subnodes) - 1;
+	Triple<eslocal> dnodes = (Triple<int>(TElement::subnodes) - 1) * block.elements;
 	Triple<eslocal> size = (dnodes * block.domains + 1).toSize();
 
 	auto shiftCorrection = [] (int &shift, eslocal &nodes, eslocal subnodes) {
@@ -127,10 +125,12 @@ void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::
 	shiftCorrection(shift.y, dnodes.y, TElement::subnodes[1]);
 	shiftCorrection(shift.z, dnodes.z, TElement::subnodes[2]);
 
-	size_t number = 0;
-	number += TElement::subnodes[0] > 1 ? 1 : 0;
-	number += TElement::subnodes[1] > 1 ? 1 : 0;
-	number += TElement::subnodes[2] > 1 ? 1 : 0;
+	size_t number = 1;
+	number *= TElement::subnodes[0] > 1 ? 2 : 1;
+	number *= TElement::subnodes[1] > 1 ? 2 : 1;
+	number *= TElement::subnodes[2] > 1 ? 2 : 1;
+
+	fixPoints.resize(block.domains.mul(), std::vector<Element*>(number, NULL));
 
 	Triple<size_t> domain;
 	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
@@ -149,11 +149,10 @@ void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::
 template<class TElement>
 void Block<TElement>::uniformCorners(const std::vector<Element*> &nodes, std::vector<Element*> &corners, size_t number, bool point, bool edge, bool face)
 {
-	Triple<size_t> dnodes = (Triple<int>(TElement::subnodes) + 1) * block.elements;
+	Triple<size_t> dnodes = (Triple<size_t>(TElement::subnodes) - 1) * block.elements;
 	Triple<size_t> cnodes = block.domains * dnodes;
 	Triple<size_t> size = (cnodes + 1).toSize();
 	Triple<size_t> step = dnodes / (number + 1);
-
 
 	Triple<std::vector<size_t> > offsets;
 
@@ -182,6 +181,9 @@ void Block<TElement>::uniformCorners(const std::vector<Element*> &nodes, std::ve
 		if (!offset.z) { c++; }
 		return c == n;
 	};
+
+	dnodes = (dnodes + 1).steps();
+	cnodes = (cnodes + 1).steps();
 
 	Triple<size_t> offset;
 	for (size_t z = 0; z < offsets.z.size(); z++) {
@@ -268,10 +270,10 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region &regi
 	if (bborder.end.y > block.end.y) { bborder.end.y = block.end.y; bborder.excludeEnd.y = false; }
 	if (bborder.end.z > block.end.z) { bborder.end.z = block.end.z; bborder.excludeEnd.z = false; }
 
-	Triple<size_t> cnodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) + 1);
-	Triple<double> step = (block.end - block.start) / Triple<double>(cnodes.x, cnodes.y, cnodes.z ? cnodes.z : 1);
+	Triple<size_t> cnodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1) + 1;
+	Triple<double> step = (block.end - block.start) / cnodes.steps();
 	Triple<size_t> elems = block.domains * block.elements;
-	Triple<double> estep = (block.end - block.start) / Triple<double>(elems.x, elems.y, elems.z ? elems.z : 1);
+	Triple<double> estep = (block.end - block.start) / Triple<double>(elems.x, elems.y, elems.z);
 
 	Triple<double> offsetMin = (bborder.start - block.start) / step;
 	Triple<double> offsetMax = (bborder.end - block.start) / step;

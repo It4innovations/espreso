@@ -5,7 +5,7 @@
 using namespace espreso::input;
 
 size_t Tetrahedron4::subelements = 6;
-size_t Tetrahedron4::subnodes[] = { 0, 0, 0 };
+size_t Tetrahedron4::subnodes[] = { 2, 2, 2 };
 
 void Tetrahedron4::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {

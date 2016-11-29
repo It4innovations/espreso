@@ -68,6 +68,7 @@ struct Triple {
 	Triple<double> ceil() const { return Triple<double>(std::ceil(x), std::ceil(y), std::ceil(z)); }
 
 	Triple<Ttype> toSize() const { return Triple<Ttype>(1, x, x * y); }
+	Triple<Ttype> steps() const { return Triple<Ttype>(x > 1 ? x - 1 : 1, y > 1 ? y - 1 : 1, z > 1 ? z - 1 : 1); }
 };
 
 template <typename Ttype>

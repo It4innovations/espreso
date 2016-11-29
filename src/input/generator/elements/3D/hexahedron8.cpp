@@ -4,7 +4,7 @@
 using namespace espreso::input;
 
 size_t Hexahedron8::subelements = 1;
-size_t Hexahedron8::subnodes[] = { 0, 0, 0 };
+size_t Hexahedron8::subnodes[] = { 2, 2, 2 };
 
 void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {

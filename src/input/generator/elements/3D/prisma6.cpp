@@ -5,7 +5,7 @@
 using namespace espreso::input;
 
 size_t Prisma6::subelements = 2;
-size_t Prisma6::subnodes[] = { 0, 0, 0 };
+size_t Prisma6::subnodes[] = { 2, 2, 2 };
 
 void Prisma6::addElements(std::vector<Element*> &elements, const eslocal indices[], const eslocal params[])
 {
