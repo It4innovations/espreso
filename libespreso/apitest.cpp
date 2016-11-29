@@ -3,7 +3,7 @@
 
 // we use ESPRESO assembler for compute stiffness matrices
 #include "../src/app/factory/factory.h"
-
+#include "../src/config/description.h"
 
 int main(int argc, char** argv)
 {
@@ -15,13 +15,13 @@ int main(int argc, char** argv)
 
 ///////////////////////////////////////////// CREATE INSTANCE /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	espreso::ArgsConfiguration configuration = espreso::ParametersReader::fromArguments(&argc, &argv);
+	espreso::ParametersReader::fromArguments(&argc, &argv);
 
 	ESINFO(espreso::OVERVIEW) << "Run ESPRESO API test on " << espreso::config::env::MPIsize << " process(es).";
 	espreso::ParametersReader::printParameters(espreso::config::parameters, espreso::config::info::VERBOSE_LEVEL);
 
 	// use ESPRESO factory to allow run test on all examples/assemblers
-	espreso::Factory factory(configuration);
+	espreso::Factory factory(espreso::configuration);
 	factory.mesh.partitiate(1); // we need only one sub-domain per cluster
 	factory.instance->init(); // it perform full initialization; it is not effective but sufficient to test API
 

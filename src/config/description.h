@@ -251,6 +251,12 @@ struct GridConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, elements, "List of elements regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
 };
 
+struct ESPRESOInput: public Configuration {
+
+	PARAMETER(std::string, path, "Path to an input description.", "");
+	PARAMETER(size_t, domains, "Number of sub-domains of each cluster.", 8);
+};
+
 struct ESPRESOGenerator: public Configuration {
 
 	OPTION(GENERATOR_SHAPE, shape, "Generated shape", GENERATOR_SHAPE::GRID, OPTIONS({
@@ -442,6 +448,9 @@ struct GlobalConfiguration: public Configuration {
 
 	SUBCONFIG(Environment       , env         , "Environment dependent variables (set by ./env/scripts).");
 	SUBCONFIG(ESPRESOGenerator  , generator   , "ESPRESO internal mesh generator.");
+	SUBCONFIG(ESPRESOInput      , workbench   , "Mesh description in Ansys Workbench format.");
+	SUBCONFIG(ESPRESOInput      , openfoam    , "Mesh description in OpenFOAM format.");
+	SUBCONFIG(ESPRESOInput      , esdata      , "Mesh description in ESPRESO internal binary format.");
 	SUBCONFIG(FETISolver        , feti        , "Internal FETI solver options.");
 	SUBCONFIG(MULTIGRIDSolver   , multigrid   , "Multigrid setting.");
 	SUBCONFIG(Output            , output      , "Output settings.");
