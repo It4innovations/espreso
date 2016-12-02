@@ -29,6 +29,8 @@ int main(int argc, char **argv)
 
 	MPI_Init(&argc, &argv);
 
+	MPI_Comm_rank(MPI_COMM_WORLD, &configuration.env.MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &configuration.env.MPIsize);
 	Configuration::read(&argc, &argv);
 	ParametersReader::fromArguments(&argc, &argv);
 
