@@ -66,10 +66,10 @@ private:
 	int _size;
 
 	/** @brief Temporary storage for faces*/
-	std::vector<Face> _faces;
+	//std::vector<Face> _faces;
 
 	/** @brief Temporary storage for cell zones*/
-	std::vector<CellZone> _cellZones;
+	//std::vector<CellZone> _cellZones;
 };
 
 }

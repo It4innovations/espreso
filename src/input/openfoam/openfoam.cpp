@@ -70,8 +70,7 @@ void OpenFOAM::points(Coordinates &coordinates)
 					<< ") is not the same as the number of points(";
 			ss << addressing.size() << ") in the file:" << _polyMeshPath
 					<< "pointProcAddressing\n";
-			std::cerr << ss.str();
-			exit(EXIT_FAILURE);
+			ESINFO(GLOBAL_ERROR) << ss.str();
 		}
 		std::vector< esglobal >::iterator it_addressing = addressing.begin();
 		it_addressing = addressing.begin();
@@ -91,7 +90,28 @@ void OpenFOAM::points(Coordinates &coordinates)
 void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	FoamFile facesFile(_polyMeshPath + "faces");
+	std::vector<Face> _faces;
 	solveParseError(parse(facesFile.getTokenizer(), _faces));
+
+	for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end();
+			++it) {
+		Element *faceElement;
+		if ((*it).numberOfPoints ==3 ) {
+			faceElement = new Triangle3((*it).p);
+		}else if ((*it).numberOfPoints ==4 ) {
+			faceElement = new Square4((*it).p);
+		}else{
+			ESINFO(GLOBAL_ERROR) << "Faces with "<<(*it).numberOfPoints << " points are not supported.";
+		}
+		faces.push_back(faceElement);
+		(*it).faceElement = faceElement;
+	}
+
+	/*for (std::vector<Element*>::iterator it = faces.begin(); it != faces.end();
+				++it) {
+		std::cout<<*(*it)<<"\n";
+	}*/
+
 	FoamFile ownerFile(_polyMeshPath + "owner");
 	std::vector< esglobal > owner;
 	solveParseError(parse(ownerFile.getTokenizer(), owner));
@@ -108,7 +128,6 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 	elements.reserve(maximum);
 	elementBuilders.reserve(maximum);
 
-	//#pragma omp for
 	for (int i = 0; i < maximum; i++) {
 		elementBuilders.push_back(new ElementBuilder());
 	}
@@ -133,12 +152,25 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 	}
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin();
 			it != elementBuilders.end(); ++it) {
-		solveParseError((*it)->createElement(elements));
+		VolumeElement *element=NULL;
+		solveParseError((*it)->createElement(element));
+		if (element==NULL) {
+			ESINFO(GLOBAL_ERROR) << "Unrecognized element form faces: "<<(*it)<<"\n";
+		}else {
+			elements.push_back(element);
+			//std::cout<<*(*it)<<"\n";
+			for(auto face : (*it)->selectedFaces) {
+				//std::cout<<*(face.first)<<"\n";
+				//TODO: check for error
+				face.first->faceElement->parentElements().push_back(element);
+			}
+		}
+
 		delete *it;
 	}
 	//reads also cell zones
-	FoamFile cellZonesFile(_polyMeshPath + "cellZones");
-	solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
+	//FoamFile cellZonesFile(_polyMeshPath + "cellZones");
+	//solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 }
 
 void OpenFOAM::materials(std::vector<Material> &materials)
@@ -155,7 +187,9 @@ void OpenFOAM::regions(
 				std::vector<Element*> &edges,
 				std::vector<Element*> &nodes)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement setting of OpenFOAM project.";
+
+
+
 };
 
 //void OpenFOAM::faces(std::vector<Element*> &faces)
@@ -177,39 +211,39 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		nodes[i]->clusters().push_back(_rank);
 	}
-	if (_size > 1) {
 
-		FoamFile boundaryFile(_polyMeshPath + "boundary");
-		std::vector<Dictionary> boundary;
-		solveParseError(parse(boundaryFile.getTokenizer(), boundary));
+	FoamFile boundaryFile(_polyMeshPath + "boundary");
+	std::vector<Dictionary> boundary;
+	solveParseError(parse(boundaryFile.getTokenizer(), boundary));
 
-		for (std::vector<Dictionary>::iterator it = boundary.begin(); it != boundary.end(); ++it) {
-			if ((*it).getName().find("procBoundary") == 0) {
-				int myProcNo = 0;
-				solveParseError((*it).readEntry("myProcNo", myProcNo));
-				if (myProcNo != _rank) {
-					std::stringstream ss;
-					ss << "Boundary for rank: " << myProcNo << ", but opened in process: " << _rank;
-					std::cerr << ss.str();
-					exit(EXIT_FAILURE);
-				}
+	for (std::vector<Dictionary>::iterator it = boundary.begin(); it != boundary.end(); ++it) {
+		int nFaces = 0;
+		solveParseError((*it).readEntry("nFaces", nFaces));
+		int startFace = 0;
+		solveParseError((*it).readEntry("startFace", startFace));
 
-				int neighbProcNo = 0;
-				solveParseError((*it).readEntry("neighbProcNo", neighbProcNo));
-				int nFaces = 0;
-				solveParseError((*it).readEntry("nFaces", nFaces));
-				int startFace = 0;
-				solveParseError((*it).readEntry("startFace", startFace));
-				ESINFO(GLOBAL_ERROR) << "Implement OpenFOAM";
-//				for (int i = 0; i < nFaces; i++) {
-//					std::vector<eslocal> face = mesh.faces()[startFace + i];
-//					for (std::vector<eslocal>::iterator it = face.begin(); it != face.end(); ++it) {
-//						boundaries[*it].push_back(neighbProcNo);
-//						neighs.insert(neighbProcNo);
-//					}
-//				}
+		if ((*it).getName().find("procBoundary") == 0) {
+			int myProcNo = 0;
+			solveParseError((*it).readEntry("myProcNo", myProcNo));
+			if (myProcNo != _rank) {
+				std::stringstream ss;
+				ss << "Boundary for rank: " << myProcNo << ", but opened in process: " << _rank;
+				ESINFO(GLOBAL_ERROR) << ss.str();
 			}
+			int neighbProcNo = 0;
+			solveParseError((*it).readEntry("neighbProcNo", neighbProcNo));
+		}else{
+			ESINFO(OVERVIEW) << "Boundary: "<<(*it).getName()<<" start: "<<startFace<<" nFaces: "<<nFaces;
 		}
+
+			//ESINFO(GLOBAL_ERROR) << "Implement OpenFOAM";
+			//for (int i = 0; i < nFaces; i++) {
+				//std::vector<eslocal> face = mesh.faces()[startFace + i];
+				//for (std::vector<eslocal>::iterator it = face.begin(); it != face.end(); ++it) {
+				//	boundaries[*it].push_back(neighbProcNo);
+				//	neighs.insert(neighbProcNo);
+				//}
+		//	}
 	}
 
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {

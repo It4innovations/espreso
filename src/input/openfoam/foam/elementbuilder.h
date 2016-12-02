@@ -40,15 +40,16 @@ public:
     }
     size_t getNumberOfFaces() { return selectedFaces.size();}
 
-    ParseError* createElement(std::vector<Element*> &elements);
+    ParseError* createElement(VolumeElement *&elements);
 
+    /** List of pairs: Face, owner */
+    std::list< std::pair<Face*, bool> > selectedFaces;
 
 protected:
 private:
 
     ParseError* nextPoint(eslocal x, eslocal y, eslocal &nextPoint);
 
-    std::list< std::pair<Face*, bool> > selectedFaces;
 };
 
 }

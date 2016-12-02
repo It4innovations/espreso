@@ -9,8 +9,7 @@ ElementBuilder::~ElementBuilder() {
 
 }
 
-ParseError* ElementBuilder::createElement(
-		std::vector<Element*> &elements) {
+ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 
 	std::set< eslocal > coordinates;
 	int numberOfSquares = 0;
@@ -56,7 +55,7 @@ ParseError* ElementBuilder::createElement(
 		indicies[3] = indicies[2];
 		indicies[4] = *(coordinates.begin());
 
-		Element* element = new Tetrahedron4(indicies, 8, params);
+		element = new Tetrahedron4(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -73,7 +72,6 @@ ParseError* ElementBuilder::createElement(
 					face->setFaceIndex(element, 3);
 			}
 		}
-		elements.push_back(element);
 	} else if (coordinates.size() == 5) {
 		if (selectedFaces.size() != 5) {
 			std::stringstream ss;
@@ -107,7 +105,7 @@ ParseError* ElementBuilder::createElement(
 		indicies[2] = firstFace.first->p[2];
 		indicies[3] = firstFace.first->p[1];
 		indicies[4] = *(coordinates.begin());
-		Element *element = new Pyramid5(indicies, 8, params);
+		element = new Pyramid5(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -126,7 +124,6 @@ ParseError* ElementBuilder::createElement(
 					face->setFaceIndex(element, 4);
 			}
 		}
-		elements.push_back(element);
 
 	} else if (coordinates.size() == 6) {
 		if (selectedFaces.size() != 5) {
@@ -171,7 +168,7 @@ ParseError* ElementBuilder::createElement(
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		indicies[7] = indicies[6];
-		Element *element = new Prisma6(indicies, 8, params);
+		element = new Prisma6(indicies, 8, params);
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 3);
 		}
@@ -191,7 +188,6 @@ ParseError* ElementBuilder::createElement(
 					face->setFaceIndex(element, 2);
 			}
 		}
-		elements.push_back(element);
 
 	} else if (coordinates.size() == 8) {
 		if (selectedFaces.size() != 6) {
@@ -218,7 +214,7 @@ ParseError* ElementBuilder::createElement(
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		PARSE_GUARD(nextPoint(indicies[2], indicies[3], indicies[7]));
-		Element *element = new Hexahedron8(indicies, 8, params);
+		element = new Hexahedron8(indicies, 8, params);
 
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 4);
@@ -240,7 +236,6 @@ ParseError* ElementBuilder::createElement(
 					face->setFaceIndex(element, 5);
 			}
 		}
-		elements.push_back(element);
 
 	} else {
 		std::stringstream ss;

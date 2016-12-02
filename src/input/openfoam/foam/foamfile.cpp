@@ -14,14 +14,18 @@ bool FoamFile::fileExists(const char *filename)
 FoamFile::FoamFile(const std::string &filename)
 {
     std::string gzFilename = filename + ".gz";
+
     if (fileExists(gzFilename.c_str())) {
         GzFileStream *s = new GzFileStream(gzFilename);
         tokenizer = new TokenStream<GzFileStream>(s);
         stream = s;
+        ESINFO(OVERVIEW) << "Reading OpenFoam file: "<<gzFilename;
+
     } else {
         FileStream *s = new FileStream(filename);
         tokenizer = new TokenStream<FileStream>(s);
         stream = s;
+        ESINFO(OVERVIEW) << "Reading OpenFoam file: "<<filename;
     }
     parseHeader();
 }
