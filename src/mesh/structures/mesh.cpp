@@ -1512,13 +1512,15 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 	// TODO: parallelization
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		for (size_t e = 0; e < nElements[n].size(); e++) {
+		for (size_t e = 0, offset = 0; e < nElements[n].size(); e++) {
 			auto it = std::lower_bound(elements.begin(), elements.end(), nElements[n][e], [&] (Element *el1, Element *el2) { return *el1 < *el2; });
 			if (it != elements.end() && **it == *(nElements[n][e])) {
+				(*it)->clusterOffsets().resize((*it)->clusters().size());
 				size_t cluster = std::lower_bound((*it)->clusters().begin(), (*it)->clusters().end(), neighbours[n]) - (*it)->clusters().begin();
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
 					(*it)->DOFsDomainsCounters()[cluster * DOFs.size() + dof] = nElements[n][e]->DOFsDomainsCounters()[dof];
 				}
+				(*it)->clusterOffsets()[cluster] = offset++;
 			}
 		}
 	}
@@ -1586,6 +1588,111 @@ void Mesh::mapCoordinatesToDomains()
 
 		_coordinates._clusterIndex[p] = l2g;
 	}
+}
+
+struct __Point__ {
+
+	static constexpr size_t digits = 1000;
+
+	__Point__(): x(0), y(0), z(0), id(-1) {};
+	__Point__(const Point &p, esglobal id): x(p.x), y(p.y), z(p.z), id(id) {};
+
+	bool operator<(const __Point__ &p) const
+	{
+		if (std::trunc(z * digits) == std::trunc(p.z * digits)) {
+			if (std::trunc(y * digits) == std::trunc(p.y * digits)) {
+				if (std::trunc(x * digits) == std::trunc(p.x * digits)) {
+					return false;
+				}
+				return x < p.x;
+			}
+			return y < p.y;
+		}
+		return z < p.z;
+	}
+
+	bool operator==(const __Point__ &p) const
+	{
+		return !(*this < p) && !(p < *this);
+	}
+
+	double x, y, z;
+	esglobal id;
+};
+
+void Mesh::synchronizeGlobalIndices()
+{
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
+	};
+
+	size_t threads = config::env::CILK_NWORKERS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
+
+	// clusters x threads x nodes
+	std::vector<std::vector<std::vector<__Point__> > > sBuffer(_neighbours.size(), std::vector<std::vector<__Point__> >(threads));
+	std::vector<std::vector<__Point__> > rBuffer(_neighbours.size());
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+
+			if (_nodes[n]->clusters().size() > 1) {
+				if (_nodes[n]->clusters().front() == config::env::MPIrank) {
+					for (size_t c = 1; c < _nodes[n]->clusters().size(); c++) {
+						sBuffer[n2i(_nodes[n]->clusters()[c])][t].push_back(__Point__(_coordinates[n], _coordinates.globalIndex(n)));
+					}
+				} else {
+					sBuffer[n2i(_nodes[n]->clusters().front())][t].push_back(__Point__(_coordinates[n], _coordinates.globalIndex(n)));
+				}
+			}
+
+		}
+	}
+
+	cilk_for (size_t n = 0; n < _neighbours.size(); n++) {
+		for (size_t t = 1; t < threads; t++) {
+			sBuffer[n][0].insert(sBuffer[n][0].end(), sBuffer[n][t].begin(), sBuffer[n][t].end());
+		}
+		if (_neighbours[n] < config::env::MPIrank) {
+			rBuffer[n].resize(sBuffer[n][0].size());
+			std::sort(sBuffer[n][0].begin(), sBuffer[n][0].end());
+		}
+	}
+
+	std::vector<MPI_Request> req(_neighbours.size());
+	for (size_t n = 0; n < _neighbours.size(); n++) {
+		if (_neighbours[n] > config::env::MPIrank) {
+			MPI_Isend(sBuffer[n][0].data(), sizeof(__Point__) * sBuffer[n][0].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
+		}
+		if (_neighbours[n] < config::env::MPIrank) {
+			MPI_Irecv(rBuffer[n].data(), sizeof(__Point__) * rBuffer[n].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
+		}
+	}
+
+	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+
+	for (size_t n = 0; n < _neighbours.size(); n++) {
+		if (_neighbours[n] < config::env::MPIrank) {
+			for (size_t p = 0; p < rBuffer[n].size(); p++) {
+				auto it = std::lower_bound(sBuffer[n][0].begin(), sBuffer[n][0].end(), rBuffer[n][p]);
+				if (*it == rBuffer[n][p]) {
+					_coordinates._globalIndex[_coordinates.clusterIndex(it->id)] = rBuffer[n][p].id;
+				} else {
+					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _neighbours[n] << " on " << config::env::MPIrank;
+				}
+			}
+		}
+	}
+
+	#pragma cilk grainsize = 1
+	cilk_for (size_t t = 0; t < threads; t++) {
+		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+			_coordinates._globalMapping[n].first = _coordinates._globalIndex[n];
+			_coordinates._globalMapping[n].second = n;
+		}
+	}
+	std::sort(_coordinates._globalMapping.begin(), _coordinates._globalMapping.end());
 }
 
 }

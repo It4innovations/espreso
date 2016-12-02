@@ -85,6 +85,8 @@ public:
 
 	void getSurface(Mesh &surface) const;
 
+	void synchronizeGlobalIndices();
+
 protected:
 	Region& region(const std::string &name)
 	{

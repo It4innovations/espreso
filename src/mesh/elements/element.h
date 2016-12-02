@@ -140,6 +140,8 @@ public:
 	std::vector<eslocal>& DOFsDomainsCounters() { return _DOFsDomainsCounters; }
 	const std::vector<eslocal>& DOFsDomainsCounters() const { return _DOFsDomainsCounters; }
 
+	std::vector<eslocal>& clusterOffsets() { return _clusterOffsets; }
+
 	virtual const std::vector<double>& stiffnessMatrix() const { ESINFO(GLOBAL_ERROR) << "Stiffness matrix of an element is not set."; exit(0); }
 
 	eslocal DOFIndex(eslocal domain, size_t DOFIndex) const
@@ -154,6 +156,11 @@ public:
 		auto it = std::lower_bound(_clusters.begin(), _clusters.end(), cluster);
 		auto DOFs = _DOFsDomainsCounters.size() / _clusters.size();
 		return _DOFsDomainsCounters[DOFs * (it - _clusters.begin()) + DOFIndex];
+	}
+
+	eslocal clusterOffset(eslocal cluster) const
+	{
+		return _clusterOffsets[lower_bound(_clusters.begin(), _clusters.end(), cluster)  -_clusters.begin()];
 	}
 
 	size_t numberOfGlobalDomainsWithDOF(size_t index) const
@@ -245,6 +252,7 @@ protected:
 	std::vector<eslocal> _clusters;
 	std::vector<eslocal> _DOFsIndices;
 	std::vector<eslocal> _DOFsDomainsCounters;
+	std::vector<eslocal> _clusterOffsets;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Element &e)
