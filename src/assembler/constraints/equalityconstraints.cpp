@@ -117,7 +117,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 	// neighbours x threads x data
 	std::vector<std::vector<std::vector<esglobal> > > sLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<esglobal> > > rLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<std::pair<esglobal,esglobal> > >(threads));
 
 
 	#pragma omp parallel for
@@ -140,7 +140,9 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 							sLambdas[n2i(elements[e]->clusters()[c])][t].push_back(e * DOFs.size() + dof);
 						}
 					} else { // pick ID from lower cluster
-						rLambdas[n2i(elements[e]->clusters()[0])][t].push_back(e * DOFs.size() + dof);
+						rLambdas[n2i(elements[e]->clusters()[0])][t].push_back( // offset + lambda
+								std::make_pair(elements[e]->clusterOffset(elements[e]->clusters()[0]), e * DOFs.size() + dof)
+						);
 					}
 				}
 			}
@@ -182,12 +184,12 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 	#pragma omp parallel for
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-		size_t size = rLambdas[n][0].size();
 		for (size_t t = 1; t < threads; t++) {
 			sLambdas[n][0].insert(sLambdas[n][0].end(), sLambdas[n][t].begin(), sLambdas[n][t].end());
-			size += rLambdas[n][t].size();
+			rLambdas[n][0].insert(rLambdas[n][0].end(), rLambdas[n][t].begin(), rLambdas[n][t].end());
 		}
-		rBuffer[n].resize(size);
+		std::sort(rLambdas[n][0].begin(), rLambdas[n][0].end());
+		rBuffer[n].resize(rLambdas[n][0].size());
 	}
 
 
@@ -217,6 +219,9 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 				}
 			}
 
+	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
+		for (size_t i = 0; i < rLambdas[n][0].size(); i++) {
+			lambdasID[rLambdas[n][0][i].second] = rBuffer[n][i];
 		}
 	}
 
