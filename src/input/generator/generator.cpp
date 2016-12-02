@@ -1,5 +1,6 @@
 
 #include "composition/grid.h"
+#include "composition/sphere.h"
 
 #include "../../config/description.h"
 #include "esmesh.h"
@@ -14,8 +15,10 @@ void Generator::generate(const ESPRESOGenerator &configuration, Mesh &mesh, size
 		Grid::load(configuration.grid, mesh, index, size);
 		break;
 	case GENERATOR_SHAPE::SPHERE:
-		ESINFO(GLOBAL_ERROR) << "Implement sphere generator";
+		Sphere::load(configuration.sphere, mesh, index, size);
 		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented generator";
 	}
 }
 
