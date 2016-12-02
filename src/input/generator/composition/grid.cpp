@@ -147,7 +147,7 @@ void Grid::points(Coordinates &coordinates)
 {
 	_block->points(coordinates._points);
 
-	Triple<size_t> cnodes = _settings.domains * _settings.elements * (Triple<size_t>(_subnodes) + 1);
+	Triple<size_t> cnodes = _settings.domains * _settings.elements * (Triple<size_t>(_subnodes) - 1);
 	Triple<size_t> gnodes = _settings.blocks * _settings.clusters * cnodes;
 	Triple<size_t> coffset = _clusterOffset * cnodes;
 	Triple<size_t> size = (gnodes + 1).toSize();
