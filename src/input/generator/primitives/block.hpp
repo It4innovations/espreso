@@ -73,7 +73,6 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 template <class TElement>
 void Block<TElement>::elements(std::vector<Element*> &elements)
 {
-	Triple<size_t> elems = block.domains * block.elements;
 	elements.reserve(TElement::subelements * (block.domains * block.elements).mul());
 	std::vector<eslocal> params(6);
 
@@ -136,7 +135,7 @@ void Block<TElement>::uniformFixPoints(const std::vector<Element*> &nodes, std::
 	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
 		for (domain.y = 0; domain.y < block.domains.y; domain.y++) {
 			for (domain.x = 0; domain.x < block.domains.x; domain.x++) {
-				for (int i = 0; i < number; i++) {
+				for (size_t i = 0; i < number; i++) {
 					Triple<eslocal> corner((i & 1) ? domain.x + 1 : domain.x, (i & 2) ? domain.y + 1 : domain.y, (i & 4) ? domain.z + 1 : domain.z);
 					Triple<eslocal> offset((i & 1) ? -shift.x : shift.x, (i & 2) ? -shift.y : shift.y, (i & 4) ? -shift.z : shift.z);
 					fixPoints[(domain * block.domains.toSize()).sum()][i] = nodes[((corner * dnodes + offset) * size).sum()];

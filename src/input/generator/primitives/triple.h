@@ -3,6 +3,7 @@
 #define SRC_INPUT_GENERATOR_PRIMITIVES_TRIPLE_H_
 
 #include <iostream>
+#include <cmath>
 
 namespace espreso {
 namespace input {
