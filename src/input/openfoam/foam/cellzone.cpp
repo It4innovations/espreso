@@ -2,25 +2,34 @@
 
 using namespace espreso::input;
 
-CellZone::CellZone()
+Zone::Zone(std::string containerIndexesName)
 {
-
+	this->containerIndexesName = containerIndexesName;
 }
 
-ParseError *CellZone::loadFromDictionary(Dictionary &dictionary)
+ParseError *Zone::loadFromDictionary(Dictionary &dictionary)
 {
     name = dictionary.getName();
-    PARSE_GUARD(dictionary.readEntry("cellLabels", _elementIndexes));
+    PARSE_GUARD(dictionary.readEntry(containerIndexesName, _elementIndexes));
+    return NULL;
+}
+
+ParseError* espreso::input::parse(Tokenizer &ts, Zone &zone)
+{
+    Dictionary dictionary;
+
+    PARSE_GUARD(parse(ts, dictionary));
+    PARSE_GUARD(zone.loadFromDictionary(dictionary));
     return NULL;
 }
 
 ParseError* espreso::input::parse(Tokenizer &ts, CellZone &cellZone)
 {
-    Dictionary dictionary;
-
-    PARSE_GUARD(parse(ts, dictionary));
-    PARSE_GUARD(cellZone.loadFromDictionary(dictionary));
-    return NULL;
+    return parse(ts, (Zone&)cellZone);
 }
 
+ParseError* espreso::input::parse(Tokenizer &ts, FaceZone &faceZone)
+{
+    return parse(ts, (Zone&)faceZone);
+}
 

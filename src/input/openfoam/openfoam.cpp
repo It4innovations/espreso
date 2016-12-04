@@ -183,6 +183,35 @@ void OpenFOAM::regions(
 				std::vector<Element*> &nodes)
 {
 
+	FoamFile boundaryFile(_polyMeshPath + "boundary");
+	std::vector<Dictionary> boundary;
+	solveParseError(parse(boundaryFile.getTokenizer(), boundary));
+
+	for (std::vector<Dictionary>::iterator it = boundary.begin(); it != boundary.end(); ++it) {
+		int nFaces = 0;
+		solveParseError((*it).readEntry("nFaces", nFaces));
+		int startFace = 0;
+		solveParseError((*it).readEntry("startFace", startFace));
+
+		if ((*it).getName().find("procBoundary") == 0) {
+			int myProcNo = 0;
+			solveParseError((*it).readEntry("myProcNo", myProcNo));
+			if (myProcNo != _rank) {
+				std::stringstream ss;
+				ss << "Boundary for rank: " << myProcNo << ", but opened in process: " << _rank;
+				ESINFO(GLOBAL_ERROR) << ss.str();
+			}
+			int neighbProcNo = 0;
+			solveParseError((*it).readEntry("neighbProcNo", neighbProcNo));
+		}else{
+			//ESINFO(OVERVIEW) << "Boundary: "<<(*it).getName()<<" start: "<<startFace<<" nFaces: "<<nFaces;
+			regions.push_back(Region());
+			Region *region = &(regions[regions.size()-1]);
+			region->name=(*it).getName();
+			region->elements.resize(nFaces);
+			memcpy(&region->elements[0], &faces[startFace], nFaces*sizeof(Element*));
+		}
+	}
 	//reads cell zones
 	FoamFile cellZonesFile(_polyMeshPath + "cellZones");
 	std::vector<CellZone> _cellZones;
@@ -196,9 +225,22 @@ void OpenFOAM::regions(
 			region->elements.push_back(elements[index]);
 		}
 	}
+	//reads face zones
+	FoamFile faceZonesFile(_polyMeshPath + "faceZones");
+	std::vector<FaceZone> _faceZones;
+	solveParseError(parse(faceZonesFile.getTokenizer(), _faceZones));
+
+	for(auto faceZone : _faceZones) {
+		regions.push_back(Region());
+		Region *region = &(regions[regions.size()-1]);
+		region->name=faceZone.getName();
+		for(auto index : faceZone.elementIndexes()) {
+			region->elements.push_back(faces[index]);
+		}
+	}
 
 	for(auto region : regions) {
-		ESINFO(OVERVIEW) << "Loaded region: "<<region.name<<" with: "<<region.elements.size() <<" elements.\n";
+		ESINFO(OVERVIEW) << "Loaded region: "<<region.name<<" with: "<<region.elements.size() <<" elements.";
 		/*for (auto element : region.elements) {
 			std::cout << *element<<"\n";
 		}*/
@@ -218,6 +260,7 @@ void OpenFOAM::regions(
 //}
 
 void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours) {
+
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		nodes[i]->clusters().push_back(_rank);
 	}
