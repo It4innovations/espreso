@@ -158,9 +158,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 			ESINFO(GLOBAL_ERROR) << "Unrecognized element form faces: "<<(*it)<<"\n";
 		}else {
 			elements.push_back(element);
-			//std::cout<<*(*it)<<"\n";
 			for(auto face : (*it)->selectedFaces) {
-				//std::cout<<*(face.first)<<"\n";
 				//TODO: check for error
 				face.first->faceElement->parentElements().push_back(element);
 			}
@@ -168,9 +166,6 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 
 		delete *it;
 	}
-	//reads also cell zones
-	//FoamFile cellZonesFile(_polyMeshPath + "cellZones");
-	//solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 }
 
 void OpenFOAM::materials(std::vector<Material> &materials)
@@ -188,13 +183,30 @@ void OpenFOAM::regions(
 				std::vector<Element*> &nodes)
 {
 
+	//reads cell zones
+	FoamFile cellZonesFile(_polyMeshPath + "cellZones");
+	std::vector<CellZone> _cellZones;
+	solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 
+	for(auto cellZone : _cellZones) {
+		regions.push_back(Region());
+		Region *region = &(regions[regions.size()-1]);
+		region->name=cellZone.getName();
+		for(auto index : cellZone.elementIndexes()) {
+			region->elements.push_back(elements[index]);
+		}
+	}
 
+	for(auto region : regions) {
+		ESINFO(OVERVIEW) << "Loaded region: "<<region.name<<" with: "<<region.elements.size() <<" elements.\n";
+		/*for (auto element : region.elements) {
+			std::cout << *element<<"\n";
+		}*/
+	}
 };
 
 //void OpenFOAM::faces(std::vector<Element*> &faces)
 //{
-//	// Implement me
 //}
 
 //void OpenFOAM::faces(Faces &faces) {
@@ -206,8 +218,6 @@ void OpenFOAM::regions(
 //}
 
 void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours) {
-	std::set<int> neighs;
-
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		nodes[i]->clusters().push_back(_rank);
 	}
@@ -250,8 +260,5 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 		std::sort(nodes[i]->clusters().begin(), nodes[i]->clusters().end());
 		nodes[i]->clusters().resize(std::unique(nodes[i]->clusters().begin(), nodes[i]->clusters().end()) - nodes[i]->clusters().begin());
 	}
-
-	neighs.erase(environment->MPIrank);
-	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

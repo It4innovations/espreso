@@ -18,9 +18,7 @@ public:
 	}
 
 	ParseError* loadFromDictionary(Dictionary &dictionary);
-	const std::vector<Element*>& elements() const {
-		return _elements;
-	}
+
 	const std::vector<eslocal >& elementIndexes() const {
 		return _elementIndexes;
 	}
@@ -40,7 +38,6 @@ public:
 
 protected:
 	std::string name;
-	std::vector<Element*> _elements;
 	std::vector< eslocal > _elementIndexes;
 };
 
@@ -48,9 +45,5 @@ ParseError* parse(Tokenizer &ts, CellZone &cellZone);
 
 }
 }
-
-
-
-
 
 #endif // CELLZONE_H
