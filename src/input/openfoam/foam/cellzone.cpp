@@ -33,3 +33,7 @@ ParseError* espreso::input::parse(Tokenizer &ts, FaceZone &faceZone)
     return parse(ts, (Zone&)faceZone);
 }
 
+ParseError* espreso::input::parse(Tokenizer &ts, PointZone &pointZone)
+{
+    return parse(ts, (Zone&)pointZone);
+}

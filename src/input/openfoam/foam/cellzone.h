@@ -58,8 +58,17 @@ public:
 
 };
 
+class PointZone : public Zone {
+public:
+	PointZone() : Zone("pointLabels") {
+
+	}
+
+};
+
 ParseError* parse(Tokenizer &ts, CellZone &cellZone);
 ParseError* parse(Tokenizer &ts, FaceZone &faceZone);
+ParseError* parse(Tokenizer &ts, PointZone &pointZone);
 ParseError* parse(Tokenizer &ts, Zone &Zone);
 
 }
