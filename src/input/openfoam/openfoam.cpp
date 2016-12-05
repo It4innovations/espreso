@@ -220,29 +220,46 @@ void OpenFOAM::regions(
 		}
 	}
 	//reads cell zones
-	FoamFile cellZonesFile(_polyMeshPath + "cellZones");
-	std::vector<CellZone> _cellZones;
-	solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
+	if (!FoamFile::checkFileType(_polyMeshPath + "cellZones").empty()) {
+		FoamFile cellZonesFile(_polyMeshPath + "cellZones");
+		std::vector<CellZone> _cellZones;
+		solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 
-	for(auto cellZone : _cellZones) {
-		regions.push_back(Region());
-		Region *region = &(regions[regions.size()-1]);
-		region->name=cellZone.getName();
-		for(auto index : cellZone.elementIndexes()) {
-			region->elements.push_back(elements[index]);
+		for(auto cellZone : _cellZones) {
+			regions.push_back(Region());
+			Region *region = &(regions[regions.size()-1]);
+			region->name=cellZone.getName();
+			for(auto index : cellZone.elementIndexes()) {
+				region->elements.push_back(elements[index]);
+			}
 		}
 	}
-	//reads face zones
-	FoamFile faceZonesFile(_polyMeshPath + "faceZones");
-	std::vector<FaceZone> _faceZones;
-	solveParseError(parse(faceZonesFile.getTokenizer(), _faceZones));
-
-	for(auto faceZone : _faceZones) {
-		regions.push_back(Region());
-		Region *region = &(regions[regions.size()-1]);
-		region->name=faceZone.getName();
-		for(auto index : faceZone.elementIndexes()) {
-			region->elements.push_back(faces[index]);
+	if (!FoamFile::checkFileType(_polyMeshPath + "faceZones").empty()) {
+		//reads face zones
+		FoamFile faceZonesFile(_polyMeshPath + "faceZones");
+		std::vector<FaceZone> _faceZones;
+		solveParseError(parse(faceZonesFile.getTokenizer(), _faceZones));
+		for(auto faceZone : _faceZones) {
+			regions.push_back(Region());
+			Region *region = &(regions[regions.size()-1]);
+			region->name=faceZone.getName();
+			for(auto index : faceZone.elementIndexes()) {
+				region->elements.push_back(faces[index]);
+			}
+		}
+	}
+	if (!FoamFile::checkFileType(_polyMeshPath + "pointZones").empty()) {
+		//reads point zones
+		FoamFile pointZonesFile(_polyMeshPath + "pointZones");
+		std::vector<PointZone> _pointZones;
+		solveParseError(parse(pointZonesFile.getTokenizer(), _pointZones));
+		for(auto pointZone : _pointZones) {
+			regions.push_back(Region());
+			Region *region = &(regions[regions.size()-1]);
+			region->name=pointZone.getName();
+			for(auto index : pointZone.elementIndexes()) {
+				region->elements.push_back(nodes[index]);
+			}
 		}
 	}
 
