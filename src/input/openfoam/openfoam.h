@@ -3,12 +3,12 @@
 #define INPUT_OPENFOAM_OPENFOAM_H_
 
 #include "../loader.h"
+#include "foam/boundary.h"
 #include "foam/foamfile.h"
 #include "foam/face.h"
 #include "foam/dictionary.h"
 #include "foam/elementbuilder.h"
 #include "foam/cellzone.h"
-#include "foam/Boundary.h"
 
 #include "../../config/description.h"
 

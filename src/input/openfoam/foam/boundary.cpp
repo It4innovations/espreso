@@ -5,7 +5,7 @@
  *      Author: beh01
  */
 
-#include "Boundary.h"
+#include "boundary.h"
 
 Boundary::Boundary(int procNo) {
 	this->procNo = procNo;
