@@ -383,6 +383,209 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
 void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
 {
-	ESINFO(ALWAYS) << Info::TextColor::YELLOW << "GLUING is implemented only VTK library output";
+	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
+
+	std::vector<Point> cCenter(config::env::MPIsize);
+	std::vector<Point> sCenters(config::env::MPIsize * mesh.parts());
+
+	MPI_Allgather(&vtk._cCenter, sizeof(Point), MPI_BYTE, cCenter.data(), sizeof(Point), MPI_BYTE, MPI_COMM_WORLD);
+	MPI_Allgather(vtk._sCenters.data(), mesh.parts() * sizeof(Point), MPI_BYTE, sCenters.data(), mesh.parts() * sizeof(Point), MPI_BYTE, MPI_COMM_WORLD);
+
+	std::vector<size_t> sOffset(mesh.parts());
+	std::vector<size_t> eOffset(mesh.parts());
+
+	std::vector<std::vector<std::vector<std::pair<esglobal, Element*> > > > DOF2e(mesh.parts(), std::vector<std::vector<std::pair<esglobal, Element*> > >(dofs));
+
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		eOffset[p] += std::lower_bound(constraints.B1[p].I_row_indices.begin(), constraints.B1[p].I_row_indices.end(), constraints.block[Constraints::DIRICHLET] + 1) - constraints.B1[p].I_row_indices.begin();
+	}
+	for (size_t n = 0; n < mesh.nodes().size(); n++) {
+		for (size_t d = 0; d < mesh.nodes()[n]->domains().size(); d++) {
+			size_t p = mesh.nodes()[n]->domains()[d];
+			for (size_t dof = 0; dof < dofs; dof++) {
+				DOF2e[p][dof].push_back(std::make_pair(mesh.nodes()[n]->DOFIndex(p, dof) + IJVMatrixIndexing, mesh.nodes()[n]));
+			}
+		}
+	}
+	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		for (size_t dof = 0; dof < dofs; dof++) {
+			std::sort(DOF2e[p][dof].begin(), DOF2e[p][dof].end());
+		}
+	}
+
+	for (size_t dof = 0; dof < dofs; dof++) {
+		std::stringstream ss;
+		ss << dof << "dirichlet" << config::env::MPIrank << ".vtk";
+		std::ofstream os;
+		os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
+
+		std::vector<std::vector<Element*> > dnodes(mesh.parts());
+
+		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
+				auto it = std::lower_bound(DOF2e[p][dof].begin(), DOF2e[p][dof].end(), constraints.B1[p].J_col_indices[i], [] (const std::pair<esglobal, Element*> &pair, esglobal index) {
+					return pair.first < index;
+				});
+				if (it != DOF2e[p][dof].end() && it->first == constraints.B1[p].J_col_indices[i]) {
+					dnodes[p].push_back(it->second);
+				}
+			}
+		}
+
+		for (size_t p = 1; p < mesh.parts(); p++) {
+			dnodes[0].insert(dnodes[0].end(), dnodes[p].begin(), dnodes[p].end());
+		}
+		std::sort(dnodes[0].begin(), dnodes[0].end());
+		Esutils::removeDuplicity(dnodes[0]);
+
+		head(os);
+		coordinates(os, mesh.coordinates(), dnodes[0], [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
+		nodes(os, dnodes[0], mesh.parts());
+
+		os.close();
+	}
+
+	size_t maxLambda = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + 1;
+	for (size_t p = 0; p < mesh.parts(); p++) {
+		sOffset[p] = eOffset[p];
+		eOffset[p] = std::lower_bound(constraints.B1[p].I_row_indices.begin() + eOffset[p], constraints.B1[p].I_row_indices.end(), maxLambda) - constraints.B1[p].I_row_indices.begin();
+	}
+
+	auto getDomain = [&] (esglobal lambda, size_t exclude) -> size_t {
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			if (p == exclude) {
+				continue;
+			}
+			auto it = std::lower_bound(constraints.B1subdomainsMap[p].begin(), constraints.B1subdomainsMap[p].end(), lambda - IJVMatrixIndexing);
+			if (it != constraints.B1subdomainsMap[p].end() && *it == lambda - IJVMatrixIndexing) {
+				return p;
+			}
+		}
+		ESINFO(ERROR) << "Internal error: Broken exporting of gluing matrices";
+		return 0;
+	};
+
+	for (size_t dof = 0; dof < dofs; dof++) {
+		std::stringstream ss;
+		ss << dof << "gluing" << config::env::MPIrank << ".vtk";
+		std::ofstream os;
+		os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
+
+		std::vector<std::vector<Element*> > dnodes(mesh.parts());
+		std::vector<std::vector<size_t> > indices(mesh.parts());
+
+		std::vector<std::vector<std::vector<std::pair<esglobal, eslocal> > > > CDneighbour(mesh.parts(), std::vector<std::vector<std::pair<esglobal, eslocal> > >(config::env::MPIsize));
+		std::vector<std::vector<std::pair<eslocal, eslocal> > > CDindex(mesh.parts()); // cluster x domain index
+		std::vector<std::vector<std::pair<esglobal, eslocal> > > sBuffer(config::env::MPIsize);
+		std::vector<std::vector<std::pair<esglobal, eslocal> > > rBuffer(config::env::MPIsize);
+
+		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
+				auto it = std::lower_bound(DOF2e[p][dof].begin(), DOF2e[p][dof].end(), constraints.B1[p].J_col_indices[i], [] (const std::pair<esglobal, Element*> &pair, esglobal index) {
+					return pair.first < index;
+				});
+				if (it != DOF2e[p][dof].end() && it->first == constraints.B1[p].J_col_indices[i]) {
+					dnodes[p].push_back(it->second);
+					indices[p].push_back(i);
+
+					auto it = std::lower_bound(constraints.B1clustersMap.begin(), constraints.B1clustersMap.end(), constraints.B1[p].I_row_indices[i] - IJVMatrixIndexing, [&] (const std::vector<esglobal> &v, esglobal i) {
+						return v[0] < i;
+					});
+					if (it->size() == 2) { // local gluing
+						CDindex[p].push_back(std::make_pair((eslocal)it->back(), (eslocal)getDomain(constraints.B1[p].I_row_indices[i], p)));
+					} else { // global gluing
+						CDindex[p].push_back(std::make_pair((eslocal)it->back(), -1));
+						CDneighbour[p][it->back()].push_back(std::make_pair(constraints.B1[p].I_row_indices[i], p));
+					}
+
+				}
+			}
+		}
+
+		cilk_for (int c = 0; c < config::env::MPIsize; c++) {
+			for (size_t p = 0; p < mesh.parts(); p++) {
+				sBuffer[c].insert(sBuffer[c].end(), CDneighbour[p][c].begin(), CDneighbour[p][c].end());
+			}
+			std::sort(sBuffer[c].begin(), sBuffer[c].end(), [] (const std::pair<esglobal, eslocal> &p1, const std::pair<esglobal, eslocal> &p2) {
+				return p1.first < p2.first;
+			});
+		}
+
+		std::vector<MPI_Request> req(2 * config::env::MPIsize);
+		for (int n = 0; n < config::env::MPIsize; n++) {
+			rBuffer[n].resize(sBuffer[n].size());
+			MPI_Isend(sBuffer[n].data(), sizeof(std::pair<esglobal, eslocal>) * sBuffer[n].size(), MPI_BYTE, n, 1, MPI_COMM_WORLD, req.data() + 2 * n);
+			MPI_Irecv(rBuffer[n].data(), sizeof(std::pair<esglobal, eslocal>) * rBuffer[n].size(), MPI_BYTE, n, 1, MPI_COMM_WORLD, req.data() + 2 * n + 1);
+		}
+
+		MPI_Waitall(2 * config::env::MPIsize, req.data(), MPI_STATUSES_IGNORE);
+
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			std::vector<int> offsets(config::env::MPIsize);
+			for (size_t i = 0; i < CDindex[p].size(); i++) {
+				if (CDindex[p][i].second == -1) {
+					int n = CDindex[p][i].first;
+					esglobal lambda = CDneighbour[p][n][offsets[n]++].first;
+					auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), lambda, [] (const std::pair<esglobal, eslocal> &p, esglobal l) { return p.first < l; });
+					if (it != rBuffer[n].end() && it->first == lambda) {
+						CDindex[p][i].second = it->second;
+					} else {
+						ESINFO(ERROR) << "Internal error: gluint matrices are weird.";
+					}
+				}
+			}
+		}
+
+		head(os);
+		size_t cSize = 0;
+		for (size_t p = 0; p < dnodes.size(); p++) {
+			cSize += dnodes[p].size();
+		}
+
+		os << "DATASET UNSTRUCTURED_GRID\n";
+		os << "POINTS " << 2 * cSize << " float\n";
+
+		for (size_t p = 0; p < dnodes.size(); p++) {
+			for (size_t n = 0; n < dnodes[p].size(); n++) {
+				Point p1 = vtk.shrink(mesh.coordinates()[dnodes[p][n]->node(0)], p);
+				Point p2 = vtk.shrink(mesh.coordinates()[dnodes[p][n]->node(0)], sCenters[CDindex[p][n].first * mesh.parts() + CDindex[p][n].second], cCenter[CDindex[p][n].first]);
+				os << p1 << "\n";
+				os << p1 + (p2 - p1) * constraints.B1duplicity[p][indices[p][n]] << "\n";
+			}
+		}
+
+		// ELEMENTS
+		os << "\nCELLS " << cSize << " " << 3 * cSize << "\n";
+		for (size_t p = 0, index = 0; p < dnodes.size(); p++) {
+			for (size_t n = 0; n < dnodes[p].size(); n++, index++) {
+				os << "2 " << 2 * index << " " << 2 * index + 1 << "\n";
+			}
+		}
+		os << "\n";
+
+		// ELEMENTS TYPES
+		os << "CELL_TYPES " << cSize << "\n";
+		for (size_t p = 0; p < dnodes.size(); p++) {
+			for (size_t n = 0; n < dnodes[p].size(); n++) {
+				os << Line2VTKCode << "\n";
+			}
+		}
+		os << "\n";
+
+		// DECOMPOSITION TO SUBDOMAINS
+		os << "CELL_DATA " << cSize << "\n";
+		os << "SCALARS values double 1\n";
+		os << "LOOKUP_TABLE values\n";
+		for (size_t p = 0; p < dnodes.size(); p++) {
+			for (size_t n = 0; n < dnodes[p].size(); n++) {
+				os << constraints.B1[p].V_values[indices[p][n]] << "\n";
+			}
+		}
+		os << "\n";
+
+		os.close();
+	}
+
+
 }
 

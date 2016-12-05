@@ -1,7 +1,9 @@
 
 #include "vtk.h"
 
-using namespace espreso::output;
+namespace espreso {
+namespace output{
+
 
 void VTK::computeCenters()
 {
@@ -19,14 +21,24 @@ void VTK::computeCenters()
 	_cCenter /= _mesh.coordinates().clusterSize();
 }
 
-espreso::Point VTK::shrink(const espreso::Point &p, size_t part)
+Point VTK::shrink(const Point &p, size_t part) const
 {
-	espreso::Point x = p;
+	Point x = p;
 	x = _sCenters[part] + (x - _sCenters[part]) * _shrinkSubdomain;
 	x = _cCenter + (x - _cCenter) * _shringCluster;
 	return x;
 }
 
+Point VTK::shrink(const Point &p, const Point &sCenter, const Point &cCenter) const
+{
+	Point x = p;
+	x = sCenter + (x - sCenter) * _shrinkSubdomain;
+	x = cCenter + (x - cCenter) * _shringCluster;
+	return x;
+}
 
+
+}
+}
 
 

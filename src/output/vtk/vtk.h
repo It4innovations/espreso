@@ -29,7 +29,8 @@ public:
 
 protected:
 	void computeCenters();
-	Point shrink(const Point &p, size_t part);
+	Point shrink(const Point &p, size_t part) const;
+	Point shrink(const Point &p, const Point &sCenter, const Point &cCenter) const;
 
 	std::ofstream _os;
 	std::vector<Point> _sCenters;
