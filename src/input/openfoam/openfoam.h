@@ -8,7 +8,7 @@
 #include "foam/face.h"
 #include "foam/dictionary.h"
 #include "foam/elementbuilder.h"
-#include "foam/cellzone.h"
+#include "foam/zones.h"
 
 #include "../../config/description.h"
 
