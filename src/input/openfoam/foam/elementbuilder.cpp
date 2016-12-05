@@ -14,7 +14,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 	std::set< eslocal > coordinates;
 	int numberOfSquares = 0;
 	eslocal indicies[8];
-	eslocal params[Element::PARAMS_SIZE];
+	std::vector<eslocal> params(Element::PARAMS_SIZE);
 
 	for (std::list<std::pair<Face*, bool> >::iterator it =
 			selectedFaces.begin(); it != selectedFaces.end(); ++it) {
@@ -55,7 +55,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 		indicies[3] = indicies[2];
 		indicies[4] = *(coordinates.begin());
 
-		element = new Tetrahedron4(indicies, 8, params);
+		element = new Tetrahedron4(indicies, 8, params.data());
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -105,7 +105,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 		indicies[2] = firstFace.first->p[2];
 		indicies[3] = firstFace.first->p[1];
 		indicies[4] = *(coordinates.begin());
-		element = new Pyramid5(indicies, 8, params);
+		element = new Pyramid5(indicies, 8, params.data());
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
@@ -168,7 +168,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		indicies[7] = indicies[6];
-		element = new Prisma6(indicies, 8, params);
+		element = new Prisma6(indicies, 8, params.data());
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 3);
 		}
@@ -214,7 +214,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		PARSE_GUARD(nextPoint(indicies[2], indicies[3], indicies[7]));
-		element = new Hexahedron8(indicies, 8, params);
+		element = new Hexahedron8(indicies, 8, params.data());
 
 		if (firstFace.second) {
 			firstFace.first->setFaceIndex(element, 4);

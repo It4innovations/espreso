@@ -8,6 +8,7 @@
 #include "foam/dictionary.h"
 #include "foam/elementbuilder.h"
 #include "foam/cellzone.h"
+#include "foam/Boundary.h"
 
 #include "../../config/description.h"
 
@@ -65,11 +66,8 @@ private:
 	/** @brief Number of processes, 1 for non MPI runs*/
 	int _size;
 
-	/** @brief Temporary storage for faces*/
-	//std::vector<Face> _faces;
-
-	/** @brief Temporary storage for cell zones*/
-	//std::vector<CellZone> _cellZones;
+	/** @brief Temporary storage for loaded boundaries*/
+	std::vector<Boundary > _boundaries;
 };
 
 }
