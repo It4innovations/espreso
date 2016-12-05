@@ -285,6 +285,7 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 	});
 
 	for(auto boundary : _boundaries) {
+		boundary.prepareNodes();
 		for(auto node : boundary.getNodes()) {
 			nodes[node]->clusters().push_back(boundary.getProcNo());
 		}

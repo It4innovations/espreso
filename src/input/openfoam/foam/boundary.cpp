@@ -7,6 +7,8 @@
 
 #include "boundary.h"
 
+using namespace espreso::input;
+
 Boundary::Boundary(int procNo) {
 	this->procNo = procNo;
 }

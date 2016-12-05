@@ -8,8 +8,11 @@
 #ifndef SRC_INPUT_OPENFOAM_FOAM_BOUNDARY_H_
 #define SRC_INPUT_OPENFOAM_FOAM_BOUNDARY_H_
 
-#include <set>
+#include <vector>
 #include "../../loader.h"
+
+namespace espreso {
+namespace input {
 
 class Boundary {
 public:
@@ -21,13 +24,17 @@ public:
 	}
 
 	void add(eslocal node) {
-		nodes.insert(node);
+		nodes.push_back(node);
 	}
 
-	std::set< eslocal >& getNodes() {
+	std::vector< eslocal >& getNodes() {
 		return nodes;
 	}
 
+	void prepareNodes() {
+		std::sort(nodes.begin(), nodes.end());
+		Esutils::removeDuplicity(nodes);
+	}
 
 	friend inline std::ostream& operator<<(std::ostream& os,
 				const Boundary& obj) {
@@ -41,8 +48,9 @@ public:
 
 private:
 	int procNo;
-	std::set< eslocal > nodes;
+	std::vector< eslocal > nodes;
 
 };
-
+}
+}
 #endif /* SRC_INPUT_OPENFOAM_FOAM_BOUNDARY_H_ */
