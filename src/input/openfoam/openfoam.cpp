@@ -8,7 +8,6 @@ OpenFOAM::OpenFOAM(const GlobalConfiguration &configuration, Mesh &mesh, int ran
 	solveParseError(computePolyMeshPath(rank, size));
 	_rank = rank;
 	_size = size;
-	std::cout << "My rank" << rank << " my size" << size << "\n";
 }
 
 OpenFOAM::~OpenFOAM() {
@@ -24,7 +23,6 @@ void OpenFOAM::solveParseError(ParseError *error) {
 
 ParseError* OpenFOAM::computePolyMeshPath(int rank, int size) {
 	if (size > 1) {
-		ESINFO(OVERVIEW)<<"My rank"<<rank<<" my size" <<size<<"\n";
 		std::string decomposePar = _projectPath + "/system/decomposeParDict";
 		std::string mesh;
 
