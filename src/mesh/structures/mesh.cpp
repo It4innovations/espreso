@@ -488,9 +488,9 @@ void Mesh::getSurface(Mesh &surface) const
 	}
 }
 
-void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool faces)
+void Mesh::computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces)
 {
-	if (parts() == 1 || (!vertices && !edges && !faces)) {
+	if (parts() == 1 || (!onVertices && !onEdges && !onFaces)) {
 		return;
 	}
 
@@ -501,15 +501,15 @@ void Mesh::computeVolumeCorners(size_t number, bool vertices, bool edges, bool f
 	computeFacesSharedByDomains();
 	computeEdgesOnBordersOfFacesSharedByDomains();
 
-	computeCornersOnEdges(number);
-	if (faces) {
-		computeCornersOnFaces(number);
+	computeCornersOnEdges(number, onVertices, onEdges);
+	if (onFaces) {
+		computeCornersOnFaces(number, onVertices, onEdges, onFaces);
 	}
 }
 
-void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
+void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 {
-	if (parts() == 1 || (!vertices && !edges)) {
+	if (parts() == 1 || (!onVertices && !onEdges)) {
 		return;
 	}
 
@@ -518,7 +518,7 @@ void Mesh::computePlaneCorners(size_t number, bool vertices, bool edges)
 	}
 
 	computeEdgesSharedByDomains();
-	computeCornersOnEdges(number);
+	computeCornersOnEdges(number, onVertices, onEdges);
 }
 
 template<typename MergeFunction>
@@ -1010,19 +1010,19 @@ void Mesh::clearEdgesWithoutSettings()
 	_edges.resize(it);
 }
 
-void Mesh::computeCornersOnEdges(size_t number)
+void Mesh::computeCornersOnEdges(size_t number, bool onVertices, bool onEdges)
 {
 	if (_edges.size() == 0) {
 		ESINFO(ERROR) << "There are no edges for computation of corners.";
 	}
 
 	std::vector<Element*> edges;
-	if (config::mesh::EDGE_CORNERS) {
+	if (onEdges) {
 		edges.reserve(_edges.size());
 	}
 	for (size_t e = 0; e < _edges.size(); e++) {
 		if (_edges[e]->domains().size()) {
-			if (config::mesh::VERTEX_CORNERS) {
+			if (onVertices) {
 				if (_nodes[_edges[e]->node(0)]->domains().size() > _nodes[_edges[e]->node(_edges[e]->coarseNodes() - 1)]->domains().size()) {
 					_corners.push_back(_nodes[_edges[e]->node(0)]);
 				}
@@ -1030,7 +1030,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 					_corners.push_back(_nodes[_edges[e]->node(_edges[e]->coarseNodes() - 1)]);
 				}
 			}
-			if (config::mesh::EDGE_CORNERS) {
+			if (onEdges) {
 				edges.push_back(_edges[e]);
 			}
 		}
@@ -1093,7 +1093,7 @@ void Mesh::computeCornersOnEdges(size_t number)
 	Esutils::removeDuplicity(_corners);
 }
 
-void Mesh::computeCornersOnFaces(size_t number)
+void Mesh::computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces)
 {
 	ESINFO(GLOBAL_ERROR) << "Corners in faces are not implemented.";
 }
@@ -1204,23 +1204,12 @@ static void setDOFsIndices(
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<std::vector<size_t> > counters(parts);
+		std::vector<size_t> counters(parts);
 		for (size_t p = 0; p < parts; p++) {
-			switch (config::assembler::DOFS_ORDER) {
-			case config::assembler::DOFS_ORDERalternative::GROUP_ELEMENTS:
-				counters[p].resize(1, 0);
-				for (size_t dof = 0; dof < DOFs.size(); dof++) {
-					counters[p][0] += threadsOffsets[p][dof][t];
-				}
-				counters[p][0] += offsets[p];
-				break;
-			case config::assembler::DOFS_ORDERalternative::GROUP_DOFS:
-				counters[p].resize(3, offsets[p]);
-				counters[p][0] += threadsOffsets[p][0][t];
-				counters[p][1] += threadsOffsets[p][1][t] + threadsOffsets[p][0][threads];
-				counters[p][2] += threadsOffsets[p][2][t] + threadsOffsets[p][0][threads] + threadsOffsets[p][1][threads];
-				break;
+			for (size_t dof = 0; dof < DOFs.size(); dof++) {
+				counters[p] += threadsOffsets[p][dof][t];
 			}
+			counters[p] += offsets[p];
 		}
 
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -1229,14 +1218,7 @@ static void setDOFsIndices(
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
 					if (elements[i]->DOFsIndices()[d * DOFs.size() + dof] == 1) {
 
-						switch (config::assembler::DOFS_ORDER) {
-						case config::assembler::DOFS_ORDERalternative::GROUP_ELEMENTS:
-							elements[i]->DOFsIndices()[d * DOFs.size() + dof] = counters[elements[i]->domains()[d]][0]++;
-							break;
-						case config::assembler::DOFS_ORDERalternative::GROUP_DOFS:
-							elements[i]->DOFsIndices()[d * DOFs.size() + dof] = counters[elements[i]->domains()[d]][dof]++;
-							break;
-						}
+						elements[i]->DOFsIndices()[d * DOFs.size() + dof] = counters[elements[i]->domains()[d]]++;
 
 					}
 				}

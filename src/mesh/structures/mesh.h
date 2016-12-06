@@ -38,8 +38,8 @@ public:
 
 	virtual void partitiate(size_t parts);
 	void computeFixPoints(size_t number);
-	void computeVolumeCorners(size_t number, bool vertices, bool edges, bool faces);
-	void computePlaneCorners(size_t number, bool vertices, bool edges);
+	void computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces);
+	void computePlaneCorners(size_t number, bool onVertices, bool onEdges);
 
 	void computeElementsFromFaces();
 
@@ -53,8 +53,8 @@ public:
 	void computeEdgesOnBordersOfFacesSharedByDomains();
 	void clearEdgesWithoutSettings();
 
-	void computeCornersOnEdges(size_t number);
-	void computeCornersOnFaces(size_t number);
+	void computeCornersOnEdges(size_t number, bool onVertices, bool onEdges);
+	void computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces);
 
 	const Coordinates& coordinates() const { return _coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };

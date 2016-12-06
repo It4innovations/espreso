@@ -44,7 +44,7 @@ void LinearElasticity3D::prepareMeshStructures()
 			_mesh.computeFacesSharedByDomains();
 			if (!_mesh.corners().size()) {
 				_mesh.computeEdgesOnBordersOfFacesSharedByDomains();
-				_mesh.computeCornersOnEdges(1);
+				_mesh.computeCornersOnEdges(1, true, true);
 			}
 			break;
 		default:
