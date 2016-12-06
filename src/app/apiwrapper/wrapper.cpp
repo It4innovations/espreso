@@ -29,7 +29,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 	options[FETI4I_VERBOSE_LEVEL] = config::info::VERBOSE_LEVEL;
 	options[FETI4I_TESTING_LEVEL] = config::info::TESTING_LEVEL;
 	options[FETI4I_MEASURE_LEVEL] = config::info::MEASURE_LEVEL;
-	options[FETI4I_PRINT_MATRICES] = config::info::PRINT_MATRICES;
+	options[FETI4I_PRINT_MATRICES] = output->print_matrices;
 }
 
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
@@ -68,7 +68,7 @@ static void FETI4ISetIntegerOptions(FETI4IInt* options)
 	if (!reader.setParameter(&config::info::MEASURE_LEVEL, options[FETI4I_MEASURE_LEVEL])) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MEASURE_LEVEL' to " << options[FETI4I_MEASURE_LEVEL];
 	}
-	if (!reader.setParameter(&config::info::PRINT_MATRICES, options[FETI4I_PRINT_MATRICES])) {
+	if (!reader.setParameter(&output->print_matrices, options[FETI4I_PRINT_MATRICES])) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
 }

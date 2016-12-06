@@ -203,8 +203,8 @@ static void results(std::ofstream &os, const std::vector<std::vector<Ttype> > &v
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 : Store(mesh, path, shrinkSubdomain, shringCluster), _lastData(ElementType::ELEMENTS)
 {
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		break;
 	default:
 		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";

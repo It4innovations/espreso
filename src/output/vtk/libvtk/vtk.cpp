@@ -153,8 +153,8 @@ void VTK::storeGeometry(size_t timeStep)
 
 
 	//Writers
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT: {
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		ss << _path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
@@ -162,7 +162,7 @@ void VTK::storeGeometry(size_t timeStep)
 		writervtk->Write();
 	}
 		break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		ss << _path << environment->MPIrank << ".vtu";
 		writervtu->SetFileName(ss.str().c_str());
@@ -171,7 +171,7 @@ void VTK::storeGeometry(size_t timeStep)
 		writervtu->Write();
 		break;
 	}
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		std::ofstream result;
 
@@ -187,7 +187,7 @@ void VTK::storeGeometry(size_t timeStep)
 			sss << _path << ".vtm";
 			result.open(sss.str().c_str());
 			result << "<?xml version=\"1.0\"?>\n";
-			if (!config::output::OUTPUT_COMPRESSION) {
+			if (!output->compression) {
 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 
 			} else {
@@ -205,7 +205,7 @@ void VTK::storeGeometry(size_t timeStep)
 		}
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		writervtu->SetFileName(ss.str().c_str());
@@ -234,8 +234,8 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	stringstream ss;
 
 
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtk";
 		rvtk->SetFileName(ss.str().c_str());
@@ -243,7 +243,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		prof->ShallowCopy(rvtk->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
@@ -251,7 +251,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		prof->ShallowCopy(rvtu->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
@@ -259,7 +259,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		prof->ShallowCopy(rvtu->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:{
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rcase = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rcase->SetFileName(ss.str().c_str());
@@ -364,15 +364,15 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 
 	stringstream sss;
 	//Writers
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(prof);
 		writervtk->Write();
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(prof);
@@ -380,7 +380,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		writervtu->Write();
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		std::ofstream result;
 		wvtu->SetFileName(ss.str().c_str());
@@ -389,7 +389,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		wvtu->Write();
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(prof);
@@ -408,8 +408,8 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	vtkSmartPointer<vtkUnstructuredGrid> VTKGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
 	stringstream ss;
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtk";
 		rvtk->SetFileName(ss.str().c_str());
@@ -417,7 +417,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		VTKGrid->ShallowCopy(rvtk->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
@@ -425,7 +425,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		VTKGrid->ShallowCopy(rvtu->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtm = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtm->SetFileName(ss.str().c_str());
@@ -433,7 +433,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		VTKGrid->ShallowCopy(rvtm->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:{
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rcase = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rcase->SetFileName(ss.str().c_str());
@@ -502,8 +502,8 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 
 	//Writers
 	stringstream sss;
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(VTKGrid);
@@ -511,7 +511,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	}
 	break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(VTKGrid);
@@ -520,7 +520,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	}
 	break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		wvtu->SetFileName(ss.str().c_str());
 		wvtu->SetInputData(VTKGrid);
@@ -529,7 +529,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	}
 	break;
 
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(VTKGrid);
@@ -651,15 +651,15 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		ss << path << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(m);
 		writervtk->Write();
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:
 		sss << path << ".vtu";
 		writervtu->SetFileName(sss.str().c_str());
 		writervtu->SetInputData(m);
@@ -667,7 +667,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 		writervtu->Write();
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:
 		ssss << path << ".vtu";
 		wvtu->SetFileName(ssss.str().c_str());
 		wvtu->SetInputData(m);
@@ -690,7 +690,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 		}
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT:
 		vtkSmartPointer<vtkMPIController> controller=vtkSmartPointer<vtkMPIController>::New();
 		//controller->Initialize();
 
@@ -833,15 +833,15 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		ss << path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(fp);
 		writervtk->Write();
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:
 		sss << path << environment->MPIrank << ".vtu";
 		writervtu->SetFileName(sss.str().c_str());
 		writervtu->SetInputData(fp);
@@ -849,7 +849,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 		writervtu->Write();
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:
 		ssss << path << environment->MPIrank << ".vtu";
 		wvtu->SetFileName(ssss.str().c_str());
 		wvtu->SetInputData(fp);
@@ -874,7 +874,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 		}
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT:
 
 		//write ensight format
 		wcase->SetFileName("meshFP_result.case");
@@ -1024,15 +1024,15 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		ss << path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(c);
 		writervtk->Write();
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:
 		sss << path << environment->MPIrank << ".vtu";
 		writervtu->SetFileName(sss.str().c_str());
 		writervtu->SetInputData(c);
@@ -1040,7 +1040,7 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 		writervtu->Write();
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:
 		ssss << path << environment->MPIrank << ".vtu";
 		wvtu->SetFileName(ssss.str().c_str());
 		wvtu->SetInputData(c);
@@ -1064,7 +1064,7 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 		}
 		break;
 
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT:
 
 		//write ensight format
 		wcase->SetFileName("meshC_result.case");
@@ -1106,7 +1106,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	return;
 	/*
 	 //TO DO compresion
-	 std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION << "\n";
+	 std::cout << "Compression: " << output->::OUTPUT_COMPRESSION << "\n";
 	 //pokus();
 
 	 const std::vector<Element*> &elements = _mesh.elements();
@@ -1257,7 +1257,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 
 	 //surface and decimation
 
-	 std::cout << "Decimation: " << config::output::OUTPUT_DECIMATION << "\n";
+	 std::cout << "Decimation: " << output->::OUTPUT_DECIMATION << "\n";
 	 vtkSmartPointer < vtkDecimatePro > decimate = vtkSmartPointer
 	 < vtkDecimatePro > ::New();
 	 vtkAppendFilter* ap = vtkAppendFilter::New();
@@ -1269,7 +1269,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 vtkSmartPointer < vtkContourFilter > cg = vtkSmartPointer < vtkContourFilter
 	 > ::New();
 
-	 if (config::output::OUTPUT_DECIMATION != 0) {
+	 if (output->::OUTPUT_DECIMATION != 0) {
 	 gf->SetInputData(VTKGrid);
 	 gf->Update();
 
@@ -1280,7 +1280,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 tf->Update();
 
 	 decimate->SetInputData(tf->GetOutput());
-	 decimate->SetTargetReduction(config::output::OUTPUT_DECIMATION);
+	 decimate->SetTargetReduction(output->::OUTPUT_DECIMATION);
 	 decimate->Update();
 
 	 ap->AddInputData(decimate->GetOutput());
@@ -1340,19 +1340,19 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 //ensight
 	 vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	 switch (config::output::OUTPUT_FORMAT) {
-	 case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
+	 switch (output->format) {
+	 case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 	 std::cout << "LEGACY\n";
 	 ss << _path << environment->MPIrank<<".vtk";
 	 writervtk->SetFileName(ss.str().c_str());
-	 if (config::output::OUTPUT_DECIMATION == 0) {
+	 if (output->::OUTPUT_DECIMATION == 0) {
 	 writervtk->SetInputData(VTKGrid);
 	 } else {
 	 writervtk->SetInputData(decimated);
 	 }
-	 if (config::output::OUTPUT_COMPRESSION) {
+	 if (output->::OUTPUT_COMPRESSION) {
 	 // writervtk->SetCompressor(myZlibCompressor);
-	 std::cout << "Compression: " << config::output::OUTPUT_COMPRESSION
+	 std::cout << "Compression: " << output->::OUTPUT_COMPRESSION
 	 << "\n";
 	 }
 
@@ -1360,11 +1360,11 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 
 	 break;
 
-	 case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
+	 case OUTPUT_FORMAT::VTK_BINARY_FORMAT:
 	 std::cout << "BINARY\n";
 	 sss << _path << ".vtu";
 	 writervtu->SetFileName(sss.str().c_str());
-	 if (config::output::OUTPUT_DECIMATION == 0) {
+	 if (output->::OUTPUT_DECIMATION == 0) {
 	 writervtu->SetInputData(VTKGrid);
 	 } else {
 	 writervtu->SetInputData(decimated);
@@ -1373,11 +1373,11 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 writervtu->Write();
 	 break;
 
-	 case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
+	 case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:
 	 std::cout << "MULTIBLOCK\n";
 	 ssss << _path << ".vtu";
 	 wvtu->SetFileName(ssss.str().c_str());
-	 if (config::output::OUTPUT_DECIMATION == 0) {
+	 if (output->::OUTPUT_DECIMATION == 0) {
 	 wvtu->SetInputData(VTKGrid);
 	 } else {
 	 wvtu->SetInputData(decimated);
@@ -1390,16 +1390,16 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 if (environment->MPIrank == 0) {
 	 result.open("result.vtm");
 	 result << "<?xml version=\"1.0\"?>\n";
-	 if (!config::output::OUTPUT_COMPRESSION) {
+	 if (!output->::OUTPUT_COMPRESSION) {
 	 result
 	 << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 	 std::cout << "Compression: "
-	 << config::output::OUTPUT_COMPRESSION << "\n";
+	 << output->::OUTPUT_COMPRESSION << "\n";
 	 } else {
 	 result
 	 << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
 	 std::cout << "Compression: "
-	 << config::output::OUTPUT_COMPRESSION << "\n";
+	 << output->::OUTPUT_COMPRESSION << "\n";
 	 }
 
 	 result << " <vtkMultiBlockDataSet>\n";
@@ -1413,7 +1413,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 }
 	 break;
 
-	 case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
+	 case OUTPUT_FORMAT::ENSIGHT_FORMAT:
 	 std::cout << "ENSIGHT\n";
 	 if (rank != 0) {
 	 controller->Send(VTKGrid, 0, 1111 + rank);
@@ -1683,8 +1683,8 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 ap->Update();
 
 	 stringstream ss;
-	 switch (config::output::OUTPUT_FORMAT) {
-	 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	 switch (output->format) {
+	 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 	 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	 		ss<<path<<environment->MPIrank<<".vtk";
 	 		writervtk->SetFileName(ss.str().c_str());
@@ -1698,7 +1698,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		dw->Write();
 	 	}
 	 	break;
-	 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	 	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 	 		ss<<path<<environment->MPIrank<<".vtu";
 	 		writervtu->SetFileName(ss.str().c_str());
@@ -1713,7 +1713,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		dw1->Write();
 	 	}
 	 	break;
-	 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	 	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 	 		std::ofstream result;
 	 		ss<<path<<environment->MPIrank<<".vtu";
@@ -1734,7 +1734,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 			sss << path << ".vtm";
 	 			result.open(sss.str().c_str());
 	 			result << "<?xml version=\"1.0\"?>\n";
-	 			if (!config::output::OUTPUT_COMPRESSION) {
+	 			if (!output->compression) {
 	 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 	 			} else {
 	 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
@@ -1752,7 +1752,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		}
 	 	}
 	 	break;
-	 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
+	 	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 	 		vtkMPIController* controller=vtkMPIController::New();
 	 		vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 	 		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
@@ -1834,8 +1834,8 @@ void VTK::finalize(){
 	vtkSmartPointer<vtkUnstructuredGrid> VTKGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
 	stringstream ss;
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtk";
 		rvtk->SetFileName(ss.str().c_str());
@@ -1843,7 +1843,7 @@ void VTK::finalize(){
 		VTKGrid->ShallowCopy(rvtk->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
@@ -1851,7 +1851,7 @@ void VTK::finalize(){
 		VTKGrid->ShallowCopy(rvtu->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtm = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtm->SetFileName(ss.str().c_str());
@@ -1859,7 +1859,7 @@ void VTK::finalize(){
 		VTKGrid->ShallowCopy(rvtm->GetOutput());
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:{
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rcase = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtu";
 		rcase->SetFileName(ss.str().c_str());
@@ -1875,7 +1875,7 @@ void VTK::finalize(){
 	vtkSmartPointer<vtkDataSetSurfaceFilter> dssf = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
 	vtkSmartPointer<vtkTriangleFilter> tf = vtkSmartPointer<vtkTriangleFilter>::New();
 
-	if (config::output::OUTPUT_DECIMATION != 0) {
+	if (output->decimation != 0) {
 		 gf->SetInputData(VTKGrid);
 		 gf->Update();
 
@@ -1886,7 +1886,7 @@ void VTK::finalize(){
 		 tf->Update();
 
 		 decimate->SetInputData(tf->GetOutput());
-		 decimate->SetTargetReduction(config::output::OUTPUT_DECIMATION);
+		 decimate->SetTargetReduction(output->decimation);
 		 decimate->Update();
 
 		 ap->AddInputData(decimate->GetOutput());
@@ -1895,15 +1895,15 @@ void VTK::finalize(){
 		 VTKGrid->ShallowCopy(ap->GetOutput());
 	}
 
-	switch (config::output::OUTPUT_FORMAT) {
-	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
+	switch (output->format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(VTKGrid);
 		writervtk->Write();
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(VTKGrid);
@@ -1911,7 +1911,7 @@ void VTK::finalize(){
 		writervtu->Write();
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		wvtu->SetFileName(ss.str().c_str());
 		wvtu->SetInputData(VTKGrid);
@@ -1919,7 +1919,7 @@ void VTK::finalize(){
 		wvtu->Write();
 	}
 	break;
-	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		vtkMPIController* controller=vtkMPIController::New();
 		vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();

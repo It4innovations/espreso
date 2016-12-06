@@ -10,10 +10,10 @@ void DynamicsInstance<TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
-	if (config::output::SAVE_PROPERTIES || config::output::SAVE_RESULTS) {
+	if (output->properties || output->results) {
 		_store.storeGeometry(_time);
 	}
-	if (config::output::SAVE_PROPERTIES) {
+	if (output->properties) {
 		_physics.saveMeshProperties(_store);
 	}
 
@@ -21,7 +21,7 @@ void DynamicsInstance<TPhysics>::init()
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
-	if (config::info::PRINT_MATRICES) {
+	if (output->print_matrices) {
 		_physics.saveStiffnessMatrices();
 	}
 
@@ -29,7 +29,7 @@ void DynamicsInstance<TPhysics>::init()
 	_physics.makeStiffnessMatricesRegular();
 	timeReg.endWithBarrier(); _timeStatistics.addEvent(timeReg);
 
-	if (config::info::PRINT_MATRICES) {
+	if (output->print_matrices) {
 		_physics.saveKernelMatrices();
 	}
 
@@ -37,7 +37,7 @@ void DynamicsInstance<TPhysics>::init()
 	_physics.assembleB1();
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
 
-	if (config::info::PRINT_MATRICES) {
+	if (output->print_matrices) {
 		_constrains.save();
 	}
 
@@ -94,7 +94,7 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 		_physics.M[p].MatVec(_tmp[p], _b[p], 'N');
 	}
 
-	if (_time && config::output::SAVE_RESULTS) {
+	if (_time && output->results) {
 		_store.storeGeometry(_time);
 	}
 
@@ -108,7 +108,7 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 	_linearSolver.Solve(_b, solution);
 	timeLSrun.endWithBarrier(); _timeStatistics.addEvent(timeLSrun);
 
-	if (config::output::SAVE_RESULTS) {
+	if (output->results) {
 		_physics.saveMeshResults(_store, solution);
 	}
 

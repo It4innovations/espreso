@@ -10,10 +10,10 @@ void LinearInstance<TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
-	if (config::output::SAVE_PROPERTIES || config::output::SAVE_RESULTS) {
+	if (output->properties || output->results) {
 		_store.storeGeometry();
 	}
-	if (config::output::SAVE_PROPERTIES) {
+	if (output->properties) {
 		_physics.saveMeshProperties(_store);
 	}
 
@@ -21,7 +21,7 @@ void LinearInstance<TPhysics>::init()
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
-	if (config::info::PRINT_MATRICES) {
+	if (output->print_matrices) {
 		_physics.saveStiffnessMatrices();
 	}
 
@@ -33,7 +33,7 @@ void LinearInstance<TPhysics>::init()
 	_physics.makeStiffnessMatricesRegular();
 	timeReg.endWithBarrier(); _timeStatistics.addEvent(timeReg);
 
-	if (config::info::PRINT_MATRICES) {
+	if (output->print_matrices) {
 		_physics.saveKernelMatrices();
 	}
 
@@ -41,12 +41,12 @@ void LinearInstance<TPhysics>::init()
 	_physics.assembleB0();
 	timeConstrainsB0.end(); _timeStatistics.addEvent(timeConstrainsB0);
 
-	if (config::info::PRINT_MATRICES) {
+	if (output->print_matrices) {
 		_constrains.save();
 	}
 
-	if (config::output::SAVE_GLUING) {
-		store::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+	if (output->gluing) {
+		store::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), output->domain_shrink_ratio, output->cluster_shrink_ratio);
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
@@ -61,7 +61,7 @@ void LinearInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution
 	_linearSolver.Solve(_physics.f, solution);
 	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);
 
-	if (config::output::SAVE_RESULTS) {
+	if (output->results) {
 		_physics.saveMeshResults(_store, solution);
 	}
 }

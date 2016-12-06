@@ -416,6 +416,8 @@ struct MULTIGRIDSolver: public Configuration {
 
 struct OutputConfiguration: public Configuration {
 
+	OutputConfiguration();
+
 	OPTION(OUTPUT_FORMAT, format, "Format - only LEGACY format is supported without VTK library", OUTPUT_FORMAT::VTK_LEGACY_FORMAT, OPTIONS({
 		{ "VTK_LEGACY"    , OUTPUT_FORMAT::VTK_LEGACY_FORMAT    , "*.vtk files" },
 		{ "VTK_BINARY"    , OUTPUT_FORMAT::VTK_BINARY_FORMAT    , "*.vtu files" },
@@ -426,12 +428,12 @@ struct OutputConfiguration: public Configuration {
 	PARAMETER(bool, compression, "Compression - needs VTK library", false);
 	PARAMETER(double, decimation, "Decimation - needs VTK library", 0);
 
-	PARAMETER(bool, result, "Save result", true);
+	PARAMETER(bool, results, "Save results", true);
 	PARAMETER(bool, properties, "Save also input parameters", false);
 	PARAMETER(bool, gluing, "Save lagrange multipliers", false);
 
-	PARAMETER(double, subdomains_shring_ratio, "All subdomains are shrunk by this ratio", .95);
-	PARAMETER(double, clusters_shring_ratio  , "All clusters are shrunk by this ratio"  , .9);
+	PARAMETER(double, domain_shrink_ratio, "All domains are shrunk by this ratio", .95);
+	PARAMETER(double, cluster_shrink_ratio  , "All clusters are shrunk by this ratio"  , .9);
 
 	PARAMETER(std::string, log_dir, "Log directory.", "log");
 
@@ -441,6 +443,8 @@ struct OutputConfiguration: public Configuration {
 
 	PARAMETER(bool, print_matrices, "Print assembler matrices.", false);
 };
+
+extern OutputConfiguration *output;
 
 struct MaterialParameters: public Configuration {
 

@@ -267,7 +267,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
       }
       K_modif.ConvertToCSRwithSort(1);
       {
-			if (config::info::PRINT_MATRICES) {
+			if (output->print_matrices) {
 				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
 				osS << K_modif;
 				osS.close();
@@ -360,7 +360,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 			}
 
-			if (config::info::PRINT_MATRICES) {
+			if (output->print_matrices) {
 				std::ofstream osS(Logging::prepareFile(d, "S"));
 				SparseMatrix SC =  cluster.domains[d].Prec;
 				if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET){

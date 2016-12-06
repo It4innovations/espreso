@@ -62,18 +62,18 @@ void LinearElasticity3D::saveMeshProperties(store::Store &store)
 	store.storeProperty("obstacle", { Property::OBSTACLE }, store::Store::ElementType::NODES);
 	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::Store::ElementType::NODES);
 	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
-		store::VTK::fixPoints(_mesh, "fixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		store::VTK::fixPoints(_mesh, "fixPoints", output->domain_shrink_ratio, output->cluster_shrink_ratio);
 	}
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
 		case config::solver::B0_TYPEalternative::COMBINED:
-			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-			store::VTK::mesh(_mesh, "edges", store::Store::ElementType::EDGES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-			store::VTK::corners(_mesh, "corners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
+			store::VTK::mesh(_mesh, "edges", store::Store::ElementType::EDGES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
+			store::VTK::corners(_mesh, "corners", output->domain_shrink_ratio, output->cluster_shrink_ratio);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented saving properties of B0";

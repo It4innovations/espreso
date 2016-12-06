@@ -27,7 +27,7 @@ public:
 	virtual ~Store() {};
 
 protected:
-	Store(const Mesh &mesh, const std::string &path, double shrinkSubdomain = config::output::SUBDOMAINS_SHRINK_RATIO, double shringCluster = config::output::CLUSTERS_SHRINK_RATIO)
+	Store(const Mesh &mesh, const std::string &path, double shrinkSubdomain = output->domain_shrink_ratio, double shringCluster = output->cluster_shrink_ratio)
 	:_mesh(mesh), _path(path), _shrinkSubdomain(shrinkSubdomain), _shringCluster(shringCluster) {};
 
 	const Mesh &_mesh;
