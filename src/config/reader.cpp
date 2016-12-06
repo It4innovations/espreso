@@ -9,8 +9,6 @@
 
 using namespace espreso;
 
-GlobalConfiguration espreso::configuration;
-
 static struct option long_options[] = {
 		{"configuration",  no_argument, 0, 'c'},
 		{"default",  no_argument, 0, 'd'},
@@ -32,7 +30,7 @@ static std::string uppercase(const std::string &str) {
 	return upper;
 };
 
-void Reader::_read(int* argc, char ***argv)
+void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 {
 	int option_index, option;
 	std::string options("c:dhvtm");
@@ -87,7 +85,7 @@ void Reader::_read(int* argc, char ***argv)
 			helpVerboseLevel++;
 			break;
 		case 'd':
-			store();
+			store(configuration);
 			exit(EXIT_SUCCESS);
 		case 'c':
 			confFile = optarg;
@@ -105,7 +103,7 @@ void Reader::_read(int* argc, char ***argv)
 		nameless.push_back(std::string((*argv)[optind++]));
 	}
 
-	_read(confFile, nameless);
+	_read(configuration, confFile, nameless);
 
 	optind = 0;
 	while ((option = getopt_long(*argc, *argv, "c:dhvtm", opts.data(), &option_index)) != -1) {
@@ -119,7 +117,7 @@ void Reader::_read(int* argc, char ***argv)
 	}
 }
 
-void Reader::_read(const std::string &file, const std::vector<std::string> &args)
+void Reader::_read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args)
 {
 	std::vector<std::string> values;
 	std::stack<Configuration*> confStack;
@@ -232,13 +230,13 @@ static void storeConfiguration(std::ofstream &os, const Configuration &configura
 	}
 }
 
-void Reader::print()
+void Reader::print(const Configuration &configuration)
 {
 	ESINFO(ALWAYS) << "ESPRESO configuration:";
 	printConfiguration(configuration, 4);
 }
 
-void Reader::store()
+void Reader::store(const Configuration &configuration)
 {
 	std::ofstream os("espreso.ecf.default");
 

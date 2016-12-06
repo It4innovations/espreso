@@ -43,12 +43,14 @@ public:
 	void boundaryConditions();
 
 protected:
-	Loader(Mesh &mesh): mesh(mesh)
+	Loader(const GlobalConfiguration &configuration, Mesh &mesh): configuration(configuration), mesh(mesh)
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
 		MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
 	}
 	virtual ~Loader() {};
+
+	const GlobalConfiguration &configuration;
 	Mesh &mesh;
 };
 

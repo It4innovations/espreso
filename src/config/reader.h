@@ -6,18 +6,20 @@
 
 namespace espreso {
 
+struct Configuration;
+
 class Reader {
 
 public:
-	static void read(const std::string &file) { _read(file, {}); }
-	static void read(int* argc, char ***argv) { _read(argc, argv); }
+	static void read(Configuration &configuration, const std::string &file) { _read(configuration, file, {}); }
+	static void read(Configuration &configuration, int* argc, char ***argv) { _read(configuration, argc, argv); }
 
-	static void print();
-	static void store();
+	static void print(const Configuration &configuration);
+	static void store(const Configuration &configuration);
 
 private:
-	static void _read(const std::string &file, const std::vector<std::string> &args);
-	static void _read(int* argc, char ***argv);
+	static void _read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args);
+	static void _read(Configuration &configuration, int* argc, char ***argv);
 };
 
 }

@@ -153,11 +153,6 @@ struct Configuration {
 	std::string name;
 	std::string description;
 
-	static void read(const std::string &file) { Reader::read(file); }
-	static void read(int *argc, char ***argv) { Reader::read(argc, argv); }
-	static void print() { Reader::print(); }
-	static void store() { Reader::store(); }
-
 	template <typename Ttype>
 	static Ttype create(const std::string &name, const std::string &description, Configuration* conf)
 	{

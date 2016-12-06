@@ -32,10 +32,10 @@ struct SphereSettings {
 class Sphere: public Loader {
 
 public:
-	Sphere(Mesh &mesh, const SphereSettings &settings, size_t index, size_t size);
+	Sphere(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 	virtual ~Sphere();
 
-	static void load(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);

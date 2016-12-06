@@ -17,17 +17,17 @@ namespace input {
 class OpenFOAM: public Loader {
 
 public:
-	static void load(Mesh &mesh, const ESPRESOInput &configuration, int rank, int size)
+	static void load(const GlobalConfiguration &configuration, Mesh &mesh, int rank, int size)
 	{
-		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
-		OpenFOAM openfoam(mesh, configuration, rank, size);
+		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.openfoam.path;
+		OpenFOAM openfoam(configuration, mesh, rank, size);
 		openfoam.fill();
 	}
 
 	bool faceBased() const { return true; }
 
 protected:
-	OpenFOAM(Mesh &mesh, const ESPRESOInput &configuration, int rank, int size);
+	OpenFOAM(const GlobalConfiguration &configuration, Mesh &mesh, int rank, int size);
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);

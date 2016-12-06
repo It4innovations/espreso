@@ -16,16 +16,16 @@ void Loader::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t i
 {
 	switch (configuration.input) {
 	case INPUT::WORKBENCH:
-		AnsysWorkbench::load(mesh, configuration.workbench, index, size);
+		AnsysWorkbench::load(configuration, mesh, index, size);
 		break;
 	case INPUT::OPENFOAM:
-		OpenFOAM::load(mesh, configuration.openfoam, index, size);
+		OpenFOAM::load(configuration, mesh, index, size);
 		break;
 	case INPUT::ESDATA:
-		Esdata::load(mesh, configuration.esdata, index, size);
+		Esdata::load(configuration, mesh, index, size);
 		break;
 	case INPUT::GENERATOR:
-		Generator::generate(configuration.generator, mesh, index, size);
+		Generator::generate(configuration, mesh, index, size);
 		break;
 	}
 }

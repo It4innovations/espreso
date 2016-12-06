@@ -33,10 +33,10 @@ struct GridSettings {
 class Grid: public Loader {
 
 public:
-	Grid(Mesh &mesh, const GridSettings &settings, size_t index, size_t size);
+	Grid(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 	virtual ~Grid();
 
-	static void load(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);

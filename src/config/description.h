@@ -465,6 +465,12 @@ struct MaterialParameters: public Configuration {
 
 struct GlobalConfiguration: public Configuration {
 
+	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); }
+	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); }
+
+	void print() { Reader::print(*this); }
+	void store() { Reader::store(*this); }
+
 	OPTION(INPUT, input, "test input", INPUT::GENERATOR, OPTIONS({
 			{ "WORKBENCH", INPUT::WORKBENCH, "Ansys Workbench input file" },
 			{ "OPENFOAM", INPUT::OPENFOAM, "OpenFOAM input format" },

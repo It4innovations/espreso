@@ -30,15 +30,15 @@ SphereSettings::SphereSettings(const SphereConfiguration &configuration)
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void Sphere::load(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void Sphere::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	ESINFO(OVERVIEW) << "Generate grid";
-	Sphere sphere(mesh, configuration, index, size);
+	Sphere sphere(configuration, mesh, index, size);
 	sphere.fill();
 }
 
-Sphere::Sphere(Mesh &mesh, const SphereSettings &settings, size_t index, size_t size)
-: Loader(mesh), _settings(settings), _index(index), _size(size)
+Sphere::Sphere(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+: Loader(configuration, mesh), _settings(configuration.generator.sphere), _index(index), _size(size)
 {
 	if (size % 6 != 0) {
 		ESINFO(GLOBAL_ERROR) << "Number of MPI process should be 6 x clusters for sphere generator.";
@@ -52,10 +52,10 @@ Sphere::Sphere(Mesh &mesh, const SphereSettings &settings, size_t index, size_t 
 	_col = ((_index % (_settings.clusters * _settings.clusters)) / _settings.clusters);
 	_layer = _index / (6 * _settings.clusters * _settings.clusters);
 
-	block.start = Triple<double>( _row      / (double)_settings.clusters,  _col      / (double)_settings.clusters,  _layer      / (double)settings.layers);
-	block.end   = Triple<double>((_row + 1) / (double)_settings.clusters, (_col + 1) / (double)_settings.clusters, (_layer + 1) / (double)settings.layers);
+	block.start = Triple<double>( _row      / (double)_settings.clusters,  _col      / (double)_settings.clusters,  _layer      / (double)_settings.layers);
+	block.end   = Triple<double>((_row + 1) / (double)_settings.clusters, (_col + 1) / (double)_settings.clusters, (_layer + 1) / (double)_settings.layers);
 
-	switch ((index / (settings.clusters * settings.clusters)) % 6) {
+	switch ((index / (_settings.clusters * _settings.clusters)) % 6) {
 	case 0:
 		_side = SIDE::UP;
 		block.projection = Triple<Expression>(

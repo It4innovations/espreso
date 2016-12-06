@@ -42,15 +42,15 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void Grid::load(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void Grid::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	ESINFO(OVERVIEW) << "Generate grid";
-	Grid grid(mesh, configuration, index, size);
+	Grid grid(configuration, mesh, index, size);
 	grid.fill();
 }
 
-Grid::Grid(Mesh &mesh, const GridSettings &settings, size_t index, size_t size)
-: Loader(mesh), _settings(settings), _index(index), _size(size)
+Grid::Grid(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+: Loader(configuration, mesh), _settings(configuration.generator.grid), _index(index), _size(size)
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;
 
