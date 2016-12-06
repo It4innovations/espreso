@@ -8,9 +8,9 @@ namespace espreso {
 
 struct LameSteklovPoincare: public LinearPhysics
 {
-	LameSteklovPoincare(Mesh &mesh, Constraints &constraints)
+	LameSteklovPoincare(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: LinearPhysics(
-			mesh, constraints,
+			mesh, constraints, configuration,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 

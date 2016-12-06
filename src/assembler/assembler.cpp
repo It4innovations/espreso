@@ -21,16 +21,44 @@ void Assembler::compose(const GlobalConfiguration &configuration, Instance* &ins
 {
 	switch (configuration.physics) {
 	case PHYSICS::LINEAR_ELASTICITY_2D:
-		instance = new LinearInstance<LinearElasticity2D>(mesh);
+		switch (configuration.linear_elasticity_2D.library) {
+		case SOLVER_LIBRARY::ESPRESO:
+			instance = new LinearInstance<LinearElasticity2D>(configuration.linear_elasticity_2D.espreso, mesh);
+			break;
+		case SOLVER_LIBRARY::HYPRE:
+			instance = new HypreInstance<LinearElasticity2D>(configuration.linear_elasticity_2D.hypre, mesh);
+			break;
+		};
 		break;
 	case PHYSICS::LINEAR_ELASTICITY_3D:
-		instance = new LinearInstance<Elasticity3D>(mesh);
+		switch (configuration.linear_elasticity_3D.library) {
+		case SOLVER_LIBRARY::ESPRESO:
+			instance = new LinearInstance<Elasticity3D>(configuration.linear_elasticity_3D.espreso, mesh);
+			break;
+		case SOLVER_LIBRARY::HYPRE:
+			instance = new HypreInstance<Elasticity3D>(configuration.linear_elasticity_3D.hypre, mesh);
+			break;
+		};
 		break;
 	case PHYSICS::ADVECTION_DIFFUSION_2D:
-		instance = new LinearInstance<AdvectionDiffusion2D>(mesh);
+		switch (configuration.advection_diffusion_2D.library) {
+		case SOLVER_LIBRARY::ESPRESO:
+			instance = new LinearInstance<AdvectionDiffusion2D>(configuration.advection_diffusion_2D.espreso, mesh);
+			break;
+		case SOLVER_LIBRARY::HYPRE:
+			instance = new HypreInstance<AdvectionDiffusion2D>(configuration.advection_diffusion_2D.hypre, mesh);
+			break;
+		};
 		break;
 	case PHYSICS::ADVECTION_DIFFUSION_3D:
-		instance = new LinearInstance<AdvectionDiffusion3D>(mesh);
+		switch (configuration.advection_diffusion_3D.library) {
+		case SOLVER_LIBRARY::ESPRESO:
+			instance = new LinearInstance<AdvectionDiffusion3D>(configuration.advection_diffusion_3D.espreso, mesh);
+			break;
+		case SOLVER_LIBRARY::HYPRE:
+			instance = new HypreInstance<AdvectionDiffusion3D>(configuration.advection_diffusion_3D.hypre, mesh);
+			break;
+		};
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not implemented physics";

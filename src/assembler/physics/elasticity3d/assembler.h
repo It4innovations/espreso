@@ -8,9 +8,9 @@ namespace espreso {
 
 struct Elasticity3D: public Physics
 {
-	Elasticity3D(Mesh &mesh, Constraints &constraints)
+	Elasticity3D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: Physics(
-			mesh, constraints,
+			mesh, constraints, configuration,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 

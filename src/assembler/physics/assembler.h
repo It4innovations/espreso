@@ -85,6 +85,7 @@ struct Physics {
 
 	Physics(Mesh &mesh,
 			Constraints &constraints,
+			const ESPRESOSolver &configuration,
 			SparseMatrix::MatrixType mtype,
 			const std::vector<Property> elementDOFs,
 			const std::vector<Property> faceDOFs,
@@ -99,7 +100,8 @@ struct Physics {
 	matrixSize(mesh.parts()),
 	mtype(mtype),
 	_mesh(mesh),
-	_constraints(constraints)
+	_constraints(constraints),
+	_configuration(configuration)
 	{
 		K.resize(_mesh.parts());
 		R1.resize(_mesh.parts());
@@ -114,6 +116,7 @@ struct Physics {
 protected:
 	Mesh& _mesh;
 	Constraints &_constraints;
+	const ESPRESOSolver &_configuration;
 };
 
 }

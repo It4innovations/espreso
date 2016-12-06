@@ -14,10 +14,11 @@ template <class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(Mesh &mesh): Instance(mesh),
+	HypreInstance(const HypreSolver &configuration, Mesh &mesh): Instance(mesh),
+	_configuration(configuration),
 	feiPtr(MPI_COMM_WORLD),
 	_constrains(mesh),
-	_physics(mesh, _constrains),
+	_physics(mesh, _constrains, _dummyESPRESOSolver),
 	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
@@ -33,6 +34,8 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const HypreSolver &_configuration;
+	const ESPRESOSolver _dummyESPRESOSolver;
 	LLNL_FEI_Impl feiPtr;
 	Constraints _constrains;
 	TPhysics _physics;
@@ -52,7 +55,7 @@ template <class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(Mesh &mesh): Instance(mesh), _constrains(mesh), _physics(mesh, _constrains)
+	HypreInstance(const HypreSolver &configuration, Mesh &mesh): Instance(mesh), _configuration(configuration), _constrains(mesh), _physics(mesh, _constrains, _dummyESPRESOSolver)
 	{
 		ESINFO(GLOBAL_ERROR) << "HYPRE is not linked! Specify HYPRE::INCLUDE and HYPRE::LIBPATH";
 	}
@@ -67,6 +70,8 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const HypreSolver &_configuration;
+	const ESPRESOSolver _dummyESPRESOSolver;
 	Constraints _constrains;
 	TPhysics _physics;
 };

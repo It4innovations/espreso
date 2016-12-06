@@ -17,14 +17,14 @@ enum class INPUT {
 	GENERATOR = 3
 };
 
-enum class FETI_METHOD {
+enum class ESPRESO_METHOD {
 	/// Total FETI
 	TOTAL_FETI = 0,
 	/// Hybrid Total FETI
 	HYBRID_FETI = 1,
 };
 
-enum class FETI_ITERATIVE_SOLVER {
+enum class ESPRESO_ITERATIVE_SOLVER {
 	/// Projected conjugate gradients
 	PCG = 0,
 	/// Pipelined PCG
@@ -39,7 +39,7 @@ enum class FETI_ITERATIVE_SOLVER {
 	QPCE = 5
 };
 
-enum class FETI_PRECONDITIONER {
+enum class ESPRESO_PRECONDITIONER {
 	/// No preconditioner is used
 	NONE = 0,
 	/// Lumped preconditioner     S = K_ss
@@ -77,7 +77,7 @@ enum class FLOAT_PRECISION {
 	SINGLE = 1
 };
 
-enum class FETI_KSOLVER {
+enum class ESPRESO_KSOLVER {
 	/// A direct solver with double precision
 	DIRECT_DP = 0,
 	/// An iterative solver
@@ -88,14 +88,14 @@ enum class FETI_KSOLVER {
 	DIRECT_MP = 3
 };
 
-enum class FETI_F0SOLVER_PRECISION {
+enum class ESPRESO_F0SOLVER_PRECISION {
 	/// The same precision as K solver
 	K_PRECISION = 0,
 	/// Double precision
 	DOUBLE = 1
 };
 
-enum class FETI_SASOLVER {
+enum class ESPRESO_SASOLVER {
 	/// Dense on CPU
 	CPU_DENSE = 0,
 	/// Dense on accelerator
@@ -111,7 +111,7 @@ enum class MATRIX_STORAGE {
 	SYMMETRIC = 1
 };
 
-enum class MULTIGRID_SOLVER {
+enum class HYPRE_SOLVER {
 	CG = 0,
 	GMRES = 1,
 	FGMRES = 2,
@@ -123,7 +123,7 @@ enum class MULTIGRID_SOLVER {
 	SUPERLUX = 8
 };
 
-enum class MULTIGRID_PRECONDITIONER {
+enum class HYPRE_PRECONDITIONER {
 	DIAGONAL = 0,
 	PILUT = 1,
 	EUCLID = 2,
@@ -148,6 +148,11 @@ enum class PHYSICS {
 	ADVECTION_DIFFUSION_2D,
 	ADVECTION_DIFFUSION_3D,
 	STOKES
+};
+
+enum class SOLVER_LIBRARY {
+	ESPRESO,
+	HYPRE
 };
 
 enum class MATERIAL_MODEL {
@@ -306,32 +311,32 @@ struct ESPRESOGenerator: public Configuration {
 	SUBCONFIG(SphereConfiguration, sphere, "Detailed specification of spherical shape.");
 };
 
-struct FETISolver: public Configuration {
+struct ESPRESOSolver: public Configuration {
 
 	PARAMETER(double, epsilon, "Solver requested precision.", 1e-5);
 	PARAMETER(size_t, iterations, "solver iterations", 100);
 
-	OPTION(FETI_METHOD, method, "The FETI method used by ESPRESO.", FETI_METHOD::TOTAL_FETI, OPTIONS({
-		{ "TOTAL_FETI" , FETI_METHOD::TOTAL_FETI , "Total FETI." },
-		{ "HYBRID_FETI", FETI_METHOD::HYBRID_FETI, "Hybrid Total FETI." }
+	OPTION(ESPRESO_METHOD, method, "The FETI method used by ESPRESO.", ESPRESO_METHOD::TOTAL_FETI, OPTIONS({
+		{ "TOTAL_FETI" , ESPRESO_METHOD::TOTAL_FETI , "Total FETI." },
+		{ "HYBRID_FETI", ESPRESO_METHOD::HYBRID_FETI, "Hybrid Total FETI." }
 	}));
 
-	OPTION(FETI_ITERATIVE_SOLVER, solver, "Used iterative solver", FETI_ITERATIVE_SOLVER::PCG, OPTIONS({
-		{ "PCG"          , FETI_ITERATIVE_SOLVER::PCG          , "Standard Projected conjugate gradients." },
-		{ "PIPEPCG"      , FETI_ITERATIVE_SOLVER::pipePCG      , "Pipelined PCG." },
-		{ "ORTHOGONALPCG", FETI_ITERATIVE_SOLVER::orthogonalPCG, "Full ortogonalization PCG." },
-		{ "GMRES"        , FETI_ITERATIVE_SOLVER::GMRES        , "GMRES - allows non-symmetric systems." },
-		{ "BICGSTAB"     , FETI_ITERATIVE_SOLVER::BICGSTAB     , "BICGSTAB - allows non-symmetric systems." },
-		{ "QPCE"         , FETI_ITERATIVE_SOLVER::QPCE         , "QPCE - allows contact." }
+	OPTION(ESPRESO_ITERATIVE_SOLVER, solver, "Used iterative solver", ESPRESO_ITERATIVE_SOLVER::PCG, OPTIONS({
+		{ "PCG"          , ESPRESO_ITERATIVE_SOLVER::PCG          , "Standard Projected conjugate gradients." },
+		{ "PIPEPCG"      , ESPRESO_ITERATIVE_SOLVER::pipePCG      , "Pipelined PCG." },
+		{ "ORTHOGONALPCG", ESPRESO_ITERATIVE_SOLVER::orthogonalPCG, "Full ortogonalization PCG." },
+		{ "GMRES"        , ESPRESO_ITERATIVE_SOLVER::GMRES        , "GMRES - allows non-symmetric systems." },
+		{ "BICGSTAB"     , ESPRESO_ITERATIVE_SOLVER::BICGSTAB     , "BICGSTAB - allows non-symmetric systems." },
+		{ "QPCE"         , ESPRESO_ITERATIVE_SOLVER::QPCE         , "QPCE - allows contact." }
 	}));
 
-	OPTION(FETI_PRECONDITIONER, preconditioner, "Preconditioner", FETI_PRECONDITIONER::LUMPED, OPTIONS({
-		{ "NONE"           , FETI_PRECONDITIONER::NONE           , "Use no preconditioner." },
-		{ "LUMPED"         , FETI_PRECONDITIONER::LUMPED         , "Lumber preconditioner." },
-		{ "WEIGHT_FUNCTION", FETI_PRECONDITIONER::WEIGHT_FUNCTION, "Use weight function." },
-		{ "DIRICHLET"      , FETI_PRECONDITIONER::DIRICHLET      , "Dirichlet preconditioner." },
-		{ "SUPER_DIRICHLET", FETI_PRECONDITIONER::SUPER_DIRICHLET, "simplified Dirichlet preconditioner." },
-		{ "MAGIC"          , FETI_PRECONDITIONER::MAGIC          , "TODO." }
+	OPTION(ESPRESO_PRECONDITIONER, preconditioner, "Preconditioner", ESPRESO_PRECONDITIONER::LUMPED, OPTIONS({
+		{ "NONE"           , ESPRESO_PRECONDITIONER::NONE           , "Use no preconditioner." },
+		{ "LUMPED"         , ESPRESO_PRECONDITIONER::LUMPED         , "Lumber preconditioner." },
+		{ "WEIGHT_FUNCTION", ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION, "Use weight function." },
+		{ "DIRICHLET"      , ESPRESO_PRECONDITIONER::DIRICHLET      , "Dirichlet preconditioner." },
+		{ "SUPER_DIRICHLET", ESPRESO_PRECONDITIONER::SUPER_DIRICHLET, "simplified Dirichlet preconditioner." },
+		{ "MAGIC"          , ESPRESO_PRECONDITIONER::MAGIC          , "TODO." }
 	}));
 
 	OPTION(REGULARIZATION, regularization, "Type of regularization of stiffness matrix", REGULARIZATION::FIX_POINTS, OPTIONS({
@@ -355,25 +360,25 @@ struct FETISolver: public Configuration {
 		{"SINGLE", FLOAT_PRECISION::SINGLE, "Single precision."}
 	}));
 
-	OPTION(FETI_KSOLVER, Ksolver, "Stiffness matrix solver type", FETI_KSOLVER::DIRECT_DP, OPTIONS({
-		{ "DIRECT_DP", FETI_KSOLVER::DIRECT_DP, "Directly with double precision" },
-		{ "ITERATIVE", FETI_KSOLVER::ITERATIVE, "Iteratively" },
-		{ "DIRECT_SP", FETI_KSOLVER::DIRECT_SP, "Directly with single precision" },
-		{ "DIRECT_MX", FETI_KSOLVER::DIRECT_MP, "Directly with mixed precision" }
+	OPTION(ESPRESO_KSOLVER, Ksolver, "Stiffness matrix solver type", ESPRESO_KSOLVER::DIRECT_DP, OPTIONS({
+		{ "DIRECT_DP", ESPRESO_KSOLVER::DIRECT_DP, "Directly with double precision" },
+		{ "ITERATIVE", ESPRESO_KSOLVER::ITERATIVE, "Iteratively" },
+		{ "DIRECT_SP", ESPRESO_KSOLVER::DIRECT_SP, "Directly with single precision" },
+		{ "DIRECT_MX", ESPRESO_KSOLVER::DIRECT_MP, "Directly with mixed precision" }
 	}));
 
 	PARAMETER(size_t, Ksolver_iterations, "Number of reiteration steps for single precision direct solver", 1000);
 	PARAMETER(double, Ksolver_epsilon   , "Reguested norm for single precision direct solver", 1e-12);
 
-	OPTION(FETI_F0SOLVER_PRECISION, F0_precision, "Precision of F0", FETI_F0SOLVER_PRECISION::K_PRECISION, OPTIONS({
-		{ "K_PRECISION", FETI_F0SOLVER_PRECISION::K_PRECISION, "With the same precision as KSOLVER" },
-		{ "DOUBLE"     , FETI_F0SOLVER_PRECISION::DOUBLE     , "Always with double precision" }
+	OPTION(ESPRESO_F0SOLVER_PRECISION, F0_precision, "Precision of F0", ESPRESO_F0SOLVER_PRECISION::K_PRECISION, OPTIONS({
+		{ "K_PRECISION", ESPRESO_F0SOLVER_PRECISION::K_PRECISION, "With the same precision as KSOLVER" },
+		{ "DOUBLE"     , ESPRESO_F0SOLVER_PRECISION::DOUBLE     , "Always with double precision" }
 	}));
 
-	OPTION(FETI_SASOLVER, SAsolver, "S alfa solver type", FETI_SASOLVER::CPU_DENSE, OPTIONS({
-		{ "CPU_DENSE" , FETI_SASOLVER::CPU_DENSE , "Dense solver on CPU" },
-		{ "ACC_DENSE" , FETI_SASOLVER::ACC_DENSE , "Dense solver on ACC" },
-		{ "CPU_SPARSE", FETI_SASOLVER::CPU_SPARSE, "Sparse solver on CPU." }
+	OPTION(ESPRESO_SASOLVER, SAsolver, "S alfa solver type", ESPRESO_SASOLVER::CPU_DENSE, OPTIONS({
+		{ "CPU_DENSE" , ESPRESO_SASOLVER::CPU_DENSE , "Dense solver on CPU" },
+		{ "ACC_DENSE" , ESPRESO_SASOLVER::ACC_DENSE , "Dense solver on ACC" },
+		{ "CPU_SPARSE", ESPRESO_SASOLVER::CPU_SPARSE, "Sparse solver on CPU." }
 	}));
 
 	OPTION(MATRIX_STORAGE, schur_type, "Schur complement matrix type.", MATRIX_STORAGE::GENERAL, OPTIONS({
@@ -389,28 +394,28 @@ struct FETISolver: public Configuration {
 	PARAMETER(size_t, time_steps, "Number of time steps for transient problems", 1);
 };
 
-struct MULTIGRIDSolver: public Configuration {
+struct HypreSolver: public Configuration {
 
-	OPTION(MULTIGRID_SOLVER, solver, "Used solver", MULTIGRID_SOLVER::CG, OPTIONS({
-		{"CG"      , MULTIGRID_SOLVER::CG      , "CG solver." },
-		{"GMRES"   , MULTIGRID_SOLVER::GMRES   , "GMRES solver." },
-		{"FGMRES"  , MULTIGRID_SOLVER::FGMRES  , "FGMRES solver." },
-		{"BICGS"   , MULTIGRID_SOLVER::BICGS   , "BICGS solver." },
-		{"BICGSTAB", MULTIGRID_SOLVER::BICGSTAB, "BICGSTAB solver." },
-		{"TFQMR"   , MULTIGRID_SOLVER::TFQMR   , "TFQMR solver." },
-		{"SYMQMR"  , MULTIGRID_SOLVER::SYMQMR  , "SYMQMR solver." },
-		{"SUPERLU" , MULTIGRID_SOLVER::SUPERLU , "SUPERLU solver." },
-		{"SUPERLUX", MULTIGRID_SOLVER::SUPERLUX, "SUPERLUX solver." }
+	OPTION(HYPRE_SOLVER, solver, "Used solver", HYPRE_SOLVER::CG, OPTIONS({
+		{"CG"      , HYPRE_SOLVER::CG      , "CG solver." },
+		{"GMRES"   , HYPRE_SOLVER::GMRES   , "GMRES solver." },
+		{"FGMRES"  , HYPRE_SOLVER::FGMRES  , "FGMRES solver." },
+		{"BICGS"   , HYPRE_SOLVER::BICGS   , "BICGS solver." },
+		{"BICGSTAB", HYPRE_SOLVER::BICGSTAB, "BICGSTAB solver." },
+		{"TFQMR"   , HYPRE_SOLVER::TFQMR   , "TFQMR solver." },
+		{"SYMQMR"  , HYPRE_SOLVER::SYMQMR  , "SYMQMR solver." },
+		{"SUPERLU" , HYPRE_SOLVER::SUPERLU , "SUPERLU solver." },
+		{"SUPERLUX", HYPRE_SOLVER::SUPERLUX, "SUPERLUX solver." }
 	}));
 
-	OPTION(MULTIGRID_PRECONDITIONER, preconditioner, "Used preconditioner", MULTIGRID_PRECONDITIONER::BOOMERAMG, OPTIONS({
-		{"DIAGONAL" , MULTIGRID_PRECONDITIONER::DIAGONAL , "DIAGONAL preconditioner." },
-		{"PILUT"    , MULTIGRID_PRECONDITIONER::PILUT    , "PILUT preconditioner." },
-		{"EUCLID"   , MULTIGRID_PRECONDITIONER::EUCLID   , "EUCLID preconditioner." },
-		{"PARASAILS", MULTIGRID_PRECONDITIONER::PARASAILS, "PARASAILS preconditioner." },
-		{"BOOMERAMG", MULTIGRID_PRECONDITIONER::BOOMERAMG, "BOOMERAMG preconditioner." },
-		{"POLY"     , MULTIGRID_PRECONDITIONER::POLY     , "POLY preconditioner." },
-		{"MLI"      , MULTIGRID_PRECONDITIONER::MLI      , "MLI preconditioner." }
+	OPTION(HYPRE_PRECONDITIONER, preconditioner, "Used preconditioner", HYPRE_PRECONDITIONER::BOOMERAMG, OPTIONS({
+		{"DIAGONAL" , HYPRE_PRECONDITIONER::DIAGONAL , "DIAGONAL preconditioner." },
+		{"PILUT"    , HYPRE_PRECONDITIONER::PILUT    , "PILUT preconditioner." },
+		{"EUCLID"   , HYPRE_PRECONDITIONER::EUCLID   , "EUCLID preconditioner." },
+		{"PARASAILS", HYPRE_PRECONDITIONER::PARASAILS, "PARASAILS preconditioner." },
+		{"BOOMERAMG", HYPRE_PRECONDITIONER::BOOMERAMG, "BOOMERAMG preconditioner." },
+		{"POLY"     , HYPRE_PRECONDITIONER::POLY     , "POLY preconditioner." },
+		{"MLI"      , HYPRE_PRECONDITIONER::MLI      , "MLI preconditioner." }
 	}));
 };
 
@@ -470,6 +475,50 @@ struct MaterialParameters: public Configuration {
 	}));
 };
 
+struct LinearElasticity2DConfiguration: public Configuration {
+
+	OPTION(SOLVER_LIBRARY, library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
+		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
+		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
+	}));
+
+	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
+	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+};
+
+struct LinearElasticity3DConfiguration: public Configuration {
+
+	OPTION(SOLVER_LIBRARY, library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
+		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
+		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
+	}));
+
+	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
+	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+};
+
+struct AdvectionDiffusion2DConfiguration: public Configuration {
+
+	OPTION(SOLVER_LIBRARY, library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
+		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
+		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
+	}));
+
+	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
+	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+};
+
+struct AdvectionDiffusion3DConfiguration: public Configuration {
+
+	OPTION(SOLVER_LIBRARY, library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
+		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
+		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
+	}));
+
+	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
+	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+};
+
 struct GlobalConfiguration: public Configuration {
 
 	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(*this); }
@@ -503,8 +552,10 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOInput       , openfoam    , "Mesh description in OpenFOAM format.");
 	SUBCONFIG(ESPRESOInput       , esdata      , "Mesh description in ESPRESO internal binary format.");
 
-	SUBCONFIG(FETISolver         , feti        , "Internal FETI solver options.");
-	SUBCONFIG(MULTIGRIDSolver    , multigrid   , "Multigrid setting.");
+	SUBCONFIG(LinearElasticity2DConfiguration  , linear_elasticity_2D  , "2D Linear elasticity solver.");
+	SUBCONFIG(LinearElasticity3DConfiguration  , linear_elasticity_3D  , "3D Linear elasticity solver.");
+	SUBCONFIG(AdvectionDiffusion2DConfiguration, advection_diffusion_2D, "2D advection diffusiuon solver.");
+	SUBCONFIG(AdvectionDiffusion3DConfiguration, advection_diffusion_3D, "3D advection diffusiuon solver.");
 
 
 	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");

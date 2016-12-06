@@ -15,9 +15,9 @@ struct LinearElasticity2D: public LinearPhysics
 		PLANE_STRESS_WITH_THICKNESS = 3
 	};
 
-	LinearElasticity2D(Mesh &mesh, Constraints &constraints)
+	LinearElasticity2D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: LinearPhysics(
-			mesh, constraints,
+			mesh, constraints, configuration,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 

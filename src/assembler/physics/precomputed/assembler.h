@@ -31,6 +31,7 @@ struct PrecomputedPhysics: public Physics {
 	PrecomputedPhysics(
 			APIMesh &mesh,
 			Constraints &constraints,
+			const ESPRESOSolver &configuration,
 			SparseMatrix::MatrixType mtype,
 			const std::vector<Property> elementDOFs,
 			const std::vector<Property> faceDOFs,
@@ -38,7 +39,7 @@ struct PrecomputedPhysics: public Physics {
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs,
 			double *rhs, size_t rhs_size)
-	: Physics(mesh, constraints, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs), _apimesh(mesh), _rhs(rhs), _rhs_size(rhs_size) {};
+	: Physics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs), _apimesh(mesh), _rhs(rhs), _rhs_size(rhs_size) {};
 	virtual ~PrecomputedPhysics() {};
 
 protected:

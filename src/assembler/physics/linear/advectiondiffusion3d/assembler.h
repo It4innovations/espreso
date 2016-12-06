@@ -8,9 +8,9 @@ namespace espreso {
 
 struct AdvectionDiffusion3D: public LinearPhysics
 {
-	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints)
+	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: LinearPhysics(
-			mesh, constraints,
+			mesh, constraints, configuration,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 

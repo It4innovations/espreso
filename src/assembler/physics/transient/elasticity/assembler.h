@@ -8,9 +8,9 @@ namespace espreso {
 
 struct TransientElasticity: public TransientPhysics
 {
-	TransientElasticity(Mesh &mesh, Constraints &constraints)
+	TransientElasticity(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: TransientPhysics(
-			mesh, constraints,
+			mesh, constraints, configuration,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs)
 	{

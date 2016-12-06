@@ -13,9 +13,9 @@ struct AdvectionDiffusion2D: public LinearPhysics
 		CAU = 1
 	};
 
-	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints)
+	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: LinearPhysics(
-			mesh, constraints,
+			mesh, constraints, configuration,
 			SparseMatrix::MatrixType::REAL_UNSYMMETRIC,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 

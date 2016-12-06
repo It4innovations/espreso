@@ -11,9 +11,10 @@ template <class TPhysics>
 struct LinearInstance: public Instance
 {
 public:
-	LinearInstance(Mesh &mesh): Instance(mesh),
+	LinearInstance(const ESPRESOSolver &configuration, Mesh &mesh): Instance(mesh),
+	_configuration(configuration),
 	_constrains(mesh),
-	_physics(mesh, _constrains),
+	_physics(mesh, _constrains, configuration),
 	_linearSolver(_physics, _constrains),
 	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
 	{
@@ -30,6 +31,7 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const ESPRESOSolver &_configuration;
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
