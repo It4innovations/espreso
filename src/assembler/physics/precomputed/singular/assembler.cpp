@@ -8,7 +8,7 @@ void SingularSystem::prepareMeshStructures()
 	matrixSize = _apimesh.distributeDOFsToDomains(matrixSize);
 	_apimesh.computeDOFsDOFsCounters();
 
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		_apimesh.computeFacesSharedByDomains();
 	}
 
@@ -45,7 +45,7 @@ void SingularSystem::assembleB1()
 
 void SingularSystem::assembleB0()
 {
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
+	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		EqualityConstraints::insertKernelsToB0(_constraints, _apimesh.faces(), _apimesh.DOFs(), R1);
 	}
 }

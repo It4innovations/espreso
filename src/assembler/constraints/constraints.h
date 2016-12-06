@@ -36,7 +36,7 @@ struct Constraints
 
 	std::vector<size_t> block;
 
-	Constraints(Mesh &mesh): block(3), _mesh(mesh) {};
+	Constraints(const ESPRESOSolver &configuration, Mesh &mesh): block(3), _configuration(configuration), _mesh(mesh) {};
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 
@@ -45,6 +45,7 @@ struct Constraints
 protected:
 	size_t synchronizeOffsets(size_t &offset);
 
+	const ESPRESOSolver &_configuration;
 	Mesh &_mesh;
 };
 

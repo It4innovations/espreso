@@ -18,7 +18,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				if (nodes[i]->settings().isSet(DOFs[dof])) {
-					if (!config::solver::REDUNDANT_LAGRANGE && nodes[i]->clusters()[0] != environment->MPIrank) {
+					if (!constraints._configuration.redundant_lagrange && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
@@ -28,7 +28,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + IJVMatrixIndexing);
 							dirichletValues[nodes[i]->domains()[d]][t].push_back(value);
 						}
-						if (!config::solver::REDUNDANT_LAGRANGE) {
+						if (!constraints._configuration.redundant_lagrange) {
 							break;
 						}
 					}
@@ -127,9 +127,9 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
-				if (n > 1 && (!config::solver::REDUNDANT_LAGRANGE || !elements[e]->settings().isSet(DOFs[dof]))) {
+				if (n > 1 && (!constraints._configuration.redundant_lagrange || !elements[e]->settings().isSet(DOFs[dof]))) {
 					if (elements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
-						if (config::solver::REDUNDANT_LAGRANGE) {
+						if (constraints._configuration.redundant_lagrange) {
 							lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;
 							lambdasSize += n * (n - 1) / 2;
 						} else {
@@ -278,7 +278,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 	};
 
 	std::vector<std::vector<double> > diagonals;
-	if (config::solver::SCALING) {
+	if (constraints._configuration.scaling) {
 		diagonals.resize(permutation.size());
 		std::vector<std::vector<double> > D(constraints._mesh.parts());
 
@@ -364,7 +364,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 			size_t dof = permutation[i] % DOFs.size();
 			esglobal offset = 0;
 			double duplicity = 0;
-			if (config::solver::SCALING) {
+			if (constraints._configuration.scaling) {
 				std::for_each(diagonals[i].begin(), diagonals[i].end(), [&] (double v) { duplicity += v; });
 			} else {
 				duplicity = e->numberOfGlobalDomainsWithDOF(dof);
@@ -383,7 +383,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
 								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
 								vals[t][d].push_back(1);
-								if (config::solver::SCALING) {
+								if (constraints._configuration.scaling) {
 									dup[t][d].push_back(diagonals[i][diag2] / duplicity);
 								} else {
 									dup[t][d].push_back(1 / duplicity);
@@ -395,7 +395,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
 								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
 								vals[t][d].push_back(-1);
-								if (config::solver::SCALING) {
+								if (constraints._configuration.scaling) {
 									dup[t][d].push_back(diagonals[i][diag1] / duplicity);
 								} else {
 									dup[t][d].push_back(1 / duplicity);
@@ -418,11 +418,11 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 							offset++;
 						}
 					}
-					if (!config::solver::REDUNDANT_LAGRANGE) {
+					if (!constraints._configuration.redundant_lagrange) {
 						break;
 					}
 				}
-				if (!config::solver::REDUNDANT_LAGRANGE) {
+				if (!constraints._configuration.redundant_lagrange) {
 					break;
 				}
 			}

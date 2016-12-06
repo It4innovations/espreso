@@ -191,8 +191,8 @@ void Stokes::composeSubdomain(size_t subdomain)
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
 
-	switch (config::solver::REGULARIZATION) {
-	case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+	switch (_configuration.regularization) {
+	case REGULARIZATION::FIX_POINTS:
 		analyticsKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
 		analyticsRegMat(K[subdomain], RegMat[subdomain]);
 		K[subdomain].RemoveLower();
@@ -200,7 +200,7 @@ void Stokes::composeSubdomain(size_t subdomain)
 		K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
 		RegMat[subdomain].ConvertToCOO(1);
 		break;
-	case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+	case REGULARIZATION::NULL_PIVOTS:
 		K[subdomain].RemoveLower();
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 		break;

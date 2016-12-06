@@ -285,68 +285,68 @@ void HypreInstance<TPhysics>::solve(std::vector<std::vector<double> > &solution)
 
 	strcpy(paramStrings[0],  "outputLevel 2");
 	//	SOLVER
-	switch(config::hypre::HYPRE_SOLVER)	//CG, GMRES, FGMRES, BICGS, BICGSTAB, TFQMR, SYMQMR, SUPERLU, SUPERLUX
+	switch(_configuration.solver)	//CG, GMRES, FGMRES, BICGS, BICGSTAB, TFQMR, SYMQMR, SUPERLU, SUPERLUX
 	{
-		case config::hypre::SOLVERalternative::CG:
+		case HYPRE_SOLVER::CG:
 			strcpy(paramStrings[1], "solver cg");
 			break;
 		default:
-		case config::hypre::SOLVERalternative::GMRES:
+		case HYPRE_SOLVER::GMRES:
 			strcpy(paramStrings[1], "solver gmres");
 			break;
-		case config::hypre::SOLVERalternative::FGMRES:
+		case HYPRE_SOLVER::FGMRES:
 			strcpy(paramStrings[1], "solver fgmres");
 			break;
 
-		case config::hypre::SOLVERalternative::BICGS:
+		case HYPRE_SOLVER::BICGS:
 			strcpy(paramStrings[1], "solver bicgs");
 			break;
-		case config::hypre::SOLVERalternative::BICGSTAB:
+		case HYPRE_SOLVER::BICGSTAB:
 			strcpy(paramStrings[1], "solver bicgstab");
 			break;
-		case config::hypre::SOLVERalternative::TFQMR:
+		case HYPRE_SOLVER::TFQMR:
 			strcpy(paramStrings[1], "solver tfqmr");
 			break;
-		case config::hypre::SOLVERalternative::SYMQMR:
+		case HYPRE_SOLVER::SYMQMR:
 			strcpy(paramStrings[1], "solver symqmr");
 			break;
-		case config::hypre::SOLVERalternative::SUPERLU:	//NOT PARALLEL
+		case HYPRE_SOLVER::SUPERLU:	//NOT PARALLEL
 			strcpy(paramStrings[1], "solver superlu");
 			break;
-		case config::hypre::SOLVERalternative::SUPERLUX: //NOT PARALLEL
+		case HYPRE_SOLVER::SUPERLUX: //NOT PARALLEL
 			strcpy(paramStrings[1], "solver superlux");
 			break;
 
 
 	}
 	//	PRECONDITIONER
-	switch(config::hypre::HYPRE_PRECONDITIONER) //DIAGONAL PILUT EUCLID PARASAILS BOOMERAMG POLY MLI
+	switch(_configuration.preconditioner) //DIAGONAL PILUT EUCLID PARASAILS BOOMERAMG POLY MLI
 	{
 		default:
-		case config::hypre::PRECONDITIONERalternative::DIAGONAL:
+		case HYPRE_PRECONDITIONER::DIAGONAL:
 			strcpy(paramStrings[2], "preconditioner diagonal");
 			break;
-		case config::hypre::PRECONDITIONERalternative::PILUT:
+		case HYPRE_PRECONDITIONER::PILUT:
 			strcpy(paramStrings[2], "preconditioner pilut");
 			break;
-		case config::hypre::PRECONDITIONERalternative::EUCLID:
+		case HYPRE_PRECONDITIONER::EUCLID:
 			strcpy(paramStrings[2], "preconditioner euclid");
 			break;
-		case config::hypre::PRECONDITIONERalternative::PARASAILS:
+		case HYPRE_PRECONDITIONER::PARASAILS:
 			strcpy(paramStrings[2], "preconditioner parasails");
 			break;
-		case config::hypre::PRECONDITIONERalternative::BOOMERAMG:
+		case HYPRE_PRECONDITIONER::BOOMERAMG:
 			strcpy(paramStrings[2], "preconditioner boomeramg");
 			break;
-		case config::hypre::PRECONDITIONERalternative::POLY:
+		case HYPRE_PRECONDITIONER::POLY:
 			strcpy(paramStrings[2], "preconditioner poly");
 			break;
-		case config::hypre::PRECONDITIONERalternative::MLI:
+		case HYPRE_PRECONDITIONER::MLI:
 			strcpy(paramStrings[2], "preconditioner mli");
 			break;
 	}
-	strcpy(paramStrings[3],  ("maxIterations "+std::to_string(config::solver::ITERATIONS)).c_str());
-	strcpy(paramStrings[4],  ("tolerance "+std::to_string(config::solver::EPSILON)).c_str());
+	strcpy(paramStrings[3],  ("maxIterations "+std::to_string(_configuration.iterations)).c_str());
+	strcpy(paramStrings[4],  ("tolerance "+std::to_string(_configuration.epsilon)).c_str());
 	
 	strcpy(paramStrings[5],  "gmresDim 30");
 	strcpy(paramStrings[6],  "amgNumSweeps 2");	// 1

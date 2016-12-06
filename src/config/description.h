@@ -396,6 +396,9 @@ struct ESPRESOSolver: public Configuration {
 
 struct HypreSolver: public Configuration {
 
+	PARAMETER(double, epsilon, "Solver requested precision.", 1e-5);
+	PARAMETER(size_t, iterations, "solver max iterations", 100);
+
 	OPTION(HYPRE_SOLVER, solver, "Used solver", HYPRE_SOLVER::CG, OPTIONS({
 		{"CG"      , HYPRE_SOLVER::CG      , "CG solver." },
 		{"GMRES"   , HYPRE_SOLVER::GMRES   , "GMRES solver." },

@@ -17,7 +17,7 @@ public:
 	HypreInstance(const HypreSolver &configuration, Mesh &mesh): Instance(mesh),
 	_configuration(configuration),
 	feiPtr(MPI_COMM_WORLD),
-	_constrains(mesh),
+	_constrains(_dummyESPRESOSolver, mesh),
 	_physics(mesh, _constrains, _dummyESPRESOSolver),
 	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
 	{
@@ -55,7 +55,7 @@ template <class TPhysics>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(const HypreSolver &configuration, Mesh &mesh): Instance(mesh), _configuration(configuration), _constrains(mesh), _physics(mesh, _constrains, _dummyESPRESOSolver)
+	HypreInstance(const HypreSolver &configuration, Mesh &mesh): Instance(mesh), _configuration(configuration), _constrains(_dummyESPRESOSolver, mesh), _physics(mesh, _constrains, _dummyESPRESOSolver)
 	{
 		ESINFO(GLOBAL_ERROR) << "HYPRE is not linked! Specify HYPRE::INCLUDE and HYPRE::LIBPATH";
 	}

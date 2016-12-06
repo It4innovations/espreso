@@ -22,12 +22,12 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
-		switch (config::solver::B0_TYPE) {
-		case config::solver::B0_TYPEalternative::CORNERS:
-			_mesh.computePlaneCorners(config::mesh::CORNERS, config::mesh::VERTEX_CORNERS, config::mesh::EDGE_CORNERS);
+	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_configuration.B0_type) {
+		case B0_TYPE::CORNERS:
+			_mesh.computePlaneCorners(1, true, true);
 			break;
-		case config::solver::B0_TYPEalternative::KERNELS:
+		case B0_TYPE::KERNELS:
 			_mesh.computeEdgesSharedByDomains();
 			break;
 		default:
@@ -59,12 +59,12 @@ void AdvectionDiffusion2D::assembleB1()
 
 void AdvectionDiffusion2D::assembleB0()
 {
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
-		switch (config::solver::B0_TYPE) {
-		case config::solver::B0_TYPEalternative::CORNERS:
+	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_configuration.B0_type) {
+		case B0_TYPE::CORNERS:
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
-		case config::solver::B0_TYPEalternative::KERNELS:
+		case B0_TYPE::KERNELS:
 			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
 			break;
