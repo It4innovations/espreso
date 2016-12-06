@@ -197,7 +197,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	SEQ_VECTOR <eslocal> SC_dense_val_offsets(domains_in_global_index.size(), 0);
 
 	// 2 domains per iteration processed
-	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 		if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
 			// Calculates SC on CPU and keeps it CPU memory
@@ -305,7 +306,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		SC_dense_val_orig.resize(domains_in_global_index.size());
 	}
 #else
-	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 			if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
@@ -620,7 +622,8 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
 
 void ClusterGPU::SetupKsolvers ( ) {
 
-	cilk_for (eslocal d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++) {
 
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
 		switch (config::solver::KSOLVER) {
@@ -692,7 +695,8 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	// loop over domains in the cluster
 	loop_1_1_time.start();
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
@@ -700,7 +704,8 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	loop_1_1_time.end();
 
 	loop_1_2_time.start();
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
@@ -733,7 +738,8 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	G0.MatVec(tm1[0], tm2[0], 'N');
 	clus_G0_time.end();
 
-	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
+	#pragma omp parallel for
+for (eslocal i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
@@ -778,7 +784,8 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
 	 clus_G0t_time.end();
 
-	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
+	#pragma omp parallel for
+for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
@@ -792,7 +799,8 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	// Kplus_x
 	mkl_set_num_threads(1);
 	loop_2_1_time.start();
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
@@ -909,7 +917,8 @@ void ClusterGPU::multKplus_HF_Loop1(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	loop_1_1_time.start();
 	loop_1_1_time.end();
 	loop_1_2_time.start();
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
@@ -943,7 +952,8 @@ void ClusterGPU::multKplus_HF_CP( ) {
 	G0.MatVec(tm1[0], tm2[0], 'N');
 	 clus_G0_time.end();
 
-	cilk_for (eslocal i = 0; i < vec_e0.size(); i++)
+	#pragma omp parallel for
+for (eslocal i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
@@ -969,7 +979,8 @@ void ClusterGPU::multKplus_HF_CP( ) {
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
 	 clus_G0t_time.end();
 
-	cilk_for (eslocal i = 0; i < vec_g0.size(); i++)
+	#pragma omp parallel for
+for (eslocal i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
@@ -987,7 +998,8 @@ void ClusterGPU::multKplus_HF_Loop2_SC(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, S
 	//mkl_set_num_threads(1);
 	 loop_2_1_time.start();
 
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
@@ -1016,7 +1028,8 @@ void ClusterGPU::multKplus_HF_Loop2_SPDS (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	//mkl_set_num_threads(1);
 	 loop_2_1_time.start();
 
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
@@ -1051,7 +1064,8 @@ void ClusterGPU::multKplus_HF_Loop2_MIX (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in)
 	// mkl_set_num_threads(1);
 	 loop_2_1_time.start();
 
-	cilk_for (eslocal d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);

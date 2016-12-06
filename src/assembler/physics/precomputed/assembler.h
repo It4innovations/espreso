@@ -16,7 +16,8 @@ struct PrecomputedPhysics: public Physics {
 	virtual void assembleStiffnessMatrices()
 	{
 		ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
-		cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+		#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 			composeSubdomain(p);
 			K[p].mtype = mtype;
 			ESINFO(PROGRESS2) << Info::plain() << ".";

@@ -149,7 +149,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     }
 
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    #pragma omp parallel for
+for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
@@ -339,7 +340,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     offset += matrixPerPack;
     }
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    #pragma omp parallel for
+	for  (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
     if (cluster_global_index == 1) cout << "."; // << i ;
 
@@ -368,7 +370,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         this->B1KplusPacks[i].CopyToMIC();
     }
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+    #pragma omp parallel for
+	for  (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
 
     if (cluster_global_index == 1)
@@ -378,7 +381,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
 void ClusterAcc::Create_Kinv_perDomain() {
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+    #pragma omp parallel for
+for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
     ESINFO(PROGRESS2) << "Creating B1*K+*B1t on Xeon Phi accelerator";
@@ -426,7 +430,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
 
     ESINFO(PROGRESS2) << "Creating B1*K+*B1t : ";
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+    #pragma omp parallel for
+for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
         domains[i].KplusF.msglvl = 0;
 
@@ -468,7 +473,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
     }
 
 
-    cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+    #pragma omp parallel for
+for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
 
     //	std::cout << "This function is obsolete - use Create_SC_perDomain" << std::endl;
@@ -666,7 +672,8 @@ void ClusterAcc::Create_Kinv_perDomain() {
 void ClusterAcc::SetupKsolvers ( ) {
     // this part is for setting CPU pardiso, temporarily until everything is
     // solved on MIC
-    cilk_for (eslocal d = 0; d < domains.size(); d++) {
+    #pragma omp parallel for
+for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
         switch (config::solver::KSOLVER) {

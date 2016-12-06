@@ -33,7 +33,8 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path)
 
 void Esdata::coordinates(const Coordinates &coordinates)
 {
-	cilk_for (size_t p = 0; p < coordinates.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < coordinates.parts(); p++) {
 		std::ofstream os;
 		eslocal size;
 		esglobal index;
@@ -57,7 +58,8 @@ void Esdata::coordinates(const Coordinates &coordinates)
 
 void Esdata::elements(const Mesh &mesh)
 {
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		const std::vector<eslocal> &parts = mesh.getPartition();
 		const std::vector<Element*> &elements = mesh.elements();
@@ -81,7 +83,8 @@ void Esdata::elements(const Mesh &mesh)
 
 void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 {
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/materials.dat";
@@ -135,7 +138,8 @@ void Esdata::settings(const Mesh &mesh)
 	};
 
 
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/settings.dat";
@@ -311,7 +315,8 @@ void Esdata::boundaries(const Mesh &mesh)
 //		os.close();
 //	}
 
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaries.dat";

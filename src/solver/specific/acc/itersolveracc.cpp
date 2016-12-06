@@ -21,7 +21,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         // *** Part 1.1 - prepare vectors for FETI operator with SC
         // at first - work with domains assigned to MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-            cilk_for (eslocal d = 0; d < cluster.accDomains[i].size(); ++d) {
+            #pragma omp parallel for
+for (eslocal d = 0; d < cluster.accDomains[i].size(); ++d) {
                 eslocal domN = cluster.accDomains[i].at(d);
                 for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
                     cluster.B1KplusPacks[i].SetX(d, j, x_in[ cluster.domains[domN].lambda_map_sub_local[j]]);
@@ -33,7 +34,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         }
 
         // *** Part 1.2 work with domains staying on CPU
-        cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+        #pragma omp parallel for
+for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
                 cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
@@ -54,7 +56,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
         // meanwhile compute the same for domains staying on CPU
         double startCPU = Measure::time();
-        cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+        #pragma omp parallel for
+        for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
         }
@@ -91,7 +94,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
             long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
-            cilk_for ( eslocal d = 0 ; d < end; ++d ) {
+            for ( eslocal d = 0 ; d < end; ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
@@ -226,7 +229,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
     if (cluster.USE_KINV == 0) {
         time_eval.timeEvents[0].start();
-        cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+        #pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
             SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
             for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
                 x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];

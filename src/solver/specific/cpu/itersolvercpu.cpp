@@ -10,7 +10,8 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
         time_eval.timeEvents[0].start();
-        cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+        #pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
             //SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
             for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
                 cluster.domains[d].compressed_tmp2[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
@@ -61,7 +62,8 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         time_eval.timeEvents[0].end();
 
         time_eval.timeEvents[1].start();
-        cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+        #pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
             SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
             for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
                 x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
@@ -81,7 +83,8 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
     if (cluster.USE_KINV == 0) {
         time_eval.timeEvents[0].start();
-        cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+        #pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
             SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
             for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
                 x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
@@ -92,7 +95,8 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
         time_eval.timeEvents[1].start();
         if (cluster.USE_HFETI == 0) {
-            cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+            #pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
                 cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
             }
 		} else {

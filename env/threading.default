@@ -10,7 +10,7 @@ fi
 if [ "$#" -eq 1 ]; then
 
  export MKL_NUM_THREADS=1
- export OMP_NUM_THREADS=1
+ export OMP_NUM_THREADS=$1
 
  export SOLVER_NUM_THREADS=$1
  export PAR_NUM_THREADS=$1

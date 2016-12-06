@@ -89,7 +89,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		tm2.resize(domains.size());
 		tm3.resize(domains.size());
 
-		cilk_for (size_t d = 0; d < domains.size(); d++) {
+		#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
 			eslocal max_tmp_vec_size = domains[d].B0.cols;
 
 			if (domains[d].B0.rows > domains[d].B0.cols)
@@ -143,7 +144,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	//ESLOG(MEMORY) << "1 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	cilk_for (size_t i = 0; i < my_neighs.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices[i] = lambdas_per_subdomain[my_neighs[i]];
 		my_comm_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
@@ -156,7 +158,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	//ESLOG(MEMORY) << "3 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	cilk_for (size_t d = 0; d < domains.size(); d++ )
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++ )
 		if (USE_KINV == 1 ) {
 			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
 			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
@@ -172,7 +175,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	//ESLOG(MEMORY) << "5 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	// mapping/compression vector for domains
-	cilk_for (size_t i = 0; i < domains.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < domains.size(); i++) {
 		for (size_t j = 0; j < domains[i].lambda_map_sub.size(); j++) {
 			domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
 		}
@@ -180,7 +184,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	//ESLOG(MEMORY) << "6 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	cilk_for (size_t d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
 
             if (domains[d].lambda_map_sub.size() > 0 ) {
 
@@ -211,7 +216,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
 	my_comm_lambdas_indices_comp.resize(my_neighs.size());
-	cilk_for (size_t i = 0; i < my_neighs.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices_comp[i].resize( lambdas_per_subdomain[my_neighs[i]].size() );
 		for (size_t j = 0; j < lambdas_per_subdomain[my_neighs[i]].size(); j++ )
 			my_comm_lambdas_indices_comp[i][j] = _my_lamdas_map_indices[lambdas_per_subdomain[my_neighs[i]][j]];
@@ -226,7 +232,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-	cilk_for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+	#pragma omp parallel for
+for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
 		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
 		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
@@ -298,7 +305,8 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat ) {
 
-	cilk_for (size_t d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
 		if ( d == 0 && config::env::MPIrank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
@@ -536,7 +544,8 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	// loop over domains in the cluster
 	loop_1_1_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		if (SYMMETRIC_SYSTEM) {
@@ -548,7 +557,8 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	loop_1_1_time.end();
 
 	loop_1_2_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
@@ -591,7 +601,8 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //	for (int i = 0; i < tm1[0].size(); i++)
 //	printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
 
-	cilk_for (size_t i = 0; i < vec_e0.size(); i++)
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
@@ -630,7 +641,8 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //		for (int i = 0; i < tm1[0].size(); i++)
 //		printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
 
-	cilk_for (size_t i = 0; i < vec_g0.size(); i++)
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
@@ -646,7 +658,8 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	// Kplus_x
 	mkl_set_num_threads(1);
 	loop_2_1_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
@@ -688,7 +701,8 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 
 	// loop over domains in the cluster
 	loop_1_1_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
    		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
@@ -696,7 +710,8 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 	loop_1_1_time.end();
 
 	loop_1_2_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
@@ -723,7 +738,8 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 	G0.MatVec(tm1[0], tm2[0], 'N');
 	clus_G0_time.end();
 
-	cilk_for (size_t i = 0; i < vec_e0.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_e0.size(); i++) {
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	}
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
@@ -756,7 +772,8 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
 	 clus_G0t_time.end();
 
-	cilk_for (size_t i = 0; i < vec_g0.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_g0.size(); i++) {
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 	}
 
@@ -771,7 +788,8 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 	// Kplus_x
 	mkl_set_num_threads(1);
 	loop_2_1_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
@@ -805,7 +823,8 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 
 	// loop over domains in the cluster
 	loop_1_1_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
    		//domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);				// g0 - with comp B0Kplus
 		//domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
@@ -815,7 +834,8 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	loop_1_1_time.end();
 
 	loop_1_2_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
@@ -842,7 +862,8 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	G0.MatVec(tm1[0], tm2[0], 'N');
 	clus_G0_time.end();
 
-	cilk_for (size_t i = 0; i < vec_e0.size(); i++)
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
@@ -869,7 +890,8 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
 	clus_G0t_time.end();
 
-	cilk_for (size_t i = 0; i < vec_g0.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_g0.size(); i++) {
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 	}
 
@@ -884,7 +906,8 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 	// Kplus_x
 	mkl_set_num_threads(1);
 	loop_2_1_time.start();
-	cilk_for (size_t d = 0; d < domains.size(); d++)
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
@@ -1058,7 +1081,8 @@ void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in
 
 void ClusterBase::CompressB0() {
 
-	cilk_for (size_t d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
 		domains[d].B0.MatTranspose(domains[d].B0t);
 		domains[d].B0_comp = domains[d].B0;
 
@@ -1094,7 +1118,8 @@ void ClusterBase::CreateG0() {
 
 	SEQ_VECTOR <SparseMatrix> G0LocalTemp( domains.size() );
 
-	cilk_for (size_t i = 0; i<domains.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i<domains.size(); i++) {
 		domains[i].Kplus_R.ConvertDenseToCSR(0);
 
 		G0LocalTemp[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R );
@@ -1114,7 +1139,8 @@ void ClusterBase::CreateG0() {
 
 		SEQ_VECTOR <SparseMatrix> G0LocalTemp2( domains.size() );
 
-		cilk_for (size_t i = 0; i<domains.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i<domains.size(); i++) {
 			domains[i].Kplus_R2.ConvertDenseToCSR(0);
 
 			G0LocalTemp2[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R2 );
@@ -1151,7 +1177,8 @@ void ClusterBase::CreateF0() {
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
 	 solve_F0_time.start();
 
-	cilk_for (size_t d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
 
 		if (MPIrank == 0 && d == 0)
 			domains[d].Kplus.msglvl=0;
@@ -1228,7 +1255,8 @@ void ClusterBase::CreateF0() {
 	 reduction_F0_time.start();
 
 	for (size_t j = 1; j < tmpF0v.size(); j *= 2) {
-		cilk_for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
 			if (i * 2 * j + j < tmpF0v.size()) {
 				tmpF0v[i * 2 * j].MatAddInPlace( tmpF0v[i * 2 * j + j], 'N', 1.0 );
 				tmpF0v[i * 2 * j + j].Clear();
@@ -1278,7 +1306,8 @@ void ClusterBase::CreateF0() {
 	F0_timing.printStatsMPI();
 
 	// *** POZOR **************************************************************
-	cilk_for (size_t d = 0; d<domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d<domains.size(); d++) {
 		domains[d].B0.Clear();
 		domains[d].B0t.Clear();
 	}
@@ -1596,7 +1625,8 @@ void ClusterBase::Create_G_perCluster() {
 	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
 
-	cilk_for (size_t j = 0; j < domains.size(); j++) {
+	#pragma omp parallel for
+for (size_t j = 0; j < domains.size(); j++) {
 
 		SparseMatrix Rt;
 		SparseMatrix Rt2;
@@ -1659,7 +1689,8 @@ void ClusterBase::Create_G_perCluster() {
 	G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
 
 	for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-		cilk_for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 
 			if (i * 2 * j + j < tmp_Mat.size()) {
 				if (USE_HFETI == 1) {
@@ -1896,7 +1927,8 @@ void ClusterBase::Create_G1_perCluster() {
 		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
 
 		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-		cilk_for (size_t j = 0; j < tmp_Mat.size(); j++) {
+		#pragma omp parallel for
+for (size_t j = 0; j < tmp_Mat.size(); j++) {
 			// V1
 			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
 			//tmp_Mat[j].MatTranspose();
@@ -2024,7 +2056,8 @@ void ClusterBase::Create_G1_perCluster() {
 		G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
 
 		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-			cilk_for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 				if (i * 2 * j + j < tmp_Mat.size()) {
 					tmp_Mat[i * 2 * j].MatAddInPlace(tmp_Mat[i * 2 * j + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
 					tmp_Mat[i * 2 * j + j].Clear();
@@ -2048,7 +2081,8 @@ void ClusterBase::Create_G1_perCluster() {
 	} else {
 
 		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-		cilk_for (size_t j = 0; j < domains.size(); j++) {
+		#pragma omp parallel for
+for (size_t j = 0; j < domains.size(); j++) {
 
 			// V1
 			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
@@ -2135,7 +2169,8 @@ void ClusterBase::Create_G1_perCluster() {
 		}
 
 		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-			cilk_for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 				if (i * 2 * j + j < tmp_Mat.size()) {
 					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
 					tmp_Mat[i * 2 * j + j].Clear();
@@ -2183,7 +2218,8 @@ void ClusterBase::Compress_G( SparseMatrix &G_in, SparseMatrix &G_comp_out ) {
 
 	G_in.ConvertToCOO( 1 );
 
-	cilk_for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
+	#pragma omp parallel for
+for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
 		G_in.J_col_indices[j] = _my_lamdas_map_indices[ G_in.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
 	}
 
@@ -2272,12 +2308,14 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
-	cilk_for (size_t d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
 		x_prim_cluster[d] = f[d];
 	}
 
 	if (USE_HFETI == 0) {
-		cilk_for (size_t d = 0; d < domains.size(); d++) {				// MFETI
+		#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {				// MFETI
 			domains[d].multKplusLocal( x_prim_cluster[d] );
 		}
 	} else {

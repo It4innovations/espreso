@@ -30,7 +30,8 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void SingularSystem::makeStiffnessMatricesRegular()
 {
-	cilk_for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+	#pragma omp parallel for
+	for  (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		K[subdomain].RemoveLower();
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
 	}

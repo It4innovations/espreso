@@ -1478,7 +1478,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 
 	// *** r = b - Ax *************************************************************
-	cilk_for (size_t i = 0; i < r_l.size(); i++)
+	#pragma omp parallel for
+	for (size_t i = 0; i < r_l.size(); i++)
 		r_l[i] = b_l[i] - Ax_l[i];
 
 	if (USE_GGtINV == 1) {
@@ -1514,7 +1515,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 		timing.totalTime.start();
 
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 			wp_l[i] = w_l[i];				//	wp = w;
 			yp_l[i] = y_l[i];				//	yp = y
 		}
@@ -1556,7 +1558,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 			}
 			proj_time.end();
 
-			cilk_for (size_t i = 0; i < w_l.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++)
 				y_l[i] = w_l[i];
 
 			break;
@@ -1568,7 +1571,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 		//------------------------------------------
 		if (iter == 0) {									// if outputs.n_it==1;
 
-			cilk_for (size_t i = 0; i < y_l.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < y_l.size(); i++)
 				p_l[i] = y_l[i];							// p = y;
 
 		} else {
@@ -1578,7 +1582,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
 			ddot_beta.end();
 
-			cilk_for (size_t i = 0; i < p_l.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 
 		}
@@ -1631,7 +1636,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 
 
 		//------------------------------------------
-		cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
 			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
@@ -1762,7 +1768,8 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
-	cilk_for (size_t i = 0; i < g_l.size(); i++){
+	#pragma omp parallel for
+for (size_t i = 0; i < g_l.size(); i++){
 		g_l[i] = Ax_l[i] - b_l[i];
   }
 
@@ -1814,7 +1821,8 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
       wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
       rho_l = -ztg/wtAw;
 
-		  cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		  #pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 		  	x_l[i] = x_l[i] + rho_l * w_l[i];
         g_l[i] += Aw_l[i] * rho_l;
 		  }
@@ -1865,12 +1873,14 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 
     if (iter > -1) {
       gamma_l = ztg/ztg_prew;
-		  cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		  #pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 		  	w_l[i] = z_l[i] +  w_l[i]*gamma_l;
 		  }
     }
     else {
-	    cilk_for (size_t i = 0; i < w_l.size(); i++){
+	    #pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++){
 		  	w_l[i] = z_l[i];
 		  }
     }
@@ -1898,7 +1908,8 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	// *** save solution - in dual and amplitudes *********************************************
 
 
-	cilk_for (size_t i = 0; i < x_l.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 		g_l[i] = -g_l[i];
 	}
 
@@ -2022,7 +2033,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
-	cilk_for (size_t i = 0; i < g_l.size(); i++){
+	#pragma omp parallel for
+for (size_t i = 0; i < g_l.size(); i++){
 		g_l[i] = Ax_l[i] - b_l[i];
   }
 
@@ -2096,7 +2108,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
       rho_l_prew = rho_l;
 
 
-		  cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		  #pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 		  	x_l[i] = x_l[i] + rho_l * w_l[i];
         g_l[i] += Aw_l[i] * rho_l;
 		  }
@@ -2147,26 +2160,30 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
     if (iter > 0) {
 
       // filtering duplicit Lambda entries
-      cilk_for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+      #pragma omp parallel for
+for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
         _z_l[i] = z_l[i] * cluster.my_lamdas_ddot_filter[i];
       }
 
       AW_l.DenseMatVec(_z_l,_Gamma_l,'T');
 
-		  cilk_for (eslocal i = 0; i < iter; i++) {
+		  #pragma omp parallel for
+for (eslocal i = 0; i < iter; i++) {
         _Gamma_l[i] /= -WtAW_l[i];
       }
 
 	    MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       W_l.DenseMatVec(Gamma_l,v_tmp_l);
 
-		  cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		  #pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 		  	w_l[i] = z_l[i] +  v_tmp_l[i];
 		  }
 
     }
     else {
-	    cilk_for (size_t i = 0; i < w_l.size(); i++){
+	    #pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++){
 		  	w_l[i] = z_l[i];
 		  }
     }
@@ -2208,7 +2225,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	// *** save solution - in dual and amplitudes *********************************************
 
 
-	cilk_for (size_t i = 0; i < x_l.size(); i++) {
+	#pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 		g_l[i] = -g_l[i];
 	}
 
@@ -2355,7 +2373,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
-	cilk_for (size_t i = 0; i < g_l.size(); i++){
+	#pragma omp parallel for
+for (size_t i = 0; i < g_l.size(); i++){
 		g_l[i] = Ax_l[i] - b_l[i];
   }
 
@@ -2445,7 +2464,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
   // InitialCondition for system H_{i+1,i} * y{i} = b_H
   b_H[0] = beta;
   // set-up first basis vector   (A * V_{i} = V_{i+1} * H_{i+1,i})
-  cilk_for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+  #pragma omp parallel for
+for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
      v_l[i] = z_l[i]/beta;
   }
 
@@ -2518,7 +2538,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
       H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(V_l.dense_values[v_l.size()*k]), &(z_l[0]));
 
 //
-      cilk_for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+      #pragma omp parallel for
+for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
          z_l[i] -= V_l.dense_values[v_l.size()*k + i] * H_l[ij(k,iter)];
 
       }
@@ -2526,7 +2547,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 //
     H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
 //
-    cilk_for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+    #pragma omp parallel for
+for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
       v_l[i] = z_l[i]/H_l[ij(iter+1,iter)];
     }
 
@@ -2635,7 +2657,8 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 
   apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
-  cilk_for (size_t i = 0; i < g_l.size(); i++){
+  #pragma omp parallel for
+for (size_t i = 0; i < g_l.size(); i++){
     w_l[i] = -(Ax_l[i] - b_l[i]);
   }
 
@@ -2763,7 +2786,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
-	cilk_for (size_t i = 0; i < g_l.size(); i++){
+	#pragma omp parallel for
+for (size_t i = 0; i < g_l.size(); i++){
 		g_l[i] = Ay_l[i] - b_l[i];
   }
 
@@ -2867,7 +2891,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 
     if (iter>0){
       gamma = -(delta/delta_p)*(rho/omega);
-		  cilk_for (size_t i = 0; i < w_l.size(); i++) {
+		  #pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++) {
         w_l[i] = z_l[i] + gamma * (w_l[i] - omega*v_l[i]);
       }
     }
@@ -2927,7 +2952,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
     rho = -(delta / parallel_ddot_compressed(cluster, ztld_l, v_l));
 
 
-		cilk_for (size_t i = 0; i < s_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < s_l.size(); i++) {
       s_l[i] = z_l[i] + rho * v_l[i];
     }
 
@@ -2936,7 +2962,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 //  norm_l / tol * epsilon
 
     if (norm_l < tol){
-      cilk_for (size_t i = 0; i < x_l.size(); i++) {
+      #pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
         x_l[i] += rho * w_l[i];
       } 
       //norm_l = parallel_norm_compressed(cluster, s_l);
@@ -2993,7 +3020,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
     omega  = parallel_ddot_compressed(cluster, t_l, s_l)/parallel_ddot_compressed(cluster, t_l, t_l);
 
 
-		cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
       x_l[i] += rho * w_l[i] - omega * s_l[i];
       z_l[i] = -omega * t_l[i] + s_l[i];
     }
@@ -3041,7 +3069,8 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 
   apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ay_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
-  cilk_for (size_t i = 0; i < g_l.size(); i++){
+  #pragma omp parallel for
+for (size_t i = 0; i < g_l.size(); i++){
     w_l[i] = -(Ay_l[i] - b_l[i]);
   }
 
@@ -3172,7 +3201,8 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
 	case config::solver::PRECONDITIONERalternative::MAGIC:
 
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 			tmp_l[i] = b_l[i] - Ax_l[i];
 		}
 
@@ -3200,7 +3230,8 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 		break;
 	case config::solver::PRECONDITIONERalternative::NONE:
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 			r_l[i] = b_l[i] - Ax_l[i];
 		}
 
@@ -3340,7 +3371,8 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 			alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp);
 		}
 
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 			z_l[i] = n_l[i] + beta_l  * z_l[i];
 			q_l[i] = m_l[i] + beta_l  * q_l[i];
 			s_l[i] = w_l[i] + beta_l  * s_l[i];
@@ -3371,7 +3403,8 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l); //apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
-	cilk_for(size_t i = 0; i < r_l.size(); i++)
+	#pragma omp parallel for
+for(size_t i = 0; i < r_l.size(); i++)
 		r_l[i] = b_l[i] - Ax_l[i];
 
 	dual_soultion_compressed_parallel   = x_l;
@@ -3484,7 +3517,8 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
 
-	cilk_for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
+	#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
 		r_l[i] = b_l[i] - Ax_l[i];
 		wp_l[i] = 0.0;
 		yp_l[i] = 0.0;
@@ -3513,7 +3547,8 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 	for ( iter = 0; iter < 1000; iter++) {
 		timing.totalTime.start();
 
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 			wp_l[i] = w_l[i];				//	wp = w;
 			yp_l[i] = y_l[i];				//	yp = y
 		}
@@ -3524,16 +3559,19 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 		case config::solver::PRECONDITIONERalternative::DIRICHLET:
 	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
 		case config::solver::PRECONDITIONERalternative::MAGIC:
-			cilk_for (size_t i = 0; i < w_l.size(); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++) {
 				w_l[i] = r_l[i];
 			}
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
 			break;
 		case config::solver::PRECONDITIONERalternative::NONE:
-			cilk_for (size_t i = 0; i < w_l.size(); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++) {
 				w_l[i] = r_l[i];
 			}
-			cilk_for (size_t i = 0; i < w_l.size(); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i < w_l.size(); i++) {
 				y_l[i] = w_l[i];
 			}
 			break;
@@ -3543,7 +3581,8 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 
 
 		if (iter == 0) {									// if outputs.n_it==1;
-			cilk_for (size_t i = 0; i < y_l.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < y_l.size(); i++)
 				p_l[i] = y_l[i];							// p = y;
 		} else {
 			ddot_beta.start();
@@ -3551,7 +3590,8 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
 			ddot_beta.end();
 
-			cilk_for (size_t i = 0; i < p_l.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 		}
 
@@ -3562,7 +3602,8 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l);
 		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
 
-		cilk_for (size_t i = 0; i < x_l.size(); i++) {
+		#pragma omp parallel for
+for (size_t i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
 			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
@@ -3587,7 +3628,8 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 	 timeGetSol.start();
 
 	// reconstruction of u
-	cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 
 		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
@@ -3682,7 +3724,8 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
 
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
+		#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
 			r_l[i] = b_l[i] - Ax_l[i];
 			wp_l[i] = 0.0;
 			yp_l[i] = 0.0;
@@ -3697,7 +3740,8 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
 			break;
 		case config::solver::PRECONDITIONERalternative::NONE:
-			cilk_for (size_t i = 0; i < r_l.size(); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 				u_l = r_l;
 			}
 			break;
@@ -3754,7 +3798,8 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 				prec_time.end();
 				break;
 			case config::solver::PRECONDITIONERalternative::NONE:
-				cilk_for (size_t i = 0; i < m_l.size(); i++) {
+				#pragma omp parallel for
+for (size_t i = 0; i < m_l.size(); i++) {
 					m_l[i] = w_l[i];
 				}
 				break;
@@ -3787,7 +3832,8 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 				alpha_l = gama_l / (delta_l - beta_l * gama_l / alpha_lp);
 			}
 
-			cilk_for (size_t i = 0; i < r_l.size(); i++) {
+			#pragma omp parallel for
+for (size_t i = 0; i < r_l.size(); i++) {
 				z_l[i] = n_l[i] + beta_l  * z_l[i];
 				q_l[i] = m_l[i] + beta_l  * q_l[i];
 				s_l[i] = w_l[i] + beta_l  * s_l[i];
@@ -3824,7 +3870,8 @@ void IterSolverBase::Solve_PipeCG_nonsingular ( Cluster & cluster,
 		 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 		 timeGetSol.start();
 
-		cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 
 			for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
@@ -4019,7 +4066,8 @@ void IterSolverBase::CreateGGt_inv_dist_d( Cluster & cluster )
 	GGt_l.cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
 
 	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
-	cilk_for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+	#pragma omp parallel for
+for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 
 		if (cluster.USE_HFETI == 0)
 			GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', Gt_l);
@@ -4206,7 +4254,8 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	GGt_l.cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
 
 	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
-	cilk_for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+	#pragma omp parallel for
+for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 
 		GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
 		GGt_neighs[neigh_i].MatTranspose();
@@ -4419,7 +4468,8 @@ void IterSolverBase::Projector_l_compG (TimeEval & time_eval, Cluster & cluster,
 		time_eval.timeEvents[5].end();
 
 		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
-			cilk_for (size_t i = 0; i < x_in.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < x_in.size(); i++)
 				y_out[i] = x_in[i] - y_out[i];
 		}
 
@@ -4482,7 +4532,8 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 		 time_eval.timeEvents[5].end();
 
 		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
-			cilk_for (size_t i = 0; i < y_out.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < y_out.size(); i++)
 				y_out[i] = x_in[i] - y_out[i];
 		}
 
@@ -4545,7 +4596,8 @@ void IterSolverBase::Projector_l_inv_compG_d (TimeEval & time_eval, Cluster & cl
 		time_eval.timeEvents[5].end();
 
 		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
-			cilk_for (size_t i = 0; i < y_out.size(); i++)
+			#pragma omp parallel for
+for (size_t i = 0; i < y_out.size(); i++)
 				y_out[i] = x_in[i] - y_out[i];
 		}
 
@@ -4563,7 +4615,8 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 
 	time_eval.timeEvents[0].start();
 
-	cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+	#pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling

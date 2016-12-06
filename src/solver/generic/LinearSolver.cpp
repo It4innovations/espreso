@@ -75,6 +75,10 @@ void LinearSolver::setup() {
 // TODO: const parameters
 void LinearSolver::init(const std::vector<int> &neighbours)
 {
+
+	// Kill Cilk+ threads
+	__cilkrts_end_cilk();
+
 	number_of_subdomains_per_cluster = physics.K.size();
 
 	// Overall Linear Solver Time measurement structure
@@ -143,7 +147,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		timeSetR.start();
 
 		// TODO: remove copying of R1
-		cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+		#pragma omp parallel for
+for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 	//		physics.R1[d].GramSchmidtOrtho();
 
@@ -169,7 +174,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet InitialCondition points"));
 	timeSetInitialCondition.start();
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].vec_c = constraints.B1c[d];
 		cluster.domains[d].vec_lb = constraints.LB[d];
 	}
@@ -183,7 +189,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	// *** Set up solver, create G1 per cluster, global G1, GGt, distribute GGt, factorization of GGt, compression of vector and matrices B1 and G1 *******************
 	TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].lambda_map_sub = constraints.B1subdomainsMap[d];
 	}
 	Preprocessing( constraints.B1clustersMap );
@@ -478,7 +485,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 		// Cleanup - of uncessary objects
 		cluster._my_lamdas_map_indices.clear();
-		cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].B1.Clear();
 		}
 
@@ -512,7 +520,8 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	}
 
 	if ( config::mesh::AVERAGE_EDGES || config::mesh::AVERAGE_FACES ) {
-		cilk_for (size_t d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (size_t d = 0; d < cluster.domains.size(); d++) {
 			vector < double >  tmp;
 			tmp = prim_solution[d];
 			cluster.domains[d].T.MatVec(tmp, prim_solution[d], 'N');
@@ -571,7 +580,8 @@ void LinearSolver::set_B1(
 		const std::vector < SparseMatrix >			& B1_mat,
 		const std::vector < std::vector <double> >	& B1_duplicity) {
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 		cluster.domains[d].B1 = B1_mat[d];
 		cluster.domains[d].B1.type = 'G';
@@ -582,7 +592,8 @@ void LinearSolver::set_B1(
 
 	}
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].B1_scale_vec = B1_duplicity[d];
 	}
 
@@ -593,7 +604,8 @@ void LinearSolver::set_B1(
 
 void LinearSolver::set_B0 ( const std::vector < SparseMatrix >	& B0_mat ) {
 
-	cilk_for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+	#pragma omp parallel for
+for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster.domains[d].B0 = B0_mat[d];
 		cluster.domains[d].B0.type = 'G';
 		cluster.domains[d].B0.ConvertToCSRwithSort(1);
@@ -610,7 +622,8 @@ void LinearSolver::set_R_from_K ()
 
 
   // getting factors and kernels of stiffness matrix K (+ statistic)
-	cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
+	#pragma omp parallel for
+for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 
 		if (cluster.SYMMETRIC_SYSTEM) {

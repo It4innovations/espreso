@@ -12,7 +12,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
 		time_eval.timeEvents[0].start();
 
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 			// *** Part 1 - prepare vectors for FETI operator with SC
 			//     cluster.domains[d].compressed_tmp2 for CPU
@@ -79,7 +80,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 		time_eval.timeEvents[2].start();
 
 		// *** Part 5 - Finalize transfers of the result of the FETI SC operator from GPU back to CPU
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d].isOnACC == 1) {
 				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
 			}
@@ -138,7 +140,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
 		cilk_spawn apply_A_FETI_SC_forFETI (cluster, x_in);
 
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp;
 
 			if (!cluster.domains[d].isOnACC == 1) {
@@ -183,7 +186,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 	if (cluster.USE_KINV == 0 && cluster.USE_HFETI == 1) {
 
 		 time_eval.timeEvents[0].start();
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
@@ -202,7 +206,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 		if (method == 1) {
 				cluster.multKplus_HF(cluster.x_prim_cluster1);
 
-				cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+				#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 					cluster.domains[d].multKplusLocal( cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d] );
 				}
 		}
@@ -210,13 +215,15 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 		if (method == 2) {
 			cilk_spawn cluster.multKplus_HF_SC (cluster.x_prim_cluster1, cluster.x_prim_cluster3);
 
-			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 				cluster.domains[d].multKplusLocal( cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d] );
 			}
 
 			cilk_sync;
 
-			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+			#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 				for (int i = 0; i < cluster.domains[d].K.rows; i++) {
 					cluster.x_prim_cluster1[d][i] = cluster.x_prim_cluster2[d][i] + cluster.x_prim_cluster3[d][i];
 				}
@@ -247,7 +254,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 	if (cluster.USE_KINV == 0 && cluster.USE_HFETI == 0) {
 
 		 time_eval.timeEvents[0].start();
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 			for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 				x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
@@ -257,7 +265,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
 		 time_eval.timeEvents[1].start();
 		if (cluster.USE_HFETI == 0) {
-			cilk_for (eslocal d = 0; d < cluster.domains.size(); d++)
+			#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++)
 				cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
 		} else {
 			cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
@@ -356,7 +365,8 @@ void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 		  	}
 		}
 
-		cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		#pragma omp parallel for
+for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		  	if (!config::solver::COMBINE_SC_AND_SPDS) {
 				if (cluster.domains[d].isOnACC == 0) {
 					// Automatic fall-back to CPU for sub-domains Schur complements, which did not fit GPU memory

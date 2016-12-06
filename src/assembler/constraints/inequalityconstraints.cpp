@@ -12,8 +12,8 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 	std::vector<std::vector<std::vector<esglobal> > > indices(constraints._mesh.parts(), std::vector<std::vector<eslocal> >(threads));
 	std::vector<std::vector<std::vector<double> > > values(constraints._mesh.parts(), std::vector<std::vector<double> >(threads));
 
-	#pragma cilk grainsize = 1
-	cilk_for (size_t t = 0; t < threads; t++) {
+	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 			for (size_t dof = 0; dof < boundDOFs.size(); dof++) {
@@ -31,8 +31,8 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 	}
 
 	std::vector<size_t> indicesSizes(constraints._mesh.parts());
-	#pragma cilk grainsize = 1
-	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
+	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		size_t size = 0;
 		for (size_t t = 0; t < threads; t++) {
 			size += indices[p][t].size();
@@ -53,14 +53,14 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 	size_t globalIndicesSize = constraints.synchronizeOffsets(clusterOffset);
 
 	clusterOffset += constraints.B1[0].rows;
-	#pragma cilk grainsize = 1
-	cilk_for (size_t p = 0; p < constraints._mesh.parts(); p++) {
+	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		constraints.B1[p].rows += globalIndicesSize;
 	}
 
 	Esutils::sizesToOffsets(indicesSizes);
-	#pragma cilk grainsize = 1
-	cilk_for (size_t i = 0; i < subdomainsWithLowerBounds.size(); i++) {
+	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	for (size_t i = 0; i < subdomainsWithLowerBounds.size(); i++) {
 		size_t s = subdomainsWithLowerBounds[i];
 		for (size_t t = 0, row = clusterOffset + indicesSizes[s]; t < threads; t++) {
 			for (size_t n = 0; n < indices[s][t].size(); n++, row++) {

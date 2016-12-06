@@ -58,7 +58,8 @@ void DynamicsInstance<TPhysics>::init()
 	 _b.resize(_mesh.parts());
 	 _tmp.resize(_mesh.parts());
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		_u[p].resize(_physics.M[p].rows, 0);
 		_v[p].resize(_physics.M[p].rows, 0);
 		_w[p].resize(_physics.M[p].rows, 0);
@@ -70,7 +71,8 @@ void DynamicsInstance<TPhysics>::init()
 		_tmp[p].resize(_physics.M[p].rows, 0);
 	}
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		for (size_t i = 1; i < _w[p].size(); i += 3) {
 			_w[p][i] = 1.0;
 		}
@@ -84,7 +86,8 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 {
 	ESINFO(PROGRESS1) << "Time: " << _time;
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		for(size_t i = 0; i < _u[p].size(); i++) {
 			_tmp[p][i] = _physics.A[0] * _u[p][i] + _physics.A[2] * _v[p][i] + _physics.A[3] * _w[p][i];
 		}
@@ -97,7 +100,8 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 
 	TimeEvent timeLSrun("Linear Solver - runtime"); timeLSrun.start();
 	solution.resize(_mesh.parts());
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		solution[p].resize(_physics.M[p].rows, 0);
 	}
 
@@ -108,7 +112,8 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 		_physics.saveMeshResults(_store, solution);
 	}
 
-	cilk_for (size_t p = 0; p < _mesh.parts(); p++) {
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		for(size_t i = 0; i < _u[p].size(); i++) {
 			_wn[p][i] = (_physics.A[0] * (solution[p][i] - _u[p][i])) - (_physics.A[2] * _v[p][i]) - (_physics.A[3] * _w[p][i]);
 			_vn[p][i] = _v[p][i] + (_physics.A[6] * _w[p][i]) + (_physics.A[7] * _wn[p][i]);
