@@ -215,6 +215,7 @@ void VTK::storeGeometry(size_t timeStep)
 	}
 	break;
 	}
+	delete[] decomposition_array;
 }
 
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
@@ -360,6 +361,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		value->SetArray(hvalues,static_cast<vtkIdType>(ite), numb);
 		numb++;
 		prof->GetCellData()->AddArray(value.GetPointer());
+		delete[] hvalues;
 	}
 
 	stringstream sss;
@@ -452,7 +454,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		}
 
 		const unsigned int dofs = values[0].size() / _mesh.coordinates().localSize(0);
-		double value_array[mycounter];
+		double *value_array=new double[mycounter];
 		counter = 0;
 
 		for (size_t i = 0; i < values.size(); i++) {
@@ -479,6 +481,8 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 			}
 			value->SetTypedTuple(counter, values);
 		}
+		//delete[] value_array;
+		delete[] valueData;
 	} else if (eType == ElementType::ELEMENTS) {
 		float *value_array = new float[elements.size()];
 
@@ -497,6 +501,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		value->SetArray(value_array, static_cast<vtkIdType>(elements.size()), numb);
 		numb++;
 		VTKGrid->GetCellData()->AddArray(value.GetPointer());
+		delete[] value_array;
 	}
 
 
@@ -755,38 +760,14 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 	hh->SetOutputPointsPrecision(11);
 	hh->Update();
 
-	vtkAppendFilter* ap = vtkAppendFilter::New();
+	vtkSmartPointer<vtkAppendFilter> ap = vtkSmartPointer<vtkAppendFilter>::New();
 	ap->AddInputData(hh->GetOutput());
 	ap->Update();
 	pro->ShallowCopy(ap->GetOutput());
 
-	//add BlockId
-	bool FCD = false;
-	if (pro->GetCellData()) {
-		if (pro->GetCellData()->GetArray("BlockId")) {
-			FCD = true;
-		}
-	}
-	if (FCD == false) {
-		vtkIntArray *bids = vtkIntArray::New();
-		bids->SetName("BlockId");
-		for (int i = 0; i < pro->GetNumberOfCells(); i++) {
-			bids->InsertNextValue(1);
-		}
-		pro->GetCellData()->SetScalars(bids);
-	}
-	int blockids[2];
-	blockids[0] = 1;
-	blockids[1] = 0;
 
-	//MultiProces controler	
-	vtkUnstructuredGrid* ugcase = vtkUnstructuredGrid::New();
-	vtkMPIController* controller = vtkMPIController::New();
-	controller->Initialize();
-	int rank = config::env::MPIrank;
-	if (rank != 0) {
-		controller->Send(pro, 0, 1111 + rank);
-	}
+
+
 
 	//vtk
 	vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
@@ -801,7 +782,7 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 	std::stringstream ssss;
 	ofstream result;
 	//ensight
-	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
+	vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
@@ -846,14 +827,38 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:
-
+		vtkMPIController* controller = vtkMPIController::New();
+		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
+		controller->Initialize();
+		//add BlockId
+		bool FCD = false;
+		if (pro->GetCellData()) {
+			if (pro->GetCellData()->GetArray("BlockId")) {
+				FCD = true;
+			}
+		}
+		if (FCD == false) {
+			vtkSmartPointer<vtkIntArray> bids = vtkSmartPointer<vtkIntArray>::New();
+			bids->SetName("BlockId");
+			for (int i = 0; i < pro->GetNumberOfCells(); i++) {
+				bids->InsertNextValue(1);
+			}
+			pro->GetCellData()->SetScalars(bids);
+		}
+		int blockids[2];
+		blockids[0] = 1;
+		blockids[1] = 0;
 		//write ensight format
 		wcase->SetFileName("meshP_result.case");
 		wcase->SetNumberOfBlocks(1);
 		wcase->SetBlockIDs(blockids);
 		wcase->SetTimeStep(0);
+		if(config::env::MPIrank!=0){
+			int rank = config::env::MPIrank;
+			controller->Send(pro, 0, 1111 + rank);
+		}
 		if (config::env::MPIrank == 0) {
-			vtkAppendFilter* app = vtkAppendFilter::New();
+			vtkSmartPointer<vtkAppendFilter> app = vtkSmartPointer<vtkAppendFilter>::New();
 			app->AddInputData(pro);
 			for (int i = 1; i < config::env::MPIsize; i++) {
 				vtkUnstructuredGrid* h = vtkUnstructuredGrid::New();
@@ -883,7 +888,7 @@ void VTK::properties(const Mesh &mesh, const std::string &path, std::vector<Prop
 
 void VTK::fixPoints(const Mesh &mesh, const std::string &path)
 {
-	vtkUnstructuredGrid* fp = vtkUnstructuredGrid::New();
+	vtkSmartPointer<vtkUnstructuredGrid> fp = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	//std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
 	const Coordinates &_coordinates = mesh.coordinates();
 	const std::vector<eslocal> &_partPtrs = mesh.getPartition();
@@ -943,34 +948,6 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path)
 	decomposition->SetArray(decomposition_array, static_cast<vtkIdType>(fixPoints.size()), 1);
 	fp->GetCellData()->AddArray(decomposition.GetPointer());
 
-	//add BlockId
-	bool FCD = false;
-	if (fp->GetCellData()) {
-		if (fp->GetCellData()->GetArray("BlockId")) {
-			FCD = true;
-		}
-	}
-	if (FCD == false) {
-		vtkIntArray *bids = vtkIntArray::New();
-		bids->SetName("BlockId");
-		for (i = 0; i < fp->GetNumberOfCells(); i++) {
-			bids->InsertNextValue(1);
-		}
-		fp->GetCellData()->SetScalars(bids);
-	}
-	int blockids[2];
-	blockids[0] = 1;
-	blockids[1] = 0;
-
-	//MultiProces controler	
-	vtkUnstructuredGrid* ugcase = vtkUnstructuredGrid::New();
-	vtkMPIController* controller = vtkMPIController::New();
-
-	int rank = environment->MPIrank;
-	controller->Initialize();
-	if (rank != 0) {
-		controller->Send(fp, 0, 1111 + rank);
-	}
 
 	//vtk
 	vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
@@ -985,7 +962,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path)
 	std::stringstream ssss;
 	ofstream result;
 	//ensight
-	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
+	vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 
 	switch (output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
@@ -1029,14 +1006,38 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path)
 		break;
 
 	case OUTPUT_FORMAT::ENSIGHT_FORMAT:
-
+		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
+		vtkMPIController* controller = vtkMPIController::New();
+		controller->Initialize();
+		//add BlockId
+		bool FCD = false;
+		if (fp->GetCellData()) {
+			if (fp->GetCellData()->GetArray("BlockId")) {
+				FCD = true;
+			}
+		}
+		if (FCD == false) {
+			vtkSmartPointer<vtkIntArray> bids = vtkSmartPointer<vtkIntArray>::New();
+			bids->SetName("BlockId");
+			for (i = 0; i < fp->GetNumberOfCells(); i++) {
+				bids->InsertNextValue(1);
+			}
+			fp->GetCellData()->SetScalars(bids);
+		}
+			int blockids[2];
+			blockids[0] = 1;
+			blockids[1] = 0;
 		//write ensight format
 		wcase->SetFileName("meshFP_result.case");
 		wcase->SetNumberOfBlocks(1);
 		wcase->SetBlockIDs(blockids);
 		wcase->SetTimeStep(0);
+		if(environment->MPIrank!=0){
+			int rank = environment->MPIrank;
+			controller->Send(fp, 0, 1111 + rank);
+		}
 		if (environment->MPIrank == 0) {
-			vtkAppendFilter* app = vtkAppendFilter::New();
+			vtkSmartPointer<vtkAppendFilter> app = vtkSmartPointer<vtkAppendFilter>::New();
 			app->AddInputData(fp);
 			for (int i = 1; i < environment->MPIsize; i++) {
 				vtkSmartPointer<vtkUnstructuredGrid> h = vtkSmartPointer<vtkUnstructuredGrid>::New();
@@ -1061,12 +1062,12 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path)
 		controller->Delete();
 		break;
 	}
-
+	delete[] decomposition_array;
 }
 
 void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 {
-	vtkUnstructuredGrid* c = vtkUnstructuredGrid::New();
+	vtkSmartPointer<vtkUnstructuredGrid> c = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	const Coordinates &_coordinates = mesh.coordinates();
 	const std::vector<eslocal> &_partPtrs = mesh.getPartition();
 	const std::vector<Element*> &elements = mesh.elements();
@@ -1084,28 +1085,16 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 	for (size_t iEl = 0; iEl < elements.size(); iEl++) {
 		n_nodsClust += elements[iEl]->nodes();
 	}
-	double *coord_xyz = new double[mesh.parts() * corners.size() * 3];
-
+	vtkSmartPointer<vtkPoints> point=vtkSmartPointer<vtkPoints>::New();
 	int counter = 0;
 	for (size_t d = 0; d < mesh.parts(); d++) {
 		for (size_t i = 0; i < corners[d].size(); i++) {
 			Point xyz = mesh.coordinates()[corners[d][i]];
-			//xyz = shrink(xyz,d);
-
-			coord_xyz[3 * counter + 0] = xyz.x;
-			coord_xyz[3 * counter + 1] = xyz.y;
-			coord_xyz[3 * counter + 2] = xyz.z;
+			point->InsertNextPoint(xyz.x,xyz.y, xyz.z);
 			counter++;
 		}
 	}
-	vtkNew<vtkDoubleArray> pointArray;
-	pointArray->SetNumberOfComponents(3);
-	size_t numpoints = mesh.parts() * corners.size() * 3;
-	pointArray->SetArray(coord_xyz, numpoints, 1);
-	vtkNew<vtkPoints> points;
-	points->SetData(pointArray.GetPointer());
-	c->SetPoints(points.GetPointer());
-	c->Allocate(static_cast<vtkIdType>(n_nodsClust));
+	c->SetPoints(point);
 
 	//cells
 	size_t offset = 0;
@@ -1136,35 +1125,6 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 	decomposition->SetArray(decomposition_array, static_cast<vtkIdType>(corners.size()), 1);
 	c->GetCellData()->AddArray(decomposition.GetPointer());
 
-	//add BlockId
-	bool FCD = false;
-	if (c->GetCellData()) {
-		if (c->GetCellData()->GetArray("BlockId")) {
-			FCD = true;
-		}
-	}
-	if (FCD == false) {
-		vtkIntArray *bids = vtkIntArray::New();
-		bids->SetName("BlockId");
-		for (i = 0; i < c->GetNumberOfCells(); i++) {
-			bids->InsertNextValue(1);
-		}
-		c->GetCellData()->SetScalars(bids);
-	}
-	int blockids[2];
-	blockids[0] = 1;
-	blockids[1] = 0;
-
-	//MultiProces controler	
-	vtkUnstructuredGrid* ugcase = vtkUnstructuredGrid::New();
-	vtkMPIController* controller = vtkMPIController::New();
-
-	int rank = environment->MPIrank;
-	controller->Initialize();
-	if (rank != 0) {
-		controller->Send(c, 0, 1111 + rank);
-	}
-
 	//vtk
 	vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	std::stringstream ss;
@@ -1178,7 +1138,7 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 	std::stringstream ssss;
 	ofstream result;
 	//ensight
-	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
+	vtkSmartPointer<vtkEnSightWriter> wcase = vtkSmartPointer<vtkEnSightWriter>::New();
 
 	switch (output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
@@ -1221,13 +1181,38 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 		break;
 
 	case OUTPUT_FORMAT::ENSIGHT_FORMAT:
-
+		vtkSmartPointer<vtkUnstructuredGrid> ugcase = vtkSmartPointer<vtkUnstructuredGrid>::New();
+		vtkMPIController* controller = vtkMPIController::New();
+		controller->Initialize();
+		//add BlockId
+		bool FCD = false;
+		if (c->GetCellData()) {
+			if (c->GetCellData()->GetArray("BlockId")) {
+				FCD = true;
+			}
+		}
+		if (FCD == false) {
+			vtkSmartPointer<vtkIntArray> bids = vtkSmartPointer<vtkIntArray>::New();
+			bids->SetName("BlockId");
+			for (i = 0; i < c->GetNumberOfCells(); i++) {
+				bids->InsertNextValue(1);
+			}
+			c->GetCellData()->SetScalars(bids);
+		}
+		int blockids[2];
+		blockids[0] = 1;
+		blockids[1] = 0;
 		//write ensight format
 		wcase->SetFileName("meshC_result.case");
 		wcase->SetNumberOfBlocks(1);
 		wcase->SetBlockIDs(blockids);
 		wcase->SetTimeStep(0);
 		if (environment->MPIrank == 0) {
+			int rank = environemtn->MPIrank;
+			controller->Send(c, 0, 1111 + rank);
+		}
+
+		if (environemnt->MPIrank == 0) {
 			vtkAppendFilter* app = vtkAppendFilter::New();
 			app->AddInputData(c);
 			for (int i = 1; i < environment->MPIsize; i++) {
@@ -1253,7 +1238,7 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 		controller->Delete();
 		break;
 	}
-
+	delete[] decomposition_array;
 }
 
 void VTK::store(std::vector<std::vector<double> > &displasment)
