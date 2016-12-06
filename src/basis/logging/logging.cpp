@@ -1,7 +1,17 @@
 
 #include "logging.h"
+#include "../../config/description.h"
 
 namespace espreso {
+
+size_t Test::outputLevel = 0;
+size_t Info::outputLevel = 0;
+size_t Info::testLevel = 0;
+size_t Measure::outputLevel = 0;
+
+std::string Logging::output = "log";
+int Logging::rank = 0;
+
 
 Test::~Test()
 {
@@ -20,7 +30,7 @@ static void printStack()
 	char** functions = backtrace_symbols(stack.data(), size);
 
 	std::stringstream command;
-	command << "addr2line -sipfC -e " << config::env::executable;
+	command << "addr2line -sipfC -e " << environment->executable;
 	for (size_t i = 0; i < size; i++) {
 		std::string function(functions[i]);
 		size_t begin = function.find_last_of('[') + 1;
@@ -37,17 +47,17 @@ static void printStack()
 Info::~Info()
 {
 	if (_plain) {
-		if (config::env::MPIrank == 0) {
+		if (environment->MPIrank == 0) {
 			std::cout << os.str();
 		}
 		return;
 	}
-	if (event == ERROR || (event == GLOBAL_ERROR && config::env::MPIrank == 0)) {
+	if (event == ERROR || (event == GLOBAL_ERROR && environment->MPIrank == 0)) {
 		fprintf(stderr, "\x1b[31m%s\x1b[0m\n", os.str().c_str());
 		if (event == ERROR) {
-			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", config::env::MPIrank);
+			fprintf(stderr, "ESPRESO EXITED WITH AN ERROR ON PROCESS %d.\n\n\n", environment->MPIrank);
 
-			if (config::env::executable.size()) {
+			if (environment->executable.size()) {
 				printStack();
 			}
 		}
@@ -58,7 +68,7 @@ Info::~Info()
 
 	os << std::endl;
 
-	if (config::env::MPIrank != 0) {
+	if (environment->MPIrank != 0) {
 		return; // only first process print results
 	}
 
@@ -104,7 +114,7 @@ Measure::~Measure()
 
 	os << std::endl;
 
-	if (config::env::MPIrank != 0) {
+	if (environment->MPIrank != 0) {
 		return; // only first process print results
 	}
 

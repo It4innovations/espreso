@@ -75,8 +75,8 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 
 void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const eslocal *l2g)
 {
-	auto it = std::find(neighbours.begin(), neighbours.end(), config::env::MPIrank);
-	if (it != neighbours.end() && *it == config::env::MPIrank) {
+	auto it = std::find(neighbours.begin(), neighbours.end(), environment->MPIrank);
+	if (it != neighbours.end() && *it == environment->MPIrank) {
 		neighbours.erase(it);
 	}
 
@@ -106,7 +106,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
 
-	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), config::env::MPIrank) - neighbours.begin();
+	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), environment->MPIrank) - neighbours.begin();
 	std::vector<std::vector<std::pair<esglobal, eslocal> > > g2l(threads);
 
 	#pragma omp parallel for
@@ -115,7 +115,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 
 			for (size_t n = 0; n < neighbours.size(); n++) {
 				if (n == pushMyRank) {
-					_mesh._DOFs[i]->clusters().push_back(config::env::MPIrank);
+					_mesh._DOFs[i]->clusters().push_back(environment->MPIrank);
 				}
 				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), l2g[i]);
 				if (it != rBuffer[n].end() && *it == l2g[i]) {
@@ -123,7 +123,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 				}
 			}
 			if (neighbours.size() == pushMyRank) {
-				_mesh._DOFs[i]->clusters().push_back(config::env::MPIrank);
+				_mesh._DOFs[i]->clusters().push_back(environment->MPIrank);
 			}
 			if (_mesh._DOFs[i]->clusters().size() > 1) {
 				g2l[t].push_back(std::make_pair(l2g[i], i));

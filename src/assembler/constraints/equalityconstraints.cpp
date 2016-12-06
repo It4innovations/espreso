@@ -18,7 +18,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				if (nodes[i]->settings().isSet(DOFs[dof])) {
-					if (!config::solver::REDUNDANT_LAGRANGE && nodes[i]->clusters()[0] != config::env::MPIrank) {
+					if (!config::solver::REDUNDANT_LAGRANGE && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
@@ -96,7 +96,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 
 	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterDirichletSize);
 	for (size_t i = clusterOffset; i < clusterOffset + clusterDirichletSize; i++) {
-		constraints.B1clustersMap.push_back({ (esglobal)i, config::env::MPIrank });
+		constraints.B1clustersMap.push_back({ (esglobal)i, environment->MPIrank });
 	}
 
 	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << constraints.B1[0].rows;
@@ -128,7 +128,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
 				if (n > 1 && (!config::solver::REDUNDANT_LAGRANGE || !elements[e]->settings().isSet(DOFs[dof]))) {
-					if (elements[e]->clusters()[0] == config::env::MPIrank) { // set lambda ID
+					if (elements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
 						if (config::solver::REDUNDANT_LAGRANGE) {
 							lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;
 							lambdasSize += n * (n - 1) / 2;
@@ -195,10 +195,10 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 	std::vector<MPI_Request> req(constraints._mesh.neighbours().size());
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-		if (constraints._mesh.neighbours()[n] > config::env::MPIrank) {
+		if (constraints._mesh.neighbours()[n] > environment->MPIrank) {
 			MPI_Isend(sLambdas[n][0].data(), sizeof(esglobal) * sLambdas[n][0].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
 		}
-		if (constraints._mesh.neighbours()[n] < config::env::MPIrank) {
+		if (constraints._mesh.neighbours()[n] < environment->MPIrank) {
 			MPI_Irecv(rBuffer[n].data(), sizeof(esglobal) * rBuffer[n].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
 		}
 	}
@@ -298,7 +298,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 				size_t dof = permutation[i] % DOFs.size();
 
 				for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
-					if (*c != config::env::MPIrank) {
+					if (*c != environment->MPIrank) {
 						for (auto d = e->domains().begin(); d != e->domains().end(); d++) {
 							sBuffer[t][n2i(*c)].push_back(D[*d][e->DOFIndex(*d, dof)]);
 						}
@@ -342,7 +342,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 			size_t dof = permutation[i] % DOFs.size();
 
 			for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
-				if (*c == config::env::MPIrank) {
+				if (*c == environment->MPIrank) {
 					for (auto d = e->domains().begin(); d != e->domains().end(); d++) {
 						diagonals[i].push_back(D[*d][e->DOFIndex(*d, dof)]);
 					}
@@ -378,7 +378,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 					for (auto c2 = c1; c2 != e->clusters().end(); ++c2) {
 						for (eslocal d2 = (*c1 == *c2 ? d1 + 1 : 0); d2 < e->DOFCounter(*c2, dof); d2++, diag2++) {
 
-							if (*c1 == config::env::MPIrank) {
+							if (*c1 == environment->MPIrank) {
 								eslocal d = findDomain(e, d1, dof);
 								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
 								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
@@ -390,7 +390,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 								}
 							}
 
-							if (*c2 == config::env::MPIrank) {
+							if (*c2 == environment->MPIrank) {
 								eslocal d = findDomain(e, d2, dof);
 								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
 								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
@@ -402,11 +402,11 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 								}
 							}
 
-							if (*c1 == config::env::MPIrank || *c2 == config::env::MPIrank) {
+							if (*c1 == environment->MPIrank || *c2 == environment->MPIrank) {
 								cMap[t].push_back({ lambdasID[permutation[i]] + offset });
 								if (*c1 == *c2) {
 									cMap[t].back().push_back(*c1);
-								} else if (*c1 == config::env::MPIrank) {
+								} else if (*c1 == environment->MPIrank) {
 									cMap[t].back().push_back(*c1);
 									cMap[t].back().push_back(*c2);
 								} else {
@@ -471,7 +471,7 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 
 	for (size_t i = 0; i < elements.size(); i++) {
 		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
-			if (config::env::MPIrank) {
+			if (environment->MPIrank) {
 				masterElements.push_back(std::vector<int>());
 				for (size_t n = 0; n < elements[i]->nodes(); n++) {
 					masterElements.back().push_back(elements[i]->node(n));
@@ -497,7 +497,7 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 	Esutils::removeDuplicity(nodes);
 
 	for (size_t n = 0; n < nodes.size(); n++) {
-		if (config::env::MPIrank) {
+		if (environment->MPIrank) {
 			masterCoordinates.push_back(Point_3D());
 			masterCoordinates.back().x = constraints._mesh.coordinates()[nodes[n]].x;
 			masterCoordinates.back().y = constraints._mesh.coordinates()[nodes[n]].y;
@@ -526,7 +526,7 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 		}
 	}
 
-	if (config::env::MPIrank) {
+	if (environment->MPIrank) {
 		MPI_Send(buffer.data(), buffer.size() * sizeof(int), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
 		MPI_Send(masterCoordinates.data(), masterCoordinates.size() * sizeof(Point_3D), MPI_BYTE, 0, 1, MPI_COMM_WORLD);
 	} else {
@@ -553,7 +553,7 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 		}
 	}
 
-	if (!config::env::MPIrank && (masterElements.size() || slaveElements.size())) {
+	if (!environment->MPIrank && (masterElements.size() || slaveElements.size())) {
 		computeMortarEqualityConstraints(rows, columns, values, masterElements, masterCoordinates, slaveElements, slaveCoordinates);
 	}
 }

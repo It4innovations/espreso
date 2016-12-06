@@ -9,7 +9,7 @@ using namespace espreso::output;
 static void open(std::ofstream &os, const std::string &path, size_t timeStep)
 {
 	std::stringstream ss;
-	ss << path << espreso::config::env::MPIrank;
+	ss << path << espreso::environment->MPIrank;
 	if (timeStep < (size_t)-1) {
 		ss << "_" << timeStep;
 	}
@@ -310,7 +310,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster)
 {
 	std::stringstream ss;
-	ss << _path << config::env::MPIrank << ".vtk";
+	ss << _path << environment->MPIrank << ".vtk";
 
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
@@ -333,7 +333,7 @@ void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSu
 void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, double shrinkSubdomain, double shrinkCluster)
 {
 	std::stringstream ss;
-	ss << path << config::env::MPIrank << ".vtk";
+	ss << path << environment->MPIrank << ".vtk";
 
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
@@ -368,7 +368,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
 {
 	std::stringstream ss;
-	ss << path << config::env::MPIrank << ".vtk";
+	ss << path << environment->MPIrank << ".vtk";
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
@@ -385,8 +385,8 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 {
 	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
 
-	std::vector<Point> cCenter(config::env::MPIsize);
-	std::vector<Point> sCenters(config::env::MPIsize * mesh.parts());
+	std::vector<Point> cCenter(environment->MPIsize);
+	std::vector<Point> sCenters(environment->MPIsize * mesh.parts());
 
 	MPI_Allgather(&vtk._cCenter, sizeof(Point), MPI_BYTE, cCenter.data(), sizeof(Point), MPI_BYTE, MPI_COMM_WORLD);
 	MPI_Allgather(vtk._sCenters.data(), mesh.parts() * sizeof(Point), MPI_BYTE, sCenters.data(), mesh.parts() * sizeof(Point), MPI_BYTE, MPI_COMM_WORLD);
@@ -415,7 +415,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 
 	for (size_t dof = 0; dof < dofs; dof++) {
 		std::stringstream ss;
-		ss << dof << "dirichlet" << config::env::MPIrank << ".vtk";
+		ss << dof << "dirichlet" << environment->MPIrank << ".vtk";
 		std::ofstream os;
 		os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
@@ -467,17 +467,17 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 
 	for (size_t dof = 0; dof < dofs; dof++) {
 		std::stringstream ss;
-		ss << dof << "gluing" << config::env::MPIrank << ".vtk";
+		ss << dof << "gluing" << environment->MPIrank << ".vtk";
 		std::ofstream os;
 		os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
 		std::vector<std::vector<Element*> > dnodes(mesh.parts());
 		std::vector<std::vector<size_t> > indices(mesh.parts());
 
-		std::vector<std::vector<std::vector<std::pair<esglobal, eslocal> > > > CDneighbour(mesh.parts(), std::vector<std::vector<std::pair<esglobal, eslocal> > >(config::env::MPIsize));
+		std::vector<std::vector<std::vector<std::pair<esglobal, eslocal> > > > CDneighbour(mesh.parts(), std::vector<std::vector<std::pair<esglobal, eslocal> > >(environment->MPIsize));
 		std::vector<std::vector<std::pair<eslocal, eslocal> > > CDindex(mesh.parts()); // cluster x domain index
-		std::vector<std::vector<std::pair<esglobal, eslocal> > > sBuffer(config::env::MPIsize);
-		std::vector<std::vector<std::pair<esglobal, eslocal> > > rBuffer(config::env::MPIsize);
+		std::vector<std::vector<std::pair<esglobal, eslocal> > > sBuffer(environment->MPIsize);
+		std::vector<std::vector<std::pair<esglobal, eslocal> > > rBuffer(environment->MPIsize);
 
 		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
@@ -502,7 +502,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 			}
 		}
 
-		cilk_for (int c = 0; c < config::env::MPIsize; c++) {
+		cilk_for (int c = 0; c < environment->MPIsize; c++) {
 			for (size_t p = 0; p < mesh.parts(); p++) {
 				sBuffer[c].insert(sBuffer[c].end(), CDneighbour[p][c].begin(), CDneighbour[p][c].end());
 			}
@@ -511,17 +511,17 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 			});
 		}
 
-		std::vector<MPI_Request> req(2 * config::env::MPIsize);
-		for (int n = 0; n < config::env::MPIsize; n++) {
+		std::vector<MPI_Request> req(2 * environment->MPIsize);
+		for (int n = 0; n < environment->MPIsize; n++) {
 			rBuffer[n].resize(sBuffer[n].size());
 			MPI_Isend(sBuffer[n].data(), sizeof(std::pair<esglobal, eslocal>) * sBuffer[n].size(), MPI_BYTE, n, 1, MPI_COMM_WORLD, req.data() + 2 * n);
 			MPI_Irecv(rBuffer[n].data(), sizeof(std::pair<esglobal, eslocal>) * rBuffer[n].size(), MPI_BYTE, n, 1, MPI_COMM_WORLD, req.data() + 2 * n + 1);
 		}
 
-		MPI_Waitall(2 * config::env::MPIsize, req.data(), MPI_STATUSES_IGNORE);
+		MPI_Waitall(2 * environment->MPIsize, req.data(), MPI_STATUSES_IGNORE);
 
 		for (size_t p = 0; p < mesh.parts(); p++) {
-			std::vector<int> offsets(config::env::MPIsize);
+			std::vector<int> offsets(environment->MPIsize);
 			for (size_t i = 0; i < CDindex[p].size(); i++) {
 				if (CDindex[p][i].second == -1) {
 					int n = CDindex[p][i].first;

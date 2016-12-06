@@ -62,7 +62,7 @@ static void offsetSum(void *in, void *out, int *len, MPI_Datatype *datatype)
 size_t Constraints::synchronizeOffsets(size_t &offset)
 {
 	size_t size = offset;
-	if (config::env::MPIsize == 1) {
+	if (environment->MPIsize == 1) {
 		offset = 0;
 		return size;
 	}
@@ -72,8 +72,8 @@ size_t Constraints::synchronizeOffsets(size_t &offset)
 	MPI_Exscan(&size, &offset, sizeof(size_t), MPI_BYTE, op, MPI_COMM_WORLD);
 
 	size = offset + size;
-	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, config::env::MPIsize - 1, MPI_COMM_WORLD);
-	if (config::env::MPIrank == 0) {
+	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
+	if (environment->MPIrank == 0) {
 		offset = 0;
 	}
 

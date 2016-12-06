@@ -688,7 +688,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -770,7 +770,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		/* -------------------------------------------------------------------- */
 		int nRhs = 1;
 		initialized = false;
-		if (config::env::MPIrank == 0) printf(".");
+		if (environment->MPIrank == 0) printf(".");
 
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
@@ -799,7 +799,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -911,7 +911,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		/* -------------------------------------------------------------------- */
 		MKL_INT nRhs = 1;
 		initialized = false;
-		if (config::env::MPIrank == 0) printf(".");
+		if (environment->MPIrank == 0) printf(".");
 
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
@@ -940,7 +940,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -1020,7 +1020,7 @@ void SparseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & s
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
 		initialized = false;
-		if (config::env::MPIrank == 0) printf(".");
+		if (environment->MPIrank == 0) printf(".");
 
 		if(soInfo != NULL){
 			CHECK_SO(cusolverSpDestroyCsrcholInfo(soInfo));
@@ -1060,7 +1060,7 @@ void SparseSolverCUDA::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::S
 
 	if (!initialized){
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 

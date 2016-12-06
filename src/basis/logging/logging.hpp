@@ -6,7 +6,9 @@ namespace espreso {
 template<typename Tvalue>
 static void gather(const Tvalue &value, Tvalue &min, Tvalue &max, Tvalue &total)
 {
-	typename std::vector<Tvalue> values(config::env::MPIsize);
+	int MPIsize;
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	typename std::vector<Tvalue> values(MPIsize);
 
 	MPI_Gather(&value, sizeof(Tvalue), MPI_BYTE, values.data(), sizeof(Tvalue), MPI_BYTE, 0, MPI_COMM_WORLD);
 
@@ -22,7 +24,9 @@ static void gather(const Tvalue &value, Tvalue &min, Tvalue &max, Tvalue &total)
 template<typename Tvalue>
 static void gather(const std::pair<Tvalue, Tvalue> &value, Tvalue &min, Tvalue &max)
 {
-	typename std::vector<std::pair<Tvalue, Tvalue> > values(config::env::MPIsize);
+	int MPIsize;
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	typename std::vector<std::pair<Tvalue, Tvalue> > values(MPIsize);
 
 	MPI_Gather(&value, 2 * sizeof(Tvalue), MPI_BYTE, values.data(), 2 * sizeof(Tvalue), MPI_BYTE, 0, MPI_COMM_WORLD);
 
@@ -38,11 +42,13 @@ static void gather(const std::pair<Tvalue, Tvalue> &value, Tvalue &min, Tvalue &
 template<typename Tvalue>
 std::string Info::sumValue(const Tvalue &value)
 {
+	int MPIsize;
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	Tvalue min, max, total;
 	gather(value, min, max, total);
 
 	std::stringstream ss;
-	ss << total << ", average: " << (double)total / config::env::MPIsize << " (from " << min << " to " << max << ")";
+	ss << total << ", average: " << (double)total / MPIsize << " (from " << min << " to " << max << ")";
 	return ss.str();
 }
 
@@ -50,11 +56,13 @@ std::string Info::sumValue(const Tvalue &value)
 template<typename Tvalue>
 std::string Info::averageValue(const Tvalue &value)
 {
+	int MPIsize;
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	Tvalue min, max, total;
 	gather(value, min, max, total);
 
 	std::stringstream ss;
-	ss << "average: " << (double)total / config::env::MPIsize << " (from " << min << " to " << max << ")";
+	ss << "average: " << (double)total / MPIsize << " (from " << min << " to " << max << ")";
 	return ss.str();
 }
 

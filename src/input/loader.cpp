@@ -94,7 +94,7 @@ void Loader::fill()
 	}
 
 	tPartition.end(); measurement.addEvent(tPartition);
-	ESINFO(OVERVIEW) << "Mesh partitioned into " << config::env::MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * config::env::MPIsize
+	ESINFO(OVERVIEW) << "Mesh partitioned into " << environment->MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * environment->MPIsize
 			<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";
 
 	measurement.totalTime.endWithBarrier(); measurement.printStatsMPI();

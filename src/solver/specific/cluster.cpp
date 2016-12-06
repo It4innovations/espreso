@@ -111,7 +111,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 
@@ -136,14 +136,14 @@ for (size_t d = 0; d < domains.size(); d++) {
 	}
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	my_comm_lambdas_indices .resize(my_neighs.size());
 	my_comm_lambdas			.resize(my_neighs.size());
 	my_recv_lambdas			.resize(my_neighs.size());
 
-	//ESLOG(MEMORY) << "1 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "1 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
 for (size_t i = 0; i < my_neighs.size(); i++) {
@@ -152,12 +152,12 @@ for (size_t i = 0; i < my_neighs.size(); i++) {
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 	}
 
-	//ESLOG(MEMORY) << "2 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "2 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
 	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
-	//ESLOG(MEMORY) << "3 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "3 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
 for (size_t d = 0; d < domains.size(); d++ )
@@ -173,7 +173,7 @@ for (size_t d = 0; d < domains.size(); d++ )
 	for (size_t i = 0; i <my_lamdas_indices.size(); i++)
 		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
 
-	//ESLOG(MEMORY) << "5 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "5 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	// mapping/compression vector for domains
 	#pragma omp parallel for
@@ -183,7 +183,7 @@ for (size_t i = 0; i < domains.size(); i++) {
 		}
 	}
 
-	//ESLOG(MEMORY) << "6 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "6 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
 for (size_t d = 0; d < domains.size(); d++) {
@@ -225,12 +225,12 @@ for (size_t i = 0; i < my_neighs.size(); i++) {
 	}
 	//// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
 
-	//ESLOG(MEMORY) << "8 process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "8 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
 	ESLOG(MEMORY) << "B1 compression";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	#pragma omp parallel for
@@ -288,7 +288,7 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
 	//// *** Compression of Matrix G1 to work with compressed lambda vectors *******************
 	ESLOG(MEMORY) << "G1 compression";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (USE_DYNAMIC == 0) {
@@ -299,7 +299,7 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
 	ESLOG(MEMORY) << "Lambdas end";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
@@ -307,7 +307,7 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat ) {
 
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
+	for (size_t d = 0; d < domains.size(); d++) {
 		if ( d == 0 && config::env::MPIrank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
@@ -1195,7 +1195,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
-			ss << "Create F0 -> rank: " << config::env::MPIrank << ", subdomain: " << d;
+			ss << "Create F0 -> rank: " << environment->MPIrank << ", subdomain: " << d;
 			Ktmp.Factorization(ss.str());
 			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 			domains[d].B0Kplus = domains[d].B0Kplus_comp;
@@ -1294,7 +1294,7 @@ for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
 	//F0_Mat.Clear();
 	F0.SetThreaded();
 	std::stringstream ss;
-	ss << "F0 -> rank: " << config::env::MPIrank;
+	ss << "F0 -> rank: " << environment->MPIrank;
 	F0.Factorization(ss.str());
 
 	mkl_set_num_threads(1);

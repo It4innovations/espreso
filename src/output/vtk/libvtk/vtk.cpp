@@ -156,7 +156,7 @@ void VTK::storeGeometry(size_t timeStep)
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-		ss << _path << config::env::MPIrank << ".vtk";
+		ss << _path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(VTKGrid);
 		writervtk->Write();
@@ -164,7 +164,7 @@ void VTK::storeGeometry(size_t timeStep)
 		break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-		ss << _path << config::env::MPIrank << ".vtu";
+		ss << _path << environment->MPIrank << ".vtu";
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(VTKGrid);
 		writervtu->SetDataModeToBinary();
@@ -175,14 +175,14 @@ void VTK::storeGeometry(size_t timeStep)
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		std::ofstream result;
 
-		ss << _path << config::env::MPIrank << ".vtu";
+		ss << _path << environment->MPIrank << ".vtu";
 		wvtu->SetFileName(ss.str().c_str());
 		wvtu->SetInputData(VTKGrid);
 		wvtu->SetDataModeToBinary();
 		wvtu->Write();
 
-		int size = config::env::MPIsize;
-		if (config::env::MPIrank == 0) {
+		int size = environment->MPIsize;
+		if (environment->MPIrank == 0) {
 			stringstream sss;
 			sss << _path << ".vtm";
 			result.open(sss.str().c_str());
@@ -207,7 +207,7 @@ void VTK::storeGeometry(size_t timeStep)
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT: {
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		writervtu->SetFileName(ss.str().c_str());
 		writervtu->SetInputData(VTKGrid);
 		writervtu->SetDataModeToBinary();
@@ -237,7 +237,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtk";
+		ss<<_path<<environment->MPIrank<<".vtk";
 		rvtk->SetFileName(ss.str().c_str());
 		rvtk->Update();
 		prof->ShallowCopy(rvtk->GetOutput());
@@ -245,7 +245,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
 		rvtu->Update();
 		prof->ShallowCopy(rvtu->GetOutput());
@@ -253,7 +253,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
 		rvtu->Update();
 		prof->ShallowCopy(rvtu->GetOutput());
@@ -261,7 +261,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rcase = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rcase->SetFileName(ss.str().c_str());
 		rcase->Update();
 		prof->ShallowCopy(rcase->GetOutput());
@@ -411,7 +411,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtk";
+		ss<<_path<<environment->MPIrank<<".vtk";
 		rvtk->SetFileName(ss.str().c_str());
 		rvtk->Update();
 		VTKGrid->ShallowCopy(rvtk->GetOutput());
@@ -419,7 +419,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
 		rvtu->Update();
 		VTKGrid->ShallowCopy(rvtu->GetOutput());
@@ -427,7 +427,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtm = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtm->SetFileName(ss.str().c_str());
 		rvtm->Update();
 		VTKGrid->ShallowCopy(rvtm->GetOutput());
@@ -435,7 +435,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rcase = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rcase->SetFileName(ss.str().c_str());
 		rcase->Update();
 		VTKGrid->ShallowCopy(rcase->GetOutput());
@@ -631,7 +631,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 	vtkUnstructuredGrid* ugcase = vtkUnstructuredGrid::New();
 	vtkMPIController* controller = vtkMPIController::New();
 
-	int rank = config::env::MPIrank;
+	int rank = environment->MPIrank;
 	if (rank != 0) {
 		controller->Send(m, 0, 1111 + rank);
 	}
@@ -675,8 +675,8 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 		wvtu->Write();
 
 		MPI_Barrier(MPI_COMM_WORLD);
-		int size = config::env::MPIsize;
-		if (config::env::MPIrank == 0) {
+		int size = environment->MPIsize;
+		if (environment->MPIrank == 0) {
 			result.open("mesh_result.vtm");
 			result << "<?xml version=\"1.0\"?>\n";
 			result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
@@ -699,10 +699,10 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 		wcase->SetNumberOfBlocks(1);
 		wcase->SetBlockIDs(blockids);
 		wcase->SetTimeStep(0);
-		if (config::env::MPIrank == 0) {
+		if (environment->MPIrank == 0) {
 			vtkAppendFilter* app = vtkAppendFilter::New();
 			app->AddInputData(m);
-			for (int i = 1; i < config::env::MPIsize; i++) {
+			for (int i = 1; i < environment->MPIsize; i++) {
 				vtkUnstructuredGrid* h = vtkUnstructuredGrid::New();
 				controller->Receive(h, i, 1111 + i);
 				app->AddInputData(h);
@@ -813,7 +813,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 	vtkUnstructuredGrid* ugcase = vtkUnstructuredGrid::New();
 	vtkMPIController* controller = vtkMPIController::New();
 
-	int rank = config::env::MPIrank;
+	int rank = environment->MPIrank;
 	if (rank != 0) {
 		controller->Send(fp, 0, 1111 + rank);
 	}
@@ -835,14 +835,14 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
-		ss << path << config::env::MPIrank << ".vtk";
+		ss << path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(fp);
 		writervtk->Write();
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
-		sss << path << config::env::MPIrank << ".vtu";
+		sss << path << environment->MPIrank << ".vtu";
 		writervtu->SetFileName(sss.str().c_str());
 		writervtu->SetInputData(fp);
 		writervtu->SetDataModeToBinary();
@@ -850,15 +850,15 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
-		ssss << path << config::env::MPIrank << ".vtu";
+		ssss << path << environment->MPIrank << ".vtu";
 		wvtu->SetFileName(ssss.str().c_str());
 		wvtu->SetInputData(fp);
 		wvtu->SetDataModeToBinary();
 		wvtu->Write();
 
 		MPI_Barrier(MPI_COMM_WORLD);
-		int size = config::env::MPIsize;
-		if (config::env::MPIrank == 0) {
+		int size = environment->MPIsize;
+		if (environment->MPIrank == 0) {
 			result.open("meshFP_result.vtm");
 			result << "<?xml version=\"1.0\"?>\n";
 			result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
@@ -881,10 +881,10 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 		wcase->SetNumberOfBlocks(1);
 		wcase->SetBlockIDs(blockids);
 		wcase->SetTimeStep(0);
-		if (config::env::MPIrank == 0) {
+		if (environment->MPIrank == 0) {
 			vtkAppendFilter* app = vtkAppendFilter::New();
 			app->AddInputData(fp);
-			for (int i = 1; i < config::env::MPIsize; i++) {
+			for (int i = 1; i < environment->MPIsize; i++) {
 				vtkSmartPointer<vtkUnstructuredGrid> h = vtkSmartPointer<vtkUnstructuredGrid>::New();
 				controller->Receive(h, i, 1111 + i);
 				app->AddInputData(h);
@@ -1004,7 +1004,7 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 	vtkUnstructuredGrid* ugcase = vtkUnstructuredGrid::New();
 	vtkMPIController* controller = vtkMPIController::New();
 
-	int rank = config::env::MPIrank;
+	int rank = environment->MPIrank;
 	if (rank != 0) {
 		controller->Send(c, 0, 1111 + rank);
 	}
@@ -1026,14 +1026,14 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
-		ss << path << config::env::MPIrank << ".vtk";
+		ss << path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
 		writervtk->SetInputData(c);
 		writervtk->Write();
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:
-		sss << path << config::env::MPIrank << ".vtu";
+		sss << path << environment->MPIrank << ".vtu";
 		writervtu->SetFileName(sss.str().c_str());
 		writervtu->SetInputData(c);
 		writervtu->SetDataModeToBinary();
@@ -1041,15 +1041,15 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 		break;
 
 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:
-		ssss << path << config::env::MPIrank << ".vtu";
+		ssss << path << environment->MPIrank << ".vtu";
 		wvtu->SetFileName(ssss.str().c_str());
 		wvtu->SetInputData(c);
 		wvtu->SetDataModeToBinary();
 		wvtu->Write();
 
 		MPI_Barrier(MPI_COMM_WORLD);
-		int size = config::env::MPIsize;
-		if (config::env::MPIrank == 0) {
+		int size = environment->MPIsize;
+		if (environment->MPIrank == 0) {
 			result.open("meshC_result.vtm");
 			result << "<?xml version=\"1.0\"?>\n";
 			result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
@@ -1071,10 +1071,10 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 		wcase->SetNumberOfBlocks(1);
 		wcase->SetBlockIDs(blockids);
 		wcase->SetTimeStep(0);
-		if (config::env::MPIrank == 0) {
+		if (environment->MPIrank == 0) {
 			vtkAppendFilter* app = vtkAppendFilter::New();
 			app->AddInputData(c);
-			for (int i = 1; i < config::env::MPIsize; i++) {
+			for (int i = 1; i < environment->MPIsize; i++) {
 				vtkUnstructuredGrid* h = vtkUnstructuredGrid::New();
 				controller->Receive(h, i, 1111 + i);
 				app->AddInputData(h);
@@ -1315,7 +1315,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 controller->Initialize();
 	 init=true;
 	 }
-	 int rank = config::env::MPIrank;
+	 int rank = environment->MPIrank;
 
 
 	 //Compresor
@@ -1343,7 +1343,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 switch (config::output::OUTPUT_FORMAT) {
 	 case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:
 	 std::cout << "LEGACY\n";
-	 ss << _path << config::env::MPIrank<<".vtk";
+	 ss << _path << environment->MPIrank<<".vtk";
 	 writervtk->SetFileName(ss.str().c_str());
 	 if (config::output::OUTPUT_DECIMATION == 0) {
 	 writervtk->SetInputData(VTKGrid);
@@ -1386,8 +1386,8 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 wvtu->Write();
 
 	 MPI_Barrier(MPI_COMM_WORLD);
-	 int size = config::env::MPIsize;
-	 if (config::env::MPIrank == 0) {
+	 int size = environment->MPIsize;
+	 if (environment->MPIrank == 0) {
 	 result.open("result.vtm");
 	 result << "<?xml version=\"1.0\"?>\n";
 	 if (!config::output::OUTPUT_COMPRESSION) {
@@ -1424,10 +1424,10 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 wcase->SetNumberOfBlocks(1);
 	 wcase->SetBlockIDs(blockids);
 	 wcase->SetTimeStep(0);
-	 if (config::env::MPIrank == 0) {
+	 if (environment->MPIrank == 0) {
 	 vtkAppendFilter* app = vtkAppendFilter::New();
 	 app->AddInputData(VTKGrid);
-	 for (int i = 1; i < config::env::MPIsize; i++) {
+	 for (int i = 1; i < environment->MPIsize; i++) {
 	 vtkUnstructuredGrid* h = vtkUnstructuredGrid::New();
 	 controller->Receive(h, i, 1111 + i);
 	 app->AddInputData(h);
@@ -1557,7 +1557,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 		dirpMPI[i] = vtkSmartPointer<vtkPoints>::New();
 	 }
 
-	 if(config::env::MPIsize>1){
+	 if(environment->MPIsize>1){
 		 MPI_Barrier(MPI_COMM_WORLD);
 
 		 vtkSmartPointer<vtkPolyData> PPoints[dofs];
@@ -1566,9 +1566,9 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 			 PPoints[i]->SetPoints(dirpoints[i]);
 		 }
 
-		 int rank = config::env::MPIrank;
+		 int rank = environment->MPIrank;
 
-		 for(int i=0;i<config::env::MPIsize;i++){
+		 for(int i=0;i<environment->MPIsize;i++){
 			 std::vector<int> row2;
 			 vtkSmartPointer<vtkPolyData> PPoints2[dofs];
 			 for(int pd=0;pd<dofs;pd++){
@@ -1663,7 +1663,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 vtkSmartPointer<vtkAppendFilter> app=vtkSmartPointer<vtkAppendFilter>::New();
 
 	 for(size_t i=0;i<dofs;i++){
-		 if(config::env::MPIsize==1){
+		 if(environment->MPIsize==1){
 			 dirichlet[i]->SetPoints(dirpoints[i]);
 			 dirichlet[i]->SetVerts(verdir[i]);
 		 }else{
@@ -1686,13 +1686,13 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 switch (config::output::OUTPUT_FORMAT) {
 	 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
 	 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
-	 		ss<<path<<config::env::MPIrank<<".vtk";
+	 		ss<<path<<environment->MPIrank<<".vtk";
 	 		writervtk->SetFileName(ss.str().c_str());
 	 		writervtk->SetInputData(ap->GetOutput());
 	 		writervtk->Write();
 	 		vtkSmartPointer<vtkGenericDataObjectWriter> dw=vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	 		stringstream sd;
-	 		sd<<"dirichlet"<<config::env::MPIrank<<".vtk";
+	 		sd<<"dirichlet"<<environment->MPIrank<<".vtk";
 	 		dw->SetFileName(sd.str().c_str());
 	 		dw->SetInputData(app->GetOutput());
 	 		dw->Write();
@@ -1700,14 +1700,14 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 	break;
 	 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
 	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writervtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-	 		ss<<path<<config::env::MPIrank<<".vtu";
+	 		ss<<path<<environment->MPIrank<<".vtu";
 	 		writervtu->SetFileName(ss.str().c_str());
 	 		writervtu->SetInputData(ap->GetOutput());
 	 		writervtu->SetDataModeToBinary();
 	 		writervtu->Write();
 	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> dw1=vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 	 		stringstream sd;
-	 		sd<<"dirichlet"<<config::env::MPIrank<<".vtu";
+	 		sd<<"dirichlet"<<environment->MPIrank<<".vtu";
 	 		dw1->SetFileName(sd.str().c_str());
 	 		dw1->SetInputData(app->GetOutput());
 	 		dw1->Write();
@@ -1716,20 +1716,20 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
 	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> wvtu = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 	 		std::ofstream result;
-	 		ss<<path<<config::env::MPIrank<<".vtu";
+	 		ss<<path<<environment->MPIrank<<".vtu";
 	 		wvtu->SetFileName(ss.str().c_str());
 	 		wvtu->SetInputData(ap->GetOutput());
 	 		wvtu->SetDataModeToBinary();
 	 		wvtu->Write();
 	 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> dw2=vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 	 		stringstream sd;
-	 		sd<<"dirichlet"<<config::env::MPIrank<<".vtu";
+	 		sd<<"dirichlet"<<environment->MPIrank<<".vtu";
 	 		dw2->SetFileName(sd.str().c_str());
 	 		dw2->SetInputData(app->GetOutput());
 	 		dw2->Write();
 
-	 		int size = config::env::MPIsize;
-	 		if (config::env::MPIrank == 0) {
+	 		int size = environment->MPIsize;
+	 		if (environment->MPIrank == 0) {
 	 			stringstream sss;
 	 			sss << path << ".vtm";
 	 			result.open(sss.str().c_str());
@@ -1792,12 +1792,12 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 		blockids[0] = 1;
 	 		blockids[1] = 0;
 
-	 		if (config::env::MPIrank != 0) {
-	 			controller->Send(VTKGrid1, 0, 1111 + config::env::MPIrank);
-	 			controller->Send(VTKGrid2, 0, 2222 + config::env::MPIrank);
+	 		if (environment->MPIrank != 0) {
+	 			controller->Send(VTKGrid1, 0, 1111 + environment->MPIrank);
+	 			controller->Send(VTKGrid2, 0, 2222 + environment->MPIrank);
 	 		}
 
-	 		if (config::env::MPIrank == 0) {
+	 		if (environment->MPIrank == 0) {
 	 			stringstream sc;
 	 			sc<<path<<".case";
 	 			wcase->SetFileName(sc.str().c_str());
@@ -1807,7 +1807,7 @@ void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::st
 	 			vtkSmartPointer<vtkAppendFilter> appp = vtkSmartPointer<vtkAppendFilter>::New();
 	 			appp->AddInputData(VTKGrid1);
 	 			appp->AddInputData(VTKGrid2);
-	 			for (int i = 1; i < config::env::MPIsize; i++) {
+	 			for (int i = 1; i < environment->MPIsize; i++) {
 	 				vtkSmartPointer<vtkUnstructuredGrid> h = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	 				vtkSmartPointer<vtkUnstructuredGrid> h2 = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	 				controller->Receive(h2, i, 2222 + i);
@@ -1837,7 +1837,7 @@ void VTK::finalize(){
 	switch (config::output::OUTPUT_FORMAT) {
 	case config::output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtk";
+		ss<<_path<<environment->MPIrank<<".vtk";
 		rvtk->SetFileName(ss.str().c_str());
 		rvtk->Update();
 		VTKGrid->ShallowCopy(rvtk->GetOutput());
@@ -1845,7 +1845,7 @@ void VTK::finalize(){
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtu = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtu->SetFileName(ss.str().c_str());
 		rvtu->Update();
 		VTKGrid->ShallowCopy(rvtu->GetOutput());
@@ -1853,7 +1853,7 @@ void VTK::finalize(){
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rvtm = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rvtm->SetFileName(ss.str().c_str());
 		rvtm->Update();
 		VTKGrid->ShallowCopy(rvtm->GetOutput());
@@ -1861,7 +1861,7 @@ void VTK::finalize(){
 	break;
 	case config::output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT:{
 		vtkSmartPointer<vtkXMLUnstructuredGridReader> rcase = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
-		ss<<_path<<config::env::MPIrank<<".vtu";
+		ss<<_path<<environment->MPIrank<<".vtu";
 		rcase->SetFileName(ss.str().c_str());
 		rcase->Update();
 		VTKGrid->ShallowCopy(rcase->GetOutput());
@@ -1941,19 +1941,19 @@ void VTK::finalize(){
 		blockids[0] = 1;
 		blockids[1] = 0;
 
-		if (config::env::MPIrank != 0) {
-			controller->Send(VTKGrid, 0, 1111 + config::env::MPIrank);
+		if (environment->MPIrank != 0) {
+			controller->Send(VTKGrid, 0, 1111 + environment->MPIrank);
 		}
 
 
-		if (config::env::MPIrank == 0) {
+		if (environment->MPIrank == 0) {
 			wcase->SetFileName(ss.str().c_str());
 			wcase->SetNumberOfBlocks(1);
 			wcase->SetBlockIDs(blockids);
 			wcase->SetTimeStep(0);
 			vtkSmartPointer<vtkAppendFilter> app = vtkSmartPointer<vtkAppendFilter>::New();
 			app->AddInputData(VTKGrid);
-			for (int i = 1; i < config::env::MPIsize; i++) {
+			for (int i = 1; i < environment->MPIsize; i++) {
 				vtkSmartPointer<vtkUnstructuredGrid> h = vtkSmartPointer<vtkUnstructuredGrid>::New();
 				controller->Receive(h, i, 1111 + i);
 				app->AddInputData(h);

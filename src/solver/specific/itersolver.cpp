@@ -2212,7 +2212,7 @@ for (size_t i = 0; i < w_l.size(); i++){
 // Evaluation of cond(P*F*P) is limited by 1000 iter.
 // Tridiagonal Lanczos' matrix is assembled at each node.
   bool cond_numb_FETI_operator=true;
-  if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && config::env::MPIrank==0){
+  if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && environment->MPIrank==0){
     char JOBZ = 'N';
     double *Z = new double[cnt_iter];
     eslocal ldz = cnt_iter;
@@ -3998,7 +3998,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		std::stringstream ss;
-		ss << "Create GGt -> rank: " << config::env::MPIrank;
+		ss << "Create GGt -> rank: " << environment->MPIrank;
 		GGt.Factorization(ss.str());
 		ESINFO(PROGRESS2) << "Factorization = " << omp_get_wtime() - t1;
 
@@ -4158,7 +4158,7 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 	 TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
 	 GGt_tmp.SetThreaded();
 	 std::stringstream ss;
-	 ss << "Create GGt_inv_dist-> rank: " << config::env::MPIrank;
+	 ss << "Create GGt_inv_dist-> rank: " << environment->MPIrank;
 	GGt_tmp.Factorization(ss.str());
 	 GGtFactor_time.end();
 	 //GGtFactor_time.printLastStatMPIPerNode();
@@ -4210,7 +4210,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	SparseSolverCPU GGt_tmp;
 
     /* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs = config::env::PAR_NUM_THREADS;
+	int num_procs = environment->PAR_NUM_THREADS;
 	GGt_tmp.iparm[2]  = num_procs;
 
 	 TimeEvent SaRGlocal("Exchange local G1 matrices to neighs. "); SaRGlocal.start();
@@ -4362,7 +4362,7 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 	 TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
 	 GGt_tmp.SetThreaded();
 	 std::stringstream ss;
-	 ss << "Create GGt_inv_dist-> rank: " << config::env::MPIrank;
+	 ss << "Create GGt_inv_dist-> rank: " << environment->MPIrank;
 	GGt_tmp.Factorization(ss.str());
 	 GGtFactor_time.end();
 	 //GGtFactor_time.printLastStatMPIPerNode();

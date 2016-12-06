@@ -102,14 +102,14 @@ for (size_t d = 0; d < domains.size(); d++) {
 
         if (config::solver::KEEP_FACTORS) {
             std::stringstream ss;
-            ss << "init -> rank: " << config::env::MPIrank << ", subdomain: " << d;
+            ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
             if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {
             domains[d].Kplus.keep_factors = false;
-            domains[d].Kplus.MPIrank = config::env::MPIrank;
+            domains[d].Kplus.MPIrank = environment->MPIrank;
         }
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
@@ -124,8 +124,8 @@ for (size_t d = 0; d < domains.size(); d++) {
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
-        if ( d == 0 && config::env::MPIrank == 0) {
-            domains[d].Kplus.msglvl = 0;
+        if ( d == 0 && environment->MPIrank == 0) {
+        	domains[d].Kplus.msglvl = 0;
         }
         ESINFO(PROGRESS2) << Info::plain() << ".";
     }

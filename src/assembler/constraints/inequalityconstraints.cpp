@@ -17,7 +17,7 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 			for (size_t dof = 0; dof < boundDOFs.size(); dof++) {
-				if (nodes[n]->clusters()[0] != config::env::MPIrank) {
+				if (nodes[n]->clusters()[0] != environment->MPIrank) {
 					continue;
 				}
 				if (nodes[n]->settings().isSet(boundDOFs[dof])) {
@@ -96,7 +96,7 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 
 	constraints.B1clustersMap.reserve(constraints.B1clustersMap.size() + clusterIndicesSize);
 	for (size_t i = clusterOffset; i < clusterOffset + clusterIndicesSize; i++) {
-		constraints.B1clustersMap.push_back({ (eslocal)i, config::env::MPIrank });
+		constraints.B1clustersMap.push_back({ (eslocal)i, environment->MPIrank });
 	}
 
 	constraints.block[Constraints::BLOCK::INEQUALITY_CONSTRAINTS] += globalIndicesSize;

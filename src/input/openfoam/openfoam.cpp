@@ -217,7 +217,7 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 		nodes[i]->clusters().resize(std::unique(nodes[i]->clusters().begin(), nodes[i]->clusters().end()) - nodes[i]->clusters().begin());
 	}
 
-	neighs.erase(config::env::MPIrank);
+	neighs.erase(environment->MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

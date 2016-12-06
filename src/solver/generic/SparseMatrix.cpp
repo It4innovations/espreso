@@ -3923,7 +3923,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     if (SC_via_K_rr){
       S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
       K_rr_solver.ImportMatrix(K_rr);
-      ss << "get kerner from K -> rank: " << config::env::MPIrank;
+      ss << "get kerner from K -> rank: " << environment->MPIrank;
       int error_K_rr = K_rr_solver.Factorization(ss.str());
 
 
@@ -4071,7 +4071,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     if (!SC_via_K_rr) {
       K_rr_solver.ImportMatrix(K_rr);
       K_rr.Clear();
-      ss << "get kerner from K -> rank: " << config::env::MPIrank;
+      ss << "get kerner from K -> rank: " << environment->MPIrank;
       K_rr_solver.Factorization(ss.str());
     }
     K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
@@ -4216,7 +4216,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
     std::stringstream sss;
-    sss << "get kernel from K -> rank: " << config::env::MPIrank;
+    sss << "get kernel from K -> rank: " << environment->MPIrank;
     NtN.Factorization(sss.str());
     NtN.SolveMat_Sparse(Nt);
     NtN.Clear();
@@ -4244,7 +4244,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //  SparseSolverCPU K_solver;
 //  std::stringstream ss2;
 //  K_solver.ImportMatrix(K);
-//  ss2 << "testing factorization of regularized K -> rank: " << config::env::MPIrank;
+//  ss2 << "testing factorization of regularized K -> rank: " << environment->MPIrank;
 //  int error_reg = K_solver.Factorization(ss2.str());
 //
 //
@@ -4930,7 +4930,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       K_rr_solver.mtype = 11;
       K_rr_solver.msglvl= 0;
 
-      ss << "get kerner from K -> rank: " << config::env::MPIrank;
+      ss << "get kerner from K -> rank: " << environment->MPIrank;
 
 
 //      {
@@ -5121,7 +5121,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     if (!SC_via_K_rr) {
       K_rr_solver.ImportMatrix(K_rr);
 //      K_rr.Clear();
-      ss << "get kerner from K -> rank: " << config::env::MPIrank;
+      ss << "get kerner from K -> rank: " << environment->MPIrank;
       K_rr_solver.Factorization(ss.str());
     }
     K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
@@ -5373,7 +5373,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     N.MatTranspose( Nt );
     SparseMatrix NtNl;
     std::stringstream sss;
-    sss << "get kernel from K -> rank: " << config::env::MPIrank;
+    sss << "get kernel from K -> rank: " << environment->MPIrank;
     if (use_invNtN_in_regMat){
       Nl.MatTranspose( Nlt );
       NtNl.MatMat( Nt,'N',Nl );
@@ -5426,7 +5426,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  SparseSolverCPU K_solver;
 //  std::stringstream ss2;
 //  K_solver.ImportMatrix(K);
-//  ss2 << "testing factorization of regularized K -> rank: " << config::env::MPIrank;
+//  ss2 << "testing factorization of regularized K -> rank: " << environment->MPIrank;
 //  int error_reg = K_solver.Factorization(ss2.str());
 //
 //

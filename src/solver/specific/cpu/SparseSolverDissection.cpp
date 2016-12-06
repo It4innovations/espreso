@@ -416,7 +416,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -498,7 +498,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -570,7 +570,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -642,7 +642,7 @@ void SparseSolverDissection::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix 
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 

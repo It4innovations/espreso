@@ -179,14 +179,10 @@ enum class ELEMENT_TYPE {
 
 struct Environment: public Configuration {
 
-	Environment(): executable("espreso")
-	{
-		MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-		MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-	}
+	Environment();
 
-	int MPIrank;
-	int MPIsize;
+	int MPIrank = 0;
+	int MPIsize = 1;
 
 	std::string executable;
 
@@ -196,6 +192,8 @@ struct Environment: public Configuration {
 	PARAMETER(size_t, PAR_NUM_THREADS, "Number of parallel threads.", Esutils::getEnv<size_t>("PAR_NUM_THREADS"));
 	PARAMETER(size_t, CILK_NWORKERS, "Number of cilk++ threads.", Esutils::getEnv<size_t>("CILK_NWORKERS"));
 };
+
+extern Environment *environment;
 
 struct GridConfiguration: public Configuration {
 
@@ -416,7 +414,7 @@ struct MULTIGRIDSolver: public Configuration {
 	}));
 };
 
-struct Output: public Configuration {
+struct OutputConfiguration: public Configuration {
 
 	OPTION(OUTPUT_FORMAT, format, "Format - only LEGACY format is supported without VTK library", OUTPUT_FORMAT::VTK_LEGACY_FORMAT, OPTIONS({
 		{ "VTK_LEGACY"    , OUTPUT_FORMAT::VTK_LEGACY_FORMAT    , "*.vtk files" },
@@ -470,8 +468,8 @@ struct MaterialParameters: public Configuration {
 
 struct GlobalConfiguration: public Configuration {
 
-	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); }
-	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); }
+	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(*this); }
+	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(*this); }
 
 	void print() { Reader::print(*this); }
 	void store() { Reader::store(*this); }
@@ -493,14 +491,17 @@ struct GlobalConfiguration: public Configuration {
 		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
 	}));
 
-	SUBCONFIG(Environment       , env         , "Environment dependent variables (set by ./env/threading.* scripts).");
-	SUBCONFIG(ESPRESOGenerator  , generator   , "ESPRESO internal mesh generator.");
-	SUBCONFIG(ESPRESOInput      , workbench   , "Mesh description in Ansys Workbench format.");
-	SUBCONFIG(ESPRESOInput      , openfoam    , "Mesh description in OpenFOAM format.");
-	SUBCONFIG(ESPRESOInput      , esdata      , "Mesh description in ESPRESO internal binary format.");
-	SUBCONFIG(FETISolver        , feti        , "Internal FETI solver options.");
-	SUBCONFIG(MULTIGRIDSolver   , multigrid   , "Multigrid setting.");
-	SUBCONFIG(Output            , output      , "Output settings.");
+	SUBCONFIG(Environment        , env         , "Environment dependent variables (set by ./env/threading.* scripts).");
+	SUBCONFIG(OutputConfiguration, output      , "Output settings.");
+
+	SUBCONFIG(ESPRESOGenerator   , generator   , "ESPRESO internal mesh generator.");
+	SUBCONFIG(ESPRESOInput       , workbench   , "Mesh description in Ansys Workbench format.");
+	SUBCONFIG(ESPRESOInput       , openfoam    , "Mesh description in OpenFOAM format.");
+	SUBCONFIG(ESPRESOInput       , esdata      , "Mesh description in ESPRESO internal binary format.");
+
+	SUBCONFIG(FETISolver         , feti        , "Internal FETI solver options.");
+	SUBCONFIG(MULTIGRIDSolver    , multigrid   , "Multigrid setting.");
+
 
 	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
 	SUBMAP(size_t, std::string  , material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");

@@ -44,7 +44,7 @@ void LinearSolver::setup() {
 	}
 	cluster.USE_KINV			= config::solver::USE_SCHUR_COMPLEMENT ? 1 : 0;
 	cluster.SUBDOM_PER_CLUSTER	= number_of_subdomains_per_cluster;
-	cluster.NUMBER_OF_CLUSTERS	= config::env::MPIsize;
+	cluster.NUMBER_OF_CLUSTERS	= environment->MPIsize;
 	// ***************************************************************************************************************************
 
 	// ***************************************************************************************************************************
@@ -92,7 +92,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		domain_list[i] = i;
 	}
 
-	cluster.cluster_global_index = config::env::MPIrank + 1;
+	cluster.cluster_global_index = environment->MPIrank + 1;
 	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
 	cluster.my_neighs = std::vector<eslocal>(neighbours.begin(), neighbours.end());
 	cluster.mtype = physics.mtype;
@@ -388,7 +388,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 	TimeEvent timeSolKproc(string("Solver - K regularization and factorization"));
 	timeSolKproc.start();
 
-	ESLOG(MEMORY) << "Before K reg. and fact. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Before K reg. and fact. process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
@@ -399,7 +399,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 	KregMem.endWithoutBarrier( GetProcessMemory_u() );
 	//KregMem.printLastStatMPIPerNode();
 
-	ESLOG(MEMORY) << "After import K process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "After import K process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 
@@ -419,7 +419,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		KSCMem.endWithoutBarrier( GetProcessMemory_u() );
 		//KSCMem.printLastStatMPIPerNode();
 
-		ESLOG(MEMORY) << "After K inv. process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "After K inv. process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	} else {
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
@@ -438,7 +438,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 	KFactMem.endWithoutBarrier( GetProcessMemory_u() );
 	//KFactMem.printLastStatMPIPerNode();
 
-	ESLOG(MEMORY) << "After K solver setup process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "After K solver setup process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	timeSolKproc.endWithBarrier();
@@ -454,7 +454,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		timeHFETIprec.endWithBarrier();
 		timeEvalMain.addEvent(timeHFETIprec);
 
-		ESLOG(MEMORY) << "After HFETI preprocessing process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "After HFETI preprocessing process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	}
 	// *** END - Setup Hybrid FETI part of the solver ********************************************************************************
@@ -464,7 +464,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		TimeEvent timeSolPrec2(string("Solver - FETI Preprocessing 2")); timeSolPrec2.start();
 
 		ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
-		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
@@ -474,7 +474,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
 		ESLOG(MEMORY) << "Created G1 per cluster";
-		ESLOG(MEMORY) << "Before HFETI create GGt process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "Before HFETI create GGt process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
@@ -492,7 +492,7 @@ for (size_t d = 0; d < cluster.domains.size(); d++) {
 
 		timeSolPrec2.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec2);
 
-		ESLOG(MEMORY) << "After HFETI full preprocess process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "After HFETI full preprocess process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	}
 
@@ -803,7 +803,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 	if ( ! (cluster.USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS )) {
 		ESLOG(MEMORY) << "Solver Preprocessing";
-		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent G1_perCluster_time ("Setup G1 per Cluster time - preprocessing"); G1_perCluster_time.start();
@@ -813,7 +813,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
 		ESLOG(MEMORY) << "Created G1 per cluster";
-		ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		 TimeEvent solver_Preprocessing_time ("Setup solver.Preprocessing() - pre-processing"); solver_Preprocessing_time.start();
@@ -822,7 +822,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 	}
 
 	ESLOG(MEMORY) << "Preprocessing";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	 TimeEvent cluster_SetClusterPC_time ("Setup cluster.SetClusterPC() - pre-processing"); cluster_SetClusterPC_time.start();
@@ -831,7 +831,7 @@ void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lamb
 
 
 	ESLOG(MEMORY) << "Preprocessing end";
-	ESLOG(MEMORY) << "process " << config::env::MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 

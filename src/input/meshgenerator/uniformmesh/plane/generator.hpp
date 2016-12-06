@@ -282,7 +282,7 @@ void PlaneGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::vec
 		}
 	}
 
-	neighs.erase(config::env::MPIrank);
+	neighs.erase(environment->MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

@@ -78,6 +78,8 @@ enum MeasureEvent {
 	MEASURE_LEVEL3
 };
 
+struct OutputConfiguration;
+
 class Test
 {
 public:
@@ -99,7 +101,7 @@ public:
 	Test& get() { return *this; };
 
 	static bool report(TestEvent event) {
-		switch (config::info::TESTING_LEVEL) {
+		switch (outputLevel) {
 		case 0: return event < TEST_LEVEL0;
 		case 1: return event < TEST_LEVEL1;
 		case 2: return event < TEST_LEVEL2;
@@ -108,7 +110,11 @@ public:
 		}
 	};
 
+	static void setLevel(size_t level) { outputLevel = level; }
+
 protected:
+	static size_t outputLevel;
+
 	std::ostringstream os;
 	bool error;
 };
@@ -126,7 +132,7 @@ public:
 
 	Info(InfoEvent event): event(event), color(TextColor::WHITE), _plain(false)
 	{
-		if (config::info::TESTING_LEVEL) {
+		if (testLevel) {
 			switch (event) {
 			case CONVERGENCE:
 				os << "CONVERGENCE: ";
@@ -167,10 +173,8 @@ public:
 	template<typename Tvalue>
 	static std::string averageValues(const std::vector<Tvalue> &values);
 
-
-
 	static bool report(InfoEvent event) {
-		switch (config::info::VERBOSE_LEVEL) {
+		switch (outputLevel) {
 		case 0: return event < VERBOSE_LEVEL0;
 		case 1: return event < VERBOSE_LEVEL1;
 		case 2: return event < VERBOSE_LEVEL2;
@@ -179,7 +183,12 @@ public:
 		}
 	};
 
+	static void setLevel(size_t level, size_t testing) { outputLevel = level; testLevel = testing; }
+
 protected:
+	static size_t outputLevel;
+	static size_t testLevel;
+
 	std::ostringstream os;
 	InfoEvent event;
 	TextColor color;
@@ -206,7 +215,7 @@ public:
 	std::ostringstream& get() { return os; };
 
 	static bool report(MeasureEvent event) {
-		switch (config::info::MEASURE_LEVEL) {
+		switch (outputLevel) {
 		case 0: return event < MEASURE_LEVEL0;
 		case 1: return event < MEASURE_LEVEL1;
 		case 2: return event < MEASURE_LEVEL2;
@@ -215,7 +224,11 @@ public:
 		}
 	};
 
+	static void setLevel(size_t level) { outputLevel = level; }
+
 protected:
+	static size_t outputLevel;
+
 	static std::vector<Checkpoint> checkpoints;
 
 	void evaluateCheckpoints();
@@ -231,7 +244,7 @@ public:
 	{
 		std::stringstream dir, file, mkdir;
 
-		dir << config::info::OUTPUT << "/" << config::env::MPIrank << "/";
+		dir << output << "/" << rank << "/";
 		file << dir.str() << "/" << name << ".txt";
 
 		mkdir << "mkdir -p " << dir.str();
@@ -248,6 +261,9 @@ public:
 		ss << name << subdomain;
 		return prepareFile(ss.str());
 	}
+
+	static std::string output;
+	static int rank;
 };
 }
 

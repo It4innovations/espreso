@@ -1385,7 +1385,7 @@ std::vector<size_t> APIMesh::distributeDOFsToDomains(const std::vector<size_t> &
 
 static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::vector<std::pair<esglobal, eslocal> > &g2l)
 {
-	neighbours.push_back(config::env::MPIrank);
+	neighbours.push_back(environment->MPIrank);
 	std::sort(neighbours.begin(), neighbours.end());
 
 	auto n2i = [ & ] (size_t neighbour) {
@@ -1406,13 +1406,13 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
 			elements[e]->DOFsDomainsCounters().resize(DOFs.size() * elements[e]->clusters().size(), -1);
-			size_t cluster = std::lower_bound(elements[e]->clusters().begin(), elements[e]->clusters().end(), config::env::MPIrank) - elements[e]->clusters().begin();
+			size_t cluster = std::lower_bound(elements[e]->clusters().begin(), elements[e]->clusters().end(), environment->MPIrank) - elements[e]->clusters().begin();
 			for (size_t i = 0; i < DOFs.size(); i++) {
 				elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i] = elements[e]->numberOfLocalDomainsWithDOF(i);
 			}
 			if (elements[e]->clusters().size() > 1) {
 				for (auto c = elements[e]->clusters().begin(); c != elements[e]->clusters().end(); ++c) {
-					if (*c == config::env::MPIrank) {
+					if (*c == environment->MPIrank) {
 						continue;
 					}
 
@@ -1626,19 +1626,19 @@ void Mesh::synchronizeGlobalIndices()
 		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
 	};
 
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	// clusters x threads x nodes
 	std::vector<std::vector<std::vector<__Point__> > > sBuffer(_neighbours.size(), std::vector<std::vector<__Point__> >(threads));
 	std::vector<std::vector<__Point__> > rBuffer(_neighbours.size());
 
-	#pragma cilk grainsize = 1
-	cilk_for (size_t t = 0; t < threads; t++) {
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 			if (_nodes[n]->clusters().size() > 1) {
-				if (_nodes[n]->clusters().front() == config::env::MPIrank) {
+				if (_nodes[n]->clusters().front() == environment->MPIrank) {
 					for (size_t c = 1; c < _nodes[n]->clusters().size(); c++) {
 						sBuffer[n2i(_nodes[n]->clusters()[c])][t].push_back(__Point__(_coordinates[n], _coordinates.globalIndex(n)));
 					}
@@ -1650,11 +1650,12 @@ void Mesh::synchronizeGlobalIndices()
 		}
 	}
 
-	cilk_for (size_t n = 0; n < _neighbours.size(); n++) {
+	#pragma omp parallel for
+	for (size_t n = 0; n < _neighbours.size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
 			sBuffer[n][0].insert(sBuffer[n][0].end(), sBuffer[n][t].begin(), sBuffer[n][t].end());
 		}
-		if (_neighbours[n] < config::env::MPIrank) {
+		if (_neighbours[n] < environment->MPIrank) {
 			rBuffer[n].resize(sBuffer[n][0].size());
 			std::sort(sBuffer[n][0].begin(), sBuffer[n][0].end());
 		}
@@ -1662,10 +1663,10 @@ void Mesh::synchronizeGlobalIndices()
 
 	std::vector<MPI_Request> req(_neighbours.size());
 	for (size_t n = 0; n < _neighbours.size(); n++) {
-		if (_neighbours[n] > config::env::MPIrank) {
+		if (_neighbours[n] > environment->MPIrank) {
 			MPI_Isend(sBuffer[n][0].data(), sizeof(__Point__) * sBuffer[n][0].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
 		}
-		if (_neighbours[n] < config::env::MPIrank) {
+		if (_neighbours[n] < environment->MPIrank) {
 			MPI_Irecv(rBuffer[n].data(), sizeof(__Point__) * rBuffer[n].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
 		}
 	}
@@ -1673,20 +1674,20 @@ void Mesh::synchronizeGlobalIndices()
 	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
 	for (size_t n = 0; n < _neighbours.size(); n++) {
-		if (_neighbours[n] < config::env::MPIrank) {
+		if (_neighbours[n] < environment->MPIrank) {
 			for (size_t p = 0; p < rBuffer[n].size(); p++) {
 				auto it = std::lower_bound(sBuffer[n][0].begin(), sBuffer[n][0].end(), rBuffer[n][p]);
 				if (*it == rBuffer[n][p]) {
 					_coordinates._globalIndex[_coordinates.clusterIndex(it->id)] = rBuffer[n][p].id;
 				} else {
-					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _neighbours[n] << " on " << config::env::MPIrank;
+					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _neighbours[n] << " on " << environment->MPIrank;
 				}
 			}
 		}
 	}
 
-	#pragma cilk grainsize = 1
-	cilk_for (size_t t = 0; t < threads; t++) {
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 			_coordinates._globalMapping[n].first = _coordinates._globalIndex[n];
 			_coordinates._globalMapping[n].second = n;

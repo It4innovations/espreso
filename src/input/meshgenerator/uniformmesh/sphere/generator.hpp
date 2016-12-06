@@ -350,7 +350,7 @@ void SphereGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::ve
 					}
 				}
 			}
-			if (sortedMap[i] != config::env::MPIrank) {
+			if (sortedMap[i] != environment->MPIrank) {
 				neighbours.push_back(sortedMap[i] + _settings.clusterOffset);
 			}
 		}

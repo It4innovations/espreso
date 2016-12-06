@@ -87,8 +87,8 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		type,
 		FETI4IInt		indexBase)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
 	config::solver::REGULARIZATION = config::solver::REGULARIZATIONalternative::NULL_PIVOTS;
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();

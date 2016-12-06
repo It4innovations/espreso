@@ -301,7 +301,7 @@ void CubeGenerator<TElement>::neighbours(std::vector<Element*> &nodes, std::vect
 		}
 	}
 
-	neighs.erase(config::env::MPIrank);
+	neighs.erase(environment->MPIrank);
 	neighbours.insert(neighbours.end(), neighs.begin(), neighs.end());
 }
 

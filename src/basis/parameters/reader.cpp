@@ -1,6 +1,8 @@
 
 #include "reader.h"
 
+#include "../../config/description.h"
+
 using namespace espreso;
 
 static struct option long_options[] = {
@@ -19,8 +21,8 @@ ParametersReader::ParametersReader(const std::vector<Parameter> &parameters)
 
 ArgsConfiguration ParametersReader::fromArguments(int *argc, char*** argv, const std::vector<Parameter> &params)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &config::env::MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &config::env::MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
+	MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
 
 	ParametersReader reader(params);
 	ArgsConfiguration conf;
@@ -64,11 +66,11 @@ ArgsConfiguration ParametersReader::fromArguments(int *argc, char*** argv, const
 			configured = true;
 		}
 	}
-	if (!configured && std::ifstream(config::env::configurationFile).good()) {
-		// read the default configuration file
-		conf.path = config::env::configurationFile;
-		conf = reader.read(conf, 1);
-	}
+//	if (!configured && std::ifstream(environment->configurationFile).good()) {
+//		// read the default configuration file
+//		conf.path = environment->configurationFile;
+//		conf = reader.read(conf, 1);
+//	}
 
 	// read the rest parameters
 	optind = 0;

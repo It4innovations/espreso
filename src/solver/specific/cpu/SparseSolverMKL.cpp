@@ -280,7 +280,7 @@ void SparseSolverMKL::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 void SparseSolverMKL::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
-	int num_procs = config::env::SOLVER_NUM_THREADS;
+	int num_procs = environment->SOLVER_NUM_THREADS;
     iparm[2]  = num_procs;
 }
 
@@ -380,7 +380,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -460,7 +460,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -528,7 +528,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -602,7 +602,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Solve -> rank: " << config::env::MPIrank;
+		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 

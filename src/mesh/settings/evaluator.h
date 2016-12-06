@@ -7,6 +7,8 @@
 #include "../structures/coordinates.h"
 #include <numeric>
 
+#include "../../config/description.h"
+
 namespace espreso {
 
 class Coordinates;

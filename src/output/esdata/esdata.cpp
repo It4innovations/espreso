@@ -16,7 +16,7 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path)
 	int out = system(ss.str().c_str());
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::stringstream ssDir;
-		ssDir << ss.str() << "/" << p + _mesh.parts() * config::env::MPIrank;
+		ssDir << ss.str() << "/" << p + _mesh.parts() * environment->MPIrank;
 		out = system(ssDir.str().c_str());
 	}
 
@@ -40,7 +40,7 @@ void Esdata::coordinates(const Coordinates &coordinates)
 		esglobal index;
 
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/coordinates.dat";
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/coordinates.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
@@ -66,7 +66,7 @@ void Esdata::elements(const Mesh &mesh)
 		eslocal size;
 
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/elements.dat";
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/elements.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
@@ -87,7 +87,7 @@ void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/materials.dat";
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		eslocal size = materials.size();
@@ -142,7 +142,7 @@ void Esdata::settings(const Mesh &mesh)
 	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/settings.dat";
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/settings.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
@@ -229,7 +229,7 @@ void Esdata::boundaries(const Mesh &mesh)
 //	cilk_for (size_t t = 0; t < threads; t++) {
 //		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 //			for (size_t j = 0; j < boundaries[i].size(); j++) {
-//				boundaries[i][j] += config::env::MPIrank * mesh.parts();
+//				boundaries[i][j] += environment->MPIrank * mesh.parts();
 //			}
 //			for (size_t n = 0; n < mesh.neighbours().size(); n++) {
 //				if (std::binary_search(cBoundaries[i].begin(), cBoundaries[i].end(), mesh.neighbours()[n])) {
@@ -289,21 +289,21 @@ void Esdata::boundaries(const Mesh &mesh)
 //	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
 //		std::ofstream os;
 //		std::stringstream ss;
-//		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaries.dat";
+//		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/boundaries.dat";
 //		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 //
 //		eslocal value, size;
 //		esglobal index;
 //		size = 0;
 //		for (size_t i = 0; i < boundaries.size(); i++) {
-//			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * config::env::MPIrank)) {
+//			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * environment->MPIrank)) {
 //				size++;
 //			}
 //		}
 //		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 //
 //		for (size_t i = 0; i < boundaries.size(); i++) {
-//			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * config::env::MPIrank)) {
+//			if (std::binary_search(boundaries[i].begin(), boundaries[i].end(), p + _mesh.parts() * environment->MPIrank)) {
 //				size = boundaries[i].size();
 //				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 //				for (auto it = boundaries[i].begin(); it != boundaries[i].end(); ++it) {
@@ -319,7 +319,7 @@ void Esdata::boundaries(const Mesh &mesh)
 	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * config::env::MPIrank << "/boundaries.dat";
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/boundaries.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		eslocal domain, size;

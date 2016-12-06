@@ -32,14 +32,14 @@ int main(int argc, char **argv)
 	GlobalConfiguration configuration(&argc, &argv);
 	ParametersReader::fromArguments(&argc, &argv);
 
-	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " process(es).";
-	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);
+	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
+	ParametersReader::printParameters(config::parameters, configuration.output.verbose_level);
 
 	Factory factory(configuration);
 	factory.solve("result");
 
 	ESTEST(EVALUATION)
-		<< (fabs(factory.norm() - config::solver::NORM) > 1e-3 && !config::env::MPIrank ? TEST_FAILED : TEST_PASSED)
+		<< (fabs(factory.norm() - config::solver::NORM) > 1e-3 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
 		<< "Norm of the solution " << factory.norm() << " is not " << config::solver::NORM << ".";
 
 	MPI_Barrier(MPI_COMM_WORLD);

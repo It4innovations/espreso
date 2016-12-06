@@ -200,7 +200,7 @@ void Grid::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours
 					map[index] = -1;
 				} else {
 					map[index] = _cMap[((coffset + offset) * size).sum()];
-					if (map[index] != config::env::MPIrank) {
+					if (map[index] != environment->MPIrank) {
 						neighbours.push_back(map[index]);
 					}
 				}

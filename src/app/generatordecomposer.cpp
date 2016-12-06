@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 
 	std::cout << "Mesh loaded\n";
 
-	std::cout << "Mesh partitiated to " << mesh.parts() * config::env::MPIsize << " parts\n";
+	std::cout << "Mesh partitiated to " << mesh.parts() * environment->MPIsize << " parts\n";
 	std::vector<size_t> sizes(mesh.parts());
 	for (size_t p = 0; p < mesh.parts(); p++) {
 		sizes[p] = mesh.coordinates().localSize(p);

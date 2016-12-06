@@ -197,7 +197,15 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 	if (confStack.size() != 1) {
 		ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected EOF before close all regions.";
 	}
+}
 
+void Reader::set(const GlobalConfiguration &configuration)
+{
+	Test::setLevel(configuration.output.testing_level);
+	Info::setLevel(configuration.output.verbose_level, configuration.output.testing_level);
+	Measure::setLevel(configuration.output.measure_level);
+	Logging::output = configuration.output.log_dir;
+	Logging::rank = configuration.env.MPIrank;
 }
 
 static void printConfiguration(const Configuration &configuration, size_t indent)
