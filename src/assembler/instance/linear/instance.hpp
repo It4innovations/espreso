@@ -25,17 +25,9 @@ void LinearInstance<TPhysics>::init()
 		_physics.saveStiffnessMatrices();
 	}
 
-	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
-	_physics.assembleGluingMatrices();
-	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
-
-	if (config::info::PRINT_MATRICES) {
-		_constrains.save();
-	}
-
-	if (config::output::SAVE_GLUING) {
-		output::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-	}
+	TimeEvent timeConstrainsB1("Assemble B1"); timeConstrainsB1.startWithBarrier();
+	_physics.assembleB1();
+	timeConstrainsB1.end(); _timeStatistics.addEvent(timeConstrainsB1);
 
 	TimeEvent timeReg("Make K regular"); timeReg.start();
 	_physics.makeStiffnessMatricesRegular();
@@ -43,6 +35,18 @@ void LinearInstance<TPhysics>::init()
 
 	if (config::info::PRINT_MATRICES) {
 		_physics.saveKernelMatrices();
+	}
+
+	TimeEvent timeConstrainsB0("Assemble B0"); timeConstrainsB0.startWithBarrier();
+	_physics.assembleB0();
+	timeConstrainsB0.end(); _timeStatistics.addEvent(timeConstrainsB0);
+
+	if (config::info::PRINT_MATRICES) {
+		_constrains.save();
+	}
+
+	if (config::output::SAVE_GLUING) {
+		output::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();

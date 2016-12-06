@@ -17,7 +17,8 @@ struct Stokes: public LinearPhysics
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
 	void makeStiffnessMatricesRegular();
-	void assembleGluingMatrices() {};
+	void assembleB1() {};
+	void assembleB0() {};
 
 	void saveMeshProperties(output::Store &store);
 	void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results);

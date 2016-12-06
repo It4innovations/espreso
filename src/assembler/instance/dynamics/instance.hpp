@@ -34,7 +34,7 @@ void DynamicsInstance<TPhysics>::init()
 	}
 
 	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
-	_physics.assembleGluingMatrices();
+	_physics.assembleB1();
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
 
 	if (config::info::PRINT_MATRICES) {

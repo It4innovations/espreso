@@ -11,6 +11,8 @@ void SingularSystem::prepareMeshStructures()
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		_apimesh.computeFacesSharedByDomains();
 	}
+
+	_constraints.initMatrices(matrixSize);
 }
 
 void SingularSystem::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
@@ -34,13 +36,14 @@ void SingularSystem::makeStiffnessMatricesRegular()
 	}
 }
 
-void SingularSystem::assembleGluingMatrices()
+void SingularSystem::assembleB1()
 {
-	_constraints.initMatrices(matrixSize);
-
 	EqualityConstraints::insertDirichletToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN });
 	EqualityConstraints::insertElementGluingToB1(_constraints, _apimesh.DOFs(), { Property::UNKNOWN }, K);
+}
 
+void SingularSystem::assembleB0()
+{
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		EqualityConstraints::insertKernelsToB0(_constraints, _apimesh.faces(), _apimesh.DOFs(), R1);
 	}

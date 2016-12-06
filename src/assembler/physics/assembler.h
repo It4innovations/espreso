@@ -19,7 +19,8 @@ struct Physics {
 	virtual void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const =0;
 	virtual void assembleStiffnessMatrices() =0;
 	virtual void makeStiffnessMatricesRegular() =0;
-	virtual void assembleGluingMatrices() =0;
+	virtual void assembleB1() =0;
+	virtual void assembleB0() =0;
 
 	virtual void saveMeshProperties(output::Store &store) =0;
 	virtual void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results) =0;

@@ -38,6 +38,8 @@ void LinearElasticity2D::prepareMeshStructures()
 			break;
 		}
 	}
+
+	_constraints.initMatrices(matrixSize);
 }
 
 void LinearElasticity2D::saveMeshProperties(output::Store &store)
@@ -70,13 +72,14 @@ void LinearElasticity2D::saveMeshResults(output::Store &store, const std::vector
 	store.storeValues("displacement", 2, results, output::Store::ElementType::NODES);
 }
 
-void LinearElasticity2D::assembleGluingMatrices()
+void LinearElasticity2D::assembleB1()
 {
-	_constraints.initMatrices(matrixSize);
-
 	EqualityConstraints::insertDirichletToB1(_constraints, _mesh.nodes(), pointDOFs);
 	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs, K);
+}
 
+void LinearElasticity2D::assembleB0()
+{
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:

@@ -17,7 +17,8 @@ struct SingularSystem: public PrecomputedPhysics
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
 	void makeStiffnessMatricesRegular();
-	void assembleGluingMatrices();
+	void assembleB1();
+	void assembleB0();
 
 protected:
 	void composeSubdomain(size_t subdomain);

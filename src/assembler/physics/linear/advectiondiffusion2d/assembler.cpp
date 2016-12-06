@@ -34,6 +34,8 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 			break;
 		}
 	}
+
+	_constraints.initMatrices(matrixSize);
 }
 
 void AdvectionDiffusion2D::saveMeshProperties(output::Store &store)
@@ -49,13 +51,14 @@ void AdvectionDiffusion2D::saveMeshResults(output::Store &store, const std::vect
 	store.finalize();
 }
 
-void AdvectionDiffusion2D::assembleGluingMatrices()
+void AdvectionDiffusion2D::assembleB1()
 {
-	_constraints.initMatrices(matrixSize);
-
 	EqualityConstraints::insertDirichletToB1(_constraints, _mesh.nodes(), pointDOFs);
 	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs, K);
+}
 
+void AdvectionDiffusion2D::assembleB0()
+{
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:

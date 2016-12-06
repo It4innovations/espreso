@@ -51,6 +51,8 @@ void Elasticity3D::prepareMeshStructures()
 			ESINFO(GLOBAL_ERROR) << "Not implemented B0";
 		}
 	}
+
+	_constraints.initMatrices(matrixSize);
 }
 
 void Elasticity3D::saveMeshProperties(output::Store &store)
@@ -85,14 +87,21 @@ void Elasticity3D::saveMeshResults(output::Store &store, const std::vector<std::
 	store.finalize();
 }
 
-void Elasticity3D::assembleGluingMatrices()
+void Elasticity3D::assembleB1()
 {
-	_constraints.initMatrices(matrixSize);
-
 	EqualityConstraints::insertDirichletToB1(_constraints, _mesh.nodes(), pointDOFs);
 	EqualityConstraints::insertElementGluingToB1(_constraints, _mesh.nodes(), pointDOFs, K);
 	EqualityConstraints::insertMortarGluingToB1(_constraints, _mesh.faces(), pointDOFs);
 
+	for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
+		if (_mesh.evaluators()[i]->property() == Property::OBSTACLE) {
+			InequalityConstraints::insertLowerBoundToB1(_constraints, _mesh.nodes(), pointDOFs, { Property::OBSTACLE });
+		}
+	}
+}
+
+void Elasticity3D::assembleB0()
+{
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
@@ -107,12 +116,6 @@ void Elasticity3D::assembleGluingMatrices()
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented construction of B0";
-		}
-	}
-
-	for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
-		if (_mesh.evaluators()[i]->property() == Property::OBSTACLE) {
-			InequalityConstraints::insertLowerBoundToB1(_constraints, _mesh.nodes(), pointDOFs, { Property::OBSTACLE });
 		}
 	}
 }
