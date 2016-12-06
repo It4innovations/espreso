@@ -6,20 +6,6 @@ namespace espreso {
 
 namespace config {
 
-//////////////////////////// ENVIRONMENT ///////////////////////////////////////
-
-int env::MPIrank = 0;
-int env::MPIsize = 1;
-
-size_t env::MKL_NUM_THREADS    = Esutils::getEnv<size_t>("MKL_NUM_THREADS");
-size_t env::OMP_NUM_THREADS    = Esutils::getEnv<size_t>("OMP_NUM_THREADS");
-size_t env::SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
-size_t env::PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
-size_t env::CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
-
-std::string env::executable    = "espreso"; // Esutils::getEnv<std::string>("_") not works with DDT;
-std::string env::configurationFile = "espreso.config";
-
 
 ///////////////////////////////// MESH /////////////////////////////////////////
 
@@ -78,30 +64,6 @@ size_t                                   solver::TIME_STEPS            = 1;
 
 assembler::DISCRETIZATIONalternative assembler::DISCRETIZATION = assembler::DISCRETIZATIONalternative::FEM;
 assembler::DOFS_ORDERalternative     assembler::DOFS_ORDER     = assembler::DOFS_ORDERalternative::GROUP_ELEMENTS;
-
-/////////////////////////////// OUTPUT /////////////////////////////////////////
-
-output::OUTPUT_FORMATAlternatives output::OUTPUT_FORMAT = output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT;
-
-bool   output::OUTPUT_COMPRESSION = false;
-double output::OUTPUT_DECIMATION  = 0;
-
-bool output::SAVE_PROPERTIES = false;
-bool output::SAVE_GLUING     = false;
-bool output::SAVE_RESULTS    = true;
-
-double output::SUBDOMAINS_SHRINK_RATIO = .95;
-double output::CLUSTERS_SHRINK_RATIO   = .9;
-
-//////////////////////////////// INFO //////////////////////////////////////////
-
-std::string info::OUTPUT = "log";
-
-size_t info::VERBOSE_LEVEL = 1;
-size_t info::TESTING_LEVEL = 0;
-size_t info::MEASURE_LEVEL = 0;
-
-bool info::PRINT_MATRICES = false;
 
 //////////////////////////////// HYPRE /////////////////////////////////////////
 
@@ -234,33 +196,6 @@ std::vector<espreso::Parameter> parameters = {
 	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_NORM , "Number of reiteration steps for SP direct solver." },
 
 	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
-
-    { "LOAD_BALANCING", solver::LOAD_BALANCING, "Enables or disables dynamic load balancing between the host and Intel Xeon Phi." },
-
-	// OUTPUT DESCRIPTION
-	{ "OUTPUT_FORMAT"   , output::OUTPUT_FORMAT   , "Format of output data.", {
-			{ "VTK_LEGACY_FORMAT", output::OUTPUT_FORMATAlternatives::VTK_LEGACY_FORMAT, "*.vtk files" },
-			{ "VTK_BINARY_FORMAT", output::OUTPUT_FORMATAlternatives::VTK_BINARY_FORMAT, "*.vtu files" },
-			{ "VTK_MULTIBLOCK_FORMAT", output::OUTPUT_FORMATAlternatives::VTK_MULTIBLOCK_FORMAT, "*.vtu + *.vtm files" },
-			{ "ENSIGHT_FORMAT", output::OUTPUT_FORMATAlternatives::ENSIGHT_FORMAT, "EnSight files" }
-	}, WRITE_TO_HELP },
-
-	{ "OUTPUT_COMPRESSION", output::OUTPUT_COMPRESSION, "Output is compressed by 'z' library.", WRITE_TO_HELP },
-	{ "OUTPUT_DECIMATION" , output::OUTPUT_DECIMATION,  "Output mesh size is reduced by VTK Decimation.", WRITE_TO_HELP },
-
-	{ "SAVE_PROPERTIES" , output::SAVE_PROPERTIES , "Save properties of mesh elements.", WRITE_TO_HELP },
-	{ "SAVE_GLUING"     , output::SAVE_GLUING     , "Save gluing of sub-domains and clusters." },
-	{ "SAVE_RESULTS"    , output::SAVE_RESULTS    , "Save the results.", WRITE_TO_HELP },
-
-	{ "SUBDOMAIN_SHRINK_RATIO", output::SUBDOMAINS_SHRINK_RATIO, "Shrink ratio for subdomains.", WRITE_TO_HELP },
-	{ "CLUSTER_SHRINK_RATIO"  , output::CLUSTERS_SHRINK_RATIO  , "Shrink ratio for clusters.", WRITE_TO_HELP },
-
-	// INFO DESCRIPTION
-	{ "OUTPUT", info::OUTPUT, "A location for saving output informations.", WRITE_TO_HELP },
-	{ "VERBOSE_LEVEL", info::VERBOSE_LEVEL, "ESPRESO verbose level.", WRITE_TO_HELP },
-	{ "TESTING_LEVEL", info::TESTING_LEVEL, "ESPRESO testing level.", WRITE_TO_HELP },
-	{ "MEASURE_LEVEL", info::MEASURE_LEVEL, "ESPRESO measure level.", WRITE_TO_HELP },
-	{ "PRINT_MATRICES", info::PRINT_MATRICES, "ESPRESO print solver input matrices." }
 };
 
 }

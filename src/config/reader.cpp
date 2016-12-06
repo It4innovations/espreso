@@ -72,15 +72,6 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 		case 'p':
 			// parameters will be read after configuration file
 			break;
-		case 'v':
-			config::info::VERBOSE_LEVEL++;
-			break;
-		case 't':
-			config::info::TESTING_LEVEL++;
-			break;
-		case 'm':
-			config::info::MEASURE_LEVEL++;
-			break;
 		case 'h':
 			helpVerboseLevel++;
 			break;
@@ -112,6 +103,15 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 			if (!parameters[option_index].second->set(optarg)) {
 				ESINFO(GLOBAL_ERROR) << "Parameter '" << parameters[option_index].first << "' has wrong value '" << optarg << "'";
 			}
+			break;
+		case 'v':
+			output->verbose_level++;
+			break;
+		case 't':
+			output->testing_level++;
+			break;
+		case 'm':
+			output->measure_level++;
 			break;
 		}
 	}

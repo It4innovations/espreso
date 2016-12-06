@@ -9,16 +9,12 @@ int main(int argc, char** argv)
 {
 	// Always initialize MPI before call ESPRESO!
 	MPI_Init(&argc, &argv);
-	int rank, size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 ///////////////////////////////////////////// CREATE INSTANCE /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	espreso::ParametersReader::fromArguments(&argc, &argv);
+	espreso::GlobalConfiguration configuration(&argc, &argv);
 
-	ESINFO(espreso::OVERVIEW) << "Run ESPRESO API test on " << espreso::config::env::MPIsize << " process(es).";
-	espreso::ParametersReader::printParameters(espreso::config::parameters, espreso::config::info::VERBOSE_LEVEL);
+	ESINFO(espreso::OVERVIEW) << "Run ESPRESO API test on " << espreso::environment->MPIsize << " process(es).";
 
 	// use ESPRESO factory to allow run test on all examples/assemblers
 	espreso::Factory factory(espreso::configuration);
