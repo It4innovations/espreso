@@ -17,6 +17,7 @@
 #include <sstream>
 #include <vtkGenericDataObjectWriter.h>
 #include <vtkXMLUnstructuredGridWriter.h>
+#include <vtkMPI.h>
 #include <vtkMPIController.h>
 #include <vtkEnSightWriter.h>
 #include <vtkCleanPolyData.h>
@@ -26,6 +27,9 @@
 vtkSmartPointer<vtkCPProcessor> processor;
 vtkSmartPointer<vtkUnstructuredGrid> VTKGrid;
 vtkNew<vtkCPDataDescription> dataDescription;
+vtkNew<vtkMPIController> controller;
+vtkMPICommunicatorOpaqueComm* Comm;
+
 double xx = 1;
 
 using namespace espreso::output;
@@ -34,9 +38,14 @@ Paraview::Paraview(const Mesh &mesh, const std::string &path): Store(mesh, path)
 {
 	processor = vtkSmartPointer<vtkCPProcessor>::New();
 	processor->Initialize();
+	//MPI_Comm* handle;
+	//handle=MPI_COMM_WORLD;
+	//Comm = new vtkMPICommunicatorOpaqueComm(MPI_COMM_WORLD);
+	//processor->Initialize(*Comm);
+
 
 	vtkNew<vtkCPPythonScriptPipeline> pipeline;
-	pipeline->Initialize("catalyst_pipeline_cube.py");
+	pipeline->Initialize("catalyst_pipeline.py");
 	processor->AddPipeline(pipeline.GetPointer());
 
 	const std::vector<Element*> &elements = _mesh.elements();
@@ -478,4 +487,5 @@ void Paraview::finalize()
 		}
 		break;
 		}
+	delete Comm;
 }
