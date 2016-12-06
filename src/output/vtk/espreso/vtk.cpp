@@ -4,7 +4,7 @@
 
 #include "../vtk.h"
 
-using namespace espreso::output;
+using namespace espreso::store;
 
 static void open(std::ofstream &os, const std::string &path, size_t timeStep)
 {
@@ -118,19 +118,19 @@ static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes
 	os << "\n";
 }
 
-static void elements(std::ofstream &os, const espreso::Mesh &mesh, espreso::output::Store::ElementType eType)
+static void elements(std::ofstream &os, const espreso::Mesh &mesh, espreso::store::Store::ElementType eType)
 {
 	std::vector<espreso::Element*> elements;
 
 	switch (eType) {
-	case espreso::output::Store::ElementType::ELEMENTS:
+	case espreso::store::Store::ElementType::ELEMENTS:
 		elements.insert(elements.end(), mesh.elements().begin(), mesh.elements().end());
 		break;
-	case espreso::output::Store::ElementType::FACES:
+	case espreso::store::Store::ElementType::FACES:
 		elements.insert(elements.end(), mesh.faces().begin(), mesh.faces().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
-	case espreso::output::Store::ElementType::EDGES:
+	case espreso::store::Store::ElementType::EDGES:
 		elements.insert(elements.end(), mesh.edges().begin(), mesh.edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;

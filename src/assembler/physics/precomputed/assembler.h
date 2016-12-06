@@ -25,8 +25,8 @@ struct PrecomputedPhysics: public Physics {
 		ESINFO(PROGRESS2);
 	}
 
-	void saveMeshProperties(output::Store &store) { ESINFO(GLOBAL_ERROR) << "It is not possible to save mesh through API"; }
-	void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results) { ESINFO(GLOBAL_ERROR) << "It is not possible to save results through API"; }
+	void saveMeshProperties(store::Store &store) { ESINFO(GLOBAL_ERROR) << "It is not possible to save mesh through API"; }
+	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results) { ESINFO(GLOBAL_ERROR) << "It is not possible to save results through API"; }
 
 	PrecomputedPhysics(
 			APIMesh &mesh,

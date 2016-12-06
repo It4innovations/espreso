@@ -33,7 +33,7 @@ protected:
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
-	output::VTK _store;
+	store::VTK _store;
 };
 
 }

@@ -36,7 +36,7 @@ protected:
 	LLNL_FEI_Impl feiPtr;
 	Constraints _constrains;
 	TPhysics _physics;
-	output::VTK _store;
+	store::VTK _store;
 
 };
 

@@ -20,8 +20,8 @@ struct Temperature: public LinearPhysics
 	void assembleB1() {};
 	void assembleB0() {};
 
-	void saveMeshProperties(output::Store &store);
-	void saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results);
+	void saveMeshProperties(store::Store &store);
+	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

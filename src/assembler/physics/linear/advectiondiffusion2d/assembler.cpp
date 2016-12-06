@@ -38,16 +38,16 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	_constraints.initMatrices(matrixSize);
 }
 
-void AdvectionDiffusion2D::saveMeshProperties(output::Store &store)
+void AdvectionDiffusion2D::saveMeshProperties(store::Store &store)
 {
-	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, output::Store::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, output::Store::ElementType::ELEMENTS);
-	store.storeProperty("temperature", { Property::TEMPERATURE }, output::Store::ElementType::NODES);
+	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, store::Store::ElementType::ELEMENTS);
+	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::Store::ElementType::ELEMENTS);
+	store.storeProperty("temperature", { Property::TEMPERATURE }, store::Store::ElementType::NODES);
 }
 
-void AdvectionDiffusion2D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+void AdvectionDiffusion2D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("temperature", 1, results, output::Store::ElementType::NODES);
+	store.storeValues("temperature", 1, results, store::Store::ElementType::NODES);
 	store.finalize();
 }
 

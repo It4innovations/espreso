@@ -6,7 +6,7 @@
 #include "../store.h"
 
 namespace espreso {
-namespace output {
+namespace store {
 
 class Paraview: public Store {
 

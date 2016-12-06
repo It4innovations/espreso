@@ -73,7 +73,7 @@
 
 #include "../vtk.h"
 
-using namespace espreso::output;
+using namespace espreso::store;
 
 VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
 : Store(mesh, path, shrinkSubdomain, shringCluster), _lastData(ElementType::ELEMENTS)

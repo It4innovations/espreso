@@ -2,7 +2,7 @@
 #include "vtk.h"
 
 namespace espreso {
-namespace output{
+namespace store{
 
 
 void VTK::computeCenters()

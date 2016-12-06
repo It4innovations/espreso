@@ -1,7 +1,7 @@
 
 #include "paraview.h"
 
-using namespace espreso::output;
+using namespace espreso::store;
 
 Paraview::Paraview(const Mesh &mesh, const std::string &path): Store(mesh, path)
 {

@@ -5,7 +5,7 @@
 #include "esmesh.h"
 
 namespace espreso {
-namespace output {
+namespace store {
 
 class Store {
 

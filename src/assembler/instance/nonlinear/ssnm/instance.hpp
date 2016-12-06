@@ -42,7 +42,7 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	}
 
 	if (config::output::SAVE_GLUING) {
-		output::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		store::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();

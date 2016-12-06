@@ -26,12 +26,12 @@ void TransientElasticity::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
-void TransientElasticity::saveMeshProperties(output::Store &store)
+void TransientElasticity::saveMeshProperties(store::Store &store)
 {
 
 }
 
-void TransientElasticity::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+void TransientElasticity::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
 
 }

@@ -55,25 +55,25 @@ void LinearElasticity3D::prepareMeshStructures()
 	_constraints.initMatrices(matrixSize);
 }
 
-void LinearElasticity3D::saveMeshProperties(output::Store &store)
+void LinearElasticity3D::saveMeshProperties(store::Store &store)
 {
-	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, output::Store::ElementType::NODES);
-	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, output::Store::ElementType::NODES);
-	store.storeProperty("obstacle", { Property::OBSTACLE }, output::Store::ElementType::NODES);
-	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, output::Store::ElementType::NODES);
+	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, store::Store::ElementType::NODES);
+	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, store::Store::ElementType::NODES);
+	store.storeProperty("obstacle", { Property::OBSTACLE }, store::Store::ElementType::NODES);
+	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::Store::ElementType::NODES);
 	if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
-		output::VTK::fixPoints(_mesh, "fixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+		store::VTK::fixPoints(_mesh, "fixPoints", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 	}
 	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
 		switch (config::solver::B0_TYPE) {
 		case config::solver::B0_TYPEalternative::CORNERS:
 		case config::solver::B0_TYPEalternative::COMBINED:
-			output::VTK::mesh(_mesh, "faces", output::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-			output::VTK::mesh(_mesh, "edges", output::Store::ElementType::EDGES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
-			output::VTK::corners(_mesh, "corners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			store::VTK::mesh(_mesh, "edges", store::Store::ElementType::EDGES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			store::VTK::corners(_mesh, "corners", config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			output::VTK::mesh(_mesh, "faces", output::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
+			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, config::output::SUBDOMAINS_SHRINK_RATIO, config::output::CLUSTERS_SHRINK_RATIO);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented saving properties of B0";
@@ -81,9 +81,9 @@ void LinearElasticity3D::saveMeshProperties(output::Store &store)
 	}
 }
 
-void LinearElasticity3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+void LinearElasticity3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("displacement", 3, results, output::Store::ElementType::NODES);
+	store.storeValues("displacement", 3, results, store::Store::ElementType::NODES);
 	store.finalize();
 }
 

@@ -1,7 +1,7 @@
 
 #include "esdata.h"
 
-using namespace espreso::output;
+using namespace espreso::store;
 
 void Esdata::mesh(const Mesh &mesh, const std::string &path)
 {

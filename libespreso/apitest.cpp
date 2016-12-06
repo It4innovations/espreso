@@ -114,9 +114,9 @@ int main(int argc, char** argv)
 
 	// Process solution
 
-	espreso::output::VTK vtk(factory.mesh, "results");
+	espreso::store::VTK vtk(factory.mesh, "results");
 	vtk.storeGeometry();
-	vtk.storeValues("api_result", DOFs.size(), solution, espreso::output::Store::ElementType::NODES);
+	vtk.storeValues("api_result", DOFs.size(), solution, espreso::store::Store::ElementType::NODES);
 
 	// Remove data
 	FETI4IDestroy(K);

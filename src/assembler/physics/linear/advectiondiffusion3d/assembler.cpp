@@ -67,16 +67,16 @@ void AdvectionDiffusion3D::assembleB0()
 	}
 }
 
-void AdvectionDiffusion3D::saveMeshProperties(output::Store &store)
+void AdvectionDiffusion3D::saveMeshProperties(store::Store &store)
 {
-	//store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, output::Store::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, output::Store::ElementType::ELEMENTS);
-	store.storeProperty("temperature", { Property::TEMPERATURE }, output::Store::ElementType::NODES);
+	//store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, store::Store::ElementType::ELEMENTS);
+	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::Store::ElementType::ELEMENTS);
+	store.storeProperty("temperature", { Property::TEMPERATURE }, store::Store::ElementType::NODES);
 }
 
-void AdvectionDiffusion3D::saveMeshResults(output::Store &store, const std::vector<std::vector<double> > &results)
+void AdvectionDiffusion3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("temperature", 1, results, output::Store::ElementType::NODES);
+	store.storeValues("temperature", 1, results, store::Store::ElementType::NODES);
 	store.finalize();
 }
 
