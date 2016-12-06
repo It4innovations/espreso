@@ -179,17 +179,22 @@ enum class ELEMENT_TYPE {
 
 struct Environment: public Configuration {
 
-	PARAMETER(int, MPIrank, "Rank of an MPI process.", 0);
-	PARAMETER(int, MPIsize, "Size of an MPI communicator (MPI_COMM_WORLD).", 1);
+	Environment(): executable("espreso")
+	{
+		MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+		MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	}
+
+	int MPIrank;
+	int MPIsize;
+
+	std::string executable;
 
 	PARAMETER(size_t, MKL_NUM_THREADS, "Number of MKL threads.", Esutils::getEnv<size_t>("MKL_NUM_THREADS"));
 	PARAMETER(size_t, OMP_NUM_THREADS, "Number of OMP threads.", Esutils::getEnv<size_t>("OMP_NUM_THREADS"));
 	PARAMETER(size_t, SOLVER_NUM_THREADS, "Number of threads used in ESPRESO solver.", Esutils::getEnv<size_t>("SOLVER_NUM_THREADS"));
 	PARAMETER(size_t, PAR_NUM_THREADS, "Number of parallel threads.", Esutils::getEnv<size_t>("PAR_NUM_THREADS"));
 	PARAMETER(size_t, CILK_NWORKERS, "Number of cilk++ threads.", Esutils::getEnv<size_t>("CILK_NWORKERS"));
-
-	PARAMETER(std::string, executable, "name", "espreso");
-
 };
 
 struct GridConfiguration: public Configuration {
@@ -488,7 +493,7 @@ struct GlobalConfiguration: public Configuration {
 		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
 	}));
 
-	SUBCONFIG(Environment       , env         , "Environment dependent variables (set by ./env/scripts).");
+	SUBCONFIG(Environment       , env         , "Environment dependent variables (set by ./env/threading.* scripts).");
 	SUBCONFIG(ESPRESOGenerator  , generator   , "ESPRESO internal mesh generator.");
 	SUBCONFIG(ESPRESOInput      , workbench   , "Mesh description in Ansys Workbench format.");
 	SUBCONFIG(ESPRESOInput      , openfoam    , "Mesh description in OpenFOAM format.");

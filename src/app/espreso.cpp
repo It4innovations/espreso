@@ -30,9 +30,6 @@ int main(int argc, char **argv)
 	MPI_Init(&argc, &argv);
 
 	GlobalConfiguration configuration(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &configuration.env.MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &configuration.env.MPIsize);
-
 	ParametersReader::fromArguments(&argc, &argv);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << config::env::MPIsize << " process(es).";
