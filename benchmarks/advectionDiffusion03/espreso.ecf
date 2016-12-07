@@ -1,0 +1,102 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: boundary layer problem                                   |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_2D;
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE  SQUARE8;
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG0];
+    CLUSTERS_Y     [ARG1];
+    CLUSTERS_Z          1;
+
+    DOMAINS_X      [ARG2];
+    DOMAINS_Y      [ARG3];
+    DOMAINS_Z           1;
+
+    ELEMENTS_X     [ARG4];
+    ELEMENTS_Y     [ARG5];
+    ELEMENTS_Z          1;
+
+    NODES {
+      LEFT   "(0, 1) <0, 0> <0, 0>";
+      TOP    "<0, 0> <0, 1> <0, 0>";
+      BOTTOM "<1, 1> <0, 1> <0, 0>";
+      RIGHT  "(0, 1) <1, 1> <0, 0>";
+    }
+
+    ELEMENTS {
+        ALL_EL ALL;
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_2D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD      TOTAL_FETI;
+    SOLVER           GMRES;
+    PRECONDITIONER  LUMPED;
+    ITERATIONS        1000;
+    EPSILON           1e-8;
+  }
+
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    LEFT "T = 0";
+    TOP  "T = 1";
+  }
+
+  HEAT_SOURCE {
+    ALL_EL     0;
+  }
+
+  TRANSLATION_MOTIONS {
+    ALL_EL  "x = y^0.1, y = 0";
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+
+      DENS    1;
+      KXX  1e-5;
+      KXY  1e-5;
+      C       1;
+    }
+  }
+
+  MATERIAL_SET {
+    1 ALL_EL;
+  }
+}
+
