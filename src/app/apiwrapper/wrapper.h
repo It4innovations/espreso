@@ -5,7 +5,6 @@
 #include <iostream>
 #include <list>
 
-#include "esconfig.h"
 #include "esassembler.h"
 #include "esinput.h"
 #include "esbasis.h"

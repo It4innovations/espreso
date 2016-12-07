@@ -29,7 +29,6 @@
 #include "densesolvers.h"
 
 #include "../generic/utils.h"
-#include "esconfig.h"
 #include "esbasis.h"
 //#include "../../assembler/physics/assembler.h"
 

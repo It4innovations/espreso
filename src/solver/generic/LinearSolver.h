@@ -9,7 +9,6 @@
 #define SOLVER_GENERIC_LINEARSOLVER_H_
 
 #include "../specific/itersolvers.h"
-#include "esconfig.h"
 #include "esmesh.h"
 
 #include "../../assembler/physics/assembler.h"

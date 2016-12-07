@@ -13,7 +13,6 @@
 #include <execinfo.h>
 #include <cstring>
 
-#include "esconfig.h"
 #include "timeeval.h"
 
 #define ESTEST(EVENT) if (!espreso::Test::report(EVENT))    ; else espreso::Test(EVENT).get()
