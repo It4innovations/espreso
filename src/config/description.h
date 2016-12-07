@@ -522,6 +522,11 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 };
 
+struct Results: public Configuration {
+
+	PARAMETER(double, norm, "Norm of the solution", 0);
+};
+
 struct GlobalConfiguration: public Configuration {
 
 	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(*this); }
@@ -561,6 +566,7 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(AdvectionDiffusion2DConfiguration, advection_diffusion_2D, "2D advection diffusiuon solver.");
 	SUBCONFIG(AdvectionDiffusion3DConfiguration, advection_diffusion_3D, "3D advection diffusiuon solver.");
 
+	SUBCONFIG(Results, results, "Expected output results.");
 
 	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
 	SUBMAP(size_t, std::string  , material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");

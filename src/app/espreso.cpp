@@ -34,11 +34,9 @@ int main(int argc, char **argv)
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
 
 	Factory factory(configuration);
-	factory.solve("result");
 
-	ESTEST(EVALUATION)
-		<< (fabs(factory.norm() - config::solver::NORM) > 1e-3 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
-		<< "Norm of the solution " << factory.norm() << " is not " << config::solver::NORM << ".";
+	factory.solve("result");
+	factory.check(configuration.results);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

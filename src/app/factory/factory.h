@@ -18,6 +18,7 @@ struct Factory {
 	}
 
 	void solve(const std::string &outputFile);
+	void check(const Results &configuration);
 
 	double norm() const;
 
