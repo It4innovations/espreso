@@ -9,8 +9,8 @@ namespace espreso {
 template <class TPhysics>
 struct PrecomputedInstance: public Instance
 {
-	PrecomputedInstance(APIMesh &mesh, SparseMatrix::MatrixType type, double* rhs, eslocal rhs_size)
-	: Instance(mesh), _constrains(mesh), _physics(mesh, _constrains, type, rhs, rhs_size), _linearSolver(_physics, _constrains)
+	PrecomputedInstance(const ESPRESOSolver &configuration, APIMesh &mesh, SparseMatrix::MatrixType type, double* rhs, eslocal rhs_size)
+	: Instance(mesh), _configuration(configuration), _constrains(configuration, mesh), _physics(mesh, _constrains, configuration, type, rhs, rhs_size), _linearSolver(_physics, _constrains)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};
@@ -25,6 +25,7 @@ struct PrecomputedInstance: public Instance
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const ESPRESOSolver &_configuration;
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;

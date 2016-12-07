@@ -12,8 +12,8 @@
 #include "reader.h"
 
 #define OPTIONS(...) __VA_ARGS__
-#define OPTION(type, name, description, value, options)         type name = DataHolder::create<type>(#name, description, name, value, options, this)
-#define PARAMETER(type, name, description, value)               type name = DataHolder::create<type>(#name, description, name, value, #type, this)
+#define OPTION(type, name, description, value, options)         type name = ParameterHolder::create<type>(#name, description, name, value, options, this)
+#define PARAMETER(type, name, description, value)               type name = ParameterHolder::create<type>(#name, description, name, value, #type, this)
 
 #define SUBVECTOR(type, name, description, dparameter, dvalue)           ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, dparameter, dvalue, this)
 #define SUBMAP(ptype, vtype, name, description, dparameter, dvalue) ConfigurationMap<ptype, vtype> name = ConfigurationMap<ptype, vtype>::create(#name, description, #vtype, dparameter, dvalue, this)
@@ -303,7 +303,7 @@ struct ConfigurationMap: public Configuration {
 	}
 };
 
-struct DataHolder {
+struct ParameterHolder {
 	template <typename Ttype>
 	static Ttype create(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, const std::string &type, Configuration* configuration)
 	{

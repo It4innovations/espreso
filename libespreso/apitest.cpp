@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 	ESINFO(espreso::OVERVIEW) << "Run ESPRESO API test on " << espreso::environment->MPIsize << " process(es).";
 
 	// use ESPRESO factory to allow run test on all examples/assemblers
-	espreso::Factory factory(espreso::configuration);
+	espreso::Factory factory(configuration);
 	factory.mesh.partitiate(1); // we need only one sub-domain per cluster
 	factory.instance->init(); // it perform full initialization; it is not effective but sufficient to test API
 

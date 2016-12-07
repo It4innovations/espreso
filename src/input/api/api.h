@@ -11,6 +11,7 @@ class API {
 
 public:
 	static void load(
+			const ESPRESOInput &configuration,
 			APIMesh &mesh,
 			eslocal indexBase,
 			const std::vector<eslocal> &eType,

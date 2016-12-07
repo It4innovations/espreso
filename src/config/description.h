@@ -554,6 +554,7 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOInput       , workbench   , "Mesh description in Ansys Workbench format.");
 	SUBCONFIG(ESPRESOInput       , openfoam    , "Mesh description in OpenFOAM format.");
 	SUBCONFIG(ESPRESOInput       , esdata      , "Mesh description in ESPRESO internal binary format.");
+	SUBCONFIG(ESPRESOInput       , api         , "API description.");
 
 	SUBCONFIG(LinearElasticity2DConfiguration  , linear_elasticity_2D  , "2D Linear elasticity solver.");
 	SUBCONFIG(LinearElasticity3DConfiguration  , linear_elasticity_3D  , "3D Linear elasticity solver.");

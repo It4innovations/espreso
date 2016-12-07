@@ -29,6 +29,7 @@ struct FETI4IStructInstance {
 
 	espreso::Instance *instance;
 	espreso::APIMesh mesh;
+	espreso::ESPRESOSolver configuration;
 };
 
 namespace espreso {

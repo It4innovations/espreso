@@ -12,72 +12,66 @@ using namespace espreso;
 
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
-	if (std::ifstream("espreso.config").good()) {
-		ArgsConfiguration conf;
-		conf.path = "espreso.config";
-		ParametersReader::fromConfigurationFile(conf, config::parameters);
-	}
+	ESPRESOInput input;
+	ESPRESOSolver solver;
 
-	options[FETI4I_SUBDOMAINS] = config::mesh::SUBDOMAINS;
+	options[FETI4I_SUBDOMAINS] = input.domains;
 
-	options[FETI4I_ITERATIONS] = config::solver::ITERATIONS;
-	options[FETI4I_FETI_METHOD] = static_cast<int>(config::solver::FETI_METHOD);
-	options[FETI4I_PRECONDITIONER] = static_cast<int>(config::solver::PRECONDITIONER);
-	options[FETI4I_CGSOLVER] = static_cast<int>(config::solver::CGSOLVER);
-	options[FETI4I_N_MICS] = config::solver::N_MICS;
+	options[FETI4I_ITERATIONS] = solver.iterations;
+	options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
+	options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
+	options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
+	options[FETI4I_N_MICS] = solver.N_MICS;
 
-	options[FETI4I_VERBOSE_LEVEL] = config::info::VERBOSE_LEVEL;
-	options[FETI4I_TESTING_LEVEL] = config::info::TESTING_LEVEL;
-	options[FETI4I_MEASURE_LEVEL] = config::info::MEASURE_LEVEL;
+	options[FETI4I_VERBOSE_LEVEL] = output->verbose_level;
+	options[FETI4I_TESTING_LEVEL] = output->testing_level;
+	options[FETI4I_MEASURE_LEVEL] = output->measure_level;
 	options[FETI4I_PRINT_MATRICES] = output->print_matrices;
 }
 
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 {
-	options[FETI4I_EPSILON] = config::solver::EPSILON;
+	ESPRESOSolver solver;
+	options[FETI4I_EPSILON] = solver.epsilon;
 }
 
-static void FETI4ISetIntegerOptions(FETI4IInt* options)
+static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRESOSolver &solver, FETI4IInt* options)
 {
-	ParametersReader reader(config::parameters);
-
-	if (!reader.setParameter(&config::mesh::SUBDOMAINS, options[FETI4I_SUBDOMAINS])) {
+	if (!input.parameters["domains"]->set(std::to_string(options[FETI4I_SUBDOMAINS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SUBDOMAINS' to " << options[FETI4I_SUBDOMAINS];
 	}
-	if (!reader.setParameter(&config::solver::ITERATIONS, options[FETI4I_ITERATIONS])) {
+	if (!solver.parameters["iterations"]->set(std::to_string(options[FETI4I_ITERATIONS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'ITERATIONS' to " << options[FETI4I_ITERATIONS];
 	}
-	if (!reader.setParameter(&config::solver::FETI_METHOD, options[FETI4I_FETI_METHOD])) {
+	if (!solver.parameters["method"]->set(std::to_string(options[FETI4I_FETI_METHOD]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'FETI_METHOD' to " << options[FETI4I_FETI_METHOD];
 	}
-	if (!reader.setParameter(&config::solver::PRECONDITIONER, options[FETI4I_PRECONDITIONER])) {
+	if (!solver.parameters["preconditioner"]->set(std::to_string(options[FETI4I_PRECONDITIONER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRECONDITIONER' to " << options[FETI4I_PRECONDITIONER];
 	}
-	if (!reader.setParameter(&config::solver::CGSOLVER, options[FETI4I_CGSOLVER])) {
+	if (!solver.parameters["solver"]->set(std::to_string(options[FETI4I_CGSOLVER]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'CGSOLVER' to " << options[FETI4I_CGSOLVER];
 	}
-	if (!reader.setParameter(&config::solver::N_MICS, options[FETI4I_N_MICS])) {
+	if (!solver.parameters["N_MICS"]->set(std::to_string(options[FETI4I_N_MICS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'N_MICS' to " << options[FETI4I_N_MICS];
 	}
-	if (!reader.setParameter(&config::info::VERBOSE_LEVEL, options[FETI4I_VERBOSE_LEVEL])) {
+	if (!output->parameters["verbose_level"]->set(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'VERBOSE_LEVEL' to " << options[FETI4I_VERBOSE_LEVEL];
 	}
-	if (!reader.setParameter(&config::info::TESTING_LEVEL, options[FETI4I_TESTING_LEVEL])) {
+	if (!output->parameters["testing_level"]->set(std::to_string(options[FETI4I_TESTING_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'TESTING_LEVEL' to " << options[FETI4I_TESTING_LEVEL];
 	}
-	if (!reader.setParameter(&config::info::MEASURE_LEVEL, options[FETI4I_MEASURE_LEVEL])) {
+	if (!output->parameters["measure_level"]->set(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MEASURE_LEVEL' to " << options[FETI4I_MEASURE_LEVEL];
 	}
-	if (!reader.setParameter(&output->print_matrices, options[FETI4I_PRINT_MATRICES])) {
+	if (!output->parameters["print_matrices"]->set(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
 }
 
-static void FETI4ISetRealOptions(FETI4IReal* options)
+static void FETI4ISetRealOptions(espreso::ESPRESOSolver &solver, FETI4IReal* options)
 {
-	ParametersReader reader(config::parameters);
-
-	if (!reader.setParameter(&config::solver::EPSILON, options[FETI4I_EPSILON])) {
+	if (!solver.parameters["epsilon"]->set(std::to_string(options[FETI4I_EPSILON]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'EPSILON' to " << options[FETI4I_PRINT_MATRICES];
 	}
 }
@@ -89,7 +83,6 @@ void FETI4ICreateStiffnessMatrix(
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
-	config::solver::REGULARIZATION = config::solver::REGULARIZATIONalternative::NULL_PIVOTS;
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
@@ -140,9 +133,11 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		integer_options,
 		FETI4IReal*		real_options)
 {
-	FETI4ISetIntegerOptions(integer_options);
-	FETI4ISetRealOptions(real_options);
-	ParametersReader::printParameters(config::parameters, config::info::VERBOSE_LEVEL);
+	ESPRESOInput input;
+	ESPRESOSolver solver;
+
+	FETI4ISetIntegerOptions(input, solver, integer_options);
+	FETI4ISetRealOptions(solver, real_options);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
@@ -152,13 +147,14 @@ void FETI4ICreateInstance(
 
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 	input::API::load(
+			input,
 			DataHolder::instances.back()->mesh, matrix->offset,
 			matrix->eType, matrix->eNodes, matrix->eDOFs, matrix->eMatrices,
 			dirichlet_size, dirichlet_indices, dirichlet_values,
 			neighClusters,
 			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(DataHolder::instances.back()->mesh, (espreso::SparseMatrix::MatrixType)matrix->type, rhs, size);
+	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(solver, DataHolder::instances.back()->mesh, (espreso::SparseMatrix::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 

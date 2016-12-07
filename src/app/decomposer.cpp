@@ -5,6 +5,7 @@
 #include "esoutput.h"
 #include "esmesh.h"
 #include "factory/factory.h"
+#include "../config/description.h"
 
 using namespace espreso;
 
@@ -16,29 +17,26 @@ int main(int argc, char** argv)
 
 	MPI_Init(&argc, &argv);
 
-	ArgsConfiguration configuration;
-	configuration.path = argv[1];
-	for (int i = 2; i < argc; i++) {
-		configuration.nameless.push_back(argv[i]);
-	}
+	GlobalConfiguration configuration(&argc, &argv);
 
 	if (environment->MPIsize > 1) {
 		ESINFO(GLOBAL_ERROR) << "Not implemented decomposition of ESDATA";
-		config::mesh::INPUT = config::mesh::INPUTalternative::ESDATA;
+		configuration.input = INPUT::ESDATA;
+		configuration.esdata.domains = 1;
+		configuration.esdata.path = argv[1];
 	} else {
-		config::mesh::INPUT = config::mesh::INPUTalternative::WORKBENCH;
+		configuration.input = INPUT::WORKBENCH;
+		configuration.workbench.domains = 1;
+		configuration.workbench.path = argv[1];
 	}
-	config::mesh::SUBDOMAINS = 1;
-	config::info::VERBOSE_LEVEL = 2;
-	config::info::MEASURE_LEVEL = 2;
 
 	Factory factory(configuration);
 	std::cout << "Mesh loaded\n";
 
-	for (size_t i = 1; i < configuration.nameless.size(); i++) {
-		int parts = atoi(configuration.nameless[i].c_str());
+	for (size_t i = 2; i < argc; i++) {
+		int parts = atoi(argv[i]);
 		std::stringstream ss;
-		ss << configuration.nameless[0] << parts * environment->MPIsize;
+		ss << argv[2] << parts * environment->MPIsize;
 
 		factory.mesh.partitiate(parts);
 		std::cout << "Mesh partitiated to " << parts * environment->MPIsize << " parts\n";
@@ -47,7 +45,7 @@ int main(int argc, char** argv)
 			sizes[p] = factory.mesh.coordinates().localSize(p);
 		}
 		std::cout << "Nodes in subdomains: " << Info::averageValues(sizes) << "\n";
-		output::Esdata::mesh(factory.mesh, ss.str());
+		store::Esdata::mesh(factory.mesh, ss.str());
 		std::cout << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved\n";
 	}
 
