@@ -111,9 +111,6 @@ CubeEdge BlockBorder::getEdge(const BlockSetting &block) const
 	auto eq = [&] (const double &a, const double &b) {
 		return a < b + epsilon && a > b - epsilon ? true : false;
 	};
-	auto lo = [&] (const double &a, const double &b) {
-		return a < b + epsilon ? true : false;
-	};
 
 	size_t fixed_x = (start.x == end.x) ? 1 : 0;
 	size_t fixed_y = (start.y == end.y) ? 1 : 0;
@@ -133,7 +130,7 @@ CubeEdge BlockBorder::getEdge(const BlockSetting &block) const
 		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'x' coordinate is inside a block. Region is skipped!";
 	}
 
-	if (fixed_z && fixed_y && lo(start.x, block.start.x) && lo(block.start.x, end.x)) {
+	if (fixed_z && fixed_y) {
 		if (eq(block.start.z, start.z) && eq(block.start.y, start.y)) {
 			return CubeEdge::Y_0_Z_0;
 		}
@@ -148,7 +145,7 @@ CubeEdge BlockBorder::getEdge(const BlockSetting &block) const
 		}
 	}
 
-	if (fixed_z && fixed_x && lo(start.y, block.start.y) && lo(block.start.y, end.y)) {
+	if (fixed_z && fixed_x) {
 		if (eq(block.start.z, start.z) && eq(block.start.x, start.x)) {
 			return CubeEdge::X_0_Z_0;
 		}
@@ -163,7 +160,7 @@ CubeEdge BlockBorder::getEdge(const BlockSetting &block) const
 		}
 	}
 
-	if (fixed_y && fixed_x && lo(start.z, block.start.z) && lo(block.start.z, end.z)) {
+	if (fixed_y && fixed_x) {
 		if (eq(block.start.y, start.y) && eq(block.start.x, start.x)) {
 			return CubeEdge::X_0_Y_0;
 		}
@@ -186,9 +183,6 @@ CubeFace BlockBorder::getFace(const BlockSetting &block) const
 	auto eq = [&] (const double &a, const double &b) {
 		return a < b + epsilon && a > b - epsilon ? true : false;
 	};
-	auto lo = [&] (const double &a, const double &b) {
-		return a < b + epsilon ? true : false;
-	};
 
 	size_t fixed_x = (start.x == end.x) ? 1 : 0;
 	size_t fixed_y = (start.y == end.y) ? 1 : 0;
@@ -208,7 +202,7 @@ CubeFace BlockBorder::getFace(const BlockSetting &block) const
 		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: interval 'x' coordinate is inside a block. Region is skipped!";
 	}
 
-	if (fixed_x && lo(start.y, block.start.y) && lo(block.start.y, end.y) && lo(start.z, block.start.z) && lo(block.start.z, end.z)) {
+	if (fixed_x) {
 		if (eq(block.start.x, start.x)) {
 			return CubeFace::X_0;
 		}
@@ -217,7 +211,7 @@ CubeFace BlockBorder::getFace(const BlockSetting &block) const
 		}
 	}
 
-	if (fixed_y && lo(start.x, block.start.x) && lo(block.start.x, end.x) && lo(start.z, block.start.z) && lo(block.start.z, end.z)) {
+	if (fixed_y) {
 		if (eq(block.start.y, start.y)) {
 			return CubeFace::Y_0;
 		}
@@ -226,7 +220,7 @@ CubeFace BlockBorder::getFace(const BlockSetting &block) const
 		}
 	}
 
-	if (fixed_z && lo(start.x, block.start.x) && lo(block.start.x, end.x) && lo(start.y, block.start.y) && lo(block.start.y, end.y)) {
+	if (fixed_z) {
 		if (eq(block.start.z, start.z)) {
 			return CubeFace::Z_0;
 		}
