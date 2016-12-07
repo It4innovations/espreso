@@ -8,16 +8,12 @@ namespace espreso {
 
 struct AdvectionDiffusion2D: public LinearPhysics
 {
-	enum class STABILIZATION {
-		SUPG = 0,
-		CAU = 1
-	};
-
-	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
+	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration)
 	: LinearPhysics(
-			mesh, constraints, configuration,
+			mesh, constraints, configuration.espreso,
 			SparseMatrix::MatrixType::REAL_UNSYMMETRIC,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+	  _configuration(configuration) {};
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
@@ -28,8 +24,7 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	void saveMeshProperties(store::Store &store);
 	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
 
-	static double sigma;
-	static STABILIZATION stabilization;
+	const AdvectionDiffusion2DConfiguration &_configuration;
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

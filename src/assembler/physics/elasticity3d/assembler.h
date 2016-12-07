@@ -8,11 +8,12 @@ namespace espreso {
 
 struct Elasticity3D: public Physics
 {
-	Elasticity3D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
+	Elasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
 	: Physics(
-			mesh, constraints, configuration,
+			mesh, constraints, configuration.espreso,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+	  _configuration(configuration) {};
 
 	bool singular() const
 	{
@@ -39,6 +40,8 @@ struct Elasticity3D: public Physics
 
 	void saveMeshProperties(store::Store &store);
 	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
+
+	const LinearElasticity3DConfiguration &_configuration;
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

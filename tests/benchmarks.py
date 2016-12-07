@@ -12,7 +12,7 @@ class ESPRESOBenchmarks(unittest.TestCase):
     espreso = Espreso()
 
     def benchmark(self, path):
-        config = { "TESTING_LEVEL": 1, "VERBOSE_LEVEL": 0, "MEASURE_LEVEL": 0, "SAVE_RESULT": 0 }
+        config = { "OUTPUT::TESTING_LEVEL": 3, "OUTPUT::VERBOSE_LEVEL": 0, "OUTPUT::MEASURE_LEVEL": 0, "OUTPUT::RESULT": 0 }
         for test in  glob.glob(path + "/*.test"):
             for line in [ string.capwords(line.rstrip('\n')) for line in open(test) ]:
                 param, value = line.split("=")
@@ -21,7 +21,7 @@ class ESPRESOBenchmarks(unittest.TestCase):
                 if param.strip() == "Args":
                     args = [ int(i) for i in value.split() ]
                 if param.strip() == "Norm":
-                    config["NORM"] = float(value)
+                    config["RESULTS::NORM"] = float(value)
 
             self.espreso.run(procs, path, config, args)
 

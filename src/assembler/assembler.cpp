@@ -21,42 +21,42 @@ void Assembler::compose(const GlobalConfiguration &configuration, Instance* &ins
 {
 	switch (configuration.physics) {
 	case PHYSICS::LINEAR_ELASTICITY_2D:
-		switch (configuration.linear_elasticity_2D.library) {
+		switch (configuration.linear_elasticity_2D.solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
-			instance = new LinearInstance<LinearElasticity2D>(configuration.linear_elasticity_2D.espreso, mesh);
+			instance = new LinearInstance<LinearElasticity2D, LinearElasticity2DConfiguration>(configuration.linear_elasticity_2D, mesh);
 			break;
 		case SOLVER_LIBRARY::HYPRE:
-			instance = new HypreInstance<LinearElasticity2D>(configuration.linear_elasticity_2D.hypre, mesh);
+			instance = new HypreInstance<LinearElasticity2D, LinearElasticity2DConfiguration>(configuration.linear_elasticity_2D, mesh);
 			break;
 		};
 		break;
 	case PHYSICS::LINEAR_ELASTICITY_3D:
-		switch (configuration.linear_elasticity_3D.library) {
+		switch (configuration.linear_elasticity_3D.solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
-			instance = new LinearInstance<Elasticity3D>(configuration.linear_elasticity_3D.espreso, mesh);
+			instance = new LinearInstance<Elasticity3D, LinearElasticity3DConfiguration>(configuration.linear_elasticity_3D, mesh);
 			break;
 		case SOLVER_LIBRARY::HYPRE:
-			instance = new HypreInstance<Elasticity3D>(configuration.linear_elasticity_3D.hypre, mesh);
+			instance = new HypreInstance<Elasticity3D, LinearElasticity3DConfiguration>(configuration.linear_elasticity_3D, mesh);
 			break;
 		};
 		break;
 	case PHYSICS::ADVECTION_DIFFUSION_2D:
-		switch (configuration.advection_diffusion_2D.library) {
+		switch (configuration.advection_diffusion_2D.solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
-			instance = new LinearInstance<AdvectionDiffusion2D>(configuration.advection_diffusion_2D.espreso, mesh);
+			instance = new LinearInstance<AdvectionDiffusion2D, AdvectionDiffusion2DConfiguration>(configuration.advection_diffusion_2D, mesh);
 			break;
 		case SOLVER_LIBRARY::HYPRE:
-			instance = new HypreInstance<AdvectionDiffusion2D>(configuration.advection_diffusion_2D.hypre, mesh);
+			instance = new HypreInstance<AdvectionDiffusion2D, AdvectionDiffusion2DConfiguration>(configuration.advection_diffusion_2D, mesh);
 			break;
 		};
 		break;
 	case PHYSICS::ADVECTION_DIFFUSION_3D:
-		switch (configuration.advection_diffusion_3D.library) {
+		switch (configuration.advection_diffusion_3D.solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
-			instance = new LinearInstance<AdvectionDiffusion3D>(configuration.advection_diffusion_3D.espreso, mesh);
+			instance = new LinearInstance<AdvectionDiffusion3D, AdvectionDiffusion3DConfiguration>(configuration.advection_diffusion_3D, mesh);
 			break;
 		case SOLVER_LIBRARY::HYPRE:
-			instance = new HypreInstance<AdvectionDiffusion3D>(configuration.advection_diffusion_3D.hypre, mesh);
+			instance = new HypreInstance<AdvectionDiffusion3D, AdvectionDiffusion3DConfiguration>(configuration.advection_diffusion_3D, mesh);
 			break;
 		};
 		break;

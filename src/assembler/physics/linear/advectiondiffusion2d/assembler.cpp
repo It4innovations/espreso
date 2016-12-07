@@ -3,9 +3,6 @@
 
 namespace espreso {
 
-double AdvectionDiffusion2D::sigma = 0;
-AdvectionDiffusion2D::STABILIZATION AdvectionDiffusion2D::stabilization = AdvectionDiffusion2D::STABILIZATION::CAU;
-
 std::vector<Property> AdvectionDiffusion2D::elementDOFs;
 std::vector<Property> AdvectionDiffusion2D::faceDOFs;
 std::vector<Property> AdvectionDiffusion2D::edgeDOFs;
@@ -22,8 +19,8 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			_mesh.computePlaneCorners(1, true, true);
 			break;
@@ -36,6 +33,13 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	}
 
 	_constraints.initMatrices(matrixSize);
+
+	_mesh.loadProperty(_configuration.translation_motions.values, { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	_mesh.loadProperty(_configuration.initial_temperature.values, { }         , { Property::INITIAL_TEMPERATURE });
+	_mesh.loadProperty(_configuration.temperature.values        , { "T" }     , { Property::TEMPERATURE });
+	_mesh.loadProperty(_configuration.heat_source.values        , { "T" }     , { Property::HEAT_SOURCE });
+
+	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
 }
 
 void AdvectionDiffusion2D::saveMeshProperties(store::Store &store)
@@ -59,8 +63,8 @@ void AdvectionDiffusion2D::assembleB1()
 
 void AdvectionDiffusion2D::assembleB0()
 {
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
@@ -91,10 +95,10 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv(1, 1) =   detJx * m(0, 0);
 }
 
-static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element)
+static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element, const AdvectionDiffusion2DConfiguration &configuration)
 {
-	bool CAU = AdvectionDiffusion2D::stabilization == AdvectionDiffusion2D::STABILIZATION::CAU;
-	double sigma = AdvectionDiffusion2D::sigma;
+	bool CAU = configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
+	double sigma = configuration.sigma;
 
 	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
 	double detJ;
@@ -225,7 +229,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 
 void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
-	processElement(Ke, fe, _mesh, e);
+	processElement(Ke, fe, _mesh, e, _configuration);
 	dofs.resize(e->nodes());
 	for (size_t n = 0; n < e->nodes(); n++) {
 		dofs[n] = e->node(n);
@@ -260,7 +264,7 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		processElement(Ke, fe, _mesh, elements[e]);
+		processElement(Ke, fe, _mesh, elements[e], _configuration);
 
 		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
 			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {

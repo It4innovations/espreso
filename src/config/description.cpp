@@ -14,6 +14,9 @@ Environment::Environment(): executable("espreso")
 		MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 		MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	}
+
+	executable = Esutils::getEnv<std::string>("_");
+
 	environment = this;
 }
 

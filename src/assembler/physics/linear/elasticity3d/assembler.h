@@ -8,11 +8,12 @@ namespace espreso {
 
 struct LinearElasticity3D: public LinearPhysics
 {
-	LinearElasticity3D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
+	LinearElasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
 	: LinearPhysics(
-			mesh, constraints, configuration,
+			mesh, constraints, configuration.espreso,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+	  _configuration(configuration) {};
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
@@ -22,6 +23,8 @@ struct LinearElasticity3D: public LinearPhysics
 
 	void saveMeshProperties(store::Store &store);
 	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
+
+	const LinearElasticity3DConfiguration &_configuration;
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

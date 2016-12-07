@@ -7,15 +7,15 @@
 
 namespace espreso {
 
-template <class TPhysics>
+template <class TPhysics, class TConfiguration>
 struct LinearInstance: public Instance
 {
 public:
-	LinearInstance(const ESPRESOSolver &configuration, Mesh &mesh): Instance(mesh),
-	_configuration(configuration),
-	_constrains(configuration, mesh),
+	LinearInstance(const TConfiguration &configuration, Mesh &mesh): Instance(mesh),
+	_configuration(configuration.espreso),
+	_constrains(configuration.espreso, mesh),
 	_physics(mesh, _constrains, configuration),
-	_linearSolver(configuration, _physics, _constrains),
+	_linearSolver(configuration.espreso, _physics, _constrains),
 	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
 	{
 		_timeStatistics.totalTime.startWithBarrier();

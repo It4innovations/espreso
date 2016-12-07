@@ -15,11 +15,12 @@ struct LinearElasticity2D: public LinearPhysics
 		PLANE_STRESS_WITH_THICKNESS = 3
 	};
 
-	LinearElasticity2D(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
+	LinearElasticity2D(Mesh &mesh, Constraints &constraints, const LinearElasticity2DConfiguration &configuration)
 	: LinearPhysics(
-			mesh, constraints, configuration,
+			mesh, constraints, configuration.espreso,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
+			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+	  _configuration(configuration) {};
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
@@ -32,6 +33,7 @@ struct LinearElasticity2D: public LinearPhysics
 
 	static ELEMENT_BEHAVIOUR elementBehaviour;
 	static Point angularVelocity;
+	const LinearElasticity2DConfiguration &_configuration;
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

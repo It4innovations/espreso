@@ -28,8 +28,8 @@ void AdvectionDiffusion3D::prepareMeshStructures()
 	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			_mesh.computeVolumeCorners(1, true, true, false);
 			break;
@@ -52,8 +52,8 @@ void AdvectionDiffusion3D::assembleB1()
 
 void AdvectionDiffusion3D::assembleB0()
 {
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
@@ -172,7 +172,7 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 {
 	#pragma omp parallel for
 	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
-		switch (_configuration.regularization) {
+		switch (_solverConfiguration.regularization) {
 		case REGULARIZATION::FIX_POINTS:
 			ESINFO(GLOBAL_ERROR) << "Implement fix point regularization for advection diffusion 3D";
 			break;

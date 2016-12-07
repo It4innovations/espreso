@@ -44,12 +44,12 @@ static bool isObjectClose(int c)
 
 static bool isStringStart(int c)
 {
-	return c == '(';
+	return c == '"' || c == '\'';
 }
 
 static bool isStringEnd(int c)
 {
-	return c == ')';
+	return c == '"' || c == '\'';
 }
 
 static bool isSingleCommentChar(int c)
@@ -173,6 +173,9 @@ Tokenizer::Token Tokenizer::_next()
 				_file.get();
 			}
 			while (!isStringEnd(_file.peek()) || stacked) {
+				if (_file.eof()) {
+					ESINFO(GLOBAL_ERROR) << "Configuration file error: missing string end character '\"' for:\n " << std::string(_buffer.begin(), _buffer.begin() + 20);
+				}
 				if (isStringStart(_file.peek())) {
 					stacked++;
 				}

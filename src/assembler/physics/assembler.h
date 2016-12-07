@@ -101,7 +101,7 @@ struct Physics {
 	mtype(mtype),
 	_mesh(mesh),
 	_constraints(constraints),
-	_configuration(configuration)
+	_solverConfiguration(configuration)
 	{
 		K.resize(_mesh.parts());
 		R1.resize(_mesh.parts());
@@ -109,7 +109,7 @@ struct Physics {
 		RegMat.resize(_mesh.parts());
 		D.resize(_mesh.parts());
 		f.resize(_mesh.parts());
-		if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
 			ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (_mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
 		}
 	}
@@ -119,7 +119,7 @@ struct Physics {
 protected:
 	Mesh& _mesh;
 	Constraints &_constraints;
-	const ESPRESOSolver &_configuration;
+	const ESPRESOSolver &_solverConfiguration;
 };
 
 }

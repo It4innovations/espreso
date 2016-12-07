@@ -22,12 +22,12 @@ void LinearElasticity2D::prepareMeshStructures()
 	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 
-	if (_configuration.regularization == REGULARIZATION::FIX_POINTS) {
+	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {
 		_mesh.computeFixPoints(4);
 	}
 
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			_mesh.computePlaneCorners(1, true, false);
 			break;
@@ -48,11 +48,11 @@ void LinearElasticity2D::saveMeshProperties(store::Store &store)
 	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y }, store::Store::ElementType::NODES);
 	store.storeProperty("obstacle", { Property::OBSTACLE }, store::Store::ElementType::NODES);
 	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::Store::ElementType::NODES);
-	if (_configuration.regularization == REGULARIZATION::FIX_POINTS) {
+	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {
 		store::VTK::fixPoints(_mesh, "fixPoints", output->domain_shrink_ratio, output->cluster_shrink_ratio);
 	}
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 		case B0_TYPE::COMBINED:
 			store::VTK::mesh(_mesh, "edges", store::Store::ElementType::EDGES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
@@ -80,8 +80,8 @@ void LinearElasticity2D::assembleB1()
 
 void LinearElasticity2D::assembleB0()
 {
-	if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_configuration.B0_type) {
+	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
@@ -491,7 +491,7 @@ void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 void LinearElasticity2D::makeStiffnessMatricesRegular()
 {
 	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
-		switch (_configuration.regularization) {
+		switch (_solverConfiguration.regularization) {
 		case REGULARIZATION::FIX_POINTS:
 			analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
 			analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);

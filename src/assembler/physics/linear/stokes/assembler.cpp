@@ -191,7 +191,7 @@ void Stokes::composeSubdomain(size_t subdomain)
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
 
-	switch (_configuration.regularization) {
+	switch (_solverConfiguration.regularization) {
 	case REGULARIZATION::FIX_POINTS:
 		analyticsKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
 		analyticsRegMat(K[subdomain], RegMat[subdomain]);

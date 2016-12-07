@@ -521,6 +521,55 @@ void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 	computeCornersOnEdges(number, onVertices, onEdges);
 }
 
+void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties) {
+
+	auto getValueIndex = [] (const std::vector<std::string> &values, const std::string &parameter) -> size_t {
+		if (values.size() == 1 && !Parser::contains(values[0], ":=")) {
+			return 0;
+		}
+		for (size_t i = 0; i < values.size(); i++) {
+			if (StringCompare::caseInsensitiveEq(parameter, Parser::strip(Parser::split(values[i], ":=")[0]))) {
+				return i;
+			}
+		}
+		return values.size();
+	};
+
+	for (auto it = regions.begin(); it != regions.end(); ++it) {
+		Region &region = this->region(it->first);
+		std::vector<std::string> values = Parser::split(it->second, ",;");
+
+		for (size_t p = 0; p < properties.size(); p++) {
+			size_t index = getValueIndex(values, parameters[p]);
+			if (index < values.size()) {
+				std::string value = Parser::contains(values[index], ":=") ? Parser::split(values[index], ":=")[1] : values[index];
+				if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos && value.find("t") == std::string::npos) {
+					espreso::Expression expr(value, {});
+					_evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({}), properties[p]));
+				} else {
+					_evaluators.push_back(new espreso::CoordinatesEvaluator(value, _coordinates, properties[p]));
+				}
+				for (size_t i = 0; i < region.elements.size(); i++) {
+					region.elements[i]->addSettings(properties[p], _evaluators.back());
+				}
+			}
+		}
+	}
+}
+
+void Mesh::loadMaterials(const std::vector<Configuration*> &materials, const std::map<size_t, std::string> &sets)
+{
+	for (auto it = sets.begin(); it != sets.end(); ++it) {
+		Region &region = this->region(it->second);
+		for (size_t e = 0; e << region.elements.size(); e++) {
+			region.elements[e]->setParam(Element::MATERIAL, it->first -1);
+		}
+		for (auto p = materials[it->first - 1]->parameters.begin(); p != materials[it->first - 1]->parameters.end(); ++p) {
+			_materials[it->first - 1].setParameter(p->first, p->second->get());
+		}
+	}
+}
+
 template<typename MergeFunction>
 static void uniqueWithMerge(std::vector<Element*> &elements, MergeFunction merge)
 {
