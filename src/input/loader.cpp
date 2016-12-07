@@ -89,10 +89,6 @@ void Loader::fill()
 		mesh.mapCoordinatesToDomains();
 	}
 
-	if (config::solver::FETI_METHOD == config::solver::FETI_METHODalternative::HYBRID_FETI) {
-		ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
-	}
-
 	tPartition.end(); measurement.addEvent(tPartition);
 	ESINFO(OVERVIEW) << "Mesh partitioned into " << environment->MPIsize << " * " << mesh.parts() << " = " << mesh.parts() * environment->MPIsize
 			<< " parts. There is " << intervalStats(mesh._partPtrs) << " elements in subdomain.";

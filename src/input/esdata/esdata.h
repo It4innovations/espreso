@@ -35,6 +35,11 @@ protected:
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
 	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+	{
+		mesh.partitiate(_esdata.domains);
+		return true;
+	}
 
 private:
 	ESPRESOInput _esdata;

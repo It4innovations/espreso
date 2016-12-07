@@ -109,6 +109,9 @@ struct Physics {
 		RegMat.resize(_mesh.parts());
 		D.resize(_mesh.parts());
 		f.resize(_mesh.parts());
+		if (_configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+			ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (_mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
+		}
 	}
 
 	virtual ~Physics() {};

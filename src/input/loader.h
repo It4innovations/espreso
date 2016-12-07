@@ -34,11 +34,7 @@ public:
 	virtual void open() {};
 	virtual void close() {};
 
-	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
-	{
-		mesh.partitiate(config::mesh::SUBDOMAINS);
-		return false;
-	}
+	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners) = 0;
 
 	void boundaryConditions();
 

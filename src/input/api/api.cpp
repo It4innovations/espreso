@@ -56,7 +56,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 	_mesh.fillParentElementsToNodes();
 	_mesh.fillParentElementsToDOFs(eDOFs);
 
-	_mesh.partitiate(config::mesh::SUBDOMAINS);
+	_mesh.partitiate(_configuration.domains);
 }
 
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)

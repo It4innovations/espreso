@@ -25,7 +25,7 @@ public:
 			size_t size, const eslocal *l2g)
 	{
 		ESINFO(OVERVIEW) << "Set mesh through API";
-		API api(mesh, indexBase);
+		API api(configuration, mesh, indexBase);
 
 		api.points(eNodes, size);
 		api.elements(eType, eNodes, eDOFs, eMatrices);
@@ -34,13 +34,14 @@ public:
 	}
 
 protected:
-	API(APIMesh &mesh, eslocal offset): _mesh(mesh), _offset(offset) {};
+	API(const ESPRESOInput &configuration, APIMesh &mesh, eslocal offset): _configuration(configuration), _mesh(mesh), _offset(offset) {};
 
 	void points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize);
 	void elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices);
 	void dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues);
 	void clusterBoundaries(std::vector<int> &neighbours, size_t size, const eslocal *l2g);
 
+	const ESPRESOInput &_configuration;
 	APIMesh &_mesh;
 	eslocal _offset;
 };
