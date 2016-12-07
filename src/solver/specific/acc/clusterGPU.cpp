@@ -84,8 +84,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	size_t SC_total_size = 0;
 	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 
-		switch (config::solver::SCHUR_COMPLEMENT_TYPE) {
-		case config::solver::SCHUR_COMPLEMENT_TYPEalternative::GENERAL:
+		switch (configuration.schur_type) {
+		case MATRIX_STORAGE::GENERAL:
 #ifdef SHARE_SC
 			// SC_total_size will be halved in the case of 2 symmetric SCs in 1 full matrix
 			if (d%2 == 0) {
@@ -130,7 +130,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #endif
 			break;
-		case config::solver::SCHUR_COMPLEMENT_TYPEalternative::SYMMETRIC:
+		case MATRIX_STORAGE::SYMMETRIC:
 			if (USE_FLOAT) {
 				SC_total_size +=
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
@@ -185,7 +185,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	// Schur complement calculation on CPU
 //	cilk_for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
-//		if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
+//		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 //			// Calculates SC on CPU and keeps it CPU memory
 //			GetSchurComplement(USE_FLOAT, d);
 //			ESINFO(PROGRESS2) << Info::plain() << ".";
@@ -200,7 +200,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	#pragma omp parallel for
 for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
-		if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
+		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d);
 			ESINFO(PROGRESS2) << Info::plain() << ".";
@@ -212,7 +212,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			domains[d].B1Kplus.extern_lda = domains[d].B1Kplus.rows;
 		}
 
-		if (d+1 < domains_in_global_index.size() && (domains[d+1].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS)) {
+		if (d+1 < domains_in_global_index.size() && (domains[d+1].isOnACC == 1 || !configuration.combine_sc_and_spds)) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d+1);
 			ESINFO(PROGRESS2) << Info::plain() << ".";
@@ -307,8 +307,8 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 	}
 #else
 	#pragma omp parallel for
-for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
-			if (domains[d].isOnACC == 1 || !config::solver::COMBINE_SC_AND_SPDS) {
+	for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
+			if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
 				ESINFO(PROGRESS2) << Info::plain() << ".";
@@ -464,7 +464,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 					cudaFreeHost(domains[d].cuda_pinned_buff);
 				}
 
-				if (config::solver::COMBINE_SC_AND_SPDS) {
+				if (configuration.combine_sc_and_spds) {
 
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
@@ -485,7 +485,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		} else {
 
-			if (config::solver::COMBINE_SC_AND_SPDS) {
+			if (configuration.combine_sc_and_spds) {
 
 				if (USE_FLOAT)
 					ESINFO(PROGRESS2) << Info::plain() << "f";
@@ -522,7 +522,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 //		eslocal status = 0;
 //		cudaError_t status_c;
 //
-//		if (!GPU_full || !config::solver::COMBINE_SC_AND_SPDS) {
+//		if (!GPU_full || !configuration.combine_sc_and_spds) {
 //
 //			GetSchurComplement(USE_FLOAT, i);
 //
@@ -563,7 +563,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d++ ) {
 //			} else {
 //				domains[i].isOnACC = 0;
 //				GPU_full = true;
-//				if (config::solver::COMBINE_SC_AND_SPDS) {
+//				if (configuration.combine_sc_and_spds) {
 //					SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
 //					SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
 //					if (USE_FLOAT)
@@ -614,7 +614,7 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
 	//ESINFO(PROGRESS2) << Info::plain() << "s";
 
 	// if Schur complement is symmetric - then remove lower part - slower for GPU but more mem. efficient
-	if (config::solver::SCHUR_COMPLEMENT_TYPE == config::solver::SCHUR_COMPLEMENT_TYPEalternative::SYMMETRIC) {
+	if (configuration.schur_type == MATRIX_STORAGE::SYMMETRIC) {
 		domains[i].B1Kplus.RemoveLowerDense();
 	}
 
@@ -626,18 +626,18 @@ void ClusterGPU::SetupKsolvers ( ) {
 for (eslocal d = 0; d < domains.size(); d++) {
 
 		// Import of Regularized matrix K into Kplus (Sparse Solver)
-		switch (config::solver::KSOLVER) {
-		case config::solver::KSOLVERalternative::DIRECT_DP:
+		switch (configuration.Ksolver) {
+		case ESPRESO_KSOLVER::DIRECT_DP:
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::ITERATIVE:
+		case ESPRESO_KSOLVER::ITERATIVE:
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::DIRECT_SP:
+		case ESPRESO_KSOLVER::DIRECT_SP:
 			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
 			//domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::DIRECT_MP:
+		case ESPRESO_KSOLVER::DIRECT_MP:
 			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
 //		case 4:
@@ -648,13 +648,13 @@ for (eslocal d = 0; d < domains.size(); d++) {
 			exit(EXIT_FAILURE);
 		}
 
-		if (config::solver::KEEP_FACTORS) {
+		if (configuration.keep_factors) {
 
-			if (!config::solver::COMBINE_SC_AND_SPDS) { // if both CPU and GPU uses Schur Complement
+			if (!configuration.combine_sc_and_spds) { // if both CPU and GPU uses Schur Complement
 				std::stringstream ss;
 				ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
 				domains[d].Kplus.keep_factors = true;
-				if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
+				if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
 					domains[d].Kplus.Factorization (ss.str());
 				}
 			} else {
@@ -662,7 +662,7 @@ for (eslocal d = 0; d < domains.size(); d++) {
 					std::stringstream ss;
 					ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
 					domains[d].Kplus.keep_factors = true;
-					if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
+					if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
 						domains[d].Kplus.Factorization (ss.str());
 					}
 				}
@@ -762,16 +762,16 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 ////	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 ////#endif
 
-	 if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_SPARSE) {
+	 if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_SPARSE) {
 		 Sa.Solve(tm2[0], vec_alfa,0,0);
 	 }
 
-	 if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_DENSE) {
+	 if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_DENSE) {
 			eslocal nrhs = 1;
 			Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	 }
 
-	 if (config::solver::SASOLVER == config::solver::SASOLVERalternative::ACC_DENSE) {
+	 if (configuration.SAsolver == ESPRESO_SASOLVER::ACC_DENSE) {
 			eslocal nrhs = 1;
 			Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);
 	 }
@@ -805,7 +805,7 @@ for (eslocal d = 0; d < domains.size(); d++)
 		eslocal domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
 
-		bool MIXED_SC_FACT = config::solver::COMBINE_SC_AND_SPDS;
+		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
 		if (domains[d].isOnACC == 0 && MIXED_SC_FACT) {
 
@@ -959,16 +959,16 @@ for (eslocal i = 0; i < vec_e0.size(); i++)
 
 
 	 clus_Sa_time.start();
-	if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_SPARSE) {
+	if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_SPARSE) {
 		Sa.Solve(tm2[0], vec_alfa,0,0);
 	}
 
-	if (config::solver::SASOLVER == config::solver::SASOLVERalternative::CPU_DENSE) {
+	if (configuration.SAsolver == ESPRESO_SASOLVER::CPU_DENSE) {
 		eslocal nrhs = 1;
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, nrhs);
 	}
 
-	if (config::solver::SASOLVER == config::solver::SASOLVERalternative::ACC_DENSE) {
+	if (configuration.SAsolver == ESPRESO_SASOLVER::ACC_DENSE) {
 		eslocal nrhs = 1;
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, nrhs);// lambda
 	}
@@ -1070,9 +1070,9 @@ for (eslocal d = 0; d < domains.size(); d++)
 		eslocal domain_size = domains[d].domain_prim_size;
 		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
 
-		bool MIXED_SC_FACT = config::solver::COMBINE_SC_AND_SPDS;
+		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
-		if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !config::solver::USE_SCHUR_COMPLEMENT ) {
+		if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
 
 			for (eslocal i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;

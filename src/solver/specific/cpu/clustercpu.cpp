@@ -78,17 +78,17 @@ void ClusterCPU::SetupKsolvers ( ) {
 for (size_t d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-    	switch (config::solver::KSOLVER) {
-		case config::solver::KSOLVERalternative::DIRECT_DP:
+    	switch (configuration.Ksolver) {
+		case ESPRESO_KSOLVER::DIRECT_DP:
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::ITERATIVE:
+		case ESPRESO_KSOLVER::ITERATIVE:
 			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::DIRECT_SP:
+		case ESPRESO_KSOLVER::DIRECT_SP:
 			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
 			break;
-		case config::solver::KSOLVERalternative::DIRECT_MP:
+		case ESPRESO_KSOLVER::DIRECT_MP:
 			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 			break;
 //		case 4:
@@ -100,11 +100,11 @@ for (size_t d = 0; d < domains.size(); d++) {
 
         //domains[d].Kplus.mtype = -2;
 
-        if (config::solver::KEEP_FACTORS) {
+        if (configuration.keep_factors) {
             std::stringstream ss;
             ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
-            if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
+            if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {

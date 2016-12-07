@@ -11,8 +11,8 @@ class ClusterCPU: public ClusterBase
 
 public:
 	// Constructor
-	ClusterCPU(eslocal cluster_index): ClusterBase(cluster_index) { };
-	ClusterCPU(): ClusterBase() {};
+	ClusterCPU(const ESPRESOSolver &configuration, eslocal cluster_index): ClusterBase(configuration, cluster_index) { };
+	ClusterCPU(const ESPRESOSolver &configuration): ClusterBase(configuration) {};
 
 	void Create_SC_perDomain( bool USE_FLOAT );
     void Create_Kinv_perDomain();

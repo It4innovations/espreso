@@ -15,11 +15,11 @@ class ClusterAcc: public ClusterBase
 
 public:
 	// Constructor
-	ClusterAcc(eslocal cluster_index): ClusterBase(cluster_index) {
+	ClusterAcc(const ESPRESOSolver &configuration, eslocal cluster_index): ClusterBase(configuration, cluster_index) {
         this->deleteMatrices = false;
         this->NUM_MICS = 2;
     };
-	ClusterAcc(): ClusterBase() {
+	ClusterAcc(const ESPRESOSolver &configuration): ClusterBase(configuration) {
         this->deleteMatrices = false;
         this->NUM_MICS = 2;
     };

@@ -152,6 +152,31 @@ struct Configuration {
 	std::vector<Configuration*> orderedSubconfiguration;
 	std::string name;
 	std::string description;
+	bool copy;
+
+	Configuration(): copy(false) {};
+	Configuration(const Configuration &other)
+	: copy(true),
+	  parameters(other.parameters),
+	  subconfigurations(other.subconfigurations),
+	  orderedParameters(other.orderedParameters),
+	  orderedSubconfiguration(other.orderedSubconfiguration),
+	  name(other.name),
+	  description(other.description) {};
+
+	Configuration& operator=(const Configuration &other)
+	{
+		if (this != &other) {
+			copy = true;
+			parameters = other.parameters;
+			subconfigurations = other.subconfigurations;
+			orderedParameters = other.orderedParameters;
+			orderedSubconfiguration = other.orderedSubconfiguration;
+			name = other.name;
+			description = other.description;
+		}
+		return *this;
+	}
 
 	template <typename Ttype>
 	static Ttype create(const std::string &name, const std::string &description, Configuration* conf)
@@ -189,8 +214,10 @@ struct Configuration {
 
 	virtual ~Configuration()
 	{
-		for (auto it = parameters.begin(); it != parameters.end(); ++it) {
-			delete it->second;
+		if (!copy) {
+			for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+				delete it->second;
+			}
 		}
 	}
 };
@@ -242,8 +269,10 @@ struct ConfigurationVector: public Configuration {
 
 	~ConfigurationVector()
 	{
-		std::for_each(configurations.begin(), configurations.end(), [] (Configuration * c) { delete c; });
-		std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
+		if (!copy) {
+			std::for_each(configurations.begin(), configurations.end(), [] (Configuration * c) { delete c; });
+			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
+		}
 	}
 };
 
@@ -299,7 +328,9 @@ struct ConfigurationMap: public Configuration {
 
 	~ConfigurationMap()
 	{
-		std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
+		if (!copy) {
+			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
+		}
 	}
 };
 

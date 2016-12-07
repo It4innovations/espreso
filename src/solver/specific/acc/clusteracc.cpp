@@ -6,7 +6,7 @@ using namespace espreso;
 
 ClusterAcc::~ClusterAcc() {
     if (this->deleteMatrices) {
-        for (eslocal i = 0; i < config::solver::N_MICS; i++) {
+        for (eslocal i = 0; i < configuration.N_MICS; i++) {
             if (matricesPerAcc[i]) {
                 //delete [] matricesPerAcc[i];
             }
@@ -135,8 +135,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;
-    long micMem[config::solver::N_MICS];
-    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+    long micMem[configuration.N_MICS];
+    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
         long currentMem = 0;
 //#pragma offload target(mic:i)
 #pragma offload target(mic:target)
@@ -155,9 +155,9 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = config::solver::N_MICS;
-    eslocal matrixPerPack[config::solver::N_MICS];
-    for (eslocal i = 0 ; i < config::solver::N_MICS; ++i) {
+    eslocal maxDevNumber = configuration.N_MICS;
+    eslocal matrixPerPack[configuration.N_MICS];
+    for (eslocal i = 0 ; i < configuration.N_MICS; ++i) {
         matrixPerPack[i] = domains.size() / maxDevNumber;
     }
     for (eslocal i = 0 ; i < domains.size() % maxDevNumber; ++i) {
@@ -217,7 +217,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
     bool assembleOnCPU = true;
     if ( assembleOnCPU ) {
         // iterate over available MICs and assemble their domains on CPU
-        for (eslocal i = 0 ; i < config::solver::N_MICS ; ++i) {
+        for (eslocal i = 0 ; i < configuration.N_MICS ; ++i) {
             this->B1KplusPacks[i].AllocateVectors( );
             this->B1KplusPacks[i].SetDevice( target );
 #pragma omp parallel for
@@ -236,10 +236,10 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
             }
         }
 
-#pragma omp parallel num_threads(config::solver::N_MICS)
-        {
-            this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
-        }
+    #pragma omp parallel num_threads(configuration.N_MICS)
+    {
+         this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
+    }
 
 #pragma omp parallel for
         for (eslocal d = 0; d < hostDomains.size(); ++d) {
@@ -255,8 +255,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
     } else {
 #pragma omp parallel
         {
-            if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < config::solver::N_MICS)) {
-                // the first config::solver::N_MICS threads will communicate with MICs
+            if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < configuration.N_MICS)) {
+                // the first configuration.N_MICS threads will communicate with MICs
                 // now copy data to MIC and assemble Schur complements
                 int  i = omp_get_thread_num();
                 this->B1KplusPacks[i].AllocateVectors( );
@@ -389,8 +389,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = config::solver::N_MICS;
-    if (config::solver::N_MICS == 0) {
+    eslocal maxDevNumber = configuration.N_MICS;
+    if (configuration.N_MICS == 0) {
         maxDevNumber = 1;
     }
     eslocal matrixPerPack = domains.size() / maxDevNumber;
@@ -463,10 +463,10 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
     delete [] dom2dev;
     delete [] offsets;
-    if (config::solver::N_MICS == 0) {
+    if (configuration.N_MICS == 0) {
         this->B1KplusPacks[0].AllocateVectors( );
     }
-    for (eslocal i = 0; i < config::solver::N_MICS ; i++ ) {
+    for (eslocal i = 0; i < configuration.N_MICS ; i++ ) {
         this->B1KplusPacks[i].AllocateVectors( );
         this->B1KplusPacks[i].SetDevice( i );
         this->B1KplusPacks[i].CopyToMIC();
@@ -488,8 +488,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 //        cout << "Creating B1*K+*B1t : using MKL Pardiso on Xeon Phi accelerator : ";
 //
 //    // First, get the available memory on coprocessors (in bytes)
-//    long micMem[config::solver::N_MICS];
-//    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+//    long micMem[configuration.N_MICS];
+//    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
 //        long currentMem = 0;
 //        #pragma offload target(mic:0)
 //        {
@@ -499,7 +499,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 //        }
 //        micMem[i] = currentMem;
 //    }
-//    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+//    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
 //        totalMem += micMem[i];
 //    }
 //
@@ -509,8 +509,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 //    }
 //
 //    // compute sizes of data to be offloaded to MIC
-//    int maxDevNumber = config::solver::N_MICS;
-//    if (config::solver::N_MICS == 0) {
+//    int maxDevNumber = configuration.N_MICS;
+//    if (configuration.N_MICS == 0) {
 //        maxDevNumber = 1;
 //    }
 //    int matrixPerPack = domains.size() / maxDevNumber;
@@ -549,7 +549,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 //        offset += matrixPerPack;
 //    }
 //    int matrixPP = domains.size() / maxDevNumber;
-//#pragma omp parallel num_threads(config::solver::N_MICS)
+//#pragma omp parallel num_threads(configuration.N_MICS)
 //    {
 //        int  i = omp_get_thread_num();
 //        std::cout << "DEVICE: " <<i << std::endl;
@@ -672,36 +672,36 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 void ClusterAcc::SetupKsolvers ( ) {
     // this part is for setting CPU pardiso, temporarily until everything is
     // solved on MIC
-    #pragma omp parallel for
-for (eslocal d = 0; d < domains.size(); d++) {
+	#pragma omp parallel for
+	for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-        switch (config::solver::KSOLVER) {
-            case config::solver::KSOLVERalternative::DIRECT_DP:
-                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                break;
-            case config::solver::KSOLVERalternative::ITERATIVE:
-                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-                break;
-            case config::solver::KSOLVERalternative::DIRECT_SP:
-                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                break;
-            case config::solver::KSOLVERalternative::DIRECT_MP:
-                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                break;
-                //		case 4:
-                //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                //			break;
-            default:
-                ESINFO(ERROR) << "Invalid KSOLVER value.";
-                exit(EXIT_FAILURE);
-        }
+		switch (configuration.Ksolver) {
+		case ESPRESO_KSOLVER::DIRECT_DP:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case ESPRESO_KSOLVER::ITERATIVE:
+			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+			break;
+		case ESPRESO_KSOLVER::DIRECT_SP:
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+		case ESPRESO_KSOLVER::DIRECT_MP:
+			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+			break;
+//		case 4:
+//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+//			break;
+		default:
+			ESINFO(ERROR) << "Invalid KSOLVER value.";
+			exit(EXIT_FAILURE);
+		}
 
-        if (config::solver::KEEP_FACTORS) {
+        if (configuration.keep_factors) {
             std::stringstream ss;
             ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
             domains[d].Kplus.keep_factors = true;
-            if (config::solver::KSOLVER != config::solver::KSOLVERalternative::ITERATIVE) {
+            if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
             }
         } else {
@@ -718,28 +718,28 @@ for (eslocal d = 0; d < domains.size(); d++) {
     if (!USE_KINV) {
         // send matrices to Xeon Phi
         eslocal nMatrices = domains.size();
-        this->matricesPerAcc.reserve(config::solver::N_MICS);
+        this->matricesPerAcc.reserve(configuration.N_MICS);
         SEQ_VECTOR<eslocal> nMatPerMIC;
-        nMatPerMIC.resize(config::solver::N_MICS);
+        nMatPerMIC.resize(configuration.N_MICS);
 
-        for (eslocal i = 0; i < config::solver::N_MICS; i++) {
-            nMatPerMIC[i] = nMatrices / config::solver::N_MICS;
+        for (eslocal i = 0; i < configuration.N_MICS; i++) {
+            nMatPerMIC[i] = nMatrices / configuration.N_MICS;
         }
 
-        for (eslocal i = 0 ; i < nMatrices % config::solver::N_MICS; i++ ) {
+        for (eslocal i = 0 ; i < nMatrices % configuration.N_MICS; i++ ) {
             nMatPerMIC[i]++;
         }
 
         eslocal offset = 0;
-        for (eslocal i = 0; i < config::solver::N_MICS; i++) {
+        for (eslocal i = 0; i < configuration.N_MICS; i++) {
             for (eslocal j = offset; j < offset + nMatPerMIC[ i ]; j++) {
                 (this->matricesPerAcc[i])[j - offset] = &(domains[j].K);
             }
             offset += nMatPerMIC[i];
         }
-        this->solver.resize(config::solver::N_MICS);
+        this->solver.resize(configuration.N_MICS);
 
-#pragma omp parallel num_threads(config::solver::N_MICS)
+#pragma omp parallel num_threads(configuration.N_MICS)
         {
             eslocal myAcc = omp_get_thread_num();
             this->solver[myAcc].ImportMatrices_wo_Copy(this->matricesPerAcc[myAcc], nMatPerMIC[myAcc], myAcc);

@@ -10,7 +10,11 @@ template <class TPhysics>
 struct PrecomputedInstance: public Instance
 {
 	PrecomputedInstance(const ESPRESOSolver &configuration, APIMesh &mesh, SparseMatrix::MatrixType type, double* rhs, eslocal rhs_size)
-	: Instance(mesh), _configuration(configuration), _constrains(configuration, mesh), _physics(mesh, _constrains, configuration, type, rhs, rhs_size), _linearSolver(_physics, _constrains)
+	: Instance(mesh),
+	  _configuration(configuration),
+	  _constrains(configuration, mesh),
+	  _physics(mesh, _constrains, configuration, type, rhs, rhs_size),
+	  _linearSolver(configuration, _physics, _constrains)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};

@@ -6,7 +6,8 @@
 
 using namespace espreso;
 
-IterSolverBase::IterSolverBase():
+IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):
+	configuration(configuration),
 	timing			("Main CG loop timing "),
 	preproc_timing	("Preprocessing timing "),
 	postproc_timing	("Postprocessing timing"),
@@ -103,23 +104,23 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
 
-	switch (config::solver::CGSOLVER) {
-	case config::solver::CGSOLVERalternative::STANDARD:
+	switch (configuration.solver) {
+	case ESPRESO_ITERATIVE_SOLVER::PCG:
 		Solve_RegCG_singular_dom ( cluster, in_right_hand_side_primal );
 		break;
-	case config::solver::CGSOLVERalternative::PIPELINED:
+	case ESPRESO_ITERATIVE_SOLVER::pipePCG:
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
 		break;
-	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
+	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG:
 		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
 		break;
-	case config::solver::CGSOLVERalternative::GMRES:
+	case ESPRESO_ITERATIVE_SOLVER::GMRES:
 		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
 		break;
-	case config::solver::CGSOLVERalternative::BICGSTAB:
+	case ESPRESO_ITERATIVE_SOLVER::BICGSTAB:
 		Solve_BICGSTAB_singular_dom(cluster, in_right_hand_side_primal );
 		break;
-	case config::solver::CGSOLVERalternative::QPCE:
+	case ESPRESO_ITERATIVE_SOLVER::QPCE:
 		Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 		break;
 	default:
@@ -145,18 +146,18 @@ void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
 {
-	switch (config::solver::CGSOLVER) {
-	case config::solver::CGSOLVERalternative::STANDARD:
+	switch (configuration.solver) {
+	case ESPRESO_ITERATIVE_SOLVER::PCG:
 		Solve_RegCG_nonsingular  ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
 		break;
-	case config::solver::CGSOLVERalternative::PIPELINED:
+	case ESPRESO_ITERATIVE_SOLVER::pipePCG:
 		Solve_PipeCG_nonsingular ( cluster, in_right_hand_side_primal, out_primal_solution_parallel);
 		break;
-//	case config::solver::CGSOLVERalternative::FULL_ORTOGONAL:
+//	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG:
 //		break;
-//	case config::solver::CGSOLVERalternative::GMRES:
+//	case ESPRESO_ITERATIVE_SOLVER::GMRES:
 //		break;
-//	case config::solver::CGSOLVERalternative::BICGSTAB:
+//	case ESPRESO_ITERATIVE_SOLVER::BICGSTAB:
 //		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
@@ -353,8 +354,8 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		ESINFO(CONVERGENCE) << " Check Multipliers positiveness: norm(max(-Lambda_N,0) =			" << std::setw(6) << lambda_n_max_2_g / lambda_n_max_g;
 		ESINFO(CONVERGENCE) << " Check norm of Normal Multipliers: norm((Be*u - ce)*Lambda_N) =			" << std::setw(6) << norm_Bn_lLambda / ( norm_cn * lambda_n_max_g );
 
-//		switch (config::solver::CGSOLVER) {
-//		case config::solver::CGSOLVERalternative::QPCE:
+//		switch (configuration.solver) {
+//		case ESPRESO_ITERATIVE_SOLVER::QPCE:
 //			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 //			break;
 //		default:
@@ -379,7 +380,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 		if (USE_HFETI == 1)
 
-			if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS )
+			if ( configuration.regularization == REGULARIZATION::FIX_POINTS )
 				cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
 		  	else
 		  		cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
@@ -847,11 +848,11 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 
 	switch (USE_PREC) {
-			case config::solver::PRECONDITIONERalternative::LUMPED:
-			case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-			case config::solver::PRECONDITIONERalternative::DIRICHLET:
-			case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-			case config::solver::PRECONDITIONERalternative::MAGIC:
+			case ESPRESO_PRECONDITIONER::LUMPED:
+			case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+			case ESPRESO_PRECONDITIONER::DIRICHLET:
+			case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+			case ESPRESO_PRECONDITIONER::MAGIC:
 
 				if (USE_GGtINV == 1) {
 					Projector_l_inv_compG( timeEvalProj, cluster, p_l, w_l, 0 );
@@ -873,7 +874,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 				}
 
 				break;
-			case config::solver::PRECONDITIONERalternative::NONE:
+			case ESPRESO_PRECONDITIONER::NONE:
 
 
 				break;
@@ -1022,11 +1023,11 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 
 					switch (USE_PREC) {
-							case config::solver::PRECONDITIONERalternative::LUMPED:
-							case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-							case config::solver::PRECONDITIONERalternative::DIRICHLET:
-							case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-							case config::solver::PRECONDITIONERalternative::MAGIC:
+							case ESPRESO_PRECONDITIONER::LUMPED:
+							case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+							case ESPRESO_PRECONDITIONER::DIRICHLET:
+							case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+							case ESPRESO_PRECONDITIONER::MAGIC:
 
 								if (USE_GGtINV == 1) {
 									Projector_l_inv_compG( timeEvalProj, cluster, tmp, w_l, 0 );
@@ -1050,7 +1051,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 
 								break;
-							case config::solver::PRECONDITIONERalternative::NONE:
+							case ESPRESO_PRECONDITIONER::NONE:
 
 
 								break;
@@ -1522,11 +1523,11 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		}
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
-		case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::LUMPED:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
+		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			proj1_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -1549,7 +1550,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			}
 			proj2_time.end();
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			proj_time.start();
 			if (USE_GGtINV == 1) {
 				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -1677,16 +1678,16 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -1829,11 +1830,11 @@ for (size_t i = 0; i < x_l.size(); i++) {
       ztg_prew = ztg;
     }
     switch (USE_PREC) {
-    case config::solver::PRECONDITIONERalternative::LUMPED:
-    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-    case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-    case config::solver::PRECONDITIONERalternative::MAGIC:
+    case ESPRESO_PRECONDITIONER::LUMPED:
+    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+    case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+    case ESPRESO_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
@@ -1856,7 +1857,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case config::solver::PRECONDITIONERalternative::NONE:
+    case ESPRESO_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -1931,16 +1932,16 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -2116,11 +2117,11 @@ for (size_t i = 0; i < x_l.size(); i++) {
       //ztg_prew = ztg;
     }
     switch (USE_PREC) {
-    case config::solver::PRECONDITIONERalternative::LUMPED:
-    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-    case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-    case config::solver::PRECONDITIONERalternative::MAGIC:
+    case ESPRESO_PRECONDITIONER::LUMPED:
+    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+    case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+    case ESPRESO_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
@@ -2143,7 +2144,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case config::solver::PRECONDITIONERalternative::NONE:
+    case ESPRESO_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -2248,16 +2249,16 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -2379,11 +2380,11 @@ for (size_t i = 0; i < g_l.size(); i++){
   }
 
   switch (USE_PREC) {
-  case config::solver::PRECONDITIONERalternative::LUMPED:
-  case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-  case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-  case config::solver::PRECONDITIONERalternative::MAGIC:
+  case ESPRESO_PRECONDITIONER::LUMPED:
+  case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+  case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+  case ESPRESO_PRECONDITIONER::MAGIC:
     proj1_time.start();
     if (USE_GGtINV == 1) {
       Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
@@ -2406,7 +2407,7 @@ for (size_t i = 0; i < g_l.size(); i++){
     }
     proj2_time.end();
     break;
-  case config::solver::PRECONDITIONERalternative::NONE:
+  case ESPRESO_PRECONDITIONER::NONE:
     proj_time.start();
     if (USE_GGtINV == 1) {
       Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -2493,11 +2494,11 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     appA_time.end();
 
     switch (USE_PREC) {
-    case config::solver::PRECONDITIONERalternative::LUMPED:
-    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-    case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-    case config::solver::PRECONDITIONERalternative::MAGIC:
+    case ESPRESO_PRECONDITIONER::LUMPED:
+    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+    case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+    case ESPRESO_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, w_l, Pw_l, 0 );
@@ -2520,7 +2521,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
       }
       proj2_time.end();
       break;
-    case config::solver::PRECONDITIONERalternative::NONE:
+    case ESPRESO_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, w_l, z_l, 0 );
@@ -2698,16 +2699,16 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -2792,11 +2793,11 @@ for (size_t i = 0; i < g_l.size(); i++){
   }
 
   switch (USE_PREC) {
-  case config::solver::PRECONDITIONERalternative::LUMPED:
-  case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-  case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-  case config::solver::PRECONDITIONERalternative::MAGIC:
+  case ESPRESO_PRECONDITIONER::LUMPED:
+  case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+  case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+  case ESPRESO_PRECONDITIONER::MAGIC:
     proj1_time.start();
     if (USE_GGtINV == 1) {
       Projector_l_inv_compG( timeEvalProj, cluster, g_l, tmp1_l, 0 );
@@ -2819,7 +2820,7 @@ for (size_t i = 0; i < g_l.size(); i++){
     }
     proj2_time.end();
     break;
-  case config::solver::PRECONDITIONERalternative::NONE:
+  case ESPRESO_PRECONDITIONER::NONE:
     proj_time.start();
     if (USE_GGtINV == 1) {
       Projector_l_inv_compG( timeEvalProj, cluster, g_l, z_l, 0 );
@@ -2906,11 +2907,11 @@ for (size_t i = 0; i < w_l.size(); i++) {
     appA_time.end();
 
     switch (USE_PREC) {
-    case config::solver::PRECONDITIONERalternative::LUMPED:
-    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-    case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-    case config::solver::PRECONDITIONERalternative::MAGIC:
+    case ESPRESO_PRECONDITIONER::LUMPED:
+    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+    case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+    case ESPRESO_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, Ay_l, v_l, 0 );
@@ -2933,7 +2934,7 @@ for (size_t i = 0; i < w_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case config::solver::PRECONDITIONERalternative::NONE:
+    case ESPRESO_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, Ay_l, v_l, 0 );
@@ -2976,11 +2977,11 @@ for (size_t i = 0; i < x_l.size(); i++) {
     appA_time.end();
     
     switch (USE_PREC) {
-    case config::solver::PRECONDITIONERalternative::LUMPED:
-    case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-    case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-    case config::solver::PRECONDITIONERalternative::MAGIC:
+    case ESPRESO_PRECONDITIONER::LUMPED:
+    case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+    case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+    case ESPRESO_PRECONDITIONER::MAGIC:
       proj1_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, Ay_l, t_l, 0 );
@@ -3003,7 +3004,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
       }
       proj2_time.end();
       break;
-    case config::solver::PRECONDITIONERalternative::NONE:
+    case ESPRESO_PRECONDITIONER::NONE:
       proj_time.start();
       if (USE_GGtINV == 1) {
         Projector_l_inv_compG( timeEvalProj, cluster, Ay_l, t_l, 0 );
@@ -3098,16 +3099,16 @@ for (size_t i = 0; i < g_l.size(); i++){
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 		timing.addEvent(proj1_time);
 		timing.addEvent(prec_time );
 		timing.addEvent(proj2_time);
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -3195,11 +3196,11 @@ void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
 
 	// *** r = b - Ax; ************************************************************
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 
 		#pragma omp parallel for
 for (size_t i = 0; i < r_l.size(); i++) {
@@ -3229,9 +3230,9 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		}
 
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		#pragma omp parallel for
-for (size_t i = 0; i < r_l.size(); i++) {
+		cilk_for (size_t i = 0; i < r_l.size(); i++) {
 			r_l[i] = b_l[i] - Ax_l[i];
 		}
 
@@ -3284,11 +3285,11 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		SEQ_VECTOR <double> send_buf      (3,0);
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::LUMPED:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, r_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, r_l);
 			ddot_time.end();
 
@@ -3317,7 +3318,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			proj_time.end();
 
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			parallel_ddot_compressed_non_blocking(cluster, r_l, u_l, w_l, u_l, u_l, &mpi_req, reduction_tmp, send_buf); // norm_l = parallel_norm_compressed(cluster, u_l);
 			ddot_time.end();
 
@@ -3424,17 +3425,17 @@ for(size_t i = 0; i < r_l.size(); i++)
 	// *** Preslocal out the timing for the iteration loop ***************************************
 
 	switch (USE_PREC) {
-	case config::solver::PRECONDITIONERalternative::LUMPED:
-	case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-	case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-	case config::solver::PRECONDITIONERalternative::MAGIC:
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
 		//timing.addEvent(proj1_time);
 		timing.addEvent(proj_time);
 		timing.addEvent(prec_time );
 		//timing.addEvent(proj2_time);
 		break;
-	case config::solver::PRECONDITIONERalternative::NONE:
+	case ESPRESO_PRECONDITIONER::NONE:
 		timing.addEvent(proj_time);
 		break;
 	default:
@@ -3554,24 +3555,24 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		}
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::LUMPED:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
+		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			#pragma omp parallel for
-for (size_t i = 0; i < w_l.size(); i++) {
+			for (size_t i = 0; i < w_l.size(); i++) {
 				w_l[i] = r_l[i];
 			}
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			#pragma omp parallel for
-for (size_t i = 0; i < w_l.size(); i++) {
+			for (size_t i = 0; i < w_l.size(); i++) {
 				w_l[i] = r_l[i];
 			}
 			#pragma omp parallel for
-for (size_t i = 0; i < w_l.size(); i++) {
+			for (size_t i = 0; i < w_l.size(); i++) {
 				y_l[i] = w_l[i];
 			}
 			break;
@@ -3582,8 +3583,9 @@ for (size_t i = 0; i < w_l.size(); i++) {
 
 		if (iter == 0) {									// if outputs.n_it==1;
 			#pragma omp parallel for
-for (size_t i = 0; i < y_l.size(); i++)
+			for (size_t i = 0; i < y_l.size(); i++) {
 				p_l[i] = y_l[i];							// p = y;
+			}
 		} else {
 			ddot_beta.start();
 			beta_l =          parallel_ddot_compressed(cluster, y_l, w_l);
@@ -3591,8 +3593,9 @@ for (size_t i = 0; i < y_l.size(); i++)
 			ddot_beta.end();
 
 			#pragma omp parallel for
-for (size_t i = 0; i < p_l.size(); i++)
+			for (size_t i = 0; i < p_l.size(); i++) {
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
+			}
 		}
 
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, p_l, Ap_l);
@@ -3603,7 +3606,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
 
 		#pragma omp parallel for
-for (size_t i = 0; i < x_l.size(); i++) {
+		for (size_t i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
 			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
@@ -3732,16 +3735,16 @@ for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
 		}
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	  case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::LUMPED:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
+	  case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, u_l);
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			#pragma omp parallel for
-for (size_t i = 0; i < r_l.size(); i++) {
+			for (size_t i = 0; i < r_l.size(); i++) {
 				u_l = r_l;
 			}
 			break;
@@ -3788,18 +3791,18 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			ddot_time.end();
 
 			switch (USE_PREC) {
-			case config::solver::PRECONDITIONERalternative::LUMPED:
-			case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-			case config::solver::PRECONDITIONERalternative::DIRICHLET:
-	    case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
-			case config::solver::PRECONDITIONERalternative::MAGIC:
+			case ESPRESO_PRECONDITIONER::LUMPED:
+			case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+			case ESPRESO_PRECONDITIONER::DIRICHLET:
+	    case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+			case ESPRESO_PRECONDITIONER::MAGIC:
 				prec_time.start();
 				apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, m_l);
 				prec_time.end();
 				break;
-			case config::solver::PRECONDITIONERalternative::NONE:
+			case ESPRESO_PRECONDITIONER::NONE:
 				#pragma omp parallel for
-for (size_t i = 0; i < m_l.size(); i++) {
+				for (size_t i = 0; i < m_l.size(); i++) {
 					m_l[i] = w_l[i];
 				}
 				break;
@@ -4620,28 +4623,28 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case ESPRESO_PRECONDITIONER::LUMPED:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
 			break;
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
 			break;
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 			//cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			cluster.domains[d].Prec.DenseMatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
-		case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
@@ -4656,19 +4659,19 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::LUMPED:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 			break;
     //TODO  check if MatVec is correct (DenseMatVec!!!) 
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 			break;
-		case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";

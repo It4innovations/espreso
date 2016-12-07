@@ -15,7 +15,7 @@ public:
 	_configuration(configuration),
 	_constrains(configuration, mesh),
 	_physics(mesh, _constrains, configuration),
-	_linearSolver(_physics, _constrains),
+	_linearSolver(configuration, _physics, _constrains),
 	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
 	{
 		_timeStatistics.totalTime.startWithBarrier();

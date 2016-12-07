@@ -47,7 +47,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 	// domains_in_global_index[0] = index_of_first_subdomain ;
 	// *** END - Init the vector of domains ***********************************************
 
-	domains.resize( number_of_subdomains );
+	domains.resize( number_of_subdomains, Domain(configuration) );
 
 	if (USE_HFETI == 1) {
 		for (eslocal i = 0; i < number_of_subdomains; i++)									// HFETI
@@ -212,7 +212,7 @@ for (size_t d = 0; d < domains.size(); d++) {
         }
 	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
-	//ESLOG(MEMORY) << "7 process " << config::evn::MPIrank << " uses " << Measure::processMemory() << " MB";
+	//ESLOG(MEMORY) << "7 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
@@ -253,8 +253,8 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
 		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 
-		if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET || 
-        config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET) {
+		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
+        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET) {
 			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
 			Esutils::removeDuplicity(domains[i].B1t_DirPr.CSR_I_row_indices);
 //			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
@@ -269,7 +269,7 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 		}
 
 		//************************
-		if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
+		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
 			domains[i].B1.Clear();
 		}
 
@@ -292,7 +292,7 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	if (USE_DYNAMIC == 0) {
-		if ( ! (USE_HFETI == 1 && config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS )) {
+		if ( ! (USE_HFETI == 1 && configuration.regularization == REGULARIZATION::NULL_PIVOTS )) {
 			Compress_G1();
 		}
 	}
@@ -312,13 +312,11 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 
-	    //if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
-
 		domains[d].K.swap(K_in[d]);
 		domains[d]._RegMat.swap(RegMat[d]);
 
 
-		if ( config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::MAGIC ) {
+		if ( configuration.preconditioner == ESPRESO_PRECONDITIONER::MAGIC ) {
 			//domains[d].Prec = domains[d].K;
 			domains[d]._RegMat.ConvertToCSR(1);
 			domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
@@ -615,14 +613,14 @@ for (size_t i = 0; i < vec_e0.size(); i++)
 //	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 //#endif
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
+	switch (configuration.SAsolver) {
+	case ESPRESO_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
+	case ESPRESO_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
+	case ESPRESO_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:
@@ -753,14 +751,14 @@ for (size_t i = 0; i < vec_e0.size(); i++) {
 //    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 // #endif
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
+	switch (configuration.SAsolver) {
+	case ESPRESO_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
+	case ESPRESO_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
+	case ESPRESO_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:
@@ -871,14 +869,14 @@ for (size_t i = 0; i < vec_e0.size(); i++)
 	clus_Sa_time.start();
 //	Sa.Solve(tm2[0], vec_alfa,0,0);
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
+	switch (configuration.SAsolver) {
+	case ESPRESO_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
+	case ESPRESO_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
+	case ESPRESO_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:
@@ -1188,9 +1186,9 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 		// FO solve in double in case K is in single
 		if (
-				config::solver::F0SOLVER == config::solver::F0SOLVERalternative::DOUBLE
-				&& (config::solver::KSOLVER == config::solver::KSOLVERalternative::DIRECT_SP
-				|| config::solver::KSOLVER == config::solver::KSOLVERalternative::DIRECT_MP )
+				configuration.F0_precision == ESPRESO_F0SOLVER_PRECISION::DOUBLE
+				&& (configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP
+				|| configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_MP )
 			) {
 			SparseSolverCPU Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
@@ -1317,7 +1315,7 @@ for (size_t d = 0; d<domains.size(); d++) {
 void ClusterBase::CreateSa() {
 
 	bool PARDISO_SC = true;
-	bool get_kernel_from_mesh = config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS;
+	bool get_kernel_from_mesh = configuration.regularization == REGULARIZATION::FIX_POINTS;
 
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -1561,8 +1559,8 @@ void ClusterBase::CreateSa() {
 	// END of Sa regularization part
 
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE: {
+	switch (configuration.SAsolver) {
+	case ESPRESO_SASOLVER::CPU_SPARSE: {
 		TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
 		if (MPIrank == 0)  {
 			Sa.msglvl = 1;
@@ -1575,7 +1573,7 @@ void ClusterBase::CreateSa() {
 		fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
 		break;
 	}
-	case config::solver::SASOLVERalternative::CPU_DENSE: {
+	case ESPRESO_SASOLVER::CPU_DENSE: {
 		TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 
 		Salfa.ConvertCSRToDense(1);
@@ -1586,7 +1584,7 @@ void ClusterBase::CreateSa() {
 		factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
 		break;
 	}
-	case config::solver::SASOLVERalternative::ACC_DENSE: {
+	case ESPRESO_SASOLVER::ACC_DENSE: {
 		TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
 
 		//TODO: This works only for CuSolver
@@ -1635,8 +1633,8 @@ for (size_t j = 0; j < domains.size(); j++) {
 		SparseMatrix B;
 		B = domains[j].B1;
 
-		switch (config::solver::REGULARIZATION) {
-		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+		switch (configuration.regularization) {
+		case REGULARIZATION::FIX_POINTS:
 			Rt = domains[j].Kplus_R;
 			Rt.ConvertDenseToCSR(1);
 			Rt.MatTranspose();
@@ -1648,7 +1646,7 @@ for (size_t j = 0; j < domains.size(); j++) {
 			}
 
 			break;
-		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+		case REGULARIZATION::NULL_PIVOTS:
 			Rt = domains[j].Kplus_Rb;
 			Rt.ConvertDenseToCSR(1);
 			Rt.MatTranspose();
@@ -1944,14 +1942,14 @@ for (size_t j = 0; j < tmp_Mat.size(); j++) {
 				SparseMatrix Rt;
 				SparseMatrix B;
 
-				switch (config::solver::REGULARIZATION) {
-				case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+				switch (configuration.regularization) {
+				case REGULARIZATION::FIX_POINTS:
 					Rt = domains[j].Kplus_R;
 					Rt.ConvertDenseToCSR(1);
 					Rt.MatTranspose();
 					//domains[j].Kplus_R.MatTranspose(Rt);
 					break;
-				case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+				case REGULARIZATION::NULL_PIVOTS:
 					Rt = domains[j].Kplus_Rb;
 					Rt.ConvertDenseToCSR(1);
 					Rt.MatTranspose();
@@ -2020,7 +2018,7 @@ for (size_t j = 0; j < tmp_Mat.size(); j++) {
 
 			} else {
 				Gcoo.cols = domains[j].B1.rows;
-				if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS) {
+				if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
 					Gcoo.rows = domains[j].Kplus_R.rows;
 				} else {
 					Gcoo.rows = domains[j].Kplus_Rb.rows;
@@ -2096,14 +2094,14 @@ for (size_t j = 0; j < domains.size(); j++) {
 			SparseMatrix Rt;
 			SparseMatrix B;
 
-			switch (config::solver::REGULARIZATION) {
-			case config::solver::REGULARIZATIONalternative::FIX_POINTS:
+			switch (configuration.regularization) {
+			case REGULARIZATION::FIX_POINTS:
 				Rt = domains[j].Kplus_R;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
 				//domains[j].Kplus_R.MatTranspose(Rt);
 				break;
-			case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+			case REGULARIZATION::NULL_PIVOTS:
 				Rt = domains[j].Kplus_Rb;
 				Rt.ConvertDenseToCSR(1);
 				Rt.MatTranspose();
@@ -2252,7 +2250,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
-				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
 					domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
 					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
@@ -2260,7 +2258,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
-				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
 					domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 				} else {
 					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
@@ -2272,7 +2270,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
-				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
 					domains[d].Kplus_R2 .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
 					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
@@ -2280,7 +2278,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
-				if ( config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::FIX_POINTS ) {
+				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
 					domains[d].Kplus_R2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
 				} else {
 					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI

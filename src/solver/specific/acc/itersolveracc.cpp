@@ -9,7 +9,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
     time_eval.totalTime.start();
 
     // number of Xeon Phi devices 
-    eslocal numDevices = config::solver::N_MICS;
+    eslocal numDevices = configuration.N_MICS;
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
         // HFETI on MIC using Schur
@@ -244,20 +244,20 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
             //cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
             eslocal nMatrices = cluster.domains.size(); 
             SEQ_VECTOR<SEQ_VECTOR<double>**> vectorsPerAcc;
-            vectorsPerAcc.reserve(config::solver::N_MICS);
+            vectorsPerAcc.reserve(configuration.N_MICS);
             SEQ_VECTOR<eslocal> nVecPerMIC;
-            nVecPerMIC.resize(config::solver::N_MICS);
+            nVecPerMIC.resize(configuration.N_MICS);
 
-            for (eslocal i = 0; i < config::solver::N_MICS; i++) {
-                nVecPerMIC[i] = nMatrices / config::solver::N_MICS;
+            for (eslocal i = 0; i < configuration.N_MICS; i++) {
+                nVecPerMIC[i] = nMatrices / configuration.N_MICS;
             }
 
-            for (eslocal i = 0 ; i < nMatrices % config::solver::N_MICS; i++ ) {
+            for (eslocal i = 0 ; i < nMatrices % configuration.N_MICS; i++ ) {
                 nVecPerMIC[i]++;
             }
 
             eslocal offset = 0;
-            for (eslocal i = 0; i < config::solver::N_MICS; i++) {
+            for (eslocal i = 0; i < configuration.N_MICS; i++) {
                 vectorsPerAcc[i] = new SEQ_VECTOR<double>*[ nVecPerMIC[ i ] ];
                 for (eslocal j = offset; j < offset + nVecPerMIC[ i ]; j++) {
                     (vectorsPerAcc[i])[j - offset] = &(cluster.x_prim_cluster1[j]); 
@@ -266,7 +266,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
                 //     cluster.solver[i].Solve(vectorsPerAcc[i]);
             }
 
-#pragma omp parallel num_threads(config::solver::N_MICS)
+#pragma omp parallel num_threads(configuration.N_MICS)
             {
                 eslocal myAcc = omp_get_thread_num();
                 cluster.solver[myAcc].Solve(vectorsPerAcc[myAcc]);

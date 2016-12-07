@@ -151,7 +151,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 					x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
 				}
 
-				if (!config::solver::COMBINE_SC_AND_SPDS) {
+				if (!configuration.combine_sc_and_spds) {
 					cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
 				} else {
 					cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
@@ -367,8 +367,8 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 		}
 
 		#pragma omp parallel for
-for (eslocal d = 0; d < cluster.domains.size(); d++) {
-		  	if (!config::solver::COMBINE_SC_AND_SPDS) {
+		for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		  	if (!configuration.combine_sc_and_spds) {
 				if (cluster.domains[d].isOnACC == 0) {
 					// Automatic fall-back to CPU for sub-domains Schur complements, which did not fit GPU memory
 					// Note: DenseMatVec - this is a blocking operation - it waits till its finished

@@ -23,8 +23,13 @@ class Constraints;
 class LinearSolver {
 public:
 
-	LinearSolver(Physics &physics, Constraints &constraints)
-	: timeEvalMain("ESPRESO Solver Overal Timing"), physics(physics), constraints(constraints)
+	LinearSolver(const ESPRESOSolver &configuration, Physics &physics, Constraints &constraints)
+	: timeEvalMain("ESPRESO Solver Overal Timing"),
+	  configuration(configuration),
+	  physics(physics),
+	  constraints(constraints),
+	  cluster(configuration),
+	  solver(configuration)
 	{
 		setup();
 	}
@@ -82,6 +87,7 @@ private:
 
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
+	const ESPRESOSolver &configuration;
 	Physics &physics;
 	Constraints &constraints;
 

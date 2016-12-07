@@ -36,8 +36,10 @@ class Domain {
 
 public:
 	// Constructor
-	Domain(eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0);
-	Domain();
+	Domain(const ESPRESOSolver &configuration, eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0);
+	Domain(const ESPRESOSolver &configuration);
+
+	ESPRESOSolver configuration;
 
 	// Domain specific variables
 	eslocal domain_global_index;

@@ -39,6 +39,8 @@ public:
 
 	// *** Variables *************
 
+	ESPRESOSolver configuration;
+
 	// MPI variables
 	int  mpi_rank;
 	int  mpi_root;
@@ -66,7 +68,7 @@ public:
 	eslocal  USE_GGtINV;
 	eslocal  USE_HFETI;
 
-	config::solver::PRECONDITIONERalternative  USE_PREC;
+	ESPRESO_PRECONDITIONER  USE_PREC;
 
 	eslocal  CG_max_iter;
 
@@ -135,7 +137,7 @@ public:
 	// *** Members ***************
 
 	//Constructor
-	IterSolverBase();
+	IterSolverBase(const ESPRESOSolver &configuration);
 
 	//Destructor
 	virtual ~IterSolverBase() {};
