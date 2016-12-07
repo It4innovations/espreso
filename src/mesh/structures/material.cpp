@@ -57,7 +57,7 @@ bool Material::setParameter(const std::string &parameter, const std::string &val
 	skip("MURZ");
 
 	if (StringCompare::caseInsensitiveEq(parameter, "MODEL")) {
-		Parameter p("MODEL", _model, "model", {
+		OptionsHolder<MODEL> p("model", "model", _model, MODEL::LINEAR_ELASTIC_ISOTROPIC, {
 				{"LINEAR_ELASTIC_ISOTROPIC", MODEL::LINEAR_ELASTIC_ISOTROPIC, "Isotropic"},
 				{"LINEAR_ELASTIC_ORTHOTROPIC", MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic"},
 				{"LINEAR_ELASTIC_ANISOTROPIC", MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic"},

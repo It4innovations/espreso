@@ -9,7 +9,6 @@
 #include <vector>
 #include <iomanip>
 
-#include "esconfig.h"
 #include "logging.h"
 
 namespace espreso {

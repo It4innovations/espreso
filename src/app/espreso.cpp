@@ -30,10 +30,8 @@ int main(int argc, char **argv)
 	MPI_Init(&argc, &argv);
 
 	GlobalConfiguration configuration(&argc, &argv);
-	ParametersReader::fromArguments(&argc, &argv);
 
 	ESINFO(OVERVIEW) << "Run ESPRESO on " << environment->MPIsize << " process(es).";
-	ParametersReader::printParameters(config::parameters, configuration.output.verbose_level);
 
 	Factory factory(configuration);
 	factory.solve("result");
