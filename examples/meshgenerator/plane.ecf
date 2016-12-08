@@ -45,37 +45,40 @@ GENERATOR { # ESPRESO internal mesh generator.
     ELEMENTS_Z [ARG9];
 
     NODES { # List of nodes regions.
-      Y0 (<0, 100> <0, 0> <0, 0>);
-      X0 (<0, 0> <0, 100> <0, 0>);
+      Y0 "<0, 100> <0, 0> <0, 0>";
+      X0 "<0, 0> <0, 100> <0, 0>";
     }
 
 #    EDGES { # List of faces regions.
-#      Y1 (<0, 100> <100, 100> <0, 0>);
-#      X1 (<100, 100> <0, 100> <0, 0>);
+#      Y1 "<0, 100> <100, 100> <0, 0>";
+#      X1 "<100, 100> <0, 100> <0, 0>";
 #    }
     ELEMENTS {
        E_ALL ALL;
     }
   }
 }
-MATERIALS { # Vector of materials (counterd from 1).
 
-  1 { # First configuration settings.
+LINEAR_ELASTICITY_3D {
 
-    DENS 7850;
-    MIXY 0.3;
-    EX 2.1e11;
+  MATERIALS { # Vector of materials (counterd from 1).
 
-    MODEL LINEAR_ELASTIC_ISOTROPIC;
+    1 { # First configuration settings.
+
+      DENS 7850;
+      MIXY 0.3;
+      EX 2.1e11;
+
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
+  }
+
+  DISPLACEMENT {
+    X0 0;
+  }
+
+  ACCELERATION {
+    E_ALL y:9.81;
   }
 }
-
-DISPLACEMENT {
-  X0 0;
-}
-
-ACCELERATION {
-  E_ALL y:9.81;
-}
-
 

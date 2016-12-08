@@ -54,11 +54,11 @@ GENERATOR { # ESPRESO internal mesh generator
     UNIFORM_DECOMPOSITION 1;
 
     NODES { # List of nodes regions.
-      Z0 (<0, 1> <0, 1> <0, 0>);
+      Z0 "<0, 1> <0, 1> <0, 0>";
     }
 
     FACES {
-      Z1 (<0, 1> <0, 1> <1, 1>);
+      Z1 "<0, 1> <0, 1> <1, 1>";
     }
 
     ELEMENTS { # List of elements regions.
@@ -69,32 +69,32 @@ GENERATOR { # ESPRESO internal mesh generator
 
 }
 
+LINEAR_ELASTICITY_3D {
 
-MATERIALS { # Vector of materials (counterd from 1).
+  MATERIALS { # Vector of materials (counterd from 1).
 
-  1 { # Description of material with index 1
-    DENS 7850;
-    MIXY 0.3;
-    EX 2.1e11;
+    1 { # Description of material with index 1
+      DENS 7850;
+      MIXY 0.3;
+      EX 2.1e11;
 
-    MODEL LINEAR_ELASTIC_ISOTROPIC;
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
   }
 
-}
+  MATERIAL_SET {
+    1 E_ALL;
+  }
 
-MATERIAL_SET {
-  1 E_ALL;
-}
+  DISPLACEMENT { # <REGION> <EXPRESSION>;
+    Z0 0;
+  }
 
-DISPLACEMENT { # <REGION> <EXPRESSION>;
-  Z0 0;
-}
+  ACCELERATION {
+  #  E_ALL z:9.81;
+  }
 
-ACCELERATION {
-#  E_ALL z:9.81;
+  NORMAL_PRESURE { # <REGION> <EXPRESSION>;
+    Z1 10000;
+  }
 }
-
-NORMAL_PRESURE { # <REGION> <EXPRESSION>;
-  Z1 10000;
-}
-

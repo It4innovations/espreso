@@ -1,4 +1,0 @@
-
-SHAPE = GRID
-
-ELEMENT_TYPE = 0

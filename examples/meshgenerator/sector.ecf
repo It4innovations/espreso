@@ -51,15 +51,15 @@ GENERATOR { # ESPRESO internal mesh generator.
     ELEMENTS_Z [ARG9];
 
     NODES {
-      X0 (<0, 0> <0, 1> <0, 1>);
-      X1 (<1, 1> <0, 1> <0, 1>);
-      Z0 (<0, 1> <0, 1> <0, 0>);
-      Z1 (<0, 1> <0, 1> <1, 1>);
+      X0 "<0, 0> <0, 1> <0, 1>";
+      X1 "<1, 1> <0, 1> <0, 1>";
+      Z0 "<0, 1> <0, 1> <0, 0>";
+      Z1 "<0, 1> <0, 1> <1, 1>";
     }
 
     FACES {
-      Y1 (<0, 1> <1, 1> <0, 1>);
-      Y0 (<0, 1> <0, 0> <0, 1>);
+      Y1 "<0, 1> <1, 1> <0, 1>";
+      Y0 "<0, 1> <0, 0> <0, 1>";
     }
 
     ELEMENTS {
@@ -68,30 +68,32 @@ GENERATOR { # ESPRESO internal mesh generator.
   }
 }
 
-MATERIALS { # Vector of materials (counterd from 1).
+LINEAR_ELASTICITY_3D {
 
-  1 { # First configuration settings.
-    DENS 7850;
-    MIXY 0.3;
-    EX 2.1e11;
+  MATERIALS { # Vector of materials (counterd from 1).
 
-    MODEL LINEAR_ELASTIC_ISOTROPIC;
+    1 { # First configuration settings.
+      DENS 7850;
+      MIXY 0.3;
+      EX 2.1e11;
+
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
+  }
+
+  MATERIAL_SET {
+    1 E_ALL;
+  }
+
+  DISPLACEMENT {
+    X0 x:0;
+    X1 y:0;
+    Z0 z:0;
+    Z1 z:0;
+  }
+
+  NORMAL_PRESURE {
+    Y0 7538461538.465456;
+    Y1 5923076923.08;
   }
 }
-
-MATERIAL_SET {
-  1 E_ALL;
-}
-
-DISPLACEMENT {
-  X0 x:0;
-  X1 y:0;
-  Z0 z:0;
-  Z1 z:0;
-}
-
-NORMAL_PRESURE {
-  Y0 7538461538.465456;
-  Y1 5923076923.08;
-}
-
