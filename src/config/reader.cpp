@@ -32,6 +32,7 @@ static std::string uppercase(const std::string &str) {
 
 void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 {
+	environment->executable = *argv[0];
 	int option_index, option;
 	std::string options("c:dhvtm");
 
@@ -66,7 +67,15 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 
 	// read the rest parameters
 	size_t helpVerboseLevel = 0;
-	std::string confFile = "espreso.ecf";
+
+	std::string confFile;
+	if (StringCompare::caseSensitiveSuffix(std::string(*argv[0]), "espreso")) {
+		confFile = "espreso.ecf";
+	}
+	if (StringCompare::caseSensitiveSuffix(std::string(*argv[0]), "decomposer")) {
+		confFile = "decomposer.ecf";
+	}
+
 	while ((option = getopt_long(*argc, *argv, "c:dhvtm", opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'p':

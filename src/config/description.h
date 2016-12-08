@@ -498,6 +498,17 @@ struct LinearElasticity3DConfiguration: public Configuration {
 
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+
+	SUBMAP(std::string, std::string, displacement       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, normal_presure     , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, initial_temperature, "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, temperature        , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, acceleration       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, obstacle           , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, normal_direction   , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+
+	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
+	SUBMAP(size_t, std::string  , material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");
 };
 
 struct AdvectionDiffusion2DConfiguration: public Configuration {
@@ -546,6 +557,12 @@ struct Results: public Configuration {
 	PARAMETER(double, norm, "Norm of the solution", 0);
 };
 
+struct Decomposer: public Configuration {
+
+	PARAMETER(std::string, parts, "Each MPI process will be decomposed into the specified number of parts (e.q. 1 2 4).", "1");
+	PARAMETER(std::string, prefix, "Decomposition will be saved into PREFIX{PARTS} directories.", "DECOMPOSITION");
+};
+
 struct GlobalConfiguration: public Configuration {
 
 	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(*this); }
@@ -587,19 +604,8 @@ struct GlobalConfiguration: public Configuration {
 
 	SUBCONFIG(Results, results, "Expected output results.");
 
-	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
-	SUBMAP(size_t, std::string  , material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");
+	SUBCONFIG(Decomposer, decomposer, "./decomposer configuration");
 
-	SUBMAP(std::string, std::string, displacement       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, normal_presure     , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, initial_temperature, "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, temperature        , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, heat_source        , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, translation_motions, "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, acceleration       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, thickness          , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, obstacle           , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, normal_direction   , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 };
 
 extern GlobalConfiguration configuration;

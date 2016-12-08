@@ -100,6 +100,7 @@ struct ValueHolder<std::string>: public ParameterBase {
 	}
 };
 
+
 template <typename Ttype>
 struct OptionsHolder: public ParameterBase {
 	Ttype &value;

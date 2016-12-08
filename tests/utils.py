@@ -235,7 +235,7 @@ class Espreso:
             raise EspresoError(output)
 
     def decompose(self, *args, **kwargs):
-        program = [ os.path.join(self.path, "generatordecomposer") ]
+        program = [ os.path.join(self.path, "decomposer") ]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":

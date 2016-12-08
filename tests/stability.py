@@ -5,7 +5,8 @@ import unittest
 class ESPRESOTests(unittest.TestCase):
 
     espreso = Espreso()
-    cube = "tests/examples/linearElasticity/cube"
+    regular_cube  = "tests/examples/regular_cube"
+    iregular_cube = "tests/examples/iregular_cube"
 
     def ordinary_check(self, config, info):
         if "ITERATIONS" in config and config["ITERATIONS"] > 3:
@@ -13,27 +14,18 @@ class ESPRESOTests(unittest.TestCase):
         if "EPSILON" in config:
             info.precision(config["EPSILON"])
 
-    def regular_cube(self, procs, config, args):
-        config["INPUT"] = "GENERATOR"
-        config["PATH"] = "regular_fixed_bottom.txt"
-        info = RunInfo(self.espreso.output(procs, self.cube, config, args))
-        self.ordinary_check(config, info)
-
-    def metis_cube(self, procs, config, args):
-        config["INPUT"] = "GENERATOR"
-        config["PATH"] = "metis_fixed_bottom.txt"
-        info = RunInfo(self.espreso.output(procs, self.cube, config, args))
+    def cube(self, example, procs, config, args):
+        info = RunInfo(self.espreso.output(procs, example, config, args))
         self.ordinary_check(config, info)
 
     def esdata(self, procs, config, args):
-        config["INPUT"] = "GENERATOR"
-        config["PATH"] = "metis_fixed_bottom.txt"
-        self.espreso.decompose(self.cube, config, args + [ "METIS_" ])
+        self.espreso.decompose(self.regular_cube, config, args + [ "METIS_" ])
 
+        print "decomposed"
         procs = reduce(lambda x, y: x * y, args[4:7])
         config["INPUT"] = "ESDATA"
-        config["PATH"] = "METIS_" + str(procs)
-        info = RunInfo(self.espreso.output(procs, self.cube, config, []))
+        config["ESDATA::PATH"] = "DECOMPOSITION" + str(procs)
+        info = RunInfo(self.espreso.output(procs, self.regular_cube, config, args))
         self.ordinary_check(config, info)
 
 if __name__ == '__main__':
@@ -42,17 +34,17 @@ if __name__ == '__main__':
         procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
         args = [example["ETYPE"]] + example["CLUSTERS"] + example["ARGS"]
         name = "_".join(str(x) for x in args + config.values())
-        config["VERBOSE_LEVEL"] = 1
-        config["TESTING_LEVEL"] = 1
+        config["OUTPUT::VERBOSE_LEVEL"] = 1
+        config["OUTPUT::TESTING_LEVEL"] = 1
         return name, procs, args
 
     def regular_cube(config, example):
         name, procs, args = parameters(config, example)
-        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, "REGULAR_CUBE_" + name, procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.cube, "REGULAR_CUBE_" + name, ESPRESOTests.regular_cube, procs, config, args)
 
     def metis_cube(config, example):
         name, procs, args = parameters(config, example)
-        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.metis_cube, "METIS_CUBE_" + name, procs, config, args)
+        TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.cube, "METIS_CUBE_" + name, ESPRESOTests.iregular_cube, procs, config, args)
 
     def esdata(config, example):
         name, procs, args = parameters(config, example)
@@ -62,19 +54,21 @@ if __name__ == '__main__':
     PRECONDITIONERS = [ "NONE", "LUMPED", "WEIGHT_FUNCTION", "DIRICHLET" ]
     REGULARIZATIONS = [ "FIX_POINTS", "NULL_PIVOTS" ]
     B0_TYPES = [ "CORNERS", "KERNELS" ]
-    CGSOLVERS = [ "STANDARD", "PIPELINED", "FULL_ORTOGONAL" ]
+    CGSOLVERS = [ "PCG", "pipePCG", "orthogonalPCG" ]
     ETYPES = [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ]
+
+    SOLVER = "LINEAR_ELASTICITY_3D::ESPRESO::"
 
     # Test generator for corners and fix points
     TestCaseCreator.iterate(
         regular_cube,
         {
-            "FETI_METHOD": [ "HYBRID_FETI" ],
-            "PRECONDITIONER": [ "DIRICHLET" ],
-            "REGULARIZATION": [ "FIX_POINTS" ],
-            "B0_TYPE": [ "CORNERS" ],
-            "ITERATIONS": [ 40 ],
-            "EPSILON": [ 1e-5 ]
+            SOLVER + "METHOD": [ "HYBRID_FETI" ],
+            SOLVER + "PRECONDITIONER": [ "DIRICHLET" ],
+            SOLVER + "REGULARIZATION": [ "FIX_POINTS" ],
+            SOLVER + "B0_TYPE": [ "CORNERS" ],
+            SOLVER + "ITERATIONS": [ 40 ],
+            SOLVER + "EPSILON": [ 1e-5 ]
         },
         {
             "ETYPE": ETYPES,
@@ -87,11 +81,11 @@ if __name__ == '__main__':
     TestCaseCreator.iterate(
         regular_cube,
         {
-            "FETI_METHOD": [ "TOTAL_FETI" ],
-            "PRECONDITIONER": [ "DIRICHLET" ],
-            "REGULARIZATION": [ "FIX_POINTS" ],
-            "ITERATIONS": [ 2 ],
-            "EPSILON": [ 1e-5 ]
+            SOLVER + "METHOD": [ "TOTAL_FETI" ],
+            SOLVER + "PRECONDITIONER": [ "DIRICHLET" ],
+            SOLVER + "REGULARIZATION": [ "FIX_POINTS" ],
+            SOLVER + "ITERATIONS": [ 2 ],
+            SOLVER + "EPSILON": [ 1e-5 ]
         },
         {
             "ETYPE": ETYPES,
@@ -104,11 +98,11 @@ if __name__ == '__main__':
     TestCaseCreator.iterate(
         metis_cube,
         {
-            "FETI_METHOD": [ "HYBRID_FETI" ],
-            "PRECONDITIONER": [ "DIRICHLET" ],
-            "B0_TYPE": [ "CORNERS" ],
-            "ITERATIONS": [ 30 ],
-            "EPSILON": [ 1e-5 ]
+            SOLVER + "METHOD": [ "HYBRID_FETI" ],
+            SOLVER + "PRECONDITIONER": [ "DIRICHLET" ],
+            SOLVER + "B0_TYPE": [ "CORNERS" ],
+            SOLVER + "ITERATIONS": [ 30 ],
+            SOLVER + "EPSILON": [ 1e-5 ]
         },
         {
             "ETYPE": ETYPES,
@@ -117,33 +111,34 @@ if __name__ == '__main__':
         }
     )
 
-    # Check save/load ESDATA
-    TestCaseCreator.iterate(
-        esdata,
-        {
-            "FETI_METHOD": [ "TOTAL_FETI" ],
-            "PRECONDITIONER": [ "DIRICHLET" ],
-            "ITERATIONS": [ 30 ],
-            "EPSILON": [ 1e-5 ],
-            "SUBDOMAINS": [ 4 ]
-        },
-        {
-            "ETYPE": ETYPES,
-            "CLUSTERS": [ [1, 1, 1] ],
-            "ARGS": [ [ 2, 2, 2, 6, 6, 6] ]
-        }
-    )
+# TODO: FIX ESDATA
+#    # Check save/load ESDATA
+#    TestCaseCreator.iterate(
+#        esdata,
+#        {
+#            SOLVER + "METHOD": [ "TOTAL_FETI" ],
+#            SOLVER + "PRECONDITIONER": [ "DIRICHLET" ],
+#            SOLVER + "ITERATIONS": [ 30 ],
+#            SOLVER + "EPSILON": [ 1e-5 ],
+#            "ESDATA::DOMAINS": [ 4 ]
+#        },
+#        {
+#            "ETYPE": [ "HEXA8" ], #ETYPES,
+#            "CLUSTERS": [ [1, 1, 1] ],
+#            "ARGS": [ [ 2, 2, 2, 6, 6, 6] ]
+#        }
+#    )
 
     # Main test for TOTAL FETI - loop over all settings
     TestCaseCreator.iterate(
         metis_cube,
         {
-            "FETI_METHOD": [ "TOTAL_FETI" ],
-            "PRECONDITIONER": PRECONDITIONERS,
-            "REGULARIZATION": REGULARIZATIONS,
-            "CGSOLVER": CGSOLVERS,
-            "ITERATIONS": [ 600 ],
-            "EPSILON": [ 1e-4 ]
+            SOLVER + "METHOD": [ "TOTAL_FETI" ],
+            SOLVER + "PRECONDITIONER": PRECONDITIONERS,
+            SOLVER + "REGULARIZATION": REGULARIZATIONS,
+            SOLVER + "SOLVER": CGSOLVERS,
+            SOLVER + "ITERATIONS": [ 600 ],
+            SOLVER + "EPSILON": [ 1e-4 ]
         },
         {
             "ETYPE": ETYPES,
@@ -156,13 +151,13 @@ if __name__ == '__main__':
     TestCaseCreator.iterate(
         metis_cube,
         {
-            "FETI_METHOD": [ "HYBRID_FETI" ],
-            "PRECONDITIONER": PRECONDITIONERS,
-            "REGULARIZATION": REGULARIZATIONS,
-            "B0_TYPE": B0_TYPES,
-            "CGSOLVER": CGSOLVERS,
-            "ITERATIONS": [ 600 ],
-            "EPSILON": [ 1e-4 ]
+            SOLVER + "METHOD": [ "HYBRID_FETI" ],
+            SOLVER + "PRECONDITIONER": PRECONDITIONERS,
+            SOLVER + "REGULARIZATION": REGULARIZATIONS,
+            SOLVER + "B0_TYPE": B0_TYPES,
+            SOLVER + "SOLVER": CGSOLVERS,
+            SOLVER + "ITERATIONS": [ 600 ],
+            SOLVER + "EPSILON": [ 1e-4 ]
         },
         {
             "ETYPE": ETYPES,

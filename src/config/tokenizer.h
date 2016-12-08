@@ -27,7 +27,7 @@ public:
 	Tokenizer(const std::string &file): _file(file), _token(Token::END), _line(1)
 	{
 		if (!_file.good()) {
-			ESINFO(GLOBAL_ERROR) << "Invalid file '" << file << "'";
+			ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
 		}
 		_buffer.reserve(80);
 	}

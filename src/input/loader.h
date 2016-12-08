@@ -36,8 +36,6 @@ public:
 
 	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners) = 0;
 
-	void boundaryConditions();
-
 protected:
 	Loader(const GlobalConfiguration &configuration, Mesh &mesh): configuration(configuration), mesh(mesh)
 	{
