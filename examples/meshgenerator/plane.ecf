@@ -28,38 +28,39 @@ GENERATOR { # ESPRESO internal mesh generator.
     START_X 0;
     START_Y 0;
     START_Z 0;
-    LENGTH_X 100;
-    LENGTH_Y 100;
-    LENGTH_Z 100;
+    LENGTH_X 1;
+    LENGTH_Y 1;
+    LENGTH_Z 0;
 
     CLUSTERS_X [ARG1];
     CLUSTERS_Y [ARG2];
-    CLUSTERS_Z [ARG3];
+    CLUSTERS_Z 1;
 
-    DOMAINS_X [ARG4];
-    DOMAINS_Y [ARG5];
-    DOMAINS_Z [ARG6];
+    DOMAINS_X [ARG3];
+    DOMAINS_Y [ARG4];
+    DOMAINS_Z 1;
 
-    ELEMENTS_X [ARG7];
-    ELEMENTS_Y [ARG8];
-    ELEMENTS_Z [ARG9];
+    ELEMENTS_X [ARG5];
+    ELEMENTS_Y [ARG6];
+    ELEMENTS_Z 1;
 
     NODES { # List of nodes regions.
-      Y0 "<0, 100> <0, 0> <0, 0>";
-      X0 "<0, 0> <0, 100> <0, 0>";
+      Y0 "<0, 1> <0, 0> <0, 0>";
+      X0 "<0, 0> <0, 1> <0, 0>";
+      N_ALL ALL;
     }
 
-#    EDGES { # List of faces regions.
-#      Y1 "<0, 100> <100, 100> <0, 0>";
-#      X1 "<100, 100> <0, 100> <0, 0>";
-#    }
+    EDGES { # List of faces regions.
+      Y1 "<0, 1> <1, 1> <0, 0>";
+#      X1 "<1, 1> <0, 1> <0, 0>";
+    }
     ELEMENTS {
        E_ALL ALL;
     }
   }
 }
 
-LINEAR_ELASTICITY_3D {
+LINEAR_ELASTICITY_2D {
 
   MATERIALS { # Vector of materials (counterd from 1).
 
@@ -73,12 +74,26 @@ LINEAR_ELASTICITY_3D {
     }
   }
 
+  ELEMENT_BEHAVIOUR = PLANE_STRESS_WITH_THICKNESS;
+
   DISPLACEMENT {
     X0 0;
   }
 
-  ACCELERATION {
-    E_ALL y:9.81;
+  NORMAL_PRESURE {
+    Y1 "P: 1e6";
   }
+
+  INITIAL_TEMPERATURE {
+    E_ALL 20;
+  }
+
+  THICKNESS {
+    N_ALL 0.5;
+  }
+
+#  ACCELERATION {
+#    E_ALL 0;
+#  }
 }
 

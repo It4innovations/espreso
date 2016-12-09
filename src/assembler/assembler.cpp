@@ -9,8 +9,8 @@
 
 #include "physics/linear/advectiondiffusion2d/assembler.h"
 #include "physics/linear/advectiondiffusion3d/assembler.h"
-#include "physics/linear/elasticity2d/assembler.h"
 
+#include "physics/elasticity2d/assembler.h"
 #include "physics/elasticity3d/assembler.h"
 
 using namespace espreso;
@@ -23,10 +23,10 @@ void Assembler::compose(const GlobalConfiguration &configuration, Instance* &ins
 	case PHYSICS::LINEAR_ELASTICITY_2D:
 		switch (configuration.linear_elasticity_2D.solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
-			instance = new LinearInstance<LinearElasticity2D, LinearElasticity2DConfiguration>(configuration.linear_elasticity_2D, mesh);
+			instance = new LinearInstance<Elasticity2D, LinearElasticity2DConfiguration>(configuration.linear_elasticity_2D, mesh);
 			break;
 		case SOLVER_LIBRARY::HYPRE:
-			instance = new HypreInstance<LinearElasticity2D, LinearElasticity2DConfiguration>(configuration.linear_elasticity_2D, mesh);
+			instance = new HypreInstance<Elasticity2D, LinearElasticity2DConfiguration>(configuration.linear_elasticity_2D, mesh);
 			break;
 		};
 		break;
