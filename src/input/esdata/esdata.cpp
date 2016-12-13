@@ -115,7 +115,7 @@ void Esdata::regions(
 	fileName << _esdata.path << "/" << _rank << "/settings.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
-	eslocal size;
+	eslocal size, region;
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	faces.reserve(size);
@@ -127,31 +127,53 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		evaluators.push_back(Evaluator::create(is, mesh.coordinates()));
+		regions.push_back(Region());
+		eslocal length;
+		is.read(reinterpret_cast<char *>(&length), sizeof(eslocal));
+		char *buffer = new char[length];
+		is.read(buffer, length);
+		regions.back().name = std::string(buffer, buffer + length);
+		delete buffer;
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of element settings" << (size == (int)elements.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < size; i++) {
-		elements[i]->settings().load(is, evaluators);
+	ESTEST(MANDATORY) << "Invalid size element regions" << (size == (int)elements.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < elements.size(); i++) {
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal r = 0; r < size; r++) {
+			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
+			regions[region].elements.push_back(elements[i]);
+		}
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of faces settings" << (size == (int)faces.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < size; i++) {
-		faces[i]->settings().load(is, evaluators);
+	ESTEST(MANDATORY) << "Invalid size of faces regions" << (size == (int)faces.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < faces.size(); i++) {
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal r = 0; r < size; r++) {
+			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
+			regions[region].elements.push_back(faces[i]);
+		}
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of edge settings" << (size == (int)edges.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < size; i++) {
-		edges[i]->settings().load(is, evaluators);
+	ESTEST(MANDATORY) << "Invalid size of edge regions" << (size == (int)edges.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < edges.size(); i++) {
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal r = 0; r < size; r++) {
+			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
+			regions[region].elements.push_back(edges[i]);
+		}
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	ESTEST(MANDATORY) << "Invalid size of node settings" << (size == (int)nodes.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < size; i++) {
-		nodes[i]->settings().load(is, evaluators);
+	ESTEST(MANDATORY) << "Invalid size of node regions" << (size == (int)nodes.size() ? TEST_PASSED : TEST_FAILED);
+	for (eslocal i = 0; i < nodes.size(); i++) {
+		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+		for (eslocal r = 0; r < size; r++) {
+			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
+			regions[region].elements.push_back(nodes[i]);
+		}
 	}
 
 	is.close();

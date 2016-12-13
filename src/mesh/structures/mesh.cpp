@@ -521,6 +521,16 @@ void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 	computeCornersOnEdges(number, onVertices, onEdges);
 }
 
+void Mesh::markRegions()
+{
+	for (size_t r = 0; r < _regions.size(); r++) {
+		_evaluators.push_back(new ConstEvaluator(r, Property::NAMED_REGION));
+		for (size_t i = 0; i < _regions[r].elements.size(); i++) {
+			_regions[r].elements[i]->addSettings(Property::NAMED_REGION, _evaluators.back());
+		}
+	}
+}
+
 void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties) {
 
 	auto getValueIndex = [] (const std::vector<std::string> &values, const std::string &parameter) -> size_t {
@@ -549,6 +559,7 @@ void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const
 				} else {
 					_evaluators.push_back(new espreso::CoordinatesEvaluator(value, _coordinates, properties[p]));
 				}
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
 				for (size_t i = 0; i < region.elements.size(); i++) {
 					region.elements[i]->addSettings(properties[p], _evaluators.back());
 				}

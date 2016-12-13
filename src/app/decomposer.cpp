@@ -15,6 +15,7 @@ int main(int argc, char** argv)
 	GlobalConfiguration configuration(&argc, &argv);
 
 	Factory factory(configuration);
+	factory.mesh.markRegions();
 	std::stringstream decomposition(configuration.decomposer.parts);
 
 	size_t parts;

@@ -27,7 +27,7 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path)
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
 	materials(_mesh, _mesh.materials());
-	settings(_mesh);
+	regions(_mesh);
 	boundaries(_mesh);
 }
 
@@ -99,7 +99,7 @@ void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
 	}
 }
 
-void Esdata::settings(const Mesh &mesh)
+void Esdata::regions(const Mesh &mesh)
 {
 	auto computeIntervals = [] (const std::vector<espreso::Element*> &elements, eslocal p) {
 		std::vector<size_t> intervals;
@@ -147,8 +147,19 @@ void Esdata::settings(const Mesh &mesh)
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		eslocal size;
-		std::vector<Element*> faces(mesh.faces());
-		std::vector<Element*> edges(mesh.edges());
+		std::vector<Element*> faces;
+		std::vector<Element*> edges;
+		for (size_t i = 0; i < mesh.faces().size(); i++) {
+			if (mesh.faces()[i]->settings().isSet(Property::NAMED_REGION)) {
+				faces.push_back(mesh.faces()[i]);
+			}
+		}
+		for (size_t i = 0; i < mesh.edges().size(); i++) {
+			if (mesh.edges()[i]->settings().isSet(Property::NAMED_REGION)) {
+				edges.push_back(mesh.edges()[i]);
+			}
+		}
+
 		std::sort(faces.begin(), faces.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
 		std::sort(edges.begin(), edges.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
 
@@ -172,11 +183,13 @@ void Esdata::settings(const Mesh &mesh)
 			}
 		}
 
-		// evaluator
-		size = _mesh.evaluators().size();
+		// regions
+		size = _mesh.regions().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
-			_mesh.evaluators()[i]->store(os);
+		for (size_t i = 0; i < _mesh.regions().size(); i++) {
+			eslocal length = _mesh.regions()[i].name.size();
+			os.write(reinterpret_cast<const char *>(&length), sizeof(eslocal));
+			os.write(_mesh.regions()[i].name.c_str(), _mesh.regions()[i].name.size());
 		}
 
 		// elements
@@ -185,14 +198,30 @@ void Esdata::settings(const Mesh &mesh)
 		size = parts[p + 1] - parts[p];
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
-			elements[e]->settings().store(os, mesh.evaluators());
+			if (elements[e]->settings().isSet(Property::NAMED_REGION)) {
+				size = elements[e]->settings(Property::NAMED_REGION).size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (size_t r = 0; r < elements[e]->settings(Property::NAMED_REGION).size(); r++) {
+					eslocal region = elements[e]->settings(Property::NAMED_REGION)[r]->evaluate(0);
+					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
+				}
+			} else {
+				eslocal region = 0;
+				os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
+			}
+
 		}
 
 		// faces
 		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
 		for (size_t i = 0; i < fIntervals.size(); i += 2) {
 			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
-				faces[f]->settings().store(os, mesh.evaluators());
+				size = faces[f]->settings(Property::NAMED_REGION).size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (size_t r = 0; r < faces[f]->settings(Property::NAMED_REGION).size(); r++) {
+					eslocal region = faces[f]->settings(Property::NAMED_REGION)[r]->evaluate(0);
+					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
+				}
 			}
 		}
 
@@ -200,7 +229,12 @@ void Esdata::settings(const Mesh &mesh)
 		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
 		for (size_t i = 0; i < eIntervals.size(); i += 2) {
 			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
-				edges[e]->settings().store(os, mesh.evaluators());
+				size = edges[e]->settings(Property::NAMED_REGION).size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (size_t r = 0; r < edges[e]->settings(Property::NAMED_REGION).size(); r++) {
+					eslocal region = edges[e]->settings(Property::NAMED_REGION)[r]->evaluate(0);
+					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
+				}
 			}
 		}
 
@@ -208,7 +242,18 @@ void Esdata::settings(const Mesh &mesh)
 		size = mesh.coordinates().localSize(p);
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
-			mesh.nodes()[mesh.coordinates().clusterIndex(i, p)]->settings().store(os, mesh.evaluators());
+			const Element* node = mesh.nodes()[mesh.coordinates().clusterIndex(i, p)];
+			if (node->settings().isSet(Property::NAMED_REGION)) {
+				size = node->settings(Property::NAMED_REGION).size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (size_t r = 0; r < node->settings(Property::NAMED_REGION).size(); r++) {
+					eslocal region = node->settings(Property::NAMED_REGION)[r]->evaluate(0);
+					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
+				}
+			} else {
+				eslocal region = 0;
+				os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
+			}
 		}
 
 		os.close();

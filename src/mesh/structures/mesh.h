@@ -56,6 +56,7 @@ public:
 	void computeCornersOnEdges(size_t number, bool onVertices, bool onEdges);
 	void computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces);
 
+	void markRegions();
 	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 	void loadMaterials(const std::vector<Configuration*> &materials, const std::map<size_t, std::string> &sets);
 

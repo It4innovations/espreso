@@ -44,6 +44,9 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 
 		case Property::THICKNESS: return os << "THICKNESS";
 		case Property::INITIAL_TEMPERATURE: return os << "INITIAL_TEMPERATURE";
+		case Property::FORCE_X: return os << "FORCE_X";
+		case Property::FORCE_Y: return os << "FORCE_Y";
+		case Property::FORCE_Z: return os << "FORCE_Z";
 		case Property::ACCELERATION_X: return os << "ACCELERATION_X";
 		case Property::ACCELERATION_Y: return os << "ACCELERATION_Y";
 		case Property::ACCELERATION_Z: return os << "ACCELERATION_Z";
@@ -51,8 +54,10 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::TRANSLATION_MOTION_X: return os << "TRANSLATION_MOTION_X";
 		case Property::TRANSLATION_MOTION_Y: return os << "TRANSLATION_MOTION_Y";
 		case Property::TRANSLATION_MOTION_Z: return os << "TRANSLATION_MOTION_Z";
+
 		case Property::OBSTACLE: return os << "OBSTACLE";
 		case Property::NORMAL_DIRECTION: return os << "NORMAL_DIRECTION";
+		case Property::NONMATCHING_ELEMENT: return os << "NONMATCHING_ELEMENT";
 		default: return os;
 	}
 }
