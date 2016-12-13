@@ -119,11 +119,11 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	faces.reserve(size);
-	addElements(is, elements, size);
+	addElements(is, faces, size);
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	edges.reserve(size);
-	addElements(is, elements, size);
+	addElements(is, edges, size);
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
