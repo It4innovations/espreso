@@ -336,9 +336,13 @@ std::vector<eslocal> Hexahedron20::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Hexahedron20::fillEdges()
+size_t Hexahedron20::fillEdges()
 {
 	eslocal line[Line3NodesCount];
+	if (_edges.size() == Hexahedron20EdgeCount) {
+		return Hexahedron20EdgeCount;
+	}
+
 	_edges.reserve(Hexahedron20EdgeCount);
 
 	size_t filled = _edges.size();
@@ -347,23 +351,27 @@ void Hexahedron20::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 8     ];
-		addUniqueEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(line, filled);
 
 		line[0] = _indices[ edge          +  4];
 		line[1] = _indices[(edge + 1) % 4 +  4];
 		line[2] = _indices[ edge          + 12];
-		addUniqueEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  4];
 		line[2] = _indices[edge + 16];
-		addUniqueEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(line, filled);
 	}
+	return filled;
 }
 
-void Hexahedron20::fillFaces()
+size_t Hexahedron20::fillFaces()
 {
 	eslocal square[Square8NodesCount];
+	if (_faces.size() == Hexahedron20FacesCount) {
+		return Hexahedron20FacesCount;
+	}
 	_faces.reserve(Hexahedron20FacesCount);
 
 	size_t filled = _faces.size();
@@ -378,7 +386,7 @@ void Hexahedron20::fillFaces()
 		square[5] = _indices[(face + 1) % 4 + 16 ];
 		square[6] = _indices[ face          + 12 ];
 		square[7] = _indices[ face          + 16 ];
-		addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
+		addUniqueFace<Square8>(square, filled, Square4NodesCount);
 	}
 
 	square[0] = _indices[0];
@@ -390,7 +398,7 @@ void Hexahedron20::fillFaces()
 	square[5] = _indices[10];
 	square[6] = _indices[9];
 	square[7] = _indices[8];
-	addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square8>(square, filled, Square4NodesCount);
 
 	square[0] = _indices[4];
 	square[1] = _indices[5];
@@ -401,7 +409,8 @@ void Hexahedron20::fillFaces()
 	square[5] = _indices[13];
 	square[6] = _indices[14];
 	square[7] = _indices[15];
-	addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square8>(square, filled, Square4NodesCount);
+	return filled;
 }
 
 Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params)

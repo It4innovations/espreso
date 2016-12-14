@@ -53,8 +53,8 @@ protected:
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Point element has no face"; }
 	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Point element has no edge"; }
 
-	void fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on Point element"; }
-	void fillEdges() { ESINFO(GLOBAL_ERROR) << "Call fill edges on Point element"; }
+	size_t fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on Point element"; return 0; }
+	size_t fillEdges() { ESINFO(GLOBAL_ERROR) << "Call fill edges on Point element"; return 0; }
 
 	eslocal* indices() { return &_index; }
 	const eslocal* indices() const { return &_index; }

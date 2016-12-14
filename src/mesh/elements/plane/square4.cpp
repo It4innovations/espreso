@@ -99,9 +99,13 @@ std::vector<eslocal> Square4::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Square4::fillEdges()
+size_t Square4::fillEdges()
 {
 	eslocal line[Line2NodesCount];
+
+	if (_edges.size() == Square4EdgeCount) {
+		return Square4EdgeCount;
+	}
 	_edges.reserve(Square4EdgeCount);
 
 	size_t filled = _edges.size();
@@ -109,8 +113,9 @@ void Square4::fillEdges()
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 	}
+	return filled;
 }
 
 Square4::Square4(const eslocal *indices)

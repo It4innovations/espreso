@@ -50,8 +50,8 @@ protected:
 	eslocal* indices() { return _indices.data(); }
 	const eslocal* indices() const { return _indices.data(); }
 
-	void fillFaces();
-	void fillEdges() { ESINFO(GLOBAL_ERROR) << "Unknown volume element cannot fill edges."; }
+	size_t fillFaces();
+	size_t fillEdges() { ESINFO(GLOBAL_ERROR) << "Unknown volume element cannot fill edges."; return 0; }
 
 private:
 	const std::vector<Element*> &_nodes;

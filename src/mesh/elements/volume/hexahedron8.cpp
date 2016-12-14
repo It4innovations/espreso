@@ -131,9 +131,13 @@ std::vector<eslocal> Hexahedron8::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Hexahedron8::fillEdges()
+size_t Hexahedron8::fillEdges()
 {
 	eslocal line[Line2NodesCount];
+
+	if (_edges.size() == Hexahedron8EdgeCount) {
+		return Hexahedron8EdgeCount;
+	}
 	_edges.reserve(Hexahedron8EdgeCount);
 
 	size_t filled = _edges.size();
@@ -141,21 +145,25 @@ void Hexahedron8::fillEdges()
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 
 		line[0] = _indices[ edge          +  4];
 		line[1] = _indices[(edge + 1) % 4 +  4];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  4];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 	}
+	return filled;
 }
 
-void Hexahedron8::fillFaces()
+size_t Hexahedron8::fillFaces()
 {
 	eslocal square[Square4NodesCount];
+	if (_faces.size() == Hexahedron8FacesCount) {
+		return Hexahedron8FacesCount;
+	}
 	_faces.reserve(Hexahedron8FacesCount);
 
 	size_t filled = _faces.size();
@@ -165,20 +173,21 @@ void Hexahedron8::fillFaces()
 		square[1] = _indices[(face + 1) % 4    ];
 		square[2] = _indices[(face + 1) % 4 + 4];
 		square[3] = _indices[ face + 4         ];
-		addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
+		addUniqueFace<Square4>(square, filled, Square4NodesCount);
 	}
 
 	square[0] = _indices[0];
 	square[1] = _indices[3];
 	square[2] = _indices[2];
 	square[3] = _indices[1];
-	addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square4>(square, filled, Square4NodesCount);
 
 	square[0] = _indices[4];
 	square[1] = _indices[5];
 	square[2] = _indices[6];
 	square[3] = _indices[7];
-	addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square4>(square, filled, Square4NodesCount);
+	return filled;
 }
 
 Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params)

@@ -170,9 +170,13 @@ std::vector<eslocal> Pyramid5::getNeighbours(size_t nodeIndex) const
 	}
 }
 
-void Pyramid5::fillEdges()
+size_t Pyramid5::fillEdges()
 {
 	eslocal line[Line2NodesCount];
+
+	if (_edges.size() == Pyramid5EdgeCount) {
+		return Pyramid5EdgeCount;
+	}
 	_edges.reserve(Pyramid5EdgeCount);
 
 	size_t filled = _edges.size();
@@ -180,18 +184,23 @@ void Pyramid5::fillEdges()
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 
 		line[0] = _indices[edge];
 		line[1] = _indices[   4];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 	}
+	return filled;
 }
 
-void Pyramid5::fillFaces()
+size_t Pyramid5::fillFaces()
 {
 	eslocal square[Square4NodesCount];
 	eslocal triangle[Triangle3NodesCount];
+
+	if (_faces.size() == Pyramid5FacesCount) {
+		return Pyramid5FacesCount;
+	}
 	_faces.reserve(Pyramid5FacesCount);
 
 	size_t filled = _faces.size();
@@ -200,14 +209,15 @@ void Pyramid5::fillFaces()
 		triangle[0] = _indices[face - 1];
 		triangle[1] = _indices[face % 4];
 		triangle[2] = _indices[4];
-		addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+		addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
 	}
 
 	square[0] = _indices[0];
 	square[1] = _indices[3];
 	square[2] = _indices[2];
 	square[3] = _indices[1];
-	addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square4>(square, filled, Square4NodesCount);
+	return filled;
 }
 
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)

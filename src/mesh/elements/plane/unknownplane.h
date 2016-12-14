@@ -48,7 +48,7 @@ protected:
 	eslocal* indices() { return _indices.data(); }
 	const eslocal* indices() const { return _indices.data(); }
 
-	void fillEdges();
+	size_t fillEdges();
 
 private:
 	const std::vector<Element*> &_nodes;

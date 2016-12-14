@@ -138,9 +138,13 @@ std::vector<eslocal> Triangle3::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Triangle3::fillEdges()
+size_t Triangle3::fillEdges()
 {
 	eslocal line[Line2NodesCount];
+
+	if (_edges.size() == Triangle3EdgeCount) {
+		return Triangle3EdgeCount;
+	}
 	_edges.reserve(Triangle3EdgeCount);
 
 	size_t filled = _edges.size();
@@ -148,8 +152,9 @@ void Triangle3::fillEdges()
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 	}
+	return filled;
 }
 
 Triangle3::Triangle3(const eslocal *indices)

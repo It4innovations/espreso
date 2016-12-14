@@ -18,7 +18,13 @@ public:
 	virtual void setParam(Params param, eslocal value) { _params[param] = value; }
 	virtual size_t params() const { return PARAMS_SIZE; }
 
-	virtual Element* face(size_t index) const { return _faces[index]; }
+	virtual Element* face(size_t index) const
+	{
+		if (index >= _faces.size()) {
+			ESINFO(ERROR) << "Element does not have face " << index;
+		}
+		return _faces[index];
+	}
 	virtual Element* edge(size_t index) const { return _edges[index]; }
 
 	virtual void addFace(Element* face)

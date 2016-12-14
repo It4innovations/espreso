@@ -218,15 +218,15 @@ protected:
 	virtual void setFace(size_t index, Element* face) = 0;
 	virtual void setEdge(size_t index, Element* edge) = 0;
 
-	virtual void fillFaces() = 0;
-	virtual void fillEdges() = 0;
+	virtual size_t fillFaces() = 0;
+	virtual size_t fillEdges() = 0;
 
 
 	template <class TEdge>
-	void addUniqueEdge(std::vector<Element*> &edges, eslocal *line, size_t filled)
+	void addUniqueEdge(eslocal *line, size_t filled)
 	{
 		for (size_t i = 0; i < filled; i++) {
-			if (std::is_permutation(edges[i]->indices(), edges[i]->indices() + 2, line)) {
+			if (std::is_permutation(edge(i)->indices(), edge(i)->indices() + 2, line)) {
 				return;
 			}
 		}
@@ -234,10 +234,10 @@ protected:
 	}
 
 	template <class TFace>
-	void addUniqueFace(std::vector<Element*> &faces, eslocal *face, size_t filled, size_t coarseSize)
+	void addUniqueFace(eslocal *face, size_t filled, size_t coarseSize)
 	{
 		for (size_t i = 0; i < filled; i++) {
-			if (std::is_permutation(faces[i]->indices(), faces[i]->indices() + coarseSize, face)) {
+			if (std::is_permutation(this->face(i)->indices(), this->face(i)->indices() + coarseSize, face)) {
 				return;
 			}
 		}

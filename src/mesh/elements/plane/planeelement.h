@@ -36,7 +36,7 @@ protected:
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
 
-	void fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on plane element."; }
+	size_t fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on plane element."; return 0; }
 
 	std::vector<eslocal> _params;
 	std::vector<Element*> _edges;

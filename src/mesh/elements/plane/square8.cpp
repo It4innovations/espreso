@@ -130,9 +130,13 @@ std::vector<eslocal> Square8::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Square8::fillEdges()
+size_t Square8::fillEdges()
 {
 	eslocal line[Line3NodesCount];
+
+	if (_edges.size() == Square8EdgeCount) {
+		return Square8EdgeCount;
+	}
 	_edges.reserve(Square8EdgeCount);
 
 	size_t filled = _edges.size();
@@ -141,8 +145,9 @@ void Square8::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 4     ];
-		addUniqueEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(line, filled);
 	}
+	return filled;
 }
 
 Square8::Square8(const eslocal *indices)

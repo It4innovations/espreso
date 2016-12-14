@@ -134,9 +134,13 @@ std::vector<eslocal> Triangle6::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Triangle6::fillEdges()
+size_t Triangle6::fillEdges()
 {
 	eslocal line[Line3NodesCount];
+
+	if (_edges.size() == Triangle6EdgeCount) {
+		return Triangle6EdgeCount;
+	}
 	_edges.reserve(Triangle6EdgeCount);
 
 	size_t filled = _edges.size();
@@ -145,8 +149,9 @@ void Triangle6::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
 		line[2] = _indices[ edge + 3     ];
-		addUniqueEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(line, filled);
 	}
+	return filled;
 }
 
 Triangle6::Triangle6(const eslocal *indices)

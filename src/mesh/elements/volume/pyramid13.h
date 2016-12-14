@@ -63,8 +63,8 @@ protected:
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
 
-	void fillFaces();
-	void fillEdges();
+	size_t fillFaces();
+	size_t fillEdges();
 
 private:
 	eslocal _indices[Pyramid13NodesCount];

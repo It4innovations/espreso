@@ -37,8 +37,8 @@ protected:
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Line element has no face"; }
 	void setEdge(size_t index, Element* edge) { ESINFO(GLOBAL_ERROR) << "Line element has no edge"; }
 
-	void fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on line element."; }
-	void fillEdges() { ESINFO(GLOBAL_ERROR) << "Call fill edges on line element."; }
+	size_t fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on line element."; return 0; }
+	size_t fillEdges() { ESINFO(GLOBAL_ERROR) << "Call fill edges on line element."; return 0; }
 
 	std::vector<eslocal> _params;
 };

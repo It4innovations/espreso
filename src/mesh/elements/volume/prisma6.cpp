@@ -183,9 +183,13 @@ std::vector<eslocal> Prisma6::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
-void Prisma6::fillEdges()
+size_t Prisma6::fillEdges()
 {
 	eslocal line[Line2NodesCount];
+
+	if (_edges.size() == Prisma6EdgeCount) {
+		return Prisma6EdgeCount;
+	}
 	_edges.reserve(Prisma6EdgeCount);
 
 	size_t filled = _edges.size();
@@ -193,22 +197,26 @@ void Prisma6::fillEdges()
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 
 		line[0] = _indices[ edge          +  3];
 		line[1] = _indices[(edge + 1) % 3 +  3];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  3];
-		addUniqueEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(line, filled);
 	}
+	return filled;
 }
 
-void Prisma6::fillFaces()
+size_t Prisma6::fillFaces()
 {
 	eslocal square[Square4NodesCount];
 	eslocal triangle[Triangle3NodesCount];
+	if (_faces.size() == Prisma6FacesCount) {
+		return Prisma6FacesCount;
+	}
 	_faces.reserve(Prisma6FacesCount);
 
 	size_t filled = _faces.size();
@@ -218,18 +226,19 @@ void Prisma6::fillFaces()
 		square[1] = _indices[(face + 1) % 3     ];
 		square[2] = _indices[(face + 1) % 3 + 3 ];
 		square[3] = _indices[ face          + 3 ];
-		addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
+		addUniqueFace<Square4>(square, filled, Square4NodesCount);
 	}
 
 	triangle[0] = _indices[1];
 	triangle[1] = _indices[0];
 	triangle[2] = _indices[2];
-	addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[3];
 	triangle[1] = _indices[4];
 	triangle[2] = _indices[5];
-	addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
+	return filled;
 }
 
 Prisma6::Prisma6(const eslocal *indices, eslocal n, const eslocal *params)

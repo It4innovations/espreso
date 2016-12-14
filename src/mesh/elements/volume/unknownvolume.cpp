@@ -4,7 +4,7 @@
 
 using namespace espreso;
 
-void UnknownVolume::fillFaces()
+size_t UnknownVolume::fillFaces()
 {
 	std::vector<Element*> elements;
 	for (size_t i = 0; i < _indices.size(); i++) {
@@ -31,6 +31,7 @@ void UnknownVolume::fillFaces()
 		_faces.push_back(new UnknownPlane(_nodes, _faceNodes[i], _stiffnessMatrix));
 		_faces.back()->parentElements().push_back(this);
 	}
+	return _faces.size();
 }
 
 

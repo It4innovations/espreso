@@ -59,7 +59,7 @@ protected:
 	eslocal* indices() { return _indices; }
 	const eslocal* indices() const { return _indices; }
 
-	void fillEdges();
+	size_t fillEdges();
 
 private:
 	eslocal _indices[Triangle3NodesCount];
