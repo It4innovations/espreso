@@ -138,7 +138,7 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	ESTEST(MANDATORY) << "Invalid size element regions" << (size == (int)elements.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < elements.size(); i++) {
+	for (size_t i = 0; i < elements.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
@@ -148,7 +148,7 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	ESTEST(MANDATORY) << "Invalid size of faces regions" << (size == (int)faces.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < faces.size(); i++) {
+	for (size_t i = 0; i < faces.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
@@ -158,7 +158,7 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	ESTEST(MANDATORY) << "Invalid size of edge regions" << (size == (int)edges.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < edges.size(); i++) {
+	for (size_t i = 0; i < edges.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
@@ -168,7 +168,7 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	ESTEST(MANDATORY) << "Invalid size of node regions" << (size == (int)nodes.size() ? TEST_PASSED : TEST_FAILED);
-	for (eslocal i = 0; i < nodes.size(); i++) {
+	for (size_t i = 0; i < nodes.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));

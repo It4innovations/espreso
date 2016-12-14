@@ -179,7 +179,7 @@ void Sphere::materials(std::vector<Material> &materials)
 void Sphere::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::vector<int> map(27, -1);
-	std::vector<size_t> cross(9 * _settings.clusters * _settings.clusters, -1);
+	std::vector<eslocal> cross(9 * _settings.clusters * _settings.clusters, -1);
 
 	auto setCross = [&] (size_t offset_r, size_t offset_c, size_t row, size_t col, size_t cluster) {
 		cross[(row + offset_r * _settings.clusters) * 3 * _settings.clusters + col + offset_c * _settings.clusters] = cluster;
