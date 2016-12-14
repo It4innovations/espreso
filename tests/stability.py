@@ -34,8 +34,8 @@ if __name__ == '__main__':
         procs = reduce(lambda x, y: x * y, example["CLUSTERS"])
         args = [example["ETYPE"]] + example["CLUSTERS"] + example["ARGS"]
         name = "_".join(str(x) for x in args + config.values())
-        config["OUTPUT::VERBOSE_LEVEL"] = 1
-        config["OUTPUT::TESTING_LEVEL"] = 1
+        config["ENV::VERBOSE_LEVEL"] = 1
+        config["ENV::TESTING_LEVEL"] = 1
         return name, procs, args
 
     def regular_cube(config, example):

@@ -12,7 +12,7 @@ class ESPRESOBenchmarks(unittest.TestCase):
     espreso = Espreso()
 
     def benchmark(self, path):
-        config = { "OUTPUT::TESTING_LEVEL": 3, "OUTPUT::VERBOSE_LEVEL": 0, "OUTPUT::MEASURE_LEVEL": 0, "OUTPUT::RESULT": 0 }
+        config = { "ENV::TESTING_LEVEL": 3, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULT": 0 }
         for test in  glob.glob(path + "/*.test"):
             for line in [ string.capwords(line.rstrip('\n')) for line in open(test) ]:
                 param, value = line.split("=")
