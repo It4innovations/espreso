@@ -37,14 +37,13 @@ public:
 	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners) = 0;
 
 protected:
-	Loader(const GlobalConfiguration &configuration, Mesh &mesh): configuration(configuration), mesh(mesh)
+	Loader(Mesh &mesh): mesh(mesh)
 	{
 		MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
 		MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
 	}
 	virtual ~Loader() {};
 
-	const GlobalConfiguration &configuration;
 	Mesh &mesh;
 };
 

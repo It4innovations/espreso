@@ -5,7 +5,7 @@
 #include "esoutput.h"
 #include "esmesh.h"
 #include "factory/factory.h"
-#include "../config/description.h"
+#include "../config/globalconfiguration.h"
 
 using namespace espreso;
 

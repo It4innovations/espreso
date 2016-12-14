@@ -10,11 +10,12 @@ namespace espreso {
 template <class TPhysics>
 struct SemiSmoothNewtonMethod: public Instance
 {
-	SemiSmoothNewtonMethod(Mesh &mesh): Instance(mesh),
+	SemiSmoothNewtonMethod(const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	_output(output),
 	_constrains(mesh),
 	_physics(mesh, _constrains),
 	_linearSolver(_physics, _constrains),
-	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
+	_store(_output, mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};
@@ -29,6 +30,7 @@ struct SemiSmoothNewtonMethod: public Instance
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const OutputConfiguration &_output;
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;

@@ -4,6 +4,8 @@
 
 #include "../loader.h"
 
+#include "../../config/input.h"
+
 namespace espreso {
 namespace input {
 

@@ -15,7 +15,7 @@ void PrecomputedInstance<TPhysics>::init()
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		_physics.saveStiffnessMatrices();
 	}
 
@@ -23,7 +23,7 @@ void PrecomputedInstance<TPhysics>::init()
 	_physics.makeStiffnessMatricesRegular();
 	timeReg.endWithBarrier(); _timeStatistics.addEvent(timeReg);
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		_physics.saveKernelMatrices();
 	}
 
@@ -31,7 +31,7 @@ void PrecomputedInstance<TPhysics>::init()
 	_physics.assembleB1();
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		_constrains.save();
 	}
 

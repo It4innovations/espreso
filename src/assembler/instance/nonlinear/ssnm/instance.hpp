@@ -10,10 +10,10 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
-	if (output->properties || output->results) {
+	if (_output.properties || _output.results) {
 		_store.storeGeometry();
 	}
-	if (output->properties) {
+	if (_output.properties) {
 		_physics.saveMeshProperties(_store);
 	}
 
@@ -21,7 +21,7 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		_physics.saveStiffnessMatrices();
 	}
 
@@ -29,7 +29,7 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	_physics.makeStiffnessMatricesRegular();
 	timeReg.endWithBarrier(); _timeStatistics.addEvent(timeReg);
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		_physics.saveKernelMatrices();
 	}
 
@@ -37,12 +37,12 @@ void SemiSmoothNewtonMethod<TPhysics>::init()
 	_physics.assembleB1();
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		_constrains.save();
 	}
 
-	if (output->gluing) {
-		store::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size(), output->domain_shrink_ratio, output->cluster_shrink_ratio);
+	if (_output.gluing) {
+		store::VTK::gluing(_mesh, _constrains, "B1", _physics.pointDOFs.size());
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
@@ -57,7 +57,7 @@ void SemiSmoothNewtonMethod<TPhysics>::solve(std::vector<std::vector<double> > &
 	_linearSolver.Solve(_physics.f, solution);
 	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);
 
-	if (output->results) {
+	if (_output.results) {
 		_physics.saveMeshResults(_store, solution);
 	}
 }

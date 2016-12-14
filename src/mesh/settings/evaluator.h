@@ -7,7 +7,7 @@
 #include "../structures/coordinates.h"
 #include <numeric>
 
-#include "../../config/description.h"
+#include "../../config/environment.h"
 
 namespace espreso {
 

@@ -6,14 +6,14 @@
 
 namespace espreso {
 
-struct GlobalConfiguration;
+struct ESPRESOGenerator;
 class Mesh;
 
 namespace input {
 
 struct Generator {
 
-	static void generate(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void generate(const ESPRESOGenerator &configuration, Mesh &mesh, size_t index, size_t size);
 };
 }
 }

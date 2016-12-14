@@ -3,6 +3,7 @@
 #define SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY3D_ASSEMBLER_H_
 
 #include "../assembler.h"
+#include "../../../../config/linearelasticity3d.h"
 
 namespace espreso {
 

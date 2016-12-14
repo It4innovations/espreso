@@ -1,6 +1,7 @@
 
 #include "../generic/utils.h"
 #include "esmesh.h"
+#include "../../config/solverespreso.h"
 
 //class SparseSolverCPU;
 

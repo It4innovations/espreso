@@ -1264,7 +1264,7 @@ for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
 	}
 	F0_Mat = tmpF0v[0];
 
-	if (output->print_matrices) {
+	if (environment->print_matrices) {
 		SparseMatrix tmpF0 = F0_Mat;
 		std::ofstream osF0(Logging::prepareFile("F0"));
 		osF0 <<  tmpF0;
@@ -1386,7 +1386,7 @@ void ClusterBase::CreateSa() {
 		//GGt.RemoveLower();
 		//GGt.get_kernel_from_K(GGt, Kernel_Sa);
 
-		if (output->print_matrices) {
+		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Salfa"));
 			osSa << Salfa;
 			osSa.close();
@@ -1403,17 +1403,17 @@ void ClusterBase::CreateSa() {
 		TSak.Clear();
 
 
-		if (output->print_matrices) {
+		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
 			osSa << Salfa;
 			osSa.close();
 		}
-		if (output->print_matrices) {
+		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
 			osSa << Kernel_Sa;
 			osSa.close();
 		}
-		if (output->print_matrices) {
+		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa2"));
 			osSa << Kernel_Sa2;
 			osSa.close();
@@ -1455,7 +1455,7 @@ void ClusterBase::CreateSa() {
         LAMN.CSR_V_values[i] *= -1;
       }
 
-		  if (output->print_matrices) {
+		  if (environment->print_matrices) {
 		  	std::ofstream osSa(Logging::prepareFile("LAMN"));
 		  	osSa << LAMN;
 		  	osSa.close();
@@ -1504,7 +1504,7 @@ void ClusterBase::CreateSa() {
 				domains[d].Kplus_Rb2 = TmpR2;
 				domains[d].Kplus_Rb2.ConvertCSRToDense(0);
 
-				if (output->print_matrices) {
+				if (environment->print_matrices) {
 					std::ofstream osR(Logging::prepareFile(d, "Rb_").c_str());
 					SparseMatrix tmpR = domains[d].Kplus_Rb;
 					tmpR.ConvertDenseToCSR(0);
@@ -1513,7 +1513,7 @@ void ClusterBase::CreateSa() {
 
 				}
 
-				if (output->print_matrices) {
+				if (environment->print_matrices) {
 					std::ofstream osR(Logging::prepareFile(d, "Rb2_").c_str());
 					SparseMatrix tmpR = domains[d].Kplus_Rb2;
 					tmpR.ConvertDenseToCSR(0);

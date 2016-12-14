@@ -24,16 +24,16 @@ void VTK::computeCenters()
 Point VTK::shrink(const Point &p, size_t part) const
 {
 	Point x = p;
-	x = _sCenters[part] + (x - _sCenters[part]) * _shrinkSubdomain;
-	x = _cCenter + (x - _cCenter) * _shringCluster;
+	x = _sCenters[part] + (x - _sCenters[part]) * _output.domain_shrink_ratio;
+	x = _cCenter + (x - _cCenter) * _output.cluster_shrink_ratio;
 	return x;
 }
 
 Point VTK::shrink(const Point &p, const Point &sCenter, const Point &cCenter) const
 {
 	Point x = p;
-	x = sCenter + (x - sCenter) * _shrinkSubdomain;
-	x = cCenter + (x - cCenter) * _shringCluster;
+	x = sCenter + (x - sCenter) * _output.domain_shrink_ratio;
+	x = cCenter + (x - cCenter) * _output.cluster_shrink_ratio;
 	return x;
 }
 

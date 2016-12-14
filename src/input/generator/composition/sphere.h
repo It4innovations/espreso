@@ -8,8 +8,8 @@
 
 namespace espreso {
 
-struct SphereConfiguration;
 enum class ELEMENT_TYPE;
+struct SphereConfiguration;
 
 namespace input {
 
@@ -32,10 +32,10 @@ struct SphereSettings {
 class Sphere: public Loader {
 
 public:
-	Sphere(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	Sphere(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 	virtual ~Sphere();
 
-	static void load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
+	static void load(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
@@ -61,6 +61,7 @@ protected:
 		RIGHT = 5
 	};
 
+	const SphereConfiguration &_sphere;
 	SphereSettings _settings;
 	BlockGenerator* _block;
 	Triple<size_t> _clusterOffset;

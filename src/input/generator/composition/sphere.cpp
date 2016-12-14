@@ -4,7 +4,7 @@
 #include "../primitives/block.h"
 #include "../elements/elements.h"
 
-#include "../../../config/description.h"
+#include "../../../config/inputgeneratorsphere.h"
 
 using namespace espreso::input;
 
@@ -30,15 +30,15 @@ SphereSettings::SphereSettings(const SphereConfiguration &configuration)
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void Sphere::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void Sphere::load(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	ESINFO(OVERVIEW) << "Generate grid";
 	Sphere sphere(configuration, mesh, index, size);
 	sphere.fill();
 }
 
-Sphere::Sphere(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
-: Loader(configuration, mesh), _settings(configuration.generator.sphere), _index(index), _size(size)
+Sphere::Sphere(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+: Loader(mesh), _sphere(configuration), _settings(configuration), _index(index), _size(size)
 {
 	if (size % 6 != 0) {
 		ESINFO(GLOBAL_ERROR) << "Number of MPI process should be 6 x clusters for sphere generator.";
@@ -279,7 +279,7 @@ void Sphere::regions(
 		std::vector<Element*> &edges,
 		std::vector<Element*> &nodes)
 {
-	for (auto it = configuration.generator.sphere.nodes.values.begin(); it != configuration.generator.sphere.nodes.values.end(); ++it) {
+	for (auto it = _sphere.nodes.values.begin(); it != _sphere.nodes.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -289,7 +289,7 @@ void Sphere::regions(
 			_block->region(nodes, regions.back(), border, 0);
 		}
 	}
-	for (auto it = configuration.generator.sphere.edges.values.begin(); it != configuration.generator.sphere.edges.values.end(); ++it) {
+	for (auto it = _sphere.edges.values.begin(); it != _sphere.edges.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -300,7 +300,7 @@ void Sphere::regions(
 			edges.insert(edges.end(), regions.back().elements.begin(), regions.back().elements.end());
 		}
 	}
-	for (auto it = configuration.generator.sphere.faces.values.begin(); it != configuration.generator.sphere.faces.values.end(); ++it) {
+	for (auto it = _sphere.faces.values.begin(); it != _sphere.faces.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -312,7 +312,7 @@ void Sphere::regions(
 		}
 	}
 
-	for (auto it = configuration.generator.sphere.elements.values.begin(); it != configuration.generator.sphere.elements.values.end(); ++it) {
+	for (auto it = _sphere.elements.values.begin(); it != _sphere.elements.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {

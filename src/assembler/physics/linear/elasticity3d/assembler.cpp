@@ -62,18 +62,18 @@ void LinearElasticity3D::saveMeshProperties(store::Store &store)
 	store.storeProperty("obstacle", { Property::OBSTACLE }, store::Store::ElementType::NODES);
 	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::Store::ElementType::NODES);
 	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {
-		store::VTK::fixPoints(_mesh, "fixPoints", output->domain_shrink_ratio, output->cluster_shrink_ratio);
+		store::VTK::fixPoints(store.configuration(), _mesh, "fixPoints");
 	}
 	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 		case B0_TYPE::COMBINED:
-			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
-			store::VTK::mesh(_mesh, "edges", store::Store::ElementType::EDGES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
-			store::VTK::corners(_mesh, "corners", output->domain_shrink_ratio, output->cluster_shrink_ratio);
+			store::VTK::mesh(store.configuration(), _mesh, "faces", store::Store::ElementType::FACES);
+			store::VTK::mesh(store.configuration(), _mesh, "edges", store::Store::ElementType::EDGES);
+			store::VTK::corners(store.configuration(), _mesh, "corners");
 			break;
 		case B0_TYPE::KERNELS:
-			store::VTK::mesh(_mesh, "faces", store::Store::ElementType::FACES, output->domain_shrink_ratio, output->cluster_shrink_ratio);
+			store::VTK::mesh(store.configuration(), _mesh, "faces", store::Store::ElementType::FACES);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented saving properties of B0";

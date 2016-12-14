@@ -4,6 +4,7 @@
 
 #include "../instance.h"
 #include "esoutput.h"
+#include "../../../config/output.h"
 
 namespace espreso {
 
@@ -11,12 +12,13 @@ template <class TPhysics, class TConfiguration>
 struct LinearInstance: public Instance
 {
 public:
-	LinearInstance(const TConfiguration &configuration, Mesh &mesh): Instance(mesh),
+	LinearInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	_output(output),
 	_configuration(configuration.espreso),
 	_constrains(configuration.espreso, mesh),
 	_physics(mesh, _constrains, configuration),
 	_linearSolver(configuration.espreso, _physics, _constrains),
-	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
+	_store(_output, mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};
@@ -31,6 +33,7 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const OutputConfiguration &_output;
 	const ESPRESOSolver &_configuration;
 	Constraints _constrains;
 	TPhysics _physics;

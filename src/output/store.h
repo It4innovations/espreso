@@ -3,6 +3,7 @@
 #define SRC_OUTPUT_STORE_H_
 
 #include "esmesh.h"
+#include "../config/output.h"
 
 namespace espreso {
 namespace store {
@@ -17,7 +18,9 @@ public:
 		ELEMENTS
 	};
 
-	virtual void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shringCluster) = 0;
+	const OutputConfiguration& configuration() const { return _output; };
+
+	virtual void store(std::vector<std::vector<double> > &displacement) = 0;
 
 	virtual void storeGeometry(size_t timeStep = -1) = 0;
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType) = 0;
@@ -27,13 +30,12 @@ public:
 	virtual ~Store() {};
 
 protected:
-	Store(const Mesh &mesh, const std::string &path, double shrinkSubdomain = output->domain_shrink_ratio, double shringCluster = output->cluster_shrink_ratio)
-	:_mesh(mesh), _path(path), _shrinkSubdomain(shrinkSubdomain), _shringCluster(shringCluster) {};
+	Store(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+	:_output(output), _mesh(mesh), _path(path) {};
 
+	const OutputConfiguration &_output;
 	const Mesh &_mesh;
 	std::string _path;
-	double _shrinkSubdomain;
-	double _shringCluster;
 };
 
 }

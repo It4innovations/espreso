@@ -3,8 +3,7 @@
 #include "../primitives/block.h"
 #include "../elements/elements.h"
 
-#include "../../../config/description.h"
-
+#include "../../../config/inputgeneratorgrid.h"
 
 using namespace espreso::input;
 
@@ -42,15 +41,15 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 	uniformDecomposition = configuration.uniform_decomposition;
 }
 
-void Grid::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+void Grid::load(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	ESINFO(OVERVIEW) << "Generate grid";
 	Grid grid(configuration, mesh, index, size);
 	grid.fill();
 }
 
-Grid::Grid(const GlobalConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
-: Loader(configuration, mesh), _settings(configuration.generator.grid), _index(index), _size(size)
+Grid::Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
+: Loader(mesh), _grid(configuration), _settings(configuration), _index(index), _size(size)
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;
 
@@ -220,7 +219,7 @@ void Grid::regions(
 		std::vector<Element*> &edges,
 		std::vector<Element*> &nodes)
 {
-	for (auto it = configuration.generator.grid.nodes.values.begin(); it != configuration.generator.grid.nodes.values.end(); ++it) {
+	for (auto it = _grid.nodes.values.begin(); it != _grid.nodes.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -230,7 +229,7 @@ void Grid::regions(
 			_block->region(nodes, regions.back(), border, 0);
 		}
 	}
-	for (auto it = configuration.generator.grid.edges.values.begin(); it != configuration.generator.grid.edges.values.end(); ++it) {
+	for (auto it = _grid.edges.values.begin(); it != _grid.edges.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -241,7 +240,7 @@ void Grid::regions(
 			edges.insert(edges.end(), regions.back().elements.begin(), regions.back().elements.end());
 		}
 	}
-	for (auto it = configuration.generator.grid.faces.values.begin(); it != configuration.generator.grid.faces.values.end(); ++it) {
+	for (auto it = _grid.faces.values.begin(); it != _grid.faces.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
@@ -253,7 +252,7 @@ void Grid::regions(
 		}
 	}
 
-	for (auto it = configuration.generator.grid.elements.values.begin(); it != configuration.generator.grid.elements.values.end(); ++it) {
+	for (auto it = _grid.elements.values.begin(); it != _grid.elements.values.end(); ++it) {
 		regions.push_back(Region());
 		regions.back().name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {

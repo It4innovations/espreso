@@ -2,7 +2,7 @@
 #include <signal.h>
 #include <csignal>
 
-#include "../config/description.h"
+#include "../config/globalconfiguration.h"
 #include "factory/factory.h"
 #include "esinput.h"
 

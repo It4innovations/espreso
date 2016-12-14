@@ -3,6 +3,7 @@
 #define SRC_ASSEMBLER_INSTANCE_HYPRE_INSTANCE_H_
 
 #include "../instance.h"
+#include "../../../config/solverhypre.h"
 
 #ifdef HAVE_HYPRE
 
@@ -14,12 +15,13 @@ template <class TPhysics, class TConfiguration>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(const TConfiguration &configuration, Mesh &mesh): Instance(mesh),
+	HypreInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	_output(output),
 	_configuration(configuration.hypre),
 	feiPtr(MPI_COMM_WORLD),
 	_constrains(configuration.espreso, mesh),
 	_physics(mesh, _constrains, configuration),
-	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
+	_store(output, mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}
@@ -34,6 +36,7 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const OutputConfiguration &_output;
 	const HypreSolver &_configuration;
 	LLNL_FEI_Impl feiPtr;
 	Constraints _constrains;
@@ -54,7 +57,8 @@ template <class TPhysics, class TConfiguration>
 struct HypreInstance: public Instance
 {
 public:
-	HypreInstance(const TConfiguration &configuration, Mesh &mesh): Instance(mesh), _configuration(configuration.hypre), _constrains(configuration.espreso, mesh), _physics(mesh, _constrains, configuration)
+	HypreInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh)
+	: Instance(mesh), _configuration(configuration.hypre), _constrains(configuration.espreso, mesh), _physics(mesh, _constrains, configuration)
 	{
 		ESINFO(GLOBAL_ERROR) << "HYPRE is not linked! Specify HYPRE::INCLUDE and HYPRE::LIBPATH";
 	}

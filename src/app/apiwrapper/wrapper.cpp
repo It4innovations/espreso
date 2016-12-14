@@ -23,10 +23,10 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 	options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
 	options[FETI4I_N_MICS] = solver.N_MICS;
 
-	options[FETI4I_VERBOSE_LEVEL] = output->verbose_level;
-	options[FETI4I_TESTING_LEVEL] = output->testing_level;
-	options[FETI4I_MEASURE_LEVEL] = output->measure_level;
-	options[FETI4I_PRINT_MATRICES] = output->print_matrices;
+	options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
+	options[FETI4I_TESTING_LEVEL] = environment->testing_level;
+	options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
+	options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
 }
 
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
@@ -55,16 +55,16 @@ static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRE
 	if (!solver.parameters["N_MICS"]->set(std::to_string(options[FETI4I_N_MICS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'N_MICS' to " << options[FETI4I_N_MICS];
 	}
-	if (!output->parameters["verbose_level"]->set(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
+	if (!environment->parameters["verbose_level"]->set(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'VERBOSE_LEVEL' to " << options[FETI4I_VERBOSE_LEVEL];
 	}
-	if (!output->parameters["testing_level"]->set(std::to_string(options[FETI4I_TESTING_LEVEL]))) {
+	if (!environment->parameters["testing_level"]->set(std::to_string(options[FETI4I_TESTING_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'TESTING_LEVEL' to " << options[FETI4I_TESTING_LEVEL];
 	}
-	if (!output->parameters["measure_level"]->set(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
+	if (!environment->parameters["measure_level"]->set(std::to_string(options[FETI4I_MEASURE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'MEASURE_LEVEL' to " << options[FETI4I_MEASURE_LEVEL];
 	}
-	if (!output->parameters["print_matrices"]->set(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
+	if (!environment->parameters["print_matrices"]->set(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
 }

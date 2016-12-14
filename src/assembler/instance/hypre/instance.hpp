@@ -14,11 +14,11 @@ void HypreInstance<TPhysics>::init()
 	MPI_Status stat;
 //------------------------------------------------------------------------------
 	_physics.prepareMeshStructures();
-	if (output->properties || output->results) {
+	if (_output.properties || _output.results) {
 		_store.storeGeometry();
 	}
 
-	if (output->properties) {
+	if (_output.properties) {
 		_physics.saveMeshProperties(_store);
 	}
 //------------------------------------------------------------------------------
@@ -469,7 +469,7 @@ std::cout << " CLK " << transferIndex << std::endl;
 	delete [] nodeIDList;
 	delete [] solnOffsets;
 
-        if (output->results) {
+        if (_output.results) {
                 _physics.saveMeshResults(_store, solution);
         }
 

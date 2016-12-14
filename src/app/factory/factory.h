@@ -8,6 +8,7 @@
 namespace espreso {
 
 struct GlobalConfiguration;
+struct Results;
 
 struct Factory {
 

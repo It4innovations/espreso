@@ -75,8 +75,8 @@
 
 using namespace espreso::store;
 
-VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
-: Store(mesh, path, shrinkSubdomain, shringCluster), _lastData(ElementType::ELEMENTS)
+VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+: Store(output, mesh, path), _lastData(ElementType::ELEMENTS)
 {
 	computeCenters();
 }
@@ -540,7 +540,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	}
 }
 
-void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, double shrinkSubdomain, double shrinkCluster)
+void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement mesh";
 	const std::vector<Element*> &elements = mesh.elements();
@@ -728,7 +728,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 
 }
 
-void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK::fixPoints(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 {
 	vtkUnstructuredGrid* fp = vtkUnstructuredGrid::New();
 	//std::vector<std::vector<eslocal> > fixPoints(mesh.parts());
@@ -909,7 +909,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 
 }
 
-void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
+void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 {
 	vtkUnstructuredGrid* c = vtkUnstructuredGrid::New();
 	const Coordinates &_coordinates = mesh.coordinates();
@@ -1099,7 +1099,7 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 
 }
 
-void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSubdomain, double shrinkCluster)
+void VTK::store(std::vector<std::vector<double> > &displasment)
 {
 	//storeGeometry(1);
 	//storeValues("displacement", 3, displasment, ElementType::NODES);
@@ -1443,7 +1443,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment, double shrinkSub
 	 }*/
 }
 
-void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs)
 {
 	 VTK* help=new VTK(mesh,path,shrinkSubdomain,shrinkCluster);
 

@@ -2,10 +2,9 @@
 #include "factory.h"
 #include "esbasis.h"
 #include "esinput.h"
-#include "../config/description.h"
-
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
+#include "../../config/globalconfiguration.h"
 
 namespace espreso {
 

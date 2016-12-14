@@ -1,6 +1,7 @@
 
 #include "logging.h"
-#include "../../config/description.h"
+
+#include "../../config/environment.h"
 
 namespace espreso {
 

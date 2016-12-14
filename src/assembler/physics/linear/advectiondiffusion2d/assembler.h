@@ -3,6 +3,7 @@
 #define SRC_ASSEMBLER_PHYSICS_LINEAR_ADVECTIONDIFFUSION2D_ASSEMBLER_H_
 
 #include "../assembler.h"
+#include "../../../../config/advectiondiffusion2d.h"
 
 namespace espreso {
 

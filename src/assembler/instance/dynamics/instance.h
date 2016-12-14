@@ -11,11 +11,12 @@ template <class TPhysics>
 struct DynamicsInstance: public Instance
 {
 public:
-	DynamicsInstance(Mesh &mesh): Instance(mesh),
+	DynamicsInstance(const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	_output(output),
 	_constrains(mesh),
 	_physics(mesh, _constrains),
 	_linearSolver(_physics, _constrains),
-	_store(mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio),
+	_store(output, mesh, "results"),
 	 _time(0)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
@@ -33,6 +34,7 @@ public:
 	virtual const Constraints& constraints() const { return _constrains; }
 
 protected:
+	const OutputConfiguration &_output;
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;

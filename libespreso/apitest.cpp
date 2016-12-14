@@ -3,7 +3,7 @@
 
 // we use ESPRESO assembler for compute stiffness matrices
 #include "../src/app/factory/factory.h"
-#include "../src/config/description.h"
+#include "../src/config/globalconfiguration.h"
 
 int main(int argc, char** argv)
 {
@@ -110,7 +110,7 @@ int main(int argc, char** argv)
 
 	// Process solution
 
-	espreso::store::VTK vtk(factory.mesh, "results");
+	espreso::store::VTK vtk(configuration.output, factory.mesh, "results");
 	vtk.storeGeometry();
 	vtk.storeValues("api_result", DOFs.size(), solution, espreso::store::Store::ElementType::NODES);
 

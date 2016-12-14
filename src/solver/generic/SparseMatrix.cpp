@@ -5397,14 +5397,14 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
     {
-    	if (output->print_matrices) {
+    	if (environment->print_matrices) {
     		std::ofstream osS(Logging::prepareFile(0, "N"));
     		osS << N;
     		osS.close();
     	}
     }
     {
-    	if (output->print_matrices) {
+    	if (environment->print_matrices) {
     		std::ofstream osS(Logging::prepareFile(0, "Nl"));
     		osS << Nl;
     		osS.close();

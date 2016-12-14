@@ -1,7 +1,7 @@
 
 #include "timeeval.h"
 
-#include "../../config/description.h"
+#include "../../config/environment.h"
 
 using namespace espreso;
 
@@ -194,7 +194,7 @@ void TimeEvent::printStatMPI(double totalTime) {
 
 
 void TimeEvent::printLastStatMPI(double totalTime) {
-	if (output->measure_level == 0) {
+	if (environment->measure_level == 0) {
 		return;
 	}
 	double d_time = eventTime.back();

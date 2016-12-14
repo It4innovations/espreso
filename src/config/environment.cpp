@@ -1,10 +1,9 @@
 
-#include "description.h"
+#include "environment.h"
 
 namespace espreso {
 
 Environment *environment;
-OutputConfiguration *output;
 
 Environment::Environment(): executable("espreso")
 {
@@ -18,11 +17,6 @@ Environment::Environment(): executable("espreso")
 	executable = Esutils::getEnv<std::string>("_");
 
 	environment = this;
-}
-
-OutputConfiguration::OutputConfiguration()
-{
-	output = this;
 }
 
 }

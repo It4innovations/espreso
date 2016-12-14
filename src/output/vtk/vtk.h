@@ -12,20 +12,20 @@ class VTK: public Store {
 
 public:
 	int numb=1;
-	VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain = output->domain_shrink_ratio, double shringCluster = output->cluster_shrink_ratio);
+	VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
 
 	virtual void storeGeometry(size_t timeStep = -1);
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType);
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType);
 	virtual void finalize();
 
-	void store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster);
+	void store(std::vector<std::vector<double> > &displacement);
 
-	static void gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster);
+	static void gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs);
 
-	static void mesh(const Mesh &mesh, const std::string &path, ElementType eType, double shrinkSubdomain, double shrinkCluster);
-	static void fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
-	static void corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster);
+	static void mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path, ElementType eType);
+	static void fixPoints(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
+	static void corners(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
 
 protected:
 	void computeCenters();

@@ -5,7 +5,7 @@
 #include <stack>
 
 #include "esbasis.h"
-#include "description.h"
+#include "globalconfiguration.h"
 
 using namespace espreso;
 
@@ -114,13 +114,13 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 			}
 			break;
 		case 'v':
-			output->verbose_level++;
+			environment->verbose_level++;
 			break;
 		case 't':
-			output->testing_level++;
+			environment->testing_level++;
 			break;
 		case 'm':
-			output->measure_level++;
+			environment->measure_level++;
 			break;
 		}
 	}
@@ -210,10 +210,10 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 
 void Reader::set(const GlobalConfiguration &configuration)
 {
-	Test::setLevel(configuration.output.testing_level);
-	Info::setLevel(configuration.output.verbose_level, configuration.output.testing_level);
-	Measure::setLevel(configuration.output.measure_level);
-	Logging::output = configuration.output.log_dir;
+	Test::setLevel(configuration.env.testing_level);
+	Info::setLevel(configuration.env.verbose_level, configuration.env.testing_level);
+	Measure::setLevel(configuration.env.measure_level);
+	Logging::output = configuration.env.log_dir;
 	Logging::rank = configuration.env.MPIrank;
 }
 

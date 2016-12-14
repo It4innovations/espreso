@@ -6,9 +6,9 @@
 
 using namespace espreso::store;
 
-Paraview::Paraview(const Mesh &mesh, const std::string &path): Store(mesh, path)
+Paraview::Paraview(const OutputConfiguration &output, const Mesh &mesh, const std::string &path): Store(output, mesh, path)
 {
 	ESINFO(GLOBAL_ERROR) << "Re-compile ESPRESO with Paraview support.";
 }
 
-void Paraview::store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster) { }
+void Paraview::store(std::vector<std::vector<double> > &displacement) { }

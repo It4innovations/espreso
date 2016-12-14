@@ -3,8 +3,11 @@
 #define SRC_ASSEMBLER_PHYSICS_LINEAR_ADVECTIONDIFFUSION3D_ASSEMBLER_H_
 
 #include "../assembler.h"
+#include "../../../../config/advectiondiffusion3d.h"
 
 namespace espreso {
+
+struct AdvectionDiffusion3DConfiguration;
 
 struct AdvectionDiffusion3D: public LinearPhysics
 {

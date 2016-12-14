@@ -200,10 +200,10 @@ static void results(std::ofstream &os, const std::vector<std::vector<Ttype> > &v
 	}
 }
 
-VTK::VTK(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shringCluster)
-: Store(mesh, path, shrinkSubdomain, shringCluster), _lastData(ElementType::ELEMENTS)
+VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+: Store(output, mesh, path), _lastData(ElementType::ELEMENTS)
 {
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		break;
 	default:
@@ -307,7 +307,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	_os.flush();
 }
 
-void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSubdomain, double shrinkCluster)
+void VTK::store(std::vector<std::vector<double> > &displacement)
 {
 	std::stringstream ss;
 	ss << _path << environment->MPIrank << ".vtk";
@@ -330,7 +330,7 @@ void VTK::store(std::vector<std::vector<double> > &displacement, double shrinkSu
 	os.close();
 }
 
-void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, double shrinkSubdomain, double shrinkCluster)
+void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path, ElementType eType)
 {
 	std::stringstream ss;
 	ss << path << environment->MPIrank << ".vtk";
@@ -338,7 +338,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
-	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
+	VTK vtk(output, mesh, path);
 
 	head(os);
 	coordinates(os, mesh.coordinates(), [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
@@ -347,7 +347,7 @@ void VTK::mesh(const Mesh &mesh, const std::string &path, ElementType eType, dou
 	os.close();
 }
 
-void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::fixPoints(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 {
 	std::vector<Element*> fixPoints;
 	for (size_t p = 0; p < mesh.parts(); p++) {
@@ -357,7 +357,7 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 	std::sort(fixPoints.begin(), fixPoints.end());
 	Esutils::removeDuplicity(fixPoints);
 
-	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
+	VTK vtk(output, mesh, path);
 
 	open(vtk._os, vtk._path, -1);
 	head(vtk._os);
@@ -365,14 +365,14 @@ void VTK::fixPoints(const Mesh &mesh, const std::string &path, double shrinkSubd
 	nodes(vtk._os, fixPoints, mesh.parts());
 }
 
-void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdomain, double shrinkCluster)
+void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 {
 	std::stringstream ss;
 	ss << path << environment->MPIrank << ".vtk";
 	std::ofstream os;
 	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
 
-	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
+	VTK vtk(output, mesh, path);
 
 	head(os);
 	coordinates(os, mesh.coordinates(), mesh.corners(), [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
@@ -381,9 +381,9 @@ void VTK::corners(const Mesh &mesh, const std::string &path, double shrinkSubdom
 	os.close();
 }
 
-void VTK::gluing(const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs, double shrinkSubdomain, double shrinkCluster)
+void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs)
 {
-	VTK vtk(mesh, path, shrinkSubdomain, shrinkCluster);
+	VTK vtk(output, mesh, path);
 
 	std::vector<Point> cCenter(environment->MPIsize);
 	std::vector<Point> sCenters(environment->MPIsize * mesh.parts());

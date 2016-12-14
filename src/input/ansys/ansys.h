@@ -11,7 +11,7 @@
 #include "utils.h"
 #include "parser.h"
 
-#include "../../config/description.h"
+#include "../../config/input.h"
 
 namespace espreso {
 namespace input {
@@ -19,16 +19,16 @@ namespace input {
 class AnsysWorkbench: public Loader {
 
 public:
-	static void load(const GlobalConfiguration &configuration, Mesh &mesh, int rank, int size)
+	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
 	{
-		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.workbench.path;
+		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
 		AnsysWorkbench workbench(configuration, mesh, rank, size);
 		workbench.fill();
 	}
 
 protected:
-	AnsysWorkbench(const GlobalConfiguration &configuration, Mesh &mesh, int rank, int size)
-	: Loader(configuration, mesh), _workbench(configuration.workbench), _parser(mesh) { };
+	AnsysWorkbench(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+	: Loader(mesh), _workbench(configuration), _parser(mesh) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
@@ -58,7 +58,7 @@ protected:
 	}
 
 private:
-	ESPRESOInput _workbench;
+	const ESPRESOInput &_workbench;
 	WorkbenchParser _parser;
 };
 
