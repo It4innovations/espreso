@@ -67,13 +67,13 @@ void OpenFOAM::points(Coordinates &coordinates)
 					<< addressing.size() << ") in the file:" << _polyMeshPath << "pointProcAddressing\n";
 		}
 		std::vector< esglobal >::iterator it_addressing = addressing.begin();
-		for (std::vector<Point>::iterator it = points.begin(); it != points.end(); ++it) {
-			coordinates.add(*it, counter++, *it_addressing);
+		for (std::vector<Point>::iterator it = points.begin(); it != points.end(); ++it, counter++) {
+			coordinates.add(*it, counter, *it_addressing);
 			++it_addressing;
 		}
 	} else {
-		for (std::vector<Point>::iterator it = points.begin(); it != points.end(); ++it) {
-			coordinates.add(*it, counter, counter++);
+		for (std::vector<Point>::iterator it = points.begin(); it != points.end(); ++it, counter++) {
+			coordinates.add(*it, counter, counter);
 		}
 	}
 }
@@ -260,7 +260,7 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 				}
 			}
 
-			for (size_t i = startFace; i < startFace + nFaces; i++) {
+			for (eslocal i = startFace; i < startFace + nFaces; i++) {
 				for (size_t n = 0; n < faces[i]->nodes(); n++) {
 					if (!nodes[faces[i]->node(n)]->clusters().size() || nodes[faces[i]->node(n)]->clusters().back() != neighbProcNo) {
 						nodes[faces[i]->node(n)]->clusters().push_back(neighbProcNo);

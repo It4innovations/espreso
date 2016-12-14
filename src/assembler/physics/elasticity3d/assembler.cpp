@@ -38,7 +38,7 @@ void Elasticity3D::prepareMeshStructures()
 			_mesh.computeVolumeCorners(1, true, true, false);
 			break;
 		case B0_TYPE::KERNELS:
-			//_mesh.computeFacesSharedByDomains();
+			_mesh.computeFacesSharedByDomains();
 			break;
 		case B0_TYPE::COMBINED:
 			_mesh.computeFacesSharedByDomains();

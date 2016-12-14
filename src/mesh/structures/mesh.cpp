@@ -672,9 +672,9 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			_elements[e]->fillEdges();
+			size_t i = _elements[e]->fillEdges();
 
-			for (size_t i = 0; i < _elements[e]->edges(); i++) {
+			for (; i < _elements[e]->edges(); i++) {
 				Element* edge = _elements[e]->edge(i);
 				if (edge->settings().size() || filter(_nodes, edge)) {
 					edges[t].push_back(edge);
@@ -686,7 +686,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 		}
 	}
 
-	_edges = mergeElements(threads, distribution, edges, [] (Element* e1, Element *e2) {
+	std::vector<Element*> created = mergeElements(threads, distribution, edges, [] (Element* e1, Element *e2) {
 		e1->parentElements().insert(e1->parentElements().end(), e2->parentElements().begin(), e2->parentElements().end());
 		for (size_t e = 0; e < e2->parentElements().size(); e++) {
 			for (size_t i = 0; i < e2->parentElements()[e]->edges(); i++) {
@@ -697,6 +697,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 			}
 		}
 	});
+	_edges.insert(_edges.end(), created.begin(), created.end());
 
 	mapEdgesToClusters();
 	mapEdgesToDomains();
@@ -713,9 +714,9 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			_elements[e]->fillFaces();
+			size_t f = _elements[e]->fillFaces();
 
-			for (size_t f = 0; f < _elements[e]->faces(); f++) {
+			for (; f < _elements[e]->faces(); f++) {
 				Element* face = _elements[e]->face(f);
 				if (face->settings().size() || filter(_nodes, face)) {
 					faces[t].push_back(face);
@@ -727,7 +728,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 		}
 	}
 
-	_faces = mergeElements(threads, distribution, faces, [] (Element* e1, Element *e2) {
+	std::vector<Element*> created = mergeElements(threads, distribution, faces, [] (Element* e1, Element *e2) {
 		e1->parentElements().push_back(e2->parentElements().back()); // Face can be only between two elements
 		for (size_t i = 0; i < e2->parentElements()[0]->faces(); i++) {
 			if (e2->parentElements()[0]->face(i) != NULL && *e1 == *e2->parentElements()[0]->face(i)) {
@@ -736,6 +737,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 			}
 		}
 	});
+	_faces.insert(_faces.end(), created.begin(), created.end());
 
 	mapFacesToClusters();
 	mapFacesToDomains();
