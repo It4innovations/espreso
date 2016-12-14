@@ -23,17 +23,18 @@ public:
 		ESINFO(GLOBAL_ERROR) << "Plane element has no face";
 		return NULL;
 	}
-	virtual Element* edge(size_t index) const { return _edges[index]; };
+	virtual Element* edge(size_t index) const { return _edges[index]; }
 
-protected:
-	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	void setFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
-	virtual void setEdge(Element* edge)
+	void addFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
+	virtual void addEdge(Element* edge)
 	{
 		_edges.push_back(edge);
 		edge->parentElements().push_back(this);
 	}
+
+protected:
+	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
+	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
 
 	void fillFaces() { ESINFO(GLOBAL_ERROR) << "Call fill faces on plane element."; }
 

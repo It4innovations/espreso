@@ -99,7 +99,7 @@ void AnsysWorkbench::regions(
 }
 
 
-void AnsysWorkbench::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void AnsysWorkbench::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	for (size_t i = 0; i < mesh.coordinates().clusterSize(); i++) {
 		nodes[i]->clusters().push_back(0);

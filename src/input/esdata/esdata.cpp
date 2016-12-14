@@ -180,7 +180,7 @@ void Esdata::regions(
 }
 
 
-void Esdata::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void Esdata::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _esdata.path << "/" << _rank << "/boundaries.dat";

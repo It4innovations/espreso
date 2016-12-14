@@ -299,12 +299,12 @@ void Pyramid13::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 5     ];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[edge    ];
 		line[1] = _indices[       4];
 		line[2] = _indices[edge + 9];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 	}
 }
 
@@ -324,7 +324,7 @@ void Pyramid13::fillFaces()
 		triangle[3] = _indices[face - 1 + 5];
 		triangle[4] = _indices[face % 4 + 9];
 		triangle[5] = _indices[face - 1 + 9];
-		addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
+		addUniqueFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 	}
 
 	square[0] = _indices[0];
@@ -336,7 +336,7 @@ void Pyramid13::fillFaces()
 	square[5] = _indices[7];
 	square[6] = _indices[6];
 	square[7] = _indices[5];
-	addFace<Square8>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
 }
 
 Pyramid13::Pyramid13(const eslocal *indices, eslocal n, const eslocal *params)

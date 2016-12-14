@@ -109,7 +109,7 @@ void Square4::fillEdges()
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 	}
 }
 

@@ -148,7 +148,7 @@ void Triangle3::fillEdges()
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 	}
 }
 

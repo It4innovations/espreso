@@ -187,7 +187,7 @@ void Grid::materials(std::vector<Material> &materials)
 	materials.push_back(Material(mesh.coordinates()));
 }
 
-void Grid::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void Grid::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::vector<int> map(27);
 

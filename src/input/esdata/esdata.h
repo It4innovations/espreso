@@ -34,7 +34,7 @@ protected:
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
-	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours);
+	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
 	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 	{
 		mesh.partitiate(_esdata.domains);

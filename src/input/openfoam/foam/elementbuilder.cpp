@@ -16,8 +16,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 	eslocal indicies[8];
 	std::vector<eslocal> params(Element::PARAMS_SIZE);
 
-	for (std::list<std::pair<Face*, bool> >::iterator it =
-			selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+	for (auto it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 		Face *face = it->first;
 		coordinates.insert(face->p[0]);
 		coordinates.insert(face->p[1]);
@@ -31,14 +30,12 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 		//Tetrahedron4
 		if (selectedFaces.size() != 4) {
 			std::stringstream ss;
-			ss << "Element with 4 unique coordinates can not have "
-					<< selectedFaces.size() << " faces.";
+			ss << "Element with 4 unique coordinates can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares > 0) {
 			std::stringstream ss;
-			ss
-					<< "Element with 4 unique coordinates can not have a face with 4 points.";
+			ss << "Element with 4 unique coordinates can not have a face with 4 points.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 
@@ -60,8 +57,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
 
-		for (std::list<std::pair<Face*, bool> >::iterator it =
-				selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+		for (std::list<std::pair<Face*, bool> >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it).second) {
 				Face *face = (*it).first;
 				if (face->containsLine(indicies[0], indicies[1]))
@@ -75,20 +71,17 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 	} else if (coordinates.size() == 5) {
 		if (selectedFaces.size() != 5) {
 			std::stringstream ss;
-			ss << "Element with 5 unique coordinates can not have "
-					<< selectedFaces.size() << " faces.";
+			ss << "Element with 5 unique coordinates can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares != 1) {
 			std::stringstream ss;
-			ss
-					<< "Element with 5 unique coordinates must have 1 face with 4 points.";
+			ss << "Element with 5 unique coordinates must have 1 face with 4 points.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		std::pair<Face*, bool> firstFace;
 
-		for (std::list<std::pair<Face*, bool> >::iterator it =
-				selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+		for (std::list<std::pair<Face*, bool> >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it).first->numberOfPoints == 4) {
 				firstFace = *it;
 				break;
@@ -110,8 +103,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 			firstFace.first->setFaceIndex(element, 0);
 		}
 
-		for (std::list<std::pair<Face*, bool> >::iterator it =
-				selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+		for (std::list<std::pair<Face*, bool> >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it).second) {
 				Face *face = (*it).first;
 				if (face->containsLine(indicies[0], indicies[1]))
@@ -128,14 +120,12 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 	} else if (coordinates.size() == 6) {
 		if (selectedFaces.size() != 5) {
 			std::stringstream ss;
-			ss << "Element with 6 unique coordinates can not have "
-					<< selectedFaces.size() << " faces.";
+			ss << "Element with 6 unique coordinates can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares != 3) {
 			std::stringstream ss;
-			ss
-					<< "Element with 6 unique coordinates must have 3 faces with 4 points.";
+			ss << "Element with 6 unique coordinates must have 3 faces with 4 points.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 
@@ -144,8 +134,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 		std::pair<Face*, bool> lastFace;
 		std::list<std::pair<Face*, bool> >::iterator lastit;
 		bool first = true;
-		for (std::list<std::pair<Face*, bool> >::iterator it =
-				selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+		for (std::list<std::pair<Face*, bool> >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it).first->numberOfPoints == 3) {
 				if (first) {
 					firstFace = *it;
@@ -176,8 +165,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 			lastFace.first->setFaceIndex(element, 4);
 		}
 
-		for (std::list<std::pair<Face*, bool> >::iterator it =
-				selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+		for (std::list<std::pair<Face*, bool> >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it).second) {
 				Face *face = (*it).first;
 				if (face->containsLine(indicies[0], indicies[1]))
@@ -192,14 +180,12 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 	} else if (coordinates.size() == 8) {
 		if (selectedFaces.size() != 6) {
 			std::stringstream ss;
-			ss << "Element with 8 unique coordinates can not have "
-					<< selectedFaces.size() << " faces.";
+			ss << "Element with 8 unique coordinates can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares != 6) {
 			std::stringstream ss;
-			ss
-					<< "Element with 4 unique coordinates supports only faces with 4 points.";
+			ss << "Element with 4 unique coordinates supports only faces with 4 points.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		std::pair<Face*, bool> firstFace = selectedFaces.front();
@@ -220,8 +206,7 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 			firstFace.first->setFaceIndex(element, 4);
 		}
 
-		for (std::list<std::pair<Face*, bool> >::iterator it =
-				selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+		for (auto it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it).second) {
 				Face *face = (*it).first;
 				if (face->containsLine(indicies[0], indicies[1]))
@@ -239,24 +224,20 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 
 	} else {
 		std::stringstream ss;
-		ss << "Element with " << coordinates.size()
-				<< " coordinates is not supported.";
+		ss << "Element with " << coordinates.size() << " coordinates is not supported.";
 		return new ParseError(ss.str(), "ElementBuilder");
 	}
 	return NULL;
 }
 
-ParseError* ElementBuilder::nextPoint(eslocal x, eslocal y,
-eslocal &nextPoint) {
-	for (std::list<std::pair<Face*, bool> >::iterator it =
-			selectedFaces.begin(); it != selectedFaces.end(); ++it) {
+ParseError* ElementBuilder::nextPoint(eslocal x, eslocal y, eslocal &nextPoint) {
+	for (std::list<std::pair<Face*, bool> >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 		if ((*it).first->containsLine(x, y)) {
 			return (*it).first->nextPoint(x, y, nextPoint);
 		}
 	}
 
 	std::stringstream ss;
-	ss << "No next point for line (" << x << "," << y << ") in Element: "
-			<< this;
+	ss << "No next point for line (" << x << "," << y << ") in Element: " << this;
 	return new ParseError(ss.str(), "ElementBuilder");
 }

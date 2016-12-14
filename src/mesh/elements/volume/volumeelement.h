@@ -9,6 +9,8 @@ namespace espreso {
 class VolumeElement: public Element
 {
 
+	friend class Mesh;
+
 public:
 	Type type() const { return Type::VOLUME; }
 
@@ -19,19 +21,20 @@ public:
 	virtual Element* face(size_t index) const { return _faces[index]; }
 	virtual Element* edge(size_t index) const { return _edges[index]; }
 
-protected:
-	void setFace(size_t index, Element* face) { _faces[index] = face; }
-	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
-	virtual void setFace(Element* face)
+	virtual void addFace(Element* face)
 	{
 		_faces.push_back(face);
 		face->parentElements().push_back(this);
 	}
-	virtual void setEdge(Element* edge)
+	virtual void addEdge(Element* edge)
 	{
 		_edges.push_back(edge);
 		edge->parentElements().push_back(this);
 	}
+
+protected:
+	void setFace(size_t index, Element* face) { _faces[index] = face; }
+	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }
 
 	eslocal _params[PARAMS_SIZE];
 	std::vector<Element*> _edges;

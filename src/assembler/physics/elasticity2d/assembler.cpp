@@ -38,14 +38,15 @@ void Elasticity2D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
-	_mesh.loadProperty(_configuration.displacement.values       , { "x", "y" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	_mesh.loadNodeProperty(_configuration.displacement.values       , { "x", "y" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	_mesh.loadNodeProperty(_configuration.temperature.values        , { }         , { Property::TEMPERATURE });
+	_mesh.loadNodeProperty(_configuration.obstacle.values           , { }         , { Property::OBSTACLE });
+	_mesh.loadNodeProperty(_configuration.normal_direction.values   , { }         , { Property::NORMAL_DIRECTION });
+	_mesh.loadNodeProperty(_configuration.thickness.values          , { }         , { Property::THICKNESS });
+
 	_mesh.loadProperty(_configuration.normal_presure.values     , { "P" }     , { Property::PRESSURE });
 	_mesh.loadProperty(_configuration.acceleration.values       , { "x", "y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y });
 	_mesh.loadProperty(_configuration.initial_temperature.values, { }         , { Property::INITIAL_TEMPERATURE });
-	_mesh.loadProperty(_configuration.temperature.values        , { }         , { Property::TEMPERATURE });
-	_mesh.loadProperty(_configuration.obstacle.values           , { }         , { Property::OBSTACLE });
-	_mesh.loadProperty(_configuration.normal_direction.values   , { }         , { Property::NORMAL_DIRECTION });
-	_mesh.loadProperty(_configuration.thickness.values          , { }         , { Property::THICKNESS });
 
 	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
 }

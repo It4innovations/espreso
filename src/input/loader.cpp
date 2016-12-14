@@ -63,7 +63,7 @@ void Loader::fill()
 
 	// LOAD NEIGHBOURS
 	TimeEvent tClusterBoundaries("cluster boundaries"); tClusterBoundaries.start();
-	neighbours(mesh._nodes, mesh._neighbours);
+	neighbours(mesh._nodes, mesh._neighbours, mesh._faces, mesh._edges);
 	tClusterBoundaries.end(); measurement.addEvent(tClusterBoundaries);
 	ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(mesh.neighbours().size());
 

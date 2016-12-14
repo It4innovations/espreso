@@ -176,7 +176,7 @@ void Sphere::materials(std::vector<Material> &materials)
 	materials.push_back(Material(mesh.coordinates()));
 }
 
-void Sphere::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours)
+void Sphere::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::vector<int> map(27, -1);
 	std::vector<size_t> cross(9 * _settings.clusters * _settings.clusters, -1);

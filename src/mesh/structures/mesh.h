@@ -58,6 +58,7 @@ public:
 
 	void markRegions();
 	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 	void loadMaterials(const std::vector<Configuration*> &materials, const std::map<size_t, std::string> &sets);
 
 	const Coordinates& coordinates() const { return _coordinates; }
@@ -91,7 +92,6 @@ public:
 
 	void synchronizeGlobalIndices();
 
-protected:
 	Region& region(const std::string &name)
 	{
 		auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region &region) { return region.name.compare(name) == 0; });
@@ -102,6 +102,7 @@ protected:
 		exit(EXIT_FAILURE);
 	}
 
+protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
 	void fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
 	void fillNodesFromCoordinates();

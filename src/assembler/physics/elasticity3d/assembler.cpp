@@ -38,7 +38,7 @@ void Elasticity3D::prepareMeshStructures()
 			_mesh.computeVolumeCorners(1, true, true, false);
 			break;
 		case B0_TYPE::KERNELS:
-			_mesh.computeFacesSharedByDomains();
+			//_mesh.computeFacesSharedByDomains();
 			break;
 		case B0_TYPE::COMBINED:
 			_mesh.computeFacesSharedByDomains();
@@ -54,13 +54,15 @@ void Elasticity3D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
-	_mesh.loadProperty(_configuration.displacement.values       , { "x", "y", "z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
+	_mesh.loadNodeProperty(_configuration.displacement.values       , { "x", "y", "z" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
+	_mesh.loadNodeProperty(_configuration.temperature.values        , { }              , { Property::TEMPERATURE });
+	_mesh.loadNodeProperty(_configuration.obstacle.values           , { }              , { Property::OBSTACLE });
+	_mesh.loadNodeProperty(_configuration.normal_direction.values   , { }              , { Property::NORMAL_DIRECTION });
+
 	_mesh.loadProperty(_configuration.normal_presure.values     , { "P" }          , { Property::PRESSURE });
 	_mesh.loadProperty(_configuration.acceleration.values       , { "x", "y", "z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
 	_mesh.loadProperty(_configuration.initial_temperature.values, { }              , { Property::INITIAL_TEMPERATURE });
-	_mesh.loadProperty(_configuration.temperature.values        , { }              , { Property::TEMPERATURE });
-	_mesh.loadProperty(_configuration.obstacle.values           , { }              , { Property::OBSTACLE });
-	_mesh.loadProperty(_configuration.normal_direction.values   , { }              , { Property::NORMAL_DIRECTION });
+
 
 	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
 }

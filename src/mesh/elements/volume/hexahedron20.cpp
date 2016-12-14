@@ -347,17 +347,17 @@ void Hexahedron20::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
 		line[2] = _indices[ edge + 8     ];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[ edge          +  4];
 		line[1] = _indices[(edge + 1) % 4 +  4];
 		line[2] = _indices[ edge          + 12];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  4];
 		line[2] = _indices[edge + 16];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 	}
 }
 
@@ -378,7 +378,7 @@ void Hexahedron20::fillFaces()
 		square[5] = _indices[(face + 1) % 4 + 16 ];
 		square[6] = _indices[ face          + 12 ];
 		square[7] = _indices[ face          + 16 ];
-		addFace<Square8>(_faces, square, filled, Square4NodesCount);
+		addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
 	}
 
 	square[0] = _indices[0];
@@ -390,7 +390,7 @@ void Hexahedron20::fillFaces()
 	square[5] = _indices[10];
 	square[6] = _indices[9];
 	square[7] = _indices[8];
-	addFace<Square8>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
 
 	square[0] = _indices[4];
 	square[1] = _indices[5];
@@ -401,7 +401,7 @@ void Hexahedron20::fillFaces()
 	square[5] = _indices[13];
 	square[6] = _indices[14];
 	square[7] = _indices[15];
-	addFace<Square8>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
 }
 
 Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params)

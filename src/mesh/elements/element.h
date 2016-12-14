@@ -189,29 +189,8 @@ public:
 		return it != _domains.end() && *it == domain;
 	}
 
-	template <class TEdge>
-	void addEdge(std::vector<Element*> &edges, eslocal *line, size_t filled)
-	{
-		for (size_t i = 0; i < filled; i++) {
-			if (std::is_permutation(edges[i]->indices(), edges[i]->indices() + 2, line)) {
-				return;
-			}
-		}
-		edges.push_back(new TEdge(line));
-		edges.back()->parentElements().push_back(this);
-	}
-
-	template <class TFace>
-	void addFace(std::vector<Element*> &faces, eslocal *face, size_t filled, size_t coarseSize)
-	{
-		for (size_t i = 0; i < filled; i++) {
-			if (std::is_permutation(faces[i]->indices(), faces[i]->indices() + coarseSize, face)) {
-				return;
-			}
-		}
-		faces.push_back(new TFace(face));
-		faces.back()->parentElements().push_back(this);
-	}
+	virtual void addFace(Element* face) = 0;
+	virtual void addEdge(Element* edge) = 0;
 
 	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const
 	{
@@ -238,11 +217,32 @@ protected:
 
 	virtual void setFace(size_t index, Element* face) = 0;
 	virtual void setEdge(size_t index, Element* edge) = 0;
-	virtual void setFace(Element* face) = 0;
-	virtual void setEdge(Element* edge) = 0;
 
 	virtual void fillFaces() = 0;
 	virtual void fillEdges() = 0;
+
+
+	template <class TEdge>
+	void addUniqueEdge(std::vector<Element*> &edges, eslocal *line, size_t filled)
+	{
+		for (size_t i = 0; i < filled; i++) {
+			if (std::is_permutation(edges[i]->indices(), edges[i]->indices() + 2, line)) {
+				return;
+			}
+		}
+		addEdge(new TEdge(line));
+	}
+
+	template <class TFace>
+	void addUniqueFace(std::vector<Element*> &faces, eslocal *face, size_t filled, size_t coarseSize)
+	{
+		for (size_t i = 0; i < filled; i++) {
+			if (std::is_permutation(faces[i]->indices(), faces[i]->indices() + coarseSize, face)) {
+				return;
+			}
+		}
+		addFace(new TFace(face));
+	}
 
 	Settings _settings;
 	std::vector<Element*> _parentElements;

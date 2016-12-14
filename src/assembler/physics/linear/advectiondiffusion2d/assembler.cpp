@@ -34,9 +34,10 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
+	_mesh.loadNodeProperty(_configuration.temperature.values        , { "T" }     , { Property::TEMPERATURE });
+
 	_mesh.loadProperty(_configuration.translation_motions.values, { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 	_mesh.loadProperty(_configuration.initial_temperature.values, { }         , { Property::INITIAL_TEMPERATURE });
-	_mesh.loadProperty(_configuration.temperature.values        , { "T" }     , { Property::TEMPERATURE });
 	_mesh.loadProperty(_configuration.heat_source.values        , { "T" }     , { Property::HEAT_SOURCE });
 
 	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);

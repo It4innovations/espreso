@@ -221,11 +221,11 @@ void Tetrahedron4::fillEdges()
 	for (size_t edge = 0; edge < 3; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 
 		line[0] = _indices[edge];
 		line[1] = _indices[   3];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 	}
 }
 
@@ -239,22 +239,22 @@ void Tetrahedron4::fillFaces()
 	triangle[0] = _indices[1];
 	triangle[1] = _indices[0];
 	triangle[2] = _indices[2];
-	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[0];
 	triangle[1] = _indices[1];
 	triangle[2] = _indices[3];
-	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[1];
 	triangle[1] = _indices[2];
 	triangle[2] = _indices[3];
-	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[2];
 	triangle[1] = _indices[0];
 	triangle[2] = _indices[3];
-	addFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle3>(_faces, triangle, filled, Triangle3NodesCount);
 }
 
 Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params)

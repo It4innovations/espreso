@@ -531,8 +531,8 @@ void Mesh::markRegions()
 	}
 }
 
-void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties) {
-
+static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
+{
 	auto getValueIndex = [] (const std::vector<std::string> &values, const std::string &parameter) -> size_t {
 		if (values.size() == 1 && !Parser::contains(values[0], ":=")) {
 			return 0;
@@ -546,7 +546,7 @@ void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const
 	};
 
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
-		Region &region = this->region(it->first);
+		Region &region = mesh.region(it->first);
 		std::vector<std::string> values = Parser::split(it->second, ",;");
 
 		for (size_t p = 0; p < properties.size(); p++) {
@@ -555,17 +555,42 @@ void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const
 				std::string value = Parser::contains(values[index], ":=") ? Parser::split(values[index], ":=")[1] : values[index];
 				if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos && value.find("t") == std::string::npos) {
 					espreso::Expression expr(value, {});
-					_evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({}), properties[p]));
+					evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({}), properties[p]));
 				} else {
-					_evaluators.push_back(new espreso::CoordinatesEvaluator(value, _coordinates, properties[p]));
+					evaluators.push_back(new espreso::CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
 				}
-				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
-				for (size_t i = 0; i < region.elements.size(); i++) {
-					region.elements[i]->addSettings(properties[p], _evaluators.back());
+				if (distributeToNodes) {
+					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for nodes of region '" << region.name << "'";
+					std::vector<Element*> nodes;
+					for (size_t i = 0; i < region.elements.size(); i++) {
+						for (size_t n = 0; n < region.elements[i]->nodes(); n++) {
+							nodes.push_back(mesh.nodes()[region.elements[i]->node(n)]);
+						}
+						std::sort(nodes.begin(), nodes.end());
+						Esutils::removeDuplicity(nodes);
+						for (size_t n = 0; n < nodes.size(); n++) {
+							nodes[n]->addSettings(properties[p], evaluators.back());
+						}
+					}
+				} else {
+					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
+					for (size_t i = 0; i < region.elements.size(); i++) {
+						region.elements[i]->addSettings(properties[p], evaluators.back());
+					}
 				}
 			}
 		}
 	}
+}
+
+void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties) {
+
+	_loadProperty(*this, _evaluators, regions, parameters, properties, false);
+}
+
+void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+{
+	_loadProperty(*this, _evaluators, regions, parameters, properties, true);
 }
 
 void Mesh::loadMaterials(const std::vector<Configuration*> &materials, const std::map<size_t, std::string> &sets)
@@ -873,7 +898,9 @@ void Mesh::fillEdgesParents()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			parentElement(_nodes, _edges[e])->setEdge(_edges[e]);
+			if (!_edges[e]->parentElements().size()) {
+				parentElement(_nodes, _edges[e])->addEdge(_edges[e]);
+			}
 		}
 	}
 }
@@ -886,7 +913,9 @@ void Mesh::fillFacesParents()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			parentElement(_nodes, _faces[e])->setFace(_faces[e]);
+			if (!_faces[e]->parentElements().size()) {
+				parentElement(_nodes, _faces[e])->addFace(_faces[e]);
+			}
 		}
 	}
 }
@@ -1514,22 +1543,16 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 				nElements[n].push_back(new DOF(rBuffer[n][p]));
 				break;
 			case Line2VTKCode:
+			case Line3VTKCode:
 				nElements[n].push_back(new Line2(&rBuffer[n][p]));
 				break;
-			case Line3VTKCode:
-				nElements[n].push_back(new Line3(&rBuffer[n][p]));
-				break;
 			case Square4VTKCode:
+			case Square8VTKCode:
 				nElements[n].push_back(new Square4(&rBuffer[n][p]));
 				break;
-			case Square8VTKCode:
-				nElements[n].push_back(new Square8(&rBuffer[n][p]));
-				break;
 			case Triangle3VTKCode:
-				nElements[n].push_back(new Triangle3(&rBuffer[n][p]));
-				break;
 			case Triangle6VTKCode:
-				nElements[n].push_back(new Triangle6(&rBuffer[n][p]));
+				nElements[n].push_back(new Triangle3(&rBuffer[n][p]));
 				break;
 			case UnknownPointVTKCode:
 			case UnknownLineVTKCode:

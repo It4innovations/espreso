@@ -317,17 +317,17 @@ void Prisma15::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
 		line[2] = _indices[ edge + 6     ];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[ edge          +  3];
 		line[1] = _indices[(edge + 1) % 3 +  3];
 		line[2] = _indices[ edge          + 9];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  3];
 		line[2] = _indices[edge + 12];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 	}
 }
 
@@ -349,7 +349,7 @@ void Prisma15::fillFaces()
 		square[5] = _indices[(face + 1) % 3 + 12];
 		square[6] = _indices[ face          + 9 ];
 		square[7] = _indices[ face          + 12];
-		addFace<Square8>(_faces, square, filled, Square4NodesCount);
+		addUniqueFace<Square8>(_faces, square, filled, Square4NodesCount);
 	}
 
 	triangle[0] = _indices[1];
@@ -359,7 +359,7 @@ void Prisma15::fillFaces()
 	triangle[3] = _indices[6];
 	triangle[4] = _indices[8];
 	triangle[5] = _indices[7];
-	addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 
 	triangle[0] = _indices[3];
 	triangle[1] = _indices[4];
@@ -368,7 +368,7 @@ void Prisma15::fillFaces()
 	triangle[3] = _indices[9];
 	triangle[4] = _indices[10];
 	triangle[5] = _indices[11];
-	addFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
+	addUniqueFace<Triangle6>(_faces, triangle, filled, Triangle3NodesCount);
 }
 
 Prisma15::Prisma15(const eslocal *indices, eslocal n, const eslocal *params)

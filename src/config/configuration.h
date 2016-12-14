@@ -147,13 +147,13 @@ struct OptionsHolder: public ParameterBase {
 };
 
 struct Configuration {
+	bool copy;
 	std::map<std::string, ParameterBase*, StringCompare> parameters;
 	std::map<std::string, Configuration*, StringCompare> subconfigurations;
 	std::vector<ParameterBase*> orderedParameters;
 	std::vector<Configuration*> orderedSubconfiguration;
 	std::string name;
 	std::string description;
-	bool copy;
 
 	Configuration(): copy(false) {};
 	Configuration(const Configuration &other)

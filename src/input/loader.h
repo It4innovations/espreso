@@ -22,7 +22,7 @@ public:
 	virtual void points(Coordinates &coordinates) = 0;
 	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges) = 0;
 	virtual void materials(std::vector<Material> &materials) = 0;
-	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours) = 0;
+	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges) = 0;
 	virtual void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region> &regions,

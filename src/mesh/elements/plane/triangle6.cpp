@@ -145,7 +145,7 @@ void Triangle6::fillEdges()
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 3];
 		line[2] = _indices[ edge + 3     ];
-		addEdge<Line3>(_edges, line, filled);
+		addUniqueEdge<Line3>(_edges, line, filled);
 	}
 }
 

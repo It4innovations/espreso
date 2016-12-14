@@ -141,15 +141,15 @@ void Hexahedron8::fillEdges()
 	for (size_t edge = 0; edge < 4; edge++) {
 		line[0] = _indices[ edge         ];
 		line[1] = _indices[(edge + 1) % 4];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 
 		line[0] = _indices[ edge          +  4];
 		line[1] = _indices[(edge + 1) % 4 +  4];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 
 		line[0] = _indices[edge     ];
 		line[1] = _indices[edge +  4];
-		addEdge<Line2>(_edges, line, filled);
+		addUniqueEdge<Line2>(_edges, line, filled);
 	}
 }
 
@@ -165,20 +165,20 @@ void Hexahedron8::fillFaces()
 		square[1] = _indices[(face + 1) % 4    ];
 		square[2] = _indices[(face + 1) % 4 + 4];
 		square[3] = _indices[ face + 4         ];
-		addFace<Square4>(_faces, square, filled, Square4NodesCount);
+		addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
 	}
 
 	square[0] = _indices[0];
 	square[1] = _indices[3];
 	square[2] = _indices[2];
 	square[3] = _indices[1];
-	addFace<Square4>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
 
 	square[0] = _indices[4];
 	square[1] = _indices[5];
 	square[2] = _indices[6];
 	square[3] = _indices[7];
-	addFace<Square4>(_faces, square, filled, Square4NodesCount);
+	addUniqueFace<Square4>(_faces, square, filled, Square4NodesCount);
 }
 
 Hexahedron8::Hexahedron8(const eslocal *indices, eslocal n, const eslocal *params)
