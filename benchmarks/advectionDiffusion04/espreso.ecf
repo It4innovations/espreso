@@ -81,10 +81,10 @@ ADVECTION_DIFFUSION_2D {
   }
 
   THICKNESS {
-    N_ALL 1;
+    N_ALL "1";
   }
 
-  HEAT_FLUX  CONVECTIVE;
+  HEAT_FLUX  GENERAL;
 
   GENERAL_HEAT_FLUX {
     RIGHT "q = 10";
@@ -98,15 +98,28 @@ ADVECTION_DIFFUSION_2D {
     RIGHT "T_ext = 5";
   }
 
+#  HEAT_FLUXS {
+#    RIGHT {
+#      TYPE  GENERAL;
+#      q          10;
+#    }
+#
+#    LEFT {
+#      TYPE CONVETIVE;
+#      HTC    2;
+#      T_ext  5;
+#    }
+#  }
+
   MATERIALS {
 
     1 {
-      MODEL LINEAR_ELASTIC_ISOTROPIC;
+      MODEL ISOTROPIC;
 
       DENS    1;
       KXX     1;
       KXY     1;
-      C       1;
+      Cp      1;
     }
   }
 

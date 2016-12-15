@@ -3,10 +3,33 @@
 #ifndef SRC_CONFIG_ADVECTIONDIFFUSION2D_H_
 #define SRC_CONFIG_ADVECTIONDIFFUSION2D_H_
 
-#include "material.h"
 #include "solver.h"
 
 namespace espreso {
+
+enum class MATERIAL_MODEL_AD2D {
+	ISOTROPIC = 0,
+	DIAGONAL = 1,
+	SYMMETRIC = 2,
+	ANISOTROPIC = 3
+};
+
+struct AdvectionDiffusion2DMaterial: public Configuration {
+
+	PARAMETER(std::string, DENS, "Density"                , "7850");
+	PARAMETER(std::string, Cp  , "Termal capacity."       , "1");
+	PARAMETER(std::string, KXX , "Termal conductivity XX.", "1");
+	PARAMETER(std::string, KYY , "Termal conductivity YY.", "1");
+	PARAMETER(std::string, KXY , "Termal conductivity XY.", "1");
+	PARAMETER(std::string, KYX , "Termal conductivity YX.", "1");
+
+	OPTION(MATERIAL_MODEL_AD2D, model, "Material model", MATERIAL_MODEL_AD2D::ISOTROPIC, OPTIONS({
+		{ "ISOTROPIC"  , MATERIAL_MODEL_AD2D::ISOTROPIC  , "Isotropic." },
+		{ "DIAGONAL"   , MATERIAL_MODEL_AD2D::DIAGONAL   , "Diagonal." },
+		{ "SYMMETRIC"  , MATERIAL_MODEL_AD2D::SYMMETRIC  , "Symmetric." },
+		{ "ANISOTROPIC", MATERIAL_MODEL_AD2D::ANISOTROPIC, "Anisotropic." }
+	}));
+};
 
 struct AdvectionDiffusion2DConfiguration: public Configuration {
 
@@ -49,8 +72,8 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, translation_motions , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, thickness           , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTOR(MaterialParameters, materials, "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
-	SUBMAP(size_t, std::string  , material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");
+	SUBVECTOR(AdvectionDiffusion2DMaterial, materials, "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
+	SUBMAP(size_t, std::string, material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");
 };
 
 }

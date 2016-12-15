@@ -156,6 +156,7 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 	}
 }
 
+
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element, const AdvectionDiffusion2DConfiguration &configuration)
 {
 	bool CAU = configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
@@ -165,6 +166,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	double detJ;
 	DenseMatrix f(1, element->nodes());
 	DenseMatrix U(element->nodes(), 2);
+	DenseMatrix thickness(element->nodes(), 1), dens(element->nodes(), 1), Cp(element->nodes(), 1), K(element->nodes(), 4);
+	DenseMatrix gpThickness(1, 1), gpDens(1, 1), gpCp(1, 1), gpK(1, 4);
 
 	const std::vector<Evaluator*> &heat_sources = element->settings(Property::HEAT_SOURCE);
 	const std::vector<Evaluator*> &ux = element->settings(Property::TRANSLATION_MOTION_X);
@@ -175,19 +178,22 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
 
-	Ce(0, 0) = material.termalConductionX(0);
-	Ce(1, 1) = material.termalConductionY(0);
-
 	coordinates.resize(element->nodes(), 2);
 	for (size_t i = 0; i < element->nodes(); i++) {
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		U(i, 0) = ux.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i));
-		U(i, 1) = uy.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i));
+		thickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
+		U(i, 0) = ux.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i)) * thickness(i, 0);
+		U(i, 1) = uy.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i)) * thickness(i, 0);
 		for (size_t j = 0; j < heat_sources.size(); j++) {
-			f(0, i) += heat_sources[j]->evaluate(element->node(i));
+			f(0, i) += heat_sources[j]->evaluate(element->node(i)) * thickness(i, 0);
 		}
+
+		K(i, 0) = 1; // TODO KXX
+		K(i, 1) = 1; // TODO KYY
+		K(i, 2) = 0; // TODO KXY
+		K(i, 3) = 0; // TODO KYX
 	}
 
 	eslocal Ksize = element->nodes();
@@ -206,6 +212,14 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		J.multiply(dN[gp], coordinates);
 		detJ = determinant2x2(J);
 		inverse(J, invJ, detJ);
+
+		gpThickness.multiply(N[gp], thickness);
+		gpK.multiply(N[gp], K);
+
+		Ce(0, 0) = gpK(0, 0);
+		Ce(1, 1) = gpK(0, 1);
+		Ce(0, 1) = gpK(0, 2);
+		Ce(1, 0) = gpK(0, 3);
 
 		dND.multiply(invJ, dN[gp]);
 
@@ -262,7 +276,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		Ce(0, 0) += sigma * h_e * norm_u_e;
 		Ce(1, 1) += sigma * h_e * norm_u_e;
 
-		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp], 1, true);
+		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
 		Ke.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
 		if (konst * weighFactor[gp] * detJ != 0) {
 			Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
