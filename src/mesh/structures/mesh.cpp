@@ -545,6 +545,18 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 		return values.size();
 	};
 
+	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator) {
+		size_t threads = environment->CILK_NWORKERS;
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+
+		#pragma cilk grainsize = 1
+		cilk_for (size_t t = 0; t < threads; t++) {
+			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+				elements[n]->addSettings(property, evaluator);
+			}
+		}
+	};
+
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region &region = mesh.region(it->first);
 		std::vector<std::string> values = Parser::split(it->second, ",;");
@@ -559,24 +571,21 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 				} else {
 					evaluators.push_back(new espreso::CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
 				}
-				if (distributeToNodes) {
+				if (distributeToNodes && region.elements.size() && region.elements[0]->nodes() > 1) {
 					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for nodes of region '" << region.name << "'";
 					std::vector<Element*> nodes;
 					for (size_t i = 0; i < region.elements.size(); i++) {
 						for (size_t n = 0; n < region.elements[i]->nodes(); n++) {
 							nodes.push_back(mesh.nodes()[region.elements[i]->node(n)]);
 						}
-						std::sort(nodes.begin(), nodes.end());
-						Esutils::removeDuplicity(nodes);
-						for (size_t n = 0; n < nodes.size(); n++) {
-							nodes[n]->addSettings(properties[p], evaluators.back());
-						}
 					}
+					std::sort(nodes.begin(), nodes.end());
+					Esutils::removeDuplicity(nodes);
+
+					distribute(nodes, properties[p], evaluators.back());
 				} else {
 					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
-					for (size_t i = 0; i < region.elements.size(); i++) {
-						region.elements[i]->addSettings(properties[p], evaluators.back());
-					}
+					distribute(region.elements, properties[p], evaluators.back());
 				}
 			}
 		}
