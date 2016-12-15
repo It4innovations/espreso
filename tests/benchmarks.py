@@ -14,14 +14,14 @@ class ESPRESOBenchmarks(unittest.TestCase):
     def benchmark(self, path):
         config = { "ENV::TESTING_LEVEL": 3, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULT": 0 }
         for test in  glob.glob(path + "/*.test"):
-            for line in [ string.capwords(line.rstrip('\n')) for line in open(test) ]:
+            for line in [ line.rstrip('\n') for line in open(test) ]:
                 param, value = line.split("=")
-                if param.strip() == "Procs":
+                if param.strip() == "PROCS":
                     procs = int(value)
-                if param.strip() == "Args":
-                    args = [ int(i) for i in value.split() ]
-                if param.strip() == "Norm":
-                    config["RESULTS::NORM"] = float(value)
+                elif param.strip() == "ARGS":
+                    args = value.split()
+                else:
+                    config["RESULTS::" + param.strip()] = value.strip()
 
             self.espreso.run(procs, path, config, args)
 
@@ -30,8 +30,10 @@ if __name__ == '__main__':
 
     benchmarks = []
     for root, subFolders, files in os.walk(os.path.join(ROOT, "benchmarks")):
-        if "espreso.test" in files:
-            benchmarks.append(root)
+        for file in files:
+            if file.endswith(".test"):
+                benchmarks.append(root)
+                break
 
     benchmarks.sort()
     for benchmark in benchmarks:

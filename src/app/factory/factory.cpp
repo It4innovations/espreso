@@ -23,6 +23,7 @@ void Factory::solve(const std::string &outputFile)
 
 void Factory::check(const Results &configuration)
 {
+	double epsilon = 1e-2;
 	auto norm = [&] () {
 		double n = 0, sum = 0;
 		for (size_t i = 0; i < _solution.size(); i++) {
@@ -39,6 +40,7 @@ void Factory::check(const Results &configuration)
 		double nn = norm();
 		ESTEST(EVALUATION)
 			<< (fabs(nn - configuration.norm) > 1e-2 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
+			<< (fabs(nn - configuration.norm) > epsilon && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
 			<< "Norm of the solution " << nn << " is not " << configuration.norm << ".";
 	}
 
@@ -49,7 +51,7 @@ void Factory::check(const Results &configuration)
 				for (size_t n = 0; n < mesh.coordinates().localSize(p); n++) {
 					eslocal index = mesh.coordinates().localToCluster(p)[n];
 					ESTEST(EVALUATION)
-						<< (fabs(evaluator.evaluate(mesh.coordinates()[index]) - _solution[p][mesh.nodes()[index]->DOFIndex(p, DOF)]) > 1e-3 ? TEST_FAILED : TEST_PASSED)
+						<< (fabs(evaluator.evaluate(mesh.coordinates()[index]) - _solution[p][mesh.nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
 						<< "Incorrect x-displacement of the solution.";
 				}
 			}
