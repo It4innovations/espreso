@@ -41,6 +41,28 @@ void Factory::check(const Results &configuration)
 			<< (fabs(nn - configuration.norm) > 1e-3 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
 			<< "Norm of the solution " << nn << " is not " << configuration.norm << ".";
 	}
+
+	auto evaluateProperty = [&] (const std::string &value, Property property, size_t DOF) {
+		if (instance->physics().pointDOFs[DOF] == property && value.size()) {
+			CoordinatesEvaluator evaluator(value, mesh.coordinates());
+			for (size_t p = 0; p < mesh.parts(); p++) {
+				for (size_t n = 0; n < mesh.coordinates().localSize(p); n++) {
+					eslocal index = mesh.coordinates().localToCluster(p)[n];
+					ESTEST(EVALUATION)
+						<< (fabs(evaluator.evaluate(mesh.coordinates()[index]) - _solution[p][mesh.nodes()[index]->DOFIndex(p, DOF)]) > 1e-3 ? TEST_FAILED : TEST_PASSED)
+						<< "Incorrect x-displacement of the solution.";
+				}
+			}
+		}
+	};
+
+	for (size_t DOF = 0; DOF < instance->physics().pointDOFs.size(); DOF++) {
+		evaluateProperty(configuration.displacement_x, Property::DISPLACEMENT_X, DOF);
+		evaluateProperty(configuration.displacement_y, Property::DISPLACEMENT_Y, DOF);
+		evaluateProperty(configuration.displacement_z, Property::DISPLACEMENT_Z, DOF);
+		evaluateProperty(configuration.temperature   , Property::TEMPERATURE   , DOF);
+		evaluateProperty(configuration.pressure      , Property::PRESSURE      , DOF);
+	};
 }
 
 double Factory::norm() const
