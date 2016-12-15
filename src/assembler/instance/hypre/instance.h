@@ -21,7 +21,7 @@ public:
 	feiPtr(MPI_COMM_WORLD),
 	_constrains(configuration.espreso, mesh),
 	_physics(mesh, _constrains, configuration),
-	_store(output, mesh, "results", output->domain_shrink_ratio, output->cluster_shrink_ratio)
+	_store(output, mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}
