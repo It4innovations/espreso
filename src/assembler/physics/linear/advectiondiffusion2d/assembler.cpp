@@ -35,10 +35,20 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	_constraints.initMatrices(matrixSize);
 
 	_mesh.loadNodeProperty(_configuration.temperature.values        , { "T" }     , { Property::TEMPERATURE });
+	_mesh.loadNodeProperty(_configuration.thickness.values          , { }         , { Property::THICKNESS });
 
-	_mesh.loadProperty(_configuration.translation_motions.values, { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
-	_mesh.loadProperty(_configuration.initial_temperature.values, { }         , { Property::INITIAL_TEMPERATURE });
-	_mesh.loadProperty(_configuration.heat_source.values        , { "T" }     , { Property::HEAT_SOURCE });
+	_mesh.loadProperty(_configuration.translation_motions.values      , { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	_mesh.loadProperty(_configuration.initial_temperature.values      , { }         , { Property::INITIAL_TEMPERATURE });
+	_mesh.loadProperty(_configuration.heat_source.values              , { "T" }     , { Property::HEAT_SOURCE });
+	switch (_configuration.heat_flux) {
+	case AdvectionDiffusion2DConfiguration::HEAT_FLUX::GENERAL:
+		_mesh.loadProperty(_configuration.general_heat_flux.values, { "q" }, { Property::GENERAL_HEAT_FLUX });
+		break;
+	case AdvectionDiffusion2DConfiguration::HEAT_FLUX::CONVECTIVE:
+		_mesh.loadProperty(_configuration.heat_transfer_coefficient.values, { "HTC" }  , { Property::HEAT_TRANSFER_COEFFICIENT });
+		_mesh.loadProperty(_configuration.external_temperature.values     , { "T_ext" }, { Property::EXTERNAL_TEMPERATURE });
+		break;
+	}
 
 	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
 }
@@ -94,6 +104,56 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv(0, 1) = - detJx * m(0, 1);
 	inv(1, 0) = - detJx * m(1, 0);
 	inv(1, 1) =   detJx * m(0, 0);
+}
+
+static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* edge, const AdvectionDiffusion2DConfiguration &configuration)
+{
+	DenseMatrix coordinates(edge->nodes(), 2), dND(1, 2), q(edge->nodes(), 1), htc(edge->nodes(), 1), thickness(edge->nodes(), 1);
+	DenseMatrix gpQ(1, 2), gpHtc(1, 1), gpThickness(1, 1);
+
+	Ke.resize(2, 2);
+	Ke = 0;
+
+	const std::vector<DenseMatrix> &dN = edge->dN();
+	const std::vector<DenseMatrix> &N = edge->N();
+	const std::vector<double> &weighFactor = edge->weighFactor();
+
+	for (size_t n = 0; n < edge->nodes(); n++) {
+		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
+		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
+		switch (configuration.heat_flux) {
+		case AdvectionDiffusion2DConfiguration::HEAT_FLUX::GENERAL:
+			q(n, 0) = edge->settings(Property::GENERAL_HEAT_FLUX).back()->evaluate(edge->node(n));
+			break;
+		case AdvectionDiffusion2DConfiguration::HEAT_FLUX::CONVECTIVE:
+			q(n, 0) = edge->settings(Property::EXTERNAL_TEMPERATURE).back()->evaluate(edge->node(n));
+			q(n, 0) *= edge->settings(Property::HEAT_TRANSFER_COEFFICIENT).back()->evaluate(edge->node(n));
+			htc(n, 0) = edge->settings(Property::HEAT_TRANSFER_COEFFICIENT).back()->evaluate(edge->node(n));
+			thickness(n, 0) = mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
+			break;
+		}
+		q(n, 0) *= mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
+	}
+
+	eslocal Ksize = 2 * edge->nodes();
+	fe.resize(Ksize);
+	std::fill(fe.begin(), fe.end(), 0);
+
+	for (size_t gp = 0; gp < edge->gaussePoints(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		double J = dND.norm();
+		gpQ.multiply(N[gp], q);
+		switch (configuration.heat_flux) {
+		case AdvectionDiffusion2DConfiguration::HEAT_FLUX::CONVECTIVE:
+			gpHtc.multiply(N[gp], htc);
+			gpThickness.multiply(N[gp], thickness);
+			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0) * gpThickness(0, 0), 1, true);
+			break;
+		}
+		for (eslocal i = 0; i < Ksize; i++) {
+			fe[i] += J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
+		}
+	}
 }
 
 static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element, const AdvectionDiffusion2DConfiguration &configuration)
@@ -228,6 +288,14 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
 }
 
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1, SparseMatrix &RegMat, size_t subdomain)
+{
+	double norm;
+	eslocal defect;
+
+	K.get_kernel_from_K(K, RegMat, R1, norm, defect, subdomain);
+}
+
 void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
 	processElement(Ke, fe, _mesh, e, _configuration);
@@ -245,8 +313,18 @@ void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix
 
 void AdvectionDiffusion2D::makeStiffnessMatricesRegular()
 {
-	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
-		algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+	switch (mtype) {
+		case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+			for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+				K[subdomain].RemoveLower();
+				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], RegMat[subdomain], subdomain);
+			}
+			break;
+		case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+			for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+			}
+			break;
 	}
 }
 
@@ -278,6 +356,34 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 				}
 				f[subdomain][row] += fe[dx * elements[e]->nodes() + nx];
 			}
+		}
+	}
+
+	for (size_t i = 0; i < _mesh.edges().size(); i++) {
+		if (_mesh.edges()[i]->inDomain(subdomain) && _mesh.edges()[i]->settings().size()) {
+			processEdge(Ke, fe, _mesh, _mesh.edges()[i], _configuration);
+
+			for (size_t nx = 0; nx < _mesh.edges()[i]->nodes(); nx++) {
+				for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
+					size_t row = nodes[_mesh.edges()[i]->node(nx)]->DOFIndex(subdomain, dx);
+					f[subdomain][row] += fe[dx * _mesh.edges()[i]->nodes() + nx];
+				}
+			}
+			switch (_configuration.heat_flux) {
+			case AdvectionDiffusion2DConfiguration::HEAT_FLUX::CONVECTIVE:
+				for (size_t nx = 0; nx < _mesh.edges()[i]->nodes(); nx++) {
+					for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
+						size_t row = nodes[_mesh.edges()[i]->node(nx)]->DOFIndex(subdomain, dx);
+						for (size_t ny = 0; ny < _mesh.edges()[i]->nodes(); ny++) {
+							for (size_t dy = 0; dy < pointDOFs.size(); dy++) {
+								size_t column = nodes[_mesh.edges()[i]->node(ny)]->DOFIndex(subdomain, dy);
+								_K(row, column) = Ke(dx * _mesh.edges()[i]->nodes() + nx, dy * _mesh.edges()[i]->nodes() + ny);
+							}
+						}
+					}
+				}
+			}
+
 		}
 	}
 

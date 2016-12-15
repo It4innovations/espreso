@@ -12,9 +12,14 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration.espreso,
-			SparseMatrix::MatrixType::REAL_UNSYMMETRIC,
+			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
-	  _configuration(configuration) {};
+	  _configuration(configuration)
+	{
+		if (_configuration.translation_motions.values.size()) {
+			mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+		}
+	};
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;

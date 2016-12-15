@@ -24,6 +24,9 @@ enum class Property : int {
 	TRANSLATION_MOTION_X,
 	TRANSLATION_MOTION_Y,
 	TRANSLATION_MOTION_Z,
+	GENERAL_HEAT_FLUX,
+	HEAT_TRANSFER_COEFFICIENT,
+	EXTERNAL_TEMPERATURE,
 
 	OBSTACLE,
 	NORMAL_DIRECTION,
@@ -54,6 +57,9 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::TRANSLATION_MOTION_X: return os << "TRANSLATION_MOTION_X";
 		case Property::TRANSLATION_MOTION_Y: return os << "TRANSLATION_MOTION_Y";
 		case Property::TRANSLATION_MOTION_Z: return os << "TRANSLATION_MOTION_Z";
+		case Property::GENERAL_HEAT_FLUX: return os << "GENERAL_HEAT_FLUX";
+		case Property::HEAT_TRANSFER_COEFFICIENT: return os << "HEAT_TRANSFER_COEFFICIENT";
+		case Property::EXTERNAL_TEMPERATURE: return os << "EXTERNAL_TEMPERATURE";
 
 		case Property::OBSTACLE: return os << "OBSTACLE";
 		case Property::NORMAL_DIRECTION: return os << "NORMAL_DIRECTION";
