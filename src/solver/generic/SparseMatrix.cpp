@@ -4004,7 +4004,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  eslocal defect_K_in = 6;// R_s_cols;
+  eslocal defect_K_in = 0;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? twenty : S.rows ;
 //#if VERBOSE_KERNEL>1
@@ -4041,6 +4041,26 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     }
   }
 #endif
+
+if (defect_K_in == 0){
+
+	    regMat.rows = 0;
+	    regMat.cols = 0;
+	    regMat.nnz= 0; 
+//      regMat.ConvertToCOO(1);
+
+	    Kplus_R.rows = 0;
+	    Kplus_R.cols = 0;
+	    Kplus_R.nnz= 0;
+
+      norm_KR_d_pow_2_approx = 0;
+      defect_d = 0;
+
+      return; 
+}
+
+
+
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
   SparseMatrix R_s;
   R_s.nnz  = defect_K_in*S.rows;
@@ -5045,7 +5065,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  eslocal defect_K_in = 6;// R_s_cols;
+  eslocal defect_K_in = 0;// R_s_cols;
   eslocal ind_U_V = 0;// R_s_cols;
   double ratio;
   eslocal itMax = twenty < S.rows ? sc_size-twenty-1 : 0 ;
@@ -5084,6 +5104,32 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
     }
   }
 #endif
+
+
+if (defect_K_in == 0){
+
+	    regMat.rows = 0;
+	    regMat.cols = 0;
+	    regMat.nnz= 0; 
+//      regMat.ConvertToCOO(1);
+
+	    Kplus_R.rows = 0;
+	    Kplus_R.cols = 0;
+	    Kplus_R.nnz= 0;
+
+	    Kplus_Rl.rows = 0;
+	    Kplus_Rl.cols = 0;
+	    Kplus_Rl.nnz= 0;
+
+      norm_KR_d_pow_2_approx = 0;
+      defect_d = 0;
+
+
+      return; 
+}
+
+
+
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
