@@ -289,10 +289,19 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
 {
 	switch (eType) {
-	case ElementType::ELEMENTS:
 	case ElementType::FACES:
 	case ElementType::EDGES:
 		ESINFO(GLOBAL_ERROR) << "Implement store values";
+		break;
+	case ElementType::ELEMENTS:
+		_os << "\n";
+		if (_lastData != ElementType::ELEMENTS) {
+			_os << "CELL_DATA " << _mesh.elements().size() << "\n";
+			_lastData = ElementType::ELEMENTS;
+		}
+		_os << "SCALARS " << name << " double " << dimension << "\n";
+		_os << "LOOKUP_TABLE fixed" << name << "\n";
+		results(_os, values, dimension);
 		break;
 	case ElementType::NODES:
 		_os << "\n";

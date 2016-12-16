@@ -59,6 +59,7 @@ void LinearInstance<TPhysics, TConfiguration>::solve(std::vector<std::vector<dou
 {
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
 	_linearSolver.Solve(_physics.f, solution);
+	_physics.postProcess(_store, solution);
 	timeSolve.endWithBarrier(); _timeStatistics.addEvent(timeSolve);
 
 	if (_output.results) {

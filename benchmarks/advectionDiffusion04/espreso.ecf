@@ -65,9 +65,9 @@ ADVECTION_DIFFUSION_2D {
 
   ESPRESO {
 
-    METHOD      TOTAL_FETI;
-    SOLVER           GMRES;
-    PRECONDITIONER  NONE;
+    METHOD         TOTAL_FETI;
+    SOLVER              GMRES;
+    PRECONDITIONER  DIRICHLET;
   }
   
   STABILIZATION CAU;
@@ -77,7 +77,6 @@ ADVECTION_DIFFUSION_2D {
     LEFT   "T = 1";
     TOP    "T = 1";
     BOTTOM "T = 0";
-#    RIGHT  "T = 0";
   }
 
   THICKNESS {

@@ -22,6 +22,8 @@ struct Physics {
 	virtual void assembleB1() =0;
 	virtual void assembleB0() =0;
 
+	virtual void postProcess(store::Store &store, const std::vector<std::vector<double> > &solution) {};
+
 	virtual void saveMeshProperties(store::Store &store) =0;
 	virtual void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results) =0;
 	virtual void saveStiffnessMatrices()

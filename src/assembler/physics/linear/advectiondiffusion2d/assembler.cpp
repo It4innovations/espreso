@@ -406,6 +406,107 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	K[subdomain] = csrK;
 }
 
+static void postProcessElement(std::vector<double> &gradient, std::vector<double> &flux, DenseMatrix &solution, const Element* element, const Mesh &mesh, const AdvectionDiffusion2DConfiguration &configuration)
+{
+	bool CAU = configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
+	double sigma = configuration.sigma;
+
+	DenseMatrix Ce(2, 2), coordinates, J, invJ, dND;
+	double detJ;
+	DenseMatrix U(element->nodes(), 2);
+	DenseMatrix thickness(element->nodes(), 1), dens(element->nodes(), 1), Cp(element->nodes(), 1), K(element->nodes(), 4);
+	DenseMatrix gpThickness(1, 1), gpDens(1, 1), gpCp(1, 1), gpK(1, 4);
+
+	const std::vector<Evaluator*> &ux = element->settings(Property::TRANSLATION_MOTION_X);
+	const std::vector<Evaluator*> &uy = element->settings(Property::TRANSLATION_MOTION_Y);
+
+	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
+	const std::vector<DenseMatrix> &dN = element->dN();
+	const std::vector<DenseMatrix> &N = element->N();
+	const std::vector<double> &weighFactor = element->weighFactor();
+
+	DenseMatrix matFlux(2, 1), matGradient(2, 1);
+
+	coordinates.resize(element->nodes(), 2);
+	for (size_t i = 0; i < element->nodes(); i++) {
+		const Point &p = mesh.coordinates()[element->node(i)];
+		coordinates(i, 0) = p.x;
+		coordinates(i, 1) = p.y;
+		thickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
+		U(i, 0) = ux.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i)) * thickness(i, 0);
+		U(i, 1) = uy.back()->evaluate(element->node(i)) * material.density(element->node(i)) * material.termalCapacity(element->node(i)) * thickness(i, 0);
+
+		K(i, 0) = 1; // TODO KXX
+		K(i, 1) = 1; // TODO KYY
+		K(i, 2) = 0; // TODO KXY
+		K(i, 3) = 0; // TODO KYX
+	}
+
+	DenseMatrix u(1, 2), v(1, 2), Re(1, element->nodes());
+
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
+		u.multiply(N[gp], U, 1, 0);
+
+		J.multiply(dN[gp], coordinates);
+		detJ = determinant2x2(J);
+		inverse(J, invJ, detJ);
+
+		gpThickness.multiply(N[gp], thickness);
+		gpK.multiply(N[gp], K);
+
+		Ce(0, 0) = gpK(0, 0);
+		Ce(1, 1) = gpK(0, 1);
+		Ce(0, 1) = gpK(0, 2);
+		Ce(1, 0) = gpK(0, 3);
+
+		dND.multiply(invJ, dN[gp]);
+
+		DenseMatrix b_e(1, element->nodes()), b_e_c(1, element->nodes());
+		b_e.multiply(u, dND, 1, 0);
+
+
+		double norm_u_e = u.norm();
+		double h_e = 0;
+
+		if (norm_u_e != 0) {
+			h_e = 2 * norm_u_e / b_e.norm();
+		}
+
+		Ce(0, 0) += sigma * h_e * norm_u_e;
+		Ce(1, 1) += sigma * h_e * norm_u_e;
+
+		matGradient.multiply(dND, solution, gpThickness(0, 0), 1);
+		matFlux.multiply(Ce, dND * solution, gpThickness(0, 0), 1);
+	}
+	gradient.push_back(matGradient(0, 0) / element->gaussePoints());
+	gradient.push_back(matGradient(1, 0) / element->gaussePoints());
+	flux.push_back(matFlux(0, 0) / element->gaussePoints());
+	flux.push_back(matFlux(1, 0) / element->gaussePoints());
+}
+
+void AdvectionDiffusion2D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)
+{
+	std::vector<std::vector<double> > termalGradient(_mesh.parts()), termalFlux(_mesh.parts());
+	DenseMatrix eSolution;
+
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		termalGradient[p].reserve(matrixSize[p]);
+		termalFlux[p].reserve(matrixSize[p]);
+		for (size_t e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
+			eSolution.resize(_mesh.elements()[e]->nodes(), 1);
+			for (size_t n = 0; n < _mesh.elements()[e]->nodes(); n++) {
+				eSolution(n, 0) = solution[p][_mesh.nodes()[_mesh.elements()[e]->node(n)]->DOFIndex(p, 0)];
+			}
+			postProcessElement(termalGradient[p], termalFlux[p], eSolution, _mesh.elements()[e], _mesh, _configuration);
+		}
+	}
+
+	store.storeValues("gradient", 2, termalGradient, store::Store::ElementType::ELEMENTS);
+	store.storeValues("flux", 2, termalFlux, store::Store::ElementType::ELEMENTS);
+	store.finalize();
+
+}
+
 }
 
 
