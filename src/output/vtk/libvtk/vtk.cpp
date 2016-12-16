@@ -153,7 +153,7 @@ void VTK::storeGeometry(size_t timeStep)
 
 
 	//Writers
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT: {
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		ss << _path << environment->MPIrank << ".vtk";
@@ -187,7 +187,7 @@ void VTK::storeGeometry(size_t timeStep)
 			sss << _path << ".vtm";
 			result.open(sss.str().c_str());
 			result << "<?xml version=\"1.0\"?>\n";
-			if (!output->compression) {
+			if (!_output.compression) {
 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 
 			} else {
@@ -234,7 +234,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	stringstream ss;
 
 
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtk";
@@ -364,7 +364,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 
 	stringstream sss;
 	//Writers
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writervtk->SetFileName(ss.str().c_str());
@@ -408,7 +408,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	vtkSmartPointer<vtkUnstructuredGrid> VTKGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
 	stringstream ss;
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtk";
@@ -502,7 +502,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 
 	//Writers
 	stringstream sss;
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writervtk->SetFileName(ss.str().c_str());
@@ -540,7 +540,7 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 	}
 }
 
-void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path, ElementType eType)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement mesh";
 	const std::vector<Element*> &elements = mesh.elements();
@@ -651,7 +651,7 @@ void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::s
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	switch (output->format) {
+	switch (output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		ss << path << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
@@ -833,7 +833,7 @@ void VTK::fixPoints(const OutputConfiguration &output, const Mesh &mesh, const s
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	switch (output->format) {
+	switch (output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		ss << path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
@@ -1024,7 +1024,7 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 	//ensight
 	vtkEnSightWriter *wcase = vtkEnSightWriter::New();
 
-	switch (output->format) {
+	switch (output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
 		ss << path << environment->MPIrank << ".vtk";
 		writervtk->SetFileName(ss.str().c_str());
@@ -1445,7 +1445,7 @@ void VTK::store(std::vector<std::vector<double> > &displasment)
 
 void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs)
 {
-	 VTK* help=new VTK(mesh,path,shrinkSubdomain,shrinkCluster);
+	 VTK* help=new VTK(output, mesh, path);
 
 	 vtkSmartPointer<vtkPolyData> gp[dofs];
 	 vtkSmartPointer<vtkPolyData> dirichlet[dofs];
@@ -1683,7 +1683,7 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 	 ap->Update();
 
 	 stringstream ss;
-	 switch (output->format) {
+	 switch (output.format) {
 	 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 	 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 	 		ss<<path<<environment->MPIrank<<".vtk";
@@ -1734,7 +1734,7 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 	 			sss << path << ".vtm";
 	 			result.open(sss.str().c_str());
 	 			result << "<?xml version=\"1.0\"?>\n";
-	 			if (!output->compression) {
+	 			if (!output.compression) {
 	 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 	 			} else {
 	 				result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
@@ -1834,7 +1834,7 @@ void VTK::finalize(){
 	vtkSmartPointer<vtkUnstructuredGrid> VTKGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 
 	stringstream ss;
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectReader> rvtk = vtkSmartPointer<vtkGenericDataObjectReader>::New();
 		ss<<_path<<environment->MPIrank<<".vtk";
@@ -1875,7 +1875,7 @@ void VTK::finalize(){
 	vtkSmartPointer<vtkDataSetSurfaceFilter> dssf = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
 	vtkSmartPointer<vtkTriangleFilter> tf = vtkSmartPointer<vtkTriangleFilter>::New();
 
-	if (output->decimation != 0) {
+	if (_output.decimation != 0) {
 		 gf->SetInputData(VTKGrid);
 		 gf->Update();
 
@@ -1886,7 +1886,7 @@ void VTK::finalize(){
 		 tf->Update();
 
 		 decimate->SetInputData(tf->GetOutput());
-		 decimate->SetTargetReduction(output->decimation);
+		 decimate->SetTargetReduction(_output.decimation);
 		 decimate->Update();
 
 		 ap->AddInputData(decimate->GetOutput());
@@ -1895,7 +1895,7 @@ void VTK::finalize(){
 		 VTKGrid->ShallowCopy(ap->GetOutput());
 	}
 
-	switch (output->format) {
+	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:{
 		vtkSmartPointer<vtkGenericDataObjectWriter> writervtk = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writervtk->SetFileName(ss.str().c_str());
