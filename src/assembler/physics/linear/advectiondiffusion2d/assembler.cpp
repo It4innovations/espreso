@@ -490,8 +490,8 @@ void AdvectionDiffusion2D::postProcess(store::Store &store, const std::vector<st
 	DenseMatrix eSolution;
 
 	for (size_t p = 0; p < _mesh.parts(); p++) {
-		termalGradient[p].reserve(matrixSize[p]);
-		termalFlux[p].reserve(matrixSize[p]);
+		termalGradient[p].reserve(2 * matrixSize[p]);
+		termalFlux[p].reserve(2 * matrixSize[p]);
 		for (size_t e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
 			eSolution.resize(_mesh.elements()[e]->nodes(), 1);
 			for (size_t n = 0; n < _mesh.elements()[e]->nodes(); n++) {

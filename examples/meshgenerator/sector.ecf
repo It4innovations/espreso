@@ -34,9 +34,9 @@ GENERATOR { # ESPRESO internal mesh generator.
     LENGTH_Y 1;
     LENGTH_Z 1;
 
-    PROJECTION_X = ((50 * y + 50) * sin(x * pi / 2));
-    PROJECTION_Y = ((50 * y + 50) * cos(x * pi / 2));
-    PROJECTION_Z = (50 * z);
+    PROJECTION_X = "(50 * y + 50) * sin(x * pi / 2)";
+    PROJECTION_Y = "(50 * y + 50) * cos(x * pi / 2)";
+    PROJECTION_Z = "50 * z";
 
     CLUSTERS_X [ARG1];
     CLUSTERS_Y [ARG2];

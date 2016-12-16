@@ -1,5 +1,6 @@
 
 #include "assembler.h"
+#include "mkl.h"
 
 namespace espreso {
 
@@ -637,6 +638,121 @@ void Elasticity3D::composeSubdomain(size_t subdomain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	K[subdomain] = csrK;
+}
+
+static void postProcessElement(std::vector<double> &stress, std::vector<double> &principleStress, std::vector<double> &HMH, DenseMatrix &solution, const Element* element, const Mesh &mesh, const LinearElasticity3DConfiguration &configuration)
+{
+	DenseMatrix Ce(6, 6), XYZ(1, 3), coordinates, J, invJ, dND, B, epsilon, rhsT;
+	DenseMatrix
+			matDENS(element->nodes(), 1), matE(element->nodes(), 3), matMI(element->nodes(), 3), matG(element->nodes(), 3),
+			matTE(element->nodes(), 3), matT(element->nodes(), 1),
+			matInitT(element->nodes(), 1), inertia(element->nodes(), 3);
+	DenseMatrix gpDENS(1, 1), gpE(1, 3), gpMI(1, 3), gpG(1, 3), gpTE(1, 3), gpT(1, 1), gpInitT(1, 1), gpInertia(1, 3);
+	DenseMatrix matStress(6, 1);
+	double detJ;
+
+	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
+	const std::vector<DenseMatrix> &dN = element->dN();
+	const std::vector<DenseMatrix> &N = element->N();
+	const std::vector<double> &weighFactor = element->weighFactor();
+
+	coordinates.resize(element->nodes(), 3);
+
+	inertia = 0;
+	for (size_t i = 0; i < element->nodes(); i++) {
+		matDENS(i, 0) = material.density(element->node(i));
+
+		// dependent on temperature
+		matE(i, 0) = material.youngModulusX(element->node(i));
+		matE(i, 1) = material.youngModulusY(element->node(i));
+		matE(i, 2) = material.youngModulusZ(element->node(i));
+
+		matMI(i, 0) = material.poissonRatioXY(element->node(i));
+		matMI(i, 1) = material.poissonRatioXZ(element->node(i));
+		matMI(i, 2) = material.poissonRatioYZ(element->node(i));
+
+		matG(i, 0) = material.shearModulusXY(element->node(i));
+		matG(i, 1) = material.shearModulusXZ(element->node(i));
+		matG(i, 2) = material.shearModulusYZ(element->node(i));
+
+		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
+		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
+			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
+		} else {
+			matT(i, 0) = matInitT(i, 0);
+		}
+
+		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
+		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
+		coordinates(i, 2) = mesh.coordinates()[element->node(i)].z;
+	}
+
+	eslocal Ksize = 3 * element->nodes();
+
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
+		J.multiply(dN[gp], coordinates);
+		detJ = determinant3x3(J);
+		inverse(J, invJ, detJ);
+		dND.multiply(invJ, dN[gp]);
+		gpDENS.multiply(N[gp], matDENS);
+		gpE.multiply(N[gp], matE);
+		gpMI.multiply(N[gp], matMI);
+		gpG.multiply(N[gp], matG);
+
+		fillC(Ce, material.model(), gpDENS, gpE, gpMI, gpG);
+		B.resize(Ce.rows(), Ksize);
+		distribute(B, dND);
+
+		matStress.multiply(Ce, B * solution, 1, 1);
+	}
+	for (size_t i = 0; i < 6; i++) {
+		stress.push_back(matStress(i, 0) / element->gaussePoints());
+	}
+
+	std::vector<double> tensor = {
+			matStress(0, 0) / element->gaussePoints(),
+			matStress(3, 0) / element->gaussePoints(),
+			matStress(5, 0) / element->gaussePoints(),
+			matStress(1, 0) / element->gaussePoints(),
+			matStress(4, 0) / element->gaussePoints(),
+			matStress(2, 0) / element->gaussePoints()
+	};
+	principleStress.insert(principleStress.end(), 3, 0);
+	LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'U', 3, tensor.data(), principleStress.data() + principleStress.size() - 3, NULL, 3);
+
+	auto hmh = [] (double *data) {
+		return sqrt((pow(data[0] - data[1], 2) + pow(data[0] - data[2], 2) + pow(data[1] - data[2], 2)) / 2);
+	};
+
+	HMH.push_back(hmh(principleStress.data() + principleStress.size() - 3));
+}
+
+void Elasticity3D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)
+{
+	std::vector<std::vector<double> > stress(_mesh.parts());
+	std::vector<std::vector<double> > principleStress(_mesh.parts());
+	std::vector<std::vector<double> > HMH(_mesh.parts());
+	DenseMatrix eSolution;
+
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		stress[p].reserve(6 * matrixSize[p]);
+		principleStress[p].reserve(3 * matrixSize[p]);
+		HMH[p].reserve(1 * matrixSize[p]);
+		for (size_t e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
+			eSolution.resize(pointDOFs.size() * _mesh.elements()[e]->nodes(), 1);
+			for (size_t dof = 0, i = 0; dof < pointDOFs.size(); dof++) {
+				for (size_t n = 0; n < _mesh.elements()[e]->nodes(); n++, i++) {
+					eSolution(i, 0) = solution[p][_mesh.nodes()[_mesh.elements()[e]->node(n)]->DOFIndex(p, dof)];
+				}
+			}
+			postProcessElement(stress[p], principleStress[p], HMH[p], eSolution, _mesh.elements()[e], _mesh, _configuration);
+		}
+	}
+
+	store.storeValues("stress", 6, stress, store::Store::ElementType::ELEMENTS);
+	store.storeValues("principle_stress", 3, principleStress, store::Store::ElementType::ELEMENTS);
+	store.storeValues("HMH", 1, HMH, store::Store::ElementType::ELEMENTS);
+	store.finalize();
 }
 
 }

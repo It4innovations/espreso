@@ -39,6 +39,8 @@ struct Elasticity3D: public Physics
 	void assembleB1();
 	void assembleB0();
 
+	void postProcess(store::Store &store, const std::vector<std::vector<double> > &solution);
+
 	void saveMeshProperties(store::Store &store);
 	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
 
