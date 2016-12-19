@@ -97,9 +97,32 @@ ADVECTION_DIFFUSION_2D {
 #    RIGHT "T_ext = 5";
   }
 
-  HEAT_FLOW {
-    RIGHT "q = 20";
-  }
+#  HEAT_FLOW {
+#    RIGHT "q = 20";
+#  }
+
+#  RESISTIVE_THIN_LAYER {
+#    RIGHT {
+#      TYPE  THERMAL_RESISTANCE;
+#      RESISTANCE            10;
+#      SURFACE_TEMPERATURE   20;
+#    }
+#
+#    RIGHT {
+#      TYPE    LAYER_PROPERTIES;
+#      NUMBER_OF_LAYERS       2;
+#      LAYERS {
+#        1 {
+#          THICKNESS          1;
+#          CONDUCTION         1;
+#        }
+#        2 {
+#          THICKNESS          2;
+#          CONDUCTION        10;
+#        }
+#      }
+#    }
+#  }
 
 #  HEAT_FLOW {
 #    RIGHT {

@@ -162,6 +162,7 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 			thickness(n, 0) = mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
 			break;
 		}
+
 		q(n, 0) *= mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
 	}
 

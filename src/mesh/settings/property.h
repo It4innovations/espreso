@@ -29,6 +29,11 @@ enum class Property : int {
 	HEAT_TRANSFER_COEFFICIENT,
 	EXTERNAL_TEMPERATURE,
 
+	THERMAL_RESISTANCE,
+	SURFACE_TEMPERATURE,
+	LAYER_THICKNESS,
+	LAYER_CONDUCTIVITY,
+
 	OBSTACLE,
 	NORMAL_DIRECTION,
 	NONMATCHING_ELEMENT,
@@ -55,12 +60,17 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::ACCELERATION_Y: return os << "ACCELERATION_Y";
 		case Property::ACCELERATION_Z: return os << "ACCELERATION_Z";
 		case Property::HEAT_SOURCE: return os << "HEAT_SOURCE";
+		case Property::HEAT_FLOW: return os << "HEAT_FLOW";
 		case Property::TRANSLATION_MOTION_X: return os << "TRANSLATION_MOTION_X";
 		case Property::TRANSLATION_MOTION_Y: return os << "TRANSLATION_MOTION_Y";
 		case Property::TRANSLATION_MOTION_Z: return os << "TRANSLATION_MOTION_Z";
 		case Property::GENERAL_HEAT_FLUX: return os << "GENERAL_HEAT_FLUX";
 		case Property::HEAT_TRANSFER_COEFFICIENT: return os << "HEAT_TRANSFER_COEFFICIENT";
 		case Property::EXTERNAL_TEMPERATURE: return os << "EXTERNAL_TEMPERATURE";
+
+		case Property::THERMAL_RESISTANCE: return os << "THERMAL_RESISTANCE";
+		case Property::LAYER_THICKNESS: return os << "LAYER_THICKNESS";
+		case Property::LAYER_CONDUCTIVITY: return os << "LAYER_CONDUCTIVITY";
 
 		case Property::OBSTACLE: return os << "OBSTACLE";
 		case Property::NORMAL_DIRECTION: return os << "NORMAL_DIRECTION";
