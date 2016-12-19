@@ -86,25 +86,35 @@ ADVECTION_DIFFUSION_2D {
   HEAT_FLUX  GENERAL;
 
   GENERAL_HEAT_FLUX {
-    RIGHT "q = 10";
+#    RIGHT "q = 10";
   }
 
   HEAT_TRANSFER_COEFFICIENT {
-    RIGHT "HTC = 2"; 
+#    RIGHT "HTC = 2"; 
   }
 
   EXTERNAL_TEMPERATURE {
-    RIGHT "T_ext = 5";
+#    RIGHT "T_ext = 5";
   }
 
-#  HEAT_FLUXS {
+  HEAT_FLOW {
+    RIGHT "q = 20";
+  }
+
+#  HEAT_FLOW {
 #    RIGHT {
-#      TYPE  GENERAL;
-#      q          10;
+#      q    10;
 #    }
+#  }
 #
+#  HEAT_FLUX {
+#    RIGHT {
+#      q      10;
+#    }
+#  }
+#
+#  CONVECTION { 
 #    LEFT {
-#      TYPE CONVETIVE;
 #      HTC    2;
 #      T_ext  5;
 #    }

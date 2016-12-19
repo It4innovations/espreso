@@ -71,6 +71,7 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 		{ "CONVECTIVE" , HEAT_FLUX::CONVECTIVE, "Convective heat flux with parameters heat transfer and external temperature." },
 	}));
 
+	SUBMAP(std::string, std::string, heat_flow                , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, general_heat_flux        , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, heat_transfer_coefficient, "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, external_temperature     , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");

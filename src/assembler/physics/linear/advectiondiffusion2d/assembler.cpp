@@ -40,6 +40,7 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	_mesh.loadProperty(_configuration.translation_motions.values      , { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 	_mesh.loadProperty(_configuration.initial_temperature.values      , { }         , { Property::INITIAL_TEMPERATURE });
 	_mesh.loadProperty(_configuration.heat_source.values              , { "T" }     , { Property::HEAT_SOURCE });
+	_mesh.loadProperty(_configuration.heat_flow.values                , { "q" }     , { Property::HEAT_FLOW });
 	switch (_configuration.heat_flux) {
 	case AdvectionDiffusion2DConfiguration::HEAT_FLUX::GENERAL:
 		_mesh.loadProperty(_configuration.general_heat_flux.values, { "q" }, { Property::GENERAL_HEAT_FLUX });
@@ -106,10 +107,37 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv(1, 1) =   detJx * m(0, 0);
 }
 
-static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* edge, const AdvectionDiffusion2DConfiguration &configuration)
+static double computeRegionArea(Region &region, const espreso::Mesh &mesh)
 {
-	DenseMatrix coordinates(edge->nodes(), 2), dND(1, 2), q(edge->nodes(), 1), htc(edge->nodes(), 1), thickness(edge->nodes(), 1);
-	DenseMatrix gpQ(1, 2), gpHtc(1, 1), gpThickness(1, 1);
+	double A = 0, B;
+	for (size_t e = 0; e < region.elements.size(); e++) {
+
+		DenseMatrix coordinates(region.elements[e]->nodes(), 2), dND(1, 2);
+
+		const std::vector<DenseMatrix> &dN = region.elements[e]->dN();
+		const std::vector<double> &weighFactor = region.elements[e]->weighFactor();
+
+		for (size_t n = 0; n < region.elements[e]->nodes(); n++) {
+			coordinates(n, 0) = mesh.coordinates()[region.elements[e]->node(n)].x;
+			coordinates(n, 1) = mesh.coordinates()[region.elements[e]->node(n)].y;
+		}
+
+		for (size_t gp = 0; gp < region.elements[e]->gaussePoints(); gp++) {
+			dND.multiply(dN[gp], coordinates);
+			double J = dND.norm();
+			A += J * weighFactor[gp];
+		}
+	}
+
+	MPI_Allgather(&A, sizeof(double), MPI_BYTE, &B, sizeof(double), MPI_BYTE, MPI_COMM_WORLD);
+
+	return B;
+}
+
+static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* edge, const AdvectionDiffusion2DConfiguration &configuration, double Area = 1)
+{
+	DenseMatrix coordinates(edge->nodes(), 2), dND(1, 2), q(edge->nodes(), 1), htc(edge->nodes(), 1), thickness(edge->nodes(), 1), flow(edge->nodes(), 1);
+	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1);
 
 	Ke.resize(2, 2);
 	Ke = 0;
@@ -121,6 +149,8 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 	for (size_t n = 0; n < edge->nodes(); n++) {
 		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
 		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
+		flow(n, 0) = edge->settings(Property::HEAT_FLOW).back()->evaluate(edge->node(n));
+		flow(n, 0) = edge->settings(Property::HEAT_FLOW).back()->evaluate(edge->node(n));
 		switch (configuration.heat_flux) {
 		case AdvectionDiffusion2DConfiguration::HEAT_FLUX::GENERAL:
 			q(n, 0) = edge->settings(Property::GENERAL_HEAT_FLUX).back()->evaluate(edge->node(n));
@@ -143,6 +173,7 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 		dND.multiply(dN[gp], coordinates);
 		double J = dND.norm();
 		gpQ.multiply(N[gp], q);
+		gpFlow.multiply(N[gp], flow);
 		switch (configuration.heat_flux) {
 		case AdvectionDiffusion2DConfiguration::HEAT_FLUX::CONVECTIVE:
 			gpHtc.multiply(N[gp], htc);
@@ -151,7 +182,8 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 			break;
 		}
 		for (eslocal i = 0; i < Ksize; i++) {
-			fe[i] += J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpQ(0, i / edge->nodes());
+			fe[i] += J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpQ(0, 0);
+			fe[i] += J * weighFactor[gp] * N[gp](0, i % edge->nodes()) * gpFlow(0, 0) / Area;
 		}
 	}
 }
