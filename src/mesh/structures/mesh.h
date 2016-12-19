@@ -75,7 +75,7 @@ public:
 
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Region>& regions() const { return _regions; }
-	const std::vector<Material>& materials() const { return _materials; }
+	const std::vector<Material*>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
 	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
@@ -159,7 +159,7 @@ protected:
 	std::vector<int> _neighbours;
 
 	/** @brief list of materials in the mesh*/
-	std::vector<Material> _materials;
+	std::vector<Material*> _materials;
 
 	/** @brief list of mesh regions*/
 	std::vector<Region> _regions;

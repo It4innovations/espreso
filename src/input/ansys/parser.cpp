@@ -217,16 +217,16 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 	bodyCounter++;
 }
 
-void WorkbenchParser::mp(std::vector<Material> &materials)
+void WorkbenchParser::mp(std::vector<Material*> &materials)
 {
 	std::vector<std::string> params = divide(_line);
 
 	int mNumber = std::stoi(params[2]);
-	materials.resize(mNumber--, Material(_mesh.coordinates()));
+	// materials.resize(mNumber--, Material(_mesh.coordinates()));
 
-	if (!materials[mNumber].setParameter(params[1], params[3])) {
-		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
-	}
+//	if (!materials[mNumber].setParameter(params[1], params[3])) {
+//		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
+//	}
 }
 
 void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)

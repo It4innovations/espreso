@@ -47,6 +47,7 @@ GENERATOR {
 
         BOTTOM "<1, 1> <0, 1> <0, 0>";
         RIGHT  "<0, 1> <1, 1> <0, 0>";
+        N_ALL ALL;
     }
 
     ELEMENTS {
@@ -69,6 +70,10 @@ ADVECTION_DIFFUSION_2D {
   STABILIZATION CAU;
   SIGMA           0;
 
+  THICKNESS {
+    N_ALL 1;
+  }
+
   TEMPERATURE {
     LEFT   "T = 1";
     TOP    "T = 1";
@@ -87,12 +92,12 @@ ADVECTION_DIFFUSION_2D {
   MATERIALS {
 
     1 {
-      MODEL LINEAR_ELASTIC_ISOTROPIC;
+      MODEL ISOTROPIC;
 
-      DENS    1;
+      DENSITY 1;
       KXX  1e-5;
       KXY  1e-5;
-      C       1;
+      Cp      1;
     }
   }
 

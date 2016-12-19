@@ -165,11 +165,11 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND, const DenseMatrix &N, D
 	}
 }
 
-static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAVIOUR behaviour, Material::MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &T)
+static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAVIOUR behaviour, size_t model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &T)
 {
 	switch (model) {
 
-	case Material::MODEL::LINEAR_ELASTIC_ISOTROPIC:
+	case LinearElasticity2DMaterial::LINEAR_ELASTIC_ISOTROPIC:
 	{
 
 		switch (behaviour) {
@@ -207,12 +207,12 @@ static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAV
 		}
 	}
 
-	case Material::MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+	case LinearElasticity2DMaterial::LINEAR_ELASTIC_ORTHOTROPIC:
 	{
 		return;
 	}
 
-	case Material::MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+	case LinearElasticity2DMaterial::LINEAR_ELASTIC_ANISOTROPIC:
 	{
 		return;
 	}
@@ -229,7 +229,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix gpDENS(1, 1), gpE(1, 2), gpMI(1, 1), gpTE(1, 2), gpT(1, 1), gpInitT(1, 1), gpThickness(1, 1), gpInertia(1, 2);
 	double detJ;
 
-	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
+	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -238,12 +238,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material.density(element->node(i));
-		matE(i, 0) = material.youngModulusX(element->node(i));
-		matE(i, 1) = material.youngModulusY(element->node(i));
-		matMI(i, 0) = material.poissonRatioXY(element->node(i));
-		matTE(i, 0) = material.termalExpansionX(element->node(i));
-		matTE(i, 1) = material.termalExpansionY(element->node(i));
+		matDENS(i, 0) = material->get(LinearElasticity2DMaterial::DENSITY)->evaluate(element->node(i));
+		matE(i, 0) = material->get(LinearElasticity2DMaterial::YOUNG_MODULUS_X)->evaluate(element->node(i));
+		matE(i, 1) = material->get(LinearElasticity2DMaterial::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+		matMI(i, 0) = material->get(LinearElasticity2DMaterial::POISSON_RATIO)->evaluate(element->node(i));
+		matTE(i, 0) = material->get(LinearElasticity2DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+		matTE(i, 1) = material->get(LinearElasticity2DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
 		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
 		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
 			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
@@ -289,7 +289,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		gpThickness.multiply(N[gp], matThickness, 1, 0);
 
-		fillC(Ce, configuration.element_behaviour, material.model(), gpDENS, gpE, gpMI, gpT);
+		fillC(Ce, configuration.element_behaviour, material->getModel(), gpDENS, gpE, gpMI, gpT);
 		B.resize(Ce.rows(), Ksize);
 		epsilon.resize(Ce.rows(), 1);
 		switch (configuration.element_behaviour) {

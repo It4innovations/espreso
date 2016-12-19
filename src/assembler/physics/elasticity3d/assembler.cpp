@@ -192,10 +192,10 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND)
 	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
 }
 
-static void fillC(DenseMatrix &Ce, Material::MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &G)
+static void fillC(DenseMatrix &Ce, size_t model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &G)
 {
 	switch (model) {
-	case Material::MODEL::LINEAR_ELASTIC_ISOTROPIC: {
+	case LinearElasticity3DMaterial::LINEAR_ELASTIC_ISOTROPIC: {
 
 		double EE = E(0, 0) / ((1 + mi(0, 0)) * (1 - 2 * mi(0, 0)));
 
@@ -204,7 +204,7 @@ static void fillC(DenseMatrix &Ce, Material::MODEL model, DenseMatrix &dens, Den
 		Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = EE * (0.5 - mi(0, 0));
 		break;
 	}
-	case Material::MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+	case LinearElasticity3DMaterial::LINEAR_ELASTIC_ANISOTROPIC:
 
 //	       D11 = MATERIAL_Properties.D11;
 //	       D12 = MATERIAL_Properties.D12;
@@ -237,7 +237,7 @@ static void fillC(DenseMatrix &Ce, Material::MODEL model, DenseMatrix &dens, Den
 
 		break;
 
-	case Material::MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+	case LinearElasticity3DMaterial::LINEAR_ELASTIC_ORTHOTROPIC:
 
 		double miXY = mi(0, 0);
 		double miYZ = mi(0, 1);
@@ -278,7 +278,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	DenseMatrix gpDENS(1, 1), gpE(1, 3), gpMI(1, 3), gpG(1, 3), gpTE(1, 3), gpT(1, 1), gpInitT(1, 1), gpInertia(1, 3);
 	double detJ;
 
-	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
+	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -287,24 +287,24 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material.density(element->node(i));
+		matDENS(i, 0) = material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(element->node(i));
 
 		// dependent on temperature
-		matE(i, 0) = material.youngModulusX(element->node(i));
-		matE(i, 1) = material.youngModulusY(element->node(i));
-		matE(i, 2) = material.youngModulusZ(element->node(i));
+		matE(i, 0) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_X)->evaluate(element->node(i));
+		matE(i, 1) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+		matE(i, 2) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Z)->evaluate(element->node(i));
 
-		matMI(i, 0) = material.poissonRatioXY(element->node(i));
-		matMI(i, 1) = material.poissonRatioXZ(element->node(i));
-		matMI(i, 2) = material.poissonRatioYZ(element->node(i));
+		matMI(i, 0) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XY)->evaluate(element->node(i));
+		matMI(i, 1) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XZ)->evaluate(element->node(i));
+		matMI(i, 2) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_YZ)->evaluate(element->node(i));
 
-		matG(i, 0) = material.shearModulusXY(element->node(i));
-		matG(i, 1) = material.shearModulusXZ(element->node(i));
-		matG(i, 2) = material.shearModulusYZ(element->node(i));
+		matG(i, 0) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XY)->evaluate(element->node(i));
+		matG(i, 1) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
+		matG(i, 2) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
 
-		matTE(i, 0) = material.termalExpansionX(element->node(i));
-		matTE(i, 1) = material.termalExpansionY(element->node(i));
-		matTE(i, 2) = material.termalExpansionZ(element->node(i));
+		matTE(i, 0) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+		matTE(i, 1) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		matTE(i, 2) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
 
 		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
 		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
@@ -352,7 +352,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		gpInitT.multiply(N[gp], matInitT);
 		gpInertia.multiply(N[gp], inertia);
 
-		fillC(Ce, material.model(), gpDENS, gpE, gpMI, gpG);
+		fillC(Ce, material->getModel(), gpDENS, gpE, gpMI, gpG);
 		B.resize(Ce.rows(), Ksize);
 		epsilon.resize(Ce.rows(), 1);
 
@@ -651,7 +651,7 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 	DenseMatrix matStress(6, 1);
 	double detJ;
 
-	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
+	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -660,20 +660,24 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material.density(element->node(i));
+		matDENS(i, 0) = material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(element->node(i));
 
 		// dependent on temperature
-		matE(i, 0) = material.youngModulusX(element->node(i));
-		matE(i, 1) = material.youngModulusY(element->node(i));
-		matE(i, 2) = material.youngModulusZ(element->node(i));
+		matE(i, 0) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_X)->evaluate(element->node(i));
+		matE(i, 1) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+		matE(i, 2) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Z)->evaluate(element->node(i));
 
-		matMI(i, 0) = material.poissonRatioXY(element->node(i));
-		matMI(i, 1) = material.poissonRatioXZ(element->node(i));
-		matMI(i, 2) = material.poissonRatioYZ(element->node(i));
+		matMI(i, 0) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XY)->evaluate(element->node(i));
+		matMI(i, 1) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XZ)->evaluate(element->node(i));
+		matMI(i, 2) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_YZ)->evaluate(element->node(i));
 
-		matG(i, 0) = material.shearModulusXY(element->node(i));
-		matG(i, 1) = material.shearModulusXZ(element->node(i));
-		matG(i, 2) = material.shearModulusYZ(element->node(i));
+		matG(i, 0) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XY)->evaluate(element->node(i));
+		matG(i, 1) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
+		matG(i, 2) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
+
+		matTE(i, 0) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+		matTE(i, 1) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		matTE(i, 2) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
 
 		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
 		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
@@ -699,7 +703,7 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 		gpMI.multiply(N[gp], matMI);
 		gpG.multiply(N[gp], matG);
 
-		fillC(Ce, material.model(), gpDENS, gpE, gpMI, gpG);
+		fillC(Ce, material->getModel(), gpDENS, gpE, gpMI, gpG);
 		B.resize(Ce.rows(), Ksize);
 		distribute(B, dND);
 

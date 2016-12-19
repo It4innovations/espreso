@@ -7,27 +7,36 @@
 
 namespace espreso {
 
-enum class MATERIAL_MODEL_AD2D {
-	ISOTROPIC = 0,
-	DIAGONAL = 1,
-	SYMMETRIC = 2,
-	ANISOTROPIC = 3
-};
-
 struct AdvectionDiffusion2DMaterial: public Configuration {
 
-	PARAMETER(std::string, DENS, "Density"                , "7850");
-	PARAMETER(std::string, Cp  , "Termal capacity."       , "1");
-	PARAMETER(std::string, KXX , "Termal conductivity XX.", "1");
-	PARAMETER(std::string, KYY , "Termal conductivity YY.", "1");
-	PARAMETER(std::string, KXY , "Termal conductivity XY.", "1");
-	PARAMETER(std::string, KYX , "Termal conductivity YX.", "1");
+	enum MODEL {
+		ISOTROPIC = 0,
+		DIAGONAL = 1,
+		SYMMETRIC = 2,
+		ANISOTROPIC = 3
+	};
 
-	OPTION(MATERIAL_MODEL_AD2D, model, "Material model", MATERIAL_MODEL_AD2D::ISOTROPIC, OPTIONS({
-		{ "ISOTROPIC"  , MATERIAL_MODEL_AD2D::ISOTROPIC  , "Isotropic." },
-		{ "DIAGONAL"   , MATERIAL_MODEL_AD2D::DIAGONAL   , "Diagonal." },
-		{ "SYMMETRIC"  , MATERIAL_MODEL_AD2D::SYMMETRIC  , "Symmetric." },
-		{ "ANISOTROPIC", MATERIAL_MODEL_AD2D::ANISOTROPIC, "Anisotropic." }
+	enum Parameter {
+		DENSITY = 0,
+		HEAT_CAPACITY,
+		THERMAL_CONDUCTIVITY_XX,
+		THERMAL_CONDUCTIVITY_YY,
+		THERMAL_CONDUCTIVITY_XY,
+		THERMAL_CONDUCTIVITY_YX
+	};
+
+	PARAMETER(std::string, density, "Density"                , "0");
+	PARAMETER(std::string, Cp     , "Termal capacity."       , "0");
+	PARAMETER(std::string, KXX    , "Termal conductivity XX.", "1");
+	PARAMETER(std::string, KYY    , "Termal conductivity YY.", "1");
+	PARAMETER(std::string, KXY    , "Termal conductivity XY.", "1");
+	PARAMETER(std::string, KYX    , "Termal conductivity YX.", "1");
+
+	OPTION(MODEL, model, "Material model", MODEL::ISOTROPIC, OPTIONS({
+		{ "ISOTROPIC"  , MODEL::ISOTROPIC  , "Isotropic." },
+		{ "DIAGONAL"   , MODEL::DIAGONAL   , "Diagonal." },
+		{ "SYMMETRIC"  , MODEL::SYMMETRIC  , "Symmetric." },
+		{ "ANISOTROPIC", MODEL::ANISOTROPIC, "Anisotropic." }
 	}));
 };
 

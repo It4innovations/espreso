@@ -102,7 +102,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	std::vector<double> inertia(3, 0);
 	double detJ, CP;
 
-	const Material &material = mesh.materials()[element->param(Element::MATERIAL)];
+	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
 	const std::vector<double> &weighFactor = element->weighFactor();
@@ -110,15 +110,15 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 	// TODO: set the omega from example
 	Point omega(50, 50, 0);
 
-	double ex = material.youngModulusX(0);
-	double mi = material.poissonRatioXY(0);
+	double ex = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_X)->evaluate(0);
+	double mi = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XY)->evaluate(0);
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 	Ce(0, 1) = Ce(0, 2) = Ce(1, 0) = Ce(1, 2) = Ce(2, 0) = Ce(2, 1) = E * mi;
 	Ce(0, 0) = Ce(1, 1) = Ce(2, 2) = E * (1.0 - mi);
 	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
 
 	inertia[0] = inertia[1] = 0;
-	inertia[2] = 9.8066 * material.density(0);
+	inertia[2] = 9.8066 * material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(0);
 	CP = 1;
 
 	coordinates.resize(element->nodes(), DOFs);
@@ -150,7 +150,7 @@ static void processElement(DenseMatrix &Ke, DenseMatrix &Me, std::vector<double>
 		B.resize(Ce.rows(), Ksize);
 		distribute(B, dND);
 		Ke.multiply(B, Ce * B, detJ * weighFactor[gp], 1, true);
-		Me.multiply(N[gp], N[gp], material.density(0) * detJ * weighFactor[gp] * CP, 1, true);
+		Me.multiply(N[gp], N[gp], material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(0) * detJ * weighFactor[gp] * CP, 1, true);
 
 		for (eslocal i = 0; i < Ksize; i++) {
 			// TODO: set rotation from example

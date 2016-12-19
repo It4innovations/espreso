@@ -61,7 +61,7 @@ public:
 	void nblock(Coordinates &coordinates);
 
 	void eblock(std::vector<Element*> &elements);
-	void mp(std::vector<Material> &materials);
+	void mp(std::vector<Material*> &materials);
 
 	void eblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void cmblock(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);

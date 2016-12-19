@@ -19,7 +19,6 @@ protected:
 
 	void coordinates(const Coordinates &coordinates);
 	void elements(const Mesh &mesh);
-	void materials(const Mesh &mesh, const std::vector<Material> &materials);
 	void regions(const Mesh &mesh);
 	void boundaries(const Mesh &mesh);
 

@@ -40,7 +40,7 @@ void AnsysWorkbench::elements(std::vector<Element*> &elements, std::vector<Eleme
 	}
 }
 
-void AnsysWorkbench::materials(std::vector<Material> &materials)
+void AnsysWorkbench::materials(std::vector<Material*> &materials)
 {
 	while (true) {
 		switch (_parser.process()) {

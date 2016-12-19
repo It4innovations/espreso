@@ -115,7 +115,7 @@ ADVECTION_DIFFUSION_2D {
     1 {
       MODEL ISOTROPIC;
 
-      DENS    1;
+      DENSITY 1;
       KXX     1;
       KXY     1;
       Cp      1;

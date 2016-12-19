@@ -74,9 +74,9 @@ LINEAR_ELASTICITY_3D {
   MATERIALS { # Vector of materials (counterd from 1).
 
     1 { # Description of material with index 1
-      DENS 7850;
-      MIXY 0.3;
-      EX 2.1e11;
+      DENSITY 7850;
+      MIXY     0.3;
+      EX    2.1e11;
 
       MODEL LINEAR_ELASTIC_ISOTROPIC;
     }

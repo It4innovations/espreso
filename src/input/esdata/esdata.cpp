@@ -89,19 +89,19 @@ void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &fa
 	is.close();
 }
 
-void Esdata::materials(std::vector<Material> &materials)
-{
-	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/materials.dat";
-	std::ifstream is(fileName.str(), std::ifstream::binary);
-
-	eslocal size;
-	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-	for (eslocal i = 0; i < size; i++) {
-		materials.push_back(Material(is, mesh.coordinates()));
-	}
-	is.close();
-}
+//void Esdata::materials(std::vector<Material> &materials)
+//{
+//	std::stringstream fileName;
+//	fileName << _esdata.path << "/" << _rank << "/materials.dat";
+//	std::ifstream is(fileName.str(), std::ifstream::binary);
+//
+//	eslocal size;
+//	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+//	for (eslocal i = 0; i < size; i++) {
+//		materials.push_back(Material(is, mesh.coordinates()));
+//	}
+//	is.close();
+//}
 
 void Esdata::regions(
 		std::vector<Evaluator*> &evaluators,

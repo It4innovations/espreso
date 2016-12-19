@@ -7,6 +7,39 @@
 
 namespace espreso {
 
+struct LinearElasticity2DMaterial: public Configuration {
+
+	enum MODEL {
+		LINEAR_ELASTIC_ISOTROPIC = 0,
+		LINEAR_ELASTIC_ORTHOTROPIC = 1,
+		LINEAR_ELASTIC_ANISOTROPIC = 2
+	};
+
+	enum Parameter {
+		DENSITY = 0,
+		HEAT_CAPACITY,
+		POISSON_RATIO,
+		YOUNG_MODULUS_X,
+		YOUNG_MODULUS_Y,
+		THERMAL_EXPANSION_X,
+		THERMAL_EXPANSION_Y
+	};
+
+	PARAMETER(std::string, density, "Density"                , "0");
+	PARAMETER(std::string, Cp     , "Termal capacity."       , "0");
+	PARAMETER(std::string, MI     , "Poisson ratio."         , "1");
+	PARAMETER(std::string, EX     , "Young modulus X."       , "1");
+	PARAMETER(std::string, EY     , "Young modulus Y."       , "1");
+	PARAMETER(std::string, TEX    , "Thermal expansion X."   , "1");
+	PARAMETER(std::string, TEY    , "Thermal expansion Y."   , "1");
+
+	OPTION(MODEL, model, "Material model", MODEL::LINEAR_ELASTIC_ISOTROPIC, OPTIONS({
+		{ "LINEAR_ELASTIC_ISOTROPIC"  , MODEL::LINEAR_ELASTIC_ISOTROPIC  , "Isotropic material." },
+		{ "LINEAR_ELASTIC_ORTHOTROPIC", MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic material." },
+		{ "LINEAR_ELASTIC_ANISOTROPIC", MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic material." }
+	}));
+};
+
 struct LinearElasticity2DConfiguration: public Configuration {
 
 	enum class ELEMENT_BEHAVIOUR {
@@ -43,7 +76,7 @@ struct LinearElasticity2DConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, normal_direction   , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, thickness          , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTOR(MaterialParameters, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
+	SUBVECTOR(LinearElasticity2DMaterial, materials   , "Vector of materials (counterd from 1).", "1", "Description of material with index 1");
 	SUBMAP(size_t, std::string  , material_set, "Assign materials to regions", "<MATERIAL_INDEX>", "<REGION>");
 };
 

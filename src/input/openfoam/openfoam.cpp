@@ -154,11 +154,6 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 	}
 }
 
-void OpenFOAM::materials(std::vector<Material> &materials)
-{
-	materials.resize(1, Material(mesh.coordinates()));
-}
-
 void OpenFOAM::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region> &regions,

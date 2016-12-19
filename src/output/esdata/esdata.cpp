@@ -26,7 +26,6 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path)
 
 	coordinates(_mesh.coordinates());
 	elements(_mesh);
-	materials(_mesh, _mesh.materials());
 	regions(_mesh);
 	boundaries(_mesh);
 }
@@ -81,23 +80,23 @@ void Esdata::elements(const Mesh &mesh)
 	}
 }
 
-void Esdata::materials(const Mesh &mesh, const std::vector<Material> &materials)
-{
-	#pragma omp parallel for
-	for  (size_t p = 0; p < mesh.parts(); p++) {
-		std::ofstream os;
-		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
-		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-
-		eslocal size = materials.size();
-		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (size_t i = 0; i < materials.size(); i++) {
-			os << materials[i];
-		}
-		os.close();
-	}
-}
+//void Esdata::materials(const Mesh &mesh, const std::vector<Material*> &materials)
+//{
+//	#pragma omp parallel for
+//	for (size_t p = 0; p < mesh.parts(); p++) {
+//		std::ofstream os;
+//		std::stringstream ss;
+//		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
+//		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+//
+//		eslocal size = materials.size();
+//		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+//		for (size_t i = 0; i < materials.size(); i++) {
+//			os << materials[i];
+//		}
+//		os.close();
+//	}
+//}
 
 void Esdata::regions(const Mesh &mesh)
 {

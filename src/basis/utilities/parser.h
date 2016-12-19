@@ -10,7 +10,7 @@ namespace espreso {
 
 struct StringCompare {
 
-	bool operator()(const std::string &s1, const std::string &s2)
+	bool operator()(const std::string &s1, const std::string &s2) const
 	{
 		return caseInsensitive(s1, s2);
 	}
@@ -54,6 +54,15 @@ struct StringCompare {
 	{
 		return std::equal(s1.begin() + s1.size() - s2.size(), s1.end(), s2.begin(), _equals);
 	}
+
+	static bool contains(const std::string &s, const std::string &variables) {
+		for (size_t v = 0; v < variables.size(); v++) {
+			if (s.find(variables[v]) != std::string::npos) {
+				return true;
+			}
+		}
+		return false;
+	};
 
 private:
 	static bool _caseInsensitive(const char &c1, const char &c2)

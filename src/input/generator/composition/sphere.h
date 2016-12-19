@@ -39,7 +39,6 @@ public:
 
 	virtual void points(Coordinates &coordinates);
 	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
-	virtual void materials(std::vector<Material> &materials);
 	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
 	virtual void regions(
 			std::vector<Evaluator*> &evaluators,

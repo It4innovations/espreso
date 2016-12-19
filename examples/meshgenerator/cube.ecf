@@ -68,12 +68,16 @@ LINEAR_ELASTICITY_3D {
 
     1 { # First configuration settings.
 
-      DENS 7850;
-      MIXY 0.3;
-      EX 2.1e11;
+      DENSITY 7850;
+      MIXY     0.3;
+      EX    2.1e11;
 
       MODEL LINEAR_ELASTIC_ISOTROPIC;
     }
+  }
+
+  MATERIAL_SET {
+    1 E_ALL;
   }
 
   DISPLACEMENT {

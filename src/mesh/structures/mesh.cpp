@@ -610,7 +610,10 @@ void Mesh::loadMaterials(const std::vector<Configuration*> &materials, const std
 			region.elements[e]->setParam(Element::MATERIAL, it->first -1);
 		}
 		for (auto p = materials[it->first - 1]->parameters.begin(); p != materials[it->first - 1]->parameters.end(); ++p) {
-			_materials[it->first - 1].setParameter(p->first, p->second->get());
+			if (_materials.size() < it->first) {
+				_materials.resize(it->first, NULL);
+			}
+			_materials[it->first - 1] = new Material(_coordinates, *materials[it->first - 1]);
 		}
 	}
 }
