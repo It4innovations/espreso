@@ -1627,52 +1627,56 @@ void ClusterBase::Create_G_perCluster() {
 	#pragma omp parallel for
 for (size_t j = 0; j < domains.size(); j++) {
 
-		SparseMatrix Rt;
-		SparseMatrix Rt2;
+	 	if (domains[j].Kplus_R.nnz != 0) {
 
-		SparseMatrix B;
-		B = domains[j].B1;
+			SparseMatrix Rt;
+			SparseMatrix Rt2;
 
-		switch (configuration.regularization) {
-		case REGULARIZATION::FIX_POINTS:
-			Rt = domains[j].Kplus_R;
-			Rt.ConvertDenseToCSR(1);
-			Rt.MatTranspose();
+			SparseMatrix B;
+			B = domains[j].B1;
 
-			if (!SYMMETRIC_SYSTEM) {
-				Rt2 = domains[j].Kplus_R2;
-				Rt2.ConvertDenseToCSR(1);
-				Rt2.MatTranspose();
+			switch (configuration.regularization) {
+			case REGULARIZATION::FIX_POINTS:
+				Rt = domains[j].Kplus_R;
+				Rt.ConvertDenseToCSR(1);
+				Rt.MatTranspose();
+
+				if (!SYMMETRIC_SYSTEM) {
+					Rt2 = domains[j].Kplus_R2;
+					Rt2.ConvertDenseToCSR(1);
+					Rt2.MatTranspose();
+				}
+
+				break;
+			case REGULARIZATION::NULL_PIVOTS:
+				Rt = domains[j].Kplus_Rb;
+				Rt.ConvertDenseToCSR(1);
+				Rt.MatTranspose();
+
+				if (!SYMMETRIC_SYSTEM) {
+					Rt2 = domains[j].Kplus_Rb2;
+					Rt2.ConvertDenseToCSR(1);
+					Rt2.MatTranspose();
+				}
+
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "Not implemented type of regularization.";
 			}
 
-			break;
-		case REGULARIZATION::NULL_PIVOTS:
-			Rt = domains[j].Kplus_Rb;
-			Rt.ConvertDenseToCSR(1);
-			Rt.MatTranspose();
+			Rt.ConvertCSRToDense(1);
+			//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
+			Create_G1_perSubdomain(Rt, B, tmp_Mat[j]);
 
 			if (!SYMMETRIC_SYSTEM) {
-				Rt2 = domains[j].Kplus_Rb2;
-				Rt2.ConvertDenseToCSR(1);
-				Rt2.MatTranspose();
+				Rt2.ConvertCSRToDense(1);
+				//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
+				Create_G1_perSubdomain(Rt2, B, tmp_Mat2[j]);
 			}
 
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented type of regularization.";
-		}
+	 	} // END: if
 
-		Rt.ConvertCSRToDense(1);
-		//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
-		Create_G1_perSubdomain(Rt, B, tmp_Mat[j]);
-
-		if (!SYMMETRIC_SYSTEM) {
-			Rt2.ConvertCSRToDense(1);
-			//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
-			Create_G1_perSubdomain(Rt2, B, tmp_Mat2[j]);
-		}
-
-	}
+	} //end cilk for
 
 	G1_1_time.end();
 	G1_1_time.printStatMPI();
@@ -1693,17 +1697,17 @@ for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 
 			if (i * 2 * j + j < tmp_Mat.size()) {
 				if (USE_HFETI == 1) {
-					tmp_Mat[i * 2 * j].MatAddInPlace( tmp_Mat[i * 2 * j + j], 'N', 1.0 );
+					tmp_Mat[i * 2 * j].MatAddInPlace( tmp_Mat[i * 2 * j + j], 'N', 1.0 ); 	//Fixed for empty matrix in MatAddInPlace
 				} else {
-					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
+					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]); 					//Fixed for empty matrix in MatAddInPlace
 				}
 				tmp_Mat[i * 2 * j + j].Clear();
 
 				if (!SYMMETRIC_SYSTEM) {
 					if (USE_HFETI == 1) {
-						tmp_Mat2[i * 2 * j].MatAddInPlace(tmp_Mat2[i * 2 * j + j], 'N', 1.0 );
+						tmp_Mat2[i * 2 * j].MatAddInPlace(tmp_Mat2[i * 2 * j + j], 'N', 1.0 );	//Fixed for empty matrix in MatAddInPlace
 					} else {
-						tmp_Mat2[i * 2 * j].MatAppend(tmp_Mat2[i * 2 * j + j]);
+						tmp_Mat2[i * 2 * j].MatAppend(tmp_Mat2[i * 2 * j + j]);					//Fixed for empty matrix in MatAddInPlace
 					}
 					tmp_Mat2[i * 2 * j + j].Clear();
 				}
@@ -1721,21 +1725,20 @@ for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 	//G1_2_mem.printLastStatMPIPerNode();
 
 	// Save resulting matrix G1
-	G1 = tmp_Mat[0];
+	G1.swap( tmp_Mat[0] );
+
 	for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
 		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
 	}
 
 
 	if (!SYMMETRIC_SYSTEM) {
-		G2 = tmp_Mat2[0];
+		G2.swap( tmp_Mat2[0] );
 		for (size_t i = 0; i < G2.CSR_V_values.size(); i++) {
 			G2.CSR_V_values[i] = -1.0 * G2.CSR_V_values[i];
 		}
 
-	} //else {
-	//G2 = G1;
-	//}
+	}
 
 }
 

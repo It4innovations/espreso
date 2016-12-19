@@ -94,6 +94,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 	cluster.cluster_global_index = environment->MPIrank + 1;
 	cluster.InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
+
 	cluster.my_neighs = std::vector<eslocal>(neighbours.begin(), neighbours.end());
 	cluster.mtype = physics.mtype;
 	switch (physics.mtype) {

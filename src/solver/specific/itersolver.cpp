@@ -84,7 +84,8 @@ void IterSolverBase::Preprocessing ( Cluster & cluster )
 		if (USE_GGtINV == 1)
 			CreateGGt_inv_dist( cluster );
 		else
-			CreateGGt    ( cluster );
+			ESINFO(GLOBAL_ERROR) << "Only Inverse of GGT is supported for Projector";
+			//CreateGGt    ( cluster );
 	}
 
 	createGGT_time.end();
@@ -219,7 +220,10 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].K.MatVec(primal_solution_out[d], cluster.x_prim_cluster2[d],'N');
-			cluster.domains[d]._RegMat.MatVecCOO(primal_solution_out[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
+			if (cluster.domains[d]._RegMat.nnz > 0) {
+				cluster.domains[d]._RegMat.MatVecCOO(primal_solution_out[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
+			}
+
 		}
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
@@ -4251,25 +4255,47 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	 }
 	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
 
+	 //TODO: Need fix
+
+	int local_ker_size = (int)cluster.G1.rows;
+	int global_ker_size = 0;
+
+	SEQ_VECTOR<int> global_ker_sizes;
+	global_ker_sizes.resize(cluster.NUMBER_OF_CLUSTERS, 0);
+
+
+
+	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, MPI_COMM_WORLD);
+
+	int global_GGt_size = 0;
+
+	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
 	for (size_t i = 0; i < GGt_l.CSR_J_col_indices.size(); i++) {
-		GGt_l.CSR_J_col_indices[i] += mpi_rank * cluster.G1.rows;
+		GGt_l.CSR_J_col_indices[i] += global_ker_size; //mpi_rank * cluster.G1.rows;
 	}
-	GGt_l.cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
+	GGt_l.cols = global_GGt_size;//cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
+	//TODO: END
 
 	 TimeEvent GGTNeighTime("G1t_local x G1_neigh MatMat(N-times) "); GGTNeighTime.start();
 	#pragma omp parallel for
 for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 
 		GGt_neighs[neigh_i].MatMatT(G_neighs[neigh_i], cluster.G1);
+//
+//		cluster.G1.MatTranspose(G1t_l);
+//		GGt_neighs[neigh_i].MatMat(G_neighs[neigh_i], 'N', G1t_l);
+//
 		GGt_neighs[neigh_i].MatTranspose();
 
 		//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
-		eslocal inc = cluster.G1.rows * cluster.my_neighs[neigh_i];
+		eslocal inc = global_ker_sizes[cluster.my_neighs[neigh_i]]; //cluster.G1.rows * cluster.my_neighs[neigh_i];
 		for (size_t i = 0; i < GGt_neighs[neigh_i].CSR_J_col_indices.size(); i++)
 			GGt_neighs[neigh_i].CSR_J_col_indices[i] += inc;
 
 		//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
-		GGt_neighs[neigh_i].cols = cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
+		GGt_neighs[neigh_i].cols = global_GGt_size; //cluster.NUMBER_OF_CLUSTERS * cluster.G1.rows;
 
 		G_neighs[neigh_i].Clear();
 	}
@@ -4372,13 +4398,13 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 	 GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
 
 	 TimeEvent GGT_rhs_time("Time to create InitialCondition for get GGTINV"); GGT_rhs_time.start();
-	 //TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
+	//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
 	SEQ_VECTOR <double> rhs   (cluster.G1.rows * GGt_tmp.rows, 0.0);
 	cluster.GGtinvV.resize    (cluster.G1.rows * GGt_tmp.rows, 0.0);
 
 	//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
 	for (eslocal i = 0; i < cluster.G1.rows; i++) {
-		eslocal index = (GGt_tmp.rows * i) + (cluster.G1.rows * mpi_rank) + i;
+		eslocal index = (GGt_tmp.rows * i) + i + global_ker_size;// + (cluster.G1.rows * mpi_rank);
 		rhs[index] = 1;
 	}
 	GGT_rhs_time.end(); GGT_rhs_time.printStatMPI(); preproc_timing.addEvent(GGT_rhs_time);
@@ -4505,10 +4531,24 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 	 time_eval.timeEvents[0].end();
 
 	//TODO: Pocitam s tim, ze kazdy cluster ma stejny ocet domen
+	//TODO: Udelat poradne
 	 time_eval.timeEvents[1].start();
-	MPI_Allgather(&d_local[0], d_local_size, MPI_DOUBLE,
-		&d_mpi[0], d_local_size, MPI_DOUBLE,
-		MPI_COMM_WORLD);
+//	MPI_Allgather(&d_local[0], d_local_size, MPI_DOUBLE,
+//		&d_mpi[0], d_local_size, MPI_DOUBLE,
+//		MPI_COMM_WORLD);
+
+	SEQ_VECTOR<int> ker_size_per_clusters(cluster.NUMBER_OF_CLUSTERS, 0);
+	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, MPI_COMM_WORLD );
+
+	SEQ_VECTOR<int> displs (cluster.NUMBER_OF_CLUSTERS, 0);
+    displs[0] = 0;
+    for (int i=1; i<displs.size(); ++i) {
+        displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
+    }
+
+    MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, MPI_COMM_WORLD);
+	// TODO: END
+
 	 time_eval.timeEvents[1].end();
 
 	 time_eval.timeEvents[2].start();
@@ -4626,7 +4666,9 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 		case ESPRESO_PRECONDITIONER::LUMPED:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
-			cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
+			if (cluster.domains[d]._RegMat.nnz > 0) {
+				cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
+			}
 			break;
 		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');

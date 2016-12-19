@@ -2631,95 +2631,98 @@ void SparseMatrix::MatAddInPlace(SparseMatrix & B_in, char MatB_T_for_transpose_
 
 	char transa = MatB_T_for_transpose_N_for_non_transpose;
 
-	// if this matrix is empty then we copy the input matrix
-	if (nnz == 0 && transa == 'N' && beta == 1.0) { // POZOR - what if we need to copy a transpose of the matrix
+	if (!B_in.nnz == 0) {
 
-		cols = B_in.cols;
-		rows = B_in.rows;
-		nnz  = B_in.nnz;
-		type = B_in.type;
-		mtype = MatrixType::REAL_UNSYMMETRIC;
+		// if this matrix is empty then we copy the input matrix
+		if (nnz == 0 && transa == 'N' && beta == 1.0) { // POZOR - what if we need to copy a transpose of the matrix
 
-		CSR_I_row_indices = B_in.CSR_I_row_indices;
-		CSR_J_col_indices = B_in.CSR_J_col_indices;
-		CSR_V_values      = B_in.CSR_V_values;
+			cols = B_in.cols;
+			rows = B_in.rows;
+			nnz  = B_in.nnz;
+			type = B_in.type;
+			mtype = MatrixType::REAL_UNSYMMETRIC;
 
-		I_row_indices	  = B_in.I_row_indices;
-		J_col_indices     = B_in.J_col_indices;
-		V_values		  = B_in.V_values;
+			CSR_I_row_indices = B_in.CSR_I_row_indices;
+			CSR_J_col_indices = B_in.CSR_J_col_indices;
+			CSR_V_values      = B_in.CSR_V_values;
 
-		dense_values	  = B_in.dense_values;
+			I_row_indices	  = B_in.I_row_indices;
+			J_col_indices     = B_in.J_col_indices;
+			V_values		  = B_in.V_values;
 
-		return;
+			dense_values	  = B_in.dense_values;
+
+			return;
+		}
+
+
+		if (nnz == 0 && transa == 'T' && beta == 1.0) {
+			ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
+			return;
+		}
+
+		if (nnz == 0 && beta != 1.0) {
+			ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
+			return;
+		}
+
+		eslocal job;
+		eslocal sort = 3; // 3	yes	yes	yes
+
+		eslocal m = rows; // Number of rows of the matrix A.
+		eslocal n = cols; // Number of columns of the matrix A.
+
+		eslocal nnzmax;
+		eslocal ierr;
+
+		double 	   * a  = &CSR_V_values[0];
+		eslocal    * ia = &CSR_I_row_indices[0];
+		eslocal    * ja = &CSR_J_col_indices[0];
+
+		double     * b  = &B_in.CSR_V_values[0];
+		eslocal    * ib = &B_in.CSR_I_row_indices[0];
+		eslocal    * jb = &B_in.CSR_J_col_indices[0];
+
+		SEQ_VECTOR<eslocal>		t_CSR_I_row_indices;	t_CSR_I_row_indices.resize( m + 1 );
+		SEQ_VECTOR<eslocal>		t_CSR_J_col_indices;	t_CSR_J_col_indices.resize(1);
+		SEQ_VECTOR<double>		t_CSR_V_values;			t_CSR_V_values.resize(1);
+
+		//void mkl_dcsradd (
+		//	char *transa, eslocal *job, eslocal *sort,
+		//	eslocal *m, eslocal *n,
+		//	double *a, eslocal *ja, eslocal *ia,
+		//	double *beta, double *b, eslocal *jb, eslocal *ib,
+		//	double *c, eslocal *jc, eslocal *ic, eslocal *nnzmax,
+		//	eslocal *ierr);
+
+		job	= 1;
+		mkl_dcsradd (
+			&transa, &job, &sort,
+			&m, &n,
+			a, ja, ia,
+			&beta, b, jb, ib,
+			&t_CSR_V_values[0], &t_CSR_J_col_indices[0], &t_CSR_I_row_indices[0], &nnzmax,
+			&ierr);
+
+		job = 2;
+		nnz = t_CSR_I_row_indices[m] - 1;
+		nnzmax = nnz;
+		t_CSR_V_values.resize(nnz);
+		t_CSR_J_col_indices.resize(nnz);
+
+		mkl_dcsradd (
+			&transa, &job, &sort,
+			&m, &n,
+			a, ja, ia,
+			&beta, b, jb, ib,
+			&t_CSR_V_values[0], &t_CSR_J_col_indices[0], &t_CSR_I_row_indices[0], &nnzmax,
+			&ierr);
+
+		CSR_I_row_indices.swap(t_CSR_I_row_indices);
+		CSR_J_col_indices.swap(t_CSR_J_col_indices);
+		CSR_V_values.     swap(t_CSR_V_values);
 	}
 
-
-	if (nnz == 0 && transa == 'T' && beta == 1.0) {
-		ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
-		return;
-	}
-
-	if (nnz == 0 && beta != 1.0) {
-		ESINFO(ERROR) << "Error in 'SparseMatrix::MatAddInPlace' - not implemented - " << "beta = " << beta << " Trans = " << transa;
-		return;
-	}
-
-
-	eslocal job;
-	eslocal sort = 3; // 3	yes	yes	yes
-
-	eslocal m = rows; // Number of rows of the matrix A.
-	eslocal n = cols; // Number of columns of the matrix A.
-
-	eslocal nnzmax;
-	eslocal ierr;
-
-	double 	   * a  = &CSR_V_values[0];
-	eslocal    * ia = &CSR_I_row_indices[0];
-	eslocal    * ja = &CSR_J_col_indices[0];
-
-	double     * b  = &B_in.CSR_V_values[0];
-	eslocal    * ib = &B_in.CSR_I_row_indices[0];
-	eslocal    * jb = &B_in.CSR_J_col_indices[0];
-
-	SEQ_VECTOR<eslocal>		t_CSR_I_row_indices;	t_CSR_I_row_indices.resize( m + 1 );
-	SEQ_VECTOR<eslocal>		t_CSR_J_col_indices;	t_CSR_J_col_indices.resize(1);
-	SEQ_VECTOR<double>		t_CSR_V_values;			t_CSR_V_values.resize(1);
-
-	//void mkl_dcsradd (
-	//	char *transa, eslocal *job, eslocal *sort,
-	//	eslocal *m, eslocal *n,
-	//	double *a, eslocal *ja, eslocal *ia,
-	//	double *beta, double *b, eslocal *jb, eslocal *ib,
-	//	double *c, eslocal *jc, eslocal *ic, eslocal *nnzmax,
-	//	eslocal *ierr);
-
-	job	= 1;
-	mkl_dcsradd (
-		&transa, &job, &sort,
-		&m, &n,
-		a, ja, ia,
-		&beta, b, jb, ib,
-		&t_CSR_V_values[0], &t_CSR_J_col_indices[0], &t_CSR_I_row_indices[0], &nnzmax,
-		&ierr);
-
-	job = 2;
-	nnz = t_CSR_I_row_indices[m] - 1;
-	nnzmax = nnz;
-	t_CSR_V_values.resize(nnz);
-	t_CSR_J_col_indices.resize(nnz);
-
-	mkl_dcsradd (
-		&transa, &job, &sort,
-		&m, &n,
-		a, ja, ia,
-		&beta, b, jb, ib,
-		&t_CSR_V_values[0], &t_CSR_J_col_indices[0], &t_CSR_I_row_indices[0], &nnzmax,
-		&ierr);
-
-	CSR_I_row_indices.swap(t_CSR_I_row_indices);
-	CSR_J_col_indices.swap(t_CSR_J_col_indices);
-	CSR_V_values.     swap(t_CSR_V_values);
 
 }
 
@@ -3029,34 +3032,38 @@ void SparseMatrix::SetDiagonalOfSymmetricMatrix( double val ) {
 
 void SparseMatrix::MatAppend(SparseMatrix & A) {
 
-	if (nnz == 0 && rows == 0 && cols == 0) { // this matrix is empty
-		rows = A.rows;
-		cols = A.cols;
-		nnz = A.nnz;
-		type = A.type;
-		mtype = MatrixType::REAL_UNSYMMETRIC;
+	if (A.nnz != 0) {
 
-		CSR_I_row_indices = A.CSR_I_row_indices;
-		CSR_J_col_indices = A.CSR_J_col_indices;
-		CSR_V_values	  = A.CSR_V_values;
+		if (nnz == 0 && rows == 0 && cols == 0) { // this matrix is empty
+			rows = A.rows;
+			cols = A.cols;
+			nnz = A.nnz;
+			type = A.type;
+			mtype = MatrixType::REAL_UNSYMMETRIC;
 
-	}else {
-		// Just append the arrays
-		CSR_J_col_indices.insert(CSR_J_col_indices.end(), A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end() );
-		CSR_V_values.insert(CSR_V_values.end(), A.CSR_V_values.begin(), A.CSR_V_values.end() );
+			CSR_I_row_indices = A.CSR_I_row_indices;
+			CSR_J_col_indices = A.CSR_J_col_indices;
+			CSR_V_values	  = A.CSR_V_values;
 
-		//copy(CSR_J_col_indices.begin(), A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end());
-		//copy(CSR_V_values.begin(),      A.CSR_V_values.begin(),      A.CSR_V_values.end());
+		}else {
+			// Just append the arrays
+			CSR_J_col_indices.insert(CSR_J_col_indices.end(), A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end() );
+			CSR_V_values.insert(CSR_V_values.end(), A.CSR_V_values.begin(), A.CSR_V_values.end() );
 
-		eslocal last_row = CSR_I_row_indices[CSR_I_row_indices.size()-1];
+			//copy(CSR_J_col_indices.begin(), A.CSR_J_col_indices.begin(), A.CSR_J_col_indices.end());
+			//copy(CSR_V_values.begin(),      A.CSR_V_values.begin(),      A.CSR_V_values.end());
 
-		for (size_t i = 1; i < A.CSR_I_row_indices.size(); i++)
-			CSR_I_row_indices.push_back(last_row + A.CSR_I_row_indices[i]-1);
+			eslocal last_row = CSR_I_row_indices[CSR_I_row_indices.size()-1];
 
-		rows = rows + A.rows;
-		nnz  = nnz + A.nnz;
-		type = 'G';
-		mtype = MatrixType::REAL_UNSYMMETRIC;
+			for (size_t i = 1; i < A.CSR_I_row_indices.size(); i++)
+				CSR_I_row_indices.push_back(last_row + A.CSR_I_row_indices[i]-1);
+
+			rows = rows + A.rows;
+			nnz  = nnz + A.nnz;
+			type = 'G';
+			mtype = MatrixType::REAL_UNSYMMETRIC;
+		}
+
 	}
 }
 
@@ -3335,7 +3342,7 @@ void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 	}
 
 	rows = A_in.rows;
-	cols = A_in.rows;
+	cols = B_in.rows;
 	nnz  = CSR_V_values.size();
 	type = 'G';
 	mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
