@@ -83,23 +83,20 @@ ADVECTION_DIFFUSION_2D {
     N_ALL "1";
   }
 
-  HEAT_FLUX  GENERAL;
-
-  GENERAL_HEAT_FLUX {
+  HEAT_FLUX {
 #    RIGHT "q = 10";
   }
 
-  HEAT_TRANSFER_COEFFICIENT {
-#    RIGHT "HTC = 2"; 
+  CONVECTION {
+#    RIGHT {
+#      EXTERNAL_TEMPERATURE      2;
+#      HEAT_TRANSFER_COEFFICIENT 5;
+#    }
   }
 
-  EXTERNAL_TEMPERATURE {
-#    RIGHT "T_ext = 5";
+  HEAT_FLOW {
+    RIGHT "q = 20";
   }
-
-#  HEAT_FLOW {
-#    RIGHT "q = 20";
-#  }
 
 #  RESISTIVE_THIN_LAYER {
 #    RIGHT {
@@ -121,25 +118,6 @@ ADVECTION_DIFFUSION_2D {
 #          CONDUCTION        10;
 #        }
 #      }
-#    }
-#  }
-
-#  HEAT_FLOW {
-#    RIGHT {
-#      q    10;
-#    }
-#  }
-#
-#  HEAT_FLUX {
-#    RIGHT {
-#      q      10;
-#    }
-#  }
-#
-#  CONVECTION { 
-#    LEFT {
-#      HTC    2;
-#      T_ext  5;
 #    }
 #  }
 

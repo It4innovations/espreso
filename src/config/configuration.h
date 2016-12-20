@@ -228,7 +228,7 @@ struct Configuration {
 
 template <typename Ttype>
 struct ConfigurationVector: public Configuration {
-	std::vector<Configuration*> configurations;
+	std::map<std::string, Ttype*> configurations;
 	std::vector<Configuration*> dummy;
 
 	static ConfigurationVector<Ttype> create(const std::string &name, const std::string &description, const std::string &dParameter, const std::string &dValue, Configuration* conf)
@@ -246,20 +246,13 @@ struct ConfigurationVector: public Configuration {
 
 	Configuration& operator[](const std::string &subconfiguration)
 	{
-		std::stringstream ss(subconfiguration);
-		size_t index;
-		ss >> index;
-		if (!ss.eof() || ss.fail()) {
-			ESINFO(GLOBAL_ERROR) << "Invalid vector index '" << subconfiguration << "'";
+		if (configurations.find(subconfiguration) == configurations.end()) {
+			configurations[subconfiguration] = new Ttype{};
+			subconfigurations[subconfiguration] = configurations[subconfiguration];
+			orderedSubconfiguration.push_back(configurations[subconfiguration]);
+			configurations[subconfiguration]->name = subconfiguration;
 		}
-		if (index > configurations.size()) {
-			configurations.resize(index, NULL);
-			configurations[index - 1] = new Ttype{};
-			subconfigurations[std::to_string(index - 1)] = configurations[index - 1];
-			orderedSubconfiguration.push_back(configurations[index - 1]);
-			configurations[index - 1]->name = std::to_string(index);
-		}
-		return *configurations[index - 1];
+		return *configurations[subconfiguration];
 	}
 
 	virtual const std::vector<Configuration*>& storeConfigurations() const
@@ -274,7 +267,9 @@ struct ConfigurationVector: public Configuration {
 	~ConfigurationVector()
 	{
 		if (!copy) {
-			std::for_each(configurations.begin(), configurations.end(), [] (Configuration * c) { delete c; });
+			for (auto it = configurations.begin(); it != configurations.end(); ++it) {
+				delete it->second;
+			}
 			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
 		}
 	}

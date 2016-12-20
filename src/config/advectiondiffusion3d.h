@@ -61,6 +61,9 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+
+	SUBVECTOR(AdvectionDiffusion3DMaterial, materials, "Vector of materials.", "1", "Description of material '1'");
+	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<MATERIAL_NAME>", "<REGION>");
 };
 
 }

@@ -4,6 +4,31 @@
 
 namespace espreso {
 
+void Region::computeArea(const Coordinates &coordinates) const
+{
+	double A = 0, B;
+	for (size_t e = 0; e < elements.size(); e++) {
+
+		DenseMatrix coords(elements[e]->nodes(), 2), dND(1, 2);
+
+		const std::vector<DenseMatrix> &dN = elements[e]->dN();
+		const std::vector<double> &weighFactor = elements[e]->weighFactor();
+
+		for (size_t n = 0; n < elements[e]->nodes(); n++) {
+			coords(n, 0) = coordinates[elements[e]->node(n)].x;
+			coords(n, 1) = coordinates[elements[e]->node(n)].y;
+		}
+
+		for (size_t gp = 0; gp < elements[e]->gaussePoints(); gp++) {
+			dND.multiply(dN[gp], coords);
+			double J = dND.norm();
+			A += J * weighFactor[gp];
+		}
+	}
+
+	MPI_Allreduce(&A, &area, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+}
+
 Mesh::Mesh():_elements(0)
 {
 	_partPtrs.resize(2);
@@ -587,6 +612,7 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
 					distribute(region.elements, properties[p], evaluators.back());
 				}
+				region.settings[properties[p]].push_back(evaluators.back());
 			}
 		}
 	}
@@ -600,22 +626,6 @@ void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const
 void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
 {
 	_loadProperty(*this, _evaluators, regions, parameters, properties, true);
-}
-
-void Mesh::loadMaterials(const std::vector<Configuration*> &materials, const std::map<size_t, std::string> &sets)
-{
-	for (auto it = sets.begin(); it != sets.end(); ++it) {
-		Region &region = this->region(it->second);
-		for (size_t e = 0; e << region.elements.size(); e++) {
-			region.elements[e]->setParam(Element::MATERIAL, it->first -1);
-		}
-		for (auto p = materials[it->first - 1]->parameters.begin(); p != materials[it->first - 1]->parameters.end(); ++p) {
-			if (_materials.size() < it->first) {
-				_materials.resize(it->first, NULL);
-			}
-			_materials[it->first - 1] = new Material(_coordinates, *materials[it->first - 1]);
-		}
-	}
 }
 
 template<typename MergeFunction>

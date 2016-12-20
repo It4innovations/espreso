@@ -25,6 +25,9 @@ struct Region {
 	std::string name;
 	std::vector<Element*> elements;
 	Settings settings;
+	mutable double area;
+
+	void computeArea(const Coordinates &coordinates) const;
 };
 
 class Mesh
@@ -59,7 +62,21 @@ public:
 	void markRegions();
 	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadMaterials(const std::vector<Configuration*> &materials, const std::map<size_t, std::string> &sets);
+	template<typename TMaterial>
+	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)
+	{
+		size_t index = 0;
+		for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
+			Region &region = this->region(it->second);
+			for (size_t e = 0; e < region.elements.size(); e++) {
+				region.elements[e]->setParam(Element::MATERIAL, index);
+			}
+			Configuration *material = materials.find(it->first)->second;
+			for (auto p = material->parameters.begin(); p != material->parameters.end(); ++p) {
+				_materials.push_back(new Material(_coordinates, *material));
+			}
+		}
+	}
 
 	const Coordinates& coordinates() const { return _coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
