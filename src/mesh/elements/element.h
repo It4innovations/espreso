@@ -23,6 +23,11 @@ public:
 		VOLUME = 3,
 	};
 
+	enum class ElementPointType {
+		GAUSSE_POINT,
+		VERTEX_POINT
+	};
+
 	enum Params {
 		MATERIAL,
 		CONSTANT,
@@ -81,9 +86,9 @@ public:
 
 	virtual ~Element() {};
 
-	virtual const std::vector<DenseMatrix>& dN() const = 0;
-	virtual const std::vector<DenseMatrix>& N() const = 0;
-	virtual const std::vector<double>& weighFactor() const = 0;
+	virtual const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
+	virtual const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
+	virtual const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
 
 	virtual const std::vector<Property>& elementDOFs() const = 0;
 	virtual const std::vector<Property>& faceDOFs() const = 0;

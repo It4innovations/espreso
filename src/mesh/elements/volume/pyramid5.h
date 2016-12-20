@@ -48,9 +48,9 @@ public:
 	size_t coarseNodes() const { return Pyramid5NodesCount; }
 	size_t gaussePoints() const { return Pyramid5GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Pyramid5::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Pyramid5::_N; }
-	const std::vector<double>& weighFactor() const { return Pyramid5::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Pyramid5::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Pyramid5::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Pyramid5::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Pyramid5::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Pyramid5::_DOFFace; }

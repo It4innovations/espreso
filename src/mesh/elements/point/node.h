@@ -34,9 +34,9 @@ public:
 
 	size_t gaussePoints() const { return NodeGPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Node::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Node::_N; }
-	const std::vector<double>& weighFactor() const { return Node::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Node::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Node::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Node::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Node::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Node::_DOFFace; }

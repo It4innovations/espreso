@@ -48,9 +48,9 @@ public:
 	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
 	size_t gaussePoints() const { return Tetrahedron10GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Tetrahedron10::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Tetrahedron10::_N; }
-	const std::vector<double>& weighFactor() const { return Tetrahedron10::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Tetrahedron10::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Tetrahedron10::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Tetrahedron10::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Tetrahedron10::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Tetrahedron10::_DOFFace; }

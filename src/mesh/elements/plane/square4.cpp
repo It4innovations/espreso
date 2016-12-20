@@ -10,13 +10,11 @@ std::vector<Property> Square4::_DOFEdge;
 std::vector<Property> Square4::_DOFPoint;
 std::vector<Property> Square4::_DOFMidPoint;
 
-static std::vector<DenseMatrix> get_dN() {
+static std::vector<DenseMatrix> get_dN(double CsQ_scale) {
 	std::vector<DenseMatrix> dN(
 		Square4GPCount,
 		DenseMatrix(2, Square4NodesCount)
 	);
-
-	double CsQ_scale = 0.577350269189626;
 
 	for (unsigned int i = 0; i < Square4GPCount; i++) {
 		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
@@ -46,17 +44,15 @@ static std::vector<DenseMatrix> get_dN() {
 	return dN;
 }
 
-static std::vector<DenseMatrix> get_N() {
+static std::vector<DenseMatrix> get_N(double CsQ_scale) {
 	std::vector<DenseMatrix> N(
 		Square4GPCount,
 		DenseMatrix(1, Square4NodesCount)
 	);
 
-	double CsQ_scale = 0.5773502691896258;
-
 	for (unsigned int i = 0; i < Square4GPCount; i++) {
-		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
-		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
+		double t = (i & 2) ? CsQ_scale : -CsQ_scale;
+		double s = (i & 1) ? CsQ_scale : -CsQ_scale;
 
 		// basis function
 		N[i](0, 0) = 0.25 * (1 - s) * (1 - t);
@@ -68,9 +64,13 @@ static std::vector<DenseMatrix> get_N() {
 	return N;
 }
 
-std::vector<DenseMatrix> Square4::_dN = get_dN();
-std::vector<DenseMatrix> Square4::_N = get_N();
+std::vector<DenseMatrix> Square4::_dN = get_dN(0.577350269189626);
+std::vector<DenseMatrix> Square4::_N = get_N(0.577350269189626);
 std::vector<double> Square4::_weighFactor(Square4GPCount, 1);
+
+std::vector<DenseMatrix> Square4::_v_dN = get_dN(1);
+std::vector<DenseMatrix> Square4::_v_N = get_N(1);
+std::vector<double> Square4::_v_weighFactor(Square4GPCount, 1);
 
 bool Square4::match(const eslocal *indices, eslocal n)
 {

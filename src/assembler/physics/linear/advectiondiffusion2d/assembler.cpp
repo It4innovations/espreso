@@ -472,9 +472,9 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 	const std::vector<Evaluator*> &uy = element->settings(Property::TRANSLATION_MOTION_Y);
 
 	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
-	const std::vector<DenseMatrix> &dN = element->dN();
-	const std::vector<DenseMatrix> &N = element->N();
-	const std::vector<double> &weighFactor = element->weighFactor();
+	const std::vector<DenseMatrix> &dN = element->dN(Element::ElementPointType::GAUSSE_POINT);
+	const std::vector<DenseMatrix> &N = element->N(Element::ElementPointType::GAUSSE_POINT);
+	const std::vector<double> &weighFactor = element->weighFactor(Element::ElementPointType::GAUSSE_POINT);
 
 	DenseMatrix matFlux(2, 1), matGradient(2, 1);
 
@@ -513,7 +513,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 
 	DenseMatrix u(1, 2), v(1, 2), Re(1, element->nodes());
 
-	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
+	for (size_t gp = 0; gp < element->nodes(); gp++) {
 		u.multiply(N[gp], U, 1, 0);
 
 		J.multiply(dN[gp], coordinates);
@@ -547,10 +547,10 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 		matGradient.multiply(dND, solution, gpThickness(0, 0), 1);
 		matFlux.multiply(Ce, dND * solution, gpThickness(0, 0), 1);
 	}
-	gradient.push_back(matGradient(0, 0) / element->gaussePoints());
-	gradient.push_back(matGradient(1, 0) / element->gaussePoints());
-	flux.push_back(matFlux(0, 0) / element->gaussePoints());
-	flux.push_back(matFlux(1, 0) / element->gaussePoints());
+	gradient.push_back(matGradient(0, 0) / element->nodes());
+	gradient.push_back(matGradient(1, 0) / element->nodes());
+	flux.push_back(matFlux(0, 0) / element->nodes());
+	flux.push_back(matFlux(1, 0) / element->nodes());
 }
 
 void AdvectionDiffusion2D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)

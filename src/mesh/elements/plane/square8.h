@@ -45,9 +45,9 @@ public:
 	size_t coarseNodes() const { return Square4NodesCount; }
 	size_t gaussePoints() const { return Square8GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Square8::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Square8::_N; }
-	const std::vector<double>& weighFactor() const { return Square8::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Square8::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Square8::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Square8::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Square8::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Square8::_DOFFace; }

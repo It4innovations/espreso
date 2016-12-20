@@ -45,9 +45,9 @@ public:
 	size_t coarseNodes() const { return Triangle3NodesCount; }
 	size_t gaussePoints() const { return Triangle6GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Triangle6::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Triangle6::_N; }
-	const std::vector<double>& weighFactor() const { return Triangle6::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle6::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle6::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle6::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Triangle6::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Triangle6::_DOFFace; }

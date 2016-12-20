@@ -47,9 +47,9 @@ public:
 	size_t coarseNodes() const { return Hexahedron8NodesCount; }
 	size_t gaussePoints() const { return Hexahedron20GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Hexahedron20::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Hexahedron20::_N; }
-	const std::vector<double>& weighFactor() const { return Hexahedron20::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Hexahedron20::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Hexahedron20::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Hexahedron20::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Hexahedron20::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Hexahedron20::_DOFFace; }

@@ -48,9 +48,9 @@ public:
 	size_t coarseNodes() const { return Prisma6NodesCount; }
 	size_t gaussePoints() const { return Prisma15GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Prisma15::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Prisma15::_N; }
-	const std::vector<double>& weighFactor() const { return Prisma15::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Prisma15::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Prisma15::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Prisma15::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Prisma15::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Prisma15::_DOFFace; }

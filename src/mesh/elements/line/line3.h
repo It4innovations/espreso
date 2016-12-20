@@ -42,9 +42,9 @@ public:
 	size_t coarseNodes() const { return Line2NodesCount; }
 	size_t gaussePoints() const { return Line3GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Line3::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Line3::_N; }
-	const std::vector<double>& weighFactor() const { return Line3::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Line3::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Line3::_DOFFace; }

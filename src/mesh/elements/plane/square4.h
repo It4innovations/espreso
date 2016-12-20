@@ -45,9 +45,9 @@ public:
 	size_t coarseNodes() const { return Square4NodesCount; }
 	size_t gaussePoints() const { return Square4GPCount; }
 
-	const std::vector<DenseMatrix>& dN() const { return Square4::_dN; }
-	const std::vector<DenseMatrix>& N() const { return Square4::_N; }
-	const std::vector<double>& weighFactor() const { return Square4::_weighFactor; }
+	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return (type == ElementPointType::GAUSSE_POINT) ? Square4::_dN : Square4::_v_dN; }
+	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return (type == ElementPointType::GAUSSE_POINT) ? Square4::_N : Square4::_v_N; }
+	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return (type == ElementPointType::GAUSSE_POINT) ? Square4::_weighFactor : Square4::_v_weighFactor; }
 
 	const std::vector<Property>& elementDOFs() const { return Square4::_DOFElement; }
 	const std::vector<Property>& faceDOFs() const { return Square4::_DOFFace; }
@@ -68,6 +68,10 @@ private:
 	static std::vector<DenseMatrix> _dN;
 	static std::vector<DenseMatrix> _N;
 	static std::vector<double> _weighFactor;
+
+	static std::vector<DenseMatrix> _v_dN;
+	static std::vector<DenseMatrix> _v_N;
+	static std::vector<double> _v_weighFactor;
 
 	static std::vector<Property> _DOFElement;
 	static std::vector<Property> _DOFFace;
