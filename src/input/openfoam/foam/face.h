@@ -18,16 +18,9 @@ public:
 	ParseError* parse(Tokenizer &ts);
 	bool containsLine(eslocal x, eslocal y);
 	ParseError* nextPoint(eslocal x, eslocal y, eslocal &next);
-	void setFaceIndex(Element *element, unsigned char index) {
-		_index = std::pair<Element*, unsigned char>(element, index);
-	}
-	std::pair<Element*, unsigned char> &getFaceIndex() {
-		return _index;
-	}
 
 	friend inline std::ostream& operator<<(std::ostream& os, const Face& obj)
 	{
-		// write obj to stream
 		os<<obj.numberOfPoints<<"("<<obj.p[0]<<","<<obj.p[1]<<","<<obj.p[2];
 		if (obj.numberOfPoints==4) {
 		os<<","<<obj.p[3];
@@ -42,7 +35,6 @@ public:
 
 protected:
 private:
-	std::pair<Element*, unsigned char> _index;
 
 };
 

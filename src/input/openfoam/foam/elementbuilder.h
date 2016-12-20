@@ -15,9 +15,9 @@ public:
 	ElementBuilder();
 	virtual ~ElementBuilder();
 
-	void add(Face *face, bool owner)
+	void add(Face *face)
 	{
-		selectedFaces.push_back(std::pair<Face*, bool>(face, owner));
+		selectedFaces.push_back(face);
 	}
 
 	friend inline std::ostream& operator<<(std::ostream& os, const ElementBuilder& obj)
@@ -31,7 +31,7 @@ public:
 			} else {
 				os << ",";
 			}
-			os << *((*it).first) << "-" << (*it).second;
+			os << *(*it) ;
 		}
 		os<<")";
 		return os;
@@ -41,7 +41,7 @@ public:
 	ParseError* createElement(VolumeElement *&elements);
 
 	/** List of pairs: Face, owner */
-	std::list< std::pair<Face*, bool> > selectedFaces;
+	std::list< Face* > selectedFaces;
 
 protected:
 private:

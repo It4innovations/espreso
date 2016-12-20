@@ -5,8 +5,6 @@ using namespace espreso::input;
 Face::Face()
 {
     numberOfPoints =0;
-    _index.first = NULL;
-    _index.second = 0;
 }
 
 Face::~Face()

@@ -121,7 +121,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 
 	esglobal face = 0;
 	for (std::vector<esglobal>::iterator it = owner.begin(); it != owner.end(); ++it) {
-		elementBuilders[*it]->add(&_faces[face], true);
+		elementBuilders[*it]->add(&_faces[face]);
 		face++;
 	}
 
@@ -132,7 +132,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 
 	face = 0;
 	for (std::vector<esglobal>::iterator it = neighbour.begin(); it != neighbour.end(); ++it) {
-		elementBuilders[*it]->add(&_faces[face], false);
+		elementBuilders[*it]->add(&_faces[face]);
 		face++;
 	}
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin(); it != elementBuilders.end(); ++it) {
