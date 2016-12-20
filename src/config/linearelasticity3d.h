@@ -56,9 +56,9 @@ struct LinearElasticity3DMaterial: public Configuration {
 
 	PARAMETER(std::string, density, "Density"             , "0");
 	PARAMETER(std::string, Cp     , "Termal capacity."    , "0");
-	PARAMETER(std::string, MIXY   , "Poisson ratio XY."   , "1");
-	PARAMETER(std::string, MIXZ   , "Poisson ratio XZ."   , "1");
-	PARAMETER(std::string, MIYZ   , "Poisson ratio YZ."   , "1");
+	PARAMETER(std::string, MIXY   , "Poisson ratio XY."   , "0.3");
+	PARAMETER(std::string, MIXZ   , "Poisson ratio XZ."   , "0.3");
+	PARAMETER(std::string, MIYZ   , "Poisson ratio YZ."   , "0.3");
 
 	PARAMETER(std::string, EX     , "Young modulus X."    , "1");
 	PARAMETER(std::string, EY     , "Young modulus Y."    , "1");

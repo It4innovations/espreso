@@ -1,0 +1,253 @@
+
+# test input [WORKBENCH, OPENFOAM, ESDATA, GENERATOR]
+INPUT GENERATOR;
+
+# Used physics [LINEAR_ELASTICITY_2D, LINEAR_ELASTICITY_3D, TRANSIENT_ELASTICITY_2D, TRANSIENT_ELASTICITY_3D, ADVECTION_DIFFUSION_2D, ADVECTION_DIFFUSION_3D, STOKES]
+PHYSICS LINEAR_ELASTICITY_3D;
+
+OUTPUT { # Output settings.
+
+  # Format - only LEGACY format is supported without VTK library [VTK_LEGACY, VTK_BINARY, VTK_MULTIBLOCK, ENSIGHT]
+  FORMAT VTK_LEGACY;
+
+  # Compression - needs VTK library [bool]
+  COMPRESSION 0;
+
+  # Decimation - needs VTK library [double]
+  DECIMATION 0;
+
+  # Save results [bool]
+  RESULTS 0;
+
+  # Save also input parameters [bool]
+  PROPERTIES 0;
+
+  # Save lagrange multipliers [bool]
+  GLUING 0;
+
+  # All domains are shrunk by this ratio [double]
+  DOMAIN_SHRINK_RATIO 0.95;
+
+  # All clusters are shrunk by this ratio [double]
+  CLUSTER_SHRINK_RATIO 0.9;
+}
+
+ENV {
+  # Log directory. [*]
+  LOG_DIR log;
+
+  # Verbose level [0-3] [size_t]
+  VERBOSE_LEVEL 0;
+
+  # Testing level [0-3] [size_t]
+  TESTING_LEVEL 3;
+
+  # Measure level [0-3] [size_t]
+  MEASURE_LEVEL 0;
+
+  # Print assembler matrices. [bool]
+  PRINT_MATRICES 0;
+}
+
+
+GENERATOR { # ESPRESO internal mesh generator.
+
+  # Generated shape [GRID, SPHERE]
+  SHAPE GRID;
+
+  GRID { # Detailed specification of grid shape.
+
+    # Type of generated element [HEXA8, HEXA20, TETRA4, TETRA10, PRISMA6, PRISMA15, PYRAMID5, PYRAMID13, SQUARE4, SQUARE8, TRIANGLE3, TRIANGLE6]
+    ELEMENT_TYPE [ARG0];
+
+    # x-coordinate of grid starting point. [double]
+    START_X 0;
+
+    # y-coordinate of grid starting point. [double]
+    START_Y 0;
+
+    # z-coordinate of grid starting point. [double]
+    START_Z 0;
+
+    # x-length of generated grid. [double]
+    LENGTH_X 30;
+
+    # y-length of generated grid. [double]
+    LENGTH_Y 30;
+
+    # z-length of generated grid. [double]
+    LENGTH_Z 30;
+
+    # Projection of x-coordinate. [*]
+    PROJECTION_X x;
+
+    # Projection of y-coordinate. [*]
+    PROJECTION_Y y;
+
+    # Projection of z-coordinate. [*]
+    PROJECTION_Z z;
+
+    # Rotation of x-coordinate. [*]
+    ROTATION_X 0;
+
+    # Rotation of y-coordinate. [*]
+    ROTATION_Y 0;
+
+    # Rotation of z-coordinate. [*]
+    ROTATION_Z 0;
+
+    # Number of blocks in x-direction of a grid. [double]
+    BLOCKS_X 1;
+
+    # Number of blocks in y-direction of a grid. [double]
+    BLOCKS_Y 1;
+
+    # Number of blocks in z-direction of a grid. [double]
+    BLOCKS_Z 1;
+
+    # Number of clusters in x-direction of each grid square. [double]
+    CLUSTERS_X [ARG1];
+
+    # Number of clusters in y-direction of each grid square. [double]
+    CLUSTERS_Y [ARG2];
+
+    # Number of clusters in z-direction of each grid square. [double]
+    CLUSTERS_Z [ARG3];
+
+    # Number of domains in x-direction of each cluster. [double]
+    DOMAINS_X [ARG4];
+
+    # Number of domains in y-direction of each cluster. [double]
+    DOMAINS_Y [ARG5];
+
+    # Number of domains in z-direction of each cluster. [double]
+    DOMAINS_Z [ARG6];
+
+    # Number of elements in x-direction of each domain. [double]
+    ELEMENTS_X [ARG7];
+
+    # Number of elements in y-direction of each domain. [double]
+    ELEMENTS_Y [ARG8];
+
+    # Number of elements in z-direction of each domain. [double]
+    ELEMENTS_Z [ARG9];
+
+    # Grid is uniformly decomposed [bool]
+    UNIFORM_DECOMPOSITION 0;
+
+    BLOCKS { # List of grid blocks [<INDEX> <VALUE>]. Where value indicate if a block will be generated.
+
+      # List of values. [bool]
+      # <INDEX> 1;
+    }
+
+
+    NODES { # List of nodes regions.
+
+      BOTTOM "<0, 30> <0, 30> <0, 0>";
+    }
+
+    ELEMENTS { # List of elements regions.
+
+      ALL_EL ALL;
+    }
+  }
+}
+
+
+LINEAR_ELASTICITY_3D { # 3D Linear elasticity solver.
+
+  # Linear solver used for computing a system. [ESPRESO, HYPRE]
+  SOLVER_LIBRARY ESPRESO;
+
+  ESPRESO { # Internal FETI solver options.
+
+    # Solver requested precision. [double]
+    EPSILON 1e-05;
+
+    # solver iterations [size_t]
+    ITERATIONS 100;
+
+    # The FETI method used by ESPRESO. [TOTAL_FETI, HYBRID_FETI]
+    METHOD TOTAL_FETI;
+
+    # Used iterative solver [PCG, PIPEPCG, ORTHOGONALPCG, GMRES, BICGSTAB, QPCE]
+    SOLVER PCG;
+
+    # Preconditioner [NONE, LUMPED, WEIGHT_FUNCTION, DIRICHLET, SUPER_DIRICHLET, MAGIC]
+    PRECONDITIONER LUMPED;
+
+    # Type of regularization of stiffness matrix [FIX_POINTS, NULL_PIVOTS]
+    REGULARIZATION FIX_POINTS;
+
+    # If true, each pair of DOF are glued [bool]
+    REDUNDANT_LAGRANGE 1;
+
+    # If true, Lagrange multiplicators are weighted according a value in the stiffness matrix [bool]
+    SCALING 1;
+
+    # Type of gluing matrix for Hybrid FETI [CORNERS, KERNELS, COMBINED]
+    B0_TYPE KERNELS;
+
+    # Use schur complement for stiffness matrix processing. [bool]
+    USE_SCHUR_COMPLEMENT 0;
+
+    # Precision of Schur complement [DOUBLE, SINGLE]
+    SCHUR_PRECISION DOUBLE;
+
+    # Stiffness matrix solver type [DIRECT_DP, ITERATIVE, DIRECT_SP, DIRECT_MX]
+    KSOLVER DIRECT_DP;
+
+    # Number of reiteration steps for single precision direct solver [size_t]
+    KSOLVER_ITERATIONS 1000;
+
+    # Reguested norm for single precision direct solver [double]
+    KSOLVER_EPSILON 1e-12;
+
+    # Precision of F0 [K_PRECISION, DOUBLE]
+    F0_PRECISION K_PRECISION;
+
+    # S alfa solver type [CPU_DENSE, ACC_DENSE, CPU_SPARSE]
+    SASOLVER CPU_DENSE;
+
+    # Schur complement matrix type. [GENERAL, SYMMETRIC]
+    SCHUR_TYPE GENERAL;
+
+    # Combine usage of SC for Accelerator and sparse direct solver for CPU. [bool]
+    COMBINE_SC_AND_SPDS 1;
+
+    # Keep factors between iterations. [bool]
+    KEEP_FACTORS 1;
+
+    # Number of MIC accelerators [size_t]
+    N_MICS 2;
+
+    # Number of time steps for transient problems [size_t]
+    TIME_STEPS 1;
+  }
+ 
+  MATERIALS { # Vector of materials (counterd from 1).
+
+    1 { # First configuration settings.
+
+      DENSITY 7850;
+      MIXY     0.3;
+      EX    2.1e11;
+
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
+  }
+
+  MATERIAL_SET {
+    1 ALL_EL;
+  }
+
+  DISPLACEMENT { # <REGION> <EXPRESSION>;
+    BOTTOM 0;
+  }
+
+  ACCELERATION { # <REGION> <EXPRESSION>;
+    ALL_EL "z = 9.81";
+  }
+}
+

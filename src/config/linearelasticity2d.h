@@ -27,7 +27,7 @@ struct LinearElasticity2DMaterial: public Configuration {
 
 	PARAMETER(std::string, density, "Density"                , "0");
 	PARAMETER(std::string, Cp     , "Termal capacity."       , "0");
-	PARAMETER(std::string, MI     , "Poisson ratio."         , "1");
+	PARAMETER(std::string, MI     , "Poisson ratio."         , "0.3");
 	PARAMETER(std::string, EX     , "Young modulus X."       , "1");
 	PARAMETER(std::string, EY     , "Young modulus Y."       , "1");
 	PARAMETER(std::string, TEX    , "Thermal expansion X."   , "1");
