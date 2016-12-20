@@ -7,8 +7,6 @@
 
 namespace espreso {
 
-struct AdvectionDiffusion3DConfiguration;
-
 struct AdvectionDiffusion3D: public LinearPhysics
 {
 	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion3DConfiguration &configuration)
@@ -16,7 +14,12 @@ struct AdvectionDiffusion3D: public LinearPhysics
 			mesh, constraints, configuration.espreso,
 			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
-	  _configuration(configuration) {};
+	  _configuration(configuration)
+	{
+		if (_configuration.translation_motions.values.size()) {
+			mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+		}
+	};
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
@@ -26,6 +29,8 @@ struct AdvectionDiffusion3D: public LinearPhysics
 
 	void saveMeshProperties(store::Store &store);
 	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
+
+	void postProcess(store::Store &store, const std::vector<std::vector<double> > &solution);
 
 	const AdvectionDiffusion3DConfiguration &_configuration;
 

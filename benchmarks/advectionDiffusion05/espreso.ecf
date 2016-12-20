@@ -1,0 +1,141 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: TODO          |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_3D;
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE    HEXA8;
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG0];
+    CLUSTERS_Y     [ARG1];
+    CLUSTERS_Z     [ARG2];
+
+    DOMAINS_X      [ARG3];
+    DOMAINS_Y      [ARG4];
+    DOMAINS_Z      [ARG5];
+
+    ELEMENTS_X     [ARG6];
+    ELEMENTS_Y     [ARG7];
+    ELEMENTS_Z     [ARG8];
+
+    NODES {
+        LEFT   "<0, 1) <0, 0> <0, 1>";
+        TOP    "<0, 0> (0, 1) <0, 1>";
+
+        BOTTOM "<1, 1> <0, 1> <0, 1>";
+        N_ALL  ALL;
+    }
+
+    FACES {
+       RIGHT   "<0, 1> <1, 1> <0, 1>";
+    }
+
+    ELEMENTS {
+        ALL_EL ALL;
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_3D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD         TOTAL_FETI;
+    SOLVER                PCG;
+    PRECONDITIONER  DIRICHLET;
+  }
+  
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    LEFT   "T = 1";
+    TOP    "T = 1";
+    BOTTOM "T = 0";
+  }
+
+#  TRANSLATION_MOTIONS {
+#    ALL_EL "x = y, y = -x";
+#  }
+
+#  HEAT_FLUX {
+#    RIGHT "q = 10";
+#  }
+
+#  CONVECTION {
+#    RIGHT {
+#      EXTERNAL_TEMPERATURE      2;
+#      HEAT_TRANSFER_COEFFICIENT 5;
+#    }
+#  }
+
+  HEAT_FLOW {
+    RIGHT "q = 20";
+  }
+
+#  RESISTIVE_THIN_LAYER {
+#    RIGHT {
+#      TYPE  THERMAL_RESISTANCE;
+#      RESISTANCE            10;
+#      SURFACE_TEMPERATURE   20;
+#    }
+#
+#    RIGHT {
+#      TYPE    LAYER_PROPERTIES;
+#      NUMBER_OF_LAYERS       2;
+#      LAYERS {
+#        1 {
+#          THICKNESS          1;
+#          CONDUCTION         1;
+#        }
+#        2 {
+#          THICKNESS          2;
+#          CONDUCTION        10;
+#        }
+#      }
+#    }
+#  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY  1;
+      KXX    0.1;
+      Cp       1;
+    }
+  }
+
+  MATERIAL_SET {
+    1 ALL_EL;
+  }
+}
+
+
+
