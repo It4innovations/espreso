@@ -4667,7 +4667,7 @@ void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clus
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			if (cluster.domains[d]._RegMat.nnz > 0) {
-				cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
+				cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0);
 			}
 			break;
 		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:

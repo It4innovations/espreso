@@ -158,18 +158,17 @@ for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			cluster.domains[d].Kplus_Rb = physics.R1[d];
 			cluster.domains[d].Kplus_Rb2 = physics.R2[d];
 		}
-//		cilk_for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
-//			cluster.domains[d].K = physics.K[d];
-//			if (solver.USE_PREC == ESPRESO_PRECONDITIONER::MAGIC) {
-//				cluster.domains[d].Prec = cluster.domains[d].K;
-//				cluster.domains[d].Prec.MatAddInPlace(physics.RegMat[d], 'N', -1);
-//			}
-//		}
 
 		timeSetR.endWithBarrier();
 		timeEvalMain.addEvent(timeSetR);
 	}
 	// *** END - Setup R matrix **************************************************************************************
+
+
+
+
+
+
 
 	// *** Load InitialCondition for dirichelt
 	TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet InitialCondition points"));
@@ -202,7 +201,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 	// **** Calculate Dirichlet Preconditioner ********************************
 	if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET ||
-      configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
+			configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
 		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
@@ -231,8 +230,8 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
 			SparseMatrix K_modif = physics.K[d];
-      SparseMatrix RegMatCRS = physics.RegMat[d];
-      RegMatCRS.ConvertToCSRwithSort(0);
+			SparseMatrix RegMatCRS = physics.RegMat[d];
+			RegMatCRS.ConvertToCSRwithSort(0);
 			K_modif.MatAddInPlace(RegMatCRS,'N',-1);
 			// K_modif.RemoveLower();
 
@@ -247,117 +246,119 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
 
 			// permutations made on matrix in COO format
-      K_modif.ConvertToCOO(0);
-      eslocal I_index,J_index;
-      bool unsymmetric=!cluster.SYMMETRIC_SYSTEM;
-      for (eslocal i = 0;i<K_modif.nnz;i++){
-        I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
-        J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
-        if (unsymmetric || I_index<=J_index){
-          I_row_indices_p[i]=I_index;
-          J_col_indices_p[i]=J_index;
-        }
-        else{
-          I_row_indices_p[i]=J_index;
-          J_col_indices_p[i]=I_index;
-        }
-      }
-      for (eslocal i = 0; i<K_modif.nnz;i++){
-        K_modif.I_row_indices[i] = I_row_indices_p[i];
-        K_modif.J_col_indices[i] = J_col_indices_p[i];
-      }
-      K_modif.ConvertToCSRwithSort(1);
-      {
-			if (environment->print_matrices) {
-				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
-				osS << K_modif;
-				osS.close();
+			K_modif.ConvertToCOO(0);
+			eslocal I_index,J_index;
+			bool unsymmetric=!cluster.SYMMETRIC_SYSTEM;
+			for (eslocal i = 0;i<K_modif.nnz;i++){
+				I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+				J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+				if (unsymmetric || I_index<=J_index){
+					I_row_indices_p[i]=I_index;
+					J_col_indices_p[i]=J_index;
+				}
+				else{
+					I_row_indices_p[i]=J_index;
+					J_col_indices_p[i]=I_index;
+				}
 			}
-      }
+			for (eslocal i = 0; i<K_modif.nnz;i++){
+				K_modif.I_row_indices[i] = I_row_indices_p[i];
+				K_modif.J_col_indices[i] = J_col_indices_p[i];
+			}
+			K_modif.ConvertToCSRwithSort(1);
+			{
+				if (environment->print_matrices) {
+					std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+					osS << K_modif;
+					osS.close();
+				}
+			}
 
 
-      // ------------------------------------------------------------------------------------------------------------------
-      bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
-      //        PRECONDITIONER==NONE              - 0
-      //        PRECONDITIONER==LUMPED            - 1
-      //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
-      //        PRECONDITIONER==DIRICHLET         - 3
-      //        PRECONDITIONER==SUPER_DIRICHLET   - 4
-      //        
-      //        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
-      //        bool diagonalized_K_rr = false
-      // ------------------------------------------------------------------------------------------------------------------
+			// ------------------------------------------------------------------------------------------------------------------
+			bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+			//        PRECONDITIONER==NONE              - 0
+			//        PRECONDITIONER==LUMPED            - 1
+			//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+			//        PRECONDITIONER==DIRICHLET         - 3
+			//        PRECONDITIONER==SUPER_DIRICHLET   - 4
+			//
+			//        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+			//        bool diagonalized_K_rr = false
+			// ------------------------------------------------------------------------------------------------------------------
 
 			eslocal sc_size = perm_vec.size();
 
 			if (sc_size == physics.K[d].rows) {
 				cluster.domains[d].Prec = physics.K[d];
 				cluster.domains[d].Prec.ConvertCSRToDense(1);
-        // if physics.K[d] does not contain inner DOF
+				// if physics.K[d] does not contain inner DOF
 			} else {
 
-        if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
-          SparseSolverCPU createSchur;
-//          createSchur.msglvl=1;
-          eslocal sc_size = perm_vec.size();
-          createSchur.ImportMatrix_wo_Copy(K_modif);
-          createSchur.Create_SC(cluster.domains[d].Prec, sc_size,false);
-				  cluster.domains[d].Prec.ConvertCSRToDense(1);
-        }
-        else
-        {
-          SparseMatrix K_rr;
-          SparseMatrix K_rs;
-          SparseMatrix K_sr;
-          SparseMatrix KsrInvKrrKrs; 
+				if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+					SparseSolverCPU createSchur;
+					//          createSchur.msglvl=1;
+					eslocal sc_size = perm_vec.size();
+					createSchur.ImportMatrix_wo_Copy(K_modif);
+					createSchur.Create_SC(cluster.domains[d].Prec, sc_size,false);
+					cluster.domains[d].Prec.ConvertCSRToDense(1);
+				}
+				else
+				{
+					SparseMatrix K_rr;
+					SparseMatrix K_rs;
+					SparseMatrix K_sr;
+					SparseMatrix KsrInvKrrKrs;
 
-          eslocal i_start = 0;
-          eslocal nonsing_size = K_modif.rows - sc_size - i_start;
-          eslocal j_start = nonsing_size;
+					eslocal i_start = 0;
+					eslocal nonsing_size = K_modif.rows - sc_size - i_start;
+					eslocal j_start = nonsing_size;
 
-          K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+					K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
 
-          if (cluster.SYMMETRIC_SYSTEM){
-            K_rs.MatTranspose(K_sr);
-          }
-          else
-          {
-            K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
-          }
-      
-          cluster.domains[d].Prec.getSubDiagBlockmatrix(K_modif,cluster.domains[d].Prec,nonsing_size,sc_size);
-          SEQ_VECTOR <double> diagonals;
-          SparseSolverCPU K_rr_solver;
+					if (cluster.SYMMETRIC_SYSTEM){
+						K_rs.MatTranspose(K_sr);
+					}
+					else
+					{
+						K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
+					}
 
-          // K_rs is replaced by:
-          // a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
-          // b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
-          if (diagonalized_K_rr){
-            diagonals = K_modif.getDiagonal();
-            // diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
-            //      K_modif = [K_rr, K_rs]
-            //                [K_sr, K_ss]
-            // 
-            for (eslocal i = 0; i < K_rs.rows; i++) {
-              for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
-                K_rs.CSR_V_values[j - offset] /= diagonals[i];
-              }
-            }
-          }
-          else
-          {
-            K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
-            K_rr_solver.ImportMatrix_wo_Copy(K_rr);
-//            K_rr_solver.msglvl = 1;
-            K_rr_solver.SolveMat_Dense(K_rs);
-          }
+					cluster.domains[d].Prec.getSubDiagBlockmatrix(K_modif,cluster.domains[d].Prec,nonsing_size,sc_size);
+					SEQ_VECTOR <double> diagonals;
+					SparseSolverCPU K_rr_solver;
 
-          KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
-          cluster.domains[d].Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
-//          if (!diagonalized_K_rr){
-//				    cluster.domains[d].Prec.ConvertCSRToDense(1);
-//          }
-        }
+					// K_rs is replaced by:
+					// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+					// b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+					if (diagonalized_K_rr){
+						diagonals = K_modif.getDiagonal();
+						// diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+						//      K_modif = [K_rr, K_rs]
+						//                [K_sr, K_ss]
+						//
+						for (eslocal i = 0; i < K_rs.rows; i++) {
+							for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+								K_rs.CSR_V_values[j - offset] /= diagonals[i];
+								//TODO: Lumped v2
+								//K_rs.CSR_V_values[j - offset] = 0;
+							}
+						}
+					}
+					else
+					{
+						K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
+						K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+						//            K_rr_solver.msglvl = 1;
+						K_rr_solver.SolveMat_Dense(K_rs);
+					}
+
+					KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
+					cluster.domains[d].Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+					//          if (!diagonalized_K_rr){
+					//				    cluster.domains[d].Prec.ConvertCSRToDense(1);
+					//          }
+				}
 
 			}
 
@@ -365,7 +366,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 				std::ofstream osS(Logging::prepareFile(d, "S"));
 				SparseMatrix SC =  cluster.domains[d].Prec;
 				if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
-				  SC.ConvertDenseToCSR(1);
+					SC.ConvertDenseToCSR(1);
 				}
 				osS << SC;
 				osS.close();

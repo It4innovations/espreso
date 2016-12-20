@@ -315,12 +315,14 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 		domains[d].K.swap(K_in[d]);
 		domains[d]._RegMat.swap(RegMat[d]);
 
-
 		if ( configuration.preconditioner == ESPRESO_PRECONDITIONER::MAGIC ) {
-			//domains[d].Prec = domains[d].K;
-			domains[d]._RegMat.ConvertToCSR(1);
-			domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
-			domains[d]._RegMat.ConvertToCOO(1);
+			if (domains[d]._RegMat.nnz > 0) {
+				domains[d]._RegMat.ConvertToCSR(1);
+				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
+				domains[d]._RegMat.ConvertToCOO(1);
+			} else {
+				domains[d].Prec = domains[d].K;
+			}
 		}
 
 		domains[d].enable_SP_refinement = true;
@@ -559,8 +561,18 @@ for (size_t d = 0; d < domains.size(); d++)
 	#pragma omp parallel for
 for (size_t d = 0; d < domains.size(); d++)
 	{
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+		SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
+		kerindices[0] = 0;
+		for (int k = 1; k < kerindices.size(); k++) {
+			kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
+		}
+
+		eslocal e0_start	= kerindices[d];
+		eslocal e0_end		= kerindices[d+1];
+
+		//eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		//eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
 		for (eslocal i = e0_start; i < e0_end; i++ )
 			vec_e0[i] = - tm3[d][i - e0_start];
@@ -673,7 +685,14 @@ for (size_t d = 0; d < domains.size(); d++)
 
 		domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
+		kerindices[0] = 0;
+		for (int k = 1; k < kerindices.size(); k++) {
+			kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
+		}
+
+		eslocal e0_start	= kerindices[d];
+		//eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 
 		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
@@ -1155,6 +1174,22 @@ for (size_t i = 0; i<domains.size(); i++) {
 			G0LocalTemp2[i].Clear();
 		}
 
+		if (environment->print_matrices) {
+			SparseMatrix tmpG02 = G02;
+			std::ofstream osG0(Logging::prepareFile("G02"));
+			osG0 <<  tmpG02;
+			osG0.close();
+		}
+
+
+	}
+
+
+	if (environment->print_matrices) {
+		SparseMatrix tmpG01 = G0;
+		std::ofstream osG0(Logging::prepareFile("G01"));
+		osG0 <<  tmpG01;
+		osG0.close();
 	}
 
 
@@ -1434,8 +1469,12 @@ void ClusterBase::CreateSa() {
 				domains[d].Kplus_R.ConvertDenseToCSR(0);
 				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
 
-				domains[d].Kplus_Rb = TmpR;
-				domains[d].Kplus_Rb.ConvertCSRToDense(0);
+				if (TmpR.nnz == 0) {
+                                    ; //domains[d].Kplus_Rb = domains[d].Kplus_R;     
+                                } else {
+                                    domains[d].Kplus_Rb = TmpR;
+                                    domains[d].Kplus_Rb.ConvertCSRToDense(0);
+                                }
 
 			}
 		} else { // NON SYMMETRIC SYSTEMS
@@ -1558,6 +1597,13 @@ void ClusterBase::CreateSa() {
 	}
 	// END of Sa regularization part
 
+
+	if (environment->print_matrices) {
+		SparseMatrix tmpSa = Salfa;
+		std::ofstream osSa(Logging::prepareFile("Sa"));
+		osSa <<  tmpSa;
+		osSa.close();
+	}
 
 	switch (configuration.SAsolver) {
 	case ESPRESO_SASOLVER::CPU_SPARSE: {

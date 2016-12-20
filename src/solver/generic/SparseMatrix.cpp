@@ -2000,6 +2000,8 @@ void SparseMatrix::MatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_ou
 void SparseMatrix::MatMat(SparseMatrix & A_in, char MatA_T_for_transpose_N_for_non_transpose, SparseMatrix & B_in) {
 	// THIS := op(A)*B
 
+	if (A_in.nnz > 0 && B_in.nnz > 0) {
+
 	char transa = MatA_T_for_transpose_N_for_non_transpose;
 
 	eslocal job;
@@ -2076,6 +2078,9 @@ void SparseMatrix::MatMat(SparseMatrix & A_in, char MatA_T_for_transpose_N_for_n
 
 	type ='G';
 	mtype = MatrixType::REAL_UNSYMMETRIC;
+
+	}
+
 }
 
 
