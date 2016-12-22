@@ -66,7 +66,7 @@ if __name__ == '__main__':
         name, procs, args = parameters(config, example)
         TestCaseCreator.create_test(ESPRESOTests, ESPRESOTests.regular_cube, "OUTPUT" + name, procs, config, args)
 
-    OUTPUT_FORMATS = [ "VTK_LEGACY", "VTK_BINARY", "VTK_MULTIBLOCK" ] #, "ENSIGHT_FORMAT" ]
+    OUTPUT_FORMATS = [ "VTK_LEGACY", "VTK_BINARY", "VTK_MULTIBLOCK" ] #, "ENSIGHT" ]
     ETYPES = [ "HEXA8", "TETRA4", "PRISMA6", "PYRAMID5", "HEXA20", "TETRA10", "PRISMA15", "PYRAMID13" ]
 
     # Test output format
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         {
             "OUTPUT::FORMAT": OUTPUT_FORMATS,
             "OUTPUT::COMPRESSION": [ 0, 1 ],
-            "OUTPUT::DECIMATION": [ 0, 0.5, 0.9 ]
+            "OUTPUT::DECIMATION": [ 0, 0.8 ]
         },
         {
             "ETYPE": ETYPES,

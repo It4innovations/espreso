@@ -250,5 +250,7 @@ LINEAR_ELASTICITY_3D { # 3D Linear elasticity solver.
   ACCELERATION { # <REGION> <EXPRESSION>;
     ALL_EL "z = 9.81";
   }
+
+  POST_PROCESS 0;
 }
 
