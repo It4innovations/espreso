@@ -733,6 +733,9 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 
 void Elasticity3D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)
 {
+	if (!_configuration.post_process) {
+		return;
+	}
 	std::vector<std::vector<double> > stress(_mesh.parts());
 	std::vector<std::vector<double> > principleStress(_mesh.parts());
 	std::vector<std::vector<double> > HMH(_mesh.parts());

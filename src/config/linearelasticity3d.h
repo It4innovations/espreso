@@ -121,6 +121,8 @@ struct LinearElasticity3DConfiguration: public Configuration {
 
 	SUBVECTOR(LinearElasticity3DMaterial, materials, "Vector of materials.", "1", "Description of material '1'");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<MATERIAL_NAME>", "<REGION>");
+
+	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 };
 
 }

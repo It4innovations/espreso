@@ -646,6 +646,10 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 
 void AdvectionDiffusion3D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)
 {
+	if (!_configuration.post_process) {
+		return;
+	}
+
 	std::vector<std::vector<double> > termalGradient(_mesh.parts()), termalFlux(_mesh.parts());
 	DenseMatrix eSolution;
 

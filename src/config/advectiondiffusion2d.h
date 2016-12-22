@@ -75,6 +75,8 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 
 	SUBVECTOR(AdvectionDiffusion2DMaterial, materials, "Vector of materials.", "1", "Description of material '1'");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<MATERIAL_NAME>", "<REGION>");
+
+	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 };
 
 }

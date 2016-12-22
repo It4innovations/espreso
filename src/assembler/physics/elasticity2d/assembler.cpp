@@ -520,6 +520,10 @@ void Elasticity2D::makeStiffnessMatricesRegular()
 
 void Elasticity2D::composeSubdomain(size_t subdomain)
 {
+	if (!_configuration.post_process) {
+		return;
+	}
+
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke;
 	std::vector<double> fe;
