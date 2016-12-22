@@ -380,18 +380,21 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
 	// R * mu
 	SEQ_VECTOR<SEQ_VECTOR<double> > R_mu_prim_cluster;
 
+	int amp_offset = 0;
 	for (size_t d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
-		if (USE_HFETI == 1)
+		if (USE_HFETI == 1) {
 
 			if ( configuration.regularization == REGULARIZATION::FIX_POINTS )
 				cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
 		  	else
 		  		cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
 
-		else
-			cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', d * cluster.domains[d].Kplus_R.cols, 0);
-
+	} else {
+		//cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', d * cluster.domains[d].Kplus_R.cols, 0);
+		cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+		amp_offset += cluster.domains[d].Kplus_R.cols;
+	}
 		R_mu_prim_cluster.push_back(tmp);
 	}
 

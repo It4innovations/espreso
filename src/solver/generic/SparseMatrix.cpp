@@ -3802,7 +3802,6 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //
     if (permutVectorActive==1){
       srand(time(NULL));
-//      srand(0); // random will be constant until next compiling
 
       if (fixing_nodes_or_dof==0){
         random_shuffle ( permVec.begin(), permVec.end() );
