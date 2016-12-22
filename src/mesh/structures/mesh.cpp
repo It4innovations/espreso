@@ -411,6 +411,10 @@ Mesh::~Mesh()
 	for (size_t i = 0; i < _evaluators.size(); i++) {
 		delete _evaluators[i];
 	}
+
+	for (size_t i = 0; i < _materials.size(); i++) {
+		delete _materials[i];
+	}
 }
 
 static bool isOuterFace(

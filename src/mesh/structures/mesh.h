@@ -71,10 +71,7 @@ public:
 			for (size_t e = 0; e < region.elements.size(); e++) {
 				region.elements[e]->setParam(Element::MATERIAL, index);
 			}
-			Configuration *material = materials.find(it->first)->second;
-			for (auto p = material->parameters.begin(); p != material->parameters.end(); ++p) {
-				_materials.push_back(new Material(_coordinates, *material));
-			}
+			_materials.push_back(new Material(_coordinates, *materials.find(it->first)->second));
 		}
 	}
 
