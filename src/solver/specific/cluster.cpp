@@ -1470,11 +1470,11 @@ void ClusterBase::CreateSa() {
 				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
 
 				if (TmpR.nnz == 0) {
-                                    ; //domains[d].Kplus_Rb = domains[d].Kplus_R;     
-                                } else {
-                                    domains[d].Kplus_Rb = TmpR;
-                                    domains[d].Kplus_Rb.ConvertCSRToDense(0);
-                                }
+					; //domains[d].Kplus_Rb = domains[d].Kplus_R;
+				} else {
+					domains[d].Kplus_Rb = TmpR;
+					domains[d].Kplus_Rb.ConvertCSRToDense(0);
+				}
 
 			}
 		} else { // NON SYMMETRIC SYSTEMS
@@ -1490,15 +1490,15 @@ void ClusterBase::CreateSa() {
 			F0.SolveMat_Sparse( LAMN_RHS, LAMN );
 			F0.iparm[11] = set_bckp_F0;
 
-      for (eslocal i = 0;i<LAMN.nnz;i++){
-        LAMN.CSR_V_values[i] *= -1;
-      }
+			for (eslocal i = 0;i<LAMN.nnz;i++){
+				LAMN.CSR_V_values[i] *= -1;
+			}
 
-		  if (environment->print_matrices) {
-		  	std::ofstream osSa(Logging::prepareFile("LAMN"));
-		  	osSa << LAMN;
-		  	osSa.close();
-		  }
+			if (environment->print_matrices) {
+				std::ofstream osSa(Logging::prepareFile("LAMN"));
+				osSa << LAMN;
+				osSa.close();
+			}
 
 
 			for (size_t d = 0; d < domains.size(); d++) {
@@ -1531,17 +1531,27 @@ void ClusterBase::CreateSa() {
 				SparseMatrix TmpR;
 				domains[d].Kplus_R.ConvertDenseToCSR(0);
 				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
-				domains[d].Kplus_Rb = TmpR;
-				domains[d].Kplus_Rb.ConvertCSRToDense(0);
+
+				if (TmpR.nnz == 0) {
+					; //domains[d].Kplus_Rb = domains[d].Kplus_R;
+				} else {
+					domains[d].Kplus_Rb = TmpR;
+					domains[d].Kplus_Rb.ConvertCSRToDense(0);
+				}
+
 
 				SparseMatrix TmpR2;
 				domains[d].Kplus_R2.ConvertDenseToCSR(0);
 				TmpR2.MatMat( domains[d].Kplus_R2, 'N', tR2 );
-
 				TmpR2.MatAddInPlace(B0t_LAMNlocal,'N', 1.0);
 
-				domains[d].Kplus_Rb2 = TmpR2;
-				domains[d].Kplus_Rb2.ConvertCSRToDense(0);
+				if (TmpR2.nnz == 0) {
+					; //domains[d].Kplus_Rb = domains[d].Kplus_R;
+				} else {
+					domains[d].Kplus_Rb2 = TmpR2;
+					domains[d].Kplus_Rb2.ConvertCSRToDense(0);
+				}
+
 
 				if (environment->print_matrices) {
 					std::ofstream osR(Logging::prepareFile(d, "Rb_").c_str());

@@ -3116,6 +3116,8 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_VECTOR <eslocal> & rows_to_add) {
 
+    if (A_in.nnz > 0 ) {
+
 	int row_fill   = 1;
 
 	rows = rows_to_add.size();
@@ -3146,7 +3148,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_
         CSR_I_row_indices.push_back(row_fill);
 
 	nnz = CSR_V_values.size();
-
+    }
 }
 
 eslocal SparseMatrix::MatCompare(SparseMatrix & A) {
