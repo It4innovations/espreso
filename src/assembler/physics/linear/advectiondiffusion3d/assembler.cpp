@@ -101,7 +101,6 @@ void AdvectionDiffusion3D::saveMeshProperties(store::Store &store)
 void AdvectionDiffusion3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("temperature", 1, results, store::Store::ElementType::NODES);
-	store.finalize();
 }
 
 static double determinant3x3(DenseMatrix &m)
@@ -667,8 +666,6 @@ void AdvectionDiffusion3D::postProcess(store::Store &store, const std::vector<st
 
 	store.storeValues("gradient", 3, termalGradient, store::Store::ElementType::ELEMENTS);
 	store.storeValues("flux", 3, termalFlux, store::Store::ElementType::ELEMENTS);
-	store.finalize();
-
 }
 
 

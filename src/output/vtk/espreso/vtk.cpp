@@ -212,6 +212,11 @@ VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string 
 	computeCenters();
 }
 
+VTK::~VTK()
+{
+
+}
+
 void VTK::storeGeometry(size_t timeStep)
 {
 	open(_os, _path, timeStep);
@@ -314,29 +319,6 @@ void VTK::storeValues(const std::string &name, size_t dimension, const std::vect
 		results(_os, values, dimension);
 	}
 	_os.flush();
-}
-
-void VTK::store(std::vector<std::vector<double> > &displacement)
-{
-	std::stringstream ss;
-	ss << _path << environment->MPIrank << ".vtk";
-
-	std::ofstream os;
-	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-	head(os);
-	coordinates(os, _mesh.coordinates(), [&] (const Point &point, size_t part) { return this->shrink(point, part); });
-	elements(os, _mesh, ElementType::ELEMENTS);
-	os << "\n";
-	if (_lastData != ElementType::NODES) {
-		_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";
-		_lastData = ElementType::NODES;
-	}
-	os << "SCALARS displacement float " << displacement[0].size() / _mesh.coordinates().localSize(0) << "\n";
-	os << "LOOKUP_TABLE default\n";
-	results(os, displacement, displacement[0].size() / _mesh.coordinates().localSize(0));
-
-	os.close();
 }
 
 void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path, ElementType eType)

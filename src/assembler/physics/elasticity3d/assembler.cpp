@@ -64,7 +64,6 @@ void Elasticity3D::prepareMeshStructures()
 	_mesh.loadProperty(_configuration.acceleration.values       , { "x", "y", "z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
 	_mesh.loadProperty(_configuration.initial_temperature.values, { }              , { Property::INITIAL_TEMPERATURE });
 
-
 	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
 }
 
@@ -97,7 +96,6 @@ void Elasticity3D::saveMeshProperties(store::Store &store)
 void Elasticity3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("displacement", 3, results, store::Store::ElementType::NODES);
-	store.finalize();
 }
 
 void Elasticity3D::assembleB1()
@@ -759,7 +757,6 @@ void Elasticity3D::postProcess(store::Store &store, const std::vector<std::vecto
 	store.storeValues("stress", 6, stress, store::Store::ElementType::ELEMENTS);
 	store.storeValues("principle_stress", 3, principleStress, store::Store::ElementType::ELEMENTS);
 	store.storeValues("HMH", 1, HMH, store::Store::ElementType::ELEMENTS);
-	store.finalize();
 }
 
 }

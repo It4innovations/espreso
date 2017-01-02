@@ -84,7 +84,6 @@ void LinearElasticity3D::saveMeshProperties(store::Store &store)
 void LinearElasticity3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("displacement", 3, results, store::Store::ElementType::NODES);
-	store.finalize();
 }
 
 void LinearElasticity3D::assembleB1()

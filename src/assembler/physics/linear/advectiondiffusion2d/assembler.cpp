@@ -70,7 +70,6 @@ void AdvectionDiffusion2D::saveMeshProperties(store::Store &store)
 void AdvectionDiffusion2D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
 {
 	store.storeValues("temperature", 1, results, store::Store::ElementType::NODES);
-	store.finalize();
 }
 
 void AdvectionDiffusion2D::assembleB1()
@@ -565,8 +564,6 @@ void AdvectionDiffusion2D::postProcess(store::Store &store, const std::vector<st
 
 	store.storeValues("gradient", 2, termalGradient, store::Store::ElementType::ELEMENTS);
 	store.storeValues("flux", 2, termalFlux, store::Store::ElementType::ELEMENTS);
-	store.finalize();
-
 }
 
 }
