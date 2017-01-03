@@ -17,6 +17,7 @@
 
 #include "vtkXMLUnstructuredGridWriter.h"
 #include "vtkGenericDataObjectWriter.h"
+#include "vtkEnSightWriter.h"
 
 #include "../vtk.h"
 
@@ -236,7 +237,6 @@ static void storeData(vtkUnstructuredGrid *VTKGrid, std::vector<void*> &VTKDataA
 	VTKDataArrays.push_back(data);
 }
 
-
 void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<eslocal> > &values, espreso::store::Store::ElementType eType)
 {
 	storeData<vtkIntArray, eslocal>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
@@ -321,7 +321,20 @@ void VTK::finalize()
 	} break;
 
 	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
-		ESINFO(espreso::GLOBAL_ERROR) << "Implement ENSIGHT";
+		if (!VTKGrid->GetCellData()->GetArray("BlockId")) {
+			// EnSight needs Block ID for each cell
+			std::vector<std::vector<eslocal> > blockID(_mesh.parts());
+			for (size_t p = 0; p < _mesh.parts(); p++) {
+				blockID[p].resize(_mesh.getPartition()[p + 1] - _mesh.getPartition()[p], 1);
+			}
+			storeData<vtkIntArray, eslocal>(VTKGrid, VTKDataArrays, "BlockId", 1, blockID, ElementType::ELEMENTS);
+		}
+
+		vtkSmartPointer<vtkEnSightWriter> writer = vtkSmartPointer<vtkEnSightWriter>::New();
+		writer->SetFileName(name.str().c_str());
+		writer->SetInputData(VTKGrid);
+		writer->Write();
+		writer->WriteCaseFile(1);
 	} break;
 	}
 }
