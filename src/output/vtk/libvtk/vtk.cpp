@@ -9,6 +9,12 @@
 #include "vtkCellData.h"
 #include "vtkUnstructuredGrid.h"
 
+#include "vtkGeometryFilter.h"
+#include "vtkDataSetSurfaceFilter.h"
+#include "vtkTriangleFilter.h"
+#include "vtkDecimatePro.h"
+#include "vtkAppendFilter.h"
+
 #include "vtkXMLUnstructuredGridWriter.h"
 #include "vtkGenericDataObjectWriter.h"
 
@@ -245,6 +251,32 @@ void VTK::finalize()
 {
 	std::stringstream name;
 	name << _path << espreso::environment->MPIrank;
+
+	if (_output.decimation) {
+		vtkSmartPointer<vtkGeometryFilter>       geometry  = vtkSmartPointer<vtkGeometryFilter>::New();
+		vtkSmartPointer<vtkDataSetSurfaceFilter> surface   = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+		vtkSmartPointer<vtkTriangleFilter>       triangles = vtkSmartPointer<vtkTriangleFilter>::New();
+		vtkSmartPointer<vtkDecimatePro>          decimated = vtkSmartPointer<vtkDecimatePro>::New();
+		vtkSmartPointer<vtkAppendFilter>         result    = vtkSmartPointer<vtkAppendFilter>::New();
+
+		geometry->SetInputData(VTKGrid);
+		geometry->Update();
+
+		surface->SetInputConnection(geometry->GetOutputPort());
+		surface->Update();
+
+		triangles->SetInputConnection(surface->GetOutputPort());
+		triangles->Update();
+
+		decimated->SetInputConnection(triangles->GetOutputPort());
+		decimated->SetTargetReduction(_output.decimation);
+		decimated->Update();
+
+		result->AddInputConnection(decimated->GetOutputPort());
+		result->Update();
+
+		VTKGrid->ShallowCopy(result->GetOutput());
+	}
 
 	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT: {
