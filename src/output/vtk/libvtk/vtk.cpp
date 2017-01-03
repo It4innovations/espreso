@@ -247,39 +247,37 @@ void VTK::finalize()
 	name << _path << espreso::environment->MPIrank;
 
 	switch (_output.format) {
-	case espreso::OUTPUT_FORMAT::VTK_LEGACY_FORMAT: {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT: {
 		vtkSmartPointer<vtkGenericDataObjectWriter> writer = vtkSmartPointer<vtkGenericDataObjectWriter>::New();
 		writer->SetFileName((name.str() + ".vtk").c_str());
 		writer->SetInputData(VTKGrid);
 		writer->Write();
 	} break;
 
-	case espreso::OUTPUT_FORMAT::VTK_BINARY_FORMAT: {
+	case OUTPUT_FORMAT::VTK_BINARY_FORMAT:
+	case OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT: {
 		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 		writer->SetFileName((name.str() + ".vtu").c_str());
 		writer->SetInputData(VTKGrid);
 		writer->SetDataModeToBinary();
-		writer->Write();
-	} break;
-
-	case espreso::OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT: {
-		vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-
-		writer->SetFileName((name.str() + ".vtu").c_str());
-		writer->SetInputData(VTKGrid);
-		writer->SetDataModeToBinary();
+		if (_output.compression) {
+			writer->SetCompressorTypeToZLib();
+		} else {
+			writer->SetCompressorTypeToNone();
+		}
 		writer->Write();
 
-		if (espreso::environment->MPIrank) {
+		if (_output.format == OUTPUT_FORMAT::VTK_BINARY_FORMAT || espreso::environment->MPIrank) {
 			break;
 		}
+
 		std::ofstream result(_path + ".vtm");
 
 		result << "<?xml version=\"1.0\"?>\n";
-		if (!_output.compression) {
-			result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
-		} else {
+		if (_output.compression) {
 			result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\" compressor=\"vtkZLibDataCompressor\">\n";
+		} else {
+			result << "<VTKFile type=\"vtkMultiBlockDataSet\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 		}
 		result << " <vtkMultiBlockDataSet>\n";
 		for (int i = 0; i < espreso::environment->MPIsize; i++) {
@@ -290,7 +288,7 @@ void VTK::finalize()
 		result.close();
 	} break;
 
-	case espreso::OUTPUT_FORMAT::ENSIGHT_FORMAT: {
+	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		ESINFO(espreso::GLOBAL_ERROR) << "Implement ENSIGHT";
 	} break;
 	}
