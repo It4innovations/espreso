@@ -13,8 +13,8 @@ namespace store {
 class VTK: public Store {
 
 public:
-	int numb=1;
 	VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
+	VTK(const OutputConfiguration &output, const Mesh &mesh);
 	~VTK();
 
 	virtual void storeGeometry(size_t timeStep = -1);
@@ -32,6 +32,16 @@ protected:
 	void computeCenters();
 	Point shrink(const Point &p, size_t part) const;
 	Point shrink(const Point &p, const Point &sCenter, const Point &cCenter) const;
+
+	void coordinates();
+	void nodes(const std::vector<Element*> &nodes);
+	void nodes(const std::vector<std::vector<eslocal> > &nodes);
+	void cells(ElementType eType);
+
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<eslocal> > &values, espreso::store::Store::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::Store::ElementType eType);
+
+	void lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function<Point(const Point&, size_t, size_t, bool)> shrink);
 
 	std::ofstream _os;
 	std::vector<Point> _sCenters;

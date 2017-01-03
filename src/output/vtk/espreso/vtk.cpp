@@ -1,29 +1,46 @@
 
-// Dummy VTK file
-// Always store VTK Legacy format
-
 #include "../vtk.h"
 
 using namespace espreso::store;
 
-static void open(std::ofstream &os, const std::string &path, size_t timeStep)
+VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+: Store(output, mesh, path), _lastData(ElementType::ELEMENTS)
 {
+	switch (_output.format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
+		break;
+	default:
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";
+	}
+
+	computeCenters();
+
 	std::stringstream ss;
 	ss << path << espreso::environment->MPIrank;
-	if (timeStep < (size_t)-1) {
-		ss << "_" << timeStep;
-	}
 	ss << ".vtk";
 
-	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
+	_os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
+	_os << "# vtk DataFile Version 4.0\n";
+	_os << "ESPRESO output\n";
+	_os << "ASCII\n";
+	_os << "\n";
 }
 
-static void head(std::ofstream &os)
+VTK::VTK(const OutputConfiguration &output, const Mesh &mesh)
+: Store(output, mesh, ""), _lastData(ElementType::ELEMENTS)
 {
-	os << "# vtk DataFile Version 4.0\n";
-	os << "ESPRESO output\n";
-	os << "ASCII\n";
-	os << "\n";
+	switch (_output.format) {
+	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
+		break;
+	default:
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";
+	}
+
+	computeCenters();
+}
+
+VTK::~VTK()
+{
 }
 
 static size_t coordinateSize(const espreso::Coordinates &coordinates)
@@ -35,43 +52,26 @@ static size_t coordinateSize(const espreso::Coordinates &coordinates)
 	return cSize;
 }
 
-static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, std::function<espreso::Point(const espreso::Point&, size_t)> shrink)
+void VTK::coordinates()
 {
-	size_t parts = coordinates.parts();
-	size_t cSize = coordinateSize(coordinates);
+	size_t parts = _mesh.parts();
+	size_t cSize = coordinateSize(_mesh.coordinates());
 
-	os << "DATASET UNSTRUCTURED_GRID\n";
-	os << "POINTS " << cSize << " float\n";
+	_os << "DATASET UNSTRUCTURED_GRID\n";
+	_os << "POINTS " << cSize << " float\n";
 
 	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = 0; i < coordinates.localToCluster(p).size(); i++) {
-			os << shrink(coordinates.get(i, p), p) << "\n";
+		for (size_t i = 0; i < _mesh.coordinates().localToCluster(p).size(); i++) {
+			_os << shrink(_mesh.coordinates().get(i, p), p) << "\n";
 		}
 	}
-	os << "\n";
+	_os << "\n";
+	_os.flush();
 }
 
-static void coordinates(std::ofstream &os, const espreso::Coordinates &coordinates, const std::vector<espreso::Element*> &nodes, std::function<espreso::Point(const espreso::Point&, size_t)> shrink)
+void VTK::nodes(const std::vector<Element*> &nodes)
 {
-	size_t cSize = 0;
-	for (size_t n = 0; n < nodes.size(); n++) {
-		cSize += nodes[n]->domains().size();
-	}
-
-	os << "DATASET UNSTRUCTURED_GRID\n";
-	os << "POINTS " << cSize << " float\n";
-
-	for (size_t i = 0; i < nodes.size(); i++) {
-		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
-			os << shrink(coordinates[nodes[i]->node(0)], nodes[i]->domains()[d]) << "\n";
-		}
-	}
-	os << "\n";
-}
-
-static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes, size_t domains)
-{
-	std::vector<size_t> domainSize(domains, 0);
+	std::vector<size_t> domainSize(_mesh.parts(), 0);
 	size_t size = 0;
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
@@ -79,59 +79,117 @@ static void nodes(std::ofstream &os, const std::vector<espreso::Element*> &nodes
 		}
 	}
 
-	for (size_t i = 0; i < domains; i++) {
+	for (size_t i = 0; i < _mesh.parts(); i++) {
 		size += domainSize[i];
 	}
 
 	size_t offset = 0;
-	std::vector<std::vector<eslocal> > points(domains);
-	os << "CELLS " << domains << " " << size + domains << "\n";
+	std::vector<std::vector<eslocal> > points(_mesh.parts());
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
 			points[nodes[i]->domains()[d]].push_back(offset++);
 		}
 	}
 
-	for (size_t d = 0; d < domains; d++) {
-		os << points[d].size();
-		for (size_t i = 0; i < points[d].size(); i++) {
-			os << " " << points[d][i];
+	_os << "DATASET UNSTRUCTURED_GRID\n";
+	_os << "POINTS " << size << " float\n";
+	for (size_t i = 0; i < nodes.size(); i++) {
+		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
+			_os << shrink(_mesh.coordinates()[nodes[i]->node(0)], nodes[i]->domains()[d]) << "\n";
 		}
-		os << "\n";
+	}
+	_os << "\n";
+
+	_os << "CELLS " << _mesh.parts() << " " << size + _mesh.parts() << "\n";
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		_os << points[d].size();
+		for (size_t i = 0; i < points[d].size(); i++) {
+			_os << " " << points[d][i];
+		}
+		_os << "\n";
 	}
 
-	os << "\n";
+	_os << "\n";
 
-	os << "CELL_TYPES " << domains << "\n";
-	for (size_t d = 0; d < domains; d++) {
-		os << "2\n";
+	_os << "CELL_TYPES " << _mesh.parts() << "\n";
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		_os << "2\n";
 	}
-	os << "\n";
+	_os << "\n";
 
 	// DECOMPOSITION TO SUBDOMAINS
-	os << "CELL_DATA " << domains << "\n";
-	os << "SCALARS decomposition int 1\n";
-	os << "LOOKUP_TABLE decomposition\n";
-	for (size_t d = 0; d < domains; d++) {
-		os << d << "\n";
+	_os << "CELL_DATA " << _mesh.parts() << "\n";
+	_os << "SCALARS decomposition int 1\n";
+	_os << "LOOKUP_TABLE decomposition\n";
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		_os << d << "\n";
 	}
-	os << "\n";
+	_os << "\n";
 }
 
-static void elements(std::ofstream &os, const espreso::Mesh &mesh, espreso::store::Store::ElementType eType)
+void VTK::nodes(const std::vector<std::vector<eslocal> > &nodes)
+{
+	std::vector<size_t> domainSize(_mesh.parts(), 0);
+	size_t size = 0;
+	for (size_t i = 0; i < nodes.size(); i++) {
+		domainSize[i] = nodes[i].size();
+	}
+
+	for (size_t i = 0; i < _mesh.parts(); i++) {
+		size += domainSize[i];
+	}
+
+	_os << "DATASET UNSTRUCTURED_GRID\n";
+	_os << "POINTS " << size << " float\n";
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		for (size_t i = 0; i < nodes[p].size(); i++) {
+			_os << shrink(_mesh.coordinates()[nodes[p][i]], p) << "\n";
+		}
+	}
+	_os << "\n";
+
+	_os << "CELLS " << _mesh.parts() << " " << size + _mesh.parts() << "\n";
+
+	for (size_t d = 0, index = 0; d < _mesh.parts(); d++) {
+		_os << nodes[d].size();
+		for (size_t i = 0; i < nodes[d].size(); i++) {
+			_os << " " << index++;
+		}
+		_os << "\n";
+	}
+
+	_os << "\n";
+
+	_os << "CELL_TYPES " << _mesh.parts() << "\n";
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		_os << "2\n";
+	}
+	_os << "\n";
+
+	// DECOMPOSITION TO SUBDOMAINS
+	_os << "CELL_DATA " << _mesh.parts() << "\n";
+	_os << "SCALARS decomposition int 1\n";
+	_os << "LOOKUP_TABLE decomposition\n";
+	for (size_t d = 0; d < _mesh.parts(); d++) {
+		_os << d << "\n";
+	}
+	_os << "\n";
+}
+
+void VTK::cells(ElementType eType)
 {
 	std::vector<espreso::Element*> elements;
 
 	switch (eType) {
 	case espreso::store::Store::ElementType::ELEMENTS:
-		elements.insert(elements.end(), mesh.elements().begin(), mesh.elements().end());
+		elements.insert(elements.end(), _mesh.elements().begin(), _mesh.elements().end());
 		break;
 	case espreso::store::Store::ElementType::FACES:
-		elements.insert(elements.end(), mesh.faces().begin(), mesh.faces().end());
+		elements.insert(elements.end(), _mesh.faces().begin(), _mesh.faces().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
 	case espreso::store::Store::ElementType::EDGES:
-		elements.insert(elements.end(), mesh.edges().begin(), mesh.edges().end());
+		elements.insert(elements.end(), _mesh.edges().begin(), _mesh.edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
 	default:
@@ -145,50 +203,120 @@ static void elements(std::ofstream &os, const espreso::Mesh &mesh, espreso::stor
 	}
 
 	std::vector<size_t> offset = { 0 };
-	for (size_t p = 1; p < mesh.parts(); p++) {
-		offset.push_back(offset[p - 1] + mesh.coordinates().localSize(p - 1));
+	for (size_t p = 1; p < _mesh.parts(); p++) {
+		offset.push_back(offset[p - 1] + _mesh.coordinates().localSize(p - 1));
 	}
 
 	// ELEMENTS
-	os << "CELLS " << eSize << " " << nSize << "\n";
+	_os << "CELLS " << eSize << " " << nSize << "\n";
 	for (size_t i = 0; i < elements.size(); i++) {
 		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-			os << elements[i]->nodes();
+			_os << elements[i]->nodes();
 			for (size_t j = 0; j < elements[i]->nodes(); j++) {
-				os << " " << mesh.coordinates().localIndex(elements[i]->node(j), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]];
+				_os << " " << _mesh.coordinates().localIndex(elements[i]->node(j), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]];
 			}
-			os << "\n";
+			_os << "\n";
 		}
 	}
-	os << "\n";
+	_os << "\n";
 
 	// ELEMENTS TYPES
-	os << "CELL_TYPES " << eSize << "\n";
+	_os << "CELL_TYPES " << eSize << "\n";
 	for (size_t i = 0; i < elements.size(); i++) {
 		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-			os << elements[i]->vtkCode() << "\n";
+			_os << elements[i]->vtkCode() << "\n";
 		}
 	}
-	os << "\n";
+	_os << "\n";
 
 	// DECOMPOSITION TO SUBDOMAINS
-	os << "CELL_DATA " << eSize << "\n";
-	os << "SCALARS decomposition int 1\n";
-	os << "LOOKUP_TABLE decomposition\n";
+	_os << "CELL_DATA " << eSize << "\n";
+	_os << "SCALARS decomposition int 1\n";
+	_os << "LOOKUP_TABLE decomposition\n";
 	size_t part = 0;
 	for (size_t i = 0; i < elements.size(); i++) {
 		if (i && elements[i]->domains() != elements[i - 1]->domains()) {
 			part++;
 		}
 		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-			os << part << "\n";
+			_os << part << "\n";
 		}
 	}
-	os << "\n";
+	_os << "\n";
+	_os.flush();
+}
+
+void VTK::lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function<Point(const Point&, size_t, size_t, bool)> shrink)
+{
+	size_t cSize = 0;
+	for (size_t p = 0; p < nodes.size(); p++) {
+		cSize += nodes[p].size();
+	}
+
+	_os << "DATASET UNSTRUCTURED_GRID\n";
+	_os << "POINTS " << 2 * cSize << " float\n";
+
+	for (size_t p = 0; p < nodes.size(); p++) {
+		for (size_t n = 0; n < nodes[p].size(); n++) {
+			Point p1 = shrink(_mesh.coordinates()[nodes[p][n]], p, n, true);
+			Point p2 = shrink(_mesh.coordinates()[nodes[p][n]], p, n, false);
+			_os << p1 << " " << p2 << "\n";
+		}
+	}
+
+	// ELEMENTS
+	_os << "\nCELLS " << cSize << " " << 3 * cSize << "\n";
+	for (size_t p = 0, index = 0; p < nodes.size(); p++) {
+		for (size_t n = 0; n < nodes[p].size(); n++, index++) {
+			_os << "2 " << 2 * index << " " << 2 * index + 1 << "\n";
+		}
+	}
+	_os << "\n";
+
+	// ELEMENTS TYPES
+	_os << "CELL_TYPES " << cSize << "\n";
+	for (size_t p = 0; p < nodes.size(); p++) {
+		for (size_t n = 0; n < nodes[p].size(); n++) {
+			_os << Line2VTKCode << "\n";
+		}
+	}
+	_os << "\n";
+
+	// DECOMPOSITION TO SUBDOMAINS
+	_os << "CELL_DATA " << cSize << "\n";
+	_os << "SCALARS decomposition int 1\n";
+	_os << "LOOKUP_TABLE decomposition\n";
+	for (size_t i = 0; i < nodes.size(); i++) {
+		for (size_t j = 0; j < nodes[i].size(); j++) {
+			_os << i << "\n";
+		}
+	}
+	_os << "\n";
+	_os.flush();
 }
 
 template <typename Ttype>
-static void results(std::ofstream &os, const std::vector<std::vector<Ttype> > &values, size_t DOFs)
+static void setValueHeader(std::ofstream &os, const std::vector<std::vector<Ttype> > &values, size_t dimension, espreso::store::Store::ElementType &last, espreso::store::Store::ElementType current)
+{
+	if (last != current) {
+		size_t size = 0;
+		for (size_t p = 0; p < values.size(); p++) {
+			size += values[p].size() / dimension;
+		}
+		switch (current) {
+		case espreso::store::Store::ElementType::NODES:
+			os << "POINT_DATA " << size << "\n";
+			last = espreso::store::Store::ElementType::NODES;
+			break;
+		default:
+			os << "CELL_DATA " << size << "\n";
+			last = espreso::store::Store::ElementType::ELEMENTS;
+		}
+	}
+}
+
+template <typename Ttype>
+static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > &values, size_t DOFs)
 {
 	for (size_t p = 0; p < values.size(); p++) {
 		for (size_t i = 0; i < values[p].size() / DOFs; i++) {
@@ -198,385 +326,27 @@ static void results(std::ofstream &os, const std::vector<std::vector<Ttype> > &v
 			os << "\n";
 		}
 	}
+	os.flush();
 }
 
-VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: Store(output, mesh, path), _lastData(ElementType::ELEMENTS)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<eslocal> > &values, espreso::store::Store::ElementType eType)
 {
-	switch (_output.format) {
-	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
-		break;
-	default:
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";
-	}
-	computeCenters();
+	setValueHeader(_os, values, dimension, _lastData, eType);
+	_os << "SCALARS " << name << " int " << dimension << "\n";
+	_os << "LOOKUP_TABLE default\n";
+	storeData<eslocal>(_os, values, dimension);
 }
 
-VTK::~VTK()
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::Store::ElementType eType)
 {
-
+	setValueHeader(_os, values, dimension, _lastData, eType);
+	_os << "SCALARS " << name << " double " << dimension << "\n";
+	_os << "LOOKUP_TABLE default\n";
+	storeData<double>(_os, values, dimension);
 }
 
-void VTK::storeGeometry(size_t timeStep)
+void VTK::finalize()
 {
-	open(_os, _path, timeStep);
-	head(_os);
-	coordinates(_os, _mesh.coordinates(), [&] (const Point &point, size_t part) { return shrink(point, part); });
-	elements(_os, _mesh, ElementType::ELEMENTS);
-	_os.flush();
-}
-
-void VTK::finalize() {};
-
-void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
-{
-	std::vector<std::vector<int> > selection(_mesh.parts());
-	std::vector<std::vector<double> > values(_mesh.parts());
-
-	switch (eType) {
-	case ElementType::ELEMENTS:
-		for (size_t e = 0; e < _mesh.elements().size(); e++) {
-			const Element *element = _mesh.elements()[e];
-			for (size_t p = 0; p < properties.size(); p++) {
-				size_t domain = element->domains()[0];
-				double value = 0;
-				for (size_t n = 0; n < element->nodes(); n++) {
-					value += element->settings(properties[p]).back()->evaluate(element->node(n));
-				}
-				values[domain].push_back(value / element->nodes());
-			}
-		}
-		_os << "\n";
-		if (_lastData != ElementType::ELEMENTS) {
-			_os << "CELL_DATA " << _mesh.elements().size() + _mesh.faces().size() + _mesh.edges().size() << "\n";
-			_lastData = ElementType::ELEMENTS;
-		}
-		_os << "SCALARS " << name << "FixedValue double " << properties.size() << "\n";
-		_os << "LOOKUP_TABLE fixed" << name << "\n";
-		results(_os, values, properties.size());
-		break;
-	case ElementType::FACES:
-		ESINFO(GLOBAL_ERROR) << "Implement store properties for faces";
-		break;
-	case ElementType::EDGES:
-		ESINFO(GLOBAL_ERROR) << "Implement store properties for edges";
-		break;
-	case ElementType::NODES:
-		for (size_t n = 0; n < _mesh.nodes().size(); n++) {
-			const Element *node = _mesh.nodes()[n];
-			for (size_t p = 0; p < properties.size(); p++) {
-				for (size_t d = 0; d < node->domains().size(); d++) {
-					size_t domain = node->domains()[d];
-					selection[domain].push_back(node->settings().isSet(properties[p]) ? 1 : 0);
-					values[domain].push_back(node->settings(properties[p]).back()->evaluate(n));
-				}
-			}
-		}
-		_os << "\n";
-		if (_lastData != ElementType::NODES) {
-			_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";
-			_lastData = ElementType::NODES;
-		}
-		_os << "SCALARS " << name << "IsSet int " << properties.size() << "\n";
-		_os << "LOOKUP_TABLE setted" << name << "\n";
-		results(_os, selection, properties.size());
-		_os << "\n";
-		_os << "SCALARS " << name << "FixedValue double " << properties.size() << "\n";
-		_os << "LOOKUP_TABLE fixed" << name << "\n";
-		results(_os, values, properties.size());
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Unknown element type";
-	}
-	_os.flush();
-}
-
-void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
-{
-	switch (eType) {
-	case ElementType::FACES:
-	case ElementType::EDGES:
-		ESINFO(GLOBAL_ERROR) << "Implement store values";
-		break;
-	case ElementType::ELEMENTS:
-		_os << "\n";
-		if (_lastData != ElementType::ELEMENTS) {
-			_os << "CELL_DATA " << _mesh.elements().size() << "\n";
-			_lastData = ElementType::ELEMENTS;
-		}
-		_os << "SCALARS " << name << " double " << dimension << "\n";
-		_os << "LOOKUP_TABLE fixed" << name << "\n";
-		results(_os, values, dimension);
-		break;
-	case ElementType::NODES:
-		_os << "\n";
-		if (_lastData != ElementType::NODES) {
-			_os << "POINT_DATA " << coordinateSize(_mesh.coordinates()) << "\n";
-			_lastData = ElementType::NODES;
-		}
-		_os << "SCALARS " << name << " float " << dimension << "\n";
-		_os << "LOOKUP_TABLE default\n";
-		results(_os, values, dimension);
-	}
-	_os.flush();
-}
-
-void VTK::mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path, ElementType eType)
-{
-	std::stringstream ss;
-	ss << path << environment->MPIrank << ".vtk";
-
-	std::ofstream os;
-	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-	VTK vtk(output, mesh, path);
-
-	head(os);
-	coordinates(os, mesh.coordinates(), [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
-	elements(os, mesh, eType);
-
-	os.close();
-}
-
-void VTK::fixPoints(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-{
-	std::vector<Element*> fixPoints;
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		fixPoints.insert(fixPoints.end(), mesh.fixPoints(p).begin(), mesh.fixPoints(p).end());
-	}
-
-	std::sort(fixPoints.begin(), fixPoints.end());
-	Esutils::removeDuplicity(fixPoints);
-
-	VTK vtk(output, mesh, path);
-
-	open(vtk._os, vtk._path, -1);
-	head(vtk._os);
-	coordinates(vtk._os, mesh.coordinates(), fixPoints, [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
-	nodes(vtk._os, fixPoints, mesh.parts());
-}
-
-void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-{
-	std::stringstream ss;
-	ss << path << environment->MPIrank << ".vtk";
-	std::ofstream os;
-	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-	VTK vtk(output, mesh, path);
-
-	head(os);
-	coordinates(os, mesh.coordinates(), mesh.corners(), [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
-	nodes(os, mesh.corners(), mesh.parts());
-
-	os.close();
-}
-
-void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs)
-{
-	VTK vtk(output, mesh, path);
-
-	std::vector<Point> cCenter(environment->MPIsize);
-	std::vector<Point> sCenters(environment->MPIsize * mesh.parts());
-
-	MPI_Allgather(&vtk._cCenter, sizeof(Point), MPI_BYTE, cCenter.data(), sizeof(Point), MPI_BYTE, MPI_COMM_WORLD);
-	MPI_Allgather(vtk._sCenters.data(), mesh.parts() * sizeof(Point), MPI_BYTE, sCenters.data(), mesh.parts() * sizeof(Point), MPI_BYTE, MPI_COMM_WORLD);
-
-	std::vector<size_t> sOffset(mesh.parts());
-	std::vector<size_t> eOffset(mesh.parts());
-
-	std::vector<std::vector<std::vector<std::pair<esglobal, Element*> > > > DOF2e(mesh.parts(), std::vector<std::vector<std::pair<esglobal, Element*> > >(dofs));
-
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
-		eOffset[p] += std::lower_bound(constraints.B1[p].I_row_indices.begin(), constraints.B1[p].I_row_indices.end(), constraints.block[Constraints::DIRICHLET] + 1) - constraints.B1[p].I_row_indices.begin();
-	}
-	for (size_t n = 0; n < mesh.nodes().size(); n++) {
-		for (size_t d = 0; d < mesh.nodes()[n]->domains().size(); d++) {
-			size_t p = mesh.nodes()[n]->domains()[d];
-			for (size_t dof = 0; dof < dofs; dof++) {
-				DOF2e[p][dof].push_back(std::make_pair(mesh.nodes()[n]->DOFIndex(p, dof) + IJVMatrixIndexing, mesh.nodes()[n]));
-			}
-		}
-	}
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
-		for (size_t dof = 0; dof < dofs; dof++) {
-			std::sort(DOF2e[p][dof].begin(), DOF2e[p][dof].end());
-		}
-	}
-
-	for (size_t dof = 0; dof < dofs; dof++) {
-		std::stringstream ss;
-		ss << dof << "dirichlet" << environment->MPIrank << ".vtk";
-		std::ofstream os;
-		os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-		std::vector<std::vector<Element*> > dnodes(mesh.parts());
-
-		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
-			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
-				auto it = std::lower_bound(DOF2e[p][dof].begin(), DOF2e[p][dof].end(), constraints.B1[p].J_col_indices[i], [] (const std::pair<esglobal, Element*> &pair, esglobal index) {
-					return pair.first < index;
-				});
-				if (it != DOF2e[p][dof].end() && it->first == constraints.B1[p].J_col_indices[i]) {
-					dnodes[p].push_back(it->second);
-				}
-			}
-		}
-
-		for (size_t p = 1; p < mesh.parts(); p++) {
-			dnodes[0].insert(dnodes[0].end(), dnodes[p].begin(), dnodes[p].end());
-		}
-		std::sort(dnodes[0].begin(), dnodes[0].end());
-		Esutils::removeDuplicity(dnodes[0]);
-
-		head(os);
-		coordinates(os, mesh.coordinates(), dnodes[0], [&] (const Point &point, size_t part) { return vtk.shrink(point, part); });
-		nodes(os, dnodes[0], mesh.parts());
-
-		os.close();
-	}
-
-	size_t maxLambda = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + 1;
-	for (size_t p = 0; p < mesh.parts(); p++) {
-		sOffset[p] = eOffset[p];
-		eOffset[p] = std::lower_bound(constraints.B1[p].I_row_indices.begin() + eOffset[p], constraints.B1[p].I_row_indices.end(), maxLambda) - constraints.B1[p].I_row_indices.begin();
-	}
-
-	auto getDomain = [&] (esglobal lambda, size_t exclude) -> size_t {
-		for (size_t p = 0; p < mesh.parts(); p++) {
-			if (p == exclude) {
-				continue;
-			}
-			auto it = std::lower_bound(constraints.B1subdomainsMap[p].begin(), constraints.B1subdomainsMap[p].end(), lambda - IJVMatrixIndexing);
-			if (it != constraints.B1subdomainsMap[p].end() && *it == lambda - IJVMatrixIndexing) {
-				return p;
-			}
-		}
-		ESINFO(ERROR) << "Internal error: Broken exporting of gluing matrices";
-		return 0;
-	};
-
-	for (size_t dof = 0; dof < dofs; dof++) {
-		std::stringstream ss;
-		ss << dof << "gluing" << environment->MPIrank << ".vtk";
-		std::ofstream os;
-		os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-
-		std::vector<std::vector<Element*> > dnodes(mesh.parts());
-		std::vector<std::vector<size_t> > indices(mesh.parts());
-
-		std::vector<std::vector<std::vector<std::pair<esglobal, eslocal> > > > CDneighbour(mesh.parts(), std::vector<std::vector<std::pair<esglobal, eslocal> > >(environment->MPIsize));
-		std::vector<std::vector<std::pair<eslocal, eslocal> > > CDindex(mesh.parts()); // cluster x domain index
-		std::vector<std::vector<std::pair<esglobal, eslocal> > > sBuffer(environment->MPIsize);
-		std::vector<std::vector<std::pair<esglobal, eslocal> > > rBuffer(environment->MPIsize);
-
-		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
-			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
-				auto it = std::lower_bound(DOF2e[p][dof].begin(), DOF2e[p][dof].end(), constraints.B1[p].J_col_indices[i], [] (const std::pair<esglobal, Element*> &pair, esglobal index) {
-					return pair.first < index;
-				});
-				if (it != DOF2e[p][dof].end() && it->first == constraints.B1[p].J_col_indices[i]) {
-					dnodes[p].push_back(it->second);
-					indices[p].push_back(i);
-
-					auto it = std::lower_bound(constraints.B1clustersMap.begin(), constraints.B1clustersMap.end(), constraints.B1[p].I_row_indices[i] - IJVMatrixIndexing, [&] (const std::vector<esglobal> &v, esglobal i) {
-						return v[0] < i;
-					});
-					if (it->size() == 2) { // local gluing
-						CDindex[p].push_back(std::make_pair((eslocal)it->back(), (eslocal)getDomain(constraints.B1[p].I_row_indices[i], p)));
-					} else { // global gluing
-						CDindex[p].push_back(std::make_pair((eslocal)it->back(), -1));
-						CDneighbour[p][it->back()].push_back(std::make_pair(constraints.B1[p].I_row_indices[i], p));
-					}
-
-				}
-			}
-		}
-
-		cilk_for (int c = 0; c < environment->MPIsize; c++) {
-			for (size_t p = 0; p < mesh.parts(); p++) {
-				sBuffer[c].insert(sBuffer[c].end(), CDneighbour[p][c].begin(), CDneighbour[p][c].end());
-			}
-			std::sort(sBuffer[c].begin(), sBuffer[c].end(), [] (const std::pair<esglobal, eslocal> &p1, const std::pair<esglobal, eslocal> &p2) {
-				return p1.first < p2.first;
-			});
-		}
-
-		std::vector<MPI_Request> req(2 * environment->MPIsize);
-		for (int n = 0; n < environment->MPIsize; n++) {
-			rBuffer[n].resize(sBuffer[n].size());
-			MPI_Isend(sBuffer[n].data(), sizeof(std::pair<esglobal, eslocal>) * sBuffer[n].size(), MPI_BYTE, n, 1, MPI_COMM_WORLD, req.data() + 2 * n);
-			MPI_Irecv(rBuffer[n].data(), sizeof(std::pair<esglobal, eslocal>) * rBuffer[n].size(), MPI_BYTE, n, 1, MPI_COMM_WORLD, req.data() + 2 * n + 1);
-		}
-
-		MPI_Waitall(2 * environment->MPIsize, req.data(), MPI_STATUSES_IGNORE);
-
-		for (size_t p = 0; p < mesh.parts(); p++) {
-			std::vector<int> offsets(environment->MPIsize);
-			for (size_t i = 0; i < CDindex[p].size(); i++) {
-				if (CDindex[p][i].second == -1) {
-					int n = CDindex[p][i].first;
-					esglobal lambda = CDneighbour[p][n][offsets[n]++].first;
-					auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), lambda, [] (const std::pair<esglobal, eslocal> &p, esglobal l) { return p.first < l; });
-					if (it != rBuffer[n].end() && it->first == lambda) {
-						CDindex[p][i].second = it->second;
-					} else {
-						ESINFO(ERROR) << "Internal error: gluint matrices are weird.";
-					}
-				}
-			}
-		}
-
-		head(os);
-		size_t cSize = 0;
-		for (size_t p = 0; p < dnodes.size(); p++) {
-			cSize += dnodes[p].size();
-		}
-
-		os << "DATASET UNSTRUCTURED_GRID\n";
-		os << "POINTS " << 2 * cSize << " float\n";
-
-		for (size_t p = 0; p < dnodes.size(); p++) {
-			for (size_t n = 0; n < dnodes[p].size(); n++) {
-				Point p1 = vtk.shrink(mesh.coordinates()[dnodes[p][n]->node(0)], p);
-				Point p2 = vtk.shrink(mesh.coordinates()[dnodes[p][n]->node(0)], sCenters[CDindex[p][n].first * mesh.parts() + CDindex[p][n].second], cCenter[CDindex[p][n].first]);
-				os << p1 << "\n";
-				os << p1 + (p2 - p1) * constraints.B1duplicity[p][indices[p][n]] << "\n";
-			}
-		}
-
-		// ELEMENTS
-		os << "\nCELLS " << cSize << " " << 3 * cSize << "\n";
-		for (size_t p = 0, index = 0; p < dnodes.size(); p++) {
-			for (size_t n = 0; n < dnodes[p].size(); n++, index++) {
-				os << "2 " << 2 * index << " " << 2 * index + 1 << "\n";
-			}
-		}
-		os << "\n";
-
-		// ELEMENTS TYPES
-		os << "CELL_TYPES " << cSize << "\n";
-		for (size_t p = 0; p < dnodes.size(); p++) {
-			for (size_t n = 0; n < dnodes[p].size(); n++) {
-				os << Line2VTKCode << "\n";
-			}
-		}
-		os << "\n";
-
-		// DECOMPOSITION TO SUBDOMAINS
-		os << "CELL_DATA " << cSize << "\n";
-		os << "SCALARS values double 1\n";
-		os << "LOOKUP_TABLE values\n";
-		for (size_t p = 0; p < dnodes.size(); p++) {
-			for (size_t n = 0; n < dnodes[p].size(); n++) {
-				os << constraints.B1[p].V_values[indices[p][n]] << "\n";
-			}
-		}
-		os << "\n";
-
-		os.close();
-	}
-
-
+	_os.close();
 }
 
