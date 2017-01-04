@@ -34,21 +34,21 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
-	_mesh.loadNodeProperty(_configuration.temperature.values        , { "T" }     , { Property::TEMPERATURE });
-	_mesh.loadNodeProperty(_configuration.thickness.values          , { }         , { Property::THICKNESS });
+	_mesh.loadNodeProperty(_configuration.temperature.values, { }, { Property::TEMPERATURE });
+	_mesh.loadNodeProperty(_configuration.thickness.values  , { }, { Property::THICKNESS });
 
-	_mesh.loadProperty(_configuration.translation_motions.values      , { "x", "y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
+	_mesh.loadProperty(_configuration.translation_motions.values      , { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 	_mesh.loadProperty(_configuration.initial_temperature.values      , { }         , { Property::INITIAL_TEMPERATURE });
-	_mesh.loadProperty(_configuration.heat_source.values              , { "T" }     , { Property::HEAT_SOURCE });
-	_mesh.loadProperty(_configuration.heat_flux.values                , { "q" }     , { Property::HEAT_FLUX });
-	_mesh.loadProperty(_configuration.heat_flow.values                , { "q" }     , { Property::HEAT_FLOW });
+	_mesh.loadProperty(_configuration.heat_source.values              , { }         , { Property::HEAT_SOURCE });
+	_mesh.loadProperty(_configuration.heat_flux.values                , { }         , { Property::HEAT_FLUX });
+	_mesh.loadProperty(_configuration.heat_flow.values                , { }         , { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.configurations.begin(); it != _configuration.convection.configurations.end(); ++it) {
 		std::map<std::string, std::string> values;
 		values[it->first] = it->second->external_temperature;
-		_mesh.loadProperty(values, { "T_ext" }     , { Property::EXTERNAL_TEMPERATURE });
+		_mesh.loadProperty(values, { }     , { Property::EXTERNAL_TEMPERATURE });
 		values[it->first] = it->second->heat_transfer_coefficient;
-		_mesh.loadProperty(values, { "HTC" }     , { Property::HEAT_TRANSFER_COEFFICIENT });
+		_mesh.loadProperty(values, { }     , { Property::HEAT_TRANSFER_COEFFICIENT });
 	}
 
 	for (size_t r = 0; r < _mesh.regions().size(); r++) {

@@ -13,8 +13,7 @@ static bool isWhiteSpace(int c)
 
 static bool isDelimiter(int c)
 {
-	return false;
-	// return c == ',';
+	return c == ',';
 }
 
 static bool isAssign(int c)
@@ -40,6 +39,16 @@ static bool isObjectOpen(int c)
 static bool isObjectClose(int c)
 {
 	return c == '}';
+}
+
+static bool isLinkStart(int c)
+{
+	return c == '[';
+}
+
+static bool isLinkEnd(int c)
+{
+	return c == ']';
 }
 
 static bool isStringStart(int c)
@@ -164,6 +173,14 @@ Tokenizer::Token Tokenizer::_next()
 		}
 		if (isObjectClose(_file.peek())) {
 			return specialToken(Token::OBJECT_CLOSE);
+		}
+		if (isLinkStart(_file.peek())) {
+			_file.get();
+			while(!isLinkEnd(_file.peek())) {
+				_buffer.push_back(_file.get());
+			}
+			_file.get();
+			return Token::LINK;
 		}
 		if (isStringStart(_file.peek())) {
 			size_t stacked = 0, bsize = _buffer.size();

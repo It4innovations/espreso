@@ -76,8 +76,8 @@ ADVECTION_DIFFUSION_2D {
   }
 
   TEMPERATURE {
-    LEFT "T = 0";
-    TOP  "T = 1";
+    LEFT 0;
+    TOP  1;
   }
 
   HEAT_SOURCE {
@@ -85,7 +85,7 @@ ADVECTION_DIFFUSION_2D {
   }
 
   TRANSLATION_MOTIONS {
-    ALL_EL  "x = y^0.1, y = 0";
+    ALL_EL  X y^0.1, Y 0;
   }
 
   MATERIALS {

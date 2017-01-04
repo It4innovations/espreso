@@ -81,13 +81,13 @@ LINEAR_ELASTICITY_3D {
   }
 
   DISPLACEMENT {
-    Z0 z:0;
-    Y0 y:0;
-    X0 x:0;
+    Z0 Z 0;
+    Y0 Y 0;
+    X0 X 0;
   }
 
   ACCELERATION {
-  #  E_ALL z:9.8066;
+  #  E_ALL Z 9.8066;
   }
 
   NORMAL_PRESURE {

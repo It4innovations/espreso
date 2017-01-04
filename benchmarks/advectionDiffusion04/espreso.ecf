@@ -74,17 +74,17 @@ ADVECTION_DIFFUSION_2D {
   SIGMA           0;
 
   TEMPERATURE {
-    LEFT   "T = 1";
-    TOP    "T = 1";
-    BOTTOM "T = 0";
+    LEFT   1;
+    TOP    1;
+    BOTTOM 0;
   }
 
   THICKNESS {
-    N_ALL "1";
+    N_ALL 1;
   }
 
   HEAT_FLUX {
-#    RIGHT "q = 10";
+#    RIGHT 10;
   }
 
   CONVECTION {
@@ -95,7 +95,7 @@ ADVECTION_DIFFUSION_2D {
   }
 
   HEAT_FLOW {
-    RIGHT "q = 20";
+    RIGHT 20;
   }
 
 #  RESISTIVE_THIN_LAYER {

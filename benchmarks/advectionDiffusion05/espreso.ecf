@@ -74,17 +74,17 @@ ADVECTION_DIFFUSION_3D {
   SIGMA           0;
 
   TEMPERATURE {
-    LEFT   "T = 1";
-    TOP    "T = 1";
-    BOTTOM "T = 0";
+    LEFT   1;
+    TOP    1;
+    BOTTOM 0;
   }
 
 #  TRANSLATION_MOTIONS {
-#    ALL_EL "x = y, y = -x";
+#    ALL_EL X y, Y -x;
 #  }
 
 #  HEAT_FLUX {
-#    RIGHT "q = 10";
+#    RIGHT 10;
 #  }
 
 #  CONVECTION {
@@ -95,7 +95,7 @@ ADVECTION_DIFFUSION_3D {
 #  }
 
   HEAT_FLOW {
-    RIGHT "q = 20";
+    RIGHT 20;
   }
 
 #  RESISTIVE_THIN_LAYER {

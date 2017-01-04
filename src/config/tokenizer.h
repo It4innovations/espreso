@@ -15,6 +15,7 @@ class Tokenizer {
 public:
 	enum class Token {
 		STRING,
+		LINK,
 		DELIMITER,
 		ASSIGN,
 		OBJECT_OPEN,

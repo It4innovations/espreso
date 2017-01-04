@@ -86,10 +86,10 @@ LINEAR_ELASTICITY_3D {
   }
 
   DISPLACEMENT {
-    X0 x:0;
-    X1 y:0;
-    Z0 z:0;
-    Z1 z:0;
+    X0 X 0;
+    X1 Y 0;
+    Z0 Z 0;
+    Z1 Z 0;
   }
 
   NORMAL_PRESURE {

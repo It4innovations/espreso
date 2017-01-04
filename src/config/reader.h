@@ -2,7 +2,8 @@
 #ifndef SRC_CONFIG_READER_H_
 #define SRC_CONFIG_READER_H_
 
-#include "tokenizer.h"
+#include <string>
+#include <vector>
 
 namespace espreso {
 

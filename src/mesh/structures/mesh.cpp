@@ -573,16 +573,16 @@ void Mesh::markRegions()
 
 static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
 {
-	auto getValueIndex = [] (const std::vector<std::string> &values, const std::string &parameter) -> size_t {
-		if (values.size() == 1 && !Parser::contains(values[0], ":=")) {
-			return 0;
-		}
+	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) {
 		for (size_t i = 0; i < values.size(); i++) {
-			if (StringCompare::caseInsensitiveEq(parameter, Parser::strip(Parser::split(values[i], ":=")[0]))) {
-				return i;
+			std::vector<std::string> args = Parser::split(Parser::strip(values[i]), " ");
+			if (StringCompare::caseSensitiveEq(args[0], parameter)) {
+				std::stringstream ss;
+				std::for_each(args.begin() + 1, args.end(), [&] (const std::string &v) { ss << v; });
+				return ss.str();
 			}
 		}
-		return values.size();
+		return "";
 	};
 
 	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator) {
@@ -599,36 +599,38 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region &region = mesh.region(it->first);
-		std::vector<std::string> values = Parser::split(it->second, ",;");
+		std::vector<std::string> values = Parser::split(it->second, ",");
 
 		for (size_t p = 0; p < properties.size(); p++) {
-			size_t index = getValueIndex(values, parameters[p]);
-			if (index < values.size()) {
-				std::string value = Parser::contains(values[index], ":=") ? Parser::split(values[index], ":=")[1] : values[index];
-				if (value.find("x") == std::string::npos && value.find("y") == std::string::npos && value.find("z") == std::string::npos && value.find("t") == std::string::npos) {
-					espreso::Expression expr(value, {});
-					evaluators.push_back(new espreso::ConstEvaluator(expr.evaluate({}), properties[p]));
-				} else {
-					evaluators.push_back(new espreso::CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
-				}
-				if (distributeToNodes && region.elements.size() && region.elements[0]->nodes() > 1) {
-					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for nodes of region '" << region.name << "'";
-					std::vector<Element*> nodes;
-					for (size_t i = 0; i < region.elements.size(); i++) {
-						for (size_t n = 0; n < region.elements[i]->nodes(); n++) {
-							nodes.push_back(mesh.nodes()[region.elements[i]->node(n)]);
-						}
-					}
-					std::sort(nodes.begin(), nodes.end());
-					Esutils::removeDuplicity(nodes);
-
-					distribute(nodes, properties[p], evaluators.back());
-				} else {
-					ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
-					distribute(region.elements, properties[p], evaluators.back());
-				}
-				region.settings[properties[p]].push_back(evaluators.back());
+			std::string value = properties.size() == 1 ? values[0] : getValue(values, parameters[p]);
+			if (!value.size()) {
+				continue;
 			}
+
+			if (!StringCompare::contains(value, "xyzt")) {
+				Expression expr(value, {});
+				evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
+			} else {
+				evaluators.push_back(new CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
+			}
+
+			if (distributeToNodes && region.elements.size() && region.elements[0]->nodes() > 1) {
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for nodes of region '" << region.name << "'";
+				std::vector<Element*> nodes;
+				for (size_t i = 0; i < region.elements.size(); i++) {
+					for (size_t n = 0; n < region.elements[i]->nodes(); n++) {
+						nodes.push_back(mesh.nodes()[region.elements[i]->node(n)]);
+					}
+				}
+				std::sort(nodes.begin(), nodes.end());
+				Esutils::removeDuplicity(nodes);
+
+				distribute(nodes, properties[p], evaluators.back());
+			} else {
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
+				distribute(region.elements, properties[p], evaluators.back());
+			}
+			region.settings[properties[p]].push_back(evaluators.back());
 		}
 	}
 }

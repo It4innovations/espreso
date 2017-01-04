@@ -244,11 +244,11 @@ LINEAR_ELASTICITY_3D { # 3D Linear elasticity solver.
 
 
   DISPLACEMENT { # <REGION> <EXPRESSION>;
-    BOTTOM 0;
+    BOTTOM X 0, Y 0, Z 0;
   }
 
   ACCELERATION { # <REGION> <EXPRESSION>;
-    ALL_EL "z = 9.81";
+    ALL_EL Z 9.81;
   }
 
   POST_PROCESS 0;

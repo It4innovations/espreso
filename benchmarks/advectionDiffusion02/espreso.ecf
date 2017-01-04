@@ -81,15 +81,15 @@ ADVECTION_DIFFUSION_2D {
   }
 
   TEMPERATURE {
-    TOP1   "T = 0";
-    TOP2   "T = y - 0.6";
-    TOP3   "T = 18 * (y - 0.65) + 0.05";
-    TOP4   "T = (y - 0.7) + 0.95";
-    TOP5   "T = 1";
-    RIGHT  "T = 1";
+    TOP1   0;
+    TOP2   y - 0.6;
+    TOP3   18 * (y - 0.65) + 0.05;
+    TOP4   (y - 0.7) + 0.95;
+    TOP5   1;
+    RIGHT  1;
 
-    LEFT   "T = 0";
-    BOTTOM "T = 0";
+    LEFT   0;
+    BOTTOM 0;
   }
 
   HEAT_SOURCE {
@@ -97,7 +97,7 @@ ADVECTION_DIFFUSION_2D {
   }
 
   TRANSLATION_MOTIONS {
-    ALL_EL  "x = y, y = -x";
+    ALL_EL  X y, Y -x;
   }
 
   MATERIALS {

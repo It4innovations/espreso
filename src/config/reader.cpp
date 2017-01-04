@@ -1,6 +1,8 @@
 
 #include "reader.h"
 
+#include "tokenizer.h"
+
 #include <getopt.h>
 #include <stack>
 
@@ -141,30 +143,33 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			tokenStack.pop();
 			break;
 		case Tokenizer::Token::STRING:
-			if (tokenStack.top()->value()[0] == '[' && tokenStack.top()->value().back() == ']') {
-				std::string value = tokenStack.top()->value();
-				value = value.substr(1, value.size() - 2);
-				if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".ecf")) {
-					tokenStack.push(new Tokenizer(value));
-				}
-				if (value.size() > 2 && StringCompare::caseInsensitivePreffix("ARG", value)) {
-					std::stringstream ss(std::string(value.begin() + 3, value.end()));
-					size_t index = args.size();
-					ss >> index;
-					if (!ss.fail() && ss.eof() && index < args.size()) {
-						values.push_back(args[index]);
+			values.push_back(tokenStack.top()->value());
+			break;
+		case Tokenizer::Token::LINK:
+		{
+			std::string value = tokenStack.top()->value();
+			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".ecf")) {
+				tokenStack.push(new Tokenizer(value));
+			}
+			if (value.size() > 2 && StringCompare::caseInsensitivePreffix("ARG", value)) {
+				std::stringstream ss(std::string(value.begin() + 3, value.end()));
+				size_t index = args.size();
+				ss >> index;
+				if (!ss.fail() && ss.eof() && index < args.size()) {
+					values.push_back(args[index]);
+				} else {
+					if (index < args.size()) {
+						ESINFO(GLOBAL_ERROR) << "Invalid argument '" << value << "'";
 					} else {
-						if (index < args.size()) {
-							ESINFO(GLOBAL_ERROR) << "Invalid argument '" << value << "'";
-						} else {
-							ESINFO(GLOBAL_ERROR) << "ARG index is out of range '" << value << "'";
-						}
+						ESINFO(GLOBAL_ERROR) << "ARG index is out of range '" << value << "'";
 					}
 				}
-			} else {
-				values.push_back(tokenStack.top()->value());
+			}
+			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".csv")) {
+				std::cout << "READ CSV file\n";
 			}
 			break;
+		}
 		case Tokenizer::Token::OBJECT_OPEN:
 			if (values.size() == 0) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Opening of an unnamed region is not allowed.\n" << tokenStack.top()->lastLines(2);
@@ -182,18 +187,27 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			confStack.pop();
 			break;
 		case Tokenizer::Token::ASSIGN:
+			break;
 		case Tokenizer::Token::DELIMITER:
-			// assign and delimiters tokens are skipped
+			values.push_back(",");
 			break;
 		case Tokenizer::Token::EXPRESSION_END:
-			if (values.size() != 2) {
+		{
+			if (values.size() < 2) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Incorrect assignment format on line " << tokenStack.top()->line() << ". Use 'PARAMETER' 'VALUE';\n" << tokenStack.top()->lastLines(2);
 			}
-			if (!confStack.top()->set(values[0], values[1])) {
-				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << values[1] << "'";
+			std::stringstream ss;
+			ss << values[1];
+			for (size_t i = 2; i < values.size(); i++) {
+				ss << " " << values[i];
 			}
+			if (!confStack.top()->set(values[0], ss.str())) {
+				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Parameter '" << values[0] << "' has wrong value '" << ss.str() << "'";
+			}
+
 			values.clear();
 			break;
+		}
 		case Tokenizer::Token::LINE_END:
 			if (values.size() > 1) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Expected ';' at the end of each expression.\n" << tokenStack.top()->lastLines(1);
