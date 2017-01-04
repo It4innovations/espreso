@@ -3,7 +3,9 @@
 #define SRC_CONFIG_ADVECTIONDIFFUSION3D_H_
 
 #include "solver.h"
+#include "coordinatesystem.h"
 #include "advectiondiffusionconvection.h"
+#include "advectiondiffusionsolver.h"
 
 namespace espreso {
 
@@ -50,6 +52,8 @@ struct AdvectionDiffusion3DMaterial: public Configuration {
 		{ "SYMMETRIC"  , MODEL::SYMMETRIC  , "Symmetric." },
 		{ "ANISOTROPIC", MODEL::ANISOTROPIC, "Anisotropic." }
 	}));
+
+	SUBCONFIG(CoordinateSystem, coordinate_system, "Element coordinate system.");
 };
 
 struct AdvectionDiffusion3DConfiguration: public Configuration {
@@ -59,6 +63,14 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 		CAU = 1
 	};
 
+	OPTION(STABILIZATION, stabilization, "The type of the stabilization.", STABILIZATION::SUPG, OPTIONS({
+		{ "SUPG", STABILIZATION::SUPG, "SUPG stabilization." },
+		{ "CAU" , STABILIZATION::CAU , "CAU stabilization." },
+	}));
+	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
+
+	SUBCONFIG(AdvectionDiffusionSolver, physics_solver, "Settings of physics solver.");
+
 	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
 		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
 		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
@@ -66,12 +78,6 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
-
-	OPTION(STABILIZATION, stabilization, "The type of the stabilization.", STABILIZATION::SUPG, OPTIONS({
-		{ "SUPG", STABILIZATION::SUPG, "SUPG stabilization." },
-		{ "CAU" , STABILIZATION::CAU , "CAU stabilization." },
-	}));
-	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
 
 	SUBMAP(std::string, std::string, heat_flux                , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, heat_flow                , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
