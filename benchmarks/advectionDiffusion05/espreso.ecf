@@ -133,7 +133,7 @@ ADVECTION_DIFFUSION_3D {
   }
 
   MATERIAL_SET {
-    1 ALL_EL;
+    ALL_EL 1;
   }
 }
 

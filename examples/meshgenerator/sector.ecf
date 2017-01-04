@@ -82,7 +82,7 @@ LINEAR_ELASTICITY_3D {
   }
 
   MATERIAL_SET {
-    1 E_ALL;
+    E_ALL 1;
   }
 
   DISPLACEMENT {

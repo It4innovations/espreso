@@ -67,11 +67,11 @@ public:
 	{
 		size_t index = 0;
 		for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
-			Region &region = this->region(it->second);
+			Region &region = this->region(it->first);
 			for (size_t e = 0; e < region.elements.size(); e++) {
 				region.elements[e]->setParam(Element::MATERIAL, index);
 			}
-			_materials.push_back(new Material(_coordinates, *materials.find(it->first)->second));
+			_materials.push_back(new Material(_coordinates, *materials.find(it->second)->second));
 		}
 	}
 

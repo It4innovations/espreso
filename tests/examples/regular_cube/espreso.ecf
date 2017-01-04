@@ -239,7 +239,7 @@ LINEAR_ELASTICITY_3D { # 3D Linear elasticity solver.
   }
 
   MATERIAL_SET {
-    1 ALL_EL;
+    ALL_EL 1;
   }
 
 
