@@ -112,7 +112,7 @@ static void inverse(const DenseMatrix &m, DenseMatrix &inv, double det)
 	inv(1, 1) =   detJx * m(0, 0);
 }
 
-static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* edge, const AdvectionDiffusion2DConfiguration &configuration, double area = 1)
+static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* edge, const AdvectionDiffusion2DConfiguration &configuration, const AdvectionDiffusion2D &ad2d, double area = 1)
 {
 	DenseMatrix coordinates(edge->nodes(), 2), dND(1, 2), q(edge->nodes(), 1), htc(edge->nodes(), 1), thickness(edge->nodes(), 1), flow(edge->nodes(), 1);
 	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1);
@@ -140,7 +140,8 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 			q(n, 0) = htc(n, 0) * edge->settings(Property::EXTERNAL_TEMPERATURE).back()->evaluate(edge->node(n));
 		}
 
-		thickness(n, 0) = mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
+		// thickness(n, 0) = mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
+		thickness(n, 0) = ad2d.getNodeProperty(Property::THICKNESS, edge->node(n), 0, 1);
 		q(n, 0) *= thickness(n, 0);
 	}
 
@@ -164,7 +165,7 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 }
 
 
-static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element, const AdvectionDiffusion2DConfiguration &configuration)
+static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espreso::Mesh &mesh, const Element* element, const AdvectionDiffusion2DConfiguration &configuration, const AdvectionDiffusion2D &ad2d)
 {
 	bool CAU = configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
 	double sigma = configuration.sigma;
@@ -190,7 +191,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		thickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
+		// thickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
+		thickness(i, 0) = ad2d.getNodeProperty(Property::THICKNESS, element->node(i), 0, 1);
 		U(i, 0) = ux.back()->evaluate(element->node(i)) * material->get(AdvectionDiffusion2DMaterial::DENSITY)->evaluate(element->node(i)) * material->get(AdvectionDiffusion2DMaterial::HEAT_CAPACITY)->evaluate(element->node(i)) * thickness(i, 0);
 		U(i, 1) = uy.back()->evaluate(element->node(i)) * material->get(AdvectionDiffusion2DMaterial::DENSITY)->evaluate(element->node(i)) * material->get(AdvectionDiffusion2DMaterial::HEAT_CAPACITY)->evaluate(element->node(i)) * thickness(i, 0);
 		for (size_t j = 0; j < heat_sources.size(); j++) {
@@ -337,7 +339,7 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1,
 
 void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
 {
-	processElement(Ke, fe, _mesh, e, _configuration);
+	processElement(Ke, fe, _mesh, e, _configuration, *this);
 	dofs.resize(e->nodes());
 	for (size_t n = 0; n < e->nodes(); n++) {
 		dofs[n] = e->node(n);
@@ -382,7 +384,7 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 
 	for (eslocal e = partition[subdomain]; e < partition[subdomain + 1]; e++) {
 
-		processElement(Ke, fe, _mesh, elements[e], _configuration);
+		processElement(Ke, fe, _mesh, elements[e], _configuration, *this);
 
 		for (size_t nx = 0; nx < elements[e]->nodes(); nx++) {
 			for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
@@ -401,7 +403,7 @@ void AdvectionDiffusion2D::composeSubdomain(size_t subdomain)
 	auto processRegion = [&] (const std::vector<Element*> &edges, bool withK = false, double area = 1) {
 		for (size_t i = 0; i < edges.size(); i++) {
 			if (edges[i]->inDomain(subdomain)) {
-				processEdge(Ke, fe, _mesh, edges[i], _configuration, area);
+				processEdge(Ke, fe, _mesh, edges[i], _configuration, *this, area);
 
 				for (size_t nx = 0; nx < edges[i]->nodes(); nx++) {
 					for (size_t dx = 0; dx < pointDOFs.size(); dx++) {

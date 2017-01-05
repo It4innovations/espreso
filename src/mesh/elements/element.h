@@ -10,6 +10,7 @@
 namespace espreso {
 
 class Mesh;
+class Region;
 
 class Element
 {
@@ -117,6 +118,9 @@ public:
 	virtual size_t params() const =0;
 
 	virtual Type type() const =0;
+
+	std::vector<Region*>& regions() { return _regions; }
+	const std::vector<Region*>& regions() const { return _regions; }
 
 	Settings& settings() { return _settings; }
 	const Settings& settings() const { return _settings; }
@@ -249,6 +253,7 @@ protected:
 		addFace(new TFace(face));
 	}
 
+	std::vector<Region*> _regions;
 	Settings _settings;
 	std::vector<Element*> _parentElements;
 	std::vector<Element*> _parentFaces;

@@ -141,7 +141,8 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 
 	std::vector<std::vector<std::vector<std::pair<esglobal, Element*> > > > DOF2e(mesh.parts(), std::vector<std::vector<std::pair<esglobal, Element*> > >(dofs));
 
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+	#pragma omp parallel for
+	for (size_t p = 0; p < mesh.parts(); p++) {
 		eOffset[p] += std::lower_bound(constraints.B1[p].I_row_indices.begin(), constraints.B1[p].I_row_indices.end(), constraints.block[Constraints::DIRICHLET] + 1) - constraints.B1[p].I_row_indices.begin();
 	}
 	for (size_t n = 0; n < mesh.nodes().size(); n++) {
@@ -152,7 +153,8 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 			}
 		}
 	}
-	cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+	#pragma omp parallel for
+	for (size_t p = 0; p < mesh.parts(); p++) {
 		for (size_t dof = 0; dof < dofs; dof++) {
 			std::sort(DOF2e[p][dof].begin(), DOF2e[p][dof].end());
 		}
@@ -165,7 +167,8 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 
 		std::vector<std::vector<eslocal> > dnodes(mesh.parts());
 
-		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		#pragma omp parallel for
+		for (size_t p = 0; p < mesh.parts(); p++) {
 			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
 				auto it = std::lower_bound(DOF2e[p][dof].begin(), DOF2e[p][dof].end(), constraints.B1[p].J_col_indices[i], [] (const std::pair<esglobal, Element*> &pair, esglobal index) {
 					return pair.first < index;
@@ -213,7 +216,8 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 		std::vector<std::vector<std::pair<esglobal, eslocal> > > sBuffer(environment->MPIsize);
 		std::vector<std::vector<std::pair<esglobal, eslocal> > > rBuffer(environment->MPIsize);
 
-		cilk_for (size_t p = 0; p < mesh.parts(); p++) {
+		#pragma omp parallel for
+		for (size_t p = 0; p < mesh.parts(); p++) {
 			for (size_t i = sOffset[p]; i < eOffset[p]; i++) {
 				auto it = std::lower_bound(DOF2e[p][dof].begin(), DOF2e[p][dof].end(), constraints.B1[p].J_col_indices[i], [] (const std::pair<esglobal, Element*> &pair, esglobal index) {
 					return pair.first < index;
@@ -236,7 +240,8 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 			}
 		}
 
-		cilk_for (int c = 0; c < environment->MPIsize; c++) {
+		#pragma omp parallel for
+		for (int c = 0; c < environment->MPIsize; c++) {
 			for (size_t p = 0; p < mesh.parts(); p++) {
 				sBuffer[c].insert(sBuffer[c].end(), CDneighbour[p][c].begin(), CDneighbour[p][c].end());
 			}

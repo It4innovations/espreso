@@ -3239,7 +3239,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		break;
 	case ESPRESO_PRECONDITIONER::NONE:
 		#pragma omp parallel for
-		cilk_for (size_t i = 0; i < r_l.size(); i++) {
+		for (size_t i = 0; i < r_l.size(); i++) {
 			r_l[i] = b_l[i] - Ax_l[i];
 		}
 

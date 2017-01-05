@@ -950,7 +950,8 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 //        this->DirichletPacks[mic].SetDevice( mic );
         this->DirichletPacks[mic].SetDevice( target );        
 
-        cilk_for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
+		#pragma omp parallel for
+        for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
             eslocal d = accPreconditioners[mic].at(j);
             SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
             SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );

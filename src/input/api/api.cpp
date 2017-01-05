@@ -6,7 +6,7 @@ using namespace espreso::input;
 
 void API::points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, eNodes.size());
 
 	std::vector<eslocal> tMax(threads);
@@ -62,7 +62,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
 	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, dirichletSize);
 
 	#pragma omp parallel for
@@ -103,7 +103,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	}
 	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
 
 	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), environment->MPIrank) - neighbours.begin();

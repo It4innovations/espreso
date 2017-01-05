@@ -264,7 +264,7 @@ void Esdata::boundaries(const Mesh &mesh)
 //	Boundaries boundaries = mesh.subdomainBoundaries();
 //	const Boundaries &cBoundaries = mesh.clusterBoundaries();
 //
-//	size_t threads = config::env::OMP_NUM_THREADS;
+//	size_t threads = environment->OMP_NUM_THREADS;
 //	std::vector<size_t> distribution = Esutils::getDistribution(threads, boundaries.size());
 //
 //	std::vector<std::vector<std::vector<esglobal> > > sBuffer(threads, std::vector<std::vector<esglobal> > (mesh.neighbours().size()));

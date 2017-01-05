@@ -585,14 +585,15 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 		return "";
 	};
 
-	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator) {
+	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator, Region &region) {
 		size_t threads = environment->CILK_NWORKERS;
 		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
-		#pragma cilk grainsize = 1
-		cilk_for (size_t t = 0; t < threads; t++) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
 			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 				elements[n]->addSettings(property, evaluator);
+				elements[n]->regions().push_back(&region);
 			}
 		}
 	};
@@ -625,10 +626,10 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 				std::sort(nodes.begin(), nodes.end());
 				Esutils::removeDuplicity(nodes);
 
-				distribute(nodes, properties[p], evaluators.back());
+				distribute(nodes, properties[p], evaluators.back(), region);
 			} else {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
-				distribute(region.elements, properties[p], evaluators.back());
+				distribute(region.elements, properties[p], evaluators.back(), region);
 			}
 			region.settings[properties[p]].push_back(evaluators.back());
 		}
@@ -703,7 +704,7 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<size_t> &
 
 void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
 
 	std::vector<std::vector<Element*> > edges(threads);
@@ -745,7 +746,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 
 void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
 
 	std::vector<std::vector<Element*> > faces(threads);
@@ -876,7 +877,7 @@ void Mesh::fillParentEdgesToNodes()
 
 void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &faces, const Element* edge)> filter)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
 	std::vector<std::vector<Element*> > edges(threads);
@@ -933,7 +934,7 @@ static Element* parentElement(const std::vector<Element*> &nodes, const Element 
 
 void Mesh::fillEdgesParents()
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
 	#pragma omp parallel for
@@ -948,7 +949,7 @@ void Mesh::fillEdgesParents()
 
 void Mesh::fillFacesParents()
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
 	#pragma omp parallel for
@@ -1027,7 +1028,7 @@ void APIMesh::computeFacesSharedByDomains()
 
 void Mesh::clearFacesWithoutSettings()
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
 	#pragma omp parallel for
@@ -1111,7 +1112,7 @@ void Mesh::computeEdgesOnBordersOfFacesSharedByDomains()
 
 void Mesh::clearEdgesWithoutSettings()
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
 	#pragma omp parallel for
@@ -1243,7 +1244,7 @@ static void setCluster(Element* &element, std::vector<Element*> &nodes)
 
 void Mesh::mapFacesToClusters()
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
 	#pragma omp parallel for
@@ -1260,7 +1261,7 @@ void Mesh::mapFacesToClusters()
 
 void Mesh::mapEdgesToClusters()
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
 	#pragma omp parallel for
@@ -1275,7 +1276,7 @@ void Mesh::mapEdgesToClusters()
 
 static void assignDomains(std::vector<Element*> &elements)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	#pragma omp parallel for
@@ -1329,7 +1330,7 @@ static void setDOFsIndices(
 		const std::vector<size_t> &offsets,
 		const std::vector<std::vector<std::vector<size_t> > > &threadsOffsets)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	#pragma omp parallel for
@@ -1382,7 +1383,7 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	};
 
 
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	// domains x DOFs x (threads + 1)
@@ -1434,7 +1435,7 @@ static std::vector<size_t> fillUniformDOFs(
 		const std::vector<Property> &DOFs,
 		const std::vector<size_t> &offsets)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	// domains x DOF x (threads + 1)
@@ -1504,7 +1505,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	// threads x neighbour x data

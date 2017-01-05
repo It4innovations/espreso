@@ -5,7 +5,7 @@ using namespace espreso;
 
 void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &eDOFs, const std::vector<Property> &boundDOFs)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
 	// part x thread x indices

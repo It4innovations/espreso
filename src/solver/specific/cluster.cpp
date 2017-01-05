@@ -308,7 +308,7 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++) {
-		if ( d == 0 && config::env::MPIrank == 0) {
+		if ( d == 0 && environment->MPIrank == 0) {
 			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
 
@@ -2545,7 +2545,7 @@ void ClusterBase::CreateDirichletPrec(Physics &physics)
 		}
 		K_modif.ConvertToCSRwithSort(1);
 		{
-			if (config::info::PRINT_MATRICES) {
+			if (environment->print_matrices) {
 				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
 				osS << K_modif;
 				osS.close();
@@ -2553,7 +2553,7 @@ void ClusterBase::CreateDirichletPrec(Physics &physics)
 		}
 
 		// ------------------------------------------------------------------------------------------------------------------
-		bool diagonalized_K_rr = config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET;
+		bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
 		//        PRECONDITIONER==NONE              - 0
 		//        PRECONDITIONER==LUMPED            - 1
 		//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -2572,7 +2572,7 @@ void ClusterBase::CreateDirichletPrec(Physics &physics)
 			// if physics.K[d] does not contain inner DOF
 		} else {
 
-			if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET) {
+			if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
 				SparseSolverCPU createSchur;
 //          createSchur.msglvl=1;
 				eslocal sc_size = perm_vec.size();
@@ -2631,10 +2631,10 @@ void ClusterBase::CreateDirichletPrec(Physics &physics)
 
 		}
 
-		if (config::info::PRINT_MATRICES) {
+		if (environment->print_matrices) {
 			std::ofstream osS(Logging::prepareFile(d, "S"));
 			SparseMatrix SC = domains[d].Prec;
-			if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET) {
+			if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
 				SC.ConvertDenseToCSR(1);
 			}
 			osS << SC;

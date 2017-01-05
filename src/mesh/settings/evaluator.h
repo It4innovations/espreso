@@ -83,8 +83,8 @@ class ExpressionEvaluator: public Evaluator {
 protected:
 	ExpressionEvaluator(const std::string &expression, std::vector<std::string> variables, Property property = Property::EMPTY)
 	: Evaluator(property),
-	 _expression(config::env::OMP_NUM_THREADS, Expression(expression, variables)),
-	 _values(config::env::OMP_NUM_THREADS, std::vector<double>(variables.size())) {};
+	 _expression(environment->OMP_NUM_THREADS, Expression(expression, variables)),
+	 _values(environment->OMP_NUM_THREADS, std::vector<double>(variables.size())) {};
 
 	ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables, Property property)
 	: Evaluator(property)
@@ -95,8 +95,8 @@ protected:
 		is.read(buffer, size);
 		std::string expression(buffer, size);
 		delete buffer;
-		_expression.resize(config::env::OMP_NUM_THREADS, Expression(expression, variables));
-		_values.resize(config::env::OMP_NUM_THREADS, std::vector<double>(variables.size()));
+		_expression.resize(environment->OMP_NUM_THREADS, Expression(expression, variables));
+		_values.resize(environment->OMP_NUM_THREADS, std::vector<double>(variables.size()));
 	}
 
 	virtual Evaluator* copy() const =0;

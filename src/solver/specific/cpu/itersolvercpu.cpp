@@ -140,28 +140,28 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
+		case ESPRESO_PRECONDITIONER::LUMPED:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			cluster.domains[d]._RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
 			break;
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
 			break;
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 			//cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			cluster.domains[d].Prec.DenseMatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
-		case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
 			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
@@ -176,19 +176,19 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 
 
 		switch (USE_PREC) {
-		case config::solver::PRECONDITIONERalternative::LUMPED:
-		case config::solver::PRECONDITIONERalternative::WEIGHT_FUNCTION:
-		case config::solver::PRECONDITIONERalternative::MAGIC:
+		case ESPRESO_PRECONDITIONER::LUMPED:
+		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		case ESPRESO_PRECONDITIONER::MAGIC:
 			cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 			break;
     //TODO  check if MatVec is correct (DenseMatVec!!!) 
-		case config::solver::PRECONDITIONERalternative::DIRICHLET:
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 			break;
-		case config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET:
+		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 			break;
-		case config::solver::PRECONDITIONERalternative::NONE:
+		case ESPRESO_PRECONDITIONER::NONE:
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";

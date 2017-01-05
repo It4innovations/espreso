@@ -42,7 +42,8 @@
 
     public:
         // Constructor
-        ClusterBase(eslocal cluster_index):
+        ClusterBase(const ESPRESOSolver &configuration, eslocal cluster_index):
+        	configuration(configuration),
             cluster_time("Cluster Timing "),
             vec_fill_time("Reseting vec_g0 and vec_e0"),
             loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
@@ -59,7 +60,8 @@
             iter_cnt_comm = 0;
         };
 
-        ClusterBase():
+        ClusterBase(const ESPRESOSolver &configuration):
+        	configuration(configuration),
             cluster_time("Cluster Timing "),
 
             vec_fill_time("Reseting vec_g0 and vec_e0"),
@@ -79,6 +81,8 @@
         }
 
         virtual ~ClusterBase() {};
+
+        const ESPRESOSolver &configuration;
 
         // Cluster specific variables
         eslocal cluster_global_index;

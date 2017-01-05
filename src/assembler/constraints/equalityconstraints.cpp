@@ -5,7 +5,7 @@ using namespace espreso;
 
 void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
 	// part x thread x Dirichlet
@@ -111,7 +111,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 		return std::lower_bound(constraints._mesh.neighbours().begin(), constraints._mesh.neighbours().end(), neighbour) - constraints._mesh.neighbours().begin();
 	};
 
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 	std::vector<size_t> offsets(threads);
 
@@ -205,20 +205,6 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 	MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-
-			for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-				size_t offset = 0;
-				for (size_t i = 0; i < t; i++) {
-					offset += rLambdas[n][i].size();
-				}
-				for (size_t i = 0; i < rLambdas[n][t].size(); i++) {
-					lambdasID[rLambdas[n][t][i]] = rBuffer[n][offset + i];
-				}
-			}
-
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
 		for (size_t i = 0; i < rLambdas[n][0].size(); i++) {
 			lambdasID[rLambdas[n][0][i].second] = rBuffer[n][i];
@@ -253,7 +239,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 	permutation.resize(it - permutation.begin());
 
 
-	size_t threads = config::env::OMP_NUM_THREADS;
+	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, permutation.size());
 
 	// threads x domains x data
