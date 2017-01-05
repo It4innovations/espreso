@@ -5,14 +5,14 @@ using namespace espreso;
 
 void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
 	// part x thread x Dirichlet
 	std::vector<std::vector<std::vector<esglobal> > > dirichlet(constraints._mesh.parts(), std::vector<std::vector<esglobal> >(threads));
 	std::vector<std::vector<std::vector<double> > > dirichletValues(constraints._mesh.parts(), std::vector<std::vector<double> >(threads));
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
@@ -39,7 +39,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	}
 
 	std::vector<size_t> dirichletSizes(constraints._mesh.parts());
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		size_t size = 0;
 		for (size_t t = 0; t < threads; t++) {
@@ -62,12 +62,12 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	constraints.block[Constraints::BLOCK::DIRICHLET] += globalDirichletSize;
 
 	clusterOffset += constraints.B1[0].rows;
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		constraints.B1[p].rows += globalDirichletSize;
 	}
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
 		constraints.B1[s].nnz += dirichletSizes[s];
@@ -77,7 +77,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	}
 
 	Esutils::sizesToOffsets(dirichletSizes);
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
 		for (eslocal i = 0; i < constraints.B1[s].nnz; i++) {
@@ -111,7 +111,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 		return std::lower_bound(constraints._mesh.neighbours().begin(), constraints._mesh.neighbours().end(), neighbour) - constraints._mesh.neighbours().begin();
 	};
 
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 	std::vector<size_t> offsets(threads);
 
@@ -120,7 +120,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	std::vector<std::vector<std::vector<esglobal> > > rLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
 
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		size_t lambdasSize = 0;
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
@@ -157,7 +157,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 		offsets[i] += clusterOffset + constraints.B1[0].rows;
 	}
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		esglobal offset = offsets[t];
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
@@ -180,7 +180,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 	std::vector<std::vector<esglobal> > rBuffer(constraints._mesh.neighbours().size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
 		size_t size = rLambdas[n][0].size();
 		for (size_t t = 1; t < threads; t++) {
@@ -203,7 +203,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 	MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
@@ -220,7 +220,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 		}
 	}
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		constraints.B1[p].rows += totalNumberOfLambdas;
 	}
@@ -248,7 +248,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 	permutation.resize(it - permutation.begin());
 
 
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, permutation.size());
 
 	// threads x domains x data
@@ -278,15 +278,15 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		std::vector<std::vector<double> > D(constraints._mesh.parts());
 
 		#pragma omp parallel for
-	for  (size_t p = 0; p < K.size(); p++) {
+		for  (size_t p = 0; p < K.size(); p++) {
 			D[p] = K[p].getDiagonal();
 		}
 
 		std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(constraints._mesh.neighbours().size()));
 		std::vector<std::vector<double> > rBuffer(constraints._mesh.neighbours().size());
 
-		//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
-		cilk_for (size_t t = 0; t < threads; t++) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 				const Element *e = elements[permutation[i] / DOFs.size()];
@@ -351,7 +351,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		}
 	}
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
@@ -425,7 +425,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		}
 	}
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t t = 0; t < threads; t++) {
 			constraints.B1[p].I_row_indices.insert(constraints.B1[p].I_row_indices.end(), rows[t][p].begin(), rows[t][p].end());

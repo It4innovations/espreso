@@ -387,10 +387,8 @@ void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 
 void LinearElasticity3D::makeStiffnessMatricesRegular()
 {
-
-    //TODO: Fix OpenMP
-	//#pragma omp parallel for
-	for  (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+	#pragma omp parallel for
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		switch (config::solver::REGULARIZATION) {
 		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
 			if (config::assembler::DOFS_ORDER == config::assembler::DOFS_ORDERalternative::GROUP_DOFS) {

@@ -77,7 +77,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 {
 
 	// Kill Cilk+ threads
-	__cilkrts_end_cilk();
+//	__cilkrts_end_cilk();
 
 	number_of_subdomains_per_cluster = physics.K.size();
 

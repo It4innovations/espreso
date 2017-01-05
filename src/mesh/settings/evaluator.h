@@ -5,8 +5,6 @@
 #include "esbasis.h"
 #include "property.h"
 #include "../structures/coordinates.h"
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 #include <numeric>
 
 namespace espreso {
@@ -75,7 +73,7 @@ private:
 
 
 /**
- * Evaluator can be called from various CILK workers.
+ * Evaluator can be called from various threads.
  * Create one instance for each worker in order to avoid race conditions.
  */
 class ExpressionEvaluator: public Evaluator {
@@ -83,8 +81,8 @@ class ExpressionEvaluator: public Evaluator {
 protected:
 	ExpressionEvaluator(const std::string &expression, std::vector<std::string> variables, Property property = Property::EMPTY)
 	: Evaluator(property),
-	 _expression(config::env::CILK_NWORKERS, Expression(expression, variables)),
-	 _values(config::env::CILK_NWORKERS, std::vector<double>(variables.size())) {};
+	 _expression(config::env::OMP_NUM_THREADS, Expression(expression, variables)),
+	 _values(config::env::OMP_NUM_THREADS, std::vector<double>(variables.size())) {};
 
 	ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables, Property property)
 	: Evaluator(property)
@@ -95,8 +93,8 @@ protected:
 		is.read(buffer, size);
 		std::string expression(buffer, size);
 		delete buffer;
-		_expression.resize(config::env::CILK_NWORKERS, Expression(expression, variables));
-		_values.resize(config::env::CILK_NWORKERS, std::vector<double>(variables.size()));
+		_expression.resize(config::env::OMP_NUM_THREADS, Expression(expression, variables));
+		_values.resize(config::env::OMP_NUM_THREADS, std::vector<double>(variables.size()));
 	}
 
 	virtual Evaluator* copy() const =0;
@@ -119,18 +117,18 @@ public:
 	virtual Evaluator* copy() const { return new CoordinatesEvaluator(*this); }
 	double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
-		_values[__cilkrts_get_worker_number()][0] = _coordinates[index].x;
-		_values[__cilkrts_get_worker_number()][1] = _coordinates[index].y;
-		_values[__cilkrts_get_worker_number()][2] = _coordinates[index].z;
-		return _expression[__cilkrts_get_worker_number()].evaluate(_values[__cilkrts_get_worker_number()]);
+		_values[omp_get_num_threads()][0] = _coordinates[index].x;
+		_values[omp_get_num_threads()][1] = _coordinates[index].y;
+		_values[omp_get_num_threads()][2] = _coordinates[index].z;
+		return _expression[omp_get_num_threads()].evaluate(_values[omp_get_thread_num()]);
 	}
 
 	double evaluate(const Point &p) const
 	{
-		_values[__cilkrts_get_worker_number()][0] = p.x;
-		_values[__cilkrts_get_worker_number()][1] = p.y;
-		_values[__cilkrts_get_worker_number()][2] = p.z;
-		return _expression[__cilkrts_get_worker_number()].evaluate(_values[__cilkrts_get_worker_number()]);
+		_values[omp_get_num_threads()][0] = p.x;
+		_values[omp_get_num_threads()][1] = p.y;
+		_values[omp_get_num_threads()][2] = p.z;
+		return _expression[omp_get_num_threads()].evaluate(_values[omp_get_thread_num()]);
 	}
 
 	virtual void store(std::ofstream& os)

@@ -1,7 +1,6 @@
 
 #include "mesh.h"
 #include "mkl.h"
-#include "cilk/cilk.h"
 
 namespace espreso {
 
@@ -547,7 +546,7 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<size_t> &
 {
 	std::vector<Element*> result;
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::sort(elements[t].begin(), elements[t].end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
 		uniqueWithMerge(elements[t], merge);
@@ -561,8 +560,8 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<size_t> &
 		divided.resize(divided.size() + divided.size() % 2); // keep the size even
 		merged.resize(divided.size() / 2);
 
-		//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
-		cilk_for (size_t t = 0; t < merged.size(); t++) {
+		#pragma omp parallel for
+		for (size_t t = 0; t < merged.size(); t++) {
 			merged[t].resize(divided[2 * t].size() + divided[2 * t + 1].size());
 			std::merge(
 					divided[2 * t    ].begin(), divided[2 * t    ].end(),
@@ -580,12 +579,12 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<size_t> &
 
 void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
 
 	std::vector<std::vector<Element*> > edges(threads);
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			_elements[e]->fillEdges();
@@ -621,12 +620,12 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 
 void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _elements.size());
 
 	std::vector<std::vector<Element*> > faces(threads);
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			_elements[e]->fillFaces();
@@ -751,12 +750,12 @@ void Mesh::fillParentEdgesToNodes()
 
 void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &faces, const Element* edge)> filter)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
 	std::vector<std::vector<Element*> > edges(threads);
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			_faces[e]->fillEdges();
@@ -808,10 +807,10 @@ static Element* parentElement(const std::vector<Element*> &nodes, const Element 
 
 void Mesh::fillEdgesParents()
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			parentElement(_nodes, _edges[e])->setEdge(_edges[e]);
@@ -821,10 +820,10 @@ void Mesh::fillEdgesParents()
 
 void Mesh::fillFacesParents()
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			parentElement(_nodes, _faces[e])->setFace(_faces[e]);
@@ -898,10 +897,10 @@ void APIMesh::computeFacesSharedByDomains()
 
 void Mesh::clearFacesWithoutSettings()
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
 			if (!_faces[f]->settings().size()) {
@@ -982,10 +981,10 @@ void Mesh::computeEdgesOnBordersOfFacesSharedByDomains()
 
 void Mesh::clearEdgesWithoutSettings()
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
 			if (!_edges[f]->settings().size()) {
@@ -1114,10 +1113,10 @@ static void setCluster(Element* &element, std::vector<Element*> &nodes)
 
 void Mesh::mapFacesToClusters()
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
 			if (_faces[f]->parentElements().size() == 1) { // Only faces with one element can have more clusters
@@ -1131,10 +1130,10 @@ void Mesh::mapFacesToClusters()
 
 void Mesh::mapEdgesToClusters()
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			if (std::all_of(_edges[e]->indices(), _edges[e]->indices() + _edges[e]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
@@ -1146,10 +1145,10 @@ void Mesh::mapEdgesToClusters()
 
 static void assignDomains(std::vector<Element*> &elements)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 			elements[i]->domains().clear();
@@ -1200,10 +1199,10 @@ static void setDOFsIndices(
 		const std::vector<size_t> &offsets,
 		const std::vector<std::vector<std::vector<size_t> > > &threadsOffsets)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<std::vector<size_t> > counters(parts);
 		for (size_t p = 0; p < parts; p++) {
@@ -1271,13 +1270,13 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	};
 
 
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	// domains x DOFs x (threads + 1)
 	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts(), std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1)));
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<std::vector<size_t> > threadOffset(parts(), std::vector<size_t>(DOFs.size(), 0));
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -1323,13 +1322,13 @@ static std::vector<size_t> fillUniformDOFs(
 		const std::vector<Property> &DOFs,
 		const std::vector<size_t> &offsets)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	// domains x DOF x (threads + 1)
 	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts, std::vector<std::vector<size_t> >(DOFs.size(), std::vector<size_t>(threads + 1)));
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<size_t> threadOffset(parts, 0);
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -1393,7 +1392,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 	// threads x neighbour x data
@@ -1402,7 +1401,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 	std::vector<std::vector<esglobal> > rBuffer(neighbours.size());
 
 	// Compute send buffers
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
@@ -1461,7 +1460,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 	// Create list of neighbours elements
 	std::vector<std::vector<Element*> > nElements(neighbours.size());
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		size_t p = 0;
 		while (p + 1 < rBuffer[n].size()) {
@@ -1522,7 +1521,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		}
 	}
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		for (size_t e = 0; e < nElements[n].size(); e++) {
 			delete nElements[n][e];
@@ -1530,7 +1529,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 	}
 
 	// Remove elements that are not in both clusters
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 

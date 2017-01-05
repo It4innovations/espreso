@@ -14,8 +14,8 @@
 //#include "mkl_pardiso.h"
 #include <omp.h>
 
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
+//#include <cilk/cilk.h>
+//#include <cilk/cilk_api.h>
 
 #include <tbb/mutex.h>
 #include "tbb/parallel_sort.h"

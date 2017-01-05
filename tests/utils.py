@@ -10,9 +10,9 @@ EXAMPLES = os.path.join(ESPRESO_TESTS, "examples")
 
 ENV = {
     "MKL_NUM_THREADS": "1",
-    "OMP_NUM_THREADS": "1",
+    "CILK_NWORKERS": "1",
 
-    "CILK_NWORKERS": "4",
+    "OMP_NUM_THREADS": "4",
     "SOLVER_NUM_THREADS": "4",
     "PAR_NUM_THREADS": "4",
 

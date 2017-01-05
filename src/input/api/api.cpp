@@ -6,11 +6,11 @@ using namespace espreso::input;
 
 void API::points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize)
 {
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, eNodes.size());
 
 	std::vector<eslocal> tMax(threads);
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		eslocal max = 0;
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
@@ -62,10 +62,10 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
 	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, dirichletSize);
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 			_mesh._DOFs[dirichletIndices[i] - _offset]->addSettings(Property::UNKNOWN, _mesh._evaluators.back());
@@ -103,13 +103,13 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	}
 	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
-	size_t threads = config::env::CILK_NWORKERS;
+	size_t threads = config::env::OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
 
 	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), config::env::MPIrank) - neighbours.begin();
 	std::vector<std::map<esglobal, eslocal> > g2l(threads);
 
-	//TODO: Fix OpenMP -->> #pragma cilk grainsize = 1
+	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 

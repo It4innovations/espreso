@@ -103,4 +103,18 @@
    obj:/usr/lib/x86_64-linux-gnu/libcuda.so.352.68
    ...
 }
-
+{
+   threading cond
+   Memcheck:Cond
+   ...
+   fun:__kmp_get_global_thread_id_reg
+   ...
+}
+{
+   threading param
+   Memcheck:Param
+   sched_setaffinity(mask)
+   ...
+   fun:__kmp_get_global_thread_id_reg
+   ...
+}
