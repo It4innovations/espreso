@@ -4,8 +4,8 @@
 # CXX compiler has to use Intel C++ compiler.
 
 CXX = mpiicpc
-CC = mpicc
-FC = mpif90
+CC = mpiicc
+FC = mpiifort
 
 
 #..............................................................................
