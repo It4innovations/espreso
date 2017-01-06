@@ -133,7 +133,8 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 
 	time_eval.timeEvents[0].start();
 
-	cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+	#pragma omp parallel for
+	for (eslocal d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling

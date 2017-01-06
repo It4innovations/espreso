@@ -135,7 +135,8 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 
 void ClusterCPU::CreateDirichletPrec( Physics &physics ) {
-    cilk_for (int d = 0; d < physics.K.size(); d++) {
+	#pragma omp parallel for
+    for (int d = 0; d < physics.K.size(); d++) {
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
         SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
         SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
