@@ -26,7 +26,6 @@
 
 #include "../generic/SparseMatrix.h"
 #include "../generic/Domain.h"
-#include "acc/DenseMatrixPack.h"
 #include "densesolvers.h"
 
 #include "../generic/utils.h"
