@@ -4607,16 +4607,14 @@ for (size_t i = 0; i < y_out.size(); i++)
 
 }
 
-
-
-void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
-
+void IterSolverBase::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
+{
 	time_eval.totalTime.start();
 
 	time_eval.timeEvents[0].start();
 
 	#pragma omp parallel for
-for (size_t d = 0; d < cluster.domains.size(); d++) {
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
 		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
