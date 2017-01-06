@@ -23,7 +23,7 @@ def configure(ctx):
             ctx.env.append_unique("LIB", [ mkl, "mkl_core", threading ])
         if ctx.env.CXX_NAME == "gcc":
             ctx.check_lib("gomp")
-            ctx.env.append_unique("LIB", [ "cilkrts", "gomp" ])
+            ctx.env.append_unique("LIB", [ "gomp" ])
         ctx.check_lib("pthread")
         ctx.env.append_unique("LIB", [ "pthread" ])
 
