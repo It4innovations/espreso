@@ -134,9 +134,9 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 	time_eval.timeEvents[0].start();
 
 	#pragma omp parallel for
-	for (eslocal d = 0; d < cluster.domains.size(); d++) {
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
-		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 
 		switch (USE_PREC) {
@@ -171,7 +171,7 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 
 	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 	SEQ_VECTOR < double > y_out_tmp;
-	for (eslocal d = 0; d < cluster.domains.size(); d++) {
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
 		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
 
 
@@ -195,7 +195,7 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 		}
 
 
-		for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
 			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 	}
 	time_eval.timeEvents[0].end();

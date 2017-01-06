@@ -2,7 +2,6 @@
 import subprocess
 import os
 import shutil
-from apt_pkg import config
 
 ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
 ESPRESO_ROOT = os.path.dirname(ESPRESO_TESTS)

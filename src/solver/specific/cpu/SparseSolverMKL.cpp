@@ -625,7 +625,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
 			offset = rhs.size();
 			rhs.resize(rhs.size() + tmpM.cols);
-			for (size_t col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
+			for (eslocal col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
 				rhs[offset + tmpM.CSR_J_col_indices[col - 1] - IJVMatrixIndexing] = tmpM.CSR_V_values[col - IJVMatrixIndexing];
 			}
 		}
@@ -636,7 +636,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 
 	for (size_t row = 1, offset = 0; row < tmpM.CSR_I_row_indices.size(); row++) {
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
-			for (size_t col = 0; col < tmpM.cols; col++, offset++){
+			for (eslocal col = 0; col < tmpM.cols; col++, offset++){
 				if (sol[offset] != 0.0) {
 					tmpM.I_row_indices.push_back(row);
 					tmpM.J_col_indices.push_back(col + IJVMatrixIndexing);

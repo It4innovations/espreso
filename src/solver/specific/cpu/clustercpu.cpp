@@ -136,7 +136,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 void ClusterCPU::CreateDirichletPrec( Physics &physics ) {
 	#pragma omp parallel for
-    for (int d = 0; d < physics.K.size(); d++) {
+    for (size_t d = 0; d < physics.K.size(); d++) {
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
         SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
         SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
@@ -144,11 +144,11 @@ void ClusterCPU::CreateDirichletPrec( Physics &physics ) {
         SEQ_VECTOR <eslocal> I_row_indices_p (physics.K[d].nnz);
         SEQ_VECTOR <eslocal> J_col_indices_p (physics.K[d].nnz);
 
-        for (eslocal i = 0; i < perm_vec.size(); i++) {
+        for (size_t i = 0; i < perm_vec.size(); i++) {
             perm_vec[i] = perm_vec[i] - 1;
         }
 
-        for (eslocal i = 0; i < perm_vec_full.size(); i++) {
+        for (size_t i = 0; i < perm_vec_full.size(); i++) {
             perm_vec_full[i] = i;
         }
 
