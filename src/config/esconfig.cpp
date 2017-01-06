@@ -71,6 +71,7 @@ solver::F0SOLVERalternative              solver::F0SOLVER              = solver:
 solver::SASOLVERalternative              solver::SASOLVER              = solver::SASOLVERalternative::CPU_DENSE;
 
 size_t                                   solver::N_MICS                = 2;
+bool                                     solver::LOAD_BALANCING        = true;
 size_t                                   solver::TIME_STEPS            = 1;
 
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
@@ -233,6 +234,8 @@ std::vector<espreso::Parameter> parameters = {
 	{ "KSOLVER_SP_iter_norm", solver::KSOLVER_SP_NORM , "Number of reiteration steps for SP direct solver." },
 
 	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
+
+    { "LOAD_BALANCING", solver::LOAD_BALANCING, "Enables or disables dynamic load balancing between the host and Intel Xeon Phi." },
 
 	// OUTPUT DESCRIPTION
 	{ "OUTPUT_FORMAT"   , output::OUTPUT_FORMAT   , "Format of output data.", {

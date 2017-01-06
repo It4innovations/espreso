@@ -29,12 +29,13 @@ public:
 	void Create_SC_perDomain( bool USE_FLOAT );
     void Create_Kinv_perDomain();
 	void SetupKsolvers ( );
+    void CreateDirichletPrec( Physics &physics );
 
 //private:
 
     // packed matrices
     SEQ_VECTOR<DenseMatrixPack> B1KplusPacks;
-
+    
     // number of accelerators
     eslocal NUM_MICS;
 
@@ -49,6 +50,18 @@ public:
 
     // vector of indices of domains on the host
     SEQ_VECTOR<eslocal> hostDomains;
+
+    // packed Dirichlet preconditioners
+    SEQ_VECTOR<DenseMatrixPack> DirichletPacks;
+
+    // vector of length N_MIC of vectors of indices of preconditioners on MICs
+    SEQ_VECTOR<SEQ_VECTOR<eslocal> > accPreconditioners;
+
+    // vector of indices of domains on the host
+    SEQ_VECTOR<eslocal> hostPreconditioners;
+
+
+
 
     bool deleteMatrices;
 };

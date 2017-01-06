@@ -198,6 +198,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
 		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
+        cluster.CreateDirichletPrec( physics );
+       /* 
 		cilk_for (size_t d = 0; d < physics.K.size(); d++) {
 			SEQ_VECTOR <eslocal> perm_vec = cluster.domains[d].B1t_Dir_perm_vec;
 			SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
@@ -363,6 +365,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 			ESINFO(PROGRESS2) << Info::plain() << ".";
 		}
+        */
 		ESINFO(PROGRESS2);
 
 		timeDirPrec.endWithBarrier(); timeEvalMain.addEvent(timeDirPrec);

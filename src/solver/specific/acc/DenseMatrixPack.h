@@ -10,292 +10,342 @@ using std::vector;
 
 namespace espreso {
 
-class DenseMatrixPack
-{
-    friend class SparseSolverMIC;
+    class DenseMatrixPack
+    {
+        friend class SparseSolverMIC;
 
-public:
+        public:
 
-  // Default constructor
-  DenseMatrixPack();
+        // Default constructor
+        DenseMatrixPack();
 
-  // Constructor
-  DenseMatrixPack( long maxNMatrices, long preallocSize, int device = 0 );
+        // Constructor
+        DenseMatrixPack( long maxNMatrices, long preallocSize, int device = 0 );
 
-  // Copy constructor
-  DenseMatrixPack( const DenseMatrixPack& orig );
+        // Copy constructor
+        DenseMatrixPack( const DenseMatrixPack& orig );
 
-  // Destructor
-  ~DenseMatrixPack();
+        // Destructor
+        ~DenseMatrixPack();
 
-  // deletes current data and resizes the buffer
-  void Resize( long maxNMatrices, long preallocSize );
+        // deletes current data and resizes the buffer
+        void Resize( long maxNMatrices, long preallocSize );
 
-  // prepares arrays containing offsets etc. (necessary to run in cycle before AddDenseMatrix)
-  void PreparePack(
-    eslocal i,
-    eslocal nRows,
-    eslocal nCols,
-    bool isPacked
-  );
+        // prepares arrays containing offsets etc. (necessary to run in cycle before AddDenseMatrix)
+        void PreparePack(
+                eslocal i,
+                eslocal nRows,
+                eslocal nCols,
+                bool isPacked
+                );
 
-  // Adds dense matrix to the pack (if there is enough space)
-  void AddDenseMatrix(
-    eslocal i,
-    double * matrixData
-  );
+        // Adds dense matrix to the pack (if there is enough space)
+        void AddDenseMatrix(
+                eslocal i,
+                double * matrixData
+                );
 
-  void AllocateVectors() {
-    mic_x_in = ( double * ) malloc( totalCols * sizeof( double ) );
-    mic_y_out = ( double * ) malloc( totalRows * sizeof( double ) );
-  }
+        void AllocateVectors() {
+            mic_x_in = ( double * ) malloc( totalCols * sizeof( double ) );
+            mic_y_out = ( double * ) malloc( totalRows * sizeof( double ) );
+        }
 
-  // Sends matrices to MIC, preallocates data for input/ouptut vectors
-  void CopyToMIC();
+        // Sends matrices to MIC, preallocates data for input/ouptut vectors
+        void CopyToMIC();
 
-  // Multiplies input vectors with matrices in pack on cpu
-  void DenseMatsVecs(
-    char T_for_transpose_N_for_not_transpose
-  );
+        // Multiplies input vectors with matrices in pack on cpu
+        void DenseMatsVecs(
+                char T_for_transpose_N_for_not_transpose
+                );
 
-  // Multiplies input vectors with matrices in pack on mic
-  void DenseMatsVecsMIC(
-    char T_for_transpose_N_for_not_transpose
-  );
+        // Multiplies input vectors with matrices in pack on mic
+        void DenseMatsVecsMIC(
+                char T_for_transpose_N_for_not_transpose
+                );
 
-  // Multiplies input vectors with matrices in pack on mic - start of async. c.
-  void DenseMatsVecsMIC_Start(
-    char T_for_transpose_N_for_not_transpose
-  );
+        // Multiplies input vectors with matrices in pack on mic
+        void DenseMatsVecsCPU(
+                long start,
+                long end,
+                char T_for_transpose_N_for_not_transpose
+                );
 
-  // Multiplies input vectors with matrices in pack on mic - sync.
-  void DenseMatsVecsMIC_Sync( );
+        void DenseMatsVecsRestCPU(
+                char T_for_transpose_N_for_not_transpose
+                );
 
-  void SetX(
-    long vector,
-    long position,
-    double value
-  );
+        // Multiplies input vectors with matrices in pack on mic - start of async. c.
+        void DenseMatsVecsMIC_Start(
+                char T_for_transpose_N_for_not_transpose
+                );
 
-  void GetY(
-    long vector,
-    std::SEQ_VECTOR <double> & y
-  );
+        // Multiplies input vectors with matrices in pack on mic - sync.
+        void DenseMatsVecsMIC_Sync( );
 
-  void SetDevice(
-    int device
-  );
+        void SetX(
+                long vector,
+                long position,
+                double value
+                );
 
-  int getDevice() {
-    return device;
-  }
+        void GetY(
+                long vector,
+                std::SEQ_VECTOR <double> & y
+                );
 
-  bool areDataOnMIC() {
-    return this->copiedToMIC;  
-  }
+        void SetDevice(
+                int device
+                );
 
-  double * getMatrixPointer( 
-    eslocal matrix
-  );
+        int getDevice() {
+            return device;
+        }
 
-  long getDataLength(
-    eslocal matrix
-  ) {
-    return this->lengths[matrix];
-  }
+        bool areDataOnMIC() {
+            return this->copiedToMIC;  
+        }
 
-/*
-  void setDevice(int device) {
-    this->device = device;
-  }
+        double * getMatrixPointer( 
+                eslocal matrix
+                );
 
-  long getMaxNMatrices() {
-    return this->maxNMatrices;
-  }
+        long getDataLength(
+                eslocal matrix
+                ) {
+            return this->lengths[matrix];
+        }
 
-  void setMaxNMatrices(long maxNMatrices) {
-    this->maxNMatrices = maxNMatrices;
-  }
+        void setMICratio( 
+                double MICratio
+                ) {
+            this->MICratio = MICratio; 
+        }
 
-  long getNMatrices() {
-    return this->nMatrices;
-  }
+        double getMICratio() {
+            return MICratio;    
+        }
 
-  void setNMatrices(long nMatrices) {
-    this->nMatrices = nMatrices;
-  }
+        long getNMatrices() {
+            return this->nMatrices;
+        }
 
-  void setPreallocSize(long preallocSize) {
-    this->preallocSize = preallocSize;
-  }
+        void enableLoadBalancing() {
+            this->loadBalancing = true;
+        }
+        void disableLoadBalancing() {
+            this->loadBalancing = false;
+        }
+        bool getLoadBalancing() {
+            return this->loadBalancing;
+        }
 
-  long getPreallocSize() {
-    return this->preallocSize;
-  }
+        double getElapsedTime() {
+            return this->elapsedTime[0];
+        }
 
-  void setFreeSpace(long freeSpace) {
-    this->freeSpace = freeSpace;
-  }
+        /*
+           void setDevice(int device) {
+           this->device = device;
+           }
 
-  long getFreeSpace() {
-    return this->freeSpace;
-  }
+           long getMaxNMatrices() {
+           return this->maxNMatrices;
+           }
 
-  void setMatrices(double * matrices) {
-    this->matrices = matrices;
-  }
+           void setMaxNMatrices(long maxNMatrices) {
+           this->maxNMatrices = maxNMatrices;
+           }
 
-  double * getMatrices() {
-    return this->matrices;
-  }
+           long getNMatrices() {
+           return this->nMatrices;
+           }
 
-  void setRows(int * rows) {
-    this->rows = rows;
-  }
+           void setNMatrices(long nMatrices) {
+           this->nMatrices = nMatrices;
+           }
 
-  int * getRows() {
-    return this->rows;
-  }
+           void setPreallocSize(long preallocSize) {
+           this->preallocSize = preallocSize;
+           }
 
-  void setCols(int * cols) {
-    this->cols = cols;
-  }
+           long getPreallocSize() {
+           return this->preallocSize;
+           }
 
-  int * getCols() {
-    return this->cols;
-  }
+           void setFreeSpace(long freeSpace) {
+           this->freeSpace = freeSpace;
+           }
 
-  void setTotalRows(long totalRows) {
-    this->totalRows = totalRows;
-  }
+           long getFreeSpace() {
+           return this->freeSpace;
+           }
 
-  long getTotalRows() {
-    return this->totalRows;
-  }
+           void setMatrices(double * matrices) {
+           this->matrices = matrices;
+           }
 
-  void setTotalCols(long totalCols) {
-    this->totalCols = totalCols;
-  }
+           double * getMatrices() {
+           return this->matrices;
+           }
 
-  long getTotalCols() {
+           void setRows(int * rows) {
+           this->rows = rows;
+           }
+
+           int * getRows() {
+           return this->rows;
+           }
+
+           void setCols(int * cols) {
+           this->cols = cols;
+           }
+
+           int * getCols() {
+           return this->cols;
+           }
+
+           void setTotalRows(long totalRows) {
+           this->totalRows = totalRows;
+           }
+
+           long getTotalRows() {
+           return this->totalRows;
+           }
+
+           void setTotalCols(long totalCols) {
+           this->totalCols = totalCols;
+}
+
+long getTotalCols() {
     return this->totalCols;
-  }
+}
 
-  void setOffsets(long * offsets) {
-      this->offsets = offsets;
-  }
+void setOffsets(long * offsets) {
+    this->offsets = offsets;
+}
 
-  long * getOffsets() {
+long * getOffsets() {
     return this->offsets;
-  }
+}
 
-  void setRowOffsets(long * rowOffsets) {
-      this->rowOffsets = rowOffsets;
-  }
+void setRowOffsets(long * rowOffsets) {
+    this->rowOffsets = rowOffsets;
+}
 
-  long * getRowOffsets() {
+long * getRowOffsets() {
     return this->rowOffsets;
-  }
+}
 
-  void setColOffsets(long * colOffsets) {
-      this->colOffsets = colOffsets;
-  }
+void setColOffsets(long * colOffsets) {
+    this->colOffsets = colOffsets;
+}
 
-  long * getColOffsets() {
+long * getColOffsets() {
     return this->colOffsets;
-  }
+}
 
-  void setLengths(long * lenghts) {
+void setLengths(long * lenghts) {
     this->lengths = lengths;
-  }
+}
 
-  long * getLengths() {
+long * getLengths() {
     return this->lengths;
-  }
-  
-  void setPacked(bool * packed) {
+}
+
+void setPacked(bool * packed) {
     this->packed = packed;
-  }
+}
 
-  bool* getPacked() {
+bool* getPacked() {
     return this->packed;
-  }
+}
 
-  void setMic_x_in(double * mic_x_in) {
+void setMic_x_in(double * mic_x_in) {
     this->mic_x_in = mic_x_in;
-  }
+}
 
-  double * getMic_x_in() {
+double * getMic_x_in() {
     return this->mic_x_in;
-  }
+}
 
-  void setMic_y_out(double * mic_y_out) {
+void setMic_y_out(double * mic_y_out) {
     this->mic_y_out = mic_y_out;
-  }
+}
 
-  double * getMic_y_out() {
+double * getMic_y_out() {
     return this->mic_y_out;
-  }
+}
 
 */
 private:
 
-  // MIC number
-  int device;
+// MIC number
+int device;
 
-  // maximum number of matrices in pack
-  long maxNMatrices;
+// maximum number of matrices in pack
+long maxNMatrices;
 
-  // number of matrices in pack
-  long nMatrices;
+// number of matrices in pack
+long nMatrices;
 
-  // size of preallocated data
-  long preallocSize;
+// size of preallocated data
+long preallocSize;
 
-  // free space
-  long freeSpace;
+// free space
+long freeSpace;
 
-  // array of matrix values
-  double * matrices;
+// array of matrix values
+double * matrices;
 
-  // array of matrix values on MIC
-  double * matrices_mic;
+// array of matrix values on MIC
+double * matrices_mic;
 
-  // array with numbers of rows of individual matrices
-  eslocal * rows;
+// array with numbers of rows of individual matrices
+eslocal * rows;
 
-  // array with numbers of cols of individual matrices
-  eslocal * cols;
+// array with numbers of cols of individual matrices
+eslocal * cols;
 
-  // total number of matrix rows
-  long totalRows;
+// total number of matrix rows
+long totalRows;
 
-  // total number of matrix cols
-  long totalCols;
+// total number of matrix cols
+long totalCols;
 
-  // array of offsets to the beginnings of matrices data
-  long * offsets;
+// array of offsets to the beginnings of matrices data
+long * offsets;
 
-  // offsets of rows
-  long * rowOffsets;
+// offsets of rows
+long * rowOffsets;
 
-  // offsets of columns
-  long * colOffsets;
+// offsets of columns
+long * colOffsets;
 
-  // array of lengths of matrix data
-  long * lengths;
+// array of lengths of matrix data
+long * lengths;
 
-  // is i-th matrix symmetric and stored in packed format?
-  bool * packed;
+// is i-th matrix symmetric and stored in packed format?
+bool * packed;
 
-  // input buffer on MIC
-  double * mic_x_in;
+// input buffer on MIC
+double * mic_x_in;
 
-  // output buffer on MIC
-  double * mic_y_out;
+// output buffer on MIC
+double * mic_y_out;
 
-  // are data copied to MIC
-  bool copiedToMIC;
+// are data copied to MIC
+bool copiedToMIC;
+
+// whether to use load balancing between host and MIC  
+bool loadBalancing;
+
+
+#pragma offload_attribute(push,target(mic))
+// ratio of work during mv multiplication 
+double MICratio;
+// time for one mv
+double *  elapsedTime;
+#pragma offload_attribute(pop)
 };
 
 }
