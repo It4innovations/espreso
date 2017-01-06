@@ -117,18 +117,18 @@ public:
 	virtual Evaluator* copy() const { return new CoordinatesEvaluator(*this); }
 	double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{
-		_values[omp_get_num_threads()][0] = _coordinates[index].x;
-		_values[omp_get_num_threads()][1] = _coordinates[index].y;
-		_values[omp_get_num_threads()][2] = _coordinates[index].z;
-		return _expression[omp_get_num_threads()].evaluate(_values[omp_get_thread_num()]);
+		_values[omp_get_thread_num()][0] = _coordinates[index].x;
+		_values[omp_get_thread_num()][1] = _coordinates[index].y;
+		_values[omp_get_thread_num()][2] = _coordinates[index].z;
+		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
 	double evaluate(const Point &p) const
 	{
-		_values[omp_get_num_threads()][0] = p.x;
-		_values[omp_get_num_threads()][1] = p.y;
-		_values[omp_get_num_threads()][2] = p.z;
-		return _expression[omp_get_num_threads()].evaluate(_values[omp_get_thread_num()]);
+		_values[omp_get_thread_num()][0] = p.x;
+		_values[omp_get_thread_num()][1] = p.y;
+		_values[omp_get_thread_num()][2] = p.z;
+		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
 	virtual void store(std::ofstream& os)
