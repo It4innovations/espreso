@@ -329,3 +329,74 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 	exit(1);
 
 }
+
+
+
+void DenseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A) {
+	SolveMat_Sparse(A, A);
+};
+
+void DenseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out) {
+	SolveMat_Sparse(A_in, B_out, 'T');
+};
+
+void DenseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed ) {
+
+	char trans = T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed;
+
+	espreso::SparseMatrix tmpM;
+	if (trans == 'T')
+		A_in.MatTranspose(tmpM);
+	else
+		tmpM = A_in;
+
+
+	SEQ_VECTOR<double> rhs;
+	SEQ_VECTOR<double> sol;
+
+	rhs.reserve(tmpM.cols+8);
+	rhs.reserve(tmpM.cols+8);
+
+	rhs.resize(tmpM.cols);
+	sol.resize(tmpM.cols);
+
+	// main loop over rows
+	MKL_INT col = 0;
+	MKL_INT n_nnz = 0;
+	for (size_t row = 1; row < tmpM.CSR_I_row_indices.size(); row++) {
+		MKL_INT row_size = tmpM.CSR_I_row_indices[row] - tmpM.CSR_I_row_indices[row-1];
+		if (row_size > 0) {
+			for (MKL_INT c = 0; c < row_size; c++) { // loop over selected row
+				rhs[ tmpM.CSR_J_col_indices[col] - 1] = tmpM.CSR_V_values [col];
+				col++;
+			}
+			MKL_INT nRhs_l = 1;
+			//m_error = dss_solve_real (m_handle, m_opt, &rhs[0], nRhs_l, &sol[0]);
+			Solve(rhs, sol, nRhs_l);
+
+			for (size_t s = 0; s < sol.size(); s++){
+				if (sol[s] != 0.0) {
+					tmpM.I_row_indices.push_back(row);
+					tmpM.J_col_indices.push_back(s+1);
+					tmpM.V_values.push_back(sol[s]);
+					n_nnz++;
+				}
+			}
+
+			//Reset InitialCondition and SOL
+			fill(rhs.begin(), rhs.end(), 0); // reset entire vector to 0
+			//fill(sol.begin(), sol.end(), 0); // reset entire vector to 0
+		}
+	}
+
+	rhs.clear();
+	sol.clear();
+
+	tmpM.nnz = n_nnz;
+	tmpM.ConvertToCSR(1);
+	tmpM.MatTranspose(B_out);
+
+	tmpM.Clear();
+
+}
+

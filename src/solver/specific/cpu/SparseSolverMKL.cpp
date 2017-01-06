@@ -94,8 +94,8 @@ void SparseSolverMKL::Clear() {
 
 	if ( initialized == true )
 	{
-		double ddum;			/* Double dummy */
-		MKL_INT idum;			/* Integer dummy. */
+		double ddum = 0;			/* Double dummy */
+		MKL_INT idum = 0;			/* Integer dummy. */
 		MKL_INT nRhs = 1;
 
 		/* -------------------------------------------------------------------- */
@@ -621,42 +621,32 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
 
-	rhs.resize(tmpM.cols);
-	sol.resize(tmpM.cols);
-
-	// main loop over rows
-	MKL_INT col = 0;
-	MKL_INT n_nnz = 0;
-	for (size_t row = 1; row < tmpM.CSR_I_row_indices.size(); row++) {
-		MKL_INT row_size = tmpM.CSR_I_row_indices[row] - tmpM.CSR_I_row_indices[row-1];
-		if (row_size > 0) {
-			for (MKL_INT c = 0; c < row_size; c++) { // loop over selected row
-				rhs[ tmpM.CSR_J_col_indices[col] - 1] = tmpM.CSR_V_values [col];
-				col++;
+	for (size_t row = 1, offset = 0; row < tmpM.CSR_I_row_indices.size(); row++) {
+		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
+			offset = rhs.size();
+			rhs.resize(rhs.size() + tmpM.cols);
+			for (size_t col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
+				rhs[offset + tmpM.CSR_J_col_indices[col - 1] - IJVMatrixIndexing] = tmpM.CSR_V_values[col - IJVMatrixIndexing];
 			}
-			MKL_INT nRhs_l = 1;
-			//m_error = dss_solve_real (m_handle, m_opt, &rhs[0], nRhs_l, &sol[0]);
-			Solve(rhs, sol, nRhs_l);
-
-			for (size_t s = 0; s < sol.size(); s++){
-				if (sol[s] != 0.0) {
-					tmpM.I_row_indices.push_back(row);
-					tmpM.J_col_indices.push_back(s+1);
-					tmpM.V_values.push_back(sol[s]);
-					n_nnz++;
-				}
-			}
-
-			//Reset InitialCondition and SOL
-			fill(rhs.begin(), rhs.end(), 0); // reset entire vector to 0
-			//fill(sol.begin(), sol.end(), 0); // reset entire vector to 0
 		}
 	}
 
-	rhs.clear();
-	sol.clear();
+	sol.resize(rhs.size());
+	Solve(rhs, sol, rhs.size() / tmpM.cols);
 
-	tmpM.nnz = n_nnz;
+	for (size_t row = 1, offset = 0; row < tmpM.CSR_I_row_indices.size(); row++) {
+		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
+			for (size_t col = 0; col < tmpM.cols; col++, offset++){
+				if (sol[offset] != 0.0) {
+					tmpM.I_row_indices.push_back(row);
+					tmpM.J_col_indices.push_back(col + IJVMatrixIndexing);
+					tmpM.V_values.push_back(sol[offset]);
+				}
+			}
+		}
+	}
+
+	tmpM.nnz = tmpM.V_values.size();
 	tmpM.ConvertToCSR(1);
 	tmpM.MatTranspose(B_out);
 
