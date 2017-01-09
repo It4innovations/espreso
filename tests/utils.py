@@ -15,7 +15,9 @@ ENV = {
     "SOLVER_NUM_THREADS": "4",
     "PAR_NUM_THREADS": "4",
 
-    "PARDISOLICMESSAGE": "1"
+    "PARDISOLICMESSAGE": "1",
+
+    "OMP_PROC_BIND": "TRUE", # there is problem with linking CUDA
 }
 
 
