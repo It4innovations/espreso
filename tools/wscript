@@ -97,7 +97,9 @@ def build_qd(ctx):
         return
 
     path = ctx.ROOT + "/tools/qd-2.3.17"
-    params = "CXX={0} CC={1} FC={2} --prefix={3}/install -q".format(ctx.env.CXX[0], ctx.env.CC[0], ctx.env.FC[0], path)
+    # QD has bug in compilation fortran shared objects -> add -fPIC manualy
+    fc = (ctx.env.FC[0], ctx.env.FC[0] + " -fPIC")[ctx.env.LIBTYPE == "SHARED"]
+    params = "CXX={0} CC={1} FC='{2}' --prefix={3}/install -q".format(ctx.env.CXX[0], ctx.env.CC[0], fc, path)
     if ctx.env.LIBTYPE == "SHARED":
         params += " --enable-shared=yes"
 
