@@ -33,6 +33,20 @@ public:
 		delete _settings[Property::EMPTY][0];
 	}
 
+	std::vector<Evaluator*>& property(Property property)
+	{
+		return _settings[property];
+	}
+
+	const std::vector<Evaluator*>& property(Property property) const
+	{
+		if (_settings.find(property) != _settings.end()) {
+			return _settings.find(property)->second;
+		} else {
+			return _settings.find(Property::EMPTY)->second;
+		}
+	}
+
 	std::vector<Evaluator*>& operator[](Property property)
 	{
 		return _settings[property];

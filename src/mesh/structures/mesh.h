@@ -16,6 +16,7 @@
 
 namespace espreso {
 
+struct Configuration;
 namespace input {
 class Loader;
 }
@@ -24,7 +25,7 @@ class Loader;
 struct Region {
 	std::string name;
 	std::vector<Element*> elements;
-	Settings settings;
+	std::vector<std::map<Property, std::vector<Evaluator*> > > settings;
 	mutable double area;
 
 	void computeArea(const Coordinates &coordinates) const;
@@ -60,8 +61,11 @@ public:
 	void computeCornersOnFaces(size_t number, bool onVertices, bool onEdges, bool onFaces);
 
 	void markRegions();
-	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
+	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
+	void loadProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadNodeProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+
 	template<typename TMaterial>
 	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)
 	{

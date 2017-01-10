@@ -74,28 +74,32 @@ ADVECTION_DIFFUSION_2D {
   SIGMA           0;
 
   TEMPERATURE {
-    LEFT   1;
-    TOP    1;
-    BOTTOM 0;
-  }
-
-  THICKNESS {
-    N_ALL 1;
+    1 {
+      LEFT   1;
+      TOP    1;
+      BOTTOM 0;
+    }
   }
 
   HEAT_FLUX {
-#    RIGHT 10;
+    1 {
+#      RIGHT 10;
+    }
   }
 
   CONVECTION {
-#    RIGHT {
-#      EXTERNAL_TEMPERATURE      2;
-#      HEAT_TRANSFER_COEFFICIENT 5;
-#    }
+    1 {
+      RIGHT {
+        EXTERNAL_TEMPERATURE      2;
+        HEAT_TRANSFER_COEFFICIENT 5;
+      }
+    }
   }
 
   HEAT_FLOW {
-    RIGHT 20;
+    1 {
+      RIGHT 20;
+    }
   }
 
 #  RESISTIVE_THIN_LAYER {

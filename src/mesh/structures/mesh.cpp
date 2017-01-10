@@ -1,6 +1,7 @@
 
 #include "mesh.h"
 #include "mkl.h"
+#include "../../config/configuration.h"
 
 namespace espreso {
 
@@ -571,7 +572,7 @@ void Mesh::markRegions()
 	}
 }
 
-static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
+static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
 {
 	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) {
 		for (size_t i = 0; i < values.size(); i++) {
@@ -600,6 +601,7 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region &region = mesh.region(it->first);
+		region.settings.resize(loadStep + 1);
 		std::vector<std::string> values = Parser::split(it->second, ",");
 
 		for (size_t p = 0; p < properties.size(); p++) {
@@ -616,7 +618,7 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 			}
 
 			if (distributeToNodes && region.elements.size() && region.elements[0]->nodes() > 1) {
-				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for nodes of region '" << region.name << "'";
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region.name << "'";
 				std::vector<Element*> nodes;
 				for (size_t i = 0; i < region.elements.size(); i++) {
 					for (size_t n = 0; n < region.elements[i]->nodes(); n++) {
@@ -628,22 +630,42 @@ static void _loadProperty(Mesh &mesh, std::vector<Evaluator*> &evaluators, const
 
 				distribute(nodes, properties[p], evaluators.back(), region);
 			} else {
-				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for region '" << region.name << "'";
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region.name << "'";
 				distribute(region.elements, properties[p], evaluators.back(), region);
 			}
-			region.settings[properties[p]].push_back(evaluators.back());
+			region.settings[loadStep][properties[p]].push_back(evaluators.back());
 		}
 	}
 }
 
-void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties) {
+void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep) {
 
-	_loadProperty(*this, _evaluators, regions, parameters, properties, false);
+	_loadProperty(*this, loadStep, _evaluators, regions, parameters, properties, false);
 }
 
-void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
-	_loadProperty(*this, _evaluators, regions, parameters, properties, true);
+	_loadProperty(*this, loadStep, _evaluators, regions, parameters, properties, true);
+}
+
+void Mesh::loadProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+{
+	for (auto it = property.configurations.begin(); it != property.configurations.end(); ++it) {
+		std::stringstream ss(it->first);
+		size_t step;
+		ss >> step;
+		_loadProperty(*this, step - 1, _evaluators, it->second->values, parameters, properties, false);
+	}
+}
+
+void Mesh::loadNodeProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+{
+	for (auto it = property.configurations.begin(); it != property.configurations.end(); ++it) {
+		std::stringstream ss(it->first);
+		size_t step;
+		ss >> step;
+		_loadProperty(*this, step - 1, _evaluators, it->second->values, parameters, properties, true);
+	}
 }
 
 template<typename MergeFunction>

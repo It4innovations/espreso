@@ -15,9 +15,20 @@
 #define OPTION(type, name, description, value, options)         type name = ParameterHolder::create<type>(#name, description, name, value, options, this)
 #define PARAMETER(type, name, description, value)               type name = ParameterHolder::create<type>(#name, description, name, value, #type, this)
 
-#define SUBVECTOR(type, name, description, dparameter, dvalue)           ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, dparameter, dvalue, this)
-#define SUBMAP(ptype, vtype, name, description, dparameter, dvalue) ConfigurationMap<ptype, vtype> name = ConfigurationMap<ptype, vtype>::create(#name, description, #vtype, dparameter, dvalue, this)
-#define SUBCONFIG(type, name, description)                                                    type name = Configuration::create<type>(#name, description, this)
+#define SUBVECTOR(type, name, description, dparameter, dvalue) \
+	ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, dparameter, dvalue, this)
+
+#define SUBMAP(ptype, vtype, name, description, dparameter, dvalue) \
+	ConfigurationMap<ptype, vtype> name = ConfigurationMap<ptype, vtype>::create(#name, description, #vtype, dparameter, dvalue, this)
+
+#define SUBVECTORVECTOR(value, name, description, ditem, dvalue) \
+	ConfigurationVectorVector<value> name = ConfigurationVectorVector<value>::create(#name, description, ditem, dvalue, this)
+
+#define SUBVECTORMAP(parameter, value, name, description, ditem, dparameter, dvalue) \
+	ConfigurationVectorMap<parameter, value> name = ConfigurationVectorMap<parameter, value>::create(#name, description, ditem, dparameter, dvalue, this)
+
+#define SUBCONFIG(type, name, description) \
+	type name = Configuration::create<type>(#name, description, this)
 
 namespace espreso {
 
@@ -329,6 +340,120 @@ struct ConfigurationMap: public Configuration {
 	{
 		if (!copy) {
 			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
+		}
+	}
+};
+
+template <typename TParameter, typename TValue>
+struct ConfigurationVectorMap: public Configuration {
+	std::map<std::string, ConfigurationMap<TParameter, TValue>* > configurations;
+	std::vector<Configuration*> dummy;
+	std::string item;
+
+	static ConfigurationVectorMap<TParameter, TValue> create(const std::string &name, const std::string &description, const std::string &dItem, const std::string &dParameter, const std::string &dValue, Configuration* conf)
+	{
+		ConfigurationVectorMap<TParameter, TValue> configuration;
+		conf->subconfigurations[name] = &configuration;
+		conf->orderedSubconfiguration.push_back(&configuration);
+		configuration.name = name;
+		configuration.description = description;
+		configuration.item = dItem;
+		configuration.dummy.push_back(new Configuration());
+		configuration.dummy.back()->name = dItem;
+		configuration.dummy.back()->description = dParameter + " " + dValue;
+		return configuration;
+	}
+
+	Configuration& operator[](const std::string &subconfiguration)
+	{
+		if (configurations.find(subconfiguration) == configurations.end()) {
+			configurations[subconfiguration] = new ConfigurationMap<TParameter, TValue>();
+			subconfigurations[subconfiguration] = configurations[subconfiguration];
+			orderedSubconfiguration.push_back(configurations[subconfiguration]);
+			configurations[subconfiguration]->name = subconfiguration;
+		}
+		return *configurations[subconfiguration];
+	}
+
+	virtual const std::vector<Configuration*>& storeConfigurations() const
+	{
+		if (orderedSubconfiguration.size()) {
+			return orderedSubconfiguration;
+		} else {
+			return dummy;
+		}
+	}
+
+	bool set(const std::string &parameter, const std::string &value)
+	{
+		ESINFO(GLOBAL_ERROR) << "Parameter '" << name << "' expected format " << item << " { " << dummy.back()->name << " " << dummy.back()->description << "; ... }";
+		return false;
+	}
+
+	~ConfigurationVectorMap()
+	{
+		if (!copy) {
+			for (auto it = configurations.begin(); it != configurations.end(); ++it) {
+				delete it->second;
+			}
+			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
+		}
+	}
+};
+
+template <typename TValue>
+struct ConfigurationVectorVector: public Configuration {
+	std::map<std::string, ConfigurationVector<TValue>* > configurations;
+	std::vector<Configuration*> dummy;
+	std::string item;
+
+	static ConfigurationVectorVector<TValue> create(const std::string &name, const std::string &description, const std::string &dItem, const std::string &dValue, Configuration* conf)
+	{
+		ConfigurationVectorVector<TValue> configuration;
+		conf->subconfigurations[name] = &configuration;
+		conf->orderedSubconfiguration.push_back(&configuration);
+		configuration.name = name;
+		configuration.description = description;
+		configuration.item = dItem;
+		configuration.dummy.push_back(new Configuration());
+		configuration.dummy.back()->name = dItem;
+		configuration.dummy.back()->description = dValue;
+		return configuration;
+	}
+
+	Configuration& operator[](const std::string &subconfiguration)
+	{
+		if (configurations.find(subconfiguration) == configurations.end()) {
+			configurations[subconfiguration] = new ConfigurationVector<TValue>();
+			subconfigurations[subconfiguration] = configurations[subconfiguration];
+			orderedSubconfiguration.push_back(configurations[subconfiguration]);
+			configurations[subconfiguration]->name = subconfiguration;
+		}
+		return *configurations[subconfiguration];
+	}
+
+	virtual const std::vector<Configuration*>& storeConfigurations() const
+	{
+		if (orderedSubconfiguration.size()) {
+			return orderedSubconfiguration;
+		} else {
+			return dummy;
+		}
+	}
+
+	bool set(const std::string &parameter, const std::string &value)
+	{
+		ESINFO(GLOBAL_ERROR) << "Parameter '" << name << "' expected format " << item << " { " << dummy.back()->name << " " << dummy.back()->description << "; ... }";
+		return false;
+	}
+
+	~ConfigurationVectorVector()
+	{
+		if (!copy) {
+			for (auto it = configurations.begin(); it != configurations.end(); ++it) {
+				delete it->second;
+			}
+			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
 		}
 	}
 };

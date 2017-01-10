@@ -16,7 +16,7 @@ struct AdvectionDiffusion3D: public LinearPhysics
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
 	  _configuration(configuration)
 	{
-		if (_configuration.translation_motions.values.size()) {
+		if (_configuration.translation_motions.configurations.size()) {
 			mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
 		}
 	};

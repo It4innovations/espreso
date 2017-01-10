@@ -43,25 +43,34 @@ void AdvectionDiffusion3D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
-	_mesh.loadNodeProperty(_configuration.temperature.values, { }, { Property::TEMPERATURE });
+	_mesh.loadProperty(_configuration.initial_temperature.values, { }         , { Property::INITIAL_TEMPERATURE });
 
-	_mesh.loadProperty(_configuration.translation_motions.values      , { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
-	_mesh.loadProperty(_configuration.initial_temperature.values      , { }         , { Property::INITIAL_TEMPERATURE });
-	_mesh.loadProperty(_configuration.heat_source.values              , { }     , { Property::HEAT_SOURCE });
-	_mesh.loadProperty(_configuration.heat_flux.values                , { }     , { Property::HEAT_FLUX });
-	_mesh.loadProperty(_configuration.heat_flow.values                , { }     , { Property::HEAT_FLOW });
+	_mesh.loadNodeProperty(_configuration.temperature, { }, { Property::TEMPERATURE });
+
+	_mesh.loadProperty(_configuration.translation_motions, { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
+	_mesh.loadProperty(_configuration.heat_source        , { }     , { Property::HEAT_SOURCE });
+	_mesh.loadProperty(_configuration.heat_flux          , { }     , { Property::HEAT_FLUX });
+	_mesh.loadProperty(_configuration.heat_flow          , { }     , { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.configurations.begin(); it != _configuration.convection.configurations.end(); ++it) {
+		std::stringstream ss(it->first);
+		size_t step;
+		ss >> step;
 		std::map<std::string, std::string> values;
-		values[it->first] = it->second->external_temperature;
-		_mesh.loadProperty(values, { }     , { Property::EXTERNAL_TEMPERATURE });
-		values[it->first] = it->second->heat_transfer_coefficient;
-		_mesh.loadProperty(values, { }     , { Property::HEAT_TRANSFER_COEFFICIENT });
+		for (auto regions = it->second->configurations.begin(); regions != it->second->configurations.end(); ++regions) {
+			values[regions->first] = regions->second->external_temperature;
+			_mesh.loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
+			values[regions->first] = regions->second->heat_transfer_coefficient;
+			_mesh.loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
+		}
 	}
 
 	for (size_t r = 0; r < _mesh.regions().size(); r++) {
-		if (_mesh.regions()[r].settings.isSet(Property::HEAT_FLOW)) {
-			_mesh.regions()[r].computeArea(_mesh.coordinates());
+		for (size_t i = 0; i < _mesh.regions()[r].settings.size(); i++) {
+			if (_mesh.regions()[r].settings[i].count(Property::HEAT_FLOW)) {
+				_mesh.regions()[r].computeArea(_mesh.coordinates());
+				break;
+			}
 		}
 	}
 
@@ -511,14 +520,15 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 	};
 
 
+	size_t step = 0;
 	for (size_t r = 0; r < _mesh.regions().size(); r++) {
-		if (_mesh.regions()[r].settings.isSet(Property::HEAT_FLUX)) {
+		if (step < _mesh.regions()[r].settings.size() && _mesh.regions()[r].settings[step].count(Property::HEAT_FLUX)) {
 			processRegion(_mesh.regions()[r].elements);
 		}
-		if (_mesh.regions()[r].settings.isSet(Property::HEAT_FLOW)) {
+		if (step < _mesh.regions()[r].settings.size() && _mesh.regions()[r].settings[step].count(Property::HEAT_FLOW)) {
 			processRegion(_mesh.regions()[r].elements, false, _mesh.regions()[r].area);
 		}
-		if (_mesh.regions()[r].settings.isSet(Property::EXTERNAL_TEMPERATURE)) {
+		if (step < _mesh.regions()[r].settings.size() && _mesh.regions()[r].settings[step].count(Property::EXTERNAL_TEMPERATURE)) {
 			processRegion(_mesh.regions()[r].elements, true);
 		}
 	}

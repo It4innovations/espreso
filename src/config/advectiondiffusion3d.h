@@ -79,15 +79,17 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
-	SUBMAP(std::string, std::string, heat_flux                , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, heat_flow                , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBVECTORMAP(std::string, std::string, heat_flux, "Heat flux", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
+	SUBVECTORMAP(std::string, std::string, heat_flow, "Heat flow", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTOR(AdvectionDiffusionConvection, convection, "Region with convective heat flux", "<REGION>", "Convective parameters.");
+	SUBVECTORVECTOR(AdvectionDiffusionConvection, convection, "Region with convective heat flux", "<LOAD_STEPS>", "Convective parameters.");
 
 	SUBMAP(std::string, std::string, initial_temperature , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, temperature         , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, heat_source         , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, translation_motions , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+
+	SUBVECTORMAP(std::string, std::string, temperature        , "Temperature"       , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
+	SUBVECTORMAP(std::string, std::string, heat_source        , "Heat source"       , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
+	SUBVECTORMAP(std::string, std::string, translation_motions, "Translation motion", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
+	SUBVECTORMAP(std::string, std::string, thickness          , "Thicness"          , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 
 	SUBVECTOR(AdvectionDiffusion3DMaterial, materials, "Vector of materials.", "1", "Description of material '1'");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
