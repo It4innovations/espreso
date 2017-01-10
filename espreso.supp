@@ -118,3 +118,44 @@
    fun:__kmp_get_global_thread_id_reg
    ...
 }
+
+{
+   PMPI leak
+   Memcheck:Leak
+   ...
+   fun:PMPI_*
+   ...
+}
+
+{
+   MKL load lib
+   Memcheck:Leak
+   ...
+   fun:MKL_Load_Lib
+   ...
+}
+
+{
+   __kmp_cleanup
+   Memcheck:Leak
+   ...
+   fun:__kmp_cleanup
+   ...
+}
+
+{
+   start threads
+   Memcheck:Leak
+   ...
+   fun:start_thread
+   ...
+}
+
+{
+   sse2 strdup
+   Memcheck:Leak
+   ...
+   fun:__intel_sse2_strdup
+   ...
+}
+
