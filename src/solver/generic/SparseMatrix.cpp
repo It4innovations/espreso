@@ -4069,6 +4069,9 @@ if (defect_K_in == 0){
       norm_KR_d_pow_2_approx = 0;
       defect_d = 0;
 
+      delete [] W;
+	  delete [] Z;
+
       return; 
 }
 
@@ -5136,6 +5139,11 @@ if (defect_K_in == 0){
 
       norm_KR_d_pow_2_approx = 0;
       defect_d = 0;
+
+      delete [] S_S ;
+	  delete [] U_S ;
+	  delete [] Vt_S;
+	  delete [] superb;
 
 
       return; 
