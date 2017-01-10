@@ -76,28 +76,30 @@ ADVECTION_DIFFUSION_2D {
   STABILIZATION CAU;
   SIGMA           0;
 
-  THICKNESS {
-    N_ALL 1;
-  }
-
   TEMPERATURE {
-    TOP1   0;
-    TOP2   y - 0.6;
-    TOP3   18 * (y - 0.65) + 0.05;
-    TOP4   (y - 0.7) + 0.95;
-    TOP5   1;
-    RIGHT  1;
+    1 {
+     TOP1   0;
+     TOP2   y - 0.6;
+     TOP3   18 * (y - 0.65) + 0.05;
+     TOP4   (y - 0.7) + 0.95;
+     TOP5   1;
+     RIGHT  1;
 
-    LEFT   0;
-    BOTTOM 0;
+     LEFT   0;
+     BOTTOM 0;
+    }
   }
 
   HEAT_SOURCE {
-    ALL_EL    0;
+    1 {
+      ALL_EL    0;
+    }
   }
 
   TRANSLATION_MOTIONS {
-    ALL_EL  X y, Y -x;
+    1 {
+      ALL_EL  X y, Y -x;
+    }
   }
 
   MATERIALS {

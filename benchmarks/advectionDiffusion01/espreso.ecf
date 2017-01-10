@@ -70,23 +70,25 @@ ADVECTION_DIFFUSION_2D {
   STABILIZATION CAU;
   SIGMA           0;
 
-  THICKNESS {
-    N_ALL 1;
-  }
-
   TEMPERATURE {
-    LEFT   1;
-    TOP    1;
-    BOTTOM 0;
-    RIGHT  0;
+    1 {
+      LEFT   1;
+      TOP    1;
+      BOTTOM 0;
+      RIGHT  0;
+    }
   }
 
   HEAT_SOURCE {
-    ALL_EL       1;
+    1 {
+      ALL_EL       1;
+    }
   }
 
   TRANSLATION_MOTIONS {
-    ALL_EL  X 0.5, Y 0.5;
+    1 {
+      ALL_EL  X 0.5, Y 0.5;
+    }
   }
 
   MATERIALS {
