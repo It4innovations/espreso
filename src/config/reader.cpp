@@ -70,7 +70,7 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 	// read the rest parameters
 	size_t helpVerboseLevel = 0;
 
-	std::string confFile;
+	std::string confFile = "espreso.ecf";
 	if (StringCompare::caseSensitiveSuffix(std::string(*argv[0]), "espreso")) {
 		confFile = "espreso.ecf";
 	}
