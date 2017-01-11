@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_SETTINGS_PROPERTY_H_
 #define SRC_MESH_SETTINGS_PROPERTY_H_
 
+#include <sstream>
+
 namespace espreso {
 
 enum class Property : int {

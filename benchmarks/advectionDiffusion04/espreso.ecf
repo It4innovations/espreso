@@ -46,7 +46,6 @@ GENERATOR {
         TOP    "<0, 0> (0, 1) <0, 0>";
 
         BOTTOM "<1, 1> <0, 1> <0, 0>";
-        N_ALL  ALL;
     }
 
     EDGES {
@@ -87,14 +86,14 @@ ADVECTION_DIFFUSION_2D {
     }
   }
 
-  CONVECTION {
-    1 {
-      RIGHT {
-        EXTERNAL_TEMPERATURE      2;
-        HEAT_TRANSFER_COEFFICIENT 5;
-      }
-    }
-  }
+#  CONVECTION {
+#    1 {
+#      RIGHT {
+#        EXTERNAL_TEMPERATURE      2;
+#        HEAT_TRANSFER_COEFFICIENT 5;
+#      }
+#    }
+#  }
 
   HEAT_FLOW {
     1 {

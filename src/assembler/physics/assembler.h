@@ -12,10 +12,6 @@
 namespace espreso {
 
 struct Physics {
-
-	double sumNodeProperty(Property property, eslocal node, size_t step, double defaultValue) const;
-	double getNodeProperty(Property property, eslocal node, size_t step, double defaultValue) const;
-
 	virtual bool singular() const =0;
 
 	virtual void prepareMeshStructures() =0;

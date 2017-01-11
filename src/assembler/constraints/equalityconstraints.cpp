@@ -3,8 +3,38 @@
 
 using namespace espreso;
 
+static std::vector<std::vector<Region*> > getRegionsWithDOFs(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &DOFs)
+{
+	std::vector<std::vector<Region*> > result(DOFs.size());
+	for (size_t r = 0; r < regions.size(); r++) {
+		Region* region = regions[r];
+		for (size_t dof = 0; dof < DOFs.size(); dof++) {
+			if (loadStep < region->settings.size() && region->settings[loadStep].count(DOFs[dof])) {
+				result[dof].push_back(region);
+			}
+		}
+	}
+	for (size_t dof = 0; dof < DOFs.size(); dof++) {
+		std::sort(result[dof].begin(), result[dof].end());
+	}
+	return result;
+}
+
+
+
+static bool commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2) {
+	for (size_t i = 0, j = 0; i < v1.size() && j < v2.size(); v1[i] < v2[j] ? i++ : j++) {
+		if (v1[i] == v2[j]) {
+			return true;
+		}
+	}
+	return false;
+};
+
 void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
+	size_t loadStep = 0;
+
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
@@ -12,17 +42,19 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	std::vector<std::vector<std::vector<esglobal> > > dirichlet(constraints._mesh.parts(), std::vector<std::vector<esglobal> >(threads));
 	std::vector<std::vector<std::vector<double> > > dirichletValues(constraints._mesh.parts(), std::vector<std::vector<double> >(threads));
 
+	std::vector<std::vector<Region*> > fixedRegions = getRegionsWithDOFs(constraints._mesh.regions(), loadStep, DOFs);
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
-				if (nodes[i]->settings().isSet(DOFs[dof])) {
+				if (commonRegion(fixedRegions[dof], nodes[i]->regions())) {
 					if (!constraints._configuration.redundant_lagrange && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
-					double value = nodes[i]->settings(DOFs[dof]).back()->evaluate(i);
+					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (indices[d * DOFs.size() + dof] != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + IJVMatrixIndexing);
@@ -36,7 +68,8 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 			}
 
 		}
-	}
+}
+
 
 	std::vector<size_t> dirichletSizes(constraints._mesh.parts());
 	#pragma omp parallel for
@@ -105,6 +138,8 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 
 std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
+	size_t loadStep = 0;
+
 	std::vector<esglobal> lambdasID(elements.size() * DOFs.size(), -1);
 
 	auto n2i = [ & ] (size_t neighbour) {
@@ -119,6 +154,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	std::vector<std::vector<std::vector<esglobal> > > sLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<std::pair<esglobal,esglobal> > >(threads));
 
+	std::vector<std::vector<Region*> > skippedRegions = getRegionsWithDOFs(constraints._mesh.regions(), loadStep, DOFs);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -127,7 +163,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
-				if (n > 1 && (!constraints._configuration.redundant_lagrange || !elements[e]->settings().isSet(DOFs[dof]))) {
+				if (n > 1 && (!constraints._configuration.redundant_lagrange || !commonRegion(skippedRegions[dof], elements[e]->regions()))) {
 					if (elements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
 						if (constraints._configuration.redundant_lagrange) {
 							lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;
@@ -191,7 +227,6 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 		std::sort(rLambdas[n][0].begin(), rLambdas[n][0].end());
 		rBuffer[n].resize(rLambdas[n][0].size());
 	}
-
 
 	std::vector<MPI_Request> req(constraints._mesh.neighbours().size());
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
@@ -445,6 +480,8 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 
 void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
+	size_t loadStep = 0;
+
 	std::vector<int> rows;
 	std::vector<int> columns;
 	std::vector<double> values;
@@ -455,22 +492,24 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 	std::vector<Point_3D> slaveCoordinates;
 	std::vector<int> nodes;
 
-	for (size_t i = 0; i < elements.size(); i++) {
-		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
-			if (environment->MPIrank) {
-				masterElements.push_back(std::vector<int>());
-				for (size_t n = 0; n < elements[i]->nodes(); n++) {
-					masterElements.back().push_back(elements[i]->node(n));
-					nodes.push_back(elements[i]->node(n));
-				}
-			} else {
-				slaveElements.push_back(std::vector<int>());
-				for (size_t n = 0; n < elements[i]->nodes(); n++) {
-					slaveElements.back().push_back(elements[i]->node(n));
-					nodes.push_back(elements[i]->node(n));
-				}
-			}
+	for (size_t r = 0; r < constraints._mesh.regions().size(); r++) {
+		if (loadStep < constraints._mesh.regions()[r]->settings.size() && constraints._mesh.regions()[r]->settings[loadStep].count(Property::NONMATCHING_ELEMENT)) {
+			for (size_t i = 0; i < elements.size(); i++) {
+					if (environment->MPIrank) {
+						masterElements.push_back(std::vector<int>());
+						for (size_t n = 0; n < elements[i]->nodes(); n++) {
+							masterElements.back().push_back(elements[i]->node(n));
+							nodes.push_back(elements[i]->node(n));
+						}
+					} else {
+						slaveElements.push_back(std::vector<int>());
+						for (size_t n = 0; n < elements[i]->nodes(); n++) {
+							slaveElements.back().push_back(elements[i]->node(n));
+							nodes.push_back(elements[i]->node(n));
+						}
+					}
 
+			}
 		}
 	}
 
@@ -548,15 +587,11 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 
 void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
-	// TODO: improve!
-	size_t cc = 0;
-	for (size_t i = 0; i < elements.size(); i++) {
-		if (elements[i]->settings().isSet(Property::NONMATCHING_ELEMENT)) {
-			cc++;
+	size_t loadStep = 0;
+	for (size_t r = 0; r < constraints._mesh.regions().size(); r++) {
+		if (loadStep < constraints._mesh.regions()[r]->settings.size() && constraints._mesh.regions()[r]->settings[loadStep].count(Property::NONMATCHING_ELEMENT)) {
+			ESINFO(GLOBAL_ERROR) << "Gluing of non-matching grids is not supported. Link MORTAR library!";
 		}
-	}
-	if (cc) {
-		ESINFO(GLOBAL_ERROR) << "Gluing of non-matching grids is not supported. Link MORTAR library!";
 	}
 }
 

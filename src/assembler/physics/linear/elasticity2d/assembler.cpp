@@ -40,6 +40,8 @@ void LinearElasticity2D::prepareMeshStructures()
 	}
 
 	_constraints.initMatrices(matrixSize);
+
+	_mesh.removeDuplicateRegions();
 }
 
 void LinearElasticity2D::saveMeshProperties(store::Store &store)
@@ -234,21 +236,11 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		matMI(i, 0) = material->get(LinearElasticity2DMaterial::POISSON_RATIO)->evaluate(element->node(i));
 		matTE(i, 0) = material->get(LinearElasticity2DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
 		matTE(i, 1) = material->get(LinearElasticity2DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
-		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
-		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
-			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
-		} else {
-			matT(i, 0) = matInitT(i, 0);
-		}
-
-		for (size_t j = 0; j < element->settings(Property::ACCELERATION_X).size(); j++) {
-			inertia(i, 0) += element->settings(Property::ACCELERATION_X)[j]->evaluate(element->node(i));
-		}
-		for (size_t j = 0; j < element->settings(Property::ACCELERATION_Y).size(); j++) {
-			inertia(i, 1) += element->settings(Property::ACCELERATION_Y)[j]->evaluate(element->node(i));
-		}
-
-		matThickness(i, 0) = mesh.nodes()[element->node(i)]->settings(Property::THICKNESS).back()->evaluate(element->node(i));
+		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
+		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
+		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0);
+		inertia(i, 1) = element->sumProperty(Property::ACCELERATION_Y, i, 0, 0);
+		matThickness(i, 0) = element->getProperty(Property::THICKNESS, i, 0, 1);
 
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
@@ -333,8 +325,8 @@ static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 	for (size_t n = 0; n < edge->nodes(); n++) {
 		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
 		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
-		P(n, 0) = edge->settings(Property::PRESSURE).back()->evaluate(edge->node(n));
-		matThickness(n, 0) = mesh.nodes()[edge->node(n)]->settings(Property::THICKNESS).back()->evaluate(edge->node(n));
+		P(n, 0) = edge->getProperty(Property::PRESSURE, n, 0, 0);
+		matThickness(n, 0) = edge->getProperty(Property::THICKNESS, n, 0, 1);
 	}
 
 	eslocal Ksize = 2 * edge->nodes();
@@ -481,9 +473,7 @@ void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y };
 	for (size_t n = 0; n < e->nodes(); n++) {
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			if (_mesh.nodes()[e->node(n)]->settings().isSet(forces[dof])) {
-				fe[n * pointDOFs.size() + dof] = _mesh.nodes()[e->node(n)]->settings(forces[dof]).back()->evaluate(e->node(n)) / _mesh.nodes()[e->node(n)]->domains().size();
-			}
+			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof], n, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
 		}
 	}
 }
@@ -540,7 +530,7 @@ void LinearElasticity2D::composeSubdomain(size_t subdomain)
 	}
 
 	for (size_t i = 0; i < _mesh.edges().size(); i++) {
-		if (_mesh.edges()[i]->inDomain(subdomain) && _mesh.edges()[i]->settings().size()) {
+		if (_mesh.edges()[i]->inDomain(subdomain) && _mesh.edges()[i]->regions().size()) {
 			processEdge(fe, _mesh, _mesh.edges()[i]);
 
 			for (size_t nx = 0; nx < _mesh.edges()[i]->nodes(); nx++) {

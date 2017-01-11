@@ -256,7 +256,7 @@ void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector
 }
 
 template <class TElement>
-void Block<TElement>::region(const std::vector<Element*> &elements, Region &region, const BlockBorder &border, size_t dimension)
+void Block<TElement>::region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension)
 {
 	if (!border.intersect(block)) {
 		return;
@@ -304,20 +304,20 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region &regi
 		case 0:
 			forEachElement(start, end,
 			[&] (std::vector<eslocal> &indices) {
-				TElement::pickNodes(elements, region.elements, indices.data(), edge);
+				TElement::pickNodes(elements, region->elements, indices.data(), edge);
 			},
 			[&] (Triple<size_t> &offset) {
 				offset.x = offset.x < minOffset.x ? minOffset.x : maxOffset.x < offset.x ? maxOffset.x : offset.x;
 				offset.y = offset.y < minOffset.y ? minOffset.y : maxOffset.y < offset.y ? maxOffset.y : offset.y;
 				offset.z = offset.z < minOffset.z ? minOffset.z : maxOffset.z < offset.z ? maxOffset.z : offset.z;
 			});
-			std::sort(region.elements.begin(), region.elements.end());
-			Esutils::removeDuplicity(region.elements);
+			std::sort(region->elements.begin(), region->elements.end());
+			Esutils::removeDuplicity(region->elements);
 			break;
 		case 1:
 			forEachElement(start, end,
 			[&] (std::vector<eslocal> &indices) {
-				TElement::addEdges(region.elements, indices.data(), edge);
+				TElement::addEdges(region->elements, indices.data(), edge);
 			});
 			break;
 		default:
@@ -331,15 +331,15 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region &regi
 		case 0:
 			forEachElement(start, end,
 			[&] (std::vector<eslocal> &indices) {
-				TElement::pickNodes(elements, region.elements, indices.data(), face);
+				TElement::pickNodes(elements, region->elements, indices.data(), face);
 			},
 			[&] (Triple<size_t> &offset) {
 				offset.x = offset.x < minOffset.x ? minOffset.x : maxOffset.x < offset.x ? maxOffset.x : offset.x;
 				offset.y = offset.y < minOffset.y ? minOffset.y : maxOffset.y < offset.y ? maxOffset.y : offset.y;
 				offset.z = offset.z < minOffset.z ? minOffset.z : maxOffset.z < offset.z ? maxOffset.z : offset.z;
 			});
-			std::sort(region.elements.begin(), region.elements.end());
-			Esutils::removeDuplicity(region.elements);
+			std::sort(region->elements.begin(), region->elements.end());
+			Esutils::removeDuplicity(region->elements);
 			break;
 		case 1:
 			ESINFO(GLOBAL_ERROR) << "Implement selection of edges on face";
@@ -347,7 +347,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region &regi
 		case 2:
 			forEachElement(start, end,
 			[&] (std::vector<eslocal> &indices) {
-				TElement::addFaces(region.elements, indices.data(), face);
+				TElement::addFaces(region->elements, indices.data(), face);
 			});
 			break;
 		default:

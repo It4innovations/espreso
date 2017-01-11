@@ -63,7 +63,7 @@ void AnsysWorkbench::materials(std::vector<Material*> &materials)
 
 void AnsysWorkbench::regions(
 			std::vector<Evaluator*> &evaluators,
-			std::vector<Region> &regions,
+			std::vector<Region*> &regions,
 			std::vector<Element*> &elements,
 			std::vector<Element*> &faces,
 			std::vector<Element*> &edges,
@@ -78,19 +78,19 @@ void AnsysWorkbench::regions(
 			}
 			break;
 		case WorkbenchCommands::CMBLOCK:
-			_parser.cmblock(elements, faces, edges, nodes);
+			_parser.cmblock(elements, regions, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::DISPLACEMENT:
-			_parser.displacement(evaluators, elements, faces, edges, nodes);
+			_parser.displacement(evaluators, regions, elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::FORCE:
-			_parser.force(evaluators, elements, faces, edges, nodes);
+			_parser.force(evaluators, regions, elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::OBSTACLE:
-			_parser.obstacle(evaluators, elements, faces, edges, nodes);
+			_parser.obstacle(evaluators, regions, elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::EBLOCK:
-			_parser.eblock(elements, faces, edges, nodes);
+			_parser.eblock(elements, regions, faces, edges, nodes);
 			break;
 		default:
 			return;

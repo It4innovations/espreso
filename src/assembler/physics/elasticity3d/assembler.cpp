@@ -65,6 +65,7 @@ void Elasticity3D::prepareMeshStructures()
 	_mesh.loadProperty(_configuration.initial_temperature.values, { }              , { Property::INITIAL_TEMPERATURE });
 
 	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
+	_mesh.removeDuplicateRegions();
 }
 
 void Elasticity3D::saveMeshProperties(store::Store &store)
@@ -106,7 +107,7 @@ void Elasticity3D::assembleB1()
 
 	for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
 		if (_mesh.evaluators()[i]->property() == Property::OBSTACLE) {
-			InequalityConstraints::insertLowerBoundToB1(_constraints, _mesh.nodes(), pointDOFs, { Property::OBSTACLE });
+			InequalityConstraints::insertLowerBoundToB1(_constraints, pointDOFs, { Property::OBSTACLE });
 		}
 	}
 }
@@ -304,22 +305,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		matTE(i, 1) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
 		matTE(i, 2) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
 
-		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
-		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
-			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
-		} else {
-			matT(i, 0) = matInitT(i, 0);
-		}
+		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
+		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
 
-		for (size_t j = 0; j < element->settings(Property::ACCELERATION_X).size(); j++) {
-			inertia(i, 0) += element->settings(Property::ACCELERATION_X)[j]->evaluate(element->node(i));
-		}
-		for (size_t j = 0; j < element->settings(Property::ACCELERATION_Y).size(); j++) {
-			inertia(i, 1) += element->settings(Property::ACCELERATION_Y)[j]->evaluate(element->node(i));
-		}
-		for (size_t j = 0; j < element->settings(Property::ACCELERATION_Z).size(); j++) {
-			inertia(i, 2) += element->settings(Property::ACCELERATION_Z)[j]->evaluate(element->node(i));
-		}
+		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0);
+		inertia(i, 1) = element->sumProperty(Property::ACCELERATION_Y, i, 0, 0);
+		inertia(i, 2) = element->sumProperty(Property::ACCELERATION_Z, i, 0, 0);
 
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
@@ -385,7 +376,7 @@ static void processFace(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 		coordinates(n, 1) = mesh.coordinates()[face->node(n)].y;
 		coordinates(n, 2) = mesh.coordinates()[face->node(n)].z;
 
-		P(n, 0) = face->settings(Property::PRESSURE).back()->evaluate(face->node(n));
+		P(n, 0) = face->getProperty(Property::PRESSURE, n, 0, 0);
 	}
 
 	eslocal Ksize = 3 * face->nodes();
@@ -550,9 +541,7 @@ void Elasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, st
 	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z };
 	for (size_t n = 0; n < e->nodes(); n++) {
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			if (_mesh.nodes()[e->node(n)]->settings().isSet(forces[dof])) {
-				fe[n * pointDOFs.size() + dof] = _mesh.nodes()[e->node(n)]->settings(forces[dof]).back()->evaluate(e->node(n)) / _mesh.nodes()[e->node(n)]->domains().size();
-			}
+			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof], n, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
 		}
 	}
 }
@@ -610,7 +599,7 @@ void Elasticity3D::composeSubdomain(size_t subdomain)
 	}
 
 	for (size_t i = 0; i < _mesh.faces().size(); i++) {
-		if (_mesh.faces()[i]->inDomain(subdomain) && _mesh.faces()[i]->settings().size()) {
+		if (_mesh.faces()[i]->inDomain(subdomain) && _mesh.faces()[i]->regions().size()) {
 			processFace(fe, _mesh, _mesh.faces()[i]);
 
 			for (size_t nx = 0; nx < _mesh.faces()[i]->nodes(); nx++) {
@@ -627,9 +616,7 @@ void Elasticity3D::composeSubdomain(size_t subdomain)
 	for (size_t n = 0; n < _mesh.coordinates().localSize(subdomain); n++) {
 		Element *node = _mesh.nodes()[_mesh.coordinates().clusterIndex(n, subdomain)];
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			if (node->settings().isSet(forces[dof])) {
-				f[subdomain][node->DOFIndex(subdomain, dof)] += node->settings(forces[dof]).back()->evaluate(node->node(0)) / node->numberOfGlobalDomainsWithDOF(dof);
-			}
+			f[subdomain][node->DOFIndex(subdomain, dof)] += node->sumProperty(forces[dof], 0, 0, 0) / node->numberOfGlobalDomainsWithDOF(dof);
 		}
 	}
 
@@ -677,12 +664,8 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 		matTE(i, 1) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
 		matTE(i, 2) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
 
-		matInitT(i, 0) = element->settings(Property::INITIAL_TEMPERATURE).back()->evaluate(element->node(i));
-		if (mesh.nodes()[element->node(i)]->settings().isSet(Property::TEMPERATURE)) {
-			matT(i, 0) =  mesh.nodes()[element->node(i)]->settings(Property::TEMPERATURE).back()->evaluate(element->node(i));
-		} else {
-			matT(i, 0) = matInitT(i, 0);
-		}
+		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
+		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
 
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;

@@ -8,7 +8,7 @@ namespace espreso {
 
 struct InequalityConstraints
 {
-	static void insertLowerBoundToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &eDOFs, const std::vector<Property> &boundDOFs);
+	static void insertLowerBoundToB1(Constraints &constraints, const std::vector<Property> &eDOFs, const std::vector<Property> &boundDOFs);
 };
 
 }

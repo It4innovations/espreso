@@ -100,43 +100,6 @@ void Esdata::elements(const Mesh &mesh)
 
 void Esdata::regions(const Mesh &mesh)
 {
-	auto computeIntervals = [] (const std::vector<espreso::Element*> &elements, eslocal p) {
-		std::vector<size_t> intervals;
-		if (!elements.size()) {
-			return intervals;
-		}
-
-		if (std::find(elements[0]->domains().begin(), elements[0]->domains().end(), p) != elements[0]->domains().end()) {
-			intervals.push_back(0);
-		}
-		for (size_t i = 1; i < elements.size(); i++) {
-			if (elements[i - 1]->domains() != elements[i]->domains()) {
-				if (std::find(elements[i]->domains().begin(), elements[i]->domains().end(), p) != elements[i]->domains().end()) {
-					if (intervals.size() % 2 == 0) {
-						intervals.push_back(i);
-					}
-				} else {
-					if (intervals.size() % 2 == 1) {
-						intervals.push_back(i);
-					}
-				}
-			}
-		}
-		if (intervals.size() % 2 == 1) {
-			intervals.push_back(elements.size());
-		}
-		return intervals;
-	};
-
-	auto intervalsSize = [] (const std::vector<size_t> &intervals) {
-		size_t size = 0;
-		for (size_t i = 0; i < intervals.size(); i += 2) {
-			size += intervals[2 * i + 1] - intervals[2 * i];
-		}
-		return size;
-	};
-
-
 	#pragma omp parallel for
 	for  (size_t p = 0; p < mesh.parts(); p++) {
 		std::ofstream os;
@@ -146,117 +109,17 @@ void Esdata::regions(const Mesh &mesh)
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		eslocal size;
-		std::vector<Element*> faces;
-		std::vector<Element*> edges;
-		for (size_t i = 0; i < mesh.faces().size(); i++) {
-			if (mesh.faces()[i]->settings().isSet(Property::NAMED_REGION)) {
-				faces.push_back(mesh.faces()[i]);
-			}
-		}
-		for (size_t i = 0; i < mesh.edges().size(); i++) {
-			if (mesh.edges()[i]->settings().isSet(Property::NAMED_REGION)) {
-				edges.push_back(mesh.edges()[i]);
-			}
-		}
-
-		std::sort(faces.begin(), faces.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
-		std::sort(edges.begin(), edges.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
-
-		// faces
-		std::vector<size_t> fIntervals = computeIntervals(faces, p);
-		eslocal fSize = intervalsSize(fIntervals);
-		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
-		for (size_t i = 0; i < fIntervals.size(); i += 2) {
-			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
-				faces[f]->store(os, _mesh.coordinates(), p);
-			}
-		}
-
-		// edges
-		std::vector<size_t> eIntervals = computeIntervals(edges, p);
-		eslocal eSize = intervalsSize(eIntervals);
-		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
-		for (size_t i = 0; i < eIntervals.size(); i += 2) {
-			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
-				edges[e]->store(os, _mesh.coordinates(), p);
-			}
-		}
-
 		// regions
 		size = _mesh.regions().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (size_t i = 0; i < _mesh.regions().size(); i++) {
-			eslocal length = _mesh.regions()[i].name.size();
+			eslocal length = _mesh.regions()[i]->name.size();
 			os.write(reinterpret_cast<const char *>(&length), sizeof(eslocal));
-			os.write(_mesh.regions()[i].name.c_str(), _mesh.regions()[i].name.size());
+			os.write(_mesh.regions()[i]->name.c_str(), _mesh.regions()[i]->name.size());
 		}
-
-		// elements
-		const std::vector<eslocal> &parts = mesh.getPartition();
-		const std::vector<Element*> &elements = mesh.elements();
-		size = parts[p + 1] - parts[p];
-		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
-			if (elements[e]->settings().isSet(Property::NAMED_REGION)) {
-				size = elements[e]->settings(Property::NAMED_REGION).size();
-				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-				for (size_t r = 0; r < elements[e]->settings(Property::NAMED_REGION).size(); r++) {
-					eslocal region = elements[e]->settings(Property::NAMED_REGION)[r]->evaluate(0);
-					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
-				}
-			} else {
-				eslocal region = 0;
-				os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
-			}
-
-		}
-
-		// faces
-		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
-		for (size_t i = 0; i < fIntervals.size(); i += 2) {
-			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
-				size = faces[f]->settings(Property::NAMED_REGION).size();
-				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-				for (size_t r = 0; r < faces[f]->settings(Property::NAMED_REGION).size(); r++) {
-					eslocal region = faces[f]->settings(Property::NAMED_REGION)[r]->evaluate(0);
-					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
-				}
-			}
-		}
-
-		// edges
-		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
-		for (size_t i = 0; i < eIntervals.size(); i += 2) {
-			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
-				size = edges[e]->settings(Property::NAMED_REGION).size();
-				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-				for (size_t r = 0; r < edges[e]->settings(Property::NAMED_REGION).size(); r++) {
-					eslocal region = edges[e]->settings(Property::NAMED_REGION)[r]->evaluate(0);
-					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
-				}
-			}
-		}
-
-		// nodes
-		size = mesh.coordinates().localSize(p);
-		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
-			const Element* node = mesh.nodes()[mesh.coordinates().clusterIndex(i, p)];
-			if (node->settings().isSet(Property::NAMED_REGION)) {
-				size = node->settings(Property::NAMED_REGION).size();
-				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-				for (size_t r = 0; r < node->settings(Property::NAMED_REGION).size(); r++) {
-					eslocal region = node->settings(Property::NAMED_REGION)[r]->evaluate(0);
-					os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
-				}
-			} else {
-				eslocal region = 0;
-				os.write(reinterpret_cast<const char*>(&region), sizeof(eslocal));
-			}
-		}
-
 		os.close();
 	}
+	ESINFO(GLOBAL_ERROR) << "Implement store regions";
 }
 
 void Esdata::boundaries(const Mesh &mesh)

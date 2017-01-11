@@ -208,50 +208,50 @@ void Grid::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours
 
 void Grid::regions(
 		std::vector<Evaluator*> &evaluators,
-		std::vector<Region> &regions,
+		std::vector<Region*> &regions,
 		std::vector<Element*> &elements,
 		std::vector<Element*> &faces,
 		std::vector<Element*> &edges,
 		std::vector<Element*> &nodes)
 {
 	for (auto it = _grid.nodes.values.begin(); it != _grid.nodes.values.end(); ++it) {
-		regions.push_back(Region());
-		regions.back().name = it->first;
+		regions.push_back(new Region());
+		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
-			regions.back().elements = nodes;
+			regions.back()->elements = nodes;
 		} else {
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 0);
 		}
 	}
 	for (auto it = _grid.edges.values.begin(); it != _grid.edges.values.end(); ++it) {
-		regions.push_back(Region());
-		regions.back().name = it->first;
+		regions.push_back(new Region());
+		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all edges.";
 		} else {
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 1);
-			edges.insert(edges.end(), regions.back().elements.begin(), regions.back().elements.end());
+			edges.insert(edges.end(), regions.back()->elements.begin(), regions.back()->elements.end());
 		}
 	}
 	for (auto it = _grid.faces.values.begin(); it != _grid.faces.values.end(); ++it) {
-		regions.push_back(Region());
-		regions.back().name = it->first;
+		regions.push_back(new Region());
+		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all faces.";
 		} else {
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 2);
-			faces.insert(faces.end(), regions.back().elements.begin(), regions.back().elements.end());
+			faces.insert(faces.end(), regions.back()->elements.begin(), regions.back()->elements.end());
 		}
 	}
 
 	for (auto it = _grid.elements.values.begin(); it != _grid.elements.values.end(); ++it) {
-		regions.push_back(Region());
-		regions.back().name = it->first;
+		regions.push_back(new Region());
+		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
-			regions.back().elements = elements;
+			regions.back()->elements = elements;
 		} else {
 			BlockBorder border(it->second);
 			_block->region(elements, regions.back(), border, 3);

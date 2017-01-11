@@ -6,11 +6,11 @@
 
 #include "esbasis.h"
 #include "../settings/setting.h"
+#include "../structures/region.h"
 
 namespace espreso {
 
 class Mesh;
-class Region;
 
 class Element
 {
@@ -122,12 +122,6 @@ public:
 	std::vector<Region*>& regions() { return _regions; }
 	const std::vector<Region*>& regions() const { return _regions; }
 
-	Settings& settings() { return _settings; }
-	const Settings& settings() const { return _settings; }
-
-	void addSettings(Property property, Evaluator* evaluator) { return _settings[property].push_back(evaluator); }
-	const std::vector<Evaluator*>& settings(Property property) const { return _settings[property]; }
-
 	std::vector<Element*>& parentElements() { return _parentElements; }
 	const std::vector<Element*>& parentElements() const { return _parentElements; }
 
@@ -220,6 +214,50 @@ public:
 		}
 	}
 
+	bool hasProperty(Property property, size_t step) const
+	{
+		for (size_t i = 0; i < _regions.size(); i++) {
+			if (step < _regions[i]->settings.size() && _regions[i]->settings[step].count(property)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	double sumProperty(Property property, eslocal node, size_t step, double defaultValue) const
+	{
+		double result = 0;
+		bool set = false;
+		for (size_t i = 0; i < _regions.size(); i++) {
+			if (step < _regions[i]->settings.size()) {
+				auto it = _regions[i]->settings[step].find(property);
+				if (it != _regions[i]->settings[step].end()) {
+					for (size_t j = 0; j < it->second.size(); j++) {
+						result += it->second[j]->evaluate(this->node(node));
+					}
+					set = true;
+				}
+			}
+		}
+
+		return set ? result : defaultValue;
+	}
+
+	double getProperty(Property property, eslocal node, size_t step, double defaultValue) const
+	{
+		for (size_t i = 0; i < _regions.size(); i++) {
+			if (step < _regions[i]->settings.size()) {
+				auto it = _regions[i]->settings[step].find(property);
+				if (it == _regions[i]->settings[step].end()) {
+					continue;
+				}
+				return it->second.back()->evaluate(this->node(node));
+			}
+		}
+
+		return defaultValue;
+	}
+
 protected:
 	virtual Element* copy() const =0;
 	virtual std::vector<eslocal> getNeighbours(size_t nodeIndex) const = 0;
@@ -254,7 +292,6 @@ protected:
 	}
 
 	std::vector<Region*> _regions;
-	Settings _settings;
 	std::vector<Element*> _parentElements;
 	std::vector<Element*> _parentFaces;
 	std::vector<Element*> _parentEdges;

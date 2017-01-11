@@ -5,42 +5,6 @@
 
 namespace espreso {
 
-void Region::computeArea(const Coordinates &coordinates) const
-{
-	double A = 0, B;
-	for (size_t e = 0; e < elements.size(); e++) {
-
-		DenseMatrix coords(elements[e]->nodes(), 3), dND(1, 3);
-
-		const std::vector<DenseMatrix> &dN = elements[e]->dN();
-		const std::vector<double> &weighFactor = elements[e]->weighFactor();
-
-		for (size_t n = 0; n < elements[e]->nodes(); n++) {
-			coords(n, 0) = coordinates[elements[e]->node(n)].x;
-			coords(n, 1) = coordinates[elements[e]->node(n)].y;
-			coords(n, 2) = coordinates[elements[e]->node(n)].z;
-		}
-
-		if (elements[e]->type() == Element::Type::LINE) {
-			for (size_t gp = 0; gp < elements[e]->gaussePoints(); gp++) {
-				dND.multiply(dN[gp], coords);
-				A += dND.norm() * weighFactor[gp];
-			}
-		}
-		if (elements[e]->type() == Element::Type::PLANE) {
-			for (size_t gp = 0; gp < elements[e]->gaussePoints(); gp++) {
-				dND.multiply(dN[gp], coords);
-				Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
-				Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
-				Point va = Point::cross(v1, v2);
-				A += va.norm() * weighFactor[gp];
-			}
-		}
-	}
-
-	MPI_Allreduce(&A, &area, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-}
-
 Mesh::Mesh():_elements(0)
 {
 	_partPtrs.resize(2);
@@ -409,6 +373,10 @@ Mesh::~Mesh()
 		delete _nodes[i];
 	}
 
+	for (size_t i = 0; i < _regions.size(); i++) {
+		delete _regions[i];
+	}
+
 	for (size_t i = 0; i < _evaluators.size(); i++) {
 		delete _evaluators[i];
 	}
@@ -562,16 +530,6 @@ void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 	computeCornersOnEdges(number, onVertices, onEdges);
 }
 
-void Mesh::markRegions()
-{
-	for (size_t r = 0; r < _regions.size(); r++) {
-		_evaluators.push_back(new ConstEvaluator(r, Property::NAMED_REGION));
-		for (size_t i = 0; i < _regions[r].elements.size(); i++) {
-			_regions[r].elements[i]->addSettings(Property::NAMED_REGION, _evaluators.back());
-		}
-	}
-}
-
 static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
 {
 	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) {
@@ -586,22 +544,21 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 		return "";
 	};
 
-	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator, Region &region) {
-		size_t threads = environment->CILK_NWORKERS;
+	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator, Region *region) {
+		size_t threads = environment->OMP_NUM_THREADS;
 		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-				elements[n]->addSettings(property, evaluator);
-				elements[n]->regions().push_back(&region);
+				elements[n]->regions().push_back(region);
 			}
 		}
 	};
 
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
-		Region &region = mesh.region(it->first);
-		region.settings.resize(loadStep + 1);
+		Region *region = mesh.region(it->first);
+		region->settings.resize(loadStep + 1);
 		std::vector<std::string> values = Parser::split(it->second, ",");
 
 		for (size_t p = 0; p < properties.size(); p++) {
@@ -617,12 +574,12 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				evaluators.push_back(new CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
 			}
 
-			if (distributeToNodes && region.elements.size() && region.elements[0]->nodes() > 1) {
-				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region.name << "'";
+			if (distributeToNodes && region->elements.size() && region->elements[0]->nodes() > 1) {
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region->name << "'";
 				std::vector<Element*> nodes;
-				for (size_t i = 0; i < region.elements.size(); i++) {
-					for (size_t n = 0; n < region.elements[i]->nodes(); n++) {
-						nodes.push_back(mesh.nodes()[region.elements[i]->node(n)]);
+				for (size_t i = 0; i < region->elements.size(); i++) {
+					for (size_t n = 0; n < region->elements[i]->nodes(); n++) {
+						nodes.push_back(mesh.nodes()[region->elements[i]->node(n)]);
 					}
 				}
 				std::sort(nodes.begin(), nodes.end());
@@ -630,10 +587,10 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 
 				distribute(nodes, properties[p], evaluators.back(), region);
 			} else {
-				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region.name << "'";
-				distribute(region.elements, properties[p], evaluators.back(), region);
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region->name << "'";
+				distribute(region->elements, properties[p], evaluators.back(), region);
 			}
-			region.settings[loadStep][properties[p]].push_back(evaluators.back());
+			region->settings[loadStep][properties[p]].push_back(evaluators.back());
 		}
 	}
 }
@@ -666,6 +623,26 @@ void Mesh::loadNodeProperty(const ConfigurationVectorMap<std::string, std::strin
 		ss >> step;
 		_loadProperty(*this, step - 1, _evaluators, it->second->values, parameters, properties, true);
 	}
+}
+
+void Mesh::removeDuplicateRegions()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	auto remove = [&] (std::vector<Element*> &elements) {
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+				std::sort(elements[i]->regions().begin(), elements[i]->regions().end());
+				Esutils::removeDuplicity(elements[i]->regions());
+			}
+		}
+	};
+
+	remove(_elements);
+	remove(_faces);
+	remove(_edges);
+	remove(_nodes);
 }
 
 template<typename MergeFunction>
@@ -738,7 +715,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 
 			for (; i < _elements[e]->edges(); i++) {
 				Element* edge = _elements[e]->edge(i);
-				if (edge->settings().size() || filter(_nodes, edge)) {
+				if (edge->regions().size() || filter(_nodes, edge)) {
 					edges[t].push_back(edge);
 				} else {
 					_elements[e]->setEdge(i, NULL);
@@ -780,7 +757,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 
 			for (; f < _elements[e]->faces(); f++) {
 				Element* face = _elements[e]->face(f);
-				if (face->settings().size() || filter(_nodes, face)) {
+				if (face->regions().size() || filter(_nodes, face)) {
 					faces[t].push_back(face);
 				} else {
 					_elements[e]->setFace(f, NULL);
@@ -911,7 +888,7 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 
 			for (size_t i = 0; i < _faces[e]->edges(); i++) {
 				Element* edge = _faces[e]->edge(i);
-				if (edge->settings().size() || filter(_nodes, edge)) {
+				if (edge->regions().size() || filter(_nodes, edge)) {
 					edges[t].push_back(edge);
 				} else {
 					_faces[e]->setEdge(i, NULL);
@@ -1056,7 +1033,7 @@ void Mesh::clearFacesWithoutSettings()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
-			if (!_faces[f]->settings().size()) {
+			if (!_faces[f]->regions().size()) {
 				for (size_t e = 0; e < _faces[f]->parentElements().size(); e++) {
 					for (size_t i = 0; i < _faces[f]->parentElements()[e]->faces(); i++) {
 						if (_faces[f]->parentElements()[e]->face(i) != NULL && *_faces[f] == *_faces[f]->parentElements()[e]->face(i)) {
@@ -1140,7 +1117,7 @@ void Mesh::clearEdgesWithoutSettings()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t f = distribution[t]; f < distribution[t + 1]; f++) {
-			if (!_edges[f]->settings().size()) {
+			if (!_edges[f]->regions().size()) {
 				for (size_t e = 0; e < _edges[f]->parentElements().size(); e++) {
 					for (size_t i = 0; i < _edges[f]->parentElements()[e]->edges(); i++) {
 						if (_edges[f]->parentElements()[e]->edge(i) != NULL && *_edges[f] == *_edges[f]->parentElements()[e]->edge(i)) {

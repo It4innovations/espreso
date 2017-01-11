@@ -53,6 +53,8 @@ void LinearElasticity3D::prepareMeshStructures()
 	}
 
 	_constraints.initMatrices(matrixSize);
+
+	_mesh.removeDuplicateRegions();
 }
 
 void LinearElasticity3D::saveMeshProperties(store::Store &store)
@@ -94,7 +96,7 @@ void LinearElasticity3D::assembleB1()
 
 	for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
 		if (_mesh.evaluators()[i]->property() == Property::OBSTACLE) {
-			InequalityConstraints::insertLowerBoundToB1(_constraints, _mesh.nodes(), pointDOFs, { Property::OBSTACLE });
+			InequalityConstraints::insertLowerBoundToB1(_constraints, pointDOFs, { Property::OBSTACLE });
 		}
 	}
 }
@@ -378,9 +380,7 @@ void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z };
 	for (size_t n = 0; n < e->nodes(); n++) {
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			if (_mesh.nodes()[e->node(n)]->settings().isSet(forces[dof])) {
-				fe[n * pointDOFs.size() + dof] = _mesh.nodes()[e->node(n)]->settings(forces[dof]).back()->evaluate(e->node(n)) / _mesh.nodes()[e->node(n)]->domains().size();
-			}
+			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof],n, 0, 0);
 		}
 	}
 }
@@ -441,9 +441,7 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 	for (size_t n = 0; n < _mesh.coordinates().localSize(subdomain); n++) {
 		Element *node = _mesh.nodes()[_mesh.coordinates().clusterIndex(n, subdomain)];
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			if (node->settings().isSet(forces[dof])) {
-				f[subdomain][node->DOFIndex(subdomain, dof)] += node->settings(forces[dof]).back()->evaluate(node->node(0)) / node->numberOfGlobalDomainsWithDOF(dof);
-			}
+			f[subdomain][node->DOFIndex(subdomain, dof)] += node->sumProperty(forces[dof], 0, 0, 0) / node->numberOfGlobalDomainsWithDOF(dof);
 		}
 	}
 

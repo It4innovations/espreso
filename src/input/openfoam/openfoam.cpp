@@ -156,7 +156,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 
 void OpenFOAM::regions(
 		std::vector<Evaluator*> &evaluators,
-		std::vector<Region> &regions,
+		std::vector<Region*> &regions,
 		std::vector<Element*> &elements,
 		std::vector<Element*> &faces,
 		std::vector<Element*> &edges,
@@ -174,8 +174,8 @@ void OpenFOAM::regions(
 		solveParseError((*it).readEntry("startFace", startFace));
 
 		if ((*it).getName().find("procBoundary") != 0) {
-			regions.push_back(Region());
-			Region *region = &(regions[regions.size() - 1]);
+			regions.push_back(new Region());
+			Region *region = regions[regions.size() - 1];
 			region->name = (*it).getName();
 			region->elements.resize(nFaces);
 			memcpy(&region->elements[0], &faces[startFace], nFaces * sizeof(Element*));
@@ -188,8 +188,8 @@ void OpenFOAM::regions(
 		solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 
 		for (auto cellZone : _cellZones) {
-			regions.push_back(Region());
-			Region *region = &(regions[regions.size() - 1]);
+			regions.push_back(new Region());
+			Region *region = regions[regions.size() - 1];
 			region->name = cellZone.getName();
 			for (auto index : cellZone.elementIndexes()) {
 				region->elements.push_back(elements[index]);
@@ -202,8 +202,8 @@ void OpenFOAM::regions(
 		std::vector<FaceZone> _faceZones;
 		solveParseError(parse(faceZonesFile.getTokenizer(), _faceZones));
 		for (auto faceZone : _faceZones) {
-			regions.push_back(Region());
-			Region *region = &(regions[regions.size() - 1]);
+			regions.push_back(new Region());
+			Region *region = regions[regions.size() - 1];
 			region->name = faceZone.getName();
 			for (auto index : faceZone.elementIndexes()) {
 				region->elements.push_back(faces[index]);
@@ -216,8 +216,8 @@ void OpenFOAM::regions(
 		std::vector<PointZone> _pointZones;
 		solveParseError(parse(pointZonesFile.getTokenizer(), _pointZones));
 		for (auto pointZone : _pointZones) {
-			regions.push_back(Region());
-			Region *region = &(regions[regions.size() - 1]);
+			regions.push_back(new Region());
+			Region *region = regions[regions.size() - 1];
 			region->name = pointZone.getName();
 			for (auto index : pointZone.elementIndexes()) {
 				region->elements.push_back(nodes[index]);

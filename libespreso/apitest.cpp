@@ -37,9 +37,9 @@ int main(int argc, char** argv)
 	std::vector<FETI4IReal> dirichletValues;
 	for (size_t n = 0; n < factory.mesh.nodes().size(); n++) {
 		for (size_t dof = 0; dof < DOFs.size(); dof++) {
-			if (factory.mesh.nodes()[n]->settings().isSet(DOFs[dof])) {
+			if (factory.mesh.nodes()[n]->hasProperty(DOFs[dof], 0)) {
 				dirichletIndices.push_back(DOFs.size() * n + dof);
-				dirichletValues.push_back(factory.mesh.nodes()[n]->settings(DOFs[dof]).back()->evaluate(n));
+				dirichletValues.push_back(factory.mesh.nodes()[n]->getProperty(DOFs[dof], n, 0, 0));
 			}
 		}
 	}

@@ -105,7 +105,7 @@ void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &fa
 
 void Esdata::regions(
 		std::vector<Evaluator*> &evaluators,
-		std::vector<Region> &regions,
+		std::vector<Region*> &regions,
 		std::vector<Element*> &elements,
 		std::vector<Element*> &faces,
 		std::vector<Element*> &edges,
@@ -127,12 +127,12 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		regions.push_back(Region());
+		regions.push_back(new Region());
 		eslocal length;
 		is.read(reinterpret_cast<char *>(&length), sizeof(eslocal));
 		char *buffer = new char[length];
 		is.read(buffer, length);
-		regions.back().name = std::string(buffer, buffer + length);
+		regions.back()->name = std::string(buffer, buffer + length);
 		delete buffer;
 	}
 
@@ -142,7 +142,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region].elements.push_back(elements[i]);
+			regions[region]->elements.push_back(elements[i]);
 		}
 	}
 
@@ -152,7 +152,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region].elements.push_back(faces[i]);
+			regions[region]->elements.push_back(faces[i]);
 		}
 	}
 
@@ -162,7 +162,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region].elements.push_back(edges[i]);
+			regions[region]->elements.push_back(edges[i]);
 		}
 	}
 
@@ -172,7 +172,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region].elements.push_back(nodes[i]);
+			regions[region]->elements.push_back(nodes[i]);
 		}
 	}
 

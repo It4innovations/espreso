@@ -56,7 +56,7 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 				size_t domain = element->domains()[0];
 				double value = 0;
 				for (size_t n = 0; n < element->nodes(); n++) {
-					value += element->settings(properties[p]).back()->evaluate(element->node(n));
+					value += element->getProperty(properties[p], n, 0, 0);
 				}
 				values[domain].push_back(value / element->nodes());
 			}
@@ -75,8 +75,8 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 			for (size_t p = 0; p < properties.size(); p++) {
 				for (size_t d = 0; d < node->domains().size(); d++) {
 					size_t domain = node->domains()[d];
-					selection[domain].push_back(node->settings().isSet(properties[p]) ? 1 : 0);
-					values[domain].push_back(node->settings(properties[p]).back()->evaluate(n));
+					selection[domain].push_back(node->hasProperty(properties[p], 0) ? 1 : 0);
+					values[domain].push_back(node->getProperty(properties[p], 0, 0, 0));
 				}
 			}
 		}
