@@ -329,12 +329,20 @@ static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > 
 	os.flush();
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<eslocal> > &values, espreso::store::Store::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::Store::ElementType eType)
 {
 	setValueHeader(_os, values, dimension, _lastData, eType);
 	_os << "SCALARS " << name << " int " << dimension << "\n";
 	_os << "LOOKUP_TABLE default\n";
-	storeData<eslocal>(_os, values, dimension);
+	storeData<int>(_os, values, dimension);
+}
+
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::Store::ElementType eType)
+{
+	setValueHeader(_os, values, dimension, _lastData, eType);
+	_os << "SCALARS " << name << " long " << dimension << "\n";
+	_os << "LOOKUP_TABLE default\n";
+	storeData<long>(_os, values, dimension);
 }
 
 void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::Store::ElementType eType)

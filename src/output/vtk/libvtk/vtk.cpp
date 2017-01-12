@@ -2,7 +2,8 @@
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 
-#include "vtkIntArray.h"
+#include "vtkTypeInt32Array.h"
+#include "vtkTypeInt64Array.h"
 #include "vtkDoubleArray.h"
 
 #include "vtkPointData.h"
@@ -237,9 +238,14 @@ static void storeData(vtkUnstructuredGrid *VTKGrid, std::vector<void*> &VTKDataA
 	VTKDataArrays.push_back(data);
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<eslocal> > &values, espreso::store::Store::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::Store::ElementType eType)
 {
-	storeData<vtkIntArray, eslocal>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
+	storeData<vtkTypeInt32Array, int>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
+}
+
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::Store::ElementType eType)
+{
+	storeData<vtkTypeInt64Array, long>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
 }
 
 void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::Store::ElementType eType)
