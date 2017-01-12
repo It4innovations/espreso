@@ -241,6 +241,8 @@ void VTK::cells(ElementType eType)
 
 void VTK::lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function<Point(const Point&, size_t, size_t, bool)> shrink)
 {
+	create(_os, _path);
+
 	size_t cSize = 0;
 	for (size_t p = 0; p < nodes.size(); p++) {
 		cSize += nodes[p].size();
