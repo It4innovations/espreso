@@ -4,6 +4,7 @@
 #include "../../assembler/instance/precomputed/instance.h"
 #include "../../assembler/physics/precomputed/singular/assembler.h"
 
+espreso::Environment espreso::DataHolder::environment;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
@@ -83,6 +84,7 @@ void FETI4ICreateStiffnessMatrix(
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
+	Reader::set(*environment);
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");
@@ -133,11 +135,11 @@ void FETI4ICreateInstance(
 		FETI4IInt* 		integer_options,
 		FETI4IReal*		real_options)
 {
-	ESPRESOInput input;
-	ESPRESOSolver solver;
+	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 
-	FETI4ISetIntegerOptions(input, solver, integer_options);
-	FETI4ISetRealOptions(solver, real_options);
+	ESPRESOInput input;
+	FETI4ISetIntegerOptions(input, DataHolder::instances.back()->configuration, integer_options);
+	FETI4ISetRealOptions(DataHolder::instances.back()->configuration, real_options);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
@@ -145,7 +147,7 @@ void FETI4ICreateInstance(
 
 	std::vector<int> neighClusters = std::vector<int>(neighbours, neighbours + neighbours_size);
 
-	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
+
 	input::API::load(
 			input,
 			DataHolder::instances.back()->mesh, matrix->offset,
@@ -154,7 +156,11 @@ void FETI4ICreateInstance(
 			neighClusters,
 			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(solver, DataHolder::instances.back()->mesh, (espreso::SparseMatrix::MatrixType)matrix->type, rhs, size);
+	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(
+			DataHolder::instances.back()->configuration,
+			DataHolder::instances.back()->mesh,
+			(espreso::SparseMatrix::MatrixType)matrix->type, rhs, size);
+
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
 

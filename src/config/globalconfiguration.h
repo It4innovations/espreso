@@ -40,8 +40,8 @@ enum class PHYSICS {
 
 struct GlobalConfiguration: public Configuration {
 
-	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(*this); }
-	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(*this); }
+	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(this->env); }
+	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(this->env); }
 
 	void print() { Reader::print(*this); }
 	void store() { Reader::store(*this); }
@@ -70,7 +70,6 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOInput       , workbench   , "Mesh description in Ansys Workbench format.");
 	SUBCONFIG(ESPRESOInput       , openfoam    , "Mesh description in OpenFOAM format.");
 	SUBCONFIG(ESPRESOInput       , esdata      , "Mesh description in ESPRESO internal binary format.");
-	SUBCONFIG(ESPRESOInput       , api         , "API description.");
 
 	SUBCONFIG(LinearElasticity2DConfiguration  , linear_elasticity_2D  , "2D Linear elasticity solver.");
 	SUBCONFIG(LinearElasticity3DConfiguration  , linear_elasticity_3D  , "3D Linear elasticity solver.");

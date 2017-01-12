@@ -62,7 +62,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
 	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
-	_mesh._regions.resize(1);
+	_mesh._regions.push_back(new Region());
 
 	_mesh._regions[0]->settings.resize(1);
 	_mesh._regions[0]->settings[0][Property::UNKNOWN].push_back(_mesh._evaluators.back());
@@ -74,6 +74,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			_mesh._DOFs[dirichletIndices[i] - _offset]->regions().push_back(_mesh._regions[0]);
 			_mesh._regions[0]->elements[i] = _mesh._DOFs[dirichletIndices[i] - _offset];
 		}
 	}

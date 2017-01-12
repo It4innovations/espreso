@@ -222,13 +222,13 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 	}
 }
 
-void Reader::set(const GlobalConfiguration &configuration)
+void Reader::set(const Environment &env)
 {
-	Test::setLevel(configuration.env.testing_level);
-	Info::setLevel(configuration.env.verbose_level, configuration.env.testing_level);
-	Measure::setLevel(configuration.env.measure_level);
-	Logging::output = configuration.env.log_dir;
-	Logging::rank = configuration.env.MPIrank;
+	Test::setLevel(env.testing_level);
+	Info::setLevel(env.verbose_level, env.testing_level);
+	Measure::setLevel(env.measure_level);
+	Logging::output = env.log_dir;
+	Logging::rank = env.MPIrank;
 }
 
 static void printConfiguration(const Configuration &configuration, size_t indent)

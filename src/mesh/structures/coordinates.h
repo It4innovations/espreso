@@ -17,10 +17,12 @@ struct Coordinates
 	friend std::ostream& operator<<(std::ostream& os, const Coordinates &c);
 
 public:
-	Coordinates(): _clusterIndex(1) { };
+	Coordinates(): _clusterSize(0), _clusterIndex(1) { };
 
 	void resize(size_t size)
 	{
+		_clusterSize = size;
+		_points.reserve(size);
 		_clusterIndex.resize(1);
 		_clusterIndex[0].resize(size);
 	}
@@ -42,6 +44,7 @@ public:
 
 	void clear()
 	{
+		_clusterSize = 0;
 		_points.clear();
 		_globalIndex.clear();
 		_clusterIndex.resize(1);
@@ -90,7 +93,7 @@ public:
 
 	size_t clusterSize() const
 	{
-		return _points.size();
+		return _clusterSize < _points.size() ? _points.size() : _clusterSize;
 	}
 
 	size_t localSize(eslocal part) const
@@ -134,6 +137,7 @@ public:
 	}
 
 // private:
+	size_t _clusterSize;
 	std::vector<Point> _points;
 
 	/** @brief Local point to cluster index. */
