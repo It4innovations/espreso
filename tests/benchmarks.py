@@ -37,7 +37,9 @@ if __name__ == '__main__':
 
     benchmarks.sort()
     for benchmark in benchmarks:
-        name = os.path.relpath(benchmark[0], path).replace('/', '_') + "_" + benchmark[1]
+        name = os.path.relpath(benchmark[0], path).replace('/', '_')
+        if benchmark[1] != "espreso":
+            name += "_" + benchmark[1]
         TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name, benchmark[0], benchmark[1] + ".test")
 
     unittest.main()
