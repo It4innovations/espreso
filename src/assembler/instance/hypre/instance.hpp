@@ -135,7 +135,7 @@ if(rank==TEST)	std::cout << "  > FILL BC\n";
 	std::vector<int> BCEid;
 	for (size_t i = 0; i < nodes.size(); i++)
 	{
-		if (nodes[i]->settings().isSet(DOFs[0]))
+		if (nodes[i]->hasProperty(DOFs[0], 0))
 		{
 			BCEqn.push_back(_mesh.coordinates().globalIndex(i));
 			BCEid.push_back(i);
@@ -163,10 +163,10 @@ if(rank==TEST)	std::cout << "  > FILL BC\n";
 			gamma[i][j] = 0.0;
 		}
 
-		if (nodes[i]->settings().isSet(Property::TEMPERATURE))
+		if (nodes[i]->hasProperty(Property::TEMPERATURE, 0))
 		{
 			const Point &p = _mesh.coordinates()[BCEid[i]];
-			gamma[i][0] = nodes[BCEid[i]]->settings(Property::TEMPERATURE).back()->evaluate(p.x, p.y, p.z);
+			gamma[i][0] = nodes[BCEid[i]]->getProperty(Property::TEMPERATURE, BCEid[i], 0, 0);
 		}
 	}
 	
