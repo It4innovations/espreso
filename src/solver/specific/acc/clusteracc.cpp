@@ -71,7 +71,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // Set process placement on Xeon Phi
     int ranks_per_node = _MPInodeSize;
     int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
-    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
         int used_core_num = 0;
         int first_core = 0;
         int last_core = 0;
@@ -129,7 +129,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     // Ratio of work done on MIC
     double MICr = 1.0;
-    if ( config::solver::LOAD_BALANCING ) {
+    if ( configuration.load_balancing ) {
         MICr = 0.1;
     }
 
@@ -202,7 +202,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         this->B1KplusPacks[i].Resize( matrixPerPack[i], dataSize );
         this->B1KplusPacks[i].setMICratio( MICr );
 
-        if ( config::solver::LOAD_BALANCING ) {
+        if ( configuration.load_balancing ) {
             this->B1KplusPacks[i].enableLoadBalancing();
         } else {
             this->B1KplusPacks[i].disableLoadBalancing();
@@ -807,7 +807,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
     // Set process placement on Xeon Phi
     int ranks_per_node = _MPInodeSize;
     int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
-    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
         int used_core_num = 0;
         int first_core = 0;
         int last_core = 0;
@@ -864,14 +864,14 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
     // Ratio of work done on MIC
     double MICr = 1.0;
-    if ( config::solver::LOAD_BALANCING ) {
+    if ( configuration.load_balancing ) {
         MICr = 0.1;
     }
 
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;
-    long micMem[config::solver::N_MICS];
-    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+    long micMem[configuration.N_MICS];
+    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
         long currentMem = 0;
 //#pragma offload target(mic:i)
 #pragma offload target(mic:target)
@@ -884,9 +884,9 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = config::solver::N_MICS;
-    eslocal matrixPerPack[config::solver::N_MICS];
-    for (eslocal i = 0 ; i < config::solver::N_MICS; ++i) {
+    eslocal maxDevNumber = configuration.N_MICS;
+    eslocal matrixPerPack[configuration.N_MICS];
+    for (eslocal i = 0 ; i < configuration.N_MICS; ++i) {
         matrixPerPack[i] = domains.size() / maxDevNumber;
     }
     for (eslocal i = 0 ; i < domains.size() % maxDevNumber; ++i) {
@@ -932,7 +932,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
         this->DirichletPacks[i].Resize( matrixPerPack[i], dataSize );
         this->DirichletPacks[i].setMICratio( MICr );
 
-        if ( config::solver::LOAD_BALANCING ) {
+        if ( configuration.load_balancing ) {
             this->DirichletPacks[i].enableLoadBalancing();
         } else {
             this->DirichletPacks[i].disableLoadBalancing();
@@ -945,7 +945,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
     }
 
 
-    for (eslocal mic = 0 ; mic < config::solver::N_MICS ; ++mic ) {
+    for (eslocal mic = 0 ; mic < configuration.N_MICS ; ++mic ) {
         this->DirichletPacks[mic].AllocateVectors( );
 //        this->DirichletPacks[mic].SetDevice( mic );
         this->DirichletPacks[mic].SetDevice( target );        
@@ -1012,7 +1012,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
             }
             K_modif.ConvertToCSRwithSort(1);
             {
-                if (config::info::PRINT_MATRICES) {
+                if (environment->print_matrices) {
                     std::ofstream osS(Logging::prepareFile(d, "K_modif"));
                     osS << K_modif;
                     osS.close();
@@ -1021,7 +1021,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
 
             // ------------------------------------------------------------------------------------------------------------------
-            bool diagonalized_K_rr = config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET;
+            bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
             //        PRECONDITIONER==NONE              - 0
             //        PRECONDITIONER==LUMPED            - 1
             //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -1040,7 +1040,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
                 // if physics.K[d] does not contain inner DOF
             } else {
 
-                if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET) {
+                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
                     SparseSolverCPU createSchur;
                     //          createSchur.msglvl=1;
                     eslocal sc_size = perm_vec.size();
@@ -1105,10 +1105,10 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
             }
 
-            if (config::info::PRINT_MATRICES) {
+            if (environment->print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "S"));
                 SparseMatrix SC =  domains[d].Prec;
-                if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET){
+                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
                     SC.ConvertDenseToCSR(1);
                 }
                 osS << SC;
@@ -1124,14 +1124,15 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
         }
     }
 
-#pragma omp parallel num_threads(config::solver::N_MICS)
+#pragma omp parallel num_threads(configuration.N_MICS)
     {
         this->DirichletPacks[omp_get_thread_num()].CopyToMIC();
     }
 
 
     // finish the blocks held on CPU
-    cilk_for (eslocal j = 0; j < hostPreconditioners.size(); ++j ) {
+	#pragma omp parallel for
+    for (size_t j = 0; j < hostPreconditioners.size(); ++j ) {
         eslocal d = hostPreconditioners.at(j);
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
         SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
@@ -1192,7 +1193,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
         }
         K_modif.ConvertToCSRwithSort(1);
         {
-            if (config::info::PRINT_MATRICES) {
+            if (environment->print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "K_modif"));
                 osS << K_modif;
                 osS.close();
@@ -1201,7 +1202,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
 
         // ------------------------------------------------------------------------------------------------------------------
-        bool diagonalized_K_rr = config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET;
+        bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
         //        PRECONDITIONER==NONE              - 0
         //        PRECONDITIONER==LUMPED            - 1
         //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
@@ -1220,7 +1221,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
             // if physics.K[d] does not contain inner DOF
         } else {
 
-            if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET) {
+            if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
                 SparseSolverCPU createSchur;
                 //          createSchur.msglvl=1;
                 eslocal sc_size = perm_vec.size();
@@ -1285,10 +1286,10 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
         }
 
-        if (config::info::PRINT_MATRICES) {
+        if (environment->print_matrices) {
             std::ofstream osS(Logging::prepareFile(d, "S"));
             SparseMatrix SC =  domains[d].Prec;
-            if (config::solver::PRECONDITIONER == config::solver::PRECONDITIONERalternative::DIRICHLET){
+            if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
                 SC.ConvertDenseToCSR(1);
             }
             osS << SC;

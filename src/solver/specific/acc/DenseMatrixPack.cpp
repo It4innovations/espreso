@@ -312,7 +312,7 @@ namespace espreso {
 
 #endif
         this->copiedToMIC = true;
-        if ( !config::solver::LOAD_BALANCING ) {
+        if ( !loadBalancing ) { // TODO: check correctness
             free(this->matrices);
             this->matrices = NULL;
         }
