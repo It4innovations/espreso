@@ -31,13 +31,6 @@ VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string 
 	VTKGrid = vtkUnstructuredGrid::New();
 }
 
-VTK::VTK(const OutputConfiguration &output, const Mesh &mesh)
-: Store(output, mesh, ""), _lastData(ElementType::ELEMENTS)
-{
-	computeCenters();
-	VTKGrid = vtkUnstructuredGrid::New();
-}
-
 VTK::~VTK()
 {
 	for (size_t i = 0; i < VTKDataArrays.size(); i++) {

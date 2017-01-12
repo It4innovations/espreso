@@ -128,7 +128,7 @@ void VTK::corners(const OutputConfiguration &output, const Mesh &mesh, const std
 
 void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs)
 {
-	VTK vtk(output, mesh);
+	VTK vtk(output, mesh, path);
 
 	std::vector<Point> cCenter(environment->MPIsize);
 	std::vector<Point> sCenters(environment->MPIsize * mesh.parts());

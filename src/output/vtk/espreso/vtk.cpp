@@ -3,31 +3,21 @@
 
 using namespace espreso::store;
 
-VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: Store(output, mesh, path), _lastData(ElementType::ELEMENTS)
+static void create(std::ofstream &os, const std::string &path)
 {
-	switch (_output.format) {
-	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
-		break;
-	default:
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Warning: ESPRESO not contains a library for saving generic VTK format. VTK Legacy format is used.";
-	}
-
-	computeCenters();
-
 	std::stringstream ss;
 	ss << path << espreso::environment->MPIrank;
 	ss << ".vtk";
 
-	_os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
-	_os << "# vtk DataFile Version 4.0\n";
-	_os << "ESPRESO output\n";
-	_os << "ASCII\n";
-	_os << "\n";
+	os.open(ss.str().c_str(), std::ios::out | std::ios::trunc);
+	os << "# vtk DataFile Version 4.0\n";
+	os << "ESPRESO output\n";
+	os << "ASCII\n";
+	os << "\n";
 }
 
-VTK::VTK(const OutputConfiguration &output, const Mesh &mesh)
-: Store(output, mesh, ""), _lastData(ElementType::ELEMENTS)
+VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+: Store(output, mesh, path), _lastData(ElementType::ELEMENTS)
 {
 	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
@@ -54,6 +44,7 @@ static size_t coordinateSize(const espreso::Coordinates &coordinates)
 
 void VTK::coordinates()
 {
+	create(_os, _path);
 	size_t parts = _mesh.parts();
 	size_t cSize = coordinateSize(_mesh.coordinates());
 
@@ -71,6 +62,7 @@ void VTK::coordinates()
 
 void VTK::nodes(const std::vector<Element*> &nodes)
 {
+	create(_os, _path);
 	std::vector<size_t> domainSize(_mesh.parts(), 0);
 	size_t size = 0;
 	for (size_t i = 0; i < nodes.size(); i++) {
@@ -129,6 +121,7 @@ void VTK::nodes(const std::vector<Element*> &nodes)
 
 void VTK::nodes(const std::vector<std::vector<eslocal> > &nodes)
 {
+	create(_os, _path);
 	std::vector<size_t> domainSize(_mesh.parts(), 0);
 	size_t size = 0;
 	for (size_t i = 0; i < nodes.size(); i++) {

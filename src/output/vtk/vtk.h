@@ -14,7 +14,6 @@ class VTK: public Store {
 
 public:
 	VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
-	VTK(const OutputConfiguration &output, const Mesh &mesh);
 	~VTK();
 
 	virtual void storeGeometry(size_t timeStep = -1);
