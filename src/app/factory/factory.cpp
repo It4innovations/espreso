@@ -38,7 +38,7 @@ void Factory::check(const Results &configuration)
 	if (configuration.norm != 0) {
 		double nn = norm();
 		ESTEST(EVALUATION)
-			<< (fabs(nn - configuration.norm) > 1e-3 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
+			<< (fabs(nn - configuration.norm) > 1e-2 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
 			<< "Norm of the solution " << nn << " is not " << configuration.norm << ".";
 	}
 
