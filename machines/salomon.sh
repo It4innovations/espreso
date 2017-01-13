@@ -1,10 +1,10 @@
 #!/bin/bash
 
-WORKDIR=/scratch/temp/lriha/xeonphitemp-2  #ESCO2016-experiments/LargeTests/feti-static-3 #3-espreso-results-large-htfeti-FACEAVG-2clustersPerNode-lumped-11thredsPerMPI #FACEAVG
+WORKDIR=~/espreso/tests-jan2017/   #/scratch/temp/lriha/xeonphitemp-2  #ESCO2016-experiments/LargeTests/feti-static-3 #3-espreso-results-large-htfeti-FACEAVG-2clustersPerNode-lumped-11thredsPerMPI #FACEAVG
 ESPRESODIR=~/espreso
 EXAMPLEDIR=examples/meshgenerator
 EXAMPLE=cube_elasticity_fixed_bottom.txt
-THREADS_PER_MPI=12 
+THREADS_PER_MPI=11
 MPI_PER_NODE=2
 USE_MIC_NODES_ONLY=1
 account=OPEN-7-46
@@ -152,7 +152,7 @@ if [ "$1" = "run" ]; then
   
   qsub_command_0+="module list;"
 
-  for i in 1 2 3 4 5 6 7 8 9 10
+  for i in 1 2 # 2 3 4 5 6 7 8 9 10
   do
     d=${dom_size[${i}]}
 
@@ -168,15 +168,15 @@ if [ "$1" = "run" ]; then
 ###  Overriding the table settings 
 
 #    Scalability with clusters - changing the number of clusters/MPI processes 
-#    d=14 # subdomains size
+    d=10 # subdomains size
     
-#    x=3 # cluster size in domains
-#    y=$x
-#    z=$x
+    x=8 # cluster size in domains
+    y=$x
+    z=$x
 
-#    X=$i
-#    Y=$X
-#    Z=$X
+    X=$i #$i
+    Y=$X
+    Z=$X
    
 ###  Cluster scalability - changing number of domains per cluster 
 #    d=11 # subdomains size
@@ -214,7 +214,7 @@ if [ "$1" = "run" ]; then
 
     if [ "$3" = "mpi" ]; then
 
-      export LD_LIBRARY_PATH=/home/lriha/espreso/libs:$LD_LIBRARY_PATH
+      export LD_LIBRARY_PATH=$ESPRESODIR/libs:$LD_LIBRARY_PATH  # /home/lriha/espreso/libs:$LD_LIBRARY_PATH
       export MKL_NUM_THREADS=1
       export OMP_NUM_THREADS=$THREADS_PER_MPI
       export SOLVER_NUM_THREADS=$THREADS_PER_MPI
@@ -236,11 +236,11 @@ if [ "$1" = "run" ]; then
 
       #cat $PBS_NODEFILE | tee -a $node_file
       if [ "$2" = "intel" ]; then
-        mpirun      -n $(( X * Y * Z ))                  $EXAMPLEDIR/$EXAMPLE ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+        mpirun      -n $(( X * Y * Z ))                ./espreso  $EXAMPLEDIR/$EXAMPLE ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
       fi
       
       if [ "$2" = "sgi" ]; then
-        mpiexec_mpt -n $(( X * Y * Z )) perfboost -impi  $EXAMPLEDIR/$EXAMPLE ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
+        mpiexec_mpt -n $(( X * Y * Z )) perfboost -impi  ./espreso $EXAMPLEDIR/$EXAMPLE ${el_type[0]} ${X} ${Y} ${Z} ${x} ${y} ${z} ${d} ${d} ${d}                   | tee -a $log_file
       fi
     fi
 
