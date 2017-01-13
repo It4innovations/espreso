@@ -114,7 +114,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
 
 	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), environment->MPIrank) - neighbours.begin();
-	std::vector<std::vector<std::pair<esglobal, eslocal> > > g2l(threads);
+	std::vector<std::vector<G2L> > g2l(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -133,7 +133,7 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 				_mesh._DOFs[i]->clusters().push_back(environment->MPIrank);
 			}
 			if (_mesh._DOFs[i]->clusters().size() > 1) {
-				g2l[t].push_back(std::make_pair(l2g[i], i));
+				g2l[t].push_back(G2L(l2g[i], i));
 			}
 		}
 	}

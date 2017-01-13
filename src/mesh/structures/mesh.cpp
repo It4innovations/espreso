@@ -1526,7 +1526,7 @@ std::vector<size_t> APIMesh::distributeDOFsToDomains(const std::vector<size_t> &
 	return fillUniformDOFs(_DOFs, _DOFtoElement, parts(), { Property::UNKNOWN }, offsets);
 }
 
-static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::vector<std::pair<esglobal, eslocal> > &g2l)
+static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::vector<G2L> &g2l)
 {
 	neighbours.push_back(environment->MPIrank);
 	std::sort(neighbours.begin(), neighbours.end());
@@ -1637,9 +1637,9 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 			}
 			p += nElements[n].back()->nodes();
 			for (size_t i = 0; i < nElements[n].back()->nodes(); i++) {
-				nElements[n].back()->node(i) = std::lower_bound(g2l.begin(), g2l.end(), nElements[n].back()->node(i), [] (const std::pair<esglobal, esglobal> &mapping, esglobal index) {
-					return mapping.first < index;
-				})->second;
+				nElements[n].back()->node(i) = std::lower_bound(g2l.begin(), g2l.end(), nElements[n].back()->node(i), [] (const G2L &mapping, esglobal index) {
+					return mapping.global < index;
+				})->local;
 			}
 
 			nElements[n].back()->DOFsDomainsCounters() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
@@ -1826,10 +1826,11 @@ void Mesh::synchronizeGlobalIndices()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-			_coordinates._globalMapping[n].first = _coordinates._globalIndex[n];
-			_coordinates._globalMapping[n].second = n;
+			_coordinates._globalMapping[n].global = _coordinates._globalIndex[n];
+			_coordinates._globalMapping[n].local = n;
 		}
 	}
+
 	std::sort(_coordinates._globalMapping.begin(), _coordinates._globalMapping.end());
 }
 

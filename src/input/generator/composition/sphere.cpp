@@ -149,7 +149,7 @@ void Sphere::points(Coordinates &coordinates)
 
 	for (size_t i = 0; i < coordinates._points.size(); i++) {
 		coordinates._globalIndex.push_back(i + _index * coordinates._points.size());
-		coordinates._globalMapping.push_back(std::make_pair(i + _index * coordinates._points.size(), i));
+		coordinates._globalMapping.push_back(G2L(i + _index * coordinates._points.size(), i));
 	}
 }
 
@@ -202,7 +202,7 @@ void Sphere::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbou
 				setCross(1, 0, c - i,     j, index + static_cast<int>(SIDE::LEFT)  * _settings.clusters * _settings.clusters);
 				setCross(1, 1,     j,     i, index + static_cast<int>(SIDE::DOWN)  * _settings.clusters * _settings.clusters);
 				setCross(1, 2,     i, c - j, index + static_cast<int>(SIDE::RIGHT) * _settings.clusters * _settings.clusters);
-				setCross(2, 1,     j,     i, index + static_cast<int>(SIDE::BACK)   * _settings.clusters * _settings.clusters);
+				setCross(2, 1,     j,     i, index + static_cast<int>(SIDE::BACK)  * _settings.clusters * _settings.clusters);
 				break;
 			case SIDE::BACK:
 				setCross(0, 1,     j,     i, index + static_cast<int>(SIDE::DOWN)  * _settings.clusters * _settings.clusters);

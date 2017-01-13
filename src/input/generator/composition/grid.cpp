@@ -157,7 +157,7 @@ void Grid::points(Coordinates &coordinates)
 		for (offset.y = 0; offset.y <= cnodes.y; offset.y++) {
 			for (offset.x = 0; offset.x <= cnodes.x; offset.x++) {
 				coordinates._globalIndex.push_back(((coffset + offset) * size).sum());
-				coordinates._globalMapping.push_back(std::make_pair(coordinates._globalIndex.back(), (esglobal)coordinates._globalMapping.size()));
+				coordinates._globalMapping.push_back(G2L(coordinates._globalIndex.back(), (esglobal)coordinates._globalMapping.size()));
 			}
 		}
 	}

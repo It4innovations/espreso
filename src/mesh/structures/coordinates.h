@@ -11,6 +11,18 @@
 namespace espreso
 {
 
+struct G2L {
+	esglobal global;
+	esglobal local;
+
+	G2L(esglobal global, esglobal local): global(global), local(local) {};
+
+	bool operator<(const G2L &other) const
+	{
+		return global < other.global;
+	}
+};
+
 struct Coordinates
 {
 	friend class Mesh;
@@ -32,7 +44,7 @@ public:
 		_points.push_back(point);
 		_clusterIndex[0].push_back(clusterIndex);
 		_globalIndex.push_back(globalIndex);
-		_globalMapping.push_back(std::make_pair(globalIndex, clusterIndex));
+		_globalMapping.push_back(G2L(globalIndex, clusterIndex));
 	}
 
 	void reserve(size_t size)
@@ -73,9 +85,9 @@ public:
 
 	eslocal clusterIndex(esglobal index) const
 	{
-		return std::lower_bound(_globalMapping.begin(), _globalMapping.end(), index, [] (const std::pair<esglobal, esglobal> &mapping, esglobal index) {
-			return mapping.first < index;
-		})->second;
+		return std::lower_bound(_globalMapping.begin(), _globalMapping.end(), index, [] (const G2L &mapping, esglobal index) {
+			return mapping.global < index;
+		})->local;
 	}
 
 	eslocal localIndex(eslocal index, eslocal part) const
@@ -145,7 +157,7 @@ public:
 
 	/** @brief Point to global index */
 	std::vector<esglobal> _globalIndex;
-	std::vector<std::pair<esglobal, esglobal> > _globalMapping;
+	std::vector<G2L> _globalMapping;
 };
 
 }
