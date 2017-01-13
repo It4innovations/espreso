@@ -1,0 +1,3 @@
+PROCS = 6
+ARGS = HEXA8 1 1  2 2 2  4 4 4
+NORM = 0.770288
