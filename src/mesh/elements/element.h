@@ -206,6 +206,7 @@ public:
 		return it != _domains.end() && *it == domain;
 	}
 
+	void addParent(Element* parent) { _parentElements.push_back(parent); }
 	virtual void addFace(Element* face) = 0;
 	virtual void addEdge(Element* edge) = 0;
 

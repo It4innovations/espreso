@@ -29,7 +29,6 @@ public:
 	virtual void addEdge(Element* edge)
 	{
 		_edges.push_back(edge);
-		edge->parentElements().push_back(this);
 	}
 
 protected:

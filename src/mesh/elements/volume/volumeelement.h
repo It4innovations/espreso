@@ -30,12 +30,10 @@ public:
 	virtual void addFace(Element* face)
 	{
 		_faces.push_back(face);
-		face->parentElements().push_back(this);
 	}
 	virtual void addEdge(Element* edge)
 	{
 		_edges.push_back(edge);
-		edge->parentElements().push_back(this);
 	}
 
 protected:

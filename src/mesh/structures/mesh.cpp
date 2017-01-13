@@ -937,13 +937,21 @@ void Mesh::fillEdgesParents()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _edges.size());
+	std::vector<std::vector<Element*> > edges(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			if (!_edges[e]->parentElements().size()) {
-				parentElement(_nodes, _edges[e])->addEdge(_edges[e]);
+				_edges[e]->addParent(parentElement(_nodes, _edges[e]));
+				edges[t].push_back(_edges[e]);
 			}
+		}
+	}
+
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t e = 0; e < edges[t].size(); e++) {
+			edges[t][e]->parentElements()[0]->addEdge(edges[t][e]);
 		}
 	}
 }
@@ -952,13 +960,21 @@ void Mesh::fillFacesParents()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _faces.size());
+	std::vector<std::vector<Element*> > faces(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			if (!_faces[e]->parentElements().size()) {
-				parentElement(_nodes, _faces[e])->addFace(_faces[e]);
+				_faces[e]->addParent(parentElement(_nodes, _faces[e]));
+				faces[t].push_back(_faces[e]);
 			}
+		}
+	}
+
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t f = 0; f < faces[t].size(); f++) {
+			faces[t][f]->parentElements()[0]->addFace(faces[t][f]);
 		}
 	}
 }
