@@ -639,7 +639,6 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN();
 	const std::vector<DenseMatrix> &N = element->N();
-	const std::vector<double> &weighFactor = element->weighFactor();
 
 	coordinates.resize(element->nodes(), 3);
 
@@ -726,7 +725,7 @@ void Elasticity3D::postProcess(store::Store &store, const std::vector<std::vecto
 		stress[p].reserve(6 * matrixSize[p]);
 		principleStress[p].reserve(3 * matrixSize[p]);
 		HMH[p].reserve(1 * matrixSize[p]);
-		for (size_t e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
+		for (eslocal e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
 			eSolution.resize(pointDOFs.size() * _mesh.elements()[e]->nodes(), 1);
 			for (size_t dof = 0, i = 0; dof < pointDOFs.size(); dof++) {
 				for (size_t n = 0; n < _mesh.elements()[e]->nodes(); n++, i++) {

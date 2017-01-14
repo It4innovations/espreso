@@ -4545,7 +4545,7 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 
 	SEQ_VECTOR<int> displs (cluster.NUMBER_OF_CLUSTERS, 0);
     displs[0] = 0;
-    for (int i=1; i<displs.size(); ++i) {
+    for (size_t i=1; i<displs.size(); ++i) {
         displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
     }
 

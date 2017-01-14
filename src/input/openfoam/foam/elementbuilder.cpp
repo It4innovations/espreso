@@ -100,7 +100,6 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 
 		Face* firstFace;
 		std::list< Face* >::iterator firstit;
-		Face* lastFace;
 		std::list< Face* >::iterator lastit;
 		bool first = true;
 		for (std::list<Face* >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
@@ -110,7 +109,6 @@ ParseError* ElementBuilder::createElement(VolumeElement *&element) {
 					firstit = it;
 					first = false;
 				} else {
-					lastFace = *it;
 					lastit = it;
 				}
 			}

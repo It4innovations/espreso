@@ -219,11 +219,11 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 
 void WorkbenchParser::mp(std::vector<Material*> &materials)
 {
-	std::vector<std::string> params = divide(_line);
-
-	int mNumber = std::stoi(params[2]);
-	// materials.resize(mNumber--, Material(_mesh.coordinates()));
-
+//	std::vector<std::string> params = divide(_line);
+//
+//	int mNumber = std::stoi(params[2]);
+//	materials.resize(mNumber--, Material(_mesh.coordinates()));
+//
 //	if (!materials[mNumber].setParameter(params[1], params[3])) {
 //		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
 //	}

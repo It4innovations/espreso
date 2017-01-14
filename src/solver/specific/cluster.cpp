@@ -564,7 +564,7 @@ for (size_t d = 0; d < domains.size(); d++)
 
 		SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
 		kerindices[0] = 0;
-		for (int k = 1; k < kerindices.size(); k++) {
+		for (size_t k = 1; k < kerindices.size(); k++) {
 			kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
 		}
 
@@ -687,7 +687,7 @@ for (size_t d = 0; d < domains.size(); d++)
 
 		SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
 		kerindices[0] = 0;
-		for (int k = 1; k < kerindices.size(); k++) {
+		for (size_t k = 1; k < kerindices.size(); k++) {
 			kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
 		}
 

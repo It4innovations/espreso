@@ -38,11 +38,11 @@ void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::init()
 	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
 
 	if (environment->print_matrices) {
-		_constrains.save();
+		_constraints.save();
 	}
 
 	if (_output.gluing) {
-		store::VTK::gluing(_output, _mesh, _constrains, "B1", _physics.pointDOFs.size());
+		store::VTK::gluing(_output, _mesh, _constraints, "B1", _physics.pointDOFs.size());
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();

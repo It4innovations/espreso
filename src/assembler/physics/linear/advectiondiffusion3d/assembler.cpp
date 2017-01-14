@@ -442,6 +442,8 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 			}
 			break;
+		default:
+			ESINFO(ERROR) << "Unknown matrix type for regularization.";
 	}
 }
 
@@ -527,7 +529,6 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 
 static void postProcessElement(std::vector<double> &gradient, std::vector<double> &flux, DenseMatrix &solution, const Element* element, const Mesh &mesh, const AdvectionDiffusion3DConfiguration &configuration)
 {
-	bool CAU = configuration.stabilization == AdvectionDiffusion3DConfiguration::STABILIZATION::CAU;
 	double sigma = configuration.sigma;
 
 	DenseMatrix Ce(3, 3), coordinates(element->nodes(), 3), J, invJ, dND;
@@ -539,7 +540,6 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 	const Material* material = mesh.materials()[element->param(Element::MATERIAL)];
 	const std::vector<DenseMatrix> &dN = element->dN(Element::ElementPointType::GAUSSE_POINT);
 	const std::vector<DenseMatrix> &N = element->N(Element::ElementPointType::GAUSSE_POINT);
-	const std::vector<double> &weighFactor = element->weighFactor(Element::ElementPointType::GAUSSE_POINT);
 
 	DenseMatrix matFlux(3, 1), matGradient(3, 1);
 
@@ -657,7 +657,7 @@ void AdvectionDiffusion3D::postProcess(store::Store &store, const std::vector<st
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		termalGradient[p].reserve(3 * matrixSize[p]);
 		termalFlux[p].reserve(3 * matrixSize[p]);
-		for (size_t e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
+		for (eslocal e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
 			eSolution.resize(_mesh.elements()[e]->nodes(), 1);
 			for (size_t n = 0; n < _mesh.elements()[e]->nodes(); n++) {
 				eSolution(n, 0) = solution[p][_mesh.nodes()[_mesh.elements()[e]->node(n)]->DOFIndex(p, 0)];

@@ -6,7 +6,7 @@ using namespace espreso;
 
 void Region::computeArea(const Coordinates &coordinates) const
 {
-	double A = 0, B;
+	double A = 0;
 	for (size_t e = 0; e < elements.size(); e++) {
 
 		DenseMatrix coords(elements[e]->nodes(), 3), dND(1, 3);

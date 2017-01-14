@@ -534,7 +534,7 @@ void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 
 static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
 {
-	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) {
+	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) -> std::string {
 		for (size_t i = 0; i < values.size(); i++) {
 			std::vector<std::string> args = Parser::split(Parser::strip(values[i]), " ");
 			if (StringCompare::caseSensitiveEq(args[0], parameter)) {
