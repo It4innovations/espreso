@@ -70,6 +70,15 @@ GENERATOR { # ESPRESO internal mesh generator.
 
 LINEAR_ELASTICITY_3D {
 
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD      TOTAL_FETI;
+    SOLVER             PCG;
+    PRECONDITIONER  LUMPED;
+  }
+
   MATERIALS { # Vector of materials (counterd from 1).
 
     1 { # First configuration settings.
