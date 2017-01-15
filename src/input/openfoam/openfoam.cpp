@@ -152,7 +152,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 	}
 	for (size_t i = 0; i < neighbour.size(); i++) {
 		elements[neighbour[i]]->addFace(faces[i]);
-		faces[i]->addParent(elements[owner[i]]);
+		faces[i]->addParent(elements[neighbour[i]]);
 	}
 }
 
