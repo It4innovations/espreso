@@ -4,13 +4,13 @@
 |     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
 |                                      |   http://espreso.it4i.cz             |
 |-----------------------------------------------------------------------------|
-|  Case Description: TODO          |
+|  Case Description: Heat flux set on the right edge                          |
 |                                                                             |
 |-----------------------------------------------------------------------------|
 |*****************************************************************************|
 
 INPUT GENERATOR;
-PHYSICS ADVECTION_DIFFUSION_3D;
+PHYSICS ADVECTION_DIFFUSION_2D;
 
 GENERATOR {
 
@@ -19,7 +19,7 @@ GENERATOR {
   GRID {
     UNIFORM_DECOMPOSITION 1;
 
-    ELEMENT_TYPE    HEXA8;
+    ELEMENT_TYPE   [ARG0];
 
     LENGTH_X            1;
     LENGTH_Y            1;
@@ -29,28 +29,27 @@ GENERATOR {
     BLOCKS_Y            1;
     BLOCKS_Z            1;
 
-    CLUSTERS_X     [ARG0];
-    CLUSTERS_Y     [ARG1];
-    CLUSTERS_Z     [ARG2];
+    CLUSTERS_X     [ARG1];
+    CLUSTERS_Y     [ARG2];
+    CLUSTERS_Z          1;
 
     DOMAINS_X      [ARG3];
     DOMAINS_Y      [ARG4];
-    DOMAINS_Z      [ARG5];
+    DOMAINS_Z           1;
 
-    ELEMENTS_X     [ARG6];
-    ELEMENTS_Y     [ARG7];
-    ELEMENTS_Z     [ARG8];
+    ELEMENTS_X     [ARG5];
+    ELEMENTS_Y     [ARG6];
+    ELEMENTS_Z          1;
 
     NODES {
-        LEFT   "<0, 1) <0, 0> <0, 1>";
-        TOP    "<0, 0> (0, 1) <0, 1>";
+        LEFT   "<0, 1) <0, 0> <0, 0>";
+        TOP    "<0, 0> (0, 1) <0, 0>";
 
-        BOTTOM "<1, 1> <0, 1> <0, 1>";
-        N_ALL  ALL;
+        BOTTOM "<1, 1> <0, 1> <0, 0>";
     }
 
-    FACES {
-       RIGHT   "<0, 1> <1, 1> <0, 1>";
+    EDGES {
+        RIGHT  "<0, 1> <1, 1> <0, 0>";
     }
 
     ELEMENTS {
@@ -59,14 +58,14 @@ GENERATOR {
   }
 }
 
-ADVECTION_DIFFUSION_3D {
+ADVECTION_DIFFUSION_2D {
 
-  SOLVER_LIBRARY   ESPRESO;
+  SOLVER_LIBRARY      ESPRESO;
 
   ESPRESO {
 
     METHOD         TOTAL_FETI;
-    SOLVER                PCG;
+    SOLVER              GMRES;
     PRECONDITIONER  DIRICHLET;
   }
   
@@ -81,64 +80,27 @@ ADVECTION_DIFFUSION_3D {
     }
   }
 
-#  TRANSLATION_MOTIONS {
-#    1 {
-#      ALL_EL X y, Y -x;
-#    }
-#  }
-
-#  HEAT_FLUX {
-#    1 {
-#      RIGHT 10;
-#    }
-#  }
-
-#  CONVECTION {
-#    1 {
-#      RIGHT {
-#        EXTERNAL_TEMPERATURE      2;
-#        HEAT_TRANSFER_COEFFICIENT 5;
-#      }
-#    }
-#  }
-
-  HEAT_FLOW {
+  HEAT_FLUX {
     1 {
-      RIGHT 20;
+      RIGHT 10;
     }
   }
-
-#  RESISTIVE_THIN_LAYER {
-#    RIGHT {
-#      TYPE  THERMAL_RESISTANCE;
-#      RESISTANCE            10;
-#      SURFACE_TEMPERATURE   20;
-#    }
-#
-#    RIGHT {
-#      TYPE    LAYER_PROPERTIES;
-#      NUMBER_OF_LAYERS       2;
-#      LAYERS {
-#        1 {
-#          THICKNESS          1;
-#          CONDUCTION         1;
-#        }
-#        2 {
-#          THICKNESS          2;
-#          CONDUCTION        10;
-#        }
-#      }
-#    }
-#  }
+  
+  TRANSLATION_MOTIONS {
+    1 {
+      ALL_EL  X -10, Y 2;
+    }
+  }
 
   MATERIALS {
 
     1 {
       MODEL ISOTROPIC;
 
-      DENSITY  1;
-      KXX    0.1;
-      Cp       1;
+      DENSITY 1;
+      KXX     1;
+      KXY     1;
+      Cp      1;
     }
   }
 
