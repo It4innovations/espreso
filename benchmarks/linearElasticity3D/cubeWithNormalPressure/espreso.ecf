@@ -68,9 +68,10 @@ LINEAR_ELASTICITY_3D {
 
   ESPRESO {
 
-    METHOD      TOTAL_FETI;
-    SOLVER             PCG;
-    PRECONDITIONER  LUMPED;
+    METHOD          TOTAL_FETI;
+    SOLVER                 PCG;
+    PRECONDITIONER      LUMPED;
+    REGULARIZATION NULL_PIVOTS;
   }
 
   MATERIALS { # Vector of materials (counterd from 1).
