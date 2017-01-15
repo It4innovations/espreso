@@ -7,27 +7,27 @@ using namespace espreso;
 void Region::computeArea(const Coordinates &coordinates) const
 {
 	double A = 0;
-	for (size_t e = 0; e < elements.size(); e++) {
+	for (size_t e = 0; e < elements().size(); e++) {
 
-		DenseMatrix coords(elements[e]->nodes(), 3), dND(1, 3);
+		DenseMatrix coords(elements()[e]->nodes(), 3), dND(1, 3);
 
-		const std::vector<DenseMatrix> &dN = elements[e]->dN();
-		const std::vector<double> &weighFactor = elements[e]->weighFactor();
+		const std::vector<DenseMatrix> &dN = elements()[e]->dN();
+		const std::vector<double> &weighFactor = elements()[e]->weighFactor();
 
-		for (size_t n = 0; n < elements[e]->nodes(); n++) {
-			coords(n, 0) = coordinates[elements[e]->node(n)].x;
-			coords(n, 1) = coordinates[elements[e]->node(n)].y;
-			coords(n, 2) = coordinates[elements[e]->node(n)].z;
+		for (size_t n = 0; n < elements()[e]->nodes(); n++) {
+			coords(n, 0) = coordinates[elements()[e]->node(n)].x;
+			coords(n, 1) = coordinates[elements()[e]->node(n)].y;
+			coords(n, 2) = coordinates[elements()[e]->node(n)].z;
 		}
 
-		if (elements[e]->type() == Element::Type::LINE) {
-			for (size_t gp = 0; gp < elements[e]->gaussePoints(); gp++) {
+		if (elements()[e]->type() == Element::Type::LINE) {
+			for (size_t gp = 0; gp < elements()[e]->gaussePoints(); gp++) {
 				dND.multiply(dN[gp], coords);
 				A += dND.norm() * weighFactor[gp];
 			}
 		}
-		if (elements[e]->type() == Element::Type::PLANE) {
-			for (size_t gp = 0; gp < elements[e]->gaussePoints(); gp++) {
+		if (elements()[e]->type() == Element::Type::PLANE) {
+			for (size_t gp = 0; gp < elements()[e]->gaussePoints(); gp++) {
 				dND.multiply(dN[gp], coords);
 				Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
 				Point v1(dND(1, 0), dND(1, 1), dND(1, 2));

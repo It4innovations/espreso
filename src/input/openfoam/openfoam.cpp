@@ -179,8 +179,8 @@ void OpenFOAM::regions(
 			regions.push_back(new Region());
 			Region *region = regions[regions.size() - 1];
 			region->name = (*it).getName();
-			region->elements.resize(nFaces);
-			memcpy(&region->elements[0], &faces[startFace], nFaces * sizeof(Element*));
+			region->elements().resize(nFaces);
+			memcpy(region->elements().data(), &faces[startFace], nFaces * sizeof(Element*));
 		}
 	}
 	//reads cell zones
@@ -194,7 +194,7 @@ void OpenFOAM::regions(
 			Region *region = regions[regions.size() - 1];
 			region->name = cellZone.getName();
 			for (auto index : cellZone.elementIndexes()) {
-				region->elements.push_back(elements[index]);
+				region->elements().push_back(elements[index]);
 			}
 		}
 	}
@@ -208,7 +208,7 @@ void OpenFOAM::regions(
 			Region *region = regions[regions.size() - 1];
 			region->name = faceZone.getName();
 			for (auto index : faceZone.elementIndexes()) {
-				region->elements.push_back(faces[index]);
+				region->elements().push_back(faces[index]);
 			}
 		}
 	}
@@ -222,7 +222,7 @@ void OpenFOAM::regions(
 			Region *region = regions[regions.size() - 1];
 			region->name = pointZone.getName();
 			for (auto index : pointZone.elementIndexes()) {
-				region->elements.push_back(nodes[index]);
+				region->elements().push_back(nodes[index]);
 			}
 		}
 	}

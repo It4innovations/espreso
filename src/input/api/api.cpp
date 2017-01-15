@@ -66,7 +66,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 
 	_mesh._regions[0]->settings.resize(1);
 	_mesh._regions[0]->settings[0][Property::UNKNOWN].push_back(_mesh._evaluators.back());
-	_mesh._regions[0]->elements.resize(dirichletSize);
+	_mesh._regions[0]->elements().resize(dirichletSize);
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, dirichletSize);
@@ -75,7 +75,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 			_mesh._DOFs[dirichletIndices[i] - _offset]->regions().push_back(_mesh._regions[0]);
-			_mesh._regions[0]->elements[i] = _mesh._DOFs[dirichletIndices[i] - _offset];
+			_mesh._regions[0]->elements()[i] = _mesh._DOFs[dirichletIndices[i] - _offset];
 		}
 	}
 }

@@ -142,7 +142,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements.push_back(elements[i]);
+			regions[region]->elements().push_back(elements[i]);
 		}
 	}
 
@@ -152,7 +152,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements.push_back(faces[i]);
+			regions[region]->elements().push_back(faces[i]);
 		}
 	}
 
@@ -162,7 +162,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements.push_back(edges[i]);
+			regions[region]->elements().push_back(edges[i]);
 		}
 	}
 
@@ -172,7 +172,7 @@ void Esdata::regions(
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
 			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements.push_back(nodes[i]);
+			regions[region]->elements().push_back(nodes[i]);
 		}
 	}
 

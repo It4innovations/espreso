@@ -576,12 +576,12 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				evaluators.push_back(new CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
 			}
 
-			if (distributeToNodes && region->elements.size() && region->elements[0]->nodes() > 1) {
+			if (distributeToNodes && region->elements().size() && region->elements()[0]->nodes() > 1) {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region->name << "'";
 				std::vector<Element*> nodes;
-				for (size_t i = 0; i < region->elements.size(); i++) {
-					for (size_t n = 0; n < region->elements[i]->nodes(); n++) {
-						nodes.push_back(mesh.nodes()[region->elements[i]->node(n)]);
+				for (size_t i = 0; i < region->elements().size(); i++) {
+					for (size_t n = 0; n < region->elements()[i]->nodes(); n++) {
+						nodes.push_back(mesh.nodes()[region->elements()[i]->node(n)]);
 					}
 				}
 				std::sort(nodes.begin(), nodes.end());
@@ -590,7 +590,7 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				distribute(nodes, properties[p], evaluators.back(), region);
 			} else {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region->name << "'";
-				distribute(region->elements, properties[p], evaluators.back(), region);
+				distribute(region->elements(), properties[p], evaluators.back(), region);
 			}
 			region->settings[loadStep][properties[p]].push_back(evaluators.back());
 		}

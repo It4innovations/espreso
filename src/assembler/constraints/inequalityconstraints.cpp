@@ -26,12 +26,12 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 						ESINFO(GLOBAL_ERROR) << "You have to set normal direction for elements with obstacle";
 					}
 
-					distribution = Esutils::getDistribution(threads, region->elements.size());
+					distribution = Esutils::getDistribution(threads, region->elements().size());
 
 					#pragma omp parallel for
 					for (size_t t = 0; t < threads; t++) {
 						for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-							if (region->elements[n]->clusters()[0] != environment->MPIrank) {
+							if (region->elements()[n]->clusters()[0] != environment->MPIrank) {
 								continue;
 							}
 							Point direction;
@@ -42,10 +42,10 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 
 							double value[3] { direction.x, direction.y, direction.z };
 
-							eslocal domain = region->elements[n]->domains().front();
+							eslocal domain = region->elements()[n]->domains().front();
 							for (size_t dof = 0; dof < eDOFs.size(); dof++) {
 								if (value[dof]) {
-									indices[domain][t].push_back(region->elements[n]->DOFIndex(domain, dof) + IJVMatrixIndexing);
+									indices[domain][t].push_back(region->elements()[n]->DOFIndex(domain, dof) + IJVMatrixIndexing);
 									values[domain][t].push_back(settings->second.back()->evaluate(n));
 									normal[domain][t].push_back(std::abs(value[dof]) * values[domain][t].back());
 								}

@@ -275,47 +275,47 @@ void Sphere::regions(
 		std::vector<Element*> &nodes)
 {
 	for (auto it = _sphere.nodes.values.begin(); it != _sphere.nodes.values.end(); ++it) {
-		regions.push_back(new Region());
-		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
-			regions.back()->elements = nodes;
+			regions.push_back(new Region(nodes));
 		} else {
+			regions.push_back(new Region());
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 0);
 		}
+		regions.back()->name = it->first;
 	}
 	for (auto it = _sphere.edges.values.begin(); it != _sphere.edges.values.end(); ++it) {
-		regions.push_back(new Region());
-		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all edges.";
 		} else {
+			regions.push_back(new Region());
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 1);
-			edges.insert(edges.end(), regions.back()->elements.begin(), regions.back()->elements.end());
+			edges.insert(edges.end(), regions.back()->elements().begin(), regions.back()->elements().end());
 		}
+		regions.back()->name = it->first;
 	}
 	for (auto it = _sphere.faces.values.begin(); it != _sphere.faces.values.end(); ++it) {
-		regions.push_back(new Region());
-		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all faces.";
 		} else {
+			regions.push_back(new Region());
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 2);
-			faces.insert(faces.end(), regions.back()->elements.begin(), regions.back()->elements.end());
+			faces.insert(faces.end(), regions.back()->elements().begin(), regions.back()->elements().end());
 		}
+		regions.back()->name = it->first;
 	}
 
 	for (auto it = _sphere.elements.values.begin(); it != _sphere.elements.values.end(); ++it) {
-		regions.push_back(new Region());
-		regions.back()->name = it->first;
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
-			regions.back()->elements = elements;
+			regions.push_back(new Region(elements));
 		} else {
+			regions.push_back(new Region());
 			BlockBorder border(it->second);
 			_block->region(elements, regions.back(), border, 3);
 		}
+		regions.back()->name = it->first;
 	}
 }
 

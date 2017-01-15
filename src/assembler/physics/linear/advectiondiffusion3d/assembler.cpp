@@ -512,13 +512,13 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 	size_t step = 0;
 	for (size_t r = 0; r < _mesh.regions().size(); r++) {
 		if (step < _mesh.regions()[r]->settings.size() && _mesh.regions()[r]->settings[step].count(Property::HEAT_FLUX)) {
-			processRegion(_mesh.regions()[r]->elements);
+			processRegion(_mesh.regions()[r]->elements());
 		}
 		if (step < _mesh.regions()[r]->settings.size() && _mesh.regions()[r]->settings[step].count(Property::HEAT_FLOW)) {
-			processRegion(_mesh.regions()[r]->elements, false, _mesh.regions()[r]->area);
+			processRegion(_mesh.regions()[r]->elements(), false, _mesh.regions()[r]->area);
 		}
 		if (step < _mesh.regions()[r]->settings.size() && _mesh.regions()[r]->settings[step].count(Property::EXTERNAL_TEMPERATURE)) {
-			processRegion(_mesh.regions()[r]->elements, true);
+			processRegion(_mesh.regions()[r]->elements(), true);
 		}
 	}
 

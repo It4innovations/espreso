@@ -239,7 +239,7 @@ static size_t getRegionIndex(std::vector<espreso::Region*> &regions, const std::
 		}
 	} else {
 		regions.push_back(new espreso::Region());
-		regions.back()->elements.insert(regions.back()->elements.end(), elements.begin(), elements.end());
+		regions.back()->elements().insert(regions.back()->elements().end(), elements.begin(), elements.end());
 		return regions.size() - 1;
 	}
 	ESINFO(espreso::GLOBAL_ERROR) << "Unknown region '" << name << "'";
@@ -265,7 +265,7 @@ void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Regio
 	params[1] = Parser::strip(params[1]);
 	regions.push_back(new Region());
 	regions.back()->name = params[1];
-	std::vector<Element*> &region = regions.back()->elements;
+	std::vector<Element*> &region = regions.back()->elements();
 	if (params[2].compare(0, 4, "NODE") == 0) {
 		ESINFO(DETAILS) << "WB: CREATE BLOCK OF NODES: " << params[1];
 		eslocal size = std::stol(params[3]);

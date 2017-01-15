@@ -73,7 +73,7 @@ void Loader::fill()
 	regions(mesh._evaluators, mesh._regions, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 
 	for (size_t r = 0; r < mesh._regions.size(); r++) {
-		ESINFO(OVERVIEW) << "Loaded region '" << mesh._regions[r]->name << "' of size " << Info::sumValue(mesh._regions[r]->elements.size());
+		ESINFO(OVERVIEW) << "Loaded region '" << mesh._regions[r]->name << "' of size " << Info::sumValue(mesh._regions[r]->elements().size());
 	}
 
 	mesh.fillFacesParents();
