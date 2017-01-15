@@ -292,7 +292,9 @@ protected:
 				return;
 			}
 		}
-		addEdge(new TEdge(line));
+		Element *e = new TEdge(line);
+		addEdge(e);
+		e->addParent(this);
 	}
 
 	template <class TFace>
@@ -303,7 +305,9 @@ protected:
 				return;
 			}
 		}
-		addFace(new TFace(face));
+		Element *f = new TFace(face);
+		addFace(f);
+		f->addParent(this);
 	}
 
 	std::vector<Region*> _regions;
