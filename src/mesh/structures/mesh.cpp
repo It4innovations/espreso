@@ -10,6 +10,11 @@ Mesh::Mesh():_elements(0)
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
+
+	_regions.push_back(new Region(_elements));
+	_regions.back()->name = "ALL_ELEMENTS";
+	_regions.push_back(new Region(_nodes));
+	_regions.back()->name = "ALL_NODES";
 }
 
 void Mesh::partitiate(size_t parts)
