@@ -18,6 +18,9 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	{
 		if (_configuration.translation_motions.configurations.size()) {
 			mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+			if (configuration.espreso.regularization == REGULARIZATION::FIX_POINTS) {
+				ESINFO(GLOBAL_ERROR) << "Set regularization to NULL_PIVOTS";
+			}
 		}
 	};
 

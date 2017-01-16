@@ -66,11 +66,12 @@ ADVECTION_DIFFUSION_2D {
 
   ESPRESO {
 
-    METHOD      TOTAL_FETI;
-    SOLVER           GMRES;
-    PRECONDITIONER  LUMPED;
-    ITERATIONS        1000;
-    EPSILON           1e-8;
+    METHOD           TOTAL_FETI;
+    SOLVER                GMRES;
+    PRECONDITIONER       LUMPED;
+    REGULARIZATION  NULL_PIVOTS;
+    ITERATIONS             1000;
+    EPSILON                1e-8;
   }
 
   STABILIZATION CAU;
