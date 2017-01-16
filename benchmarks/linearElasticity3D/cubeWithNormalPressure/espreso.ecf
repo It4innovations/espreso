@@ -21,7 +21,7 @@ GENERATOR { # ESPRESO internal mesh generator.
 
   GRID { # Detailed specification of grid shape.
 
-    UNIFORM_DECOMPOSITION 1;
+    UNIFORM_DECOMPOSITION 0;
 
     ELEMENT_TYPE [ARG0];
 
