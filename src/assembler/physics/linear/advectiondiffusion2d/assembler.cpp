@@ -510,7 +510,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 
 	DenseMatrix u(1, 2), v(1, 2), Re(1, element->nodes());
 
-	for (size_t gp = 0; gp < element->nodes(); gp++) {
+	for (size_t gp = 0; gp < element->gaussePoints(); gp++) {
 		u.multiply(N[gp], U, 1, 0);
 
 		J.multiply(dN[gp], coordinates);
