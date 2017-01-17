@@ -1,0 +1,105 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: homogenous problem with constant advection term          |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_3D;
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE    HEXA8;
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG0];
+    CLUSTERS_Y     [ARG1];
+    CLUSTERS_Z     [ARG2];
+
+    DOMAINS_X      [ARG3];
+    DOMAINS_Y      [ARG4];
+    DOMAINS_Z      [ARG5];
+
+    ELEMENTS_X     [ARG6];
+    ELEMENTS_Y     [ARG7];
+    ELEMENTS_Z     [ARG8];
+
+    NODES { # List of nodes regions.
+      Z0 "<0, 1> <0, 1> <0, 0>";
+      Y0 "<0, 1> <0, 0> <0, 1>";
+      X0 "<0, 0> <0, 1> <0, 1>";
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_3D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD           TOTAL_FETI;
+    SOLVER                GMRES;
+    PRECONDITIONER       LUMPED;
+    REGULARIZATION  NULL_PIVOTS;
+  }
+  
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    1 {
+      X0 1;
+      Y0 1;
+      Z0 1;
+    }
+  }
+
+  HEAT_SOURCE {
+    1 {
+      ALL_ELEMENTS 1;
+    }
+  }
+
+  TRANSLATION_MOTIONS {
+    1 {
+      ALL_ELEMENTS  X 0.5, Y 0.5, Z 0.5;
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY 1;
+      KXX  1e-5;
+      KXY  1e-5;
+      Cp      1;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
+
+
+
