@@ -52,7 +52,7 @@ void Factory::check(const Results &configuration)
 					eslocal index = mesh.coordinates().localToCluster(p)[n];
 					ESTEST(EVALUATION)
 						<< (fabs(evaluator.evaluate(mesh.coordinates()[index]) - _solution[p][mesh.nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
-						<< "Incorrect x-displacement of the solution.";
+						<< "Incorrect " << property << " of the solution.";
 				}
 			}
 		}
