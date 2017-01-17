@@ -632,8 +632,10 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 	}
 
 	sol.resize(rhs.size());
-	Solve(rhs, sol, rhs.size() / tmpM.cols);
-
+	if (tmpM.cols !=0) {
+		Solve(rhs, sol, rhs.size() / tmpM.cols);
+	}
+	
 	for (size_t row = 1, offset = 0; row < tmpM.CSR_I_row_indices.size(); row++) {
 		if (tmpM.CSR_I_row_indices[row - 1] < tmpM.CSR_I_row_indices[row]) {
 			for (eslocal col = 0; col < tmpM.cols; col++, offset++){
