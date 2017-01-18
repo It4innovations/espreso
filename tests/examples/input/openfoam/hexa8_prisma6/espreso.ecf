@@ -1,0 +1,54 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Simple example for test OpenFOAM input file              |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT OPENFOAM;
+PHYSICS LINEAR_ELASTICITY_3D;
+
+OPENFOAM {
+  PATH    .;
+  DOMAINS 2;
+}
+
+LINEAR_ELASTICITY_3D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD         TOTAL_FETI;
+    SOLVER                PCG;
+    PRECONDITIONER     LUMPED;
+  }
+
+  DISPLACEMENT {
+    inner_convection X 0, Y 0, Z 0;
+  }
+
+  NORMAL_PRESURE {
+    outer_convection 10000;
+  }
+
+  MATERIALS {
+
+    1 {
+
+      DENSITY 7850;
+      MIXY     0.3;
+      EX     2.1e9;
+
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
