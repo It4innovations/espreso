@@ -3,6 +3,7 @@
 #ifndef SRC_CONFIG_ADVECTIONDIFFUSION2D_H_
 #define SRC_CONFIG_ADVECTIONDIFFUSION2D_H_
 
+#include "material.h"
 #include "solver.h"
 #include "coordinatesystem.h"
 #include "advectiondiffusionconvection.h"
@@ -10,36 +11,20 @@
 
 namespace espreso {
 
-struct AdvectionDiffusion2DMaterial: public Configuration {
+struct AdvectionDiffusion2DMaterial: public MaterialParameters, public Configuration {
 
-	enum MODEL {
-		ISOTROPIC = 0,
-		DIAGONAL = 1,
-		SYMMETRIC = 2,
-		ANISOTROPIC = 3
-	};
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::DENSITY>                , density, "Density", {"0"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::HEAT_CAPACITY>          , Cp     , "Termal capacity."       , {"0"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX>, KXX    , "Termal conductivity XX.", {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY>, KYY    , "Termal conductivity YY.", {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY>, KXY    , "Termal conductivity XY.", {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX>, KYX    , "Termal conductivity YX.", {"1"});
 
-	enum Parameter {
-		DENSITY = 0,
-		HEAT_CAPACITY,
-		THERMAL_CONDUCTIVITY_XX,
-		THERMAL_CONDUCTIVITY_YY,
-		THERMAL_CONDUCTIVITY_XY,
-		THERMAL_CONDUCTIVITY_YX
-	};
-
-	PARAMETER(std::string, density, "Density"                , "0");
-	PARAMETER(std::string, Cp     , "Termal capacity."       , "0");
-	PARAMETER(std::string, KXX    , "Termal conductivity XX.", "1");
-	PARAMETER(std::string, KYY    , "Termal conductivity YY.", "1");
-	PARAMETER(std::string, KXY    , "Termal conductivity XY.", "1");
-	PARAMETER(std::string, KYX    , "Termal conductivity YX.", "1");
-
-	OPTION(MODEL, model, "Material model", MODEL::ISOTROPIC, OPTIONS({
-		{ "ISOTROPIC"  , MODEL::ISOTROPIC  , "Isotropic." },
-		{ "DIAGONAL"   , MODEL::DIAGONAL   , "Diagonal." },
-		{ "SYMMETRIC"  , MODEL::SYMMETRIC  , "Symmetric." },
-		{ "ANISOTROPIC", MODEL::ANISOTROPIC, "Anisotropic." }
+	OPTION(MATERIAL_MODEL, model, "Material model", MATERIAL_MODEL::ISOTROPIC, OPTIONS({
+		{ "ISOTROPIC"  , MATERIAL_MODEL::ISOTROPIC  , "Isotropic." },
+		{ "DIAGONAL"   , MATERIAL_MODEL::DIAGONAL   , "Diagonal." },
+		{ "SYMMETRIC"  , MATERIAL_MODEL::SYMMETRIC  , "Symmetric." },
+		{ "ANISOTROPIC", MATERIAL_MODEL::ANISOTROPIC, "Anisotropic." }
 	}));
 
 	SUBCONFIG(CoordinateSystem, coordinate_system, "Element coordinate system.");

@@ -166,11 +166,11 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND, const DenseMatrix &N, D
 	}
 }
 
-static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAVIOUR behaviour, size_t model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &T)
+static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAVIOUR behaviour, MATERIAL_MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &T)
 {
 	switch (model) {
 
-	case LinearElasticity2DMaterial::LINEAR_ELASTIC_ISOTROPIC:
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC:
 	{
 
 		switch (behaviour) {
@@ -208,12 +208,12 @@ static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAV
 		}
 	}
 
-	case LinearElasticity2DMaterial::LINEAR_ELASTIC_ORTHOTROPIC:
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
 	{
 		return;
 	}
 
-	case LinearElasticity2DMaterial::LINEAR_ELASTIC_ANISOTROPIC:
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
 	{
 		return;
 	}

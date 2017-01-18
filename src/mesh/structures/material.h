@@ -6,6 +6,8 @@
 #include <string>
 #include <algorithm>
 
+#include "../../config/materialparameters.h"
+
 namespace espreso {
 
 class Coordinates;
@@ -18,20 +20,21 @@ class Material {
 
 public:
 	Material(const Coordinates &coordinates, const Configuration &configuration);
-	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(coordinates), _model(0) {};
+	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(coordinates), _model(MATERIAL_MODEL::SIZE) {};
 
 	virtual ~Material();
 
+	const Evaluator* get(MATERIAL_PARAMETER parameter) const { return _values[static_cast<int>(parameter)]; }
 	const Evaluator* get(size_t index) const { return _values[index]; }
-	size_t getModel() const { return _model; }
+	MATERIAL_MODEL getModel() const { return _model; }
 
 	void set(size_t index, const std::string &value);
-	void setModel(size_t model) { _model = model; }
+	void setModel(MATERIAL_MODEL model) { _model = model; }
 
 protected:
 	const Coordinates &_coordinates;
 
-	size_t _model;
+	MATERIAL_MODEL _model;
 	std::vector<Evaluator*> _values;
 };
 

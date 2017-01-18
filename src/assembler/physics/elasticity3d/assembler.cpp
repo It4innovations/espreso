@@ -191,10 +191,10 @@ static void distribute(DenseMatrix &B, DenseMatrix &dND)
 	memcpy(&v[5 * columns],                     dNDz, sizeof(double) * dND.columns());
 }
 
-static void fillC(DenseMatrix &Ce, size_t model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &G)
+static void fillC(DenseMatrix &Ce, MATERIAL_MODEL model, DenseMatrix &dens, DenseMatrix &E, DenseMatrix &mi, DenseMatrix &G)
 {
 	switch (model) {
-	case LinearElasticity3DMaterial::LINEAR_ELASTIC_ISOTROPIC: {
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC: {
 
 		double EE = E(0, 0) / ((1 + mi(0, 0)) * (1 - 2 * mi(0, 0)));
 
@@ -203,7 +203,7 @@ static void fillC(DenseMatrix &Ce, size_t model, DenseMatrix &dens, DenseMatrix 
 		Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = EE * (0.5 - mi(0, 0));
 		break;
 	}
-	case LinearElasticity3DMaterial::LINEAR_ELASTIC_ANISOTROPIC:
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
 
 //	       D11 = MATERIAL_Properties.D11;
 //	       D12 = MATERIAL_Properties.D12;
@@ -236,7 +236,7 @@ static void fillC(DenseMatrix &Ce, size_t model, DenseMatrix &dens, DenseMatrix 
 
 		break;
 
-	case LinearElasticity3DMaterial::LINEAR_ELASTIC_ORTHOTROPIC:
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
 
 		double miXY = mi(0, 0);
 		double miYZ = mi(0, 1);

@@ -9,12 +9,11 @@ using namespace espreso;
 Material::Material(const Coordinates &coordinates, const Configuration &configuration)
 : _coordinates(coordinates)
 {
+	_values.resize(static_cast<int>(MATERIAL_PARAMETER::SIZE), NULL);
 	if (configuration.parameters.find("MODEL") != configuration.parameters.end()) {
-		_model = configuration.parameters.find("MODEL")->second->option();
-		_values.reserve(configuration.parameters.size() - 1);
+		_model = (MATERIAL_MODEL)configuration.parameters.find("MODEL")->second->option();
 	} else {
-		_model = 0;
-		_values.reserve(configuration.parameters.size());
+		_model = MATERIAL_MODEL::SIZE;
 	}
 
 	for (size_t p = 0; p < configuration.orderedParameters.size(); p++) {
