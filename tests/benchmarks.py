@@ -27,19 +27,9 @@ class ESPRESOBenchmarks(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    path = os.path.join(ROOT, "benchmarks")
+    benchmarks = os.path.join(ROOT, "benchmarks")
 
-    benchmarks = []
-    for root, subFolders, files in os.walk(path):
-        for file in files:
-            if file.endswith(".test"):
-                benchmarks.append(( root, file[0:-5]))
-
-    benchmarks.sort()
-    for benchmark in benchmarks:
-        name = os.path.relpath(benchmark[0], path).replace('/', '_')
-        if benchmark[1] != "espreso":
-            name += "_" + benchmark[1]
-        TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name, benchmark[0], benchmark[1] + ".test")
+    for name, path, file in TestCaseCreator.gather(benchmarks, ".test"):
+        TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name, path, file)
 
     unittest.main()

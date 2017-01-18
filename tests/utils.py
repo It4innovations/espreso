@@ -43,6 +43,23 @@ class TestCaseCreator:
                 if next[i]:
                     break
 
+    @staticmethod
+    def gather(folder, ext):
+        examples = []
+        for root, subFolders, files in os.walk(folder):
+            for file in files:
+                if file.endswith(ext):
+                    examples.append(( root, file.rstrip(ext)))
+
+        examples.sort()
+
+        result = []
+        for example in examples:
+            name = os.path.relpath(example[0], folder).replace('/', '_')
+            if example[1] != "espreso":
+                name += "_" + example[1]
+            result.append((name, example[0], example[1] + ext))
+        return result
 
 class Iterator:
 
