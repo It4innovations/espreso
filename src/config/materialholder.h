@@ -20,7 +20,7 @@ struct ValueHolder<MaterialParam<TParameter> >: public ParameterBase {
 	MaterialParam<TParameter> &value;
 
 	ValueHolder(const std::string &name, const std::string &description, MaterialParam<TParameter> &value, MaterialParam<TParameter> defaultValue, const std::string &type)
-	: ParameterBase(name, description, type), value(value) { value = defaultValue; }
+	: ParameterBase(name, description, "*"), value(value) {};
 
 	bool set(const std::string &value)
 	{
