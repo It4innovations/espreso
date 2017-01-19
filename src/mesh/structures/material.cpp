@@ -9,9 +9,9 @@ using namespace espreso;
 Material::Material(const Coordinates &coordinates, const Configuration &configuration)
 : _coordinates(coordinates)
 {
-	_values.resize(static_cast<int>(MATERIAL_PARAMETER::SIZE), NULL);
+	_values.resize((size_t)MATERIAL_PARAMETER::SIZE, NULL);
 	if (configuration.parameters.find("MODEL") != configuration.parameters.end()) {
-		_model = (MATERIAL_MODEL)configuration.parameters.find("MODEL")->second->option();
+		_model = (MATERIAL_MODEL)configuration.parameters.find("MODEL")->second->index();
 	} else {
 		_model = MATERIAL_MODEL::SIZE;
 	}
@@ -20,10 +20,10 @@ Material::Material(const Coordinates &coordinates, const Configuration &configur
 		if (!StringCompare::caseInsensitiveEq(configuration.orderedParameters[p]->name, "MODEL")) {
 			const std::string &value = configuration.orderedParameters[p]->get();
 			if (StringCompare::contains(value, "xyzt")) {
-				_values.push_back(new CoordinatesEvaluator(value, _coordinates));
+				_values[configuration.orderedParameters[p]->index()] = new CoordinatesEvaluator(value, _coordinates);
 			} else {
 				espreso::Expression expr(value, {});
-				_values.push_back(new ConstEvaluator(expr.evaluate({})));
+				_values[configuration.orderedParameters[p]->index()] = new ConstEvaluator(expr.evaluate({}));
 			}
 		}
 	}
@@ -38,17 +38,17 @@ Material::~Material()
 	}
 }
 
-void Material::set(size_t index, const std::string &value)
+void Material::set(MATERIAL_PARAMETER parameter, const std::string &value)
 {
-	if (_values[index] != NULL) {
-		delete _values[index];
+	if (_values[(size_t)parameter] != NULL) {
+		delete _values[(size_t)parameter];
 	}
 
 	if (StringCompare::contains(value, "xyzt")) {
-		_values[index] = new CoordinatesEvaluator(value, _coordinates);
+		_values[(size_t)parameter] = new CoordinatesEvaluator(value, _coordinates);
 	} else {
 		espreso::Expression expr(value, {});
-		_values[index] = new ConstEvaluator(expr.evaluate({}));
+		_values[(size_t)parameter] = new ConstEvaluator(expr.evaluate({}));
 	}
 }
 

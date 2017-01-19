@@ -248,48 +248,50 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		coordinates(i, 2) = p.z;
 		U(i, 0) =
 				element->getProperty(Property::TRANSLATION_MOTION_X, i, 0, 0) *
-				material->get(AdvectionDiffusion3DMaterial::DENSITY)->evaluate(element->node(i)) *
-				material->get(AdvectionDiffusion3DMaterial::HEAT_CAPACITY)->evaluate(element->node(i));
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i)) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i));
 		U(i, 1) =
 				element->getProperty(Property::TRANSLATION_MOTION_Y, i, 0, 0) *
-				material->get(AdvectionDiffusion3DMaterial::DENSITY)->evaluate(element->node(i)) *
-				material->get(AdvectionDiffusion3DMaterial::HEAT_CAPACITY)->evaluate(element->node(i));
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i)) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i));
 		U(i, 2) =
 				element->getProperty(Property::TRANSLATION_MOTION_Z, i, 0, 0) *
-				material->get(AdvectionDiffusion3DMaterial::DENSITY)->evaluate(element->node(i)) *
-				material->get(AdvectionDiffusion3DMaterial::HEAT_CAPACITY)->evaluate(element->node(i));
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i)) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i));
 		f(0, i) = element->sumProperty(Property::HEAT_SOURCE, i, 0, 0);
 
 		switch (material->getModel()) {
 		case MATERIAL_MODEL::ISOTROPIC:
-			K(i, 0) = K(i, 1) = K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 0) = K(i, 1) = K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
 			K(i, 3) = K(i, 4) = K(i, 5) = K(i, 6) = K(i, 7) = K(i, 8) = 0;
 			break;
 		case MATERIAL_MODEL::DIAGONAL:
-			K(i, 0) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
-			K(i, 1) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
-			K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
 			K(i, 3) = K(i, 4) = K(i, 5) = K(i, 6) = K(i, 7) = K(i, 8) = 0;
 			break;
 		case MATERIAL_MODEL::SYMMETRIC:
-			K(i, 0) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
-			K(i, 1) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
-			K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
-			K(i, 3) = K(i, 5) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
-			K(i, 4) = K(i, 7) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
-			K(i, 6) = K(i, 8) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
+			K(i, 3) = K(i, 5) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
+			K(i, 4) = K(i, 7) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
+			K(i, 6) = K(i, 8) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
 			break;
 		case MATERIAL_MODEL::ANISOTROPIC:
-			K(i, 0) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
-			K(i, 1) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
-			K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
-			K(i, 3) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
-			K(i, 4) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
-			K(i, 5) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
-			K(i, 6) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
-			K(i, 7) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZX)->evaluate(element->node(i));
-			K(i, 8) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZY)->evaluate(element->node(i));
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
+			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
+			K(i, 4) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
+			K(i, 5) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
+			K(i, 6) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
+			K(i, 7) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZX)->evaluate(element->node(i));
+			K(i, 8) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZY)->evaluate(element->node(i));
 			break;
+		default:
+			ESINFO(ERROR) << "This physics not supports set material model";
 		}
 	}
 
@@ -550,47 +552,49 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 		coordinates(i, 2) = p.z;
 		U(i, 0) =
 				element->getProperty(Property::TRANSLATION_MOTION_X, i, 0, 0) *
-				material->get(AdvectionDiffusion3DMaterial::DENSITY)->evaluate(element->node(i)) *
-				material->get(AdvectionDiffusion3DMaterial::HEAT_CAPACITY)->evaluate(element->node(i));
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i)) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i));
 		U(i, 1) =
 				element->getProperty(Property::TRANSLATION_MOTION_Y, i, 0, 0) *
-				material->get(AdvectionDiffusion3DMaterial::DENSITY)->evaluate(element->node(i)) *
-				material->get(AdvectionDiffusion3DMaterial::HEAT_CAPACITY)->evaluate(element->node(i));
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i)) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i));
 		U(i, 2) =
 				element->getProperty(Property::TRANSLATION_MOTION_Z, i, 0, 0) *
-				material->get(AdvectionDiffusion3DMaterial::DENSITY)->evaluate(element->node(i)) *
-				material->get(AdvectionDiffusion3DMaterial::HEAT_CAPACITY)->evaluate(element->node(i));
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i)) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i));
 
 		switch (material->getModel()) {
 		case MATERIAL_MODEL::ISOTROPIC:
-			K(i, 0) = K(i, 1) = K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 0) = K(i, 1) = K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
 			K(i, 3) = K(i, 4) = K(i, 5) = K(i, 6) = K(i, 7) = K(i, 8) = 0;
 			break;
 		case MATERIAL_MODEL::DIAGONAL:
-			K(i, 0) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
-			K(i, 1) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
-			K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
 			K(i, 3) = K(i, 4) = K(i, 5) = K(i, 6) = K(i, 7) = K(i, 8) = 0;
 			break;
 		case MATERIAL_MODEL::SYMMETRIC:
-			K(i, 0) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
-			K(i, 1) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
-			K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
-			K(i, 3) = K(i, 5) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
-			K(i, 4) = K(i, 7) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
-			K(i, 6) = K(i, 8) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
+			K(i, 3) = K(i, 5) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
+			K(i, 4) = K(i, 7) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
+			K(i, 6) = K(i, 8) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
 			break;
 		case MATERIAL_MODEL::ANISOTROPIC:
-			K(i, 0) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
-			K(i, 1) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
-			K(i, 2) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
-			K(i, 3) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
-			K(i, 4) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
-			K(i, 5) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
-			K(i, 6) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
-			K(i, 7) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZX)->evaluate(element->node(i));
-			K(i, 8) = material->get(AdvectionDiffusion3DMaterial::THERMAL_CONDUCTIVITY_ZY)->evaluate(element->node(i));
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(element->node(i));
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ)->evaluate(element->node(i));
+			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
+			K(i, 4) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XZ)->evaluate(element->node(i));
+			K(i, 5) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
+			K(i, 6) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YZ)->evaluate(element->node(i));
+			K(i, 7) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZX)->evaluate(element->node(i));
+			K(i, 8) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZY)->evaluate(element->node(i));
 			break;
+		default:
+			ESINFO(ERROR) << "This physics not supports set material model";
 		}
 	}
 

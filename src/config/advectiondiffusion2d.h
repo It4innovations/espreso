@@ -1,17 +1,16 @@
 
-
 #ifndef SRC_CONFIG_ADVECTIONDIFFUSION2D_H_
 #define SRC_CONFIG_ADVECTIONDIFFUSION2D_H_
 
-#include "material.h"
 #include "solver.h"
 #include "coordinatesystem.h"
 #include "advectiondiffusionconvection.h"
 #include "advectiondiffusionsolver.h"
+#include "materialholder.h"
 
 namespace espreso {
 
-struct AdvectionDiffusion2DMaterial: public MaterialParameters, public Configuration {
+struct AdvectionDiffusion2DMaterial: public Configuration {
 
 	PARAMETER(MaterialParam<MATERIAL_PARAMETER::DENSITY>                , density, "Density", {"0"});
 	PARAMETER(MaterialParam<MATERIAL_PARAMETER::HEAT_CAPACITY>          , Cp     , "Termal capacity."       , {"0"});

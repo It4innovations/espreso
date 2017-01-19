@@ -223,6 +223,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
 			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
 			break;
+		default:
+			ESINFO(ERROR) << "This physics not supports set material model";
 		}
 	}
 
@@ -505,6 +507,8 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(element->node(i));
 			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
 			break;
+		default:
+			ESINFO(ERROR) << "This physics not support set material model";
 		}
 	}
 

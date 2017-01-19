@@ -25,10 +25,9 @@ public:
 	virtual ~Material();
 
 	const Evaluator* get(MATERIAL_PARAMETER parameter) const { return _values[static_cast<int>(parameter)]; }
-	const Evaluator* get(size_t index) const { return _values[index]; }
 	MATERIAL_MODEL getModel() const { return _model; }
 
-	void set(size_t index, const std::string &value);
+	void set(MATERIAL_PARAMETER parameter, const std::string &value);
 	void setModel(MATERIAL_MODEL model) { _model = model; }
 
 protected:

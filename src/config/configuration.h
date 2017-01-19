@@ -42,7 +42,7 @@ struct ParameterBase {
 
 	virtual bool set(const std::string &value) =0;
 	virtual std::string get() const =0;
-	virtual size_t option() const { ESINFO(ERROR) << "Call option on non-option parameter"; return 0; }
+	virtual size_t index() const { ESINFO(ERROR) << "Call index of non-indexable parameter"; return 0; }
 
 	virtual ~ParameterBase() {};
 };
@@ -157,7 +157,7 @@ struct OptionsHolder: public ParameterBase {
 		return "Unrecognized value";
 	}
 
-	size_t option() const { return (size_t)value; }
+	size_t index() const { return (size_t)value; }
 };
 
 struct Configuration {

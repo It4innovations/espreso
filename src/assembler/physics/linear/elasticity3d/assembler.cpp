@@ -194,8 +194,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	// TODO: set the omega from example
 	Point omega(50, 50, 0);
 
-	double ex = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_X)->evaluate(0);
-	double mi = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XY)->evaluate(0);
+	double ex = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(0);
+	double mi = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(0);
 
 	double E = ex / ((1 + mi) * (1 - 2 * mi));
 
@@ -204,7 +204,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	Ce(3, 3) = Ce(4, 4) = Ce(5, 5) = E * (0.5 - mi);
 
 	inertia[0] = inertia[1] = 0; // inertia[2] = 0;
-	inertia[2] = 9.8066 * material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(0);
+	inertia[2] = 9.8066 * material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(0);
 
 	coordinates.resize(element->nodes(), 3);
 

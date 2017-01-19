@@ -8,8 +8,6 @@
 #include "input.h"
 #include "inputgenerator.h"
 
-#include "material.h"
-
 #include "linearelasticity2d.h"
 #include "linearelasticity3d.h"
 #include "advectiondiffusion2d.h"
@@ -18,6 +16,7 @@
 #include "results.h"
 
 #include "decomposer.h"
+#include "materialholder.h"
 
 namespace espreso {
 

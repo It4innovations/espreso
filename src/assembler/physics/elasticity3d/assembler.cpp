@@ -236,7 +236,7 @@ static void fillC(DenseMatrix &Ce, MATERIAL_MODEL model, DenseMatrix &dens, Dens
 
 		break;
 
-	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+	case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC: {
 
 		double miXY = mi(0, 0);
 		double miYZ = mi(0, 1);
@@ -264,6 +264,10 @@ static void fillC(DenseMatrix &Ce, MATERIAL_MODEL model, DenseMatrix &dens, Dens
 		Ce(5, 5) = G(0, 1);
 		break;
 	}
+
+	default:
+		ESINFO(ERROR) << "This physics not supports set material model";
+	}
 }
 
 
@@ -286,24 +290,24 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(element->node(i));
+		matDENS(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i));
 
 		// dependent on temperature
-		matE(i, 0) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_X)->evaluate(element->node(i));
-		matE(i, 1) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Y)->evaluate(element->node(i));
-		matE(i, 2) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Z)->evaluate(element->node(i));
+		matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+		matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+		matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(element->node(i));
 
-		matMI(i, 0) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XY)->evaluate(element->node(i));
-		matMI(i, 1) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XZ)->evaluate(element->node(i));
-		matMI(i, 2) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_YZ)->evaluate(element->node(i));
+		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+		matMI(i, 1) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(element->node(i));
+		matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(element->node(i));
 
-		matG(i, 0) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XY)->evaluate(element->node(i));
-		matG(i, 1) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
-		matG(i, 2) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
+		matG(i, 0) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(element->node(i));
+		matG(i, 1) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
+		matG(i, 2) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
 
-		matTE(i, 0) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
-		matTE(i, 1) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
-		matTE(i, 2) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
+		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
 
 		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
 		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
@@ -644,24 +648,24 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material->get(LinearElasticity3DMaterial::DENSITY)->evaluate(element->node(i));
+		matDENS(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i));
 
 		// dependent on temperature
-		matE(i, 0) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_X)->evaluate(element->node(i));
-		matE(i, 1) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Y)->evaluate(element->node(i));
-		matE(i, 2) = material->get(LinearElasticity3DMaterial::YOUNG_MODULUS_Z)->evaluate(element->node(i));
+		matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+		matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+		matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(element->node(i));
 
-		matMI(i, 0) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XY)->evaluate(element->node(i));
-		matMI(i, 1) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_XZ)->evaluate(element->node(i));
-		matMI(i, 2) = material->get(LinearElasticity3DMaterial::POISSON_RATIO_YZ)->evaluate(element->node(i));
+		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+		matMI(i, 1) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(element->node(i));
+		matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(element->node(i));
 
-		matG(i, 0) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XY)->evaluate(element->node(i));
-		matG(i, 1) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
-		matG(i, 2) = material->get(LinearElasticity3DMaterial::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
+		matG(i, 0) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(element->node(i));
+		matG(i, 1) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
+		matG(i, 2) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
 
-		matTE(i, 0) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
-		matTE(i, 1) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
-		matTE(i, 2) = material->get(LinearElasticity3DMaterial::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
+		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
 
 		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
 		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));

@@ -2,41 +2,25 @@
 #ifndef SRC_CONFIG_LINEARELASTICITY2D_H_
 #define SRC_CONFIG_LINEARELASTICITY2D_H_
 
-#include "material.h"
 #include "solver.h"
+#include "materialholder.h"
 
 namespace espreso {
 
 struct LinearElasticity2DMaterial: public Configuration {
 
-	enum MODEL {
-		LINEAR_ELASTIC_ISOTROPIC = 0,
-		LINEAR_ELASTIC_ORTHOTROPIC = 1,
-		LINEAR_ELASTIC_ANISOTROPIC = 2
-	};
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::DENSITY>            , density, "Density"             , {"0"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::HEAT_CAPACITY>      , Cp     , "Termal capacity."    , {"0"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::POISSON_RATIO_XY>   , MI     , "Poisoon ratio."      , {"0.3"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::YOUNG_MODULUS_X>    , EX     , "Young modulus X."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::YOUNG_MODULUS_Y>    , EY     , "Young modulus Y."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_EXPANSION_X>, TEX    , "Thermal expansion X.", {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_EXPANSION_Y>, TEY    , "Thermal expansion Y.", {"1"});
 
-	enum Parameter {
-		DENSITY = 0,
-		HEAT_CAPACITY,
-		POISSON_RATIO,
-		YOUNG_MODULUS_X,
-		YOUNG_MODULUS_Y,
-		THERMAL_EXPANSION_X,
-		THERMAL_EXPANSION_Y
-	};
-
-	PARAMETER(std::string, density, "Density"                , "0");
-	PARAMETER(std::string, Cp     , "Termal capacity."       , "0");
-	PARAMETER(std::string, MI     , "Poisson ratio."         , "0.3");
-	PARAMETER(std::string, EX     , "Young modulus X."       , "1");
-	PARAMETER(std::string, EY     , "Young modulus Y."       , "1");
-	PARAMETER(std::string, TEX    , "Thermal expansion X."   , "1");
-	PARAMETER(std::string, TEY    , "Thermal expansion Y."   , "1");
-
-	OPTION(MODEL, model, "Material model", MODEL::LINEAR_ELASTIC_ISOTROPIC, OPTIONS({
-		{ "LINEAR_ELASTIC_ISOTROPIC"  , MODEL::LINEAR_ELASTIC_ISOTROPIC  , "Isotropic material." },
-		{ "LINEAR_ELASTIC_ORTHOTROPIC", MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic material." },
-		{ "LINEAR_ELASTIC_ANISOTROPIC", MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic material." }
+	OPTION(MATERIAL_MODEL, model, "Material model", MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC, OPTIONS({
+		{ "LINEAR_ELASTIC_ISOTROPIC"  , MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC  , "Isotropic material." },
+		{ "LINEAR_ELASTIC_ORTHOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic material." },
+		{ "LINEAR_ELASTIC_ANISOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic material." }
 	}));
 };
 

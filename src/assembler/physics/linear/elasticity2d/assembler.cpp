@@ -208,6 +208,9 @@ static void fillC(DenseMatrix &C, LinearElasticity2D::ELEMENT_BEHAVIOUR behaviou
 	{
 		return;
 	}
+
+	default:
+		ESINFO(ERROR) << "This physics not supports set material model";
 	}
 }
 
@@ -230,12 +233,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material->get(LinearElasticity2DMaterial::DENSITY)->evaluate(element->node(i));
-		matE(i, 0) = material->get(LinearElasticity2DMaterial::YOUNG_MODULUS_X)->evaluate(element->node(i));
-		matE(i, 1) = material->get(LinearElasticity2DMaterial::YOUNG_MODULUS_Y)->evaluate(element->node(i));
-		matMI(i, 0) = material->get(LinearElasticity2DMaterial::POISSON_RATIO)->evaluate(element->node(i));
-		matTE(i, 0) = material->get(LinearElasticity2DMaterial::THERMAL_EXPANSION_X)->evaluate(element->node(i));
-		matTE(i, 1) = material->get(LinearElasticity2DMaterial::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		matDENS(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i));
+		matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+		matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
 		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
 		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
 		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0);

@@ -2,102 +2,57 @@
 #ifndef SRC_CONFIG_LINEARELASTICITY3D_H_
 #define SRC_CONFIG_LINEARELASTICITY3D_H_
 
-#include "material.h"
 #include "solver.h"
+#include "materialholder.h"
 
 namespace espreso {
 
 struct LinearElasticity3DMaterial: public Configuration {
 
-	enum MODEL {
-		LINEAR_ELASTIC_ISOTROPIC = 0,
-		LINEAR_ELASTIC_ORTHOTROPIC = 1,
-		LINEAR_ELASTIC_ANISOTROPIC = 2
-	};
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::DENSITY>            , density, "Density"             , {"0"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::HEAT_CAPACITY>      , Cp     , "Termal capacity."    , {"0"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::POISSON_RATIO_XY>   , MIXY   , "Poisoon ratio XY."   , {"0.3"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::POISSON_RATIO_XZ>   , MIXZ   , "Poisoon ratio XZ."   , {"0.3"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::POISSON_RATIO_YZ>   , MIYZ   , "Poisoon ratio YZ."   , {"0.3"});
 
-	enum Parameter {
-		DENSITY = 0,
-		HEAT_CAPACITY,
-		POISSON_RATIO_XY,
-		POISSON_RATIO_XZ,
-		POISSON_RATIO_YZ,
-		YOUNG_MODULUS_X,
-		YOUNG_MODULUS_Y,
-		YOUNG_MODULUS_Z,
-		THERMAL_EXPANSION_X,
-		THERMAL_EXPANSION_Y,
-		THERMAL_EXPANSION_Z,
-		SHEAR_MODULUS_XY,
-		SHEAR_MODULUS_XZ,
-		SHEAR_MODULUS_YZ,
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::YOUNG_MODULUS_X>    , EX     , "Young modulus X."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::YOUNG_MODULUS_Y>    , EY     , "Young modulus Y."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::YOUNG_MODULUS_Z>    , EZ     , "Young modulus Z."    , {"1"});
 
-		D11,
-		D12,
-		D13,
-		D14,
-		D15,
-		D16,
-		D22,
-		D23,
-		D24,
-		D25,
-		D26,
-		D33,
-		D34,
-		D35,
-		D36,
-		D44,
-		D45,
-		D46,
-		D55,
-		D56,
-		D66
-	};
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_EXPANSION_X>, TEX    , "Thermal expansion X.", {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_EXPANSION_Y>, TEY    , "Thermal expansion Y.", {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_EXPANSION_Z>, TEZ    , "Thermal expansion Z.", {"1"});
 
-	PARAMETER(std::string, density, "Density"             , "0");
-	PARAMETER(std::string, Cp     , "Termal capacity."    , "0");
-	PARAMETER(std::string, MIXY   , "Poisson ratio XY."   , "0.3");
-	PARAMETER(std::string, MIXZ   , "Poisson ratio XZ."   , "0.3");
-	PARAMETER(std::string, MIYZ   , "Poisson ratio YZ."   , "0.3");
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::SHEAR_MODULUS_XY>   , GXY    , "Shear modulus XY."   , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::SHEAR_MODULUS_XZ>   , GXZ    , "Shear modulus XZ."   , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::SHEAR_MODULUS_YZ>   , GYZ    , "Shear modulus YZ."   , {"1"});
 
-	PARAMETER(std::string, EX     , "Young modulus X."    , "1");
-	PARAMETER(std::string, EY     , "Young modulus Y."    , "1");
-	PARAMETER(std::string, EZ     , "Young modulus Z."    , "1");
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D11>                , D11    , "Coefficient D11."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D12>                , D12    , "Coefficient D12."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D13>                , D13    , "Coefficient D13."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D14>                , D14    , "Coefficient D14."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D15>                , D15    , "Coefficient D15."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D16>                , D16    , "Coefficient D16."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D22>                , D22    , "Coefficient D22."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D23>                , D23    , "Coefficient D23."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D24>                , D24    , "Coefficient D24."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D25>                , D25    , "Coefficient D25."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D26>                , D26    , "Coefficient D26."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D33>                , D33    , "Coefficient D33."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D34>                , D34    , "Coefficient D34."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D35>                , D35    , "Coefficient D35."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D36>                , D36    , "Coefficient D36."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D44>                , D44    , "Coefficient D44."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D45>                , D45    , "Coefficient D45."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D46>                , D46    , "Coefficient D46."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D55>                , D55    , "Coefficient D55."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D56>                , D56    , "Coefficient D56."    , {"1"});
+	PARAMETER(MaterialParam<MATERIAL_PARAMETER::D66>                , D66    , "Coefficient D66."    , {"1"});
 
-	PARAMETER(std::string, TEX    , "Thermal expansion X.", "1");
-	PARAMETER(std::string, TEY    , "Thermal expansion Y.", "1");
-	PARAMETER(std::string, TEZ    , "Thermal expansion Z.", "1");
-
-	PARAMETER(std::string, GXY    , "Shear modulus XY."   , "1");
-	PARAMETER(std::string, GXZ    , "Shear modulus XY."   , "1");
-	PARAMETER(std::string, GYZ    , "Shear modulus YZ."   , "1");
-
-	PARAMETER(std::string, d11    , "Coefficient."        , "1");
-	PARAMETER(std::string, d12    , "Coefficient."        , "1");
-	PARAMETER(std::string, d13    , "Coefficient."        , "1");
-	PARAMETER(std::string, d14    , "Coefficient."        , "1");
-	PARAMETER(std::string, d15    , "Coefficient."        , "1");
-	PARAMETER(std::string, d16    , "Coefficient."        , "1");
-	PARAMETER(std::string, d22    , "Coefficient."        , "1");
-	PARAMETER(std::string, d23    , "Coefficient."        , "1");
-	PARAMETER(std::string, d24    , "Coefficient."        , "1");
-	PARAMETER(std::string, d25    , "Coefficient."        , "1");
-	PARAMETER(std::string, d26    , "Coefficient."        , "1");
-	PARAMETER(std::string, d33    , "Coefficient."        , "1");
-	PARAMETER(std::string, d34    , "Coefficient."        , "1");
-	PARAMETER(std::string, d35    , "Coefficient."        , "1");
-	PARAMETER(std::string, d36    , "Coefficient."        , "1");
-	PARAMETER(std::string, d44    , "Coefficient."        , "1");
-	PARAMETER(std::string, d45    , "Coefficient."        , "1");
-	PARAMETER(std::string, d46    , "Coefficient."        , "1");
-	PARAMETER(std::string, d55    , "Coefficient."        , "1");
-	PARAMETER(std::string, d56    , "Coefficient."        , "1");
-	PARAMETER(std::string, d66    , "Coefficient."        , "1");
-
-	OPTION(MODEL, model, "Material model", MODEL::LINEAR_ELASTIC_ISOTROPIC, OPTIONS({
-		{ "LINEAR_ELASTIC_ISOTROPIC"  , MODEL::LINEAR_ELASTIC_ISOTROPIC  , "Isotropic material." },
-		{ "LINEAR_ELASTIC_ORTHOTROPIC", MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic material." },
-		{ "LINEAR_ELASTIC_ANISOTROPIC", MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic material." }
+	OPTION(MATERIAL_MODEL, model, "Material model", MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC, OPTIONS({
+		{ "LINEAR_ELASTIC_ISOTROPIC"  , MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC  , "Isotropic material." },
+		{ "LINEAR_ELASTIC_ORTHOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic material." },
+		{ "LINEAR_ELASTIC_ANISOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic material." }
 	}));
 };
 
