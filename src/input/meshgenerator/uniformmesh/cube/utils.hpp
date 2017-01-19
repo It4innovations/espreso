@@ -45,6 +45,16 @@ void CubeUtils<TElement>::computeInterval(const CubeSettings &settings, size_t c
 		}
 		start[i] = start[i] < cStart ? 0 : start[i] - cStart;
 		end[i] = end[i] > cEnd ? settings.subdomainsInCluster[i] * settings.elementsInSubdomain[i] : end[i] - cStart;
+
+		if (start[i] == end[i]) {
+			if (start[i] == 0) {
+				start[i] = 0;
+				end[i] = 1;
+			} else {
+				end[i] = elements;
+				start[i] = end[i] - 1;
+			}
+		}
 	}
 }
 

@@ -155,7 +155,7 @@ void PlaneGenerator<TElement>::elementsMaterials(std::vector<Element*> &elements
 template<class TElement>
 void PlaneGenerator<TElement>::pickElementsInInterval(const std::vector<Element*> &elements, std::vector<Element*> &selection, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement pick elements in interval";
+	ESINFO(ERROR) << "Implement pick elements in interval";
 }
 
 template<class TElement>
@@ -167,7 +167,7 @@ void PlaneGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &
 				this->_e.pickNodes(nodes, selection, indices.data(), edge);
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
-				ESINFO(GLOBAL_ERROR) << "Interval is not on the border";
+				ESINFO(ERROR) << "Interval is not on the border";
 			},
 			true
 	);
@@ -179,7 +179,7 @@ void PlaneGenerator<TElement>::pickNodesInInterval(const std::vector<Element*> &
 template<class TElement>
 void PlaneGenerator<TElement>::generateFacesInInterval(std::vector<Element*> &faces, const Interval &interval)
 {
-	ESINFO(GLOBAL_ERROR) << "Plane mesh has no faces";
+	ESINFO(ERROR) << "Plane mesh has no faces";
 }
 
 template<class TElement>
@@ -191,7 +191,7 @@ void PlaneGenerator<TElement>::generateEdgesInInterval(std::vector<Element*> &ed
 				this->_e.addEdges(edges, &indices[0], edge);
 			},
 			[ & ] (std::vector<eslocal> &indices, CubeFaces face) {
-				ESINFO(GLOBAL_ERROR) << "Interval is not on the border";
+				ESINFO(ERROR) << "Interval is not on the border";
 			},
 			false
 	);
