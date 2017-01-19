@@ -292,11 +292,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 
 	switch (bborder.dimension()) {
 
-	case 0: { // Point
-
-		ESINFO(GLOBAL_ERROR) << "Implement selection of points";
-	} break;
-
+	case 0:   // Point
 	case 1: { // Line
 
 		CubeEdge edge = bborder.getEdge(block);
@@ -321,7 +317,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			});
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Cannot select element of dimension " << dimension << " on 1D line.";
+			ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 1D line.";
 		}
 	} break;
 
@@ -342,7 +338,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			Esutils::removeDuplicity(region->elements());
 			break;
 		case 1:
-			ESINFO(GLOBAL_ERROR) << "Implement selection of edges on face";
+			ESINFO(ERROR) << "Implement selection of edges on face";
 			break;
 		case 2:
 			forEachElement(start, end,
@@ -351,13 +347,13 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			});
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Cannot select element of dimension " << dimension << " on 2D plane.";
+			ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 2D plane.";
 		}
 	} break;
 
 	case 3: { // Volume
 
-		ESINFO(GLOBAL_ERROR) << "Implement selection of volume";
+		ESINFO(ERROR) << "Implement selection of volume";
 	} break;
 
 	}
