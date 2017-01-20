@@ -1,5 +1,6 @@
 
 #include "parser.h"
+#include "../../mesh/structures/material.h"
 
 using namespace espreso::input;
 
@@ -219,14 +220,87 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 
 void WorkbenchParser::mp(std::vector<Material*> &materials)
 {
-//	std::vector<std::string> params = divide(_line);
-//
-//	int mNumber = std::stoi(params[2]);
-//	materials.resize(mNumber--, Material(_mesh.coordinates()));
-//
-//	if (!materials[mNumber].setParameter(params[1], params[3])) {
-//		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
-//	}
+	std::vector<std::string> params = divide(_line);
+
+	size_t mNumber = std::stoi(params[2]);
+	for (size_t i = materials.size(); i < mNumber; i++) {
+		materials.push_back(new Material(_mesh.coordinates()));
+		materials.back()->setModel(PHYSICS::ADVECTION_DIFFUSION_2D, MATERIAL_MODEL::ISOTROPIC);
+		materials.back()->setModel(PHYSICS::ADVECTION_DIFFUSION_3D, MATERIAL_MODEL::ISOTROPIC);
+		materials.back()->setModel(PHYSICS::LINEAR_ELASTICITY_2D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
+		materials.back()->setModel(PHYSICS::LINEAR_ELASTICITY_3D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
+	}
+	mNumber--;
+
+	bool match = false;
+	auto set = [&] (MATERIAL_PARAMETER parameter, const std::string &name) {
+		if (StringCompare::caseInsensitiveEq(params[1], name)) {
+			materials[mNumber]->set(parameter, params[3]);
+			match = true;
+			return true;
+		}
+		return false;
+	};
+
+	auto setWithModel = [&] (MATERIAL_PARAMETER parameter, const std::string &name, std::function<void(void)> setModel) {
+		if (set(parameter, name)) {
+			setModel();
+		}
+	};
+
+	auto setModelAD = [&] (MATERIAL_MODEL model) {
+		materials[mNumber]->setModel(PHYSICS::ADVECTION_DIFFUSION_2D, model);
+		materials[mNumber]->setModel(PHYSICS::ADVECTION_DIFFUSION_3D, model);
+	};
+
+	auto setModelLE = [&] (MATERIAL_MODEL model) {
+		materials[mNumber]->setModel(PHYSICS::LINEAR_ELASTICITY_2D, model);
+		materials[mNumber]->setModel(PHYSICS::LINEAR_ELASTICITY_3D, model);
+	};
+
+	auto skip = [&] (const std::string &name) {
+		if (StringCompare::caseInsensitiveEq(params[1], name)) {
+			match = true;
+		}
+	};
+
+	set(MATERIAL_PARAMETER::DENSITY                , "DENS");
+	set(MATERIAL_PARAMETER::HEAT_CAPACITY          , "C");
+
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, "KXX", [&] () { setModelAD(MATERIAL_MODEL::ISOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, "KYY", [&] () { setModelAD(MATERIAL_MODEL::DIAGONAL); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ, "KZZ", [&] () { setModelAD(MATERIAL_MODEL::DIAGONAL); });
+
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, "KXY", [&] () { setModelAD(MATERIAL_MODEL::SYMMETRIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XZ, "KXZ", [&] () { setModelAD(MATERIAL_MODEL::SYMMETRIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YZ, "KYZ", [&] () { setModelAD(MATERIAL_MODEL::SYMMETRIC); });
+
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX, "KYX", [&] () { setModelAD(MATERIAL_MODEL::ANISOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZX, "KZX", [&] () { setModelAD(MATERIAL_MODEL::ANISOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZY, "KZY", [&] () { setModelAD(MATERIAL_MODEL::ANISOTROPIC); });
+
+
+	setWithModel(MATERIAL_PARAMETER::YOUNG_MODULUS_X        , "EX"  , [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::POISSON_RATIO_XY       , "NUXY", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_EXPANSION_X    , "ALPX", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC); });
+
+	setWithModel(MATERIAL_PARAMETER::YOUNG_MODULUS_Y        , "EY"  , [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::YOUNG_MODULUS_Z        , "EZ"  , [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::POISSON_RATIO_XZ       , "NUXZ", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::POISSON_RATIO_YZ       , "NUYZ", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y    , "ALPY", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+	setWithModel(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z    , "ALPZ", [&] () { setModelLE(MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC); });
+
+	skip("RSVX");
+	skip("RSVY");
+	skip("RSVZ");
+	skip("MURX");
+	skip("MURY");
+	skip("MURZ");
+
+	if (!match) {
+		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
+	}
 }
 
 static size_t getRegionIndex(std::vector<espreso::Region*> &regions, const std::string &name, std::vector<espreso::Element*> &elements)

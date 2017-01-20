@@ -202,7 +202,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 				thickness(i, 0);
 		f(0, i) = element->sumProperty(Property::HEAT_SOURCE, i, 0, 0) * thickness(i, 0);
 
-		switch (material->getModel()) {
+		switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 		case MATERIAL_MODEL::ISOTROPIC:
 			K(i, 0) = K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
 			K(i, 2) = K(i, 3) = 0;
@@ -224,7 +224,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
 			break;
 		default:
-			ESINFO(ERROR) << "This physics not supports set material model";
+			ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
 		}
 	}
 
@@ -486,7 +486,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i)) *
 				thickness(i, 0);
 
-		switch (material->getModel()) {
+		switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 		case MATERIAL_MODEL::ISOTROPIC:
 			K(i, 0) = K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(element->node(i));
 			K(i, 2) = K(i, 3) = 0;
@@ -508,7 +508,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(element->node(i));
 			break;
 		default:
-			ESINFO(ERROR) << "This physics not support set material model";
+			ESINFO(ERROR) << "This  not support set material model";
 		}
 	}
 

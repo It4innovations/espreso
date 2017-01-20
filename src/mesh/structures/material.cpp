@@ -11,9 +11,9 @@ Material::Material(const Coordinates &coordinates, const Configuration &configur
 {
 	_values.resize((size_t)MATERIAL_PARAMETER::SIZE, NULL);
 	if (configuration.parameters.find("MODEL") != configuration.parameters.end()) {
-		_model = (MATERIAL_MODEL)configuration.parameters.find("MODEL")->second->index();
+		_models.resize((size_t)PHYSICS::SIZE, (MATERIAL_MODEL)configuration.parameters.find("MODEL")->second->index());
 	} else {
-		_model = MATERIAL_MODEL::SIZE;
+		_models.resize((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE);
 	}
 
 	for (size_t p = 0; p < configuration.orderedParameters.size(); p++) {

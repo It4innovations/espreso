@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "../../config/materialparameters.h"
+#include "../../config/physics.h"
 
 namespace espreso {
 
@@ -19,21 +20,22 @@ class Material {
 	friend std::ofstream& operator<<(std::ofstream& os, const Material &m);
 
 public:
+	Material(const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE), _values((size_t)MATERIAL_PARAMETER::SIZE, NULL) {}
 	Material(const Coordinates &coordinates, const Configuration &configuration);
-	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(coordinates), _model(MATERIAL_MODEL::SIZE) {};
+	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE) {};
 
 	virtual ~Material();
 
 	const Evaluator* get(MATERIAL_PARAMETER parameter) const { return _values[static_cast<int>(parameter)]; }
-	MATERIAL_MODEL getModel() const { return _model; }
+	MATERIAL_MODEL getModel(PHYSICS physics) const { return _models[(size_t)physics]; }
 
 	void set(MATERIAL_PARAMETER parameter, const std::string &value);
-	void setModel(MATERIAL_MODEL model) { _model = model; }
+	void setModel(PHYSICS physics, MATERIAL_MODEL model) { _models[(size_t)physics] = model; }
 
 protected:
 	const Coordinates &_coordinates;
 
-	MATERIAL_MODEL _model;
+	std::vector<MATERIAL_MODEL> _models;
 	std::vector<Evaluator*> _values;
 };
 

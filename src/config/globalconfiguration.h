@@ -8,6 +8,8 @@
 #include "input.h"
 #include "inputgenerator.h"
 
+#include "physics.h"
+
 #include "linearelasticity2d.h"
 #include "linearelasticity3d.h"
 #include "advectiondiffusion2d.h"
@@ -25,16 +27,6 @@ enum class INPUT {
 	OPENFOAM = 1,
 	ESDATA = 2,
 	GENERATOR = 3
-};
-
-enum class PHYSICS {
-	LINEAR_ELASTICITY_2D,
-	LINEAR_ELASTICITY_3D,
-	TRANSIENT_ELASTICITY_2D,
-	TRANSIENT_ELASTICITY_3D,
-	ADVECTION_DIFFUSION_2D,
-	ADVECTION_DIFFUSION_3D,
-	STOKES
 };
 
 struct GlobalConfiguration: public Configuration {

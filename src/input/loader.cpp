@@ -77,6 +77,17 @@ void Loader::fill()
 	}
 
 	for (size_t r = 0; r < mesh._regions.size(); r++) {
+
+		size_t threads = environment->OMP_NUM_THREADS;
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, mesh._regions[r]->elements().size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+				mesh._regions[r]->elements()[n]->regions().push_back(mesh._regions[r]);
+			}
+		}
+
 		for (size_t s = 0; s < mesh._regions[r]->settings.size(); s++) {
 			for (auto it = mesh._regions[r]->settings[s].begin(); it != mesh._regions[r]->settings[s].end(); ++it) {
 				ESINFO(OVERVIEW) << it->first << " loaded for LOAD STEP " << s + 1 << " for region '" << mesh._regions[r]->name << "'";

@@ -266,7 +266,7 @@ static void fillC(DenseMatrix &Ce, MATERIAL_MODEL model, DenseMatrix &dens, Dens
 	}
 
 	default:
-		ESINFO(ERROR) << "This physics not supports set material model";
+		ESINFO(ERROR) << "Linear elasticity 3D not supports set material model";
 	}
 }
 
@@ -292,22 +292,34 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	for (size_t i = 0; i < element->nodes(); i++) {
 		matDENS(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i));
 
-		// dependent on temperature
-		matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
-		matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
-		matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(element->node(i));
+		switch (material->getModel(PHYSICS::LINEAR_ELASTICITY_3D)) {
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC:
+			matE(i, 0) = matE(i, 1) = matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+			matMI(i, 0) = matMI(i, 1) = matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+			matTE(i, 0) = matTE(i, 1) = matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+			break;
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+			ESINFO(ERROR) << "Implement ANISOTROPIC MATERIAL";
+			break;
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+			matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+			matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+			matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(element->node(i));
 
-		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
-		matMI(i, 1) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(element->node(i));
-		matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(element->node(i));
+			matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+			matMI(i, 1) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(element->node(i));
+			matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(element->node(i));
 
-		matG(i, 0) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(element->node(i));
-		matG(i, 1) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
-		matG(i, 2) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
+			matG(i, 0) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(element->node(i));
+			matG(i, 1) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
+			matG(i, 2) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
 
-		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
-		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
-		matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
+			matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+			matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+			matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
+		default:
+			ESINFO(ERROR) << "Linear elasticity 3D not supports set material model";
+		}
 
 		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
 		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
@@ -345,7 +357,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		gpInitT.multiply(N[gp], matInitT);
 		gpInertia.multiply(N[gp], inertia);
 
-		fillC(Ce, material->getModel(), gpDENS, gpE, gpMI, gpG);
+		fillC(Ce, material->getModel(PHYSICS::LINEAR_ELASTICITY_3D), gpDENS, gpE, gpMI, gpG);
 		B.resize(Ce.rows(), Ksize);
 		epsilon.resize(Ce.rows(), 1);
 
@@ -650,22 +662,34 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 	for (size_t i = 0; i < element->nodes(); i++) {
 		matDENS(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i));
 
-		// dependent on temperature
-		matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
-		matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
-		matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(element->node(i));
+		switch (material->getModel(PHYSICS::LINEAR_ELASTICITY_3D)) {
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC:
+			matE(i, 0) = matE(i, 1) = matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+			matMI(i, 0) = matMI(i, 1) = matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+			matTE(i, 0) = matTE(i, 1) = matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+			break;
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+			ESINFO(ERROR) << "Implement ANISOTROPIC MATERIAL";
+			break;
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+			matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+			matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+			matE(i, 2) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Z)->evaluate(element->node(i));
 
-		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
-		matMI(i, 1) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(element->node(i));
-		matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(element->node(i));
+			matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+			matMI(i, 1) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XZ)->evaluate(element->node(i));
+			matMI(i, 2) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_YZ)->evaluate(element->node(i));
 
-		matG(i, 0) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(element->node(i));
-		matG(i, 1) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
-		matG(i, 2) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
+			matG(i, 0) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XY)->evaluate(element->node(i));
+			matG(i, 1) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_XZ)->evaluate(element->node(i));
+			matG(i, 2) = material->get(MATERIAL_PARAMETER::SHEAR_MODULUS_YZ)->evaluate(element->node(i));
 
-		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
-		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
-		matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
+			matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+			matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+			matTE(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Z)->evaluate(element->node(i));
+		default:
+			ESINFO(ERROR) << "Linear elasticity 3D not supports set material model";
+		}
 
 		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
 		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
@@ -687,7 +711,7 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 		gpMI.multiply(N[gp], matMI);
 		gpG.multiply(N[gp], matG);
 
-		fillC(Ce, material->getModel(), gpDENS, gpE, gpMI, gpG);
+		fillC(Ce, material->getModel(PHYSICS::LINEAR_ELASTICITY_3D), gpDENS, gpE, gpMI, gpG);
 		B.resize(Ce.rows(), Ksize);
 		distribute(B, dND);
 

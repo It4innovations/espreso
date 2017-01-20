@@ -219,7 +219,7 @@ static void fillC(DenseMatrix &C, LinearElasticity2DConfiguration::ELEMENT_BEHAV
 	}
 
 	default:
-		ESINFO(ERROR) << "This physics not supports set material model";
+		ESINFO(ERROR) << "Linear elasticity 2D not supports set material model";
 	}
 }
 
@@ -242,12 +242,27 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	inertia = 0;
 	for (size_t i = 0; i < element->nodes(); i++) {
-		matDENS(i, 0) = material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i));
-		matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
-		matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
-		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
-		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
-		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		switch (material->getModel(PHYSICS::LINEAR_ELASTICITY_2D)) {
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC:
+			matE(i, 0) = matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+			matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+			matTE(i, 0) = matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+			break;
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC:
+			ESINFO(ERROR) << "Implement ANISOTROPIC MATERIAL";
+			break;
+		case MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC:
+			matE(i, 0) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_X)->evaluate(element->node(i));
+			matE(i, 1) = material->get(MATERIAL_PARAMETER::YOUNG_MODULUS_Y)->evaluate(element->node(i));
+
+			matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
+
+			matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
+			matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
+		default:
+			ESINFO(ERROR) << "Linear elasticity 2D not supports set material model";
+		}
+
 		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
 		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
 		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0);
@@ -282,7 +297,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		gpThickness.multiply(N[gp], matThickness, 1, 0);
 
-		fillC(Ce, configuration.element_behaviour, material->getModel(), gpDENS, gpE, gpMI, gpT);
+		fillC(Ce, configuration.element_behaviour, material->getModel(PHYSICS::LINEAR_ELASTICITY_2D), gpDENS, gpE, gpMI, gpT);
 		B.resize(Ce.rows(), Ksize);
 		epsilon.resize(Ce.rows(), 1);
 		switch (configuration.element_behaviour) {

@@ -210,7 +210,7 @@ static void fillC(DenseMatrix &C, LinearElasticity2D::ELEMENT_BEHAVIOUR behaviou
 	}
 
 	default:
-		ESINFO(ERROR) << "This physics not supports set material model";
+		ESINFO(ERROR) << "Linear elasticity 2D not supports set material model";
 	}
 }
 
@@ -274,7 +274,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 		gpThickness.multiply(N[gp], matThickness, 1, 0);
 
-		fillC(Ce, LinearElasticity2D::elementBehaviour, material->getModel(), gpDENS, gpE, gpMI, gpT);
+		fillC(Ce, LinearElasticity2D::elementBehaviour, material->getModel(PHYSICS::LINEAR_ELASTICITY_2D), gpDENS, gpE, gpMI, gpT);
 		B.resize(Ce.rows(), Ksize);
 		epsilon.resize(Ce.rows(), 1);
 		switch (LinearElasticity2D::elementBehaviour) {
