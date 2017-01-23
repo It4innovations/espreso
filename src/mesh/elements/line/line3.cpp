@@ -53,11 +53,11 @@ std::vector<double> Line3::_weighFactor = { 5 / 9.0, 8 / 9.0, 5 / 9.0 };
 
 bool Line3::match(const eslocal *indices, eslocal n)
 {
-	if (n != 2) {
+	if (n != 3) {
 		return false;
 	}
 
-	if (Element::match(indices, 0, 1)) {
+	if (Element::match(indices, 0, 1) || Element::match(indices, 0, 2) || Element::match(indices, 1, 2)) {
 		return false;
 	}
 
