@@ -4,13 +4,13 @@
 |     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
 |                                      |   http://espreso.it4i.cz             |
 |-----------------------------------------------------------------------------|
-|  Case Description: Heat convection set on the right edge                    |
+|  Case Description: Heat flux set on the right edge                          |
 |                                                                             |
 |-----------------------------------------------------------------------------|
 |*****************************************************************************|
 
 INPUT GENERATOR;
-PHYSICS ADVECTION_DIFFUSION_2D;
+PHYSICS ADVECTION_DIFFUSION_3D;
 
 GENERATOR {
 
@@ -31,44 +31,40 @@ GENERATOR {
 
     CLUSTERS_X     [ARG1];
     CLUSTERS_Y     [ARG2];
-    CLUSTERS_Z          1;
+    CLUSTERS_Z     [ARG3];
 
-    DOMAINS_X      [ARG3];
-    DOMAINS_Y      [ARG4];
-    DOMAINS_Z           1;
+    DOMAINS_X      [ARG4];
+    DOMAINS_Y      [ARG5];
+    DOMAINS_Z      [ARG6];
 
-    ELEMENTS_X     [ARG5];
-    ELEMENTS_Y     [ARG6];
-    ELEMENTS_Z          1;
+    ELEMENTS_X     [ARG7];
+    ELEMENTS_Y     [ARG8];
+    ELEMENTS_Z     [ARG9];
 
-    NODES {
-        LEFT   "<0, 1) <0, 0> <0, 0>";
-        TOP    "<0, 0> (0, 1) <0, 0>";
-
-        BOTTOM "<1, 1> <0, 1> <0, 0>";
+    NODES { # List of nodes regions.
+      Z0 "<0, 1> <0, 1> <0, 0>";
+      Y0 "<0, 1> <0, 0> <0, 1>";
+      X0 "<0, 0> <0, 1> <0, 1>";
+      Y1 "<0, 1> <1, 1> <0, 1>";
+      X1 "<1, 1> <0, 1> <0, 1>";
     }
 
-    EDGES {
-        RIGHT  "<0, 1> <1, 1> <0, 0>";
-    }
-
-    ELEMENTS {
-        ALL_EL ALL;
+    FACES { # List of faces regions.
+      Z1 "<0, 1> <0, 1> <1, 1>";
     }
   }
 }
 
-ADVECTION_DIFFUSION_2D {
+ADVECTION_DIFFUSION_3D {
 
   SOLVER_LIBRARY      ESPRESO;
 
   ESPRESO {
 
-    METHOD          HYBRID_FETI;
+    METHOD           TOTAL_FETI;
     SOLVER                GMRES;
     PRECONDITIONER    DIRICHLET;
     REGULARIZATION  NULL_PIVOTS;
-    B0_TYPE             CORNERS;
   }
 
   STABILIZATION CAU;
@@ -76,24 +72,17 @@ ADVECTION_DIFFUSION_2D {
 
   TEMPERATURE {
     1 {
-      LEFT   1;
-      TOP    1;
-      BOTTOM 0;
+      X0   0;
+      X1   0;
+      Y0   0;
+      Y1   0;
+      Z0   0;
     }
   }
 
-  CONVECTION {
+  HEAT_FLOW {
     1 {
-      RIGHT {
-        HEAT_TRANSFER_COEFFICIENT  2;
-        EXTERNAL_TEMPERATURE       5;
-      }
-    }
-  }
-
-  TRANSLATION_MOTIONS {
-    1 {
-      ALL_EL  X -10, Y 2;
+      Z1 10;
     }
   }
 
@@ -110,7 +99,7 @@ ADVECTION_DIFFUSION_2D {
   }
 
   MATERIAL_SET {
-    ALL_EL 1;
+    ALL_ELEMENTS 1;
   }
 }
 

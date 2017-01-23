@@ -4,7 +4,7 @@
 |     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
 |                                      |   http://espreso.it4i.cz             |
 |-----------------------------------------------------------------------------|
-|  Case Description: Heat convection set on the right edge                    |
+|  Case Description: Heat flow set on the right edge                          |
 |                                                                             |
 |-----------------------------------------------------------------------------|
 |*****************************************************************************|
@@ -65,10 +65,10 @@ ADVECTION_DIFFUSION_2D {
   ESPRESO {
 
     METHOD          HYBRID_FETI;
-    SOLVER                GMRES;
+    SOLVER             BICGSTAB;
     PRECONDITIONER    DIRICHLET;
     REGULARIZATION  NULL_PIVOTS;
-    B0_TYPE             CORNERS;
+    B0_TYPE             KERNELS;
   }
 
   STABILIZATION CAU;
@@ -82,18 +82,9 @@ ADVECTION_DIFFUSION_2D {
     }
   }
 
-  CONVECTION {
+  HEAT_FLOW {
     1 {
-      RIGHT {
-        HEAT_TRANSFER_COEFFICIENT  2;
-        EXTERNAL_TEMPERATURE       5;
-      }
-    }
-  }
-
-  TRANSLATION_MOTIONS {
-    1 {
-      ALL_EL  X -10, Y 2;
+      RIGHT 10;
     }
   }
 

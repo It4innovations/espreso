@@ -67,7 +67,7 @@ ADVECTION_DIFFUSION_3D {
     REGULARIZATION  NULL_PIVOTS;
     B0_TYPE             KERNELS;
   }
-  
+
   STABILIZATION CAU;
   SIGMA           0;
 
@@ -86,7 +86,7 @@ ADVECTION_DIFFUSION_3D {
       Z1 10;
     }
   }
-  
+
   TRANSLATION_MOTIONS {
     1 {
       ALL_ELEMENTS  Z -10;

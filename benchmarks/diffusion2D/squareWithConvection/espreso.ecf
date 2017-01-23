@@ -60,15 +60,15 @@ GENERATOR {
 
 ADVECTION_DIFFUSION_2D {
 
-  SOLVER_LIBRARY      ESPRESO;
+  SOLVER_LIBRARY        ESPRESO;
 
   ESPRESO {
 
     METHOD          HYBRID_FETI;
-    SOLVER                GMRES;
+    SOLVER                  PCG;
     PRECONDITIONER    DIRICHLET;
     REGULARIZATION  NULL_PIVOTS;
-    B0_TYPE             CORNERS;
+    B0_TYPE             KERNELS;
   }
 
   STABILIZATION CAU;
@@ -88,12 +88,6 @@ ADVECTION_DIFFUSION_2D {
         HEAT_TRANSFER_COEFFICIENT  2;
         EXTERNAL_TEMPERATURE       5;
       }
-    }
-  }
-
-  TRANSLATION_MOTIONS {
-    1 {
-      ALL_EL  X -10, Y 2;
     }
   }
 
