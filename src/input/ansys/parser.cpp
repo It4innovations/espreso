@@ -218,6 +218,8 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 		eParams[Element::BODY] = bodyCounter;
 		Element *e = AnsysUtils::createElement(values.data() + PARAM_SIZE, NODE_SIZE, eParams.data(), eType[values[ETYPE] - 1]);
 		switch (eType[values[ETYPE] - 1]) {
+		case 77:
+		case 87:
 		case 90:
 		case 185:
 		case 186:
@@ -227,6 +229,9 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 		case 152:
 		case 154:
 			faces.push_back(e);
+			break;
+		case 151:
+			edges.push_back(e);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Unknown element type " << eType[values[ETYPE] - 1];

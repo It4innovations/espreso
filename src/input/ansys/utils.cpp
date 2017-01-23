@@ -79,8 +79,11 @@ espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal
 			return new Pyramid13(indices, n, params);
 		}
 		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
+	case 87:
 	case 187:
 		return new Tetrahedron10(indices, n, params);
+	case 77:
+		return new Square8(indices, params);
 	case 152:
 		if (Square4::match(indices, n)) {
 			return new Square4(indices, params);
@@ -94,6 +97,14 @@ espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal
 		}
 		if (Triangle6::match(indices, n)) {
 			return new Triangle6(indices, params);
+		}
+		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
+	case 151:
+		if (Line2::match(indices, n)) {
+			return new Line2(indices);
+		}
+		if (Line3::match(indices, n)) {
+			return new Line3(indices);
 		}
 		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
 	default:
