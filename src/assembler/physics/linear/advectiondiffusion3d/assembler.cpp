@@ -636,7 +636,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 
 		Ce(0, 0) += sigma * h_e * norm_u_e;
 		Ce(1, 1) += sigma * h_e * norm_u_e;
-		Ce(3, 3) += sigma * h_e * norm_u_e;
+		Ce(2, 2) += sigma * h_e * norm_u_e;
 
 		matGradient.multiply(dND, solution, 1, 1);
 		matFlux.multiply(Ce, dND * solution, 1, 1);
