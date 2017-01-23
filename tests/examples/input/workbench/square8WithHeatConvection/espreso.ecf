@@ -1,0 +1,31 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Simple example for test OpenFOAM input file              |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT WORKBENCH;
+PHYSICS ADVECTION_DIFFUSION_2D;
+
+WORKBENCH {
+  PATH    workbench.dat;
+  DOMAINS 4;
+}
+
+ADVECTION_DIFFUSION_2D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD           TOTAL_FETI;
+    SOLVER                  PCG;
+    PRECONDITIONER    DIRICHLET;
+    REGULARIZATION  NULL_PIVOTS;
+  }
+}
