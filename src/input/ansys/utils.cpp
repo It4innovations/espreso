@@ -50,25 +50,6 @@ espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal
 espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal *params, int eType)
 {
 	switch (eType) {
-	case 186:
-		if (Hexahedron20::match(indices, n)) {
-			return new Hexahedron20(indices, n, params);
-		}
-		if (Tetrahedron10::match(indices, n)) {
-			return new Tetrahedron10(indices, n, params);
-		}
-		if (Prisma15::match(indices, n)) {
-			return new Prisma15(indices, n, params);
-		}
-		if (Pyramid13::match(indices, n)) {
-			return new Pyramid13(indices, n, params);
-		}
-		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
-		break;
-	case 187:
-		return new Tetrahedron10(indices, n, params);
-	case 154:
-		return new Square8(indices, params);
 	case 185:
 		if (Hexahedron8::match(indices, n)) {
 			return new Hexahedron8(indices, n, params);
@@ -83,7 +64,30 @@ espreso::Element* AnsysUtils::createElement(eslocal *indices, eslocal n, eslocal
 			return new Pyramid5(indices, n, params);
 		}
 		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
-		break;
+	case 186:
+		if (Hexahedron20::match(indices, n)) {
+			return new Hexahedron20(indices, n, params);
+		}
+		if (Tetrahedron10::match(indices, n)) {
+			return new Tetrahedron10(indices, n, params);
+		}
+		if (Prisma15::match(indices, n)) {
+			return new Prisma15(indices, n, params);
+		}
+		if (Pyramid13::match(indices, n)) {
+			return new Pyramid13(indices, n, params);
+		}
+		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
+	case 187:
+		return new Tetrahedron10(indices, n, params);
+	case 154:
+		if (Square8::match(indices, n)) {
+			return new Square8(indices, params);
+		}
+		if (Triangle6::match(indices, n)) {
+			return new Triangle6(indices, params);
+		}
+		ESINFO(ERROR) << "Unknown element with indices: " << print_indices(indices, n);
 	default:
 		ESINFO(ERROR) << "Unknown element type: " << eType;
 	}

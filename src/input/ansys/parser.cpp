@@ -17,8 +17,10 @@ WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
 	_commands["*DIM"] = WorkbenchCommands::DIM;
 	_commands["d"] = WorkbenchCommands::DISPLACEMENT;
 	_commands["f"] = WorkbenchCommands::FORCE;
+	_commands["sf"] = WorkbenchCommands::SURFACE_EFFECT;
 	_commands["obstacle"] = WorkbenchCommands::OBSTACLE;
 	_commands["nsel"] = WorkbenchCommands::NSEL;
+	_commands["esel"] = WorkbenchCommands::ESEL;
 	_commands["_loadvari"] = WorkbenchCommands::LOADVAR;
 }
 
@@ -73,6 +75,7 @@ WorkbenchCommands WorkbenchParser::process()
 			case WorkbenchCommands::ET: et(); break;
 			case WorkbenchCommands::CMSEL: cmsel(); break;
 			case WorkbenchCommands::NSEL: nsel(); break;
+			case WorkbenchCommands::ESEL: esel(); break;
 			case WorkbenchCommands::DIM: dim(); break;
 
 			default: {
@@ -136,9 +139,11 @@ void WorkbenchParser::nblock(Coordinates &coordinates)
 	}
 }
 
-void WorkbenchParser::eblock(std::vector<Element*> &elements)
+void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
-	int MATERIAL = 0, ETYPE, CONSTANT, COORDINATES, NODES, PARAM_SIZE = 6, NODE_SIZE;
+	regions.push_back(new Region());
+
+	int MATERIAL = 0, ETYPE = 1, CONSTANT = 2, COORDINATES, NODES, PARAM_SIZE = 6, NODE_SIZE;
 	bool SOLID = true;
 
 	std::vector<std::string> params = divide(_line);
@@ -151,16 +156,12 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 	case 3:
 		if (!StringCompare::caseInsensitiveEq(params[2], "SOLID")) {
 			SOLID = false;
-			ETYPE = 1;
-			CONSTANT = 2;
 			MATERIAL = 3;
 			COORDINATES = 4;
 			PARAM_SIZE = 5;
 		} else { // SOLID element
 			SOLID = true;
 			MATERIAL = 0;
-			ETYPE = 1;
-			CONSTANT = 2;
 			COORDINATES = 4;
 			NODES = 8;
 			PARAM_SIZE = 11;
@@ -213,8 +214,22 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements)
 		eParams[Element::CONSTANT] = values[CONSTANT];
 		eParams[Element::COORDINATES] = values[COORDINATES] - 1;
 		eParams[Element::BODY] = bodyCounter;
-		elements.push_back(AnsysUtils::createElement(values.data() + PARAM_SIZE, NODE_SIZE, eParams.data(), eType[values[ETYPE] - 1]));
+		Element *e = AnsysUtils::createElement(values.data() + PARAM_SIZE, NODE_SIZE, eParams.data(), eType[values[ETYPE] - 1]);
+		switch (eType[values[ETYPE] - 1]) {
+		case 185:
+		case 186:
+		case 187:
+			elements.push_back(e);
+			break;
+		case 154:
+			faces.push_back(e);
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Unknown element type " << eType[values[ETYPE] - 1];
+		}
+		regions.back()->elements().push_back(e);
 	}
+	regions.back()->name = std::to_string(values[ETYPE]);
 	bodyCounter++;
 }
 
@@ -303,7 +318,7 @@ void WorkbenchParser::mp(std::vector<Material*> &materials)
 	}
 }
 
-static size_t getRegionIndex(std::vector<espreso::Region*> &regions, const std::string &name, std::vector<espreso::Element*> &elements)
+static size_t getRegionIndex(std::vector<espreso::Region*> &regions, const std::string &name)
 {
 	if (name.size()) {
 		for (size_t i = 0; i < regions.size(); i++) {
@@ -311,25 +326,9 @@ static size_t getRegionIndex(std::vector<espreso::Region*> &regions, const std::
 				return i;
 			}
 		}
-	} else {
-		regions.push_back(new espreso::Region());
-		regions.back()->elements().insert(regions.back()->elements().end(), elements.begin(), elements.end());
-		return regions.size() - 1;
 	}
 	ESINFO(espreso::GLOBAL_ERROR) << "Unknown region '" << name << "'";
 	return -1;
-}
-
-void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
-{
-	ESINFO(GLOBAL_ERROR) << "Implement eblock settings";
-	//SurfaceCondition *ec = new SurfaceCondition();
-	//eblock(ec->faces());
-
-	//conditions.push_back(ec);
-//	std::stringstream ss;
-//	ss << eType.back();
-//	selections.push_back({ss.str(), ConditionElements::ELEMENTS});
 }
 
 void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
@@ -389,7 +388,7 @@ void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vec
 
 	size_t loadStep = 0;
 	if (!params[1].compare(0, 3, "all")) {
-		Region *region = regions[getRegionIndex(regions, _selectedRegion, nodes)];
+		Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_NODES")];
 		region->settings.resize(loadStep + 1);
 		if (!params[2].compare(0, 3, "all")) {
 			evaluators.push_back(new ConstEvaluator(0, Property::DISPLACEMENT_X));
@@ -423,7 +422,7 @@ void WorkbenchParser::displacement(std::vector<Evaluator*> &evaluators, std::vec
 	}
 
 	pushTableEvaluator(evaluators, _tables, params[3]);
-	Region *region = regions[getRegionIndex(regions, params[1], nodes)];
+	Region *region = regions[getRegionIndex(regions, params[1])];
 	region->settings.resize(loadStep + 1);
 	if (!params[2].compare(0, 2, "ux")) {
 		evaluators.back()->property() = Property::DISPLACEMENT_X;
@@ -456,7 +455,7 @@ void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Reg
 
 	size_t loadStep = 0;
 	pushTableEvaluator(evaluators, _tables, params[3]);
-	Region *region = regions[getRegionIndex(regions, params[1], nodes)];
+	Region *region = regions[getRegionIndex(regions, params[1])];
 	region->settings.resize(loadStep + 1);
 	if (!params[2].compare(0, 2, "fx")) {
 		evaluators.back()->property() = Property::FORCE_X;
@@ -475,6 +474,24 @@ void WorkbenchParser::force(std::vector<Evaluator*> &evaluators, std::vector<Reg
 	}
 }
 
+void WorkbenchParser::sf(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+{
+	std::vector<std::string> params = divide(_line);
+
+	size_t loadStep = 0;
+	pushTableEvaluator(evaluators, _tables, params[3]);
+	Region *region = regions[getRegionIndex(regions, _selectedRegion)];
+	region->settings.resize(loadStep + 1);
+
+	if (!params[1].compare(0, 3, "all")) {
+		if (!params[2].compare(0, 4, "pres")) {
+			evaluators.back()->property() = Property::PRESSURE;
+			ESINFO(DETAILS) << "WB: SET PRESSURE to region " << _selectedRegion << " to table " << evaluators.back()->name();
+			region->settings[loadStep][Property::PRESSURE].push_back(evaluators.back());
+		}
+	}
+}
+
 void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
 {
 	std::vector<std::string> params = divide(_line);
@@ -484,7 +501,7 @@ void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<
 	}
 
 	size_t loadStep = 0;
-	Region *region = regions[getRegionIndex(regions, _selectedRegion, nodes)];
+	Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_NODES")];
 	region->settings.resize(loadStep + 1);
 	evaluators.push_back(new CoordinatesEvaluator(params[1], _mesh.coordinates(), Property::OBSTACLE));
 	evaluators.push_back(new CoordinatesEvaluator(params[2], _mesh.coordinates(), Property::NORMAL_DIRECTION));
@@ -613,9 +630,15 @@ void WorkbenchParser::esel()
 	if (params[1].compare(0, 3, "all") == 0) {
 		_selectedRegion.clear();
 		ESINFO(DETAILS) << "WB: CLEAR SELECTION";
-	} else {
-		ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << params[1] << "'";
+		return;
 	}
+	if (params[1].compare(0, 3, "s") == 0 && params[2].compare(0, 3, "type")) {
+		_selectedRegion = params[4];
+		ESINFO(DETAILS) << "WB: SELECT ELEMENTS REGION " << params[4];
+		return;
+	}
+
+	ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << params[1] << "'";
 }
 
 

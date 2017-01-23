@@ -29,7 +29,8 @@ void AnsysWorkbench::elements(std::vector<Element*> &elements, std::vector<Eleme
 			}
 			break;
 		case WorkbenchCommands::EBLOCK: {
-			_parser.eblock(elements);
+			std::vector<Region*> dummyRegions;
+			_parser.eblock(elements, dummyRegions, faces, edges);
 			break;
 		}
 		case WorkbenchCommands::END:
@@ -86,11 +87,14 @@ void AnsysWorkbench::regions(
 		case WorkbenchCommands::FORCE:
 			_parser.force(evaluators, regions, elements, faces, edges, nodes);
 			break;
+		case WorkbenchCommands::SURFACE_EFFECT:
+			_parser.sf(evaluators, regions, elements, faces, edges);
+			break;
 		case WorkbenchCommands::OBSTACLE:
 			_parser.obstacle(evaluators, regions, elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::EBLOCK:
-			_parser.eblock(elements, regions, faces, edges, nodes);
+			_parser.eblock(elements, regions, faces, edges);
 			break;
 		default:
 			return;
