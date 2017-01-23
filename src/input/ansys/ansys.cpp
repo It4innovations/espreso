@@ -90,6 +90,9 @@ void AnsysWorkbench::regions(
 		case WorkbenchCommands::SURFACE_EFFECT:
 			_parser.sf(evaluators, regions, elements, faces, edges);
 			break;
+		case WorkbenchCommands::ACCELERATION:
+			_parser.acceleration(evaluators, regions);
+			break;
 		case WorkbenchCommands::OBSTACLE:
 			_parser.obstacle(evaluators, regions, elements, faces, edges, nodes);
 			break;

@@ -20,6 +20,7 @@ enum class WorkbenchCommands {
 	DISPLACEMENT,
 	FORCE,
 	SURFACE_EFFECT,
+	ACCELERATION,
 	OBSTACLE,
 	LOADVAR,
 	DIM,
@@ -64,6 +65,7 @@ public:
 	void cmblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void displacement(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void force(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
+	void acceleration(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions);
 	void obstacle(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void sf(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void loadvar();

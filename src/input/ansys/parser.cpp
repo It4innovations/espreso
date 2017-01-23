@@ -18,6 +18,7 @@ WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
 	_commands["d"] = WorkbenchCommands::DISPLACEMENT;
 	_commands["f"] = WorkbenchCommands::FORCE;
 	_commands["sf"] = WorkbenchCommands::SURFACE_EFFECT;
+	_commands["acel"] = WorkbenchCommands::ACCELERATION;
 	_commands["obstacle"] = WorkbenchCommands::OBSTACLE;
 	_commands["nsel"] = WorkbenchCommands::NSEL;
 	_commands["esel"] = WorkbenchCommands::ESEL;
@@ -490,6 +491,26 @@ void WorkbenchParser::sf(std::vector<Evaluator*> &evaluators, std::vector<Region
 			region->settings[loadStep][Property::PRESSURE].push_back(evaluators.back());
 		}
 	}
+}
+
+void WorkbenchParser::acceleration(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions)
+{
+	std::vector<std::string> params = divide(_line);
+
+	size_t loadStep = 0;
+	Region *region = regions[getRegionIndex(regions, _selectedRegion.size() ? _selectedRegion : "ALL_ELEMENTS")];
+	region->settings.resize(loadStep + 1);
+
+	auto setAcceleration = [&] (size_t param, Property property) {
+		pushTableEvaluator(evaluators, _tables, params[param]);
+		evaluators.back()->property() = property;
+		ESINFO(DETAILS) << "WB: SET " << property << " to region " << region->name << " to table " << evaluators.back()->name();
+		region->settings[loadStep][property].push_back(evaluators.back());
+	};
+
+	setAcceleration(1, Property::ACCELERATION_X);
+	setAcceleration(2, Property::ACCELERATION_Y);
+	setAcceleration(3, Property::ACCELERATION_Z);
 }
 
 void WorkbenchParser::obstacle(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes)
