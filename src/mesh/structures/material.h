@@ -20,7 +20,7 @@ class Material {
 	friend std::ofstream& operator<<(std::ofstream& os, const Material &m);
 
 public:
-	Material(const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE), _values((size_t)MATERIAL_PARAMETER::SIZE, NULL) {}
+	Material(const Coordinates &coordinates);
 	Material(const Coordinates &coordinates, const Configuration &configuration);
 	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE) {};
 

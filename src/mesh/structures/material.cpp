@@ -6,10 +6,19 @@
 
 using namespace espreso;
 
+Material::Material(const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE)
+{
+	for (size_t i = 0; i < (size_t)MATERIAL_PARAMETER::SIZE; i++) {
+		_values.push_back(new ConstEvaluator(0));
+	}
+}
+
 Material::Material(const Coordinates &coordinates, const Configuration &configuration)
 : _coordinates(coordinates)
 {
-	_values.resize((size_t)MATERIAL_PARAMETER::SIZE, NULL);
+	for (size_t i = 0; i < (size_t)MATERIAL_PARAMETER::SIZE; i++) {
+		_values.push_back(new ConstEvaluator(0));
+	}
 	if (configuration.parameters.find("MODEL") != configuration.parameters.end()) {
 		_models.resize((size_t)PHYSICS::SIZE, (MATERIAL_MODEL)configuration.parameters.find("MODEL")->second->index());
 	} else {
@@ -32,17 +41,13 @@ Material::Material(const Coordinates &coordinates, const Configuration &configur
 Material::~Material()
 {
 	for (size_t i = 0; i < _values.size(); i++) {
-		if (_values[i] != NULL) {
-			delete _values[i];
-		}
+		delete _values[i];
 	}
 }
 
 void Material::set(MATERIAL_PARAMETER parameter, const std::string &value)
 {
-	if (_values[(size_t)parameter] != NULL) {
-		delete _values[(size_t)parameter];
-	}
+	delete _values[(size_t)parameter];
 
 	if (StringCompare::contains(value, "xyzt")) {
 		_values[(size_t)parameter] = new CoordinatesEvaluator(value, _coordinates);
