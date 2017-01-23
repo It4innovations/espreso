@@ -81,8 +81,8 @@ void AnsysWorkbench::regions(
 		case WorkbenchCommands::CMBLOCK:
 			_parser.cmblock(elements, regions, faces, edges, nodes);
 			break;
-		case WorkbenchCommands::DISPLACEMENT:
-			_parser.displacement(evaluators, regions, elements, faces, edges, nodes);
+		case WorkbenchCommands::DIRICHLET:
+			_parser.dirichlet(evaluators, regions, elements, faces, edges, nodes);
 			break;
 		case WorkbenchCommands::FORCE:
 			_parser.force(evaluators, regions, elements, faces, edges, nodes);
@@ -92,6 +92,9 @@ void AnsysWorkbench::regions(
 			break;
 		case WorkbenchCommands::ACCELERATION:
 			_parser.acceleration(evaluators, regions);
+			break;
+		case WorkbenchCommands::INITIAL_TEMPERATURE:
+			_parser.initial_temperature(evaluators, regions);
 			break;
 		case WorkbenchCommands::OBSTACLE:
 			_parser.obstacle(evaluators, regions, elements, faces, edges, nodes);

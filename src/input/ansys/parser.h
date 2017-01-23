@@ -17,7 +17,8 @@ enum class WorkbenchCommands {
 	NBLOCK,
 	EBLOCK,
 	MP,
-	DISPLACEMENT,
+	DIRICHLET,
+	INITIAL_TEMPERATURE,
 	FORCE,
 	SURFACE_EFFECT,
 	ACCELERATION,
@@ -63,9 +64,10 @@ public:
 	void eblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void mp(std::vector<Material*> &materials);
 	void cmblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
-	void displacement(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
+	void dirichlet(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void force(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void acceleration(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions);
+	void initial_temperature(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions);
 	void obstacle(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges, std::vector<Element*> &nodes);
 	void sf(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void loadvar();
@@ -87,6 +89,8 @@ protected:
 	std::vector<std::string> divide(std::string &line, std::string delim = ",");
 	std::vector<int> parseBlockHeader(std::string &line);
 	bool trash(const std::string &line);
+
+	bool setProperty(const std::string &parameter, const std::string &value, const std::string &name, espreso::Property property, size_t loadStep, espreso::Region *region, std::vector<Evaluator*> &evaluators);
 
 	std::ifstream _file;
 	std::string _line;
