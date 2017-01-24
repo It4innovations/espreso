@@ -92,7 +92,6 @@ void AdvectionDiffusion3D::assembleB0()
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case B0_TYPE::KERNELS:
-			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, R1);
 			break;
 		default:
@@ -401,6 +400,29 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 	}
 }
 
+static void analyticsKernels(SparseMatrix &R1, const Coordinates &coordinates, size_t subdomain)
+{
+	R1.rows = coordinates.localSize(subdomain);
+	R1.cols = 1;
+	R1.nnz = R1.rows * R1.cols;
+	R1.type = 'G';
+
+	R1.dense_values.resize(R1.nnz, 1 / sqrt(coordinates.localSize(subdomain)));
+}
+
+static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat)
+{
+	RegMat.rows = K.rows;
+	RegMat.cols = K.cols;
+	RegMat.nnz  = 1;
+	RegMat.type = K.type;
+
+	RegMat.I_row_indices.push_back(1);
+	RegMat.J_col_indices.push_back(1);
+	RegMat.V_values.push_back(K.getDiagonalMaximum());
+	RegMat.ConvertToCSR(1);
+}
+
 static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1, SparseMatrix &R2, SparseMatrix &RegMat, size_t subdomain)
 {
 	double norm;
@@ -430,22 +452,40 @@ void AdvectionDiffusion3D::assembleStiffnessMatrix(const Element* e, DenseMatrix
 
 void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 {
-	switch (mtype) {
-		case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-			#pragma omp parallel for
-			for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+	#pragma omp parallel for
+	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+		switch (_solverConfiguration.regularization) {
+		case REGULARIZATION::FIX_POINTS:
+			switch (mtype) {
+			case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+				analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+				analyticsRegMat(K[subdomain], RegMat[subdomain]);
+				K[subdomain].RemoveLower();
+				RegMat[subdomain].RemoveLower();
+				K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+				RegMat[subdomain].ConvertToCOO(1);
+				break;
+			case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+				ESINFO(ERROR) << "Cannot regularize stiffness matrix from fix point. Set REGULARIZATION = NULL_PIVOTS";
+				break;
+			default:
+				ESINFO(ERROR) << "Unknown matrix type for regularization.";
+			}
+			break;
+		case REGULARIZATION::NULL_PIVOTS:
+			switch (mtype) {
+			case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 				K[subdomain].RemoveLower();
 				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], RegMat[subdomain], subdomain);
-			}
-			break;
-		case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
-			#pragma omp parallel for
-			for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+				break;
+			case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+				break;
+			default:
+				ESINFO(ERROR) << "Unknown matrix type for regularization.";
 			}
 			break;
-		default:
-			ESINFO(ERROR) << "Unknown matrix type for regularization.";
+		}
 	}
 }
 
