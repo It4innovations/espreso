@@ -65,10 +65,9 @@ ADVECTION_DIFFUSION_2D {
   ESPRESO {
 
     METHOD          HYBRID_FETI;
-    SOLVER                  PCG;
-    PRECONDITIONER    DIRICHLET;
+    SOLVER              pipePCG;
+    PRECONDITIONER         NONE;
     REGULARIZATION  NULL_PIVOTS;
-    B0_TYPE             KERNELS;
   }
 
   STABILIZATION CAU;
