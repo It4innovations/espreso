@@ -701,9 +701,10 @@ void AdvectionDiffusion3D::postProcess(store::Store &store, const std::vector<st
 	}
 
 	std::vector<std::vector<double> > termalGradient(_mesh.parts()), termalFlux(_mesh.parts());
-	DenseMatrix eSolution;
 
+	#pragma omp parallel for
 	for (size_t p = 0; p < _mesh.parts(); p++) {
+		DenseMatrix eSolution;
 		termalGradient[p].reserve(3 * matrixSize[p]);
 		termalFlux[p].reserve(3 * matrixSize[p]);
 		for (eslocal e = _mesh.getPartition()[p]; e < _mesh.getPartition()[p + 1]; e++) {
