@@ -3292,6 +3292,9 @@ void SparseMatrix::TestMatRow(eslocal size, eslocal row_index) {
 
 void SparseMatrix::MatMatT(SparseMatrix & A_in, SparseMatrix & B_in) {
 
+	if (!A_in.nnz || !B_in.nnz) {
+		return;
+	}
 	//SEQ_VECTOR < SEQ_VECTOR < eslocal    > > GGt_J (A_in.rows, SEQ_VECTOR < eslocal    > () );
 	//SEQ_VECTOR < SEQ_VECTOR < double > > GGt_V (A_in.rows, SEQ_VECTOR < double > () );
 

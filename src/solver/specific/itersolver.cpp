@@ -4966,9 +4966,13 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		eslocal dest_rank = neighbor_ranks[neigh_i];
 		eslocal tag = 1;
 
-		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
-		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 2] );
-		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 3] );
+		if (A_in.rows) {
+			MPI_Isend(A_in.CSR_I_row_indices.data(), A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
+		} else {
+			MPI_Isend(A_in.CSR_I_row_indices.data(),             0, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
+		}
+		MPI_Isend(A_in.CSR_J_col_indices.data(), A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 2] );
+		MPI_Isend(A_in.CSR_V_values.data(),      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 3] );
 
 	}
 
@@ -4978,7 +4982,11 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		eslocal source_rank = neighbor_ranks[neigh_i];
 		eslocal tag = 1;
 
-		MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0], B_out[neigh_i].rows + 1, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
+		if (B_out[neigh_i].rows) {
+			MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0], B_out[neigh_i].rows + 1, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
+		} else {
+			MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0],                       0, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
+		}
 		MPI_Irecv(&B_out[neigh_i].CSR_J_col_indices[0], B_out[neigh_i].nnz,      esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 5] );
 		MPI_Irecv(&B_out[neigh_i].CSR_V_values[0],      B_out[neigh_i].nnz,      MPI_DOUBLE,      source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 6] );
 	}
