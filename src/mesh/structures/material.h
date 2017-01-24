@@ -30,6 +30,7 @@ public:
 	MATERIAL_MODEL getModel(PHYSICS physics) const { return _models[(size_t)physics]; }
 
 	void set(MATERIAL_PARAMETER parameter, const std::string &value);
+	void set(MATERIAL_PARAMETER parameter, Evaluator* value);
 	void setModel(PHYSICS physics, MATERIAL_MODEL model) { _models[(size_t)physics] = model; }
 
 protected:

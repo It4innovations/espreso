@@ -11,6 +11,7 @@ WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
 	_commands["eblock"] = WorkbenchCommands::EBLOCK;
 	_commands["cmblock"] = WorkbenchCommands::CMBLOCK;
 	_commands["MP"] = WorkbenchCommands::MP;
+	_commands["MPTEMP"] = WorkbenchCommands::MPTEMP;
 
 	_commands["et"] = WorkbenchCommands::ET;
 	_commands["cmsel"] = WorkbenchCommands::CMSEL;
@@ -34,8 +35,14 @@ std::vector<std::string> WorkbenchParser::divide(std::string &line, std::string 
 		start = end + 1;
 		end = line.find_first_of(delim, start);
 		parts.push_back(Parser::strip(line.substr(start, end - start)));
+		if (parts.back().size() && parts.back()[0] == '!') {
+			parts.pop_back();
+			break;
+		}
 	} while(end != std::string::npos);
-
+	if (!parts.back().size()) {
+		parts.pop_back();
+	}
 	return parts;
 }
 
@@ -242,7 +249,7 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 	bodyCounter++;
 }
 
-void WorkbenchParser::mp(std::vector<Material*> &materials)
+void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator)
 {
 	std::vector<std::string> params = divide(_line);
 
@@ -259,7 +266,11 @@ void WorkbenchParser::mp(std::vector<Material*> &materials)
 	bool match = false;
 	auto set = [&] (MATERIAL_PARAMETER parameter, const std::string &name) {
 		if (StringCompare::caseInsensitiveEq(params[1], name)) {
-			materials[mNumber]->set(parameter, params[3]);
+			if (evaluator == NULL) {
+				materials[mNumber]->set(parameter, params[3]);
+			} else {
+				materials[mNumber]->set(parameter, evaluator);
+			}
 			match = true;
 			return true;
 		}
@@ -324,6 +335,35 @@ void WorkbenchParser::mp(std::vector<Material*> &materials)
 
 	if (!match) {
 		ESINFO(GLOBAL_ERROR) << "Unknown material property '" << params[1] << "'";
+	}
+}
+
+void WorkbenchParser::mptemp(std::vector<Material*> &materials)
+{
+	std::vector<std::pair<double, double> > table;
+	while (true) {
+		std::vector<std::string> params = divide(_line);
+		if (!params[0].compare("MPDATA")) {
+			size_t loaded = 0;
+			while (loaded < table.size()) {
+				if (loaded) {
+					getline(_file, _line);
+					params = divide(_line);
+				}
+				for (size_t i = 0; i + 4 < params.size(); i++) {
+					table[loaded++].second = std::stod(params[i + 4]);
+				}
+			}
+			mp(materials, new TableInterpolationEvaluator("TEMP" + params[2], table));
+		} else {
+			if (!params[1].size()) {
+				break;
+			}
+			int index = std::stoi(params[1]);
+			table.resize(index);
+			table[index - 1].first = std::stod(params[2]);
+		}
+		getline(_file, _line);
 	}
 }
 
@@ -637,7 +677,7 @@ void WorkbenchParser::cmsel()
 	if (params[1].compare(0, 1, "s")) {
 		ESINFO(GLOBAL_ERROR) << Info::TextColor::YELLOW << "unknown cmsel parameters '" << params[1] << "'";
 	}
-	_selectedRegion = Parser::strip(params[2]);
+	_selectedRegion = Parser::strip(Parser::split(params[2], "!")[0]);
 	ESINFO(DETAILS) << "WB: SELECT REGION: " << _selectedRegion;
 }
 

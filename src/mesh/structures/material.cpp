@@ -57,5 +57,11 @@ void Material::set(MATERIAL_PARAMETER parameter, const std::string &value)
 	}
 }
 
+void Material::set(MATERIAL_PARAMETER parameter, Evaluator* value)
+{
+	delete _values[(size_t)parameter];
+	_values[(size_t)parameter] = value;
+}
+
 
 

@@ -200,6 +200,44 @@ protected:
 	std::vector<std::vector<double> > _axis;
 };
 
+class TableInterpolationEvaluator: public Evaluator {
+
+public:
+	TableInterpolationEvaluator(
+			const std::string &name,
+			const std::vector<std::pair<double, double> > &table,
+			Property property = Property::EMPTY)
+	: Evaluator(name, property), _table(table)
+	{
+		if (!_table.size()) {
+			ESINFO(GLOBAL_ERROR) << "Interpolation table with zero size.";
+		}
+	};
+
+	TableInterpolationEvaluator(std::ifstream &is, Property property) { ESINFO(GLOBAL_ERROR) << "Implement load TableInterpolationEvaluator."; }
+
+	virtual Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
+	virtual double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
+	{
+		if (temperature < _table[0].first) {
+			return _table[0].second;
+		}
+		for (size_t i = 0; i < _table.size() - 1; i++) {
+			if (_table[i].first < temperature && temperature < _table[i + 1].first) {
+				double a = _table[i].first  , b = _table[i + 1].first;
+				double va = _table[i].second, vb = _table[i + 1].second;
+				return va + (vb - va) * (temperature - a) / (b - a);
+			}
+		}
+		return _table.back().second;
+	}
+
+	virtual void store(std::ofstream& os)  { ESINFO(GLOBAL_ERROR) << "Implement store TableInterpolationEvaluator."; }
+
+protected:
+	std::vector<std::pair<double, double> > _table;
+};
+
 namespace input { class API; }
 
 class ArrayEvaluator: public Evaluator {

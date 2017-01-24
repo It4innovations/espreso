@@ -54,6 +54,10 @@ void AnsysWorkbench::materials(std::vector<Material*> &materials)
 			_parser.mp(materials);
 			break;
 		}
+		case WorkbenchCommands::MPTEMP: {
+			_parser.mptemp(materials);
+			break;
+		}
 		case WorkbenchCommands::END:
 			return;
 		default:
