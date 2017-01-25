@@ -96,7 +96,6 @@ void AdvectionDiffusion2D::assembleB0()
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case B0_TYPE::KERNELS:
-			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
 			break;
 		default:
