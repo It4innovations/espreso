@@ -461,12 +461,23 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 		case REGULARIZATION::FIX_POINTS:
 			switch (mtype) {
 			case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-				analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-				analyticsRegMat(K[subdomain], RegMat[subdomain]);
-				K[subdomain].RemoveLower();
-				RegMat[subdomain].RemoveLower();
-				K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
-				RegMat[subdomain].ConvertToCOO(1);
+				if (singularK[subdomain]) {
+					analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+					analyticsRegMat(K[subdomain], RegMat[subdomain]);
+					K[subdomain].RemoveLower();
+					RegMat[subdomain].RemoveLower();
+					K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+					RegMat[subdomain].ConvertToCOO(1);
+				} else {
+					R1[subdomain].rows = 0;
+					R1[subdomain].cols = 0;
+					R1[subdomain].nnz  = 0;
+					R1[subdomain].type = 'G';
+					RegMat[subdomain].rows = 0;
+					RegMat[subdomain].cols = 0;
+					RegMat[subdomain].nnz  = 0;
+					RegMat[subdomain].type = 'G';
+				}
 				break;
 			case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
 				ESINFO(ERROR) << "Cannot regularize stiffness matrix from fix point. Set REGULARIZATION = NULL_PIVOTS";
@@ -536,6 +547,7 @@ void AdvectionDiffusion3D::composeSubdomain(size_t subdomain)
 					}
 				}
 				if (withK) {
+					singularK[subdomain] = false;
 					for (size_t nx = 0; nx < elments[i]->nodes(); nx++) {
 						for (size_t dx = 0; dx < pointDOFs.size(); dx++) {
 							size_t row = nodes[elments[i]->node(nx)]->DOFIndex(subdomain, dx);
