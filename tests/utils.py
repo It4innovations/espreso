@@ -46,19 +46,20 @@ class TestCaseCreator:
     @staticmethod
     def gather(folder, ext):
         examples = []
-        founded = []
         for root, subFolders, files in os.walk(folder):
-            ext_founded = False
-            for path in founded:
-                if os.path.commonprefix([path, root]) == path:
-                    ext_founded = True
+            skip = False
+            for file in files:
+                if file.endswith(".skip"):
+                    print "skip folder " + root
+                    for line in open(os.path.join(root, file)):
+                        print "--> " + line
+                    skip = True
+                    break
+            if skip:
+                continue
             for file in files:
                 if file.endswith(ext):
-                    ext_founded = True
                     examples.append(( root, file.rstrip(ext)))
-                    founded.append(root)
-            if not ext_founded and len(subFolders) == 0:
-                print "skip folder " + root
 
         examples.sort()
 
