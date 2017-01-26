@@ -24,17 +24,6 @@ public:
 	size_t coarseNodes() const { return _indices.size(); }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown line has no gausse points."; return 0; }
 
-	virtual Point faceNormal(const Element *face) const
-	{
-		ESINFO(GLOBAL_ERROR) << "Call normal of unknown line element.";
-		return Point();
-	}
-	virtual Point edgeNormal(const Element *edge, const Coordinates &coordinates)
-	{
-		ESINFO(GLOBAL_ERROR) << "Call normal of unknown line element.";
-		return Point();
-	}
-
 	std::vector<eslocal>& DOFsIndices() { return _DOFs; }
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }

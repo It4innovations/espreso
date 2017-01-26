@@ -14,7 +14,7 @@ std::vector<Property> Hexahedron8::_DOFMidPoint;
 static std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
 		Hexahedron8GPCount,
-		DenseMatrix(Point::dimension(), Hexahedron8NodesCount)
+		DenseMatrix(3, Hexahedron8NodesCount)
 	);
 
 	double CsQ_scale = 0.577350269189626;

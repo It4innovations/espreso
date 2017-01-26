@@ -37,7 +37,7 @@ static std::vector<std::vector< double> > Prisma15_rst()
 static std::vector<DenseMatrix> Prisma15_dN() {
 	std::vector<DenseMatrix> dN(
 		Prisma15GPCount,
-		DenseMatrix(Point::dimension(), Prisma15NodesCount)
+		DenseMatrix(3, Prisma15NodesCount)
 	);
 
 	std::vector<std::vector< double> > rst = Prisma15_rst();

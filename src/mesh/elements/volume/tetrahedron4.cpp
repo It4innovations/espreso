@@ -16,7 +16,7 @@ static std::vector<DenseMatrix> Tetra4_dN()
 	// dN contains [dNr, dNs, dNt]
 	std::vector<DenseMatrix> dN(
 		Tetrahedron4GPCount,
-		DenseMatrix(Point::dimension(), Tetrahedron4NodesCount)
+		DenseMatrix(3, Tetrahedron4NodesCount)
 	);
 
 	for (unsigned int i = 0; i < Tetrahedron4GPCount; i++) {

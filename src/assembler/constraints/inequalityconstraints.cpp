@@ -1,5 +1,6 @@
 
 #include "inequalityconstraints.h"
+#include "../../mesh/settings/evaluator.h"
 
 using namespace espreso;
 

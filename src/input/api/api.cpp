@@ -1,5 +1,7 @@
 
 #include "api.h"
+#include "../../config/environment.h"
+#include "../../mesh/settings/evaluator.h"
 
 using namespace espreso::input;
 

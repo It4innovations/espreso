@@ -1,6 +1,7 @@
 
 #include "parser.h"
 #include "../../mesh/structures/material.h"
+#include "../../mesh/settings/evaluator.h"
 
 using namespace espreso::input;
 
@@ -25,6 +26,13 @@ WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
 	_commands["nsel"] = WorkbenchCommands::NSEL;
 	_commands["esel"] = WorkbenchCommands::ESEL;
 	_commands["_loadvari"] = WorkbenchCommands::LOADVAR;
+}
+
+WorkbenchParser::~WorkbenchParser()
+{
+	for (size_t t = 0; t < _tables.size(); t++) {
+		delete _tables[t];
+	}
 }
 
 std::vector<std::string> WorkbenchParser::divide(std::string &line, std::string delim)

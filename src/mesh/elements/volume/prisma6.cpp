@@ -36,7 +36,7 @@ static std::vector< std::vector< double> > Prisma6_rst()
 static std::vector<DenseMatrix> Prisma6_dN() {
 	std::vector<DenseMatrix> dN(
 		Prisma6GPCount,
-		DenseMatrix(Point::dimension(), Prisma6NodesCount)
+		DenseMatrix(3, Prisma6NodesCount)
 	);
 
 	std::vector<std::vector<double> > rst = Prisma6_rst();

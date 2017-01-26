@@ -1,6 +1,7 @@
 
 #include "unknownplane.h"
 #include "../line/unknownline.h"
+#include "../../../basis/utilities/utils.h"
 
 using namespace espreso;
 

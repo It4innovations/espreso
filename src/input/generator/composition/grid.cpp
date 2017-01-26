@@ -4,6 +4,7 @@
 #include "../elements/elements.h"
 
 #include "../../../config/inputgeneratorgrid.h"
+#include "../../../config/environment.h"
 
 using namespace espreso::input;
 

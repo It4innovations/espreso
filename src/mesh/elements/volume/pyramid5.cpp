@@ -33,7 +33,7 @@ static std::vector< std::vector< double> > Pyramid5_rst()
 static std::vector<DenseMatrix> Pyramid5_dN() {
 	std::vector<DenseMatrix> dN(
 		Pyramid5GPCount,
-		DenseMatrix(Point::dimension(), Pyramid5NodesCount)
+		DenseMatrix(3, Pyramid5NodesCount)
 	);
 
 	std::vector< std::vector< double> > _pyramid5_rst = Pyramid5_rst();

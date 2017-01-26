@@ -1,5 +1,6 @@
 
 #include "esdata.h"
+#include "../../config/environment.h"
 
 using namespace espreso::store;
 

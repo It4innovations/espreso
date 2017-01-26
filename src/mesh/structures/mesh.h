@@ -18,6 +18,9 @@
 namespace espreso {
 
 struct Configuration;
+template <typename TParameter, typename TValue>
+struct ConfigurationVectorMap;
+
 namespace input {
 class Loader;
 }

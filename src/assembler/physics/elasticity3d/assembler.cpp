@@ -1,6 +1,7 @@
 
 #include "assembler.h"
 #include "mkl.h"
+#include "../../../mesh/settings/evaluator.h"
 
 namespace espreso {
 

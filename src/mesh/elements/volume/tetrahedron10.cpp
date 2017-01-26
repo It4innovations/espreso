@@ -16,7 +16,7 @@ static std::vector<DenseMatrix> Tetra10_dN()
 {
 	std::vector<DenseMatrix> dN(
 		Tetrahedron10GPCount,
-		DenseMatrix(Point::dimension(), Tetrahedron10NodesCount)
+		DenseMatrix(3, Tetrahedron10NodesCount)
 	);
 
 	std::vector<double> rv;

@@ -42,7 +42,7 @@ std::vector<DenseMatrix> Hexa20_dN()
 {
 	std::vector<DenseMatrix> dN(
 		Hexahedron20GPCount,
-		DenseMatrix(Point::dimension(), Hexahedron20NodesCount)
+		DenseMatrix(3, Hexahedron20NodesCount)
 	);
 
 	std::vector<std::vector< double> > rst = Hexa20_rst();

@@ -5,6 +5,7 @@
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
 #include "../../config/globalconfiguration.h"
+#include "../../mesh/settings/evaluator.h"
 
 namespace espreso {
 

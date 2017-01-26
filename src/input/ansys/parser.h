@@ -3,12 +3,16 @@
 #define INPUT_ANSYS_PARSER_H_
 
 #include <map>
+#include <vector>
 
 #include "esbasis.h"
 #include "esmesh.h"
 #include "utils.h"
 
 namespace espreso {
+
+class TableEvaluator;
+
 namespace input {
 
 enum class WorkbenchCommands {
@@ -74,12 +78,7 @@ public:
 	void sf(std::vector<Evaluator*> &evaluators, std::vector<Region*> &regions, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void loadvar();
 
-	~WorkbenchParser()
-	{
-		for (size_t t = 0; t < _tables.size(); t++) {
-			delete _tables[t];
-		}
-	}
+	~WorkbenchParser();
 
 protected:
 	void et();

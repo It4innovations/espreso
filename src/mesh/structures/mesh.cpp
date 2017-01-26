@@ -2,6 +2,7 @@
 #include "mesh.h"
 #include "mkl.h"
 #include "../../config/configuration.h"
+#include "../settings/evaluator.h"
 
 namespace espreso {
 
