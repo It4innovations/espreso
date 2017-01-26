@@ -1,0 +1,102 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Heat flow set on the right edge                          |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_2D;
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE  SQUARE4;
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X          2;
+    CLUSTERS_Y          3;
+    CLUSTERS_Z          1;
+
+    DOMAINS_X           2;
+    DOMAINS_Y           2;
+    DOMAINS_Z           1;
+
+    ELEMENTS_X         30;
+    ELEMENTS_Y         20;
+    ELEMENTS_Z          1;
+
+    NODES {
+        LEFT   "(0, 1) <0, 0> <0, 0>";
+        RIGHT  "(0, 1) <1, 1> <0, 0>";
+
+        TOP    "<0, 0> <0, 1> <0, 0>";
+        BOTTOM "<1, 1> <0, 1> <0, 0>";
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_2D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD          [ARG0];
+    SOLVER          [ARG1];
+    PRECONDITIONER  [ARG2];
+    REGULARIZATION  [ARG3];
+    B0_TYPE         [ARG4];
+
+    REDUNDANT_LAGRANGE   0;
+    SCALING              0;
+    EPSILON           1e-3;
+    ITERATIONS          50;
+  }
+
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    1 {
+      LEFT   1;
+      TOP    1;
+      RIGHT  0;
+      BOTTOM 0;
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY 1;
+      KXX     1;
+      KXY     1;
+      Cp      1;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
+
+
+
