@@ -2,7 +2,6 @@
 from utils import *
 import unittest
 import glob
-import string
 
 ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(ESPRESO_TESTS)
