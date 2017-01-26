@@ -1,4 +1,10 @@
+
 #include "openfoam.h"
+
+#include "../../mesh/elements/plane/square4.h"
+#include "../../mesh/elements/plane/triangle3.h"
+
+#include "../../mesh/structures/mesh.h"
 
 using namespace espreso::input;
 
@@ -136,7 +142,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 		face++;
 	}
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin(); it != elementBuilders.end(); ++it) {
-		VolumeElement *element = NULL;
+		Element *element = NULL;
 		solveParseError((*it)->createElement(element));
 		if (element == NULL) {
 			ESINFO(GLOBAL_ERROR) << "Unrecognized element form face: " << (*it) << "\n";
@@ -226,6 +232,12 @@ void OpenFOAM::regions(
 			}
 		}
 	}
+}
+
+bool OpenFOAM::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+{
+	mesh.partitiate(_openfoam.domains);
+	return true;
 }
 
 void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)

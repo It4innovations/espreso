@@ -3,8 +3,6 @@
 #define INPUT_ESDATA_ESDATA_H_
 
 #include "../loader.h"
-#include "esbasis.h"
-
 #include "../../config/input.h"
 
 namespace espreso {
@@ -34,11 +32,7 @@ protected:
 			std::vector<Element*> &edges,
 			std::vector<Element*> &nodes);
 	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
-	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
-	{
-		mesh.partitiate(_esdata.domains);
-		return true;
-	}
+	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
 
 private:
 	const ESPRESOInput &_esdata;

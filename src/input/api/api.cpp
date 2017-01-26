@@ -3,6 +3,14 @@
 #include "../../config/environment.h"
 #include "../../mesh/settings/evaluator.h"
 
+#include "../../mesh/elements/volume/unknownvolume.h"
+#include "../../mesh/elements/plane/unknownplane.h"
+#include "../../mesh/elements/line/unknownline.h"
+#include "../../mesh/elements/point/unknownpoint.h"
+#include "../../mesh/elements/point/dof.h"
+
+#include "../../mesh/structures/mesh.h"
+
 using namespace espreso::input;
 
 

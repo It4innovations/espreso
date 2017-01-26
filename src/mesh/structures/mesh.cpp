@@ -5,6 +5,10 @@
 #include "../../config/environment.h"
 #include "../settings/evaluator.h"
 
+#include "../elements/elements.h"
+
+#include "metis.h"
+
 namespace espreso {
 
 Mesh::Mesh():_elements(0)

@@ -4,7 +4,13 @@
 
 #include "../instance.h"
 
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/elements/element.h"
+#include "../../../solver/generic/LinearSolver.h"
+
 namespace espreso {
+
+class ESPRESOSolver;
 
 template <class TPhysics>
 struct PrecomputedInstance: public Instance

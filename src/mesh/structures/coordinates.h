@@ -1,12 +1,10 @@
 #ifndef COORDINATES_H_
 #define COORDINATES_H_
 
-#include "esbasis.h"
-
-#include <algorithm>
 #include <vector>
-#include <map>
-#include <fstream>
+#include <algorithm>
+
+#include "../../basis/point/point.h"
 
 namespace espreso
 {

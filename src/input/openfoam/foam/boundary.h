@@ -9,6 +9,7 @@
 #define SRC_INPUT_OPENFOAM_FOAM_BOUNDARY_H_
 
 #include <vector>
+#include <ostream>
 #include "../../loader.h"
 
 namespace espreso {
@@ -31,19 +32,16 @@ public:
 		return nodes;
 	}
 
-	void prepareNodes() {
-		std::sort(nodes.begin(), nodes.end());
-		Esutils::removeDuplicity(nodes);
-	}
+	void prepareNodes();
 
-	friend inline std::ostream& operator<<(std::ostream& os,
-				const Boundary& obj) {
-			os << "Rank: " << obj.procNo <<"{\n";
-			for (auto node : obj.nodes) {
-				os << node << "\n";
-			}
-			os << "};\n";
-			return os;
+	friend inline std::ostream& operator<<(std::ostream& os, const Boundary& obj)
+	{
+		os << "Rank: " << obj.procNo <<"{\n";
+		for (auto node : obj.nodes) {
+			os << node << "\n";
+		}
+		os << "};\n";
+		return os;
 	}
 
 private:

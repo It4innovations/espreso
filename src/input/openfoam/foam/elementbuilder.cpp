@@ -1,4 +1,13 @@
+
 #include "elementbuilder.h"
+#include "../../../mesh/elements/volume/hexahedron8.h"
+#include "../../../mesh/elements/volume/hexahedron20.h"
+#include "../../../mesh/elements/volume/tetrahedron4.h"
+#include "../../../mesh/elements/volume/tetrahedron10.h"
+#include "../../../mesh/elements/volume/prisma6.h"
+#include "../../../mesh/elements/volume/prisma15.h"
+#include "../../../mesh/elements/volume/pyramid5.h"
+#include "../../../mesh/elements/volume/pyramid13.h"
 
 using namespace espreso::input;
 
@@ -9,7 +18,7 @@ ElementBuilder::~ElementBuilder() {
 
 }
 
-ParseError* ElementBuilder::createElement(VolumeElement *&element) {
+ParseError* ElementBuilder::createElement(Element *&element) {
 
 	std::set< eslocal > coordinates;
 	int numberOfSquares = 0;

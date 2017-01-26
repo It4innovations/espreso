@@ -1,6 +1,16 @@
 
 #include "../vtk.h"
 
+#include "../../../basis/logging/logging.h"
+
+#include "../../../config/output.h"
+#include "../../../config/environment.h"
+
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/elements/element.h"
+
+#include "../../../mesh/elements/line/line2.h"
+
 using namespace espreso::store;
 
 static void create(std::ofstream &os, const std::string &path)

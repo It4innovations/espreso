@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
 	Factory factory(configuration);
 
-	factory.solve("result");
+	factory.solve();
 	factory.check(configuration.results);
 
 	MPI_Barrier(MPI_COMM_WORLD);

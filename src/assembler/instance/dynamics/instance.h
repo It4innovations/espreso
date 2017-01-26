@@ -3,7 +3,11 @@
 #define SRC_ASSEMBLER_INSTANCE_DYNAMICS_INSTANCE_H_
 
 #include "../instance.h"
-#include "esoutput.h"
+
+#include "../../../config/output.h"
+#include "../../constraints/constraints.h"
+#include "../../../output/vtk/vtk.h"
+#include "../../../solver/generic/LinearSolver.h"
 
 namespace espreso {
 

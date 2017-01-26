@@ -1,6 +1,9 @@
 
 #include "triangle6.h"
 
+#include "../../../../mesh/elements/line/line3.h"
+#include "../../../../mesh/elements/plane/triangle6.h"
+
 using namespace espreso::input;
 
 size_t Triangle6::subelements = 2;

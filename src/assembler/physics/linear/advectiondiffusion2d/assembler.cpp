@@ -1,6 +1,12 @@
 
 #include "assembler.h"
+#include "../../../../mesh/elements/element.h"
 #include "../../../../mesh/settings/evaluator.h"
+
+#include "../../../../mesh/elements/plane/square4.h"
+#include "../../../../mesh/elements/plane/square8.h"
+#include "../../../../mesh/elements/plane/triangle3.h"
+#include "../../../../mesh/elements/plane/triangle6.h"
 
 namespace espreso {
 

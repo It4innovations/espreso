@@ -1,6 +1,15 @@
 
 #include "vtk.h"
 
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/elements/element.h"
+
+#include "../../assembler/constraints/constraints.h"
+#include "../../solver/generic/SparseMatrix.h"
+
+#include "../../config/output.h"
+#include "../../config/environment.h"
+
 namespace espreso {
 namespace store {
 

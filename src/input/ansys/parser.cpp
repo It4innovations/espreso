@@ -2,6 +2,7 @@
 #include "parser.h"
 #include "../../mesh/structures/material.h"
 #include "../../mesh/settings/evaluator.h"
+#include "../../mesh/elements/element.h"
 
 using namespace espreso::input;
 

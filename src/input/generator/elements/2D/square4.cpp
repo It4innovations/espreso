@@ -1,6 +1,9 @@
 
 #include "square4.h"
 
+#include "../../../../mesh/elements/line/line2.h"
+#include "../../../../mesh/elements/plane/square4.h"
+
 using namespace espreso::input;
 
 size_t Square4::subelements = 1;

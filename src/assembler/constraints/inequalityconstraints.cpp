@@ -1,6 +1,15 @@
 
 #include "inequalityconstraints.h"
+
+#include "../../solver/generic/SparseMatrix.h"
+
+#include "../../mesh/elements/element.h"
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/region.h"
 #include "../../mesh/settings/evaluator.h"
+
+#include "../../config/configuration.h"
+#include "../../config/environment.h"
 
 using namespace espreso;
 

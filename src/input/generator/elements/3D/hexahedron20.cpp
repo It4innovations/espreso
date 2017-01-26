@@ -1,6 +1,9 @@
 
 #include "hexahedron20.h"
 
+#include "../../../../mesh/elements/plane/square8.h"
+#include "../../../../mesh/elements/volume/hexahedron20.h"
+
 using namespace espreso::input;
 
 size_t Hexahedron20::subelements = 1;

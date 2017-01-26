@@ -2,13 +2,18 @@
 #ifndef INPUT_LOADER_H_
 #define INPUT_LOADER_H_
 
-#include "esbasis.h"
-#include "esmesh.h"
-#include <string>
+#include <cstring>
+#include <vector>
 
 namespace espreso {
 
 struct GlobalConfiguration;
+class Mesh;
+class Coordinates;
+class Element;
+class Material;
+class Evaluator;
+class Region;
 
 namespace input {
 

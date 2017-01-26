@@ -1,6 +1,9 @@
 
 #include "assembler.h"
 
+#include "../../../../mesh/structures/mesh.h"
+#include "../../../../mesh/elements/element.h"
+
 namespace espreso {
 
 void SingularSystem::prepareMeshStructures()

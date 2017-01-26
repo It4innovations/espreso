@@ -1,6 +1,9 @@
 
 #include "square8.h"
 
+#include "../../../../mesh/elements/line/line3.h"
+#include "../../../../mesh/elements/plane/square8.h"
+
 using namespace espreso::input;
 
 size_t Square8::subelements = 1;

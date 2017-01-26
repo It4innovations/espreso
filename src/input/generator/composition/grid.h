@@ -5,6 +5,8 @@
 #include "../../loader.h"
 #include "../primitives/triple.h"
 
+#include "../../../basis/expression/expression.h"
+
 namespace espreso {
 
 enum class ELEMENT_TYPE;

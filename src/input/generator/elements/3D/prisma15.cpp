@@ -3,6 +3,9 @@
 #include "hexahedron20.h"
 #include "tetrahedron10.h"
 
+#include "../../../../mesh/elements/plane/triangle6.h"
+#include "../../../../mesh/elements/volume/prisma15.h"
+
 using namespace espreso::input;
 
 size_t Prisma15::subelements = 2;

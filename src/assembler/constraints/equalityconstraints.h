@@ -6,6 +6,9 @@
 
 namespace espreso {
 
+class Element;
+enum class Property;
+
 struct EqualityConstraints
 {
 	static void insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs);

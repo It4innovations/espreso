@@ -2,11 +2,13 @@
 #ifndef SRC_ASSEMBLER_INSTANCE_INSTANCE_H_
 #define SRC_ASSEMBLER_INSTANCE_INSTANCE_H_
 
-#include "esbasis.h"
-#include "esmesh.h"
-#include "essolver.h"
+#include "../../basis/logging/timeeval.h"
 
 namespace espreso {
+
+class Mesh;
+class Physics;
+class Constraints;
 
 struct Instance {
 

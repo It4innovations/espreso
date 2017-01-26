@@ -2,10 +2,14 @@
 #ifndef SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
 #define SRC_ASSEMBLER_CONSTRAINTS_CONSTRAINTS_H_
 
-#include "../../solver/generic/SparseMatrix.h"
-#include "esmesh.h"
+#include <vector>
+#include <cstring>
 
 namespace espreso {
+
+class SparseMatrix;
+class Mesh;
+class ESPRESOSolver;
 
 struct EqualityConstraints;
 struct InequalityConstraints;

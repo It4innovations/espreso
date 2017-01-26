@@ -1,6 +1,9 @@
 
 #include "pyramid13.h"
 
+#include "../../../../mesh/elements/plane/square8.h"
+#include "../../../../mesh/elements/volume/pyramid13.h"
+
 using namespace espreso::input;
 
 size_t Pyramid13::subelements = 6;

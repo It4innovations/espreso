@@ -4,6 +4,8 @@
 
 namespace espreso {
 
+class Point;
+
 namespace input {
 
 class ClusterGenerator {

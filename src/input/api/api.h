@@ -3,10 +3,12 @@
 #define INPUT_API_API_H_
 
 #include "../loader.h"
-
 #include "../../config/input.h"
 
 namespace espreso {
+
+class APIMesh;
+
 namespace input {
 
 class API {

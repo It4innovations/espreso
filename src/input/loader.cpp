@@ -9,6 +9,11 @@
 #include "esdata/esdata.h"
 #include "generator/generator.h"
 
+#include "../mesh/elements/element.h"
+#include "../mesh/structures/mesh.h"
+#include "../mesh/structures/region.h"
+#include "../mesh/settings/evaluator.h"
+
 using namespace espreso::input;
 
 

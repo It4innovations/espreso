@@ -2,6 +2,25 @@
 #include "esdata.h"
 #include "../../config/environment.h"
 
+#include "../../mesh/elements/line/line2.h"
+#include "../../mesh/elements/line/line3.h"
+
+#include "../../mesh/elements/plane/square4.h"
+#include "../../mesh/elements/plane/square8.h"
+#include "../../mesh/elements/plane/triangle3.h"
+#include "../../mesh/elements/plane/triangle6.h"
+
+#include "../../mesh/elements/volume/hexahedron20.h"
+#include "../../mesh/elements/volume/hexahedron8.h"
+#include "../../mesh/elements/volume/prisma15.h"
+#include "../../mesh/elements/volume/prisma6.h"
+#include "../../mesh/elements/volume/pyramid13.h"
+#include "../../mesh/elements/volume/pyramid5.h"
+#include "../../mesh/elements/volume/tetrahedron10.h"
+#include "../../mesh/elements/volume/tetrahedron4.h"
+
+#include "../../mesh/structures/mesh.h"
+
 using namespace espreso::input;
 
 
@@ -180,6 +199,11 @@ void Esdata::regions(
 	is.close();
 }
 
+bool Esdata::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+{
+	mesh.partitiate(_esdata.domains);
+	return true;
+}
 
 void Esdata::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {

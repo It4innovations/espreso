@@ -1,21 +1,31 @@
 
 #include "factory.h"
-#include "esbasis.h"
-#include "esinput.h"
+
+#include "../../assembler/physics/assembler.h"
+#include "../../assembler/instance/instance.h"
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
 #include "../../config/globalconfiguration.h"
+#include "../../mesh/structures/mesh.h"
 #include "../../mesh/settings/evaluator.h"
+#include "../../mesh/elements/element.h"
 
 namespace espreso {
 
 Factory::Factory(const GlobalConfiguration &configuration)
 {
-	input::Loader::load(configuration, mesh, configuration.env.MPIrank, configuration.env.MPIsize);
-	Assembler::compose(configuration, instance, mesh);
+	mesh = new Mesh();
+	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
+	Assembler::compose(configuration, instance, *mesh);
 }
 
-void Factory::solve(const std::string &outputFile)
+Factory::~Factory()
+{
+	delete instance;
+	delete mesh;
+}
+
+void Factory::solve()
 {
 	instance->init();
 	instance->solve(_solution);
@@ -47,12 +57,12 @@ void Factory::check(const Results &configuration)
 
 	auto evaluateProperty = [&] (const std::string &value, Property property, size_t DOF) {
 		if (instance->physics().pointDOFs[DOF] == property && value.size()) {
-			CoordinatesEvaluator evaluator(value, mesh.coordinates());
-			for (size_t p = 0; p < mesh.parts(); p++) {
-				for (size_t n = 0; n < mesh.coordinates().localSize(p); n++) {
-					eslocal index = mesh.coordinates().localToCluster(p)[n];
+			CoordinatesEvaluator evaluator(value, mesh->coordinates());
+			for (size_t p = 0; p < mesh->parts(); p++) {
+				for (size_t n = 0; n < mesh->coordinates().localSize(p); n++) {
+					eslocal index = mesh->coordinates().localToCluster(p)[n];
 					ESTEST(EVALUATION)
-						<< (fabs(evaluator.evaluate(mesh.coordinates()[index]) - _solution[p][mesh.nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
+						<< (fabs(evaluator.evaluate(mesh->coordinates()[index]) - _solution[p][mesh->nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
 						<< "Incorrect " << property << " of the solution.";
 				}
 			}

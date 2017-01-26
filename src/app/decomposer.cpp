@@ -22,14 +22,14 @@ int main(int argc, char** argv)
 		std::stringstream path;
 		path << configuration.decomposer.prefix << parts * environment->MPIsize;
 
-		factory.mesh.partitiate(parts);
+		factory.mesh->partitiate(parts);
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";
-		std::vector<size_t> sizes(factory.mesh.parts());
-		for (size_t p = 0; p < factory.mesh.parts(); p++) {
-			sizes[p] = factory.mesh.coordinates().localSize(p);
+		std::vector<size_t> sizes(factory.mesh->parts());
+		for (size_t p = 0; p < factory.mesh->parts(); p++) {
+			sizes[p] = factory.mesh->coordinates().localSize(p);
 		}
 		ESINFO(ALWAYS) << "Nodes in domains: " << Info::averageValues(sizes);
-		store::Esdata::mesh(factory.mesh, path.str());
+		store::Esdata::mesh(*factory.mesh, path.str());
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 

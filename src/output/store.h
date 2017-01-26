@@ -2,10 +2,15 @@
 #ifndef SRC_OUTPUT_STORE_H_
 #define SRC_OUTPUT_STORE_H_
 
-#include "esmesh.h"
-#include "../config/output.h"
+#include <string>
+#include <vector>
 
 namespace espreso {
+
+class Mesh;
+class OutputConfiguration;
+enum class Property;
+
 namespace store {
 
 class Store {

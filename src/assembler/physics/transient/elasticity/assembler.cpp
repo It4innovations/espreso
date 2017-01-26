@@ -1,6 +1,21 @@
 
 #include "assembler.h"
+#include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/settings/evaluator.h"
+
+#include "../../../../mesh/elements/plane/square4.h"
+#include "../../../../mesh/elements/plane/square8.h"
+#include "../../../../mesh/elements/plane/triangle3.h"
+#include "../../../../mesh/elements/plane/triangle6.h"
+
+#include "../../../../mesh/elements/volume/hexahedron20.h"
+#include "../../../../mesh/elements/volume/hexahedron8.h"
+#include "../../../../mesh/elements/volume/prisma15.h"
+#include "../../../../mesh/elements/volume/prisma6.h"
+#include "../../../../mesh/elements/volume/pyramid13.h"
+#include "../../../../mesh/elements/volume/pyramid5.h"
+#include "../../../../mesh/elements/volume/tetrahedron10.h"
+#include "../../../../mesh/elements/volume/tetrahedron4.h"
 
 using namespace espreso;
 

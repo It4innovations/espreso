@@ -6,6 +6,8 @@
 
 namespace espreso {
 
+enum class Property;
+
 struct InequalityConstraints
 {
 	static void insertLowerBoundToB1(Constraints &constraints, const std::vector<Property> &eDOFs, const std::vector<Property> &boundDOFs);

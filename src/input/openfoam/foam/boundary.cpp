@@ -7,6 +7,8 @@
 
 #include "boundary.h"
 
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso::input;
 
 Boundary::Boundary(int procNo) {
@@ -15,5 +17,10 @@ Boundary::Boundary(int procNo) {
 
 Boundary::~Boundary() {
 	// TODO Auto-generated destructor stub
+}
+
+void Boundary::prepareNodes() {
+	std::sort(nodes.begin(), nodes.end());
+	Esutils::removeDuplicity(nodes);
 }
 

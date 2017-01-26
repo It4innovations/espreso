@@ -4,7 +4,6 @@
 
 #include <vector>
 #include <map>
-#include <string.h>
 
 #include "../settings/property.h"
 

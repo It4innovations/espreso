@@ -1,6 +1,15 @@
 
 #include "equalityconstraints.h"
 
+#include "../../solver/generic/SparseMatrix.h"
+
+#include "../../mesh/elements/element.h"
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/region.h"
+
+#include "../../config/configuration.h"
+#include "../../config/environment.h"
+
 using namespace espreso;
 
 static std::vector<std::vector<Region*> > getRegionsWithDOFs(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &DOFs)

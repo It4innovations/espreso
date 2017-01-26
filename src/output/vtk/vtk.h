@@ -2,12 +2,19 @@
 #ifndef SRC_OUTPUT_VTK_VTK_H_
 #define SRC_OUTPUT_VTK_VTK_H_
 
-#include "../../assembler/constraints/constraints.h"
+#include <functional>
+#include <fstream>
+
 #include "../store.h"
+#include "../../basis/point/point.h"
 
 class vtkUnstructuredGrid;
 
 namespace espreso {
+
+class Element;
+class Constraints;
+
 namespace store {
 
 class VTK: public Store {

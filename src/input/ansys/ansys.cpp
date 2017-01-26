@@ -1,5 +1,7 @@
 
 #include "ansys.h"
+#include "../../mesh/elements/element.h"
+
 using namespace espreso::input;
 
 void AnsysWorkbench::points(Coordinates &coordinates)

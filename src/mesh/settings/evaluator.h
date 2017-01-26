@@ -3,7 +3,10 @@
 #define SRC_MESH_SETTINGS_EVALUATOR_H_
 
 #include "property.h"
+#include "../../basis/logging/logging.h"
 #include "../structures/coordinates.h"
+#include "../../basis/expression/expression.h"
+#include "omp.h"
 
 namespace espreso {
 

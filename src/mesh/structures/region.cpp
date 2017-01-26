@@ -1,6 +1,7 @@
 
 #include "region.h"
-#include "../structures/mesh.h"
+#include "../elements/elements.h"
+#include "../structures/coordinates.h"
 
 using namespace espreso;
 

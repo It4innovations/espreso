@@ -2,6 +2,9 @@
 #include "tetrahedron4.h"
 #include "hexahedron8.h"
 
+#include "../../../../mesh/elements/plane/triangle3.h"
+#include "../../../../mesh/elements/volume/tetrahedron4.h"
+
 using namespace espreso::input;
 
 size_t Tetrahedron4::subelements = 6;

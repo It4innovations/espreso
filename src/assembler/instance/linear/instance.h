@@ -3,10 +3,15 @@
 #define SRC_ASSEMBLER_INSTANCE_LINEAR_INSTANCE_H_
 
 #include "../instance.h"
-#include "esoutput.h"
+
 #include "../../../config/output.h"
+#include "../../constraints/constraints.h"
+#include "../../../output/vtk/vtk.h"
+#include "../../../solver/generic/LinearSolver.h"
 
 namespace espreso {
+
+class ESPRESOSolver;
 
 template <class TPhysics, class TConfiguration>
 struct LinearInstance: public Instance

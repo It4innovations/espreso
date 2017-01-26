@@ -6,9 +6,6 @@
 #include <vector>
 #include <functional>
 
-#include "metis.h"
-
-#include "../elements/elements.h"
 #include "coordinates.h"
 #include "material.h"
 #include "region.h"
@@ -20,6 +17,8 @@ namespace espreso {
 struct Configuration;
 template <typename TParameter, typename TValue>
 struct ConfigurationVectorMap;
+
+class Element;
 
 namespace input {
 class Loader;

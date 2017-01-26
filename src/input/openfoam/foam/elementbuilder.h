@@ -7,6 +7,9 @@
 
 
 namespace espreso {
+
+class Element;
+
 namespace input {
 
 class ElementBuilder
@@ -38,7 +41,7 @@ public:
 	}
 	size_t getNumberOfFaces() { return selectedFaces.size();}
 
-	ParseError* createElement(VolumeElement *&elements);
+	ParseError* createElement(Element *&elements);
 
 	/** List of pairs: Face, owner */
 	std::list< Face* > selectedFaces;

@@ -22,6 +22,12 @@
 
 #include "../vtk.h"
 
+#include "../../../config/output.h"
+#include "../../../config/environment.h"
+
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/elements/element.h"
+
 using namespace espreso::store;
 
 VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
