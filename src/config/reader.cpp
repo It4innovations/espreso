@@ -130,9 +130,13 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 
 void Reader::_read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args)
 {
+	std::vector<std::string> prefix;
 	std::vector<std::string> values;
 	std::stack<Configuration*> confStack;
 	std::stack<Tokenizer*> tokenStack;
+
+	bool correctlyLoaded = true;
+	std::map<size_t, std::vector<std::string> > arguments;
 
 	confStack.push(&configuration);
 	tokenStack.push(new Tokenizer(file));
@@ -161,7 +165,14 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 					if (index < args.size()) {
 						ESINFO(GLOBAL_ERROR) << "Invalid argument '" << value << "'";
 					} else {
-						ESINFO(GLOBAL_ERROR) << "ARG index is out of range '" << value << "'";
+						correctlyLoaded = false;
+						if (values.size()) {
+							std::string parameter;
+							std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { parameter += s + "::"; });
+							arguments[index].push_back(parameter + values.front());
+						} else {
+							ESINFO(GLOBAL_ERROR) << "parameter cannot be the [ARG].\n" << tokenStack.top()->lastLines(2);
+						}
 					}
 				}
 			}
@@ -177,6 +188,7 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			if (values.size() > 1) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Multiple names for a region are not allowed.\n" << tokenStack.top()->lastLines(2);
 			}
+			prefix.push_back(values[0]);
 			confStack.push(&confStack.top()->operator [](values[0]));
 			values.clear();
 			break;
@@ -184,6 +196,7 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			if (!confStack.size()) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected region end.\n" << tokenStack.top()->lastLines(2);
 			}
+			prefix.pop_back();
 			confStack.pop();
 			break;
 		case Tokenizer::Token::ASSIGN:
@@ -193,6 +206,10 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			break;
 		case Tokenizer::Token::EXPRESSION_END:
 		{
+			if (arguments.size()) {
+				values.clear();
+				break;
+			}
 			if (values.size() < 2) {
 				ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Incorrect assignment format on line " << tokenStack.top()->line() << ". Use 'PARAMETER' 'VALUE';\n" << tokenStack.top()->lastLines(2);
 			}
@@ -219,6 +236,27 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 	}
 	if (confStack.size() != 1) {
 		ESINFO(GLOBAL_ERROR) << "PARSE ERROR: Unexpected EOF before close all regions.";
+	}
+
+	if (!correctlyLoaded) {
+		std::string error = "Configuration file is not correctly loaded.\nUse ./espreso ";
+		size_t i = 0;
+		for (auto it = arguments.begin(); it != arguments.end(); ++it) {
+			error += "[ARG" + std::to_string(i++) + "] ";
+		}
+		error += "\nWhere ARGs are the following:\n";
+		i = 0;
+		for (auto it = arguments.begin(); it != arguments.end(); ++it) {
+			error += "ARG" + std::to_string(i++) + " = { ";
+			for (size_t j = 0; j < it->second.size(); j++) {
+				error += it->second[j];
+				if (j != it->second.size() - 1) {
+					error += ", ";
+				}
+			}
+			error += " }\n";
+		}
+		ESINFO(GLOBAL_ERROR) << error;
 	}
 }
 
