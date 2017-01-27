@@ -1,13 +1,27 @@
 
 #include "grid.h"
 #include "../primitives/block.h"
-#include "../elements/elements.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/coordinates.h"
 
 #include "../../../config/inputgeneratorgrid.h"
 #include "../../../config/environment.h"
+
+
+#include "../elements/2D/square4.h"
+#include "../elements/2D/square8.h"
+#include "../elements/2D/triangle3.h"
+#include "../elements/2D/triangle6.h"
+
+#include "../elements/3D/hexahedron20.h"
+#include "../elements/3D/hexahedron8.h"
+#include "../elements/3D/prisma15.h"
+#include "../elements/3D/prisma6.h"
+#include "../elements/3D/pyramid13.h"
+#include "../elements/3D/pyramid5.h"
+#include "../elements/3D/tetrahedron10.h"
+#include "../elements/3D/tetrahedron4.h"
 
 using namespace espreso::input;
 

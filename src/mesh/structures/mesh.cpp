@@ -1,6 +1,7 @@
 
 #include "mesh.h"
 #include "mkl.h"
+
 #include "../../config/configuration.h"
 #include "../../config/environment.h"
 #include "../settings/evaluator.h"
@@ -8,7 +9,19 @@
 #include "material.h"
 #include "region.h"
 
-#include "../elements/elements.h"
+#include "../elements/point/node.h"
+#include "../elements/point/dof.h"
+#include "../elements/point/unknownpoint.h"
+#include "../elements/line/line2.h"
+#include "../elements/line/line3.h"
+#include "../elements/line/unknownline.h"
+#include "../elements/plane/square4.h"
+#include "../elements/plane/square8.h"
+#include "../elements/plane/triangle3.h"
+#include "../elements/plane/triangle6.h"
+#include "../elements/plane/unknownplane.h"
+
+#include "../elements/element.h"
 
 #include "metis.h"
 
