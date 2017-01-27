@@ -1,21 +1,22 @@
 
-#include "esdata.h"
+#include "../espreso/espresobinaryformat.h"
 
 #include "../../config/environment.h"
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/elements/element.h"
 
 using namespace espreso::store;
 
-void Esdata::mesh(const Mesh &mesh, const std::string &path)
+void ESPRESOBinaryFormat::store(const Mesh &mesh, const std::string &path)
 {
-	Esdata(mesh, path);
+	ESPRESOBinaryFormat(mesh, path);
 }
 
-Esdata::Esdata(const Mesh &mesh, const std::string &path)
-: _mesh(mesh), _path(path)
+ESPRESOBinaryFormat::ESPRESOBinaryFormat(const Mesh &mesh, const std::string &path)
+: DataStore(mesh, path)
 {
 	std::stringstream ss;
 	ss << "mkdir -p " << _path;
@@ -30,16 +31,17 @@ Esdata::Esdata(const Mesh &mesh, const std::string &path)
 		ESINFO(ERROR) << "Cannot create output directory";
 	}
 
-	coordinates(_mesh.coordinates());
-	elements(_mesh);
-	regions(_mesh);
-	boundaries(_mesh);
+	coordinates();
+	elements();
+	materials();
+	regions();
+	boundaries();
 }
 
-void Esdata::coordinates(const Coordinates &coordinates)
+void ESPRESOBinaryFormat::coordinates()
 {
 	#pragma omp parallel for
-	for  (size_t p = 0; p < coordinates.parts(); p++) {
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream os;
 		eslocal size;
 		esglobal index;
@@ -49,25 +51,25 @@ void Esdata::coordinates(const Coordinates &coordinates)
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
-		size = coordinates.localSize(p);
+		size = _mesh.coordinates().localSize(p);
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (size_t i = 0; i < coordinates.localSize(p); i++) {
-			index = coordinates.globalIndex(i, p);
+		for (size_t i = 0; i < _mesh.coordinates().localSize(p); i++) {
+			index = _mesh.coordinates().globalIndex(i, p);
 			os.write(reinterpret_cast<const char*>(&index), sizeof(esglobal));
-			const Point &point = coordinates.get(i, p);
+			const Point &point = _mesh.coordinates().get(i, p);
 			os.write(reinterpret_cast<const char*>(&point), Point::size() * sizeof(double));
 		}
 		os.close();
 	}
 }
 
-void Esdata::elements(const Mesh &mesh)
+void ESPRESOBinaryFormat::elements()
 {
 	#pragma omp parallel for
-	for  (size_t p = 0; p < mesh.parts(); p++) {
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream os;
-		const std::vector<eslocal> &parts = mesh.getPartition();
-		const std::vector<Element*> &elements = mesh.elements();
+		const std::vector<eslocal> &parts = _mesh.getPartition();
+		const std::vector<Element*> &elements = _mesh.elements();
 		eslocal size;
 
 		std::stringstream ss;
@@ -79,35 +81,35 @@ void Esdata::elements(const Mesh &mesh)
 		size = parts[p + 1] - parts[p];
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
-			elements[e]->store(os, mesh.coordinates(), p);
+			elements[e]->store(os, _mesh.coordinates(), p);
 		}
 
 		os.close();
 	}
 }
 
-//void Esdata::materials(const Mesh &mesh, const std::vector<Material*> &materials)
-//{
-//	#pragma omp parallel for
-//	for (size_t p = 0; p < mesh.parts(); p++) {
-//		std::ofstream os;
-//		std::stringstream ss;
-//		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
-//		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
-//
-//		eslocal size = materials.size();
-//		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-//		for (size_t i = 0; i < materials.size(); i++) {
-//			os << materials[i];
-//		}
-//		os.close();
-//	}
-//}
-
-void Esdata::regions(const Mesh &mesh)
+void ESPRESOBinaryFormat::materials()
 {
 	#pragma omp parallel for
-	for  (size_t p = 0; p < mesh.parts(); p++) {
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		std::ofstream os;
+		std::stringstream ss;
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
+		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+
+		eslocal size = _mesh.materials().size();
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (size_t i = 0; i < _mesh.materials().size(); i++) {
+			_mesh.materials()[i]->store(os);
+		}
+		os.close();
+	}
+}
+
+void ESPRESOBinaryFormat::regions()
+{
+	#pragma omp parallel for
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/settings.dat";
@@ -115,7 +117,6 @@ void Esdata::regions(const Mesh &mesh)
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		eslocal size;
-		// regions
 		size = _mesh.regions().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 		for (size_t i = 0; i < _mesh.regions().size(); i++) {
@@ -128,7 +129,7 @@ void Esdata::regions(const Mesh &mesh)
 	ESINFO(GLOBAL_ERROR) << "Implement store regions";
 }
 
-void Esdata::boundaries(const Mesh &mesh)
+void ESPRESOBinaryFormat::boundaries()
 {
 //	Boundaries boundaries = mesh.subdomainBoundaries();
 //	const Boundaries &cBoundaries = mesh.clusterBoundaries();
@@ -229,7 +230,7 @@ void Esdata::boundaries(const Mesh &mesh)
 //	}
 
 	#pragma omp parallel for
-	for  (size_t p = 0; p < mesh.parts(); p++) {
+	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/boundaries.dat";
@@ -237,11 +238,11 @@ void Esdata::boundaries(const Mesh &mesh)
 
 		eslocal domain, size;
 
-		size = mesh.coordinates().localSize(p);
+		size = _mesh.coordinates().localSize(p);
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
 
-		for (size_t i = 0; i < mesh.coordinates().localSize(p); i++) {
-			const std::vector<eslocal> &domains = mesh.nodes()[mesh.coordinates().clusterIndex(i, p)]->domains();
+		for (size_t i = 0; i < _mesh.coordinates().localSize(p); i++) {
+			const std::vector<eslocal> &domains = _mesh.nodes()[_mesh.coordinates().clusterIndex(i, p)]->domains();
 
 			eslocal dSize = domains.size();
 			os.write(reinterpret_cast<const char*>(&dSize), sizeof(eslocal));
@@ -253,6 +254,5 @@ void Esdata::boundaries(const Mesh &mesh)
 
 		os.close();
 	}
-
 }
 

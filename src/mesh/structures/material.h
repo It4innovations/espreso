@@ -17,12 +17,9 @@ struct Configuration;
 
 class Material {
 
-	friend std::ofstream& operator<<(std::ofstream& os, const Material &m);
-
 public:
 	Material(const Coordinates &coordinates);
 	Material(const Coordinates &coordinates, const Configuration &configuration);
-	Material(std::ifstream &is, const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE) {};
 
 	virtual ~Material();
 
@@ -32,6 +29,9 @@ public:
 	void set(MATERIAL_PARAMETER parameter, const std::string &value);
 	void set(MATERIAL_PARAMETER parameter, Evaluator* value);
 	void setModel(PHYSICS physics, MATERIAL_MODEL model) { _models[(size_t)physics] = model; }
+
+	void store(std::ofstream& os);
+	void load(std::ifstream& is);
 
 protected:
 	const Coordinates &_coordinates;
