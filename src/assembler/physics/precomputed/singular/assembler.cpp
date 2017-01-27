@@ -3,6 +3,7 @@
 
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/elements/element.h"
+#include "../../../../mesh/settings/property.h"
 
 namespace espreso {
 

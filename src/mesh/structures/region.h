@@ -5,13 +5,12 @@
 #include <vector>
 #include <map>
 
-#include "../settings/property.h"
-
 namespace espreso {
 
 class Element;
 class Evaluator;
 class Coordinates;
+enum class Property;
 
 struct Region {
 	std::string name;
@@ -24,12 +23,7 @@ struct Region {
 	Region(): area(0), _destroy(true) { _elements = new std::vector<Element*>(); }
 	Region(std::vector<Element*> &element): area(0), _elements(&element), _destroy(false) { }
 
-	~Region()
-	{
-		if (_destroy) {
-			delete _elements;
-		}
-	}
+	~Region();
 
 	void computeArea(const Coordinates &coordinates) const;
 

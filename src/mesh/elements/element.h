@@ -5,7 +5,6 @@
 
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/logging/logging.h"
-#include "../settings/property.h"
 
 #define __WITHOUT_DOF__ -1
 #define __HAS_DOF__ 1
@@ -16,6 +15,7 @@ class Point;
 class Region;
 class Coordinates;
 class Mesh;
+enum class Property;
 
 class Element
 {

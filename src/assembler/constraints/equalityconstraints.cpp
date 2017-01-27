@@ -6,6 +6,7 @@
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/region.h"
+#include "../../mesh/settings/property.h"
 
 #include "../../config/configuration.h"
 #include "../../config/environment.h"

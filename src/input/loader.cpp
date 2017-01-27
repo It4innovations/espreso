@@ -1,7 +1,6 @@
 
 #include "loader.h"
 
-#include "../mesh/settings/property.h"
 #include "../config/globalconfiguration.h"
 
 #include "ansys/ansys.h"

@@ -2,6 +2,8 @@
 #include "assembler.h"
 //#include "esbem.h"
 
+#include "../../../../mesh/settings/property.h"
+
 #include "../../../../mesh/elements/plane/square4.h"
 #include "../../../../mesh/elements/plane/square8.h"
 #include "../../../../mesh/elements/plane/triangle3.h"

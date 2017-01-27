@@ -41,5 +41,10 @@ void Region::computeArea(const Coordinates &coordinates) const
 	MPI_Allreduce(&A, &area, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 }
 
-
+Region::~Region()
+{
+	if (_destroy) {
+		delete _elements;
+	}
+}
 
