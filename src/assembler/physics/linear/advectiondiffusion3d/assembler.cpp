@@ -143,16 +143,16 @@ void AdvectionDiffusion3D::assembleB0()
 	}
 }
 
-void AdvectionDiffusion3D::saveMeshProperties(store::Store &store)
+void AdvectionDiffusion3D::saveMeshProperties(store::ResultStore &store)
 {
-	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, store::Store::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::Store::ElementType::ELEMENTS);
-	store.storeProperty("temperature", { Property::TEMPERATURE }, store::Store::ElementType::NODES);
+	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, store::ResultStore::ElementType::ELEMENTS);
+	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::ResultStore::ElementType::ELEMENTS);
+	store.storeProperty("temperature", { Property::TEMPERATURE }, store::ResultStore::ElementType::NODES);
 }
 
-void AdvectionDiffusion3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
+void AdvectionDiffusion3D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("temperature", 1, results, store::Store::ElementType::NODES);
+	store.storeValues("temperature", 1, results, store::ResultStore::ElementType::NODES);
 }
 
 static double determinant3x3(DenseMatrix &m)
@@ -749,7 +749,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 	flux.push_back(matFlux(2, 0) / element->gaussePoints());
 }
 
-void AdvectionDiffusion3D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)
+void AdvectionDiffusion3D::postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution)
 {
 	if (!_configuration.post_process) {
 		return;
@@ -771,8 +771,8 @@ void AdvectionDiffusion3D::postProcess(store::Store &store, const std::vector<st
 		}
 	}
 
-	store.storeValues("gradient", 3, termalGradient, store::Store::ElementType::ELEMENTS);
-	store.storeValues("flux", 3, termalFlux, store::Store::ElementType::ELEMENTS);
+	store.storeValues("gradient", 3, termalGradient, store::ResultStore::ElementType::ELEMENTS);
+	store.storeValues("flux", 3, termalFlux, store::ResultStore::ElementType::ELEMENTS);
 }
 
 

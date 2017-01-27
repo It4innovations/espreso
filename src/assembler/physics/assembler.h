@@ -19,7 +19,7 @@ enum class Property;
 class SparseMatrix;
 
 namespace store {
-class Store;
+class ResultStore;
 }
 
 struct Physics {
@@ -32,10 +32,10 @@ struct Physics {
 	virtual void assembleB1() =0;
 	virtual void assembleB0() =0;
 
-	virtual void postProcess(store::Store &store, const std::vector<std::vector<double> > &solution) {};
+	virtual void postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution) {};
 
-	virtual void saveMeshProperties(store::Store &store) =0;
-	virtual void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results) =0;
+	virtual void saveMeshProperties(store::ResultStore &store) =0;
+	virtual void saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results) =0;
 	virtual void saveStiffnessMatrices();
 	virtual void saveKernelMatrices();
 

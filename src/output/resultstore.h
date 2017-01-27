@@ -1,6 +1,6 @@
 
-#ifndef SRC_OUTPUT_STORE_H_
-#define SRC_OUTPUT_STORE_H_
+#ifndef SRC_OUTPUT_RESULTSTORE_H_
+#define SRC_OUTPUT_RESULTSTORE_H_
 
 #include <string>
 #include <vector>
@@ -13,7 +13,7 @@ enum class Property;
 
 namespace store {
 
-class Store {
+class ResultStore {
 
 public:
 	enum class ElementType {
@@ -30,10 +30,10 @@ public:
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType) = 0;
 	virtual void finalize() =0;
 
-	virtual ~Store() {};
+	virtual ~ResultStore() {};
 
 protected:
-	Store(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+	ResultStore(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 	:_output(output), _mesh(mesh), _path(path) {};
 
 	const OutputConfiguration &_output;
@@ -46,4 +46,4 @@ protected:
 
 
 
-#endif /* SRC_OUTPUT_STORE_H_ */
+#endif /* SRC_OUTPUT_RESULTSTORE_H_ */

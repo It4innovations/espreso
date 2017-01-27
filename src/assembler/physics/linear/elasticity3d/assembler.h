@@ -18,8 +18,8 @@ struct LinearElasticity3D: public LinearPhysics
 	void assembleB1();
 	void assembleB0();
 
-	void saveMeshProperties(store::Store &store);
-	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
+	void saveMeshProperties(store::ResultStore &store);
+	void saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results);
 
 	const LinearElasticity3DConfiguration &_configuration;
 

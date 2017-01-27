@@ -33,12 +33,12 @@ void PrecomputedPhysics::assembleStiffnessMatrices()
 	ESINFO(PROGRESS2);
 }
 
-void PrecomputedPhysics::saveMeshProperties(store::Store &store)
+void PrecomputedPhysics::saveMeshProperties(store::ResultStore &store)
 {
 	ESINFO(GLOBAL_ERROR) << "It is not possible to save mesh through API";
 }
 
-void PrecomputedPhysics::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
+void PrecomputedPhysics::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
 	ESINFO(GLOBAL_ERROR) << "It is not possible to save results through API";
 }

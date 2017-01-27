@@ -49,12 +49,12 @@ void Stokes::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
-void Stokes::saveMeshProperties(store::Store &store)
+void Stokes::saveMeshProperties(store::ResultStore &store)
 {
 
 }
 
-void Stokes::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
+void Stokes::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
 
 }

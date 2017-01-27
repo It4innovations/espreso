@@ -3,7 +3,7 @@
 
 using namespace espreso::store;
 
-Paraview::Paraview(const OutputConfiguration &output, const Mesh &mesh, const std::string &path): Store(output, mesh, path)
+Paraview::Paraview(const OutputConfiguration &output, const Mesh &mesh, const std::string &path): ResultStore(output, mesh, path)
 {
 	// constructor
 	// save mesh to the memory

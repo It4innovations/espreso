@@ -119,12 +119,12 @@ void Elasticity3D::prepareMeshStructures()
 	_mesh.removeDuplicateRegions();
 }
 
-void Elasticity3D::saveMeshProperties(store::Store &store)
+void Elasticity3D::saveMeshProperties(store::ResultStore &store)
 {
-	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, store::Store::ElementType::NODES);
-	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, store::Store::ElementType::NODES);
-	store.storeProperty("obstacle", { Property::OBSTACLE }, store::Store::ElementType::NODES);
-	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::Store::ElementType::NODES);
+	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z }, store::ResultStore::ElementType::NODES);
+	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z }, store::ResultStore::ElementType::NODES);
+	store.storeProperty("obstacle", { Property::OBSTACLE }, store::ResultStore::ElementType::NODES);
+	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::ResultStore::ElementType::NODES);
 	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {
 		store::VTK::fixPoints(store.configuration(), _mesh, "fixPoints");
 	}
@@ -132,12 +132,12 @@ void Elasticity3D::saveMeshProperties(store::Store &store)
 		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 		case B0_TYPE::COMBINED:
-			store::VTK::mesh(store.configuration(), _mesh, "faces", store::Store::ElementType::FACES);
-			store::VTK::mesh(store.configuration(), _mesh, "edges", store::Store::ElementType::EDGES);
+			store::VTK::mesh(store.configuration(), _mesh, "faces", store::ResultStore::ElementType::FACES);
+			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ResultStore::ElementType::EDGES);
 			store::VTK::corners(store.configuration(), _mesh, "corners");
 			break;
 		case B0_TYPE::KERNELS:
-			store::VTK::mesh(store.configuration(), _mesh, "faces", store::Store::ElementType::FACES);
+			store::VTK::mesh(store.configuration(), _mesh, "faces", store::ResultStore::ElementType::FACES);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented saving properties of B0";
@@ -145,9 +145,9 @@ void Elasticity3D::saveMeshProperties(store::Store &store)
 	}
 }
 
-void Elasticity3D::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
+void Elasticity3D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("displacement", 3, results, store::Store::ElementType::NODES);
+	store.storeValues("displacement", 3, results, store::ResultStore::ElementType::NODES);
 }
 
 void Elasticity3D::assembleB1()
@@ -790,7 +790,7 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 	HMH.push_back(hmh(principleStress.data() + principleStress.size() - 3));
 }
 
-void Elasticity3D::postProcess(store::Store &store, const std::vector<std::vector<double> > &solution)
+void Elasticity3D::postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution)
 {
 	if (!_configuration.post_process) {
 		return;
@@ -815,9 +815,9 @@ void Elasticity3D::postProcess(store::Store &store, const std::vector<std::vecto
 		}
 	}
 
-	store.storeValues("stress", 6, stress, store::Store::ElementType::ELEMENTS);
-	store.storeValues("principle_stress", 3, principleStress, store::Store::ElementType::ELEMENTS);
-	store.storeValues("HMH", 1, HMH, store::Store::ElementType::ELEMENTS);
+	store.storeValues("stress", 6, stress, store::ResultStore::ElementType::ELEMENTS);
+	store.storeValues("principle_stress", 3, principleStress, store::ResultStore::ElementType::ELEMENTS);
+	store.storeValues("HMH", 1, HMH, store::ResultStore::ElementType::ELEMENTS);
 }
 
 }

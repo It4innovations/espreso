@@ -3,12 +3,12 @@
 #ifndef SRC_OUTPUT_PARAVIEW_PARAVIEW_H_
 #define SRC_OUTPUT_PARAVIEW_PARAVIEW_H_
 
-#include "../store.h"
+#include "../resultstore.h"
 
 namespace espreso {
 namespace store {
 
-class Paraview: public Store {
+class Paraview: public ResultStore {
 
 public:
 	Paraview(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);

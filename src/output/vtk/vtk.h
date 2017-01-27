@@ -5,8 +5,8 @@
 #include <functional>
 #include <fstream>
 
-#include "../store.h"
 #include "../../basis/point/point.h"
+#include "../resultstore.h"
 
 class vtkUnstructuredGrid;
 
@@ -17,7 +17,7 @@ class Constraints;
 
 namespace store {
 
-class VTK: public Store {
+class VTK: public ResultStore {
 
 public:
 	VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
@@ -44,9 +44,9 @@ protected:
 	void nodes(const std::vector<std::vector<eslocal> > &nodes);
 	void cells(ElementType eType);
 
-	void data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::Store::ElementType eType);
-	void data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::Store::ElementType eType);
-	void data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::Store::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ResultStore::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ResultStore::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ResultStore::ElementType eType);
 
 	void lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function<Point(const Point&, size_t, size_t, bool)> shrink);
 

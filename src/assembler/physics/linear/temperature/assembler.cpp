@@ -49,12 +49,12 @@ void Temperature::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
-void Temperature::saveMeshProperties(store::Store &store)
+void Temperature::saveMeshProperties(store::ResultStore &store)
 {
 
 }
 
-void Temperature::saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results)
+void Temperature::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
 
 }

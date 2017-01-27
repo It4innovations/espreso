@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 
 	espreso::store::VTK vtk(configuration.output, factory.mesh, "results");
 	vtk.storeGeometry();
-	vtk.storeValues("api_result", DOFs.size(), solution, espreso::store::Store::ElementType::NODES);
+	vtk.storeValues("api_result", DOFs.size(), solution, espreso::store::ResultStore::ElementType::NODES);
 
 	// Remove data
 	FETI4IDestroy(K);
