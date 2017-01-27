@@ -1,6 +1,9 @@
 
 #include "assembler.h"
 
+#include "../../../../basis/matrices/sparseVVPMatrix.h"
+#include "../../../../basis/matrices/sparseCSRMatrix.h"
+
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/elements/element.h"
 #include "../../../../mesh/settings/property.h"

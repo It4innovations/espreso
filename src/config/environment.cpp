@@ -1,5 +1,6 @@
 
 #include "environment.h"
+#include "../basis/utilities/utils.h"
 
 namespace espreso {
 
@@ -15,6 +16,12 @@ Environment::Environment(): executable("espreso")
 	}
 
 	executable = Esutils::getEnv<std::string>("_");
+
+	MKL_NUM_THREADS    = Esutils::getEnv<size_t>("MKL_NUM_THREADS");
+	OMP_NUM_THREADS    = Esutils::getEnv<size_t>("OMP_NUM_THREADS");
+	SOLVER_NUM_THREADS = Esutils::getEnv<size_t>("SOLVER_NUM_THREADS");
+	PAR_NUM_THREADS    = Esutils::getEnv<size_t>("PAR_NUM_THREADS");
+	CILK_NWORKERS      = Esutils::getEnv<size_t>("CILK_NWORKERS");
 
 	environment = this;
 }

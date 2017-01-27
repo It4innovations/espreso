@@ -1,6 +1,8 @@
 
 #include "SparseSolverMKL.h"
 
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 SparseSolverMKL::SparseSolverMKL(){
@@ -626,7 +628,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 			offset = rhs.size();
 			rhs.resize(rhs.size() + tmpM.cols);
 			for (eslocal col = tmpM.CSR_I_row_indices[row - 1]; col < tmpM.CSR_I_row_indices[row]; col++) {
-				rhs[offset + tmpM.CSR_J_col_indices[col - 1] - IJVMatrixIndexing] = tmpM.CSR_V_values[col - IJVMatrixIndexing];
+				rhs[offset + tmpM.CSR_J_col_indices[col - 1] - 1] = tmpM.CSR_V_values[col - 1];
 			}
 		}
 	}
@@ -641,7 +643,7 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 			for (eslocal col = 0; col < tmpM.cols; col++, offset++){
 				if (sol[offset] != 0.0) {
 					tmpM.I_row_indices.push_back(row);
-					tmpM.J_col_indices.push_back(col + IJVMatrixIndexing);
+					tmpM.J_col_indices.push_back(col + 1);
 					tmpM.V_values.push_back(sol[offset]);
 				}
 			}

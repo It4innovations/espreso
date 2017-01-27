@@ -13,8 +13,6 @@ class APIMesh;
 class ESPRESOSolver;
 }
 
-#include "esbasis.h"
-
 struct FETI4IStructMatrix {
 	FETI4IStructMatrix(eslocal type, eslocal offset): type(type), offset(offset) {};
 

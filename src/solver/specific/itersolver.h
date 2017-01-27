@@ -29,8 +29,6 @@ using std::make_pair;
 
 #include "../generic/utils.h"
 
-#include "esbasis.h"
-
 namespace espreso {
 
 class IterSolverBase

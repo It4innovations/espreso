@@ -2,6 +2,8 @@
 #include "assembler.h"
 #include "../../../mesh/structures/mesh.h"
 
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 

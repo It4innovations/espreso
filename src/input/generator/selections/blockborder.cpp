@@ -3,7 +3,8 @@
 #include "blockborder.h"
 #include "../primitives/blocksetting.h"
 
-#include "esbasis.h"
+#include "../../../basis/logging/logging.h"
+#include "../../../basis/utilities/parser.h"
 
 namespace espreso {
 namespace input {

@@ -7,6 +7,8 @@
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
 
+#include "../../basis/logging/logging.h"
+
 using namespace espreso::input;
 
 WorkbenchParser::WorkbenchParser(Mesh &mesh): bodyCounter(0), _mesh(mesh)
@@ -36,6 +38,14 @@ WorkbenchParser::~WorkbenchParser()
 {
 	for (size_t t = 0; t < _tables.size(); t++) {
 		delete _tables[t];
+	}
+}
+
+void WorkbenchParser::open(std::string path)
+{
+	_file.open(path.c_str());
+	if (!_file.is_open()) {
+		ESINFO(GLOBAL_ERROR) << "Cannot load mesh from file: " << path;
 	}
 }
 

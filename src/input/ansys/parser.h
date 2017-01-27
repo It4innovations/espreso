@@ -4,9 +4,10 @@
 
 #include <map>
 #include <vector>
+#include <fstream>
 
-#include "esbasis.h"
 #include "utils.h"
+#include "../../basis/utilities/parser.h"
 
 namespace espreso {
 
@@ -54,14 +55,7 @@ class WorkbenchParser {
 public:
 	WorkbenchParser(Mesh &mesh);
 
-	void open(std::string path)
-	{
-		_file.open(path.c_str());
-		if (!_file.is_open()) {
-			ESINFO(GLOBAL_ERROR) << "Cannot load mesh from file: " << path;
-		}
-	}
-
+	void open(std::string path);
 	void close()
 	{
 		_file.close();

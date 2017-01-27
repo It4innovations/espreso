@@ -1,6 +1,8 @@
 
 #include "block.h"
 
+#include "../../../basis/utilities/utils.h"
+
 namespace espreso {
 namespace input {
 

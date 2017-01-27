@@ -7,8 +7,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "esbasis.h"
-
 namespace espreso {
 
 class Tokenizer {
@@ -25,13 +23,7 @@ public:
 		END
 	};
 
-	Tokenizer(const std::string &file): _file(file), _token(Token::END), _line(1)
-	{
-		if (!_file.good()) {
-			ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
-		}
-		_buffer.reserve(80);
-	}
+	Tokenizer(const std::string &file);
 
 	~Tokenizer() { _file.close(); }
 

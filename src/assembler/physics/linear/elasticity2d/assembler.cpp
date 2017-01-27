@@ -1,5 +1,10 @@
 
 #include "assembler.h"
+
+#include "../../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/sparseVVPMatrix.h"
+#include "../../../../basis/matrices/sparseCSRMatrix.h"
+
 #include "../../../../mesh/elements/element.h"
 #include "../../../../mesh/settings/evaluator.h"
 #include "../../../../mesh/structures/mesh.h"
@@ -23,7 +28,6 @@ std::vector<Property> LinearElasticity2D::pointDOFs = { Property::DISPLACEMENT_X
 std::vector<Property> LinearElasticity2D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 
 LinearElasticity2D::ELEMENT_BEHAVIOUR LinearElasticity2D::elementBehaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS;
-Point LinearElasticity2D::angularVelocity(0, 0, 0);
 
 void LinearElasticity2D::prepareMeshStructures()
 {
@@ -304,7 +308,7 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			rhsT.multiply(B, Ce * epsilon, detJ * weighFactor[gp] * gpThickness(0, 0), 0, true, false);
 			for (eslocal i = 0; i < Ksize; i++) {
 				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * gpInertia(0, i / element->nodes());
-				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * XY(0, i / element->nodes()) * pow(LinearElasticity2D::angularVelocity.z, 2);
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * gpThickness(0, 0) * N[gp](0, i % element->nodes()) * XY(0, i / element->nodes()) * pow(0, 2);
 				fe[i] += rhsT(i, 0);
 			}
 			break;
@@ -321,8 +325,8 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 				fe[i] += rhsT(i, 0);
 			}
 			for (eslocal i = 0; i < Ksize / 2; i++) {
-				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 0) * pow(LinearElasticity2D::angularVelocity.y, 2);
-				fe[Ksize / 2 + i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 1) * pow(LinearElasticity2D::angularVelocity.x, 2);
+				fe[i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 0) * pow(0, 2);
+				fe[Ksize / 2 + i] += gpDENS(0, 0) * detJ * weighFactor[gp] * 2 * M_PI * XY(0, 0) * N[gp](0, i % element->nodes()) * XY(0, 1) * pow(0, 2);
 			}
 			break;
 		}
@@ -434,16 +438,16 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 
 		kernel[c] = 1;
 		for (size_t i = 0; i < fixPoints.size(); i++) {
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 1);
 			VALS.insert(VALS.end(), kernel.begin(), kernel.end());
 		}
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
 		const Point &p = coordinates[fixPoints[i]->node(0)];
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 1);
 		VALS.push_back(-p.y);
 		VALS.push_back( p.x);
 	}

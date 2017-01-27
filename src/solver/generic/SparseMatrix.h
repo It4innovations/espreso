@@ -23,6 +23,9 @@ using std::fill;
 
 namespace espreso {
 
+template <typename TIndices> class SparseCSRMatrix;
+template <typename TIndices> class SparseIJVMatrix;
+
 class SparseMatrix
 {
 

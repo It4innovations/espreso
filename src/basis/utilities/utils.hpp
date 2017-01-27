@@ -1,7 +1,5 @@
 
-
 #include "utils.h"
-
 
 namespace espreso {
 

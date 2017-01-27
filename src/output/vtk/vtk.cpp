@@ -1,6 +1,8 @@
 
 #include "vtk.h"
 
+#include "../../basis/utilities/utils.h"
+
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/elements/element.h"
@@ -159,7 +161,7 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 		for (size_t d = 0; d < mesh.nodes()[n]->domains().size(); d++) {
 			size_t p = mesh.nodes()[n]->domains()[d];
 			for (size_t dof = 0; dof < dofs; dof++) {
-				DOF2e[p][dof].push_back(std::make_pair(mesh.nodes()[n]->DOFIndex(p, dof) + IJVMatrixIndexing, mesh.nodes()[n]));
+				DOF2e[p][dof].push_back(std::make_pair(mesh.nodes()[n]->DOFIndex(p, dof) + 1, mesh.nodes()[n]));
 			}
 		}
 	}
@@ -204,8 +206,8 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 			if (p == exclude) {
 				continue;
 			}
-			auto it = std::lower_bound(constraints.B1subdomainsMap[p].begin(), constraints.B1subdomainsMap[p].end(), lambda - IJVMatrixIndexing);
-			if (it != constraints.B1subdomainsMap[p].end() && *it == lambda - IJVMatrixIndexing) {
+			auto it = std::lower_bound(constraints.B1subdomainsMap[p].begin(), constraints.B1subdomainsMap[p].end(), lambda - 1);
+			if (it != constraints.B1subdomainsMap[p].end() && *it == lambda - 1) {
 				return p;
 			}
 		}
@@ -236,7 +238,7 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 					dnodes[p].push_back(it->second->node(0));
 					indices[p].push_back(i);
 
-					auto it = std::lower_bound(constraints.B1clustersMap.begin(), constraints.B1clustersMap.end(), constraints.B1[p].I_row_indices[i] - IJVMatrixIndexing, [&] (const std::vector<esglobal> &v, esglobal i) {
+					auto it = std::lower_bound(constraints.B1clustersMap.begin(), constraints.B1clustersMap.end(), constraints.B1[p].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
 						return v[0] < i;
 					});
 					if (it->size() == 2) { // local gluing

@@ -2,6 +2,7 @@
 #include "constraints.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../solver/generic/SparseMatrix.h"
+#include "../../basis/utilities/utils.h"
 
 using namespace espreso;
 

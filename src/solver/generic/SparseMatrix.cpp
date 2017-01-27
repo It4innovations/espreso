@@ -2,6 +2,9 @@
 
 #include "../specific/sparsesolvers.h"
 
+#include "../../basis/matrices/sparseIJVMatrix.h"
+#include "../../basis/matrices/sparseCSRMatrix.h"
+
 namespace espreso {
 
 std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)

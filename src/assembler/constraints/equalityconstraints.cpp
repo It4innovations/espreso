@@ -1,6 +1,8 @@
 
 #include "equalityconstraints.h"
 
+#include "../../basis/utilities/utils.h"
+
 #include "../../solver/generic/SparseMatrix.h"
 
 #include "../../mesh/elements/element.h"
@@ -67,7 +69,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (indices[d * DOFs.size() + dof] != -1) {
-							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + IJVMatrixIndexing);
+							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + 1);
 							dirichletValues[nodes[i]->domains()[d]][t].push_back(value);
 						}
 						if (!constraints._configuration.redundant_lagrange) {
@@ -124,7 +126,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	for (size_t i = 0; i < subdomainsWithDirichlet.size(); i++) {
 		size_t s = subdomainsWithDirichlet[i];
 		for (eslocal i = 0; i < constraints.B1[s].nnz; i++) {
-			constraints.B1[s].I_row_indices.push_back(clusterOffset + dirichletSizes[s] + i + IJVMatrixIndexing);
+			constraints.B1[s].I_row_indices.push_back(clusterOffset + dirichletSizes[s] + i + 1);
 		}
 		for (size_t t = 0; t < threads; t++) {
 			constraints.B1[s].J_col_indices.insert(constraints.B1[s].J_col_indices.end(), dirichlet[s][t].begin(), dirichlet[s][t].end());
@@ -411,8 +413,8 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 
 							if (*c1 == environment->MPIrank) {
 								eslocal d = findDomain(e, d1, dof);
-								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
-								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
+								rows[t][d].push_back(lambdasID[permutation[i]] + offset + 1);
+								cols[t][d].push_back(e->DOFIndex(d, dof) + 1);
 								vals[t][d].push_back(1);
 								if (constraints._configuration.scaling) {
 									dup[t][d].push_back(diagonals[i][diag2] / duplicity);
@@ -423,8 +425,8 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 
 							if (*c2 == environment->MPIrank) {
 								eslocal d = findDomain(e, d2, dof);
-								rows[t][d].push_back(lambdasID[permutation[i]] + offset + IJVMatrixIndexing);
-								cols[t][d].push_back(e->DOFIndex(d, dof) + IJVMatrixIndexing);
+								rows[t][d].push_back(lambdasID[permutation[i]] + offset + 1);
+								cols[t][d].push_back(e->DOFIndex(d, dof) + 1);
 								vals[t][d].push_back(-1);
 								if (constraints._configuration.scaling) {
 									dup[t][d].push_back(diagonals[i][diag1] / duplicity);
@@ -623,12 +625,12 @@ void EqualityConstraints::insertDomainGluingToB0(Constraints &constraints, const
 
 				for (size_t d1 = 0, d2 = 1; d2 < elements[e]->domains().size(); d1++, d2++) {
 
-					constraints.B0[elements[e]->domains()[d1]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
-					constraints.B0[elements[e]->domains()[d1]].J_col_indices.push_back(DOFIndices[d1 * DOFs.size() + dof] + IJVMatrixIndexing);
+					constraints.B0[elements[e]->domains()[d1]].I_row_indices.push_back(lambdas + 1);
+					constraints.B0[elements[e]->domains()[d1]].J_col_indices.push_back(DOFIndices[d1 * DOFs.size() + dof] + 1);
 					constraints.B0[elements[e]->domains()[d1]].V_values.push_back(1);
 
-					constraints.B0[elements[e]->domains()[d2]].I_row_indices.push_back(lambdas + IJVMatrixIndexing);
-					constraints.B0[elements[e]->domains()[d2]].J_col_indices.push_back(DOFIndices[d2 * DOFs.size() + dof] + IJVMatrixIndexing);
+					constraints.B0[elements[e]->domains()[d2]].I_row_indices.push_back(lambdas + 1);
+					constraints.B0[elements[e]->domains()[d2]].J_col_indices.push_back(DOFIndices[d2 * DOFs.size() + dof] + 1);
 					constraints.B0[elements[e]->domains()[d2]].V_values.push_back(-1);
 
 					lambdas++;
@@ -646,7 +648,7 @@ void EqualityConstraints::insertDomainGluingToB0(Constraints &constraints, const
 
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
 		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
-			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
+			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - 1);
 		}
 	}
 
@@ -696,8 +698,8 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 			for (eslocal col = 0; col < kernel[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodes.size(); n++) {
 					for (size_t dof = 0; dof < DOFs.size(); dof++) {
-						constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
-						constraints.B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + IJVMatrixIndexing);
+						constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + 1);
+						constraints.B0[p].J_col_indices.push_back(nodes[n]->DOFIndex(p, dof) + 1);
 						constraints.B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + nodes[n]->DOFIndex(domains[0], dof)]);
 					}
 				}
@@ -709,7 +711,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
 		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
-			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
+			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - 1);
 		}
 	}
 }
@@ -755,8 +757,8 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 			size_t DOFIndex = 0;
 			for (eslocal col = 0; col < kernel[domains[0]].cols; col++) {
 				for (size_t n = 0; n < interfaceDOFs.size(); n++) {
-					constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + IJVMatrixIndexing);
-					constraints.B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + IJVMatrixIndexing);
+					constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + 1);
+					constraints.B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + 1);
 					constraints.B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + DOFs[interfaceDOFs[n]]->DOFIndex(domains[0], DOFIndex)]);
 				}
 			}
@@ -767,7 +769,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
 		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {
-			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - IJVMatrixIndexing);
+			constraints.B0subdomainsMap[p].push_back(constraints.B0[p].I_row_indices[i] - 1);
 		}
 	}
 }

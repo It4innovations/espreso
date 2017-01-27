@@ -2,6 +2,10 @@
 #include "assembler.h"
 //#include "esbem.h"
 
+#include "../../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/sparseVVPMatrix.h"
+#include "../../../../basis/matrices/sparseCSRMatrix.h"
+
 #include "../../../../mesh/settings/property.h"
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/structures/coordinates.h"

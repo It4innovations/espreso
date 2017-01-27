@@ -26,8 +26,6 @@ using std::make_pair;
 
 #include "../generic/utils.h"
 
-#include "esbasis.h"
-
 #pragma once
 
 namespace espreso {

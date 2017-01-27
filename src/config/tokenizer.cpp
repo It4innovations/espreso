@@ -4,7 +4,17 @@
 #include <sstream>
 #include <iomanip>
 
+#include "../basis/logging/logging.h"
+
 using namespace espreso;
+
+Tokenizer::Tokenizer(const std::string &file): _file(file), _token(Token::END), _line(1)
+{
+	if (!_file.good()) {
+		ESINFO(GLOBAL_ERROR) << "Cannot read file '" << file << "'";
+	}
+	_buffer.reserve(80);
+}
 
 static bool isWhiteSpace(int c)
 {

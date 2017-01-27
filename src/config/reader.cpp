@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <stack>
 
-#include "esbasis.h"
+#include "../basis/logging/logging.h"
 #include "globalconfiguration.h"
 
 using namespace espreso;

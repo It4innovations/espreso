@@ -3,7 +3,7 @@
 
 #include <string>
 #include <stdio.h>
-#include "esbasis.h"
+#include <sstream>
 
 #define PARSE_GUARD(x) { ParseError *_parse_err = (x); if (_parse_err != NULL) { return _parse_err; } }
 
@@ -21,9 +21,7 @@ public:
 
     const std::string& getMessage() { return message; }
 
-    void print() {
-        ESINFO(ERROR) << "ParseError: " << message;
-    }
+    void print();
 
 protected:
     std::string message;

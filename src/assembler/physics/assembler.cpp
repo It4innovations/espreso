@@ -1,8 +1,8 @@
 
 #include "assembler.h"
 
-#include "../../basis/logging/logging.h"
 #include "../../mesh/structures/mesh.h"
+#include "../../basis/utilities/utils.h"
 
 using namespace espreso;
 

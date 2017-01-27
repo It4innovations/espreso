@@ -2,6 +2,7 @@
 #include "foamfile.h"
 #include "../base/filestream.h"
 #include "../base/tokenstream.h"
+#include "../../../basis/logging/logging.h"
 
 using namespace espreso::input;
 

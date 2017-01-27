@@ -29,7 +29,6 @@
 #include "densesolvers.h"
 
 #include "../generic/utils.h"
-#include "esbasis.h"
 //#include "../../assembler/physics/assembler.h"
 
     namespace espreso {

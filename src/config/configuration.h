@@ -8,8 +8,10 @@
 #include <map>
 #include <iostream>
 
-#include "esbasis.h"
 #include "reader.h"
+
+#include "../basis/logging/logging.h"
+#include "../basis/utilities/parser.h"
 
 #define OPTIONS(...) __VA_ARGS__
 #define OPTION(type, name, description, value, options)         type name = ParameterHolder::create<type>(#name, description, name, value, options, this)

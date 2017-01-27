@@ -1,6 +1,8 @@
 
 #include "DenseSolverMKL.h"
 
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 DenseSolverMKL::DenseSolverMKL(){

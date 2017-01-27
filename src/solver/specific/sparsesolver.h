@@ -2,7 +2,6 @@
 #ifndef SOLVER_SPECIFIC_SPARSESOLVER_H_
 #define SOLVER_SPECIFIC_SPARSESOLVER_H_
 
-#include "esbasis.h"
 #include "../generic/utils.h"
 #include "../generic/SparseMatrix.h"
 

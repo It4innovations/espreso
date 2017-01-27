@@ -33,7 +33,6 @@ struct LinearElasticity2D: public LinearPhysics
 	void saveMeshResults(store::Store &store, const std::vector<std::vector<double> > &results);
 
 	static ELEMENT_BEHAVIOUR elementBehaviour;
-	static Point angularVelocity;
 	const LinearElasticity2DConfiguration &_configuration;
 
 	static std::vector<Property> elementDOFs;

@@ -4,6 +4,8 @@
 
 #include "itersolver.h"
 
+#include "../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):

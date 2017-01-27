@@ -1,6 +1,11 @@
 
 #include "assembler.h"
 #include "mkl.h"
+
+#include "../../../basis/matrices/denseMatrix.h"
+#include "../../../basis/matrices/sparseVVPMatrix.h"
+#include "../../../basis/matrices/sparseCSRMatrix.h"
+
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/settings/evaluator.h"
 #include "../../../mesh/structures/mesh.h"
@@ -522,31 +527,31 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 
 	for (size_t c = 0; c < 3; c++) {
 		for (size_t i = 0; i < fixPoints.size(); i++) {
-			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, c) + IJVMatrixIndexing);
+			COLS.push_back(fixPoints[i]->DOFIndex(subdomain, c) + 1);
 		}
 	}
 	VALS.insert(VALS.end(), 3 * fixPoints.size(), 1);
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
 		const Point &p = coordinates[fixPoints[i]->node(0)];
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 1);
 		VALS.push_back(-p.y);
 		VALS.push_back( p.x);
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
 		const Point &p = coordinates[fixPoints[i]->node(0)];
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + IJVMatrixIndexing);
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 0) + 1);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + 1);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.x);
 	}
 
 	for (size_t i = 0; i < fixPoints.size(); i++) {
 		const Point &p = coordinates[fixPoints[i]->node(0)];
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + IJVMatrixIndexing);
-		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + IJVMatrixIndexing);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 1) + 1);
+		COLS.push_back(fixPoints[i]->DOFIndex(subdomain, 2) + 1);
 		VALS.push_back(-p.z);
 		VALS.push_back( p.y);
 	}

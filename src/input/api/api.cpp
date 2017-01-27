@@ -13,6 +13,8 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
+#include "../../basis/utilities/utils.h"
+
 using namespace espreso::input;
 
 

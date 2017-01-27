@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_GENERATOR_PRIMITIVES_BLOCKSETTING_H_
 #define SRC_INPUT_GENERATOR_PRIMITIVES_BLOCKSETTING_H_
 
-#include "esbasis.h"
+#include "../../../basis/expression/expression.h"
 
 namespace espreso {
 namespace input {

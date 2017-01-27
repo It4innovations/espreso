@@ -1,5 +1,10 @@
 
 #include "assembler.h"
+
+#include "../../../../basis/matrices/denseMatrix.h"
+#include "../../../../basis/matrices/sparseVVPMatrix.h"
+#include "../../../../basis/matrices/sparseCSRMatrix.h"
+
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/structures/material.h"
 #include "../../../../mesh/settings/evaluator.h"

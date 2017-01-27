@@ -1,6 +1,8 @@
 
 #include "inequalityconstraints.h"
 
+#include "../../basis/utilities/utils.h"
+
 #include "../../solver/generic/SparseMatrix.h"
 
 #include "../../mesh/elements/element.h"
@@ -55,7 +57,7 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 							eslocal domain = region->elements()[n]->domains().front();
 							for (size_t dof = 0; dof < eDOFs.size(); dof++) {
 								if (value[dof]) {
-									indices[domain][t].push_back(region->elements()[n]->DOFIndex(domain, dof) + IJVMatrixIndexing);
+									indices[domain][t].push_back(region->elements()[n]->DOFIndex(domain, dof) + 1);
 									values[domain][t].push_back(settings->second.back()->evaluate(n));
 									normal[domain][t].push_back(std::abs(value[dof]) * values[domain][t].back());
 								}
@@ -103,7 +105,7 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 		size_t s = subdomainsWithLowerBounds[i];
 		for (size_t t = 0, row = clusterOffset + indicesSizes[s]; t < threads; row += indices[s][t++].size()) {
 			constraints.B1[s].I_row_indices.resize(constraints.B1[s].I_row_indices.size() + indices[s][t].size());
-			std::iota(constraints.B1[s].I_row_indices.end() - indices[s][t].size(), constraints.B1[s].I_row_indices.end(), row + IJVMatrixIndexing);
+			std::iota(constraints.B1[s].I_row_indices.end() - indices[s][t].size(), constraints.B1[s].I_row_indices.end(), row + 1);
 			constraints.B1[s].J_col_indices.insert(constraints.B1[s].J_col_indices.end(), indices[s][t].begin(), indices[s][t].end());
 			constraints.B1[s].V_values.insert(constraints.B1[s].V_values.end(), values[s][t].begin(), values[s][t].end());
 			constraints.B1c[s].insert(constraints.B1c[s].end(), normal[s][t].begin(), normal[s][t].end());
@@ -127,7 +129,7 @@ void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const
 
 void InequalityConstraints::removePositive(Constraints &constraints, const std::vector<std::vector<double> > &solution, double rho)
 {
-	size_t inequalityStart = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + IJVMatrixIndexing;
+	size_t inequalityStart = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + 1;
 	if (constraints.inequalityStored) {
 		#pragma omp parallel for
 		for(size_t p = 0; p < constraints._mesh.parts(); p++) {
@@ -193,7 +195,7 @@ void InequalityConstraints::removePositive(Constraints &constraints, const std::
 
 void InequalityConstraints::reconstruct(Constraints &constraints)
 {
-	size_t inequalityStart = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + IJVMatrixIndexing;
+	size_t inequalityStart = constraints.block[Constraints::DIRICHLET] + constraints.block[Constraints::EQUALITY_CONSTRAINTS] + 1;
 
 	#pragma omp parallel for
 	for(size_t p = 0; p < constraints._mesh.parts(); p++) {
