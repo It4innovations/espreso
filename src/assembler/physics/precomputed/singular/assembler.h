@@ -8,7 +8,7 @@ namespace espreso {
 
 struct SingularSystem: public PrecomputedPhysics
 {
-	SingularSystem(APIMesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration, SparseMatrix::MatrixType type, double *rhs, size_t rhs_size)
+	SingularSystem(APIMesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration, MatrixType type, double *rhs, size_t rhs_size)
 	: PrecomputedPhysics(
 			mesh, constraints, configuration, type,
 			{}, {}, {}, {}, {},

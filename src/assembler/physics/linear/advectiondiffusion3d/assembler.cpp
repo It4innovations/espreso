@@ -4,6 +4,7 @@
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
+#include "../../../../solver/generic/SparseMatrix.h"
 
 #include "../../../../mesh/elements/element.h"
 #include "../../../../mesh/settings/evaluator.h"
@@ -488,7 +489,7 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 		switch (_solverConfiguration.regularization) {
 		case REGULARIZATION::FIX_POINTS:
 			switch (mtype) {
-			case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 				if (singularK[subdomain]) {
 					analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
 					analyticsRegMat(K[subdomain], RegMat[subdomain]);
@@ -507,7 +508,7 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 					RegMat[subdomain].type = 'G';
 				}
 				break;
-			case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+			case MatrixType::REAL_UNSYMMETRIC:
 				ESINFO(ERROR) << "Cannot regularize stiffness matrix from fix point. Set REGULARIZATION = NULL_PIVOTS";
 				break;
 			default:
@@ -516,11 +517,11 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 			break;
 		case REGULARIZATION::NULL_PIVOTS:
 			switch (mtype) {
-			case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 				K[subdomain].RemoveLower();
 				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], RegMat[subdomain], subdomain);
 				break;
-			case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+			case MatrixType::REAL_UNSYMMETRIC:
 				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 				break;
 			default:

@@ -5,6 +5,8 @@
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../basis/matrices/sparseCSRMatrix.h"
+#include "../../../solver/generic/SparseMatrix.h"
+#include "../../../solver/specific/sparsesolvers.h"
 
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/settings/evaluator.h"
@@ -561,7 +563,7 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	RegMat.MatMat(Nt, 'N', N);
 	RegMat.MatTranspose();
 	RegMat.RemoveLower();
-	RegMat.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	RegMat.mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
 	SparseSolverCPU NtN;
 	NtN.ImportMatrix(RegMat);

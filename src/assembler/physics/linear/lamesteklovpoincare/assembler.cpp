@@ -5,6 +5,8 @@
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
+#include "../../../../solver/generic/SparseMatrix.h"
+#include "../../../../solver/specific/sparsesolvers.h"
 
 #include "../../../../mesh/settings/property.h"
 #include "../../../../mesh/structures/mesh.h"

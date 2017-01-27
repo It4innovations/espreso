@@ -150,13 +150,13 @@ void SparseSolverPardiso::ImportMatrix(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -198,13 +198,13 @@ void SparseSolverPardiso::ImportMatrix_fl(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -248,13 +248,13 @@ void SparseSolverPardiso::ImportMatrix_wo_Copy_fl(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -284,13 +284,13 @@ void SparseSolverPardiso::ImportMatrix_wo_Copy(SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -783,13 +783,13 @@ void SparseSolverPardiso::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, 
 
 	//int mtype = 2;
 	switch (A_in.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -1156,13 +1156,13 @@ void SparseSolverPardiso::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B
 
 	//int 	mtype = 2;
 	switch (K_in.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}

@@ -19,7 +19,7 @@ struct LinearElasticity2D: public LinearPhysics
 	LinearElasticity2D(Mesh &mesh, Constraints &constraints, const LinearElasticity2DConfiguration &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration.espreso,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
 	  _configuration(configuration) {};
 

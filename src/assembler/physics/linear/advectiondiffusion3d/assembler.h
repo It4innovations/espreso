@@ -12,12 +12,12 @@ struct AdvectionDiffusion3D: public LinearPhysics
 	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion3DConfiguration &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration.espreso,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
 	  _configuration(configuration)
 	{
 		if (_configuration.translation_motions.configurations.size()) {
-			mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+			mtype = MatrixType::REAL_UNSYMMETRIC;
 		}
 	};
 

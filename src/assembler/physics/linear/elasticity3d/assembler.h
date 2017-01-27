@@ -12,7 +12,7 @@ struct LinearElasticity3D: public LinearPhysics
 	LinearElasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration.espreso,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
 	  _configuration(configuration) {};
 

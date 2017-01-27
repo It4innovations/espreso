@@ -2,7 +2,10 @@
 #ifndef SRC_ASSEMBLER_PHYSICS_ASSEMBLER_H_
 #define SRC_ASSEMBLER_PHYSICS_ASSEMBLER_H_
 
-#include "essolver.h"
+#include <vector>
+#include <cstddef>
+
+#include "../../basis/matrices/matrixtype.h"
 
 namespace espreso {
 
@@ -13,6 +16,7 @@ class Mesh;
 class Constraints;
 class ESPRESOSolver;
 enum class Property;
+class SparseMatrix;
 
 namespace store {
 class Store;
@@ -43,7 +47,7 @@ struct Physics {
 
 	std::vector<size_t> matrixSize;
 
-	SparseMatrix::MatrixType mtype;
+	MatrixType mtype;
 	std::vector<SparseMatrix> K, R1, R2, RegMat;
 	std::vector<std::vector<double> > f, D;
 	std::vector<bool> singularK;
@@ -51,14 +55,14 @@ struct Physics {
 	Physics(Mesh &mesh,
 			Constraints &constraints,
 			const ESPRESOSolver &configuration,
-			SparseMatrix::MatrixType mtype,
+			MatrixType mtype,
 			const std::vector<Property> elementDOFs,
 			const std::vector<Property> faceDOFs,
 			const std::vector<Property> edgeDOFs,
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs);
 
-	virtual ~Physics() {};
+	virtual ~Physics();
 
 protected:
 	Mesh& _mesh;

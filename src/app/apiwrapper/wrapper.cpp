@@ -176,7 +176,7 @@ void FETI4ICreateInstance(
 	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(
 			*DataHolder::instances.back()->configuration,
 			*DataHolder::instances.back()->mesh,
-			(espreso::SparseMatrix::MatrixType)matrix->type, rhs, size);
+			(espreso::MatrixType)matrix->type, rhs, size);
 
 	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();

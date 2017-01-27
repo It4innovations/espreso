@@ -19,7 +19,7 @@ struct LinearPhysics: public Physics {
 			Mesh &mesh,
 			Constraints &constraints,
 			const ESPRESOSolver &configuration,
-			SparseMatrix::MatrixType mtype,
+			MatrixType mtype,
 			const std::vector<Property> elementDOFs,
 			const std::vector<Property> faceDOFs,
 			const std::vector<Property> edgeDOFs,

@@ -140,13 +140,13 @@ void SparseSolverMKL::ImportMatrix(espreso::SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -177,13 +177,13 @@ void SparseSolverMKL::ImportMatrix_fl(espreso::SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -220,13 +220,13 @@ void SparseSolverMKL::ImportMatrix_wo_Copy_fl(espreso::SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -256,13 +256,13 @@ void SparseSolverMKL::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 	m_Kplus_size = A.rows;
 
 	switch (A.mtype) {
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -810,13 +810,13 @@ void SparseSolverMKL::SolveMatF( espreso::SparseMatrix & A_in, espreso::SparseMa
 
 	//MKL_INT mtype = 2;
 	switch (A_in.mtype) {
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}
@@ -1232,13 +1232,13 @@ void SparseSolverMKL::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::Sp
 
 	//MKL_INT 	mtype = 2;
 	switch (K_in.mtype) {
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		mtype = 2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		mtype = -2;
 		break;
-	case espreso::SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
 		mtype = 11;
 		break;
 	}

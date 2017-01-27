@@ -4381,10 +4381,10 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 	//TODO: Toto se musi nejak korektne vyresit pomoci fyziky
 //	if (cluster.SYMMETRIC_SYSTEM)  {
 //		GGt_tmp.mtype = 2; // non-symmetric; // GGt_tmp.mtype = 2;  // Real symmetric positive definite matrix - this is default setting of the PARDISO solver
-//		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+//		GGt_Mat_tmp.mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 //	} else {
 //		GGt_tmp.mtype = 11; // non-symmetric
-//		GGt_Mat_tmp.mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+//		GGt_Mat_tmp.mtype = MatrixType::REAL_UNSYMMETRIC;
 //	}
 	GGt_Mat_tmp.mtype = cluster.mtype;
 

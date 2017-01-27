@@ -12,7 +12,7 @@ struct TransientElasticity: public TransientPhysics
 	TransientElasticity(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: TransientPhysics(
 			mesh, constraints, configuration,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs)
 	{
 		beta = 0.25;

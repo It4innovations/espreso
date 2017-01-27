@@ -93,7 +93,7 @@
         eslocal PAR_NUM_THREADS;
         eslocal SOLVER_NUM_THREADS;
         bool SYMMETRIC_SYSTEM;
-        SparseMatrix::MatrixType mtype;
+        MatrixType mtype;
 
         eslocal dual_size;
         string data_directory;

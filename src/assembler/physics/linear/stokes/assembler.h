@@ -11,7 +11,7 @@ struct Stokes: public LinearPhysics
 	Stokes(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE,
+			MatrixType::REAL_SYMMETRIC_INDEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void prepareMeshStructures();

@@ -12,12 +12,12 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration.espreso,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
 	  _configuration(configuration)
 	{
 		if (_configuration.translation_motions.configurations.size()) {
-			mtype = SparseMatrix::MatrixType::REAL_UNSYMMETRIC;
+			mtype = MatrixType::REAL_UNSYMMETRIC;
 			if (configuration.espreso.regularization == REGULARIZATION::FIX_POINTS) {
 				ESINFO(GLOBAL_ERROR) << "Set regularization to NULL_PIVOTS";
 			}

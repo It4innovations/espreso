@@ -4,6 +4,8 @@
 #include "../../../mesh/structures/mesh.h"
 #include "../../../basis/logging/logging.h"
 
+#include "../../../solver/generic/SparseMatrix.h"
+
 using namespace espreso;
 
 

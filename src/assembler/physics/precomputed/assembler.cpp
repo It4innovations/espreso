@@ -1,6 +1,9 @@
 
 #include "assembler.h"
 
+#include "../../../basis/logging/logging.h"
+
+#include "../../../solver/generic/SparseMatrix.h"
 #include "../../../mesh/structures/mesh.h"
 
 using namespace espreso;
@@ -9,7 +12,7 @@ PrecomputedPhysics::PrecomputedPhysics(
 		APIMesh &mesh,
 		Constraints &constraints,
 		const ESPRESOSolver &configuration,
-		SparseMatrix::MatrixType mtype,
+		MatrixType mtype,
 		const std::vector<Property> elementDOFs,
 		const std::vector<Property> faceDOFs,
 		const std::vector<Property> edgeDOFs,

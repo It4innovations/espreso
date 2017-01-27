@@ -11,7 +11,7 @@ struct Temperature: public LinearPhysics
 	Temperature(Mesh &mesh, Constraints &constraints, const ESPRESOSolver &configuration)
 	: LinearPhysics(
 			mesh, constraints, configuration,
-			SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 
 	void prepareMeshStructures();

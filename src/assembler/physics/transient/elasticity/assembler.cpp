@@ -4,6 +4,7 @@
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
+#include "../../../../solver/generic/SparseMatrix.h"
 
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/structures/material.h"

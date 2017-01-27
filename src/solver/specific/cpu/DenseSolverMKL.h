@@ -35,7 +35,7 @@ public:
 	// int  		MPIrank;
 	bool 		USE_FLOAT;
 
-	SparseMatrix::MatrixType        mtype;
+	MatrixType        mtype;
 
 	// Matrix properties
 	MKL_INT 	m_rows;

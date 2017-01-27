@@ -98,13 +98,13 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	cluster.my_neighs = std::vector<eslocal>(neighbours.begin(), neighbours.end());
 	cluster.mtype = physics.mtype;
 	switch (physics.mtype) {
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		cluster.SYMMETRIC_SYSTEM = true;
 		break;
-	case SparseMatrix::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+	case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 		cluster.SYMMETRIC_SYSTEM = true;
 		break;
-	case SparseMatrix::MatrixType::REAL_UNSYMMETRIC:
+	case MatrixType::REAL_UNSYMMETRIC:
 		cluster.SYMMETRIC_SYSTEM = false;
 		break;
 	default:

@@ -3,6 +3,8 @@
 #include "../../config/solverespreso.h"
 #include "../../config/environment.h"
 
+#include "../../basis/matrices/matrixtype.h"
+
 //class SparseSolverCPU;
 
 #ifdef CUDA
@@ -30,12 +32,6 @@ class SparseMatrix
 {
 
 public:
-
-	enum class MatrixType : int {
-		REAL_SYMMETRIC_POSITIVE_DEFINITE = 0,
-		REAL_SYMMETRIC_INDEFINITE = 1,
-		REAL_UNSYMMETRIC = 2
-	};
 
 	//Constructors
 	SparseMatrix(char matrix_type_G_for_general_S_for_symmetric, string filename);

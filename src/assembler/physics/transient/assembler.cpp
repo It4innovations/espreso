@@ -2,6 +2,8 @@
 #include "assembler.h"
 #include "../../../mesh/structures/mesh.h"
 
+#include "../../../solver/generic/SparseMatrix.h"
+
 #include "../../../basis/utilities/utils.h"
 
 using namespace espreso;
@@ -45,7 +47,7 @@ TransientPhysics::TransientPhysics(
 		Mesh &mesh,
 		Constraints &constraints,
 		const ESPRESOSolver &configuration,
-		SparseMatrix::MatrixType mtype,
+		MatrixType mtype,
 		const std::vector<Property> elementDOFs,
 		const std::vector<Property> faceDOFs,
 		const std::vector<Property> edgeDOFs,

@@ -4,12 +4,16 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../basis/utilities/utils.h"
 
+#include "../../solver/generic/SparseMatrix.h"
+
+#include "../../config/solverespreso.h"
+
 using namespace espreso;
 
 Physics::Physics(Mesh &mesh,
 		Constraints &constraints,
 		const ESPRESOSolver &configuration,
-		SparseMatrix::MatrixType mtype,
+		MatrixType mtype,
 		const std::vector<Property> elementDOFs,
 		const std::vector<Property> faceDOFs,
 		const std::vector<Property> edgeDOFs,
@@ -36,6 +40,11 @@ _solverConfiguration(configuration)
 	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (_mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
 	}
+}
+
+Physics::~Physics()
+{
+
 }
 
 void Physics::saveStiffnessMatrices()
