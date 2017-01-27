@@ -3,11 +3,12 @@
 #define INPUT_API_API_H_
 
 #include "../loader.h"
-#include "../../config/input.h"
+
 
 namespace espreso {
 
 class APIMesh;
+struct ESPRESOInput;
 
 namespace input {
 
@@ -26,16 +27,7 @@ public:
 			eslocal *dirichletIndices,
 			double *dirichletValues,
 			std::vector<int> &neighbours,
-			size_t size, const eslocal *l2g)
-	{
-		ESINFO(OVERVIEW) << "Set mesh through API";
-		API api(configuration, mesh, indexBase);
-
-		api.points(eNodes, size);
-		api.elements(eType, eNodes, eDOFs, eMatrices);
-		api.dirichlet(dirichletSize, dirichletIndices, dirichletValues);
-		api.clusterBoundaries(neighbours, size, l2g);
-	}
+			size_t size, const eslocal *l2g);
 
 protected:
 	API(const ESPRESOInput &configuration, APIMesh &mesh, eslocal offset): _configuration(configuration), _mesh(mesh), _offset(offset) {};

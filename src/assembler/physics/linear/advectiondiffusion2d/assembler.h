@@ -3,26 +3,14 @@
 #define SRC_ASSEMBLER_PHYSICS_LINEAR_ADVECTIONDIFFUSION2D_ASSEMBLER_H_
 
 #include "../assembler.h"
-#include "../../../../config/advectiondiffusion2d.h"
 
 namespace espreso {
 
+struct AdvectionDiffusion2DConfiguration;
+
 struct AdvectionDiffusion2D: public LinearPhysics
 {
-	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration)
-	: LinearPhysics(
-			mesh, constraints, configuration.espreso,
-			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
-	  _configuration(configuration)
-	{
-		if (_configuration.translation_motions.configurations.size()) {
-			mtype = MatrixType::REAL_UNSYMMETRIC;
-			if (configuration.espreso.regularization == REGULARIZATION::FIX_POINTS) {
-				ESINFO(GLOBAL_ERROR) << "Set regularization to NULL_PIVOTS";
-			}
-		}
-	};
+	AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration);
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;

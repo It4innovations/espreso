@@ -1,6 +1,8 @@
 
 #include "assembler.h"
 
+#include "../../../../config/advectiondiffusion3d.h"
+
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
@@ -37,6 +39,18 @@ std::vector<Property> AdvectionDiffusion3D::faceDOFs;
 std::vector<Property> AdvectionDiffusion3D::edgeDOFs;
 std::vector<Property> AdvectionDiffusion3D::pointDOFs = { Property::TEMPERATURE };
 std::vector<Property> AdvectionDiffusion3D::midPointDOFs = { Property::TEMPERATURE };
+
+AdvectionDiffusion3D::AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion3DConfiguration &configuration)
+: LinearPhysics(
+		mesh, constraints, configuration.espreso,
+		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+  _configuration(configuration)
+{
+	if (_configuration.translation_motions.configurations.size()) {
+		mtype = MatrixType::REAL_UNSYMMETRIC;
+	}
+};
 
 void AdvectionDiffusion3D::prepareMeshStructures()
 {

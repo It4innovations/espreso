@@ -11,20 +11,16 @@
 #include "utils.h"
 #include "parser.h"
 
-#include "../../config/input.h"
-
 namespace espreso {
+
+struct ESPRESOInput;
+
 namespace input {
 
 class AnsysWorkbench: public Loader {
 
 public:
-	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
-	{
-		ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
-		AnsysWorkbench workbench(configuration, mesh, rank, size);
-		workbench.fill();
-	}
+	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
 
 protected:
 	AnsysWorkbench(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
@@ -43,15 +39,8 @@ protected:
 	void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
 	bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
 
-	void open()
-	{
-		_parser.open(_workbench.path);
-	}
-
-	void close()
-	{
-		_parser.close();
-	}
+	void open();
+	void close();
 
 private:
 	const ESPRESOInput &_workbench;

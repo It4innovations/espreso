@@ -1,6 +1,8 @@
 
 #include "assembler.h"
 
+#include "../../../../config/linearelasticity3d.h"
+
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"

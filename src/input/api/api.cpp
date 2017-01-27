@@ -14,9 +14,32 @@
 #include "../../mesh/structures/region.h"
 
 #include "../../basis/utilities/utils.h"
+#include "../../config/input.h"
 
 using namespace espreso::input;
 
+void API::load(
+		const ESPRESOInput &configuration,
+		APIMesh &mesh,
+		eslocal indexBase,
+		const std::vector<eslocal> &eType,
+		std::vector<std::vector<eslocal> > &eNodes,
+		std::vector<std::vector<eslocal> > &eDOFs,
+		std::vector<std::vector<double> > &eMatrices,
+		eslocal dirichletSize,
+		eslocal *dirichletIndices,
+		double *dirichletValues,
+		std::vector<int> &neighbours,
+		size_t size, const eslocal *l2g)
+{
+	ESINFO(OVERVIEW) << "Set mesh through API";
+	API api(configuration, mesh, indexBase);
+
+	api.points(eNodes, size);
+	api.elements(eType, eNodes, eDOFs, eMatrices);
+	api.dirichlet(dirichletSize, dirichletIndices, dirichletValues);
+	api.clusterBoundaries(neighbours, size, l2g);
+}
 
 void API::points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSize)
 {

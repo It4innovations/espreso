@@ -23,8 +23,16 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
+#include "../../config/input.h"
+
 using namespace espreso::input;
 
+void Esdata::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+{
+	ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << configuration.path;
+	Esdata esdata(configuration, mesh, rank, size);
+	esdata.fill();
+}
 
 void Esdata::points(Coordinates &coordinates)
 {

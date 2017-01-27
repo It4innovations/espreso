@@ -10,21 +10,17 @@
 #include "foam/elementbuilder.h"
 #include "foam/zones.h"
 
-#include "../../config/input.h"
 
 namespace espreso {
+
+struct ESPRESOInput;
+
 namespace input {
 
 class OpenFOAM: public Loader {
 
 public:
-	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
-	{
-		ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
-		OpenFOAM openfoam(configuration, mesh, rank, size);
-		openfoam.fill();
-	}
-
+	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
 	bool faceBased() const { return true; }
 
 protected:

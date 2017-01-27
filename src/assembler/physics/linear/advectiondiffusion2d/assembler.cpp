@@ -1,6 +1,8 @@
 
 #include "assembler.h"
 
+#include "../../../../config/advectiondiffusion2d.h"
+
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
@@ -28,6 +30,21 @@ std::vector<Property> AdvectionDiffusion2D::faceDOFs;
 std::vector<Property> AdvectionDiffusion2D::edgeDOFs;
 std::vector<Property> AdvectionDiffusion2D::pointDOFs = { Property::TEMPERATURE };
 std::vector<Property> AdvectionDiffusion2D::midPointDOFs = { Property::TEMPERATURE };
+
+AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration)
+: LinearPhysics(
+		mesh, constraints, configuration.espreso,
+		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+  _configuration(configuration)
+{
+	if (_configuration.translation_motions.configurations.size()) {
+		mtype = MatrixType::REAL_UNSYMMETRIC;
+		if (configuration.espreso.regularization == REGULARIZATION::FIX_POINTS) {
+			ESINFO(GLOBAL_ERROR) << "Set regularization to NULL_PIVOTS";
+		}
+	}
+}
 
 void AdvectionDiffusion2D::prepareMeshStructures()
 {

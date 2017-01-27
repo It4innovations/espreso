@@ -1,6 +1,8 @@
 
 #include "assembler.h"
 
+#include "../../../config/linearelasticity2d.h"
+
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../basis/matrices/sparseCSRMatrix.h"
@@ -28,6 +30,13 @@ std::vector<Property> Elasticity2D::faceDOFs;
 std::vector<Property> Elasticity2D::edgeDOFs;
 std::vector<Property> Elasticity2D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 std::vector<Property> Elasticity2D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
+
+Elasticity2D::Elasticity2D(Mesh &mesh, Constraints &constraints, const LinearElasticity2DConfiguration &configuration)
+: Physics(
+		mesh, constraints, configuration.espreso,
+		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+  _configuration(configuration) {};
 
 void Elasticity2D::assembleStiffnessMatrices()
 {

@@ -3,18 +3,14 @@
 #define SRC_ASSEMBLER_PHYSICS_LINEAR_ELASTICITY3D_ASSEMBLER_H_
 
 #include "../assembler.h"
-#include "../../../../config/linearelasticity3d.h"
 
 namespace espreso {
 
+struct LinearElasticity3DConfiguration;
+
 struct LinearElasticity3D: public LinearPhysics
 {
-	LinearElasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
-	: LinearPhysics(
-			mesh, constraints, configuration.espreso,
-			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
-	  _configuration(configuration) {};
+	LinearElasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration);
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;

@@ -4,7 +4,27 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 
+#include "../../config/input.h"
+#include "../../basis/logging/logging.h"
+
 using namespace espreso::input;
+
+void AnsysWorkbench::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+{
+	ESINFO(OVERVIEW) << "Load mesh from Ansys/Workbench format from file " << configuration.path;
+	AnsysWorkbench workbench(configuration, mesh, rank, size);
+	workbench.fill();
+}
+
+void AnsysWorkbench::open()
+{
+	_parser.open(_workbench.path);
+}
+
+void AnsysWorkbench::close()
+{
+	_parser.close();
+}
 
 void AnsysWorkbench::points(Coordinates &coordinates)
 {

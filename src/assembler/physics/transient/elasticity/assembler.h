@@ -3,9 +3,10 @@
 #define SRC_ASSEMBLER_PHYSICS_TRANSIENT_ELASTICITY_ASSEMBLER_H_
 
 #include "../assembler.h"
-#include "../../../../config/linearelasticity3d.h"
 
 namespace espreso {
+
+struct ESPRESOSolver;
 
 struct TransientElasticity: public TransientPhysics
 {

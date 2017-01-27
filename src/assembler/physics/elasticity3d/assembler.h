@@ -3,18 +3,14 @@
 #define SRC_ASSEMBLER_PHYSICS_ELASTICITY3D_ASSEMBLER_H_
 
 #include "../assembler.h"
-#include "../../../config/linearelasticity3d.h"
 
 namespace espreso {
 
+struct LinearElasticity3DConfiguration;
+
 struct Elasticity3D: public Physics
 {
-	Elasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
-	: Physics(
-			mesh, constraints, configuration.espreso,
-			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
-	  _configuration(configuration) {};
+	Elasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration);
 
 	bool singular() const
 	{

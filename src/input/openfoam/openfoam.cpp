@@ -8,7 +8,18 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
+#include "../../config/input.h"
+#include "../../basis/logging/logging.h"
+
 using namespace espreso::input;
+
+
+void OpenFOAM::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+{
+	ESINFO(OVERVIEW) << "Load mesh from OpenFOAM format from directory " << configuration.path;
+	OpenFOAM openfoam(configuration, mesh, rank, size);
+	openfoam.fill();
+}
 
 OpenFOAM::OpenFOAM(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size) :
 		Loader(mesh), _openfoam(configuration)

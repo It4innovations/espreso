@@ -3,20 +3,17 @@
 #define INPUT_ESDATA_ESDATA_H_
 
 #include "../loader.h"
-#include "../../config/input.h"
 
 namespace espreso {
+
+struct ESPRESOInput;
+
 namespace input {
 
 class Esdata: public Loader {
 
 public:
-	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
-	{
-		ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << configuration.path;
-		Esdata esdata(configuration, mesh, rank, size);
-		esdata.fill();
-	}
+	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
 
 protected:
 	Esdata(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)

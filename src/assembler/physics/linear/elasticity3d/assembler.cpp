@@ -1,6 +1,8 @@
 
 #include "assembler.h"
 
+#include "../../../../config/linearelasticity3d.h"
+
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
@@ -38,6 +40,13 @@ std::vector<Property> LinearElasticity3D::faceDOFs;
 std::vector<Property> LinearElasticity3D::edgeDOFs;
 std::vector<Property> LinearElasticity3D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 std::vector<Property> LinearElasticity3D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+
+LinearElasticity3D::LinearElasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
+: LinearPhysics(
+		mesh, constraints, configuration.espreso,
+		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
+		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
+  _configuration(configuration) {};
 
 void LinearElasticity3D::prepareMeshStructures()
 {

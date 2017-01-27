@@ -3,23 +3,14 @@
 #define SRC_ASSEMBLER_PHYSICS_LINEAR_ADVECTIONDIFFUSION3D_ASSEMBLER_H_
 
 #include "../assembler.h"
-#include "../../../../config/advectiondiffusion3d.h"
 
 namespace espreso {
 
+struct AdvectionDiffusion3DConfiguration;
+
 struct AdvectionDiffusion3D: public LinearPhysics
 {
-	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion3DConfiguration &configuration)
-	: LinearPhysics(
-			mesh, constraints, configuration.espreso,
-			MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
-			elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
-	  _configuration(configuration)
-	{
-		if (_configuration.translation_motions.configurations.size()) {
-			mtype = MatrixType::REAL_UNSYMMETRIC;
-		}
-	};
+	AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion3DConfiguration &configuration);
 
 	void prepareMeshStructures();
 	void assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const;
