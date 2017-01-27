@@ -14,6 +14,20 @@ espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
 
 using namespace espreso;
 
+FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
+: instance(NULL)
+{
+	mesh = new APIMesh(l2g, size);
+	configuration = new ESPRESOSolver();
+};
+
+FETI4IStructInstance::~FETI4IStructInstance()
+{
+	if (instance != NULL) { delete instance; }
+	delete mesh;
+	delete configuration;
+}
+
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
 	ESPRESOInput input;
@@ -141,8 +155,8 @@ void FETI4ICreateInstance(
 	DataHolder::instances.push_back(new FETI4IStructInstance(*matrix, l2g, size));
 
 	ESPRESOInput input;
-	FETI4ISetIntegerOptions(input, DataHolder::instances.back()->configuration, integer_options);
-	FETI4ISetRealOptions(DataHolder::instances.back()->configuration, real_options);
+	FETI4ISetIntegerOptions(input, *DataHolder::instances.back()->configuration, integer_options);
+	FETI4ISetRealOptions(*DataHolder::instances.back()->configuration, real_options);
 
 	TimeEvent event("Create FETI4I instance"); event.startWithBarrier();
 
@@ -153,15 +167,15 @@ void FETI4ICreateInstance(
 
 	input::API::load(
 			input,
-			DataHolder::instances.back()->mesh, matrix->offset,
+			*DataHolder::instances.back()->mesh, matrix->offset,
 			matrix->eType, matrix->eNodes, matrix->eDOFs, matrix->eMatrices,
 			dirichlet_size, dirichlet_indices, dirichlet_values,
 			neighClusters,
 			size, l2g);
 
 	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(
-			DataHolder::instances.back()->configuration,
-			DataHolder::instances.back()->mesh,
+			*DataHolder::instances.back()->configuration,
+			*DataHolder::instances.back()->mesh,
 			(espreso::SparseMatrix::MatrixType)matrix->type, rhs, size);
 
 	DataHolder::instances.back()->instance->init();

@@ -5,7 +5,14 @@
 #include <iostream>
 #include <list>
 
-#include "esassembler.h"
+#include "../../config/environment.h"
+
+namespace espreso {
+class Instance;
+class APIMesh;
+class ESPRESOSolver;
+}
+
 #include "esbasis.h"
 
 struct FETI4IStructMatrix {
@@ -21,13 +28,12 @@ struct FETI4IStructMatrix {
 };
 
 struct FETI4IStructInstance {
-	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
-	: instance(NULL), mesh(l2g, size) {};
-	~FETI4IStructInstance() { if (instance != NULL) { delete instance; } }
+	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size);
+	~FETI4IStructInstance();
 
 	espreso::Instance *instance;
-	espreso::APIMesh mesh;
-	espreso::ESPRESOSolver configuration;
+	espreso::APIMesh *mesh;
+	espreso::ESPRESOSolver *configuration;
 };
 
 namespace espreso {
