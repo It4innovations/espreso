@@ -13,6 +13,8 @@
 
 #include "../../constraints/equalityconstraints.h"
 
+#include "../../../output/vtk/vtk.h"
+
 namespace espreso {
 
 std::vector<Property> Elasticity2D::elementDOFs;

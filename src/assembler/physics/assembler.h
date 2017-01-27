@@ -3,7 +3,6 @@
 #define SRC_ASSEMBLER_PHYSICS_ASSEMBLER_H_
 
 #include "essolver.h"
-#include "esoutput.h"
 
 namespace espreso {
 
@@ -13,6 +12,11 @@ class Coordinates;
 class Mesh;
 class Constraints;
 class ESPRESOSolver;
+enum class Property;
+
+namespace store {
+class Store;
+}
 
 struct Physics {
 	virtual bool singular() const =0;

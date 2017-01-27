@@ -1,7 +1,6 @@
 
 #include "mpi.h"
 
-#include "esinput.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
 #include "../output/esdata/esdata.h"

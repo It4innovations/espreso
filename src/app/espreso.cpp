@@ -4,8 +4,6 @@
 
 #include "../config/globalconfiguration.h"
 #include "factory/factory.h"
-#include "esinput.h"
-
 
 using namespace espreso;
 

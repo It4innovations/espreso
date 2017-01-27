@@ -23,6 +23,8 @@
 #include "../../constraints/equalityconstraints.h"
 #include "../../constraints/inequalityconstraints.h"
 
+#include "../../../output/vtk/vtk.h"
+
 namespace espreso {
 
 std::vector<Property> Elasticity3D::elementDOFs;

@@ -4,6 +4,9 @@
 #include "../../assembler/instance/precomputed/instance.h"
 #include "../../assembler/physics/precomputed/singular/assembler.h"
 
+#include "../../config/input.h"
+#include "../../input/api/api.h"
+
 espreso::Environment espreso::DataHolder::environment;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;

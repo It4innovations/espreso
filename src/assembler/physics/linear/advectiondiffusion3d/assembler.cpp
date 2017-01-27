@@ -22,6 +22,8 @@
 
 #include "../../../constraints/equalityconstraints.h"
 
+#include "../../../../output/vtk/vtk.h"
+
 namespace espreso {
 
 std::vector<Property> AdvectionDiffusion3D::elementDOFs;

@@ -6,7 +6,6 @@
 #include <list>
 
 #include "esassembler.h"
-#include "esinput.h"
 #include "esbasis.h"
 
 struct FETI4IStructMatrix {

@@ -3,7 +3,6 @@
 #define SRC_ASSEMBLER_INSTANCE_SSNM_INSTANCE_H_
 
 #include "../../instance.h"
-#include "esoutput.h"
 #include "../../../../config/output.h"
 
 namespace espreso {
