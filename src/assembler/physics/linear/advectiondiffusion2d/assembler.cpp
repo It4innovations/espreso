@@ -11,6 +11,8 @@
 #include "../../../../mesh/elements/plane/triangle3.h"
 #include "../../../../mesh/elements/plane/triangle6.h"
 
+#include "../../../constraints/equalityconstraints.h"
+
 namespace espreso {
 
 std::vector<Property> AdvectionDiffusion2D::elementDOFs;

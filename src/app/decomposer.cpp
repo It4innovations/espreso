@@ -2,8 +2,9 @@
 #include "mpi.h"
 
 #include "esinput.h"
-#include "esoutput.h"
-#include "esmesh.h"
+#include "../mesh/structures/mesh.h"
+#include "../mesh/structures/coordinates.h"
+#include "../output/esdata/esdata.h"
 #include "factory/factory.h"
 #include "../config/globalconfiguration.h"
 

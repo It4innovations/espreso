@@ -1,5 +1,7 @@
 
 #include "parser.h"
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/material.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/settings/evaluator.h"

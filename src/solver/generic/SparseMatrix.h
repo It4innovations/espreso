@@ -1,6 +1,5 @@
 
 #include "../generic/utils.h"
-#include "esmesh.h"
 #include "../../config/solverespreso.h"
 #include "../../config/environment.h"
 

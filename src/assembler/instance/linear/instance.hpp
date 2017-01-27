@@ -1,6 +1,8 @@
 
 #include "instance.h"
 
+#include "../../../mesh/structures/mesh.h"
+
 namespace espreso {
 
 template <class TPhysics, class TConfiguration>

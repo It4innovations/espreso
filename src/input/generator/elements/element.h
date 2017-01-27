@@ -2,6 +2,8 @@
 #ifndef SRC_INPUT_MESHGENERATOR_ELEMENTS_ELEMENT_H_
 #define SRC_INPUT_MESHGENERATOR_ELEMENTS_ELEMENT_H_
 
+#include <ostream>
+
 namespace espreso {
 namespace input {
 

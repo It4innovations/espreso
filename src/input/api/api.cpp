@@ -10,6 +10,7 @@
 #include "../../mesh/elements/point/dof.h"
 
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
 using namespace espreso::input;
@@ -150,9 +151,9 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	}
 
 	for (size_t t = 0; t < threads; t++) {
-		_mesh._g2l.insert(_mesh._g2l.end(), g2l[t].begin(), g2l[t].end());
+		_mesh._g2l->insert(_mesh._g2l->end(), g2l[t].begin(), g2l[t].end());
 	}
-	std::sort(_mesh._g2l.begin(), _mesh._g2l.end());
+	std::sort(_mesh._g2l->begin(), _mesh._g2l->end());
 
 	_mesh._neighbours = neighbours;
 }

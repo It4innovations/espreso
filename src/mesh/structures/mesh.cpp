@@ -26,6 +26,7 @@ Mesh::Mesh():_elements(0)
 	_regions.push_back(new Region(_nodes));
 	_regions.back()->name = "ALL_NODES";
 }
+
 Mesh::Mesh(const Mesh &mesh)
 {
 	ESINFO(ERROR) << "It is not allowed to copy Mesh.";
@@ -36,6 +37,12 @@ Mesh& Mesh::operator=(const Mesh &mesh)
 	ESINFO(ERROR) << "It is not allowed to copy Mesh.";
 	return *this;
 }
+
+APIMesh::APIMesh(eslocal *l2g, size_t size)
+: _l2g(l2g, l2g + size)
+{
+	_g2l = new std::vector<G2L>();
+};
 
 void Mesh::partitiate(size_t parts)
 {
@@ -1760,7 +1767,7 @@ void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 
 void APIMesh::computeDOFsDOFsCounters()
 {
-	computeDOFsCounters(_DOFs, { Property::UNKNOWN }, _neighbours, _l2g, _g2l);
+	computeDOFsCounters(_DOFs, { Property::UNKNOWN }, _neighbours, _l2g, *_g2l);
 }
 
 void Mesh::mapCoordinatesToDomains()

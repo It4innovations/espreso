@@ -4,9 +4,10 @@
 
 #include <cstdlib>
 
-#include "esmesh.h"
-
 namespace espreso {
+
+class Element;
+
 namespace input {
 
 class AnsysUtils {

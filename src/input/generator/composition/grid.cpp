@@ -3,6 +3,8 @@
 #include "../primitives/block.h"
 #include "../elements/elements.h"
 #include "../../../mesh/structures/region.h"
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/coordinates.h"
 
 #include "../../../config/inputgeneratorgrid.h"
 #include "../../../config/environment.h"

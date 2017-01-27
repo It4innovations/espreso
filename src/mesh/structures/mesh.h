@@ -187,7 +187,7 @@ class APIMesh: public Mesh
 {
 	friend class input::API;
 public:
-	APIMesh(eslocal *l2g, size_t size): _l2g(l2g, l2g + size) { };
+	APIMesh(eslocal *l2g, size_t size);
 
 	void partitiate(size_t parts);
 
@@ -203,7 +203,7 @@ public:
 protected:
 	std::vector<Element*> _DOFs;
 	std::vector<esglobal> _l2g;
-	std::vector<G2L> _g2l;
+	std::vector<G2L> *_g2l;
 };
 
 }

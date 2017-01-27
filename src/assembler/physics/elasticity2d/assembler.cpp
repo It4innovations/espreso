@@ -11,6 +11,8 @@
 #include "../../../mesh/elements/plane/triangle3.h"
 #include "../../../mesh/elements/plane/triangle6.h"
 
+#include "../../constraints/equalityconstraints.h"
+
 namespace espreso {
 
 std::vector<Property> Elasticity2D::elementDOFs;
@@ -18,6 +20,18 @@ std::vector<Property> Elasticity2D::faceDOFs;
 std::vector<Property> Elasticity2D::edgeDOFs;
 std::vector<Property> Elasticity2D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 std::vector<Property> Elasticity2D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
+
+void Elasticity2D::assembleStiffnessMatrices()
+{
+	ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and RHS.";
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		composeSubdomain(p);
+		K[p].mtype = mtype;
+		ESINFO(PROGRESS2) << Info::plain() << ".";
+	}
+	ESINFO(PROGRESS2);
+}
 
 void Elasticity2D::prepareMeshStructures()
 {

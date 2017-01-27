@@ -1,6 +1,8 @@
 
 #include "ansys.h"
 #include "../../mesh/elements/element.h"
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 
 using namespace espreso::input;
 
@@ -114,6 +116,11 @@ void AnsysWorkbench::regions(
 	}
 }
 
+bool AnsysWorkbench::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+{
+	mesh.partitiate(_workbench.domains);
+	return true;
+}
 
 void AnsysWorkbench::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {

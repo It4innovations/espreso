@@ -6,11 +6,16 @@
 #include <vector>
 
 #include "esbasis.h"
-#include "esmesh.h"
 #include "utils.h"
 
 namespace espreso {
 
+enum class Property;
+class Mesh;
+class Coordinates;
+class Region;
+class Material;
+class Evaluator;
 class TableEvaluator;
 
 namespace input {

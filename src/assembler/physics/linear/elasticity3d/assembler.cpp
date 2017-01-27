@@ -19,6 +19,9 @@
 #include "../../../../mesh/elements/volume/tetrahedron10.h"
 #include "../../../../mesh/elements/volume/tetrahedron4.h"
 
+#include "../../../constraints/equalityconstraints.h"
+#include "../../../constraints/inequalityconstraints.h"
+
 namespace espreso {
 
 std::vector<Property> LinearElasticity3D::elementDOFs;

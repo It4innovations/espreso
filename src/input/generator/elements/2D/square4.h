@@ -2,10 +2,13 @@
 #ifndef INPUT_MESHGENERATOR_ELEMENTS_2D_SQUARE4_H_
 #define INPUT_MESHGENERATOR_ELEMENTS_2D_SQUARE4_H_
 
-#include "esmesh.h"
 #include "../element.h"
+#include <vector>
 
 namespace espreso {
+
+class Element;
+
 namespace input {
 
 class Square4 {

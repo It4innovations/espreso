@@ -3,10 +3,13 @@
 #define OUTPUT_ESDATA_ESDATA_H_
 
 #include <cstdlib>
-
-#include "esmesh.h"
+#include <string>
 
 namespace espreso {
+
+class Mesh;
+class Coordinates;
+
 namespace store {
 
 class Esdata {

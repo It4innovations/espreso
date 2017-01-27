@@ -13,39 +13,9 @@ struct TransientPhysics: public Physics {
 		return false;
 	}
 
-	virtual void assembleStiffnessMatrices()
-	{
-		ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS.";
-		#pragma omp parallel for
-	for  (size_t p = 0; p < _mesh.parts(); p++) {
-			composeSubdomain(p);
-			K[p].mtype = mtype;
-			ESINFO(PROGRESS2) << Info::plain() << ".";
-		}
-		ESINFO(PROGRESS2);
-	}
+	virtual void assembleStiffnessMatrices();
 
-	virtual void saveStiffnessMatrices()
-	{
-		ESINFO(PROGRESS2) << "Save matrices K, M, RHS, and A constant";
-		for (size_t p = 0; p < _mesh.parts(); p++) {
-			std::ofstream osK(Logging::prepareFile(p, "K").c_str());
-			osK << K[p];
-			osK.close();
-
-			std::ofstream osM(Logging::prepareFile(p, "M").c_str());
-			osM << M[p];
-			osM.close();
-
-			std::ofstream osF(Logging::prepareFile(p, "f").c_str());
-			osF << f[p];
-			osF.close();
-		}
-
-		std::ofstream osA(Logging::prepareFile("A").c_str());
-		osA << A;
-		osA.close();
-	}
+	virtual void saveStiffnessMatrices();
 
 	TransientPhysics(
 			Mesh &mesh,
@@ -56,12 +26,9 @@ struct TransientPhysics: public Physics {
 			const std::vector<Property> faceDOFs,
 			const std::vector<Property> edgeDOFs,
 			const std::vector<Property> pointDOFs,
-			const std::vector<Property> midPointDOFs)
-	: Physics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
-	virtual ~TransientPhysics()
-	{
-		M.resize(_mesh.parts());
-	}
+			const std::vector<Property> midPointDOFs);
+
+	virtual ~TransientPhysics() {}
 
 	std::vector<SparseMatrix> M;
 	std::vector<double> A;

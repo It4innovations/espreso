@@ -20,6 +20,9 @@
 #include "../../../mesh/elements/volume/tetrahedron10.h"
 #include "../../../mesh/elements/volume/tetrahedron4.h"
 
+#include "../../constraints/equalityconstraints.h"
+#include "../../constraints/inequalityconstraints.h"
+
 namespace espreso {
 
 std::vector<Property> Elasticity3D::elementDOFs;
@@ -27,6 +30,18 @@ std::vector<Property> Elasticity3D::faceDOFs;
 std::vector<Property> Elasticity3D::edgeDOFs;
 std::vector<Property> Elasticity3D::pointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 std::vector<Property> Elasticity3D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
+
+void Elasticity3D::assembleStiffnessMatrices()
+{
+	ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and RHS.";
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh.parts(); p++) {
+		composeSubdomain(p);
+		K[p].mtype = mtype;
+		ESINFO(PROGRESS2) << Info::plain() << ".";
+	}
+	ESINFO(PROGRESS2);
+}
 
 void Elasticity3D::prepareMeshStructures()
 {

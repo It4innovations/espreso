@@ -2,6 +2,7 @@
 #include "vtk.h"
 
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 #include "../../mesh/elements/element.h"
 
 #include "../../assembler/constraints/constraints.h"

@@ -3,7 +3,6 @@
 #include "composition/sphere.h"
 
 #include "../../config/inputgenerator.h"
-#include "esmesh.h"
 #include "generator.h"
 
 using namespace espreso::input;

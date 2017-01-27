@@ -20,6 +20,8 @@
 #include "../../../../mesh/elements/volume/tetrahedron10.h"
 #include "../../../../mesh/elements/volume/tetrahedron4.h"
 
+#include "../../../constraints/equalityconstraints.h"
+
 namespace espreso {
 
 std::vector<Property> AdvectionDiffusion3D::elementDOFs;

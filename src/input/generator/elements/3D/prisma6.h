@@ -2,10 +2,13 @@
 #ifndef INPUT_MESHGENERATOR_ELEMENTS_3D_PRISMA6_H_
 #define INPUT_MESHGENERATOR_ELEMENTS_3D_PRISMA6_H_
 
-#include "esmesh.h"
 #include "../element.h"
+#include <vector>
 
 namespace espreso {
+
+class Element;
+
 namespace input {
 
 class Prisma6 {

@@ -5,6 +5,8 @@
 #include "../../../../mesh/elements/element.h"
 #include "../../../../mesh/settings/property.h"
 
+#include "../../../constraints/equalityconstraints.h"
+
 namespace espreso {
 
 void SingularSystem::prepareMeshStructures()

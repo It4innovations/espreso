@@ -9,7 +9,6 @@
 #define SOLVER_GENERIC_LINEARSOLVER_H_
 
 #include "../specific/itersolvers.h"
-#include "esmesh.h"
 
 #include "../../assembler/physics/assembler.h"
 #include "../../assembler/constraints/constraints.h"
@@ -40,26 +39,26 @@ public:
 
 	void init(const std::vector<int> &neighbours);
 
-	void init(
-			const Mesh &mesh,
-
-			std::vector < SparseMatrix >	& K_mat,
-			std::vector < SparseMatrix >	& T_mat,
-			std::vector < SparseMatrix >	& B1_mat,
-			std::vector < SparseMatrix >	& B0_mat,
-
-			std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
-			std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
-			std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
-			std::vector < std::vector <double> >	& B1_duplicity,
-
-			std::vector < std::vector <double > >	& f_vec,
-			std::vector < std::vector <double > >	& vec_c,
-
-			const std::vector < std::vector <eslocal > >	& fix_nodes,
-
-			const std::vector < int > & neigh_clusters
-	);
+//	void init(
+//			const Mesh &mesh,
+//
+//			std::vector < SparseMatrix >	& K_mat,
+//			std::vector < SparseMatrix >	& T_mat,
+//			std::vector < SparseMatrix >	& B1_mat,
+//			std::vector < SparseMatrix >	& B0_mat,
+//
+//			std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
+//			std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
+//			std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
+//			std::vector < std::vector <double> >	& B1_duplicity,
+//
+//			std::vector < std::vector <double > >	& f_vec,
+//			std::vector < std::vector <double > >	& vec_c,
+//
+//			const std::vector < std::vector <eslocal > >	& fix_nodes,
+//
+//			const std::vector < int > & neigh_clusters
+//	);
 
 	void Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub );
 
@@ -78,9 +77,9 @@ public:
 	void set_B0(
 			const std::vector < SparseMatrix >				& B0_mat );
 
-	void set_R(
-			const Mesh &mesh
-	);
+//	void set_R(
+//			const Mesh &mesh
+//	);
 
 	void set_R_from_K();
 private:
