@@ -2,15 +2,8 @@ variables:
   GIT_STRATEGY: fetch
 
 stages:
-  - benchmarks
-  - stability
-  - performance
+  - tests
   - release
-
-cache:
-  paths:
-    - build/
-    - espreso
 
 before_script:
   - source /opt/intel/bin/compilervars.sh intel64
@@ -20,37 +13,49 @@ before_script:
 after_script:
   - ./waf distclean
   - rm -fr libs*
+  - rm espreso
+  - rm decomposer
 
 MKL32:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=MKL --INT_WIDTH=32
     - ./waf install -j8
-    - python tests/benchmarks.py
+    - python tests/all.py
 
 MKL64:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=MKL --INT_WIDTH=64
     - ./waf install -j8
-    - python tests/benchmarks.py
+    - python tests/all.py
 
 CUDA32:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
     - ./waf install -j8
-    - python tests/benchmarks.py
+    - python tests/all.py
 
 CUDA64:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
     - ./waf install -j8
-    - python tests/benchmarks.py
+    - python tests/all.py
 
 PARDISO32:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=PARDISO --INT_WIDTH=32 --LIBPATH=/opt/pardiso/
     - ./waf install -j8
@@ -58,126 +63,50 @@ PARDISO32:
     - echo $PARDISO_LICENCE > pardiso.lic
     - export PARDISO_LIC_PATH=$PWD
     - export LD_LIBRARY_PATH=/opt/pardiso/:$LD_LIBRARY_PATH
-    - python tests/benchmarks.py
+    - python tests/all.py
 
 SHARED_DISSECTION:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=DISSECTION
     - ./waf install -j8
 
 STATIC_DISSECTION:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --SOLVER=DISSECTION --LIBTYPE=STATIC
     - ./waf install -j8
 
 STATIC_LIBRARY:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --LIBTYPE=STATIC
     - ./waf install -j8
+    - python tests/all.py
 
 HYPRE:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --HYPRE::INCLUDE=/opt/hypre/include --HYPRE::LIBPATH=/opt/hypre/lib
     - ./waf install -j8
 
 VTK:
-  stage: benchmarks
+  stage: tests
+  only:
+    - triggers
   script:
     - ./waf configure --VTK::INCLUDE=/opt/vtk/include/vtk-7.1 --VTK::LIBPATH=/opt/vtk/lib
     - ./waf install -j8
     - export LD_LIBRARY_PATH=/opt/vtk/lib/:$LD_LIBRARY_PATH
-    - python tests/output.py
 
-
-MKL_32:
-  stage: stability
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=MKL --INT_WIDTH=32
-    - ./waf install -j8
-    - python tests/stability.py
-
-MKL_64:
-  stage: stability
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=MKL --INT_WIDTH=64
-    - ./waf install -j8
-    - python tests/stability.py
-
-CUDA_32:
-  stage: stability
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
-    - ./waf install -j8
-    - python tests/stability.py
-
-CUDA_64:
-  stage: stability
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
-    - ./waf install -j8
-    - python tests/stability.py
-
-MKL_MEMORY_LEAKS:
-  stage: stability
-  only:
-    - triggers
-  script:
-    - ./waf configure --debug --SOLVER=MKL
-    - ./waf install -j8
-    - python tests/memory.py
-
-CUDA_MEMORY_LEAKS:
-  stage: stability
-  only:
-    - triggers
-  script:
-    - ./waf configure --debug --SOLVER=CUDA
-    - ./waf install -j8
-    - python tests/memory.py
-
-MKL 32:
-  stage: performance
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=MKL --INT_WIDTH=32
-    - ./waf install -j8
-
-MKL 64:
-  stage: performance
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=MKL --INT_WIDTH=64
-    - ./waf install -j8
-
-CUDA 32:
-  stage: performance
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
-    - ./waf install -j8
-
-CUDA 64:
-  stage: performance
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
-    - ./waf install -j8
 
 GITHUB:
   stage: release
