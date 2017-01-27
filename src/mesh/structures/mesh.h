@@ -4,13 +4,8 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <functional>
-
-#include "coordinates.h"
-#include "material.h"
-#include "region.h"
-
-#include "esbasis.h"
 
 namespace espreso {
 
@@ -18,7 +13,13 @@ struct Configuration;
 template <typename TParameter, typename TValue>
 struct ConfigurationVectorMap;
 
+struct G2L;
+class Coordinates;
+class Evaluator;
+class Material;
+class Region;
 class Element;
+enum class Property;
 
 namespace input {
 class Loader;
@@ -65,20 +66,14 @@ public:
 	{
 		size_t index = 0;
 		for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
-			Region *region = this->region(it->first);
-			#pragma omp parallel for
-			for (size_t e = 0; e < region->elements().size(); e++) {
-				region->elements()[e]->setParam(Element::MATERIAL, index);
-			}
-			_materials.push_back(new Material(_coordinates, *materials.find(it->second)->second));
-			ESINFO(OVERVIEW) << "Set material '" << it-> second << "' for region '" << region->name << "'";
+			loadMaterial(this->region(it->first), index, it->second, *materials.find(it->second)->second);
 		}
-		if (!_materials.size()) {
-			ESINFO(GLOBAL_ERROR) << "ESPRESO needs at least one material.";
-		}
+		checkMaterials();
 	}
+	void loadMaterial(Region* region, size_t index, const std::string &name, const Configuration &configuration);
+	void checkMaterials();
 
-	const Coordinates& coordinates() const { return _coordinates; }
+	const Coordinates& coordinates() const { return *_coordinates; }
 	const std::vector<Element*>& elements() const { return _elements; };
 	const std::vector<Element*>& faces() const { return _faces; };
 	const std::vector<Element*>& edges() const { return _edges; };
@@ -111,15 +106,7 @@ public:
 
 	void synchronizeGlobalIndices();
 
-	Region* region(const std::string &name)
-	{
-		auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region *region) { return region->name.compare(name) == 0; });
-		if (it != _regions.end()) {
-			return *it;
-		}
-		ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
-		exit(EXIT_FAILURE);
-	}
+	Region* region(const std::string &name);
 
 protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
@@ -151,7 +138,7 @@ protected:
 	void makePartContinuous(size_t part);
 
 	/** @brief Reference to coordinates. */
-	Coordinates _coordinates;
+	Coordinates *_coordinates;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;
@@ -190,17 +177,8 @@ protected:
 	std::vector<Evaluator*> _evaluators;
 
 private:
-	Mesh(const Mesh &mesh)
-	{
-		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
-	}
-
-	Mesh& operator=(const Mesh &mesh)
-	{
-		ESINFO(ERROR) << "It is not allowed to copy Mesh.";
-		return *this;
-	}
-
+	Mesh(const Mesh &mesh);
+	Mesh& operator=(const Mesh &mesh);
 };
 
 namespace input { class API; }

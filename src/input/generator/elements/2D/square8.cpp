@@ -24,6 +24,11 @@ void Square8::addElements(std::vector<Element*> &elements, const eslocal indices
 	elements.push_back(new espreso::Square8(square, params));
 }
 
+void Square8::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+{
+	ESINFO(GLOBAL_ERROR) << "Generator: plane element has no faces.";
+}
+
 void Square8::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	eslocal line[3];
@@ -80,5 +85,10 @@ void Square8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown edge";
 	}
+}
+
+void Square8::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for a face for SQUARE*";
 }
 

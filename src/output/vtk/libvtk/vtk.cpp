@@ -26,6 +26,7 @@
 #include "../../../config/environment.h"
 
 #include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/coordinates.h"
 #include "../../../mesh/elements/element.h"
 
 using namespace espreso::store;

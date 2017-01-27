@@ -24,6 +24,11 @@ void Triangle3::addElements(std::vector<Element*> &elements, const eslocal indic
 	elements.push_back(new espreso::Triangle3(triangle, params));
 }
 
+void Triangle3::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
+{
+	ESINFO(GLOBAL_ERROR) << "Generator: plane element has no faces.";
+}
+
 void Triangle3::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
 	eslocal line[2];
@@ -72,5 +77,10 @@ void Triangle3::pickNodes(const std::vector<Element*> &nodes, std::vector<Elemen
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown edge";
 	}
+}
+
+void Triangle3::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for a face for TRIANGLE3";
 }
 

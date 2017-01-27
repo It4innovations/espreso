@@ -3,6 +3,7 @@
 #include "sphere.h"
 #include "../primitives/block.h"
 #include "../elements/elements.h"
+#include "../../../mesh/structures/region.h"
 
 #include "../../../config/inputgeneratorsphere.h"
 

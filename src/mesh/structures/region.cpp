@@ -2,6 +2,7 @@
 #include "region.h"
 #include "../elements/elements.h"
 #include "../structures/coordinates.h"
+#include "../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

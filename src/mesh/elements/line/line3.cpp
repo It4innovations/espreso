@@ -1,5 +1,6 @@
 
 #include "line3.h"
+#include "../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

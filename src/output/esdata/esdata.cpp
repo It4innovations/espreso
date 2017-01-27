@@ -3,6 +3,7 @@
 
 #include "../../config/environment.h"
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/region.h"
 #include "../../mesh/elements/element.h"
 
 using namespace espreso::store;

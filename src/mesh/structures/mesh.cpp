@@ -4,6 +4,9 @@
 #include "../../config/configuration.h"
 #include "../../config/environment.h"
 #include "../settings/evaluator.h"
+#include "coordinates.h"
+#include "material.h"
+#include "region.h"
 
 #include "../elements/elements.h"
 
@@ -13,6 +16,7 @@ namespace espreso {
 
 Mesh::Mesh():_elements(0)
 {
+	_coordinates = new Coordinates();
 	_partPtrs.resize(2);
 	_partPtrs[0] = 0;
 	_partPtrs[1] = 0;
@@ -21,6 +25,16 @@ Mesh::Mesh():_elements(0)
 	_regions.back()->name = "ALL_ELEMENTS";
 	_regions.push_back(new Region(_nodes));
 	_regions.back()->name = "ALL_NODES";
+}
+Mesh::Mesh(const Mesh &mesh)
+{
+	ESINFO(ERROR) << "It is not allowed to copy Mesh.";
+}
+
+Mesh& Mesh::operator=(const Mesh &mesh)
+{
+	ESINFO(ERROR) << "It is not allowed to copy Mesh.";
+	return *this;
 }
 
 void Mesh::partitiate(size_t parts)
@@ -272,7 +286,7 @@ std::vector<eslocal> Mesh::getPartition(size_t begin, size_t end, eslocal parts)
 		}
 	}
 
-	return computePartition(e, n, end - begin, _coordinates.clusterSize(), ncommon, parts);
+	return computePartition(e, n, end - begin, _coordinates->clusterSize(), ncommon, parts);
 }
 
 static eslocal computeCenter(std::vector<std::vector<eslocal> > &neighbours)
@@ -351,21 +365,21 @@ eslocal Mesh::getCentralNode(eslocal begin, eslocal end, const std::vector<esloc
 {
 	// Compute CSR format of symmetric adjacency matrix
 	////////////////////////////////////////////////////////////////////////////
-	std::vector<std::vector<eslocal> > neighbours(_coordinates.localSize(part));
+	std::vector<std::vector<eslocal> > neighbours(_coordinates->localSize(part));
 	for (eslocal i = begin; i < end; i++) {
 		if (ePartition[i - begin] == subpart) {
 			for (size_t j = 0; j < _elements[i]->nodes(); j++) {
 				std::vector<eslocal> neigh = _elements[i]->getNeighbours(j);
 				for (size_t k = 0; k < neigh.size(); k++) {
 					if (_elements[i]->node(j) < neigh[k]) {
-						neighbours[_coordinates.localIndex(_elements[i]->node(j), part)].push_back(_coordinates.localIndex(neigh[k], part));
+						neighbours[_coordinates->localIndex(_elements[i]->node(j), part)].push_back(_coordinates->localIndex(neigh[k], part));
 					}
 				}
 			}
 		}
 	}
 
-	return _coordinates.clusterIndex(computeCenter(neighbours), part);
+	return _coordinates->clusterIndex(computeCenter(neighbours), part);
 }
 
 Mesh::~Mesh()
@@ -397,6 +411,7 @@ Mesh::~Mesh()
 	for (size_t i = 0; i < _materials.size(); i++) {
 		delete _materials[i];
 	}
+	delete _coordinates;
 }
 
 static bool isOuterFace(
@@ -421,93 +436,94 @@ static bool isOuterFace(
 
 void Mesh::getSurface(Mesh &surface) const
 {
-	// vector of faces in all parts
-	std::vector<std::vector<std::vector<eslocal> > > faces(parts());
-	// number of elements in all parts
-	std::vector<size_t> elementsCount(parts(), 0);
-
-	if (parts() < 1) {
-		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
-	}
-
-	#pragma omp parallel for
-	for  (size_t i = 0; i < parts(); i++) {
-		// Compute nodes' adjacent elements
-		std::vector<std::vector<eslocal> > nodesElements(_coordinates.localSize(i));
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->nodes(); k++) {
-				nodesElements[_elements[j]->node(k)].push_back(j);
-			}
-		}
-
-		// compute number of elements and fill used nodes
-		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
-			for (size_t k = 0; k < _elements[j]->faces(); k++) {
-				std::vector<eslocal> face(_elements[j]->face(k)->indices(), _elements[j]->face(k)->indices() + _elements[j]->face(k)->nodes());
-				if (isOuterFace(nodesElements, face)) {
-					for (size_t f = 0; f < face.size(); f++) {
-						face[f] = _coordinates.clusterIndex(face[f], i);
-					}
-					faces[i].push_back(face);
-					if (face.size() == 3) {
-						elementsCount[i] += 1;
-					}
-					if (face.size() == 4) {
-						elementsCount[i] += 2;
-					}
-				}
-			}
-		}
-	}
-
-	surface._coordinates = _coordinates;
-
-	size_t count = 0;
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
-		count += elementsCount[i];
-	}
-
-	surface._elements.reserve(count);
-	surface._partPtrs.clear();
-	surface._partPtrs.reserve(_partPtrs.size());
-	eslocal params[6] = {0, 0, 0, 0, 0, 0};
-
-	// create surface mesh
-	surface._partPtrs.push_back(0); //(surface._elements.size());
-	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
-		for (size_t j = 0; j < faces[i].size(); j++) {
-			std::vector<eslocal> &face = faces[i][j];
-			if (face.size() == 3) {
-				surface._elements.push_back(new Triangle3(&face[0], params));
-			}
-			// divide square to triangles
-			if (face.size() == 4) {
-				size_t min = 0;
-				for (size_t p = 1; p < 4; p++) {
-					if (_coordinates[face[p]] < _coordinates[face[min]]) {
-						min = p;
-					}
-				}
-				if (min % 2 == 0) {
-					surface._elements.push_back(new Triangle3(&face[0], params));
-					face[1] = face[0];
-					surface._elements.push_back(new Triangle3(&face[1], params));
-				} else {
-					surface._elements.push_back(new Triangle3(&face[1], params));
-					face[2] = face[3];
-					surface._elements.push_back(new Triangle3(&face[0], params));
-				}
-			}
-		}
-		surface._partPtrs.push_back(surface._elements.size());
-	}
-
-	surface.mapCoordinatesToDomains();
-	surface._neighbours = _neighbours;
-	surface._materials = _materials;
-	for (size_t i = 0; i < _evaluators.size(); i++) {
-		surface._evaluators.push_back(_evaluators[i]->copy());
-	}
+	ESINFO(ERROR) << "Not use getSurface method\n";
+//	// vector of faces in all parts
+//	std::vector<std::vector<std::vector<eslocal> > > faces(parts());
+//	// number of elements in all parts
+//	std::vector<size_t> elementsCount(parts(), 0);
+//
+//	if (parts() < 1) {
+//		ESINFO(ERROR) << "Internal error: _partPtrs.size().";
+//	}
+//
+//	#pragma omp parallel for
+//	for  (size_t i = 0; i < parts(); i++) {
+//		// Compute nodes' adjacent elements
+//		std::vector<std::vector<eslocal> > nodesElements(_coordinates->localSize(i));
+//		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+//			for (size_t k = 0; k < _elements[j]->nodes(); k++) {
+//				nodesElements[_elements[j]->node(k)].push_back(j);
+//			}
+//		}
+//
+//		// compute number of elements and fill used nodes
+//		for (eslocal j = _partPtrs[i]; j < _partPtrs[i + 1]; j++) {
+//			for (size_t k = 0; k < _elements[j]->faces(); k++) {
+//				std::vector<eslocal> face(_elements[j]->face(k)->indices(), _elements[j]->face(k)->indices() + _elements[j]->face(k)->nodes());
+//				if (isOuterFace(nodesElements, face)) {
+//					for (size_t f = 0; f < face.size(); f++) {
+//						face[f] = _coordinates->clusterIndex(face[f], i);
+//					}
+//					faces[i].push_back(face);
+//					if (face.size() == 3) {
+//						elementsCount[i] += 1;
+//					}
+//					if (face.size() == 4) {
+//						elementsCount[i] += 2;
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//	surface._coordinates = _coordinates;
+//
+//	size_t count = 0;
+//	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+//		count += elementsCount[i];
+//	}
+//
+//	surface._elements.reserve(count);
+//	surface._partPtrs.clear();
+//	surface._partPtrs.reserve(_partPtrs.size());
+//	eslocal params[6] = {0, 0, 0, 0, 0, 0};
+//
+//	// create surface mesh
+//	surface._partPtrs.push_back(0); //(surface._elements.size());
+//	for (size_t i = 0; i + 1 < _partPtrs.size(); i++) {
+//		for (size_t j = 0; j < faces[i].size(); j++) {
+//			std::vector<eslocal> &face = faces[i][j];
+//			if (face.size() == 3) {
+//				surface._elements.push_back(new Triangle3(&face[0], params));
+//			}
+//			// divide square to triangles
+//			if (face.size() == 4) {
+//				size_t min = 0;
+//				for (size_t p = 1; p < 4; p++) {
+//					if (_coordinates[face[p]] < _coordinates[face[min]]) {
+//						min = p;
+//					}
+//				}
+//				if (min % 2 == 0) {
+//					surface._elements.push_back(new Triangle3(&face[0], params));
+//					face[1] = face[0];
+//					surface._elements.push_back(new Triangle3(&face[1], params));
+//				} else {
+//					surface._elements.push_back(new Triangle3(&face[1], params));
+//					face[2] = face[3];
+//					surface._elements.push_back(new Triangle3(&face[0], params));
+//				}
+//			}
+//		}
+//		surface._partPtrs.push_back(surface._elements.size());
+//	}
+//
+//	surface.mapCoordinatesToDomains();
+//	surface._neighbours = _neighbours;
+//	surface._materials = _materials;
+//	for (size_t i = 0; i < _evaluators.size(); i++) {
+//		surface._evaluators.push_back(_evaluators[i]->copy());
+//	}
 }
 
 void Mesh::computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces)
@@ -635,6 +651,33 @@ void Mesh::loadNodeProperty(const ConfigurationVectorMap<std::string, std::strin
 		size_t step;
 		ss >> step;
 		_loadProperty(*this, step - 1, _evaluators, it->second->values, parameters, properties, true);
+	}
+}
+
+Region* Mesh::region(const std::string &name)
+{
+	auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region *region) { return region->name.compare(name) == 0; });
+	if (it != _regions.end()) {
+		return *it;
+	}
+	ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
+	exit(EXIT_FAILURE);
+}
+
+void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
+{
+	#pragma omp parallel for
+	for (size_t e = 0; e < region->elements().size(); e++) {
+		region->elements()[e]->setParam(Element::MATERIAL, index);
+	}
+	_materials.push_back(new Material(*_coordinates, configuration));
+	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
+}
+
+void Mesh::checkMaterials()
+{
+	if (!_materials.size()) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO needs at least one material.";
 	}
 }
 
@@ -798,8 +841,8 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 
 void Mesh::fillNodesFromCoordinates()
 {
-	_nodes.reserve(_coordinates.clusterSize());
-	for (size_t i = 0; i < _coordinates.clusterSize(); i++) {
+	_nodes.reserve(_coordinates->clusterSize());
+	for (size_t i = 0; i < _coordinates->clusterSize(); i++) {
 		_nodes.push_back(new Node(i));
 	}
 }
@@ -1702,17 +1745,17 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 void Mesh::computeNodesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_nodes, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMapping);
+	computeDOFsCounters(_nodes, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
 }
 
 void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_edges, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMapping);
+	computeDOFsCounters(_edges, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
 }
 
 void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
-	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates._globalIndex, _coordinates._globalMapping);
+	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
 }
 
 void APIMesh::computeDOFsDOFsCounters()
@@ -1722,8 +1765,8 @@ void APIMesh::computeDOFsDOFsCounters()
 
 void Mesh::mapCoordinatesToDomains()
 {
-	_coordinates._clusterIndex.clear();
-	_coordinates._clusterIndex.resize(parts());
+	_coordinates->_clusterIndex.clear();
+	_coordinates->_clusterIndex.resize(parts());
 
 	for (size_t p = 0; p < parts(); p++) {
 		std::vector<eslocal> l2g;
@@ -1734,7 +1777,7 @@ void Mesh::mapCoordinatesToDomains()
 		std::sort(l2g.begin(), l2g.end());
 		Esutils::removeDuplicity(l2g);
 
-		_coordinates._clusterIndex[p] = l2g;
+		_coordinates->_clusterIndex[p] = l2g;
 	}
 }
 
@@ -1788,10 +1831,10 @@ void Mesh::synchronizeGlobalIndices()
 			if (_nodes[n]->clusters().size() > 1) {
 				if (_nodes[n]->clusters().front() == environment->MPIrank) {
 					for (size_t c = 1; c < _nodes[n]->clusters().size(); c++) {
-						sBuffer[n2i(_nodes[n]->clusters()[c])][t].push_back(__Point__(_coordinates[n], _coordinates.globalIndex(n)));
+						sBuffer[n2i(_nodes[n]->clusters()[c])][t].push_back(__Point__(_coordinates->_points[n], _coordinates->globalIndex(n)));
 					}
 				} else {
-					sBuffer[n2i(_nodes[n]->clusters().front())][t].push_back(__Point__(_coordinates[n], _coordinates.globalIndex(n)));
+					sBuffer[n2i(_nodes[n]->clusters().front())][t].push_back(__Point__(_coordinates->_points[n], _coordinates->globalIndex(n)));
 				}
 			}
 
@@ -1826,7 +1869,7 @@ void Mesh::synchronizeGlobalIndices()
 			for (size_t p = 0; p < rBuffer[n].size(); p++) {
 				auto it = std::lower_bound(sBuffer[n][0].begin(), sBuffer[n][0].end(), rBuffer[n][p]);
 				if (*it == rBuffer[n][p]) {
-					_coordinates._globalIndex[_coordinates.clusterIndex(it->id)] = rBuffer[n][p].id;
+					_coordinates->_globalIndex[_coordinates->clusterIndex(it->id)] = rBuffer[n][p].id;
 				} else {
 					ESINFO(ERROR) << "Internal ERROR while synchronization global indices: " << _neighbours[n] << " on " << environment->MPIrank;
 				}
@@ -1837,12 +1880,12 @@ void Mesh::synchronizeGlobalIndices()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
-			_coordinates._globalMapping[n].global = _coordinates._globalIndex[n];
-			_coordinates._globalMapping[n].local = n;
+			_coordinates->_globalMapping[n].global = _coordinates->_globalIndex[n];
+			_coordinates->_globalMapping[n].local = n;
 		}
 	}
 
-	std::sort(_coordinates._globalMapping.begin(), _coordinates._globalMapping.end());
+	std::sort(_coordinates->_globalMapping.begin(), _coordinates->_globalMapping.end());
 }
 
 }

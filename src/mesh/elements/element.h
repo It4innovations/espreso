@@ -3,7 +3,6 @@
 
 #include <vector>
 
-#include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/logging/logging.h"
 
 #define __WITHOUT_DOF__ -1
@@ -15,6 +14,7 @@ class Point;
 class Region;
 class Coordinates;
 class Mesh;
+class DenseMatrix;
 enum class Property;
 
 class Element

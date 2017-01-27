@@ -10,6 +10,7 @@
 #include "../../mesh/elements/point/dof.h"
 
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/region.h"
 
 using namespace espreso::input;
 
@@ -29,7 +30,7 @@ void API::points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSi
 		tMax[t] = max;
 	}
 
-	_mesh._coordinates.resize(*std::max_element(tMax.begin(), tMax.end()) + 1);
+	_mesh._coordinates->resize(*std::max_element(tMax.begin(), tMax.end()) + 1);
 
 	_mesh._DOFs.reserve(DOFsSize);
 	for (size_t d = 0; d < DOFsSize; d++) {

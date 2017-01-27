@@ -2,6 +2,7 @@
 #include "tetrahedron4.h"
 #include "../line/line2.h"
 #include "../plane/triangle3.h"
+#include "../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

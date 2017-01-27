@@ -2,6 +2,7 @@
 #include "hexahedron20.h"
 #include "../line/line3.h"
 #include "../plane/square8.h"
+#include "../../../basis/matrices/denseMatrix.h"
 
 using namespace espreso;
 

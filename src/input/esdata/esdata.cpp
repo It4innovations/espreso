@@ -20,6 +20,8 @@
 #include "../../mesh/elements/volume/tetrahedron4.h"
 
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
+#include "../../mesh/structures/region.h"
 
 using namespace espreso::input;
 

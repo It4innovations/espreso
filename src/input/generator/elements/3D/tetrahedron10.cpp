@@ -92,6 +92,11 @@ void Tetrahedron10::addElements(std::vector<Element*> &elements, const eslocal i
 	elements.push_back(new espreso::Tetrahedron10(tetra, size, params));
 }
 
+void Tetrahedron10::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+}
+
 void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
 	eslocal triangle1[6], triangle2[6];
@@ -193,6 +198,11 @@ void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices
 
 	faces.push_back(new espreso::Triangle6(triangle1));
 	faces.push_back(new espreso::Triangle6(triangle2));
+}
+
+void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA20";
 }
 
 void Tetrahedron10::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)

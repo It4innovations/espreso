@@ -50,6 +50,10 @@ void Pyramid5::addElements(std::vector<Element*> &elements, const eslocal indice
 	elements.push_back(new espreso::Pyramid5(pyramid, 5, params));
 }
 
+void Pyramid5::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+}
 
 void Pyramid5::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
@@ -97,6 +101,11 @@ void Pyramid5::addFaces(std::vector<Element*> &faces, const eslocal indices[], C
 	}
 
 	faces.push_back(new espreso::Square4(square));
+}
+
+void Pyramid5::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA20";
 }
 
 void Pyramid5::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)

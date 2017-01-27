@@ -1,6 +1,7 @@
 
 #include "assembler.h"
 #include "../../../../mesh/structures/mesh.h"
+#include "../../../../mesh/structures/material.h"
 #include "../../../../mesh/settings/evaluator.h"
 
 #include "../../../../mesh/elements/plane/square4.h"

@@ -30,6 +30,10 @@ void Prisma6::addElements(std::vector<Element*> &elements, const eslocal indices
 	elements.push_back(new espreso::Prisma6(prisma, 6, params));
 }
 
+void Prisma6::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+}
 
 void Prisma6::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
 {
@@ -67,6 +71,11 @@ void Prisma6::addFaces(std::vector<Element*> &faces, const eslocal indices[], Cu
 	default:
 		ESINFO(GLOBAL_ERROR) << "Incorrect face";
 	}
+}
+
+void Prisma6::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeEdge edge)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement pickNodes for an edge for HEXA20";
 }
 
 void Prisma6::pickNodes(const std::vector<Element*> &nodes, std::vector<Element*> &selection, const eslocal indices[], CubeFace face)
