@@ -13,6 +13,8 @@
 #include "mkl_pardiso.h"
 #include "solvermumps.h"
 
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 /************************************************************************************************

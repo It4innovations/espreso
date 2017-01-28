@@ -1,6 +1,8 @@
 
 #include "SparseSolverDissection.h"
 
+#include "../../../basis/utilities/utils.h"
+
 #ifdef DEBUG
 	extern"C" {
 	#include <scotch.h>

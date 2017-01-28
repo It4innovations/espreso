@@ -1,6 +1,8 @@
 
 #include "solverpardiso.h"
 
+#include "../../../basis/utilities/utils.h"
+
 using namespace espreso;
 
 /* PARDISO prototype. */

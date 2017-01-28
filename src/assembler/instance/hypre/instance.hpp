@@ -1,6 +1,12 @@
 
 #include "instance.h"
 
+#include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/elements/element.h"
+#include "../../../mesh/structures/coordinates.h"
+#include "../../../mesh/settings/property.h"
+#include "../../../basis/matrices/denseMatrix.h"
+
 #define TEST 0
 
 namespace espreso {
