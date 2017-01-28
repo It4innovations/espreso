@@ -13,6 +13,8 @@
 #include "../../config/configuration.h"
 #include "../../config/environment.h"
 
+#include <numeric>
+
 using namespace espreso;
 
 static std::vector<std::vector<Region*> > getRegionsWithDOFs(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &DOFs)

@@ -13,6 +13,8 @@
 #include "physics/elasticity3d/assembler.h"
 #include "../config/globalconfiguration.h"
 
+#include <numeric>
+
 using namespace espreso;
 
 class Mesh;

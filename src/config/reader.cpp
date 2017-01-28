@@ -5,6 +5,7 @@
 
 #include <getopt.h>
 #include <stack>
+#include <functional>
 
 #include "../basis/logging/logging.h"
 #include "globalconfiguration.h"

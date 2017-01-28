@@ -1,6 +1,10 @@
 
 #include "instance.h"
 
+#include "../../../../mesh/elements/element.h"
+#include <numeric>
+#include "../../../constraints/inequalityconstraints.h"
+
 namespace espreso {
 
 template <class TPhysics, class TConfiguration>

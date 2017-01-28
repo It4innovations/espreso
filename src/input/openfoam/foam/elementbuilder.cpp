@@ -74,7 +74,7 @@ ParseError* ElementBuilder::createElement(Element *&element) {
 			ss << "Element with 5 unique coordinates must have 1 face with 4 points.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
-		Face* firstFace;
+		Face* firstFace = NULL;
 
 		for (std::list<Face* >::iterator it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 			if ((*it)->numberOfPoints == 4) {
@@ -107,7 +107,7 @@ ParseError* ElementBuilder::createElement(Element *&element) {
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 
-		Face* firstFace;
+		Face* firstFace = NULL;
 		std::list< Face* >::iterator firstit;
 		std::list< Face* >::iterator lastit;
 		bool first = true;

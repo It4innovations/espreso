@@ -13,6 +13,8 @@
 #include "../../config/configuration.h"
 #include "../../config/environment.h"
 
+#include <numeric>
+
 using namespace espreso;
 
 void InequalityConstraints::insertLowerBoundToB1(Constraints &constraints, const std::vector<Property> &eDOFs, const std::vector<Property> &boundDOFs)

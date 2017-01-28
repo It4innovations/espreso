@@ -1,7 +1,10 @@
 
 #include "block.h"
 
+#include "../../../mesh/structures/region.h"
 #include "../../../basis/utilities/utils.h"
+
+#include <numeric>
 
 namespace espreso {
 namespace input {

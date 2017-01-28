@@ -2,6 +2,8 @@
 #include "evaluator.h"
 #include "../../config/environment.h"
 
+#include <numeric>
+
 using namespace espreso;
 
 Evaluator::Evaluator(Property property)
