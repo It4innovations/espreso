@@ -65,22 +65,6 @@ PARDISO32:
     - export LD_LIBRARY_PATH=/opt/pardiso/:$LD_LIBRARY_PATH
     - python tests/all.py
 
-SHARED_DISSECTION:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=DISSECTION
-    - ./waf install -j8
-
-STATIC_DISSECTION:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=DISSECTION --LIBTYPE=STATIC
-    - ./waf install -j8
-
 STATIC_LIBRARY:
   stage: tests
   only:
