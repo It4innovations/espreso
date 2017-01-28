@@ -27,7 +27,8 @@
 
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/coordinates.h"
-#include "../../../mesh/elements/element.h"
+#include "../../../mesh/elements/line/line2.h"
+#include "../../../mesh/elements/point/node.h"
 
 using namespace espreso::store;
 
