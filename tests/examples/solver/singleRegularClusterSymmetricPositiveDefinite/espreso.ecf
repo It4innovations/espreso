@@ -29,25 +29,25 @@ GENERATOR {
     BLOCKS_Y            1;
     BLOCKS_Z            1;
 
-    CLUSTERS_X          2;
-    CLUSTERS_Y          2;
+    CLUSTERS_X          1;
+    CLUSTERS_Y          3;
     CLUSTERS_Z          1;
 
     DOMAINS_X           2;
-    DOMAINS_Y           3;
+    DOMAINS_Y           1;
     DOMAINS_Z           1;
 
-    ELEMENTS_X         15;
-    ELEMENTS_Y         10;
+    ELEMENTS_X         30;
+    ELEMENTS_Y         20;
     ELEMENTS_Z          1;
 
     NODES {
         TOP    "<0, 0> <0, 1> <0, 0>";
+        BOTTOM "<1, 1> <0, 1> <0, 0>";
+        LEFT   "<0, 1> <0, 0> <0, 0>";
     }
 
     EDGES {
-        BOTTOM "<1, 1> <0, 1> <0, 0>";
-        LEFT   "<0, 1> <0, 0> <0, 0>";
         RIGHT  "<0, 1> <1, 1> <0, 0>";
     }
   }
@@ -76,30 +76,18 @@ ADVECTION_DIFFUSION_2D {
 
   TEMPERATURE {
     1 {
-      TOP 1;
+      TOP    1;
+      BOTTOM 1;
+      LEFT   1;
     }
   }
 
   CONVECTION {
     1 {
-      BOTTOM {
-        HEAT_TRANSFER_COEFFICIENT 10;
-        EXTERNAL_TEMPERATURE      50;
-      }
-      LEFT {
-        HEAT_TRANSFER_COEFFICIENT 10;
-        EXTERNAL_TEMPERATURE      50;
-      }
       RIGHT {
         HEAT_TRANSFER_COEFFICIENT 10;
         EXTERNAL_TEMPERATURE      50;
       }
-    }
-  }
-
-  TRANSLATION_MOTIONS {
-    1 {
-      ALL_ELEMENTS X 10 - 20 * x, Y 10 - 20 * y;
     }
   }
 

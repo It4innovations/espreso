@@ -43,11 +43,11 @@ GENERATOR {
 
     NODES {
         TOP    "<0, 0> <0, 1> <0, 0>";
+        BOTTOM "<1, 1> <0, 1> <0, 0>";
+        LEFT   "<0, 1> <0, 0> <0, 0>";
     }
 
     EDGES {
-        BOTTOM "<1, 1> <0, 1> <0, 0>";
-        LEFT   "<0, 1> <0, 0> <0, 0>";
         RIGHT  "<0, 1> <1, 1> <0, 0>";
     }
   }
@@ -76,20 +76,14 @@ ADVECTION_DIFFUSION_2D {
 
   TEMPERATURE {
     1 {
-      TOP 1;
+      TOP    1;
+      BOTTOM 1;
+      LEFT   1;
     }
   }
 
   CONVECTION {
     1 {
-      BOTTOM {
-        HEAT_TRANSFER_COEFFICIENT 10;
-        EXTERNAL_TEMPERATURE      50;
-      }
-      LEFT {
-        HEAT_TRANSFER_COEFFICIENT 10;
-        EXTERNAL_TEMPERATURE      50;
-      }
       RIGHT {
         HEAT_TRANSFER_COEFFICIENT 10;
         EXTERNAL_TEMPERATURE      50;
