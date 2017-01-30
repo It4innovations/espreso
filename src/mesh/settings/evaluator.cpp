@@ -31,6 +31,7 @@ Evaluator* Evaluator::create(std::ifstream &is, const Coordinates &coordinates)
 	case Type::CONST: return new ConstEvaluator(is, property);
 	case Type::COORDINATE: return new CoordinatesEvaluator(is, coordinates, property);
 	case Type::TABLE: return new TableEvaluator(is, property);
+	case Type::TABLE_INTERPOLATION: return new TableInterpolationEvaluator(is, property);
 	case Type::ARRAY: ESINFO(GLOBAL_ERROR) << "Implement loading of Array evaluator"; return NULL;
 	default: ESINFO(GLOBAL_ERROR) << "Unknown evaluator type"; return NULL;
 	}
@@ -214,13 +215,23 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(
 }
 
 TableInterpolationEvaluator::TableInterpolationEvaluator(std::ifstream &is, Property property)
+: Evaluator(property)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement load TableInterpolationEvaluator.";
+	size_t size;
+	is.read(reinterpret_cast<char *>(&size), sizeof(size_t));
+	_table.resize(size);
+	is.read(reinterpret_cast<char *>(_table.data()), 2 * sizeof(size_t) * _table.size());
 }
 
 void TableInterpolationEvaluator::store(std::ofstream& os)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement store TableInterpolationEvaluator.";
+	Type type = Type::TABLE_INTERPOLATION;
+	os.write(reinterpret_cast<const char *>(&type), sizeof(Evaluator::Type));
+	os.write(reinterpret_cast<const char *>(&_property), sizeof(Property));
+
+	size_t size = _table.size();
+	os.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
+	os.write(reinterpret_cast<const char *>(_table.data()), 2 * sizeof(double) * _table.size());
 }
 
 ArrayEvaluator::ArrayEvaluator(const std::string &name, std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset, Property property)

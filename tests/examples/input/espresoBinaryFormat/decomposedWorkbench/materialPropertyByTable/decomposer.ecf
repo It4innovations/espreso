@@ -1,0 +1,13 @@
+
+INPUT  WORKBENCH;
+
+WORKBENCH {
+  PATH workbench.dat;
+  DOMAINS 1;
+}
+
+DECOMPOSER {
+  PARTS "4";
+  PREFIX ESDATA_;
+}
+

@@ -1,0 +1,31 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Simple example for test Workbench input file             |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT ESDATA;
+PHYSICS ADVECTION_DIFFUSION_3D;
+
+ESDATA {
+  PATH    [ARG0];
+  DOMAINS     16;
+}
+
+ADVECTION_DIFFUSION_3D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD          HYBRID_FETI;
+    SOLVER                  PCG;
+    PRECONDITIONER    DIRICHLET;
+    REGULARIZATION   FIX_POINTS;
+  }
+}

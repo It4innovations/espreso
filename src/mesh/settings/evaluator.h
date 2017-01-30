@@ -18,6 +18,7 @@ protected:
 		CONST,
 		COORDINATE,
 		TABLE,
+		TABLE_INTERPOLATION,
 		ARRAY
 	};
 
