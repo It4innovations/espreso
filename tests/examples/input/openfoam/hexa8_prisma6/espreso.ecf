@@ -23,7 +23,7 @@ LINEAR_ELASTICITY_3D {
 
   ESPRESO {
 
-    METHOD         TOTAL_FETI;
+    METHOD        HYBRID_FETI;
     SOLVER                PCG;
     PRECONDITIONER     LUMPED;
   }
