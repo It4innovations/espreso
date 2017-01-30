@@ -1,6 +1,6 @@
 
-#ifndef INPUT_ESDATA_ESDATA_H_
-#define INPUT_ESDATA_ESDATA_H_
+#ifndef INPUT_ESPRESO_ESPRESOBINARYFORMAT_H_
+#define INPUT_ESPRESO_ESPRESOBINARYFORMAT_H_
 
 #include "../loader.h"
 
@@ -10,17 +10,18 @@ struct ESPRESOInput;
 
 namespace input {
 
-class Esdata: public Loader {
+class ESPRESOBinaryFormat: public Loader {
 
 public:
 	static void load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
 
 protected:
-	Esdata(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+	ESPRESOBinaryFormat(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
 	: Loader(mesh), _esdata(configuration), _rank(rank), _size(size) { };
 
 	void points(Coordinates &coordinates);
 	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
+	void materials(std::vector<Material*> &materials);
 	void regions(
 			std::vector<Evaluator*> &evaluators,
 			std::vector<Region*> &regions,
@@ -41,4 +42,4 @@ private:
 }
 
 
-#endif /* INPUT_ESDATA_ESDATA_H_ */
+#endif /* INPUT_ESPRESO_ESPRESOBINARYFORMAT_H_ */

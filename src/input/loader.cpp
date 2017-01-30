@@ -5,7 +5,6 @@
 
 #include "ansys/ansys.h"
 #include "openfoam/openfoam.h"
-#include "esdata/esdata.h"
 #include "generator/generator.h"
 
 #include "../mesh/elements/element.h"
@@ -14,6 +13,7 @@
 #include "../mesh/settings/evaluator.h"
 
 #include "../basis/utilities/utils.h"
+#include "espreso/espresobinaryformat.h"
 
 using namespace espreso::input;
 
@@ -28,7 +28,7 @@ void Loader::load(const GlobalConfiguration &configuration, Mesh &mesh, size_t i
 		OpenFOAM::load(configuration.openfoam, mesh, index, size);
 		break;
 	case INPUT::ESDATA:
-		Esdata::load(configuration.esdata, mesh, index, size);
+		ESPRESOBinaryFormat::load(configuration.esdata, mesh, index, size);
 		break;
 	case INPUT::GENERATOR:
 		Generator::generate(configuration.generator, mesh, index, size);

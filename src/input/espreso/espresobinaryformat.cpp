@@ -1,5 +1,4 @@
 
-#include "esdata.h"
 #include "../../config/environment.h"
 
 #include "../../mesh/elements/line/line2.h"
@@ -22,19 +21,51 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
+#include "../../mesh/structures/material.h"
+#include "../../mesh/settings/evaluator.h"
 
 #include "../../config/input.h"
+#include "espresobinaryformat.h"
 
 using namespace espreso::input;
 
-void Esdata::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
+void ESPRESOBinaryFormat::load(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size)
 {
+	auto checkFile = [&] (int cluster, const std::string &file) {
+		std::stringstream ss;
+		ss << configuration.path << "/" << cluster << "/" << file;
+		std::ifstream is (ss.str());
+		if (!is.good()) {
+			ESINFO(GLOBAL_ERROR) << "Old ESPRESO binary format. File '" << ss.str() << "' is missing.";
+		}
+	};
+
 	ESINFO(OVERVIEW) << "Load mesh from ESPRESO binary format from directory " << configuration.path;
-	Esdata esdata(configuration, mesh, rank, size);
+	ESPRESOBinaryFormat esdata(configuration, mesh, rank, size);
+	std::ifstream is(configuration.path + "/description.txt");
+	if (!is.good()) {
+		ESINFO(GLOBAL_ERROR) << "Old ESPRESO binary format. File '" << configuration.path << "/description.txt' is missing.";
+	}
+	int clusters;
+	is >> clusters;
+	if (clusters != environment->MPIsize) {
+		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << environment->MPIsize << "). Should be " << clusters;
+	}
+
+
+
+	for (int cluster = 0; cluster < clusters; cluster++) {
+		checkFile(cluster, "coordinates.dat");
+		checkFile(cluster, "elements.dat");
+		checkFile(cluster, "materials.dat");
+		checkFile(cluster, "regions.dat");
+		checkFile(cluster, "boundaries.dat");
+	}
+
 	esdata.fill();
 }
 
-void Esdata::points(Coordinates &coordinates)
+void ESPRESOBinaryFormat::points(Coordinates &coordinates)
 {
 	std::stringstream fileName;
 	fileName << _esdata.path << "/" << _rank << "/coordinates.dat";
@@ -105,7 +136,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 	}
 };
 
-void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void ESPRESOBinaryFormat::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _esdata.path << "/" << _rank << "/elements.dat";
@@ -119,21 +150,22 @@ void Esdata::elements(std::vector<Element*> &elements, std::vector<Element*> &fa
 	is.close();
 }
 
-//void Esdata::materials(std::vector<Material> &materials)
-//{
-//	std::stringstream fileName;
-//	fileName << _esdata.path << "/" << _rank << "/materials.dat";
-//	std::ifstream is(fileName.str(), std::ifstream::binary);
-//
-//	eslocal size;
-//	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
-//	for (eslocal i = 0; i < size; i++) {
-//		materials.push_back(Material(is, mesh.coordinates()));
-//	}
-//	is.close();
-//}
+void ESPRESOBinaryFormat::materials(std::vector<Material*> &materials)
+{
+	std::stringstream fileName;
+	fileName << _esdata.path << "/" << _rank << "/materials.dat";
+	std::ifstream is(fileName.str(), std::ifstream::binary);
 
-void Esdata::regions(
+	eslocal size;
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	for (eslocal i = 0; i < size; i++) {
+		materials.push_back(new Material(mesh.coordinates()));
+		materials.back()->load(is);
+	}
+	is.close();
+}
+
+void ESPRESOBinaryFormat::regions(
 		std::vector<Evaluator*> &evaluators,
 		std::vector<Region*> &regions,
 		std::vector<Element*> &elements,
@@ -142,10 +174,11 @@ void Esdata::regions(
 		std::vector<Element*> &nodes)
 {
 	std::stringstream fileName;
-	fileName << _esdata.path << "/" << _rank << "/settings.dat";
+	fileName << _esdata.path << "/" << _rank << "/regions.dat";
 	std::ifstream is(fileName.str(), std::ifstream::binary);
 
-	eslocal size, region;
+	eslocal size;
+	int index;
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	faces.reserve(size);
@@ -157,6 +190,11 @@ void Esdata::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
+		evaluators.push_back(Evaluator::create(is, mesh.coordinates()));
+	}
+
+	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
+	for (eslocal i = 0; i < size; i++) {
 		regions.push_back(new Region());
 		eslocal length;
 		is.read(reinterpret_cast<char *>(&length), sizeof(eslocal));
@@ -164,6 +202,24 @@ void Esdata::regions(
 		is.read(buffer, length);
 		regions.back()->name = std::string(buffer, buffer + length);
 		delete buffer;
+
+		eslocal steps;
+		is.read(reinterpret_cast<char *>(&steps), sizeof(eslocal));
+		regions.back()->settings.resize(steps);
+		for (eslocal step = 0; step < steps; step++) {
+			eslocal properties;
+			is.read(reinterpret_cast<char *>(&properties), sizeof(eslocal));
+			for (eslocal property = 0; property < properties; property++) {
+				int p, index;
+				eslocal eSize;
+				is.read(reinterpret_cast<char *>(&p), sizeof(int));
+				is.read(reinterpret_cast<char *>(&eSize), sizeof(eslocal));
+				for (eslocal j = 0; j < eSize; j++) {
+					is.read(reinterpret_cast<char *>(&index), sizeof(int));
+					regions.back()->settings[step][(Property)p].push_back(evaluators[index]);
+				}
+			}
+		}
 	}
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
@@ -171,8 +227,8 @@ void Esdata::regions(
 	for (size_t i = 0; i < elements.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
-			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements().push_back(elements[i]);
+			is.read(reinterpret_cast<char *>(&index), sizeof(int));
+			regions[index]->elements().push_back(elements[i]);
 		}
 	}
 
@@ -181,8 +237,8 @@ void Esdata::regions(
 	for (size_t i = 0; i < faces.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
-			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements().push_back(faces[i]);
+			is.read(reinterpret_cast<char *>(&index), sizeof(int));
+			regions[index]->elements().push_back(faces[i]);
 		}
 	}
 
@@ -191,8 +247,8 @@ void Esdata::regions(
 	for (size_t i = 0; i < edges.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
-			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements().push_back(edges[i]);
+			is.read(reinterpret_cast<char *>(&index), sizeof(int));
+			regions[index]->elements().push_back(edges[i]);
 		}
 	}
 
@@ -201,21 +257,21 @@ void Esdata::regions(
 	for (size_t i = 0; i < nodes.size(); i++) {
 		is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 		for (eslocal r = 0; r < size; r++) {
-			is.read(reinterpret_cast<char *>(&region), sizeof(eslocal));
-			regions[region]->elements().push_back(nodes[i]);
+			is.read(reinterpret_cast<char *>(&index), sizeof(int));
+			regions[index]->elements().push_back(nodes[i]);
 		}
 	}
 
 	is.close();
 }
 
-bool Esdata::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
+bool ESPRESOBinaryFormat::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
 	mesh.partitiate(_esdata.domains);
 	return true;
 }
 
-void Esdata::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
+void ESPRESOBinaryFormat::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _esdata.path << "/" << _rank << "/boundaries.dat";

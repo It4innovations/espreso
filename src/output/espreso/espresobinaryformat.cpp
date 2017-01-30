@@ -7,6 +7,7 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/elements/element.h"
+#include "../../mesh/settings/evaluator.h"
 
 using namespace espreso::store;
 
@@ -31,11 +32,20 @@ ESPRESOBinaryFormat::ESPRESOBinaryFormat(const Mesh &mesh, const std::string &pa
 		ESINFO(ERROR) << "Cannot create output directory";
 	}
 
+	metafile();
 	coordinates();
 	elements();
 	materials();
 	regions();
 	boundaries();
+}
+
+void ESPRESOBinaryFormat::metafile()
+{
+	std::ofstream os;
+	os.open(_path + "/description.txt", std::ofstream::trunc);
+	os << _mesh.parts() * environment->MPIsize << "\n";
+	os.close();
 }
 
 void ESPRESOBinaryFormat::coordinates()
@@ -108,25 +118,183 @@ void ESPRESOBinaryFormat::materials()
 
 void ESPRESOBinaryFormat::regions()
 {
+	auto computeIntervals = [] (const std::vector<espreso::Element*> &elements, eslocal p) {
+		std::vector<size_t> intervals;
+		if (!elements.size()) {
+			return intervals;
+		}
+
+		if (std::find(elements[0]->domains().begin(), elements[0]->domains().end(), p) != elements[0]->domains().end()) {
+			intervals.push_back(0);
+		}
+		for (size_t i = 1; i < elements.size(); i++) {
+			if (elements[i - 1]->domains() != elements[i]->domains()) {
+				if (std::find(elements[i]->domains().begin(), elements[i]->domains().end(), p) != elements[i]->domains().end()) {
+					if (intervals.size() % 2 == 0) {
+						intervals.push_back(i);
+					}
+				} else {
+					if (intervals.size() % 2 == 1) {
+						intervals.push_back(i);
+					}
+				}
+			}
+		}
+		if (intervals.size() % 2 == 1) {
+			intervals.push_back(elements.size());
+		}
+		return intervals;
+	};
+
+	auto intervalsSize = [] (const std::vector<size_t> &intervals) {
+		size_t size = 0;
+		for (size_t i = 0; i < intervals.size(); i += 2) {
+			size += intervals[2 * i + 1] - intervals[2 * i];
+		}
+		return size;
+	};
+
+	auto region2index = [&] (const Region *region) {
+		auto it = std::find(_mesh.regions().begin(), _mesh.regions().end(), region);
+		return it - _mesh.regions().begin();
+	};
+
+	auto evaluator2index = [&] (const Evaluator *evaluator) {
+		auto it = std::find(_mesh.evaluators().begin(), _mesh.evaluators().end(), evaluator);
+		return it - _mesh.evaluators().begin();
+	};
+
+
 	#pragma omp parallel for
 	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream os;
 		std::stringstream ss;
-		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/settings.dat";
-
+		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/regions.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
 
 		eslocal size;
-		size = _mesh.regions().size();
+		std::vector<Element*> faces;
+		std::vector<Element*> edges;
+		for (size_t i = 0; i < _mesh.faces().size(); i++) {
+			if (_mesh.faces()[i]->regions().size()) {
+				faces.push_back(_mesh.faces()[i]);
+			}
+		}
+		for (size_t i = 0; i < _mesh.edges().size(); i++) {
+			if (_mesh.edges()[i]->regions().size()) {
+				edges.push_back(_mesh.edges()[i]);
+			}
+		}
+
+		std::sort(faces.begin(), faces.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
+		std::sort(edges.begin(), edges.end(), [] (Element *e1, Element *e2) { return e1->domains() < e2->domains(); });
+
+		// faces
+		std::vector<size_t> fIntervals = computeIntervals(faces, p);
+		eslocal fSize = intervalsSize(fIntervals);
+		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
+		for (size_t i = 0; i < fIntervals.size(); i += 2) {
+			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
+				faces[f]->store(os, _mesh.coordinates(), p);
+			}
+		}
+
+		// edges
+		std::vector<size_t> eIntervals = computeIntervals(edges, p);
+		eslocal eSize = intervalsSize(eIntervals);
+		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
+		for (size_t i = 0; i < eIntervals.size(); i += 2) {
+			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
+				edges[e]->store(os, _mesh.coordinates(), p);
+			}
+		}
+
+		size = _mesh.evaluators().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (size_t i = 0; i < _mesh.regions().size(); i++) {
+		for (size_t i = 0; i < _mesh.evaluators().size(); i++) {
+			_mesh.evaluators()[i]->store(os);
+		}
+
+		// regions
+		size = _mesh.regions().size() - 2; // not store default regions ELL_ELEMENT and ALL_NODES
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (size_t i = 2; i < _mesh.regions().size(); i++) {
 			eslocal length = _mesh.regions()[i]->name.size();
 			os.write(reinterpret_cast<const char *>(&length), sizeof(eslocal));
 			os.write(_mesh.regions()[i]->name.c_str(), _mesh.regions()[i]->name.size());
+			size = _mesh.regions()[i]->settings.size();
+			os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
+			for (size_t step = 0; step < _mesh.regions()[i]->settings.size(); step++) {
+				size = _mesh.regions()[i]->settings[step].size();
+				os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
+				for (auto it = _mesh.regions()[i]->settings[step].begin(); it != _mesh.regions()[i]->settings[step].end(); ++it) {
+					int property = (int)it->first;
+					os.write(reinterpret_cast<const char *>(&property), sizeof(int));
+					size = it->second.size();
+					os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
+					for (size_t j = 0; j < it->second.size(); j++) {
+						int index = evaluator2index(it->second[j]);
+						os.write(reinterpret_cast<const char *>(&index), sizeof(int));
+					}
+				}
+			}
 		}
+
+		// elements
+		const std::vector<eslocal> &parts = _mesh.getPartition();
+		const std::vector<Element*> &elements = _mesh.elements();
+		size = parts[p + 1] - parts[p];
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (eslocal e = parts[p]; e < parts[p + 1]; e++) {
+			size = elements[e]->regions().size() - 1;
+			os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+			for (size_t r = 1; r < elements[e]->regions().size(); r++) {
+				int index = region2index(elements[e]->regions()[r]);
+				os.write(reinterpret_cast<const char*>(&index), sizeof(int));
+			}
+		}
+
+		// faces
+		os.write(reinterpret_cast<const char*>(&fSize), sizeof(eslocal));
+		for (size_t i = 0; i < fIntervals.size(); i += 2) {
+			for (size_t f = fIntervals[2 * i]; f < fIntervals[2 * i + 1]; f++) {
+				size = faces[f]->regions().size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (size_t r = 0; r < faces[f]->regions().size(); r++) {
+					int index = region2index(faces[f]->regions()[r]);
+					os.write(reinterpret_cast<const char*>(&index), sizeof(int));
+				}
+			}
+		}
+
+		// edges
+		os.write(reinterpret_cast<const char*>(&eSize), sizeof(eslocal));
+		for (size_t i = 0; i < eIntervals.size(); i += 2) {
+			for (size_t e = eIntervals[2 * i]; e < eIntervals[2 * i + 1]; e++) {
+				size = edges[e]->regions().size();
+				os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+				for (size_t r = 0; r < edges[e]->regions().size(); r++) {
+					int index = region2index(edges[e]->regions()[r]);
+					os.write(reinterpret_cast<const char*>(&index), sizeof(int));
+				}
+			}
+		}
+
+		// nodes
+		size = _mesh.coordinates().localSize(p);
+		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+		for (size_t i = 0; i < _mesh.coordinates().localSize(p); i++) {
+			const Element* node = _mesh.nodes()[_mesh.coordinates().clusterIndex(i, p)];
+			size = node->regions().size() - 1;
+			os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
+			for (size_t r = 1; r < node->regions().size(); r++) {
+				int index = region2index(node->regions()[r]);
+				os.write(reinterpret_cast<const char*>(&index), sizeof(int));
+			}
+		}
+
 		os.close();
 	}
-	ESINFO(GLOBAL_ERROR) << "Implement store regions";
 }
 
 void ESPRESOBinaryFormat::boundaries()

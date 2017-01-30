@@ -1,13 +1,13 @@
 
 def configure(ctx):
-    ctx.recurse("esdata")
+    ctx.recurse("espreso")
     ctx.recurse("ansys")
     ctx.recurse("generator")
     ctx.recurse("openfoam")
     ctx.recurse("api")
 
 def build(ctx):
-    ctx.recurse("esdata")
+    ctx.recurse("espreso")
     ctx.recurse("ansys")
     ctx.recurse("generator")
     ctx.recurse("openfoam")

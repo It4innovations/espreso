@@ -39,7 +39,6 @@ enum class Property : int {
 	OBSTACLE,
 	NORMAL_DIRECTION,
 	NONMATCHING_ELEMENT,
-	NAMED_REGION,
 	EMPTY
 };
 

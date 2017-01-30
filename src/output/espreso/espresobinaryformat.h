@@ -1,6 +1,6 @@
 
-#ifndef OUTPUT_ESDATA_ESDATA_H_
-#define OUTPUT_ESDATA_ESDATA_H_
+#ifndef OUTPUT_ESPRESO_ESPRESOBINARYFORMAT_H_
+#define OUTPUT_ESPRESO_ESPRESOBINARYFORMAT_H_
 
 #include <cstdlib>
 #include <string>
@@ -22,6 +22,7 @@ public:
 protected:
 	ESPRESOBinaryFormat(const Mesh &mesh, const std::string &path);
 
+	void metafile();
 	void coordinates();
 	void elements();
 	void materials();
@@ -34,4 +35,4 @@ protected:
 }
 
 
-#endif /* OUTPUT_ESDATA_ESDATA_H_ */
+#endif /* OUTPUT_ESPRESO_ESPRESOBINARYFORMAT_H_ */
