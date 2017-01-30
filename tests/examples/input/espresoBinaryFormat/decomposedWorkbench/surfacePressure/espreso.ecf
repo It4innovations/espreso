@@ -1,0 +1,35 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Simple example for test Workbench input file             |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT ESDATA;
+PHYSICS LINEAR_ELASTICITY_3D;
+
+WORKBENCH {
+  PATH    workbench.dat;
+  DOMAINS             2;
+}
+
+ESDATA {
+  PATH      [ARG0];
+  DOMAINS        2;
+}
+
+LINEAR_ELASTICITY_3D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD        HYBRID_FETI;
+    SOLVER                PCG;
+    PRECONDITIONER     LUMPED;
+  }
+}

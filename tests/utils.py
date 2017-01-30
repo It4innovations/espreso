@@ -1,6 +1,7 @@
 
 import subprocess
 import os
+import re
 import shutil
 
 ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
@@ -44,22 +45,24 @@ class TestCaseCreator:
                     break
 
     @staticmethod
-    def gather(folder, ext):
-        examples = []
-        for root, subFolders, files in os.walk(folder):
-            skip = False
+    def gather(folder, ext, omit = "$^"):
+        def skip(files):
             for file in files:
                 if file.endswith(".skip"):
                     print "skip folder " + root
                     for line in open(os.path.join(root, file)):
                         print "--> " + line
-                    skip = True
-                    break
-            if skip:
-                continue
-            for file in files:
-                if file.endswith(ext):
-                    examples.append(( root, file.rstrip(ext)))
+                    return True
+            return False
+
+        # recurse tree a gather all examples
+        omit = re.compile(omit)
+        examples = []
+        for root, subFolders, files in os.walk(folder):
+            if not skip(files):
+                for file in files:
+                    if file.endswith(ext) and not omit.match(file):
+                        examples.append(( root, file.rstrip(ext)))
 
         examples.sort()
 
