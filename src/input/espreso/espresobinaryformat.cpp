@@ -195,17 +195,19 @@ void ESPRESOBinaryFormat::regions(
 
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
-		regions.push_back(new Region());
-		eslocal length;
-		is.read(reinterpret_cast<char *>(&length), sizeof(eslocal));
-		char *buffer = new char[length];
-		is.read(buffer, length);
-		regions.back()->name = std::string(buffer, buffer + length);
-		delete buffer;
+		if (i > 1) {
+			regions.push_back(new Region());
+			eslocal length;
+			is.read(reinterpret_cast<char *>(&length), sizeof(eslocal));
+			char *buffer = new char[length];
+			is.read(buffer, length);
+			regions.back()->name = std::string(buffer, buffer + length);
+			delete buffer;
+		}
 
 		eslocal steps;
 		is.read(reinterpret_cast<char *>(&steps), sizeof(eslocal));
-		regions.back()->settings.resize(steps);
+		regions[i]->settings.resize(steps);
 		for (eslocal step = 0; step < steps; step++) {
 			eslocal properties;
 			is.read(reinterpret_cast<char *>(&properties), sizeof(eslocal));
@@ -216,7 +218,7 @@ void ESPRESOBinaryFormat::regions(
 				is.read(reinterpret_cast<char *>(&eSize), sizeof(eslocal));
 				for (eslocal j = 0; j < eSize; j++) {
 					is.read(reinterpret_cast<char *>(&index), sizeof(int));
-					regions.back()->settings[step][(Property)p].push_back(evaluators[index]);
+					regions[i]->settings[step][(Property)p].push_back(evaluators[index]);
 				}
 			}
 		}

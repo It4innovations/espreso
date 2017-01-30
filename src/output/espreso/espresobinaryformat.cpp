@@ -216,12 +216,15 @@ void ESPRESOBinaryFormat::regions()
 		}
 
 		// regions
-		size = _mesh.regions().size() - 2; // not store default regions ELL_ELEMENT and ALL_NODES
+		size = _mesh.regions().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
-		for (size_t i = 2; i < _mesh.regions().size(); i++) {
-			eslocal length = _mesh.regions()[i]->name.size();
-			os.write(reinterpret_cast<const char *>(&length), sizeof(eslocal));
-			os.write(_mesh.regions()[i]->name.c_str(), _mesh.regions()[i]->name.size());
+		for (size_t i = 0; i < _mesh.regions().size(); i++) {
+			if (i > 1) {
+				// not store default regions ELL_ELEMENT and ALL_NODES name
+				eslocal length = _mesh.regions()[i]->name.size();
+				os.write(reinterpret_cast<const char *>(&length), sizeof(eslocal));
+				os.write(_mesh.regions()[i]->name.c_str(), _mesh.regions()[i]->name.size());
+			}
 			size = _mesh.regions()[i]->settings.size();
 			os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));
 			for (size_t step = 0; step < _mesh.regions()[i]->settings.size(); step++) {
