@@ -436,25 +436,25 @@ Mesh::~Mesh()
 	delete _coordinates;
 }
 
-static bool isOuterFace(
-		std::vector<std::vector<eslocal> > &nodesElements,
-		std::vector<eslocal> &face)
-{
-	std::vector<eslocal> result(nodesElements[face[0]]);
-	std::vector<eslocal>::iterator it = result.end();
-
-	for (size_t i = 1; i < face.size(); i++) {
-		std::vector<eslocal> tmp(result.begin(), it);
-		it = std::set_intersection(tmp.begin(), tmp.end(),
-				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
-				result.begin());
-		if (it - result.begin() == 1) {
-			return true;
-		}
-	}
-
-	return false;
-}
+//static bool isOuterFace(
+//		std::vector<std::vector<eslocal> > &nodesElements,
+//		std::vector<eslocal> &face)
+//{
+//	std::vector<eslocal> result(nodesElements[face[0]]);
+//	std::vector<eslocal>::iterator it = result.end();
+//
+//	for (size_t i = 1; i < face.size(); i++) {
+//		std::vector<eslocal> tmp(result.begin(), it);
+//		it = std::set_intersection(tmp.begin(), tmp.end(),
+//				nodesElements[face[i]].begin(), nodesElements[face[i]].end(),
+//				result.begin());
+//		if (it - result.begin() == 1) {
+//			return true;
+//		}
+//	}
+//
+//	return false;
+//}
 
 void Mesh::getSurface(Mesh &surface) const
 {
