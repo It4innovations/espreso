@@ -162,6 +162,9 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 				ss >> index;
 				if (!ss.fail() && ss.eof() && index < args.size()) {
 					values.push_back(args[index]);
+					std::string parameter;
+					std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { parameter += s + "::"; });
+					arguments[index].push_back(parameter + values.front());
 				} else {
 					if (index < args.size()) {
 						ESINFO(GLOBAL_ERROR) << "Invalid argument '" << value << "'";
@@ -207,7 +210,7 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			break;
 		case Tokenizer::Token::EXPRESSION_END:
 		{
-			if (arguments.size()) {
+			if (!correctlyLoaded) {
 				values.clear();
 				break;
 			}
