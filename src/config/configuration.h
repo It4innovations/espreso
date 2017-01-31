@@ -17,14 +17,14 @@
 #define OPTION(type, name, description, value, options)         type name = ParameterHolder::create<type>(#name, description, name, value, options, this)
 #define PARAMETER(type, name, description, value)               type name = ParameterHolder::create<type>(#name, description, name, value, #type, this)
 
-#define SUBVECTORMAP(parameter, value, name, description, ditem, dparameter, dvalue) \
-	ConfigurationVectorMap<parameter, value> name = ConfigurationVectorMap<parameter, value>::create(#name, description, ditem, dparameter, dvalue, this)
-
 #define SUBCONFIG(type, name, description) \
 	type name = Configuration::create<type>(#name, description, this)
 
 #define SUBMAP(type1, type2, name, description, dparameter, dvalue) \
 	std::map<type1, type2> name = mapToBaseType<type1, type2>::create(#name, description, this)
+
+#define SUBMAPTOMAP(type1, type2, type3, name, description) \
+	std::map<type1, std::map<type2, type3> > name = mapToMapToBaseType<type1, type2, type3>::create(#name, description, this)
 
 #define SUBMAPTOCONFIG(type1, type2, name, description) \
 	std::map<type1, type2*> name = mapToConfiguration<type1, type2>::create(#name, description, this)
@@ -413,33 +413,41 @@ struct mapToBaseType: public Configuration {
 	}
 };
 
-template <typename Ttype>
-struct ConfigurationVector: public Configuration {
-	std::map<std::string, Ttype*> configurations;
+template <typename Tparameter1, typename Tparameter2, typename Tvalue>
+struct mapToMapToBaseType: public Configuration {
+	std::map<Tparameter1, std::map<Tparameter2, Tvalue> > *map;
+	std::map<Tparameter1, mapToBaseType<Tparameter2, Tvalue> > submap;
 	std::vector<Configuration*> dummy;
 
-	static ConfigurationVector<Ttype> create(const std::string &name, const std::string &description, const std::string &dParameter, const std::string &dValue, Configuration* conf)
+	static std::map<Tparameter1, std::map<Tparameter2, Tvalue> > create(const std::string &name, const std::string &description, Configuration* conf)
 	{
-		ConfigurationVector<Ttype> configuration;
-		conf->subconfigurations[name] = &configuration;
-		conf->orderedSubconfiguration.push_back(&configuration);
-		configuration.name = name;
-		configuration.description = description;
-		configuration.dummy.push_back(new Ttype{});
-		configuration.dummy.back()->name = dParameter;
-		configuration.dummy.back()->description = dValue;
+		std::map<Tparameter1, std::map<Tparameter2, Tvalue> > configuration;
+		mapToMapToBaseType<Tparameter1, Tparameter2, Tvalue> *subconf = new mapToMapToBaseType<Tparameter1, Tparameter2, Tvalue>();
+		conf->subconfigurations[name] = subconf;
+		conf->orderedSubconfiguration.push_back(subconf);
+		conf->toDelete.push_back(subconf);
+		subconf->map = &configuration;
+		subconf->name = name;
+		subconf->description = description;
+//		subconf->dummy.push_back(new mapToConfiguration<Tparameter1, Tparameter2, Tvalue>());
+//		subconf->dummy.back()->name = "DEFAULT";
+//		subconf->dummy.back()->description = "VALUE"; // TODO: improve
 		return configuration;
 	}
 
-	Configuration& operator[](const std::string &subconfiguration)
+	Configuration& operator[](const std::string &parameter)
 	{
-		if (configurations.find(subconfiguration) == configurations.end()) {
-			configurations[subconfiguration] = new Ttype{};
-			subconfigurations[subconfiguration] = configurations[subconfiguration];
-			orderedSubconfiguration.push_back(configurations[subconfiguration]);
-			configurations[subconfiguration]->name = subconfiguration;
+		Tparameter1 param;
+		ValueHolder<Tparameter1> pholder(parameter, "", param, param, "");
+		if (!pholder.set(parameter)) {
+			ESINFO(GLOBAL_ERROR) << "Invalid object type of object '" << name << "'";
 		}
-		return *configurations[subconfiguration];
+
+		if (submap.find(param) == submap.end()) {
+			auto &value = (*map)[param];
+			submap[param].map = &value;
+		}
+		return submap.find(param)->second;
 	}
 
 	virtual const std::vector<Configuration*>& storeConfigurations() const
@@ -451,132 +459,14 @@ struct ConfigurationVector: public Configuration {
 		}
 	}
 
-	~ConfigurationVector()
+	~mapToMapToBaseType()
 	{
 		if (!copy) {
-			for (auto it = configurations.begin(); it != configurations.end(); ++it) {
-				delete it->second;
-			}
 			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
 		}
 	}
 };
 
-
-template <typename Tparameter, typename Tvalue>
-struct ConfigurationMap: public Configuration {
-	std::map<Tparameter, Tvalue> values;
-	Tvalue dummyValue;
-	std::vector<ParameterBase*> dummy;
-	std::string type;
-
-	static ConfigurationMap<Tparameter, Tvalue> create(const std::string &name, const std::string &description, const std::string &type, const std::string &dParameter, Tvalue dValue, Configuration* conf)
-	{
-		ConfigurationMap<Tparameter, Tvalue> configuration;
-		conf->subconfigurations[name] = &configuration;
-		conf->orderedSubconfiguration.push_back(&configuration);
-		configuration.name = name;
-		configuration.description = description;
-		configuration.dummy.push_back(new ValueHolder<Tvalue>("# " + dParameter, "List of values.", configuration.dummyValue, dValue, type));
-		configuration.dummyValue = dValue;
-		return configuration;
-	}
-
-	bool set(const std::string &parameter, const std::string &value)
-	{
-		if (parameters.find(parameter) != parameters.end()) {
-			return parameters.find(parameter)->second->set(value);
-		} else {
-			Tparameter par;
-			ValueHolder<Tparameter> pholder(parameter, "", par, par, type);
-			if (!pholder.set(parameter)) {
-				return false;
-			}
-			Tvalue val;
-			ValueHolder<Tvalue> vholder(value, "", val, val, type);
-			if (!vholder.set(value)) {
-				return false;
-			}
-			values[pholder.value] = vholder.value;
-			parameters[parameter] = new ValueHolder<Tvalue>(parameter, "Parameter value", values[pholder.value], values[pholder.value], type);
-			orderedParameters.push_back(parameters[parameter]);
-			return true;
-		}
-	}
-
-	virtual const std::vector<ParameterBase*>& storeParameters() const
-	{
-		if (orderedParameters.size()) {
-			return orderedParameters;
-		} else {
-			return dummy;
-		}
-	}
-
-	~ConfigurationMap()
-	{
-		if (!copy) {
-			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
-		}
-	}
-};
-
-template <typename TParameter, typename TValue>
-struct ConfigurationVectorMap: public Configuration {
-	std::map<std::string, ConfigurationMap<TParameter, TValue>* > configurations;
-	std::vector<Configuration*> dummy;
-	std::string item;
-
-	static ConfigurationVectorMap<TParameter, TValue> create(const std::string &name, const std::string &description, const std::string &dItem, const std::string &dParameter, const std::string &dValue, Configuration* conf)
-	{
-		ConfigurationVectorMap<TParameter, TValue> configuration;
-		conf->subconfigurations[name] = &configuration;
-		conf->orderedSubconfiguration.push_back(&configuration);
-		configuration.name = name;
-		configuration.description = description;
-		configuration.item = dItem;
-		configuration.dummy.push_back(new Configuration());
-		configuration.dummy.back()->name = dItem;
-		configuration.dummy.back()->description = dParameter + " " + dValue;
-		return configuration;
-	}
-
-	Configuration& operator[](const std::string &subconfiguration)
-	{
-		if (configurations.find(subconfiguration) == configurations.end()) {
-			configurations[subconfiguration] = new ConfigurationMap<TParameter, TValue>();
-			subconfigurations[subconfiguration] = configurations[subconfiguration];
-			orderedSubconfiguration.push_back(configurations[subconfiguration]);
-			configurations[subconfiguration]->name = subconfiguration;
-		}
-		return *configurations[subconfiguration];
-	}
-
-	virtual const std::vector<Configuration*>& storeConfigurations() const
-	{
-		if (orderedSubconfiguration.size()) {
-			return orderedSubconfiguration;
-		} else {
-			return dummy;
-		}
-	}
-
-	bool set(const std::string &parameter, const std::string &value)
-	{
-		ESINFO(GLOBAL_ERROR) << "Parameter '" << name << "' expected format " << item << " { " << dummy.back()->name << " " << dummy.back()->description << "; ... }";
-		return false;
-	}
-
-	~ConfigurationVectorMap()
-	{
-		if (!copy) {
-			for (auto it = configurations.begin(); it != configurations.end(); ++it) {
-				delete it->second;
-			}
-			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
-		}
-	}
-};
 
 struct ParameterHolder {
 	template <typename Ttype>

@@ -38,7 +38,7 @@ AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration)
 {
-	if (_configuration.translation_motions.configurations.size()) {
+	if (_configuration.translation_motions.size()) {
 		mtype = MatrixType::REAL_UNSYMMETRIC;
 		if (configuration.espreso.regularization == REGULARIZATION::FIX_POINTS) {
 			ESINFO(GLOBAL_ERROR) << "Set regularization to NULL_PIVOTS";

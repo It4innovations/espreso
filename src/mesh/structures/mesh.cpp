@@ -656,23 +656,17 @@ void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, c
 	_loadProperty(*this, loadStep, _evaluators, regions, parameters, properties, true);
 }
 
-void Mesh::loadProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+void Mesh::loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
 {
-	for (auto it = property.configurations.begin(); it != property.configurations.end(); ++it) {
-		std::stringstream ss(it->first);
-		size_t step;
-		ss >> step;
-		_loadProperty(*this, step - 1, _evaluators, it->second->values, parameters, properties, false);
+	for (auto it = property.begin(); it != property.end(); ++it) {
+		_loadProperty(*this, it->first - 1, _evaluators, it->second, parameters, properties, false);
 	}
 }
 
-void Mesh::loadNodeProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+void Mesh::loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
 {
-	for (auto it = property.configurations.begin(); it != property.configurations.end(); ++it) {
-		std::stringstream ss(it->first);
-		size_t step;
-		ss >> step;
-		_loadProperty(*this, step - 1, _evaluators, it->second->values, parameters, properties, true);
+	for (auto it = property.begin(); it != property.end(); ++it) {
+		_loadProperty(*this, it->first - 1, _evaluators, it->second, parameters, properties, true);
 	}
 }
 

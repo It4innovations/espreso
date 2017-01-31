@@ -47,7 +47,7 @@ AdvectionDiffusion3D::AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration)
 {
-	if (_configuration.translation_motions.configurations.size()) {
+	if (_configuration.translation_motions.size()) {
 		mtype = MatrixType::REAL_UNSYMMETRIC;
 	}
 };

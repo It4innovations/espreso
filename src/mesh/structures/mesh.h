@@ -10,8 +10,6 @@
 namespace espreso {
 
 struct Configuration;
-template <typename TParameter, typename TValue>
-struct ConfigurationVectorMap;
 
 struct G2L;
 class Coordinates;
@@ -56,8 +54,8 @@ public:
 
 	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
 	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
-	void loadProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
-	void loadNodeProperty(const ConfigurationVectorMap<std::string, std::string> &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 
 	void removeDuplicateRegions();
 

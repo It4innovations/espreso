@@ -59,17 +59,17 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
-	SUBVECTORMAP(std::string, std::string, heat_flux, "Heat flux", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
-	SUBVECTORMAP(std::string, std::string, heat_flow, "Heat flow", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, heat_flux, "Heat flux");
+	SUBMAPTOMAP(size_t, std::string, std::string, heat_flow, "Heat flow");
 
 	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionConvection, convection, "Region with convective heat flux");
 
 	SUBMAP(std::string, std::string, initial_temperature , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTORMAP(std::string, std::string, temperature        , "Temperature"       , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
-	SUBVECTORMAP(std::string, std::string, heat_source        , "Heat source"       , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
-	SUBVECTORMAP(std::string, std::string, translation_motions, "Translation motion", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
-	SUBVECTORMAP(std::string, std::string, thickness          , "Thicness"          , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, temperature        , "Temperature"       );
+	SUBMAPTOMAP(size_t, std::string, std::string, heat_source        , "Heat source"       );
+	SUBMAPTOMAP(size_t, std::string, std::string, translation_motions, "Translation motion");
+	SUBMAPTOMAP(size_t, std::string, std::string, thickness          , "Thicness"          );
 
 	SUBMAPTOCONFIG(std::string, AdvectionDiffusion3DMaterial, materials, "Material description.");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
