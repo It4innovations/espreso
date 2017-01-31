@@ -71,7 +71,7 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	SUBVECTORMAP(std::string, std::string, translation_motions, "Translation motion", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 	SUBVECTORMAP(std::string, std::string, thickness          , "Thicness"          , "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTOR(AdvectionDiffusion3DMaterial, materials, "Vector of materials.", "1", "Description of material '1'");
+	SUBMAPTOCONFIG(std::string, AdvectionDiffusion3DMaterial, materials, "Material description.");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);

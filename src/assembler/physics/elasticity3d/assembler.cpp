@@ -115,7 +115,7 @@ void Elasticity3D::prepareMeshStructures()
 	_mesh.loadProperty(_configuration.acceleration.values       , { "X", "Y", "Z" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
 	_mesh.loadProperty(_configuration.initial_temperature.values, { }              , { Property::INITIAL_TEMPERATURE });
 
-	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
+	_mesh.loadMaterials(_configuration.materials, _configuration.material_set.values);
 	_mesh.removeDuplicateRegions();
 }
 

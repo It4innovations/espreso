@@ -60,7 +60,7 @@ struct LinearElasticity2DConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, normal_direction   , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, thickness          , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTOR(LinearElasticity2DMaterial, materials, "Vector of materials.", "1", "Description of material '1'");
+	SUBMAPTOCONFIG(std::string, LinearElasticity2DMaterial, materials, "Material description.");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);

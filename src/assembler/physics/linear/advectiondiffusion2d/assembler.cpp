@@ -103,7 +103,7 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 		}
 	}
 
-	_mesh.loadMaterials(_configuration.materials.configurations, _configuration.material_set.values);
+	_mesh.loadMaterials(_configuration.materials, _configuration.material_set.values);
 	_mesh.removeDuplicateRegions();
 }
 

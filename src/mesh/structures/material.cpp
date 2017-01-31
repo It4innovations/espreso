@@ -28,6 +28,7 @@ Material::Material(const Coordinates &coordinates, const Configuration &configur
 	for (size_t p = 0; p < configuration.orderedParameters.size(); p++) {
 		if (!StringCompare::caseInsensitiveEq(configuration.orderedParameters[p]->name, "MODEL")) {
 			const std::string &value = configuration.orderedParameters[p]->get();
+			delete _values[configuration.orderedParameters[p]->index()];
 			if (StringCompare::contains(value, "xyzt")) {
 				_values[configuration.orderedParameters[p]->index()] = new CoordinatesEvaluator(value, _coordinates);
 			} else {

@@ -17,9 +17,6 @@
 #define OPTION(type, name, description, value, options)         type name = ParameterHolder::create<type>(#name, description, name, value, options, this)
 #define PARAMETER(type, name, description, value)               type name = ParameterHolder::create<type>(#name, description, name, value, #type, this)
 
-#define SUBVECTOR(type, name, description, dparameter, dvalue) \
-	ConfigurationVector<type> name = ConfigurationVector<type>::create(#name, description, dparameter, dvalue, this)
-
 #define SUBMAP(ptype, vtype, name, description, dparameter, dvalue) \
 	ConfigurationMap<ptype, vtype> name = ConfigurationMap<ptype, vtype>::create(#name, description, #vtype, dparameter, dvalue, this)
 
@@ -31,6 +28,9 @@
 
 #define SUBCONFIG(type, name, description) \
 	type name = Configuration::create<type>(#name, description, this)
+
+#define SUBMAPTOCONFIG(type1, type2, name, description) \
+	std::map<type1, type2*> name = mapToConfiguration<type1, type2>::create(#name, description, this)
 
 namespace espreso {
 
@@ -168,6 +168,7 @@ struct Configuration {
 	std::map<std::string, Configuration*, StringCompare> subconfigurations;
 	std::vector<ParameterBase*> orderedParameters;
 	std::vector<Configuration*> orderedSubconfiguration;
+	std::vector<Configuration*> toDelete;
 	std::string name;
 	std::string description;
 
@@ -235,6 +236,64 @@ struct Configuration {
 			for (auto it = parameters.begin(); it != parameters.end(); ++it) {
 				delete it->second;
 			}
+			std::for_each(toDelete.begin(), toDelete.end(), [] (Configuration *c) { delete c; });
+		}
+	}
+};
+
+template <typename Tparameter, typename Tvalue>
+struct mapToConfiguration: public Configuration {
+	std::map<Tparameter, Tvalue*> *map;
+	std::vector<Configuration*> dummy;
+
+	static std::map<Tparameter, Tvalue*> create(const std::string &name, const std::string &description, Configuration* conf)
+	{
+		std::map<Tparameter, Tvalue*> configuration;
+		mapToConfiguration<Tparameter, Tvalue> *subconf = new mapToConfiguration<Tparameter, Tvalue>();
+		conf->subconfigurations[name] = subconf;
+		conf->orderedSubconfiguration.push_back(subconf);
+		conf->toDelete.push_back(subconf);
+		subconf->map = &configuration;
+		subconf->name = name;
+		subconf->description = description;
+		subconf->dummy.push_back(new mapToConfiguration<Tparameter, Tvalue>());
+		subconf->dummy.back()->name = "DEFAULT";
+		subconf->dummy.back()->description = "VALUE"; // TODO: improve
+		return configuration;
+	}
+
+	Configuration& operator[](const std::string &parameter)
+	{
+		Tparameter param;
+		ValueHolder<Tparameter> pholder(parameter, "", param, param, "");
+		if (!pholder.set(parameter)) {
+			ESINFO(GLOBAL_ERROR) << "Invalid object type of object '" << name << "'";
+		}
+
+		if (map->find(param) == map->end()) {
+			Tvalue *value = new Tvalue{};
+			(*map)[param] = value;
+			toDelete.push_back(value);
+			subconfigurations[parameter] = value;
+			orderedSubconfiguration.push_back(value);
+			subconfigurations[parameter]->name = parameter;
+		}
+		return *map->find(param)->second;
+	}
+
+	virtual const std::vector<Configuration*>& storeConfigurations() const
+	{
+		if (orderedSubconfiguration.size()) {
+			return orderedSubconfiguration;
+		} else {
+			return dummy;
+		}
+	}
+
+	~mapToConfiguration()
+	{
+		if (!copy) {
+			std::for_each(dummy.begin(), dummy.end(), [] (Configuration * c) { delete c; });
 		}
 	}
 };
@@ -287,6 +346,7 @@ struct ConfigurationVector: public Configuration {
 		}
 	}
 };
+
 
 template <typename Tparameter, typename Tvalue>
 struct ConfigurationMap: public Configuration {

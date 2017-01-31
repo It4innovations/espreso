@@ -105,8 +105,8 @@ struct AdvectionDiffusionSolver: public Configuration {
 
 	PARAMETER(size_t, load_steps, "Number of load steps in simulation.", 1);
 
-	SUBVECTOR(AdvectionDiffusion2DNonLinearSolver, nonlinear_solver, "Non-linear configuration for each load step.", "1", "Settings for the first load step.");
-	SUBVECTOR(AdvectionDiffusion2DTransientSolver, transient_solver, "Transient configuration for each load step." , "1", "Settings for the first load step.");
+	SUBMAPTOCONFIG(size_t, AdvectionDiffusion2DNonLinearSolver, nonlinear_solver, "Non-linear configuration for each load step.");
+	SUBMAPTOCONFIG(size_t, AdvectionDiffusion2DTransientSolver, transient_solver, "Transient configuration for each load step.");
 };
 
 }
