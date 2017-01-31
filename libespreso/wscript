@@ -6,7 +6,6 @@ def configure(ctx):
 
 
 def build(ctx):
-    return
     ctx.program(
         source       = "apitest.cpp",
         target       = "apitest",
