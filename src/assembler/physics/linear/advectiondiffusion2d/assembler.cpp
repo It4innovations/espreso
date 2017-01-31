@@ -71,7 +71,7 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
-	_mesh.loadProperty(_configuration.initial_temperature.values, { }, { Property::INITIAL_TEMPERATURE });
+	_mesh.loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE });
 
 	_mesh.loadNodeProperty(_configuration.temperature    , { }, { Property::TEMPERATURE });
 	_mesh.loadNodeProperty(_configuration.thickness      , { }, { Property::THICKNESS });
@@ -81,12 +81,9 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	_mesh.loadProperty(_configuration.heat_flux          , { }         , { Property::HEAT_FLUX });
 	_mesh.loadProperty(_configuration.heat_flow          , { }         , { Property::HEAT_FLOW });
 
-	for (auto it = _configuration.convection.configurations.begin(); it != _configuration.convection.configurations.end(); ++it) {
-		std::stringstream ss(it->first);
-		size_t step;
-		ss >> step;
+	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
 		std::map<std::string, std::string> values;
-		for (auto regions = it->second->configurations.begin(); regions != it->second->configurations.end(); ++regions) {
+		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			values[regions->first] = regions->second->external_temperature;
 			_mesh.loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
 			values[regions->first] = regions->second->heat_transfer_coefficient;
@@ -103,7 +100,7 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 		}
 	}
 
-	_mesh.loadMaterials(_configuration.materials, _configuration.material_set.values);
+	_mesh.loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh.removeDuplicateRegions();
 }
 

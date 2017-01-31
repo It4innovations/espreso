@@ -49,7 +49,7 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 	start = Triple<double>(configuration.start_x, configuration.start_y, configuration.start_z);
 	end   = Triple<double>(configuration.start_x + configuration.length_x, configuration.start_y + configuration.length_y, configuration.start_z + configuration.length_z);
 
-	for (auto it = configuration.blocks.values.begin(); it != configuration.blocks.values.end(); ++it) {
+	for (auto it = configuration.blocks.begin(); it != configuration.blocks.end(); ++it) {
 		if (it->first >= nonempty.size()) {
 			ESINFO(GLOBAL_ERROR) << "Block index is out of range.";
 		}
@@ -232,7 +232,7 @@ void Grid::regions(
 		std::vector<Element*> &edges,
 		std::vector<Element*> &nodes)
 {
-	for (auto it = _grid.nodes.values.begin(); it != _grid.nodes.values.end(); ++it) {
+	for (auto it = _grid.nodes.begin(); it != _grid.nodes.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region(nodes));
 		} else {
@@ -242,7 +242,7 @@ void Grid::regions(
 		}
 		regions.back()->name = it->first;
 	}
-	for (auto it = _grid.edges.values.begin(); it != _grid.edges.values.end(); ++it) {
+	for (auto it = _grid.edges.begin(); it != _grid.edges.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region());
 			ESINFO(GLOBAL_ERROR) << "Implement region of all edges.";
@@ -254,7 +254,7 @@ void Grid::regions(
 		}
 		regions.back()->name = it->first;
 	}
-	for (auto it = _grid.faces.values.begin(); it != _grid.faces.values.end(); ++it) {
+	for (auto it = _grid.faces.begin(); it != _grid.faces.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region());
 			ESINFO(GLOBAL_ERROR) << "Implement region of all faces.";
@@ -267,7 +267,7 @@ void Grid::regions(
 		regions.back()->name = it->first;
 	}
 
-	for (auto it = _grid.elements.values.begin(); it != _grid.elements.values.end(); ++it) {
+	for (auto it = _grid.elements.begin(); it != _grid.elements.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region(elements));
 		} else {

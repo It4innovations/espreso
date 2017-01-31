@@ -62,7 +62,7 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	SUBVECTORMAP(std::string, std::string, heat_flux, "Heat flux", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 	SUBVECTORMAP(std::string, std::string, heat_flow, "Heat flow", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTORVECTOR(AdvectionDiffusionConvection, convection, "Region with convective heat flux", "<LOAD_STEPS>", "Convective parameters.");
+	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionConvection, convection, "Region with convective heat flux");
 
 	SUBMAP(std::string, std::string, initial_temperature , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 

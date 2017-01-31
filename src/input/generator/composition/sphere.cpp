@@ -285,7 +285,7 @@ void Sphere::regions(
 		std::vector<Element*> &edges,
 		std::vector<Element*> &nodes)
 {
-	for (auto it = _sphere.nodes.values.begin(); it != _sphere.nodes.values.end(); ++it) {
+	for (auto it = _sphere.nodes.begin(); it != _sphere.nodes.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region(nodes));
 		} else {
@@ -295,7 +295,7 @@ void Sphere::regions(
 		}
 		regions.back()->name = it->first;
 	}
-	for (auto it = _sphere.edges.values.begin(); it != _sphere.edges.values.end(); ++it) {
+	for (auto it = _sphere.edges.begin(); it != _sphere.edges.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all edges.";
 		} else {
@@ -306,7 +306,7 @@ void Sphere::regions(
 		}
 		regions.back()->name = it->first;
 	}
-	for (auto it = _sphere.faces.values.begin(); it != _sphere.faces.values.end(); ++it) {
+	for (auto it = _sphere.faces.begin(); it != _sphere.faces.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all faces.";
 		} else {
@@ -318,7 +318,7 @@ void Sphere::regions(
 		regions.back()->name = it->first;
 	}
 
-	for (auto it = _sphere.elements.values.begin(); it != _sphere.elements.values.end(); ++it) {
+	for (auto it = _sphere.elements.begin(); it != _sphere.elements.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region(elements));
 		} else {

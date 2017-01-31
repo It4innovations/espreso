@@ -55,7 +55,7 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 	SUBVECTORMAP(std::string, std::string, heat_flux, "Heat flux", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 	SUBVECTORMAP(std::string, std::string, heat_flow, "Heat flow", "<LOAD_STEPS>", "<REGION>", "<EXPRESSION>");
 
-	SUBVECTORVECTOR(AdvectionDiffusionConvection, convection, "Region with convective heat flux", "<LOAD_STEPS>", "Convective parameters.");
+	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionConvection, convection, "Region with convective heat flux");
 
 	SUBMAP(std::string, std::string, initial_temperature , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 
@@ -66,6 +66,8 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 
 	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
+
+	std::map<std::string, std::map<std::string, AdvectionDiffusion2DMaterial*> > xxx = mapToMapToConfiguration<std::string, std::string, AdvectionDiffusion2DMaterial>::create("xxx", "DESC", this);
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 

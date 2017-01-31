@@ -79,17 +79,17 @@ void Elasticity2D::prepareMeshStructures()
 
 	_constraints.initMatrices(matrixSize);
 
-	_mesh.loadNodeProperty(_configuration.displacement.values       , { "X", "Y" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
-	_mesh.loadNodeProperty(_configuration.temperature.values        , { }         , { Property::TEMPERATURE });
-	_mesh.loadNodeProperty(_configuration.obstacle.values           , { }         , { Property::OBSTACLE });
-	_mesh.loadNodeProperty(_configuration.normal_direction.values   , { }         , { Property::NORMAL_DIRECTION });
-	_mesh.loadNodeProperty(_configuration.thickness.values          , { }         , { Property::THICKNESS });
+	_mesh.loadNodeProperty(_configuration.displacement       , { "X", "Y" }, { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
+	_mesh.loadNodeProperty(_configuration.temperature        , { }         , { Property::TEMPERATURE });
+	_mesh.loadNodeProperty(_configuration.obstacle           , { }         , { Property::OBSTACLE });
+	_mesh.loadNodeProperty(_configuration.normal_direction   , { }         , { Property::NORMAL_DIRECTION });
+	_mesh.loadNodeProperty(_configuration.thickness          , { }         , { Property::THICKNESS });
 
-	_mesh.loadProperty(_configuration.normal_presure.values     , { }         , { Property::PRESSURE });
-	_mesh.loadProperty(_configuration.acceleration.values       , { "X", "Y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y });
-	_mesh.loadProperty(_configuration.initial_temperature.values, { }         , { Property::INITIAL_TEMPERATURE });
+	_mesh.loadProperty(_configuration.normal_presure     , { }         , { Property::PRESSURE });
+	_mesh.loadProperty(_configuration.acceleration       , { "X", "Y" }, { Property::ACCELERATION_X, Property::ACCELERATION_Y });
+	_mesh.loadProperty(_configuration.initial_temperature, { }         , { Property::INITIAL_TEMPERATURE });
 
-	_mesh.loadMaterials(_configuration.materials, _configuration.material_set.values);
+	_mesh.loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh.removeDuplicateRegions();
 }
 
