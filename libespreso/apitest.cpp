@@ -11,7 +11,7 @@
 #include "../src/mesh/structures/mesh.h"
 #include "../src/mesh/structures/coordinates.h"
 #include "../src/assembler/instance/instance.h"
-#include "../src/assembler/physics/assembler.h"
+#include "../src/assembler/old_physics/assembler.h"
 
 int main(int argc, char** argv)
 {

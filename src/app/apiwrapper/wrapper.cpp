@@ -2,8 +2,7 @@
 #include "wrapper.h"
 #include "../../../libespreso/feti4i.h"
 #include "../../assembler/instance/precomputed/instance.h"
-#include "../../assembler/physics/precomputed/singular/assembler.h"
-
+#include "../../assembler/old_physics/precomputed/singular/assembler.h"
 #include "../../config/input.h"
 #include "../../input/api/api.h"
 

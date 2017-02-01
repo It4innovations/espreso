@@ -10,8 +10,8 @@
 
 #include "../specific/itersolvers.h"
 
-#include "../../assembler/physics/assembler.h"
 #include "../../assembler/constraints/constraints.h"
+#include "../../assembler/old_physics/assembler.h"
 
 
 namespace espreso {

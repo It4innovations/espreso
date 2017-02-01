@@ -1,6 +1,7 @@
 
 #include "clusteracc.h"
-#include "../../../assembler/physics/assembler.h"
+
+#include "../../../assembler/old_physics/assembler.h"
 
 using namespace espreso;
 

@@ -1,16 +1,15 @@
 
 #include "assembler.h"
+#include "old_physics/elasticity2d/assembler.h"
+#include "old_physics/elasticity3d/assembler.h"
+#include "old_physics/linear/advectiondiffusion2d/assembler.h"
+#include "old_physics/linear/advectiondiffusion3d/assembler.h"
 
 #include "instance/linear/instance.h"
 #include "instance/dynamics/instance.h"
 #include "instance/hypre/instance.h"
 #include "instance/nonlinear/ssnm/instance.h"
 
-#include "physics/linear/advectiondiffusion2d/assembler.h"
-#include "physics/linear/advectiondiffusion3d/assembler.h"
-
-#include "physics/elasticity2d/assembler.h"
-#include "physics/elasticity3d/assembler.h"
 #include "../config/globalconfiguration.h"
 
 #include <numeric>

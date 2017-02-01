@@ -61,8 +61,8 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "HAVE_MORTAR" ])
 
 def build(ctx):
-    base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'physics/*.cpp'])
-    library = ctx.path.ant_glob(['instance/precomputed/**/*.cpp', 'physics/precomputed/**/*.cpp'])
+    base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'old_physics/*.cpp'])
+    library = ctx.path.ant_glob(['instance/precomputed/**/*.cpp', 'old_physics/precomputed/**/*.cpp'])
     rest = list(set(ctx.path.ant_glob(['**/*.cpp'])) - set(base + library))
 
     ctx.objects(
