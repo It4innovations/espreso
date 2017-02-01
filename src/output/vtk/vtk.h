@@ -35,6 +35,7 @@ public:
 	static void corners(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);
 
 protected:
+	bool skipStoring();
 	void computeCenters();
 	Point shrink(const Point &p, size_t part) const;
 	Point shrink(const Point &p, const Point &sCenter, const Point &cCenter) const;

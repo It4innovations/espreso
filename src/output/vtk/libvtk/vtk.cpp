@@ -256,6 +256,10 @@ void VTK::data(const std::string &name, size_t dimension, const std::vector<std:
 
 void VTK::finalize()
 {
+	if (skipStoring()) {
+		return;
+	}
+
 	std::stringstream name;
 	name << _path << espreso::environment->MPIrank;
 
