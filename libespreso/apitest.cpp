@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 		for (size_t dof = 0; dof < DOFs.size(); dof++) {
 			if (factory.mesh->nodes()[n]->hasProperty(DOFs[dof], 0)) {
 				dirichletIndices.push_back(DOFs.size() * n + dof);
-				dirichletValues.push_back(factory.mesh->nodes()[n]->getProperty(DOFs[dof], n, 0, 0));
+				dirichletValues.push_back(factory.mesh->nodes()[n]->getProperty(DOFs[dof], 0, 0, 0));
 			}
 		}
 	}
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 
 	// Configure ESPRESO solver
 	iopts[FETI4I_FETI_METHOD] = 0;
-	iopts[FETI4I_SUBDOMAINS] = 4;
+	iopts[FETI4I_SUBDOMAINS] = 1;
 	iopts[FETI4I_ITERATIONS] = 100;
 	iopts[FETI4I_PRECONDITIONER] = 1;
 	iopts[FETI4I_VERBOSE_LEVEL] = 1;
