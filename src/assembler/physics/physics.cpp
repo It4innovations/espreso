@@ -50,7 +50,6 @@ void NewPhysics::assembleStiffnessMatrices(const Step &step)
 
 void NewPhysics::assembleStiffnessMatrix(const Step &step, size_t domain)
 {
-	size_t loadStep = 0;
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke, fe;
 	std::vector<eslocal> DOFs;
@@ -89,7 +88,6 @@ void NewPhysics::assembleStiffnessMatrix(const Step &step, size_t domain)
 
 void NewPhysics::assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe)
 {
-	size_t loadStep = 0;
 	size_t domain = e->domains().front();
 
 	fillDOFsIndices(e, domain, DOFs);
