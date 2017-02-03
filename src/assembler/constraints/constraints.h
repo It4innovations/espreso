@@ -43,14 +43,14 @@ struct Constraints
 
 	std::vector<size_t> block;
 
-	Constraints(const ESPRESOSolver &configuration, Mesh &mesh): block(3), _configuration(configuration), _mesh(mesh), inequalityStored(false) {};
+	Constraints(const ESPRESOSolver &configuration, Mesh &mesh);
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
 
 
 
 protected:
-	size_t synchronizeOffsets(size_t &offset);
+	static size_t synchronizeOffsets(size_t &offset);
 
 	const ESPRESOSolver &_configuration;
 	Mesh &_mesh;

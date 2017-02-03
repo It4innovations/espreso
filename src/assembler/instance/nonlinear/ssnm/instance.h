@@ -30,6 +30,8 @@ struct SemiSmoothNewtonMethod: public Instance
 
 	virtual const Physics& physics() const { return _physics; }
 	virtual const Constraints& constraints() const { return _constraints; }
+	virtual Physics& physics() { return _physics; }
+	virtual Constraints& constraints() { return _constraints; }
 
 protected:
 	const OutputConfiguration &_output;

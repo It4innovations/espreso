@@ -33,6 +33,8 @@ struct PrecomputedInstance: public Instance
 
 	virtual const Physics& physics() const { return _physics; }
 	virtual const Constraints& constraints() const { return _constrains; }
+	virtual Physics& physics() { return _physics; }
+	virtual Constraints& constraints() { return _constrains; }
 
 protected:
 	const ESPRESOSolver &_configuration;

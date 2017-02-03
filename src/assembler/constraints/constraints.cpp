@@ -6,6 +6,11 @@
 
 using namespace espreso;
 
+Constraints::Constraints(const ESPRESOSolver &configuration, Mesh &mesh)
+: block(3), _configuration(configuration), _mesh(mesh), inequalityStored(false)
+{
+
+}
 
 void Constraints::initMatrices(const std::vector<size_t> &columns)
 {

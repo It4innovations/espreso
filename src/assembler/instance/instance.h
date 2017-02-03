@@ -20,6 +20,8 @@ struct Instance {
 
 	virtual const Physics& physics() const = 0;
 	virtual const Constraints& constraints() const = 0;
+	virtual Physics& physics() = 0;
+	virtual Constraints& constraints() = 0;
 
 	virtual ~Instance() {};
 

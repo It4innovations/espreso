@@ -14,6 +14,7 @@ namespace espreso {
 
 class Element;
 class Constraints;
+class NewInstance;
 
 namespace store {
 
@@ -29,6 +30,7 @@ public:
 	virtual void finalize();
 
 	static void gluing(const OutputConfiguration &output, const Mesh &mesh, const Constraints &constraints, const std::string &path, size_t dofs);
+	static void gluing(const OutputConfiguration &output, const Mesh &mesh, const NewInstance &instance, const std::string &path, size_t dofs);
 
 	static void mesh(const OutputConfiguration &output, const Mesh &mesh, const std::string &path, ElementType eType);
 	static void fixPoints(const OutputConfiguration &output, const Mesh &mesh, const std::string &path);

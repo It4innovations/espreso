@@ -72,15 +72,36 @@ void LinearSolver::setup() {
 
 }
 
+void LinearSolver::steel(NewInstance *instance)
+{
+	setup();
+	physics.mtype = instance->K[0].mtype;
+	physics.K.swap(instance->K);
+	physics.R1.swap(instance->R1);
+	physics.R2.swap(instance->R2);
+	physics.RegMat.swap(instance->RegMat);
+
+	constraints.B1.swap(instance->B1);
+	constraints.B1c.swap(instance->B1c);
+	constraints.B1subdomainsMap.swap(instance->B1subdomainsMap);
+	constraints.B1clustersMap.swap(instance->B1clustersMap);
+	constraints.B1duplicity.swap(instance->B1duplicity);
+
+	constraints.B0.swap(instance->B0);
+	constraints.B0subdomainsMap.swap(instance->B0subdomainsMap);
+
+	constraints.LB.swap(instance->LB);
+	constraints.inequality.swap(instance->inequality);
+	constraints.inequalityC.swap(instance->inequalityC);
+}
+
 // TODO: const parameters
 void LinearSolver::init(const std::vector<int> &neighbours)
 {
-
 	// Kill Cilk+ threads
 //	__cilkrts_end_cilk();
 
 	number_of_subdomains_per_cluster = physics.K.size();
-
 	// Overall Linear Solver Time measurement structure
 	timeEvalMain.totalTime.startWithBarrier();
 
@@ -117,7 +138,6 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	}
 
 	SINGULAR = physics.singular();
-
 
 	vector<double> solver_parameters ( 10 );
 	solver.Setup ( solver_parameters, cluster );
@@ -513,9 +533,9 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	 timeSolCG.start();
 
-	if (solver.USE_DYNAMIC == 0)
+	if (solver.USE_DYNAMIC == 0) {
 		solver.Solve_singular    ( cluster, f_vec, prim_solution );
-	else {
+	} else {
 		solver.Solve_non_singular( cluster, f_vec, prim_solution );
 		solver.timing.totalTime.printStatMPI();
 		//solver.timing.totalTime.Reset();

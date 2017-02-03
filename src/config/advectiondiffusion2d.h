@@ -42,6 +42,8 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 	}));
 	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
 
+	PARAMETER(bool, newassembler, "New version of assembler.", 0);
+
 	SUBCONFIG(AdvectionDiffusionSolver, physics_solver, "Settings of physics solver.");
 
 	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({

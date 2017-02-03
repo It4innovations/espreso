@@ -12,19 +12,18 @@
 
 #include "../../assembler/constraints/constraints.h"
 #include "../../assembler/old_physics/assembler.h"
+#include "../../assembler/instance.h"
 
 
 namespace espreso {
 
-class Physics;
-class Constraints;
 
 class LinearSolver {
 public:
 
 	LinearSolver(const ESPRESOSolver &configuration, Physics &physics, Constraints &constraints)
-	: timeEvalMain("ESPRESO Solver Overal Timing"),
-	  configuration(configuration),
+	: configuration(configuration),
+	  timeEvalMain("ESPRESO Solver Overal Timing"),
 	  physics(physics),
 	  constraints(constraints),
 	  cluster(configuration),
@@ -36,6 +35,7 @@ public:
 	virtual ~LinearSolver();
 
 	void setup();
+	void steel(NewInstance *instance);
 
 	void init(const std::vector<int> &neighbours);
 
@@ -82,11 +82,13 @@ public:
 //	);
 
 	void set_R_from_K();
+
+	const ESPRESOSolver &configuration;
+
 private:
 
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
-	const ESPRESOSolver &configuration;
 	Physics &physics;
 	Constraints &constraints;
 

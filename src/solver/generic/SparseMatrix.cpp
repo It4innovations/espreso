@@ -17,6 +17,10 @@ std::ostream& operator<<(std::ostream& os, const SparseMatrix &m)
 	if (s.CSR_J_col_indices.size()) {
 		s.ConvertToCOO(1);
 	}
+	if (s.dense_values.size()) {
+		s.ConvertDenseToCSR(0);
+		s.ConvertToCOO(1);
+	}
 
 	for (eslocal i = 0; i < s.nnz; i++) {
 		os << s.I_row_indices[i] << " ";

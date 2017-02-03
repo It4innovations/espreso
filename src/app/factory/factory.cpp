@@ -1,6 +1,7 @@
 
 #include "factory.h"
 
+#include "../../assembler/instance.h"
 #include "../../assembler/instance/instance.h"
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
@@ -21,7 +22,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 Factory::~Factory()
 {
-	delete instance;
+	if (instance != NULL) {
+		delete instance;
+	}
 	delete mesh;
 }
 
