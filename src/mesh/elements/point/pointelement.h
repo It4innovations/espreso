@@ -23,6 +23,9 @@ public:
 	void setParam(Params param, eslocal value) { ESINFO(GLOBAL_ERROR) << "Point element has no params"; }
 	size_t params() const { return 0; }
 
+	virtual size_t filledFaces() const { return 0; }
+	virtual size_t filledEdges() const { return 0; }
+
 	eslocal nCommon() const { return PointCommonNodes; }
 	size_t faces() const { return PointFacesCount; }
 	size_t edges() const { return PointEdgeCount; }

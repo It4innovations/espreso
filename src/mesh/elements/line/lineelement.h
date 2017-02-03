@@ -16,6 +16,9 @@ public:
 	void setParam(Params param, eslocal value) { _params[param] = value; }
 	size_t params() const { return _params.size(); }
 
+	virtual size_t filledFaces() const { return 0; }
+	virtual size_t filledEdges() const { return 0; }
+
 	size_t faces() const { return 0; }
 	size_t edges() const { return 0; }
 

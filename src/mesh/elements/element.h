@@ -86,6 +86,8 @@ public:
 	virtual eslocal nCommon() const = 0;
 	virtual eslocal vtkCode() const = 0;
 
+	virtual size_t filledFaces() const = 0;
+	virtual size_t filledEdges() const = 0;
 	virtual size_t faces() const = 0;
 	virtual size_t edges() const = 0;
 	virtual size_t nodes() const = 0;

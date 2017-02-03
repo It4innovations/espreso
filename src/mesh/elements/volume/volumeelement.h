@@ -18,6 +18,9 @@ public:
 	virtual void setParam(Params param, eslocal value) { _params[param] = value; }
 	virtual size_t params() const { return PARAMS_SIZE; }
 
+	virtual size_t filledFaces() const { return _faces.size(); }
+	virtual size_t filledEdges() const { return _edges.size(); }
+
 	virtual Element* face(size_t index) const
 	{
 		if (index >= _faces.size()) {
