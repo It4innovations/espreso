@@ -30,8 +30,19 @@ NewPhysics::NewPhysics(Mesh *mesh, NewInstance *instance)
 void NewPhysics::assembleStiffnessMatrices(const Step &step)
 {
 	#pragma omp parallel for
-	for  (size_t p = 0; p < _instance->domains; p++) {
-		assembleStiffnessMatrix(step, p);
+	for  (size_t d = 0; d < _instance->domains; d++) {
+
+		assembleStiffnessMatrix(step, d);
+
+		switch (_instance->K[d].mtype) {
+		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+			_instance->K[d].RemoveLower();
+			break;
+		case MatrixType::REAL_UNSYMMETRIC:
+			break;
+		}
+
 		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS2);
@@ -144,14 +155,6 @@ void NewPhysics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < _instance->domains; d++) {
-		switch (_instance->K[d].mtype) {
-		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-			_instance->K[d].RemoveLower();
-			break;
-		case MatrixType::REAL_UNSYMMETRIC:
-			break;
-		}
 
 		switch (regularization) {
 
