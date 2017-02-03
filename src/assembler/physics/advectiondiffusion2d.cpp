@@ -112,29 +112,54 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
+void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
+{
+	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
+	case MATERIAL_MODEL::ISOTROPIC:
+		K(node, 0) = K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.load, temp);
+		K(node, 2) = K(node, 3) = 0;
+		break;
+	case MATERIAL_MODEL::DIAGONAL:
+		K(node, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.load, temp);
+		K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.load, temp);
+		K(node, 2) = K(node, 3) = 0;
+		break;
+	case MATERIAL_MODEL::SYMMETRIC:
+		K(node, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.load, temp);
+		K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.load, temp);
+		K(node, 2) = K(node, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.load, temp);
+		break;
+	case MATERIAL_MODEL::ANISOTROPIC:
+		K(node, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.load, temp);
+		K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.load, temp);
+		K(node, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.load, temp);
+		K(node, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.load, temp);
+		break;
+	default:
+		ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
+	}
+}
+
 void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
 
 	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND;
 	double detJ, temp;
-	DenseMatrix f(1, e->nodes());
+	DenseMatrix f(e->nodes(), 1);
 	DenseMatrix U(e->nodes(), 2);
 	DenseMatrix thickness(e->nodes(), 1), K(e->nodes(), 4);
 	DenseMatrix gpThickness(1, 1), gpK(1, 4);
 
-
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
-	const std::vector<DenseMatrix> &dN = e->dN();
-	const std::vector<DenseMatrix> &N = e->N();
-	const std::vector<double> &weighFactor = e->weighFactor();
 
 	coordinates.resize(e->nodes(), 2);
+
 	for (size_t i = 0; i < e->nodes(); i++) {
 		temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.load, 273.15 + 20);
-		const Point &p = _mesh->coordinates()[e->node(i)];
-		coordinates(i, 0) = p.x;
-		coordinates(i, 1) = p.y;
+		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
+		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.load, 1);
 		U(i, 0) =
 				e->getProperty(Property::TRANSLATION_MOTION_X, i, step.load, 0) *
@@ -146,32 +171,8 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.load, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.load, temp) *
 				thickness(i, 0);
-		f(0, i) = e->sumProperty(Property::HEAT_SOURCE, i, step.load, 0) * thickness(i, 0);
-
-		switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
-		case MATERIAL_MODEL::ISOTROPIC:
-			K(i, 0) = K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
-			K(i, 2) = K(i, 3) = 0;
-			break;
-		case MATERIAL_MODEL::DIAGONAL:
-			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
-			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), step.load, temp);
-			K(i, 2) = K(i, 3) = 0;
-			break;
-		case MATERIAL_MODEL::SYMMETRIC:
-			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
-			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), step.load, temp);
-			K(i, 2) = K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(i), step.load, temp);
-			break;
-		case MATERIAL_MODEL::ANISOTROPIC:
-			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
-			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), step.load, temp);
-			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(i), step.load, temp);
-			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(i), step.load, temp);
-			break;
-		default:
-			ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
-		}
+		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, i, step.load, 0) * thickness(i, 0);
+		assembleMaterialMatrix(step, e, i, temp, K);
 	}
 
 	eslocal Ksize = e->nodes();
@@ -185,21 +186,21 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 	double normGradN = 0;
 
 	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-		u.multiply(N[gp], U, 1, 0);
+		u.multiply(e->N()[gp], U, 1, 0);
 
-		J.multiply(dN[gp], coordinates);
+		J.multiply(e->dN()[gp], coordinates);
 		detJ = determinant2x2(J.values());
 		inverse2x2(J.values(), invJ.values(), detJ);
 
-		gpThickness.multiply(N[gp], thickness);
-		gpK.multiply(N[gp], K);
+		gpThickness.multiply(e->N()[gp], thickness);
+		gpK.multiply(e->N()[gp], K);
 
 		Ce(0, 0) = gpK(0, 0);
 		Ce(1, 1) = gpK(0, 1);
 		Ce(0, 1) = gpK(0, 2);
 		Ce(1, 0) = gpK(0, 3);
 
-		dND.multiply(invJ, dN[gp]);
+		dND.multiply(invJ, e->dN()[gp]);
 
 		DenseMatrix b_e(1, e->nodes()), b_e_c(1, e->nodes());
 		b_e.multiply(u, dND, 1, 0);
@@ -208,7 +209,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 			normGradN = dND.norm();
 			if (normGradN >= 1e-12) {
 				for (size_t i = 0; i < Re.columns(); i++) {
-					Re(0, i) = b_e(0, i) - f(0, i);
+					Re(0, i) = b_e(0, i) - f(i, 0);
 				}
 				DenseMatrix ReBt(1, 2);
 				ReBt.multiply(Re, dND, 1 / pow(normGradN, 2), 0, false, true);
@@ -254,19 +255,19 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
 		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
 
-		Ke.multiply(dND, Ce * dND, detJ * weighFactor[gp] * gpThickness(0, 0), 1, true);
-		Ke.multiply(N[gp], b_e, detJ * weighFactor[gp], 1, true);
-		if (konst * weighFactor[gp] * detJ != 0) {
-			Ke.multiply(b_e, b_e, konst * weighFactor[gp] * detJ, 1, true);
+		Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
+		Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
+		if (konst * e->weighFactor()[gp] * detJ != 0) {
+			Ke.multiply(b_e, b_e, konst * e->weighFactor()[gp] * detJ, 1, true);
 		}
 		if (CAU) {
-			Ke.multiply(dND, dND, C_e * weighFactor[gp] * detJ, 1, true);
+			Ke.multiply(dND, dND, C_e * e->weighFactor()[gp] * detJ, 1, true);
 		}
 
 		for (eslocal i = 0; i < Ksize; i++) {
-			fe(i, 0) += detJ * weighFactor[gp] * N[gp](0, i) * f(0, i);
+			fe(i, 0) += detJ * e->weighFactor()[gp] * e->N()[gp](0, i) * f(i, 0);
 			if (norm_u_e != 0) {
-				fe(i, 0) += detJ * weighFactor[gp] * h_e * tau_e * b_e(0, i) * f(0, i) / (2 * norm_u_e);
+				fe(i, 0) += detJ * e->weighFactor()[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
 			}
 		}
 	}
