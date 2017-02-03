@@ -2,6 +2,8 @@
 #include "mesh.h"
 #include "mkl.h"
 
+#include <numeric>
+
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
 
