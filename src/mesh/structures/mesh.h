@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <set>
 #include <functional>
 
 namespace espreso {
@@ -58,6 +59,8 @@ public:
 	void loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 
 	void removeDuplicateRegions();
+	void fillDomainsSettings();
+	bool hasProperty(size_t domain, Property property, size_t loadStep);
 
 	template<typename TMaterial>
 	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)
@@ -170,6 +173,9 @@ protected:
 
 	/** @brief list of mesh regions*/
 	std::vector<Region*> _regions;
+
+	/** @brief list of settings for each domain and load step*/
+	std::vector<std::vector<std::set<Property> > > _properties;
 
 	/** @brief list of evaluators */
 	std::vector<Evaluator*> _evaluators;

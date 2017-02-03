@@ -64,12 +64,25 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh->removeDuplicateRegions();
+	_mesh->fillDomainsSettings();
 }
 
 void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set REGULARIZATION = NULL_PIVOTS";
+	}
+
+	if (_mesh->hasProperty(domain, Property::EXTERNAL_TEMPERATURE, 0)) {
+		_instance->R1[domain].rows = 0;
+		_instance->R1[domain].cols = 0;
+		_instance->R1[domain].nnz  = 0;
+		_instance->R1[domain].type = 'G';
+		_instance->RegMat[domain].rows = 0;
+		_instance->RegMat[domain].cols = 0;
+		_instance->RegMat[domain].nnz  = 0;
+		_instance->RegMat[domain].type = 'G';
+		return;
 	}
 
 	_instance->R1[domain].rows = _mesh->coordinates().localSize(domain);
@@ -258,19 +271,27 @@ void NewAdvectionDiffusion2D::processFace(const Element *e, DenseMatrix &Ke, Den
 
 void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
+	size_t loadStep = 0;
+	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, loadStep) ||
+		e->hasProperty(Property::HEAT_FLOW, loadStep) ||
+		e->hasProperty(Property::HEAT_FLUX, loadStep))) {
+
+		Ke.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
 	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1);
 	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1);
 
-	size_t loadStep = 0;
-	double area = 1;
 
+	double area = 1;
 	eslocal Ksize = e->nodes();
 	Ke.resize(0, 0);
 	fe.resize(Ksize, 1);
 	fe = 0;
 
 	for (size_t r = 0; r < e->regions().size(); r++) {
-		if (loadStep < e->regions()[r]->settings.size() && e->regions()[r]->settings[loadStep].count(Property::EXTERNAL_TEMPERATURE)) {
+		if (loadStep < e->regions()[r]->settings.size() && e->regions()[r]->settings[loadStep].count(Property::HEAT_FLOW)) {
 			Ke.resize(Ksize, Ksize);
 			Ke = 0;
 			area = e->regions()[r]->area;
@@ -333,7 +354,7 @@ void NewAdvectionDiffusion2D::assembleStiffnessMatrix(size_t domain)
 
 	for (size_t i = 0; i < _mesh->edges().size(); i++) {
 		if (_mesh->edges()[i]->inDomain(domain)) {
-			processFace(_mesh->edges()[i], Ke, fe);
+			processEdge(_mesh->edges()[i], Ke, fe);
 			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
 			insertElementToDomain(_K, DOFs, Ke, fe, domain);
 		}
@@ -342,14 +363,11 @@ void NewAdvectionDiffusion2D::assembleStiffnessMatrix(size_t domain)
 	// TODO: make it direct
 	SparseCSRMatrix<eslocal> csrK = _K;
 	_instance->K[domain] = csrK;
-	_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	for (size_t r = 0; r < _mesh->regions().size(); r++) {
-		if (loadStep < _mesh->regions()[r]->settings.size() &&
-			(_mesh->regions()[r]->settings[loadStep].count(Property::TRANSLATION_MOTION_X) ||
-			_mesh->regions()[r]->settings[loadStep].count(Property::TRANSLATION_MOTION_Y))) {
 
-			_instance->K[domain].mtype = MatrixType::REAL_UNSYMMETRIC;
-		}
+	if (_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_X, loadStep) || _mesh->hasProperty(domain, Property::TRANSLATION_MOTION_Y, loadStep)) {
+		_instance->K[domain].mtype = MatrixType::REAL_UNSYMMETRIC;
+	} else {
+		_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	}
 }
 

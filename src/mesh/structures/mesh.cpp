@@ -86,6 +86,9 @@ void Mesh::partitiate(size_t parts)
 	mapEdgesToDomains();
 	mapNodesToDomains();
 	mapCoordinatesToDomains();
+	if (_properties.size()) {
+		fillDomainsSettings();
+	}
 }
 
 void APIMesh::partitiate(size_t parts)
@@ -715,6 +718,60 @@ void Mesh::removeDuplicateRegions()
 	remove(_faces);
 	remove(_edges);
 	remove(_nodes);
+}
+
+void Mesh::fillDomainsSettings()
+{
+	_properties.clear();
+	_properties.resize(parts());
+
+	auto addProperties = [&] (const std::vector<eslocal> &domains, size_t region) {
+		for (size_t d = 0; d < domains.size(); d++) {
+			_properties[d].resize(_regions[region]->settings.size());
+		}
+		for (size_t i = 0; i < _regions[region]->settings.size(); i++) {
+			for (auto it = _regions[region]->settings[i].begin(); it != _regions[region]->settings[i].end(); ++it) {
+				for (size_t d = 0; d < domains.size(); d++) {
+					_properties[d][i].insert(it->first);
+				}
+			}
+		}
+	};
+
+	std::vector<eslocal> domains(parts());
+	std::iota(domains.begin(), domains.end(), 0);
+
+	addProperties(domains, 0); // settings for ALL_ELEMENTS
+	addProperties(domains, 1); // settings for ALL_NODES
+
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	for (size_t r = 2; r < _regions.size(); r++) {
+		domains.clear();
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, _regions[r]->elements().size());
+		std::vector<std::vector<eslocal> > tdomains(threads);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+				tdomains[t].insert(tdomains[t].end(), _regions[r]->elements()[e]->domains().begin(), _regions[r]->elements()[e]->domains().end());
+			}
+			std::sort(tdomains[t].begin(), tdomains[t].end());
+			Esutils::removeDuplicity(tdomains[t]);
+		}
+
+		for (size_t t = 0; t < threads; t++) {
+			domains.insert(domains.end(), tdomains[t].begin(), tdomains[t].end());
+		}
+		std::sort(domains.begin(), domains.end());
+		Esutils::removeDuplicity(domains);
+		addProperties(domains, r);
+	}
+}
+
+bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep)
+{
+	return loadStep < _properties[domain].size() && _properties[domain][loadStep].count(property);
 }
 
 template<typename MergeFunction>
