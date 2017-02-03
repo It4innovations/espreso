@@ -1,5 +1,6 @@
 
 #include "linear.h"
+#include "../step.h"
 
 using namespace espreso;
 
@@ -16,18 +17,20 @@ Linear::Linear(
 
 void Linear::init()
 {
+	Step step;
 	meshPreprocessing();
-	assembleStiffnessMatrices();
-	assembleB1();
+	assembleStiffnessMatrices(step);
+	assembleB1(step);
 	makeStiffnessMatricesRegular();
-	assembleB0();
+	assembleB0(step);
 
 	initLinearSolver();
 }
 
 void Linear::solve(std::vector<std::vector<double> > &solution)
 {
-	startLinearSolver(solution);
+	Step step;
+	startLinearSolver(step, solution);
 }
 
 void Linear::finalize()

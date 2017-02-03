@@ -6,6 +6,7 @@
 
 namespace espreso {
 
+struct Step;
 class Mesh;
 class NewPhysics;
 class NewInstance;
@@ -32,13 +33,13 @@ public:
 
 protected:
 	void meshPreprocessing();
-	void assembleStiffnessMatrices();
-	void assembleB1();
+	void assembleStiffnessMatrices(const Step &step);
+	void assembleB1(const Step &step);
 	void makeStiffnessMatricesRegular();
-	void assembleB0();
+	void assembleB0(const Step &step);
 
 	void initLinearSolver();
-	void startLinearSolver(std::vector<std::vector<double> > &solution);
+	void startLinearSolver(const Step &step, std::vector<std::vector<double> > &solution);
 
 	void finalizeLinearSolver();
 

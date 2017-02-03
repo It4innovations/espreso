@@ -26,8 +26,8 @@ struct Physics2D: public NewPhysics {
 
 	void prepareHybridTotalFETIWithCorners();
 	void prepareHybridTotalFETIWithKernels();
-	void assembleB0FromCorners();
-	void assembleB0FromKernels();
+	void assembleB0FromCorners(const Step &step);
+	void assembleB0FromKernels(const Step &step);
 };
 
 }

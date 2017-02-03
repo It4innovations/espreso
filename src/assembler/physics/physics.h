@@ -9,6 +9,8 @@
 
 namespace espreso {
 
+struct Step;
+enum class MatrixType;
 template<typename TIndices> class SparseVVPMatrix;
 class DenseMatrix;
 class Element;
@@ -26,26 +28,28 @@ struct NewPhysics {
 	virtual void prepareHybridTotalFETIWithCorners() =0;
 	virtual void prepareHybridTotalFETIWithKernels() =0;
 
-	void assembleStiffnessMatrices();
-	virtual void assembleStiffnessMatrix(size_t domain) =0;
-	virtual void assembleStiffnessMatrix(Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe) =0;
+	virtual void assembleStiffnessMatrices(const Step &step);
+	virtual void assembleStiffnessMatrix(const Step &step, size_t domain);
+	virtual void assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe);
 
-	virtual void processElement(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
-	virtual void processFace(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
-	virtual void processEdge(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
-	virtual void processNode(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
+	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
+
+	virtual void processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
+	virtual void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
+	virtual void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
+	virtual void processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 
 	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs);
 	virtual void insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &fe, size_t domain);
 
-	void makeStiffnessMatricesRegular(REGULARIZATION regularization);
+	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization);
 	virtual void analyticRegularization(size_t domain) =0;
 
-	virtual void assembleB1(bool withRedundantMultipliers, bool withScaling);
-	virtual void assembleB0FromCorners() =0;
-	virtual void assembleB0FromKernels() =0;
+	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);
+	virtual void assembleB0FromCorners(const Step &step) =0;
+	virtual void assembleB0FromKernels(const Step &step) =0;
 
-	virtual void storeSolution(std::vector<std::vector<double> > &solution, store::ResultStore *store) =0;
+	virtual void storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store) =0;
 
 	virtual ~NewPhysics() {}
 

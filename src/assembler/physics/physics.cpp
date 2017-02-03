@@ -15,6 +15,7 @@
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/denseMatrix.h"
+#include "../../basis/matrices/sparseCSRMatrix.h"
 
 
 using namespace espreso;
@@ -26,14 +27,76 @@ NewPhysics::NewPhysics(Mesh *mesh, NewInstance *instance)
 }
 
 
-void NewPhysics::assembleStiffnessMatrices()
+void NewPhysics::assembleStiffnessMatrices(const Step &step)
 {
 	#pragma omp parallel for
 	for  (size_t p = 0; p < _instance->domains; p++) {
-		assembleStiffnessMatrix(p);
+		assembleStiffnessMatrix(step, p);
 		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS2);
+}
+
+void NewPhysics::assembleStiffnessMatrix(const Step &step, size_t domain)
+{
+	size_t loadStep = 0;
+	SparseVVPMatrix<eslocal> _K;
+	DenseMatrix Ke, fe;
+	std::vector<eslocal> DOFs;
+
+	_K.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
+	_instance->f[domain].resize(_instance->DOFs[domain]);
+
+	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
+		processElement(step, _mesh->elements()[e], Ke, fe);
+		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
+		insertElementToDomain(_K, DOFs, Ke, fe, domain);
+	}
+
+	for (size_t i = 0; i < _mesh->faces().size(); i++) {
+		if (_mesh->faces()[i]->inDomain(domain)) {
+			processFace(step, _mesh->faces()[i], Ke, fe);
+			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
+			insertElementToDomain(_K, DOFs, Ke, fe, domain);
+		}
+	}
+
+	for (size_t i = 0; i < _mesh->edges().size(); i++) {
+		if (_mesh->edges()[i]->inDomain(domain)) {
+			processEdge(step, _mesh->edges()[i], Ke, fe);
+			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
+			insertElementToDomain(_K, DOFs, Ke, fe, domain);
+		}
+	}
+
+	// TODO: make it direct
+	SparseCSRMatrix<eslocal> csrK = _K;
+	_instance->K[domain] = csrK;
+
+	_instance->K[domain].mtype = getMatrixType(step, domain);
+}
+
+void NewPhysics::assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe)
+{
+	size_t loadStep = 0;
+	size_t domain = e->domains().front();
+
+	fillDOFsIndices(e, domain, DOFs);
+
+	processElement(step, e, Ke, fe);
+
+	for (size_t i = 0; i < e->filledFaces(); i++) {
+		DenseMatrix Ki, fi;
+		processFace(step, e->face(i), Ki, fi);
+		Ke += Ki;
+		fe += fi;
+	}
+	for (size_t i = 0; i < e->filledEdges(); i++) {
+		DenseMatrix Ki, fi;
+		processEdge(step, e->edge(i), Ki, fi);
+		Ke += Ki;
+		fe += fi;
+	}
 }
 
 /**
@@ -122,7 +185,7 @@ void NewPhysics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 	ESINFO(PROGRESS2);
 }
 
-void NewPhysics::assembleB1(bool withRedundantMultipliers, bool withScaling)
+void NewPhysics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
 {
 	EqualityConstraints::insertDirichletToB1(*_instance, _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers);
 	EqualityConstraints::insertElementGluingToB1(*_instance, _mesh->neighbours(), _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers, withScaling);

@@ -33,7 +33,8 @@ public:
 	template<typename Tindices> DenseMatrix& operator=(const SparseIJVMatrix<Tindices> &other);
 
 	DenseMatrix& operator=(double value);
-	DenseMatrix operator*(DenseMatrix &M);
+	DenseMatrix& operator+=(const DenseMatrix &other);
+	DenseMatrix operator*(DenseMatrix &other);
 
 	void multiply(
 			const DenseMatrix &A, const DenseMatrix &B,

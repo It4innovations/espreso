@@ -8,10 +8,20 @@ DenseMatrix& DenseMatrix::operator=(double value)
 	return *this;
 }
 
-DenseMatrix DenseMatrix::operator*(DenseMatrix &M)
+DenseMatrix& DenseMatrix::operator+=(const DenseMatrix &other)
+{
+	for (size_t r = 0; r < other.rows(); r++) {
+		for (size_t c = 0; c < other.columns(); c++) {
+			(*this)(r, c) += other(r, c);
+		}
+	}
+	return *this;
+}
+
+DenseMatrix DenseMatrix::operator*(DenseMatrix &other)
 {
 	DenseMatrix result;
-	result.multiply(*this, M);
+	result.multiply(*this, other);
 	return result;
 }
 

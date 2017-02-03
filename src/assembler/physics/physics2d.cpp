@@ -23,12 +23,12 @@ void Physics2D::prepareHybridTotalFETIWithKernels()
 	_mesh->computeEdgesSharedByDomains();
 }
 
-void Physics2D::assembleB0FromCorners()
+void Physics2D::assembleB0FromCorners(const Step &step)
 {
 	EqualityConstraints::insertCornersGluingToB0(*_instance, _mesh->corners(), pointDOFs());
 }
 
-void Physics2D::assembleB0FromKernels()
+void Physics2D::assembleB0FromKernels(const Step &step)
 {
 	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->edges(), _mesh->nodes(), pointDOFs());
 }

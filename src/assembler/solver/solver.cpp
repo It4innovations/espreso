@@ -7,6 +7,7 @@
 #include "../../config/output.h"
 
 #include "../physics/physics.h"
+#include "../step.h"
 #include "../instance.h"
 
 #include "../../mesh/structures/mesh.h"
@@ -70,11 +71,11 @@ void Solver::meshPreprocessing()
 	timeStoring.endWithBarrier(); _timeStatistics->addEvent(timeStoring);
 }
 
-void Solver::assembleStiffnessMatrices()
+void Solver::assembleStiffnessMatrices(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
 	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
-	std::for_each(_physics.begin(), _physics.end(), [&] (NewPhysics *p) { p->assembleStiffnessMatrices(); });
+	std::for_each(_physics.begin(), _physics.end(), [&] (NewPhysics *p) { p->assembleStiffnessMatrices(step); });
 	timePhysics.endWithBarrier(); _timeStatistics->addEvent(timePhysics);
 
 	if (environment->print_matrices) {
@@ -125,7 +126,7 @@ void Solver::makeStiffnessMatricesRegular()
 	}
 }
 
-void Solver::assembleB1()
+void Solver::assembleB1(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble B1.";
 	TimeEvent timeConstrainsB1("Assemble B1"); timeConstrainsB1.startWithBarrier();
@@ -133,7 +134,7 @@ void Solver::assembleB1()
 		for (size_t d = 0; d < _instances[i]->domains; d++) {
 			_instances[i]->B1[d].cols = _instances[i]->DOFs[d];
 		}
-		_physics[i]->assembleB1(_linearSolvers[i]->configuration.redundant_lagrange, _linearSolvers[i]->configuration.scaling);
+		_physics[i]->assembleB1(step, _linearSolvers[i]->configuration.redundant_lagrange, _linearSolvers[i]->configuration.scaling);
 	}
 	timeConstrainsB1.end(); _timeStatistics->addEvent(timeConstrainsB1);
 
@@ -164,7 +165,7 @@ void Solver::assembleB1()
 	}
 }
 
-void Solver::assembleB0()
+void Solver::assembleB0(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble B0.";
 	TimeEvent timeConstrainsB0("Assemble B0"); timeConstrainsB0.startWithBarrier();
@@ -179,10 +180,10 @@ void Solver::assembleB0()
 
 		switch (_linearSolvers[i]->configuration.B0_type) {
 		case B0_TYPE::CORNERS:
-			_physics[i]->assembleB0FromCorners();
+			_physics[i]->assembleB0FromCorners(step);
 			break;
 		case B0_TYPE::KERNELS:
-			_physics[i]->assembleB0FromKernels();
+			_physics[i]->assembleB0FromKernels(step);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
@@ -212,12 +213,12 @@ void Solver::initLinearSolver()
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
 }
 
-void Solver::startLinearSolver(std::vector<std::vector<double> > &solution)
+void Solver::startLinearSolver(const Step &step, std::vector<std::vector<double> > &solution)
 {
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
 	for (size_t i = 0; i < _instances.size(); i++) {
 		_linearSolvers[i]->Solve(_instances[i]->f, solution);
-		_physics[i]->storeSolution(solution, _store);
+		_physics[i]->storeSolution(step, solution, _store);
 	}
 	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
 }

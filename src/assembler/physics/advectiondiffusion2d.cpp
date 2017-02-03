@@ -1,6 +1,7 @@
 
 #include "advectiondiffusion2d.h"
 
+#include "../step.h"
 #include "../instance.h"
 
 #include "../../config/advectiondiffusion2d.h"
@@ -15,9 +16,8 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
-#include "../../basis/matrices/sparseVVPMatrix.h"
+
 #include "../../basis/matrices/denseMatrix.h"
-#include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
 
 using namespace espreso;
@@ -26,6 +26,15 @@ NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, NewInstance *instan
 : Physics2D(mesh, instance), _configuration(configuration)
 {
 
+}
+
+MatrixType NewAdvectionDiffusion2D::getMatrixType(const Step &step, size_t domain) const
+{
+	if (_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_X, step.load) || _mesh->hasProperty(domain, Property::TRANSLATION_MOTION_Y, step.load)) {
+		return MatrixType::REAL_UNSYMMETRIC;
+	} else {
+		return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	}
 }
 
 void NewAdvectionDiffusion2D::prepareTotalFETI()
@@ -103,9 +112,8 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
-void NewAdvectionDiffusion2D::processElement(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
-	size_t timeStep = 0;
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
 
 	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND;
@@ -123,43 +131,43 @@ void NewAdvectionDiffusion2D::processElement(const Element *e, DenseMatrix &Ke, 
 
 	coordinates.resize(e->nodes(), 2);
 	for (size_t i = 0; i < e->nodes(); i++) {
-		temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 273.15 + 20);
+		temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.load, 273.15 + 20);
 		const Point &p = _mesh->coordinates()[e->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, timeStep, 1);
+		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.load, 1);
 		U(i, 0) =
-				e->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0) *
-				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), timeStep, temp) *
-				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), timeStep, temp) *
+				e->getProperty(Property::TRANSLATION_MOTION_X, i, step.load, 0) *
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.load, temp) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.load, temp) *
 				thickness(i, 0);
 		U(i, 1) =
-				e->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0) *
-				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), timeStep, temp) *
-				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), timeStep, temp) *
+				e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.load, 0) *
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.load, temp) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.load, temp) *
 				thickness(i, 0);
-		f(0, i) = e->sumProperty(Property::HEAT_SOURCE, i, timeStep, 0) * thickness(i, 0);
+		f(0, i) = e->sumProperty(Property::HEAT_SOURCE, i, step.load, 0) * thickness(i, 0);
 
 		switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 		case MATERIAL_MODEL::ISOTROPIC:
-			K(i, 0) = K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), timeStep, temp);
+			K(i, 0) = K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
 			K(i, 2) = K(i, 3) = 0;
 			break;
 		case MATERIAL_MODEL::DIAGONAL:
-			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), timeStep, temp);
-			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), timeStep, temp);
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), step.load, temp);
 			K(i, 2) = K(i, 3) = 0;
 			break;
 		case MATERIAL_MODEL::SYMMETRIC:
-			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), timeStep, temp);
-			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), timeStep, temp);
-			K(i, 2) = K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(i), timeStep, temp);
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), step.load, temp);
+			K(i, 2) = K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(i), step.load, temp);
 			break;
 		case MATERIAL_MODEL::ANISOTROPIC:
-			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), timeStep, temp);
-			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), timeStep, temp);
-			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(i), timeStep, temp);
-			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(i), timeStep, temp);
+			K(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(i), step.load, temp);
+			K(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(i), step.load, temp);
+			K(i, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(i), step.load, temp);
+			K(i, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(i), step.load, temp);
 			break;
 		default:
 			ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
@@ -264,17 +272,16 @@ void NewAdvectionDiffusion2D::processElement(const Element *e, DenseMatrix &Ke, 
 	}
 }
 
-void NewAdvectionDiffusion2D::processFace(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
-void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
-	size_t loadStep = 0;
-	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, loadStep) ||
-		e->hasProperty(Property::HEAT_FLOW, loadStep) ||
-		e->hasProperty(Property::HEAT_FLUX, loadStep))) {
+	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.load) ||
+		e->hasProperty(Property::HEAT_FLOW, step.load) ||
+		e->hasProperty(Property::HEAT_FLUX, step.load))) {
 
 		Ke.resize(0, 0);
 		fe.resize(0, 0);
@@ -283,7 +290,6 @@ void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, Den
 	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1);
 	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1);
 
-
 	double area = 1;
 	eslocal Ksize = e->nodes();
 	Ke.resize(0, 0);
@@ -291,7 +297,7 @@ void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, Den
 	fe = 0;
 
 	for (size_t r = 0; r < e->regions().size(); r++) {
-		if (loadStep < e->regions()[r]->settings.size() && e->regions()[r]->settings[loadStep].count(Property::HEAT_FLOW)) {
+		if (step.load < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.load].count(Property::HEAT_FLOW)) {
 			Ke.resize(Ksize, Ksize);
 			Ke = 0;
 			area = e->regions()[r]->area;
@@ -307,12 +313,12 @@ void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, Den
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
 
-		htc(n, 0) = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, loadStep, 0);
-		q(n, 0) += htc(n, 0) * e->getProperty(Property::EXTERNAL_TEMPERATURE, n, loadStep, 0);
-		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, loadStep, 0) / area;
-		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, loadStep, 0);
+		htc(n, 0) = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, step.load, 0);
+		q(n, 0) += htc(n, 0) * e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.load, 0);
+		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.load, 0) / area;
+		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, step.load, 0);
 
-		thickness(n, 0) = e->getProperty(Property::THICKNESS, n, loadStep, 1);
+		thickness(n, 0) = e->getProperty(Property::THICKNESS, n, step.load, 1);
 		q(n, 0) *= thickness(n, 0);
 	}
 
@@ -320,7 +326,7 @@ void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, Den
 		dND.multiply(dN[gp], coordinates);
 		double J = dND.norm();
 		gpQ.multiply(N[gp], q);
-		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, loadStep)) {
+		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.load)) {
 			gpHtc.multiply(N[gp], htc);
 			gpThickness.multiply(N[gp], thickness);
 			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0) * gpThickness(0, 0), 1, true);
@@ -331,53 +337,12 @@ void NewAdvectionDiffusion2D::processEdge(const Element *e, DenseMatrix &Ke, Den
 	}
 }
 
-void NewAdvectionDiffusion2D::processNode(const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 
 }
 
-void NewAdvectionDiffusion2D::assembleStiffnessMatrix(size_t domain)
-{
-	size_t loadStep = 0;
-	SparseVVPMatrix<eslocal> _K;
-	DenseMatrix Ke, fe;
-	std::vector<eslocal> DOFs;
-
-	_K.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
-	_instance->f[domain].resize(_instance->DOFs[domain]);
-
-	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
-		processElement(_mesh->elements()[e], Ke, fe);
-		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
-		insertElementToDomain(_K, DOFs, Ke, fe, domain);
-	}
-
-	for (size_t i = 0; i < _mesh->edges().size(); i++) {
-		if (_mesh->edges()[i]->inDomain(domain)) {
-			processEdge(_mesh->edges()[i], Ke, fe);
-			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
-			insertElementToDomain(_K, DOFs, Ke, fe, domain);
-		}
-	}
-
-	// TODO: make it direct
-	SparseCSRMatrix<eslocal> csrK = _K;
-	_instance->K[domain] = csrK;
-
-	if (_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_X, loadStep) || _mesh->hasProperty(domain, Property::TRANSLATION_MOTION_Y, loadStep)) {
-		_instance->K[domain].mtype = MatrixType::REAL_UNSYMMETRIC;
-	} else {
-		_instance->K[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	}
-}
-
-void NewAdvectionDiffusion2D::assembleStiffnessMatrix(Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe)
-{
-
-}
-
-
-void NewAdvectionDiffusion2D::storeSolution(std::vector<std::vector<double> > &solution, store::ResultStore *store)
+void NewAdvectionDiffusion2D::storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store)
 {
 	store->storeValues("temperature", 1, solution, store::ResultStore::ElementType::NODES);
 }
