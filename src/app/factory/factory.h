@@ -6,6 +6,13 @@
 
 namespace espreso {
 
+struct Solver;
+struct NewPhysics;
+struct NewInstance;
+class LinearSolver;
+namespace store { class ResultStore; }
+
+
 struct GlobalConfiguration;
 struct Results;
 struct Instance;
@@ -20,6 +27,12 @@ struct Factory {
 	void check(const Results &configuration);
 
 	double norm() const;
+
+	Solver *solver;
+	std::vector<NewPhysics*> physics;
+	std::vector<NewInstance*> instances;
+	std::vector<LinearSolver*> linearSolvers;
+	store::ResultStore* store;
 
 	Instance *instance;
 	Mesh *mesh;

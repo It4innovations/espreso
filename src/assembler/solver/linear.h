@@ -16,9 +16,7 @@ public:
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 
-	virtual void init();
-	virtual void solve(std::vector<std::vector<double> > &solution);
-	virtual void finalize();
+	virtual void run();
 };
 
 }

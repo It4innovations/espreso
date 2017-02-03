@@ -25,9 +25,7 @@ public:
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 
-	virtual void init() =0;
-	virtual void solve(std::vector<std::vector<double> > &solution) =0;
-	virtual void finalize() =0;
+	virtual void run() =0;
 
 	virtual ~Solver();
 
@@ -39,7 +37,7 @@ protected:
 	void assembleB0(const Step &step);
 
 	void initLinearSolver();
-	void startLinearSolver(const Step &step, std::vector<std::vector<double> > &solution);
+	void startLinearSolver(const Step &step);
 
 	void finalizeLinearSolver();
 

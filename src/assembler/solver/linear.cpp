@@ -12,29 +12,18 @@ Linear::Linear(
 		store::ResultStore* store)
 : Solver(mesh, physics, instances, linearSolvers, store)
 {
-
+	meshPreprocessing();
 }
 
-void Linear::init()
+void Linear::run()
 {
 	Step step;
-	meshPreprocessing();
 	assembleStiffnessMatrices(step);
 	assembleB1(step);
 	makeStiffnessMatricesRegular();
 	assembleB0(step);
 
 	initLinearSolver();
-}
-
-void Linear::solve(std::vector<std::vector<double> > &solution)
-{
-	Step step;
-	startLinearSolver(step, solution);
-}
-
-void Linear::finalize()
-{
+	startLinearSolver(step);
 	finalizeLinearSolver();
 }
-

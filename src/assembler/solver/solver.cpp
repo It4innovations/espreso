@@ -213,12 +213,12 @@ void Solver::initLinearSolver()
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
 }
 
-void Solver::startLinearSolver(const Step &step, std::vector<std::vector<double> > &solution)
+void Solver::startLinearSolver(const Step &step)
 {
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
 	for (size_t i = 0; i < _instances.size(); i++) {
-		_linearSolvers[i]->Solve(_instances[i]->f, solution);
-		_physics[i]->storeSolution(step, solution, _store);
+		_linearSolvers[i]->Solve(_instances[i]->f, _instances[i]->primalSolution);
+		_physics[i]->storeSolution(step, _instances[i]->primalSolution, _store);
 	}
 	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
 }

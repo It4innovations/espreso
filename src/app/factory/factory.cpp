@@ -1,7 +1,14 @@
 
 #include "factory.h"
 
+#include "../../assembler/step.h"
 #include "../../assembler/instance.h"
+
+#include "../../assembler/solver/linear.h"
+#include "../../assembler/physics/advectiondiffusion2d.h"
+#include "../../solver/generic/LinearSolver.h"
+#include "../../output/vtk/vtk.h"
+
 #include "../../assembler/instance/instance.h"
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
@@ -14,10 +21,20 @@
 namespace espreso {
 
 Factory::Factory(const GlobalConfiguration &configuration)
+: solver(NULL), store(NULL), instance(NULL),mesh(new Mesh())
 {
-	mesh = new Mesh();
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
-	Assembler::compose(configuration, instance, *mesh);
+
+	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
+		instances.push_back(new NewInstance(mesh->parts()));
+		physics.push_back(new NewAdvectionDiffusion2D(mesh, instances.front(), configuration.advection_diffusion_2D));
+		linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
+		store = new store::VTK(configuration.output, *mesh, "results");
+
+		solver = new Linear(mesh, physics, instances, linearSolvers, store);
+	} else {
+		Assembler::compose(configuration, instance, *mesh);
+	}
 }
 
 Factory::~Factory()
@@ -30,9 +47,14 @@ Factory::~Factory()
 
 void Factory::solve()
 {
-	instance->init();
-	instance->solve(_solution);
-	instance->finalize();
+	if (instance != NULL) {
+		instance->init();
+		instance->solve(_solution);
+		instance->finalize();
+	} else {
+		solver->run();
+		_solution = instances.front()->primalSolution;
+	}
 }
 
 void Factory::check(const Results &configuration)
