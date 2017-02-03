@@ -43,6 +43,10 @@ struct NewInstance {
 	};
 
 	std::vector<size_t> block;
+
+
+	std::vector<std::vector<double> > primalSolution;
+	std::vector<std::vector<double> > dualSolution;
 };
 
 }
