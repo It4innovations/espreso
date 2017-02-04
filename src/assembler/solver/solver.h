@@ -30,7 +30,6 @@ public:
 	virtual ~Solver();
 
 protected:
-	void meshPreprocessing();
 	void assembleStiffnessMatrices(const Step &step);
 	void assembleB1(const Step &step);
 	void makeStiffnessMatricesRegular();

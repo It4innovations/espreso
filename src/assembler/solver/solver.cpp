@@ -36,41 +36,6 @@ Solver::~Solver()
 
 }
 
-
-void Solver::meshPreprocessing()
-{
-	ESINFO(PROGRESS2) << "Prepare mesh structures.";
-	TimeEvent timePreparation("Prepare mesh structures"); timePreparation.start();
-	for (size_t i = 0; i < _instances.size(); i++) {
-
-		switch (_linearSolvers[i]->configuration.method) {
-		case ESPRESO_METHOD::TOTAL_FETI:
-			_physics[i]->prepareTotalFETI();
-			break;
-		case ESPRESO_METHOD::HYBRID_FETI:
-			switch (_linearSolvers[i]->configuration.B0_type) {
-			case B0_TYPE::CORNERS:
-				_physics[i]->prepareHybridTotalFETIWithCorners();
-				break;
-			case B0_TYPE::KERNELS:
-				_physics[i]->prepareHybridTotalFETIWithKernels();
-				break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
-			}
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown FETI method";
-		}
-
-	}
-	timePreparation.endWithBarrier(); _timeStatistics->addEvent(timePreparation);
-
-	TimeEvent timeStoring("Store mesh data"); timeStoring.start();
-	_store->storeGeometry();
-	timeStoring.endWithBarrier(); _timeStatistics->addEvent(timeStoring);
-}
-
 void Solver::assembleStiffnessMatrices(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";

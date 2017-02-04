@@ -12,7 +12,7 @@ Linear::Linear(
 		store::ResultStore* store)
 : Solver(mesh, physics, instances, linearSolvers, store)
 {
-	meshPreprocessing();
+
 }
 
 void Linear::run()

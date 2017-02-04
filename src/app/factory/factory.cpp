@@ -21,20 +21,49 @@
 namespace espreso {
 
 Factory::Factory(const GlobalConfiguration &configuration)
-: solver(NULL), store(NULL), instance(NULL),mesh(new Mesh())
+: solver(NULL), store(NULL), instance(NULL), mesh(new Mesh()), newAssembler(false)
 {
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
+	Assembler::compose(configuration, instance, *mesh);
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
+		newAssembler = true;
 		instances.push_back(new NewInstance(mesh->parts()));
 		physics.push_back(new NewAdvectionDiffusion2D(mesh, instances.front(), configuration.advection_diffusion_2D));
 		linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
 		store = new store::VTK(configuration.output, *mesh, "results");
 
 		solver = new Linear(mesh, physics, instances, linearSolvers, store);
-	} else {
-		Assembler::compose(configuration, instance, *mesh);
+		meshPreprocessing();
 	}
+}
+
+void Factory::meshPreprocessing()
+{
+	for (size_t i = 0; i < physics.size(); i++) {
+
+		switch (linearSolvers[i]->configuration.method) {
+		case ESPRESO_METHOD::TOTAL_FETI:
+			physics[i]->prepareTotalFETI();
+			break;
+		case ESPRESO_METHOD::HYBRID_FETI:
+			switch (linearSolvers[i]->configuration.B0_type) {
+			case B0_TYPE::CORNERS:
+				physics[i]->prepareHybridTotalFETIWithCorners();
+				break;
+			case B0_TYPE::KERNELS:
+				physics[i]->prepareHybridTotalFETIWithKernels();
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
+			}
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Unknown FETI method";
+		}
+
+	}
+	store->storeGeometry();
 }
 
 Factory::~Factory()
@@ -47,7 +76,7 @@ Factory::~Factory()
 
 void Factory::solve()
 {
-	if (instance != NULL) {
+	if (!newAssembler) {
 		instance->init();
 		instance->solve(_solution);
 		instance->finalize();

@@ -38,6 +38,10 @@ struct Factory {
 	Mesh *mesh;
 
 private:
+	void meshPreprocessing();
+
+	bool newAssembler;
+
 	std::vector<std::vector<double> > _solution;
 };
 
