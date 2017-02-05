@@ -43,7 +43,6 @@ SphereSettings::SphereSettings(const SphereConfiguration &configuration)
 
 void Sphere::load(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
-	ESINFO(OVERVIEW) << "Generate grid";
 	Sphere sphere(configuration, mesh, index, size);
 	sphere.fill();
 }
@@ -111,42 +110,54 @@ Sphere::Sphere(const SphereConfiguration &configuration, Mesh &mesh, size_t inde
 		break;
 	}
 
+	std::string element;
+
 	switch (_settings.etype) {
 	case ELEMENT_TYPE::HEXA8:
 		_block = new Block<Hexahedron8>(mesh, block);
 		_subnodes = Hexahedron8::subnodes;
+		element = "hexahedrons";
 		break;
 	case ELEMENT_TYPE::HEXA20:
 		_block = new Block<Hexahedron20>(mesh, block);
 		_subnodes = Hexahedron20::subnodes;
+		element = "hexahedrons with midnodes";
 		break;
 	case ELEMENT_TYPE::TETRA4:
 		_block = new Block<Tetrahedron4>(mesh, block);
 		_subnodes = Tetrahedron4::subnodes;
+		element = "tetrahedrons";
 		break;
 	case ELEMENT_TYPE::TETRA10:
 		_block = new Block<Tetrahedron10>(mesh, block);
 		_subnodes = Tetrahedron10::subnodes;
+		element = "tetrahedrons with midnodes";
 		break;
 	case ELEMENT_TYPE::PRISMA6:
 		_block = new Block<Prisma6>(mesh, block);
 		_subnodes = Prisma6::subnodes;
+		element = "prismas";
 		break;
 	case ELEMENT_TYPE::PRISMA15:
 		_block = new Block<Prisma15>(mesh, block);
 		_subnodes = Prisma15::subnodes;
+		element = "prismas with midnodes";
 		break;
 	case ELEMENT_TYPE::PYRAMID5:
 		_block = new Block<Pyramid5>(mesh, block);
 		_subnodes = Pyramid5::subnodes;
+		element = "pyramids";
 		break;
 	case ELEMENT_TYPE::PYRAMID13:
 		_block = new Block<Pyramid13>(mesh, block);
 		_subnodes = Pyramid13::subnodes;
+		element = "pyramids with midnodes";
 		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unsupported element type";
 	}
+
+	ESINFO(OVERVIEW) << "Generate sphere " << element;
 }
 
 Sphere::~Sphere()

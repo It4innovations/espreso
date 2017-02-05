@@ -61,7 +61,6 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 
 void Grid::load(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
 {
-	ESINFO(OVERVIEW) << "Generate grid";
 	Grid grid(configuration, mesh, index, size);
 	grid.fill();
 }
@@ -70,6 +69,7 @@ Grid::Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, siz
 : Loader(mesh), _grid(configuration), _settings(configuration), _index(index), _size(size)
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;
+	std::string element;
 
 	size_t cluster = 0;
 	Triple<size_t> offset;
@@ -99,51 +99,63 @@ Grid::Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, siz
 					case ELEMENT_TYPE::HEXA8:
 						_block = new Block<Hexahedron8>(mesh, block);
 						_subnodes = Hexahedron8::subnodes;
+						element = "hexahedrons";
 						break;
 					case ELEMENT_TYPE::HEXA20:
 						_block = new Block<Hexahedron20>(mesh, block);
 						_subnodes = Hexahedron20::subnodes;
+						element = "hexahedrons with midnodes";
 						break;
 					case ELEMENT_TYPE::TETRA4:
 						_block = new Block<Tetrahedron4>(mesh, block);
 						_subnodes = Tetrahedron4::subnodes;
+						element = "tetrahedrons";
 						break;
 					case ELEMENT_TYPE::TETRA10:
 						_block = new Block<Tetrahedron10>(mesh, block);
 						_subnodes = Tetrahedron10::subnodes;
+						element = "tetrahedrons with midnodes";
 						break;
 					case ELEMENT_TYPE::PRISMA6:
 						_block = new Block<Prisma6>(mesh, block);
 						_subnodes = Prisma6::subnodes;
+						element = "prismas";
 						break;
 					case ELEMENT_TYPE::PRISMA15:
 						_block = new Block<Prisma15>(mesh, block);
 						_subnodes = Prisma15::subnodes;
+						element = "prismas with midnodes";
 						break;
 					case ELEMENT_TYPE::PYRAMID5:
 						_block = new Block<Pyramid5>(mesh, block);
 						_subnodes = Pyramid5::subnodes;
+						element = "pyramids";
 						break;
 					case ELEMENT_TYPE::PYRAMID13:
 						_block = new Block<Pyramid13>(mesh, block);
 						_subnodes = Pyramid13::subnodes;
+						element = "pyramids with midnodes";
 						break;
 
 					case ELEMENT_TYPE::SQUARE4:
 						_block = new Block<Square4>(mesh, block);
 						_subnodes = Square4::subnodes;
+						element = "squares";
 						break;
 					case ELEMENT_TYPE::SQUARE8:
 						_block = new Block<Square8>(mesh, block);
 						_subnodes = Square8::subnodes;
+						element = "squares with midnodes";
 						break;
 					case ELEMENT_TYPE::TRIANGLE3:
 						_block = new Block<Triangle3>(mesh, block);
 						_subnodes = Triangle3::subnodes;
+						element = "triangles";
 						break;
 					case ELEMENT_TYPE::TRIANGLE6:
 						_block = new Block<Triangle6>(mesh, block);
 						_subnodes = Triangle6::subnodes;
+						element = "triangles with midnodes";
 						break;
 					}
 				}
@@ -153,6 +165,7 @@ Grid::Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, siz
 	if (cluster != size) {
 		ESINFO(GLOBAL_ERROR) << "Incorrect number of MPI processes (" << size << "). Should be " << cluster;
 	}
+	ESINFO(OVERVIEW) << "Generate grid of " << element;
 }
 
 Grid::~Grid()
