@@ -92,6 +92,7 @@ void Factory::solve()
 	} else {
 		Step step;
 		for (size_t loadStep = 0; loadStep < loadSteps.size(); loadStep++) {
+			step.load = loadStep;
 			loadSteps[loadStep]->run(step);
 			_solution = _instances.front()->primalSolution;
 		}
