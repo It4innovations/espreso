@@ -28,10 +28,7 @@ struct Factory {
 
 	double norm() const;
 
-	Solver *solver;
-	std::vector<NewPhysics*> physics;
-	std::vector<NewInstance*> instances;
-	std::vector<LinearSolver*> linearSolvers;
+	std::vector<Solver*> loadSteps;
 	store::ResultStore* store;
 
 	Instance *instance;
@@ -40,7 +37,12 @@ struct Factory {
 private:
 	void meshPreprocessing();
 
-	bool newAssembler;
+	std::vector<Solver*> _solvers;
+	std::vector<NewPhysics*> _physics;
+	std::vector<NewInstance*> _instances;
+	std::vector<LinearSolver*> _linearSolvers;
+
+	bool _newAssembler;
 
 	std::vector<std::vector<double> > _solution;
 };

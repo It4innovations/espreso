@@ -21,38 +21,41 @@
 namespace espreso {
 
 Factory::Factory(const GlobalConfiguration &configuration)
-: solver(NULL), store(NULL), instance(NULL), mesh(new Mesh()), newAssembler(false)
+: store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
 	Assembler::compose(configuration, instance, *mesh);
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
-		newAssembler = true;
-		instances.push_back(new NewInstance(mesh->parts()));
-		physics.push_back(new NewAdvectionDiffusion2D(mesh, instances.front(), configuration.advection_diffusion_2D));
-		linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
+		_newAssembler = true;
+		_instances.push_back(new NewInstance(mesh->parts()));
+		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
+		_linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
 		store = new store::VTK(configuration.output, *mesh, "results");
 
-		solver = new Linear(mesh, physics, instances, linearSolvers, store);
+		_solvers.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
+		for (size_t i = 0; i < configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
+			loadSteps.push_back(_solvers.back());
+		}
 		meshPreprocessing();
 	}
 }
 
 void Factory::meshPreprocessing()
 {
-	for (size_t i = 0; i < physics.size(); i++) {
+	for (size_t i = 0; i < _physics.size(); i++) {
 
-		switch (linearSolvers[i]->configuration.method) {
+		switch (_linearSolvers.front()->configuration.method) {
 		case ESPRESO_METHOD::TOTAL_FETI:
-			physics[i]->prepareTotalFETI();
+			_physics[i]->prepareTotalFETI();
 			break;
 		case ESPRESO_METHOD::HYBRID_FETI:
-			switch (linearSolvers[i]->configuration.B0_type) {
+			switch (_linearSolvers.back()->configuration.B0_type) {
 			case B0_TYPE::CORNERS:
-				physics[i]->prepareHybridTotalFETIWithCorners();
+				_physics[i]->prepareHybridTotalFETIWithCorners();
 				break;
 			case B0_TYPE::KERNELS:
-				physics[i]->prepareHybridTotalFETIWithKernels();
+				_physics[i]->prepareHybridTotalFETIWithKernels();
 				break;
 			default:
 				ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
@@ -72,17 +75,26 @@ Factory::~Factory()
 		delete instance;
 	}
 	delete mesh;
+
+	std::for_each(_solvers.begin(), _solvers.end(), [] (Solver* solver) { delete solver; });
+	std::for_each(_physics.begin(), _physics.end(), [] (NewPhysics* physics) { delete physics; });
+	std::for_each(_instances.begin(), _instances.end(), [] (NewInstance* instance) { delete instance; });
+	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (LinearSolver* linearSolver) { delete linearSolver; });
+	delete store;
 }
 
 void Factory::solve()
 {
-	if (!newAssembler) {
+	if (!_newAssembler) {
 		instance->init();
 		instance->solve(_solution);
 		instance->finalize();
 	} else {
-		solver->run();
-		_solution = instances.front()->primalSolution;
+		Step step;
+		for (size_t loadStep = 0; loadStep < loadSteps.size(); loadStep++) {
+			loadSteps[loadStep]->run(step);
+			_solution = _instances.front()->primalSolution;
+		}
 	}
 }
 

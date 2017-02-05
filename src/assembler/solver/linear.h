@@ -16,7 +16,7 @@ public:
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 
-	virtual void run();
+	virtual void run(const Step &step);
 };
 
 }

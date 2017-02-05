@@ -25,9 +25,13 @@ public:
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 
-	virtual void run() =0;
+	virtual void run(const Step &step) =0;
 
 	virtual ~Solver();
+
+	std::vector<NewPhysics*> physics;
+	std::vector<NewInstance*> instances;
+	std::vector<LinearSolver*> linearSolvers;
 
 protected:
 	void assembleStiffnessMatrices(const Step &step);
@@ -41,9 +45,6 @@ protected:
 	void finalizeLinearSolver();
 
 	Mesh *_mesh;
-	std::vector<NewPhysics*> &_physics;
-	std::vector<NewInstance*> &_instances;
-	std::vector<LinearSolver*> &_linearSolvers;
 	store::ResultStore* _store;
 
 	TimeEval *_timeStatistics;

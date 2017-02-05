@@ -15,9 +15,8 @@ Linear::Linear(
 
 }
 
-void Linear::run()
+void Linear::run(const Step &step)
 {
-	Step step;
 	assembleStiffnessMatrices(step);
 	assembleB1(step);
 	makeStiffnessMatricesRegular();
