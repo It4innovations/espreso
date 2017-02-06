@@ -38,7 +38,7 @@ struct Instance {
 	std::vector<std::vector<double> > inequalityC;
 
 	// blocks types of B1
-	enum class CONSTRAINT {
+	enum CONSTRAINT {
 		DIRICHLET,
 		EQUALITY_CONSTRAINTS,
 		INEQUALITY_CONSTRAINTS,

@@ -143,12 +143,14 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 
 void NewAdvectionDiffusion2D::assembleResidualForces(const Step &step, const Element *e, DenseMatrix &Re) const
 {
-	DenseMatrix Ke, fe;
-	processElement(step, e, Ke, fe);
-	DenseMatrix T;
-	std::vector<eslocal> DOFs;
-	fillDOFsIndices(e, 0, DOFs);
+	DenseMatrix Ke, fe, T(e->nodes(), 1);
+	assembleStiffnessMatrix(step, e, Ke, fe);
+	for (size_t i = 0; i < e->nodes(); i++) {
+		T(i, 0) = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+	}
 
+	Re.multiply(Ke, T);
+	Re.transpose();
 }
 
 void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const

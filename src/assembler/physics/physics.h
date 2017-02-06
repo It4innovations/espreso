@@ -30,7 +30,10 @@ struct Physics {
 
 	virtual void assembleStiffnessMatrices(const Step &step);
 	virtual void assembleStiffnessMatrix(const Step &step, size_t domain);
-	virtual void assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe);
+	virtual void assembleStiffnessMatrix(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
+
+	virtual void subtractResidualForces(const Step &step);
+	virtual void subtractResidualForces(const Step &step, size_t domain);
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
 
@@ -60,7 +63,7 @@ struct Physics {
 	virtual const std::vector<Property>& faceDOFs() const =0;
 	virtual const std::vector<Property>& elementDOFs() const =0;
 
-protected:
+// protected:
 	Mesh *_mesh;
 	Instance *_instance;
 };

@@ -5,6 +5,8 @@
 #include "../../assembler/instance.h"
 
 #include "../../assembler/solver/linear.h"
+#include "../../assembler/solver/newtonrhapson.h"
+
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../solver/generic/LinearSolver.h"
 #include "../../output/vtk/vtk.h"
@@ -33,7 +35,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
 		store = new store::VTK(configuration.output, *mesh, "results");
 
-		_solvers.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
+		_solvers.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store));
 		for (size_t i = 0; i < configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			loadSteps.push_back(_solvers.back());
 		}

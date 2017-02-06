@@ -23,6 +23,8 @@ void Linear::run(const Step &step)
 	assembleB0(step);
 
 	initLinearSolver();
-	startLinearSolver(step);
+	startLinearSolver();
+	storeSolution(step);
+
 	finalizeLinearSolver();
 }

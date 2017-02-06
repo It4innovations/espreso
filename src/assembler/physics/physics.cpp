@@ -85,11 +85,33 @@ void Physics::assembleStiffnessMatrix(const Step &step, size_t domain)
 	_instance->K[domain].mtype = getMatrixType(step, domain);
 }
 
-void Physics::assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe)
+void Physics::subtractResidualForces(const Step &step)
+{
+	#pragma omp parallel for
+	for  (size_t d = 0; d < _instance->domains; d++) {
+		subtractResidualForces(step, d);
+		ESINFO(PROGRESS2) << Info::plain() << ".";
+	}
+	ESINFO(PROGRESS2);
+}
+
+void Physics::subtractResidualForces(const Step &step, size_t domain)
+{
+	DenseMatrix Re;
+	std::vector<eslocal> DOFs;
+
+	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
+		assembleResidualForces(step, _mesh->elements()[e], Re);
+		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
+		for (size_t i = 0; i < Re.rows(); i++) {
+			_instance->f[domain][DOFs[i]] = Re(i, 0);
+		}
+	}
+}
+
+void Physics::assembleStiffnessMatrix(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	size_t domain = e->domains().front();
-
-	fillDOFsIndices(e, domain, DOFs);
 
 	processElement(step, e, Ke, fe);
 

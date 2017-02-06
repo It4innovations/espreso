@@ -85,13 +85,12 @@ public:
 
 	const ESPRESOSolver &configuration;
 
-private:
-
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
 	OldPhysics &physics;
 	Constraints &constraints;
 
+private:
 	eslocal number_of_subdomains_per_cluster;
 
 	bool 	SINGULAR;
