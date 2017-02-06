@@ -4,6 +4,7 @@
 
 #include "../step.h"
 #include "../instance.h"
+#include "../solution.h"
 
 #include "../../output/resultstore.h"
 
@@ -140,6 +141,16 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 	}
 }
 
+void NewAdvectionDiffusion2D::assembleResidualForces(const Step &step, const Element *e, DenseMatrix &Re) const
+{
+	DenseMatrix Ke, fe;
+	processElement(step, e, Ke, fe);
+	DenseMatrix T;
+	std::vector<eslocal> DOFs;
+	fillDOFsIndices(e, 0, DOFs);
+
+}
+
 void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
@@ -156,7 +167,11 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 	coordinates.resize(e->nodes(), 2);
 
 	for (size_t i = 0; i < e->nodes(); i++) {
-		temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.load, 273.15 + 20);
+		if (_instance->solutions.size()) {
+			temp = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+		} else {
+			temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.load, 273.15 + 20);
+		}
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.load, 1);
@@ -344,6 +359,13 @@ void NewAdvectionDiffusion2D::processNode(const Step &step, const Element *e, De
 
 void NewAdvectionDiffusion2D::storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store)
 {
-	store->storeValues("temperature", 1, solution, store::ResultStore::ElementType::NODES);
+	_instance->solutions.resize(1, NULL);
+	if (_instance->solutions[0] != NULL) {
+		delete _instance->solutions[0];
+	}
+
+	_instance->solutions[0] = new Solution(pointDOFs(), solution);
+
+	store->storeValues("temperature", 1, _instance->solutions[0]->data, store::ResultStore::ElementType::NODES);
 }
 

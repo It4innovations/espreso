@@ -113,7 +113,7 @@ void Physics::assembleStiffnessMatrix(const Step &step, Element *e, std::vector<
  * x1, x2, x3, ..., y1, y2, y3, ..., z1, z2, z3,...
  *
  */
-void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs)
+void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const
 {
 	DOFs.resize(e->nodes() * pointDOFs().size());
 	for (size_t n = 0, i = 0; n < e->nodes(); n++) {

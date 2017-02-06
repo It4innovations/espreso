@@ -8,10 +8,12 @@
 namespace espreso {
 
 class SparseMatrix;
+class Solution;
 
 struct Instance {
 
 	Instance(size_t domains);
+	~Instance();
 
 	size_t domains;
 	std::vector<size_t> DOFs;
@@ -47,6 +49,8 @@ struct Instance {
 
 	std::vector<std::vector<double> > primalSolution;
 	std::vector<std::vector<double> > dualSolution;
+
+	std::vector<Solution*> solutions;
 };
 
 }

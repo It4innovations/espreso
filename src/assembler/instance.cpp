@@ -2,6 +2,7 @@
 #include "instance.h"
 
 #include "../solver/generic/SparseMatrix.h"
+#include "solution.h"
 
 using namespace espreso;
 
@@ -42,6 +43,12 @@ Instance::Instance(size_t domains): domains(domains)
 	}
 }
 
+Instance::~Instance()
+{
+	for (size_t i = 0; i < solutions.size(); i++) {
+		delete solutions[i];
+	}
+}
 
 
 

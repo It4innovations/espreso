@@ -34,12 +34,13 @@ struct Physics {
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
 
+	virtual void assembleResidualForces(const Step &step, const Element *e, DenseMatrix &Re) const =0;
 	virtual void processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 	virtual void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 	virtual void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 	virtual void processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 
-	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs);
+	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;
 	virtual void insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &fe, size_t domain);
 
 	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization);

@@ -39,7 +39,9 @@ enum class Property : int {
 	OBSTACLE,
 	NORMAL_DIRECTION,
 	NONMATCHING_ELEMENT,
-	EMPTY
+	EMPTY,
+
+	SIZE
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Property& property)

@@ -17,6 +17,7 @@ struct NewAdvectionDiffusion2D: public Physics2D
 
 	void prepareTotalFETI();
 
+	void assembleResidualForces(const Step &step, const Element *e, DenseMatrix &Re) const;
 	void processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
 	void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
 	void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
