@@ -49,7 +49,8 @@ Info::~Info()
 {
 	if (_plain) {
 		if (environment->MPIrank == 0) {
-			std::cout << os.str();
+			fprintf(stdout, "%s", os.str().c_str());
+			fflush(stdout);
 		}
 		return;
 	}
