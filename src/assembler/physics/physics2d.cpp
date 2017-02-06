@@ -6,7 +6,7 @@
 
 using namespace espreso;
 
-Physics2D::Physics2D(Mesh *mesh, Instance *instance): NewPhysics(mesh, instance)
+Physics2D::Physics2D(Mesh *mesh, Instance *instance): Physics(mesh, instance)
 {
 
 }

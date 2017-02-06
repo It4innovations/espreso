@@ -21,7 +21,7 @@ using namespace espreso;
 
 Solver::Solver(
 		Mesh *mesh,
-		std::vector<NewPhysics*> &physics,
+		std::vector<Physics*> &physics,
 		std::vector<Instance*> &instances,
 		std::vector<LinearSolver*> &linearSolvers,
 		store::ResultStore* store)
@@ -40,7 +40,7 @@ void Solver::assembleStiffnessMatrices(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
 	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
-	std::for_each(physics.begin(), physics.end(), [&] (NewPhysics *p) { p->assembleStiffnessMatrices(step); });
+	std::for_each(physics.begin(), physics.end(), [&] (Physics *p) { p->assembleStiffnessMatrices(step); });
 	timePhysics.endWithBarrier(); _timeStatistics->addEvent(timePhysics);
 
 	if (environment->print_matrices) {

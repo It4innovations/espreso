@@ -11,7 +11,7 @@ class Linear: public Solver
 public:
 	Linear(
 			Mesh *mesh,
-			std::vector<NewPhysics*> &physics,
+			std::vector<Physics*> &physics,
 			std::vector<Instance*> &instances,
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);

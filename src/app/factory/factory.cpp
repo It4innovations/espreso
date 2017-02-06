@@ -77,7 +77,7 @@ Factory::~Factory()
 	delete mesh;
 
 	std::for_each(_solvers.begin(), _solvers.end(), [] (Solver* solver) { delete solver; });
-	std::for_each(_physics.begin(), _physics.end(), [] (NewPhysics* physics) { delete physics; });
+	std::for_each(_physics.begin(), _physics.end(), [] (Physics* physics) { delete physics; });
 	std::for_each(_instances.begin(), _instances.end(), [] (Instance* instance) { delete instance; });
 	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (LinearSolver* linearSolver) { delete linearSolver; });
 	delete store;

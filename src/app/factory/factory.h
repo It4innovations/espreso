@@ -7,7 +7,7 @@
 namespace espreso {
 
 struct Solver;
-struct NewPhysics;
+struct Physics;
 struct Instance;
 class LinearSolver;
 namespace store { class ResultStore; }
@@ -38,7 +38,7 @@ private:
 	void meshPreprocessing();
 
 	std::vector<Solver*> _solvers;
-	std::vector<NewPhysics*> _physics;
+	std::vector<Physics*> _physics;
 	std::vector<Instance*> _instances;
 	std::vector<LinearSolver*> _linearSolvers;
 

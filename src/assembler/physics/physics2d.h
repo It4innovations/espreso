@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct Physics2D: public NewPhysics {
+struct Physics2D: public Physics {
 
 	Physics2D(Mesh *mesh, Instance *instance);
 

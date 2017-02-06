@@ -20,14 +20,14 @@
 
 using namespace espreso;
 
-NewPhysics::NewPhysics(Mesh *mesh, Instance *instance)
+Physics::Physics(Mesh *mesh, Instance *instance)
 : _mesh(mesh), _instance(instance)
 {
 
 }
 
 
-void NewPhysics::assembleStiffnessMatrices(const Step &step)
+void Physics::assembleStiffnessMatrices(const Step &step)
 {
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance->domains; d++) {
@@ -48,7 +48,7 @@ void NewPhysics::assembleStiffnessMatrices(const Step &step)
 	ESINFO(PROGRESS2);
 }
 
-void NewPhysics::assembleStiffnessMatrix(const Step &step, size_t domain)
+void Physics::assembleStiffnessMatrix(const Step &step, size_t domain)
 {
 	SparseVVPMatrix<eslocal> _K;
 	DenseMatrix Ke, fe;
@@ -86,7 +86,7 @@ void NewPhysics::assembleStiffnessMatrix(const Step &step, size_t domain)
 	_instance->K[domain].mtype = getMatrixType(step, domain);
 }
 
-void NewPhysics::assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe)
+void Physics::assembleStiffnessMatrix(const Step &step, Element *e, std::vector<eslocal> &DOFs, DenseMatrix &Ke, DenseMatrix &fe)
 {
 	size_t domain = e->domains().front();
 
@@ -114,7 +114,7 @@ void NewPhysics::assembleStiffnessMatrix(const Step &step, Element *e, std::vect
  * x1, x2, x3, ..., y1, y2, y3, ..., z1, z2, z3,...
  *
  */
-void NewPhysics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs)
+void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs)
 {
 	DOFs.resize(e->nodes() * pointDOFs().size());
 	for (size_t n = 0, i = 0; n < e->nodes(); n++) {
@@ -124,7 +124,7 @@ void NewPhysics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<e
 	}
 }
 
-void NewPhysics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &fe, size_t domain)
+void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &fe, size_t domain)
 {
 	if (Ke.rows() == DOFs.size() && Ke.columns() == DOFs.size()) {
 		for (size_t r = 0; r < DOFs.size(); r++) {
@@ -149,7 +149,7 @@ void NewPhysics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::v
 	}
 }
 
-void NewPhysics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
+void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < _instance->domains; d++) {
@@ -186,7 +186,7 @@ void NewPhysics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 	ESINFO(PROGRESS2);
 }
 
-void NewPhysics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
+void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
 {
 	EqualityConstraints::insertDirichletToB1(*_instance, _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers);
 	EqualityConstraints::insertElementGluingToB1(*_instance, _mesh->neighbours(), _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers, withScaling);

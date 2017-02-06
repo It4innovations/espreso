@@ -20,9 +20,9 @@ namespace store { class ResultStore; }
 
 enum class REGULARIZATION;
 
-struct NewPhysics {
+struct Physics {
 
-	NewPhysics(Mesh *mesh, Instance *instance);
+	Physics(Mesh *mesh, Instance *instance);
 
 	virtual void prepareTotalFETI() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;
@@ -51,7 +51,7 @@ struct NewPhysics {
 
 	virtual void storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store) =0;
 
-	virtual ~NewPhysics() {}
+	virtual ~Physics() {}
 
 	virtual const std::vector<Property>& pointDOFs() const =0;
 	virtual const std::vector<Property>& midPointDOFs() const =0;
