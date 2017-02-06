@@ -38,14 +38,9 @@ Paraview::Paraview(const Mesh &mesh, const std::string &path): Store(mesh, path)
 {
 	processor = vtkSmartPointer<vtkCPProcessor>::New();
 	processor->Initialize();
-	//MPI_Comm* handle;
-	//handle=MPI_COMM_WORLD;
-	//Comm = new vtkMPICommunicatorOpaqueComm(MPI_COMM_WORLD);
-	//processor->Initialize(*Comm);
-
 
 	vtkNew<vtkCPPythonScriptPipeline> pipeline;
-	pipeline->Initialize("catalyst_pipeline.py");
+	pipeline->Initialize("pokus.py");
 	processor->AddPipeline(pipeline.GetPointer());
 
 	const std::vector<Element*> &elements = _mesh.elements();
@@ -110,8 +105,13 @@ Paraview::Paraview(const Mesh &mesh, const std::string &path): Store(mesh, path)
 	decomposition->SetArray(decomposition_array, static_cast<vtkIdType>(elements.size()), 0);
 	VTKGrid->GetCellData()->AddArray(decomposition.GetPointer());
 
+	if (processor->RequestDataDescription(dataDescription.GetPointer()) != 0) {
+		dataDescription->GetInputDescriptionByName("input")->SetGrid(VTKGrid);
+		processor->CoProcess(dataDescription.GetPointer());
+	}
+
 	dataDescription->AddInput("input");
-	dataDescription->SetTimeData(0, 0);
+	dataDescription->SetTimeData(xx++, xx++);
 	dataDescription->ForceOutputOn();
 }
 
@@ -154,7 +154,6 @@ void Paraview::store(std::vector<std::vector<double> > &displasment, double shri
 		for(size_t k=0;k<dofs;k++){
 			values[k]=displacementData[i*dofs+k];
 		}
-		xx += 0.1;
 		displacement->SetTypedTuple(counter, values);
 	}
 
@@ -163,6 +162,9 @@ void Paraview::store(std::vector<std::vector<double> > &displasment, double shri
 		processor->CoProcess(dataDescription.GetPointer());
 	}
 	sleep(1);
+	dataDescription->AddInput("input");
+	dataDescription->SetTimeData(xx++, xx++);
+	dataDescription->ForceOutputOn();
 }
 
 void Paraview::storeGeometry(size_t timeStep = -1)
