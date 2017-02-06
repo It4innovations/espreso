@@ -54,7 +54,7 @@ TransientPhysics::TransientPhysics(
 		const std::vector<Property> edgeDOFs,
 		const std::vector<Property> pointDOFs,
 		const std::vector<Property> midPointDOFs)
-: Physics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs)
+: OldPhysics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs)
 {
 	M.resize(_mesh.parts());
 }

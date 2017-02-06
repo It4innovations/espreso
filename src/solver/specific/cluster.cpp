@@ -2485,7 +2485,7 @@ void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, 
 
 }
 
-void ClusterBase::CreateDirichletPrec(Physics &physics)
+void ClusterBase::CreateDirichletPrec(OldPhysics &physics)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < physics.K.size(); d++) {

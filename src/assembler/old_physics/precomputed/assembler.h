@@ -8,7 +8,7 @@ namespace espreso {
 
 class APIMesh;
 
-struct PrecomputedPhysics: public Physics {
+struct PrecomputedPhysics: public OldPhysics {
 
 	virtual bool singular() const
 	{

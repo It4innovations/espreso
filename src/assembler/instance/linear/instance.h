@@ -33,9 +33,9 @@ struct LinearInstance: public Instance
 
 	virtual ~LinearInstance() {};
 
-	virtual const Physics& physics() const { return _physics; }
+	virtual const OldPhysics& physics() const { return _physics; }
 	virtual const Constraints& constraints() const { return _constrains; }
-	virtual Physics& physics() { return _physics; }
+	virtual OldPhysics& physics() { return _physics; }
 	virtual Constraints& constraints() { return _constrains; }
 
 protected:

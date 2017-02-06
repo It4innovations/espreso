@@ -16,7 +16,7 @@ public:
 
 	void Create_SC_perDomain( bool USE_FLOAT );
     void Create_Kinv_perDomain();
-    void CreateDirichletPrec( Physics &physics );
+    void CreateDirichletPrec( OldPhysics &physics );
 	void SetupKsolvers ( );
 };
 

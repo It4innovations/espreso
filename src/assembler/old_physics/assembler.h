@@ -22,7 +22,7 @@ namespace store {
 class ResultStore;
 }
 
-struct Physics {
+struct OldPhysics {
 	virtual bool singular() const =0;
 
 	virtual void prepareMeshStructures() =0;
@@ -52,7 +52,7 @@ struct Physics {
 	std::vector<std::vector<double> > f, D;
 	std::vector<bool> singularK;
 
-	Physics(Mesh &mesh,
+	OldPhysics(Mesh &mesh,
 			Constraints &constraints,
 			const ESPRESOSolver &configuration,
 			MatrixType mtype,
@@ -62,7 +62,7 @@ struct Physics {
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs);
 
-	virtual ~Physics();
+	virtual ~OldPhysics();
 
 protected:
 	Mesh& _mesh;

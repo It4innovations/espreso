@@ -44,7 +44,7 @@ std::vector<Property> Elasticity3D::pointDOFs = { Property::DISPLACEMENT_X, Prop
 std::vector<Property> Elasticity3D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z };
 
 Elasticity3D::Elasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
-: Physics(
+: OldPhysics(
 		mesh, constraints, configuration.espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),

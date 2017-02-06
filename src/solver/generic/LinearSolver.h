@@ -21,7 +21,7 @@ namespace espreso {
 class LinearSolver {
 public:
 
-	LinearSolver(const ESPRESOSolver &configuration, Physics &physics, Constraints &constraints)
+	LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints)
 	: configuration(configuration),
 	  timeEvalMain("ESPRESO Solver Overal Timing"),
 	  physics(physics),
@@ -89,7 +89,7 @@ private:
 
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
-	Physics &physics;
+	OldPhysics &physics;
 	Constraints &constraints;
 
 	eslocal number_of_subdomains_per_cluster;

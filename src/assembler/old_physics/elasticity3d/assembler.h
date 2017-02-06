@@ -8,7 +8,7 @@ namespace espreso {
 
 struct LinearElasticity3DConfiguration;
 
-struct Elasticity3D: public Physics
+struct Elasticity3D: public OldPhysics
 {
 	Elasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration);
 

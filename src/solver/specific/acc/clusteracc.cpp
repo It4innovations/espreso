@@ -752,7 +752,7 @@ void ClusterAcc::SetupKsolvers ( ) {
     }
 }
 
-void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
+void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
     // Prepare matrix pack
 
     // detect how many MPI processes is running per node

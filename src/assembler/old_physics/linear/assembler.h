@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct LinearPhysics: public Physics {
+struct LinearPhysics: public OldPhysics {
 
 	virtual bool singular() const
 	{
@@ -25,7 +25,7 @@ struct LinearPhysics: public Physics {
 			const std::vector<Property> edgeDOFs,
 			const std::vector<Property> pointDOFs,
 			const std::vector<Property> midPointDOFs)
-	: Physics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
+	: OldPhysics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs) {};
 	virtual ~LinearPhysics() {};
 
 protected:

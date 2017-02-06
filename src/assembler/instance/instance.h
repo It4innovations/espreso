@@ -7,7 +7,7 @@
 namespace espreso {
 
 class Mesh;
-class Physics;
+class OldPhysics;
 class Constraints;
 
 struct Instance {
@@ -18,9 +18,9 @@ struct Instance {
 	virtual void solve(std::vector<std::vector<double> > &solution) = 0;
 	virtual void finalize() = 0;
 
-	virtual const Physics& physics() const = 0;
+	virtual const OldPhysics& physics() const = 0;
 	virtual const Constraints& constraints() const = 0;
-	virtual Physics& physics() = 0;
+	virtual OldPhysics& physics() = 0;
 	virtual Constraints& constraints() = 0;
 
 	virtual ~Instance() {};

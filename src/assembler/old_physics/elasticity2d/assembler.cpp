@@ -32,7 +32,7 @@ std::vector<Property> Elasticity2D::pointDOFs = { Property::DISPLACEMENT_X, Prop
 std::vector<Property> Elasticity2D::midPointDOFs = { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y };
 
 Elasticity2D::Elasticity2D(Mesh &mesh, Constraints &constraints, const LinearElasticity2DConfiguration &configuration)
-: Physics(
+: OldPhysics(
 		mesh, constraints, configuration.espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),

@@ -10,7 +10,7 @@
 
 using namespace espreso;
 
-Physics::Physics(Mesh &mesh,
+OldPhysics::OldPhysics(Mesh &mesh,
 		Constraints &constraints,
 		const ESPRESOSolver &configuration,
 		MatrixType mtype,
@@ -42,12 +42,12 @@ _solverConfiguration(configuration)
 	}
 }
 
-Physics::~Physics()
+OldPhysics::~OldPhysics()
 {
 
 }
 
-void Physics::saveStiffnessMatrices()
+void OldPhysics::saveStiffnessMatrices()
 {
 	ESINFO(PROGRESS2) << "Save matrices K and RHS.";
 	for (size_t p = 0; p < K.size(); p++) {
@@ -69,7 +69,7 @@ void Physics::saveStiffnessMatrices()
 	}
 }
 
-void Physics::saveKernelMatrices()
+void OldPhysics::saveKernelMatrices()
 {
 	for (size_t p = 0; p < R1.size(); p++) {
 		std::ofstream osR(Logging::prepareFile(p, "R1").c_str());

@@ -19,7 +19,7 @@ PrecomputedPhysics::PrecomputedPhysics(
 		const std::vector<Property> pointDOFs,
 		const std::vector<Property> midPointDOFs,
 		double *rhs, size_t rhs_size)
-: Physics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs), _apimesh(mesh), _rhs(rhs), _rhs_size(rhs_size) {};
+: OldPhysics(mesh, constraints, configuration, mtype, elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs), _apimesh(mesh), _rhs(rhs), _rhs_size(rhs_size) {};
 
 void PrecomputedPhysics::assembleStiffnessMatrices()
 {

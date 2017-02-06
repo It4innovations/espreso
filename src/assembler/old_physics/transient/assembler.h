@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct TransientPhysics: public Physics {
+struct TransientPhysics: public OldPhysics {
 
 	virtual bool singular() const
 	{
