@@ -337,7 +337,7 @@ void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Cons
 	}
 }
 
-void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const NewInstance &instance, const std::string &path, size_t dofs)
+void VTK::gluing(const OutputConfiguration &output, const Mesh &mesh, const Instance &instance, const std::string &path, size_t dofs)
 {
 	VTK vtk(output, mesh, path);
 

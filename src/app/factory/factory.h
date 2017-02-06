@@ -8,7 +8,7 @@ namespace espreso {
 
 struct Solver;
 struct NewPhysics;
-struct NewInstance;
+struct Instance;
 class LinearSolver;
 namespace store { class ResultStore; }
 
@@ -39,7 +39,7 @@ private:
 
 	std::vector<Solver*> _solvers;
 	std::vector<NewPhysics*> _physics;
-	std::vector<NewInstance*> _instances;
+	std::vector<Instance*> _instances;
 	std::vector<LinearSolver*> _linearSolvers;
 
 	bool _newAssembler;

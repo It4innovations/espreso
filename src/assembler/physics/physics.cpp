@@ -20,7 +20,7 @@
 
 using namespace espreso;
 
-NewPhysics::NewPhysics(Mesh *mesh, NewInstance *instance)
+NewPhysics::NewPhysics(Mesh *mesh, Instance *instance)
 : _mesh(mesh), _instance(instance)
 {
 

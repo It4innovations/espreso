@@ -778,7 +778,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	}
 }
 
-void EqualityConstraints::insertDirichletToB1(NewInstance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, bool withRedundantMultiplier)
+void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, bool withRedundantMultiplier)
 {
 	size_t loadStep = 0;
 
@@ -884,7 +884,7 @@ void EqualityConstraints::insertDirichletToB1(NewInstance &instance, const std::
 }
 
 
-std::vector<esglobal> EqualityConstraints::computeLambdasID(NewInstance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier)
+std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier)
 {
 	size_t loadStep = 0;
 
@@ -1004,7 +1004,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(NewInstance &instanc
 }
 
 
-void EqualityConstraints::insertElementGluingToB1(NewInstance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier, bool withScaling)
 {
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
@@ -1224,7 +1224,7 @@ void EqualityConstraints::insertElementGluingToB1(NewInstance &instance, const s
 }
 
 
-void EqualityConstraints::insertCornersGluingToB0(NewInstance &instance, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
 {
 	if (!elements.size()) {
 		return;
@@ -1273,7 +1273,7 @@ void EqualityConstraints::insertCornersGluingToB0(NewInstance &instance, const s
 	ESINFO(DETAILS) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
-void EqualityConstraints::insertKernelsGluingToB0(NewInstance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
 	std::vector<Element*> el(elements);
 

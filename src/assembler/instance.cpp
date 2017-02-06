@@ -5,7 +5,7 @@
 
 using namespace espreso;
 
-NewInstance::NewInstance(size_t domains): domains(domains)
+Instance::Instance(size_t domains): domains(domains)
 {
 	DOFs.resize(domains);
 

@@ -12,7 +12,7 @@ public:
 	Linear(
 			Mesh *mesh,
 			std::vector<NewPhysics*> &physics,
-			std::vector<NewInstance*> &instances,
+			std::vector<Instance*> &instances,
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 

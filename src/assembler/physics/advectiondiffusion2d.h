@@ -11,7 +11,7 @@ struct AdvectionDiffusion2DConfiguration;
 
 struct NewAdvectionDiffusion2D: public Physics2D
 {
-	NewAdvectionDiffusion2D(Mesh *mesh, NewInstance *instance, const AdvectionDiffusion2DConfiguration &configuration);
+	NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
 
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
 

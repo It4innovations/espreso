@@ -9,7 +9,7 @@ namespace espreso {
 class Element;
 class Region;
 enum class Property;
-class NewInstance;
+class Instance;
 
 struct EqualityConstraints
 {
@@ -21,15 +21,15 @@ struct EqualityConstraints
 	static void insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel);
 	static void insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Element*> &DOFs, const std::vector<SparseMatrix> &kernel);
 
-	static void insertDirichletToB1(NewInstance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, bool withRedundantMultiplier);
-	static void insertElementGluingToB1(NewInstance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier, bool withScaling);
+	static void insertDirichletToB1(Instance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, bool withRedundantMultiplier);
+	static void insertElementGluingToB1(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier, bool withScaling);
 
-	static void insertCornersGluingToB0(NewInstance &instance, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
-	static void insertKernelsGluingToB0(NewInstance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs);
+	static void insertCornersGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
+	static void insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs);
 
 protected:
 	static std::vector<esglobal> computeLambdasID(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);
-	static std::vector<esglobal> computeLambdasID(NewInstance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier);
+	static std::vector<esglobal> computeLambdasID(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier);
 
 };
 

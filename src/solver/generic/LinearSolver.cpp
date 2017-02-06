@@ -72,7 +72,7 @@ void LinearSolver::setup() {
 
 }
 
-void LinearSolver::steel(NewInstance *instance)
+void LinearSolver::steel(Instance *instance)
 {
 	setup();
 	physics.mtype = instance->K[0].mtype;

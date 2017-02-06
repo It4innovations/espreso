@@ -28,7 +28,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
 		_newAssembler = true;
-		_instances.push_back(new NewInstance(mesh->parts()));
+		_instances.push_back(new Instance(mesh->parts()));
 		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
 		_linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
 		store = new store::VTK(configuration.output, *mesh, "results");
@@ -78,7 +78,7 @@ Factory::~Factory()
 
 	std::for_each(_solvers.begin(), _solvers.end(), [] (Solver* solver) { delete solver; });
 	std::for_each(_physics.begin(), _physics.end(), [] (NewPhysics* physics) { delete physics; });
-	std::for_each(_instances.begin(), _instances.end(), [] (NewInstance* instance) { delete instance; });
+	std::for_each(_instances.begin(), _instances.end(), [] (Instance* instance) { delete instance; });
 	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (LinearSolver* linearSolver) { delete linearSolver; });
 	delete store;
 }

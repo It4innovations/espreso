@@ -22,7 +22,7 @@
 
 using namespace espreso;
 
-NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, NewInstance *instance, const AdvectionDiffusion2DConfiguration &configuration)
+NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration)
 : Physics2D(mesh, instance), _configuration(configuration)
 {
 

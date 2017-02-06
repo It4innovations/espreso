@@ -9,9 +9,9 @@ namespace espreso {
 
 class SparseMatrix;
 
-struct NewInstance {
+struct Instance {
 
-	NewInstance(size_t domains);
+	Instance(size_t domains);
 
 	size_t domains;
 	std::vector<size_t> DOFs;

@@ -22,7 +22,7 @@ using namespace espreso;
 Solver::Solver(
 		Mesh *mesh,
 		std::vector<NewPhysics*> &physics,
-		std::vector<NewInstance*> &instances,
+		std::vector<Instance*> &instances,
 		std::vector<LinearSolver*> &linearSolvers,
 		store::ResultStore* store)
 : physics(physics), instances(instances), linearSolvers(linearSolvers), _mesh(mesh), _store(store)

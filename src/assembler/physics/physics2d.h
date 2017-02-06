@@ -8,7 +8,7 @@ namespace espreso {
 
 struct Physics2D: public NewPhysics {
 
-	Physics2D(Mesh *mesh, NewInstance *instance);
+	Physics2D(Mesh *mesh, Instance *instance);
 
 	double determinant2x2(double *values) const
 	{

@@ -9,7 +9,7 @@ namespace espreso {
 struct Step;
 class Mesh;
 class NewPhysics;
-class NewInstance;
+class Instance;
 class LinearSolver;
 namespace store { class ResultStore; }
 class TimeEval;
@@ -21,7 +21,7 @@ public:
 	Solver(
 			Mesh *mesh,
 			std::vector<NewPhysics*> &physics,
-			std::vector<NewInstance*> &instances,
+			std::vector<Instance*> &instances,
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 
@@ -30,7 +30,7 @@ public:
 	virtual ~Solver();
 
 	std::vector<NewPhysics*> physics;
-	std::vector<NewInstance*> instances;
+	std::vector<Instance*> instances;
 	std::vector<LinearSolver*> linearSolvers;
 
 protected:

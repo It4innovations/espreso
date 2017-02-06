@@ -15,14 +15,14 @@ template<typename TIndices> class SparseVVPMatrix;
 class DenseMatrix;
 class Element;
 class Mesh;
-class NewInstance;
+class Instance;
 namespace store { class ResultStore; }
 
 enum class REGULARIZATION;
 
 struct NewPhysics {
 
-	NewPhysics(Mesh *mesh, NewInstance *instance);
+	NewPhysics(Mesh *mesh, Instance *instance);
 
 	virtual void prepareTotalFETI() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;
@@ -61,7 +61,7 @@ struct NewPhysics {
 
 protected:
 	Mesh *_mesh;
-	NewInstance *_instance;
+	Instance *_instance;
 };
 
 }

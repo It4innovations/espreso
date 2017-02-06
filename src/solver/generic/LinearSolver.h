@@ -35,7 +35,7 @@ public:
 	virtual ~LinearSolver();
 
 	void setup();
-	void steel(NewInstance *instance);
+	void steel(Instance *instance);
 
 	void init(const std::vector<int> &neighbours);
 
