@@ -6,8 +6,8 @@
 #include <string>
 #include <algorithm>
 
-#include "../../config/materialparameters.h"
-#include "../../config/physics.h"
+#include "../../configuration/materialparameters.h"
+#include "../../configuration/physics.h"
 
 namespace espreso {
 

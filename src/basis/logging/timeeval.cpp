@@ -1,7 +1,7 @@
 
 #include "timeeval.h"
 
-#include "../../config/environment.h"
+#include "../../configuration/environment.h"
 
 using namespace espreso;
 

@@ -1,12 +1,12 @@
 
 
 #include "sphere.h"
+
+#include "../../../configuration/inputgeneratorsphere.h"
 #include "../primitives/block.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/coordinates.h"
-
-#include "../../../config/inputgeneratorsphere.h"
 
 #include "../elements/3D/hexahedron20.h"
 #include "../elements/3D/hexahedron8.h"

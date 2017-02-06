@@ -2,10 +2,9 @@
 #include "solver.h"
 
 #include "../../basis/utilities/utils.h"
-#include "../../config/environment.h"
-#include "../../config/solverespresooptions.h"
-#include "../../config/output.h"
-
+#include "../../configuration/environment.h"
+#include "../../configuration/output.h"
+#include "../../configuration/solverespresooptions.h"
 #include "../physics/physics.h"
 #include "../step.h"
 #include "../instance.h"

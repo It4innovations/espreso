@@ -1,6 +1,5 @@
 
 #include "api.h"
-#include "../../config/environment.h"
 #include "../../mesh/settings/evaluator.h"
 
 #include "../../mesh/elements/volume/unknownvolume.h"
@@ -14,7 +13,8 @@
 #include "../../mesh/structures/region.h"
 
 #include "../../basis/utilities/utils.h"
-#include "../../config/input.h"
+#include "../../configuration/environment.h"
+#include "../../configuration/input.h"
 
 using namespace espreso::input;
 

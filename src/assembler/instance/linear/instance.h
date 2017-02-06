@@ -4,7 +4,7 @@
 
 #include "../instance.h"
 
-#include "../../../config/output.h"
+#include "../../../configuration/output.h"
 #include "../../constraints/constraints.h"
 #include "../../../output/vtk/vtk.h"
 #include "../../../solver/generic/LinearSolver.h"

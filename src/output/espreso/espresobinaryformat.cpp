@@ -1,7 +1,7 @@
 
 #include "../espreso/espresobinaryformat.h"
 
-#include "../../config/environment.h"
+#include "../../configuration/environment.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"

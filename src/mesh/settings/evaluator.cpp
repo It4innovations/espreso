@@ -1,8 +1,7 @@
 
 #include "evaluator.h"
-#include "../../config/environment.h"
-
 #include <numeric>
+#include "../../configuration/environment.h"
 
 using namespace espreso;
 

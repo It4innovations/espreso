@@ -1,11 +1,10 @@
 
 #include "../../old_physics/elasticity2d/assembler.h"
 
-#include "../../../config/linearelasticity2d.h"
-
 #include "../../../basis/matrices/denseMatrix.h"
 #include "../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../basis/matrices/sparseCSRMatrix.h"
+#include "../../../configuration/physics/linearelasticity2d.h"
 #include "../../../solver/generic/SparseMatrix.h"
 #include "../../../solver/specific/sparsesolvers.h"
 

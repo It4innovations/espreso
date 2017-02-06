@@ -3,7 +3,7 @@
 #include "../../../libespreso/feti4i.h"
 #include "../../assembler/instance/precomputed/instance.h"
 #include "../../assembler/old_physics/precomputed/singular/assembler.h"
-#include "../../config/input.h"
+#include "../../configuration/input.h"
 #include "../../input/api/api.h"
 
 espreso::Environment espreso::DataHolder::environment;

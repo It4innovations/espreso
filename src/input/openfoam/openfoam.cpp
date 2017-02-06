@@ -8,8 +8,8 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
-#include "../../config/input.h"
 #include "../../basis/logging/logging.h"
+#include "../../configuration/input.h"
 
 using namespace espreso::input;
 

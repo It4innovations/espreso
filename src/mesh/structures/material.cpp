@@ -1,8 +1,9 @@
 
 #include "material.h"
+
+#include "../../configuration/configuration.h"
 #include "coordinates.h"
 #include "../settings/evaluator.h"
-#include "../../config/configuration.h"
 
 using namespace espreso;
 

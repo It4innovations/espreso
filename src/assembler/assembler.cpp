@@ -5,10 +5,9 @@
 #include "old_physics/linear/advectiondiffusion2d/assembler.h"
 #include "old_physics/linear/advectiondiffusion3d/assembler.h"
 
-#include "../config/globalconfiguration.h"
-
 #include <numeric>
 
+#include "../configuration/globalconfiguration.h"
 #include "instance/dynamics/instance.h"
 #include "instance/hypre/instance.h"
 #include "instance/linear/instance.h"

@@ -2,8 +2,6 @@
 #include "physics.h"
 
 #include "../../basis/logging/logging.h"
-#include "../../config/solverespresooptions.h"
-
 #include "../instance.h"
 
 #include "../../mesh/elements/element.h"
@@ -16,6 +14,7 @@
 #include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/matrices/sparseCSRMatrix.h"
+#include "../../configuration/solverespresooptions.h"
 
 
 using namespace espreso;

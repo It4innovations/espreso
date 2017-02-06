@@ -11,8 +11,8 @@
 #include "../../assembler/instance.h"
 #include "../../solver/generic/SparseMatrix.h"
 
-#include "../../config/output.h"
-#include "../../config/environment.h"
+#include "../../configuration/environment.h"
+#include "../../configuration/output.h"
 
 namespace espreso {
 namespace store {

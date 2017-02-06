@@ -6,7 +6,7 @@
 
 #include "../../solver/generic/SparseMatrix.h"
 
-#include "../../config/solverespreso.h"
+#include "../../configuration/solverespreso.h"
 
 using namespace espreso;
 

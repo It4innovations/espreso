@@ -2,7 +2,7 @@
 #include <signal.h>
 #include <csignal>
 
-#include "../config/globalconfiguration.h"
+#include "../configuration/globalconfiguration.h"
 #include "factory/factory.h"
 
 using namespace espreso;

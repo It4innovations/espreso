@@ -2,8 +2,8 @@
 #include "composition/grid.h"
 #include "composition/sphere.h"
 
-#include "../../config/inputgenerator.h"
 #include "generator.h"
+#include "../../configuration/inputgenerator.h"
 
 using namespace espreso::input;
 

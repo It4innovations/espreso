@@ -7,7 +7,6 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
 
-#include "../../config/environment.h"
 #include "../settings/evaluator.h"
 #include "coordinates.h"
 #include "material.h"
@@ -28,6 +27,7 @@
 #include "../elements/element.h"
 
 #include "metis.h"
+#include "../../configuration/environment.h"
 
 namespace espreso {
 

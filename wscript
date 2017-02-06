@@ -98,7 +98,7 @@ def configure(ctx):
         ctx.check_header(header)
 
     # recurse to basic parts
-    ctx.recurse("src/config")
+    ctx.recurse("src/configuration")
     ctx.recurse("src/basis")
 
     # recurse to ESPRESO solver
@@ -133,7 +133,7 @@ def configure(ctx):
 def build(ctx):
 
     ctx(
-        export_includes = "src/include src/config src/basis src/mesh src/input src/output tools/bem4i/src src/assembler src/solver",
+        export_includes = "src/include src/configuration src/basis src/mesh src/input src/output tools/bem4i/src src/assembler src/solver",
         name            = "espreso_includes"
     )
 
@@ -144,7 +144,7 @@ def build(ctx):
     ctx.add_group()
 
     ctx.recurse("src/basis")
-    ctx.recurse("src/config")
+    ctx.recurse("src/configuration")
 
     ctx.env = ctx.all_envs["solver"]
     ctx.recurse("src/mesh")

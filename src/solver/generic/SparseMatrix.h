@@ -1,9 +1,8 @@
 
 #include "../generic/utils.h"
-#include "../../config/solverespreso.h"
-#include "../../config/environment.h"
-
 #include "../../basis/matrices/matrixtype.h"
+#include "../../configuration/environment.h"
+#include "../../configuration/solverespreso.h"
 
 //class SparseSolverCPU;
 

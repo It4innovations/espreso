@@ -1,11 +1,10 @@
 
 #include "../../../old_physics/linear/advectiondiffusion3d/assembler.h"
 
-#include "../../../../config/advectiondiffusion3d.h"
-
 #include "../../../../basis/matrices/denseMatrix.h"
 #include "../../../../basis/matrices/sparseVVPMatrix.h"
 #include "../../../../basis/matrices/sparseCSRMatrix.h"
+#include "../../../../configuration/physics/advectiondiffusion3d.h"
 #include "../../../../solver/generic/SparseMatrix.h"
 
 #include "../../../../mesh/elements/element.h"

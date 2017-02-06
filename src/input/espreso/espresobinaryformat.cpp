@@ -1,6 +1,4 @@
 
-#include "../../config/environment.h"
-
 #include "../../mesh/elements/line/line2.h"
 #include "../../mesh/elements/line/line3.h"
 
@@ -24,8 +22,9 @@
 #include "../../mesh/structures/material.h"
 #include "../../mesh/settings/evaluator.h"
 
-#include "../../config/input.h"
 #include "espresobinaryformat.h"
+#include "../../configuration/environment.h"
+#include "../../configuration/input.h"
 
 using namespace espreso::input;
 

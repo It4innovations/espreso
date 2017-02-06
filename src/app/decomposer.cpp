@@ -1,10 +1,10 @@
 
 #include "mpi.h"
 
+#include "../configuration/globalconfiguration.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
 #include "factory/factory.h"
-#include "../config/globalconfiguration.h"
 #include "../output/espreso/espresobinaryformat.h"
 
 using namespace espreso;

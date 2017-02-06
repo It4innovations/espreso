@@ -1,8 +1,6 @@
 
 #include "loader.h"
 
-#include "../config/globalconfiguration.h"
-
 #include "ansys/ansys.h"
 #include "openfoam/openfoam.h"
 #include "generator/generator.h"
@@ -13,6 +11,7 @@
 #include "../mesh/settings/evaluator.h"
 
 #include "../basis/utilities/utils.h"
+#include "../configuration/globalconfiguration.h"
 #include "espreso/espresobinaryformat.h"
 
 using namespace espreso::input;

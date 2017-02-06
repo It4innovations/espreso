@@ -1,10 +1,9 @@
 
+#include "../../configuration/physics/advectiondiffusion2d.h"
 #include "advectiondiffusion2d.h"
 
 #include "../step.h"
 #include "../instance.h"
-
-#include "../../config/advectiondiffusion2d.h"
 
 #include "../../output/resultstore.h"
 

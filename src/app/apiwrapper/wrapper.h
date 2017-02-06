@@ -5,7 +5,7 @@
 #include <iostream>
 #include <list>
 
-#include "../../config/environment.h"
+#include "../../configuration/environment.h"
 
 namespace espreso {
 class OldInstance;

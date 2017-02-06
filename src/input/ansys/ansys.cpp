@@ -4,8 +4,8 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 
-#include "../../config/input.h"
 #include "../../basis/logging/logging.h"
+#include "../../configuration/input.h"
 
 using namespace espreso::input;
 
