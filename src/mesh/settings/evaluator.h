@@ -91,6 +91,7 @@ public:
 		_values[omp_get_thread_num()][0] = _coordinates[index].x;
 		_values[omp_get_thread_num()][1] = _coordinates[index].y;
 		_values[omp_get_thread_num()][2] = _coordinates[index].z;
+		_values[omp_get_thread_num()][3] = temperature;
 		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
@@ -99,6 +100,7 @@ public:
 		_values[omp_get_thread_num()][0] = p.x;
 		_values[omp_get_thread_num()][1] = p.y;
 		_values[omp_get_thread_num()][2] = p.z;
+		_values[omp_get_thread_num()][3] = 0;
 		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
