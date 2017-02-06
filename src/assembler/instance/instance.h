@@ -10,9 +10,9 @@ class Mesh;
 class OldPhysics;
 class Constraints;
 
-struct Instance {
+struct OldInstance {
 
-	Instance(const Mesh &mesh): _mesh(mesh), _timeStatistics("Solver Overall Timing") {};
+	OldInstance(const Mesh &mesh): _mesh(mesh), _timeStatistics("Solver Overall Timing") {};
 
 	virtual void init() = 0;
 	virtual void solve(std::vector<std::vector<double> > &solution) = 0;
@@ -23,7 +23,7 @@ struct Instance {
 	virtual OldPhysics& physics() = 0;
 	virtual Constraints& constraints() = 0;
 
-	virtual ~Instance() {};
+	virtual ~OldInstance() {};
 
 protected:
 	const Mesh &_mesh;

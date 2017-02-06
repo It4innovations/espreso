@@ -13,10 +13,10 @@ namespace espreso {
 class ESPRESOSolver;
 
 template <class TPhysics>
-struct PrecomputedInstance: public Instance
+struct PrecomputedInstance: public OldInstance
 {
 	PrecomputedInstance(const ESPRESOSolver &configuration, APIMesh &mesh, MatrixType type, double* rhs, eslocal rhs_size)
-	: Instance(mesh),
+	: OldInstance(mesh),
 	  _configuration(configuration),
 	  _constrains(configuration, mesh),
 	  _physics(mesh, _constrains, configuration, type, rhs, rhs_size),

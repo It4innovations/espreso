@@ -15,7 +15,7 @@ namespace store { class ResultStore; }
 
 struct GlobalConfiguration;
 struct Results;
-struct Instance;
+struct OldInstance;
 struct Mesh;
 
 struct Factory {
@@ -31,7 +31,7 @@ struct Factory {
 	std::vector<Solver*> loadSteps;
 	store::ResultStore* store;
 
-	Instance *instance;
+	OldInstance *instance;
 	Mesh *mesh;
 
 private:

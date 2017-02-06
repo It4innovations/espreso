@@ -8,9 +8,9 @@
 namespace espreso {
 
 template <class TPhysics, class TConfiguration>
-struct SemiSmoothNewtonMethod: public Instance
+struct SemiSmoothNewtonMethod: public OldInstance
 {
-	SemiSmoothNewtonMethod(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	SemiSmoothNewtonMethod(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): OldInstance(mesh),
 	_output(output),
 	_configuration(configuration.espreso),
 	_constraints(mesh),

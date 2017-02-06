@@ -8,7 +8,7 @@
 #include "../../config/environment.h"
 
 namespace espreso {
-class Instance;
+class OldInstance;
 class APIMesh;
 class ESPRESOSolver;
 }
@@ -29,7 +29,7 @@ struct FETI4IStructInstance {
 	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size);
 	~FETI4IStructInstance();
 
-	espreso::Instance *instance;
+	espreso::OldInstance *instance;
 	espreso::APIMesh *mesh;
 	espreso::ESPRESOSolver *configuration;
 };

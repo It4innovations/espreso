@@ -12,10 +12,10 @@
 namespace espreso {
 
 template <class TPhysics>
-struct DynamicsInstance: public Instance
+struct DynamicsInstance: public OldInstance
 {
 public:
-	DynamicsInstance(const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	DynamicsInstance(const OutputConfiguration &output, Mesh &mesh): OldInstance(mesh),
 	_output(output),
 	_constrains(mesh),
 	_physics(mesh, _constrains),

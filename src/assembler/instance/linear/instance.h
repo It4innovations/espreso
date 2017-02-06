@@ -14,9 +14,9 @@ namespace espreso {
 class ESPRESOSolver;
 
 template <class TPhysics, class TConfiguration>
-struct LinearInstance: public Instance
+struct LinearInstance: public OldInstance
 {
-	LinearInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): Instance(mesh),
+	LinearInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): OldInstance(mesh),
 	_output(output),
 	_configuration(configuration.espreso),
 	_constrains(configuration.espreso, mesh),

@@ -5,20 +5,20 @@
 #include "old_physics/linear/advectiondiffusion2d/assembler.h"
 #include "old_physics/linear/advectiondiffusion3d/assembler.h"
 
-#include "instance/linear/instance.h"
-#include "instance/dynamics/instance.h"
-#include "instance/hypre/instance.h"
-#include "instance/nonlinear/ssnm/instance.h"
-
 #include "../config/globalconfiguration.h"
 
 #include <numeric>
+
+#include "instance/dynamics/instance.h"
+#include "instance/hypre/instance.h"
+#include "instance/linear/instance.h"
+#include "instance/nonlinear/ssnm/instance.h"
 
 using namespace espreso;
 
 class Mesh;
 
-void Assembler::compose(const GlobalConfiguration &configuration, Instance* &instance, Mesh &mesh)
+void Assembler::compose(const GlobalConfiguration &configuration, OldInstance* &instance, Mesh &mesh)
 {
 	switch (configuration.physics) {
 	case PHYSICS::LINEAR_ELASTICITY_2D:

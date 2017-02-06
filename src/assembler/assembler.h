@@ -5,11 +5,11 @@
 namespace espreso {
 
 struct GlobalConfiguration;
-class Instance;
+class OldInstance;
 class Mesh;
 
 struct Assembler {
-	static void compose(const GlobalConfiguration &configuration, Instance* &instance, Mesh &mesh);
+	static void compose(const GlobalConfiguration &configuration, OldInstance* &instance, Mesh &mesh);
 };
 
 }

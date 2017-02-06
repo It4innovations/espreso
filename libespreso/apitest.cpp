@@ -3,6 +3,7 @@
 
 // we use ESPRESO assembler for compute stiffness matrices
 #include "../src/app/factory/factory.h"
+#include "../src/assembler/instance/instance.h"
 #include "../src/config/globalconfiguration.h"
 #include "../src/basis/matrices/denseMatrix.h"
 #include "../src/output/vtk/vtk.h"
@@ -10,7 +11,6 @@
 #include "../src/mesh/elements/element.h"
 #include "../src/mesh/structures/mesh.h"
 #include "../src/mesh/structures/coordinates.h"
-#include "../src/assembler/instance/instance.h"
 #include "../src/assembler/old_physics/assembler.h"
 
 int main(int argc, char** argv)
