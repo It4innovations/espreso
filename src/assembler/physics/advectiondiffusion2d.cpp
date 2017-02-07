@@ -144,7 +144,7 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 void NewAdvectionDiffusion2D::assembleResidualForces(const Step &step, const Element *e, DenseMatrix &Re) const
 {
 	DenseMatrix Ke, fe, T(e->nodes(), 1);
-	assembleStiffnessMatrix(step, e, Ke, fe);
+	processElement(step, e, Ke, fe);
 	for (size_t i = 0; i < e->nodes(); i++) {
 		T(i, 0) = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
 	}
@@ -329,8 +329,12 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, const Element *e, De
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
 
+		double temp = 0;
+		if (_instance->solutions.size()) {
+			temp = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
+		}
 		htc(n, 0) = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, step.load, 0);
-		q(n, 0) += htc(n, 0) * e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.load, 0);
+		q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.load, 0) - temp);
 		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.load, 0) / area;
 		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, step.load, 0);
 
