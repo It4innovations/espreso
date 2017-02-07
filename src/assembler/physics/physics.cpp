@@ -104,7 +104,7 @@ void Physics::subtractResidualForces(const Step &step, size_t domain)
 		assembleResidualForces(step, _mesh->elements()[e], Re);
 		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
 		for (size_t i = 0; i < Re.rows(); i++) {
-			_instance->f[domain][DOFs[i]] = Re(i, 0);
+			_instance->f[domain][DOFs[i]] -= Re(i, 0);
 		}
 	}
 }
