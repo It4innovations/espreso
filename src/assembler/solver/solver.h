@@ -37,15 +37,15 @@ public:
 	std::vector<LinearSolver*> linearSolvers;
 
 protected:
-	double norm(const std::vector<std::vector<double> > &v) const;
-
 	void assembleStiffnessMatrices(const Step &step);
 	void subtractResidualForces(const Step &step);
 	void assembleB1(const Step &step);
 	void subtractSolutionFromB1c(const Step &step);
 	void makeStiffnessMatricesRegular(const Step &step);
 	void assembleB0(const Step &step);
-	void addToPrimar(size_t instance, const std::vector<std::vector<double> > &values);
+
+	double deltaToSolution(Physics *physics, const std::vector<std::vector<double> > &previous);
+
 	void storeSolution(const Step &step);
 
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);

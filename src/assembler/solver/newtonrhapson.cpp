@@ -34,18 +34,17 @@ void NewtonRhapson::run(Step &step)
 	startLinearSolver();
 	storeSolution(step);
 
-	double precision = 1e-3;
-	double normDeltaT = 2, normT = 1;
+	double convergence = 1;
 
-	while (normDeltaT / normT > 1e-3) {
+	while (convergence > 1e-3) {
 		std::vector<std::vector<double> > T = instances.front()->primalSolution;
 		step.solver++;
 
 		instances.front() = new Instance(instances.front()->domains);
-		instances.front()->DOFs = physics.front()->_instance->DOFs;
-		instances.front()->primalSolution = physics.front()->_instance->primalSolution;
-		instances.front()->solutions = physics.front()->_instance->solutions;
-		physics.front()->_instance->solutions.resize(0);
+		instances.front()->DOFs = physics.front()->instance()->DOFs;
+		instances.front()->primalSolution = physics.front()->instance()->primalSolution;
+		instances.front()->solutions = physics.front()->instance()->solutions;
+		physics.front()->instance()->solutions.resize(0);
 		linearSolvers.front() = new LinearSolver(linearSolvers.front()->configuration, linearSolvers.front()->physics, linearSolvers.front()->constraints);
 		physics.front()->_instance = instances.front();
 
@@ -61,9 +60,7 @@ void NewtonRhapson::run(Step &step)
 		initLinearSolver();
 		startLinearSolver();
 
-		normDeltaT = norm(instances.front()->primalSolution);
-		addToPrimar(0, T);
-		normT = norm(instances.front()->primalSolution);
+		convergence = deltaToSolution(physics.front(), T);
 		storeSolution(step);
 	}
 

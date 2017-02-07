@@ -207,6 +207,24 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 	ESINFO(PROGRESS2);
 }
 
+double Physics::computeNormOfSolution() const
+{
+	double norm = 0, sum;
+	double solution;
+	for (size_t n = 0; n < _mesh->nodes().size(); n++) {
+		for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
+			size_t multiplicity = _mesh->nodes()[n]->numberOfGlobalDomainsWithDOF(dof);
+			for (size_t d = 0; d < _mesh->nodes()[n]->domains().size(); d++) {
+				size_t domain = _mesh->nodes()[n]->domains()[d];
+				solution = _instance->primalSolution[domain][_mesh->nodes()[n]->DOFIndex(domain, dof)] / multiplicity;
+				norm += solution * solution;
+			}
+		}
+	}
+	MPI_Allreduce(&norm, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	return sqrt(sum);
+}
+
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
 {
 	EqualityConstraints::insertDirichletToB1(*_instance, _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers);

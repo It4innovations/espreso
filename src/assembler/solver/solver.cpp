@@ -35,16 +35,6 @@ Solver::~Solver()
 	delete _timeStatistics;
 }
 
-double Solver::norm(const std::vector<std::vector<double> > &v) const
-{
-	double norm = 0;
-	for (size_t d = 0; d < v.size(); d++) {
-		for (size_t i = 0; i < v[d].size(); i++) {
-			norm += v[d][i] * v[d][i];
-		}
-	}
-	return sqrt(norm);
-}
 
 void Solver::storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description)
 {
@@ -191,17 +181,23 @@ void Solver::assembleB0(const Step &step)
 	}
 }
 
-void Solver::addToPrimar(size_t instance, const std::vector<std::vector<double> > &values)
+double Solver::deltaToSolution(Physics *physics, const std::vector<std::vector<double> > &previous)
 {
-	ESINFO(PROGRESS2) << "Update primar solution";
-	TimeEvent timeupdate("Update primar solution"); timeupdate.startWithBarrier();
+	ESINFO(PROGRESS2) << "Sum previous solution step with increment";
+	TimeEvent timePrecision("Sum previous solution step with increment"); timePrecision.startWithBarrier();
+
+	double delta = physics->computeNormOfSolution();
 	#pragma omp parallel for
-	for (size_t d = 0; d < instances[instance]->domains; d++) {
-		for (size_t i = 0; i < instances[instance]->primalSolution[d].size(); i++) {
-			instances[instance]->primalSolution[d][i] += values[d][i];
+	for (size_t d = 0; d < physics->instance()->domains; d++) {
+		for (size_t i = 0; i < physics->instance()->primalSolution[d].size(); i++) {
+			physics->instance()->primalSolution[d][i] += previous[d][i];
 		}
 	}
-	timeupdate.end(); _timeStatistics->addEvent(timeupdate);
+
+	double final = physics->computeNormOfSolution();
+	timePrecision.end(); _timeStatistics->addEvent(timePrecision);
+
+	return delta / final;
 }
 
 void Solver::storeSolution(const Step &step)
