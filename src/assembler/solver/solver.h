@@ -28,7 +28,7 @@ public:
 			std::vector<LinearSolver*> &linearSolvers,
 			store::ResultStore* store);
 
-	virtual void run(const Step &step) =0;
+	virtual void run(Step &step) =0;
 
 	virtual ~Solver();
 
@@ -42,14 +42,14 @@ protected:
 	void assembleStiffnessMatrices(const Step &step);
 	void subtractResidualForces(const Step &step);
 	void assembleB1(const Step &step);
-	void subtractSolutionFromB1c();
-	void makeStiffnessMatricesRegular();
+	void subtractSolutionFromB1c(const Step &step);
+	void makeStiffnessMatricesRegular(const Step &step);
 	void assembleB0(const Step &step);
 	void addToPrimar(size_t instance, const std::vector<std::vector<double> > &values);
 	void storeSolution(const Step &step);
 
-	void storeInput(std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
-	void storeInput(std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
+	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
+	void storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
 
 	void initLinearSolver();
 	void startLinearSolver();

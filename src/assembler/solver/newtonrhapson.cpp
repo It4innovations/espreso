@@ -23,23 +23,23 @@ NewtonRhapson::NewtonRhapson(
 
 }
 
-void NewtonRhapson::run(const Step &step)
+void NewtonRhapson::run(Step &step)
 {
 	assembleStiffnessMatrices(step);
 	assembleB1(step);
-	makeStiffnessMatricesRegular();
+	makeStiffnessMatricesRegular(step);
 	assembleB0(step);
 
 	initLinearSolver();
 	startLinearSolver();
 	storeSolution(step);
 
-	std::vector<std::vector<double> > T = instances.front()->primalSolution;
-
 	double precision = 1e-3;
 	double normDeltaT = 2, normT = 1;
 
 	while (normDeltaT / normT > 1e-3) {
+		std::vector<std::vector<double> > T = instances.front()->primalSolution;
+		step.solver++;
 
 		instances.front() = new Instance(instances.front()->domains);
 		instances.front()->DOFs = physics.front()->_instance->DOFs;
@@ -54,9 +54,9 @@ void NewtonRhapson::run(const Step &step)
 		subtractResidualForces(step);
 		assembleB1(step);
 
-		subtractSolutionFromB1c();
+		subtractSolutionFromB1c(step);
 
-		makeStiffnessMatricesRegular();
+		makeStiffnessMatricesRegular(step);
 
 		initLinearSolver();
 		startLinearSolver();

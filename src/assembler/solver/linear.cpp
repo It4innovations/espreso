@@ -15,11 +15,11 @@ Linear::Linear(
 
 }
 
-void Linear::run(const Step &step)
+void Linear::run(Step &step)
 {
 	assembleStiffnessMatrices(step);
 	assembleB1(step);
-	makeStiffnessMatricesRegular();
+	makeStiffnessMatricesRegular(step);
 	assembleB0(step);
 
 	initLinearSolver();

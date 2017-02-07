@@ -46,24 +46,24 @@ double Solver::norm(const std::vector<std::vector<double> > &v) const
 	return sqrt(norm);
 }
 
-void Solver::storeInput(std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description)
+void Solver::storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description)
 {
 	if (environment->print_matrices) {
 		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
 		for (size_t d = 0; d < matrices.size(); d++) {
-			std::ofstream os(Logging::prepareFile(d, name.c_str()));
+			std::ofstream os(Logging::prepareFile(d, (name + "_" + std::to_string(step.solver) + "_")).c_str());
 			os << matrices[d];
 			os.close();
 		}
 	}
 }
 
-void Solver::storeInput(std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description)
+void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description)
 {
 	if (environment->print_matrices) {
 		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
 		for (size_t d = 0; d < vectors.size(); d++) {
-			std::ofstream os(Logging::prepareFile(d, name.c_str()));
+			std::ofstream os(Logging::prepareFile(d, (name + "_" + std::to_string(step.solver) + "_")).c_str());
 			os << vectors[d];
 			os.close();
 		}
@@ -78,8 +78,8 @@ void Solver::assembleStiffnessMatrices(const Step &step)
 	timePhysics.endWithBarrier(); _timeStatistics->addEvent(timePhysics);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeInput(instances[i]->K, instances.size() > 1 ? "K" + std::to_string(i) + "_" : "K", "stiffness matrices");
-		storeInput(instances[i]->f, instances.size() > 1 ? "f" + std::to_string(i) + "_" : "f", "RHS");
+		storeData(step, instances[i]->K, instances.size() > 1 ? "K" + std::to_string(i) + "_" : "K", "stiffness matrices");
+		storeData(step, instances[i]->f, instances.size() > 1 ? "f" + std::to_string(i) + "_" : "f", "RHS");
 	}
 }
 
@@ -93,11 +93,11 @@ void Solver::subtractResidualForces(const Step &step)
 	timeSub.endWithBarrier(); _timeStatistics->addEvent(timeSub);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeInput(instances[i]->f, instances.size() > 1 ? "f" + std::to_string(i) + "_" : "f", "RHS");
+		storeData(step, instances[i]->f, instances.size() > 1 ? "f" + std::to_string(i) + "_" : "f", "RHS");
 	}
 }
 
-void Solver::makeStiffnessMatricesRegular()
+void Solver::makeStiffnessMatricesRegular(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble matrices R1, R2 and RegMat.";
 	TimeEvent timeReg("Make K regular"); timeReg.start();
@@ -107,9 +107,9 @@ void Solver::makeStiffnessMatricesRegular()
 	timeReg.endWithBarrier(); _timeStatistics->addEvent(timeReg);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeInput(instances[i]->R1, instances.size() > 1 ? "R1" + std::to_string(i) + "_" : "R1", "R1");
-		storeInput(instances[i]->R2, instances.size() > 1 ? "R2" + std::to_string(i) + "_" : "R2", "R2");
-		storeInput(instances[i]->RegMat, instances.size() > 1 ? "RegMat" + std::to_string(i) + "_" : "RegMat", "regularization matrix");
+		storeData(step, instances[i]->R1, instances.size() > 1 ? "R1" + std::to_string(i) + "_" : "R1", "R1");
+		storeData(step, instances[i]->R2, instances.size() > 1 ? "R2" + std::to_string(i) + "_" : "R2", "R2");
+		storeData(step, instances[i]->RegMat, instances.size() > 1 ? "RegMat" + std::to_string(i) + "_" : "RegMat", "regularization matrix");
 	}
 }
 
@@ -126,9 +126,9 @@ void Solver::assembleB1(const Step &step)
 	timeConstrainsB1.end(); _timeStatistics->addEvent(timeConstrainsB1);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeInput(instances[i]->B1, instances.size() > 1 ? "B1" + std::to_string(i) + "_" : "B1", "Total FETI gluing matrices");
-		storeInput(instances[i]->B1duplicity, instances.size() > 1 ? "B1duplicity" + std::to_string(i) + "_" : "B1duplicity", "B1 duplicity");
-		storeInput(instances[i]->B1c, instances.size() > 1 ? "B1c" + std::to_string(i) + "_" : "B1c", "B1 c");
+		storeData(step, instances[i]->B1, instances.size() > 1 ? "B1" + std::to_string(i) + "_" : "B1", "Total FETI gluing matrices");
+		storeData(step, instances[i]->B1duplicity, instances.size() > 1 ? "B1duplicity" + std::to_string(i) + "_" : "B1duplicity", "B1 duplicity");
+		storeData(step, instances[i]->B1c, instances.size() > 1 ? "B1c" + std::to_string(i) + "_" : "B1c", "B1 c");
 	}
 
 	if (_store->configuration().gluing) {
@@ -138,7 +138,7 @@ void Solver::assembleB1(const Step &step)
 	}
 }
 
-void Solver::subtractSolutionFromB1c()
+void Solver::subtractSolutionFromB1c(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Subtract solution from B1c.";
 	TimeEvent timesubtractB1c("Assemble B1"); timesubtractB1c.startWithBarrier();
@@ -156,7 +156,7 @@ void Solver::subtractSolutionFromB1c()
 	timesubtractB1c.end(); _timeStatistics->addEvent(timesubtractB1c);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeInput(instances[i]->B1c, instances.size() > 1 ? "B1c" + std::to_string(i) + "_" : "B1c", "B1 c");
+		storeData(step, instances[i]->B1c, instances.size() > 1 ? "B1c" + std::to_string(i) + "_" : "B1c", "B1 c");
 	}
 }
 
@@ -187,7 +187,7 @@ void Solver::assembleB0(const Step &step)
 	timeConstrainsB0.end(); _timeStatistics->addEvent(timeConstrainsB0);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeInput(instances[i]->B0, instances.size() > 1 ? "B0" + std::to_string(i) + "_" : "B0", "Hybrid Totoal FETI gluing matrices");
+		storeData(step, instances[i]->B0, instances.size() > 1 ? "B0" + std::to_string(i) + "_" : "B0", "Hybrid Totoal FETI gluing matrices");
 	}
 }
 
@@ -211,6 +211,10 @@ void Solver::storeSolution(const Step &step)
 		physics[i]->storeSolution(step, instances[i]->primalSolution, _store);
 	}
 	store.end(); _timeStatistics->addEvent(store);
+
+	for (size_t i = 0; i < instances.size(); i++) {
+		storeData(step, instances[i]->primalSolution, instances.size() > 1 ? "solution" + std::to_string(i) + "_" : "solution", "solution");
+	}
 }
 
 void Solver::initLinearSolver()
