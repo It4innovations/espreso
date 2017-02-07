@@ -35,9 +35,18 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
 		store = new store::VTK(configuration.output, *mesh, "results");
 
-		_solvers.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store));
 		for (size_t i = 0; i < configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
-			loadSteps.push_back(_solvers.back());
+			if (configuration.advection_diffusion_2D.physics_solver.type == AdvectionDiffusionSolver::TYPE::STEADY_STATE) {
+				if (configuration.advection_diffusion_2D.physics_solver.mode == AdvectionDiffusionSolver::MODE::LINEAR) {
+					loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
+				}
+				if (configuration.advection_diffusion_2D.physics_solver.mode == AdvectionDiffusionSolver::MODE::NONLINEAR) {
+					loadSteps.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store));
+				}
+			}
+			if (i == loadSteps.size()) {
+				ESINFO(GLOBAL_ERROR) << "Not implemented Physics solver";
+			}
 		}
 		meshPreprocessing();
 	}
@@ -78,7 +87,7 @@ Factory::~Factory()
 	}
 	delete mesh;
 
-	std::for_each(_solvers.begin(), _solvers.end(), [] (Solver* solver) { delete solver; });
+	std::for_each(loadSteps.begin(), loadSteps.end(), [] (Solver* solver) { delete solver; });
 	std::for_each(_physics.begin(), _physics.end(), [] (Physics* physics) { delete physics; });
 	std::for_each(_instances.begin(), _instances.end(), [] (Instance* instance) { delete instance; });
 	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (LinearSolver* linearSolver) { delete linearSolver; });
