@@ -150,7 +150,6 @@ void NewAdvectionDiffusion2D::assembleResidualForces(const Step &step, const Ele
 	}
 
 	Re.multiply(Ke, T);
-	Re.transpose();
 }
 
 void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
