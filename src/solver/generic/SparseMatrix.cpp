@@ -860,6 +860,10 @@ void SparseMatrix::ConvertToCOO( eslocal clearCSR_1_keep_CSR_0 ) {
 	J_col_indices.resize(nnz);
 	I_row_indices.resize(nnz);
 
+	if (!(rows && cols)) {
+		return;
+	}
+
 	eslocal info;
 
 	//void mkl_dcsrcoo ( eslocal * job, eslocal * n, double *Acsr,      eslocal * AJR,          eslocal * AIR,          eslocal * nnz,  double *Acoo,  eslocal * ir,       eslocal * jc,       eslocal * info);
@@ -2964,6 +2968,10 @@ void SparseMatrix::RemoveLower() {
 	SEQ_VECTOR <eslocal> t_CSR_J_col_indices;
 	SEQ_VECTOR <double> t_CSR_V_values;
 	eslocal l_nnz = 0;
+
+	if (!(rows && cols)) {
+		return;
+	}
 
 	for (size_t row = 0; row < CSR_I_row_indices.size() - 1; row++) {
 		t_CSR_I_row_indices.push_back(l_nnz+1);

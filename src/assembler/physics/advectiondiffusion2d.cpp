@@ -83,14 +83,6 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 	}
 
 	if (_mesh->hasProperty(domain, Property::EXTERNAL_TEMPERATURE, 0)) {
-		_instance->R1[domain].rows = 0;
-		_instance->R1[domain].cols = 0;
-		_instance->R1[domain].nnz  = 0;
-		_instance->R1[domain].type = 'G';
-		_instance->RegMat[domain].rows = 0;
-		_instance->RegMat[domain].cols = 0;
-		_instance->RegMat[domain].nnz  = 0;
-		_instance->RegMat[domain].type = 'G';
 		return;
 	}
 

@@ -729,12 +729,12 @@ void Mesh::fillDomainsSettings()
 
 	auto addProperties = [&] (const std::vector<eslocal> &domains, size_t region) {
 		for (size_t d = 0; d < domains.size(); d++) {
-			_properties[d].resize(_regions[region]->settings.size());
+			_properties[domains[d]].resize(_regions[region]->settings.size());
 		}
 		for (size_t i = 0; i < _regions[region]->settings.size(); i++) {
 			for (auto it = _regions[region]->settings[i].begin(); it != _regions[region]->settings[i].end(); ++it) {
 				for (size_t d = 0; d < domains.size(); d++) {
-					_properties[d][i].insert(it->first);
+					_properties[domains[d]][i].insert(it->first);
 				}
 			}
 		}
