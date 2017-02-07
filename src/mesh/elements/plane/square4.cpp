@@ -17,24 +17,23 @@ static std::vector<DenseMatrix> get_dN(double CsQ_scale) {
 		DenseMatrix(2, Square4NodesCount)
 	);
 
+	std::vector<double> s = { -CsQ_scale,  CsQ_scale,  CsQ_scale, -CsQ_scale };
+	std::vector<double> t = { -CsQ_scale, -CsQ_scale,  CsQ_scale,  CsQ_scale };
 	for (unsigned int i = 0; i < Square4GPCount; i++) {
-		double s = (i & 2) ? CsQ_scale : -CsQ_scale;
-		double t = (i & 1) ? CsQ_scale : -CsQ_scale;
-
 		///dN contains [dNr, dNs, dNt]
 		DenseMatrix &m = dN[i];
 
 		// dNs - derivation of basis function
-		m(0, 0) = 0.25 * ( t - 1);
-		m(0, 1) = 0.25 * (-t + 1);
-		m(0, 2) = 0.25 * ( t + 1);
-		m(0, 3) = 0.25 * (-t - 1);
+		m(0, 0) = 0.25 * ( t[i] - 1);
+		m(0, 1) = 0.25 * (-t[i] + 1);
+		m(0, 2) = 0.25 * ( t[i] + 1);
+		m(0, 3) = 0.25 * (-t[i] - 1);
 
 		// dNt - derivation of basis function
-		m(1, 0) = 0.25 * ( s - 1);
-		m(1, 1) = 0.25 * (-s - 1);
-		m(1, 2) = 0.25 * ( s + 1);
-		m(1, 3) = 0.25 * (-s + 1);
+		m(1, 0) = 0.25 * ( s[i] - 1);
+		m(1, 1) = 0.25 * (-s[i] - 1);
+		m(1, 2) = 0.25 * ( s[i] + 1);
+		m(1, 3) = 0.25 * (-s[i] + 1);
 
 //		m(2, 0) = 0;
 //		m(2, 1) = 0;
@@ -51,15 +50,14 @@ static std::vector<DenseMatrix> get_N(double CsQ_scale) {
 		DenseMatrix(1, Square4NodesCount)
 	);
 
+	std::vector<double> s = { -CsQ_scale,  CsQ_scale,  CsQ_scale, -CsQ_scale };
+	std::vector<double> t = { -CsQ_scale, -CsQ_scale,  CsQ_scale,  CsQ_scale };
 	for (unsigned int i = 0; i < Square4GPCount; i++) {
-		double t = (i & 2) ? CsQ_scale : -CsQ_scale;
-		double s = (i & 1) ? CsQ_scale : -CsQ_scale;
-
 		// basis function
-		N[i](0, 0) = 0.25 * (1 - s) * (1 - t);
-		N[i](0, 1) = 0.25 * (s + 1) * (1 - t);
-		N[i](0, 2) = 0.25 * (s + 1) * (t + 1);
-		N[i](0, 3) = 0.25 * (1 - s) * (t + 1);
+		N[i](0, 0) = 0.25 * (1 - s[i]) * (1 - t[i]);
+		N[i](0, 1) = 0.25 * (s[i] + 1) * (1 - t[i]);
+		N[i](0, 2) = 0.25 * (s[i] + 1) * (t[i] + 1);
+		N[i](0, 3) = 0.25 * (1 - s[i]) * (t[i] + 1);
 	}
 
 	return N;
