@@ -88,7 +88,7 @@ void Solver::subtractResidualForces(const Step &step)
 	ESINFO(PROGRESS2) << "Subtract residual forces.";
 	TimeEvent timeSub("Subtract residual forces"); timeSub.start();
 	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->makeStiffnessMatricesRegular(linearSolvers[i]->configuration.regularization);
+		physics[i]->subtractResidualForces(step);
 	}
 	timeSub.endWithBarrier(); _timeStatistics->addEvent(timeSub);
 
