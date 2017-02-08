@@ -61,64 +61,6 @@ APIMesh::APIMesh(eslocal *l2g, size_t size)
 	_g2l = new std::vector<G2L>();
 };
 
-void Mesh::partitiate(size_t parts)
-{
-	if (parts == 1 && this->parts() == 1) {
-		_partPtrs = { 0, (eslocal)_elements.size() };
-		mapElementsToDomains();
-	} else {
-		std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
-
-		_partPtrs = std::vector<eslocal>(parts + 1, 0);
-		for (size_t i = 0; i < _elements.size(); i++) {
-			_elements[i]->domains().clear();
-			_elements[i]->domains().push_back(ePartition[i]);
-			_partPtrs[ePartition[i]]++;
-		}
-
-		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
-		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
-		Esutils::sizesToOffsets(_partPtrs);
-	}
-
-	_DOFtoElement.clear();
-	_fixPoints.clear();
-	_corners.clear();
-	mapFacesToDomains();
-	mapEdgesToDomains();
-	mapNodesToDomains();
-	mapCoordinatesToDomains();
-	if (_properties.size()) {
-		fillDomainsSettings();
-	}
-}
-
-void APIMesh::partitiate(size_t parts)
-{
-	if (parts == 1 && this->parts() == 1) {
-		_partPtrs = { 0, (eslocal)_elements.size() };
-		mapElementsToDomains();
-	} else {
-		std::vector<eslocal> ePartition = getPartition(0, _elements.size(), parts);
-
-		_partPtrs = std::vector<eslocal>(parts + 1, 0);
-		for (size_t i = 0; i < _elements.size(); i++) {
-			_elements[i]->domains().clear();
-			_elements[i]->domains().push_back(ePartition[i]);
-			_partPtrs[ePartition[i]]++;
-		}
-
-		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
-		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
-		Esutils::sizesToOffsets(_partPtrs);
-	}
-
-	_DOFtoElement.clear();
-	mapNodesToDomains();
-	mapDOFsToDomains();
-	mapCoordinatesToDomains();
-}
-
 void Mesh::computeFixPoints(size_t number)
 {
 	if (_fixPoints.size() && _fixPoints[0].size() == number) {
@@ -272,6 +214,118 @@ static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, s
 	METIS_Free(adjncy);
 
 	return partPtrs;
+}
+
+void Mesh::partitiate(size_t parts)
+{
+	if (parts == 1 && this->parts() == 1) {
+		_partPtrs = { 0, (eslocal)_elements.size() };
+		mapElementsToDomains();
+	} else {
+		std::vector<eslocal> blocks = continuousReorder(_elements, 0, _elements.size());
+		std::vector<eslocal> ePartition;
+		if (blocks.size() == 2) {
+			ePartition = getPartition(0, _elements.size(), parts);
+		} else {
+			double averageDomainSize = _elements.size() / (double)parts;
+			std::vector<size_t> bPart(blocks.size() - 1);
+			size_t bParts = 0;
+			for (size_t b = 0; b < blocks.size() - 1; b++) {
+				bPart[b] = std::round((blocks[b + 1] - blocks[b]) / averageDomainSize);
+				bParts += bPart[b];
+			}
+			while (bParts < parts) {
+				(*std::max_element(bPart.begin(), bPart.end()))++;
+				bParts++;
+			}
+			while (bParts > parts) {
+				(*std::max_element(bPart.begin(), bPart.end()))--;
+				bParts--;
+			}
+			bParts = 0;
+			for (size_t b = 0; b < blocks.size() - 1; b++) {
+				std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
+				std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
+				ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
+				bParts += bPart[0];
+			}
+		};
+
+		_partPtrs = std::vector<eslocal>(parts + 1, 0);
+		for (size_t i = 0; i < _elements.size(); i++) {
+			_elements[i]->domains().clear();
+			_elements[i]->domains().push_back(ePartition[i]);
+			_partPtrs[ePartition[i]]++;
+		}
+
+		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
+		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
+		Esutils::sizesToOffsets(_partPtrs);
+	}
+
+	_DOFtoElement.clear();
+	_fixPoints.clear();
+	_corners.clear();
+	mapFacesToDomains();
+	mapEdgesToDomains();
+	mapNodesToDomains();
+	mapCoordinatesToDomains();
+	if (_properties.size()) {
+		fillDomainsSettings();
+	}
+}
+
+void APIMesh::partitiate(size_t parts)
+{
+	if (parts == 1 && this->parts() == 1) {
+		_partPtrs = { 0, (eslocal)_elements.size() };
+		mapElementsToDomains();
+	} else {
+		std::vector<eslocal> blocks = continuousReorder(_elements, 0, _elements.size());
+		std::vector<eslocal> ePartition;
+		if (blocks.size() == 2) {
+			ePartition = getPartition(0, _elements.size(), parts);
+		} else {
+			double averageDomainSize = _elements.size() / (double)parts;
+			std::vector<size_t> bPart(blocks.size() - 1);
+			size_t bParts = 0;
+			for (size_t b = 0; b < blocks.size() - 1; b++) {
+				bPart[b] = std::round((blocks[b + 1] - blocks[b]) / averageDomainSize);
+				bParts += bPart[b];
+			}
+			while (bParts < parts) {
+				(*std::max_element(bPart.begin(), bPart.end()))++;
+				bParts++;
+			}
+			while (bParts > parts) {
+				(*std::max_element(bPart.begin(), bPart.end()))--;
+				bParts--;
+			}
+			bParts = 0;
+			for (size_t b = 0; b < blocks.size() - 1; b++) {
+				std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
+				std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
+				ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
+				bParts += bPart[0];
+			}
+		};
+
+		_partPtrs = std::vector<eslocal>(parts + 1, 0);
+		for (size_t i = 0; i < _elements.size(); i++) {
+			_elements[i]->domains().clear();
+			_elements[i]->domains().push_back(ePartition[i]);
+			_partPtrs[ePartition[i]]++;
+		}
+
+		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
+		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
+		Esutils::sizesToOffsets(_partPtrs);
+	}
+
+	_DOFtoElement.clear();
+	mapNodesToDomains();
+	mapDOFsToDomains();
+	mapCoordinatesToDomains();
 }
 
 std::vector<eslocal> Mesh::getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const
