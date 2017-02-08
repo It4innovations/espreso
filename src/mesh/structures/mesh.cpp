@@ -2017,6 +2017,67 @@ void Mesh::synchronizeGlobalIndices()
 	std::sort(_coordinates->_globalMapping.begin(), _coordinates->_globalMapping.end());
 }
 
+void Mesh::checkNeighbours()
+{
+	int nSize = _neighbours.size();
+	std::vector<int> neighbours;
+	std::vector<int> counters(environment->MPIsize);
+	std::vector<int> displacements;
+
+	MPI_Gather(&nSize, 1, MPI_INT, counters.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	for (size_t i = 0; i < counters.size(); i++) {
+		displacements.push_back(displacements.size() ? displacements.back() + counters[i - 1] : 0);
+		neighbours.resize(neighbours.size() + counters[i]);
+	}
+	MPI_Gatherv(_neighbours.data(), _neighbours.size(), MPI_INT, neighbours.data(), counters.data(), displacements.data(), MPI_INT, 0, MPI_COMM_WORLD);
+
+	for (int r = 0; r < environment->MPIsize; r++) {
+		for (size_t n = displacements[r]; n < displacements[r] + counters[r]; n++) {
+			if (!std::binary_search(neighbours.begin() + displacements[neighbours[n]], neighbours.begin() + displacements[neighbours[n]] + counters[neighbours[n]], r)) {
+				ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL TEST FAILED: neighbours are not correctly set.";
+			}
+		}
+	}
+
+	std::vector<esglobal> sClusters;
+	std::vector<esglobal> rClusters;
+	displacements.clear();
+
+	for (size_t n = 0; n < _nodes.size(); n++) {
+		sClusters.push_back(_coordinates->globalIndex(n));
+		sClusters.push_back(_nodes[n]->clusters().size());
+		sClusters.insert(sClusters.end(), _nodes[n]->clusters().begin(), _nodes[n]->clusters().end());
+	}
+	nSize = sClusters.size();
+
+	MPI_Gather(&nSize, 1, MPI_INT, counters.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	for (size_t i = 0; i < counters.size(); i++) {
+		displacements.push_back(displacements.size() ? displacements.back() + counters[i - 1] : 0);
+		rClusters.resize(rClusters.size() + counters[i]);
+		counters[i] *= sizeof(esglobal);
+	}
+	MPI_Gatherv(sClusters.data(), sizeof(esglobal) * sClusters.size(), MPI_BYTE, rClusters.data(), counters.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+	std::vector<std::vector<int> > nodes;
+	for (size_t n = 0; n < rClusters.size(); ) {
+		esglobal index = rClusters[n++];
+		esglobal cSize = rClusters[n++];
+		std::vector<int> clusters;
+		for (size_t c = 0; c < cSize; c++) {
+			clusters.push_back(rClusters[n++]);
+		}
+
+		nodes.resize(index + 1);
+		if (nodes[index].size()) {
+			if (clusters != nodes[index]) {
+				ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL TEST FAILED: neighbours for node '" << index << "' are not correct.";
+			}
+		} else {
+			nodes[index].swap(clusters);
+		}
+	}
+}
+
 }
 
 

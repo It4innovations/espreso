@@ -109,6 +109,8 @@ public:
 
 	Region* region(const std::string &name);
 
+	void checkNeighbours();
+
 protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
 	void fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter);
