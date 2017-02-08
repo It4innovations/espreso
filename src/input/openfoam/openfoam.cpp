@@ -282,7 +282,6 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 			}
 
 			lastNeighbProcNo = neighbProcNo;
-			neighbours.push_back(neighbProcNo);
 		}
 	}
 
@@ -291,5 +290,7 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 			nodes[n]->clusters().push_back(_rank);
 		}
 	}
+
+	mesh.synchronizeNeighbours();
 }
 

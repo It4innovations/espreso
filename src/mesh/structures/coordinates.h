@@ -83,9 +83,13 @@ public:
 
 	eslocal clusterIndex(esglobal index) const
 	{
-		return std::lower_bound(_globalMapping.begin(), _globalMapping.end(), index, [] (const G2L &mapping, esglobal index) {
+		auto it = std::lower_bound(_globalMapping.begin(), _globalMapping.end(), index, [] (const G2L &mapping, esglobal index) {
 			return mapping.global < index;
-		})->local;
+		});
+		if (it != _globalMapping.end() && it->global == index) {
+			return it->local;
+		}
+		return -1;
 	}
 
 	eslocal localIndex(eslocal index, eslocal part) const

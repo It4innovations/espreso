@@ -106,6 +106,7 @@ public:
 	void getSurface(Mesh &surface) const;
 
 	void synchronizeGlobalIndices();
+	void synchronizeNeighbours();
 
 	Region* region(const std::string &name);
 

@@ -2017,6 +2017,128 @@ void Mesh::synchronizeGlobalIndices()
 	std::sort(_coordinates->_globalMapping.begin(), _coordinates->_globalMapping.end());
 }
 
+void Mesh::synchronizeNeighbours()
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<std::vector<std::vector<int> > > sNeighbours(environment->MPIsize, std::vector<std::vector<int> >(threads));
+	std::vector<std::vector<int> > rNeighbours(environment->MPIsize);
+	_neighbours.clear();
+
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+
+			for (size_t c1 = 0; c1 < _nodes[n]->clusters().size(); c1++) {
+				for (size_t c2 = 0; c2 < _nodes[n]->clusters().size(); c2++) {
+					if (c1 != c2 && _nodes[n]->clusters()[c1] != environment->MPIrank) {
+						sNeighbours[_nodes[n]->clusters()[c1]][t].push_back(_nodes[n]->clusters()[c2]);
+					}
+				}
+			}
+		}
+		for (int r = 0; r < environment->MPIsize; r++) {
+			std::sort(sNeighbours[r][t].begin(), sNeighbours[r][t].end());
+			Esutils::removeDuplicity(sNeighbours[r][t]);
+		}
+	}
+
+	#pragma omp parallel for
+	for (int r = 0; r < environment->MPIsize; r++) {
+		for (size_t t = 1; t < threads; t++) {
+			sNeighbours[r][0].insert(sNeighbours[r][0].end(), sNeighbours[r][t].begin(), sNeighbours[r][t].end());
+		}
+		std::sort(sNeighbours[r][0].begin(), sNeighbours[r][0].end());
+		Esutils::removeDuplicity(sNeighbours[r][0]);
+	}
+	for (int r = 0; r < environment->MPIsize; r++) {
+		if (sNeighbours[r][0].size()) {
+			_neighbours.push_back(r);
+		}
+	}
+
+	std::vector<MPI_Request> req(_neighbours.size());
+	for (size_t n = 0; n < _neighbours.size(); n++) {
+		MPI_Isend(sNeighbours[_neighbours[n]][0].data(), sizeof(int) * sNeighbours[_neighbours[n]][0].size(), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+	}
+
+	size_t counter = 0;
+	MPI_Status status;
+	while (counter < _neighbours.size()) {
+		MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+		int count;
+		MPI_Get_count(&status, MPI_BYTE, &count);
+		rNeighbours[status.MPI_SOURCE].resize(count / sizeof(int));
+		MPI_Recv(rNeighbours[status.MPI_SOURCE].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		counter++;
+	}
+
+	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+
+	size_t size = _neighbours.size();
+	for (size_t n = 0; n < size; n++) {
+		_neighbours.insert(_neighbours.end(), rNeighbours[_neighbours[n]].begin(), rNeighbours[_neighbours[n]].end());
+	}
+	std::sort(_neighbours.begin(), _neighbours.end());
+	Esutils::removeDuplicity(_neighbours);
+
+	std::vector<std::vector<std::vector<esglobal> > > sIndices(_neighbours.size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<esglobal> > rIndices(_neighbours.size());
+
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
+	};
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+			for (size_t i = 0; i < _neighbours.size(); i++) {
+				sIndices[i][t].push_back(_coordinates->globalIndex(n));
+			}
+		}
+	}
+
+	for (size_t n = 0; n < _neighbours.size(); n++) {
+		for (size_t t = 1; t < threads; t++) {
+			sIndices[n][0].insert(sIndices[n][0].end(), sIndices[n][t].begin(), sIndices[n][t].end());
+		}
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	req.clear();
+	req.resize(_neighbours.size());
+	for (size_t n = 0; n < _neighbours.size(); n++) {
+		MPI_Isend(sIndices[n][0].data(), sizeof(esglobal) * sIndices[n][0].size(), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+	}
+
+	counter = 0;
+	while (counter < _neighbours.size()) {
+		MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+		int count;
+		MPI_Get_count(&status, MPI_BYTE, &count);
+		rIndices[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
+		MPI_Recv(rIndices[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		counter++;
+	}
+
+	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+
+	for (size_t n = 0; n < _neighbours.size(); n++) {
+		#pragma omp parallel for
+		for (size_t i = 0; i < rIndices[n].size(); i++) {
+			eslocal index = _coordinates->clusterIndex(rIndices[n][i]);
+			if (index >= 0) {
+				Element *node = _nodes[index];
+				node->clusters().push_back(_neighbours[n]);
+				std::sort(node->clusters().begin(), node->clusters().end());
+				Esutils::removeDuplicity(node->clusters());
+			}
+		}
+	}
+}
+
 void Mesh::checkNeighbours()
 {
 	int nSize = _neighbours.size();
