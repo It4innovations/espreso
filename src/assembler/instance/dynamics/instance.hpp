@@ -1,5 +1,6 @@
 
 #include "instance.h"
+#include "../../../mesh/structures/mesh.h"
 
 namespace espreso {
 
