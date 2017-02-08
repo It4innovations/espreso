@@ -120,40 +120,31 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 	}
 
 	FoamFile ownerFile(_polyMeshPath + "owner");
-	std::vector< esglobal > owner;
-	solveParseError(parse(ownerFile.getTokenizer(), owner));
-
-	esglobal maximum = 0;
-	for (std::vector<esglobal>::iterator it = owner.begin(); it != owner.end(); ++it) {
-		if (*it + 1 > maximum) {
-			maximum = *it + 1;
-		}
-	}
-
-	std::vector<ElementBuilder*> elementBuilders;
-	elements.reserve(maximum);
-	elementBuilders.reserve(maximum);
-
-	for (int i = 0; i < maximum; i++) {
-		elementBuilders.push_back(new ElementBuilder());
-	}
-
-	esglobal face = 0;
-	for (std::vector<esglobal>::iterator it = owner.begin(); it != owner.end(); ++it) {
-		elementBuilders[*it]->add(&_faces[face]);
-		face++;
-	}
-
 	FoamFile neighbourFile(_polyMeshPath + "neighbour");
-	std::vector< esglobal > neighbour;
 
+	std::vector< esglobal > owner, neighbour;
+
+	solveParseError(parse(ownerFile.getTokenizer(), owner));
 	solveParseError(parse(neighbourFile.getTokenizer(), neighbour));
 
-	face = 0;
-	for (std::vector<esglobal>::iterator it = neighbour.begin(); it != neighbour.end(); ++it) {
-		elementBuilders[*it]->add(&_faces[face]);
-		face++;
+	size_t nElements = 1 + std::max(
+			*std::max_element(owner.begin(), owner.end()),
+			*std::max_element(neighbour.begin(), neighbour.end()));
+
+	std::vector<ElementBuilder*> elementBuilders;
+	elements.reserve(nElements);
+	elementBuilders.reserve(nElements);
+
+	for (size_t i = 0; i < nElements; i++) {
+		elementBuilders.push_back(new ElementBuilder());
 	}
+	for (size_t i = 0; i < owner.size(); i++)  {
+		elementBuilders[owner[i]]->add(&_faces[i]);
+	}
+	for (size_t i = 0; i < neighbour.size(); i++)  {
+		elementBuilders[neighbour[i]]->add(&_faces[i]);
+	}
+
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin(); it != elementBuilders.end(); ++it) {
 		Element *element = NULL;
 		solveParseError((*it)->createElement(element));
