@@ -5,9 +5,8 @@
 #include "../solution.h"
 #include "../physics/physics.h"
 
-#include "../../basis/utilities/utils.h"
-#include "../../mesh/settings/property.h"
-#include "../../solver/generic/SparseMatrix.h"
+#include "../../configuration/physics/nonlinearsolver.h"
+
 #include "../../solver/generic/LinearSolver.h"
 
 using namespace espreso;
@@ -17,14 +16,20 @@ NewtonRhapson::NewtonRhapson(
 		std::vector<Physics*> &physics,
 		std::vector<Instance*> &instances,
 		std::vector<LinearSolver*> &linearSolvers,
-		store::ResultStore* store)
-: Solver(mesh, physics, instances, linearSolvers, store)
+		store::ResultStore* store,
+		const NonLinearSolver &configuration)
+: Solver(mesh, physics, instances, linearSolvers, store), _configuration(configuration)
 {
 
 }
 
 void NewtonRhapson::run(Step &step)
 {
+	if (!_configuration.convergence.temperature && _configuration.convergence.heat) {
+		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
+	}
+	step.solver = 0;
+
 	assembleStiffnessMatrices(step);
 	assembleB1(step);
 	makeStiffnessMatricesRegular(step);
@@ -34,11 +39,21 @@ void NewtonRhapson::run(Step &step)
 	startLinearSolver();
 	storeSolution(step);
 
-	double convergence = 1;
+	double temperatureResidual = _configuration.convergence.temperature_residual;
+	double heatResidual = _configuration.convergence.heat_residual;
+	if (_configuration.convergence.temperature) {
+		temperatureResidual *= 10;
+	}
+	if (_configuration.convergence.heat) {
+		heatResidual *= 10;
+	}
 
-	while (convergence > 1e-3) {
+	while (
+		step.solver++ < _configuration.max_iterations &&
+		(temperatureResidual > _configuration.convergence.temperature_residual ||
+		heatResidual > _configuration.convergence.heat_residual)) {
+
 		std::vector<std::vector<double> > T = instances.front()->primalSolution;
-		step.solver++;
 
 		instances.front() = new Instance(instances.front()->domains);
 		instances.front()->DOFs = physics.front()->instance()->DOFs;
@@ -47,7 +62,6 @@ void NewtonRhapson::run(Step &step)
 		physics.front()->instance()->solutions.resize(0);
 		linearSolvers.front() = new LinearSolver(linearSolvers.front()->configuration, linearSolvers.front()->physics, linearSolvers.front()->constraints);
 		physics.front()->_instance = instances.front();
-
 
 		assembleStiffnessMatrices(step);
 		subtractResidualForces(step);
@@ -60,7 +74,13 @@ void NewtonRhapson::run(Step &step)
 		initLinearSolver();
 		startLinearSolver();
 
-		convergence = deltaToSolution(physics.front(), T);
+		if (_configuration.convergence.temperature) {
+			temperatureResidual = physics.front()->computeNormOfSolution();
+		}
+		addToSolution(physics.front(), T);
+		if (_configuration.convergence.temperature) {
+			temperatureResidual /= physics.front()->computeNormOfSolution();
+		}
 		storeSolution(step);
 	}
 

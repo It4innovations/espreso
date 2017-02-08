@@ -35,16 +35,26 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
 		store = new store::VTK(configuration.output, *mesh, "results");
 
-		for (size_t i = 0; i < configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
+		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			if (configuration.advection_diffusion_2D.physics_solver.type == AdvectionDiffusionSolver::TYPE::STEADY_STATE) {
 				if (configuration.advection_diffusion_2D.physics_solver.mode == AdvectionDiffusionSolver::MODE::LINEAR) {
 					loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
 				}
 				if (configuration.advection_diffusion_2D.physics_solver.mode == AdvectionDiffusionSolver::MODE::NONLINEAR) {
-					loadSteps.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store));
+					auto it = configuration.advection_diffusion_2D.physics_solver.nonlinear_solver.find(i);
+					if (it == configuration.advection_diffusion_2D.physics_solver.nonlinear_solver.end()) {
+						ESINFO(GLOBAL_ERROR) << "Set non-linear physics solver for load step '" << i << "'";
+					}
+					switch (it->second->method) {
+					case NonLinearSolver::METHOD::NEWTON_RHAPSON:
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store, *it->second));
+						break;
+					default:
+						ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
+					}
 				}
 			}
-			if (i == loadSteps.size()) {
+			if (i != loadSteps.size()) {
 				ESINFO(GLOBAL_ERROR) << "Not implemented Physics solver";
 			}
 		}

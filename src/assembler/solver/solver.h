@@ -44,7 +44,7 @@ protected:
 	void makeStiffnessMatricesRegular(const Step &step);
 	void assembleB0(const Step &step);
 
-	double deltaToSolution(Physics *physics, const std::vector<std::vector<double> > &previous);
+	void addToSolution(Physics *physics, const std::vector<std::vector<double> > &previous);
 
 	void storeSolution(const Step &step);
 

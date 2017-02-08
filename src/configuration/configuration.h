@@ -88,6 +88,14 @@ inline bool ValueHolder<bool>::set(const std::string &value)
 		this->value = true;
 		return true;
 	} else {
+		if (StringCompare::caseInsensitiveEq(value, "FALSE")) {
+			this->value = false;
+			return true;
+		}
+		if (StringCompare::caseInsensitiveEq(value, "TRUE")) {
+			this->value = true;
+			return true;
+		}
 		std::stringstream ss(value);
 		ss >> this->value;
 		return ss.eof();

@@ -181,12 +181,11 @@ void Solver::assembleB0(const Step &step)
 	}
 }
 
-double Solver::deltaToSolution(Physics *physics, const std::vector<std::vector<double> > &previous)
+void Solver::addToSolution(Physics *physics, const std::vector<std::vector<double> > &previous)
 {
 	ESINFO(PROGRESS2) << "Sum previous solution step with increment";
 	TimeEvent timePrecision("Sum previous solution step with increment"); timePrecision.startWithBarrier();
 
-	double delta = physics->computeNormOfSolution();
 	#pragma omp parallel for
 	for (size_t d = 0; d < physics->instance()->domains; d++) {
 		for (size_t i = 0; i < physics->instance()->primalSolution[d].size(); i++) {
@@ -194,10 +193,7 @@ double Solver::deltaToSolution(Physics *physics, const std::vector<std::vector<d
 		}
 	}
 
-	double final = physics->computeNormOfSolution();
 	timePrecision.end(); _timeStatistics->addEvent(timePrecision);
-
-	return delta / final;
 }
 
 void Solver::storeSolution(const Step &step)

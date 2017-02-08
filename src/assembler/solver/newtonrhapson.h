@@ -6,6 +6,8 @@
 
 namespace espreso {
 
+struct NonLinearSolver;
+
 class NewtonRhapson: public Solver
 {
 public:
@@ -14,9 +16,13 @@ public:
 			std::vector<Physics*> &physics,
 			std::vector<Instance*> &instances,
 			std::vector<LinearSolver*> &linearSolvers,
-			store::ResultStore* store);
+			store::ResultStore* store,
+			const NonLinearSolver &configuration);
 
 	virtual void run(Step &step);
+
+protected:
+	const NonLinearSolver &_configuration;
 };
 
 }
