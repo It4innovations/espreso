@@ -88,6 +88,9 @@ void Factory::meshPreprocessing()
 
 	}
 	store->storeGeometry();
+	if (Test::report(EXPENSIVE)) {
+		mesh->checkRegions(mesh->nodes());
+	}
 }
 
 Factory::~Factory()
