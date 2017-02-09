@@ -736,6 +736,7 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 						mesh.nodes()[mesh.coordinates().clusterIndex(neighboursNodes[n][i])]->regions().push_back(region);
 					}
 				}
+				MPI_Barrier(MPI_COMM_WORLD);
 			}
 
 			region->settings[loadStep][properties[p]].push_back(evaluators.back());
