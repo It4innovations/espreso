@@ -691,8 +691,13 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 
 			std::vector<std::vector<esglobal> > boundaryNodes(mesh.neighbours().size());
 			std::vector<std::vector<esglobal> > neighboursNodes(mesh.neighbours().size());
-			if (distributeToNodes && region->elements().size() && region->elements()[0]->nodes() > 1) {
+			if (distributeToNodes) {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region->name << "'";
+			} else {
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region->name << "'";
+			}
+
+			if (distributeToNodes && region->elements().size() && region->elements()[0]->nodes() > 1) {
 				std::vector<Element*> nodes;
 				for (size_t i = 0; i < region->elements().size(); i++) {
 					for (size_t n = 0; n < region->elements()[i]->nodes(); n++) {
@@ -710,7 +715,6 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				}
 				distribute(nodes, properties[p], evaluators.back(), region);
 			} else {
-				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region->name << "'";
 				distribute(region->elements(), properties[p], evaluators.back(), region);
 			}
 
