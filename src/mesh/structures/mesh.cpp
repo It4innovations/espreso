@@ -654,6 +654,10 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 		return "";
 	};
 
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(mesh.neighbours().begin(), mesh.neighbours().end(), neighbour) - mesh.neighbours().begin();
+	};
+
 	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator, Region *region) {
 		size_t threads = environment->OMP_NUM_THREADS;
 		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
@@ -684,6 +688,8 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				evaluators.push_back(new CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
 			}
 
+			std::vector<std::vector<esglobal> > boundaryNodes(mesh.neighbours().size());
+			std::vector<std::vector<esglobal> > neighboursNodes(mesh.neighbours().size());
 			if (distributeToNodes && region->elements().size() && region->elements()[0]->nodes() > 1) {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region->name << "'";
 				std::vector<Element*> nodes;
@@ -694,12 +700,44 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				}
 				std::sort(nodes.begin(), nodes.end());
 				Esutils::removeDuplicity(nodes);
-
+				for (size_t n = 0; n < nodes.size(); n++) {
+					for (size_t c = 0; c < nodes[n]->clusters().size(); c++) {
+						if (nodes[n]->clusters()[c] != environment->MPIrank) {
+							boundaryNodes[n2i(nodes[n]->clusters()[c])].push_back(mesh.coordinates().globalIndex(nodes[n]->node(0)));
+						}
+					}
+				}
 				distribute(nodes, properties[p], evaluators.back(), region);
 			} else {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region->name << "'";
 				distribute(region->elements(), properties[p], evaluators.back(), region);
 			}
+
+			if (distributeToNodes) {
+				std::vector<MPI_Request> req(mesh.neighbours().size());
+				for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+					MPI_Isend(boundaryNodes[n].data(), sizeof(esglobal) * boundaryNodes[n].size(), MPI_BYTE, mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
+				}
+
+				size_t counter = 0;
+				MPI_Status status;
+				while (counter < mesh.neighbours().size()) {
+					MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+					int count;
+					MPI_Get_count(&status, MPI_BYTE, &count);
+					neighboursNodes[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
+					MPI_Recv(neighboursNodes[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					counter++;
+				}
+
+				MPI_Waitall(mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
+				for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+					for (size_t i = 0; i < neighboursNodes[n].size(); i++) {
+						mesh.nodes()[mesh.coordinates().clusterIndex(neighboursNodes[n][i])]->regions().push_back(region);
+					}
+				}
+			}
+
 			region->settings[loadStep][properties[p]].push_back(evaluators.back());
 		}
 	}
@@ -2141,6 +2179,7 @@ void Mesh::synchronizeNeighbours()
 
 void Mesh::checkNeighbours()
 {
+	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Checking whether neighbours are correct";
 	int nSize = _neighbours.size();
 	std::vector<int> neighbours;
 	std::vector<int> counters(environment->MPIsize);
@@ -2200,6 +2239,121 @@ void Mesh::checkNeighbours()
 	}
 }
 
+void Mesh::storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store)
+{
+	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing node data: '" << name << "'";
+	std::ofstream os(Logging::prepareFile(name));
+	for (size_t n = 0; n < _nodes.size(); n++) {
+		os << _coordinates->globalIndex(n) << " :: ";
+		store(os, _nodes[n]);
+	}
+	os.close();
 }
+
+void Mesh::storeRegions()
+{
+	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing regions";
+	for (size_t r = 0; r < _regions.size(); r++) {
+		std::ofstream os(Logging::prepareFile(std::to_string(r) + "_" + _regions[r]->name));
+		for (size_t e = 0; e < _regions[r]->elements().size(); e++) {
+			os << *_regions[r]->elements()[e] << "\n";
+		}
+		os.close();
+	}
+}
+
+void Mesh::checkRegions(const std::vector<Element*> &elements)
+{
+	storeNodeData("clusters", [] (std::ofstream &os, const Element* e) { os << e->clusters(); });
+	storeNodeData("regions", [] (std::ofstream &os, const Element* e) {
+		std::for_each(e->regions().begin(), e->regions().end(), [&] (const Region *r) { os << r->name << " "; });
+		os << "\n";
+	});
+	storeRegions();
+	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Checking whether regions are correct";
+
+	int rSize = _regions.size();
+	std::vector<int> sizes(environment->MPIsize);
+
+	MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	if (!std::all_of(sizes.begin(), sizes.end(), [&] (int size) { return size == rSize; })) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: The same regions have to be set for all processes.";
+	}
+
+	std::vector<char> regions;
+	for (size_t r = 0; r < _regions.size(); r++) {
+		rSize = _regions[r]->name.size();
+		MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+		if (!std::all_of(sizes.begin(), sizes.end(), [&] (int size) { return size == rSize; })) {
+			ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: regions have not the same names on all processes.";
+		}
+		regions.resize(rSize * environment->MPIsize);
+		MPI_Gather(_regions[r]->name.c_str(), rSize, MPI_BYTE, regions.data(), rSize, MPI_BYTE, 0, MPI_COMM_WORLD);
+		if (!environment->MPIrank) {
+			for (size_t i = 0; i < environment->MPIsize; i++) {
+				std::string str(regions.begin() + i * rSize, regions.begin() + (i + 1) * rSize);
+				if (str != _regions[r]->name) {
+					ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: regions have not the same names on all processes.";
+				}
+			}
+		}
+	}
+
+	std::vector<esglobal> sRegions;
+	std::vector<esglobal> rRegions;
+	std::vector<int> displacements;
+
+	auto r2i = [ & ] (const Region *region) -> int {
+		for (size_t r = 0; r < _regions.size(); r++) {
+			if (_regions[r] == region) {
+				return r;
+			}
+		}
+		return -1;
+	};
+
+	for (size_t n = 0; n < _nodes.size(); n++) {
+		sRegions.push_back(_coordinates->globalIndex(n));
+		sRegions.push_back(_nodes[n]->regions().size());
+		for (size_t r = 0; r < _nodes[n]->regions().size(); r++) {
+			sRegions.push_back(r2i(_nodes[n]->regions()[r]));
+		}
+	}
+
+	rSize = sRegions.size();
+
+	MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	for (size_t i = 0; i < sizes.size(); i++) {
+		displacements.push_back(displacements.size() ? displacements.back() + sizes[i - 1] : 0);
+		rRegions.resize(rRegions.size() + sizes[i]);
+		sizes[i] *= sizeof(esglobal);
+	}
+	MPI_Gatherv(sRegions.data(), sizeof(esglobal) * sRegions.size(), MPI_BYTE, rRegions.data(), sizes.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+	std::vector<std::vector<int> > nodes;
+	for (size_t n = 0; n < rRegions.size(); ) {
+		esglobal index = rRegions[n++];
+		esglobal size = rRegions[n++];
+		std::vector<int> regions;
+		for (size_t c = 0; c < size; c++) {
+			regions.push_back(rRegions[n++]);
+		}
+
+		nodes.resize(index + 1);
+		if (nodes[index].size()) {
+			if (regions != nodes[index]) {
+				std::cout << regions;
+				std::cout << nodes[index];
+				ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL TEST FAILED: regions for node '" << index << "' are not correct.";
+			}
+		} else {
+			nodes[index].swap(regions);
+		}
+	}
+
+}
+
+}
+
 
 

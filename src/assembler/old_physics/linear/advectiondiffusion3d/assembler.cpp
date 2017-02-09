@@ -115,6 +115,9 @@ void AdvectionDiffusion3D::prepareMeshStructures()
 
 	_mesh.loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh.removeDuplicateRegions();
+	if (Test::report(EXPENSIVE)) {
+		_mesh.checkRegions(_mesh.nodes());
+	}
 }
 
 void AdvectionDiffusion3D::assembleB1()

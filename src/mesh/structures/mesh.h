@@ -111,6 +111,9 @@ public:
 	Region* region(const std::string &name);
 
 	void checkNeighbours();
+	void storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store);
+	void storeRegions();
+	void checkRegions(const std::vector<Element*> &elements);
 
 protected:
 	void fillFacesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* face)> filter);
