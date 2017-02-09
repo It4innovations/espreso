@@ -2228,7 +2228,9 @@ void Mesh::checkNeighbours()
 			clusters.push_back(rClusters[n++]);
 		}
 
-		nodes.resize(index + 1);
+		if (index + 1 >= nodes.size()) {
+			nodes.resize(index + 1);
+		}
 		if (nodes[index].size()) {
 			if (clusters != nodes[index]) {
 				ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL TEST FAILED: neighbours for node '" << index << "' are not correct.";
@@ -2339,11 +2341,11 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 			regions.push_back(rRegions[n++]);
 		}
 
-		nodes.resize(index + 1);
+		if (index + 1 >= nodes.size()) {
+			nodes.resize(index + 1);
+		}
 		if (nodes[index].size()) {
 			if (regions != nodes[index]) {
-				std::cout << regions;
-				std::cout << nodes[index];
 				ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL TEST FAILED: regions for node '" << index << "' are not correct.";
 			}
 		} else {
