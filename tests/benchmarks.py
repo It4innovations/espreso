@@ -10,7 +10,7 @@ class ESPRESOBenchmarks(unittest.TestCase):
     espreso = Espreso()
 
     def benchmark(self, path, file):
-        config = { "ENV::TESTING_LEVEL": 3, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
+        config = { "ENV::TESTING_LEVEL": 1, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
         for line in [ line.rstrip('\n') for line in open(os.path.join(path, file)) ]:
             param, value = line.split("=")
             if param.strip() == "PROCS":

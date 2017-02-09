@@ -2341,6 +2341,7 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 		for (size_t c = 0; c < size; c++) {
 			regions.push_back(rRegions[n++]);
 		}
+		std::sort(regions.begin(), regions.end());
 
 		if (index + 1 >= nodes.size()) {
 			nodes.resize(index + 1);
