@@ -670,6 +670,7 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 		}
 	};
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region *region = mesh.region(it->first);
 		region->settings.resize(loadStep + 1);
