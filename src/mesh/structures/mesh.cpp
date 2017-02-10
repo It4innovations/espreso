@@ -31,7 +31,7 @@
 
 namespace espreso {
 
-Mesh::Mesh():_elements(0)
+Mesh::Mesh(): _continuous(false), _elements(0)
 {
 	_coordinates = new Coordinates();
 	_partPtrs.resize(2);
@@ -42,17 +42,6 @@ Mesh::Mesh():_elements(0)
 	_regions.back()->name = "ALL_ELEMENTS";
 	_regions.push_back(new Region(_nodes));
 	_regions.back()->name = "ALL_NODES";
-}
-
-Mesh::Mesh(const Mesh &mesh)
-{
-	ESINFO(ERROR) << "It is not allowed to copy Mesh.";
-}
-
-Mesh& Mesh::operator=(const Mesh &mesh)
-{
-	ESINFO(ERROR) << "It is not allowed to copy Mesh.";
-	return *this;
 }
 
 APIMesh::APIMesh(eslocal *l2g, size_t size)
@@ -227,6 +216,7 @@ void Mesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
+			_continuous = false;
 			double averageDomainSize = _elements.size() / (double)parts;
 			std::vector<size_t> bPart(blocks.size() - 1);
 			size_t bParts = 0;
@@ -286,6 +276,7 @@ void APIMesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
+			_continuous = false;
 			double averageDomainSize = _elements.size() / (double)parts;
 			std::vector<size_t> bPart(blocks.size() - 1);
 			size_t bParts = 0;

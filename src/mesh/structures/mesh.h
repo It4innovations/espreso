@@ -110,6 +110,8 @@ public:
 
 	Region* region(const std::string &name);
 
+	bool isContinuous() const { return _continuous; }
+
 	void checkNeighbours();
 	void storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store);
 	void storeRegions();
@@ -150,6 +152,9 @@ protected:
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;
 
+	/** @brief Mesh is only one continuous object */
+	bool _continuous;
+
 	/// Elements of the mesh.
 	std::vector<Element*> _elements;
 
@@ -187,8 +192,8 @@ protected:
 	std::vector<Evaluator*> _evaluators;
 
 private:
-	Mesh(const Mesh &mesh);
-	Mesh& operator=(const Mesh &mesh);
+	Mesh(const Mesh &mesh) = delete;
+	Mesh& operator=(const Mesh &mesh) = delete;
 };
 
 namespace input { class API; }
