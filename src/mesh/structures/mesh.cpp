@@ -31,7 +31,7 @@
 
 namespace espreso {
 
-Mesh::Mesh(): _continuous(false), _elements(0)
+Mesh::Mesh(): _continuous(true), _elements(0)
 {
 	_coordinates = new Coordinates();
 	_partPtrs.resize(2);
@@ -797,6 +797,7 @@ void Mesh::removeDuplicateRegions()
 
 	auto remove = [&] (std::vector<Element*> &elements) {
 		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements.size());
+		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 				std::sort(elements[i]->regions().begin(), elements[i]->regions().end());
