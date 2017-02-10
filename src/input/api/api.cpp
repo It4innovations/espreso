@@ -64,6 +64,9 @@ void API::points(const std::vector<std::vector<eslocal> > &eNodes, size_t DOFsSi
 	}
 
 	_mesh.fillNodesFromCoordinates();
+
+	ESINFO(OVERVIEW) << "Number of loaded nodes: " << Info::sumValue(_mesh._coordinates->clusterSize());
+	ESINFO(OVERVIEW) << "Number of loaded DOFs: " << Info::sumValue(DOFsSize);
 }
 
 void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<eslocal> > &eNodes, std::vector<std::vector<eslocal> > &eDOFs, std::vector<std::vector<double> > &eMatrices)
@@ -93,7 +96,19 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 	_mesh.fillParentElementsToNodes();
 	_mesh.fillParentElementsToDOFs(eDOFs);
 
+	ESINFO(OVERVIEW) << "Number of loaded elements: " << Info::sumValue(_mesh._elements.size());
 	_mesh.partitiate(_configuration.domains);
+
+	auto intervalStats = [] (const std::vector<eslocal> &data) {
+		std::vector<size_t> sizes(data.size() - 1);
+		for (size_t p = 0; p < data.size() - 1; p++) {
+			sizes[p] = data[p + 1] - data[p];
+		}
+		return Info::averageValues(sizes);
+	};
+
+	ESINFO(OVERVIEW) << "Mesh partitioned into " << environment->MPIsize << " * " << _mesh.parts() << " = " << _mesh.parts() * environment->MPIsize
+			<< " parts. There is " << intervalStats(_mesh.getPartition()) << " elements in subdomain.";
 }
 
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
@@ -101,6 +116,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
 	_mesh._regions.push_back(new Region());
 
+	_mesh._regions.back()->name = "DIRICHLET";
 	_mesh._regions.back()->settings.resize(1);
 	_mesh._regions.back()->settings[0][Property::UNKNOWN].push_back(_mesh._evaluators.back());
 	_mesh._regions.back()->elements().resize(dirichletSize);
@@ -112,6 +128,7 @@ void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dir
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 			_mesh._DOFs[dirichletIndices[i] - _offset]->regions().push_back(_mesh._regions.back());
+			std::sort(_mesh._DOFs[dirichletIndices[i] - _offset]->regions().begin(), _mesh._DOFs[dirichletIndices[i] - _offset]->regions().end());
 			_mesh._regions.back()->elements()[i] = _mesh._DOFs[dirichletIndices[i] - _offset];
 		}
 	}
@@ -181,4 +198,6 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	std::sort(_mesh._g2l->begin(), _mesh._g2l->end());
 
 	_mesh._neighbours = neighbours;
+
+	ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(_mesh.neighbours().size());
 }

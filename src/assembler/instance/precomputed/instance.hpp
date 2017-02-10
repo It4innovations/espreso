@@ -10,7 +10,6 @@ void PrecomputedInstance<TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
-
 	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
 	_physics.assembleStiffnessMatrices();
 	timePhysics.endWithBarrier(); _timeStatistics.addEvent(timePhysics);
@@ -18,6 +17,10 @@ void PrecomputedInstance<TPhysics>::init()
 	if (environment->print_matrices) {
 		_physics.saveStiffnessMatrices();
 	}
+
+	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
+	_physics.assembleB1();
+	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
 
 	TimeEvent timeReg("Make K regular"); timeReg.start();
 	_physics.makeStiffnessMatricesRegular();
@@ -27,9 +30,9 @@ void PrecomputedInstance<TPhysics>::init()
 		_physics.saveKernelMatrices();
 	}
 
-	TimeEvent timeConstrains("Assemble gluing matrices"); timeConstrains.startWithBarrier();
-	_physics.assembleB1();
-	timeConstrains.end(); _timeStatistics.addEvent(timeConstrains);
+	TimeEvent timeConstrainsB0("Assemble B0"); timeConstrainsB0.startWithBarrier();
+	_physics.assembleB0();
+	timeConstrainsB0.end(); _timeStatistics.addEvent(timeConstrainsB0);
 
 	if (environment->print_matrices) {
 		_constrains.save();

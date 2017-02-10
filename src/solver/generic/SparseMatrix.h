@@ -253,7 +253,7 @@ private:
   double COND_NUMB_FOR_SINGULAR_MATRIX                  = 1e13;
   eslocal CHECK_NONSING                                 = 0;
   eslocal MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
-  eslocal SC_SIZE                                       = 50;
+  eslocal SC_SIZE                                       = 200;
   eslocal TWENTY                                        = 20;
   double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0e-5;
 
