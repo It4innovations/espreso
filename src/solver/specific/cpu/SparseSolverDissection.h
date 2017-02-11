@@ -2,13 +2,15 @@
 #ifndef SOLVER_SPECIFIC_CPU_SOLVERDISSECTION_H_
 #define SOLVER_SPECIFIC_CPU_SOLVERDISSECTION_H_
 
-#include <Driver/DissectionSolver.hpp>
 #include "../sparsesolver.h"
 
 #include "mkl_pardiso.h"
 
 // #include "mkl_types.h"
 // #undef MKL_Complex16
+
+template<typename T, typename U, typename W, typename Z, typename X, typename Y>
+class DissectionSolver;
 
 
 namespace espreso {
@@ -54,7 +56,7 @@ public:
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol);
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol);
 
-	DissectionSolver<double> * dslv;
+	DissectionSolver<double, double, double, double, double, double> * dslv;
 	// DissectionSolver<float> * dslv_fl;
 	FILE *fp;
 	int called;

@@ -3,6 +3,8 @@
 
 #include "../../../basis/utilities/utils.h"
 
+#include <Driver/DissectionSolver.hpp>
+
 #ifdef DEBUG
 	extern"C" {
 	#include <scotch.h>

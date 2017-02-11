@@ -46,7 +46,6 @@ namespace espreso {
 }
 
 #elif defined(SOLVER_DISSECTION)
-#include <Driver/DissectionSolver.hpp>
 #include "cpu/itersolvercpu.h"
 
 namespace espreso {

@@ -56,7 +56,6 @@ namespace espreso {
 }
 
 #elif defined(SOLVER_DISSECTION)
-#include <Driver/DissectionSolver.hpp>
 #include "cpu/DenseSolverMKL.h"
 
 namespace espreso {
