@@ -199,6 +199,8 @@ public:
 	ArrayEvaluator(const std::string &name, std::vector<eslocal> &indices, std::vector<double> &values, eslocal offset, Property property = Property::EMPTY);
 	ArrayEvaluator(const std::string &name, eslocal size, eslocal *indices, double *values, eslocal offset, Property property = Property::EMPTY);
 
+	void addIndex(eslocal index, eslocal value);
+
 	virtual Evaluator* copy() const { return new ArrayEvaluator(*this); }
 	virtual inline double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
 	{

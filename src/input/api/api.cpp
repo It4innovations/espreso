@@ -163,12 +163,14 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 		MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(eslocal), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + 2 * n + 1);
 	}
 	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+	MPI_Barrier(MPI_COMM_WORLD);
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
 
 	size_t pushMyRank = std::lower_bound(neighbours.begin(), neighbours.end(), environment->MPIrank) - neighbours.begin();
 	std::vector<std::vector<G2L> > g2l(threads);
+	std::vector<std::vector<eslocal> > dirichletDOFs(threads);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -181,6 +183,9 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 				auto it = std::lower_bound(rBuffer[n].begin(), rBuffer[n].end(), l2g[i]);
 				if (it != rBuffer[n].end() && *it == l2g[i]) {
 					_mesh._DOFs[i]->clusters().push_back(neighbours[n]);
+					if (_mesh._DOFs[i]->regions().size()) {
+						dirichletDOFs[t].push_back(i);
+					}
 				}
 			}
 			if (neighbours.size() == pushMyRank) {
@@ -198,6 +203,59 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	std::sort(_mesh._g2l->begin(), _mesh._g2l->end());
 
 	_mesh._neighbours = neighbours;
+
+	std::vector<std::vector<std::pair<esglobal, double> > > sDirichlet(neighbours.size());
+	std::vector<std::vector<std::pair<esglobal, double> > > rDirichlet(neighbours.size());
+	std::vector<MPI_Request> requests(neighbours.size());
+
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
+	};
+
+	Region *dirRegion = _mesh.region("DIRICHLET");
+	ArrayEvaluator *evaluator = dynamic_cast<ArrayEvaluator*>(dirRegion->settings[0][Property::UNKNOWN].front());
+
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t i = 0; i < dirichletDOFs[t].size(); i++) {
+			for (size_t c = 0; c < _mesh._DOFs[dirichletDOFs[t][i]]->clusters().size(); c++) {
+				if (_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c] != environment->MPIrank) {
+					sDirichlet[n2i(_mesh._DOFs[dirichletDOFs[t][i]]->clusters()[c])].push_back(
+							std::make_pair(l2g[dirichletDOFs[t][i]], evaluator->evaluate(dirichletDOFs[t][i], 0, 0, 0, 0)));
+				}
+			}
+		}
+	}
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		MPI_Isend(sDirichlet[n].data(), sizeof(std::pair<esglobal, double>) * sDirichlet[n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, requests.data() + n);
+	}
+
+	size_t counter = 0;
+	MPI_Status status;
+	while (counter < neighbours.size()) {
+		MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+		int count;
+		MPI_Get_count(&status, MPI_BYTE, &count);
+		rDirichlet[n2i(status.MPI_SOURCE)].resize(count / sizeof(std::pair<esglobal, double>));
+		MPI_Recv(rDirichlet[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		counter++;
+	}
+
+	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	for (size_t n = 0; n < neighbours.size(); n++) {
+	for (size_t i = 0; i < rDirichlet[n].size(); i++) {
+		auto index = std::lower_bound(_mesh._g2l->begin(), _mesh._g2l->end(), rDirichlet[n][i].first, [] (const G2L &mapping, esglobal index) {
+			return mapping.global < index;
+		});
+		if (!_mesh._DOFs[index->local]->regions().size()) {
+			_mesh._DOFs[index->local]->regions().push_back(dirRegion);
+			evaluator->addIndex(index->local, rDirichlet[n][i].second);
+		}
+	}
+	}
+
 
 	ESINFO(OVERVIEW) << "Neighbours loaded - number of neighbours for each cluster is " << Info::averageValue(_mesh.neighbours().size());
 }

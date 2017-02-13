@@ -261,6 +261,14 @@ ArrayEvaluator::ArrayEvaluator(const std::string &name, eslocal size, eslocal *i
 	}
 }
 
+void ArrayEvaluator::addIndex(eslocal index, eslocal value)
+{
+	size_t offset = std::lower_bound(_indices.begin(), _indices.end(), index) - _indices.begin();
+	_indices.insert(_indices.begin() + offset, index);
+	_values.insert(_values.begin() + offset, value);
+}
+
+
 void ArrayEvaluator::store(std::ofstream& os)
 {
 	ESINFO(GLOBAL_ERROR) << "Implement store ArrayEvaluator.";
