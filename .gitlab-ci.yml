@@ -71,9 +71,6 @@ PARDISO32:
     - echo $PARDISO_LICENCE > pardiso.lic
     - export PARDISO_LIC_PATH=$PWD
     - export LD_LIBRARY_PATH=/opt/pardiso/:$LD_LIBRARY_PATH
-    - python tests/benchmarks.py
-    - python tests/input.py
-    - python tests/solver.py
 
 STATIC_LIBRARY:
   stage: tests
