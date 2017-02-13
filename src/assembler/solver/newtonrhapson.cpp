@@ -25,7 +25,7 @@ NewtonRhapson::NewtonRhapson(
 
 void NewtonRhapson::run(Step &step)
 {
-	if (!_configuration.convergence.temperature && _configuration.convergence.heat) {
+	if (!_configuration.convergence_parameters.temperature && _configuration.convergence_parameters.heat) {
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 	step.solver = 0;
@@ -39,19 +39,19 @@ void NewtonRhapson::run(Step &step)
 	startLinearSolver();
 	storeSolution(step);
 
-	double temperatureResidual = _configuration.convergence.temperature_residual;
-	double heatResidual = _configuration.convergence.heat_residual;
-	if (_configuration.convergence.temperature) {
+	double temperatureResidual = _configuration.convergence_parameters.temperature_residual;
+	double heatResidual = _configuration.convergence_parameters.heat_residual;
+	if (_configuration.convergence_parameters.temperature) {
 		temperatureResidual *= 10;
 	}
-	if (_configuration.convergence.heat) {
+	if (_configuration.convergence_parameters.heat) {
 		heatResidual *= 10;
 	}
 
 	while (
 		step.solver++ < _configuration.max_iterations &&
-		(temperatureResidual > _configuration.convergence.temperature_residual ||
-		heatResidual > _configuration.convergence.heat_residual)) {
+		(temperatureResidual > _configuration.convergence_parameters.temperature_residual ||
+		heatResidual > _configuration.convergence_parameters.heat_residual)) {
 
 		std::vector<std::vector<double> > T = instances.front()->primalSolution;
 
@@ -74,11 +74,11 @@ void NewtonRhapson::run(Step &step)
 		initLinearSolver();
 		startLinearSolver();
 
-		if (_configuration.convergence.temperature) {
+		if (_configuration.convergence_parameters.temperature) {
 			temperatureResidual = physics.front()->computeNormOfSolution();
 		}
 		addToSolution(physics.front(), T);
-		if (_configuration.convergence.temperature) {
+		if (_configuration.convergence_parameters.temperature) {
 			temperatureResidual /= physics.front()->computeNormOfSolution();
 		}
 		storeSolution(step);

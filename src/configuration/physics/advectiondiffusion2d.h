@@ -4,6 +4,7 @@
 
 #include "../material/coordinatesystem.h"
 #include "../material/holder.h"
+#include "solver.h"
 #include "../solver.h"
 #include "advectiondiffusionconvection.h"
 #include "advectiondiffusionsolver.h"
@@ -44,7 +45,7 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 
 	PARAMETER(bool, newassembler, "New version of assembler.", 1);
 
-	SUBCONFIG(AdvectionDiffusionSolver, physics_solver, "Settings of physics solver.");
+	SUBCONFIG(PhysicsSolver, physics_solver, "Settings of physics solver.");
 
 	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
 		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
@@ -68,8 +69,6 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 
 	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
-
-	std::map<std::string, std::map<std::string, AdvectionDiffusion2DMaterial*> > xxx = mapToMapToConfiguration<std::string, std::string, AdvectionDiffusion2DMaterial>::create("xxx", "DESC", this);
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 
