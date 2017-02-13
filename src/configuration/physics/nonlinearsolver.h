@@ -25,7 +25,7 @@ struct NonLinearSolver: public Configuration {
 		{ "NEWTON_RHAPSON", METHOD::NEWTON_RHAPSON, "Newton-Rhapson method." }
 	}));
 
-	PARAMETER(size_t, max_iterations, "Allowed number of iterations.", 100);
+	PARAMETER(size_t, max_iterations, "Allowed number of iterations.", 15);
 	PARAMETER(bool, line_search, "Set line search.", false);
 	SUBCONFIG(NonLinearConvergence, convergence_parameters, "Convergence parameters.");
 	PARAMETER(size_t, substeps, "Number of loading substeps.", 1);
