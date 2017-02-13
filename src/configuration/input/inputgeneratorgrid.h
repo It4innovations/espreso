@@ -1,8 +1,8 @@
 
-#ifndef SRC_CONFIGURATION_INPUTGENERATORGRID_H_
-#define SRC_CONFIGURATION_INPUTGENERATORGRID_H_
+#ifndef SRC_CONFIGURATION_INPUT_INPUTGENERATORGRID_H_
+#define SRC_CONFIGURATION_INPUT_INPUTGENERATORGRID_H_
 
-#include "../configuration/inputgeneratorelements.h"
+#include "input/inputgeneratorelements.h"
 
 namespace espreso {
 
@@ -69,4 +69,4 @@ struct GridConfiguration: public Configuration {
 
 
 
-#endif /* SRC_CONFIGURATION_INPUTGENERATORGRID_H_ */
+#endif /* SRC_CONFIGURATION_INPUT_INPUTGENERATORGRID_H_ */

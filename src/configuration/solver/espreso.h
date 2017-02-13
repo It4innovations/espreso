@@ -1,9 +1,9 @@
 
-#ifndef SRC_CONFIGURATION_SOLVERESPRESO_H_
-#define SRC_CONFIGURATION_SOLVERESPRESO_H_
+#ifndef SRC_CONFIGURATION_SOLVER_ESPRESO_H_
+#define SRC_CONFIGURATION_SOLVER_ESPRESO_H_
 
-#include "../configuration/configuration.h"
-#include "../configuration/solverespresooptions.h"
+#include "../configuration.h"
+#include "espresooptions.h"
 
 namespace espreso {
 
@@ -94,4 +94,4 @@ struct ESPRESOSolver: public Configuration {
 
 }
 
-#endif /* SRC_CONFIGURATION_SOLVERESPRESO_H_ */
+#endif /* SRC_CONFIGURATION_SOLVER_ESPRESO_H_ */

@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_PHYSICS_LINEARELASTICITY3D_H_
 #define SRC_CONFIGURATION_PHYSICS_LINEARELASTICITY3D_H_
 
-#include "../materialholder.h"
+#include "../material/holder.h"
 #include "../solver.h"
 
 namespace espreso {

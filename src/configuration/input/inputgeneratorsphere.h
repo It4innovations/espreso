@@ -1,8 +1,8 @@
 
-#ifndef SRC_CONFIGURATION_INPUTGENERATORSPHERE_H_
-#define SRC_CONFIGURATION_INPUTGENERATORSPHERE_H_
+#ifndef SRC_CONFIGURATION_INPUT_INPUTGENERATORSPHERE_H_
+#define SRC_CONFIGURATION_INPUT_INPUTGENERATORSPHERE_H_
 
-#include "../configuration/inputgeneratorelements.h"
+#include "input/inputgeneratorelements.h"
 
 namespace espreso {
 
@@ -45,4 +45,4 @@ struct SphereConfiguration: public Configuration {
 
 
 
-#endif /* SRC_CONFIGURATION_INPUTGENERATORSPHERE_H_ */
+#endif /* SRC_CONFIGURATION_INPUT_INPUTGENERATORSPHERE_H_ */

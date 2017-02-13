@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIGURATION_PHYSICS_ADVECTIONDIFFUSION3D_H_
 #define SRC_CONFIGURATION_PHYSICS_ADVECTIONDIFFUSION3D_H_
 
-#include "../coordinatesystem.h"
-#include "../materialholder.h"
+#include "../material/coordinatesystem.h"
+#include "../material/holder.h"
 #include "../solver.h"
 #include "advectiondiffusionconvection.h"
 #include "advectiondiffusionsolver.h"

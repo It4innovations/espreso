@@ -1,8 +1,8 @@
 
-#ifndef SRC_CONFIGURATION_COORDINATESYSTEM_H_
-#define SRC_CONFIGURATION_COORDINATESYSTEM_H_
+#ifndef SRC_CONFIGURATION_MATERIAL_COORDINATESYSTEM_H_
+#define SRC_CONFIGURATION_MATERIAL_COORDINATESYSTEM_H_
 
-#include "../configuration/configuration.h"
+#include "../configuration.h"
 
 namespace espreso {
 
@@ -34,4 +34,4 @@ struct CoordinateSystem: public Configuration {
 
 
 
-#endif /* SRC_CONFIGURATION_COORDINATESYSTEM_H_ */
+#endif /* SRC_CONFIGURATION_MATERIAL_COORDINATESYSTEM_H_ */

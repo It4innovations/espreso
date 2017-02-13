@@ -2,8 +2,8 @@
 #ifndef SRC_CONFIGURATION_SOLVER_H_
 #define SRC_CONFIGURATION_SOLVER_H_
 
-#include "../configuration/solverespreso.h"
-#include "../configuration/solverhypre.h"
+#include "solver/espreso.h"
+#include "solver/hypre.h"
 
 enum class SOLVER_LIBRARY {
 	ESPRESO,

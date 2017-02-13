@@ -2,7 +2,7 @@
 #include "grid.h"
 
 #include "../../../configuration/environment.h"
-#include "../../../configuration/inputgeneratorgrid.h"
+#include "../../../configuration/input/inputgeneratorgrid.h"
 #include "../primitives/block.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"

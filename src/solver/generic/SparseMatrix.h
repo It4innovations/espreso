@@ -2,7 +2,7 @@
 #include "../generic/utils.h"
 #include "../../basis/matrices/matrixtype.h"
 #include "../../configuration/environment.h"
-#include "../../configuration/solverespreso.h"
+#include "../../configuration/solver/espreso.h"
 
 //class SparseSolverCPU;
 

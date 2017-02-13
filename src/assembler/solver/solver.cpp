@@ -4,7 +4,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../configuration/environment.h"
 #include "../../configuration/output.h"
-#include "../../configuration/solverespresooptions.h"
+#include "../../configuration/solver/espresooptions.h"
 #include "../physics/physics.h"
 #include "../step.h"
 #include "../instance.h"

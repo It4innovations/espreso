@@ -14,7 +14,7 @@
 #include "../../basis/matrices/sparseVVPMatrix.h"
 #include "../../basis/matrices/denseMatrix.h"
 #include "../../basis/matrices/sparseCSRMatrix.h"
-#include "../../configuration/solverespresooptions.h"
+#include "../../configuration/solver/espresooptions.h"
 
 
 using namespace espreso;

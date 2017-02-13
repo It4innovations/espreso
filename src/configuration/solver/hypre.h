@@ -1,8 +1,8 @@
 
-#ifndef SRC_CONFIGURATION_SOLVERHYPRE_H_
-#define SRC_CONFIGURATION_SOLVERHYPRE_H_
+#ifndef SRC_CONFIGURATION_SOLVER_HYPRE_H_
+#define SRC_CONFIGURATION_SOLVER_HYPRE_H_
 
-#include "../configuration/configuration.h"
+#include "../configuration.h"
 
 namespace espreso {
 
@@ -61,4 +61,4 @@ struct HypreSolver: public Configuration {
 
 
 
-#endif /* SRC_CONFIGURATION_SOLVERHYPRE_H_ */
+#endif /* SRC_CONFIGURATION_SOLVER_HYPRE_H_ */

@@ -2,7 +2,7 @@
 
 #include "sphere.h"
 
-#include "../../../configuration/inputgeneratorsphere.h"
+#include "../../../configuration/input/inputgeneratorsphere.h"
 #include "../primitives/block.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"

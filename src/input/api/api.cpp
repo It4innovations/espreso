@@ -14,7 +14,7 @@
 
 #include "../../basis/utilities/utils.h"
 #include "../../configuration/environment.h"
-#include "../../configuration/input.h"
+#include "../../configuration/input/input.h"
 
 using namespace espreso::input;
 

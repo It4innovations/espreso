@@ -3,7 +3,7 @@
 #define SRC_ASSEMBLER_INSTANCE_HYPRE_INSTANCE_H_
 
 #include "../instance.h"
-#include "../../../configuration/solverhypre.h"
+#include "../../../configuration/solver/hypre.h"
 
 #ifdef HAVE_HYPRE
 

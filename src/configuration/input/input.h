@@ -1,8 +1,8 @@
 
-#ifndef SRC_CONFIGURATION_INPUT_H_
-#define SRC_CONFIGURATION_INPUT_H_
+#ifndef SRC_CONFIGURATION_INPUT_INPUT_H_
+#define SRC_CONFIGURATION_INPUT_INPUT_H_
 
-#include "../configuration/configuration.h"
+#include "../configuration.h"
 
 namespace espreso {
 
@@ -16,4 +16,4 @@ struct ESPRESOInput: public Configuration {
 
 
 
-#endif /* SRC_CONFIGURATION_INPUT_H_ */
+#endif /* SRC_CONFIGURATION_INPUT_INPUT_H_ */

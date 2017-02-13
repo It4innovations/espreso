@@ -1,9 +1,9 @@
 
-#ifndef SRC_CONFIGURATION_MATERIALHOLDER_H_
-#define SRC_CONFIGURATION_MATERIALHOLDER_H_
+#ifndef SRC_CONFIGURATION_MATERIAL_HOLDER_H_
+#define SRC_CONFIGURATION_MATERIAL_HOLDER_H_
 
-#include "../configuration/configuration.h"
-#include "../configuration/materialparameters.h"
+#include "../configuration.h"
+#include "parameters.h"
 
 namespace espreso {
 
@@ -40,4 +40,4 @@ struct ValueHolder<MaterialParam<TParameter> >: public ParameterBase {
 
 
 
-#endif /* SRC_CONFIGURATION_MATERIALHOLDER_H_ */
+#endif /* SRC_CONFIGURATION_MATERIAL_HOLDER_H_ */
