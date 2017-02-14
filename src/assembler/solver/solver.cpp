@@ -41,7 +41,7 @@ void Solver::storeData(const Step &step, std::vector<SparseMatrix> &matrices, co
 	if (environment->print_matrices) {
 		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
 		for (size_t d = 0; d < matrices.size(); d++) {
-			std::ofstream os(Logging::prepareFile(d, (name + "_" + std::to_string(step.solver) + "_")).c_str());
+			std::ofstream os(Logging::prepareFile(d, name));
 			os << matrices[d];
 			os.close();
 		}
@@ -53,7 +53,7 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 	if (environment->print_matrices) {
 		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
 		for (size_t d = 0; d < vectors.size(); d++) {
-			std::ofstream os(Logging::prepareFile(d, (name + "_" + std::to_string(step.solver) + "_")).c_str());
+			std::ofstream os(Logging::prepareFile(d, name));
 			os << vectors[d];
 			os.close();
 		}
