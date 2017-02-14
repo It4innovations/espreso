@@ -2052,7 +2052,7 @@ void Mesh::synchronizeNeighbours()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<std::vector<std::vector<int> > > sNeighbours(threads, std::vector<std::vector<int> >(environment->MPIsize));
-	std::vector<std::vector<int> > rNeighbours(environment->MPIsize);
+	std::vector<std::vector<int> > rNeighbours;
 	_neighbours.clear();
 
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
@@ -2085,9 +2085,11 @@ void Mesh::synchronizeNeighbours()
 	}
 	for (int r = 0; r < environment->MPIsize; r++) {
 		if (sNeighbours[0][r].size()) {
+			sNeighbours[0][_neighbours.size()].swap(sNeighbours[0][r]);
 			_neighbours.push_back(r);
 		}
 	}
+	rNeighbours.resize(_neighbours.size());
 
 	if (!Communication::exchangeUnknownSize(sNeighbours[0], rNeighbours, _neighbours)) {
 		ESINFO(ERROR) << "problem while synchronization of neighbours clusters.";
@@ -2095,7 +2097,7 @@ void Mesh::synchronizeNeighbours()
 
 	size_t size = _neighbours.size();
 	for (size_t n = 0; n < size; n++) {
-		_neighbours.insert(_neighbours.end(), rNeighbours[_neighbours[n]].begin(), rNeighbours[_neighbours[n]].end());
+		_neighbours.insert(_neighbours.end(), rNeighbours[n].begin(), rNeighbours[n].end());
 	}
 	std::sort(_neighbours.begin(), _neighbours.end());
 	Esutils::removeDuplicity(_neighbours);
@@ -2121,9 +2123,6 @@ void Mesh::synchronizeNeighbours()
 			sIndices[0][n].insert(sIndices[0][n].end(), sIndices[t][n].begin(), sIndices[t][n].end());
 		}
 	}
-
-	MPI_Barrier(MPI_COMM_WORLD);
-
 
 	if (!Communication::exchangeUnknownSize(sIndices[0], rIndices, _neighbours)) {
 		ESINFO(ERROR) << "problem while synchronization of indices in synchronization neighbours.";
