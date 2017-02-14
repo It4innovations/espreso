@@ -759,6 +759,40 @@ Region* Mesh::region(const std::string &name)
 	exit(EXIT_FAILURE);
 }
 
+std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties)
+{
+	std::vector<std::vector<Region*> > result(properties.size());
+	for (size_t r = 0; r < regions.size(); r++) {
+		Region* region = regions[r];
+		for (size_t dof = 0; dof < properties.size(); dof++) {
+			if (loadStep < region->settings.size() && region->settings[loadStep].count(properties[dof])) {
+				result[dof].push_back(region);
+			}
+		}
+	}
+	for (size_t dof = 0; dof < properties.size(); dof++) {
+		std::sort(result[dof].begin(), result[dof].end());
+		Esutils::removeDuplicity(result[dof]);
+	}
+
+	return result;
+}
+
+std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(size_t loadStep, const std::vector<Property> &properties) const
+{
+	return getRegionsWithProperties(_regions, loadStep, properties);
+}
+
+bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2)
+{
+	for (size_t i = 0, j = 0; i < v1.size() && j < v2.size(); v1[i] < v2[j] ? i++ : j++) {
+		if (v1[i] == v2[j]) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
 {
 	#pragma omp parallel for

@@ -181,6 +181,11 @@ void Solver::assembleB0(const Step &step)
 	}
 }
 
+void Solver::postProcessDelta(Physics *physics, const std::vector<std::vector<double> > &previous)
+{
+	// process Line search
+}
+
 void Solver::addToSolution(Physics *physics, const std::vector<std::vector<double> > &previous)
 {
 	ESINFO(PROGRESS2) << "Sum previous solution step with increment";

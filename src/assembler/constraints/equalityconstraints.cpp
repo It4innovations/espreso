@@ -20,34 +20,6 @@
 
 using namespace espreso;
 
-static std::vector<std::vector<Region*> > getRegionsWithDOFs(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &DOFs)
-{
-	std::vector<std::vector<Region*> > result(DOFs.size());
-	for (size_t r = 0; r < regions.size(); r++) {
-		Region* region = regions[r];
-		for (size_t dof = 0; dof < DOFs.size(); dof++) {
-			if (loadStep < region->settings.size() && region->settings[loadStep].count(DOFs[dof])) {
-				result[dof].push_back(region);
-			}
-		}
-	}
-	for (size_t dof = 0; dof < DOFs.size(); dof++) {
-		std::sort(result[dof].begin(), result[dof].end());
-	}
-	return result;
-}
-
-
-
-static bool commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2) {
-	for (size_t i = 0, j = 0; i < v1.size() && j < v2.size(); v1[i] < v2[j] ? i++ : j++) {
-		if (v1[i] == v2[j]) {
-			return true;
-		}
-	}
-	return false;
-};
-
 void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
 {
 	size_t loadStep = 0;
@@ -59,14 +31,14 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	std::vector<std::vector<std::vector<esglobal> > > dirichlet(constraints._mesh.parts(), std::vector<std::vector<esglobal> >(threads));
 	std::vector<std::vector<std::vector<double> > > dirichletValues(constraints._mesh.parts(), std::vector<std::vector<double> >(threads));
 
-	std::vector<std::vector<Region*> > fixedRegions = getRegionsWithDOFs(constraints._mesh.regions(), loadStep, DOFs);
+	std::vector<std::vector<Region*> > fixedRegions = constraints._mesh.getRegionsWithProperties(loadStep, DOFs);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
-				if (commonRegion(fixedRegions[dof], nodes[i]->regions())) {
+				if (constraints._mesh.commonRegion(fixedRegions[dof], nodes[i]->regions())) {
 					if (!constraints._configuration.redundant_lagrange && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
@@ -171,7 +143,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	std::vector<std::vector<std::vector<esglobal> > > sLambdas(threads, std::vector<std::vector<esglobal> >(constraints._mesh.neighbours().size()));
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(threads, std::vector<std::vector<std::pair<esglobal,esglobal> > >(constraints._mesh.neighbours().size()));
 
-	std::vector<std::vector<Region*> > skippedRegions = getRegionsWithDOFs(constraints._mesh.regions(), loadStep, DOFs);
+	std::vector<std::vector<Region*> > skippedRegions = constraints._mesh.getRegionsWithProperties(loadStep, DOFs);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -180,7 +152,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
-				if (n > 1 && (!constraints._configuration.redundant_lagrange || !commonRegion(skippedRegions[dof], elements[e]->regions()))) {
+				if (n > 1 && (!constraints._configuration.redundant_lagrange || !constraints._mesh.commonRegion(skippedRegions[dof], elements[e]->regions()))) {
 					if (elements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
 						if (constraints._configuration.redundant_lagrange) {
 							lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;
@@ -765,14 +737,14 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 	std::vector<std::vector<std::vector<esglobal> > > dirichlet(instance.domains, std::vector<std::vector<esglobal> >(threads));
 	std::vector<std::vector<std::vector<double> > > dirichletValues(instance.domains, std::vector<std::vector<double> >(threads));
 
-	std::vector<std::vector<Region*> > fixedRegions = getRegionsWithDOFs(regions, loadStep, DOFs);
+	std::vector<std::vector<Region*> > fixedRegions = Mesh::getRegionsWithProperties(regions, loadStep, DOFs);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
-				if (commonRegion(fixedRegions[dof], nodes[i]->regions())) {
+				if (Mesh::commonRegion(fixedRegions[dof], nodes[i]->regions())) {
 					if (!withRedundantMultiplier && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
@@ -878,7 +850,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 	std::vector<std::vector<std::vector<esglobal> > > sLambdas(threads, std::vector<std::vector<esglobal> >(neighbours.size()));
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(threads, std::vector<std::vector<std::pair<esglobal,esglobal> > >(neighbours.size()));
 
-	std::vector<std::vector<Region*> > skippedRegions = getRegionsWithDOFs(regions, loadStep, DOFs);
+	std::vector<std::vector<Region*> > skippedRegions = Mesh::getRegionsWithProperties(regions, loadStep, DOFs);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -887,7 +859,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
 				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
-				if (n > 1 && (!withRedundantMultiplier || !commonRegion(skippedRegions[dof], elements[e]->regions()))) {
+				if (n > 1 && (!withRedundantMultiplier || !Mesh::commonRegion(skippedRegions[dof], elements[e]->regions()))) {
 					if (elements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
 						if (withRedundantMultiplier) {
 							lambdasID[e * DOFs.size() + dof] = n * (n - 1) / 2;

@@ -22,6 +22,16 @@ enum class REGULARIZATION;
 
 struct Physics {
 
+	enum class SumOperation {
+		SUM,
+		AVERAGE
+	};
+
+	enum class SumRestriction {
+		NONE,
+		DIRICHLET
+	};
+
 	Physics(Mesh *mesh, Instance *instance);
 
 	virtual void prepareTotalFETI() =0;
@@ -53,7 +63,7 @@ struct Physics {
 	virtual void assembleB0FromCorners(const Step &step) =0;
 	virtual void assembleB0FromKernels(const Step &step) =0;
 
-	virtual double computeNormOfSolution() const;
+	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction = SumRestriction::NONE, size_t loadStep = 0) const;
 	virtual void storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store) =0;
 
 	virtual ~Physics() {}

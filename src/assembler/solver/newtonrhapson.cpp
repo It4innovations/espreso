@@ -41,6 +41,7 @@ void NewtonRhapson::run(Step &step)
 
 	double temperatureResidual = _configuration.convergence_parameters.temperature_residual;
 	double heatResidual = _configuration.convergence_parameters.heat_residual;
+	double heatResidualNorm = 0;
 	if (_configuration.convergence_parameters.temperature) {
 		temperatureResidual *= 10;
 	}
@@ -64,7 +65,13 @@ void NewtonRhapson::run(Step &step)
 		physics.front()->_instance = instances.front();
 
 		assembleStiffnessMatrices(step);
+		if (_configuration.convergence_parameters.heat) {
+			heatResidual = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
+		}
 		subtractResidualForces(step);
+		if (_configuration.convergence_parameters.heat) {
+			heatResidual += physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
+		}
 		assembleB1(step);
 
 		subtractSolutionFromB1c(step);
@@ -74,14 +81,25 @@ void NewtonRhapson::run(Step &step)
 		initLinearSolver();
 		startLinearSolver();
 
+		postProcessDelta(physics.front(), T);
 		if (_configuration.convergence_parameters.temperature) {
-			temperatureResidual = physics.front()->computeNormOfSolution();
+			temperatureResidual = sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 		}
 		addToSolution(physics.front(), T);
 		if (_configuration.convergence_parameters.temperature) {
-			temperatureResidual /= physics.front()->computeNormOfSolution();
+			temperatureResidual /= sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}
 		storeSolution(step);
+
+		if (_configuration.convergence_parameters.heat) {
+			assembleStiffnessMatrices(step);
+			subtractResidualForces(step);
+			double R;
+			// |R| = f - R
+			R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
+			// |R| -= BtLambda
+			// TODO
+		}
 	}
 
 	finalizeLinearSolver();

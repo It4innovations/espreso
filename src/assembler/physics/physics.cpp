@@ -1,7 +1,8 @@
 
 #include "physics.h"
 
-#include "../../basis/logging/logging.h"
+#include "../../basis/utilities/utils.h"
+#include "../../basis/utilities/communication.h"
 #include "../instance.h"
 
 #include "../../mesh/elements/element.h"
@@ -207,22 +208,135 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 	ESINFO(PROGRESS2);
 }
 
-double Physics::computeNormOfSolution() const
+double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, size_t loadStep) const
 {
-	double norm = 0, sum;
-	double solution;
-	for (size_t n = 0; n < _mesh->nodes().size(); n++) {
-		for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-			size_t multiplicity = _mesh->nodes()[n]->numberOfGlobalDomainsWithDOF(dof);
-			for (size_t d = 0; d < _mesh->nodes()[n]->domains().size(); d++) {
-				size_t domain = _mesh->nodes()[n]->domains()[d];
-				solution = _instance->primalSolution[domain][_mesh->nodes()[n]->DOFIndex(domain, dof)] / multiplicity;
-				norm += solution * solution;
+	auto n2i = [ & ] (size_t neighbour) {
+		return std::lower_bound(_mesh->neighbours().begin(), _mesh->neighbours().end(), neighbour) - _mesh->neighbours().begin();
+	};
+
+	double csum = 0, gsum;
+
+	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->nodes().size());
+
+	std::vector<std::vector<std::vector<double> > > sBuffer(threads, std::vector<std::vector<double> >(_mesh->neighbours().size()));
+	std::vector<std::vector<double> > rBuffer(_mesh->neighbours().size());
+	std::vector<std::vector<size_t> > rBufferSize(threads, std::vector<size_t>(_mesh->neighbours().size()));
+	std::vector<std::vector<eslocal> > incomplete(threads);
+	std::vector<std::vector<double> > incompleteData(threads);
+
+	std::vector<std::vector<Region*> > allowed(pointDOFs().size());
+	if (restriction == SumRestriction::DIRICHLET) {
+		allowed = _mesh->getRegionsWithProperties(loadStep, pointDOFs());
+	}
+
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		double tSum = 0;
+		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+
+			if (_mesh->nodes()[n]->clusters().size() > 1) {
+				if (_mesh->nodes()[n]->clusters().front() == environment->MPIrank) {
+					for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
+						rBufferSize[t][n2i(*c)] += pointDOFs().size();
+					}
+					incomplete[t].push_back(n);
+					incompleteData[t].resize(incompleteData.size() + pointDOFs().size());
+					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
+						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
+							if (restriction == SumRestriction::NONE || _mesh->commonRegion(allowed[dof], _mesh->nodes()[n]->regions())) {
+								eslocal index = _mesh->nodes()[n]->DOFIndex(*d, dof);
+								if (index >= 0) {
+									incompleteData[t][incompleteData.size() - pointDOFs().size() + dof] += data[*d][index];
+								}
+							}
+						}
+					}
+				} else {
+					eslocal cluster = _mesh->nodes()[n]->clusters().front();
+					sBuffer[t][n2i(cluster)].resize(sBuffer[t][n2i(cluster)].size() + pointDOFs().size());
+					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
+						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
+							if (restriction == SumRestriction::NONE || _mesh->commonRegion(allowed[dof], _mesh->nodes()[n]->regions())) {
+								eslocal index = _mesh->nodes()[n]->DOFIndex(*d, dof);
+								if (index >= 0) {
+									sBuffer[t][n2i(cluster)][sBuffer[t][n2i(cluster)].size() - pointDOFs().size() + dof] += data[*d][index];
+								}
+							}
+						}
+					}
+				}
+			} else {
+				for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
+					double sum = 0;
+					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
+						if (restriction == SumRestriction::NONE || _mesh->commonRegion(allowed[dof], _mesh->nodes()[n]->regions())) {
+							eslocal index = _mesh->nodes()[n]->DOFIndex(*d, dof);
+							if (index >= 0) {
+								sum += data[*d][index];
+							}
+						}
+					}
+					switch (operation) {
+					case SumOperation::AVERAGE:
+						sum /= _mesh->nodes()[n]->numberOfGlobalDomainsWithDOF(dof);
+					case SumOperation::SUM:
+						tSum += sum * sum;
+						break;
+					default:
+						ESINFO(GLOBAL_ERROR) << "Implement new SumOperation.";
+					}
+				}
 			}
+
+		}
+		csum += tSum;
+	}
+
+	for (size_t n = 0; n < _mesh->neighbours().size(); n++) {
+		rBuffer[n].resize(rBuffer[n].size() + rBufferSize[0][n]);
+		for (size_t t = 1; t < threads; t++) {
+			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
+			incomplete[0].insert(incomplete[0].end(), incomplete[t].begin(), incomplete[t].end());
+			incompleteData[0].insert(incompleteData[0].end(), incompleteData[t].begin(), incompleteData[t].end());
+			rBuffer[n].resize(rBuffer[n].size() + rBufferSize[t][n]);
 		}
 	}
-	MPI_Allreduce(&norm, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	return sqrt(sum);
+
+	if (!Communication::receiveUpperKnownSize(sBuffer[0], rBuffer, _mesh->neighbours())) {
+		ESINFO(ERROR) << "problem while exchange sum of squares.";
+	}
+
+	distribution = Esutils::getDistribution(threads, incomplete[0].size());
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		double tSum = 0;
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			size_t n = incomplete[0][i];
+
+			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
+				double sum = incompleteData[0][n * pointDOFs().size() + dof];
+				for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
+					sum += rBuffer[n2i(*c)][_mesh->nodes()[n]->clusterOffset(*c) * pointDOFs().size() + dof];
+				}
+				switch (operation) {
+				case SumOperation::AVERAGE:
+					sum /= _mesh->nodes()[n]->numberOfGlobalDomainsWithDOF(dof);
+				case SumOperation::SUM:
+					tSum += sum * sum;
+					break;
+				default:
+					ESINFO(GLOBAL_ERROR) << "Implement new SumOperation.";
+				}
+			}
+
+		}
+		csum += tSum;
+	}
+
+	MPI_Allreduce(&csum, &gsum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	return gsum;
 }
 
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)

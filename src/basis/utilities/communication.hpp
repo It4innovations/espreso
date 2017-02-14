@@ -52,6 +52,23 @@ bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> >
 	return true;
 }
 
+template <typename Ttype>
+bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbours)
+{
+	std::vector<MPI_Request> req(neighbours.size());
+	for (size_t n = 0; n < neighbours.size(); n++) {
+		if (neighbours[n] < environment->MPIrank) {
+			MPI_Isend(sBuffer[n].data(), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
+		}
+		if (neighbours[n] > environment->MPIrank) {
+			MPI_Irecv(rBuffer[n].data(), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
+		}
+	}
+
+	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
+	return true;
+}
+
 }
 
 
