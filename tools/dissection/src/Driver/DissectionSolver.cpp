@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Mar. 30th 2012
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Driver/DissectionSolver.hpp"
 #include "Driver/C_BlasRoutines.hpp"
@@ -141,13 +168,27 @@ template
 void DissectionSolver<double>::NumericFree(void);
 
 template
-void DissectionSolver<complex<double>, double>::NumericFree(void);
-
-template
 void DissectionSolver<quadruple>::NumericFree(void);
 
 template
+void DissectionSolver<quadruple, quadruple, double, double>::NumericFree(void);
+
+template
+void DissectionSolver<double, double, double, double, quadruple, quadruple>::NumericFree(void);
+
+template
+void DissectionSolver<complex<double>, double>::NumericFree(void);
+
+template
 void DissectionSolver<complex<quadruple>, quadruple>::NumericFree(void);
+//
+
+template
+void DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::NumericFree(void);
+
+template
+void DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::NumericFree(void);
+
 //
 
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
@@ -229,23 +270,6 @@ SaveCSRMatrix(const int called,
 }
 
 #endif
-void SaveMMMatrix_(const int dim,
-		   const int nnz,
-		   const bool isSymmetric,
-		   const bool isUpper,
-		   const int *ptrows,
-		   const int *indcols,
-		   const int called,
-		   const double *coefs_);
-
-void SaveMMMatrix_(const int dim,
-		   const int nnz,
-		   const bool isSymmetric,
-		   const bool isUpper,
-		   const int *ptrows,
-		   const int *indcols,
-		   const int called,
-		   const complex<double> *coefs_);
 
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
 void DissectionSolver<T, U, W, Z, X, Y>::
@@ -301,7 +325,7 @@ SaveMMMatrix(const int called,
 {
   SaveMMMatrix_(_dim,
 		_ptDA->nnz(),
-		_ptDA->isSymmetric(),
+		_ptDA->isWhole() ? false : _ptDA->isSymmetric(),
 		_ptDA->isUpper(),
 		_ptDA->getRows(),
 		_ptDA->getIndCols(),
@@ -315,7 +339,7 @@ SaveMMMatrix(const int called,
 {
   SaveMMMatrix_(_dim,
 		_ptDA->nnz(),
-		_ptDA->isSymmetric(),
+		_ptDA->isWhole() ? false : _ptDA->isSymmetric(),
 		_ptDA->isUpper(),
 		_ptDA->getRows(),
 		_ptDA->getIndCols(),
@@ -386,7 +410,7 @@ void SaveMMMatrix_(const int dim,
   FILE *fp;
   sprintf(fname, "matrix.%04d.%06d.data", called, pid);
   if ((fp = fopen(fname, "w")) != NULL) {
-    fprintf(fp, "%%%%MatrixMarket matrix coordinate real %s\n%d %d %d\n",
+    fprintf(fp, "%%%%MatrixMarket matrix coordinate complex %s\n%d %d %d\n",
 	    
 	    isSymmetric? "symmetric" : "general",
 	    dim, dim, nnz);
@@ -421,8 +445,7 @@ void SaveMMMatrix_(const int dim,
 // copy from higher precision than T and U : quadruple <- T = double
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
 void DissectionSolver<T, U, W, Z, X, Y>::
-CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
-	      T *coefs)
+CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv)
 {
   bool isSym = qdslv.ptDA()->isSymmetric();
   bool isUpper = qdslv.ptDA()->isUpper();
@@ -435,7 +458,7 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
   _nsing = qdslv.nsing();
   _fp = qdslv.get_filedescriptor();
   bool verbose = qdslv.verbose();
-  
+  //  T *coefs;
   _dissectionQueue = new DissectionQueue<T, U>*[_graph_colors];  
   _tridiagQueue = new TridiagQueue<T, U>*[_graph_colors];
   _dissectionMatrix =
@@ -445,13 +468,18 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
   _Schur = new SchurMatrix<T>[_graph_colors];
   _kernel = new KernelMatrix<T>[_graph_colors];
   _singIdx = new vector<int>[_graph_colors];
-  
+  for (int m = 0; m < _graph_colors; m++) {
+    _Schur[m].getAcol() = new SparseMatrix<T>(); // dummy allocation
+    _Schur[m].getArow() = new SparseMatrix<T>(); // dummy allocation
+  }
   DissectionQueue<X, Y>** dQ = qdslv.getDissectionQueue();
   TridiagQueue<X, Y>** tQ = qdslv.getTridiagQueue();
-  // copy coef
+#if 0
+  // copy scaled coef
   for (int i = 0; i < qdslv.ptDA()->nnz(); i++) {
     coefs[i] = tolower<X, T>(qdslv.ptDA()->Coef(i));
   }
+#endif
   _precDiag = new U[_dim];
   for (int i = 0; i < _dim; i++) {
     _precDiag[i] = tolower<Y, U>(qdslv.addrPrecDiag()[i]);
@@ -460,6 +488,7 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
   _ptDA = new SparseMatrix<T, W, Z>(isSym, isUpper, isWhole);
   
   CopySparseMatrix(_ptDA, qdslv.ptDA());
+  //  coefs = _ptDA->getCoef();
   for (int m = 0; m < _graph_colors; m++) {
     if (tQ[m]->tridiagSolver()) {
       const int dim = tQ[m]->dimension();
@@ -470,7 +499,8 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
 						       verbose,
 						       _fp);
       CopyTridiagBlockMatrix(*_tridiagMatrix[m],
-			     *qdslv.getTridiagBlockMatrix()[m], coefs);
+			     *qdslv.getTridiagBlockMatrix()[m],
+			     _ptDA->getCoef());
 
       _tridiagQueue[m] = new TridiagQueue<T, U>(true, verbose, _fp);
       _tridiagQueue[m]->generate_queue(_tridiagMatrix[m],
@@ -481,7 +511,7 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
 				       tQ[m]->ptRows(),
 				       tQ[m]->indCols(),
 				       tQ[m]->indVals(),
-				       coefs);
+				       _ptDA->getCoef());
     }
     else { //     if (tQ[m]->tridiagSolver()) 
       Dissection::Tree* btree = qdslv.btree()[m];
@@ -502,7 +532,8 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
 	  int color = (*it)->ColorTridiagBlockMatrix();
 	  for (int i = 0; i < color; i++) {
 	    CopyTridiagBlockMatrix(*(*jt)->addrtridiagBlock()[i],
-				   *(*it)->addrtridiagBlock()[i], coefs);
+				   *(*it)->addrtridiagBlock()[i],
+				   _ptDA->getCoef());
 	  } // loop : i
 	}   // if ((*it)->islast())
 	else {
@@ -525,7 +556,7 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
 
       _dissectionQueue[m]->generate_queue_fwbw(_dissectionMatrix[m],
 					       dQ[m]->dimension(),
-					       dQ[m]->nnz(), coefs);
+					       dQ[m]->nnz(), _ptDA->getCoef());
     } // if (tQ[m]->tridiagSolver())
     CopyKernelMatrix(_kernel[m], qdslv.getKernelMatrix()[m]);
     _singIdx[m] = qdslv.getSingVal()[m];
@@ -539,16 +570,14 @@ CopyQueueFwBw(DissectionSolver<X, Y, T, U> &qdslv,
 
 template
 void DissectionSolver<double, double, double, double, quadruple, quadruple>::
-CopyQueueFwBw(DissectionSolver<quadruple, quadruple, double, double> &qdslv,
-	      double *coefs);
+CopyQueueFwBw(DissectionSolver<quadruple, quadruple, double, double> &qdslv);
 
 template
 void DissectionSolver<complex<double>, double, complex<double>, double,
 		      complex<quadruple>, quadruple>::
 CopyQueueFwBw(DissectionSolver<complex<quadruple>, quadruple,
-	      complex<double>, double> &qdslv,
-	      complex<double> *coefs);
-//
+	      complex<double>, double> &qdslv);
+
 
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
 void DissectionSolver<T, U, W, Z, X, Y>::
@@ -748,7 +777,7 @@ SymbolicFact(const int dim_,
     
     if (_graph_colors > 1) {
       const int level_tmp = (int)log2((double)count / (double)minNodes);
-      nbLevels = nbLevels_ < level_tmp ? nbLevels_ : level_tmp;
+      nbLevels = nbLevels < level_tmp ? nbLevels : level_tmp;
     }
     if (_verbose) {
       fprintf(_fp,
@@ -799,8 +828,8 @@ SymbolicFact(const int dim_,
 			"%s %d : Dissection:: %d-th too small nrow = %d\n",
 			__FILE__, __LINE__, d, isd);
 	      }
-	      nbLevels = (int)log2((double)d) + 1;
-	      break;
+	      //	      nbLevels = (int)log2((double)d) + 1;
+	      //	      break;
 	    }
 	    else {
 	      fprintf(stderr,
@@ -808,23 +837,22 @@ SymbolicFact(const int dim_,
 		      __FILE__, __LINE__, isd);
 	      exit(-1);
 	    }
-	    flag = false;
-	  }
-	}
+	    //	    flag = false;
+	  } // if (isd == 0)
+	} // loop : d
 	if (flag) {
 	  break;
 	}
 	else {
 	  if (berr == true) {
 	    delete _btree[m];  // for retry of graph partitioning
-    	//	  nbLevels--;
 	  }
 	}
       } // while
       //      _nbLevels = _btree[m]->NumberOfLevels();
       if (_verbose) {
 	fprintf(_fp, 
-		"%s %d : Dissection::Tree strategy = 0 : nblevels = %d -> %d\n ",
+		"%s %d : Dissection::Tree strategy = 0 : nblevels = %d -> %d\n",
 		__FILE__, __LINE__,
 		nbLevels, _btree[m]->NumberOfLevels());
       }
@@ -1057,7 +1085,7 @@ NumericFact(const int called,
 {
   clock_t t0_cpu, t1_cpu, t2_cpu, t3_cpu;
   elapsed_t t0_elapsed, t1_elapsed, t2_elapsed, t3_elapsed;
-  const U eps_machine = machine_epsilon<U>();
+  const U eps_machine = machine_epsilon<U, Z>();
   t0_cpu = clock();
   get_realtime(&t0_elapsed);
 
@@ -1706,17 +1734,116 @@ template
 void DissectionSolver<double>::GetNullPivotIndices(int *pivots);
 
 template
-void DissectionSolver<complex<double>, double>::
-GetNullPivotIndices(int *pivots);
-
-template
 void DissectionSolver<quadruple>::GetNullPivotIndices(int *pivots);
 
 template
-void DissectionSolver<complex<quadruple>, quadruple>::
-GetNullPivotIndices(int *pivots);
+void DissectionSolver<quadruple, quadruple, double, double>::GetNullPivotIndices(int *pivots);
+
+template
+void DissectionSolver<double, double, double, double, quadruple, quadruple>::GetNullPivotIndices(int *pivots);
+
+template
+void DissectionSolver<complex<double>, double>::GetNullPivotIndices(int *pivots);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple>::GetNullPivotIndices(int *pivots);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::GetNullPivotIndices(int *pivots);
+
+template
+void DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::GetNullPivotIndices(int *pivots);
 //
 
+
+template<typename T, typename U, typename W, typename Z, typename X, typename Y>
+int DissectionSolver<T, U, W, Z, X, Y>::
+GetMaxColors()
+{
+  int nn = 0;
+  for (int m = 0; m < _graph_colors; m++) {
+    if (!_tridiagQueue[m]->tridiagSolver()) {
+      nn++;
+    }
+  }
+  return nn;
+}
+
+template
+int DissectionSolver<double>::GetMaxColors();
+
+template
+int DissectionSolver<quadruple>::GetMaxColors();
+
+template
+int DissectionSolver<quadruple, quadruple, double, double>::GetMaxColors();
+
+template
+int DissectionSolver<double, double, double, double, quadruple, quadruple>::GetMaxColors();
+
+template
+int DissectionSolver<complex<double>, double>::GetMaxColors();
+
+template
+int DissectionSolver<complex<quadruple>, quadruple>::GetMaxColors();
+
+template
+int DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::GetMaxColors();
+
+template
+int DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::GetMaxColors();
+//
+
+template<typename T, typename U, typename W, typename Z, typename X, typename Y>
+void DissectionSolver<T, U, W, Z, X, Y>::
+GetSmallestPivotIndices(const int n, int *pivots)
+{
+  int nn = 0;
+  for (int m = 0; m < _graph_colors; m++) {
+    if (!_tridiagQueue[m]->tridiagSolver()) {
+      SquareBlockMatrix<T>* diag =
+	&_dissectionMatrix[m][_btree[m]->selfIndex(1)]->diagBlock();
+      const int *loc2glob = _btree[m]->getDiagLoc2Glob(1);
+      vector<int> &permute = diag->getPermute();
+      int ndiag = diag->dimension();
+      if (n > ndiag) {
+	fprintf(stderr, "%s %d : GetSmallestPivotIndices %d > %d\n",
+		__FILE__, __LINE__, n, ndiag);
+      }
+      for (int k = (ndiag - 1); k >= (ndiag - n); k--, nn++) {
+	pivots[nn] = loc2glob[permute[k]];
+      }
+    }
+  }  // loop : m
+}
+
+template
+void DissectionSolver<double>::GetSmallestPivotIndices(const int n,
+						       int *pivots);
+
+template
+void DissectionSolver<quadruple>::GetSmallestPivotIndices(const int n, int *pivots);
+
+template
+void DissectionSolver<quadruple, quadruple, double, double>::GetSmallestPivotIndices(const int n, int *pivots);
+
+template
+void DissectionSolver<double, double, double, double, quadruple, quadruple>::GetSmallestPivotIndices(const int n, int *pivots);
+
+template
+void DissectionSolver<complex<double>, double>::GetSmallestPivotIndices(const int n, int *pivots);
+
+
+template
+void DissectionSolver<complex<quadruple>, quadruple>::GetSmallestPivotIndices(const int n, int *pivots);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::GetSmallestPivotIndices(const int n, int *pivots);
+
+template
+void DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::GetSmallestPivotIndices(const int n, int *pivots);
+
+//
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
 void DissectionSolver<T, U, W, Z, X, Y>::
 GetKernelVectors(T *kern_basis)
@@ -1737,15 +1864,26 @@ template
 void DissectionSolver<double>::GetKernelVectors(double *kern_basis);
 
 template
-void DissectionSolver<complex<double>, double>::
-GetKernelVectors(complex<double> *kern_basis);
-
-template
 void DissectionSolver<quadruple>::GetKernelVectors(quadruple *kern_basis);
 
 template
-void DissectionSolver<complex<quadruple>, quadruple>::
-GetKernelVectors(complex<quadruple> *kern_basis);
+void DissectionSolver<quadruple, quadruple, double, double>::GetKernelVectors(quadruple *kern_basis);
+
+template
+void DissectionSolver<double, double, double, double, quadruple, quadruple>::GetKernelVectors(double *kern_basis);
+
+template
+void DissectionSolver<complex<double>, double>::GetKernelVectors(complex<double> *kern_basis);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple>::GetKernelVectors(complex<quadruple> *kern_basis);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::GetKernelVectors(complex<quadruple> *kern_basis);
+
+template
+void DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::GetKernelVectors(complex<double> *kern_basis);
+
 //
 
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
@@ -1767,16 +1905,28 @@ GetTransKernelVectors(T *kernt_basis)
 template
 void DissectionSolver<double>::GetTransKernelVectors(double *kernt_basis);
 
-template
-void DissectionSolver<complex<double>, double>::
-GetTransKernelVectors(complex<double> *kernt_basis);
 
 template
 void DissectionSolver<quadruple>::GetTransKernelVectors(quadruple *kernt_basis);
 
 template
-void DissectionSolver<complex<quadruple>, quadruple>::
-GetTransKernelVectors(complex<quadruple> *kernt_basis);
+void DissectionSolver<quadruple, quadruple, double, double>::GetTransKernelVectors(quadruple *kern_basis);
+
+template
+void DissectionSolver<double, double, double, double, quadruple, quadruple>::GetTransKernelVectors(double *kern_basis);
+
+template
+void DissectionSolver<complex<double>, double>::GetTransKernelVectors(complex<double> *kernt_basis);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple>::GetTransKernelVectors(complex<quadruple> *kernt_basis);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::GetTransKernelVectors(complex<quadruple> *kern_basis);
+
+template
+void DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::GetTransKernelVectors(complex<double> *kern_basis);
+
 //
 
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
@@ -2413,8 +2563,8 @@ SolveScaled(T *x, int nrhs, bool isTrans)
       _tridiagQueue[m]->exec_fwbw(x, nrhs, isTrans);
     }
     else {
-      //      if (nrhs == 1) {
-      if (true) {
+      if (nrhs == 1) {
+	//      if (true) {
         _dissectionQueue[m]->exec_fwbw_seq(x, nrhs, isTrans);
       }
       else {
@@ -2684,11 +2834,6 @@ void DissectionSolver<double>::SolveMulti(double *x, int nrhs,
 					  bool isTrans, bool isScaling);
 
 template
-void DissectionSolver<complex<double>, double>::
-SolveMulti(complex<double> *x, int nrhs, bool projection, 
-	   bool isTrans, bool isScaling);
-
-template
 void DissectionSolver<quadruple>::SolveMulti(quadruple *x, int nrhs,
 					     bool projection, 
 					     bool isTrans,
@@ -2702,9 +2847,33 @@ SolveMulti(quadruple *x, int nrhs,
 	   bool isScaling);
 
 template
+void DissectionSolver<double, double, double, double, quadruple, quadruple>::
+SolveMulti(double *x, int nrhs,
+	   bool projection, 
+	   bool isTrans,
+	   bool isScaling);
+
+template
+void DissectionSolver<complex<double>, double>::
+SolveMulti(complex<double> *x, int nrhs, bool projection, 
+	   bool isTrans, bool isScaling);
+
+template
+void DissectionSolver<complex<quadruple>, quadruple>::
+SolveMulti(complex<quadruple> *x, int nrhs, bool projection, 
+	   bool isTrans, bool isScaling);
+
+
+template
 void DissectionSolver<complex<quadruple>, quadruple, complex<double>, double>::
 SolveMulti(complex<quadruple> *x, int nrhs, bool projection, 
 	   bool isTrans, bool isScaling);
+
+template
+void DissectionSolver<complex<double>, double, complex<double>, double, complex<quadruple>, quadruple>::
+SolveMulti(complex<double> *x, int nrhs, bool projection, 
+	   bool isTrans, bool isScaling);
+
 //
 
 template<typename T, typename U, typename W, typename Z, typename X, typename Y>
@@ -3515,7 +3684,7 @@ BuildKernelsDetection(int &n0,
       }
     }  //   if (nsing0 <= 0)
     bool flag, flag_2x2;
-    const U eps_machine = machine_epsilon<U>();
+    const U eps_machine = machine_epsilon<U, Z>();
     flag = ComputeDimKernel<T, U>(&n0, &flag_2x2,
 				  DSsingCoefs1.addrCoefs(), nsing1,
 				  _ptDA->isSymmetric(),
@@ -3561,12 +3730,12 @@ BuildKernelsDetection(int &n0,
     if (_ptDA->isSymmetric()) {
       full_ldlt_permute<T, U>(&nn0, n0, nsing,
 			      DSsingCoefs.addrCoefs(), nsing, &last_pivot,
-			      &permute[0], machine_epsilon<double>(), &fop);
+			      &permute[0], machine_epsilon<double, double>(), &fop);
     }
     else {
       full_ldu_permute<T, U>(&nn0, n0, nsing,
 			     DSsingCoefs.addrCoefs(), nsing, &last_pivot,
-			     &permute[0], machine_epsilon<double>(), &fop);
+			     &permute[0], machine_epsilon<double, double>(), &fop);
     }
     n0 = nn0;
   }

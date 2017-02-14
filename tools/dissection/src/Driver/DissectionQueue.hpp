@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Mar. 30th 2012
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #ifndef _DISSECTION_QUEUE_
 #define _DISSECTION_QUEUE_
@@ -88,7 +115,7 @@ private:
   C_task_seq* _queue_fwbw;
   list<C_task_seq*> *_queue_static;
   vector<C_task_seq *> *_queue_dynamic;
-
+  list<C_task *> _queue_dummy;
   vector<int>* _children;
   vector<C_task *>* _tasks_SparseSymb;
   vector<C_task *>* _tasks_SparseNum;
@@ -100,13 +127,14 @@ private:
   vector<C_task *>* _tasks_deallocLocalSchur;
   vector<C_task *>** _tasks_Dsub;
   vector<C_task *>* _tasks_deallocLower;
-
   list<child_contribution<T> > *_child_contribs;
 
   int _num_threads;
   int _num_threads_symb;
   int _dim;
   int _nnz;
+  int _nb_doms;
+  int _nb_level;
  
   double _eps_piv;           // used in selecting pivot
   bool _kernel_detection;
@@ -133,7 +161,7 @@ private:
   bool _queue_symb_allocated;
   bool _queue_numrc_allocated;
   bool _queue_fwbw_allocated;
-
+    
   static const T _one;  // (1.0);
   static const T _zero; // (0.0);
   static const T _none; // (-1.0);

@@ -37,8 +37,7 @@
 #include <sstream>
 #include <fstream>
 #include <complex>
-#include "qd/dd_real.h"
-typedef dd_real quadruple; // implementation of quadruple precision
+#include "Compiler/arithmetic.hpp"
 
 using namespace std;
 
@@ -257,8 +256,8 @@ int main(int argc, char **argv)
   int nrow, nnz, flag;
   int *ptrows, *indcols;
   int *irow, *jcol;
-  double *val, *coefs, *coefs_double;
-  complex<double> *valc, *ccoefs, *ccoefs_double;
+  double *val, *coefs;
+  complex<double> *valc, *ccoefs;
   //  quadruple *qcoefs;
   //  complex<quadruple> *qccoefs;
   int decomposer;
@@ -496,7 +495,6 @@ int main(int argc, char **argv)
   indcols = new int[nnz];
   if (isComplex) {
     ccoefs = new complex<double>[nnz];
-    ccoefs_double = new complex<double>[nnz];
     copy_CSR<complex<double> >(indcols, ptrows, ccoefs, 
 			       nrow, upper_flag, isSym, 
 			       ind_cols_tmp, val_tmpc);
@@ -512,7 +510,6 @@ int main(int argc, char **argv)
   
   else {
     coefs = new double[nnz];
-    coefs_double = new double[nnz];
     copy_CSR<double>(indcols, ptrows, coefs, 
 		     nrow, upper_flag, isSym,
 		     ind_cols_tmp, val_tmp);
@@ -620,7 +617,7 @@ int main(int argc, char **argv)
     get_realtime(&t3_elapsed);
     usleep(5000);
     fprintf(stderr, "%s %d : NumericFact() done\n", __FILE__, __LINE__);
-    dslv2->CopyQueueFwBw(*dslv, ccoefs_double);
+    dslv2->CopyQueueFwBw(*dslv);
     int n0;
     n0 = dslv2->kern_dimension();
     fprintf(fp, "## kernel dimension = %d\n", n0);
@@ -745,7 +742,7 @@ int main(int argc, char **argv)
     _stat = (-1);
     usleep(5000);
     fprintf(stderr, "%s %d : NumericFact() done\n", __FILE__, __LINE__);
-    dslv2->CopyQueueFwBw(*dslv, coefs_double);
+    dslv2->CopyQueueFwBw(*dslv);
     int n0;
     //    n0 = dslv->kern_dimension();
     n0 = dslv2->kern_dimension();
@@ -831,11 +828,9 @@ int main(int argc, char **argv)
   }
   if (isComplex) {
     delete [] ccoefs;
-    delete [] ccoefs_double;
   }
   else {
     delete [] coefs;
-    delete [] coefs_double;
   }
   fclose(fp);
 

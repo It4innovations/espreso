@@ -1,9 +1,8 @@
-/*! \file   MM-Dissection-mRHS.cpp
+/*! \file   MM-DissectionSolver.cpp
     \brief  test rouinte of dissection solver reading Matrix Market format
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Jun. 20th 2014
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
 */
 
 // This file is part of Dissection
@@ -19,7 +18,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Disection.  If not, see <http://www.gnu.org/licenses/>.
+// along with Dissection solver.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdio>
 #include <cstdlib>
@@ -29,7 +28,9 @@
 #include <math.h>
 
 #include "Driver/DissectionSolver.hpp"
+#ifdef BLAS_MKL
 #include <mkl_service.h>
+#endif
 #include <pthread.h>
 #include <iostream>
 #include <sstream>
@@ -42,19 +43,20 @@ static int _stat = (-1);
 void *thread_child(void *arg)
 {
   char buf[256];
-  int pid = (int)arg;
+  int *pid = (int *)arg;
   unsigned int mem_tmp, mem_min, mem_max;
   double avg_mem;
   avg_mem = 0.0;
-  mem_min = 1U << 32 - 1;
+  mem_min = (1U << 31) - 1;
   mem_max = 0U;
   int stat0, stat1;
   stat0 = _stat;
   unsigned int count = 0U;
 //  fprintf(stderr, "thread_child forked\n");
   while(_stat != 0) {
-     if (_stat == 1) {
-       sprintf(buf, "/proc/%d/statm", pid);
+    stat1 = _stat;
+     if (stat1 == 1) {
+       sprintf(buf, "/proc/%d/statm", *pid);
        ifstream fin(buf);
        fin >> mem_tmp;
        fin.close();
@@ -67,7 +69,6 @@ void *thread_child(void *arg)
        avg_mem += (double)mem_tmp;
        count++;
      }
-     stat1 = _stat;
      if ((stat1 == (-1)) && (stat0 == 1)) {
        fprintf(stderr, 
 	       "used memory :min: %14.8e  max: %14.8e avg: %14.8e count: %d\n", 
@@ -77,7 +78,7 @@ void *thread_child(void *arg)
 	       count);
        count = 0U;
        avg_mem = 0.0;
-       mem_min = 1U << 32 - 1;
+       mem_min = (1U << 31) - 1;
        mem_max = 0U;
      }
      stat0 = stat1;
@@ -90,15 +91,25 @@ void *thread_child(void *arg)
 }
 
 template<typename T>
-void generate_CSR(std::list<int>* &ind_cols_tmp, std::list<T>* &val_tmp, 
-		  int nrow, int nnz,
-		  int *irow, int *jcol, T* val)
+void generate_CSR(std::list<int>* ind_cols_tmp, std::list<T>* val_tmp, 
+		  int nrow, int *nnz, int *mask, int *old2new,
+		  int *irow, int *jcol, T* val, bool symmetrize)
 {
-  ind_cols_tmp = new std::list<int>[nrow];
-  val_tmp = new std::list<T>[nrow];
-  for (int i = 0; i < nnz; i++) {
-    const int ii = irow[i];
-    const int jj = jcol[i];
+  const T zero(0.0);
+  //  ind_cols_tmp = new std::list<int>[nrow];
+  //  val_tmp = new std::list<T>[nrow];
+  int nnz1 = *nnz;
+  for (int i = 0; i < *nnz; i++) {
+    const int i0 = irow[i];
+    const int j0 = jcol[i];
+    const int ii = old2new[i0];
+    const int jj = old2new[j0];
+    if ((mask[i0] != 1) || (mask[j0] != 1)) {
+      //      fprintf(stderr, "%d %d\n", i0, j0);
+      nnz1--;
+      continue;
+    }
+    //    fprintf(stderr, "%d %d -> %d %d \n", i0, j0, ii, jj);
     if (ind_cols_tmp[ii].empty()) {
       ind_cols_tmp[ii].push_back(jj);
       val_tmp[ii].push_back(val[i]);
@@ -125,7 +136,81 @@ void generate_CSR(std::list<int>* &ind_cols_tmp, std::list<T>* &val_tmp,
       }
     }
   }
+  // symmetrize
+  if (symmetrize) {
+    for (int i = 0; i < nrow; i++) {
+      std::list<int>::iterator jt = ind_cols_tmp[i].begin();
+      for ( ; jt != ind_cols_tmp[i].end(); ++jt) {
+	const int jj = (*jt);
+	bool flag = false;
+	std::list<int>::iterator it = ind_cols_tmp[jj].begin();
+	for ( ; it != ind_cols_tmp[jj].end(); ++it) {
+	  if ((*it) == i) {
+	    flag = true;
+	    //	    fprintf(stderr, "%d %d symmetric position found\n", i, jj);
+	    break;
+	  }
+	}
+	if (!flag) {
+	  if (ind_cols_tmp[jj].back() < i) {
+	    ind_cols_tmp[jj].push_back(i);
+	    val_tmp[jj].push_back(zero);
+	    fprintf(stderr, "%d %d added for symmetry\n", i, jj);
+	    nnz1++;
+	  }
+	  else {
+	    typename std::list<T>::iterator iv = val_tmp[jj].begin();
+	    std::list<int>::iterator it = ind_cols_tmp[jj].begin();
+	    for ( ; it != ind_cols_tmp[jj].end(); ++it, ++iv) {
+	      std::list<int>::iterator it1 = it;
+	      ++it1;
+	      if (((*it)) < i && ((*it1) > i)) {
+		ind_cols_tmp[jj].insert(it, i);
+		val_tmp[jj].insert(iv, zero);
+		nnz1++;
+		//	fprintf(stderr, "%d %d inserted for symmetry\n", i, jj);
+		break;
+	      }
+	    }
+	  }
+	} // if (!flag);
+      }
+    }
+  }
+#if 0
+  {
+    for (int i = 0; i < nrow; i++) {
+      std::list<int>::iterator jt = ind_cols_tmp[i].begin();
+      for ( ; jt != ind_cols_tmp[i].end(); ++jt) {
+	const int jj = (*jt);
+	bool flag = false;
+	std::list<int>::iterator it = ind_cols_tmp[jj].begin();
+	for ( ; it != ind_cols_tmp[jj].end(); ++it) {
+	  if ((*it) == i) {
+	    flag = true;
+	    break;
+	  }
+	}
+	if (!flag) {
+	  fprintf(stderr, "%d %d position is not symmetric\n", i, jj);
+	}
+      }
+    }
+  }
+#endif
+  *nnz = nnz1;
 }
+
+template
+void generate_CSR<double>(std::list<int>* ind_cols_tmp, std::list<double>* val_tmp, 
+			  int nrow, int *nnz, int *mask, int *old2new,
+			  int *irow, int *jcol, double* val, bool symmetrize);
+template
+void generate_CSR<complex<double> >(std::list<int>* ind_cols_tmp,
+				    std::list<complex<double> >* val_tmp, 
+				    int nrow, int *nnz, int *mask, int *old2new,
+				    int *irow, int *jcol, complex<double>* val,
+				    bool symmetrize);
 
 template<typename T>
 void copy_CSR(int *indcols, int *ptrows, T* coefs, int nrow, 
@@ -171,32 +256,46 @@ void copy_CSR(int *indcols, int *ptrows, T* coefs, int nrow,
   } // loop : i
 }
 
+template
+void copy_CSR<double>(int *indcols, int *ptrows, double* coefs, int nrow, 
+	      bool upper_flag, bool isSym,
+	      std::list<int>* ind_cols_tmp, std::list<double>* val_tmp);
+
+template
+void copy_CSR<complex<double> >(int *indcols, int *ptrows, complex<double>* coefs, int nrow, 
+	      bool upper_flag, bool isSym,
+	      std::list<int>* ind_cols_tmp, std::list<complex<double> >* val_tmp);
 
 int main(int argc, char **argv)
 {
-  int n, itmp;
-  char fname[256];
+  int n, itmp, jtmp;
+  char fname[256], fname1[256];
   char buf[1024];
   int nrow, nnz, flag;
-  int *ptrows, *indcols, *indvals;
+  int *ptrows, *indcols;
   int *irow, *jcol;
   double *val, *coefs;
   complex<double> *valc, *ccoefs;
   int decomposer;
   int num_threads;
+  int scaling = 1;
   double eps_pivot;
-  int numlevels;
-  int minNodes = 64;
+  int numlevels = -1;
+  int minNodes = 128;
   std::list<int>* ind_cols_tmp;
   std::list<double>* val_tmp;
   std::list<complex<double> >* val_tmpc;
   FILE *fp;
   bool isSym, isComplex;
   bool upper_flag = true;
+  bool isWhole = false;
+  bool kernel_detection_all = false;
+  int *indx_excl;
+  int nexcl = 0;
+  bool excl_flag = false;
 
   if (argc < 6) {
-    fprintf(stderr, 
-	    "MM-dissection [data file] [decomposer] [num_threads] [eps_pivot] [num_levels]\n");
+    fprintf(stderr, "MM-dissection [data file] [decomposer] [num_threads] [eps_pivot] [num_levels] [scaling] [kerner_detection_all] [upper_flag] [minNodes]\n");
     exit(-1);
   }    
   strcpy(fname, argv[1]);
@@ -205,10 +304,22 @@ int main(int argc, char **argv)
   eps_pivot = atof(argv[4]);
   numlevels = atof(argv[5]);
   if (argc >= 7) {
-    minNodes = atoi(argv[6]);
+    scaling = atoi(argv[6]);
   }
   if (argc >= 8) {
-    upper_flag = (atoi(argv[7]) == 1);
+   kernel_detection_all = (atoi(argv[7]) == 1);
+  }
+
+  if (argc >= 9) {
+    upper_flag = (atoi(argv[8]) == 1);
+    isWhole = (atoi(argv[8]) == (-1));
+  }
+  if (argc >= 10) {
+    strcpy(fname1, argv[9]);
+    excl_flag = true;
+  }
+  if (argc >= 11) {
+    minNodes = atoi(argv[10]);
   }
 
   // read from the file
@@ -224,6 +335,7 @@ int main(int argc, char **argv)
     isSym = false;
     upper_flag = false;
   }
+
   if (strstr(buf, "complex") != NULL) {
    isComplex = true;
   }
@@ -232,6 +344,14 @@ int main(int argc, char **argv)
   }
 
   fprintf(stderr, "symmetric = %s\n", isSym ? "true " : "false");
+  fprintf(stderr, "scaling = %d\n", scaling);
+  fprintf(stderr, "upper = %s\n", upper_flag ? "true" : "false");
+  if (kernel_detection_all) {
+    fprintf(stderr, "kernel detection is activated for all submatrices\n");
+  }
+  if (excl_flag) {
+    fprintf(stderr, "list of singular nodes %s\n", fname1);
+  }
   while (1) {
     fgets(buf, 256, fp);
     if (buf[0] != '%') {
@@ -243,11 +363,12 @@ int main(int argc, char **argv)
   jcol = new int[nnz];
 
   if (isComplex) {
+    double xreal, ximag;
     valc = new complex<double>[nnz];
     if (upper_flag) {
       for (int i = 0; i < nnz; i++) {
-	fscanf(fp, "%d %d %lf %lf", &jcol[i], &irow[i], 
-	       &(valc[i].real()), &(valc[i].imag()));
+	fscanf(fp, "%d %d %lf %lf", &jcol[i], &irow[i], &xreal, &ximag);
+	valc[i] = complex<double>(xreal, ximag);
 	irow[i]--;
 	jcol[i]--;
 	if (isSym && irow[i] > jcol[i]) {
@@ -260,8 +381,8 @@ int main(int argc, char **argv)
     }
     else {
       for (int i = 0; i < nnz; i++) {
-	fscanf(fp, "%d %d %lf %lf", &irow[i], &jcol[i], 
-	       &(valc[i].real()), &(valc[i].imag())); 
+	fscanf(fp, "%d %d %lf %lf", &irow[i], &jcol[i], &xreal, &ximag);
+	valc[i] = complex<double>(xreal, ximag);
 	irow[i]--;
 	jcol[i]--;
 	if (isSym && irow[i] < jcol[i]) {
@@ -304,21 +425,67 @@ int main(int argc, char **argv)
   }
   fclose (fp);
 
+  if (excl_flag) {
+    if ((fp = fopen(fname1, "r")) == NULL) {
+      fprintf(stderr, "fail to open %s\n", fname1);
+    }
+    fgets(buf, 256, fp);
+    sscanf(buf, "# %d", &nexcl);
+    indx_excl = new int[nexcl];
+    for (int i = 0; i < nexcl; i++) {
+      fgets(buf, 256, fp);
+      sscanf(buf, "%d", &itmp);
+      indx_excl[i] = itmp;
+    }
+    fclose(fp);
+  }
+
+  int *mask = new int[nrow];
+  int *old2new = new int[nrow];
+  for (int i = 0; i < nrow; i++) {
+    mask[i] = 1;
+  }
+  for (int i = 0; i < nexcl; i++) {
+    mask[indx_excl[i]] = 0;
+  }
+  itmp = 0;
+  jtmp = nrow - nexcl;
+  for (int i = 0; i < nrow; i++) {
+    if (mask[i] == 1) {
+      old2new[i] = itmp++;
+    }
+    else {
+      old2new[i] = jtmp++;
+    }
+  }
+#if 0
+  if ((fp = fopen("debug-index.data", "w")) != NULL) {
+    for (int i = 0; i < nrow; i++) {
+      fprintf(fp, "%d %d %d\n", i, old2new[i], mask[i]);
+    }
+    fclose(fp);
+  }
+#endif
+  nrow -= nexcl;
+
   ind_cols_tmp = new std::list<int>[nrow];
+  fprintf(stderr, "%s %d : getnerate_CSR\n", __FILE__, __LINE__);
   if (isComplex) {
     val_tmpc = new std::list<complex<double> >[nrow];
     generate_CSR<complex<double> >(ind_cols_tmp, val_tmpc, 
-				   nrow, nnz,
-				   irow, jcol, valc);
+				   nrow, &nnz, mask, old2new,
+				   irow, jcol, valc, (!isSym));
   }
   else {
     val_tmp = new std::list<double>[nrow];
     generate_CSR<double>(ind_cols_tmp, val_tmp, 
-			 nrow, nnz,
-			 irow, jcol, val);
+			 nrow, &nnz, mask, old2new,
+			 irow, jcol, val, (!isSym));
   }
   delete [] irow;
   delete [] jcol;
+  delete [] mask;
+  delete [] old2new;
   if (isComplex) {
     delete [] valc;
   }
@@ -340,9 +507,9 @@ int main(int argc, char **argv)
       }
     }
   }
+  fprintf(stderr, "%s %d : copy_CSR\n", __FILE__, __LINE__);
   ptrows = new int[nrow + 1];
   indcols = new int[nnz];
-  indvals = new int[nnz];
   if (isComplex) {
     ccoefs = new complex<double>[nnz];
     copy_CSR<complex<double> >(indcols, ptrows, ccoefs, 
@@ -355,7 +522,14 @@ int main(int argc, char **argv)
 		     nrow, upper_flag, isSym,
 		     ind_cols_tmp, val_tmp);
   }
+  delete [] ind_cols_tmp;
 
+  if (isComplex) {
+    delete [] val_tmpc;
+  }
+  else {
+    delete [] val_tmp;
+  }
 #if 0
   if ((fp = fopen("debug.matrix.data", "w")) != NULL) {
     for (int i = 0; i < nrow; i++) {
@@ -369,14 +543,18 @@ int main(int argc, char **argv)
   fclose(fp);
 #endif
   int pid = (int)getpid();
-#if 1
+#if 1 
   fprintf(stderr, "pid = %d\n", pid);
   sprintf(fname, "dissection.%04d.log", pid);
   fp = fopen(fname, "a");
 #else
   fp = stderr;
 #endif
-
+  for (int i = 0; i < argc; i++) {
+    fprintf(fp, "%s ", argv[i]);
+  }
+  fprintf(fp, "\n");
+  fprintf(stderr, "%s %d : before pthread_create\n", __FILE__, __LINE__);
   void* results;
   pthread_attr_t th_attr;
   pthread_t thread;
@@ -384,43 +562,42 @@ int main(int argc, char **argv)
   pthread_attr_setdetachstate(&th_attr, PTHREAD_CREATE_JOINABLE);       
   int pthid = pthread_create(&thread, &th_attr, 
 			     &thread_child,
-			     (void *)pid);
+			     (void *)&pid);
   if (pthid != 0) {
     cout << "bad thread creation ? " << pid << endl;
     exit(0);
   }
-  //  DissectionSolver *dslv = new DissectionSolver(num_threads > 1 ? 2 : 1, true, 0, fp);
-
-    clock_t t0_cpu, t1_cpu, t2_cpu, t3_cpu;
+  fprintf(stderr, "%s %d : after pthread_create\n", __FILE__, __LINE__);
+  
+  if (isWhole) {
+    isSym = true;
+    upper_flag = false;
+  }
+    
+  if (isComplex) {
+    DissectionSolver<complex<double>, double>*dslv = 
+      new DissectionSolver<complex<double>, double>(num_threads, true, 0, fp);
+    
+    int called = 0;
+    clock_t t0_cpu, t1_cpu, t2_cpu, t3_cpu, t4_cpu, t5_cpu;
     clock_t *tbegin_cpu, *tend_cpu;
-    elapsed_t t0_elapsed, t1_elapsed, t2_elapsed, t3_elapsed;
+    elapsed_t t0_elapsed, t1_elapsed, t2_elapsed, t3_elapsed, t4_elapsed, t5_elapsed;
     elapsed_t *tbegin_elapsed, *tend_elapsed;
 
-    int num_levels;
-    const int scaling = 1;
-    const int pivot_strategy = 0;
-    const int dim_augkern = 4;
-    int called = 0;
-    
+#ifdef BLAS_MKL
     mkl_set_num_threads(1);
+#endif
+#ifdef VECLIB
+    setenv("VECLIB_MAXIMUM_THREADS", "1", true);
+#endif
     t0_cpu = clock();
     get_realtime(&t0_elapsed);
-    if (numlevels <= 0) {
-      num_levels = (int)log2((double)nrow / (double)minNodes);
-    }
-    else {
-      num_levels = numlevels;
-    }
-
-  if (isComplex) {
-    DissectionSolver<complex<double> > *dslv = 
-      new DissectionSolver<complex<double> >(num_threads, true, 0, fp);
 
     dslv->SymbolicFact(nrow, (int *)ptrows, (int *)indcols,
 		       isSym,
 		       upper_flag,
-		       decomposer, num_levels, minNodes); 
-    //                  sym, upper
+		       isWhole,
+		       decomposer, numlevels, minNodes); 
     
     t1_cpu = clock();
     get_realtime(&t1_elapsed);
@@ -428,21 +605,25 @@ int main(int argc, char **argv)
     t2_cpu = clock();
     get_realtime(&t2_elapsed);
     _stat = 1;
-    fprintf(stderr, "%s %d : NumericFact()\n", __FILE__, __LINE__);
-    dslv->NumericFact((complex<double> *)ccoefs, scaling, 
-		      pivot_strategy, eps_pivot, 
-		      dim_augkern);
-    fprintf(stderr, "%s %d : NumericFact()\n", __FILE__, __LINE__);
+    usleep(5000);
+    dslv->NumericFact(0, (complex<double> *)ccoefs, scaling, 
+		      eps_pivot, kernel_detection_all);
     _stat = (-1);
     t3_cpu = clock();
     get_realtime(&t3_elapsed);
-    usleep(10000); // sleep
-    
-    _stat = 1;
+    usleep(5000);
+    fprintf(stderr, "%s %d : NumericFact() done\n", __FILE__, __LINE__);
+
+    int n0;
+    n0 = dslv->kern_dimension();
+    fprintf(fp, "%s %d : ## kernel dimension = %d\n", __FILE__, __LINE__, n0);
+
+
     int nrhs = 40;
     complex<double> *x = new complex<double>[nrow];
     complex<double> *y = new complex<double>[nrow * nrhs];
     complex<double> *z = new complex<double>[nrow * nrhs];
+
     int ntrial = 24;
     tbegin_cpu = new clock_t[ntrial];
     tend_cpu =  new clock_t[ntrial];
@@ -472,13 +653,13 @@ int main(int argc, char **argv)
       get_realtime(&tbegin_elapsed[k - 1]);  
       if (k == 1) {
 	fprintf(stderr, "%s %d : SolveSingle()\n", __FILE__, __LINE__);
-	dslv->SolveSingle(y, false, false);
+	dslv->SolveSingle(y, false, false, true);
 	fprintf(stderr, "%s %d : SolveSingle()\n", __FILE__, __LINE__);
       }
       else {
 	const int nnrhs = k;
 	fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
-	dslv->SolveMulti(y, nnrhs, false, false); 
+	dslv->SolveMulti(y, nnrhs, false, false, true); 
 	fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
       }
       tend_cpu[k - 1] = clock();
@@ -492,13 +673,14 @@ int main(int argc, char **argv)
       get_realtime(&tbegin_elapsed[k + 15]);  
       const int nnrhs = k * 5;
       fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
-      dslv->SolveMulti(y, nnrhs, false, false); 
+      dslv->SolveMulti(y, nnrhs, false, false, true); 
       fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
       tend_cpu[k + 15] = clock();
       get_realtime(&tend_elapsed[k + 15]);
     }
     _stat = (-1);
-#if 1
+
+    #if 1
     for (int k = 0; k < nrhs; k++) {
       const int kshft = k * nrow;
       for (int i = 0; i < nrow; i++) {
@@ -532,43 +714,74 @@ int main(int argc, char **argv)
 	      sqrt(norm1 / norm0), sqrt(norm1), sqrt(norm0));
     }
 #endif
+
     delete dslv;
+    delete [] ptrows;
+    delete [] indcols;
     delete [] ccoefs;
     delete [] x;
     delete [] y;
     delete [] z;
-
-  }
-  else {
+  }  // if (isComplex)
+  else { 
     DissectionSolver<double> *dslv = 
       new DissectionSolver<double>(num_threads, true, 0, fp);
     
+    int called = 0;
+    clock_t t0_cpu, t1_cpu, t2_cpu, t3_cpu, t4_cpu, t5_cpu;
+    clock_t *tbegin_cpu, *tend_cpu;
+    elapsed_t t0_elapsed, t1_elapsed, t2_elapsed, t3_elapsed, t4_elapsed, t5_elapsed;
+    elapsed_t *tbegin_elapsed, *tend_elapsed;
+#ifdef BLAS_MKL
+    mkl_set_num_threads(1);
+#endif
+#ifdef VECLIB
+   setenv("VECLIB_MAXIMUM_THREADS", "1", true);
+#endif
+    t0_cpu = clock();
+    get_realtime(&t0_elapsed);
+
     dslv->SymbolicFact(nrow, (int *)ptrows, (int *)indcols,
 		       isSym,
 		       upper_flag,
-		       decomposer, num_levels, minNodes); 
+		       isWhole,
+		       decomposer, numlevels, minNodes); 
     //                  sym, upper
-    
+    //    dslv->SaveMMMatrix(0, coefs);
+    //    exit(-1);
+#if 0
+    fprintf(stderr, "%d %d\n", nnz, ptrows[nrow]);
+    FORTRAN_DECL(csrmatrix_save)(0,
+				 0,
+				 0,  // is_sym
+				 1,  // real_or_cmplx
+				 nrow,
+				 ptrows[nrow],
+				 ptrows, 
+				 indcols,
+				 coefs);
+    exit(-1);
+#endif
     t1_cpu = clock();
     get_realtime(&t1_elapsed);
     
+    _stat = 1;
+    usleep(5000);   
     t2_cpu = clock();
     get_realtime(&t2_elapsed);
-    _stat = 1;
-    fprintf(stderr, "%s %d : NumericFact()\n", __FILE__, __LINE__);
-    dslv->NumericFact((double *)coefs, scaling, 
-		      pivot_strategy, eps_pivot, 
-		      dim_augkern);
-    fprintf(stderr, "%s %d : NumericFact()\n", __FILE__, __LINE__);
-    _stat = (-1);
+    dslv->NumericFact(0, (double *)coefs, scaling, 
+		      eps_pivot, kernel_detection_all);
     t3_cpu = clock();
     get_realtime(&t3_elapsed);
-    usleep(10000); // sleep
+    _stat = (-1);
+    usleep(5000);
+    fprintf(stderr, "%s %d : NumericFact() done\n", __FILE__, __LINE__);
     int n0;
     n0 = dslv->kern_dimension();
-    fprintf(fp, "## kernel dimension = %d\n", n0);
+    fprintf(fp, "%s %d : ## kernel dimension = %d\n", __FILE__, __LINE__, n0);
     
     _stat = 1;
+
     int nrhs = 40;
     double *x = new double[nrow];
     double *y = new double[nrow * nrhs];
@@ -584,7 +797,7 @@ int main(int argc, char **argv)
     if (!isSym && (n0 > 0)) {
       _stat = 1;
       fprintf(stderr, "%s %d : ComputeTransposedKernels()\n", __FILE__, __LINE__);
-      dslv->ComputeTransposedKernels(true);
+      dslv->ComputeTransposedKernels();
       fprintf(stderr, "%s %d : ComputeTransposedKernels()\n", __FILE__, __LINE__);
       _stat = (-1);
     }
@@ -612,13 +825,13 @@ int main(int argc, char **argv)
       get_realtime(&tbegin_elapsed[k - 1]);  
       if (k == 1) {
 	fprintf(stderr, "%s %d : SolveSingle()\n", __FILE__, __LINE__);
-	dslv->SolveSingle(y, false, false);
+	dslv->SolveSingle(y, false, false, true);
 	fprintf(stderr, "%s %d : SolveSingle()\n", __FILE__, __LINE__);
       }
       else {
 	const int nnrhs = k;
 	fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
-	dslv->SolveMulti(y, nnrhs, false, false); 
+	dslv->SolveMulti(y, nnrhs, false, false, true); 
 	fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
       }
       if (n0 > 0) {
@@ -635,7 +848,7 @@ int main(int argc, char **argv)
       get_realtime(&tbegin_elapsed[k + 15]);  
       const int nnrhs = k * 5;
       fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
-      dslv->SolveMulti(y, nnrhs, false, false); 
+      dslv->SolveMulti(y, nnrhs, false, false, true); 
       fprintf(stderr, "%s %d : SolveMulti() %d\n", __FILE__, __LINE__, nnrhs);
       if (n0 > 0) {
 	dslv->ProjectionImageSingle(y);
@@ -678,78 +891,27 @@ int main(int argc, char **argv)
       fprintf(fp, "## %2d : residual : %18.7e = %18.7e / %18.7e\n", k, 
 	      sqrt(norm1 / norm0), sqrt(norm1), sqrt(norm0));
     }
-#endif
 
-  delete dslv;
-  delete [] coefs;
-  delete [] x;
-  delete [] y;
-  delete [] z;
-
-  }
-  
-  _stat = 0;
-  pthread_attr_destroy(&th_attr);
-  pthid = pthread_join(thread, &results);  
-  if (pthid != 0) {
-    cout << "bad thread join ? " << pthid << endl;
-    exit(0);
-  }
-
-  fprintf(fp, "## symbolic fact    : cpu time = %.4e elapsed time = %.4e\n", 
-	 (double)(t1_cpu - t0_cpu) / (double)CLOCKS_PER_SEC,
-	 convert_time(t1_elapsed, t0_elapsed));
- 
-  fprintf(fp, "## numeric fact     : cpu time = %.4e elapsed time = %.4e\n", 
-	 (double)(t3_cpu - t2_cpu) / (double)CLOCKS_PER_SEC,
-	 convert_time(t3_elapsed, t2_elapsed));
-
-  for (int k = 1; k <= 20; k++) {
-    if (k == 1) {
-      fprintf(fp,
-	      "## solve single RHS : cpu time = %.4e elapsed time = %.4e\n", 
-	      (double)(tend_cpu[0] - tbegin_cpu[0]) / (double)CLOCKS_PER_SEC,
-	      convert_time(tend_elapsed[0], tbegin_elapsed[0]));
-    }
-    else {
-      const int nnrhs = k;
-      fprintf(fp,
-	      "## solve %d mlt-RHS : cpu time = %.4e elapsed time = %.4e\n", 
-	      nnrhs,
-	      (double)(tend_cpu[k - 1] - tbegin_cpu[k - 1]) / 
-	      (double)CLOCKS_PER_SEC,
-	      convert_time(tend_elapsed[k - 1], tbegin_elapsed[k - 1]));
-    }
-  }
-  for (int k = 5; k < 9; k++) {
-    const int nnrhs = k * 5;
-    fprintf(fp,
-	    "## solve %d mlt-RHS : cpu time = %.4e elapsed time = %.4e\n", 
-	    nnrhs,
-	    (double)(tend_cpu[k + 15] - tbegin_cpu[k + 15]) / 
-	    (double)CLOCKS_PER_SEC,
-	    convert_time(tend_elapsed[k + 15], tbegin_elapsed[k + 15]));
-    }
-
+    usleep(5000);   
+    t4_cpu = clock();
+    get_realtime(&t4_elapsed);  
+    dslv->SolveSingle(y, false, true, true); // with projection : true
+    //  dslv->ProjectionImageSingle(y);
+    t5_cpu = clock();
+    get_realtime(&t5_elapsed);
+    _stat = (-1);
+    usleep(5000);
+    fprintf(stderr, "%s %d : SolveSingle() done\n", __FILE__, __LINE__);
+#endif  
     
-#if 0
-  double *scalediag;
-  scalediag = new double[nrow];
-  dslv->GetMatrixScaling(scalediag);
-  for (int i = 0; i < nrow; i++) {
-    for (int k = ptrows[i]; k < ptrows[i + 1]; k++) {
-      if (indcols[k] == i) {
-	fprintf(fp, "%i : %g : %g %g\n", i, scalediag[i], 
-		1.0 / (scalediag[i] * scalediag[i]), coefs[k]);
-	break;
-      }
-    }
+    delete dslv;
+    delete [] ptrows;
+    delete [] indcols;
+    delete [] coefs;
+    delete [] x;
+    delete [] y;
+    delete [] z;
   }
-  delete [] scalediag;
-#endif
-
-  delete [] ptrows;
-  delete [] indcols;
   fclose(fp);
 
 }

@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Apr. 22th 2013
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #ifndef _C_THREADS_TASKS_
 #define _C_THREADS_TASKS_
@@ -108,6 +135,8 @@ struct C_Dsub_task {
   int parallel_id;
   long *ops_complexity;
   int father_id;
+  int child0_id;
+  int child1_id;
   int level;
   bool verbose;
   bool debug;
@@ -229,6 +258,7 @@ typedef struct {
 #define TASK_SINGLE   8
 #define TASK_PARALLEL 9
 
+#define C_DUMMY           1
 #define C_DIAG_START      2
 
 #define C_DFULL           4
@@ -1067,11 +1097,37 @@ struct C_deallocLocalSchur_arg {
   C_deallocLocalSchur_arg(const C_deallocLocalSchur_arg &im)
   {
     isSym = im.isSym;
-    i_block = im.i_block_;
-    j_block = im.j_block_;
+    i_block = im.i_block;
+    j_block = im.j_block;
     localSchur = im.localSchur;
     ops_complexity = im.ops_complexity;
     verbose = im.verbose;
+    fp = im.fp;
+    nb = im.nb;
+  }
+};
+
+struct C_dummy_arg {
+  long *ops_complexity;
+  bool verbose;
+  FILE **fp;
+  int nb;
+  ~C_dummy_arg() {
+    delete ops_complexity;
+  }
+  C_dummy_arg() {}
+  C_dummy_arg(bool verbose_,
+	      FILE **fp_,
+	      int nb_) :
+    verbose(verbose_),
+    fp(fp_),
+    nb(nb_) {
+    ops_complexity = new long;
+    *ops_complexity = (-1L);
+  }
+  C_dummy_arg(const C_dummy_arg & im)
+  {
+    ops_complexity = im.ops_complexity;
     fp = im.fp;
     nb = im.nb;
   }
@@ -2148,6 +2204,8 @@ void C_Dfill_FwBw(void *arg_);
 template<typename T, typename U>
 void erase_task(C_task *& task);
 
+void C_dummy(void *arg_);
+
 #define imin(a, b) ((a) < (b) ? (a) : (b))
 #define imax(a, b) ((a) > (b) ? (a) : (b))
 
@@ -2164,10 +2222,10 @@ int combine_two_strips(list<index_strip> &stripsa,
 		       list<index_strip> &strips0, 
 		       list<index_strip> &strips1,
 		       const int size);
-
+#if 0
 void copy_one_strip(list<index_strip> &strips_dst, 
 		    list<index_strip> &strips_src);
-
+#endif
 void copy_two_strips(list<index_strip2> &strips2,
 		     list<index_strip> &strips0, 
 		     list<index_strip> &strips1);

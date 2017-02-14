@@ -1,8 +1,8 @@
-#! \file   Makefile
+#! \file   Makefile.Solaris
 #  \brief  top of Makefile
 #  \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
 #  \date   Jul. 12th 2015
-#  \date   Feb. 10th 2016
+#  \date   Nov. 30th 2016
 
 # This file is part of dissection solver
 # 
@@ -38,10 +38,9 @@ all:
 	Compiler/*.o \
 	Interfaces/*.o \
         -L$(LIB_DIR_SCOTCH) -lscotch -lscotcherr \
+        -L$(LIB_DIR_METIS) -lmetis \
         -Xlinker -rpath=$(LIB_DIR_QD) -L$(LIB_DIR_QD) -lqd \
         $(SHARED_BLAS) $(SHARED_COMPILER)
-#	mv libDissection.$(EXT_SHAREDLIB) $(PROJ_LIBDIR)
-#	$(LD) $(LDOPT) -shared -o libDissection.$(EXT_SHAREDLIB) \
 
 clean:
 	@(cd Compiler;        make clean)
@@ -55,6 +54,3 @@ distclean:
 	-make clean
 	@rm -rf */*.d 
 	@(cd C-test; make clean)
-
-tar:
-	@tar --exclude='*/._*.[ch]pp' -zcvf src.tar.gz Defs.inc.Intel Defs.inc.SX Make.inc Makefile.Intel Makefile.SX */*.cpp */*.hpp */*.h */Makefile */Make.inc freefem++-interface/

@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Apr. 22th 2013
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Compiler/blas.hpp"
 #include "Compiler/OptionLibrary.h"
@@ -27,13 +54,15 @@
 #include "Driver/C_KernDetect.hpp"
 #include "Algebra/VectorArray.hpp"
 
-// #include <sstream>
+#include <iostream>
 #include <float.h>
 #include <cmath> // for isnan()
 // #define DEBUG_SVD
 #ifdef DEBUG_SVD
 #include "mkl_lapack.h"
 #endif
+
+void C_dummy(void *arg_) { };
 
 //#define DEBUG_ERASENULLPARETS
 int EraseNullParents(vector<C_task *> &queue)
@@ -217,6 +246,34 @@ int combine_two_strips(list<index_strip> &stripsa,
     return 0;
   }
 
+  if (strips0.size() == 0) {
+    stripsa.clear();
+    stripsb.clear();
+    for (list<index_strip>::const_iterator it = strips1.begin();
+	 it != strips1.end();
+	 ++it) {
+      stripsc.push_back(index_strip2((*it).begin_dst,
+				     -1,
+				     (*it).begin_src, 
+				     (*it).width));
+    }
+    return strips1.size();
+  }
+
+  if (strips1.size() == 0) {
+    stripsa.clear();
+    stripsb.clear();
+    for (list<index_strip>::const_iterator it = strips0.begin();
+	 it != strips0.end();
+	 ++it) {
+      	  stripsc.push_back(index_strip2((*it).begin_dst, 
+					 (*it).begin_src, 
+					 -1,
+					 (*it).width));
+    }
+    return strips0.size();
+  }
+
   vector<int> ary0(size, (-1));
   vector<int> ary1(size, (-1));
   int in_strip0, in_strip;
@@ -322,37 +379,36 @@ int combine_two_strips(list<index_strip> &stripsa,
     }
   }
 #if 0
-  cout << "child-a " << endl;
-  //   cout << ary0 << endl;
+  std::cout << "child-a " << std::endl;
+  //   std::cout << ary0 << std::endl;
   for (list <index_strip>::const_iterator kt = stripsa.begin();
        kt != stripsa.end();
        ++kt) {
-    cout << "[ " << (*kt).begin_dst << " , " 
+    std::cout << "[ " << (*kt).begin_dst << " , " 
 	 << (*kt).begin_src << " , "
 	 << (*kt).width << " ] ";
   }
-  cout << endl;
-  cout << "child-b " << endl;
-  //   cout << ary1 << endl;
+  std::cout << std::endl;
+  std::cout << "child-b " << std::endl;
+  //   std::cout << ary1 << std::endl;
   for (list <index_strip>::const_iterator kt = stripsb.begin();
 	     kt != stripsb.end();
        ++kt) {
-    cout << "[ " << (*kt).begin_dst << " , " 
+    std::cout << "[ " << (*kt).begin_dst << " , " 
 	 << (*kt).begin_src << " , "
 	 << (*kt).width << " ] ";
   }
-  cout << endl;
-  cout << "children-a -b ";
+  std::cout << std::endl;
+  std::cout << "children-a -b ";
   for (list <index_strip2>::const_iterator kt = stripsc.begin();
        kt != stripsc.end();
        ++kt) {
-    cout << "[ " << (*kt).begin_dst << " , " 
+    std::cout << "[ " << (*kt).begin_dst << " , " 
 	 << (*kt).begin_src0 << " , "
 	 << (*kt).begin_src1 << " , "
 	 << (*kt).width << " ] ";
   }
-  cout << endl;
-#endif
+  std::cout << std::endl;
   // checking generated new three strips :
   vector<int> bry0(size, (-1));
   vector<int> bry1(size, (-1));
@@ -387,7 +443,7 @@ int combine_two_strips(list<index_strip> &stripsa,
     }
   }
   for (int i = 0; i < size; i++) {
-#if 0 // combined with verbose
+
     if (bry0[i] != ary0[i]) {
       cout << "mismatch 0 in " << i << " : " 
 	   << bry0[i] << " " << ary0[i] << endl;
@@ -396,12 +452,11 @@ int combine_two_strips(list<index_strip> &stripsa,
       cout << "mismatch 1 in " << i << " : " 
 	   << bry1[i] << " " << ary1[i] << endl;
     }
-#endif
   } // loop : i
-  
+#endif  
   return (stripsa.size() + stripsb.size() + stripsc.size());
 }
-
+#if 0
 void copy_one_strip(list<index_strip> &strips_dst, 
 		    list<index_strip> &strips_src)
 {
@@ -412,7 +467,7 @@ void copy_one_strip(list<index_strip> &strips_dst,
     strips_dst.push_back(*mt);
   }
 }
-
+#endif
 void copy_two_strips(list<index_strip2> &strips2,
 		     list<index_strip> &strips0, 
 		     list<index_strip> &strips1) 
@@ -464,20 +519,20 @@ void split_two_strips(list<index_strip> &strips0,
     begin_src1 += width;
   }
   begin_dst += width;
-  int end_dst = end_dst0 < end_dst1 ? end_dst0 : end_dst1;
-  width = end_dst - begin_dst;
+  const int end_dst = end_dst0 < end_dst1 ? end_dst0 : end_dst1;
+  const int width2 = end_dst - begin_dst;
   strips2.push_back(index_strip2(begin_dst,
 				 begin_src0,
 				 begin_src1,
-				 width));
+				 width2));
   if (end_dst0 < end_dst1) {
-    strips1.push_back(index_strip(end_dst,
-				  begin_src0 + width,
+    strips1.push_back(index_strip(end_dst,              // 27 Nov.2016 bug found
+				  begin_src1 + width2,  // begin_src0 + width
 				  end_dst1 - end_dst0));
   }
   else if (end_dst0 > end_dst1) {
     strips0.push_back(index_strip(end_dst,
-				  begin_src1 + width,
+				  begin_src0 + width2,  // begin_src1 + width
 				  end_dst0 - end_dst1));
   }
 }
@@ -1669,7 +1724,7 @@ void test_2x2(int *print_cntrl)
   long double *bbq = new long double[n_dim2 * n_dim2];
   long double *d1q = new long double[n_dim2];
   double ad1, ad3, al2, al3;
-  const double machine_eps0 = machine_epsilon<double>(); //DBL_EPSILON;
+  const double machine_eps0 = machine_epsilon<double, double>(); //DBL_EPSILON;
   double *errors = new double[6];
   int n0, n1, flag0;
   int dim_augkern2 = 2;
@@ -1695,7 +1750,7 @@ void test_2x2(int *print_cntrl)
     double tmp = 0.0;
     for (int j = 0; j < (n_dim2 - 1); j++) {
       // weight cos(j) is a trick to avoid the case A [1 ... 1]^T = 0
-      tmp += aaa[i + j *n_dim2] + (random_normalized() < 0.5 ? machine_eps0 : 0.0);
+      tmp += aaa[i + j *n_dim2] + (random_bool() ? machine_eps0 : 0.0);
       // emulate numerical error from floating point operations
     }
     aaa[i + (n_dim2 - 1) * n_dim2] = 0.0;//tmp;
@@ -2376,7 +2431,7 @@ void C_SparseNumFact(void *arg_)
   }
 	
   get_realtime(&t1);
-  if (verbose) {
+  if (verbose) { // Oct.2016 : needs lower level of verbose to prevent message
     fprintf(fp, "%s %d : %d : pivot = %g n0 = %d detected = %s\n",
 	    __FILE__, __LINE__,
 	    arg->nb, *pivot, nsing, detected ? "true" : "false");
@@ -3772,7 +3827,8 @@ void C_Dsub_FwBw(void *arg_)
        it != diag_contribs->end(); ++it) {
     const int child_id = (*it).child_id;
     const int child_id0 = btree->selfIndex(child_id);
-    if (btree->nodeLayer(child_id) == level) {
+    if ((btree->nodeLayer(child_id) == level) &&
+	(btree->sizeOfDomain(child_id) > 0)) {   // 08 Nov.2016 Atsushi
       for (list<index_strip>::const_iterator mt = (*it).diag_strip.begin();
 	   mt != (*it).diag_strip.end(); ++mt) {
 	for (int m = 0; m < nrhs; m++) {
@@ -4500,6 +4556,13 @@ void erase_task(C_task *& task)
   case C_SPARSESYMBW:
     {
       C_SparseBw_arg<T, U> *tt = (C_SparseBw_arg<T, U> *)task->func_arg;
+      delete tt;
+      tt = NULL;
+    }
+    break;
+  case C_DUMMY:
+    {
+      C_dummy_arg *tt = (C_dummy_arg *)task->func_arg;
       delete tt;
       tt = NULL;
     }

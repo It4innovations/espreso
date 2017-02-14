@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Jun. 20th 2014
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Compiler/blas.hpp"
 #include "Compiler/OptionLibrary.h"
@@ -398,6 +425,7 @@ void dsub_unsym2unsym(C_Dsub_task<T> *arg)
   const int jblock1 = src_mtrx->BlockIndex(jc_bgn_src + ncol - 1);
   const int ncol_src_offset = src_mtrx->BlockOffset(jc_bgn_src);
   const T none(-1.0);
+
   if ((iblock0 + 1) == iblock1) {
     // decomposition is defined by src block with SIZE_B1
     const int ir_mid_src = src_mtrx->IndexBlock(iblock1);// * SIZE_B1;
@@ -710,6 +738,7 @@ void dsub_unsym2diag(C_Dsub_task<T> *arg)
   const int jblock1 = src_mtrx->BlockIndex(jc_bgn_src + ncol - 1);
   const int ncol_src_offset = src_mtrx->BlockOffset(jc_bgn_src);
   const T none(-1.0);
+
   if ((iblock0 + 1) == iblock1) {
     // decomposition is defined by src block with SIZE_B1
     const int ir_mid_src = src_mtrx->IndexBlock(iblock1);
@@ -1938,7 +1967,6 @@ template<typename T>
 void dsub_sym2rct_two(C_Dsub_task<T> *arg) 
 {
   C_Dsub_task<T> *tmp;
-
   tmp = new C_Dsub_task<T>(arg->atomic_size,
 			   arg->atomic_id,
 			   arg->ir_bgn, 
@@ -2104,6 +2132,7 @@ void C_Dsub_queue(bool isSym,
 		  list <child_contribution<T> > &child_contrib,
 		  vector<C_task *>* tasks_p, // _tasks_DSymmGEMM
 		  vector<int>* tasks_p_indcol,
+		  const bool tasks_p_flag,
 		  vector<C_task *>* tasks_q, // _tasks_DfillSymm
 		  vector<C_task *>* tasks_r, // _tasks_SparseLocalSchur
 		  vector<C_task *>* tasks_s, // _tasks_DSub[level + 1][(*it)]
@@ -2126,6 +2155,26 @@ void C_Dsub_queue(bool isSym,
   const int block_diag_size = (num_block * (num_block + 1)) / 2;
   const int block_offdiag_size = num_block * num_block2;
 
+  //  vector<C_task *>* tasks_p = ((tasks_p_ == NULL) ? NULL :
+  //			       (tasks_p_->size() > 0 ? tasks_p_ : NULL));
+  if (diag_size == 0) {
+    queue.resize(1);
+    int nb = father_id + 1;
+    string task_name = ("i dummy : " +
+			to_string(level) + " : " +to_string(nb));
+    C_dummy_arg *arg = new C_dummy_arg(verbose, &fp, nb);
+    //    *(arg->ops_complexity) = (-1L);
+    queue[0] = new C_task(C_DUMMY,
+			  task_name,
+			  (void *)arg,
+			  C_dummy,
+			  1, // atomic_size,
+			  0, // atomic_id,
+			  arg->ops_complexity);
+    queue[0]->parents->clear();
+    fprintf(fp, "%s %d : %s\n", __FILE__, __LINE__, task_name.c_str());
+    return;
+  }
 #ifdef DEBUG_PREPARE_THREAD
   cout << "father = " << (father_id + 1) // selfIndex^-1
        << " # of child = " << child_contrib.size() << " [ ";
@@ -2189,6 +2238,17 @@ void C_Dsub_queue(bool isSym,
       cout << endl;
     }
 #endif
+    if ((child0.child_pt->dimension() == 0) ||
+	(child1.child_pt->dimension() == 0)) {
+      fprintf(fp, "%s %d : %d %d %d : %d %d %d\n", __FILE__, __LINE__,
+	      child0.child_id,
+	      (int)child0.diag_strip.size(),
+	      (int)child0.offdiag_strip.size(),
+	      child1.child_id,
+	      (int)child1.diag_strip.size(),
+	      (int)child1.offdiag_strip.size());
+    }
+
     list <index_strip> *strips_r, *strips_c;
     strips_r = new list <index_strip>[2];
     strips_c = new list <index_strip>[2];
@@ -2225,36 +2285,46 @@ void C_Dsub_queue(bool isSym,
 	  fprintf(fp, "%s %d : both rows are null : father = %d\n",
 		  __FILE__, __LINE__, (father_id + 1));
 	}
-	exit(-1); // 15 Jul.2013 need to be treaded by thowing exception
+	strips_r[0].clear();
+	strips_r[1].clear();
+	strips_r01.clear();
       }
-	
       if ((child0.diag_strip.size() == 0) || 
 	  (child1.diag_strip.size() == 0)) {
 	if (verbose) {
 	  fprintf(fp, "%s %d : one of rows is null / ",
 		  __FILE__, __LINE__);
-	  if (child0.diag_strip.size() == 0) {
+	}
+	if (child0.diag_strip.size() == 0) {
+	  if (verbose) {
 	    fprintf(fp, " r0 null / ");
 	  }
-	  else {
+	  strips_r[0].clear();
+	  strips_r[1] = child1.diag_strip;
+	}
+	else {
+	  if (verbose) {
 	    fprintf(fp, "%d : %d / ",  
 		    child0.diag_strip.front().begin_dst,
 		    child0.diag_strip.front().width);
 	  }
-	  if (child1.diag_strip.size() == 0) {
-	    fprintf(fp, " r1 null\n ");
+	}
+	if (child1.diag_strip.size() == 0) {
+	  if (verbose) {
+	    fprintf(fp, " r1 null\n");
 	  }
-	  else {
+	  strips_r[0] = child0.diag_strip;
+	  strips_r[1].clear();
+	}
+	else {
+	  if (verbose) {
 	    fprintf(fp, "%d : %d\n",  
 		    child1.diag_strip.front().begin_dst,
 		    child1.diag_strip.front().width);
 	  }
 	} // if (verbose)
 	strips_r01.clear();
-	// null is also copied
-	copy_one_strip(strips_r[0], child0.diag_strip);
-	copy_one_strip(strips_r[1], child1.diag_strip);
-      }
+      } //  (child0.diag_strip.size() == 0) || (child1.diag_strip.size() == 0)
       else {
 	if ((child0.diag_strip.front().begin_dst != 
 	     child1.diag_strip.front().begin_dst) ||
@@ -2276,7 +2346,7 @@ void C_Dsub_queue(bool isSym,
 			   child0.diag_strip.front(),
 			   child1.diag_strip.front());
 	  if (verbose) {
-	    fprintf(fp, "%s %d : split of strips r0",
+	    fprintf(fp, "%s %d : split of strips r0 ",
 		    __FILE__, __LINE__);
 	    for (list<index_strip>::const_iterator kt = strips_r[0].begin(); 
 		 kt != strips_r[0].end(); ++kt) {
@@ -2314,12 +2384,31 @@ void C_Dsub_queue(bool isSym,
 	    fprintf(fp, "\n");
 	  } // if (verbose)
 	}
-      }
+      }//  (child0.diag_strip.size() == 0) || (child1.diag_strip.size() == 0)
+    }  //  (child0.diag_strip.size() > 1 || child1.diag_strip.size() > 1)
+    if ((child0.offdiag_strip.size() > 0) &&
+	(child1.offdiag_strip.size() > 0)) {
+      combine_two_strips(strips_c[0], strips_c[1], strips_c01, 
+			 child0.offdiag_strip,
+			 child1.offdiag_strip,
+			 child0.offdiag_size);
     }
-    combine_two_strips(strips_c[0], strips_c[1], strips_c01, 
-		       child0.offdiag_strip,
-		       child1.offdiag_strip,
-		       child0.offdiag_size);
+    else if (child1.offdiag_strip.size() == 0) {
+      strips_c[0]= child0.offdiag_strip;
+      strips_c[1].clear();
+      strips_c01.clear();
+    }
+    else { // (child0.offdiag_strip.size() == 0)
+      strips_c[1]= child1.offdiag_strip;
+      strips_c[0].clear();
+      strips_c01.clear();
+    }
+    if ((child0.child_pt->dimension() == 0) ||
+	(child1.child_pt->dimension() == 0)) {
+      fprintf(fp, "%s %d : %d %d %d\n", __FILE__, __LINE__,
+	      (int)strips_c[0].size(), (int)strips_c[1].size(),
+	      (int)strips_c01.size());
+    }
     queue.resize(block_diag_size + num_block2);
     //    queue.resize(block_diag_size + block_offdiag_size);
     if (verbose) {
@@ -2415,12 +2504,14 @@ void C_Dsub_queue(bool isSym,
 				     (SquareBlockMatrix<T>*)NULL, // src_pt2
 				     (isSym ? dsub_sym2sym_diag<T> : 
 				      dsub_unsym2unsym_diag<T>), 
-				     false,
+				     false,  // skip_flag
 				     ops,
 				     father_id,
 				     level,
 				     verbose,
 				     fp);
+		tmp->child0_id = child_id[0];
+		tmp->child1_id = child_id[1];
 		C_task_arg->push_back(tmp);
 		*ops_sum += ops;
 		update_parents_list(parents_r[ll], 
@@ -2459,7 +2550,7 @@ void C_Dsub_queue(bool isSym,
 				     child_pt[ll],
 				     (SquareBlockMatrix<T>*)NULL, // src_pt2
 				     isSym ? dsub_sym2sym<T> : dsub_unsym2unsym<T>,
-				     false,
+				     false, // skip_flag
 				     ops,
 				     father_id,
 				     level,
@@ -2472,6 +2563,13 @@ void C_Dsub_queue(bool isSym,
 				    ir_bgn_src, ir_end_src, child_pt[ll]);
 		update_parents_list(parents_c[ll], 
 				    ic_bgn_src, ic_end_src, child_pt[ll]);
+#if 0
+		if (father_id == 0 && ll == 1) {
+		  fprintf(stderr, "%s : %d [%d %d] %d\n",
+			  __FILE__, __LINE__,
+			  ic_bgn_src, ic_end_src, parents_c[ll].back());
+		}
+#endif
 		//SIZE_B1);
 	      } // if ((ir_bgn < ir_end) && (ic_bgn < ic_end)) 
 	    } // if (kc == kr)
@@ -2521,7 +2619,7 @@ void C_Dsub_queue(bool isSym,
 				     child_pt[ll],
 				     (SquareBlockMatrix<T>*)NULL, // src_pt2
 				     isSym ? dsub_sym2sym<T> : ((kr0 == kc0) ? dsub_unsym2diag<T> :dsub_unsym2unsym<T>),
-				     false,
+				     false, // skip_flag
 				     ops,
 				     father_id,
 				     level,
@@ -2534,6 +2632,13 @@ void C_Dsub_queue(bool isSym,
 				    ir_bgn_src, ir_end_src, child_pt[ll]);
 		update_parents_list(parents_c[ll], 
 				    jc_bgn_src, jc_end_src, child_pt[ll]);
+#if 0
+		if (father_id == 0 && ll == 1) {
+		  fprintf(stderr, "%s : %d [%d %d] %d\n",
+			  __FILE__, __LINE__,
+			  jc_bgn_src, jc_end_src, parents_c[ll].back());
+		}
+#endif
 	      } // if ((ir_bgn < ir_end) && (jc_bgn < jc_end))
 	    } // loop : nt
 	    // -- child_ll * child01
@@ -2587,7 +2692,7 @@ void C_Dsub_queue(bool isSym,
 				     (SquareBlockMatrix<T>*)NULL, // src_pt2
 				     isSym ? dsub_sym2sym<T> : ((kr0 == kc0) ? dsub_unsym2diag<T> :dsub_unsym2unsym<T>),
 			     // dsub_unsym2unsym<T>, bug : 17 Jan.2016 found
-				     false,
+				     false, // skip_flag
 				     ops,
 				     father_id,
 				     level,
@@ -2600,6 +2705,13 @@ void C_Dsub_queue(bool isSym,
 				    ir_bgn_src, ir_end_src, child_pt[ll]);
 		update_parents_list(parents_c[ll], 
 				    jc_bgn_src, jc_end_src, child_pt[ll]);
+#if 0
+		if (father_id == 0 && ll == 1) {
+		  fprintf(stderr, "%s : %d [%d %d] %d\n",
+			  __FILE__, __LINE__,
+			  jc_bgn_src, jc_end_src, parents_c[ll].back());
+		}
+#endif
 	      } //  if ((ir_bgn < ir_end) && (jc_bgn < jc_end))v
 	    } // loop : nt
 	  }   // loop : mt
@@ -2793,6 +2905,13 @@ void C_Dsub_queue(bool isSym,
 		update_parents_list(parents_c[ll], 
 				    jc_bgn_srcs[ll], jc_end_srcs[ll], 
 				    child_pt[ll]);
+#if 0
+		if (father_id == 0 && ll == 1) {
+		  fprintf(stderr, "%s : %d [%d %d] %d\n",
+			  __FILE__, __LINE__,
+			  jc_bgn_srcs[ll], jc_end_srcs[ll], parents_c[ll].back());
+		}
+#endif
 	      }
 	    } //	if ((ir_bgn < ir_end) && (jc_bgn < jc_end)) {
 	  } // loop : nt
@@ -2821,8 +2940,8 @@ void C_Dsub_queue(bool isSym,
 		((ll == 0 ? (*mt).begin_src0 : (*mt).begin_src1) +
 		 (ir_bgn - r_bgn_dst));
 	      const int jc_bgn_src = 
-		((*nt).begin_dst + (jc_bgn - c_bgn_dst));
-
+		// ((*nt).begin_dst + (jc_bgn - c_bgn_dst));
+		(*nt).begin_src + (jc_bgn - c_bgn_dst);
 	      const int ir_end_src = ir_bgn_src + (ir_end - ir_bgn);
 	      const int jc_end_src = jc_bgn_src + (jc_end - jc_bgn);
 
@@ -2862,6 +2981,14 @@ void C_Dsub_queue(bool isSym,
 				    ir_bgn_src, ir_end_src, child_pt[ll]);
 		update_parents_list(parents_c[ll], 
 				    jc_bgn_src, jc_end_src, child_pt[ll]);
+#if 0
+		if (father_id == 0 && ll == 1) {
+		  fprintf(stderr, "%s : %d [%d %d] %d : %d %d %d\n",
+			  __FILE__, __LINE__,
+			  jc_bgn_src, jc_end_src, parents_c[ll].back(),
+			  (*nt).begin_src, (*nt).begin_dst, (*nt).width);
+		}
+#endif
 	      } 	//      if ((ir_bgn < ir_end) && (jc_bgn < jc_end)) 
 	    } // loop : nt
 	  }   // loop : ll
@@ -2919,19 +3046,23 @@ void C_Dsub_queue(bool isSym,
 				 ((*nt) * (*nt) + 2 * (*mt)));
 		vector<C_task *> &tasks_tmq = tasks_d[child_id[ll]];
 		vector<int> &indcolq = tasks_d_indcol[child_id[ll]];
-		if (tasks_p != NULL) {
+		if (tasks_p_flag) {
 		  vector<C_task *> &tasks_tmp = tasks_p[child_id[ll]];
 		  vector<int> &indcolp = tasks_p_indcol[child_id[ll]];
 		  queue[kk]->parents->push_back(tasks_tmp[indcolp[idx]]);
 		}
-		tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		if (tasks_tmq.size() > 0) {
+		  tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		}
 		if (!isSym && ((*nt) > (*mt))) {
-		  if (tasks_p != NULL) {
+		  if (tasks_p_flag) {
 		    vector<C_task *> &tasks_tmp = tasks_p[child_id[ll]];
 		    vector<int> &indcolp = tasks_p_indcol[child_id[ll]];
 		    queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);
 		  }
-		  tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		  if (tasks_tmq.size() > 0) {
+		    tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		  }
 		}
 	      }
 	      for (list<int>::const_iterator nt = parents_c[ll].begin(); 
@@ -2942,19 +3073,57 @@ void C_Dsub_queue(bool isSym,
 				   ((*nt) * (*nt) + 2 * (*mt)));
 		  vector<C_task *> &tasks_tmq = tasks_d[child_id[ll]];
 		  vector<int> &indcolq = tasks_d_indcol[child_id[ll]];
-		  if (tasks_p != NULL) {
+		  if (tasks_p_flag) {
 		    vector<C_task *> &tasks_tmp = tasks_p[child_id[ll]];
 		    vector<int> &indcolp = tasks_p_indcol[child_id[ll]];
+		    //		    if (indcolp.size() > idx) {
 		    queue[kk]->parents->push_back(tasks_tmp[indcolp[idx]]);
+#if 0
+		    }
+		    else {
+			fprintf(stderr,
+				"%s %d : %d < %d : prnts_c[%d].size=%d %d %d kr0=%d kc0=%d\n",
+				__FILE__, __LINE__,
+				(int)indcolp.size(), idx,
+				ll, parents_c[ll].size(), *mt, *nt, kr0, kc0);
+		    }
+#endif
 		  }
-		  tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		  if (tasks_tmq.size() > 0) {
+		    //		    if (indcolq.size() > idx) {
+		      tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+#if 0
+		    }
+		    else {
+			fprintf(stderr, "%s %d : % d : (%d %d) %d < %d\n",
+				__FILE__, __LINE__, ll, (*nt), (*mt),
+				(int)indcolq.size(), idx);
+		    }
+		  #endif
 		  if (!isSym) {
-		    if (tasks_p != NULL) {
+		    if (tasks_p_flag) {
 		      vector<C_task *> &tasks_tmp = tasks_p[child_id[ll]];
 		      vector<int> &indcolp = tasks_p_indcol[child_id[ll]];
-		      queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);
+		      //		      if (indcolp.size() > (idx + 1)) {
+			queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);		      }
+#if 0
+		      else {
+			fprintf(stderr, "%s %d : %d < %d\n", __FILE__, __LINE__,
+				(int)indcolp.size(), (idx + 1));
+		      }
+#endif
 		    }
-		    tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		    if (tasks_tmq.size() > 0) {
+		      //		      if (indcolq.size() > (idx + 1)) {
+			tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+#if 0
+		      }
+		      else {
+			fprintf(stderr, "%s %d : %d < %d\n", __FILE__, __LINE__,
+				(int)indcolq.size(), (idx + 1));
+		      }
+#endif
+		    }
 		  }
 		}
 	      }  // loop : nt
@@ -3258,9 +3427,9 @@ void C_Dsub_queue(bool isSym,
 	    jc_end_srcs[0] = jc_bgn_srcs[0] + (jc_end - jc_bgn);
 	    jc_end_srcs[1] = jc_bgn_srcs[1] + (jc_end - jc_bgn);
 	    
-	    if ((ir_bgn < ir_end) && (jc_bgn < jc_end)) {	    
+	    if ((ir_bgn < ir_end) && (jc_bgn < jc_end)) {
 	      C_Dsub_task<T> *tmp = 
-		new C_Dsub_task<T>(1,
+		  new C_Dsub_task<T>(1,
 				   0,
 				   (ir_bgn - kr), 
 				   (ir_end - kr), 
@@ -3301,9 +3470,9 @@ void C_Dsub_queue(bool isSym,
 	  } // loop : nt
 	}    // loop : mt
       } // loop : kr0
-	string task_name = ("h    " + to_string(kc0) + " : "
-			    + to_string(level) + " : "
-			    + to_string(father_id + 1)); // selfIndex^-1
+      string task_name = ("h    " + to_string(kc0) + " : "
+			  + to_string(level) + " : "
+			  + to_string(father_id + 1)); // selfIndex^-1
       queue[kk] = new C_task(C_DSUB,
 			     task_name, //task_name.str(),
 			     (void *)C_task_arg,
@@ -3343,19 +3512,23 @@ void C_Dsub_queue(bool isSym,
 
 	      vector<C_task *> &tasks_tmq = tasks_d[child_id[ll]];
 	      vector<int> &indcolq = tasks_d_indcol[child_id[ll]];
-	      if (tasks_p != NULL) {
+	      if (tasks_p_flag) {
 		vector<C_task *> &tasks_tmp = tasks_p[child_id[ll]];
 		vector<int> &indcolp = tasks_p_indcol[child_id[ll]];
 		queue[kk]->parents->push_back(tasks_tmp[indcolp[idx]]);
 	      }
-	      tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+	      if (tasks_tmq.size() > 0) {
+		tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+	      }
 	      if (!isSym && ((*nt) > (*mt))) {
-		if (tasks_p != NULL) {
+		if (tasks_p_flag) {
 		  vector<C_task *> &tasks_tmp = tasks_p[child_id[ll]];
 		  vector<int> &indcolp = tasks_p_indcol[child_id[ll]];
 		  queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);
 		}
-		tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		if (tasks_tmq.size() > 0) {
+		  tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		}
 	      }
 	    }
 	  }  // loop : nt
@@ -3678,19 +3851,23 @@ void C_Dsub_queue(bool isSym,
 	      
 	      vector<C_task *> &tasks_tmq = tasks_d[(*jt).child_id];
 	      vector<int> &indcolq = tasks_d_indcol[(*jt).child_id];
-	      if (tasks_p != NULL) {
+	      if (tasks_p_flag) {
 		vector<C_task *> &tasks_tmp = tasks_p[(*jt).child_id];
 		vector<int> &indcolp = tasks_p_indcol[(*jt).child_id];
 		queue[kk]->parents->push_back(tasks_tmp[indcolp[idx]]);
 	      }
-	      tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+	      if (tasks_tmq.size() > 0) {
+		tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+	      }
 	      if (!isSym && ((*nt) > (*mt))) { 
-		if (tasks_p != NULL) {
+		if (tasks_p_flag) {
 		  vector<C_task *> &tasks_tmp = tasks_p[(*jt).child_id];
 		  vector<int> &indcolp = tasks_p_indcol[(*jt).child_id];
 		  queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);
 		}
-		tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		if (tasks_tmq.size() > 0) {
+		  tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		}
 	      }
 	    }
 	    for (list<int>::const_iterator nt = parents_c[ll].begin(); 
@@ -3701,19 +3878,23 @@ void C_Dsub_queue(bool isSym,
 				 ((*nt) * (*nt) + 2 * (*mt)));
 		vector<C_task *> &tasks_tmq = tasks_d[(*jt).child_id];
 		vector<int> &indcolq = tasks_d_indcol[(*jt).child_id];
-		if (tasks_p != NULL) {
+		if (tasks_p_flag) {
 		  vector<C_task *> &tasks_tmp = tasks_p[(*jt).child_id];
 		  vector<int> &indcolp = tasks_p_indcol[(*jt).child_id];
 		  queue[kk]->parents->push_back(tasks_tmp[indcolp[idx]]);
 		}
-		tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		if (tasks_tmq.size() > 0) {
+		  tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		}
 		if (!isSym) {
-		  if (tasks_p != NULL) {
+		  if (tasks_p_flag) {
 		    vector<C_task *> &tasks_tmp = tasks_p[(*jt).child_id];
 		    vector<int> &indcolp = tasks_p_indcol[(*jt).child_id];
 		    queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);
 		  }
-		  tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		  if (tasks_tmq.size() > 0) {
+		    tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		  }
 		}
 	      }
 	    } // loop : nt
@@ -3904,19 +4085,23 @@ void C_Dsub_queue(bool isSym,
 				 ((*nt) * (*nt) + 2 * (*mt)));
 		vector<C_task *>&tasks_tmq = tasks_d[(*jt).child_id];
 		vector<int> &indcolq = tasks_d_indcol[(*jt).child_id];
-		if (tasks_p != NULL) {
+		if (tasks_p_flag) {
 		  vector<C_task *>&tasks_tmp = tasks_p[(*jt).child_id];
 		  vector<int> &indcolp = tasks_p_indcol[(*jt).child_id];
 		  queue[kk]->parents->push_back(tasks_tmp[indcolp[idx]]);
 		}
-		tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		if (tasks_tmq.size() > 0) {
+		  tasks_tmq[indcolq[idx]]->parents->push_back(queue[kk]);
+		}
 		if (!isSym && ((*nt) > (*mt))) {
-		  if (tasks_p != NULL) {
+		  if (tasks_p_flag) {
 		    vector<C_task *>&tasks_tmp = tasks_p[(*jt).child_id];
 		    vector<int> &indcolp = tasks_p_indcol[(*jt).child_id];
 		    queue[kk]->parents->push_back(tasks_tmp[indcolp[idx + 1]]);
 		  }
-		  tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		  if (tasks_tmq.size() > 0) {
+		    tasks_tmq[indcolq[idx + 1]]->parents->push_back(queue[kk]);
+		  }
 		}
 	      }  
 	    } // loop : nt
@@ -3961,6 +4146,7 @@ void C_Dsub_queue<double>(bool isSym,
 			  list <child_contribution<double> > &child_contrib,
 			  vector<C_task *>* tasks_p, 
 			  vector<int>* tasks_p_indcol,
+			  const bool tasks_p_flag,
 			  vector<C_task *>* tasks_q,
 			  vector<C_task *>* tasks_r,
 			  vector<C_task *>* tasks_s,
@@ -3978,6 +4164,7 @@ void C_Dsub_queue<quadruple>(bool isSym,
 			     list <child_contribution<quadruple> > &child_contrib,
 			     vector<C_task *>* tasks_p, 
 			     vector<int>* tasks_p_indcol,
+			     const bool tasks_p_flag,
 			     vector<C_task *>* tasks_q,
 			     vector<C_task *>* tasks_r,
 			     vector<C_task *>* tasks_s,
@@ -3995,6 +4182,7 @@ void C_Dsub_queue<complex<double> >(bool isSym,
 				    list <child_contribution<complex<double> > > &child_contrib,
 				    vector<C_task *>* tasks_p, 
 				    vector<int>* tasks_p_indcol,
+				    const bool tasks_p_flag,
 				    vector<C_task *>* tasks_q,
 				    vector<C_task *>* tasks_r,
 				    vector<C_task *>* tasks_s,
@@ -4012,6 +4200,7 @@ void C_Dsub_queue<complex<quadruple> >(bool isSym,
 				       list <child_contribution<complex<quadruple> > > &child_contrib,
 				       vector<C_task *>* tasks_p, 
 				       vector<int>* tasks_p_indcol,
+				       const bool tasks_p_flag,
 				       vector<C_task *>* tasks_q,
 				       vector<C_task *>* tasks_r,
 				       vector<C_task *>* tasks_s,
@@ -4028,14 +4217,8 @@ void update_parents_list(list <int>& parents,
 			 SquareBlockMatrix<T>* mtrx)
 			 //			 const int size_block)
 {
-#if 0
-  // index range is located in [begin end)
-  const int ibgn = (int)(begin / size_block);
-  const int iend = (int)((end - 1) / size_block);
-#else
   const int ibgn = mtrx->BlockIndex(begin);
   const int iend = mtrx->BlockIndex(end - 1);
-#endif
   for (int m = ibgn; m <= iend; m++) {
     bool flag = true;
     for (list<int>::const_iterator it = parents.begin();

@@ -1,9 +1,7 @@
-** dissection solver in C++ version with qd libiray or Intel 90bit long double
-** or GNU __float128 **
+** dissection solver Ver 1.0.0  : written in C++ with qd libiray or **
+**                                                   GNU __float128 **
 ** Atsushi Suzuki, 25 Jun. 2015
-**                 23 Jul. 2015
-**                 18 Jan. 2016
-**                 08 Jul. 2016
+**                 30 Nov. 2016
 
 How to compile:
 
@@ -12,25 +10,21 @@ How to compile:
 
 - copy src/Defs.inc.Intel to src/Defs.inc
 - copy src/Makfile.Intel to src/Makefile
-  src/Defs.inc.SX and src/Makefile.SX are experimental implementation for
-  NEC SX-ACE
   
 - src/Defs.inc contains definition of the place of header files
     METIS_INC = $(PROJ_DIR)/metis-5.1.0/include
     SCOTCH_INC = $(PROJ_DIR)/scotch_6.0.4/include
     QD_INC = $(PROJ_DIR)/include
   and libraries
-    METIS_DIR =  $(PROJ_DIR)/metis-5.1.0/build/Darwin-x86_64/libmetis
+    METIS_DIR =  $(PROJ_DIR)/metis-5.0.2/build/Darwin-x86_64/libmetis
     LIB_DIR_SCOTCH = $(PROJ_DIR)/scotch_6.0.4/lib
     LIB_DIR_QD =  $(PROJ_DIR)/qd-2.3.17/lib
-
-- DISSECTION = NO_METIS skips use of METIS
 
 - to use intel MKL specify BLAS in Def.inc
     BLAS = MKL
   On the MacOSX (Mavericks or Yosemite),
     BLAS = VECLIB
-  archieves 90 % of the speed of MKL. For preparation to use vecLib
+  attains 90 % of the speed of MKL. For preparation to use vecLib
   framework, command line Xcode needs to be installed by
   % xcode-select --install
 
@@ -46,15 +40,7 @@ How to compile:
   configure needs to be done with specifying install directory $(PROJ_DIR)
   % ./configure --prefix=$(PROJ_DIR) CXX=clang++ CC=clang
   % make install
-  some files in qd libiray are modified to treat dynamic memory treatment
-  and to work with C++ complex number.
 
-- without qd library, facotrization by quadruple using supplemental octruple
-  does not work.
-  QUAD = LONG_DOUBLE
-  provides double precision factorization with 80bit higher accuracy computation
-  for kernel detection
-  
 - to clean directories under $(PROJ_DIR)/src,
   % make distclean
   % make distclean
@@ -64,30 +50,12 @@ How to compile:
 
 - a test program is located in $(PROJ_DIR)/src/C-test
   % make
-  % ./MM-Dissection ../MM-matrix/MM.testA.data 0 1 1.e-2 8
-  the first argument shows 0 for SCOTCH and 1 for METIS
-  the second shows number of threads, which should be less or equal to number
-  of the physical CPU cores
-  the third shows pivot threshold
-  the fourth shows number of level of dissection
+  % ./MM-Dissection ../MM-matrix/MM.testA.data 0 1 1.e-2 8 2
+  the first argument specifies 0 for SCOTCH and 1 for METIS
+  the second specifies number of threads, which should be less or equal to
+  number of the physical CPU cores
+  the third specifies pivot threshold
+  the fourth specifies number of level of dissection
+  the fifth specifies scaling strategy : 0 for no-scaling, 1 for diagonal
+                                         2 for scaling for KKT-type matrix
 
-  % ./MM-Dissection ../MM-matix/stokes.sym-small.data 0 1 1.e-2 8 3
-  the fifth argument shows scaling strategy : 3 for constraint (KKT) problem 
-    
-- For Ubuntu 14.04 without intel compiler nor MKL
-  using GNU compiler 4.8.2 and OpenBLAS-0.2.14
-  for OpenBLAS-0.2.14
-  % make BINARY=64 TARGET=SANDYBRIDGE USE_THREAD=0 NO_LAPACK=1
-
-  using LLVM compiler 3.5 (not yet success by issue on libc++ and libgcc_s )
-  add repository sehing for clang-3.5 in /etc/apt/source.list by following
-  http://llvm.org/apt
-
-  % apt-get update
-  % apt-get install clang-3.5
-  % apt-get install libc++-dev
-  
-  to compile OpenBLAS-0.2.14 for SANDYBRIDGE; IVYBRIDGE is not optimized by OpenBLAS
-  % make CC=clang-3.5 BINARY=64 TARGET=SANDYBRIDGE USE_THREAD=0 NOFORTRAN=0 ONLY_CBLAS=1
-
-  
