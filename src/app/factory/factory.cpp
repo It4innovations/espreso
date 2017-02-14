@@ -38,7 +38,8 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);
 			if (it == configuration.advection_diffusion_2D.physics_solver.load_steps_settings.end()) {
-				ESINFO(GLOBAL_ERROR) << "Unknown settings for load step '" << i << "'";
+				loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
+				break;
 			}
 			LoadStepSettings *loadStepSettings = it->second;
 

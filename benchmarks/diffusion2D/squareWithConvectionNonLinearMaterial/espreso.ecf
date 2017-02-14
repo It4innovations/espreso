@@ -67,17 +67,20 @@ ADVECTION_DIFFUSION_2D {
   }
 
   PHYSICS_SOLVER {
-    TYPE     STEADY_STATE;
-    MODE        NONLINEAR;
     LOAD_STEPS          1;
 
-    NONLINEAR_SOLVER {
+    LOAD_STEPS_SETTINGS {
       1 {
-        METHOD   NEWTON_RHAPSON;
-        LINE_SEARCH      FALSE;
-        CONVERGENCE {
-          TEMPERATURE           TRUE;
-          TEMPERATURE_RESIDUAL  1e-3;
+        TYPE     STEADY_STATE;
+        MODE        NONLINEAR;
+
+        NONLINEAR_SOLVER {
+          METHOD   NEWTON_RHAPSON;
+          LINE_SEARCH      FALSE;
+          CONVERGENCE_PARAMETERS {
+            TEMPERATURE           TRUE;
+            TEMPERATURE_RESIDUAL  1e-3;
+          }
         }
       }
     }
