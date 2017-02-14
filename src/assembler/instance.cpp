@@ -11,10 +11,11 @@ Instance::Instance(size_t domains): domains(domains)
 	DOFs.resize(domains);
 
 	K.resize(domains);
-	R1.resize(domains);
-	R2.resize(domains);
+	N1.resize(domains);
+	N2.resize(domains);
 	RegMat.resize(domains);
 	f.resize(domains);
+	R.resize(domains);
 
 	B0.resize(domains);
 	B0subdomainsMap.resize(domains);

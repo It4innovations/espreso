@@ -86,12 +86,12 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 		return;
 	}
 
-	_instance->R1[domain].rows = _mesh->coordinates().localSize(domain);
-	_instance->R1[domain].cols = 1;
-	_instance->R1[domain].nnz = _instance->R1[domain].rows * _instance->R1[domain].cols;
-	_instance->R1[domain].type = 'G';
+	_instance->N1[domain].rows = _mesh->coordinates().localSize(domain);
+	_instance->N1[domain].cols = 1;
+	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
+	_instance->N1[domain].type = 'G';
 
-	_instance->R1[domain].dense_values.resize(_instance->R1[domain].nnz, 1 / sqrt(_mesh->coordinates().localSize(domain)));
+	_instance->N1[domain].dense_values.resize(_instance->N1[domain].nnz, 1 / sqrt(_mesh->coordinates().localSize(domain)));
 
 	_instance->RegMat[domain].rows = _instance->K[domain].rows;
 	_instance->RegMat[domain].cols = _instance->K[domain].cols;

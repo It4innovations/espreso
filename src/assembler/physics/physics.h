@@ -42,8 +42,8 @@ struct Physics {
 	virtual void assembleStiffnessMatrix(const Step &step, size_t domain);
 	virtual void assembleStiffnessMatrix(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
 
-	virtual void subtractResidualForces(const Step &step);
-	virtual void subtractResidualForces(const Step &step, size_t domain);
+	virtual void assembleResidualForces(const Step &step);
+	virtual void assembleResidualForces(const Step &step, size_t domain);
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
 

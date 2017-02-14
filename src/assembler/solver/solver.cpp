@@ -73,12 +73,12 @@ void Solver::assembleStiffnessMatrices(const Step &step)
 	}
 }
 
-void Solver::subtractResidualForces(const Step &step)
+void Solver::assembleResidualForces(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Subtract residual forces.";
 	TimeEvent timeSub("Subtract residual forces"); timeSub.start();
 	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->subtractResidualForces(step);
+		physics[i]->assembleResidualForces(step);
 	}
 	timeSub.endWithBarrier(); _timeStatistics->addEvent(timeSub);
 
@@ -97,8 +97,8 @@ void Solver::makeStiffnessMatricesRegular(const Step &step)
 	timeReg.endWithBarrier(); _timeStatistics->addEvent(timeReg);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->R1, instances.size() > 1 ? "R1" + std::to_string(i) + "_" : "R1", "R1");
-		storeData(step, instances[i]->R2, instances.size() > 1 ? "R2" + std::to_string(i) + "_" : "R2", "R2");
+		storeData(step, instances[i]->N1, instances.size() > 1 ? "R1" + std::to_string(i) + "_" : "R1", "R1");
+		storeData(step, instances[i]->N2, instances.size() > 1 ? "R2" + std::to_string(i) + "_" : "R2", "R2");
 		storeData(step, instances[i]->RegMat, instances.size() > 1 ? "RegMat" + std::to_string(i) + "_" : "RegMat", "regularization matrix");
 	}
 }
@@ -181,24 +181,83 @@ void Solver::assembleB0(const Step &step)
 	}
 }
 
-void Solver::postProcessDelta(Physics *physics, const std::vector<std::vector<double> > &previous)
+void Solver::lineSearch(const std::vector<std::vector<double> > &previous, std::vector<std::vector<double> > &delta, Physics *physics, const Step &step)
 {
-	// process Line search
-}
+	auto multiply = [] (const std::vector<std::vector<double> > &v1, const std::vector<std::vector<double> > &v2) {
+		double cmul = 0, gmul;
 
-void Solver::addToSolution(Physics *physics, const std::vector<std::vector<double> > &previous)
-{
-	ESINFO(PROGRESS2) << "Sum previous solution step with increment";
-	TimeEvent timePrecision("Sum previous solution step with increment"); timePrecision.startWithBarrier();
-
-	#pragma omp parallel for
-	for (size_t d = 0; d < physics->instance()->domains; d++) {
-		for (size_t i = 0; i < physics->instance()->primalSolution[d].size(); i++) {
-			physics->instance()->primalSolution[d][i] += previous[d][i];
+		#pragma omp parallel for
+		for (size_t d = 0; d < v1.size(); d++) {
+			double dmul = 0;
+			for (size_t i = 0; i < v1[d].size(); i++) {
+				dmul += v1[d][i] * v2[d][i];
+			}
+			#pragma omp atomic
+			cmul += dmul;
 		}
+		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		return gmul;
+	};
+
+	double a = 0, b = 1, alpha = 1;
+	double fa, fb, fx, faStart;
+
+	std::vector<std::vector<double> > solution = delta;
+	std::vector<std::vector<double> > R0 = physics->instance()->R;
+
+	for (size_t i = 0; i < 6; i++) {
+		sumVectors(solution, previous, delta, 1, alpha); // solution = U + alpha * deltaU
+
+		// physics->instance()->R = K * solution
+		solution.swap(physics->instance()->primalSolution);
+		physics->assembleResidualForces(step);
+		solution.swap(physics->instance()->primalSolution);
+
+		if (i == 0) {
+			faStart = multiply(delta, physics->instance()->f); // deltaU * RHS_i
+			fb = -multiply(delta, physics->instance()->R); // deltaU * -(K * solution)
+			if (faStart * fb > 0) {
+				R0.swap(physics->instance()->R);
+				return;
+			}
+			fa = faStart;
+		} else {
+			fx = -multiply(delta, physics->instance()->R); // deltaU * -(K * solution)
+			if (fabs(fx) <= 0.5 * faStart) {
+				alpha = a - fa * ((b - a ) / (fb - fa));
+				break;
+			}
+			if (fa * fx < 0) {
+				b = alpha;
+				fb = fx;
+			} else if (fb * fx < 0) {
+				a = alpha;
+				fa = fx;
+			}
+		}
+
+		alpha = a - fa * ((b - a ) / (fb - fa));
 	}
 
-	timePrecision.end(); _timeStatistics->addEvent(timePrecision);
+	if (alpha < 0.1) {
+		alpha = 0.1;
+	}
+	if (alpha > 1) {
+		alpha = 1;
+	}
+
+	sumVectors(solution, previous, delta, 0, alpha);
+	solution.swap(delta);
+}
+
+void Solver::sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha, double beta)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < a.size(); d++) {
+		for (size_t i = 0; i < a[d].size(); i++) {
+			result[d][i] = alpha * a[d][i] + beta * b[d][i];
+		}
+	}
 }
 
 void Solver::storeSolution(const Step &step)

@@ -1236,19 +1236,19 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 			std::sort(nodesOnInterface.begin(), nodesOnInterface.end());
 			Esutils::removeDuplicity(nodesOnInterface);
 
-			for (eslocal col = 0; col < instance.R1[domains[0]].cols; col++) {
+			for (eslocal col = 0; col < instance.N1[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodesOnInterface.size(); n++) {
 					for (size_t dof = 0; dof < DOFs.size(); dof++) {
-						instance.B0[p].I_row_indices.push_back(i * instance.R1[0].cols + col + 1);
+						instance.B0[p].I_row_indices.push_back(i * instance.N1[0].cols + col + 1);
 						instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
-						instance.B0[p].V_values.push_back(sign * instance.R1[domains[0]].dense_values[instance.R1[domains[0]].rows * col + nodesOnInterface[n]->DOFIndex(domains[0], dof)]);
+						instance.B0[p].V_values.push_back(sign * instance.N1[domains[0]].dense_values[instance.N1[domains[0]].rows * col + nodesOnInterface[n]->DOFIndex(domains[0], dof)]);
 					}
 				}
 			}
 		}
 
 
-		instance.B0[p].rows = instance.R1[0].cols * (part.size() - 1);
+		instance.B0[p].rows = instance.N1[0].cols * (part.size() - 1);
 		instance.B0[p].nnz = instance.B0[p].I_row_indices.size();
 		instance.B0subdomainsMap[p].reserve(instance.B0[p].nnz);
 		for (eslocal i = instance.B0subdomainsMap[p].size(); i < instance.B0[p].nnz; i++) {

@@ -77,8 +77,8 @@ void LinearSolver::steel(Instance *instance)
 	setup();
 	physics.mtype = instance->K[0].mtype;
 	physics.K.swap(instance->K);
-	physics.R1.swap(instance->R1);
-	physics.R2.swap(instance->R2);
+	physics.R1.swap(instance->N1);
+	physics.R2.swap(instance->N2);
 	physics.RegMat.swap(instance->RegMat);
 
 	constraints.B1.swap(instance->B1);

@@ -86,26 +86,28 @@ void Physics::assembleStiffnessMatrix(const Step &step, size_t domain)
 	_instance->K[domain].mtype = getMatrixType(step, domain);
 }
 
-void Physics::subtractResidualForces(const Step &step)
+void Physics::assembleResidualForces(const Step &step)
 {
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance->domains; d++) {
-		subtractResidualForces(step, d);
+		assembleResidualForces(step, d);
 		ESINFO(PROGRESS2) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS2);
 }
 
-void Physics::subtractResidualForces(const Step &step, size_t domain)
+void Physics::assembleResidualForces(const Step &step, size_t domain)
 {
 	DenseMatrix Re;
 	std::vector<eslocal> DOFs;
+
+	_instance->R[domain].resize(_instance->DOFs[domain]);
 
 	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
 		assembleResidualForces(step, _mesh->elements()[e], Re);
 		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
 		for (size_t i = 0; i < Re.rows(); i++) {
-			_instance->f[domain][DOFs[i]] -= Re(i, 0);
+			_instance->R[domain][DOFs[i]] += Re(i, 0);
 		}
 	}
 }
@@ -191,11 +193,11 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 				eslocal defect;
 
 			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-				_instance->K[d].get_kernel_from_K(_instance->K[d], _instance->RegMat[d], _instance->R1[d], norm, defect, d);
+				_instance->K[d].get_kernel_from_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], norm, defect, d);
 				break;
 
 			case MatrixType::REAL_UNSYMMETRIC:
-				_instance->K[d].get_kernels_from_nonsym_K(_instance->K[d], _instance->RegMat[d], _instance->R1[d], _instance->R2[d], norm, defect, d);
+				_instance->K[d].get_kernels_from_nonsym_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], _instance->N2[d], norm, defect, d);
 				break;
 
 			default:

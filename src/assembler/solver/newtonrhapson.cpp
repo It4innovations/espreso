@@ -5,6 +5,7 @@
 #include "../solution.h"
 #include "../physics/physics.h"
 
+#include "../../basis/utilities/utils.h"
 #include "../../configuration/physics/nonlinearsolver.h"
 
 #include "../../solver/generic/LinearSolver.h"
@@ -68,7 +69,8 @@ void NewtonRhapson::run(Step &step)
 		if (_configuration.convergence_parameters.heat) {
 			heatResidual = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
 		}
-		subtractResidualForces(step);
+		assembleResidualForces(step);
+		sumVectors(physics.front()->instance()->f, physics.front()->instance()->f, physics.front()->instance()->R, 1, -1);
 		if (_configuration.convergence_parameters.heat) {
 			heatResidual += physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
 		}
@@ -81,19 +83,22 @@ void NewtonRhapson::run(Step &step)
 		initLinearSolver();
 		startLinearSolver();
 
-		postProcessDelta(physics.front(), T);
+		if (_configuration.line_search) {
+			lineSearch(T, physics.front()->instance()->primalSolution, physics.front(), step);
+		}
 		if (_configuration.convergence_parameters.temperature) {
 			temperatureResidual = sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 		}
-		addToSolution(physics.front(), T);
+		sumVectors(physics.front()->instance()->primalSolution, T, physics.front()->instance()->primalSolution);
 		if (_configuration.convergence_parameters.temperature) {
 			temperatureResidual /= sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}
+
 		storeSolution(step);
 
 		if (_configuration.convergence_parameters.heat) {
 			assembleStiffnessMatrices(step);
-			subtractResidualForces(step);
+			assembleResidualForces(step);
 			double R;
 			// |R| = f - R
 			R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
@@ -101,7 +106,6 @@ void NewtonRhapson::run(Step &step)
 			// TODO
 		}
 	}
-
 	finalizeLinearSolver();
 }
 

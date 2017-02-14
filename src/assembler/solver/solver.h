@@ -38,14 +38,14 @@ public:
 
 protected:
 	void assembleStiffnessMatrices(const Step &step);
-	void subtractResidualForces(const Step &step);
+	void assembleResidualForces(const Step &step);
 	void assembleB1(const Step &step);
 	void subtractSolutionFromB1c(const Step &step);
 	void makeStiffnessMatricesRegular(const Step &step);
 	void assembleB0(const Step &step);
 
-	void postProcessDelta(Physics *physics, const std::vector<std::vector<double> > &previous);
-	void addToSolution(Physics *physics, const std::vector<std::vector<double> > &previous);
+	void lineSearch(const std::vector<std::vector<double> > &previous, std::vector<std::vector<double> > &delta, Physics *physics, const Step &step);
+	void sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1);
 
 	void storeSolution(const Step &step);
 

@@ -18,8 +18,8 @@ struct Instance {
 	size_t domains;
 	std::vector<size_t> DOFs;
 
-	std::vector<SparseMatrix> K, R1, R2, RegMat;
-	std::vector<std::vector<double> > f;
+	std::vector<SparseMatrix> K, N1, N2, RegMat;
+	std::vector<std::vector<double> > f, R;
 
 	// matrices for Hybrid FETI constraints
 	std::vector<SparseMatrix> B0;
