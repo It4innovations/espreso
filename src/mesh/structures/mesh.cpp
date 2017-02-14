@@ -6,6 +6,7 @@
 
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
+#include "../../basis/utilities/communication.h"
 
 #include "../settings/evaluator.h"
 #include "coordinates.h"
@@ -661,7 +662,6 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 		}
 	};
 
-	MPI_Barrier(MPI_COMM_WORLD);
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region *region = mesh.region(it->first);
 		region->settings.resize(loadStep + 1);
@@ -710,29 +710,14 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 			}
 
 			if (distributeToNodes) {
-				std::vector<MPI_Request> req(mesh.neighbours().size());
-				for (size_t n = 0; n < mesh.neighbours().size(); n++) {
-					MPI_Isend(boundaryNodes[n].data(), sizeof(esglobal) * boundaryNodes[n].size(), MPI_BYTE, mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
+				if (!Communication::exchangeUnknownSize(boundaryNodes, neighboursNodes, mesh.neighbours())) {
+					ESINFO(ERROR) << "problem while synchronization of nodes regions.";
 				}
-
-				size_t counter = 0;
-				MPI_Status status;
-				while (counter < mesh.neighbours().size()) {
-					MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-					int count;
-					MPI_Get_count(&status, MPI_BYTE, &count);
-					neighboursNodes[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
-					MPI_Recv(neighboursNodes[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					counter++;
-				}
-
-				MPI_Waitall(mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
 				for (size_t n = 0; n < mesh.neighbours().size(); n++) {
 					for (size_t i = 0; i < neighboursNodes[n].size(); i++) {
 						mesh.nodes()[mesh.coordinates().clusterIndex(neighboursNodes[n][i])]->regions().push_back(region);
 					}
 				}
-				MPI_Barrier(MPI_COMM_WORLD);
 			}
 
 			region->settings[loadStep][properties[p]].push_back(evaluators.back());
@@ -1800,27 +1785,9 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		}
 	}
 
-	std::vector<MPI_Request> req(neighbours.size());
-	for (size_t n = 0; n < neighbours.size(); n++) {
-		MPI_Isend(sBuffer[0][n].data(), sizeof(esglobal) * sBuffer[0][n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, neighbours)) {
+		ESINFO(ERROR) << "problem while synchronization of DOFs counters.";
 	}
-
-	int flag;
-	size_t counter = 0;
-	MPI_Status status;
-	while (counter < neighbours.size()) {
-		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
-		if (flag) {
-			int count;
-			MPI_Get_count(&status, MPI_BYTE, &count);
-			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
-			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			counter++;
-		}
-	}
-
-	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-	// All data are exchanged
 
 	// Create list of neighbours elements
 	std::vector<std::vector<Element*> > nElements(neighbours.size());
@@ -1988,7 +1955,7 @@ void Mesh::synchronizeGlobalIndices()
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
 
 	// clusters x threads x nodes
-	std::vector<std::vector<std::vector<__Point__> > > sBuffer(_neighbours.size(), std::vector<std::vector<__Point__> >(threads));
+	std::vector<std::vector<std::vector<__Point__> > > sBuffer(threads, std::vector<std::vector<__Point__> >(_neighbours.size()));
 	std::vector<std::vector<__Point__> > rBuffer(_neighbours.size());
 
 	#pragma omp parallel for
@@ -1998,10 +1965,10 @@ void Mesh::synchronizeGlobalIndices()
 			if (_nodes[n]->clusters().size() > 1) {
 				if (_nodes[n]->clusters().front() == environment->MPIrank) {
 					for (size_t c = 1; c < _nodes[n]->clusters().size(); c++) {
-						sBuffer[n2i(_nodes[n]->clusters()[c])][t].push_back(__Point__(_coordinates->_points[n], _coordinates->globalIndex(n)));
+						sBuffer[t][n2i(_nodes[n]->clusters()[c])].push_back(__Point__(_coordinates->_points[n], _coordinates->globalIndex(n)));
 					}
 				} else {
-					sBuffer[n2i(_nodes[n]->clusters().front())][t].push_back(__Point__(_coordinates->_points[n], _coordinates->globalIndex(n)));
+					sBuffer[t][n2i(_nodes[n]->clusters().front())].push_back(__Point__(_coordinates->_points[n], _coordinates->globalIndex(n)));
 				}
 			}
 
@@ -2011,30 +1978,22 @@ void Mesh::synchronizeGlobalIndices()
 	#pragma omp parallel for
 	for (size_t n = 0; n < _neighbours.size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
-			sBuffer[n][0].insert(sBuffer[n][0].end(), sBuffer[n][t].begin(), sBuffer[n][t].end());
+			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
 		}
 		if (_neighbours[n] < environment->MPIrank) {
-			rBuffer[n].resize(sBuffer[n][0].size());
-			std::sort(sBuffer[n][0].begin(), sBuffer[n][0].end());
+			rBuffer[n].resize(sBuffer[0][n].size());
+			std::sort(sBuffer[0][n].begin(), sBuffer[0][n].end());
 		}
 	}
 
-	std::vector<MPI_Request> req(_neighbours.size());
-	for (size_t n = 0; n < _neighbours.size(); n++) {
-		if (_neighbours[n] > environment->MPIrank) {
-			MPI_Isend(sBuffer[n][0].data(), sizeof(__Point__) * sBuffer[n][0].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
-		}
-		if (_neighbours[n] < environment->MPIrank) {
-			MPI_Irecv(rBuffer[n].data(), sizeof(__Point__) * rBuffer[n].size(), MPI_BYTE, _neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
-		}
+	if (!Communication::receiveLowerKnownSize(sBuffer[0], rBuffer, _neighbours)) {
+		ESINFO(ERROR) << "problem while synchronization of global indices.";
 	}
-
-	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
 	for (size_t n = 0; n < _neighbours.size(); n++) {
 		if (_neighbours[n] < environment->MPIrank) {
 			for (size_t p = 0; p < rBuffer[n].size(); p++) {
-				auto it = std::lower_bound(sBuffer[n][0].begin(), sBuffer[n][0].end(), rBuffer[n][p]);
+				auto it = std::lower_bound(sBuffer[0][n].begin(), sBuffer[0][n].end(), rBuffer[n][p]);
 				if (*it == rBuffer[n][p]) {
 					_coordinates->_globalIndex[_coordinates->clusterIndex(it->id)] = rBuffer[n][p].id;
 				} else {
@@ -2058,7 +2017,7 @@ void Mesh::synchronizeGlobalIndices()
 void Mesh::synchronizeNeighbours()
 {
 	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<std::vector<std::vector<int> > > sNeighbours(environment->MPIsize, std::vector<std::vector<int> >(threads));
+	std::vector<std::vector<std::vector<int> > > sNeighbours(threads, std::vector<std::vector<int> >(environment->MPIsize));
 	std::vector<std::vector<int> > rNeighbours(environment->MPIsize);
 	_neighbours.clear();
 
@@ -2071,48 +2030,34 @@ void Mesh::synchronizeNeighbours()
 			for (size_t c1 = 0; c1 < _nodes[n]->clusters().size(); c1++) {
 				for (size_t c2 = 0; c2 < _nodes[n]->clusters().size(); c2++) {
 					if (c1 != c2 && _nodes[n]->clusters()[c1] != environment->MPIrank) {
-						sNeighbours[_nodes[n]->clusters()[c1]][t].push_back(_nodes[n]->clusters()[c2]);
+						sNeighbours[t][_nodes[n]->clusters()[c1]].push_back(_nodes[n]->clusters()[c2]);
 					}
 				}
 			}
 		}
 		for (int r = 0; r < environment->MPIsize; r++) {
-			std::sort(sNeighbours[r][t].begin(), sNeighbours[r][t].end());
-			Esutils::removeDuplicity(sNeighbours[r][t]);
+			std::sort(sNeighbours[t][r].begin(), sNeighbours[t][r].end());
+			Esutils::removeDuplicity(sNeighbours[t][r]);
 		}
 	}
 
 	#pragma omp parallel for
 	for (int r = 0; r < environment->MPIsize; r++) {
 		for (size_t t = 1; t < threads; t++) {
-			sNeighbours[r][0].insert(sNeighbours[r][0].end(), sNeighbours[r][t].begin(), sNeighbours[r][t].end());
+			sNeighbours[0][r].insert(sNeighbours[0][r].end(), sNeighbours[t][r].begin(), sNeighbours[t][r].end());
 		}
-		std::sort(sNeighbours[r][0].begin(), sNeighbours[r][0].end());
-		Esutils::removeDuplicity(sNeighbours[r][0]);
+		std::sort(sNeighbours[0][r].begin(), sNeighbours[0][r].end());
+		Esutils::removeDuplicity(sNeighbours[0][r]);
 	}
 	for (int r = 0; r < environment->MPIsize; r++) {
-		if (sNeighbours[r][0].size()) {
+		if (sNeighbours[0][r].size()) {
 			_neighbours.push_back(r);
 		}
 	}
 
-	std::vector<MPI_Request> req(_neighbours.size());
-	for (size_t n = 0; n < _neighbours.size(); n++) {
-		MPI_Isend(sNeighbours[_neighbours[n]][0].data(), sizeof(int) * sNeighbours[_neighbours[n]][0].size(), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+	if (!Communication::exchangeUnknownSize(sNeighbours[0], rNeighbours, _neighbours)) {
+		ESINFO(ERROR) << "problem while synchronization of neighbours clusters.";
 	}
-
-	size_t counter = 0;
-	MPI_Status status;
-	while (counter < _neighbours.size()) {
-		MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-		int count;
-		MPI_Get_count(&status, MPI_BYTE, &count);
-		rNeighbours[status.MPI_SOURCE].resize(count / sizeof(int));
-		MPI_Recv(rNeighbours[status.MPI_SOURCE].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		counter++;
-	}
-
-	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
 	size_t size = _neighbours.size();
 	for (size_t n = 0; n < size; n++) {
@@ -2121,7 +2066,7 @@ void Mesh::synchronizeNeighbours()
 	std::sort(_neighbours.begin(), _neighbours.end());
 	Esutils::removeDuplicity(_neighbours);
 
-	std::vector<std::vector<std::vector<esglobal> > > sIndices(_neighbours.size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<esglobal> > > sIndices(threads, std::vector<std::vector<esglobal> >(_neighbours.size()));
 	std::vector<std::vector<esglobal> > rIndices(_neighbours.size());
 
 	auto n2i = [ & ] (size_t neighbour) {
@@ -2132,36 +2077,23 @@ void Mesh::synchronizeNeighbours()
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 			for (size_t i = 0; i < _neighbours.size(); i++) {
-				sIndices[i][t].push_back(_coordinates->globalIndex(n));
+				sIndices[t][i].push_back(_coordinates->globalIndex(n));
 			}
 		}
 	}
 
 	for (size_t n = 0; n < _neighbours.size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
-			sIndices[n][0].insert(sIndices[n][0].end(), sIndices[n][t].begin(), sIndices[n][t].end());
+			sIndices[0][n].insert(sIndices[0][n].end(), sIndices[t][n].begin(), sIndices[t][n].end());
 		}
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	req.clear();
-	req.resize(_neighbours.size());
-	for (size_t n = 0; n < _neighbours.size(); n++) {
-		MPI_Isend(sIndices[n][0].data(), sizeof(esglobal) * sIndices[n][0].size(), MPI_BYTE, _neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
-	}
 
-	counter = 0;
-	while (counter < _neighbours.size()) {
-		MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-		int count;
-		MPI_Get_count(&status, MPI_BYTE, &count);
-		rIndices[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
-		MPI_Recv(rIndices[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		counter++;
+	if (!Communication::exchangeUnknownSize(sIndices[0], rIndices, _neighbours)) {
+		ESINFO(ERROR) << "problem while synchronization of indices in synchronization neighbours.";
 	}
-
-	MPI_Waitall(_neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
 	for (size_t n = 0; n < _neighbours.size(); n++) {
 		#pragma omp parallel for

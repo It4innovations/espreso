@@ -4,6 +4,7 @@
 #include "../instance.h"
 
 #include "../../basis/utilities/utils.h"
+#include "../../basis/utilities/communication.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 
@@ -167,8 +168,8 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	std::vector<size_t> offsets(threads);
 
 	// neighbours x threads x data
-	std::vector<std::vector<std::vector<esglobal> > > sLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(constraints._mesh.neighbours().size(), std::vector<std::vector<std::pair<esglobal,esglobal> > >(threads));
+	std::vector<std::vector<std::vector<esglobal> > > sLambdas(threads, std::vector<std::vector<esglobal> >(constraints._mesh.neighbours().size()));
+	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(threads, std::vector<std::vector<std::pair<esglobal,esglobal> > >(constraints._mesh.neighbours().size()));
 
 	std::vector<std::vector<Region*> > skippedRegions = getRegionsWithDOFs(constraints._mesh.regions(), loadStep, DOFs);
 
@@ -189,10 +190,10 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 							lambdasSize += n - 1;
 						}
 						for (size_t c = 1; c < elements[e]->clusters().size(); c++) { // send to higher clusters
-							sLambdas[n2i(elements[e]->clusters()[c])][t].push_back(e * DOFs.size() + dof);
+							sLambdas[t][n2i(elements[e]->clusters()[c])].push_back(e * DOFs.size() + dof);
 						}
 					} else { // pick ID from lower cluster
-						rLambdas[n2i(elements[e]->clusters()[0])][t].push_back( // offset + lambda
+						rLambdas[t][n2i(elements[e]->clusters()[0])].push_back( // offset + lambda
 								std::make_pair(elements[e]->clusterOffset(elements[e]->clusters()[0]), e * DOFs.size() + dof)
 						);
 					}
@@ -226,8 +227,8 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 		}
 
 		for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-			for (size_t i = 0; i < sLambdas[n][t].size(); i++) {
-				sLambdas[n][t][i] = lambdasID[sLambdas[n][t][i]];
+			for (size_t i = 0; i < sLambdas[t][n].size(); i++) {
+				sLambdas[t][n][i] = lambdasID[sLambdas[t][n][i]];
 			}
 		}
 	}
@@ -237,28 +238,20 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constra
 	#pragma omp parallel for
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
-			sLambdas[n][0].insert(sLambdas[n][0].end(), sLambdas[n][t].begin(), sLambdas[n][t].end());
-			rLambdas[n][0].insert(rLambdas[n][0].end(), rLambdas[n][t].begin(), rLambdas[n][t].end());
+			sLambdas[0][n].insert(sLambdas[0][n].end(), sLambdas[t][n].begin(), sLambdas[t][n].end());
+			rLambdas[0][n].insert(rLambdas[0][n].end(), rLambdas[t][n].begin(), rLambdas[t][n].end());
 		}
-		std::sort(rLambdas[n][0].begin(), rLambdas[n][0].end());
-		rBuffer[n].resize(rLambdas[n][0].size());
+		std::sort(rLambdas[0][n].begin(), rLambdas[0][n].end());
+		rBuffer[n].resize(rLambdas[0][n].size());
 	}
 
-	std::vector<MPI_Request> req(constraints._mesh.neighbours().size());
-	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-		if (constraints._mesh.neighbours()[n] > environment->MPIrank) {
-			MPI_Isend(sLambdas[n][0].data(), sizeof(esglobal) * sLambdas[n][0].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
-		}
-		if (constraints._mesh.neighbours()[n] < environment->MPIrank) {
-			MPI_Irecv(rBuffer[n].data(), sizeof(esglobal) * rBuffer[n].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 1, MPI_COMM_WORLD, req.data() + n);
-		}
+	if (!Communication::receiveLowerKnownSize(sLambdas[0], rBuffer, constraints._mesh.neighbours())) {
+		ESINFO(ERROR) << "problem while synchronization of lambdas.";
 	}
 
-	MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
-
 	for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-		for (size_t i = 0; i < rLambdas[n][0].size(); i++) {
-			lambdasID[rLambdas[n][0][i].second] = rBuffer[n][i];
+		for (size_t i = 0; i < rLambdas[0][n].size(); i++) {
+			lambdasID[rLambdas[0][n][i].second] = rBuffer[n][i];
 		}
 	}
 
@@ -351,26 +344,9 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 			}
 		}
 
-		std::vector<MPI_Request> req(constraints._mesh.neighbours().size());
-		for (size_t n = 0; n < constraints._mesh.neighbours().size(); n++) {
-			MPI_Isend(sBuffer[0][n].data(), sizeof(double) * sBuffer[0][n].size(), MPI_BYTE, constraints._mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
+		if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, constraints._mesh.neighbours())) {
+			ESINFO(ERROR) << "problem while exchange K diagonals in B1 scaling.";
 		}
-
-		int flag;
-		size_t counter = 0;
-		MPI_Status status;
-		while (counter < constraints._mesh.neighbours().size()) {
-			MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
-			if (flag) {
-				int count;
-				MPI_Get_count(&status, MPI_BYTE, &count);
-				rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(double));
-				MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				counter++;
-			}
-		}
-
-		MPI_Waitall(constraints._mesh.neighbours().size(), req.data(), MPI_STATUSES_IGNORE);
 
 		std::vector<eslocal> nPointer(constraints._mesh.neighbours().size());
 		for (size_t i = 0; i < diagonals.size(); i++) {
@@ -899,8 +875,8 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 	std::vector<size_t> offsets(threads);
 
 	// neighbours x threads x data
-	std::vector<std::vector<std::vector<esglobal> > > sLambdas(neighbours.size(), std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(neighbours.size(), std::vector<std::vector<std::pair<esglobal,esglobal> > >(threads));
+	std::vector<std::vector<std::vector<esglobal> > > sLambdas(threads, std::vector<std::vector<esglobal> >(neighbours.size()));
+	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(threads, std::vector<std::vector<std::pair<esglobal,esglobal> > >(neighbours.size()));
 
 	std::vector<std::vector<Region*> > skippedRegions = getRegionsWithDOFs(regions, loadStep, DOFs);
 
@@ -921,10 +897,10 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 							lambdasSize += n - 1;
 						}
 						for (size_t c = 1; c < elements[e]->clusters().size(); c++) { // send to higher clusters
-							sLambdas[n2i(elements[e]->clusters()[c])][t].push_back(e * DOFs.size() + dof);
+							sLambdas[t][n2i(elements[e]->clusters()[c])].push_back(e * DOFs.size() + dof);
 						}
 					} else { // pick ID from lower cluster
-						rLambdas[n2i(elements[e]->clusters()[0])][t].push_back( // offset + lambda
+						rLambdas[t][n2i(elements[e]->clusters()[0])].push_back( // offset + lambda
 								std::make_pair(elements[e]->clusterOffset(elements[e]->clusters()[0]), e * DOFs.size() + dof)
 						);
 					}
@@ -958,8 +934,8 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 		}
 
 		for (size_t n = 0; n < neighbours.size(); n++) {
-			for (size_t i = 0; i < sLambdas[n][t].size(); i++) {
-				sLambdas[n][t][i] = lambdasID[sLambdas[n][t][i]];
+			for (size_t i = 0; i < sLambdas[t][n].size(); i++) {
+				sLambdas[t][n][i] = lambdasID[sLambdas[t][n][i]];
 			}
 		}
 	}
@@ -969,28 +945,20 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 	#pragma omp parallel for
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		for (size_t t = 1; t < threads; t++) {
-			sLambdas[n][0].insert(sLambdas[n][0].end(), sLambdas[n][t].begin(), sLambdas[n][t].end());
-			rLambdas[n][0].insert(rLambdas[n][0].end(), rLambdas[n][t].begin(), rLambdas[n][t].end());
+			sLambdas[0][n].insert(sLambdas[0][n].end(), sLambdas[t][n].begin(), sLambdas[t][n].end());
+			rLambdas[0][n].insert(rLambdas[0][n].end(), rLambdas[t][n].begin(), rLambdas[t][n].end());
 		}
-		std::sort(rLambdas[n][0].begin(), rLambdas[n][0].end());
-		rBuffer[n].resize(rLambdas[n][0].size());
+		std::sort(rLambdas[0][n].begin(), rLambdas[0][n].end());
+		rBuffer[n].resize(rLambdas[0][n].size());
 	}
 
-	std::vector<MPI_Request> req(neighbours.size());
-	for (size_t n = 0; n < neighbours.size(); n++) {
-		if (neighbours[n] > environment->MPIrank) {
-			MPI_Isend(sLambdas[n][0].data(), sizeof(esglobal) * sLambdas[n][0].size(), MPI_BYTE, neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
-		}
-		if (neighbours[n] < environment->MPIrank) {
-			MPI_Irecv(rBuffer[n].data(), sizeof(esglobal) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 1, MPI_COMM_WORLD, req.data() + n);
-		}
+	if (!Communication::receiveLowerKnownSize(sLambdas[0], rBuffer, neighbours)) {
+		ESINFO(ERROR) << "problem while synchronization of lambdas.";
 	}
 
-	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		for (size_t i = 0; i < rLambdas[n][0].size(); i++) {
-			lambdasID[rLambdas[n][0][i].second] = rBuffer[n][i];
+		for (size_t i = 0; i < rLambdas[0][n].size(); i++) {
+			lambdasID[rLambdas[0][n][i].second] = rBuffer[n][i];
 		}
 	}
 
@@ -1084,26 +1052,9 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 			}
 		}
 
-		std::vector<MPI_Request> req(neighbours.size());
-		for (size_t n = 0; n < neighbours.size(); n++) {
-			MPI_Isend(sBuffer[0][n].data(), sizeof(double) * sBuffer[0][n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + n);
+		if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, neighbours)) {
+			ESINFO(ERROR) << "problem while exchange K diagonal in B1 scaling.";
 		}
-
-		int flag;
-		size_t counter = 0;
-		MPI_Status status;
-		while (counter < neighbours.size()) {
-			MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
-			if (flag) {
-				int count;
-				MPI_Get_count(&status, MPI_BYTE, &count);
-				rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(double));
-				MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				counter++;
-			}
-		}
-
-		MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
 		std::vector<eslocal> nPointer(neighbours.size());
 		for (size_t i = 0; i < diagonals.size(); i++) {
