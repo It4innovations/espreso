@@ -4,6 +4,7 @@
 #include "../../assembler/instance/precomputed/instance.h"
 #include "../../assembler/old_physics/precomputed/singular/assembler.h"
 #include "../../configuration/input/input.h"
+#include "../../configuration/globalconfiguration.h"
 #include "../../input/api/api.h"
 
 espreso::Environment espreso::DataHolder::environment;
@@ -29,27 +30,54 @@ FETI4IStructInstance::~FETI4IStructInstance()
 
 void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 {
-	ESPRESOInput input;
-	ESPRESOSolver solver;
+	std::ifstream is("espreso.ecf");
+	if (is.good()) {
+		espreso::GlobalConfiguration configuration("espreso.ecf");
 
-	options[FETI4I_SUBDOMAINS] = input.domains;
+		options[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
 
-	options[FETI4I_ITERATIONS] = solver.iterations;
-	options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
-	options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
-	options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
-	options[FETI4I_N_MICS] = solver.N_MICS;
+		options[FETI4I_ITERATIONS] = configuration.linear_elasticity_3D.espreso.iterations;
+		options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.linear_elasticity_3D.espreso.method);
+		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.linear_elasticity_3D.espreso.preconditioner);
+		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.linear_elasticity_3D.espreso.solver);
+		options[FETI4I_N_MICS] = configuration.linear_elasticity_3D.espreso.N_MICS;
 
-	options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
-	options[FETI4I_TESTING_LEVEL] = environment->testing_level;
-	options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
-	options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
+		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
+		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
+		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
+		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
+		environment = &DataHolder::environment;
+	} else {
+		ESPRESOInput input;
+		ESPRESOSolver solver;
+                options[FETI4I_SUBDOMAINS] = input.domains;
+
+                options[FETI4I_ITERATIONS] = solver.iterations;
+                options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
+                options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
+                options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
+                options[FETI4I_N_MICS] = solver.N_MICS;
+
+                options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
+                options[FETI4I_TESTING_LEVEL] = environment->testing_level;
+                options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
+                options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
+	}
 }
 
 void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 {
-	ESPRESOSolver solver;
-	options[FETI4I_EPSILON] = solver.epsilon;
+	std::ifstream is("espreso.ecf");
+	if (is.good()) {
+		espreso::GlobalConfiguration configuration("espreso.ecf");
+
+		options[FETI4I_EPSILON] = configuration.linear_elasticity_3D.espreso.epsilon;
+		environment = &DataHolder::environment;
+	} else {
+		ESPRESOSolver solver;
+
+		options[FETI4I_EPSILON] = solver.epsilon;
+	}
 }
 
 static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRESOSolver &solver, FETI4IInt* options)
