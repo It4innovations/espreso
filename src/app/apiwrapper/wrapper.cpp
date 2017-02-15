@@ -112,13 +112,14 @@ static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRE
 	if (!environment->parameters["print_matrices"]->set(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
+	solver.regularization = REGULARIZATION::NULL_PIVOTS;
 	Reader::set(*environment);
 }
 
 static void FETI4ISetRealOptions(espreso::ESPRESOSolver &solver, FETI4IReal* options)
 {
 	if (!solver.parameters["epsilon"]->set(std::to_string(options[FETI4I_EPSILON]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'EPSILON' to " << options[FETI4I_PRINT_MATRICES];
+		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'EPSILON' to " << options[FETI4I_EPSILON];
 	}
 }
 
