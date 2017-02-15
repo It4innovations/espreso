@@ -7,7 +7,6 @@
 
 #include "../../basis/utilities/utils.h"
 #include "../../configuration/physics/nonlinearsolver.h"
-
 #include "../../solver/generic/LinearSolver.h"
 
 using namespace espreso;
@@ -18,7 +17,7 @@ NewtonRhapson::NewtonRhapson(
 		std::vector<Instance*> &instances,
 		std::vector<LinearSolver*> &linearSolvers,
 		store::ResultStore* store,
-		const NonLinearSolver &configuration)
+		const NonLinearSolverBase &configuration)
 : Solver(mesh, physics, instances, linearSolvers, store), _configuration(configuration)
 {
 
@@ -26,7 +25,7 @@ NewtonRhapson::NewtonRhapson(
 
 void NewtonRhapson::run(Step &step)
 {
-	if (!_configuration.convergence_parameters.temperature && _configuration.convergence_parameters.heat) {
+	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 	step.solver = 0;
@@ -40,13 +39,13 @@ void NewtonRhapson::run(Step &step)
 	startLinearSolver();
 	processSolution(step);
 
-	double temperatureResidual = _configuration.convergence_parameters.temperature_residual;
-	double heatResidual = _configuration.convergence_parameters.heat_residual;
+	double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
+	double heatResidual = _configuration.convergenceParameters().requestedResidual();
 	double heatResidualNorm = 0;
-	if (_configuration.convergence_parameters.temperature) {
+	if (_configuration.convergenceParameters().checkSolution()) {
 		temperatureResidual *= 10;
 	}
-	if (_configuration.convergence_parameters.heat) {
+	if (_configuration.convergenceParameters().checkResidual()) {
 		heatResidual *= 10;
 	}
 
@@ -54,8 +53,8 @@ void NewtonRhapson::run(Step &step)
 	std::vector<std::vector<double> > F_ext;
 	while (
 		step.solver++ < _configuration.max_iterations &&
-		(temperatureResidual > _configuration.convergence_parameters.temperature_residual ||
-		heatResidual > _configuration.convergence_parameters.heat_residual)) {
+		(temperatureResidual > _configuration.convergenceParameters().requestedSolution() ||
+		heatResidual > _configuration.convergenceParameters().requestedResidual())) {
 
 		T = instances.front()->primalSolution;
 
@@ -72,12 +71,12 @@ void NewtonRhapson::run(Step &step)
 
 		assembleStiffnessMatrices(step);
 		F_ext = instances.front()->f;
-		if (_configuration.convergence_parameters.heat) {
+		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
 		}
 		assembleResidualForces(step);
 		sumVectors(physics.front()->instance()->f, physics.front()->instance()->f, physics.front()->instance()->R, 1, -1);
-		if (_configuration.convergence_parameters.heat) {
+		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual += physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
 		}
 		assembleB1(step);
@@ -92,17 +91,17 @@ void NewtonRhapson::run(Step &step)
 		if (_configuration.line_search) {
 			lineSearch(T, physics.front()->instance()->primalSolution, F_ext, physics.front(), step);
 		}
-		if (_configuration.convergence_parameters.temperature) {
+		if (_configuration.convergenceParameters().checkSolution()) {
 			temperatureResidual = sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 		}
 		sumVectors(physics.front()->instance()->primalSolution, T, physics.front()->instance()->primalSolution);
-		if (_configuration.convergence_parameters.temperature) {
+		if (_configuration.convergenceParameters().checkSolution()) {
 			temperatureResidual /= sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}
 
 		processSolution(step);
 
-		if (_configuration.convergence_parameters.heat) {
+		if (_configuration.convergenceParameters().checkResidual()) {
 			assembleStiffnessMatrices(step);
 			assembleResidualForces(step);
 			double R;

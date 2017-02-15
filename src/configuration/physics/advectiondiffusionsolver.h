@@ -7,6 +7,21 @@
 
 namespace espreso {
 
+struct AdvectionDiffusionNonLinearConvergence: public NonLinearConvergence {
+
+	virtual bool checkSolution() const { return temperature; }
+	virtual bool checkResidual() const { return heat; }
+
+	virtual double requestedSolution() const { return temperature_residual; }
+	virtual double requestedResidual() const { return heat_residual; }
+
+	PARAMETER(bool, temperature, "Turn on/off temperature residual check.", true);
+	PARAMETER(bool, heat       , "Turn on/off heat residual check."       , false);
+
+	PARAMETER(double, temperature_residual, "Requested temperature residual", 1e-3);
+	PARAMETER(double, heat_residual       , "Requested heat residual"       , 1e-3);
+};
+
 struct AdvectionDiffusionSolver: public Configuration {
 
 	enum class TYPE {
@@ -41,7 +56,7 @@ struct AdvectionDiffusionSolver: public Configuration {
 
 	PARAMETER(size_t, load_steps, "Number of load steps in simulation.", 1);
 
-	SUBMAPTOCONFIG(size_t, NonLinearSolver, nonlinear_solver, "Non-linear configuration for each load step.");
+	SUBMAPTOCONFIG(size_t, NonLinearSolver<AdvectionDiffusionNonLinearConvergence>, nonlinear_solver, "Non-linear configuration for each load step.");
 	SUBMAPTOCONFIG(size_t, TransientSolver, transient_solver, "Transient configuration for each load step.");
 };
 

@@ -45,7 +45,7 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 
 	PARAMETER(bool, newassembler, "New version of assembler.", 1);
 
-	SUBCONFIG(PhysicsSolver, physics_solver, "Settings of physics solver.");
+	SUBCONFIG(PhysicsSolver<AdvectionDiffusionNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
 	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
 		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },

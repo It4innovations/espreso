@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct LoadStepSettings: public Configuration {
+struct LoadStepSettingsBase: public Configuration {
 
 	enum class TYPE {
 		STEADY_STATE,
@@ -32,8 +32,13 @@ struct LoadStepSettings: public Configuration {
 	PARAMETER(size_t, start_time, "Step start time.", 0);
 	PARAMETER(size_t, end_time  , "Step end time"   , 1);
 
-	SUBCONFIG(NonLinearSolver, nonlinear_solver, "Non-linear configuration for each load step.");
 	SUBCONFIG(TransientSolver, transient_solver, "Transient configuration for each load step.");
+};
+
+template<class TConvergence>
+struct LoadStepSettings: public LoadStepSettingsBase {
+
+	SUBCONFIG(NonLinearSolver<TConvergence>, nonlinear_solver, "Transient configuration for each load step.");
 };
 
 }

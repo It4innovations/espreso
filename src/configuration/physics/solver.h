@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct PhysicsSolver: public Configuration {
+struct PhysicsSolverBase: public Configuration {
 
 	enum class INTERPOLATION {
 		LINEAR,
@@ -19,8 +19,12 @@ struct PhysicsSolver: public Configuration {
 	}));
 
 	PARAMETER(size_t, load_steps, "Number of load steps in simulation.", 1);
+};
 
-	SUBMAPTOCONFIG(size_t, LoadStepSettings, load_steps_settings, "Detail settings for each load step.");
+template <class TConvergence>
+struct PhysicsSolver: public PhysicsSolverBase {
+
+	SUBMAPTOCONFIG(size_t, LoadStepSettings<TConvergence>, load_steps_settings, "Detail settings for each load step.");
 };
 
 }

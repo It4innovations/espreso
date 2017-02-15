@@ -41,15 +41,15 @@ Factory::Factory(const GlobalConfiguration &configuration)
 				loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
 				break;
 			}
-			LoadStepSettings *loadStepSettings = it->second;
+			LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
 
-			if (loadStepSettings->type == LoadStepSettings::TYPE::STEADY_STATE) {
-				if (loadStepSettings->mode == LoadStepSettings::MODE::LINEAR) {
+			if (loadStepSettings->type == LoadStepSettingsBase::TYPE::STEADY_STATE) {
+				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::LINEAR) {
 					loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
 				}
-				if (loadStepSettings->mode == LoadStepSettings::MODE::NONLINEAR) {
+				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::NONLINEAR) {
 					switch (loadStepSettings->nonlinear_solver.method) {
-					case NonLinearSolver::METHOD::NEWTON_RHAPSON:
+					case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
 						loadSteps.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store, loadStepSettings->nonlinear_solver));
 						break;
 					default:

@@ -8,14 +8,16 @@ namespace espreso {
 
 struct NonLinearConvergence: public Configuration {
 
-	PARAMETER(bool, temperature, "Turn on/off temperature residual check.", true);
-	PARAMETER(bool, heat       , "Turn on/off heat residual check."       , false);
+	virtual bool checkSolution() const =0;
+	virtual bool checkResidual() const =0;
 
-	PARAMETER(double, temperature_residual, "Requested temperature residual", 1e-3);
-	PARAMETER(double, heat_residual       , "Requested heat residual"       , 1e-3);
+	virtual double requestedSolution() const =0;
+	virtual double requestedResidual() const =0;
 };
 
-struct NonLinearSolver: public Configuration {
+struct NonLinearSolverBase: public Configuration {
+
+	virtual const NonLinearConvergence& convergenceParameters() const =0;
 
 	enum class METHOD {
 		NEWTON_RHAPSON
@@ -27,8 +29,16 @@ struct NonLinearSolver: public Configuration {
 
 	PARAMETER(size_t, max_iterations, "Allowed number of iterations.", 15);
 	PARAMETER(bool, line_search, "Set line search.", false);
-	SUBCONFIG(NonLinearConvergence, convergence_parameters, "Convergence parameters.");
 	PARAMETER(size_t, substeps, "Number of loading substeps.", 1);
+};
+
+
+template <class TConvergence>
+struct NonLinearSolver: public NonLinearSolverBase {
+
+	const NonLinearConvergence& convergenceParameters() const { return convergence_parameters; }
+
+	SUBCONFIG(TConvergence, convergence_parameters, "Convergence parameters.");
 };
 
 }
