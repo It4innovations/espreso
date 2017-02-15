@@ -50,18 +50,18 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 	} else {
 		ESPRESOInput input;
 		ESPRESOSolver solver;
-                options[FETI4I_SUBDOMAINS] = input.domains;
+		options[FETI4I_SUBDOMAINS] = input.domains;
 
-                options[FETI4I_ITERATIONS] = solver.iterations;
-                options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
-                options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
-                options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
-                options[FETI4I_N_MICS] = solver.N_MICS;
+		options[FETI4I_ITERATIONS] = solver.iterations;
+		options[FETI4I_FETI_METHOD] = static_cast<int>(solver.method);
+		options[FETI4I_PRECONDITIONER] = static_cast<int>(solver.preconditioner);
+		options[FETI4I_CGSOLVER] = static_cast<int>(solver.solver);
+		options[FETI4I_N_MICS] = solver.N_MICS;
 
-                options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
-                options[FETI4I_TESTING_LEVEL] = environment->testing_level;
-                options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
-                options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
+		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
+		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
+		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
+		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
 	}
 }
 
