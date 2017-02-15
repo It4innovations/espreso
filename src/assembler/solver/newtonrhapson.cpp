@@ -50,13 +50,16 @@ void NewtonRhapson::run(Step &step)
 		heatResidual *= 10;
 	}
 
+	std::vector<std::vector<double> > T;
+	std::vector<std::vector<double> > F_ext;
 	while (
 		step.solver++ < _configuration.max_iterations &&
 		(temperatureResidual > _configuration.convergence_parameters.temperature_residual ||
 		heatResidual > _configuration.convergence_parameters.heat_residual)) {
 
-		std::vector<std::vector<double> > T = instances.front()->primalSolution;
+		T = instances.front()->primalSolution;
 
+		////////
 		instances.front() = new Instance(instances.front()->domains);
 		instances.front()->DOFs = physics.front()->instance()->DOFs;
 		instances.front()->primalSolution = physics.front()->instance()->primalSolution;
@@ -64,8 +67,11 @@ void NewtonRhapson::run(Step &step)
 		physics.front()->instance()->solutions.resize(0);
 		linearSolvers.front() = new LinearSolver(linearSolvers.front()->configuration, linearSolvers.front()->physics, linearSolvers.front()->constraints);
 		physics.front()->_instance = instances.front();
+		processSolution(step);
+		///////
 
 		assembleStiffnessMatrices(step);
+		F_ext = instances.front()->f;
 		if (_configuration.convergence_parameters.heat) {
 			heatResidual = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
 		}
@@ -84,7 +90,7 @@ void NewtonRhapson::run(Step &step)
 		startLinearSolver();
 
 		if (_configuration.line_search) {
-			lineSearch(T, physics.front()->instance()->primalSolution, physics.front(), step);
+			lineSearch(T, physics.front()->instance()->primalSolution, F_ext, physics.front(), step);
 		}
 		if (_configuration.convergence_parameters.temperature) {
 			temperatureResidual = sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));

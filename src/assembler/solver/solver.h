@@ -45,7 +45,7 @@ protected:
 	void assembleB0(const Step &step);
 	void processSolution(const Step &step);
 
-	void lineSearch(const std::vector<std::vector<double> > &previous, std::vector<std::vector<double> > &delta, Physics *physics, const Step &step);
+	void lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step);
 	void sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1);
 
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);

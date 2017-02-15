@@ -55,6 +55,7 @@ void Physics::assembleStiffnessMatrix(const Step &step, size_t domain)
 	std::vector<eslocal> DOFs;
 
 	_K.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
+	_instance->f[domain].clear();
 	_instance->f[domain].resize(_instance->DOFs[domain]);
 
 	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
@@ -101,6 +102,7 @@ void Physics::assembleResidualForces(const Step &step, size_t domain)
 	DenseMatrix Re;
 	std::vector<eslocal> DOFs;
 
+	_instance->R[domain].clear();
 	_instance->R[domain].resize(_instance->DOFs[domain]);
 
 	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {

@@ -191,7 +191,7 @@ void Solver::assembleB0(const Step &step)
 	}
 }
 
-void Solver::lineSearch(const std::vector<std::vector<double> > &previous, std::vector<std::vector<double> > &delta, Physics *physics, const Step &step)
+void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step)
 {
 	auto multiply = [] (const std::vector<std::vector<double> > &v1, const std::vector<std::vector<double> > &v2) {
 		double cmul = 0, gmul;
@@ -210,39 +210,40 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &previous, std::
 	};
 
 	double a = 0, b = 1, alpha = 1;
-	double fa, fb, fx, faStart;
+	double fa = 0, fb = 0, fx = 0, faStart = 0;
 
-	std::vector<std::vector<double> > solution = delta;
-	std::vector<std::vector<double> > R0 = physics->instance()->R;
+	std::vector<std::vector<double> > solution = deltaU;
+	std::vector<std::vector<double> > F_ext_r = F_ext;
 
 	for (size_t i = 0; i < 6; i++) {
-		sumVectors(solution, previous, delta, 1, alpha); // solution = U + alpha * deltaU
+		sumVectors(solution, U, deltaU, 1, alpha);
 
-		// physics->instance()->R = K * solution
 		solution.swap(physics->instance()->primalSolution);
 		physics->assembleResidualForces(step);
 		solution.swap(physics->instance()->primalSolution);
 
 		if (i == 0) {
-			faStart = multiply(delta, physics->instance()->f); // deltaU * RHS_i
-			fb = -multiply(delta, physics->instance()->R); // deltaU * -(K * solution)
-			if (faStart * fb > 0) {
-				R0.swap(physics->instance()->R);
+			faStart = multiply(deltaU, physics->instance()->f);
+			sumVectors(F_ext_r, F_ext, physics->instance()->R, 1, -1);
+			fb = multiply(deltaU, F_ext_r);
+			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
 				return;
 			}
 			fa = faStart;
 		} else {
-			fx = -multiply(delta, physics->instance()->R); // deltaU * -(K * solution)
-			if (fabs(fx) <= 0.5 * faStart) {
-				alpha = a - fa * ((b - a ) / (fb - fa));
-				break;
-			}
+			sumVectors(F_ext_r, F_ext, physics->instance()->R, 1, -1);
+			fx = multiply(deltaU, F_ext_r);
 			if (fa * fx < 0) {
 				b = alpha;
 				fb = fx;
 			} else if (fb * fx < 0) {
 				a = alpha;
 				fa = fx;
+			}
+
+			if (fabs(fx) <= 0.5 * faStart) {
+				alpha = a - fa * ((b - a ) / (fb - fa));
+				break;
 			}
 		}
 
@@ -252,12 +253,12 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &previous, std::
 	if (alpha < 0.1) {
 		alpha = 0.1;
 	}
-	if (alpha > 1) {
+	if (alpha > .99) {
 		alpha = 1;
 	}
 
-	sumVectors(solution, previous, delta, 0, alpha);
-	solution.swap(delta);
+	sumVectors(solution, U, deltaU, 0, alpha);
+	solution.swap(deltaU);
 }
 
 void Solver::sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha, double beta)
