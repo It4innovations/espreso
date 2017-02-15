@@ -361,7 +361,7 @@ void NewAdvectionDiffusion2D::storeSolution(const Step &step, std::vector<std::v
 		delete _instance->solutions[0];
 	}
 
-	_instance->solutions[0] = new Solution(pointDOFs(), solution);
+	_instance->solutions[0] = new Solution("temperature", pointDOFs(), solution);
 
 	store->storeValues("temperature", 1, _instance->solutions[0]->data, store::ResultStore::ElementType::NODES);
 }

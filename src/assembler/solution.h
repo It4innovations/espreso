@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <string>
 
 namespace espreso {
 
@@ -11,14 +12,15 @@ enum class Property;
 
 struct Solution {
 
-	Solution(const std::vector<Property> &properties, const std::vector<std::vector<double> > &data);
-	Solution(const std::vector<Property> &properties);
+	Solution(const std::string &name, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data);
+	Solution(const std::string &name, const std::vector<Property> &properties);
 
 	inline double get(Property property, eslocal domain, eslocal index) const
 	{
 		return data[domain][index * properties + _offset[static_cast<int>(property)]];
 	}
 
+	std::string name;
 	size_t properties;
 	const std::vector<std::vector<double> > &data;
 protected:
