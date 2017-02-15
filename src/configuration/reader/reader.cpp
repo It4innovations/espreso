@@ -12,7 +12,7 @@
 using namespace espreso;
 
 static struct option long_options[] = {
-		{"configuration",  no_argument, 0, 'c'},
+		{"config",  no_argument, 0, 'c'},
 		{"default",  no_argument, 0, 'd'},
 		{"help",  no_argument, 0, 'h'},
 		{0, 0, 0, 0}
@@ -96,7 +96,27 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 	}
 
 	if (helpVerboseLevel) {
-		std::cout << "PRINT HELP\n";
+		std::cout << "\nusage: ./espreso [options] [ARGS]\n\n";
+
+		std::cout << " [options] are the following:\n";
+		std::cout << "\t -h, --help            print this message\n";
+		std::cout << "\t -d, --default         generate default configuration file\n";
+		std::cout << "\t -c, --config=[path]   set path to configuration file\n\n";
+
+		std::cout << " [ARGS] are unnamed argument that can be referenced in a configuration\n";
+		std::cout << "        file by [ARGX], where X is a number of an argument counted from 0.\n";
+		std::cout << "        e.g. DOMAINS [ARG0]; set number of domains to the first argument.\n\n";
+
+		std::cout << "The solver is controlled by '*.ecf' scripts. Some examples can be found\n";
+		std::cout << "in 'benchmarks' directory or in 'tests/examples'. In default 'espreso.ecf'\n";
+		std::cout << "from ESPRESO root directory is loaded. A different configuration file can\n";
+		std::cout << "be set by -c [path] option.\n\n";
+		std::cout << "A file is composed from parameters and objects with the following pattern:\n\n";
+		std::cout << "  OBJECT {\n";
+		std::cout << "    PARAMETER VALUE;\n";
+		std::cout << "  }\n\n";
+		std::cout << "Run ./espreso --default to generates the configuration file with default\n";
+		std::cout << "parameters.\n\n";
 		exit(0);
 	}
 
