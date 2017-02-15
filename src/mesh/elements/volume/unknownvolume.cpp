@@ -32,7 +32,7 @@ size_t UnknownVolume::fillFaces()
 		_faces.push_back(new UnknownPlane(_nodes, _faceNodes[i], _stiffnessMatrix));
 		_faces.back()->parentElements().push_back(this);
 	}
-	return _faces.size();
+	return 0;
 }
 
 

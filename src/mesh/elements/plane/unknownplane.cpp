@@ -32,7 +32,7 @@ size_t UnknownPlane::fillEdges()
 		_edges.push_back(new UnknownPlane(_nodes, _edgeNodes[i], _stiffnessMatrix));
 		_edges.back()->parentElements().push_back(this);
 	}
-	return _edges.size();
+	return 0;
 }
 
 
