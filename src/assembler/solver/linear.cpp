@@ -24,6 +24,7 @@ void Linear::run(Step &step)
 
 	initLinearSolver();
 	startLinearSolver();
+	processSolution(step);
 	storeSolution(step);
 
 	finalizeLinearSolver();

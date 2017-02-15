@@ -354,15 +354,13 @@ void NewAdvectionDiffusion2D::processNode(const Step &step, const Element *e, De
 
 }
 
-void NewAdvectionDiffusion2D::storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store)
+void NewAdvectionDiffusion2D::processSolution(const Step &step)
 {
 	_instance->solutions.resize(1, NULL);
 	if (_instance->solutions[0] != NULL) {
 		delete _instance->solutions[0];
 	}
 
-	_instance->solutions[0] = new Solution("temperature", pointDOFs(), solution);
-
-	store->storeValues("temperature", 1, _instance->solutions[0]->data, store::ResultStore::ElementType::NODES);
+	_instance->solutions[0] = new Solution("temperature", store::ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 

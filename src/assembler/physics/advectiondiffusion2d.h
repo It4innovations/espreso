@@ -22,10 +22,9 @@ struct NewAdvectionDiffusion2D: public Physics2D
 	void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
 	void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
 	void processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
+	void processSolution(const Step &step);
 
 	void analyticRegularization(size_t domain);
-
-	void storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store);
 
 	const std::vector<Property>& pointDOFs() const
 	{

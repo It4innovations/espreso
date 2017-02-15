@@ -13,16 +13,16 @@ enum class Property;
 
 namespace store {
 
+enum class ElementType {
+	NODES,
+	EDGES,
+	FACES,
+	ELEMENTS
+};
+
 class ResultStore {
 
 public:
-	enum class ElementType {
-		NODES,
-		EDGES,
-		FACES,
-		ELEMENTS
-	};
-
 	const OutputConfiguration& configuration() const { return _output; };
 
 	virtual void storeGeometry(size_t timeStep = -1) = 0;

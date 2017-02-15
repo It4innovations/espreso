@@ -38,7 +38,7 @@ void NewtonRhapson::run(Step &step)
 
 	initLinearSolver();
 	startLinearSolver();
-	storeSolution(step);
+	processSolution(step);
 
 	double temperatureResidual = _configuration.convergence_parameters.temperature_residual;
 	double heatResidual = _configuration.convergence_parameters.heat_residual;
@@ -94,7 +94,7 @@ void NewtonRhapson::run(Step &step)
 			temperatureResidual /= sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}
 
-		storeSolution(step);
+		processSolution(step);
 
 		if (_configuration.convergence_parameters.heat) {
 			assembleStiffnessMatrices(step);
@@ -106,6 +106,7 @@ void NewtonRhapson::run(Step &step)
 			// TODO
 		}
 	}
+	storeSolution(step);
 	finalizeLinearSolver();
 }
 

@@ -8,6 +8,7 @@
 #include "../physics/physics.h"
 #include "../step.h"
 #include "../instance.h"
+#include "../solution.h"
 
 #include "../../mesh/structures/mesh.h"
 
@@ -56,6 +57,15 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 			std::ofstream os(Logging::prepareFile(d, name));
 			os << vectors[d];
 			os.close();
+		}
+	}
+}
+
+void Solver::storeSolution(const Step &step)
+{
+	for (size_t i = 0; i < instances.size(); i++) {
+		for (size_t s = 0; s < instances[i]->solutions.size(); s++) {
+			_store->storeValues(instances[i]->solutions[s]->name, instances[i]->solutions[i]->properties, instances[i]->solutions[s]->data, instances[i]->solutions[s]->eType);
 		}
 	}
 }
@@ -260,11 +270,11 @@ void Solver::sumVectors(std::vector<std::vector<double> > &result, const std::ve
 	}
 }
 
-void Solver::storeSolution(const Step &step)
+void Solver::processSolution(const Step &step)
 {
 	TimeEvent store("Store solution"); store.startWithBarrier();
 	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->storeSolution(step, instances[i]->primalSolution, _store);
+		physics[i]->processSolution(step);
 	}
 	store.end(); _timeStatistics->addEvent(store);
 

@@ -105,14 +105,14 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 
 void AdvectionDiffusion2D::saveMeshProperties(store::ResultStore &store)
 {
-	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, store::ResultStore::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::ResultStore::ElementType::ELEMENTS);
-	store.storeProperty("temperature", { Property::TEMPERATURE }, store::ResultStore::ElementType::NODES);
+	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, store::ElementType::ELEMENTS);
+	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::ElementType::ELEMENTS);
+	store.storeProperty("temperature", { Property::TEMPERATURE }, store::ElementType::NODES);
 }
 
 void AdvectionDiffusion2D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("temperature", 1, results, store::ResultStore::ElementType::NODES);
+	store.storeValues("temperature", 1, results, store::ElementType::NODES);
 }
 
 void AdvectionDiffusion2D::assembleB1()
@@ -666,8 +666,8 @@ void AdvectionDiffusion2D::postProcess(store::ResultStore &store, const std::vec
 		}
 	}
 
-	store.storeValues("gradient", 2, termalGradient, store::ResultStore::ElementType::ELEMENTS);
-	store.storeValues("flux", 2, termalFlux, store::ResultStore::ElementType::ELEMENTS);
+	store.storeValues("gradient", 2, termalGradient, store::ElementType::ELEMENTS);
+	store.storeValues("flux", 2, termalFlux, store::ElementType::ELEMENTS);
 }
 
 }

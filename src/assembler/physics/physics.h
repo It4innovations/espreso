@@ -52,6 +52,7 @@ struct Physics {
 	virtual void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 	virtual void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
 	virtual void processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
+	virtual void processSolution(const Step &step) =0;
 
 	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;
 	virtual void insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &fe, size_t domain);
@@ -64,7 +65,6 @@ struct Physics {
 	virtual void assembleB0FromKernels(const Step &step) =0;
 
 	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction = SumRestriction::NONE, size_t loadStep = 0) const;
-	virtual void storeSolution(const Step &step, std::vector<std::vector<double> > &solution, store::ResultStore *store) =0;
 
 	virtual ~Physics() {}
 

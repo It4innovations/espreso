@@ -94,10 +94,10 @@ void Elasticity2D::prepareMeshStructures()
 
 void Elasticity2D::saveMeshProperties(store::ResultStore &store)
 {
-	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y }, store::ResultStore::ElementType::NODES);
-	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y }, store::ResultStore::ElementType::NODES);
-	store.storeProperty("obstacle", { Property::OBSTACLE }, store::ResultStore::ElementType::NODES);
-	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::ResultStore::ElementType::NODES);
+	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y }, store::ElementType::NODES);
+	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y }, store::ElementType::NODES);
+	store.storeProperty("obstacle", { Property::OBSTACLE }, store::ElementType::NODES);
+	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::ElementType::NODES);
 	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {
 		store::VTK::fixPoints(store.configuration(), _mesh, "fixPoints");
 	}
@@ -105,11 +105,11 @@ void Elasticity2D::saveMeshProperties(store::ResultStore &store)
 		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 		case B0_TYPE::COMBINED:
-			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ResultStore::ElementType::EDGES);
+			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ElementType::EDGES);
 			store::VTK::corners(store.configuration(), _mesh, "corners");
 			break;
 		case B0_TYPE::KERNELS:
-			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ResultStore::ElementType::EDGES);
+			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ElementType::EDGES);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented saving properties of B0";
@@ -119,7 +119,7 @@ void Elasticity2D::saveMeshProperties(store::ResultStore &store)
 
 void Elasticity2D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("displacement", 2, results, store::ResultStore::ElementType::NODES);
+	store.storeValues("displacement", 2, results, store::ElementType::NODES);
 }
 
 void Elasticity2D::assembleB1()

@@ -47,9 +47,9 @@ protected:
 	void nodes(const std::vector<std::vector<eslocal> > &nodes);
 	void cells(ElementType eType);
 
-	void data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ResultStore::ElementType eType);
-	void data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ResultStore::ElementType eType);
-	void data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ResultStore::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ElementType eType);
+	void data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ElementType eType);
 
 	void lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function<Point(const Point&, size_t, size_t, bool)> shrink);
 

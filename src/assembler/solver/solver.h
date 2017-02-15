@@ -43,14 +43,14 @@ protected:
 	void subtractSolutionFromB1c(const Step &step);
 	void makeStiffnessMatricesRegular(const Step &step);
 	void assembleB0(const Step &step);
+	void processSolution(const Step &step);
 
 	void lineSearch(const std::vector<std::vector<double> > &previous, std::vector<std::vector<double> > &delta, Physics *physics, const Step &step);
 	void sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1);
 
-	void storeSolution(const Step &step);
-
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
 	void storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
+	void storeSolution(const Step &step);
 
 	void initLinearSolver();
 	void startLinearSolver();

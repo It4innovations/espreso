@@ -123,14 +123,14 @@ void VTK::cells(ElementType eType)
 	std::vector<espreso::Element*> elements;
 
 	switch (eType) {
-	case espreso::store::ResultStore::ElementType::ELEMENTS:
+	case espreso::store::ElementType::ELEMENTS:
 		elements.insert(elements.end(), _mesh.elements().begin(), _mesh.elements().end());
 		break;
-	case espreso::store::ResultStore::ElementType::FACES:
+	case espreso::store::ElementType::FACES:
 		elements.insert(elements.end(), _mesh.faces().begin(), _mesh.faces().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
-	case espreso::store::ResultStore::ElementType::EDGES:
+	case espreso::store::ElementType::EDGES:
 		elements.insert(elements.end(), _mesh.edges().begin(), _mesh.edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
@@ -204,7 +204,7 @@ void VTK::lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function
 }
 
 template <typename TVTKArray, typename TType>
-static void storeData(vtkUnstructuredGrid *VTKGrid, std::vector<void*> &VTKDataArrays, const std::string &name, size_t dimension, const std::vector<std::vector<TType> > &values, espreso::store::ResultStore::ElementType eType)
+static void storeData(vtkUnstructuredGrid *VTKGrid, std::vector<void*> &VTKDataArrays, const std::string &name, size_t dimension, const std::vector<std::vector<TType> > &values, espreso::store::ElementType eType)
 {
 	size_t size = 0;
 	for (size_t i = 0; i < values.size(); i++) {
@@ -222,13 +222,13 @@ static void storeData(vtkUnstructuredGrid *VTKGrid, std::vector<void*> &VTKDataA
 	vtkArray->SetArray(data, static_cast<vtkIdType>(size), 1);
 
 	switch (eType) {
-	case espreso::store::ResultStore::ElementType::NODES:
+	case espreso::store::ElementType::NODES:
 		VTKGrid->GetPointData()->AddArray(vtkArray.GetPointer());
 		if (VTKGrid->GetPointData()->GetNumberOfArrays() == 1) {
 			VTKGrid->GetPointData()->SetActiveScalars(name.c_str());
 		}
 		break;
-	case espreso::store::ResultStore::ElementType::ELEMENTS:
+	case espreso::store::ElementType::ELEMENTS:
 		VTKGrid->GetCellData()->AddArray(vtkArray.GetPointer());
 		if (VTKGrid->GetPointData()->GetNumberOfArrays() == 0) {
 			VTKGrid->GetCellData()->SetActiveScalars(name.c_str());
@@ -238,17 +238,17 @@ static void storeData(vtkUnstructuredGrid *VTKGrid, std::vector<void*> &VTKDataA
 	VTKDataArrays.push_back(data);
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ResultStore::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ElementType eType)
 {
 	storeData<vtkIntArray, int>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ResultStore::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ElementType eType)
 {
 	storeData<vtkLongArray, long>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ResultStore::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ElementType eType)
 {
 	storeData<vtkDoubleArray, double>(VTKGrid, VTKDataArrays, name, dimension, values, eType);
 }

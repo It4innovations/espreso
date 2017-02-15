@@ -184,14 +184,14 @@ void VTK::cells(ElementType eType)
 	std::vector<espreso::Element*> elements;
 
 	switch (eType) {
-	case espreso::store::ResultStore::ElementType::ELEMENTS:
+	case espreso::store::ElementType::ELEMENTS:
 		elements.insert(elements.end(), _mesh.elements().begin(), _mesh.elements().end());
 		break;
-	case espreso::store::ResultStore::ElementType::FACES:
+	case espreso::store::ElementType::FACES:
 		elements.insert(elements.end(), _mesh.faces().begin(), _mesh.faces().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
-	case espreso::store::ResultStore::ElementType::EDGES:
+	case espreso::store::ElementType::EDGES:
 		elements.insert(elements.end(), _mesh.edges().begin(), _mesh.edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
@@ -301,7 +301,7 @@ void VTK::lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function
 }
 
 template <typename Ttype>
-static void setValueHeader(std::ofstream &os, const std::vector<std::vector<Ttype> > &values, size_t dimension, espreso::store::ResultStore::ElementType &last, espreso::store::ResultStore::ElementType current)
+static void setValueHeader(std::ofstream &os, const std::vector<std::vector<Ttype> > &values, size_t dimension, espreso::store::ElementType &last, espreso::store::ElementType current)
 {
 	if (last != current) {
 		size_t size = 0;
@@ -309,13 +309,13 @@ static void setValueHeader(std::ofstream &os, const std::vector<std::vector<Ttyp
 			size += values[p].size() / dimension;
 		}
 		switch (current) {
-		case espreso::store::ResultStore::ElementType::NODES:
+		case espreso::store::ElementType::NODES:
 			os << "POINT_DATA " << size << "\n";
-			last = espreso::store::ResultStore::ElementType::NODES;
+			last = espreso::store::ElementType::NODES;
 			break;
 		default:
 			os << "CELL_DATA " << size << "\n";
-			last = espreso::store::ResultStore::ElementType::ELEMENTS;
+			last = espreso::store::ElementType::ELEMENTS;
 		}
 	}
 }
@@ -334,7 +334,7 @@ static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > 
 	os.flush();
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ResultStore::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<int> > &values, espreso::store::ElementType eType)
 {
 	setValueHeader(_os, values, dimension, _lastData, eType);
 	_os << "SCALARS " << name << " int " << dimension << "\n";
@@ -342,7 +342,7 @@ void VTK::data(const std::string &name, size_t dimension, const std::vector<std:
 	storeData<int>(_os, values, dimension);
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ResultStore::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<long> > &values, espreso::store::ElementType eType)
 {
 	setValueHeader(_os, values, dimension, _lastData, eType);
 	_os << "SCALARS " << name << " long " << dimension << "\n";
@@ -350,7 +350,7 @@ void VTK::data(const std::string &name, size_t dimension, const std::vector<std:
 	storeData<long>(_os, values, dimension);
 }
 
-void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ResultStore::ElementType eType)
+void VTK::data(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, espreso::store::ElementType eType)
 {
 	setValueHeader(_os, values, dimension, _lastData, eType);
 	_os << "SCALARS " << name << " double " << dimension << "\n";
