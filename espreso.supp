@@ -42,7 +42,6 @@
    sqrt
    Memcheck:Cond
    fun:__libm_sqrt_ex
-   fun:sqrt
    ...
 }
 {
