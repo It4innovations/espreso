@@ -229,16 +229,23 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 	std::vector<std::vector<eslocal> > incomplete(threads);
 	std::vector<std::vector<double> > incompleteData(threads);
 
+	// clusterOffset not work because only to the lowest rank receive data
+	std::vector<std::vector<std::vector<eslocal> > > skipped(threads, std::vector<std::vector<eslocal> >(_mesh->neighbours().size()));
+
 	std::vector<std::vector<Region*> > allowed(pointDOFs().size());
 	if (restriction == SumRestriction::DIRICHLET) {
 		allowed = _mesh->getRegionsWithProperties(loadStep, pointDOFs());
 	}
 
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		double tSum = 0;
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+
+			if (!_mesh->nodes()[n]->parentElements().size()) {
+				// mesh generator can generate dangling nodes -> skip them
+				continue;
+			}
 
 			if (_mesh->nodes()[n]->clusters().size() > 1) {
 				if (_mesh->nodes()[n]->clusters().front() == environment->MPIrank) {
@@ -246,19 +253,24 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 						rBufferSize[t][n2i(*c)] += pointDOFs().size();
 					}
 					incomplete[t].push_back(n);
-					incompleteData[t].resize(incompleteData.size() + pointDOFs().size());
+					incompleteData[t].insert(incompleteData[t].end(), pointDOFs().size(), 0);
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
 						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
 							if (restriction == SumRestriction::NONE || _mesh->commonRegion(allowed[dof], _mesh->nodes()[n]->regions())) {
 								eslocal index = _mesh->nodes()[n]->DOFIndex(*d, dof);
 								if (index >= 0) {
-									incompleteData[t][incompleteData.size() - pointDOFs().size() + dof] += data[*d][index];
+									incompleteData[t][incompleteData[t].size() - pointDOFs().size() + dof] += data[*d][index];
 								}
 							}
 						}
 					}
 				} else {
 					eslocal cluster = _mesh->nodes()[n]->clusters().front();
+					for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
+						if (*c != environment->MPIrank) {
+							skipped[t][n2i(*c)].push_back(_mesh->nodes()[n]->clusterOffset(*c));
+						}
+					}
 					sBuffer[t][n2i(cluster)].resize(sBuffer[t][n2i(cluster)].size() + pointDOFs().size());
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
 						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
@@ -299,18 +311,34 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 	}
 
 	for (size_t n = 0; n < _mesh->neighbours().size(); n++) {
-		rBuffer[n].resize(rBuffer[n].size() + rBufferSize[0][n]);
+		size_t rSize = rBufferSize[0][n];
 		for (size_t t = 1; t < threads; t++) {
 			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
-			incomplete[0].insert(incomplete[0].end(), incomplete[t].begin(), incomplete[t].end());
-			incompleteData[0].insert(incompleteData[0].end(), incompleteData[t].begin(), incompleteData[t].end());
-			rBuffer[n].resize(rBuffer[n].size() + rBufferSize[t][n]);
+			skipped[0][n].insert(skipped[0][n].end(), skipped[t][n].begin(), skipped[t][n].end());
+			rSize += rBufferSize[t][n];
 		}
+		rBuffer[n].resize(rSize);
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		incomplete[0].insert(incomplete[0].end(), incomplete[t].begin(), incomplete[t].end());
+		incompleteData[0].insert(incompleteData[0].end(), incompleteData[t].begin(), incompleteData[t].end());
+	}
+
+	#pragma omp parallel for
+	for (size_t n = 0; n < _mesh->neighbours().size(); n++) {
+		std::sort(skipped[0][n].begin(), skipped[0][n].end());
 	}
 
 	if (!Communication::receiveUpperKnownSize(sBuffer[0], rBuffer, _mesh->neighbours())) {
 		ESINFO(ERROR) << "problem while exchange sum of squares.";
 	}
+
+	auto clusterOffset = [&] (size_t n, eslocal cluster) {
+		eslocal offset = _mesh->nodes()[n]->clusterOffset(cluster);
+		auto it = std::lower_bound(skipped[0][n2i(cluster)].begin(), skipped[0][n2i(cluster)].end(), offset);
+		return offset - (it - skipped[0][n2i(cluster)].begin());
+	};
 
 	distribution = Esutils::getDistribution(threads, incomplete[0].size());
 	#pragma omp parallel for
@@ -320,9 +348,9 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 			size_t n = incomplete[0][i];
 
 			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-				double sum = incompleteData[0][n * pointDOFs().size() + dof];
+				double sum = incompleteData[0][i * pointDOFs().size() + dof];
 				for (auto c = _mesh->nodes()[n]->clusters().begin() + 1; c != _mesh->nodes()[n]->clusters().end(); ++c) {
-					sum += rBuffer[n2i(*c)][_mesh->nodes()[n]->clusterOffset(*c) * pointDOFs().size() + dof];
+					sum += rBuffer[n2i(*c)][clusterOffset(n, *c) * pointDOFs().size() + dof];
 				}
 				switch (operation) {
 				case SumOperation::AVERAGE:
