@@ -48,7 +48,7 @@ def configure(ctx):
         link_MKL()
         ctx.check_lib("ifcore")
         ctx.env.append_unique("LIB", [ "ifcore" ])
-        ctx.env.append_unique("LINKFLAGS", ["-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64  -lmkl_core -lmkl_intel_thread ".format(os.environ['MKLROOT']) ])
+        ctx.env.append_unique("LINKFLAGS", ["-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64  -lmkl_core -lmkl_intel ".format(os.environ['MKLROOT']) ])
 
 
     if ctx.env.SOLVER == "CUDA" or ctx.env.SOLVER == "CUDA_7":

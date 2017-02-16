@@ -65,7 +65,8 @@ for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
         for ( eslocal i = 0 ; i < numDevices; ++i ) {
             cluster.B1KplusPacks[ i ].DenseMatsVecsRestCPU( 'N' );    
             long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
-            cilk_for (  long d = start ; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
+#pragma omp parallel for
+            for (  long d = start ; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
@@ -138,6 +139,11 @@ for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
     }
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+        #pragma omp parallel num_threads( numDevices  )
+            {
+//                cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( 0.1 );
+            }
+ 
         // classical FETI on MIC using Schur
         time_eval.timeEvents[0].start();
         time_eval.timeEvents[0].end();
@@ -146,7 +152,8 @@ for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
         // *** Part 1.1 - prepare vectors for FETI operator with SC
         // at first - work with domains assigned to MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-            cilk_for (eslocal d = 0; d < cluster.accDomains[i].size(); d++) {
+#pragma omp parallel for 
+            for (eslocal d = 0; d < cluster.accDomains[i].size(); d++) {
                 eslocal domN = cluster.accDomains[i].at(d);
                 for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
                     cluster.B1KplusPacks[i].SetX(d, j, x_in[ cluster.domains[domN].lambda_map_sub_local[j]]);
@@ -155,48 +162,52 @@ for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
         }
 
         // *** Part 1.2 work with domains staying on CPU
-        cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+        #pragma omp parallel for
+        for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
                 cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
             }
         }
-        //#pragma omp parallel num_threads( maxDevNumber )
-        //        {
+        #pragma omp parallel num_threads( maxDevNumber )
+                 {
         //            // start async. computation on MICs
-        for (int mic=0; mic<maxDevNumber; mic++)            
-            if (cluster.accDomains[mic].size() > 0) {
-                cluster.B1KplusPacks[ mic ].DenseMatsVecsMIC_Start( 'N' );
-            }
-        //        }
+        //for (int mic=0; mic<maxDevNumber; mic++)            
+            if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
+                cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
+             }
+                }
         // meanwhile compute the same for domains staying on CPU
         double startCPU = Measure::time();
-        cilk_for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+#pragma omp parallel for 
+        for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
         }
         for ( eslocal i = 0 ; i < numDevices; ++i ) {
             cluster.B1KplusPacks[ i ].DenseMatsVecsRestCPU( 'N' );    
             long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
-            cilk_for (  long d = start; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
+#pragma omp parallel for
+            for (  long d = start; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
         double CPUtime = Measure::time() - startCPU;
         // *** Part 5 - Finalize transfers of the result of the FETI SC operator
         // from MICs back to CPU
-        //#pragma omp parallel num_threads( maxDevNumber )
-        //        {
+        #pragma omp parallel num_threads( maxDevNumber )
+              {
         // synchronize computation
-        for (int mic=0 ; mic < maxDevNumber; mic++)
-            if (cluster.accDomains[mic].size() > 0) {
-                cluster.B1KplusPacks[ mic ].DenseMatsVecsMIC_Sync(  );
+        //for (int mic=0 ; mic < maxDevNumber; mic++)
+            if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
+                cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
             }
-        //        }
+                }
         // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
             long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio()); 
-            cilk_for ( eslocal d = 0 ; d < end; ++d ) {
+#pragma omp parallel for
+            for ( eslocal d = 0 ; d < end; ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
@@ -212,13 +223,17 @@ for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
         }
 
         if ( config::solver::LOAD_BALANCING ) {
-            // update the ratio between the cpu and mic
-            double r = cluster.B1KplusPacks[0].getMICratio();
-            double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
-            double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
-#pragma omp parallel num_threads( maxDevNumber )
+            #pragma omp parallel num_threads( maxDevNumber )
             {
+// update the ratio between the cpu and mic
+            double r = cluster.B1KplusPacks[omp_get_thread_num()].getMICratio();
+            double MICtime = cluster.B1KplusPacks[omp_get_thread_num()].getElapsedTime();
+            double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
+            if (omp_get_thread_num() == 0)
+            {
+            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            }
+
                 cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
             }
         }
@@ -310,7 +325,8 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 
     time_eval.timeEvents[0].start();
 
-    cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+#pragma omp parallel for
+    for (eslocal d = 0; d < cluster.domains.size(); d++) {
         SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
         for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
             x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]] * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
@@ -348,7 +364,8 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
     if ( USE_PREC == config::solver::PRECONDITIONERalternative::DIRICHLET || 
             USE_PREC == config::solver::PRECONDITIONERalternative::SUPER_DIRICHLET ) {
         for ( eslocal mic = 0 ; mic < config::solver::N_MICS ; ++mic ) {
-            cilk_for ( eslocal d = 0; d < cluster.accPreconditioners[mic].size(); ++d) {
+#pragma omp parallel for
+            for ( eslocal d = 0; d < cluster.accPreconditioners[mic].size(); ++d) {
                 eslocal domN = cluster.accPreconditioners[mic].at(d);
                 for ( eslocal j = 0; j < cluster.domains[domN].B1t_Dir_perm_vec.size(); j++ ) {
                     cluster.DirichletPacks[mic].SetX(d, j, ( cluster.x_prim_cluster1[ domN ] )[ j ] );
@@ -364,7 +381,8 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         }
         // meanwhile compute the same for domains staying on CPU
         double startCPU = Measure::time();
-        cilk_for (eslocal d = 0; d <
+        #pragma omp parallel for
+        for (eslocal d = 0; d <
                 cluster.hostPreconditioners.size(); ++d ) {
             eslocal domN = cluster.hostPreconditioners.at(d);
             cluster.domains[domN].Prec.DenseMatVec(cluster.x_prim_cluster1[domN], cluster.x_prim_cluster2[domN],'N');
@@ -373,7 +391,8 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         for ( eslocal mic = 0 ; mic < config::solver::N_MICS; ++mic ) {
             cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
             long start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-            cilk_for (  long d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
+#pragma omp parallel for
+            for (  long d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
                 cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
             }
         }
@@ -389,12 +408,13 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         // extract the result from MICs
         for ( eslocal mic = 0; mic < config::solver::N_MICS; ++mic ) {
             long end = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-            cilk_for ( eslocal d = 0 ; d < end; ++d ) {
+#pragma omp parallel for 
+            for ( eslocal d = 0 ; d < end; ++d ) {
                 cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
             }
         }
         
-        if ( config::solver::LOAD_BALANCING ) {
+        if ( config::solver::LOAD_BALANCING_PREC ) {
             // update the ratio between the cpu and mic
             double r = cluster.DirichletPacks[0].getMICratio();
             double MICtime = cluster.DirichletPacks[0].getElapsedTime();

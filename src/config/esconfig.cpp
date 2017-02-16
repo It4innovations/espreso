@@ -72,6 +72,7 @@ solver::SASOLVERalternative              solver::SASOLVER              = solver:
 
 size_t                                   solver::N_MICS                = 2;
 bool                                     solver::LOAD_BALANCING        = true;
+bool                                     solver::LOAD_BALANCING_PREC   = true;
 size_t                                   solver::TIME_STEPS            = 1;
 
 /////////////////////////////// ASSEMBLER //////////////////////////////////////
@@ -235,7 +236,9 @@ std::vector<espreso::Parameter> parameters = {
 
 	{ "N_MICS", solver::N_MICS, "Number of MIC accelerators.", WRITE_TO_HELP },
 
-    { "LOAD_BALANCING", solver::LOAD_BALANCING, "Enables or disables dynamic load balancing between the host and Intel Xeon Phi." },
+    { "LOAD_BALANCING", solver::LOAD_BALANCING, "Enables or disables dynamic load balancing between the host and Intel Xeon Phi during application of the system matrix." },
+    { "LOAD_BALANCING_PREC", solver::LOAD_BALANCING_PREC, "Enables or disables dynamic load balancing between the host and Intel Xeon Phi during application of the preconditioner." },
+
 
 	// OUTPUT DESCRIPTION
 	{ "OUTPUT_FORMAT"   , output::OUTPUT_FORMAT   , "Format of output data.", {

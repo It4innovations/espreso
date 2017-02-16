@@ -17,7 +17,6 @@ ClusterAcc::~ClusterAcc() {
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     ESINFO(PROGRESS2) << "Creating Local Schur complements";
-
     // detect how many MPI processes is running per node
     int _MPIglobalRank;
     int _MPIglobalSize;
@@ -61,17 +60,20 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // END - detect how many MPI processes is running per node
     ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
     //TODO:
-    int accelerators_per_node = 2;
+    int accelerators_per_node = config::solver::N_MICS;
     int target;
     
     if (_MPInodeRank < (_MPInodeSize/2)) //  .../accelerators_per_node
         target = 0;
     else
         target = 1;
+
+    if (accelerators_per_node == 1) target = 0;
     // Set process placement on Xeon Phi
     int ranks_per_node = _MPInodeSize;
-    int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
-    for (eslocal i = 0; i < config::solver::N_MICS; ++i) {
+    //int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
+    int rank = _MPInodeRank % (_MPInodeSize/accelerators_per_node);
+    for (eslocal i = 0; i < accelerators_per_node; ++i) {
         int used_core_num = 0;
         int first_core = 0;
         int last_core = 0;
@@ -106,19 +108,27 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
             cpu_set_t my_set;        /* Define your cpu_set bit mask. */
             CPU_ZERO(&my_set);       /* Initialize it all to 0, i.e. no CPUs selected. */
             int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-            cores = (cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
+            cores = (cores/4  ) - 1; // keep core for system and remove effect of hyperthreading
             //std::cout << sysconf(_SC_NPROCESSORS_ONLN) << " Cores\n";//std::thread::hardware_concurrency() << "Cores \n";
-            int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
+            //int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
+            int cores_per_rank = accelerators_per_node * cores / ranks_per_node;
             for (int i = 0; i < cores_per_rank; i++) {
                 if (i == 0) {
-                    first_core = 1*(cores_per_rank)*rank + 1*i;
+                    //first_core = 1*(cores_per_rank)*rank + 1*i;
+                    first_core = cores_per_rank*rank + 1;
                 }
                 last_core = 1*(cores_per_rank)*rank + 1*i;
-                int core = 1 + 4*(cores_per_rank)*rank + 4*i;
-                CPU_SET(core, &my_set);     /* set the bit that represents core 7. */
+                //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
+                
+                int core = 1+ 4*cores_per_rank*rank + 4*i;
+                for (int j = 0 ; j < 4; j++ ) {
+                    // std::cout << core << std::endl;
+                    CPU_SET(core, &my_set);     /* set the bit that represents core 7. */
+                    core++;
+                }
                 used_core_num++;
             }
-            omp_set_num_threads(cores_per_rank-0);
+            omp_set_num_threads(4*cores_per_rank-0);
             sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
             /* the defined mask, i.e. only 7. */
         }
@@ -145,7 +155,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
             long page_size = sysconf(_SC_PAGE_SIZE);
             currentMem = pages * page_size;
         }
-        micMem[i] = currentMem;
+        micMem[i] = currentMem / (_MPInodeSize/accelerators_per_node);
     }
 
 
@@ -842,7 +852,7 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
             cpu_set_t my_set;        /* Define your cpu_set bit mask. */
             CPU_ZERO(&my_set);       /* Initialize it all to 0, i.e. no CPUs selected. */
             int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-            cores = (cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
+            cores = (cores /4 ) - 1; // keep core for system and remove effect of hyperthreading
             //std::cout << sysconf(_SC_NPROCESSORS_ONLN) << " Cores\n";//std::thread::hardware_concurrency() << "Cores \n";
             int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
             for (int i = 0; i < cores_per_rank; i++) {
@@ -856,9 +866,11 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
             }
             omp_set_num_threads(cores_per_rank-0);
             sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
+
             /* the defined mask, i.e. only 7. */
         }
         //ESINFO(PROGRESS2)
+
         std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
     }
 
@@ -950,7 +962,8 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 //        this->DirichletPacks[mic].SetDevice( mic );
         this->DirichletPacks[mic].SetDevice( target );        
 
-        cilk_for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
+        #pragma omp parallel for
+        for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
             eslocal d = accPreconditioners[mic].at(j);
             SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
             SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
@@ -1130,7 +1143,8 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
 
     // finish the blocks held on CPU
-    cilk_for (eslocal j = 0; j < hostPreconditioners.size(); ++j ) {
+    #pragma omp parallel for
+    for (eslocal j = 0; j < hostPreconditioners.size(); ++j ) {
         eslocal d = hostPreconditioners.at(j);
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
         SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
