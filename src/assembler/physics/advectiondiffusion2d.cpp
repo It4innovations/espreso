@@ -133,18 +133,7 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 	}
 }
 
-void NewAdvectionDiffusion2D::assembleResidualForces(const Step &step, const Element *e, DenseMatrix &Re) const
-{
-	DenseMatrix Ke, fe, T(e->nodes(), 1);
-	processElement(step, e, Ke, fe);
-	for (size_t i = 0; i < e->nodes(); i++) {
-		T(i, 0) = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
-	}
-
-	Re.multiply(Ke, T);
-}
-
-void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
 
@@ -152,6 +141,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 	double detJ, temp;
 	DenseMatrix f(e->nodes(), 1);
 	DenseMatrix U(e->nodes(), 2);
+	DenseMatrix T(e->nodes(), 1);
 	DenseMatrix thickness(e->nodes(), 1), K(e->nodes(), 4);
 	DenseMatrix gpThickness(1, 1), gpK(1, 4);
 
@@ -160,11 +150,12 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 	coordinates.resize(e->nodes(), 2);
 
 	for (size_t i = 0; i < e->nodes(); i++) {
-		if (_instance->solutions.size()) {
-			temp = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+		if (solution.size()) {
+			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
 		} else {
 			temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.load, 273.15 + 20);
 		}
+		T(i, 0) = temp;
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.load, 1);
@@ -189,7 +180,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 	fe.resize(Ksize, 1);
 	fe = 0;
 
-	DenseMatrix u(1, 2), v(1, 2), Re(1, e->nodes());
+	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
 	double normGradN = 0;
 
 	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
@@ -215,11 +206,11 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 		if (CAU) {
 			normGradN = dND.norm();
 			if (normGradN >= 1e-12) {
-				for (size_t i = 0; i < Re.columns(); i++) {
-					Re(0, i) = b_e(0, i) - f(i, 0);
+				for (size_t i = 0; i < re.columns(); i++) {
+					re(0, i) = b_e(0, i) - f(i, 0);
 				}
 				DenseMatrix ReBt(1, 2);
-				ReBt.multiply(Re, dND, 1 / pow(normGradN, 2), 0, false, true);
+				ReBt.multiply(re, dND, 1 / pow(normGradN, 2), 0, false, true);
 				for (size_t i = 0; i < ReBt.columns(); i++) {
 					v(0, i) = u(0, i) - ReBt(0, i);
 				}
@@ -249,7 +240,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 				double P_e_c = h_e_c * norm_u_v / (2 * Ce.norm());
 				double tau_e_c = std::max(0.0, 1 - 1 / P_e_c);
 
-				double konst1 = Re.norm() / normGradN;
+				double konst1 = re.norm() / normGradN;
 				double konst2 = tau_e * h_e != 0 ? tau_e_c * h_e_c / (tau_e * h_e) : 0;
 				if (konst1 / norm_u_e < konst2) {
 					C_e = tau_e * h_e * konst1 * (konst2 - konst1 / norm_u_e) / 2;
@@ -277,6 +268,9 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, const Element *e,
 				fe(i, 0) += detJ * e->weighFactor()[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
 			}
 		}
+	}
+	if (matrices & Matrices::R) {
+		Re.multiply(Ke, T);
 	}
 }
 

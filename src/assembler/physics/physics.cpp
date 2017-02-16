@@ -26,13 +26,17 @@ Physics::Physics(Mesh *mesh, Instance *instance)
 
 }
 
+void Physics::assembleMatrix(const Step &step, Matrices matrix)
+{
+	updateMatrix(step, matrix, {});
+}
 
-void Physics::assembleStiffnessMatrices(const Step &step)
+void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<Solution*> &solution)
 {
 	#pragma omp parallel for
 	for  (size_t d = 0; d < _instance->domains; d++) {
 
-		assembleStiffnessMatrix(step, d);
+		updateMatrix(step, matrix, d, solution);
 
 		switch (_instance->K[d].mtype) {
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -48,27 +52,43 @@ void Physics::assembleStiffnessMatrices(const Step &step)
 	ESINFO(PROGRESS2);
 }
 
-void Physics::assembleStiffnessMatrix(const Step &step, size_t domain)
+void Physics::assembleMatrix(const Step &step, Matrices matrices, size_t domain)
 {
-	SparseVVPMatrix<eslocal> _K;
-	DenseMatrix Ke, fe;
+	updateMatrix(step, matrices, domain, {});
+}
+
+void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+{
+	SparseVVPMatrix<eslocal> _K, _M;
+	DenseMatrix Ke, Me, Re, fe;
 	std::vector<eslocal> DOFs;
 
-	_K.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
-	_instance->f[domain].clear();
-	_instance->f[domain].resize(_instance->DOFs[domain]);
+	if (matrices & Matrices::K) {
+		_K.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
+	}
+	if (matrices & Matrices::M) {
+		_M.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
+	}
+	if (matrices & Matrices::R) {
+		_instance->R[domain].clear();
+		_instance->R[domain].resize(_instance->DOFs[domain]);
+	}
+	if (matrices & Matrices::f) {
+		_instance->f[domain].clear();
+		_instance->f[domain].resize(_instance->DOFs[domain]);
+	}
 
 	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
-		processElement(step, _mesh->elements()[e], Ke, fe);
+		processElement(step, matrices, _mesh->elements()[e], Ke, Me, Re, fe, solution);
 		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
-		insertElementToDomain(_K, DOFs, Ke, fe, domain);
+		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
 	}
 
 	for (size_t i = 0; i < _mesh->faces().size(); i++) {
 		if (_mesh->faces()[i]->inDomain(domain)) {
 			processFace(step, _mesh->faces()[i], Ke, fe);
 			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
-			insertElementToDomain(_K, DOFs, Ke, fe, domain);
+			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
 		}
 	}
 
@@ -76,47 +96,32 @@ void Physics::assembleStiffnessMatrix(const Step &step, size_t domain)
 		if (_mesh->edges()[i]->inDomain(domain)) {
 			processEdge(step, _mesh->edges()[i], Ke, fe);
 			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
-			insertElementToDomain(_K, DOFs, Ke, fe, domain);
+			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
 		}
 	}
 
 	// TODO: make it direct
-	SparseCSRMatrix<eslocal> csrK = _K;
-	_instance->K[domain] = csrK;
-
-	_instance->K[domain].mtype = getMatrixType(step, domain);
-}
-
-void Physics::assembleResidualForces(const Step &step)
-{
-	#pragma omp parallel for
-	for  (size_t d = 0; d < _instance->domains; d++) {
-		assembleResidualForces(step, d);
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+	if (matrices & Matrices::K) {
+		SparseCSRMatrix<eslocal> csrK = _K;
+		_instance->K[domain] = csrK;
+		_instance->K[domain].mtype = getMatrixType(step, domain);
 	}
-	ESINFO(PROGRESS2);
-}
-
-void Physics::assembleResidualForces(const Step &step, size_t domain)
-{
-	DenseMatrix Re;
-	std::vector<eslocal> DOFs;
-
-	_instance->R[domain].clear();
-	_instance->R[domain].resize(_instance->DOFs[domain]);
-
-	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
-		assembleResidualForces(step, _mesh->elements()[e], Re);
-		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
-		for (size_t i = 0; i < Re.rows(); i++) {
-			_instance->R[domain][DOFs[i]] += Re(i, 0);
-		}
+	if (matrices & Matrices::M) {
+		SparseCSRMatrix<eslocal> csrM = _M;
+		_instance->M[domain] = csrM;
+		// _instance->M[domain].mtype = getMatrixType(step, domain);
 	}
+
 }
 
-void Physics::assembleStiffnessMatrix(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void Physics::assembleMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)
 {
-	processElement(step, e, Ke, fe);
+	updateMatrix(step, matrices, e, Ke, Me, Re, fe, {});
+}
+
+void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
+{
+	processElement(step, matrices, e, Ke, Me, Re, fe, solution);
 
 	for (size_t i = 0; i < e->filledFaces(); i++) {
 		DenseMatrix Ki, fi;
@@ -148,7 +153,7 @@ void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslo
 	}
 }
 
-void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &fe, size_t domain)
+void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe, size_t domain)
 {
 	if (Ke.rows() == DOFs.size() && Ke.columns() == DOFs.size()) {
 		for (size_t r = 0; r < DOFs.size(); r++) {
@@ -158,7 +163,30 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vect
 		}
 	} else {
 		if (Ke.rows() != 0 || Ke.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while inserting element matrix to domain matrix";
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling stiffness matrix K.";
+		}
+	}
+
+	if (Me.rows() == DOFs.size() && Me.columns() == DOFs.size()) {
+		for (size_t r = 0; r < DOFs.size(); r++) {
+			for (size_t c = 0; c < DOFs.size(); c++) {
+				M(DOFs[r], DOFs[c]) = Me(r, c);
+			}
+		}
+	} else {
+		if (Me.rows() != 0 || Me.columns() != 0) {
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling mass matrix M.";
+		}
+	}
+
+
+	if (Re.rows() == DOFs.size() && Re.columns() == 1) {
+		for (size_t r = 0; r < DOFs.size(); r++) {
+			_instance->R[domain][DOFs[r]] += Re(r, 0);
+		}
+	} else {
+		if (Re.rows() != 0 || Re.columns() != 0) {
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling matrix R with residual forces.";
 		}
 	}
 
@@ -168,7 +196,7 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, const std::vect
 		}
 	} else {
 		if (fe.rows() != 0 || fe.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while inserting element RHS to domain RHS";
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling right-hand side vector";
 		}
 	}
 }

@@ -4,11 +4,19 @@
 
 #include <cstddef>
 #include <vector>
+#include <fstream>
 
 namespace espreso {
 
 class SparseMatrix;
 class Solution;
+
+enum Matrices : int {
+	K = 1,
+	M = 2,
+	R = 4,
+	f = 8
+};
 
 struct Instance {
 
@@ -18,8 +26,8 @@ struct Instance {
 	size_t domains;
 	std::vector<size_t> DOFs;
 
-	std::vector<SparseMatrix> K, N1, N2, RegMat;
-	std::vector<std::vector<double> > f, R;
+	std::vector<SparseMatrix> K, M, N1, N2, RegMat;
+	std::vector<std::vector<double> > R, f;
 
 	// matrices for Hybrid FETI constraints
 	std::vector<SparseMatrix> B0;
@@ -53,8 +61,27 @@ struct Instance {
 	std::vector<Solution*> solutions;
 };
 
+inline Matrices operator|(Matrices m1, Matrices m2)
+{
+	return static_cast<Matrices>(static_cast<int>(m1) | static_cast<int>(m2));
 }
 
+inline Matrices operator|=(Matrices m1, Matrices m2)
+{
+	return static_cast<Matrices>(static_cast<int>(m1) | static_cast<int>(m2));
+}
+
+inline Matrices operator&(Matrices m1, Matrices m2)
+{
+	return static_cast<Matrices>(static_cast<int>(m1) & static_cast<int>(m2));
+}
+
+inline Matrices operator&=(Matrices m1, Matrices m2)
+{
+	return static_cast<Matrices>(static_cast<int>(m1) & static_cast<int>(m2));
+}
+
+}
 
 
 #endif /* SRC_ASSEMBLER_INSTANCE_H_ */

@@ -74,7 +74,7 @@ void Solver::assembleStiffnessMatrices(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
 	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
-	std::for_each(physics.begin(), physics.end(), [&] (Physics *p) { p->assembleStiffnessMatrices(step); });
+	std::for_each(physics.begin(), physics.end(), [&] (Physics *p) { p->assembleMatrix(step, Matrices::K | Matrices::f); });
 	timePhysics.endWithBarrier(); _timeStatistics->addEvent(timePhysics);
 
 	for (size_t i = 0; i < instances.size(); i++) {
@@ -88,7 +88,7 @@ void Solver::assembleResidualForces(const Step &step)
 	ESINFO(PROGRESS2) << "Subtract residual forces.";
 	TimeEvent timeSub("Subtract residual forces"); timeSub.start();
 	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->assembleResidualForces(step);
+		physics[i]->assembleMatrix(step, Matrices::R);
 	}
 	timeSub.endWithBarrier(); _timeStatistics->addEvent(timeSub);
 
@@ -219,7 +219,7 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 		sumVectors(solution, U, deltaU, 1, alpha);
 
 		solution.swap(physics->instance()->primalSolution);
-		physics->assembleResidualForces(step);
+		physics->assembleMatrix(step, Matrices::R);
 		solution.swap(physics->instance()->primalSolution);
 
 		if (i == 0) {
