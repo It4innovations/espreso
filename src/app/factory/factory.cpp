@@ -132,6 +132,7 @@ void Factory::solve()
 void Factory::check(const Results &configuration)
 {
 	double epsilon = 1e-2;
+
 	auto norm = [&] () {
 		double n = 0, sum = 0;
 		for (size_t i = 0; i < _solution.size(); i++) {
@@ -144,11 +145,16 @@ void Factory::check(const Results &configuration)
 		return sqrt(sum);
 	};
 
+
 	if (configuration.norm != 0) {
-		double nn = norm();
+		double nn;
+		if (!_newAssembler) {
+			nn = norm();
+		} else {
+			nn = sqrt(_physics.front()->sumSquares(_solution, Physics::SumOperation::AVERAGE));
+		}
 		ESTEST(EVALUATION)
-			<< (fabs(nn - configuration.norm) > 1e-2 && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
-			<< (fabs(nn - configuration.norm) > epsilon && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
+			<< (fabs((nn - configuration.norm) / nn) > epsilon && !environment->MPIrank ? TEST_FAILED : TEST_PASSED)
 			<< "Norm of the solution " << nn << " is not " << configuration.norm << ".";
 	}
 
