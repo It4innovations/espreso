@@ -41,7 +41,6 @@ void NewtonRhapson::run(Step &step)
 
 	double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
 	double heatResidual = _configuration.convergenceParameters().requestedResidual();
-	double heatResidualNorm = 0;
 	if (_configuration.convergenceParameters().checkSolution()) {
 		temperatureResidual *= 10;
 	}
@@ -104,9 +103,9 @@ void NewtonRhapson::run(Step &step)
 		if (_configuration.convergenceParameters().checkResidual()) {
 			assembleStiffnessMatrices(step);
 			assembleResidualForces(step);
-			double R;
+			// double R;
 			// |R| = f - R
-			R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
+			// R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
 			// |R| -= BtLambda
 			// TODO
 		}

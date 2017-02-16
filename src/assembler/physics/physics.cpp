@@ -116,8 +116,6 @@ void Physics::assembleResidualForces(const Step &step, size_t domain)
 
 void Physics::assembleStiffnessMatrix(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
 {
-	size_t domain = e->domains().front();
-
 	processElement(step, e, Ke, fe);
 
 	for (size_t i = 0; i < e->filledFaces(); i++) {

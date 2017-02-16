@@ -146,7 +146,7 @@ void Solver::subtractSolutionFromB1c(const Step &step)
 		#pragma omp parallel for
 		for (size_t d = 0; d < instances[i]->domains; d++) {
 			for (size_t j = 0; j < instances[i]->B1[d].J_col_indices.size(); j++) {
-				if (instances[i]->B1[d].I_row_indices[j] > instances[i]->block[Instance::CONSTRAINT::DIRICHLET]) {
+				if (instances[i]->B1[d].I_row_indices[j] > (eslocal)instances[i]->block[Instance::CONSTRAINT::DIRICHLET]) {
 					break;
 				}
 				instances[i]->B1c[d][j] -= instances[i]->primalSolution[d][instances[i]->B1[d].J_col_indices[j] - 1];

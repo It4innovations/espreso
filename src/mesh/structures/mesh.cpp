@@ -2105,10 +2105,6 @@ void Mesh::synchronizeNeighbours()
 	std::vector<std::vector<std::vector<esglobal> > > sIndices(threads, std::vector<std::vector<esglobal> >(_neighbours.size()));
 	std::vector<std::vector<esglobal> > rIndices(_neighbours.size());
 
-	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
-	};
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
@@ -2158,7 +2154,7 @@ void Mesh::checkNeighbours()
 	MPI_Gatherv(_neighbours.data(), _neighbours.size(), MPI_INT, neighbours.data(), counters.data(), displacements.data(), MPI_INT, 0, MPI_COMM_WORLD);
 
 	for (int r = 0; r < environment->MPIsize; r++) {
-		for (size_t n = displacements[r]; n < displacements[r] + counters[r]; n++) {
+		for (int n = displacements[r]; n < displacements[r] + counters[r]; n++) {
 			if (!std::binary_search(neighbours.begin() + displacements[neighbours[n]], neighbours.begin() + displacements[neighbours[n]] + counters[neighbours[n]], r)) {
 				ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL TEST FAILED: neighbours are not correctly set.";
 			}
@@ -2189,11 +2185,11 @@ void Mesh::checkNeighbours()
 		esglobal index = rClusters[n++];
 		esglobal cSize = rClusters[n++];
 		std::vector<int> clusters;
-		for (size_t c = 0; c < cSize; c++) {
+		for (esglobal c = 0; c < cSize; c++) {
 			clusters.push_back(rClusters[n++]);
 		}
 
-		if (index + 1 >= nodes.size()) {
+		if (index + 1 >= (esglobal)nodes.size()) {
 			nodes.resize(index + 1);
 		}
 		if (nodes[index].size()) {
@@ -2257,7 +2253,7 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 		regions.resize(rSize * environment->MPIsize);
 		MPI_Gather(_regions[r]->name.c_str(), rSize, MPI_BYTE, regions.data(), rSize, MPI_BYTE, 0, MPI_COMM_WORLD);
 		if (!environment->MPIrank) {
-			for (size_t i = 0; i < environment->MPIsize; i++) {
+			for (int i = 0; i < environment->MPIsize; i++) {
 				std::string str(regions.begin() + i * rSize, regions.begin() + (i + 1) * rSize);
 				if (str != _regions[r]->name) {
 					ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: regions have not the same names on all processes.";
@@ -2302,12 +2298,12 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 		esglobal index = rRegions[n++];
 		esglobal size = rRegions[n++];
 		std::vector<int> regions;
-		for (size_t c = 0; c < size; c++) {
+		for (esglobal c = 0; c < size; c++) {
 			regions.push_back(rRegions[n++]);
 		}
 		std::sort(regions.begin(), regions.end());
 
-		if (index + 1 >= nodes.size()) {
+		if (index + 1 >= (esglobal)nodes.size()) {
 			nodes.resize(index + 1);
 		}
 		if (nodes[index].size()) {
